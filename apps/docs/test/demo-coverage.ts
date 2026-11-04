@@ -7,6 +7,8 @@ import type { DensityPart } from "@elmeragroup/fuse/theme-catalog";
 
 import { currentColorReport, probeBorders } from "./border-attribution";
 import type { BorderReading } from "./border-attribution";
+import { readStageLeaks } from "./demo-containment";
+import type { StageLeak } from "./demo-containment";
 import { GROUP_FILE } from "./demo-coverage-file";
 import { launchSuiteBrowser } from "./demo-page";
 import { SWEEP_GROUPS, sweepDemos, sweepGroup } from "./demo-sweep";
@@ -33,6 +35,10 @@ import type { PartReading, ProbeOptions } from "./density-attribution";
  * The width gate. Each stage's demo roots must sit as the stage's width rule says
  * (`demo-width.ts`), read on the stages at both densities, since a control's size, and so whether a
  * root fits, follows density.
+ *
+ * The containment gate. The stage's root rules move nothing inside a Fuse part
+ * (`demo-containment.ts`): every descendant of a stage root with a `data-slot` keeps the box it has
+ * with those rules switched off. Read on the stages at both densities, with the width gate.
  */
 
 /** One probed part on one page. */
@@ -70,17 +76,23 @@ const densityProbe: DemoProbe<PartReading> = (page, scope) => {
   return page.evaluate(probeParts, options);
 };
 
-/** What the further probe reads: every box's borders, and on the stages, the roots that break the width rule. */
+/**
+ * What the further probe reads: every box's borders, and on the stages, the roots that break the
+ * width rule and the part descendants the stage moves.
+ */
 type StageReading =
   | (BorderReading & { readonly kind: "border" })
-  | (WidthViolation & { readonly kind: "width" });
+  | (WidthViolation & { readonly kind: "width" })
+  | (StageLeak & { readonly kind: "leak" });
 
 const stageProbe: DemoProbe<StageReading> = async (page, scope) => {
   const borders = await page.evaluate(probeBorders, scope);
   const widths = scope === "stages" ? await page.evaluate(readDemoWidths) : [];
+  const leaks = scope === "stages" ? await page.evaluate(readStageLeaks) : [];
   return [
     ...borders.map((reading) => ({ ...reading, kind: "border" as const })),
     ...widths.map((violation) => ({ ...violation, kind: "width" as const })),
+    ...leaks.map((leak) => ({ ...leak, kind: "leak" as const })),
   ];
 };
 
@@ -100,15 +112,25 @@ export function describeDemoCoverage(fileUrl: string): void {
   const measured: Instance[] = [];
   const bordered: Located<BorderReading>[] = [];
   const widths: Located<WidthViolation>[] = [];
+  const leaks: Located<StageLeak>[] = [];
 
   beforeAll(async () => {
     const readings = await sweepDemos(browser(), slugs, densityProbe, stageProbe);
     measured.push(...readings.discovered);
     for (const reading of readings.probed) {
-      if (reading.kind === "border") {
-        bordered.push(reading);
-      } else {
-        widths.push(reading);
+      switch (reading.kind) {
+        case "border": {
+          bordered.push(reading);
+          break;
+        }
+        case "width": {
+          widths.push(reading);
+          break;
+        }
+        case "leak": {
+          leaks.push(reading);
+          break;
+        }
       }
     }
   }, 900_000);
@@ -117,6 +139,7 @@ export function describeDemoCoverage(fileUrl: string): void {
     describeDensityCoverage(slugs, measured);
     describeBorderCoverage(bordered);
     describeWidthCoverage(widths);
+    describeContainmentCoverage(leaks);
   });
 }
 
@@ -206,6 +229,23 @@ function describeWidthCoverage(widths: readonly Located<WidthViolation>[]): void
     it("fills the stage with every block-level demo and centres every inline-level one", () => {
       const report = new Set(
         widths.map(({ page, demo, root, reason }) => `${page}#${demo} ${root}: ${reason}`)
+      );
+      expect([...report]).toEqual([]);
+    });
+  });
+}
+
+function describeContainmentCoverage(leaks: readonly Located<StageLeak>[]): void {
+  describe("demo containment coverage", () => {
+    // The unit under test is the stage's root rules; the oracle is each part's own layout with
+    // them switched off. The stage positions a root and never lays out what is inside a part. A
+    // descendant that never reads steadily is reported too, so a flaky read cannot pass.
+    it("moves nothing inside a Fuse part", () => {
+      const report = new Set(
+        leaks.map(
+          ({ outcome, page, demo, root, descendant, reason }) =>
+            `${outcome}: ${page}#${demo} ${root} > ${descendant} ${reason}`
+        )
       );
       expect([...report]).toEqual([]);
     });

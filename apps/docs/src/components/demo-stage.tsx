@@ -18,11 +18,17 @@ const demoStage = tv({
   // up to its own `max-w-*`, whatever state its content is in, and an inline-level root (a
   // Button, Badge or Switch) keeps its width on a centred line. The child rules weigh nothing,
   // so a demo's own margin, alignment or justification wins: a capped root centres, its text
-  // starts at the start, and a block-level row keeps its controls centred. A root with a width of
-  // its own, such as `w-96`, shrinks to the stage on a phone instead of running out of it, and a
-  // smaller cap the demo sets still wins. Every stage is at least 256px tall, with a short demo
-  // centred in it, so the frames on a page share a floor and the Code view has room to show code.
-  base: "sm:px-8 text-base flow-root min-h-64 content-center bg-background px-0 py-11 text-center text-foreground min-[360px]:px-3 [:where(&>*)]:mx-auto [:where(&>*)]:max-w-full [:where(&>*)]:justify-center [:where(&>*)]:text-start",
+  // starts at the start, and a plain wrapper row keeps its controls centred. The stage positions
+  // a root but never lays out what is inside a Fuse part, so `justify-center` skips roots with a
+  // `data-slot`: a part such as the Switch track or `Avatar.Group` places its own content. A root
+  // with a width of its own, such as `w-96`, shrinks to the stage on a phone instead of running
+  // out of it, and a smaller cap the demo sets still wins. Every stage is at least 256px tall,
+  // with a short demo centred in it, so the frames on a page share a floor and the Code view has
+  // room to show code.
+  //
+  // Every rule that lays out the stage's roots keys off `data-stage-layout`, so a test can remove
+  // that one attribute to read a part's own layout without the stage's (`demo-containment.ts`).
+  base: "sm:px-8 text-base flow-root min-h-64 content-center bg-background px-0 py-11 text-foreground min-[360px]:px-3 [&[data-stage-layout]]:text-center [:where(&[data-stage-layout]>*)]:mx-auto [:where(&[data-stage-layout]>*)]:max-w-full [:where(&[data-stage-layout]>*)]:text-start [:where(&[data-stage-layout]>*:not([data-slot]))]:justify-center",
 });
 
 /**
@@ -33,14 +39,19 @@ const demoStage = tv({
  * stage's own theme attributes and `data-density` name the coordinate it renders under, for the
  * tests and tools that need it. Density is the *deployment default* for the previewed variant,
  * stamped on the stage so the demo-stage density re-scope in `globals.css` can take effect inside
- * the sandbox.
+ * the sandbox. `data-stage-layout` switches on the rules that lay out the demo's roots.
  */
 export function DemoStage({ children }: DemoStageProps): ReactElement {
   const { theme } = usePreviewTheme();
   const density = defaultDensityForVariant(theme.variant);
 
   return (
-    <ThemeScope theme={theme} className={demoStage()} data-demo-stage {...densityAttributes(density)}>
+    <ThemeScope
+      theme={theme}
+      className={demoStage()}
+      data-demo-stage
+      data-stage-layout
+      {...densityAttributes(density)}>
       {children}
     </ThemeScope>
   );

@@ -19,7 +19,7 @@ const people = [
 
 export function AvatarGroup() {
   return (
-    <Avatar.Group>
+    <Avatar.Group className="w-fit">
       {people.map((person) => (
         <Avatar.Root key={person.initials}>
           <Avatar.Image src={person.src} alt={person.alt} />

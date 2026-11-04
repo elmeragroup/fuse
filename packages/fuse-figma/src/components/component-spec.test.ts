@@ -1882,12 +1882,17 @@ describe("a part translated along its parent's row", () => {
     expect(await build(ROW, translate)).toEqual({ align, rows: [["literal", detail]] });
   });
 
-  it("agrees with a row that packs its child at the start", async () => {
-    expect(await build(`${ROW} justify-start`, "translate-x-0")).toEqual({
-      align: "MIN",
-      rows: [["literal", AT_START]],
-    });
-  });
+  // `justify-start` packs the child where an unset `justify-content` does, so a move counts from
+  // the same place, as the Switch track sets it to keep a parent's child rule off its thumb.
+  it.each([
+    ["translate-x-0", "MIN", AT_START],
+    ["translate-x-[calc(100%-2px)]", "MAX", AT_END],
+  ])(
+    "reads %s in a row that packs its child at the start as the row's %s alignment",
+    async (translate, align, detail) => {
+      expect(await build(`${ROW} justify-start`, translate)).toEqual({ align, rows: [["literal", detail]] });
+    }
+  );
 
   it.each([
     ["a move that leaves a gap", ROW, "translate-x-[13px]"],
@@ -1898,7 +1903,6 @@ describe("a part translated along its parent's row", () => {
     ],
     ["a move in a row that centers its child", `${ROW} justify-center`, "translate-x-0"],
     ["a move in a row that packs its child at the end", `${ROW} justify-end`, "translate-x-[14px]"],
-    ["a move in a row that packs its child at the start", `${ROW} justify-start`, "translate-x-[14px]"],
     ["a vertical move", ROW, "translate-y-[1px]"],
   ])("leaves %s unmapped", async (_case, rowClasses, translate) => {
     const { rows } = await build(rowClasses, translate);
