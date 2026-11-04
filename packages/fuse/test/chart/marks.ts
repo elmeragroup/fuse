@@ -105,16 +105,30 @@ export function label(): string | null {
 }
 
 /**
+ * The element at a point in client pixels and the point inside it, as `userEvent.hover` and
+ * `userEvent.click` take them. The options skip Playwright's wait for that element to be the hit
+ * target, because a popup that follows the slot may move between the hit check and the event.
+ *
+ * @param x - The client x.
+ * @param y - The client y.
+ * @returns The element and the event options.
+ */
+export function pointerTarget(
+  x: number,
+  y: number
+): [Element, { readonly position: { readonly x: number; readonly y: number }; readonly force: true }] {
+  const target = document.elementFromPoint(x, y);
+  if (!(target instanceof Element)) throw new Error(`nothing at ${String(x)}, ${String(y)}`);
+  const box = target.getBoundingClientRect();
+  return [target, { position: { x: x - box.left, y: y - box.top }, force: true }];
+}
+
+/**
  * Move the pointer to a point in client pixels, over the element at that point, as a hand does.
- * The move does not wait for that element to be Playwright's hit target, because a popup that
- * follows the slot may move between the hit check and the move.
  *
  * @param x - The client x.
  * @param y - The client y.
  */
 export async function pointerAt(x: number, y: number): Promise<void> {
-  const target = document.elementFromPoint(x, y);
-  if (!(target instanceof Element)) throw new Error(`nothing at ${String(x)}, ${String(y)}`);
-  const box = target.getBoundingClientRect();
-  await userEvent.hover(target, { position: { x: x - box.left, y: y - box.top }, force: true });
+  await userEvent.hover(...pointerTarget(x, y));
 }

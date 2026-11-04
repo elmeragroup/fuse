@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, use, useMemo } from "react";
+import { use, useMemo } from "react";
 import type { ReactElement, ReactNode } from "react";
 
 import { attachJoin, copyBefore, pointAxes, useAttachedMark } from "./chart-attached";
@@ -16,11 +16,16 @@ import {
 import type { ChartRootContextValue } from "./chart-context";
 import { partsCache, writeAttribute, writeAttributes, writeStyle } from "./chart-dom";
 import { useChartFollower } from "./chart-followers";
-import { ChartHeadlineContext } from "./chart-headline";
 import type { JoinLead, MarkValues } from "./chart-motion";
 import { useFirstDraw } from "./chart-motion-mark";
 import { useChartFrame } from "./chart-plot";
-import { fallbackSlot, readingAt, useActiveSlot } from "./chart-readout";
+import {
+  ChartDatumContext,
+  ChartHeadlineContext,
+  fallbackSlot,
+  readingAt,
+  useActiveSlot,
+} from "./chart-readout";
 import type { ChartFallback, ChartLayerProps, ValueFormat } from "./chart-types";
 import { formatValue } from "./format/value-format";
 import { barCellAt, barEndValue, barTip } from "./layout/bar-geometry";
@@ -55,14 +60,6 @@ export type ChartActiveValueLineProps = ChartLayerProps & {
   /** A `ValueLabel` adds the value as a pill at the value axis. */
   children?: ReactNode;
 };
-
-/**
- * The datum a ValueLabel prints, which the enclosing ActiveValueLine or Marker provides: a key and
- * a slot, or the active slot when `slot` is null.
- */
-export const ChartDatumContext = createContext<{ readonly key: string; readonly slot: number | null } | null>(
-  null
-);
 
 /** The bar a series draws at a slot, whose end the value followers sit at. Null where it draws none. */
 function cellAt(context: ChartRootContextValue, dataKey: string, slot: number | null): BarCell | null {

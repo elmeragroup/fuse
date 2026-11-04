@@ -1,11 +1,11 @@
 "use client";
 
-import { createContext } from "react";
 import type { ReactElement } from "react";
 
 import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
 
+import { ChartHeadlineContext } from "./chart-readout";
 import type { ChartDomProps } from "./chart-types";
 
 /**
@@ -24,9 +24,6 @@ export type ChartTakeawayProps = Omit<ChartDomProps<"p">, "children"> & {
   /** The takeaway sentence. Interpolated strings and numbers pass, and elements fail the type. */
   children: string | number | readonly (string | number)[];
 };
-
-/** Whether a part sits inside a Headline, where an ActiveValue is exposed text. */
-export const ChartHeadlineContext = createContext(false);
 
 /**
  * The key figure above the chart, such as `1,78 kr` over `Spotpris nå 16:00–16:15`. Format a static

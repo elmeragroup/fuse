@@ -3,7 +3,8 @@
 /**
  * What the tooltip, legend and headline parts print, read from Root's model. The active point is
  * Root's store state, and a template row supplies its own key, so every readout part reads the
- * same slot and key the option names.
+ * same slot and key the option names. It also holds the contexts that say where a part sits, which
+ * Root resets for its own parts.
  */
 import { createContext, use } from "react";
 
@@ -52,6 +53,23 @@ export function useLegendSide(key: string | null): ChartThresholdSide | null {
  * does not, so a pointer move renders no legend swatch or label.
  */
 export const ChartLiveContext = createContext(false);
+
+// Root resets every context in this file. The three below live here, so Root resets them without
+// importing the Crosshair, Headline or ActiveValue module.
+
+/** Whether a part sits inside a Crosshair, which a SlotLabel needs. */
+export const ChartCrosshairContext = createContext(false);
+
+/** Whether a part sits inside a Headline, where an ActiveValue is exposed text. */
+export const ChartHeadlineContext = createContext(false);
+
+/**
+ * The datum a ValueLabel prints, which the enclosing ActiveValueLine or Marker provides: a key and
+ * a slot, or the active slot when `slot` is null.
+ */
+export const ChartDatumContext = createContext<{ readonly key: string; readonly slot: number | null } | null>(
+  null
+);
 
 /**
  * The key a readout part prints: its own `dataKey`, else its template row's, else the active

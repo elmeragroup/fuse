@@ -3,7 +3,6 @@
 import { memo, use, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { ReactElement, ReactNode } from "react";
 
-import { ChartDatumContext } from "./chart-active-value";
 import {
   attachJoin,
   barTip,
@@ -26,7 +25,7 @@ import { readingPaint, seriesPaintOf } from "./chart-paint";
 import type { SeriesPaint } from "./chart-paint";
 import { pathAnchor, routeRestIndex } from "./chart-paths";
 import { useChartFrame } from "./chart-plot";
-import { readingAt, useActiveSlot } from "./chart-readout";
+import { ChartDatumContext, readingAt, useActiveSlot } from "./chart-readout";
 import { glideShown, rideFrom, snapGlide, stepSpring } from "./chart-spring";
 import type { Ride } from "./chart-spring";
 import { useSteady } from "./chart-steady";

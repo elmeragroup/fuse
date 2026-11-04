@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useLayoutEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import type { ReactElement, ReactNode } from "react";
 
 import { useChartRoot, usePlotLayout } from "./chart-context";
@@ -8,6 +8,7 @@ import { writeAttribute } from "./chart-dom";
 import { useChartFollower } from "./chart-followers";
 import { useChartFrame } from "./chart-plot";
 import { usePlotRead } from "./chart-plot-measure";
+import { ChartCrosshairContext } from "./chart-readout";
 import { glideFrom, snapGlide, stepSpring } from "./chart-spring";
 import { sameShallow, useSteady } from "./chart-steady";
 import type { ChartLayerProps } from "./chart-types";
@@ -35,9 +36,6 @@ export type ChartCrosshairProps = ChartLayerProps & {
   /** A `SlotLabel` adds the active slot's label as a pill on the x axis. */
   children?: ReactNode;
 };
-
-/** Whether a part sits inside a Crosshair, which a SlotLabel needs. */
-export const ChartCrosshairContext = createContext(false);
 
 /**
  * The marker of the active slot, a band for `xScale="band"` and a line for `"point"` by default.
