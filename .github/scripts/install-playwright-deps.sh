@@ -2,8 +2,11 @@
 set -euo pipefail
 
 # Installs the system packages Playwright's browsers need, from the restored .deb cache on a
-# hit and from the Ubuntu mirror otherwise. After a download it copies the .debs into the
-# cache directory and writes `save=true` to GITHUB_OUTPUT, so the workflow saves them.
+# hit and from the Ubuntu mirror otherwise. After a download on a miss it copies the .debs into
+# the cache directory and writes `save=true` to GITHUB_OUTPUT, so the workflow saves them; a
+# hit's key already holds a set, so it never offers one. A run that fails leaves the retry to
+# merge.yml, which restores the cache again, since a sibling leg has usually saved it by then,
+# and runs this script once more.
 : "${DEBS:?Set DEBS to the .deb cache directory}"
 : "${GITHUB_OUTPUT:?Set GITHUB_OUTPUT}"
 cache_hit="${CACHE_HIT:-false}"
@@ -31,37 +34,41 @@ install_from_archive() {
 # The mirror is only read here, and only to download: APT_CONFIG makes Playwright's
 # `apt-get update && apt-get install` download-only, so stopping it never interrupts dpkg.
 # Playwright owns the package list, and apt resolves it against this image. apt's own
-# timeout only notices a silent connection, not one trickling at 130 kB/s, so each attempt is
-# bounded and retried once: apt keeps the .debs it finished, and a new connection can reach
-# a faster backend. `timeout` runs as root because apt does and a user cannot signal it.
+# timeout only notices a silent connection, not one trickling at 73 kB/s, so the attempt is
+# bounded. Healthy legs fetch the 139 MB set in 4-14 s; 3 minutes still passes a mirror at
+# about 800 kB/s and hands a stalled one to the rescue soon after a sibling has saved the set.
+# A retry on the same mirror did not help (merge run 41916918732), so there is one attempt per
+# run. `timeout` runs as root because apt does and a user cannot signal it.
 download() {
   local config
   config="$(mktemp)"
   echo 'APT::Get::Download-Only "true";' >"$config"
-  local attempt
-  for attempt in 1 2; do
-    if sudo env "PATH=$PATH" "APT_CONFIG=$config" timeout --kill-after=30s 5m \
-      "$playwright" install-deps chromium firefox webkit; then
-      return 0
-    fi
-    echo "::warning::Downloading Playwright system packages failed or timed out (attempt $attempt)"
-  done
+  if sudo env "PATH=$PATH" "APT_CONFIG=$config" timeout --kill-after=30s 3m \
+    "$playwright" install-deps chromium firefox webkit; then
+    return 0
+  fi
+  echo "::warning::Downloading Playwright system packages failed or took over 3 minutes; a rescue step may follow"
   return 1
 }
 
-# The image ships an empty archive (runner-images cleanup.sh runs apt-get clean); cleaning
-# again keeps the archive, and so the cache, to this install's .debs.
-sudo apt-get clean
-
 if [[ "$cache_hit" == true ]]; then
+  sudo apt-get clean
   sudo cp "$DEBS"/*.deb "$archive"/
-  if install_from_archive; then exit 0; fi
+  if install_from_archive; then
+    cached=("$archive"/*.deb)
+    echo "Installed ${#cached[@]} cached system packages without downloading."
+    exit 0
+  fi
   echo "::warning::The cached system packages did not install; downloading them instead"
   sudo apt-get clean
 fi
 
+# A download leaves the archive as it is. The image ships it empty (runner-images cleanup.sh
+# runs apt-get clean), and after a failed first run it holds that run's finished .debs from
+# the same list, which the next run's download keeps instead of fetching again.
 download
 install_from_archive
+if [[ "$cache_hit" == true ]]; then exit 0; fi
 
 debs=("$archive"/*.deb)
 if ((${#debs[@]} == 0)); then

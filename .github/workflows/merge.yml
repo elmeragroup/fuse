@@ -193,20 +193,42 @@ jobs:
           path: ${{ runner.temp }}/playwright-debs
           key: playwright-debs-${{ steps.runner-image.outputs.image }}-${{ steps.playwright.outputs.version }}
 
-      # The script bounds each mirror download itself; this limit is the backstop for the step.
+      # One bounded download per run; the script explains the limit. A failure here does not fail
+      # the leg: by then a sibling leg has usually saved the set, so the rescue below restores
+      # the cache again and installs offline, or downloads once more when nothing was saved.
+      # Each step's limit is a backstop over one attempt and the offline install.
       - name: Install Playwright system dependencies
         id: playwright-deps
-        timeout-minutes: 15
+        continue-on-error: true
+        timeout-minutes: 6
         env:
           CACHE_HIT: ${{ steps.deps-cache.outputs.cache-hit }}
           DEBS: ${{ runner.temp }}/playwright-debs
         run: bash .github/scripts/install-playwright-deps.sh
 
-      # Every leg that missed saves the same key; one wins and the others log a warning. Any ref
+      - name: Restore Playwright system packages another leg saved
+        id: deps-cache-rescue
+        if: steps.playwright-deps.outcome == 'failure'
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/playwright-debs
+          key: ${{ steps.deps-cache.outputs.cache-primary-key }}
+
+      - name: Install Playwright system dependencies (rescue)
+        id: playwright-deps-rescue
+        if: steps.playwright-deps.outcome == 'failure'
+        timeout-minutes: 6
+        env:
+          CACHE_HIT: ${{ steps.deps-cache-rescue.outputs.cache-hit }}
+          DEBS: ${{ runner.temp }}/playwright-debs
+        run: bash .github/scripts/install-playwright-deps.sh
+
+      # The script offers a set only after downloading it on a miss, in either run. Every leg
+      # that downloaded saves the same key; one wins and the others log a warning. Any ref
       # saves, so a branch run restores its own entry. A PR falls back to main's, so it misses
       # only while main has none for its image.
       - name: Save Playwright system packages
-        if: steps.deps-cache.outputs.cache-hit != 'true' && steps.playwright-deps.outputs.save == 'true'
+        if: steps.playwright-deps.outputs.save == 'true' || steps.playwright-deps-rescue.outputs.save == 'true'
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ${{ runner.temp }}/playwright-debs

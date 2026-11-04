@@ -20,6 +20,29 @@ import {
 const activatedPush =
   "github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.RELEASE_ENABLED == 'true'";
 
+/** Where the browser legs keep the cached system packages. */
+const debs = "${{ runner.temp }}/playwright-debs";
+
+/**
+ * The browser job's two runs of the system-package installer, in order: the first and the
+ * rescue. Both run the same command, matched whole so nothing appended (such as `|| true`) can
+ * swallow a failure; the steps' conditions, not the script, tell the runs apart.
+ * @param {Record<string, unknown>[]} steps
+ */
+function depsRuns(steps) {
+  const runs = steps.filter(
+    (step) =>
+      step.run !== undefined &&
+      asString(step.run, "step run").startsWith("bash .github/scripts/install-playwright-deps.sh")
+  );
+  expect(runs.map((step) => step.run)).toEqual([
+    "bash .github/scripts/install-playwright-deps.sh",
+    "bash .github/scripts/install-playwright-deps.sh",
+  ]);
+  const [first, rescue] = runs;
+  return { first, rescue };
+}
+
 describe("merge workflow", () => {
   const workflow = readWorkflow("merge");
 
@@ -106,9 +129,9 @@ describe("merge workflow", () => {
       "pnpm --filter @elmeragroup/fuse exec playwright install chromium firefox webkit"
     );
     expect(install.if).toBe(`steps.${asString(cache.id, "cache id")}.outputs.cache-hit != 'true'`);
-    const deps = requiredRunStep(browser, "bash .github/scripts/install-playwright-deps.sh");
+    const { first } = depsRuns(browser);
     const gate = requiredRunStep(browser, "pnpm exec turbo run ");
-    const order = [version, cache, install, deps, gate].map((step) => browser.indexOf(step));
+    const order = [version, cache, install, first, gate].map((step) => browser.indexOf(step));
     expect(order).toEqual([...order].sort((a, b) => a - b));
   });
 
@@ -119,39 +142,61 @@ describe("merge workflow", () => {
     if (version === undefined) throw new Error("browser job does not resolve the Playwright version");
     const image = browser.find((step) => step.id === "runner-image");
     if (image === undefined) throw new Error("browser job does not resolve the runner image");
-    const debs = "${{ runner.temp }}/playwright-debs";
+    const { first, rescue } = depsRuns(browser);
+    const failed = `steps.${asString(first.id, "first deps id")}.outcome == 'failure'`;
 
+    // The first restore runs on every leg; the rescue restores the same key again only after
+    // the first run failed, when a sibling has usually saved it.
+    const restores = browser.filter(
+      (step) =>
+        step.uses !== undefined &&
+        asString(step.uses, "step uses").startsWith("actions/cache/restore@") &&
+        asRecord(step.with, "restore inputs").path === debs
+    );
+    expect(restores).toHaveLength(2);
+    const [restore, rescueRestore] = restores;
     // A cached set only installs onto the dpkg state it was resolved against, and only lists
     // the packages of the Playwright version that asked for them.
-    const restore = requiredCacheStep(browser, "actions/cache/restore", debs);
     expect(asRecord(restore.with, "deps restore inputs").key).toBe(
       `playwright-debs-\${{ steps.${asString(image.id, "image id")}.outputs.image }}-\${{ steps.${asString(version.id, "version id")}.outputs.version }}`
     );
     expect(restore.if).toBeUndefined();
     const restored = `steps.${asString(restore.id, "deps restore id")}.outputs`;
+    expect(rescueRestore.if).toBe(failed);
+    expect(asRecord(rescueRestore.with, "rescue restore inputs").key).toBe(
+      `\${{ ${restored}.cache-primary-key }}`
+    );
 
-    // Every leg installs, from the restored set on a hit, so the step has no condition. Its
-    // own limit stays under the job's, so a stalled mirror cannot spend the leg's budget.
-    const deps = requiredRunStep(browser, "bash .github/scripts/install-playwright-deps.sh");
-    // The whole command, so nothing appended can swallow the script's failure.
-    expect(deps.run).toBe("bash .github/scripts/install-playwright-deps.sh");
-    expect(deps.if).toBeUndefined();
-    expect(deps.env).toEqual({ CACHE_HIT: `\${{ ${restored}.cache-hit }}`, DEBS: debs });
-    expect(deps["timeout-minutes"]).toBeLessThan(job["timeout-minutes"]);
+    // Every leg installs, so the first run has no condition; its failure leaves the leg to the
+    // rescue instead of failing it. The rescue reads the second restore and fails the leg itself.
+    expect(first.if).toBeUndefined();
+    expect(first["continue-on-error"]).toBe(true);
+    expect(first.env).toEqual({ CACHE_HIT: `\${{ ${restored}.cache-hit }}`, DEBS: debs });
+    expect(rescue.if).toBe(failed);
+    expect(rescue["continue-on-error"]).toBeUndefined();
+    expect(rescue.env).toEqual({
+      CACHE_HIT: `\${{ steps.${asString(rescueRestore.id, "rescue restore id")}.outputs.cache-hit }}`,
+      DEBS: debs,
+    });
+    // Both bounded runs end well inside the job, so two stalls fail the leg instead of its budget.
+    expect(Number(first["timeout-minutes"]) + Number(rescue["timeout-minutes"])).toBeLessThan(
+      Number(job["timeout-minutes"])
+    );
 
-    // The save never overwrites an existing entry and saves only a set the script collected.
+    // The script offers a set only after a download on a miss; either run's offer saves it.
     const save = requiredCacheStep(browser, "actions/cache/save", debs);
     expect(save.if).toBe(
-      `${restored}.cache-hit != 'true' && steps.${asString(deps.id, "deps id")}.outputs.save == 'true'`
+      `steps.${asString(first.id, "first deps id")}.outputs.save == 'true' || steps.${asString(rescue.id, "rescue deps id")}.outputs.save == 'true'`
     );
     expect(asRecord(save.with, "deps save inputs").key).toBe(`\${{ ${restored}.cache-primary-key }}`);
 
     const browsers = requiredCacheStep(browser, "actions/cache", "~/.cache/ms-playwright");
     const gate = requiredRunStep(browser, "pnpm exec turbo run ");
-    const order = [version, image, restore, deps, save].map((step) => browser.indexOf(step));
+    const order = [version, image, restore, first, rescueRestore, rescue, save, gate].map((step) =>
+      browser.indexOf(step)
+    );
     expect(order).toEqual([...order].sort((a, b) => a - b));
-    expect(browser.indexOf(browsers)).toBeLessThan(browser.indexOf(deps));
-    expect(browser.indexOf(deps)).toBeLessThan(browser.indexOf(gate));
+    expect(browser.indexOf(browsers)).toBeLessThan(browser.indexOf(first));
   });
 
   it.each([

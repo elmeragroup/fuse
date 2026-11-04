@@ -13,7 +13,8 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
-import { readWorkflow, requiredJobSteps, requiredRunStep } from "./workflow.mjs";
+import { asString } from "./json-object.mjs";
+import { readWorkflow, requiredJobSteps } from "./workflow.mjs";
 
 // Unit under test: the browser legs' system-package installer. Oracle: the deb-cache contract
 // in merge.yml and apt's behavior on the runner. Only root, apt, `timeout` and Playwright's
@@ -122,9 +123,12 @@ beforeAll(() => {
 afterAll(() => rmSync(tools.directory, { recursive: true, force: true }));
 
 /**
- * @param {{ restored?: string[], downloads?: string[], stalls?: number, rejectedInstalls?: number }} scenario
+ * Runs the script once, as either of merge.yml's install steps does. `restored` is the cache
+ * the preceding restore step found, `leftovers` the .debs an earlier run left in apt's archive,
+ * and `downloads` what the mirror delivers.
+ * @param {{ restored?: string[], leftovers?: string[], downloads?: string[], stalls?: number, rejectedInstalls?: number }} scenario
  */
-async function install({ restored, downloads = [], stalls = 0, rejectedInstalls = 0 }) {
+async function install({ restored, leftovers = [], downloads = [], stalls = 0, rejectedInstalls = 0 }) {
   const directory = mkdtempSync(join(tmpdir(), "fuse-playwright-deps-"));
   const archive = join(directory, "archive");
   const state = join(directory, "state");
@@ -132,6 +136,7 @@ async function install({ restored, downloads = [], stalls = 0, rejectedInstalls 
   const output = join(directory, "output");
   const trace = join(directory, "trace");
   for (const path of [archive, state]) mkdirSync(path);
+  for (const deb of leftovers) writeFileSync(join(archive, deb), deb);
   writeFileSync(join(state, "installs"), "0");
   writeFileSync(join(state, "attempts"), "0");
   writeFileSync(output, "");
@@ -161,6 +166,7 @@ async function install({ restored, downloads = [], stalls = 0, rejectedInstalls 
     return {
       ...result,
       calls,
+      attempts: calls.filter((call) => call.startsWith("timeout ")),
       installs: calls
         .filter((call) => call.startsWith("apt-get root=1 install "))
         .map((call) => call.split(" ").filter((arg) => arg.endsWith(".deb"))),
@@ -177,6 +183,8 @@ async function install({ restored, downloads = [], stalls = 0, rejectedInstalls 
 const offlineInstall = "apt-get root=1 install -y --no-install-recommends --no-download ";
 /** The single download Playwright's installer runs, as root and without dpkg. */
 const download = "playwright root=1 download-only install-deps chromium firefox webkit";
+/** A GitHub warning annotation, which surfaces on the run's summary. */
+const warning = /^::warning::/m;
 
 describe.concurrent("Playwright system package install", () => {
   it("installs a restored set offline without contacting the mirror", async () => {
@@ -191,10 +199,9 @@ describe.concurrent("Playwright system package install", () => {
   it("downloads from the mirror, installs offline and offers the set for saving on a miss", async () => {
     const result = await install({ downloads: ["a.deb", "b.deb"] });
     expect(result.status, result.stderr).toBe(0);
-    const timed = result.calls.filter((call) => call.startsWith("timeout "));
-    expect(timed).toHaveLength(1);
+    expect(result.attempts).toHaveLength(1);
     // Root runs the time limit, so it can stop the root apt processes beneath it.
-    expect(timed[0]).toMatch(/^timeout root=1 /);
+    expect(result.attempts[0]).toMatch(/^timeout root=1 /);
     expect(result.calls).toContain(download);
     expect(result.installs).toEqual([[join(result.archive, "a.deb"), join(result.archive, "b.deb")]]);
     expect(result.calls.findIndex((call) => call === download)).toBeLessThan(
@@ -204,48 +211,62 @@ describe.concurrent("Playwright system package install", () => {
     expect(result.outputs).toEqual(["save=true"]);
   });
 
-  it("retries a stalled download once and still installs and saves the set", async () => {
+  it("makes one bounded attempt and leaves the retry to the workflow", async () => {
     const result = await install({ downloads: ["a.deb"], stalls: 1 });
-    expect(result.status, result.stderr).toBe(0);
-    expect(result.calls.filter((call) => call.startsWith("timeout "))).toHaveLength(2);
-    expect(result.stdout).toContain("::warning::");
-    expect(result.installs).toEqual([[join(result.archive, "a.deb")]]);
-    expect(result.outputs).toEqual(["save=true"]);
-  });
-
-  it("fails after a second stall without installing or saving", async () => {
-    const result = await install({ downloads: ["a.deb"], stalls: 2 });
     expect(result.status).not.toBe(0);
-    const timed = result.calls.filter((call) => call.startsWith("timeout "));
-    expect(timed).toHaveLength(2);
+    expect(result.attempts).toHaveLength(1);
+    expect(result.stdout).toMatch(warning);
     expect(result.installs).toEqual([]);
     expect(result.cached).toBeUndefined();
     expect(result.outputs).toEqual([]);
 
-    // Cross-check against merge.yml: both attempts, each with its kill grace, must end inside
-    // the step's own limit, or a second stall reaches the backstop before the retry finishes.
-    const deps = requiredRunStep(
-      requiredJobSteps(readWorkflow("merge"), "browser"),
-      "bash .github/scripts/install-playwright-deps.sh"
+    // Cross-check against merge.yml: the attempt and its kill grace, plus the offline install
+    // (14-47 s on Ubuntu 26.04), must end inside each run's step limit, or the backstop rather
+    // than the script decides when the next step starts.
+    const runs = requiredJobSteps(readWorkflow("merge"), "browser").filter(
+      (step) =>
+        step.run !== undefined &&
+        asString(step.run, "step run").startsWith("bash .github/scripts/install-playwright-deps.sh")
     );
-    const stepSeconds = Number(deps["timeout-minutes"]) * 60;
-    const attemptSeconds = timed.map((call) => {
-      const match = /^timeout root=1 limit=([\d.]+) grace=([\d.]+) /.exec(call);
-      if (match === null) throw new Error(`unbounded attempt: ${call}`);
-      return Number(match[1]) + Number(match[2]);
-    });
-    expect(attemptSeconds.reduce((total, seconds) => total + seconds, 0)).toBeLessThan(stepSeconds);
+    expect(runs).toHaveLength(2);
+    const match = /^timeout root=1 limit=([\d.]+) grace=([\d.]+) /.exec(result.attempts[0]);
+    if (match === null) throw new Error(`unbounded attempt: ${result.attempts[0]}`);
+    const installSeconds = 60;
+    for (const step of runs) {
+      expect(Number(match[1]) + Number(match[2]) + installSeconds).toBeLessThanOrEqual(
+        Number(step["timeout-minutes"]) * 60
+      );
+    }
   });
 
-  it("downloads afresh when apt rejects the restored set, installing none of it", async () => {
+  it("replaces a failed run's partial download with the restored set", async () => {
+    const result = await install({ restored: ["a.deb", "b.deb"], leftovers: ["partial.deb"] });
+    expect(result.status, result.stderr).toBe(0);
+    expect(result.attempts).toEqual([]);
+    expect(result.installs).toEqual([[join(result.archive, "a.deb"), join(result.archive, "b.deb")]]);
+    // The cache already holds this key, so installing from it offers nothing to save.
+    expect(result.outputs).toEqual([]);
+  });
+
+  it("keeps a failed run's finished .debs when it downloads again", async () => {
+    const result = await install({ leftovers: ["a.deb"], downloads: ["b.deb"] });
+    expect(result.status, result.stderr).toBe(0);
+    expect(result.attempts).toHaveLength(1);
+    expect(result.installs).toEqual([[join(result.archive, "a.deb"), join(result.archive, "b.deb")]]);
+    expect(result.cached).toEqual(["a.deb", "b.deb"]);
+    expect(result.outputs).toEqual(["save=true"]);
+  });
+
+  it("downloads afresh when apt rejects the restored set, offering nothing for the existing key", async () => {
     const result = await install({ restored: ["stale.deb"], downloads: ["fresh.deb"], rejectedInstalls: 1 });
     expect(result.status, result.stderr).toBe(0);
-    expect(result.stdout).toContain("::warning::");
+    expect(result.stdout).toMatch(warning);
     expect(result.calls).toContain(download);
     expect(result.installs).toEqual([
       [join(result.archive, "stale.deb")],
       [join(result.archive, "fresh.deb")],
     ]);
+    expect(result.outputs).toEqual([]);
   });
 
   it("saves nothing when every package is already installed", async () => {
