@@ -7,6 +7,7 @@ import { renderToString } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import "../../../dist/styles.css";
+import { computedColor } from "../../../test/assert-invalid-ring";
 import { barBox } from "../../../test/chart/bar-box";
 import { bars } from "../../../test/chart/marks";
 import { renderThemed } from "../../../test/themed-browser-render";
@@ -309,10 +310,7 @@ describe("data rules in production", () => {
     );
     const { host, rerender } = renderThemed(element);
     // The theme's own role, resolved through a probe outside every chart rule.
-    const probe = document.createElement("span");
-    probe.style.color = "var(--chart-sentiment-positive)";
-    host.append(probe);
-    const positive = getComputedStyle(probe).color;
+    const positive = computedColor(host, "var(--chart-sentiment-positive)");
     expect(bars(host).map((bar) => getComputedStyle(bar).fill)).toEqual([
       positive,
       positive,

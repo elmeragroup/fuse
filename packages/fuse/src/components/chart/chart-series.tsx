@@ -6,14 +6,14 @@ import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
 
 import { useChartRoot } from "./chart-context";
-import { isThresholdColor, seriesPaintOf, valuePaint } from "./chart-paint";
+import { isThresholdColor, readingPaint, seriesPaintOf } from "./chart-paint";
 import type { SeriesPaint } from "./chart-paint";
 import { usePendingOr } from "./chart-pending-root";
 import { readingAt, useActivePoint, useLegendSide, useReadoutKey } from "./chart-readout";
-import type { ThresholdSideName } from "./chart-readout";
 import { seriesLabel } from "./chart-text";
 import type { ChartDomProps } from "./chart-types";
 import { barForm, drawnBarVariant } from "./layout/bar-geometry";
+import { seriesPaint } from "./layout/color-key";
 import { seriesOf } from "./layout/series-of";
 
 /**
@@ -63,12 +63,6 @@ function swatchPaint(paint: SeriesPaint, step: string | undefined): string {
   return `linear-gradient(to right, ${below} 50%, ${above} 50%)`;
 }
 
-/** The paint of a threshold side, which a threshold's ramp holds lower side first. */
-function sidePaint(paint: SeriesPaint, side: ThresholdSideName | null): string | undefined {
-  if (side === null || !isThresholdColor(paint.color)) return undefined;
-  return paint.ramp?.[side === "above" ? 1 : 0];
-}
-
 /**
  * The series' paint. A role list shows the list as a gradient, a scale shows its ramp, and a
  * threshold shows its two sides split in half. Inside a tooltip row a scale or a threshold series
@@ -96,10 +90,13 @@ function ChartSwatchBody({
   const series = seriesOf(context.model, key);
   const paint = seriesPaintOf(key, context.config[key]?.color ?? "chart-1", series);
   const side = useLegendSide(key);
-  const reading =
-    point.slot === null || paint.bins === undefined ? null : readingAt(context, key, point.slot);
+  // A legend entry's side paints its role with the consumer override first, as the series' marks do.
   const step =
-    sidePaint(paint, side) ?? (reading?.kind === "reading" ? valuePaint(paint, reading.value) : undefined);
+    side === null
+      ? point.slot === null
+        ? undefined
+        : readingPaint(paint, readingAt(context, key, point.slot))
+      : seriesPaint(key, side.color);
   // The swatch wears the look the series' bars draw in, from config at render time, so the server
   // HTML and the legend tell a hatched series apart before the chart hydrates.
   const look = drawnBarVariant(
@@ -141,13 +138,7 @@ function ChartSeriesLabelBody({ dataKey, render, className, ...props }: ChartSer
   const point = useActivePoint(context);
   const key = useReadoutKey("Chart.SeriesLabel", context, dataKey, point.key);
   const side = useLegendSide(key);
-  const color = key === null ? undefined : context.config[key]?.color;
-  const text =
-    key === null
-      ? null
-      : side !== null && color !== undefined && isThresholdColor(color)
-        ? color[side].label
-        : seriesLabel(context, key).text;
+  const text = key === null ? null : (side?.label ?? seriesLabel(context, key).text);
   return useRender({
     defaultTagName: "span",
     render,

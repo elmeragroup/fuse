@@ -10,6 +10,7 @@ import { binEdges, colorBins } from "./layout/color-bins";
 import type { ColorBins } from "./layout/color-bins";
 import { seriesPaint } from "./layout/color-key";
 import { ChartCompositionError } from "./layout/errors";
+import type { Reading } from "./layout/readings";
 import type { StackOffset } from "./layout/stack";
 
 /** Whether a colour is a decorative role list. */
@@ -110,17 +111,6 @@ export function stackedScaleError(
   );
 }
 
-/**
- * The role a mark without a value of its own paints: a role itself, a role list's first role, a
- * scale's middle step, or a threshold's `below` role.
- */
-function baseRole(color: ChartColor): string {
-  if (isRoleList(color)) return color[0];
-  if (isThresholdColor(color)) return color.below.color;
-  const scale = scaleOf(color);
-  return scale === undefined ? color : `${scale}-4`;
-}
-
 /** What a series paints with, which its marks, its active overlay and its swatches all read. */
 export type SeriesPaint = {
   readonly key: string;
@@ -136,7 +126,10 @@ export type SeriesPaint = {
    * threshold. Empty otherwise.
    */
   readonly edges: readonly number[];
-  /** The series paint, which a mark without a paint of its own takes. */
+  /**
+   * The series paint, which a mark without a paint of its own takes: a role itself, a role list's
+   * first stop, a scale's middle step or a threshold's `below` side.
+   */
   readonly base: string;
   /** The role list's colour stops from the tip to the base, or undefined for every other colour. */
   readonly stops: readonly string[] | undefined;
@@ -163,30 +156,53 @@ function thresholdBins(threshold: number): ColorBins {
 }
 
 function buildPaint(key: string, color: ChartColor, series: SeriesModel | undefined): SeriesPaint {
-  const shared = { key, color, base: seriesPaint(key, baseRole(color)) };
   if (isRoleList(color)) {
     const stops = color.map((role) => seriesPaint(key, role));
-    return { ...shared, bins: undefined, edges: [], stops, ramp: undefined };
+    // The list's first stop.
+    return {
+      key,
+      color,
+      base: seriesPaint(key, color[0]),
+      bins: undefined,
+      edges: [],
+      stops,
+      ramp: undefined,
+    };
   }
   if (isThresholdColor(color)) {
     const { threshold, below, above } = color;
+    const ramp = [seriesPaint(key, below.color), seriesPaint(key, above.color)] as const;
     return {
-      ...shared,
+      key,
+      color,
+      base: ramp[0],
       bins: thresholdBins(threshold),
       edges: Number.isFinite(threshold) ? [threshold] : [],
       stops: undefined,
-      ramp: [seriesPaint(key, below.color), seriesPaint(key, above.color)],
+      ramp,
     };
   }
   const scale = scaleOf(color);
-  if (scale === undefined)
-    return { ...shared, bins: undefined, edges: [], stops: undefined, ramp: undefined };
+  if (scale === undefined) {
+    return {
+      key,
+      color,
+      base: seriesPaint(key, color),
+      bins: undefined,
+      edges: [],
+      stops: undefined,
+      ramp: undefined,
+    };
+  }
   const values =
     series === undefined
       ? []
       : series.readings.flatMap((reading) => (reading.kind === "reading" ? [reading.value] : []));
   return {
-    ...shared,
+    key,
+    color,
+    // The middle of the ramp's 7 steps.
+    base: seriesPaint(key, `${scale}-4`),
     bins: series === undefined ? undefined : colorBins(scale, values),
     edges: binEdges(scale, values),
     stops: undefined,
@@ -232,4 +248,16 @@ export function seriesPaintOf(key: string, color: ChartColor, series: SeriesMode
  */
 export function valuePaint(paint: SeriesPaint, value: number): string | undefined {
   return paint.bins === undefined ? undefined : paint.ramp?.[paint.bins(value) - 1];
+}
+
+/**
+ * One reading's paint: its value's step under a scale or a threshold. Undefined for a slot with no
+ * reading and for every reading of a role or a role list, which take the series paint.
+ *
+ * @param paint - The series paint.
+ * @param reading - The slot's reading, if any.
+ * @returns A CSS colour with the consumer override first.
+ */
+export function readingPaint(paint: SeriesPaint, reading: Reading | undefined): string | undefined {
+  return reading?.kind === "reading" ? valuePaint(paint, reading.value) : undefined;
 }

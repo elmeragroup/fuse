@@ -9,7 +9,7 @@ import { assertKnownKey, assertLayoutKey, usePlotLayout, useChartRoot, useSeries
 import type { ChartRootContextValue } from "./chart-context";
 import { datumSlots } from "./chart-datum";
 import { useSvgIdPrefix } from "./chart-dom";
-import { ValueGlowFilter } from "./chart-glow-filter";
+import { BAR_GLOW, valueGlow } from "./chart-glow-filter";
 import { seriesPaintOf } from "./chart-paint";
 import { useBarMetrics, useChartFrame } from "./chart-plot";
 import { useSeriesOwner } from "./chart-series-path";
@@ -204,6 +204,7 @@ export function ChartBar({
   // Once it has started, every draw takes its place as its commit asks. Both forms read this one
   // decision.
   const entering = context.entrance && phase === "waiting";
+  const glow = valueGlow(paint, prefix, BAR_GLOW);
   // The marks and the active overlay draw in two layers, so the marks dim on their own and the
   // compositor runs both fades. The Bar's element holds both, so the selection dim, a glow and
   // a consumer's filter apply to the two as one, as they did to one SVG.
@@ -213,7 +214,7 @@ export function ChartBar({
       data-slot="chart-bar-series"
       data-variant={drawnVariant}
       data-list={stops === undefined ? undefined : ""}
-      data-paint={paint.bins === undefined ? undefined : "value"}
+      data-paint={glow?.paint}
       data-series={seriesIndex}
       data-emphasis={emphasised.size > 0 ? "" : undefined}
       aria-hidden="true"
@@ -221,15 +222,11 @@ export function ChartBar({
       style={{
         "--chart-series-paint": base,
         "--chart-series": seriesIndex,
-        "--_glow": paint.bins === undefined ? undefined : `url(#${prefix}-glow)`,
+        "--_glow": glow?.url,
         ...style,
       }}>
       <svg>
-        {shared === null || paint.bins === undefined ? null : (
-          <defs>
-            <ValueGlowFilter id={`${prefix}-glow`} frame={shared.frame} deviation={8} alpha={0.5} />
-          </defs>
-        )}
+        {shared === null || glow === null ? null : <defs>{glow.filter(shared.frame)}</defs>}
         {shared === null ? null : form === "bars" ? (
           <SeriesBars {...shared} entering={entering} variant={drawnVariant} emphasised={emphasised} />
         ) : (

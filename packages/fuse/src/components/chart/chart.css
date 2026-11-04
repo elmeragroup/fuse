@@ -597,15 +597,11 @@
     Glow casts each wrapped series' own colour at half alpha, blurred by a Gaussian of 8 px
     standard deviation. A drop-shadow length is the Gaussian's standard deviation.
   */
-  [data-slot="chart-glow"] [data-slot="chart-bar-series"] {
+  [data-slot="chart-glow"] [data-slot="chart-bar-series"]:not([data-paint]) {
     filter: drop-shadow(0 0 8px color-mix(in oklab, var(--chart-series-paint) 50%, transparent));
   }
 
-  /* A series painted by value glows through its own filter, so each halo takes its mark's colour. */
-  [data-slot="chart-glow"] [data-paint="value"][data-series] {
-    filter: none;
-  }
-
+  /* A series painted by value glows through PATH_GLOW's or BAR_GLOW's filter instead. */
   [data-slot="chart-glow"] [data-paint="value"] > g,
   [data-slot="chart-glow"] [data-paint="value"] > svg > :is(g, polygon) {
     filter: var(--_glow);
@@ -1861,7 +1857,8 @@
     glow spec's line halo, whose half-intensity width chart-media.browser.test.tsx holds in
     Chromium.
   */
-  [data-slot="chart-glow"] :is([data-slot="chart-line-series"], [data-slot="chart-area-series"]) {
+  [data-slot="chart-glow"]
+    :is([data-slot="chart-line-series"], [data-slot="chart-area-series"]):not([data-paint]) {
     filter: drop-shadow(0 0 9.5px var(--chart-series-paint));
   }
 

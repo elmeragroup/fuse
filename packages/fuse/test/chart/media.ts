@@ -5,6 +5,9 @@
  */
 import { commands } from "vitest/browser";
 
+import { getOrThrow } from "@elmeragroup/color/result";
+import * as Srgb from "@elmeragroup/color/srgb";
+
 declare module "vitest/browser" {
   // oxlint-disable-next-line typescript/consistent-type-definitions -- Vitest registers custom commands by interface declaration merging; a type alias cannot augment.
   interface BrowserCommands {
@@ -64,6 +67,20 @@ export async function pagePixels(): Promise<PagePixels> {
     data: context.getImageData(0, 0, canvas.width, canvas.height).data,
     scale: image.naturalWidth / innerWidth,
   };
+}
+
+/**
+ * The colour of the device pixel under a point.
+ *
+ * @param pixels - The screenshot.
+ * @param x - The point's x in CSS pixels from the viewport's left.
+ * @param y - The point's y in CSS pixels from the viewport's top.
+ * @returns The pixel's opaque sRGB colour.
+ */
+export function pixelAt(pixels: PagePixels, x: number, y: number): Srgb.Srgb {
+  const index = (Math.round(y * pixels.scale) * pixels.width + Math.round(x * pixels.scale)) * 4;
+  const [r = 0, g = 0, b = 0] = pixels.data.subarray(index, index + 3);
+  return getOrThrow(Srgb.make({ r: r / 255, g: g / 255, b: b / 255, alpha: 1 }));
 }
 
 /**

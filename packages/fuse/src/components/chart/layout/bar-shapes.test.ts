@@ -396,14 +396,13 @@ describe("the pixel floor", () => {
           const x1 = x0 + width * step;
           const entry = {
             fill: 0,
-            estimated: false,
-            projected: false,
+            part: "fill" as const,
             missing: false,
             emphasis: false,
             leaving: false,
           };
           const numbers = [(x0 + x1) / 2, 0.1 * across, x0, x1, across, x0, x0, x0, x0];
-          const [d = ""] = columnsDrawing(frame, { count: 1, entries: [entry] }, numbers).fills;
+          const [d = ""] = columnsDrawing(frame, { count: 1, entries: [entry] }, numbers).fill;
           const [, x = 0, y = 0, right = 0, bottom = 0] =
             /M(-?[\d.]+) (-?[\d.]+)H(-?[\d.]+)V(-?[\d.]+)/u.exec(d)?.map(Number) ?? [];
           const rect = { x, y, width: right - x, height: bottom - y };

@@ -31,6 +31,7 @@ import {
   useMeasuredPlot,
   usePanelSpan,
 } from "./chart-plot";
+import { ChartLegendSideContext, ChartRowContext } from "./chart-readout";
 import { createChartRiders } from "./chart-riders";
 import { PlotLoader } from "./chart-skeleton";
 import { sameShallow, useSteady } from "./chart-steady";
@@ -867,46 +868,53 @@ export function ChartRoot<
   const slots = model.window === null ? 0 : model.window.last - model.window.first + 1;
   // The description reads every series over the window, so it waits for a change of what it says.
   const spokenDescription = useMemo(() => description ?? chartDescription(text), [description, text]);
+  // A Root starts its own rows and legend entries, so an outer chart's template row or threshold
+  // side never reaches a part of this one, such as a sparkline nested in a legend item.
   return (
-    <ChartRootContext value={context}>
-      <ChartSelectionContext value={selected}>
-        <ChartLayoutContext value={layout}>
-          <figure
-            ref={rootRef}
-            data-slot="chart"
-            data-orientation={orientation}
-            data-x-scale={xScale}
-            data-selected={selected === null ? undefined : ""}
-            style={{
-              "--chart-selected": selected === null ? undefined : Object.keys(modelConfig).indexOf(selected),
-              ...style,
-            }}
-            {...figureProps}>
-            <p id={`${id}-description`} data-slot="chart-description">
-              {spokenDescription}
-            </p>
-            <p id={`${id}-instructions`} data-slot="chart-instructions">
-              {strings.instructionsCartesian}
-            </p>
-            <div ref={frameRef} data-slot="chart-frame" style={{ "--chart-slots": slots }}>
-              <div ref={plotRef} data-slot="chart-plot" aria-hidden="true">
-                {probe}
-                {plot === null && !model.empty ? <PlotLoader /> : null}
-              </div>
-              <ChartRootPlotContext value={plot}>
-                <ChartPlotContext value={plot}>
-                  <PlotReadsContext value={reads}>
-                    <ChartSurface name={name} labelledBy={labelledBy} />
-                    {children}
-                  </PlotReadsContext>
-                </ChartPlotContext>
-              </ChartRootPlotContext>
-            </div>
-            <ChartStatus />
-          </figure>
-        </ChartLayoutContext>
-      </ChartSelectionContext>
-    </ChartRootContext>
+    <ChartRowContext value={null}>
+      <ChartLegendSideContext value={null}>
+        <ChartRootContext value={context}>
+          <ChartSelectionContext value={selected}>
+            <ChartLayoutContext value={layout}>
+              <figure
+                ref={rootRef}
+                data-slot="chart"
+                data-orientation={orientation}
+                data-x-scale={xScale}
+                data-selected={selected === null ? undefined : ""}
+                style={{
+                  "--chart-selected":
+                    selected === null ? undefined : Object.keys(modelConfig).indexOf(selected),
+                  ...style,
+                }}
+                {...figureProps}>
+                <p id={`${id}-description`} data-slot="chart-description">
+                  {spokenDescription}
+                </p>
+                <p id={`${id}-instructions`} data-slot="chart-instructions">
+                  {strings.instructionsCartesian}
+                </p>
+                <div ref={frameRef} data-slot="chart-frame" style={{ "--chart-slots": slots }}>
+                  <div ref={plotRef} data-slot="chart-plot" aria-hidden="true">
+                    {probe}
+                    {plot === null && !model.empty ? <PlotLoader /> : null}
+                  </div>
+                  <ChartRootPlotContext value={plot}>
+                    <ChartPlotContext value={plot}>
+                      <PlotReadsContext value={reads}>
+                        <ChartSurface name={name} labelledBy={labelledBy} />
+                        {children}
+                      </PlotReadsContext>
+                    </ChartPlotContext>
+                  </ChartRootPlotContext>
+                </div>
+                <ChartStatus />
+              </figure>
+            </ChartLayoutContext>
+          </ChartSelectionContext>
+        </ChartRootContext>
+      </ChartLegendSideContext>
+    </ChartRowContext>
   );
 }
 

@@ -13,7 +13,7 @@
 import { missingTickAt } from "./chart-bar-draw";
 import type { ChartRootContextValue } from "./chart-context";
 import type { MarkValues, ValueAxis } from "./chart-motion";
-import { valuePaint } from "./chart-paint";
+import { readingPaint } from "./chart-paint";
 import type { SeriesPaint } from "./chart-paint";
 import type { PathKind } from "./chart-path-draw";
 import { bucketColumns, rectsPath } from "./layout/bar-geometry";
@@ -40,17 +40,20 @@ export const COLUMN_STRIDE = 9;
 /** What each of an entry's numbers measures, on the vertical frame the path form draws in. */
 export const COLUMN_AXES: ValueAxis[] = ["x", "y", "x", "x", "y", "x", "x", "x", "x"];
 
+/**
+ * Which of its step's paths a column draws in: the solid fill, the estimated outline or the
+ * projected fill. It is the paths' `data-part`.
+ */
+export type ColumnPart = "fill" | "estimated" | "projected";
+
 /** One entry's topology. */
 export type ColumnEntry = {
   /**
-   * The paint step its column draws in, whatever its quality, or -1 where it draws no column. The
-   * flags below pick the step's solid, estimated or projected path.
+   * The paint step its column draws in, whatever its quality, or -1 where it draws no column.
+   * `part` picks the step's solid, estimated or projected path.
    */
   readonly fill: number;
-  /** Whether the column draws in its step's estimated path. */
-  readonly estimated: boolean;
-  /** Whether the column draws in its step's projected path. */
-  readonly projected: boolean;
+  readonly part: ColumnPart;
   readonly missing: boolean;
   readonly emphasis: boolean;
   /**
@@ -82,10 +85,10 @@ export type ColumnsLayout = {
   /** The paint of each fill step, "" for the series paint, in the order the topology names them. */
   readonly fills: readonly string[];
   /**
-   * Each emphasised entry's own paint, in entry order: its value's scale or threshold step, or
-   * undefined for the series paint.
+   * Each emphasised entry's key and own paint, in entry order: its value's scale or threshold step,
+   * or undefined for the series paint.
    */
-  readonly emphasisPaints: readonly (string | undefined)[];
+  readonly emphasis: readonly { readonly key: string; readonly paint: string | undefined }[];
 };
 
 /**
@@ -103,7 +106,7 @@ type Entry = {
 /** What one column of the path form draws. */
 export type ColumnsDrawing = {
   /** One solid path's data per fill step. */
-  readonly fills: readonly string[];
+  readonly fill: readonly string[];
   /** One estimated path's data per fill step. */
   readonly estimated: readonly string[];
   /** One projected path's data per fill step. */
@@ -148,7 +151,7 @@ export function layoutColumns(
       values: [],
       topology: { count: 0, entries: [] },
       fills: [],
-      emphasisPaints: [],
+      emphasis: [],
     };
   }
   const count = window.last - window.first + 1;
@@ -159,13 +162,18 @@ export function layoutColumns(
   // paths too, so a reading's colour never depends on its quality.
   const { bins, ramp } = paint;
   const fills = bins === undefined || ramp === undefined ? [""] : ramp;
-  const fillOf = (slot: number): number => {
+  /** A slot's column: its paint step and the path of its quality, or step -1 where it draws none. */
+  const columnOf = (slot: number): Pick<ColumnEntry, "fill" | "part"> => {
     const reading = series.readings[slot];
     const extent = series.extents[slot];
     // A reading of 0 has no length, so it draws no column.
-    if (extent === null || extent === undefined || extent[0] === extent[1]) return -1;
-    if (reading?.kind !== "reading") return -1;
-    return bins === undefined ? 0 : bins(reading.value) - 1;
+    if (extent === null || extent === undefined || extent[0] === extent[1] || reading?.kind !== "reading")
+      return { fill: -1, part: "fill" };
+    return {
+      fill: bins === undefined ? 0 : bins(reading.value) - 1,
+      part:
+        reading.quality === "estimated" ? "estimated" : slot >= series.projectedFrom ? "projected" : "fill",
+    };
   };
   const keyOf = (slot: number) => update.keys[slot] ?? slotId(model.domain, slot);
   /** The entry of one own slot's column, its tick and its box, across every Root slot it covers. */
@@ -179,8 +187,6 @@ export function layoutColumns(
     const reading = series.readings[slot];
     const extent = series.extents[slot];
     const negative = extent !== null && extent !== undefined && extent[0] < 0 && extent[1] <= 0;
-    // A reading of 0 has no length, so it draws in no path.
-    const long = extent !== null && extent !== undefined && extent[0] !== extent[1];
     const emphasis = emphasised.has(slot);
     const [tip, base] =
       reading?.kind === "reading" && extent !== null && extent !== undefined
@@ -191,20 +197,14 @@ export function layoutColumns(
       at: position,
       numbers: [(x0 + x1) / 2, tip, x0, x1, base, tickAt(0.25), tickAt(0.75), x0, x1],
       entry: {
-        fill: fillOf(slot),
-        estimated: long && reading?.kind === "reading" && reading.quality === "estimated",
-        projected:
-          long &&
-          reading?.kind === "reading" &&
-          reading.quality !== "estimated" &&
-          slot >= series.projectedFrom,
+        ...columnOf(slot),
         // The model reads no missing marker for an empty chart, as section 8.13 says.
         missing: reading?.kind === "missing" && !model.empty,
         emphasis,
         leaving: false,
       },
       // The emphasis box paints the step of its slot's value, as the column under it does.
-      paint: emphasis && reading?.kind === "reading" ? valuePaint(paint, reading.value) : undefined,
+      paint: emphasis ? readingPaint(paint, reading) : undefined,
     };
   };
   const slots = Array.from({ length: count }, (_, index) => window.first + index);
@@ -218,17 +218,12 @@ export function layoutColumns(
       const toY = (percent: number) => (percent / 100) * frame.box.height;
       const x0 = column.x0 * step;
       const x1 = column.x1 * step;
-      const reading = series.readings[column.slot];
-      const fill = fillOf(column.slot);
-      const estimated = fill >= 0 && reading?.kind === "reading" && reading.quality === "estimated";
       return {
         key: `bucket ${keyOf(column.first)} ${column.side}`,
         at: (column.x0 + column.x1) / 2 - 0.5,
         numbers: [(x0 + x1) / 2, toY(column.top), x0, x1, toY(column.bottom), x0, x0, x0, x0],
         entry: {
-          fill,
-          estimated,
-          projected: fill >= 0 && !estimated && column.slot >= series.projectedFrom,
+          ...columnOf(column.slot),
           missing: false,
           emphasis: false,
           leaving: false,
@@ -240,7 +235,7 @@ export function layoutColumns(
       .filter((slot) => (series.readings[slot]?.kind === "missing" && !model.empty) || emphasised.has(slot))
       .map((slot): Entry => {
         const own = slotEntry(slot);
-        const entry = { ...own.entry, fill: -1, estimated: false, projected: false };
+        const entry: ColumnEntry = { ...own.entry, fill: -1, part: "fill" };
         return { ...own, key: `note ${own.key}`, entry };
       });
     entries = [...buckets, ...notes].toSorted((a, b) => a.at - b.at);
@@ -252,7 +247,7 @@ export function layoutColumns(
     values: entries.flatMap(({ numbers }) => numbers),
     topology: { count: entries.length, entries: entries.map(({ entry }) => entry) },
     fills,
-    emphasisPaints: entries.flatMap((entry) => (entry.entry.emphasis ? [entry.paint] : [])),
+    emphasis: entries.flatMap(({ key, entry, paint: own }) => (entry.emphasis ? [{ key, paint: own }] : [])),
   };
 }
 
@@ -277,9 +272,10 @@ export function columnsDrawing(
   const columnSpan = frame.count > DECIMATE_ABOVE ? snapSpan : snapBarSpan;
   const fillCount = Math.max(0, ...topology.entries.map((entry) => entry.fill + 1));
   const steps = () => Array.from({ length: fillCount }, (): PlotRect[] => []);
-  const fills = steps();
-  const estimated = steps();
-  const projected = steps();
+  const paths = { fill: steps(), estimated: steps(), projected: steps() } satisfies Record<
+    ColumnPart,
+    PlotRect[][]
+  >;
   const emphasis: PlotRect[] = [];
   let missing = "";
   /** The band of the slot a coordinate along the slot axis lies in. */
@@ -289,8 +285,7 @@ export function columnsDrawing(
     const band = bandAt(at(0));
     const rect = frameRect(frame, columnSpan(frame, at(2), at(3), band), [at(1), at(4)]);
     const drawn = entry.fill >= 0 && (!entry.leaving || rect.height > 0);
-    const path = entry.estimated ? estimated : entry.projected ? projected : fills;
-    if (drawn) path[entry.fill]?.push(rect);
+    if (drawn) paths[entry.part][entry.fill]?.push(rect);
     if (entry.missing) {
       // The tick keeps its pixel in the band of the slot its own middle lies in. That middle is
       // unsnapped, where the column's middle is snapped, and a slot narrower than a device pixel
@@ -302,9 +297,9 @@ export function columnsDrawing(
       emphasis.push(frameRect(frame, snapBarSpan(frame, at(7), at(8), band), [at(1), at(4)]));
   });
   return {
-    fills: fills.map((rects) => rectsPath(rects)),
-    estimated: estimated.map((rects) => rectsPath(rects)),
-    projected: projected.map((rects) => rectsPath(rects)),
+    fill: paths.fill.map((rects) => rectsPath(rects)),
+    estimated: paths.estimated.map((rects) => rectsPath(rects)),
+    projected: paths.projected.map((rects) => rectsPath(rects)),
     missing,
     emphasis,
   };
@@ -341,8 +336,7 @@ export function columnKind(step: number, zero: number): PathKind<ColumnTopology,
     at: (topology, index) =>
       topology.entries[index] ?? {
         fill: -1,
-        estimated: false,
-        projected: false,
+        part: "fill",
         missing: false,
         emphasis: false,
         leaving: false,
@@ -351,9 +345,7 @@ export function columnKind(step: number, zero: number): PathKind<ColumnTopology,
     // A column whose reading leaves keeps its old paint while it shrinks to the zero line, so it
     // never vanishes from the frame it last drew in, and draws in no path once it rests at 0.
     keep: (old, next) =>
-      next.fill === -1
-        ? { ...next, fill: old.fill, estimated: old.estimated, projected: old.projected, leaving: true }
-        : next,
+      next.fill === -1 ? { ...next, fill: old.fill, part: old.part, leaving: true } : next,
     shift: (vertex, by) => vertex.map((value, index) => (along.has(index) ? value + by * step : value)),
     // Only a decimated window's tick or box is an entry of one layout inside the window.
     flat: (vertex, entry) =>

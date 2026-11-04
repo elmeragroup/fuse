@@ -22,7 +22,7 @@ import { datumSlots } from "./chart-datum";
 import { partsCache, writeAttribute, writeStyle } from "./chart-dom";
 import { useChartFollower } from "./chart-followers";
 import type { MarkValues, ValueAxis } from "./chart-motion";
-import { seriesPaintOf, valuePaint } from "./chart-paint";
+import { readingPaint, seriesPaintOf } from "./chart-paint";
 import type { SeriesPaint } from "./chart-paint";
 import { pathAnchor, routeRestIndex } from "./chart-paths";
 import { useChartFrame } from "./chart-plot";
@@ -178,15 +178,6 @@ function sameDot(a: DotLook, b: DotLook): boolean {
 }
 
 /**
- * The paint of one reading's point mark: the step of its value under a scale or a threshold, or
- * undefined where the mark takes its layer's series paint.
- */
-function readingPaint(paint: SeriesPaint, series: SeriesModel, slot: number): string | undefined {
-  const reading = series.readings[slot];
-  return reading?.kind === "reading" ? valuePaint(paint, reading.value) : undefined;
-}
-
-/**
  * What an attached part writes on `data-intro` for the dots that mount now, which draw as they
  * mount: nothing while Root's entrance waits, so they join it, and their update's intro after it
  * started.
@@ -205,9 +196,10 @@ function inlinePaint(dot: Element): string {
 
 /**
  * How Dots keep their last drawing: the group and one dot of it as a template, so a commit copies
- * two elements and not every dot, and each dot's own paint, a string per dot, where a scale or a
- * threshold paints the dots by value. A crossfade then builds the old dots from the template, one
- * per point the loop drew last, each in the paint its dot wore.
+ * two elements and not every dot. Where a scale or a threshold paints the dots by value, it keeps
+ * each dot's own paint too, a string per dot, and only there does a commit read every dot. A
+ * crossfade then builds the old dots from the template, one per point the loop drew last, each in
+ * the paint its dot wore.
  */
 const DOTS_COPY: AttachedCopy = {
   keep: (live) => {
@@ -220,8 +212,10 @@ const DOTS_COPY: AttachedCopy = {
       template.removeAttribute("style");
       kept.append(template);
     }
-    const paints = [...live.children].map(inlinePaint);
-    if (paints.some((paint) => paint !== "")) keptPaints.set(kept, paints);
+    // Dots draw only on readings, and a scale or a threshold paints every reading a step of its
+    // own, so either every dot wears an inline paint or none does, and the first dot tells which.
+    if (live.firstElementChild === null || inlinePaint(live.firstElementChild) === "") return kept;
+    keptPaints.set(kept, [...live.children].map(inlinePaint));
     return kept;
   },
   outgoing: (kept, before) => {
@@ -267,7 +261,7 @@ export function ChartDots({ dataKey, variant = "default", className, style }: Ch
               key: path.keys[index] ?? String(vertex.slot),
               slot: vertex.slot,
               point,
-              paint: readingPaint(paint, series, vertex.slot),
+              paint: readingPaint(paint, series.readings[vertex.slot]),
             },
           ];
     });
@@ -358,7 +352,9 @@ const activeDots = partsCache((svg) => [...svg.querySelectorAll(":scope > [data-
  */
 const ACTIVE_DOT_COPY: AttachedCopy = {
   sync: (kept, live) => {
-    const copies = kept.querySelectorAll(":scope > [data-slot=chart-dot]");
+    // The kept copy is a fresh deep copy at each commit and is never committed itself, so its
+    // circles, which never change, are found once.
+    const copies = activeDots(kept);
     activeDots(live).forEach((dot, index) => {
       const copy = copies[index];
       const paint = inlinePaint(dot);
@@ -609,7 +605,9 @@ export function ChartActiveDot({
     if (svg !== null) {
       writeAttribute(svg, "data-value", point === null ? null : "");
       const own =
-        active === null || series === undefined ? undefined : readingPaint(paint, series, active.slot);
+        active === null || series === undefined
+          ? undefined
+          : readingPaint(paint, series.readings[active.slot]);
       for (const dot of activeDots(svg)) {
         if (dot instanceof SVGElement) writeStyle(dot, "--chart-series-paint", own ?? null);
       }
@@ -764,7 +762,7 @@ export function ChartMarker({
               series,
               slot
             );
-            return point === null ? [] : [{ slot, point, paint: readingPaint(paint, series, slot) }];
+            return point === null ? [] : [{ slot, point, paint: readingPaint(paint, series.readings[slot]) }];
           }),
     [context.model, context.xScale, series, frame, slots, paint]
   );

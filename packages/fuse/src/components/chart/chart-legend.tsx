@@ -22,7 +22,6 @@ import {
   useReadoutKey,
   windowShares,
 } from "./chart-readout";
-import type { ThresholdSideName } from "./chart-readout";
 import { ChartSeriesLabel, ChartSwatch } from "./chart-series";
 import { seriesLabel } from "./chart-text";
 import type {
@@ -30,6 +29,7 @@ import type {
   ChartFallback,
   ChartLayerProps,
   ChartFractionDigits,
+  ChartThresholdSide,
   ValueFormat,
 } from "./chart-types";
 import { CHART_STRINGS } from "./format/chart-strings";
@@ -148,9 +148,9 @@ function ChartLegendBody({
  * The legend entries of one series: one per side of a threshold colour, the upper side first as
  * the value axis reads, or one entry with no side for every other colour.
  */
-function entrySides(context: ChartRootContextValue, key: string): readonly (ThresholdSideName | null)[] {
+function entrySides(context: ChartRootContextValue, key: string): readonly (ChartThresholdSide | null)[] {
   const color = context.config[key]?.color;
-  return color !== undefined && isThresholdColor(color) ? ["above", "below"] : [null];
+  return color !== undefined && isThresholdColor(color) ? [color.above, color.below] : [null];
 }
 
 /** One legend entry's own element. */
@@ -163,7 +163,7 @@ function LegendEntry({
   props,
 }: {
   readonly itemKey: string;
-  readonly side: ThresholdSideName | null;
+  readonly side: ChartThresholdSide | null;
   readonly render: ChartLegendItemProps["render"];
   readonly className: string | undefined;
   readonly children: ReactNode;
@@ -178,7 +178,6 @@ function LegendEntry({
     props: {
       "data-slot": "chart-legend-item",
       "data-series": seriesIndex,
-      "data-threshold-side": side ?? undefined,
       "data-dimmed": selectedKey !== null && selectedKey !== itemKey ? "" : undefined,
       ...mergeProps<"li">(
         {
@@ -203,38 +202,6 @@ function LegendEntry({
   );
 }
 
-/** Every legend entry of one series, its LegendItem's own props on each. */
-function SeriesEntries({
-  itemKey,
-  render,
-  className,
-  children,
-  props,
-}: {
-  readonly itemKey: string;
-  readonly render: ChartLegendItemProps["render"];
-  readonly className: string | undefined;
-  readonly children: ReactNode;
-  readonly props: Omit<ChartLegendItemProps, "dataKey" | "render" | "className" | "children">;
-}): ReactElement {
-  const context = useChartRoot("Chart.LegendItem");
-  return (
-    <>
-      {entrySides(context, itemKey).map((side) => (
-        <LegendEntry
-          key={side ?? "series"}
-          itemKey={itemKey}
-          side={side}
-          render={render}
-          className={className}
-          props={props}>
-          {children}
-        </LegendEntry>
-      ))}
-    </>
-  );
-}
-
 /**
  * One legend entry. With a `dataKey`, that series' entries: one item, or one per side of a threshold
  * colour, above first. Without one, a template rendered once per legend entry, as TooltipItems is.
@@ -255,21 +222,24 @@ function ChartLegendItemBody({
   ...props
 }: ChartLegendItemProps): ReactElement {
   const context = useChartRoot("Chart.LegendItem");
-  if (dataKey !== undefined) {
-    assertKnownKey("Chart.LegendItem", context.config, dataKey);
-    return (
-      <SeriesEntries itemKey={dataKey} render={render} className={className} props={props}>
-        {children}
-      </SeriesEntries>
-    );
-  }
+  if (dataKey !== undefined) assertKnownKey("Chart.LegendItem", context.config, dataKey);
+  const keys = dataKey === undefined ? Object.keys(context.config) : [dataKey];
   return (
     <>
-      {Object.keys(context.config).map((key) => (
-        <SeriesEntries key={key} itemKey={key} render={render} className={className} props={props}>
-          {children}
-        </SeriesEntries>
-      ))}
+      {keys.flatMap((key) =>
+        entrySides(context, key).map((side, index) => (
+          <LegendEntry
+            // A series' sides never reorder, so their position tells its entries apart.
+            key={`${key}\u0000${String(index)}`}
+            itemKey={key}
+            side={side}
+            render={render}
+            className={className}
+            props={props}>
+            {children}
+          </LegendEntry>
+        ))
+      )}
     </>
   );
 }

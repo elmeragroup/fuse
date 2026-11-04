@@ -9,30 +9,38 @@
  */
 import type { ReactElement } from "react";
 
+import type { SeriesPaint } from "./chart-paint";
 import type { PlotFrame } from "./layout/plot-frame";
+
+/** A halo: the blur's standard deviation in CSS pixels and the halo's alpha. */
+type Halo = { readonly deviation: number; readonly alpha: number };
+
+/**
+ * The halo of a Line or an Area. It matches the 9.5 px full-alpha shadow that `chart.css` gives
+ * `chart-line-series` and `chart-area-series` inside `Chart.Glow`, so change both together.
+ */
+export const PATH_GLOW: Halo = { deviation: 9.5, alpha: 1 };
+
+/**
+ * The halo of a Bar. It matches the 8 px half-alpha shadow that `chart.css` gives
+ * `chart-bar-series` inside `Chart.Glow`, so change both together.
+ */
+export const BAR_GLOW: Halo = { deviation: 8, alpha: 0.5 };
 
 /** How far a halo reaches, in standard deviations, before it fades below a 1 % alpha. */
 const REACH = 3;
 
-/**
- * The filter a value-painted series' marks glow through, which `chart.css` applies only inside
- * `Chart.Glow`.
- *
- * @param props - The filter's id, the frame its marks draw in, the blur's standard deviation in
- *   CSS pixels and the halo's alpha.
- * @returns The filter element.
- */
-export function ValueGlowFilter({
+/** The filter a value-painted series' marks glow through. */
+function ValueGlowFilter({
   id,
   frame,
-  deviation,
-  alpha,
+  halo,
 }: {
   readonly id: string;
   readonly frame: PlotFrame;
-  readonly deviation: number;
-  readonly alpha: number;
+  readonly halo: Halo;
 }): ReactElement {
+  const { deviation, alpha } = halo;
   const margin = deviation * REACH;
   // The region sits in the marks' user space, so a flat line, whose box has no height, still glows.
   return (
@@ -57,3 +65,32 @@ export function ValueGlowFilter({
 }
 
 Object.assign(ValueGlowFilter, { displayName: "Chart.ValueGlowFilter" });
+
+/** What a series painted by value writes so that `Chart.Glow` blurs it through its own filter. */
+export type ValueGlow = {
+  /** The series element's `data-paint`, on which `chart.css` swaps the series' shadow for the filter. */
+  readonly paint: "value";
+  /** The series element's `--_glow`, which `chart.css` applies only inside `Chart.Glow`. */
+  readonly url: string;
+  /** The filter, for the series' `<defs>`, over the frame its marks draw in. */
+  readonly filter: (frame: PlotFrame) => ReactElement;
+};
+
+/**
+ * The glow wiring of one series.
+ *
+ * @param paint - The series paint.
+ * @param prefix - The series' SVG id prefix.
+ * @param halo - `PATH_GLOW` or `BAR_GLOW`.
+ * @returns The wiring for a scale or a threshold, or null for a role or a role list, which glow
+ *   through the CSS shadow.
+ */
+export function valueGlow(paint: SeriesPaint, prefix: string, halo: Halo): ValueGlow | null {
+  if (paint.bins === undefined) return null;
+  const id = `${prefix}-glow`;
+  return {
+    paint: "value",
+    url: `url(#${id})`,
+    filter: (frame) => <ValueGlowFilter id={id} frame={frame} halo={halo} />,
+  };
+}

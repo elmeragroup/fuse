@@ -32,7 +32,7 @@ import {
   useMotionMark,
 } from "./chart-motion-mark";
 import type { SeriesPaint } from "./chart-paint";
-import { valuePaint } from "./chart-paint";
+import { readingPaint } from "./chart-paint";
 import { pathAnchor, routeIndex } from "./chart-paths";
 import type { ChartPlot } from "./chart-plot";
 import { introFor } from "./chart-store";
@@ -467,7 +467,7 @@ export function ActiveBar({
       return;
     }
     const reading = series.readings[cell.slot];
-    const own = reading?.kind === "reading" ? valuePaint(paint, reading.value) : undefined;
+    const own = readingPaint(paint, reading);
     const projected = cell.slot >= series.projectedFrom;
     const quality = reading?.kind === "reading" && reading.quality !== "measured" ? reading.quality : null;
     writeAttributes(overlay, {

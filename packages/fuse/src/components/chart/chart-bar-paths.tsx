@@ -9,7 +9,7 @@ import { useCallback, useLayoutEffect, useMemo, useRef } from "react";
 import type { ReactElement } from "react";
 
 import { COLUMN_AXES, COLUMN_STRIDE, columnKind, columnsDrawing, layoutColumns } from "./chart-bar-columns";
-import type { ColumnTopology } from "./chart-bar-columns";
+import type { ColumnPart, ColumnsDrawing, ColumnTopology } from "./chart-bar-columns";
 import { pastSpanEnd } from "./chart-bar-draw";
 import { ListFills } from "./chart-bar-fills";
 import type { SeriesDraw } from "./chart-bar-series";
@@ -47,11 +47,15 @@ type ColumnsLook = {
   readonly moving: { current: ColumnTopology | null };
 };
 
+/** The parts a paint step's paths take, which a path's `data-part` names. */
+const STEP_PARTS: readonly ColumnPart[] = ["fill", "projected", "estimated"];
+
 /** The columns' paths, each with what it draws, and the emphasis boxes, in order. */
 const columnParts = partsCache((group) => ({
   paths: [...group.querySelectorAll('[data-slot="chart-bar-path"]')].map((path) => ({
     path,
-    part: path.getAttribute("data-part"),
+    // The missing ticks' path names no step part.
+    part: STEP_PARTS.find((part) => part === path.getAttribute("data-part")),
     fill: Number(path.getAttribute("data-fill") ?? "-1"),
   })),
   boxes: [...group.querySelectorAll('[data-slot="chart-bar-emphasis"]')],
@@ -64,20 +68,59 @@ function drawColumns(group: SVGGElement, look: ColumnsLook | null, values: MarkV
   const drawing = columnsDrawing(look.frame, topology, values);
   const { paths, boxes } = columnParts(group);
   for (const { path, part, fill } of paths) {
-    const d =
-      part === "fill"
-        ? drawing.fills[fill]
-        : part === "estimated"
-          ? drawing.estimated[fill]
-          : part === "projected"
-            ? drawing.projected[fill]
-            : drawing.missing;
-    writeAttribute(path, "d", d ?? "");
+    writeAttribute(path, "d", (part === undefined ? drawing.missing : drawing[part][fill]) ?? "");
   }
   boxes.forEach((rect, index) => {
     const box = drawing.emphasis[index];
     if (box !== undefined) writeAttributes(rect, box);
   });
+}
+
+/** The attribute chart.css draws each quality path by: projected lighter, estimated dashed. */
+const PART_QUALITY = {
+  fill: {},
+  projected: { "data-projected": "" },
+  estimated: { "data-quality": "estimated" },
+} satisfies Record<ColumnPart, Record<string, string>>;
+
+/**
+ * One path per paint step for one part. A step's position is its identity, since a threshold's two
+ * sides may share a role, and a projected or estimated reading keeps its step's paint, so each step
+ * has a path of each part.
+ */
+function StepPaths({
+  part,
+  fills,
+  resting,
+  seriesIndex,
+  listFill,
+}: {
+  readonly part: ColumnPart;
+  readonly fills: readonly string[];
+  readonly resting: ColumnsDrawing;
+  readonly seriesIndex: number;
+  /** The role list's gradient, which only the solid fill takes. */
+  readonly listFill: string | undefined;
+}): ReactElement {
+  return (
+    <>
+      {fills.map((fill, index) => (
+        <path
+          key={index}
+          data-slot="chart-bar-path"
+          data-part={part}
+          data-fill={index}
+          data-series={seriesIndex}
+          {...PART_QUALITY[part]}
+          d={resting[part][index] ?? ""}
+          style={{
+            "--chart-bar-paint": fill === "" ? undefined : fill,
+            "--_fill": fill === "" && part === "fill" ? listFill : undefined,
+          }}
+        />
+      ))}
+    </>
+  );
 }
 
 /**
@@ -153,15 +196,13 @@ export function SeriesPaths({
   });
   // React draws the first rest, and the loop draws every frame after it.
   const resting = useFirstDraw(() => columnsDrawing(frame, topology, columns.values));
+  const steps = { fills, resting, seriesIndex: series.seriesIndex, listFill };
   const setRefs = useCallback(
     (element: SVGGElement | null) => {
       growRef(element);
       columnsRef(element);
     },
     [growRef, columnsRef]
-  );
-  const emphasisSlots = topology.entries.flatMap((entry, index) =>
-    entry.emphasis ? [columns.keys[index] ?? String(index)] : []
   );
   return (
     <>
@@ -231,47 +272,10 @@ export function SeriesPaths({
         {/* Every paint and quality path stays mounted, its data empty at rest when nothing draws in
             it, so a route that still draws a leaving column in it finds it. */}
         <g mask={variant === "gradient" ? `url(#${prefix}-fade)` : undefined}>
-          {/* A step's position is its identity, since a threshold's two sides may share a role. */}
-          {fills.map((fill, index) => (
-            <path
-              key={index}
-              data-slot="chart-bar-path"
-              data-part="fill"
-              data-fill={index}
-              data-series={series.seriesIndex}
-              d={resting.fills[index] ?? ""}
-              style={{
-                "--chart-bar-paint": fill === "" ? undefined : fill,
-                "--_fill": fill === "" ? listFill : undefined,
-              }}
-            />
-          ))}
-          {/* A projected or estimated reading keeps its step's paint, so each step has its own. */}
-          {fills.map((fill, index) => (
-            <path
-              key={index}
-              data-slot="chart-bar-path"
-              data-part="projected"
-              data-fill={index}
-              data-series={series.seriesIndex}
-              data-projected=""
-              d={resting.projected[index] ?? ""}
-              style={{ "--chart-bar-paint": fill === "" ? undefined : fill }}
-            />
-          ))}
+          <StepPaths part="fill" {...steps} />
+          <StepPaths part="projected" {...steps} />
         </g>
-        {fills.map((fill, index) => (
-          <path
-            key={index}
-            data-slot="chart-bar-path"
-            data-part="estimated"
-            data-fill={index}
-            data-series={series.seriesIndex}
-            data-quality="estimated"
-            d={resting.estimated[index] ?? ""}
-            style={{ "--chart-bar-paint": fill === "" ? undefined : fill }}
-          />
-        ))}
+        <StepPaths part="estimated" {...steps} />
         <path
           data-slot="chart-bar-path"
           data-part="missing"
@@ -280,18 +284,15 @@ export function SeriesPaths({
           style={{ "--_tick-width": `${String(tickWidth(box))}px` }}
           d={resting.missing}
         />
-        {emphasisSlots.map((key, index) => {
-          const own = columns.emphasisPaints[index];
-          return (
-            <rect
-              key={key}
-              data-slot="chart-bar-emphasis"
-              data-series={series.seriesIndex}
-              {...resting.emphasis[index]}
-              style={own === undefined ? undefined : { "--chart-bar-paint": own }}
-            />
-          );
-        })}
+        {columns.emphasis.map(({ key, paint: own }, index) => (
+          <rect
+            key={key}
+            data-slot="chart-bar-emphasis"
+            data-series={series.seriesIndex}
+            {...resting.emphasis[index]}
+            style={own === undefined ? undefined : { "--chart-bar-paint": own }}
+          />
+        ))}
       </g>
       <g ref={outgoingRef} data-part="outgoing" />
     </>
