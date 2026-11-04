@@ -62,10 +62,16 @@ test("the x and y keys must name number columns, and the series key a string col
   <ScatterChart.Root data={weeks} config={config} xKey="tempC" yKey="kwh" seriesKey="tempC" aria-label="x" />;
 });
 
-test("scatter config takes no slot fields and no scale or role list", () => {
+test("scatter config takes no slot fields and no scale, role list or threshold", () => {
   const stacked = { a: { label: "A", color: "chart-1", stack: "s" } } as const satisfies ChartConfig;
   const scaled = { a: { label: "A", color: "chart-seq" } } as const satisfies ChartConfig;
   const listed = { a: { label: "A", color: ["chart-1", "chart-2"] } } as const satisfies ChartConfig;
+  const split = {
+    threshold: 10,
+    below: { color: "chart-sentiment-positive", label: "Under" },
+    above: { color: "chart-sentiment-negative", label: "Over" },
+  } as const;
+  const thresholded = { a: { label: "A", color: split } } as const satisfies ChartConfig;
   <ScatterChart.Root
     data={weeks}
     // @ts-expect-error -- a stack needs slots.
@@ -88,6 +94,15 @@ test("scatter config takes no slot fields and no scale or role list", () => {
     data={weeks}
     // @ts-expect-error -- a role list runs along a category axis, which a scatter chart lacks.
     config={listed}
+    xKey="tempC"
+    yKey="kwh"
+    seriesKey="series"
+    aria-label="x"
+  />;
+  <ScatterChart.Root
+    data={weeks}
+    // @ts-expect-error -- a threshold would colour by y, which the y axis shows already.
+    config={thresholded}
     xKey="tempC"
     yKey="kwh"
     seriesKey="series"

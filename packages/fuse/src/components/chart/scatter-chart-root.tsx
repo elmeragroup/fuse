@@ -66,9 +66,10 @@ export type ScatterChartRootProps<
      * One entry per series, keyed by the values of the `seriesKey` column. Each entry is a
      * `ChartSeriesConfig` with `label`, `color` and optionally `format` and `icon`. It takes no
      * `stack`, `projectedFrom`, `interval`, `missing`, `qualityKey` or `barVariant`, and its colour
-     * is a role, never a scale or a role list. Write it `as const satisfies ChartConfig`. The legend
-     * lists the keys in config order, and JavaScript orders keys that read as integers, such as
-     * "2026", first and ascending, so name a year's series, such as `thisYear`.
+     * is a role, never a scale, a role list or a threshold. Write it
+     * `as const satisfies ChartConfig`. The legend lists the keys in config order, and JavaScript
+     * orders keys that read as integers, such as "2026", first and ascending, so name a year's
+     * series, such as `thisYear`.
      */
     config: TConfig & ChartScatterFieldCheck<TConfig>;
     /** The number column the x axis reads. */

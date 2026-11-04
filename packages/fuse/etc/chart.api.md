@@ -640,7 +640,7 @@ export type ChartScatterFieldCheck<TConfig> = string extends keyof TConfig ? unk
     } : TConfig[K] extends {
         color: ChartRole;
     } ? unknown : {
-        readonly "ScatterChart colours are single roles, never a scale or a role list": never;
+        readonly "ScatterChart colours are single roles, never a scale, a role list or a threshold": never;
     }; };
 
 // @beta
