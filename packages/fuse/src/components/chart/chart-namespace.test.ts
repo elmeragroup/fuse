@@ -104,8 +104,8 @@ describe("chart namespaces", () => {
 });
 
 describe("the ScatterChart namespace", () => {
-  // Unit under test: scatter-chart-parts.ts through its namespace. Oracle: SPEC.md's v1 part list,
-  // written out here, and the rule that a part reused from Chart keeps Chart's dotted name.
+  // Unit under test: scatter-chart-parts.ts through its namespace. Oracle: the v1 part list the
+  // owner agreed, written out here, and the rule that a part reused from Chart keeps Chart's dotted name.
   const OWN = [
     "Root",
     "Grid",

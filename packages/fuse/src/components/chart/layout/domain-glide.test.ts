@@ -1,25 +1,27 @@
 import { describe, expect, it } from "vitest";
 
 import frames from "../../../../test/chart/motion-frames.json" with { type: "json" };
+import type { MotionHost } from "../chart-motion";
 import { createDomainGlide } from "./domain-glide";
 
 /** A hand-driven clock with one queue of frames, run at a chosen time. */
 function clock() {
   let time = 0;
-  let queue: (() => void)[] = [];
-  return {
-    host: {
-      now: () => time,
-      requestFrame: (callback: () => void) => queue.push(callback),
-      cancelFrame: () => {
-        queue = [];
-      },
+  let queue: ((time: number) => void)[] = [];
+  const host: MotionHost = {
+    now: () => time,
+    requestFrame: (callback) => queue.push(callback),
+    cancelFrame: () => {
+      queue = [];
     },
+  };
+  return {
+    host,
     at: (ms: number) => {
       time = ms;
       const due = queue;
       queue = [];
-      for (const callback of due) callback();
+      for (const callback of due) callback(time);
     },
   };
 }

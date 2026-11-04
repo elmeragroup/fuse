@@ -10,6 +10,7 @@ import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
+import { nextFrames } from "../../../test/animation-frames";
 import { CaughtError, caughtError } from "../../../test/caught-error";
 import { installFrameClock } from "../../../test/chart/frame-clock";
 import { chromaAt, pagePixels } from "../../../test/chart/media";
@@ -490,7 +491,7 @@ describe("the active ring mid-glide", () => {
   async function paintsBy(host: HTMLElement, box: readonly [number, number, number, number], least: number) {
     let most = 0;
     for (let frame = 0; frame < 60 && most <= least; frame += 1) {
-      await new Promise((resolve) => requestAnimationFrame(resolve));
+      await nextFrames();
       most = await strongest(host, ...box);
     }
     return most;
@@ -567,5 +568,25 @@ describe("ScatterChart reference segments", () => {
     expect(lines[0]?.querySelector('[data-slot="chart-reference-rule"]')).toBeNull();
     const rule = lines[1]?.querySelector('[data-slot="chart-reference-rule"]');
     expect(["x1", "y1", "x2", "y2"].map((name) => Number(rule?.getAttribute(name)))).toEqual([0, 70, 40, 70]);
+  });
+
+  it("labels a segment at its last end, not at the plot's right edge", async () => {
+    // A segment from (−2, 20 000) to (6, 90 000) ends at (6 + 2) / 20 = 40 % of the 200 px plot,
+    // 80 px from its left, and 70 px down. Its label ends at the end's x and sits on its y.
+    const { host } = renderThemed(
+      <Scatter>
+        <ScatterChart.ReferenceLine from={[-2, 20_000]} to={[6, 90_000]} label="Mål" />
+      </Scatter>
+    );
+    // DOM audit: the reference line spans the plot, and its label is aria-hidden plot text.
+    const line = host.querySelector('[data-slot="chart-reference-line"]');
+    await expect.poll(() => line?.querySelector('[data-slot="chart-reference-rule"]')).not.toBeNull();
+    const plot = line?.getBoundingClientRect() ?? new DOMRect();
+    const label =
+      line?.querySelector('[data-slot="chart-reference-label"]')?.getBoundingClientRect() ?? new DOMRect();
+    expect(plot.width).toBe(200);
+    expect(label.width).toBeGreaterThan(0);
+    expect(label.right - plot.left).toBeCloseTo(80, 0);
+    expect(label.bottom - plot.top).toBeCloseTo(70, 0);
   });
 });

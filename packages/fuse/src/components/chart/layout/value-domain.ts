@@ -42,6 +42,13 @@ const TICK_COUNT = 5;
 const NARROW = 1e-12;
 
 /**
+ * The largest magnitude a value may have. 1e15 Wh is 1 PWh, and the d3 tick port stays exact up to
+ * it, so a larger value breaks d3's nice step: a reading above it counts as missing and a scatter
+ * coordinate above it skips its row.
+ */
+export const VALUE_LIMIT = 1e15;
+
+/**
  * A magnitude below this counts as 0 in the domain. It mirrors the 1e15 upper bound, and below it
  * d3's step search overflows, so a subnormal such as 5e-324 would yield no tick at all.
  */

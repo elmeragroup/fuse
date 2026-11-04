@@ -1585,6 +1585,20 @@
     translate: min(0px, calc((1 - var(--chart-x)) * 100cqw - 100%)) calc(-100% - 0.25rem);
   }
 
+  /*
+    A segment labels its visible last end: the label ends at the end's x, which ReferenceLine writes
+    as a share, and sits above the end's y, shifting right only to stay inside the plot.
+  */
+  [data-slot="chart-reference-line"][data-axis="segment"] {
+    container-type: inline-size;
+  }
+
+  [data-slot="chart-reference-line"][data-axis="segment"] > [data-slot="chart-reference-label"] {
+    inset-inline-end: auto;
+    left: calc(var(--chart-x) * 100%);
+    translate: max(-100%, calc(var(--chart-x) * -100cqw)) -100%;
+  }
+
   /* A reference outside the plot draws nothing, and its sentence stays. */
   [data-slot^="chart-reference"][data-outside] > svg,
   [data-slot^="chart-reference"][data-outside] > [data-slot="chart-reference-label"] {
@@ -2099,32 +2113,23 @@
     }
 
     [data-slot="chart"][data-entrance][data-intro="right"]
-      :is(
-        [data-slot="chart-line-series"],
-        [data-slot="chart-area-series"],
-        [data-slot="chart-dots"],
-        [data-slot="chart-points"]
-      ):not([data-intro]) {
+      :is([data-slot="chart-line-series"], [data-slot="chart-area-series"], [data-slot="chart-dots"]):not(
+        [data-intro]
+      ) {
       animation-name: chart-wipe-right;
     }
 
     [data-slot="chart"][data-entrance][data-intro="center"]
-      :is(
-        [data-slot="chart-line-series"],
-        [data-slot="chart-area-series"],
-        [data-slot="chart-dots"],
-        [data-slot="chart-points"]
-      ):not([data-intro]) {
+      :is([data-slot="chart-line-series"], [data-slot="chart-area-series"], [data-slot="chart-dots"]):not(
+        [data-intro]
+      ) {
       animation-name: chart-wipe-center;
     }
 
     [data-slot="chart"][data-entrance][data-intro="edges"]
-      :is(
-        [data-slot="chart-line-series"],
-        [data-slot="chart-area-series"],
-        [data-slot="chart-dots"],
-        [data-slot="chart-points"]
-      ):not([data-intro]) {
+      :is([data-slot="chart-line-series"], [data-slot="chart-area-series"], [data-slot="chart-dots"]):not(
+        [data-intro]
+      ) {
       animation-name: chart-wipe-edges;
     }
   }
@@ -2209,6 +2214,7 @@
     [data-slot="chart-line-series"],
     [data-slot="chart-area-series"],
     [data-slot="chart-dots"],
+    [data-slot="chart-points"],
     [data-slot="chart-active-dot"],
     [data-slot="chart-marker"] > svg,
     [data-slot="sparkline"],

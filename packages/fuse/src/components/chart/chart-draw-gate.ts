@@ -41,6 +41,23 @@ export function createDrawGate(): DrawGate {
   };
 }
 
+/** The draw gate as the server and a hydrating part read it. */
+function closedOnServer(): boolean {
+  return false;
+}
+
+/**
+ * Whether a Root's plot parts may draw, as a part renders it. The server and a hydrating part read
+ * the gate closed, so a part whose Suspense boundary hydrates after Root measured still matches its
+ * server HTML, and draws in the render React runs right after.
+ *
+ * @param gate - The Root's gate.
+ * @returns Whether the gate is open.
+ */
+export function useDrawGateOpen(gate: DrawGate): boolean {
+  return useSyncExternalStore(gate.subscribe, gate.open, closedOnServer);
+}
+
 /** The gates that open in the next microtask, all in one commit. */
 const opening = new Set<DrawGate>();
 

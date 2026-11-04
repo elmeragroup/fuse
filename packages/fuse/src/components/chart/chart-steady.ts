@@ -7,6 +7,8 @@
  */
 import { useState } from "react";
 
+import { isThresholdColor } from "./chart-paint";
+import type { ChartColor, ChartConfig, ChartSeriesConfig } from "./chart-types";
 import { sameItems } from "./layout/same-items";
 
 /**
@@ -30,6 +32,62 @@ export function sameShallow<T>(a: T, b: T): boolean {
   return (
     left.length === right.length &&
     left.every(([key, value], index) => right[index]?.[0] === key && Object.is(value, right[index][1]))
+  );
+}
+
+/** One field value of a series config. */
+type ConfigField = ChartSeriesConfig[keyof ChartSeriesConfig];
+
+/** A series config's fields in order. */
+function fieldsOf(entry: ChartSeriesConfig): (readonly [string, ConfigField])[] {
+  // SAFETY: Object.entries of a ChartSeriesConfig yields its own fields, each a ConfigField.
+  return Object.entries(entry) as (readonly [string, ConfigField])[];
+}
+
+/**
+ * Whether two colours say the same thing. A threshold nests its two sides, which a config written
+ * inline in JSX writes anew on every render, so they compare field by field.
+ */
+function sameColor(a: ChartColor, b: ChartColor): boolean {
+  if (isThresholdColor(a) && isThresholdColor(b)) {
+    return (
+      Object.is(a.threshold, b.threshold) && sameShallow(a.below, b.below) && sameShallow(a.above, b.above)
+    );
+  }
+  return sameShallow(a, b);
+}
+
+/**
+ * Whether two configs say the same thing: the same keys in the same order, each with the same
+ * fields, compared by `sameShallow`, and a threshold colour by its value and both sides. A config
+ * written inline in JSX is a new object on every render, and only a change of what it says counts
+ * as an update.
+ *
+ * @param a - One config.
+ * @param b - The other.
+ * @returns Whether they match.
+ */
+export function sameConfig(a: ChartConfig, b: ChartConfig): boolean {
+  const left = Object.entries(a);
+  const right = Object.entries(b);
+  return (
+    left.length === right.length &&
+    left.every(([key, entry], index) => {
+      const other = right[index];
+      if (other?.[0] !== key) return false;
+      const fields = fieldsOf(entry);
+      const otherFields = new Map(fieldsOf(other[1]));
+      return (
+        fields.length === otherFields.size &&
+        fields.every(
+          ([name, value]) =>
+            otherFields.has(name) &&
+            (name === "color"
+              ? sameColor(entry.color, other[1].color)
+              : sameShallow(value, otherFields.get(name)))
+        )
+      );
+    })
   );
 }
 

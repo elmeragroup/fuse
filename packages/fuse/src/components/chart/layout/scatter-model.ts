@@ -9,7 +9,7 @@
 import type { ChartRow } from "../chart-types";
 import type { PointShares } from "./point-index";
 import { numberOf, stringOf } from "./scalar";
-import { valueDomain } from "./value-domain";
+import { VALUE_LIMIT, valueDomain } from "./value-domain";
 import type { ValueDomain } from "./value-domain";
 
 /** What Root reads the model from. */
@@ -92,14 +92,11 @@ const X_TICKS = 10;
 /** The y axis aims for the value axis's 5 ticks. */
 const Y_TICKS = 5;
 
-/** A larger magnitude breaks d3's nice step, as the value axis rules it. */
-const LIMIT = 1e15;
-
 /** A cell's number, null for a quiet skip, or undefined for a cell that breaks the rule. */
 function coordinate(cell: ChartRow[string]): number | null | undefined {
   if (cell === null || cell === undefined) return null;
   const value = numberOf(cell);
-  return value !== undefined && Number.isFinite(value) && Math.abs(value) <= LIMIT ? value : undefined;
+  return value !== undefined && Number.isFinite(value) && Math.abs(value) <= VALUE_LIMIT ? value : undefined;
 }
 
 /**
@@ -140,37 +137,47 @@ export function buildScatterModel(input: ScatterModelInput): ScatterModel {
     members[slot]?.push(index);
   });
   let offset = 0;
+  let lowX = Number.POSITIVE_INFINITY;
+  let highX = Number.NEGATIVE_INFINITY;
+  let lowY = Number.POSITIVE_INFINITY;
+  let highY = Number.NEGATIVE_INFINITY;
   const series = keys.map((key, seriesIndex): ScatterSeries => {
     const own = Uint32Array.from(members[seriesIndex] ?? []);
-    // Rows enter in data order, so equal points keep their row order.
-    own.sort((a, b) => (xAt[a] ?? 0) - (xAt[b] ?? 0) || (yAt[a] ?? 0) - (yAt[b] ?? 0) || a - b);
-    const entry: ScatterSeries = {
-      key,
-      seriesIndex,
-      offset,
-      xs: Float64Array.from(own, (row) => xAt[row] ?? 0),
-      ys: Float64Array.from(own, (row) => yAt[row] ?? 0),
-      rows: own,
-    };
+    // Rows enter in data order, so equal points keep their row order, and a series already in
+    // order, as a live stream's is, skips the sort.
+    if (!inPointOrder(own, xAt, yAt)) {
+      own.sort((a, b) => (xAt[a] ?? 0) - (xAt[b] ?? 0) || (yAt[a] ?? 0) - (yAt[b] ?? 0) || a - b);
+    }
+    const xs = new Float64Array(own.length);
+    const ys = new Float64Array(own.length);
+    for (let index = 0; index < own.length; index += 1) {
+      const row = own[index] ?? 0;
+      const x = xAt[row] ?? 0;
+      const y = yAt[row] ?? 0;
+      xs[index] = x;
+      ys[index] = y;
+      if (x < lowX) lowX = x;
+      if (x > highX) highX = x;
+      if (y < lowY) lowY = y;
+      if (y > highY) highY = y;
+    }
+    const entry: ScatterSeries = { key, seriesIndex, offset, xs, ys, rows: own };
     offset += own.length;
     return entry;
   });
   const count = offset;
-  const order = mergeOrder(series, count);
-  const rank = new Uint32Array(count);
-  order.forEach((id, place) => {
-    rank[id] = place;
-  });
+  const { order, rank } = mergeOrder(series, count);
   return {
     series,
+    // A domain reads only the lowest and highest coordinate along its axis.
     x: valueDomain({
-      values: extent(series, "xs"),
+      values: count === 0 ? [] : [lowX, highX],
       baseline: "none",
       include: input.xInclude,
       count: X_TICKS,
     }),
     y: valueDomain({
-      values: extent(series, "ys"),
+      values: count === 0 ? [] : [lowY, highY],
       baseline: "none",
       include: input.yInclude,
       count: Y_TICKS,
@@ -183,49 +190,57 @@ export function buildScatterModel(input: ScatterModelInput): ScatterModel {
   };
 }
 
-/** The lowest and highest coordinate of every series along one axis, which is all a domain reads. */
-function extent(series: readonly ScatterSeries[], axis: "xs" | "ys"): number[] {
-  let low = Number.POSITIVE_INFINITY;
-  let high = Number.NEGATIVE_INFINITY;
-  for (const entry of series) {
-    for (const value of entry[axis]) {
-      if (value < low) low = value;
-      if (value > high) high = value;
-    }
+/**
+ * Whether rows in data order already lie by x, then y. Equal points then keep their row order,
+ * which the sort would give them too.
+ */
+function inPointOrder(rows: Uint32Array, xAt: Float64Array, yAt: Float64Array): boolean {
+  for (let index = 1; index < rows.length; index += 1) {
+    const before = rows[index - 1] ?? 0;
+    const row = rows[index] ?? 0;
+    const dx = (xAt[row] ?? 0) - (xAt[before] ?? 0);
+    if (dx < 0 || (dx === 0 && (yAt[row] ?? 0) < (yAt[before] ?? 0))) return false;
   }
-  return low > high ? [] : [low, high];
+  return true;
 }
 
+/** The all-series walk: every point id in walk order, and each id's place in it. */
+type WalkOrder = Pick<ScatterModel, "order" | "rank">;
+
 /**
- * Merge the sorted series into the all-series order, by x, then y, then series, then row. A chart
- * has few series, so each step scans every series' head.
+ * Merge the sorted series into the all-series order, by x, then y, then series, then row, and
+ * each point's place in it. A chart has few series, so each step scans every series' head.
  */
-function mergeOrder(series: readonly ScatterSeries[], count: number): Uint32Array {
+function mergeOrder(series: readonly ScatterSeries[], count: number): WalkOrder {
   const order = new Uint32Array(count);
-  const heads = series.map(() => 0);
+  const rank = new Uint32Array(count);
+  const heads = new Uint32Array(series.length);
   for (let place = 0; place < count; place += 1) {
     let best = -1;
     let bestX = 0;
     let bestY = 0;
-    series.forEach(({ xs, ys }, index) => {
+    for (let index = 0; index < series.length; index += 1) {
+      const entry = series[index];
       const head = heads[index] ?? 0;
-      if (head >= xs.length) return;
-      const x = xs[head] ?? 0;
-      const y = ys[head] ?? 0;
+      if (entry === undefined || head >= entry.xs.length) continue;
+      const x = entry.xs[head] ?? 0;
+      const y = entry.ys[head] ?? 0;
       // Series come in config order, so a tie keeps the earlier one.
       if (best === -1 || x < bestX || (x === bestX && y < bestY)) {
         best = index;
         bestX = x;
         bestY = y;
       }
-    });
+    }
     const chosen = series[best];
     if (chosen === undefined) break;
     const head = heads[best] ?? 0;
-    order[place] = chosen.offset + head;
+    const id = chosen.offset + head;
+    order[place] = id;
+    rank[id] = place;
     heads[best] = head + 1;
   }
-  return order;
+  return { order, rank };
 }
 
 /**
@@ -235,7 +250,7 @@ function mergeOrder(series: readonly ScatterSeries[], count: number): Uint32Arra
  * @param id - A point id.
  * @returns The series, or undefined for an id outside the model.
  */
-export function seriesOfPoint(model: ScatterModel, id: number): ScatterSeries | undefined {
+function seriesOfPoint(model: ScatterModel, id: number): ScatterSeries | undefined {
   if (id < 0 || id >= model.count) return undefined;
   return model.series.find(({ offset, xs }) => id >= offset && id < offset + xs.length);
 }
@@ -349,29 +364,23 @@ export function focusPoint(model: ScatterModel, id: number, focus: number): numb
 export function stepPoint(model: ScatterModel, id: number, focus: number, step: ScatterStep): number {
   const series = model.series[focus];
   if (focus !== -1 && series !== undefined && series.xs.length > 0) {
-    const last = series.xs.length - 1;
-    const index = id - series.offset;
-    const next =
-      step === "first"
-        ? 0
-        : step === "last"
-          ? last
-          : step === "next"
-            ? Math.min(last, index + 1)
-            : Math.max(0, index - 1);
-    return series.offset + next;
+    return series.offset + stepIndex(id - series.offset, series.xs.length - 1, step);
   }
-  const last = model.count - 1;
-  const place = model.rank[id] ?? 0;
-  const next =
-    step === "first"
-      ? 0
-      : step === "last"
-        ? last
-        : step === "next"
-          ? Math.min(last, place + 1)
-          : Math.max(0, place - 1);
-  return model.order[next] ?? id;
+  return model.order[stepIndex(model.rank[id] ?? 0, model.count - 1, step)] ?? id;
+}
+
+/** The index a step reaches from `at` in a walk whose last index is `last`, staying inside it. */
+function stepIndex(at: number, last: number, step: ScatterStep): number {
+  switch (step) {
+    case "first":
+      return 0;
+    case "last":
+      return last;
+    case "next":
+      return Math.min(last, at + 1);
+    case "previous":
+      return Math.max(0, at - 1);
+  }
 }
 
 /**

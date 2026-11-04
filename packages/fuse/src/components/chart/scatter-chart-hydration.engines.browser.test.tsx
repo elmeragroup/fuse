@@ -1,4 +1,4 @@
-// Delayed hydration of scatter marks, after Chart's motion rule 1 and SPEC.md's entrance rule, in
+// Delayed hydration of scatter marks, after Chart's motion rule 1 and the scatter entrance's, in
 // Chromium, Firefox and WebKit: a series whose Suspense boundary hydrates while another series'
 // entrance wipe runs matches the server HTML, which wrote no data-intro, with no recoverable error,
 // and then takes data-intro="none", so it draws at rest and never wipes in late.
@@ -10,6 +10,7 @@ import { renderToString } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
 import "../../../dist/styles.css";
+import { nextFrames } from "../../../test/animation-frames";
 import { fkasPrivate } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
 import { ThemeScope } from "../../theme/theme-scope";
@@ -110,8 +111,7 @@ describe("delayed hydration", () => {
       expect(animationsOf(layers()[0])).toEqual(["chart-wipe-left"]);
       ready.resolve();
       await late.promise;
-      for (let frame = 0; frame < 2; frame += 1)
-        await new Promise((resolve) => requestAnimationFrame(resolve));
+      await nextFrames(2);
       expect(recover).not.toHaveBeenCalled();
       expect(layers()[1]?.getAttribute("data-intro")).toBe("none");
       expect(animationsOf(layers()[1])).toEqual([]);

@@ -8,6 +8,7 @@
 import { createContext, use, useMemo, useSyncExternalStore } from "react";
 
 import type { SupportedLocale } from "../../intl/locale-context";
+import { useDrawGateOpen } from "./chart-draw-gate";
 import { isThresholdColor } from "./chart-paint";
 import type { ChartPlot } from "./chart-plot-measure";
 import type { ChartColor, ChartConfig, ValueFormat } from "./chart-types";
@@ -26,6 +27,16 @@ export type ScatterMark =
   | { readonly kind: "line"; readonly variant: "default" | "dashed" | "flowing" | "quiet" };
 
 /**
+ * A mark's dot diameter: a Points part's, or 0 for a line or no mark.
+ *
+ * @param mark - The mark a series draws, or undefined.
+ * @returns The diameter in CSS pixels.
+ */
+export function dotOf(mark: ScatterMark | undefined): number {
+  return mark?.kind === "points" ? mark.diameter : 0;
+}
+
+/**
  * The marks the mounted parts draw, by config key. A part registers after it mounts, so the
  * server and a hydrating legend read none, and the update the registration triggers draws the
  * swatch the part's mark asks for.
@@ -36,17 +47,13 @@ export type ScatterMarks = {
   /** The mark a key draws, its points when a part draws them, else its line, or undefined. */
   readonly of: (key: string) => ScatterMark | undefined;
   readonly subscribe: (listener: () => void) => () => void;
-  /** A count that changes on every registration, which a subscriber's snapshot reads. */
-  readonly version: () => number;
 };
 
 /** Create a Root's mark registry. */
 export function createScatterMarks(): ScatterMarks {
   const entries = new Map<object, { readonly key: string; readonly mark: ScatterMark }>();
   const listeners = new Set<() => void>();
-  let version = 0;
   const notify = (): void => {
-    version += 1;
     for (const listener of listeners) listener();
   };
   return {
@@ -75,7 +82,6 @@ export function createScatterMarks(): ScatterMarks {
         listeners.delete(listener);
       };
     },
-    version: () => version,
   };
 }
 
@@ -106,6 +112,12 @@ export type ScatterRootContextValue = {
   readonly entrance: boolean;
   /** The domains the marks and the axes draw under, which glide to new ones on a data update. */
   readonly glide: DomainGlide;
+  /**
+   * The model's own domains when the data update that brought the model snaps them, or null when
+   * it glides. A snapping update draws under its new domains from its first render, before Root's
+   * layout effect snaps the glide, so every path builds once per update.
+   */
+  readonly snapped: ScatterDomains | null;
 };
 
 export const ScatterRootContext = createContext<ScatterRootContextValue | null>(null);
@@ -129,40 +141,17 @@ export function useScatterRoot(part: string): ScatterRootContextValue {
 }
 
 /**
- * Check that a part names a config key.
- *
- * @param part - The calling part's display name.
- * @param config - The Root's config.
- * @param key - The key the part names.
- * @throws {ChartCompositionError} `unknown-key`, listing the valid keys.
- */
-export function assertScatterKey(part: string, config: ChartConfig, key: string): void {
-  if (Object.hasOwn(config, key)) return;
-  const keys = Object.keys(config)
-    .map((name) => JSON.stringify(name))
-    .join(", ");
-  throw new ChartCompositionError(
-    part,
-    "unknown-key",
-    `received dataKey ${JSON.stringify(key)}, which names no config key. Use one of ${keys}.`
-  );
-}
-
-/** The draw gate as the server and a hydrating part read it. */
-function closedOnServer(): boolean {
-  return false;
-}
-
-/**
- * The domains the marks and the axes draw under now, which glide on a data update. The server and a
- * hydrating part read the model's own.
+ * The domains the marks and the axes draw under now: the model's own after an update that snaps
+ * them, and otherwise the glide's, which move from the old domains to the new ones. The server and
+ * a hydrating part read the model's own.
  *
  * @param context - The Root.
  * @returns The domains.
  */
 export function useScatterDomains(context: ScatterRootContextValue): ScatterDomains {
   const { glide } = context;
-  return useSyncExternalStore(glide.subscribe, glide.get, glide.get);
+  const drawn = useSyncExternalStore(glide.subscribe, glide.get, glide.get);
+  return context.snapped ?? drawn;
 }
 
 /**
@@ -173,8 +162,7 @@ export function useScatterDomains(context: ScatterRootContextValue): ScatterDoma
  * @returns The frame, or null before the plot is measured and while the part hydrates.
  */
 export function useScatterFrame(context: ScatterRootContextValue): ScatterFrame | null {
-  const { drawing } = context.store;
-  const open = useSyncExternalStore(drawing.subscribe, drawing.open, closedOnServer);
+  const open = useDrawGateOpen(context.store.drawing);
   const measured = use(ScatterPlotContext);
   const plot = open ? measured : null;
   const { x, y } = useScatterDomains(context);
@@ -243,4 +231,23 @@ export function useWalk(context: ScatterRootContextValue): WalkState {
     () => carryWalk(from, model, { active, place, dismissed, focus }),
     [from, model, active, place, dismissed, focus]
   );
+}
+
+/**
+ * The walk's place and series focus in the Root's current model, for the surface's render. It
+ * subscribes to those two alone, since `carryWalk` carries them apart from the active point, so a
+ * pointer that moves the active point renders no surface.
+ *
+ * @param context - The Root.
+ * @returns The place and the focus in the Root's model.
+ */
+export function useWalkPlace(context: ScatterRootContextValue): Pick<WalkState, "place" | "focus"> {
+  const { store, model } = context;
+  const from = useScatterStore(store, (snapshot) => snapshot.model);
+  const place = useScatterStore(store, (snapshot) => snapshot.place);
+  const focus = useScatterStore(store, (snapshot) => snapshot.focus);
+  return useMemo(() => {
+    const walk = carryWalk(from, model, { active: null, place, dismissed: null, focus });
+    return { place: walk.place, focus: walk.focus };
+  }, [from, model, place, focus]);
 }

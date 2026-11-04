@@ -397,15 +397,15 @@ export const CHART_STRINGS = {
 } as const satisfies { readonly [L in SupportedLocale]: ChartStrings };
 
 /**
- * A count of slots in words, such as `25 timer` or `1 day`.
+ * A count in words, such as `25 timer`, `1 day` or `52 punkter`, joined by a no-break space so the
+ * number never wraps away from its word.
  *
  * @param locale - The active supported locale.
- * @param count - The number of slots.
- * @param unit - The interval, or `category` on a category axis.
+ * @param count - The number of things.
+ * @param word - The word's forms, such as a slot interval's or the points' word.
  * @returns The count and its word in the locale's plural form.
  */
-export function countSlots(locale: SupportedLocale, count: number, unit: Interval | "category"): string {
-  const word = CHART_STRINGS[locale].slots[unit];
+export function countOf(locale: SupportedLocale, count: number, word: Inflected): string {
   const number = canonicalSpaces(numberFormat(locale, {}).format(count));
   return `${number}\u00a0${inflect(locale, count, word)}`;
 }

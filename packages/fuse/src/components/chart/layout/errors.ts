@@ -4,6 +4,7 @@
  * warn once per Root for each rule and subject, such as a column, and render the fallback the rule
  * names. Both classes stay private, as `CommandCompositionError` does, and each carries its rule.
  */
+import type { ChartConfig } from "../chart-types";
 import type { ModelIssue } from "./cartesian-model";
 
 /** The composition rules this layer reaches. */
@@ -124,13 +125,46 @@ export const DATA_MESSAGES = {
 } as const satisfies { readonly [R in ChartDataRule]: string };
 
 /**
+ * Check that a part names a config key.
+ *
+ * @param part - The calling part's display name.
+ * @param config - The Root's config.
+ * @param key - The key the part names.
+ * @throws {ChartCompositionError} `unknown-key`, listing the valid keys.
+ */
+export function assertKnownKey(part: string, config: ChartConfig, key: string): void {
+  if (Object.hasOwn(config, key)) return;
+  const keys = Object.keys(config)
+    .map((name) => JSON.stringify(name))
+    .join(", ");
+  throw new ChartCompositionError(
+    part,
+    "unknown-key",
+    `received dataKey ${JSON.stringify(key)}, which names no config key. Use one of ${keys}.`
+  );
+}
+
+/** A data issue that names its own row and subject, as the scatter model reports a skipped row. */
+export type RowSubjectIssue = {
+  readonly rule: ChartDataRule;
+  readonly row: number;
+  /** The column the rule is about. */
+  readonly subject: string;
+};
+
+/** Every data issue a Root reports: a cartesian model's, or one that names its row and subject. */
+export type DataIssue = ModelIssue | RowSubjectIssue;
+
+/**
  * What a data issue is about, so production warns once per rule and subject however many rows break
- * it: the column for a cell, the x axis for a row, and the stack for a mixed-sign slot.
+ * it: the column for a cell, the x axis for a row, the stack for a mixed-sign slot, and an issue's
+ * own subject where it names one.
  *
  * @param issue - The issue.
  * @returns The subject.
  */
-export function dataSubject(issue: ModelIssue): string {
+export function dataSubject(issue: DataIssue): string {
+  if ("subject" in issue) return issue.subject;
   if ("key" in issue) return issue.key;
   return issue.rule === "mixed-sign-expand" ? issue.stack : "x";
 }
@@ -148,10 +182,10 @@ export function issueKey(rule: ChartDataRule | ChartHintRule, subject: string): 
 }
 
 /** The data issues of one rule and subject: the first of them and how many there are. */
-export type IssueGroup = {
+export type IssueGroup<TIssue extends DataIssue = ModelIssue> = {
   readonly rule: ChartDataRule;
   readonly subject: string;
-  readonly first: ModelIssue;
+  readonly first: TIssue;
   readonly count: number;
 };
 
@@ -162,8 +196,8 @@ export type IssueGroup = {
  * @param issues - The model's issues, in data order.
  * @returns Each group's first issue and count.
  */
-export function issueGroups(issues: readonly ModelIssue[]): IssueGroup[] {
-  const groups = new Map<string, { -readonly [K in keyof IssueGroup]: IssueGroup[K] }>();
+export function issueGroups<TIssue extends DataIssue>(issues: readonly TIssue[]): IssueGroup<TIssue>[] {
+  const groups = new Map<string, { -readonly [K in keyof IssueGroup<TIssue>]: IssueGroup<TIssue>[K] }>();
   for (const issue of issues) {
     const subject = dataSubject(issue);
     const key = issueKey(issue.rule, subject);
@@ -183,11 +217,12 @@ export function issueGroups(issues: readonly ModelIssue[]): IssueGroup[] {
  * @param count - How many issues share the rule and subject.
  * @returns The text.
  */
-export function dataMessage(issue: ModelIssue, rowAt: readonly (number | undefined)[], count = 1): string {
+export function dataMessage(issue: DataIssue, rowAt: readonly (number | undefined)[], count = 1): string {
   const row = "row" in issue ? issue.row : "key" in issue ? rowAt[issue.slot] : undefined;
   const where =
     row !== undefined ? `Row ${String(row)}` : "slot" in issue ? `Slot ${String(issue.slot)}` : "";
-  const key = "key" in issue ? ` of ${JSON.stringify(issue.key)}` : "";
+  const named = "subject" in issue ? issue.subject : "key" in issue ? issue.key : undefined;
+  const key = named === undefined ? "" : ` of ${JSON.stringify(named)}`;
   const more = count > 1 ? `, the first of ${String(count)}` : "";
   return `${DATA_MESSAGES[issue.rule]} ${where}${key}${more}.`;
 }

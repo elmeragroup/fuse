@@ -17,13 +17,14 @@ import type { ChartPaths } from "./chart-paths";
 import type { ChartRiders } from "./chart-riders";
 import type { ChartStore, EmphasisEntry } from "./chart-store";
 import type { TextContext } from "./chart-text";
-import type { ChartConfig, ChartIntro, ChartRow, ChartSelectionChangeReason } from "./chart-types";
+import type { ChartIntro, ChartRow, ChartSelectionChangeReason } from "./chart-types";
 import type { LayoutInput } from "./layout/cartesian-model";
-import { ChartCompositionError } from "./layout/errors";
+import { assertKnownKey, ChartCompositionError } from "./layout/errors";
 import type { ChartDataRule, ChartHintRule } from "./layout/errors";
 import type { PathMotion } from "./layout/path-motion";
 
 export { ChartPendingRootContext } from "./chart-pending-root";
+export { assertKnownKey } from "./layout/errors";
 import type { ValueDomain } from "./layout/value-domain";
 
 /**
@@ -323,25 +324,5 @@ export function assertLayoutKey(part: string, layout: ChartLayoutContextValue, k
     part,
     "series-not-in-panel",
     `draws ${JSON.stringify(key)}, which its Chart.Panel's series does not list. Add it to the Panel's series, or move the part to the Panel that lists it: ${keys}.`
-  );
-}
-
-/**
- * Check that a part names a config key.
- *
- * @param part - The calling part's display name.
- * @param config - The Root's config.
- * @param key - The key the part names.
- * @throws {ChartCompositionError} `unknown-key`, listing the valid keys.
- */
-export function assertKnownKey(part: string, config: ChartConfig, key: string): void {
-  if (Object.hasOwn(config, key)) return;
-  const keys = Object.keys(config)
-    .map((name) => JSON.stringify(name))
-    .join(", ");
-  throw new ChartCompositionError(
-    part,
-    "unknown-key",
-    `received dataKey ${JSON.stringify(key)}, which names no config key. Use one of ${keys}.`
   );
 }

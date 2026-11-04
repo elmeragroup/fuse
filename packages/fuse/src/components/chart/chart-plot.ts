@@ -5,21 +5,13 @@
  * every mark reads the measurement through `useChartFrame` and draws in CSS pixels, under its
  * layout's value domain.
  */
-import {
-  createContext,
-  use,
-  useInsertionEffect,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-  useSyncExternalStore,
-} from "react";
+import { createContext, use, useInsertionEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { RefObject } from "react";
 
 import { useChartRoot } from "./chart-context";
 import type { ChartLayoutContextValue, PanelEntry } from "./chart-context";
 import { writeStyle } from "./chart-dom";
+import { useDrawGateOpen } from "./chart-draw-gate";
 import {
   PlotReadsContext,
   readBarMetrics,
@@ -246,11 +238,6 @@ export function useRootFrame(part: string): ChartFrame | null {
   return useFrameOf(part, use(ChartRootPlotContext), model.y);
 }
 
-/** The draw gate as the server and a hydrating part read it. */
-function closedOnServer(): boolean {
-  return false;
-}
-
 /**
  * A measured plot under a value domain, once Root opens its draw gate. The server and a hydrating
  * part read the gate closed, so a part whose Suspense boundary hydrates after Root measured still
@@ -258,9 +245,7 @@ function closedOnServer(): boolean {
  */
 function useFrameOf(part: string, measured: ChartPlot | null, y: ValueDomain): ChartFrame | null {
   const { model, orientation, store, xScale } = useChartRoot(part);
-  const { drawing } = store;
-  const open = useSyncExternalStore(drawing.subscribe, drawing.open, closedOnServer);
-  const plot = open ? measured : null;
+  const plot = useDrawGateOpen(store.drawing) ? measured : null;
   const window = model.window;
   const count = window === null ? 1 : window.last - window.first + 1;
   return useMemo(

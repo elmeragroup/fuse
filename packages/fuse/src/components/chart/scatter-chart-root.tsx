@@ -10,10 +10,10 @@ import { useLocale } from "../../intl/locale-context";
 import { writeAttribute } from "./chart-dom";
 import { openDrawingSoon, useClientMount } from "./chart-draw-gate";
 import { useEntrance } from "./chart-entrance";
-import { createChartMotion } from "./chart-motion";
+import { BROWSER_FRAMES, createChartMotion, REDUCED_MOTION } from "./chart-motion";
 import { PlotReadsContext, useMeasuredPlot } from "./chart-plot-measure";
 import { PlotLoader } from "./chart-skeleton";
-import { sameShallow, useSteady } from "./chart-steady";
+import { sameConfig, sameShallow, useSteady } from "./chart-steady";
 import type {
   ChartAccessibleName,
   ChartCategoryKey,
@@ -26,10 +26,11 @@ import type {
 } from "./chart-types";
 import { CHART_STRINGS } from "./format/chart-strings";
 import { createDomainGlide } from "./layout/domain-glide";
-import { ChartDataError, DATA_MESSAGES, isChartDevelopment, issueKey } from "./layout/errors";
+import type { ScatterDomains } from "./layout/domain-glide";
+import { ChartDataError, dataMessage, isChartDevelopment, issueGroups, issueKey } from "./layout/errors";
 import { sameItems } from "./layout/same-items";
 import { buildScatterModel } from "./layout/scatter-model";
-import type { ScatterIssue } from "./layout/scatter-model";
+import type { ScatterModel } from "./layout/scatter-model";
 import { createScatterMarks, ScatterPlotContext, ScatterRootContext } from "./scatter-chart-context";
 import type { ScatterRootContextValue } from "./scatter-chart-context";
 import { createScatterStore } from "./scatter-chart-store";
@@ -103,53 +104,17 @@ export type ScatterChartRootProps<
     children?: ReactNode;
   };
 
-/** The reader's motion preference, which turns the entrance and the domain glide off. */
-const REDUCED_MOTION = "(prefers-reduced-motion: reduce)";
-
 /**
  * Above this many points a data update snaps the domains: each glide frame redraws every path, and
  * past a few thousand points that costs more than the glide is worth.
  */
 const GLIDE_LIMIT = 5_000;
 
-/** The browser's clock and frames, which the domain glide runs on. */
-const BROWSER_FRAMES = {
-  now: () => performance.now(),
-  requestFrame: (callback: (time: number) => void) => requestAnimationFrame(callback),
-  cancelFrame: (handle: number) => {
-    cancelAnimationFrame(handle);
-  },
-};
+/** A scatter issue names its own row, so no slot maps to one. */
+const NO_SLOT_ROWS: readonly number[] = [];
 
-/** One field value of a series config. */
-type ConfigField = ChartConfig[string][keyof ChartConfig[string]];
-
-/** Whether two configs say the same thing, so an inline config is no data update. */
-function sameConfig(a: ChartConfig, b: ChartConfig): boolean {
-  const left = Object.entries(a);
-  const right = Object.entries(b);
-  return (
-    left.length === right.length &&
-    left.every(([key, entry], index) => {
-      const other = right[index];
-      if (other?.[0] !== key) return false;
-      // SAFETY: Object.entries of a ChartSeriesConfig yields its own fields, each a ConfigField.
-      const fields = Object.entries(entry) as [string, ConfigField][];
-      // SAFETY: as above, for the other entry.
-      const otherFields = new Map(Object.entries(other[1]) as [string, ConfigField][]);
-      return (
-        fields.length === otherFields.size &&
-        fields.every(([name, value]) => otherFields.has(name) && sameShallow(value, otherFields.get(name)))
-      );
-    })
-  );
-}
-
-/** What a data issue says after the part: the rule's message, then the row it first broke in. */
-function issueMessage(issue: ScatterIssue, count: number): string {
-  const more = count > 1 ? `, the first of ${String(count)}` : "";
-  return `${DATA_MESSAGES[issue.rule]} Row ${String(issue.row)} of ${JSON.stringify(issue.subject)}${more}.`;
-}
+/** The model Root draws and whether the data update that brought it glides the domains to fit. */
+type TakenModel = { readonly model: ScatterModel; readonly glides: boolean };
 
 /** Write the active state onto Root, where the CSS reads it. A move restyles no mark. */
 function markActive(root: HTMLElement, store: ScatterStore): void {
@@ -202,7 +167,8 @@ export function ScatterChartRoot<
   const modelConfig = useSteady<ChartConfig>(config, sameConfig);
   const steadyX = useSteady(xInclude, sameItems);
   const steadyY = useSteady(yInclude, sameItems);
-  const keys = useMemo(() => Object.keys(modelConfig), [modelConfig]);
+  // The model reads the keys alone, so a label, colour, format or icon change keeps it.
+  const keys = useSteady(Object.keys(config), sameItems);
   const model = useMemo(
     () =>
       buildScatterModel({
@@ -218,21 +184,15 @@ export function ScatterChartRoot<
   );
   const firstIssue = model.issues[0];
   if (firstIssue !== undefined && isChartDevelopment()) {
-    throw new ChartDataError("ScatterChart.Root", firstIssue.rule, issueMessage(firstIssue, 1));
+    throw new ChartDataError("ScatterChart.Root", firstIssue.rule, dataMessage(firstIssue, NO_SLOT_ROWS));
   }
   const warned = useRef(new Set<string>());
   useEffect(() => {
-    const groups = new Map<string, { readonly first: ScatterIssue; count: number }>();
-    for (const issue of model.issues) {
-      const key = issueKey(issue.rule, issue.subject);
-      const group = groups.get(key);
-      if (group === undefined) groups.set(key, { first: issue, count: 1 });
-      else group.count += 1;
-    }
-    for (const [key, { first, count }] of groups) {
+    for (const { rule, subject, first, count } of issueGroups(model.issues)) {
+      const key = issueKey(rule, subject);
       if (warned.current.has(key)) continue;
       warned.current.add(key);
-      console.warn(`ScatterChart.Root ${issueMessage(first, count)}`);
+      console.warn(`ScatterChart.Root ${dataMessage(first, NO_SLOT_ROWS, count)}`);
     }
   }, [model.issues]);
 
@@ -262,21 +222,27 @@ export function ScatterChartRoot<
   const intro = figureProps["data-intro"];
   const entrance = intro !== "none" && !reduced;
   useEntrance(store, motion, rootRef, plotRef, entrance);
+  // A data update glides the domains to fit, from where they draw, once the chart has entered.
+  // Root decides in the update's first render, so an update that snaps draws under its new domains
+  // there and builds each path once.
+  const [taken, setTaken] = useState<TakenModel>({ model, glides: false });
+  let { glides } = taken;
+  if (taken.model !== model) {
+    const previous = taken.model;
+    glides = !previous.empty && !reduced && model.count <= GLIDE_LIMIT && store.get().phase === "started";
+    setTaken({ model, glides });
+  }
+  const domains = useMemo((): ScatterDomains => ({ x: model.x.domain, y: model.y.domain }), [model]);
+  const snapped = glides ? null : domains;
   useLayoutEffect(() => {
     // The store's ids belong to the model it last carried its walk into. A data update carries
     // the whole walk into the new model in one step, through the transition every reader uses.
     const previous = store.get().model;
     store.carry(model);
     if (rootRef.current) markActive(rootRef.current, store);
-    // A data update glides the domains to fit, from where they draw, once the chart has entered.
-    const glides =
-      previous !== model &&
-      !previous.empty &&
-      !reduced &&
-      model.count <= GLIDE_LIMIT &&
-      store.get().phase === "started";
-    glide.to({ x: model.x.domain, y: model.y.domain }, glides ? "glide" : "snap");
-  }, [model, store, glide, reduced]);
+    glide.to(domains, previous !== model && glides ? "glide" : "snap");
+    // A change of the motion preference runs it again, which snaps a running glide.
+  }, [model, domains, glides, reduced, store, glide]);
   useLayoutEffect(() => () => glide.stop(), [glide]);
   useLayoutEffect(
     () =>
@@ -307,6 +273,7 @@ export function ScatterChartRoot<
       marks,
       entrance,
       glide,
+      snapped,
     }),
     [
       model,
@@ -323,6 +290,7 @@ export function ScatterChartRoot<
       marks,
       entrance,
       glide,
+      snapped,
     ]
   );
   const spokenDescription = useMemo(
@@ -355,7 +323,7 @@ export function ScatterChartRoot<
           </div>
           <ScatterPlotContext value={plot}>
             <PlotReadsContext value={reads}>
-              <ScatterSurface name={name} labelledBy={labelledBy} />
+              <ScatterSurface labelledBy={labelledBy} />
               {children}
             </PlotReadsContext>
           </ScatterPlotContext>

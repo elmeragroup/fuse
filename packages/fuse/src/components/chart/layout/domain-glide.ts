@@ -4,6 +4,7 @@
  * mark and axis of a Root, so the points, the line, the grid and the ticks move as one. It takes
  * its clock and its frame scheduler from its host and touches no browser API itself.
  */
+import type { MotionHost } from "../chart-motion";
 import { cubicBezier } from "./ease";
 import { CHART_UPDATE_CURVE, CHART_UPDATE_MS } from "./motion";
 
@@ -11,13 +12,6 @@ import { CHART_UPDATE_CURVE, CHART_UPDATE_MS } from "./motion";
 export type ScatterDomains = {
   readonly x: readonly [number, number];
   readonly y: readonly [number, number];
-};
-
-/** The clock and the frame scheduler a glide runs on. */
-export type GlideHost = {
-  readonly now: () => number;
-  readonly requestFrame: (callback: () => void) => number;
-  readonly cancelFrame: (handle: number) => void;
 };
 
 /** The domains a Root draws under, which its parts subscribe to. */
@@ -51,7 +45,7 @@ function same(a: ScatterDomains, b: ScatterDomains): boolean {
  * @param host - The clock and the frame scheduler.
  * @returns The glide.
  */
-export function createDomainGlide(initial: ScatterDomains, host: GlideHost): DomainGlide {
+export function createDomainGlide(initial: ScatterDomains, host: MotionHost): DomainGlide {
   let current = initial;
   let frame: number | null = null;
   const listeners = new Set<() => void>();

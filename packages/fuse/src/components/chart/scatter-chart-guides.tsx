@@ -9,6 +9,7 @@ import type { FormattedText } from "./format/formatted-text";
 import { formatValue } from "./format/value-format";
 import { labelWidth } from "./layout/label-width";
 import { hairline, ruleAcross } from "./layout/plot-frame";
+import { valueTop } from "./layout/plot-geometry";
 import { frameX, frameY, referenceInDomains } from "./layout/scatter-frame";
 import { thinTicks } from "./layout/tick-fit";
 import { useScatterDomains, useScatterFrame, useScatterRoot } from "./scatter-chart-context";
@@ -199,11 +200,7 @@ export function ScatterChartXAxis({
   // The labels sit at their shares of the drawn domain, which glides on a data update.
   const drawn = useScatterDomains(context).x;
   const labels = useMemo(() => {
-    const texts = ticks.map((value) =>
-      format === undefined
-        ? xValueText({ locale, xFormat }, value, "tick").text
-        : formatValue(locale, value, format, "tick").text
-    );
+    const texts = ticks.map((value) => formatValue(locale, value, format ?? xFormat, "tick").text);
     // The candidates keep every 1st, 2nd or 10th tick, counted from the lowest, so the shown
     // values keep a nice step of the ticks' own, such as −2, 2, 6 and so on up to 18.
     const strides = STRIDES.filter((stride) => stride === 1 || stride < texts.length).map((stride) => ({
@@ -276,7 +273,7 @@ export function ScatterChartYAxis({
               <span
                 key={value}
                 data-slot="chart-y-tick"
-                style={{ "--chart-at": `${String((1 - at) * 100)}%` }}>
+                style={{ "--chart-at": `${String(valueTop(drawn, value))}%` }}>
                 {text}
               </span>,
             ];
@@ -334,12 +331,12 @@ export function ScatterChartReferenceLine({
       spoken: strings.valueRange(spoken[0] ?? "", spoken[1] ?? ""),
     };
   }
-  // The label sits at the line's x or y, and at a segment's visible last end.
+  // The label sits at the line's x or y, at a horizontal line's right end, and at both coordinates
+  // of a segment's visible last end. `share` is the label's x as a share of the plot's width.
   const end = part?.[1];
+  const share = axis === "value" ? 1 : shareOf(drawn.x, axis === "slot" ? (props.x ?? 0) : (end?.[0] ?? 0));
   const at =
-    axis === "slot"
-      ? shareOf(drawn.x, props.x ?? 0) * 100
-      : (1 - shareOf(drawn.y, axis === "value" ? (props.y ?? 0) : (end?.[1] ?? 0))) * 100;
+    axis === "slot" ? share * 100 : valueTop(drawn.y, axis === "value" ? (props.y ?? 0) : (end?.[1] ?? 0));
   const shown = label === undefined ? value.spoken : label.replace("{value}", value.spoken);
   const visible = label === undefined ? null : label.replace("{value}", value.text);
   let rule: { readonly x1: number; readonly y1: number; readonly x2: number; readonly y2: number } | null =
@@ -361,7 +358,7 @@ export function ScatterChartReferenceLine({
       className={className}
       style={{
         "--chart-at": `${String(at)}%`,
-        "--chart-x": at / 100,
+        "--chart-x": share,
         ...style,
       }}>
       <svg

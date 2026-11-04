@@ -12,7 +12,7 @@ import type { PointIndex } from "./layout/point-index";
 import { dotCentre } from "./layout/scatter-frame";
 import { focusPoint, pointOf, pointShares, stepPoint, walkPosition } from "./layout/scatter-model";
 import type { ScatterModel, ScatterStep } from "./layout/scatter-model";
-import { useScatterFrame, useScatterRoot, useWalk, walkOf } from "./scatter-chart-context";
+import { useScatterFrame, useScatterRoot, useWalkPlace, walkOf } from "./scatter-chart-context";
 import type { ScatterRootContextValue } from "./scatter-chart-context";
 import { useScatterStore } from "./scatter-chart-store";
 import { scatterOptionName } from "./scatter-chart-text";
@@ -120,8 +120,25 @@ export function tapPoint(
   surface: Element | null,
   event: { readonly clientX: number; readonly clientY: number; readonly pointerType: string }
 ): void {
+  context.store.press(context.model, trackedPick(context, surface, event));
+}
+
+/**
+ * Record the pointer's position and type, then pick the point under it through `pickPoint`, as
+ * every pointer event the plot or its popup acts on does.
+ *
+ * @param context - The Root.
+ * @param surface - The plot's surface.
+ * @param event - The pointer's client point and type.
+ * @returns The point id, or -1 when none lies within the hit radius.
+ */
+function trackedPick(
+  context: Pick<ScatterRootContextValue, "model" | "store" | "glide">,
+  surface: Element | null,
+  event: { readonly clientX: number; readonly clientY: number; readonly pointerType: string }
+): number {
   context.store.track(event.clientX, event.clientY, event.pointerType);
-  context.store.press(context.model, pickPoint(context, surface, event));
+  return pickPoint(context, surface, event);
 }
 
 /**
@@ -132,14 +149,12 @@ export function tapPoint(
  * nearest point through `pickPoint` and never moves focus or the place.
  */
 export function ScatterSurface({
-  name,
   labelledBy,
 }: {
-  readonly name: string | undefined;
   readonly labelledBy: string | undefined;
 }): ReactElement | null {
   const context = useScatterRoot("ScatterChart.Root");
-  const { model, store, id, locale } = context;
+  const { model, store, id, locale, name } = context;
   const counter = useRef(0);
   const nextId = (): string => {
     counter.current += 1;
@@ -158,7 +173,7 @@ export function ScatterSurface({
   const listbox = useRef<HTMLDivElement>(null);
   const frame = useScatterFrame(context);
   const pinned = useScatterStore(store, (snapshot) => snapshot.pinned);
-  const { place, focus } = useWalk(context);
+  const { place, focus } = useWalkPlace(context);
   useLayoutEffect(() => {
     const target = focusTarget.current;
     if (target === null) return;
@@ -245,20 +260,12 @@ export function ScatterSurface({
     setOptions([{ id: nextId(), entry: true }]);
   };
 
-  const pointAt = (event: PointerEvent<HTMLDivElement> | MouseEvent<HTMLDivElement>): number => {
-    const pointerType = "pointerType" in event ? event.pointerType : "mouse";
-    store.track(event.clientX, event.clientY, pointerType);
-    return pickPoint(context, event.currentTarget, {
+  const pointAt = (event: PointerEvent<HTMLDivElement> | MouseEvent<HTMLDivElement>): number =>
+    trackedPick(context, event.currentTarget, {
       clientX: event.clientX,
       clientY: event.clientY,
-      pointerType,
+      pointerType: "pointerType" in event ? event.pointerType : "mouse",
     });
-  };
-
-  /** A tap or a click: it pins the point under the pointer, and on the pinned point dismisses it. */
-  const press = (point: number): void => {
-    store.press(model, point);
-  };
 
   const strings = CHART_STRINGS[locale];
   const placed = pointOf(model, place);
@@ -321,11 +328,12 @@ export function ScatterSurface({
         // A touch or pen press already acted on its lift, so only a mouse click and a keyboard or
         // assistive click, which reports a detail of 0, act here.
         if (!lift.clickActs(event)) return;
+        // A tap or a click pins the point under the pointer, and on the pinned point dismisses it.
         if (event.detail === 0) {
-          press(walk().active ?? place);
+          store.press(model, walk().active ?? place);
           return;
         }
-        press(pointAt(event));
+        store.press(model, pointAt(event));
       }}>
       {labelledBy === undefined ? null : (
         <span id={`${id}-surface-name`} hidden>

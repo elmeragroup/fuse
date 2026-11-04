@@ -21,11 +21,19 @@ import { formatValue } from "./format/value-format";
 import { dotCentre } from "./layout/scatter-frame";
 import { pointOf } from "./layout/scatter-model";
 import { ROOF_GAP, TOOLTIP_EDGE } from "./layout/tooltip-place";
-import { scatterPaint, useScatterFrame, useScatterRoot, useWalk, walkOf } from "./scatter-chart-context";
-import type { ScatterMark, ScatterRootContextValue } from "./scatter-chart-context";
+import {
+  dotOf,
+  scatterPaint,
+  useScatterFrame,
+  useScatterRoot,
+  useWalk,
+  walkOf,
+} from "./scatter-chart-context";
+import type { ScatterRootContextValue } from "./scatter-chart-context";
+import { SeriesSwatch } from "./scatter-chart-legend";
 import { useScatterStore } from "./scatter-chart-store";
 import { pickPoint, tapPoint } from "./scatter-chart-surface";
-import { axisNames, scatterSeriesLabel, xValueText, yValueText } from "./scatter-chart-text";
+import { axisNames, scatterSeriesLabel, yFormatOf } from "./scatter-chart-text";
 
 /**
  * Props for `ScatterChart.Tooltip`, a closed part.
@@ -64,14 +72,14 @@ export type ScatterChartTooltipValueProps = ChartDomProps<"span"> & {
 /** How far a touch may move between down and up and still be a tap, in CSS pixels. */
 const TAP_SLOP = 10;
 
+/** The plot's surface, the element the pointer's pick measures against, or null before it mounts. */
+function plotSurface(id: string): HTMLElement | null {
+  return document.getElementById(`${id}-surface`);
+}
+
 /** The active point's id in the Root's model, or null, which the readout parts render on. */
 function useActive(context: ScatterRootContextValue): number | null {
   return useWalk(context).active;
-}
-
-/** A mark's dot diameter: a Points part's, or 0 for a line or no mark. */
-function dotOf(mark: ScatterMark | undefined): number {
-  return mark?.kind === "points" ? mark.diameter : 0;
 }
 
 /**
@@ -111,10 +119,9 @@ export function ScatterChartTooltip({
     const centre = dotCentre(frame, point.x, point.y, diameter);
     // The anchor spans the point and the gap above it, so the popup rests clear of the point.
     const reach = diameter / 2 + ROOF_GAP;
-    const surfaceOf = () => document.getElementById(`${id}-surface`);
     return {
       getBoundingClientRect: () => {
-        const surface = surfaceOf()?.getBoundingClientRect();
+        const surface = plotSurface(id)?.getBoundingClientRect();
         if (surface === undefined) return new DOMRect();
         const { box } = frame;
         const scaleX = box.width === 0 ? 1 : surface.width / box.width;
@@ -127,7 +134,7 @@ export function ScatterChartTooltip({
         );
       },
       get contextElement() {
-        return surfaceOf() ?? undefined;
+        return plotSurface(id) ?? undefined;
       },
     };
   }, [active, frame, model, diameter, id]);
@@ -142,7 +149,6 @@ export function ScatterChartTooltip({
   const touchInput = input === "touch" || input === "pen";
   // Where a touch the popup took went down, so its lift tells a tap from a scroll.
   const pressed = useRef<{ readonly x: number; readonly y: number } | null>(null);
-  const plotSurface = () => document.getElementById(`${id}-surface`);
   return (
     <TooltipPrimitive.Root
       open={open}
@@ -206,36 +212,34 @@ export function ScatterChartTooltip({
               // beside the chart would. Otherwise the tap acts on the plot under it, as one there
               // does.
               if (event.currentTarget.hasAttribute("data-scrolls")) store.dismiss(model);
-              else tapPoint(context, plotSurface(), event);
+              else tapPoint(context, plotSurface(id), event);
             }}
             onPointerEnter={(event) => {
               const from = store.pointer();
-              const snapshot = store.get();
-              const active = walkOf(snapshot, model).active;
+              const { active } = walkOf(store.get(), model);
+              frozen.current = false;
+              if (from === null || active === null) return;
               // The pointer must come from the active point and move along the axis that leads to
               // the popup, up or down to a popup above or below it.
-              const start =
-                from === null
-                  ? -1
-                  : pickPoint(context, plotSurface(), {
-                      clientX: from.x,
-                      clientY: from.y,
-                      pointerType: from.type,
-                    });
-              const dx = Math.abs(from === null ? 0 : event.clientX - from.x);
-              const dy = Math.abs(from === null ? 0 : event.clientY - from.y);
-              frozen.current = active !== null && start === active && dy > dx;
+              const start = pickPoint(context, plotSurface(id), {
+                clientX: from.x,
+                clientY: from.y,
+                pointerType: from.type,
+              });
+              const dx = Math.abs(event.clientX - from.x);
+              const dy = Math.abs(event.clientY - from.y);
+              frozen.current = start === active && dy > dx;
             }}
             onPointerMove={(event) => {
               if (event.pointerType === "mouse") store.track(event.clientX, event.clientY, "mouse");
               // The popup lies over the plot, so a pointer that scrubs across it picks the points
               // under it, through the surface's own query.
               if (frozen.current || store.get().source === "keyboard") return;
-              store.hover(model, pickPoint(context, plotSurface(), event));
+              store.hover(model, pickPoint(context, plotSurface(id), event));
             }}
             onPointerLeave={(event) => {
               frozen.current = false;
-              const surface = plotSurface();
+              const surface = plotSurface(id);
               if (
                 surface !== null &&
                 event.relatedTarget instanceof Node &&
@@ -273,24 +277,6 @@ function DefaultTooltip(): ReactElement {
   );
 }
 
-/** The swatch of a series, a dot in its paint, as decoration. */
-function SeriesSwatch({
-  seriesKey,
-  context,
-}: {
-  readonly seriesKey: string;
-  readonly context: ScatterRootContextValue;
-}) {
-  return (
-    <span
-      data-slot="chart-swatch"
-      data-variant="circle"
-      aria-hidden="true"
-      style={{ "--chart-swatch-paint": scatterPaint(context.config, seriesKey) }}
-    />
-  );
-}
-
 /**
  * The active point's series: its swatch and its label.
  *
@@ -317,7 +303,7 @@ export function ScatterChartTooltipLabel({
             children ??
             (key === null ? null : (
               <>
-                <SeriesSwatch seriesKey={key} context={context} />
+                <SeriesSwatch paint={scatterPaint(context.config, key)} />
                 {scatterSeriesLabel(context, key).text}
               </>
             )),
@@ -346,12 +332,8 @@ export function ScatterChartTooltipValue({
   if (active !== null) {
     const point = pointOf(context.model, active);
     const value = axis === "x" ? point.x : point.y;
-    text =
-      format !== undefined
-        ? formatValue(context.locale, value, format, "full").text
-        : axis === "x"
-          ? xValueText(context, value, "full").text
-          : yValueText(context, point.key, value, "full").text;
+    const fallback = axis === "x" ? context.xFormat : yFormatOf(context, point.key);
+    text = formatValue(context.locale, value, format ?? fallback, "full").text;
   }
   return useRender({
     defaultTagName: "span",

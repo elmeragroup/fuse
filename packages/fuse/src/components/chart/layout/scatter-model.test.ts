@@ -123,6 +123,39 @@ describe("the scatter walk order", () => {
     ]);
   });
 
+  it("keeps a series that arrives in x order, then y, as it came, beside one it sorts", () => {
+    // Series "a" arrives sorted, a repeated point included, as a live stream's rows do. Series "b"
+    // arrives out of order. Sorted by hand: a (1, 5) r0, (2, 3) r1, (2, 3) r2, (2, 4) r4, (5, 1) r6;
+    // b (0, 2) r5, (3, 9) r3. The x extent is 0 to 5 and the y extent 1 to 9.
+    const stream = [
+      { t: 1, v: 5, s: "a" },
+      { t: 2, v: 3, s: "a" },
+      { t: 2, v: 3, s: "a" },
+      { t: 3, v: 9, s: "b" },
+      { t: 2, v: 4, s: "a" },
+      { t: 0, v: 2, s: "b" },
+      { t: 5, v: 1, s: "a" },
+    ];
+    const scatter = model(stream, ["a", "b"]);
+    const [a, b] = scatter.series;
+    expect([...(a?.xs ?? [])]).toEqual([1, 2, 2, 2, 5]);
+    expect([...(a?.ys ?? [])]).toEqual([5, 3, 3, 4, 1]);
+    expect([...(a?.rows ?? [])]).toEqual([0, 1, 2, 4, 6]);
+    expect([...(b?.xs ?? [])]).toEqual([0, 3]);
+    expect([...(b?.rows ?? [])]).toEqual([5, 3]);
+    expect(walkOrder(scatter)).toEqual([
+      "b 0 2 r5",
+      "a 1 5 r0",
+      "a 2 3 r1",
+      "a 2 3 r2",
+      "a 2 4 r4",
+      "b 3 9 r3",
+      "a 5 1 r6",
+    ]);
+    // Each point's rank is its place in that walk.
+    expect([...scatter.rank]).toEqual([1, 2, 3, 4, 6, 0, 5]);
+  });
+
   it("puts the earlier config key first on a tie, whatever the row order", () => {
     expect(walkOrder(model(rows, ["b", "a"]))).toEqual([
       "a 1 3 r1",
@@ -185,7 +218,9 @@ describe("the scatter walk order", () => {
 
 describe("the scatter data rules", () => {
   // Unit under test: which rows become points and which issues the model reports. Oracle: the
-  // data rules of SPEC.md, applied by hand to each row.
+  // data rules, applied by hand to each row: a null x or y skips its row quietly, a cell that is not
+  // a finite number within ±1e15 reports non-finite-x or non-finite-y, and a series cell that names
+  // no config key reports unknown-series.
   it("skips null cells quietly and reports broken cells and unknown series", () => {
     const scatter = model(
       [
@@ -216,8 +251,9 @@ describe("the scatter data rules", () => {
 
 describe("the walk across a data update", () => {
   // Unit under test: carryWalk, the one transition of the active point, the keyboard's place, the
-  // dismissed point and the series focus. Oracle: the review's scenarios and SPEC.md's identity
-  // rule, worked by hand on small models.
+  // dismissed point and the series focus. Oracle: the review's scenarios and the identity rule, under
+  // which a point keeps its series, x and y, and a repeated point its rank among its twins, worked
+  // by hand on small models.
   const before = model(
     [
       { t: 0, v: 0, s: "a" },
@@ -291,7 +327,7 @@ describe("the walk across a data update", () => {
 
 describe("the nearest point in a series", () => {
   // Unit under test: the one nearest-in-series rule that focus changes and data updates share.
-  // Oracle: the rule written down in SPEC.md, nearest x, then nearer y, then the earlier point,
+  // Oracle: the nearest rule, nearest x, then nearer y, then the earlier point,
   // applied by hand to a point exactly between two others.
   it("gives a focus change the earlier of two points at the same distance", () => {
     // From a(0, 1), b's points (0, 0) and (0, 2) both lie 0 across and 1 up or down.

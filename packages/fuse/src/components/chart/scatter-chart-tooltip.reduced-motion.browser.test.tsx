@@ -1,11 +1,12 @@
 // The scatter tooltip's anchor under reduced motion, in Chromium, Firefox and WebKit, where the
-// popup moves at once. Oracle: SPEC.md's tooltip rule, the popup rests ROOF_GAP, 8 px, above the
+// popup moves at once. Oracle: the tooltip's rule, the popup rests ROOF_GAP, 8 px, above the
 // active point's edge, so its bottom sits half the point's diameter plus 8 px above the point's
 // centre: 2.5 + 8 = 10.5 px for a small 5 px point and 5.5 + 8 = 13.5 px for a large 11 px one.
 import { describe, expect, it } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
+import { popup } from "../../../test/chart/marks";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
 import type { ChartConfig } from "./chart-types";
@@ -43,11 +44,10 @@ function Sized({ size }: { readonly size: "sm" | "lg" }) {
 
 /** How far the open popup's bottom rests above the point at (100, 70), in CSS pixels. */
 function gap(): number | null {
-  // DOM audit: the popup portals out of the host and is aria-hidden, so its slot locates it.
-  const popup = document.querySelector('[data-slot="chart-tooltip"][data-open]');
-  if (popup === null) return null;
+  const open = popup();
+  if (open === null) return null;
   const plot = page.getByRole("listbox").element().getBoundingClientRect();
-  return plot.top + 70 - popup.getBoundingClientRect().bottom;
+  return plot.top + 70 - open.getBoundingClientRect().bottom;
 }
 
 describe("the tooltip's anchor", () => {

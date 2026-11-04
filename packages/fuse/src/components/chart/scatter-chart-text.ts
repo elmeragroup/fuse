@@ -5,13 +5,10 @@
  * the option's name and the generated description. The module calls no hook, so the server reads
  * it too.
  */
-import { numberFormat } from "../../internal/intl-cache";
-import { canonicalSpaces } from "../../intl/canonical-spaces";
 import type { SupportedLocale } from "../../intl/locale-context";
 import type { ChartConfig, ValueFormat } from "./chart-types";
-import { CHART_STRINGS } from "./format/chart-strings";
+import { CHART_STRINGS, countOf } from "./format/chart-strings";
 import type { FormattedText, LabelRole } from "./format/formatted-text";
-import { inflect } from "./format/inflection";
 import { formatValue } from "./format/value-format";
 import { pointOf } from "./layout/scatter-model";
 import type { ScatterModel } from "./layout/scatter-model";
@@ -103,8 +100,9 @@ export function axisNames(text: Pick<ScatterText, "locale" | "xLabel" | "yLabel"
 }
 
 /**
- * The single option's name for a point: its series, then its x and y with their names when Root
- * names them, as `Forbruk 2026, Ukemiddeltemperatur: 3,6 °C, kWh per uke: 121 000 kWh`.
+ * The single option's name for a point: its series, then its x and y, each after its name from
+ * `axisNames`, so Root's `xLabel` and `yLabel` win and the dictionary's "x-verdi" and "y-verdi"
+ * name them otherwise, as `Forbruk 2026, Ukemiddeltemperatur: 3,6 °C, kWh per uke: 121 000 kWh`.
  *
  * @param text - The Root's words.
  * @param id - The point.
@@ -115,21 +113,8 @@ export function scatterOptionName(text: ScatterText, id: number): string {
   const x = xValueText(text, point.x, "full").spoken;
   const y = yValueText(text, point.key, point.y, "full").spoken;
   const series = scatterSeriesLabel(text, point.key).spoken;
-  const xPart = text.xLabel === undefined ? x : `${text.xLabel}: ${x}`;
-  const yPart = text.yLabel === undefined ? y : `${text.yLabel}: ${y}`;
-  return `${series}, ${xPart}, ${yPart}`;
-}
-
-/**
- * A count of points in words, such as `52 punkter`.
- *
- * @param locale - The active supported locale.
- * @param count - The number of points.
- * @returns The count and its word in the locale's plural form.
- */
-export function countPoints(locale: SupportedLocale, count: number): string {
-  const number = canonicalSpaces(numberFormat(locale, {}).format(count));
-  return `${number} ${inflect(locale, count, CHART_STRINGS[locale].points)}`;
+  const names = axisNames(text);
+  return `${series}, ${names.x}: ${x}, ${names.y}: ${y}`;
 }
 
 /**
@@ -162,20 +147,10 @@ export function scatterDescription(text: ScatterText): string {
       )}`;
       return strings.scatterSeries(
         scatterSeriesLabel(text, series.key).spoken,
-        countPoints(text.locale, series.xs.length),
+        countOf(text.locale, series.xs.length, strings.points),
         x,
         y
       );
     })
     .join(" ");
-}
-
-/**
- * The first point a walk shows: the first point in the walk order, or -1 for an empty chart.
- *
- * @param model - The model.
- * @returns The point id, or -1.
- */
-export function firstPoint(model: ScatterModel): number {
-  return model.empty ? -1 : (model.order[0] ?? -1);
 }

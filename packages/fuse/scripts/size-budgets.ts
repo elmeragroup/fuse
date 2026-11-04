@@ -349,14 +349,19 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // focus guard ends with the tap's own task and whose gesture ends with the surface's element,
     // which measured 127 bytes on Chart (145715 to 145842) and on BarChart (145718 to 145845).
     // Each ceiling keeps about 100 bytes of headroom.
-    ceilingGzip: 147367,
+    // Raised again from 147367 on 2026-11-04, with BarChart's from 147371, after the threshold
+    // colours above. The leaves Chart now shares with ScatterChart, the table's disclosure and
+    // pagination shell, the count words, the generic issue grouping, the config comparison, the
+    // motion host and the draw gate's read, measured 192 bytes on Chart (145842 to 146034) and on
+    // BarChart (145845 to 146037). Each ceiling keeps about 100 bytes of headroom.
+    ceilingGzip: 147559,
   },
   {
     name: "chart/BarChart",
     entryFile: "chart.js",
     exportName: "BarChart",
     measuredGzip: 95989,
-    ceilingGzip: 147371,
+    ceilingGzip: 147563,
   },
   { name: "chart/PieChart", entryFile: "chart.js", exportName: "PieChart", measuredGzip: 79885 },
   { name: "chart/RadialChart", entryFile: "chart.js", exportName: "RadialChart", measuredGzip: 79858 },
@@ -424,7 +429,11 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // ends it on every compatibility click, and Root merges a consumer ref with its own, which
     // measured 142 bytes on this route (74612 to 74754). The ceiling keeps about 100 bytes of
     // headroom.
-    ceilingGzip: 75594,
+    // Raised from 75594 on 2026-11-04, after the threshold colours above. The leaves this route
+    // shares with ScatterChart, the count words, the generic issue grouping, the config
+    // comparison, the motion host and the draw gate's read, measured 119 bytes on this route
+    // (74754 to 74873). The ceiling keeps about 100 bytes of headroom.
+    ceilingGzip: 75713,
   },
   {
     name: "chart/PieChart.Root",
@@ -503,7 +512,10 @@ export const CSS_BUDGETS: readonly CssBudget[] = derive([
   // headroom past it.
   // Raised from 15575 on 2026-11-04. The points layer's clip at the plot, past it by a dot's
   // radius, measured 96 bytes (15475 to 15571). The ceiling keeps about 100 bytes of headroom.
-  { name: "chart.css", file: "chart.css", measuredGzip: 10089, ceilingGzip: 15671 },
+  // Raised from 15671 on 2026-11-04. A segment reference's label at its last end, the points layer
+  // in the forced-colours list, less the three entrance wipes ScatterChart never runs, measured 173
+  // bytes (15571 to 15744). The ceiling keeps about 100 bytes of headroom.
+  { name: "chart.css", file: "chart.css", measuredGzip: 10089, ceilingGzip: 15844 },
 ] satisfies readonly Measured<CssBudget>[]);
 
 export const FLAG_RAW_BUDGETS: readonly FlagRawBudget[] = [

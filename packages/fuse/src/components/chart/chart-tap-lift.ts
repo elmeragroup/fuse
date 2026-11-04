@@ -37,7 +37,7 @@ export type TapLift = {
  *
  * @returns The record, with no lift.
  */
-export function createTapLift(): TapLift {
+function createTapLift(): TapLift {
   let lifted = false;
   let focusing = false;
   return {

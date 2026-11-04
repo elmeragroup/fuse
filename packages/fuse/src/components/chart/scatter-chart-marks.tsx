@@ -6,16 +6,12 @@ import type { ReactElement } from "react";
 import { writeAttribute, writeStyle } from "./chart-dom";
 import { useIntro } from "./chart-store";
 import type { ChartLayerProps } from "./chart-types";
+import { assertKnownKey } from "./layout/errors";
 import { dotCentre, dotDiameter, linePath, pointsPath } from "./layout/scatter-frame";
 import type { ScatterCurve, ScatterFrame } from "./layout/scatter-frame";
 import { pointOf } from "./layout/scatter-model";
-import {
-  assertScatterKey,
-  scatterPaint,
-  useScatterFrame,
-  useScatterRoot,
-  walkOf,
-} from "./scatter-chart-context";
+import type { ScatterSeries } from "./layout/scatter-model";
+import { dotOf, scatterPaint, useScatterFrame, useScatterRoot, walkOf } from "./scatter-chart-context";
 import type { ScatterRootContextValue } from "./scatter-chart-context";
 
 /**
@@ -75,23 +71,33 @@ const RING_GAP = 3;
 /** The active dot's radius over a line's vertex, as Chart.ActiveDot draws it. */
 const VERTEX_RADIUS = 4;
 
-/** A series' paint and its place in config order, which the layer's style carries. */
-function seriesStyle(context: ScatterRootContextValue, key: string) {
-  const index = context.model.series.findIndex((series) => series.key === key);
-  return { paint: scatterPaint(context.config, key), index };
-}
+/** What a series mark reads: its Root, its series, the frame it draws in, its intro and its paint. */
+type SeriesSetup = {
+  readonly context: ScatterRootContextValue;
+  readonly series: ScatterSeries | undefined;
+  readonly frame: ScatterFrame | null;
+  readonly intro: "fade" | "none" | undefined;
+  /** The series' paint, which the layer's style carries. */
+  readonly paint: string;
+  /** The series' place in config order, -1 for a key the model lacks. */
+  readonly index: number;
+};
 
 /**
- * What a mark writes on `data-intro` for its life, by Chart's rule in `useIntro`: it matches the
- * server while it hydrates, joins the entrance when it first draws while the entrance waits, and
- * writes "none" when it first draws after the entrance started, as a series whose Suspense
- * boundary hydrates late. A scatter mark never fades in, so it renders as an initial commit.
+ * The setup Points and Line share: the Root, a known config key, the series, the frame, and the
+ * `data-intro` a mark writes for its life, by Chart's rule in `useIntro`. It matches the server
+ * while it hydrates, joins the entrance when it first draws while the entrance waits, and writes
+ * "none" when it first draws after the entrance started, as a series whose Suspense boundary
+ * hydrates late. A scatter mark never fades in, so it renders as an initial commit.
  */
-function useScatterIntro(
-  context: ScatterRootContextValue,
-  frame: ScatterFrame | null
-): "fade" | "none" | undefined {
-  return useIntro(context.store, "initial", context.entrance, frame !== null);
+function useScatterSeries(part: string, dataKey: string): SeriesSetup {
+  const context = useScatterRoot(part);
+  assertKnownKey(part, context.config, dataKey);
+  const series = context.model.series.find((entry) => entry.key === dataKey);
+  const frame = useScatterFrame(context);
+  const intro = useIntro(context.store, "initial", context.entrance, frame !== null);
+  const paint = scatterPaint(context.config, dataKey);
+  return { context, series, frame, intro, paint, index: series?.seriesIndex ?? -1 };
 }
 
 /**
@@ -109,10 +115,7 @@ export function ScatterChartPoints({
   className,
   style,
 }: ScatterChartPointsProps): ReactElement {
-  const context = useScatterRoot("ScatterChart.Points");
-  assertScatterKey("ScatterChart.Points", context.config, dataKey);
-  const series = context.model.series.find((entry) => entry.key === dataKey);
-  const frame = useScatterFrame(context);
+  const { context, series, frame, intro, paint, index } = useScatterSeries("ScatterChart.Points", dataKey);
   const box = frame?.box;
   const diameter = box === undefined ? POINT_SIZE[size] : dotDiameter(box, POINT_SIZE[size]);
   const { marks } = context;
@@ -124,8 +127,6 @@ export function ScatterChartPoints({
     () => (frame === null || series === undefined ? null : pointsPath(frame, series.xs, series.ys, diameter)),
     [frame, series, diameter]
   );
-  const intro = useScatterIntro(context, frame);
-  const { paint, index } = seriesStyle(context, dataKey);
   return (
     <svg
       data-slot="chart-points"
@@ -162,18 +163,13 @@ export function ScatterChartLine({
   className,
   style,
 }: ScatterChartLineProps): ReactElement {
-  const context = useScatterRoot("ScatterChart.Line");
-  assertScatterKey("ScatterChart.Line", context.config, dataKey);
-  const series = context.model.series.find((entry) => entry.key === dataKey);
-  const frame = useScatterFrame(context);
+  const { context, series, frame, intro, paint, index } = useScatterSeries("ScatterChart.Line", dataKey);
   const { marks } = context;
   useLayoutEffect(() => marks.register(dataKey, { kind: "line", variant }), [marks, dataKey, variant]);
   const path = useMemo(
     () => (frame === null || series === undefined ? null : linePath(frame, series.xs, series.ys, curve)),
     [frame, series, curve]
   );
-  const intro = useScatterIntro(context, frame);
-  const { paint, index } = seriesStyle(context, dataKey);
   return (
     <svg
       data-slot="chart-line-series"
@@ -215,10 +211,9 @@ export function ScatterChartActiveDot({
         return;
       }
       const point = pointOf(model, active);
-      const mark = marks.of(point.key);
-      const pointRadius = mark?.kind === "points" ? mark.diameter / 2 : 0;
-      const radius = variant === "ring" ? Math.max(pointRadius + RING_GAP, VERTEX_RADIUS) : VERTEX_RADIUS;
-      const centre = dotCentre(frame, point.x, point.y, mark?.kind === "points" ? mark.diameter : 0);
+      const diameter = dotOf(marks.of(point.key));
+      const radius = variant === "ring" ? Math.max(diameter / 2 + RING_GAP, VERTEX_RADIUS) : VERTEX_RADIUS;
+      const centre = dotCentre(frame, point.x, point.y, diameter);
       circle.setAttribute("cx", String(centre.x));
       circle.setAttribute("cy", String(centre.y));
       circle.setAttribute("r", String(radius));

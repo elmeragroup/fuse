@@ -1,5 +1,6 @@
-// ScatterChart's readout in Chromium: the single-option keyboard walk of SPEC.md D6, the pointer's
-// nearest-point pick, the tooltip, the active dot, the legend and the table. Unit under test: the
+// ScatterChart's readout in Chromium: the single-option keyboard walk, where Left and Right walk the
+// focused series by x, then y, Up and Down cycle the series focus with all series first, and Home
+// and End reach the ends, the pointer's nearest-point pick, the tooltip, the active dot, the legend and the table. Unit under test: the
 // surface, the readout parts and the store between them. Oracles: option names, positions and set
 // sizes written by hand from the rows below, pixels worked out by hand on a 200 by 140 px plot over
 // x [−2, 18] and y [20\u00a0000, 160\u00a0000], and row orders sorted by hand.
@@ -9,6 +10,8 @@ import { describe, expect, it } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
+import { nextFrames } from "../../../test/animation-frames";
+import { popup } from "../../../test/chart/marks";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
 import type { ChartConfig } from "./chart-types";
@@ -90,9 +93,7 @@ async function enterChart(): Promise<void> {
 
 /** The tooltip's text, or null while it is closed. */
 function tooltipText(): string | null {
-  // DOM audit: the tooltip popup is aria-hidden, since the option speaks the same values.
-  const popup = document.querySelector('[data-slot="chart-tooltip"][data-open]');
-  return popup?.textContent ?? null;
+  return popup()?.textContent ?? null;
 }
 
 describe("the keyboard walk", () => {
@@ -116,6 +117,33 @@ describe("the keyboard walk", () => {
     expect(focused()[1]).toBe("1");
     // The listbox always holds exactly one option once a step settles.
     expect(page.getByRole("option").all()).toHaveLength(1);
+  });
+
+  it("names x and y by the dictionary's words when Root names neither measure", async () => {
+    renderThemed(
+      <LocaleProvider locale="nb-NO">
+        <button type="button">før</button>
+        <div style={{ width: 200 }}>
+          <ScatterChart.Root
+            data={ROWS}
+            config={CONFIG}
+            xKey="t"
+            yKey="kwh"
+            seriesKey="s"
+            xFormat={{ maximumFractionDigits: 1 }}
+            valueFormat={{ maximumFractionDigits: 0 }}
+            data-intro="none"
+            aria-label="Forbruk mot temperatur"
+            style={{ "--chart-plot-height": "140px" }}>
+            <ScatterChart.Points dataKey="now" />
+          </ScatterChart.Root>
+        </div>
+      </LocaleProvider>
+    );
+    await enterChart();
+    expect(focused()).toEqual(["Forbruk 2026, x-verdi: minus\u00a02, y-verdi: 20\u00a0000", "1", "6"]);
+    await userEvent.keyboard("{End}");
+    expect(focused()).toEqual(["Normalforbruk, x-verdi: 18, y-verdi: 160\u00a0000", "6", "6"]);
   });
 
   it("cycles the series focus with Up and Down, all series first, and walks the focused one", async () => {
@@ -248,11 +276,18 @@ describe("the table", () => {
       </Scatter>
     );
     await userEvent.click(page.getByRole("button", { name: "Vis som tabell" }));
+    // The toggle expanded the table and its pagination, which are clipped while collapsed.
     const table = page.getByRole("table");
-    expect(table.getByRole("row").all()).toHaveLength(501);
+    await expect.element(table).toBeVisible();
+    const next = page.getByRole("button", { name: "Gå til neste side" });
+    await expect.element(next).toBeVisible();
+    // DOM audit: a role query over 500 rows walks the accessibility tree for seconds, and the body
+    // rows are the table's own rows.
+    const bodyRows = () => table.element().querySelectorAll("tbody > tr").length;
+    expect(bodyRows()).toBe(500);
     expect(page.getByText("Side 1 av 2 · Rad 1 til 500").element()).not.toBeNull();
-    await userEvent.click(page.getByRole("button", { name: "Gå til neste side" }));
-    expect(table.getByRole("row").all()).toHaveLength(2);
+    await userEvent.click(next);
+    expect(bodyRows()).toBe(1);
     // The status region announces the new page, and the pagination shows it.
     expect(page.getByRole("status").element().textContent).toBe("Side 2 av 2 · Rad 501 til 501");
   });
@@ -316,7 +351,7 @@ describe("the tooltip under the pointer", () => {
     // DOM audit: the popup portals out of the host, and the pointer is over its own slot.
     expect(document.querySelector('[data-slot="chart-tooltip"]:hover')).not.toBeNull();
     // Three frames give a store change time to render and the popup time to start closing.
-    for (let frame = 0; frame < 3; frame += 1) await new Promise((resolve) => requestAnimationFrame(resolve));
+    await nextFrames(3);
     expect(tooltipText()).toBe("Forbruk 2026Temperatur8Forbruk90 000");
   });
 
@@ -331,7 +366,7 @@ describe("the tooltip under the pointer", () => {
     await expect.poll(tooltipText).toBeNull();
     await userEvent.hover(surface, { position: { x: 3, y: 138 } });
     // Three frames give a store change time to render and the popup time to start closing.
-    for (let frame = 0; frame < 3; frame += 1) await new Promise((resolve) => requestAnimationFrame(resolve));
+    await nextFrames(3);
     expect(tooltipText()).toBeNull();
   });
 });

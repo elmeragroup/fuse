@@ -1,4 +1,4 @@
-// Real taps through Playwright's touchscreen in Chromium, after SPEC.md's pointer rules: a tap pins
+// Real taps through Playwright's touchscreen in Chromium, after the scatter pointer rules: a tap pins
 // the nearest point within the coarse hit radius, a second tap on it dismisses the tooltip, a third
 // opens it again, and a tap on empty plot dismisses a pinned tooltip. Oracle: points placed by hand
 // on a 200 by 140 px plot over x [−2, 18] and y [20 000, 160 000], where now(2, 90 000) sits at
@@ -7,7 +7,8 @@ import { describe, expect, it } from "vitest";
 import { commands, page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
-import { popupOpen } from "../../../test/chart/marks";
+import { nextFrames } from "../../../test/animation-frames";
+import { popupOpen, surfaceBox } from "../../../test/chart/marks";
 import "../../../test/pointer-press";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
@@ -49,13 +50,13 @@ function TapChart() {
 
 /** A point on the plot, in plot pixels from its top left, as client pixels. */
 function at(host: HTMLElement, x: number, y: number): readonly [number, number] {
-  const box = host.querySelector('[role="listbox"]')?.getBoundingClientRect() ?? new DOMRect();
+  const box = surfaceBox(host);
   return [box.left + x, box.top + y];
 }
 
 async function tap(point: readonly [number, number]): Promise<void> {
   await commands.tap(point[0], point[1]);
-  for (let frame = 0; frame < 2; frame += 1) await new Promise((resolve) => requestAnimationFrame(resolve));
+  await nextFrames(2);
 }
 
 function label(): string | null {
@@ -179,7 +180,7 @@ describe("a touch held across a data update", () => {
   }
 
   async function frames(): Promise<void> {
-    for (let frame = 0; frame < 2; frame += 1) await new Promise((resolve) => requestAnimationFrame(resolve));
+    await nextFrames(2);
   }
 
   it("lifts on the pinned point after a row before it is removed, and the chart stays", async () => {
@@ -341,7 +342,7 @@ describe("focus after a gesture with no click", () => {
   }
 
   async function frames(): Promise<void> {
-    for (let frame = 0; frame < 2; frame += 1) await new Promise((resolve) => requestAnimationFrame(resolve));
+    await nextFrames(2);
   }
 
   /** Tab in from the button before the chart, onto the plot's option. */

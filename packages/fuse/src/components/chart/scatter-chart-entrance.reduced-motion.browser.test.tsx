@@ -1,5 +1,5 @@
 // ScatterChart's entrance under reduced motion, in Chromium, Firefox and WebKit, whose Playwright
-// context sets prefers-reduced-motion: reduce. Oracle: SPEC.md's reduced-motion rule, no entrance
+// context sets prefers-reduced-motion: reduce. Oracle: the reduced-motion rule, no entrance
 // motion: Root never waits, and the points and the line draw at rest with no running animation.
 import { describe, expect, it } from "vitest";
 

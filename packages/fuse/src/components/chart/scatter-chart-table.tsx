@@ -1,24 +1,17 @@
 "use client";
 
-import { Fragment, useEffect, useRef, useState } from "react";
-import type { ReactElement, ReactNode } from "react";
+import { useMemo, useState } from "react";
+import type { ReactElement } from "react";
 
-import { useLocalizedStrings } from "../../hooks/use-localized-strings";
-import { CaretDoubleLeft } from "../../icons/generated/caret-double-left";
-import { CaretDoubleRight } from "../../icons/generated/caret-double-right";
-import { CaretLeft } from "../../icons/generated/caret-left";
-import { CaretRight } from "../../icons/generated/caret-right";
-import { cn } from "../../styles/cn";
-import { Button } from "../button/button";
-import { pageStatus } from "../data-table/data-table-pagination-status";
-import { dataTableStrings } from "../data-table/intl";
 import { Table } from "../table/table";
+import { ChartTableShell, PAGE_ROWS, Twin, useTableDisclosure } from "./chart-table-shell";
 import type { ChartLayerProps } from "./chart-types";
-import { CHART_STRINGS } from "./format/chart-strings";
+import { CHART_STRINGS, countOf } from "./format/chart-strings";
 import type { FormattedText } from "./format/formatted-text";
 import { pointOf } from "./layout/scatter-model";
 import { useScatterRoot } from "./scatter-chart-context";
-import { axisNames, countPoints, scatterSeriesLabel, xValueText, yValueText } from "./scatter-chart-text";
+import type { ScatterRootContextValue } from "./scatter-chart-context";
+import { axisNames, scatterSeriesLabel, xValueText, yValueText } from "./scatter-chart-text";
 
 /**
  * Props for `ScatterChart.Table`, a closed part.
@@ -34,18 +27,24 @@ export type ScatterChartTableProps = ChartLayerProps & {
   hideLabel?: string;
 };
 
-/** Above this many rows the table pages, after CONTRACT section 9.6. */
-const PAGE_ROWS = 500;
+/** One row's cells: the series, x and y, each in both forms. */
+type PointRow = { readonly series: FormattedText; readonly x: FormattedText; readonly y: FormattedText };
 
-/** The words a twin cell shows and speaks. */
-function Twin({ text }: { readonly text: FormattedText }): ReactNode {
-  if (text.text === text.spoken) return text.text;
-  return (
-    <>
-      <span aria-hidden="true">{text.text}</span>
-      <span className="sr-only">{text.spoken}</span>
-    </>
-  );
+/** The rows of one page, from walk place `from` up to `to`, in their formats. */
+function pageRows(
+  context: Pick<ScatterRootContextValue, "model" | "config" | "locale" | "xFormat" | "valueFormat">,
+  from: number,
+  to: number
+): PointRow[] {
+  const { model } = context;
+  return Array.from({ length: to - from }, (_, offset) => {
+    const { key, x, y } = pointOf(model, model.order[from + offset] ?? 0);
+    return {
+      series: scatterSeriesLabel(context, key),
+      x: xValueText(context, x, "full"),
+      y: yValueText(context, key, y, "full"),
+    };
+  });
 }
 
 /**
@@ -64,26 +63,23 @@ export function ScatterChartTable({
   style,
 }: ScatterChartTableProps): ReactElement {
   const context = useScatterRoot("ScatterChart.Table");
-  const { model, locale, id, store } = context;
+  const { model, config, locale, xFormat, valueFormat, id, store } = context;
   const strings = CHART_STRINGS[locale];
-  const tableStrings = useLocalizedStrings(dataTableStrings);
-  const [shown, setShown] = useState(false);
+  const disclosure = useTableDisclosure();
   const [page, setPage] = useState(0);
-  const table = useRef<HTMLTableElement>(null);
-  const focusTable = useRef(false);
-  useEffect(() => {
-    if (!focusTable.current) return;
-    focusTable.current = false;
-    table.current?.focus();
-  }, [shown]);
-  if (model.empty) return <></>;
   const pages = Math.max(1, Math.ceil(model.count / PAGE_ROWS));
   // A data update that drops pages clamps to the last one.
   const index = Math.min(page, pages - 1);
   const from = index * PAGE_ROWS;
   const to = Math.min(model.count, from + PAGE_ROWS);
+  // The shown page's rows format once per page, data, format or locale change, so a render for
+  // anything else, such as a live update's tick while the table is collapsed, formats none.
+  const rows = useMemo(
+    () => pageRows({ model, config, locale, xFormat, valueFormat }, from, to),
+    [model, config, locale, xFormat, valueFormat, from, to]
+  );
+  if (model.empty) return <></>;
   const names = axisNames(context);
-  const status = pageStatus(index, { kind: "known", pageCount: pages });
   const range = (start: number, end: number) => strings.rowRange(String(start + 1), String(end));
   const go = (next: number): void => {
     if (next < 0 || next >= pages || next === index) return;
@@ -97,100 +93,45 @@ export function ScatterChartTable({
       )
     );
   };
-  const hiddenClass = shown ? undefined : cn("sr-only");
-  const controlTab = shown ? undefined : -1;
-  const moves = [
-    { key: "first", label: "goToFirstPage", Icon: CaretDoubleLeft, target: 0, enabled: status.canPrevious },
-    {
-      key: "previous",
-      label: "goToPreviousPage",
-      Icon: CaretLeft,
-      target: index - 1,
-      enabled: status.canPrevious,
-    },
-    { key: "next", label: "goToNextPage", Icon: CaretRight, target: index + 1, enabled: status.canNext },
-    {
-      key: "last",
-      label: "goToLastPage",
-      Icon: CaretDoubleRight,
-      target: pages - 1,
-      enabled: status.canNext,
-    },
-  ] as const;
-  const rows = Array.from({ length: to - from }, (_, offset) => model.order[from + offset] ?? 0);
-  const tableId = `${id}-rows`;
   return (
-    <div data-slot="chart-table" className={className} style={style}>
-      <Button
-        data-slot="chart-table-toggle"
-        variant="outline"
-        size="xs"
-        aria-controls={tableId}
-        onClick={() => {
-          focusTable.current = !shown;
-          setShown(!shown);
-        }}>
-        {shown ? (hideLabel ?? strings.hideTable) : (showLabel ?? strings.showTable)}
-      </Button>
-      {/* Shown, the table takes a Tab stop, so a keyboard can scroll a table wider than its box. */}
-      <Table.Root
-        id={tableId}
-        ref={table}
-        tabIndex={shown ? 0 : -1}
-        data-slot="chart-table-content"
-        className={hiddenClass}>
-        <Table.Caption>
-          {caption ?? [context.name, countPoints(locale, model.count)].filter(Boolean).join(", ")}
-        </Table.Caption>
-        <Table.Header>
-          <Table.Row>
-            <Table.Head scope="col">{strings.seriesHeader}</Table.Head>
-            <Table.Head scope="col">{names.x}</Table.Head>
-            <Table.Head scope="col">{names.y}</Table.Head>
-          </Table.Row>
-        </Table.Header>
-        <Table.Body>
-          {rows.map((point) => {
-            const { key, x, y } = pointOf(model, point);
-            return (
-              <Table.Row key={point}>
-                <Table.Head scope="row">
-                  <Twin text={scatterSeriesLabel(context, key)} />
-                </Table.Head>
-                <Table.Cell>
-                  <Twin text={xValueText(context, x, "full")} />
-                </Table.Cell>
-                <Table.Cell>
-                  <Twin text={yValueText(context, key, y, "full")} />
-                </Table.Cell>
-              </Table.Row>
-            );
-          })}
-        </Table.Body>
-      </Table.Root>
-      {pages > 1 ? (
-        <div data-slot="chart-table-pagination" className={hiddenClass}>
-          {moves.map(({ key, label, Icon, target, enabled }) => (
-            <Fragment key={key}>
-              {key === "next" ? (
-                <span>{strings.pageStatus(String(index + 1), String(pages), range(from, to))}</span>
-              ) : null}
-              <Button
-                variant="outline"
-                size="icon-xs"
-                aria-label={tableStrings.format(label)}
-                tabIndex={controlTab}
-                disabled={!enabled}
-                onClick={() => {
-                  go(target);
-                }}>
-                <Icon aria-hidden="true" />
-              </Button>
-            </Fragment>
-          ))}
-        </div>
-      ) : null}
-    </div>
+    <ChartTableShell
+      disclosure={disclosure}
+      tableId={`${id}-rows`}
+      showLabel={showLabel ?? strings.showTable}
+      hideLabel={hideLabel ?? strings.hideTable}
+      className={className}
+      style={style}
+      caption={
+        caption ?? [context.name, countOf(locale, model.count, strings.points)].filter(Boolean).join(", ")
+      }
+      head={
+        <>
+          <Table.Head scope="col">{strings.seriesHeader}</Table.Head>
+          <Table.Head scope="col">{names.x}</Table.Head>
+          <Table.Head scope="col">{names.y}</Table.Head>
+        </>
+      }
+      pages={{
+        index,
+        count: pages,
+        status: strings.pageStatus(String(index + 1), String(pages), range(from, to)),
+        go,
+      }}>
+      {rows.map((row, offset) => (
+        // Rows key by their place on the page, so a page or data change updates them in place.
+        <Table.Row key={offset}>
+          <Table.Head scope="row">
+            <Twin text={row.series} />
+          </Table.Head>
+          <Table.Cell>
+            <Twin text={row.x} />
+          </Table.Cell>
+          <Table.Cell>
+            <Twin text={row.y} />
+          </Table.Cell>
+        </Table.Row>
+      ))}
+    </ChartTableShell>
   );
 }
 

@@ -7,7 +7,9 @@ import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
 
 import type { ChartDomProps } from "./chart-types";
-import { assertScatterKey, scatterPaint, useScatterRoot } from "./scatter-chart-context";
+import { assertKnownKey } from "./layout/errors";
+import { scatterPaint, useScatterRoot } from "./scatter-chart-context";
+import type { ScatterMark } from "./scatter-chart-context";
 import { scatterSeriesLabel } from "./scatter-chart-text";
 
 /**
@@ -57,9 +59,35 @@ export function ScatterChartLegend({
   });
 }
 
+/**
+ * A series' swatch in its paint, as decoration: a dot for points, or a short line for a series a
+ * Line draws alone, in the quiet, dashed or flowing look its mark draws in.
+ *
+ * @param props - The paint, the kind of mark the series draws and its look.
+ */
+export function SeriesSwatch({
+  paint,
+  kind = "points",
+  look = "default",
+}: {
+  readonly paint: string;
+  readonly kind?: ScatterMark["kind"] | undefined;
+  readonly look?: ScatterMark["variant"] | undefined;
+}): ReactElement {
+  return (
+    <span
+      data-slot="chart-swatch"
+      data-variant={kind === "line" ? "line" : "circle"}
+      data-look={look === "default" ? undefined : look}
+      aria-hidden="true"
+      style={{ "--chart-swatch-paint": paint }}
+    />
+  );
+}
+
 /** The server and a hydrating legend read no registered mark, so they draw a dot. */
-function noMark(): string {
-  return "points default";
+function noMark(): undefined {
+  return undefined;
 }
 
 /**
@@ -77,17 +105,10 @@ export function ScatterChartLegendItem({
   ...props
 }: ScatterChartLegendItemProps): ReactElement {
   const context = useScatterRoot("ScatterChart.LegendItem");
-  assertScatterKey("ScatterChart.LegendItem", context.config, dataKey);
+  assertKnownKey("ScatterChart.LegendItem", context.config, dataKey);
   const { marks } = context;
-  const look = useSyncExternalStore(
-    marks.subscribe,
-    () => {
-      const mark = marks.of(dataKey);
-      return mark === undefined ? noMark() : `${mark.kind} ${mark.variant}`;
-    },
-    noMark
-  );
-  const [kind, variant] = look.split(" ");
+  // A registration keeps its mark object, so the snapshot changes only when the drawn mark does.
+  const mark = useSyncExternalStore(marks.subscribe, () => marks.of(dataKey), noMark);
   const index = context.model.series.findIndex((series) => series.key === dataKey);
   return useRender({
     defaultTagName: "li",
@@ -100,12 +121,10 @@ export function ScatterChartLegendItem({
           className,
           children: children ?? (
             <>
-              <span
-                data-slot="chart-swatch"
-                data-variant={kind === "line" ? "line" : "circle"}
-                data-look={variant === "default" ? undefined : variant}
-                aria-hidden="true"
-                style={{ "--chart-swatch-paint": scatterPaint(context.config, dataKey) }}
+              <SeriesSwatch
+                paint={scatterPaint(context.config, dataKey)}
+                kind={mark?.kind}
+                look={mark?.variant}
               />
               <span data-slot="chart-series-label">{scatterSeriesLabel(context, dataKey).text}</span>
             </>

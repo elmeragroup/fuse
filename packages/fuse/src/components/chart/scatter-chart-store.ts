@@ -57,8 +57,8 @@ export type TrackedPointer = { readonly x: number; readonly y: number; readonly 
 /**
  * The store one scatter Root owns. Every write is a named transition that reads the snapshot at
  * write time, carries it into the caller's model first and sets only the fields it owns, so no
- * caller spreads a snapshot it read earlier or holds a point id across a model change. SPEC.md's
- * transition table names each transition's fields.
+ * caller spreads a snapshot it read earlier or holds a point id across a model change. Each
+ * transition below says what it changes.
  */
 export type ScatterStore = {
   /** The state the store started with, which the server and a hydrating part read. */
