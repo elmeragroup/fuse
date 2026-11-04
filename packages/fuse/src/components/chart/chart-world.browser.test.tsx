@@ -320,6 +320,36 @@ describe("one world of marks", () => {
               { kind: "reorder" },
             ],
           ],
+          // A key step onto the last of 101 path-form columns while an update tweens them toward
+          // readings of 0: fast-check's seed -1936575091, shrunk.
+          [
+            1,
+            {
+              orientation: "vertical",
+              readings: [0, 0, 0, 0, 0],
+              include: [-10, 10],
+              panelled: false,
+              line: { axis: "value", at: 10.015 },
+              area: { axis: "value", from: 0.001, to: 0.005 },
+            },
+            [
+              { kind: "swap" },
+              {
+                kind: "update",
+                readings: Array.from({ length: 101 }, (_, index) =>
+                  index === 100
+                    ? -1
+                    : [5, 6, 14, 19, 30, 32, 36, 47, 49, 55, 60, 68, 70, 71, 75, 77, 81, 85, 87, 94].includes(
+                          index
+                        )
+                      ? 0.01
+                      : 0
+                ),
+              },
+              { kind: "activate", key: "{End}" },
+              { kind: "wait", ms: 16 },
+            ],
+          ],
           // A decimated world: 2,400 categories whose value-only updates tween the M4 vertices, one
           // with a run of missing readings that breaks the line and draws its ticks.
           [
