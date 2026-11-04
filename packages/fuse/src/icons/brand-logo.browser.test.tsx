@@ -60,15 +60,15 @@ describe("BrandLogo", () => {
     }
   });
 
-  it("paints every full logo's lettering in the inherited text colour and its mark in exactly the brand's colours", () => {
+  it("paints every full logo's lettering in the inherited text colour and its mark, beside the lettering or alone, in exactly the brand's colours", () => {
     // Oracle, measured by hand from the brand artwork: the fraction of the logo's width where the
     // lettering starts (the mark sits left of it), and every colour the mark paints, with a
     // gradient counted as its stop colours. TrøndelagKraft's lamp has a text-coloured ring and base
-    // around its yellow light. Fjordkraft's mark is one ink with its lettering.
+    // around its yellow light. Fjordkraft's face paints the text colour like its lettering.
     const text = "rgb(1, 2, 3)";
     const artwork = {
-      fkas: { letteringFrom: 0, markInks: [] },
-      fkab: { letteringFrom: 0, markInks: [] },
+      fkas: { letteringFrom: 0.2, markInks: [text] },
+      fkab: { letteringFrom: 0.2, markInks: [text] },
       tkas: { letteringFrom: 0.14, markInks: [text, "rgb(252, 227, 0)"] },
       guen: { letteringFrom: 0.3, markInks: ["rgb(236, 100, 4)", "rgb(246, 179, 87)"] },
       fkse: { letteringFrom: 0.15, markInks: ["rgb(45, 192, 208)"] },
@@ -85,44 +85,50 @@ describe("BrandLogo", () => {
     } satisfies Record<Exclude<BrandCode, "elma">, { letteringFrom: number; markInks: readonly string[] }>;
     for (const brand of DRAWN_BRANDS) {
       const { letteringFrom, markInks } = artwork[brand];
-      const { host, unmount } = render(
-        <div style={{ color: text, width: 1000 }}>
-          <style>{"svg { display: block; width: 1000px; height: auto; }"}</style>
-          <BrandLogo brand={brand} />
-        </div>
-      );
-      const svg = host.querySelector("svg");
-      if (svg === null) {
-        throw new Error(`expected ${brand} to draw an SVG`);
+      for (const variant of ["full", "mark"] as const) {
+        const { host, unmount } = render(
+          <div style={{ color: text, width: 1000 }}>
+            <style>{"svg { display: block; width: 1000px; height: auto; }"}</style>
+            <BrandLogo brand={brand} variant={variant} />
+          </div>
+        );
+        const svg = host.querySelector("svg");
+        if (svg === null) {
+          throw new Error(`expected ${brand} to draw an SVG`);
+        }
+        const box = svg.getBoundingClientRect();
+        // A mark alone has no lettering, so every shape it paints is mark.
+        const from = variant === "full" ? letteringFrom : Number.POSITIVE_INFINITY;
+        const lettering: string[] = [];
+        const mark = new Set<string>();
+        for (const part of svg.querySelectorAll("path, polygon, rect")) {
+          if (part.closest("defs, clipPath, mask") !== null) continue;
+          const rect = part.getBoundingClientRect();
+          // Empty geometry paints nothing, whatever its fill says.
+          if (rect.width === 0 || rect.height === 0) continue;
+          const fill = getComputedStyle(part).fill;
+          if ((rect.left - box.left) / box.width >= from) {
+            lettering.push(fill);
+            continue;
+          }
+          const gradient = /^url\("#(?<id>[^"]+)"\)$/u.exec(fill)?.groups?.id;
+          const stops = gradient === undefined ? [] : [...svg.querySelectorAll(`[id="${gradient}"] stop`)];
+          if (gradient !== undefined && stops.length === 0) {
+            throw new Error(`${brand}: ${fill} names no gradient in the logo`);
+          }
+          for (const ink of gradient === undefined
+            ? [fill]
+            : stops.map((stop) => getComputedStyle(stop).stopColor)) {
+            mark.add(ink);
+          }
+        }
+        if (variant === "full") {
+          expect(lettering.length, brand).toBeGreaterThan(0);
+          expect(new Set(lettering), brand).toEqual(new Set([text]));
+        }
+        expect(mark, `${brand} ${variant}`).toEqual(new Set(markInks));
+        unmount();
       }
-      const box = svg.getBoundingClientRect();
-      const lettering: string[] = [];
-      const mark = new Set<string>();
-      for (const part of svg.querySelectorAll("path, polygon, rect")) {
-        if (part.closest("defs, clipPath") !== null) continue;
-        const rect = part.getBoundingClientRect();
-        // Empty geometry paints nothing, whatever its fill says.
-        if (rect.width === 0 || rect.height === 0) continue;
-        const fill = getComputedStyle(part).fill;
-        if ((rect.left - box.left) / box.width >= letteringFrom) {
-          lettering.push(fill);
-          continue;
-        }
-        const gradient = /^url\("#(?<id>[^"]+)"\)$/u.exec(fill)?.groups?.id;
-        const stops = gradient === undefined ? [] : [...svg.querySelectorAll(`[id="${gradient}"] stop`)];
-        if (gradient !== undefined && stops.length === 0) {
-          throw new Error(`${brand}: ${fill} names no gradient in the logo`);
-        }
-        for (const ink of gradient === undefined
-          ? [fill]
-          : stops.map((stop) => getComputedStyle(stop).stopColor)) {
-          mark.add(ink);
-        }
-      }
-      expect(lettering.length, brand).toBeGreaterThan(0);
-      expect(new Set(lettering), brand).toEqual(new Set([text]));
-      expect(mark, brand).toEqual(new Set(markInks));
-      unmount();
     }
   });
 
