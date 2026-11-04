@@ -9,6 +9,7 @@ import {
   jobMatrixEntries,
   jobSteps,
   readWorkflow,
+  requiredCacheStep,
   requiredJobSteps,
   requiredRunStep,
   requiredUsesStep,
@@ -50,9 +51,8 @@ describe("merge workflow", () => {
         `${prefix}\${{ github.sha }}-\${{ github.run_id }}-\${{ github.run_attempt }}`
       );
 
-      const restore = requiredUsesStep(steps, "actions/cache/restore");
+      const restore = requiredCacheStep(steps, "actions/cache/restore", ".turbo/cache");
       const restoreWith = asRecord(restore.with, `${job} restore with`);
-      expect(restoreWith.path).toBe(".turbo/cache");
       expect(restoreWith.key).toBe("${{ env.TURBO_CACHE_KEY }}");
       expect(
         resolveMatrixExpressions(asString(restoreWith["restore-keys"], `${job} restore keys`), entry)
@@ -67,9 +67,8 @@ describe("merge workflow", () => {
       const prune = requiredRunStep(steps, "pnpm turbo-cache:prune");
       expect(prune.if).toBe(`\${{ always() && steps.${asString(gate.id, "gate id")}.outcome != 'skipped' }}`);
 
-      const save = requiredUsesStep(steps, "actions/cache/save");
+      const save = requiredCacheStep(steps, "actions/cache/save", ".turbo/cache");
       const saveWith = asRecord(save.with, `${job} save with`);
-      expect(saveWith.path).toBe(".turbo/cache");
       expect(saveWith.key).toBe("${{ env.TURBO_CACHE_KEY }}");
       expect(save.if).toBe(
         `\${{ always() && steps.${asString(prune.id, "prune id")}.outcome == 'success' }}`
@@ -96,31 +95,98 @@ describe("merge workflow", () => {
     expect(asString(version.run, "version run")).toContain(
       "pnpm --filter @elmeragroup/fuse exec playwright --version"
     );
-    const cache = requiredUsesStep(browser, "actions/cache");
-    expect(asRecord(cache.with, "playwright cache inputs")).toEqual({
-      path: "~/.cache/ms-playwright",
-      key: `playwright-chromium-firefox-webkit-\${{ runner.os }}-\${{ steps.${asString(version.id, "version id")}.outputs.version }}`,
-    });
-    const hit = `steps.${asString(cache.id, "cache id")}.outputs.cache-hit`;
-    const install = requiredRunStep(
-      browser,
-      "pnpm --filter @elmeragroup/fuse exec playwright install --with-deps"
+    const cache = requiredCacheStep(browser, "actions/cache", "~/.cache/ms-playwright");
+    expect(asRecord(cache.with, "playwright cache inputs").key).toBe(
+      `playwright-chromium-firefox-webkit-\${{ runner.os }}-\${{ steps.${asString(version.id, "version id")}.outputs.version }}`
     );
+    // Only a browser-cache miss downloads browsers, and it leaves their system packages to the
+    // deps step, which every leg runs.
+    const install = requiredRunStep(browser, "pnpm --filter @elmeragroup/fuse exec playwright install ");
     expect(install.run).toBe(
-      "pnpm --filter @elmeragroup/fuse exec playwright install --with-deps chromium firefox webkit"
+      "pnpm --filter @elmeragroup/fuse exec playwright install chromium firefox webkit"
     );
-    expect(install.if).toBe(`${hit} != 'true'`);
-    const deps = requiredRunStep(browser, "pnpm --filter @elmeragroup/fuse exec playwright install-deps");
-    expect(deps.run).toBe(
-      "pnpm --filter @elmeragroup/fuse exec playwright install-deps chromium firefox webkit"
-    );
-    expect(deps.if).toBe(`${hit} == 'true'`);
+    expect(install.if).toBe(`steps.${asString(cache.id, "cache id")}.outputs.cache-hit != 'true'`);
+    const deps = requiredRunStep(browser, "bash .github/scripts/install-playwright-deps.sh");
     const gate = requiredRunStep(browser, "pnpm exec turbo run ");
-    const order = [version, cache, install, gate].map((step) => browser.indexOf(step));
+    const order = [version, cache, install, deps, gate].map((step) => browser.indexOf(step));
     expect(order).toEqual([...order].sort((a, b) => a - b));
-    // A deps step above the cache reads an unset cache-hit and never runs on a hit.
-    expect(browser.indexOf(cache)).toBeLessThan(browser.indexOf(deps));
+  });
+
+  it("caches the browsers' system packages per runner image and Playwright version", () => {
+    const browser = requiredJobSteps(workflow, "browser");
+    const job = asRecord(asRecord(workflow.jobs, "merge jobs").browser, "browser job");
+    const version = browser.find((step) => step.id === "playwright");
+    if (version === undefined) throw new Error("browser job does not resolve the Playwright version");
+    const image = browser.find((step) => step.id === "runner-image");
+    if (image === undefined) throw new Error("browser job does not resolve the runner image");
+    const debs = "${{ runner.temp }}/playwright-debs";
+
+    // A cached set only installs onto the dpkg state it was resolved against, and only lists
+    // the packages of the Playwright version that asked for them.
+    const restore = requiredCacheStep(browser, "actions/cache/restore", debs);
+    expect(asRecord(restore.with, "deps restore inputs").key).toBe(
+      `playwright-debs-\${{ steps.${asString(image.id, "image id")}.outputs.image }}-\${{ steps.${asString(version.id, "version id")}.outputs.version }}`
+    );
+    expect(restore.if).toBeUndefined();
+    const restored = `steps.${asString(restore.id, "deps restore id")}.outputs`;
+
+    // Every leg installs, from the restored set on a hit, so the step has no condition. Its
+    // own limit stays under the job's, so a stalled mirror cannot spend the leg's budget.
+    const deps = requiredRunStep(browser, "bash .github/scripts/install-playwright-deps.sh");
+    // The whole command, so nothing appended can swallow the script's failure.
+    expect(deps.run).toBe("bash .github/scripts/install-playwright-deps.sh");
+    expect(deps.if).toBeUndefined();
+    expect(deps.env).toEqual({ CACHE_HIT: `\${{ ${restored}.cache-hit }}`, DEBS: debs });
+    expect(deps["timeout-minutes"]).toBeLessThan(job["timeout-minutes"]);
+
+    // The save never overwrites an existing entry and saves only a set the script collected.
+    const save = requiredCacheStep(browser, "actions/cache/save", debs);
+    expect(save.if).toBe(
+      `${restored}.cache-hit != 'true' && steps.${asString(deps.id, "deps id")}.outputs.save == 'true'`
+    );
+    expect(asRecord(save.with, "deps save inputs").key).toBe(`\${{ ${restored}.cache-primary-key }}`);
+
+    const browsers = requiredCacheStep(browser, "actions/cache", "~/.cache/ms-playwright");
+    const gate = requiredRunStep(browser, "pnpm exec turbo run ");
+    const order = [version, image, restore, deps, save].map((step) => browser.indexOf(step));
+    expect(order).toEqual([...order].sort((a, b) => a - b));
+    expect(browser.indexOf(browsers)).toBeLessThan(browser.indexOf(deps));
     expect(browser.indexOf(deps)).toBeLessThan(browser.indexOf(gate));
+  });
+
+  it.each([
+    {
+      name: "names the runner image from its environment",
+      env: { ImageOS: "ubuntu26", ImageVersion: "20261101.1.0" },
+      status: 0,
+      outputs: ["image=ubuntu26-20261101.1.0"],
+    },
+    {
+      name: "fails rather than key the cache without an image",
+      env: { ImageOS: "ubuntu26" },
+      status: 1,
+      outputs: [],
+    },
+  ])("$name", ({ env, status, outputs }) => {
+    const step = jobSteps(workflow, "browser").find((candidate) => candidate.id === "runner-image");
+    if (step === undefined) throw new Error("browser job does not resolve the runner image");
+    const scratch = mkdtempSync(join(tmpdir(), "elmera-merge-workflow-"));
+    const output = join(scratch, "output");
+    try {
+      // Only the case's variables reach the step, so the runner's own image cannot leak in.
+      const result = spawnSync("bash", ["-e", "-c", asString(step.run, "runner image run")], {
+        encoding: "utf8",
+        timeout: 5_000,
+        env: { PATH: "/usr/bin:/bin", ...env, GITHUB_OUTPUT: output },
+      });
+      expect(result.error).toBeUndefined();
+      expect(result.status, result.stderr).toBe(status);
+      expect(existsSync(output) ? readFileSync(output, "utf8").split("\n").filter(Boolean) : []).toEqual(
+        outputs
+      );
+    } finally {
+      rmSync(scratch, { recursive: true, force: true });
+    }
   });
 
   it("validates the stable release PR in the merge checks", () => {

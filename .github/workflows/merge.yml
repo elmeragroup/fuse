@@ -152,9 +152,8 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       # The browser download is keyed on the Playwright version pnpm resolved, so a catalog bump
-      # misses once and every other run restores it. System packages are not cached; a hit
-      # still installs them. An unparsable version fails here rather than becoming a constant key
-      # that restores stale browsers after every bump.
+      # misses once and every other run restores it. An unparsable version fails here rather than
+      # becoming a constant key that restores stale browsers after every bump.
       - name: Resolve Playwright version
         id: playwright
         run: |
@@ -170,14 +169,48 @@ jobs:
           key: playwright-chromium-firefox-webkit-${{ runner.os }}-${{ steps.playwright.outputs.version }}
 
       # The `browser-engines` and `browser-reduced-motion` projects and the docs time-zone
-      # hydration suite run in all three.
+      # hydration suite run in all three. Their system packages install in their own step, so
+      # either browser cache result shares the package cache.
       - name: Install Playwright browsers
         if: steps.playwright-cache.outputs.cache-hit != 'true'
-        run: pnpm --filter @elmeragroup/fuse exec playwright install --with-deps chromium firefox webkit
+        run: pnpm --filter @elmeragroup/fuse exec playwright install chromium firefox webkit
 
+      # The system packages' .debs are cached too: fetching them from the Ubuntu mirror has
+      # stalled legs for 40 minutes. A set only installs onto the dpkg state it was resolved
+      # against, so the key names the runner image as well as the Playwright version that lists
+      # the packages. The image variables come from the runner's environment, which the `env`
+      # context does not include.
+      - name: Resolve runner image
+        id: runner-image
+        run: |
+          if [ -z "${ImageOS:-}" ] || [ -z "${ImageVersion:-}" ]; then echo "::error::ImageOS or ImageVersion is unset"; exit 1; fi
+          echo "image=$ImageOS-$ImageVersion" >> "$GITHUB_OUTPUT"
+
+      - name: Restore Playwright system packages
+        id: deps-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/playwright-debs
+          key: playwright-debs-${{ steps.runner-image.outputs.image }}-${{ steps.playwright.outputs.version }}
+
+      # The script bounds each mirror download itself; this limit is the backstop for the step.
       - name: Install Playwright system dependencies
-        if: steps.playwright-cache.outputs.cache-hit == 'true'
-        run: pnpm --filter @elmeragroup/fuse exec playwright install-deps chromium firefox webkit
+        id: playwright-deps
+        timeout-minutes: 15
+        env:
+          CACHE_HIT: ${{ steps.deps-cache.outputs.cache-hit }}
+          DEBS: ${{ runner.temp }}/playwright-debs
+        run: bash .github/scripts/install-playwright-deps.sh
+
+      # Every leg that missed saves the same key; one wins and the others log a warning. Any ref
+      # saves, so a branch run restores its own entry. A PR falls back to main's, so it misses
+      # only while main has none for its image.
+      - name: Save Playwright system packages
+        if: steps.deps-cache.outputs.cache-hit != 'true' && steps.playwright-deps.outputs.save == 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/playwright-debs
+          key: ${{ steps.deps-cache.outputs.cache-primary-key }}
 
       # Turbo's local cache persists per job, so unchanged packages replay their cached
       # results. A PR restores from its own branch first and falls back to main's. Every run on

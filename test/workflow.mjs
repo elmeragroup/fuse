@@ -140,6 +140,25 @@ export function requiredUsesStep(steps, action) {
 }
 
 /**
+ * Finds the single step that runs a cache `action` for `path`. A job can cache several things,
+ * so a cache is known by what it stores; a second step caching the same path fails here as a
+ * duplicate.
+ * @param {Record<string, unknown>[]} steps
+ * @param {string} action The action path without a ref, such as `actions/cache/restore`.
+ * @param {string} path The cached path exactly as the step's `with.path` spells it.
+ */
+export function requiredCacheStep(steps, action, path) {
+  const matches = steps.filter(
+    (step) =>
+      step.uses !== undefined &&
+      asString(step.uses, "step uses").startsWith(`${action}@`) &&
+      asRecord(step.with, `${action} inputs`).path === path
+  );
+  expect(matches, `expected one ${action} step for ${path}`).toHaveLength(1);
+  return matches[0];
+}
+
+/**
  * Local composite actions execute steps with the caller's token permissions, so the same
  * pin and shell/token checks that inspect workflows must inspect their steps too.
  */
