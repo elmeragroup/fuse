@@ -9,8 +9,9 @@ import { partsCache, writeAttribute, writeAttributes, writeStyle } from "./chart
 import type { ChartLabels } from "./chart-labels";
 import type { MarkValues } from "./chart-motion";
 import { placementOf, useCommitMotion, useFirstDraw, useMotionMark } from "./chart-motion-mark";
-import { useChartFrame, usePlotRead } from "./chart-plot";
+import { useChartFrame } from "./chart-plot";
 import type { ChartFrame } from "./chart-plot";
+import { usePlotRead } from "./chart-plot-measure";
 import { sameShallow, useSteady } from "./chart-steady";
 import { slotLabel } from "./chart-text";
 import type { ChartLayerProps, ChartTone, ChartX, ValueFormat, XFormat } from "./chart-types";

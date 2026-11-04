@@ -29,6 +29,7 @@ describe("pages that share the chart entry", () => {
     ["pie-chart", "pie-chart-root.tsx", ["PieChart"]],
     ["radial-chart", "radial-chart-root.tsx", ["RadialChart"]],
     ["radar-chart", "radar-chart-root.tsx", ["RadarChart"]],
+    ["scatter-chart", "scatter-chart-root.tsx", ["ScatterChart"]],
     ["sparkline", "sparkline.tsx", ["Sparkline"]],
   ])("resolve %s to @elmeragroup/fuse/chart and %s", (slug, source, exportNames) => {
     const paths = resolveComponentPaths(slug);
@@ -129,7 +130,15 @@ describe("the generated chart references", () => {
 
   it("names the chart stylesheet on every chart endpoint and on no other page", () => {
     const line = '- Stylesheet: `import "@elmeragroup/fuse/chart.css";`, once, beside Fuse\'s own';
-    for (const slug of ["chart", "bar-chart", "pie-chart", "radial-chart", "radar-chart", "sparkline"]) {
+    for (const slug of [
+      "chart",
+      "bar-chart",
+      "pie-chart",
+      "radial-chart",
+      "radar-chart",
+      "scatter-chart",
+      "sparkline",
+    ]) {
       expect(endpoint(slug), slug).toContain(line);
     }
     expect(endpoint("badge")).not.toContain("- Stylesheet:");

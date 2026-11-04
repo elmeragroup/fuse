@@ -717,6 +717,32 @@ export type ChartRadarFieldCheck<TConfig> = string extends keyof TConfig
     };
 
 /**
+ * Scatter config takes no field that needs slots or bars, and its colours are single roles: a point
+ * has no category axis for a role list to run along, and a scale would colour by y, which the y
+ * axis already shows. A widened config, whose keys are plain strings, passes.
+ *
+ * @template TConfig - The config, with its literal keys.
+ * @beta
+ */
+export type ChartScatterFieldCheck<TConfig> = string extends keyof TConfig
+  ? unknown
+  : {
+      readonly [K in keyof TConfig]: TConfig[K] extends
+        | { stack: unknown }
+        | { projectedFrom: unknown }
+        | { interval: unknown }
+        | { missing: unknown }
+        | { qualityKey: unknown }
+        | { barVariant: unknown }
+        ? {
+            readonly "ScatterChart config takes no stack, projectedFrom, interval, missing, qualityKey or barVariant": never;
+          }
+        : TConfig[K] extends { color: ChartRole }
+          ? unknown
+          : { readonly "ScatterChart colours are single roles, never a scale or a role list": never };
+    };
+
+/**
  * A literal category union needs one entry per category and no other key. A `string` column needs
  * neither, and neither does a widened config, which `unknown-category` covers at render.
  *

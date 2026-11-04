@@ -1,0 +1,256 @@
+"use client";
+
+import { useLayoutEffect, useMemo, useRef } from "react";
+import type { ReactElement } from "react";
+
+import { writeAttribute, writeStyle } from "./chart-dom";
+import { useIntro } from "./chart-store";
+import type { ChartLayerProps } from "./chart-types";
+import { dotCentre, dotDiameter, linePath, pointsPath } from "./layout/scatter-frame";
+import type { ScatterCurve, ScatterFrame } from "./layout/scatter-frame";
+import { pointOf } from "./layout/scatter-model";
+import {
+  assertScatterKey,
+  scatterPaint,
+  useScatterFrame,
+  useScatterRoot,
+  walkOf,
+} from "./scatter-chart-context";
+import type { ScatterRootContextValue } from "./scatter-chart-context";
+
+/**
+ * Props for `ScatterChart.Points`, a closed part.
+ *
+ * @beta
+ */
+export type ScatterChartPointsProps = ChartLayerProps & {
+  /** The series the points draw. An unknown key throws `unknown-key`. */
+  dataKey: string;
+  /** The dots' diameter: "sm" is 5 px, "md" 8 px and "lg" 11 px. "md" by default. */
+  size?: "sm" | "md" | "lg";
+  /** The dots' look. "quiet" draws them pale, for a reference series such as last year. */
+  variant?: "default" | "quiet";
+};
+
+/**
+ * Props for `ScatterChart.Line`, a closed part.
+ *
+ * @beta
+ */
+export type ScatterChartLineProps = ChartLayerProps & {
+  /** The series the line joins. An unknown key throws `unknown-key`. */
+  dataKey: string;
+  /**
+   * The curve through the points, in x order, ties by y. "linear" by default, which draws a fitted
+   * line through its points as straight segments. "step-after" holds each y until the next x, as a
+   * tariff step does.
+   */
+  curve?: ScatterCurve;
+  /**
+   * The line's look. "default" by default. "dashed" dashes the whole line, "flowing" runs its
+   * dashes along it, which reduced motion stops, and "quiet" draws a thin, faint line.
+   */
+  variant?: "default" | "dashed" | "flowing" | "quiet";
+};
+
+/**
+ * Props for `ScatterChart.ActiveDot`, a closed part.
+ *
+ * @beta
+ */
+export type ScatterChartActiveDotProps = ChartLayerProps & {
+  /**
+   * The mark on the active point. "ring" by default, a ring around the point in its series' colour.
+   * "dot" draws a filled dot inside a ring of the surface, for a series a Line draws alone.
+   */
+  variant?: "ring" | "dot";
+};
+
+/** Each size step's diameter in CSS pixels. */
+const POINT_SIZE = { sm: 5, md: 8, lg: 11 } as const;
+
+/** The gap between a point's edge and the active ring, in CSS pixels. */
+const RING_GAP = 3;
+
+/** The active dot's radius over a line's vertex, as Chart.ActiveDot draws it. */
+const VERTEX_RADIUS = 4;
+
+/** A series' paint and its place in config order, which the layer's style carries. */
+function seriesStyle(context: ScatterRootContextValue, key: string) {
+  const index = context.model.series.findIndex((series) => series.key === key);
+  return { paint: scatterPaint(context.config, key), index };
+}
+
+/**
+ * What a mark writes on `data-intro` for its life, by Chart's rule in `useIntro`: it matches the
+ * server while it hydrates, joins the entrance when it first draws while the entrance waits, and
+ * writes "none" when it first draws after the entrance started, as a series whose Suspense
+ * boundary hydrates late. A scatter mark never fades in, so it renders as an initial commit.
+ */
+function useScatterIntro(
+  context: ScatterRootContextValue,
+  frame: ScatterFrame | null
+): "fade" | "none" | undefined {
+  return useIntro(context.store, "initial", context.entrance, frame !== null);
+}
+
+/**
+ * One series' points, drawn as one path of round dots. A data update redraws the path in place, so
+ * 100 000 points stay one element per series, and the points sweep in with the entrance. The layer
+ * clips at the plot, past it by a dot's radius, so a point the domains glide toward stays inside
+ * the chart until they reach it.
+ *
+ * @beta
+ */
+export function ScatterChartPoints({
+  dataKey,
+  size = "md",
+  variant = "default",
+  className,
+  style,
+}: ScatterChartPointsProps): ReactElement {
+  const context = useScatterRoot("ScatterChart.Points");
+  assertScatterKey("ScatterChart.Points", context.config, dataKey);
+  const series = context.model.series.find((entry) => entry.key === dataKey);
+  const frame = useScatterFrame(context);
+  const box = frame?.box;
+  const diameter = box === undefined ? POINT_SIZE[size] : dotDiameter(box, POINT_SIZE[size]);
+  const { marks } = context;
+  useLayoutEffect(
+    () => marks.register(dataKey, { kind: "points", diameter, variant }),
+    [marks, dataKey, diameter, variant]
+  );
+  const path = useMemo(
+    () => (frame === null || series === undefined ? null : pointsPath(frame, series.xs, series.ys, diameter)),
+    [frame, series, diameter]
+  );
+  const intro = useScatterIntro(context, frame);
+  const { paint, index } = seriesStyle(context, dataKey);
+  return (
+    <svg
+      data-slot="chart-points"
+      data-series={index}
+      data-size={size}
+      data-variant={variant}
+      data-intro={intro}
+      aria-hidden="true"
+      className={className}
+      style={{
+        "--chart-series-paint": paint,
+        "--chart-series": index,
+        // The layer clips at the plot, past it by a dot's radius and its snap, so a dot on the
+        // domain's edge stays whole, and a dot a glide has not reached yet stays inside.
+        "--_bleed": `${String(diameter / 2 + 1)}px`,
+        ...style,
+      }}>
+      {path === null ? null : <path data-slot="chart-points-path" d={path} strokeWidth={diameter} />}
+    </svg>
+  );
+}
+
+/**
+ * One series' points joined in x order, ties by y, so a scatter chart also draws curves over a
+ * numeric x, such as a fitted normal line or a charging curve. Fuse fits nothing: pass the fitted
+ * points as their own series.
+ *
+ * @beta
+ */
+export function ScatterChartLine({
+  dataKey,
+  curve = "linear",
+  variant = "default",
+  className,
+  style,
+}: ScatterChartLineProps): ReactElement {
+  const context = useScatterRoot("ScatterChart.Line");
+  assertScatterKey("ScatterChart.Line", context.config, dataKey);
+  const series = context.model.series.find((entry) => entry.key === dataKey);
+  const frame = useScatterFrame(context);
+  const { marks } = context;
+  useLayoutEffect(() => marks.register(dataKey, { kind: "line", variant }), [marks, dataKey, variant]);
+  const path = useMemo(
+    () => (frame === null || series === undefined ? null : linePath(frame, series.xs, series.ys, curve)),
+    [frame, series, curve]
+  );
+  const intro = useScatterIntro(context, frame);
+  const { paint, index } = seriesStyle(context, dataKey);
+  return (
+    <svg
+      data-slot="chart-line-series"
+      data-series={index}
+      data-variant={variant}
+      data-intro={intro}
+      aria-hidden="true"
+      className={className}
+      style={{ "--chart-series-paint": paint, "--chart-series": index, ...style }}>
+      {path === null || path === "" ? null : <path data-slot="chart-line" data-part="solid" d={path} />}
+    </svg>
+  );
+}
+
+/**
+ * The mark on the active point, which follows the pointer and the keyboard outside React: a ring
+ * around a point, or a dot on a line's vertex. It shows while a point is active.
+ *
+ * @beta
+ */
+export function ScatterChartActiveDot({
+  variant = "ring",
+  className,
+  style,
+}: ScatterChartActiveDotProps): ReactElement {
+  const context = useScatterRoot("ScatterChart.ActiveDot");
+  const frame = useScatterFrame(context);
+  const layer = useRef<SVGSVGElement>(null);
+  const dot = useRef<SVGCircleElement>(null);
+  const { store, model, marks, config } = context;
+  useLayoutEffect(() => {
+    const paint = (): void => {
+      const svg = layer.current;
+      const circle = dot.current;
+      if (svg === null || circle === null) return;
+      const { active } = walkOf(store.get(), model);
+      if (frame === null || active === null || active >= model.count) {
+        writeAttribute(svg, "data-value", null);
+        return;
+      }
+      const point = pointOf(model, active);
+      const mark = marks.of(point.key);
+      const pointRadius = mark?.kind === "points" ? mark.diameter / 2 : 0;
+      const radius = variant === "ring" ? Math.max(pointRadius + RING_GAP, VERTEX_RADIUS) : VERTEX_RADIUS;
+      const centre = dotCentre(frame, point.x, point.y, mark?.kind === "points" ? mark.diameter : 0);
+      circle.setAttribute("cx", String(centre.x));
+      circle.setAttribute("cy", String(centre.y));
+      circle.setAttribute("r", String(radius));
+      writeAttribute(svg, "data-series", point.seriesIndex);
+      writeStyle(svg, "--chart-series", String(point.seriesIndex));
+      writeStyle(svg, "--chart-series-paint", scatterPaint(config, point.key));
+      // The layer clips at the plot, past it by the ring's radius, half its 2 px stroke and a pixel
+      // of snap.
+      writeStyle(svg, "--_bleed", `${String(radius + 2)}px`);
+      writeAttribute(svg, "data-value", "");
+    };
+    paint();
+    const leaveStore = store.subscribe(paint);
+    const leaveMarks = marks.subscribe(paint);
+    return () => {
+      leaveStore();
+      leaveMarks();
+    };
+  }, [store, model, marks, config, frame, variant]);
+  return (
+    <svg
+      ref={layer}
+      data-slot="chart-active-dot"
+      data-variant={variant}
+      aria-hidden="true"
+      className={className}
+      style={style}>
+      {frame === null ? null : <circle ref={dot} data-slot="chart-dot" r={0} />}
+    </svg>
+  );
+}
+
+Object.assign(ScatterChartPoints, { displayName: "ScatterChart.Points" });
+Object.assign(ScatterChartLine, { displayName: "ScatterChart.Line" });
+Object.assign(ScatterChartActiveDot, { displayName: "ScatterChart.ActiveDot" });

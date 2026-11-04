@@ -13,7 +13,13 @@ import type { RefObject } from "react";
 
 import { writeAttribute } from "./chart-dom";
 import type { ChartMotion } from "./chart-motion";
-import type { ChartStore } from "./chart-store";
+import type { EntrancePhase } from "./chart-store";
+
+/** What the entrance reads and moves on a Root's store: its phase alone. */
+export type EntranceStore = {
+  readonly get: () => { readonly phase: EntrancePhase };
+  readonly set: (patch: { readonly phase: EntrancePhase }) => void;
+};
 
 /** Each waiting plot's reveal, by plot element. */
 const reveals = new Map<Element, () => void>();
@@ -172,7 +178,7 @@ function isWipe(name: string): boolean {
  *   motion.
  */
 export function useEntrance(
-  store: ChartStore,
+  store: EntranceStore,
   motion: ChartMotion,
   root: RefObject<HTMLElement | null>,
   plot: RefObject<HTMLElement | null>,

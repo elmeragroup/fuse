@@ -1,0 +1,109 @@
+---
+lede: >
+  Preview. Points and curves over a numeric x axis.
+---
+
+import { ScatterChartBasic } from "./demos/scatter-chart-basic";
+import { ScatterChartCurves } from "./demos/scatter-chart-curves";
+import { ScatterChartLarge } from "./demos/scatter-chart-large";
+import { ScatterChartLive } from "./demos/scatter-chart-live";
+import { ScatterChartReferenceLines } from "./demos/scatter-chart-reference-lines";
+import { ScatterChartSignature } from "./demos/scatter-chart-signature";
+import { ScatterChartSizes } from "./demos/scatter-chart-sizes";
+
+import { componentMetadata } from "../../../../lib/component-page";
+
+export const metadata = componentMetadata("scatter-chart");
+
+<ComponentIntro slug="scatter-chart" />
+
+<Prose>
+
+The chart entry is a preview. Its names and props can change until Fuse's first stable release. `ScatterChart` plots a number against a number, such as weekly consumption against the week's mean temperature. Each row is one point: `xKey` and `yKey` name its two number columns, and `seriesKey` names the column that says which series it belongs to. Config is keyed by those series values. Repeated x values and repeated points are valid, and every one draws.
+
+</Prose>
+
+<Demo slug="scatter-chart" id="signature" title="Energy signature" file="scatter-chart-signature.tsx">
+  <ScatterChartSignature />
+</Demo>
+
+<Prose>
+
+This year's weeks draw as large dots, last year's as small pale ones, and the normal consumption as a line. Fuse fits nothing: the app computes the normal line and passes its points as a series of their own, which `ScatterChart.Line` joins. The `Tabell` view and the download read the same rows.
+
+</Prose>
+
+<Demo slug="scatter-chart" id="basic" title="Basic" file="scatter-chart-basic.tsx">
+  <ScatterChartBasic />
+</Demo>
+
+## Sizes and looks
+
+<Prose>
+
+`size` takes a named step: `"sm"` draws 5 px dots, `"md"` 8 px and `"lg"` 11 px. `variant="quiet"` draws pale dots for a reference series, such as last year. Overlapping dots of one series never darken each other.
+
+</Prose>
+
+<Demo slug="scatter-chart" id="sizes" title="Sizes and looks" file="scatter-chart-sizes.tsx">
+  <ScatterChartSizes />
+</Demo>
+
+## Reference lines
+
+<Prose>
+
+`ScatterChart.ReferenceLine` takes a `y` for a horizontal line, an `x` for a vertical one, or a `from` and a `to` for a segment between two points. A line outside the domains draws nothing, so pass its value in Root's `xInclude` or `yInclude` to bring it in.
+
+</Prose>
+
+<Demo
+  slug="scatter-chart"
+  id="freezing-and-budget"
+  title="Freezing point and budget"
+  file="scatter-chart-reference-lines.tsx">
+  <ScatterChartReferenceLines />
+</Demo>
+
+## Curves over a numeric x
+
+<Prose>
+
+A numeric x axis is `ScatterChart`. `ScatterChart.Line` joins a series' points in x order, so the same chart draws a curve whose samples sit unevenly along x, such as a charging curve or a tariff's steps under `curve="step-after"`. `curve` takes the d3 curves `Chart.Line` takes, with `"linear"` as the default. Category and time axes stay on [`Chart`](/components/chart).
+
+</Prose>
+
+<Demo slug="scatter-chart" id="curves" title="Charging curve" file="scatter-chart-curves.tsx">
+  <ScatterChartCurves />
+</Demo>
+
+## Large data and updates
+
+<Prose>
+
+Each series draws all its points as one SVG path, so 100,000 points stay two elements, and a data update redraws each path in place. The pointer finds the nearest point through a grid index in well under a millisecond. On a data update the axes glide to fit the new points over the chart's update time, unless the reader prefers reduced motion or the chart holds more than 5,000 points, where they move at once.
+
+</Prose>
+
+<Demo slug="scatter-chart" id="large" title="100,000 points" file="scatter-chart-large.tsx">
+  <ScatterChartLarge />
+</Demo>
+
+<Demo slug="scatter-chart" id="live" title="Live readings" file="scatter-chart-live.tsx">
+  <ScatterChartLive />
+</Demo>
+
+## Keyboard
+
+<Prose>
+
+The plot is one tab stop, and its one option names the active point: its series, then its x and y with Root's `xLabel` and `yLabel`.
+
+| Where | Keys                                                                                                                                                                                                                                                                                     |
+| ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Chart | ArrowRight and ArrowLeft move to the next and previous point, by x, then y. Home and End go to the first and last point. ArrowDown and ArrowUp move the series focus, all series first, and the walk then stays in the focused series. Enter and Space pin the tooltip. Escape hides it. |
+| Table | The table's button and the page buttons are native buttons. Past 500 points the table pages by row range.                                                                                                                                                                                |
+
+</Prose>
+
+<ApiReference slug="scatter-chart" />

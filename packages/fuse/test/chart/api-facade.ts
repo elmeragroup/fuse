@@ -83,6 +83,26 @@ import { RadialChartSkeleton } from "../../src/components/chart/radial-chart-ske
 // same name, so the objects below replace the entry's namespaces.
 export * from "../../src/chart";
 
+import { ScatterChartEmpty, ScatterChartSkeleton } from "../../src/components/chart/scatter-chart-empty";
+import {
+  ScatterChartGrid,
+  ScatterChartReferenceLine,
+  ScatterChartXAxis,
+  ScatterChartYAxis,
+} from "../../src/components/chart/scatter-chart-guides";
+import { ScatterChartLegend, ScatterChartLegendItem } from "../../src/components/chart/scatter-chart-legend";
+import {
+  ScatterChartActiveDot,
+  ScatterChartLine,
+  ScatterChartPoints,
+} from "../../src/components/chart/scatter-chart-marks";
+import { ScatterChartRoot } from "../../src/components/chart/scatter-chart-root";
+import { ScatterChartTable } from "../../src/components/chart/scatter-chart-table";
+import {
+  ScatterChartTooltip,
+  ScatterChartTooltipLabel,
+  ScatterChartTooltipValue,
+} from "../../src/components/chart/scatter-chart-tooltip";
 export const Chart = {
   Root: ChartRoot,
   Panel: ChartPanel,
@@ -228,6 +248,28 @@ export const RadarChart = {
   Table: ChartTable,
   TableColumn: ChartTableColumn,
   Empty: ChartEmpty,
+  Background: ChartBackground,
+} as const;
+
+export const ScatterChart = {
+  Root: ScatterChartRoot,
+  Grid: ScatterChartGrid,
+  XAxis: ScatterChartXAxis,
+  YAxis: ScatterChartYAxis,
+  ReferenceLine: ScatterChartReferenceLine,
+  Points: ScatterChartPoints,
+  Line: ScatterChartLine,
+  ActiveDot: ScatterChartActiveDot,
+  Tooltip: ScatterChartTooltip,
+  TooltipLabel: ScatterChartTooltipLabel,
+  TooltipValue: ScatterChartTooltipValue,
+  Legend: ScatterChartLegend,
+  LegendItem: ScatterChartLegendItem,
+  Table: ScatterChartTable,
+  Empty: ScatterChartEmpty,
+  Skeleton: ScatterChartSkeleton,
+  Headline: ChartHeadline,
+  Takeaway: ChartTakeaway,
   Background: ChartBackground,
 } as const;
 

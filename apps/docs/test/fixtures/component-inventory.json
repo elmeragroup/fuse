@@ -661,6 +661,19 @@
       "range-calendar-bounds.tsx"
     ]
   },
+  "scatter-chart": {
+    "title": "Scatter Chart",
+    "rsc": "client",
+    "demos": [
+      "scatter-chart-signature.tsx",
+      "scatter-chart-basic.tsx",
+      "scatter-chart-sizes.tsx",
+      "scatter-chart-reference-lines.tsx",
+      "scatter-chart-curves.tsx",
+      "scatter-chart-large.tsx",
+      "scatter-chart-live.tsx"
+    ]
+  },
   "scroll-area": {
     "title": "Scroll Area",
     "rsc": "client",

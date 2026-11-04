@@ -57,6 +57,8 @@ describe("size-limit harness", () => {
       "chart/Chart.Root",
       "chart/Chart bar route",
       "chart/PieChart.Root",
+      "chart/ScatterChart",
+      "chart/ScatterChart.Root",
       "chart/Sparkline",
       "chart/useChartPoint",
       "chart/formatChartValue",

@@ -41,7 +41,10 @@ export type ChartDataRule =
   | "quality-without-value"
   | "invalid-quality"
   | "mixed-sign-expand"
-  | "table-column-format";
+  | "table-column-format"
+  | "non-finite-x"
+  | "non-finite-y"
+  | "unknown-series";
 
 /** The development hints, which warn in development only. */
 export type ChartHintRule =
@@ -112,6 +115,12 @@ export const DATA_MESSAGES = {
     'received a stacked slot with both signs under stackOffset="expand". Production divides the slot by the sum of its magnitudes and keeps the signs apart.',
   "table-column-format":
     "received a format that does not fit its cells, a time preset on numbers or a value format on Date cells. Production prints each cell through its type's default format.",
+  "non-finite-x":
+    "received an x cell that is not a finite number within ±1e15. Pass numbers, null or undefined. Production skips the row.",
+  "non-finite-y":
+    "received a y cell that is not a finite number within ±1e15. Pass numbers, null or undefined. Production skips the row.",
+  "unknown-series":
+    "received a series cell that names no config key. Add the value to config, or pass one of its keys. Production skips the row.",
 } as const satisfies { readonly [R in ChartDataRule]: string };
 
 /**

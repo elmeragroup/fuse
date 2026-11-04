@@ -8,6 +8,7 @@ import { ChartSelectionContext, useChartRoot } from "./chart-context";
 import type { ChartRootContextValue } from "./chart-context";
 import { useRootFrame } from "./chart-plot";
 import { useChartStore } from "./chart-store";
+import { useTapLift } from "./chart-tap-lift";
 import { optionName } from "./chart-text";
 import type { OptionOrder } from "./chart-text";
 import { CHART_STRINGS } from "./format/chart-strings";
@@ -210,12 +211,8 @@ export function ChartSurface({
   const focusTarget = useRef<string | null>(null);
   /** Whether the current press started while a tooltip was pinned, which a touch lift reads. */
   const gesture = useRef<Gesture | null>(null);
-  /**
-   * Whether a touch or pen lift just acted. WebKit follows a tap with a click whose pointer type
-   * reads "mouse", so the flag keeps that click from acting twice, and the focus that follows a
-   * tap keeps the slot the finger picked.
-   */
-  const lifted = useRef(false);
+  /** The touch or pen lift that just acted, so the focus that follows a tap keeps its slot. */
+  const lift = useTapLift();
   const listbox = useRef<HTMLDivElement>(null);
   const drawn = useRootFrame("Chart.Root");
   const pinned = useChartStore(store, (snapshot) => snapshot.pinned);
@@ -254,6 +251,20 @@ export function ChartSurface({
       ?.querySelector<HTMLElement>(`[id="${CSS.escape(target)}"]`)
       ?.focus({ preventScroll: true });
   });
+
+  // An empty model takes the surface's element away, mid-press too, so no later press inherits the
+  // gesture: the element's cleanup ends it.
+  const shown = window !== null && !model.empty;
+  useLayoutEffect(
+    () =>
+      shown
+        ? () => {
+            gesture.current = null;
+            lift.press();
+          }
+        : undefined,
+    [shown, lift]
+  );
 
   if (window === null || model.empty) return null;
   const current = options.at(-1) ?? options[0];
@@ -310,7 +321,7 @@ export function ChartSurface({
     }
     // A tap focuses the option after its lift, at the point Chromium's touch adjustment moved it
     // to, which may be another slot's option. The slot the finger's own point picked stays active.
-    if (lifted.current || gesture.current !== null) return;
+    if (lift.tapFocus() || gesture.current !== null) return;
     store.set({
       active: slotOfOption(context, window, current),
       source: "keyboard",
@@ -322,7 +333,7 @@ export function ChartSurface({
     if (event.relatedTarget instanceof Node && event.currentTarget.contains(event.relatedTarget)) return;
     // A tap on the plot moves focus off an option that an earlier tap focused, and the slot it
     // pinned stays.
-    const tapped = lifted.current || gesture.current !== null;
+    const tapped = lift.tapFocus() || gesture.current !== null;
     if (!tapped && (store.get().source === "keyboard" || store.get().pinned)) {
       store.set({ active: null, source: null, near: null, pinned: false });
     }
@@ -397,8 +408,11 @@ export function ChartSurface({
       // The span the surface covers can trail a move no commit or resize reported, so a pointer
       // that arrives places it again first.
       onPointerEnter={() => context.placeSpan()}
+      onMouseDown={() => {
+        lift.mouseDown();
+      }}
       onPointerDown={(event) => {
-        lifted.current = false;
+        lift.press();
         if (event.pointerType === "mouse") return;
         const snapshot = store.get();
         const { slot } = slotAt(event);
@@ -419,7 +433,7 @@ export function ChartSurface({
         const snapshot = store.get();
         const slot = started.pinned ? started.slot : snapshot.active;
         if (slot === null) return;
-        lifted.current = true;
+        lift.lift();
         press(event, slot, started.shown && slot === started.slot);
       }}
       onPointerCancel={() => {
@@ -446,12 +460,7 @@ export function ChartSurface({
       onClick={(event) => {
         // A touch or pen press already acted on its lift, so only a mouse click and a keyboard
         // or assistive click, which reports a detail of 0, act here.
-        const native = event.nativeEvent;
-        if (native instanceof globalThis.PointerEvent && native.pointerType !== "mouse" && event.detail > 0)
-          return;
-        const afterTap = lifted.current && event.detail > 0;
-        lifted.current = false;
-        if (afterTap) return;
+        if (!lift.clickActs(event)) return;
         if (event.detail === 0) {
           const { active } = store.get();
           if (active !== null) press(event, active);

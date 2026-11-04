@@ -8,7 +8,7 @@
  *
  * The errors the parts' JSDoc names, such as `unknown-key`, throw as the cartesian parts render.
  * `PieChart`, `RadialChart` and `RadarChart` render nothing yet, so theirs start to throw once those
- * parts render in a later preview release.
+ * parts render in a later preview release. `ScatterChart` throws its own as its parts render.
  *
  * Import `@elmeragroup/fuse/chart.css` once, beside Fuse's own stylesheet.
  *
@@ -21,6 +21,7 @@ export { Chart, AreaChart, BarChart, LineChart } from "./components/chart/chart-
 export { PieChart } from "./components/chart/pie-chart-namespace";
 export { RadialChart } from "./components/chart/radial-chart-namespace";
 export { RadarChart } from "./components/chart/radar-chart-namespace";
+export { ScatterChart } from "./components/chart/scatter-chart-namespace";
 export { Sparkline } from "./components/chart/sparkline";
 export { useChartPoint } from "./components/chart/use-chart-point";
 export { formatChartValue, formatChartSlot } from "./components/chart/chart-format";
@@ -60,6 +61,7 @@ export type {
   ChartRowOf,
   ChartScalar,
   ChartScale,
+  ChartScatterFieldCheck,
   ChartSelectionChangeReason,
   ChartSelectionProps,
   ChartSentimentRole,
@@ -90,6 +92,7 @@ export type { ChartRootProps } from "./components/chart/chart-root";
 export type { PieChartRootProps } from "./components/chart/pie-chart-root";
 export type { RadialChartRootProps } from "./components/chart/radial-chart-root";
 export type { RadarChartRootProps } from "./components/chart/radar-chart-root";
+export type { ScatterChartRootProps } from "./components/chart/scatter-chart-root";
 export type { ChartActiveValueLineProps, ChartActiveValueProps } from "./components/chart/chart-active-value";
 export type { ChartAreaProps } from "./components/chart/chart-area";
 export type { ChartXAxisProps, ChartYAxisProps } from "./components/chart/chart-axis";
@@ -160,4 +163,30 @@ export type {
   RadarChartLineProps,
 } from "./components/chart/radar-chart-marks";
 export type { RadarChartSkeletonProps } from "./components/chart/radar-chart-skeleton";
+export type {
+  ScatterChartGridProps,
+  ScatterChartReferenceLineProps,
+  ScatterChartXAxisProps,
+  ScatterChartYAxisProps,
+} from "./components/chart/scatter-chart-guides";
+export type {
+  ScatterChartActiveDotProps,
+  ScatterChartLineProps,
+  ScatterChartPointsProps,
+} from "./components/chart/scatter-chart-marks";
+export type {
+  ScatterChartTooltipLabelProps,
+  ScatterChartTooltipProps,
+  ScatterChartTooltipValueProps,
+} from "./components/chart/scatter-chart-tooltip";
+export type {
+  ScatterChartLegendItemProps,
+  ScatterChartLegendProps,
+} from "./components/chart/scatter-chart-legend";
+export type { ScatterChartTableProps } from "./components/chart/scatter-chart-table";
+export type {
+  ScatterChartEmptyProps,
+  ScatterChartSkeletonProps,
+} from "./components/chart/scatter-chart-empty";
+export type { ScatterCurve } from "./components/chart/layout/scatter-frame";
 export type { SparklineProps } from "./components/chart/sparkline";

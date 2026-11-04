@@ -17,6 +17,11 @@ export type ValueDomainInput = {
   readonly baseline: Baseline;
   /** Values the domain must reach, such as a price cap. */
   readonly include?: readonly number[];
+  /**
+   * The tick count the nice step aims for. 5 by default, the value axis's. A scatter chart's x
+   * axis aims for 10, d3's own default, since it runs along the plot's long side.
+   */
+  readonly count?: number;
 };
 
 /** A niced value domain and its ticks. */
@@ -51,20 +56,20 @@ function withoutNegativeZero(value: number): number {
 }
 
 /** The nice domain and ticks of an extent, through the scale functions the d3 oracle checks. */
-function niced(lo: number, hi: number): ValueDomain {
-  const scale = niceScale(linearScale([lo, hi], [0, 1]), TICK_COUNT);
+function niced(lo: number, hi: number, count: number): ValueDomain {
+  const scale = niceScale(linearScale([lo, hi], [0, 1]), count);
   const [start, stop] = scale.domain;
   return {
     domain: [withoutNegativeZero(start), withoutNegativeZero(stop)],
-    ticks: scaleTicks(scale, TICK_COUNT).map(withoutNegativeZero),
+    ticks: scaleTicks(scale, count).map(withoutNegativeZero),
   };
 }
 
 /** The flat rule: a tenth of the value's magnitude on each side, or ±1 around 0. */
-function flat(value: number): ValueDomain {
-  if (value === 0) return niced(-1, 1);
+function flat(value: number, count: number): ValueDomain {
+  if (value === 0) return niced(-1, 1, count);
   const spread = Math.abs(value) / 10;
-  return niced(value - spread, value + spread);
+  return niced(value - spread, value + spread, count);
 }
 
 /**
@@ -95,6 +100,7 @@ export function valueDomain(input: ValueDomainInput): ValueDomain {
   hi = withoutNegativeZero(hi);
   if (lo === 0 && hi === 0 && input.baseline === "zero") return { domain: [0, 1], ticks: [0] };
   // Under "zero" the extent holds 0, so only a "none" extent can be flat or near-flat.
-  if (hi - lo <= Math.max(Math.abs(lo), Math.abs(hi)) * NARROW) return flat((lo + hi) / 2);
-  return niced(lo, hi);
+  const count = input.count ?? TICK_COUNT;
+  if (hi - lo <= Math.max(Math.abs(lo), Math.abs(hi)) * NARROW) return flat((lo + hi) / 2, count);
+  return niced(lo, hi, count);
 }

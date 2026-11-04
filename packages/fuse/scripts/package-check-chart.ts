@@ -41,6 +41,7 @@ const NAMESPACE_DECLARATIONS = [
   "components/chart/pie-chart-namespace.d.ts",
   "components/chart/radial-chart-namespace.d.ts",
   "components/chart/radar-chart-namespace.d.ts",
+  "components/chart/scatter-chart-namespace.d.ts",
 ] as const;
 
 /** A declaration file's comment text with the JSDoc line prefixes removed and spaces collapsed. */
@@ -146,6 +147,19 @@ const PIE_ROUTE_FORBIDDEN: readonly Forbidden[] = [
   { label: "cartesian model", module: /^cartesian-model\./u },
 ];
 
+/**
+ * The cartesian code `ScatterChart.Root` must not ship: the cartesian store, readout, model, Root
+ * context, Root, surface and measured cartesian plot. A scatter Root measures its plot through
+ * `chart-plot-measure` and owns a store of its own.
+ */
+const SCATTER_ROUTE_FORBIDDEN: readonly Forbidden[] = [
+  ...PIE_ROUTE_FORBIDDEN,
+  { label: "cartesian context", module: /^chart-context\./u },
+  { label: "cartesian Root", module: /^chart-root\./u },
+  { label: "cartesian surface", module: /^chart-surface\./u },
+  { label: "cartesian plot", module: /^chart-plot\./u },
+];
+
 /** The labels of the forbidden code a route ships, each with what it matched. */
 function shipped(route: Route, forbidden: readonly Forbidden[]): string[] {
   return forbidden.flatMap(({ label, module, external }) => {
@@ -178,7 +192,7 @@ const BAR_PARTS = "Chart.Root, Chart.Grid, Chart.XAxis, Chart.YAxis, Chart.Bar";
 export async function checkPackedChartBundles(extracted: string): Promise<string> {
   const work = mkdtempSync(join(tmpdir(), "fuse-chart-routes-"));
   try {
-    const [chart, alias, bars, control, pie] = await Promise.all([
+    const [chart, alias, bars, control, pie, scatter] = await Promise.all([
       bundleRoute(
         extracted,
         work,
@@ -208,6 +222,12 @@ export async function checkPackedChartBundles(extracted: string): Promise<string
         work,
         "pie-chart",
         "import { PieChart } from <chart>;\nexport const Root = PieChart.Root;\n"
+      ),
+      bundleRoute(
+        extracted,
+        work,
+        "scatter-chart",
+        "import { ScatterChart } from <chart>;\nexport const Root = ScatterChart.Root;\n"
       ),
     ]);
     if (chart.code !== alias.code) {
@@ -243,7 +263,20 @@ export async function checkPackedChartBundles(extracted: string): Promise<string
     if (pieLeaks.length > 0) {
       throw new Error(`the PieChart.Root route ships ${pieLeaks.join("; ")}`);
     }
-    return `Packed chart routes: Chart.Root and BarChart.Root emit ${String(chart.code.length)} identical bytes from ${String(chart.modules.length)} modules, the bar route reaches ${String(bars.modules.length)} modules with no Tooltip, Table, LegendToggleGroup or floating-ui code, its control trips all ${String(BAR_ROUTE_FORBIDDEN.length)} rules, and PieChart.Root reaches ${String(pie.modules.length)} modules and no cartesian code`;
+    const scatterLeaks = shipped(scatter, SCATTER_ROUTE_FORBIDDEN);
+    if (scatterLeaks.length > 0) {
+      throw new Error(`the ScatterChart.Root route ships ${scatterLeaks.join("; ")}`);
+    }
+    // A detector that stops seeing modules would pass any route, so the bar control route, whose
+    // Root and Tooltip ship every cartesian module the scatter rule names, must trip each of them.
+    const cartesianTripped = shipped(control, SCATTER_ROUTE_FORBIDDEN).map((entry) => entry.split(" (")[0]);
+    const scatterBlind = SCATTER_ROUTE_FORBIDDEN.map(({ label }) => label).filter(
+      (label) => !cartesianTripped.includes(label)
+    );
+    if (scatterBlind.length > 0) {
+      throw new Error(`the bar control route trips no scatter rule for ${scatterBlind.join(", ")}`);
+    }
+    return `Packed chart routes: Chart.Root and BarChart.Root emit ${String(chart.code.length)} identical bytes from ${String(chart.modules.length)} modules, the bar route reaches ${String(bars.modules.length)} modules with no Tooltip, Table, LegendToggleGroup or floating-ui code, its control trips all ${String(BAR_ROUTE_FORBIDDEN.length)} rules, PieChart.Root reaches ${String(pie.modules.length)} modules and no cartesian code, and ScatterChart.Root reaches ${String(scatter.modules.length)} modules and no cartesian code`;
   } finally {
     rmSync(work, { recursive: true, force: true });
   }

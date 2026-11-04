@@ -15,10 +15,12 @@ import { labelWidth } from "./layout/label-width";
 import { runMargins } from "./layout/plot-frame";
 import { slotCentre, valueTop } from "./layout/plot-geometry";
 import type { SlotWindow } from "./layout/slot-window";
+import { fitsEveryBucket, thinTicks } from "./layout/tick-fit";
+import type { ShownTick, TickVisibility } from "./layout/tick-fit";
 import { slotCount } from "./layout/x-domain";
 import type { XDomain } from "./layout/x-domain";
-import { fitsEveryBucket, thinTicks, tickStrides } from "./layout/x-ticks";
-import type { ShownTick, TickStride, TickVisibility } from "./layout/x-ticks";
+import { tickStrides } from "./layout/x-ticks";
+import type { TickStride } from "./layout/x-ticks";
 
 /**
  * Props for `Chart.XAxis`, a closed part.

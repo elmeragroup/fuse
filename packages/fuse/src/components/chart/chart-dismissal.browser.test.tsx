@@ -181,3 +181,48 @@ describe("value identity", () => {
     expect(activeValue(host)).toBe("2");
   });
 });
+
+describe("a consumer ref on Root", () => {
+  it("receives the figure, and Root still marks the hovered slot active", async () => {
+    let figure: HTMLElement | null = null;
+    const { host } = renderThemed(
+      <div style={{ width: 400 }}>
+        <LocaleProvider locale="nb-NO">
+          <Chart.Root
+            ref={(element) => {
+              figure = element;
+            }}
+            data-intro="none"
+            data={ROWS}
+            config={ONE}
+            xKey="name"
+            aria-label="Plott">
+            <Chart.Bar dataKey="v" />
+          </Chart.Root>
+        </LocaleProvider>
+      </div>
+    );
+    // DOM audit: Root's figure carries the active state the crosshair reads.
+    const root = host.querySelector('[data-slot="chart"]');
+    expect(figure).toBe(root);
+    const [, second] = bars(host);
+    if (second === undefined) throw new Error("no bars");
+    await userEvent.hover(...over(host, second));
+    await expect.poll(() => root?.getAttribute("data-active")).toBe("pointer");
+  });
+});
+
+describe("a click that moves a pin onto the option's slot", () => {
+  it("pins the clicked slot, though its press focuses the option", async () => {
+    // The plot's option lies over the first slot, a, so a press there focuses it.
+    const { host } = renderThemed(<Plot data={ROWS} />);
+    const [first, second] = bars(host);
+    if (first === undefined || second === undefined) throw new Error("no bars");
+    await userEvent.click(...over(host, second));
+    await expect.poll(() => activeValue(host)).toBe("2");
+    await userEvent.click(...over(host, first));
+    expect(document.activeElement?.getAttribute("role")).toBe("option");
+    await expect.poll(popupOpen).toBe(true);
+    await expect.poll(() => activeValue(host)).toBe("1");
+  });
+});

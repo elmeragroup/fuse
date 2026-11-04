@@ -4,6 +4,7 @@ import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useSta
 import type { ReactElement, ReactNode } from "react";
 
 import { useMediaQuery } from "../../hooks/use-media-query";
+import { useMergedRefs } from "../../hooks/use-merged-refs";
 import { definedProps } from "../../internal/defined-props";
 import { useLocale } from "../../intl/locale-context";
 import { createAxisRecord } from "./chart-axis-format";
@@ -16,6 +17,7 @@ import {
 } from "./chart-context";
 import type { ChartLayoutContextValue, ChartRootContextValue, PanelEntry } from "./chart-context";
 import { writeAttribute, writeStyle } from "./chart-dom";
+import { openDrawingSoon, useClientMount } from "./chart-draw-gate";
 import { useEntrance } from "./chart-entrance";
 import { createChartFollowers } from "./chart-followers";
 import type { ActiveSlot, ChartFollowers } from "./chart-followers";
@@ -24,18 +26,13 @@ import { createChartMotion, createFrameOwner } from "./chart-motion";
 import type { ChartMotion, FrameOwner } from "./chart-motion";
 import { colourFamilyError, isThresholdColor, nonFiniteThresholds } from "./chart-paint";
 import { createChartPaths } from "./chart-paths";
-import {
-  ChartPlotContext,
-  ChartRootPlotContext,
-  PlotReadsContext,
-  useMeasuredPlot,
-  usePanelSpan,
-} from "./chart-plot";
+import { ChartPlotContext, ChartRootPlotContext, usePanelSpan } from "./chart-plot";
+import { PlotReadsContext, useMeasuredPlot } from "./chart-plot-measure";
 import { ChartLegendSideContext, ChartRowContext } from "./chart-readout";
 import { createChartRiders } from "./chart-riders";
 import { PlotLoader } from "./chart-skeleton";
 import { sameShallow, useSteady } from "./chart-steady";
-import { createChartStore, openDrawingSoon, useClientMount } from "./chart-store";
+import { createChartStore } from "./chart-store";
 import type { ChartSnapshot, EmphasisEntry } from "./chart-store";
 import { ChartStatus, ChartSurface } from "./chart-surface";
 import { chartDescription, seriesLabel } from "./chart-text";
@@ -383,6 +380,7 @@ export function ChartRoot<
   description,
   children,
   style,
+  ref,
   ...figure
 }: ChartRootProps<TRow, TConfig, TXKey>): ReactElement {
   const { locale, timeZone: providerZone } = useLocale();
@@ -557,6 +555,8 @@ export function ChartRoot<
     return createChartStore(slot === -1 ? null : slot);
   });
   const rootRef = useRef<HTMLElement>(null);
+  // Root reads its own figure for the active state and the entrance, and a consumer ref gets it too.
+  const figureRef = useMergedRefs(rootRef, ref);
   const frameRef = useRef<HTMLDivElement>(null);
   const plotRef = useRef<HTMLDivElement>(null);
   // Root's plot spans its Panels' plots, so its probe places their span once per commit, before
@@ -877,7 +877,7 @@ export function ChartRoot<
           <ChartSelectionContext value={selected}>
             <ChartLayoutContext value={layout}>
               <figure
-                ref={rootRef}
+                ref={figureRef}
                 data-slot="chart"
                 data-orientation={orientation}
                 data-x-scale={xScale}

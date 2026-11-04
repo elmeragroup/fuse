@@ -143,7 +143,24 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = derive([
   // estimated paths and its emphasis boxes paint by step, and Glow haloes a value-painted series
   // through its own SVG filter, which measured 1428 bytes on this entry (147777 to 149205). The
   // ceiling keeps about 100 bytes of headroom.
-  { name: "chart", entryFile: "chart.js", measuredGzip: 97044, ceilingGzip: 149305 },
+  // Raised again from 149305 on 2026-11-04, after the threshold colours above. ScatterChart, its
+  // model, spatial index, domain glide, surface and parts, measured 11618 bytes on this entry
+  // (147777 to 159395). The ceiling keeps about 100 bytes of headroom.
+  // Raised again from 159495 on 2026-11-04. ScatterChart's review round carries the active point,
+  // the keyboard's place and the series focus across a data update in one transition, clips
+  // reference segments to the domains, picks points through the gliding domains and holds the
+  // point while the pointer crosses the tooltip, which measured 492 bytes on this entry (159395
+  // to 159887). The ceiling keeps about 100 bytes of headroom.
+  // Raised again from 159987 on 2026-11-04. ScatterChart's second review round commits a press
+  // with the walk it carries, makes the pointer's input kind observable, routes a touch the
+  // tooltip takes through the plot's own tap, and resolves the nearest point once, which measured
+  // 103 bytes on this entry (159887 to 159990). The ceiling keeps about 100 bytes of headroom.
+  // Raised again from 160090 on 2026-11-04. ScatterChart's third to fifth review rounds write the
+  // store through named transitions, share Chart's intro rule, ref merge and tap lift, end a
+  // tap's focus guard with its own task, reset a gesture its element outlives and move the
+  // tooltip with its mark's size, which measured 198 bytes on this entry (159990 to 160188). The
+  // ceiling keeps about 100 bytes of headroom.
+  { name: "chart", entryFile: "chart.js", measuredGzip: 97044, ceilingGzip: 161716 },
   // 2026-10-13: new entry, measured at 29180. Pure wrappers over Base UI's toolbar and its roving focus.
   { name: "toolbar", entryFile: "toolbar.js", measuredGzip: 29180, ceilingGzip: 43770 },
   // 2026-10-12: new entries. Command is Base UI's Autocomplete in the InputGroup, with the Dialog
@@ -322,14 +339,24 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // haloes a value-painted series through its own SVG filter, which measured 1425 bytes on Chart
     // (145482 to 146907) and 1426 on BarChart (145484 to 146910). Each ceiling keeps about 100
     // bytes of headroom.
-    ceilingGzip: 147007,
+    // Raised again from 147007 on 2026-11-04, with BarChart's from 147010, after the threshold
+    // colours above. ScatterChart's strings in the shared chart dictionary, its three data-rule
+    // messages and the leaf modules it shares with Chart measured 233 bytes on Chart (145482 to
+    // 145715) and 234 on BarChart (145484 to 145718). Each ceiling keeps about 100 bytes of
+    // headroom.
+    // Raised again from 145815 on 2026-11-04, with BarChart's from 145818. Chart.Root merges a
+    // consumer ref with its own, and the surface keeps a tap's lift in the shared record, whose
+    // focus guard ends with the tap's own task and whose gesture ends with the surface's element,
+    // which measured 127 bytes on Chart (145715 to 145842) and on BarChart (145718 to 145845).
+    // Each ceiling keeps about 100 bytes of headroom.
+    ceilingGzip: 147367,
   },
   {
     name: "chart/BarChart",
     entryFile: "chart.js",
     exportName: "BarChart",
     measuredGzip: 95989,
-    ceilingGzip: 147010,
+    ceilingGzip: 147371,
   },
   { name: "chart/PieChart", entryFile: "chart.js", exportName: "PieChart", measuredGzip: 79885 },
   { name: "chart/RadialChart", entryFile: "chart.js", exportName: "RadialChart", measuredGzip: 79858 },
@@ -390,7 +417,14 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // a value-painted Bar's glow filter, Root's comparison of its sides and its non-finite rule
     // measured 740 bytes on this route (74417 to 75157). The ceiling keeps about 100 bytes of
     // headroom.
-    ceilingGzip: 75257,
+    // Raised from 75257 on 2026-11-04, after the threshold colours above. ScatterChart's strings
+    // in the shared chart dictionary and its three data-rule messages measured 195 bytes on this
+    // route (74417 to 74612). The ceiling keeps about 100 bytes of headroom.
+    // Raised from 74712 on 2026-11-04. The surface keeps a tap's lift in the shared record that
+    // ends it on every compatibility click, and Root merges a consumer ref with its own, which
+    // measured 142 bytes on this route (74612 to 74754). The ceiling keeps about 100 bytes of
+    // headroom.
+    ceilingGzip: 75594,
   },
   {
     name: "chart/PieChart.Root",
@@ -398,6 +432,16 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     exportName: "PieChart",
     members: ["Root"],
     measuredGzip: 404,
+  },
+  // 2026-11-04: new rows, measured at 84628 for the whole ScatterChart namespace and 41808 for its
+  // Root alone, each with the derived ceiling.
+  { name: "chart/ScatterChart", entryFile: "chart.js", exportName: "ScatterChart", measuredGzip: 84628 },
+  {
+    name: "chart/ScatterChart.Root",
+    entryFile: "chart.js",
+    exportName: "ScatterChart",
+    members: ["Root"],
+    measuredGzip: 41808,
   },
   { name: "chart/Sparkline", entryFile: "chart.js", exportName: "Sparkline", measuredGzip: 11118 },
   { name: "chart/useChartPoint", entryFile: "chart.js", exportName: "useChartPoint", measuredGzip: 3635 },
@@ -454,7 +498,12 @@ export const CSS_BUDGETS: readonly CssBudget[] = derive([
   // Chart stylesheet. Measured 13523 on 2026-10-31, within the ceiling from layer 05.
   // 2026-11-03: 14920 with Chart.SlotLabel, the line crosshair's fade and the tick fade, about 630
   // bytes over the stylesheet before them, within the ceiling.
-  { name: "chart.css", file: "chart.css", measuredGzip: 10089 },
+  // 2026-11-04: 15475 with ScatterChart's points, option, ring, quiet looks, skeleton dots and its
+  // layers in the entrance sweep, over the derived 15134, so the ceiling keeps about 100 bytes of
+  // headroom past it.
+  // Raised from 15575 on 2026-11-04. The points layer's clip at the plot, past it by a dot's
+  // radius, measured 96 bytes (15475 to 15571). The ceiling keeps about 100 bytes of headroom.
+  { name: "chart.css", file: "chart.css", measuredGzip: 10089, ceilingGzip: 15671 },
 ] satisfies readonly Measured<CssBudget>[]);
 
 export const FLAG_RAW_BUDGETS: readonly FlagRawBudget[] = [
