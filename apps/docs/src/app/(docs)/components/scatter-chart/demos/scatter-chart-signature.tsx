@@ -1,16 +1,8 @@
 "use client";
 
-import { useState } from "react";
-
-import { Button } from "@elmeragroup/fuse/button";
-import { Card } from "@elmeragroup/fuse/card";
 import { ScatterChart } from "@elmeragroup/fuse/chart";
 import type { ChartConfig } from "@elmeragroup/fuse/chart";
-import { ChartBar, Download, List } from "@elmeragroup/fuse/icons";
-import { ScrollArea } from "@elmeragroup/fuse/scroll-area";
-import { Table } from "@elmeragroup/fuse/table";
 import { LocaleProvider } from "@elmeragroup/fuse/theme";
-import { ToggleGroup } from "@elmeragroup/fuse/toggle-group";
 
 // Invented values. One business's weekly consumption in kWh against the week's mean temperature
 // in °C, this year and last, and the normal consumption the app fitted to last year's weeks.
@@ -135,102 +127,32 @@ const config = {
   normal: { label: "Normalforbruk", color: "chart-2" },
 } as const satisfies ChartConfig;
 
-const temperature = new Intl.NumberFormat("nb-NO", { maximumFractionDigits: 1 });
-const energy = new Intl.NumberFormat("nb-NO", { maximumFractionDigits: 0 });
-
-/** The rows as a semicolon-separated file with comma decimals, which Excel opens in Norway. */
-function download(): void {
-  const lines = [
-    "Serie;Ukemiddeltemperatur (°C);kWh per uke",
-    ...rows.map(({ series, tempC, kwh }) =>
-      [config[series].label, String(tempC).replace(".", ","), String(kwh)].join(";")
-    ),
-  ];
-  const url = URL.createObjectURL(new Blob([`﻿${lines.join("\r\n")}`], { type: "text/csv;charset=utf-8" }));
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = "energisignatur.csv";
-  link.click();
-  URL.revokeObjectURL(url);
-}
-
 export function ScatterChartSignature() {
-  const [view, setView] = useState<"chart" | "table">("chart");
   return (
     <LocaleProvider locale="nb-NO">
-      <Card.Root className="w-full">
-        <Card.Content className="flex flex-col gap-4">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <ToggleGroup.Root
-              aria-label="Visning"
-              value={[view]}
-              onValueChange={(value: string[]) => {
-                if (value[0] === "chart" || value[0] === "table") setView(value[0]);
-              }}>
-              <ToggleGroup.Item value="chart">
-                <ChartBar aria-hidden="true" />
-                Diagram
-              </ToggleGroup.Item>
-              <ToggleGroup.Item value="table">
-                <List aria-hidden="true" />
-                Tabell
-              </ToggleGroup.Item>
-            </ToggleGroup.Root>
-            <Button variant="outline" onClick={download}>
-              <Download aria-hidden="true" />
-              Last ned Excel
-            </Button>
-          </div>
-          {view === "chart" ? (
-            <ScatterChart.Root
-              data={rows}
-              config={config}
-              xKey="tempC"
-              yKey="kwh"
-              seriesKey="series"
-              xFormat={{ style: "unit", unit: "celsius", maximumFractionDigits: 1 }}
-              valueFormat={{ preset: "energy", unit: "kWh", maximumFractionDigits: 0 }}
-              xLabel="Ukemiddeltemperatur"
-              yLabel="Ukeforbruk"
-              aria-label="Ukeforbruk mot ukemiddeltemperatur, 2026 og 2025"
-              style={{ "--chart-plot-height": "18rem" }}>
-              <ScatterChart.Grid />
-              <ScatterChart.XAxis label="Ukemiddeltemperatur (°C)" format={{ maximumFractionDigits: 0 }} />
-              <ScatterChart.YAxis label="kWh per uke" format={{ maximumFractionDigits: 0 }} />
-              <ScatterChart.Points dataKey="lastYear" size="sm" variant="quiet" />
-              <ScatterChart.Line dataKey="normal" />
-              <ScatterChart.Points dataKey="thisYear" size="md" />
-              <ScatterChart.ActiveDot />
-              <ScatterChart.Tooltip />
-              <ScatterChart.Legend className="justify-start" />
-            </ScatterChart.Root>
-          ) : (
-            <ScrollArea.Root className="max-h-96 rounded-md border">
-              <Table.Root>
-                <Table.Caption>Ukeforbruk mot ukemiddeltemperatur, 2026 og 2025</Table.Caption>
-                <Table.Header>
-                  <Table.Row>
-                    <Table.Head scope="col">Serie</Table.Head>
-                    <Table.Head scope="col">Ukemiddeltemperatur (°C)</Table.Head>
-                    <Table.Head scope="col">kWh per uke</Table.Head>
-                  </Table.Row>
-                </Table.Header>
-                <Table.Body>
-                  {rows
-                    .toSorted((a, b) => a.tempC - b.tempC || a.kwh - b.kwh)
-                    .map(({ series, tempC, kwh }) => (
-                      <Table.Row key={`${series} ${String(tempC)} ${String(kwh)}`}>
-                        <Table.Head scope="row">{config[series].label}</Table.Head>
-                        <Table.Cell>{temperature.format(tempC)}</Table.Cell>
-                        <Table.Cell>{energy.format(kwh)}</Table.Cell>
-                      </Table.Row>
-                    ))}
-                </Table.Body>
-              </Table.Root>
-            </ScrollArea.Root>
-          )}
-        </Card.Content>
-      </Card.Root>
+      <ScatterChart.Root
+        data={rows}
+        config={config}
+        xKey="tempC"
+        yKey="kwh"
+        seriesKey="series"
+        xFormat={{ style: "unit", unit: "celsius", maximumFractionDigits: 1 }}
+        valueFormat={{ preset: "energy", unit: "kWh", maximumFractionDigits: 0 }}
+        xLabel="Ukemiddeltemperatur"
+        yLabel="Ukeforbruk"
+        aria-label="Ukeforbruk mot ukemiddeltemperatur, 2026 og 2025"
+        style={{ "--chart-plot-height": "18rem" }}>
+        <ScatterChart.Grid />
+        <ScatterChart.XAxis label="Ukemiddeltemperatur (°C)" format={{ maximumFractionDigits: 0 }} />
+        <ScatterChart.YAxis label="kWh per uke" format={{ maximumFractionDigits: 0 }} />
+        <ScatterChart.Points dataKey="lastYear" size="sm" variant="quiet" />
+        <ScatterChart.Line dataKey="normal" />
+        <ScatterChart.Points dataKey="thisYear" size="md" />
+        <ScatterChart.ActiveDot />
+        <ScatterChart.Tooltip />
+        <ScatterChart.Legend className="justify-start" />
+        <ScatterChart.Table />
+      </ScatterChart.Root>
     </LocaleProvider>
   );
 }
