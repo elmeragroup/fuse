@@ -48,6 +48,13 @@ export const ChartDatumContext = createContext<{ readonly key: string; readonly 
   null
 );
 
+/**
+ * How many chart Roots enclose the next one: 0 outside every Root. Each Root writes its own depth on
+ * its figure, so a hover rule bound to the nearest Root picks that Root out by its depth, which no
+ * other Root on the chain shares, and the hover restyles only the parts it styles.
+ */
+export const ChartDepthContext = createContext(0);
+
 /** The enclosing cartesian Root, or null outside one. */
 export const ChartRootContext = createContext<ChartRootContextValue | null>(null);
 

@@ -935,6 +935,10 @@ describe("runtime listeners and layout motion", () => {
       // a consumer's own handler, which Root's spread props replace. The same owner listens on
       // the window for `beforeprint`, and for `scroll` and `resize` only while a plot waits.
       "components/chart/chart-entrance.ts",
+      // Document `pointermove`, in the capture phase, only while a pointer crosses the gap from a
+      // polar plot to its tooltip: no element of the chart lies under the gap, so no React handler
+      // sees the move, and the popup and the plot take over once it reaches either (B1).
+      "components/chart/chart-polar-surface.tsx",
       // `document.fonts` `loadingdone`: a web font that loads after the pill measured its label
       // widths changes them, and React has no FontFaceSet handler.
       "components/chart/chart-slot-label.tsx",

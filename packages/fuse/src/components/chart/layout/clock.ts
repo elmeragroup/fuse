@@ -1,5 +1,3 @@
-import { nextSlotStart, slotStart, slotStartsFrom } from "../format/time-format";
-import type { Interval } from "../format/time-format";
 /**
  * The clock dial's layout. A cycle, a day, an ISO week or a year in the data's zone, runs once
  * around the dial from 12 o'clock, and every slot takes an equal angle (D11), so a 25-hour day draws
@@ -13,28 +11,6 @@ import { valueFloor } from "./value-floor";
 
 /** The cycles a dial runs. */
 export type ClockCycle = "day" | "week" | "year";
-
-/**
- * The slot starts of the cycle that holds an instant: from the cycle's local start, midnight,
- * Monday 00:00 or 1 January, up to the next cycle's, at the interval's slots in the zone. A day
- * holds 23, 24 or 25 hours and a year 365 or 366 days.
- *
- * @param at - An instant inside the cycle, in epoch milliseconds.
- * @param cycle - The dial's cycle.
- * @param interval - The slot length, which nests in the cycle.
- * @param timeZone - The IANA zone of the data's market.
- * @returns The slot starts in order.
- */
-export function cycleSlots(
-  at: number,
-  cycle: ClockCycle,
-  interval: Interval,
-  timeZone: string
-): readonly number[] {
-  const first = slotStart(at, cycle, timeZone);
-  const end = nextSlotStart(first, cycle, timeZone);
-  return slotStartsFrom(first, (start) => start >= end, interval, timeZone);
-}
 
 /** One slot's angles in degrees: where it starts, where it ends and where its vertex sits. */
 export type SlotAngles = { readonly start: number; readonly end: number; readonly centre: number };

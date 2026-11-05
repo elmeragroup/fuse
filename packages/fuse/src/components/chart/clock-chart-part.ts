@@ -27,6 +27,25 @@ export const NOMINAL_RADIUS = 100;
 export const DIAL_REGION = { x: -1.5, y: -1.5, width: 3, height: 3, unit: NOMINAL_RADIUS } as const;
 
 /**
+ * Throw `baseline-required` for a part that encodes its value as the length from 0, as a Column's
+ * wedge and an Area's band do, under a Root whose `yBaseline="none"` domain cuts that length off at
+ * the hole, as the cartesian Bar and Area rule says (B2).
+ *
+ * @param clock - The dial.
+ * @param part - The part's display name.
+ * @param mark - What the part draws from 0, for the message.
+ * @throws {ChartCompositionError} `baseline-required` under `yBaseline="none"`.
+ */
+export function assertClockBaseline(clock: ClockDrawing, part: string, mark: string): void {
+  if (clock.baseline !== "none") return;
+  throw new ChartCompositionError(
+    part,
+    "baseline-required",
+    `draws in a dial with yBaseline="none", but ${mark} encodes its value as the length from 0. Keep the zero baseline, or draw a ClockChart.Line.`
+  );
+}
+
+/**
  * The slots a datum selects on a clock: a keyword over a series' drawn values, or the slots holding
  * explicit instants, each resolved to the slot that owns its reading.
  *

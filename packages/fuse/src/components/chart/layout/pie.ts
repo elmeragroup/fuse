@@ -37,6 +37,11 @@ export type PieItem = {
   readonly key: string;
   /** The reading, the sum of the folded readings on Other, or null when every row it holds is missing. */
   readonly value: number | null;
+  /**
+   * What it draws: the sum of its rows' readings above 0, so a credit folded into Other draws as 0
+   * and never cancels a charge beside it, as a negative reading draws as 0 on its own (Q2, B3).
+   */
+  readonly weight: number;
   /** The rows it stands for, by index into the rows. */
   readonly rows: readonly number[];
 };
@@ -83,11 +88,12 @@ export function foldPie(rows: readonly PieRow[], maxSlices: number): readonly Pi
   }
   const items: PieItem[] = [];
   rows.forEach(({ key, value }, index) => {
-    if (!folded.has(index)) items.push({ key, value, rows: [index] });
+    if (!folded.has(index)) items.push({ key, value, weight: weightOf(value), rows: [index] });
   });
   if (folded.size > 0) {
     const members = [...folded].toSorted((a, b) => a - b);
-    items.push({ key: OTHER_KEY, value: sumOf(rows, members), rows: members });
+    const weight = members.reduce((sum, index) => sum + weightOf(rows[index]?.value ?? null), 0);
+    items.push({ key: OTHER_KEY, value: sumOf(rows, members), weight, rows: members });
   }
   return items;
 }

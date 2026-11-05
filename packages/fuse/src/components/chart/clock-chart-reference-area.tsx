@@ -62,7 +62,9 @@ export type ClockChartReferenceAreaProps = ChartLayerProps &
 
 /**
  * An annulus between two values, as `y1` and `y2`, or a sector from one instant's slot to another's,
- * as `x1` and `x2`, with an optional label.
+ * as `x1` and `x2`, with an optional label. The annulus clips to the radius domain, from the hole
+ * to the rim, and one outside it draws nothing, as a sector outside the cycle draws nothing, the
+ * label included.
  *
  * @beta
  */
@@ -75,13 +77,20 @@ export function ClockChartReferenceArea({ style, ...props }: ClockChartReference
   let place: LabelPlace;
   if (props.y1 !== undefined) {
     const [a, b] = [clock.radius(props.y1), clock.radius(props.y2)];
-    d = sectorPath(0, 360, Math.min(a, b), Math.max(a, b));
+    // The band clips to the radius domain, from the hole to the rim, and a band outside it draws
+    // nothing (B5).
+    const low = Math.max(clock.inner, Math.min(a, b));
+    const high = Math.min(1, Math.max(a, b));
+    const inside = high > low;
+    d = inside ? sectorPath(0, 360, low, high) : "";
     const valueFormat = props.format ?? clock.format;
-    text = label?.replace(
-      "{value}",
-      `${formatValue(kernel.locale, props.y1, valueFormat, "full").text}–${formatValue(kernel.locale, props.y2, valueFormat, "full").text}`
-    );
-    place = labelPlace(box, 0, Math.max(a, b));
+    text = inside
+      ? label?.replace(
+          "{value}",
+          `${formatValue(kernel.locale, props.y1, valueFormat, "full").text}–${formatValue(kernel.locale, props.y2, valueFormat, "full").text}`
+        )
+      : undefined;
+    place = labelPlace(box, 0, high);
   } else {
     const first = slotOfX(clock, "ClockChart.ReferenceArea", props.x1);
     const last = slotOfX(clock, "ClockChart.ReferenceArea", props.x2);
@@ -106,7 +115,7 @@ export function ClockChartReferenceArea({ style, ...props }: ClockChartReference
       formatSlot(kernel.locale, timeZone, instant, interval, format, "full").text;
     text =
       !ok || from === undefined || until === undefined
-        ? label
+        ? undefined
         : label?.replace("{value}", `${at(from)}\u2013${at(nextSlotStart(until, interval, timeZone))}`);
     place = labelPlace(box, (start + end) / 2, 1.02);
   }

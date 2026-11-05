@@ -7,6 +7,7 @@ import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import { label } from "../../../test/chart/marks";
+import { centreText, outerArc, sectors } from "../../../test/chart/pie";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
 import type { ChartConfig } from "./chart-types";
@@ -29,6 +30,17 @@ const BILL_CONFIG = {
   nettleie: { label: "Nettleie", color: "chart-2" },
   avgifter: { label: "Avgifter", color: "chart-3" },
 } as const;
+
+/** A power bill's charges and its credit, in their order on the bill. */
+const BILL_PARTS = {
+  energi: { label: "Energi", color: "chart-1" },
+  nettleie: { label: "Nettleie", color: "chart-2" },
+  forbruksavgift: { label: "Forbruksavgift", color: "chart-3" },
+  enova: { label: "Enova", color: "chart-4" },
+  mva: { label: "Mva", color: "chart-5" },
+  paslag: { label: "Påslag", color: "chart-1" },
+  rabatt: { label: "Rabatt", color: "chart-2" },
+} as const satisfies ChartConfig;
 
 /** Dispatch a pointer move onto the dial at an angle, halfway out from its centre. */
 async function hoverAngle(angle: number): Promise<void> {
@@ -123,6 +135,48 @@ describe("the polar data rules in production", () => {
     // DOM audit: the legend items and the description are the Root's own output.
     expect(host.querySelectorAll('[data-slot="chart-legend-item"]')).toHaveLength(1);
     expect(host.querySelector('[data-slot="chart-description"]')?.textContent).toContain("totalt 1.");
+  });
+
+  // Q2 and B3: folding keeps each item's drawing weight, the sum of its rows' readings above 0,
+  // apart from its signed value. A credit inside Other draws as 0 and never cancels a charge beside
+  // it, so Other's arc and the centre's total read the charges alone, worked by hand: 2 of 402 is
+  // 1.7910°, and 10 of 1010 is 3.5644°.
+  it.each([
+    [
+      "a credit folded with a charge of the same size, under the default six slices",
+      [100, 90, 80, 70, 60, 2, -2],
+      undefined,
+      (2 / 402) * 360,
+      402,
+    ],
+    ["a credit folded with a larger charge, under two slices", [1000, 10, -9], 2, (10 / 1010) * 360, 1010],
+  ] as const)("draws Other from its charges alone for %s", (_, values, maxSlices, otherSweep, total) => {
+    spy();
+    const keys = Object.keys(BILL_PARTS).slice(0, values.length);
+    const { host } = renderThemed(
+      <LocaleProvider locale="nb-NO">
+        <div style={{ width: 300 }}>
+          <PieChart.Root
+            data={keys.map((key, index) => ({ key, kr: values[index] ?? 0 }))}
+            config={BILL_PARTS}
+            nameKey="key"
+            valueKey="kr"
+            maxSlices={maxSlices}
+            data-intro="none"
+            aria-label="Regning">
+            <PieChart.Pie />
+            <PieChart.Center>
+              <PieChart.CenterValue />
+            </PieChart.Center>
+          </PieChart.Root>
+        </div>
+      </LocaleProvider>
+    );
+    const other = sectors(host).at(-1);
+    const arc = outerArc(other?.getAttribute("d") ?? "");
+    // The path keeps three digits in the dial's units, so an angle reads back to about 0.06°.
+    expect(arc === null ? 0 : arc[1] - arc[0]).toBeCloseTo(otherSweep, 1);
+    expect(centreText(host, "pie-chart-center-value")).toBe(new Intl.NumberFormat("nb-NO").format(total));
   });
 
   it("compares a radar's first four series, leaves the fifth out, and warns once", () => {

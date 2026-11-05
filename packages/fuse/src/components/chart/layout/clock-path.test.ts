@@ -235,6 +235,57 @@ describe("an Area's quality hatch (Q3, B1)", () => {
   });
 });
 
+describe("a step curve's quality (Q3, B7)", () => {
+  // A step draws each reading across its own slot, so its quality covers exactly that slot: hour h
+  // of 24 runs from 15h° to 15(h + 1)°. A cell step draws the slot's two ends, and the midpoint step
+  // turns halfway between two vertices, which on equal slots is their shared edge.
+  const angleOf = ([x = 0, y = 0]: readonly number[]) =>
+    ((((Math.atan2(x, -y) * 180) / Math.PI) % 360) + 360) % 360;
+  const pointsOf = (d: string) =>
+    [...d.matchAll(/[ML](-?[\d.]+),(-?[\d.]+)/gu)].map((match) => [Number(match[1]), Number(match[2])]);
+  const xy = (angle: number, radius: number): readonly [number, number] => [
+    radius * Math.sin((angle * Math.PI) / 180),
+    -radius * Math.cos((angle * Math.PI) / 180),
+  ];
+  const day = (marked: number, pending: readonly number[]): ClockSlots => ({
+    ...readings(24),
+    states: Array.from({ length: 24 }, (_, slot) => (pending.includes(slot) ? "pending" : "reading")),
+    marked: Array.from({ length: 24 }, (_, slot) => slot === marked),
+  });
+
+  it.each(
+    (["step-after", "step-before", "step"] as const).flatMap((curve) => [
+      [curve, "06:00 of a complete day", day(6, []), 90, 105] as const,
+      // An open run's midpoint step starts at its first vertex, 7.5°, so it draws hour 0 from there.
+      [
+        curve,
+        "00:00 of a live day whose 23:00 is pending",
+        day(0, [23]),
+        curve === "step" ? 7.5 : 0,
+        15,
+      ] as const,
+    ])
+  )("dashes and hatches exactly the slot of a %s curve's estimated %s", (curve, _, slots, from, to) => {
+    const tips = Array.from({ length: 24 }, () => 0.6);
+    const line = clockLine(numbers(tips), slots, curve);
+    const dashed = pointsOf(line.marked).map(angleOf);
+    expect(Math.min(...dashed)).toBeCloseTo(from, 1);
+    expect(Math.max(...dashed)).toBeCloseTo(to, 1);
+    expect(
+      pointsOf(line.solid)
+        .map(angleOf)
+        .filter((angle) => angle > from + 0.5 && angle < to - 0.5)
+    ).toEqual([]);
+    const area = clockArea(numbers(tips), slots, curve);
+    for (let angle = 0.25; angle < 360; angle += 1) {
+      if (Math.abs(angle - from) < 0.5 || Math.abs(angle - to) < 0.5) continue;
+      expect(insideEvenOdd(area.marked, ...xy(angle, 0.45)), `${String(angle)}°`).toBe(
+        angle > from && angle < to
+      );
+    }
+  });
+});
+
 describe("the columns", () => {
   it("draws one wedge per reading in its group", () => {
     const groups = clockWedges(
@@ -283,6 +334,35 @@ describe("a ride along the curve", () => {
       expect(radius).toBeLessThanOrEqual(0.9 + 1e-9);
     }
   });
+
+  it.each([
+    ["from slot 1 back across midnight to slot 23", 1, 23, 0.5, 22.5, 0.9, 352.5],
+    ["from slot 23 on across midnight to slot 1", 23, 1, 0.9, 352.5, 0.5, 22.5],
+  ] as const)(
+    "ends an open run's ride %s on the destination's own vertex, never past the samples (B8)",
+    (_, from, to, startRadius, startAngle, endRadius, endAngle) => {
+      // A linear day with slot 0 missing, so slots 1 to 23 form one open run: radii 0.5 at slot 1,
+      // 0.6 at slot 2, 0.9 at slot 23 and 0.7 elsewhere. The short way between 1 and 23 crosses
+      // midnight, outside the run's samples, so the ride goes straight from vertex to vertex.
+      const tips = Array.from({ length: 24 }, (_, slot) =>
+        slot === 1 ? 0.5 : slot === 2 ? 0.6 : slot === 23 ? 0.9 : 0.7
+      );
+      const slots: ClockSlots = {
+        ...readings(24),
+        states: Array.from({ length: 24 }, (_, slot) => (slot === 0 ? "missing" : "reading")),
+      };
+      const route = curveRoute(numbers(tips), slots, "linear", from, to);
+      const turn = (angle: number) => ((angle % 360) + 360) % 360;
+      expect(route[0]?.radius).toBeCloseTo(startRadius, 6);
+      expect(turn(route[0]?.angle ?? 0)).toBeCloseTo(startAngle, 6);
+      expect(route.at(-1)?.radius).toBeCloseTo(endRadius, 6);
+      expect(turn(route.at(-1)?.angle ?? 0)).toBeCloseTo(endAngle, 6);
+      for (const { radius } of route) {
+        expect(radius).toBeGreaterThanOrEqual(0.5 - 1e-9);
+        expect(radius).toBeLessThanOrEqual(0.9 + 1e-9);
+      }
+    }
+  );
 
   it("samples a segment between equal radii as an arc", () => {
     const line = sampleCurve(

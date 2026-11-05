@@ -176,6 +176,7 @@ export function ChartArea({
   return (
     <svg
       data-slot="chart-area-series"
+      data-orientation={context.orientation}
       data-variant={variant}
       data-series={seriesIndex}
       data-paint={glow?.paint}

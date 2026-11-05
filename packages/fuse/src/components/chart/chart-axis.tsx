@@ -272,7 +272,13 @@ export function ChartXAxis({
   const margins = runMargins(drawn?.frame ?? null);
   const placed = { ...style, "--_run-before": margins.before, "--_run-after": margins.after };
   return (
-    <div data-slot="chart-x-axis" data-tick={tick} aria-hidden="true" className={className} style={placed}>
+    <div
+      data-slot="chart-x-axis"
+      data-orientation={orientation}
+      data-tick={tick}
+      aria-hidden="true"
+      className={className}
+      style={placed}>
       {/* Every horizontal label shows, so a hidden sizer gives the axis column the widest one. */}
       {context.orientation === "horizontal" ? (
         <span data-slot="chart-axis-sizer">
@@ -322,7 +328,13 @@ export function ChartYAxis({
   }));
   const inline = context.orientation === "horizontal" ? inlineValueTicks(labels, y.domain) : undefined;
   return (
-    <div data-slot="chart-y-axis" data-side={side} aria-hidden="true" className={className} style={style}>
+    <div
+      data-slot="chart-y-axis"
+      data-orientation={context.orientation}
+      data-side={side}
+      aria-hidden="true"
+      className={className}
+      style={style}>
       <span data-slot="chart-axis-sizer">
         {labels.map(({ value, text }) => (
           <span key={value}>{text}</span>

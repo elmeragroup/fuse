@@ -20,7 +20,7 @@ import {
 } from "../../../test/chart/pie";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
-import type { ChartConfig } from "./chart-types";
+import type { ChartConfig, ChartQuality } from "./chart-types";
 import "./chart.css";
 import { PieChart } from "./pie-chart-namespace";
 import { RadialChart } from "./radial-chart-namespace";
@@ -288,6 +288,129 @@ describe("the Other fold (section 8.4)", () => {
   });
 });
 
+describe("Other's quality (section 8.7, Q1)", () => {
+  // A household's consumption of 60, 30 and 10 kWh under a cap of 2: 30 and 10 fold into Other's
+  // 40. Folding is a drawing rule, so Other keeps the quality of the readings it holds: estimated
+  // when any is estimated, corrected when any is corrected and none estimated, measured otherwise,
+  // and missing only when every one is missing.
+  it.each([
+    [
+      "estimated when one reading it holds is estimated",
+      "measured",
+      "estimated",
+      "estimated",
+      "40\u00a0kilowattimer, estimert, 40\u00a0prosent",
+    ],
+    [
+      "estimated over corrected",
+      "corrected",
+      "estimated",
+      "estimated",
+      "40\u00a0kilowattimer, estimert, 40\u00a0prosent",
+    ],
+    [
+      "corrected when one reading it holds is corrected",
+      "corrected",
+      "measured",
+      "corrected",
+      "40\u00a0kilowattimer, korrigert, 40\u00a0prosent",
+    ],
+    [
+      "measured when every reading it holds is",
+      "measured",
+      "measured",
+      undefined,
+      "40\u00a0kilowattimer, 40\u00a0prosent",
+    ],
+  ] as const)("draws and names Other %s", async (_, second, third, drawn, spoken) => {
+    const rows: { readonly use: string; readonly kwh: number; readonly q: ChartQuality }[] = [
+      { use: "varme", kwh: 60, q: "measured" },
+      { use: "lys", kwh: 30, q: second },
+      { use: "elbil", kwh: 10, q: third },
+    ];
+    const { host } = renderThemed(
+      <LocaleProvider locale="nb-NO">
+        <div style={{ width: 320 }}>
+          <PieChart.Root
+            data={rows}
+            config={{
+              varme: { label: "Varme", color: "chart-1", format: { preset: "energy", unit: "kWh" } },
+              lys: { label: "Lys", color: "chart-2", format: { preset: "energy", unit: "kWh" } },
+              elbil: { label: "Elbil", color: "chart-3", format: { preset: "energy", unit: "kWh" } },
+            }}
+            nameKey="use"
+            valueKey="kwh"
+            qualityKey="q"
+            maxSlices={2}
+            valueFormat={{ preset: "energy", unit: "kWh" }}
+            data-intro="none"
+            aria-label="Forbruk">
+            <PieChart.Pie />
+          </PieChart.Root>
+        </div>
+      </LocaleProvider>
+    );
+    // DOM audit: the slices are aria-hidden plot output, read by their slot.
+    expect(sectors(host).at(-1)?.getAttribute("data-quality") ?? undefined).toBe(drawn);
+    // Other is the second option, a step from the first.
+    await userEvent.tab();
+    await userEvent.keyboard("{ArrowRight}");
+    expect(document.activeElement?.getAttribute("aria-label")).toBe(`Annet, 2\u00a0kategorier: ${spoken}`);
+  });
+});
+
+describe("outside labels before the entrance (D18)", () => {
+  it("keeps the room for its outside labels while the pie waits to come into view", async () => {
+    // The docs' server-component bill: Monthly fee's 49 of 1,386 kr is a 12.7° slice ending at
+    // 12 o'clock, whose outside label sits above the dial, in the room the frame keeps above it. A
+    // pie below the fold waits for its entrance, and the first paint must hold the rest layout, so
+    // the room stays and every label lies inside the Root.
+    const { host } = renderThemed(
+      <LocaleProvider locale="nb-NO">
+        <div style={{ width: 560, marginTop: "300vh" }}>
+          <PieChart.Root
+            data={[
+              { part: "energy", kr: 612 },
+              { part: "grid", kr: 438 },
+              { part: "taxes", kr: 287 },
+              { part: "fee", kr: 49 },
+            ]}
+            config={{
+              energy: { label: "Energi", color: "chart-1" },
+              grid: { label: "Nettleie", color: "chart-2" },
+              taxes: { label: "Avgifter", color: "chart-3" },
+              fee: { label: "Fastledd", color: "chart-4" },
+            }}
+            nameKey="part"
+            valueKey="kr"
+            innerRadius={0.62}
+            aria-label="Regning">
+            <PieChart.Pie />
+            <PieChart.Labels position="outside" />
+          </PieChart.Root>
+        </div>
+      </LocaleProvider>
+    );
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+    // DOM audit: the figure, its labels layer and its labels are the Root's own plot output.
+    const figure = host.querySelector<HTMLElement>("[data-polar]");
+    expect(figure?.hasAttribute("data-drawn")).toBe(false);
+    expect(host.querySelector('[data-slot="pie-chart-labels"]')?.hasAttribute("data-outside")).toBe(true);
+    const box = figure?.getBoundingClientRect() ?? new DOMRect();
+    const outside = [...host.querySelectorAll('[data-slot="pie-chart-label"]')].filter((label) => {
+      const at = label.getBoundingClientRect();
+      return (
+        at.top < box.top - 0.5 ||
+        at.bottom > box.bottom + 0.5 ||
+        at.left < box.left - 0.5 ||
+        at.right > box.right + 0.5
+      );
+    });
+    expect(outside.map((label) => label.textContent)).toEqual([]);
+  });
+});
+
 describe("the centre (section 8.13)", () => {
   function Bill({ config }: { readonly config: ChartConfig }) {
     return (
@@ -336,6 +459,74 @@ describe("the centre (section 8.13)", () => {
     );
     expect(centreText(host, "pie-chart-center-value")).toBe("");
   });
+
+  // B4: two formats that name the same options in another key order are one format. Unit under
+  // test: the centre's total, maximum and share. Oracle: the same chart with identical formats.
+  it.each(["pie", "radial"] as const)(
+    "prints a %s's totals for formats that differ only in key order, as for identical ones",
+    (family) => {
+      const energy = { preset: "energy", unit: "kWh" } as const;
+      const reordered = { unit: "kWh", preset: "energy" } as const;
+      const centre = (second: typeof energy | typeof reordered): string[] => {
+        const config = {
+          varme: { label: "Varme", color: "chart-1", format: energy },
+          elbil: { label: "Elbil", color: "chart-2", format: second },
+        } as const;
+        const data = [
+          { use: "varme", kwh: 100, limit: 200 },
+          { use: "elbil", kwh: 50, limit: 100 },
+        ];
+        const parts = (
+          <>
+            <PieChart.CenterValue />
+            <PieChart.CenterShare />
+            <PieChart.CenterMax />
+          </>
+        );
+        const { host, unmount } = renderThemed(
+          <LocaleProvider locale="nb-NO">
+            <div style={{ width: 320 }}>
+              {family === "pie" ? (
+                <PieChart.Root
+                  data={data}
+                  config={config}
+                  nameKey="use"
+                  valueKey="kwh"
+                  innerRadius={0.6}
+                  data-intro="none"
+                  aria-label="Forbruk">
+                  <PieChart.Pie />
+                  <PieChart.Center>{parts}</PieChart.Center>
+                </PieChart.Root>
+              ) : (
+                <RadialChart.Root
+                  data={data}
+                  config={config}
+                  nameKey="use"
+                  valueKey="kwh"
+                  maxKey="limit"
+                  data-intro="none"
+                  aria-label="Forbruk">
+                  <RadialChart.Bar />
+                  <RadialChart.Center>{parts}</RadialChart.Center>
+                </RadialChart.Root>
+              )}
+            </div>
+          </LocaleProvider>
+        );
+        const texts = ["pie-chart-center-value", "pie-chart-center-share", "pie-chart-center-max"].map(
+          (part) => centreText(host, part)
+        );
+        unmount();
+        return texts;
+      };
+      const identical = centre(energy);
+      // 100 and 50 kWh print a total either way, and a radial chart their 150 of 300 too.
+      expect(identical[0]).not.toBe("");
+      if (family === "radial") expect(identical.slice(1).every((text) => text !== "")).toBe(true);
+      expect(centre(reordered)).toEqual(identical);
+    }
+  );
 
   it("reads a gauge's total against its maximum, and fills the whole track past it", async () => {
     function Gauge({ kwh }: { readonly kwh: number }) {

@@ -54,7 +54,7 @@ export function ChartCrosshair({
   style,
   children,
 }: ChartCrosshairProps): ReactElement {
-  const { xScale, model, motion, store } = useChartRoot("Chart.Crosshair");
+  const { xScale, model, motion, store, orientation } = useChartRoot("Chart.Crosshair");
   const layout = usePlotLayout("Chart.Crosshair");
   const { keys } = layout;
   const drawn = useChartFrame("Chart.Crosshair", layout);
@@ -127,6 +127,7 @@ export function ChartCrosshair({
       <svg
         ref={layer}
         data-slot="chart-crosshair"
+        data-orientation={orientation}
         data-variant={look}
         data-fade={look === "line" ? fade : undefined}
         aria-hidden="true"

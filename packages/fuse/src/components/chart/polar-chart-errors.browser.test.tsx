@@ -241,6 +241,22 @@ describe("the polar rules in development", () => {
       </ClockChart.Root>,
       composition("x-type-mismatch"),
     ],
+    // B2: a Column's wedge and an Area's band encode their value as the length from 0, which a
+    // yBaseline="none" domain cuts off at the hole, as the cartesian Bar and Area rule says.
+    [
+      'a clock Column under yBaseline="none"',
+      <ClockChart.Root key="clock" {...DIAL} yBaseline="none">
+        <ClockChart.Column dataKey="kwh" />
+      </ClockChart.Root>,
+      composition("baseline-required"),
+    ],
+    [
+      'a clock Area under yBaseline="none"',
+      <ClockChart.Root key="clock" {...DIAL} yBaseline="none">
+        <ClockChart.Area dataKey="kwh" />
+      </ClockChart.Root>,
+      composition("baseline-required"),
+    ],
     [
       "a pie Table inside a radar",
       <RadarChart.Root key="radar" data={[]} config={{}} nameKey="season" aria-label="Områder">
@@ -250,6 +266,16 @@ describe("the polar rules in development", () => {
     ],
   ])("throws for %s", (_, element, expected) => {
     expect(thrown(element)).toEqual(expected);
+  });
+
+  it('draws a clock Line under yBaseline="none", which encodes its value by position (B2)', () => {
+    expect(
+      thrown(
+        <ClockChart.Root {...DIAL} yBaseline="none">
+          <ClockChart.Line dataKey="kwh" />
+        </ClockChart.Root>
+      )
+    ).toBeNull();
   });
 
   it("renders a pie whose rows all keep the rules, on the server and in the browser", () => {

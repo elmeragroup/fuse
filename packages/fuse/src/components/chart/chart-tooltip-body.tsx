@@ -16,6 +16,7 @@ import { useChartFollower } from "./chart-followers";
 import { useActiveIndex, useChartReadout } from "./chart-readout";
 import type { TooltipPlacer } from "./chart-readout-port";
 import { ChartLiveContext } from "./chart-scope-contexts";
+import { shareCorridor } from "./chart-tooltip-corridor";
 import { createTooltipGlider } from "./chart-tooltip-glide";
 import type { GlideRoute, TooltipGlider } from "./chart-tooltip-glide";
 import { chartTakesPress, TOOLTIP_POSITIONER, tooltipPopupClass, watchOverflow } from "./chart-tooltip-popup";
@@ -82,6 +83,21 @@ export function ChartTooltipBody({
       measures,
     });
   const pick = readout.usePick();
+  // While the popup shows, the plot reads its anchor's corridor, so a pointer heading for the popup
+  // keeps the active part over what it crosses and across the gap (B1).
+  const latestFreezes = useRef(freezes);
+  useLayoutEffect(() => {
+    latestFreezes.current = freezes;
+  });
+  useEffect(() => {
+    if (!open) return undefined;
+    shareCorridor(store, (from, to) =>
+      latestFreezes.current(from, to, positioner.current?.getAttribute("data-side") ?? null)
+    );
+    return () => {
+      shareCorridor(store, null);
+    };
+  }, [open, store]);
   const glider = useRef<TooltipGlider | null>(null);
   const watchPositioner = useCallback(
     (node: HTMLDivElement | null) => {

@@ -203,7 +203,7 @@ export function PieChartLabels({
     if (node === null) return undefined;
     let sizes: readonly LabelSize[] = [];
     let scale = 0;
-    const write = (measured: readonly Placed[], hidden: (index: number) => boolean): void => {
+    const write = (measured: readonly Placed[], hidden: (index: number) => boolean, rest: boolean): void => {
       for (const label of node.querySelectorAll<HTMLElement>('[data-slot="pie-chart-label"]')) {
         const index = Number(label.dataset.index);
         writeAttribute(label, "data-empty", hidden(index) ? "" : null);
@@ -220,7 +220,10 @@ export function PieChartLabels({
         const at = measured[index];
         leader.setAttribute("points", at?.placement === "outside" && !hidden(index) ? at.leader : "");
       }
-      writeAttribute(node, "data-outside", measured.some((at) => at?.placement === "outside") ? "" : null);
+      // The room past the rim follows the labels at rest, so it holds while the slices sweep in or
+      // wait for the entrance, and the dial never shifts as its first labels show (D18).
+      if (rest)
+        writeAttribute(node, "data-outside", measured.some((at) => at?.placement === "outside") ? "" : null);
     };
     const place = (): void => {
       scale = node.getBoundingClientRect().width / width;
@@ -232,7 +235,7 @@ export function PieChartLabels({
           ? { width: 0, height: 0 }
           : { width: label.offsetWidth, height: label.offsetHeight };
       });
-      write(placeLabels(pie, sizes, scale, position), () => false);
+      write(placeLabels(pie, sizes, scale, position), () => false, true);
     };
     place();
     const observer = new ResizeObserver(place);
@@ -242,7 +245,7 @@ export function PieChartLabels({
       const drawn = pie.slices.map((slice) =>
         angles.has(slice.key) ? (angles.get(slice.key) ?? null) : slice.angles
       );
-      write(placeLabels(pie, sizes, scale, position, drawn), (index) => drawn[index] === null);
+      write(placeLabels(pie, sizes, scale, position, drawn), (index) => drawn[index] === null, false);
     });
     return () => {
       observer.disconnect();

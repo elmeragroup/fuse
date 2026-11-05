@@ -19,7 +19,7 @@ import type { ActiveSlot, ChartFollowers } from "./chart-followers";
 import { createChartLabels } from "./chart-labels";
 import { BROWSER_FRAMES, createChartMotion, createFrameOwner } from "./chart-motion";
 import type { ChartMotion, FrameOwner } from "./chart-motion";
-import { ChartOwnScope } from "./chart-own-scope";
+import { ChartOwnScope, useChartDepth } from "./chart-own-scope";
 import { colourFamilyError, nonFiniteThresholds } from "./chart-paint";
 import { createChartPaths } from "./chart-paths";
 import { usePanelSpan } from "./chart-plot";
@@ -831,6 +831,7 @@ export function ChartRoot<
   const slots = model.window === null ? 0 : model.window.last - model.window.first + 1;
   // The description reads every series over the window, so it waits for a change of what it says.
   const spokenDescription = useMemo(() => description ?? chartDescription(text), [description, text]);
+  const depth = useChartDepth();
   return (
     <ChartOwnScope>
       <ChartRootContext value={context}>
@@ -840,6 +841,7 @@ export function ChartRoot<
               <figure
                 ref={figureRef}
                 data-slot="chart"
+                data-chart-depth={depth}
                 data-orientation={orientation}
                 data-x-scale={xScale}
                 data-selected={selected === null ? undefined : ""}

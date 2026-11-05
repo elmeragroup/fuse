@@ -49,6 +49,8 @@ export type ClockInput = {
   readonly issues: readonly PolarIssue[];
   /** How stacks combine, which decides whether a path may paint by value. */
   readonly stackOffset: "diverging" | "expand";
+  /** Root's `yBaseline`: "zero" keeps 0 in the domain, which a Column and an Area need. */
+  readonly baseline: "zero" | "none";
 };
 
 /** A series' numbers at rest and what its slots hold. */
@@ -197,6 +199,7 @@ export function clockModel(input: ClockInput): PolarModel {
     now,
     format: config[model.series[0]?.key ?? ""]?.format ?? {},
     stackOffset: input.stackOffset,
+    baseline: input.baseline,
     text: context,
     slotOf: (x) => slotOf(model.domain, x),
   };

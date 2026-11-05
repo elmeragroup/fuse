@@ -8,17 +8,18 @@
  * between spokes while Up and Down move the series focus. Home and End go to the first and last
  * option. PageUp and PageDown propagate, except on a clock, where they move one label unit.
  */
-import { use, useLayoutEffect, useRef, useState } from "react";
+import { use, useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { FocusEvent, KeyboardEvent, MouseEvent, PointerEvent, ReactElement } from "react";
 
 import { listboxProps, SurfaceName, useGestureEnd, useOptionHandoff } from "./chart-listbox";
 import { PolarContext } from "./chart-polar-context";
 import type { PolarModel } from "./chart-polar-context";
 import { ChartSelectionContext } from "./chart-readout-port";
-import type { PointerSlot } from "./chart-readout-port";
+import type { ClientPoint, PointerSlot } from "./chart-readout-port";
 import { useChartStore } from "./chart-store";
 import { useTapLift } from "./chart-tap-lift";
 import type { OptionOrder } from "./chart-text";
+import { corridorOf } from "./chart-tooltip-corridor";
 
 /** What one option names: the active option and the series focus. */
 type OptionState = {
@@ -93,6 +94,16 @@ export function PolarSurface(): ReactElement | null {
   // The slots a clock's Columns emphasise, whose options append the emphasis word.
   const emphasis = useChartStore(store, (snapshot) => snapshot.emphasis);
   const pick = kernel.usePick();
+  // Where the pointer last stood on the active part, the corner a move toward the popup leaves from.
+  const apex = useRef<ClientPoint | null>(null);
+  // The watch that follows a pointer across the gap between the plot and the popup, while it runs.
+  const crossing = useRef<(() => void) | null>(null);
+  useEffect(
+    () => () => {
+      crossing.current?.();
+    },
+    []
+  );
   // New data keeps the option on its index while it exists, and the series focus while the series does.
   const [seen, setSeen] = useState(model);
   if (seen !== model) {
@@ -191,17 +202,61 @@ export function PolarSurface(): ReactElement | null {
   const pickAt = (event: MouseEvent<HTMLDivElement>): PointerSlot | null =>
     pick(event.clientX, event.clientY);
 
+  /**
+   * Whether a pointer at a point heads for the open popup from the active part: inside the triangle
+   * from where it last stood on that part to the popup's near edge (CONTRACT section 9.5, B1).
+   */
+  const heading = (to: ClientPoint): boolean => {
+    const from = apex.current;
+    const corridor = corridorOf(store);
+    return from !== null && (corridor?.(from, to) ?? false);
+  };
+
+  /**
+   * Follow a pointer that left the plot toward the popup across the gap between them, where no
+   * plot event reaches it. It keeps the active part until the pointer reaches the popup or the plot
+   * again, which take it from there, or leaves the corridor, which ends the hover.
+   */
+  const crossGap = (): void => {
+    crossing.current?.();
+    const surface = listbox.current;
+    const move = (event: globalThis.PointerEvent): void => {
+      const target = event.target instanceof Element ? event.target : null;
+      if (target?.closest('[data-slot="chart-tooltip"]') != null || (surface?.contains(target) ?? false)) {
+        stop();
+        return;
+      }
+      if (heading({ x: event.clientX, y: event.clientY })) return;
+      stop();
+      const snapshot = store.get();
+      if (snapshot.source === "pointer" && !snapshot.pinned)
+        store.set({ active: null, source: null, near: null });
+    };
+    const stop = (): void => {
+      document.removeEventListener("pointermove", move, true);
+      crossing.current = null;
+    };
+    document.addEventListener("pointermove", move, true);
+    crossing.current = stop;
+  };
+
   const hover = (event: PointerEvent<HTMLDivElement>): void => {
+    crossing.current?.();
     store.track(event.clientX, event.clientY, event.pointerType, event.timeStamp);
-    const { pinned: isPinned, dismissed } = store.get();
+    const { pinned: isPinned, dismissed, active, source } = store.get();
     if (isPinned) return;
+    const point = { x: event.clientX, y: event.clientY };
     const found = pickAt(event);
+    // A pointer heading for the open popup keeps the part it left, over the parts it crosses.
+    if (active !== null && source === "pointer" && found?.slot !== active && heading(point)) return;
     if (found === null) {
-      if (store.get().source === "pointer") store.set({ active: null, source: null, near: null });
+      apex.current = null;
+      if (source === "pointer") store.set({ active: null, source: null, near: null });
       return;
     }
     // A dismissed tooltip stays closed while the pointer stays on its option.
     if (dismissed === found.slot) return;
+    apex.current = point;
     store.set({ active: found.slot, source: "pointer", near: found.near });
   };
 
@@ -246,8 +301,11 @@ export function PolarSurface(): ReactElement | null {
           event.relatedTarget.closest('[data-slot="chart-tooltip"]') !== null;
         if (intoPopup || event.pointerType !== "mouse") return;
         const snapshot = store.get();
-        if (snapshot.source === "pointer" && !snapshot.pinned)
-          store.set({ active: null, source: null, near: null });
+        // A pointer that leaves toward the popup keeps the part across the gap to it.
+        if (snapshot.source === "pointer" && !snapshot.pinned) {
+          if (heading({ x: event.clientX, y: event.clientY })) crossGap();
+          else store.set({ active: null, source: null, near: null });
+        }
         if (snapshot.dismissed !== null) store.set({ dismissed: null });
       }}
       onClick={(event) => {

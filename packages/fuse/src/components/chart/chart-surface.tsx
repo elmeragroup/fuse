@@ -269,6 +269,7 @@ export function ChartSurface({
       ref={listbox}
       role="listbox"
       {...listboxProps(naming, pinned, orientation === "vertical" ? "horizontal" : "vertical")}
+      data-orientation={orientation}
       onKeyDown={onKeyDown}
       onFocus={onFocus}
       onBlur={onBlur}

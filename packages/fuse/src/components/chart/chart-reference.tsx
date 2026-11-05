@@ -596,6 +596,7 @@ export function ChartReferenceLine({ style, ...props }: ChartReferenceLineProps)
     <div
       ref={wrapper}
       data-slot="chart-reference-line"
+      data-orientation={context.orientation}
       data-axis={axis}
       data-outside={outside ? "" : undefined}
       data-variant={variant}
@@ -697,6 +698,7 @@ export function ChartReferenceArea({ style, ...props }: ChartReferenceAreaProps)
     <div
       ref={wrapper}
       data-slot="chart-reference-area"
+      data-orientation={context.orientation}
       data-axis={axis}
       data-outside={outside ? "" : undefined}
       data-clipped={clipped ? "" : undefined}

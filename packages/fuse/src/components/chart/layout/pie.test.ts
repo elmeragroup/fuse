@@ -124,7 +124,18 @@ describe("section 8.4's fold, written by hand", () => {
     expect(foldPie(rows([5, 4, 3, null, null]), 4).at(-1)).toEqual({
       key: OTHER_KEY,
       value: null,
+      weight: 0,
       rows: [3, 4],
+    });
+  });
+
+  it("weighs Other by its readings above 0, apart from its signed value (Q2, B3)", () => {
+    // 2 and −2 fold together: their value sums to 0, and Other still draws the 2.
+    expect(foldPie(rows([100, 90, 80, 70, 60, 2, -2]), 6).at(-1)).toEqual({
+      key: OTHER_KEY,
+      value: 0,
+      weight: 2,
+      rows: [5, 6],
     });
   });
 });

@@ -19,15 +19,16 @@ import { useStackSeat } from "./chart-stack-floors";
 import type { StackSeat } from "./chart-stack-floors";
 import type { ChartDatum, ChartLayerProps } from "./chart-types";
 import {
-  NOMINAL_RADIUS,
   DIAL_REGION,
+  NOMINAL_RADIUS,
+  assertClockBaseline,
   clockDatumSlots,
-  useClockSeries,
-  useClockPlacement,
-  writeReveal,
-  paintOf,
   groupOf,
+  paintOf,
   retuneGlow,
+  useClockPlacement,
+  useClockSeries,
+  writeReveal,
 } from "./clock-chart-part";
 import { columnAxis, columnFloorSpan, columnSpan, wedgePad } from "./layout/clock";
 import { clockWedges, entranceFrame } from "./layout/clock-path";
@@ -187,6 +188,7 @@ export function ClockChartColumn({
   style,
 }: ClockChartColumnProps): ReactElement {
   const { polar, clock, series } = useClockSeries("ClockChart.Column", dataKey);
+  assertClockBaseline(clock, "ClockChart.Column", "a wedge");
   const { kernel } = polar;
   const seat = useStackSeat(polar.motion, series?.stack, dataKey);
   const picked = useMemo(

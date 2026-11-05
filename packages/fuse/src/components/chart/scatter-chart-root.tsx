@@ -11,7 +11,7 @@ import { writeAttribute } from "./chart-dom";
 import { openDrawingSoon, useClientMount } from "./chart-draw-gate";
 import { useEntrance } from "./chart-entrance";
 import { BROWSER_FRAMES, createChartMotion } from "./chart-motion";
-import { ChartOwnScope } from "./chart-own-scope";
+import { ChartOwnScope, useChartDepth } from "./chart-own-scope";
 import { useMeasuredPlot } from "./chart-plot-measure";
 import { PlotReadsContext, ScatterPlotContext, ScatterRootContext } from "./chart-scope-contexts";
 import { PlotLoader } from "./chart-skeleton";
@@ -310,10 +310,16 @@ export function ScatterChartRoot<
       }),
     [description, model, modelConfig, locale, steadyXFormat, steadyValueFormat, xLabel, yLabel]
   );
+  const depth = useChartDepth();
   return (
     <ChartOwnScope>
       <ScatterRootContext value={context}>
-        <figure ref={figureRef} data-slot="chart" data-chart="scatter" {...figureProps}>
+        <figure
+          ref={figureRef}
+          data-slot="chart"
+          data-chart="scatter"
+          data-chart-depth={depth}
+          {...figureProps}>
           <p id={`${id}-description`} data-slot="chart-description">
             {spokenDescription}
           </p>

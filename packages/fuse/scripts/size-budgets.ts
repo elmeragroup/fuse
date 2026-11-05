@@ -216,7 +216,14 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = derive([
   // (B6), and every Root's own scope resetting each family's Root contexts from one light leaf
   // (Q2), which measured 565 bytes on this entry (207302 to 207867). The ceiling keeps about 100
   // bytes of headroom.
-  { name: "chart", entryFile: "chart.js", measuredGzip: 97044, ceilingGzip: 207976 },
+  // Raised again from 207976 on 2026-11-05, fix round 3: the tooltip's corridor from a part to its
+  // popup (B1), the fold's drawing weights (Q2, B3), Other's quality (Q1), formats compared in any
+  // key order (B4), and each Root's depth on its figure (B6), the tooltip's corridor (B1), the step
+  // curves' slot ranges (Q3, B7), routes that end on their vertex (B8), the Column's and Area's
+  // baseline rule (B2), references bounded to the dial (B5), formats compared in any key order
+  // (B4), and the orientation the cartesian parts carry, which measured 968 bytes on this entry
+  // (207867 to 208835). The ceiling keeps about 100 bytes of headroom.
+  { name: "chart", entryFile: "chart.js", measuredGzip: 97044, ceilingGzip: 208935 },
   // 2026-10-13: new entry, measured at 29180. Pure wrappers over Base UI's toolbar and its roving focus.
   { name: "toolbar", entryFile: "toolbar.js", measuredGzip: 29180, ceilingGzip: 43770 },
   // 2026-10-12: new entries. Command is Base UI's Autocomplete in the InputGroup, with the Dialog
@@ -445,7 +452,10 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // so a part under a nested Root of another family reaches no outer Root (Q2), which measured
     // 111 bytes on Chart (153291 to 153402) and on BarChart (153294 to 153405). Each ceiling
     // keeps about 100 bytes of headroom.
-    ceilingGzip: 153527,
+    // Fix round 3 on 2026-11-05: each Root's depth on its figure and the orientation the parts that
+    // read it carry (B6), and formats compared in any key order (B4), 153402 to 153643. The ceiling
+    // keeps about 100 bytes of headroom.
+    ceilingGzip: 153743,
   },
   {
     name: "chart/BarChart",
@@ -454,7 +464,10 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     measuredGzip: 95989,
     // Raised from 153123 on 2026-11-05 with Chart's, for the same cause.
     // Raised again from 153394 on 2026-11-05 with Chart's, for polar fix round 2's own-scope reset.
-    ceilingGzip: 153529,
+    // Fix round 3 on 2026-11-05: each Root's depth on its figure and the orientation the parts that
+    // read it carry (B6), and formats compared in any key order (B4), 153405 to 153645. The ceiling
+    // keeps about 100 bytes of headroom.
+    ceilingGzip: 153745,
   },
   // Set from its measurement on 2026-11-05, when the polar families landed: the whole namespace: slices on their frame with the rim floor and ghosts, labels and leaders that ride the frame, Track, Center parts, Glow and the polar readouts. The ceiling
   // keeps about 100 bytes of headroom.
@@ -468,7 +481,11 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // Fix round 2 on 2026-11-05: duplicate categories (B4), the centre's numbers in their own
     // module (Q1), and every Root's own scope resetting each family's Root contexts from one light
     // leaf (Q2), 106075 to 106238. The ceiling keeps about 100 bytes of headroom.
-    ceilingGzip: 106349,
+    // Fix round 3 on 2026-11-05: the tooltip's corridor from a part to its popup (B1), the fold's
+    // drawing weights (Q2, B3), Other's quality (Q1), formats compared in any key order (B4), and
+    // each Root's depth on its figure (B6), 106238 to 106799. The ceiling keeps about 100 bytes of
+    // headroom.
+    ceilingGzip: 106899,
   },
   // Set from its measurement on 2026-11-05, when the polar families landed: the whole namespace: rings on their frame in three looks, Track, Glow, the Center parts and the polar readouts. The ceiling
   // keeps about 100 bytes of headroom.
@@ -483,7 +500,11 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // (B4), the dotted ring's one-dot floor (B6), the centre's numbers in their own module (Q1),
     // and every Root's own scope resetting each family's Root contexts from one light leaf (Q2),
     // 102522 to 102737. The ceiling keeps about 100 bytes of headroom.
-    ceilingGzip: 102849,
+    // Fix round 3 on 2026-11-05: the tooltip's corridor from a part to its popup (B1), the fold's
+    // drawing weights (Q2, B3), Other's quality (Q1), formats compared in any key order (B4), and
+    // each Root's depth on its figure (B6), 102737 to 103205. The ceiling keeps about 100 bytes of
+    // headroom.
+    ceilingGzip: 103305,
   },
   // Set from its measurement on 2026-11-05, when the polar families landed: the whole namespace: grid, spoke and ring labels fitted to the dial, Area, Line, Dots, an ActiveDot on the loop, Glow and the polar readouts. The ceiling
   // keeps about 100 bytes of headroom.
@@ -495,7 +516,10 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // Fix round 2 on 2026-11-05: Grid, both axes, ActiveDot and Glow in modules of their own (Q1),
     // and every Root's own scope resetting each family's Root contexts from one light leaf (Q2),
     // 107377 to 107489. The ceiling keeps about 100 bytes of headroom.
-    ceilingGzip: 107607,
+    // Fix round 3 on 2026-11-05: the tooltip's corridor (B1), formats compared in any key order
+    // (B4), and each Root's depth on its figure (B6), 107489 to 107893. The ceiling keeps about 100
+    // bytes of headroom.
+    ceilingGzip: 107993,
   },
   // Set from its measurement on 2026-11-05, when the polar families landed: the whole namespace: the zoned dial model, curves, wedges with floors and coarse slots, labels and ring values fitted to the dial, hands, Now, references, centre and value parts, and the polar readouts. The ceiling
   // keeps about 100 bytes of headroom.
@@ -512,7 +536,11 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // from the scale (B5), the datum slots resolved to their owner (B3), and every Root's own scope
     // resetting each family's Root contexts and the clock Marker's from light leaves (Q2), 123362 to
     // 123645. The ceiling keeps about 100 bytes of headroom.
-    ceilingGzip: 123755,
+    // Fix round 3 on 2026-11-05: the tooltip's corridor (B1), the step curves' slot ranges (Q3,
+    // B7), routes that end on their vertex (B8), the Column's and Area's baseline rule (B2),
+    // references bounded to the dial (B5), formats compared in any key order (B4), and each Root's
+    // depth on its figure (B6), 123645 to 124386. The ceiling keeps about 100 bytes of headroom.
+    ceilingGzip: 124486,
   },
   {
     name: "chart/Chart.Root",
@@ -601,7 +629,10 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // reads a region with its unit, and the loop's entrance takes a linear curve, so a clock dial
     // floors and glows through the same code without the plot frame, which measured 145 bytes on
     // this route (80448 to 80593). The ceiling keeps about 100 bytes of headroom.
-    ceilingGzip: 80693,
+    // Fix round 3 on 2026-11-05: each Root's depth on its figure and the orientation the bar
+    // series, axes and crosshair carry (B6) since the last raise, 80593 to 80787. The ceiling keeps
+    // about 100 bytes of headroom.
+    ceilingGzip: 80887,
   },
   // 2026-11-05: PieChart.Root draws through the polar kernel, no longer a pending stub, so its row
   // starts again at 41609 with the derived ceiling, beside new rows for the RadialChart and
@@ -617,7 +648,10 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // Fix rounds 1 and 2 on 2026-11-05: the item reading rules (B9), duplicate categories (B4), and
     // every Root's own scope resetting each family's Root contexts from one light leaf (Q2), 43915
     // to 44160. The ceiling keeps about 100 bytes of headroom.
-    ceilingGzip: 44266,
+    // Fix round 3 on 2026-11-05: the fold's drawing weights (Q2, B3), Other's quality (Q1), formats
+    // compared in any key order (B4), the corridor the surface reads (B1), and the Root's depth
+    // (B6), 44160 to 44570. The ceiling keeps about 100 bytes of headroom.
+    ceilingGzip: 44670,
   },
   // 2026-11-05: new row, the typical pie route, as the bar route is Chart's: Root, Pie, the Center
   // parts, Legend and Tooltip, which the owner set beside the whole-namespace row, with the derived
@@ -644,7 +678,11 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // 100 bytes of headroom.
     // Fix round 2 on 2026-11-05: B4, Q1 and Q2 as on the namespace row, 87534 to 87694. The ceiling
     // keeps about 100 bytes of headroom.
-    ceilingGzip: 87790,
+    // Fix round 3 on 2026-11-05: the tooltip's corridor from a part to its popup (B1), the fold's
+    // drawing weights (Q2, B3), Other's quality (Q1), formats compared in any key order (B4), and
+    // each Root's depth on its figure (B6), 87694 to 88179. The ceiling keeps about 100 bytes of
+    // headroom.
+    ceilingGzip: 88279,
   },
   // 2026-11-05: new row, the typical radial route: Root, Bar, the Center parts, Legend and Tooltip,
   // which the owner set beside the whole-namespace row, with the derived ceiling.
@@ -670,7 +708,11 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // 100 bytes of headroom.
     // Fix round 2 on 2026-11-05: B4, B6, Q1 and Q2 as on the namespace row, 83551 to 83773. The
     // ceiling keeps about 100 bytes of headroom.
-    ceilingGzip: 83881,
+    // Fix round 3 on 2026-11-05: the tooltip's corridor from a part to its popup (B1), the fold's
+    // drawing weights (Q2, B3), Other's quality (Q1), formats compared in any key order (B4), and
+    // each Root's depth on its figure (B6), 83773 to 84173. The ceiling keeps about 100 bytes of
+    // headroom.
+    ceilingGzip: 84273,
   },
   {
     name: "chart/RadialChart.Root",
@@ -685,7 +727,10 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // Fix round 2 on 2026-11-05: duplicate categories with each ring's maximum kept on its own row
     // (B4), and every Root's own scope resetting each family's Root contexts from one light leaf
     // (Q2), 42766 to 43026. The ceiling keeps about 100 bytes of headroom.
-    ceilingGzip: 43137,
+    // Fix round 3 on 2026-11-05: formats compared in any key order (B4), the corridor the surface
+    // reads (B1), and the Root's depth (B6), 43026 to 43369. The ceiling keeps about 100 bytes of
+    // headroom.
+    ceilingGzip: 43469,
   },
   {
     name: "chart/RadarChart.Root",
@@ -697,7 +742,10 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // ceiling keeps about 100 bytes of headroom.
     // Fix round 2 on 2026-11-05: every Root's own scope resetting each family's Root contexts from
     // one light leaf (Q2), 50817 to 50972. The ceiling keeps about 100 bytes of headroom.
-    ceilingGzip: 51069,
+    // Fix round 3 on 2026-11-05: the corridor the surface reads (B1), formats compared in any key
+    // order (B4), and the Root's depth (B6), 50972 to 51297. The ceiling keeps about 100 bytes of
+    // headroom.
+    ceilingGzip: 51397,
   },
   // 2026-11-05: new row, the typical radar route: Root, Grid, both axes, Area, Line, Legend and
   // Tooltip, which the owner set beside the whole-namespace row, with the derived ceiling.
@@ -712,7 +760,10 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // Fix round 2 on 2026-11-05: lowered to the route's new measurement, 94894 to 94191. The split
     // (Q1), which keeps ActiveDot and Glow off a route of Area and Line, saved more than the own
     // scope's reset (Q2) added.
-    ceilingGzip: 94296,
+    // Fix round 3 on 2026-11-05: the tooltip's corridor (B1), formats compared in any key order
+    // (B4), and the Root's depth (B6), 94191 to 94603. The ceiling keeps about 100 bytes of
+    // headroom.
+    ceilingGzip: 94703,
   },
   // 2026-11-05: new rows, ClockChart's Root alone and its typical route: Root, Line, Grid,
   // AngleAxis, Center, Legend and Tooltip, which the owner set, each with the derived ceiling.
@@ -727,7 +778,10 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // Fix rounds 1 and 2 on 2026-11-05: the coarse owner in the pick (Q3), and every Root's own
     // scope resetting each family's Root contexts and the clock Marker's from light leaves (Q2),
     // 54320 to 54512. The ceiling keeps about 100 bytes of headroom.
-    ceilingGzip: 54625,
+    // Fix round 3 on 2026-11-05: the corridor the surface reads (B1), the baseline the dial carries
+    // (B2), formats compared in any key order (B4), and the Root's depth (B6), 54512 to 54868. The
+    // ceiling keeps about 100 bytes of headroom.
+    ceilingGzip: 54968,
   },
   {
     name: "chart/ClockChart route",
@@ -744,7 +798,11 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // second split (Q1), which keeps RadiusAxis, the references, Scrubber, Now, their label fitting
     // and TooltipTotal off a route of Grid, AngleAxis and Center, saved more than the own scope's
     // reset (Q2) added.
-    ceilingGzip: 103101,
+    // Fix round 3 on 2026-11-05: the tooltip's corridor (B1), the step curves' slot ranges (Q3,
+    // B7), routes that end on their vertex (B8), the Column's and Area's baseline rule (B2),
+    // references bounded to the dial (B5), formats compared in any key order (B4), and each Root's
+    // depth on its figure (B6), 102986 to 103601. The ceiling keeps about 100 bytes of headroom.
+    ceilingGzip: 103701,
   },
   // 2026-11-04: new rows, measured at 84628 for the whole ScatterChart namespace and 41808 for its
   // Root alone, each with the derived ceiling.
@@ -849,7 +907,11 @@ export const CSS_BUDGETS: readonly CssBudget[] = derive([
   // Raised again from 22914 on 2026-11-05, fix round 2: the Area's estimated stretch in its own value
   // paint through the quality mask, with the mask's ink (B2), which measured 80 bytes over the
   // stylesheet (22868 to 22948). The ceiling keeps about 100 bytes of headroom.
-  { name: "chart.css", file: "chart.css", measuredGzip: 10089, ceilingGzip: 23048 },
+  // Raised again from 23048 on 2026-11-05, fix round 3: each Root's state flags and their reset,
+  // the hover rules listed once per Root depth so a hover restyles only its parts, and the
+  // orientation rules keyed on the parts that carry it (B6), which measured 1089 bytes over the
+  // stylesheet (22948 to 24037). The ceiling keeps about 100 bytes of headroom.
+  { name: "chart.css", file: "chart.css", measuredGzip: 10089, ceilingGzip: 24137 },
 ] satisfies readonly Measured<CssBudget>[]);
 
 export const FLAG_RAW_BUDGETS: readonly FlagRawBudget[] = [

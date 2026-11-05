@@ -27,7 +27,7 @@ import type { ActiveSlot } from "./chart-followers";
 import { StatusRegion } from "./chart-listbox";
 import { BROWSER_FRAMES, createChartMotion } from "./chart-motion";
 import type { ChartMotion } from "./chart-motion";
-import { ChartOwnScope } from "./chart-own-scope";
+import { ChartOwnScope, useChartDepth } from "./chart-own-scope";
 import { PolarContext } from "./chart-polar-context";
 import type { PolarContextValue, PolarKernel, PolarModel, PolarUpdate } from "./chart-polar-context";
 import { introPace } from "./chart-polar-motion";
@@ -139,6 +139,7 @@ export function PolarRoot(props: PolarRootProps): ReactElement {
   );
   const width = box.right - box.left;
   const height = box.bottom - box.top;
+  const depth = useChartDepth();
   return (
     <ChartOwnScope>
       <PolarContext value={context}>
@@ -148,6 +149,7 @@ export function PolarRoot(props: PolarRootProps): ReactElement {
               ref={figureRef}
               {...SLOTS[model.family]}
               data-polar=""
+              data-chart-depth={depth}
               data-selected={selected === null ? undefined : ""}
               {...figureProps}>
               <p id={`${kernel.id}-description`} data-slot="chart-description">

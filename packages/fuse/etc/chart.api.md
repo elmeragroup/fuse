@@ -1190,7 +1190,7 @@ export type ClockChartSkeletonProps = Omit<ChartDomProps<"div">, "children" | "r
 function ClockChartTable(props: ChartTableProps): ReactElement;
 
 // @beta
-function ClockChartTooltip(props: ChartTooltipProps): ReactElement;
+function ClockChartTooltip(input: ChartTooltipProps): ReactElement;
 
 // @beta
 function ClockChartTooltipTotal(props: ChartTooltipTotalProps): ReactElement;

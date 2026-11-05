@@ -109,6 +109,7 @@ export function ChartLine({
   return (
     <svg
       data-slot="chart-line-series"
+      data-orientation={context.orientation}
       data-variant={variant}
       data-series={seriesIndex}
       data-paint={glow?.paint}

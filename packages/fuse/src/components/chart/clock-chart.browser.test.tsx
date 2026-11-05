@@ -637,6 +637,70 @@ describe("a ReferenceArea's label (B10)", () => {
   });
 });
 
+describe("a reference inside the dial's bounds (B5)", () => {
+  // A linear dial of readings 100 and 200 with the zero baseline: the domain runs from 0 to 200, so
+  // a value v sits at 0.3 + 0.7 · v / 200, from the 0.3 hole to the rim. A line outside that range
+  // draws nothing and shows no label, a band clips to it or draws nothing, as the cartesian
+  // references do in the plot, and an instant outside the cycle draws nothing either.
+  const rows = hours(Array.from({ length: 24 }, (_, hour) => (hour % 2 === 0 ? 100 : 200)));
+
+  /** The smallest and largest radius a reference path visits, its M points and its arcs' ends. */
+  function radiusSpan(d: string): readonly [number, number] | null {
+    const ends = [
+      ...d.matchAll(/M(-?[\d.]+),(-?[\d.]+)|A[\d.]+,[\d.]+,[\d.]+,[01],[01],(-?[\d.]+),(-?[\d.]+)/gu),
+    ].map((match) => Math.hypot(Number(match[1] ?? match[3]), Number(match[2] ?? match[4])));
+    return ends.length === 0 ? null : [Math.min(...ends), Math.max(...ends)];
+  }
+
+  it.each([
+    [
+      "a line inside the range, its ring at 0.65",
+      <ClockChart.ReferenceLine key="r" y={100} label="Mål" />,
+      [0.65, 0.65],
+      "Mål",
+    ],
+    ["a line past the rim", <ClockChart.ReferenceLine key="r" y={300} label="Mål" />, null, null],
+    ["a line inside the hole", <ClockChart.ReferenceLine key="r" y={-50} label="Mål" />, null, null],
+    [
+      "a band reaching into the hole, clipped to it",
+      <ClockChart.ReferenceArea key="r" y1={-100} y2={100} label="Lav" />,
+      [0.3, 0.65],
+      "Lav",
+    ],
+    ["a band past the rim", <ClockChart.ReferenceArea key="r" y1={250} y2={300} label="Høy" />, null, null],
+    [
+      "a line at an instant outside the cycle",
+      <ClockChart.ReferenceLine key="r" x={DAY + 30 * HOUR} label="Nå" />,
+      null,
+      null,
+    ],
+    [
+      "a band between instants outside the cycle",
+      <ClockChart.ReferenceArea key="r" x1={DAY + 30 * HOUR} x2={DAY + 32 * HOUR} label="Topp" />,
+      null,
+      null,
+    ],
+  ] as const)("draws %s", async (_, reference, span, label) => {
+    const { host } = renderThemed(
+      <Dial data={rows} scale="linear">
+        {reference}
+      </Dial>
+    );
+    await painted();
+    // DOM audit: a reference's path and label are aria-hidden plot output, read by their slot and part.
+    const d = host.querySelector('[data-slot="clock-chart-reference-path"]')?.getAttribute("d") ?? "";
+    const drawn = radiusSpan(d);
+    if (span === null) expect(drawn).toBeNull();
+    else {
+      expect(drawn?.[0]).toBeCloseTo(span[0], 3);
+      expect(drawn?.[1]).toBeCloseTo(span[1], 3);
+    }
+    const text =
+      host.querySelector('[data-slot^="clock-chart-reference"] > [data-part="label"]')?.textContent ?? null;
+    expect(text).toBe(label);
+  });
+});
+
 describe("the default tooltip over a stack (B11)", () => {
   it("adds one total row for a stack of two series, as the table and the option do", async () => {
     // Household 2 and cabin 1 at 00:00 stack to 3, which the total row prints.

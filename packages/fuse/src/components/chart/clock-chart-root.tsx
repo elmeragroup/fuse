@@ -90,7 +90,11 @@ export type ClockChartRootProps<
     xFormat?: XFormat;
     /** How stacks combine. "diverging" by default. */
     stackOffset?: "diverging" | "expand";
-    /** "zero" puts 0 in the radius domain, "none" fits the data. "zero" by default. */
+    /**
+     * "zero" puts 0 in the radius domain, "none" fits the data. "zero" by default. A Column or an
+     * Area under "none" throws `baseline-required`, since each draws its value as the length from 0,
+     * and a Line draws.
+     */
     yBaseline?: "zero" | "none";
     /** Values the radius domain must hold, such as a threshold. */
     yInclude?: readonly number[];
@@ -269,6 +273,7 @@ export function ClockChartRoot<
       name,
       issues,
       stackOffset,
+      baseline: yBaseline,
     });
   }, [
     data,

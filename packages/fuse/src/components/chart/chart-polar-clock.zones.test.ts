@@ -1,6 +1,8 @@
 // The clock model on the DST days, in each zone project. Unit under test: clockModel over the
-// cartesian model a ClockChart.Root builds for one day cycle. Oracles: the zoneinfo slot lists in
-// format/fixtures/slots.json for the 23-, 24- and 25-hour days in Europe/Oslo; D11's equal slots,
+// cartesian model a ClockChart.Root builds for one cycle. Oracles: the zoneinfo slot lists in
+// format/fixtures/slots.json for the 23-, 24- and 25-hour days in Europe/Oslo, their quarter-hours,
+// the ISO weeks around both 2025 changes and the months of 2025; calendar counts written by hand,
+// 365 and 366 days and 8,760 and 8,784 hours, from 1 January 00:00 CET; D11's equal slots,
 // 360/n degrees each; the hour labels written by hand, one per wall hour, so the repeated fall-back
 // hour labels once; "06" at slot 7's start on the 25-hour day, 7 × 14.4 = 100.8°; and PageDown's one
 // label unit, six wall hours, which lands on 06:00 at slot 7 of the 25-hour day and slot 5 of the
@@ -43,9 +45,49 @@ function dayModel(day: "2026-03-29" | "2025-10-25" | "2025-10-26") {
     name: "Dag",
     issues: [],
     stackOffset: "diverging",
+    baseline: "zero",
   });
   if (polar.drawing.kind !== "clock") throw new Error("a clock model draws a clock");
   return { polar, clock: polar.drawing.clock, starts };
+}
+
+/**
+ * The model of one cycle over a period, as the Root builds it, with one reading at the period's
+ * start, which is the cycle's first slot.
+ */
+function cycleModel(
+  cycle: "day" | "week" | "year",
+  interval: "quarter-hour" | "hour" | "day" | "month",
+  period: readonly [number, number]
+): ClockDrawing {
+  const rows = [{ start: period[0], kwh: 1 }];
+  const model = buildCartesianModel({
+    rows,
+    series: [["kwh", {}]],
+    xKey: "start",
+    time: { interval, timeZone: OSLO, period },
+    stackOffset: "diverging",
+    baseline: "zero",
+    include: [],
+  });
+  const polar = clockModel({
+    model,
+    config: { kwh: { label: "kWh", color: "chart-1" } },
+    rows,
+    locale: "nb-NO",
+    timeZone: OSLO,
+    cycle,
+    inner: 0.3,
+    scale: "radial",
+    now: undefined,
+    xFormat: undefined,
+    name: "Syklus",
+    issues: [],
+    stackOffset: "diverging",
+    baseline: "zero",
+  });
+  if (polar.drawing.kind !== "clock") throw new Error("a clock model draws a clock");
+  return polar.drawing.clock;
 }
 
 /** Each label's text and angle, rounded to a thousandth of a degree. */
@@ -115,5 +157,54 @@ describe("a day dial across the DST changes", () => {
     expect(polar.page?.(six, -1)).toBe(0);
     // PageUp from midnight wraps to 18:00, six wall hours back round the dial.
     expect(polar.page?.(0, -1)).toBe(polar.count - 6);
+  });
+});
+
+describe("a day's quarter-hours, a week and a year (Q4)", () => {
+  const instants = (list: readonly string[]) => list.map((start) => Date.parse(start));
+
+  it.each([
+    ["2026-03-29", 92],
+    ["2025-10-25", 96],
+    ["2025-10-26", 100],
+  ] as const)("holds %s's quarter-hours, as zoneinfo lists them", (day, count) => {
+    const expected = instants(slots["quarter-hour"][OSLO][day].utc_start);
+    expect(expected).toHaveLength(count);
+    const period = [expected[0] ?? 0, (expected.at(-1) ?? 0) + 900_000] as const;
+    expect(cycleModel("day", "quarter-hour", period).starts).toEqual(expected);
+  });
+
+  // Consecutive Monday starts from zoneinfo, in UTC.
+  const mondays = instants(slots.week[OSLO].utc_start);
+  const weekOf = (day: string): readonly [number, number] => {
+    const monday = mondays.findLast((start) => start <= Date.parse(`${day}T10:00:00Z`)) ?? Number.NaN;
+    return [monday, mondays.find((start) => start > monday) ?? Number.NaN];
+  };
+
+  it.each([
+    ["the week of the spring change", "2025-03-26", 167],
+    ["an ordinary week", "2025-03-19", 168],
+    ["the week of the autumn change", "2025-10-22", 169],
+  ] as const)("holds %s's hours from Monday 00:00", (_, inside, count) => {
+    const period = weekOf(inside);
+    const clock = cycleModel("week", "hour", period);
+    expect(clock.starts[0]).toBe(period[0]);
+    expect(clock.count).toBe(count);
+  });
+
+  it("holds 2025's months from 1 January 00:00, as zoneinfo lists them", () => {
+    const months = instants(slots.month[OSLO]["2025"].utc_start);
+    // 1 January 2026 00:00 CET is 31 December 2025 23:00 UTC.
+    const clock = cycleModel("year", "month", [months[0] ?? 0, Date.parse("2025-12-31T23:00:00Z")]);
+    expect(clock.starts).toEqual(months);
+  });
+
+  it.each([
+    ["2025", "2024-12-31T23:00:00Z", "2025-12-31T23:00:00Z", 365, 8760],
+    ["leap 2024", "2023-12-31T23:00:00Z", "2024-12-31T23:00:00Z", 366, 8784],
+  ] as const)("holds %s's days and hours", (_, start, end, days, hours) => {
+    const period = [Date.parse(start), Date.parse(end)] as const;
+    expect(cycleModel("year", "day", period).count).toBe(days);
+    expect(cycleModel("year", "hour", period).count).toBe(hours);
   });
 });

@@ -51,7 +51,9 @@ export type ClockChartReferenceLineProps = ChartLayerProps &
 
 /**
  * A ring at a value, as `y`, or a spoke at an instant's slot start, as `x`, with an optional label.
- * A `y` at a series' threshold draws the ring the threshold paints at.
+ * A `y` at a series' threshold draws the ring the threshold paints at. A `y` outside the radius
+ * domain, inside the hole or past the rim, and an `x` outside the cycle draw nothing, the label
+ * included; `yInclude` widens the domain to hold one.
  *
  * @beta
  */
@@ -65,20 +67,25 @@ export function ClockChartReferenceLine({ style, ...props }: ClockChartReference
   let place: LabelPlace;
   if (props.y !== undefined) {
     const radius = clock.radius(props.y);
-    d = ringPath(radius);
-    text = label?.replace(
-      "{value}",
-      formatValue(kernel.locale, props.y, props.format ?? clock.format, "full").text
-    );
+    // A value outside the radius domain, inside the hole or past the rim, draws nothing (B5).
+    const inside = radius >= clock.inner - 1e-9 && radius <= 1 + 1e-9;
+    d = inside ? ringPath(radius) : "";
+    text = inside
+      ? label?.replace(
+          "{value}",
+          formatValue(kernel.locale, props.y, props.format ?? clock.format, "full").text
+        )
+      : undefined;
     place = labelPlace(box, 0, radius);
   } else {
     const slot = slotOfX(clock, "ClockChart.ReferenceLine", props.x);
     const angle = slot === -1 ? 0 : slotAngles(slot, clock.count).start;
     d = slot === -1 ? "" : spokePath(angle, clock.inner, 1);
     const start = clock.starts[slot];
+    // An instant outside the cycle draws nothing, its label included.
     text =
       start === undefined
-        ? label
+        ? undefined
         : label?.replace(
             "{value}",
             formatSlot(

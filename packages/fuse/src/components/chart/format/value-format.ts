@@ -194,6 +194,24 @@ function formatPreset(
 }
 
 /**
+ * Whether two value formats name the same options, in any key order, so a format written in
+ * another order prints as the same one and shares a total with it (B4).
+ *
+ * @param a - One format.
+ * @param b - The other.
+ * @returns Whether they match.
+ */
+export function sameFormat(a: ValueFormat, b: ValueFormat): boolean {
+  if (a === b) return true;
+  const left = Object.entries(a);
+  const right = new Map(Object.entries(b));
+  return (
+    left.length === right.size &&
+    left.every(([key, value]) => right.has(key) && Object.is(value, right.get(key)))
+  );
+}
+
+/**
  * Format a chart value for one locale.
  *
  * Values that round to zero, and −0, print `0`, because `signDisplay` defaults to `"negative"`.

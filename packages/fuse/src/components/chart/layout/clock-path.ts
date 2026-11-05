@@ -237,10 +237,19 @@ function slotAt(values: readonly number[], slot: number): readonly [number, numb
   return [values[at] ?? 0, values[at + 1] ?? 0, values[at + 2] ?? 0, values[at + 3] ?? 0];
 }
 
-/** A run's points in unrolled space, its angles kept ascending across the seam. */
+/**
+ * Whether a curve draws each reading across its own slot: the cell steps by their points, and the
+ * midpoint step because it turns halfway between two vertices, which on equal slots is their edge.
+ */
+function stepsAcrossSlots(curve: ChartCurve): boolean {
+  return curve === "step" || curve === "step-after" || curve === "step-before";
+}
+
+/** A run's points in unrolled space, its angles kept ascending across the seam, and each slot's edges. */
 function runPoints(values: readonly number[], run: Run, curve: ChartCurve, pick: "base" | "tip") {
   const points: ClockPoint[] = [];
   const angles: number[] = [];
+  const edges: (readonly [number, number])[] = [];
   let turn = 0;
   let previous = Number.NEGATIVE_INFINITY;
   for (const slot of run.slots) {
@@ -249,13 +258,14 @@ function runPoints(values: readonly number[], run: Run, curve: ChartCurve, pick:
     const radius = pick === "tip" ? tip : base;
     const centre = (start + end) / 2 + turn;
     angles.push(centre);
+    edges.push([start + turn, end + turn]);
     previous = centre;
     if (curve === "step-after" || curve === "step-before") {
       // A cell step runs each reading across its whole slot.
       points.push({ angle: start + turn, radius }, { angle: end + turn, radius });
     } else points.push({ angle: centre, radius });
   }
-  return { points, angles };
+  return { points, angles, edges };
 }
 
 /** A run's curve sampled in unrolled space, closed round the dial when the run closes. */
@@ -314,7 +324,10 @@ function polyline(points: readonly ClockPoint[], closed: boolean): string {
 
 /**
  * The angle ranges a run dashes or hatches: each segment that touches a marked slot, and each
- * bridge, folded into the angles its curve samples and merged. A closed run's first and last readings
+ * bridge, folded into the angles its curve samples and merged. A curve that steps draws each reading
+ * across its own slot, so its marked range is that slot, from its start to its end, and its bridge
+ * runs from one reading's end to the next one's start (section 8.7, Q3, B7). Any other curve draws
+ * a reading as a vertex, so its range runs between the vertices beside it. A closed run's first and last readings
  * meet across midnight, so a range that reaches past one end of the sampled turn continues at the
  * other, and overlapping ranges, as two adjacent marked readings give, merge into one, so no piece is
  * drawn twice, extrapolated past the samples or cancelled by an even-odd fill.
@@ -323,13 +336,15 @@ function polyline(points: readonly ClockPoint[], closed: boolean): string {
  * @param angles - Each of its slots' vertex angle, in the curve's unrolled turn.
  * @param slots - The slots' states and marks.
  * @param bounds - The first and last angle the run's curve samples.
+ * @param edges - Each slot's start and end, in the same turn, for a curve that steps, or null.
  * @returns The merged ranges, ascending, each inside the bounds.
  */
 function markedRanges(
   run: Run,
   angles: readonly number[],
   slots: ClockSlots,
-  bounds: readonly [number, number]
+  bounds: readonly [number, number],
+  edges: readonly (readonly [number, number])[] | null
 ): [number, number][] {
   const raw: [number, number][] = [];
   const last = angles.length - 1;
@@ -343,11 +358,14 @@ function markedRanges(
     const here = angles[index] ?? 0;
     const before = wrapped(index - 1);
     const after = wrapped(index + 1);
-    if (slots.marked[slot] === true) raw.push([before ?? here, after ?? here]);
+    const cell = edges?.[index];
+    const nextCell = edges?.[index + 1];
+    if (slots.marked[slot] === true)
+      raw.push(cell === undefined ? [before ?? here, after ?? here] : [cell[0], cell[1]]);
     const next = run.slots[index + 1];
     // A bridge crosses one or more missing slots between two readings, and a covered slot is none.
     if (next !== undefined && after !== undefined && bridges(slots.states, slot, next))
-      raw.push([here, after]);
+      raw.push(cell === undefined || nextCell === undefined ? [here, after] : [cell[1], nextCell[0]]);
   });
   const [low, high] = bounds;
   const shifts = run.closed ? [-360, 0, 360] : [0];
@@ -398,14 +416,19 @@ function splitMarked(line: readonly ClockPoint[], ranges: readonly (readonly [nu
         piece.push(at);
         flush();
         piece = [at];
-        // The piece after the cut takes the mark of its first stretch past the cut.
-        const ahead = point.angle > cut ? point.angle : (line[index + 1]?.angle ?? cut);
+        // The piece after the cut takes the mark of its first stretch past the cut, past a step's
+        // edge too, whose samples all lie at the cut's angle.
+        const ahead =
+          point.angle > cut
+            ? point.angle
+            : (line.slice(index + 1).find(({ angle }) => angle > cut)?.angle ?? cut);
         pieceMarked = isMarked((cut + ahead) / 2);
       }
-    } else
-      pieceMarked = isMarked(
-        line.length > 1 ? (point.angle + (line[1]?.angle ?? point.angle)) / 2 : point.angle
-      );
+    } else {
+      // The first piece takes the mark of its first stretch, past a step's edge at its start.
+      const ahead = line.find(({ angle }) => angle > point.angle)?.angle ?? point.angle;
+      pieceMarked = isMarked((point.angle + ahead) / 2);
+    }
     piece.push(point);
   });
   flush();
@@ -433,9 +456,15 @@ export function clockLine(values: readonly number[], slots: ClockSlots, curve: C
       lone += `${polyline([{ angle: (start + end) / 2, radius: tip }], false)}h0`;
       continue;
     }
-    const { angles } = runPoints(values, run, curve, "tip");
+    const { angles, edges } = runPoints(values, run, curve, "tip");
     const line = runCurve(values, run, curve, "tip");
-    const ranges = markedRanges(run, angles, slots, [line[0]?.angle ?? 0, line.at(-1)?.angle ?? 0]);
+    const ranges = markedRanges(
+      run,
+      angles,
+      slots,
+      [line[0]?.angle ?? 0, line.at(-1)?.angle ?? 0],
+      stepsAcrossSlots(curve) ? edges : null
+    );
     if (ranges.length === 0) {
       solid += polyline(line, run.closed);
       continue;
@@ -475,13 +504,19 @@ export function clockArea(values: readonly number[], slots: ClockSlots, curve: C
     const base = runCurve(values, run, curve, "base");
     if (run.closed) solid += polyline(top, true) + polyline(base, true);
     else solid += region(top, base);
-    const { angles } = runPoints(values, run, curve, "tip");
+    const { angles, edges } = runPoints(values, run, curve, "tip");
     // The ranges lie inside both curves' samples, merged, so each hatch region is drawn once.
     const bounds: [number, number] = [
       Math.max(top[0]?.angle ?? 0, base[0]?.angle ?? 0),
       Math.min(top.at(-1)?.angle ?? 0, base.at(-1)?.angle ?? 0),
     ];
-    for (const [from, to] of markedRanges(run, angles, slots, bounds)) {
+    for (const [from, to] of markedRanges(
+      run,
+      angles,
+      slots,
+      bounds,
+      stepsAcrossSlots(curve) ? edges : null
+    )) {
       hatched += region(clip(top, from, to), clip(base, from, to));
     }
   }
@@ -595,7 +630,9 @@ export function clockXY(point: ClockPoint): PolarPoint {
 
 /**
  * The points a follower rides along a series' curve from one slot's vertex to another's, the short
- * way round the dial, a tie going clockwise.
+ * way round the dial, a tie going clockwise. The route starts and ends on the two vertices. Where
+ * the curve does not run between them, across another run or past an open run's end, it goes
+ * straight from one vertex to the other and never extrapolates the curve.
  *
  * @param values - The loop's numbers.
  * @param slots - Each slot's state and mark, and the missing rule.
@@ -629,16 +666,18 @@ export function curveRoute(
   const low = Math.min(a, b);
   const high = Math.max(a, b);
   // A closed run repeats a turn either side, so a step back across the seam, which ends before the
-  // run's first vertex, and a step forward past its last both read the curve, never extrapolate.
+  // run's first vertex, and a step forward past its last both read the curve. An open run's short
+  // way can leave its samples, across midnight, and then the ride goes straight (B8).
+  if (!run.closed && (low < first - 1e-9 || high > (line.at(-1)?.angle ?? first) + 1e-9)) return [start, end];
   const shift = (turn: number) => line.map((point) => ({ angle: point.angle + turn, radius: point.radius }));
   const twice = run.closed ? [...shift(-360), ...line, ...shift(360)] : line;
   const route = twice.filter((point) => point.angle > low && point.angle < high);
   const path = [
-    { angle: low, radius: radiusAt(twice, low) },
-    ...route,
-    { angle: high, radius: radiusAt(twice, high) },
+    { angle: a, radius: start.radius },
+    ...(forward ? route : route.toReversed()),
+    { angle: b, radius: end.radius },
   ];
-  return forward ? path : path.toReversed();
+  return path;
 }
 
 /**

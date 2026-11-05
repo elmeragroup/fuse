@@ -108,6 +108,105 @@
     --chart-plot-height: 12.5rem;
   }
 
+  /*
+    Each Root's state reaches its own parts and stops at a nested Root (S14). A Root writes its state
+    on its own figure, and every figure sets each flag below, so a part reads the nearest Root's state
+    by inheritance and never an outer Root's. A cartesian or scatter Root's hover is the one
+    state no variable carries, since a variable that changes on the figure restyles every element
+    in it: its rules list one selector per depth instead, each bound to the Root at that depth,
+    which no other Root on a part's chain shares, so a hover restyles only the parts it styles. A number flag is 0 or 1 for arithmetic. A switch,
+    named --_if-root-…, is empty while on, so `var(--_if-root-x) value` reads the value, and
+    `initial` while off, so the declaration drops out, or `var(--_x, rest)` reads the rest. The
+    state variables a Root writes reset here too, and the Root writes its own over them.
+  */
+  :is([data-slot="chart"], [data-polar]) {
+    --chart-active: initial;
+    --chart-near: initial;
+    --chart-selected: initial;
+    --chart-highlight: initial;
+    --_root-active: 0;
+    --_root-near: 0;
+    --_root-selected: 0;
+    --_root-highlight: 0;
+    --_root-past: 0;
+    --_root-wipe: chart-wipe-left;
+    --_root-wipe-state: running;
+    --_root-reveal-to: to right;
+    --_if-root-waiting: initial;
+    --_if-root-entering: initial;
+    --_if-root-grow: initial;
+    --_if-root-entrance: initial;
+  }
+
+  [data-polar][data-active] {
+    --_root-active: 1;
+  }
+
+  [data-polar][data-near] {
+    --_root-near: 1;
+  }
+
+  :is([data-slot="chart"], [data-polar])[data-selected] {
+    --_root-selected: 1;
+  }
+
+  :is([data-slot="chart"], [data-polar])[data-highlight] {
+    --_root-highlight: 1;
+  }
+
+  :is([data-slot="chart"], [data-polar])[data-fade="past"] {
+    --_root-past: 1;
+  }
+
+  [data-polar][data-entering] {
+    --_if-root-entering: ;
+  }
+
+  [data-polar][data-grow] {
+    --_if-root-grow: ;
+  }
+
+  [data-slot="chart"][data-entrance] {
+    --_if-root-entrance: ;
+  }
+
+  [data-slot="chart"][data-entrance="waiting"] {
+    --_root-wipe-state: paused;
+  }
+
+  [data-slot="chart"][data-intro="right"] {
+    --_root-wipe: chart-wipe-right;
+  }
+
+  [data-slot="chart"][data-intro="center"] {
+    --_root-wipe: chart-wipe-center;
+  }
+
+  [data-slot="chart"][data-intro="edges"] {
+    --_root-wipe: chart-wipe-edges;
+  }
+
+  [data-slot="chart"][data-orientation="horizontal"] {
+    --_root-reveal-to: to bottom;
+  }
+
+  /*
+    First paint (D18). With JavaScript on, a polar Root waits until it comes into view and its
+    entrance starts, which writes data-drawn on its figure. With JavaScript off, and in print, the
+    full chart shows.
+  */
+  @media (scripting: enabled) {
+    [data-polar]:not([data-drawn]) {
+      --_if-root-waiting: ;
+    }
+  }
+
+  @media print {
+    [data-polar]:not([data-drawn]) {
+      --_if-root-waiting: initial;
+    }
+  }
+
   /* Visually hidden, still in the accessibility tree. */
   [data-slot="chart-description"],
   [data-slot="chart-instructions"],
@@ -343,7 +442,7 @@
     outline: none;
   }
 
-  :where([data-slot="chart"])[data-orientation="horizontal"] [data-slot="chart-point"] {
+  :where([data-slot="chart-surface"])[data-orientation="horizontal"] > [data-slot="chart-point"] {
     inset-inline: 0;
     left: 0;
     width: auto;
@@ -407,7 +506,7 @@
   }
 
   /* Horizontal bars run the value axis to the right, so their far end is the right one. */
-  :where([data-slot="chart"])[data-orientation="horizontal"]
+  :where([data-slot="chart-bar-series"])[data-orientation="horizontal"]
     :is([data-slot="chart-bar"], [data-slot="chart-bar-active"]) {
     --_tl: 0px;
     --_tr: var(--_far);
@@ -415,22 +514,12 @@
     --_bl: 0px;
   }
 
-  :where([data-slot="chart"])[data-orientation="horizontal"]
+  :where([data-slot="chart-bar-series"])[data-orientation="horizontal"]
     :is([data-slot="chart-bar"], [data-slot="chart-bar-active"])[data-negative] {
     --_tl: var(--_far);
     --_tr: 0px;
     --_br: 0px;
     --_bl: var(--_far);
-  }
-
-  /*
-    The past slots dim under data-fade="past". A part with an opacity of its own, such as the faint
-    blocks track, keeps it under the dim, so the two multiply. The hover dim applies to their group
-    as well.
-  */
-  [data-slot="chart"][data-fade="past"]
-    :is([data-slot="chart-bar"], [data-slot="chart-bar-detail"])[data-time="past"] {
-    opacity: calc(0.4 * var(--_own-opacity, 1));
   }
 
   /*
@@ -445,11 +534,37 @@
     opacity: 0;
   }
 
-  [data-slot="chart"][data-active] [data-slot="chart-bar-series"] > svg {
+  [data-slot="chart"][data-chart-depth="0"][data-active]
+    [data-slot="chart-bar-series"]:not([data-chart-depth="0"] :is([data-slot="chart"], [data-polar]) *)
+    > svg,
+  [data-slot="chart"][data-chart-depth="1"][data-active]
+    [data-slot="chart-bar-series"]:not([data-chart-depth="1"] :is([data-slot="chart"], [data-polar]) *)
+    > svg,
+  [data-slot="chart"][data-chart-depth="2"][data-active]
+    [data-slot="chart-bar-series"]:not([data-chart-depth="2"] :is([data-slot="chart"], [data-polar]) *)
+    > svg,
+  [data-slot="chart"][data-chart-depth="3"][data-active]
+    [data-slot="chart-bar-series"]:not([data-chart-depth="3"] :is([data-slot="chart"], [data-polar]) *)
+    > svg {
     opacity: var(--chart-hover-dim);
   }
 
-  [data-slot="chart"][data-active] [data-slot="chart-bar-series"] > svg + svg {
+  [data-slot="chart"][data-chart-depth="0"][data-active]
+    [data-slot="chart-bar-series"]:not([data-chart-depth="0"] :is([data-slot="chart"], [data-polar]) *)
+    > svg
+    + svg,
+  [data-slot="chart"][data-chart-depth="1"][data-active]
+    [data-slot="chart-bar-series"]:not([data-chart-depth="1"] :is([data-slot="chart"], [data-polar]) *)
+    > svg
+    + svg,
+  [data-slot="chart"][data-chart-depth="2"][data-active]
+    [data-slot="chart-bar-series"]:not([data-chart-depth="2"] :is([data-slot="chart"], [data-polar]) *)
+    > svg
+    + svg,
+  [data-slot="chart"][data-chart-depth="3"][data-active]
+    [data-slot="chart-bar-series"]:not([data-chart-depth="3"] :is([data-slot="chart"], [data-polar]) *)
+    > svg
+    + svg {
     opacity: 1;
   }
 
@@ -597,6 +712,15 @@
   [data-slot="chart-bar-detail"][data-part="track"] {
     --_own-opacity: calc(0.1 * var(--_top, 1));
     opacity: var(--_own-opacity);
+  }
+
+  /*
+    The past slots dim under data-fade="past". A part with an opacity of its own, such as the faint
+    blocks track, keeps it under the dim, so the two multiply. The hover dim applies to their group
+    as well.
+  */
+  :is([data-slot="chart-bar"], [data-slot="chart-bar-detail"])[data-time="past"] {
+    opacity: calc((1 - 0.6 * var(--_root-past)) * var(--_own-opacity, 1));
   }
 
   /* Isometric bars add a top face and a side face 10 px deep. */
@@ -779,7 +903,11 @@
     inset: 0;
   }
 
-  [data-polar] [data-slot="chart-point"] {
+  [data-polar]
+    > [data-slot="chart-polar-frame"]
+    > [data-slot="chart-polar-cell"]
+    > [data-slot="chart-surface"]
+    > [data-slot="chart-point"] {
     inset: 0;
     left: 0;
     width: auto;
@@ -790,25 +918,16 @@
     A dial scrubs round its whole turn, so a finger that lands on it keeps every direction: no pan
     starts there, and a pinch still zooms. The page scrolls from beside the dial.
   */
-  [data-polar] [data-slot="chart-surface"] {
+  [data-polar]
+    > [data-slot="chart-polar-frame"]
+    > [data-slot="chart-polar-cell"]
+    > [data-slot="chart-surface"] {
     touch-action: pinch-zoom;
   }
 
-  /*
-    First paint (D18). With JavaScript on, a polar mark stays hidden behind the tracks and the grid
-    until the chart comes into view and its entrance starts, which writes data-drawn on the figure.
-    With JavaScript off, and in print, the full chart shows.
-  */
-  @media (scripting: enabled) {
-    [data-polar]:not([data-drawn]) [data-polar-mark] {
-      visibility: hidden;
-    }
-  }
-
-  @media print {
-    [data-polar] [data-polar-mark] {
-      visibility: visible;
-    }
+  /* A polar mark stays hidden behind the tracks and the grid while its Root waits for its first paint. */
+  [data-polar-mark] {
+    visibility: var(--_if-root-waiting) hidden;
   }
 
   /* A pie leaves room around its dial for the active slice's pop, and seams its slices as bars. */
@@ -874,25 +993,28 @@
 
   /*
     The state rules lead with data-sector, which only slices and their halo carry, so Chromium
-    restyles them alone when Root's state changes, and no cartesian mark.
+    restyles them alone when Root's state changes, and no cartesian mark. They read Root's flags,
+    so a highlighted category dims the rest over a selected one's dim.
   */
-  [data-polar][data-active] [data-sector] {
-    --_dim-active: var(--_off);
-    translate: calc((1 - var(--_off)) * var(--_px, 0) * 1px) calc((1 - var(--_off)) * var(--_py, 0) * 1px);
-  }
-
-  [data-polar][data-selected] [data-sector] {
-    --_dim-series: min(
-      1,
-      max(var(--chart-series) - var(--chart-selected), var(--chart-selected) - var(--chart-series))
+  [data-sector] {
+    --_dim-active: calc(var(--_root-active) * var(--_off));
+    --_dim-series: calc(
+      var(--_root-highlight) *
+        min(
+          1,
+          max(
+            var(--chart-series) - var(--chart-highlight, 0),
+            var(--chart-highlight, 0) - var(--chart-series)
+          )
+        ) +
+        (1 - var(--_root-highlight)) * var(--_root-selected) *
+        min(
+          1,
+          max(var(--chart-series) - var(--chart-selected, 0), var(--chart-selected, 0) - var(--chart-series))
+        )
     );
-  }
-
-  [data-polar][data-highlight] [data-sector] {
-    --_dim-series: min(
-      1,
-      max(var(--chart-series) - var(--chart-highlight), var(--chart-highlight) - var(--chart-series))
-    );
+    translate: calc(var(--_root-active) * (1 - var(--_off)) * var(--_px, 0) * 1px)
+      calc(var(--_root-active) * (1 - var(--_off)) * var(--_py, 0) * 1px);
   }
 
   :is([data-slot="pie-chart-pie"], [data-slot="radial-chart-bar"], [data-radar-series], [data-clock-series])
@@ -974,23 +1096,27 @@
     opacity: calc(1 - (1 - var(--chart-hover-dim)) * max(var(--_dim-active, 0), var(--_dim-series, 0)));
   }
 
-  [data-polar][data-active] [data-ring] {
-    --_dim-active: var(--_off);
-    scale: calc(1 + 0.03 * (1 - var(--_off)) + 0.02 * var(--_outside));
-  }
-
-  [data-polar][data-selected] [data-ring] {
-    --_dim-series: min(
-      1,
-      max(var(--chart-series, -2) - var(--chart-selected), var(--chart-selected) - var(--chart-series, -2))
+  [data-ring] {
+    --_dim-active: calc(var(--_root-active) * var(--_off));
+    --_dim-series: calc(
+      var(--_root-highlight) *
+        min(
+          1,
+          max(
+            var(--chart-series, -2) - var(--chart-highlight, 0),
+            var(--chart-highlight, 0) - var(--chart-series, -2)
+          )
+        ) +
+        (1 - var(--_root-highlight)) * var(--_root-selected) *
+        min(
+          1,
+          max(
+            var(--chart-series, -2) - var(--chart-selected, 0),
+            var(--chart-selected, 0) - var(--chart-series, -2)
+          )
+        )
     );
-  }
-
-  [data-polar][data-highlight] [data-ring] {
-    --_dim-series: min(
-      1,
-      max(var(--chart-series, -2) - var(--chart-highlight), var(--chart-highlight) - var(--chart-series, -2))
-    );
+    scale: calc(1 + var(--_root-active) * (0.03 * (1 - var(--_off)) + 0.02 * var(--_outside)));
   }
 
   /* Glow casts the slice's own paint at half alpha, blurred by a Gaussian of 8 px, as a bar's halo. */
@@ -1099,17 +1225,12 @@
     overflow: hidden;
   }
 
+  /* Until the slices sweep in, the centre's digits wait at 0, and they count up with the sweep. */
   [data-slot="pie-chart-center"] [data-part="reel"] {
+    --_reel-waiting: var(--_if-root-waiting) 0 0;
     display: flex;
     flex-direction: column;
-    translate: 0 calc(var(--_digit) * -10%);
-  }
-
-  /* Until the slices sweep in, the centre's digits wait at 0, and they count up with the sweep. */
-  @media (scripting: enabled) {
-    [data-polar]:not([data-drawn]) [data-reel] {
-      translate: 0 0;
-    }
+    translate: var(--_reel-waiting, 0 calc(var(--_digit) * -10%));
   }
 
   /*
@@ -1239,25 +1360,26 @@
     opacity: calc(1 - (1 - var(--chart-hover-dim)) * max(var(--_dim-near, 0), var(--_dim-series, 0)));
   }
 
-  [data-polar][data-near] [data-radar-series] {
-    --_dim-near: min(
-      1,
-      max(var(--chart-series) - var(--chart-near), var(--chart-near) - var(--chart-series))
+  [data-radar-series] {
+    --_dim-near: calc(
+      var(--_root-near) *
+        min(1, max(var(--chart-series) - var(--chart-near, 0), var(--chart-near, 0) - var(--chart-series)))
     );
-    --_near: calc(1 - var(--_dim-near));
-  }
-
-  [data-polar][data-selected] [data-radar-series] {
-    --_dim-series: min(
-      1,
-      max(var(--chart-series) - var(--chart-selected), var(--chart-selected) - var(--chart-series))
-    );
-  }
-
-  [data-polar][data-highlight] [data-radar-series] {
-    --_dim-series: min(
-      1,
-      max(var(--chart-series) - var(--chart-highlight), var(--chart-highlight) - var(--chart-series))
+    --_near: calc(var(--_root-near) * (1 - var(--_dim-near)));
+    --_dim-series: calc(
+      var(--_root-highlight) *
+        min(
+          1,
+          max(
+            var(--chart-series) - var(--chart-highlight, 0),
+            var(--chart-highlight, 0) - var(--chart-series)
+          )
+        ) +
+        (1 - var(--_root-highlight)) * var(--_root-selected) *
+        min(
+          1,
+          max(var(--chart-series) - var(--chart-selected, 0), var(--chart-selected, 0) - var(--chart-series))
+        )
     );
   }
 
@@ -1455,8 +1577,8 @@
     stop-opacity: 1;
   }
 
-  [data-polar][data-fade="past"] [data-slot="clock-chart-wedge"][data-time="past"] {
-    opacity: 0.4;
+  [data-slot="clock-chart-wedge"][data-time="past"] {
+    opacity: calc(1 - 0.6 * var(--_root-past));
   }
 
   [data-slot="clock-chart-wedge"][data-part="emphasis"] {
@@ -1512,25 +1634,26 @@
     opacity: calc(1 - (1 - var(--chart-hover-dim)) * max(var(--_dim-near, 0), var(--_dim-series, 0)));
   }
 
-  [data-polar][data-near] [data-clock-series] {
-    --_dim-near: min(
-      1,
-      max(var(--chart-series) - var(--chart-near), var(--chart-near) - var(--chart-series))
+  [data-clock-series] {
+    --_dim-near: calc(
+      var(--_root-near) *
+        min(1, max(var(--chart-series) - var(--chart-near, 0), var(--chart-near, 0) - var(--chart-series)))
     );
-    --_near: calc(1 - var(--_dim-near));
-  }
-
-  [data-polar][data-selected] [data-clock-series] {
-    --_dim-series: min(
-      1,
-      max(var(--chart-series) - var(--chart-selected), var(--chart-selected) - var(--chart-series))
-    );
-  }
-
-  [data-polar][data-highlight] [data-clock-series] {
-    --_dim-series: min(
-      1,
-      max(var(--chart-series) - var(--chart-highlight), var(--chart-highlight) - var(--chart-series))
+    --_near: calc(var(--_root-near) * (1 - var(--_dim-near)));
+    --_dim-series: calc(
+      var(--_root-highlight) *
+        min(
+          1,
+          max(
+            var(--chart-series) - var(--chart-highlight, 0),
+            var(--chart-highlight, 0) - var(--chart-series)
+          )
+        ) +
+        (1 - var(--_root-highlight)) * var(--_root-selected) *
+        min(
+          1,
+          max(var(--chart-series) - var(--chart-selected, 0), var(--chart-selected, 0) - var(--chart-series))
+        )
     );
   }
 
@@ -2271,7 +2394,7 @@
     }
   }
 
-  :where([data-slot="chart"])[data-orientation="horizontal"] [data-slot="chart-x-axis"] {
+  [data-slot="chart-x-axis"][data-orientation="horizontal"] {
     grid-area: start;
     container: none;
     height: auto;
@@ -2282,7 +2405,7 @@
     padding-inline-end: 0.5rem;
   }
 
-  :where([data-slot="chart"])[data-orientation="horizontal"] [data-slot="chart-x-tick"] {
+  :where([data-slot="chart-x-axis"])[data-orientation="horizontal"] > [data-slot="chart-x-tick"] {
     position: absolute;
     inset-inline-end: 0.5rem;
     left: auto;
@@ -2329,18 +2452,18 @@
     Under horizontal bars the value axis runs along the inline edge, so it takes the x axis's
     container name, and its labels thin by the same width buckets.
   */
-  :where([data-slot="chart"])[data-orientation="horizontal"] [data-slot="chart-y-axis"] {
+  [data-slot="chart-y-axis"][data-orientation="horizontal"] {
     container: chart-x-axis / inline-size;
     grid-area: under;
     height: calc(1rem + 0.5rem);
     padding: 0;
   }
 
-  :where([data-slot="chart"])[data-orientation="horizontal"] [data-slot="chart-y-axis"][data-side="end"] {
+  [data-slot="chart-y-axis"][data-orientation="horizontal"][data-side="end"] {
     grid-area: over;
   }
 
-  :where([data-slot="chart"])[data-orientation="horizontal"] [data-slot="chart-y-tick"] {
+  :where([data-slot="chart-y-axis"])[data-orientation="horizontal"] > [data-slot="chart-y-tick"] {
     top: 0.5rem;
     inset-inline: auto;
     left: calc(100% - var(--chart-at));
@@ -2348,11 +2471,13 @@
   }
 
   /* The domain's ends align their labels inward, so the last value label stays inside the root. */
-  :where([data-slot="chart"])[data-orientation="horizontal"] [data-slot="chart-y-tick"][data-edge="end"] {
+  :where([data-slot="chart-y-axis"])[data-orientation="horizontal"]
+    > [data-slot="chart-y-tick"][data-edge="end"] {
     translate: -100% 0;
   }
 
-  :where([data-slot="chart"])[data-orientation="horizontal"] [data-slot="chart-y-tick"][data-edge="start"] {
+  :where([data-slot="chart-y-axis"])[data-orientation="horizontal"]
+    > [data-slot="chart-y-tick"][data-edge="start"] {
     translate: 0 0;
   }
 
@@ -2364,20 +2489,14 @@
   }
 
   /* Below or above the plot, the title takes a line of its own past the tick line. */
-  [data-slot="chart"]:not([data-orientation="horizontal"])
-    [data-slot="chart-x-axis"]:has(> [data-slot="chart-axis-label"]),
-  :where([data-slot="chart"])[data-orientation="horizontal"]
-    [data-slot="chart-y-axis"]:has(> [data-slot="chart-axis-label"]) {
+  [data-slot="chart-x-axis"]:not([data-orientation="horizontal"]):has(> [data-slot="chart-axis-label"]),
+  [data-slot="chart-y-axis"][data-orientation="horizontal"]:has(> [data-slot="chart-axis-label"]) {
     height: auto;
     padding-top: 1.5rem;
   }
 
-  [data-slot="chart"]:not([data-orientation="horizontal"])
-    [data-slot="chart-x-axis"]
-    > [data-slot="chart-axis-label"],
-  :where([data-slot="chart"])[data-orientation="horizontal"]
-    [data-slot="chart-y-axis"]
-    > [data-slot="chart-axis-label"] {
+  [data-slot="chart-x-axis"]:not([data-orientation="horizontal"]) > [data-slot="chart-axis-label"],
+  [data-slot="chart-y-axis"][data-orientation="horizontal"] > [data-slot="chart-axis-label"] {
     text-align: center;
   }
 
@@ -2385,28 +2504,21 @@
     Beside the plot, the title runs along the axis on the outer edge, so the tick labels keep
     their own column.
   */
-  [data-slot="chart"]:not([data-orientation="horizontal"])
-    [data-slot="chart-y-axis"]:has(> [data-slot="chart-axis-label"]),
-  :where([data-slot="chart"])[data-orientation="horizontal"]
-    [data-slot="chart-x-axis"]:has(> [data-slot="chart-axis-label"]) {
+  [data-slot="chart-y-axis"]:not([data-orientation="horizontal"]):has(> [data-slot="chart-axis-label"]),
+  [data-slot="chart-x-axis"][data-orientation="horizontal"]:has(> [data-slot="chart-axis-label"]) {
     display: flex;
     column-gap: 0.25rem;
   }
 
-  [data-slot="chart"]:not([data-orientation="horizontal"])
-    [data-slot="chart-y-axis"]
-    > [data-slot="chart-axis-label"],
-  :where([data-slot="chart"])[data-orientation="horizontal"]
-    [data-slot="chart-x-axis"]
-    > [data-slot="chart-axis-label"] {
+  [data-slot="chart-y-axis"]:not([data-orientation="horizontal"]) > [data-slot="chart-axis-label"],
+  [data-slot="chart-x-axis"][data-orientation="horizontal"] > [data-slot="chart-axis-label"] {
     order: -1;
     text-align: center;
     writing-mode: vertical-rl;
     rotate: 180deg;
   }
 
-  [data-slot="chart"]:not([data-orientation="horizontal"])
-    [data-slot="chart-y-axis"][data-side="end"]
+  [data-slot="chart-y-axis"]:not([data-orientation="horizontal"])[data-side="end"]
     > [data-slot="chart-axis-label"] {
     order: 1;
     margin-inline: auto 0;
@@ -2418,7 +2530,22 @@
     opacity: 0;
   }
 
-  [data-slot="chart"][data-active] [data-variant][data-slot="chart-crosshair"] {
+  [data-slot="chart"][data-chart-depth="0"][data-active]
+    [data-variant][data-slot="chart-crosshair"]:not(
+      [data-chart-depth="0"] :is([data-slot="chart"], [data-polar]) *
+    ),
+  [data-slot="chart"][data-chart-depth="1"][data-active]
+    [data-variant][data-slot="chart-crosshair"]:not(
+      [data-chart-depth="1"] :is([data-slot="chart"], [data-polar]) *
+    ),
+  [data-slot="chart"][data-chart-depth="2"][data-active]
+    [data-variant][data-slot="chart-crosshair"]:not(
+      [data-chart-depth="2"] :is([data-slot="chart"], [data-polar]) *
+    ),
+  [data-slot="chart"][data-chart-depth="3"][data-active]
+    [data-variant][data-slot="chart-crosshair"]:not(
+      [data-chart-depth="3"] :is([data-slot="chart"], [data-polar]) *
+    ) {
     opacity: 1;
   }
 
@@ -2435,7 +2562,7 @@
     --_fade-to: to bottom;
   }
 
-  [data-slot="chart"][data-orientation="horizontal"] [data-slot="chart-crosshair"][data-variant="line"] {
+  [data-slot="chart-crosshair"][data-orientation="horizontal"][data-variant="line"] {
     --_fade-to: to left;
   }
 
@@ -2633,7 +2760,7 @@
     A hatched series draws its swatches inside the chart hatched too, so the legend tells the series
     apart. The rule comes after every swatch shape, so it hatches each one.
   */
-  [data-slot="chart"] [data-slot="chart-swatch"][data-series-variant="hatched"] {
+  :is([data-slot="chart"], [data-polar]) [data-slot="chart-swatch"][data-series-variant="hatched"] {
     background: repeating-linear-gradient(
       45deg in srgb,
       var(--chart-swatch-paint) 0 1px,
@@ -2800,13 +2927,10 @@
     pointer-events: none;
   }
 
-  :where([data-slot="chart"])[data-orientation="horizontal"]
-    [data-slot="chart-frame"]
-    > [data-slot="chart-active-value"],
-  :where([data-slot="chart"])[data-orientation="horizontal"]
-    [data-slot="chart-frame"]
+  [data-slot="chart-frame"] > [data-slot="chart-active-value"][data-orientation="horizontal"],
+  [data-slot="chart-frame"]
     > [data-part="outgoing"]
-    > [data-slot="chart-active-value"] {
+    > [data-slot="chart-active-value"][data-orientation="horizontal"] {
     left: calc(100% - var(--chart-value-top));
     top: calc(var(--chart-value-at) * 100%);
     translate: 0.25rem -50%;
@@ -2820,7 +2944,22 @@
     opacity: 0;
   }
 
-  [data-slot="chart"][data-active] [data-value][data-slot="chart-active-value-line"] {
+  [data-slot="chart"][data-chart-depth="0"][data-active]
+    [data-value][data-slot="chart-active-value-line"]:not(
+      [data-chart-depth="0"] :is([data-slot="chart"], [data-polar]) *
+    ),
+  [data-slot="chart"][data-chart-depth="1"][data-active]
+    [data-value][data-slot="chart-active-value-line"]:not(
+      [data-chart-depth="1"] :is([data-slot="chart"], [data-polar]) *
+    ),
+  [data-slot="chart"][data-chart-depth="2"][data-active]
+    [data-value][data-slot="chart-active-value-line"]:not(
+      [data-chart-depth="2"] :is([data-slot="chart"], [data-polar]) *
+    ),
+  [data-slot="chart"][data-chart-depth="3"][data-active]
+    [data-value][data-slot="chart-active-value-line"]:not(
+      [data-chart-depth="3"] :is([data-slot="chart"], [data-polar]) *
+    ) {
     opacity: 1;
   }
 
@@ -2843,13 +2982,13 @@
     just inside the plot's start edge and never leaves the root.
   */
   [data-slot="chart"]:not([data-orientation="horizontal"])
-    [data-slot="chart-frame"]:not(:has(> [data-slot="chart-panel"])):not(
+    > [data-slot="chart-frame"]:not(:has(> [data-slot="chart-panel"])):not(
       :has(> [data-slot="chart-y-axis"]:not([data-side="end"]))
     )
-    [data-slot="chart-active-value-line"]
+    > [data-slot="chart-active-value-line"]
     [data-slot="chart-value-label"],
   [data-slot="chart-panel"]:not(:has(> [data-slot="chart-y-axis"]:not([data-side="end"])))
-    [data-slot="chart-active-value-line"]
+    > [data-slot="chart-active-value-line"]
     [data-slot="chart-value-label"] {
     z-index: 1;
     translate: 0.25rem -50%;
@@ -2936,12 +3075,12 @@
     for the active value line's pill.
   */
   [data-slot="chart"]:not([data-orientation="horizontal"])
-    [data-slot="chart-frame"]:has(
-      [data-slot^="chart-reference"][data-axis="slot"]:not([data-outside], [data-slot="chart-panel"] *)
+    > [data-slot="chart-frame"]:has(
+      > [data-slot^="chart-reference"][data-axis="slot"]:not([data-outside])
         > [data-slot="chart-reference-label"]:not(:empty)
     )::before,
   [data-slot="chart-panel"]:has(
-      [data-slot^="chart-reference"][data-axis="slot"]:not([data-outside])
+      > [data-slot^="chart-reference"][data-axis="slot"]:not([data-outside])
         > [data-slot="chart-reference-label"]:not(:empty)
     )::before {
     content: "";
@@ -2949,12 +3088,11 @@
     height: 1.25rem;
   }
 
-  [data-slot="chart"]:not([data-orientation="horizontal"]) [data-slot^="chart-reference"][data-axis="slot"] {
+  [data-slot^="chart-reference"]:not([data-orientation="horizontal"])[data-axis="slot"] {
     container-type: inline-size;
   }
 
-  [data-slot="chart"]:not([data-orientation="horizontal"])
-    [data-slot="chart-reference-line"][data-axis="slot"]
+  [data-slot="chart-reference-line"]:not([data-orientation="horizontal"])[data-axis="slot"]
     > [data-slot="chart-reference-label"] {
     inset-inline-end: auto;
     top: 0;
@@ -2963,8 +3101,7 @@
       calc(-100% - 0.25rem);
   }
 
-  [data-slot="chart"]:not([data-orientation="horizontal"])
-    [data-slot="chart-reference-area"][data-axis="slot"]
+  [data-slot="chart-reference-area"]:not([data-orientation="horizontal"])[data-axis="slot"]
     > [data-slot="chart-reference-label"] {
     inset-inline-end: auto;
     top: 0;
@@ -2997,8 +3134,7 @@
     guides turn in the geometry Root writes, and the HTML labels turn here. A value at a top offset
     of p sits p from the right.
   */
-  :where([data-slot="chart"])[data-orientation="horizontal"]
-    [data-slot^="chart-reference"]:not([data-axis="slot"])
+  :where([data-slot^="chart-reference"])[data-orientation="horizontal"]:not([data-axis="slot"])
     > [data-slot="chart-reference-label"] {
     inset-inline-end: auto;
     top: 0;
@@ -3006,8 +3142,7 @@
     translate: 0.25rem 0;
   }
 
-  :where([data-slot="chart"])[data-orientation="horizontal"]
-    [data-slot="chart-active-value-line"]
+  :where([data-slot="chart-active-value-line"])[data-orientation="horizontal"]
     [data-slot="chart-value-label"] {
     top: 100%;
     left: calc(100% - var(--chart-line-top) + var(--_rule-width, 1px) / 2);
@@ -3041,8 +3176,7 @@
     print-color-adjust: exact;
   }
 
-  :where([data-slot="chart"])[data-orientation="horizontal"]
-    :is([data-slot="chart-line-series"], [data-slot="chart-area-series"]) {
+  :is([data-slot="chart-line-series"], [data-slot="chart-area-series"])[data-orientation="horizontal"] {
     clip-path: inset(var(--_run-before, 0px) -0.5rem var(--_run-after, 0px));
   }
 
@@ -3220,7 +3354,10 @@
     active ring past it by the ring's reach, which ActiveDot writes, so a dot or a ring on the
     domain's edge stays whole and one the domains have not glided to yet stays inside.
   */
-  :is([data-slot="chart-points"], [data-chart="scatter"] [data-slot="chart-active-dot"]) {
+  :is(
+    [data-slot="chart-points"],
+    [data-chart="scatter"] > [data-slot="chart-frame"] > [data-slot="chart-active-dot"]
+  ) {
     clip-path: inset(calc(-1 * var(--_bleed, 0px)));
   }
 
@@ -3246,7 +3383,22 @@
   }
 
   /* A shown active dot dims with its series, as the series' line does, by the private dimming share. */
-  [data-slot="chart"][data-active] [data-value][data-slot="chart-active-dot"] {
+  [data-slot="chart"][data-chart-depth="0"][data-active]
+    [data-value][data-slot="chart-active-dot"]:not(
+      [data-chart-depth="0"] :is([data-slot="chart"], [data-polar]) *
+    ),
+  [data-slot="chart"][data-chart-depth="1"][data-active]
+    [data-value][data-slot="chart-active-dot"]:not(
+      [data-chart-depth="1"] :is([data-slot="chart"], [data-polar]) *
+    ),
+  [data-slot="chart"][data-chart-depth="2"][data-active]
+    [data-value][data-slot="chart-active-dot"]:not(
+      [data-chart-depth="2"] :is([data-slot="chart"], [data-polar]) *
+    ),
+  [data-slot="chart"][data-chart-depth="3"][data-active]
+    [data-value][data-slot="chart-active-dot"]:not(
+      [data-chart-depth="3"] :is([data-slot="chart"], [data-polar]) *
+    ) {
     opacity: calc(1 - (1 - var(--chart-hover-dim)) * var(--_other, 0));
   }
 
@@ -3303,29 +3455,36 @@
   }
 
   /* Reveal paints its marks at full strength up to the active slot and dims them past it. */
-  [data-slot="chart"][data-active]
-    [data-slot="chart-reveal"]
+  [data-slot="chart"][data-chart-depth="0"][data-active]
+    [data-slot="chart-reveal"]:not([data-chart-depth="0"] :is([data-slot="chart"], [data-polar]) *)
+    > [data-variant]:is(
+      [data-slot="chart-line-series"],
+      [data-slot="chart-area-series"],
+      [data-slot="chart-dots"]
+    ),
+  [data-slot="chart"][data-chart-depth="1"][data-active]
+    [data-slot="chart-reveal"]:not([data-chart-depth="1"] :is([data-slot="chart"], [data-polar]) *)
+    > [data-variant]:is(
+      [data-slot="chart-line-series"],
+      [data-slot="chart-area-series"],
+      [data-slot="chart-dots"]
+    ),
+  [data-slot="chart"][data-chart-depth="2"][data-active]
+    [data-slot="chart-reveal"]:not([data-chart-depth="2"] :is([data-slot="chart"], [data-polar]) *)
+    > [data-variant]:is(
+      [data-slot="chart-line-series"],
+      [data-slot="chart-area-series"],
+      [data-slot="chart-dots"]
+    ),
+  [data-slot="chart"][data-chart-depth="3"][data-active]
+    [data-slot="chart-reveal"]:not([data-chart-depth="3"] :is([data-slot="chart"], [data-polar]) *)
     > [data-variant]:is(
       [data-slot="chart-line-series"],
       [data-slot="chart-area-series"],
       [data-slot="chart-dots"]
     ) {
     mask-image: linear-gradient(
-      to right,
-      #000 var(--chart-active-x, 100%),
-      rgb(0 0 0 / var(--chart-hover-dim)) var(--chart-active-x, 100%)
-    );
-  }
-
-  [data-slot="chart"][data-orientation="horizontal"][data-active]
-    [data-slot="chart-reveal"]
-    > [data-variant]:is(
-      [data-slot="chart-line-series"],
-      [data-slot="chart-area-series"],
-      [data-slot="chart-dots"]
-    ) {
-    mask-image: linear-gradient(
-      to bottom,
+      var(--_root-reveal-to),
       #000 var(--chart-active-x, 100%),
       rgb(0 0 0 / var(--chart-hover-dim)) var(--chart-active-x, 100%)
     );
@@ -3346,44 +3505,41 @@
     through min and max, so |a - b| clamped to 1 is 0 for the match and 1 for the rest. The result
     lives in a private property, so a series painted with the public chart-other role keeps it.
   */
-  [data-slot="chart"][data-selected]
-    :is(
-      [data-slot="chart-bar-series"],
-      [data-slot="chart-line-series"],
-      [data-slot="chart-area-series"],
-      [data-slot="chart-dots"],
-      [data-slot="chart-marker"],
-      [data-slot="chart-active-dot"]
-    ) {
-    --_other: min(
-      1,
-      max(var(--chart-series, 0) - var(--chart-selected), var(--chart-selected) - var(--chart-series, 0))
+  :is(
+    [data-slot="chart-bar-series"],
+    [data-slot="chart-line-series"],
+    [data-slot="chart-area-series"],
+    [data-slot="chart-dots"],
+    [data-slot="chart-marker"],
+    [data-slot="chart-active-dot"]
+  ) {
+    --_other: calc(
+      var(--_root-highlight) *
+        min(
+          1,
+          max(
+            var(--chart-series, 0) - var(--chart-highlight, 0),
+            var(--chart-highlight, 0) - var(--chart-series, 0)
+          )
+        ) +
+        (1 - var(--_root-highlight)) * var(--_root-selected) *
+        min(
+          1,
+          max(
+            var(--chart-series, 0) - var(--chart-selected, 0),
+            var(--chart-selected, 0) - var(--chart-series, 0)
+          )
+        )
     );
   }
 
-  [data-slot="chart"][data-highlight]
-    :is(
-      [data-slot="chart-bar-series"],
-      [data-slot="chart-line-series"],
-      [data-slot="chart-area-series"],
-      [data-slot="chart-dots"],
-      [data-slot="chart-marker"],
-      [data-slot="chart-active-dot"]
-    ) {
-    --_other: min(
-      1,
-      max(var(--chart-series, 0) - var(--chart-highlight), var(--chart-highlight) - var(--chart-series, 0))
-    );
-  }
-
-  [data-slot="chart"]:is([data-selected], [data-highlight])
-    :is(
-      [data-slot="chart-bar-series"],
-      [data-slot="chart-line-series"],
-      [data-slot="chart-area-series"],
-      [data-slot="chart-dots"],
-      [data-slot="chart-marker"]
-    ) {
+  :is(
+    [data-slot="chart-bar-series"],
+    [data-slot="chart-line-series"],
+    [data-slot="chart-area-series"],
+    [data-slot="chart-dots"],
+    [data-slot="chart-marker"]
+  ) {
     opacity: calc(1 - (1 - var(--chart-hover-dim)) * var(--_other, 0));
     transition: opacity 150ms ease;
   }
@@ -3479,12 +3635,10 @@
         translate var(--_spring-duration) var(--_spring-easing);
     }
 
+    /* While the entrance plays, the digits count up over it, and afterwards roll on their spring. */
     [data-slot="pie-chart-center"] [data-part="reel"] {
-      transition: translate var(--_spring-duration) var(--_spring-easing);
-    }
-
-    [data-polar][data-entering] [data-reel] {
-      transition: translate var(--chart-intro) var(--chart-ease) 100ms;
+      --_reel-entering: var(--_if-root-entering) translate var(--chart-intro) var(--chart-ease) 100ms;
+      transition: var(--_reel-entering, translate var(--_spring-duration) var(--_spring-easing));
     }
 
     [data-slot="pie-chart-label"] {
@@ -3502,28 +3656,28 @@
       As the entrance starts on a chart nothing painted before, each ring's track scales out from
       the centre, i·80 ms apart. A hydrated chart's tracks stay at rest.
     */
-    [data-polar][data-grow] [data-ring-track] {
-      animation: chart-ring-grow var(--_grow-duration) var(--_grow-easing) calc(var(--chart-slot) * 80ms)
-        backwards;
+    [data-ring-track] {
+      animation: var(--_if-root-grow) chart-ring-grow var(--_grow-duration) var(--_grow-easing)
+        calc(var(--chart-slot) * 80ms) backwards;
     }
 
     /*
       On a radar nothing painted before, the rings scale out 80 ms apart, the spokes extend 50 ms
       apart, and the labels fade in over 500 ms from 400 ms, 50 ms apart. A hydrated grid stays.
     */
-    [data-polar][data-grow] [data-slot="radar-chart-grid-ring"] {
-      animation: chart-ring-grow var(--_grow-duration) var(--_grow-easing) calc(var(--chart-slot) * 80ms)
-        backwards;
+    [data-slot="radar-chart-grid-ring"] {
+      animation: var(--_if-root-grow) chart-ring-grow var(--_grow-duration) var(--_grow-easing)
+        calc(var(--chart-slot) * 80ms) backwards;
     }
 
-    [data-polar][data-grow] [data-slot="radar-chart-spoke"]:not([data-part="hand"]) {
-      animation: chart-ring-grow var(--_extend-duration) var(--_extend-easing) calc(var(--chart-slot) * 50ms)
-        backwards;
+    [data-slot="radar-chart-spoke"]:not([data-part="hand"]) {
+      animation: var(--_if-root-grow) chart-ring-grow var(--_extend-duration) var(--_extend-easing)
+        calc(var(--chart-slot) * 50ms) backwards;
     }
 
-    [data-polar][data-grow]
-      :is([data-slot="radar-chart-angle-label"], [data-slot="radar-chart-radius-label"]) {
-      animation: chart-fade-in 500ms ease-out calc(400ms + var(--chart-slot, 0) * 50ms) backwards;
+    :is([data-slot="radar-chart-angle-label"], [data-slot="radar-chart-radius-label"]) {
+      animation: var(--_if-root-grow) chart-fade-in 500ms ease-out calc(400ms + var(--chart-slot, 0) * 50ms)
+        backwards;
     }
 
     [data-slot="radar-chart-spoke"][data-part="hand"],
@@ -3554,45 +3708,19 @@
       entrance started carries data-intro. Root writes no data-entrance on the server, so no wipe
       starts before the chart hydrates, and drops it once the wipe has run, so no wipe starts again.
     */
-    [data-slot="chart"][data-entrance]
-      :is(
-        [data-slot="chart-line-series"],
-        [data-slot="chart-area-series"],
-        [data-slot="chart-dots"],
-        [data-slot="chart-points"]
-      ):not([data-intro]) {
-      animation: chart-wipe-left 1s var(--chart-ease) backwards;
+    :is(
+      [data-slot="chart-line-series"],
+      [data-slot="chart-area-series"],
+      [data-slot="chart-dots"],
+      [data-slot="chart-points"]
+    ):not([data-intro]) {
+      animation: var(--_if-root-entrance) var(--_root-wipe) 1s var(--chart-ease) backwards;
+      animation-play-state: var(--_root-wipe-state);
     }
 
-    [data-slot="chart"][data-entrance="waiting"]
-      :is(
-        [data-slot="chart-line-series"],
-        [data-slot="chart-area-series"],
-        [data-slot="chart-dots"],
-        [data-slot="chart-points"]
-      ):not([data-intro]) {
-      animation-play-state: paused;
-    }
-
-    [data-slot="chart"][data-entrance][data-intro="right"]
-      :is([data-slot="chart-line-series"], [data-slot="chart-area-series"], [data-slot="chart-dots"]):not(
-        [data-intro]
-      ) {
-      animation-name: chart-wipe-right;
-    }
-
-    [data-slot="chart"][data-entrance][data-intro="center"]
-      :is([data-slot="chart-line-series"], [data-slot="chart-area-series"], [data-slot="chart-dots"]):not(
-        [data-intro]
-      ) {
-      animation-name: chart-wipe-center;
-    }
-
-    [data-slot="chart"][data-entrance][data-intro="edges"]
-      :is([data-slot="chart-line-series"], [data-slot="chart-area-series"], [data-slot="chart-dots"]):not(
-        [data-intro]
-      ) {
-      animation-name: chart-wipe-edges;
+    /* Points wipe in from the left whatever the intro, as data-intro names a line's origin. */
+    [data-slot="chart-points"]:not([data-intro]) {
+      animation-name: var(--_if-root-entrance) chart-wipe-left;
     }
   }
 

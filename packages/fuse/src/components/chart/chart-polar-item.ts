@@ -17,7 +17,7 @@ import { CHART_STRINGS, countOf } from "./format/chart-strings";
 import type { FormattedText } from "./format/formatted-text";
 import { POLAR_STRINGS } from "./format/polar-strings";
 import { seriesLabel } from "./format/series-label";
-import { formatUnitLabel, formatUnitless, formatValue } from "./format/value-format";
+import { formatUnitLabel, formatUnitless, formatValue, sameFormat } from "./format/value-format";
 import { isRoleList, seriesPaint, singleRole } from "./layout/color-key";
 import {
   assertKnownKey,
@@ -82,6 +82,22 @@ type ItemRow = {
 function qualityOf(reading: Reading): "estimated" | "corrected" | "missing" | undefined {
   if (reading.kind === "missing") return "missing";
   if (reading.kind === "reading" && reading.quality !== "measured") return reading.quality;
+  return undefined;
+}
+
+/**
+ * The quality of the readings Other holds (section 8.7, Q1). Folding is a drawing rule, so Other
+ * keeps their uncertainty: estimated when any is estimated, corrected when any is corrected and none
+ * estimated, missing only when every one is missing, and measured otherwise.
+ *
+ * @param readings - The folded readings.
+ * @returns The quality state, or undefined for measured.
+ */
+function foldedQuality(readings: readonly Reading[]): "estimated" | "corrected" | "missing" | undefined {
+  const states = readings.map(qualityOf);
+  if (states.includes("estimated")) return "estimated";
+  if (states.includes("corrected")) return "corrected";
+  if (states.length > 0 && states.every((state) => state === "missing")) return "missing";
   return undefined;
 }
 
@@ -281,8 +297,8 @@ function itemReadout(source: ItemSource, kernel: PolarKernel, empty: boolean): C
 function sharedFormat(items: readonly { readonly format: ValueFormat }[]): ValueFormat | null {
   const [first] = items;
   if (first === undefined) return null;
-  const key = JSON.stringify(first.format);
-  return items.every(({ format }) => JSON.stringify(format) === key) ? first.format : null;
+  // Two formats that name the same options in another key order are one format (B4).
+  return items.every(({ format }) => sameFormat(format, first.format)) ? first.format : null;
 }
 
 /** The rows of an item table: every original row unfolded, with its value and its share or maximum. */
@@ -400,7 +416,7 @@ export function pieModel(input: PieInput): PolarModel {
         key,
         label: { text: label, spoken: label },
         value,
-        quality: undefined,
+        quality: foldedQuality(members.flatMap((member) => rows[member]?.reading ?? [])),
         format: valueFormat ?? {},
         icon: undefined,
         paint: "var(--chart-other)",
@@ -419,7 +435,9 @@ export function pieModel(input: PieInput): PolarModel {
       rows: members,
     };
   });
-  const drawn = items.map(({ value }) => (value !== null && value > 0 ? value : 0));
+  // The slices, the gauge and the drawn total read each item's weight, its readings above 0, and the
+  // text and the Table keep the signed values (Q2, B3).
+  const drawn = folded.map(({ weight }) => weight);
   const total = drawn.reduce((sum, value) => sum + value, 0);
   const gauge = input.max === undefined ? null : gaugeFill(input.sweep, total, input.max);
   const sweep = gauge?.sweep ?? input.sweep;

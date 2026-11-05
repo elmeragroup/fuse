@@ -181,6 +181,8 @@ export type ClockDrawing = {
   readonly format: ValueFormat;
   /** How stacks combine, which decides whether a Line or an Area may paint by value. */
   readonly stackOffset: "diverging" | "expand";
+  /** Root's `yBaseline`, which a Column and an Area need at "zero" (B2). */
+  readonly baseline: "zero" | "none";
   /** The series model and its words, which the value parts read. */
   readonly text: TextContext;
   /** The slot of an x, or -1 when no slot holds it. */

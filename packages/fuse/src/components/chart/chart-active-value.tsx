@@ -246,6 +246,7 @@ function PlotValue({
       <span
         ref={markRef}
         data-slot="chart-active-value"
+        data-orientation={context.orientation}
         aria-hidden="true"
         className={className}
         style={{
@@ -321,6 +322,7 @@ export function ChartActiveValueLine({
       <div
         ref={markRef}
         data-slot="chart-active-value-line"
+        data-orientation={context.orientation}
         aria-hidden="true"
         className={className}
         style={style}>

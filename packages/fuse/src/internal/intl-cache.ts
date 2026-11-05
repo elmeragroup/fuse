@@ -31,7 +31,9 @@ export function cached<TFormat>(
   options: FormatOptions,
   create: () => TFormat
 ): TFormat {
-  const key = `${locale}\u0000${JSON.stringify(options)}`;
+  // The options in key order, so the same options written in another order share one entry.
+  const sorted = Object.entries(options).toSorted(([a], [b]) => (a < b ? -1 : 1));
+  const key = `${locale}\u0000${JSON.stringify(sorted)}`;
   let format = cache.get(key);
   if (format === undefined) {
     format = create();

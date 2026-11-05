@@ -212,6 +212,7 @@ export function ChartBar({
     <div
       ref={element}
       data-slot="chart-bar-series"
+      data-orientation={context.orientation}
       data-variant={drawnVariant}
       data-list={stops === undefined ? undefined : ""}
       data-paint={glow?.paint}

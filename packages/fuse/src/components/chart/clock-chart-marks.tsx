@@ -18,7 +18,7 @@ import { PATH_GLOW, valueGlow } from "./chart-glow-filter";
 import type { MarkValues } from "./chart-motion";
 import { stackedScaleError } from "./chart-paint";
 import { viewBoxOf } from "./chart-pie-frame";
-import { usePolarContext } from "./chart-polar-context";
+import { clockDrawingIn, usePolarContext } from "./chart-polar-context";
 import type { ClockDrawing, ClockSeries } from "./chart-polar-context";
 import { PolarHatch } from "./chart-polar-hatch";
 import { usePolarCommit, usePolarMark } from "./chart-polar-motion";
@@ -33,6 +33,7 @@ import {
   paintOf,
   retuneGlow,
   useLineCurve,
+  assertClockBaseline,
 } from "./clock-chart-part";
 import { clockArea, clockLine, entranceFrame } from "./layout/clock-path";
 
@@ -418,6 +419,8 @@ export function ClockChartArea({
   className,
   style,
 }: ClockChartAreaProps): ReactElement {
+  const { model } = usePolarContext("ClockChart.Area", ["clock"]);
+  assertClockBaseline(clockDrawingIn(model, "ClockChart.Area"), "ClockChart.Area", "a band");
   return (
     <SeriesLayer
       dataSlot="clock-chart-area"
