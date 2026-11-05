@@ -19,6 +19,7 @@ import { BrandLogo } from "@elmeragroup/fuse/icons";
 
 <BrandLogo brand="fkas" />              // Fjordkraft wordmark
 <BrandLogo brand="tkas" variant="mark" />
+<BrandLogo brand="tkas" className="[--logo-mark-ink:var(--brand-tkas)]" /> // turquoise lamp
 
 <DropdownMenu.Item>
   <BrandLogo brand="fkas" variant="mark" className="size-3" />
@@ -125,6 +126,13 @@ export default function IconsPage(): ReactElement {
       <pre>
         <code>{BRAND_LOGO}</code>
       </pre>
+      <p>
+        TrøndelagKraft&apos;s own lockups draw the lamp&apos;s ring and base in an ink apart from the name.
+        Set <code>--logo-mark-ink</code> on the logo or an ancestor to do the same:{" "}
+        <code>var(--brand-tkas)</code> gives a turquoise lamp beside a text-coloured name, and{" "}
+        <code>white</code> the look of the brand&apos;s hero. Without it the ring and base keep{" "}
+        <code>currentColor</code>. No other logo reads it.
+      </p>
       <p>
         <code>BrandLogo</code> is exhaustive over every brand code and reads no context: pass the brand
         explicitly. Its accessible name defaults to the brand&apos;s display name, and <code>elma</code>{" "}
