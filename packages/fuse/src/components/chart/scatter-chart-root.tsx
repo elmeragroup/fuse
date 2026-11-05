@@ -3,14 +3,14 @@
 import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { ReactElement, ReactNode } from "react";
 
-import { useMediaQuery } from "../../hooks/use-media-query";
 import { useMergedRefs } from "../../hooks/use-merged-refs";
+import { useReducedMotion } from "../../hooks/use-reduced-motion";
 import { definedProps } from "../../internal/defined-props";
 import { useLocale } from "../../intl/locale-context";
 import { writeAttribute } from "./chart-dom";
 import { openDrawingSoon, useClientMount } from "./chart-draw-gate";
 import { useEntrance } from "./chart-entrance";
-import { BROWSER_FRAMES, createChartMotion, REDUCED_MOTION } from "./chart-motion";
+import { BROWSER_FRAMES, createChartMotion } from "./chart-motion";
 import { PlotReadsContext, useMeasuredPlot } from "./chart-plot-measure";
 import { PlotLoader } from "./chart-skeleton";
 import { sameConfig, sameShallow, useSteady } from "./chart-steady";
@@ -212,7 +212,7 @@ export function ScatterChartRoot<
     if (clientMount) store.drawing.openNow();
     else openDrawingSoon(store.drawing);
   }, [store, clientMount]);
-  const reduced = useMediaQuery(REDUCED_MOTION);
+  const reduced = useReducedMotion();
   // The entrance's loop moves no mark. It only holds and releases the entrance's phase.
   const [motion] = useState(() => createChartMotion(BROWSER_FRAMES, reduced, () => undefined));
   const [glide] = useState(() => createDomainGlide({ x: model.x.domain, y: model.y.domain }, BROWSER_FRAMES));

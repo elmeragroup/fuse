@@ -59,3 +59,14 @@ export function containsAcrossShadowRoots(element: Element, node: Node): boolean
   }
   return false;
 }
+
+/**
+ * Compare two nodes by document order, for sorting.
+ *
+ * @param left - One node.
+ * @param right - The other node.
+ * @returns A negative number when `left` comes first, a positive one otherwise.
+ */
+export function documentOrder(left: Node, right: Node): number {
+  return left.compareDocumentPosition(right) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1;
+}
