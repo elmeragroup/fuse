@@ -161,6 +161,7 @@ export function ComboboxClear({
   return (
     <ComboboxPrimitive.Clear
       data-slot="combobox-clear"
+      // oxlint-disable-next-line fuse/render-element-wiring -- an icon-sized InputGroupButton requires aria-label; it repeats the Clear part's own name.
       render={<InputGroupButton variant="ghost" size="icon-sm" aria-label={accessibleName} />}
       aria-label={accessibleName}
       className={mergeClassName(className)}
@@ -523,6 +524,7 @@ function ComboboxChipRemove({ label }: { label: string }): ReactElement {
         <Button
           variant="ghost"
           size="icon-inline"
+          // oxlint-disable-next-line fuse/render-element-wiring -- an icon-sized Button requires aria-label; it repeats the ChipRemove part's own name.
           aria-label={label}
           // The remove button sits inside a chip in the field box, so it rounds inside the
           // chip's corner instead of with Button's `--radius-button`. The inline square is as tall as the

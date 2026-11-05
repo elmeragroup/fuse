@@ -5,7 +5,7 @@ import "../../dist/styles.css";
 import "../../dist/themes.css";
 import { cornerRadius } from "../../test/inner-corner-specimens";
 import { withLocale } from "../../test/locale-matrix";
-import { fkasPrivate, tkasCompany } from "../../test/theme-fixtures";
+import { tkasCompany } from "../../test/theme-fixtures";
 import { px, renderThemed, roleNamed, stampDensity } from "../../test/themed-browser-render";
 import { Accordion } from "../components/accordion";
 import { Card } from "../components/card/card";
@@ -151,31 +151,27 @@ describe("surface metrics follow document density", () => {
         expect(cornerRadius(block)).toBe({ dense: 18, comfortable: 14 }[density]);
       });
 
-      it("pads an unrounded infodropdown Accordion item with the medium tier and publishes no corner", () => {
+      // concentric-surfaces.browser.test.tsx shows the unrounded item publishes no corner.
+      it("pads an unrounded infodropdown Accordion item with the medium tier", () => {
         stampDensity(density);
         renderThemed(
-          <ThemeScope theme={fkasPrivate} style={{ "--radius": "32px" }}>
-            <Accordion.Root variant="infodropdown" defaultValue={["one"]}>
-              <Accordion.Item value="one">
-                <Accordion.Header>
-                  <Accordion.Trigger>Details</Accordion.Trigger>
-                </Accordion.Header>
-                <Accordion.Content>
-                  <div role="group" aria-label="Item block" className="rounded-inner" />
-                </Accordion.Content>
-              </Accordion.Item>
-            </Accordion.Root>
-          </ThemeScope>
+          <Accordion.Root variant="infodropdown" defaultValue={["one"]}>
+            <Accordion.Item value="one">
+              <Accordion.Header>
+                <Accordion.Trigger>Details</Accordion.Trigger>
+              </Accordion.Header>
+              <Accordion.Content>
+                <div role="group" aria-label="Item block" />
+              </Accordion.Content>
+            </Accordion.Item>
+          </Accordion.Root>
         );
-        const block = roleNamed("group", "Item block");
-        const item = block.closest('[data-slot="accordion-item"]');
+        const item = roleNamed("group", "Item block").closest('[data-slot="accordion-item"]');
         if (!(item instanceof HTMLElement)) {
           throw new Error("expected the accordion item around the block");
         }
         const tier = SURFACE.md[density];
         expect(paddings(item)).toEqual([tier, tier, tier, tier]);
-        // The item is no shell, so the block rounds with the scope's 32px --radius.
-        expect(cornerRadius(block)).toBe(32);
       });
 
       it("sizes a Sidebar menu skeleton as the default menu row", () => {

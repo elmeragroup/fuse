@@ -23,6 +23,7 @@ import {
   fkasPrivate,
   mountedColorScheme,
   readDocumentBrand,
+  resetThemeDocument,
   tkasCompany,
   writeManifest,
 } from "../../test/theme-browser-fixtures";
@@ -50,18 +51,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  document.documentElement.removeAttribute("data-theme");
-  document.documentElement.removeAttribute("data-theme-variant");
-  document.documentElement.removeAttribute("data-theme-brand");
-  document.documentElement.removeAttribute("data-theme-segment");
-  document.documentElement.style.removeProperty("color-scheme");
-  for (const meta of document.querySelectorAll('meta[name="color-scheme"]')) {
-    meta.remove();
-  }
-  writeManifest(undefined);
-  window.localStorage.clear();
-  window.sessionStorage.clear();
-  vi.unstubAllEnvs();
+  resetThemeDocument();
   vi.restoreAllMocks();
 });
 

@@ -85,16 +85,9 @@ test("ThemeInput and ThemeSlug reject illegal pinned-brand permutations", () => 
 
 test("SupportedLocale is the four shipped locales and locale is required", () => {
   expectTypeOf<SupportedLocale>().toEqualTypeOf<"nb-NO" | "sv-SE" | "en-US" | "fi-FI">();
-  expectTypeOf<LocaleProviderProps>().toHaveProperty("locale");
   expectTypeOf<LocaleProviderProps["locale"]>().toEqualTypeOf<SupportedLocale>();
   expectTypeOf<ThemeProviderProps["theme"]>().toEqualTypeOf<ThemeInput>();
   expectTypeOf<ThemeProviderProps>().toHaveProperty("children");
-  expectTypeOf<ThemeProviderProps>().toHaveProperty("storageKey");
-  expectTypeOf<ThemeProviderProps>().toHaveProperty("defaultColorScheme");
-  expectTypeOf<ThemeProviderProps>().toHaveProperty("enableSystem");
-  expectTypeOf<ThemeProviderProps>().toHaveProperty("forcedColorScheme");
-  expectTypeOf<ThemeProviderProps>().toHaveProperty("disableTransitionOnChange");
-  expectTypeOf<ThemeProviderProps>().toHaveProperty("injectColorSchemeScript");
   expectTypeOf<ThemeProviderProps>().toHaveProperty("nonce");
   expectTypeOf<ThemeProviderProps>().toHaveProperty("scriptProps");
   expectTypeOf<ThemeProviderProps["storageKey"]>().toEqualTypeOf<string | undefined>();
@@ -134,7 +127,6 @@ test("theme constant tuples are public /theme values", () => {
   expectTypeOf(LEGAL_THEMES).toEqualTypeOf<readonly ThemeInput[]>();
   expectTypeOf<(typeof THEME_VARIANTS)[number]>().toEqualTypeOf<ThemeVariant>();
   expectTypeOf<(typeof THEME_SEGMENTS)[number]>().toEqualTypeOf<ThemeSegment>();
-  expectTypeOf<typeof ThemeApi>().toHaveProperty("LEGAL_THEMES");
   expectTypeOf<typeof ThemeApi>().not.toHaveProperty("composeTheme");
 });
 
@@ -195,7 +187,6 @@ test("useColorScheme takes no options and returns the specified result shape", (
 });
 
 test("ForceColorScheme is a runtime-only color-scheme lock", () => {
-  expectTypeOf<ForceColorSchemeProps>().toHaveProperty("value");
   expectTypeOf<ForceColorSchemeProps["value"]>().toEqualTypeOf<ColorScheme>();
   expectTypeOf<ForceColorSchemeProps>().toHaveProperty("children");
   expectTypeOf(ForceColorScheme).toBeFunction();

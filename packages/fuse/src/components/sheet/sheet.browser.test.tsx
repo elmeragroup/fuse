@@ -162,11 +162,15 @@ describe("Sheet", () => {
     await expect.element(dialog).toHaveAccessibleDescription("Readings for this address.");
   });
 
-  it("maps Root side onto the popup data-side for every edge", async () => {
+  it("maps Root side onto the popup data-side and the swipe that dismisses toward that edge", async () => {
+    // Oracle: a swipe toward the anchored edge dismisses. Base UI stamps the direction its swipe
+    // handlers dismiss on as the popup's `data-swipe-direction`.
+    const towardEdge = { top: "up", right: "right", bottom: "down", left: "left" } as const;
     for (const side of ["top", "right", "bottom", "left"] as const) {
       const { unmount } = renderThemed(withLocale("en-US", <BasicSheet side={side} />));
       const dialog = await openSheet();
       expect(dialog.getAttribute("data-side"), side).toBe(side);
+      expect(dialog.getAttribute("data-swipe-direction"), side).toBe(towardEdge[side]);
       unmount();
     }
   });

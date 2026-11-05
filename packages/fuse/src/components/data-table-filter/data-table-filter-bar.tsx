@@ -162,8 +162,8 @@ export function DataTableFilterTrigger({
           handle={meta.menuHandle}
           render={
             render ??
-            // An icon Button requires its own name, and its props win in Base UI's merge.
             (iconOnly ? (
+              // oxlint-disable-next-line fuse/render-element-wiring -- an icon Button requires its own name, and its props win in Base UI's merge.
               <Button variant="outline" size="icon-sm" aria-label={label} />
             ) : (
               <Button variant="outline" size="sm" />
@@ -508,7 +508,7 @@ export function DataTableFilterRemove({
       ref={segmentRef}
       data-slot="data-table-filter-remove"
       aria-label={label}
-      // An icon Button requires its own name, and its props win in Base UI's merge.
+      // oxlint-disable-next-line fuse/render-element-wiring -- an icon Button requires its own name, and its props win in Base UI's merge.
       render={render ?? <Button variant="ghost" size="icon-sm" aria-label={label} />}
       className={mergeClassName(className, slots.segment())}
       onPointerDownCapture={always(discard, onPointerDownCapture)}

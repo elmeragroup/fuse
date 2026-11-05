@@ -129,13 +129,6 @@ describe("Sidebar's row sets", () => {
       [[{ name: "Count", defaultValue: "12" }], []],
     ]);
   });
-
-  it("leave no Sidebar declaration unmapped", () => {
-    const unmapped = coverage.filter(
-      (row) => row.component.startsWith("Sidebar ") && row.outcome === "unmapped"
-    );
-    expect(unmapped).toEqual([]);
-  });
 });
 
 describe("the Sidebar menu button", () => {

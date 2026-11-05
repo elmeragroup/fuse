@@ -692,6 +692,7 @@ describe("Combobox", () => {
       </ThemeScope>
     );
     const chipsBox = roleNamed("toolbar", "Selected fruit");
+    // DOM audit: the InputGroup root is a layout box with no role, so its slot is the only locator.
     const inputBox = comboboxNamed("Single fruit").closest<HTMLElement>("[data-slot=input-group]");
     if (inputBox === null) {
       throw new Error("expected Combobox.Input inside its InputGroup root");

@@ -2,8 +2,8 @@ import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
+import { repoRoot } from "../scripts/repo-tree.ts";
 import { asRecord, asString, readJsonObject } from "./json-object.mjs";
-import { repoRoot } from "./repo-tree.mjs";
 
 const readme = readFileSync(join(repoRoot, "README.md"), "utf8");
 

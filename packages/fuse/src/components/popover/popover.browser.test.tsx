@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 
 import { describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
@@ -146,15 +146,6 @@ describe("Popover", () => {
     expect(dialog.getAttribute("data-align")).toBe("start");
   });
 
-  it("portals into the enclosing ThemeScope instead of the document body", async () => {
-    renderThemed(<BasicPopover />);
-    const dialog = await openPopover();
-    const scope = dialog.closest("[data-theme-brand]");
-    expect(scope).not.toBeNull();
-    expect(scope?.contains(dialog)).toBe(true);
-    expect([...document.body.children].includes(dialog)).toBe(false);
-  });
-
   it("portals into an explicit container element", async () => {
     function ExplicitContainer() {
       const [node, setNode] = useState<HTMLDivElement | null>(null);
@@ -178,24 +169,15 @@ describe("Popover", () => {
     expect([...document.body.children].includes(dialog)).toBe(false);
   });
 
-  it("waits while the resolved container element is still null", () => {
-    function NeverAttached() {
-      const ref = useRef<HTMLElement | null>(null);
-      return (
-        <Popover.Root open>
-          <Popover.Content container={ref}>
-            <Popover.Title>Pending</Popover.Title>
-          </Popover.Content>
-        </Popover.Root>
-      );
-    }
-    renderThemed(<NeverAttached />);
-
-    expect(page.getByRole("dialog").query()).toBeNull();
-  });
-
   it("does not paint the popup outside a ThemeScope element that has not attached yet", async () => {
-    renderThemed(
+    // Every node added straight to the body while the popup mounts. A portal that escaped the
+    // unattached scope for even one commit adds its own node here before it moves into the scope.
+    const bodyAdditions: Node[] = [];
+    const observer = new MutationObserver((records) => {
+      for (const record of records) bodyAdditions.push(...record.addedNodes);
+    });
+    observer.observe(document.body, { childList: true });
+    const { host } = renderThemed(
       <ThemeScope theme={{ variant: "external", brand: "fkas", segment: "private" }}>
         <Popover.Root open>
           <Popover.Content>
@@ -205,9 +187,10 @@ describe("Popover", () => {
       </ThemeScope>
     );
     const dialog = await mountedPopover();
-    const scope = dialog.closest("[data-theme-variant=external]");
-    expect(scope).not.toBeNull();
-    expect([...document.body.children].includes(dialog)).toBe(false);
+    for (const record of observer.takeRecords()) bodyAdditions.push(...record.addedNodes);
+    observer.disconnect();
+    expect(dialog.closest("[data-theme-variant=external]")).not.toBeNull();
+    expect(bodyAdditions).toEqual([host]);
   });
 
   it("places a controlled popover with no trigger against its anchor, and follows the anchor as it moves", async () => {

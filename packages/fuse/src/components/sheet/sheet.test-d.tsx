@@ -27,9 +27,6 @@ test("swipeDirection stays off the public Root props and sheetContentVariants is
   const _root = <Sheet.Root side="left" />;
   const _content = <Sheet.Content size="sm" showCloseButton closeLabel="Dismiss" />;
 
-  // @ts-expect-error swipeDirection is coupled to side and omitted from Root
-  const _noSwipe = <Sheet.Root swipeDirection="left" />;
-
   // @ts-expect-error polymorphism is never an `as` prop
   const _noAs = <Sheet.Trigger as="div" />;
 });

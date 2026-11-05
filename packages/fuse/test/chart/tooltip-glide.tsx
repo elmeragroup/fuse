@@ -298,6 +298,7 @@ export function watchDots(host: HTMLElement) {
  */
 function lineBoxes(host: HTMLElement): Box[] {
   const boxes: Box[] = [];
+  // DOM audit: drawn lines are aria-hidden plot output, so their slot is the only locator.
   for (const path of host.querySelectorAll<SVGPathElement>('[data-slot="chart-line"]')) {
     const matrix = path.getScreenCTM();
     if (matrix === null) continue;

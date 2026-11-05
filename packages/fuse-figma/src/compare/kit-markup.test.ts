@@ -155,7 +155,26 @@ describe("each kit definition against the markup of its component", () => {
     }
   );
 
-  it("renders one measured element per cell, holds each attribute condition exactly where it carries it, and places its parts, icons and label", async () => {
+  // One set a test, each loading only its own renderer, so each test's time budget covers one set
+  // rather than the whole kit, which a loaded runner took past it, and a failure names its set.
+  it.each(
+    KIT.filter(({ definition }) => !CHECKED_ON_THE_MOUNTED_PAGE.includes(definition.key)).map(
+      (entry) => [entry.definition.name, entry] as const
+    )
+  )(
+    "renders %s with one measured element per cell, holds each attribute condition exactly where it carries it, and places its parts, icons and label",
+    async (_name, { definition, previewCells }) => {
+      const renderers = await Effect.runPromise(loadRenderers(new Set([definition.key])));
+      const renderer = renderers.get(definition.key);
+      if (renderer === undefined || isClientRenderer(renderer)) {
+        throw new Error(`${definition.key} has no static renderer`);
+      }
+      checkMarkup(definition, previewCells, renderer);
+    }
+  );
+
+  it("has a renderer for every definition and leaves the client sets to the mounted page", async () => {
+    // The sets above loaded their own renderers, so this load finds every static module imported.
     const renderers = await Effect.runPromise(loadRenderers());
     // No KIT key lacks a renderer.
     expect(
@@ -169,13 +188,6 @@ describe("each kit definition against the markup of its component", () => {
         return renderer !== undefined && isClientRenderer(renderer);
       }).map(({ definition }) => definition.key)
     ).toEqual(CHECKED_ON_THE_MOUNTED_PAGE);
-    const checked = KIT.flatMap((entry) => {
-      const renderer = renderers.get(entry.definition.key);
-      return renderer === undefined || isClientRenderer(renderer) ? [] : [{ ...entry, renderer }];
-    });
-    for (const { definition, previewCells, renderer } of checked) {
-      checkMarkup(definition, previewCells, renderer);
-    }
   });
 });
 

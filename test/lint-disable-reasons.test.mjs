@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
-import { findFiles, isSourceFile, repoRelativePath, repoRoot, SOURCE_TREES } from "./repo-tree.mjs";
+import { findFiles, isSourceFile, repoRelativePath, repoRoot, SOURCE_TREES } from "../scripts/repo-tree.ts";
 
 /**
  * A disable directive inside a line or block comment, in both spellings oxlint honours. Requiring

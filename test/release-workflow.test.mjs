@@ -5,8 +5,8 @@ import picomatch from "picomatch";
 import { describe, expect, it } from "vitest";
 
 import { USAGE } from "../scripts/release.ts";
+import { repoRoot } from "../scripts/repo-tree.ts";
 import { asRecord, asString, readJsonObject } from "./json-object.mjs";
-import { repoRoot } from "./repo-tree.mjs";
 import { jobSteps, readWorkflow, requiredRunStep, requiredUsesStep, turboTasks } from "./workflow.mjs";
 
 function rootScripts() {

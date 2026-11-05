@@ -25,7 +25,6 @@ beforeEach(() => {
 
 afterEach(() => {
   resetThemeDocument();
-  vi.unstubAllEnvs();
   vi.restoreAllMocks();
 });
 

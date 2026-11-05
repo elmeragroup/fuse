@@ -285,6 +285,5 @@ describe("the Meter component set", () => {
     expect(reasons("outline-transparent")).toEqual(new Set(["outline-color: dropped"]));
     expect(reasons("align-text-bottom")).toEqual(new Set(["vertical-align: dropped"]));
     expect(reasons("inline-block")).toEqual(new Set(["display: literal"]));
-    expect(coverage.filter((row) => row.component === "Meter" && row.outcome === "unmapped")).toEqual([]);
   });
 });

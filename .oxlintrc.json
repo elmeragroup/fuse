@@ -11,7 +11,8 @@
     {
       "name": "anti-slop",
       "specifier": "@elmeragroup/internal/oxlint/anti-slop"
-    }
+    },
+    "./scripts/oxlint/fuse-plugin.ts"
   ],
   "categories": {
     "correctness": "error"
@@ -169,6 +170,18 @@
   },
   "overrides": [
     {
+      "files": ["apps/**", "packages/**", "scripts/**", "tooling/**", "test/**"],
+      "rules": {
+        "fuse/no-vague-module-name": "error"
+      }
+    },
+    {
+      "files": ["**/generated/**", "**/.*/**", "**/.*"],
+      "rules": {
+        "fuse/no-vague-module-name": "off"
+      }
+    },
+    {
       "files": ["apps/**/*.{ts,tsx}", "packages/fuse/**/*.{ts,tsx}"],
       "globals": {
         "React": "writable"
@@ -214,6 +227,11 @@
         "elmera/no-rac-outside-quarantine": "error",
         "elmera/no-hardcoded-density-metrics": "warn",
         "elmera/no-raw-class-map": "error",
+        "fuse/base-ui-preview-menu": "error",
+        "fuse/no-object-string-tag": "error",
+        "fuse/no-ref-snapshot-path": "error",
+        "fuse/no-retired-user-agent-api": "error",
+        "fuse/overlay-classes-owner": "error",
         "no-restricted-imports": [
           "error",
           {
@@ -364,9 +382,92 @@
       }
     },
     {
+      "files": [
+        "packages/fuse/src/components/checkbox/checkbox.tsx",
+        "packages/fuse/src/components/confirm-button/confirm-button.tsx",
+        "packages/fuse/src/react-aria/grid-list/grid-list.tsx"
+      ],
+      "rules": {
+        "fuse/required-import": [
+          "error",
+          {
+            "source": "(?:^|/)internal/is-text-node(?:\\.tsx?)?$",
+            "names": ["isTextNode", "isTextValueNode"],
+            "kind": "value",
+            "message": "Ask whether a ReactNode is text through internal/is-text-node.ts: import isTextNode or isTextValueNode from it as a value."
+          }
+        ]
+      }
+    },
+    {
+      "files": ["packages/fuse/src/icons/create-elmera-icon.ts"],
+      "rules": {
+        "fuse/server-safe-asset": "error",
+        "fuse/required-import": [
+          "error",
+          {
+            "source": "^@phosphor-icons/react/dist/ssr/Check$",
+            "names": ["Check"],
+            "kind": "any",
+            "message": "The icon helper types its props from Phosphor's SSR Check module: import Check from @phosphor-icons/react/dist/ssr/Check, a type import suffices."
+          }
+        ],
+        "no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "@internationalized/string",
+                "importNames": ["LocalizedStringDictionary"],
+                "allowTypeImports": true,
+                "message": "Assemble dictionaries with createStringDictionary; do not construct LocalizedStringDictionary outside the factory."
+              },
+              {
+                "name": "@tanstack/react-table",
+                "allowTypeImports": true,
+                "message": "Import only types from the optional TanStack peer. Plain parts render through table.FlexRender and read structural slices; only the data-table contexts, the table hook factory and their tests call into TanStack."
+              },
+              {
+                "name": "@tanstack/react-virtual",
+                "allowTypeImports": true,
+                "message": "Import only types from the optional virtualizer peer. Only the command-virtual list calls into TanStack Virtual, so the core command entry never loads it."
+              },
+              {
+                "name": "@base-ui/react/combobox",
+                "allowTypeImports": true,
+                "message": "Import Combobox from the @base-ui/react package root. The subpath type-checks but crashes at runtime with a null React context."
+              },
+              {
+                "name": "@base-ui/react/autocomplete",
+                "allowTypeImports": true,
+                "message": "Import Autocomplete from the @base-ui/react package root. It shares the combobox internals, so the subpath type-checks but crashes at runtime with a null React context."
+              },
+              {
+                "name": "tailwind-variants",
+                "importNames": ["tv", "createTV"],
+                "allowTypeImports": true,
+                "message": "Import tv from styles/tv. It shares cn's tailwind-merge extension, so a consumer's rounded-* class replaces rounded-inner in a recipe; the upstream tv keeps both."
+              },
+              {
+                "name": "@phosphor-icons/react",
+                "message": "The icon helper stays server-safe: import Phosphor's per-icon SSR modules under @phosphor-icons/react/dist/ssr/, never the client root."
+              }
+            ],
+            "patterns": [
+              {
+                "group": ["@phosphor-icons/react/dist/csr/*"],
+                "message": "The icon helper stays server-safe: import Phosphor's per-icon SSR modules under @phosphor-icons/react/dist/ssr/, never the client build."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
       "files": ["packages/fuse/test/**/*.{ts,tsx}"],
       "rules": {
-        "elmera/restrict-browser-helper-copy": "error"
+        "elmera/restrict-browser-helper-copy": "error",
+        "fuse/locate-by-role": "error"
       }
     },
     {
@@ -538,6 +639,106 @@
             ]
           }
         ]
+      }
+    },
+    {
+      "files": [
+        "packages/fuse/src/components/**/*.browser.test.tsx",
+        "packages/fuse/src/react-aria/**/*.browser.test.tsx",
+        "packages/fuse/src/hooks/**/*.browser.test.tsx"
+      ],
+      "rules": {
+        "fuse/browser-suite-harness": "error",
+        "fuse/locate-by-role": "error",
+        "no-restricted-globals": [
+          "error",
+          {
+            "globals": [
+              {
+                "name": "setTimeout",
+                "message": "Browser suites wait on observable state through expect.poll, expect.element or vi.waitFor, or on frames through test/animation-frames, never on a timer."
+              }
+            ],
+            "checkGlobalObject": true
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "packages/fuse/src/components/**/*.test.{ts,tsx}",
+        "packages/fuse/src/react-aria/**/*.test.{ts,tsx}"
+      ],
+      "rules": {
+        "fuse/no-ring-shadow-in-suites": "error"
+      }
+    },
+    {
+      "files": ["packages/fuse/src/components/chart/**/*.{ts,tsx}"],
+      "rules": {
+        "fuse/chart-motion-placement": "error",
+        "fuse/chart-motion-writer": "error",
+        "fuse/no-chart-colour-literal": "error"
+      }
+    },
+    {
+      "files": ["packages/fuse/src/components/chart/**/*.tsx"],
+      "rules": {
+        "fuse/chart-part-display-name": "error"
+      }
+    },
+    {
+      "files": ["packages/fuse/src/components/**/*.tsx"],
+      "rules": {
+        "fuse/render-element-wiring": "error"
+      }
+    },
+    {
+      "files": ["packages/fuse/src/icons/bespoke/*.tsx", "packages/fuse/src/illustrations/*.tsx"],
+      "rules": {
+        "fuse/server-safe-asset": "error"
+      }
+    },
+    {
+      "files": ["packages/fuse/src/icons/bespoke/*.tsx"],
+      "rules": {
+        "fuse/asset-title-slot": "error"
+      }
+    },
+    {
+      "files": ["packages/fuse/scripts/build.ts"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "regex": "(?:^|/)generate-exports(?:\\.ts)?$",
+                "importNames": ["writeSourceExports"],
+                "message": "The build leaves the tracked package.json exports and root barrel alone: the exports-map drift gate compares them with a fresh generation, so regenerate them with `pnpm --filter @elmeragroup/fuse generate:exports`, never from the build."
+              },
+              {
+                "regex": "(?:^|/)write-source-exports(?:\\.ts)?$",
+                "message": "The build leaves the tracked package.json exports and root barrel alone: the exports-map drift gate compares them with a fresh generation, so regenerate them with `pnpm --filter @elmeragroup/fuse generate:exports`, never from the build."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["**/*.test.{ts,tsx}", "**/*.test-d.{ts,tsx}"],
+      "rules": {
+        "fuse/base-ui-preview-menu": "off",
+        "fuse/chart-motion-placement": "off",
+        "fuse/chart-motion-writer": "off",
+        "fuse/chart-part-display-name": "off",
+        "fuse/no-chart-colour-literal": "off",
+        "fuse/no-object-string-tag": "off",
+        "fuse/no-ref-snapshot-path": "off",
+        "fuse/no-retired-user-agent-api": "off",
+        "fuse/overlay-classes-owner": "off",
+        "fuse/render-element-wiring": "off"
       }
     },
     {

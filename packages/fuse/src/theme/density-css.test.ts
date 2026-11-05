@@ -65,7 +65,9 @@ describe("density CSS", () => {
 
   it("does not key density metrics on data-theme-variant or a nested attribute selector", () => {
     for (const prefix of DENSITY_METRIC_PREFIXES) {
-      expect(fuseCss).not.toMatch(new RegExp(String.raw`\[data-theme-variant[^\]]*\][^{]*--${prefix}`, "s"));
+      expect(fuseCss).not.toMatch(
+        new RegExp(String.raw`\[data-theme-variant[^\]]*\][^{]*\{[^}]*--${prefix}[\w-]*\s*:`, "s")
+      );
     }
     expect(fuseCss).not.toMatch(/(?<!:root)\[data-density="comfortable"\]/);
   });

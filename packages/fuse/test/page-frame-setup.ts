@@ -1,4 +1,4 @@
-import { beforeAll } from "vitest";
+import { beforeEach } from "vitest";
 import { commands } from "vitest/browser";
 
 import { nextFrames } from "./animation-frames";
@@ -41,16 +41,34 @@ async function settles(frames: number): Promise<boolean> {
   return uncovered() === null;
 }
 
-// Before each file's first test, the page shows the whole frame. A file can start in a page an
-// earlier file left at another size, or scrolled, so the frame's far edge falls outside it, where
+/**
+ * Lay the test frame out as a block in Vitest's runner page. The runner leaves it inline, so the
+ * line box under it makes the page a few pixels taller than its viewport. Playwright's scroll into
+ * view then scrolls the page, and a later test starts with the frame's top edge cut off.
+ */
+function blockFrame(): void {
+  const runner = window.parent.document;
+  if (runner.getElementById(BLOCK_FRAME_ID) !== null) return;
+  const style = runner.createElement("style");
+  style.id = BLOCK_FRAME_ID;
+  style.textContent = "iframe[data-vitest] { display: block; }";
+  runner.head.append(style);
+}
+
+const BLOCK_FRAME_ID = "fuse-block-frame";
+
+// Before each test, the page shows the whole frame. A test can start in a page an earlier file or
+// test left at another size, or scrolled, so the frame's far edge falls outside it, where
 // Playwright cannot click (see VIEWPORT in vitest.config.ts). The page then scrolls back to its
 // start and takes the frame's size from Playwright, which Vitest's own `page.viewport` would skip
 // as a size it already set. In Chromium, a file that cleared its own CDP metrics override can leave
 // the page at a size no later Playwright call reaches, so the page then takes the frame's size from
-// that CDP session. A page that still cuts the frame off fails the file here, before a test reads it.
-beforeAll(async () => {
+// that CDP session. A page that still cuts the frame off fails the test here, before it reads it.
+beforeEach(async () => {
   const frame = window.frameElement;
-  if (frame === null || uncovered() === null) return;
+  if (frame === null) return;
+  blockFrame();
+  if (uncovered() === null) return;
   window.parent.scrollTo(0, 0);
   const [width, height] = [frame.clientWidth, frame.clientHeight];
   await commands.sizePage(width, height);

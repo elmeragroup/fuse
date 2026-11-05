@@ -218,7 +218,7 @@ describe("the Select trigger component set", () => {
     expect([text?.fontSize, text?.lineHeight]).toEqual([literal(14), literal(20)]);
   });
 
-  it("paints the placeholder muted-foreground, a value foreground, an invalid value error, and the caret muted", () => {
+  it("paints the placeholder muted-foreground, a value foreground, and an invalid value error", () => {
     const colors = (content: string) =>
       STATES.map((state) => textOf(trigger("default", state, content, "off"))?.color);
     expect(colors("placeholder")).toEqual(STATES.map(() => paint("muted-foreground")));
@@ -228,10 +228,6 @@ describe("the Select trigger component set", () => {
       paint("foreground"),
       paint("error"),
     ]);
-    for (const { size, state, content, open } of CELLS) {
-      const caret = caretOf(trigger(size, state, content, open));
-      expect(caret?.kind === "icon" && caret.color).toEqual(paint("muted-foreground"));
-    }
   });
 
   it("rings focus, strokes and rings invalid with error, and dims disabled to 50% on the card fill", () => {
@@ -245,7 +241,7 @@ describe("the Select trigger component set", () => {
     }
   });
 
-  it("draws each open cell as its closed cell with the caret turned half a turn", () => {
+  it("draws the muted CaretDown in every closed cell, and each open cell as its closed cell with the caret turned half a turn", () => {
     for (const { size, state, content } of CELLS) {
       const closed = trigger(size, state, content, "off");
       expect(caretOf(closed), `${size} ${state} ${content}`).toEqual(CARET);

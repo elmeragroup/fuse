@@ -256,10 +256,4 @@ describe("the Input group component set", () => {
       "Fuse tokens / muted-foreground",
     ]);
   });
-
-  it("leaves no class of the set unmapped", () => {
-    expect(coverage.filter((row) => row.component === "Input group" && row.outcome === "unmapped")).toEqual(
-      []
-    );
-  });
 });

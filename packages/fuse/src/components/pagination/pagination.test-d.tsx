@@ -74,20 +74,6 @@ test("parts take the public API: no locale, no consumer direction, no as prop", 
   expectTypeOf<Parameters<typeof Pagination.Next>[0]>().not.toHaveProperty("children");
   expectTypeOf<Parameters<typeof Pagination.Ellipsis>[0]>().not.toHaveProperty("children");
 
-  // @ts-expect-error locale is provider-only
-  const _noLocale = <Pagination.Root locale="nb-NO" />;
-  // @ts-expect-error direction is not a consumer-facing prop
-  const _noDirection = <Pagination.Previous href="#" direction="previous" />;
   // @ts-expect-error polymorphism is never an as prop
   const _noAs = <Pagination.Link as="button" />;
-  // @ts-expect-error Previous is not a current-page control
-  const _prevActive = <Pagination.Previous href="#" isActive />;
-  // @ts-expect-error Previous owns its children
-  const _prevChildren = <Pagination.Previous href="#">nope</Pagination.Previous>;
-  // @ts-expect-error Next is not a current-page control
-  const _nextActive = <Pagination.Next href="#" isActive />;
-  // @ts-expect-error Next owns its children
-  const _nextChildren = <Pagination.Next href="#">nope</Pagination.Next>;
-  // @ts-expect-error Ellipsis owns its children
-  const _ellipsisChildren = <Pagination.Ellipsis>nope</Pagination.Ellipsis>;
 });

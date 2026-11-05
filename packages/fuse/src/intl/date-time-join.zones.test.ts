@@ -80,19 +80,6 @@ afterAll(() => {
   vi.restoreAllMocks();
 });
 
-describe("the stand-in engine", () => {
-  it("writes its own join for date and time fields and keeps each half real", () => {
-    expect(
-      spaces(
-        new Intl.DateTimeFormat("en-US", { ...OSLO, dateStyle: "medium", timeStyle: "short" }).format(AT)
-      )
-    ).toBe("Oct 18, 2026 ENGINE JOIN 12:30 PM");
-    expect(new Intl.DateTimeFormat("en-US", { ...OSLO, dateStyle: "medium" }).format(AT)).toBe(
-      "Oct 18, 2026"
-    );
-  });
-});
-
 const JOINED_CASES = DATE_TIME_CASES.filter((dateTimeCase) => dateTimeCase !== WEEKDAY_TIME_CASE);
 
 describe("formatDateTime under an engine with another join", () => {

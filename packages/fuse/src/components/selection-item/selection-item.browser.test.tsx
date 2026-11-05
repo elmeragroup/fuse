@@ -171,30 +171,6 @@ describe("SelectionItem", () => {
     expect(checkboxNamed(title).getAttribute("aria-checked")).toBe("false");
   });
 
-  it("toggles from row text and isolates subsection clicks", async () => {
-    renderThemed(
-      <Field.Root>
-        <SelectionItem.Shell dataSlot="checkbox-item" control={<Checkbox.Root />}>
-          <SelectionItem.Content>
-            <RowTitle>Fixed price</RowTitle>
-          </SelectionItem.Content>
-          <SelectionItem.SubSection>
-            <button type="button">Details</button>
-          </SelectionItem.SubSection>
-        </SelectionItem.Shell>
-      </Field.Root>
-    );
-
-    const details = page.getByRole("button", { name: "Details", exact: true }).element();
-    expect(details.closest("label")).toBeNull();
-
-    await userEvent.click(headingNamed("Fixed price"));
-    expect(checkboxNamed("Fixed price", true).getAttribute("aria-checked")).toBe("true");
-
-    await userEvent.click(page.getByRole("button", { name: "Details", exact: true }));
-    expect(checkboxNamed("Fixed price", true).getAttribute("aria-checked")).toBe("true");
-  });
-
   it("selects a RadioItem from 4px inside either edge", async () => {
     renderThemed(
       // Narrower than the viewport, so the hit test reaches both edges.

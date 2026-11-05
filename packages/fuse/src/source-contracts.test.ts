@@ -8,12 +8,10 @@ import { describe, expect, it } from "vitest";
 import { OPTIONAL_PEER_ENTRIES, walkImportedSourceFiles } from "../scripts/entries";
 import { FLOOR_MARKS, SCATTER_FLOOR_MARKS } from "../test/chart/floor-marks";
 import { classTokens, colorRolePaints, splitVariants, tokenAssignments } from "../test/class-tokens";
-import { motionWriters } from "../test/motion-writers";
 import { svgMarks } from "../test/svg-marks";
 import { writtenSlots } from "../test/written-slots";
 import { CHART_SPRINGS, CHART_UPDATE_EASE, CHART_UPDATE_MS } from "./components/chart/layout/motion";
 import { springEasing } from "./components/chart/layout/spring";
-import { overlayLayer, toastLayer } from "./components/overlay/overlay-classes";
 import { TOKEN_PAINTS } from "./theme/tokens/contract";
 import type { ColorTokenName, TokenPaint } from "./theme/tokens/contract";
 import { PART_DENSITY } from "./theme/tokens/density-roles";
@@ -26,9 +24,10 @@ import { PART_DENSITY } from "./theme/tokens/density-roles";
  * `no-tailwind-dark-variant`, `restrict-process-env`, `no-restricted-imports` for
  * `LocalizedStringDictionary`, for runtime values of `@tanstack/react-table` and
  * `@tanstack/react-virtual`, and for the `@base-ui/react/combobox` and
- * `@base-ui/react/autocomplete` subpaths)
- * or an exports/package-check gate. Each describe documents why the contract is
- * not a lint rule.
+ * `@base-ui/react/autocomplete` subpaths, and the repository's own per-file `fuse/*` rules in
+ * `scripts/oxlint/`) or an exports/package-check gate. What stays here needs the whole tree, a
+ * second language, a module graph or a reviewed inventory. Each describe documents why the
+ * contract is not a lint rule.
  */
 const SRC_ROOT = dirname(fileURLToPath(import.meta.url));
 const PACKAGE_ROOT = join(SRC_ROOT, "..");
@@ -260,17 +259,6 @@ function readCode(relativePath: string): string {
   return sourceRecord(relativePath).code;
 }
 
-function ownedBy(owner: string, needle: string): string[] {
-  const ownerPath = join(SRC_ROOT, owner);
-  const restating: string[] = [];
-  for (const [file, record] of SOURCE_TREE) {
-    if (file !== ownerPath && record.code.includes(needle)) {
-      restating.push(record.relative);
-    }
-  }
-  return restating;
-}
-
 function filesContainingCode(needle: string): string[] {
   const hits: string[] = [];
   for (const record of SOURCE_TREE.values()) {
@@ -490,32 +478,6 @@ describe("chart module directives", () => {
   });
 });
 
-describe("chart display names", () => {
-  // Why not a lint rule: the owner is the API report, not the syntax. `Part.displayName = …` makes
-  // TypeScript emit an untagged `declare namespace Part` beside each `@beta` part in the `.d.ts`,
-  // which api-extractor rejects as a missing and a different release tag. `Object.assign` sets the
-  // same runtime name and emits no namespace. Fuse's other components keep the plain assignment.
-  const partModules = [...SOURCE_TREE.values()].filter(
-    (record) => record.relative.startsWith("components/chart/") && record.relative.endsWith(".tsx")
-  );
-
-  it("sets every chart part's displayName through Object.assign", () => {
-    expect(partModules.length).toBeGreaterThan(0);
-    expect(
-      partModules
-        .filter((record) => /^\w+\.displayName\s*=/mu.test(record.code))
-        .map((record) => record.relative)
-    ).toEqual([]);
-    expect(
-      partModules
-        .filter(
-          (record) => /^export function \w+/mu.test(record.code) && !record.code.includes("Object.assign(")
-        )
-        .map((record) => record.relative)
-    ).toEqual([]);
-  });
-});
-
 describe("chart plot marks", () => {
   // Why not a lint rule: the floor oracle is a browser test, which cannot read the source, and lint
   // cannot compare the SVG a module renders with the marks a test walks. This reads every chart
@@ -565,121 +527,10 @@ describe("chart plot marks", () => {
   });
 });
 
-describe("chart motion classification", () => {
-  // Why not a lint rule: the rule is about which module may decide a placement, which no lint rule
-  // expresses. Every mark that moves registers through useMotionMark, and asks the one commit
-  // classifier, useCommitMotion, or its follower form, how to reach a commit's geometry.
-  const chart = [...SOURCE_TREE.values()].filter(
-    (record) => record.relative.startsWith("components/chart/") && !record.relative.includes(".test.")
-  );
-  const owners = new Set(["components/chart/chart-motion.ts", "components/chart/chart-motion-mark.ts"]);
-
-  it("places marks on Root's loop only through useMotionMark", () => {
-    expect(
-      chart
-        .filter((record) => /\bmotion\.place\(/u.test(record.code) && !owners.has(record.relative))
-        .map((record) => record.relative)
-    ).toEqual([]);
-  });
-
-  it("asks the shared classifier once for every mark that moves", () => {
-    // Each mark registers once and asks its commits' kind once, so a module's registrations and
-    // classifier calls match, and a mark that places without asking leaves its module one short.
-    const count = (code: string, pattern: RegExp): number => code.match(pattern)?.length ?? 0;
-    expect(
-      chart
-        .filter((record) => !owners.has(record.relative))
-        .map((record) => ({
-          module: record.relative,
-          marks: count(record.code, /\buseMotionMark\b(?:<[^>]*>)?\(/gu),
-          asks: count(record.code, /\b(?:useCommitMotion|useFollowerPlacement)\(/gu),
-        }))
-        .filter(({ marks, asks }) => marks !== asks)
-    ).toEqual([]);
-  });
-
-  it("hands the loop only writers bound at module scope", () => {
-    // Why not a lint rule: whether an argument names a module-scope binding is a scope question
-    // that no oxlint rule asks. A writer at module scope reads only its node, its look and the
-    // numbers the loop draws, so none of its inputs can be a target the tween does not carry.
-    // A shared owner such as usePathMark forwards its own writer parameter, which this check reads
-    // at the owner's call sites instead.
-    const misplaced = chart.flatMap((record) =>
-      motionWriters(record.relative, record.code)
-        .filter(({ moduleScope, forwarded }) => !moduleScope && !forwarded)
-        .map(({ writer, at }) => `${record.relative}@${String(at)} ${writer ?? "inline writer"}`)
-    );
-    expect(misplaced).toEqual([]);
-    // The check reads every registration: a bar, a missing tick, the overlay, the path form's
-    // growth, ActiveValue, the active value line and a reference.
-    expect(
-      chart.flatMap((record) => motionWriters(record.relative, record.code)).length
-    ).toBeGreaterThanOrEqual(7);
-  });
-
-  it("finds an inline writer and one bound inside a component", () => {
-    const inline = motionWriters(
-      "probe.tsx",
-      "function Mark() { useMotionMark(motion, (node) => node, look, []); }"
-    );
-    const nested = motionWriters(
-      "probe.tsx",
-      "function Mark() { const write = () => {}; useMotionMark(motion, write, look, []); }"
-    );
-    const top = motionWriters(
-      "probe.tsx",
-      "function write() {}\nfunction Mark() { useMotionMark(motion, write, look, []); }"
-    );
-    expect([inline[0]?.moduleScope, nested[0]?.moduleScope, top[0]?.moduleScope]).toEqual([
-      false,
-      false,
-      true,
-    ]);
-  });
-
-  it("lets a writer hook forward only its own writer parameter", () => {
-    // The oracle is each probe's binding of `draw`: usePathMark's own writer parameter forwards, a
-    // parameter of a component does not, and neither does another parameter of the hook.
-    const forwarded = (source: string) => motionWriters("probe.tsx", source)[0]?.forwarded;
-    expect(
-      [
-        "function usePathMark(draw, input) { useMotionMark(motion, draw, look, []); }",
-        "function Mark(draw) { useMotionMark(motion, draw, look, []); }",
-        "function usePathMark(write, draw) { useMotionMark(motion, draw, look, []); }",
-      ].map(forwarded)
-    ).toEqual([true, false, false]);
-  });
-
-  it("refuses a component-local writer that shadows a module-level name (F4)", () => {
-    // Each probe binds `write` at module scope and again inside the component, so the call reads
-    // the component's: by a const, a parameter, a block's let, a var hoisted past the call, and a
-    // catch clause. The last probe binds it only at module scope, under a block that binds another.
-    const scoped = (body: string) =>
-      motionWriters("probe.tsx", `function write() {}\n${body}`)[0]?.moduleScope;
-    expect(
-      [
-        "function Mark() { const write = () => {}; useMotionMark(motion, write, look, []); }",
-        "function Mark({ write }) { useMotionMark(motion, write, look, []); }",
-        "function Mark() { if (on) { let write = () => {}; useMotionMark(motion, write, look, []); } }",
-        "function Mark() { useMotionMark(motion, write, look, []); if (on) { var write = () => {}; } }",
-        "function Mark() { try {} catch (write) { useMotionMark(motion, write, look, []); } }",
-        "function Mark() { { const other = 1; } useMotionMark(motion, write, look, []); }",
-      ].map(scoped)
-    ).toEqual([false, false, false, false, false, true]);
-  });
-
-  it("names the move and settle placements only in the loop and its classifier", () => {
-    expect(
-      chart
-        .filter((record) => /kind:\s*"(?:move|settle)"/u.test(record.code) && !owners.has(record.relative))
-        .map((record) => record.relative)
-    ).toEqual([]);
-  });
-});
-
 describe("chart colour namespace", () => {
-  // Why not a lint rule: lint cannot read custom-property names inside style objects or CSS files.
-  // `--color-*` is Tailwind 4's theme namespace, so a chart that wrote `--color-<key>` for a config
+  // Why not a lint rule: oxlint reads no CSS, and one pattern judges chart.css and the chart
+  // modules alike; a lint copy for the modules would split the pattern in two. `--color-*` is
+  // Tailwind 4's theme namespace, so a chart that wrote `--color-<key>` for a config
   // key named `primary` would repaint every Fuse component inside it. Charts read
   // `--chart-color-<key>` instead.
   const WRITES_THEME_COLOR = /--color-[\w${}.-]*["'`]?\]?\s*:/u;
@@ -728,25 +579,12 @@ describe("chart motion tokens", () => {
 });
 
 describe("chart styles a user can override", () => {
-  // Why not a lint rule: oxlint reads no CSS, and a colour literal in a style object is a string
-  // no rule types. Chartability heuristic 43 in CONTRACT.md section 9.11 asks that a user style
-  // sheet and forced colours reach every mark, so chart.css holds no !important and the chart
-  // modules paint through custom properties, never through a colour literal.
+  // Why not a lint rule: oxlint reads no CSS. Chartability heuristic 43 in CONTRACT.md section 9.11
+  // asks that a user style sheet and forced colours reach every mark, so chart.css holds no
+  // !important; `fuse/no-chart-colour-literal` keeps colour literals out of the chart modules.
   it("keeps !important out of chart.css", () => {
     const css = readFileSync(join(SRC_ROOT, "components/chart/chart.css"), "utf8");
     expect(css.match(/!important/gu) ?? []).toEqual([]);
-  });
-
-  it("writes no colour literal in a chart module", () => {
-    const literal = /#[\da-f]{3,8}\b|\b(?:rgba?|hsla?|oklch|oklab|lab|lch)\(/iu;
-    const offenders = [...SOURCE_TREE.values()]
-      .filter(
-        ({ relative }) =>
-          relative.startsWith("components/chart/") && !/\.test(-d)?\.tsx?$|test\./u.test(relative)
-      )
-      .filter(({ relative, code }) => /\.tsx?$/u.test(relative) && literal.test(code))
-      .map(({ relative }) => relative);
-    expect(offenders).toEqual([]);
   });
 });
 
@@ -765,29 +603,10 @@ describe("optional peers and the root barrel", () => {
   );
 });
 
-describe("no .ref/ in package source", () => {
-  // Why not a lint rule: the architecture forbids `.ref/` in package source,
-  // generated declarations, and the packed artifact. Package-check covers the
-  // packed artifact; this walk is the source-side half. A path-literal lint
-  // rule would need a reviewed allowlist for scripts that read the snapshots.
-  it("does not mention .ref/ in library source modules", () => {
-    expect(SOURCE_TREE.size).toBeGreaterThan(0);
-    for (const [file, record] of SOURCE_TREE) {
-      expect(record.source, file).not.toContain(".ref/");
-    }
-  });
-});
-
 describe("deleted user-agent and @elmeragroup/lib APIs", () => {
-  // Why not a lint rule: these identifiers are a retired public surface, not a
-  // syntactic class of mistakes. The allowlist would be the identifiers
-  // themselves.
-  it("does not ship userAgent, UserAgentParserResult, or @elmeragroup/lib", () => {
-    for (const [file, record] of SOURCE_TREE) {
-      expect(record.source, file).not.toMatch(/\buserAgent\b/);
-      expect(record.source, file).not.toMatch(/\bUserAgentParserResult\b/);
-      expect(record.source, file).not.toMatch(/@elmeragroup\/lib/);
-    }
+  // Why not a lint rule: oxlint reads no package manifest. `fuse/no-retired-user-agent-api` keeps
+  // the retired surface out of package source; this keeps it out of package.json.
+  it("does not declare userAgent, UserAgentParserResult, or @elmeragroup/lib in the manifest", () => {
     const manifest = readFileSync(join(PACKAGE_ROOT, "package.json"), "utf8");
     expect(manifest).not.toMatch(/\buserAgent\b/);
     expect(manifest).not.toMatch(/\bUserAgentParserResult\b/);
@@ -953,148 +772,6 @@ describe("runtime listeners and layout motion", () => {
   });
 });
 
-describe("Base UI preview APIs", () => {
-  // Why not a lint rule: the preview members hang off the `Menu` namespace, and a restricted-import
-  // rule sees the import of `Menu`, not which of its members a module reads. Base UI renames
-  // preview APIs on their way out of preview, so one module owns them and a rename is one edit.
-  const PREVIEW_MENU_MEMBERS: ReadonlySet<string> = new Set([
-    "FilterProvider",
-    "Input",
-    "List",
-    "Clear",
-    "Empty",
-    "useFilter",
-  ]);
-  /** The entries that export Base UI's `Menu`: its own subpath and the root package. */
-  const MENU_SOURCES: ReadonlySet<string> = new Set(["@base-ui/react/menu", "@base-ui/react"]);
-
-  /**
-   * Each `Name.Member` read of a preview member through a binding of Base UI's `Menu` export, in
-   * code, JSX and types alike.
-   */
-  function previewMenuReads(fileName: string, source: string): string[] {
-    const parsed = parseSync(fileName, source);
-    expect(parsed.errors, fileName).toEqual([]);
-    const aliases = new Set<string>();
-    for (const statement of parsed.program.body) {
-      if (statement.type !== "ImportDeclaration" || !MENU_SOURCES.has(statement.source.value)) continue;
-      for (const specifier of statement.specifiers) {
-        if (specifier.type !== "ImportSpecifier") continue;
-        const imported =
-          specifier.imported.type === "Identifier" ? specifier.imported.name : specifier.imported.value;
-        if (imported === "Menu") aliases.add(specifier.local.name);
-      }
-    }
-    const reads: string[] = [];
-    const note = (object: string, member: string): void => {
-      if (aliases.has(object) && PREVIEW_MENU_MEMBERS.has(member)) reads.push(`${object}.${member}`);
-    };
-    new Visitor({
-      MemberExpression: (node) => {
-        if (node.object.type === "Identifier" && !node.computed && node.property.type === "Identifier") {
-          note(node.object.name, node.property.name);
-        }
-      },
-      JSXMemberExpression: (node) => {
-        if (node.object.type === "JSXIdentifier") note(node.object.name, node.property.name);
-      },
-      TSQualifiedName: (node) => {
-        if (node.left.type === "Identifier") note(node.left.name, node.right.name);
-      },
-    }).visit(parsed.program);
-    return reads;
-  }
-
-  it("recognizes a preview member read through any alias of Menu, from either entry, and not other members", () => {
-    expect(
-      previewMenuReads(
-        "alias.ts",
-        'import { Menu as M } from "@base-ui/react/menu";\nM.FilterProvider; M.Item; M.useFilter;'
-      )
-    ).toEqual(["M.FilterProvider", "M.useFilter"]);
-    expect(
-      previewMenuReads("subpath.ts", 'import { Menu } from "@base-ui/react/menu";\nMenu.Input;')
-    ).toEqual(["Menu.Input"]);
-    expect(
-      previewMenuReads("root.ts", 'import { Menu } from "@base-ui/react";\nMenu.FilterProvider;')
-    ).toEqual(["Menu.FilterProvider"]);
-    expect(previewMenuReads("clear.ts", 'import { Menu } from "@base-ui/react";\nMenu.Clear;')).toEqual([
-      "Menu.Clear",
-    ]);
-    expect(
-      previewMenuReads(
-        "jsx-and-types.tsx",
-        'import { Menu as M } from "@base-ui/react/menu";\ntype P = M.Empty.Props;\n<M.List />;'
-      )
-    ).toEqual(["M.Empty", "M.List"]);
-    expect(previewMenuReads("other.ts", 'import { Menu } from "./menu";\nMenu.Input;')).toEqual([]);
-  });
-
-  it("reads Menu's preview filtering parts only in the data table filter's searchable-menu.ts", () => {
-    const readers = [...SOURCE_TREE.values()]
-      .filter((record) => record.source.includes("@base-ui/react"))
-      .filter((record) => previewMenuReads(record.relative, record.source).length > 0)
-      .map((record) => record.relative);
-    expect(readers).toEqual(["components/data-table-filter/searchable-menu.ts"]);
-  });
-});
-
-describe("overlay layer", () => {
-  // Why not a lint rule: the invariant is a count across two places. The shared overlay
-  // module spells `z-50` and the toast layer's `z-60` once each, and no component restates
-  // them. A rule banning either class would need an exemption for the module that owns it
-  // and could not assert "exactly once".
-  it("is declared once in overlay-classes.ts and nowhere else in component source", () => {
-    expect(overlayLayer).toBe("z-50");
-    expect(codeOnly(readSrc("components/overlay/overlay-classes.ts")).match(/z-50/gu)).toHaveLength(1);
-    expect(ownedBy("components/overlay/overlay-classes.ts", "z-50")).toEqual([]);
-  });
-
-  it("declares the toast layer once in overlay-classes.ts and nowhere else in component source", () => {
-    expect(toastLayer).toBe("z-60");
-    expect(codeOnly(readSrc("components/overlay/overlay-classes.ts")).match(/z-60/gu)).toHaveLength(1);
-    expect(ownedBy("components/overlay/overlay-classes.ts", "z-60")).toEqual([]);
-  });
-});
-
-describe("superseded local forms", () => {
-  // Why not a lint rule: each of these is a "there is exactly one owner" count
-  // across the whole tree. A rule banning the spelling would need a per-file
-  // exemption for precisely its owner and still could not assert the "exactly
-  // once" half. Private copies would undo the shared ownership. Calls and imports use lint
-  // allow lists; class-string ownership stays
-  // here because lint cannot count.
-  it("spells the popup motion, fill, surface and modal title classes only in overlay-classes.ts", () => {
-    for (const needle of [
-      "origin-(--transform-origin)",
-      "text-xl font-medium",
-      "bg-popover text-popover-foreground",
-      "bg-dialog text-dialog-foreground",
-      "shadow-md ring-1 ring-foreground/10",
-      "pointer-events-none absolute right-2 flex items-center justify-center",
-      "-mx-1 my-1 h-px bg-border",
-    ]) {
-      expect(ownedBy("components/overlay/overlay-classes.ts", needle), needle).toEqual([]);
-    }
-  });
-
-  it("asks whether a ReactNode is text only through internal/is-text-node.ts", () => {
-    // The two survivors elsewhere are not this question: Toast's manager adapter and
-    // Sidebar's tooltip shorthand narrow `string | <object>` unions, and an options
-    // object is not a `ReactNode` (is-text-node.ts documents both).
-    for (const file of [
-      "components/checkbox/checkbox.tsx",
-      "components/confirm-button/confirm-button.tsx",
-      "react-aria/grid-list/grid-list.tsx",
-    ]) {
-      expect(readSrc(file), file).toContain("is-text-node");
-    }
-    // The `Object.prototype.toString.call(v) === "[object String]"` spelling evaded the
-    // anti-slop rule rather than answering it; no source file spells it any more.
-    expect(filesContainingCode("[object String]")).toEqual([]);
-  });
-});
-
 /** A variant that reads another element's state (`group-*`, `peer-*`, `in-*`) styles a part. */
 function readsAnotherElement(variant: string): boolean {
   return /^(?:group|peer|in)-/u.test(variant);
@@ -1187,9 +864,9 @@ function allowedPaints(role: ColorTokenName): readonly TokenPaint[] {
 }
 
 describe("token paints", () => {
-  // Why not a lint rule: the oracle is the paint table in theme/tokens/contract.ts, and the
-  // `elmera` rules live in the external `@elmeragroup/internal/oxlint` package, which cannot read
-  // this repo's tables. The unit under test is TOKEN_PAINTS. The oracle is where the library's
+  // Why not a lint rule: the oracle is the paint table in theme/tokens/contract.ts, and a route
+  // into a token takes the paints that token is drawn with anywhere in the tree, which no per-file
+  // rule sees. The unit under test is TOKEN_PAINTS. The oracle is where the library's
   // own classes paint each role, so a role the Figma sync hides from a picker is never one a
   // component paints there. A role routed into a color token's own property, such as `--ring`,
   // takes every paint the scan finds that token drawn with anywhere in the tree, never the paints
@@ -1223,10 +900,10 @@ describe("token paints", () => {
 });
 
 describe("state faces", () => {
-  // Why not a lint rule: the `elmera` rules live in the external
-  // `@elmeragroup/internal/oxlint` package, so this repo cannot add a sibling of
-  // `no-local-focus-ring` in place, and that rule's owner path is not configurable yet
-  // (see the open-work list). The upstream proposal is `no-local-state-face`. Until it ships, this walk is
+  // Why not a lint rule: the exceptions are a reviewed inventory keyed by file and exact token,
+  // so a new token in a listed file and a stale exception both fail, and the class parsing is
+  // test/class-tokens.ts, which the token-paints oracle shares. The upstream proposal is the
+  // `elmera` rule `no-local-state-face` (see the open-work list). Until it ships, this walk is
   // the gate: `styles/state-face.ts` owns the disabled dim, and hover and press faces sit
   // behind the `enabled-hover:` / `enabled-active:` variants from fuse.css.
   it("recognizes a local disabled dim and an ungated pointer face, and not the gated forms", () => {
@@ -1353,26 +1030,6 @@ function openingElements(relativePath: string, source: string): JSXOpeningElemen
   return elements;
 }
 
-const STATE_OR_WIRING_ATTRIBUTE = /^(?:disabled|readOnly|required|id|value|aria-.+)$/u;
-
-/** `Part > RenderTag attribute` for each state or wiring attribute, or spread, on an inline render element. */
-function renderElementWiring(relativePath: string, source: string): string[] {
-  return openingElements(relativePath, source).flatMap((element) =>
-    element.attributes.flatMap((attribute) => {
-      if (attribute.type !== "JSXAttribute" || attribute.name.name !== "render") return [];
-      if (attribute.value?.type !== "JSXExpressionContainer") return [];
-      if (attribute.value.expression.type !== "JSXElement") return [];
-      const rendered = attribute.value.expression.openingElement;
-      const prefix = `${tagName(element.name)} > ${tagName(rendered.name)}`;
-      return rendered.attributes.flatMap((item) => {
-        if (item.type === "JSXSpreadAttribute") return [`${prefix} {...}`];
-        const name = tagName(item.name);
-        return STATE_OR_WIRING_ATTRIBUTE.test(name) ? [`${prefix} ${name}`] : [];
-      });
-    })
-  );
-}
-
 function isDefinedPropsCall(expression: Expression): boolean {
   return (
     expression.type === "CallExpression" &&
@@ -1443,47 +1100,15 @@ const WIRING_PARTS = {
 } as const satisfies Readonly<Record<string, readonly string[]>>;
 
 describe("Base UI prop wiring", () => {
-  // Why not a lint rule: both checks read what a JSX element renders and which parts wire
-  // themselves. Oxlint has no rule for either, and the `elmera` rules live in the external
-  // `@elmeragroup/internal/oxlint` package.
-  it("recognizes state and wiring on a render element, and a raw spread on a wiring part", () => {
-    expect(
-      renderElementWiring(
-        "probe.tsx",
-        "<P.Input render={<Group disabled={false} aria-label={x} className={c} />} />"
-      )
-    ).toEqual(["P.Input > Group disabled", "P.Input > Group aria-label"]);
-    expect(renderElementWiring("probe.tsx", "<Control render={<Textarea {...props} />} />")).toEqual([
-      "Control > Textarea {...}",
-    ]);
-    expect(renderElementWiring("probe.tsx", '<P.Icon render={<span className="x" />} />')).toEqual([]);
+  // Why not a lint rule: the table is a reviewed inventory. Each listed module must still render
+  // every part it names, through definedProps, so a renamed or dropped part fails here; a per-file
+  // rule cannot know which parts a module must render. `fuse/render-element-wiring` keeps state and
+  // wiring off inline render elements.
+  it("recognizes a raw spread on a wiring part and the definedProps spread", () => {
     const parts = new Set(["S.Root"]);
     expect(wiringPartSpreads("probe.tsx", "<S.Root {...props} />", parts)).toEqual(["S.Root raw"]);
     expect(wiringPartSpreads("probe.tsx", "<S.Root {...definedProps(props)} />", parts)).toEqual(["S.Root"]);
     expect(wiringPartSpreads("probe.tsx", "<S.Thumb {...props} />", parts)).toEqual([]);
-  });
-
-  it("keeps state and wiring off every inline render element", () => {
-    // A render element's props beat the part's own props and Root or Field state, so a
-    // `disabled={false}` there re-enabled a disabled Combobox.Root (#49). The exceptions
-    // repeat the part's own name because Button's icon sizes require `aria-label`.
-    const flagged = Object.fromEntries(
-      [...SOURCE_TREE.values()]
-        .filter((record) => record.relative.startsWith("components/") && record.relative.endsWith(".tsx"))
-        .map((record) => [record.relative, renderElementWiring(record.relative, record.source)] as const)
-        .filter(([, sites]) => sites.length > 0)
-    );
-    expect(flagged).toEqual({
-      "components/autocomplete/autocomplete.tsx": [
-        "AutocompletePrimitive.Clear > InputGroupButton aria-label",
-      ],
-      "components/combobox/combobox.tsx": [
-        "ComboboxPrimitive.Clear > InputGroupButton aria-label",
-        "ComboboxPrimitive.ChipRemove > Button aria-label",
-      ],
-      "components/data-table/data-table-row-actions.tsx": ["DropdownMenuTrigger > Button aria-label"],
-      "components/toast/toast.tsx": ["ToastPrimitive.Close > Button aria-label"],
-    });
   });
 
   it.each(Object.entries(WIRING_PARTS))(

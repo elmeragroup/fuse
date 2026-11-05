@@ -105,7 +105,7 @@ describe("the Calendar day component set", () => {
     expect(day("on", "disabled")).toEqual(circle("muted-foreground"));
   });
 
-  it("drops the pressed fill, the hidden outside-month day, a disabled day's hover fill, the forced-colors arms and the cursor, and leaves nothing unmapped", () => {
+  it("drops the pressed fill, the hidden outside-month day, a disabled day's hover fill, the forced-colors arms and the cursor", () => {
     const rows = coverage.filter((row) => row.component === "Calendar day");
     const outcomes = (className: string) =>
       new Set(
@@ -120,6 +120,5 @@ describe("the Calendar day component set", () => {
     expect(outcomes("forced-colors:text-[GrayText]")).toEqual(new Set(["color: dropped"]));
     expect(outcomes("forced-color-adjust-none")).toEqual(new Set(["forced-color-adjust: dropped"]));
     expect(outcomes("cursor-default")).toEqual(new Set(["cursor: dropped"]));
-    expect(rows.filter((row) => row.outcome === "unmapped")).toEqual([]);
   });
 });

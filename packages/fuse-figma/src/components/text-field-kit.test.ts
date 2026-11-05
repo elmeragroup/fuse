@@ -98,7 +98,18 @@ describe("the Text field component set", () => {
   it("shows each state and content on the input, and dims the label only in a disabled Field", () => {
     const variants = (content: string, state: string) =>
       outline(cell(content, state).children).filter((line) => line.includes("->"));
-    expect([variants("value", "readonly"), variants("value", "disabled")]).toEqual([
+    // Static markup cannot show `focus-visible:`, so the markup check reads no focused input; this
+    // focus row is the only proof that a focused Field draws a focused Input.
+    expect([
+      variants("value", "focus"),
+      variants("value", "readonly"),
+      variants("value", "disabled"),
+    ]).toEqual([
+      [
+        "  label -> label/state=rest",
+        "    input -> input/content=value,state=focus",
+        "  description -> field-description/state=rest",
+      ],
       [
         "  label -> label/state=rest",
         "    input -> input/content=value,state=readonly",

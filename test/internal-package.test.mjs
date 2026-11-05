@@ -3,8 +3,8 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { parse } from "yaml";
 
+import { repoRoot } from "../scripts/repo-tree.ts";
 import { asRecord, asRecordArray, asString, isString, readJsonObject } from "./json-object.mjs";
-import { repoRoot } from "./repo-tree.mjs";
 
 const workspace = asRecord(
   parse(readFileSync(join(repoRoot, "pnpm-workspace.yaml"), "utf8")),

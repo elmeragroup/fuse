@@ -70,17 +70,15 @@ describe("Phosphor adapters", () => {
   });
 
   it("imports only per-icon SSR modules and stays server-safe", () => {
+    // Source inspection, not a lint rule: the facade and the adapters are generator output, and the
+    // roster decides which module each adapter must import, so these read the generated files beside
+    // the drift check above. The handwritten helper's imports and directive are lint's:
+    // `fuse/required-import`, `fuse/server-safe-asset` and `no-restricted-imports` in .oxlintrc.json.
     const facade = readFileSync(join(packageRoot, "src/icons.ts"), "utf8");
     expect(facade).not.toContain("use client");
     expect(facade).not.toContain("dist/csr");
     expect(facade).not.toMatch(/from ["']@phosphor-icons\/react["']/);
     expect(facade).not.toMatch(/from ["']@phosphor-icons\/react\/ssr["']/);
-
-    const helper = readFileSync(join(packageRoot, "src/icons/create-elmera-icon.ts"), "utf8");
-    expect(helper).not.toContain("use client");
-    expect(helper).not.toContain("dist/csr");
-    expect(helper).not.toMatch(/from ["']@phosphor-icons\/react["']/);
-    expect(helper).toContain(`from "@phosphor-icons/react/dist/ssr/Check"`);
 
     for (const name of PHOSPHOR_ICON_NAMES) {
       const text = readFileSync(join(generatedDir, `${iconModuleSlug(name)}.ts`), "utf8");

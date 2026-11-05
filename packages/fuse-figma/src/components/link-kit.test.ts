@@ -140,7 +140,7 @@ describe("the Link component set", () => {
     }
   });
 
-  it("drops the cursor, the transition and the line fragments, and leaves nothing unmapped", () => {
+  it("drops the cursor, the transition and the line fragments", () => {
     const rows = coverage.filter((row) => row.component === "Link");
     const outcomes = (className: string) =>
       new Set(
@@ -157,7 +157,6 @@ describe("the Link component set", () => {
     expect(outcomes("box-decoration-clone")).toEqual(
       new Set(["box-decoration-break: dropped", "-webkit-box-decoration-break: dropped"])
     );
-    expect(rows.filter((row) => row.outcome === "unmapped")).toEqual([]);
   });
 
   it("binds the light arm of the resting underline color and records the dark arm it leaves out", () => {

@@ -37,8 +37,6 @@ test("the recipe stays off the module; the element takes Button props, required 
 
   // @ts-expect-error children are required
   const _missing = <PopoverInfoButton />;
-  // @ts-expect-error locale is provider-only
-  const _noLocale = <PopoverInfoButton locale="nb-NO">x</PopoverInfoButton>;
   // @ts-expect-error polymorphism is never an as prop
   const _noAs = <PopoverInfoButton as="div">x</PopoverInfoButton>;
 });
