@@ -13,6 +13,11 @@
       }
     },
     "oxlint": {
+      "binary": {
+        "env": {
+          "OXLINT_TSGOLINT_PATH": "node_modules/.bin/tsrs-lint"
+        }
+      },
       "initialization_options": {
         "settings": {
           "configPath": null,

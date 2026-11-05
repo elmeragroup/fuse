@@ -67,6 +67,8 @@ Put necessary source contracts in the central suite with the reason lint or an
 existing gate cannot enforce them.
 While editing, run `vitest related <files> --run --project unit` in the owning package
 (drop `--project` where none exist). Direct Vitest skips the Fuse build and dist tripwires.
+Lint through `pnpm lint`: type-aware rules run on tsrs, so a direct `oxlint` needs
+`OXLINT_TSGOLINT_PATH=node_modules/.bin/tsrs-lint`.
 Before review, run the touched turbo tasks with `--affected`, then `pnpm check`, the
 local gate. CI also runs the e2e and packed-artifact tier on every PR. A PR that leaves
 `apps/docs` unchanged skips its studio and landing e2e files, which every push to `main` runs.

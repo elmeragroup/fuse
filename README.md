@@ -44,7 +44,7 @@ Root scripts fan out through turbo unless noted.
 | ------------------------- | --------------------------------------------------------------------------------------------------------------------- |
 | `pnpm build`              | Builds every package (`@elmeragroup/fuse` via tsdown, the Next apps, static-theme)                                    |
 | `pnpm dev`                | Runs the dev servers                                                                                                  |
-| `pnpm lint`               | `oxlint . --deny-warnings` over the tree, including the two local plugins                                             |
+| `pnpm lint`               | `oxlint . --deny-warnings` over the tree, including the two local plugins and the type-aware rules on tsrs            |
 | `pnpm lint:fix`           | The same with `--fix`                                                                                                 |
 | `pnpm format`             | `oxfmt` write; `pnpm format:check` is the CI form                                                                     |
 | `pnpm test`               | Unit tests (vitest) in every package                                                                                  |
@@ -60,6 +60,11 @@ Root scripts fan out through turbo unless noted.
 | `pnpm type-check:scripts` | `tsrs --noEmit` for the root release scripts                                                                          |
 | `pnpm check`              | The local gate: `oxfmt --check` then `turbo run check`, `ci:checks` minus the e2e and packed-artifact tier            |
 | `pnpm ci:checks`          | The full merge gate locally: `oxfmt --check` then `turbo run ci:checks`                                               |
+
+The type-aware lint rules run on the linter built into tsrs, the compiler behind every type-check, so
+the workspace does not install `oxlint-tsgolint`. The lint scripts set
+`OXLINT_TSGOLINT_PATH=node_modules/.bin/tsrs-lint`; set it too when you run `oxlint` directly. The
+Oxc extensions read the same launcher from `.vscode/settings.json` and `.zed/settings.json`.
 
 Package-scoped scripts worth knowing:
 
