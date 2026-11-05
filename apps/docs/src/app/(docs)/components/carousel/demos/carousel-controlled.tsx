@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 
-import { Button } from "@elmeragroup/fuse/button";
 import { Carousel, useCarousel } from "@elmeragroup/fuse/carousel";
+import { ToggleGroup } from "@elmeragroup/fuse/toggle-group";
 
 const PLANS = ["Basic", "Plus", "Premium"];
 
@@ -11,18 +11,25 @@ const PLANS = ["Basic", "Plus", "Premium"];
 function PlanPicker() {
   const { state, actions } = useCarousel();
   return (
-    <div className="flex flex-wrap justify-center gap-2">
-      {PLANS.map((plan, index) => (
-        <Button
-          key={plan}
-          size="sm"
-          variant={state.index === index ? "default" : "outline"}
-          aria-pressed={state.index === index}
-          onClick={() => actions.goTo(index)}>
+    <ToggleGroup.Root
+      aria-label="Plan"
+      size="sm"
+      variant="outline"
+      className="self-center"
+      value={[PLANS[state.index] ?? ""]}
+      onValueChange={(next) => {
+        // Pressing the selected plan again would empty the group; the page stays instead.
+        const picked = PLANS.indexOf(next[0] ?? "");
+        if (picked !== -1) {
+          actions.goTo(picked);
+        }
+      }}>
+      {PLANS.map((plan) => (
+        <ToggleGroup.Item key={plan} value={plan}>
           {plan}
-        </Button>
+        </ToggleGroup.Item>
       ))}
-    </div>
+    </ToggleGroup.Root>
   );
 }
 

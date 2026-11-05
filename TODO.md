@@ -585,6 +585,20 @@ Paths are relative to `packages/fuse-figma` unless they start with `packages/`.
   snap, resizes nothing and mutates nothing inside it, so the indicators take it only at the next
   scroll end, navigation, resize, mutation or commit (`carousel-engine.ts`). Following it at once
   would mean observing ancestors or measuring on a timer.
+- Split the snapshot out of `CarouselContext`. Each change to the slides in view, about twice per
+  slide a scroll passes, re-renders every part and every `useCarousel()` caller, though `state`,
+  `actions` and `meta` keep their identity. Only Slide, Indicators and Indicator read the
+  snapshot; a `Map` of slide positions in it would also spare each Slide its `indexOf` scan.
+- Fold the stranded-scroll restore into `measure` and `flush` options. `ended` reaches `flush`
+  through the `ending` closure field, and only `strandedUnderOwnScroll` reads it, so the restore
+  decision is split across `measure`, `flush` and `ended` (`carousel-engine.ts`). Verify the
+  refactor in Firefox, whose missing re-snap it exists for.
+- Move the wheel listener from the engine into `carousel-input.ts`, which owns every other input
+  lifetime, and let a turn that arrives while the hold is pending extend it. A trackpad gesture
+  now restarts the two-frame hold, its listeners and its quiet-spell timer every few frames.
+- Make `movesSlides` walk ancestors against a `Set` of the measured slides. It now runs
+  `contains` against every slide for each mutation record, so animated content in each slide
+  costs O(slides) per record.
 
 ## Charts
 
