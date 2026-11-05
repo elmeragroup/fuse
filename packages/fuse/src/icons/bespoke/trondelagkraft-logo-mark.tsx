@@ -5,8 +5,8 @@ import type { BespokeSvgProps } from "../bespoke-svg";
 
 /**
  * The TrøndelagKraft mark: the lamp without the wordmark. The lamp's ring and base paint in
- * `currentColor`, as in the full logo, and its light keeps the brand yellow. A nonempty `title`
- * names it as an image; without one it renders decorative.
+ * `--logo-mark-ink`, falling back to `currentColor`, as in the full logo, and its light keeps the
+ * brand yellow. A nonempty `title` names it as an image; without one it renders decorative.
  *
  * @param props - SVG props, plus the optional accessible `title`.
  * @returns The mark as an SVG.
@@ -23,24 +23,28 @@ export function TrondelagkraftLogoMark({ title, ...props }: BespokeSvgProps): Re
       {...decorativeSvgProps(title)}
       {...props}>
       {title ? <title>{title}</title> : null}
-      <path
-        fillRule="evenodd"
-        clipRule="evenodd"
-        d="M69.6918 243.151H168.167V217.177H69.6918V243.151Z"
-        fill="currentColor"
-      />
-      <path
-        fillRule="evenodd"
-        clipRule="evenodd"
-        d="M69.6936 282.118H168.167V256.146H69.6936V282.118Z"
-        fill="currentColor"
-      />
-      <path
-        fillRule="evenodd"
-        clipRule="evenodd"
-        d="M118.93 175.031C81.8439 175.031 51.7846 144.869 51.7846 107.656C51.7846 70.454 81.8439 40.2917 118.93 40.2917C156.015 40.2917 186.075 70.454 186.075 107.656C186.075 144.869 156.015 175.031 118.93 175.031ZM191.644 44.1266L208.149 18.1009L179.243 -0.000976562L156.768 18.6901C145.15 13.728 132.357 10.9727 118.93 10.9727C65.5635 10.9727 22.3125 54.3718 22.3125 107.921C22.3125 161.472 65.5635 204.871 118.93 204.871C172.296 204.871 215.547 161.472 215.547 107.921C215.547 83.4862 206.518 61.1684 191.644 44.1266Z"
-        fill="currentColor"
-      />
+      <g
+        // oxlint-disable-next-line shadcn/no-inline-styles -- var() with a fallback works only in a style declaration, not a presentation attribute, and the default needs no Fuse CSS
+        style={{ color: "var(--logo-mark-ink, currentColor)" }}>
+        <path
+          fillRule="evenodd"
+          clipRule="evenodd"
+          d="M69.6918 243.151H168.167V217.177H69.6918V243.151Z"
+          fill="currentColor"
+        />
+        <path
+          fillRule="evenodd"
+          clipRule="evenodd"
+          d="M69.6936 282.118H168.167V256.146H69.6936V282.118Z"
+          fill="currentColor"
+        />
+        <path
+          fillRule="evenodd"
+          clipRule="evenodd"
+          d="M118.93 175.031C81.8439 175.031 51.7846 144.869 51.7846 107.656C51.7846 70.454 81.8439 40.2917 118.93 40.2917C156.015 40.2917 186.075 70.454 186.075 107.656C186.075 144.869 156.015 175.031 118.93 175.031ZM191.644 44.1266L208.149 18.1009L179.243 -0.000976562L156.768 18.6901C145.15 13.728 132.357 10.9727 118.93 10.9727C65.5635 10.9727 22.3125 54.3718 22.3125 107.921C22.3125 161.472 65.5635 204.871 118.93 204.871C172.296 204.871 215.547 161.472 215.547 107.921C215.547 83.4862 206.518 61.1684 191.644 44.1266Z"
+          fill="currentColor"
+        />
+      </g>
       <path
         fillRule="evenodd"
         clipRule="evenodd"
