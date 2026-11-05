@@ -346,15 +346,21 @@ function routeRoof(view: RoofView): RoofProfile | null {
   try {
     sweep();
     raster.draw();
+    // Each pass writes every moving mark as one batch, so the stack floors settle once per pass
+    // before the raster reads it.
     for (let step = 1; step <= fractions; step += 1) {
       const at = step / fractions;
-      for (const { write, drawn, end } of marks) {
-        write(end.map((to, index) => (drawn[index] ?? to) + (to - (drawn[index] ?? to)) * at));
-      }
+      view.motion.batch(() => {
+        for (const { write, drawn, end } of marks) {
+          write(end.map((to, index) => (drawn[index] ?? to) + (to - (drawn[index] ?? to)) * at));
+        }
+      });
       raster.draw();
     }
     sweep();
-    for (const { write, target } of marks) write(target);
+    view.motion.batch(() => {
+      for (const { write, target } of marks) write(target);
+    });
     raster.draw();
     sweep();
     const footprints = [...swept.values()].flatMap(({ bounds, reach }) =>
@@ -371,7 +377,9 @@ function routeRoof(view: RoofView): RoofProfile | null {
     return raisedRoof(widenedRoof(profile, gap), gap);
   } finally {
     // The marks show where they showed, whatever the read did.
-    for (const { write, drawn } of marks) write(drawn);
+    view.motion.batch(() => {
+      for (const { write, drawn } of marks) write(drawn);
+    });
   }
 }
 

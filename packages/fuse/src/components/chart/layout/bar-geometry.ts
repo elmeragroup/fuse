@@ -9,7 +9,7 @@ import { ownSlot, ownSpan } from "./coarse-slots";
 import { BUCKETS, bucketEdges } from "./decimate";
 import { linearScale, scaleValue } from "./linear-scale";
 import { barSpan, frameRect, valueAt } from "./plot-frame";
-import type { BarMetrics, PlotFrame, PlotRect, SubBand } from "./plot-frame";
+import type { BarMetrics, PlotFrame, PlotRect, StackPlace, SubBand } from "./plot-frame";
 import type { Extent } from "./stack";
 import { slotCount } from "./x-domain";
 
@@ -58,6 +58,11 @@ export type BarCell = {
   readonly negative: boolean;
   /** Whether the bar is its stack's outer segment on its side of zero, which takes the rounded end. */
   readonly stackTop: boolean;
+  /**
+   * Whether the bar owns its stack side's value-axis pixel floor at rest, from `floorPlace`, which
+   * the first draw takes before a frame's segments decide it through `settleFloors`.
+   */
+  readonly place: StackPlace;
 };
 
 /**
@@ -94,6 +99,25 @@ export function isStackTop(model: CartesianModel, series: SeriesModel, slot: num
 }
 
 /**
+ * Whether a key's segment at a slot owns the value-axis pixel floor of its stack's side at rest: a
+ * loose bar always does, and in a stack only the outer segment of a reading other than 0 does, so
+ * each side of a stack has at most one owner. A segment of no length can still count as the
+ * outermost one, as `isStackTop` reads it. It agrees with `settleFloors` on a resting stack of one
+ * slot's segments, and serves a
+ * mark's first draw, which React renders before any frame's segments decide it.
+ *
+ * @param model - The Root's model.
+ * @param series - The key's series.
+ * @param slot - A slot index.
+ * @returns `"outer"` for the owner, `"inner"` otherwise.
+ */
+export function floorPlace(model: CartesianModel, series: SeriesModel, slot: number): StackPlace {
+  if (series.stack === undefined) return "outer";
+  const extent = series.extents[slot];
+  return extent && extent[0] !== extent[1] && isStackTop(model, series, slot) ? "outer" : "inner";
+}
+
+/**
  * One series' bar at a slot of the window, or null where it draws nothing, such as a missing or
  * pending reading or a slot outside the window. A coarse series' bar is the bar of its own slot
  * that holds the Root slot.
@@ -115,6 +139,7 @@ export function barCellAt(model: CartesianModel, series: SeriesModel, slot: numb
     extent,
     negative: isNegative(extent),
     stackTop: isStackTop(model, series, first),
+    place: floorPlace(model, series, first),
   };
 }
 
@@ -178,16 +203,65 @@ export function barGeometry(
   sub: SubBand,
   seam: "cut" | "whole"
 ): BarGeometry {
-  const [low, high] = cell.extent;
   const [alongStart, alongEnd] = barSpan(frame, cell.position, metrics, sub, cell.span);
+  const [base, tip] = projectedEnds(frame, cell.extent, cell.negative);
   return [
     alongStart,
     alongEnd,
-    valueAt(frame, cell.negative ? high : low),
-    barTip(frame, cell),
+    base,
+    tip,
     seam === "cut" && !cell.stackTop ? metrics.seam : 0,
     cell.stackTop ? 1 : 0,
   ];
+}
+
+/**
+ * Where an extent's base and its far end land along the value axis, unsnapped. A projection can
+ * round a reading other than 0 onto its base, as 0.01 on a domain up to 1e15 does, which would draw
+ * it as flat as a 0. Its far end then keeps the smallest step past the base on the reading's side
+ * that the coordinates hold, so the pixel floor still sees a body with length and its side.
+ *
+ * @param frame - The layout's frame.
+ * @param extent - The low and high value the body covers.
+ * @param negative - Whether the body hangs below zero, which puts its base at its high end.
+ * @returns The base and the far end, in CSS pixels from the plot's top or left edge.
+ */
+export function projectedEnds(
+  frame: PlotFrame,
+  extent: readonly [number, number],
+  negative: boolean
+): readonly [base: number, tip: number] {
+  const [low, high] = extent;
+  const base = valueAt(frame, negative ? high : low);
+  const tip = valueAt(frame, negative ? low : high);
+  if (tip !== base || low === high) return [base, tip];
+  // Up a vertical frame and right across a horizontal one is positive.
+  const outward = (frame.orientation === "vertical" ? -1 : 1) * (negative ? -1 : 1);
+  return [base, base + outward * apart(base)];
+}
+
+/** A step past a coordinate that a float holds apart from it: a few units in its last place. */
+function apart(at: number): number {
+  return Math.max(1, Math.abs(at)) * 4 * Number.EPSILON;
+}
+
+/**
+ * Hold a decimated column's two ends apart where its projection rounds one onto the other, as
+ * `projectedEnds` does for a bar: its upper end moves up for a column above zero, and its lower end
+ * down for one below it. Every column has length in value, as `bucketColumns` drops the rest.
+ *
+ * @param top - The column's upper end, in CSS pixels down a vertical frame.
+ * @param bottom - Its lower end.
+ * @param side - The side of zero the column's own reading lies on.
+ * @returns The upper and lower ends.
+ */
+export function apartEnds(
+  top: number,
+  bottom: number,
+  side: "positive" | "negative"
+): readonly [top: number, bottom: number] {
+  if (top !== bottom) return [top, bottom];
+  return side === "negative" ? [top, bottom + apart(bottom)] : [top - apart(top), bottom];
 }
 
 /**
@@ -220,16 +294,27 @@ export function hangs(frame: PlotFrame, [, , base, tip]: BarGeometry): boolean {
  * The rectangle a bar's drawn geometry stands for, every edge on the device pixel grid. A stack's
  * inner segment ends its seam short of its tip, so the surface shows between segments. Its span
  * snaps through `snapBarSpan`, so a resting bar draws its grid span as it is and a tween frame
- * draws whole device pixels between its two rests' widths.
+ * draws whole device pixels between its two rests' widths. The owner of its stack side's pixel
+ * floor, from `settleFloors` in each frame, keeps a device pixel along the value axis from its base
+ * toward its tip, and any other segment keeps its plain snap. A segment's base is its inner
+ * neighbour's tip, so both snap it alike and the segments keep tiling. The owner's pixel outlasts
+ * its seam: a seam that would take the whole of a segment with length leaves the floor its pixel,
+ * so a stack with length never draws nothing.
  *
  * @param frame - The layout's frame.
  * @param geometry - The drawn geometry, a tween frame's or the target's.
+ * @param place - Whether the bar owns its stack side's pixel floor in this frame.
  * @returns The rectangle.
  */
-export function geometryRect(frame: PlotFrame, geometry: BarGeometry): PlotRect {
+export function geometryRect(frame: PlotFrame, geometry: BarGeometry, place: StackPlace): PlotRect {
   const [alongStart, alongEnd, base, tip, seam] = geometry;
-  const end = tip + Math.sign(base - tip) * Math.min(Math.max(0, seam), Math.abs(tip - base));
-  return frameRect(frame, [alongStart, alongEnd], [base, end]);
+  const length = Math.abs(tip - base);
+  const cut = Math.min(Math.max(0, seam), length);
+  const toTip = Math.sign(tip - base);
+  // The owner keeps a body of the least length past its base where the seam would take it all.
+  const end =
+    place === "outer" && length > 0 && cut === length ? base + toTip * apart(base) : tip - toTip * cut;
+  return frameRect(frame, [alongStart, alongEnd], [base, end], place);
 }
 
 /**

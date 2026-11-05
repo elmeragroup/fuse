@@ -12,16 +12,27 @@
 // Otherwise a slot's band covers the device pixels from the one its start lies in to the one its
 // end lies in, among the plot's, and a slot wholly outside them covers the plot's nearest pixel. Each
 // mark of a slot must draw at least one device pixel inside the pixels its slot covers, and every
-// rule and band of the value axis inside the plot.
+// rule and band of the value axis inside the plot. Along the value axis every bar, path column,
+// emphasis box and active overlay of a non-zero reading, some far under a device pixel, must draw
+// at least one device pixel inside the plot, its base on the zero rule's near edge, which the grid
+// draws on its own, and its far edge on the reading's side of it, and a reading of 0 none. The
+// scenario model and the walkers live in test/chart/floor-walkers.ts.
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 import { userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
-import { drawnRect } from "../../../test/chart/bar-box";
 import { FLOOR_MARKS } from "../../../test/chart/floor-marks";
 import type { FloorMark } from "../../../test/chart/floor-marks";
-import { pathRects } from "../../../test/chart/world-reader";
+import {
+  DECIMATE_ABOVE,
+  SERIAL,
+  WALKERS,
+  missingAt,
+  reading,
+  ruleBox,
+} from "../../../test/chart/floor-walkers";
+import type { Dense, Span, Walk } from "../../../test/chart/floor-walkers";
 import { emulatePixelRatio } from "../../../test/page-metrics";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
@@ -45,47 +56,12 @@ const VARIANTS: readonly ChartBarVariant[] = [
   "isometric",
 ];
 
-/** How far a computed style may stray from what it stands for: it serializes six decimals. */
-const SERIAL = 1e-5;
-
 /** One colour per series of a group. */
 const COLORS = ["chart-1", "chart-2", "chart-3"] as const;
 
-/** One random dense chart and the guides drawn on it. */
-type Dense = {
-  readonly count: number;
-  readonly length: number;
-  readonly group: number;
-  readonly variant: ChartBarVariant;
-  readonly orientation: "vertical" | "horizontal";
-  readonly missing: readonly boolean[];
-  readonly offset: number;
-  readonly crosshair: "band" | "line";
-  /** The step line's look: the default 2 px stroke or the quiet 1 px one. */
-  readonly stroke: "default" | "quiet";
-  /** The line's step: from cell edge to cell edge, or d3's, rising halfway between two vertices. */
-  readonly curve: "step-after" | "step";
-  /** The active slot: the first or the last. */
-  readonly last: boolean;
-  /** The slot a slot reference line marks, and the first and last slot of a slot area. */
-  readonly line: number;
-  readonly from: number;
-  readonly span: number;
-  /**
-   * Whether every mark draws in a second Panel, under a first Panel of other bars, so the walk
-   * reads the lower Panel's own plot origin. Only a vertical chart takes Panels.
-   */
-  readonly panels: boolean;
-};
-
-/** A reading of 1 to 4 for a series at a slot, the same in the chart and in the oracle. */
-function reading(slot: number, series: number): number {
-  return 1 + ((slot + series) % 4);
-}
-
 /** The chart: `group` series side by side, missing where the list says, with every guide. */
 function render(chart: Dense) {
-  const { count, length, group, variant, orientation, missing, offset } = chart;
+  const { count, length, group, variant, orientation, offset } = chart;
   const keys = Array.from({ length: group }, (_, index) => `s${String(index)}`);
   const panelled = chart.panels && orientation === "vertical";
   // With Panels the upper Panel draws a series of its own.
@@ -93,43 +69,68 @@ function render(chart: Dense) {
     key: string,
     color: ChartSeriesConfig["color"],
     look: ChartSeriesConfig["barVariant"] = "default"
-  ): [string, ChartSeriesConfig] => [key, { label: key, color, qualityKey: "q", barVariant: look }];
+  ): [string, ChartSeriesConfig] => {
+    const own: ChartSeriesConfig = { label: key, color, qualityKey: "q", barVariant: look };
+    return [key, stacked && (key === "s0" || key === "under") ? { ...own, stack: "s" } : own];
+  };
+  // Where the chart asks, its one series stacks on a series of zeros that draws no Bar, so its marks
+  // floor through the stack floors as a stack's outer segment, the only one with length.
+  const stacked = chart.stacked && group === 1;
   const entries = keys.map((key, index) => series(key, COLORS[index] ?? "chart-1", variant));
+  if (stacked) entries.unshift(series("under", "chart-2"));
   if (panelled) entries.push(series("upper", "chart-4"));
   const config: ChartConfig = Object.fromEntries(entries);
   // Every row holds the upper Panel's reading, which only a chart with Panels reads.
   const rows = Array.from({ length: count }, (_, slot) => ({
     name: `c${String(slot)}`,
-    q: missing[slot] === true ? "missing" : "measured",
-    upper: reading(slot, 3),
+    q: missingAt(chart, slot) ? "missing" : "measured",
+    upper: reading(slot, 3, { small: false, peak: false }),
+    under: 0,
     ...Object.fromEntries(
-      keys.map((key, index) => [key, missing[slot] === true ? null : reading(slot, index)])
+      keys.map((key, index) => [key, missingAt(chart, slot) ? null : reading(slot, index, chart)])
     ),
   }));
-  const bars = keys.map((key) => <Chart.Bar key={key} dataKey={key} emphasis="max" />);
+  // A present reading under 1, as `chart.emphasis` "small" emphasises it.
+  const under = (series: number) =>
+    Array.from({ length: count }, (_, slot) => slot).filter(
+      (slot) => !missingAt(chart, slot) && Math.abs(reading(slot, series, chart)) < 1
+    );
+  const bars = keys.map((key, index) => (
+    <Chart.Bar
+      key={key}
+      dataKey={key}
+      emphasis={chart.emphasis === "max" ? "max" : { x: under(index).map((slot) => `c${String(slot)}`) }}
+    />
+  ));
   const vertical = orientation === "vertical";
   const line = chart.line % count;
   const from = chart.from % count;
   const to = Math.min(count - 1, from + chart.span);
+  const decimated = count > DECIMATE_ABOVE;
   const marks = (
     <>
       <Chart.Grid orientation="both" />
       {group > 1 ? <Chart.BarGroup series={keys}>{bars}</Chart.BarGroup> : bars}
       <Chart.Crosshair variant={chart.crosshair} />
       <Chart.ReferenceLine x={`c${String(line)}`} label="Linje" />
-      {/* Every reading is 1 or more, so every domain with a reading holds these values. */}
+      {/* Every chart reads 1 or more somewhere, so every domain with a reading holds these values. */}
       <Chart.ReferenceLine y={0.5} label="Mål" />
       <Chart.ReferenceArea x1={`c${String(from)}`} x2={`c${String(to)}`} label="Spenn" />
       <Chart.ReferenceArea y1={0.25} y2={0.75} />
       <Chart.ActiveValueLine dataKey="s0">
         <Chart.ValueLabel />
       </Chart.ActiveValueLine>
-      {/* Step runs fill their cells, so a line and an area of the first series walk like bars. */}
-      <Chart.Area dataKey="s0" curve="step-after" variant="solid" />
-      <Chart.Line dataKey="s0" curve={chart.curve} variant={chart.stroke} />
-      <Chart.Dots dataKey="s0" />
-      <Chart.Marker dataKey="s0" at="max" />
-      <Chart.ActiveDot dataKey="s0" />
+      {/* Step runs fill their cells, so a line and an area of the first series walk like bars.
+          A decimated window's line keeps only some readings, which these walks do not model. */}
+      {decimated ? null : (
+        <>
+          <Chart.Area dataKey="s0" curve="step-after" variant="solid" />
+          <Chart.Line dataKey="s0" curve={chart.curve} variant={chart.stroke} />
+          <Chart.Dots dataKey="s0" />
+          <Chart.Marker dataKey="s0" at="max" />
+          <Chart.ActiveDot dataKey="s0" />
+        </>
+      )}
     </>
   );
   return renderThemed(
@@ -149,7 +150,8 @@ function render(chart: Dense) {
                 <Chart.Grid />
                 <Chart.Bar dataKey="upper" />
               </Chart.Panel>
-              <Chart.Panel series={keys}>{marks}</Chart.Panel>
+              {/* The series of zeros a stacked chart's series stacks on sits in its Panel. */}
+              <Chart.Panel series={stacked ? ["under", ...keys] : keys}>{marks}</Chart.Panel>
             </>
           ) : (
             marks
@@ -159,445 +161,6 @@ function render(chart: Dense) {
     </LocaleProvider>
   );
 }
-
-/** The horizontal ticks of a path, each as its start and end x. */
-function pathTicks(d: string): [number, number][] {
-  return [...d.matchAll(/M([-\d.e]+) [-\d.e]+H([-\d.e]+)/gu)].map(([, x, x2]) => [Number(x), Number(x2)]);
-}
-
-/** The points of a path written with M and L commands, as x and y, in order, by subpath. */
-function pathPoints(d: string): (readonly [number, number])[][] {
-  return d
-    .split("M")
-    .filter((part) => part !== "")
-    .map((part) =>
-      [...part.matchAll(/(-?[\d.e]+),(-?[\d.e]+)/gu)].map(([, x, y]) => [Number(x), Number(y)] as const)
-    );
-}
-
-/** A span in device pixels. */
-type Span = readonly [number, number];
-
-type Box = { readonly x: number; readonly y: number; readonly width: number; readonly height: number };
-
-/** What every walker reads: the plot's drawn origin and size, the slots, and the checks. */
-type Walk = {
-  readonly host: HTMLElement;
-  readonly chart: Dense;
-  readonly vertical: boolean;
-  readonly layers: readonly Element[];
-  readonly present: readonly number[];
-  readonly absent: readonly number[];
-  readonly active: number;
-  /** The along and across spans of a box. */
-  readonly along: (rect: Box) => Span;
-  readonly across: (rect: Box) => Span;
-  /** Check a mark of slots inside the device pixels the slots cover, a device pixel wide at least. */
-  readonly inSlots: (what: string, first: number, last: number, span: Span) => void;
-  /**
-   * Check a stroked step run of one slot, its two riser places in CSS pixels from the plot: each
-   * riser's stroke, `width` CSS pixels wide around its place, covers whole device pixels, and the
-   * run, less the half device pixel an odd stroke moves past its cell edges, covers its slot's
-   * device pixels, so an odd riser at a cell edge lies inside the band of the run it starts.
-   */
-  readonly stroked: (what: string, slot: number, run: Span, width: number) => void;
-  /**
-   * Check a plain step's riser between two neighbouring slots, its place in CSS pixels from the
-   * plot: its stroke covers whole device pixels, and its place, less the half device pixel an odd
-   * stroke moves, lies among the two slots' device pixels.
-   */
-  readonly riser: (left: number, right: number, at: number, width: number) => void;
-  /** Check a mark of the value axis inside the plot along it. */
-  readonly inPlot: (what: string, span: Span) => void;
-  /**
-   * Check a rule's thickness, its edges across it in CSS pixels from the plot on the x or y axis:
-   * both edges on device pixels, and 1 px rounded down to whole device pixels wide, at least one.
-   * A rule of slots may be narrower, down to one device pixel, where its band is.
-   */
-  readonly crisp: (what: string, axis: "x" | "y", span: Span, width: "hairline" | "slot") => void;
-  /** Check that a label centres on a rule's centre, both in page pixels along one axis. */
-  readonly centred: (what: string, label: number, rule: number) => void;
-};
-
-function box(element: Element): Box {
-  if (element.tagName === "polygon") return drawnRect(element);
-  return {
-    x: Number(element.getAttribute("x")),
-    y: Number(element.getAttribute("y")),
-    width: Number(element.getAttribute("width")),
-    height: Number(element.getAttribute("height")),
-  };
-}
-
-/** A line's endpoints as a box, which its stroke widens by half the stroke's width each side. */
-function ruleBox(line: Element): Box {
-  const [x1 = 0, y1 = 0, x2 = 0, y2 = 0] = ["x1", "y1", "x2", "y2"].map((name) =>
-    Number(line.getAttribute(name))
-  );
-  const stroke = Number.parseFloat(getComputedStyle(line).strokeWidth);
-  return x1 === x2
-    ? { x: x1 - stroke / 2, y: Math.min(y1, y2), width: stroke, height: Math.abs(y2 - y1) }
-    : { x: Math.min(x1, x2), y: y1 - stroke / 2, width: Math.abs(x2 - x1), height: stroke };
-}
-
-/** A line's thickness: the axis it lies across and its edges on it, from `ruleBox`. */
-function thickness(line: Element, rule: Box): ["x" | "y", Span] {
-  return line.getAttribute("x1") === line.getAttribute("x2")
-    ? ["x", [rule.x, rule.x + rule.width]]
-    : ["y", [rule.y, rule.y + rule.height]];
-}
-
-/** A label's centre on the page along an axis, and a rule's centre in its own SVG's page box. */
-function labelCentre(label: Element, axis: "x" | "y"): number {
-  const rect = label.getBoundingClientRect();
-  return axis === "x" ? rect.left + rect.width / 2 : rect.top + rect.height / 2;
-}
-
-function ruleCentre(line: Element, axis: "x" | "y"): number {
-  const svg = line.closest("svg")?.getBoundingClientRect() ?? new DOMRect();
-  return axis === "x"
-    ? svg.left + Number(line.getAttribute("x1"))
-    : svg.top + Number(line.getAttribute("y1"));
-}
-
-/** Walk each mark kind, and return how many marks of it the walk checked. */
-type Walker = (walk: Walk) => number;
-
-/** The slots a series emphasises with `emphasis="max"`: every present slot of its largest reading. */
-function maxima(walk: Walk, series: number): number[] {
-  const top = Math.max(...walk.present.map((slot) => reading(slot, series)));
-  return walk.present.filter((slot) => reading(slot, series) === top);
-}
-
-/** The bars of a layer in slot order, in the element form. */
-function barsOf(layer: Element): Element[] {
-  // DOM audit: the marks group's children are the bars, aria-hidden plot output.
-  const marks = layer.querySelector('[data-slot="chart-bar-marks"]');
-  return [...(marks?.children ?? [])].filter(
-    (child) =>
-      child.getAttribute("data-slot") === "chart-bar" ||
-      (child.tagName === "g" &&
-        [...child.children].some((part) => part.getAttribute("data-slot") === "chart-bar"))
-  );
-}
-
-/** One walker for every mark, so a mark added to the list without a walker fails to compile. */
-type Walkers = { readonly [Mark in FloorMark]: Walker };
-
-/**
- * Walk a step path's runs, one per present reading of the first series in slot order: a Line's
- * runs, each stroked over whole device pixels from its cell's start to its end, or the top edge of
- * an Area's subpaths, each from cell edge to cell edge of its slot.
- */
-function stepRuns(walk: Walk, what: string, d: string, edge: "line" | "area", width = 0): number {
-  const along = ([x, y]: readonly [number, number]) => (walk.vertical ? x : y);
-  const runs = pathPoints(d).flatMap((points) => {
-    // An area's subpath runs along its top, then back along its base.
-    const top = edge === "area" ? points.slice(0, points.length / 2) : points;
-    return Array.from({ length: top.length / 2 }, (_, index) => {
-      const start = top[index * 2];
-      const end = top[index * 2 + 1];
-      return start === undefined || end === undefined ? null : ([along(start), along(end)] as const);
-    });
-  });
-  expect(runs).toHaveLength(walk.present.length);
-  runs.forEach((run, index) => {
-    const slot = walk.present[index] ?? -1;
-    if (run === null) return;
-    const span: Span = [Math.min(...run), Math.max(...run)];
-    if (edge === "line") walk.stroked(what, slot, span, width);
-    else walk.inSlots(what, slot, slot, span);
-  });
-  return runs.length;
-}
-
-/**
- * Walk a plain step line's risers, one between each two neighbouring readings of a run. A run of
- * n readings draws 2n points, its risers at the odd ones, and a lone reading draws a dot.
- */
-function stepRisers(walk: Walk, d: string, width: number): number {
-  let next = 0;
-  let risers = 0;
-  for (const part of d.split("M").filter((piece) => piece !== "")) {
-    if (part.includes("a")) {
-      next += 1;
-      continue;
-    }
-    const points = [...part.matchAll(/(-?[\d.e]+),(-?[\d.e]+)/gu)].map(
-      ([, x, y]) => [Number(x), Number(y)] as const
-    );
-    const count = points.length / 2;
-    for (let index = 1; index < count; index += 1) {
-      const point = points[2 * index - 1];
-      if (point === undefined) continue;
-      walk.riser(
-        walk.present[next + index - 1] ?? -1,
-        walk.present[next + index] ?? -1,
-        walk.vertical ? point[0] : point[1],
-        width
-      );
-      risers += 1;
-    }
-    next += count;
-  }
-  expect(next).toBe(walk.present.length);
-  return risers;
-}
-
-const WALKERS: Walkers = {
-  "chart-line": (walk) => {
-    // DOM audit: the line is aria-hidden plot output, and its dashed twin draws nothing here.
-    const line = walk.host.querySelector('[data-slot="chart-line"][data-part="solid"]');
-    if (line === null) return 0;
-    const width = Number.parseFloat(getComputedStyle(line).strokeWidth);
-    const d = line.getAttribute("d") ?? "";
-    return walk.chart.curve === "step"
-      ? stepRisers(walk, d, width)
-      : stepRuns(walk, "line run", d, "line", width);
-  },
-  "chart-area": (walk) => {
-    // DOM audit: the area is aria-hidden plot output.
-    const area = walk.host.querySelector('[data-slot="chart-area"][data-part="solid"]');
-    return area === null ? 0 : stepRuns(walk, "area run", area.getAttribute("d") ?? "", "area");
-  },
-  "chart-dot": (walk) => {
-    // Every dot centres on the column of its slot the line crosshair draws in, a device pixel wide
-    // at least, so the device pixel around its centre lies among its slot's.
-    const column = (dot: Element): Span => {
-      const centre = Number(dot.getAttribute(walk.vertical ? "cx" : "cy"));
-      const half = 0.5 / devicePixelRatio;
-      return [centre - half, centre + half];
-    };
-    // DOM audit: dots, the marker's dots and the active dot are aria-hidden plot output.
-    const dots = [...walk.host.querySelectorAll('[data-slot="chart-dots"] [data-slot="chart-dot"]')];
-    expect(dots).toHaveLength(walk.present.length);
-    dots.forEach((dot, index) => {
-      const slot = walk.present[index] ?? -1;
-      walk.inSlots("dot", slot, slot, column(dot));
-    });
-    const marked = [...walk.host.querySelectorAll('[data-slot="chart-marker"] [data-slot="chart-dot"]')];
-    const tops = maxima(walk, 0);
-    expect(marked).toHaveLength(tops.length);
-    marked.forEach((dot, index) => {
-      const slot = tops[index] ?? -1;
-      walk.inSlots("marker", slot, slot, column(dot));
-    });
-    const active = walk.host.querySelector(
-      '[data-slot="chart-active-dot"][data-value] [data-slot="chart-dot"]'
-    );
-    if (active !== null) walk.inSlots("active dot", walk.active, walk.active, column(active));
-    return dots.length + marked.length + (active === null ? 0 : 1);
-  },
-  "chart-bar": (walk) => {
-    let checked = 0;
-    for (const layer of walk.layers) {
-      const bars = barsOf(layer);
-      if (bars.length === 0) continue;
-      expect(bars).toHaveLength(walk.present.length);
-      bars.forEach((bar, index) => {
-        // DOM audit: a bar's body carries the bar's slot.
-        const body = bar.tagName === "g" ? bar.querySelector('[data-slot="chart-bar"]') : bar;
-        if (body === null) return;
-        const slot = walk.present[index] ?? -1;
-        walk.inSlots("bar", slot, slot, walk.along(box(body)));
-        checked += 1;
-      });
-    }
-    return checked;
-  },
-  "chart-bar-detail": (walk) => {
-    let checked = 0;
-    for (const layer of walk.layers) {
-      barsOf(layer).forEach((bar, index) => {
-        const slot = walk.present[index] ?? -1;
-        // DOM audit: a bar's look parts are aria-hidden plot output.
-        for (const part of bar.querySelectorAll('[data-slot="chart-bar-detail"]')) {
-          const name = part.getAttribute("data-part") ?? "part";
-          if (name === "cap") walk.inSlots(name, slot, slot, walk.along(box(part)));
-          else if (part.tagName === "path") {
-            for (const rect of pathRects(part.getAttribute("d") ?? ""))
-              walk.inSlots(name, slot, slot, walk.along(rect));
-          } else {
-            // An isometric face reaches past its band by design, its depth a whole device pixel.
-            const xs = (part.getAttribute("points") ?? "")
-              .split(" ")
-              .map((point) => Number(point.split(",")[0]));
-            expect(Math.max(...xs) - Math.min(...xs)).toBeGreaterThan(0);
-          }
-          checked += 1;
-        }
-      });
-    }
-    return checked;
-  },
-  "chart-bar-path": (walk) => {
-    let checked = 0;
-    for (const layer of walk.layers) {
-      // DOM audit: the path form's paths are aria-hidden plot output.
-      const paths = [...layer.querySelectorAll('[data-slot="chart-bar-path"]')];
-      if (paths.length === 0) continue;
-      const columns = paths
-        .filter((path) => path.getAttribute("data-quality") !== "missing")
-        .flatMap((path) => pathRects(path.getAttribute("d") ?? ""))
-        .toSorted((a, b) => a.x - b.x);
-      expect(columns).toHaveLength(walk.present.length);
-      columns.forEach((rect, index) => {
-        const slot = walk.present[index] ?? -1;
-        walk.inSlots("column", slot, slot, [rect.x, rect.x + rect.width]);
-      });
-      const ticks = paths
-        .filter((path) => path.getAttribute("data-quality") === "missing")
-        .flatMap((path) => pathTicks(path.getAttribute("d") ?? ""));
-      expect(ticks).toHaveLength(walk.absent.length);
-      ticks.forEach(([start, end], index) => {
-        const slot = walk.absent[index] ?? -1;
-        walk.inSlots("path tick", slot, slot, [start, end]);
-      });
-      checked += columns.length + ticks.length;
-    }
-    return checked;
-  },
-  "chart-bar-emphasis": (walk) => {
-    let checked = 0;
-    walk.layers.forEach((layer, series) => {
-      // DOM audit: the path form's emphasis overlays are aria-hidden plot output.
-      const overlays = [...layer.querySelectorAll('[data-slot="chart-bar-emphasis"]')]
-        .map((overlay) => box(overlay))
-        .toSorted((a, b) => a.x - b.x);
-      if (overlays.length === 0) return;
-      const slots = maxima(walk, series);
-      expect(overlays).toHaveLength(slots.length);
-      overlays.forEach((rect, index) => {
-        const slot = slots[index] ?? -1;
-        walk.inSlots("emphasis", slot, slot, [rect.x, rect.x + rect.width]);
-      });
-      checked += overlays.length;
-    });
-    return checked;
-  },
-  "chart-bar-missing": (walk) => {
-    let checked = 0;
-    for (const layer of walk.layers) {
-      // DOM audit: missing ticks are aria-hidden plot output.
-      const ticks = [...layer.querySelectorAll('[data-slot="chart-bar-missing"]')];
-      // The path form draws its ticks in a path of its own.
-      if (layer.querySelector('[data-slot="chart-bar-path"]') !== null) continue;
-      expect(ticks).toHaveLength(walk.absent.length);
-      ticks.forEach((tick, index) => {
-        const slot = walk.absent[index] ?? -1;
-        const ends = walk.vertical ? ["x1", "x2"] : ["y1", "y2"];
-        const [start = 0, end = 0] = ends.map((name) => Number(tick.getAttribute(name)));
-        walk.inSlots("tick", slot, slot, [Math.min(start, end), Math.max(start, end)]);
-      });
-      checked += ticks.length;
-    }
-    return checked;
-  },
-  "chart-bar-active": (walk) => {
-    let checked = 0;
-    for (const layer of walk.layers) {
-      // DOM audit: the active overlay is aria-hidden plot output.
-      const overlay = layer.querySelector('[data-slot="chart-bar-active"]');
-      if (overlay?.getAttribute("visibility") !== "visible") continue;
-      walk.inSlots("overlay", walk.active, walk.active, walk.along(box(overlay)));
-      checked += 1;
-    }
-    return checked;
-  },
-  "chart-grid-line": (walk) => {
-    // DOM audit: grid lines are aria-hidden plot output.
-    const lines = [...walk.host.querySelectorAll('[data-slot="chart-grid-line"]')];
-    for (const line of lines) {
-      const rule = ruleBox(line);
-      // A slot line runs across the value axis between two slots, and a value line along it.
-      const what = line.getAttribute("data-axis") === "slot" ? "slot grid line" : "value grid line";
-      walk.inPlot(what, walk.across(rule));
-      walk.crisp(what, ...thickness(line, rule), "hairline");
-    }
-    return lines.length;
-  },
-  "chart-crosshair-mark": (walk) => {
-    // DOM audit: the crosshair is aria-hidden plot output.
-    const mark = walk.host.querySelector('[data-slot="chart-crosshair-mark"]');
-    // The crosshair draws while a slot is active, which an empty chart never has.
-    if (
-      mark === null ||
-      (
-        walk.host.closest('[data-slot="chart"]') ?? walk.host.querySelector('[data-slot="chart"]')
-      )?.hasAttribute("data-active") !== true
-    ) {
-      return 0;
-    }
-    const drawn = box(mark);
-    walk.inSlots(`crosshair ${walk.chart.crosshair}`, walk.active, walk.active, walk.along(drawn));
-    // The line crosshair is a rule of its slot.
-    if (walk.chart.crosshair === "line") {
-      walk.crisp("line crosshair", walk.vertical ? "x" : "y", walk.along(drawn), "slot");
-    }
-    return 1;
-  },
-  "chart-reference-rule": (walk) => {
-    // DOM audit: reference rules are aria-hidden plot output, inside their reference's wrapper.
-    const rules = [...walk.host.querySelectorAll('[data-slot="chart-reference-rule"]')];
-    for (const rule of rules) {
-      const reference = rule.closest('[data-slot="chart-reference-line"]');
-      const slotAxis = reference?.getAttribute("data-axis") === "slot";
-      // An empty chart has no value domain, so a value reference draws outside it and hides.
-      if (!slotAxis && walk.present.length === 0) continue;
-      expect(reference?.hasAttribute("data-outside")).toBe(false);
-      const drawn = ruleBox(rule);
-      if (slotAxis) {
-        const slot = walk.chart.line % walk.chart.count;
-        walk.inSlots("slot reference rule", slot, slot, walk.along(drawn));
-        walk.crisp("slot reference rule", ...thickness(rule, drawn), "slot");
-        // On a vertical chart its label sits above the plot and centres on it, unless the label
-        // meets the plot's edge and stops there.
-        const label = reference.querySelector('[data-slot="chart-reference-label"]');
-        const plot = walk.layers[0]?.getBoundingClientRect() ?? new DOMRect();
-        const edges = label?.getBoundingClientRect() ?? new DOMRect();
-        if (label !== null && walk.vertical && edges.left > plot.left + 1 && edges.right < plot.right - 1) {
-          walk.centred("slot reference label", labelCentre(label, "x"), ruleCentre(rule, "x"));
-        }
-      } else {
-        walk.inPlot("value reference rule", walk.across(drawn));
-        walk.crisp("value reference rule", ...thickness(rule, drawn), "hairline");
-      }
-    }
-    return rules.length;
-  },
-  "chart-reference-band": (walk) => {
-    // DOM audit: reference bands are aria-hidden plot output, inside their reference's wrapper.
-    const bands = [...walk.host.querySelectorAll('[data-slot="chart-reference-band"]')];
-    for (const band of bands) {
-      const reference = band.closest('[data-slot="chart-reference-area"]');
-      const slotAxis = reference?.getAttribute("data-axis") === "slot";
-      if (!slotAxis && walk.present.length === 0) continue;
-      expect(reference?.hasAttribute("data-outside")).toBe(false);
-      if (slotAxis) {
-        const from = walk.chart.from % walk.chart.count;
-        const to = Math.min(walk.chart.count - 1, from + walk.chart.span);
-        walk.inSlots("slot reference band", from, to, walk.along(box(band)));
-      } else walk.inPlot("value reference band", walk.across(box(band)));
-    }
-    return bands.length;
-  },
-  "chart-active-value-rule": (walk) => {
-    // DOM audit: the active value line is aria-hidden plot output.
-    const wrapper = walk.host.querySelector('[data-slot="chart-active-value-line"]');
-    const rule = wrapper?.querySelector('[data-slot="chart-active-value-rule"]');
-    if (rule === null || rule === undefined || wrapper?.hasAttribute("data-value") !== true) return 0;
-    const drawn = ruleBox(rule);
-    // It runs along the slot axis, across the whole plot, at the active value.
-    walk.inPlot("active value rule", walk.across(drawn));
-    const [axis, span] = thickness(rule, drawn);
-    walk.crisp("active value rule", axis, span, "hairline");
-    // The pill beside it centres on it.
-    // DOM audit: the pill is aria-hidden text inside the active value line.
-    const pill = wrapper.querySelector('[data-slot="chart-value-label"]');
-    if (pill !== null) walk.centred("active value pill", labelCentre(pill, axis), ruleCentre(rule, axis));
-    return 1;
-  },
-};
 
 describe("every drawn mark under the pixel floor", () => {
   it("walks every mark the chart source draws", () => {
@@ -621,6 +184,10 @@ describe("every drawn mark under the pixel floor", () => {
       stroke: fc.constantFrom("default" as const, "quiet" as const),
       curve: fc.constantFrom("step-after" as const, "step" as const),
       last: fc.boolean(),
+      small: fc.boolean(),
+      peak: fc.boolean(),
+      emphasis: fc.constantFrom("max" as const, "small" as const),
+      stacked: fc.boolean(),
       line: fc.nat(),
       from: fc.nat(),
       span: fc.integer({ min: 0, max: 3 }),
@@ -638,6 +205,10 @@ describe("every drawn mark under the pixel floor", () => {
       stroke: "default",
       curve: "step-after",
       last: true,
+      small: false,
+      peak: false,
+      emphasis: "max",
+      stacked: false,
       line: 399,
       from: 0,
       span: 0,
@@ -679,6 +250,14 @@ describe("every drawn mark under the pixel floor", () => {
           // The plot's first and last drawn device pixel edges.
           const first = Math.ceil(page * dpr - 0.5);
           const last = Math.ceil((page + length) * dpr - 0.5);
+          // The plot's drawn length along the value axis, between its edges' device pixels.
+          const acrossPage = vertical ? plot.top : plot.left;
+          const drawnBreadth =
+            (Math.ceil((acrossPage + breadth) * dpr - 0.5) - Math.ceil(acrossPage * dpr - 0.5)) / dpr;
+          // DOM audit: grid lines are aria-hidden plot output, and the zero line carries data-zero.
+          const zeroRule = host.querySelector('[data-slot="chart-grid-line"][data-zero]');
+          // The zero rule starts at its coordinate, its near edge, as a CSS border does.
+          const zero = zeroRule === null ? null : vertical ? ruleBox(zeroRule).y : ruleBox(zeroRule).x;
           // The owner's slot grid: every band takes the same whole pixels, at least one, from a start
           // that splits the leftover between both ends.
           const pixels = last - first;
@@ -693,14 +272,14 @@ describe("every drawn mark under the pixel floor", () => {
             return low >= last ? [last - 1, last] : [first, first + 1];
           };
           const present = Array.from({ length: chart.count }, (_, slot) => slot).filter(
-            (slot) => chart.missing[slot] !== true
+            (slot) => !missingAt(chart, slot)
           );
           // An empty chart, every reading missing, draws no missing marker, as section 8.13 says.
           const absent =
             present.length === 0
               ? []
-              : Array.from({ length: chart.count }, (_, slot) => slot).filter(
-                  (slot) => chart.missing[slot] === true
+              : Array.from({ length: chart.count }, (_, slot) => slot).filter((slot) =>
+                  missingAt(chart, slot)
                 );
           const failures: string[] = [];
           const walk: Walk = {
@@ -711,6 +290,8 @@ describe("every drawn mark under the pixel floor", () => {
             present,
             absent,
             active: chart.last ? chart.count - 1 : 0,
+            read: (slot, series) => reading(slot, series, chart),
+            zero,
             along: (rect) => (vertical ? [rect.x, rect.x + rect.width] : [rect.y, rect.y + rect.height]),
             across: (rect) => (vertical ? [rect.y, rect.y + rect.height] : [rect.x, rect.x + rect.width]),
             inSlots: (what, first, last, [start, end]) => {
@@ -771,6 +352,29 @@ describe("every drawn mark under the pixel floor", () => {
               if (Math.abs(label - rule) > 1 / 64 + SERIAL)
                 failures.push(`${what} at ${String(label)} off its rule at ${String(rule)}`);
             },
+            valued: (what, value, [start, end]) => {
+              if (value === 0) {
+                if (zero === null || end - start > SERIAL || Math.abs(start - zero) > SERIAL)
+                  failures.push(`${what} reading 0: ${String(start)}–${String(end)}, zero ${String(zero)}`);
+                return;
+              }
+              // Up a vertical plot and right across a horizontal one is positive.
+              const toStart = vertical ? value > 0 : value < 0;
+              const [base, far] = toStart ? [end, start] : [start, end];
+              const away = toStart ? far < base : far > base;
+              if (
+                zero === null ||
+                end - start < 1 / dpr - SERIAL ||
+                Math.abs(base - zero) > SERIAL ||
+                !away ||
+                start < -SERIAL ||
+                end > drawnBreadth + SERIAL
+              ) {
+                failures.push(
+                  `${what} reading ${String(value)}: ${String(start)}–${String(end)}, zero ${String(zero)}, in 0–${String(drawnBreadth)}`
+                );
+              }
+            },
             inPlot: (what, [start, end]) => {
               // A rule may start on the plot's far edge, as the zero line runs past the bars' base.
               if (end - start < 1 / dpr - SERIAL || start < -SERIAL || start > breadth + SERIAL) {
@@ -802,7 +406,12 @@ describe("every drawn mark under the pixel floor", () => {
         // every rule at 1.25x and 1.5x, in both orientations, on a plot a fraction of a pixel in,
         // with a slot line and the line crosshair in the middle, where their labels centre. Then
         // seed -1298470839's path form at 1x: 101 slots on 100 px, a 64th of a pixel in, every
-        // reading missing but the last, where slot 50's snapped column middle lay in slot 51.
+        // reading missing but the last, where slot 50's snapped column middle lay in slot 51. Then
+        // readings far under a device pixel on both sides of zero and readings of 0: path columns
+        // at 1x, their emphasis boxes on exactly those readings, horizontal bars at 1.5x, and a
+        // group of blocks bars at 2x, each a fraction of a pixel in. Then a peak of 1e15, which
+        // projects every other reading onto its base exactly, over bars, path columns and, past
+        // 2,000 slots, decimated columns.
         examples: [
           [DENSE, 1],
           [
@@ -859,6 +468,46 @@ describe("every drawn mark under the pixel floor", () => {
               line: 0,
             },
             1,
+          ],
+          [{ ...DENSE, count: 120, length: 300, small: true, offset: 0.4, last: false }, 1],
+          [{ ...DENSE, count: 120, length: 300, small: true, emphasis: "small", offset: 0.4 }, 1],
+          [{ ...DENSE, count: 30, length: 200, orientation: "horizontal", small: true, offset: 0.3 }, 1.5],
+          [{ ...DENSE, count: 40, length: 301, group: 2, variant: "blocks", small: true, offset: 1 / 3 }, 2],
+          [{ ...DENSE, count: 30, length: 200, small: true, peak: true, offset: 0.2 }, 1],
+          [{ ...DENSE, count: 120, length: 300, small: true, peak: true, offset: 0.7 }, 1.5],
+          // A decimated window under a peak, every bucket's column but the peak's under a device
+          // pixel, on both sides of zero and held apart where its projection collapses.
+          [{ ...DENSE, count: 2500, length: 400, small: true, peak: true, offset: 0.4 }, 1],
+          [{ ...DENSE, count: 2500, length: 400, small: true, peak: true, offset: 0.3 }, 1.5],
+          // A stack of one series over zeros in a lower Panel, which holds the zeros' series too.
+          [{ ...DENSE, count: 40, length: 301, stacked: true, panels: true, offset: 0.4, last: false }, 1.5],
+          // A decimated stack of one series under a peak, its emphasis boxes on its small readings
+          // and the active overlay on its first and on its last slot.
+          [
+            {
+              ...DENSE,
+              count: 2500,
+              length: 400,
+              small: true,
+              peak: true,
+              emphasis: "small",
+              stacked: true,
+              last: false,
+            },
+            1,
+          ],
+          [
+            {
+              ...DENSE,
+              count: 2500,
+              length: 400,
+              small: true,
+              peak: true,
+              emphasis: "small",
+              stacked: true,
+              offset: 0.3,
+            },
+            1.5,
           ],
         ],
       }

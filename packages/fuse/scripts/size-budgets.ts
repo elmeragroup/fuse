@@ -153,7 +153,13 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = derive([
   // Chart's intro rule, ref merge and tap lift, end a tap's focus guard with its own task, reset a
   // gesture its element outlives and move the tooltip with its mark's size, measured 11835 bytes
   // on this entry (149205 to 161040). The ceiling keeps about 100 bytes of headroom.
-  { name: "chart", entryFile: "chart.js", measuredGzip: 97044, ceilingGzip: 161140 },
+  // Raised again from 161140 on 2026-11-05. A reading other than 0 keeps one device pixel
+  // along the value axis, grown from the zero rule and kept inside the plot, its projection
+  // kept apart from its neighbour's, and a stack settles which segment keeps that pixel on
+  // each side in every frame through the batched floor registry, which bars, path-form
+  // columns, emphasis boxes and the active overlay read, which measured 3136 bytes on this
+  // entry (161040 to 164176). The ceiling keeps about 100 bytes of headroom.
+  { name: "chart", entryFile: "chart.js", measuredGzip: 97044, ceilingGzip: 164276 },
   // 2026-10-13: new entry, measured at 29180. Pure wrappers over Base UI's toolbar and its roving focus.
   { name: "toolbar", entryFile: "toolbar.js", measuredGzip: 29180, ceilingGzip: 43770 },
   // 2026-10-12: new entries. Command is Base UI's Autocomplete in the InputGroup, with the Dialog
@@ -340,14 +346,21 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // and pagination shell, the count words, the generic issue grouping, the config comparison, the
     // motion host and the draw gate's read, measured 391 bytes on Chart (146907 to 147298) and 390
     // on BarChart (146910 to 147300). Each ceiling keeps about 100 bytes of headroom.
-    ceilingGzip: 147398,
+    // Raised again from 147398 on 2026-11-05, with BarChart's from 147400. A reading other
+    // than 0 keeps one device pixel along the value axis, grown from the zero rule and kept
+    // inside the plot, its projection kept apart from its neighbour's, and a stack settles
+    // which segment keeps that pixel on each side in every frame through the batched floor
+    // registry, which bars, path-form columns, emphasis boxes and the active overlay read,
+    // which measured 3121 bytes on Chart (147298 to 150419) and on BarChart (147300 to
+    // 150421). Each ceiling keeps about 100 bytes of headroom.
+    ceilingGzip: 150519,
   },
   {
     name: "chart/BarChart",
     entryFile: "chart.js",
     exportName: "BarChart",
     measuredGzip: 95989,
-    ceilingGzip: 147400,
+    ceilingGzip: 150521,
   },
   { name: "chart/PieChart", entryFile: "chart.js", exportName: "PieChart", measuredGzip: 79885 },
   { name: "chart/RadialChart", entryFile: "chart.js", exportName: "RadialChart", measuredGzip: 79858 },
@@ -415,7 +428,13 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // generic issue grouping, the config comparison, the motion host and the draw gate's read,
     // measured 511 bytes on this route (75157 to 75668). The ceiling keeps about 100 bytes of
     // headroom.
-    ceilingGzip: 75768,
+    // Raised from 75768 on 2026-11-05. A reading other than 0 keeps one device pixel along
+    // the value axis, grown from the zero rule and kept inside the plot, its projection kept
+    // apart from its neighbour's, and a stack settles which segment keeps that pixel on each
+    // side in every frame through the batched floor registry, which bars, path-form columns,
+    // emphasis boxes and the active overlay read, which measured 3100 bytes on this route
+    // (75668 to 78768). The ceiling keeps about 100 bytes of headroom.
+    ceilingGzip: 78868,
   },
   {
     name: "chart/PieChart.Root",

@@ -15,6 +15,8 @@ import type { BarBox } from "../../../test/chart/bar-box";
 import { installFrameClock } from "../../../test/chart/frame-clock";
 import { barLayerBox, bars } from "../../../test/chart/marks";
 import frames from "../../../test/chart/motion-frames.json" with { type: "json" };
+import { pathRects } from "../../../test/chart/world-reader";
+import type { Rect } from "../../../test/chart/world-reader";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
 import type { SupportedLocale } from "../../intl/locale-context";
@@ -416,22 +418,14 @@ describe("structural counts per form", () => {
   });
 });
 
-/** The heights of a path's columns, one `M x y H x V y` rectangle each, in order. */
-function columnHeights(path: Element | null | undefined): number[] {
-  return [...(path?.getAttribute("d") ?? "").matchAll(/M[\d.]+ ([\d.]+)H[\d.]+V([\d.]+)/gu)].map(
-    ([, top = "0", bottom = "0"]) => Number(bottom) - Number(top)
-  );
+/** The rectangles of a path-form fill, in x order. */
+function fillRects(path: Element | null | undefined): Rect[] {
+  return pathRects(path?.getAttribute("d") ?? "").toSorted((a, b) => a.x - b.x);
 }
 
-/** The rectangles of a path-form fill, one `M x y H x V y` subpath each. */
-function rectsOfFill(path: Element | null | undefined) {
-  return [...(path?.getAttribute("d") ?? "").matchAll(/M([\d.]+) ([\d.]+)H([\d.]+)V([\d.]+)/gu)].map(
-    ([, x = "0", top = "0", right = "0", bottom = "0"]) => ({
-      x: Number(x),
-      width: Number(right) - Number(x),
-      height: Number(bottom) - Number(top),
-    })
-  );
+/** The heights of a path-form fill's columns, in x order. */
+function columnHeights(path: Element | null | undefined): number[] {
+  return fillRects(path).map(({ height }) => height);
 }
 
 /** The oracle's eased progress 120 ms into a 480 ms tween. */
@@ -441,6 +435,81 @@ function easedAt120(): number {
 }
 
 describe("path form motion", () => {
+  it("draws a column and its active overlay alike in every frame of an update that moves the domain", async () => {
+    // 120 categories on a 200 px plot, so the bars draw as paths. c119 is the active slot. Its
+    // column and the overlay over it draw one geometry, the column's base and tip, so in every
+    // frame both take the same value-axis edges, the pixel floor's included. First every reading
+    // turns from 1 to -1 and the maximum from 1,000 to -1,000, which flips the domain. Then, on
+    // 0..1,200 over 256 px, c119 reads 0.001 while c0 falls from 0 to -1,000.
+    const cases: readonly {
+      readonly height: number;
+      readonly include: readonly number[];
+      readonly from: (slot: number) => number;
+      readonly to: (slot: number) => number;
+    }[] = [
+      {
+        height: 200,
+        include: [],
+        from: (slot: number) => (slot === 0 ? 1000 : 1),
+        to: (slot: number) => (slot === 0 ? -1000 : -1),
+      },
+      {
+        height: 256,
+        include: [1200],
+        from: (slot: number) => (slot === 119 ? 0.001 : 0),
+        to: (slot: number) => (slot === 119 ? 0.001 : slot === 0 ? -1000 : 0),
+      },
+    ];
+    for (const { height, include, from, to } of cases) {
+      const clock = installFrameClock();
+      try {
+        const rows = (read: (slot: number) => number) =>
+          Array.from({ length: 120 }, (_, slot) => ({ name: `c${String(slot)}`, a: read(slot) }));
+        const chart = (data: readonly { name: string; a: number }[]) => (
+          <LocaleProvider locale="nb-NO">
+            <div style={{ width: 600 }}>
+              <Chart.Root
+                data-intro="none"
+                data={data}
+                config={{ a: TWO.a }}
+                xKey="name"
+                yInclude={[...include]}
+                style={{ "--chart-plot-height": `${String(height)}px` }}
+                aria-label="Mange">
+                <Chart.Bar dataKey="a" />
+              </Chart.Root>
+            </div>
+          </LocaleProvider>
+        );
+        const { host, rerender, unmount } = renderThemed(chart(rows(from)));
+        try {
+          // DOM audit: the plot's single tab stop is the listbox's option.
+          host.querySelector<HTMLElement>('[role="option"]')?.focus();
+          await userEvent.keyboard("{End}");
+          clock.frameAt(clock.now() + 1);
+          // DOM audit: the path form's fill and the active overlay are aria-hidden plot output.
+          const column = () =>
+            fillRects(host.querySelector('[data-slot="chart-bar-path"][data-part="fill"]')).at(-1);
+          const overlay = () => drawnRect(host.querySelector('[data-slot="chart-bar-active"]'));
+          const start = clock.now();
+          rerender(chart(rows(to)));
+          for (let time = 0; time <= 600; time += 30) {
+            clock.frameAt(start + time);
+            const drawn = column();
+            const over = overlay();
+            const what = `${String(height)} px at ${String(time)} ms: column ${String(drawn?.y)}+${String(drawn?.height)}, overlay ${String(over.y)}+${String(over.height)}`;
+            expect(drawn?.y, what).toBeCloseTo(over.y, 6);
+            expect(drawn?.height, what).toBeCloseTo(over.height, 6);
+          }
+        } finally {
+          unmount();
+        }
+      } finally {
+        clock.restore();
+      }
+    }
+  });
+
   /** A 365-category chart with no axes, the plot its whole 1,095 px width. */
   function year(
     data: readonly { name: string; a: number | null }[],
@@ -658,7 +727,7 @@ describe("decimated path form", () => {
       const { host, rerender } = renderThemed(chart(rows(0)));
       // DOM audit: the path form's fill is aria-hidden plot output.
       const tall = () =>
-        rectsOfFill(host.querySelector('[data-slot="chart-bar-path"][data-part="fill"]')).filter(
+        fillRects(host.querySelector('[data-slot="chart-bar-path"][data-part="fill"]')).filter(
           ({ height }) => height > 150
         );
       expect(tall().map(({ x, width, height }) => [x, width, height])).toEqual([[402, 2, 200]]);
@@ -669,7 +738,7 @@ describe("decimated path form", () => {
       expect(moving).toHaveLength(1);
       expect(Math.abs((moving[0]?.x ?? 0) - (402 - 2 * easedAt120()))).toBeLessThanOrEqual(0.5);
       // No column grows or shrinks in place on the way: each stays 2 or 200 px tall.
-      const heights = rectsOfFill(host.querySelector('[data-slot="chart-bar-path"][data-part="fill"]')).map(
+      const heights = fillRects(host.querySelector('[data-slot="chart-bar-path"][data-part="fill"]')).map(
         ({ height }) => height
       );
       expect(heights.filter((height) => height > 3 && height < 199)).toEqual([]);
@@ -678,6 +747,104 @@ describe("decimated path form", () => {
     } finally {
       clock.restore();
     }
+  });
+
+  it("keeps a decimated column's length through an update whose larger extreme changes sign", () => {
+    // 2,500 categories on 1,000 by 200 px, all 0 but c1005 and c1006, which share bucket 201. Over
+    // [-20, 20] at 5 px a unit, -10 and 9 draw one column from 55 to 150 px, 95 px, and -9 and 10
+    // from 50 to 145 px, 95 px too. Its ends move 5 px each, so every frame draws 95 px. Over
+    // [-2, 2] at 50 px a unit, -1 and 2 draw 0 to 150 px and -2 and 1 draw 50 to 200 px, 150 px.
+    const cases = [
+      { reach: 20, from: [-10, 9], to: [-9, 10], length: 95 },
+      { reach: 2, from: [-1, 2], to: [-2, 1], length: 150 },
+    ] as const;
+    for (const { reach, from, to, length } of cases) {
+      const clock = installFrameClock();
+      try {
+        const rows = (pair: readonly [number, number]) =>
+          Array.from({ length: 2500 }, (_, index) => ({
+            name: `c${String(index)}`,
+            a: index === 1005 ? pair[0] : index === 1006 ? pair[1] : 0,
+          }));
+        const chart = (data: readonly { name: string; a: number }[]) => (
+          <LocaleProvider locale="nb-NO">
+            <div style={{ width: 1000 }}>
+              <Chart.Root
+                data-intro="none"
+                data={data}
+                config={{ a: TWO.a }}
+                xKey="name"
+                yInclude={[-reach, reach]}
+                style={{ "--chart-plot-height": "200px" }}
+                aria-label="Mange">
+                <Chart.Bar dataKey="a" />
+              </Chart.Root>
+            </div>
+          </LocaleProvider>
+        );
+        const { host, rerender, unmount } = renderThemed(chart(rows(from)));
+        try {
+          // DOM audit: the path form's fill is aria-hidden plot output.
+          const heights = () =>
+            fillRects(host.querySelector('[data-slot="chart-bar-path"][data-part="fill"]')).map(
+              ({ height }) => height
+            );
+          expect(heights()).toEqual([length]);
+          const start = clock.now();
+          rerender(chart(rows(to)));
+          for (const time of [60, 120, 240, 360, 600]) {
+            clock.frameAt(start + time);
+            const drawn = heights();
+            expect(drawn, `${String(reach)} at ${String(time)} ms`).toHaveLength(1);
+            expect(
+              Math.abs((drawn[0] ?? 0) - length),
+              `${String(reach)} at ${String(time)} ms`
+            ).toBeLessThanOrEqual(1);
+          }
+        } finally {
+          unmount();
+        }
+      } finally {
+        clock.restore();
+      }
+    }
+  });
+
+  it("grows a resting decimated column under a device pixel up from the zero rule", () => {
+    // 2,500 categories, all 0 but c1005 = 0.01, on -5e13..2.5e14 over a 100.140625 px plot, which
+    // Root measures as 100.141. Zero lies 83.45 px down, and 0.01 lies far under a device pixel
+    // above it. On this plot the bucket's upper end, 0.01, projects onto zero's own coordinate,
+    // and its lower end, 0, a float step past it, so only the reading's sign tells which end is the
+    // base. The column keeps the pixel above the zero rule.
+    const rows = Array.from({ length: 2500 }, (_, index) => ({
+      name: `c${String(index)}`,
+      a: index === 1005 ? 0.01 : 0,
+    }));
+    const { host } = renderThemed(
+      <LocaleProvider locale="nb-NO">
+        <div style={{ width: 1000 }}>
+          <Chart.Root
+            data-intro="none"
+            data={rows}
+            config={{ a: TWO.a }}
+            xKey="name"
+            yInclude={[-5e13, 2.5e14]}
+            style={{ "--chart-plot-height": "100.140625px" }}
+            aria-label="Mange">
+            <Chart.Grid />
+            <Chart.Bar dataKey="a" />
+          </Chart.Root>
+        </div>
+      </LocaleProvider>
+    );
+    // DOM audit: grid lines and the path form's fill are aria-hidden plot output.
+    const rule = host.querySelector('[data-slot="chart-grid-line"][data-zero]');
+    const zero =
+      Number(rule?.getAttribute("y1")) - Number.parseFloat(getComputedStyle(rule ?? host).strokeWidth) / 2;
+    const columns = fillRects(host.querySelector('[data-slot="chart-bar-path"][data-part="fill"]'));
+    expect(columns).toHaveLength(1);
+    expect(columns[0]?.height).toBeCloseTo(1, 6);
+    expect((columns[0]?.y ?? 0) + (columns[0]?.height ?? 0)).toBeCloseTo(zero, 6);
   });
 
   it("keeps a missing reading's tick and the emphasised maximum's box above 2,000 slots (Q1-2)", () => {

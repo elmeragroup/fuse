@@ -16,13 +16,21 @@ import type { MarkValues, ValueAxis } from "./chart-motion";
 import { readingPaint } from "./chart-paint";
 import type { SeriesPaint } from "./chart-paint";
 import type { PathKind } from "./chart-path-draw";
-import { bucketColumns, rectsPath } from "./layout/bar-geometry";
+import {
+  apartEnds,
+  bucketColumns,
+  floorPlace,
+  isNegative,
+  projectedEnds,
+  rectsPath,
+} from "./layout/bar-geometry";
 import type { SeriesModel } from "./layout/cartesian-model";
 import { ownSpan, ownWindowFirsts } from "./layout/coarse-slots";
 import { DECIMATE_ABOVE } from "./layout/decimate";
 import type { PathSlots } from "./layout/path-motion";
 import {
   barSpan,
+  floorBody,
   frameRect,
   slotAxisAt,
   slotBandAt,
@@ -30,7 +38,7 @@ import {
   snapSpan,
   valueAt,
 } from "./layout/plot-frame";
-import type { BarMetrics, PlotFrame, PlotRect, SubBand } from "./layout/plot-frame";
+import type { BarMetrics, PlotFrame, PlotRect, StackPlace, SubBand } from "./layout/plot-frame";
 import { windowSlots } from "./layout/series-path";
 import { slotId } from "./layout/slot-keys";
 
@@ -49,6 +57,14 @@ export type ColumnPart = "fill" | "estimated" | "projected";
 /** One entry's topology. */
 export type ColumnEntry = {
   /**
+   * Which of the entry's numbers is its column's base: the fifth, its own base, for a slot's
+   * column and a decimated column above zero, and the second, its upper end, for a decimated
+   * column below zero, whose upper end lies toward zero. The other number is the far end, where
+   * the pixel floor grows. The bucket's own reading decides it in value space, so a projection's
+   * float error never turns a column over.
+   */
+  readonly baseAt: 1 | 4;
+  /**
    * The paint step its column draws in, whatever its quality, or -1 where it draws no column.
    * `part` picks the step's solid, estimated or projected path.
    */
@@ -61,6 +77,11 @@ export type ColumnEntry = {
    * still has length, where a resting reading draws even below a device pixel.
    */
   readonly leaving: boolean;
+  /**
+   * Whether its column owns its stack side's pixel floor at rest, from `floorPlace`, which the first
+   * draw takes before the stack floors decide it in each frame. A loose column always owns it.
+   */
+  readonly place: StackPlace;
 };
 
 /** The topology of a path form's entries. */
@@ -120,6 +141,17 @@ export type ColumnsDrawing = {
 type ColumnsContext = Pick<ChartRootContextValue, "model" | "update">;
 
 /**
+ * The key a slot's entry renders under in the path form, which its route and the stack floors read.
+ *
+ * @param context - Root's model, and the key each slot renders under.
+ * @param slot - The slot.
+ * @returns The key.
+ */
+export function columnKey(context: ColumnsContext, slot: number): string {
+  return context.update.keys[slot] ?? slotId(context.model.domain, slot);
+}
+
+/**
  * Lay out a path-form series' entries.
  *
  * @param context - Root's model, and the key each slot renders under.
@@ -175,7 +207,7 @@ export function layoutColumns(
         reading.quality === "estimated" ? "estimated" : slot >= series.projectedFrom ? "projected" : "fill",
     };
   };
-  const keyOf = (slot: number) => update.keys[slot] ?? slotId(model.domain, slot);
+  const keyOf = (slot: number) => columnKey(context, slot);
   /** The entry of one own slot's column, its tick and its box, across every Root slot it covers. */
   const slotEntry = (slot: number): Entry => {
     const { position, span } = ownSpan(series, window, slot);
@@ -188,9 +220,9 @@ export function layoutColumns(
     const extent = series.extents[slot];
     const negative = extent !== null && extent !== undefined && extent[0] < 0 && extent[1] <= 0;
     const emphasis = emphasised.has(slot);
-    const [tip, base] =
+    const [base, tip] =
       reading?.kind === "reading" && extent !== null && extent !== undefined
-        ? [valueAt(frame, negative ? extent[0] : extent[1]), valueAt(frame, negative ? extent[1] : extent[0])]
+        ? projectedEnds(frame, extent, negative)
         : [zero, zero];
     return {
       key: keyOf(slot),
@@ -198,10 +230,12 @@ export function layoutColumns(
       numbers: [(x0 + x1) / 2, tip, x0, x1, base, tickAt(0.25), tickAt(0.75), x0, x1],
       entry: {
         ...columnOf(slot),
+        baseAt: 4,
         // The model reads no missing marker for an empty chart, as section 8.13 says.
         missing: reading?.kind === "missing" && !model.empty,
         emphasis,
         leaving: false,
+        place: floorPlace(model, series, slot),
       },
       // The emphasis box paints the step of its slot's value, as the column under it does.
       paint: emphasis ? readingPaint(paint, reading) : undefined,
@@ -218,15 +252,25 @@ export function layoutColumns(
       const toY = (percent: number) => (percent / 100) * frame.box.height;
       const x0 = column.x0 * step;
       const x1 = column.x1 * step;
+      const own = series.extents[column.slot];
+      // The side of zero the column's own reading lies on, in value space.
+      const side = own && isNegative(own) ? "negative" : "positive";
+      const [top, bottom] = apartEnds(toY(column.top), toY(column.bottom), side);
+      const key = `bucket ${keyOf(column.first)} ${column.side}`;
+      // A column keeps its upper end in the tip's place and its lower end in the base's, whichever
+      // side of zero it stands for, so a tween between two columns of a bucket moves each end to
+      // its own new place, and `baseAt` names its base.
       return {
-        key: `bucket ${keyOf(column.first)} ${column.side}`,
+        key,
         at: (column.x0 + column.x1) / 2 - 0.5,
-        numbers: [(x0 + x1) / 2, toY(column.top), x0, x1, toY(column.bottom), x0, x0, x0, x0],
+        numbers: [(x0 + x1) / 2, top, x0, x1, bottom, x0, x0, x0, x0],
         entry: {
           ...columnOf(column.slot),
+          baseAt: side === "negative" ? 1 : 4,
           missing: false,
           emphasis: false,
           leaving: false,
+          place: floorPlace(model, series, column.slot),
         },
       };
     });
@@ -235,8 +279,9 @@ export function layoutColumns(
       .filter((slot) => (series.readings[slot]?.kind === "missing" && !model.empty) || emphasised.has(slot))
       .map((slot): Entry => {
         const own = slotEntry(slot);
+        const key = `note ${own.key}`;
         const entry: ColumnEntry = { ...own.entry, fill: -1, part: "fill" };
-        return { ...own, key: `note ${own.key}`, entry };
+        return { ...own, key, entry };
       });
     entries = [...buckets, ...notes].toSorted((a, b) => a.at - b.at);
   }
@@ -262,14 +307,19 @@ export function layoutColumns(
  * @param frame - The vertical frame.
  * @param topology - The entries' topology.
  * @param values - The entries' numbers, at rest or in a tween frame.
+ * @param placeOf - Whether an entry's column owns its stack side's pixel floor in this frame: the
+ *   stack floors' decision for a stacked series, and the entry's resting place by default.
+ * @param bodies - Each entry's column with no floor, where the caller snapped it for the stack
+ *   floors already, so the drawing floors it only where it owns the floor.
  * @returns What each path and emphasis box draws.
  */
 export function columnsDrawing(
   frame: PlotFrame,
   topology: ColumnTopology,
-  values: MarkValues
+  values: MarkValues,
+  placeOf: (entry: ColumnEntry, index: number) => StackPlace = (entry) => entry.place,
+  bodies?: readonly (PlotRect | undefined)[]
 ): ColumnsDrawing {
-  const columnSpan = frame.count > DECIMATE_ABOVE ? snapSpan : snapBarSpan;
   const fillCount = Math.max(0, ...topology.entries.map((entry) => entry.fill + 1));
   const steps = () => Array.from({ length: fillCount }, (): PlotRect[] => []);
   const paths = { fill: steps(), estimated: steps(), projected: steps() } satisfies Record<
@@ -282,8 +332,14 @@ export function columnsDrawing(
   const bandAt = (along: number) => slotBandAt(frame, along, "band");
   topology.entries.forEach((entry, index) => {
     const at = (offset: number) => values[index * COLUMN_STRIDE + offset] ?? 0;
-    const band = bandAt(at(0));
-    const rect = frameRect(frame, columnSpan(frame, at(2), at(3), band), [at(1), at(4)]);
+    const place = placeOf(entry, index);
+    const known = bodies?.[index];
+    const rect =
+      known === undefined
+        ? columnBody(frame, values, index, entry, place)
+        : place === "outer"
+          ? floorBody(frame, known, columnEnds(values, index, entry))
+          : known;
     const drawn = entry.fill >= 0 && (!entry.leaving || rect.height > 0);
     if (drawn) paths[entry.part][entry.fill]?.push(rect);
     if (entry.missing) {
@@ -294,7 +350,9 @@ export function columnsDrawing(
       missing += `M${String(from)} ${String(missingTickAt(frame, at(4)))}H${String(to)}`;
     }
     if (entry.emphasis)
-      emphasis.push(frameRect(frame, snapBarSpan(frame, at(7), at(8), band), [at(1), at(4)]));
+      emphasis.push(
+        frameRect(frame, emphasisSpan(frame, values, index), columnEnds(values, index, entry), place)
+      );
   });
   return {
     fill: paths.fill.map((rects) => rectsPath(rects)),
@@ -303,6 +361,62 @@ export function columnsDrawing(
     missing,
     emphasis,
   };
+}
+
+/**
+ * One entry's column in a frame, every edge on the device pixel grid. A column of one slot keeps
+ * its pixel among the pixels of the slot its middle lies in, as a bar does.
+ *
+ * @param frame - The vertical frame.
+ * @param values - The entries' numbers.
+ * @param index - The entry's index among them.
+ * @param entry - The entry.
+ * @param place - Whether the column owns its stack side's pixel floor in this frame.
+ * @returns The column's rectangle.
+ */
+export function columnBody(
+  frame: PlotFrame,
+  values: MarkValues,
+  index: number,
+  entry: ColumnEntry,
+  place: StackPlace
+): PlotRect {
+  const at = (offset: number) => values[index * COLUMN_STRIDE + offset] ?? 0;
+  const columnSpan = frame.count > DECIMATE_ABOVE ? snapSpan : snapBarSpan;
+  const span = columnSpan(frame, at(2), at(3), slotBandAt(frame, at(0), "band"));
+  return frameRect(frame, span, columnEnds(values, index, entry), place);
+}
+
+/**
+ * An entry's emphasis box span along the slot axis in a frame, snapped among the pixels of the slot
+ * its column's middle lies in.
+ *
+ * @param frame - The vertical frame.
+ * @param values - The entries' numbers.
+ * @param index - The entry's index among them.
+ * @returns The span's start and end.
+ */
+export function emphasisSpan(frame: PlotFrame, values: MarkValues, index: number): readonly [number, number] {
+  const at = (offset: number) => values[index * COLUMN_STRIDE + offset] ?? 0;
+  return snapBarSpan(frame, at(7), at(8), slotBandAt(frame, at(0), "band"));
+}
+
+/**
+ * An entry's column base and far end in a frame, as `baseAt` names them.
+ *
+ * @param values - The entries' numbers.
+ * @param index - The entry's index among them.
+ * @param entry - The entry.
+ * @returns The base and the far end, unsnapped.
+ */
+export function columnEnds(
+  values: MarkValues,
+  index: number,
+  entry: ColumnEntry
+): readonly [base: number, tip: number] {
+  const upper = values[index * COLUMN_STRIDE + 1] ?? 0;
+  const lower = values[index * COLUMN_STRIDE + 4] ?? 0;
+  return entry.baseAt === 4 ? [lower, upper] : [upper, lower];
 }
 
 /**
@@ -335,11 +449,13 @@ export function columnKind(step: number, zero: number): PathKind<ColumnTopology,
     stride: COLUMN_STRIDE,
     at: (topology, index) =>
       topology.entries[index] ?? {
+        baseAt: 4,
         fill: -1,
         part: "fill",
         missing: false,
         emphasis: false,
         leaving: false,
+        place: "outer",
       },
     of: (entries) => ({ count: entries.length, entries }),
     // A column whose reading leaves keeps its old paint while it shrinks to the zero line, so it

@@ -139,7 +139,7 @@ export type BarAxes = readonly [
 /** A bar's geometry and the rectangle it stands for at rest. */
 function restingBar(frame: PlotFrame, cell: BarCell, metrics: BarMetrics, sub: SubBand) {
   const geometry = barGeometry(frame, cell, metrics, sub, "cut");
-  return { geometry, rect: geometryRect(frame, geometry) };
+  return { geometry, rect: geometryRect(frame, geometry, cell.place) };
 }
 
 /** One fill on both sides of the base. */
