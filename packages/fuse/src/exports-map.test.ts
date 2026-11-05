@@ -184,6 +184,7 @@ const EXPECTED_ENTRIES = {
   toggle: { inRootBarrel: true, runtimeExports: ["Toggle", "toggleVariants"] },
   "toggle-group": { inRootBarrel: true, runtimeExports: ["ToggleGroup"] },
   tooltip: { inRootBarrel: true, runtimeExports: ["Tooltip"] },
+  carousel: { inRootBarrel: true, runtimeExports: ["Carousel", "useCarousel"] },
   "autocomplete-field": { inRootBarrel: true, runtimeExports: ["AutocompleteField"] },
   "combobox-field": { inRootBarrel: true, runtimeExports: ["ComboboxField"] },
   autocomplete: { inRootBarrel: true, runtimeExports: ["Autocomplete"] },

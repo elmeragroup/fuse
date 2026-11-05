@@ -79,4 +79,74 @@ export const pointerCommands = {
     await session.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
     await session.detach();
   }) satisfies BrowserCommand<[]>,
+  /**
+   * Several fingers at once, through Chromium's touch input: `points` is every finger down after
+   * this event, each by its `id`, in the test frame's client coordinates. A finger missing from
+   * the last call's points lifts, a new one lands, and one that moved moves. `touchStart` and
+   * `touchMove` dispatch the change; `touchEnd` lifts the fingers left out, and with no points
+   * lifts them all and ends the sequence.
+   */
+  touchPoints: (async (
+    context,
+    type: "touchStart" | "touchMove" | "touchEnd",
+    points: readonly { readonly id: number; readonly x: number; readonly y: number }[]
+  ) => {
+    const frame = await context.iframe.owner().boundingBox();
+    let session = touches.get(context.page);
+    if (session === undefined) {
+      session = await context.page.context().newCDPSession(context.page);
+      touches.set(context.page, session);
+    }
+    await session.send("Input.dispatchTouchEvent", {
+      type,
+      touchPoints: points.map((point) => ({
+        id: point.id,
+        x: (frame?.x ?? 0) + point.x,
+        y: (frame?.y ?? 0) + point.y,
+      })),
+    });
+    if (type === "touchEnd" && points.length === 0) {
+      touches.delete(context.page);
+      await session.detach();
+    }
+  }) satisfies BrowserCommand<
+    [
+      "touchStart" | "touchMove" | "touchEnd",
+      readonly { readonly id: number; readonly x: number; readonly y: number }[],
+    ]
+  >,
+  /**
+   * A finger swipe from a point in the test frame's client coordinates, moving `dx` and `dy` px at
+   * `speed` px/s and then lifting, through Chromium's synthetic touch gesture. The gesture runs
+   * through the compositor's input path, as a real finger's does, so the page's native scrolling,
+   * scroll snapping and the fling after the lift all respond to it. `lift` says whether the finger
+   * leaves still moving, which flings, or stops first. It resolves once the gesture's input has
+   * been sent; a fling may still be running.
+   */
+  touchSwipe: (async (
+    context,
+    x: number,
+    y: number,
+    dx: number,
+    dy: number,
+    speed: number,
+    lift: "fling" | "hold"
+  ) => {
+    const frame = await context.iframe.owner().boundingBox();
+    const session = await context.page.context().newCDPSession(context.page);
+    try {
+      await session.send("Input.synthesizeScrollGesture", {
+        x: (frame?.x ?? 0) + x,
+        y: (frame?.y ?? 0) + y,
+        // The protocol's distances are the scroll's: a finger moving left scrolls right.
+        xDistance: dx,
+        yDistance: dy,
+        speed,
+        gestureSourceType: "touch",
+        preventFling: lift === "hold",
+      });
+    } finally {
+      await session.detach();
+    }
+  }) satisfies BrowserCommand<[number, number, number, number, number, "fling" | "hold"]>,
 };

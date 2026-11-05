@@ -567,6 +567,25 @@ Paths are relative to `packages/fuse-figma` unless they start with `packages/`.
   `File[]` payload. Changing what its `onSelect` receives is a
   breaking change for FileTrigger consumers.
 
+## Carousel
+
+- Try the swipe on real phones: iPhone Safari and Samsung Internet or Chrome on a flagship
+  Android. The browser suites drive Chromium's synthetic touch gesture and an iPhone-sized WebKit,
+  but Playwright cannot drag a finger in WebKit, and neither measures how a fling feels.
+- Ask design to draw the rotation control. `Carousel.Autoplay` shows Phosphor's `Pause` and
+  `Play` in the outline square that Previous and Next use.
+- Ask design whether Previous and Next keep the outline Button's 2px text-colour ring in external
+  themes. The approved controls draw a light border on a card fill, which is the internal
+  outline's hairline.
+- Render the indicators before hydration. The pages are snap positions measured after mount, so
+  the server renders none, and the controls row widens once they appear.
+- Add a Figma kit set for the indicator and the controls row.
+- Decide whether a carousel should follow an inherited layout change no one acts on. A change from
+  outside the carousel, such as an ancestor's gap variable or a class that changes which slides
+  snap, resizes nothing and mutates nothing inside it, so the indicators take it only at the next
+  scroll end, navigation, resize, mutation or commit (`carousel-engine.ts`). Following it at once
+  would mean observing ancestors or measuring on a timer.
+
 ## Charts
 
 Charts v1 ships the `chart` entry with a "preview" label. Remove the label at Fuse's first stable

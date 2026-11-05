@@ -186,6 +186,19 @@
       "card-section-button.tsx"
     ]
   },
+  "carousel": {
+    "title": "Carousel",
+    "rsc": "client",
+    "demos": [
+      "carousel-basic.tsx",
+      "carousel-several.tsx",
+      "carousel-status.tsx",
+      "carousel-thumbnails.tsx",
+      "carousel-autoplay.tsx",
+      "carousel-vertical.tsx",
+      "carousel-controlled.tsx"
+    ]
+  },
   "chart": {
     "title": "Chart",
     "rsc": "client",

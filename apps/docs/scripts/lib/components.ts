@@ -90,6 +90,7 @@ const EXTRA_API_EXPORT_NAMES = new Map<string, readonly string[]>([
   ["kbd", ["Kbd", "KbdGroup"]],
   ["sidebar", ["Sidebar", "useSidebar"]],
   ["file-upload", ["FileUpload", "useFileUpload"]],
+  ["carousel", ["Carousel", "useCarousel"]],
   ["chart", ["Chart", "useChartPoint", "formatChartValue", "formatChartSlot"]],
 ]);
 

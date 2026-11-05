@@ -11,6 +11,18 @@ declare module "vitest/browser" {
     touchStart: (x: number, y: number) => Promise<void>;
     touchMove: (x: number, y: number) => Promise<void>;
     touchEnd: () => Promise<void>;
+    touchPoints: (
+      type: "touchStart" | "touchMove" | "touchEnd",
+      points: readonly { readonly id: number; readonly x: number; readonly y: number }[]
+    ) => Promise<void>;
+    touchSwipe: (
+      x: number,
+      y: number,
+      dx: number,
+      dy: number,
+      speed: number,
+      lift: "fling" | "hold"
+    ) => Promise<void>;
   }
 }
 

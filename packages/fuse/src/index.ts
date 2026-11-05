@@ -18,6 +18,7 @@ export * from "./breadcrumb";
 export * from "./button";
 export * from "./button-group";
 export * from "./card";
+export * from "./carousel";
 export * from "./checkbox";
 export * from "./checkbox-card";
 export * from "./code";

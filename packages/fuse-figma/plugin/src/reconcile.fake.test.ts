@@ -236,7 +236,7 @@ describe("Apply on a synced file without the kit pages", () => {
     expect(applied).toEqual({
       changes: [
         ...CREATE_PAGES,
-        "Icons: create the Icons frame with 135 icons",
+        "Icons: create the Icons frame with 137 icons",
         ...CREATE_SETS,
         ...CREATE_AND_PLACE_PREVIEWS,
       ],
@@ -406,14 +406,14 @@ describe("Apply on a synced file without the kit pages", () => {
     expect(iconButton.defaultVariant.name).toBe("variant=default, size=icon, state=rest");
   });
 
-  it("starts each swap property with its icon and offers all 135 library icons", async () => {
+  it("starts each swap property with its icon and offers all 137 library icons", async () => {
     const icons = await iconLibrary(file);
     const plus = childNamed(icons, "COMPONENT", "Plus");
     const arrow = childNamed(icons, "COMPONENT", "ArrowRight");
     const button = await componentSet(file, "Button");
     const start = property(button, "Start icon");
     expect(start).toMatchObject({ type: "INSTANCE_SWAP", defaultValue: plus.id });
-    expect(start.preferredValues).toHaveLength(135);
+    expect(start.preferredValues).toHaveLength(137);
     expect(start.preferredValues).toContainEqual({ type: "COMPONENT", key: plus.key });
     expect(property(button, "End icon")).toMatchObject({ type: "INSTANCE_SWAP", defaultValue: arrow.id });
     expect(property(await componentSet(file, "Icon button"), "Icon")).toMatchObject({
@@ -661,9 +661,9 @@ describe("a later run on an applied file", () => {
     (await iconLibrary(file)).remove();
 
     expect((await applies(file)).slice(0, 3)).toEqual([
-      "Icons: create the Icons frame with 135 icons",
-      "Button: Start icon → Plus and the 135 library icons",
-      "Button: End icon → ArrowRight and the 135 library icons",
+      "Icons: create the Icons frame with 137 icons",
+      "Button: Start icon → Plus and the 137 library icons",
+      "Button: End icon → ArrowRight and the 137 library icons",
     ]);
     expect(await changes(file)).toEqual([]);
     const plus = childNamed(await iconLibrary(file), "COMPONENT", "Plus");

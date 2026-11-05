@@ -1,0 +1,128 @@
+---
+lede: >
+  A row of slides the browser scrolls natively, one page per swipe, with Previous and Next, a
+  slide picker, a page count and optional automatic rotation.
+---
+
+import { CarouselBasic } from "./demos/carousel-basic";
+import { CarouselSeveral } from "./demos/carousel-several";
+import { CarouselStatus } from "./demos/carousel-status";
+import { CarouselThumbnails } from "./demos/carousel-thumbnails";
+import { CarouselAutoplay } from "./demos/carousel-autoplay";
+import { CarouselVertical } from "./demos/carousel-vertical";
+import { CarouselControlled } from "./demos/carousel-controlled";
+
+import { componentMetadata } from "../../../../lib/component-page";
+
+export const metadata = componentMetadata("carousel");
+
+<ComponentIntro slug="carousel" />
+
+<Prose>
+
+`Carousel.Root` is the carousel: a region landmark that needs a name, through `aria-label` or the `aria-labelledby` of a visible heading. `Carousel.Viewport` holds the `Carousel.Slide`s and scrolls them with the browser's own scroll snapping, so a swipe, a trackpad, a mouse wheel and the arrow keys all work as they do on any scroller, and a flick stops at the next slide. `Carousel.Controls` lays out the controls in one centred row: `Carousel.Previous`, `Carousel.Indicators` and `Carousel.Next`. Each feature is a part you mount; there are no boolean props. The slides do not loop, so Previous is disabled on the first page and Next on the last.
+
+</Prose>
+
+<Demo slug="carousel" id="basic" title="Basic" file="carousel-basic.tsx">
+  <CarouselBasic />
+</Demo>
+
+<Prose>
+
+## Several slides at once
+
+A slide fills the viewport by default. Size it with a class such as `basis-1/2` to show more at once. Every slide stays a snap position, so the pages follow the layout: six slides three to a view make four pages, and `Carousel.Indicators` renders one indicator per page. Space the slides with a margin on each slide, such as `me-3 last:me-0`, and take it out of the slide's basis.
+
+</Prose>
+
+<Demo slug="carousel" id="several" title="Several slides at once" file="carousel-several.tsx">
+  <CarouselSeveral />
+</Demo>
+
+<Prose>
+
+## Page count
+
+`Carousel.Status` shows where you are, such as "3 of 12", in the locale. Use it in place of the indicators when there are many pages. It announces each page change politely.
+
+</Prose>
+
+<Demo slug="carousel" id="status" title="Page count" file="carousel-status.tsx">
+  <CarouselStatus />
+</Demo>
+
+<Prose>
+
+## Thumbnails
+
+Map your own `Carousel.Indicator`s inside `Carousel.Indicators` to pick slides by thumbnail. An Indicator with children draws only the focus ring and keeps a 24px target however small its content is, so style its content with the `in-data-current:` variant, as the current page's Indicator carries `data-current`, and name it, as the thumbnail has no text.
+
+</Prose>
+
+<Demo slug="carousel" id="thumbnail-indicators" title="Thumbnails" file="carousel-thumbnails.tsx">
+  <CarouselThumbnails />
+</Demo>
+
+<Prose>
+
+## Automatic rotation
+
+Mount `Carousel.Autoplay` with a `delay` in milliseconds to rotate the pages. It renders the rotation control, a button whose name says what it will do: "Stop automatic slide show" while the pages rotate and "Start automatic slide show" while they do not. Put it first in the Controls, and the Controls before the Viewport in the source, so it comes before the rotating content in the tab order; `className="order-last"` on the Controls still shows the row below the slides.
+
+Rotation starts on mount, except when the user prefers reduced motion. Keyboard focus on any element in the carousel stops it, the rotation control included, as the APG carousel pattern asks, so a keyboard user who tabs in finds the slides still and the control reading "Start automatic slide show". A swipe, a drag that snaps back, a wheel turn or a press of any other control stops it too. Only the rotation control starts it again, and once the user presses it, keyboard focus and hover no longer stop or pause rotation until they press it again, so it keeps running with focus on the control. Until then rotation pauses while the pointer is over the carousel. It also pauses while the tab is hidden. An `Autoplay` starts from what is already so, whether it mounts with the carousel or later: paused if the pointer is already over the carousel, even since before the page hydrated on a device whose main pointer can hover, and stopped if keyboard focus is already inside it, as when a slide's field has `autoFocus`. Focus that a mouse press moved in, such as an `autoFocus` button that opens after a click, is not keyboard focus and leaves rotation running. Keyboard focus in a slide's portal, such as a popover's field, even one portalled into a same-origin frame, or inside a custom element's open shadow root counts as focus in the carousel. Changing `delay` keeps whether the user stopped it. From the last page it goes back to the first. While the pages rotate the slides' live region is silent, so a screen reader is not interrupted.
+
+</Prose>
+
+<Demo slug="carousel" id="autoplay" title="Automatic rotation" file="carousel-autoplay.tsx">
+  <CarouselAutoplay />
+</Demo>
+
+<Prose>
+
+## Vertical
+
+`orientation="vertical"` scrolls the slides up and down, and Previous and Next point up and down. Give the Viewport a height.
+
+</Prose>
+
+<Demo slug="carousel" id="vertical-steps" title="Vertical" file="carousel-vertical.tsx">
+  <CarouselVertical />
+</Demo>
+
+<Prose>
+
+## Controlled page and custom controls
+
+`index` and `onIndexChange` let the parent own the page. `onIndexChange` also receives the reason for each change: `"scroll"`, `"previous"`, `"next"`, `"indicator"`, `"autoplay"` or `"action"`. A Root whose parent keeps its `index` after a swipe scrolls back to it once the swipe ends.
+
+`useCarousel()` gives a part inside the Root its `state` (`index`, `pageCount`, `canPrevious`, `canNext` and `rotating`), its `actions` (`goTo`, `previous`, `next`, `play` and `stop`) and its `meta` (`orientation`), for controls of your own, such as the plan picker below.
+
+</Prose>
+
+<Demo slug="carousel" id="controlled" title="Controlled page" file="carousel-controlled.tsx">
+  <CarouselControlled />
+</Demo>
+
+<Prose>
+
+## Server rendering
+
+`Carousel.Root` is a client component that a server component can render, with server-rendered slides inside it. The pages are measured from the layout after hydration, so the server renders no indicators and no page count, and the page in `defaultIndex` moves into place before the first client paint.
+
+## Accessibility
+
+- **Name the carousel.** The Root is a region with the role description "carousel", and its type requires `aria-label` or `aria-labelledby`. Leave the word "carousel" out of the name.
+- **Slides are named by their place.** Each slide is a group with the role description "slide", named such as "3 of 6". Give a slide with a visible title `aria-labelledby` instead.
+- **Only what is in view is reachable.** A slide fully outside the viewport is `inert`, so Tab and a screen reader's reading order skip what the user cannot see. In-page search does not find text in those slides either.
+- **The picker marks the current page.** Each Indicator is a button named after the first slide on its page. The current page's Indicator is `aria-disabled`, as the APG grouped carousel asks, and stays in the tab order.
+- **Focus stays put.** Previous and Next stay focusable when they disable at the ends, so pressing Next onto the last page leaves focus on Next.
+- **The controls are 24px targets** at both densities, the 8px dots included.
+- **Controls can be cancelled.** A consumer `onClick` on Previous, Next, an Indicator or Autoplay runs first, and `event.preventBaseUIHandler()` there cancels the control's own action.
+- **Motion follows the user.** Reduced motion turns the smooth scroll and the pill's transition off, and stops automatic rotation until the user starts it.
+
+</Prose>
+
+<ApiReference slug="carousel" />
+
+<ComponentTokens slug="carousel" />
