@@ -142,6 +142,11 @@ function Fixture({ onHydrated }: { readonly onHydrated?: () => void }) {
     <LocaleProvider locale="nb-NO">
       <div style={{ width: 300 }}>
         <PieChart.Root data={BILL} config={BILL_CONFIG} nameKey="name" valueKey="v" aria-label="Regning">
+          <PieChart.Pie />
+          <PieChart.Labels />
+          <PieChart.Center>
+            <PieChart.CenterValue />
+          </PieChart.Center>
           <PieChart.Legend />
           <PieChart.Table />
         </PieChart.Root>
@@ -152,9 +157,14 @@ function Fixture({ onHydrated }: { readonly onHydrated?: () => void }) {
 }
 
 describe("hydration (D18)", () => {
-  it("sends the figure, its description and its table from the server, and draws once hydrated in view", async () => {
+  it("sends the figure, its slices, its description and its table from the server, and draws once hydrated in view", async () => {
     const html = renderToString(<Fixture />);
     expect(html).toContain("Kakediagram med 4\u00a0deler, totalt 100.");
+    // The server writes every slice at rest: Strøm's half from 12 o'clock to 6 through 3, as d3's
+    // arc writes a half turn with no hole, rounded to 3 decimals.
+    expect(html.split('data-slot="pie-chart-sector"').length - 1).toBe(4);
+    expect(html).toContain('d="M0,-1A1,1,0,1,1,0,1L0,0Z"');
+    expect(html.split('data-slot="pie-chart-label"').length - 1).toBe(4);
     expect(html).toContain('data-slot="chart-polar-plot"');
     expect(html).not.toContain("data-drawn");
     const host = document.createElement("div");

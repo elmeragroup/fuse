@@ -736,6 +736,7 @@ export type ChartStyleVars = {
     "--chart-hover-dim"?: number | string;
     "--chart-ring-fill"?: number | string;
     "--chart-slice-seam"?: string;
+    "--chart-slice-pop"?: string;
     "--animate-chart-ping"?: string;
     "--animate-chart-dash"?: string;
     "--animate-chart-shimmer"?: string;
@@ -1028,10 +1029,10 @@ declare namespace PieChart {
 }
 
 // @beta
-function PieChartCenter(_props: PieChartCenterProps): ReactElement;
+function PieChartCenter(input: PieChartCenterProps): ReactElement;
 
 // @beta
-function PieChartCenterLabel(_props: PieChartCenterLabelProps): ReactElement;
+function PieChartCenterLabel(input: PieChartCenterLabelProps): ReactElement;
 
 // @beta
 export type PieChartCenterLabelProps = ChartLayerProps & {
@@ -1039,7 +1040,7 @@ export type PieChartCenterLabelProps = ChartLayerProps & {
 };
 
 // @beta
-function PieChartCenterMax(_props: PieChartCenterMaxProps): ReactElement;
+function PieChartCenterMax(input: PieChartCenterMaxProps): ReactElement;
 
 // @beta
 export type PieChartCenterMaxProps = ChartLayerProps & {
@@ -1052,7 +1053,7 @@ export type PieChartCenterProps = ChartLayerProps & {
 };
 
 // @beta
-function PieChartCenterShare(_props: PieChartCenterShareProps): ReactElement;
+function PieChartCenterShare(input: PieChartCenterShareProps): ReactElement;
 
 // @beta
 export type PieChartCenterShareProps = ChartLayerProps & {
@@ -1060,7 +1061,7 @@ export type PieChartCenterShareProps = ChartLayerProps & {
 };
 
 // @beta
-function PieChartCenterValue(_props: PieChartCenterValueProps): ReactElement;
+function PieChartCenterValue(input: PieChartCenterValueProps): ReactElement;
 
 // @beta
 export type PieChartCenterValueProps = ChartLayerProps & {
@@ -1068,7 +1069,7 @@ export type PieChartCenterValueProps = ChartLayerProps & {
 };
 
 // @beta
-function PieChartGlow(_props: PieChartGlowProps): ReactElement;
+function PieChartGlow(input: PieChartGlowProps): ReactElement;
 
 // @beta
 export type PieChartGlowProps = ChartLayerProps & {
@@ -1076,7 +1077,7 @@ export type PieChartGlowProps = ChartLayerProps & {
 };
 
 // @beta
-function PieChartLabels(_props: PieChartLabelsProps): ReactElement;
+function PieChartLabels(input: PieChartLabelsProps): ReactElement;
 
 // @beta
 export type PieChartLabelsProps = ChartLayerProps & {
@@ -1085,7 +1086,7 @@ export type PieChartLabelsProps = ChartLayerProps & {
 };
 
 // @beta
-function PieChartPie(_props: PieChartPieProps): ReactElement;
+function PieChartPie(input: PieChartPieProps): ReactElement;
 
 // @beta
 export type PieChartPieProps = ChartLayerProps & {
@@ -1132,7 +1133,7 @@ function PieChartTable(props: ChartTableProps): ReactElement;
 function PieChartTooltip(props: ChartTooltipProps): ReactElement;
 
 // @beta
-function PieChartTrack(_props: PieChartTrackProps): ReactElement;
+function PieChartTrack(input: PieChartTrackProps): ReactElement;
 
 // @beta
 export type PieChartTrackProps = ChartLayerProps;

@@ -467,7 +467,7 @@
           "type": "string",
           "shortType": null,
           "defaultValue": null,
-          "description": "The category whose slice or ring glows.",
+          "description": "The category whose slice glows.",
           "required": true
         },
         {
@@ -1316,7 +1316,7 @@
     {
       "name": "RadialChart.TableColumn",
       "rsc": "client",
-      "sourcePath": "packages/fuse/src/components/chart/chart-table-body.tsx",
+      "sourcePath": "packages/fuse/src/components/chart/chart-table-column.tsx",
       "forwardedFrom": [],
       "forwardedCount": 0,
       "props": [

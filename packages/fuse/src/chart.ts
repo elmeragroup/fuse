@@ -6,9 +6,10 @@
  * prop that mirrors one, Root state or a data attribute. It never becomes a boolean or mode prop on
  * a part below Root.
  *
- * The errors the parts' JSDoc names, such as `unknown-key`, throw as the cartesian parts render.
- * `PieChart`, `RadialChart` and `RadarChart` render nothing yet, so theirs start to throw once those
- * parts render in a later preview release. `ScatterChart` throws its own as its parts render.
+ * The errors the parts' JSDoc names, such as `unknown-key`, throw as the cartesian parts and the
+ * `PieChart` parts render. The `RadialChart` and `RadarChart` marks render nothing yet, so theirs
+ * start to throw once those parts render in a later preview release. `ScatterChart` throws its own
+ * as its parts render.
  *
  * Import `@elmeragroup/fuse/chart.css` once, beside Fuse's own stylesheet.
  *
@@ -146,7 +147,8 @@ export type {
   PieChartTrackProps,
 } from "./components/chart/pie-chart-center";
 export type { PieChartGlowProps } from "./components/chart/pie-chart-glow";
-export type { PieChartLabelsProps, PieChartPieProps } from "./components/chart/pie-chart-pie";
+export type { PieChartLabelsProps } from "./components/chart/pie-chart-labels";
+export type { PieChartPieProps } from "./components/chart/pie-chart-pie";
 export type { PieChartSkeletonProps } from "./components/chart/pie-chart-skeleton";
 export type { RadialChartBarProps } from "./components/chart/radial-chart-bar";
 export type { RadialChartSkeletonProps } from "./components/chart/radial-chart-skeleton";

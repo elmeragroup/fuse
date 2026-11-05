@@ -180,7 +180,7 @@ const SEASONS = [
 ];
 
 /**
- * The polar Roots as a directive-free server page: a bill as a pie with its legend and table,
+ * The polar Roots as a directive-free server page: a bill as a pie with its slices, labels, legend and table,
  * three price areas as rings against 150 øre with their table, and two areas' seasons as a radar
  * with its legend.
  */
@@ -198,6 +198,8 @@ export function PolarPage(): ReactElement {
           nameKey="part"
           valueKey="kr"
           aria-label="Strømregning i oktober">
+          <PieChart.Pie />
+          <PieChart.Labels />
           <PieChart.Legend />
           <PieChart.Table />
         </PieChart.Root>

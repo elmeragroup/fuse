@@ -548,8 +548,12 @@ describe("chart plot marks", () => {
   // behind the plot and draws no reading. Sparkline is left out too: it draws in a stretched
   // viewBox outside any plot, with no pixel grid to hold its marks to.
   // ScatterChart's parts draw over two value axes with no slot grid, so their own floor oracle,
-  // scatter-chart-floor.browser.test.tsx, walks them against the device pixel grid alone.
+  // scatter-chart-floor.browser.test.tsx, walks them against the device pixel grid alone. The polar
+  // parts draw in a dial with no slot grid either: a slice keeps its rim floor (D24), which
+  // pie-chart-floor.browser.test.tsx checks, and its leaders, track and glow draw no reading.
   const isScatter = (relative: string): boolean => relative.startsWith("components/chart/scatter-chart-");
+  const isPolar = (relative: string): boolean =>
+    /^components\/chart\/(?:pie|radial|radar)-chart-/u.test(relative);
   const parts = [...SOURCE_TREE.values()].filter(
     (record) =>
       record.relative.startsWith("components/chart/") &&
@@ -564,13 +568,16 @@ describe("chart plot marks", () => {
         .filter(({ internal }) => !internal)
         .map(({ slot, at }) => ({ file: record.relative, slot, at }))
     );
-  const marks = marksOf(parts.filter((record) => !isScatter(record.relative)));
+  const marks = marksOf(parts.filter((record) => !isScatter(record.relative) && !isPolar(record.relative)));
+  const polarMarks = marksOf(parts.filter((record) => isPolar(record.relative)));
   const scatterMarks = marksOf(parts.filter((record) => isScatter(record.relative)));
 
   it("names every SVG mark a chart part draws with a data-slot", () => {
     expect(marks.length).toBeGreaterThan(0);
     expect(
-      marks.filter(({ slot }) => slot === undefined).map(({ file, at }) => `${file}@${String(at)}`)
+      [...marks, ...polarMarks]
+        .filter(({ slot }) => slot === undefined)
+        .map(({ file, at }) => `${file}@${String(at)}`)
     ).toEqual([]);
   });
 

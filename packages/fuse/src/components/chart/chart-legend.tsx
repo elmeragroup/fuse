@@ -27,7 +27,6 @@ import type {
   ChartThresholdSide,
   ValueFormat,
 } from "./chart-types";
-import { CHART_STRINGS } from "./format/chart-strings";
 
 /**
  * Props for `Chart.Legend`, a `ul` with Base UI's `render`.
@@ -120,8 +119,9 @@ export function ChartLegend({
   children,
   ...props
 }: ChartLegendProps): ReactElement {
-  const readout = useChartReadout("Chart.Legend");
-  const items = children ?? readout.legendKeys.map((key) => <ChartLegendItem key={key} dataKey={key} />);
+  useChartReadout("Chart.Legend");
+  // The template walks the legend's own keys, Other among them, which no explicit dataKey may name.
+  const items = children ?? <ChartLegendItem />;
   return useRender({
     defaultTagName: "ul",
     render,
@@ -297,14 +297,14 @@ export function ChartLegendToggleGroup({
   children,
 }: ChartLegendToggleGroupProps): ReactElement {
   const readout = useChartReadout("Chart.LegendToggleGroup");
-  const { registerToggleGroup, select, locale } = readout;
+  const { registerToggleGroup, select } = readout;
   const selectedKey = use(ChartSelectionContext);
   useEffect(() => registerToggleGroup(), [registerToggleGroup]);
   return (
     <ToggleGroupRoot
       data-slot="chart-legend-toggle-group"
       data-side={side}
-      aria-label={ariaLabel ?? CHART_STRINGS[locale].seriesGroup}
+      aria-label={ariaLabel ?? readout.toggleGroupName}
       size="xs"
       value={selectedKey === null ? [] : [selectedKey]}
       onValueChange={(value, details) => {

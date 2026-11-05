@@ -241,7 +241,7 @@
           "origin": "declared",
           "type": "number | undefined",
           "shortType": null,
-          "defaultValue": null,
+          "defaultValue": "0",
           "description": "A fraction of the outer radius, from 0 to 0.5. The plot keeps its aspect, so pixels would mean nothing.",
           "required": false
         },
@@ -259,7 +259,7 @@
     {
       "name": "PieChart.Labels",
       "rsc": "client",
-      "sourcePath": "packages/fuse/src/components/chart/pie-chart-pie.tsx",
+      "sourcePath": "packages/fuse/src/components/chart/pie-chart-labels.tsx",
       "forwardedFrom": [],
       "forwardedCount": 0,
       "props": [
@@ -286,7 +286,7 @@
           "origin": "declared",
           "type": "\"inside\" | \"outside\" | undefined",
           "shortType": "Union",
-          "defaultValue": null,
+          "defaultValue": "\"inside\"",
           "description": "Where each label sits. An inside label on a role with no on-colour role draws outside instead.",
           "required": false
         },
@@ -530,7 +530,7 @@
           "type": "string",
           "shortType": null,
           "defaultValue": null,
-          "description": "The category whose slice or ring glows.",
+          "description": "The category whose slice glows.",
           "required": true
         },
         {
@@ -1379,7 +1379,7 @@
     {
       "name": "PieChart.TableColumn",
       "rsc": "client",
-      "sourcePath": "packages/fuse/src/components/chart/chart-table-body.tsx",
+      "sourcePath": "packages/fuse/src/components/chart/chart-table-column.tsx",
       "forwardedFrom": [],
       "forwardedCount": 0,
       "props": [

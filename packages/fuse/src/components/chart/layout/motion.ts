@@ -27,13 +27,15 @@ export const CHART_CROSSFADE_MS = 150;
  * active dots share on each step: a keyboard step and a slow pointer take it as it is, and a faster
  * pointer stiffens it, `FOLLOW_FASTEST` at most. `glide` moves the tooltip, whose duration is
  * `--chart-glide` in `chart.css`, and keeps its softer spring at every speed. `ticker` moves
- * Chart.SlotLabel's pill and its rolling parts. Each glide starts from what the mark shows, so a
- * step mid-glide retargets it.
+ * Chart.SlotLabel's pill and its rolling parts and a pie's centre digits. `pop` moves the active
+ * slice out along its bisector (D3). Each glide starts from what the mark shows, so a step
+ * mid-glide retargets it.
  */
 export const CHART_SPRINGS = {
   follow: { stiffness: 300, damping: 30 },
   glide: { stiffness: 100, damping: 20 },
   ticker: { stiffness: 400, damping: 35 },
+  pop: { stiffness: 400, damping: 25 },
 } as const satisfies Record<string, Spring>;
 
 /**

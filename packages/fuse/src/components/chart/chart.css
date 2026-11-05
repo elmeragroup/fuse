@@ -33,6 +33,22 @@
   initial-value: 2px;
 }
 
+/*
+  A pie reads its pop and its seam once per layout, as lengths, so a theme may write them in any
+  unit. 0 turns the pop off.
+*/
+@property --chart-slice-pop {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 0px;
+}
+
+@property --chart-slice-seam {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 2px;
+}
+
 /* The crosshair reads its width once per layout, as a length. */
 @property --chart-crosshair-width {
   syntax: "<length>";
@@ -653,7 +669,16 @@
     font-size: 0.75rem;
     line-height: 1rem;
     color: var(--muted-foreground);
-    grid-template-columns: [legend-start] auto [plot] minmax(0, var(--chart-polar-size)) [legend-end] auto;
+    /*
+      The plot area holds the cell and the room around it: the pie's pop, and a gutter beside the
+      dial while outside labels show.
+    */
+    --_room-x: var(--chart-slice-pop);
+    --_room-y: var(--chart-slice-pop);
+    grid-template-columns:
+      [legend-start] auto
+      [plot] minmax(0, calc(var(--chart-polar-size) + 2 * var(--_room-x)))
+      [legend-end] auto;
     justify-content: center;
     grid-template-areas:
       "headline headline headline"
@@ -666,11 +691,36 @@
       "table table table";
   }
 
-  [data-slot="chart-polar-cell"] {
+  [data-slot="chart-polar-frame"]:has(> [data-slot="pie-chart-labels"][data-outside]) {
+    --_room-x: calc(var(--chart-slice-pop) + 4.5rem);
+    --_room-y: calc(var(--chart-slice-pop) + 1.25rem);
+  }
+
+  /*
+    The cell and every layer a family draws over it share one box in the plot area: the sweep's
+    aspect, inside the room the frame leaves. Marks stack under the cell, whose listbox takes every
+    pointer, and the Background sits under them all.
+  */
+  [data-slot="chart-polar-cell"],
+  [data-polar-layer] {
     grid-area: plot;
     position: relative;
-    width: 100%;
+    box-sizing: border-box;
+    width: calc(100% - 2 * var(--_room-x));
+    margin: var(--_room-y) var(--_room-x);
     aspect-ratio: var(--chart-polar-aspect, 1);
+    align-self: center;
+  }
+
+  [data-slot="chart-polar-cell"] {
+    z-index: 4;
+  }
+
+  [data-polar-layer] {
+    display: block;
+    height: auto;
+    overflow: visible;
+    pointer-events: none;
   }
 
   [data-slot="chart-polar-plot"] {
@@ -709,6 +759,192 @@
   @media print {
     [data-polar] [data-polar-mark] {
       visibility: visible;
+    }
+  }
+
+  /* A pie leaves room around its dial for the active slice's pop, and seams its slices as bars. */
+  [data-slot="pie-chart"] {
+    --chart-slice-pop: 8px;
+    --chart-slice-seam: var(--chart-bar-seam);
+  }
+
+  [data-layer="track"] {
+    z-index: 0;
+  }
+
+  [data-slot="pie-chart-track"] {
+    fill: var(--muted);
+  }
+
+  [data-layer="glow"] {
+    z-index: 1;
+  }
+
+  [data-slot="pie-chart-pie"] {
+    z-index: 2;
+  }
+
+  [data-slot="pie-chart-labels"],
+  [data-slot="pie-chart-center"] {
+    z-index: 3;
+  }
+
+  /*
+    A slice paints its own colour, or its role list's gradient, with the surface's seam along its
+    edges (Q3). It pops along its bisector by the frame's --_px and --_py, its pop's CSS pixels in
+    the dial's units, and dims to --chart-hover-dim while another slice is active (D3). A selected
+    or highlighted category dims the rest the same way (S2), and every dim fades over 150 ms.
+  */
+  [data-slot="pie-chart-sector"],
+  [data-slot="pie-chart-glow"] {
+    --_off: min(
+      1,
+      max(var(--chart-slot) - var(--chart-active, -2), var(--chart-active, -2) - var(--chart-slot))
+    );
+  }
+
+  [data-slot="pie-chart-sector"] {
+    fill: var(--_paint);
+    stroke: var(--background);
+    stroke-width: var(--chart-slice-seam);
+    stroke-linejoin: round;
+    opacity: calc(1 - (1 - var(--chart-hover-dim)) * max(var(--_dim-active, 0), var(--_dim-series, 0)));
+    transition: opacity 150ms ease-out;
+  }
+
+  [data-slot="pie-chart-sector"],
+  [data-slot="pie-chart-ghost"],
+  [data-slot="pie-chart-leader"] {
+    vector-effect: non-scaling-stroke;
+  }
+
+  [data-slot="pie-chart-ghost"] {
+    stroke: var(--background);
+    stroke-width: var(--chart-slice-seam);
+  }
+
+  /*
+    The state rules lead with data-sector, which only slices and their halo carry, so Chromium
+    restyles them alone when Root's state changes, and no cartesian mark.
+  */
+  [data-polar][data-active] [data-sector] {
+    --_dim-active: var(--_off);
+    translate: calc((1 - var(--_off)) * var(--_px, 0) * 1px) calc((1 - var(--_off)) * var(--_py, 0) * 1px);
+  }
+
+  [data-polar][data-selected] [data-sector] {
+    --_dim-series: min(
+      1,
+      max(var(--chart-series) - var(--chart-selected), var(--chart-selected) - var(--chart-series))
+    );
+  }
+
+  [data-polar][data-highlight] [data-sector] {
+    --_dim-series: min(
+      1,
+      max(var(--chart-series) - var(--chart-highlight), var(--chart-highlight) - var(--chart-series))
+    );
+  }
+
+  [data-slot="pie-chart-pie"] stop {
+    stop-color: var(--_stop);
+  }
+
+  /* Glow casts the slice's own paint at half alpha, blurred by a Gaussian of 8 px, as a bar's halo. */
+  [data-slot="pie-chart-glow"] {
+    fill: var(--_paint);
+    filter: drop-shadow(0 0 8px color-mix(in oklab, var(--_paint) 50%, transparent));
+  }
+
+  /* A label is 12 px text placed in the cell, centred on its point inside, or reading away outside. */
+  [data-slot="pie-chart-labels"] > svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+  }
+
+  [data-slot="pie-chart-leader"] {
+    fill: none;
+    stroke: var(--muted-foreground);
+    stroke-width: 1px;
+  }
+
+  [data-slot="pie-chart-label"] {
+    position: absolute;
+    left: var(--_x);
+    top: var(--_y);
+    font-size: 0.75rem;
+    line-height: 1rem;
+    white-space: nowrap;
+    color: var(--foreground);
+    translate: -50% -50%;
+  }
+
+  [data-slot="pie-chart-label"][data-placement="inside"] {
+    color: var(--_on, var(--foreground));
+  }
+
+  [data-slot="pie-chart-label"][data-side="end"] {
+    translate: 0.25rem -50%;
+  }
+
+  [data-slot="pie-chart-label"][data-side="start"] {
+    translate: calc(-100% - 0.25rem) -50%;
+  }
+
+  /* The centre's parts stack in the square inscribed in the hole, sized to it (Q11). */
+  [data-slot="pie-chart-center"] > [data-part="hole"] {
+    position: absolute;
+    left: var(--_left);
+    top: var(--_top);
+    width: var(--_width);
+    height: var(--_height);
+    container-type: size;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: var(--muted-foreground);
+  }
+
+  [data-slot="pie-chart-center-value"] {
+    font-size: min(var(--heading-2-size, 1.25rem), 22cqmin);
+    font-weight: var(--heading-2-weight, 600);
+    line-height: 1.2;
+    color: var(--foreground);
+  }
+
+  [data-slot="pie-chart-center-share"],
+  [data-slot="pie-chart-center-max"] {
+    color: var(--foreground);
+  }
+
+  /* A number's digits are reels of 0 to 9 in tabular figures, each slid to its digit (S3). */
+  [data-slot="pie-chart-center"] [data-part="digits"] {
+    display: inline-flex;
+    font-variant-numeric: tabular-nums;
+    white-space: pre;
+  }
+
+  [data-slot="pie-chart-center"] [data-part="digit"] {
+    display: inline-block;
+    height: 1lh;
+    overflow: hidden;
+  }
+
+  [data-slot="pie-chart-center"] [data-part="reel"] {
+    display: flex;
+    flex-direction: column;
+    translate: 0 calc(var(--_digit) * -10%);
+  }
+
+  /* Until the slices sweep in, the centre's digits wait at 0, and they count up with the sweep. */
+  @media (scripting: enabled) {
+    [data-polar]:not([data-drawn]) [data-reel] {
+      translate: 0 0;
     }
   }
 
@@ -2196,6 +2432,25 @@
 
     [data-slot="chart-x-tick"] {
       transition: opacity 150ms var(--chart-ease);
+    }
+
+    /* The active slice pops on its spring, and its glow with it. */
+    :is([data-slot="pie-chart-sector"], [data-slot="pie-chart-glow"]) {
+      transition:
+        opacity 150ms ease-out,
+        translate var(--_spring-duration) var(--_spring-easing);
+    }
+
+    [data-slot="pie-chart-center"] [data-part="reel"] {
+      transition: translate var(--_spring-duration) var(--_spring-easing);
+    }
+
+    [data-polar][data-entering] [data-reel] {
+      transition: translate var(--chart-intro) var(--chart-ease) 100ms;
+    }
+
+    [data-slot="pie-chart-label"] {
+      transition: opacity 150ms ease-out;
     }
 
     [data-slot="chart-bar-marks"] > [data-intro="fade"],

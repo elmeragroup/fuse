@@ -58,7 +58,8 @@ import {
   PieChartTrack,
 } from "../../src/components/chart/pie-chart-center";
 import { PieChartGlow } from "../../src/components/chart/pie-chart-glow";
-import { PieChartLabels, PieChartPie } from "../../src/components/chart/pie-chart-pie";
+import { PieChartLabels } from "../../src/components/chart/pie-chart-labels";
+import { PieChartPie } from "../../src/components/chart/pie-chart-pie";
 import { PieChartRoot } from "../../src/components/chart/pie-chart-root";
 import { PieChartSkeleton } from "../../src/components/chart/pie-chart-skeleton";
 import {

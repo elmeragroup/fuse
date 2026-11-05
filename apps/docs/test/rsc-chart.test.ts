@@ -170,6 +170,8 @@ describe("the polar Roots under React Server Components", () => {
     expect(references).toEqual([
       "intl/locale-context.tsx#LocaleProvider",
       "components/chart/pie-chart-root.tsx#PieChartRoot",
+      "components/chart/pie-chart-pie.tsx#PieChartPie",
+      "components/chart/pie-chart-labels.tsx#PieChartLabels",
       "components/chart/chart-legend.tsx#ChartLegend",
       "components/chart/polar-chart-table.tsx#PieChartTable",
       "components/chart/radial-chart-root.tsx#RadialChartRoot",
@@ -195,8 +197,10 @@ describe("the polar Roots under React Server Components", () => {
     ) as SsrResult;
     expect(ssr.flight).toBe(ssr.clientOnly);
     for (const html of [ssr.flight, ssr.clientOnly]) {
-      // Each Root sends its aspect-locked cell and plot, which hold its marks from L4 on.
+      // Each Root sends its aspect-locked cell and plot, and the pie its three slices and labels.
       expect(slotCount(html, "chart-polar-cell")).toBe(3);
+      expect(slotCount(html, "pie-chart-sector")).toBe(3);
+      expect(slotCount(html, "pie-chart-label")).toBe(3);
       expect(slotCount(html, "chart-polar-plot")).toBe(3);
       expect(slotCount(html, "loader")).toBe(0);
       // The bill's three parts and the radar's two areas.

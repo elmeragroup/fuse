@@ -198,6 +198,11 @@ export type ChartReadout = {
   readonly empty: boolean;
   /** The legend's keys in legend order. */
   readonly legendKeys: readonly string[];
+  /**
+   * The LegendToggleGroup's default name: the series word, or the category word where the toggles
+   * list a pie's or a radial chart's categories (S9).
+   */
+  readonly toggleGroupName: string;
   /** A key's item, or undefined for a key the Root lacks. */
   readonly item: (key: string) => ReadoutItem | undefined;
   /**

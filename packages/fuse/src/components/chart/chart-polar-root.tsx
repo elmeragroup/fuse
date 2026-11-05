@@ -19,7 +19,7 @@ import { useMergedRefs } from "../../hooks/use-merged-refs";
 import { useReducedMotion } from "../../hooks/use-reduced-motion";
 import { definedProps } from "../../internal/defined-props";
 import type { SupportedLocale } from "../../intl/locale-context";
-import { writeAttribute } from "./chart-dom";
+import { writeAttribute, writeStyle } from "./chart-dom";
 import { openDrawingSoon, useClientMount } from "./chart-draw-gate";
 import { useEntrance } from "./chart-entrance";
 import { createChartFollowers } from "./chart-followers";
@@ -40,6 +40,7 @@ import { CHART_STRINGS } from "./format/chart-strings";
 import { issueKey } from "./layout/errors";
 import type { ChartDataRule, ChartHintRule } from "./layout/errors";
 import { sweepBox } from "./layout/polar-angle";
+import { CHART_INTRO_MS, introDelay } from "./layout/polar-motion";
 
 /** The figure's slot per family, which the stylesheet and the density roles read. */
 const SLOTS = {
@@ -85,6 +86,8 @@ function markActive(figure: HTMLElement, snapshot: ChartSnapshot, active: Active
   writeAttribute(figure, "data-pinned", snapshot.pinned && active !== null ? "" : null);
   writeAttribute(figure, "data-near", active !== null && snapshot.near !== null ? snapshot.near : null);
   writeAttribute(figure, "data-drawn", snapshot.phase === "started" ? "" : null);
+  // The active option's place, which a pie's slices pop and dim against with no React commit.
+  writeStyle(figure, "--chart-active", active === null ? null : String(active.slot));
 }
 
 /**
@@ -122,16 +125,14 @@ export function PolarRoot(props: PolarRootProps): ReactElement {
               <p id={`${kernel.id}-instructions`} data-slot="chart-instructions">
                 {model.instructions === "polar" ? strings.instructionsPolar : strings.instructionsCartesian}
               </p>
-              {/* The selected series' place, which every mark and part in the frame dims against. */}
+              {/* The place of the selected series, which marks dim against, and the aspect every layer keeps. */}
               <div
                 data-slot="chart-polar-frame"
                 style={{
                   "--chart-selected": selected === null ? undefined : model.selectable.indexOf(selected),
+                  "--chart-polar-aspect": `${String(width)} / ${String(height)}`,
                 }}>
-                <div
-                  ref={cellRef}
-                  data-slot="chart-polar-cell"
-                  style={{ "--chart-polar-aspect": `${String(width)} / ${String(height)}` }}>
+                <div ref={cellRef} data-slot="chart-polar-cell">
                   <svg
                     data-slot="chart-polar-plot"
                     aria-hidden="true"
@@ -262,6 +263,31 @@ export function usePolarRoot(props: PolarRootProps): PolarRootState {
 
   const entrance = figureProps["data-intro"] !== "none" && !reduced;
   useEntrance(store, motion, rootRef, cellRef, entrance);
+  // While the entrance plays, the figure carries `data-entering`, so the centre's digits count up
+  // over the entrance's span instead of rolling on their own spring.
+  const lastItem = useRef(model.count - 1);
+  useLayoutEffect(() => {
+    lastItem.current = model.count - 1;
+  });
+  useLayoutEffect(() => {
+    if (!entrance) return undefined;
+    let timer: number | null = null;
+    const watch = (): void => {
+      const figure = rootRef.current;
+      if (figure === null || timer !== null || store.get().phase !== "started") return;
+      writeAttribute(figure, "data-entering", "");
+      const span = CHART_INTRO_MS + introDelay(model.family, Math.max(0, lastItem.current));
+      timer = window.setTimeout(() => {
+        writeAttribute(figure, "data-entering", null);
+      }, span);
+    };
+    watch();
+    const stop = store.subscribe(watch);
+    return () => {
+      stop();
+      if (timer !== null) window.clearTimeout(timer);
+    };
+  }, [store, entrance, model.family]);
 
   const warned = useRef(new Set<string>());
   const warnOnce = useCallback(
@@ -325,7 +351,7 @@ export function usePolarRoot(props: PolarRootProps): PolarRootState {
     if (root === null) return;
     const index = key === null ? -1 : keysRef.current.indexOf(key);
     writeAttribute(root, "data-highlight", index === -1 ? null : "");
-    root.style.setProperty("--chart-highlight", index === -1 ? "" : String(index));
+    writeStyle(root, "--chart-highlight", index === -1 ? null : String(index));
   }, []);
   const modelRef = useRef(model);
   useLayoutEffect(() => {

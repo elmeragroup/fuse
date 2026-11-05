@@ -618,7 +618,15 @@
   "pie-chart": {
     "title": "Pie Chart",
     "rsc": "client",
-    "demos": ["pie-chart-bill.tsx"]
+    "demos": [
+      "pie-chart-appliances.tsx",
+      "pie-chart-bill.tsx",
+      "pie-chart-capacity-step.tsx",
+      "pie-chart-empty.tsx",
+      "pie-chart-loading.tsx",
+      "pie-chart-semicircle.tsx",
+      "pie-chart-server.tsx"
+    ]
   },
   "popover": {
     "title": "Popover",

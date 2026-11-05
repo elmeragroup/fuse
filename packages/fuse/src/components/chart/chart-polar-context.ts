@@ -13,9 +13,11 @@ import type { ChartMotion } from "./chart-motion";
 import type { ChartReadout, ChartTableModel, PointerSlot } from "./chart-readout-port";
 import type { ChartStore } from "./chart-store";
 import type { OptionOrder } from "./chart-text";
-import type { ChartSelectionChangeReason } from "./chart-types";
+import type { ChartSelectionChangeReason, ValueFormat } from "./chart-types";
+import type { FormattedText } from "./format/formatted-text";
 import { ChartCompositionError } from "./layout/errors";
 import type { ChartDataRule, ChartHintRule } from "./layout/errors";
+import type { SliceAngles } from "./layout/pie";
 import type { PolarPoint, Sweep, SweepBox } from "./layout/polar-angle";
 
 /** The polar families. */
@@ -27,6 +29,7 @@ export type PolarRay = { readonly angle: number; readonly radius: number };
 /** What a polar family hands its Root: its geometry, its words, its pick, its table and its readout. */
 export type PolarModel = {
   readonly family: PolarFamily;
+  /** The whole sweep, whose box the cell keeps: a gauge's empty part included. */
   readonly sweep: Sweep;
   /** The options the listbox steps through: a pie's items, a radial chart's rings or a radar's spokes. */
   readonly count: number;
@@ -69,6 +72,54 @@ export type PolarModel = {
   readonly readout: (kernel: PolarKernel) => ChartReadout;
   /** The data rules the rows broke, with their production fallback already applied. */
   readonly issues: readonly PolarIssue[];
+  /** What the family's marks draw. */
+  readonly drawing: PolarDrawing;
+};
+
+/** What a family's marks draw: a pie's slices, or nothing yet for the families still to come. */
+export type PolarDrawing = { readonly kind: "pie"; readonly pie: PieDrawing } | { readonly kind: "none" };
+
+/** One slice a pie draws: a kept category or Other, in sweep order. */
+export type PieSlice = {
+  /** The item's key, a category or `OTHER_KEY`. */
+  readonly key: string;
+  readonly label: FormattedText;
+  /** The colour role the slice paints with, which decides whether its label fits inside. */
+  readonly role: string;
+  /** The slice's paint, the consumer's per-key property first. */
+  readonly paint: string;
+  /** A role list's stops from the tip to the base, which paint from the rim to the hole (Q12). */
+  readonly stops: readonly string[] | undefined;
+  /** The category's place among the config keys, which selection and highlight name, or -1. */
+  readonly series: number;
+  /** The reading the texts print, its sign kept, or null for a missing one. */
+  readonly value: number | null;
+  readonly format: ValueFormat;
+  /** The slice's angles at rest, before the rim floor, or null where it draws no arc. */
+  readonly angles: SliceAngles | null;
+};
+
+/** What a pie's parts draw and print. */
+export type PieDrawing = {
+  /** The whole sweep, which the Track fills. */
+  readonly track: Sweep;
+  /** The sweep the slices fill: the whole sweep, or a gauge's total's share of it. */
+  readonly fill: Sweep;
+  /** The hole's radius as a share of the outer radius. */
+  readonly innerRadius: number;
+  readonly slices: readonly PieSlice[];
+  /** The sum of the drawn readings. */
+  readonly total: number;
+  /** The format every slice shares, which the total prints through, or null where they differ. */
+  readonly totalFormat: ValueFormat | null;
+  /** A gauge's maximum, or null for a plain pie. */
+  readonly max: number | null;
+  /** Whether a gauge's total passes its maximum. */
+  readonly over: boolean;
+  /** A slice's share in the pie's one largest-remainder set at `digits`, or null. */
+  readonly share: (index: number, digits: number) => number | null;
+  /** The slice a category draws in: its own key, or `OTHER_KEY` when it folds. */
+  readonly sliceOf: (category: string) => string;
 };
 
 /** One data rule a polar Root's rows broke, which production warns once per subject. */
@@ -138,3 +189,27 @@ export function usePolarContext(part: string, families: readonly PolarFamily[]):
 
 /** Each family's Root, as an error names it. */
 const ROOTS = { pie: "PieChart.Root", radial: "RadialChart.Root", radar: "RadarChart.Root" } as const;
+
+/**
+ * A pie's drawing, which only a pie model holds.
+ *
+ * @param model - The Root's model.
+ * @returns The drawing, or null under a family that draws no pie, where a shared part renders nothing.
+ */
+export function pieDrawingOf(model: PolarModel): PieDrawing | null {
+  return model.drawing.kind === "pie" ? model.drawing.pie : null;
+}
+
+/**
+ * A pie's drawing, for a part only a pie holds.
+ *
+ * @param model - The Root's model, a pie's, as `usePolarContext` admitted the part under a pie only.
+ * @param part - The part, which a defect names.
+ * @returns The drawing.
+ * @throws When the model holds no pie, a defect.
+ */
+export function pieDrawingIn(model: PolarModel, part: string): PieDrawing {
+  const pie = pieDrawingOf(model);
+  if (pie === null) throw new Error(`${part} read a ${model.family} model, which holds no pie.`);
+  return pie;
+}

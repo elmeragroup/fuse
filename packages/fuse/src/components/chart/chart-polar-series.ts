@@ -135,8 +135,8 @@ export function radarModel(input: RadarInput): PolarModel {
     series: model.series.length,
     optionName: (index, focus, order) => optionName(context, index, focus, order),
     pick: (point) => {
-      // Past the outer ring nothing picks, as the cell's corners lie outside the dial.
-      if (count === 0 || Math.hypot(point.x, point.y) > 1) return null;
+      // Distance from the centre changes nothing, as R6 says.
+      if (count === 0) return null;
       const spoke = spokeAt(pointerAngle(point.x, point.y), count);
       const near =
         model.series.length > 1
@@ -153,6 +153,7 @@ export function radarModel(input: RadarInput): PolarModel {
     table: seriesTable({ ...context, name: input.name, rows: input.rows }, keys),
     readout: (kernel) => radarReadout(context, kernel),
     issues: input.issues,
+    drawing: { kind: "none" },
   };
 }
 
@@ -183,6 +184,7 @@ function radarReadout(context: TextContext, kernel: PolarKernel): ChartReadout {
     window: model.window,
     empty: model.empty,
     legendKeys,
+    toggleGroupName: CHART_STRINGS[context.locale].seriesGroup,
     item: (key) => items.get(key),
     assertKey: (part, key) => {
       assertKnownKey(part, config, key);

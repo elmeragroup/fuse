@@ -313,13 +313,12 @@ describe("the dial as one target (Q8)", () => {
     expect(figureOf(host).getAttribute("data-active")).toBe("pointer");
   });
 
-  it("drops the active slice when the pointer moves into a corner past the rim", async () => {
+  it("picks by angle past the rim too, in the cell's corners (Q8)", async () => {
+    // Nettleie sweeps 223.2° to 345.6°, so 300° picks it at any distance inside the cell.
     const { host } = renderThemed(<Pie />);
-    await hover(...pointAt(host, 90, 0.5));
-    expect(figureOf(host).getAttribute("data-active")).toBe("pointer");
-    // At 135°, 1.3 radii out lies inside the square cell but outside the dial.
-    await hover(...pointAt(host, 135, 1.3));
-    expect(figureOf(host).hasAttribute("data-active")).toBe(false);
+    await hover(...pointAt(host, 300, 1.3));
+    // DOM audit: Root writes the active option's place on the figure, which the slices pop against.
+    expect(figureOf(host).style.getPropertyValue("--chart-active")).toBe("1");
   });
 });
 

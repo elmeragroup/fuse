@@ -543,12 +543,18 @@ export type ChartStyleVars = {
   "--chart-crosshair-width"?: string;
   /** The area fill opacity. `0.1` by default. */
   "--chart-area-opacity"?: number | string;
-  /** The opacity of marks outside the active column. `0.45` by default, and `1` turns dimming off. */
+  /** The opacity of marks outside the active item. `0.45` by default, and `1` turns dimming off. */
   "--chart-hover-dim"?: number | string;
   /** A ring's stroke as a fraction of its band, which also sets the gap to the next ring. `0.7` by default. */
   "--chart-ring-fill"?: number | string;
   /** The surface-coloured stroke between adjacent slices. `--chart-bar-seam` by default. */
   "--chart-slice-seam"?: string;
+  /**
+   * How far the active slice moves out along its bisector, on the pointer, a key and touch alike.
+   * `8px` by default, and `0` turns the pop off. The pie leaves this much room around its dial, and
+   * the pick reads the slices where they rest, so the pop never moves a target.
+   */
+  "--chart-slice-pop"?: string;
   /** The active-dot ping animation. Reduced motion sets it to `none`. */
   "--animate-chart-ping"?: string;
   /** The flowing-line dash animation. Reduced motion sets it to `none`. */

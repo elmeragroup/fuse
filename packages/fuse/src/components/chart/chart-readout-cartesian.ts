@@ -1,10 +1,5 @@
 "use client";
 
-/**
- * A cartesian Root's readout: the port the shared parts read, over Root's series model and its
- * pick. An index is a slot, the legend lists every config key, and the tooltip rows list every
- * series at the active slot.
- */
 import type { ChartRootContextValue } from "./chart-context";
 import { readingPaint, seriesPaintOf } from "./chart-paint";
 import type { SeriesPaint } from "./chart-paint";
@@ -13,6 +8,12 @@ import type { ChartReadout, ReadoutItem } from "./chart-readout-port";
 import { fallbackSlot, readingAt, readingText, slotShares, windowShares } from "./chart-series-readout";
 import { slotLabel } from "./chart-text";
 import type { ChartQuality } from "./chart-types";
+/**
+ * A cartesian Root's readout: the port the shared parts read, over Root's series model and its
+ * pick. An index is a slot, the legend lists every config key, and the tooltip rows list every
+ * series at the active slot.
+ */
+import { CHART_STRINGS } from "./format/chart-strings";
 import { seriesLabel } from "./format/series-label";
 import { barForm, drawnBarVariant } from "./layout/bar-geometry";
 import { isThresholdColor } from "./layout/color-key";
@@ -73,6 +74,7 @@ export function cartesianReadout(context: ChartRootContextValue): ChartReadout {
     window: model.window,
     empty: model.empty,
     legendKeys,
+    toggleGroupName: CHART_STRINGS[context.locale].seriesGroup,
     item,
     assertKey: (part, key) => {
       assertKnownKey(part, config, key);

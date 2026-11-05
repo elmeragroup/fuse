@@ -4,7 +4,8 @@
  * component reads each part as a client reference. Each export name is the part's key.
  */
 export { PieChartRoot as Root } from "./pie-chart-root";
-export { PieChartPie as Pie, PieChartLabels as Labels } from "./pie-chart-pie";
+export { PieChartPie as Pie } from "./pie-chart-pie";
+export { PieChartLabels as Labels } from "./pie-chart-labels";
 export {
   PieChartTrack as Track,
   PieChartCenter as Center,
@@ -37,6 +38,6 @@ export {
   ChartLegendToggle as LegendToggle,
 } from "./chart-legend";
 export { PieChartTable as Table } from "./polar-chart-table";
-export { ChartTableColumn as TableColumn } from "./chart-table-body";
+export { ChartTableColumn as TableColumn } from "./chart-table-column";
 export { ChartEmpty as Empty } from "./chart-empty";
 export { ChartBackground as Background } from "./chart-background";

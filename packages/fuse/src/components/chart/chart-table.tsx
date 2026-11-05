@@ -24,5 +24,6 @@ export function ChartTable(props: ChartTableProps): ReactElement {
 
 Object.assign(ChartTable, { displayName: "Chart.Table" });
 
-export { ChartTableColumn } from "./chart-table-body";
-export type { ChartTableColumnProps, ChartTableProps } from "./chart-table-body";
+export { ChartTableColumn } from "./chart-table-column";
+export type { ChartTableColumnProps } from "./chart-table-column";
+export type { ChartTableProps } from "./chart-table-body";

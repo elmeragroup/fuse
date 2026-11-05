@@ -175,7 +175,12 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = derive([
   // series adapters, the polar Tooltip's anchor and orbit, the polar Tables, the polar motion
   // binder and exit ghosts, and the polar words in their own dictionary, which measured 11441
   // bytes on this entry (165874 to 177315). The ceiling keeps about 100 bytes of headroom.
-  { name: "chart", entryFile: "chart.js", measuredGzip: 97044, ceilingGzip: 177415 },
+  // Raised again from 177415 on 2026-11-05. The pie draws: its slices on one frame per loop with the
+  // rim floor and the ghosts that collapse, the labels with their leaders and the client's second
+  // placing, the Track, the Center parts with the digit roll, the Glow's mirror and the slices'
+  // gradients, which measured 6947 bytes on this entry (177315 to 184262). The ceiling keeps about
+  // 100 bytes of headroom.
+  { name: "chart", entryFile: "chart.js", measuredGzip: 97044, ceilingGzip: 184362 },
   // 2026-10-13: new entry, measured at 29180. Pure wrappers over Base UI's toolbar and its roving focus.
   { name: "toolbar", entryFile: "toolbar.js", measuredGzip: 29180, ceilingGzip: 43770 },
   // 2026-10-12: new entries. Command is Base UI's Autocomplete in the InputGroup, with the Dialog
@@ -498,6 +503,26 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     members: ["Root"],
     measuredGzip: 41609,
   },
+  // 2026-11-05: new row, the typical pie route, as the bar route is Chart's: Root, Pie, the Center
+  // parts, Legend and Tooltip, which the owner set beside the whole-namespace row, with the derived
+  // ceiling.
+  {
+    name: "chart/PieChart route",
+    entryFile: "chart.js",
+    exportName: "PieChart",
+    members: [
+      "Root",
+      "Pie",
+      "Center",
+      "CenterValue",
+      "CenterShare",
+      "CenterMax",
+      "CenterLabel",
+      "Legend",
+      "Tooltip",
+    ],
+    measuredGzip: 85724,
+  },
   {
     name: "chart/RadialChart.Root",
     entryFile: "chart.js",
@@ -587,7 +612,12 @@ export const CSS_BUDGETS: readonly CssBudget[] = derive([
   // scripting on and shows them in print (D18), and the pie, radial and radar skeleton shapes
   // measured 784 bytes over the stylesheet (15840 to 16624). The ceiling keeps about 100 bytes of
   // headroom.
-  { name: "chart.css", file: "chart.css", measuredGzip: 10089, ceilingGzip: 16724 },
+  // Raised again from 16724 on 2026-11-05. The pie's rules: the layers over the cell with the pop's
+  // room and the outside labels' gutter, the slices' seam, pop, dims and their state rules keyed on
+  // data-sector, the labels and leaders, the centre's square with its reels, the Track and the
+  // Glow, which measured 1513 bytes over the stylesheet (16624 to 18137). The ceiling keeps about
+  // 100 bytes of headroom.
+  { name: "chart.css", file: "chart.css", measuredGzip: 10089, ceilingGzip: 18237 },
 ] satisfies readonly Measured<CssBudget>[]);
 
 export const FLAG_RAW_BUDGETS: readonly FlagRawBudget[] = [

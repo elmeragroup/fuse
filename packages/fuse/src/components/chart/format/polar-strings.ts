@@ -8,6 +8,8 @@ import type { Inflected } from "./inflection";
 
 /** The words a polar Root and its Table read. */
 export type PolarStrings = {
+  /** A pie's or a radial chart's LegendToggleGroup name, which lists categories, not series (S9). */
+  readonly categoryGroup: string;
   /** A pie's opening sentence: the family word, the slice count and the total. */
   readonly descriptionPie: (count: string, total: string) => string;
   /** A radial chart's opening sentence: the family word and the ring count. */
@@ -30,6 +32,7 @@ export type PolarStrings = {
 
 // oxlint-disable-next-line elmera/no-raw-class-map -- a dictionary, not classes: `ring` is the word for a ring
 const NB_NO: PolarStrings = {
+  categoryGroup: "Kategorier",
   descriptionPie: (count, total) => `Kakediagram med ${count}, totalt ${total}.`,
   descriptionRadial: (count) => `Ringdiagram med ${count}.`,
   descriptionRadar: (series, categories) => `Radardiagram med ${series} over ${categories}.`,
@@ -43,6 +46,7 @@ const NB_NO: PolarStrings = {
 
 // oxlint-disable-next-line elmera/no-raw-class-map -- a dictionary, not classes: `ring` is the word for a ring
 const SV_SE: PolarStrings = {
+  categoryGroup: "Kategorier",
   descriptionPie: (count, total) => `Cirkeldiagram med ${count}, totalt ${total}.`,
   descriptionRadial: (count) => `Ringdiagram med ${count}.`,
   descriptionRadar: (series, categories) => `Radardiagram med ${series} över ${categories}.`,
@@ -55,6 +59,7 @@ const SV_SE: PolarStrings = {
 };
 
 const FI_FI: PolarStrings = {
+  categoryGroup: "Luokat",
   descriptionPie: (count, total) => `Ympyräkaavio, ${count}, yhteensä ${total}.`,
   descriptionRadial: (count) => `Rengaskaavio, ${count}.`,
   descriptionRadar: (series, categories) => `Tutkakaavio, ${series}, ${categories}.`,
@@ -68,6 +73,7 @@ const FI_FI: PolarStrings = {
 
 // oxlint-disable-next-line elmera/no-raw-class-map -- a dictionary, not classes: `ring` is the word for a ring
 const EN_US: PolarStrings = {
+  categoryGroup: "Categories",
   descriptionPie: (count, total) => `Pie chart with ${count}, ${total} in total.`,
   descriptionRadial: (count) => `Radial chart with ${count}.`,
   descriptionRadar: (series, categories) => `Radar chart with ${series} across ${categories}.`,

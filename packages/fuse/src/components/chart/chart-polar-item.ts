@@ -18,7 +18,7 @@ import type { FormattedText } from "./format/formatted-text";
 import { POLAR_STRINGS } from "./format/polar-strings";
 import { seriesLabel } from "./format/series-label";
 import { formatUnitLabel, formatUnitless, formatValue } from "./format/value-format";
-import { seriesPaint, singleRole } from "./layout/color-key";
+import { isRoleList, seriesPaint, singleRole } from "./layout/color-key";
 import { assertKnownKey, ChartDataError, DATA_MESSAGES, isChartDevelopment } from "./layout/errors";
 import { foldPie, gaugeFill, OTHER_KEY, pieAngles, floorSlices, sliceAt } from "./layout/pie";
 import type { PieRole, SliceAngles } from "./layout/pie";
@@ -181,6 +181,7 @@ function itemReadout(source: ItemSource, kernel: PolarKernel, empty: boolean): C
     window: items.length === 0 ? null : { first: 0, last: items.length - 1 },
     empty,
     legendKeys: items.map(({ key }) => key),
+    toggleGroupName: POLAR_STRINGS[input.locale].categoryGroup,
     item: (key) => readoutItems.get(key),
     assertKey: (part, key) => {
       // Other is no config key, so naming it fails as any other unknown key does.
@@ -306,6 +307,8 @@ function itemTable(source: ItemSource, rowShares: (digits: number) => (number | 
 /** What a pie reads beside every item model's input. */
 export type PieInput = ItemInput & {
   readonly maxSlices: number;
+  /** The hole's radius as a share of the outer radius. */
+  readonly innerRadius: number;
   readonly padAngle: number;
   /** A gauge's maximum, or undefined for a plain pie. */
   readonly max: number | undefined;
@@ -416,7 +419,8 @@ export function pieModel(input: PieInput): PolarModel {
   };
   return {
     family: "pie",
-    sweep,
+    // The cell holds the whole sweep, a gauge's empty part included.
+    sweep: input.sweep,
     count: items.length,
     keys: items.map(({ key }) => key),
     empty,
@@ -432,8 +436,7 @@ export function pieModel(input: PieInput): PolarModel {
     series: 0,
     optionName,
     pick: (point, pixels) => {
-      // Past the rim nothing picks, as the cell's corners lie outside the dial.
-      if (Math.hypot(point.x, point.y) > 1) return null;
+      // The whole cell inside the sweep picks, the hole and the space past the rim too (Q8).
       const floored = floorSlices(slices, sweep, { radius: pixels.scale, dpr: pixels.dpr, seam: 0 });
       const index = sliceAt(pointerAngle(point.x, point.y), floored, sweep);
       return index === null ? null : { slot: index, near: null };
@@ -451,6 +454,38 @@ export function pieModel(input: PieInput): PolarModel {
     table: itemTable(source, rowShares),
     readout: (kernel) => itemReadout(source, kernel, empty),
     issues,
+    drawing: {
+      kind: "pie",
+      pie: {
+        track: input.sweep,
+        fill: sweep,
+        innerRadius: input.innerRadius,
+        slices: items.map((item, index) => {
+          const color = config[item.key]?.color;
+          const role = item.key === OTHER_KEY ? "chart-other" : singleRole(color);
+          return {
+            key: item.key,
+            label: item.label,
+            role,
+            paint: item.paint,
+            stops:
+              color !== undefined && isRoleList(color)
+                ? color.map((stop) => seriesPaint(item.key, stop))
+                : undefined,
+            series: Object.keys(config).indexOf(item.key),
+            value: item.value,
+            format: item.format,
+            angles: slices[index] ?? null,
+          };
+        }),
+        total,
+        totalFormat: sharedFormat(items) ?? null,
+        max: input.max ?? null,
+        over: gauge?.over ?? false,
+        share: source.share,
+        sliceOf: (category) => (folded.some(({ key }) => key === category) ? category : OTHER_KEY),
+      },
+    },
   };
 }
 
@@ -556,5 +591,6 @@ export function radialModel(input: RadialInput): PolarModel {
     table: itemTable(source, (digits) => items.map((_, index) => share(index, digits))),
     readout: (kernel) => itemReadout(source, kernel, empty),
     issues,
+    drawing: { kind: "none" },
   };
 }

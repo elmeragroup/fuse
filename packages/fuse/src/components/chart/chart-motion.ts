@@ -251,9 +251,10 @@ export type ChartMotion = {
   readonly eachLanding: (visit: LandingVisit) => void;
   /**
    * Tell a party when the loop writes a batch of marks: one frame's moving marks, a finish or a
-   * resize's remapping. A write outside a batch, such as a placement's, stands alone.
+   * resize's remapping. A write outside a batch, such as a placement's, stands alone. It returns
+   * the party's leave, for a party that ends before its loop does.
    */
-  readonly batches: (party: MotionBatch) => void;
+  readonly batches: (party: MotionBatch) => () => void;
   /**
    * Write a batch of marks outside the loop's own frames, as a reader that draws each mark where it
    * lands and back does, so the parties `batches` tells settle once for the batch.
@@ -848,6 +849,9 @@ export function createChartMotion(
     batch,
     batches(party) {
       parties.add(party);
+      return () => {
+        parties.delete(party);
+      };
     },
     eachLanding(visit) {
       for (const { tween, write, drawn, axes } of moving) {
