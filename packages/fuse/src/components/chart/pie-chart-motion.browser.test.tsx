@@ -4,11 +4,15 @@
 // over 1000 ms; an update moves every slice over 480 ms; a leaving slice collapses over 480 ms to
 // its seam, or to Other's start when it folds; the pop rides a 400/25 spring, whose damping ratio
 // 25 / (2·√400) = 0.625 overshoots by e^(−π·0.625/√(1 − 0.625²)) ≈ 8.1 %; every dim fades over
-// 150 ms. Time is read from each frame's own timestamp, never by counting frames.
+// 150 ms. The entrance runs on a hand-driven frame clock, read on the loop's own time; the rest
+// read each frame's own timestamp, never a count of frames.
+import type { ReactElement } from "react";
+
 import { describe, expect, it } from "vitest";
 import { userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
+import { installFrameClock } from "../../../test/chart/frame-clock";
 import { outerArc, polarFigure, sectors } from "../../../test/chart/pie";
 import { sweepGlides } from "../../../test/chart/tooltip-glide";
 import { renderThemed } from "../../../test/themed-browser-render";
@@ -55,6 +59,46 @@ async function record(host: HTMLElement, start: () => number | null, until: numb
 }
 
 const width = (arc: readonly [number, number] | null | undefined): number => (arc ? arc[1] - arc[0] : 0);
+
+/**
+ * Mount a chart on a hand-driven frame clock and read its entrance every 10 ms of the loop's own
+ * time. The entrance waits until the chart is in view, then starts on the first frame after, which
+ * the standing clock runs at t = 0, so each reading's time is the loop's and no load on the runner
+ * moves it.
+ *
+ * @param chart - The chart, its entrance on.
+ * @param until - How long after the start to read, in milliseconds.
+ * @returns The readings, from the start on.
+ */
+async function entrance(chart: ReactElement, until: number): Promise<Frame[]> {
+  const clock = installFrameClock();
+  try {
+    const { host } = renderThemed(chart);
+    // The clock stands still while the chart waits to come into view, so whichever frame the
+    // entrance starts on runs at the same instant, the loop's t = 0.
+    const start = clock.now();
+    await expect
+      .poll(() => {
+        clock.frameAt(start);
+        return polarFigure(host).hasAttribute("data-entering");
+      })
+      .toBe(true);
+    const frames: Frame[] = [];
+    for (let t = 0; t <= until; t += 10) {
+      clock.frameAt(start + t);
+      // DOM audit: ghosts are aria-hidden plot output the loop writes, read by their slot.
+      const ghosts = [...host.querySelectorAll('[data-slot="pie-chart-ghost"]')];
+      frames.push({
+        t,
+        slices: sectors(host).map((path) => outerArc(path.getAttribute("d") ?? "")),
+        ghosts: ghosts.map((path) => outerArc(path.getAttribute("d") ?? "")),
+      });
+    }
+    return frames;
+  } finally {
+    clock.restore();
+  }
+}
 
 function Chart({
   data,
@@ -116,26 +160,13 @@ const QUARTET = [
 
 describe("the pie's motion (SPEC's Motion table)", () => {
   it("sweeps each slice in its own angle from 100 + i·80 ms over 1000 ms, once in view", async () => {
-    const { host } = renderThemed(<Chart data={QUARTET} />);
-    const figure = polarFigure(host);
-    let from: number | null = null;
-    const frames = await record(
-      host,
-      () => {
-        // The entrance starts in the frame Root writes data-drawn.
-        if (from === null && figure.hasAttribute("data-drawn")) from = performance.now();
-        return from;
-      },
-      1500
-    );
-    const rest = [180, 108, 54, 18];
-    rest.forEach((angle, index) => {
+    const frames = await entrance(<Chart data={QUARTET} />, 1500);
+    [180, 108, 54, 18].forEach((angle, index) => {
       const begins = 100 + 80 * index;
-      const ends = begins + 1000;
       const widths = frames.map((frame) => ({ t: frame.t, width: width(frame.slices[index]) }));
-      expect(widths.filter(({ t }) => t < begins - SLACK).every(({ width: w }) => w === 0)).toBe(true);
+      expect(widths.filter(({ t }) => t <= begins).every(({ width: w }) => w === 0)).toBe(true);
       expect(
-        widths.filter(({ t }) => t > ends + SLACK).every(({ width: w }) => Math.abs(w - angle) < ROUNDED)
+        widths.filter(({ t }) => t >= begins + 1000).every(({ width: w }) => Math.abs(w - angle) < ROUNDED)
       ).toBe(true);
       expect(widths.some(({ width: w }) => w > 0 && w < angle - 1)).toBe(true);
       // The sweep only grows.
@@ -147,25 +178,16 @@ describe("the pie's motion (SPEC's Motion table)", () => {
 
   it("takes its pace from the figure's --chart-intro and --chart-stagger", async () => {
     // 0.6 s and 200 ms: slice i sweeps from 100 + i·200 ms over 600 ms, so d waits until 700 ms.
-    const { host } = renderThemed(<Chart data={QUARTET} pace={{ intro: "0.6s", stagger: "200ms" }} />);
-    const figure = polarFigure(host);
-    let from: number | null = null;
-    const frames = await record(
-      host,
-      () => {
-        if (from === null && figure.hasAttribute("data-drawn")) from = performance.now();
-        return from;
-      },
-      1500
-    );
+    const frames = await entrance(<Chart data={QUARTET} pace={{ intro: "0.6s", stagger: "200ms" }} />, 1500);
     [180, 108, 54, 18].forEach((angle, index) => {
       const begins = 100 + 200 * index;
       const widths = frames.map((frame) => ({ t: frame.t, width: width(frame.slices[index]) }));
-      expect(widths.filter(({ t }) => t < begins - SLACK).every(({ width: w }) => w === 0)).toBe(true);
+      expect(widths.filter(({ t }) => t <= begins).every(({ width: w }) => w === 0)).toBe(true);
+      expect(widths.some(({ t, width: w }) => t > begins && t < begins + 600 && w > 0 && w < angle - 1)).toBe(
+        true
+      );
       expect(
-        widths
-          .filter(({ t }) => t > begins + 600 + SLACK)
-          .every(({ width: w }) => Math.abs(w - angle) < ROUNDED)
+        widths.filter(({ t }) => t >= begins + 600).every(({ width: w }) => Math.abs(w - angle) < ROUNDED)
       ).toBe(true);
     });
   });

@@ -4,7 +4,7 @@
 // a piecewise-linear curve through each stop, and needs the curve within 0.5% of the
 // travel of the oscillator at every sampled moment, and the duration to end once the oscillator stays
 // within 0.1% of its target. followSpring is checked against the same oscillator and the owner's
-// decision for pointer-paced steps: bklit's 300/30 for keyboard and slow steps, a stiffest spring
+// decision for pointer-paced steps: 300/30 for keyboard and slow steps, a stiffest spring
 // that settles in about 120 ms, and one damping ratio throughout.
 import { describe, expect, it } from "vitest";
 
@@ -45,7 +45,7 @@ function evaluateLinear(easing: string, p: number): number {
 }
 
 const CASES = [
-  // bklit's tooltip-dot spring, which the crosshair and the active dots follow a slow step on.
+  // The follow spring, which the crosshair and the active dots follow a slow step on.
   ["the follow spring", CHART_SPRINGS.follow, 300, 30],
   ["the tooltip", CHART_SPRINGS.glide, 100, 20],
   ["the slot label", CHART_SPRINGS.ticker, 400, 35],
@@ -109,7 +109,7 @@ describe("followSpring", () => {
   // Pointer speeds in CSS pixels per millisecond: a slow scrub, a steady sweep and a flick.
   const speeds = [0, 0.1, 0.5, 1, 1.5, 2, 2.5, 5, 50];
 
-  it("follows a keyboard step and a slow pointer on bklit's 300/30", () => {
+  it("follows a keyboard step and a slow pointer on 300/30", () => {
     for (const speed of [null, 0, 0.1]) {
       const { stiffness, damping } = followSpring(speed);
       expect([stiffness, damping], String(speed)).toEqual([300, 30]);

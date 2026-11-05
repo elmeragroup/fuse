@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * The pointer-following glides on bklit's springs. A follower writes its mark's resting geometry at
+ * The pointer-following glides on `CHART_SPRINGS`. A follower writes its mark's resting geometry at
  * once, so every attribute and every reader sees the active slot, and `glideFrom` plays a Web
  * Animation of `translate` from where the mark shows back to none. A step mid-glide replaces the
  * running glide with one from the offset it shows now, which the easing the animation plays gives

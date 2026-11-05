@@ -21,7 +21,7 @@ export const metadata = componentMetadata("pie-chart");
 
 The chart entry is a preview. Names and props can change until Fuse's first stable release. Slices draw in data order from `startAngle`, clockwise. A consumer who wants the largest slice first sorts the rows. The slices sweep in once, the first time the chart comes into view, and a data update tweens them to their new angles. A slice that leaves collapses into its neighbour's seam, and one that folds into Other collapses into Other as Other grows. Every reading above 0 keeps at least one device pixel of rim, while the labels, the tooltip and the table keep the true value.
 
-The active slice moves out along its bisector by `--chart-slice-pop`, 8 px by default, and the other slices dim. A pointer anywhere in the chart's cell picks the slice under its angle, the hole and the space past the rim included, so the gaps between slices never flicker.
+The active slice moves out along its bisector by `--chart-slice-pop`, 8 px by default, and the other slices dim. A pointer anywhere in the chart's cell picks the slice under its angle, the hole and the space past the rim included, so the gaps between slices never flicker. On a touch screen, a drag that starts on the dial scrubs round it instead of scrolling the page, which scrolls from beside the dial. A tap pins the tooltip, and a second tap on the same slice releases it.
 
 </Prose>
 

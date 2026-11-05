@@ -9,13 +9,13 @@ import { Chart } from "../../src/components/chart/chart-namespace";
 import { LocaleProvider } from "../../src/intl/locale-context";
 import { label, pointerAt, popup, surfaceBox } from "./marks";
 
-/** bklit's months. */
+/** Six months. */
 export const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun"];
 
-/** bklit's revenue per month. */
+/** Revenue per month. */
 export const REVENUE = [12000, 15500, 11000, 18800, 16800, 21200];
 
-/** bklit's profit per month. */
+/** Profit per month. */
 const PROFIT = [4500, 5200, 3800, 7100, 5400, 8800];
 
 /** Thirty days of two series that cross, rise to the plot top and fall away. */
@@ -36,7 +36,7 @@ function stage(chart: ReactNode): ReactNode {
   );
 }
 
-/** bklit's revenue and profit as grouped bars. */
+/** Revenue and profit as grouped bars. */
 export function barChart(): ReactNode {
   return stage(
     <Chart.Root

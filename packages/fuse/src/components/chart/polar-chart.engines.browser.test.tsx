@@ -13,6 +13,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import "../../../dist/styles.css";
 import { clockLayer, clockPath, dotPoints } from "../../../test/chart/clock";
+import { phrasesAfter, startReader as start } from "../../../test/chart/spoken";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
 import "./chart.css";
@@ -51,22 +52,6 @@ const SPOKE_CONFIG = {
   w: { label: "Pris", color: "chart-2" },
 } as const;
 
-/** Start vsr on the host with focus on the button before the chart. */
-async function start(host: HTMLElement): Promise<void> {
-  host.querySelector("button")?.focus();
-  await virtual.start({ container: host });
-}
-
-/** Press each key and return the last phrase after each. */
-async function phrasesAfter(keys: readonly string[]): Promise<string[]> {
-  const heard: string[] = [];
-  for (const key of keys) {
-    await virtual.press(key);
-    heard.push((await virtual.spokenPhraseLog()).at(-1) ?? "");
-  }
-  return heard;
-}
-
 describe("the polar options' spoken phrases (section 9.4)", () => {
   it("speaks a pie's slices with their shares, the folded Other slice with its count, and wraps", async () => {
     const { host } = renderThemed(
@@ -84,7 +69,13 @@ describe("the polar options' spoken phrases (section 9.4)", () => {
       </LocaleProvider>
     );
     await start(host);
-    const heard = await phrasesAfter(["Tab", "ArrowDown", "ArrowDown", "ArrowDown", "Enter"]);
+    const heard = await phrasesAfter([
+      ["Tab", 1],
+      ["ArrowDown", 1],
+      ["ArrowDown", 1],
+      ["ArrowDown", 1],
+      ["Enter", 1],
+    ]);
     expect(heard.slice(1, 4)).toEqual([
       "option, Nettleie: 30, 30\u00a0prosent, not selected, position 2, set size 3",
       "option, Annet, 2\u00a0kategorier: 20, 20\u00a0prosent, not selected, position 3, set size 3",
@@ -108,7 +99,11 @@ describe("the polar options' spoken phrases (section 9.4)", () => {
       </LocaleProvider>
     );
     await start(host);
-    const heard = await phrasesAfter(["Tab", "End", "ArrowDown"]);
+    const heard = await phrasesAfter([
+      ["Tab", 1],
+      ["End", 1],
+      ["ArrowDown", 1],
+    ]);
     expect(heard.slice(1)).toEqual([
       "option, Mva: 5 av 50, not selected, position 4, set size 4",
       "option, Mva: 5 av 50, not selected, position 4, set size 4",
@@ -123,12 +118,144 @@ describe("the polar options' spoken phrases (section 9.4)", () => {
       </LocaleProvider>
     );
     await start(host);
-    const heard = await phrasesAfter(["Tab", "ArrowRight", "ArrowDown"]);
+    const heard = await phrasesAfter([
+      ["Tab", 1],
+      ["ArrowRight", 1],
+      ["ArrowDown", 1],
+    ]);
     expect(heard.slice(1)).toEqual([
       "option, NO2: Forbruk 2, Pris 2, not selected, position 2, set size 3",
       "option, Forbruk 2, NO2, not selected, position 2, set size 3",
     ]);
   });
+});
+
+// The key sequence on each family: Tab in, an arrow, End and Home, PageDown and PageUp on the clock,
+// and Escape. Oracle: section 9.4's option grammar with each option's own value, worked by hand from
+// the rows: the clock's PageDown moves one label unit, six hours, from 01 to 07.
+describe("a screen reader's key sequence through each family", () => {
+  /** Midnight in Oslo on 25 October 2025, a 24-hour day. */
+  const day = Date.parse("2025-10-24T22:00:00Z");
+  const families = [
+    {
+      family: "pie",
+      chart: (
+        <PieChart.Root data={BILL} config={BILL_CONFIG} nameKey="name" valueKey="v" aria-label="Regning" />
+      ),
+      keys: [
+        ["Tab", 1],
+        ["ArrowRight", 1],
+        ["End", 1],
+        ["Home", 1],
+        ["Escape", 1],
+      ] as const,
+      first:
+        /^option, Strøm: 50, 50\sprosent, Kakediagram med 4\sdeler, .*, not selected, position 1, set size 4$/u,
+      then: [
+        "option, Nettleie: 30, 30\u00a0prosent, not selected, position 2, set size 4",
+        "option, Mva: 5, 5\u00a0prosent, not selected, position 4, set size 4",
+        "option, Strøm: 50, 50\u00a0prosent, not selected, position 1, set size 4",
+        "option, Strøm: 50, 50\u00a0prosent, not selected, position 1, set size 4",
+      ],
+    },
+    {
+      family: "radial",
+      chart: (
+        <RadialChart.Root
+          data={BILL}
+          config={BILL_CONFIG}
+          nameKey="name"
+          valueKey="v"
+          max={50}
+          aria-label="Ringer"
+        />
+      ),
+      keys: [
+        ["Tab", 1],
+        ["ArrowDown", 1],
+        ["End", 1],
+        ["Home", 1],
+        ["Escape", 1],
+      ] as const,
+      first:
+        /^option, Strøm: 50 av 50, Ringdiagram med 4\sringer\. .*, not selected, position 1, set size 4$/u,
+      then: [
+        "option, Nettleie: 30 av 50, not selected, position 2, set size 4",
+        "option, Mva: 5 av 50, not selected, position 4, set size 4",
+        "option, Strøm: 50 av 50, not selected, position 1, set size 4",
+        "option, Strøm: 50 av 50, not selected, position 1, set size 4",
+      ],
+    },
+    {
+      family: "radar",
+      chart: <RadarChart.Root data={SPOKES} config={SPOKE_CONFIG} nameKey="area" aria-label="Områder" />,
+      keys: [
+        ["Tab", 1],
+        ["ArrowRight", 1],
+        ["End", 1],
+        ["Home", 1],
+        ["Escape", 1],
+      ] as const,
+      first:
+        /^option, NO1: Forbruk 1, Pris 3, Radardiagram med 2\sserier over 3\skategorier\. .*, not selected, position 1, set size 3$/u,
+      then: [
+        "option, NO2: Forbruk 2, Pris 2, not selected, position 2, set size 3",
+        "option, NO3: Forbruk 3, Pris 1, not selected, position 3, set size 3",
+        "option, NO1: Forbruk 1, Pris 3, not selected, position 1, set size 3",
+        "option, NO1: Forbruk 1, Pris 3, not selected, position 1, set size 3",
+      ],
+    },
+    {
+      family: "clock",
+      chart: (
+        <ClockChart.Root
+          data={Array.from({ length: 24 }, (_, hour) => ({ start: day + hour * 3_600_000, kwh: hour }))}
+          config={{ kwh: { label: "kWh", color: "chart-1" } }}
+          xKey="start"
+          cycle="day"
+          interval="hour"
+          aria-label="Døgn"
+        />
+      ),
+      keys: [
+        ["Tab", 1],
+        ["ArrowRight", 1],
+        ["PageDown", 1],
+        ["PageUp", 1],
+        ["End", 1],
+        ["Home", 1],
+        ["Escape", 1],
+      ] as const,
+      first:
+        /^option, kl\.\s00\stil\s01: kWh 0, Klokkediagram med 1\sserie\. .*, not selected, position 1, set size 24$/u,
+      then: [
+        "option, kl.\u00a001\u00a0til\u00a002: kWh 1, not selected, position 2, set size 24",
+        "option, kl.\u00a007\u00a0til\u00a008: kWh 7, not selected, position 8, set size 24",
+        "option, kl.\u00a001\u00a0til\u00a002: kWh 1, not selected, position 2, set size 24",
+        "option, kl.\u00a023\u00a0til\u00a024: kWh 23, not selected, position 24, set size 24",
+        "option, kl.\u00a000\u00a0til\u00a001: kWh 0, not selected, position 1, set size 24",
+        "option, kl.\u00a000\u00a0til\u00a001: kWh 0, not selected, position 1, set size 24",
+      ],
+    },
+  ];
+
+  it.each(families)(
+    "speaks the $family chart's options through Tab, arrows, Home, End and Escape",
+    async ({ chart, keys, first, then }) => {
+      const { host } = renderThemed(
+        <LocaleProvider locale="nb-NO" timeZone="Europe/Oslo">
+          <button type="button">før</button>
+          {chart}
+        </LocaleProvider>
+      );
+      await start(host);
+      const heard = await phrasesAfter(keys);
+      // Tab enters on the first option with the chart's description, each key moves the option, and
+      // Escape leaves focus on it with nothing new to say.
+      expect(heard[0]).toMatch(first);
+      expect(heard.slice(1)).toEqual(then);
+    }
+  );
 });
 
 /** Calls `onCommit` from a passive effect, once the commit that hydrates the marker has run. */

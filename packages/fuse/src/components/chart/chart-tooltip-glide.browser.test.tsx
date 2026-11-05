@@ -42,7 +42,7 @@ afterEach(async () => {
 
 describe("a pointer sweep with motion on", () => {
   it.each([
-    ["bklit's grouped bars", barChart, MONTHS, "band"],
+    ["two grouped bar series", barChart, MONTHS, "band"],
     ["two 30-point lines", lineChart, DAYS.map(({ day }) => day), "point"],
     ["columns wider than the popup", wideChart, WIDE, "band"],
   ] as const)(

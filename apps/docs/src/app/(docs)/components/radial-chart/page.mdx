@@ -21,7 +21,7 @@ export const metadata = componentMetadata("radial-chart");
 
 The chart entry is a preview. Names and props can change until Fuse's first stable release. The first row is the outermost ring. Each ring fills its value's share of its maximum: the largest value by default, one `max` for every ring, or each row's own through `maxKey`. A ring never laps. The tracks scale out and the rings sweep in once, the first time the chart comes into view, and a data update morphs each ring to its new value. Every value above 0 keeps at least one device pixel of arc.
 
-Hover a ring, or focus the chart and use the arrow keys, to read one ring. The active ring and the rings outside it grow a little, and the others dim. Rings in one unit read best sorted largest first, so the longest arc holds the largest value.
+Hover a ring, or focus the chart and use the arrow keys, to read one ring. The active ring and the rings outside it grow a little, and the others dim. Rings in one unit read best sorted largest first, so the longest arc holds the largest value. On a touch screen, a drag that starts on the dial scrubs round it instead of scrolling the page, which scrolls from beside the dial. A tap pins the tooltip, and a second tap on the same ring releases it.
 
 </Prose>
 

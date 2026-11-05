@@ -24,7 +24,9 @@ export const metadata = componentMetadata("clock-chart");
 
 The chart entry is a preview. Names and props can change until Fuse's first stable release. A clock chart draws one cycle of a time series round a dial: a day from midnight, an ISO week from Monday 00:00, or a year from 1 January, in Root's zone, with the cycle's start at 12 o'clock. Every slot takes an equal angle, so a 25-hour day draws 25 equal slots. The radius is area-true by default, so a ring twice the value covers twice the area, and `radiusScale="linear"` keeps the radius true instead.
 
-Hover a slot, or focus the chart and use the arrow keys, to read it. The arrows step one slot and wrap round the dial, PageUp and PageDown jump one label unit, six hours round a day, a day round a week and a month round a year, and up and down move between series. Each slot rises from its base as a clockwise wedge opens, the first time the chart comes into view.
+Hover a slot, or focus the chart and use the arrow keys, to read it. The arrows step one slot and wrap round the dial, PageUp and PageDown jump one label unit, six hours round a day, a day round a week and a month round a year, and up and down move between series. Each slot rises from its base as a clockwise wedge opens, the first time the chart comes into view. On a touch screen, a drag that starts on the dial scrubs round it instead of scrolling the page, which scrolls from beside the dial. A tap pins the tooltip, and a second tap on the same slot releases it.
+
+The hour, weekday or month labels thin by one stride for the whole dial. A `RadiusAxis` value shows beside the 12 o'clock spoke, or the 6 o'clock one when the marks leave that more room, and only where it clears the marks and the labels, so a crowded dial shows fewer values. `Now`'s label shows past the rim only where it clears the cycle's labels, and otherwise the hand and its dot mark Now alone.
 
 </Prose>
 
@@ -36,7 +38,7 @@ A live day draws up to `now`, and `Now` points at the current minute. The cycle 
   <ClockChartLoadProfile />
 </Demo>
 
-A threshold colour paints each wedge in its own value's side, and a dashed `ReferenceLine` at the same value draws the ring the colours split at. `radiusScale="linear"` lets the radius read as a price, so a negative hour hangs inward from the zero ring. The day is NO1's 10 August 2025, whose midday hours fell below zero.
+A threshold colour paints each wedge in its own value's side, and a dashed `ReferenceLine` at the same value draws the ring the colours split at. `radiusScale="linear"` lets the radius read as a price, so a negative hour hangs inward from the zero ring. The day is a sunny summer Sunday in NO1, whose midday hours fall below zero.
 
 <Demo slug="clock-chart" id="spot-price" title="Spot price" file="clock-chart-spot-price.tsx">
   <ClockChartSpotPrice />

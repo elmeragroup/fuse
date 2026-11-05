@@ -121,7 +121,7 @@ describe("tooltipSideOffset", () => {
 });
 
 describe("roofRest", () => {
-  // bklit's bars drawn by hand into a 600 × 200 plot over 0 to 25,000, so a value lands at
+  // Two bar series drawn by hand into a 600 × 200 plot over 0 to 25,000, so a value lands at
   // y = 200 − 0.008 · value. Each 100 px band holds revenue from 15 to 48 px and profit from 52 to
   // 85 px, and slot centres sit at 50, 150 … 550. Revenue 12000, 15500, 11000, 18800, 16800, 21200
   // tops out at 104, 76, 112, 49.6, 65.6 and 30.4. Profit 4500, 5200, 3800, 7100, 5400, 8800

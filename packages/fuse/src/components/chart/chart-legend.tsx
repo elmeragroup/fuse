@@ -34,7 +34,10 @@ import type {
  * @beta
  */
 export type ChartLegendProps = ChartDomProps<"ul"> & {
-  /** Where the legend sits around the plot. "bottom" by default. */
+  /**
+   * Where the legend sits around the plot. "bottom" by default. In a polar chart narrower than
+   * 30rem, a "start" or "end" legend moves under the dial, so the dial keeps its size.
+   */
   side?: "top" | "bottom" | "start" | "end";
 };
 

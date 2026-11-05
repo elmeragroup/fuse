@@ -201,7 +201,10 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = derive([
   // follow the slices' frame, the coarse clock slots, the glow and decimation measured from the
   // drawn dial, and the entrance's pace read from the figure, which measured 2665 bytes on this
   // entry (203717 to 206382). The ceiling keeps about 100 bytes of headroom.
-  { name: "chart", entryFile: "chart.js", measuredGzip: 97044, ceilingGzip: 206482 },
+  // Raised again from 206482 on 2026-11-05. Now's label fits past the rim against the cycle's labels
+  // instead of sitting inside it, which measured 105 bytes on this entry (206382 to 206487). The
+  // ceiling keeps about 100 bytes of headroom.
+  { name: "chart", entryFile: "chart.js", measuredGzip: 97044, ceilingGzip: 206587 },
   // 2026-10-13: new entry, measured at 29180. Pure wrappers over Base UI's toolbar and its roving focus.
   { name: "toolbar", entryFile: "toolbar.js", measuredGzip: 29180, ceilingGzip: 43770 },
   // 2026-10-12: new entries. Command is Base UI's Autocomplete in the InputGroup, with the Dialog
@@ -435,11 +438,42 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // Raised from 153123 on 2026-11-05 with Chart's, for the same cause.
     ceilingGzip: 153394,
   },
-  { name: "chart/PieChart", entryFile: "chart.js", exportName: "PieChart", measuredGzip: 79885 },
-  { name: "chart/RadialChart", entryFile: "chart.js", exportName: "RadialChart", measuredGzip: 79858 },
-  { name: "chart/RadarChart", entryFile: "chart.js", exportName: "RadarChart", measuredGzip: 79820 },
-  // 2026-11-05: new row, the whole ClockChart namespace, with the derived ceiling.
-  { name: "chart/ClockChart", entryFile: "chart.js", exportName: "ClockChart", measuredGzip: 121041 },
+  // Set from its measurement on 2026-11-05, when the polar families landed: the whole namespace: slices on their frame with the rim floor and ghosts, labels and leaders that ride the frame, Track, Center parts, Glow and the polar readouts. The ceiling
+  // keeps about 100 bytes of headroom.
+  {
+    name: "chart/PieChart",
+    entryFile: "chart.js",
+    exportName: "PieChart",
+    measuredGzip: 105684,
+    ceilingGzip: 105784,
+  },
+  // Set from its measurement on 2026-11-05, when the polar families landed: the whole namespace: rings on their frame in three looks, Track, Glow, the Center parts and the polar readouts. The ceiling
+  // keeps about 100 bytes of headroom.
+  {
+    name: "chart/RadialChart",
+    entryFile: "chart.js",
+    exportName: "RadialChart",
+    measuredGzip: 102151,
+    ceilingGzip: 102251,
+  },
+  // Set from its measurement on 2026-11-05, when the polar families landed: the whole namespace: grid, spoke and ring labels fitted to the dial, Area, Line, Dots, an ActiveDot on the loop, Glow and the polar readouts. The ceiling
+  // keeps about 100 bytes of headroom.
+  {
+    name: "chart/RadarChart",
+    entryFile: "chart.js",
+    exportName: "RadarChart",
+    measuredGzip: 107377,
+    ceilingGzip: 107477,
+  },
+  // Set from its measurement on 2026-11-05, when the polar families landed: the whole namespace: the zoned dial model, curves, wedges with floors and coarse slots, labels and ring values fitted to the dial, hands, Now, references, centre and value parts, and the polar readouts. The ceiling
+  // keeps about 100 bytes of headroom.
+  {
+    name: "chart/ClockChart",
+    entryFile: "chart.js",
+    exportName: "ClockChart",
+    measuredGzip: 122917,
+    ceilingGzip: 123017,
+  },
   {
     name: "chart/Chart.Root",
     entryFile: "chart.js",
@@ -537,7 +571,10 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     entryFile: "chart.js",
     exportName: "PieChart",
     members: ["Root"],
-    measuredGzip: 41609,
+    measuredGzip: 43915,
+    // Set from its measurement on 2026-11-05, when the polar families landed: the Root through the polar kernel, its listbox, readouts and entrance. The
+    // ceiling keeps about 100 bytes of headroom.
+    ceilingGzip: 44015,
   },
   // 2026-11-05: new row, the typical pie route, as the bar route is Chart's: Root, Pie, the Center
   // parts, Legend and Tooltip, which the owner set beside the whole-namespace row, with the derived
@@ -557,7 +594,10 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
       "Legend",
       "Tooltip",
     ],
-    measuredGzip: 85724,
+    measuredGzip: 87143,
+    // Set from its measurement on 2026-11-05, when the polar families landed: Root, Pie, the Center parts, Legend and Tooltip. The
+    // ceiling keeps about 100 bytes of headroom.
+    ceilingGzip: 87243,
   },
   // 2026-11-05: new row, the typical radial route: Root, Bar, the Center parts, Legend and Tooltip,
   // which the owner set beside the whole-namespace row, with the derived ceiling.
@@ -576,21 +616,30 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
       "Legend",
       "Tooltip",
     ],
-    measuredGzip: 82041,
+    measuredGzip: 83225,
+    // Set from its measurement on 2026-11-05, when the polar families landed: Root, Bar, the Center parts, Legend and Tooltip. The
+    // ceiling keeps about 100 bytes of headroom.
+    ceilingGzip: 83325,
   },
   {
     name: "chart/RadialChart.Root",
     entryFile: "chart.js",
     exportName: "RadialChart",
     members: ["Root"],
-    measuredGzip: 40138,
+    measuredGzip: 42428,
+    // Set from its measurement on 2026-11-05, when the polar families landed: the Root through the polar kernel. The
+    // ceiling keeps about 100 bytes of headroom.
+    ceilingGzip: 42528,
   },
   {
     name: "chart/RadarChart.Root",
     entryFile: "chart.js",
     exportName: "RadarChart",
     members: ["Root"],
-    measuredGzip: 48586,
+    measuredGzip: 50817,
+    // Set from its measurement on 2026-11-05, when the polar families landed: the Root through the polar kernel. The
+    // ceiling keeps about 100 bytes of headroom.
+    ceilingGzip: 50917,
   },
   // 2026-11-05: new row, the typical radar route: Root, Grid, both axes, Area, Line, Legend and
   // Tooltip, which the owner set beside the whole-namespace row, with the derived ceiling.
@@ -599,7 +648,10 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     entryFile: "chart.js",
     exportName: "RadarChart",
     members: ["Root", "Grid", "AngleAxis", "RadiusAxis", "Area", "Line", "Legend", "Tooltip"],
-    measuredGzip: 91837,
+    measuredGzip: 94894,
+    // Set from its measurement on 2026-11-05, when the polar families landed: Root, Grid, both axes, Area, Line, Legend and Tooltip. The
+    // ceiling keeps about 100 bytes of headroom.
+    ceilingGzip: 94994,
   },
   // 2026-11-05: new rows, ClockChart's Root alone and its typical route: Root, Line, Grid,
   // AngleAxis, Center, Legend and Tooltip, which the owner set, each with the derived ceiling.
@@ -608,14 +660,20 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     entryFile: "chart.js",
     exportName: "ClockChart",
     members: ["Root"],
-    measuredGzip: 54287,
+    measuredGzip: 54320,
+    // Set from its measurement on 2026-11-05, when the polar families landed: the Root over the zoned dial model. The
+    // ceiling keeps about 100 bytes of headroom.
+    ceilingGzip: 54420,
   },
   {
     name: "chart/ClockChart route",
     entryFile: "chart.js",
     exportName: "ClockChart",
     members: ["Root", "Line", "Grid", "AngleAxis", "Center", "Legend", "Tooltip"],
-    measuredGzip: 108611,
+    measuredGzip: 110462,
+    // Set from its measurement on 2026-11-05, when the polar families landed: Root, Line, Grid, AngleAxis, Center, Legend and Tooltip. The
+    // ceiling keeps about 100 bytes of headroom.
+    ceilingGzip: 110562,
   },
   // 2026-11-04: new rows, measured at 84628 for the whole ScatterChart namespace and 41808 for its
   // Root alone, each with the derived ceiling.

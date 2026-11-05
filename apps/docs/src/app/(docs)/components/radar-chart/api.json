@@ -924,7 +924,7 @@
           "type": "\"bottom\" | \"end\" | \"start\" | \"top\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"bottom\"",
-          "description": "Where the legend sits around the plot. \"bottom\" by default.",
+          "description": "Where the legend sits around the plot. \"bottom\" by default. In a polar chart narrower than 30rem, a \"start\" or \"end\" legend moves under the dial, so the dial keeps its size.",
           "required": false
         },
         {

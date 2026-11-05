@@ -133,6 +133,34 @@ export function ringAnchor(rings: readonly RingLabel[], clear: RingClearance): R
   return score(180) > score(0) ? 180 : 0;
 }
 
+/**
+ * The narrowest container width, from `TICK_BUCKETS`, from which a label placed past the rim at an
+ * angle, as an angle label is, clears every angle label the axis shows at that width and at every
+ * wider one, or "none" where no width keeps it clear.
+ *
+ * @param label - Its angle and its box's width in CSS pixels.
+ * @param reach - The label radius, as a share of the dial's, which the angle labels share.
+ * @param angles - The angle labels and the widths they show from.
+ * @returns The width it shows from.
+ */
+export function fitRimLabel(
+  label: { readonly angle: number; readonly width: number },
+  reach: number,
+  angles: readonly AngleObstacle[]
+): number | "none" {
+  const clear = TICK_BUCKETS.map((bucket) => {
+    const radius = (bucket / 2) * reach;
+    const own = angleBox({ ...label, shownAt: "always" }, radius);
+    return angles.every(
+      (other) =>
+        !(other.shownAt === "always" || (other.shownAt !== "none" && other.shownAt <= bucket)) ||
+        !meets(own, angleBox(other, radius))
+    );
+  });
+  const from = clear.findIndex((_, at) => clear.slice(at).every(Boolean));
+  return from === -1 ? "none" : (TICK_BUCKETS[from] ?? "none");
+}
+
 /** Whether a mark covers any of a chip's corners, edge middles or centre, the chip grown by the gap. */
 function covered(chip: Box, marks: MarkCover | undefined, radius: number): boolean {
   if (marks === undefined) return false;

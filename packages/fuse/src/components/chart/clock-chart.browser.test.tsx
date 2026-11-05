@@ -402,6 +402,60 @@ describe("the seam (D16), Now and the keys", () => {
     expect(angleOf(Number(x), Number(y))).toBeCloseTo(172.5, 1);
   });
 
+  it("shows Now's label past the rim only where it clears every cycle label shown", async () => {
+    // DOM audit: Now's label is aria-hidden plot text, read by its part.
+    const nowLabel = (host: HTMLElement) =>
+      host.querySelector<HTMLElement>('[data-slot="clock-chart-now"] > [data-part="label"]');
+    // At 11:30, 172.5°, Now's label would sit 7.5° from "12 PM", whose box it meets on this dial, so
+    // only the hand and its dot show.
+    const day = renderThemed(
+      <Dial now={DAY + 11.5 * HOUR}>
+        <ClockChart.AngleAxis />
+        <ClockChart.Now label="Nå" />
+      </Dial>
+    );
+    await painted();
+    expect(nowLabel(day.host)?.checkVisibility()).toBe(false);
+    expect(day.host.querySelector('[data-slot="clock-chart-now"] [data-part="hand"]')).not.toBeNull();
+    day.unmount();
+    // A week from Monday 20 October 2025. At Thursday 00:30, 154.4°, the label reads right and down
+    // from 1.1 R, 26° clear of Thursday's label at 180° and Wednesday's at 128.6°, so it shows.
+    const monday = Date.parse("2025-10-19T22:00:00Z");
+    const week = renderThemed(
+      <LocaleProvider locale="nb-NO" timeZone="Europe/Oslo">
+        <div style={{ width: 320 }}>
+          <ClockChart.Root
+            data={Array.from({ length: 168 }, (_, hour) => ({ start: monday + hour * HOUR, kwh: 1 }))}
+            config={{ kwh: { label: "kWh", color: "chart-1" } }}
+            xKey="start"
+            cycle="week"
+            interval="hour"
+            now={monday + 72.5 * HOUR}
+            data-intro="none"
+            aria-label="Uke">
+            <ClockChart.AngleAxis />
+            <ClockChart.Now label="Nå" />
+          </ClockChart.Root>
+        </div>
+      </LocaleProvider>
+    );
+    await painted();
+    const label = nowLabel(week.host);
+    expect(label?.checkVisibility()).toBe(true);
+    const box = label?.getBoundingClientRect() ?? new DOMRect();
+    const dial = clockLayer(week.host, "clock-chart-now").getBoundingClientRect();
+    const centre = { x: dial.left + dial.width / 2, y: dial.top + dial.height / 2 };
+    // Its near corner lies past the rim, and it meets no weekday label.
+    expect(Math.hypot(box.left - centre.x, box.top - centre.y)).toBeGreaterThan(dial.width / 2);
+    // DOM audit: the weekday labels are aria-hidden plot text, read by their slot.
+    for (const weekday of week.host.querySelectorAll('[data-slot="clock-chart-angle-label"]')) {
+      const other = weekday.getBoundingClientRect();
+      const meets =
+        box.left < other.right && box.right > other.left && box.top < other.bottom && box.bottom > other.top;
+      expect(meets).toBe(false);
+    }
+  });
+
   it("steps one slot with the arrows, wrapping, and six hours with PageDown and PageUp", async () => {
     const { host } = renderThemed(
       <Dial>

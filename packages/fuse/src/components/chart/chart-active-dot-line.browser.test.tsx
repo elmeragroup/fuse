@@ -178,7 +178,7 @@ function glideLength(layer: Element | null): number {
 }
 
 describe("the pace of a step", () => {
-  // bklit's tooltip-dot spring, stiffness 300 and damping 30, is the floor.
+  // The follow spring, stiffness 300 and damping 30, is the floor.
   const floor = settling(300, 30);
 
   it("follows a slow step on the floor spring, and a fast one over the same distance sooner", async () => {

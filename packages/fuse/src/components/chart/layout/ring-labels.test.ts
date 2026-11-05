@@ -5,7 +5,7 @@
 // bottom edges sit on its point, 1.1 R · (sin 15°, −cos 15°).
 import { describe, expect, it } from "vitest";
 
-import { fitRingLabels, ringAnchor } from "./ring-labels";
+import { fitRimLabel, fitRingLabels, ringAnchor } from "./ring-labels";
 
 /** A one-character value, 8 px wide, on each of a radar's five rings on [0, 4]. */
 const RADAR = [0, 0.25, 0.5, 0.75, 1].map((radius) => ({ radius, width: 8 }));
@@ -66,5 +66,24 @@ describe("ring values along the spoke", () => {
     expect(fitRingLabels(rings, top)).toEqual(["none", "none"]);
     expect(ringAnchor(rings, top)).toBe(180);
     expect(fitRingLabels(rings, { ...top, anchor: 180 })).toEqual([120, 120]);
+  });
+});
+
+describe("a label past the rim beside the angle labels", () => {
+  const top = { angle: 0, width: 30, shownAt: "always" as const };
+
+  it("shows from the first width where it sits clear of every shown angle label", () => {
+    // At 90° it reads right from 1.1 R, far from the labels at 12 and 6 o'clock at any width.
+    expect(fitRimLabel({ angle: 90, width: 30 }, 1.1, [top, { ...top, angle: 180 }])).toBe(120);
+    // At 10° it centres 1.1 R · sin 10° ≈ 0.191 R right of the 12 o'clock label, both 30 px wide, and
+    // their bottoms sit 0.017 R apart, so the two boxes meet until 0.191 R − 15 ≥ 15 + 2: R ≥ 167.6,
+    // first reached at the 360 px bucket.
+    expect(fitRimLabel({ angle: 10, width: 30 }, 1.1, [top])).toBe(360);
+  });
+
+  it("shows nowhere when a label it covers shows at some wider width", () => {
+    expect(fitRimLabel({ angle: 0, width: 30 }, 1.1, [top])).toBe("none");
+    // The covered label shows only from 280 px, so the label clears it below 280 but not above.
+    expect(fitRimLabel({ angle: 0, width: 30 }, 1.1, [{ ...top, shownAt: 280 }])).toBe("none");
   });
 });

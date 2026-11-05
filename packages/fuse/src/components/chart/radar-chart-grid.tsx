@@ -279,8 +279,10 @@ export function RadarChartAngleAxis({ className, style }: RadarChartAngleAxisPro
 }
 
 /**
- * The ring values along the first spoke, each beside its ring, 0 among them when the domain spans
- * it.
+ * The ring values beside the first spoke, each on its ring, 0 among them when the domain spans it,
+ * or beside the opposite spoke when the series leave that more room. A value shows only at the
+ * widths where it clears its neighbours, the series' edges and dots, and the spoke labels the
+ * AngleAxis shows, so a crowded radar shows fewer values, or none.
  *
  * @beta
  */

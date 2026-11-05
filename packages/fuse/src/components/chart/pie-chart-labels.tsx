@@ -159,7 +159,8 @@ function nominalText(pie: PieDrawing, index: number): string {
  * without children each label prints SeriesLabel and LegendShare. An inside label on a slice whose
  * role has no on-colour role, such as a sequential step, draws outside that slice instead, as does
  * one whose box does not fit its slice. Outside labels draw a leader from the rim and take a gutter
- * beside the dial.
+ * beside the dial. As the slices sweep in or tween to new data, each label and its leader ride their
+ * slice, and an inside label's value and share read in the slice's on-colour.
  *
  * @beta
  */

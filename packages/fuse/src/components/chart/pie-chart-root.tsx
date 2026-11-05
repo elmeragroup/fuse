@@ -84,7 +84,8 @@ export type PieChartRootProps<
 
 /**
  * The root of pie and donut charts. Slices draw in data order from 12 o'clock, clockwise, and past
- * `maxSlices` the smallest rows fold into one Other slice.
+ * `maxSlices` the smallest rows fold into one Other slice. The entrance sweeps slice i in from
+ * 100 ms + i · `--chart-stagger` over `--chart-intro`, both read from the figure's style.
  *
  * @template TRow - The row type, inferred from `data`.
  * @template TConfig - The config, inferred with its literal keys.

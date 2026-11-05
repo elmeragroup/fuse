@@ -30,15 +30,15 @@ import { CHART_SPRINGS } from "./layout/motion";
 import { polarPoint } from "./layout/polar-angle";
 import type { SweepBox } from "./layout/polar-angle";
 import { angleLabel } from "./layout/polar-labels";
-import { fitRingLabels, ringAnchor } from "./layout/ring-labels";
+import { fitRimLabel, fitRingLabels, ringAnchor } from "./layout/ring-labels";
 import type { MarkCover } from "./layout/ring-labels";
 import { pathNumber } from "./layout/rounding";
 
 /** The radius a cycle label sits at, as a share of the outer radius. */
 const LABEL_REACH = 1.1;
 
-/** Where Now's label sits along its hand, just inside the rim, as a share of the outer radius. */
-const NOW_REACH = 0.96;
+/** The padding either side of Now's label on its chip, in CSS pixels. */
+const NOW_CHIP = 4;
 
 /**
  * Props for `ClockChart.Grid`, a closed part.
@@ -182,16 +182,6 @@ function labelPlace(box: SweepBox, angle: number, reach: number): LabelPlace {
   const { point, alignX, alignY } = angleLabel(angle, reach);
   const [x, y] = percent(box, point.x, point.y);
   return { x, y, alignX: `${String(-alignX * 100)}%`, alignY: `${String(-alignY * 100)}%` };
-}
-
-/**
- * A label's place just inside the rim at an angle, reading toward the centre, so its box stays
- * inside the dial and never reaches the labels past the rim.
- */
-function insidePlace(box: SweepBox, angle: number, reach: number): LabelPlace {
-  const { point, alignX, alignY } = angleLabel(angle, reach);
-  const [x, y] = percent(box, point.x, point.y);
-  return { x, y, alignX: `${String(-(1 - alignX) * 100)}%`, alignY: `${String(-(1 - alignY) * 100)}%` };
 }
 
 /** A label placed past the rim, its place written as the stylesheet's custom properties. */
@@ -346,7 +336,10 @@ export function ClockChartAngleAxis({ format, className, style }: ClockChartAngl
 }
 
 /**
- * The ring values along the 12 o'clock spoke, each beside its ring.
+ * The ring values beside the 12 o'clock spoke, each on its ring, or beside the 6 o'clock spoke
+ * when the marks leave that more room. A value shows only at the widths where it clears its
+ * neighbours, the marks, the cycle labels the AngleAxis shows and the centre's text, so a crowded
+ * dial shows fewer values, or none.
  *
  * @beta
  */
@@ -576,9 +569,10 @@ export function ClockChartScrubber({
 }
 
 /**
- * A hand at Root's `now`, to the minute, with a ping at its tip and an optional label just inside the
- * rim along the hand, which never covers the cycle's labels past the rim.
- * It draws nothing when `now` lies outside the cycle.
+ * A hand at Root's `now`, to the minute, with a ping at its tip and an optional label past the rim
+ * at the hand's angle, where the cycle's labels sit. The label shows only at the widths from which it
+ * clears every cycle label the AngleAxis shows, and otherwise the hand and its dot mark Now alone,
+ * as the centre names the slot. It draws nothing when `now` lies outside the cycle.
  *
  * @beta
  */
@@ -592,11 +586,26 @@ export function ClockChartNow({
   const clock = clockDrawingIn(model, "ClockChart.Now");
   const now = clock.now;
   const tip = now === null ? null : polarPoint(now.angle, 1);
+  // The label shows from the narrowest width that keeps it clear of the cycle's labels.
+  const fit =
+    now === null || label === undefined
+      ? "none"
+      : fitRimLabel(
+          { angle: now.angle, width: labelWidth(label) + 2 * NOW_CHIP },
+          LABEL_REACH,
+          clock.labels.map((cycle) => ({
+            angle: cycle.angle,
+            width: labelWidth(cycle.text.text),
+            shownAt: cycle.visibility,
+          }))
+        );
+  const shown = fit === "none" ? undefined : fit;
   return (
     <div
       data-slot="clock-chart-now"
       data-tone={tone}
       data-polar-layer=""
+      data-outside={shown === undefined ? undefined : ""}
       aria-hidden="true"
       className={className}
       style={style}>
@@ -620,7 +629,12 @@ export function ClockChartNow({
             />
           </svg>
           {label === undefined ? null : (
-            <PlacedLabel place={insidePlace(box, now.angle, NOW_REACH)}>{label}</PlacedLabel>
+            <PlacedLabel
+              place={labelPlace(box, now.angle, LABEL_REACH)}
+              min={shown}
+              hidden={shown === undefined}>
+              {label}
+            </PlacedLabel>
           )}
         </>
       )}

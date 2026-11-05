@@ -7,7 +7,7 @@
 
 import { CHART_SPRINGS, FOLLOW_FASTEST, FOLLOW_LEVELS, FOLLOW_SPEEDS } from "./motion";
 
-/** A spring of mass 1, as bklit and Motion name them. */
+/** A spring of mass 1, named by its stiffness and its damping. */
 export type Spring = { readonly stiffness: number; readonly damping: number };
 
 /**

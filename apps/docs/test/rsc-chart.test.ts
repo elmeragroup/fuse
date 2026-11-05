@@ -221,6 +221,12 @@ describe("the polar Roots under React Server Components", () => {
       // The clock's 24 hours: a label each, and one wedge path per paint group, now and past.
       expect(slotCount(html, "clock-chart-angle-label")).toBe(24);
       expect(slotCount(html, "clock-chart-line-path")).toBe(3);
+      // The Column writes its 24 wedges on the server, so the first paint holds them with no script.
+      const wedges = [...html.matchAll(/data-slot="clock-chart-wedge"[^>]*\bd="([^"]*)"/gu)].reduce(
+        (count, [, d = ""]) => count + (d.match(/M/gu) ?? []).length,
+        0
+      );
+      expect(wedges).toBe(24);
       // The radar's readings reach 120, which the 1-2-5 rule nices to 0 to 120 by 20: seven ring
       // values, six rings past the centre, and a spoke and a label per season.
       expect(slotCount(html, "radar-chart-grid-ring")).toBe(6);
