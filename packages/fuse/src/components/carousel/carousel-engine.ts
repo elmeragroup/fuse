@@ -37,12 +37,11 @@
  *   keys typed into a field, leaves nothing live. Any scroll without a session, such as the
  *   browser re-snapping after a layout change, a focus scroll or a programmatic one, reports its
  *   page only at its end, from a fresh measurement, so a re-snap never publishes a page read from
- *   stale geometry. Such a scroll that ends with the viewport still where the selected page was,
- *   while the slides moved under it, is a re-snap that did not follow its slide, as Firefox can
- *   leave one: the engine keeps the selected page and places it where the layout now puts it,
- *   rather than reading the slide now there as the user's choice. Every scroll frame still
- *   updates the slides in view. Notifying the Root that the user acted, which stops rotation, is
- *   separate: any user input does it, scroll or not.
+ *   stale geometry. The one exception is the engine's own scroll, a page change or a placement:
+ *   when it ends where its page was, while the slides moved under it, the engine puts its own
+ *   page back where the layout now has it, as Firefox may not re-snap it (`flush`). Every scroll
+ *   frame still updates the slides in view. Notifying the Root that the user acted, which stops
+ *   rotation, is separate: any user input does it, scroll or not.
  * - Ends. A scroll ends at `scrollend`, or, without it, after a quiet spell with no scroll event.
  *   What a scroll is owed, its settle, is kept apart from the one timer that counts out its spell.
  *   Nothing ends while input is held, as a finger at rest mid-drag sends no scroll events: new
@@ -271,9 +270,13 @@ export function createCarouselEngine(
   let retryFrame: number | null = null;
   // The selected page. Scroll observations move it; so does applying the Root's page.
   let page = 0;
-  // The page a programmatic scroll is heading to. While it runs, scroll frames move nothing, so
-  // the indicators do not step through the pages it passes. User input cancels it.
+  // The page the engine's own scroll, a page change or a placement that moves the viewport, is
+  // heading to. While it runs, scroll frames move nothing, so the indicators do not step through
+  // the pages it passes. User input cancels it.
   let target: number | null = null;
+  // While the engine's own scroll ends: the pages it was measured against, and where its page
+  // started in them. See `strandedUnderOwnScroll`.
+  let ending: { readonly pages: Pages; readonly start: number } | null = null;
   // The scroll session live page reports belong to; see the module comment.
   let session: ScrollSession = "idle";
   // The Root's latest commit, and the one last applied to a layout with pages: `null` until the
@@ -466,10 +469,14 @@ export function createCarouselEngine(
     viewport.scrollTo(motion === "instant" ? { ...options, behavior: "instant" } : options);
   }
 
-  /** Jump to the selected page without motion. */
+  /**
+   * Jump to the selected page without motion. A jump that moves the viewport is the engine's own
+   * scroll until it ends, like a page change.
+   */
   function place(positions: readonly number[]): void {
-    target = null;
-    scrollToPosition(positions[page] ?? 0, "instant");
+    const destination = positions[page] ?? 0;
+    target = Math.abs(position() - destination) < ARRIVED ? null : page;
+    scrollToPosition(destination, "instant");
   }
 
   /** Scroll to a page with the viewport's own motion, unless it is there or the user is. */
@@ -542,13 +549,33 @@ export function createCarouselEngine(
       if (result === "unmeasurable") {
         return;
       }
-      restore = result === "restore";
+      restore = result === "restore" || strandedUnderOwnScroll();
     }
     if (unmeasured || layout === null) {
       return;
     }
     apply(layout, restore);
     publish(layout);
+  }
+
+  /**
+   * Whether the engine's own scroll ended where its page was in the layout it was measured
+   * against, while this measurement has the slides elsewhere: the layout moved under that scroll,
+   * so the position it left no longer shows the page the engine itself scrolled to, and the page
+   * is put back. CSS Scroll Snap 1 § 6.2 has the browser re-snap to the slide it was snapped to,
+   * which Chromium and WebKit do, so their scroll ends on the page's new position. Firefox does
+   * not re-snap the slide of a jump whose layout changes in the same task, before the jump's
+   * scroll is processed, as when an ancestor sets a spacing variable as the carousel mounts: it
+   * leaves the viewport where the jump put it, on another slide's snap position or between two.
+   * Any other scroll, a script's, a focus scroll or the user's, keeps the page it ends on.
+   */
+  function strandedUnderOwnScroll(): boolean {
+    return (
+      ending !== null &&
+      layout !== null &&
+      Math.abs(position() - ending.start) < ARRIVED &&
+      !samePages(ending.pages, layout.pages)
+    );
   }
 
   function reconcileLater(): void {
@@ -663,49 +690,20 @@ export function createCarouselEngine(
 
   /** A scroll ended: read where, from a fresh measurement, and tell the Root. */
   function ended(): void {
-    // Neither the user's scroll nor the engine's own: the browser's, such as a focus scroll, an
-    // anchor's jump, or its answer to a layout change, or a script's.
-    const browsers = session === "idle" && target === null;
-    // The last measurement's pages, and where the selected page started in them.
-    const before = layout?.pages;
-    const anchor = before?.positions[page];
+    // Ending the engine's own scroll: where its page started in the layout it was measured against.
+    const own = target === null ? undefined : layout?.pages.positions[target];
+    ending = own === undefined || layout === null ? null : { pages: layout.pages, start: own };
     target = null;
     session = "idle";
     // Where the scroll ended is read from a fresh measurement, so a re-snap after an inherited
     // layout change settles on the page it shows.
     dirty = true;
     flush();
+    ending = null;
     if (layout !== null && !unmeasured) {
-      const stranded =
-        browsers &&
-        before !== undefined &&
-        anchor !== undefined &&
-        Math.abs(position() - anchor) < ARRIVED &&
-        !samePages(before, layout.pages);
-      if (stranded) {
-        keep(layout.pages.positions);
-      } else {
-        observe(layout);
-      }
+      observe(layout);
     }
     listener.onSettle(page);
-  }
-
-  /**
-   * The slides moved under a viewport that stayed where the selected page was, as when an
-   * ancestor's spacing changes, and the browser's scroll that followed left it there: keep that
-   * page, where the layout now puts it. CSS Scroll Snap 1 § 6.2 has the browser re-snap to the
-   * slide it was snapped to, which Chromium and WebKit do. Firefox can leave the viewport where it
-   * was, between two snap positions or on another slide's, which would otherwise read as the user
-   * turning to that slide. A scroll that moved the viewport, a script's or a focus scroll's, keeps
-   * the page it moved to.
-   */
-  function keep(positions: readonly number[]): void {
-    page = Math.min(positions.length - 1, page);
-    const destination = positions[page] ?? 0;
-    if (Math.abs(position() - destination) >= ARRIVED) {
-      scrollToPosition(destination, "instant");
-    }
   }
 
   function onScroll(): void {

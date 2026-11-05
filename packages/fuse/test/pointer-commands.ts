@@ -1,11 +1,62 @@
 import type { CDPSession, Page } from "playwright";
-import type { BrowserCommand } from "vitest/node";
+import type { BrowserCommand, BrowserCommandContext } from "vitest/node";
 
 /** How often a swiping finger reports where it is, as a 60Hz touch screen does. */
 const SWIPE_STEP_MS = 16;
 
 /** The DevTools session a held finger went down through, which its lift must use too. */
 const touches = new WeakMap<Page, CDPSession>();
+
+/** A point in the page's coordinates, where the DevTools protocol's touches land. */
+type PagePoint = { readonly x: number; readonly y: number };
+
+/** A point in the test frame's client coordinates, moved by the frame's own offset into the page. */
+async function pagePoint(context: BrowserCommandContext, x: number, y: number): Promise<PagePoint> {
+  const frame = await context.iframe.owner().boundingBox();
+  return { x: (frame?.x ?? 0) + x, y: (frame?.y ?? 0) + y };
+}
+
+/** Open the DevTools session a touch sequence runs through, until `closeTouches`. */
+async function openTouches(context: BrowserCommandContext): Promise<CDPSession> {
+  const session = await context.page.context().newCDPSession(context.page);
+  touches.set(context.page, session);
+  return session;
+}
+
+/** The session a finger already down went down through. */
+function heldTouches(context: BrowserCommandContext): CDPSession {
+  const session = touches.get(context.page);
+  if (session === undefined) {
+    throw new Error("expected touchStart to have put a finger down");
+  }
+  return session;
+}
+
+async function closeTouches(context: BrowserCommandContext, session: CDPSession): Promise<void> {
+  touches.delete(context.page);
+  await session.detach();
+}
+
+/** One finger lands at a page point and stays down, through Chromium's touch input. */
+async function startTouch(context: BrowserCommandContext, point: PagePoint): Promise<void> {
+  const session = await openTouches(context);
+  await session.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [point] });
+}
+
+/** The finger `startTouch` put down moves to a page point. */
+async function moveTouch(context: BrowserCommandContext, point: PagePoint): Promise<void> {
+  await heldTouches(context).send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [point] });
+}
+
+/** The finger `startTouch` put down lifts, ending its sequence. */
+async function endTouch(context: BrowserCommandContext): Promise<void> {
+  const session = heldTouches(context);
+  try {
+    await session.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+  } finally {
+    await closeTouches(context, session);
+  }
+}
 
 /**
  * Browser commands that run in the Vitest server and drive the real mouse through Playwright.
@@ -52,35 +103,15 @@ export const pointerCommands = {
    * Playwright's touchscreen only taps, so this goes through the DevTools protocol.
    */
   touchStart: (async (context, x: number, y: number) => {
-    const frame = await context.iframe.owner().boundingBox();
-    const session = await context.page.context().newCDPSession(context.page);
-    touches.set(context.page, session);
-    await session.send("Input.dispatchTouchEvent", {
-      type: "touchStart",
-      touchPoints: [{ x: (frame?.x ?? 0) + x, y: (frame?.y ?? 0) + y }],
-    });
+    await startTouch(context, await pagePoint(context, x, y));
   }) satisfies BrowserCommand<[number, number]>,
   /** Moves the finger `touchStart` put down to a point in the test frame's client coordinates. */
   touchMove: (async (context, x: number, y: number) => {
-    const session = touches.get(context.page);
-    if (session === undefined) {
-      throw new Error("expected touchStart to have put a finger down");
-    }
-    const frame = await context.iframe.owner().boundingBox();
-    await session.send("Input.dispatchTouchEvent", {
-      type: "touchMove",
-      touchPoints: [{ x: (frame?.x ?? 0) + x, y: (frame?.y ?? 0) + y }],
-    });
+    await moveTouch(context, await pagePoint(context, x, y));
   }) satisfies BrowserCommand<[number, number]>,
   /** Lifts the finger `touchStart` put down, through the session it went down through. */
   touchEnd: (async (context) => {
-    const session = touches.get(context.page);
-    if (session === undefined) {
-      throw new Error("expected touchStart to have put a finger down");
-    }
-    touches.delete(context.page);
-    await session.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
-    await session.detach();
+    await endTouch(context);
   }) satisfies BrowserCommand<[]>,
   /**
    * Several fingers at once, through Chromium's touch input: `points` is every finger down after
@@ -94,23 +125,14 @@ export const pointerCommands = {
     type: "touchStart" | "touchMove" | "touchEnd",
     points: readonly { readonly id: number; readonly x: number; readonly y: number }[]
   ) => {
-    const frame = await context.iframe.owner().boundingBox();
-    let session = touches.get(context.page);
-    if (session === undefined) {
-      session = await context.page.context().newCDPSession(context.page);
-      touches.set(context.page, session);
-    }
+    const origin = await pagePoint(context, 0, 0);
+    const session = touches.get(context.page) ?? (await openTouches(context));
     await session.send("Input.dispatchTouchEvent", {
       type,
-      touchPoints: points.map((point) => ({
-        id: point.id,
-        x: (frame?.x ?? 0) + point.x,
-        y: (frame?.y ?? 0) + point.y,
-      })),
+      touchPoints: points.map((point) => ({ id: point.id, x: origin.x + point.x, y: origin.y + point.y })),
     });
     if (type === "touchEnd" && points.length === 0) {
-      touches.delete(context.page);
-      await session.detach();
+      await closeTouches(context, session);
     }
   }) satisfies BrowserCommand<
     [
@@ -124,37 +146,28 @@ export const pointerCommands = {
    * moving, so the page's native scrolling, its scroll snapping and the fling after the lift all
    * answer it. The touches go through Chromium's touch input, as `touchStart` does, in real time,
    * so the browser's own timestamps give the velocity the fling starts from. It resolves once the
-   * finger has lifted; a fling may still be running.
+   * finger has lifted; a fling may still be running. One command runs the whole swipe, so its
+   * steps keep time without a round trip to the test between them.
    *
    * Not `Input.synthesizeScrollGesture`: with a touch source, Linux's headless Chromium sends its
    * pointer moves without a `touchmove`, so the gesture never scrolls there, though it does on
    * macOS.
    */
   touchSwipe: (async (context, x: number, y: number, dx: number, dy: number, speed: number) => {
-    const frame = await context.iframe.owner().boundingBox();
-    const left = (frame?.x ?? 0) + x;
-    const top = (frame?.y ?? 0) + y;
+    const from = await pagePoint(context, x, y);
     const steps = Math.max(2, Math.round((Math.hypot(dx, dy) / speed) * (1000 / SWIPE_STEP_MS)));
-    const session = await context.page.context().newCDPSession(context.page);
+    await startTouch(context, from);
     try {
-      await session.send("Input.dispatchTouchEvent", {
-        type: "touchStart",
-        touchPoints: [{ x: left, y: top }],
-      });
       const start = performance.now();
       for (let step = 1; step <= steps; step += 1) {
         const due = start + step * SWIPE_STEP_MS - performance.now();
         if (due > 0) {
           await new Promise((resolve) => setTimeout(resolve, due));
         }
-        await session.send("Input.dispatchTouchEvent", {
-          type: "touchMove",
-          touchPoints: [{ x: left + (dx * step) / steps, y: top + (dy * step) / steps }],
-        });
+        await moveTouch(context, { x: from.x + (dx * step) / steps, y: from.y + (dy * step) / steps });
       }
-      await session.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
     } finally {
-      await session.detach();
+      await endTouch(context);
     }
   }) satisfies BrowserCommand<[number, number, number, number, number]>,
 };
