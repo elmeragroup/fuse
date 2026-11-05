@@ -126,7 +126,7 @@ describe("an active dot on a fast step across several slots", () => {
     // It joins the Line on a data update, so it rides the Line though the Area draws first.
     ["the Line of a series an Area draws too", () => <AreaAndLine />],
     ["the line from inside a display: contents wrapper", () => <WrappedDot />],
-  ] as const)("rides %s, on the crosshair, in every frame", async (_name, chart: () => ReactNode) => {
+  ] as const)("rides %s, on the crosshair, along its whole glide", async (_name, chart: () => ReactNode) => {
     const { host } = renderThemed(chart());
     await nextFrames(2);
     moveTo(host, 1);
@@ -146,7 +146,7 @@ describe("an active dot on a fast step across several slots", () => {
 });
 
 describe("an active dot on a fast step across a zigzag", () => {
-  it("rides every peak of the line, on the crosshair, in every frame", async () => {
+  it("rides every peak of the line, on the crosshair, along its whole glide", async () => {
     // Nine readings that alternate 20 and 80, stepped from the first to the last at once, across
     // four peaks. Past the last reading the dot holds while the crosshair overshoots.
     const zigzag = [20, 80, 20, 80, 20, 80, 20, 80, 20];

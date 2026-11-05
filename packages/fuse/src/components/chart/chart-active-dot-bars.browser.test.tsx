@@ -100,7 +100,7 @@ describe("an active dot on bars, on a fast step across several slots", () => {
       [true, false, true, false, true, false, true],
     ],
   ] as const)(
-    "rides the straight track through the %s' far ends, on the crosshair, in every frame",
+    "rides the straight track through the %s' far ends, on the crosshair, along its whole glide",
     async (_name, rows, stacked, domain, hanging) => {
       const { host } = renderThemed(<BarRideChart rows={rows} stacked={stacked} domain={domain} />);
       await nextFrames(2);
