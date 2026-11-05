@@ -37,10 +37,18 @@ async function closeTouches(context: BrowserCommandContext, session: CDPSession)
   await session.detach();
 }
 
-/** One finger lands at a page point and stays down, through Chromium's touch input. */
+/**
+ * One finger lands at a page point and stays down, through Chromium's touch input. A landing that
+ * fails closes the session it opened, so no finger is left held for the next command.
+ */
 async function startTouch(context: BrowserCommandContext, point: PagePoint): Promise<void> {
   const session = await openTouches(context);
-  await session.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [point] });
+  try {
+    await session.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [point] });
+  } catch (error) {
+    await closeTouches(context, session);
+    throw error;
+  }
 }
 
 /** The finger `startTouch` put down moves to a page point. */
