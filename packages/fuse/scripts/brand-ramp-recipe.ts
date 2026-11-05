@@ -27,35 +27,22 @@ import * as Hex from "@elmeragroup/color/hex";
 import * as Oklch from "@elmeragroup/color/oklch";
 import { getOrThrow } from "@elmeragroup/color/result";
 
+import { readTokenColor } from "../src/theme/token-color.ts";
 import { FIGMA_BRAND_RAMPS, RAMP_STEPS } from "../src/theme/tokens/brand-ramps.ts";
-import type { BrandRamps, Ramp, RampScale, RampStep } from "../src/theme/tokens/brand-ramps.ts";
+import type { BrandRamps, RampScale, RampStep } from "../src/theme/tokens/brand-ramps.ts";
 import { PRIMITIVES } from "../src/theme/tokens/primitives.ts";
 
 /** A literal as OKLCH: a Figma ramp's hex, or a primitive's `oklch()`. */
 function oklchOf(literal: string): Oklch.Oklch {
-  return literal.startsWith("#")
-    ? Oklch.fromSrgb(getOrThrow(Hex.parse(literal)))
-    : getOrThrow(Oklch.parse(literal));
+  const color = getOrThrow(readTokenColor(literal));
+  return color._tag === "Oklch" ? color : Oklch.fromSrgb(color);
 }
 
-/** The median of five or more values: the middle one, or the mean of the middle two. */
-function median(values: readonly number[]): number {
-  const sorted = values.toSorted((left, right) => left - right);
-  const middle = Math.floor(sorted.length / 2);
-  const upper = sorted[middle] ?? 0;
-  return sorted.length % 2 === 1 ? upper : ((sorted[middle - 1] ?? upper) + upper) / 2;
-}
+/** One value at every step of a ramp. */
+type StepValues<T> = { readonly [S in RampStep]: T };
 
-/** The median OKLCH lightness and chroma of one scale's Figma ramps at every step. */
-type MedianScale = { readonly [S in RampStep]: { readonly l: number; readonly c: number } };
-
-/** The median lightness and chroma of the Figma ramps of one scale at every step. */
-function medianScale(scale: RampScale): MedianScale {
-  const ramps = Object.values(FIGMA_BRAND_RAMPS).map((ramps) => ramps[scale]);
-  const at = (step: RampStep) => {
-    const colors = ramps.map((ramp) => oklchOf(ramp[step]));
-    return { l: median(colors.map((color) => color.l)), c: median(colors.map((color) => color.c)) };
-  };
+/** A value at every step of a ramp, from a per-step function. */
+function perStep<T>(at: (step: RampStep) => T): StepValues<T> {
   return {
     "50": at("50"),
     "100": at("100"),
@@ -69,6 +56,26 @@ function medianScale(scale: RampScale): MedianScale {
     "900": at("900"),
     "950": at("950"),
   };
+}
+
+/** The median of five or more values: the middle one, or the mean of the middle two. */
+function median(values: readonly number[]): number {
+  const sorted = values.toSorted((left, right) => left - right);
+  const middle = Math.floor(sorted.length / 2);
+  const upper = sorted[middle] ?? 0;
+  return sorted.length % 2 === 1 ? upper : ((sorted[middle - 1] ?? upper) + upper) / 2;
+}
+
+/** The median OKLCH lightness and chroma of one scale's Figma ramps at every step. */
+type MedianScale = StepValues<{ readonly l: number; readonly c: number }>;
+
+/** The median lightness and chroma of the Figma ramps of one scale at every step. */
+function medianScale(scale: RampScale): MedianScale {
+  const ramps = Object.values(FIGMA_BRAND_RAMPS).map((ramps) => ramps[scale]);
+  return perStep((step) => {
+    const colors = ramps.map((ramp) => oklchOf(ramp[step]));
+    return { l: median(colors.map((color) => color.l)), c: median(colors.map((color) => color.c)) };
+  });
 }
 
 /**
@@ -81,33 +88,15 @@ function literal(l: number, c: number, h: number): string {
   );
 }
 
-/** One scale's literals at every step from a per-step function. */
-function rampOf(at: (step: RampStep) => string): Ramp {
-  return {
-    "50": at("50"),
-    "100": at("100"),
-    "200": at("200"),
-    "300": at("300"),
-    "400": at("400"),
-    "500": at("500"),
-    "600": at("600"),
-    "700": at("700"),
-    "800": at("800"),
-    "900": at("900"),
-    "950": at("950"),
-  };
-}
-
 /**
  * The step a brand primitive anchors: the step whose median Figma shade lightness lies nearest
  * the primitive's lightness, the lighter one on a tie.
  *
- * @param primitive - The brand primitive's `oklch()` literal.
+ * @param brand - The brand primitive's color.
+ * @param shades - The median Figma shade ramp.
  * @returns The anchor step.
  */
-function anchorStep(primitive: string): RampStep {
-  const brand = oklchOf(primitive);
-  const shades = medianScale("shade");
+function anchorStep(brand: Oklch.Oklch, shades: MedianScale): RampStep {
   return RAMP_STEPS.reduce((nearest, step) =>
     Math.abs(shades[step].l - brand.l) < Math.abs(shades[nearest].l - brand.l) ? step : nearest
   );
@@ -125,10 +114,10 @@ export function generatedBrandRamps(code: "elma" | "ngfi"): BrandRamps {
   const brand = oklchOf(primitive);
   const shades = medianScale("shade");
   const neutrals = medianScale("neutral");
-  const anchor = anchorStep(primitive);
+  const anchor = anchorStep(brand, shades);
   return {
-    neutral: rampOf((step) => literal(neutrals[step].l, neutrals[step].c, brand.h)),
-    shade: rampOf((step) =>
+    neutral: perStep((step) => literal(neutrals[step].l, neutrals[step].c, brand.h)),
+    shade: perStep((step) =>
       step === anchor
         ? `var(--brand-${code})`
         : literal(shades[step].l, (brand.c * shades[step].c) / shades[anchor].c, brand.h)

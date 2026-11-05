@@ -9,6 +9,8 @@
  * now the source, and Figma follows them.
  */
 
+import { paletteBrand } from "./external-palettes";
+import { BRAND_CODES } from "./themes";
 import type { BrandCode, ThemeSegment } from "./themes";
 
 /** The eleven steps of a ramp, lightest first. */
@@ -264,32 +266,32 @@ export const GENERATED_BRAND_RAMPS = {
   },
 } as const satisfies Record<"elma" | "ngfi", BrandRamps>;
 
-/** Where each brand's ramps come from, which the docs mark beside a generated ramp. */
-export const BRAND_RAMP_ORIGINS = {
-  fkas: "figma",
-  tkas: "figma",
-  guen: "figma",
-  fkab: "figma",
-  fkse: "figma",
-  elma: "generated",
-  ngfi: "generated",
-} as const satisfies Record<BrandCode, RampOrigin>;
+/** Each brand's ramp origin. */
+type BrandRampOrigins = { readonly [Code in BrandCode]: RampOrigin };
 
 /**
- * A theme's ramps, by brand and segment. Fjordkraft company and Fjordkraft Företag read the
- * Bedrift mode, as they share the Bedrift sheets; every other brand reads one ramp in both
- * segments.
+ * Where each brand's ramps come from, which the docs mark beside a generated ramp: a brand with
+ * an entry in {@link GENERATED_BRAND_RAMPS} is generated, every other one reads Figma.
+ */
+export const BRAND_RAMP_ORIGINS: BrandRampOrigins =
+  // SAFETY: the map writes one origin per brand code, which is exactly the set of BrandCode keys.
+  Object.fromEntries(
+    BRAND_CODES.map((code) => [code, Object.hasOwn(GENERATED_BRAND_RAMPS, code) ? "generated" : "figma"])
+  ) as BrandRampOrigins;
+
+/**
+ * A theme's ramps, by brand and segment. Fjordkraft company reads the Bedrift mode, and so does
+ * Fjordkraft Företag through its fkas alias, as they share the Bedrift sheets; every other brand
+ * reads one ramp in both segments.
  *
  * @param brand - The theme's brand.
  * @param segment - The theme's segment.
  * @returns The brand's two ramps.
  */
 function brandRamps(brand: BrandCode, segment: ThemeSegment): BrandRamps {
-  switch (brand) {
+  switch (paletteBrand(brand)) {
     case "fkas":
       return segment === "company" ? FIGMA_BRAND_RAMPS.bedrift : FIGMA_BRAND_RAMPS.fjordkraft;
-    case "fkab":
-      return FIGMA_BRAND_RAMPS.bedrift;
     case "fkse":
       return FIGMA_BRAND_RAMPS.telinet;
     case "tkas":
@@ -306,13 +308,52 @@ function brandRamps(brand: BrandCode, segment: ThemeSegment): BrandRamps {
 /** A ramp token, such as `brand-shade-500`. */
 export type BrandRampTokenName = `brand-${RampScale}-${RampStep}`;
 
+/** One value per ramp token. */
+type BrandRampRecord<Value> = { readonly [Name in BrandRampTokenName]: Value };
+
+/**
+ * One entry per ramp token, in token order: neutral first, each lightest first.
+ *
+ * @param at - The entry of the token at a scale and step.
+ * @returns The 22 entries, keyed by token name.
+ */
+function brandRampRecord<Value>(at: (scale: RampScale, step: RampStep) => Value): BrandRampRecord<Value> {
+  // SAFETY: the two loops write every scale at every step, which is exactly the set of
+  // BrandRampTokenName keys. Object.fromEntries cannot type the template-literal keys.
+  return Object.fromEntries(
+    RAMP_SCALES.flatMap((scale) => RAMP_STEPS.map((step) => [`brand-${scale}-${step}`, at(scale, step)]))
+  ) as BrandRampRecord<Value>;
+}
+
 /** Every ramp token, neutral first, each lightest first. */
 export const BRAND_RAMP_TOKEN_NAMES: readonly BrandRampTokenName[] = RAMP_SCALES.flatMap((scale) =>
   RAMP_STEPS.map((step): BrandRampTokenName => `brand-${scale}-${step}`)
 );
 
+/** The ramp tokens' entries in the contract's `TOKEN_KINDS`: every step is a color. */
+export const BRAND_RAMP_KINDS = brandRampRecord(() => "color" as const);
+
+/**
+ * The ramp tokens' entries in the contract's `TOKEN_PAINTS`. The ramps are general-purpose steps
+ * a product picks from, so every paint offers them.
+ */
+export const BRAND_RAMP_PAINTS = brandRampRecord(() => ["surface", "ink", "line"] as const);
+
+/** How a ramp token's description names its scale. */
+const RAMP_SCALE_DESCRIPTIONS = {
+  neutral: "a grey tinted with the brand hue",
+  shade: "the brand hue from light to dark",
+} as const satisfies Record<RampScale, string>;
+
+/** The ramp tokens' entries in the contract's `TOKEN_DESCRIPTIONS`. */
+export const BRAND_RAMP_DESCRIPTIONS = brandRampRecord((scale, step) => {
+  const end =
+    step === RAMP_STEPS[0] ? ", the lightest step" : step === RAMP_STEPS.at(-1) ? ", the darkest step" : "";
+  return `Step ${step} of the theme brand ${scale} ramp, ${RAMP_SCALE_DESCRIPTIONS[scale]}${end}. It holds one value per brand and segment in both color schemes. Elmera and Nordic Green Energy ramps are generated from the brand color.`;
+});
+
 /** Every ramp token with its value. */
-export type BrandRampTokens = { readonly [Name in BrandRampTokenName]: string };
+export type BrandRampTokens = BrandRampRecord<string>;
 
 /**
  * A theme's ramp tokens, by brand and segment, as composition overlays them and the defaults
@@ -324,9 +365,5 @@ export type BrandRampTokens = { readonly [Name in BrandRampTokenName]: string };
  */
 export function brandRampTokens(brand: BrandCode, segment: ThemeSegment): BrandRampTokens {
   const ramps = brandRamps(brand, segment);
-  // SAFETY: the two loops write every scale at every step, which is exactly the set of
-  // BrandRampTokenName keys. Object.fromEntries cannot type the template-literal keys.
-  return Object.fromEntries(
-    RAMP_SCALES.flatMap((scale) => RAMP_STEPS.map((step) => [`brand-${scale}-${step}`, ramps[scale][step]]))
-  ) as BrandRampTokens;
+  return brandRampRecord((scale, step) => ramps[scale][step]);
 }

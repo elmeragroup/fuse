@@ -1,3 +1,10 @@
+import {
+  BRAND_RAMP_DESCRIPTIONS,
+  BRAND_RAMP_KINDS,
+  BRAND_RAMP_PAINTS,
+  BRAND_RAMP_TOKEN_NAMES,
+} from "./brand-ramps";
+
 export const TOKEN_NAMES = [
   "background",
   "foreground",
@@ -114,28 +121,7 @@ export const TOKEN_NAMES = [
   "sh-jsxliterals",
   "sh-sign",
   "sh-comment",
-  "brand-neutral-50",
-  "brand-neutral-100",
-  "brand-neutral-200",
-  "brand-neutral-300",
-  "brand-neutral-400",
-  "brand-neutral-500",
-  "brand-neutral-600",
-  "brand-neutral-700",
-  "brand-neutral-800",
-  "brand-neutral-900",
-  "brand-neutral-950",
-  "brand-shade-50",
-  "brand-shade-100",
-  "brand-shade-200",
-  "brand-shade-300",
-  "brand-shade-400",
-  "brand-shade-500",
-  "brand-shade-600",
-  "brand-shade-700",
-  "brand-shade-800",
-  "brand-shade-900",
-  "brand-shade-950",
+  ...BRAND_RAMP_TOKEN_NAMES,
   "radius",
   "radius-button",
   "radius-field",
@@ -388,28 +374,7 @@ export const TOKEN_KINDS = {
   "sh-jsxliterals": "color",
   "sh-sign": "color",
   "sh-comment": "color",
-  "brand-neutral-50": "color",
-  "brand-neutral-100": "color",
-  "brand-neutral-200": "color",
-  "brand-neutral-300": "color",
-  "brand-neutral-400": "color",
-  "brand-neutral-500": "color",
-  "brand-neutral-600": "color",
-  "brand-neutral-700": "color",
-  "brand-neutral-800": "color",
-  "brand-neutral-900": "color",
-  "brand-neutral-950": "color",
-  "brand-shade-50": "color",
-  "brand-shade-100": "color",
-  "brand-shade-200": "color",
-  "brand-shade-300": "color",
-  "brand-shade-400": "color",
-  "brand-shade-500": "color",
-  "brand-shade-600": "color",
-  "brand-shade-700": "color",
-  "brand-shade-800": "color",
-  "brand-shade-900": "color",
-  "brand-shade-950": "color",
+  ...BRAND_RAMP_KINDS,
   radius: "dimension",
   "radius-button": "dimension",
   "radius-field": "dimension",
@@ -575,29 +540,7 @@ export const TOKEN_PAINTS = {
   "sh-jsxliterals": ["ink"],
   "sh-sign": ["ink"],
   "sh-comment": ["ink"],
-  // The ramps are general-purpose steps a product picks from, so every paint offers them.
-  "brand-neutral-50": ["surface", "ink", "line"],
-  "brand-neutral-100": ["surface", "ink", "line"],
-  "brand-neutral-200": ["surface", "ink", "line"],
-  "brand-neutral-300": ["surface", "ink", "line"],
-  "brand-neutral-400": ["surface", "ink", "line"],
-  "brand-neutral-500": ["surface", "ink", "line"],
-  "brand-neutral-600": ["surface", "ink", "line"],
-  "brand-neutral-700": ["surface", "ink", "line"],
-  "brand-neutral-800": ["surface", "ink", "line"],
-  "brand-neutral-900": ["surface", "ink", "line"],
-  "brand-neutral-950": ["surface", "ink", "line"],
-  "brand-shade-50": ["surface", "ink", "line"],
-  "brand-shade-100": ["surface", "ink", "line"],
-  "brand-shade-200": ["surface", "ink", "line"],
-  "brand-shade-300": ["surface", "ink", "line"],
-  "brand-shade-400": ["surface", "ink", "line"],
-  "brand-shade-500": ["surface", "ink", "line"],
-  "brand-shade-600": ["surface", "ink", "line"],
-  "brand-shade-700": ["surface", "ink", "line"],
-  "brand-shade-800": ["surface", "ink", "line"],
-  "brand-shade-900": ["surface", "ink", "line"],
-  "brand-shade-950": ["surface", "ink", "line"],
+  ...BRAND_RAMP_PAINTS,
 } as const satisfies Record<ColorTokenName, readonly TokenPaint[]>;
 
 /**
@@ -802,50 +745,7 @@ export const TOKEN_DESCRIPTIONS = {
   "sh-jsxliterals": "The color of JSX text in the syntax highlighting of Code.",
   "sh-sign": "The color of punctuation and operators in the syntax highlighting of Code.",
   "sh-comment": "The color of comments in the syntax highlighting of Code.",
-  "brand-neutral-50":
-    "Step 50 of the theme brand neutral ramp, a grey tinted with the brand hue, the lightest step. It holds one value per brand and segment in both color schemes. Elmera and Nordic Green Energy ramps are generated from the brand color.",
-  "brand-neutral-100":
-    "Step 100 of the theme brand neutral ramp, a grey tinted with the brand hue. It holds one value per brand and segment in both color schemes. Elmera and Nordic Green Energy ramps are generated from the brand color.",
-  "brand-neutral-200":
-    "Step 200 of the theme brand neutral ramp, a grey tinted with the brand hue. It holds one value per brand and segment in both color schemes. Elmera and Nordic Green Energy ramps are generated from the brand color.",
-  "brand-neutral-300":
-    "Step 300 of the theme brand neutral ramp, a grey tinted with the brand hue. It holds one value per brand and segment in both color schemes. Elmera and Nordic Green Energy ramps are generated from the brand color.",
-  "brand-neutral-400":
-    "Step 400 of the theme brand neutral ramp, a grey tinted with the brand hue. It holds one value per brand and segment in both color schemes. Elmera and Nordic Green Energy ramps are generated from the brand color.",
-  "brand-neutral-500":
-    "Step 500 of the theme brand neutral ramp, a grey tinted with the brand hue. It holds one value per brand and segment in both color schemes. Elmera and Nordic Green Energy ramps are generated from the brand color.",
-  "brand-neutral-600":
-    "Step 600 of the theme brand neutral ramp, a grey tinted with the brand hue. It holds one value per brand and segment in both color schemes. Elmera and Nordic Green Energy ramps are generated from the brand color.",
-  "brand-neutral-700":
-    "Step 700 of the theme brand neutral ramp, a grey tinted with the brand hue. It holds one value per brand and segment in both color schemes. Elmera and Nordic Green Energy ramps are generated from the brand color.",
-  "brand-neutral-800":
-    "Step 800 of the theme brand neutral ramp, a grey tinted with the brand hue. It holds one value per brand and segment in both color schemes. Elmera and Nordic Green Energy ramps are generated from the brand color.",
-  "brand-neutral-900":
-    "Step 900 of the theme brand neutral ramp, a grey tinted with the brand hue. It holds one value per brand and segment in both color schemes. Elmera and Nordic Green Energy ramps are generated from the brand color.",
-  "brand-neutral-950":
-    "Step 950 of the theme brand neutral ramp, a grey tinted with the brand hue, the darkest step. It holds one value per brand and segment in both color schemes. Elmera and Nordic Green Energy ramps are generated from the brand color.",
-  "brand-shade-50":
-    "Step 50 of the theme brand shade ramp, the brand hue from light to dark, the lightest step. It holds one value per brand and segment in both color schemes. Elmera and Nordic Green Energy ramps are generated from the brand color.",
-  "brand-shade-100":
-    "Step 100 of the theme brand shade ramp, the brand hue from light to dark. It holds one value per brand and segment in both color schemes. Elmera and Nordic Green Energy ramps are generated from the brand color.",
-  "brand-shade-200":
-    "Step 200 of the theme brand shade ramp, the brand hue from light to dark. It holds one value per brand and segment in both color schemes. Elmera and Nordic Green Energy ramps are generated from the brand color.",
-  "brand-shade-300":
-    "Step 300 of the theme brand shade ramp, the brand hue from light to dark. It holds one value per brand and segment in both color schemes. Elmera and Nordic Green Energy ramps are generated from the brand color.",
-  "brand-shade-400":
-    "Step 400 of the theme brand shade ramp, the brand hue from light to dark. It holds one value per brand and segment in both color schemes. Elmera and Nordic Green Energy ramps are generated from the brand color.",
-  "brand-shade-500":
-    "Step 500 of the theme brand shade ramp, the brand hue from light to dark. It holds one value per brand and segment in both color schemes. Elmera and Nordic Green Energy ramps are generated from the brand color.",
-  "brand-shade-600":
-    "Step 600 of the theme brand shade ramp, the brand hue from light to dark. It holds one value per brand and segment in both color schemes. Elmera and Nordic Green Energy ramps are generated from the brand color.",
-  "brand-shade-700":
-    "Step 700 of the theme brand shade ramp, the brand hue from light to dark. It holds one value per brand and segment in both color schemes. Elmera and Nordic Green Energy ramps are generated from the brand color.",
-  "brand-shade-800":
-    "Step 800 of the theme brand shade ramp, the brand hue from light to dark. It holds one value per brand and segment in both color schemes. Elmera and Nordic Green Energy ramps are generated from the brand color.",
-  "brand-shade-900":
-    "Step 900 of the theme brand shade ramp, the brand hue from light to dark. It holds one value per brand and segment in both color schemes. Elmera and Nordic Green Energy ramps are generated from the brand color.",
-  "brand-shade-950":
-    "Step 950 of the theme brand shade ramp, the brand hue from light to dark, the darkest step. It holds one value per brand and segment in both color schemes. Elmera and Nordic Green Energy ramps are generated from the brand color.",
+  ...BRAND_RAMP_DESCRIPTIONS,
   radius:
     "The corner radius of the theme, the corner of cards, selection rows and fields. The radius-xs to radius-xl rungs step around it.",
   "radius-button":

@@ -172,14 +172,18 @@ function emitBrandPointers(): string {
     );
   });
   const segmentRules = BRAND_CODES.flatMap((code) => {
-    const base = rampDeclarations(internalTheme(code));
+    const base = brandRampTokens(code, internalTheme(code).segment);
     return LEGAL_THEMES.filter((theme) => theme.variant === "internal" && theme.brand === code).flatMap(
       (theme) => {
-        const ramps = rampDeclarations(theme);
-        // Both lists run in BRAND_RAMP_TOKEN_NAMES order, so entries pair up by index.
-        const departs = ramps.some(([, value], index) => base[index]?.[1] !== value);
+        const ramps = brandRampTokens(code, theme.segment);
+        const departs = BRAND_RAMP_TOKEN_NAMES.some((name) => ramps[name] !== base[name]);
         return departs
-          ? [cssRule([`[data-theme-brand="${code}"][data-theme-segment="${theme.segment}"]`], ramps)]
+          ? [
+              cssRule(
+                [`[data-theme-brand="${code}"][data-theme-segment="${theme.segment}"]`],
+                rampDeclarations(theme)
+              ),
+            ]
           : [];
       }
     );
