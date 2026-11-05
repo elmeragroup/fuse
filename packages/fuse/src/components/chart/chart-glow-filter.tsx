@@ -10,10 +10,21 @@
 import type { ReactElement } from "react";
 
 import type { SeriesPaint } from "./chart-paint";
-import type { PlotFrame } from "./layout/plot-frame";
 
 /** A halo: the blur's standard deviation in CSS pixels and the halo's alpha. */
 type Halo = { readonly deviation: number; readonly alpha: number };
+
+/**
+ * The user space a series' marks draw in: the box they cover, and how many CSS pixels one unit of
+ * it spans, 1 for a plot drawn in pixels and the dial's scale for a dial drawn in its own units.
+ */
+export type GlowRegion = {
+  readonly x: number;
+  readonly y: number;
+  readonly width: number;
+  readonly height: number;
+  readonly unit: number;
+};
 
 /**
  * The halo of a Line or an Area. It matches the 9.5 px full-alpha shadow that `chart.css` gives
@@ -33,24 +44,25 @@ const REACH = 3;
 /** The filter a value-painted series' marks glow through. */
 function ValueGlowFilter({
   id,
-  frame,
+  region,
   halo,
 }: {
   readonly id: string;
-  readonly frame: PlotFrame;
+  readonly region: GlowRegion;
   readonly halo: Halo;
 }): ReactElement {
-  const { deviation, alpha } = halo;
+  const { alpha } = halo;
+  const deviation = halo.deviation / region.unit;
   const margin = deviation * REACH;
   // The region sits in the marks' user space, so a flat line, whose box has no height, still glows.
   return (
     <filter
       id={id}
       filterUnits="userSpaceOnUse"
-      x={-margin}
-      y={-margin}
-      width={frame.box.width + 2 * margin}
-      height={frame.box.height + 2 * margin}
+      x={region.x - margin}
+      y={region.y - margin}
+      width={region.width + 2 * margin}
+      height={region.height + 2 * margin}
       colorInterpolationFilters="sRGB">
       <feGaussianBlur in="SourceGraphic" stdDeviation={deviation} result="blur" />
       <feComponentTransfer in="blur" result="halo">
@@ -72,8 +84,8 @@ export type ValueGlow = {
   readonly paint: "value";
   /** The series element's `--_glow`, which `chart.css` applies only inside `Chart.Glow`. */
   readonly url: string;
-  /** The filter, for the series' `<defs>`, over the frame its marks draw in. */
-  readonly filter: (frame: PlotFrame) => ReactElement;
+  /** The filter, for the series' `<defs>`, over the region its marks draw in. */
+  readonly filter: (region: GlowRegion) => ReactElement;
 };
 
 /**
@@ -91,6 +103,16 @@ export function valueGlow(paint: SeriesPaint, prefix: string, halo: Halo): Value
   return {
     paint: "value",
     url: `url(#${id})`,
-    filter: (frame) => <ValueGlowFilter id={id} frame={frame} halo={halo} />,
+    filter: (region) => <ValueGlowFilter id={id} region={region} halo={halo} />,
   };
+}
+
+/**
+ * A plot's glow region: its box, drawn in CSS pixels.
+ *
+ * @param box - The plot's width and height.
+ * @returns The region.
+ */
+export function plotGlowRegion(box: { readonly width: number; readonly height: number }): GlowRegion {
+  return { x: 0, y: 0, width: box.width, height: box.height, unit: 1 };
 }

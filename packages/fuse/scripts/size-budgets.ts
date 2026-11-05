@@ -190,7 +190,12 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = derive([
   // active dot's ride, the role-list gradients, Glow, and the entrance's span over rings, spokes and
   // labels, which measured 3612 bytes on this entry (186900 to 190512). The ceiling keeps about 100
   // bytes of headroom.
-  { name: "chart", entryFile: "chart.js", measuredGzip: 97044, ceilingGzip: 190612 },
+  // Raised again from 190612 on 2026-11-05. The clock draws: its model over the zoned time domain,
+  // its Root, its curves sampled in unrolled angle and radius, its wedges with constant gaps and
+  // floors, its labels fitted round the dial, its hands, references, centre and value parts, the
+  // threshold rings, and the shared seams it floors, glows and totals through, which measured
+  // 13205 bytes on this entry (190512 to 203717). The ceiling keeps about 100 bytes of headroom.
+  { name: "chart", entryFile: "chart.js", measuredGzip: 97044, ceilingGzip: 203817 },
   // 2026-10-13: new entry, measured at 29180. Pure wrappers over Base UI's toolbar and its roving focus.
   { name: "toolbar", entryFile: "toolbar.js", measuredGzip: 29180, ceilingGzip: 43770 },
   // 2026-10-12: new entries. Command is Base UI's Autocomplete in the InputGroup, with the Dialog
@@ -407,18 +412,28 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // offsets, and the glide's path route says whether it keeps its side or the popup's centre,
     // which measured 332 bytes on Chart (152688 to 153020) and on BarChart (152691 to 153023).
     // Each ceiling keeps about 100 bytes of headroom.
-    ceilingGzip: 153120,
+    // Raised again from 153120 on 2026-11-05, with BarChart's from 153123. The stack floors read a
+    // floor axis a frame lends through `floorAxisOf`, the value floor's arithmetic sits in its own
+    // leaf, the value glow's filter reads a region with its unit, the stack total row moved into a
+    // leaf the clock shares, and the loop's entrance takes a linear curve, so a clock dial floors,
+    // glows and totals through the same code without the plot frame. That measured 201 bytes on
+    // Chart (153090 to 153291) and on BarChart (153093 to 153294). Each ceiling keeps about 100
+    // bytes of headroom.
+    ceilingGzip: 153391,
   },
   {
     name: "chart/BarChart",
     entryFile: "chart.js",
     exportName: "BarChart",
     measuredGzip: 95989,
-    ceilingGzip: 153123,
+    // Raised from 153123 on 2026-11-05 with Chart's, for the same cause.
+    ceilingGzip: 153394,
   },
   { name: "chart/PieChart", entryFile: "chart.js", exportName: "PieChart", measuredGzip: 79885 },
   { name: "chart/RadialChart", entryFile: "chart.js", exportName: "RadialChart", measuredGzip: 79858 },
   { name: "chart/RadarChart", entryFile: "chart.js", exportName: "RadarChart", measuredGzip: 79820 },
+  // 2026-11-05: new row, the whole ClockChart namespace, with the derived ceiling.
+  { name: "chart/ClockChart", entryFile: "chart.js", exportName: "ClockChart", measuredGzip: 121041 },
   {
     name: "chart/Chart.Root",
     entryFile: "chart.js",
@@ -501,7 +516,12 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // data rules name the three polar rules' messages, and the loop's entrance takes its own
     // duration, which measured 271 bytes on this route (80160 to 80431). The ceiling keeps about
     // 100 bytes of headroom.
-    ceilingGzip: 80531,
+    // Raised from 80531 on 2026-11-05. The stack floors read a floor axis a frame lends through
+    // `floorAxisOf`, the value floor's arithmetic sits in its own leaf, the value glow's filter
+    // reads a region with its unit, and the loop's entrance takes a linear curve, so a clock dial
+    // floors and glows through the same code without the plot frame, which measured 145 bytes on
+    // this route (80448 to 80593). The ceiling keeps about 100 bytes of headroom.
+    ceilingGzip: 80693,
   },
   // 2026-11-05: PieChart.Root draws through the polar kernel, no longer a pending stub, so its row
   // starts again at 41609 with the derived ceiling, beside new rows for the RadialChart and
@@ -574,6 +594,22 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     exportName: "RadarChart",
     members: ["Root", "Grid", "AngleAxis", "RadiusAxis", "Area", "Line", "Legend", "Tooltip"],
     measuredGzip: 91837,
+  },
+  // 2026-11-05: new rows, ClockChart's Root alone and its typical route: Root, Line, Grid,
+  // AngleAxis, Center, Legend and Tooltip, which the owner set, each with the derived ceiling.
+  {
+    name: "chart/ClockChart.Root",
+    entryFile: "chart.js",
+    exportName: "ClockChart",
+    members: ["Root"],
+    measuredGzip: 54287,
+  },
+  {
+    name: "chart/ClockChart route",
+    entryFile: "chart.js",
+    exportName: "ClockChart",
+    members: ["Root", "Line", "Grid", "AngleAxis", "Center", "Legend", "Tooltip"],
+    measuredGzip: 108611,
   },
   // 2026-11-04: new rows, measured at 84628 for the whole ScatterChart namespace and 41808 for its
   // Root alone, each with the derived ceiling.
@@ -664,7 +700,12 @@ export const CSS_BUDGETS: readonly CssBudget[] = derive([
   // the Glow, both axes' labels, the grid's scale-outs and the labels' fade, and the forced-colour
   // rules, which measured 1298 bytes over the stylesheet (18812 to 20110). The ceiling keeps about
   // 100 bytes of headroom.
-  { name: "chart.css", file: "chart.css", measuredGzip: 10089, ceilingGzip: 20210 },
+  // Raised again from 20210 on 2026-11-05. The clock's grid, its line, area and column looks with
+  // their masks, the wedges' steps and past fade, its dots, hands, references, labels with their
+  // width buckets, centre, dims, glow and forced-colour rules, and the radar's and clock's stop
+  // colours, which measured 1744 bytes over the stylesheet (20110 to 21854). The ceiling keeps
+  // about 100 bytes of headroom.
+  { name: "chart.css", file: "chart.css", measuredGzip: 10089, ceilingGzip: 21954 },
 ] satisfies readonly Measured<CssBudget>[]);
 
 export const FLAG_RAW_BUDGETS: readonly FlagRawBudget[] = [

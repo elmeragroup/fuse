@@ -16,7 +16,7 @@ import type { RefCallback } from "react";
 import { SAME_PLOT } from "./chart-motion";
 import type { ChartMotion, MarkValues, Placement } from "./chart-motion";
 import type { PolarContextValue, PolarUpdate } from "./chart-polar-context";
-import { CHART_INTRO_MS, introDelay } from "./layout/polar-motion";
+import { introDelay, introTiming } from "./layout/polar-motion";
 import { sameItems } from "./layout/same-items";
 
 /** Writes the loop's numbers onto a polar mark's node, in the look it draws. */
@@ -86,12 +86,17 @@ export function usePolarMark<T extends Element, L>(
  *
  * @param polar - The mark's Root.
  * @returns A function the mark's layout effect calls once per draw, with the mark's place in its
- *   family's stagger, a slice, a ring or a series, and where it starts when it enters: zero width
- *   at its start angle, or radius 0.
+ *   family's stagger, a slice, a ring or a series, where it starts when it enters: zero width at its
+ *   start angle, or radius 0, and for an update whose numbers change in length the route between
+ *   them, as a clock's slots pair across a change of slot count.
  */
 export function usePolarCommit(
   polar: Pick<PolarContextValue, "update" | "entrance" | "model">
-): (index: number, from: MarkValues) => Placement {
+): (
+  index: number,
+  from: MarkValues,
+  via?: { readonly from: MarkValues; readonly to: MarkValues }
+) => Placement {
   const last = useRef<PolarUpdate | null>(null);
   // A mark that unmounts forgets what it drew, so a remount, as Strict Mode rehearses one, draws
   // its first commit again.
@@ -101,17 +106,23 @@ export function usePolarCommit(
     },
     []
   );
-  return (index, from) => {
+  return (index, from, via) => {
     const previous = last.current;
     last.current = polar.update;
     if (previous === null) {
       if (polar.update.kind === "data") return { kind: "enter", from, delay: 0 };
       if (!polar.entrance) return { kind: "snap" };
-      return { kind: "enter", from, delay: introDelay(polar.model.family, index), duration: CHART_INTRO_MS };
+      return {
+        kind: "enter",
+        from,
+        delay: introDelay(polar.model.family, index),
+        ...introTiming(polar.model.family),
+      };
     }
     // The dial scales with its cell, so a commit with no new data leaves the numbers in place.
     if (previous === polar.update) return { kind: "settle", scale: SAME_PLOT };
-    return { kind: "move" };
+    // A clock that changes its slot count moves along the route that pairs its old slots with its new.
+    return via === undefined ? { kind: "move" } : { kind: "move", via };
   };
 }
 

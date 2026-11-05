@@ -3,7 +3,7 @@
 import type { ReactElement } from "react";
 
 import { useSeriesPart } from "./chart-context";
-import { PATH_GLOW, valueGlow } from "./chart-glow-filter";
+import { PATH_GLOW, plotGlowRegion, valueGlow } from "./chart-glow-filter";
 import type { MarkValues } from "./chart-motion";
 import { useFirstDraw } from "./chart-motion-mark";
 import { placeOf, topologyAt, writePath } from "./chart-path-draw";
@@ -195,7 +195,7 @@ export function ChartArea({
         <>
           <defs>
             <PathPaint id={`${prefix}-paint`} paint={paint} frame={frame} />
-            {glow?.filter(frame)}
+            {glow?.filter(plotGlowRegion(frame.box))}
             <AreaMasks prefix={prefix} frame={frame} variant={variant} />
           </defs>
           <g ref={markRef}>

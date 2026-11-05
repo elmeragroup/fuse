@@ -281,6 +281,27 @@ export type ChartChangeEventDetails<TReason extends string> = {
 };
 
 // @beta
+export type ChartClockCycle = "day" | "week" | "year";
+
+// @beta
+export type ChartClockFieldCheck<TConfig, TCycle extends ChartClockCycle = ChartClockCycle> = string extends keyof TConfig ? unknown : { readonly [K in keyof TConfig]: TConfig[K] extends {
+        barVariant: infer B;
+    } ? B extends "default" | "gradient" ? TConfig[K] extends {
+        interval: infer I;
+    } ? I extends ChartClockInterval<TCycle> ? unknown : {
+        readonly "ClockChart series intervals nest in the cycle": ChartClockInterval<TCycle>;
+    } : unknown : {
+        readonly 'ClockChart barVariant is "default" or "gradient"': never;
+    } : TConfig[K] extends {
+        interval: infer I;
+    } ? I extends ChartClockInterval<TCycle> ? unknown : {
+        readonly "ClockChart series intervals nest in the cycle": ChartClockInterval<TCycle>;
+    } : unknown; };
+
+// @beta
+export type ChartClockInterval<TCycle extends ChartClockCycle> = TCycle extends "day" ? "quarter-hour" | "hour" : TCycle extends "week" ? "hour" | "day" : "hour" | "day" | "month";
+
+// @beta
 export type ChartColor = ChartRole | ChartScale | ChartThresholdColor | readonly [ChartRole, ChartRole, ...ChartRole[]];
 
 // @beta
@@ -854,7 +875,7 @@ export type ChartTooltipShareProps = ChartDomProps<"span"> & {
 };
 
 // @beta
-function ChartTooltipTotal(input: ChartTooltipTotalProps): ReactElement;
+function ChartTooltipTotal(props: ChartTooltipTotalProps): ReactElement;
 
 // @beta
 export type ChartTooltipTotalProps = ChartDomProps<"div"> & {
@@ -919,6 +940,267 @@ export type ChartYAxisProps = ChartLayerProps & {
     format?: ValueFormat;
     label?: string;
     side?: "start" | "end";
+};
+
+declare namespace ClockChart {
+    export {
+        ClockChartActiveDot as ActiveDot,
+        ClockChartActiveValue as ActiveValue,
+        ClockChartAngleAxis as AngleAxis,
+        ClockChartArea as Area,
+        ChartBackground as Background,
+        ClockChartCenter as Center,
+        ClockChartColumn as Column,
+        ClockChartDots as Dots,
+        ChartEmpty as Empty,
+        ClockChartGlow as Glow,
+        ClockChartGrid as Grid,
+        ChartHeadline as Headline,
+        ChartLegend as Legend,
+        ChartLegendItem as LegendItem,
+        ChartLegendShare as LegendShare,
+        ChartLegendToggle as LegendToggle,
+        ChartLegendToggleGroup as LegendToggleGroup,
+        ChartLegendValue as LegendValue,
+        ClockChartLine as Line,
+        ClockChartMarker as Marker,
+        ClockChartNow as Now,
+        ClockChartRadiusAxis as RadiusAxis,
+        ClockChartReferenceArea as ReferenceArea,
+        ClockChartReferenceLine as ReferenceLine,
+        ClockChartRoot as Root,
+        ClockChartScrubber as Scrubber,
+        ChartSeriesIcon as SeriesIcon,
+        ChartSeriesLabel as SeriesLabel,
+        ClockChartSkeleton as Skeleton,
+        ChartSwatch as Swatch,
+        ClockChartTable as Table,
+        ChartTableColumn as TableColumn,
+        ChartTakeaway as Takeaway,
+        ClockChartTooltip as Tooltip,
+        ChartTooltipItems as TooltipItems,
+        ChartTooltipLabel as TooltipLabel,
+        ChartTooltipShare as TooltipShare,
+        ClockChartTooltipTotal as TooltipTotal,
+        ChartTooltipValue as TooltipValue,
+        ClockChartValueLabel as ValueLabel
+    }
+}
+
+// @beta
+function ClockChartActiveDot(input: ClockChartActiveDotProps): ReactElement;
+
+// @beta
+export type ClockChartActiveDotProps = ChartLayerProps & {
+    dataKey: string;
+    variant?: "default" | "ring" | "halo" | "ping";
+};
+
+// @beta
+function ClockChartActiveValue(input: ClockChartActiveValueProps): ReactElement;
+
+// @beta
+export type ClockChartActiveValueProps = ChartLayerProps & {
+    dataKey: string;
+    fallback?: ChartFallback;
+    format?: ValueFormat;
+};
+
+// @beta
+function ClockChartAngleAxis(input: ClockChartAngleAxisProps): ReactElement;
+
+// @beta
+export type ClockChartAngleAxisProps = ChartLayerProps & {
+    format?: XFormat;
+};
+
+// @beta
+function ClockChartArea(input: ClockChartAreaProps): ReactElement;
+
+// @beta
+export type ClockChartAreaProps = ChartLayerProps & {
+    dataKey: string;
+    variant?: "gradient" | "gradient-reverse" | "solid" | "dotted" | "lines" | "hatched";
+    curve?: ChartCurve;
+};
+
+// @beta
+function ClockChartCenter(input: ClockChartCenterProps): ReactElement;
+
+// @beta
+export type ClockChartCenterProps = ChartLayerProps & {
+    children?: ReactNode;
+};
+
+// @beta
+function ClockChartColumn(input: ClockChartColumnProps): ReactElement;
+
+// @beta
+export type ClockChartColumnProps = ChartLayerProps & {
+    dataKey: string;
+    emphasis?: ChartDatum;
+    emphasisLabel?: string;
+};
+
+// @beta
+function ClockChartDots(input: ClockChartDotsProps): ReactElement;
+
+// @beta
+export type ClockChartDotsProps = ChartLayerProps & {
+    dataKey: string;
+    variant?: "default" | "ring" | "halo";
+};
+
+// @beta
+function ClockChartGlow(input: ClockChartGlowProps): ReactElement;
+
+// @beta
+export type ClockChartGlowProps = ChartLayerProps & {
+    children?: ReactNode;
+};
+
+// @beta
+function ClockChartGrid(input: ClockChartGridProps): ReactElement;
+
+// @beta
+export type ClockChartGridProps = ChartLayerProps & {
+    variant?: "solid" | "dashed";
+};
+
+// @beta
+function ClockChartLine(input: ClockChartLineProps): ReactElement;
+
+// @beta
+export type ClockChartLineProps = ChartLayerProps & {
+    dataKey: string;
+    variant?: "default" | "dashed" | "flowing" | "quiet";
+    curve?: ChartCurve;
+};
+
+// @beta
+function ClockChartMarker(input: ClockChartMarkerProps): ReactElement;
+
+// @beta
+export type ClockChartMarkerProps = ChartLayerProps & {
+    dataKey: string;
+    at: ChartDatum;
+    variant?: "default" | "ring" | "halo" | "ping";
+    children?: ReactNode;
+};
+
+// @beta
+function ClockChartNow(input: ClockChartNowProps): ReactElement;
+
+// @beta
+export type ClockChartNowProps = ChartLayerProps & {
+    label?: string;
+    tone?: ChartTone;
+};
+
+// @beta
+function ClockChartRadiusAxis(input: ClockChartRadiusAxisProps): ReactElement;
+
+// @beta
+export type ClockChartRadiusAxisProps = ChartLayerProps & {
+    format?: ValueFormat;
+};
+
+// @beta
+function ClockChartReferenceArea(input: ClockChartReferenceAreaProps): ReactElement;
+
+// @beta
+export type ClockChartReferenceAreaProps = ChartLayerProps & ({
+    y1: number;
+    y2: number;
+    x1?: never;
+    x2?: never;
+    format?: ValueFormat;
+} | {
+    x1: ChartX;
+    x2: ChartX;
+    y1?: never;
+    y2?: never;
+    format?: XFormat;
+}) & {
+    label?: string;
+    tone?: ChartTone;
+};
+
+// @beta
+function ClockChartReferenceLine(input: ClockChartReferenceLineProps): ReactElement;
+
+// @beta
+export type ClockChartReferenceLineProps = ChartLayerProps & ({
+    y: number;
+    x?: never;
+    format?: ValueFormat;
+} | {
+    x: ChartX;
+    y?: never;
+    format?: XFormat;
+}) & {
+    label?: string;
+    variant?: "solid" | "dashed";
+    tone?: ChartTone;
+};
+
+// @beta
+function ClockChartRoot<TRow extends ChartRowOf<TRow>, const TConfig extends ChartConfig, TXKey extends ChartKeyOf<TRow, ChartInstant>, const TCycle extends ChartClockCycle>(props: ClockChartRootProps<TRow, TConfig, TXKey, TCycle>): ReactElement;
+
+// @beta
+export type ClockChartRootProps<TRow extends ChartRowOf<TRow> = ChartRow, TConfig extends ChartConfig = ChartConfig, TXKey extends ChartKeyOf<TRow, ChartInstant> = ChartKeyOf<TRow, ChartInstant>, TCycle extends ChartClockCycle = ChartClockCycle> = ChartAccessibleName & ChartFigureProps & ChartSelectionProps<keyof TConfig & string> & {
+    data: readonly TRow[];
+    config: TConfig & ChartSeriesConfigCheck<TConfig, TRow> & ChartClockFieldCheck<TConfig, TCycle>;
+    xKey: TXKey;
+    cycle: TCycle;
+    interval: ChartClockInterval<TCycle>;
+    period?: ChartPeriod;
+    now?: ChartInstant;
+    timeZone?: string;
+    xFormat?: XFormat;
+    stackOffset?: "diverging" | "expand";
+    yBaseline?: "zero" | "none";
+    yInclude?: readonly number[];
+    innerRadius?: number;
+    radiusScale?: "radial" | "linear";
+    defaultActiveX?: ChartXValue<TRow[TXKey]>;
+    "data-intro"?: "none";
+    "data-fade"?: "past";
+    description?: string;
+    children?: ReactNode;
+};
+
+// @beta
+function ClockChartScrubber(input: ClockChartScrubberProps): ReactElement;
+
+// @beta
+export type ClockChartScrubberProps = ChartLayerProps & {
+    variant?: "line" | "band";
+};
+
+// @beta
+function ClockChartSkeleton(input: ClockChartSkeletonProps): ReactElement;
+
+// @beta
+export type ClockChartSkeletonProps = Omit<ChartDomProps<"div">, "children" | "render"> & {
+    label?: string;
+};
+
+// @beta
+function ClockChartTable(props: ChartTableProps): ReactElement;
+
+// @beta
+function ClockChartTooltip(props: ChartTooltipProps): ReactElement;
+
+// @beta
+function ClockChartTooltipTotal(props: ChartTooltipTotalProps): ReactElement;
+
+// @beta
+function ClockChartValueLabel(input: ClockChartValueLabelProps): ReactElement;
+
+// @beta
+export type ClockChartValueLabelProps = ChartLayerProps & {
+    format?: ValueFormat;
 };
 
 // @beta

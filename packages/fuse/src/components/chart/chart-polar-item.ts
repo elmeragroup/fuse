@@ -434,6 +434,7 @@ export function pieModel(input: PieInput): PolarModel {
     orientation: "vertical",
     wrap: true,
     series: 0,
+    page: null,
     optionName,
     pick: (point, pixels) => {
       // The whole cell inside the sweep picks, the hole and the space past the rim too (Q8).
@@ -581,6 +582,7 @@ export function radialModel(input: RadialInput): PolarModel {
     orientation: "vertical",
     wrap: false,
     series: 0,
+    page: null,
     optionName,
     pick: (point) => {
       if (angleInSweep(pointerAngle(point.x, point.y), sweep) === null) return null;

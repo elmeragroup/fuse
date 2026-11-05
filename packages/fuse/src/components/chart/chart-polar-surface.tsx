@@ -6,7 +6,7 @@
  * by radius band or by nearest spoke through the family's model. CONTRACT section 9.4 gives the
  * maps: a pie's arrows wrap, a radial chart's rings do not, and a radar's Left and Right move
  * between spokes while Up and Down move the series focus. Home and End go to the first and last
- * option, and PageUp and PageDown propagate.
+ * option. PageUp and PageDown propagate, except on a clock, where they move one label unit.
  */
 import { use, useLayoutEffect, useRef, useState } from "react";
 import type { FocusEvent, KeyboardEvent, MouseEvent, PointerEvent, ReactElement } from "react";
@@ -90,6 +90,8 @@ export function PolarSurface(): ReactElement | null {
   const gesture = useRef<Gesture | null>(null);
   const lift = useTapLift();
   const pinned = useChartStore(store, (snapshot) => snapshot.pinned);
+  // The slots a clock's Columns emphasise, whose options append the emphasis word.
+  const emphasis = useChartStore(store, (snapshot) => snapshot.emphasis);
   const pick = kernel.usePick();
   // New data keeps the option on its index while it exists, and the series focus while the series does.
   const [seen, setSeen] = useState(model);
@@ -142,8 +144,11 @@ export function PolarSurface(): ReactElement | null {
     const step = stepOf(model, event.key);
     const focusStep =
       model.series > 0 ? (event.key === "ArrowDown" ? 1 : event.key === "ArrowUp" ? -1 : 0) : 0;
+    const page = event.key === "PageDown" ? 1 : event.key === "PageUp" ? -1 : 0;
     if (step !== undefined) {
       move({ index: stepped(model, current.index, step), order: "slot-first" });
+    } else if (page !== 0 && model.page !== null) {
+      move({ index: model.page(current.index, page), order: "slot-first" });
     } else if (focusStep !== 0) {
       const focus = Math.max(-1, Math.min(model.series - 1, current.focus + focusStep));
       if (model.series > 1 && focus !== current.focus) move({ focus, order: "series-first" });
@@ -201,7 +206,7 @@ export function PolarSurface(): ReactElement | null {
   };
 
   const naming = { id, name, labelledBy, locale };
-  const label = model.optionName(current.index, current.focus, current.order);
+  const label = model.optionName(current.index, current.focus, current.order, emphasis);
   return (
     // oxlint-disable-next-line jsx-a11y/interactive-supports-focus -- the active option holds the one tab stop
     <div
@@ -265,7 +270,9 @@ export function PolarSurface(): ReactElement | null {
           data-slot="chart-point"
           data-focus-ring-control=""
           tabIndex={option === current ? 0 : -1}
-          aria-label={option === current ? label : model.optionName(option.index, option.focus, option.order)}
+          aria-label={
+            option === current ? label : model.optionName(option.index, option.focus, option.order, emphasis)
+          }
           aria-posinset={option.index + 1}
           aria-setsize={model.count}
           aria-describedby={option.entry ? `${id}-description ${id}-instructions` : undefined}

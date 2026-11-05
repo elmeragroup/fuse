@@ -84,3 +84,16 @@ Object.assign(PolarTooltip, { displayName: "PolarChart.Tooltip" });
 Object.assign(PieChartTooltip, { displayName: "PieChart.Tooltip" });
 Object.assign(RadialChartTooltip, { displayName: "RadialChart.Tooltip" });
 Object.assign(RadarChartTooltip, { displayName: "RadarChart.Tooltip" });
+
+/**
+ * The popup over the active slot, centred on the slot's middle just outside the rim, with one row
+ * per series. It glides round the dial the short way. Escape closes it and keeps the reader's place.
+ * `anchor` does nothing here, since the ray decides where the popup rests.
+ *
+ * @beta
+ */
+export function ClockChartTooltip(props: ChartTooltipProps): ReactElement {
+  return <PolarTooltip {...props} />;
+}
+
+Object.assign(ClockChartTooltip, { displayName: "ClockChart.Tooltip" });

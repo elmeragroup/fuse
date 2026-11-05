@@ -183,6 +183,19 @@ const POLAR_ROUTE_FORBIDDEN: readonly Forbidden[] = [
   { label: "cartesian Table", module: /^chart-table\./u },
 ];
 
+/**
+ * What a clock route must not ship: the polar rule, the cartesian plot geometry and the cartesian
+ * path code. A clock reads the series model, which it may ship, and draws its own dial (S15).
+ */
+const CLOCK_ROUTE_FORBIDDEN: readonly Forbidden[] = [
+  ...POLAR_ROUTE_FORBIDDEN,
+  { label: "plot geometry", module: /^plot-geometry\./u },
+  { label: "cartesian paths", module: /^(chart-path-draw|chart-series-path|line-path)\./u },
+];
+
+/** The cartesian parts whose route ships everything the clock rule names, its control. */
+const CLOCK_CONTROL_PARTS = "Chart.Root, Chart.Line, Chart.Bar, Chart.Tooltip, Chart.Table";
+
 /** What an item route, Pie or Radial, must not ship: the polar rule and the series model. */
 const ITEM_ROUTE_FORBIDDEN: readonly Forbidden[] = [...POLAR_ROUTE_FORBIDDEN, ...SERIES_MODEL];
 
@@ -191,6 +204,7 @@ const POLAR_FAMILIES = [
   { name: "PieChart", forbidden: ITEM_ROUTE_FORBIDDEN },
   { name: "RadialChart", forbidden: ITEM_ROUTE_FORBIDDEN },
   { name: "RadarChart", forbidden: POLAR_ROUTE_FORBIDDEN },
+  { name: "ClockChart", forbidden: CLOCK_ROUTE_FORBIDDEN },
 ] as const;
 
 /** The labels of the forbidden code a route ships, each with what it matched. */
@@ -222,7 +236,9 @@ const BAR_PARTS = "Chart.Root, Chart.Grid, Chart.XAxis, Chart.YAxis, Chart.Bar";
  * Root, and each polar namespace with its Tooltip, Legend and Table, ships no cartesian geometry,
  * and Pie's and Radial's ship no series model either (S15). A control route that adds Tooltip,
  * Table and LegendToggleGroup to the bar route must trip each of the bar route's rules, the
- * scatter rules and the polar rules, so a detector that stops seeing them fails too. The radar
+ * scatter rules and the polar rules, so a detector that stops seeing them fails too. A clock route
+ * also ships no cartesian plot geometry or path code, which a route of Chart's Line, Bar, Tooltip
+ * and Table must trip. The radar
  * namespace, which reads the series model, is the control for the item rules' series model. The
  * oracle is rolldown's module
  * and import lists per chunk and the package's `sideEffects` field, which lets a bundler drop
@@ -251,7 +267,7 @@ export async function checkPackedChartBundles(extracted: string): Promise<string
         ).then((route) => ({ name: `${name} with Tooltip, Legend and Table`, route, forbidden })),
       ])
     );
-    const [[chart, alias, bars, control, pie, scatter], polar] = await Promise.all([
+    const [[chart, alias, bars, control, pie, scatter, clockControl], polar] = await Promise.all([
       Promise.all([
         bundleRoute(
           extracted,
@@ -289,13 +305,19 @@ export async function checkPackedChartBundles(extracted: string): Promise<string
           "scatter-chart",
           "import { ScatterChart } from <chart>;\nexport const Root = ScatterChart.Root;\n"
         ),
+        bundleRoute(
+          extracted,
+          work,
+          "clock-control",
+          `import { Chart } from <chart>;\nexport const parts = [${CLOCK_CONTROL_PARTS}];\n`
+        ),
       ]),
       polarRoutes,
     ]);
     if (chart.code !== alias.code) {
       throw new Error("the BarChart.Root route emits different bytes from the Chart.Root route");
     }
-    const polarModule = /^(pie|radial|radar)-chart-/u;
+    const polarModule = /^(pie|radial|radar|clock)-chart-/u;
     for (const [name, route] of [
       ["Chart.Root", chart],
       ["BarChart.Root", alias],
@@ -334,6 +356,12 @@ export async function checkPackedChartBundles(extracted: string): Promise<string
     const polarBlind = blindRules(control, POLAR_ROUTE_FORBIDDEN);
     if (polarBlind.length > 0) {
       throw new Error(`the bar control route trips no polar rule for ${polarBlind.join(", ")}`);
+    }
+    // A cartesian route with a Line, a Bar, the Tooltip and the Table ships every module the clock
+    // rule names, so it must trip each of them.
+    const clockBlind = blindRules(clockControl, CLOCK_ROUTE_FORBIDDEN);
+    if (clockBlind.length > 0) {
+      throw new Error(`the clock control route trips no clock rule for ${clockBlind.join(", ")}`);
     }
     // The radar namespace reads the series model, so it trips the rules that keep it off items.
     const radar = polar.find(({ name }) => name.startsWith("RadarChart with"));

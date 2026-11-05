@@ -184,6 +184,12 @@ describe("the polar Roots under React Server Components", () => {
       "components/chart/radar-chart-grid.tsx#RadarChartRadiusAxis",
       "components/chart/radar-chart-marks.tsx#RadarChartArea",
       "components/chart/radar-chart-marks.tsx#RadarChartLine",
+      "components/chart/clock-chart-root.tsx#ClockChartRoot",
+      "components/chart/clock-chart-grid.tsx#ClockChartGrid",
+      "components/chart/clock-chart-grid.tsx#ClockChartAngleAxis",
+      "components/chart/clock-chart-marks.tsx#ClockChartColumn",
+      "components/chart/clock-chart-marks.tsx#ClockChartLine",
+      "components/chart/clock-chart-center.tsx#ClockChartCenter",
     ]);
   });
 
@@ -205,13 +211,16 @@ describe("the polar Roots under React Server Components", () => {
     expect(ssr.flight).toBe(ssr.clientOnly);
     for (const html of [ssr.flight, ssr.clientOnly]) {
       // Each Root sends its aspect-locked cell and plot, and the pie its three slices and labels.
-      expect(slotCount(html, "chart-polar-cell")).toBe(3);
+      expect(slotCount(html, "chart-polar-cell")).toBe(4);
       expect(slotCount(html, "pie-chart-sector")).toBe(3);
       expect(slotCount(html, "pie-chart-label")).toBe(3);
       // The rings' chart sends three rings and three tracks.
       expect(slotCount(html, "radial-chart-ring")).toBe(3);
       expect(slotCount(html, "pie-chart-track")).toBe(3);
-      expect(slotCount(html, "chart-polar-plot")).toBe(3);
+      expect(slotCount(html, "chart-polar-plot")).toBe(4);
+      // The clock's 24 hours: a label each, and one wedge path per paint group, now and past.
+      expect(slotCount(html, "clock-chart-angle-label")).toBe(24);
+      expect(slotCount(html, "clock-chart-line-path")).toBe(3);
       // The radar's readings reach 120, which the 1-2-5 rule nices to 0 to 120 by 20: seven ring
       // values, six rings past the centre, and a spoke and a label per season.
       expect(slotCount(html, "radar-chart-grid-ring")).toBe(6);

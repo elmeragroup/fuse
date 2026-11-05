@@ -34,6 +34,16 @@ const CARVE_OUTS = new Map<string, readonly string[]>([
     "radar-chart/demos/radar-chart-hours.tsx",
     ["../../chart/demos/data/no1-household-hourly-2025-09-2025-10"],
   ],
+  // The clock's day, week and last-week demos read the same two months of hours.
+  [
+    "clock-chart/demos/clock-chart-load-profile.tsx",
+    ["../../chart/demos/data/no1-household-hourly-2025-09-2025-10"],
+  ],
+  [
+    "clock-chart/demos/clock-chart-last-week.tsx",
+    ["../../chart/demos/data/no1-household-hourly-2025-09-2025-10"],
+  ],
+  ["clock-chart/demos/clock-chart-week.tsx", ["../../chart/demos/data/no1-household-hourly-2025-09-2025-10"]],
   ["date-field/demos/date-field-date-input.tsx", ["react-aria-components"]],
   // Link's router demos show `render` composing a router's link: the docs app's own, and React
   // Aria's, which routes through UiProviders.

@@ -41,6 +41,11 @@ import {
   HOURLY_AUTUMN_KWH,
   HOURLY_AUTUMN_START,
 } from "../src/app/(docs)/components/chart/demos/data/no1-household-hourly-2025-09-2025-10";
+import { NO1_HOUSEHOLD_2025_10_26 as CLOCK_FALL_BACK } from "../src/app/(docs)/components/clock-chart/demos/clock-chart-fall-back";
+import { NO1_HOUSEHOLD_MONTHLY as CLOCK_MONTHS } from "../src/app/(docs)/components/clock-chart/demos/clock-chart-heating-year";
+import { NO1_GROUPS_2026_10_16 as CLOCK_GROUPS } from "../src/app/(docs)/components/clock-chart/demos/clock-chart-server";
+import { PROSUMER_SOLAR_2026_03_29 as CLOCK_SOLAR } from "../src/app/(docs)/components/clock-chart/demos/clock-chart-solar";
+import { PRICE_DAY_2026_05_24 as CLOCK_PRICES } from "../src/app/(docs)/components/clock-chart/demos/clock-chart-spot-price";
 import {
   NO1_HOUSEHOLD_DAILY_2024_10 as WEEKDAYS_LAST_YEAR,
   NO1_HOUSEHOLD_DAILY_2025_10 as WEEKDAYS_THIS_YEAR,
@@ -135,6 +140,23 @@ describe("the chart demos' inline data", () => {
     expect(JSON.parse(fixtureText("prices/fall-back-2025-10-26-quarter.json"))).toMatchObject(
       PRICE_DAY_2025_10_26
     );
+  });
+
+  it("holds the clock's price day, groups, months, solar quarters and fall-back hours as the fixtures do", () => {
+    expect(JSON.parse(fixtureText("prices/negative-spike-2026-05-24-quarter.json"))).toMatchObject(
+      CLOCK_PRICES
+    );
+    expect(JSON.parse(fixtureText("elhub/no1-groups-2026-10-16.json"))).toMatchObject({ rows: CLOCK_GROUPS });
+    expect(JSON.parse(fixtureText("elhub/no1-household-monthly-2024-11_2026-10.json"))).toMatchObject({
+      months: CLOCK_MONTHS,
+    });
+    expect(JSON.parse(fixtureText("elhub/no1-prosumer-2026-03-29.json"))).toMatchObject({
+      quarters: CLOCK_SOLAR,
+    });
+    // The constant keeps the household rows alone, in the fixture's order.
+    expect(JSON.parse(fixtureText("elhub/no1-consumption-2025-10-26.json"))).toMatchObject({
+      rows: CLOCK_FALL_BACK.flatMap((row) => [row, { consumptionGroup: "cabin" }]),
+    });
   });
 
   it("holds the derived prosumer day", () => {

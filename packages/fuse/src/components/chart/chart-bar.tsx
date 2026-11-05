@@ -9,7 +9,7 @@ import { assertKnownKey, assertLayoutKey, usePlotLayout, useChartRoot, useSeries
 import type { ChartRootContextValue } from "./chart-context";
 import { datumSlots } from "./chart-datum";
 import { useSvgIdPrefix } from "./chart-dom";
-import { BAR_GLOW, valueGlow } from "./chart-glow-filter";
+import { BAR_GLOW, plotGlowRegion, valueGlow } from "./chart-glow-filter";
 import { seriesPaintOf } from "./chart-paint";
 import { useBarMetrics, useChartFrame } from "./chart-plot";
 import { useSeriesOwner } from "./chart-series-path";
@@ -226,7 +226,9 @@ export function ChartBar({
         ...style,
       }}>
       <svg>
-        {shared === null || glow === null ? null : <defs>{glow.filter(shared.frame)}</defs>}
+        {shared === null || glow === null ? null : (
+          <defs>{glow.filter(plotGlowRegion(shared.frame.box))}</defs>
+        )}
         {shared === null ? null : form === "bars" ? (
           <SeriesBars {...shared} entering={entering} variant={drawnVariant} emphasised={emphasised} />
         ) : (

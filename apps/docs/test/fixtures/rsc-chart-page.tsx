@@ -12,6 +12,7 @@ import { readFileSync } from "node:fs";
 import { LocaleProvider } from "@elmeragroup/fuse";
 import {
   Chart,
+  ClockChart,
   formatChartValue,
   PieChart,
   RadarChart,
@@ -179,10 +180,17 @@ const SEASONS = [
   { season: "Høst", no1: 95, no4: 38 },
 ];
 
+/** A household's day in Oslo, 25 October 2025, one reading an hour from 1 to 4 kWh. */
+const CLOCK_DAY = Array.from({ length: 24 }, (_, hour) => ({
+  start: Date.parse("2025-10-24T22:00:00Z") + hour * 3_600_000,
+  kwh: 1 + (hour % 4),
+}));
+
 /**
  * The polar Roots as a directive-free server page: a bill as a pie with its slices, labels, legend and table,
  * three price areas as rings against 150 øre with their table, and two areas' seasons as a radar
- * with its grid, axes, one area's fill and outline, and its legend.
+ * with its grid, axes, one area's fill and outline, and its legend, and a household's day as a clock
+ * with its grid, labels, columns, line and centre.
  */
 export function PolarPage(): ReactElement {
   return (
@@ -230,6 +238,19 @@ export function PolarPage(): ReactElement {
           <RadarChart.Line dataKey="no1" />
           <RadarChart.Legend />
         </RadarChart.Root>
+        <ClockChart.Root
+          data={CLOCK_DAY}
+          config={{ kwh: { label: "Forbruk", color: "chart-1" } }}
+          xKey="start"
+          cycle="day"
+          interval="hour"
+          aria-label="Forbruk per time">
+          <ClockChart.Grid />
+          <ClockChart.AngleAxis />
+          <ClockChart.Column dataKey="kwh" />
+          <ClockChart.Line dataKey="kwh" />
+          <ClockChart.Center />
+        </ClockChart.Root>
       </main>
     </LocaleProvider>
   );

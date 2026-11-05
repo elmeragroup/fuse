@@ -44,6 +44,18 @@ export function RadarChartTable(props: ChartTableProps): ReactElement {
   return <ChartTableBody table={model.table} {...props} />;
 }
 
+/**
+ * A "Vis som tabell" button and the cycle's slots as a table, one column per series and per stack
+ * total, which stays in the accessibility tree while it is visually collapsed.
+ *
+ * @beta
+ */
+export function ClockChartTable(props: ChartTableProps): ReactElement {
+  const { model } = usePolarContext("ClockChart.Table", ["clock"]);
+  return <ChartTableBody table={model.table} {...props} />;
+}
+
 Object.assign(PieChartTable, { displayName: "PieChart.Table" });
 Object.assign(RadialChartTable, { displayName: "RadialChart.Table" });
 Object.assign(RadarChartTable, { displayName: "RadarChart.Table" });
+Object.assign(ClockChartTable, { displayName: "ClockChart.Table" });

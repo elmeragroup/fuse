@@ -18,8 +18,26 @@ const RING_INTRO = { start: 160, step: 100 } as const;
 /** Where a radar series starts to grow, and the step between series, after its grid draws. */
 const RADAR_INTRO = { start: 600, step: 150 } as const;
 
-/** The families whose entrance staggers its items. */
-export type PolarIntro = "pie" | "radial" | "radar";
+/** The families whose entrance staggers its items, and the clock, whose writers stagger its slots. */
+export type PolarIntro = "pie" | "radial" | "radar" | "clock";
+
+/**
+ * The clock entrance, the Motion table's numbers: one progress over 1250 ms opens a clockwise wedge
+ * over its first 750 ms, and each slot rises from its base over 500 ms on an ease-out cubic from the
+ * moment the wedge reaches the slot's start.
+ */
+export const CLOCK_INTRO = { span: 1250, wedge: 750, rise: 500 } as const;
+
+/**
+ * How an item's entrance runs: over `--chart-intro` on the update curve, or for the clock over its
+ * whole span at a steady pace, which its writers ease slot by slot.
+ *
+ * @param family - The family.
+ * @returns The entrance's duration in milliseconds and its curve.
+ */
+export function introTiming(family: PolarIntro): { readonly duration: number; readonly curve?: "linear" } {
+  return family === "clock" ? { duration: CLOCK_INTRO.span, curve: "linear" } : { duration: CHART_INTRO_MS };
+}
 
 /**
  * When an item's entrance starts: slice i of a pie at 100 + i·80 ms, ring i's value at 160 + i·100
@@ -37,6 +55,8 @@ export function introDelay(family: PolarIntro, index: number): number {
       return RING_INTRO.start + index * RING_INTRO.step;
     case "radar":
       return RADAR_INTRO.start + index * RADAR_INTRO.step;
+    case "clock":
+      return 0;
   }
 }
 
@@ -77,6 +97,7 @@ export function entranceSpan(
   entrance: EntranceItems,
   springs: { readonly grow: number; readonly extend: number }
 ): number {
+  if (entrance.family === "clock") return CLOCK_INTRO.span;
   const items = CHART_INTRO_MS + introDelay(entrance.family, Math.max(0, entrance.items - 1));
   if (entrance.family !== "radar") return items;
   const { ringStep, spokeStep, labelStart, labelStep, labelFade } = RADAR_GRID_INTRO;

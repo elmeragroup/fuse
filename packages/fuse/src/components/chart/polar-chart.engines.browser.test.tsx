@@ -15,6 +15,7 @@ import "../../../dist/styles.css";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
 import "./chart.css";
+import { ClockChart } from "./clock-chart-namespace";
 import { PieChart } from "./pie-chart-namespace";
 import { RadarChart } from "./radar-chart-namespace";
 import { RadialChart } from "./radial-chart-namespace";
@@ -220,6 +221,56 @@ describe("hydration (D18)", () => {
     const recover = vi.fn();
     const hydrated = Promise.withResolvers<void>();
     const root = hydrateRoot(host, <Rings onHydrated={hydrated.resolve} />, { onRecoverableError: recover });
+    try {
+      await hydrated.promise;
+      expect(recover).not.toHaveBeenCalled();
+    } finally {
+      root.unmount();
+      host.remove();
+    }
+  });
+
+  it("sends a 25-hour clock's wedges, curve, labels and Now from the server, and hydrates them as they are", async () => {
+    // The 25-hour 26 October 2025 in Oslo, whose slot angles, labels and hands all run through
+    // trigonometry and zone rules the server and each engine must round alike.
+    const start = Date.parse("2025-10-25T22:00:00Z");
+    const rows = Array.from({ length: 25 }, (_, hour) => ({
+      start: start + hour * 3_600_000,
+      kwh: 1 + (hour % 5),
+    }));
+    function Clock({ onHydrated }: { readonly onHydrated?: () => void }) {
+      return (
+        <LocaleProvider locale="nb-NO" timeZone="Europe/Oslo">
+          <div style={{ width: 300 }}>
+            <ClockChart.Root
+              data={rows}
+              config={{ kwh: { label: "kWh", color: "chart-1" } }}
+              xKey="start"
+              cycle="day"
+              interval="hour"
+              now={start + 9.5 * 3_600_000}
+              aria-label="Døgn">
+              <ClockChart.Grid />
+              <ClockChart.AngleAxis />
+              <ClockChart.Column dataKey="kwh" />
+              <ClockChart.Line dataKey="kwh" />
+              <ClockChart.Now />
+              <ClockChart.Center />
+            </ClockChart.Root>
+            <CommitMarker onCommit={onHydrated} />
+          </div>
+        </LocaleProvider>
+      );
+    }
+    const html = renderToString(<Clock />);
+    expect(html.split('data-slot="clock-chart-angle-label"').length - 1).toBe(24);
+    expect(html).toContain('data-slot="clock-chart-now"');
+    const host = document.createElement("div");
+    host.innerHTML = html;
+    document.body.append(host);
+    const recover = vi.fn();
+    const hydrated = Promise.withResolvers<void>();
+    const root = hydrateRoot(host, <Clock onHydrated={hydrated.resolve} />, { onRecoverableError: recover });
     try {
       await hydrated.promise;
       expect(recover).not.toHaveBeenCalled();

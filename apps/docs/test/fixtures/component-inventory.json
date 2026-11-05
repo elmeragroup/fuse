@@ -256,6 +256,22 @@
       "checkbox-card-group.tsx"
     ]
   },
+  "clock-chart": {
+    "title": "Clock Chart",
+    "rsc": "client",
+    "demos": [
+      "clock-chart-empty.tsx",
+      "clock-chart-fall-back.tsx",
+      "clock-chart-heating-year.tsx",
+      "clock-chart-last-week.tsx",
+      "clock-chart-load-profile.tsx",
+      "clock-chart-loading.tsx",
+      "clock-chart-server.tsx",
+      "clock-chart-solar.tsx",
+      "clock-chart-spot-price.tsx",
+      "clock-chart-week.tsx"
+    ]
+  },
   "code": {
     "title": "Code",
     "rsc": "server",

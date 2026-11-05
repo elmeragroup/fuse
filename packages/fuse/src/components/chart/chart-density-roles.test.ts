@@ -11,6 +11,7 @@ const CONTRACT_ROLES = {
   "pie-chart": "layout",
   "radial-chart": "layout",
   "radar-chart": "layout",
+  "clock-chart": "layout",
   "chart-frame": "layout",
   // The polar frame, its aspect-locked cell and the cell's server SVG, which SPEC's section 10
   // amendment adds: the frame lays out its parts as the cartesian frame does, and the cell and
@@ -52,6 +53,37 @@ const CONTRACT_ROLES = {
   "radar-chart-dot": "fixed",
   "radar-chart-active-dot": "fixed",
   "radar-chart-glow": "fixed",
+  // CONTRACT section 10's clock rows, from CLOCKCHART.md: its grid, axes, marks, hands, references and centre.
+  "clock-chart-grid": "fixed",
+  "clock-chart-grid-ring": "fixed",
+  "clock-chart-spoke": "fixed",
+  "clock-chart-angle-axis": "fixed",
+  "clock-chart-angle-label": "fixed",
+  "clock-chart-radius-axis": "fixed",
+  "clock-chart-radius-label": "fixed",
+  "clock-chart-line": "fixed",
+  "clock-chart-line-path": "fixed",
+  "clock-chart-area": "fixed",
+  "clock-chart-area-path": "fixed",
+  "clock-chart-column": "fixed",
+  "clock-chart-wedge": "fixed",
+  "clock-chart-dots": "fixed",
+  "clock-chart-dot": "fixed",
+  "clock-chart-active-dot": "fixed",
+  "clock-chart-marker": "fixed",
+  "clock-chart-value-labels": "fixed",
+  "clock-chart-value-label": "fixed",
+  "clock-chart-glow": "fixed",
+  "clock-chart-scrubber": "fixed",
+  "clock-chart-now": "fixed",
+  "clock-chart-now-path": "fixed",
+  "clock-chart-scrubber-path": "fixed",
+  "clock-chart-reference-path": "fixed",
+  "clock-chart-reference-line": "fixed",
+  "clock-chart-reference-area": "fixed",
+  "clock-chart-center": "fixed",
+  "clock-chart-center-label": "fixed",
+  "clock-chart-active-value": "fixed",
   "chart-panel": "layout",
   "chart-plot": "fixed",
   "chart-surface": "fixed",
@@ -147,7 +179,7 @@ describe("chart density roles", () => {
   it("declares every written chart slot with its section 10 role", () => {
     const declared = Object.fromEntries(
       Object.entries(PART_DENSITY).filter(([slot]) =>
-        /^(sparkline|chart|pie-chart|radial-chart|radar-chart)(-|$)/u.test(slot)
+        /^(sparkline|chart|pie-chart|radial-chart|radar-chart|clock-chart)(-|$)/u.test(slot)
       )
     );
     expect(declared).toEqual(CONTRACT_ROLES);

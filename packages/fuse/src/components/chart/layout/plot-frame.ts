@@ -11,8 +11,10 @@
  * the same whole device pixels.
  */
 import { DECIMATE_ABOVE } from "./decimate";
+import type { FloorAxis } from "./floor-settle";
 import { linearScale, scaleValue } from "./linear-scale";
 import type { LinearScale } from "./linear-scale";
+import { valueFloor } from "./value-floor";
 
 /** The plot box as Root measured it. */
 export type PlotBox = {
@@ -855,13 +857,26 @@ function floorValue(
   length: number,
   floor: ValueFloor
 ): readonly [number, number] {
-  if (floor === "none" || to > from || !(length > 0) || !Number.isFinite(length)) return [from, to];
-  const device = 1 / frame.box.dpr;
-  const kept: readonly [number, number] = floor === "start" ? [from - device, from] : [to, to + device];
-  // The kept pixel lies wholly inside the plot's drawn pixels, or the body stays flat. Snapped
-  // edges are differences of page pixels, off by float error, so the bounds allow it.
-  const inside = kept[0] >= -TIE && kept[1] <= snapAcross(frame, acrossLength(frame)) + TIE;
-  return inside ? kept : [from, to];
+  return valueFloor(from, to, length, floor, frame.box.dpr, snapAcross(frame, acrossLength(frame)));
+}
+
+const floorAxes = new WeakMap<PlotFrame, FloorAxis>();
+
+/**
+ * A frame as the stack floors read it: its orientation and its value-axis floor.
+ *
+ * @param frame - The layout's frame.
+ * @returns The floor axis, the same object for the same frame.
+ */
+export function floorAxisOf(frame: PlotFrame): FloorAxis {
+  const known = floorAxes.get(frame);
+  if (known !== undefined) return known;
+  const axis: FloorAxis = {
+    orientation: frame.orientation,
+    floorAcross: (from, to, across) => floorAcross(frame, from, to, across),
+  };
+  floorAxes.set(frame, axis);
+  return axis;
 }
 
 /**

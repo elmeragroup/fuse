@@ -11,9 +11,9 @@ import type { SupportedLocale } from "../../intl/locale-context";
 import type { ChartFollowers } from "./chart-followers";
 import type { ChartMotion } from "./chart-motion";
 import type { ChartReadout, ChartTableModel, PointerSlot } from "./chart-readout-port";
-import type { ChartStore } from "./chart-store";
-import type { OptionOrder } from "./chart-text";
-import type { ChartSelectionChangeReason, ValueFormat } from "./chart-types";
+import type { ChartStore, EmphasisEntry } from "./chart-store";
+import type { OptionOrder, TextContext } from "./chart-text";
+import type { ChartSelectionChangeReason, ChartX, ValueFormat } from "./chart-types";
 import type { FormattedText } from "./format/formatted-text";
 import { ChartCompositionError } from "./layout/errors";
 import type { ChartDataRule, ChartHintRule } from "./layout/errors";
@@ -22,7 +22,7 @@ import type { PolarPoint, Sweep, SweepBox } from "./layout/polar-angle";
 import type { RingBand } from "./layout/rings";
 
 /** The polar families. */
-export type PolarFamily = "pie" | "radial" | "radar";
+export type PolarFamily = "pie" | "radial" | "radar" | "clock";
 
 /** A ray from the centre, in degrees and in units of the outer radius. */
 export type PolarRay = { readonly angle: number; readonly radius: number };
@@ -40,16 +40,29 @@ export type PolarModel = {
   readonly empty: boolean;
   /** The generated description, spoken text. */
   readonly description: string;
-  /** Which key help the family reads: the pie and radial map, or the cartesian map a radar shares. */
-  readonly instructions: "polar" | "cartesian";
+  /**
+   * Which key help the family reads: the pie and radial map, the cartesian map a radar shares, or
+   * the clock's, whose PageUp and PageDown move one label unit.
+   */
+  readonly instructions: "polar" | "cartesian" | "clock";
   /** The listbox's orientation: "vertical" for pie and radial, "horizontal" for radar (section 9.3). */
   readonly orientation: "horizontal" | "vertical";
   /** Whether the arrows wrap past the last option: a pie's and a radar's do, a radial chart's rings do not. */
   readonly wrap: boolean;
   /** How many series the Up and Down focus cycles through after "all series", 0 for none. */
   readonly series: number;
+  /**
+   * The option PageUp or PageDown reaches from an option, one label unit away, or null for a family
+   * whose map lets them propagate.
+   */
+  readonly page: ((index: number, direction: 1 | -1) => number) | null;
   /** An option's spoken name. */
-  readonly optionName: (index: number, focus: number, order: OptionOrder) => string;
+  readonly optionName: (
+    index: number,
+    focus: number,
+    order: OptionOrder,
+    emphasis: { readonly [key: string]: EmphasisEntry }
+  ) => string;
   /**
    * The option and series under a point, in units of the outer radius from the centre, or null
    * where nothing picks.
@@ -84,7 +97,92 @@ export type PolarModel = {
 export type PolarDrawing =
   | { readonly kind: "pie"; readonly pie: PieDrawing; readonly centre: CentreModel }
   | { readonly kind: "radial"; readonly radial: RadialDrawing; readonly centre: CentreModel }
-  | { readonly kind: "radar"; readonly radar: RadarDrawing };
+  | { readonly kind: "radar"; readonly radar: RadarDrawing }
+  | { readonly kind: "clock"; readonly clock: ClockDrawing };
+
+/** One series a clock draws, in config order. */
+export type ClockSeries = {
+  readonly key: string;
+  /** The series' place among the config keys, which focus, selection and highlight name. */
+  readonly index: number;
+  /** The series paint: a role, a role list's first stop, a scale's middle step or a threshold's lower side. */
+  readonly paint: string;
+  /** A role list's stops from the tip to the base (R9). */
+  readonly stops: readonly string[] | undefined;
+  /**
+   * A scale's or a threshold's steps, lowest first, each with the radius where it starts, the first
+   * at the hole: a curve's gradient turns hard at each radius (D23). Null for one paint.
+   */
+  readonly steps: readonly { readonly paint: string; readonly from: number }[] | null;
+  /** Each reading's step, 0 for the lowest, which a wedge, a dot or the active dot paints in. */
+  readonly stepAt: readonly number[];
+  readonly stack: string | undefined;
+  readonly missing: "gap" | "connect";
+  readonly slots: ClockSlotDraw;
+  /** The numbers the series rests on: 1, then each slot's start and end angle, base radius and tip. */
+  readonly rest: readonly number[];
+  /** Each slot's reading, or null. */
+  readonly values: readonly (number | null)[];
+  /** The slots the series' columns draw: every slot up to 100, M4's past it. */
+  readonly shown: readonly number[];
+};
+
+/** What a series' slots hold beside their numbers, as `layout/clock-path.ts` reads them. */
+export type ClockSlotDraw = {
+  readonly states: readonly ("reading" | "missing" | "pending")[];
+  readonly marked: readonly boolean[];
+  readonly missing: "gap" | "connect";
+};
+
+/** One label round a clock dial: where it sits, what it reads and from which width it shows. */
+export type ClockLabel = {
+  /** Its angle in degrees: an hour's slot start, or the middle of a weekday's or a month's span. */
+  readonly angle: number;
+  /** Its unit's start instant, which an AngleAxis `format` prints. */
+  readonly start: number;
+  /** Its unit: an hour, a day or a month. */
+  readonly unit: "hour" | "day" | "month";
+  readonly text: FormattedText;
+  /** The narrowest container width it shows at, "always" for the cycle's first, or "none". */
+  readonly visibility: number | "always" | "none";
+};
+
+/** What a clock's parts draw: its slots, its radius scale and its series. */
+export type ClockDrawing = {
+  readonly count: number;
+  /** Each slot's start instant. */
+  readonly starts: readonly number[];
+  /**
+   * Each slot's wall clock offset from the cycle's start, a repeated wall clock marked as its second
+   * pass, which pairs a slot with its twin on another cycle, so a switch between a 24- and a 25-hour
+   * day tweens each hour to its new angle.
+   */
+  readonly pairs: readonly string[];
+  /** The hole's radius as a share of the outer radius. */
+  readonly inner: number;
+  readonly scale: "radial" | "linear";
+  /** The radius domain, its minimum at the hole and its maximum at the rim. */
+  readonly domain: readonly [number, number];
+  /** The ring values, the domain's own ticks. */
+  readonly ticks: readonly number[];
+  /** The radius of a value, under the Root's scale, extrapolated past the domain. */
+  readonly radius: (value: number) => number;
+  /** The radius of 0 when the domain spans it, where the solid zero ring sits, or null. */
+  readonly zero: number | null;
+  readonly series: readonly ClockSeries[];
+  /** The cycle's labels: hours round a day, weekdays round a week, months round a year. */
+  readonly labels: readonly ClockLabel[];
+  /** The angle of Root's `now` and its slot, or null when `now` lies outside the cycle. */
+  readonly now: { readonly slot: number; readonly angle: number } | null;
+  /** The first series' format, which the RadiusAxis prints its ticks in. */
+  readonly format: ValueFormat;
+  /** How stacks combine, which decides whether a Line or an Area may paint by value. */
+  readonly stackOffset: "diverging" | "expand";
+  /** The series model and its words, which the value parts read. */
+  readonly text: TextContext;
+  /** The slot of an x, or -1 when no slot holds it. */
+  readonly slotOf: (x: ChartX) => number;
+};
 
 /** One series a radar draws, in config order. */
 export type RadarSeries = {
@@ -273,7 +371,12 @@ export function usePolarContext(part: string, families: readonly PolarFamily[]):
 }
 
 /** Each family's Root, as an error names it. */
-const ROOTS = { pie: "PieChart.Root", radial: "RadialChart.Root", radar: "RadarChart.Root" } as const;
+const ROOTS = {
+  pie: "PieChart.Root",
+  radial: "RadialChart.Root",
+  radar: "RadarChart.Root",
+  clock: "ClockChart.Root",
+} as const;
 
 /**
  * A pie's drawing, which only a pie model holds.
@@ -316,7 +419,21 @@ export function radialDrawingOf(model: PolarModel): RadialDrawing | null {
  * @returns The centre's numbers, or null under a family with no centre.
  */
 export function centreOf(model: PolarModel): CentreModel | null {
-  return model.drawing.kind === "radar" ? null : model.drawing.centre;
+  return model.drawing.kind === "pie" || model.drawing.kind === "radial" ? model.drawing.centre : null;
+}
+
+/**
+ * A clock's drawing, for a part only a clock holds.
+ *
+ * @param model - The Root's model, a clock's, as `usePolarContext` admitted the part.
+ * @param part - The part, which a defect names.
+ * @returns The drawing.
+ * @throws When the model holds no clock, a defect.
+ */
+export function clockDrawingIn(model: PolarModel, part: string): ClockDrawing {
+  if (model.drawing.kind !== "clock")
+    throw new Error(`${part} read a ${model.family} model, which holds no clock.`);
+  return model.drawing.clock;
 }
 
 /**

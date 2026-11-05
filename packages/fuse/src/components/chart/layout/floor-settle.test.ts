@@ -10,7 +10,7 @@ import { describe, expect, it } from "vitest";
 import { geometryRect } from "./bar-geometry";
 import { settleFloors } from "./floor-settle";
 import type { FloorSpan } from "./floor-settle";
-import { floorAcross, plotFrame, snapY } from "./plot-frame";
+import { floorAcross, floorAxisOf, plotFrame, snapY } from "./plot-frame";
 import type { PlotFrame } from "./plot-frame";
 
 /** A plot 200 px tall with zero in its middle, its top a fraction of a pixel into the page. */
@@ -35,7 +35,7 @@ function span(
 
 /** Which spans keep their floor, as 0s and 1s in span order. */
 function keeps(spans: readonly FloorSpan[], frame: PlotFrame = FRAME): number[] {
-  return [...settleFloors(spans, frame)];
+  return [...settleFloors(spans, floorAxisOf(frame))];
 }
 
 describe("the floor's owners", () => {
@@ -112,7 +112,7 @@ describe("the floor on random spans", () => {
         const spans = raw.map(({ series, from, width, base, tip }) =>
           span(series, from, from + width, base, tip, frame)
         );
-        const kept = settleFloors(spans, frame);
+        const kept = settleFloors(spans, floorAxisOf(frame));
         const drawn = spans.map(({ segment }, id) =>
           kept[id] === 1
             ? floorAcross(frame, segment.plainFrom, segment.plainTo, [segment.base, segment.tip])
@@ -149,10 +149,10 @@ describe("the floor on random spans", () => {
           const order = spans
             .map((_, id) => id)
             .toSorted((a, b) => ((a * 7919 + seed) % 13) - ((b * 7919 + seed) % 13) || a - b);
-          const kept = settleFloors(spans, frame);
+          const kept = settleFloors(spans, floorAxisOf(frame));
           const shuffled = settleFloors(
             order.map((id) => spans[id] ?? spans[0] ?? span("a", 0, 1, 100, 100)),
-            frame
+            floorAxisOf(frame)
           );
           order.forEach((id, at) => {
             expect(shuffled[at]).toBe(kept[id]);
@@ -206,7 +206,7 @@ describe("the floor on random spans", () => {
           }
           from += width;
         });
-        const kept = settleFloors(spans, frame);
+        const kept = settleFloors(spans, floorAxisOf(frame));
         const length = spans.some(({ segment }) => segment.base !== segment.tip);
         const shows = spans.some(({ segment }, id) => {
           const [low, high] =

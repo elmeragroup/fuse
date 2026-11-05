@@ -1,5 +1,5 @@
 // The clock dial's geometry. Unit under test: slotAngles, instantAngle, clockRadius,
-// thresholdRadius, wedgePad, columnFrame, columnSpan and columnFloorSpan. Oracles, written by hand:
+// thresholdRadius, wedgePad, columnAxis, columnSpan and columnFloorSpan. Oracles, written by hand:
 // D11's equal slots, where slot i of n spans [360·i/n, 360·(i+1)/n); D13's radii, r = √(lerp(ri², R², t))
 // and lerp(ri, R, t); D14's constant gap, whose width 2·padRadius·sin(padAngle/2) holds at every
 // radius, vanishing once the inner arc falls under 2 device pixels; D23's threshold ring on the
@@ -10,7 +10,7 @@ import { describe, expect, it } from "vitest";
 import {
   clockRadius,
   columnFloorSpan,
-  columnFrame,
+  columnAxis,
   columnSpan,
   instantAngle,
   slotAngles,
@@ -70,26 +70,26 @@ describe("the wedge pad (D14)", () => {
 });
 
 describe("the column floor (D24)", () => {
-  const frame = columnFrame(100, 24, 1);
+  const axis = columnAxis(100, 1);
 
   it("keeps one device pixel outward for a sliver above the zero ring", () => {
-    expect(columnSpan(frame, 40, 40.2)).toEqual([40, 41]);
+    expect(columnSpan(axis, 40, 40.2)).toEqual([40, 41]);
   });
 
   it("hangs one device pixel inward for a sliver below the zero ring", () => {
-    expect(columnSpan(frame, 40, 39.8)).toEqual([39, 40]);
+    expect(columnSpan(axis, 40, 39.8)).toEqual([39, 40]);
   });
 
   it("snaps a long column to device pixels with no floor", () => {
-    expect(columnSpan(frame, 40, 60.4)).toEqual([40, 60]);
+    expect(columnSpan(axis, 40, 60.4)).toEqual([40, 60]);
   });
 
   it("measures in device pixels at a higher ratio", () => {
-    expect(columnSpan(columnFrame(100, 24, 2), 40, 40.1)).toEqual([40, 40.5]);
+    expect(columnSpan(columnAxis(100, 2), 40, 40.1)).toEqual([40, 40.5]);
   });
 
   it("gives a stack's floor to the segment reaching farthest out", () => {
-    const spans = [columnFloorSpan(frame, 3, "a", 40, 40.2), columnFloorSpan(frame, 3, "b", 40.2, 40.4)];
-    expect([...settleFloors(spans, frame)]).toEqual([0, 1]);
+    const spans = [columnFloorSpan(axis, 3, "a", 40, 40.2), columnFloorSpan(axis, 3, "b", 40.2, 40.4)];
+    expect([...settleFloors(spans, axis)]).toEqual([0, 1]);
   });
 });

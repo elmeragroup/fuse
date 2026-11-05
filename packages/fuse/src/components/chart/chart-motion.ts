@@ -88,6 +88,11 @@ export type Placement =
        * polar entrance runs over `--chart-intro`, 1 s.
        */
       readonly duration?: number;
+      /**
+       * "linear" moves the numbers at a steady pace, as a progress the mark's writer eases itself,
+       * such as the clock entrance's. The update curve by default.
+       */
+      readonly curve?: "linear";
     };
 
 /**
@@ -275,6 +280,8 @@ type Tween = {
   readonly delay: number;
   /** How long the tween runs, the update's duration when undefined. */
   readonly duration?: number;
+  /** "linear" for a steady pace, the update curve when undefined. */
+  readonly curve?: "linear";
 };
 
 /**
@@ -528,7 +535,7 @@ export function createChartMotion(
           1,
           Math.max(0, (time - tween.start - tween.delay) / (tween.duration ?? CHART_UPDATE_MS))
         );
-        mark.eased = progress >= 1 ? 1 : ease(progress);
+        mark.eased = progress >= 1 ? 1 : tween.curve === "linear" ? progress : ease(progress);
         // The last frame writes the target itself, so the DOM ends on the numbers React rendered.
         if (progress >= 1) mark.drawn = tween.rest ?? tween.to;
         else {
@@ -746,8 +753,9 @@ export function createChartMotion(
         start: held ? Number.POSITIVE_INFINITY : startTime(),
         delay: placement.delay,
       };
-      const tween =
+      const timed =
         placement.duration === undefined ? entering : { ...entering, duration: placement.duration };
+      const tween = placement.curve === undefined ? timed : { ...timed, curve: placement.curve };
       run(id, write, tween, axes, owner);
       return;
     }

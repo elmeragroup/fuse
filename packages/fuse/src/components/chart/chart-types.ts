@@ -751,6 +751,57 @@ export type ChartScatterFieldCheck<TConfig> = string extends keyof TConfig
     };
 
 /**
+ * The cycle a clock dial runs once round: a day from midnight, an ISO week from Monday 00:00, or a
+ * year from 1 January, in Root's zone.
+ *
+ * @beta
+ */
+export type ChartClockCycle = "day" | "week" | "year";
+
+/**
+ * The intervals that nest in a clock cycle: quarter-hours or hours round a day, hours or days round
+ * a week, and hours, days or months round a year. A week never nests in a year.
+ *
+ * @template TCycle - The dial's cycle.
+ * @beta
+ */
+export type ChartClockInterval<TCycle extends ChartClockCycle> = TCycle extends "day"
+  ? "quarter-hour" | "hour"
+  : TCycle extends "week"
+    ? "hour" | "day"
+    : "hour" | "day" | "month";
+
+/**
+ * Clock config takes the cartesian fields, with two limits: a series' `interval` must nest in the
+ * cycle, and its `barVariant` is "default" or "gradient", the looks a wedge draws. A widened config
+ * skips the check.
+ *
+ * @template TConfig - The config the Root infers.
+ * @template TCycle - The dial's cycle.
+ * @beta
+ */
+export type ChartClockFieldCheck<
+  TConfig,
+  TCycle extends ChartClockCycle = ChartClockCycle,
+> = string extends keyof TConfig
+  ? unknown
+  : {
+      readonly [K in keyof TConfig]: TConfig[K] extends { barVariant: infer B }
+        ? B extends "default" | "gradient"
+          ? TConfig[K] extends { interval: infer I }
+            ? I extends ChartClockInterval<TCycle>
+              ? unknown
+              : { readonly "ClockChart series intervals nest in the cycle": ChartClockInterval<TCycle> }
+            : unknown
+          : { readonly 'ClockChart barVariant is "default" or "gradient"': never }
+        : TConfig[K] extends { interval: infer I }
+          ? I extends ChartClockInterval<TCycle>
+            ? unknown
+            : { readonly "ClockChart series intervals nest in the cycle": ChartClockInterval<TCycle> }
+          : unknown;
+    };
+
+/**
  * A literal category union needs one entry per category and no other key. A `string` column needs
  * neither, and neither does a widened config, which `unknown-category` covers at render.
  *

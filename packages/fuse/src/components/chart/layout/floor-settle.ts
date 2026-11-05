@@ -4,8 +4,30 @@
  * marks of their own, so the stack floors hand this module every span the stack's marks draw in the
  * frame, and it decides from them alone, never from the data an update ends on.
  */
-import { floorAcross } from "./plot-frame";
 import type { PlotFrame, PlotRect } from "./plot-frame";
+
+/**
+ * What the floor's policy reads of the place a stack draws in: which way its value axis runs, and
+ * the floor a body there keeps. A cartesian frame gives one through `floorAxisOf`, and a clock dial
+ * its own along the radius, so the policy reads no plot geometry.
+ */
+export type FloorAxis = {
+  /** "vertical" when values grow up the page, "horizontal" when they grow to the right or outward. */
+  readonly orientation: "vertical" | "horizontal";
+  /**
+   * The value-axis span a body covers with the floor, from the span its plain snap covers.
+   *
+   * @param from - Where the plain snap's span starts along the value axis.
+   * @param to - Where it ends.
+   * @param across - The body's unsnapped base and tip along the value axis, base first.
+   * @returns The span with the floor.
+   */
+  readonly floorAcross: (
+    from: number,
+    to: number,
+    across: readonly [base: number, tip: number]
+  ) => readonly [number, number];
+};
 
 /** One stack segment as a frame draws it: its ends and the pixels its plain snap covers. */
 export type StackSegment = {
@@ -35,14 +57,18 @@ export type FloorSpan = {
  * across a horizontal one. A body of no length lies on neither side, so it takes no floor and reads
  * no place.
  *
- * @param frame - The layout's frame.
+ * @param axis - The axis the body draws along, a frame's or a dial's.
  * @param base - The body's base along the value axis, unsnapped.
  * @param tip - Its tip, likewise.
  * @returns The side, or null.
  */
-export function zeroSide(frame: PlotFrame, base: number, tip: number): "above" | "below" | null {
+export function zeroSide(
+  axis: Pick<FloorAxis, "orientation">,
+  base: number,
+  tip: number
+): "above" | "below" | null {
   if (tip === base) return null;
-  return (frame.orientation === "vertical" ? tip < base : tip > base) ? "above" : "below";
+  return (axis.orientation === "vertical" ? tip < base : tip > base) ? "above" : "below";
 }
 
 /**
@@ -99,10 +125,10 @@ const OVERLAP = 1e-6;
  * its floor lies past every other segment's pixels.
  *
  * @param spans - The stack's spans in the frame.
- * @param frame - The layout's frame the stack draws in.
+ * @param axis - The axis the stack draws along, a frame's or a dial's.
  * @returns For each span, 1 where it keeps its floor and 0 where it does not.
  */
-export function settleFloors(spans: readonly FloorSpan[], frame: PlotFrame): Uint8Array {
+export function settleFloors(spans: readonly FloorSpan[], axis: FloorAxis): Uint8Array {
   const count = spans.length;
   const keeps = new Uint8Array(count);
   let low = Number.POSITIVE_INFINITY;
@@ -123,7 +149,7 @@ export function settleFloors(spans: readonly FloorSpan[], frame: PlotFrame): Uin
   // Each span's side, 1 above, -1 below, 0 with no length, and how far its tip reaches out.
   const sides = new Int8Array(count);
   const reaches = new Float64Array(count);
-  const vertical = frame.orientation === "vertical";
+  const vertical = axis.orientation === "vertical";
   let lastSeries = "";
   let lastRank = 0;
   for (let id = 0; id < count; id += 1) {
@@ -135,7 +161,7 @@ export function settleFloors(spans: readonly FloorSpan[], frame: PlotFrame): Uin
     }
     ranks[id] = lastRank;
     const { base, tip } = span.segment;
-    const side = zeroSide(frame, base, tip);
+    const side = zeroSide(axis, base, tip);
     if (side === null) continue;
     // How far the tip lies in the positive direction: up a vertical frame, right across a horizontal one.
     const up = vertical ? -tip : tip;
@@ -185,7 +211,7 @@ export function settleFloors(spans: readonly FloorSpan[], frame: PlotFrame): Uin
       }
       const segment = spans[id]?.segment;
       if (segment === undefined) continue;
-      const [from, to] = floorAcross(frame, segment.plainFrom, segment.plainTo, [segment.base, segment.tip]);
+      const [from, to] = axis.floorAcross(segment.plainFrom, segment.plainTo, [segment.base, segment.tip]);
       let clear = true;
       for (let other = 0; other < size && clear; other += 1) {
         const them = active[other] ?? -1;

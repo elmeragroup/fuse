@@ -458,6 +458,7 @@ describe("chart module directives", () => {
     "components/chart/pie-chart-namespace.ts",
     "components/chart/radial-chart-namespace.ts",
     "components/chart/radar-chart-namespace.ts",
+    "components/chart/clock-chart-namespace.ts",
     "components/chart/scatter-chart-namespace.ts",
     // Each namespace is an ES module namespace over its parts module, so the parts modules stay
     // directive-free too, and a server component still dots into client references.
@@ -468,6 +469,7 @@ describe("chart module directives", () => {
     "components/chart/pie-chart-parts.ts",
     "components/chart/radial-chart-parts.ts",
     "components/chart/radar-chart-parts.ts",
+    "components/chart/clock-chart-parts.ts",
     "components/chart/scatter-chart-parts.ts",
     "components/chart/sparkline.tsx",
     "components/chart/chart-types.ts",
@@ -509,6 +511,7 @@ describe("chart module directives", () => {
     ["pie-chart-namespace.ts", ["PieChart"]],
     ["radial-chart-namespace.ts", ["RadialChart"]],
     ["radar-chart-namespace.ts", ["RadarChart"]],
+    ["clock-chart-namespace.ts", ["ClockChart"]],
     ["scatter-chart-namespace.ts", ["ScatterChart"]],
   ] as const)("%s exports only its namespace objects", (file, names) => {
     expect(exportedNames(`${CHART_DIR}${file}`)).toEqual(names);
@@ -550,10 +553,11 @@ describe("chart plot marks", () => {
   // ScatterChart's parts draw over two value axes with no slot grid, so their own floor oracle,
   // scatter-chart-floor.browser.test.tsx, walks them against the device pixel grid alone. The polar
   // parts draw in a dial with no slot grid either: a slice keeps its rim floor (D24), which
-  // pie-chart-floor.browser.test.tsx checks, and its leaders, track and glow draw no reading.
+  // pie-chart-floor.browser.test.tsx checks, and its leaders, track and glow draw no reading. A clock
+  // column keeps its radial floor (D24), which clock-chart.browser.test.tsx checks at 1x and 2x.
   const isScatter = (relative: string): boolean => relative.startsWith("components/chart/scatter-chart-");
   const isPolar = (relative: string): boolean =>
-    /^components\/chart\/(?:pie|radial|radar)-chart-/u.test(relative);
+    /^components\/chart\/(?:pie|radial|radar|clock)-chart-/u.test(relative);
   const parts = [...SOURCE_TREE.values()].filter(
     (record) =>
       record.relative.startsWith("components/chart/") &&

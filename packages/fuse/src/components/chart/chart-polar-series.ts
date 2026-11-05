@@ -21,13 +21,13 @@ import {
 } from "./chart-series-readout";
 import { optionName, slotLabel } from "./chart-text";
 import type { TextContext } from "./chart-text";
-import type { ChartConfig, ChartQuality, ChartRow } from "./chart-types";
+import type { ChartColor, ChartConfig, ChartQuality, ChartRow, ChartThresholdSide } from "./chart-types";
 import { CHART_STRINGS, countOf } from "./format/chart-strings";
 import { POLAR_STRINGS } from "./format/polar-strings";
 import { seriesLabel } from "./format/series-label";
 import { formatValue } from "./format/value-format";
 import type { CartesianModel } from "./layout/cartesian-model";
-import { isRoleList, seriesPaint, singleRole } from "./layout/color-key";
+import { isRoleList, isThresholdColor, seriesPaint, singleRole } from "./layout/color-key";
 import { assertKnownKey } from "./layout/errors";
 import { pointerAngle } from "./layout/polar-angle";
 import type { Sweep } from "./layout/polar-angle";
@@ -53,12 +53,25 @@ export type RadarInput = {
   readonly issues: readonly PolarIssue[];
 };
 
-/** A swatch's paint: a role list's stops as a gradient, or the series' own paint. */
+/**
+ * A swatch's paint: the active reading's step, a role list's stops as a gradient, a scale's ramp, a
+ * threshold's two sides split in half, lower side first, or the series' own paint.
+ */
 function swatchOf(context: TextContext, key: string, at: number | null): string {
   const paint = seriesPaintOf(key, context.config[key]?.color ?? "chart-1", seriesOf(context.model, key));
   const step = at === null ? undefined : readingPaint(paint, readingAt(context, key, at));
   if (step !== undefined) return step;
-  return paint.stops === undefined ? paint.base : `linear-gradient(to right, ${paint.stops.join(", ")})`;
+  const { stops, ramp } = paint;
+  if (stops !== undefined) return `linear-gradient(to right, ${stops.join(", ")})`;
+  if (ramp === undefined) return paint.base;
+  if (!isThresholdColor(paint.color)) return `linear-gradient(to right, ${ramp.join(", ")})`;
+  const [below = paint.base, above = paint.base] = ramp;
+  return `linear-gradient(to right, ${below} 50%, ${above} 50%)`;
+}
+
+/** A threshold's two sides, upper first as the legend lists them, or null for any other colour. */
+function sidesOf(color: ChartColor | undefined): readonly [ChartThresholdSide, ChartThresholdSide] | null {
+  return color !== undefined && isThresholdColor(color) ? [color.above, color.below] : null;
 }
 
 /** The spoken extremes of each series, the radar description's sentences after its opening. */
@@ -134,6 +147,7 @@ export function radarModel(input: RadarInput): PolarModel {
     orientation: "horizontal",
     wrap: true,
     series: model.series.length,
+    page: null,
     optionName: (index, focus, order) => optionName(context, index, focus, order),
     pick: (point) => {
       // Distance from the centre changes nothing, as R6 says.
@@ -152,7 +166,7 @@ export function radarModel(input: RadarInput): PolarModel {
     selectKey: (_index, focus) => model.series[focus]?.key ?? null,
     selectable: Object.keys(config),
     table: seriesTable({ ...context, name: input.name, rows: input.rows }, keys),
-    readout: (kernel) => radarReadout(context, kernel),
+    readout: (kernel) => seriesReadout(context, kernel),
     issues: input.issues,
     drawing: {
       kind: "radar",
@@ -188,8 +202,15 @@ export function radarModel(input: RadarInput): PolarModel {
   };
 }
 
-/** A radar's readout, the cartesian series readout over the spoke model. */
-function radarReadout(context: TextContext, kernel: PolarKernel): ChartReadout {
+/**
+ * A series family's readout, a radar's or a clock's: the cartesian series readout over the family's
+ * slots, a threshold series listing both sides in the legend.
+ *
+ * @param context - The family's series model and words.
+ * @param kernel - The polar Root's kernel.
+ * @returns The readout.
+ */
+export function seriesReadout(context: TextContext, kernel: PolarKernel): ChartReadout {
   const { model, config } = context;
   const legendKeys = Object.keys(config);
   const seriesKeys = model.series.map(({ key }) => key);
@@ -201,7 +222,7 @@ function radarReadout(context: TextContext, kernel: PolarKernel): ChartReadout {
         label: seriesLabel(context, key),
         icon: config[key]?.icon,
         selectable: true,
-        sides: null,
+        sides: sidesOf(config[key]?.color),
       },
     ])
   );

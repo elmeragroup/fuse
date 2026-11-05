@@ -853,7 +853,8 @@
     );
   }
 
-  :is([data-slot="pie-chart-pie"], [data-slot="radial-chart-bar"]) stop {
+  :is([data-slot="pie-chart-pie"], [data-slot="radial-chart-bar"], [data-radar-series], [data-clock-series])
+    stop {
     stop-color: var(--_stop);
   }
 
@@ -1232,8 +1233,525 @@
     translate: 0.25rem -50%;
   }
 
+  /*
+    A clock's grid: the hole's edge, rings at the value ticks in the border role, a solid zero ring
+    in the zero line's colour, and spokes at the cycle's labels. Each stroke keeps 1 px at any dial
+    size, and the dashed grid dashes all but the zero ring.
+  */
+  [data-slot="clock-chart-grid"] {
+    z-index: 0;
+  }
+
+  :is([data-slot="clock-chart-grid-ring"], [data-slot="clock-chart-spoke"]) {
+    fill: none;
+    stroke: color-mix(in oklab, var(--border) 80%, transparent);
+    stroke-width: 1px;
+    vector-effect: non-scaling-stroke;
+  }
+
+  [data-slot="clock-chart-grid"][data-variant="dashed"]
+    :is([data-slot="clock-chart-grid-ring"]:not([data-zero], [data-part]), [data-slot="clock-chart-spoke"]) {
+    stroke-dasharray: 3 2;
+  }
+
+  [data-slot="clock-chart-grid-ring"][data-zero] {
+    stroke: var(--muted-foreground);
+  }
+
+  /*
+    A clock's series layers. An Area and a Column sit under a Line, and the dots over it. A layer
+    painted by value strokes or fills through its radial gradient, and a Column paints each wedge in
+    its own step. Every series dims as a radar's does: hover dims the series other than the nearest,
+    and selection and highlight dim the rest.
+  */
+  :is(
+    [data-slot="clock-chart-area"],
+    [data-slot="clock-chart-column"],
+    [data-slot^="clock-chart-reference"]
+  ) {
+    z-index: 1;
+  }
+
+  :is([data-slot="clock-chart-line"], [data-slot="clock-chart-scrubber"]) {
+    z-index: 2;
+  }
+
+  :is(
+    [data-slot="clock-chart-dots"],
+    [data-slot="clock-chart-marker"],
+    [data-slot="clock-chart-active-dot"],
+    [data-slot="clock-chart-now"],
+    [data-slot="clock-chart-angle-axis"],
+    [data-slot="clock-chart-radius-axis"],
+    [data-slot="clock-chart-center"]
+  ) {
+    z-index: 3;
+  }
+
+  [data-slot="clock-chart-value-labels"] {
+    z-index: 4;
+  }
+
+  [data-slot="clock-chart-line-path"] {
+    fill: none;
+    stroke: var(--_paint);
+    stroke-width: var(--chart-stroke);
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    vector-effect: non-scaling-stroke;
+  }
+
+  :is(
+    [data-slot="clock-chart-line-path"][data-part="marked"],
+    [data-slot="clock-chart-line"]:is([data-variant="dashed"], [data-variant="flowing"])
+      [data-slot="clock-chart-line-path"][data-part="solid"]
+  ) {
+    stroke-dasharray: 3 3;
+    stroke-linecap: butt;
+  }
+
+  [data-slot="clock-chart-line-path"][data-part="lone"] {
+    stroke: var(--_base);
+    stroke-width: 5px;
+  }
+
+  [data-slot="clock-chart-line"][data-variant="quiet"] [data-slot="clock-chart-line-path"] {
+    stroke-width: 1px;
+    stroke-opacity: 0.6;
+  }
+
+  [data-slot="clock-chart-area-path"] {
+    fill: var(--_paint);
+    fill-rule: evenodd;
+    stroke: none;
+  }
+
+  [data-slot="clock-chart-area"][data-variant="solid"]
+    [data-slot="clock-chart-area-path"][data-part="solid"] {
+    fill-opacity: calc(var(--chart-area-opacity) * (1 + var(--_near, 0)));
+  }
+
+  [data-slot="clock-chart-area"]:not([data-variant="solid"])
+    [data-slot="clock-chart-area-path"][data-part="solid"] {
+    mask: var(--_look);
+  }
+
+  [data-slot="clock-chart-area"] :is(mask, pattern) :is(rect, circle):not([fill]) {
+    fill: #fff;
+  }
+
+  [data-slot="clock-chart-area"] stop[data-part="near"] {
+    stop-color: #fff;
+    stop-opacity: 0;
+  }
+
+  [data-slot="clock-chart-area"] stop[data-part="far"] {
+    stop-color: #fff;
+    stop-opacity: min(1, calc(4 * var(--chart-area-opacity) * (1 + var(--_near, 0))));
+  }
+
+  [data-slot="clock-chart-area"]:is([data-variant="dotted"], [data-variant="lines"], [data-variant="hatched"])
+    [data-slot="clock-chart-area-path"][data-part="solid"] {
+    fill-opacity: 0.5;
+  }
+
+  :is([data-slot="clock-chart-area-path"], [data-slot="clock-chart-wedge"])[data-part="marked"] {
+    fill: var(--_hatch-paint);
+    fill-opacity: 0.6;
+    mask: none;
+  }
+
+  [data-slot="clock-chart-wedge"] {
+    fill: var(--_wedge);
+    stroke: none;
+    print-color-adjust: exact;
+  }
+
+  [data-slot="clock-chart-column"][data-variant="gradient"] [data-slot="clock-chart-wedge"]:not([data-part]) {
+    mask: var(--_fade);
+  }
+
+  [data-slot="clock-chart-column"] stop[data-part="near"] {
+    stop-color: #fff;
+    stop-opacity: 0.35;
+  }
+
+  [data-slot="clock-chart-column"] stop[data-part="far"] {
+    stop-color: #fff;
+    stop-opacity: 1;
+  }
+
+  [data-polar][data-fade="past"] [data-slot="clock-chart-wedge"][data-time="past"] {
+    opacity: 0.4;
+  }
+
+  [data-slot="clock-chart-wedge"][data-part="emphasis"] {
+    fill: none;
+    stroke: var(--foreground);
+    stroke-width: 1.5px;
+    vector-effect: non-scaling-stroke;
+  }
+
+  [data-slot="clock-chart-dot"] {
+    fill: none;
+    stroke-linecap: round;
+    vector-effect: non-scaling-stroke;
+    print-color-adjust: exact;
+  }
+
+  [data-slot="clock-chart-dot"][data-part="halo"] {
+    stroke: var(--background);
+    stroke-width: 10px;
+  }
+
+  [data-slot="clock-chart-dot"][data-part="dots"] {
+    stroke: var(--_dot, var(--_base));
+    stroke-width: 8px;
+  }
+
+  [data-slot="clock-chart-dot"][data-part="ping"] {
+    stroke: var(--_dot, var(--_base));
+    stroke-width: 8px;
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: var(--animate-chart-ping);
+  }
+
+  [data-variant="ring"] > g [data-slot="clock-chart-dot"][data-part="halo"] {
+    stroke: var(--_dot, var(--_base));
+  }
+
+  [data-variant="ring"] > g [data-slot="clock-chart-dot"][data-part="dots"] {
+    stroke: var(--_ring-hole, var(--background));
+  }
+
+  [data-variant="halo"] > g [data-slot="clock-chart-dot"][data-part="halo"] {
+    stroke: color-mix(in oklab, var(--_dot, var(--_base)) 50%, transparent);
+    stroke-width: 14px;
+  }
+
+  [data-slot="clock-chart-active-dot"] [data-follow]:not([data-value]) {
+    visibility: hidden;
+  }
+
+  [data-clock-series] {
+    opacity: calc(1 - (1 - var(--chart-hover-dim)) * max(var(--_dim-near, 0), var(--_dim-series, 0)));
+  }
+
+  [data-polar][data-near] [data-clock-series] {
+    --_dim-near: min(
+      1,
+      max(var(--chart-series) - var(--chart-near), var(--chart-near) - var(--chart-series))
+    );
+    --_near: calc(1 - var(--_dim-near));
+  }
+
+  [data-polar][data-selected] [data-clock-series] {
+    --_dim-series: min(
+      1,
+      max(var(--chart-series) - var(--chart-selected), var(--chart-selected) - var(--chart-series))
+    );
+  }
+
+  [data-polar][data-highlight] [data-clock-series] {
+    --_dim-series: min(
+      1,
+      max(var(--chart-series) - var(--chart-highlight), var(--chart-highlight) - var(--chart-series))
+    );
+  }
+
+  /*
+    Glow casts a series of one paint as a line's or a bar's glow does, and a series painted by value
+    glows through its own filter, so each halo takes its mark's step.
+  */
+  [data-slot="clock-chart-glow"] {
+    display: contents;
+  }
+
+  [data-slot="clock-chart-glow"] > [data-clock-series]:not([data-paint], [data-slot="clock-chart-column"]) {
+    filter: drop-shadow(0 0 9.5px var(--_base));
+  }
+
+  [data-slot="clock-chart-glow"] > [data-slot="clock-chart-column"]:not([data-paint]) {
+    filter: drop-shadow(0 0 8px color-mix(in oklab, var(--_base) 50%, transparent));
+  }
+
+  [data-slot="clock-chart-glow"] > [data-paint="value"] > g {
+    filter: var(--_glow);
+  }
+
+  /* The hands: the Scrubber's hand or band at the active slot, and Now's hand with its ping. */
+  [data-slot="clock-chart-scrubber"] [data-part="hand"] {
+    opacity: 0;
+    transform-box: view-box;
+    transform-origin: 0 0;
+  }
+
+  [data-slot="clock-chart-scrubber"] [data-part="hand"][data-shown] {
+    opacity: 1;
+  }
+
+  [data-slot="clock-chart-scrubber"] [data-part="line"] {
+    fill: none;
+    stroke: var(--muted-foreground);
+    stroke-width: 1px;
+    vector-effect: non-scaling-stroke;
+  }
+
+  [data-slot="clock-chart-scrubber"] [data-part="band"] {
+    fill: color-mix(in oklab, var(--foreground) 8%, transparent);
+  }
+
+  [data-slot^="clock-chart-reference"],
+  [data-slot="clock-chart-now"] {
+    --chart-tone: var(--muted-foreground);
+  }
+
+  :is([data-slot^="clock-chart-reference"], [data-slot="clock-chart-now"])[data-tone="muted"] {
+    --chart-tone: color-mix(in oklab, var(--muted-foreground) 60%, transparent);
+  }
+
+  :is([data-slot^="clock-chart-reference"], [data-slot="clock-chart-now"])[data-tone="error"] {
+    --chart-tone: var(--error);
+  }
+
+  :is([data-slot^="clock-chart-reference"], [data-slot="clock-chart-now"]) > svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+  }
+
+  [data-slot="clock-chart-reference-line"] [data-part="line"],
+  [data-slot="clock-chart-now"] [data-part="hand"] {
+    fill: none;
+    stroke: var(--chart-tone);
+    stroke-width: 1.5px;
+    vector-effect: non-scaling-stroke;
+  }
+
+  [data-slot="clock-chart-reference-line"][data-variant="dashed"] [data-part="line"] {
+    stroke-dasharray: 3 2;
+  }
+
+  [data-slot="clock-chart-reference-area"] [data-part="area"] {
+    fill: color-mix(in oklab, var(--chart-tone) 12%, transparent);
+  }
+
+  [data-slot="clock-chart-now"] :is([data-part="dot"], [data-part="ping"]) {
+    fill: none;
+    stroke: var(--chart-tone);
+    stroke-width: 6px;
+    stroke-linecap: round;
+    vector-effect: non-scaling-stroke;
+  }
+
+  [data-slot="clock-chart-now"] [data-part="ping"] {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: var(--animate-chart-ping);
+  }
+
+  /*
+    The cycle's labels sit past the rim, each reading away from the centre, and thin by stride as
+    the dial narrows: the axis is its own size container, so each label hides below the narrowest
+    width that holds its stride. The ring values sit beside the 12 o'clock spoke. All are 12 px text
+    placed in the cell (S12).
+  */
+  [data-slot="clock-chart-angle-axis"] {
+    container: clock-chart-dial / inline-size;
+  }
+
+  :is(
+    [data-slot="clock-chart-angle-label"],
+    [data-slot="clock-chart-radius-label"],
+    [data-slot="clock-chart-value-label"],
+    [data-slot^="clock-chart-reference"] > [data-part="label"],
+    [data-slot="clock-chart-now"] > [data-part="label"]
+  ) {
+    position: absolute;
+    left: var(--_x);
+    top: var(--_y);
+    font-size: 0.75rem;
+    line-height: 1rem;
+    white-space: nowrap;
+    translate: var(--_align-x, 0.25rem) var(--_align-y, -50%);
+  }
+
+  [data-slot="clock-chart-angle-label"] {
+    color: var(--foreground);
+  }
+
+  [data-slot="clock-chart-angle-label"][data-hidden] {
+    display: none;
+  }
+
+  [data-slot="clock-chart-radius-label"] {
+    padding: 0 0.125rem;
+    border-radius: 0.25rem;
+    background: color-mix(in oklab, var(--background) 80%, transparent);
+    color: var(--muted-foreground);
+    font-variant-numeric: tabular-nums;
+  }
+
+  [data-slot="clock-chart-value-label"] {
+    padding: 0 0.25rem;
+    border-radius: 0.25rem;
+    background: var(--background);
+    color: var(--foreground);
+    font-variant-numeric: tabular-nums;
+  }
+
+  @container clock-chart-dial (width < 7.5rem) {
+    [data-slot="clock-chart-angle-label"][data-min="120"] {
+      display: none;
+    }
+  }
+
+  @container clock-chart-dial (width < 10rem) {
+    [data-slot="clock-chart-angle-label"][data-min="160"] {
+      display: none;
+    }
+  }
+
+  @container clock-chart-dial (width < 12.5rem) {
+    [data-slot="clock-chart-angle-label"][data-min="200"] {
+      display: none;
+    }
+  }
+
+  @container clock-chart-dial (width < 15rem) {
+    [data-slot="clock-chart-angle-label"][data-min="240"] {
+      display: none;
+    }
+  }
+
+  @container clock-chart-dial (width < 17.5rem) {
+    [data-slot="clock-chart-angle-label"][data-min="280"] {
+      display: none;
+    }
+  }
+
+  @container clock-chart-dial (width < 20rem) {
+    [data-slot="clock-chart-angle-label"][data-min="320"] {
+      display: none;
+    }
+  }
+
+  @container clock-chart-dial (width < 22.5rem) {
+    [data-slot="clock-chart-angle-label"][data-min="360"] {
+      display: none;
+    }
+  }
+
+  @container clock-chart-dial (width < 25rem) {
+    [data-slot="clock-chart-angle-label"][data-min="400"] {
+      display: none;
+    }
+  }
+
+  @container clock-chart-dial (width < 27.5rem) {
+    [data-slot="clock-chart-angle-label"][data-min="440"] {
+      display: none;
+    }
+  }
+
+  @container clock-chart-dial (width < 30rem) {
+    [data-slot="clock-chart-angle-label"][data-min="480"] {
+      display: none;
+    }
+  }
+
+  @container clock-chart-dial (width < 35rem) {
+    [data-slot="clock-chart-angle-label"][data-min="560"] {
+      display: none;
+    }
+  }
+
+  @container clock-chart-dial (width < 40rem) {
+    [data-slot="clock-chart-angle-label"][data-min="640"] {
+      display: none;
+    }
+  }
+
+  @container clock-chart-dial (width < 45rem) {
+    [data-slot="clock-chart-angle-label"][data-min="720"] {
+      display: none;
+    }
+  }
+
+  @container clock-chart-dial (width < 50rem) {
+    [data-slot="clock-chart-angle-label"][data-min="800"] {
+      display: none;
+    }
+  }
+
+  @container clock-chart-dial (width < 55rem) {
+    [data-slot="clock-chart-angle-label"][data-min="880"] {
+      display: none;
+    }
+  }
+
+  @container clock-chart-dial (width < 60rem) {
+    [data-slot="clock-chart-angle-label"][data-min="960"] {
+      display: none;
+    }
+  }
+
+  @container clock-chart-dial (width < 65rem) {
+    [data-slot="clock-chart-angle-label"][data-min="1040"] {
+      display: none;
+    }
+  }
+
+  @container clock-chart-dial (width < 70rem) {
+    [data-slot="clock-chart-angle-label"][data-min="1120"] {
+      display: none;
+    }
+  }
+
+  @container clock-chart-dial (width < 75rem) {
+    [data-slot="clock-chart-angle-label"][data-min="1200"] {
+      display: none;
+    }
+  }
+
+  [data-slot="clock-chart-center"] > [data-part="hole"] {
+    position: absolute;
+    left: var(--_left);
+    top: var(--_top);
+    width: var(--_width);
+    height: var(--_height);
+    container-type: size;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: var(--muted-foreground);
+  }
+
+  [data-slot="clock-chart-center"] [data-slot="clock-chart-active-value"] {
+    font-size: min(var(--heading-2-size, 1.25rem), 30cqmin);
+    font-weight: var(--heading-2-weight, 600);
+    line-height: 1.2;
+    color: var(--foreground);
+    font-variant-numeric: tabular-nums;
+  }
+
+  [data-slot="clock-chart-center-label"] {
+    font-size: min(0.75rem, 18cqmin);
+    line-height: 1.2;
+  }
+
   /* A polar placeholder sketches one disc, annulus or hexagon in the aspect-locked cell. */
-  [data-slot="chart-skeleton"]:is([data-variant="pie"], [data-variant="radial"], [data-variant="radar"]) {
+  [data-slot="chart-skeleton"]:is(
+    [data-variant="pie"],
+    [data-variant="radial"],
+    [data-variant="radar"],
+    [data-variant="clock"]
+  ) {
     display: block;
     width: min(100%, var(--chart-polar-size, 12.5rem));
     height: auto;
@@ -1241,7 +1759,12 @@
     margin-inline: auto;
   }
 
-  [data-slot="chart-skeleton"]:is([data-variant="pie"], [data-variant="radial"], [data-variant="radar"])
+  [data-slot="chart-skeleton"]:is(
+      [data-variant="pie"],
+      [data-variant="radial"],
+      [data-variant="radar"],
+      [data-variant="clock"]
+    )
     [data-slot="chart-skeleton-mark"] {
     width: 100%;
     height: 100%;
@@ -1252,6 +1775,10 @@
       transparent calc(var(--chart-skeleton-hole, 0) * 50%),
       #000 calc(var(--chart-skeleton-hole, 0) * 50% + 0.5px)
     );
+  }
+
+  [data-slot="chart-skeleton"][data-variant="clock"] {
+    --chart-skeleton-hole: 0.3;
   }
 
   [data-slot="chart-skeleton"][data-variant="radar"] [data-slot="chart-skeleton-mark"] {
@@ -2783,6 +3310,16 @@
       transition: opacity 150ms ease-out;
     }
 
+    [data-slot="clock-chart-scrubber"] [data-part="hand"],
+    [data-clock-series] {
+      transition: opacity 150ms ease-out;
+    }
+
+    [data-slot="clock-chart-line"][data-variant="flowing"]
+      [data-slot="clock-chart-line-path"][data-part="solid"] {
+      animation: var(--animate-chart-dash);
+    }
+
     [data-slot="chart-bar-marks"] > [data-intro="fade"],
     :is([data-slot="chart-line-series"], [data-slot="chart-area-series"])[data-intro="fade"],
     [data-slot="chart-dot"][data-intro="fade"] {
@@ -2922,6 +3459,7 @@
     [data-slot="chart-active-dot"],
     [data-slot="chart-marker"] > svg,
     [data-radar-series],
+    [data-clock-series],
     [data-slot="sparkline"],
     [data-slot="chart-swatch"] {
       forced-color-adjust: none;
@@ -2933,6 +3471,8 @@
 
     [data-slot="radar-chart-grid-ring"],
     [data-slot="radar-chart-spoke"],
+    [data-slot="clock-chart-grid-ring"],
+    [data-slot="clock-chart-spoke"],
     [data-slot="chart-grid-line"],
     [data-slot="chart-grid-line"][data-zero],
     [data-slot="chart-reference-line"] > svg > line,

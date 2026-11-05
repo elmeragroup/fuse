@@ -11,6 +11,7 @@ import { page } from "vitest/browser";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
 import type { ChartConfig } from "./chart-types";
+import { ClockChart } from "./clock-chart-namespace";
 import { OTHER_KEY } from "./layout/pie";
 import { PieChart } from "./pie-chart-namespace";
 import { RadarChart } from "./radar-chart-namespace";
@@ -39,6 +40,20 @@ const ROWS = [
   { name: "strom", v: 60 },
   { name: "nettleie", v: 40 },
 ];
+
+/** A clock's props over one Oslo day of hourly rows. */
+const DIAL = {
+  data: Array.from({ length: 24 }, (_, hour) => ({
+    start: Date.parse("2025-10-24T22:00:00Z") + hour * 3_600_000,
+    kwh: 1,
+  })),
+  config: { kwh: { label: "kWh", color: "chart-1" } },
+  xKey: "start",
+  cycle: "day",
+  interval: "hour",
+  timeZone: "Europe/Oslo",
+  "aria-label": "Døgn",
+} as const;
 
 /** Five price areas, one past the radar's cap, as a config built at run time. */
 const AREAS: ChartConfig = {
@@ -110,6 +125,63 @@ describe("the polar rules in development", () => {
       composition("unknown-key"),
     ],
     ["a Table outside its Root", <PieChart.Table key="table" />, composition("part-outside-root")],
+    [
+      "a clock with no time zone",
+      <ClockChart.Root key="clock" {...DIAL} timeZone={undefined} />,
+      composition("time-axis-without-zone"),
+    ],
+    [
+      "a clock interval coarser than its cycle",
+      // SAFETY: the cast stands for a widened prop, which the type check would reject as a literal.
+      <ClockChart.Root key="clock" {...DIAL} cycle="day" interval={"day" as "hour"} />,
+      composition("interval-not-nested"),
+    ],
+    [
+      "a clock row outside its period",
+      <ClockChart.Root
+        key="clock"
+        {...DIAL}
+        data={[...DIAL.data, { start: Date.parse("2025-10-25T22:00:00Z"), kwh: 1 }]}
+        period={[Date.parse("2025-10-24T22:00:00Z"), Date.parse("2025-10-25T22:00:00Z")]}
+      />,
+      data("row-outside-period"),
+    ],
+    [
+      "a clock line painted by a threshold on a stack",
+      <ClockChart.Root
+        key="clock"
+        {...DIAL}
+        data={DIAL.data.map((row) => ({ ...row, top: 1 }))}
+        config={{
+          kwh: {
+            label: "kWh",
+            stack: "s",
+            color: {
+              threshold: 1,
+              below: { color: "chart-sentiment-positive", label: "Lav" },
+              above: { color: "chart-sentiment-negative", label: "Høy" },
+            },
+          },
+          top: { label: "Topp", color: "chart-sentiment-positive", stack: "s" },
+        }}>
+        <ClockChart.Line dataKey="kwh" />
+      </ClockChart.Root>,
+      composition("scale-colour-on-stack"),
+    ],
+    [
+      "a clock ValueLabel outside its Marker",
+      <ClockChart.Root key="clock" {...DIAL}>
+        <ClockChart.ValueLabel />
+      </ClockChart.Root>,
+      composition("part-outside-root"),
+    ],
+    [
+      "a clock Marker at an x string",
+      <ClockChart.Root key="clock" {...DIAL}>
+        <ClockChart.Marker dataKey="kwh" at={{ x: "2025-10-25" }} />
+      </ClockChart.Root>,
+      composition("x-type-mismatch"),
+    ],
     [
       "a pie Table inside a radar",
       <RadarChart.Root key="radar" data={[]} config={{}} nameKey="season" aria-label="Områder">

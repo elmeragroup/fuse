@@ -50,6 +50,32 @@ import {
 } from "../../src/components/chart/chart-tooltip";
 import { ChartTooltipTotal } from "../../src/components/chart/chart-tooltip-total";
 import {
+  ClockChartActiveValue,
+  ClockChartCenter,
+  ClockChartTooltipTotal,
+} from "../../src/components/chart/clock-chart-center";
+import {
+  ClockChartAngleAxis,
+  ClockChartGrid,
+  ClockChartNow,
+  ClockChartRadiusAxis,
+  ClockChartReferenceArea,
+  ClockChartReferenceLine,
+  ClockChartScrubber,
+} from "../../src/components/chart/clock-chart-grid";
+import {
+  ClockChartActiveDot,
+  ClockChartArea,
+  ClockChartColumn,
+  ClockChartDots,
+  ClockChartGlow,
+  ClockChartLine,
+  ClockChartMarker,
+  ClockChartValueLabel,
+} from "../../src/components/chart/clock-chart-marks";
+import { ClockChartRoot } from "../../src/components/chart/clock-chart-root";
+import { ClockChartSkeleton } from "../../src/components/chart/clock-chart-skeleton";
+import {
   PieChartCenter,
   PieChartCenterLabel,
   PieChartCenterMax,
@@ -65,11 +91,13 @@ import { PieChartTrack } from "../../src/components/chart/pie-chart-track";
 import {
   PieChartTable,
   RadarChartTable,
+  ClockChartTable,
   RadialChartTable,
 } from "../../src/components/chart/polar-chart-table";
 import {
   PieChartTooltip,
   RadarChartTooltip,
+  ClockChartTooltip,
   RadialChartTooltip,
 } from "../../src/components/chart/polar-chart-tooltip";
 import {
@@ -257,6 +285,49 @@ export const RadarChart = {
   LegendToggleGroup: ChartLegendToggleGroup,
   LegendToggle: ChartLegendToggle,
   Table: RadarChartTable,
+  TableColumn: ChartTableColumn,
+  Empty: ChartEmpty,
+  Background: ChartBackground,
+} as const;
+
+export const ClockChart = {
+  Root: ClockChartRoot,
+  Line: ClockChartLine,
+  Area: ClockChartArea,
+  Column: ClockChartColumn,
+  Dots: ClockChartDots,
+  ActiveDot: ClockChartActiveDot,
+  Marker: ClockChartMarker,
+  ValueLabel: ClockChartValueLabel,
+  Glow: ClockChartGlow,
+  Grid: ClockChartGrid,
+  AngleAxis: ClockChartAngleAxis,
+  RadiusAxis: ClockChartRadiusAxis,
+  ReferenceLine: ClockChartReferenceLine,
+  ReferenceArea: ClockChartReferenceArea,
+  Scrubber: ClockChartScrubber,
+  Now: ClockChartNow,
+  Center: ClockChartCenter,
+  ActiveValue: ClockChartActiveValue,
+  TooltipTotal: ClockChartTooltipTotal,
+  Skeleton: ClockChartSkeleton,
+  Headline: ChartHeadline,
+  Takeaway: ChartTakeaway,
+  Tooltip: ClockChartTooltip,
+  TooltipLabel: ChartTooltipLabel,
+  TooltipItems: ChartTooltipItems,
+  TooltipValue: ChartTooltipValue,
+  TooltipShare: ChartTooltipShare,
+  Swatch: ChartSwatch,
+  SeriesLabel: ChartSeriesLabel,
+  SeriesIcon: ChartSeriesIcon,
+  Legend: ChartLegend,
+  LegendItem: ChartLegendItem,
+  LegendValue: ChartLegendValue,
+  LegendShare: ChartLegendShare,
+  LegendToggleGroup: ChartLegendToggleGroup,
+  LegendToggle: ChartLegendToggle,
+  Table: ClockChartTable,
   TableColumn: ChartTableColumn,
   Empty: ChartEmpty,
   Background: ChartBackground,

@@ -81,6 +81,7 @@ const EXPECTED_ENTRIES = {
       "PieChart",
       "RadialChart",
       "RadarChart",
+      "ClockChart",
       "ScatterChart",
       "Sparkline",
       "useChartPoint",

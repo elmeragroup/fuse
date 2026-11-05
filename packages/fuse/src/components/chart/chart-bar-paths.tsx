@@ -32,7 +32,7 @@ import type { StackSeat } from "./chart-stack-floors";
 import type { ChartBarVariant } from "./chart-types";
 import { floorSpanOf } from "./layout/floor-settle";
 import type { FloorSpan } from "./layout/floor-settle";
-import { frameRect, snapY, tickWidth, valueAt } from "./layout/plot-frame";
+import { floorAxisOf, frameRect, snapY, tickWidth, valueAt } from "./layout/plot-frame";
 import type { PlotFrame, PlotRect, StackPlace } from "./layout/plot-frame";
 
 /**
@@ -113,14 +113,17 @@ function drawColumns(group: SVGGElement, look: ColumnsLook | null, values: MarkV
     spanAt[index] = spans.length;
     spans.push(floorSpanOf(frame, plain, seat.series, ends));
   });
-  seat.floors.draw(seat.mark, seat.stack, spans, frame, (kept) => {
+  seat.floors.draw(seat.mark, seat.stack, spans, floorAxisOf(frame), (kept) => {
     // A column takes its own span's place, and an emphasis box with no column of its own the place
     // of its series' spans under it, or its resting place where they draw none.
     const placeOf = (entry: ColumnEntry, index: number): StackPlace => {
       const at = spanAt[index] ?? -1;
       if (at !== -1) return kept[at] === 1 ? "outer" : "inner";
       const box = boxes[index];
-      return (box === undefined ? undefined : seat.floors.placeOver(seat.stack, box, frame)) ?? entry.place;
+      return (
+        (box === undefined ? undefined : seat.floors.placeOver(seat.stack, box, floorAxisOf(frame))) ??
+        entry.place
+      );
     };
     paintColumns(group, columnsDrawing(frame, topology, own, placeOf, bodies));
     bodies = undefined;

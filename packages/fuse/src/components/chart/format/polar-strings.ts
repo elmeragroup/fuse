@@ -16,6 +16,10 @@ export type PolarStrings = {
   readonly descriptionRadial: (count: string) => string;
   /** A radar chart's opening sentence: the family word, the series count and the category count. */
   readonly descriptionRadar: (series: string, categories: string) => string;
+  /** A clock chart's opening sentence: the family word and the series count. */
+  readonly descriptionClock: (series: string) => string;
+  /** A clock chart's key help: the arrows round the dial, PageUp and PageDown by a label, and the series focus. */
+  readonly instructionsClock: string;
   /** A pie's slice word, counted. */
   readonly slices: Inflected;
   /** A radial chart's ring word, counted. */
@@ -36,6 +40,9 @@ const NB_NO: PolarStrings = {
   descriptionPie: (count, total) => `Kakediagram med ${count}, totalt ${total}.`,
   descriptionRadial: (count) => `Ringdiagram med ${count}.`,
   descriptionRadar: (series, categories) => `Radardiagram med ${series} over ${categories}.`,
+  descriptionClock: (series) => `Klokkediagram med ${series}.`,
+  instructionsClock:
+    "Bruk venstre og høyre pil for å gå rundt urskiven, Page Up og Page Down for å hoppe én etikett, og opp og ned for å velge serie.",
   slices: { one: "del", other: "deler" },
   rings: { one: "ring", other: "ringer" },
   seriesWord: { one: "serie", other: "serier" },
@@ -50,6 +57,9 @@ const SV_SE: PolarStrings = {
   descriptionPie: (count, total) => `Cirkeldiagram med ${count}, totalt ${total}.`,
   descriptionRadial: (count) => `Ringdiagram med ${count}.`,
   descriptionRadar: (series, categories) => `Radardiagram med ${series} över ${categories}.`,
+  descriptionClock: (series) => `Klockdiagram med ${series}.`,
+  instructionsClock:
+    "Använd vänster- och högerpil för att gå runt urtavlan, Page Up och Page Down för att hoppa en etikett, och upp- och nedpil för att välja serie.",
   slices: { one: "del", other: "delar" },
   rings: { one: "ring", other: "ringar" },
   seriesWord: { one: "serie", other: "serier" },
@@ -63,6 +73,9 @@ const FI_FI: PolarStrings = {
   descriptionPie: (count, total) => `Ympyräkaavio, ${count}, yhteensä ${total}.`,
   descriptionRadial: (count) => `Rengaskaavio, ${count}.`,
   descriptionRadar: (series, categories) => `Tutkakaavio, ${series}, ${categories}.`,
+  descriptionClock: (series) => `Kellokaavio, ${series}.`,
+  instructionsClock:
+    "Siirry kellotaulun ympäri vasemmalla ja oikealla nuolinäppäimellä, hyppää yhden merkinnän verran Page Up- ja Page Down -näppäimillä ja valitse sarja ylä- ja alanuolella.",
   slices: { one: "osa", other: "osaa" },
   rings: { one: "rengas", other: "rengasta" },
   seriesWord: { one: "sarja", other: "sarjaa" },
@@ -77,6 +90,9 @@ const EN_US: PolarStrings = {
   descriptionPie: (count, total) => `Pie chart with ${count}, ${total} in total.`,
   descriptionRadial: (count) => `Radial chart with ${count}.`,
   descriptionRadar: (series, categories) => `Radar chart with ${series} across ${categories}.`,
+  descriptionClock: (series) => `Clock chart with ${series}.`,
+  instructionsClock:
+    "Use the left and right arrows to move round the dial, Page Up and Page Down to jump one label, and up and down to choose a series.",
   slices: { one: "slice", other: "slices" },
   rings: { one: "ring", other: "rings" },
   seriesWord: { one: "series", other: "series" },

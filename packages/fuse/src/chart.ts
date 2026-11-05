@@ -6,10 +6,8 @@
  * prop that mirrors one, Root state or a data attribute. It never becomes a boolean or mode prop on
  * a part below Root.
  *
- * The errors the parts' JSDoc names, such as `unknown-key`, throw as the cartesian parts and the
- * `PieChart` parts render. The `RadialChart` and `RadarChart` marks render nothing yet, so theirs
- * start to throw once those parts render in a later preview release. `ScatterChart` throws its own
- * as its parts render.
+ * The errors the parts' JSDoc names, such as `unknown-key`, throw as the parts render, and
+ * `ScatterChart` throws its own as its parts render.
  *
  * Import `@elmeragroup/fuse/chart.css` once, beside Fuse's own stylesheet.
  *
@@ -22,6 +20,7 @@ export { Chart, AreaChart, BarChart, LineChart } from "./components/chart/chart-
 export { PieChart } from "./components/chart/pie-chart-namespace";
 export { RadialChart } from "./components/chart/radial-chart-namespace";
 export { RadarChart } from "./components/chart/radar-chart-namespace";
+export { ClockChart } from "./components/chart/clock-chart-namespace";
 export { ScatterChart } from "./components/chart/scatter-chart-namespace";
 export { Sparkline } from "./components/chart/sparkline";
 export { useChartPoint } from "./components/chart/use-chart-point";
@@ -57,6 +56,9 @@ export type {
   ChartQualityKey,
   ChartRadarCap,
   ChartRadarFieldCheck,
+  ChartClockCycle,
+  ChartClockFieldCheck,
+  ChartClockInterval,
   ChartRole,
   ChartRow,
   ChartRowOf,
@@ -165,6 +167,31 @@ export type {
   RadarChartLineProps,
 } from "./components/chart/radar-chart-marks";
 export type { RadarChartSkeletonProps } from "./components/chart/radar-chart-skeleton";
+export type { ClockChartRootProps } from "./components/chart/clock-chart-root";
+export type {
+  ClockChartActiveDotProps,
+  ClockChartAreaProps,
+  ClockChartColumnProps,
+  ClockChartDotsProps,
+  ClockChartGlowProps,
+  ClockChartLineProps,
+  ClockChartMarkerProps,
+  ClockChartValueLabelProps,
+} from "./components/chart/clock-chart-marks";
+export type {
+  ClockChartAngleAxisProps,
+  ClockChartGridProps,
+  ClockChartNowProps,
+  ClockChartRadiusAxisProps,
+  ClockChartReferenceAreaProps,
+  ClockChartReferenceLineProps,
+  ClockChartScrubberProps,
+} from "./components/chart/clock-chart-grid";
+export type {
+  ClockChartActiveValueProps,
+  ClockChartCenterProps,
+} from "./components/chart/clock-chart-center";
+export type { ClockChartSkeletonProps } from "./components/chart/clock-chart-skeleton";
 export type {
   ScatterChartGridProps,
   ScatterChartReferenceLineProps,

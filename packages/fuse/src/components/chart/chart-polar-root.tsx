@@ -37,6 +37,7 @@ import { createChartStore, useChartStore } from "./chart-store";
 import type { ChartSnapshot, ChartStore } from "./chart-store";
 import type { ChartChangeEventDetails, ChartFigureProps, ChartSelectionChangeReason } from "./chart-types";
 import { CHART_STRINGS } from "./format/chart-strings";
+import { POLAR_STRINGS } from "./format/polar-strings";
 import { issueKey } from "./layout/errors";
 import type { ChartDataRule, ChartHintRule } from "./layout/errors";
 import { CHART_SPRINGS } from "./layout/motion";
@@ -50,6 +51,7 @@ const SLOTS = {
   pie: { "data-slot": "pie-chart" },
   radial: { "data-slot": "radial-chart" },
   radar: { "data-slot": "radar-chart" },
+  clock: { "data-slot": "clock-chart" },
 } as const;
 
 /** The props every polar Root takes beside its data. */
@@ -150,7 +152,11 @@ export function PolarRoot(props: PolarRootProps): ReactElement {
                 {props.description ?? model.description}
               </p>
               <p id={`${kernel.id}-instructions`} data-slot="chart-instructions">
-                {model.instructions === "polar" ? strings.instructionsPolar : strings.instructionsCartesian}
+                {model.instructions === "polar"
+                  ? strings.instructionsPolar
+                  : model.instructions === "clock"
+                    ? POLAR_STRINGS[kernel.locale].instructionsClock
+                    : strings.instructionsCartesian}
               </p>
               {/* The place of the selected series, which marks dim against, and the aspect every layer keeps. */}
               <div

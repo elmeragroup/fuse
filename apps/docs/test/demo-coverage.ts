@@ -145,14 +145,10 @@ export function describeDemoCoverage(fileUrl: string): void {
 
 /**
  * The swept pages that render no part at either density, each with why. The parity check names
- * any other requested page that reads no part.
+ * any other requested page that reads no part. Every swept page renders its parts today, the polar
+ * pages among them.
  */
-const PARTLESS_PAGES = new Set([
-  // The polar Roots render nothing until the release that draws them.
-  "pie-chart",
-  "radial-chart",
-  "radar-chart",
-]);
+const PARTLESS_PAGES = new Set<string>([]);
 
 function describeDensityCoverage(slugs: readonly string[], measured: readonly Instance[]): void {
   describe("density coverage", () => {

@@ -7,10 +7,9 @@ import type { Interval } from "../format/time-format";
  * threshold rings the dial at its value's radius (D23), and a column keeps one device pixel along
  * its radius (D24), which `floor-settle.ts` settles for a stack.
  */
-import type { FloorSpan } from "./floor-settle";
-import { floorAcross, plotFrame } from "./plot-frame";
-import type { PlotFrame } from "./plot-frame";
+import type { FloorAxis, FloorSpan } from "./floor-settle";
 import { toDegrees } from "./polar-angle";
+import { valueFloor } from "./value-floor";
 
 /** The cycles a dial runs. */
 export type ClockCycle = "day" | "week" | "year";
@@ -134,19 +133,8 @@ export function wedgePad(count: number, inner: number, outer: number, gap: numbe
   return { padAngle: toDegrees(2 * Math.asin(Math.min(1, gap / (2 * outer)))), padRadius: outer };
 }
 
-/**
- * The frame a dial's columns floor in, along their radius. A column's radius runs as a horizontal
- * frame's value axis does, outward from the centre, and its slot as that frame's slot axis, so the
- * floor rules of `plot-frame.ts` and `floor-settle.ts` read a wedge as they read a bar.
- *
- * @param outer - The rim's radius in CSS pixels.
- * @param count - The cycle's slot count.
- * @param dpr - Device pixels per CSS pixel.
- * @returns The frame.
- */
-export function columnFrame(outer: number, count: number, dpr: number): PlotFrame {
-  return plotFrame({ width: outer, height: count, dpr, left: 0, top: 0 }, "horizontal", count, [0, outer]);
-}
+/** The radius a dial's columns floor along: a floor axis that grows outward, its pixel ratio and its rim. */
+export type ColumnAxis = FloorAxis & { readonly dpr: number; readonly outer: number };
 
 /** A radius snapped to the device pixel grid. */
 function snapRadius(radius: number, dpr: number): number {
@@ -154,26 +142,47 @@ function snapRadius(radius: number, dpr: number): number {
 }
 
 /**
+ * The axis a dial's columns floor along, their radius. It grows outward as a horizontal frame's
+ * value axis grows to the right, so `floor-settle.ts` reads a wedge's radial span as it reads a
+ * bar's, and the floor stays inside the rim. It reads no plot geometry.
+ *
+ * @param outer - The rim's radius in CSS pixels.
+ * @param dpr - Device pixels per CSS pixel.
+ * @returns The axis.
+ */
+export function columnAxis(outer: number, dpr: number): ColumnAxis {
+  const limit = snapRadius(outer, dpr);
+  return {
+    orientation: "horizontal",
+    dpr,
+    outer,
+    floorAcross: (from, to, [base, tip]) =>
+      valueFloor(from, to, Math.abs(tip - base), tip < base ? "start" : "end", dpr, limit),
+  };
+}
+
+/**
  * A column's radial span with the floor: its base and tip snapped to device pixels, widened to one
  * device pixel away from its base when a non-zero value would snap to nothing, and kept inside the
  * dial.
  *
- * @param frame - The dial's column frame.
+ * @param axis - The dial's column axis.
  * @param base - The column's base radius in CSS pixels, the zero ring or the stack below it.
  * @param tip - Its tip radius.
  * @returns The span's inner and outer radius.
  */
-export function columnSpan(frame: PlotFrame, base: number, tip: number): readonly [number, number] {
-  const { dpr } = frame.box;
+export function columnSpan(axis: ColumnAxis, base: number, tip: number): readonly [number, number] {
+  const { dpr } = axis;
   const [from, to] = [snapRadius(Math.min(base, tip), dpr), snapRadius(Math.max(base, tip), dpr)];
-  return floorAcross(frame, from, to, [base, tip]);
+  return axis.floorAcross(from, to, [base, tip]);
 }
 
 /**
  * The span a stacked column hands the stack floors, which settle which segment keeps the floor on
- * each side of the zero ring through `settleFloors`.
+ * each side of the zero ring through `settleFloors`. Its slot stands for its device pixel columns,
+ * since every wedge of a dial takes an equal angle and no two slots share one.
  *
- * @param frame - The dial's column frame.
+ * @param axis - The dial's column axis.
  * @param slot - The column's slot.
  * @param series - The series it draws, by config key.
  * @param base - The segment's base radius in CSS pixels.
@@ -181,13 +190,13 @@ export function columnSpan(frame: PlotFrame, base: number, tip: number): readonl
  * @returns The span.
  */
 export function columnFloorSpan(
-  frame: PlotFrame,
+  axis: ColumnAxis,
   slot: number,
   series: string,
   base: number,
   tip: number
 ): FloorSpan {
-  const { dpr } = frame.box;
+  const { dpr } = axis;
   return {
     from: slot,
     to: slot + 1,
