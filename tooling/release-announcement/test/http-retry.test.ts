@@ -4,7 +4,7 @@ import { Headers } from "effect/http";
 import { TestClock } from "effect/testing";
 
 import { requestedWait, retryReads } from "../src/http-retry.ts";
-import type { ReadFailure } from "../src/http-retry.ts";
+import type { AttemptFailure } from "../src/http-retry.ts";
 
 // Unit under test: the read retry policy the GitHub and Slack adapters share, on the test clock.
 // Oracles: RFC 9110's Retry-After (a delay in whole seconds, or an HTTP date), GitHub's rate-limit
@@ -85,7 +85,7 @@ describe("the wait a response asks for", () => {
  * Runs a read whose every attempt takes `latency` and then fails with `failure`, on the test
  * clock, and returns when each attempt began and how the read ended.
  */
-const retried = (latency: Duration.Input, failure: ReadFailure) =>
+const retried = (latency: Duration.Input, failure: AttemptFailure) =>
   Effect.gen(function* () {
     const started: number[] = [];
     const attempt = Effect.gen(function* () {
@@ -104,20 +104,29 @@ describe("the read's budget", () => {
     Effect.gen(function* () {
       // The reviewer's probe: each answer takes 29 seconds and asks for a minute's wait. The
       // second wait would end at 178 seconds, so the read ends when the second answer arrives.
-      const failure: ReadFailure = {
+      const failure: AttemptFailure = {
         _tag: "Throttled",
         status: 503,
         wait: Option.some(Duration.seconds(60)),
       };
       const { started, ended } = yield* retried("29 seconds", failure);
       assert.deepStrictEqual(started, [0, 89_000]);
-      assert.deepStrictEqual(ended, { _tag: "OverBudget", status: 503, wait: Duration.seconds(60) });
+      assert.deepStrictEqual(ended, {
+        _tag: "WaitRefused",
+        status: 503,
+        wait: Duration.seconds(60),
+        bound: "budget",
+      });
     })
   );
 
   it.effect("stops an attempt still running when the two minutes end", () =>
     Effect.gen(function* () {
-      const failure: ReadFailure = { _tag: "Throttled", status: 503, wait: Option.some(Duration.seconds(1)) };
+      const failure: AttemptFailure = {
+        _tag: "Throttled",
+        status: 503,
+        wait: Option.some(Duration.seconds(1)),
+      };
       const { started, ended } = yield* retried("70 seconds", failure);
       assert.deepStrictEqual(started, [0, 71_000]);
       assert.deepStrictEqual(ended, {
@@ -129,7 +138,7 @@ describe("the read's budget", () => {
 
   it.effect("backs off from a second when no wait is asked for, three retries in all", () =>
     Effect.gen(function* () {
-      const failure: ReadFailure = { _tag: "Unanswered", reason: "TransportError" };
+      const failure: AttemptFailure = { _tag: "Unanswered", reason: "TransportError" };
       const { started, ended } = yield* retried("0 millis", failure);
       assert.deepStrictEqual(started, [0, 1000, 3000, 7000]);
       assert.deepStrictEqual(ended, failure);

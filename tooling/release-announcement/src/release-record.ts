@@ -12,9 +12,15 @@
 import { Result, Schema } from "effect";
 import { Url } from "effect/http";
 
+/** The source of a full, lower-case commit SHA's pattern. */
+const SHA = "[0-9a-f]{40}";
+
+/** The source of a stable version's pattern: three numbers without leading zeros. */
+const SEMVER_CORE = String.raw`(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)`;
+
 /** A full, lower-case git commit SHA. */
 export const CommitSha = Schema.String.pipe(
-  Schema.check(Schema.isPattern(/^[0-9a-f]{40}$/u, { message: "a full commit SHA" })),
+  Schema.check(Schema.isPattern(new RegExp(`^${SHA}$`, "u"), { message: "a full commit SHA" })),
   Schema.brand("CommitSha")
 );
 
@@ -24,7 +30,7 @@ export type CommitSha = typeof CommitSha.Type;
 /** A stable version such as `1.2.3`, as Changesets writes it into the package manifest. */
 export const StableVersion = Schema.String.pipe(
   Schema.check(
-    Schema.isPattern(/^(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)$/u, {
+    Schema.isPattern(new RegExp(`^${SEMVER_CORE}$`, "u"), {
       message: "a stable version such as 1.2.3",
     })
   ),
@@ -37,7 +43,7 @@ export type StableVersion = typeof StableVersion.Type;
 /** A canary version such as `1.2.3-canary.4`, as the engine computes it. */
 export const CanaryVersion = Schema.String.pipe(
   Schema.check(
-    Schema.isPattern(/^(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)-canary\.(?:0|[1-9]\d*)$/u, {
+    Schema.isPattern(new RegExp(String.raw`^${SEMVER_CORE}-canary\.(?:0|[1-9]\d*)$`, "u"), {
       message: "a canary version such as 1.2.3-canary.4",
     })
   ),
@@ -50,7 +56,7 @@ export type CanaryVersion = typeof CanaryVersion.Type;
 /** A record's tag: `v<stable version>` or `canary-<full commit SHA>`. */
 export const RecordTag = Schema.String.pipe(
   Schema.check(
-    Schema.isPattern(/^(?:v(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)|canary-[0-9a-f]{40})$/u, {
+    Schema.isPattern(new RegExp(`^(?:v${SEMVER_CORE}|canary-${SHA})$`, "u"), {
       message: "a v<version> or canary-<commit> tag",
     })
   ),
@@ -82,26 +88,22 @@ const ReleaseUrl = Schema.String.pipe(
 /** A parsed release page URL. */
 type ReleaseUrl = typeof ReleaseUrl.Type;
 
-/** A published stable release, recorded as `v<version>`. */
-export const Stable = Schema.TaggedStruct("Stable", {
-  version: StableVersion,
+/** What a record holds of either release beside its version. */
+const recorded = {
   commit: CommitSha,
   url: ReleaseUrl,
   /** When GitHub published the record, which is when the engine finished the release. */
   publishedAt: Schema.DateTimeUtcFromString,
-});
+};
+
+/** A published stable release, recorded as `v<version>`. */
+export const Stable = Schema.TaggedStruct("Stable", { version: StableVersion, ...recorded });
 
 /** A published stable release. */
 export type Stable = typeof Stable.Type;
 
 /** A published canary release, recorded as `canary-<commit>`. */
-export const Canary = Schema.TaggedStruct("Canary", {
-  version: CanaryVersion,
-  commit: CommitSha,
-  url: ReleaseUrl,
-  /** When GitHub published the record, which is when the engine finished the release. */
-  publishedAt: Schema.DateTimeUtcFromString,
-});
+export const Canary = Schema.TaggedStruct("Canary", { version: CanaryVersion, ...recorded });
 
 /** A published canary release. */
 export type Canary = typeof Canary.Type;
@@ -130,7 +132,7 @@ export class DamagedRecord extends Schema.TaggedError<DamagedRecord>()("DamagedR
  * @returns `v<version>`.
  */
 export function stableTag(version: StableVersion): RecordTag {
-  // A StableVersion matches RecordTag's version pattern, so this never fails.
+  // StableVersion and RecordTag share SEMVER_CORE, so this never fails.
   return RecordTag.make(`v${version}`);
 }
 
@@ -141,7 +143,7 @@ export function stableTag(version: StableVersion): RecordTag {
  * @returns `canary-<commit>`.
  */
 export function canaryTag(commit: CommitSha): RecordTag {
-  // A CommitSha matches RecordTag's commit pattern, so this never fails.
+  // CommitSha and RecordTag share SHA, so this never fails.
   return RecordTag.make(`canary-${commit}`);
 }
 
@@ -212,6 +214,6 @@ export function parse(record: PublishedRecord): Result.Result<Release, DamagedRe
  * @param error - The failure.
  * @returns Its message without line breaks.
  */
-function oneLine(error: Schema.SchemaError): string {
+export function oneLine(error: Schema.SchemaError): string {
   return error.message.replaceAll(/\s*\n\s*/gu, " ");
 }

@@ -25,7 +25,6 @@ describe("cutting text", () => {
     { text: "👨‍👩‍👧", length: 4, cut: "👨‍" },
   ])("cuts a cluster longer than $length between code points", ({ text, length, cut }) => {
     expect(cutText(text, length)).toBe(cut);
-    expect(cut.isWellFormed()).toBe(true);
   });
 
   it.each([

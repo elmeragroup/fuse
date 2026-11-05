@@ -2,7 +2,6 @@ import { assert, describe, it } from "@effect/vitest";
 import { Arbitrary, Schema } from "effect";
 
 import * as Announcement from "../src/announcement.ts";
-import { Changelog } from "../src/changelog-section.ts";
 import { versionNotes } from "../src/release-notes.ts";
 import { mrkdwnObjects, repository, sectionTexts, stableRelease } from "./fixtures.ts";
 
@@ -353,7 +352,7 @@ function unicodeProblems(text: string): string[] {
 function announcementProblems(markdown: string): string[] {
   // Every generated changelog opens with this note, so notes that lose everything fail.
   const text = `# @elmeragroup/fuse\n\n## 1.0.0\n\n- First note.\n\n${markdown}\n\n## 0.9.0\n\n- Old.\n`;
-  const notes = versionNotes(Changelog.Whole({ text }), "1.0.0");
+  const notes = versionNotes({ _tag: "Whole", text }, "1.0.0");
   const message = Announcement.stable(stableRelease("1.0.0"), notes, repository);
   // Flattening keeps every word, so notes shortened only by nesting must show them all.
   const flattenedOnly =

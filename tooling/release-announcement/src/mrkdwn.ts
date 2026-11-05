@@ -29,6 +29,17 @@ export function linkTarget(url: string): string {
 }
 
 /**
+ * A Slack link: `url` as its target, showing `label`.
+ *
+ * @param url - The URL, decoded.
+ * @param label - The label, as finished mrkdwn.
+ * @returns The link's mrkdwn.
+ */
+export function link(url: string, label: string): string {
+  return `<${linkTarget(url)}|${label}>`;
+}
+
+/**
  * The text of an inline code span, escaped. Slack ends a code span at the next backtick and has no escape
  * for one inside it, so a code span such as ``` ``a`b`` ``` would end early and leave a stray
  * backtick. Each backtick in the code is shown as U+02CB MODIFIER LETTER GRAVE ACCENT (ˋ), which
@@ -89,9 +100,7 @@ export function renderUnit(unit: Inline): string {
     case "code":
       return `\`${codeText(unit.code)}\``;
     case "link":
-      return unit.label.length === 0
-        ? `<${linkTarget(unit.url)}>`
-        : `<${linkTarget(unit.url)}|${render(unit.label)}>`;
+      return unit.label.length === 0 ? `<${linkTarget(unit.url)}>` : link(unit.url, render(unit.label));
     case "span":
       return `${unit.mark}${render(unit.children)}${unit.mark}`;
   }

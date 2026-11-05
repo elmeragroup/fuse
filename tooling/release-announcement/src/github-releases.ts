@@ -17,8 +17,7 @@ import { HttpClient, HttpClientRequest } from "effect/http";
 import type { HttpClientResponse } from "effect/http";
 
 import { baseUrlSetting, PathSegment, repositorySetting, under } from "./addresses.ts";
-import { attemptTimeout, describe, requestedWait, retryReads, withinTimeout } from "./http-retry.ts";
-import type { ReadFailure } from "./http-retry.ts";
+import { attemptTimeout, describe, readJson } from "./http-retry.ts";
 import { RecordsUnavailable, ReleaseRecords } from "./release-announcement.ts";
 import * as ReleaseRecord from "./release-record.ts";
 import type { RecordTag } from "./release-record.ts";
@@ -27,6 +26,12 @@ import type { RecordTag } from "./release-record.ts";
 const REPOS = PathSegment.make("repos");
 const RELEASES = PathSegment.make("releases");
 const TAGS = PathSegment.make("tags");
+
+/**
+ * The product name every request carries, since GitHub refuses a request without a User-Agent
+ * (https://docs.github.com/en/rest/using-the-rest-api/troubleshooting-the-rest-api#user-agent-required).
+ */
+const USER_AGENT = "elmeragroup-fuse-release-announcement";
 
 /** The fields of GitHub's release response that a record is read from. */
 const GitHubRelease = Schema.Struct({
@@ -60,30 +65,21 @@ export const layer = Layer.effect(
         request.pipe(
           HttpClientRequest.bearerToken(settings.token),
           HttpClientRequest.setHeader("accept", "application/vnd.github+json"),
-          HttpClientRequest.setHeader("x-github-api-version", "2022-11-28")
+          HttpClientRequest.setHeader("x-github-api-version", "2022-11-28"),
+          HttpClientRequest.setHeader("user-agent", USER_AGENT)
         )
       )
     );
 
-    /** One read of `url`: its JSON, or none for 404. */
-    const attempt = (url: URL, what: string) =>
-      Effect.gen(function* () {
-        const response = yield* client
-          .get(url)
-          .pipe(Effect.mapError((error): ReadFailure => ({ _tag: "Unanswered", reason: error.reason._tag })));
-        if (response.status === 404) return Option.none();
-        if (isThrottled(response)) {
-          const wait = yield* requestedWait(response.headers);
-          return yield* Effect.fail<ReadFailure>({ _tag: "Throttled", status: response.status, wait });
-        }
-        if (response.status !== 200)
-          return yield* Effect.fail<ReadFailure>({ _tag: "Rejected", status: response.status });
-        // The body is part of the answer: a stall while reading it counts against the timeout.
-        const json = yield* response.json.pipe(
-          Effect.mapError((error): ReadFailure => ({ _tag: "Unanswered", reason: error.reason._tag }))
-        );
-        return Option.some(json);
-      }).pipe(withinTimeout(settings.timeout), retryReads(what));
+    /** The JSON at `url`, or none for 404, which is not retried. */
+    const read = (url: URL, what: string) =>
+      readJson(client.get(url), { read: what, timeout: settings.timeout, throttled: isThrottled }).pipe(
+        Effect.map(Option.some),
+        Effect.catchIf(
+          (failure) => failure._tag === "Rejected" && failure.status === 404,
+          () => Effect.succeedNone
+        )
+      );
 
     const published = Effect.fn("GitHubReleases.published")(function* (tag: RecordTag) {
       yield* Effect.annotateCurrentSpan({ tag });
@@ -91,7 +87,7 @@ export const layer = Layer.effect(
         new RecordsUnavailable({ message: `GitHub ${reason} for ${tag}` });
       // A record tag is letters, digits, dots and dashes, so it is a path segment as it stands.
       const url = under(api, [REPOS, owner, name, RELEASES, TAGS, PathSegment.make(tag)]);
-      const answer = yield* attempt(url, `GitHub's release ${tag}`).pipe(
+      const answer = yield* read(url, `GitHub's release ${tag}`).pipe(
         Effect.mapError((failure) => unavailable(describe(failure)))
       );
       if (Option.isNone(answer)) return Option.none();

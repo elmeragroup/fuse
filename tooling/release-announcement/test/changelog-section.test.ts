@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 
-import { Changelog } from "../src/changelog-section.ts";
 import { versionNotes } from "../src/release-notes.ts";
 
 // Unit under test: ChangelogSection's choice of a version's section and of how much of it the
@@ -8,8 +7,8 @@ import { versionNotes } from "../src/release-notes.ts";
 // fenced block, an HTML comment or a list is not a heading, and the read limit, by which a prefix
 // that ends before the next version's heading has cut the section.
 
-const whole = (text: string, version = "1.0.0") => versionNotes(Changelog.Whole({ text }), version);
-const prefix = (text: string, version = "1.0.0") => versionNotes(Changelog.Prefix({ text }), version);
+const whole = (text: string, version = "1.0.0") => versionNotes({ _tag: "Whole", text }, version);
+const prefix = (text: string, version = "1.0.0") => versionNotes({ _tag: "Prefix", text }, version);
 
 describe("the version's section", () => {
   it.each([

@@ -5,9 +5,12 @@
 
 import { Option, Schema } from "effect";
 
+import { SlackChannelId } from "../src/announcement.ts";
 import type { Message, MrkdwnText, SlackBlock } from "../src/announcement.ts";
+import { versionNotes } from "../src/release-notes.ts";
 import { Release } from "../src/release-record.ts";
 import type { Canary, Stable } from "../src/release-record.ts";
+import type { VersionNotes } from "../src/render-protocol.ts";
 
 /** The web URL of the repository the Actions defaults name. */
 export const repository = new URL("https://github.com/elmeragroup/fuse");
@@ -54,6 +57,39 @@ export function canaryRelease(version: string, sha: string = commit): Canary {
   });
   if (release._tag !== "Canary") throw new Error("not a canary release");
   return release;
+}
+
+/** The releases channel the suites announce stable releases in. */
+export const releasesChannel = SlackChannelId.make("C0RELEASES");
+
+/** The channel the suites announce canaries in. */
+export const canaryChannel = SlackChannelId.make("C0CANARY");
+
+/** About 1.1 MB of changelog entries, more than twice what is read. */
+export const bulk = Array.from(
+  { length: 10_000 },
+  (_, index) => `- ${String(index).padStart(7, "0")}: ${"y".repeat(100)}`
+).join("\n");
+
+/**
+ * The notes of `## 1.0.0` holding `markdown`, from a changelog read whole.
+ *
+ * @param markdown - The section's Markdown.
+ * @returns Its notes.
+ */
+export function notesOf(markdown: string): VersionNotes {
+  return versionNotes({ _tag: "Whole", text: `## 1.0.0\n\n${markdown}\n` }, "1.0.0");
+}
+
+/**
+ * Notes the test needs shown.
+ *
+ * @param notes - The notes.
+ * @returns Their sections and extent; throws for notes that are not shown.
+ */
+export function shown(notes: VersionNotes): Extract<VersionNotes, { readonly _tag: "Notes" }> {
+  if (notes._tag !== "Notes") throw new Error(`no notes: ${notes._tag}`);
+  return notes;
 }
 
 /** A changelog as `changeset version` writes it, with the inline Markdown changesets carry. */

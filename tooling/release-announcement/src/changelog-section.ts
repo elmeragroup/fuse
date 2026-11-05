@@ -8,62 +8,14 @@
  * heading, so a `## ` line inside a fence, an HTML comment or a list neither starts nor ends one.
  */
 
-import { Data, Option, Schema } from "effect";
+import { Option } from "effect";
 import type { Root, RootContent } from "mdast";
 import { fromMarkdown } from "mdast-util-from-markdown";
 import { gfmStrikethroughFromMarkdown } from "mdast-util-gfm-strikethrough";
 import { gfmStrikethrough } from "micromark-extension-gfm-strikethrough";
 
 import { textOf } from "./markdown-text.ts";
-
-/**
- * How many bytes of the changelog are read from git. Changesets writes the newest version first,
- * so the notes a release announces sit at the top; the first release, holding 250 changesets, is a
- * 172 KB section. Reading a bounded prefix keeps the cost flat as the changelog grows.
- */
-export const READ_LIMIT = 512 * 1024;
-
-/**
- * The part of a changelog that was read: all of it, or its first `READ_LIMIT` bytes when it is
- * longer. A prefix may end inside a line, even inside a character.
- */
-export type Changelog = Data.TaggedEnum<{
-  Whole: { readonly text: string };
-  Prefix: { readonly text: string };
-}>;
-
-/** Constructors and matchers for `Changelog`. */
-export const Changelog = Data.taggedEnum<Changelog>();
-
-/** A changelog read, as data: what the notes renderer's process is handed. */
-export const ChangelogData = Schema.Union([
-  Schema.TaggedStruct("Whole", { text: Schema.String }),
-  Schema.TaggedStruct("Prefix", { text: Schema.String }),
-]);
-
-/** Why notes that were shown are not the version's whole notes. */
-export const ShortenedBy = Schema.Literals([
-  /** The notes fill four sections before they end. */
-  "section-limit",
-  /** A link label or code span longer than a section was shortened, or a link's URL dropped. */
-  "oversized-unit",
-  /** The read part of the changelog ends inside the section. */
-  "read-limit",
-  /** Blocks or spans nested deeper than the renderer nests are shown flattened, without markup. */
-  "nesting",
-]);
-
-/** Why notes that were shown are not the version's whole notes. */
-export type ShortenedBy = typeof ShortenedBy.Type;
-
-/** Whether the notes shown hold all of the version's notes. */
-export const Extent = Schema.Union([
-  Schema.TaggedStruct("Whole", {}),
-  Schema.TaggedStruct("Shortened", { by: ShortenedBy }),
-]);
-
-/** Whether the notes shown hold all of the version's notes. */
-export type Extent = typeof Extent.Type;
+import type { Changelog, Extent, ShortenedBy } from "./render-protocol.ts";
 
 /** A version's section of a parsed changelog, or why there is none. */
 export type Section =

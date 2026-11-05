@@ -13,6 +13,7 @@
 
 import { Clock, Config, Duration, Effect, Option, Result, Schedule, Schema } from "effect";
 import { Headers } from "effect/http";
+import type { HttpClientError, HttpClientResponse } from "effect/http";
 
 /** Retries after the first attempt. */
 const RETRIES = 3;
@@ -23,25 +24,37 @@ const MAX_WAIT = Duration.seconds(60);
 /** How long the retries of one read may take in all. */
 const RETRY_BUDGET = Duration.minutes(2);
 
-/** A read that failed. */
-export type ReadFailure =
+/** An attempt at a read that failed. */
+export type AttemptFailure =
   /** No whole answer arrived: the connection failed, or the answer did not finish in time. */
   | { readonly _tag: "Unanswered"; readonly reason: string }
   /** A rate limit or a server error, with the wait the server asked for, if any. */
   | { readonly _tag: "Throttled"; readonly status: number; readonly wait: Option.Option<Duration.Duration> }
   /** An answer that repeating the read would not change, such as 401. */
-  | { readonly _tag: "Rejected"; readonly status: number }
-  /** A rate limit or server error whose wait would end past the read's budget. */
-  | { readonly _tag: "OverBudget"; readonly status: number; readonly wait: Duration.Duration };
+  | { readonly _tag: "Rejected"; readonly status: number };
 
-/** What to do about a failed read, decided once from its failure. */
+/** A read that failed: its last attempt's failure, or a wait it would not begin. */
+export type ReadFailure =
+  | AttemptFailure
+  /**
+   * A rate limit or server error whose wait is longer than `MAX_WAIT` (`wait-cap`) or would end
+   * past the read's `RETRY_BUDGET` (`budget`).
+   */
+  | {
+      readonly _tag: "WaitRefused";
+      readonly status: number;
+      readonly wait: Duration.Duration;
+      readonly bound: "wait-cap" | "budget";
+    };
+
+/** What to do about a failed attempt, decided once from its failure. */
 type RetryDecision =
   | { readonly _tag: "RetryAfter"; readonly wait: Duration.Duration }
   | { readonly _tag: "Backoff" }
   | { readonly _tag: "DoNotRetry" };
 
-function decide(failure: ReadFailure): RetryDecision {
-  if (failure._tag === "Rejected" || failure._tag === "OverBudget") return { _tag: "DoNotRetry" };
+function decide(failure: AttemptFailure): RetryDecision {
+  if (failure._tag === "Rejected") return { _tag: "DoNotRetry" };
   if (failure._tag === "Unanswered") return { _tag: "Backoff" };
   return Option.match(failure.wait, {
     onNone: () => ({ _tag: "Backoff" }),
@@ -53,7 +66,7 @@ function decide(failure: ReadFailure): RetryDecision {
 /**
  * Why a read failed, for its error message.
  *
- * @param failure - The last failure.
+ * @param failure - The read's failure.
  * @returns A short explanation, such as `answered 502` or a wait too long to honour.
  */
 export function describe(failure: ReadFailure): string {
@@ -61,18 +74,14 @@ export function describe(failure: ReadFailure): string {
     case "Unanswered":
       return `could not be read (${failure.reason})`;
     case "Rejected":
-      return `answered ${String(failure.status)}`;
-    case "OverBudget":
-      return `answered ${String(failure.status)} and asked to wait ${Duration.format(failure.wait)}, past the ${Duration.format(RETRY_BUDGET)} a read may take`;
     case "Throttled":
-      return Option.match(
-        Option.filter(failure.wait, (wait) => Duration.isGreaterThan(wait, MAX_WAIT)),
-        {
-          onNone: () => `answered ${String(failure.status)}`,
-          onSome: (wait) =>
-            `answered ${String(failure.status)} and asked to wait ${Duration.format(wait)}, longer than the ${Duration.format(MAX_WAIT)} it is waited`,
-        }
-      );
+      return `answered ${String(failure.status)}`;
+    case "WaitRefused": {
+      const asked = `answered ${String(failure.status)} and asked to wait ${Duration.format(failure.wait)}`;
+      return failure.bound === "wait-cap"
+        ? `${asked}, longer than the ${Duration.format(MAX_WAIT)} it is waited`
+        : `${asked}, past the ${Duration.format(RETRY_BUDGET)} a read may take`;
+    }
   }
 }
 
@@ -110,54 +119,101 @@ export const requestedWait = Effect.fnUntraced(function* (headers: Headers.Heade
 export const attemptTimeout = Config.Duration("HTTP_TIMEOUT").pipe(Config.withDefault(Duration.seconds(30)));
 
 /**
- * Bounds one attempt by `timeout`, counting a timeout as an unanswered read.
+ * Bounds one attempt by `timeout`, failing with `onTimeout` when it runs out.
  *
  * @param timeout - How long the attempt may take.
+ * @param onTimeout - The failure of an attempt that ran out of time, given the timeout's text.
  * @returns The bounded attempt.
  */
-export function withinTimeout(
-  timeout: Duration.Duration
-): <A, R>(attempt: Effect.Effect<A, ReadFailure, R>) => Effect.Effect<A, ReadFailure, R> {
+export function withinTimeout<F>(
+  timeout: Duration.Duration,
+  onTimeout: (within: string) => F
+): <A, E, R>(attempt: Effect.Effect<A, E, R>) => Effect.Effect<A, E | F, R> {
   return (attempt) =>
     attempt.pipe(
       Effect.timeoutOrElse({
         duration: timeout,
-        orElse: () =>
-          Effect.fail({
-            _tag: "Unanswered",
-            reason: `no answer within ${Duration.format(timeout)}`,
-          } as const),
+        orElse: () => Effect.fail(onTimeout(`no answer within ${Duration.format(timeout)}`)),
       })
     );
+}
+
+/** A failure in transit, or while the body was read, as an unanswered attempt. */
+function unanswered(error: HttpClientError.HttpClientError): AttemptFailure {
+  return { _tag: "Unanswered", reason: error.reason._tag };
+}
+
+/** How `readJson` reads. */
+type JsonRead = {
+  /** What is read, for the retry warnings, such as `Slack conversations.history`. */
+  readonly read: string;
+  /** How long one attempt may take. */
+  readonly timeout: Duration.Duration;
+  /** Whether a response is a rate limit or server error, which a later attempt may not meet. */
+  readonly throttled: (response: HttpClientResponse.HttpClientResponse) => boolean;
+};
+
+/**
+ * Reads a JSON answer under the shared retry policy. Each attempt sends `request`, fails as
+ * `Throttled` with its requested wait when `throttled` says so, as `Rejected` on any other status
+ * but 200, and reads the body within the attempt's timeout, so a stall while it arrives counts as
+ * unanswered.
+ *
+ * @param request - The request, sent once per attempt.
+ * @param options - What is read, the attempt timeout and the throttle test.
+ * @returns The answer's JSON, or the read's failure.
+ */
+export function readJson<R>(
+  request: Effect.Effect<HttpClientResponse.HttpClientResponse, HttpClientError.HttpClientError, R>,
+  options: JsonRead
+): Effect.Effect<unknown, ReadFailure, R> {
+  return Effect.gen(function* () {
+    const response = yield* request.pipe(Effect.mapError(unanswered));
+    if (options.throttled(response)) {
+      const wait = yield* requestedWait(response.headers);
+      return yield* Effect.fail<AttemptFailure>({ _tag: "Throttled", status: response.status, wait });
+    }
+    if (response.status !== 200)
+      return yield* Effect.fail<AttemptFailure>({ _tag: "Rejected", status: response.status });
+    return yield* response.json.pipe(Effect.mapError(unanswered));
+  }).pipe(
+    withinTimeout(options.timeout, (reason): AttemptFailure => ({ _tag: "Unanswered", reason })),
+    retryReads(options.read)
+  );
 }
 
 /**
  * Repeats a read while its failure is worth another try, as often as `RETRIES`, waiting as long
  * as the server asks or backing off from a second, and ends the whole read by `RETRY_BUDGET`. A
- * requested wait that would end past the budget fails the read as `OverBudget` at once. Each retry
- * logs a warning naming the read.
+ * requested wait longer than `MAX_WAIT`, or one that would end past the budget, fails the read as
+ * `WaitRefused` at once. Each retry logs a warning naming the read.
  *
  * @param read - What is read, for the warnings, such as `Slack conversations.history`.
  * @returns The retried read, failing with its last failure.
  */
 export function retryReads(
   read: string
-): <A, R>(attempt: Effect.Effect<A, ReadFailure, R>) => Effect.Effect<A, ReadFailure, R> {
+): <A, R>(attempt: Effect.Effect<A, AttemptFailure, R>) => Effect.Effect<A, ReadFailure, R> {
   const budget = Duration.toMillis(RETRY_BUDGET);
   return (attempt) =>
     Effect.gen(function* () {
       const start = yield* Clock.currentTimeMillis;
       /** The failure the read ends with, once no retry follows `failure` at `now`. */
-      const final = (failure: ReadFailure, now: number): ReadFailure => {
-        const decision = decide(failure);
-        return failure._tag === "Throttled" &&
-          decision._tag === "RetryAfter" &&
-          now - start + Duration.toMillis(decision.wait) > budget
-          ? { _tag: "OverBudget", status: failure.status, wait: decision.wait }
-          : failure;
+      const final = (failure: AttemptFailure, now: number): ReadFailure => {
+        if (failure._tag !== "Throttled" || Option.isNone(failure.wait)) return failure;
+        const wait = failure.wait.value;
+        const refused = (bound: "wait-cap" | "budget"): ReadFailure => ({
+          _tag: "WaitRefused",
+          status: failure.status,
+          wait,
+          bound,
+        });
+        if (Duration.isGreaterThan(wait, MAX_WAIT)) return refused("wait-cap");
+        if (now - start + Duration.toMillis(wait) > budget) return refused("budget");
+        return failure;
       };
       const schedule = Schedule.exponential("1 second").pipe(
-        Schedule.setInputType<ReadFailure>(),
+        Schedule.setInputType<AttemptFailure>(),
         Schedule.upTo({ times: RETRIES }),
         Schedule.modifyDelay(({ input, duration }) => {
           const decision = decide(input);

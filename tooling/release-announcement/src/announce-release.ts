@@ -25,18 +25,11 @@ import * as SlackWebApi from "./slack-web-api.ts";
 /** The variable that names each release channel's Slack channel. */
 const CHANNEL_VARIABLES = { Stable: "SLACK_RELEASES_CHANNEL", Canary: "SLACK_CANARY_CHANNEL" } as const;
 
-/** A setting of the job does not parse. */
-class InvalidSetting extends Schema.TaggedError<InvalidSetting>()("InvalidSetting", {
-  message: Schema.String,
-}) {}
-
 /** A channel variable, parsed: a channel, or none while it is unset or empty. */
 const channelSetting = (name: string) =>
   Effect.gen(function* () {
     const setting = yield* Config.String(name).pipe(Config.withDefault(""));
-    return yield* Effect.fromResult(parseChannelSetting(setting)).pipe(
-      Effect.mapError((error) => new InvalidSetting({ message: `${name}: ${error.message}` }))
-    );
+    return yield* Effect.fromResult(parseChannelSetting(name, setting));
   });
 
 /** The job's settings, from its environment and the Actions defaults. */
@@ -45,8 +38,8 @@ const settings = Effect.gen(function* () {
   const server = yield* baseUrlSetting("GITHUB_SERVER_URL");
   const { owner, name } = yield* repositorySetting("GITHUB_REPOSITORY");
   const channels = {
-    stable: yield* channelSetting(CHANNEL_VARIABLES.Stable),
-    canary: yield* channelSetting(CHANNEL_VARIABLES.Canary),
+    Stable: yield* channelSetting(CHANNEL_VARIABLES.Stable),
+    Canary: yield* channelSetting(CHANNEL_VARIABLES.Canary),
   };
   // An empty secret is how Actions passes one that is not set.
   const token = yield* Config.schema(Schema.Redacted(Schema.NonEmptyString), "SLACK_BOT_TOKEN").pipe(

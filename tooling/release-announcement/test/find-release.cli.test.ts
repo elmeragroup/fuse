@@ -1,8 +1,7 @@
-import { NodeServices } from "@effect/platform-node";
-import { assert, layer } from "@effect/vitest";
-import { Clock, Effect, Layer, Option } from "effect";
+import { assert } from "@effect/vitest";
+import { Clock, Effect, Option } from "effect";
 
-import { fakeGitHub, runStep, ScratchRepository } from "./cli-harness.ts";
+import { fakeGitHub, inScratchRepository, runStep, ScratchRepository } from "./cli-harness.ts";
 import type { GitHubFailure } from "./cli-harness.ts";
 import { olderCommit } from "./fixtures.ts";
 
@@ -82,241 +81,248 @@ const lookUp = (
 const always = (failure: GitHubFailure, count = 6): readonly GitHubFailure[] =>
   Array.from({ length: count }, () => failure);
 
-layer(ScratchRepository.layer.pipe(Layer.provideMerge(NodeServices.layer)), { excludeTestServices: true })(
-  "the release a Publish Release run published",
-  (it) => {
-    it.effect("writes the commit's published canary, asking GitHub with the job's token", () =>
-      Effect.gen(function* () {
-        const sha = yield* versionCommit;
-        const run = yield* lookUp({ SOURCE_COMMIT: sha }, new Map([[`canary-${sha}`, canaryRelease(sha)]]));
-        assert.strictEqual(run.exitCode, 0, run.stdout);
-        assert.deepStrictEqual(
-          run.outputs,
-          new Map([
-            ["tag", `canary-${sha}`],
-            [
-              "release",
-              `{"_tag":"Canary","version":"0.1.0-canary.151","commit":"${sha}",` +
-                `"url":"https://github.com/elmeragroup/fuse/releases/tag/canary-${sha}","publishedAt":"2026-11-05T09:15:14.000Z"}`,
-            ],
-          ])
-        );
-        assert.deepStrictEqual(run.requests, [
+inScratchRepository("the release a Publish Release run published", (it) => {
+  it.effect("writes the commit's published canary, asking GitHub with the job's token", () =>
+    Effect.gen(function* () {
+      const sha = yield* versionCommit;
+      const run = yield* lookUp({ SOURCE_COMMIT: sha }, new Map([[`canary-${sha}`, canaryRelease(sha)]]));
+      assert.strictEqual(run.exitCode, 0, run.stdout);
+      assert.deepStrictEqual(
+        run.outputs,
+        new Map([
+          ["tag", `canary-${sha}`],
+          [
+            "release",
+            `{"_tag":"Canary","version":"0.1.0-canary.151","commit":"${sha}",` +
+              `"url":"https://github.com/elmeragroup/fuse/releases/tag/canary-${sha}","publishedAt":"2026-11-05T09:15:14.000Z"}`,
+          ],
+        ])
+      );
+      assert.deepStrictEqual(
+        run.requests.map(({ tag, authorization }) => ({ tag, authorization })),
+        [
           { tag: `canary-${sha}`, authorization: "Bearer test-token" },
           { tag: "v0.2.0", authorization: "Bearer test-token" },
-        ]);
-        assert.notInclude(`${run.stdout}${run.stderr}`, "test-token");
-      })
-    );
+        ]
+      );
+      assert.notInclude(`${run.stdout}${run.stderr}`, "test-token");
+    })
+  );
 
-    it.effect("reads the records under an API URL with a path, as GitHub Enterprise Server's is", () =>
-      Effect.gen(function* () {
-        const sha = yield* versionCommit;
-        const run = yield* lookUp(
-          { SOURCE_COMMIT: sha },
-          new Map([[`canary-${sha}`, canaryRelease(sha)]]),
-          new Map(),
-          {},
-          "/api/v3"
-        );
-        assert.strictEqual(run.exitCode, 0, run.stdout);
-        assert.strictEqual(run.outputs.get("tag"), `canary-${sha}`);
-      })
-    );
+  it.effect("sends the User-Agent GitHub requires", () =>
+    Effect.gen(function* () {
+      const sha = yield* versionCommit;
+      const run = yield* lookUp({ SOURCE_COMMIT: sha }, new Map([[`canary-${sha}`, canaryRelease(sha)]]));
+      assert.strictEqual(run.exitCode, 0, run.stdout);
+      assert.isNotEmpty(run.requests);
+      for (const { userAgent } of run.requests) assert.isNotEmpty(userAgent ?? "");
+    })
+  );
 
-    it.effect("writes the stable release the version commit published, by the version in its manifest", () =>
-      Effect.gen(function* () {
-        const sha = yield* versionCommit;
-        const run = yield* lookUp({ SOURCE_COMMIT: sha }, new Map([["v0.2.0", stableRelease(sha)]]));
-        assert.strictEqual(run.exitCode, 0, run.stdout);
-        assert.strictEqual(run.outputs.get("tag"), "v0.2.0");
-        assert.deepStrictEqual(JSON.parse(run.outputs.get("release") ?? ""), {
-          _tag: "Stable",
-          version: "0.2.0",
-          commit: sha,
-          url: "https://github.com/elmeragroup/fuse/releases/tag/v0.2.0",
-          publishedAt: "2026-11-06T12:00:00.000Z",
-        });
-      })
-    );
+  it.effect("reads the records under an API URL with a path, as GitHub Enterprise Server's is", () =>
+    Effect.gen(function* () {
+      const sha = yield* versionCommit;
+      const run = yield* lookUp(
+        { SOURCE_COMMIT: sha },
+        new Map([[`canary-${sha}`, canaryRelease(sha)]]),
+        new Map(),
+        {},
+        "/api/v3"
+      );
+      assert.strictEqual(run.exitCode, 0, run.stdout);
+      assert.strictEqual(run.outputs.get("tag"), `canary-${sha}`);
+    })
+  );
 
-    it.effect("writes nothing for a skipped canary whose version's stable release is an older commit's", () =>
-      Effect.gen(function* () {
-        const sha = yield* versionCommit;
-        const run = yield* lookUp({ SOURCE_COMMIT: sha }, new Map([["v0.2.0", stableRelease(olderCommit)]]));
-        assert.strictEqual(run.exitCode, 0, run.stdout);
-        assert.deepStrictEqual(run.outputs, new Map());
-        assert.include(
-          run.stdout,
-          "::notice::This run published no release, so there is nothing to announce."
-        );
-      })
-    );
+  it.effect("writes the stable release the version commit published, by the version in its manifest", () =>
+    Effect.gen(function* () {
+      const sha = yield* versionCommit;
+      const run = yield* lookUp({ SOURCE_COMMIT: sha }, new Map([["v0.2.0", stableRelease(sha)]]));
+      assert.strictEqual(run.exitCode, 0, run.stdout);
+      assert.strictEqual(run.outputs.get("tag"), "v0.2.0");
+      assert.deepStrictEqual(JSON.parse(run.outputs.get("release") ?? ""), {
+        _tag: "Stable",
+        version: "0.2.0",
+        commit: sha,
+        url: "https://github.com/elmeragroup/fuse/releases/tag/v0.2.0",
+        publishedAt: "2026-11-06T12:00:00.000Z",
+      });
+    })
+  );
 
-    it.effect("looks up exactly the record tag on the retry path", () =>
-      Effect.gen(function* () {
-        const sha = yield* versionCommit;
-        const run = yield* lookUp(
-          { RECORD_TAG: `canary-${sha}` },
-          new Map<string, unknown>([
-            [`canary-${sha}`, canaryRelease(sha)],
-            ["v0.2.0", stableRelease(sha)],
-          ])
-        );
-        assert.strictEqual(run.exitCode, 0, run.stdout);
-        assert.strictEqual(run.outputs.get("tag"), `canary-${sha}`);
-        assert.deepStrictEqual(
-          run.requests.map(({ tag }) => tag),
-          [`canary-${sha}`]
-        );
-      })
-    );
+  it.effect("writes nothing for a skipped canary whose version's stable release is an older commit's", () =>
+    Effect.gen(function* () {
+      const sha = yield* versionCommit;
+      const run = yield* lookUp({ SOURCE_COMMIT: sha }, new Map([["v0.2.0", stableRelease(olderCommit)]]));
+      assert.strictEqual(run.exitCode, 0, run.stdout);
+      assert.deepStrictEqual(run.outputs, new Map());
+      assert.include(run.stdout, "::notice::This run published no release, so there is nothing to announce.");
+    })
+  );
 
-    it.effect("rejects a canary record whose body names another commit", () =>
-      Effect.gen(function* () {
-        const sha = yield* versionCommit;
-        const moved = { ...canaryRelease(sha), body: canaryRelease(olderCommit).body };
-        const run = yield* lookUp({ SOURCE_COMMIT: sha }, new Map([[`canary-${sha}`, moved]]));
-        assert.strictEqual(run.exitCode, 1);
-        assert.include(run.stdout, `::error::Release record canary-${sha} records canary-${olderCommit}`);
-        assert.deepStrictEqual(run.outputs, new Map());
-      })
-    );
+  it.effect("looks up exactly the record tag on the retry path", () =>
+    Effect.gen(function* () {
+      const sha = yield* versionCommit;
+      const run = yield* lookUp(
+        { RECORD_TAG: `canary-${sha}` },
+        new Map<string, unknown>([
+          [`canary-${sha}`, canaryRelease(sha)],
+          ["v0.2.0", stableRelease(sha)],
+        ])
+      );
+      assert.strictEqual(run.exitCode, 0, run.stdout);
+      assert.strictEqual(run.outputs.get("tag"), `canary-${sha}`);
+      assert.deepStrictEqual(
+        run.requests.map(({ tag }) => tag),
+        [`canary-${sha}`]
+      );
+    })
+  );
 
-    it.effect("fails at once on a rejected token rather than calling the record unpublished", () =>
-      Effect.gen(function* () {
-        const sha = yield* versionCommit;
-        const run = yield* lookUp(
-          { SOURCE_COMMIT: sha },
-          new Map(),
-          new Map([[`canary-${sha}`, always({ _tag: "Status", status: 401 })]])
-        );
-        assert.strictEqual(run.exitCode, 1);
-        assert.include(run.stdout, `::error::GitHub answered 401 for canary-${sha}`);
-        assert.strictEqual(run.requests.length, 1);
-        assert.deepStrictEqual(run.outputs, new Map());
-      })
-    );
+  it.effect("rejects a canary record whose body names another commit", () =>
+    Effect.gen(function* () {
+      const sha = yield* versionCommit;
+      const moved = { ...canaryRelease(sha), body: canaryRelease(olderCommit).body };
+      const run = yield* lookUp({ SOURCE_COMMIT: sha }, new Map([[`canary-${sha}`, moved]]));
+      assert.strictEqual(run.exitCode, 1);
+      assert.include(run.stdout, `::error::Release record canary-${sha} records canary-${olderCommit}`);
+      assert.deepStrictEqual(run.outputs, new Map());
+    })
+  );
 
-    it.effect("retries a server error three times, then fails without an answer", () =>
-      Effect.gen(function* () {
-        const sha = yield* versionCommit;
-        const run = yield* lookUp(
-          { SOURCE_COMMIT: sha },
-          new Map(),
-          new Map([[`canary-${sha}`, always({ _tag: "Status", status: 502 })]])
-        );
-        assert.strictEqual(run.exitCode, 1);
-        assert.include(run.stdout, `::error::GitHub answered 502 for canary-${sha}`);
-        assert.strictEqual(run.requests.length, 4);
-        assert.deepStrictEqual(run.outputs, new Map());
-      })
-    );
+  it.effect("fails at once on a rejected token rather than calling the record unpublished", () =>
+    Effect.gen(function* () {
+      const sha = yield* versionCommit;
+      const run = yield* lookUp(
+        { SOURCE_COMMIT: sha },
+        new Map(),
+        new Map([[`canary-${sha}`, always({ _tag: "Status", status: 401 })]])
+      );
+      assert.strictEqual(run.exitCode, 1);
+      assert.include(run.stdout, `::error::GitHub answered 401 for canary-${sha}`);
+      assert.strictEqual(run.requests.length, 1);
+      assert.deepStrictEqual(run.outputs, new Map());
+    })
+  );
 
-    it.effect.each([
-      {
-        case: "a 429 with Retry-After",
-        failure: (): GitHubFailure => ({ _tag: "Status", status: 429, headers: { "retry-after": "2" } }),
-      },
-      {
-        case: "a 403 whose rate limit is spent until its reset",
-        // GitHub sends the reset in whole epoch seconds.
-        failure: (now: number): GitHubFailure => ({
-          _tag: "Status",
-          status: 403,
-          headers: { "x-ratelimit-remaining": "0", "x-ratelimit-reset": String(Math.floor(now / 1000) + 3) },
-        }),
-      },
-    ])("waits out $case, then finds the release", ({ failure }) =>
-      Effect.gen(function* () {
-        const sha = yield* versionCommit;
-        const now = yield* Clock.currentTimeMillis;
-        const run = yield* lookUp(
-          { RECORD_TAG: `canary-${sha}` },
-          new Map([[`canary-${sha}`, canaryRelease(sha)]]),
-          new Map([[`canary-${sha}`, [failure(now)]]])
-        );
-        assert.strictEqual(run.exitCode, 0, run.stdout);
-        assert.strictEqual(run.outputs.get("tag"), `canary-${sha}`);
-        // Each wait is longer than the first back-off, so a retry that ignored it came early.
-        assert.deepStrictEqual(run.early, []);
-        assert.strictEqual(run.requests.length, 2);
-      })
-    );
+  it.effect("retries a server error three times, then fails without an answer", () =>
+    Effect.gen(function* () {
+      const sha = yield* versionCommit;
+      const run = yield* lookUp(
+        { SOURCE_COMMIT: sha },
+        new Map(),
+        new Map([[`canary-${sha}`, always({ _tag: "Status", status: 502 })]])
+      );
+      assert.strictEqual(run.exitCode, 1);
+      assert.include(run.stdout, `::error::GitHub answered 502 for canary-${sha}`);
+      assert.strictEqual(run.requests.length, 4);
+      assert.deepStrictEqual(run.outputs, new Map());
+    })
+  );
 
-    it.effect("fails at once when GitHub asks for a wait longer than a minute", () =>
-      Effect.gen(function* () {
-        const sha = yield* versionCommit;
-        const run = yield* lookUp(
-          { RECORD_TAG: `canary-${sha}` },
-          new Map([[`canary-${sha}`, canaryRelease(sha)]]),
-          new Map([[`canary-${sha}`, [{ _tag: "Status", status: 429, headers: { "retry-after": "3600" } }]]])
-        );
-        assert.strictEqual(run.exitCode, 1);
-        assert.include(
-          run.stdout,
-          `::error::GitHub answered 429 and asked to wait 1h, longer than the 1m it is waited for canary-${sha}`
-        );
-        assert.strictEqual(run.requests.length, 1);
-      })
-    );
+  it.effect.each([
+    {
+      case: "a 429 with Retry-After",
+      failure: (): GitHubFailure => ({ _tag: "Status", status: 429, headers: { "retry-after": "2" } }),
+    },
+    {
+      case: "a 403 whose rate limit is spent until its reset",
+      // GitHub sends the reset in whole epoch seconds.
+      failure: (now: number): GitHubFailure => ({
+        _tag: "Status",
+        status: 403,
+        headers: { "x-ratelimit-remaining": "0", "x-ratelimit-reset": String(Math.floor(now / 1000) + 3) },
+      }),
+    },
+  ])("waits out $case, then finds the release", ({ failure }) =>
+    Effect.gen(function* () {
+      const sha = yield* versionCommit;
+      const now = yield* Clock.currentTimeMillis;
+      const run = yield* lookUp(
+        { RECORD_TAG: `canary-${sha}` },
+        new Map([[`canary-${sha}`, canaryRelease(sha)]]),
+        new Map([[`canary-${sha}`, [failure(now)]]])
+      );
+      assert.strictEqual(run.exitCode, 0, run.stdout);
+      assert.strictEqual(run.outputs.get("tag"), `canary-${sha}`);
+      // Each wait is longer than the first back-off, so a retry that ignored it came early.
+      assert.deepStrictEqual(run.early, []);
+      assert.strictEqual(run.requests.length, 2);
+    })
+  );
 
-    it.effect("gives up on a body that stalls after its headers, within the timeout of each read", () =>
-      Effect.gen(function* () {
-        const sha = yield* versionCommit;
-        const run = yield* lookUp(
-          { RECORD_TAG: `canary-${sha}` },
-          new Map([[`canary-${sha}`, canaryRelease(sha)]]),
-          new Map([[`canary-${sha}`, always({ _tag: "Stall" })]]),
-          { HTTP_TIMEOUT: "500 millis" }
-        );
-        assert.strictEqual(run.exitCode, 1);
-        assert.include(
-          run.stdout,
-          `::error::GitHub could not be read (no answer within 500ms) for canary-${sha}`
-        );
-        assert.strictEqual(run.requests.length, 4);
-        assert.deepStrictEqual(run.outputs, new Map());
-      })
-    );
+  it.effect("fails at once when GitHub asks for a wait longer than a minute", () =>
+    Effect.gen(function* () {
+      const sha = yield* versionCommit;
+      const run = yield* lookUp(
+        { RECORD_TAG: `canary-${sha}` },
+        new Map([[`canary-${sha}`, canaryRelease(sha)]]),
+        new Map([[`canary-${sha}`, [{ _tag: "Status", status: 429, headers: { "retry-after": "3600" } }]]])
+      );
+      assert.strictEqual(run.exitCode, 1);
+      assert.include(
+        run.stdout,
+        `::error::GitHub answered 429 and asked to wait 1h, longer than the 1m it is waited for canary-${sha}`
+      );
+      assert.strictEqual(run.requests.length, 1);
+    })
+  );
 
-    it.effect.each([
-      {
-        case: "an API URL over plain http to a remote host",
-        setting: { GITHUB_API_URL: "http://api.github.com" },
-        error: "GITHUB_API_URL must be an https URL",
-      },
-      {
-        case: "an API URL with a query",
-        setting: { GITHUB_API_URL: "https://api.github.com/?per_page=1" },
-        error: "GITHUB_API_URL must not carry a query or fragment",
-      },
-      {
-        case: "an API URL with a port past 65535",
-        setting: { GITHUB_API_URL: "https://api.github.com:99999" },
-        error: "GITHUB_API_URL is not a valid URL",
-      },
-      {
-        case: "a repository that climbs out of /repos",
-        setting: { GITHUB_REPOSITORY: "elmeragroup/.." },
-        error: "GITHUB_REPOSITORY must be an owner/name repository",
-      },
-    ])("asks GitHub nothing, with the token, for $case", ({ setting, error }) =>
-      Effect.gen(function* () {
-        const sha = yield* versionCommit;
-        const run = yield* lookUp({ SOURCE_COMMIT: sha }, new Map(), new Map(), setting);
-        assert.strictEqual(run.exitCode, 1);
-        assert.include(run.stdout, `::error::${error}`);
-        assert.deepStrictEqual(run.requests, []);
-      })
-    );
+  it.effect("gives up on a body that stalls after its headers, within the timeout of each read", () =>
+    Effect.gen(function* () {
+      const sha = yield* versionCommit;
+      const run = yield* lookUp(
+        { RECORD_TAG: `canary-${sha}` },
+        new Map([[`canary-${sha}`, canaryRelease(sha)]]),
+        new Map([[`canary-${sha}`, always({ _tag: "Stall" })]]),
+        { HTTP_TIMEOUT: "500 millis" }
+      );
+      assert.strictEqual(run.exitCode, 1);
+      assert.include(
+        run.stdout,
+        `::error::GitHub could not be read (no answer within 500ms) for canary-${sha}`
+      );
+      assert.strictEqual(run.requests.length, 4);
+      assert.deepStrictEqual(run.outputs, new Map());
+    })
+  );
 
-    it.effect("fails when neither the commit nor the record tag is set", () =>
-      Effect.gen(function* () {
-        const run = yield* lookUp({}, new Map());
-        assert.strictEqual(run.exitCode, 1);
-        assert.include(run.stdout, "::error::Set SOURCE_COMMIT or RECORD_TAG");
-      })
-    );
-  }
-);
+  it.effect.each([
+    {
+      case: "an API URL over plain http to a remote host",
+      setting: { GITHUB_API_URL: "http://api.github.com" },
+      error: "GITHUB_API_URL must be an https URL",
+    },
+    {
+      case: "an API URL with a query",
+      setting: { GITHUB_API_URL: "https://api.github.com/?per_page=1" },
+      error: "GITHUB_API_URL must not carry a query or fragment",
+    },
+    {
+      case: "an API URL with a port past 65535",
+      setting: { GITHUB_API_URL: "https://api.github.com:99999" },
+      error: "GITHUB_API_URL is not a valid URL",
+    },
+    {
+      case: "a repository that climbs out of /repos",
+      setting: { GITHUB_REPOSITORY: "elmeragroup/.." },
+      error: "GITHUB_REPOSITORY must be an owner/name repository",
+    },
+  ])("asks GitHub nothing, with the token, for $case", ({ setting, error }) =>
+    Effect.gen(function* () {
+      const sha = yield* versionCommit;
+      const run = yield* lookUp({ SOURCE_COMMIT: sha }, new Map(), new Map(), setting);
+      assert.strictEqual(run.exitCode, 1);
+      assert.include(run.stdout, `::error::${error}`);
+      assert.deepStrictEqual(run.requests, []);
+    })
+  );
+
+  it.effect("fails when neither the commit nor the record tag is set", () =>
+    Effect.gen(function* () {
+      const run = yield* lookUp({}, new Map());
+      assert.strictEqual(run.exitCode, 1);
+      assert.include(run.stdout, "::error::Set SOURCE_COMMIT or RECORD_TAG");
+    })
+  );
+});

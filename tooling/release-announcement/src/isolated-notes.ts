@@ -16,11 +16,10 @@ import { Config, Duration, Effect, Layer, Option, Path, Schema, Stream } from "e
 import type { PlatformError } from "effect/PlatformError";
 import { ChildProcess, ChildProcessSpawner } from "effect/process";
 
-import type { Changelog } from "./changelog-section.ts";
 import { NotesRenderer } from "./release-announcement.ts";
-import type { UnreadableCause, VersionNotes } from "./release-notes.ts";
 import type { StableVersion } from "./release-record.ts";
 import { RenderedNotes, RenderRequest } from "./render-protocol.ts";
+import type { Changelog, UnreadableCause, VersionNotes } from "./render-protocol.ts";
 
 /**
  * How long reading and rendering a version's notes may take, the child's start included. Measured

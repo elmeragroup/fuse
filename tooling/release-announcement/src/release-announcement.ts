@@ -15,11 +15,10 @@ import { Context, Data, DateTime, Effect, Match, Option, Schema } from "effect";
 
 import * as Announcement from "./announcement.ts";
 import type { ChatPostMessage, SlackChannelId } from "./announcement.ts";
-import { READ_LIMIT } from "./changelog-section.ts";
-import type { Changelog } from "./changelog-section.ts";
-import type { VersionNotes } from "./release-notes.ts";
 import * as ReleaseRecord from "./release-record.ts";
 import type { CommitSha, DamagedRecord, RecordTag, Release, StableVersion } from "./release-record.ts";
+import { READ_LIMIT } from "./render-protocol.ts";
+import type { Changelog, VersionNotes } from "./render-protocol.ts";
 
 /** GitHub could not be asked about a record, or answered with neither the record nor 404. */
 export class RecordsUnavailable extends Schema.TaggedError<RecordsUnavailable>()("RecordsUnavailable", {
@@ -43,8 +42,6 @@ export class ReleaseRecords extends Context.Service<
 /** git could not read what a commit holds, such as for a commit missing from the clone. */
 export class GitReadFailed extends Schema.TaggedError<GitReadFailed>()("GitReadFailed", {
   message: Schema.String,
-  /** The commit git was asked to read. */
-  read: Schema.String,
 }) {}
 
 /** The package's release history in git: its changelog, version and the commit's subject. */
@@ -83,31 +80,20 @@ export class NotesRenderer extends Context.Service<
 /** Slack answered a call with an error, such as `not_in_channel` or `missing_scope`. */
 export class SlackRefused extends Schema.TaggedError<SlackRefused>()("SlackRefused", {
   message: Schema.String,
-  method: Schema.Literals(["conversations.history", "chat.postMessage"]),
-  /** Slack's error code, or `http_<status>` for a refusal by status. */
-  error: Schema.String,
 }) {}
 
 /** Slack could not be reached, or sent an answer that does not read as one. */
 export class SlackUnavailable extends Schema.TaggedError<SlackUnavailable>()("SlackUnavailable", {
   message: Schema.String,
-  method: Schema.Literals(["conversations.history", "chat.postMessage"]),
 }) {}
 
 /**
- * The channel holds more messages since the release was published than the history check reads,
- * so an earlier announcement cannot be ruled out.
+ * The history check could not read all of the channel's history since the release was published,
+ * so an earlier announcement cannot be ruled out: the channel holds more messages than the check
+ * reads, Slack said more follows without a cursor to read it with, or Slack hides older messages
+ * past a free workspace's history limit.
  */
-export class HistoryBeyondBound extends Schema.TaggedError<HistoryBeyondBound>()("HistoryBeyondBound", {
-  message: Schema.String,
-  messages: Schema.Number,
-}) {}
-
-/**
- * Slack said more history follows but gave no cursor to read it with, so an earlier announcement
- * cannot be ruled out.
- */
-export class HistoryIncomplete extends Schema.TaggedError<HistoryIncomplete>()("HistoryIncomplete", {
+export class HistoryUnchecked extends Schema.TaggedError<HistoryUnchecked>()("HistoryUnchecked", {
   message: Schema.String,
 }) {}
 
@@ -134,10 +120,7 @@ export class SlackChannel extends Context.Service<
       channel: SlackChannelId,
       tag: RecordTag,
       postedAfter: DateTime.Utc
-    ) => Effect.Effect<
-      Option.Option<SlackMessage>,
-      SlackRefused | SlackUnavailable | HistoryBeyondBound | HistoryIncomplete
-    >;
+    ) => Effect.Effect<Option.Option<SlackMessage>, SlackRefused | SlackUnavailable | HistoryUnchecked>;
 
     /** Posts a message once. A post whose answer is lost fails with `PostUnconfirmed`. */
     readonly post: (message: ChatPostMessage) => Effect.Effect<SlackMessage, SlackRefused | PostUnconfirmed>;
@@ -178,15 +161,13 @@ export const findPublished = Effect.fn("ReleaseAnnouncement.findPublished")(func
   if (trigger._tag === "Retry") return yield* records.published(trigger.tag);
   const { commit } = trigger;
   // The canary tag names the commit, so a published canary record of it is this run's.
-  const canary = yield* records.published(ReleaseRecord.canaryTag(commit));
-  const version = yield* (yield* ChangelogSource).packageVersion(commit);
-  const stable = Option.filter(
-    yield* records.published(ReleaseRecord.stableTag(version)),
-    (release) => release.commit === commit
-  );
+  const canaryTag = ReleaseRecord.canaryTag(commit);
+  const canary = yield* records.published(canaryTag);
+  const stableTag = ReleaseRecord.stableTag(yield* (yield* ChangelogSource).packageVersion(commit));
+  const stable = Option.filter(yield* records.published(stableTag), (release) => release.commit === commit);
   if (Option.isSome(canary) && Option.isSome(stable)) {
     return yield* new ConflictingRecords({
-      message: `Both canary-${commit} and v${version} are published records of commit ${commit}`,
+      message: `Both ${canaryTag} and ${stableTag} are published records of commit ${commit}`,
     });
   }
   return Option.orElse(canary, () => stable);
@@ -233,17 +214,17 @@ export const announce = Effect.fn("ReleaseAnnouncement.announce")(function* (
 ) {
   const tag = ReleaseRecord.tagOf(release);
   yield* Effect.annotateCurrentSpan({ tag });
-  const route = Announcement.route(release, settings.channels);
-  if (route._tag === "Unrouted") return Outcome.Unrouted();
-  const { channel } = route;
+  const channel = settings.channels[release._tag];
+  if (Option.isNone(channel)) return Outcome.Unrouted();
   const message = yield* messageFor(release, settings.repository);
   yield* Effect.logInfo(`The announcement of ${tag}`, message);
   const slack = yield* SlackChannel;
   const postedAfter = DateTime.subtract(release.publishedAt, CLOCK_SKEW);
-  const earlier = yield* slack.findAnnouncement(channel, tag, postedAfter);
-  if (Option.isSome(earlier)) return Outcome.AlreadyAnnounced({ channel, message: earlier.value });
-  const posted = yield* slack.post(Announcement.postMessage(release, message, channel));
-  return Outcome.Posted({ channel, message: posted });
+  const earlier = yield* slack.findAnnouncement(channel.value, tag, postedAfter);
+  if (Option.isSome(earlier))
+    return Outcome.AlreadyAnnounced({ channel: channel.value, message: earlier.value });
+  const posted = yield* slack.post(Announcement.postMessage(release, message, channel.value));
+  return Outcome.Posted({ channel: channel.value, message: posted });
 });
 
 /** Builds a release's message, reading its notes or subject from git. */

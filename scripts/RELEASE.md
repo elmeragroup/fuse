@@ -110,28 +110,26 @@ command. Both variables hold channel IDs. The steps are Effect programs in the p
   CommonMark with micromark), checks the channel's history and posts.
 
 Release text is posted verbatim, so an `@here`, `@channel` or `@everyone` in a changelog or PR title
-notifies no one. Only the first 512 KiB of the changelog is read from git, which holds the newest
-versions, and it is parsed as CommonMark: the version's section runs from its `## <version>` heading
-to the next one, so a `## ` line in a fenced example neither starts nor ends it. micromark's cost
-grows faster than its input on deeply nested Markdown, and some changelogs inside the read limit
-would parse for many minutes, so the notes are read and rendered in a child process that is stopped
-after 10 seconds (`NOTES_TIME_LIMIT`); the 172 KB 0.1.0 section takes about 0.4 s with the process's
-start. Notes the read limit cuts into are shown as shortened. A version whose heading lies past the
-read limit, or whose notes could not be read or rendered in time, is announced with its header, its
-links and a link to its notes. The child gets an empty environment, so the Slack token and the other
-secrets of the step never reach the code that parses the changelog, and at most 64 KiB of its answer
-is read; an answer past that, or one with more than four sections or a section outside 1 to 3,000
-characters, is not believed and the notes are linked instead. A stable announcement links the
-GitHub release, the npm version and, when its notes are shortened, missing or not shown, the full
-notes in the changelog. It has no compare link to the previous stable release: the release record
-does not name that release, and telling it from tags or release listings proved unsafe (TODO.md).
+notifies no one. Only a bounded prefix of the changelog is read from git, and the version's section
+runs from its `## <version>` heading to the next one, read as CommonMark. Notes are rendered in a
+child process under a time limit ([isolated-notes.ts](../tooling/release-announcement/src/isolated-notes.ts)
+holds the limits and why). A version whose heading lies past what is read, or whose notes could not
+be read or rendered in time, is announced with its header, its links and a link to its notes; notes
+the read limit cuts into, or that fill the sections Slack shows, are marked shortened. A stable
+announcement links the GitHub release, the npm version and, when its notes are shortened, missing
+or not shown, the full notes in the changelog. It has no compare link to the previous stable
+release: the release record does not name that release, and telling it from tags or release
+listings proved unsafe (TODO.md).
 
-`GITHUB_API_URL`, `GITHUB_SERVER_URL` and `SLACK_API_URL` are parsed once when a step starts. Each
-must be https, or plain http to `127.0.0.1`, `[::1]` or `localhost` as the test stand-ins are, with
-no credentials, query or fragment and a port from 1 to 65535; otherwise the step fails before any
-request. Request and link URLs are built under them from path segments that cannot be `.` or `..`
-or hold `/`, `\`, `%`, `?` or `#`, so neither a setting nor a record tag can send the token outside
-the API path.
+The Slack token and the step's other secrets never reach the code that parses the changelog. The
+child process that parses it gets an empty environment, and the step's own process, which holds the
+token, does not load the Markdown parser at all (`token-process-imports.test.ts` holds it to that).
+
+`GITHUB_API_URL`, `GITHUB_SERVER_URL` and `SLACK_API_URL` are parsed once when a step starts, and a
+value that is not an https URL (or plain http to a loopback stand-in) without credentials, query or
+fragment fails the step before any request. Every request and link URL is built under them so that
+neither a setting nor a record tag can send the token outside the API path
+([addresses.ts](../tooling/release-announcement/src/addresses.ts) holds the rules).
 
 A run announces only the release it published. The lookup's candidates are the commit's canary
 record and, for a version commit, its stable record; a retry looks up only its record tag. A
@@ -145,12 +143,15 @@ for the tag. So re-running `notify`, or the whole workflow, does not post twice.
 job at a time per record tag, so a publication's announcement and a retry's for the same record
 cannot both post. If the history check fails, for example with `not_in_channel` or `missing_scope`,
 or the channel holds more than 2,000 messages since the publication, `notify` fails without posting,
-as it does when Slack says more history follows but gives no cursor. A history read is retried after
-a network or server error and after a rate limit, waiting as long as `Retry-After` asks, in seconds
-or as an HTTP date, up to a minute, and failing at once when asked to wait longer; a read, its
-retries and waits together, ends within two minutes. Each call, from the request to the end of its
-body, has 30 seconds (`HTTP_TIMEOUT`). The post is sent once and never retried: a retry after a lost
-response could repeat a message Slack had already accepted. If its answer is lost, `notify` fails
+as it does when Slack says more history follows but gives no cursor. On a free Slack plan past its
+history limit, Slack hides older messages and marks the history `is_limited`; unless a visible
+message carries the receipt, `notify` then fails without posting, since the announcement could be
+among the hidden messages. Past that limit every history read is marked limited, so a release
+that was never announced cannot be posted; announcing needs a workspace whose history is not
+limited, which means a paid Slack plan. History reads are retried after a network or server error and after a
+rate limit, within bounds [http-retry.ts](../tooling/release-announcement/src/http-retry.ts) sets
+and explains. The post is sent once and never retried: a retry after a lost response could repeat a
+message Slack had already accepted. If its answer is lost, `notify` fails
 and says so; re-run the failed job, which checks the history again and posts only if the first post
 did not land. To post an announced release again, delete its message in Slack, then re-run `notify`.
 
@@ -217,9 +218,8 @@ states that internal customer-built apps keep their existing limits
 ([changelog](https://docs.slack.dev/changelog/2025/05/29/rate-limit-changes-for-non-marketplace-apps/),
 [clarification](https://docs.slack.dev/changelog/2025/06/03/rate-limits-clarity/)). Fuse Releases is
 built and installed in Elmera's own workspace and is never distributed, so the check reads 200
-messages per request under Tier 3 (50+ requests a minute), for at most 10 pages, and waits out the
-`Retry-After` of a rate limit or server error, up to a minute; a longer wait fails the check. Do not
-enable public distribution for the app. Under the Marketplace limits a page holds 15 messages and
+messages per request under Tier 3 (50+ requests a minute), for at most 10 pages. Do not enable
+public distribution for the app. Under the Marketplace limits a page holds 15 messages and
 requests wait a minute apart, so a busy channel would hit the page bound or the retry limit, and the
 check would fail rather than post blind.
 

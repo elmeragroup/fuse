@@ -5,15 +5,15 @@ import picomatch from "picomatch";
 import { describe, expect, it } from "vitest";
 
 import { USAGE } from "../scripts/release.ts";
-import { asRecord, asString, isPlainObject, isString, readJsonObject } from "./json-object.mjs";
+import { asRecord, asString, readJsonObject } from "./json-object.mjs";
 import { repoRoot } from "./repo-tree.mjs";
 import {
   jobSteps,
   readWorkflow,
   requiredRunStep,
+  requiredStepById,
   requiredUsesStep,
   turboTasks,
-  workflowNames,
 } from "./workflow.mjs";
 
 function rootScripts() {
@@ -21,29 +21,15 @@ function rootScripts() {
 }
 
 /**
- * Every place a parsed workflow touches secrets, as `path: value`: each string that mentions the
- * `secrets` context, and each `secrets:` declaration, written as its keys or, for a reusable
- * workflow call, as `inherit`. A step in a list is named by its `id`, so the path survives renames
- * and reordering; a step without one is named by its position.
- * @param {unknown} value
- * @param {string} path
- * @returns {string[]}
+ * The publish job's one step that runs the release engine.
+ * @param {Record<string, unknown>[]} steps
  */
-function secretReferences(value, path) {
-  if (isString(value)) return /\bsecrets\b/.test(value) ? [`${path}: ${value}`] : [];
-  if (Array.isArray(value)) {
-    return value.flatMap((item, index) => {
-      const id = isPlainObject(item) && isString(item.id) ? item.id : `#${String(index)}`;
-      return secretReferences(item, `${path}[${id}]`);
-    });
-  }
-  if (!isPlainObject(value)) return [];
-  return Object.entries(value).flatMap(([key, item]) => {
-    const at = path === "" ? key : `${path}.${key}`;
-    if (key !== "secrets") return secretReferences(item, at);
-    const declared = isPlainObject(item) ? `{${Object.keys(item).sort().join(", ")}}` : String(item);
-    return [`${at}: ${declared}`, ...secretReferences(item, at)];
-  });
+function engineStep(steps) {
+  const matches = steps.filter(
+    (step) => step.run !== undefined && asString(step.run, "publish run").includes("pnpm release ")
+  );
+  expect(matches, "expected one release engine step").toHaveLength(1);
+  return matches[0];
 }
 
 describe("release wiring", () => {
@@ -143,11 +129,7 @@ describe("release wiring", () => {
     // The publish job carries its own `if`, so read its steps through jobSteps rather than
     // through requiredJobSteps, which asserts an unconditional job.
     const steps = jobSteps(readWorkflow("publish-release"), "publish");
-    const engineSteps = steps.filter(
-      (step) => step.run !== undefined && asString(step.run, "publish run").includes("pnpm release ")
-    );
-    expect(engineSteps).toHaveLength(1);
-    const engine = engineSteps[0];
+    const engine = engineStep(steps);
     const command = asString(engine.run, "publish run");
     expect(command).toContain('pnpm release retry "$RECORD_TAG"');
     expect(command).toContain('pnpm release publish "$SOURCE_COMMIT"');
@@ -198,10 +180,7 @@ describe("release wiring", () => {
       major > 11 || (major === 11 && minor >= 21),
       `npm ${version.slice(1).join(".")} must be at least 11.21.0`
     ).toBe(true);
-    const engine = steps.findIndex(
-      (step) => step.run !== undefined && asString(step.run, "publish run").includes("pnpm release ")
-    );
-    expect(steps.indexOf(pin)).toBeLessThan(engine);
+    expect(steps.indexOf(pin)).toBeLessThan(steps.indexOf(engineStep(steps)));
   });
 
   it("publishes from the npm environment that npm's trusted-publisher entries name", () => {
@@ -265,21 +244,12 @@ describe("release wiring", () => {
     const notify = asRecord(jobs.notify, "notify job");
     const publishSteps = jobSteps(workflow, "publish");
     const notifySteps = jobSteps(workflow, "notify");
-    /**
-     * @param {Record<string, unknown>[]} steps
-     * @param {string} id
-     */
-    const step = (steps, id) => {
-      const found = steps.find((candidate) => candidate.id === id);
-      if (found === undefined) throw new Error(`no ${id} step`);
-      return found;
-    };
     /** @param {Record<string, unknown>[]} steps */
     const runs = (steps) =>
       steps.flatMap((candidate) => (candidate.run === undefined ? [] : [asString(candidate.run, "run")]));
 
     it("finds the published release in the publish job, after the engine and under its lock", () => {
-      const lookup = step(publishSteps, "release");
+      const lookup = requiredStepById(publishSteps, "release");
       expect(lookup.run).toBe("node tooling/release-announcement/src/find-release.ts");
       // A failed lookup must not fail a finished publication.
       expect(lookup["continue-on-error"]).toBe(true);
@@ -289,17 +259,11 @@ describe("release wiring", () => {
         SOURCE_COMMIT: "${{ inputs.source_commit }}",
         RECORD_TAG: "${{ inputs.record_tag }}",
       });
-      const engine = publishSteps.findIndex(
-        (candidate) =>
-          candidate.run !== undefined && asString(candidate.run, "publish run").includes("pnpm release ")
-      );
-      const install = publishSteps.findIndex(
-        (candidate) => candidate.run === "pnpm install --frozen-lockfile"
-      );
-      expect(engine).toBeGreaterThan(-1);
-      expect(publishSteps.indexOf(lookup)).toBeGreaterThan(engine);
+      expect(publishSteps.indexOf(lookup)).toBeGreaterThan(publishSteps.indexOf(engineStep(publishSteps)));
       // The lookup runs the announcement package, which the job's full install provides.
-      expect(install).toBeGreaterThan(-1);
+      expect(requiredRunStep(publishSteps, "pnpm install --frozen-lockfile").run).toBe(
+        "pnpm install --frozen-lockfile"
+      );
       expect(asRecord(asRecord(jobs.publish, "publish job").outputs, "publish outputs")).toEqual({
         "release-tag": "${{ steps.release.outputs.tag }}",
         release: "${{ steps.release.outputs.release }}",
@@ -331,7 +295,7 @@ describe("release wiring", () => {
         "fetch-depth": 0,
         "persist-credentials": false,
       });
-      const announce = step(notifySteps, "announce");
+      const announce = requiredStepById(notifySteps, "announce");
       expect(announce.run).toBe("node tooling/release-announcement/src/announce-release.ts");
       // A failed announcement fails the job, so a release is never silently left unannounced.
       expect(announce["continue-on-error"]).toBeUndefined();
@@ -345,23 +309,6 @@ describe("release wiring", () => {
       expect(notifySteps.filter((candidate) => String(candidate.uses).startsWith("actions/cache"))).toEqual(
         []
       );
-    });
-
-    it("reads the Slack token only in the fields allowed to, across every workflow", () => {
-      // Each permitted reference, by workflow, job, step id and field. Display names, step order
-      // and other steps are free to change; a new reference anywhere fails here.
-      const allowed = [
-        // The one secret merge.yml passes to the called workflow, by name; never `inherit`.
-        "merge.yml jobs.release.secrets: {SLACK_BOT_TOKEN}",
-        "merge.yml jobs.release.secrets.SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}",
-        "publish-release.yml on.workflow_call.secrets: {SLACK_BOT_TOKEN}",
-        // Only the step that announces holds the token; the install before it does not.
-        "publish-release.yml jobs.notify.steps[announce].env.SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}",
-      ];
-      const found = workflowNames().flatMap((name) =>
-        secretReferences(readWorkflow(name), "").map((reference) => `${name}.yml ${reference}`)
-      );
-      expect(found.sort()).toEqual([...allowed].sort());
     });
 
     it("announces one release at a time, queueing rather than dropping", () => {

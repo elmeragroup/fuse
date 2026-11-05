@@ -1,20 +1,23 @@
 import { describe, expect, it } from "vitest";
 
 import * as Announcement from "../src/announcement.ts";
-import { Changelog, READ_LIMIT } from "../src/changelog-section.ts";
 import { versionNotes } from "../src/release-notes.ts";
-import type { VersionNotes } from "../src/release-notes.ts";
-import { context, repository, sectionTexts, shortenedNotice, stableRelease } from "./fixtures.ts";
+import { READ_LIMIT } from "../src/render-protocol.ts";
+import type { Changelog, VersionNotes } from "../src/render-protocol.ts";
+import {
+  bulk,
+  context,
+  notesOf,
+  repository,
+  sectionTexts,
+  shortenedNotice,
+  shown,
+  stableRelease,
+} from "./fixtures.ts";
 
 // Unit under test: ReleaseNotes.versionNotes on large and adversarial changelogs, and on the
 // bounded prefix the git adapter reads of a long one. Oracle: Block Kit's limits (3000 characters
 // per section, four note sections here).
-
-/** About 1.1 MB of entries. */
-const bulk = Array.from(
-  { length: 10_000 },
-  (_, index) => `- ${String(index).padStart(7, "0")}: ${"y".repeat(100)}`
-).join("\n");
 
 /**
  * The part of `text` the git adapter reads: all of it, or its first READ_LIMIT bytes.
@@ -24,13 +27,12 @@ const bulk = Array.from(
  */
 function read(text: string): Changelog {
   return text.length > READ_LIMIT
-    ? Changelog.Prefix({ text: text.slice(0, READ_LIMIT) })
-    : Changelog.Whole({ text });
+    ? { _tag: "Prefix", text: text.slice(0, READ_LIMIT) }
+    : { _tag: "Whole", text };
 }
 
 function sectionsOf(notes: VersionNotes): readonly string[] {
-  if (notes._tag !== "Notes") throw new Error(`no notes: ${notes._tag}`);
-  return notes.sections;
+  return shown(notes).sections;
 }
 
 describe("large changelogs", () => {
@@ -79,7 +81,7 @@ describe("large changelogs", () => {
   it("reads a prefix that ends inside a line only up to its last whole line", () => {
     // The cut lands inside the heading of 0.9.0, which must not read as a heading `## 0.`.
     const head = "## 1.0.0\n\n- Kept.\n\n";
-    const notes = versionNotes(Changelog.Prefix({ text: `${head}## 0.` }), "1.0.0");
+    const notes = versionNotes({ _tag: "Prefix", text: `${head}## 0.` }, "1.0.0");
     expect(notes).toMatchObject({
       _tag: "Notes",
       sections: ["• Kept."],
@@ -133,8 +135,6 @@ describe("lines longer than a section", () => {
   // A line past the 2,992 units a section leaves after its fences is cut into pieces. Each case's
   // pieces are worked out by hand from the cluster's length in UTF-16 units: the first piece takes
   // as many whole clusters as fit, the rest go to the next section.
-  const notesOf = (line: string) => versionNotes(Changelog.Whole({ text: `## 1.0.0\n\n${line}\n` }), "1.0.0");
-
   it.each([
     // 1 + 1,495 × 2 = 2,991; one more emoji would need 2,993.
     { case: "emoji", line: `a${"😀".repeat(2000)}`, sections: [`a${"😀".repeat(1495)}`, "😀".repeat(505)] },
@@ -185,7 +185,6 @@ describe("lines longer than a section", () => {
       sections: [section],
       extent: { _tag: "Shortened", by: "oversized-unit" },
     });
-    expect(section.isWellFormed()).toBe(true);
   });
 });
 

@@ -8,20 +8,15 @@ import { Duration, Effect, Fiber, Layer, Option, Schema, Stream } from "effect";
 import { ChildProcess, ChildProcessSpawner } from "effect/process";
 
 import { CHANGELOG_PATH } from "./announcement.ts";
-import { Changelog } from "./changelog-section.ts";
 import { ChangelogSource, GitReadFailed } from "./release-announcement.ts";
-import { StableVersion } from "./release-record.ts";
+import { oneLine, StableVersion } from "./release-record.ts";
 import type { CommitSha } from "./release-record.ts";
+import type { Changelog } from "./render-protocol.ts";
 
 /** The manifest whose version a version commit publishes as a stable release. */
 const MANIFEST_PATH = "packages/fuse/package.json";
 
 const Manifest = Schema.fromJsonString(Schema.Struct({ version: StableVersion }));
-
-/** What one git run wrote: its output, read in full or cut at a byte limit. */
-type GitOutput =
-  | { readonly _tag: "Whole"; readonly text: string }
-  | { readonly _tag: "Prefix"; readonly text: string };
 
 /** Reads the release history with the `git` on `PATH`. */
 export const layer = Layer.effect(
@@ -30,11 +25,11 @@ export const layer = Layer.effect(
     const spawner = yield* ChildProcessSpawner.ChildProcessSpawner;
 
     /**
-     * Runs git and reads at most `limit` bytes of its output. Output past the limit is not read:
-     * closing the scope kills git, so a changelog of any size costs at most `limit` bytes of
-     * memory. A run whose output fits must exit 0.
+     * Runs git and reads at most `limit` bytes of its output: all of it, or the prefix the limit
+     * cuts. Output past the limit is not read: closing the scope kills git, so a changelog of any
+     * size costs at most `limit` bytes of memory. A run whose output fits must exit 0.
      */
-    const git = (read: string, args: readonly string[], limit: number) =>
+    const git = (args: readonly string[], limit: number) =>
       Effect.scoped(
         Effect.gen(function* () {
           const handle = yield* spawner.spawn(
@@ -58,62 +53,51 @@ export const layer = Layer.effect(
               end > limit ? chunk.subarray(0, chunk.length - (end - limit)) : chunk
             )
           ).pipe(Stream.decodeText(), Stream.mkString);
-          if (size > limit) return { _tag: "Prefix", text } satisfies GitOutput;
+          if (size > limit) return { _tag: "Prefix", text } satisfies Changelog;
           const exitCode = yield* handle.exitCode;
           if (exitCode !== 0) {
             const message = (yield* Fiber.join(stderr)).trim();
             return yield* new GitReadFailed({
               message: `git ${args.join(" ")} failed${message === "" ? ` (exit ${String(exitCode)})` : `: ${message}`}`,
-              read,
             });
           }
-          return { _tag: "Whole", text } satisfies GitOutput;
+          return { _tag: "Whole", text } satisfies Changelog;
         })
       ).pipe(
         Effect.catchTag("PlatformError", (error) =>
-          Effect.fail(
-            new GitReadFailed({ message: `git ${args.join(" ")} could not run: ${error.message}`, read })
-          )
+          Effect.fail(new GitReadFailed({ message: `git ${args.join(" ")} could not run: ${error.message}` }))
         )
       );
 
     /** A short output, such as a subject or a manifest, read in full. */
-    const text = Effect.fnUntraced(function* (read: string, args: readonly string[]) {
-      const output = yield* git(read, args, SHORT_OUTPUT_LIMIT);
+    const text = Effect.fnUntraced(function* (args: readonly string[]) {
+      const output = yield* git(args, SHORT_OUTPUT_LIMIT);
       if (output._tag === "Prefix") {
-        return yield* new GitReadFailed({
-          message: `git ${args.join(" ")} wrote more than expected`,
-          read,
-        });
+        return yield* new GitReadFailed({ message: `git ${args.join(" ")} wrote more than expected` });
       }
       return output.text;
     });
 
     const changelog = Effect.fn("GitChangelog.changelog")(function* (commit: CommitSha, limit: number) {
       yield* Effect.annotateCurrentSpan({ commit });
-      const listed = yield* text(commit, ["ls-tree", "--name-only", commit, "--", CHANGELOG_PATH]);
+      const listed = yield* text(["ls-tree", "--name-only", commit, "--", CHANGELOG_PATH]);
       if (listed.trim() === "") return Option.none();
-      const output = yield* git(commit, ["show", `${commit}:${CHANGELOG_PATH}`], limit);
-      const read = output.text;
-      return Option.some(
-        output._tag === "Whole" ? Changelog.Whole({ text: read }) : Changelog.Prefix({ text: read })
-      );
+      return Option.some(yield* git(["show", `${commit}:${CHANGELOG_PATH}`], limit));
     });
 
     const subject = Effect.fn("GitChangelog.subject")(function* (commit: CommitSha) {
       yield* Effect.annotateCurrentSpan({ commit });
-      return (yield* text(commit, ["log", "-1", "--format=%s", commit])).trim();
+      return (yield* text(["log", "-1", "--format=%s", commit])).trim();
     });
 
     const packageVersion = Effect.fn("GitChangelog.packageVersion")(function* (commit: CommitSha) {
       yield* Effect.annotateCurrentSpan({ commit });
-      const manifest = yield* text(commit, ["show", `${commit}:${MANIFEST_PATH}`]);
+      const manifest = yield* text(["show", `${commit}:${MANIFEST_PATH}`]);
       const decoded = yield* Schema.decodeUnknownEffect(Manifest)(manifest).pipe(
         Effect.mapError(
           (error) =>
             new GitReadFailed({
-              message: `${MANIFEST_PATH} at ${commit} names no stable version: ${error.message.replaceAll(/\s*\n\s*/gu, " ")}`,
-              read: commit,
+              message: `${MANIFEST_PATH} at ${commit} names no stable version: ${oneLine(error)}`,
             })
         )
       );

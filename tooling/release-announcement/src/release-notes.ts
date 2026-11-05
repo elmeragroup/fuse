@@ -1,11 +1,11 @@
-import { Option, Schema } from "effect";
+import { Option } from "effect";
 import type { Nodes, PhrasingContent, Root, RootContent } from "mdast";
 
 import * as ChangelogSection from "./changelog-section.ts";
-import type { Changelog, ShortenedBy } from "./changelog-section.ts";
 import { textOf } from "./markdown-text.ts";
 import type { Inline, MrkdwnLine } from "./mrkdwn.ts";
-import { NOTE_SECTION_LIMIT, SECTION_TEXT_LIMIT, sectionPacker } from "./section-packer.ts";
+import type { Changelog, ShortenedBy, VersionNotes } from "./render-protocol.ts";
+import { sectionPacker } from "./section-packer.ts";
 import type { PackedSections } from "./section-packer.ts";
 
 /**
@@ -33,42 +33,6 @@ import type { PackedSections } from "./section-packer.ts";
  */
 const MAX_NESTING = 32;
 
-/** Why a version's notes could not be shown. */
-export const UnreadableCause = Schema.Literals([
-  /** micromark threw on the changelog. */
-  "parse-failed",
-  /** Rendering threw on the section. */
-  "render-failed",
-  /** Reading and rendering the notes took longer than their time limit. */
-  "over-budget",
-  /** The process that reads and renders the notes failed or answered with something else. */
-  "renderer-failed",
-  /** The process that reads and renders the notes answered with more than an answer can hold. */
-  "answer-too-large",
-]);
-
-/** Why a version's notes could not be shown. */
-export type UnreadableCause = typeof UnreadableCause.Type;
-
-/** One version's notes, or why there are none to show. */
-export const VersionNotes = Schema.Union([
-  Schema.TaggedStruct("Notes", {
-    /** At most four mrkdwn texts, each within Slack's 3000-character section limit; empty for a heading without notes. */
-    sections: Schema.Array(Schema.String.check(Schema.isBetweenLength(1, SECTION_TEXT_LIMIT))).check(
-      Schema.isMaxLength(NOTE_SECTION_LIMIT)
-    ),
-    extent: ChangelogSection.Extent,
-  }),
-  /** The changelog has no `## <version>` heading, or there is no changelog. */
-  Schema.TaggedStruct("Missing", {}),
-  /** The heading, if any, lies past the part of the changelog that is read. */
-  Schema.TaggedStruct("BeyondReadLimit", {}),
-  Schema.TaggedStruct("Unreadable", { cause: UnreadableCause }),
-]);
-
-/** One version's notes, or why there are none to show. */
-export type VersionNotes = typeof VersionNotes.Type;
-
 /**
  * Reads the notes under a changelog's depth-2 heading for `version` and converts them to Slack
  * mrkdwn sections.
@@ -83,12 +47,16 @@ export function versionNotes(changelog: Changelog, version: string): VersionNote
   if (Option.isNone(tree)) return { _tag: "Unreadable", cause: "parse-failed" };
   const section = ChangelogSection.select(tree.value, version, changelog);
   if (section._tag !== "Found") return section;
-  const document: SourceDocument = { text, definitions: definitionsOf(tree.value), flattened: { count: 0 } };
+  const document: SourceDocument = {
+    text,
+    definitions: definitionsOf(tree.value),
+    flattened: { value: false },
+  };
   // The depth bound keeps rendering within the stack; any failure still left is unreadable notes.
   const rendered = renderSections(section.nodes, document);
   if (Option.isNone(rendered)) return { _tag: "Unreadable", cause: "render-failed" };
   const losses = Option.orElse(rendered.value.shortenedBy, (): Option.Option<ShortenedBy> =>
-    document.flattened.count > 0 ? Option.some("nesting") : Option.none()
+    document.flattened.value ? Option.some("nesting") : Option.none()
   );
   return {
     _tag: "Notes",
@@ -102,8 +70,8 @@ type SourceDocument = {
   readonly text: string;
   /** Each definition's URL, by its normalized label; CommonMark keeps the first of a label. */
   readonly definitions: ReadonlyMap<string, string>;
-  /** How many nodes past `MAX_NESTING` were shown flattened, counted as the notes render. */
-  readonly flattened: { count: number };
+  /** Whether a node past `MAX_NESTING` was shown flattened, set as the notes render. */
+  readonly flattened: { value: boolean };
 };
 
 /**
@@ -163,17 +131,32 @@ function* blockItems(
   source: SourceDocument,
   depth: number
 ): Generator<Item, void, undefined> {
-  let previous: RootContent | undefined;
+  for (const { node, separator, lead } of siblings(nodes, prefix)) {
+    yield* separator;
+    yield* blockItem(node, { first: lead, rest: prefix.rest }, source, depth);
+  }
+}
+
+/** A sibling block, with the blank line before it, if any, and the prefix of its first line. */
+type Sibling<Node> = { readonly node: Node; readonly separator: readonly Item[]; readonly lead: string };
+
+/**
+ * Sibling nodes, each with what goes before it: a blank line written as the container's indent
+ * where the source has one, and the prefix its first line takes, `first` for the first sibling and
+ * `rest` for the others.
+ */
+function* siblings<Node extends Nodes>(
+  nodes: readonly Node[],
+  prefix: Prefix
+): Generator<Sibling<Node>, void, undefined> {
+  let previous: Node | undefined;
   for (const node of nodes) {
-    if (previous !== undefined && startLine(node) > endLine(previous) + 1) {
-      yield { kind: "line", units: prefixUnits(prefix.rest), code: false };
-    }
-    yield* blockItem(
+    const separated = previous !== undefined && startLine(node) > endLine(previous) + 1;
+    yield {
       node,
-      previous === undefined ? prefix : { first: prefix.rest, rest: prefix.rest },
-      source,
-      depth
-    );
+      separator: separated ? [{ kind: "line", units: prefixUnits(prefix.rest), code: false }] : [],
+      lead: previous === undefined ? prefix.first : prefix.rest,
+    };
     previous = node;
   }
 }
@@ -195,7 +178,7 @@ function* blockItem(
 ): Generator<Item, void, undefined> {
   if ((node.type === "list" || node.type === "blockquote") && depth >= MAX_NESTING) {
     // Too deep to nest: the container's text, as one plain line.
-    source.flattened.count += 1;
+    source.flattened.value = true;
     yield {
       kind: "line",
       units: [...prefixUnits(prefix.first), ...textUnits(textOf(node))],
@@ -227,13 +210,10 @@ function* blockItem(
       return;
     }
     case "list": {
-      let previous: RootContent | undefined;
-      for (const [index, item] of node.children.entries()) {
-        if (previous !== undefined && startLine(item) > endLine(previous) + 1) {
-          yield { kind: "line", units: prefixUnits(prefix.rest), code: false };
-        }
+      let index = 0;
+      for (const { node: item, separator, lead } of siblings(node.children, prefix)) {
+        yield* separator;
         const marker = node.ordered === true ? `${String((node.start ?? 1) + index)}.` : "•";
-        const lead = previous === undefined ? prefix.first : prefix.rest;
         const itemPrefix = {
           first: `${lead}${marker} `,
           rest: `${prefix.rest}${" ".repeat(marker.length + 1)}`,
@@ -241,7 +221,7 @@ function* blockItem(
         if (item.children.length === 0)
           yield { kind: "line", units: prefixUnits(itemPrefix.first.trimEnd()), code: false };
         else yield* blockItems(item.children, itemPrefix, source, depth + 1);
-        previous = item;
+        index += 1;
       }
       return;
     }
@@ -288,18 +268,12 @@ function sourceText(node: Nodes, source: SourceDocument): string {
   return start === undefined || end === undefined ? textOf(node) : source.text.slice(start, end);
 }
 
-/** A prefix as units: indentation as whitespace, markers as finished mrkdwn. */
+/**
+ * A prefix as units: indentation as whitespace, markers as finished mrkdwn. A prefix is built of
+ * spaces, bullets, list numbers and quote markers, never a tab.
+ */
 function prefixUnits(prefix: string): Inline[] {
-  const units: Inline[] = [];
-  let start = 0;
-  while (start < prefix.length) {
-    const space = prefix.charAt(start) === " ";
-    let end = start + 1;
-    while (end < prefix.length && (prefix.charAt(end) === " ") === space) end += 1;
-    units.push({ kind: space ? "space" : "raw", text: prefix.slice(start, end) });
-    start = end;
-  }
-  return units;
+  return wordUnits(prefix).map((unit) => (unit.kind === "text" ? { kind: "raw", text: unit.text } : unit));
 }
 
 /**
@@ -385,6 +359,12 @@ function phrasingUnits(
   };
   const space: Inline = { kind: "space", text: " " };
   for (const [index, node] of nodes.entries()) {
+    if (context.depth >= MAX_NESTING && isNesting(node)) {
+      // Too deep to nest: the span's or link's text, without its markup.
+      source.flattened.value = true;
+      for (const unit of textUnits(textOf(node))) add(unit);
+      continue;
+    }
     switch (node.type) {
       case "text": {
         for (const [at, part] of node.value.split("\n").entries()) {
@@ -402,12 +382,6 @@ function phrasingUnits(
       case "emphasis":
       case "strong":
       case "delete": {
-        if (context.depth >= MAX_NESTING) {
-          // Too deep to nest: the span's text, without its marks.
-          source.flattened.count += 1;
-          for (const unit of textUnits(textOf(node))) add(unit);
-          break;
-        }
         const children = inlineOnly(
           phrasingUnits(node.children, source, options, {
             ...context,
@@ -430,12 +404,6 @@ function phrasingUnits(
         break;
       }
       case "link": {
-        if (context.depth >= MAX_NESTING) {
-          // Too deep to nest: the link's text.
-          source.flattened.count += 1;
-          for (const unit of textUnits(textOf(node))) add(unit);
-          break;
-        }
         const label = labelUnits(node.children, source, options, context.depth + 1);
         const text = textOf(node).toLowerCase();
         const url = node.url.toLowerCase();
@@ -469,6 +437,11 @@ function phrasingUnits(
     }
   }
   return units;
+}
+
+/** Whether a phrasing node nests its children: a span or a link. */
+function isNesting(node: PhrasingContent): boolean {
+  return node.type === "emphasis" || node.type === "strong" || node.type === "delete" || node.type === "link";
 }
 
 /** The schemes a link may use, and an image, matched without regard to case as schemes are. */

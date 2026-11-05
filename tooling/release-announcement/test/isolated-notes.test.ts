@@ -3,7 +3,6 @@ import { assert, layer } from "@effect/vitest";
 import { Clock, ConfigProvider, Effect, FileSystem, Layer, Path } from "effect";
 import { ChildProcess, ChildProcessSpawner } from "effect/process";
 
-import { Changelog } from "../src/changelog-section.ts";
 import * as IsolatedNotes from "../src/isolated-notes.ts";
 import { NotesRenderer } from "../src/release-announcement.ts";
 import { StableVersion } from "../src/release-record.ts";
@@ -45,7 +44,7 @@ const render = (script: string) =>
   Effect.gen(function* () {
     const renderer = yield* NotesRenderer;
     return yield* renderer.render(
-      Changelog.Whole({ text: "## 1.0.0\n\n- Note.\n" }),
+      { _tag: "Whole", text: "## 1.0.0\n\n- Note.\n" },
       StableVersion.make("1.0.0")
     );
   }).pipe(Effect.provide(rendererWith(script)));

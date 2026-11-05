@@ -161,6 +161,9 @@
 - Restore the "Changes since" compare link in stable Slack announcements once the release engine
   (`@elmeragroup/internal`) records the previous published stable version in its release record.
   Deriving it from tags or release listings was unsafe (see the Slack announcement PR's discussion).
+- Retire `find-release.ts` and its GitHub lookup in `tooling/release-announcement` once the release
+  engine (`@elmeragroup/internal`) returns or writes the release intent it published, so the
+  announcement no longer re-derives it from GitHub's records.
 - After upstream tooling uses stable Effect 4 and the release-age guard admits it,
   upgrade and remove prerelease exclusions unless another exception is justified.
 - Retire repo-policy workarounds when upstream lint can require disable reasons

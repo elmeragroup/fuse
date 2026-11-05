@@ -5,9 +5,22 @@
  * the test that made them.
  */
 
-import { NodeHttpServer } from "@effect/platform-node";
-import { Clock, Config, Context, Effect, FileSystem, Layer, Option, Path, Schema, Stream } from "effect";
-import { HttpRouter, HttpServer, HttpServerResponse, UrlParams } from "effect/http";
+import { NodeHttpServer, NodeServices } from "@effect/platform-node";
+import { layer } from "@effect/vitest";
+import {
+  Clock,
+  Config,
+  Context,
+  DateTime,
+  Effect,
+  FileSystem,
+  Layer,
+  Option,
+  Path,
+  Schema,
+  Stream,
+} from "effect";
+import { Headers, HttpRouter, HttpServer, HttpServerResponse, UrlParams } from "effect/http";
 import type { HttpServerRequest } from "effect/http";
 import { ChildProcess, ChildProcessSpawner } from "effect/process";
 import { createServer } from "node:http";
@@ -102,6 +115,61 @@ export class ScratchRepository extends Context.Service<
     })
   );
 }
+
+/** Runs a suite's cases each in a fresh scratch repository, on the real clock and platform. */
+export const inScratchRepository = layer(
+  ScratchRepository.layer.pipe(Layer.provideMerge(NodeServices.layer)),
+  {
+    excludeTestServices: true,
+  }
+);
+
+/**
+ * The publish job's `release` output for a release of `commit`, published a minute ago.
+ *
+ * @param kind - Stable or canary.
+ * @param commit - The release's commit.
+ * @param version - Its version.
+ * @returns The release as JSON.
+ */
+export const releaseJson = (kind: "Stable" | "Canary", commit: string, version: string) =>
+  Effect.map(Clock.currentTimeMillis, (now) =>
+    JSON.stringify({
+      _tag: kind,
+      version,
+      commit,
+      url: `https://github.com/elmeragroup/fuse/releases/tag/${kind === "Stable" ? `v${version}` : `canary-${commit}`}`,
+      publishedAt: DateTime.formatIso(DateTime.makeUnsafe(now - 60_000)),
+    })
+  );
+
+/**
+ * Runs the notify step in the scratch repository for `release` against Slack at `url`, with both
+ * channels and the token set.
+ *
+ * @param url - Slack's API URL.
+ * @param release - The publish job's `release` output.
+ * @param overrides - Settings to change or add.
+ * @returns How the step ended.
+ */
+export const announceStep = (
+  url: string,
+  release: string,
+  overrides: Readonly<Record<string, string>> = {}
+) =>
+  Effect.gen(function* () {
+    const repo = yield* ScratchRepository;
+    return yield* runStep("announce-release", repo.dir, {
+      GITHUB_SERVER_URL: "https://github.com",
+      GITHUB_REPOSITORY: "elmeragroup/fuse",
+      SLACK_API_URL: url,
+      SLACK_RELEASES_CHANNEL: "C0RELEASES",
+      SLACK_CANARY_CHANNEL: "C0CANARY",
+      SLACK_BOT_TOKEN: SLACK_TOKEN,
+      RELEASE: release,
+      ...overrides,
+    });
+  });
 
 /** A finished step run. */
 type StepRun = CommandRun & {
@@ -229,7 +297,11 @@ function stalled(): HttpServerResponse.HttpServerResponse {
 }
 
 /** A request GitHub's stand-in received. */
-type GitHubRequest = { readonly tag: string; readonly authorization: string | undefined };
+type GitHubRequest = {
+  readonly tag: string;
+  readonly authorization: string | undefined;
+  readonly userAgent: string | undefined;
+};
 
 /** A GitHub answer other than the release or 404. */
 export type GitHubFailure =
@@ -241,6 +313,7 @@ export type GitHubFailure =
  * JSON and anything else with 404, as drafts and missing tags do. `failures` holds, per tag, the
  * answers its first requests get instead, in order. A request that comes before the wait such an
  * answer asked for is answered 429 again and counted in `early`, as GitHub would rate limit it.
+ * A request without a User-Agent is answered 403, as GitHub's administrative rules answer it.
  *
  * @param published - The published releases, by tag.
  * @param failures - The answers to give instead, by tag.
@@ -260,7 +333,17 @@ export const fakeGitHub = (
     const route = HttpRouter.add("GET", `${base}/repos/elmeragroup/fuse/releases/tags/:tag`, (request) =>
       Effect.gen(function* () {
         const { tag = "" } = yield* HttpRouter.params;
-        requests.push({ tag, authorization: request.headers.authorization });
+        const userAgent = request.headers["user-agent"];
+        requests.push({ tag, authorization: request.headers.authorization, userAgent });
+        if (userAgent === undefined || userAgent === "") {
+          return HttpServerResponse.jsonUnsafe(
+            {
+              message:
+                "Request forbidden by administrative rules. Please make sure your request has a User-Agent header",
+            },
+            { status: 403 }
+          );
+        }
         const now = yield* Clock.currentTimeMillis;
         if (now < notBefore) {
           // A read before the wait GitHub asked for meets the rate limit again.
@@ -302,6 +385,25 @@ export type HeldMessage = {
   readonly payload?: unknown;
 };
 
+/**
+ * A throttled history answer: a `Retry-After` value sent as given, with no wait enforced, or a
+ * wait of `seconds` the stand-in names when it answers, in seconds or as an HTTP date, and
+ * enforces. An HTTP date has whole seconds, so it names the first whole second at least `seconds`
+ * after the answer.
+ */
+export type Throttle =
+  | { readonly status: number; readonly retryAfter: string }
+  | { readonly status: number; readonly wait: "seconds" | "date"; readonly seconds: number };
+
+/** The `Retry-After` value a throttle sends at `now`, and the time before which a read is early. */
+function throttleAnswer(throttle: Throttle, now: number) {
+  if ("retryAfter" in throttle) return { retryAfter: throttle.retryAfter, notBefore: 0 };
+  if (throttle.wait === "seconds")
+    return { retryAfter: String(throttle.seconds), notBefore: now + throttle.seconds * 1000 };
+  const until = Math.ceil(now / 1000) * 1000 + throttle.seconds * 1000;
+  return { retryAfter: Headers.formatHttpDate(DateTime.makeUnsafe(until)), notBefore: until };
+}
+
 /** What Slack's stand-in does besides answering. */
 type SlackBehaviour = {
   /** Store the next post, then end the connection without a whole answer. */
@@ -312,13 +414,15 @@ type SlackBehaviour = {
   stallHistory: boolean;
   /** Answer history reads with `ok: false` and this error. */
   historyError: string | undefined;
-  /**
-   * Answer the next history reads with these statuses and `Retry-After` values, each with the
-   * time, in epoch milliseconds, before which a read is too early (0 for none).
-   */
-  throttles: { readonly status: number; readonly retryAfter: string; readonly notBefore: number }[];
+  /** Answer the next history reads with these statuses and `Retry-After` headers. */
+  throttles: Throttle[];
   /** Answer history pages with `has_more: true` and no cursor. */
   loseCursor: boolean;
+  /**
+   * Answer history pages with `is_limited: true`, as Slack does for a free workspace past its
+   * history limit, whose older messages it hides.
+   */
+  limitHistory: boolean;
 };
 
 /** The token Slack's stand-in accepts. */
@@ -350,6 +454,7 @@ export const fakeSlack = Effect.gen(function* () {
     historyError: undefined,
     throttles: [],
     loseCursor: false,
+    limitHistory: false,
   };
   let notBefore = 0;
   let sequence = 0;
@@ -367,11 +472,9 @@ export const fakeSlack = Effect.gen(function* () {
       }
       const throttle = behaviour.throttles.shift();
       if (throttle !== undefined) {
-        notBefore = throttle.notBefore;
-        return HttpServerResponse.empty({
-          status: throttle.status,
-          headers: { "retry-after": throttle.retryAfter },
-        });
+        const { retryAfter, notBefore: until } = throttleAnswer(throttle, now);
+        notBefore = until;
+        return HttpServerResponse.empty({ status: throttle.status, headers: { "retry-after": retryAfter } });
       }
       if (behaviour.stallHistory) return stalled();
       if (behaviour.historyError !== undefined) {
@@ -393,6 +496,7 @@ export const fakeSlack = Effect.gen(function* () {
         ok: true,
         messages: page.map(({ ts, metadata }) => (metadata === undefined ? { ts } : { ts, metadata })),
         has_more: more,
+        is_limited: behaviour.limitHistory,
         response_metadata: { next_cursor: more && !behaviour.loseCursor ? String(start + limit) : "" },
       });
     })

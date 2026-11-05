@@ -5,7 +5,10 @@
  * The history check reads `conversations.history` with each message's metadata, following
  * `next_cursor` for at most `MAX_PAGES` pages of `PAGE_LIMIT` messages. That covers far more
  * traffic than GitHub's 30-day re-run window brings; past it the check fails rather than guess,
- * as it does when Slack says more history follows without a cursor to read it. A history read
+ * as it does when Slack says more history follows without a cursor to read it, and when Slack
+ * marks the history `is_limited` and the visible history ends without a receipt: a free workspace
+ * past its history limit hides older messages, so an earlier announcement may be among them. A
+ * history read
  * changes nothing, so it is retried by `http-retry.ts`'s policy. A post is sent once and never
  * retried: a post whose answer was lost may have landed, and only the next history check can tell.
  * Each call, from the request to the end of its body, runs under one timeout.
@@ -14,18 +17,17 @@
  * error code, such as `not_in_channel`, `missing_scope` or `invalid_auth`.
  */
 
-import { DateTime, Duration, Effect, Layer, Option, Schema, Stream } from "effect";
+import { DateTime, Effect, Layer, Option, Schema, Stream } from "effect";
 import type { Redacted } from "effect";
 import { HttpClient, HttpClientRequest } from "effect/http";
+import type { HttpClientResponse } from "effect/http";
 
 import { baseUrlSetting, PathSegment, under } from "./addresses.ts";
 import * as Announcement from "./announcement.ts";
 import type { ChatPostMessage, SlackChannelId } from "./announcement.ts";
-import { attemptTimeout, describe, requestedWait, retryReads, withinTimeout } from "./http-retry.ts";
-import type { ReadFailure } from "./http-retry.ts";
+import { attemptTimeout, describe, readJson, withinTimeout } from "./http-retry.ts";
 import {
-  HistoryBeyondBound,
-  HistoryIncomplete,
+  HistoryUnchecked,
   PostUnconfirmed,
   SlackChannel,
   SlackRefused,
@@ -39,25 +41,41 @@ const PAGE_LIMIT = 200;
 /** History pages read before the check gives up. */
 const MAX_PAGES = 10;
 
-const HistoryAnswer = Schema.Union([
-  Schema.Struct({
-    ok: Schema.Literal(true),
-    messages: Schema.Array(
-      Schema.Struct({ ts: Schema.String, metadata: Schema.optionalKey(Schema.Unknown) })
-    ),
-    has_more: Schema.optionalKey(Schema.Boolean),
-    response_metadata: Schema.optionalKey(Schema.Struct({ next_cursor: Schema.optionalKey(Schema.String) })),
-  }),
-  Schema.Struct({ ok: Schema.Literal(false), error: Schema.String }),
-]);
+/** A Web API method's answer: `ok: true` with `fields`, or `ok: false` with Slack's error code. */
+const answer = <Fields extends Schema.Struct.Fields>(fields: Fields) =>
+  Schema.Union([
+    Schema.Struct({ ok: Schema.Literal(true), ...fields }),
+    Schema.Struct({ ok: Schema.Literal(false), error: Schema.String }),
+  ]);
 
-const PostAnswer = Schema.Union([
-  Schema.Struct({ ok: Schema.Literal(true), ts: Schema.String }),
-  Schema.Struct({ ok: Schema.Literal(false), error: Schema.String }),
-]);
+const HistoryAnswer = answer({
+  messages: Schema.Array(Schema.Struct({ ts: Schema.String, metadata: Schema.optionalKey(Schema.Unknown) })),
+  has_more: Schema.optionalKey(Schema.Boolean),
+  /** Whether a free workspace's history limit hides older messages. */
+  is_limited: Schema.optionalKey(Schema.Boolean),
+  response_metadata: Schema.optionalKey(Schema.Struct({ next_cursor: Schema.optionalKey(Schema.String) })),
+});
 
-/** Where one history read starts. */
-type PageState = { readonly cursor: string; readonly page: number };
+const PostAnswer = answer({ ts: Schema.String });
+
+/** Slack refused a call of `method` with `error`, its error code or `http_<status>`. */
+function refused(method: "conversations.history" | "chat.postMessage", error: string): SlackRefused {
+  return new SlackRefused({ message: `Slack ${method} failed: ${error}` });
+}
+
+/** Whether a history answer is a rate limit or a server error. */
+function isThrottled(response: HttpClientResponse.HttpClientResponse): boolean {
+  return response.status === 429 || response.status >= 500;
+}
+
+/**
+ * The next step of the history search: a page to read, with whether a page already read said Slack
+ * hides older history, or the end of the visible history after such a page, where the search fails
+ * because the receipt may be among the hidden messages.
+ */
+type PageState =
+  | { readonly _tag: "Read"; readonly cursor: string; readonly page: number; readonly limited: boolean }
+  | { readonly _tag: "Hidden" };
 
 /** What a post's answer was, before its body is decoded. */
 type PostFailure =
@@ -84,74 +102,47 @@ export const layer = (token: Redacted.Redacted<string>) =>
         HttpClient.mapRequest((request) => request.pipe(HttpClientRequest.bearerToken(token)))
       );
 
-      /** One read of a history page: its JSON. Only this read is retried. */
-      const historyRead = (channel: SlackChannelId, oldest: string, cursor: string) =>
-        Effect.gen(function* () {
-          const response = yield* client
-            .execute(
-              HttpClientRequest.post(historyUrl).pipe(
-                HttpClientRequest.bodyUrlParams({
-                  channel,
-                  oldest,
-                  limit: String(PAGE_LIMIT),
-                  include_all_metadata: "true",
-                  // An empty cursor reads the first page.
-                  cursor,
-                })
-              )
-            )
-            .pipe(
-              Effect.mapError((error): ReadFailure => ({ _tag: "Unanswered", reason: error.reason._tag }))
-            );
-          if (response.status === 429 || response.status >= 500) {
-            const wait = yield* requestedWait(response.headers);
-            return yield* Effect.fail<ReadFailure>({ _tag: "Throttled", status: response.status, wait });
-          }
-          if (response.status !== 200)
-            return yield* Effect.fail<ReadFailure>({ _tag: "Rejected", status: response.status });
-          // The body is part of the answer: a stall while reading it counts against the timeout.
-          return yield* response.json.pipe(
-            Effect.mapError((error): ReadFailure => ({ _tag: "Unanswered", reason: error.reason._tag }))
-          );
-        }).pipe(withinTimeout(timeout), retryReads("Slack conversations.history"));
-
       /** One page of the channel's history, decoded, or why Slack did not give it. */
       const historyPage = Effect.fnUntraced(function* (
         channel: SlackChannelId,
         oldest: string,
         cursor: string
       ) {
-        const json = yield* historyRead(channel, oldest, cursor).pipe(
+        const request = client.execute(
+          HttpClientRequest.post(historyUrl).pipe(
+            HttpClientRequest.bodyUrlParams({
+              channel,
+              oldest,
+              limit: String(PAGE_LIMIT),
+              include_all_metadata: "true",
+              // An empty cursor reads the first page.
+              cursor,
+            })
+          )
+        );
+        const json = yield* readJson(request, {
+          read: "Slack conversations.history",
+          timeout,
+          throttled: isThrottled,
+        }).pipe(
           Effect.mapError((failure) =>
             failure._tag === "Rejected"
               ? new SlackRefused({
                   message: `Slack conversations.history answered ${String(failure.status)}`,
-                  method: "conversations.history",
-                  error: `http_${String(failure.status)}`,
                 })
-              : new SlackUnavailable({
-                  message: `Slack conversations.history ${describe(failure)}`,
-                  method: "conversations.history",
-                })
+              : new SlackUnavailable({ message: `Slack conversations.history ${describe(failure)}` })
           )
         );
-        const answer = yield* Schema.decodeUnknownEffect(HistoryAnswer)(json).pipe(
+        const page = yield* Schema.decodeUnknownEffect(HistoryAnswer)(json).pipe(
           Effect.mapError(
             () =>
               new SlackUnavailable({
                 message: "Slack conversations.history answered with a body that is not a history page",
-                method: "conversations.history",
               })
           )
         );
-        if (!answer.ok) {
-          return yield* new SlackRefused({
-            message: `Slack conversations.history failed: ${answer.error}`,
-            method: "conversations.history",
-            error: answer.error,
-          });
-        }
-        return answer;
+        if (!page.ok) return yield* refused("conversations.history", page.error);
+        return page;
       });
 
       const findAnnouncement = Effect.fn("SlackWebApi.findAnnouncement")(function* (
@@ -161,12 +152,17 @@ export const layer = (token: Redacted.Redacted<string>) =>
       ) {
         yield* Effect.annotateCurrentSpan({ channel, tag });
         const oldest = String(DateTime.toEpochSeconds(postedAfter));
-        const messages = Stream.paginate({ cursor: "", page: 1 } satisfies PageState, (state: PageState) =>
+        const first: PageState = { _tag: "Read", cursor: "", page: 1, limited: false };
+        const messages = Stream.paginate(first, (state: PageState) =>
           Effect.gen(function* () {
+            if (state._tag === "Hidden") {
+              return yield* new HistoryUnchecked({
+                message: `Slack hides the channel's older history past the free plan's history limit, so the announcement of ${tag} could not be ruled out`,
+              });
+            }
             if (state.page > MAX_PAGES) {
-              return yield* new HistoryBeyondBound({
+              return yield* new HistoryUnchecked({
                 message: `The channel holds more than ${String(PAGE_LIMIT * MAX_PAGES)} messages since ${tag} was published, so its announcement could not be ruled out`,
-                messages: PAGE_LIMIT * MAX_PAGES,
               });
             }
             const page = yield* historyPage(channel, oldest, state.cursor);
@@ -174,22 +170,31 @@ export const layer = (token: Redacted.Redacted<string>) =>
             // Slack's own end of history is `has_more: false`; a page that says more follows but
             // names no cursor cannot be read past, so it is not taken as the end.
             if (page.has_more === true && next === "") {
-              return yield* new HistoryIncomplete({
+              return yield* new HistoryUnchecked({
                 message: `Slack said more of the channel's history follows page ${String(state.page)} but gave no cursor, so the announcement of ${tag} could not be ruled out`,
               });
             }
             yield* Effect.logDebug(`Read history page ${String(state.page)} of ${channel}`);
-            return [
-              page.messages,
-              next === "" ? Option.none() : Option.some({ cursor: next, page: state.page + 1 }),
-            ] as const;
+            // Slack answers newest first, so the receipt, posted when the release was announced,
+            // is on the last page; a limited page does not end the search early. A receipt among
+            // the messages Slack shows settles it; once the visible history ends without one, the
+            // receipt may be among those it hides, so the search fails rather than end.
+            const limited = state.limited || page.is_limited === true;
+            const following: Option.Option<PageState> =
+              next !== ""
+                ? Option.some({ _tag: "Read", cursor: next, page: state.page + 1, limited })
+                : limited
+                  ? Option.some({ _tag: "Hidden" })
+                  : Option.none();
+            return [page.messages, following] as const;
           })
         );
         const receipt = yield* messages.pipe(
           // Another app's metadata, or none, is simply not a receipt.
           Stream.filter((message) =>
-            Option.exists(Schema.decodeUnknownOption(Announcement.Receipt)(message.metadata), (found) =>
-              Announcement.isReceiptFor(tag, found)
+            Option.exists(
+              Schema.decodeUnknownOption(Announcement.Receipt)(message.metadata),
+              (found) => found.event_payload.tag === tag
             )
           ),
           Stream.runHead
@@ -232,27 +237,16 @@ export const layer = (token: Redacted.Redacted<string>) =>
           );
         }).pipe(
           // The whole answer, its body included, must arrive in time; the post is never repeated.
-          Effect.timeoutOrElse({
-            duration: timeout,
-            orElse: () =>
-              Effect.fail<PostFailure>({
-                _tag: "Unconfirmed",
-                reason: `no answer within ${Duration.format(timeout)}`,
-              }),
-          }),
+          withinTimeout(timeout, (reason): PostFailure => ({ _tag: "Unconfirmed", reason })),
           Effect.mapError((failure) =>
             failure._tag === "Refused"
-              ? new SlackRefused({
-                  message: `Slack chat.postMessage failed: ${failure.error}`,
-                  method: "chat.postMessage",
-                  error: failure.error,
-                })
+              ? refused("chat.postMessage", failure.error)
               : new PostUnconfirmed({
                   message: `Slack did not confirm the post (${failure.reason}), so it may have landed`,
                 })
           )
         );
-        const answer = yield* Schema.decodeUnknownEffect(PostAnswer)(json).pipe(
+        const posted = yield* Schema.decodeUnknownEffect(PostAnswer)(json).pipe(
           Effect.mapError(
             () =>
               new PostUnconfirmed({
@@ -261,14 +255,8 @@ export const layer = (token: Redacted.Redacted<string>) =>
               })
           )
         );
-        if (!answer.ok) {
-          return yield* new SlackRefused({
-            message: `Slack chat.postMessage failed: ${answer.error}`,
-            method: "chat.postMessage",
-            error: answer.error,
-          });
-        }
-        return { ts: answer.ts };
+        if (!posted.ok) return yield* refused("chat.postMessage", posted.error);
+        return { ts: posted.ts };
       });
 
       return SlackChannel.of({ findAnnouncement, post });

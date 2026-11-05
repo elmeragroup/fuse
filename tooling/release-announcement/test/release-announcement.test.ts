@@ -1,9 +1,8 @@
 import { assert, describe, it } from "@effect/vitest";
-import { DateTime, Effect, Layer, Option, Result, Schema } from "effect";
+import { DateTime, Effect, Layer, Option, Schema } from "effect";
 
 import * as Announcement from "../src/announcement.ts";
 import type { ChatPostMessage, SlackChannelId } from "../src/announcement.ts";
-import { Changelog } from "../src/changelog-section.ts";
 import {
   announce,
   ChangelogSource,
@@ -17,12 +16,14 @@ import {
 import { versionNotes } from "../src/release-notes.ts";
 import { CommitSha, RecordTag, StableVersion } from "../src/release-record.ts";
 import type { Release } from "../src/release-record.ts";
+import type { Changelog } from "../src/render-protocol.ts";
 import {
+  canaryChannel,
   canaryRelease,
   changelog,
   commit,
   olderCommit,
-  present,
+  releasesChannel,
   repository,
   stableRelease,
 } from "./fixtures.ts";
@@ -68,7 +69,7 @@ function changelogLayer(commits: ReadonlyMap<string, CommitFixture>) {
   const find = (asked: string): Effect.Effect<CommitFixture, GitReadFailed> => {
     const found = commits.get(asked);
     return found === undefined
-      ? Effect.fail(new GitReadFailed({ message: `git could not read ${asked}`, read: asked }))
+      ? Effect.fail(new GitReadFailed({ message: `git could not read ${asked}` }))
       : Effect.succeed(found);
   };
   return Layer.succeed(
@@ -77,10 +78,10 @@ function changelogLayer(commits: ReadonlyMap<string, CommitFixture>) {
       changelog: (asked, limit) =>
         find(asked).pipe(
           Effect.map(({ changelog: text }) =>
-            Option.map(Option.fromNullishOr(text), (whole) =>
+            Option.map(Option.fromNullishOr(text), (whole): Changelog =>
               whole.length > limit
-                ? Changelog.Prefix({ text: whole.slice(0, limit) })
-                : Changelog.Whole({ text: whole })
+                ? { _tag: "Prefix", text: whole.slice(0, limit) }
+                : { _tag: "Whole", text: whole }
             )
           )
         ),
@@ -146,11 +147,9 @@ class FakeSlack {
   );
 }
 
-const releasesChannel = present(Result.getOrThrow(Announcement.parseChannelSetting("C0RELEASES")));
-const canaryChannel = present(Result.getOrThrow(Announcement.parseChannelSetting("C0CANARY")));
 const settings = {
   repository,
-  channels: { stable: Option.some(releasesChannel), canary: Option.some(canaryChannel) },
+  channels: { Stable: Option.some(releasesChannel), Canary: Option.some(canaryChannel) },
 } as const;
 
 const history = new Map<string, CommitFixture>([

@@ -1,15 +1,15 @@
 import { describe, expect, it } from "vitest";
 
 import * as Announcement from "../src/announcement.ts";
-import { Changelog } from "../src/changelog-section.ts";
 import { versionNotes } from "../src/release-notes.ts";
-import type { VersionNotes } from "../src/release-notes.ts";
 import {
   changelog,
   delimiters,
+  notesOf,
   repository,
   sectionTexts,
   shortenedNotice,
+  shown,
   stableRelease,
 } from "./fixtures.ts";
 
@@ -19,15 +19,9 @@ import {
 // limits (3000 characters per section, four note sections here). Expected sections are written out
 // by hand.
 
-/** The notes of `## 1.0.0` holding `markdown`. */
-function notesOf(markdown: string): VersionNotes {
-  return versionNotes(Changelog.Whole({ text: `## 1.0.0\n\n${markdown}\n` }), "1.0.0");
-}
-
 /** The sections of `## 1.0.0` holding `markdown`, and how much of the notes they show. */
 function packed(markdown: string) {
-  const notes = notesOf(markdown);
-  if (notes._tag !== "Notes") throw new Error(`no notes: ${notes._tag}`);
+  const notes = shown(notesOf(markdown));
   return { sections: notes.sections, shortened: notes.extent._tag === "Shortened" };
 }
 
@@ -40,24 +34,24 @@ function stableNotes(markdown: string): readonly string[] {
 function announcementOf(text: string, version: string): Announcement.Message {
   return Announcement.stable(
     stableRelease(version),
-    versionNotes(Changelog.Whole({ text }), version),
+    versionNotes({ _tag: "Whole", text }, version),
     repository
   );
 }
 
 describe("stable notes", () => {
   it("reads the version's section up to the next version's heading", () => {
-    expect(versionNotes(Changelog.Whole({ text: changelog }), "0.1.0")).toEqual({
+    expect(versionNotes({ _tag: "Whole", text: changelog }, "0.1.0")).toEqual({
       _tag: "Notes",
       sections: ["*Minor Changes*\n\n• 1a2b3c4: First release."],
       extent: { _tag: "Whole" },
     });
-    const later = versionNotes(Changelog.Whole({ text: changelog }), "0.2.0");
+    const later = versionNotes({ _tag: "Whole", text: changelog }, "0.2.0");
     expect(later._tag === "Notes" && later.sections.join("\n")).not.toContain("First release");
   });
 
   it("says the notes are missing for a changelog without the version's section", () => {
-    expect(versionNotes(Changelog.Whole({ text: changelog }), "0.3.0")).toEqual({ _tag: "Missing" });
+    expect(versionNotes({ _tag: "Whole", text: changelog }, "0.3.0")).toEqual({ _tag: "Missing" });
     expect(sectionTexts(announcementOf(changelog, "0.3.0"))).toEqual([
       "The changelog has no notes for 0.3.0. " +
         "<https://github.com/elmeragroup/fuse/blob/v0.3.0/packages/fuse/CHANGELOG.md|Open the changelog>",
@@ -358,7 +352,7 @@ describe("stable notes", () => {
       "- Old.",
       "",
     ].join("\n");
-    const notes = versionNotes(Changelog.Whole({ text }), "1.0.0");
+    const notes = versionNotes({ _tag: "Whole", text }, "1.0.0");
     expect(notes).toMatchObject({
       _tag: "Notes",
       sections: [
@@ -393,7 +387,7 @@ describe("stable notes", () => {
       "## 0.9.0",
       "",
     ].join("\n");
-    const notes = versionNotes(Changelog.Whole({ text }), "1.0.0");
+    const notes = versionNotes({ _tag: "Whole", text }, "1.0.0");
     expect(notes).toMatchObject({ _tag: "Notes", sections: ["• Notes survive."] });
   });
 

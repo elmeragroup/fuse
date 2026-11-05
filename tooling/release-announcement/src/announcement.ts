@@ -9,14 +9,14 @@
  * writes as `<url|label>` still work, and text from the release is escaped by Slack's rule.
  */
 
-import { Data, Match, Option, Result, Schema } from "effect";
+import { Match, Option, Result, Schema } from "effect";
 import { Url } from "effect/http";
 
 import { PathSegment, under } from "./addresses.ts";
-import { escapeText, linkTarget } from "./mrkdwn.ts";
-import type { VersionNotes } from "./release-notes.ts";
+import { escapeText, link } from "./mrkdwn.ts";
 import { stableTag, tagOf } from "./release-record.ts";
 import type { Canary, CanaryVersion, RecordTag, Release, Stable, StableVersion } from "./release-record.ts";
+import type { VersionNotes } from "./render-protocol.ts";
 import { cutText } from "./text-cut.ts";
 
 const PACKAGE_NAME = "@elmeragroup/fuse";
@@ -50,8 +50,8 @@ export const SlackChannelId = Schema.String.pipe(
 /** A parsed Slack channel ID. */
 export type SlackChannelId = typeof SlackChannelId.Type;
 
-/** A channel setting that is neither empty nor a Slack channel ID. */
-class InvalidChannelSetting extends Schema.TaggedError<InvalidChannelSetting>()("InvalidChannelSetting", {
+/** A setting of the job that does not parse, naming the setting. */
+export class InvalidSetting extends Schema.TaggedError<InvalidSetting>()("InvalidSetting", {
   message: Schema.String,
 }) {}
 
@@ -59,54 +59,32 @@ class InvalidChannelSetting extends Schema.TaggedError<InvalidChannelSetting>()(
  * Parses a channel setting: a Slack channel ID, or empty while the channel is not set up.
  * Surrounding whitespace is ignored.
  *
+ * @param name - The setting's name, for the error.
  * @param setting - The setting's raw value.
- * @returns The channel, none for an empty setting, or `InvalidChannelSetting`.
+ * @returns The channel, none for an empty setting, or `InvalidSetting`.
  */
 export function parseChannelSetting(
+  name: string,
   setting: string
-): Result.Result<Option.Option<SlackChannelId>, InvalidChannelSetting> {
+): Result.Result<Option.Option<SlackChannelId>, InvalidSetting> {
   const trimmed = setting.trim();
   if (trimmed === "") return Result.succeed(Option.none());
   return Schema.decodeUnknownResult(SlackChannelId)(trimmed).pipe(
     Result.map(Option.some),
     Result.mapError(
       () =>
-        new InvalidChannelSetting({
-          message: `${JSON.stringify(trimmed)} is not a Slack channel ID such as C0123456789`,
+        new InvalidSetting({
+          message: `${name}: ${JSON.stringify(trimmed)} is not a Slack channel ID such as C0123456789`,
         })
     )
   );
 }
 
-/** Where each release channel is announced; none while its Slack channel is not set up. */
-export type Channels = {
-  readonly stable: Option.Option<SlackChannelId>;
-  readonly canary: Option.Option<SlackChannelId>;
-};
-
-/** The Slack channel a release goes to, or none while its channel is not set up. */
-type Route = Data.TaggedEnum<{
-  Routed: { readonly channel: SlackChannelId };
-  Unrouted: Record<never, never>;
-}>;
-
-/** Constructors and matchers for `Route`. */
-const Route = Data.taggedEnum<Route>();
-
 /**
- * Routes a release: stable releases to the releases channel, canaries to the canary channel.
- *
- * @param release - The release.
- * @param channels - The configured channels.
- * @returns The release's channel, or `Unrouted` while it is not set up.
+ * Where each release channel is announced, by the release's kind: stable releases to the releases
+ * channel, canaries to the canary channel; none while its Slack channel is not set up.
  */
-export function route(release: Release, channels: Channels): Route {
-  const channel = release._tag === "Stable" ? channels.stable : channels.canary;
-  return Option.match(channel, {
-    onNone: () => Route.Unrouted(),
-    onSome: (id) => Route.Routed({ channel: id }),
-  });
-}
+export type Channels = { readonly [Kind in Release["_tag"]]: Option.Option<SlackChannelId> };
 
 /** A mrkdwn text object, posted verbatim so Slack links and mentions nothing by itself. */
 export type MrkdwnText = { readonly type: "mrkdwn"; readonly text: string; readonly verbatim: true };
@@ -244,7 +222,7 @@ function shorten(text: string, limit: number): string {
 
 /** A Slack link to `url` with an escaped label. */
 function slackLink(url: string, label: string): string {
-  return `<${linkTarget(url)}|${escapeText(label)}>`;
+  return link(url, escapeText(label));
 }
 
 /**
@@ -297,17 +275,3 @@ export const Receipt = Schema.Struct({
   event_type: Schema.Literal(ANNOUNCEMENT_EVENT),
   event_payload: Schema.Struct({ tag: Schema.String }),
 });
-
-/** A message's announcement metadata. */
-export type Receipt = typeof Receipt.Type;
-
-/**
- * Whether a receipt is the announcement of `tag`.
- *
- * @param tag - The release's record tag.
- * @param receipt - A message's announcement metadata.
- * @returns Whether the message announces that release.
- */
-export function isReceiptFor(tag: RecordTag, receipt: Receipt): boolean {
-  return receipt.event_payload.tag === tag;
-}

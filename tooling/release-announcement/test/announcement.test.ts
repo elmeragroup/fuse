@@ -2,17 +2,16 @@ import { Option, Result, Schema } from "effect";
 import { describe, expect, it } from "vitest";
 
 import * as Announcement from "../src/announcement.ts";
-import { Changelog } from "../src/changelog-section.ts";
 import { versionNotes } from "../src/release-notes.ts";
-import { RecordTag } from "../src/release-record.ts";
 import {
+  canaryChannel,
   canaryRelease,
   changelog,
   commit,
   context,
   mrkdwnObjects,
   notes020,
-  present,
+  releasesChannel,
   repository,
   section,
   sectionTexts,
@@ -23,9 +22,6 @@ import {
 // >; a link is <url|label>), Block Kit's text objects (verbatim stops mention parsing),
 // chat.postMessage's arguments, the engine's record tags, and Slack's channel IDs. Expected
 // messages are written out by hand.
-
-const releasesChannel = present(Result.getOrThrow(Announcement.parseChannelSetting("C0RELEASES")));
-const canaryChannel = present(Result.getOrThrow(Announcement.parseChannelSetting("C0CANARY")));
 
 /** Asserts that Slack will notify no one for a payload's text. */
 function expectNoParsing(payload: Announcement.ChatPostMessage): void {
@@ -40,7 +36,7 @@ describe("the stable announcement", () => {
     const release = stableRelease("0.2.0");
     const message = Announcement.stable(
       release,
-      versionNotes(Changelog.Whole({ text: changelog }), "0.2.0"),
+      versionNotes({ _tag: "Whole", text: changelog }, "0.2.0"),
       repository
     );
     expect(Announcement.postMessage(release, message, releasesChannel)).toEqual({
@@ -91,7 +87,7 @@ describe("the stable announcement", () => {
     const release = stableRelease("1.0.0");
     const message = Announcement.stable(
       release,
-      versionNotes(Changelog.Whole({ text: "## 1.0.0\n\n- Ping @here and <!channel>.\n" }), "1.0.0"),
+      versionNotes({ _tag: "Whole", text: "## 1.0.0\n\n- Ping @here and <!channel>.\n" }, "1.0.0"),
       repository
     );
     expect(sectionTexts(message)).toEqual(["• Ping @here and &lt;!channel&gt;."]);
@@ -180,48 +176,32 @@ describe("the canary announcement", () => {
   });
 });
 
-describe("routing", () => {
-  const channels = { stable: Option.some(releasesChannel), canary: Option.some(canaryChannel) };
-
-  it("sends a stable release to the releases channel and a canary to the canary channel", () => {
-    expect(Announcement.route(stableRelease("0.2.0"), channels)).toEqual({
-      _tag: "Routed",
-      channel: "C0RELEASES",
-    });
-    expect(Announcement.route(canaryRelease("0.2.1-canary.0"), channels)).toEqual({
-      _tag: "Routed",
-      channel: "C0CANARY",
-    });
-  });
-
-  it("leaves a release unrouted while its channel is not set up", () => {
-    expect(Announcement.route(stableRelease("0.2.0"), { ...channels, stable: Option.none() })).toEqual({
-      _tag: "Unrouted",
-    });
-    expect(
-      Announcement.route(canaryRelease("0.2.1-canary.0"), { ...channels, canary: Option.none() })
-    ).toEqual({
-      _tag: "Unrouted",
-    });
-  });
-
+describe("channel settings", () => {
   it.each([
     { setting: "C0123456789", parsed: Option.some("C0123456789") },
     { setting: " C0CANARY ", parsed: Option.some("C0CANARY") },
     { setting: "", parsed: Option.none() },
     { setting: "  ", parsed: Option.none() },
   ])("reads the channel setting $setting", ({ setting, parsed }) => {
-    expect(Announcement.parseChannelSetting(setting)).toEqual(Result.succeed(parsed));
+    expect(Announcement.parseChannelSetting("SLACK_RELEASES_CHANNEL", setting)).toEqual(
+      Result.succeed(parsed)
+    );
   });
 
-  it.each(["#releases", "C0REL\npost=true", "c0releases"])("rejects the channel setting %j", (setting) => {
-    expect(Result.isFailure(Announcement.parseChannelSetting(setting))).toBe(true);
+  it.each([
+    { setting: "#releases", message: '"#releases" is not a Slack channel ID such as C0123456789' },
+    {
+      setting: "C0REL\npost=true",
+      message: '"C0REL\\npost=true" is not a Slack channel ID such as C0123456789',
+    },
+    { setting: "c0releases", message: '"c0releases" is not a Slack channel ID such as C0123456789' },
+  ])("rejects the channel setting $setting, naming the variable", ({ setting, message }) => {
+    const parsed = Announcement.parseChannelSetting("SLACK_CANARY_CHANNEL", setting);
+    expect(Result.isFailure(parsed) && parsed.failure.message).toBe(`SLACK_CANARY_CHANNEL: ${message}`);
   });
 });
 
 describe("receipts", () => {
-  const tag = Schema.decodeUnknownSync(RecordTag)("v0.2.0");
-
   it("reads the receipt an announcement's metadata carries", () => {
     const posted = Announcement.postMessage(
       stableRelease("0.2.0"),
@@ -231,8 +211,7 @@ describe("receipts", () => {
     const receipt = Schema.decodeUnknownSync(Announcement.Receipt)(
       JSON.parse(JSON.stringify(posted.metadata))
     );
-    expect(Announcement.isReceiptFor(tag, receipt)).toBe(true);
-    expect(Announcement.isReceiptFor(Schema.decodeUnknownSync(RecordTag)("v0.2.1"), receipt)).toBe(false);
+    expect(receipt).toEqual({ event_type: "fuse_release_announced", event_payload: { tag: "v0.2.0" } });
   });
 
   it.each([

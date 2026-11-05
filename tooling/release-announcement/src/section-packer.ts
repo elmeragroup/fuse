@@ -6,18 +6,10 @@
 
 import { Option } from "effect";
 
-import { codeText, linkTarget, render, renderUnit } from "./mrkdwn.ts";
+import { codeText, link, linkTarget, render, renderUnit } from "./mrkdwn.ts";
 import type { Inline, MrkdwnLine } from "./mrkdwn.ts";
+import { NOTE_SECTION_LIMIT, SECTION_TEXT_LIMIT } from "./render-protocol.ts";
 import { cutEscaped } from "./text-cut.ts";
-
-/** Slack's limit for a section's text (docs.slack.dev, Block Kit). */
-export const SECTION_TEXT_LIMIT = 3000;
-
-/**
- * Note sections a stable announcement shows before it links the full changelog. Four full
- * sections keep a large release readable and the message at eight blocks, under Slack's 50.
- */
-export const NOTE_SECTION_LIMIT = 4;
 
 /** Section texts for a version's notes, and why notes were left out, if they were. */
 export type PackedSections = {
@@ -238,7 +230,7 @@ function fitUnit(unit: Inline, limit: number, lose: () => void): string[] {
       const label = unit.label.length === 0 ? [{ kind: "text", text: unit.url } as const] : unit.label;
       const room = limit - target.length - "<|>".length;
       lose();
-      return [room >= 2 ? `<${target}|${shortenUnits(label, room)}>` : shortenUnits(label, limit)];
+      return [room >= 2 ? link(unit.url, shortenUnits(label, room)) : shortenUnits(label, limit)];
     }
     case "code":
       lose();
