@@ -1,11 +1,10 @@
 "use client";
 
-import { useLayoutEffect, useRef, useState } from "react";
+import { useRef } from "react";
 import type { FocusEvent, KeyboardEvent, MouseEvent, PointerEvent, ReactElement } from "react";
 
-import { withinFocusRingClass } from "../../styles/utils";
+import { listboxProps, StatusRegion, SurfaceName, useGestureEnd, useOptionHandoff } from "./chart-listbox";
 import { useTapLift } from "./chart-tap-lift";
-import { CHART_STRINGS } from "./format/chart-strings";
 import type { ScatterDomains } from "./layout/domain-glide";
 import { buildPointIndex, nearestPoint } from "./layout/point-index";
 import type { PointIndex } from "./layout/point-index";
@@ -23,16 +22,6 @@ import { scatterOptionName } from "./scatter-chart-text";
  * Both reach well past the 24 px target floor, so a lone point is easy to hit.
  */
 const HIT_RADIUS = { fine: 24, coarse: 32 } as const;
-
-/**
- * One rendered option. The point and the focus it names live in the store, as the walk's place,
- * so a data update carries them in the one transition Root runs. An option is only its element.
- */
-type OptionState = {
-  readonly id: string;
-  /** True for the option that receives focus from outside, which carries the description. */
-  readonly entry: boolean;
-};
 
 /** The step a key makes. Arrow directions are physical, so x runs left to right under RTL too. */
 function stepOf(key: string): ScatterStep | undefined {
@@ -142,11 +131,11 @@ function trackedPick(
 }
 
 /**
- * The plot's single tab stop. A `listbox` over the plot holds exactly one `option`, the walk's
- * place, and that option holds DOM focus. Each step renders the next option beside the current
- * one, focuses it in a layout effect and removes the old one in the next commit, so focus never
- * passes through `body`. The surface is also the plot's one pointer target. A pointer picks the
- * nearest point through `pickPoint` and never moves focus or the place.
+ * The plot's single tab stop, the listbox of `chart-listbox.tsx`, whose one option names the walk's
+ * place. The point and the focus it names live in the store, so a data update carries them in the
+ * one transition Root runs, and an option is only its element. The surface is also the plot's one
+ * pointer target. A pointer picks the nearest point through `pickPoint` and never moves focus or
+ * the place.
  */
 export function ScatterSurface({
   labelledBy,
@@ -155,58 +144,27 @@ export function ScatterSurface({
 }): ReactElement | null {
   const context = useScatterRoot("ScatterChart.Root");
   const { model, store, id, locale, name } = context;
-  const counter = useRef(0);
-  const nextId = (): string => {
-    counter.current += 1;
-    return `${id}-option-${String(counter.current)}`;
-  };
-  const [options, setOptions] = useState<readonly OptionState[]>(() => [
-    { id: `${id}-option-0`, entry: true },
-  ]);
-  const focusTarget = useRef<string | null>(null);
+  const listbox = useRef<HTMLDivElement>(null);
+  const handoff = useOptionHandoff(id, listbox, () => ({}));
   /**
    * Whether a touch or pen press is under way. It holds no point id, since a data update may land
    * between the press and its lift.
    */
   const pressing = useRef(false);
   const lift = useTapLift();
-  const listbox = useRef<HTMLDivElement>(null);
   const frame = useScatterFrame(context);
   const pinned = useScatterStore(store, (snapshot) => snapshot.pinned);
   const { place, focus } = useWalkPlace(context);
-  useLayoutEffect(() => {
-    const target = focusTarget.current;
-    if (target === null) return;
-    focusTarget.current = null;
-    listbox.current
-      ?.querySelector<HTMLElement>(`[id="${CSS.escape(target)}"]`)
-      ?.focus({ preventScroll: true });
-  });
+  useGestureEnd(place !== null, lift, pressing, false);
 
-  // An empty model takes the surface's element away, mid-press too, so no later press inherits the
-  // gesture: the element's cleanup ends it.
-  const shown = place !== null;
-  useLayoutEffect(
-    () =>
-      shown
-        ? () => {
-            pressing.current = false;
-            lift.press();
-          }
-        : undefined,
-    [shown, lift]
-  );
-
-  const current = options.at(-1);
+  const current = handoff.current;
   if (place === null || current === undefined) return null;
 
   /** The walk in the current model, as an event finds it. */
   const walk = () => walkOf(store.get(), model);
 
   const move = (point: number, nextFocus: number): void => {
-    const next = { id: nextId(), entry: false };
-    focusTarget.current = next.id;
-    setOptions((list) => [...list.slice(-1), next]);
+    handoff.step({});
     store.step(model, point, nextFocus);
   };
 
@@ -243,9 +201,9 @@ export function ScatterSurface({
   };
 
   const onFocus = (event: FocusEvent<HTMLDivElement>): void => {
-    if (event.relatedTarget instanceof Node && event.currentTarget.contains(event.relatedTarget)) {
+    if (handoff.within(event)) {
       // The old option leaves in the commit after the new one took focus.
-      if (options.length > 1) setOptions((list) => list.slice(-1));
+      handoff.prune();
       return;
     }
     // A tap focuses the option after its lift, and the point the finger picked stays active.
@@ -254,10 +212,10 @@ export function ScatterSurface({
   };
 
   const onBlur = (event: FocusEvent<HTMLDivElement>): void => {
-    if (event.relatedTarget instanceof Node && event.currentTarget.contains(event.relatedTarget)) return;
+    if (handoff.within(event)) return;
     if (!lift.tapFocus() && !pressing.current) store.release();
     // The next entry meets a new option that carries the description again.
-    setOptions([{ id: nextId(), entry: true }]);
+    handoff.reset({});
   };
 
   const pointAt = (event: PointerEvent<HTMLDivElement> | MouseEvent<HTMLDivElement>): number =>
@@ -267,7 +225,7 @@ export function ScatterSurface({
       pointerType: "pointerType" in event ? event.pointerType : "mouse",
     });
 
-  const strings = CHART_STRINGS[locale];
+  const naming = { id, name, labelledBy, locale };
   const placed = pointOf(model, place);
   const centre = frame === null ? null : dotCentre(frame, placed.x, placed.y, 0);
   const { position, size } = walkPosition(model, place, focus);
@@ -277,15 +235,8 @@ export function ScatterSurface({
     // oxlint-disable-next-line jsx-a11y/interactive-supports-focus -- the active option holds the one tab stop
     <div
       ref={listbox}
-      id={`${id}-surface`}
       role="listbox"
-      data-slot="chart-surface"
-      data-pinned={pinned ? "" : undefined}
-      aria-orientation="horizontal"
-      {...(labelledBy === undefined
-        ? { "aria-label": strings.surfaceName(name ?? "") }
-        : { "aria-labelledby": `${labelledBy} ${id}-surface-name` })}
-      className={withinFocusRingClass}
+      {...listboxProps(naming, pinned, "horizontal")}
       onKeyDown={onKeyDown}
       onFocus={onFocus}
       onBlur={onBlur}
@@ -335,12 +286,8 @@ export function ScatterSurface({
         }
         store.press(model, pointAt(event));
       }}>
-      {labelledBy === undefined ? null : (
-        <span id={`${id}-surface-name`} hidden>
-          {strings.surfaceName("").replace(/^,\s*/u, "")}
-        </span>
-      )}
-      {options.map((option) => (
+      <SurfaceName {...naming} />
+      {handoff.options.map((option) => (
         // Once the plot is measured, the option covers the place's point, where a touch reader's
         // double tap lands. An outgoing option names the same point until it leaves.
         <div
@@ -366,19 +313,12 @@ export function ScatterSurface({
   );
 }
 
-/**
- * Root's status region. It is mounted empty on the server and never unmounts. A repeated message
- * gets an alternating trailing U+00A0, so the region announces it again.
- */
+/** Root's status region, which announces what Root's store says. */
 export function ScatterStatus(): ReactElement {
   const { store } = useScatterRoot("ScatterChart.Root");
   const text = useScatterStore(store, (snapshot) => snapshot.announcement.text);
   const count = useScatterStore(store, (snapshot) => snapshot.announcement.count);
-  return (
-    <div role="status" data-slot="chart-status">
-      {text === "" ? "" : `${text}${count % 2 === 0 ? " " : ""}`}
-    </div>
-  );
+  return <StatusRegion text={text} count={count} />;
 }
 
 Object.assign(ScatterSurface, { displayName: "ScatterChart.Root.Surface" });

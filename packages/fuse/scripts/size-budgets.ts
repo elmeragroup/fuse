@@ -376,14 +376,19 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // the cartesian Table hands its rows, and the popup leaves ScatterChart now shares, which
     // measured 2420 bytes on Chart (150013 to 152433) and 2421 on BarChart (150015 to 152436).
     // Each ceiling keeps about 100 bytes of headroom.
-    ceilingGzip: 152533,
+    // Raised again from 152533 on 2026-11-05, with BarChart's from 152536. Chart's and
+    // ScatterChart's surfaces share one listbox leaf: the option handoff, the press's end with
+    // the surface's element, the listbox's naming and the status region, which measured 255 bytes
+    // on Chart (152433 to 152688) and on BarChart (152436 to 152691), while the whole entry, which
+    // ships both surfaces, fell by 86. Each ceiling keeps about 100 bytes of headroom.
+    ceilingGzip: 152788,
   },
   {
     name: "chart/BarChart",
     entryFile: "chart.js",
     exportName: "BarChart",
     measuredGzip: 95989,
-    ceilingGzip: 152536,
+    ceilingGzip: 152791,
   },
   { name: "chart/PieChart", entryFile: "chart.js", exportName: "PieChart", measuredGzip: 79885 },
   { name: "chart/RadialChart", entryFile: "chart.js", exportName: "RadialChart", measuredGzip: 79858 },
@@ -462,7 +467,11 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // swatch's paint and look. The tooltip anchor and the table rows ride with their own parts,
     // so this route ships neither. That measured 1291 bytes on this route (78635 to 79926). The
     // ceiling keeps about 100 bytes of headroom.
-    ceilingGzip: 80026,
+    // Raised from 80026 on 2026-11-05. Root's surface reads the listbox leaf it shares with
+    // ScatterChart's, the option handoff, the press's end with the surface's element, the
+    // listbox's naming and the status region, which measured 234 bytes on this route (79926 to
+    // 80160). The ceiling keeps about 100 bytes of headroom.
+    ceilingGzip: 80260,
   },
   {
     name: "chart/PieChart.Root",
