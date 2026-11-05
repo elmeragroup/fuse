@@ -1,19 +1,25 @@
 // The radar's layout. Unit under test: radarDomain, radarRadius, spokeAngle, radarVertices,
-// zeroPolygon, radarQuads, polygonsPath, radarLinePath, spokeAt and nearestVertex. Oracles, written
+// zeroPolygon, radarQuads, polygonsPath, radarEdges, radarAreas, loneVertices, dotsPath, spokeAt and
+// nearestVertex. Oracles, written
 // by hand: ticket 10's R1 vertices for values 1 to 4 on a [0, 4] domain at radius R, which are
 // (0, −R/4), (R/2, 0), (0, 3R/4) and (−R, 0); CONTRACT section 8.4's [−2, 1, 3] fixture, whose
 // domain is [−2, 3] with the zero ring at two fifths of R; R2's `max` above and below the data;
 // R3's per-edge quadrilaterals on a three-spoke fixture; and R6's centre cases, where offsets of
-// 0.001 px toward 3, 6 and 9 o'clock pick spokes 1, 2 and 3 of four.
+// 0.001 px toward 3, 6 and 9 o'clock pick spokes 1, 2 and 3 of four; and R5's counts on a six-spoke
+// fixture, whose spoke 1 is estimated and spoke 4 missing: two dashed edges and two hatched
+// quadrilaterals beside spoke 1, two plain edges and quadrilaterals, and two removed beside spoke 4.
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 
 import { pointerAngle } from "./polar-angle";
 import {
+  dotsPath,
+  loneVertices,
   nearestVertex,
   polygonsPath,
+  radarAreas,
   radarDomain,
-  radarLinePath,
+  radarEdges,
   radarQuads,
   radarRadius,
   radarVertices,
@@ -109,17 +115,89 @@ describe("the zero polygon and the quadrilaterals (R3)", () => {
   });
 });
 
-describe("radarLinePath", () => {
+describe("radarEdges", () => {
   const radius = radarRadius([0, 4], R);
+  const none = [false, false, false, false];
 
-  it("closes the polygon when every spoke holds a reading", () => {
-    expect(radarLinePath(radarVertices([4, 2, 2], radius))).toBe("M0,-100L43.301,25L-43.301,25Z");
+  it("closes the polygon when every spoke holds a plain reading", () => {
+    expect(radarEdges(radarVertices([4, 2, 2], radius), none)).toEqual({
+      plain: "M0,-100L43.301,25L-43.301,25Z",
+      marked: "",
+    });
   });
 
   it("breaks at a missing spoke and keeps a run across 12 o'clock whole", () => {
     // Spoke 1 at 90° is missing, so spokes 2, 3 and 0, at 180°, 270° and 0°, draw one run across 12 o'clock.
-    const line = radarLinePath(radarVertices([4, null, 4, 4], radius));
-    expect(line).toBe("M0,100L-100,0L0,-100");
+    expect(radarEdges(radarVertices([4, null, 4, 4], radius), none)).toEqual({
+      plain: "M0,100L-100,0L0,-100",
+      marked: "",
+    });
+  });
+
+  it("dashes the two edges beside an estimated spoke and drops the two beside a missing one (R5)", () => {
+    // Six spokes at 60° steps, every reading at the rim: v0 (0, −100), v1 (86.603, −50),
+    // v2 (86.603, 50), v3 (0, 100), v5 (−86.603, −50). Spoke 1 is estimated and spoke 4 missing.
+    const vertices = radarVertices([4, 4, 4, 4, null, 4], radius);
+    const marked = [false, true, false, false, false, false];
+    expect(radarEdges(vertices, marked)).toEqual({
+      plain: "M86.603,50L0,100M-86.603,-50L0,-100",
+      marked: "M0,-100L86.603,-50L86.603,50",
+    });
+  });
+
+  it("closes a ring whose every edge is marked", () => {
+    // Spokes 0 and 2 are estimated, so every edge of three touches one.
+    expect(radarEdges(radarVertices([4, 4, 4], radius), [true, false, true])).toEqual({
+      plain: "",
+      marked: "M0,-100L86.603,50L-86.603,50Z",
+    });
+  });
+
+  it("draws one edge for two spokes and none for one", () => {
+    expect(radarEdges(radarVertices([4, 4], radius), [false, false])).toEqual({
+      plain: "M0,-100L0,100",
+      marked: "",
+    });
+    expect(radarEdges(radarVertices([4], radius), [false])).toEqual({ plain: "", marked: "" });
+  });
+});
+
+describe("radarAreas", () => {
+  it("hatches the two quadrilaterals beside an estimated spoke and drops the two beside a missing one (R5)", () => {
+    const radius = radarRadius([0, 4], R);
+    const vertices = radarVertices([4, 4, 4, 4, null, 4], radius);
+    const marked = [false, true, false, false, false, false];
+    const { plain, marked: hatched } = radarAreas(vertices, zeroPolygon(6, 0), marked);
+    // Each quadrilateral runs zero, vertex, next vertex, next zero, and every zero point is the centre.
+    expect(plain).toBe("M0,0L86.603,50L0,100L0,0ZM0,0L-86.603,-50L0,-100L0,0Z");
+    expect(hatched).toBe("M0,0L0,-100L86.603,-50L0,0ZM0,0L86.603,-50L86.603,50L0,0Z");
+  });
+});
+
+describe("loneVertices and dotsPath", () => {
+  const radius = radarRadius([0, 4], R);
+
+  it("finds the readings between two missing spokes, and the only spoke", () => {
+    expect(
+      loneVertices(radarVertices([4, null, 4, null], radius)).map(({ x, y }) => [
+        Math.round(x),
+        Math.round(y),
+      ])
+    ).toEqual([
+      [0, -100],
+      [0, 100],
+    ]);
+    expect(loneVertices(radarVertices([4, 4, null], radius))).toEqual([]);
+    expect(loneVertices(radarVertices([2], radius))).toHaveLength(1);
+  });
+
+  it("draws each dot as a zero-length subpath", () => {
+    expect(
+      dotsPath([
+        { x: 0, y: -100 },
+        { x: 43.3012, y: 25 },
+      ])
+    ).toBe("M0,-100h0M43.301,25h0");
   });
 });
 

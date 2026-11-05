@@ -139,41 +139,6 @@ export function polygonsPath(polygons: readonly (readonly PolarPoint[])[]): stri
 }
 
 /**
- * The radar line: the polygon through every vertex when each spoke holds a reading, and otherwise
- * the runs between missing spokes, a run that crosses 12 o'clock drawn whole. A lone vertex draws
- * no line, since a dot draws it.
- *
- * @param vertices - The series' vertex per spoke, null for a missing one.
- * @returns The path data.
- */
-export function radarLinePath(vertices: readonly (PolarPoint | null)[]): string {
-  const count = vertices.length;
-  const at = (point: PolarPoint) => `${pathNumber(point.x)},${pathNumber(point.y)}`;
-  const whole = vertices.filter((vertex): vertex is PolarPoint => vertex !== null);
-  if (count >= 3 && whole.length === count) {
-    return `${whole.map((vertex, index) => `${index === 0 ? "M" : "L"}${at(vertex)}`).join("")}Z`;
-  }
-  // Start right after a missing spoke, so a run that crosses the last spoke stays whole.
-  const gap = vertices.findIndex((vertex) => vertex === null);
-  const order = Array.from({ length: count }, (_, step) => (gap + 1 + step) % count);
-  const runs: PolarPoint[][] = [];
-  let run: PolarPoint[] = [];
-  for (const index of order) {
-    const vertex = vertices[index];
-    if (vertex === null || vertex === undefined) {
-      if (run.length > 1) runs.push(run);
-      run = [];
-    } else {
-      run.push(vertex);
-    }
-  }
-  if (run.length > 1) runs.push(run);
-  return runs
-    .map((points) => points.map((point, index) => `${index === 0 ? "M" : "L"}${at(point)}`).join(""))
-    .join("");
-}
-
-/**
  * The spoke nearest a pointer's angle, by angular distance, a tie going to the lower index, so the
  * exact centre, whose angle reads 0, picks spoke 0.
  *
@@ -215,4 +180,123 @@ export function nearestVertex(pointer: PolarPoint, vertices: readonly (PolarPoin
     }
   });
   return best;
+}
+
+/** A series' drawing split by quality (R5): the plain and the marked parts, each one path. */
+export type RadarSplit = { readonly plain: string; readonly marked: string };
+
+/** The edges a ring of n spokes draws: n closing edges from 3 spokes, one for 2, none for 1. */
+function edgeCount(count: number): number {
+  return count < 2 ? 0 : count === 2 ? 1 : count;
+}
+
+/**
+ * The Line's edges, split by quality (R5): an edge that touches an estimated spoke is marked, and
+ * dashes, and one that touches a missing spoke draws nothing. Consecutive edges of one kind join
+ * into one run, and a ring whose every edge is plain, or every edge marked, closes.
+ *
+ * @param vertices - The series' vertex per spoke, null for a missing one.
+ * @param marked - Whether each spoke's reading is estimated.
+ * @returns The plain runs' path and the marked runs' path, each empty for none.
+ */
+export function radarEdges(vertices: readonly (PolarPoint | null)[], marked: readonly boolean[]): RadarSplit {
+  const count = vertices.length;
+  const edges = edgeCount(count);
+  const kinds = Array.from({ length: edges }, (_, index): "plain" | "marked" | null => {
+    const next = (index + 1) % count;
+    if (vertices[index] === null || vertices[next] === null) return null;
+    return marked[index] === true || marked[next] === true ? "marked" : "plain";
+  });
+  const at = (index: number): string => {
+    const point = vertices[index % count];
+    return point === null || point === undefined ? "" : `${pathNumber(point.x)},${pathNumber(point.y)}`;
+  };
+  const paths = { plain: "", marked: "" };
+  const [first] = kinds;
+  if (first !== undefined && first !== null && edges === count && kinds.every((kind) => kind === first)) {
+    paths[first] =
+      `${Array.from({ length: count }, (_, index) => `${index === 0 ? "M" : "L"}${at(index)}`).join("")}Z`;
+    return paths;
+  }
+  // Start at an edge whose kind differs from the one before it, so no run is cut at 12 o'clock.
+  const start =
+    edges === count
+      ? Math.max(
+          0,
+          kinds.findIndex((kind, index) => kind !== kinds.at(index - 1))
+        )
+      : 0;
+  // Each run joins consecutive edges of one kind, from its first edge to its last.
+  const runs: { kind: "plain" | "marked"; from: number; to: number }[] = [];
+  for (let step = 0; step < edges; step += 1) {
+    const index = start + step;
+    const kind = kinds[index % edges] ?? null;
+    if (kind === null) continue;
+    const last = runs.at(-1);
+    if (last?.kind === kind && last.to === index - 1) last.to = index;
+    else runs.push({ kind, from: index, to: index });
+  }
+  for (const { kind, from, to } of runs) {
+    paths[kind] += Array.from(
+      { length: to - from + 2 },
+      (_, step) => `${step === 0 ? "M" : "L"}${at(from + step)}`
+    ).join("");
+  }
+  return paths;
+}
+
+/**
+ * The Area's quadrilaterals, split by quality (R5): a quadrilateral beside an estimated spoke is
+ * marked, and hatches. A missing spoke removes both beside it, as `radarQuads` does.
+ *
+ * @param vertices - The series' vertex per spoke, null for a missing one.
+ * @param zero - The zero polygon.
+ * @param marked - Whether each spoke's reading is estimated.
+ * @returns The plain quadrilaterals' path and the marked ones', each empty for none.
+ */
+export function radarAreas(
+  vertices: readonly (PolarPoint | null)[],
+  zero: readonly PolarPoint[],
+  marked: readonly boolean[]
+): RadarSplit {
+  const count = vertices.length;
+  const plain: PolarPoint[][] = [];
+  const hatched: PolarPoint[][] = [];
+  for (let index = 0; index < edgeCount(count); index += 1) {
+    const next = (index + 1) % count;
+    const [quad] = radarQuads(
+      [vertices[index] ?? null, vertices[next] ?? null],
+      [zero[index] ?? { x: 0, y: 0 }, zero[next] ?? { x: 0, y: 0 }]
+    );
+    if (quad === undefined) continue;
+    (marked[index] === true || marked[next] === true ? hatched : plain).push([...quad]);
+  }
+  return { plain: polygonsPath(plain), marked: polygonsPath(hatched) };
+}
+
+/**
+ * The vertices no edge reaches: a reading whose neighbours on both sides are missing, or the only
+ * spoke. The Line draws each as a dot (R5).
+ *
+ * @param vertices - The series' vertex per spoke, null for a missing one.
+ * @returns The lone vertices.
+ */
+export function loneVertices(vertices: readonly (PolarPoint | null)[]): readonly PolarPoint[] {
+  const count = vertices.length;
+  return vertices.flatMap((vertex, index) => {
+    if (vertex === null) return [];
+    const before = count < 2 ? null : vertices[(index - 1 + count) % count];
+    const after = count < 2 ? null : vertices[(index + 1) % count];
+    return (before ?? null) === null && (after ?? null) === null ? [vertex] : [];
+  });
+}
+
+/**
+ * Dots as one path of zero-length subpaths, whose round caps draw each dot at the stroke's width.
+ *
+ * @param points - The dots' centres.
+ * @returns The path data, empty for none.
+ */
+export function dotsPath(points: readonly PolarPoint[]): string {
+  return points.map(({ x, y }) => `M${pathNumber(x)},${pathNumber(y)}h0`).join("");
 }

@@ -84,7 +84,38 @@ export type PolarModel = {
 export type PolarDrawing =
   | { readonly kind: "pie"; readonly pie: PieDrawing; readonly centre: CentreModel }
   | { readonly kind: "radial"; readonly radial: RadialDrawing; readonly centre: CentreModel }
-  | { readonly kind: "none" };
+  | { readonly kind: "radar"; readonly radar: RadarDrawing };
+
+/** One series a radar draws, in config order. */
+export type RadarSeries = {
+  readonly key: string;
+  /** The series' place among the config keys, which focus, selection and highlight name. */
+  readonly index: number;
+  readonly paint: string;
+  /** A role list's stops from the tip to the base (R9). */
+  readonly stops: readonly string[] | undefined;
+  /** Each spoke's reading, or null where it is missing. */
+  readonly values: readonly (number | null)[];
+  /** Each spoke's quality: an estimated spoke dashes and hatches beside it, a missing one draws nothing (R5). */
+  readonly qualities: readonly ("estimated" | "corrected" | "missing" | undefined)[];
+};
+
+/** What a radar's parts draw: its spokes, its radius domain and its series. */
+export type RadarDrawing = {
+  /** The spoke count. */
+  readonly count: number;
+  /** Each spoke's label. */
+  readonly labels: readonly FormattedText[];
+  /** The radius domain, its minimum at the centre and its maximum at the rim (R2). */
+  readonly domain: readonly [number, number];
+  /** The ring values, the domain's own ticks. */
+  readonly ticks: readonly number[];
+  /** The radius of 0 when the domain reaches below it, where the solid zero ring sits (R4), or null. */
+  readonly zero: number | null;
+  readonly series: readonly RadarSeries[];
+  /** The first series' format, which the RadiusAxis prints its ticks in. */
+  readonly format: ValueFormat;
+};
 
 /** The numbers a centre prints, per item and with nothing active (CONTRACT section 8.13). */
 export type CentreModel = {
@@ -285,7 +316,21 @@ export function radialDrawingOf(model: PolarModel): RadialDrawing | null {
  * @returns The centre's numbers, or null under a family with no centre.
  */
 export function centreOf(model: PolarModel): CentreModel | null {
-  return model.drawing.kind === "none" ? null : model.drawing.centre;
+  return model.drawing.kind === "radar" ? null : model.drawing.centre;
+}
+
+/**
+ * A radar's drawing, for a part only a radar holds.
+ *
+ * @param model - The Root's model, a radar's, as `usePolarContext` admitted the part.
+ * @param part - The part, which a defect names.
+ * @returns The drawing.
+ * @throws When the model holds no radar, a defect.
+ */
+export function radarDrawingIn(model: PolarModel, part: string): RadarDrawing {
+  if (model.drawing.kind !== "radar")
+    throw new Error(`${part} read a ${model.family} model, which holds no radar.`);
+  return model.drawing.radar;
 }
 
 /**

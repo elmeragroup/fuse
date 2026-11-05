@@ -182,7 +182,7 @@ const SEASONS = [
 /**
  * The polar Roots as a directive-free server page: a bill as a pie with its slices, labels, legend and table,
  * three price areas as rings against 150 øre with their table, and two areas' seasons as a radar
- * with its legend.
+ * with its grid, axes, one area's fill and outline, and its legend.
  */
 export function PolarPage(): ReactElement {
   return (
@@ -223,6 +223,11 @@ export function PolarPage(): ReactElement {
           config={{ no1: { label: "NO1", color: "chart-1" }, no4: { label: "NO4", color: "chart-4" } }}
           nameKey="season"
           aria-label="Spotpris per sesong">
+          <RadarChart.Grid />
+          <RadarChart.AngleAxis />
+          <RadarChart.RadiusAxis />
+          <RadarChart.Area dataKey="no1" />
+          <RadarChart.Line dataKey="no1" />
           <RadarChart.Legend />
         </RadarChart.Root>
       </main>

@@ -652,7 +652,14 @@
   "radar-chart": {
     "title": "Radar Chart",
     "rsc": "client",
-    "demos": ["radar-chart-weekdays.tsx"]
+    "demos": [
+      "radar-chart-areas.tsx",
+      "radar-chart-deviation.tsx",
+      "radar-chart-empty.tsx",
+      "radar-chart-hours.tsx",
+      "radar-chart-loading.tsx",
+      "radar-chart-weekdays.tsx"
+    ]
   },
   "radial-chart": {
     "title": "Radial Chart",

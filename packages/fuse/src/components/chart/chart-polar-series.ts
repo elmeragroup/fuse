@@ -27,6 +27,7 @@ import { POLAR_STRINGS } from "./format/polar-strings";
 import { seriesLabel } from "./format/series-label";
 import { formatValue } from "./format/value-format";
 import type { CartesianModel } from "./layout/cartesian-model";
+import { isRoleList, seriesPaint, singleRole } from "./layout/color-key";
 import { assertKnownKey } from "./layout/errors";
 import { pointerAngle } from "./layout/polar-angle";
 import type { Sweep } from "./layout/polar-angle";
@@ -104,7 +105,7 @@ export function radarModel(input: RadarInput): PolarModel {
   const values = model.series.flatMap(({ readings }) =>
     readings.flatMap((reading) => (reading.kind === "reading" ? [reading.value] : []))
   );
-  const { domain } = radarDomain(values, input.max);
+  const { domain, ticks } = radarDomain(values, input.max);
   const radius = radarRadius(domain, 1);
   const vertices = model.series.map(({ readings }) =>
     radarVertices(
@@ -153,7 +154,37 @@ export function radarModel(input: RadarInput): PolarModel {
     table: seriesTable({ ...context, name: input.name, rows: input.rows }, keys),
     readout: (kernel) => radarReadout(context, kernel),
     issues: input.issues,
-    drawing: { kind: "none" },
+    drawing: {
+      kind: "radar",
+      radar: {
+        count,
+        labels: keys.map((_, index) => slotLabel(context, index)),
+        domain,
+        ticks,
+        zero: domain[0] < 0 ? radius(0) : null,
+        series: model.series.map(({ key, readings }, index) => {
+          const color = config[key]?.color;
+          return {
+            key,
+            index,
+            paint: seriesPaint(key, singleRole(color)),
+            stops:
+              color !== undefined && isRoleList(color)
+                ? color.map((stop) => seriesPaint(key, stop))
+                : undefined,
+            values: readings.map((reading) => (reading.kind === "reading" ? reading.value : null)),
+            qualities: readings.map((reading) =>
+              reading.kind === "missing"
+                ? "missing"
+                : reading.kind === "reading" && reading.quality !== "measured"
+                  ? reading.quality
+                  : undefined
+            ),
+          };
+        }),
+        format: config[model.series[0]?.key ?? ""]?.format ?? {},
+      },
+    },
   };
 }
 

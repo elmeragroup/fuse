@@ -179,6 +179,11 @@ describe("the polar Roots under React Server Components", () => {
       "components/chart/radial-chart-bar.tsx#RadialChartBar",
       "components/chart/polar-chart-table.tsx#RadialChartTable",
       "components/chart/radar-chart-root.tsx#RadarChartRoot",
+      "components/chart/radar-chart-grid.tsx#RadarChartGrid",
+      "components/chart/radar-chart-grid.tsx#RadarChartAngleAxis",
+      "components/chart/radar-chart-grid.tsx#RadarChartRadiusAxis",
+      "components/chart/radar-chart-marks.tsx#RadarChartArea",
+      "components/chart/radar-chart-marks.tsx#RadarChartLine",
     ]);
   });
 
@@ -207,6 +212,13 @@ describe("the polar Roots under React Server Components", () => {
       expect(slotCount(html, "radial-chart-ring")).toBe(3);
       expect(slotCount(html, "pie-chart-track")).toBe(3);
       expect(slotCount(html, "chart-polar-plot")).toBe(3);
+      // The radar's readings reach 120, which the 1-2-5 rule nices to 0 to 120 by 20: seven ring
+      // values, six rings past the centre, and a spoke and a label per season.
+      expect(slotCount(html, "radar-chart-grid-ring")).toBe(6);
+      expect(slotCount(html, "radar-chart-radius-label")).toBe(7);
+      expect(slotCount(html, "radar-chart-angle-label")).toBe(4);
+      expect(slotCount(html, "radar-chart-area-path")).toBe(2);
+      expect(slotCount(html, "radar-chart-line-path")).toBe(3);
       expect(slotCount(html, "loader")).toBe(0);
       // The bill's three parts and the radar's two areas.
       expect(slotCount(html, "chart-legend-item")).toBe(5);

@@ -1174,7 +1174,7 @@ declare namespace RadarChart {
 }
 
 // @beta
-function RadarChartActiveDot(_props: RadarChartActiveDotProps): ReactElement;
+function RadarChartActiveDot(input: RadarChartActiveDotProps): ReactElement;
 
 // @beta
 export type RadarChartActiveDotProps = ChartLayerProps & {
@@ -1182,13 +1182,13 @@ export type RadarChartActiveDotProps = ChartLayerProps & {
 };
 
 // @beta
-function RadarChartAngleAxis(_props: RadarChartAngleAxisProps): ReactElement;
+function RadarChartAngleAxis(input: RadarChartAngleAxisProps): ReactElement;
 
 // @beta
 export type RadarChartAngleAxisProps = ChartLayerProps;
 
 // @beta
-function RadarChartArea(_props: RadarChartAreaProps): ReactElement;
+function RadarChartArea(input: RadarChartAreaProps): ReactElement;
 
 // @beta
 export type RadarChartAreaProps = ChartLayerProps & {
@@ -1196,7 +1196,7 @@ export type RadarChartAreaProps = ChartLayerProps & {
 };
 
 // @beta
-function RadarChartDots(_props: RadarChartDotsProps): ReactElement;
+function RadarChartDots(input: RadarChartDotsProps): ReactElement;
 
 // @beta
 export type RadarChartDotsProps = ChartLayerProps & {
@@ -1205,7 +1205,7 @@ export type RadarChartDotsProps = ChartLayerProps & {
 };
 
 // @beta
-function RadarChartGlow(_props: RadarChartGlowProps): ReactElement;
+function RadarChartGlow(input: RadarChartGlowProps): ReactElement;
 
 // @beta
 export type RadarChartGlowProps = ChartLayerProps & {
@@ -1213,7 +1213,7 @@ export type RadarChartGlowProps = ChartLayerProps & {
 };
 
 // @beta
-function RadarChartGrid(_props: RadarChartGridProps): ReactElement;
+function RadarChartGrid(input: RadarChartGridProps): ReactElement;
 
 // @beta
 export type RadarChartGridProps = ChartLayerProps & {
@@ -1221,7 +1221,7 @@ export type RadarChartGridProps = ChartLayerProps & {
 };
 
 // @beta
-function RadarChartLine(_props: RadarChartLineProps): ReactElement;
+function RadarChartLine(input: RadarChartLineProps): ReactElement;
 
 // @beta
 export type RadarChartLineProps = ChartLayerProps & {
@@ -1230,7 +1230,7 @@ export type RadarChartLineProps = ChartLayerProps & {
 };
 
 // @beta
-function RadarChartRadiusAxis(_props: RadarChartRadiusAxisProps): ReactElement;
+function RadarChartRadiusAxis(input: RadarChartRadiusAxisProps): ReactElement;
 
 // @beta
 export type RadarChartRadiusAxisProps = ChartLayerProps & {

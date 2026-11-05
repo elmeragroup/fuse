@@ -6,6 +6,8 @@
 // e^(−7.5t) / √(1 − 0.75²) does, at ln 1512 / 7.5 ≈ 976 ms; an update morphs each ring over 480 ms
 // (Q5); and the hover scales on 400/25, whose envelope at ζ = 0.625, ω = 20 settles by
 // ln 1281 / 12.5 ≈ 573 ms. Time is read from each frame's own timestamp.
+import { hydrateRoot } from "react-dom/client";
+import { renderToString } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { userEvent } from "vitest/browser";
 
@@ -50,7 +52,7 @@ function Chart({ kwh, intro }: { readonly kwh: readonly number[]; readonly intro
     <LocaleProvider locale="nb-NO">
       <div style={{ width: 320 }}>
         <RadialChart.Root
-          data={["a", "b", "c"].map((ring, index) => ({ ring, kwh: kwh[index] ?? 0 }))}
+          data={["a", "b", "c"].slice(0, kwh.length).map((ring, index) => ({ ring, kwh: kwh[index] ?? 0 }))}
           config={{
             a: { label: "A", color: "chart-1" },
             b: { label: "B", color: "chart-2" },
@@ -108,6 +110,41 @@ describe("the rings' motion (SPEC's Motion table)", () => {
         expect(frame.angle).toBeGreaterThanOrEqual((seen[at - 1]?.angle ?? 0) - ROUNDED);
       });
     });
+  });
+
+  it("keeps a hydrated chart's tracks at rest while its rings sweep in, as the first paint showed them", async () => {
+    const host = document.createElement("div");
+    host.innerHTML = renderToString(<Chart kwh={[50, 75, 25]} />);
+    document.body.append(host);
+    const root = hydrateRoot(host, <Chart kwh={[50, 75, 25]} />);
+    try {
+      const figure = polarFigure(host);
+      await expect.poll(() => figure.hasAttribute("data-entering")).toBe(true);
+      expect(figure.hasAttribute("data-grow")).toBe(false);
+      // DOM audit: the scale-out is a CSS animation on each track, read from its own animations.
+      const tracks = [...host.querySelectorAll('[data-slot="pie-chart-track"]')];
+      expect(tracks.flatMap((track) => track.getAnimations())).toEqual([]);
+      // The values still sweep in from 0.
+      const frames = await record(host, () => 0, 0);
+      expect(frames[0]?.extents.every((angle) => angle < 180)).toBe(true);
+    } finally {
+      root.unmount();
+      host.remove();
+    }
+  });
+
+  it("scales the tracks out when the chart leaves its empty state", async () => {
+    const { host, rerender } = renderThemed(<Chart kwh={[]} />);
+    const figure = polarFigure(host);
+    await expect.poll(() => figure.hasAttribute("data-drawn")).toBe(true);
+    await expect.poll(() => figure.hasAttribute("data-entering"), { timeout: 3000 }).toBe(false);
+    rerender(<Chart kwh={[50, 75, 25]} />);
+    await expect.poll(() => figure.hasAttribute("data-grow")).toBe(true);
+    // DOM audit: the scale-out is a CSS animation on each track, read from its own animations.
+    const delays = [...host.querySelectorAll('[data-slot="pie-chart-track"]')].map((track) =>
+      Number(track.getAnimations()[0]?.effect?.getComputedTiming().delay)
+    );
+    expect(delays).toEqual([0, 80, 160]);
   });
 
   it("morphs each ring to new data over 480 ms, between its old angle and its new (Q5)", async () => {

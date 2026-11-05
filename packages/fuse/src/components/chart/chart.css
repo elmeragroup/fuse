@@ -698,7 +698,7 @@
       "table table table";
   }
 
-  [data-slot="chart-polar-frame"]:has(> [data-slot="pie-chart-labels"][data-outside]) {
+  [data-slot="chart-polar-frame"]:has(> [data-polar-layer][data-outside]) {
     --_room-x: calc(var(--chart-slice-pop) + 4.5rem);
     --_room-y: calc(var(--chart-slice-pop) + 1.25rem);
   }
@@ -1046,6 +1046,190 @@
     [data-polar]:not([data-drawn]) [data-reel] {
       translate: 0 0;
     }
+  }
+
+  /*
+    A radar's grid: rings at the radius ticks in the border role, the zero ring solid in the zero
+    line's colour (R4), spokes from the centre to the rim, and the hand along the active spoke.
+    Each stroke keeps 1 px at any dial size.
+  */
+  [data-slot="radar-chart-grid"] {
+    z-index: 0;
+  }
+
+  :is([data-slot="radar-chart-grid-ring"], [data-slot="radar-chart-spoke"]) {
+    fill: none;
+    stroke: color-mix(in oklab, var(--border) 80%, transparent);
+    stroke-width: 1px;
+    vector-effect: non-scaling-stroke;
+    transform-box: view-box;
+    transform-origin: 0 0;
+  }
+
+  [data-slot="radar-chart-grid-ring"][data-zero] {
+    stroke: var(--muted-foreground);
+  }
+
+  [data-slot="radar-chart-spoke"][data-part="hand"] {
+    stroke: var(--muted-foreground);
+    opacity: 0;
+  }
+
+  [data-slot="radar-chart-spoke"][data-part="hand"][data-shown] {
+    opacity: 1;
+  }
+
+  /*
+    A series layer paints its own colour, or its role list's gradient (R9). The Area fills its
+    per-edge quadrilaterals even-odd at --chart-area-opacity, hatched beside an estimated spoke; the
+    Line strokes at --chart-stroke, dashed beside one (R5); and each dot is a round cap of a
+    zero-length subpath, in a ring of the surface, or hollow for "ring".
+  */
+  [data-slot="radar-chart-area"] {
+    z-index: 1;
+  }
+
+  [data-slot="radar-chart-line"] {
+    z-index: 2;
+  }
+
+  :is([data-slot="radar-chart-dots"], [data-slot="radar-chart-active-dot"]) {
+    z-index: 3;
+  }
+
+  [data-slot="radar-chart-area-path"] {
+    fill: var(--_paint);
+    fill-rule: evenodd;
+    fill-opacity: calc(var(--chart-area-opacity) * (1 + var(--_near, 0)));
+    stroke: none;
+  }
+
+  [data-slot="radar-chart-area-path"][data-part="marked"] {
+    fill: var(--_hatch-paint);
+    fill-opacity: 0.6;
+  }
+
+  [data-slot="radar-chart-line-path"] {
+    fill: none;
+    stroke: var(--_paint);
+    stroke-width: var(--chart-stroke);
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    vector-effect: non-scaling-stroke;
+  }
+
+  :is(
+    [data-slot="radar-chart-line-path"][data-part="marked"],
+    [data-slot="radar-chart-line"][data-variant="dashed"]
+      [data-slot="radar-chart-line-path"][data-part="solid"]
+  ) {
+    stroke-dasharray: 3 3;
+    stroke-linecap: butt;
+  }
+
+  [data-slot="radar-chart-line-path"][data-part="lone"] {
+    stroke: var(--_base);
+    stroke-width: 5px;
+  }
+
+  [data-slot="radar-chart-line"][data-variant="quiet"] [data-slot="radar-chart-line-path"] {
+    stroke-width: 1px;
+    stroke-opacity: 0.6;
+  }
+
+  [data-slot="radar-chart-dot"] {
+    fill: none;
+    stroke-linecap: round;
+    vector-effect: non-scaling-stroke;
+    print-color-adjust: exact;
+  }
+
+  [data-slot="radar-chart-dot"][data-part="halo"] {
+    stroke: var(--background);
+    stroke-width: 10px;
+  }
+
+  [data-slot="radar-chart-dot"][data-part="dots"] {
+    stroke: var(--_base);
+    stroke-width: 8px;
+  }
+
+  [data-slot="radar-chart-dots"][data-variant="ring"] [data-slot="radar-chart-dot"][data-part="halo"] {
+    stroke: var(--_base);
+  }
+
+  [data-slot="radar-chart-dots"][data-variant="ring"] [data-slot="radar-chart-dot"][data-part="dots"] {
+    stroke: var(--_ring-hole, var(--background));
+  }
+
+  [data-slot="radar-chart-active-dot"] [data-follow]:not([data-value]) {
+    visibility: hidden;
+  }
+
+  /*
+    Hover dims the series other than the nearest and doubles the nearest's fill (D19), and a
+    selected or highlighted series keeps full opacity while the rest dim, every dim over 150 ms. The
+    rules lead with data-radar-series, which only radar layers carry.
+  */
+  [data-radar-series] {
+    opacity: calc(1 - (1 - var(--chart-hover-dim)) * max(var(--_dim-near, 0), var(--_dim-series, 0)));
+  }
+
+  [data-polar][data-near] [data-radar-series] {
+    --_dim-near: min(
+      1,
+      max(var(--chart-series) - var(--chart-near), var(--chart-near) - var(--chart-series))
+    );
+    --_near: calc(1 - var(--_dim-near));
+  }
+
+  [data-polar][data-selected] [data-radar-series] {
+    --_dim-series: min(
+      1,
+      max(var(--chart-series) - var(--chart-selected), var(--chart-selected) - var(--chart-series))
+    );
+  }
+
+  [data-polar][data-highlight] [data-radar-series] {
+    --_dim-series: min(
+      1,
+      max(var(--chart-series) - var(--chart-highlight), var(--chart-highlight) - var(--chart-series))
+    );
+  }
+
+  /* Glow casts each wrapped series' own colour, blurred as a line's glow is (R10). */
+  [data-slot="radar-chart-glow"] {
+    display: contents;
+  }
+
+  [data-slot="radar-chart-glow"] > [data-radar-series] {
+    filter: drop-shadow(0 0 9.5px var(--_base));
+  }
+
+  /*
+    The spoke labels sit past the rim, each reading away from the centre, and the ring values sit
+    beside the first spoke, each centred on its ring. Both are 12 px text placed in the cell (S12).
+  */
+  :is([data-slot="radar-chart-angle-axis"], [data-slot="radar-chart-radius-axis"]) {
+    z-index: 3;
+  }
+
+  :is([data-slot="radar-chart-angle-label"], [data-slot="radar-chart-radius-label"]) {
+    position: absolute;
+    left: var(--_x);
+    top: var(--_y);
+    font-size: 0.75rem;
+    line-height: 1rem;
+    white-space: nowrap;
+  }
+
+  [data-slot="radar-chart-angle-label"] {
+    color: var(--foreground);
+    translate: var(--_align-x) var(--_align-y);
+  }
+
+  [data-slot="radar-chart-radius-label"] {
+    translate: 0.25rem -50%;
   }
 
   /* A polar placeholder sketches one disc, annulus or hexagon in the aspect-locked cell. */
@@ -2566,10 +2750,37 @@
         scale var(--_spring-duration) var(--_spring-easing);
     }
 
-    /* As the entrance starts, each ring's track scales out from the centre, i·80 ms apart. */
-    [data-polar][data-entering] [data-ring-track] {
+    /*
+      As the entrance starts on a chart nothing painted before, each ring's track scales out from
+      the centre, i·80 ms apart. A hydrated chart's tracks stay at rest.
+    */
+    [data-polar][data-grow] [data-ring-track] {
       animation: chart-ring-grow var(--_grow-duration) var(--_grow-easing) calc(var(--chart-slot) * 80ms)
         backwards;
+    }
+
+    /*
+      On a radar nothing painted before, the rings scale out 80 ms apart, the spokes extend 50 ms
+      apart, and the labels fade in over 500 ms from 400 ms, 50 ms apart. A hydrated grid stays.
+    */
+    [data-polar][data-grow] [data-slot="radar-chart-grid-ring"] {
+      animation: chart-ring-grow var(--_grow-duration) var(--_grow-easing) calc(var(--chart-slot) * 80ms)
+        backwards;
+    }
+
+    [data-polar][data-grow] [data-slot="radar-chart-spoke"]:not([data-part="hand"]) {
+      animation: chart-ring-grow var(--_extend-duration) var(--_extend-easing) calc(var(--chart-slot) * 50ms)
+        backwards;
+    }
+
+    [data-polar][data-grow]
+      :is([data-slot="radar-chart-angle-label"], [data-slot="radar-chart-radius-label"]) {
+      animation: chart-fade-in 500ms ease-out calc(400ms + var(--chart-slot, 0) * 50ms) backwards;
+    }
+
+    [data-slot="radar-chart-spoke"][data-part="hand"],
+    [data-radar-series] {
+      transition: opacity 150ms ease-out;
     }
 
     [data-slot="chart-bar-marks"] > [data-intro="fade"],
@@ -2710,6 +2921,7 @@
     [data-slot="chart-points"],
     [data-slot="chart-active-dot"],
     [data-slot="chart-marker"] > svg,
+    [data-radar-series],
     [data-slot="sparkline"],
     [data-slot="chart-swatch"] {
       forced-color-adjust: none;
@@ -2719,6 +2931,8 @@
       stroke: CanvasText;
     }
 
+    [data-slot="radar-chart-grid-ring"],
+    [data-slot="radar-chart-spoke"],
     [data-slot="chart-grid-line"],
     [data-slot="chart-grid-line"][data-zero],
     [data-slot="chart-reference-line"] > svg > line,

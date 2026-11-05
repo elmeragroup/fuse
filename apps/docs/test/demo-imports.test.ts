@@ -29,6 +29,11 @@ const CARVE_OUTS = new Map<string, readonly string[]>([
   // Two months of hours for the month switch's Sparklines, 1,465 values.
   ["chart/demos/chart-month-usage-and-price.tsx", ["./data/no1-household-hourly-2025-09-2025-10"]],
   ["line-chart/demos/line-chart-large.tsx", ["../../chart/demos/data/hourly-year"]],
+  // The 24-hour profile averages the same two months of hours by clock hour.
+  [
+    "radar-chart/demos/radar-chart-hours.tsx",
+    ["../../chart/demos/data/no1-household-hourly-2025-09-2025-10"],
+  ],
   ["date-field/demos/date-field-date-input.tsx", ["react-aria-components"]],
   // Link's router demos show `render` composing a router's link: the docs app's own, and React
   // Aria's, which routes through UiProviders.

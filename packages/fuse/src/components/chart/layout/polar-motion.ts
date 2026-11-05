@@ -39,3 +39,52 @@ export function introDelay(family: PolarIntro, index: number): number {
       return RADAR_INTRO.start + index * RADAR_INTRO.step;
   }
 }
+
+/**
+ * The radar grid's entrance, the Motion table's numbers: rings scale out 80 ms apart, spokes extend
+ * 50 ms apart, and spoke labels fade in over 500 ms from 400 ms, 50 ms apart. `chart.css` writes
+ * the same numbers on the grid's scale-outs and the labels' fade.
+ */
+export const RADAR_GRID_INTRO = {
+  ringStep: 80,
+  spokeStep: 50,
+  labelStart: 400,
+  labelStep: 50,
+  labelFade: 500,
+} as const;
+
+/** What an entrance's span reads: the family, its staggered items, and a radar's rings and spokes. */
+export type EntranceItems = {
+  readonly family: PolarIntro;
+  /** The slices, the rings, or a radar's series. */
+  readonly items: number;
+  /** A radar's rings, 0 otherwise. */
+  readonly rings: number;
+  /** A radar's spokes, 0 otherwise. */
+  readonly spokes: number;
+};
+
+/**
+ * How long an entrance runs from its start until its last item rests, in milliseconds: the last
+ * item's delay plus `--chart-intro`, or for a radar the last ring's, spoke's or label's end if one
+ * ends later.
+ *
+ * @param entrance - The family and its counts.
+ * @param springs - The settle times of the rings' `grow` and the spokes' `extend` springs.
+ * @returns The span.
+ */
+export function entranceSpan(
+  entrance: EntranceItems,
+  springs: { readonly grow: number; readonly extend: number }
+): number {
+  const items = CHART_INTRO_MS + introDelay(entrance.family, Math.max(0, entrance.items - 1));
+  if (entrance.family !== "radar") return items;
+  const { ringStep, spokeStep, labelStart, labelStep, labelFade } = RADAR_GRID_INTRO;
+  const last = (count: number, step: number): number => Math.max(0, count - 1) * step;
+  return Math.max(
+    items,
+    last(entrance.rings, ringStep) + springs.grow,
+    last(entrance.spokes, spokeStep) + springs.extend,
+    labelStart + last(entrance.spokes, labelStep) + labelFade
+  );
+}

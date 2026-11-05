@@ -185,7 +185,12 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = derive([
   // families, the hatch of an estimated slice or ring, and the gauge Track's corners, which
   // measured 2638 bytes on this entry (184262 to 186900). The ceiling keeps about 100 bytes of
   // headroom.
-  { name: "chart", entryFile: "chart.js", measuredGzip: 97044, ceilingGzip: 187000 },
+  // Raised again from 187000 on 2026-11-05. The radar draws: its grid with the zero ring and the
+  // spoke hand, both axes' labels, the Area's, Line's and Dots' writers with the quality runs, the
+  // active dot's ride, the role-list gradients, Glow, and the entrance's span over rings, spokes and
+  // labels, which measured 3612 bytes on this entry (186900 to 190512). The ceiling keeps about 100
+  // bytes of headroom.
+  { name: "chart", entryFile: "chart.js", measuredGzip: 97044, ceilingGzip: 190612 },
   // 2026-10-13: new entry, measured at 29180. Pure wrappers over Base UI's toolbar and its roving focus.
   { name: "toolbar", entryFile: "toolbar.js", measuredGzip: 29180, ceilingGzip: 43770 },
   // 2026-10-12: new entries. Command is Base UI's Autocomplete in the InputGroup, with the Dialog
@@ -561,6 +566,15 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     members: ["Root"],
     measuredGzip: 48586,
   },
+  // 2026-11-05: new row, the typical radar route: Root, Grid, both axes, Area, Line, Legend and
+  // Tooltip, which the owner set beside the whole-namespace row, with the derived ceiling.
+  {
+    name: "chart/RadarChart route",
+    entryFile: "chart.js",
+    exportName: "RadarChart",
+    members: ["Root", "Grid", "AngleAxis", "RadiusAxis", "Area", "Line", "Legend", "Tooltip"],
+    measuredGzip: 91837,
+  },
   // 2026-11-04: new rows, measured at 84628 for the whole ScatterChart namespace and 41808 for its
   // Root alone, each with the derived ceiling.
   { name: "chart/ScatterChart", entryFile: "chart.js", exportName: "ScatterChart", measuredGzip: 84628 },
@@ -645,7 +659,12 @@ export const CSS_BUDGETS: readonly CssBudget[] = derive([
   // hover scale and dims keyed on data-ring, the tracks' scale-out keyframes, and
   // --chart-ring-fill's registration, which measured 675 bytes over the stylesheet (18137 to
   // 18812). The ceiling keeps about 100 bytes of headroom.
-  { name: "chart.css", file: "chart.css", measuredGzip: 10089, ceilingGzip: 18912 },
+  // Raised again from 18912 on 2026-11-05. The radar's rings, zero ring, spokes and hand, its
+  // Area, Line and Dots looks, the hover, selection and highlight dims keyed on data-radar-series,
+  // the Glow, both axes' labels, the grid's scale-outs and the labels' fade, and the forced-colour
+  // rules, which measured 1298 bytes over the stylesheet (18812 to 20110). The ceiling keeps about
+  // 100 bytes of headroom.
+  { name: "chart.css", file: "chart.css", measuredGzip: 10089, ceilingGzip: 20210 },
 ] satisfies readonly Measured<CssBudget>[]);
 
 export const FLAG_RAW_BUDGETS: readonly FlagRawBudget[] = [

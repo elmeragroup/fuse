@@ -228,4 +228,50 @@ describe("hydration (D18)", () => {
       host.remove();
     }
   });
+
+  it("sends a radar's grid, labels and series from the server, and hydrates them as they are", async () => {
+    // Five spokes at 72° steps and a negative reading, so every ring, spoke, vertex and label
+    // position goes through trigonometry the server and each engine must round alike.
+    const spokes = ["NO1", "NO2", "NO3", "NO4", "NO5"].map((area, index) => ({
+      area,
+      index: [12, -8, 4, 20, -3][index] ?? 0,
+    }));
+    function Radar({ onHydrated }: { readonly onHydrated?: () => void }) {
+      return (
+        <LocaleProvider locale="nb-NO">
+          <div style={{ width: 300 }}>
+            <RadarChart.Root
+              data={spokes}
+              config={{ index: { label: "Indeks", color: "chart-1" } }}
+              nameKey="area"
+              aria-label="Indeks">
+              <RadarChart.Grid />
+              <RadarChart.AngleAxis />
+              <RadarChart.RadiusAxis />
+              <RadarChart.Area dataKey="index" />
+              <RadarChart.Line dataKey="index" />
+              <RadarChart.Dots dataKey="index" />
+            </RadarChart.Root>
+            <CommitMarker onCommit={onHydrated} />
+          </div>
+        </LocaleProvider>
+      );
+    }
+    const html = renderToString(<Radar />);
+    expect(html.split('data-slot="radar-chart-angle-label"').length - 1).toBe(5);
+    expect(html).toContain('data-slot="radar-chart-grid-ring" data-zero=""');
+    const host = document.createElement("div");
+    host.innerHTML = html;
+    document.body.append(host);
+    const recover = vi.fn();
+    const hydrated = Promise.withResolvers<void>();
+    const root = hydrateRoot(host, <Radar onHydrated={hydrated.resolve} />, { onRecoverableError: recover });
+    try {
+      await hydrated.promise;
+      expect(recover).not.toHaveBeenCalled();
+    } finally {
+      root.unmount();
+      host.remove();
+    }
+  });
 });

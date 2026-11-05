@@ -41,6 +41,10 @@ import {
   HOURLY_AUTUMN_KWH,
   HOURLY_AUTUMN_START,
 } from "../src/app/(docs)/components/chart/demos/data/no1-household-hourly-2025-09-2025-10";
+import {
+  NO1_HOUSEHOLD_DAILY_2024_10 as WEEKDAYS_LAST_YEAR,
+  NO1_HOUSEHOLD_DAILY_2025_10 as WEEKDAYS_THIS_YEAR,
+} from "../src/app/(docs)/components/radar-chart/demos/radar-chart-weekdays";
 
 const FIXTURES = path.join(docsRoot, "../../packages/fuse/src/components/chart/format/fixtures");
 
@@ -72,15 +76,19 @@ describe("the chart demos' inline data", () => {
     ["the capacity step", CAPACITY_DAYS],
     ["the month against last year", COMPARED_DAYS],
     ["the month switch", SWITCH_OCTOBER],
+    ["the radar's weekdays", WEEKDAYS_THIS_YEAR],
   ] as const)("holds October 2025's days for %s", (_, constant) => {
     expect(JSON.parse(fixtureText("elhub/no1-household-daily-2025-10.json"))).toMatchObject({
       days: constant,
     });
   });
 
-  it("holds October 2024's days", () => {
+  it.each([
+    ["the month against last year", NO1_HOUSEHOLD_DAILY_2024_10],
+    ["the radar's weekdays", WEEKDAYS_LAST_YEAR],
+  ] as const)("holds October 2024's days for %s", (_, constant) => {
     expect(JSON.parse(fixtureText("elhub/no1-household-daily-2024-10.json"))).toMatchObject({
-      days: NO1_HOUSEHOLD_DAILY_2024_10,
+      days: constant,
     });
   });
 

@@ -61,6 +61,7 @@ describe("size-limit harness", () => {
       "chart/RadialChart route",
       "chart/RadialChart.Root",
       "chart/RadarChart.Root",
+      "chart/RadarChart route",
       "chart/ScatterChart",
       "chart/ScatterChart.Root",
       "chart/Sparkline",

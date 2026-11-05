@@ -39,8 +39,11 @@ import type { ChartChangeEventDetails, ChartFigureProps, ChartSelectionChangeRea
 import { CHART_STRINGS } from "./format/chart-strings";
 import { issueKey } from "./layout/errors";
 import type { ChartDataRule, ChartHintRule } from "./layout/errors";
+import { CHART_SPRINGS } from "./layout/motion";
 import { sweepBox } from "./layout/polar-angle";
-import { CHART_INTRO_MS, introDelay } from "./layout/polar-motion";
+import { entranceSpan } from "./layout/polar-motion";
+import type { EntranceItems } from "./layout/polar-motion";
+import { springEasing } from "./layout/spring";
 
 /** The figure's slot per family, which the stylesheet and the density roles read. */
 const SLOTS = {
@@ -73,6 +76,24 @@ export type PolarRootProps = {
   readonly children: ReactNode;
 };
 
+/** The spring settle times a radar's grid entrance takes, sampled once. */
+const ENTRANCE_SPRINGS = {
+  grow: springEasing(CHART_SPRINGS.grow).duration,
+  extend: springEasing(CHART_SPRINGS.extend).duration,
+};
+
+/** What an entrance's span counts: the slices, the rings, or a radar's series, rings and spokes. */
+function entranceItems(model: PolarModel): EntranceItems {
+  const { drawing } = model;
+  if (drawing.kind !== "radar") return { family: model.family, items: model.count, rings: 0, spokes: 0 };
+  return {
+    family: "radar",
+    items: drawing.radar.series.length,
+    rings: drawing.radar.ticks.length,
+    spokes: drawing.radar.count,
+  };
+}
+
 /** The active option and series, or null while nothing is active. */
 function activeOf(snapshot: ChartSnapshot, count: number): ActiveSlot {
   const { active, near } = snapshot;
@@ -88,6 +109,12 @@ function markActive(figure: HTMLElement, snapshot: ChartSnapshot, active: Active
   writeAttribute(figure, "data-drawn", snapshot.phase === "started" ? "" : null);
   // The active option's place, which a pie's slices pop and dim against with no React commit.
   writeStyle(figure, "--chart-active", active === null ? null : String(active.slot));
+  // The near series' place, which a radar's series dim against and its nearest fill strengthens by.
+  writeStyle(
+    figure,
+    "--chart-near",
+    active === null || snapshot.near === null ? null : String(snapshot.near)
+  );
 }
 
 /**
@@ -264,30 +291,54 @@ export function usePolarRoot(props: PolarRootProps): PolarRootState {
   const entrance = figureProps["data-intro"] !== "none" && !reduced;
   useEntrance(store, motion, rootRef, cellRef, entrance);
   // While the entrance plays, the figure carries `data-entering`, so the centre's digits count up
-  // over the entrance's span instead of rolling on their own spring.
-  const lastItem = useRef(model.count - 1);
+  // over the entrance's span instead of rolling on their own spring. A grid or track the first
+  // paint already showed never scales out again: only a chart the browser mounted with no server
+  // HTML, or one that leaves its empty state, carries `data-grow` beside it, which the scale-outs
+  // read.
+  const items = useRef<EntranceItems>(entranceItems(model));
+  const [served] = useState(() => !clientMount);
+  const wasEmpty = useRef(model.empty);
+  const marking = useRef<(grow: boolean) => void>(() => undefined);
   useLayoutEffect(() => {
-    lastItem.current = model.count - 1;
+    items.current = entranceItems(model);
   });
   useLayoutEffect(() => {
     if (!entrance) return undefined;
     let timer: number | null = null;
-    const watch = (): void => {
+    const mark = (grow: boolean): void => {
       const figure = rootRef.current;
-      if (figure === null || timer !== null || store.get().phase !== "started") return;
+      if (figure === null) return;
+      if (timer !== null) window.clearTimeout(timer);
       writeAttribute(figure, "data-entering", "");
-      const span = CHART_INTRO_MS + introDelay(model.family, Math.max(0, lastItem.current));
+      writeAttribute(figure, "data-grow", grow ? "" : null);
+      const span = entranceSpan(items.current, ENTRANCE_SPRINGS);
       timer = window.setTimeout(() => {
+        timer = null;
         writeAttribute(figure, "data-entering", null);
+        writeAttribute(figure, "data-grow", null);
       }, span);
+    };
+    marking.current = mark;
+    let started = false;
+    const watch = (): void => {
+      if (started || store.get().phase !== "started") return;
+      started = true;
+      mark(!served);
     };
     watch();
     const stop = store.subscribe(watch);
     return () => {
       stop();
+      marking.current = () => undefined;
       if (timer !== null) window.clearTimeout(timer);
     };
-  }, [store, entrance, model.family]);
+  }, [store, entrance, served]);
+  // A chart that leaves its empty state grows its grid and tracks, as nothing painted them before.
+  useLayoutEffect(() => {
+    const before = wasEmpty.current;
+    wasEmpty.current = model.empty;
+    if (before && !model.empty && store.get().phase === "started") marking.current(true);
+  }, [model.empty, store]);
 
   const warned = useRef(new Set<string>());
   const warnOnce = useCallback(

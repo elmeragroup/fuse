@@ -59,6 +59,7 @@ describe("chart scenario demos in Chromium", () => {
     "scatter-chart",
     "pie-chart",
     "radial-chart",
+    "radar-chart",
     "sparkline",
     "chart",
   ])("on the %s page", (slug) => {

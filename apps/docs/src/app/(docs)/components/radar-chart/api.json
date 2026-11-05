@@ -169,7 +169,7 @@
           "origin": "declared",
           "type": "\"circle\" | \"polygon\" | undefined",
           "shortType": "Union",
-          "defaultValue": null,
+          "defaultValue": "\"polygon\"",
           "description": "The ring shape. \"polygon\" by default.",
           "required": false
         }
@@ -313,7 +313,7 @@
           "origin": "declared",
           "type": "\"dashed\" | \"default\" | \"quiet\" | undefined",
           "shortType": "Union",
-          "defaultValue": null,
+          "defaultValue": "\"default\"",
           "description": "The outline's look. \"default\" by default.",
           "required": false
         }
@@ -358,7 +358,7 @@
           "origin": "declared",
           "type": "\"default\" | \"ring\" | undefined",
           "shortType": "Union",
-          "defaultValue": null,
+          "defaultValue": "\"default\"",
           "description": "The dot's look. \"default\" by default.",
           "required": false
         }
