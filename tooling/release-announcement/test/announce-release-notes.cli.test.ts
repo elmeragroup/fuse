@@ -97,8 +97,8 @@ inScratchRepository("announcing a release with a long changelog", (it) => {
     return `${open.repeat(count)}${mid}${close.repeat(count)}`;
   };
 
-  /** The production time limit. */
-  const production = {};
+  /** The production time limit, isolated-notes.ts's default, which the harness otherwise raises. */
+  const production = { NOTES_TIME_LIMIT: "10 seconds" };
 
   /**
    * A second's limit, for sections that keep micromark busy for minutes and so always meet the

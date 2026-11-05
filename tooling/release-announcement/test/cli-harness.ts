@@ -144,8 +144,17 @@ export const releaseJson = (kind: "Stable" | "Canary", commit: string, version: 
   );
 
 /**
+ * How long the notify step's notes renderer may take in these runs, unless a test sets its own.
+ * Production allows 10 seconds, and on a loaded `ci:checks` runner starting the renderer and
+ * parsing 6 KB of nested lists has taken longer, which made the step link notes a test expected
+ * shown. The production limit is isolated-notes.test.ts's; a run that tests it sets it. This one
+ * stays under Vitest's 60-second test timeout, so a renderer that never answers still ends the step.
+ */
+const NOTES_TIME_LIMIT = "45 seconds";
+
+/**
  * Runs the notify step in the scratch repository for `release` against Slack at `url`, with both
- * channels and the token set.
+ * channels and the token set, and the notes renderer given `NOTES_TIME_LIMIT`.
  *
  * @param url - Slack's API URL.
  * @param release - The publish job's `release` output.
@@ -167,6 +176,7 @@ export const announceStep = (
       SLACK_CANARY_CHANNEL: "C0CANARY",
       SLACK_BOT_TOKEN: SLACK_TOKEN,
       RELEASE: release,
+      NOTES_TIME_LIMIT,
       ...overrides,
     });
   });
