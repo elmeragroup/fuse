@@ -223,7 +223,11 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = derive([
   // baseline rule (B2), references bounded to the dial (B5), formats compared in any key order
   // (B4), and the orientation the cartesian parts carry, which measured 968 bytes on this entry
   // (207867 to 208835). The ceiling keeps about 100 bytes of headroom.
-  { name: "chart", entryFile: "chart.js", measuredGzip: 97044, ceilingGzip: 208935 },
+  // Fix round 4 on 2026-11-06: the step clip's one-sided edges and the one-pass clip and split (B1,
+  // Q1), the 12 o'clock step on a split line, references checked against the domain (B2), and
+  // undefined format options dropped before comparing (Q2), 208835 to 209108. The ceiling keeps
+  // about 100 bytes of headroom.
+  { name: "chart", entryFile: "chart.js", measuredGzip: 97044, ceilingGzip: 209208 },
   // 2026-10-13: new entry, measured at 29180. Pure wrappers over Base UI's toolbar and its roving focus.
   { name: "toolbar", entryFile: "toolbar.js", measuredGzip: 29180, ceilingGzip: 43770 },
   // 2026-10-12: new entries. Command is Base UI's Autocomplete in the InputGroup, with the Dialog
@@ -540,7 +544,11 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // B7), routes that end on their vertex (B8), the Column's and Area's baseline rule (B2),
     // references bounded to the dial (B5), formats compared in any key order (B4), and each Root's
     // depth on its figure (B6), 123645 to 124386. The ceiling keeps about 100 bytes of headroom.
-    ceilingGzip: 124486,
+    // Fix round 4 on 2026-11-06: the step clip's one-sided edges and the one-pass clip and split
+    // (B1, Q1), the 12 o'clock step on a split line, references checked against the domain (B2),
+    // and undefined format options dropped before comparing (Q2), 124386 to 124639. The ceiling
+    // keeps about 100 bytes of headroom.
+    ceilingGzip: 124739,
   },
   {
     name: "chart/Chart.Root",
@@ -802,7 +810,11 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // B7), routes that end on their vertex (B8), the Column's and Area's baseline rule (B2),
     // references bounded to the dial (B5), formats compared in any key order (B4), and each Root's
     // depth on its figure (B6), 102986 to 103601. The ceiling keeps about 100 bytes of headroom.
-    ceilingGzip: 103701,
+    // Fix round 4 on 2026-11-06: the step clip's one-sided edges and the one-pass clip and split
+    // (B1, Q1), the 12 o'clock step on a split line, references checked against the domain (B2),
+    // and undefined format options dropped before comparing (Q2), 103601 to 103832. The ceiling
+    // keeps about 100 bytes of headroom.
+    ceilingGzip: 103932,
   },
   // 2026-11-04: new rows, measured at 84628 for the whole ScatterChart namespace and 41808 for its
   // Root alone, each with the derived ceiling.

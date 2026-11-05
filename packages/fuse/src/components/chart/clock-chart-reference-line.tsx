@@ -67,8 +67,10 @@ export function ClockChartReferenceLine({ style, ...props }: ClockChartReference
   let place: LabelPlace;
   if (props.y !== undefined) {
     const radius = clock.radius(props.y);
-    // A value outside the radius domain, inside the hole or past the rim, draws nothing (B5).
-    const inside = radius >= clock.inner - 1e-9 && radius <= 1 + 1e-9;
+    // A value outside the radius domain draws nothing (B5). It reads the value domain, since the
+    // area-true scale clamps a value below it to a dial with no hole's centre (r4 B2).
+    const [min, max] = clock.domain;
+    const inside = props.y >= min && props.y <= max;
     d = inside ? ringPath(radius) : "";
     text = inside
       ? label?.replace(

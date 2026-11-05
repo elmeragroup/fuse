@@ -13,8 +13,8 @@ import { sameItems } from "./layout/same-items";
 
 /**
  * Whether two prop values say the same thing, one level deep, as an inline literal rebuilds them:
- * the same value, two lists of the same items, or two plain objects with the same fields in any
- * order.
+ * the same value, two lists of the same items, or two plain objects with the same defined fields
+ * in any order.
  *
  * @param a - One value.
  * @param b - The other.
@@ -27,8 +27,9 @@ export function sameShallow<T>(a: T, b: T): boolean {
   if (typeof a !== "object" || typeof b !== "object" || a === null || b === null) return false;
   if (Object.getPrototypeOf(a) !== Object.prototype || Object.getPrototypeOf(b) !== Object.prototype)
     return false;
-  const left = Object.entries(a);
-  const right = new Map(Object.entries(b));
+  // An option set to undefined reads as one left out, as a style or Intl options read it.
+  const left = Object.entries(a).filter(([, value]) => value !== undefined);
+  const right = new Map(Object.entries(b).filter(([, value]) => value !== undefined));
   return (
     left.length === right.size &&
     left.every(([key, value]) => right.has(key) && Object.is(value, right.get(key)))

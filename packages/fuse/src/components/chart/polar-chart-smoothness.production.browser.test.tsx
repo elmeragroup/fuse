@@ -1,6 +1,7 @@
 // The polar smoothness judge, in Chromium with React's production build, as
 // `chart-smoothness.production.browser.test.tsx` judges the cartesian marks. Units under test: a
-// 32-slice pie, a 24-spoke radar of two series and a 168-slot week dial, each through its entrance
+// 32-slice pie, a 24-spoke radar of two series, a 168-slot week dial and an 8,760-slot year dial
+// whose every other hour is estimated, drawn as a step-after Line (r4 Q1), each through its entrance
 // and through a data update. Oracle: SPEC's L8 long-task check and motion-decision.md "Judges", no
 // long task over 50 ms from the mount's first frame to the entrance's end, nor through an update's
 // commit and its 480 ms tween. vitest.config.ts runs this project alone, after every other one.
@@ -16,6 +17,9 @@ import "./chart.css";
 import { ClockChart } from "./clock-chart-namespace";
 import { PieChart } from "./pie-chart-namespace";
 import { RadarChart } from "./radar-chart-namespace";
+
+/** 1 January 2025 in Oslo, the year's first hour. 2025 holds 8,760 hours. */
+const NEW_YEAR = Date.parse("2024-12-31T23:00:00Z");
 
 /** A sawtooth from 1 to 7 at an index, shifted per update. */
 function tooth(index: number, shift: number): number {
@@ -82,6 +86,26 @@ function Week168({ phase }: { readonly phase: number }): ReactElement {
   );
 }
 
+function Year8760({ phase }: { readonly phase: number }): ReactElement {
+  return (
+    <ClockChart.Root
+      data={Array.from({ length: 8760 }, (_, hour) => ({
+        start: NEW_YEAR + hour * 3_600_000,
+        kwh: tooth(hour, phase),
+        q: hour % 2 === 1 ? ("estimated" as const) : ("measured" as const),
+      }))}
+      config={{ kwh: { label: "kWh", color: "chart-1", qualityKey: "q" } }}
+      xKey="start"
+      cycle="year"
+      interval="hour"
+      aria-label="8 760 hours">
+      <ClockChart.Grid />
+      <ClockChart.AngleAxis />
+      <ClockChart.Line dataKey="kwh" curve="step-after" />
+    </ClockChart.Root>
+  );
+}
+
 /** The subpaths every path in a slot's layers draws, one per M. */
 function subpaths(host: HTMLElement, selector: string): number {
   // DOM audit: polar marks are aria-hidden plot output, read by their slot.
@@ -112,6 +136,13 @@ const CASES = [
     Chart: Week168,
     items: (host: HTMLElement) => subpaths(host, '[data-slot="clock-chart-column"] path'),
     count: 168,
+  },
+  {
+    name: "an 8,760-slot year dial with every other hour estimated",
+    Chart: Year8760,
+    // The odd hours' dashes, each its own piece across its own slot.
+    items: (host: HTMLElement) => subpaths(host, '[data-slot="clock-chart-line-path"][data-part="marked"]'),
+    count: 4380,
   },
 ] as const;
 

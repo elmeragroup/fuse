@@ -32,7 +32,10 @@ export function cached<TFormat>(
   create: () => TFormat
 ): TFormat {
   // The options in key order, so the same options written in another order share one entry.
-  const sorted = Object.entries(options).toSorted(([a], [b]) => (a < b ? -1 : 1));
+  // An option set to undefined reads as one left out, as Intl reads it.
+  const sorted = Object.entries(options)
+    .filter(([, value]) => value !== undefined)
+    .toSorted(([a], [b]) => (a < b ? -1 : 1));
   const key = `${locale}\u0000${JSON.stringify(sorted)}`;
   let format = cache.get(key);
   if (format === undefined) {

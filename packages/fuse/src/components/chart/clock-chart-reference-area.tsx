@@ -76,12 +76,15 @@ export function ClockChartReferenceArea({ style, ...props }: ClockChartReference
   let text: string | undefined;
   let place: LabelPlace;
   if (props.y1 !== undefined) {
-    const [a, b] = [clock.radius(props.y1), clock.radius(props.y2)];
     // The band clips to the radius domain, from the hole to the rim, and a band outside it draws
-    // nothing (B5).
-    const low = Math.max(clock.inner, Math.min(a, b));
-    const high = Math.min(1, Math.max(a, b));
-    const inside = high > low;
+    // nothing (B5). It clips the values, since the area-true scale clamps a value below the domain
+    // to a dial with no hole's centre (r4 B2).
+    const [min, max] = clock.domain;
+    const from = Math.max(min, Math.min(props.y1, props.y2));
+    const to = Math.min(max, Math.max(props.y1, props.y2));
+    const inside = to > from;
+    const low = clock.radius(from);
+    const high = clock.radius(to);
     d = inside ? sectorPath(0, 360, low, high) : "";
     const valueFormat = props.format ?? clock.format;
     text = inside

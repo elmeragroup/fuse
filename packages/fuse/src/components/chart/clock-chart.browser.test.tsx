@@ -48,6 +48,7 @@ function Dial({
   data = hours(VALUES),
   config = { kwh: { label: "kWh", color: "chart-1" } },
   scale,
+  inner,
   now,
   size,
   children,
@@ -55,6 +56,8 @@ function Dial({
   readonly data?: readonly Record<string, number | string>[];
   readonly config?: ChartConfig;
   readonly scale?: "radial" | "linear";
+  /** The hole's radius as a share of the outer radius, 0.3 by default. */
+  readonly inner?: number;
   readonly now?: number;
   /** The dial's `--chart-polar-size`, as a consumer sets it. */
   readonly size?: string;
@@ -70,6 +73,7 @@ function Dial({
           cycle="day"
           interval="hour"
           radiusScale={scale}
+          innerRadius={inner}
           now={now}
           data-intro="none"
           style={size === undefined ? undefined : { "--chart-polar-size": size }}
@@ -209,6 +213,82 @@ describe("a threshold ring (D23)", () => {
     expect(getComputedStyle(solid ?? area).fill).toMatch(/steps/u);
     expect(getComputedStyle(marked ?? area).mask).toMatch(/^url\(/u);
   });
+
+  /** A series of its own, its hour 6 estimated. */
+  const ALONE: ChartConfig = { kwh: { label: "kWh", color: "chart-1", qualityKey: "q" } };
+  /** The same series stacked on a base load. */
+  const STACKED: ChartConfig = {
+    base: { label: "Grunnlast", color: "chart-2", stack: "a" },
+    kwh: { label: "kWh", color: "chart-1", qualityKey: "q", stack: "a" },
+  };
+
+  it.each(
+    (["step-after", "step-before", "step"] as const).flatMap((curve) => [
+      // Hour 5 reads 100 kWh beside 10 everywhere else, on a [0, 100] domain: under "linear" with
+      // no hole a reading's radius is v / 100, so hour 6's band runs from 0 to 0.1.
+      [curve, "100 kWh, then 10 kWh", { kwh: 10 }, { kwh: 100 }, ALONE, 0, 0.1] as const,
+      // A stack of 35 kWh, 60 at hour 5, under 10 kWh, on a [0, 70] domain: hour 6's band runs
+      // from 35 / 70 = 0.5 to 45 / 70.
+      [
+        curve,
+        "a stack's stepping base",
+        { base: 35, kwh: 10 },
+        { base: 60, kwh: 10 },
+        STACKED,
+        0.5,
+        45 / 70,
+      ] as const,
+    ])
+  )(
+    "keeps a %s Area's hatch over %s inside hour 6 and inside the fill (r4 B1)",
+    async (curve, _, usual, hour5, config, low, high) => {
+      const rows = Array.from({ length: 24 }, (_, hour) => ({
+        start: DAY + hour * HOUR,
+        ...(hour === 5 ? hour5 : usual),
+        q: hour === 6 ? "estimated" : "measured",
+      }));
+      const { host } = renderThemed(
+        <Dial data={rows} config={config} scale="linear" inner={0}>
+          <ClockChart.Area dataKey="kwh" curve={curve} variant="solid" />
+        </Dial>
+      );
+      await painted();
+      const area = clockLayer(host, "clock-chart-area");
+      // DOM audit: the area's paths are aria-hidden plot output, read by their part.
+      const solid = area.querySelector<SVGPathElement>('[data-part="solid"]');
+      const marked = area.querySelector<SVGPathElement>('[data-part="marked"]');
+      if (solid === null || marked === null) throw new Error("no area paths");
+      const at = (angle: number, radius: number): DOMPoint =>
+        new DOMPoint(radius * Math.sin((angle * Math.PI) / 180), -radius * Math.cos((angle * Math.PI) / 180));
+      const middle = (low + high) / 2;
+      // Just inside each edge of hour 6, from 90° to 105°, its band is hatched, and nothing above
+      // its top or below its base is; just outside, nothing is.
+      for (const angle of [90.5, 104.5]) {
+        expect(
+          [middle, high + 0.05, low - 0.03]
+            .filter((radius) => radius > 0)
+            .map((radius) => marked.isPointInFill(at(angle, radius))),
+          `${String(angle)}°`
+        ).toEqual(low > 0 ? [true, false, false] : [true, false]);
+      }
+      for (const angle of [89.5, 105.5]) {
+        expect(
+          [middle, 0.9].map((radius) => marked.isPointInFill(at(angle, radius))),
+          `${String(angle)}°`
+        ).toEqual([false, false]);
+      }
+      // Every point the hatch covers lies inside the fill.
+      const strays: string[] = [];
+      for (let angle = 85; angle <= 110; angle += 0.5) {
+        for (let radius = 0.02; radius <= 1; radius += 0.02) {
+          if (marked.isPointInFill(at(angle, radius)) && !solid.isPointInFill(at(angle, radius))) {
+            strays.push(`${String(angle)}° at ${radius.toFixed(2)}`);
+          }
+        }
+      }
+      expect(strays).toEqual([]);
+    }
+  );
 
   it("glows a value-painted line through a filter that blurs its own pixels at the drawn radius", async () => {
     const { host } = renderThemed(
@@ -644,10 +724,10 @@ describe("a reference inside the dial's bounds (B5)", () => {
   // references do in the plot, and an instant outside the cycle draws nothing either.
   const rows = hours(Array.from({ length: 24 }, (_, hour) => (hour % 2 === 0 ? 100 : 200)));
 
-  /** The smallest and largest radius a reference path visits, its M points and its arcs' ends. */
+  /** The smallest and largest radius a reference path visits: its M and L points and its arcs' ends. */
   function radiusSpan(d: string): readonly [number, number] | null {
     const ends = [
-      ...d.matchAll(/M(-?[\d.]+),(-?[\d.]+)|A[\d.]+,[\d.]+,[\d.]+,[01],[01],(-?[\d.]+),(-?[\d.]+)/gu),
+      ...d.matchAll(/[ML](-?[\d.]+),(-?[\d.]+)|A[\d.]+,[\d.]+,[\d.]+,[01],[01],(-?[\d.]+),(-?[\d.]+)/gu),
     ].map((match) => Math.hypot(Number(match[1] ?? match[3]), Number(match[2] ?? match[4])));
     return ends.length === 0 ? null : [Math.min(...ends), Math.max(...ends)];
   }
@@ -683,6 +763,55 @@ describe("a reference inside the dial's bounds (B5)", () => {
   ] as const)("draws %s", async (_, reference, span, label) => {
     const { host } = renderThemed(
       <Dial data={rows} scale="linear">
+        {reference}
+      </Dial>
+    );
+    await painted();
+    // DOM audit: a reference's path and label are aria-hidden plot output, read by their slot and part.
+    const d = host.querySelector('[data-slot="clock-chart-reference-path"]')?.getAttribute("d") ?? "";
+    const drawn = radiusSpan(d);
+    if (span === null) expect(drawn).toBeNull();
+    else {
+      expect(drawn?.[0]).toBeCloseTo(span[0], 3);
+      expect(drawn?.[1]).toBeCloseTo(span[1], 3);
+    }
+    const text =
+      host.querySelector('[data-slot^="clock-chart-reference"] > [data-part="label"]')?.textContent ?? null;
+    expect(text).toBe(label);
+  });
+
+  // r4 B2: with no hole the area-true scale clamps a value below the domain to the centre, so the
+  // bounds come from the value domain, 0 to 200, never from the radius. A value v sits at √(v / 200):
+  // 50 at 0.5 and 100 at about 0.7071. A band clipped to the centre is a full disc, which d3 writes
+  // as two half arcs with no centre point.
+  it.each([
+    [
+      "a line inside the range, its ring at 0.5",
+      <ClockChart.ReferenceLine key="r" y={50} label="Mål {value}" />,
+      [0.5, 0.5],
+      "Mål 50",
+    ],
+    [
+      "a line below the domain",
+      <ClockChart.ReferenceLine key="r" y={-100} label="Mål {value}" />,
+      null,
+      null,
+    ],
+    [
+      "a band reaching below the domain, clipped to the centre",
+      <ClockChart.ReferenceArea key="r" y1={-100} y2={50} label="Lav" />,
+      [0.5, 0.5],
+      "Lav",
+    ],
+    [
+      "a band below the domain",
+      <ClockChart.ReferenceArea key="r" y1={-200} y2={-100} label="Lav" />,
+      null,
+      null,
+    ],
+  ] as const)("draws %s on a dial with no hole", async (_, reference, span, label) => {
+    const { host } = renderThemed(
+      <Dial data={rows} inner={0}>
         {reference}
       </Dial>
     );

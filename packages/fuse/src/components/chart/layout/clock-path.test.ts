@@ -286,6 +286,137 @@ describe("a step curve's quality (Q3, B7)", () => {
   });
 });
 
+describe("a step area's hatch at its slot's edges (r4 B1)", () => {
+  // A step draws each reading flat across its slot, so the hatch of hour 6, from 90° to 105°, must
+  // take hour 6's own top and base right up to each edge, not the neighbour's on the far side of
+  // the step. Hour 5 reads 0.9 beside 0.45 everywhere else, and in the stacked case its base sits at
+  // 0.6 beside 0.35 everywhere else, so the edge at 90° jumps on both curves.
+  const xy = (angle: number, radius: number): readonly [number, number] => [
+    radius * Math.sin((angle * Math.PI) / 180),
+    -radius * Math.cos((angle * Math.PI) / 180),
+  ];
+  /** The loop's numbers for 24 slots with a tip and a base each. */
+  const day = (tip: (slot: number) => number, base: (slot: number) => number): number[] => [
+    1,
+    ...Array.from({ length: 24 }, (_, slot) => [slot * 15, (slot + 1) * 15, base(slot), tip(slot)]).flat(),
+  ];
+  const slots = { ...readings(24), marked: Array.from({ length: 24 }, (_, slot) => slot === 6) };
+
+  it.each(
+    (["step-after", "step-before", "step"] as const).flatMap((curve) => [
+      [
+        curve,
+        "unequal readings",
+        day(
+          (slot) => (slot === 5 ? 0.9 : 0.45),
+          () => 0.3
+        ),
+        0.3,
+        0.45,
+      ] as const,
+      [
+        curve,
+        "a stack's stepping base",
+        day(
+          (slot) => (slot === 5 ? 0.9 : 0.45),
+          (slot) => (slot === 5 ? 0.6 : 0.35)
+        ),
+        0.35,
+        0.45,
+      ] as const,
+    ])
+  )("keeps a %s area's hatch over %s inside hour 6 and inside the fill", (curve, _, values, base, tip) => {
+    const { solid, marked } = clockArea(values, slots, curve);
+    const middle = (base + tip) / 2;
+    // Just inside each edge, hour 6's band is hatched; just outside, nothing is.
+    for (const angle of [90.5, 104.5]) {
+      expect(insideEvenOdd(marked, ...xy(angle, middle)), `${String(angle)}° in the band`).toBe(true);
+      expect(insideEvenOdd(marked, ...xy(angle, tip + 0.05)), `${String(angle)}° above the tip`).toBe(false);
+      expect(insideEvenOdd(marked, ...xy(angle, base - 0.02)), `${String(angle)}° below the base`).toBe(
+        false
+      );
+    }
+    for (const angle of [89.5, 105.5]) {
+      for (const radius of [middle, 0.7]) {
+        expect(insideEvenOdd(marked, ...xy(angle, radius)), `${String(angle)}° at ${String(radius)}`).toBe(
+          false
+        );
+      }
+    }
+    // Every point the hatch covers lies inside the fill.
+    for (let angle = 85; angle <= 110; angle += 0.25) {
+      for (let radius = 0.2; radius <= 1; radius += 0.02) {
+        if (insideEvenOdd(marked, ...xy(angle, radius))) {
+          expect(
+            insideEvenOdd(solid, ...xy(angle, radius)),
+            `${String(angle)}° at ${radius.toFixed(2)}`
+          ).toBe(true);
+        }
+      }
+    }
+  });
+});
+
+describe("an hourly year's quality (r4 Q1)", () => {
+  // 2025 holds 8,760 hours, every other one estimated, drawn as a step. A Line redraws on every
+  // entrance frame, so one call must cost what it cost before the step edges came in (about 9 ms
+  // here), and an Area what its fill costs: each piece found in one pass, never a scan per edge.
+  // The fastest of seven calls is the cost, since a busy machine only slows the others.
+  const tips = Array.from({ length: 8760 }, (_, hour) => 0.4 + (0.5 * ((hour * 7) % 13)) / 13);
+  const values = numbers(tips);
+  const slots: ClockSlots = {
+    ...readings(8760),
+    marked: Array.from({ length: 8760 }, (_, hour) => hour % 2 === 1),
+  };
+  const fastest = (draw: () => void): number => {
+    const costs: number[] = [];
+    for (let call = 0; call < 7; call += 1) {
+      const start = performance.now();
+      draw();
+      costs.push(performance.now() - start);
+    }
+    return Math.min(...costs);
+  };
+  const pieces = (d: string): number => d.split("M").length - 1;
+
+  it("steps back to the first reading at 12 o'clock when a closed step Line splits", () => {
+    // A step-after line holds each reading to its slot's end and steps there to the next one, so at
+    // 12 o'clock it steps from the last reading, 0.8, to the first, 0.5, as it steps from 0.5 to 0.6
+    // at 90°. The step opens slot 0's piece, which is plain. A cell step's turn starts at slot 0's
+    // start, where this step falls; the midpoint step's starts at slot 0's middle, past it.
+    const quarters = numbers([0.5, 0.6, 0.7, 0.8]);
+    const marks = { ...readings(4), marked: [false, true, false, true] };
+    for (const curve of ["step-after", "step-before"] as const) {
+      const { solid, marked } = clockLine(quarters, marks, curve);
+      expect(
+        radii(solid)
+          .slice(0, 2)
+          .map((radius) => radius.toFixed(3)),
+        curve
+      ).toEqual(["0.800", "0.500"]);
+      expect(
+        radii(marked)
+          .slice(0, 3)
+          .map((radius) => radius.toFixed(3)),
+        curve
+      ).toEqual(["0.500", "0.500", "0.600"]);
+    }
+  });
+
+  it("dashes each estimated hour of a step-after Line on its own, in about the time a plain one takes", () => {
+    const { solid, marked } = clockLine(values, slots, "step-after");
+    // The odd hours are dashed and the even ones plain, each across its own slot.
+    expect([pieces(solid), pieces(marked)]).toEqual([4380, 4380]);
+    expect(fastest(() => clockLine(values, slots, "step-after"))).toBeLessThan(25);
+  });
+
+  it("hatches each estimated hour of a step-after Area on its own, in about the time its fill takes", () => {
+    const { marked } = clockArea(values, slots, "step-after");
+    expect(pieces(marked)).toBe(4380);
+    expect(fastest(() => clockArea(values, slots, "step-after"))).toBeLessThan(40);
+  });
+});
+
 describe("the columns", () => {
   it("draws one wedge per reading in its group", () => {
     const groups = clockWedges(

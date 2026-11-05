@@ -20,7 +20,7 @@ import {
 } from "../../../test/chart/pie";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
-import type { ChartConfig, ChartQuality } from "./chart-types";
+import type { ChartConfig, ChartQuality, ValueFormat } from "./chart-types";
 import "./chart.css";
 import { PieChart } from "./pie-chart-namespace";
 import { RadialChart } from "./radial-chart-namespace";
@@ -460,14 +460,23 @@ describe("the centre (section 8.13)", () => {
     expect(centreText(host, "pie-chart-center-value")).toBe("");
   });
 
-  // B4: two formats that name the same options in another key order are one format. Unit under
-  // test: the centre's total, maximum and share. Oracle: the same chart with identical formats.
-  it.each(["pie", "radial"] as const)(
-    "prints a %s's totals for formats that differ only in key order, as for identical ones",
-    (family) => {
-      const energy = { preset: "energy", unit: "kWh" } as const;
-      const reordered = { unit: "kWh", preset: "energy" } as const;
-      const centre = (second: typeof energy | typeof reordered): string[] => {
+  // B4 and r4 Q2: two formats that name the same options, in another key order or with an option
+  // set to undefined, which prints as if omitted, are one format. Unit under test: the centre's
+  // total, maximum and share. Oracle: the same chart with identical formats.
+  const energy: ValueFormat = { preset: "energy", unit: "kWh" };
+  it.each(
+    (["pie", "radial"] as const).flatMap((family) => [
+      [family, "another key order", { unit: "kWh", preset: "energy" }] as const,
+      [
+        family,
+        "an option set to undefined",
+        { preset: "energy", unit: "kWh", maximumFractionDigits: undefined },
+      ] as const,
+    ])
+  )(
+    "prints a %s's totals for formats that differ only in %s, as for identical ones",
+    (family, _, variant: ValueFormat) => {
+      const centre = (second: ValueFormat): string[] => {
         const config = {
           varme: { label: "Varme", color: "chart-1", format: energy },
           elbil: { label: "Elbil", color: "chart-2", format: second },
@@ -524,7 +533,7 @@ describe("the centre (section 8.13)", () => {
       // 100 and 50 kWh print a total either way, and a radial chart their 150 of 300 too.
       expect(identical[0]).not.toBe("");
       if (family === "radial") expect(identical.slice(1).every((text) => text !== "")).toBe(true);
-      expect(centre(reordered)).toEqual(identical);
+      expect(centre(variant)).toEqual(identical);
     }
   );
 

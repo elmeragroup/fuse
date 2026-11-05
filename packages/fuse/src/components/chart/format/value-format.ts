@@ -194,8 +194,9 @@ function formatPreset(
 }
 
 /**
- * Whether two value formats name the same options, in any key order, so a format written in
- * another order prints as the same one and shares a total with it (B4).
+ * Whether two value formats name the same options, in any key order and with an option set to
+ * undefined read as left out, so a format written either way prints as the same one and shares a
+ * total with it (B4).
  *
  * @param a - One format.
  * @param b - The other.
@@ -203,8 +204,9 @@ function formatPreset(
  */
 export function sameFormat(a: ValueFormat, b: ValueFormat): boolean {
   if (a === b) return true;
-  const left = Object.entries(a);
-  const right = new Map(Object.entries(b));
+  // An option set to undefined reads as one left out, as Intl and the formatters read it.
+  const left = Object.entries(a).filter(([, value]) => value !== undefined);
+  const right = new Map(Object.entries(b).filter(([, value]) => value !== undefined));
   return (
     left.length === right.size &&
     left.every(([key, value]) => right.has(key) && Object.is(value, right.get(key)))

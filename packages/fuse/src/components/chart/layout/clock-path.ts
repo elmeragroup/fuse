@@ -292,22 +292,58 @@ function runCurve(
   return clip(sampleCurve(extended, curve), first.angle, first.angle + 360);
 }
 
-/** The radius of a sampled curve at an angle, by its two samples either side. */
-function radiusAt(line: readonly ClockPoint[], angle: number): number {
-  let index = 1;
-  while (index < line.length - 1 && (line[index]?.angle ?? 0) < angle) index += 1;
+/**
+ * The radius a sampled curve reaches an angle at, from the index of its first sample at or past the
+ * angle: the two samples either side, and on a step's edge, where several share the angle, the first.
+ */
+function reaching(line: readonly ClockPoint[], atOrPast: number, angle: number): number {
+  const index = Math.min(Math.max(atOrPast, 1), line.length - 1);
   const a = line[index - 1] ?? { angle, radius: 0 };
   const b = line[index] ?? a;
   const span = b.angle - a.angle;
   return span === 0 ? b.radius : a.radius + ((b.radius - a.radius) * (angle - a.angle)) / span;
 }
 
-/** The part of a sampled curve between two angles, its ends cut where they fall. */
+/**
+ * The radius a sampled curve leaves an angle at, from the index of its first sample past the angle:
+ * its last sample at the angle, where a step's edge stacks several, or the interpolation across it.
+ */
+function leaving(line: readonly ClockPoint[], past: number, angle: number): number {
+  const index = Math.min(Math.max(past - 1, 0), line.length - 1);
+  const a = line[index] ?? { angle, radius: 0 };
+  const b = line[index + 1] ?? a;
+  if (a.angle === angle || b.angle === a.angle) return a.radius;
+  return a.radius + ((b.radius - a.radius) * (angle - a.angle)) / (b.angle - a.angle);
+}
+
+/**
+ * The parts of a sampled curve between pairs of angles, ascending and apart, each with its ends cut
+ * where they fall, in one pass along the curve. A cut on a step's edge keeps the side of the step
+ * inside the part: the radius the curve leaves its start at, and the one it reaches its end at, so a
+ * hatch over a step follows the step (r4 B1).
+ */
+function clipAll(
+  line: readonly ClockPoint[],
+  ranges: readonly (readonly [number, number])[]
+): ClockPoint[][] {
+  const parts: ClockPoint[][] = [];
+  let index = 0;
+  for (const [from, to] of ranges) {
+    while (index < line.length && (line[index]?.angle ?? 0) <= from) index += 1;
+    const kept: ClockPoint[] = [{ angle: from, radius: leaving(line, index, from) }];
+    for (let point = line[index]; point !== undefined && point.angle < to; point = line[index]) {
+      kept.push(point);
+      index += 1;
+    }
+    kept.push({ angle: to, radius: reaching(line, index, to) });
+    parts.push(kept);
+  }
+  return parts;
+}
+
+/** The part of a sampled curve between two angles, as `clipAll` cuts it. */
 function clip(line: readonly ClockPoint[], from: number, to: number): ClockPoint[] {
-  const kept: ClockPoint[] = [{ angle: from, radius: radiusAt(line, from) }];
-  for (const point of line) if (point.angle > from && point.angle < to) kept.push(point);
-  kept.push({ angle: to, radius: radiusAt(line, to) });
-  return kept;
+  return clipAll(line, [[from, to]])[0] ?? [];
 }
 
 /** Sampled points as path data in the dial's x and y, open or closed. */
@@ -393,45 +429,64 @@ function bridges(states: readonly ClockSlotState[], from: number, to: number): b
   return false;
 }
 
-/** Split a sampled curve into its plain pieces and the pieces inside the marked ranges. */
+/**
+ * Split a sampled curve into its plain pieces and the pieces inside the marked ranges, in one pass:
+ * the samples, the cuts and the ranges each advance a cursor, so an 8,760-hour year splits in about
+ * the time it samples (r4 Q1).
+ *
+ * @param line - The sampled curve, its angles ascending.
+ * @param ranges - The marked ranges, ascending and apart, as `markedRanges` merges them.
+ * @returns The plain and the marked pieces, each of two points or more.
+ */
 function splitMarked(line: readonly ClockPoint[], ranges: readonly (readonly [number, number])[]) {
   const plain: ClockPoint[][] = [];
   const marked: ClockPoint[][] = [];
-  if (line.length === 0) return { plain, marked };
-  const isMarked = (angle: number): boolean => ranges.some(([from, to]) => angle >= from && angle <= to);
-  // Every range edge inside the curve, where a piece ends and the next starts.
-  const cuts = ranges.flat().toSorted((a, b) => a - b);
-  let piece: ClockPoint[] = [];
-  let pieceMarked = false;
-  const flush = (): void => {
-    if (piece.length > 1) (pieceMarked ? marked : plain).push(piece);
+  const first = line[0];
+  const last = line.at(-1);
+  if (first === undefined || last === undefined) return { plain, marked };
+  // Every range edge strictly inside the curve, where a piece ends and the next starts. A cut at
+  // either end would split off nothing.
+  const cuts = ranges.flat().filter((cut) => cut > first.angle && cut < last.angle);
+  let range = 0;
+  // The probes rise along the curve, so the range that could hold one never moves back.
+  const isMarked = (angle: number): boolean => {
+    while ((ranges[range]?.[1] ?? Number.POSITIVE_INFINITY) < angle) range += 1;
+    const [from, to] = ranges[range] ?? [Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY];
+    return angle >= from && angle <= to;
   };
-  line.forEach((point, index) => {
-    const previous = line[index - 1];
-    if (previous !== undefined) {
-      for (const cut of cuts) {
-        // A cut that falls on a sample splits there, and one between two samples splits between them.
-        if (cut <= previous.angle || cut > point.angle) continue;
-        const at = { angle: cut, radius: radiusAt([previous, point], cut) };
-        piece.push(at);
-        flush();
-        piece = [at];
-        // The piece after the cut takes the mark of its first stretch past the cut, past a step's
-        // edge too, whose samples all lie at the cut's angle.
-        const ahead =
-          point.angle > cut
-            ? point.angle
-            : (line.slice(index + 1).find(({ angle }) => angle > cut)?.angle ?? cut);
-        pieceMarked = isMarked((cut + ahead) / 2);
-      }
-    } else {
-      // The first piece takes the mark of its first stretch, past a step's edge at its start.
-      const ahead = line.find(({ angle }) => angle > point.angle)?.angle ?? point.angle;
-      pieceMarked = isMarked((point.angle + ahead) / 2);
+  // A piece takes the mark of its first stretch: from its start to the first angle past it, a
+  // later sample past a step's edge, whose samples share the start's angle, or the next cut.
+  const stretch = (start: number, from: number, next: number | undefined): number => {
+    let ahead = from;
+    while ((line[ahead]?.angle ?? Number.POSITIVE_INFINITY) <= start) ahead += 1;
+    const end = Math.min(line[ahead]?.angle ?? start, next ?? Number.POSITIVE_INFINITY);
+    return (start + end) / 2;
+  };
+  let piece: ClockPoint[] = [first];
+  let pieceMarked = isMarked(stretch(first.angle, 1, cuts[0]));
+  let cut = 0;
+  for (let index = 1; index < line.length; index += 1) {
+    const previous = line[index - 1] ?? first;
+    const point = line[index] ?? previous;
+    // A cut that falls on a sample splits there, and one between two samples splits between them.
+    for (let at = cuts[cut]; at !== undefined && at <= point.angle; at = cuts[cut]) {
+      cut += 1;
+      const span = point.angle - previous.angle;
+      const split = {
+        angle: at,
+        radius:
+          span === 0
+            ? point.radius
+            : previous.radius + ((point.radius - previous.radius) * (at - previous.angle)) / span,
+      };
+      piece.push(split);
+      if (piece.length > 1) (pieceMarked ? marked : plain).push(piece);
+      piece = [split];
+      pieceMarked = isMarked(stretch(at, index, cuts[cut]));
     }
     piece.push(point);
-  });
-  flush();
+  }
+  if (piece.length > 1) (pieceMarked ? marked : plain).push(piece);
   return { plain, marked };
 }
 
@@ -469,7 +524,15 @@ export function clockLine(values: readonly number[], slots: ClockSlots, curve: C
       solid += polyline(line, run.closed);
       continue;
     }
-    const { plain, marked } = splitMarked(line, ranges);
+    // A closed cell step's turn starts on slot 0's start, where it steps from the last reading to
+    // the first. A whole loop's closing edge draws that step; a split one draws it at its start.
+    const seam = line.at(-1);
+    const start = line[0];
+    const opened =
+      run.closed && seam !== undefined && start !== undefined && seam.radius !== start.radius
+        ? [{ angle: start.angle, radius: seam.radius }, ...line]
+        : line;
+    const { plain, marked } = splitMarked(opened, ranges);
     for (const piece of plain) solid += polyline(piece, false);
     for (const piece of marked) dashed += polyline(piece, false);
   }
@@ -510,15 +573,11 @@ export function clockArea(values: readonly number[], slots: ClockSlots, curve: C
       Math.max(top[0]?.angle ?? 0, base[0]?.angle ?? 0),
       Math.min(top.at(-1)?.angle ?? 0, base.at(-1)?.angle ?? 0),
     ];
-    for (const [from, to] of markedRanges(
-      run,
-      angles,
-      slots,
-      bounds,
-      stepsAcrossSlots(curve) ? edges : null
-    )) {
-      hatched += region(clip(top, from, to), clip(base, from, to));
-    }
+    const ranges = markedRanges(run, angles, slots, bounds, stepsAcrossSlots(curve) ? edges : null);
+    const bases = clipAll(base, ranges);
+    clipAll(top, ranges).forEach((part, index) => {
+      hatched += region(part, bases[index] ?? []);
+    });
   }
   return { solid, marked: hatched };
 }
