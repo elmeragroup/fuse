@@ -5,9 +5,15 @@
  * translate resolved values into their own format and never parse CSS themselves, and the
  * part density table it carries, which the docs coverage test reads without resolving every
  * theme. It also carries the theme axes and the brand table, so a design tool can lay out
- * variant, brand and segment as separate choices.
+ * variant, brand and segment as separate choices. The text-grade pairs name the role pairs the
+ * contrast gate holds at 4.5:1, so the docs palette page grades the same pairs. The brand ramp
+ * origins tell the docs which brands' ramps come from Figma and which are generated, and the ramp
+ * scales and steps let it group the ramp tokens without parsing their names.
  */
 
+export { TEXT_GRADE_PAIRS } from "./contrast";
+export { BRAND_RAMP_ORIGINS, RAMP_SCALES, RAMP_STEPS } from "./tokens/brand-ramps";
+export type { RampOrigin, RampScale, RampStep } from "./tokens/brand-ramps";
 export { defaultDensityForVariant } from "./density";
 export { resolveThemeCatalog } from "./resolve-theme-catalog";
 export { DENSITY_ROLES, PART_DENSITY } from "./tokens/density-roles";
@@ -22,6 +28,7 @@ export type {
   ResolvedTheme,
   ResolvedThemeCatalog,
   RungEntry,
+  SourceColor,
   TokenEntry,
   TokenReference,
 } from "./resolve-theme-catalog";

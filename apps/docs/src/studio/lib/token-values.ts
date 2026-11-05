@@ -3,6 +3,8 @@ import { themeSlug } from "@elmeragroup/fuse/theme";
 import type { ThemeInput } from "@elmeragroup/fuse/theme";
 
 import { STUDIO_BASE_REFERENCES, STUDIO_PRIMITIVES } from "../../generated/studio-seeds";
+import { TOKEN_TABLE } from "../../lib/token-sections";
+import type { TokenKind, TokenName } from "../../lib/token-sections";
 import type { ArtboardScheme } from "./documents";
 import { overrideOf, resetNames } from "./edits";
 import type { StudioDocument, StudioOverrides } from "./edits";
@@ -11,8 +13,7 @@ import { referencedNames, referencesOf } from "./references";
 import type { BaseReferences } from "./references";
 import type { StudioSeed } from "./seed";
 import { MAX_VALUE_LENGTH } from "./size-policy";
-import { STUDIO_TOKEN_NAMES, TOKEN_TABLE, isLightOnly, isTokenName } from "./tokens";
-import type { TokenKind, TokenName } from "./tokens";
+import { STUDIO_TOKEN_NAMES, isLightOnly, isTokenName } from "./tokens";
 
 export { referencedNames } from "./references";
 

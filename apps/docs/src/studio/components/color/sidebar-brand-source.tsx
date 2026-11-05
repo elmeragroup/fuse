@@ -7,8 +7,8 @@ import { tv } from "tailwind-variants";
 import { Badge } from "@elmeragroup/fuse/badge";
 import { Text } from "@elmeragroup/fuse/text";
 
+import type { TokenName } from "../../../lib/token-sections";
 import { aliasTarget, currentCss } from "../../lib/token-values";
-import type { TokenName } from "../../lib/tokens";
 import { useArtboardScope } from "../studio-artboard";
 
 const sidebarBrandSource = tv({

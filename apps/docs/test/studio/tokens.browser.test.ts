@@ -4,8 +4,9 @@ import { describe, expect, it } from "vitest";
 import * as CssColor from "@elmeragroup/color/css-color";
 import * as Hex from "@elmeragroup/color/hex";
 
+import { TOKEN_TABLE } from "../../src/lib/token-sections";
 import { MAX_SHARE_LENGTH } from "../../src/studio/lib/size-policy";
-import { STUDIO_TOKEN_NAMES, TOKEN_TABLE, isLightOnly } from "../../src/studio/lib/tokens";
+import { STUDIO_TOKEN_NAMES, isLightOnly } from "../../src/studio/lib/tokens";
 import { auditTargets, holdChunks } from "../landing-page";
 import type { HeldChunks } from "../landing-page";
 import { closeContext, launchSuiteBrowser } from "../suite-browser";

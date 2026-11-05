@@ -1,6 +1,6 @@
 import type { Density, ThemeVariant } from "@elmeragroup/fuse/theme";
 
-import type { SectionId } from "./tokens";
+import type { SectionId } from "../../lib/token-sections";
 
 /** The scheme one artboard renders in, whatever the visitor's preference or the chrome's. */
 export type ArtboardScheme = "light" | "dark";

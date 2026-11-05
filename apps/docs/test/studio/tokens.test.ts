@@ -2,14 +2,12 @@ import { describe, expect, it } from "vitest";
 
 import { resolveThemeCatalog } from "@elmeragroup/fuse/theme-catalog";
 
+import { FONT_VARIABLES, TOKEN_SECTIONS, TOKEN_TABLE } from "../../src/lib/token-sections";
 import { buildStudioSeeds } from "../../src/studio/generate/seeds";
 import {
-  FONT_VARIABLES,
   FOREGROUND_PAIRS,
   LIGHT_ONLY_TOKENS,
-  STUDIO_SECTIONS,
   STUDIO_TOKEN_NAMES,
-  TOKEN_TABLE,
   sectionTokens,
 } from "../../src/studio/lib/tokens";
 
@@ -25,7 +23,7 @@ describe("TOKEN_TABLE", () => {
   });
 
   it("files every token under a section the inspector shows", () => {
-    const filed = STUDIO_SECTIONS.flatMap((section) => sectionTokens(section.id));
+    const filed = TOKEN_SECTIONS.flatMap((section) => sectionTokens(section.id));
     expect(filed.toSorted()).toEqual([...CONTRACT_NAMES, ...FONT_VARIABLES].toSorted());
   });
 
@@ -43,6 +41,29 @@ describe("LIGHT_ONLY_TOKENS", () => {
   it("names the keys a dark palette keeps from light, which declare one value in both schemes", () => {
     expect([...LIGHT_ONLY_TOKENS].toSorted()).toEqual(
       [
+        // The brand ramps hold one value per brand and segment in both schemes.
+        "brand-neutral-50",
+        "brand-neutral-100",
+        "brand-neutral-200",
+        "brand-neutral-300",
+        "brand-neutral-400",
+        "brand-neutral-500",
+        "brand-neutral-600",
+        "brand-neutral-700",
+        "brand-neutral-800",
+        "brand-neutral-900",
+        "brand-neutral-950",
+        "brand-shade-50",
+        "brand-shade-100",
+        "brand-shade-200",
+        "brand-shade-300",
+        "brand-shade-400",
+        "brand-shade-500",
+        "brand-shade-600",
+        "brand-shade-700",
+        "brand-shade-800",
+        "brand-shade-900",
+        "brand-shade-950",
         "card-border",
         "card-section-divider",
         "card-shadow",

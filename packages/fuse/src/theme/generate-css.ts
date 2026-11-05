@@ -2,6 +2,7 @@ import type { ResolvedColorScheme } from "./color-scheme-types";
 import { composeTheme } from "./compose-theme";
 import { brandPointer } from "./tokens/brand-pointers";
 import type { BrandPointer } from "./tokens/brand-pointers";
+import { BRAND_RAMP_TOKEN_NAMES, brandRampTokens } from "./tokens/brand-ramps";
 import { derivedRoleSources, EXTERNAL_RESET_KEYS, isDerivedTokenName, TOKEN_NAMES } from "./tokens/contract";
 import type { TokenContract, TokenName } from "./tokens/contract";
 import { DEFAULTS } from "./tokens/defaults";
@@ -143,18 +144,51 @@ function internalTheme(brand: BrandCode): ThemeInput {
   return theme;
 }
 
+/** A theme's ramp tokens as declarations. */
+function rampDeclarations(theme: ThemeInput): (readonly [string, string])[] {
+  const ramps = brandRampTokens(theme.brand, theme.segment);
+  return BRAND_RAMP_TOKEN_NAMES.map((name) => [name, ramps[name]] as const);
+}
+
+/**
+ * The brand rules: the pointer, the roles that read it, and the brand's ramps. The ramps hold
+ * one value per brand and segment in both schemes and variants, so they live here, at the
+ * brand's weight, and no variant or scheme rule declares them. A segment whose ramps differ from
+ * the brand's base segment, such as Fjordkraft company with the Bedrift ramps, gets its own rule
+ * with the segment attribute beside the brand, which outweighs the brand rule.
+ */
 function emitBrandPointers(): string {
-  return BRAND_CODES.map((code) => {
+  const rules = BRAND_CODES.map((code) => {
     const pointer = brandPointer(code);
+    const base = internalTheme(code);
     return cssRule(
       [`[data-theme-brand="${code}"]`],
       [
         ["brand", pointer.brand],
         ["brand-foreground", pointer["brand-foreground"]],
-        ...brandScopedDeclarations(composeTheme(internalTheme(code), "light")),
+        ...brandScopedDeclarations(composeTheme(base, "light")),
+        ...rampDeclarations(base),
       ]
     );
-  }).join("\n\n");
+  });
+  const segmentRules = BRAND_CODES.flatMap((code) => {
+    const base = brandRampTokens(code, internalTheme(code).segment);
+    return LEGAL_THEMES.filter((theme) => theme.variant === "internal" && theme.brand === code).flatMap(
+      (theme) => {
+        const ramps = brandRampTokens(code, theme.segment);
+        const departs = BRAND_RAMP_TOKEN_NAMES.some((name) => ramps[name] !== base[name]);
+        return departs
+          ? [
+              cssRule(
+                [`[data-theme-brand="${code}"][data-theme-segment="${theme.segment}"]`],
+                rampDeclarations(theme)
+              ),
+            ]
+          : [];
+      }
+    );
+  });
+  return [...rules, ...segmentRules].join("\n\n");
 }
 
 function emitInternalReset(): string {
@@ -189,14 +223,27 @@ function emitInternalDarkPalette(): string {
 }
 
 /**
- * The roles a segment changes against its brand base. A derived role counts as changed
- * wherever one of its sources does, because the rule must declare its `color-mix()` again
- * to mix the segment's sources instead of inheriting the base's result.
+ * The keys the brand rules own: the pointer and the ramps, which `emitBrandPointers` declares
+ * per brand and segment. A palette rule never declares them, so each has one CSS owner and one
+ * override weight.
+ */
+const BRAND_RULE_KEYS: ReadonlySet<TokenName> = new Set<TokenName>([
+  ...POINTER_KEYS,
+  ...BRAND_RAMP_TOKEN_NAMES,
+]);
+
+/**
+ * The roles a segment changes against its brand base, leaving out the keys the brand rules own.
+ * A derived role counts as changed wherever one of its sources does, because the rule must
+ * declare its `color-mix()` again to mix the segment's sources instead of inheriting the base's
+ * result.
  */
 function changedKeys(base: TokenContract, tokens: TokenContract): TokenName[] {
   const differs = (key: TokenName): boolean => tokens[key] !== base[key];
-  return TOKEN_NAMES.filter((key) =>
-    isDerivedTokenName(key) ? derivedRoleSources(key).some(differs) : differs(key)
+  return TOKEN_NAMES.filter(
+    (key) =>
+      !BRAND_RULE_KEYS.has(key) &&
+      (isDerivedTokenName(key) ? derivedRoleSources(key).some(differs) : differs(key))
   );
 }
 

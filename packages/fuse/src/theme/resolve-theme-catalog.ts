@@ -2,14 +2,16 @@
  * The theme catalog resolved for design tools: every legal theme in both color schemes, the
  * primitives, the density metrics and the density role of every part, with each custom
  * property's CSS, its web code syntax, the one `var()` hop it takes, and the literal at the end
- * of its chain as a design-tool value. Exporters, such as the Figma sync and the docs DTCG export, read this tree instead of
- * parsing CSS values, so every CSS reader stays private to this module.
+ * of its chain as a design-tool value. A color also keeps the literal as declared. Exporters, such
+ * as the Figma sync and the docs DTCG export, read this tree instead of parsing CSS values, so
+ * every CSS reader stays private to this module.
  *
  * Token values are fuse source, not caller input, so a value the resolver cannot read is a
  * defect in a token module and throws.
  */
 
 import * as CssColor from "@elmeragroup/color/css-color";
+import type { Oklch } from "@elmeragroup/color/oklch";
 import type { Srgb } from "@elmeragroup/color/srgb";
 
 import type { ResolvedColorScheme } from "./color-scheme-types";
@@ -54,6 +56,17 @@ type LiteralByKind = {
   readonly fontWeight: number;
 };
 
+/**
+ * A color as its literal declares it: an `oklch()` literal as OKLCH, a `#rrggbb` literal as sRGB.
+ * The notation is the one token modules write, so an exporter formats the color without parsing.
+ */
+export type SourceColor = Oklch | Srgb;
+
+/** What a kind's literal reads into: its value, and for a color the source it came from. */
+type LiteralOf<Kind extends TokenKind> = Kind extends "color"
+  ? { readonly value: Srgb; readonly source: SourceColor }
+  : { readonly value: LiteralByKind[Kind] };
+
 /** The kind the contract gives a token. */
 type KindOf<Name extends TokenName> = (typeof TOKEN_KINDS)[Name];
 
@@ -78,16 +91,22 @@ export type TokenReference = {
 /** The one custom property a `var()` names. */
 export type Reference = PrimitiveReference | TokenReference;
 
-/** Where a color entry is painted. Only a color carries paints. */
-type PaintsOf<Kind extends TokenKind> = Kind extends "color"
+/** What only a color entry carries: where it is painted, and the color its literal declares. */
+type ColorFieldsOf<Kind extends TokenKind> = Kind extends "color"
   ? {
       /** Where Fuse paints the color, which decides where exporters offer it. Empty for none. */
       readonly paints: readonly TokenPaint[];
+
+      /**
+       * The literal at the end of the reference chain as it is declared, before the conversion
+       * to sRGB that `value` holds, so an out-of-gamut OKLCH literal keeps its chroma.
+       */
+      readonly source: SourceColor;
     }
   : unknown;
 
 /** One resolved custom property. */
-type Entry<Name extends string, Kind extends TokenKind, Ref extends Reference> = PaintsOf<Kind> & {
+type Entry<Name extends string, Kind extends TokenKind, Ref extends Reference> = ColorFieldsOf<Kind> & {
   /** The custom property without its leading dashes. */
   readonly name: Name;
 
@@ -288,7 +307,7 @@ function expected(form: string, css: string): string {
 }
 
 /** A reader for each kind's literals, which throws a defect for a value not in its form. */
-type LiteralReaders = { readonly [K in TokenKind]: (css: string, site: Site) => LiteralByKind[K] };
+type LiteralReaders = { readonly [K in TokenKind]: (css: string, site: Site) => LiteralOf<K> };
 
 const LITERAL_READERS: LiteralReaders = {
   color: (css, site) => {
@@ -297,21 +316,21 @@ const LITERAL_READERS: LiteralReaders = {
     if (color._tag === "err") {
       throw defect(site, color.error.message);
     }
-    return CssColor.toSrgb(color.value);
+    return { value: CssColor.toSrgb(color.value), source: color.value };
   },
   dimension: (css, site) => {
     const length = cssLengthToPx(css);
     if (length === undefined) {
       throw defect(site, expected("a rem or px length", css));
     }
-    return length;
+    return { value: length };
   },
   fontWeight: (css, site) => {
     const weight = cssFontWeight(css);
     if (weight === undefined) {
       throw defect(site, expected("a number from 1 to 1000", css));
     }
-    return weight;
+    return { value: weight };
   },
 };
 
@@ -353,6 +372,7 @@ type UncorrelatedEntry = EntryNotes & {
   readonly codeSyntax: string;
   readonly reference: Reference | undefined;
   readonly value: LiteralByKind[TokenKind];
+  readonly source?: SourceColor;
 };
 
 /** The names a reference into `space` can take. */
@@ -427,27 +447,32 @@ function recordOf<N extends string, E extends { readonly name: N }>(
  * @template E - The correlated entry union the entry belongs to.
  */
 function correlated<E extends AnyEntry>(entry: UncorrelatedEntry): E {
-  // SAFETY: the resolver takes `kind` from the contract for `name`, and `value` either comes
-  // from the reader for that kind or is copied from a reference target whose kind it checked
-  // is the same. The notes come from the tables for `name`, which give a color its paints.
+  // SAFETY: the resolver takes `kind` from the contract for `name`. `value`, and a color's
+  // `source`, come from the reader for that kind or from a reference target it checked has the
+  // same kind. The notes come from the tables for `name`, which give a color its paints.
   // TypeScript cannot correlate those fields across a lookup.
   return entry as E;
 }
 
-/** The value of a single `var()`'s target, after checking that the target has `kind`. */
-function referencedValue(
+/**
+ * The value of a single `var()`'s target, and a color's source with it, after checking that the
+ * target has `kind`.
+ */
+function referencedLiteral(
   site: Site,
   kind: TokenKind,
   reference: Reference,
   target: UncorrelatedEntry
-): LiteralByKind[TokenKind] {
+): Pick<UncorrelatedEntry, "value" | "source"> {
   if (target.kind !== kind) {
     throw defect(
       site,
       `it is a ${kind} that references the ${target.kind} ${reference.space} ${reference.name}`
     );
   }
-  return target.value;
+  return target.source === undefined
+    ? { value: target.value }
+    : { value: target.value, source: target.source };
 }
 
 /**
@@ -463,17 +488,17 @@ function resolveEntry<E extends AnyEntry>(
   targetOf: (reference: Reference) => UncorrelatedEntry
 ): E {
   const reference = referenceIn(site);
-  const value =
+  const literal =
     reference === undefined
       ? LITERAL_READERS[kind](site.css, site)
-      : referencedValue(site, kind, reference, targetOf(reference));
+      : referencedLiteral(site, kind, reference, targetOf(reference));
   return correlated({
     name: site.name,
     kind,
     css: site.css,
     codeSyntax: `var(--${site.name})`,
     reference,
-    value,
+    ...literal,
     ...notes,
   });
 }

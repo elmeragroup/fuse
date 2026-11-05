@@ -1,3 +1,4 @@
+import { brandRampTokens } from "./brand-ramps";
 import type { LayerTokens, TokenContract } from "./contract";
 import { withDerivedTokens } from "./derived-tokens";
 import { NEUTRAL_RING, WHITE } from "./primitives";
@@ -174,6 +175,9 @@ export const LAYER_DEFAULTS = {
   "sh-jsxliterals": "#4cbf99",
   "sh-sign": "#ed9366",
   "sh-comment": "#abb0b6",
+  // A scope without a brand takes Elmera's ramps, as the default chart palette starts from the
+  // Elmera brand. Every brand rule declares its own.
+  ...brandRampTokens("elma", "private"),
   radius: "0.5rem",
   // The internal variant rounds every outer element but the Checkbox with the one radius, and
   // inner corners follow outer − inset (`styles/corner-radius.ts`). The Checkbox caps its

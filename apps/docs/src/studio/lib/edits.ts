@@ -1,10 +1,10 @@
 import type { Density, ThemeInput } from "@elmeragroup/fuse/theme";
 import type { DensityMetricName } from "@elmeragroup/fuse/theme-catalog";
 
+import type { TokenName } from "../../lib/token-sections";
 import type { DensityOverrides, MetricOverrides } from "./density-metrics";
 import type { ArtboardScheme } from "./documents";
 import { isLightOnly } from "./tokens";
-import type { TokenName } from "./tokens";
 
 /** Token values the visitor set, each the CSS a declaration takes, keyed by token name. */
 export type TokenOverrides = Readonly<Partial<Record<TokenName, string>>>;

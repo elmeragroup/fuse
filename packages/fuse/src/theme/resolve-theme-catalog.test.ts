@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import * as Hex from "@elmeragroup/color/hex";
 import * as Oklch from "@elmeragroup/color/oklch";
 import { getOrThrow } from "@elmeragroup/color/result";
 
@@ -45,10 +46,11 @@ const SLUGS = [
 // `radius-field` field corner, the card edge, section divider and shadow, the two outline Button roles, the resting and
 // checked selection row borders and dividers, the disabled selection row fill, stripe and text,
 // the pressed Toggle fill and label, the selection row title weight, the three paragraph line
-// heights, the size, line height and weight of h1 to h3, the modal fill and text, and the 26
-// chart roles: 8 slot foregrounds, Other and its foreground, 7 ramp steps, 7 diverging steps and
-// 2 sentiments. Themes name no fonts, so `font-sans` and `font-heading` are not tokens.
-const TOKEN_COUNT = 133;
+// heights, the size, line height and weight of h1 to h3, the modal fill and text, the 26
+// chart roles, 8 slot foregrounds, Other and its foreground, 7 ramp steps, 7 diverging steps and
+// 2 sentiments, and the 22 brand ramp steps, neutral and shade from 50 to 950. Themes name no
+// fonts, so `font-sans` and `font-heading` are not tokens.
+const TOKEN_COUNT = 155;
 
 // xs, sm, md, lg, xl and the unused popover rung.
 const RUNG_COUNT = 6;
@@ -128,6 +130,22 @@ describe("resolveThemeCatalog", () => {
       css: "calc(var(--radius) - 4 * var(--radius-step, 0px))",
       value: 4,
     });
+  });
+
+  it("keeps a color's literal as declared, carried along var() chains, beside its sRGB value", () => {
+    // `tokens/dark-defaults.ts` declares the dark --error, which --destructive aliases.
+    const darkError = getOrThrow(Oklch.parse("oklch(0.8383036 0.089085 26.7575)"));
+    const guenDark = theme("external-guen-private").schemes.dark;
+    expect(guenDark.tokens.error.source).toEqual(darkError);
+    expect(guenDark.tokens.destructive.source).toEqual(darkError);
+    // A token through a primitive: --brand is var(--brand-fkas), `oklch(0.68 0.21747 38.8)`.
+    const fkasAccent = getOrThrow(Oklch.parse("oklch(0.68 0.21747 38.8)"));
+    expect(catalog.primitives["brand-fkab"].source).toEqual(fkasAccent);
+    expect(light("external-fkas-private").tokens.brand.source).toEqual(fkasAccent);
+    // `tokens/defaults.ts` declares the light --sh-keyword in hex, so its source is sRGB.
+    expect(light("external-fkas-private").tokens["sh-keyword"].source).toEqual(
+      getOrThrow(Hex.parse("#ff7733"))
+    );
   });
 
   it("keeps a var() as one hop and resolves its value along the chain in the same scheme", () => {

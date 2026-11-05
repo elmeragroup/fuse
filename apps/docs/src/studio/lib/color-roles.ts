@@ -1,5 +1,5 @@
+import type { SectionId, TokenName } from "../../lib/token-sections";
 import { FOREGROUND_PAIRS, isTokenName, sectionTokens } from "./tokens";
-import type { SectionId, TokenName } from "./tokens";
 
 /**
  * Whether a pair's foreground carries text. A text-grade pair must reach 4.5:1 on its surface;

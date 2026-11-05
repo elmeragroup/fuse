@@ -1,7 +1,7 @@
+import type { TokenName } from "../../lib/token-sections";
 import type { ArtboardScheme } from "./documents";
 import type { StudioSeed } from "./seed";
 import { isTokenName } from "./tokens";
-import type { TokenName } from "./tokens";
 
 const VAR_REFERENCE = /var\(\s*--([\w-]+)/gu;
 

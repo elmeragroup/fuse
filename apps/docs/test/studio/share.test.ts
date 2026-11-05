@@ -1,9 +1,10 @@
 import { describe, expect, it } from "vitest";
 
+import { TOKEN_TABLE } from "../../src/lib/token-sections";
 import type { StudioDocument } from "../../src/studio/lib/edits";
 import { decodeShare, encodeShare } from "../../src/studio/lib/share-codec";
 import { MAX_SHARE_LENGTH, MAX_VALUE_LENGTH } from "../../src/studio/lib/size-policy";
-import { STUDIO_TOKEN_NAMES, TOKEN_TABLE, isLightOnly } from "../../src/studio/lib/tokens";
+import { STUDIO_TOKEN_NAMES, isLightOnly } from "../../src/studio/lib/tokens";
 
 const EDITED: StudioDocument = {
   theme: { variant: "external", brand: "elma", segment: "private" },

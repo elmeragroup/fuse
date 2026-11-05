@@ -1,3 +1,10 @@
+import {
+  BRAND_RAMP_DESCRIPTIONS,
+  BRAND_RAMP_KINDS,
+  BRAND_RAMP_PAINTS,
+  BRAND_RAMP_TOKEN_NAMES,
+} from "./brand-ramps";
+
 export const TOKEN_NAMES = [
   "background",
   "foreground",
@@ -114,6 +121,7 @@ export const TOKEN_NAMES = [
   "sh-jsxliterals",
   "sh-sign",
   "sh-comment",
+  ...BRAND_RAMP_TOKEN_NAMES,
   "radius",
   "radius-button",
   "radius-field",
@@ -366,6 +374,7 @@ export const TOKEN_KINDS = {
   "sh-jsxliterals": "color",
   "sh-sign": "color",
   "sh-comment": "color",
+  ...BRAND_RAMP_KINDS,
   radius: "dimension",
   "radius-button": "dimension",
   "radius-field": "dimension",
@@ -531,6 +540,7 @@ export const TOKEN_PAINTS = {
   "sh-jsxliterals": ["ink"],
   "sh-sign": ["ink"],
   "sh-comment": ["ink"],
+  ...BRAND_RAMP_PAINTS,
 } as const satisfies Record<ColorTokenName, readonly TokenPaint[]>;
 
 /**
@@ -735,6 +745,7 @@ export const TOKEN_DESCRIPTIONS = {
   "sh-jsxliterals": "The color of JSX text in the syntax highlighting of Code.",
   "sh-sign": "The color of punctuation and operators in the syntax highlighting of Code.",
   "sh-comment": "The color of comments in the syntax highlighting of Code.",
+  ...BRAND_RAMP_DESCRIPTIONS,
   radius:
     "The corner radius of the theme, the corner of cards, selection rows and fields. The radius-xs to radius-xl rungs step around it.",
   "radius-button":

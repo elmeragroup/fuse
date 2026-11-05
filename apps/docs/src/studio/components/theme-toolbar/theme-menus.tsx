@@ -15,10 +15,11 @@ import { TextField } from "@elmeragroup/fuse/text-field";
 import type { Density } from "@elmeragroup/fuse/theme";
 import { Toolbar } from "@elmeragroup/fuse/toolbar";
 
+import { TOKEN_SECTIONS, TOKEN_TABLE } from "../../../lib/token-sections";
+import type { SectionId, TokenName } from "../../../lib/token-sections";
 import { STUDIO_METRICS } from "../../lib/density-metrics";
 import type { ArtboardSpec } from "../../lib/documents";
-import { STUDIO_SECTIONS, TOKEN_TABLE, matchesTokenQuery } from "../../lib/tokens";
-import type { SectionId, TokenName } from "../../lib/tokens";
+import { matchesTokenQuery } from "../../lib/tokens";
 import { menuPlacement } from "../../lib/viewport";
 import type { MenuPlacement } from "../../lib/viewport";
 import { METRIC_ROLES, MetricKnob } from "../density/density-panel";
@@ -241,14 +242,14 @@ function ColorKnobs({
 }): ReactElement {
   const scope = useArtboardScopeOf(artboard);
   const [query, setQuery] = useState("");
-  const listed = STUDIO_SECTIONS.filter((section) =>
+  const listed = TOKEN_SECTIONS.filter((section) =>
     tokens.some((name) => TOKEN_TABLE[name].section === section.id)
   ).map((section) => section.id);
   const [expanded, setExpanded] = useState<readonly SectionId[]>(() =>
     tokens.length <= SHORT_LIST ? listed : listed.slice(0, 1)
   );
   const { colors, probe } = useResolvedColors(scope.scheme, scope);
-  const sections = STUDIO_SECTIONS.map((section) => ({
+  const sections = TOKEN_SECTIONS.map((section) => ({
     ...section,
     names: tokens.filter(
       (name) => TOKEN_TABLE[name].section === section.id && matchesTokenQuery(name, query)

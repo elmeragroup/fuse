@@ -1,5 +1,5 @@
+import type { TokenName } from "../../lib/token-sections";
 import { STUDIO_TOKEN_NAMES } from "./tokens";
-import type { TokenName } from "./tokens";
 
 /**
  * Each `data-slot`'s owning component, and the tokens each component's recipe reads, as

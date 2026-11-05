@@ -39,6 +39,7 @@ describe("SideNav inventory", () => {
       "Theming",
       "Theme matrix",
       "Tokens",
+      "Palettes & contrast",
       "Brands & segments",
       "Fonts",
       "Icons",

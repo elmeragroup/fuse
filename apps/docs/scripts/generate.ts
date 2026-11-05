@@ -13,6 +13,7 @@
  *     outline, which the nav, the QuickNav and the site palette import;
  *   • the tokens each component's recipe reads, and the site-wide token reference;
  *   • the `/api/themes` catalog of the 24 legal permutations, plus Figma DTCG files;
+ *   • every legal theme's palettes and graded contrast pairs, for the palettes handbook page;
  *   • the measured bundle sizes the Tokens page publishes;
  *   • the locales, density metrics and component index the landing page states;
  *   • the three dark-scheme colors the Open Graph card paints;
@@ -66,6 +67,7 @@ import { renderLandingFacts } from "./lib/landing-facts.ts";
 import { renderLlmsTxt } from "./lib/llms.ts";
 import { renderComponentMarkdown } from "./lib/markdown.ts";
 import { renderOgCardColors } from "./lib/og-card-colors.ts";
+import { buildPaletteCatalog, renderPaletteCatalog } from "./lib/palette-catalog.ts";
 import { partIdentities } from "./lib/part-identity.ts";
 import {
   generatedDir,
@@ -419,6 +421,14 @@ function emitOgCardColors(catalog: ResolvedThemeCatalog): void {
   writeFile(path.join(generatedDir, "og-card-colors.ts"), `${BANNER}${renderOgCardColors(catalog)}`);
 }
 
+/** Every legal theme's palettes and graded contrast pairs, which the palettes handbook page shows. */
+function emitPaletteCatalog(catalog: ResolvedThemeCatalog): void {
+  writeFile(
+    path.join(generatedDir, "palette-catalog.ts"),
+    `${BANNER}${renderPaletteCatalog(buildPaletteCatalog(catalog))}`
+  );
+}
+
 /** The theme studio's modules: its theme seeds, slot-to-tokens index and density metric order. */
 async function emitStudio(
   catalog: ResolvedThemeCatalog,
@@ -517,6 +527,7 @@ async function main(): Promise<void> {
   emitLandingFacts(catalog, components);
   emitOgCardColors(catalog);
   emitDensityCatalog(catalog);
+  emitPaletteCatalog(catalog);
   await emitStudio(catalog, inspections, components);
   emitMarkdownEndpoints(components);
   emitSearchIndex(components);
