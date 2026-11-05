@@ -510,7 +510,9 @@ describe.each([
 ] as const)("axe on the chart pages in %s", (_, engine) => {
   const browser = launchSuiteBrowser(engine);
 
-  it.each(["bar-chart", "chart"])("finds no violation in any %s demo", async (slug) => {
+  // The sweep waits for every demo on the page to hydrate, then scans them all. The chart page
+  // takes Firefox about 25 s of that on a CI runner, close to the 30 s default.
+  it.each(["bar-chart", "chart"])("finds no violation in any %s demo", { timeout: 60_000 }, async (slug) => {
     // AxeBuilder reads frames through the page's context, so the page needs a context of its own.
     const context = await browser().newContext({ viewport: DESKTOP_VIEWPORT, timezoneId: "Europe/Oslo" });
     const page = await context.newPage();
