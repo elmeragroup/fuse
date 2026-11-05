@@ -72,12 +72,54 @@ export function centsFormat(locale: string, currency: MarketCurrency): Intl.Numb
 
 /**
  * How a day's price moves across its 24 hours, from 0 at the night low to 1 at the morning peak,
- * with a second peak at dinner. The hero's chart scales it between the day's low and high.
+ * with a second peak at dinner. {@link hourlyPrices} scales it between the day's low and high.
  */
-export const HOURLY_PROFILE = [
+const HOURLY_PROFILE = [
   0.32, 0.24, 0.16, 0.08, 0, 0.14, 0.52, 0.86, 1, 0.8, 0.62, 0.5, 0.42, 0.36, 0.34, 0.4, 0.58, 0.8, 0.94,
   0.88, 0.7, 0.56, 0.46, 0.38,
 ] as const;
+
+/** One hour of the site's day and its spot price, per kWh in the market's currency. */
+export type HourPrice = { readonly hour: Date; readonly price: number };
+
+/**
+ * The first hour of the site's day, 12 October 2026, on UTC. The chart draws the area's own hours
+ * on UTC, which keeps no daylight saving, so they read 00 to 23 in every market and on every
+ * render machine.
+ */
+const DAY_START_UTC = Date.UTC(2026, 9, 12);
+const HOUR_MS = 3_600_000;
+
+/** The day's prices hour by hour, {@link HOURLY_PROFILE} scaled between its low and its high. */
+function hoursOf(day: SpotDay): readonly HourPrice[] {
+  return HOURLY_PROFILE.map((share, hour) => ({
+    hour: new Date(DAY_START_UTC + hour * HOUR_MS),
+    price: day.low + share * (day.high - day.low),
+  }));
+}
+
+/** Each market's hours, built once, so every frame hands the chart the same rows. */
+const HOURS = {
+  NOK: hoursOf(MARKETS.NOK.spot),
+  SEK: hoursOf(MARKETS.SEK.spot),
+  EUR: hoursOf(MARKETS.EUR.spot),
+} as const satisfies Record<MarketCurrency, readonly HourPrice[]>;
+
+/**
+ * A market's spot price for each hour of the site's day, the same rows on every call.
+ *
+ * @param market - The brand's market.
+ * @returns 24 hours from 00:00 UTC, each with its price.
+ */
+export function hourlyPrices(market: SiteMarket): readonly HourPrice[] {
+  return HOURS[market.currency];
+}
+
+/**
+ * The hour the site's day has reached, 10:00 UTC on its day: the hero's chart fades the hours
+ * before it.
+ */
+export const SITE_NOW = new Date(DAY_START_UTC + 10 * HOUR_MS);
 
 /**
  * A month's estimated cost on the spot plan: the year's use at the day's average price, spread

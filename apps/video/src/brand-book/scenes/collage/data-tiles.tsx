@@ -274,7 +274,7 @@ export function AccordionTile(): ReactElement {
   );
 }
 
-/** Tabs over a week of use, the current days in the primary role, with a period switch. */
+/** Tabs over a week of use as a Fuse bar chart, its earlier days faded, with a period switch. */
 export function TabsTile(): ReactElement {
   const { tabs, periods } = useCopy().brandBook.collage;
   const [day, week, month] = periods;
@@ -300,7 +300,7 @@ export function TabsTile(): ReactElement {
           {weekTotal(locale)}
           <span className="text-sm font-normal ml-1 text-muted-foreground">kWh</span>
         </p>
-        <WeekBars className="gap-1.5" />
+        <WeekBars />
       </Tabs.Content>
     </Tabs.Root>
   );

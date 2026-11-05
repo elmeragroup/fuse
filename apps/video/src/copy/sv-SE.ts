@@ -126,6 +126,8 @@ export const SV_SE: Copy = {
         average: "Snitt",
         low: "Lägst",
         high: "Högst",
+        below: "Under snittet",
+        above: "Över snittet",
         perKwh: (amount) => `${amount} per kWh`,
       },
       plans: {

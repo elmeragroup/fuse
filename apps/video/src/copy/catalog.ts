@@ -174,6 +174,10 @@ export type ClaudeBuildsCopy = {
       readonly average: string;
       readonly low: string;
       readonly high: string;
+      /** The chart legend's entry for the hours at or below the day's average. */
+      readonly below: string;
+      /** The chart legend's entry for the hours above the day's average. */
+      readonly above: string;
       /** A price per kWh, given the formatted amount. */
       readonly perKwh: (amount: string) => string;
     };

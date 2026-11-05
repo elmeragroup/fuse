@@ -17,9 +17,9 @@ import { numberFormat } from "../../copy/intl";
 import { WeekBars, weekTotal } from "../../sample/week-bars";
 
 /**
- * The customer page the brand morph re-themes: a usage card, a budget meter, a notification
- * switch and an invoice action, built from Fuse parts as the landing's product shot is. Labels
- * follow the video's locale and money follows the brand's market.
+ * The customer page the brand morph re-themes: a usage card with the week as a Fuse bar chart, a
+ * budget meter, a notification switch and an invoice action, built from Fuse parts as the
+ * landing's product shot is. Labels follow the video's locale and money follows the brand's market.
  *
  * @param props.brand - The brand, whose market sets the currency.
  * @returns The window.
@@ -69,7 +69,7 @@ export function ProductShot({ brand }: { readonly brand: BrandCode }): ReactElem
               </p>
               <Badge variant="success">{copy.delta(change.format(-0.04))}</Badge>
             </div>
-            <WeekBars weekdays className="gap-2.5" />
+            <WeekBars weekdays />
           </Card.Content>
         </Card.Root>
         <div className="flex min-w-0 flex-col gap-5">

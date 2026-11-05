@@ -2,10 +2,12 @@ import type { ReactElement, RefObject } from "react";
 
 import { Button } from "@elmeragroup/fuse/button";
 import { Card } from "@elmeragroup/fuse/card";
+import { Heading } from "@elmeragroup/fuse/heading";
 import { Select } from "@elmeragroup/fuse/select";
 import { SelectField } from "@elmeragroup/fuse/select-field";
 import { Separator } from "@elmeragroup/fuse/separator";
 import { Slider } from "@elmeragroup/fuse/slider";
+import { Text } from "@elmeragroup/fuse/text";
 import type { BrandCode } from "@elmeragroup/fuse/theme";
 
 import { moneyFormat } from "../../brand/brand-market";
@@ -25,8 +27,9 @@ export type SiteCalculatorProps = {
 };
 
 /**
- * The site's price calculator: the brand's price area, the yearly use on a slider, and the
- * month's estimated cost in the brand's currency, which follows the slider.
+ * The site's price calculator: a Fuse heading and text beside a card with the brand's price area,
+ * the yearly use on a slider, and the month's estimated cost in the brand's currency, which
+ * follows the slider.
  *
  * @returns The calculator, filling its section.
  */
@@ -38,9 +41,15 @@ export function SiteCalculator({ brand, yearlyKwh, order }: SiteCalculatorProps)
   return (
     <section className="grid h-full grid-cols-[minmax(0,1fr)_30rem] items-center gap-12 bg-card-soft px-10 text-card-soft-foreground">
       <div className="flex flex-col gap-3">
-        <h2 className="text-3xl font-semibold tracking-tight m-0 font-heading">{calculator.title}</h2>
-        <p className="m-0 text-pretty text-muted-foreground">{calculator.lede}</p>
-        <p className="text-sm m-0 text-pretty text-muted-foreground">{calculator.note}</p>
+        <Heading size="3xl" font="semi-bold" className="tracking-tight m-0 leading-9">
+          {calculator.title}
+        </Heading>
+        <Text variant="muted" className="text-base m-0 text-pretty">
+          {calculator.lede}
+        </Text>
+        <Text variant="muted" className="text-sm m-0 text-pretty">
+          {calculator.note}
+        </Text>
       </div>
       <Card.Root>
         <Card.Content className="flex flex-col gap-5 pt-(--surface-pad-lg)">
@@ -58,6 +67,7 @@ export function SiteCalculator({ brand, yearlyKwh, order }: SiteCalculatorProps)
           />
           <Separator />
           <div className="flex items-end justify-between gap-4">
+            {/* A figure under its label. Text would size both spans to its own size, so this stays a paragraph. */}
             <p className="m-0 flex flex-col">
               <span className="text-xs text-muted-foreground">{calculator.estimate}</span>
               <span className="text-3xl font-semibold tracking-tight font-heading tabular-nums">

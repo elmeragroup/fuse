@@ -1,5 +1,7 @@
 @import "tailwindcss";
 @import "@elmeragroup/fuse/css";
+/* Fuse charts style their parts from their own stylesheet, imported beside Fuse's. */
+@import "@elmeragroup/fuse/chart.css";
 @import "@elmeragroup/fuse/themes.css";
 @import "@elmeragroup/fuse/demo-stage-density.css";
 /* The site sets Roboto first in --font-sans, and the video draws headings in it too (see the

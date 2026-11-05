@@ -52,6 +52,8 @@ export default defineConfig({
               "@phosphor-icons/react/dist/ssr/SpinnerGap",
               "@phosphor-icons/react/dist/ssr/X",
               "clsx",
+              "d3-array",
+              "d3-shape",
               "tailwind-merge",
             ].map((dependency) => `@elmeragroup/fuse > ${dependency}`),
           ],

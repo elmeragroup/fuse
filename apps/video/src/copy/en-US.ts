@@ -133,6 +133,8 @@ export const EN_US: Copy = {
         average: "Average",
         low: "Lowest",
         high: "Highest",
+        below: "Below average",
+        above: "Above average",
         perKwh: (amount) => `${amount} per kWh`,
       },
       plans: {
