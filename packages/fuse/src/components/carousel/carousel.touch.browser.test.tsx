@@ -1,10 +1,11 @@
 /**
- * Unit under test: the Carousel under a finger, in Chromium with touch on. Each swipe is Chromium's
- * synthetic touch gesture, which runs through the compositor as a real finger does, so the native
- * scroller, its scroll snapping and the fling after the lift answer it; the carousel adds no
- * touch handler of its own. Oracles: the fixture's hand-sized layout, where page N starts N slide
- * widths in, and the CSS Scroll Snap rule that `scroll-snap-stop: always` stops a fling at the
- * next snap position.
+ * Unit under test: the Carousel under a finger, in Chromium with touch on. Each finger goes through
+ * Chromium's touch input, so the native scroller, its scroll snapping and the fling after the
+ * lift answer it; the carousel adds no touch handler of its own. Oracles: the fixture's hand-sized
+ * layout, where page N starts N slide widths in, and mandatory snapping, under which a scroll
+ * comes to rest on a snap position. `scroll-snap-stop` is proven by a directional scroll in
+ * `carousel.engines.browser.test.tsx`: a synthetic flick in headless Chromium on Linux barely
+ * flings past a slide with or without it, so no flick here can tell the two apart.
  */
 import { useState } from "react";
 import type { ReactElement } from "react";
@@ -50,21 +51,18 @@ function Fixture({ autoplay }: { readonly autoplay?: number }): ReactElement {
 }
 
 /**
- * Swipe across the viewport's middle. A negative `dx` scrolls toward the next slide, as a finger
- * moving left does. `lift` is whether the finger leaves moving, which flings, or stops first.
+ * Swipe across the viewport, lifting the finger while it still moves. A negative `dx` scrolls
+ * toward the next slide, as a finger moving left does. The finger lands near the edge it moves
+ * away from, so it stays on the page however far it goes.
  */
-async function swipe(
-  viewport: HTMLElement,
-  dx: number,
-  dy: number,
-  speed: number,
-  lift: "fling" | "hold" = "fling"
-): Promise<void> {
+async function swipe(viewport: HTMLElement, dx: number, dy: number, speed: number): Promise<void> {
   // A scroller mounted a moment ago may not have reached the compositor, which hit-tests a
-  // gesture, so the first swipe waits for a few painted frames.
+  // touch, so the first swipe waits for a few painted frames.
   await nextFrames(3);
   const box = viewport.getBoundingClientRect();
-  await commands.touchSwipe(box.left + box.width / 2, box.top + box.height / 2, dx, dy, speed, lift);
+  const x = dx < 0 ? box.right - 10 : dx > 0 ? box.left + 10 : box.left + box.width / 2;
+  const y = dy < 0 ? box.bottom - 10 : dy > 0 ? box.top + 10 : box.top + box.height / 2;
+  await commands.touchSwipe(x, y, dx, dy, speed);
 }
 
 async function settles(viewport: HTMLElement, left: number): Promise<void> {
@@ -79,8 +77,7 @@ describe("Carousel swipe", () => {
     const viewport = carouselViewport(roleNamed("region", "Offers"));
     await expect.poll(currentIndicator).toBe(0);
 
-    // A 1500px/s flick a little past half a slide flings two slides without the stop. A synthetic
-    // gesture at 4000px/s is erratic in Chromium: it sometimes does not scroll at all.
+    // A 1500px/s flick a little past half a slide comes to rest one page on.
     await swipe(viewport, -(WIDTH * 0.6), 0, 1500);
     await settles(viewport, WIDTH);
     await expect.poll(currentIndicator).toBe(1);
@@ -98,7 +95,22 @@ describe("Carousel swipe", () => {
     renderThemed(<Fixture />);
     const viewport = carouselViewport(roleNamed("region", "Offers"));
     await expect.poll(currentIndicator).toBe(0);
-    await swipe(viewport, -40, 0, 200, "hold");
+    await nextFrames(3);
+    const box = viewport.getBoundingClientRect();
+    const x = box.right - 20;
+    const y = box.top + box.height / 2;
+    await commands.touchStart(x, y);
+    try {
+      // 40px toward the next slide, held still long enough that the lift does not fling.
+      for (const step of [10, 20, 30, 40, 40, 40, 40]) {
+        await commands.touchMove(x - step, y);
+        await wait(16);
+      }
+      // The viewport followed the finger, so the snap back below is the scroll's own.
+      await expect.poll(() => Math.round(viewport.scrollLeft)).toBeGreaterThan(20);
+    } finally {
+      await commands.touchEnd();
+    }
     await settles(viewport, 0);
     expect(currentIndicator()).toBe(0);
   });

@@ -1,6 +1,9 @@
 import type { CDPSession, Page } from "playwright";
 import type { BrowserCommand } from "vitest/node";
 
+/** How often a swiping finger reports where it is, as a 60Hz touch screen does. */
+const SWIPE_STEP_MS = 16;
+
 /** The DevTools session a held finger went down through, which its lift must use too. */
 const touches = new WeakMap<Page, CDPSession>();
 
@@ -116,37 +119,42 @@ export const pointerCommands = {
     ]
   >,
   /**
-   * A finger swipe from a point in the test frame's client coordinates, moving `dx` and `dy` px at
-   * `speed` px/s and then lifting, through Chromium's synthetic touch gesture. The gesture runs
-   * through the compositor's input path, as a real finger's does, so the page's native scrolling,
-   * scroll snapping and the fling after the lift all respond to it. `lift` says whether the finger
-   * leaves still moving, which flings, or stops first. It resolves once the gesture's input has
-   * been sent; a fling may still be running.
+   * A finger swipe from a point in the test frame's client coordinates: it lands, moves `dx` and
+   * `dy` px at `speed` px/s in 16ms steps, as a touch screen samples it, and lifts while still
+   * moving, so the page's native scrolling, its scroll snapping and the fling after the lift all
+   * answer it. The touches go through Chromium's touch input, as `touchStart` does, in real time,
+   * so the browser's own timestamps give the velocity the fling starts from. It resolves once the
+   * finger has lifted; a fling may still be running.
+   *
+   * Not `Input.synthesizeScrollGesture`: with a touch source, Linux's headless Chromium sends its
+   * pointer moves without a `touchmove`, so the gesture never scrolls there, though it does on
+   * macOS.
    */
-  touchSwipe: (async (
-    context,
-    x: number,
-    y: number,
-    dx: number,
-    dy: number,
-    speed: number,
-    lift: "fling" | "hold"
-  ) => {
+  touchSwipe: (async (context, x: number, y: number, dx: number, dy: number, speed: number) => {
     const frame = await context.iframe.owner().boundingBox();
+    const left = (frame?.x ?? 0) + x;
+    const top = (frame?.y ?? 0) + y;
+    const steps = Math.max(2, Math.round((Math.hypot(dx, dy) / speed) * (1000 / SWIPE_STEP_MS)));
     const session = await context.page.context().newCDPSession(context.page);
     try {
-      await session.send("Input.synthesizeScrollGesture", {
-        x: (frame?.x ?? 0) + x,
-        y: (frame?.y ?? 0) + y,
-        // The protocol's distances are the scroll's: a finger moving left scrolls right.
-        xDistance: dx,
-        yDistance: dy,
-        speed,
-        gestureSourceType: "touch",
-        preventFling: lift === "hold",
+      await session.send("Input.dispatchTouchEvent", {
+        type: "touchStart",
+        touchPoints: [{ x: left, y: top }],
       });
+      const start = performance.now();
+      for (let step = 1; step <= steps; step += 1) {
+        const due = start + step * SWIPE_STEP_MS - performance.now();
+        if (due > 0) {
+          await new Promise((resolve) => setTimeout(resolve, due));
+        }
+        await session.send("Input.dispatchTouchEvent", {
+          type: "touchMove",
+          touchPoints: [{ x: left + (dx * step) / steps, y: top + (dy * step) / steps }],
+        });
+      }
+      await session.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
     } finally {
       await session.detach();
     }
-  }) satisfies BrowserCommand<[number, number, number, number, number, "fling" | "hold"]>,
+  }) satisfies BrowserCommand<[number, number, number, number, number]>,
 };

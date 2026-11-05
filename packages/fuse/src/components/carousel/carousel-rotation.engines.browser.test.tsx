@@ -62,13 +62,13 @@ const rotationControl = (name: "Start" | "Stop"): Element | null =>
 
 /**
  * Rotation was stopped, not paused: with the pointer moved off the carousel, the rotation control
- * offers Start and the first page stays for longer than four delays.
+ * offers Start and page `on` stays for longer than four delays.
  */
-async function expectStoppedWithPointerOutside(): Promise<void> {
+async function expectStoppedWithPointerOutside(on = 0): Promise<void> {
   await userEvent.hover(roleNamed("button", "Outside"));
   expect(rotationControl("Start")).not.toBeNull();
   await wait(850);
-  expect(currentIndicator()).toBe(0);
+  expect(currentIndicator()).toBe(on);
 }
 
 describe("Carousel rotation across engines", () => {
@@ -133,9 +133,14 @@ describe("Carousel rotation across engines", () => {
   });
 
   it("stops when keyboard focus lands in a field a slide portals into a same-origin frame", async () => {
+    // Loaded before the carousel renders into it: Firefox replaces a new frame's first
+    // `about:blank` document once that loads, which would leave the portal in a dead document.
     const frame = document.createElement("iframe");
+    const loaded = new Promise((resolve) => frame.addEventListener("load", resolve, { once: true }));
+    frame.srcdoc = "<!doctype html><body></body>";
     document.body.append(frame);
     onTestFinished(() => frame.remove());
+    await loaded;
     const frameDocument = frame.contentDocument;
     if (frameDocument === null) {
       throw new Error("expected a same-origin frame document");
@@ -145,16 +150,25 @@ describe("Carousel rotation across engines", () => {
     if (field === null) {
       throw new Error("expected the portalled field in the frame");
     }
-    // Synchronously after mount, as in the shadow root's case.
     expect(rotationControl("Stop")).not.toBeNull();
-    field.focus();
+    // Firefox now and then turns down the first focus into a frame's freshly rendered field, so
+    // the field is focused until its document reports it. It sits outside every slide, so a page
+    // the carousel turns meanwhile cannot take it out of reach.
+    await expect
+      .poll(() => {
+        field.focus();
+        return frameDocument.activeElement;
+      })
+      .toBe(field);
     // The preconditions: the field has keyboard focus in its own document, while the outer
     // document names the frame, which does not match `:focus-visible` itself.
-    expect(frameDocument.activeElement).toBe(field);
     expect(field.matches(":focus-visible")).toBe(true);
     expect(document.activeElement).toBe(frame);
     expect(frame.matches(":focus-visible")).toBe(false);
-    await expectStoppedWithPointerOutside();
+    // The page a turn already under way when focus landed ends on, which then stays.
+    expect(rotationControl("Start")).not.toBeNull();
+    await wait(400);
+    await expectStoppedWithPointerOutside(currentIndicator());
     expect(frameDocument.activeElement).toBe(field);
   });
 });

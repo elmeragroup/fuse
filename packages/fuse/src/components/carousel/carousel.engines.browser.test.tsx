@@ -63,6 +63,24 @@ describe.each([
   { name: "right to left", orientation: "horizontal", dir: "rtl", read: (v: HTMLElement) => -v.scrollLeft },
   { name: "vertical", orientation: "vertical", dir: "ltr", read: (v: HTMLElement) => v.scrollTop },
 ] as const)("Carousel $name", ({ orientation, dir, read }) => {
+  it("stops a directional scroll of nearly two slides at the next slide", async () => {
+    renderThemed(<Fixture orientation={orientation} dir={dir} />);
+    const viewport = carouselViewport(roleNamed("region", "Offers"));
+    await expect.poll(currentIndicator).toBe(0);
+    // A relative scroll is directional, so `scroll-snap-stop: always` on each slide stops it at
+    // the first slide it would pass, though the second is the snap position nearest 1.8 slides in.
+    const distance = 1.8 * LENGTH;
+    viewport.scrollBy(
+      orientation === "vertical"
+        ? { top: distance, behavior: "instant" }
+        : { left: dir === "rtl" ? -distance : distance, behavior: "instant" }
+    );
+    await expect.poll(() => Math.round(read(viewport)), { timeout: 3000 }).toBe(LENGTH);
+    await wait(300);
+    expect(Math.round(read(viewport))).toBe(LENGTH);
+    expect(currentIndicator()).toBe(1);
+  });
+
   it("scrolls to the page a control asks for and lands on its snap position", async () => {
     renderThemed(<Fixture orientation={orientation} dir={dir} />);
     const viewport = carouselViewport(roleNamed("region", "Offers"));
@@ -245,51 +263,62 @@ describe("Carousel under a scaled ancestor", () => {
 });
 
 describe("Carousel spacing inherited while a later page is selected", () => {
-  it("keeps page 7 through the browser's re-snap, and pages on from it", async () => {
-    const changes: [number, CarouselIndexChangeReason][] = [];
-    renderThemed(
-      withLocale(
-        "en-US",
-        <div aria-label="Ancestor" role="group">
-          <style>{".spaced-slide { margin-inline-end: var(--spaced-gap, 0px); }"}</style>
-          <Carousel.Root
-            aria-label="Offers"
-            style={{ width: 360 }}
-            defaultIndex={6}
-            onIndexChange={(index, { reason }) => changes.push([index, reason])}>
-            <Carousel.Viewport>
-              {Array.from({ length: 12 }, (_, slide) => (
-                <Carousel.Slide key={slide} className="spaced-slide" style={{ flexBasis: `${100 / 3}%` }}>
-                  <div style={{ height: 80 }}>Offer {slide + 1}</div>
-                </Carousel.Slide>
-              ))}
-            </Carousel.Viewport>
-            <Carousel.Controls>
-              <Carousel.Next />
-              <Carousel.Indicators />
-            </Carousel.Controls>
-          </Carousel.Root>
-        </div>
-      )
-    );
-    const viewport = carouselViewport(roleNamed("region", "Offers"));
-    // Twelve 120px slides in a 360px viewport: page 7 starts six slides in, at 720px.
-    await expect.poll(() => Math.round(viewport.scrollLeft)).toBe(720);
-    await expect.poll(currentIndicator).toBe(6);
+  // Twelve 120px slides three to a view, placed on page 7 by `defaultIndex`, then an ancestor
+  // gives every slide a trailing gap. CSS Scroll Snap 1 § 6.2 has the browser re-snap to the slide
+  // it was snapped to, so slide 7 stays at the start, now 6 × (120 + gap) in. With a 24px gap the
+  // old 720px is still a snap position, slide 6's, and with a 20px gap the nearest one is 700px,
+  // slide 6's too: a re-snap to the nearest position instead of the same slide would show slide 6.
+  it.each([
+    { gap: 24, page7: 864, page8: 1008 },
+    { gap: 20, page7: 840, page8: 980 },
+  ])(
+    "keeps page 7 through the browser's re-snap after a $gap px gap, and pages on from it",
+    async ({ gap, page7, page8 }) => {
+      const changes: [number, CarouselIndexChangeReason][] = [];
+      renderThemed(
+        withLocale(
+          "en-US",
+          <div aria-label="Ancestor" role="group">
+            <style>{".spaced-slide { margin-inline-end: var(--spaced-gap, 0px); }"}</style>
+            <Carousel.Root
+              aria-label="Offers"
+              style={{ width: 360 }}
+              defaultIndex={6}
+              onIndexChange={(index, { reason }) => changes.push([index, reason])}>
+              <Carousel.Viewport>
+                {Array.from({ length: 12 }, (_, slide) => (
+                  <Carousel.Slide key={slide} className="spaced-slide" style={{ flexBasis: `${100 / 3}%` }}>
+                    <div style={{ height: 80 }}>Offer {slide + 1}</div>
+                  </Carousel.Slide>
+                ))}
+              </Carousel.Viewport>
+              <Carousel.Controls>
+                <Carousel.Next />
+                <Carousel.Indicators />
+              </Carousel.Controls>
+            </Carousel.Root>
+          </div>
+        )
+      );
+      const viewport = carouselViewport(roleNamed("region", "Offers"));
+      // Page 7 starts six slides in, at 6 × 120 = 720px.
+      await expect.poll(() => Math.round(viewport.scrollLeft)).toBe(720);
+      await expect.poll(currentIndicator).toBe(6);
 
-    // A 24px gap from the ancestor puts slide 7 at 6 × 144 = 864px, where the browser re-snaps.
-    roleNamed("group", "Ancestor").style.setProperty("--spaced-gap", "24px");
-    await expect.poll(() => Math.round(viewport.scrollLeft), { timeout: 3000 }).toBe(864);
-    await wait(400);
-    expect(currentIndicator()).toBe(6);
-    expect(changes).toEqual([]);
+      roleNamed("group", "Ancestor").style.setProperty("--spaced-gap", `${gap}px`);
+      await expect.poll(() => Math.round(viewport.scrollLeft), { timeout: 3000 }).toBe(page7);
+      await wait(400);
+      expect(Math.round(viewport.scrollLeft)).toBe(page7);
+      expect(currentIndicator()).toBe(6);
+      expect(changes).toEqual([]);
 
-    // Next goes to page 8, slide 8 at 7 × 144 = 1008px.
-    await userEvent.click(roleNamed("button", "Next slide"));
-    await expect.poll(() => Math.round(viewport.scrollLeft), { timeout: 3000 }).toBe(1008);
-    expect(currentIndicator()).toBe(7);
-    expect(changes).toEqual([[7, "next"]]);
-  });
+      // Next goes to page 8, slide 8 at 7 × (120 + gap).
+      await userEvent.click(roleNamed("button", "Next slide"));
+      await expect.poll(() => Math.round(viewport.scrollLeft), { timeout: 3000 }).toBe(page8);
+      expect(currentIndicator()).toBe(7);
+      expect(changes).toEqual([[7, "next"]]);
+    }
+  );
 });
 
 describe("Carousel input that never scrolls", () => {
