@@ -3,11 +3,9 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
 import type { FocusEvent, PointerEvent, RefObject } from "react";
 
-import { useMediaQuery } from "../../hooks/use-media-query";
-import { deepActiveElement } from "../../internal/active-element";
+import { useReducedMotion } from "../../hooks/use-reduced-motion";
+import { deepActiveElement, hasFocus } from "../../internal/active-element";
 import { containsAcrossShadowRoots } from "../../internal/dom-node";
-
-const REDUCED_MOTION = "(prefers-reduced-motion: reduce)";
 
 function subscribeToVisibility(onChange: () => void): () => void {
   document.addEventListener("visibilitychange", onChange);
@@ -62,6 +60,17 @@ function keyboardFocusInside(root: HTMLElement): boolean {
 }
 
 /**
+ * Whether `element`, which the Root's focus event recorded, still has keyboard focus. Removing a
+ * focused element blurs it without a blur the Root can hear: React suppresses its synthetic blur
+ * during the commit that removes it, and Firefox fires none on removal, so the record can outlive
+ * the focus. The element must still be in the document and focused in its own root, which covers
+ * a shadow root and a same-origin frame, and still match `:focus-visible`.
+ */
+function stillKeyboardFocused(element: Element | null): boolean {
+  return element !== null && element.isConnected && hasFocus(element) && element.matches(":focus-visible");
+}
+
+/**
  * What the user chose: nothing yet, so rotation follows the motion preference, or to play or stop
  * it. `playing` is the APG example's `hasUserActivatedPlay`: the user pressed the rotation control
  * to start it, so focus and hover no longer stop or pause it until they press it again.
@@ -89,11 +98,15 @@ export type Rotation = {
   readonly setDelay: (delay: number) => void;
   /** The Root's element, which an Autoplay mounting late reads hover and focus from. */
   readonly root: RefObject<HTMLElement | null>;
-  /** The Root's handlers: hover pauses rotation, and keyboard focus stops it. */
+  /**
+   * The Root's handlers: hover pauses rotation, and keyboard focus stops it. Focus and blur also
+   * track which element in the Root's React tree has keyboard focus, for an Autoplay mounting late.
+   */
   readonly rootHandlers: {
     readonly onPointerEnter: (event: PointerEvent<HTMLElement>) => void;
     readonly onPointerLeave: () => void;
     readonly onFocus: (event: FocusEvent<HTMLElement>) => void;
+    readonly onBlur: () => void;
   };
 };
 
@@ -110,8 +123,8 @@ export type Rotation = {
  *   follows that preference; an Autoplay starts from what is already so, whether it mounts with
  *   the Root or after it: paused if a mouse or pen is over the Root, even since before
  *   hydration where the primary pointer can hover, and stopped if keyboard
- *   focus is inside it, an `autoFocus` field's included; focus a mouse press moved in is not
- *   keyboard focus, so it does not stop rotation;
+ *   focus is inside it, an `autoFocus` field's and a portal's from a slide included; focus a mouse
+ *   press moved in is not keyboard focus, so it does not stop rotation;
  * - keyboard focus on any element in the carousel, the rotation control included, stops it, and
  *   the rotation control then reads "Start"; that is focus anywhere in its React tree, a portal,
  *   one into a same-origin frame, or an open shadow root included;
@@ -138,11 +151,13 @@ export function useCarouselRotation(
   const [delay, setDelay] = useState<number | null>(null);
   const [choice, setChoice] = useState<RotationChoice>("unread");
   const [hovered, setHovered] = useState(false);
-  // The Root's element, and whether a mouse or pen is over it, tracked with or without an Autoplay,
-  // in a ref, so the tracking renders nothing until an Autoplay reads it.
+  // The Root's element, whether a mouse or pen is over it and which element in its React tree has
+  // keyboard focus, tracked with or without an Autoplay, in refs, so the tracking renders nothing
+  // until an Autoplay reads it.
   const root = useRef<HTMLElement | null>(null);
   const pointerOver = useRef(false);
-  const reducedMotion = useMediaQuery(REDUCED_MOTION);
+  const keyboardFocused = useRef<Element | null>(null);
+  const reducedMotion = useReducedMotion();
   const hidden = useSyncExternalStore(subscribeToVisibility, documentHidden, serverDocumentHidden);
 
   // Reduced motion holds rotation until the user starts it. The server cannot read the
@@ -162,13 +177,17 @@ export function useCarouselRotation(
   }, [running, delay, index, pageCount, advance]);
 
   // An Autoplay starts from the Root as it is: paused under the pointer already over it, and
-  // stopped, as APG asks, with keyboard focus already inside. The Autoplay's own layout effect is
-  // too early to read that on a first mount: it runs before its ancestor Root's ref attaches, and
-  // before an `autoFocus` later in the tree takes focus, whose focus event then finds no Autoplay
-  // mounted. So mounting only marks the choice `unread`, which rotates nothing, and the Root reads
-  // itself in its own layout effect after the commit that mounted the Autoplay. That commit has
-  // attached every ref and applied every `autoFocus`, and the read comes before paint and before
-  // any rotation timer, which waits for a settled choice.
+  // stopped, as APG asks, with keyboard focus already inside. Focus inside is either in the Root's
+  // element, read from the document, which also finds focus that arrived before the Root could
+  // listen, or in a portal from its tree, which the element does not contain and only the tracked
+  // focus events report. The tracked element is checked again before it counts, since removing it
+  // fires no blur the Root hears, which `stillKeyboardFocused` explains. The Autoplay's own layout effect is too early to read that on a first
+  // mount: it runs before its ancestor Root's ref attaches, and before an `autoFocus` later in the
+  // tree takes focus, whose focus event then finds no Autoplay mounted. So mounting only marks the
+  // choice `unread`, which rotates nothing, and the Root reads itself in its own layout effect
+  // after the commit that mounted the Autoplay. That commit has attached every ref and applied
+  // every `autoFocus`, and the read comes before paint and before any rotation timer, which waits
+  // for a settled choice.
   const mount = useCallback(() => {
     setChoice("unread");
     return () => setDelay(null);
@@ -177,7 +196,9 @@ export function useCarouselRotation(
     if (mounted && choice === "unread") {
       const element = root.current;
       setHovered(pointerOver.current || (element !== null && hoveredNow(element)));
-      setChoice(element !== null && keyboardFocusInside(element) ? "stopped" : "auto");
+      const focused =
+        stillKeyboardFocused(keyboardFocused.current) || (element !== null && keyboardFocusInside(element));
+      setChoice(focused ? "stopped" : "auto");
     }
   }, [mounted, choice]);
   const play = useCallback(() => setChoice("playing"), []);
@@ -210,14 +231,20 @@ export function useCarouselRotation(
   // retargeted to a shadow host, which does not match `:focus-visible` for focus inside it. The
   // read starts from the target's own document, since a portal into a same-origin frame focuses
   // an element there, and the Root's document names only the frame, which does not match it.
+  // Focus moving within the tree blurs before it focuses again, so the ref ends on the new element.
   const onFocus = useCallback(
     (event: FocusEvent<HTMLElement>) => {
-      if (mounted && keyboardFocusedElement(event.target.ownerDocument) !== null) {
+      const focused = keyboardFocusedElement(event.target.ownerDocument);
+      keyboardFocused.current = focused;
+      if (mounted && focused !== null) {
         setChoice((current) => (current === "playing" ? current : "stopped"));
       }
     },
     [mounted]
   );
+  const onBlur = useCallback(() => {
+    keyboardFocused.current = null;
+  }, []);
 
   return {
     rotating,
@@ -227,6 +254,6 @@ export function useCarouselRotation(
     mount,
     setDelay,
     root,
-    rootHandlers: { onPointerEnter, onPointerLeave, onFocus },
+    rootHandlers: { onPointerEnter, onPointerLeave, onFocus, onBlur },
   };
 }

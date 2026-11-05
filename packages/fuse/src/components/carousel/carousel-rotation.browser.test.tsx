@@ -468,4 +468,105 @@ describe("Carousel autoplay and keyboard focus in a portal", () => {
     await wait(850);
     expect(currentIndicator()).toBe(0);
   });
+
+  it("starts stopped when it mounts late with keyboard focus already in a slide's portal", async () => {
+    function LatePortal({ onShow }: { readonly onShow: (show: () => void) => void }): ReactElement {
+      const [shown, setShown] = useState(false);
+      onShow(() => setShown(true));
+      return withLocale(
+        "en-US",
+        <>
+          <button type="button">Outside</button>
+          <Carousel.Root aria-label="Offers" style={{ width: WIDTH }}>
+            <Carousel.Controls>
+              {shown ? <Carousel.Autoplay delay={200} /> : null}
+              <Carousel.Indicators />
+            </Carousel.Controls>
+            <Carousel.Viewport>
+              <Carousel.Slide>
+                <div style={{ height: 80 }}>{createPortal(<input aria-label="Note" />, document.body)}</div>
+              </Carousel.Slide>
+              {carouselSlides(3, 1)}
+            </Carousel.Viewport>
+          </Carousel.Root>
+        </>
+      );
+    }
+    let show: () => void = () => undefined;
+    renderThemed(
+      <LatePortal
+        onShow={(next) => {
+          show = next;
+        }}
+      />
+    );
+    await expect.poll(() => carouselIndicators().length).toBe(4);
+    await userEvent.hover(roleNamed("button", "Outside"));
+    const note = roleNamed("textbox", "Note");
+    expect(roleNamed("region", "Offers").contains(note)).toBe(false);
+    note.focus();
+    expect(note.matches(":focus-visible")).toBe(true);
+    show();
+    // APG: keyboard focus inside the carousel, a portal from it included, stops rotation.
+    await expect
+      .poll(() => page.getByRole("button", { name: "Start automatic slide show" }).query())
+      .not.toBeNull();
+    await wait(850);
+    expect(currentIndicator()).toBe(0);
+    expect(document.activeElement).toBe(note);
+  });
+
+  it.each(["portal", "slide"] as const)(
+    "rotates when it mounts late after the keyboard-focused field in a %s is removed",
+    async (place) => {
+      type Steps = { readonly removeNote: () => void; readonly showAutoplay: () => void };
+      function RemovedNote({ onSteps }: { readonly onSteps: (steps: Steps) => void }): ReactElement {
+        const [noted, setNoted] = useState(true);
+        const [shown, setShown] = useState(false);
+        onSteps({ removeNote: () => setNoted(false), showAutoplay: () => setShown(true) });
+        const note = noted ? <input aria-label="Note" /> : null;
+        return withLocale(
+          "en-US",
+          <>
+            <button type="button">Outside</button>
+            <Carousel.Root aria-label="Offers" style={{ width: WIDTH }}>
+              <Carousel.Controls>
+                {shown ? <Carousel.Autoplay delay={200} /> : null}
+                <Carousel.Indicators />
+              </Carousel.Controls>
+              <Carousel.Viewport>
+                <Carousel.Slide>
+                  <div style={{ height: 80 }}>
+                    {place === "portal" ? createPortal(note, document.body) : note}
+                  </div>
+                </Carousel.Slide>
+                {carouselSlides(3, 1)}
+              </Carousel.Viewport>
+            </Carousel.Root>
+          </>
+        );
+      }
+      let steps: Steps = { removeNote: () => undefined, showAutoplay: () => undefined };
+      renderThemed(
+        <RemovedNote
+          onSteps={(next) => {
+            steps = next;
+          }}
+        />
+      );
+      await expect.poll(() => carouselIndicators().length).toBe(4);
+      await userEvent.hover(roleNamed("button", "Outside"));
+      const note = roleNamed("textbox", "Note");
+      note.focus();
+      expect(note.matches(":focus-visible")).toBe(true);
+      steps.removeNote();
+      await expect.poll(() => note.isConnected).toBe(false);
+      steps.showAutoplay();
+      // Removing the field took keyboard focus out of the carousel, so nothing stops rotation.
+      await expect
+        .poll(() => page.getByRole("button", { name: "Stop automatic slide show" }).query())
+        .not.toBeNull();
+      await expect.poll(currentIndicator, { timeout: 3000 }).toBe(1);
+    }
+  );
 });
