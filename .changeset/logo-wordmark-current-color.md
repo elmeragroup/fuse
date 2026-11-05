@@ -10,7 +10,7 @@ of the four logos below; the `variant="mark"` artwork and `TrumfLogo` are unchan
 - `TrondelagkraftLogo`: the letterforms and the lamp's ring and base were white. The lamp's
   yellow light stays yellow.
 - `GudbrandsdalEnergiLogo`: the lettering was white. The orange gradient mark stays.
-- `TelinetLogo`: "Telinet" was cyan and "Energi" navy. The dotted mark stays cyan.
+- `TelinetLogo`: "Energi" was navy. The word "Telinet" and the dotted mark stay cyan.
 - `NordicGreenEnergyLogo`: the lettering was dark green. The five-leaf mark stays.
 
 Where a page relied on the old fixed ink, set that colour as the text colour around the logo, for
