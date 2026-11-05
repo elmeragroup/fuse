@@ -6,6 +6,8 @@ The layout tests compare Fuse's scales, stacks, ticks and slots with these files
 
 `d3/` holds assertions from the upstream test files of d3-scale 4.0.2, d3-array 3.2.4 and d3-shape 3.2.0, as the charts ground truth extracted them. Each case keeps its test name, source line, expression, setup statements and the expected value the d3 author wrote by hand. `trim_d3_cases.py` copies them here, and `d3-cases.ts` replays each expression against a d3-shaped facade over Fuse's functions in `d3-facade.ts`.
 
+`d3/d3-shape/` also holds d3-shape 3.2.0's `arc`, `pie`, `lineRadial` and `areaRadial` cases, which judge the polar layouts. `.scratch/polar-charts/tools/trim_polar_cases.py` copies them in the same trimmed form. `d3-polar-facade.ts` gives d3's chainable `arc`, `pie`, `lineRadial` and `areaRadial` over Fuse's polar functions. It turns the cases' radians into Fuse's degrees and back, so their replay compares numbers within a relative 1e-12. A case that asserts with `assertPathEqual` compares both paths after d3's own normalisation, which `d3-cases.ts` exports as `normalizePath`.
+
 The three packages are released under the ISC licence. Each folder holds its package's `LICENSE`, which must travel with the cases.
 
 ## Value domains

@@ -14,6 +14,8 @@ export type D3Case = {
   readonly actual: string;
   readonly expected: unknown;
   readonly literal: boolean;
+  /** The upstream assertion, such as `assertPathEqual`, which compares normalised path data. */
+  readonly assert?: string;
   readonly compare?: string;
   readonly call?: readonly CallStep[] | null;
   readonly setup?: readonly { readonly line: number; readonly source: string }[];
@@ -121,20 +123,51 @@ function holdsDate(value: unknown): boolean {
   return "$date" in value || Object.values(value).some(holdsDate);
 }
 
-function isEqual(actual: unknown, expected: unknown): boolean {
-  if (typeof actual === "number" && typeof expected === "number") return Object.is(actual, expected);
+/** How a replay compares numbers: exactly by default, or within a relative tolerance. */
+export type D3ReplayOptions = {
+  /**
+   * The relative error two numbers may differ by. A facade whose Fuse function works in degrees
+   * moves the last bit of a radian through the round trip, which the d3 author's exact radians
+   * cannot hold.
+   */
+  readonly tolerance?: number;
+};
+
+function isEqual(actual: unknown, expected: unknown, tolerance: number): boolean {
+  if (typeof actual === "number" && typeof expected === "number") {
+    if (Object.is(actual, expected)) return true;
+    return tolerance > 0 && Math.abs(actual - expected) <= tolerance * Math.max(1, Math.abs(expected));
+  }
   if (actual instanceof Date && expected instanceof Date) return actual.getTime() === expected.getTime();
   if (Array.isArray(actual) && Array.isArray(expected)) {
-    return actual.length === expected.length && actual.every((item, index) => isEqual(item, expected[index]));
+    return (
+      actual.length === expected.length &&
+      actual.every((item, index) => isEqual(item, expected[index], tolerance))
+    );
   }
   if (actual !== null && expected !== null && typeof actual === "object" && typeof expected === "object") {
     const keys = Object.keys(expected);
     return (
       keys.length === Object.keys(actual).length &&
-      keys.every((key) => isEqual(Reflect.get(actual, key), Reflect.get(expected, key)))
+      keys.every((key) => isEqual(Reflect.get(actual, key), Reflect.get(expected, key), tolerance))
     );
   }
   return Object.is(actual, expected);
+}
+
+/**
+ * d3-shape's own path normalisation, from test/asserts.js of the frozen d3-shape 3.2.0 tests: every
+ * number to 3 digits, or to an integer within 1e-6 of one. `assertPathEqual` compares both sides
+ * after it.
+ *
+ * @param path - Path data.
+ * @returns The normalised path data.
+ */
+export function normalizePath(path: string): string {
+  return path.replace(/[-+]?(?:\d+\.\d+|\d+\.|\.\d+|\d+)(?:[eE][-]?\d+)?/gu, (text) => {
+    const value = Number(text);
+    return Math.abs(value - Math.round(value)) < 1e-6 ? String(Math.round(value)) : value.toFixed(3);
+  });
 }
 
 /**
@@ -142,9 +175,14 @@ function isEqual(actual: unknown, expected: unknown): boolean {
  *
  * @param testCase - The upstream assertion.
  * @param bindings - The names its expression reads, such as `scaleBand` or `ticks`.
+ * @param options - How numbers compare.
  * @returns Pass, fail with both values, or unsupported with the reason.
  */
-export function runD3Case(testCase: D3Case, bindings: Readonly<Record<string, unknown>>): D3Outcome {
+export function runD3Case(
+  testCase: D3Case,
+  bindings: Readonly<Record<string, unknown>>,
+  options: D3ReplayOptions = {}
+): D3Outcome {
   if (!testCase.literal) return { kind: "unsupported", reason: "the expected value is not a literal" };
   const setup = (testCase.setup ?? [])
     .map(({ source }) => source)
@@ -172,7 +210,11 @@ export function runD3Case(testCase: D3Case, bindings: Readonly<Record<string, un
         actual = evaluate(chainSource(testCase.call, own));
       }
     }
-    return isEqual(actual, expected) ? { kind: "pass" } : { kind: "fail", actual, expected };
+    const same =
+      testCase.assert === "assertPathEqual"
+        ? normalizePath(String(actual)) === normalizePath(String(expected))
+        : isEqual(actual, expected, options.tolerance ?? 0);
+    return same ? { kind: "pass" } : { kind: "fail", actual, expected };
   } catch (error) {
     return { kind: "unsupported", reason: error instanceof Error ? error.message : String(error) };
   }
@@ -183,15 +225,17 @@ export function runD3Case(testCase: D3Case, bindings: Readonly<Record<string, un
  *
  * @param file - The case file.
  * @param bindings - The names the expressions read.
+ * @param options - How numbers compare.
  * @returns Each case's `line` with its outcome.
  */
 export function runD3Cases(
   file: D3CaseFile,
-  bindings: Readonly<Record<string, unknown>>
+  bindings: Readonly<Record<string, unknown>>,
+  options: D3ReplayOptions = {}
 ): { readonly line: number; readonly test: string; readonly outcome: D3Outcome }[] {
   return file.cases.map((testCase) => ({
     line: testCase.line,
     test: testCase.test,
-    outcome: runD3Case(testCase, bindings),
+    outcome: runD3Case(testCase, bindings, options),
   }));
 }
