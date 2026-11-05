@@ -91,7 +91,8 @@ function browserLegs() {
 it("the merge checks schedule all required gates without browser work", () => {
   const ids = scheduledTasks("checks").map((task) => asString(task.taskId, "task id"));
   for (const required of [
-    "//#lint",
+    "//#lint:main",
+    "//#lint:module-names",
     "//#test:repo-policy",
     "//#type-check:scripts",
     "@elmeragroup/fuse#build",

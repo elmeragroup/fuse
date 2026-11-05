@@ -13,7 +13,7 @@ import { nextFrames, wait } from "../../../test/animation-frames";
 import { ONE_SERIES, PERCENT, READINGS, dotLayer, moveTo, shown } from "../../../test/chart/active-dot";
 import type { DotAndCrosshair } from "../../../test/chart/active-dot";
 import { settling } from "../../../test/chart/oscillator";
-import { everyFrame, onTheWay, sweepGlides } from "../../../test/chart/tooltip-glide";
+import { onTheWay, sweepGlides } from "../../../test/chart/tooltip-glide";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
 import { Chart } from "./chart-namespace";
@@ -267,9 +267,7 @@ describe("an active dot stepping onto a reading the line leaves out", () => {
     await nextFrames(40);
     const before = shown(host);
     moveTo(host, 1203, 0, DENSE.length);
-    const { frames, stop } = everyFrame(() => shown(host));
-    await nextFrames(60);
-    stop();
+    const frames = sweepGlides(host, () => shown(host));
     const first = frames[0];
     if (first === undefined) throw new Error("no frames");
     expect(

@@ -500,6 +500,7 @@ describe("a stream's cost", () => {
     for (let first = 1; first <= 120; first += 1) {
       rerender(stream(first));
       await frame();
+      // DOM audit: the x axis is aria-hidden plot output, so its slot is the only locator.
       if (host.querySelector(AXIS) === axis) sameAxis += 1;
     }
     observer.disconnect();

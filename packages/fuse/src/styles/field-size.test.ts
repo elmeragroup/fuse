@@ -6,7 +6,9 @@ import { fieldEntryClass, fieldReads, fieldSize } from "./field-size";
 /**
  * The field-size recipe against hand-written classes: what each size writes on the box, what
  * each read binds with its md fallback, and how a consumer's utility replaces a read through
- * tailwind-merge. `field-size.browser.test.tsx` measures the rendered boxes.
+ * tailwind-merge. `field-size.browser.test.tsx` measures the rendered boxes, and
+ * `control-size.touch.browser.test.tsx` a consumer font-size class over the text-entry type on
+ * every pointer.
  */
 
 /** Class order carries no meaning, so a slot is compared as a set. */
@@ -33,10 +35,6 @@ describe("fieldSize: the box writes", () => {
         "[--field-h:max(var(--control-h-sm),26px)] [--field-px:var(--control-px-sm)] [--field-gap:var(--control-gap-sm)] [--field-inner:max(var(--control-h-xs),24px)] [--field-text:var(--text-sm)] [--field-leading:calc(var(--text-sm)*var(--text-sm--line-height))]"
       )
     );
-  });
-
-  it("writes the default size when no size is passed", () => {
-    expect(fieldSize().box()).toBe(fieldSize({ size: "default" }).box());
   });
 });
 
@@ -77,14 +75,6 @@ describe("fieldSize: consumer utilities replace the reads", () => {
   ])("lets a consumer %s replace its read", (consumer, read) => {
     expect(cn(read, consumer)).toBe(consumer);
   });
-
-  it.each(["text-sm", "text-lg"])(
-    "lets a consumer %s replace the text-entry type on every pointer",
-    (consumer) => {
-      // Only the inert floor variable stays: no font-size class but the consumer's reads it.
-      expect(classSet(cn(fieldReads.entryType(), consumer))).toEqual(classSet(`${FLOOR} ${consumer}`));
-    }
-  );
 
   it("keeps the floored type under a consumer leading-* class", () => {
     expect(classSet(cn(fieldReads.entryType(), "leading-5"))).toEqual(

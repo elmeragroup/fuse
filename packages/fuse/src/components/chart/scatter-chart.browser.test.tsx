@@ -177,6 +177,7 @@ describe("ScatterChart marks", () => {
       "0.9",
       "1",
     ]);
+    // DOM audit: the y axis ticks are aria-hidden plot output, so their slot is the only locator.
     const yTicks = [...host.querySelectorAll<HTMLElement>('[data-slot="chart-y-tick"]')];
     expect(yTicks.map((tick) => tick.textContent)).toEqual([
       "20\u00a0000",

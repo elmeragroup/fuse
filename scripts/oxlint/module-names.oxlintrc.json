@@ -1,0 +1,8 @@
+{
+  "$schema": "../../node_modules/oxlint/configuration_schema.json",
+  "jsPlugins": ["./fuse-plugin.ts"],
+  "categories": { "correctness": "off" },
+  "rules": {
+    "fuse/no-vague-module-name": "error"
+  }
+}

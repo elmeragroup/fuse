@@ -3,8 +3,8 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { parse } from "yaml";
 
+import { repoRoot } from "../scripts/repo-tree.ts";
 import { asRecord } from "./json-object.mjs";
-import { repoRoot } from "./repo-tree.mjs";
 
 /** @param {string} file */
 function readYaml(file) {

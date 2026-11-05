@@ -10,7 +10,7 @@ import { render } from "../../test/browser-render";
 import { edgeInset } from "../../test/inner-corner-specimens";
 import type { PartEdge } from "../../test/inner-corner-specimens";
 import { withLocale } from "../../test/locale-matrix";
-import { fkasExternal, fkasPrivate, tkasCompany } from "../../test/theme-fixtures";
+import { fkasExternal, fkasPrivate, guenExternal, tkasCompany } from "../../test/theme-fixtures";
 import {
   px,
   roleNamed,
@@ -54,8 +54,6 @@ import { LEGAL_THEMES, themeSlug } from "./tokens/themes";
 import type { BrandCode, ThemeInput } from "./tokens/themes";
 
 const BUTTON_SIZES = ["default", "xs", "sm", "lg", "icon", "icon-xs", "icon-sm", "icon-lg"] as const;
-
-const guenExternal = { variant: "external", brand: "guen", segment: "private" } as const satisfies ThemeInput;
 
 type Specimen =
   | "button"

@@ -231,65 +231,6 @@ describe("the accessibility tree in Chromium", () => {
   );
 });
 
-describe("switch trigger 3, the cost of a step", () => {
-  type ThrottleCdp = {
-    send: (method: "Emulation.setCPUThrottlingRate", params: { readonly rate: number }) => Promise<void>;
-  };
-
-  it.runIf(server.browser === "chromium")(
-    "runs a 60-step ArrowRight sweep over 3,000 points with no long task over 50 ms at 4x throttling",
-    async () => {
-      // 3,000 quarter hours from 2026-10-01 in Oslo, which crosses no DST change.
-      const start = Date.parse("2026-09-30T22:00:00Z");
-      const rows = Array.from({ length: 3000 }, (_, index) => ({
-        start: new Date(start + index * 900_000),
-        price: Math.sin(index / 40),
-      }));
-      const config = { price: { label: "Spotpris", color: "chart-1" } } as const;
-      const { host } = renderThemed(
-        <LocaleProvider locale="nb-NO">
-          <Chart.Root
-            data={rows}
-            config={config}
-            xKey="start"
-            interval="quarter-hour"
-            timeZone="Europe/Oslo"
-            aria-label="Pris"
-          />
-        </LocaleProvider>
-      );
-      const option = host.querySelector<HTMLElement>('[role="option"]');
-      option?.focus();
-      // SAFETY: vitest types CDPSession as {}; Playwright's session implements send.
-      const session = cdp() as ThrottleCdp;
-      const longTasks: number[] = [];
-      const observer = new PerformanceObserver((list) => {
-        for (const entry of list.getEntries()) longTasks.push(entry.duration);
-      });
-      observer.observe({ type: "longtask", buffered: false });
-      await session.send("Emulation.setCPUThrottlingRate", { rate: 4 });
-      // The mount's own effects and the throttling switch settle first, so the sweep counts steps only.
-      await frames(20);
-      longTasks.length = 0;
-      try {
-        for (let step = 0; step < 60; step += 1) {
-          const target = document.activeElement;
-          target?.dispatchEvent(
-            new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true, cancelable: true })
-          );
-          await new Promise((resolve) => requestAnimationFrame(resolve));
-        }
-        await frames(6);
-      } finally {
-        await session.send("Emulation.setCPUThrottlingRate", { rate: 1 });
-        observer.disconnect();
-      }
-      expect(document.activeElement?.getAttribute("aria-posinset")).toBe("61");
-      expect(longTasks.filter((duration) => duration > 50)).toEqual([]);
-    }
-  );
-});
-
 describe("switch trigger 2, tooltip continuity", () => {
   it("keeps one tooltip popup through every key step", async () => {
     const { host } = renderThemed(

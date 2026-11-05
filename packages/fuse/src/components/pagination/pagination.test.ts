@@ -30,16 +30,8 @@ describe("paginationVariants", () => {
     expect(paginationVariants({ direction: "next" }).link()).toContain("pr-2.5");
   });
 
-  it("keeps the reviewed layout slots and drops the dead item/button slots", () => {
+  it("lays out the reviewed slots and sizes the ellipsis as the md control square", () => {
     const slots = paginationVariants();
-    expect(Object.keys(slots).sort()).toEqual([
-      "base",
-      "content",
-      "ellipsis",
-      "ellipsisIcon",
-      "link",
-      "linkIcon",
-    ]);
     expect(slots.base()).toContain("mx-auto");
     expect(slots.content()).toContain("flex-row");
     expect(slots.linkIcon()).toContain("size-4");

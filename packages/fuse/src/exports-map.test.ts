@@ -312,6 +312,8 @@ describe("exports map", () => {
   });
 
   it("exposes a workspace-only recipe-catalog tooling entry that is not published", () => {
+    // Source inspection, not a lint rule: the export list is a reviewed inventory, so a new
+    // catalog export is a decision here.
     expect(exportBindingTarget(sourceExports, "./recipe-catalog")).toEqual({
       types: "./src/components/recipe-catalog.ts",
       import: "./src/components/recipe-catalog.ts",
@@ -419,6 +421,7 @@ describe("exports map", () => {
   });
 
   it("exposes a workspace-only theme-catalog tooling entry that is not published", () => {
+    // Source inspection, not a lint rule: a reviewed inventory, as for the recipe catalog.
     expect(exportBindingTarget(sourceExports, "./theme-catalog")).toEqual({
       types: "./src/theme/catalog.ts",
       import: "./src/theme/catalog.ts",

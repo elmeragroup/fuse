@@ -64,7 +64,11 @@ The `browser-touch` project runs them one file at a time in Chromium with touch 
 Put unit tests whose result can depend on the process time zone in `*.zones.test.ts`. `unit`
 runs them in Europe/Oslo, and `unit-new-york` and `unit-tokyo` run them again in their zones.
 Put necessary source contracts in the central suite with the reason lint or an
-existing gate cannot enforce them.
+existing gate cannot enforce them. A per-file rule (a banned spelling, API or import
+shape, or a file-name rule) goes in the `fuse` oxlint plugin in `scripts/oxlint/`,
+with fires-and-quiet cases in `test/fuse-lint-rules.test.mjs`.
+Wall-clock judges live only in `browser-production`, which runs alone. Elsewhere read
+a glide by holding and seeking its animations (`sweepGlides`), and a cost by counted work.
 While editing, run `vitest related <files> --run --project unit` in the owning package
 (drop `--project` where none exist). Direct Vitest skips the Fuse build and dist tripwires.
 Lint through `pnpm lint`: type-aware rules run on tsrs, so a direct `oxlint` needs

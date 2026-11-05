@@ -161,9 +161,14 @@
 - After upstream tooling uses stable Effect 4 and the release-age guard admits it,
   upgrade and remove prerelease exclusions unless another exception is justified.
 - Retire repo-policy workarounds when upstream lint can require disable reasons
-  and configure the focus-ring owner path.
+  and configure the focus-ring owner path. The `styles/utils.ts` module-name exception lives in
+  `scripts/oxlint/module-name-rule.ts`.
 - Replace the `state faces` source contract with `elmera/no-local-state-face` once the
-  upstream plugin ships it with a configurable owner path and per-check allow lists.
+  upstream plugin ships it with a configurable owner path and per-check allow lists, or port it
+  to the repo's `fuse` plugin in `scripts/oxlint/`, sharing `test/class-tokens.ts`.
+- `fuse/overlay-classes-owner` still bans two class spellings no file holds any more
+  (`pointer-events-none absolute right-2 …`, `-mx-1 my-1 h-px bg-border`). Drop them or keep
+  them as retired-API guards.
 - Scope the within-target focus faces to the group's own control. `withinFocusRingClass`
   still matches any descendant `data-focus-ring-control`, so a focused NumberField nested
   in an InputGroup addon also rings the outer group. The state
@@ -177,6 +182,41 @@
   so the attribute is discarded. Drop it, and fix any comment that claims the root carries a slot.
 - The docs `sheet-demos` browser test failed once during the RSC namespace work
   (2026-09-25, T3) and passed on every rerun. If it recurs, diagnose before raising any timeout.
+- Diagnose these CI flakes when they recur; none reproduced locally under 12-core stress, 20x CDP
+  throttling or injected main-thread stalls:
+  - `sheet.browser.test.tsx` "closes from the corner button…" and `toast.browser.test.tsx`
+    "renders actionProps…": the Done and Undo buttons, at the frame's bottom, stayed "outside of
+    the viewport" for 14 s while the top-right corner button clicked. `test/page-frame-setup.ts`
+    now lays the frame out as a block and checks it before every test, which removed the 1–4 px
+    runner-page scroll eleven tests started with, but that cut the frame's top, not its bottom.
+  - `chart-entrance.browser.test.tsx`'s property, counterexample
+    `[[update seed 2, wait 0], 100, vertical]` (run 41808405870/2): a bar still waited at its base
+    two frames after the update.
+  - docs `data-table-filter-demos` "caps the 3,000 products at 50 rows": the submenu showed 0
+    options for 10 s on the code `main` has now (run 41452395142), after its search took focus.
+  - `chart-world.browser.test.tsx`'s property hit its 600 s budget once in a local full browser run
+    that took over 10 minutes; it takes about 18 s alone, passed 5 of 5 runs alone, and passed in
+    the next full run, so it stalled rather than ran slow.
+  - docs `chart-demos` (the chart page's demos took over 5 s to hydrate),
+    `landing-theme-picker` (System kept `dark` after the preference went back to light) and,
+    locally under load, `studio/theme-toolbar`.
+- The Firefox axe sweep over the chart page takes about 25 s on CI, and #453 raised its budget
+  to 60 s. Scan the demos one test each over one shared page, so a budget covers one demo.
+- `chart-world.browser.test.tsx`'s property fails on seed `-579186580` on `main` since #456: a
+  horizontal chart with readings `[0, 0.01, 0, 0, 0]` moves bar c1 from `111,112` to `235,236`
+  after a resize. It reproduces every run with the seed pinned and with `main`'s test harness, so
+  it is #456's bar floor under a resize, not a flake; CI meets it only when a run draws that seed.
+  Fix the floor, then keep the seed as an example in the property.
+- `packages/fuse/scripts/api-report.ts` rebuilds Fuse's `dist` whenever `dist/chart.d.ts` is older
+  than the newest `src` file. After turbo restores `dist` from cache, it rebuilds mid-`pnpm check`
+  and can race the tasks reading `dist` (seen locally: `//#lint:main` reporting docs classes as
+  unknown, a `fuse-figma` browser test missing `dist/styles.css`). Trust the task's turbo
+  dependency on `build` instead of comparing timestamps.
+- Test seams the overlay-through-sheet and styles audits left: `fieldSize`'s `defaultVariants`
+  (`styles/field-size.ts`) has no production caller, and `popoverInfoButtonStyles` is exported
+  only for its unit test, the one per-size proof of `contentSize`'s max-width until a browser test
+  measures it. Decide once, repo-wide, whether the eight dictionary "carries no key beyond…" tests
+  force a decision or copy the source.
 - `CssColor.parse` in `@elmeragroup/color` does not read `oklab()`, which is how Chromium
   serializes every `color-mix(in oklab, …)` / Tailwind `/NN` computed fill. Browser contrast
   checks over translucent fills, such as the Alert action's, throw `InvalidColor` until it does.
@@ -405,8 +445,11 @@ Paths are relative to `packages/fuse-figma` unless they start with `packages/`.
 - Split the large modules: `src/components/label-layout.ts`, `src/components/cascade.ts`,
   `src/components/box-sizing.ts`, and `plugin/src/reconcile.test.ts`, whose stroke cases can move
   to `plugin/src/reconcile.stroke.test.ts`.
-- Fix the compare flakes: the Fuse browser suites timed out on clicks at a load of 5, and
-  `src/compare/kit-markup.test.ts` timed out at a load of 23.
+- Fix the compare flake: the Fuse browser suites timed out on clicks at a load of 5.
+- `kit-markup.test.ts` checks only static markup, which cannot show `focus-visible:` or `hover:`,
+  so a composite's focus or hover cell showing the matching inner cell is proved only by its
+  per-kit suite. `number-field-kit.test.ts` pins no `state=focus` cell; check it and any other
+  composite with a focus axis.
 - Let the Select popup take a width other than 144px. An instance's inner text cannot take a
   sizing override.
 - Replan per set, in place of the whole kit.

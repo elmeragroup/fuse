@@ -27,7 +27,7 @@ import type { OverlayContainerProps } from "../overlay/overlay-props";
  * `side` → primitive `swipeDirection`. Swiping toward the anchored edge dismisses;
  * the mapping is the component's spine and must not be exposed as a separate prop.
  */
-export const SIDE_TO_SWIPE_DIRECTION = {
+const SIDE_TO_SWIPE_DIRECTION = {
   top: "up",
   right: "right",
   bottom: "down",

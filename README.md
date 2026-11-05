@@ -40,26 +40,26 @@ Docs: `pnpm --filter docs dev` → http://localhost:3000.
 
 Root scripts fan out through turbo unless noted.
 
-| Script                    | Does                                                                                                                  |
-| ------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| `pnpm build`              | Builds every package (`@elmeragroup/fuse` via tsdown, the Next apps, static-theme)                                    |
-| `pnpm dev`                | Runs the dev servers                                                                                                  |
-| `pnpm lint`               | `oxlint . --deny-warnings` over the tree, including the two local plugins and the type-aware rules on tsrs            |
-| `pnpm lint:fix`           | The same with `--fix`                                                                                                 |
-| `pnpm format`             | `oxfmt` write; `pnpm format:check` is the CI form                                                                     |
-| `pnpm test`               | Unit tests (vitest) in every package                                                                                  |
-| `pnpm test:browser`       | Fast browser-mode suites in the local gate (Fuse components, static-theme)                                            |
-| `pnpm test:e2e`           | End-to-end suites against a built docs app (`next start`) and the `pnpm shots` tool                                   |
-| `pnpm test:types`         | Type-level tests (`*.test-d.tsx`)                                                                                     |
-| `pnpm test:repo-policy`   | Root-only vitest project in [`test/`](test) — merge-workflow shape, lint script, README claims                        |
-| `pnpm type-check`         | `tsrs --noEmit` per package                                                                                           |
-| `pnpm gen`                | plop scaffolder — new component (source, entry facade, tests, demos)                                                  |
-| `pnpm changeset`          | Adds a changeset; see [Contribution flow](#contribution-flow)                                                         |
-| `pnpm release:version`    | `changeset version` + lockfile refresh; the Version Packages PR script                                                |
-| `pnpm release`            | Release-engine CLI: `check-pr` validates a Version Packages PR; `publish <commit>` and `retry <record-tag>` run in CI |
-| `pnpm type-check:scripts` | `tsrs --noEmit` for the root release scripts                                                                          |
-| `pnpm check`              | The local gate: `oxfmt --check` then `turbo run check`, `ci:checks` minus the e2e and packed-artifact tier            |
-| `pnpm ci:checks`          | The full merge gate locally: `oxfmt --check` then `turbo run ci:checks`                                               |
+| Script                    | Does                                                                                                                                                                                                                        |
+| ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm build`              | Builds every package (`@elmeragroup/fuse` via tsdown, the Next apps, static-theme)                                                                                                                                          |
+| `pnpm dev`                | Runs the dev servers                                                                                                                                                                                                        |
+| `pnpm lint`               | `pnpm lint:main` (`oxlint . --deny-warnings` over the tree, including the local plugins and the type-aware rules on tsrs), then `pnpm lint:module-names` (the module-name rule over the source files the main pass ignores) |
+| `pnpm lint:fix`           | The same with `--fix`                                                                                                                                                                                                       |
+| `pnpm format`             | `oxfmt` write; `pnpm format:check` is the CI form                                                                                                                                                                           |
+| `pnpm test`               | Unit tests (vitest) in every package                                                                                                                                                                                        |
+| `pnpm test:browser`       | Fast browser-mode suites in the local gate (Fuse components, static-theme)                                                                                                                                                  |
+| `pnpm test:e2e`           | End-to-end suites against a built docs app (`next start`) and the `pnpm shots` tool                                                                                                                                         |
+| `pnpm test:types`         | Type-level tests (`*.test-d.tsx`)                                                                                                                                                                                           |
+| `pnpm test:repo-policy`   | Root-only vitest project in [`test/`](test) — merge-workflow shape, lint script, README claims                                                                                                                              |
+| `pnpm type-check`         | `tsrs --noEmit` per package                                                                                                                                                                                                 |
+| `pnpm gen`                | plop scaffolder — new component (source, entry facade, tests, demos)                                                                                                                                                        |
+| `pnpm changeset`          | Adds a changeset; see [Contribution flow](#contribution-flow)                                                                                                                                                               |
+| `pnpm release:version`    | `changeset version` + lockfile refresh; the Version Packages PR script                                                                                                                                                      |
+| `pnpm release`            | Release-engine CLI: `check-pr` validates a Version Packages PR; `publish <commit>` and `retry <record-tag>` run in CI                                                                                                       |
+| `pnpm type-check:scripts` | `tsrs --noEmit` for the root release scripts                                                                                                                                                                                |
+| `pnpm check`              | The local gate: `oxfmt --check` then `turbo run check`, `ci:checks` minus the e2e and packed-artifact tier                                                                                                                  |
+| `pnpm ci:checks`          | The full merge gate locally: `oxfmt --check` then `turbo run ci:checks`                                                                                                                                                     |
 
 The type-aware lint rules run on the linter built into tsrs, the compiler behind every type-check, so
 the workspace does not install `oxlint-tsgolint`. The lint scripts set

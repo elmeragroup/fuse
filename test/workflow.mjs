@@ -4,8 +4,8 @@ import { join } from "node:path";
 import { expect } from "vitest";
 import { parse } from "yaml";
 
+import { repoRoot } from "../scripts/repo-tree.ts";
 import { asRecord, asRecordArray, asString, isString } from "./json-object.mjs";
-import { repoRoot } from "./repo-tree.mjs";
 
 /** The directory every GitHub Actions workflow lives in. */
 const WORKFLOW_DIRECTORY = new URL("../.github/workflows/", import.meta.url);

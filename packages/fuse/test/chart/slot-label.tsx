@@ -157,6 +157,7 @@ export function intl(index: number, options: Intl.DateTimeFormatOptions): string
  * @returns The pill's element.
  */
 export function slotLabel(host: HTMLElement): HTMLElement {
+  // DOM audit: the slot label is aria-hidden plot output, so its slot is the only locator.
   const pill = host.querySelector<HTMLElement>('[data-slot="chart-slot-label"]');
   if (pill === null) throw new Error("no slot label");
   return pill;

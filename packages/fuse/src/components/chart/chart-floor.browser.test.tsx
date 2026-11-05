@@ -222,6 +222,7 @@ describe("every drawn mark under the pixel floor", () => {
         const { host: root, unmount } = render(chart);
         try {
           // With Panels the walk reads the lower Panel, whose plot origin lies below the upper's.
+          // DOM audit: a Panel is a plot section with no role of its own, so its slot is the only locator.
           const host =
             chart.panels && chart.orientation === "vertical"
               ? (root.querySelectorAll<HTMLElement>('[data-slot="chart-panel"]')[1] ?? root)

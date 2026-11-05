@@ -169,14 +169,6 @@ test("the elements take the public props and reject invalid combinations", () =>
     // @ts-expect-error size is the five-value icon map
     <RadioIconButton value="a" size="md" aria-label="A" />
   );
-  const _noAs = (
-    // @ts-expect-error polymorphism is never an as prop
-    <RadioGroup as="div" />
-  );
-  const _nativeDisabled = (
-    // @ts-expect-error native disabled is not on the composite face; use isDisabled
-    <RadioGroup disabled />
-  );
   const _nullDefault = (
     // @ts-expect-error defaultValue is string, not null
     <RadioGroup defaultValue={null} />

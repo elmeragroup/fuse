@@ -1120,6 +1120,7 @@ describe("bars in measured pixels", () => {
   it("redraws the bars at a new width once the plot resizes", async () => {
     // At 300 px each band is 150 px, so its bar keeps 18.75 to 131.25 px of it.
     const { host } = renderThemed(stacked(400));
+    // DOM audit: Root's figure carries its slot, and its parent is the frame the test resizes.
     const frame = host.querySelector<HTMLElement>('[data-slot="chart"]')?.parentElement;
     frame?.style.setProperty("width", "300px");
     await expect

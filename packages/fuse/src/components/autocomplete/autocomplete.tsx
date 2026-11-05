@@ -130,6 +130,7 @@ export function AutocompleteClear({
   return (
     <AutocompletePrimitive.Clear
       data-slot="autocomplete-clear"
+      // oxlint-disable-next-line fuse/render-element-wiring -- an icon-sized InputGroupButton requires aria-label; it repeats the Clear part's own name.
       render={<InputGroupButton variant="ghost" size="icon-sm" aria-label={accessibleName} />}
       aria-label={accessibleName}
       className={mergeClassName(className)}

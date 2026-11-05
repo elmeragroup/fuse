@@ -3,7 +3,9 @@
   "ui": "stream",
   "globalEnv": ["NODE_ENV"],
   "tasks": {
-    "//#lint": {
+    // The main oxlint pass. `pnpm lint` runs it and then //#lint:module-names, which the check
+    // aggregate schedules on its own, so each gate runs each pass once.
+    "//#lint:main": {
       // apps/static-theme/vite.config.ts must import packages/fuse/dist/theme.js because
       // colorSchemeScriptSource's Function#toString() has to be the packed IIFE, not re-emitted
       // TypeScript. import/no-cycle resolves that import, so lint needs the Fuse build.
@@ -14,6 +16,13 @@
     // to enumerate every source tree. Caching this task would mean maintaining a fragile,
     // incomplete list for little gain, so it always runs.
     "//#test:repo-policy": {
+      "cache": false
+    },
+    // The module-name pass lints exactly the source files the main pass cannot reach, gitignored
+    // ones among them, which $TURBO_DEFAULT$ leaves out of any input hash. A cached result could
+    // replay green over a new gitignored file with a banned name, so, like the repo-policy suite
+    // it replaced, it always runs. It takes well under a second.
+    "//#lint:module-names": {
       "cache": false
     },
     "//#type-check:scripts": {
@@ -87,7 +96,8 @@
     },
     "check": {
       "dependsOn": [
-        "//#lint",
+        "//#lint:main",
+        "//#lint:module-names",
         "//#test:repo-policy",
         "//#type-check:scripts",
         "type-check",

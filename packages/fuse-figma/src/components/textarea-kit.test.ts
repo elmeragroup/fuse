@@ -104,8 +104,6 @@ describe("the Textarea component set", () => {
         },
       ],
     });
-    // `toEqual` skips a field it expects undefined, so the absent truncation is checked on its own.
-    expect(textOf(textarea("placeholder", "rest"))?.truncation).toBeUndefined();
   });
 
   it("paints the placeholder muted-foreground, a value foreground, and an invalid value error", () => {

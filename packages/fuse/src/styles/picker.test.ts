@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 
-import { RAW_PALETTE_RE } from "../../test/raw-palette";
 import { fieldEntryClass, fieldReads } from "./field-size";
 import { pickerVariants } from "./picker";
 
@@ -74,9 +73,8 @@ describe("pickerVariants shared slots", () => {
     }
   });
 
-  it("emits exactly the two documented axes and no raw palette", () => {
+  it("emits exactly the two documented axes", () => {
     expect(pickerVariants.variantKeys).toEqual(["range", "hasPresets"]);
-    expect(everyEmittedClass()).not.toMatch(RAW_PALETTE_RE);
   });
 
   // FieldGroup owns the field height (`fieldGroupVariants` in

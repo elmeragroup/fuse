@@ -1,8 +1,8 @@
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
+import { repoRoot } from "../scripts/repo-tree.ts";
 import { asRecord, asRecordArray, asString, isString, readJsonObject } from "./json-object.mjs";
-import { repoRoot } from "./repo-tree.mjs";
 
 /**
  * @param {Record<string, unknown>} override
@@ -49,9 +49,12 @@ function severityOf(level) {
 }
 
 describe("workspace lint script", () => {
-  it("runs oxlint over the tree with --deny-warnings and without --quiet", () => {
+  it("runs oxlint over the tree with --deny-warnings and without --quiet, then the module-name pass", () => {
     const parsed = readJsonObject(join(repoRoot, "package.json"));
-    const lint = asString(asRecord(parsed.scripts, "scripts").lint, "scripts.lint");
+    const scripts = asRecord(parsed.scripts, "scripts");
+    // `pnpm lint` is the developer entry point; turbo schedules each pass as its own task.
+    expect(asString(scripts.lint, "scripts.lint")).toBe("pnpm lint:main && pnpm lint:module-names");
+    const lint = asString(scripts["lint:main"], "scripts.lint:main");
     expect(lint).toMatch(/\boxlint\b/);
     expect(lint).toMatch(/(?:^|\s)\.(?:\s|$)/);
     expect(lint).toContain("--deny-warnings");

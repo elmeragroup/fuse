@@ -166,21 +166,9 @@ describe("bespoke icons", () => {
     expect(html).not.toContain('className="fill-on-surface"');
   });
 
-  it("ships no static title element besides the prop-driven title slot", () => {
-    const files = readdirSync(join(here, "bespoke")).filter((name) => name.endsWith(".tsx"));
-    expect(files.length).toBeGreaterThan(0);
-    for (const name of files) {
-      const titles = [
-        ...readFileSync(join(here, "bespoke", name), "utf8").matchAll(/<title>[\s\S]*?<\/title>/g),
-      ].map((match) => match[0]);
-      for (const title of titles) {
-        expect(title, name).toBe("<title>{title}</title>");
-      }
-    }
-  });
-
   it("namespaces defs ids per asset so no id is defined by two assets", () => {
-    // The next Figma/Sketch intake with generic ids (mask0_1_353, linearGradient-1)
+    // Source inspection, not a lint rule: uniqueness holds across assets, which no per-file rule
+    // sees. The next Figma/Sketch intake with generic ids (mask0_1_353, linearGradient-1)
     // must fail here instead of colliding with another asset's defs in the DOM.
     const owners = new Map<string, string>();
     let definitions = 0;
@@ -197,14 +185,6 @@ describe("bespoke icons", () => {
       }
     }
     expect(definitions).toBeGreaterThan(0);
-  });
-
-  it("keeps bespoke assets and illustrations server-safe: no hooks, no use client", () => {
-    for (const { file, source } of assetSources()) {
-      expect(source, file).not.toContain('"use client"');
-      expect(source, file).not.toMatch(/import\s*\{[^}]*\buse[A-Z]/);
-      expect(source, file).not.toMatch(/\buse[A-Z][A-Za-z]*\s*\(/);
-    }
   });
 
   it("renders the same asset twice as duplicate-but-identical defs", () => {
@@ -245,6 +225,7 @@ describe("bespoke icons", () => {
       // SAFETY: displayName is stamped by createLogo; the public prop type does not carry it.
       expect((Logo as { displayName?: string }).displayName, name).toBe(name);
     }
+    // Source inspection, not a lint rule: the roster's LOGO_NAMES decides which modules are logos.
     for (const name of LOGO_NAMES) {
       const file = `${iconModuleSlug(name)}.tsx`;
       const source = readFileSync(join(here, "bespoke", file), "utf8");

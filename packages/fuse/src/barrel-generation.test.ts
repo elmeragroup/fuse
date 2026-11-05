@@ -1,7 +1,6 @@
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { discoverJsEntriesFromAllowlist } from "../scripts/entries";
@@ -161,14 +160,5 @@ describe("barrel generation", () => {
 
     expect(jsEntries.map((entry) => entry.subpath)).not.toContain("future-entry");
     expect(jsEntries).toHaveLength(allow.length - deferred.length);
-  });
-});
-
-describe("source-export generation ownership", () => {
-  // Source inspection: a build that rewrote the tracked package.json exports or root barrel would
-  // still pass the exports-map drift gate, because it compares against a fresh generation.
-  it("keeps tracked source exports out of the package build", () => {
-    const packageRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
-    expect(readFileSync(join(packageRoot, "scripts/build.ts"), "utf8")).not.toContain("writeSourceExports");
   });
 });
