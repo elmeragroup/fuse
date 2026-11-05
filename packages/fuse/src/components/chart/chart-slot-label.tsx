@@ -9,7 +9,7 @@ import { useChartRoot, usePlotLayout } from "./chart-context";
 import { clientScale, writeAttribute, writeStyle } from "./chart-dom";
 import { useChartFollower } from "./chart-followers";
 import { useChartFrame } from "./chart-plot";
-import { ChartCrosshairContext } from "./chart-readout";
+import { ChartCrosshairContext } from "./chart-scope-contexts";
 import { springTiming } from "./chart-spring";
 import { sameShallow, useSteady } from "./chart-steady";
 import type { ChartLayerProps, XFormat } from "./chart-types";

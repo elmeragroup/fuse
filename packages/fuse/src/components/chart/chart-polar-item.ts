@@ -74,6 +74,8 @@ type ItemRow = {
   readonly category: string;
   readonly reading: Reading;
   readonly known: boolean;
+  /** The row's index in `data`, which the table's columns and the diagnostics read. */
+  readonly row: number;
 };
 
 /** A reading's quality state, or undefined for a measured or pending one. */
@@ -89,7 +91,7 @@ function valueOf(reading: Reading): number | null {
 }
 
 /**
- * Read the rows: each row's category and reading. A cell that breaks a reading rule, such as a value
+ * Read the rows: each row's category and reading, the first row of a category only. A cell that breaks a reading rule, such as a value
  * that is not a finite number, throws that rule in development, and production counts the reading
  * as missing and warns once. A negative reading throws `negative-polar-value` in development, and
  * production draws it as 0 and keeps its sign in the texts. A category config lacks throws
@@ -120,7 +122,27 @@ function readRows(input: ItemInput, issues: PolarIssue[]): ItemRow[] {
   for (const { rule, subject, first: issue, count } of issueGroups(named)) {
     issues.push({ rule, subject, message: `${part} ${dataMessage(issue, rowAt, count)}` });
   }
-  return rows.map((row, index) => {
+  // Two rows for one category break `duplicate-x`: development throws, and production keeps the
+  // first in data order and warns once, naming the first row it leaves out.
+  const seen = new Set<string>();
+  const duplicates: { readonly rule: "duplicate-x"; readonly row: number; readonly subject: string }[] = [];
+  const kept = rows.flatMap((_, index) => {
+    const category = categoryAt(index);
+    if (seen.has(category)) {
+      duplicates.push({ rule: "duplicate-x", row: index, subject: category });
+      return [];
+    }
+    seen.add(category);
+    return [index];
+  });
+  const [duplicate] = duplicates;
+  if (duplicate !== undefined && isChartDevelopment()) {
+    throw new ChartDataError(part, "duplicate-x", dataMessage(duplicate, rowAt));
+  }
+  for (const { rule, subject, first: issue, count } of issueGroups(duplicates)) {
+    issues.push({ rule, subject, message: `${part} ${dataMessage(issue, rowAt, count)}` });
+  }
+  return kept.map((index) => {
     const category = categoryAt(index);
     const reading = readings[index] ?? { kind: "missing" };
     if (reading.kind === "reading" && reading.value < 0) {
@@ -134,7 +156,7 @@ function readRows(input: ItemInput, issues: PolarIssue[]): ItemRow[] {
       if (isChartDevelopment()) throw new ChartDataError(part, "unknown-category", message);
       issues.push({ rule: "unknown-category", subject: category, message: `${part} ${message}` });
     }
-    return { category, reading, known };
+    return { category, reading, known, row: index };
   });
 }
 
@@ -325,7 +347,8 @@ function itemTable(source: ItemSource, rowShares: (digits: number) => (number | 
         };
       });
     },
-    cell: (slot, column) => input.rows[slot]?.[column],
+    // A slot is a kept row, so a table column reads the row it came from in `data`.
+    cell: (slot, column) => input.rows[rows[slot]?.row ?? -1]?.[column],
     hasColumn: (column) => input.rows.some((row) => Object.hasOwn(row, column)),
     timeZone: "UTC",
   };
@@ -557,9 +580,15 @@ export function radialModel(input: RadialInput): PolarModel {
   const polarStrings = POLAR_STRINGS[locale];
   const issues: PolarIssue[] = [];
   const rows = readRows(input, issues);
+  // Each row's own maximum follows the row it came from in `data`.
+  const given = input.maxima;
+  const maxima: RingMaxima =
+    given.kind === "rows"
+      ? { kind: "rows", maxima: rows.map(({ row }) => given.maxima[row] ?? null) }
+      : given;
   const fills: readonly RingFill[] = ringFills(
     rows.map(({ reading }) => valueOf(reading)),
-    input.maxima
+    maxima
   );
   const items: PolarItem[] = rows.map(({ category, reading, known }, index) => ({
     key: known ? category : `${OTHER_KEY}${String(index)}`,

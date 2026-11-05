@@ -1,5 +1,5 @@
 /**
- * d3-shape's chainable `arc`, `pie`, `lineRadial` and `areaRadial` over Fuse's polar functions, so
+ * d3-shape's chainable `arc` and `pie` over Fuse's polar functions, so
  * d3's own test source runs against Fuse unchanged. d3 works in radians and Fuse in degrees, so
  * each facade turns the test's radians into degrees on the way in and back on the way out, and the
  * replay compares numbers within a relative 1e-12 for that round trip. Fuse has no accessor API, so
@@ -7,7 +7,7 @@
  * draws no arc for, which section 8.2 rules, throws too.
  */
 /* oxlint-disable anti-slop/no-unknown-parameters, anti-slop/no-unknown-returns, anti-slop/no-runtime-typeof, anti-slop/no-unsafe-dictionary-type, anti-slop/require-safety-comment-for-type-assertion -- this module mirrors d3-shape's untyped chainable API so d3's own test source runs unchanged, and each method takes whatever the upstream test passes */
-import { arcCentroid, arcPath, radialAreaPath, radialLinePath } from "../arc-path";
+import { arcCentroid, arcPath } from "../arc-path";
 import { pieAngles } from "../pie";
 import { sweepOf, toDegrees, toRadians } from "../polar-angle";
 
@@ -157,60 +157,5 @@ export function pie() {
       return generator;
     },
   });
-  return generator;
-}
-
-/** A point of d3's default radial accessors: `[angle, radius]` in radians. */
-function vertexOf(point: unknown): readonly [number, number] {
-  if (!Array.isArray(point)) unsupported("the case passes a datum d3's default accessors read otherwise");
-  return [Number(point[0]), Number(point[1])];
-}
-
-/** The chainable members Fuse has no counterpart for. */
-function accessors(generator: (data: Iterable<unknown>) => string, names: readonly string[]): void {
-  for (const name of names) {
-    Object.assign(generator, { [name]: () => unsupported(`Fuse has no ${name} accessor`) });
-  }
-}
-
-/** d3's `lineRadial()`, drawn through Fuse's `radialLinePath` as an open line. */
-export function lineRadial() {
-  const generator = (data: Iterable<unknown>) =>
-    radialLinePath(
-      Array.from(data, (point) => {
-        const [angle, radius] = vertexOf(point);
-        return { angle: toDegrees(angle), radius };
-      }),
-      "open"
-    );
-  accessors(generator, ["angle", "radius", "defined", "curve", "context", "digits"]);
-  return generator;
-}
-
-/** d3's `areaRadial()`, drawn through Fuse's `radialAreaPath` from radius 0. */
-export function areaRadial() {
-  const generator = (data: Iterable<unknown>) =>
-    radialAreaPath(
-      Array.from(data, (point) => {
-        const [angle, radius] = vertexOf(point);
-        return { angle: toDegrees(angle), inner: 0, outer: radius };
-      })
-    );
-  accessors(generator, [
-    "angle",
-    "startAngle",
-    "endAngle",
-    "radius",
-    "innerRadius",
-    "outerRadius",
-    "defined",
-    "curve",
-    "context",
-    "lineStartAngle",
-    "lineEndAngle",
-    "lineInnerRadius",
-    "lineOuterRadius",
-    "digits",
-  ]);
   return generator;
 }

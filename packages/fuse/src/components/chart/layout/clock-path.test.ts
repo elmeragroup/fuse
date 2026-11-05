@@ -163,6 +163,78 @@ describe("an area round the dial", () => {
   });
 });
 
+/** Each closed subpath of a path of M, L and Z commands, as x and y points. */
+function subpathsOf(d: string): { x: number; y: number }[][] {
+  return d
+    .split("M")
+    .filter((part) => part !== "")
+    .map((part) =>
+      [...`M${part}`.matchAll(/[ML](-?[\d.]+),(-?[\d.]+)/gu)].map((match) => ({
+        x: Number(match[1]),
+        y: Number(match[2]),
+      }))
+    );
+}
+
+/** Whether a point lies inside a path filled even-odd: an odd count of edge crossings to its right. */
+function insideEvenOdd(d: string, x: number, y: number): boolean {
+  let inside = false;
+  for (const points of subpathsOf(d)) {
+    points.forEach((a, index) => {
+      const b = points[(index + 1) % points.length] ?? a;
+      if (a.y > y !== b.y > y && x < a.x + ((y - a.y) * (b.x - a.x)) / (b.y - a.y)) inside = !inside;
+    });
+  }
+  return inside;
+}
+
+describe("an Area's quality hatch (Q3, B1)", () => {
+  // 24 linear slots of 15°, vertex i at 15i + 7.5°, the base at the hole's 0.3 and tips that vary:
+  // 0.5 at midnight, rising 0.015 a slot, and 0.9 at slot 23. A linear curve draws straight in angle
+  // and radius between vertices, so the tip at an angle is the interpolation of its two vertices.
+  // The hatch must fill exactly the band beside each marked reading, from the vertex before it to
+  // the vertex after it, between the base and the tip, and nothing else.
+  const tips = Array.from({ length: 24 }, (_, slot) => (slot === 23 ? 0.9 : 0.5 + 0.015 * slot));
+  const vertex = (slot: number) => 15 * slot + 7.5;
+  const tipAt = (angle: number): number => {
+    const turn = (((angle - 7.5) % 360) + 360) % 360;
+    const slot = Math.floor(turn / 15);
+    const t = (turn - 15 * slot) / 15;
+    return (tips[slot] ?? 0) + ((tips[(slot + 1) % 24] ?? 0) - (tips[slot] ?? 0)) * t;
+  };
+  const xy = (angle: number, radius: number): readonly [number, number] => [
+    radius * Math.sin((angle * Math.PI) / 180),
+    -radius * Math.cos((angle * Math.PI) / 180),
+  ];
+
+  it.each([
+    ["a marked midnight reading", [0]],
+    ["two adjacent marked readings", [5, 6]],
+    ["a marked last reading", [23]],
+  ] as const)("hatches exactly the band beside %s, inside the area", (_, marked: readonly number[]) => {
+    const slots = { ...readings(24), marked: Array.from({ length: 24 }, (_, slot) => marked.includes(slot)) };
+    const { solid, marked: hatch } = clockArea(numbers(tips), slots, "linear");
+    // The band runs from the vertex before the first marked reading to the vertex after the last.
+    const from = vertex(Math.min(...marked) - 1);
+    const to = vertex(Math.max(...marked) + 1);
+    for (let angle = from - 30; angle <= to + 30; angle += 1) {
+      const inBand = angle > from + 0.5 && angle < to - 0.5;
+      const outBand = angle < from - 0.5 || angle > to + 0.5;
+      if (!inBand && !outBand) continue;
+      const tip = tipAt(angle);
+      for (const share of [0.15, 0.5, 0.85]) {
+        const radius = 0.3 + (tip - 0.3) * share;
+        const [x, y] = xy(angle, radius);
+        expect(insideEvenOdd(hatch, x, y), `${String(angle)}° at ${radius.toFixed(3)}`).toBe(inBand);
+        if (inBand) expect(insideEvenOdd(solid, x, y)).toBe(true);
+      }
+      // Never in the hole, never past the tip.
+      expect(insideEvenOdd(hatch, ...xy(angle, 0.2))).toBe(false);
+      expect(insideEvenOdd(hatch, ...xy(angle, tip + 0.02))).toBe(false);
+    }
+  });
+});
+
 describe("the columns", () => {
   it("draws one wedge per reading in its group", () => {
     const groups = clockWedges(

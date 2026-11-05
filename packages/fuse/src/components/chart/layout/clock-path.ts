@@ -312,11 +312,27 @@ function polyline(points: readonly ClockPoint[], closed: boolean): string {
   return closed ? `${body}Z` : body;
 }
 
-/** The angle ranges a run dashes: each segment that touches a marked slot, and each bridge. */
-function markedRanges(run: Run, angles: readonly number[], slots: ClockSlots): [number, number][] {
-  const ranges: [number, number][] = [];
+/**
+ * The angle ranges a run dashes or hatches: each segment that touches a marked slot, and each
+ * bridge, folded into the angles its curve samples and merged. A closed run's first and last readings
+ * meet across midnight, so a range that reaches past one end of the sampled turn continues at the
+ * other, and overlapping ranges, as two adjacent marked readings give, merge into one, so no piece is
+ * drawn twice, extrapolated past the samples or cancelled by an even-odd fill.
+ *
+ * @param run - The run.
+ * @param angles - Each of its slots' vertex angle, in the curve's unrolled turn.
+ * @param slots - The slots' states and marks.
+ * @param bounds - The first and last angle the run's curve samples.
+ * @returns The merged ranges, ascending, each inside the bounds.
+ */
+function markedRanges(
+  run: Run,
+  angles: readonly number[],
+  slots: ClockSlots,
+  bounds: readonly [number, number]
+): [number, number][] {
+  const raw: [number, number][] = [];
   const last = angles.length - 1;
-  // A closed run's first and last readings meet across midnight, a turn apart.
   const wrapped = (index: number): number | undefined => {
     if (!run.closed) return angles[index];
     if (index < 0) return (angles[last] ?? 0) - 360;
@@ -327,19 +343,27 @@ function markedRanges(run: Run, angles: readonly number[], slots: ClockSlots): [
     const here = angles[index] ?? 0;
     const before = wrapped(index - 1);
     const after = wrapped(index + 1);
-    if (slots.marked[slot] === true) {
-      const range: [number, number] = [before ?? here, after ?? here];
-      ranges.push(range);
-      // The curve samples one turn from the first vertex, so a range reaching back past it marks
-      // the closing edge a turn on.
-      if (run.closed && range[0] < (angles[0] ?? 0)) ranges.push([range[0] + 360, range[1] + 360]);
-    }
+    if (slots.marked[slot] === true) raw.push([before ?? here, after ?? here]);
     const next = run.slots[index + 1];
     // A bridge crosses one or more missing slots between two readings, and a covered slot is none.
     if (next !== undefined && after !== undefined && bridges(slots.states, slot, next))
-      ranges.push([here, after]);
+      raw.push([here, after]);
   });
-  return ranges;
+  const [low, high] = bounds;
+  const shifts = run.closed ? [-360, 0, 360] : [0];
+  const folded = raw
+    .flatMap(([from, to]) =>
+      shifts.map((shift): [number, number] => [Math.max(low, from + shift), Math.min(high, to + shift)])
+    )
+    .filter(([from, to]) => to > from)
+    .toSorted((a, b) => a[0] - b[0]);
+  const merged: [number, number][] = [];
+  for (const [from, to] of folded) {
+    const previous = merged.at(-1);
+    if (previous !== undefined && from <= previous[1]) previous[1] = Math.max(previous[1], to);
+    else merged.push([from, to]);
+  }
+  return merged;
 }
 
 /** Whether a missing slot lies between two slots of a run, going round from the first. */
@@ -411,7 +435,7 @@ export function clockLine(values: readonly number[], slots: ClockSlots, curve: C
     }
     const { angles } = runPoints(values, run, curve, "tip");
     const line = runCurve(values, run, curve, "tip");
-    const ranges = markedRanges(run, angles, slots);
+    const ranges = markedRanges(run, angles, slots, [line[0]?.angle ?? 0, line.at(-1)?.angle ?? 0]);
     if (ranges.length === 0) {
       solid += polyline(line, run.closed);
       continue;
@@ -452,8 +476,12 @@ export function clockArea(values: readonly number[], slots: ClockSlots, curve: C
     if (run.closed) solid += polyline(top, true) + polyline(base, true);
     else solid += region(top, base);
     const { angles } = runPoints(values, run, curve, "tip");
-    for (const [from, to] of markedRanges(run, angles, slots)) {
-      if (to <= from) continue;
+    // The ranges lie inside both curves' samples, merged, so each hatch region is drawn once.
+    const bounds: [number, number] = [
+      Math.max(top[0]?.angle ?? 0, base[0]?.angle ?? 0),
+      Math.min(top.at(-1)?.angle ?? 0, base.at(-1)?.angle ?? 0),
+    ];
+    for (const [from, to] of markedRanges(run, angles, slots, bounds)) {
       hatched += region(clip(top, from, to), clip(base, from, to));
     }
   }

@@ -8,19 +8,13 @@ import { useId, useMemo, useState } from "react";
 import type { CSSProperties, ReactElement, ReactNode } from "react";
 
 import { writeAttribute } from "./chart-dom";
+import { ClockMarkerContext } from "./chart-marker-context";
 import type { MarkValues } from "./chart-motion";
 import { viewBoxOf } from "./chart-pie-frame";
 import type { ClockDrawing, ClockSeries } from "./chart-polar-context";
 import { usePolarCommit, usePolarMark } from "./chart-polar-motion";
 import type { ChartDatum, ChartLayerProps } from "./chart-types";
-import {
-  clockDatumSlots,
-  useClockSeries,
-  useClockPlacement,
-  writeReveal,
-  groupOf,
-  ClockMarkerContext,
-} from "./clock-chart-part";
+import { clockDatumSlots, useClockSeries, useClockPlacement, writeReveal, groupOf } from "./clock-chart-part";
 import { clockDots, entranceFrame } from "./layout/clock-path";
 
 /**

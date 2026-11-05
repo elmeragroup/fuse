@@ -187,6 +187,29 @@ describe("a threshold ring (D23)", () => {
     expect(Oklab.deltaE(srgb(getComputedStyle(hatch ?? column).stopColor), role)).toBeLessThanOrEqual(3);
   });
 
+  it("hatches an estimated stretch of an Area over the area's own value paint (B2)", async () => {
+    // The 4 at 06:00 is estimated and above 1.5. Its hatched stretch must paint through the same
+    // threshold gradient as the solid area, so it reads red above the threshold, with the hatch as a
+    // texture over that paint.
+    const rows = hours(VALUES.map((value, hour) => (hour === 6 ? 4 : value))).map((row, hour) =>
+      hour === 6 ? { ...row, q: "estimated" } : row
+    );
+    const { host } = renderThemed(
+      <Dial data={rows} config={{ kwh: { ...split.kwh, qualityKey: "q" } }}>
+        <ClockChart.Area dataKey="kwh" variant="solid" />
+      </Dial>
+    );
+    await painted();
+    const area = clockLayer(host, "clock-chart-area");
+    // DOM audit: the area's paths are aria-hidden plot output, read by their part.
+    const solid = area.querySelector('[data-part="solid"]');
+    const marked = area.querySelector('[data-part="marked"]');
+    expect(marked?.getAttribute("d")).not.toBe("");
+    expect(getComputedStyle(marked ?? area).fill).toBe(getComputedStyle(solid ?? area).fill);
+    expect(getComputedStyle(solid ?? area).fill).toMatch(/steps/u);
+    expect(getComputedStyle(marked ?? area).mask).toMatch(/^url\(/u);
+  });
+
   it("glows a value-painted line through a filter that blurs its own pixels at the drawn radius", async () => {
     const { host } = renderThemed(
       <Dial config={split} size="15rem">
@@ -498,15 +521,25 @@ describe("the seam (D16), Now and the keys", () => {
   });
 });
 
-describe("an Area's gradients over both signs (B3)", () => {
-  it.each(["gradient", "gradient-reverse"] as const)(
-    "fades the %s look in its documented direction and keeps the negative side visible",
-    async (variant) => {
-      // Readings from −2 to 4 under "linear": the hole's edge is −2 at 0.3, the zero ring
-      // 0.3 + 0.7 · 2/6 ≈ 0.533 out, and 4 at the rim. "gradient" fades from the value toward zero,
-      // so it is clear at the zero ring and solid at the rim and at the hole; "gradient-reverse" is
-      // solid at the zero ring and clear at the rim and the hole.
-      const values = Array.from({ length: 24 }, (_, hour) => (hour < 12 ? 4 : -2));
+describe("an Area's gradients on every sign mix (B3, B5)", () => {
+  // Under "linear" the zero sits at its own radius: at the hole's 0.3 for readings 0 to 4, at the
+  // rim for −2 to 0, and at 0.3 + 0.7 · 2/6 ≈ 0.533 for −2 to 4. "gradient" fades from the value
+  // toward zero, so it is more solid at each reading's extreme than at zero; "gradient-reverse" is
+  // the other way round. The opacity at a radius interpolates the ramp's stops, as SVG paints it.
+  const mixes = [
+    ["positive-only", Array.from({ length: 24 }, (_, hour) => 1 + (hour % 4)), [0.98], 0.32],
+    ["negative-only", Array.from({ length: 24 }, (_, hour) => (hour % 2 === 0 ? -1 : -2)), [0.32], 0.98],
+    ["mixed", Array.from({ length: 24 }, (_, hour) => (hour < 12 ? 4 : -2)), [0.32, 0.98], 0.533],
+  ] as const;
+  it.each(
+    mixes.flatMap(([name, values, extremes, zero]) =>
+      (["gradient", "gradient-reverse"] as const).map(
+        (variant) => [variant, name, values, extremes, zero] as const
+      )
+    )
+  )(
+    "fades the %s look in its documented direction on %s readings",
+    async (variant, _, values, extremes, zero) => {
       const { host } = renderThemed(
         <Dial data={hours(values)} scale="linear">
           <ClockChart.Area dataKey="kwh" variant={variant} />
@@ -519,14 +552,66 @@ describe("an Area's gradients over both signs (B3)", () => {
         offset: Number(stop.getAttribute("offset")),
         opacity: Number(getComputedStyle(stop).stopOpacity),
       }));
-      const at = (offset: number) => stops.find((stop) => Math.abs(stop.offset - offset) < 0.001)?.opacity;
-      const zero = 0.3 + (0.7 * 2) / 6;
-      const [ends, middle] = variant === "gradient" ? ["solid", "clear"] : ["clear", "solid"];
-      const look = (opacity: number | undefined) =>
-        opacity === undefined ? "none" : opacity > 0 ? "solid" : "clear";
-      expect([look(at(0.3)), look(at(zero)), look(at(1))]).toEqual([ends, middle, ends]);
+      const opacityAt = (radius: number): number => {
+        const after = stops.findIndex((stop) => stop.offset >= radius);
+        if (after <= 0) return (after === -1 ? stops.at(-1) : stops[0])?.opacity ?? 0;
+        const a = stops[after - 1] ?? { offset: 0, opacity: 0 };
+        const b = stops[after] ?? a;
+        return b.offset === a.offset
+          ? b.opacity
+          : a.opacity + ((b.opacity - a.opacity) * (radius - a.offset)) / (b.offset - a.offset);
+      };
+      for (const extreme of extremes) {
+        if (variant === "gradient") expect(opacityAt(extreme)).toBeGreaterThan(opacityAt(zero) + 0.1);
+        else expect(opacityAt(zero)).toBeGreaterThan(opacityAt(extreme) + 0.1);
+      }
     }
   );
+});
+
+describe("a datum on a coarse reading (B3)", () => {
+  it("marks and emphasises an hourly reading from any quarter of its hour", async () => {
+    // A quarter-hour dial with an hourly reading of 3 on each :00 row and Now at 00:15, the second
+    // quarter, which the 00:00 reading covers. The Marker's dot sits at that reading's vertex, its
+    // ValueLabel prints 3, and the Column's emphasis on "now" outlines its one wedge.
+    const quarters = slots["quarter-hour"]["Europe/Oslo"]["2025-10-25"].utc_start.map((start) =>
+      Date.parse(start)
+    );
+    const rows = quarters.map((start, slot) =>
+      slot % 4 === 0 ? { start, kwh: 3, price: 1 } : { start, price: 1 }
+    );
+    const { host } = renderThemed(
+      <LocaleProvider locale="nb-NO" timeZone="Europe/Oslo">
+        <div style={{ width: 320 }}>
+          <ClockChart.Root
+            data={rows}
+            config={{
+              kwh: { label: "kWh", color: "chart-1", interval: "hour" },
+              price: { label: "Pris", color: "chart-2" },
+            }}
+            xKey="start"
+            cycle="day"
+            interval="quarter-hour"
+            yInclude={[0, 4]}
+            now={quarters[1]}
+            data-intro="none"
+            aria-label="Døgn">
+            <ClockChart.Column dataKey="kwh" emphasis="now" />
+            <ClockChart.Marker dataKey="kwh" at="now">
+              <ClockChart.ValueLabel />
+            </ClockChart.Marker>
+          </ClockChart.Root>
+        </div>
+      </LocaleProvider>
+    );
+    await painted();
+    // DOM audit: the marker's dots, its pill and the emphasis are aria-hidden plot output.
+    const marker = clockLayer(host, "clock-chart-marker");
+    expect(dotPoints(clockPath(marker, "dots"))).toHaveLength(1);
+    expect(host.querySelector('[data-slot="clock-chart-value-label"]')?.textContent).toBe("3");
+    const emphasis = clockLayer(host, "clock-chart-column").querySelector('[data-part="emphasis"]');
+    expect(wedgeRadii(emphasis?.getAttribute("d") ?? "")).toHaveLength(1);
+  });
 });
 
 describe("a ReferenceArea's label (B10)", () => {
@@ -572,6 +657,42 @@ describe("the default tooltip over a stack (B11)", () => {
     // DOM audit: the popup portals out of the host, and its total row carries its slot.
     await expect.poll(() => document.querySelectorAll('[data-slot="chart-tooltip-total"]').length).toBe(1);
     expect(document.querySelector('[data-slot="chart-tooltip-total"]')?.textContent).toContain("3");
+  });
+});
+
+describe("a Column's gradient on every sign mix (B5's class)", () => {
+  // The gradient look fades each wedge toward zero: more solid at the reading's extreme than at
+  // the zero ring, on positive-only, negative-only and mixed readings alike.
+  it.each([
+    ["positive-only", Array.from({ length: 24 }, (_, hour) => 1 + (hour % 4)), [0.98], 0.32],
+    ["negative-only", Array.from({ length: 24 }, (_, hour) => (hour % 2 === 0 ? -1 : -2)), [0.32], 0.98],
+    ["mixed", Array.from({ length: 24 }, (_, hour) => (hour < 12 ? 4 : -2)), [0.32, 0.98], 0.533],
+  ] as const)("fades toward zero on %s readings", async (_, values, extremes, zero) => {
+    const { host } = renderThemed(
+      <Dial
+        data={hours(values)}
+        config={{ kwh: { label: "kWh", color: "chart-1", barVariant: "gradient" } }}
+        scale="linear">
+        <ClockChart.Column dataKey="kwh" />
+      </Dial>
+    );
+    await painted();
+    const column = clockLayer(host, "clock-chart-column");
+    // DOM audit: the fade's ramp is aria-hidden paint, read by its stops.
+    const stops = [...column.querySelectorAll("mask radialGradient stop")].map((stop) => ({
+      offset: Number(stop.getAttribute("offset")),
+      opacity: Number(getComputedStyle(stop).stopOpacity),
+    }));
+    const opacityAt = (radius: number): number => {
+      const after = stops.findIndex((stop) => stop.offset >= radius);
+      if (after <= 0) return (after === -1 ? stops.at(-1) : stops[0])?.opacity ?? 0;
+      const a = stops[after - 1] ?? { offset: 0, opacity: 0 };
+      const b = stops[after] ?? a;
+      return b.offset === a.offset
+        ? b.opacity
+        : a.opacity + ((b.opacity - a.opacity) * (radius - a.offset)) / (b.offset - a.offset);
+    };
+    for (const extreme of extremes) expect(opacityAt(extreme)).toBeGreaterThan(opacityAt(zero) + 0.1);
   });
 });
 

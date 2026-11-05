@@ -7,7 +7,7 @@
  * provides its own, so a mark reads the nearest layout without knowing which: its value domain,
  * the frame its motion maps under on a resize, and the registry its reference labels stack in.
  */
-import { createContext, use, useLayoutEffect } from "react";
+import { use, useLayoutEffect } from "react";
 
 import type { AxisRecord } from "./chart-axis-format";
 import type { ChartFollowers } from "./chart-followers";
@@ -15,6 +15,7 @@ import type { ChartLabels } from "./chart-labels";
 import type { ChartMotion, FrameOwner } from "./chart-motion";
 import type { ChartPaths } from "./chart-paths";
 import type { ChartRiders } from "./chart-riders";
+import { ChartLayoutContext, ChartRootContext } from "./chart-scope-contexts";
 import type { ChartStore, EmphasisEntry } from "./chart-store";
 import type { TextContext } from "./chart-text";
 import type { ChartIntro, ChartRow, ChartSelectionChangeReason } from "./chart-types";
@@ -208,9 +209,6 @@ export type ChartLayoutContextValue = {
   /** The layout's reference labels, which stack against its own plot and no other. */
   readonly labels: ChartLabels;
 };
-
-export const ChartRootContext = createContext<ChartRootContextValue | null>(null);
-export const ChartLayoutContext = createContext<ChartLayoutContextValue | null>(null);
 
 /**
  * Read the enclosing cartesian Root.

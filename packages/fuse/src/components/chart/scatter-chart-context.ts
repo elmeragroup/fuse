@@ -5,11 +5,11 @@
  * never with the pointer, so marks that read it render only on a data change. It imports no
  * cartesian module, so a scatter route ships none.
  */
-import { createContext, use, useMemo, useSyncExternalStore } from "react";
+import { use, useMemo, useSyncExternalStore } from "react";
 
 import type { SupportedLocale } from "../../intl/locale-context";
 import { useDrawGateOpen } from "./chart-draw-gate";
-import type { ChartPlot } from "./chart-plot-measure";
+import { ScatterPlotContext, ScatterRootContext } from "./chart-scope-contexts";
 import type { ChartConfig, ValueFormat } from "./chart-types";
 import { seriesPaint, singleRole } from "./layout/color-key";
 import type { DomainGlide, ScatterDomains } from "./layout/domain-glide";
@@ -118,11 +118,6 @@ export type ScatterRootContextValue = {
    */
   readonly snapped: ScatterDomains | null;
 };
-
-export const ScatterRootContext = createContext<ScatterRootContextValue | null>(null);
-
-/** Root's measured plot, or null before the browser measures it. */
-export const ScatterPlotContext = createContext<ChartPlot | null>(null);
 
 /**
  * Read the enclosing scatter Root.

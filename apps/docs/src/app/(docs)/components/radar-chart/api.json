@@ -178,7 +178,7 @@
     {
       "name": "RadarChart.AngleAxis",
       "rsc": "client",
-      "sourcePath": "packages/fuse/src/components/chart/radar-chart-grid.tsx",
+      "sourcePath": "packages/fuse/src/components/chart/radar-chart-angle-axis.tsx",
       "forwardedFrom": [],
       "forwardedCount": 0,
       "props": [
@@ -205,7 +205,7 @@
     {
       "name": "RadarChart.RadiusAxis",
       "rsc": "client",
-      "sourcePath": "packages/fuse/src/components/chart/radar-chart-grid.tsx",
+      "sourcePath": "packages/fuse/src/components/chart/radar-chart-radius-axis.tsx",
       "forwardedFrom": [],
       "forwardedCount": 0,
       "props": [
@@ -367,7 +367,7 @@
     {
       "name": "RadarChart.ActiveDot",
       "rsc": "client",
-      "sourcePath": "packages/fuse/src/components/chart/radar-chart-marks.tsx",
+      "sourcePath": "packages/fuse/src/components/chart/radar-chart-active-dot.tsx",
       "forwardedFrom": [],
       "forwardedCount": 0,
       "props": [
@@ -403,7 +403,7 @@
     {
       "name": "RadarChart.Glow",
       "rsc": "client",
-      "sourcePath": "packages/fuse/src/components/chart/radar-chart-marks.tsx",
+      "sourcePath": "packages/fuse/src/components/chart/radar-chart-glow.tsx",
       "forwardedFrom": [],
       "forwardedCount": 0,
       "props": [

@@ -101,6 +101,30 @@ describe("the polar data rules in production", () => {
     expect(String(warn.mock.calls[0]?.[0])).toContain('"nettleie"');
   });
 
+  it("keeps the first of two rows for one category, and warns once with the second's row (B4)", () => {
+    spy();
+    // Strøm 1 and Strøm 2: the first row wins, so the pie totals 1 and the legend names Strøm once.
+    const rows = [
+      { name: "strom", v: 1 },
+      { name: "strom", v: 2 },
+    ];
+    const chart = (
+      <LocaleProvider locale="nb-NO">
+        <PieChart.Root data={rows} config={BILL_CONFIG} nameKey="name" valueKey="v" aria-label="Regning">
+          <PieChart.Legend />
+        </PieChart.Root>
+      </LocaleProvider>
+    );
+    const { host, rerender } = renderThemed(chart);
+    rerender(chart);
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(String(warn.mock.calls[0]?.[0])).toContain("Row 1");
+    expect(String(warn.mock.calls[0]?.[0])).toContain('"strom"');
+    // DOM audit: the legend items and the description are the Root's own output.
+    expect(host.querySelectorAll('[data-slot="chart-legend-item"]')).toHaveLength(1);
+    expect(host.querySelector('[data-slot="chart-description"]')?.textContent).toContain("totalt 1.");
+  });
+
   it("compares a radar's first four series, leaves the fifth out, and warns once", () => {
     spy();
     // A config built at run time, whose keys the type-level cap cannot count.

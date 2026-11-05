@@ -470,7 +470,7 @@ export function usePolarRoot(props: PolarRootProps): PolarRootState {
  *
  * @param id - The Root's id prefix.
  * @param model - The latest model.
- * @param motion - The Root's loop, whose frame shares the angles it painted.
+ * @param motion - The Root's loop, whose frame shares the angles it painted once it rests.
  * @returns The pick, null before the listbox mounts.
  */
 function polarPick(
@@ -487,10 +487,13 @@ function polarPick(
     if (!(rect.width > 0) || !(width > 0)) return null;
     const scale = rect.width / width;
     const point = { x: box.left + (clientX - rect.left) / scale, y: box.top + (clientY - rect.top) / scale };
+    // While a mark tweens, an entrance's slices among them, the pick reads the model, as every
+    // family's and the cartesian pick do, so a finger on a slice still sweeping in picks it. At rest
+    // it reads the floored, seamed angles the frame painted (D24).
     return model.current.pick(point, {
       scale,
       dpr: window.devicePixelRatio || 1,
-      painted: paintedOf(motion),
+      painted: motion.running() ? undefined : paintedOf(motion),
     });
   };
 }

@@ -140,13 +140,12 @@ export type {
   ChartTooltipValueProps,
 } from "./components/chart/chart-tooltip";
 export type { ChartTooltipTotalProps } from "./components/chart/chart-tooltip-total";
+export type { PieChartCenterLabelProps, PieChartCenterProps } from "./components/chart/pie-chart-center";
 export type {
-  PieChartCenterLabelProps,
   PieChartCenterMaxProps,
-  PieChartCenterProps,
   PieChartCenterShareProps,
   PieChartCenterValueProps,
-} from "./components/chart/pie-chart-center";
+} from "./components/chart/pie-chart-center-value";
 export type { PieChartGlowProps } from "./components/chart/pie-chart-glow";
 export type { PieChartTrackProps } from "./components/chart/pie-chart-track";
 export type { PieChartLabelsProps } from "./components/chart/pie-chart-labels";
@@ -154,18 +153,16 @@ export type { PieChartPieProps } from "./components/chart/pie-chart-pie";
 export type { PieChartSkeletonProps } from "./components/chart/pie-chart-skeleton";
 export type { RadialChartBarProps } from "./components/chart/radial-chart-bar";
 export type { RadialChartSkeletonProps } from "./components/chart/radial-chart-skeleton";
+export type { RadarChartGridProps } from "./components/chart/radar-chart-grid";
+export type { RadarChartAngleAxisProps } from "./components/chart/radar-chart-angle-axis";
+export type { RadarChartRadiusAxisProps } from "./components/chart/radar-chart-radius-axis";
 export type {
-  RadarChartAngleAxisProps,
-  RadarChartGridProps,
-  RadarChartRadiusAxisProps,
-} from "./components/chart/radar-chart-grid";
-export type {
-  RadarChartActiveDotProps,
   RadarChartAreaProps,
   RadarChartDotsProps,
-  RadarChartGlowProps,
   RadarChartLineProps,
 } from "./components/chart/radar-chart-marks";
+export type { RadarChartActiveDotProps } from "./components/chart/radar-chart-active-dot";
+export type { RadarChartGlowProps } from "./components/chart/radar-chart-glow";
 export type { RadarChartSkeletonProps } from "./components/chart/radar-chart-skeleton";
 export type { ClockChartRootProps } from "./components/chart/clock-chart-root";
 export type { ClockChartActiveDotProps } from "./components/chart/clock-chart-active-dot";
@@ -174,15 +171,13 @@ export type { ClockChartDotsProps, ClockChartMarkerProps } from "./components/ch
 export type { ClockChartGlowProps } from "./components/chart/clock-chart-glow";
 export type { ClockChartAreaProps, ClockChartLineProps } from "./components/chart/clock-chart-marks";
 export type { ClockChartValueLabelProps } from "./components/chart/clock-chart-value-label";
-export type {
-  ClockChartAngleAxisProps,
-  ClockChartGridProps,
-  ClockChartNowProps,
-  ClockChartRadiusAxisProps,
-  ClockChartReferenceAreaProps,
-  ClockChartReferenceLineProps,
-  ClockChartScrubberProps,
-} from "./components/chart/clock-chart-grid";
+export type { ClockChartGridProps } from "./components/chart/clock-chart-grid";
+export type { ClockChartAngleAxisProps } from "./components/chart/clock-chart-angle-axis";
+export type { ClockChartRadiusAxisProps } from "./components/chart/clock-chart-radius-axis";
+export type { ClockChartReferenceLineProps } from "./components/chart/clock-chart-reference-line";
+export type { ClockChartReferenceAreaProps } from "./components/chart/clock-chart-reference-area";
+export type { ClockChartScrubberProps } from "./components/chart/clock-chart-scrubber";
+export type { ClockChartNowProps } from "./components/chart/clock-chart-now";
 export type {
   ClockChartActiveValueProps,
   ClockChartCenterProps,

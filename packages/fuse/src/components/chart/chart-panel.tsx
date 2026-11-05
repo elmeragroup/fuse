@@ -3,13 +3,13 @@
 import { use, useInsertionEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { ReactElement, ReactNode } from "react";
 
-import { ChartLayoutContext, assertKnownKey, reportLayoutDomain, useChartRoot } from "./chart-context";
+import { assertKnownKey, reportLayoutDomain, useChartRoot } from "./chart-context";
 import type { ChartLayoutContextValue } from "./chart-context";
 import { createChartLabels } from "./chart-labels";
 import { createFrameOwner } from "./chart-motion";
 import { colourFamilyError } from "./chart-paint";
-import { ChartPlotContext, usePanelPlot } from "./chart-plot";
-import { PlotReadsContext } from "./chart-plot-measure";
+import { usePanelPlot } from "./chart-plot";
+import { ChartLayoutContext, ChartPlotContext, PlotReadsContext } from "./chart-scope-contexts";
 import { PlotLoader } from "./chart-skeleton";
 import { useSteady } from "./chart-steady";
 import type { ChartConfig, ChartLayerProps } from "./chart-types";

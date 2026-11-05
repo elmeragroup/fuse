@@ -4,6 +4,7 @@
 // directions.
 import type { ReactNode } from "react";
 
+import { renderToString } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
@@ -14,9 +15,11 @@ import { renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
 import { Chart } from "./chart-namespace";
 import "./chart.css";
+import { ClockChart } from "./clock-chart-namespace";
 import { PieChart } from "./pie-chart-namespace";
 import { RadarChart } from "./radar-chart-namespace";
 import { RadialChart } from "./radial-chart-namespace";
+import { ScatterChart } from "./scatter-chart-namespace";
 
 const ROWS = ["a", "b", "c"].map((name, index) => ({ name, v: index + 1, w: 4 - index }));
 
@@ -32,6 +35,14 @@ const POLAR_CONFIG = {
   strom: { label: "Strøm", color: "chart-1" },
   nettleie: { label: "Nettleie", color: "chart-2" },
 } as const;
+
+/** A scatter chart's points: outdoor temperature in °C against a household's yearly kWh. */
+const SCATTER_ROWS = [
+  { t: -2, kwh: 21_000, s: "now" },
+  { t: 18, kwh: 9_000, s: "now" },
+];
+
+const SCATTER_CONFIG = { now: { label: "Forbruk", color: "chart-1" } } as const;
 
 /** A radar's series over ROWS' categories. */
 const RADAR_CONFIG = {
@@ -273,5 +284,141 @@ describe("a Root nested in another chart's part", () => {
     // without one, though the nested v has a reading, 3, at the outer Marker's last slot.
     // DOM audit: the pill is aria-hidden plot output, so its slot is the only locator.
     expect(nestedFigure(host).querySelector('[data-slot="chart-value-label"]')?.textContent).toBe("");
+  });
+
+  it("gives a clock ValueLabel no outer clock Marker's datum (Q2)", () => {
+    // An outer dial of 99s with a Marker on its first hour holds an inner dial of 2s whose ValueLabel
+    // has no Marker of its own. In a chart of its own that ValueLabel throws part-outside-root, as
+    // its JSDoc says, and nested it must do the same rather than print the outer 99.
+    const day = (value: number) =>
+      Array.from({ length: 24 }, (_, hour) => ({
+        start: Date.parse("2025-10-24T22:00:00Z") + hour * 3_600_000,
+        kwh: value,
+      }));
+    const dial = {
+      config: { kwh: { label: "kWh", color: "chart-1" } },
+      xKey: "start",
+      cycle: "day",
+      interval: "hour",
+    } as const;
+    const render = () =>
+      renderToString(
+        <LocaleProvider locale="nb-NO" timeZone="Europe/Oslo">
+          <ClockChart.Root data={day(99)} {...dial} aria-label="Ytre">
+            <ClockChart.Marker dataKey="kwh" at="first">
+              <ClockChart.Root data={day(2)} {...dial} aria-label="Indre">
+                <ClockChart.ValueLabel />
+              </ClockChart.Root>
+            </ClockChart.Marker>
+          </ClockChart.Root>
+        </LocaleProvider>
+      );
+    expect(render).toThrow(expect.objectContaining({ rule: "part-outside-root" }));
+  });
+
+  it("gives a polar part inside a nested cartesian Root no outer polar Root (Q2's class)", () => {
+    // A pie's CenterValue belongs to a PieChart.Root. Placed under a Chart.Root that sits in an outer
+    // pie's Center, it has no pie of its own, so it throws part-outside-root, as it does under a
+    // lone Chart.Root, rather than print the outer pie's total.
+    const render = () =>
+      renderToString(
+        <LocaleProvider locale="nb-NO">
+          <PieChart.Root
+            data={POLAR_ROWS}
+            config={POLAR_CONFIG}
+            nameKey="name"
+            valueKey="v"
+            aria-label="Ytre">
+            <PieChart.Center>
+              <Chart.Root data={ROWS} config={CONFIG} xKey="name" aria-label="Indre">
+                <PieChart.CenterValue />
+              </Chart.Root>
+            </PieChart.Center>
+          </PieChart.Root>
+        </LocaleProvider>
+      );
+    expect(render).toThrow(expect.objectContaining({ rule: "part-outside-root" }));
+  });
+
+  // Each family's part, under another family's Root nested in a Root of its own family: alone under
+  // the inner Root it throws part-outside-root, as its JSDoc says, so nested it must throw the same
+  // rather than draw into, or read from, the outer chart (Q2's class: every context that crosses a
+  // Root). The outer Root holds the inner one where the server renders its children.
+  it.each([
+    [
+      "a pie's CenterValue under a ScatterChart in a pie's Center",
+      () => (
+        <PieChart.Root data={POLAR_ROWS} config={POLAR_CONFIG} nameKey="name" valueKey="v" aria-label="Ytre">
+          <PieChart.Center>
+            <ScatterChart.Root
+              data={SCATTER_ROWS}
+              config={SCATTER_CONFIG}
+              xKey="t"
+              yKey="kwh"
+              seriesKey="s"
+              aria-label="Indre">
+              <PieChart.CenterValue />
+            </ScatterChart.Root>
+          </PieChart.Center>
+        </PieChart.Root>
+      ),
+    ],
+    [
+      "a pie's Legend, which reads its Root's readout, under a ScatterChart in a pie's Center",
+      () => (
+        <PieChart.Root data={POLAR_ROWS} config={POLAR_CONFIG} nameKey="name" valueKey="v" aria-label="Ytre">
+          <PieChart.Center>
+            <ScatterChart.Root
+              data={SCATTER_ROWS}
+              config={SCATTER_CONFIG}
+              xKey="t"
+              yKey="kwh"
+              seriesKey="s"
+              aria-label="Indre">
+              <PieChart.Legend />
+            </ScatterChart.Root>
+          </PieChart.Center>
+        </PieChart.Root>
+      ),
+    ],
+    [
+      "a cartesian XAxis under a pie in a Chart.Root",
+      () => (
+        <Chart.Root data={ROWS} config={CONFIG} xKey="name" aria-label="Ytre">
+          <PieChart.Root
+            data={POLAR_ROWS}
+            config={POLAR_CONFIG}
+            nameKey="name"
+            valueKey="v"
+            aria-label="Indre">
+            <Chart.XAxis />
+          </PieChart.Root>
+        </Chart.Root>
+      ),
+    ],
+    [
+      "a scatter's Points under a pie in a ScatterChart.Root",
+      () => (
+        <ScatterChart.Root
+          data={SCATTER_ROWS}
+          config={SCATTER_CONFIG}
+          xKey="t"
+          yKey="kwh"
+          seriesKey="s"
+          aria-label="Ytre">
+          <PieChart.Root
+            data={POLAR_ROWS}
+            config={POLAR_CONFIG}
+            nameKey="name"
+            valueKey="v"
+            aria-label="Indre">
+            <ScatterChart.Points dataKey="now" />
+          </PieChart.Root>
+        </ScatterChart.Root>
+      ),
+    ],
+  ] as const)("gives %s no outer Root (Q2's class)", (_, chart) => {
+    const render = () => renderToString(<LocaleProvider locale="nb-NO">{chart()}</LocaleProvider>);
+    expect(render).toThrow(expect.objectContaining({ rule: "part-outside-root" }));
   });
 });

@@ -1,10 +1,11 @@
 /**
  * The polar path writers. Each turns numbers in degrees and in the caller's radius unit into SVG
  * path data through d3-shape, which takes radians, and keeps `PATH_DIGITS` digits, so the server's
- * markup and the loop's last frame write the same string. A slice and a clock wedge are d3 arcs, a
- * ring is a stroked centre-line track, and a radar or clock curve is a radial line or area.
+ * markup and the loop's last frame write the same string. A slice and a clock wedge are d3 arcs, and
+ * a ring is a stroked centre-line track. The radar's and the clock's curves have their own writers,
+ * in `radar.ts` and `clock-path.ts`.
  */
-import { arc as d3Arc, areaRadial, curveLinear, curveLinearClosed, lineRadial } from "d3-shape";
+import { arc as d3Arc } from "d3-shape";
 
 import type { Sweep } from "./polar-angle";
 import { polarPoint, toRadians } from "./polar-angle";
@@ -95,48 +96,4 @@ export function ringTrack(radius: number, sweep: Sweep): string {
   }
   const large = sweep.width > 180 ? 1 : 0;
   return `M${point(sweep.start)}A${r},${r} 0 ${large} ${clockwise} ${point(sweep.end)}`;
-}
-
-/** One vertex of a radial line, in degrees and the caller's radius unit. */
-export type RadialVertex = { readonly angle: number; readonly radius: number };
-
-/**
- * A radial line through its vertices, as d3's `lineRadial` draws it, closed back to its first vertex
- * when `closed` says so. A null vertex breaks the line.
- *
- * @param vertices - The vertices in order, null where a reading is missing.
- * @param ends - "closed" joins the last vertex to the first, "open" leaves them apart.
- * @returns The path data, empty when no two adjacent vertices draw.
- */
-export function radialLinePath(vertices: readonly (RadialVertex | null)[], ends: "closed" | "open"): string {
-  return (
-    lineRadial<RadialVertex | null>()
-      .digits(PATH_DIGITS)
-      .curve(ends === "closed" ? curveLinearClosed : curveLinear)
-      .defined((vertex) => vertex !== null)
-      .angle((vertex) => toRadians(vertex?.angle ?? 0))
-      .radius((vertex) => vertex?.radius ?? 0)(vertices) ?? ""
-  );
-}
-
-/** One vertex of a radial area: its angle and the two radii it spans. */
-export type RadialBand = { readonly angle: number; readonly inner: number; readonly outer: number };
-
-/**
- * A radial area between two radii, as d3's `areaRadial` draws it with linear edges. A null vertex
- * breaks the area.
- *
- * @param vertices - The vertices in order, null where a reading is missing.
- * @returns The path data.
- */
-export function radialAreaPath(vertices: readonly (RadialBand | null)[]): string {
-  return (
-    areaRadial<RadialBand | null>()
-      .digits(PATH_DIGITS)
-      .curve(curveLinear)
-      .defined((vertex) => vertex !== null)
-      .angle((vertex) => toRadians(vertex?.angle ?? 0))
-      .innerRadius((vertex) => vertex?.inner ?? 0)
-      .outerRadius((vertex) => vertex?.outer ?? 0)(vertices) ?? ""
-  );
 }

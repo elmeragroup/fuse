@@ -3,9 +3,9 @@
 /**
  * What every clock series part shares: the series a part names, its placement on the Root's loop
  * through the classifier, the slots a datum selects, the reveal and path writers, the value glow's
- * retuning, the Marker context a ValueLabel reads, and the curve each Line registers for an ActiveDot.
+ * retuning, and the curve each Line registers for an ActiveDot.
  */
-import { createContext, useLayoutEffect, useRef } from "react";
+import { useLayoutEffect, useRef } from "react";
 
 import { writeAttribute } from "./chart-dom";
 import type { PATH_GLOW } from "./chart-glow-filter";
@@ -16,7 +16,7 @@ import type { ClockDrawing, ClockSeries, PolarContextValue } from "./chart-polar
 import type { usePolarCommit } from "./chart-polar-motion";
 import { useChartReadout } from "./chart-readout";
 import type { ChartCurve, ChartDatum, ChartX } from "./chart-types";
-import { revealPath } from "./layout/clock-path";
+import { ownerSlot, revealPath } from "./layout/clock-path";
 import { keywordSlots, listedSlots } from "./layout/datum";
 import { ChartCompositionError } from "./layout/errors";
 
@@ -28,7 +28,7 @@ export const DIAL_REGION = { x: -1.5, y: -1.5, width: 3, height: 3, unit: NOMINA
 
 /**
  * The slots a datum selects on a clock: a keyword over a series' drawn values, or the slots holding
- * explicit instants.
+ * explicit instants, each resolved to the slot that owns its reading.
  *
  * @param clock - The clock's drawing.
  * @param part - The selecting part's display name, which an x of the wrong type names.
@@ -45,23 +45,29 @@ export function clockDatumSlots(
 ): number[] {
   const window = clock.text.model.window;
   if (window === null) return [];
+  // A slot a coarse reading covers selects the slot that owns the reading, where its wedge, its
+  // vertex and its value sit, and a reading two selected slots share is selected once.
+  const owned = (picked: readonly number[]): number[] =>
+    [...new Set(picked.map((slot) => ownerSlot(series.slots.states, slot)))].toSorted((a, b) => a - b);
   if (datum === "first" || datum === "last" || datum === "min" || datum === "max" || datum === "now") {
-    return keywordSlots(datum, { values: series.values, window, nowSlot: clock.now?.slot ?? -1 });
+    return owned(keywordSlots(datum, { values: series.values, window, nowSlot: clock.now?.slot ?? -1 }));
   }
   const xs: readonly ChartX[] = Array.isArray(datum.x) ? datum.x : [datum.x];
-  return listedSlots(
-    xs.map((x) => {
-      // oxlint-disable-next-line anti-slop/no-runtime-typeof -- consumer-owned union: an x is a string, a number or a Date
-      if (typeof x === "string") {
-        throw new ChartCompositionError(
-          part,
-          "x-type-mismatch",
-          "received a string x on a clock dial. Pass a Date or epoch milliseconds, because a date-only string parses as UTC midnight and lands on the wrong day."
-        );
-      }
-      return clock.slotOf(x);
-    }),
-    window
+  return owned(
+    listedSlots(
+      xs.map((x) => {
+        // oxlint-disable-next-line anti-slop/no-runtime-typeof -- consumer-owned union: an x is a string, a number or a Date
+        if (typeof x === "string") {
+          throw new ChartCompositionError(
+            part,
+            "x-type-mismatch",
+            "received a string x on a clock dial. Pass a Date or epoch milliseconds, because a date-only string parses as UTC midnight and lands on the wrong day."
+          );
+        }
+        return clock.slotOf(x);
+      }),
+      window
+    )
   );
 }
 
@@ -180,12 +186,6 @@ export function retuneGlow(svg: SVGSVGElement, unit: number, halo: typeof PATH_G
     if (blur !== null) writeAttribute(blur, "stdDeviation", deviation);
   }
 }
-
-/** The marker a ValueLabel sits beside: its series and the slots it marks. */
-export const ClockMarkerContext = createContext<{
-  readonly series: ClockSeries;
-  readonly slots: readonly number[];
-} | null>(null);
 
 /** CSS pixels per unit of the outer radius, as the layer shows now. */
 export function pixelsPerUnit(svg: SVGSVGElement, box: PolarContextValue["box"]): number {

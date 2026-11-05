@@ -25,7 +25,7 @@ import { readingPaint, seriesPaintOf } from "./chart-paint";
 import type { SeriesPaint } from "./chart-paint";
 import { pathAnchor, routeRestIndex } from "./chart-paths";
 import { useChartFrame } from "./chart-plot";
-import { ChartDatumContext } from "./chart-readout";
+import { ChartDatumContext } from "./chart-scope-contexts";
 import { readingAt, useActiveSlot } from "./chart-series-readout";
 import { glideShown, rideFrom, snapGlide, stepSpring } from "./chart-spring";
 import type { Ride } from "./chart-spring";

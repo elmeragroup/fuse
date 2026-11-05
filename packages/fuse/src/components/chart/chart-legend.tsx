@@ -7,17 +7,10 @@ import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
 
 import { ToggleGroupItem, ToggleGroupRoot } from "../toggle-group/toggle-group";
-import {
-  ChartLegendSideContext,
-  ChartRowContext,
-  shareDigits,
-  shareText,
-  useActiveIndex,
-  useChartReadout,
-  useReadoutKey,
-} from "./chart-readout";
+import { shareDigits, shareText, useActiveIndex, useChartReadout, useReadoutKey } from "./chart-readout";
 import { ChartSelectionContext } from "./chart-readout-port";
 import type { ChartReadout } from "./chart-readout-port";
+import { ChartLegendSideContext, ChartRowContext } from "./chart-scope-contexts";
 import { ChartSeriesLabel, ChartSwatch } from "./chart-series";
 import type {
   ChartDomProps,

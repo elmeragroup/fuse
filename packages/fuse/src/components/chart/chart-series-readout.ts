@@ -9,8 +9,8 @@
 import { use } from "react";
 
 import type { SupportedLocale } from "../../intl/locale-context";
-import { ChartLiveContext } from "./chart-readout";
 import type { ChartTableCell, ChartTableModel, ChartTablePage, ChartTableRow } from "./chart-readout-port";
+import { ChartLiveContext } from "./chart-scope-contexts";
 import { useChartStore } from "./chart-store";
 import type { ChartStore } from "./chart-store";
 import { PAGE_ROWS } from "./chart-table-shell";

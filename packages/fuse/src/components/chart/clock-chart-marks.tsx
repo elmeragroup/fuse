@@ -261,7 +261,7 @@ function SeriesLayer({
         "--chart-series": series?.index ?? 0,
         "--_paint": paint,
         "--_base": series?.paint ?? "currentColor",
-        "--_hatch-paint": `url(#${prefix}-hatch)`,
+        "--_quality": `url(#${prefix}-quality)`,
         "--_look": `url(#${prefix}-look)`,
         "--_glow": glow?.url,
         ...style,
@@ -269,7 +269,13 @@ function SeriesLayer({
       <defs>
         {series === undefined ? null : <StepGradient id={`${prefix}-steps`} series={series} />}
         {series?.stops === undefined ? null : <RoleGradient id={`${prefix}-role`} stops={series.stops} />}
-        {series === undefined ? null : <PolarHatch id={`${prefix}-hatch`} paint={series.paint} />}
+        {/* The quality texture is a mask over the mark's own value paint, so a threshold or a scale
+            keeps its colours where readings are estimated or projected. Its stripes take the
+            stylesheet's mask ink. */}
+        <PolarHatch id={`${prefix}-quality-stripes`} paint="var(--_quality-ink)" />
+        <mask id={`${prefix}-quality`} maskUnits="userSpaceOnUse" x="-1.5" y="-1.5" width="3" height="3">
+          <rect x="-1.5" y="-1.5" width="3" height="3" fill={`url(#${prefix}-quality-stripes)`} />
+        </mask>
         {glow?.filter(DIAL_REGION)}
         <clipPath id={`${prefix}-reveal`}>
           <path data-part="reveal" d="" />
@@ -356,8 +362,11 @@ function AreaMask({
   readonly clock: ClockDrawing;
 }): ReactElement | null {
   if (variant === "solid") return null;
-  const zero = clock.zero ?? clock.inner;
   if (variant === "gradient" || variant === "gradient-reverse") {
+    // Zero sits at its own radius on the scale, clamped to the dial: the hole's edge when every
+    // reading is positive, the rim when every reading is negative, and between them otherwise,
+    // whether or not the Grid draws a zero ring.
+    const zero = Math.min(1, Math.max(clock.inner, clock.radius(0)));
     // "near" is clear and "far" solid. "gradient" fades from the value toward zero: solid at the
     // rim and at the hole's edge, where the largest and the most negative values reach, clear at
     // the zero ring. "gradient-reverse" fades the other way, so both signs stay visible either way.

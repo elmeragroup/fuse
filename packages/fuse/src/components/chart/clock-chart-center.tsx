@@ -4,19 +4,17 @@
  * The text in the clock's hole and its value readouts. The Center lays its children in the square
  * inscribed in the hole, and by default prints the first series' active value, or the value at
  * `now` with nothing active, over the slot's label. ActiveValue prints one series' value at the
- * active slot, or at its `fallback` slot, and inside a Headline it is exposed text. TooltipTotal
- * prints a stack's total at the active slot. They read the series model, never plot geometry.
+ * active slot, or at its `fallback` slot, and inside a Headline it is exposed text. They read the
+ * series model, never plot geometry.
  */
 import { use } from "react";
 import type { ReactElement, ReactNode } from "react";
 
 import { clockDrawingIn, usePolarContext } from "./chart-polar-context";
 import type { ClockDrawing } from "./chart-polar-context";
-import { ChartHeadlineContext } from "./chart-readout";
+import { ChartHeadlineContext } from "./chart-scope-contexts";
 import { fallbackSlot, readingAt, useActiveSlot } from "./chart-series-readout";
 import { slotLabel } from "./chart-text";
-import type { ChartTooltipTotalProps } from "./chart-tooltip-total";
-import { TooltipTotalRow } from "./chart-tooltip-total-row";
 import type { ChartFallback, ChartLayerProps, ValueFormat } from "./chart-types";
 import { formatValue } from "./format/value-format";
 import { assertKnownKey } from "./layout/errors";
@@ -151,19 +149,5 @@ export function ClockChartCenter({ children, className, style }: ClockChartCente
   );
 }
 
-/**
- * A tooltip row with one stack's net total at the active slot, followed by the incomplete word when
- * a part is missing. A `stack` that names no stack of two or more series throws `unknown-key`.
- *
- * @beta
- */
-export function ClockChartTooltipTotal(props: ChartTooltipTotalProps): ReactElement {
-  const { model, kernel } = usePolarContext("ClockChart.TooltipTotal", ["clock"]);
-  const clock = clockDrawingIn(model, "ClockChart.TooltipTotal");
-  const slot = useActiveSlot({ model: clock.text.model, store: kernel.store });
-  return <TooltipTotalRow part="ClockChart.TooltipTotal" context={clock.text} at={slot} {...props} />;
-}
-
 Object.assign(ClockChartActiveValue, { displayName: "ClockChart.ActiveValue" });
 Object.assign(ClockChartCenter, { displayName: "ClockChart.Center" });
-Object.assign(ClockChartTooltipTotal, { displayName: "ClockChart.TooltipTotal" });

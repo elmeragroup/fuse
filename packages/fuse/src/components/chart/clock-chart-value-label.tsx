@@ -7,9 +7,9 @@ import { use } from "react";
 import type { ReactElement } from "react";
 
 import { useLocale } from "../../intl/locale-context";
+import { ClockMarkerContext } from "./chart-marker-context";
 import { clockDrawingIn, usePolarContext } from "./chart-polar-context";
 import type { ChartLayerProps, ValueFormat } from "./chart-types";
-import { ClockMarkerContext } from "./clock-chart-part";
 import { formatValue } from "./format/value-format";
 import { slotVertex } from "./layout/clock-path";
 import { ChartCompositionError } from "./layout/errors";

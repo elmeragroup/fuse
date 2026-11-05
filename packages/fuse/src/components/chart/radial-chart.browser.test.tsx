@@ -176,6 +176,28 @@ describe("the rings (section 8.4, Q5, Q8)", () => {
     expect(host.querySelectorAll('[data-slot="radial-chart-ring"][data-part="dots"]')).toHaveLength(6);
   });
 
+  it("keeps one filled dot for a positive value under half a dot, and none for a true zero (B6, D24)", async () => {
+    // 40 × 1 / 500 = 0.08 rounds to no dot, yet the value is above 0, so one dot fills; 0 of 200
+    // fills none; 233 of 180 fills all 40.
+    const { host } = renderThemed(
+      <Budgets
+        variant="dotted"
+        data={[
+          { budget: "heating", kwh: 1, limit: 500 },
+          { budget: "water", kwh: 0, limit: 200 },
+          { budget: "car", kwh: 233, limit: 180 },
+        ]}
+      />
+    );
+    await painted();
+    // DOM audit: each dotted ring's mask carries its value as a dash over the dots, read by its part.
+    const masks = [...host.querySelectorAll('[data-slot="radial-chart-ring"][data-part="mask"]')];
+    const dots = masks.map(
+      (mask) => Number((mask.getAttribute("stroke-dasharray") ?? "").split(" ")[0]) / (360 / 40)
+    );
+    expect(dots.map((count) => Math.round(count * 1e6) / 1e6)).toEqual([1, 0, 40]);
+  });
+
   it("paints a role list along the sweep in 6° segments behind a mask that carries the value (Q12)", () => {
     const { host } = renderThemed(
       <Budgets

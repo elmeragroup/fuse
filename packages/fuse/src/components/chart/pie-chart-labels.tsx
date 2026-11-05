@@ -21,7 +21,7 @@ import { ChartLegendShare } from "./chart-legend";
 import { pieFrameOf, viewBoxOf } from "./chart-pie-frame";
 import { pieDrawingIn, usePolarContext } from "./chart-polar-context";
 import type { PieDrawing } from "./chart-polar-context";
-import { ChartRowContext } from "./chart-readout";
+import { ChartRowContext } from "./chart-scope-contexts";
 import { ChartSeriesLabel } from "./chart-series";
 import type { ChartLayerProps } from "./chart-types";
 import { arcCentroid } from "./layout/arc-path";

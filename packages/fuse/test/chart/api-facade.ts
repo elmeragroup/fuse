@@ -50,35 +50,29 @@ import {
 } from "../../src/components/chart/chart-tooltip";
 import { ChartTooltipTotal } from "../../src/components/chart/chart-tooltip-total";
 import { ClockChartActiveDot } from "../../src/components/chart/clock-chart-active-dot";
-import {
-  ClockChartActiveValue,
-  ClockChartCenter,
-  ClockChartTooltipTotal,
-} from "../../src/components/chart/clock-chart-center";
+import { ClockChartAngleAxis } from "../../src/components/chart/clock-chart-angle-axis";
+import { ClockChartActiveValue, ClockChartCenter } from "../../src/components/chart/clock-chart-center";
 import { ClockChartColumn } from "../../src/components/chart/clock-chart-column";
 import { ClockChartDots, ClockChartMarker } from "../../src/components/chart/clock-chart-dots";
 import { ClockChartGlow } from "../../src/components/chart/clock-chart-glow";
-import {
-  ClockChartAngleAxis,
-  ClockChartGrid,
-  ClockChartNow,
-  ClockChartRadiusAxis,
-  ClockChartReferenceArea,
-  ClockChartReferenceLine,
-  ClockChartScrubber,
-} from "../../src/components/chart/clock-chart-grid";
+import { ClockChartGrid } from "../../src/components/chart/clock-chart-grid";
 import { ClockChartArea, ClockChartLine } from "../../src/components/chart/clock-chart-marks";
+import { ClockChartNow } from "../../src/components/chart/clock-chart-now";
+import { ClockChartRadiusAxis } from "../../src/components/chart/clock-chart-radius-axis";
+import { ClockChartReferenceArea } from "../../src/components/chart/clock-chart-reference-area";
+import { ClockChartReferenceLine } from "../../src/components/chart/clock-chart-reference-line";
 import { ClockChartRoot } from "../../src/components/chart/clock-chart-root";
+import { ClockChartScrubber } from "../../src/components/chart/clock-chart-scrubber";
 import { ClockChartSkeleton } from "../../src/components/chart/clock-chart-skeleton";
 import { ClockChartTooltip } from "../../src/components/chart/clock-chart-tooltip";
+import { ClockChartTooltipTotal } from "../../src/components/chart/clock-chart-tooltip-total";
 import { ClockChartValueLabel } from "../../src/components/chart/clock-chart-value-label";
+import { PieChartCenter, PieChartCenterLabel } from "../../src/components/chart/pie-chart-center";
 import {
-  PieChartCenter,
-  PieChartCenterLabel,
   PieChartCenterMax,
   PieChartCenterShare,
   PieChartCenterValue,
-} from "../../src/components/chart/pie-chart-center";
+} from "../../src/components/chart/pie-chart-center-value";
 import { PieChartGlow } from "../../src/components/chart/pie-chart-glow";
 import { PieChartLabels } from "../../src/components/chart/pie-chart-labels";
 import { PieChartPie } from "../../src/components/chart/pie-chart-pie";
@@ -96,18 +90,12 @@ import {
   RadarChartTooltip,
   RadialChartTooltip,
 } from "../../src/components/chart/polar-chart-tooltip";
-import {
-  RadarChartAngleAxis,
-  RadarChartGrid,
-  RadarChartRadiusAxis,
-} from "../../src/components/chart/radar-chart-grid";
-import {
-  RadarChartActiveDot,
-  RadarChartArea,
-  RadarChartDots,
-  RadarChartGlow,
-  RadarChartLine,
-} from "../../src/components/chart/radar-chart-marks";
+import { RadarChartActiveDot } from "../../src/components/chart/radar-chart-active-dot";
+import { RadarChartAngleAxis } from "../../src/components/chart/radar-chart-angle-axis";
+import { RadarChartGlow } from "../../src/components/chart/radar-chart-glow";
+import { RadarChartGrid } from "../../src/components/chart/radar-chart-grid";
+import { RadarChartArea, RadarChartDots, RadarChartLine } from "../../src/components/chart/radar-chart-marks";
+import { RadarChartRadiusAxis } from "../../src/components/chart/radar-chart-radius-axis";
 import { RadarChartRoot } from "../../src/components/chart/radar-chart-root";
 import { RadarChartSkeleton } from "../../src/components/chart/radar-chart-skeleton";
 import { RadialChartBar } from "../../src/components/chart/radial-chart-bar";

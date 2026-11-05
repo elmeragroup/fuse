@@ -5,7 +5,7 @@ import type { ReactElement } from "react";
 import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
 
-import { ChartHeadlineContext } from "./chart-readout";
+import { ChartHeadlineContext } from "./chart-scope-contexts";
 import type { ChartDomProps } from "./chart-types";
 
 /**

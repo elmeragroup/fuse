@@ -2,32 +2,21 @@
 
 /**
  * How the shared readout parts read their Root: the hooks over the Root's readout port, which give
- * every part the same active index and key the option names, and the contexts that say where a part
- * sits, which Root resets for its own parts. A template row supplies its own key. The module reads
+ * every part the same active index and key the option names. The contexts that say where a part
+ * sits live in `chart-scope-contexts`, which every Root's own scope resets. A template row supplies
+ * its own key. The module reads
  * no family's model, so a family's route ships only its own.
  */
-import { createContext, use } from "react";
+import { use } from "react";
 
 import type { SupportedLocale } from "../../intl/locale-context";
 import { ChartReadoutContext } from "./chart-readout-port";
 import type { ChartReadout } from "./chart-readout-port";
+import { ChartLegendSideContext, ChartLiveContext, ChartRowContext } from "./chart-scope-contexts";
 import { useChartStore } from "./chart-store";
 import type { ChartFractionDigits, ChartThresholdSide } from "./chart-types";
 import { formatValue } from "./format/value-format";
 import { ChartCompositionError } from "./layout/errors";
-
-/** The config key a template row renders for, such as one TooltipItems row. */
-export const ChartRowContext = createContext<string | null>(null);
-
-/** A threshold side's legend entry: the series it belongs to and the side it shows. */
-type LegendSide = { readonly key: string; readonly side: ChartThresholdSide };
-
-/**
- * The legend entry of a threshold side around a part, null outside the legend entries of a
- * threshold series. The series key travels with the side because a nested row, such as a
- * LegendToggle or a TooltipItems row, replaces `ChartRowContext` and leaves this context alone.
- */
-export const ChartLegendSideContext = createContext<LegendSide | null>(null);
 
 /**
  * The threshold side a Swatch or a SeriesLabel of one series shows: its legend entry's side, or
@@ -42,29 +31,6 @@ export function useLegendSide(key: string | null): ChartThresholdSide | null {
   const entry = use(ChartLegendSideContext);
   return entry?.key === key ? entry.side : null;
 }
-
-/**
- * Whether the readout parts below follow the active point. The tooltip does, and a static legend
- * does not, so a pointer move renders no legend swatch or label.
- */
-export const ChartLiveContext = createContext(false);
-
-// Root resets every context in this file. The three below live here, so Root resets them without
-// importing the Crosshair, Headline or ActiveValue module.
-
-/** Whether a part sits inside a Crosshair, which a SlotLabel needs. */
-export const ChartCrosshairContext = createContext(false);
-
-/** Whether a part sits inside a Headline, where an ActiveValue is exposed text. */
-export const ChartHeadlineContext = createContext(false);
-
-/**
- * The datum a ValueLabel prints, which the enclosing ActiveValueLine or Marker provides: a key and
- * a slot, or the active slot when `slot` is null.
- */
-export const ChartDatumContext = createContext<{ readonly key: string; readonly slot: number | null } | null>(
-  null
-);
 
 /**
  * Read the enclosing Root's readout.

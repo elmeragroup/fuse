@@ -367,7 +367,7 @@
     {
       "name": "PieChart.CenterValue",
       "rsc": "client",
-      "sourcePath": "packages/fuse/src/components/chart/pie-chart-center.tsx",
+      "sourcePath": "packages/fuse/src/components/chart/pie-chart-center-value.tsx",
       "forwardedFrom": [],
       "forwardedCount": 0,
       "props": [
@@ -403,7 +403,7 @@
     {
       "name": "PieChart.CenterShare",
       "rsc": "client",
-      "sourcePath": "packages/fuse/src/components/chart/pie-chart-center.tsx",
+      "sourcePath": "packages/fuse/src/components/chart/pie-chart-center-value.tsx",
       "forwardedFrom": [],
       "forwardedCount": 0,
       "props": [
@@ -439,7 +439,7 @@
     {
       "name": "PieChart.CenterMax",
       "rsc": "client",
-      "sourcePath": "packages/fuse/src/components/chart/pie-chart-center.tsx",
+      "sourcePath": "packages/fuse/src/components/chart/pie-chart-center-value.tsx",
       "forwardedFrom": [],
       "forwardedCount": 0,
       "props": [

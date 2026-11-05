@@ -195,22 +195,89 @@ const CLOCK_ROUTE_FORBIDDEN: readonly Forbidden[] = [
   { label: "cartesian paths", module: /^(chart-path-draw|chart-series-path|line-path)\./u },
 ];
 
+/** A rule that a route must not ship a part, found by the `data-slot` its code writes. */
+function slotRule(label: string, slot: string): Forbidden {
+  return { label, text: new RegExp(`["'\`]${slot}["'\`]`, "u") };
+}
+
 /**
- * What a route of `ClockChart.Line` alone must not ship: the other clock parts, found by the
- * `data-slot` each writes, and the stack floors and M4 decimation only a Column reads (Q1).
+ * A route of one polar part alone, what it must not ship, and the parts whose route ships all of
+ * that, its control. Each part module keeps its display name beside its component, so a bundler
+ * drops the parts a route never names (Q1).
  */
-const CLOCK_LINE_FORBIDDEN: readonly Forbidden[] = [
-  { label: "Column", text: /["'`]clock-chart-column["'`]/u },
-  { label: "Marker", text: /["'`]clock-chart-marker["'`]/u },
-  { label: "ValueLabel", text: /["'`]clock-chart-value-label["'`]/u },
-  { label: "ActiveDot", text: /["'`]clock-chart-active-dot["'`]/u },
-  { label: "useStackSeat", module: /^chart-stack-floors\./u },
-  { label: "m4Indexes", module: /^decimate\./u },
+type PartRoute = {
+  readonly part: string;
+  readonly forbidden: readonly Forbidden[];
+  readonly control: string;
+};
+
+/** The single-part routes: each must ship none of its rules, and its control must trip all of them. */
+const PART_ROUTES: readonly PartRoute[] = [
+  {
+    // The stack floors and M4 decimation are what only a Column reads.
+    part: "ClockChart.Line",
+    forbidden: [
+      slotRule("Column", "clock-chart-column"),
+      slotRule("Marker", "clock-chart-marker"),
+      slotRule("ValueLabel", "clock-chart-value-label"),
+      slotRule("ActiveDot", "clock-chart-active-dot"),
+      { label: "useStackSeat", module: /^chart-stack-floors\./u },
+      { label: "m4Indexes", module: /^decimate\./u },
+    ],
+    control: "ClockChart.Column, ClockChart.Marker, ClockChart.ValueLabel, ClockChart.ActiveDot",
+  },
+  {
+    // The label fitting is what only the axes and Now read.
+    part: "ClockChart.Grid",
+    forbidden: [
+      slotRule("AngleAxis", "clock-chart-angle-axis"),
+      slotRule("RadiusAxis", "clock-chart-radius-axis"),
+      slotRule("ReferenceLine", "clock-chart-reference-line"),
+      slotRule("ReferenceArea", "clock-chart-reference-area"),
+      slotRule("Scrubber", "clock-chart-scrubber"),
+      slotRule("Now", "clock-chart-now"),
+      { label: "label fitting", module: /^ring-labels\./u },
+    ],
+    control:
+      "ClockChart.AngleAxis, ClockChart.RadiusAxis, ClockChart.ReferenceLine, ClockChart.ReferenceArea, ClockChart.Scrubber, ClockChart.Now",
+  },
+  {
+    part: "ClockChart.Center",
+    forbidden: [slotRule("TooltipTotal", "chart-tooltip-total")],
+    control: "ClockChart.TooltipTotal",
+  },
+  {
+    part: "RadarChart.Grid",
+    forbidden: [
+      slotRule("AngleAxis", "radar-chart-angle-axis"),
+      slotRule("RadiusAxis", "radar-chart-radius-axis"),
+      { label: "label fitting", module: /^ring-labels\./u },
+    ],
+    control: "RadarChart.AngleAxis, RadarChart.RadiusAxis",
+  },
+  {
+    part: "RadarChart.Line",
+    forbidden: [slotRule("ActiveDot", "radar-chart-active-dot"), slotRule("Glow", "radar-chart-glow")],
+    control: "RadarChart.ActiveDot, RadarChart.Glow",
+  },
+  {
+    // The digit roll is what only the centre's numbers read.
+    part: "PieChart.Center",
+    forbidden: [
+      slotRule("CenterValue", "pie-chart-center-value"),
+      slotRule("CenterShare", "pie-chart-center-share"),
+      slotRule("CenterMax", "pie-chart-center-max"),
+      { label: "digit roll", module: /^chart-digit-roll\./u },
+    ],
+    control: "PieChart.CenterValue, PieChart.CenterShare, PieChart.CenterMax",
+  },
 ];
 
-/** The clock parts whose route ships everything the Line rule names, its control. */
-const CLOCK_LINE_CONTROL_PARTS =
-  "ClockChart.Column, ClockChart.Marker, ClockChart.ValueLabel, ClockChart.ActiveDot";
+/** A route that exports the named parts of the chart entry. */
+function partsSource(parts: string): string {
+  const families = [...new Set(parts.split(", ").map((part) => part.split(".")[0]))];
+  return `import { ${families.join(", ")} } from <chart>;\nexport const parts = [${parts}];\n`;
+}
 
 /** The cartesian parts whose route ships everything the clock rule names, its control. */
 const CLOCK_CONTROL_PARTS = "Chart.Root, Chart.Line, Chart.Bar, Chart.Tooltip, Chart.Table";
@@ -258,11 +325,11 @@ const BAR_PARTS = "Chart.Root, Chart.Grid, Chart.XAxis, Chart.YAxis, Chart.Bar";
  * Table and LegendToggleGroup to the bar route must trip each of the bar route's rules, the
  * scatter rules and the polar rules, so a detector that stops seeing them fails too. A clock route
  * also ships no cartesian plot geometry or path code, which a route of Chart's Line, Bar, Tooltip
- * and Table must trip. The radar
- * namespace, which reads the series model, is the control for the item rules' series model. The
- * oracle is rolldown's module
- * and import lists per chunk and the package's `sideEffects` field, which lets a bundler drop
- * every module a route does not reach.
+ * and Table must trip. The radar namespace, which reads the series model, is the control for the
+ * item rules' series model. A route of one polar part alone ships none of its siblings, and the
+ * siblings' route trips each of its rules (Q1). The oracle is rolldown's module and import lists
+ * per chunk and the package's `sideEffects` field, which lets a bundler drop every module a route
+ * does not reach.
  *
  * @param extracted - The extracted tarball's `package/` directory.
  * @returns A summary line.
@@ -287,66 +354,63 @@ export async function checkPackedChartBundles(extracted: string): Promise<string
         ).then((route) => ({ name: `${name} with Tooltip, Legend and Table`, route, forbidden })),
       ])
     );
-    const [[chart, alias, bars, control, pie, scatter, clockControl, clockLine, clockLineControl], polar] =
-      await Promise.all([
-        Promise.all([
-          bundleRoute(
-            extracted,
-            work,
-            "chart",
-            "import { Chart } from <chart>;\nexport const Root = Chart.Root;\n"
-          ),
-          bundleRoute(
-            extracted,
-            work,
-            "bar-chart",
-            "import { BarChart } from <chart>;\nexport const Root = BarChart.Root;\n"
-          ),
-          bundleRoute(
-            extracted,
-            work,
-            "bar-route",
-            `import { Chart } from <chart>;\nexport const parts = [${BAR_PARTS}];\n`
-          ),
-          bundleRoute(
-            extracted,
-            work,
-            "bar-route-control",
-            `import { Chart } from <chart>;\nexport const parts = [${BAR_PARTS}, Chart.Tooltip, Chart.Table, Chart.LegendToggleGroup];\n`
-          ),
-          bundleRoute(
-            extracted,
-            work,
-            "pie-chart",
-            "import { PieChart } from <chart>;\nexport const Root = PieChart.Root;\n"
-          ),
-          bundleRoute(
-            extracted,
-            work,
-            "scatter-chart",
-            "import { ScatterChart } from <chart>;\nexport const Root = ScatterChart.Root;\n"
-          ),
-          bundleRoute(
-            extracted,
-            work,
-            "clock-control",
-            `import { Chart } from <chart>;\nexport const parts = [${CLOCK_CONTROL_PARTS}];\n`
-          ),
-          bundleRoute(
-            extracted,
-            work,
-            "clock-line",
-            "import { ClockChart } from <chart>;\nexport const parts = [ClockChart.Line];\n"
-          ),
-          bundleRoute(
-            extracted,
-            work,
-            "clock-line-control",
-            `import { ClockChart } from <chart>;\nexport const parts = [${CLOCK_LINE_CONTROL_PARTS}];\n`
-          ),
-        ]),
-        polarRoutes,
-      ]);
+    const partRoutes = Promise.all(
+      PART_ROUTES.map(async (rule, index) => {
+        const [alone, control] = await Promise.all([
+          bundleRoute(extracted, work, `part-${String(index)}`, partsSource(rule.part)),
+          bundleRoute(extracted, work, `part-${String(index)}-control`, partsSource(rule.control)),
+        ]);
+        return { rule, alone, control };
+      })
+    );
+    const [[chart, alias, bars, control, pie, scatter, clockControl], polar, parts] = await Promise.all([
+      Promise.all([
+        bundleRoute(
+          extracted,
+          work,
+          "chart",
+          "import { Chart } from <chart>;\nexport const Root = Chart.Root;\n"
+        ),
+        bundleRoute(
+          extracted,
+          work,
+          "bar-chart",
+          "import { BarChart } from <chart>;\nexport const Root = BarChart.Root;\n"
+        ),
+        bundleRoute(
+          extracted,
+          work,
+          "bar-route",
+          `import { Chart } from <chart>;\nexport const parts = [${BAR_PARTS}];\n`
+        ),
+        bundleRoute(
+          extracted,
+          work,
+          "bar-route-control",
+          `import { Chart } from <chart>;\nexport const parts = [${BAR_PARTS}, Chart.Tooltip, Chart.Table, Chart.LegendToggleGroup];\n`
+        ),
+        bundleRoute(
+          extracted,
+          work,
+          "pie-chart",
+          "import { PieChart } from <chart>;\nexport const Root = PieChart.Root;\n"
+        ),
+        bundleRoute(
+          extracted,
+          work,
+          "scatter-chart",
+          "import { ScatterChart } from <chart>;\nexport const Root = ScatterChart.Root;\n"
+        ),
+        bundleRoute(
+          extracted,
+          work,
+          "clock-control",
+          `import { Chart } from <chart>;\nexport const parts = [${CLOCK_CONTROL_PARTS}];\n`
+        ),
+      ]),
+      polarRoutes,
+      partRoutes,
+    ]);
     if (chart.code !== alias.code) {
       throw new Error("the BarChart.Root route emits different bytes from the Chart.Root route");
     }
@@ -396,12 +460,18 @@ export async function checkPackedChartBundles(extracted: string): Promise<string
     if (clockBlind.length > 0) {
       throw new Error(`the clock control route trips no clock rule for ${clockBlind.join(", ")}`);
     }
-    const lineLeaks = shipped(clockLine, CLOCK_LINE_FORBIDDEN);
-    if (lineLeaks.length > 0) throw new Error(`the ClockChart.Line route ships ${lineLeaks.join("; ")}`);
-    const lineBlind = blindRules(clockLineControl, CLOCK_LINE_FORBIDDEN);
-    if (lineBlind.length > 0) {
-      throw new Error(`the clock parts control route trips no Line rule for ${lineBlind.join(", ")}`);
-    }
+    // Every single-part route reports at once, so one run names each part module that needs a split.
+    const partFailures = parts.flatMap(({ rule, alone, control: partControl }) => {
+      const leaks = shipped(alone, rule.forbidden);
+      const blindParts = blindRules(partControl, rule.forbidden);
+      return [
+        ...(leaks.length > 0 ? [`the ${rule.part} route ships ${leaks.join("; ")}`] : []),
+        ...(blindParts.length > 0
+          ? [`the control route of ${rule.control} trips no ${rule.part} rule for ${blindParts.join(", ")}`]
+          : []),
+      ];
+    });
+    if (partFailures.length > 0) throw new Error(partFailures.join("\n"));
     // The radar namespace reads the series model, so it trips the rules that keep it off items.
     const radar = polar.find(({ name }) => name.startsWith("RadarChart with"));
     const seriesBlind =
@@ -409,7 +479,7 @@ export async function checkPackedChartBundles(extracted: string): Promise<string
     if (seriesBlind.length > 0) {
       throw new Error(`the radar namespace route trips no item rule for ${seriesBlind.join(", ")}`);
     }
-    return `Packed chart routes: Chart.Root and BarChart.Root emit ${String(chart.code.length)} identical bytes from ${String(chart.modules.length)} modules, the bar route reaches ${String(bars.modules.length)} modules with no Tooltip, Table, LegendToggleGroup or floating-ui code, its control trips all ${String(BAR_ROUTE_FORBIDDEN.length)} rules, PieChart.Root reaches ${String(pie.modules.length)} modules, ScatterChart.Root reaches ${String(scatter.modules.length)} modules and no cartesian code, ${String(polar.length)} polar routes ship no cartesian geometry, and ClockChart.Line ships no other clock part, each rule tripped by its control`;
+    return `Packed chart routes: Chart.Root and BarChart.Root emit ${String(chart.code.length)} identical bytes from ${String(chart.modules.length)} modules, the bar route reaches ${String(bars.modules.length)} modules with no Tooltip, Table, LegendToggleGroup or floating-ui code, its control trips all ${String(BAR_ROUTE_FORBIDDEN.length)} rules, PieChart.Root reaches ${String(pie.modules.length)} modules, ScatterChart.Root reaches ${String(scatter.modules.length)} modules and no cartesian code, ${String(polar.length)} polar routes ship no cartesian geometry, and ${String(PART_ROUTES.length)} single-part routes (${PART_ROUTES.map(({ part }) => part).join(", ")}) ship no other part, each rule tripped by its control`;
   } finally {
     rmSync(work, { recursive: true, force: true });
   }

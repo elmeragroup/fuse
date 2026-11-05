@@ -6,10 +6,10 @@
  * the whole sweep whose `pathLength` is the sweep's width in degrees, and its value is the dash
  * (Q5): round caps sit inside the value's angle, an arc shorter than its stroke draws butt caps at
  * its true length, and every value above 0 keeps one device pixel of arc along its centre line
- * (D24). A dotted ring fills whole dots, `round(40 · share)` of them, through a mask whose dash
- * carries that count (Q12). Each ring records its angle in a frame, and the frame paints it in the
- * next microtask outside a batch, or once the batch ends, as the pie's does. One loop holds one
- * radial frame, which Bar, Track and Glow reach through `ringFrameOf`.
+ * (D24). A dotted ring fills whole dots, `round(40 · share)` of them and at least one above 0,
+ * through a mask whose dash carries that count (Q12). Each ring records its angle in a frame, and
+ * the frame paints it in the next microtask outside a batch, or once the batch ends, as the pie's
+ * does. One loop holds one radial frame, which Bar, Track and Glow reach through `ringFrameOf`.
  */
 import { writeAttribute } from "./chart-dom";
 import type { ChartMotion, MarkValues } from "./chart-motion";
@@ -56,7 +56,9 @@ export function ringDash(
 ): RingDash {
   if (place.mode === "dots") {
     const cell = sweep.width / RING_DOTS;
-    const dots = Math.round((RING_DOTS * Math.min(angle, sweep.width)) / sweep.width);
+    // A value above 0 keeps one whole dot, as a dashed ring keeps a device pixel (D24).
+    const share = Math.round((RING_DOTS * Math.min(angle, sweep.width)) / sweep.width);
+    const dots = angle > 0 ? Math.max(1, share) : 0;
     return { dasharray: `${short(dots * cell)} ${String(GAP)}`, dashoffset: "0", linecap: "butt" };
   }
   const fill = measure?.fill ?? 0.7;

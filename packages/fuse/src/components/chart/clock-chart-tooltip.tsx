@@ -8,7 +8,7 @@ import type { ReactElement } from "react";
 
 import { clockDrawingIn, usePolarContext } from "./chart-polar-context";
 import type { ChartTooltipProps } from "./chart-tooltip";
-import { ClockChartTooltipTotal } from "./clock-chart-center";
+import { ClockChartTooltipTotal } from "./clock-chart-tooltip-total";
 import { DefaultPolarTooltip, PolarTooltip } from "./polar-chart-tooltip";
 
 /** The default content: the slot's label and rows, then one total per stack of two or more series. */

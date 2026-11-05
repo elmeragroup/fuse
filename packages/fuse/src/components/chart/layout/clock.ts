@@ -98,19 +98,6 @@ export function clockRadius(radii: ClockRadii): (value: number) => number {
   };
 }
 
-/**
- * The radius of a threshold, where its ring draws and where the gradient that paints a curve's two
- * sides turns hard. A threshold outside the domain stays on the dial, so a curve wholly on one side
- * paints in that side.
- *
- * @param threshold - The threshold value.
- * @param radii - The dial's radii, domain and scale.
- * @returns The radius, between the hole and the rim.
- */
-export function thresholdRadius(threshold: number, radii: ClockRadii): number {
-  return Math.min(radii.outer, Math.max(radii.inner, clockRadius(radii)(threshold)));
-}
-
 /** A wedge's pad: the pad angle and the radius d3's arc measures its width at. */
 export type WedgePad = { readonly padAngle: number; readonly padRadius: number };
 

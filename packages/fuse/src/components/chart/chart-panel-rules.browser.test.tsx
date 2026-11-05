@@ -14,8 +14,8 @@ import { CaughtError, caughtError } from "../../../test/caught-error";
 import { barHeights, frame } from "../../../test/chart/panel-readers";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
-import { ChartRootContext } from "./chart-context";
 import { Chart } from "./chart-namespace";
+import { ChartRootContext } from "./chart-scope-contexts";
 import "./chart.css";
 
 describe("Panel rules after registration", () => {

@@ -13,8 +13,9 @@ import { flushSync } from "react-dom";
 
 import { OverlayPortal } from "../overlay/overlay-portal";
 import { useChartFollower } from "./chart-followers";
-import { ChartLiveContext, useActiveIndex, useChartReadout } from "./chart-readout";
+import { useActiveIndex, useChartReadout } from "./chart-readout";
 import type { TooltipPlacer } from "./chart-readout-port";
+import { ChartLiveContext } from "./chart-scope-contexts";
 import { createTooltipGlider } from "./chart-tooltip-glide";
 import type { GlideRoute, TooltipGlider } from "./chart-tooltip-glide";
 import { chartTakesPress, TOOLTIP_POSITIONER, tooltipPopupClass, watchOverflow } from "./chart-tooltip-popup";

@@ -1403,6 +1403,11 @@
     fill: #fff;
   }
 
+  /* The quality mask's stripes show the value paint whole, and its gaps at the hatch's tint. */
+  [data-slot="clock-chart-area"] {
+    --_quality-ink: #fff;
+  }
+
   [data-slot="clock-chart-area"] stop[data-part="near"] {
     stop-color: #fff;
     stop-opacity: 0;
@@ -1418,10 +1423,16 @@
     fill-opacity: 0.5;
   }
 
-  :is([data-slot="clock-chart-area-path"], [data-slot="clock-chart-wedge"])[data-part="marked"] {
+  [data-slot="clock-chart-wedge"][data-part="marked"] {
     fill: var(--_hatch-paint);
     fill-opacity: 0.6;
     mask: none;
+  }
+
+  /* An Area's estimated or projected stretch paints its own value paint through the hatch mask. */
+  [data-slot="clock-chart-area-path"][data-part="marked"] {
+    fill: var(--_paint);
+    mask: var(--_quality);
   }
 
   [data-slot="clock-chart-wedge"] {

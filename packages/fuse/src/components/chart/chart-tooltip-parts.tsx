@@ -12,7 +12,6 @@ import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
 
 import {
-  ChartRowContext,
   shareDigits,
   shareText,
   useActiveIndex,
@@ -21,6 +20,7 @@ import {
   useReadoutKey,
 } from "./chart-readout";
 import { ChartSelectionContext } from "./chart-readout-port";
+import { ChartRowContext } from "./chart-scope-contexts";
 import type { ChartDomProps, ChartFractionDigits, ValueFormat, XFormat } from "./chart-types";
 
 /**

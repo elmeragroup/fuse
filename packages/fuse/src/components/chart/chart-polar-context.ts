@@ -70,7 +70,7 @@ export type PolarModel = {
    *
    * @param point - The point.
    * @param pixels - CSS pixels per unit, the device pixel ratio, and the slice angles a frame
-   *   painted, which the pie picks over.
+   *   painted at rest, which the pie picks over, undefined while a mark tweens.
    */
   readonly pick: (
     point: PolarPoint,
@@ -349,7 +349,11 @@ export type PolarContextValue = {
   readonly labelledBy: string | undefined;
 };
 
-/** The enclosing polar Root, or null outside one. */
+/**
+ * The enclosing polar Root, or null outside one. Every Root's own scope resets it, so a polar part
+ * under a cartesian or scatter Root nested in a polar chart reaches no Root of its own and throws
+ * `part-outside-root`, and each polar Root sets it again inside its scope.
+ */
 export const PolarContext = createContext<PolarContextValue | null>(null);
 
 /**

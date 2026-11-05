@@ -1,10 +1,10 @@
-// The clock dial's geometry. Unit under test: slotAngles, instantAngle, clockRadius,
-// thresholdRadius, wedgePad, columnAxis, columnSpan and columnFloorSpan. Oracles, written by hand:
-// D11's equal slots, where slot i of n spans [360·i/n, 360·(i+1)/n); D13's radii, r = √(lerp(ri², R², t))
-// and lerp(ri, R, t); D14's constant gap, whose width 2·padRadius·sin(padAngle/2) holds at every
-// radius, vanishing once the inner arc falls under 2 device pixels; D23's threshold ring on the
-// dial; and D24's floor, one device pixel along the radius away from the zero ring, settled for a
-// stack by floor-settle.ts's rule that the span reaching farthest out wins.
+// The clock dial's geometry. Unit under test: slotAngles, instantAngle, clockRadius, wedgePad,
+// columnAxis, columnSpan and columnFloorSpan. Oracles, written by hand: D11's equal slots, where
+// slot i of n spans [360·i/n, 360·(i+1)/n); D13's radii, r = √(lerp(ri², R², t)) and lerp(ri, R, t);
+// D14's constant gap, whose width 2·padRadius·sin(padAngle/2) holds at every radius, vanishing once
+// the inner arc falls under 2 device pixels; and D24's floor, one device pixel along the radius away
+// from the zero ring, settled for a stack by floor-settle.ts's rule that the span reaching farthest
+// out wins.
 import { describe, expect, it } from "vitest";
 
 import {
@@ -14,7 +14,6 @@ import {
   columnSpan,
   instantAngle,
   slotAngles,
-  thresholdRadius,
   wedgePad,
 } from "./clock";
 import { settleFloors } from "./floor-settle";
@@ -47,12 +46,6 @@ describe("the radius (D13)", () => {
 
   it("keeps radius true under the linear scale", () => {
     expect(clockRadius({ ...radii, scale: "linear" })(0.5)).toBe(65);
-  });
-
-  it("rings a threshold at its value's radius, and keeps one outside the domain on the dial", () => {
-    expect(thresholdRadius(0.5, { ...radii, scale: "linear" })).toBe(65);
-    expect(thresholdRadius(2, { ...radii, scale: "radial" })).toBe(100);
-    expect(thresholdRadius(-1, { ...radii, scale: "radial" })).toBe(30);
   });
 });
 

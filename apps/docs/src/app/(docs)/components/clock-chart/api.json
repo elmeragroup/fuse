@@ -349,7 +349,7 @@
     {
       "name": "ClockChart.Column",
       "rsc": "client",
-      "sourcePath": "packages/fuse/src/components/chart/clock-chart-marks.tsx",
+      "sourcePath": "packages/fuse/src/components/chart/clock-chart-column.tsx",
       "forwardedFrom": [],
       "forwardedCount": 0,
       "props": [
@@ -403,7 +403,7 @@
     {
       "name": "ClockChart.Dots",
       "rsc": "client",
-      "sourcePath": "packages/fuse/src/components/chart/clock-chart-marks.tsx",
+      "sourcePath": "packages/fuse/src/components/chart/clock-chart-dots.tsx",
       "forwardedFrom": [],
       "forwardedCount": 0,
       "props": [
@@ -448,7 +448,7 @@
     {
       "name": "ClockChart.ActiveDot",
       "rsc": "client",
-      "sourcePath": "packages/fuse/src/components/chart/clock-chart-marks.tsx",
+      "sourcePath": "packages/fuse/src/components/chart/clock-chart-active-dot.tsx",
       "forwardedFrom": [],
       "forwardedCount": 0,
       "props": [
@@ -493,7 +493,7 @@
     {
       "name": "ClockChart.Marker",
       "rsc": "client",
-      "sourcePath": "packages/fuse/src/components/chart/clock-chart-marks.tsx",
+      "sourcePath": "packages/fuse/src/components/chart/clock-chart-dots.tsx",
       "forwardedFrom": [],
       "forwardedCount": 0,
       "props": [
@@ -556,7 +556,7 @@
     {
       "name": "ClockChart.ValueLabel",
       "rsc": "client",
-      "sourcePath": "packages/fuse/src/components/chart/clock-chart-marks.tsx",
+      "sourcePath": "packages/fuse/src/components/chart/clock-chart-value-label.tsx",
       "forwardedFrom": [],
       "forwardedCount": 0,
       "props": [
@@ -592,7 +592,7 @@
     {
       "name": "ClockChart.Glow",
       "rsc": "client",
-      "sourcePath": "packages/fuse/src/components/chart/clock-chart-marks.tsx",
+      "sourcePath": "packages/fuse/src/components/chart/clock-chart-glow.tsx",
       "forwardedFrom": [],
       "forwardedCount": 0,
       "props": [
@@ -664,7 +664,7 @@
     {
       "name": "ClockChart.AngleAxis",
       "rsc": "client",
-      "sourcePath": "packages/fuse/src/components/chart/clock-chart-grid.tsx",
+      "sourcePath": "packages/fuse/src/components/chart/clock-chart-angle-axis.tsx",
       "forwardedFrom": [],
       "forwardedCount": 0,
       "props": [
@@ -700,7 +700,7 @@
     {
       "name": "ClockChart.RadiusAxis",
       "rsc": "client",
-      "sourcePath": "packages/fuse/src/components/chart/clock-chart-grid.tsx",
+      "sourcePath": "packages/fuse/src/components/chart/clock-chart-radius-axis.tsx",
       "forwardedFrom": [],
       "forwardedCount": 0,
       "props": [
@@ -736,7 +736,7 @@
     {
       "name": "ClockChart.ReferenceLine",
       "rsc": "client",
-      "sourcePath": "packages/fuse/src/components/chart/clock-chart-grid.tsx",
+      "sourcePath": "packages/fuse/src/components/chart/clock-chart-reference-line.tsx",
       "forwardedFrom": [],
       "forwardedCount": 0,
       "props": [
@@ -817,7 +817,7 @@
     {
       "name": "ClockChart.ReferenceArea",
       "rsc": "client",
-      "sourcePath": "packages/fuse/src/components/chart/clock-chart-grid.tsx",
+      "sourcePath": "packages/fuse/src/components/chart/clock-chart-reference-area.tsx",
       "forwardedFrom": [],
       "forwardedCount": 0,
       "props": [
@@ -836,7 +836,7 @@
           "type": "ValueFormat | XFormat | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "How `{value}` in `label` prints the range.",
+          "description": "How `{value}` in `label` prints the range. How `{value}` in `label` prints the range's ends, the first slot's start and the last slot's end, joined by an en dash. \"time\" by default, and a range preset prints each end in its point form, as \"hour-range\" does in \"hour\".",
           "required": false
         },
         {
@@ -907,7 +907,7 @@
     {
       "name": "ClockChart.Scrubber",
       "rsc": "client",
-      "sourcePath": "packages/fuse/src/components/chart/clock-chart-grid.tsx",
+      "sourcePath": "packages/fuse/src/components/chart/clock-chart-scrubber.tsx",
       "forwardedFrom": [],
       "forwardedCount": 0,
       "props": [
@@ -943,7 +943,7 @@
     {
       "name": "ClockChart.Now",
       "rsc": "client",
-      "sourcePath": "packages/fuse/src/components/chart/clock-chart-grid.tsx",
+      "sourcePath": "packages/fuse/src/components/chart/clock-chart-now.tsx",
       "forwardedFrom": [],
       "forwardedCount": 0,
       "props": [
@@ -1078,7 +1078,7 @@
     {
       "name": "ClockChart.TooltipTotal",
       "rsc": "client",
-      "sourcePath": "packages/fuse/src/components/chart/clock-chart-center.tsx",
+      "sourcePath": "packages/fuse/src/components/chart/clock-chart-tooltip-total.tsx",
       "forwardedFrom": [
         "@base-ui/react",
         "@types/react"
@@ -1239,7 +1239,7 @@
     {
       "name": "ClockChart.Tooltip",
       "rsc": "client",
-      "sourcePath": "packages/fuse/src/components/chart/polar-chart-tooltip.tsx",
+      "sourcePath": "packages/fuse/src/components/chart/clock-chart-tooltip.tsx",
       "forwardedFrom": [],
       "forwardedCount": 0,
       "props": [

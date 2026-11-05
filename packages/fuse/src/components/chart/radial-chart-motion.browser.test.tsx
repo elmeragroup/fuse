@@ -5,13 +5,15 @@
 // damping ratio 15 / (2·√100) = 0.75 settles within 0.1 % before its envelope
 // e^(−7.5t) / √(1 − 0.75²) does, at ln 1512 / 7.5 ≈ 976 ms; an update morphs each ring over 480 ms
 // (Q5); and the hover scales on 400/25, whose envelope at ζ = 0.625, ω = 20 settles by
-// ln 1281 / 12.5 ≈ 573 ms. Time is read from each frame's own timestamp.
+// ln 1281 / 12.5 ≈ 573 ms. The entrance runs on a hand-driven frame clock, read on the loop's own
+// time; the rest read each frame's own timestamp.
 import { hydrateRoot } from "react-dom/client";
 import { renderToString } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
+import { installFrameClock } from "../../../test/chart/frame-clock";
 import { polarFigure, rings } from "../../../test/chart/pie";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
@@ -73,25 +75,33 @@ function Chart({ kwh, intro }: { readonly kwh: readonly number[]; readonly intro
 
 describe("the rings' motion (SPEC's Motion table)", () => {
   it("sweeps ring i's value from 0 at 160 + i·100 ms over 1000 ms, and scales each track out i·80 ms apart", async () => {
-    const { host } = renderThemed(<Chart kwh={[50, 75, 25]} />);
-    const figure = polarFigure(host);
-    let from: number | null = null;
+    const clock = installFrameClock();
+    const frames: { readonly t: number; readonly extents: readonly number[] }[] = [];
     let grows: readonly { readonly delay: number; readonly duration: number }[] = [];
-    const frames = await record(
-      host,
-      () => {
-        if (from === null && figure.hasAttribute("data-drawn")) {
-          from = performance.now();
-          // DOM audit: the scale-out is a CSS animation on each track, read from its own animations.
-          grows = [...host.querySelectorAll('[data-slot="pie-chart-track"]')].map((track) => {
-            const timing = track.getAnimations()[0]?.effect?.getComputedTiming();
-            return { delay: Number(timing?.delay), duration: Number(timing?.duration) };
-          });
-        }
-        return from;
-      },
-      1600
-    );
+    try {
+      const { host } = renderThemed(<Chart kwh={[50, 75, 25]} />);
+      const figure = polarFigure(host);
+      // The clock stands still while the chart waits to come into view, so whichever frame the
+      // entrance starts on runs at the same instant, the loop's t = 0.
+      const start = clock.now();
+      await expect
+        .poll(() => {
+          clock.frameAt(start);
+          return figure.hasAttribute("data-drawn");
+        })
+        .toBe(true);
+      // DOM audit: the scale-out is a CSS animation on each track, read from its own animations.
+      grows = [...host.querySelectorAll('[data-slot="pie-chart-track"]')].map((track) => {
+        const timing = track.getAnimations()[0]?.effect?.getComputedTiming();
+        return { delay: Number(timing?.delay), duration: Number(timing?.duration) };
+      });
+      for (let t = 0; t <= 1600; t += 10) {
+        clock.frameAt(start + t);
+        frames.push({ t, extents: rings(host).map((path) => extent(path)) });
+      }
+    } finally {
+      clock.restore();
+    }
     expect(grows.map(({ delay }) => delay)).toEqual([0, 80, 160]);
     for (const { duration } of grows) {
       expect(duration).toBeGreaterThanOrEqual(600);
@@ -101,9 +111,9 @@ describe("the rings' motion (SPEC's Motion table)", () => {
       const begins = 160 + 100 * index;
       const ends = begins + 1000;
       const seen = frames.map((frame) => ({ t: frame.t, angle: frame.extents[index] ?? 0 }));
-      expect(seen.filter(({ t }) => t < begins - SLACK).every((frame) => frame.angle === 0)).toBe(true);
+      expect(seen.filter(({ t }) => t <= begins).every((frame) => frame.angle === 0)).toBe(true);
       expect(
-        seen.filter(({ t }) => t > ends + SLACK).every((frame) => Math.abs(frame.angle - angle) < ROUNDED)
+        seen.filter(({ t }) => t >= ends).every((frame) => Math.abs(frame.angle - angle) < ROUNDED)
       ).toBe(true);
       expect(seen.some((frame) => frame.angle > 1 && frame.angle < angle - 1)).toBe(true);
       seen.forEach((frame, at) => {

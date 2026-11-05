@@ -8,7 +8,7 @@ import { writeAttribute } from "./chart-dom";
 import { useChartFollower } from "./chart-followers";
 import { useChartFrame } from "./chart-plot";
 import { usePlotRead } from "./chart-plot-measure";
-import { ChartCrosshairContext } from "./chart-readout";
+import { ChartCrosshairContext } from "./chart-scope-contexts";
 import { glideFrom, snapGlide, stepSpring } from "./chart-spring";
 import { sameShallow, useSteady } from "./chart-steady";
 import type { ChartLayerProps } from "./chart-types";

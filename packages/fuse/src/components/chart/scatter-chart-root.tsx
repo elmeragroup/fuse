@@ -11,7 +11,9 @@ import { writeAttribute } from "./chart-dom";
 import { openDrawingSoon, useClientMount } from "./chart-draw-gate";
 import { useEntrance } from "./chart-entrance";
 import { BROWSER_FRAMES, createChartMotion } from "./chart-motion";
-import { PlotReadsContext, useMeasuredPlot } from "./chart-plot-measure";
+import { ChartOwnScope } from "./chart-own-scope";
+import { useMeasuredPlot } from "./chart-plot-measure";
+import { PlotReadsContext, ScatterPlotContext, ScatterRootContext } from "./chart-scope-contexts";
 import { PlotLoader } from "./chart-skeleton";
 import { sameConfig, sameShallow, useSteady } from "./chart-steady";
 import type {
@@ -31,7 +33,7 @@ import { ChartDataError, dataMessage, isChartDevelopment, issueGroups, issueKey 
 import { sameItems } from "./layout/same-items";
 import { buildScatterModel } from "./layout/scatter-model";
 import type { ScatterModel } from "./layout/scatter-model";
-import { createScatterMarks, ScatterPlotContext, ScatterRootContext } from "./scatter-chart-context";
+import { createScatterMarks } from "./scatter-chart-context";
 import type { ScatterRootContextValue } from "./scatter-chart-context";
 import { createScatterStore } from "./scatter-chart-store";
 import type { ScatterStore } from "./scatter-chart-store";
@@ -309,29 +311,31 @@ export function ScatterChartRoot<
     [description, model, modelConfig, locale, steadyXFormat, steadyValueFormat, xLabel, yLabel]
   );
   return (
-    <ScatterRootContext value={context}>
-      <figure ref={figureRef} data-slot="chart" data-chart="scatter" {...figureProps}>
-        <p id={`${id}-description`} data-slot="chart-description">
-          {spokenDescription}
-        </p>
-        <p id={`${id}-instructions`} data-slot="chart-instructions">
-          {CHART_STRINGS[locale].instructionsCartesian}
-        </p>
-        <div data-slot="chart-frame">
-          <div ref={plotRef} data-slot="chart-plot" aria-hidden="true">
-            {probe}
-            {plot === null && !model.empty ? <PlotLoader /> : null}
+    <ChartOwnScope>
+      <ScatterRootContext value={context}>
+        <figure ref={figureRef} data-slot="chart" data-chart="scatter" {...figureProps}>
+          <p id={`${id}-description`} data-slot="chart-description">
+            {spokenDescription}
+          </p>
+          <p id={`${id}-instructions`} data-slot="chart-instructions">
+            {CHART_STRINGS[locale].instructionsCartesian}
+          </p>
+          <div data-slot="chart-frame">
+            <div ref={plotRef} data-slot="chart-plot" aria-hidden="true">
+              {probe}
+              {plot === null && !model.empty ? <PlotLoader /> : null}
+            </div>
+            <ScatterPlotContext value={plot}>
+              <PlotReadsContext value={reads}>
+                <ScatterSurface labelledBy={labelledBy} />
+                {children}
+              </PlotReadsContext>
+            </ScatterPlotContext>
           </div>
-          <ScatterPlotContext value={plot}>
-            <PlotReadsContext value={reads}>
-              <ScatterSurface labelledBy={labelledBy} />
-              {children}
-            </PlotReadsContext>
-          </ScatterPlotContext>
-        </div>
-        <ScatterStatus />
-      </figure>
-    </ScatterRootContext>
+          <ScatterStatus />
+        </figure>
+      </ScatterRootContext>
+    </ChartOwnScope>
   );
 }
 

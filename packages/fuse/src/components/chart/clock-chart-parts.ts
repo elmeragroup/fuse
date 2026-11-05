@@ -10,20 +10,15 @@ export { ClockChartDots as Dots, ClockChartMarker as Marker } from "./clock-char
 export { ClockChartActiveDot as ActiveDot } from "./clock-chart-active-dot";
 export { ClockChartValueLabel as ValueLabel } from "./clock-chart-value-label";
 export { ClockChartGlow as Glow } from "./clock-chart-glow";
-export {
-  ClockChartGrid as Grid,
-  ClockChartAngleAxis as AngleAxis,
-  ClockChartRadiusAxis as RadiusAxis,
-  ClockChartReferenceLine as ReferenceLine,
-  ClockChartReferenceArea as ReferenceArea,
-  ClockChartScrubber as Scrubber,
-  ClockChartNow as Now,
-} from "./clock-chart-grid";
-export {
-  ClockChartCenter as Center,
-  ClockChartActiveValue as ActiveValue,
-  ClockChartTooltipTotal as TooltipTotal,
-} from "./clock-chart-center";
+export { ClockChartGrid as Grid } from "./clock-chart-grid";
+export { ClockChartAngleAxis as AngleAxis } from "./clock-chart-angle-axis";
+export { ClockChartRadiusAxis as RadiusAxis } from "./clock-chart-radius-axis";
+export { ClockChartReferenceLine as ReferenceLine } from "./clock-chart-reference-line";
+export { ClockChartReferenceArea as ReferenceArea } from "./clock-chart-reference-area";
+export { ClockChartScrubber as Scrubber } from "./clock-chart-scrubber";
+export { ClockChartNow as Now } from "./clock-chart-now";
+export { ClockChartCenter as Center, ClockChartActiveValue as ActiveValue } from "./clock-chart-center";
+export { ClockChartTooltipTotal as TooltipTotal } from "./clock-chart-tooltip-total";
 export { ClockChartSkeleton as Skeleton } from "./clock-chart-skeleton";
 export { ChartHeadline as Headline, ChartTakeaway as Takeaway } from "./chart-headline";
 export { ClockChartTooltip as Tooltip } from "./clock-chart-tooltip";

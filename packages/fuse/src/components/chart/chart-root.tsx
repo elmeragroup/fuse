@@ -9,7 +9,7 @@ import { definedProps } from "../../internal/defined-props";
 import { useLocale } from "../../intl/locale-context";
 import { createAxisRecord } from "./chart-axis-format";
 import { keyDomains, useChartCommit } from "./chart-commit";
-import { ChartLayoutContext, ChartRootContext, partOutsidePanel, useChartRoot } from "./chart-context";
+import { partOutsidePanel, useChartRoot } from "./chart-context";
 import type { ChartLayoutContextValue, ChartRootContextValue, PanelEntry } from "./chart-context";
 import { writeAttribute, writeStyle } from "./chart-dom";
 import { openDrawingSoon, useClientMount } from "./chart-draw-gate";
@@ -22,11 +22,18 @@ import type { ChartMotion, FrameOwner } from "./chart-motion";
 import { ChartOwnScope } from "./chart-own-scope";
 import { colourFamilyError, nonFiniteThresholds } from "./chart-paint";
 import { createChartPaths } from "./chart-paths";
-import { ChartPlotContext, ChartRootPlotContext, usePanelSpan } from "./chart-plot";
-import { PlotReadsContext, useMeasuredPlot } from "./chart-plot-measure";
+import { usePanelSpan } from "./chart-plot";
+import { useMeasuredPlot } from "./chart-plot-measure";
 import { cartesianReadout } from "./chart-readout-cartesian";
 import { ChartReadoutContext, ChartSelectionContext } from "./chart-readout-port";
 import { createChartRiders } from "./chart-riders";
+import {
+  ChartLayoutContext,
+  ChartPlotContext,
+  ChartRootContext,
+  ChartRootPlotContext,
+  PlotReadsContext,
+} from "./chart-scope-contexts";
 import { PlotLoader } from "./chart-skeleton";
 import { discardStackFloors, flushStackFloors } from "./chart-stack-floors";
 import { sameConfig, sameShallow, useSteady } from "./chart-steady";

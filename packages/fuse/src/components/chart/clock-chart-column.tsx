@@ -285,7 +285,10 @@ export function ClockChartColumn({
         </clipPath>
         <mask id={`${prefix}-fade`} maskUnits="userSpaceOnUse" x="-1.5" y="-1.5" width="3" height="3">
           <radialGradient id={`${prefix}-ramp`} gradientUnits="userSpaceOnUse" cx="0" cy="0" r="1">
-            <stop offset={clock.zero ?? clock.inner} data-part="near" />
+            {/* Each wedge fades toward zero, which sits at its own radius on the scale: solid at the
+                hole's edge and at the rim, where the extremes reach, and faint at zero. */}
+            <stop offset={clock.inner} data-part="far" />
+            <stop offset={Math.min(1, Math.max(clock.inner, clock.radius(0)))} data-part="near" />
             <stop offset="1" data-part="far" />
           </radialGradient>
           <rect x="-1.5" y="-1.5" width="3" height="3" fill={`url(#${prefix}-ramp)`} />

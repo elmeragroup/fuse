@@ -1,5 +1,6 @@
 // The polar angle convention. Unit under test: pointerAngle, angleInSweep, sweepOf, polarPoint and
-// sweepBox. Oracles: CONTRACT section 8.5's frame and ticket 08's Q8 cases, and the sweep boxes of
+// sweepBox. Oracles: CONTRACT section 8.5's frame, d3-shape 3.2.0's lineRadial vector for the same
+// frame, ticket 08's Q8 cases, and the sweep boxes of
 // ticket 08's plot-cell judge, worked by hand for a 200 px cell: 200 by 200 for a circle, 200 by 100
 // for −90 to 90, 200 by 150 for −120 to 120 and 200 by 170.71 for −135 to 135.
 import { describe, expect, it } from "vitest";
@@ -64,6 +65,18 @@ describe("the frame", () => {
     expect([top.x, top.y]).toEqual([0, -100]);
     expect(right.x).toBeCloseTo(100, 12);
     expect(right.y).toBeCloseTo(0, 12);
+  });
+
+  it("places a vertex in d3's radial frame at any angle, as d3-shape's own lineRadial test expects", () => {
+    // d3-shape 3.2.0's test "lineRadial() returns a default radial line shape", line 12: the points
+    // [2 rad, 3] and [4 rad, 5] draw at (2.727892, 1.248441) and (−3.784012, 3.268218). Every radar
+    // and clock vertex goes through polarPoint, so the vector replays here, in degrees.
+    const degrees = (radians: number) => (radians * 180) / Math.PI;
+    const a = polarPoint(degrees(2), 3);
+    const b = polarPoint(degrees(4), 5);
+    expect([a.x, a.y, b.x, b.y].map((value) => Number(value.toFixed(6)))).toEqual([
+      2.727892, 1.248441, -3.784012, 3.268218,
+    ]);
   });
 });
 

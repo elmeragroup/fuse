@@ -123,6 +123,37 @@ describe("the polar rules in development", () => {
       data("value-out-of-range"),
     ],
     [
+      "two pie rows for one category (B4)",
+      <PieChart.Root
+        key="pie"
+        data={[
+          { name: "strom", v: 1 },
+          { name: "strom", v: 2 },
+        ]}
+        config={CONFIG}
+        nameKey="name"
+        valueKey="v"
+        aria-label="Regning"
+      />,
+      data("duplicate-x"),
+    ],
+    [
+      "two ring rows for one category (B4)",
+      <RadialChart.Root
+        key="radial"
+        data={[
+          { name: "strom", v: 1 },
+          { name: "strom", v: 2 },
+        ]}
+        config={CONFIG}
+        nameKey="name"
+        valueKey="v"
+        max={10}
+        aria-label="Ringer"
+      />,
+      data("duplicate-x"),
+    ],
+    [
       "a category the config lacks",
       <PieChart.Root
         key="pie"

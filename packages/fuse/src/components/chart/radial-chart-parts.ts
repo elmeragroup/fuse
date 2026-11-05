@@ -5,13 +5,12 @@
  */
 export { RadialChartRoot as Root } from "./radial-chart-root";
 export { RadialChartBar as Bar } from "./radial-chart-bar";
+export { PieChartCenter as Center, PieChartCenterLabel as CenterLabel } from "./pie-chart-center";
 export {
-  PieChartCenter as Center,
   PieChartCenterValue as CenterValue,
   PieChartCenterShare as CenterShare,
   PieChartCenterMax as CenterMax,
-  PieChartCenterLabel as CenterLabel,
-} from "./pie-chart-center";
+} from "./pie-chart-center-value";
 export { PieChartTrack as Track } from "./pie-chart-track";
 export { PieChartGlow as Glow } from "./pie-chart-glow";
 export { RadialChartSkeleton as Skeleton } from "./radial-chart-skeleton";

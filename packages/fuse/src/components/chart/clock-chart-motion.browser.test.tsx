@@ -6,12 +6,14 @@
 // update moves each radius over 480 ms; a switch from the 24- to the 25-hour day turns each hour to
 // its new angle, so 06:00 runs from 90° to 100.8° and never cuts a chord; the active dot rides the
 // drawn curve on the follow spring, ln 2000 / 15 ≈ 507 ms for a key step; and the Scrubber turns the
-// short way on 420/42, settling by about 483 ms. Time is read from each frame's own timestamp.
+// short way on 420/42, settling by about 483 ms. The entrance runs on a hand-driven frame clock,
+// read on the loop's own time; the rest read each frame's own timestamp.
 import { describe, expect, it } from "vitest";
 import { userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import { angleOf, clockLayer, clockPath, dotPoints } from "../../../test/chart/clock";
+import { installFrameClock } from "../../../test/chart/frame-clock";
 import { polarFigure } from "../../../test/chart/pie";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
@@ -21,6 +23,9 @@ import slots from "./format/fixtures/slots.json" with { type: "json" };
 
 /** Half a frame and more either side of a scheduled time, for the frame that straddles it. */
 const SLACK = 34;
+
+/** One reading's step on the frame clock, the entrance's tolerance either side of its schedule. */
+const STEP = 10;
 
 const OCT_25 = slots.hour["Europe/Oslo"]["2025-10-25"].utc_start.map((start) => Date.parse(start));
 const OCT_26 = slots.hour["Europe/Oslo"]["2025-10-26"].utc_start.map((start) => Date.parse(start));
@@ -86,23 +91,35 @@ function risen(slot: number, ms: number): number {
 
 describe("the clock's entrance (SPEC's Motion table)", () => {
   it("raises slot i from its base over 500 ms from 31.25·i ms, as the wedge reaches it", async () => {
-    const { host } = renderThemed(<Dial />);
-    const figure = polarFigure(host);
-    let from: number | null = null;
-    const frames = await record(
-      host,
-      () => {
-        if (from === null && figure.hasAttribute("data-drawn")) from = performance.now();
-        return from;
-      },
-      1400
-    );
+    const clock = installFrameClock();
+    const frames: { readonly t: number; readonly dots: readonly { readonly radius: number }[] }[] = [];
+    try {
+      const { host } = renderThemed(<Dial />);
+      const figure = polarFigure(host);
+      // The clock stands still while the chart waits to come into view, so whichever frame the
+      // entrance starts on runs at the same instant, the loop's t = 0.
+      const start = clock.now();
+      await expect
+        .poll(() => {
+          clock.frameAt(start);
+          return figure.hasAttribute("data-drawn");
+        })
+        .toBe(true);
+      for (let t = 0; t <= 1400; t += 10) {
+        clock.frameAt(start + t);
+        const dots = dotPoints(clockPath(clockLayer(host, "clock-chart-dots"), "step-0"));
+        frames.push({ t, dots: dots.map(({ x, y }) => ({ radius: Math.hypot(x, y) })) });
+      }
+    } finally {
+      clock.restore();
+    }
     // The domain is [0, 4] and every reading 4, so each dot rises from the hole's 0.3 to the rim.
+    // The loop's time is exact, so a reading sits within one 10 ms step of its schedule.
     for (const slot of [0, 6, 12, 23]) {
       for (const { t, dots } of frames) {
         const radius = dots[slot]?.radius ?? 0;
-        const low = 0.3 + 0.7 * risen(slot, t - SLACK);
-        const high = 0.3 + 0.7 * risen(slot, t + SLACK);
+        const low = 0.3 + 0.7 * risen(slot, t - STEP);
+        const high = 0.3 + 0.7 * risen(slot, t + STEP);
         expect(radius, `slot ${String(slot)} at ${String(Math.round(t))} ms`).toBeGreaterThanOrEqual(
           low - 0.002
         );

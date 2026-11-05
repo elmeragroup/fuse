@@ -5,30 +5,19 @@
  * every mark reads the measurement through `useChartFrame` and draws in CSS pixels, under its
  * layout's value domain.
  */
-import { createContext, use, useInsertionEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { use, useInsertionEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { RefObject } from "react";
 
 import { useChartRoot } from "./chart-context";
 import type { ChartLayoutContextValue, PanelEntry } from "./chart-context";
 import { writeStyle } from "./chart-dom";
 import { useDrawGateOpen } from "./chart-draw-gate";
-import {
-  PlotReadsContext,
-  readBarMetrics,
-  sameMetrics,
-  useMeasuredPlot,
-  usePlotRead,
-} from "./chart-plot-measure";
+import { readBarMetrics, sameMetrics, useMeasuredPlot, usePlotRead } from "./chart-plot-measure";
 import type { ChartPlot, MeasuredPlot, PlotReads } from "./chart-plot-measure";
+import { ChartPlotContext, ChartRootPlotContext, PlotReadsContext } from "./chart-scope-contexts";
 import { plotFrame } from "./layout/plot-frame";
 import type { BarMetrics, PlotFrame } from "./layout/plot-frame";
 import type { ValueDomain } from "./layout/value-domain";
-
-/** The nearest measured plot, Root's or a Panel's, or null before the browser measures it. */
-export const ChartPlotContext = createContext<ChartPlot | null>(null);
-
-/** Root's own measured plot, which spans every Panel and gives each one its x frame. */
-export const ChartRootPlotContext = createContext<ChartPlot | null>(null);
 
 /** How Root keeps the span of its Panels' plots on its frame. */
 export type PanelSpan = {
