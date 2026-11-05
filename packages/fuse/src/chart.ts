@@ -168,16 +168,12 @@ export type {
 } from "./components/chart/radar-chart-marks";
 export type { RadarChartSkeletonProps } from "./components/chart/radar-chart-skeleton";
 export type { ClockChartRootProps } from "./components/chart/clock-chart-root";
-export type {
-  ClockChartActiveDotProps,
-  ClockChartAreaProps,
-  ClockChartColumnProps,
-  ClockChartDotsProps,
-  ClockChartGlowProps,
-  ClockChartLineProps,
-  ClockChartMarkerProps,
-  ClockChartValueLabelProps,
-} from "./components/chart/clock-chart-marks";
+export type { ClockChartActiveDotProps } from "./components/chart/clock-chart-active-dot";
+export type { ClockChartColumnProps } from "./components/chart/clock-chart-column";
+export type { ClockChartDotsProps, ClockChartMarkerProps } from "./components/chart/clock-chart-dots";
+export type { ClockChartGlowProps } from "./components/chart/clock-chart-glow";
+export type { ClockChartAreaProps, ClockChartLineProps } from "./components/chart/clock-chart-marks";
+export type { ClockChartValueLabelProps } from "./components/chart/clock-chart-value-label";
 export type {
   ClockChartAngleAxisProps,
   ClockChartGridProps,

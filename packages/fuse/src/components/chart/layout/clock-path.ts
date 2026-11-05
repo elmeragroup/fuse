@@ -199,7 +199,8 @@ type Run = { readonly slots: readonly number[]; readonly closed: boolean };
 
 /**
  * The runs a series' curve draws. A pending slot always breaks a run, a missing one breaks it under
- * "gap", and a run that holds both end slots crosses 12 o'clock, closing when it holds every slot.
+ * "gap", and a run that holds both end slots, either one through the coarse reading that covers it,
+ * crosses 12 o'clock, closing when it holds every slot.
  */
 function runsOf(slots: ClockSlots): Run[] {
   const { states, missing } = slots;
@@ -216,12 +217,13 @@ function runsOf(slots: ClockSlots): Run[] {
     }
   }
   if (run.length > 0) runs.push(run);
-  const seam = count > 1 && states[0] === "reading" && states[count - 1] === "reading";
+  // The last slot may be covered by a coarse reading that owns it, which counts as a reading there.
+  const seam = count > 1 && states[0] === "reading" && states[ownerSlot(states, count - 1)] === "reading";
   if (!seam) return runs.map((slotsOf) => ({ slots: slotsOf, closed: false }));
   const [first] = runs;
   const last = runs.at(-1);
   if (first === undefined || last === undefined) return [];
-  if (runs.length === 1) return [{ slots: first, closed: count > 2 }];
+  if (runs.length === 1) return [{ slots: first, closed: first.length > 2 }];
   // The run that ends the cycle carries on into the one that starts it, across the seam.
   return [
     { slots: [...last, ...first], closed: false },
@@ -313,11 +315,25 @@ function polyline(points: readonly ClockPoint[], closed: boolean): string {
 /** The angle ranges a run dashes: each segment that touches a marked slot, and each bridge. */
 function markedRanges(run: Run, angles: readonly number[], slots: ClockSlots): [number, number][] {
   const ranges: [number, number][] = [];
+  const last = angles.length - 1;
+  // A closed run's first and last readings meet across midnight, a turn apart.
+  const wrapped = (index: number): number | undefined => {
+    if (!run.closed) return angles[index];
+    if (index < 0) return (angles[last] ?? 0) - 360;
+    if (index > last) return (angles[0] ?? 0) + 360;
+    return angles[index];
+  };
   run.slots.forEach((slot, index) => {
     const here = angles[index] ?? 0;
-    const before = angles[index - 1];
-    const after = angles[index + 1];
-    if (slots.marked[slot] === true) ranges.push([before ?? here, after ?? here]);
+    const before = wrapped(index - 1);
+    const after = wrapped(index + 1);
+    if (slots.marked[slot] === true) {
+      const range: [number, number] = [before ?? here, after ?? here];
+      ranges.push(range);
+      // The curve samples one turn from the first vertex, so a range reaching back past it marks
+      // the closing edge a turn on.
+      if (run.closed && range[0] < (angles[0] ?? 0)) ranges.push([range[0] + 360, range[1] + 360]);
+    }
     const next = run.slots[index + 1];
     // A bridge crosses one or more missing slots between two readings, and a covered slot is none.
     if (next !== undefined && after !== undefined && bridges(slots.states, slot, next))
@@ -513,6 +529,20 @@ export function clockDots(
 }
 
 /**
+ * The slot that owns a slot's reading: its own, or for a slot a coarse series covers, the first
+ * slot of its coarse slot, where the reading, its wedge and its vertex sit.
+ *
+ * @param states - The series' slot states.
+ * @param slot - The slot.
+ * @returns The owning slot.
+ */
+export function ownerSlot(states: readonly ClockSlotState[], slot: number): number {
+  let at = slot;
+  while (at > 0 && states[at] === "covered") at -= 1;
+  return at;
+}
+
+/**
  * The vertex a slot's curve passes, where its dots and its active dot sit.
  *
  * @param values - The loop's numbers.
@@ -570,9 +600,10 @@ export function curveRoute(
   if (!forward && b > a) b -= 360;
   const low = Math.min(a, b);
   const high = Math.max(a, b);
-  const twice = run.closed
-    ? [...line, ...line.map((point) => ({ angle: point.angle + 360, radius: point.radius }))]
-    : line;
+  // A closed run repeats a turn either side, so a step back across the seam, which ends before the
+  // run's first vertex, and a step forward past its last both read the curve, never extrapolate.
+  const shift = (turn: number) => line.map((point) => ({ angle: point.angle + turn, radius: point.radius }));
+  const twice = run.closed ? [...shift(-360), ...line, ...shift(360)] : line;
   const route = twice.filter((point) => point.angle > low && point.angle < high);
   const path = [
     { angle: low, radius: radiusAt(twice, low) },

@@ -20,7 +20,7 @@ import { clockDrawingIn, usePolarContext } from "./chart-polar-context";
 import type { ClockDrawing } from "./chart-polar-context";
 import { springTiming } from "./chart-spring";
 import type { ChartLayerProps, ChartTone, ChartX, ValueFormat, XFormat } from "./chart-types";
-import { formatSlot } from "./format/time-format";
+import { formatSlot, nextSlotStart } from "./format/time-format";
 import { formatValue } from "./format/value-format";
 import { slotAngles } from "./layout/clock";
 import { ringPath, sectorPath } from "./layout/clock-path";
@@ -130,7 +130,11 @@ export type ClockChartReferenceAreaProps = ChartLayerProps &
         y1?: never;
         /** Not on a sector. */
         y2?: never;
-        /** How `{value}` in `label` prints the range. */
+        /**
+         * How `{value}` in `label` prints the range's ends, the first slot's start and the last
+         * slot's end, joined by an en dash. "time" by default, and a range preset prints each end
+         * in its point form, as "hour-range" does in "hour".
+         */
         format?: XFormat;
       }
   ) & {
@@ -483,7 +487,25 @@ export function ClockChartReferenceArea({ style, ...props }: ClockChartReference
     const start = ok ? slotAngles(Math.min(first, last), clock.count).start : 0;
     const end = ok ? slotAngles(Math.max(first, last), clock.count).end : 0;
     d = ok ? sectorPath(start, end, clock.inner, 1) : "";
-    text = label;
+    // `{value}` prints the first slot's start and the last slot's end, in Root's locale and zone.
+    const domain = clock.text.model.domain;
+    const timeZone = domain.kind === "time" ? domain.timeZone : "UTC";
+    const interval = domain.kind === "time" ? domain.interval : "hour";
+    const from = clock.starts[Math.min(first, last)];
+    const until = clock.starts[Math.max(first, last)];
+    // A range preset prints one slot as a range, so each end prints its own point preset.
+    const format =
+      props.format === "hour-range"
+        ? "hour"
+        : props.format === "time-range"
+          ? "time"
+          : (props.format ?? "time");
+    const at = (instant: number): string =>
+      formatSlot(kernel.locale, timeZone, instant, interval, format, "full").text;
+    text =
+      !ok || from === undefined || until === undefined
+        ? label
+        : label?.replace("{value}", `${at(from)}\u2013${at(nextSlotStart(until, interval, timeZone))}`);
     place = labelPlace(box, (start + end) / 2, 1.02);
   }
   return (

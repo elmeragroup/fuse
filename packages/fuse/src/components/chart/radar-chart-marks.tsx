@@ -151,10 +151,14 @@ function linePaths(spokes: SpokeStates, radii: MarkValues): SeriesPaths {
   ]);
 }
 
-/** A dot on every reading. */
+/** A dot on every reading, and the ring variant's halo under each, which follows the same readings. */
 function dotPaths(spokes: SpokeStates, radii: MarkValues): SeriesPaths {
   const points = verticesAt(spokes, radii).filter((vertex): vertex is PolarPoint => vertex !== null);
-  return new Map([["dots", dotsPath(points)]]);
+  const dots = dotsPath(points);
+  return new Map([
+    ["dots", dots],
+    ["halo", dots],
+  ]);
 }
 
 /** What a series mark's writer reads beside its radii. */

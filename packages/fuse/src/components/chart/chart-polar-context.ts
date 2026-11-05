@@ -10,6 +10,7 @@ import { createContext, use } from "react";
 import type { SupportedLocale } from "../../intl/locale-context";
 import type { ChartFollowers } from "./chart-followers";
 import type { ChartMotion } from "./chart-motion";
+import type { PaintedAngles } from "./chart-polar-painted";
 import type { ChartReadout, ChartTableModel, PointerSlot } from "./chart-readout-port";
 import type { ChartStore, EmphasisEntry } from "./chart-store";
 import type { OptionOrder, TextContext } from "./chart-text";
@@ -68,11 +69,12 @@ export type PolarModel = {
    * where nothing picks.
    *
    * @param point - The point.
-   * @param pixels - CSS pixels per unit and the device pixel ratio, which the pie's rim floor reads.
+   * @param pixels - CSS pixels per unit, the device pixel ratio, and the slice angles a frame
+   *   painted, which the pie picks over.
    */
   readonly pick: (
     point: PolarPoint,
-    pixels: { readonly scale: number; readonly dpr: number }
+    pixels: { readonly scale: number; readonly dpr: number; readonly painted?: PaintedAngles | undefined }
   ) => PointerSlot | null;
   /** The ray the tooltip rests on for an option and a series, or null when nothing draws there. */
   readonly ray: (index: number, near: number | null) => PolarRay | null;

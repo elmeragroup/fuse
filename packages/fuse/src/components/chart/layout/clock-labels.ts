@@ -48,13 +48,16 @@ function wallDate(wall: number): Date {
   return new Date(wall);
 }
 
-/** Whether a wall clock starts a tier's unit: a whole hour, a midnight or a month's first midnight. */
-function startsUnit(wall: number, unit: ClockTier["unit"]): boolean {
+/**
+ * The wall-clock unit a wall clock falls in, as one ascending number: its hour, its day, or its
+ * month. A slot starts a label when its unit differs from the slot before's, so a slot that starts at
+ * :30 after a half-hour change, or a day that starts at 01:00, still labels its unit.
+ */
+function unitOf(wall: number, unit: ClockTier["unit"]): number {
+  if (unit === "hour") return Math.floor(wall / HOUR);
+  if (unit === "day") return Math.floor(wall / DAY);
   const date = wallDate(wall);
-  const whole = date.getUTCMinutes() === 0 && date.getUTCSeconds() === 0;
-  if (unit === "hour") return whole;
-  if (!whole || date.getUTCHours() !== 0) return false;
-  return unit === "day" || date.getUTCDate() === 1;
+  return date.getUTCFullYear() * 12 + date.getUTCMonth();
 }
 
 /** A unit's place in its cycle: the hour, the weekday from Monday, or the month from January. */
@@ -66,8 +69,9 @@ function unitIndex(wall: number, unit: ClockTier["unit"]): number {
 }
 
 /**
- * Where a cycle's labels sit. A label's unit starts at the first slot whose wall clock starts it,
- * so a repeated fall-back hour labels once. An hour sits on its slot's start, and a weekday or a
+ * Where a cycle's labels sit. A label's unit starts at the first slot whose wall clock falls in it,
+ * so a repeated fall-back hour labels once and an hour that starts at :30 after a half-hour change
+ * still labels. An hour sits on its slot's start, and a weekday or a
  * month in the middle of the slots it spans.
  *
  * @param starts - The cycle's slot starts, ascending.
@@ -85,10 +89,16 @@ export function clockLabelSlots(
   const count = starts.length;
   const firsts: number[] = [];
   let latest = Number.NEGATIVE_INFINITY;
+  let current = Number.NEGATIVE_INFINITY;
   walls.forEach((wall, slot) => {
+    // A repeated fall-back hour reads wall clocks already seen, so it labels once.
     if (wall <= latest) return;
     latest = wall;
-    if (startsUnit(wall, unit)) firsts.push(slot);
+    const at = unitOf(wall, unit);
+    if (at > current) {
+      current = at;
+      firsts.push(slot);
+    }
   });
   return firsts.map((slot, index) => {
     const step = 360 / count;

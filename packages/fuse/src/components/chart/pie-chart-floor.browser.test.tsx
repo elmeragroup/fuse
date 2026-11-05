@@ -1,12 +1,22 @@
 // D24's rim floor in Chromium. Unit under test: PieChart.Pie's frame, which floors every slice it
 // writes. Oracle: D24, written by hand. A slice whose reading is above 0 shows at least one device
 // pixel of rim between the seams stroked over its two edges, so its outer arc spans at least the
-// seam plus one device pixel, while its share and its texts keep the true value.
+// seam plus one device pixel, while its share and its texts keep the true value. The pointer picks
+// the slice it sees: at a 100 px radius and DPR 1 the floored slice spans the 2 px seam and one
+// pixel, 3 / 100 rad ≈ 1.719°, so it starts near 358.28° and 359° lies inside it (Q2, B13).
 import { expect, it } from "vitest";
 import { userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
-import { outerArc, pieSvg, sectors } from "../../../test/chart/pie";
+import {
+  activeSlice,
+  clientPoint,
+  dialPoint,
+  hoverAt,
+  outerArc,
+  pieSvg,
+  sectors,
+} from "../../../test/chart/pie";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
 import "./chart.css";
@@ -42,6 +52,12 @@ it("keeps a device pixel of rim between the seams of a slice a millionth of the 
     .toBeGreaterThanOrEqual(seam + 1 / window.devicePixelRatio - 0.01);
   // The seam the floor clears is the bar seam's 2 px default.
   expect(seam).toBe(2);
+  // The pointer at 359°, inside the floored slice's visible rim, picks it.
+  expect(radius).toBe(100);
+  expect(window.devicePixelRatio).toBe(1);
+  const inside = dialPoint(359, 0.75);
+  await hoverAt(...clientPoint(pieSvg(host), inside.x, inside.y));
+  expect(activeSlice(host)).toBe(1);
   // The texts keep the true value: the option reads 1 and 0 %, from the share set that sums to 100.
   await userEvent.tab();
   await userEvent.keyboard("{ArrowDown}");

@@ -11,7 +11,7 @@ import { nextFrames } from "../../../test/animation-frames";
 import { glideLanded, label, pointerAt, popup, surfaceBox } from "../../../test/chart/marks";
 import {
   MONTHS,
-  REVENUE,
+  HOUSEHOLD,
   DAYS,
   WIDE,
   barChart,
@@ -145,23 +145,23 @@ describe("the glide", () => {
   });
 
   it("moves at once on a data update", async () => {
-    // Feb, Mar and Apr rise to 24,000, under the 25,000 the axis already ends at, so the axis
-    // keeps its scale and the roof over Mar's popup rises from Apr's 18,800.
+    // Feb, Mar and Apr rise to 2,400 kWh, under the 2,500 the axis already ends at, so the axis
+    // keeps its scale and the roof over Mar's popup rises from Apr's 1,880.
     const rows = (raised: boolean) =>
       MONTHS.map((month, index) => ({
         month,
-        revenue: raised && index >= 1 && index <= 3 ? 24000 : REVENUE[index],
+        household: raised && index >= 1 && index <= 3 ? 2400 : HOUSEHOLD[index],
       }));
     const view = (raised: boolean) => (
       <div style={{ padding: "160px 24px 24px", width: 640, boxSizing: "border-box" }}>
         <LocaleProvider locale="en-US">
           <Chart.Root
             data={rows(raised)}
-            config={{ revenue: { label: "Revenue", color: "chart-1" } }}
+            config={{ household: { label: "Household", color: "chart-1" } }}
             xKey="month"
             data-intro="none"
-            aria-label="Revenue and profit">
-            <Chart.Bar dataKey="revenue" />
+            aria-label="Household use">
+            <Chart.Bar dataKey="household" />
             <Chart.Tooltip />
           </Chart.Root>
         </LocaleProvider>
@@ -204,12 +204,12 @@ describe("scrolling while the popup shows", () => {
           <div style={{ padding: "200px 24px 900px", width: 640, boxSizing: "border-box" }}>
             <LocaleProvider locale="en-US">
               <Chart.Root
-                data={MONTHS.map((month, index) => ({ month, revenue: REVENUE[index] }))}
-                config={{ revenue: { label: "Revenue", color: "chart-1" } }}
+                data={MONTHS.map((month, index) => ({ month, household: HOUSEHOLD[index] }))}
+                config={{ household: { label: "Household", color: "chart-1" } }}
                 xKey="month"
                 data-intro="none"
-                aria-label="Revenue">
-                <Chart.Bar dataKey="revenue" />
+                aria-label="Household use">
+                <Chart.Bar dataKey="household" />
                 <Chart.Tooltip />
               </Chart.Root>
             </LocaleProvider>

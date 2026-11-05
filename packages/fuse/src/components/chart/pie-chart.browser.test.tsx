@@ -23,6 +23,8 @@ import { LocaleProvider } from "../../intl/locale-context";
 import type { ChartConfig } from "./chart-types";
 import "./chart.css";
 import { PieChart } from "./pie-chart-namespace";
+import { RadialChart } from "./radial-chart-namespace";
+import { useChartPoint } from "./use-chart-point";
 
 /** Shares of 100, so slice i spans its value as a share of 360°: 0–180, 180–288, 288–342 and 342–360. */
 const HALVES = [
@@ -200,6 +202,50 @@ describe("the labels (section 8.4, Q10)", () => {
     const [x = Number.NaN, y = Number.NaN] = (leader.split(" ")[0] ?? "").split(",").map(Number);
     expect(x).toBeCloseTo(-Math.SQRT1_2, 3);
     expect(y).toBeCloseTo(Math.SQRT1_2, 3);
+  });
+});
+
+/** Prints the active point's qualities, as a consumer's headline would read them. */
+function QualityProbe() {
+  const point = useChartPoint();
+  return <output>{point === null ? "none" : JSON.stringify(point.quality)}</output>;
+}
+
+describe("the active point's qualities (B8)", () => {
+  // Two readings with no quality column, which the ChartPoint contract counts as measured.
+  const bill = [
+    { part: "strom", kr: 1 },
+    { part: "nettleie", kr: 2 },
+  ];
+  const config = {
+    strom: { label: "Strøm", color: "chart-1" },
+    nettleie: { label: "Nettleie", color: "chart-2" },
+  } as const;
+
+  it.each([
+    [
+      "pie",
+      <PieChart.Root key="pie" data={bill} config={config} nameKey="part" valueKey="kr" aria-label="Regning">
+        <QualityProbe />
+      </PieChart.Root>,
+    ],
+    [
+      "radial",
+      <RadialChart.Root
+        key="radial"
+        data={bill}
+        config={config}
+        nameKey="part"
+        valueKey="kr"
+        aria-label="Ringer">
+        <QualityProbe />
+      </RadialChart.Root>,
+    ],
+  ])("reports each measured %s reading as measured", async (_, chart) => {
+    renderThemed(<LocaleProvider locale="nb-NO">{chart}</LocaleProvider>);
+    await userEvent.tab();
+    const shown = page.getByRole("status").filter({ hasText: "{" });
+    expect(JSON.parse(shown.element().textContent)).toEqual({ strom: "measured", nettleie: "measured" });
   });
 });
 

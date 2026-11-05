@@ -81,6 +81,26 @@ describe("the polar data rules in production", () => {
     expect(values).toEqual(["60", "\u221220", "40"]);
   });
 
+  it("counts a reading that is not a finite number as missing, and warns once with its row (B9)", () => {
+    spy();
+    const rows = [
+      { name: "strom", v: 60 },
+      { name: "nettleie", v: Number.NaN },
+    ];
+    const chart = (
+      <LocaleProvider locale="nb-NO">
+        <PieChart.Root data={rows} config={BILL_CONFIG} nameKey="name" valueKey="v" aria-label="Regning" />
+      </LocaleProvider>
+    );
+    const { rerender } = renderThemed(chart);
+    rerender(chart);
+    expect(warn).toHaveBeenCalledTimes(1);
+    // The NaN sits in row 1, the Nettleie category.
+    expect(String(warn.mock.calls[0]?.[0])).toContain("PieChart.Root");
+    expect(String(warn.mock.calls[0]?.[0])).toContain("Row 1");
+    expect(String(warn.mock.calls[0]?.[0])).toContain('"nettleie"');
+  });
+
   it("compares a radar's first four series, leaves the fifth out, and warns once", () => {
     spy();
     // A config built at run time, whose keys the type-level cap cannot count.

@@ -18,7 +18,7 @@ import { ChartTooltipItems, ChartTooltipLabel, ChartTooltipValue } from "./chart
 const POLAR_PLACER: TooltipPlacer = { useAnchor: usePolarTooltipAnchor };
 
 /** The default content: the active item's label, then its rows, each a swatch, a label and a value. */
-function DefaultTooltip(): ReactElement {
+export function DefaultPolarTooltip(): ReactElement {
   return (
     <>
       <ChartTooltipLabel />
@@ -32,7 +32,7 @@ function DefaultTooltip(): ReactElement {
 }
 
 /** The polar tooltip, its `anchor` prop left out because the ray decides where it rests. */
-function PolarTooltip({
+export function PolarTooltip({
   variant = "default",
   anchor: _anchor,
   children,
@@ -40,7 +40,7 @@ function PolarTooltip({
 }: ChartTooltipProps): ReactElement {
   return (
     <ChartTooltipBody variant={variant} placement="point" placer={POLAR_PLACER} {...props}>
-      {children ?? <DefaultTooltip />}
+      {children ?? <DefaultPolarTooltip />}
     </ChartTooltipBody>
   );
 }
@@ -84,16 +84,3 @@ Object.assign(PolarTooltip, { displayName: "PolarChart.Tooltip" });
 Object.assign(PieChartTooltip, { displayName: "PieChart.Tooltip" });
 Object.assign(RadialChartTooltip, { displayName: "RadialChart.Tooltip" });
 Object.assign(RadarChartTooltip, { displayName: "RadarChart.Tooltip" });
-
-/**
- * The popup over the active slot, centred on the slot's middle just outside the rim, with one row
- * per series. It glides round the dial the short way. Escape closes it and keeps the reader's place.
- * `anchor` does nothing here, since the ray decides where the popup rests.
- *
- * @beta
- */
-export function ClockChartTooltip(props: ChartTooltipProps): ReactElement {
-  return <PolarTooltip {...props} />;
-}
-
-Object.assign(ClockChartTooltip, { displayName: "ClockChart.Tooltip" });

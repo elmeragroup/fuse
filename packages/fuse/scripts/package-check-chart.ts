@@ -126,6 +126,8 @@ type Forbidden = {
   readonly label: string;
   readonly module?: RegExp;
   readonly external?: RegExp;
+  /** A string the code of a part carries, such as its `data-slot`, in whichever quotes minifying picks. */
+  readonly text?: RegExp;
 };
 
 /** The parts a bar route of Root, Grid, both axes and Bar must not ship, with their libraries. */
@@ -193,6 +195,23 @@ const CLOCK_ROUTE_FORBIDDEN: readonly Forbidden[] = [
   { label: "cartesian paths", module: /^(chart-path-draw|chart-series-path|line-path)\./u },
 ];
 
+/**
+ * What a route of `ClockChart.Line` alone must not ship: the other clock parts, found by the
+ * `data-slot` each writes, and the stack floors and M4 decimation only a Column reads (Q1).
+ */
+const CLOCK_LINE_FORBIDDEN: readonly Forbidden[] = [
+  { label: "Column", text: /["'`]clock-chart-column["'`]/u },
+  { label: "Marker", text: /["'`]clock-chart-marker["'`]/u },
+  { label: "ValueLabel", text: /["'`]clock-chart-value-label["'`]/u },
+  { label: "ActiveDot", text: /["'`]clock-chart-active-dot["'`]/u },
+  { label: "useStackSeat", module: /^chart-stack-floors\./u },
+  { label: "m4Indexes", module: /^decimate\./u },
+];
+
+/** The clock parts whose route ships everything the Line rule names, its control. */
+const CLOCK_LINE_CONTROL_PARTS =
+  "ClockChart.Column, ClockChart.Marker, ClockChart.ValueLabel, ClockChart.ActiveDot";
+
 /** The cartesian parts whose route ships everything the clock rule names, its control. */
 const CLOCK_CONTROL_PARTS = "Chart.Root, Chart.Line, Chart.Bar, Chart.Tooltip, Chart.Table";
 
@@ -209,10 +228,11 @@ const POLAR_FAMILIES = [
 
 /** The labels of the forbidden code a route ships, each with what it matched. */
 function shipped(route: Route, forbidden: readonly Forbidden[]): string[] {
-  return forbidden.flatMap(({ label, module, external }) => {
+  return forbidden.flatMap(({ label, module, external, text }) => {
     const matched = [
       ...(module === undefined ? [] : modulesMatching(route, module)),
       ...(external === undefined ? [] : route.imports.filter((id) => external.test(id))),
+      ...(text?.exec(route.code)?.slice(0, 1) ?? []),
     ];
     return matched.length > 0
       ? [`${label} (${matched.map((id) => id.split("/").at(-1) ?? id).join(", ")})`]
@@ -267,53 +287,66 @@ export async function checkPackedChartBundles(extracted: string): Promise<string
         ).then((route) => ({ name: `${name} with Tooltip, Legend and Table`, route, forbidden })),
       ])
     );
-    const [[chart, alias, bars, control, pie, scatter, clockControl], polar] = await Promise.all([
-      Promise.all([
-        bundleRoute(
-          extracted,
-          work,
-          "chart",
-          "import { Chart } from <chart>;\nexport const Root = Chart.Root;\n"
-        ),
-        bundleRoute(
-          extracted,
-          work,
-          "bar-chart",
-          "import { BarChart } from <chart>;\nexport const Root = BarChart.Root;\n"
-        ),
-        bundleRoute(
-          extracted,
-          work,
-          "bar-route",
-          `import { Chart } from <chart>;\nexport const parts = [${BAR_PARTS}];\n`
-        ),
-        bundleRoute(
-          extracted,
-          work,
-          "bar-route-control",
-          `import { Chart } from <chart>;\nexport const parts = [${BAR_PARTS}, Chart.Tooltip, Chart.Table, Chart.LegendToggleGroup];\n`
-        ),
-        bundleRoute(
-          extracted,
-          work,
-          "pie-chart",
-          "import { PieChart } from <chart>;\nexport const Root = PieChart.Root;\n"
-        ),
-        bundleRoute(
-          extracted,
-          work,
-          "scatter-chart",
-          "import { ScatterChart } from <chart>;\nexport const Root = ScatterChart.Root;\n"
-        ),
-        bundleRoute(
-          extracted,
-          work,
-          "clock-control",
-          `import { Chart } from <chart>;\nexport const parts = [${CLOCK_CONTROL_PARTS}];\n`
-        ),
-      ]),
-      polarRoutes,
-    ]);
+    const [[chart, alias, bars, control, pie, scatter, clockControl, clockLine, clockLineControl], polar] =
+      await Promise.all([
+        Promise.all([
+          bundleRoute(
+            extracted,
+            work,
+            "chart",
+            "import { Chart } from <chart>;\nexport const Root = Chart.Root;\n"
+          ),
+          bundleRoute(
+            extracted,
+            work,
+            "bar-chart",
+            "import { BarChart } from <chart>;\nexport const Root = BarChart.Root;\n"
+          ),
+          bundleRoute(
+            extracted,
+            work,
+            "bar-route",
+            `import { Chart } from <chart>;\nexport const parts = [${BAR_PARTS}];\n`
+          ),
+          bundleRoute(
+            extracted,
+            work,
+            "bar-route-control",
+            `import { Chart } from <chart>;\nexport const parts = [${BAR_PARTS}, Chart.Tooltip, Chart.Table, Chart.LegendToggleGroup];\n`
+          ),
+          bundleRoute(
+            extracted,
+            work,
+            "pie-chart",
+            "import { PieChart } from <chart>;\nexport const Root = PieChart.Root;\n"
+          ),
+          bundleRoute(
+            extracted,
+            work,
+            "scatter-chart",
+            "import { ScatterChart } from <chart>;\nexport const Root = ScatterChart.Root;\n"
+          ),
+          bundleRoute(
+            extracted,
+            work,
+            "clock-control",
+            `import { Chart } from <chart>;\nexport const parts = [${CLOCK_CONTROL_PARTS}];\n`
+          ),
+          bundleRoute(
+            extracted,
+            work,
+            "clock-line",
+            "import { ClockChart } from <chart>;\nexport const parts = [ClockChart.Line];\n"
+          ),
+          bundleRoute(
+            extracted,
+            work,
+            "clock-line-control",
+            `import { ClockChart } from <chart>;\nexport const parts = [${CLOCK_LINE_CONTROL_PARTS}];\n`
+          ),
+        ]),
+        polarRoutes,
+      ]);
     if (chart.code !== alias.code) {
       throw new Error("the BarChart.Root route emits different bytes from the Chart.Root route");
     }
@@ -363,6 +396,12 @@ export async function checkPackedChartBundles(extracted: string): Promise<string
     if (clockBlind.length > 0) {
       throw new Error(`the clock control route trips no clock rule for ${clockBlind.join(", ")}`);
     }
+    const lineLeaks = shipped(clockLine, CLOCK_LINE_FORBIDDEN);
+    if (lineLeaks.length > 0) throw new Error(`the ClockChart.Line route ships ${lineLeaks.join("; ")}`);
+    const lineBlind = blindRules(clockLineControl, CLOCK_LINE_FORBIDDEN);
+    if (lineBlind.length > 0) {
+      throw new Error(`the clock parts control route trips no Line rule for ${lineBlind.join(", ")}`);
+    }
     // The radar namespace reads the series model, so it trips the rules that keep it off items.
     const radar = polar.find(({ name }) => name.startsWith("RadarChart with"));
     const seriesBlind =
@@ -370,7 +409,7 @@ export async function checkPackedChartBundles(extracted: string): Promise<string
     if (seriesBlind.length > 0) {
       throw new Error(`the radar namespace route trips no item rule for ${seriesBlind.join(", ")}`);
     }
-    return `Packed chart routes: Chart.Root and BarChart.Root emit ${String(chart.code.length)} identical bytes from ${String(chart.modules.length)} modules, the bar route reaches ${String(bars.modules.length)} modules with no Tooltip, Table, LegendToggleGroup or floating-ui code, its control trips all ${String(BAR_ROUTE_FORBIDDEN.length)} rules, PieChart.Root reaches ${String(pie.modules.length)} modules, ScatterChart.Root reaches ${String(scatter.modules.length)} modules and no cartesian code, and ${String(polar.length)} polar routes ship no cartesian geometry, each rule tripped by its control`;
+    return `Packed chart routes: Chart.Root and BarChart.Root emit ${String(chart.code.length)} identical bytes from ${String(chart.modules.length)} modules, the bar route reaches ${String(bars.modules.length)} modules with no Tooltip, Table, LegendToggleGroup or floating-ui code, its control trips all ${String(BAR_ROUTE_FORBIDDEN.length)} rules, PieChart.Root reaches ${String(pie.modules.length)} modules, ScatterChart.Root reaches ${String(scatter.modules.length)} modules and no cartesian code, ${String(polar.length)} polar routes ship no cartesian geometry, and ClockChart.Line ships no other clock part, each rule tripped by its control`;
   } finally {
     rmSync(work, { recursive: true, force: true });
   }

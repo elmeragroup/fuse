@@ -70,6 +70,31 @@ describe("a line round the dial", () => {
     for (const radius of radii(solid)) expect(radius).toBeCloseTo(0.6, 3);
   });
 
+  it("closes a complete coarse series whose last slots its final reading covers (B4)", () => {
+    // Three hours on a dial of twelve quarter-hour-like slots: each reading owns four slots, which
+    // carry its hour's angles, and the three after it are covered. As three hourly slots close, so
+    // does the same series drawn coarse.
+    const hour = (slot: number): [number, number] => [
+      Math.floor(slot / 4) * 120,
+      (Math.floor(slot / 4) + 1) * 120,
+    ];
+    const values = [
+      1,
+      ...Array.from({ length: 12 }, (_, slot) => [
+        ...hour(slot),
+        0.3,
+        0.5 + Math.floor(slot / 4) / 10,
+      ]).flat(),
+    ];
+    const slots: ClockSlots = {
+      states: Array.from({ length: 12 }, (_, slot) => (slot % 4 === 0 ? "reading" : "covered")),
+      marked: Array.from({ length: 12 }, () => false),
+      missing: "gap",
+    };
+    expect(clockLine(numbers([0.5, 0.6, 0.7]), readings(3), "linear").solid.endsWith("Z")).toBe(true);
+    expect(clockLine(values, slots, "linear").solid.endsWith("Z")).toBe(true);
+  });
+
   it("stays open when the last slot holds no reading yet", () => {
     const slots = { ...readings(4), states: ["reading", "reading", "reading", "pending"] as const };
     const { solid } = clockLine(numbers([0.6, 0.6, 0.6, 0.6]), slots, "linear");
@@ -100,6 +125,23 @@ describe("a line round the dial", () => {
     const angle = ([x = 0, y = 0]: number[]) => ((((Math.atan2(x, -y) * 180) / Math.PI) % 360) + 360) % 360;
     expect(angle(points[0] ?? [])).toBeCloseTo(150, 1);
     expect(angle(points.at(-1) ?? [])).toBeCloseTo(270, 1);
+  });
+
+  it("dashes and hatches the closing edge beside an estimated first or last reading (B7)", () => {
+    // Six slots of 60°, every vertex at 0.6 and slot 0, at 30°, estimated. Its marked pieces run
+    // from slot 5's vertex at 330° across midnight to slot 1's at 90°, so the closing edge from
+    // 330° to 30° is dashed, and no solid point lies strictly inside it.
+    const slots = { ...readings(6), marked: [true, false, false, false, false, false] };
+    const angles = (d: string) =>
+      [...d.matchAll(/[ML](-?[\d.]+),(-?[\d.]+)/gu)].map(
+        (match) => ((((Math.atan2(Number(match[1]), -Number(match[2])) * 180) / Math.PI) % 360) + 360) % 360
+      );
+    const { solid, marked } = clockLine(numbers([0.6, 0.6, 0.6, 0.6, 0.6, 0.6]), slots, "linear");
+    const inClosing = (angle: number) => angle > 330.5 || angle < 29.5;
+    expect(angles(marked).some(inClosing)).toBe(true);
+    expect(angles(solid).some(inClosing)).toBe(false);
+    const area = clockArea(numbers([0.6, 0.6, 0.6, 0.6, 0.6, 0.6]), slots, "linear");
+    expect(angles(area.marked).some(inClosing)).toBe(true);
   });
 
   it("draws a reading between two gaps as a lone dot", () => {
@@ -151,6 +193,23 @@ describe("a ride along the curve", () => {
     expect(route[0]?.angle).toBeCloseTo(330, 6);
     expect((route.at(-1)?.angle ?? 0) % 360).toBeCloseTo(30, 6);
     for (const { angle } of route) expect(angle % 360 > 300 || angle % 360 < 60).toBe(true);
+  });
+
+  it("rides the closing edge back across midnight to the last slot's own reading (B6)", () => {
+    // A linear day with radii 0.5 at slot 0, 0.6 at slot 1, 0.9 at slot 23 and 0.7 elsewhere. A
+    // step back from slot 0, at 7.5°, to slot 23, at 352.5°, runs 15° back along the closing edge,
+    // straight from 0.5 to 0.9, and ends on 0.9.
+    const tips = Array.from({ length: 24 }, (_, slot) =>
+      slot === 0 ? 0.5 : slot === 1 ? 0.6 : slot === 23 ? 0.9 : 0.7
+    );
+    const route = curveRoute(numbers(tips), readings(24), "linear", 0, 23);
+    expect(route[0]?.radius).toBeCloseTo(0.5, 6);
+    expect(route.at(-1)?.radius).toBeCloseTo(0.9, 6);
+    expect((((route.at(-1)?.angle ?? 0) % 360) + 360) % 360).toBeCloseTo(352.5, 6);
+    for (const { radius } of route) {
+      expect(radius).toBeGreaterThanOrEqual(0.5 - 1e-9);
+      expect(radius).toBeLessThanOrEqual(0.9 + 1e-9);
+    }
   });
 
   it("samples a segment between equal radii as an arc", () => {

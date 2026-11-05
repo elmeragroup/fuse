@@ -6,8 +6,6 @@
  */
 import { arc as d3Arc, areaRadial, curveLinear, curveLinearClosed, lineRadial } from "d3-shape";
 
-import { floorSlices } from "./pie";
-import type { RimFloor, SliceAngles } from "./pie";
 import type { Sweep } from "./polar-angle";
 import { polarPoint, toRadians } from "./polar-angle";
 import { PATH_DIGITS, pathNumber } from "./rounding";
@@ -74,73 +72,6 @@ export function arcPath(spec: ArcSpec): string {
  */
 export function arcCentroid(spec: ArcSpec): readonly [number, number] {
   return generatorOf(spec).centroid(inputOf(spec));
-}
-
-/** What a pie's slices share in a frame: the corner, the sweep they fill and the rim floor. */
-export type SliceLook = {
-  /** The corner radius, in the frame's radius unit. */
-  readonly cornerRadius: number;
-  readonly sweep: Sweep;
-  /**
-   * The device pixel ratio and the seam in CSS pixels the rim floor reads, or null where nothing
-   * measures yet, as on the server.
-   */
-  readonly floor: Omit<RimFloor, "radius"> | null;
-  /** CSS pixels per radius unit, which turns the outer radius into the floor's pixels. */
-  readonly scale: number;
-};
-
-/** One frame of a pie: each slice's floored angles and its path, null for a slice that draws nothing. */
-export type PieFrame = {
-  readonly slices: readonly (SliceAngles | null)[];
-  readonly paths: readonly (string | null)[];
-};
-
-/**
- * One frame of a pie, as its motion writer draws it. The loop tweens the numbers
- * `[innerRadius, outerRadius, start₀, end₀, start₁, end₁, …]`, and each slice keeps its pad. The rim
- * floor applies to this frame's angles, so a slice that grows through a pixel never vanishes.
- *
- * @param values - The radii, then each slice's start and end in degrees, NaN for one that draws nothing.
- * @param pads - Each slice's pad in degrees.
- * @param look - The corner, the sweep and the floor.
- * @returns Each slice's floored angles and path.
- */
-export function pieFrame(values: readonly number[], pads: readonly number[], look: SliceLook): PieFrame {
-  const [innerRadius = 0, outerRadius = 0] = values;
-  const raw = pads.map((pad, index): SliceAngles | null => {
-    const start = values[2 + 2 * index];
-    const end = values[3 + 2 * index];
-    if (
-      start === undefined ||
-      end === undefined ||
-      Number.isNaN(start) ||
-      Number.isNaN(end) ||
-      start === end
-    ) {
-      return null;
-    }
-    return { start, end, pad };
-  });
-  const slices =
-    look.floor === null
-      ? raw
-      : floorSlices(raw, look.sweep, { ...look.floor, radius: outerRadius * look.scale });
-  return {
-    slices,
-    paths: slices.map((slice) =>
-      slice === null
-        ? null
-        : arcPath({
-            innerRadius,
-            outerRadius,
-            startAngle: slice.start,
-            endAngle: slice.end,
-            padAngle: slice.pad,
-            cornerRadius: look.cornerRadius,
-          })
-    ),
-  };
 }
 
 /**

@@ -4,16 +4,12 @@
  * component reads each part as a client reference. Each export name is the part's key.
  */
 export { ClockChartRoot as Root } from "./clock-chart-root";
-export {
-  ClockChartLine as Line,
-  ClockChartArea as Area,
-  ClockChartColumn as Column,
-  ClockChartDots as Dots,
-  ClockChartActiveDot as ActiveDot,
-  ClockChartMarker as Marker,
-  ClockChartValueLabel as ValueLabel,
-  ClockChartGlow as Glow,
-} from "./clock-chart-marks";
+export { ClockChartLine as Line, ClockChartArea as Area } from "./clock-chart-marks";
+export { ClockChartColumn as Column } from "./clock-chart-column";
+export { ClockChartDots as Dots, ClockChartMarker as Marker } from "./clock-chart-dots";
+export { ClockChartActiveDot as ActiveDot } from "./clock-chart-active-dot";
+export { ClockChartValueLabel as ValueLabel } from "./clock-chart-value-label";
+export { ClockChartGlow as Glow } from "./clock-chart-glow";
 export {
   ClockChartGrid as Grid,
   ClockChartAngleAxis as AngleAxis,
@@ -30,7 +26,7 @@ export {
 } from "./clock-chart-center";
 export { ClockChartSkeleton as Skeleton } from "./clock-chart-skeleton";
 export { ChartHeadline as Headline, ChartTakeaway as Takeaway } from "./chart-headline";
-export { ClockChartTooltip as Tooltip } from "./polar-chart-tooltip";
+export { ClockChartTooltip as Tooltip } from "./clock-chart-tooltip";
 export {
   ChartTooltipLabel as TooltipLabel,
   ChartTooltipItems as TooltipItems,

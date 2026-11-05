@@ -52,7 +52,7 @@ function Dial({
   size,
   children,
 }: {
-  readonly data?: readonly Record<string, number>[];
+  readonly data?: readonly Record<string, number | string>[];
   readonly config?: ChartConfig;
   readonly scale?: "radial" | "linear";
   readonly now?: number;
@@ -163,6 +163,28 @@ describe("a threshold ring (D23)", () => {
     expect(Oklab.deltaE(fill("step-0"), role("chart-sentiment-positive"))).toBeLessThanOrEqual(3);
     expect(page.getByText("Over snittet").elements()).toHaveLength(1);
     expect(page.getByText("Under snittet").elements()).toHaveLength(1);
+  });
+
+  it("keeps an estimated wedge in its own side's paint, hatched, and in the past where it lies (Q4, B2)", async () => {
+    // The 4 at 00:00 is estimated, above 1.5, and before Now at 11:30, so it lies in the past.
+    const rows = hours(VALUES).map((row, hour) => (hour === 0 ? { ...row, q: "estimated" } : row));
+    const { host } = renderThemed(
+      <Dial data={rows} config={{ kwh: { ...split.kwh, qualityKey: "q" } }} now={DAY + 11.5 * HOUR}>
+        <ClockChart.Column dataKey="kwh" />
+      </Dial>
+    );
+    await painted();
+    const column = clockLayer(host, "clock-chart-column");
+    // DOM audit: each wedge group is aria-hidden plot output, read by its group.
+    const marked = column.querySelector('[data-group="step-1-past-marked"]');
+    expect(wedgeRadii(marked?.getAttribute("d") ?? "")).toHaveLength(1);
+    expect(marked?.getAttribute("data-time")).toBe("past");
+    expect(marked?.getAttribute("data-part")).toBe("marked");
+    // Its hatch is drawn in the above side's colour, the negative sentiment role.
+    const [, id = ""] = /url\("?#([^")]+)"?\)/u.exec(getComputedStyle(marked ?? column).fill) ?? [];
+    const hatch = column.querySelector(`[id="${id}"] stop`);
+    const role = srgb(computedColor(host, "var(--chart-sentiment-negative)"));
+    expect(Oklab.deltaE(srgb(getComputedStyle(hatch ?? column).stopColor), role)).toBeLessThanOrEqual(3);
   });
 
   it("glows a value-painted line through a filter that blurs its own pixels at the drawn radius", async () => {
@@ -473,6 +495,138 @@ describe("the seam (D16), Now and the keys", () => {
     await userEvent.keyboard("{ArrowRight}{ArrowRight}{ArrowRight}{ArrowRight}{ArrowRight}{ArrowRight}");
     expect(active()).toBe("0");
     expect(page.getByRole("listbox").element().getAttribute("aria-orientation")).toBe("horizontal");
+  });
+});
+
+describe("an Area's gradients over both signs (B3)", () => {
+  it.each(["gradient", "gradient-reverse"] as const)(
+    "fades the %s look in its documented direction and keeps the negative side visible",
+    async (variant) => {
+      // Readings from −2 to 4 under "linear": the hole's edge is −2 at 0.3, the zero ring
+      // 0.3 + 0.7 · 2/6 ≈ 0.533 out, and 4 at the rim. "gradient" fades from the value toward zero,
+      // so it is clear at the zero ring and solid at the rim and at the hole; "gradient-reverse" is
+      // solid at the zero ring and clear at the rim and the hole.
+      const values = Array.from({ length: 24 }, (_, hour) => (hour < 12 ? 4 : -2));
+      const { host } = renderThemed(
+        <Dial data={hours(values)} scale="linear">
+          <ClockChart.Area dataKey="kwh" variant={variant} />
+        </Dial>
+      );
+      await painted();
+      const area = clockLayer(host, "clock-chart-area");
+      // DOM audit: the look's ramp is aria-hidden paint, read by its stops.
+      const stops = [...area.querySelectorAll("mask radialGradient stop")].map((stop) => ({
+        offset: Number(stop.getAttribute("offset")),
+        opacity: Number(getComputedStyle(stop).stopOpacity),
+      }));
+      const at = (offset: number) => stops.find((stop) => Math.abs(stop.offset - offset) < 0.001)?.opacity;
+      const zero = 0.3 + (0.7 * 2) / 6;
+      const [ends, middle] = variant === "gradient" ? ["solid", "clear"] : ["clear", "solid"];
+      const look = (opacity: number | undefined) =>
+        opacity === undefined ? "none" : opacity > 0 ? "solid" : "clear";
+      expect([look(at(0.3)), look(at(zero)), look(at(1))]).toEqual([ends, middle, ends]);
+    }
+  );
+});
+
+describe("a ReferenceArea's label (B10)", () => {
+  it("prints a time sector's range in Root's locale and zone through the label's {value}", async () => {
+    // The sector holds the hours from 17:00 to 19:00 in Oslo, so it runs from 17:00 to 20:00, which
+    // nb-NO writes 24-hour, its ends joined by an en dash as the value annulus joins its values.
+    const { host } = renderThemed(
+      <Dial>
+        <ClockChart.ReferenceArea
+          x1={DAY + 17 * HOUR}
+          x2={DAY + 19 * HOUR}
+          label="Topp {value}"
+          format="time"
+        />
+      </Dial>
+    );
+    await painted();
+    // DOM audit: the area's label is aria-hidden plot text, read by its part.
+    const text = host.querySelector(
+      '[data-slot="clock-chart-reference-area"] > [data-part="label"]'
+    )?.textContent;
+    expect(text).toBe("Topp 17:00\u201320:00");
+  });
+});
+
+describe("the default tooltip over a stack (B11)", () => {
+  it("adds one total row for a stack of two series, as the table and the option do", async () => {
+    // Household 2 and cabin 1 at 00:00 stack to 3, which the total row prints.
+    const rows = hours(Array.from({ length: 24 }, () => 2)).map((row) => ({ ...row, cabin: 1 }));
+    renderThemed(
+      <Dial
+        data={rows}
+        config={{
+          kwh: { label: "Husholdning", color: "chart-1", stack: "home" },
+          cabin: { label: "Hytte", color: "chart-2", stack: "home" },
+        }}>
+        <ClockChart.Column dataKey="kwh" />
+        <ClockChart.Column dataKey="cabin" />
+        <ClockChart.Tooltip />
+      </Dial>
+    );
+    await userEvent.tab();
+    // DOM audit: the popup portals out of the host, and its total row carries its slot.
+    await expect.poll(() => document.querySelectorAll('[data-slot="chart-tooltip-total"]').length).toBe(1);
+    expect(document.querySelector('[data-slot="chart-tooltip-total"]')?.textContent).toContain("3");
+  });
+});
+
+describe("a coarse series under the pointer (Q3, B5)", () => {
+  it("picks and selects the hourly series anywhere in its hour, not only at its first quarter", async () => {
+    // A quarter-hour dial with prices at 1 every quarter and an hourly reading of 3 on each :00 row.
+    // On [0, 4] under "radial" the hourly tip sits at √(0.09 + 0.91 · 3/4) ≈ 0.879 and the price's
+    // at √(0.09 + 0.91 · 1/4) ≈ 0.563. The second quarter, slot 1 of 96, centres at 5.625°.
+    const quarters = slots["quarter-hour"]["Europe/Oslo"]["2025-10-25"].utc_start.map((start) =>
+      Date.parse(start)
+    );
+    const rows = quarters.map((start, slot) =>
+      slot % 4 === 0 ? { start, kwh: 3, price: 1 } : { start, price: 1 }
+    );
+    const { host } = renderThemed(
+      <LocaleProvider locale="nb-NO" timeZone="Europe/Oslo">
+        <div style={{ width: 320 }}>
+          <ClockChart.Root
+            data={rows}
+            config={{
+              kwh: { label: "Forbruk", color: "chart-1", interval: "hour" },
+              price: { label: "Pris", color: "chart-2" },
+            }}
+            xKey="start"
+            cycle="day"
+            interval="quarter-hour"
+            yInclude={[0, 4]}
+            data-intro="none"
+            aria-label="Døgn">
+            <ClockChart.Column dataKey="kwh" />
+            <ClockChart.Line dataKey="price" />
+            <ClockChart.LegendToggleGroup />
+          </ClockChart.Root>
+        </div>
+      </LocaleProvider>
+    );
+    await painted();
+    const layer = clockLayer(host, "clock-chart-column");
+    const at = {
+      x: 0.879 * Math.sin((5.625 * Math.PI) / 180),
+      y: -0.879 * Math.cos((5.625 * Math.PI) / 180),
+    };
+    await hoverAt(...clientPoint(layer, at.x, at.y));
+    // The hourly series, the first in config order, is the nearest.
+    expect(polarFigure(host).getAttribute("data-near")).toBe("0");
+    await userEvent.click(page.getByRole("listbox"), {
+      position: {
+        x:
+          clientPoint(layer, at.x, at.y)[0] -
+          page.getByRole("listbox").element().getBoundingClientRect().left,
+        y:
+          clientPoint(layer, at.x, at.y)[1] - page.getByRole("listbox").element().getBoundingClientRect().top,
+      },
+    });
+    expect(page.getByRole("button", { name: "Forbruk" }).element().getAttribute("aria-pressed")).toBe("true");
   });
 });
 

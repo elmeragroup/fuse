@@ -31,6 +31,7 @@ import { ChartOwnScope } from "./chart-own-scope";
 import { PolarContext } from "./chart-polar-context";
 import type { PolarContextValue, PolarKernel, PolarModel, PolarUpdate } from "./chart-polar-context";
 import { introPace } from "./chart-polar-motion";
+import { paintedOf } from "./chart-polar-painted";
 import { PolarSurface } from "./chart-polar-surface";
 import { ChartReadoutContext, ChartSelectionContext } from "./chart-readout-port";
 import type { PointerSlot } from "./chart-readout-port";
@@ -418,7 +419,7 @@ export function usePolarRoot(props: PolarRootProps): PolarRootState {
   useLayoutEffect(() => {
     modelRef.current = model;
   });
-  const usePick = useCallback(() => polarPick(id, modelRef), [id]);
+  const usePick = useCallback(() => polarPick(id, modelRef, motion), [id, motion]);
   const kernel = useMemo(
     (): PolarKernel => ({
       id,
@@ -469,11 +470,13 @@ export function usePolarRoot(props: PolarRootProps): PolarRootState {
  *
  * @param id - The Root's id prefix.
  * @param model - The latest model.
+ * @param motion - The Root's loop, whose frame shares the angles it painted.
  * @returns The pick, null before the listbox mounts.
  */
 function polarPick(
   id: string,
-  model: { readonly current: PolarModel }
+  model: { readonly current: PolarModel },
+  motion: ChartMotion
 ): (clientX: number, clientY: number) => PointerSlot | null {
   return (clientX, clientY) => {
     const surface = document.getElementById(`${id}-surface`);
@@ -484,7 +487,11 @@ function polarPick(
     if (!(rect.width > 0) || !(width > 0)) return null;
     const scale = rect.width / width;
     const point = { x: box.left + (clientX - rect.left) / scale, y: box.top + (clientY - rect.top) / scale };
-    return model.current.pick(point, { scale, dpr: window.devicePixelRatio || 1 });
+    return model.current.pick(point, {
+      scale,
+      dpr: window.devicePixelRatio || 1,
+      painted: paintedOf(motion),
+    });
   };
 }
 

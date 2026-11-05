@@ -8,13 +8,15 @@
 // spoke's radius over 480 ms; a change of spoke count crossfades over 150 ms; the active dot rides
 // the polygon's edges on the 300/30 follow spring, ln 2000 / 15 ≈ 507 ms for a key step; and the
 // hand turns the short way on 420/42, overdamped, its slow root 21 − √(21² − 420) ≈ 16.4 settling
-// by about 483 ms. Time is read from each frame's own timestamp.
+// by about 483 ms. The entrance runs on a hand-driven frame clock, read on the loop's own time; the
+// rest read each frame's own timestamp.
 import { hydrateRoot } from "react-dom/client";
 import { renderToString } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
+import { installFrameClock } from "../../../test/chart/frame-clock";
 import { polarFigure } from "../../../test/chart/pie";
 import { layerPath, pathPoints, radarLayers } from "../../../test/chart/radar";
 import { renderThemed } from "../../../test/themed-browser-render";
@@ -97,26 +99,34 @@ function Chart({
 
 describe("the radar's entrance (SPEC's Motion table)", () => {
   it("grows series s from the centre at 600 + s·150 ms over 1000 ms, and scales out the grid on a client mount", async () => {
-    const { host } = renderThemed(<Chart a={[4, 2, 3, 1]} b={[1, 3, 2, 4]} />);
-    const figure = polarFigure(host);
-    let from: number | null = null;
+    // The series run on a hand-driven frame clock, which stands still until the entrance starts, so
+    // that frame is the loop's t = 0, and each reading is 10 ms of the loop's own time on.
+    const clock = installFrameClock();
+    const frames: { readonly t: number; readonly radii: readonly (readonly number[])[] }[] = [];
     let rings: ReturnType<typeof timings> = [];
     let spokes: ReturnType<typeof timings> = [];
     let labels: ReturnType<typeof timings> = [];
-    const frames = await record(
-      host,
-      () => {
-        if (from === null && figure.hasAttribute("data-drawn")) {
-          from = performance.now();
-          // DOM audit: the scale-outs and the fade are CSS animations, read from their own animations.
-          rings = timings(host, '[data-slot="radar-chart-grid-ring"]');
-          spokes = timings(host, '[data-slot="radar-chart-spoke"]:not([data-part])');
-          labels = timings(host, '[data-slot="radar-chart-angle-label"]');
-        }
-        return from;
-      },
-      1900
-    );
+    try {
+      const { host } = renderThemed(<Chart a={[4, 2, 3, 1]} b={[1, 3, 2, 4]} />);
+      const figure = polarFigure(host);
+      const start = clock.now();
+      await expect
+        .poll(() => {
+          clock.frameAt(start);
+          return figure.hasAttribute("data-drawn");
+        })
+        .toBe(true);
+      // DOM audit: the scale-outs and the fade are CSS animations, read from their own animations.
+      rings = timings(host, '[data-slot="radar-chart-grid-ring"]');
+      spokes = timings(host, '[data-slot="radar-chart-spoke"]:not([data-part])');
+      labels = timings(host, '[data-slot="radar-chart-angle-label"]');
+      for (let t = 0; t <= 1900; t += 10) {
+        clock.frameAt(start + t);
+        frames.push({ t, radii: radii(host) });
+      }
+    } finally {
+      clock.restore();
+    }
     expect(rings.map(({ delay }) => delay)).toEqual([0, 80, 160, 240]);
     expect(spokes.map(({ delay }) => delay)).toEqual([0, 50, 100, 150]);
     expect(labels).toEqual([0, 1, 2, 3].map((index) => ({ delay: 400 + 50 * index, duration: 500 })));
@@ -132,10 +142,10 @@ describe("the radar's entrance (SPEC's Motion table)", () => {
       const begins = 600 + 150 * series;
       const ends = begins + 1000;
       const seen = frames.map((frame) => ({ t: frame.t, radii: frame.radii[series] ?? [] }));
-      for (const frame of seen.filter(({ t }) => t < begins - SLACK)) {
+      for (const frame of seen.filter(({ t }) => t <= begins)) {
         expect(frame.radii.every((radius) => radius < ROUNDED)).toBe(true);
       }
-      for (const frame of seen.filter(({ t }) => t > ends + SLACK)) {
+      for (const frame of seen.filter(({ t }) => t >= ends)) {
         frame.radii.forEach((radius, spoke) => {
           expect(Math.abs(radius - (rest[spoke] ?? 0))).toBeLessThan(ROUNDED);
         });

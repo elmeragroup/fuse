@@ -187,7 +187,7 @@ describe("the polar Roots under React Server Components", () => {
       "components/chart/clock-chart-root.tsx#ClockChartRoot",
       "components/chart/clock-chart-grid.tsx#ClockChartGrid",
       "components/chart/clock-chart-grid.tsx#ClockChartAngleAxis",
-      "components/chart/clock-chart-marks.tsx#ClockChartColumn",
+      "components/chart/clock-chart-column.tsx#ClockChartColumn",
       "components/chart/clock-chart-marks.tsx#ClockChartLine",
       "components/chart/clock-chart-center.tsx#ClockChartCenter",
     ]);

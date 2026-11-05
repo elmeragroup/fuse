@@ -16,6 +16,7 @@
  */
 import { writeStyle } from "./chart-dom";
 import type { ChartMotion, MarkValues } from "./chart-motion";
+import { sharePainted } from "./chart-polar-painted";
 import { arcPath } from "./layout/arc-path";
 import { CHART_SPRINGS } from "./layout/motion";
 import { floorSlices } from "./layout/pie";
@@ -121,6 +122,9 @@ export function createPieFrame(motion: ChartMotion, look: PieLook): PieFrame {
   const mirrors = new Map<string, Set<Element>>();
   const tracks = new Set<Element>();
   const listeners = new Set<PieListener>();
+  // The floored, unpopped angles each slice painted last, which the Root's pick reads (D24).
+  const painted = new Map<string, SliceAngles | null>();
+  sharePainted(motion, (key) => painted.get(key));
   let current = look;
   let measure: PieMeasure | null = null;
   let batching = 0;
@@ -140,6 +144,8 @@ export function createPieFrame(motion: ChartMotion, look: PieLook): PieFrame {
     const angles = new Map<Entry, SliceAngles | null>(
       slices.map((entry, index) => [entry, floored[index] ?? null])
     );
+    painted.clear();
+    slices.forEach((entry, index) => painted.set(entry.key, floored[index] ?? null));
     const reach = measure === null || !(measure.scale > 0) ? 0 : measure.pop / measure.scale;
     for (const [key, entry] of entries) {
       const slice =

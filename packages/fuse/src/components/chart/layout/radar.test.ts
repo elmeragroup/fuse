@@ -219,16 +219,17 @@ describe("the pick (R6)", () => {
     expect(spokeAt(135, 4)).toBe(1);
   });
 
-  it("advances one spoke when the pointer turns by one spoke's angle", () => {
+  it("picks the spoke nearest the pointer's angle for any spoke count (Q6)", () => {
     fc.assert(
       fc.property(
         fc.integer({ min: 3, max: 24 }),
         fc.double({ min: 0, max: 359.999, noNaN: true }),
         (count, angle) => {
+          // Spoke i points at i · 360 / count from 12 o'clock, so away from a midway tie the nearest
+          // spoke is the angle in steps, rounded, and a whole turn wraps to spoke 0.
           const step = 360 / count;
-          // A pointer within a hair of the midway between two spokes is a tie, which goes to the lower index.
           fc.pre(Math.abs((angle % step) - step / 2) > 1e-6);
-          expect(spokeAt((angle + step) % 360, count)).toBe((spokeAt(angle, count) + 1) % count);
+          expect(spokeAt(angle, count)).toBe(Math.round(angle / step) % count);
         }
       )
     );

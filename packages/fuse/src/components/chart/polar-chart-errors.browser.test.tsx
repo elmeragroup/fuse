@@ -95,6 +95,34 @@ describe("the polar rules in development", () => {
       data("negative-polar-value"),
     ],
     [
+      "a pie reading that is not a finite number (B9)",
+      <PieChart.Root
+        key="pie"
+        data={[
+          { name: "strom", v: Number.NaN },
+          { name: "nettleie", v: 40 },
+        ]}
+        config={CONFIG}
+        nameKey="name"
+        valueKey="v"
+        aria-label="Regning"
+      />,
+      data("non-finite-value"),
+    ],
+    [
+      "a ring reading above 1e15 (B9)",
+      <RadialChart.Root
+        key="radial"
+        data={[{ name: "strom", v: 2e15 }]}
+        config={CONFIG}
+        nameKey="name"
+        valueKey="v"
+        max={10}
+        aria-label="Ringer"
+      />,
+      data("value-out-of-range"),
+    ],
+    [
       "a category the config lacks",
       <PieChart.Root
         key="pie"

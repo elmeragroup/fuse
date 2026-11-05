@@ -1,12 +1,12 @@
-// The polar path writers. Unit under test: arcPath, arcCentroid, radialLinePath, radialAreaPath,
-// ringTrack and pieFrame. Oracles: d3-shape 3.2.0's own arc, lineRadial and areaRadial tests,
+// The polar path writers. Unit under test: arcPath, arcCentroid, radialLinePath, radialAreaPath
+// and ringTrack. Oracles: d3-shape 3.2.0's own arc, lineRadial and areaRadial tests,
 // frozen in fixtures/d3/d3-shape/ by .scratch/polar-charts/tools/trim_polar_cases.py with the
 // expected values the d3 author wrote, replayed through a facade that turns their radians into
-// Fuse's degrees; and hand-derived ring tracks and frames. Fuse forwards its arcs to d3-shape, so
+// Fuse's degrees; and hand-derived ring tracks. Fuse forwards its arcs to d3-shape, so
 // the vectors check the degree conversion, the defaults and the rounding around the forwarding.
 import { describe, expect, it } from "vitest";
 
-import { arcPath, pieFrame, radialLinePath, ringTrack } from "./arc-path";
+import { arcPath, radialLinePath, ringTrack } from "./arc-path";
 import { normalizePath, runD3Cases } from "./fixtures/d3-cases";
 import { arc, areaRadial, lineRadial } from "./fixtures/d3-polar-facade";
 import arcCases from "./fixtures/d3/d3-shape/arc.json" with { type: "json" };
@@ -112,34 +112,5 @@ describe("radialLinePath", () => {
         )
       )
     ).toBe("M0,-10L10,0M-10,0L0,-20");
-  });
-});
-
-describe("pieFrame", () => {
-  it("draws each slice of a tweened frame and skips one that draws nothing", () => {
-    const frame = pieFrame([0, 100, 0, 90, Number.NaN, Number.NaN, 90, 360], [0, 0, 0], {
-      cornerRadius: 0,
-      sweep: sweepOf(0, 360),
-      floor: null,
-      scale: 1,
-    });
-    expect(frame.slices).toEqual([{ start: 0, end: 90, pad: 0 }, null, { start: 90, end: 360, pad: 0 }]);
-    expect(frame.paths[0]).toBe("M0,-100A100,100,0,0,1,100,0L0,0Z");
-    expect(frame.paths[1]).toBeNull();
-  });
-
-  it("floors a frame's sliver to a device pixel of rim, borrowed from the widest slice", () => {
-    // A 100 px rim at 1 dp with no seam needs 1 px of arc: 180/π/100 ≈ 0.5730°.
-    const least = 180 / Math.PI / 100;
-    const frame = pieFrame([0, 100, 0, 0.1, 0.1, 360], [0, 0], {
-      cornerRadius: 0,
-      sweep: sweepOf(0, 360),
-      floor: { dpr: 1, seam: 0 },
-      scale: 1,
-    });
-    const [sliver, rest] = frame.slices;
-    expect(sliver?.end).toBeCloseTo(least, 9);
-    expect(rest?.start).toBeCloseTo(least, 9);
-    expect(rest?.end).toBe(360);
   });
 });

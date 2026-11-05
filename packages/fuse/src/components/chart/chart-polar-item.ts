@@ -19,8 +19,15 @@ import { POLAR_STRINGS } from "./format/polar-strings";
 import { seriesLabel } from "./format/series-label";
 import { formatUnitLabel, formatUnitless, formatValue } from "./format/value-format";
 import { isRoleList, seriesPaint, singleRole } from "./layout/color-key";
-import { assertKnownKey, ChartDataError, DATA_MESSAGES, isChartDevelopment } from "./layout/errors";
-import { foldPie, gaugeFill, OTHER_KEY, pieAngles, floorSlices, sliceAt } from "./layout/pie";
+import {
+  assertKnownKey,
+  ChartDataError,
+  DATA_MESSAGES,
+  dataMessage,
+  isChartDevelopment,
+  issueGroups,
+} from "./layout/errors";
+import { foldPie, gaugeFill, OTHER_KEY, pieAngles, sliceAt } from "./layout/pie";
 import type { PieRole, SliceAngles } from "./layout/pie";
 import { angleInSweep, pointerAngle } from "./layout/polar-angle";
 import type { Sweep } from "./layout/polar-angle";
@@ -82,13 +89,15 @@ function valueOf(reading: Reading): number | null {
 }
 
 /**
- * Read the rows: each row's category and reading. A negative reading throws
- * `negative-polar-value` in development, and production draws it as 0 and keeps its sign in the
- * texts. A category config lacks throws `unknown-category` in development.
+ * Read the rows: each row's category and reading. A cell that breaks a reading rule, such as a value
+ * that is not a finite number, throws that rule in development, and production counts the reading
+ * as missing and warns once. A negative reading throws `negative-polar-value` in development, and
+ * production draws it as 0 and keeps its sign in the texts. A category config lacks throws
+ * `unknown-category` in development.
  */
 function readRows(input: ItemInput, issues: PolarIssue[]): ItemRow[] {
   const { rows, config, nameKey, valueKey, qualityKey, part } = input;
-  const { readings } = readSeries(
+  const { readings, issues: cells } = readSeries(
     {
       values: rows.map((row) => row[valueKey]),
       qualities: qualityKey === undefined ? [] : rows.map((row) => row[qualityKey]),
@@ -96,8 +105,23 @@ function readRows(input: ItemInput, issues: PolarIssue[]): ItemRow[] {
     undefined,
     undefined
   );
+  const categoryAt = (index: number): string => {
+    const row = rows[index];
+    return row === undefined ? "" : (stringOf(row[nameKey]) ?? String(row[nameKey] ?? ""));
+  };
+  // A cell that breaks a reading rule throws in development, as Chart's do, and production keeps
+  // the fallback the rule names and warns once per rule and category, naming the first row.
+  const named = cells.map((issue) => ({ ...issue, key: categoryAt(issue.slot) }));
+  const rowAt = rows.map((_, index) => index);
+  const [first] = named;
+  if (first !== undefined && isChartDevelopment()) {
+    throw new ChartDataError(part, first.rule, dataMessage(first, rowAt));
+  }
+  for (const { rule, subject, first: issue, count } of issueGroups(named)) {
+    issues.push({ rule, subject, message: `${part} ${dataMessage(issue, rowAt, count)}` });
+  }
   return rows.map((row, index) => {
-    const category = stringOf(row[nameKey]) ?? String(row[nameKey] ?? "");
+    const category = categoryAt(index);
     const reading = readings[index] ?? { kind: "missing" };
     if (reading.kind === "reading" && reading.value < 0) {
       const message = DATA_MESSAGES["negative-polar-value"];
@@ -208,7 +232,10 @@ function itemReadout(source: ItemSource, kernel: PolarKernel, empty: boolean): C
       for (const item of items) {
         // Other names no config key, so its value reads under its label.
         values[item.key === OTHER_KEY ? item.label.text : item.key] = item.value;
-        if (item.quality !== undefined && item.key !== OTHER_KEY) quality[item.key] = item.quality;
+        // A reading with no quality state is measured; a pending one, with no value, has no entry.
+        if (item.key === OTHER_KEY) continue;
+        if (item.quality !== undefined) quality[item.key] = item.quality;
+        else if (item.value !== null) quality[item.key] = "measured";
       }
       const item = items[active];
       return {
@@ -437,9 +464,14 @@ export function pieModel(input: PieInput): PolarModel {
     page: null,
     optionName,
     pick: (point, pixels) => {
-      // The whole cell inside the sweep picks, the hole and the space past the rim too (Q8).
-      const floored = floorSlices(slices, sweep, { radius: pixels.scale, dpr: pixels.dpr, seam: 0 });
-      const index = sliceAt(pointerAngle(point.x, point.y), floored, sweep);
+      // The whole cell inside the sweep picks, the hole and the space past the rim too (Q8), over
+      // the angles the frame painted, floored and seamed, where it painted them (D24).
+      const drawn = slices.map((slice, index) => {
+        const key = items[index]?.key;
+        const angles = key === undefined ? undefined : pixels.painted?.(key);
+        return angles === undefined ? slice : angles;
+      });
+      const index = sliceAt(pointerAngle(point.x, point.y), drawn, sweep);
       return index === null ? null : { slot: index, near: null };
     },
     ray: (index) => {

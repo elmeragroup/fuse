@@ -136,6 +136,38 @@ describe("the spoke frame (R1, R4) and the negatives of section 8.4", () => {
   });
 });
 
+describe("ring dots (B1)", () => {
+  it("moves a ring dot's halo with its dot when the readings change, and drops it where one goes missing", async () => {
+    // Four spokes on [0, 4]: 4, 4, 4, 4 rest on the rim; 2, 4, null, 4 put spoke 0 at (0, −0.5), keep
+    // spokes 1 and 3 on the rim at (1, 0) and (−1, 0), and draw no dot at spoke 2.
+    const { host, rerender } = renderThemed(
+      <Radar data={rows([4, 4, 4, 4])} max={4}>
+        <RadarChart.Dots dataKey="a" variant="ring" />
+      </Radar>
+    );
+    await painted();
+    rerender(
+      <Radar data={rows([2, 4, null, 4])} max={4}>
+        <RadarChart.Dots dataKey="a" variant="ring" />
+      </Radar>
+    );
+    const layer = radarLayer(host, "radar-chart-dots");
+    const points = (part: string) =>
+      pathPoints(layerPath(layer, part).getAttribute("d") ?? "").map(({ x, y }) => [
+        Math.round(x * 1000) / 1000,
+        Math.round(y * 1000) / 1000,
+      ]);
+    const expected = [
+      [0, -0.5],
+      [1, 0],
+      [-1, 0],
+    ];
+    // The update tweens over 480 ms, so the dots reach their new places once it ends.
+    await expect.poll(() => points("dots")).toEqual(expected);
+    expect(points("halo")).toEqual(expected);
+  });
+});
+
 describe("quality (R5)", () => {
   it("dashes the two edges beside an estimated spoke, hatches its two quadrilaterals, and drops a missing spoke's edges and dot", async () => {
     const data = rows([4, 4, 4, 4, null, 4]).map((row, index) =>

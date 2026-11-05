@@ -22,6 +22,7 @@ import type { CartesianModel } from "./layout/cartesian-model";
 import { clockRadius, instantAngle, slotAngles } from "./layout/clock";
 import type { ClockCycle, RadiusScale } from "./layout/clock";
 import { clockLabelSlots, clockTier, fitClockLabels, pageSlot } from "./layout/clock-labels";
+import { ownerSlot } from "./layout/clock-path";
 import { isRoleList } from "./layout/color-key";
 import { labelWidth } from "./layout/label-width";
 import { pointerAngle, sweepOf } from "./layout/polar-angle";
@@ -222,12 +223,14 @@ export function clockModel(input: ClockInput): PolarModel {
       const slot = Math.min(count - 1, Math.floor((pointerAngle(point.x, point.y) / 360) * count));
       if (series.length < 2) return { slot, near: null };
       // The nearest series by its tip's radius at the slot, skipping a series with no reading there.
+      // A coarse series reads at every slot it covers, through the slot that owns its reading.
       const distance = Math.hypot(point.x, point.y);
       let near: number | null = null;
       let best = Number.POSITIVE_INFINITY;
       series.forEach((entry, index) => {
-        if (entry.slots.states[slot] !== "reading") return;
-        const gap = Math.abs((entry.rest[1 + slot * 4 + 3] ?? 0) - distance);
+        const own = ownerSlot(entry.slots.states, slot);
+        if (entry.slots.states[own] !== "reading") return;
+        const gap = Math.abs((entry.rest[1 + own * 4 + 3] ?? 0) - distance);
         if (gap < best) {
           best = gap;
           near = index;

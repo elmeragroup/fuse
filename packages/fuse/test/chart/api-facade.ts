@@ -49,11 +49,15 @@ import {
   ChartTooltipValue,
 } from "../../src/components/chart/chart-tooltip";
 import { ChartTooltipTotal } from "../../src/components/chart/chart-tooltip-total";
+import { ClockChartActiveDot } from "../../src/components/chart/clock-chart-active-dot";
 import {
   ClockChartActiveValue,
   ClockChartCenter,
   ClockChartTooltipTotal,
 } from "../../src/components/chart/clock-chart-center";
+import { ClockChartColumn } from "../../src/components/chart/clock-chart-column";
+import { ClockChartDots, ClockChartMarker } from "../../src/components/chart/clock-chart-dots";
+import { ClockChartGlow } from "../../src/components/chart/clock-chart-glow";
 import {
   ClockChartAngleAxis,
   ClockChartGrid,
@@ -63,18 +67,11 @@ import {
   ClockChartReferenceLine,
   ClockChartScrubber,
 } from "../../src/components/chart/clock-chart-grid";
-import {
-  ClockChartActiveDot,
-  ClockChartArea,
-  ClockChartColumn,
-  ClockChartDots,
-  ClockChartGlow,
-  ClockChartLine,
-  ClockChartMarker,
-  ClockChartValueLabel,
-} from "../../src/components/chart/clock-chart-marks";
+import { ClockChartArea, ClockChartLine } from "../../src/components/chart/clock-chart-marks";
 import { ClockChartRoot } from "../../src/components/chart/clock-chart-root";
 import { ClockChartSkeleton } from "../../src/components/chart/clock-chart-skeleton";
+import { ClockChartTooltip } from "../../src/components/chart/clock-chart-tooltip";
+import { ClockChartValueLabel } from "../../src/components/chart/clock-chart-value-label";
 import {
   PieChartCenter,
   PieChartCenterLabel,
@@ -97,7 +94,6 @@ import {
 import {
   PieChartTooltip,
   RadarChartTooltip,
-  ClockChartTooltip,
   RadialChartTooltip,
 } from "../../src/components/chart/polar-chart-tooltip";
 import {
