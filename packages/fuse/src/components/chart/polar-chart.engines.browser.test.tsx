@@ -187,4 +187,45 @@ describe("hydration (D18)", () => {
       host.remove();
     }
   });
+
+  it("sends a radial chart's rings, tracks and centre from the server, and hydrates them as they are", async () => {
+    function Rings({ onHydrated }: { readonly onHydrated?: () => void }) {
+      return (
+        <LocaleProvider locale="nb-NO">
+          <div style={{ width: 300 }}>
+            <RadialChart.Root
+              data={BILL}
+              config={BILL_CONFIG}
+              nameKey="name"
+              valueKey="v"
+              max={50}
+              aria-label="Ringer">
+              <RadialChart.Track />
+              <RadialChart.Bar />
+              <RadialChart.Center>
+                <RadialChart.CenterValue />
+              </RadialChart.Center>
+            </RadialChart.Root>
+            <CommitMarker onCommit={onHydrated} />
+          </div>
+        </LocaleProvider>
+      );
+    }
+    const html = renderToString(<Rings />);
+    expect(html.split('data-slot="radial-chart-ring"').length - 1).toBe(4);
+    expect(html.split('data-slot="pie-chart-track"').length - 1).toBe(4);
+    const host = document.createElement("div");
+    host.innerHTML = html;
+    document.body.append(host);
+    const recover = vi.fn();
+    const hydrated = Promise.withResolvers<void>();
+    const root = hydrateRoot(host, <Rings onHydrated={hydrated.resolve} />, { onRecoverableError: recover });
+    try {
+      await hydrated.promise;
+      expect(recover).not.toHaveBeenCalled();
+    } finally {
+      root.unmount();
+      host.remove();
+    }
+  });
 });

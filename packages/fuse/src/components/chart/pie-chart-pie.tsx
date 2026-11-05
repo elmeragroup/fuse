@@ -3,7 +3,8 @@
 /**
  * The pie's slices. Each slice is a mark of its own on the Root's loop, so it sweeps in on its own
  * stagger, tweens to new data and pops on its own, and the pie's frame paints every slice of a
- * frame together through the rim floor (D24). A slice that leaves collapses as a ghost (D5): to
+ * frame together through the rim floor (D24). An estimated slice paints a hatch of its own colour,
+ * and a missing one draws no arc (section 8.7). A slice that leaves collapses as a ghost (D5): to
  * Other's seam when it folds into Other, which grows as it takes the slice in (S6), and to its own
  * seam otherwise. The server writes every slice at rest, and the first paint keeps the slices hidden
  * until the chart comes into view (D18).
@@ -16,6 +17,7 @@ import { pieFrameOf, POP_DURATION, POP_EASING, viewBoxOf } from "./chart-pie-fra
 import type { PieFrame, PieLook } from "./chart-pie-frame";
 import { pieDrawingIn, usePolarContext } from "./chart-polar-context";
 import type { PieDrawing, PieSlice, PolarContextValue } from "./chart-polar-context";
+import { PolarHatch } from "./chart-polar-hatch";
 import { placeExit, usePolarCommit, usePolarMark } from "./chart-polar-motion";
 import type { ChartLayerProps } from "./chart-types";
 import { arcPath } from "./layout/arc-path";
@@ -50,6 +52,7 @@ function lookOf(pie: PieDrawing, cornerRadius: number): PieLook {
     innerRadius: pie.innerRadius,
     cornerRadius: Math.min(0.5, Math.max(0, cornerRadius)),
     sweep: pie.fill,
+    track: pie.track,
   };
 }
 
@@ -116,6 +119,7 @@ function PieSector({
       ref={ref}
       data-slot="pie-chart-sector"
       data-sector=""
+      data-quality={slice.quality}
       d={first}
       style={{ "--chart-slot": index, "--chart-series": slice.series, "--_paint": fill }}
     />
@@ -210,7 +214,9 @@ export function PieChartPie({ cornerRadius = 0, className, style }: PieChartPieP
       style={{ "--_spring-duration": POP_DURATION, "--_spring-easing": POP_EASING, ...style }}>
       <defs>
         {pie.slices.map((slice, index) =>
-          slice.stops === undefined ? null : (
+          slice.quality === "estimated" ? (
+            <PolarHatch key={slice.key} id={`${prefix}-paint-${String(index)}`} paint={slice.paint} />
+          ) : slice.stops === undefined ? null : (
             <radialGradient
               key={slice.key}
               id={`${prefix}-paint-${String(index)}`}
@@ -238,7 +244,11 @@ export function PieChartPie({ cornerRadius = 0, className, style }: PieChartPieP
           index={index}
           target={targets[index] ?? [pie.fill.start, pie.fill.start]}
           look={look}
-          fill={slice.stops === undefined ? slice.paint : `url(#${prefix}-paint-${String(index)})`}
+          fill={
+            slice.stops === undefined && slice.quality !== "estimated"
+              ? slice.paint
+              : `url(#${prefix}-paint-${String(index)})`
+          }
         />
       ))}
       <g ref={ghosts} />

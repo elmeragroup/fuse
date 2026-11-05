@@ -180,7 +180,12 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = derive([
   // placing, the Track, the Center parts with the digit roll, the Glow's mirror and the slices'
   // gradients, which measured 6947 bytes on this entry (177315 to 184262). The ceiling keeps about
   // 100 bytes of headroom.
-  { name: "chart", entryFile: "chart.js", measuredGzip: 97044, ceilingGzip: 184362 },
+  // Raised again from 184362 on 2026-11-05. The rings draw: their frame with the ring floor, the
+  // solid, dotted and segmented looks, the radial Track and Glow, the centre's numbers for both
+  // families, the hatch of an estimated slice or ring, and the gauge Track's corners, which
+  // measured 2638 bytes on this entry (184262 to 186900). The ceiling keeps about 100 bytes of
+  // headroom.
+  { name: "chart", entryFile: "chart.js", measuredGzip: 97044, ceilingGzip: 187000 },
   // 2026-10-13: new entry, measured at 29180. Pure wrappers over Base UI's toolbar and its roving focus.
   { name: "toolbar", entryFile: "toolbar.js", measuredGzip: 29180, ceilingGzip: 43770 },
   // 2026-10-12: new entries. Command is Base UI's Autocomplete in the InputGroup, with the Dialog
@@ -523,6 +528,25 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     ],
     measuredGzip: 85724,
   },
+  // 2026-11-05: new row, the typical radial route: Root, Bar, the Center parts, Legend and Tooltip,
+  // which the owner set beside the whole-namespace row, with the derived ceiling.
+  {
+    name: "chart/RadialChart route",
+    entryFile: "chart.js",
+    exportName: "RadialChart",
+    members: [
+      "Root",
+      "Bar",
+      "Center",
+      "CenterValue",
+      "CenterShare",
+      "CenterMax",
+      "CenterLabel",
+      "Legend",
+      "Tooltip",
+    ],
+    measuredGzip: 82041,
+  },
   {
     name: "chart/RadialChart.Root",
     entryFile: "chart.js",
@@ -617,7 +641,11 @@ export const CSS_BUDGETS: readonly CssBudget[] = derive([
   // data-sector, the labels and leaders, the centre's square with its reels, the Track and the
   // Glow, which measured 1513 bytes over the stylesheet (16624 to 18137). The ceiling keeps about
   // 100 bytes of headroom.
-  { name: "chart.css", file: "chart.css", measuredGzip: 10089, ceilingGzip: 18237 },
+  // Raised again from 18237 on 2026-11-05. The rings' strokes, dots, masks and faint dots, their
+  // hover scale and dims keyed on data-ring, the tracks' scale-out keyframes, and
+  // --chart-ring-fill's registration, which measured 675 bytes over the stylesheet (18137 to
+  // 18812). The ceiling keeps about 100 bytes of headroom.
+  { name: "chart.css", file: "chart.css", measuredGzip: 10089, ceilingGzip: 18912 },
 ] satisfies readonly Measured<CssBudget>[]);
 
 export const FLAG_RAW_BUDGETS: readonly FlagRawBudget[] = [

@@ -232,7 +232,7 @@
           "origin": "declared",
           "type": "\"default\" | \"dotted\" | undefined",
           "shortType": "Union",
-          "defaultValue": null,
+          "defaultValue": "\"default\"",
           "description": "The ring's look. \"default\" by default.",
           "required": false
         }
@@ -241,7 +241,7 @@
     {
       "name": "RadialChart.Track",
       "rsc": "client",
-      "sourcePath": "packages/fuse/src/components/chart/pie-chart-center.tsx",
+      "sourcePath": "packages/fuse/src/components/chart/pie-chart-track.tsx",
       "forwardedFrom": [],
       "forwardedCount": 0,
       "props": [
@@ -467,7 +467,7 @@
           "type": "string",
           "shortType": null,
           "defaultValue": null,
-          "description": "The category whose slice glows.",
+          "description": "The category whose slice or ring glows.",
           "required": true
         },
         {

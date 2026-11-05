@@ -10,7 +10,7 @@
 import type { ReactNode } from "react";
 
 import type { SupportedLocale } from "../../intl/locale-context";
-import type { PolarIssue, PolarKernel, PolarModel } from "./chart-polar-context";
+import type { CentreModel, PolarIssue, PolarKernel, PolarModel } from "./chart-polar-context";
 import type { ChartReadout, ChartTableCell, ChartTableModel, ReadoutItem } from "./chart-readout-port";
 import type { ChartConfig, ChartQuality, ChartRow, ValueFormat } from "./chart-types";
 import { CHART_STRINGS, countOf } from "./format/chart-strings";
@@ -476,6 +476,7 @@ export function pieModel(input: PieInput): PolarModel {
             value: item.value,
             format: item.format,
             angles: slices[index] ?? null,
+            quality: item.quality,
           };
         }),
         total,
@@ -484,6 +485,17 @@ export function pieModel(input: PieInput): PolarModel {
         over: gauge?.over ?? false,
         share: source.share,
         sliceOf: (category) => (folded.some(({ key }) => key === category) ? category : OTHER_KEY),
+      },
+      centre: {
+        value: (index) => items[index]?.value ?? null,
+        format: (index) => items[index]?.format ?? valueFormat ?? {},
+        total: sharedFormat(items) === null ? null : { value: total, format: sharedFormat(items) ?? {} },
+        share: source.share,
+        // A gauge's own share rounds alone, as a ring's does.
+        totalShare: (digits) =>
+          input.max !== undefined && input.max > 0 ? rounded((total / input.max) * 100, digits) : null,
+        max: () => input.max ?? null,
+        totalMax: input.max ?? null,
       },
     },
   };
@@ -533,9 +545,7 @@ export function radialModel(input: RadialInput): PolarModel {
   });
   const share = (index: number, digits: number): number | null => {
     const value = fills[index]?.share ?? null;
-    if (value === null) return null;
-    const unit = 10 ** digits;
-    return Math.round(value * 100 * unit) / unit;
+    return value === null ? null : rounded(value * 100, digits);
   };
   const source: ItemSource = {
     items,
@@ -591,6 +601,63 @@ export function radialModel(input: RadialInput): PolarModel {
     table: itemTable(source, (digits) => items.map((_, index) => share(index, digits))),
     readout: (kernel) => itemReadout(source, kernel, empty),
     issues,
-    drawing: { kind: "none" },
+    drawing: {
+      kind: "radial",
+      radial: {
+        sweep,
+        innerRadius: input.innerRadius,
+        rings: items.map((item, index) => {
+          const color = config[item.key]?.color;
+          const fill = fills[index] ?? { max: null, share: null, over: false };
+          return {
+            key: item.key,
+            label: item.label,
+            paint: item.paint,
+            stops:
+              color !== undefined && isRoleList(color)
+                ? color.map((stop) => seriesPaint(item.key, stop))
+                : undefined,
+            series: Object.keys(config).indexOf(item.key),
+            quality: item.quality,
+            band: bands[index] ?? { radius: 0, width: 0, inner: 0, outer: 0 },
+            angle: ringAngle(fill, sweep.width),
+            over: fill.over,
+          };
+        }),
+      },
+      centre: radialCentre(items, fills, share, valueFormat),
+    },
   };
+}
+
+/**
+ * A radial chart's centre: the active ring, or with nothing active the sum of the values over the
+ * sum of the maxima when every ring shares one format (CONTRACT section 8.13).
+ */
+function radialCentre(
+  items: readonly PolarItem[],
+  fills: readonly RingFill[],
+  share: (index: number, digits: number) => number | null,
+  valueFormat: ValueFormat | undefined
+): CentreModel {
+  const format = sharedFormat(items);
+  const sum = items.reduce((total, { value }) => total + (value !== null && value > 0 ? value : 0), 0);
+  const maxima = fills.flatMap(({ max }) => (max === null ? [] : [max]));
+  const maxSum = maxima.length === fills.length ? maxima.reduce((total, max) => total + max, 0) : null;
+  return {
+    value: (index) => items[index]?.value ?? null,
+    format: (index) => items[index]?.format ?? valueFormat ?? {},
+    total: format === null ? null : { value: sum, format },
+    share,
+    totalShare: (digits) =>
+      format === null || maxSum === null || !(maxSum > 0) ? null : rounded((sum / maxSum) * 100, digits),
+    max: (index) => fills[index]?.max ?? null,
+    totalMax: format === null ? null : maxSum,
+  };
+}
+
+/** A number rounded to `digits` fraction digits. */
+function rounded(value: number, digits: number): number {
+  const unit = 10 ** digits;
+  return Math.round(value * unit) / unit;
 }

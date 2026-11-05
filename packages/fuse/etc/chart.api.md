@@ -1302,7 +1302,7 @@ declare namespace RadialChart {
 }
 
 // @beta
-function RadialChartBar(_props: RadialChartBarProps): ReactElement;
+function RadialChartBar(input: RadialChartBarProps): ReactElement;
 
 // @beta
 export type RadialChartBarProps = ChartLayerProps & {

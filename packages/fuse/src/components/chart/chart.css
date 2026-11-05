@@ -49,6 +49,13 @@
   initial-value: 2px;
 }
 
+/* A radial chart reads its ring fill once per layout, as a number. */
+@property --chart-ring-fill {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0.7;
+}
+
 /* The crosshair reads its width once per layout, as a length. */
 @property --chart-crosshair-width {
   syntax: "<length>";
@@ -846,8 +853,101 @@
     );
   }
 
-  [data-slot="pie-chart-pie"] stop {
+  :is([data-slot="pie-chart-pie"], [data-slot="radial-chart-bar"]) stop {
     stop-color: var(--_stop);
+  }
+
+  /* An estimated slice's or ring's hatch: a line of its paint, then a 30 % tint of it. */
+  [data-hatch] > stop {
+    stop-color: var(--_hatch);
+  }
+
+  [data-hatch] > stop[data-part="tint"] {
+    stop-color: color-mix(in oklab, var(--_hatch) 30%, transparent);
+  }
+
+  /*
+    A radial chart's rings are stroked centre lines whose dash the frame writes (Q5). Each stroke
+    fills --chart-ring-fill of its band, which sets the ring's width and the gap to the next ring.
+    A dotted ring's dots are round caps of zero-length dashes, faint where its value does not reach.
+  */
+  [data-slot="radial-chart-bar"] {
+    z-index: 2;
+  }
+
+  :is(
+    [data-slot="radial-chart-ring"],
+    [data-slot="pie-chart-track"][data-ring],
+    [data-slot="pie-chart-glow"][data-ring]
+  ) {
+    fill: none;
+    stroke-width: calc(var(--chart-ring-fill) * var(--_band));
+  }
+
+  [data-slot="radial-chart-ring"] {
+    stroke: var(--_paint);
+  }
+
+  [data-slot="radial-chart-ring"][data-part="mask"] {
+    stroke: #fff;
+  }
+
+  [data-slot="radial-chart-bar"][data-variant="dotted"] [data-slot="radial-chart-ring"][data-part="mask"] {
+    stroke-width: var(--_band);
+  }
+
+  [data-slot="radial-chart-ring"][data-part="dots"] {
+    stroke-linecap: round;
+  }
+
+  [data-slot="radial-chart-ring"][data-faint] {
+    stroke: color-mix(in oklab, var(--_paint) 22%, transparent);
+  }
+
+  [data-slot="pie-chart-track"][data-ring] {
+    stroke: var(--muted);
+  }
+
+  [data-slot="pie-chart-glow"][data-ring] {
+    fill: none;
+    stroke: var(--_paint);
+  }
+
+  /*
+    The active ring scales to 1.03 and the rings outside it to 1.02 about the dial's centre, and
+    the other rings dim, as slices do (S2). The rules lead with data-ring, which only rings carry.
+  */
+  [data-ring] {
+    --_off: min(
+      1,
+      max(var(--chart-slot) - var(--chart-active, -2), var(--chart-active, -2) - var(--chart-slot))
+    );
+    --_outside: clamp(0, var(--chart-active, -2) - var(--chart-slot), 1);
+    transform-box: view-box;
+    transform-origin: 0 0;
+  }
+
+  [data-ring]:not([data-ring-track]) {
+    opacity: calc(1 - (1 - var(--chart-hover-dim)) * max(var(--_dim-active, 0), var(--_dim-series, 0)));
+  }
+
+  [data-polar][data-active] [data-ring] {
+    --_dim-active: var(--_off);
+    scale: calc(1 + 0.03 * (1 - var(--_off)) + 0.02 * var(--_outside));
+  }
+
+  [data-polar][data-selected] [data-ring] {
+    --_dim-series: min(
+      1,
+      max(var(--chart-series, -2) - var(--chart-selected), var(--chart-selected) - var(--chart-series, -2))
+    );
+  }
+
+  [data-polar][data-highlight] [data-ring] {
+    --_dim-series: min(
+      1,
+      max(var(--chart-series, -2) - var(--chart-highlight), var(--chart-highlight) - var(--chart-series, -2))
+    );
   }
 
   /* Glow casts the slice's own paint at half alpha, blurred by a Gaussian of 8 px, as a bar's halo. */
@@ -2133,7 +2233,7 @@
       [data-slot="chart-active-dot"]
     )[data-variant="ring"]
     [data-slot="chart-dot"] {
-    fill: var(--background);
+    fill: var(--_ring-hole, var(--background));
     stroke: var(--chart-series-paint);
   }
 
@@ -2154,6 +2254,12 @@
     transform-box: fill-box;
     transform-origin: center;
     animation: var(--animate-chart-ping);
+  }
+
+  @keyframes chart-ring-grow {
+    from {
+      scale: 0;
+    }
   }
 
   @keyframes chart-ping {
@@ -2190,12 +2296,12 @@
     stroke-opacity: 0.45;
   }
 
-  /* A scatter ring circles the active point and leaves it showing. */
-  [data-slot="chart"][data-chart="scatter"]
-    [data-slot="chart-active-dot"][data-variant="ring"]
-    [data-slot="chart-dot"] {
-    fill: none;
-    stroke: var(--chart-series-paint);
+  /*
+    A scatter's ring circles the active point and leaves it showing, so its hole is empty. It is
+    no ring fill: --chart-ring-fill is a radial ring's stroke over its band (#451 item 4).
+  */
+  [data-slot="chart"][data-chart="scatter"] {
+    --_ring-hole: none;
   }
 
   /* A legend swatch wears the quiet look its series' points or line draw in. */
@@ -2451,6 +2557,19 @@
 
     [data-slot="pie-chart-label"] {
       transition: opacity 150ms ease-out;
+    }
+
+    /* A ring scales on its spring, and dims over 150 ms. */
+    [data-ring] {
+      transition:
+        opacity 150ms ease-out,
+        scale var(--_spring-duration) var(--_spring-easing);
+    }
+
+    /* As the entrance starts, each ring's track scales out from the centre, i·80 ms apart. */
+    [data-polar][data-entering] [data-ring-track] {
+      animation: chart-ring-grow var(--_grow-duration) var(--_grow-easing) calc(var(--chart-slot) * 80ms)
+        backwards;
     }
 
     [data-slot="chart-bar-marks"] > [data-intro="fade"],

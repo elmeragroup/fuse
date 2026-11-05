@@ -144,9 +144,9 @@ export type {
   PieChartCenterProps,
   PieChartCenterShareProps,
   PieChartCenterValueProps,
-  PieChartTrackProps,
 } from "./components/chart/pie-chart-center";
 export type { PieChartGlowProps } from "./components/chart/pie-chart-glow";
+export type { PieChartTrackProps } from "./components/chart/pie-chart-track";
 export type { PieChartLabelsProps } from "./components/chart/pie-chart-labels";
 export type { PieChartPieProps } from "./components/chart/pie-chart-pie";
 export type { PieChartSkeletonProps } from "./components/chart/pie-chart-skeleton";

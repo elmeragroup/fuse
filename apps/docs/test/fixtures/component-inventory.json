@@ -657,7 +657,15 @@
   "radial-chart": {
     "title": "Radial Chart",
     "rsc": "client",
-    "demos": ["radial-chart-budgets.tsx"]
+    "demos": [
+      "radial-chart-budgets.tsx",
+      "radial-chart-dotted.tsx",
+      "radial-chart-empty.tsx",
+      "radial-chart-gauge.tsx",
+      "radial-chart-loading.tsx",
+      "radial-chart-month-to-date.tsx",
+      "radial-chart-over-budget.tsx"
+    ]
   },
   "radio-group": {
     "title": "Radio Group",

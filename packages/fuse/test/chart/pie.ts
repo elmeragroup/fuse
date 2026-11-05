@@ -88,3 +88,24 @@ export function outerArc(d: string): readonly [number, number] | null {
   if (end < start || (end === start && large === 1)) end += 360;
   return [start, end];
 }
+
+/** A radial chart's value rings, first outermost. */
+export function rings(host: HTMLElement): SVGPathElement[] {
+  // DOM audit: rings are aria-hidden plot output, so their slot is the only locator.
+  return [...host.querySelectorAll<SVGPathElement>('[data-slot="radial-chart-ring"]:not([data-part])')];
+}
+
+/** The radial chart's SVG, the layer that holds its rings. */
+export function radialSvg(host: HTMLElement): SVGSVGElement {
+  // DOM audit: the ring layer is aria-hidden plot output.
+  const svg = host.querySelector<SVGSVGElement>('[data-slot="radial-chart-bar"]');
+  if (svg === null) throw new Error("no rings");
+  return svg;
+}
+
+/** A point at an angle and a radius in the dial's units, x right and y down. */
+export function dialPoint(angle: number, radius: number): DOMPoint {
+  const radians = (angle * Math.PI) / 180;
+  const round = (value: number) => Math.round(value * 1e9) / 1e9;
+  return new DOMPoint(round(radius * Math.sin(radians)), round(-radius * Math.cos(radians)));
+}

@@ -33,6 +33,9 @@ const CONTRACT_ROLES = {
   "pie-chart-center-max": "fixed",
   "pie-chart-center-label": "fixed",
   "pie-chart-glow": "fixed",
+  // CONTRACT section 10's RadialChart.Bar row.
+  "radial-chart-bar": "fixed",
+  "radial-chart-ring": "fixed",
   "chart-panel": "layout",
   "chart-plot": "fixed",
   "chart-surface": "fixed",

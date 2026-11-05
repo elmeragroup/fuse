@@ -19,6 +19,7 @@ import { ChartCompositionError } from "./layout/errors";
 import type { ChartDataRule, ChartHintRule } from "./layout/errors";
 import type { SliceAngles } from "./layout/pie";
 import type { PolarPoint, Sweep, SweepBox } from "./layout/polar-angle";
+import type { RingBand } from "./layout/rings";
 
 /** The polar families. */
 export type PolarFamily = "pie" | "radial" | "radar";
@@ -76,8 +77,59 @@ export type PolarModel = {
   readonly drawing: PolarDrawing;
 };
 
-/** What a family's marks draw: a pie's slices, or nothing yet for the families still to come. */
-export type PolarDrawing = { readonly kind: "pie"; readonly pie: PieDrawing } | { readonly kind: "none" };
+/**
+ * What a family's marks draw: a pie's slices or a radial chart's rings, each with the numbers its
+ * centre prints, or nothing yet for a radar.
+ */
+export type PolarDrawing =
+  | { readonly kind: "pie"; readonly pie: PieDrawing; readonly centre: CentreModel }
+  | { readonly kind: "radial"; readonly radial: RadialDrawing; readonly centre: CentreModel }
+  | { readonly kind: "none" };
+
+/** The numbers a centre prints, per item and with nothing active (CONTRACT section 8.13). */
+export type CentreModel = {
+  /** An item's reading, its sign kept, or null for a missing one. */
+  readonly value: (index: number) => number | null;
+  /** An item's format. */
+  readonly format: (index: number) => ValueFormat;
+  /** The total with nothing active, or null when the items' formats differ. */
+  readonly total: { readonly value: number; readonly format: ValueFormat } | null;
+  /** An item's share in percent at `digits`: a slice in the pie's one set, a ring over its maximum. */
+  readonly share: (index: number, digits: number) => number | null;
+  /** The share with nothing active: a gauge's total over `max`, the rings' sum over their maxima, or null. */
+  readonly totalShare: (digits: number) => number | null;
+  /** An item's maximum: a gauge's `max`, a ring's own, or null. */
+  readonly max: (index: number) => number | null;
+  /** The maximum with nothing active: a gauge's `max`, the sum of the rings' maxima, or null. */
+  readonly totalMax: number | null;
+};
+
+/** One ring a radial chart draws, the first outermost. */
+export type RadialRing = {
+  /** The item's key, a category, or `OTHER_KEY` and its place for a category config lacks. */
+  readonly key: string;
+  readonly label: FormattedText;
+  readonly paint: string;
+  /** A role list's stops from the tip to the base, which paint along the sweep (Q12). */
+  readonly stops: readonly string[] | undefined;
+  /** The category's place among the config keys, which selection and highlight name, or -1. */
+  readonly series: number;
+  readonly quality: "estimated" | "corrected" | "missing" | undefined;
+  /** The ring's place: its centre line's radius, its band and its stroke at the default fill. */
+  readonly band: RingBand;
+  /** The angle its value fills at rest, never past the sweep. */
+  readonly angle: number;
+  /** Whether its value passes an explicit maximum. */
+  readonly over: boolean;
+};
+
+/** What a radial chart's parts draw. */
+export type RadialDrawing = {
+  readonly sweep: Sweep;
+  /** The hole's radius as a share of the outer radius. */
+  readonly innerRadius: number;
+  readonly rings: readonly RadialRing[];
+};
 
 /** One slice a pie draws: a kept category or Other, in sweep order. */
 export type PieSlice = {
@@ -97,6 +149,8 @@ export type PieSlice = {
   readonly format: ValueFormat;
   /** The slice's angles at rest, before the rim floor, or null where it draws no arc. */
   readonly angles: SliceAngles | null;
+  /** The reading's quality: an estimated slice draws hatched, and a missing one draws no arc. */
+  readonly quality: "estimated" | "corrected" | "missing" | undefined;
 };
 
 /** What a pie's parts draw and print. */
@@ -212,4 +266,38 @@ export function pieDrawingIn(model: PolarModel, part: string): PieDrawing {
   const pie = pieDrawingOf(model);
   if (pie === null) throw new Error(`${part} read a ${model.family} model, which holds no pie.`);
   return pie;
+}
+
+/**
+ * A radial chart's drawing, which only a radial model holds.
+ *
+ * @param model - The Root's model.
+ * @returns The drawing, or null under another family.
+ */
+export function radialDrawingOf(model: PolarModel): RadialDrawing | null {
+  return model.drawing.kind === "radial" ? model.drawing.radial : null;
+}
+
+/**
+ * The numbers a pie's or a radial chart's centre prints.
+ *
+ * @param model - The Root's model.
+ * @returns The centre's numbers, or null under a family with no centre.
+ */
+export function centreOf(model: PolarModel): CentreModel | null {
+  return model.drawing.kind === "none" ? null : model.drawing.centre;
+}
+
+/**
+ * A radial chart's drawing, for a part only a radial chart holds.
+ *
+ * @param model - The Root's model, a radial chart's, as `usePolarContext` admitted the part.
+ * @param part - The part, which a defect names.
+ * @returns The drawing.
+ * @throws When the model holds no rings, a defect.
+ */
+export function radialDrawingIn(model: PolarModel, part: string): RadialDrawing {
+  const radial = radialDrawingOf(model);
+  if (radial === null) throw new Error(`${part} read a ${model.family} model, which holds no rings.`);
+  return radial;
 }

@@ -7,13 +7,13 @@ export { PieChartRoot as Root } from "./pie-chart-root";
 export { PieChartPie as Pie } from "./pie-chart-pie";
 export { PieChartLabels as Labels } from "./pie-chart-labels";
 export {
-  PieChartTrack as Track,
   PieChartCenter as Center,
   PieChartCenterValue as CenterValue,
   PieChartCenterShare as CenterShare,
   PieChartCenterMax as CenterMax,
   PieChartCenterLabel as CenterLabel,
 } from "./pie-chart-center";
+export { PieChartTrack as Track } from "./pie-chart-track";
 export { PieChartGlow as Glow } from "./pie-chart-glow";
 export { PieChartSkeleton as Skeleton } from "./pie-chart-skeleton";
 export { ChartHeadline as Headline, ChartTakeaway as Takeaway } from "./chart-headline";

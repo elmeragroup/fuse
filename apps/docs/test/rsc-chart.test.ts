@@ -175,6 +175,8 @@ describe("the polar Roots under React Server Components", () => {
       "components/chart/chart-legend.tsx#ChartLegend",
       "components/chart/polar-chart-table.tsx#PieChartTable",
       "components/chart/radial-chart-root.tsx#RadialChartRoot",
+      "components/chart/pie-chart-track.tsx#PieChartTrack",
+      "components/chart/radial-chart-bar.tsx#RadialChartBar",
       "components/chart/polar-chart-table.tsx#RadialChartTable",
       "components/chart/radar-chart-root.tsx#RadarChartRoot",
     ]);
@@ -201,6 +203,9 @@ describe("the polar Roots under React Server Components", () => {
       expect(slotCount(html, "chart-polar-cell")).toBe(3);
       expect(slotCount(html, "pie-chart-sector")).toBe(3);
       expect(slotCount(html, "pie-chart-label")).toBe(3);
+      // The rings' chart sends three rings and three tracks.
+      expect(slotCount(html, "radial-chart-ring")).toBe(3);
+      expect(slotCount(html, "pie-chart-track")).toBe(3);
       expect(slotCount(html, "chart-polar-plot")).toBe(3);
       expect(slotCount(html, "loader")).toBe(0);
       // The bill's three parts and the radar's two areas.

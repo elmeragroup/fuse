@@ -4,6 +4,12 @@ lede: >
 ---
 
 import { RadialChartBudgets } from "./demos/radial-chart-budgets";
+import { RadialChartDotted } from "./demos/radial-chart-dotted";
+import { RadialChartEmpty } from "./demos/radial-chart-empty";
+import { RadialChartGauge } from "./demos/radial-chart-gauge";
+import { RadialChartLoading } from "./demos/radial-chart-loading";
+import { RadialChartMonthToDate } from "./demos/radial-chart-month-to-date";
+import { RadialChartOverBudget } from "./demos/radial-chart-over-budget";
 
 import { componentMetadata } from "../../../../lib/component-page";
 
@@ -13,12 +19,54 @@ export const metadata = componentMetadata("radial-chart");
 
 <Prose>
 
-The chart entry is a preview. This chart renders in a later release of the preview entry, so the demo below stays empty until then. Names and props can change until Fuse's first stable release. The first row is the outermost ring, and each ring reads its own maximum through `maxKey`.
+The chart entry is a preview. Names and props can change until Fuse's first stable release. The first row is the outermost ring. Each ring fills its value's share of its maximum: the largest value by default, one `max` for every ring, or each row's own through `maxKey`. A ring never laps. The tracks scale out and the rings sweep in once, the first time the chart comes into view, and a data update morphs each ring to its new value. Every value above 0 keeps at least one device pixel of arc.
+
+Hover a ring, or focus the chart and use the arrow keys, to read one ring. The active ring and the rings outside it grow a little, and the others dim. Rings in one unit read best sorted largest first, so the longest arc holds the largest value.
 
 </Prose>
 
+## Against a budget
+
 <Demo slug="radial-chart" id="budgets" title="Budgets" file="radial-chart-budgets.tsx">
   <RadialChartBudgets />
+</Demo>
+
+The centre prints the total with nothing active only when every ring shares one format, because a sum of kWh and kroner means nothing. Here it prints the active ring's share of its budget.
+
+<Demo slug="radial-chart" id="month-to-date" title="Month to date" file="radial-chart-month-to-date.tsx">
+  <RadialChartMonthToDate />
+</Demo>
+
+A value past its maximum fills the whole sweep and sets `data-over-max` on its ring, while the centre, the tooltip and the table keep the true share.
+
+<Demo slug="radial-chart" id="over-budget" title="Over budget" file="radial-chart-over-budget.tsx">
+  <RadialChartOverBudget />
+</Demo>
+
+## Gauges and dots
+
+`startAngle` and `endAngle` turn the rings into a gauge. The chart keeps the aspect of the sweep's bounding box.
+
+<Demo slug="radial-chart" id="gauge" title="Capacity step" file="radial-chart-gauge.tsx">
+  <RadialChartGauge />
+</Demo>
+
+`variant="dotted"` draws 40 dots per sweep and fills the value's share of them, whole dots only.
+
+<Demo slug="radial-chart" id="dotted" title="Dotted" file="radial-chart-dotted.tsx">
+  <RadialChartDotted />
+</Demo>
+
+## Loading and empty states
+
+<Demo slug="radial-chart" id="loading" title="Loading" file="radial-chart-loading.tsx">
+  <RadialChartLoading />
+</Demo>
+
+A chart with no reading shows `RadialChart.Empty`, and it has no tab stop.
+
+<Demo slug="radial-chart" id="empty" title="No data" file="radial-chart-empty.tsx">
+  <RadialChartEmpty />
 </Demo>
 
 <ApiReference slug="radial-chart" />

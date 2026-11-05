@@ -28,7 +28,10 @@ export type PieLook = {
   readonly innerRadius: number;
   /** The corner radius as a share of the outer radius. */
   readonly cornerRadius: number;
+  /** The sweep the slices fill. */
   readonly sweep: Sweep;
+  /** The whole sweep, which the Track fills with the slices' corners. */
+  readonly track: Sweep;
 };
 
 /** What the frame measures from the pie's element: CSS pixels per unit, the pop, the seam and the dpr. */
@@ -70,6 +73,12 @@ export type PieFrame = {
   /** Take the pie's look and its measurement, and paint every slice again. */
   readonly update: (look: PieLook, measure: PieMeasure | null) => void;
   /**
+   * Paint the Track's path over the whole sweep, with the slices' corners.
+   *
+   * @returns The track's removal.
+   */
+  readonly track: (node: Element) => () => void;
+  /**
    * Paint a node with a slice's path and pop in every frame.
    *
    * @returns The mirror's removal.
@@ -98,6 +107,7 @@ function short(value: number): string {
 export function createPieFrame(motion: ChartMotion, look: PieLook): PieFrame {
   const entries = new Map<string, Entry>();
   const mirrors = new Map<string, Set<Element>>();
+  const tracks = new Set<Element>();
   let current = look;
   let measure: PieMeasure | null = null;
   let batching = 0;
@@ -145,6 +155,16 @@ export function createPieFrame(motion: ChartMotion, look: PieLook): PieFrame {
       }
     }
   };
+  const paintTracks = (): void => {
+    const d = arcPath({
+      innerRadius: current.innerRadius,
+      outerRadius: 1,
+      startAngle: current.track.start,
+      endAngle: current.track.end,
+      cornerRadius: current.cornerRadius,
+    });
+    for (const node of tracks) node.setAttribute("d", d);
+  };
   const schedule = (): void => {
     if (batching > 0 || queued) return;
     queued = true;
@@ -174,7 +194,15 @@ export function createPieFrame(motion: ChartMotion, look: PieLook): PieFrame {
     update: (look, measured) => {
       current = look;
       measure = measured;
+      paintTracks();
       schedule();
+    },
+    track: (node) => {
+      tracks.add(node);
+      paintTracks();
+      return () => {
+        tracks.delete(node);
+      };
     },
     mirror: (key, node) => {
       const known = mirrors.get(key) ?? new Set<Element>();

@@ -201,6 +201,8 @@ export const PART_DENSITY = {
   "pie-chart-center-max": "fixed",
   "pie-chart-center-label": "fixed",
   "pie-chart-glow": "fixed",
+  "radial-chart-bar": "fixed",
+  "radial-chart-ring": "fixed",
   "radial-chart": "layout",
   "radar-chart": "layout",
   sparkline: "fixed",

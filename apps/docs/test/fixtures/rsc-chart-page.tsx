@@ -214,6 +214,8 @@ export function PolarPage(): ReactElement {
           valueKey="ore"
           max={150}
           aria-label="Spotpris per område">
+          <RadialChart.Track />
+          <RadialChart.Bar />
           <RadialChart.Table />
         </RadialChart.Root>
         <RadarChart.Root
