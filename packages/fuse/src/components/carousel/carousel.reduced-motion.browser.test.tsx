@@ -11,7 +11,8 @@ import { userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import { nextFrames, wait } from "../../../test/animation-frames";
-import { carouselIndicators, carouselViewport } from "../../../test/carousel-queries";
+import { carouselSlides } from "../../../test/carousel-fixtures";
+import { carouselIndicators, carouselViewport, settledOn } from "../../../test/carousel-queries";
 import { withLocale } from "../../../test/locale-matrix";
 import { px, renderThemed, roleNamed } from "../../../test/themed-browser-render";
 import { Carousel } from "./index";
@@ -30,13 +31,7 @@ function Fixture({ autoplay }: { readonly autoplay?: number }): ReactElement {
           <Carousel.Indicators />
           <Carousel.Next />
         </Carousel.Controls>
-        <Carousel.Viewport>
-          {[1, 2, 3].map((slide) => (
-            <Carousel.Slide key={slide}>
-              <div style={{ height: 80 }}>Slide body {slide}</div>
-            </Carousel.Slide>
-          ))}
-        </Carousel.Viewport>
+        <Carousel.Viewport>{carouselSlides(3, 1)}</Carousel.Viewport>
       </Carousel.Root>
     </>
   );
@@ -59,7 +54,7 @@ describe("Carousel under reduced motion", () => {
     await userEvent.click(roleNamed("button", "Start automatic slide show"));
     await userEvent.hover(roleNamed("button", "Outside"));
     expect(roleNamed("button", "Stop automatic slide show")).toBe(document.activeElement);
-    await expect.poll(() => Math.round(viewport.scrollLeft), { timeout: 3000 }).toBe(WIDTH);
+    await settledOn(viewport, WIDTH);
   });
 
   it("jumps to a page without a smooth scroll, and moves the pill without a transition", async () => {

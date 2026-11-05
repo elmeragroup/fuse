@@ -18,7 +18,7 @@ import { commands, page } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import { serverRendered } from "../../../test/carousel-fixtures";
-import { carouselViewport, currentIndicator } from "../../../test/carousel-queries";
+import { carouselIndicators, carouselViewport, currentIndicator } from "../../../test/carousel-queries";
 import { withLocale } from "../../../test/locale-matrix";
 import "../../../test/pointer-press";
 import { renderThemed, roleNamed } from "../../../test/themed-browser-render";
@@ -80,9 +80,7 @@ describe("Carousel on an iPhone-sized WebKit", () => {
 
   it("makes one page per snap position on fractional slide widths", async () => {
     renderThemed(<Fixture />);
-    await expect
-      .poll(() => roleNamed("group", "Choose slide to display").querySelectorAll("button").length)
-      .toBe(5);
+    await expect.poll(() => carouselIndicators().length).toBe(5);
     const viewport = carouselViewport(roleNamed("region", "Offers"));
     for (const [page, position] of POSITIONS.entries()) {
       await tap(roleNamed("button", `Slide ${page + 1} of 5`));

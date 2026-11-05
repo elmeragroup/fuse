@@ -634,7 +634,6 @@ describe("Carousel held keys", () => {
     expect(Math.round(viewport.scrollLeft)).toBe(3 * WIDTH);
     await userEvent.keyboard("{/ArrowRight}");
     // The parent keeps page 1, so once the key is up the carousel goes back to it.
-    await wait(600);
     await settledOn(viewport, 0);
   });
 });

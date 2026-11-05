@@ -89,12 +89,12 @@ function browserProject(
     exclude?: string[];
     fileParallelism?: boolean;
     groupOrder?: number;
-    /** The frame's and the context's viewport, when the project emulates a device. */
-    viewport?: { readonly width: number; readonly height: number };
   },
   browsers: readonly ("chromium" | "firefox" | "webkit")[] = ["chromium"],
   provider: Parameters<typeof playwright>[0] = {}
 ): TestProjectInlineConfiguration {
+  // A device the provider's context emulates sets the frame's viewport too.
+  const viewport = provider.contextOptions?.viewport ?? VIEWPORT;
   return {
     optimizeDeps: {
       include: [
@@ -142,10 +142,10 @@ function browserProject(
       browser: {
         enabled: true,
         headless: true,
-        viewport: options.viewport ?? VIEWPORT,
+        viewport,
         provider: playwright({
           ...provider,
-          contextOptions: { viewport: options.viewport ?? VIEWPORT, ...provider.contextOptions },
+          contextOptions: { ...provider.contextOptions, viewport },
         }),
         instances: browsers.map((browser) => ({ browser })),
         commands: { ...pointerCommands, ...mediaCommands, ...pageSizeCommands },
@@ -230,12 +230,9 @@ export default defineConfig({
       // iOS Safari is WebKit, and an iPhone's viewport, pixel density and touch change how it lays
       // out and snaps a scroller. The context takes Playwright's iPhone 15 descriptor; the frame
       // takes its viewport, so the page is as wide as the phone's.
-      browserProject(
-        "browser-iphone",
-        { include: [`src/${IPHONE_TESTS}`], viewport: IPHONE.viewport },
-        ["webkit"],
-        { contextOptions: IPHONE }
-      ),
+      browserProject("browser-iphone", { include: [`src/${IPHONE_TESTS}`] }, ["webkit"], {
+        contextOptions: IPHONE,
+      }),
     ],
   },
 });

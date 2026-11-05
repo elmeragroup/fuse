@@ -16,13 +16,6 @@ async function pagePoint(context: BrowserCommandContext, x: number, y: number): 
   return { x: (frame?.x ?? 0) + x, y: (frame?.y ?? 0) + y };
 }
 
-/** Open the DevTools session a touch sequence runs through, until `closeTouches`. */
-async function openTouches(context: BrowserCommandContext): Promise<CDPSession> {
-  const session = await context.page.context().newCDPSession(context.page);
-  touches.set(context.page, session);
-  return session;
-}
-
 /** The session a finger already down went down through. */
 function heldTouches(context: BrowserCommandContext): CDPSession {
   const session = touches.get(context.page);
@@ -42,7 +35,9 @@ async function closeTouches(context: BrowserCommandContext, session: CDPSession)
  * fails closes the session it opened, so no finger is left held for the next command.
  */
 async function startTouch(context: BrowserCommandContext, point: PagePoint): Promise<void> {
-  const session = await openTouches(context);
+  // The DevTools session the finger's sequence runs through, until `closeTouches`.
+  const session = await context.page.context().newCDPSession(context.page);
+  touches.set(context.page, session);
   try {
     await session.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [point] });
   } catch (error) {
@@ -102,8 +97,8 @@ export const pointerCommands = {
    * into page coordinates.
    */
   tap: (async (context, x: number, y: number) => {
-    const frame = await context.iframe.owner().boundingBox();
-    await context.page.touchscreen.tap((frame?.x ?? 0) + x, (frame?.y ?? 0) + y);
+    const point = await pagePoint(context, x, y);
+    await context.page.touchscreen.tap(point.x, point.y);
   }) satisfies BrowserCommand<[number, number]>,
   /**
    * A finger that lands at a point in the test frame's client coordinates and stays down, through
@@ -121,33 +116,6 @@ export const pointerCommands = {
   touchEnd: (async (context) => {
     await endTouch(context);
   }) satisfies BrowserCommand<[]>,
-  /**
-   * Several fingers at once, through Chromium's touch input: `points` is every finger down after
-   * this event, each by its `id`, in the test frame's client coordinates. A finger missing from
-   * the last call's points lifts, a new one lands, and one that moved moves. `touchStart` and
-   * `touchMove` dispatch the change; `touchEnd` lifts the fingers left out, and with no points
-   * lifts them all and ends the sequence.
-   */
-  touchPoints: (async (
-    context,
-    type: "touchStart" | "touchMove" | "touchEnd",
-    points: readonly { readonly id: number; readonly x: number; readonly y: number }[]
-  ) => {
-    const origin = await pagePoint(context, 0, 0);
-    const session = touches.get(context.page) ?? (await openTouches(context));
-    await session.send("Input.dispatchTouchEvent", {
-      type,
-      touchPoints: points.map((point) => ({ id: point.id, x: origin.x + point.x, y: origin.y + point.y })),
-    });
-    if (type === "touchEnd" && points.length === 0) {
-      await closeTouches(context, session);
-    }
-  }) satisfies BrowserCommand<
-    [
-      "touchStart" | "touchMove" | "touchEnd",
-      readonly { readonly id: number; readonly x: number; readonly y: number }[],
-    ]
-  >,
   /**
    * A finger swipe from a point in the test frame's client coordinates: it lands, moves `dx` and
    * `dy` px at `speed` px/s in 16ms steps, as a touch screen samples it, and lifts while still

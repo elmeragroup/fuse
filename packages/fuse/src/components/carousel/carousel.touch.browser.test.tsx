@@ -10,16 +10,15 @@
 import { useState } from "react";
 import type { ReactElement } from "react";
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, onTestFinished } from "vitest";
 import { commands, page } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import { nextFrames, wait } from "../../../test/animation-frames";
-import { carouselViewport, currentIndicator } from "../../../test/carousel-queries";
+import { carouselViewport, currentIndicator, settledOn } from "../../../test/carousel-queries";
 import { withLocale } from "../../../test/locale-matrix";
 import "../../../test/pointer-press";
 import { renderThemed, roleNamed } from "../../../test/themed-browser-render";
-import type { CarouselIndexChangeReason } from "./carousel-context";
 import { Carousel } from "./index";
 
 const WIDTH = 300;
@@ -165,7 +164,6 @@ describe("Carousel swipe", () => {
 
     await swipe(viewport, -(WIDTH * 0.6), 0, 1500);
     await settles(viewport, 2 * WIDTH);
-    await wait(300);
     expect(strip.scrollLeft).toBe(550);
     expect(currentIndicator()).toBe(2);
   });
@@ -225,11 +223,10 @@ describe("Carousel swipe and rotation", () => {
 
 /**
  * Make the page a browser without `scrollend`: the property is gone, so the engine takes its quiet
- * spell for every scroll's end, and the event itself never reaches an element.
- *
- * @returns A function that restores both.
+ * spell for every scroll's end, and the event itself never reaches an element. Both come back
+ * when the test finishes, however it ends.
  */
-function withoutScrollEnd(): () => void {
+function withoutScrollEnd(): void {
   const owners = [HTMLElement.prototype, Element.prototype, Document.prototype, Window.prototype].filter(
     (owner) => Object.hasOwn(owner, "onscrollend")
   );
@@ -242,19 +239,19 @@ function withoutScrollEnd(): () => void {
   }
   const block = (event: Event) => event.stopImmediatePropagation();
   window.addEventListener("scrollend", block, true);
-  return () => {
+  onTestFinished(() => {
     window.removeEventListener("scrollend", block, true);
     for (const [owner, descriptor] of saved) {
       Object.defineProperty(owner, "onscrollend", descriptor);
     }
-  };
+  });
 }
 
 /**
  * A controlled carousel whose parent takes the pages its controls ask for and refuses the ones a
  * scroll reports, so a settle that comes too early shows as the viewport snapping back.
  */
-function Refusing({ changes }: { readonly changes: [number, CarouselIndexChangeReason][] }): ReactElement {
+function Refusing(): ReactElement {
   const [index, setIndex] = useState(0);
   return withLocale(
     "en-US",
@@ -263,7 +260,6 @@ function Refusing({ changes }: { readonly changes: [number, CarouselIndexChangeR
       style={{ width: WIDTH }}
       index={index}
       onIndexChange={(next, { reason }) => {
-        changes.push([next, reason]);
         if (reason !== "scroll") {
           setIndex(next);
         }
@@ -312,117 +308,97 @@ async function atRest(viewport: HTMLElement): Promise<number> {
 
 describe("Carousel held gestures", () => {
   it("settles a drag that a tap interrupts before its quiet spell ends", async () => {
-    const restore = withoutScrollEnd();
-    try {
-      const changes: [number, CarouselIndexChangeReason][] = [];
-      renderThemed(<Refusing changes={changes} />);
-      const viewport = carouselViewport(roleNamed("region", "Offers"));
-      await expect.poll(currentIndicator).toBe(0);
-      await nextFrames(3);
-      await dragAndHold(viewport, 160);
-      await atRest(viewport);
-      // The finger lifts at rest, so nothing flings, and a tap that scrolls nothing follows at once,
-      // within the drag's quiet spell.
-      const box = viewport.getBoundingClientRect();
-      const tap = { id: 3, x: box.left + box.width / 2, y: box.top + box.height / 2 };
-      await commands.touchEnd();
-      // The lift's own snap comes to rest, and the tap lands inside the quiet spell after it.
-      await atRest(viewport);
-      await commands.touchPoints("touchStart", [tap]);
-      await commands.touchPoints("touchEnd", []);
-      // The drag is still owed its end: the parent refused its page, so the carousel goes back.
-      await settles(viewport, 0);
-    } finally {
-      restore();
-    }
+    withoutScrollEnd();
+    renderThemed(<Refusing />);
+    const viewport = carouselViewport(roleNamed("region", "Offers"));
+    await expect.poll(currentIndicator).toBe(0);
+    await nextFrames(3);
+    await dragAndHold(viewport, 160);
+    await atRest(viewport);
+    // The finger lifts at rest, so nothing flings, and a tap that scrolls nothing follows at once,
+    // within the drag's quiet spell.
+    const box = viewport.getBoundingClientRect();
+    const tap = { x: box.left + box.width / 2, y: box.top + box.height / 2 };
+    await commands.touchEnd();
+    // The lift's own snap comes to rest, and the tap lands inside the quiet spell after it.
+    await atRest(viewport);
+    await commands.touchStart(tap.x, tap.y);
+    await commands.touchEnd();
+    // The drag is still owed its end: the parent refused its page, so the carousel goes back.
+    await settles(viewport, 0);
   });
 
   it("keeps touch input held while one of two fingers is still down", async () => {
     // Chromium's touch input through CDP stalls a pan once a second finger has landed and lifted,
     // as it does for the start of a pinch, so the two fingers are the events the browser would
     // send, in its order, and the held finger's drag is a scroll of the viewport.
-    const restore = withoutScrollEnd();
-    try {
-      const changes: [number, CarouselIndexChangeReason][] = [];
-      renderThemed(<Refusing changes={changes} />);
-      const viewport = carouselViewport(roleNamed("region", "Offers"));
-      await expect.poll(currentIndicator).toBe(0);
-      const box = viewport.getBoundingClientRect();
-      const finger = (identifier: number, x: number) =>
-        new Touch({ identifier, target: viewport, clientX: x, clientY: box.top + box.height / 2 });
-      const pointer = (type: string, pointerId: number) =>
-        new PointerEvent(type, { pointerId, pointerType: "touch", bubbles: true, composed: true });
-      const touches = (type: string, down: readonly Touch[]) =>
-        new TouchEvent(type, { touches: [...down], bubbles: true, composed: true });
-      const first = finger(1, box.left + box.width - 20);
+    withoutScrollEnd();
+    renderThemed(<Refusing />);
+    const viewport = carouselViewport(roleNamed("region", "Offers"));
+    await expect.poll(currentIndicator).toBe(0);
+    const box = viewport.getBoundingClientRect();
+    const finger = (identifier: number, x: number) =>
+      new Touch({ identifier, target: viewport, clientX: x, clientY: box.top + box.height / 2 });
+    const pointer = (type: string, pointerId: number) =>
+      new PointerEvent(type, { pointerId, pointerType: "touch", bubbles: true, composed: true });
+    const touches = (type: string, down: readonly Touch[]) =>
+      new TouchEvent(type, { touches: [...down], bubbles: true, composed: true });
+    const first = finger(1, box.left + box.width - 20);
 
-      // Two fingers land; the second lifts, the first stays down.
-      viewport.dispatchEvent(pointer("pointerdown", 1));
-      viewport.dispatchEvent(pointer("pointerdown", 2));
-      viewport.dispatchEvent(pointer("pointerup", 2));
-      viewport.dispatchEvent(touches("touchend", [first]));
-      // The first finger's drag: the browser takes it for panning, then the viewport scrolls.
-      viewport.dispatchEvent(pointer("pointercancel", 1));
-      viewport.scrollTo({ left: 185, behavior: "instant" });
-      const held = await atRest(viewport);
-      expect(held).toBeGreaterThan(100);
-      // Far past the quiet spell, with the first finger still down: nothing has ended.
-      await wait(600);
-      expect(Math.abs(viewport.scrollLeft - held)).toBeLessThan(2);
+    // Two fingers land; the second lifts, the first stays down.
+    viewport.dispatchEvent(pointer("pointerdown", 1));
+    viewport.dispatchEvent(pointer("pointerdown", 2));
+    viewport.dispatchEvent(pointer("pointerup", 2));
+    viewport.dispatchEvent(touches("touchend", [first]));
+    // The first finger's drag: the browser takes it for panning, then the viewport scrolls.
+    viewport.dispatchEvent(pointer("pointercancel", 1));
+    viewport.scrollTo({ left: 185, behavior: "instant" });
+    const held = await atRest(viewport);
+    expect(held).toBeGreaterThan(100);
+    // Far past the quiet spell, with the first finger still down: nothing has ended.
+    await wait(600);
+    expect(Math.abs(viewport.scrollLeft - held)).toBeLessThan(2);
 
-      viewport.dispatchEvent(touches("touchend", []));
-      // Every finger up: the parent refused the page, so the carousel goes back to its own.
-      await settles(viewport, 0);
-    } finally {
-      restore();
-    }
+    viewport.dispatchEvent(touches("touchend", []));
+    // Every finger up: the parent refused the page, so the carousel goes back to its own.
+    await settles(viewport, 0);
   });
 
   it("does not settle a held drag in a browser without scrollend, and settles after the lift", async () => {
-    const restore = withoutScrollEnd();
-    try {
-      const changes: [number, CarouselIndexChangeReason][] = [];
-      renderThemed(<Refusing changes={changes} />);
-      const viewport = carouselViewport(roleNamed("region", "Offers"));
-      await expect.poll(currentIndicator).toBe(0);
-      await nextFrames(3);
-      await dragAndHold(viewport, 160);
-      const held = await atRest(viewport);
-      expect(held).toBeGreaterThan(100);
-      // Far past the quiet spell, with the finger still down: nothing has ended.
-      await wait(600);
-      expect(Math.abs(viewport.scrollLeft - held)).toBeLessThan(2);
-      await commands.touchEnd();
-      // The parent refused the page the drag reached, so after the lift the carousel returns to its own.
-      await settles(viewport, 0);
-    } finally {
-      restore();
-    }
+    withoutScrollEnd();
+    renderThemed(<Refusing />);
+    const viewport = carouselViewport(roleNamed("region", "Offers"));
+    await expect.poll(currentIndicator).toBe(0);
+    await nextFrames(3);
+    await dragAndHold(viewport, 160);
+    const held = await atRest(viewport);
+    expect(held).toBeGreaterThan(100);
+    // Far past the quiet spell, with the finger still down: nothing has ended.
+    await wait(600);
+    expect(Math.abs(viewport.scrollLeft - held)).toBeLessThan(2);
+    await commands.touchEnd();
+    // The parent refused the page the drag reached, so after the lift the carousel returns to its own.
+    await settles(viewport, 0);
   });
 
   it("does not let a quiet spell an earlier scroll left settle a drag the user then holds", async () => {
     // Without `scrollend`, the press's own scroll ends by a quiet spell, which is still pending the
     // moment the scroll arrives; the finger lands within it.
-    const restore = withoutScrollEnd();
-    try {
-      const changes: [number, CarouselIndexChangeReason][] = [];
-      renderThemed(<Refusing changes={changes} />);
-      const viewport = carouselViewport(roleNamed("region", "Offers"));
-      await expect.poll(currentIndicator).toBe(0);
-      roleNamed("button", "Slide 3 of 5").click();
-      await expect.poll(() => Math.round(viewport.scrollLeft), { timeout: 3000 }).toBe(2 * WIDTH);
-      // Back past the middle toward page 2, held: nearer page 2 at 300px than the parent's page 3
-      // at 600px, so an early settle would report page 2 and pull the viewport back to page 3.
-      await dragAndHold(viewport, -180);
-      const held = await atRest(viewport);
-      expect(held).toBeLessThan(1.5 * WIDTH);
-      await wait(600);
-      expect(Math.abs(viewport.scrollLeft - held)).toBeLessThan(2);
-      await commands.touchEnd();
-      // Released, the parent's page 3 stands, as it refused the scroll's.
-      await settles(viewport, 2 * WIDTH);
-    } finally {
-      restore();
-    }
+    withoutScrollEnd();
+    renderThemed(<Refusing />);
+    const viewport = carouselViewport(roleNamed("region", "Offers"));
+    await expect.poll(currentIndicator).toBe(0);
+    roleNamed("button", "Slide 3 of 5").click();
+    await settledOn(viewport, 2 * WIDTH);
+    // Back past the middle toward page 2, held: nearer page 2 at 300px than the parent's page 3
+    // at 600px, so an early settle would report page 2 and pull the viewport back to page 3.
+    await dragAndHold(viewport, -180);
+    const held = await atRest(viewport);
+    expect(held).toBeLessThan(1.5 * WIDTH);
+    await wait(600);
+    expect(Math.abs(viewport.scrollLeft - held)).toBeLessThan(2);
+    await commands.touchEnd();
+    // Released, the parent's page 3 stands, as it refused the scroll's.
+    await settles(viewport, 2 * WIDTH);
   });
 });

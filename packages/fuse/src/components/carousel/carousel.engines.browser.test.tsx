@@ -11,8 +11,8 @@ import { describe, expect, it } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
-import { wait } from "../../../test/animation-frames";
-import { carouselViewport, currentIndicator } from "../../../test/carousel-queries";
+import { nextFrames, wait } from "../../../test/animation-frames";
+import { carouselViewport, currentIndicator, settledOn } from "../../../test/carousel-queries";
 import { withLocale } from "../../../test/locale-matrix";
 import { renderThemed, roleNamed } from "../../../test/themed-browser-render";
 import type { CarouselIndexChangeReason } from "./carousel-context";
@@ -213,14 +213,12 @@ describe("Carousel mounted at zero scale", () => {
     renderThemed(<Growing />);
     // At zero scale nothing paints, so the carousel has no role to find yet, and it must stay
     // settled meanwhile rather than render without end.
-    await new Promise<void>((resolve) => {
-      requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
-    });
+    await nextFrames(2);
 
     await userEvent.click(roleNamed("button", "Grow"));
     await expect.poll(() => page.getByRole("region", { name: "Offers" }).query()).not.toBeNull();
     const viewport = carouselViewport(roleNamed("region", "Offers"));
-    await expect.poll(() => Math.round(viewport.scrollLeft), { timeout: 3000 }).toBe(2 * LENGTH);
+    await settledOn(viewport, 2 * LENGTH);
     await expect.poll(currentIndicator).toBe(2);
     const names = ["1 of 4", "2 of 4", "3 of 4", "4 of 4"];
     await expect
@@ -329,7 +327,7 @@ describe("Carousel spacing inherited while a later page is selected", () => {
       }
 
       roleNamed("group", "Ancestor").style.setProperty("--spaced-gap", `${gap}px`);
-      await expect.poll(() => Math.round(viewport.scrollLeft), { timeout: 3000 }).toBe(page7);
+      await settledOn(viewport, page7);
       await wait(400);
       expect(Math.round(viewport.scrollLeft)).toBe(page7);
       expect(currentIndicator()).toBe(6);
@@ -337,7 +335,7 @@ describe("Carousel spacing inherited while a later page is selected", () => {
 
       // Next goes to page 8, slide 8 at 7 × (120 + gap).
       await userEvent.click(roleNamed("button", "Next slide"));
-      await expect.poll(() => Math.round(viewport.scrollLeft), { timeout: 3000 }).toBe(page8);
+      await settledOn(viewport, page8);
       expect(currentIndicator()).toBe(7);
       expect(changes).toEqual([[7, "next"]]);
     }
@@ -457,14 +455,10 @@ describe("Carousel presses in quick succession", () => {
     // Each press comes the moment the scroll before it arrives, before that scroll's `scrollend`,
     // which then reaches the carousel while the next page's scroll is under way.
     const pages = [2, 3, 4, 5, 6];
-    for (const [step, page] of pages.entries()) {
+    for (const page of pages) {
       roleNamed("button", `Slide ${page} of 6`).click();
-      const next = pages[step + 1];
-      await expect.poll(() => Math.round(viewport.scrollLeft), { timeout: 3000 }).toBe((page - 1) * LENGTH);
+      await settledOn(viewport, (page - 1) * LENGTH);
       expect(currentIndicator(), `after pressing ${page}`).toBe(page - 1);
-      if (next === undefined) {
-        break;
-      }
     }
     await wait(400);
     expect(currentIndicator()).toBe(5);
