@@ -111,6 +111,7 @@ function cellAt(position: number, value: number): BarCell {
     extent: [Math.min(0, value), Math.max(0, value)],
     negative: value < 0,
     stackTop: true,
+    place: "outer",
   };
 }
 
@@ -124,7 +125,7 @@ describe("detailParts", () => {
     const rect = { x: 10, y: 20, width: 30, height: 40 };
     for (const look of VARIANTS) {
       for (const top of [0, 0.5]) {
-        const drawn = drawnBar(frame, look, rect, { negative: false, top });
+        const drawn = drawnBar(frame, look, rect, { negative: false, top, place: "outer" });
         const named = DETAIL_PARTS.filter((part) => drawn[part] !== undefined).join(" ");
         expect(detailParts(look, top), `${look} at ${String(top)}`).toBe(named);
       }
@@ -138,7 +139,7 @@ describe("drawnBar", () => {
       frameOf(100, 100),
       "isometric",
       { x: 10, y: 20, width: 30, height: 40 },
-      { negative: false, top: 1 }
+      { negative: false, top: 1, place: "outer" }
     );
     expect(parts.top).toBe("10,20 40,20 50,10 20,10");
     expect(parts.side).toBe("40,20 50,10 50,50 40,60");
@@ -152,16 +153,23 @@ describe("drawnBar", () => {
     const segment = (low: number, high: number, stackTop: boolean) =>
       barRect(
         frame,
-        { slot: 0, position: 0, span: 1, extent: [low, high], negative: false, stackTop },
+        {
+          slot: 0,
+          position: 0,
+          span: 1,
+          extent: [low, high],
+          negative: false,
+          stackTop,
+          place: stackTop ? "outer" : "inner",
+        },
         METRICS,
         WHOLE_BAND,
         "cut"
       );
     const tops = (rect: PlotRect) =>
-      (drawnBar(frame, "blocks", rect, { negative: false, top: 1 }).blocks ?? []).map(({ y, height }) => [
-        y,
-        height,
-      ]);
+      (drawnBar(frame, "blocks", rect, { negative: false, top: 1, place: "outer" }).blocks ?? []).map(
+        ({ y, height }) => [y, height]
+      );
     expect(tops(segment(4, 10, true))).toEqual(
       Array.from({ length: 10 }, (_, index) => [110 - index * 12, 10])
     );
@@ -170,9 +178,11 @@ describe("drawnBar", () => {
     );
     // Only the stack's outer segment runs its faint track on over the empty column.
     expect(
-      drawnBar(frame, "blocks", segment(0, 4, false), { negative: false, top: 0 }).track
+      drawnBar(frame, "blocks", segment(0, 4, false), { negative: false, top: 0, place: "inner" }).track
     ).toBeUndefined();
-    expect(drawnBar(frame, "blocks", segment(4, 10, true), { negative: false, top: 1 }).track?.[0]).toEqual({
+    expect(
+      drawnBar(frame, "blocks", segment(4, 10, true), { negative: false, top: 1, place: "outer" }).track?.[0]
+    ).toEqual({
       x: 15,
       y: 110,
       width: 10,
@@ -191,7 +201,7 @@ describe("drawnBar", () => {
         frame,
         "expandable",
         barRect(frame, cellAt(position, 1), METRICS, WHOLE_BAND, "cut"),
-        { negative: false, top: 1 }
+        { negative: false, top: 1, place: "outer" }
       );
       expect([body.x, body.width], String(position)).toEqual([2 * position, 1]);
     }
@@ -205,7 +215,7 @@ describe("drawnBar", () => {
     for (const position of [0, 7, 49]) {
       const strips = [0, 1].map((index) => {
         const rect = barRect(frame, cellAt(position, 1), METRICS, { index, count: 2 }, "cut");
-        const { body } = drawnBar(frame, "expandable", rect, { negative: false, top: 1 });
+        const { body } = drawnBar(frame, "expandable", rect, { negative: false, top: 1, place: "outer" });
         return [body.x, body.width];
       });
       expect(strips, String(position)).toEqual([
@@ -282,7 +292,7 @@ describe("the pixel floor", () => {
             height: resting.height + (target.height - resting.height) * t,
           };
           for (const rect of [resting, tween]) {
-            const parts = drawnBar(frame, variant, rect, { negative: value < 0, top: 1 });
+            const parts = drawnBar(frame, variant, rect, { negative: value < 0, top: 1, place: "outer" });
             const rects = [
               parts.body,
               ...(parts.cap === undefined ? [] : [parts.cap]),
@@ -290,7 +300,10 @@ describe("the pixel floor", () => {
               ...(parts.blocks ?? []),
             ];
             // The default look draws the bar's own pixels, which every look's parts stay inside.
-            const own = along(frame, drawnBar(frame, "default", rect, { negative: value < 0, top: 1 }).body);
+            const own = along(
+              frame,
+              drawnBar(frame, "default", rect, { negative: value < 0, top: 1, place: "outer" }).body
+            );
             for (const part of rects) {
               expect(rectOnGrid(part, dpr)).toBe(true);
               const { size, edges } = along(frame, part);
@@ -395,11 +408,13 @@ describe("the pixel floor", () => {
           const x0 = start * (count - width) * step;
           const x1 = x0 + width * step;
           const entry = {
+            baseAt: 4 as const,
             fill: 0,
             part: "fill" as const,
             missing: false,
             emphasis: false,
             leaving: false,
+            place: "outer" as const,
           };
           const numbers = [(x0 + x1) / 2, 0.1 * across, x0, x1, across, x0, x0, x0, x0];
           const [d = ""] = columnsDrawing(frame, { count: 1, entries: [entry] }, numbers).fill;
@@ -432,7 +447,7 @@ describe("the pixel floor", () => {
         frame,
         variant,
         { x: 3, y: 50, width: 0, height: 50 },
-        { negative: false, top: 1 }
+        { negative: false, top: 1, place: "outer" }
       );
       for (const part of [parts.body, parts.cap, ...(parts.track ?? []), ...(parts.blocks ?? [])]) {
         if (part !== undefined) expect(part.width, variant).toBe(0);
@@ -447,7 +462,7 @@ describe("the expandable strip's pixel (review round 1, B1-12 and Q1-7)", () => 
     plotFrame({ width: 100, height: 100, dpr, left, top: 0 }, "vertical", count, [0, 1]);
   /** The strip's span along the slot axis. */
   const strip = (frame: PlotFrame, bar: PlotRect) => {
-    const { body } = drawnBar(frame, "expandable", bar, { negative: false, top: 1 });
+    const { body } = drawnBar(frame, "expandable", bar, { negative: false, top: 1, place: "outer" });
     return [body.x, body.x + body.width];
   };
 

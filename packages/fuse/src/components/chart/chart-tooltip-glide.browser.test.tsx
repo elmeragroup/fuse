@@ -20,6 +20,7 @@ import {
   hoverSlot,
   lineChart,
   positioner,
+  sweepGlides,
   watchDots,
   watchFrames,
   wideChart,
@@ -939,33 +940,53 @@ describe("a step onto a label that changes the popup's size", () => {
   });
 });
 
+/**
+ * A rising step under a 240 px popup, with room above the plot, where the popup's glide can clear
+ * the dot.
+ */
+async function readerStepScene() {
+  await page.viewport(1024, 1200);
+  const { host } = renderThemed(
+    <Scene rows={named([10, 90, 40, 60, 20, 70])} kind="line" popupWidth={240} padding="480px 24px 24px" />
+  );
+  await hoverSlot(host, 0, 6, "point");
+  await nextFrames(30);
+  await glideLanded();
+  return host;
+}
+
 describe("an active dot on a reader step", () => {
-  it("glides between its two readings while the popup glides clear of it", async () => {
-    // A rising step under a 240 px popup, with room above the plot, where the popup's glide can
-    // clear the dot, so the dot glides and shows between its two centres mid-step.
-    await page.viewport(1024, 1200);
-    const { host } = renderThemed(
-      <Scene rows={named([10, 90, 40, 60, 20, 70])} kind="line" popupWidth={240} padding="480px 24px 24px" />
-    );
-    await hoverSlot(host, 0, 6, "point");
-    await nextFrames(30);
-    await glideLanded();
+  it("shows between its two centres at set times of its glide", async () => {
+    // The step is dispatched at once, so the sweep pauses the dot's glide before any frame runs.
+    // The places it reads depend on the glide, not on how many frames the runner delivers.
+    const host = await readerStepScene();
+    const [start] = dotFrame(host);
+    dispatchSlotMove(host, 1 / 5);
+    const places = sweepGlides(host, () => dotFrame(host)).flat();
+    // The popup's text follows the step in the next render.
+    await nextFrames(2);
+    expect(label()).toBe("k1");
+    const end = places.at(-1);
+    if (start === undefined || end === undefined) throw new Error("no active dot");
+    expect(start.y - end.y).toBeGreaterThan(100);
+    const between = places.filter(({ y }) => y < start.y - 1 && y > end.y + 1);
+    expect(between.length, JSON.stringify(places)).toBeGreaterThan(0);
+  });
+
+  it("lands on its new reading while the popup glides clear of it", async () => {
+    // The real pointer step, which the popup's own glide follows over real frames.
+    const host = await readerStepScene();
     const [start] = dotFrame(host);
     const watch = watchFrames(host);
-    const dots = watchDots(host);
     await hoverSlot(host, 1, 6, "point");
     await nextFrames(40);
     await glideLanded();
     watch.stop();
-    dots.stop();
     expect(label()).toBe("k1");
     const [end] = dotFrame(host);
     if (start === undefined || end === undefined) throw new Error("no active dot");
     expect(start.y - end.y).toBeGreaterThan(100);
     expect(end.gliding).toBe(false);
-    const between = dots.frames.flat().filter(({ y }) => y < start.y - 1 && y > end.y + 1);
-    expect(between.length, JSON.stringify(dots.frames)).toBeGreaterThan(0);
-    expect(between.every(({ gliding }) => gliding)).toBe(true);
     expect(watch.covered).toEqual([]);
   });
 });

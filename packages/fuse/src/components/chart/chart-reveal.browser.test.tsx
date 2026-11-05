@@ -10,7 +10,7 @@ import { userEvent } from "vitest/browser";
 import "../../../dist/styles.css";
 import { nextFrames } from "../../../test/animation-frames";
 import { settling } from "../../../test/chart/oscillator";
-import { dispatchSlotMove, everyFrame } from "../../../test/chart/tooltip-glide";
+import { dispatchSlotMove, onTheWay, sweepGlides } from "../../../test/chart/tooltip-glide";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
 import { Chart } from "./chart-namespace";
@@ -110,7 +110,6 @@ function shownAlong(host: HTMLElement, axis: "x" | "y" = "x") {
     edge: (axis === "x" ? lineBox.left : lineBox.top) + edge,
     dot: centre(dotBox),
     crosshair: centre(markBox),
-    gliding: line.getAnimations().some(({ playState }) => playState === "running"),
   };
 }
 
@@ -136,10 +135,11 @@ describe("Chart.Reveal's edge on a step", () => {
       moveTo(host, 2, 2, axis);
       await nextFrames(1);
       moveTo(host, 18, 0, axis);
-      const { frames, stop } = everyFrame(() => shownAlong(host, axis));
-      await nextFrames(60);
-      stop();
-      expect(frames.filter(({ gliding }) => gliding).length, JSON.stringify(frames)).toBeGreaterThan(3);
+      const frames = sweepGlides(host, () => shownAlong(host, axis));
+      expect(
+        onTheWay(frames.map(({ dot }) => ({ x: dot, y: 0 }))).length,
+        JSON.stringify(frames)
+      ).toBeGreaterThan(3);
       const apart = frames.filter(
         ({ edge, dot, crosshair }) => Math.abs(edge - dot) > 1 || Math.abs(edge - crosshair) > 1
       );

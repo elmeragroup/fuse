@@ -39,6 +39,7 @@ import {
 } from "./chart-readout";
 import { createChartRiders } from "./chart-riders";
 import { PlotLoader } from "./chart-skeleton";
+import { discardStackFloors, flushStackFloors } from "./chart-stack-floors";
 import { sameConfig, sameShallow, useSteady } from "./chart-steady";
 import { createChartStore } from "./chart-store";
 import type { ChartSnapshot, EmphasisEntry } from "./chart-store";
@@ -456,6 +457,18 @@ export function ChartRoot<
   const reduced = useMediaQuery(REDUCED_MOTION);
   const [followers] = useState(createChartFollowers);
   const [motion] = useState(() => browserMotion(reduced, followers));
+  // Every mark a commit renders places itself in a layout effect before Root's own, so Root's
+  // first one settles the stack floors they drew once for the commit, before any reader paints.
+  useLayoutEffect(() => {
+    flushStackFloors(motion);
+  });
+  // Once Root unmounts, the stack floors its leaving marks invalidate have nothing to paint.
+  useLayoutEffect(
+    () => () => {
+      discardStackFloors(motion);
+    },
+    [motion]
+  );
   // The mounted Panels: the registry their effects write, and its snapshot in Panel order, which
   // renders. A Panel rule breaks only once the whole current tree has registered.
   const [registry] = useState(() => new Set<PanelEntry>());

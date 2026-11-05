@@ -187,8 +187,14 @@ export function faults(shot: Shot, world: World): string[] {
       overlay: shot.overlay === null ? tip : tipEdge(shot.overlay.across, baseline),
       value: shot.value?.tip ?? tip,
     };
+    // A reading under a device pixel snaps onto the baseline, where the followers at its value's
+    // coordinate, the value line and the pill, stay, while its bar keeps the value floor's one
+    // device pixel past it. The overlay draws the bar itself, floor and all, so it keeps the tip.
+    const floored = near(Math.abs(tip - baseline), device);
     for (const [what, at] of Object.entries(tips)) {
-      if (!near(at, tip)) failures.push(`${what} at ${String(at)} off the tip ${String(tip)}`);
+      const follower = what !== "overlay";
+      if (!near(at, tip) && !(follower && floored && near(at, baseline)))
+        failures.push(`${what} at ${String(at)} off the tip ${String(tip)}`);
     }
     // ActiveValue stands over its bar's middle, within the half pixel each of the two snaps.
     const middle = (activeBar.along[0] + activeBar.along[1]) / 2;

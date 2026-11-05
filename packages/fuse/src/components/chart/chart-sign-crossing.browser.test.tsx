@@ -4,7 +4,8 @@
 // straight line between their pixels before and after the update, on one eased progress. The
 // value line draws the tip, so its drawn edge gives that frame's progress, and the bar and the
 // overlay must then span from the base at that progress to the line: a crossing bar shrinks to
-// its base and grows out on the other side. Its far end follows the tip's side of the base: the
+// its base and grows out on the other side, keeping one device pixel while its tip lies under a
+// device pixel from its base. Its far end follows the tip's side of the base: the
 // overlay's rounded end, `data-negative`, and a striped bar's cap, which sits past the tip. The
 // pixels come from the value domain the chart's `yInclude` fixes, checked at rest before the update.
 import fc from "fast-check";
@@ -154,12 +155,20 @@ async function cross(crossing: Crossing): Promise<number[]> {
           off,
           `${what} ${drawn.join("–")} at ${String(eased)}, wanted ${wanted.join("–")}`
         ).toBeLessThanOrEqual(slack);
-        // The bar and the line snap the same tweened tip, so the bar's tip edge is the line's.
+        // The bar and the line snap the same tweened tip, so the bar's tip edge is the line's. Where
+        // the tip, under a device pixel from the base, snaps onto the base's pixel edge, the value
+        // floor keeps the bar one device pixel long, and the line lies on its base edge instead.
         const tipEdge = line < base ? drawn[0] : drawn[1];
-        expect(tipEdge, `${what} tip ${drawn.join("–")} against the line at ${String(line)}`).toBeCloseTo(
-          line,
-          6
-        );
+        const device = 1 / devicePixelRatio;
+        const floored =
+          Math.abs(line - base) < device &&
+          Math.abs((drawn[1] ?? 0) - (drawn[0] ?? 0) - device) < 1e-6 &&
+          drawn.some((edge) => Math.abs(edge - line) < 1e-6);
+        if (!floored)
+          expect(tipEdge, `${what} tip ${drawn.join("–")} against the line at ${String(line)}`).toBeCloseTo(
+            line,
+            6
+          );
       }
       // The tip's side of the base: the reading's own side in every frame of an update that keeps
       // it, even one ending under a pixel, and during a crossing the side the tip lies on, once the

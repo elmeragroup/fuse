@@ -35,14 +35,26 @@ import type { SeriesPaint } from "./chart-paint";
 import { readingPaint } from "./chart-paint";
 import { pathAnchor, routeIndex } from "./chart-paths";
 import type { ChartPlot } from "./chart-plot-measure";
+import { stackFloorsOf, useStackSeat } from "./chart-stack-floors";
+import type { StackFloors, StackSeat } from "./chart-stack-floors";
 import { introFor } from "./chart-store";
 import type { EntrancePhase } from "./chart-store";
 import type { ChartBarVariant } from "./chart-types";
-import { barCellAt, barGeometry, geometryOf, geometryRect, hangs, rectsPath } from "./layout/bar-geometry";
+import {
+  barCellAt,
+  barGeometry,
+  geometryOf,
+  geometryRect,
+  hangs,
+  plainRect,
+  rectsPath,
+} from "./layout/bar-geometry";
+import type { BarGeometry } from "./layout/bar-geometry";
 import { DETAIL_PARTS, boxPoints, detailParts, drawnBar } from "./layout/bar-shapes";
 import type { SeriesModel } from "./layout/cartesian-model";
+import { floorSpanOf } from "./layout/floor-settle";
 import { tickWidth, valueAt } from "./layout/plot-frame";
-import type { BarMetrics, PlotFrame, PlotRect, SubBand } from "./layout/plot-frame";
+import type { BarMetrics, PlotFrame, PlotRect, StackPlace, SubBand } from "./layout/plot-frame";
 
 /**
  * Mark a drawn bar's body, or the active overlay, with what its drawn geometry says now: the side
@@ -64,11 +76,16 @@ function writeBox(node: Element, rect: PlotRect): void {
   writeAttribute(node, "points", boxPoints(rect));
 }
 
-/** What a bar's writer reads besides the numbers: the frame, the look and the fills by side. */
+/**
+ * What a bar's writer reads besides the numbers: the frame, the look, the fills by side, and for a
+ * stacked bar its seat among the stack floors, which decide in each frame whether it owns its
+ * side's pixel floor. A loose bar always owns its own.
+ */
 type BarWriterLook = {
   readonly frame: PlotFrame;
   readonly variant: ChartBarVariant;
   readonly fills: SideFills;
+  readonly seat: StackSeat | null;
 };
 
 /** The elements a bar draws into: its body, and the details of a look that adds parts. */
@@ -90,14 +107,46 @@ const barElements = partsCache((node): BarElements =>
 
 /**
  * Draw one bar from the loop's numbers. Every shape it draws comes from the numbers: its rectangle,
- * seam, side, rounded end, cap and blocks track, and which side's fill it takes.
+ * seam, side, rounded end, cap and blocks track, and which side's fill it takes. A stacked bar
+ * records its segment with the stack floors, which paint it with the place they decide.
  */
 function drawBar(node: SVGElement, look: BarWriterLook, values: MarkValues): void {
-  const { frame, variant, fills } = look;
+  const { frame, seat } = look;
+  // The geometry is a copy of the numbers, which the loop draws a tween's frames into and reuses.
   const geometry = geometryOf(values);
+  // The bar's span: the device pixel columns it covers along the slot axis, a coarse bar's whole
+  // run among them, and the pixels it covers along the value axis with no floor.
+  const plain = plainRect(frame, geometry);
+  if (seat === null) {
+    paintBar(node, look, geometry, "outer", plain);
+    return;
+  }
+  const [, , base, tip] = geometry;
+  seat.floors.draw(
+    seat.mark,
+    seat.stack,
+    [floorSpanOf(frame, plain, seat.series, [base, tip])],
+    frame,
+    (kept) => paintBar(node, look, geometry, kept[0] === 1 ? "outer" : "inner", plain)
+  );
+}
+
+/** Paint one bar from its geometry and plain rectangle, owning its stack side's pixel floor or not. */
+function paintBar(
+  node: SVGElement,
+  look: BarWriterLook,
+  geometry: BarGeometry,
+  place: StackPlace,
+  plain: PlotRect
+): void {
+  const { frame, variant, fills } = look;
   const negative = hangs(frame, geometry);
   const top = topWeight(geometry);
-  const drawn = drawnBar(frame, variant, geometryRect(frame, geometry), { negative, top });
+  const drawn = drawnBar(frame, variant, geometryRect(frame, geometry, place, plain), {
+    negative,
+    top,
+    place,
+  });
   const { body, details } = barElements(node);
   if (body instanceof SVGElement) {
     writeBox(body, drawn.body);
@@ -113,16 +162,37 @@ function drawBar(node: SVGElement, look: BarWriterLook, values: MarkValues): voi
   writeStyle(node, "--_fill", (negative ? fills.negative : fills.positive) ?? null);
 }
 
-/** What the overlay's writer reads: the frame, and the active reading's fills, which each paint sets. */
-type OverlayLook = { readonly frame: PlotFrame; readonly fills: { readonly current: SideFills } };
+/**
+ * What the overlay's writer reads: the frame, the active reading's fills and resting place, which
+ * each paint sets, and on a stack where its series reads the stack floors. The overlay draws after
+ * the marks it joins in every frame, so it takes the floor owner they decided, and the stack floors
+ * redraw it where it rests when that owner changes.
+ */
+type OverlayLook = {
+  readonly frame: PlotFrame;
+  readonly fills: { readonly current: SideFills };
+  /** The active reading's place at rest, where its series draws no span under the overlay. */
+  readonly rest: { readonly current: StackPlace };
+  readonly seat: { readonly floors: StackFloors; readonly stack: string; readonly series: string } | null;
+};
 
 /** Draw the active overlay from the loop's numbers, as `drawBar` draws a bar, with no seam. */
 function drawOverlay(overlay: SVGPolygonElement, look: OverlayLook, values: MarkValues): void {
-  const { frame } = look;
+  const { frame, seat } = look;
   const fills = look.fills.current;
   const geometry = geometryOf(values);
   const negative = hangs(frame, geometry);
-  writeBox(overlay, geometryRect(frame, geometry));
+  const plain = plainRect(frame, geometry);
+  // On a stack the overlay takes the place of its series' spans under the device pixel columns it
+  // covers, on the side of zero its drawn tip lies in this frame, whether a bar, a path column or
+  // a decimated bucket's column draws them.
+  const [, , base, tip] = geometry;
+  const place =
+    seat === null
+      ? "outer"
+      : (seat.floors.placeOver(seat.stack, floorSpanOf(frame, plain, seat.series, [base, tip]), frame) ??
+        look.rest.current);
+  writeBox(overlay, geometryRect(frame, geometry, place, plain));
   writeSide(overlay, negative, topWeight(geometry));
   writeStyle(overlay, "--_fill", (negative ? fills.negative : fills.positive) ?? null);
 }
@@ -135,6 +205,8 @@ function drawOverlay(overlay: SVGPolygonElement, look: OverlayLook, values: Mark
 const BarMark = memo(function BarMark({
   bar,
   series,
+  stack,
+  seriesKey,
   look,
   intro,
   motion,
@@ -144,6 +216,10 @@ const BarMark = memo(function BarMark({
   readonly bar: BarDraw;
   /** The series ordinal, which every mark writes on `data-series`, per CONTRACT section 11. */
   readonly series: number;
+  /** The series' stack, or undefined for a loose series. */
+  readonly stack: string | undefined;
+  /** The series' config key, which names the bar's spans among the stack floors. */
+  readonly seriesKey: string;
   readonly look: BarLook;
   readonly intro: "fade" | "none" | undefined;
   readonly motion: ChartMotion;
@@ -156,13 +232,15 @@ const BarMark = memo(function BarMark({
   // tweens too, so the bar and its followers agree in every frame, across zero as well.
   // The look keys on the fill strings, which a data commit lays out again for an unchanged bar.
   const { positive, negative: negativeFill } = bar.fills;
+  const seat = useStackSeat(motion, stack, seriesKey);
   const writerLook = useMemo(
     (): BarWriterLook => ({
       frame: look.frame,
       variant: look.variant,
       fills: { positive, negative: negativeFill },
+      seat,
     }),
-    [look, positive, negativeFill]
+    [look, positive, negativeFill, seat]
   );
   // The parts the bar's look draws at its top weight, which its children follow.
   const detail = detailParts(look.variant, bar.geometry[5]);
@@ -186,6 +264,7 @@ const BarMark = memo(function BarMark({
       parts: drawnBar(look.frame, look.variant, bar.rect, {
         negative: hangs(look.frame, bar.geometry),
         top: bar.geometry[5],
+        place: bar.cell.place,
       }),
       top: String(topWeight(bar.geometry)),
     }),
@@ -368,6 +447,8 @@ export function SeriesBars({
             key={bar.key}
             bar={bar}
             series={series.seriesIndex}
+            stack={series.stack}
+            seriesKey={series.key}
             look={look}
             intro={intro}
             motion={motion}
@@ -442,14 +523,37 @@ export function ActiveBar({
   readonly form: "bars" | "path";
 }): ReactElement {
   const { model, motion } = context;
-  // The active reading's fills on either side, which each paint sets before it places the overlay.
+  // The active reading's fills on either side and its resting place, which each paint sets before
+  // it places the overlay.
   const fills = useRef<SideFills>({ positive: undefined, negative: undefined });
-  const overlayLook = useMemo((): OverlayLook => ({ frame, fills }), [frame]);
+  const rest = useRef<StackPlace>("outer");
+  const { stack, key } = series;
+  const overlayLook = useMemo(
+    (): OverlayLook => ({
+      frame,
+      fills,
+      rest,
+      seat: stack === undefined ? null : { floors: stackFloorsOf(motion), stack, series: key },
+    }),
+    [frame, motion, stack, key]
+  );
   const {
     ref: activeRef,
     node,
+    drawn,
     place,
   } = useMotionMark(motion, drawOverlay, overlayLook, barAxes(frame.orientation));
+  // The overlay redraws where it rests when its stack's floors change, even while its own numbers
+  // rest.
+  useLayoutEffect(() => {
+    const { seat } = overlayLook;
+    if (seat === null) return undefined;
+    return seat.floors.watch(seat.stack, () => {
+      const overlay = node();
+      const values = drawn();
+      if (overlay !== null && values !== null) drawOverlay(overlay, overlayLook, values);
+    });
+  }, [overlayLook, node, drawn]);
   const placeFor = useFollowerPlacement(context.update, plot, frame.orientation, frame);
   useChartFollower("Chart.Bar", (active, cause) => {
     // The overlay joins what draws its slot in every paint: in the element form the bar, its whole
@@ -477,6 +581,7 @@ export function ActiveBar({
       "data-quality": quality,
     });
     fills.current = overlayFills(prefix, form, variant, paint, { own, projected });
+    rest.current = cell.place;
     writeStyle(overlay, "--chart-bar-paint", own ?? null);
     if (target !== null) place(target, placement);
   });

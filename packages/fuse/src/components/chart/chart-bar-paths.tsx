@@ -8,8 +8,17 @@
 import { useCallback, useLayoutEffect, useMemo, useRef } from "react";
 import type { ReactElement } from "react";
 
-import { COLUMN_AXES, COLUMN_STRIDE, columnKind, columnsDrawing, layoutColumns } from "./chart-bar-columns";
-import type { ColumnPart, ColumnsDrawing, ColumnTopology } from "./chart-bar-columns";
+import {
+  COLUMN_AXES,
+  COLUMN_STRIDE,
+  columnBody,
+  columnEnds,
+  columnKind,
+  columnsDrawing,
+  emphasisSpan,
+  layoutColumns,
+} from "./chart-bar-columns";
+import type { ColumnEntry, ColumnPart, ColumnsDrawing, ColumnTopology } from "./chart-bar-columns";
 import { pastSpanEnd } from "./chart-bar-draw";
 import { ListFills } from "./chart-bar-fills";
 import type { SeriesDraw } from "./chart-bar-series";
@@ -18,9 +27,13 @@ import type { MarkValues } from "./chart-motion";
 import { placementOf, useCommitMotion, useFirstDraw, useMotionMark } from "./chart-motion-mark";
 import { topologyAt } from "./chart-path-draw";
 import { usePathMark } from "./chart-series-path";
+import { useStackSeat } from "./chart-stack-floors";
+import type { StackSeat } from "./chart-stack-floors";
 import type { ChartBarVariant } from "./chart-types";
-import { snapY, tickWidth, valueAt } from "./layout/plot-frame";
-import type { PlotFrame } from "./layout/plot-frame";
+import { floorSpanOf } from "./layout/floor-settle";
+import type { FloorSpan } from "./layout/floor-settle";
+import { frameRect, snapY, tickWidth, valueAt } from "./layout/plot-frame";
+import type { PlotFrame, PlotRect, StackPlace } from "./layout/plot-frame";
 
 /**
  * Scale the path form's marks from the zero line by the loop's number. The paths draw the latest
@@ -39,12 +52,16 @@ function drawGrow(node: SVGGElement, look: { readonly frame: PlotFrame }, values
   );
 }
 
-/** What the columns' writer reads besides the numbers: the frame and the topology. */
+/**
+ * What the columns' writer reads besides the numbers: the frame, the topology and, for a stacked
+ * series, its seat among the stack floors.
+ */
 type ColumnsLook = {
   readonly frame: PlotFrame;
   readonly topology: ColumnTopology;
   /** The topology of the route a data update tweens, while it runs. */
   readonly moving: { current: ColumnTopology | null };
+  readonly seat: StackSeat | null;
 };
 
 /** The parts a paint step's paths take, which a path's `data-part` names. */
@@ -65,7 +82,53 @@ const columnParts = partsCache((group) => ({
 function drawColumns(group: SVGGElement, look: ColumnsLook | null, values: MarkValues): void {
   if (look === null) return;
   const topology = topologyAt(look.moving.current, look.topology, values.length / COLUMN_STRIDE);
-  const drawing = columnsDrawing(look.frame, topology, values);
+  const { seat } = look;
+  // A copy that leaves with an old form draws its resting owners and records nothing.
+  if (seat === null || group.closest("[data-outgoing]") !== null) {
+    paintColumns(group, columnsDrawing(look.frame, topology, values));
+    return;
+  }
+  // A stacked series records each drawn column's span, and the stack floors paint it with the
+  // floors they settle. The loop draws a tween's frames into lists it reuses, so the paint keeps
+  // its own copy.
+  const own = [...values];
+  const { frame } = look;
+  const spans: FloorSpan[] = [];
+  /** Each entry's column with no floor, which the batch's own paint reuses and then lets go. */
+  let bodies: (PlotRect | undefined)[] | undefined = [];
+  /** Each entry's span's position in `spans`, -1 for an entry with no column. */
+  const spanAt = new Int32Array(topology.entries.length).fill(-1);
+  /** Each column-less emphasis box's span, which reads the place of its series' spans under it. */
+  const boxes: (FloorSpan | undefined)[] = [];
+  topology.entries.forEach((entry, index) => {
+    const ends = columnEnds(own, index, entry);
+    if (entry.fill < 0) {
+      if (!entry.emphasis) return;
+      const box = frameRect(frame, emphasisSpan(frame, own, index), ends);
+      boxes[index] = floorSpanOf(frame, box, seat.series, ends);
+      return;
+    }
+    const plain = columnBody(frame, own, index, entry);
+    if (bodies !== undefined) bodies[index] = plain;
+    spanAt[index] = spans.length;
+    spans.push(floorSpanOf(frame, plain, seat.series, ends));
+  });
+  seat.floors.draw(seat.mark, seat.stack, spans, frame, (kept) => {
+    // A column takes its own span's place, and an emphasis box with no column of its own the place
+    // of its series' spans under it, or its resting place where they draw none.
+    const placeOf = (entry: ColumnEntry, index: number): StackPlace => {
+      const at = spanAt[index] ?? -1;
+      if (at !== -1) return kept[at] === 1 ? "outer" : "inner";
+      const box = boxes[index];
+      return (box === undefined ? undefined : seat.floors.placeOver(seat.stack, box, frame)) ?? entry.place;
+    };
+    paintColumns(group, columnsDrawing(frame, topology, own, placeOf, bodies));
+    bodies = undefined;
+  });
+}
+
+/** Write a drawing onto the columns' paths and emphasis boxes. */
+function paintColumns(group: SVGGElement, drawing: ColumnsDrawing): void {
   const { paths, boxes } = columnParts(group);
   for (const { path, part, fill } of paths) {
     writeAttribute(path, "d", (part === undefined ? drawing.missing : drawing[part][fill]) ?? "");
@@ -179,7 +242,8 @@ export function SeriesPaths({
     );
   });
   const moving = useRef<ColumnTopology | null>(null);
-  const look = useMemo((): ColumnsLook => ({ frame, topology, moving }), [frame, topology]);
+  const seat = useStackSeat(motion, series.stack, series.key);
+  const look = useMemo((): ColumnsLook => ({ frame, topology, moving, seat }), [frame, topology, seat]);
   const kind = useMemo(() => columnKind(frame.grid.step, valueAt(frame, 0)), [frame]);
   const placed = useMemo(
     () => ({ look, kind, path: columns, topology, rest: columns.values }),

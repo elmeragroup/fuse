@@ -126,12 +126,12 @@ describe("stacked cells", () => {
     const [p, q] = model.series;
     if (p === undefined || q === undefined) throw new Error("no series");
     expect(barCells(model, p)).toEqual([
-      { slot: 0, position: 0, span: 1, extent: [0, 3], negative: false, stackTop: false },
-      { slot: 1, position: 1, span: 1, extent: [0, 2], negative: false, stackTop: false },
+      { slot: 0, position: 0, span: 1, extent: [0, 3], negative: false, stackTop: false, place: "inner" },
+      { slot: 1, position: 1, span: 1, extent: [0, 2], negative: false, stackTop: false, place: "inner" },
     ]);
     expect(barCells(model, q)).toEqual([
-      { slot: 0, position: 0, span: 1, extent: [3, 8], negative: false, stackTop: true },
-      { slot: 1, position: 1, span: 1, extent: [2, 4], negative: false, stackTop: true },
+      { slot: 0, position: 0, span: 1, extent: [3, 8], negative: false, stackTop: true, place: "outer" },
+      { slot: 1, position: 1, span: 1, extent: [2, 4], negative: false, stackTop: true, place: "outer" },
     ]);
   });
 
@@ -325,7 +325,7 @@ describe("one bar gap per series", () => {
             orientation === "vertical" ? [rect.x, rect.x + rect.width] : [rect.y, rect.y + rect.height];
           const rest = (frame: PlotFrame, at: number) => barSpan(frame, at, METRICS, WHOLE_BAND);
           const drawn = (start: number, end: number) =>
-            along(geometryRect(to, geometryOf([start, end, 100, 0, 0, 1])));
+            along(geometryRect(to, geometryOf([start, end, 100, 0, 0, 1]), "outer"));
           for (let at = 0; at < Math.min(count, count + change); at += 1) {
             const [a0, a1] = rest(from, at);
             const [b0, b1] = rest(to, at);
@@ -430,28 +430,45 @@ describe("a bar drawn from its geometry", () => {
 
   it("spans its base to its tip on either side, and nothing where its tip meets its base", () => {
     // A tip at 50 px draws up from the base, one at 150 px down from it, one at 100 px nothing.
-    expect(geometryRect(vertical, [10, 30, 100, 50, 0, 1])).toEqual({ x: 10, width: 20, y: 50, height: 50 });
-    expect(geometryRect(vertical, [10, 30, 100, 150, 0, 1])).toEqual({
+    expect(geometryRect(vertical, [10, 30, 100, 50, 0, 1], "outer")).toEqual({
+      x: 10,
+      width: 20,
+      y: 50,
+      height: 50,
+    });
+    expect(geometryRect(vertical, [10, 30, 100, 150, 0, 1], "outer")).toEqual({
       x: 10,
       width: 20,
       y: 100,
       height: 50,
     });
-    expect(geometryRect(vertical, [10, 30, 100, 100, 0, 1]).height).toBe(0);
+    expect(geometryRect(vertical, [10, 30, 100, 100, 0, 1], "outer").height).toBe(0);
   });
 
   it("stops its drawn seam short of its tip, toward its base, and keeps no more than its length", () => {
-    // A 2 px seam ends the 50 px bar at 52 px above the base, or at 148 px below it, a bar 1 px
-    // long keeps nothing, and a seam halfway open in a tween frame, 1 px, ends it at 51 px.
-    expect(geometryRect(vertical, [10, 30, 100, 50, 2, 1])).toEqual({ x: 10, width: 20, y: 52, height: 48 });
-    expect(geometryRect(vertical, [10, 30, 100, 150, 2, 1])).toEqual({
+    // A 2 px seam ends the 50 px bar at 52 px above the base, or at 148 px below it, an inner
+    // segment 1 px long keeps nothing, and a seam halfway open in a tween frame, 1 px, ends it at
+    // 51 px. The floor's owner 1 px long keeps the floor's pixel from its base, 99 to 100 px.
+    expect(geometryRect(vertical, [10, 30, 100, 50, 2, 1], "outer")).toEqual({
+      x: 10,
+      width: 20,
+      y: 52,
+      height: 48,
+    });
+    expect(geometryRect(vertical, [10, 30, 100, 150, 2, 1], "outer")).toEqual({
       x: 10,
       width: 20,
       y: 100,
       height: 48,
     });
-    expect(geometryRect(vertical, [10, 30, 100, 99, 2, 1]).height).toBe(0);
-    expect(geometryRect(vertical, [10, 30, 100, 50, 1, 0.5])).toEqual({
+    expect(geometryRect(vertical, [10, 30, 100, 99, 2, 1], "inner").height).toBe(0);
+    expect(geometryRect(vertical, [10, 30, 100, 99, 2, 1], "outer")).toEqual({
+      x: 10,
+      width: 20,
+      y: 99,
+      height: 1,
+    });
+    expect(geometryRect(vertical, [10, 30, 100, 50, 1, 0.5], "outer")).toEqual({
       x: 10,
       width: 20,
       y: 51,
@@ -515,8 +532,8 @@ describe("barCells of a window", () => {
     const series = windowed.series[0];
     if (series === undefined) throw new Error("no series");
     expect(barCells(windowed, series)).toEqual([
-      { slot: 1, position: 0, span: 1, extent: [0, 4], negative: false, stackTop: true },
-      { slot: 2, position: 1, span: 1, extent: [-4, 0], negative: true, stackTop: true },
+      { slot: 1, position: 0, span: 1, extent: [0, 4], negative: false, stackTop: true, place: "outer" },
+      { slot: 2, position: 1, span: 1, extent: [-4, 0], negative: true, stackTop: true, place: "outer" },
     ]);
   });
 });

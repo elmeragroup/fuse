@@ -7,7 +7,7 @@
  * and bands that snap each edge only past 2,000 slots or below a device pixel a slot), each bar
  * its band less one gap of 25 % of a band in whole
  * device pixels, the path form's columns past 100 categories,
- * the pixel floor, the browser's snap, hairlines, the missing tick, each line vertex and dot on its
+ * the pixel floor on both axes, the browser's snap, hairlines, the missing tick, each line vertex and dot on its
  * slot's crosshair column, and above 2,000 categories a brute-force M4 scan (8.12).
  */
 
@@ -361,6 +361,17 @@ export function expected(world: World, plot: Plot, active: string | null): Expec
   // window that keeps only missing slots of a domain with readings still draws their ticks.
   const empty = world.data.every(({ v, w }) => v === null && w === undefined);
   const tipOf = (v: number) => snapAcross(valueAt(v));
+  // The value floor: a body of a reading other than 0 whose tip snaps onto its base keeps the device
+  // pixel past the base toward its far end, up or right for a positive reading, unless that pixel
+  // leaves the plot's drawn pixels.
+  const plotEnd = snapAcross(plot.across);
+  const valueFloor = (base: number, tip: number, toStart: boolean): Span => {
+    if (Math.abs(tip - base) > SERIAL) return [Math.min(base, tip), Math.max(base, tip)];
+    const kept: Span = toStart ? [base - device, base] : [base, base + device];
+    return kept[0] >= -SERIAL && kept[1] <= plotEnd + SERIAL ? kept : [base, base];
+  };
+  const barAcross = (v: number): Span =>
+    v === 0 ? [baseline, baseline] : valueFloor(baseline, tipOf(v), vertical ? v > 0 : v < 0);
   const bars = new Map<string, { along: Span; across: Span; negative: boolean }>();
   const ticks = new Map<string, { along: Span; base: number }>();
   windowed.forEach(({ name, v }, k) => {
@@ -373,25 +384,12 @@ export function expected(world: World, plot: Plot, active: string | null): Expec
     }
     // A column of the path form draws only where it has length.
     if (path && v === 0) return;
-    const tip = tipOf(v);
-    bars.set(name, {
-      along: barAlong(k),
-      across: [Math.min(baseline, tip), Math.max(baseline, tip)],
-      negative: v < 0,
-    });
+    bars.set(name, { along: barAlong(k), across: barAcross(v), negative: v < 0 });
   });
   const activeIndex = active === null ? -1 : windowed.findIndex(({ name }) => name === active);
   const activeReading = windowed[activeIndex]?.v ?? null;
   const overlay =
-    activeReading === null
-      ? null
-      : {
-          along: barAlong(activeIndex),
-          across: [
-            Math.min(baseline, tipOf(activeReading)),
-            Math.max(baseline, tipOf(activeReading)),
-          ] as const,
-        };
+    activeReading === null ? null : { along: barAlong(activeIndex), across: barAcross(activeReading) };
   // ActiveValue shows the active reading, or the window's last one while nothing is active.
   const lastIndex = windowed.findLastIndex(({ v }) => v !== null);
   const shownIndex = active === null ? lastIndex : activeIndex;
@@ -493,7 +491,12 @@ export function expected(world: World, plot: Plot, active: string | null): Expec
       : decimatedColumns(windowed, stacked)
           .map(({ from, to, low, high }) => {
             const middle = Math.min(Math.max(Math.floor((from + to) / 2), 0), count - 1);
-            const across: Span = [snapAcross(valueAt(high)), snapAcross(valueAt(low))];
+            // A column grows from its end nearer zero toward its larger extreme, up the plot.
+            const across = valueFloor(
+              snapAcross(valueAt(Math.abs(low) <= Math.abs(high) ? low : high)),
+              snapAcross(valueAt(Math.abs(low) <= Math.abs(high) ? high : low)),
+              Math.abs(low) <= Math.abs(high)
+            );
             return { along: floor("along", from * step, to * step, band(middle)), across };
           })
           .toSorted((a, b) => a.along[0] - b.along[0] || a.across[0] - b.across[0]),

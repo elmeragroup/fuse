@@ -751,32 +751,122 @@ function floorSpan(
 }
 
 /**
- * Snap a mark's drawn body: its slot-axis edges through `snapBarSpan`, so a body on the grid draws
- * as it is and a narrower one keeps the pixel floor, and its value-axis edges onto the device
- * pixels, so a zero value stays flat. Every rectangle a bar, its look's parts, the active overlay,
- * a path column or the tooltip row draws comes through here, after any shaping, so nothing narrows
- * a body after the floor.
+ * Which way a body's value-axis pixel floor grows: toward the start of the value axis's coordinates
+ * (up a vertical frame, left across a horizontal one), toward their end, or not at all. A body's
+ * floor grows from its base toward its far end, so `"start"` is a positive vertical bar's and a
+ * negative horizontal bar's, and `"end"` the others'. A stack's inner segment takes `"none"`.
+ */
+export type ValueFloor = "start" | "end" | "none";
+
+/**
+ * Where a body sits in its stack: `"outer"` for a stack's outer segment on its side of zero or a
+ * loose bar, which take the value-axis pixel floor, and `"inner"` for a segment another one covers,
+ * which does not, so the segments of a stack keep tiling.
+ */
+export type StackPlace = "outer" | "inner";
+
+/**
+ * Snap a mark's drawn body. Its slot-axis edges go through `snapBarSpan`, so a body on the grid
+ * draws as it is and a narrower one keeps the pixel floor. Its value-axis edges each snap to their
+ * device pixel, and a body of finite non-zero length there that snaps to nothing keeps one device
+ * pixel: its base edge stays on the pixel edge it snapped to, where the zero rule or the segment
+ * below it lies, and its far edge moves one device pixel on, the way `floor` names. So a reading
+ * under a device pixel still draws, away from zero, while a zero reading, whose body has no length,
+ * stays flat. A kept pixel that would cross the plot's edge, as a body past the domain's end
+ * reaches, stays out, so the body stays flat inside the plot rather than leave its base. `"none"`
+ * keeps the plain snap, as a stack's inner segment takes it: its far edge is the next segment's
+ * base, and a pixel there would cover that segment. Every rectangle a bar, its look's parts, the
+ * active overlay, a path column or the tooltip row draws comes through here, after any shaping, so
+ * nothing narrows a body after the floor.
  *
  * @param frame - The layout's frame.
  * @param rect - The unsnapped body.
+ * @param floor - Which way the value-axis pixel floor grows from the body's base, or `"none"`.
  * @param within - The snapped span of the bar a shaped part lies in, which its floor keeps its
  *   pixel inside, as a strip narrower than a device pixel inside a one-pixel bar takes that pixel.
  * @returns The snapped body.
  */
-export function snapBody(frame: PlotFrame, rect: PlotRect, within?: readonly [number, number]): PlotRect {
+export function snapBody(
+  frame: PlotFrame,
+  rect: PlotRect,
+  floor: ValueFloor,
+  within?: readonly [number, number]
+): PlotRect {
   const vertical = frame.orientation === "vertical";
   const [alongStart, alongSize] = vertical ? [rect.x, rect.width] : [rect.y, rect.height];
   const [acrossStart, acrossSize] = vertical ? [rect.y, rect.height] : [rect.x, rect.width];
   const [a0, a1] = snapBarSpan(frame, alongStart, alongStart + Math.max(0, alongSize), within);
-  const c0 = snapAcross(frame, Math.min(acrossStart, acrossStart + acrossSize));
-  const c1 = snapAcross(frame, Math.max(acrossStart, acrossStart + acrossSize));
+  const low = Math.min(acrossStart, acrossStart + acrossSize);
+  const high = Math.max(acrossStart, acrossStart + acrossSize);
+  const [c0, c1] = floorValue(frame, snapAcross(frame, low), snapAcross(frame, high), high - low, floor);
   return vertical
     ? { x: a0, y: c0, width: a1 - a0, height: c1 - c0 }
     : { x: c0, y: a0, width: c1 - c0, height: a1 - a0 };
 }
 
 /**
- * A snapped rectangle from a span along the slot axis and two coordinates along the value axis.
+ * The body that owns its stack side's value-axis pixel floor, from its body snapped with no floor,
+ * the one route every floored body takes: a bar, a path column, an emphasis box, the active overlay
+ * and the stack floors' proposals. The floor reads the body's whole length from its base to its
+ * tip, so a body whose seam takes all of it still keeps its pixel.
+ *
+ * @param frame - The layout's frame.
+ * @param plain - The body as `frameRect` snaps it, with no floor.
+ * @param across - The body's unsnapped base and tip along the value axis, base first.
+ * @returns The body with the value-axis pixel floor.
+ */
+export function floorBody(
+  frame: PlotFrame,
+  plain: PlotRect,
+  across: readonly [base: number, tip: number]
+): PlotRect {
+  const vertical = frame.orientation === "vertical";
+  const [from, to] = vertical ? [plain.y, plain.y + plain.height] : [plain.x, plain.x + plain.width];
+  const [c0, c1] = floorAcross(frame, from, to, across);
+  if (c0 === from && c1 === to) return plain;
+  return vertical ? { ...plain, y: c0, height: c1 - c0 } : { ...plain, x: c0, width: c1 - c0 };
+}
+
+/**
+ * The value-axis span a body covers with the floor, from the span its plain snap covers, as
+ * `floorBody` takes it.
+ *
+ * @param frame - The layout's frame.
+ * @param from - Where the plain snap's span starts along the value axis.
+ * @param to - Where it ends.
+ * @param across - The body's unsnapped base and tip along the value axis, base first.
+ * @returns The span with the floor.
+ */
+export function floorAcross(
+  frame: PlotFrame,
+  from: number,
+  to: number,
+  across: readonly [base: number, tip: number]
+): readonly [number, number] {
+  const [base, tip] = across;
+  return floorValue(frame, from, to, Math.abs(tip - base), tip < base ? "start" : "end");
+}
+
+/** The value-axis pixel floor `snapBody` describes, from the snapped edges and the unsnapped length. */
+function floorValue(
+  frame: PlotFrame,
+  from: number,
+  to: number,
+  length: number,
+  floor: ValueFloor
+): readonly [number, number] {
+  if (floor === "none" || to > from || !(length > 0) || !Number.isFinite(length)) return [from, to];
+  const device = 1 / frame.box.dpr;
+  const kept: readonly [number, number] = floor === "start" ? [from - device, from] : [to, to + device];
+  // The kept pixel lies wholly inside the plot's drawn pixels, or the body stays flat. Snapped
+  // edges are differences of page pixels, off by float error, so the bounds allow it.
+  const inside = kept[0] >= -TIE && kept[1] <= snapAcross(frame, acrossLength(frame)) + TIE;
+  return inside ? kept : [from, to];
+}
+
+/**
+ * A snapped rectangle from a span along the slot axis and two coordinates along the value axis,
+ * with no value-axis pixel floor, which `floorBody` adds to the body that owns it.
  *
  * @param frame - The layout's frame.
  * @param along - The start and end along the slot axis.
@@ -795,7 +885,8 @@ export function frameRect(
     frame,
     frame.orientation === "vertical"
       ? { x: along[0], width: span, y: start, height: size }
-      : { x: start, width: size, y: along[0], height: span }
+      : { x: start, width: size, y: along[0], height: span },
+    "none"
   );
 }
 

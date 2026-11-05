@@ -22,5 +22,5 @@ export function barRect(
   sub: SubBand,
   seam: "cut" | "whole"
 ): PlotRect {
-  return geometryRect(frame, barGeometry(frame, cell, metrics, sub, seam));
+  return geometryRect(frame, barGeometry(frame, cell, metrics, sub, seam), cell.place);
 }

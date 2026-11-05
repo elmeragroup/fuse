@@ -11,6 +11,7 @@ import {
   WHOLE_BAND,
   barSpan,
   centreOf,
+  floorBody,
   frameRect,
   hairline,
   optionBand,
@@ -29,7 +30,7 @@ import {
   strokeCentre,
   valueAt,
 } from "./plot-frame";
-import type { PlotBox } from "./plot-frame";
+import type { PlotBox, PlotFrame } from "./plot-frame";
 
 function box(width: number, height: number, dpr = 1, left = 0, top = 0): PlotBox {
   return { width, height, dpr, left, top };
@@ -127,7 +128,7 @@ describe("snapping", () => {
     // the start 1.6 snaps to 2 and the end lies 3 px on at 5. Across the value axis each edge snaps
     // alone, 2.6 to 3 and 3.8 to 4, so the height is 1.
     const frame = plotFrame(box(100, 100), "vertical", 1, [0, 1]);
-    expect(snapBody(frame, { x: 1.4, y: 2.6, width: 3.4, height: 1.2 })).toEqual({
+    expect(snapBody(frame, { x: 1.4, y: 2.6, width: 3.4, height: 1.2 }, "start")).toEqual({
       x: 2,
       y: 3,
       width: 3,
@@ -135,23 +136,54 @@ describe("snapping", () => {
     });
   });
 
-  it("keeps one device pixel along the slot axis only, so a zero value stays flat", () => {
-    // 0.2 px from 1.4 snaps both slot-axis edges to 1, and the floor takes the body to 2. The value
-    // axis keeps its 0.2 px height snapped to nothing, as a zero reading draws.
+  it("keeps one device pixel along the slot axis, and along the value axis grows it away from the base", () => {
+    // 0.2 px from 1.4 snaps both slot-axis edges to 1, and the floor takes the body to 2. Across the
+    // value axis 2.6 to 2.8 snaps both edges to 3 at 1x. The base stays on 3 and the far edge moves
+    // one device pixel on: up to 2 for "start", down to 4 for "end".
     const vertical = plotFrame(box(100, 100), "vertical", 1, [0, 1]);
     const horizontal = plotFrame(box(100, 100), "horizontal", 1, [0, 1]);
-    expect(snapBody(vertical, { x: 1.4, y: 2.6, width: 0.2, height: 0.2 })).toEqual({
+    const thin = { x: 1.4, y: 2.6, width: 0.2, height: 0.2 };
+    expect(snapBody(vertical, thin, "start")).toEqual({ x: 1, y: 2, width: 1, height: 1 });
+    expect(snapBody(vertical, thin, "end")).toEqual({ x: 1, y: 3, width: 1, height: 1 });
+    const across = { x: 2.6, y: 1.4, width: 0.2, height: 0.2 };
+    expect(snapBody(horizontal, across, "end")).toEqual({ x: 3, y: 1, width: 1, height: 1 });
+    expect(snapBody(horizontal, across, "start")).toEqual({ x: 2, y: 1, width: 1, height: 1 });
+  });
+
+  it("keeps a body of no value-axis length flat, and a stack's inner segment its plain snap", () => {
+    const vertical = plotFrame(box(100, 100), "vertical", 1, [0, 1]);
+    // A zero reading has no length, so whichever way its floor grows it draws nothing.
+    for (const floor of ["start", "end", "none"] as const) {
+      expect(snapBody(vertical, { x: 1, y: 3, width: 4, height: 0 }, floor).height).toBe(0);
+    }
+    expect(snapBody(vertical, { x: 1, y: 2.6, width: 4, height: 0.2 }, "none")).toEqual({
       x: 1,
       y: 3,
-      width: 1,
+      width: 4,
       height: 0,
     });
-    expect(snapBody(horizontal, { x: 2.6, y: 1.4, width: 0.2, height: 0.2 })).toEqual({
-      x: 3,
-      y: 1,
-      width: 0,
-      height: 1,
-    });
+  });
+
+  it("keeps the value-axis floor's device pixel at 2x a half CSS pixel from the base", () => {
+    // At 2x 2.6 and 2.65 lie at device 5.2 and 5.3, both on edge 5, 2.5 px. The kept pixel is half
+    // a CSS pixel: 2 to 2.5 up, 2.5 to 3 down.
+    const frame = plotFrame(box(100, 100, 2), "vertical", 1, [0, 1]);
+    const thin = { x: 1, y: 2.6, width: 4, height: 0.05 };
+    expect(snapBody(frame, thin, "start")).toEqual({ x: 1, y: 2, width: 4, height: 0.5 });
+    expect(snapBody(frame, thin, "end")).toEqual({ x: 1, y: 2.5, width: 4, height: 0.5 });
+  });
+
+  it("keeps the value-axis floor's pixel inside the plot, or the body flat", () => {
+    // 0.1 to 0.3 snaps to the plot's top edge, 0, so a pixel above it lies outside the plot. 99.7 to
+    // 99.9 snaps to its bottom edge, 100, and a pixel below it lies outside too. Grown inward, each
+    // keeps its pixel.
+    const frame = plotFrame(box(100, 100), "vertical", 1, [0, 1]);
+    const top = { x: 1, y: 0.1, width: 4, height: 0.2 };
+    const bottom = { x: 1, y: 99.7, width: 4, height: 0.2 };
+    expect(snapBody(frame, top, "start")).toEqual({ x: 1, y: 0, width: 4, height: 0 });
+    expect(snapBody(frame, top, "end")).toEqual({ x: 1, y: 0, width: 4, height: 1 });
+    expect(snapBody(frame, bottom, "end")).toEqual({ x: 1, y: 100, width: 4, height: 0 });
+    expect(snapBody(frame, bottom, "start")).toEqual({ x: 1, y: 99, width: 4, height: 1 });
   });
 });
 
@@ -379,11 +411,62 @@ describe("the value axis", () => {
     expect(snapAcrossSpan(vertical, 50, 50)).toEqual([50, 50]);
   });
 
-  it("builds a rectangle from a slot span and two values in either order", () => {
+  it("builds a rectangle from a slot span and a base and tip on either side of it", () => {
     const vertical = plotFrame(box(300, 200), "vertical", 1, [0, 1]);
     const horizontal = plotFrame(box(300, 200), "horizontal", 1, [0, 1]);
-    expect(frameRect(vertical, [10, 40], [150, 50])).toEqual({ x: 10, y: 50, width: 30, height: 100 });
-    expect(frameRect(horizontal, [10, 40], [150, 50])).toEqual({ x: 50, y: 10, width: 100, height: 30 });
+    expect(frameRect(vertical, [10, 40], [150, 50])).toEqual({
+      x: 10,
+      y: 50,
+      width: 30,
+      height: 100,
+    });
+    expect(frameRect(vertical, [10, 40], [50, 150])).toEqual({
+      x: 10,
+      y: 50,
+      width: 30,
+      height: 100,
+    });
+    expect(frameRect(horizontal, [10, 40], [150, 50])).toEqual({
+      x: 50,
+      y: 10,
+      width: 100,
+      height: 30,
+    });
+  });
+
+  it("grows a body under a device pixel from its base toward its tip, unless it is an inner segment", () => {
+    // 50.8 and 50.6 both snap to 51 at 1x. A tip above its base, a positive vertical bar, keeps 50
+    // to 51, and a tip below it, a negative one, 51 to 52. Across a horizontal frame a tip left of
+    // its base, a negative bar, keeps 74 to 75, and right of it 75 to 76.
+    const vertical = plotFrame(box(300, 200), "vertical", 1, [0, 1]);
+    const horizontal = plotFrame(box(300, 200), "horizontal", 1, [0, 1]);
+    const floored = (frame: PlotFrame, along: readonly [number, number], across: readonly [number, number]) =>
+      floorBody(frame, frameRect(frame, along, across), across);
+    expect(floored(vertical, [10, 40], [50.8, 50.6])).toEqual({
+      x: 10,
+      y: 50,
+      width: 30,
+      height: 1,
+    });
+    expect(floored(vertical, [10, 40], [50.6, 50.8])).toEqual({
+      x: 10,
+      y: 51,
+      width: 30,
+      height: 1,
+    });
+    expect(floored(horizontal, [10, 40], [75, 74.8])).toEqual({
+      x: 74,
+      y: 10,
+      width: 1,
+      height: 30,
+    });
+    expect(floored(horizontal, [10, 40], [74.8, 75])).toEqual({
+      x: 75,
+      y: 10,
+      width: 1,
+      height: 30,
+    });
+    expect(frameRect(vertical, [10, 40], [50.8, 50.6]).height).toBe(0);
   });
 });
 

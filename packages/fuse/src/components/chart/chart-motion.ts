@@ -173,6 +173,17 @@ export type LandingVisit = (
   end: MarkValues
 ) => void;
 
+/**
+ * A party that defers work while the loop writes a batch of marks, such as one frame's moving
+ * marks, and does it once the batch ends, before the loop writes any joined follower.
+ */
+export type MotionBatch = {
+  /** The loop starts writing a batch of marks. */
+  readonly begin: () => void;
+  /** The loop wrote the batch. */
+  readonly end: () => void;
+};
+
 /** Root's animation loop. */
 export type ChartMotion = {
   /**
@@ -232,6 +243,19 @@ export type ChartMotion = {
    * numbers its tween's route ends on. A reader can draw each where it lands and back in one task.
    */
   readonly eachLanding: (visit: LandingVisit) => void;
+  /**
+   * Tell a party when the loop writes a batch of marks: one frame's moving marks, a finish or a
+   * resize's remapping. A write outside a batch, such as a placement's, stands alone.
+   */
+  readonly batches: (party: MotionBatch) => void;
+  /**
+   * Write a batch of marks outside the loop's own frames, as a reader that draws each mark where it
+   * lands and back does, so the parties `batches` tells settle once for the batch.
+   *
+   * @param writes - The writes.
+   * @returns What `writes` returns.
+   */
+  readonly batch: <T>(writes: () => T) => T;
 };
 
 type Tween = {
@@ -366,6 +390,16 @@ export function createChartMotion(
   rejoin: () => void = () => undefined
 ): ChartMotion {
   const marks = new Map<string, Mark>();
+  // The parties a batch of writes tells, and the batch they hear.
+  const parties = new Set<MotionBatch>();
+  const batch = <T>(writes: () => T): T => {
+    for (const party of parties) party.begin();
+    try {
+      return writes();
+    } finally {
+      for (const party of parties) party.end();
+    }
+  };
   // The marks whose tween runs, so a frame, an unmount and `running` visit none of the rest.
   const moving = new Set<Mark>();
   // The joined followers, which every frame writes after the marks they follow.
@@ -470,39 +504,42 @@ export function createChartMotion(
   const step = (time: number): void => {
     handle = null;
     commitTime = null;
-    let running = false;
-    for (const mark of moving) {
-      let tween = mark.tween;
-      if (tween === null) {
-        moving.delete(mark);
-        continue;
+    const running = batch(() => {
+      let moved = false;
+      for (const mark of moving) {
+        let tween = mark.tween;
+        if (tween === null) {
+          moving.delete(mark);
+          continue;
+        }
+        // An entrance that waited starts in the first frame after `play`, so its first painted frame
+        // draws its start, however long the plot waited or the tab stayed hidden.
+        if (tween.start === Number.POSITIVE_INFINITY) mark.tween = tween = { ...tween, start: time };
+        const progress = Math.min(1, Math.max(0, (time - tween.start - tween.delay) / CHART_UPDATE_MS));
+        mark.eased = progress >= 1 ? 1 : ease(progress);
+        // The last frame writes the target itself, so the DOM ends on the numbers React rendered.
+        if (progress >= 1) mark.drawn = tween.rest ?? tween.to;
+        else {
+          mark.frames ??= [[], []];
+          const at = mark.next ?? 0;
+          const frame = mark.frames[at];
+          mark.next = at === 0 ? 1 : 0;
+          frame.length = tween.to.length;
+          tween.to.forEach((to, index) => {
+            const from = tween.from[index] ?? to;
+            frame[index] = from + (to - from) * mark.eased;
+          });
+          mark.drawn = frame;
+        }
+        mark.write(mark.drawn);
+        if (progress < 1) moved = true;
+        else {
+          mark.tween = null;
+          moving.delete(mark);
+        }
       }
-      // An entrance that waited starts in the first frame after `play`, so its first painted frame
-      // draws its start, however long the plot waited or the tab stayed hidden.
-      if (tween.start === Number.POSITIVE_INFINITY) mark.tween = tween = { ...tween, start: time };
-      const progress = Math.min(1, Math.max(0, (time - tween.start - tween.delay) / CHART_UPDATE_MS));
-      mark.eased = progress >= 1 ? 1 : ease(progress);
-      // The last frame writes the target itself, so the DOM ends on the numbers React rendered.
-      if (progress >= 1) mark.drawn = tween.rest ?? tween.to;
-      else {
-        mark.frames ??= [[], []];
-        const at = mark.next ?? 0;
-        const frame = mark.frames[at];
-        mark.next = at === 0 ? 1 : 0;
-        frame.length = tween.to.length;
-        tween.to.forEach((to, index) => {
-          const from = tween.from[index] ?? to;
-          frame[index] = from + (to - from) * mark.eased;
-        });
-        mark.drawn = frame;
-      }
-      mark.write(mark.drawn);
-      if (progress < 1) running = true;
-      else {
-        mark.tween = null;
-        moving.delete(mark);
-      }
-    }
+      return moved;
+    });
     projectAll();
     if (running) handle = host.requestFrame(step);
   };
@@ -611,19 +648,21 @@ export function createChartMotion(
       const resize = placement.scale.to ?? startTime();
       if (rescaledFor.get(owner) !== resize) {
         rescaledFor.set(owner, resize);
-        for (const running of moving) {
-          if (running.tween === null || running.owner !== owner) continue;
-          const { axes: kinds, tween } = running;
-          const { scale } = placement;
-          const from = rescaled(tween.from, kinds, scale);
-          const to = rescaled(tween.to, kinds, scale);
-          running.tween =
-            tween.rest === undefined
-              ? { ...tween, from, to }
-              : { ...tween, from, to, rest: rescaled(tween.rest, kinds, scale) };
-          running.drawn = rescaled(running.drawn, kinds, scale);
-          running.write(running.drawn);
-        }
+        batch(() => {
+          for (const running of moving) {
+            if (running.tween === null || running.owner !== owner) continue;
+            const { axes: kinds, tween } = running;
+            const { scale } = placement;
+            const from = rescaled(tween.from, kinds, scale);
+            const to = rescaled(tween.to, kinds, scale);
+            running.tween =
+              tween.rest === undefined
+                ? { ...tween, from, to }
+                : { ...tween, from, to, rest: rescaled(tween.rest, kinds, scale) };
+            running.drawn = rescaled(running.drawn, kinds, scale);
+            running.write(running.drawn);
+          }
+        });
         projectAll();
       }
     }
@@ -761,13 +800,15 @@ export function createChartMotion(
     },
     restRevision: () => revision,
     finish() {
-      for (const mark of moving) {
-        if (mark.tween === null) continue;
-        mark.drawn = mark.tween.rest ?? mark.tween.to;
-        mark.eased = 1;
-        mark.tween = null;
-        mark.write(mark.drawn);
-      }
+      batch(() => {
+        for (const mark of moving) {
+          if (mark.tween === null) continue;
+          mark.drawn = mark.tween.rest ?? mark.tween.to;
+          mark.eased = 1;
+          mark.tween = null;
+          mark.write(mark.drawn);
+        }
+      });
       moving.clear();
       projectAll();
       if (handle !== null) host.cancelFrame(handle);
@@ -789,6 +830,10 @@ export function createChartMotion(
     size: () => marks.size,
     // A tween the entrance holds has not started.
     running: () => !held && moving.size > 0,
+    batch,
+    batches(party) {
+      parties.add(party);
+    },
     eachLanding(visit) {
       for (const { tween, write, drawn, axes } of moving) {
         if (tween !== null) visit(write, tween.rest ?? tween.to, drawn, axes, tween.to);

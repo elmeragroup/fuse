@@ -6,7 +6,7 @@
  */
 import type { ChartBarVariant } from "../chart-types";
 import { snapBarSpan, snapBody } from "./plot-frame";
-import type { PlotFrame, PlotRect } from "./plot-frame";
+import type { PlotFrame, PlotRect, StackPlace, ValueFloor } from "./plot-frame";
 
 /** Where a bar sits, which every shape beyond the body reads. */
 export type BarPlacement = {
@@ -181,6 +181,7 @@ function squares(
   frame: PlotFrame,
   column: PlotRect,
   atStart: boolean,
+  floor: ValueFloor,
   within: readonly [number, number]
 ): PlotRect[] {
   const { along, across } = axes(column, frame.orientation);
@@ -190,29 +191,30 @@ function squares(
   return Array.from({ length: count }, (_, index) => {
     const near = index * (BLOCK + BLOCK_GAP);
     const span: readonly [number, number] = atStart ? [base - near - BLOCK, BLOCK] : [base + near, BLOCK];
-    return snapBody(frame, join(along, span, frame.orientation), within);
+    return snapBody(frame, join(along, span, frame.orientation), floor, within);
   });
 }
 
 /**
  * The shapes one bar draws at a rectangle: its look's rectangles, each snapped through the plot
- * frame's `snapBody` with its pixel floor, the blocks look's squares counted from the bar's own
+ * frame's `snapBody` with its pixel floors, the blocks look's squares counted from the bar's own
  * base, and the isometric faces built on the snapped body, their depth a whole number of device
  * pixels. A tween frame's rectangle draws through here too.
  *
  * @param frame - The layout's frame.
  * @param variant - The bar's look.
  * @param rect - The bar's rectangle, a tween frame's or its target.
- * @param bar - Whether the drawn bar hangs below its base, and its drawn top weight. A weight above
- *   0, a stack's outer segment or one on its way there, runs its blocks track on to the plot's
- *   edge over the empty column, and the track's opacity follows the weight.
+ * @param bar - Whether the drawn bar hangs below its base, its drawn top weight, and whether it owns
+ *   its stack side's value-axis pixel floor, which grows away from its base. A weight above 0, a
+ *   stack's outer segment or one on its way there, runs its blocks track on to the plot's edge
+ *   over the empty column, and the track's opacity follows the weight.
  * @returns The shapes, every rectangle edge on the device pixel grid.
  */
 export function drawnBar(
   frame: PlotFrame,
   variant: ChartBarVariant,
   rect: PlotRect,
-  bar: { readonly negative: boolean; readonly top: number }
+  bar: { readonly negative: boolean; readonly top: number; readonly place: StackPlace }
 ): BarParts {
   const { negative } = bar;
   const { orientation, box } = frame;
@@ -222,20 +224,22 @@ export function drawnBar(
   // strip does, never takes a device pixel past it, at any origin and pixel ratio.
   const [start, size] = axes(rect, orientation).along;
   const within = snapBarSpan(frame, start, start + size);
-  const body = snapBody(frame, rects.body, within);
+  const atStart = farAtStart({ orientation, negative });
+  // Only its stack side's floor owner keeps a pixel, as `geometryRect` drew its rectangle.
+  const floor: ValueFloor = bar.place === "outer" ? (atStart ? "start" : "end") : "none";
+  const body = snapBody(frame, rects.body, floor, within);
   const parts: BarParts = {
     body,
-    cap: rects.cap === undefined ? undefined : snapBody(frame, rects.cap, within),
+    cap: rects.cap === undefined ? undefined : snapBody(frame, rects.cap, floor, within),
   };
   if (variant === "isometric")
     return { ...parts, ...isometricFaces(body, Math.round(DEPTH * box.dpr) / box.dpr) };
   if (variant !== "blocks" || rects.track === undefined) return parts;
-  const atStart = farAtStart({ orientation, negative });
-  const blocks = squares(frame, rects.body, atStart, within);
+  const blocks = squares(frame, rects.body, atStart, floor, within);
   return {
     ...parts,
     blocks,
-    track: bar.top > 0 ? squares(frame, rects.track, atStart, within) : undefined,
+    track: bar.top > 0 ? squares(frame, rects.track, atStart, floor, within) : undefined,
   };
 }
 

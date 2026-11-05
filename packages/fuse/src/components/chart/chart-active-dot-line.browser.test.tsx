@@ -13,7 +13,7 @@ import { nextFrames, wait } from "../../../test/animation-frames";
 import { ONE_SERIES, PERCENT, READINGS, dotLayer, moveTo, shown } from "../../../test/chart/active-dot";
 import type { DotAndCrosshair } from "../../../test/chart/active-dot";
 import { settling } from "../../../test/chart/oscillator";
-import { everyFrame } from "../../../test/chart/tooltip-glide";
+import { everyFrame, onTheWay, sweepGlides } from "../../../test/chart/tooltip-glide";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
 import { Chart } from "./chart-namespace";
@@ -126,7 +126,7 @@ describe("an active dot on a fast step across several slots", () => {
     // It joins the Line on a data update, so it rides the Line though the Area draws first.
     ["the Line of a series an Area draws too", () => <AreaAndLine />],
     ["the line from inside a display: contents wrapper", () => <WrappedDot />],
-  ] as const)("rides %s, on the crosshair, in every frame", async (_name, chart: () => ReactNode) => {
+  ] as const)("rides %s, on the crosshair, along its whole glide", async (_name, chart: () => ReactNode) => {
     const { host } = renderThemed(chart());
     await nextFrames(2);
     moveTo(host, 1);
@@ -136,10 +136,8 @@ describe("an active dot on a fast step across several slots", () => {
     moveTo(host, 1, 2);
     await nextFrames(1);
     moveTo(host, 5);
-    const { frames, stop } = everyFrame(() => shown(host));
-    await nextFrames(60);
-    stop();
-    expect(frames.filter(({ gliding }) => gliding).length, JSON.stringify(frames)).toBeGreaterThan(3);
+    const frames = sweepGlides(host, () => shown(host));
+    expect(onTheWay(frames).length, JSON.stringify(frames)).toBeGreaterThan(3);
     for (const frame of frames) {
       expect(offLine(points, frame), JSON.stringify(frame)).toBeLessThanOrEqual(1);
       expect(Math.abs(frame.x - frame.crosshair), JSON.stringify(frame)).toBeLessThanOrEqual(1);
@@ -148,7 +146,7 @@ describe("an active dot on a fast step across several slots", () => {
 });
 
 describe("an active dot on a fast step across a zigzag", () => {
-  it("rides every peak of the line, on the crosshair, in every frame", async () => {
+  it("rides every peak of the line, on the crosshair, along its whole glide", async () => {
     // Nine readings that alternate 20 and 80, stepped from the first to the last at once, across
     // four peaks. Past the last reading the dot holds while the crosshair overshoots.
     const zigzag = [20, 80, 20, 80, 20, 80, 20, 80, 20];
@@ -160,10 +158,8 @@ describe("an active dot on a fast step across a zigzag", () => {
     moveTo(host, 0, 2, zigzag.length);
     await nextFrames(1);
     moveTo(host, 8, 0, zigzag.length);
-    const { frames, stop } = everyFrame(() => shown(host));
-    await nextFrames(60);
-    stop();
-    expect(frames.filter(({ gliding }) => gliding).length, JSON.stringify(frames)).toBeGreaterThan(3);
+    const frames = sweepGlides(host, () => shown(host));
+    expect(onTheWay(frames).length, JSON.stringify(frames)).toBeGreaterThan(3);
     const end = Math.max(...points.map(({ x }) => x));
     for (const frame of frames) {
       expect(offLine(points, frame), JSON.stringify(frame)).toBeLessThanOrEqual(1);
@@ -364,10 +360,8 @@ describe("an active dot stepping onto a line's last reading, on a stack", () => 
     moveTo(host, 2000, 0.5, DENSE_END.length);
     await nextFrames(1);
     moveTo(host, 2399, 0, DENSE_END.length);
-    const { frames, stop } = everyFrame(() => shown(host));
-    await nextFrames(60);
-    stop();
-    expect(frames.filter(({ gliding }) => gliding).length, JSON.stringify(frames)).toBeGreaterThan(3);
+    const frames = sweepGlides(host, () => shown(host));
+    expect(onTheWay(frames).length, JSON.stringify(frames)).toBeGreaterThan(3);
     for (const frame of frames) {
       expect(offLine(points, frame), JSON.stringify(frame)).toBeLessThanOrEqual(1);
       expect(frame.x, JSON.stringify(frame)).toBeLessThanOrEqual(end + 0.5);
