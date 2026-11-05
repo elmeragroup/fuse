@@ -65,7 +65,8 @@ describe("BrandLogo", () => {
     // lettering starts (the mark sits left of it), and every colour the mark paints, with a
     // gradient counted as its stop colours. TrøndelagKraft's lamp has a ring and base around its
     // yellow light in --logo-mark-ink, which the wrapper sets and no other logo reads. Fjordkraft's
-    // face paints the text colour like its lettering.
+    // face paints the text colour like its lettering. Telinet letters "Telinet" in its dots' cyan,
+    // so its text-coloured lettering starts at "Energi".
     const text = "rgb(1, 2, 3)";
     const lampInk = "rgb(4, 5, 6)";
     const artwork = {
@@ -73,7 +74,7 @@ describe("BrandLogo", () => {
       fkab: { letteringFrom: 0.2, markInks: [text] },
       tkas: { letteringFrom: 0.14, markInks: [lampInk, "rgb(252, 227, 0)"] },
       guen: { letteringFrom: 0.3, markInks: ["rgb(236, 100, 4)", "rgb(246, 179, 87)"] },
-      fkse: { letteringFrom: 0.15, markInks: ["rgb(45, 192, 208)"] },
+      fkse: { letteringFrom: 0.6, markInks: ["rgb(45, 192, 208)"] },
       ngfi: {
         letteringFrom: 0.48,
         markInks: [

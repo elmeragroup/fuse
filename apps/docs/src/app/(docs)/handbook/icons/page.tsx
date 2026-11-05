@@ -118,8 +118,10 @@ export default function IconsPage(): ReactElement {
         mark paints as it does in its full logo, alone or beside the name: Fjordkraft&apos;s face and
         TrøndelagKraft&apos;s lamp ring and base take <code>currentColor</code> too. Marks drawn in brand
         colours keep them: TrøndelagKraft&apos;s yellow light, Gudbrandsdal Energi&apos;s orange gradient,
-        Telinet&apos;s cyan dots and Nordic Green Energy&apos;s five leaves. On a brand-coloured tile, set the
-        text colour with the background, for example <code>bg-brand text-brand-foreground</code>.
+        Telinet&apos;s cyan dots and Nordic Green Energy&apos;s five leaves. Telinet letters the word
+        &quot;Telinet&quot; in its dots&apos; cyan too, as in its own logo, and only &quot;Energi&quot; takes
+        the text colour. On a brand-coloured tile, set the text colour with the background, for example{" "}
+        <code>bg-brand text-brand-foreground</code>.
       </p>
       <pre>
         <code>{BRAND_LOGO}</code>
