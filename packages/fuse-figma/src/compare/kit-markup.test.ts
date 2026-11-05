@@ -52,8 +52,8 @@
  * renders each cell once more with each such property on, where the part must be there.
  *
  * `test/markup-check.ts` holds the assertions, `test/markup-tree.ts` the queries over the markup and
- * `test/markup-variants.ts` the variant tables. This suite runs them on every kit definition and on
- * hand-written fixtures.
+ * `test/markup-variants.ts` the variant tables. This suite runs them on every kit definition, each
+ * in a test of its own, and on hand-written fixtures.
  */
 
 import { createElement } from "react";
@@ -154,10 +154,16 @@ describe("each kit definition against the markup of its component", () => {
       expect(unlisted).toEqual([]);
     }
   );
+});
 
-  it("renders one measured element per cell, holds each attribute condition exactly where it carries it, and places its parts, icons and label", async () => {
-    const renderers = await Effect.runPromise(loadRenderers());
-    // No KIT key lacks a renderer.
+// Loading the renderers imports each one's module and the Fuse build it renders. A busy runner can
+// spend longer on that than a test's 30 s budget, so it runs while the file collects, as a static
+// import would, and each definition's check gets a test, and a budget, of its own. They stay in
+// this file, since every worker that runs a kit-heavy file rebuilds the kit (`vitest.config.ts`).
+const renderers = await Effect.runPromise(loadRenderers());
+
+describe("each kit definition's markup check", () => {
+  it("has a renderer for every KIT key, and a client renderer for exactly the sets the mounted page checks", () => {
     expect(
       KIT.filter(({ definition }) => renderers.has(definition.key)).map(({ definition }) => definition.key)
     ).toEqual(KIT.map(({ definition }) => definition.key));
@@ -169,14 +175,21 @@ describe("each kit definition against the markup of its component", () => {
         return renderer !== undefined && isClientRenderer(renderer);
       }).map(({ definition }) => definition.key)
     ).toEqual(CHECKED_ON_THE_MOUNTED_PAGE);
-    const checked = KIT.flatMap((entry) => {
+  });
+
+  it.each(
+    KIT.flatMap((entry) => {
       const renderer = renderers.get(entry.definition.key);
-      return renderer === undefined || isClientRenderer(renderer) ? [] : [{ ...entry, renderer }];
-    });
-    for (const { definition, previewCells, renderer } of checked) {
+      return renderer === undefined || isClientRenderer(renderer)
+        ? []
+        : [[entry.definition.key, { ...entry, renderer }] as const];
+    })
+  )(
+    "%s renders one measured element per cell, holds each attribute condition exactly where it carries it, and places its parts, icons and label",
+    (_key, { definition, previewCells, renderer }) => {
       checkMarkup(definition, previewCells, renderer);
     }
-  });
+  );
 });
 
 // Unit under test: `checkMarkup` on a definition whose root and part name their elements, since the
