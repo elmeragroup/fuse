@@ -27,7 +27,7 @@ import { Toggle } from "@elmeragroup/fuse/toggle";
 
 import { SingleToggle } from "../../components/single-toggle";
 import { TOKEN_SECTIONS, TOKEN_TABLE } from "../../lib/token-sections";
-import type { SectionId } from "../../lib/token-sections";
+import type { SectionId, TokenName } from "../../lib/token-sections";
 import { markVariant, pairMark } from "../lib/color-roles";
 import type { PairMark } from "../lib/color-roles";
 import type { ArtboardScheme } from "../lib/documents";
@@ -50,7 +50,6 @@ import {
   pairOfForeground,
   sectionTokens,
 } from "../lib/tokens";
-import type { TokenName } from "../lib/tokens";
 import type { ArtboardScope } from "./studio-artboard";
 import { useStudioEdits } from "./studio-edits";
 import { StudioPanelSection } from "./studio-panel-section";

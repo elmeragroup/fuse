@@ -2,10 +2,9 @@ import { describe, expect, it } from "vitest";
 
 import { resolveThemeCatalog } from "@elmeragroup/fuse/theme-catalog";
 
-import { TOKEN_SECTIONS, TOKEN_TABLE } from "../../src/lib/token-sections";
+import { FONT_VARIABLES, TOKEN_SECTIONS, TOKEN_TABLE } from "../../src/lib/token-sections";
 import { buildStudioSeeds } from "../../src/studio/generate/seeds";
 import {
-  FONT_VARIABLES,
   FOREGROUND_PAIRS,
   LIGHT_ONLY_TOKENS,
   STUDIO_TOKEN_NAMES,

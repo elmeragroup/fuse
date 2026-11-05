@@ -12,10 +12,10 @@ import type {
   TokenEntry,
 } from "@elmeragroup/fuse/theme-catalog";
 
+import type { FontVariable } from "../../lib/token-sections.ts";
 import { FONT_STACK_LABELS, FONT_STACKS } from "../lib/font-stacks.ts";
 import { referencesOf } from "../lib/references.ts";
 import type { StudioSchemeSeed, StudioSeed, StudioSeedToken } from "../lib/seed.ts";
-import type { FontVariable } from "../lib/tokens.ts";
 
 /**
  * The roles the theme rules declare as a live `color-mix()` instead of the literal the catalog

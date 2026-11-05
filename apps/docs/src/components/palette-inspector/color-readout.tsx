@@ -6,7 +6,7 @@ import type { ReactElement, ReactNode } from "react";
 import { tv } from "tailwind-variants";
 
 import { copyText } from "../../lib/copy-with-toast";
-import { GRADE_LABELS } from "../../lib/palettes";
+import { alphaPercent, GRADE_LABELS } from "../../lib/palettes";
 import type { ContrastGrade, PaletteTone } from "../../lib/palettes";
 
 const colorReadout = tv({
@@ -74,13 +74,12 @@ export function Readout({ title, lines, children, copied }: ReadoutProps): React
 
 /** A tone's readout lines: hex, OKLCH and, for a translucent tone, its alpha. */
 export function toneLines(tone: PaletteTone, prefix = ""): ReadoutLine[] {
-  const lines = [
+  const alpha = alphaPercent(tone);
+  return [
     { term: `${prefix}Hex`, value: tone.hex },
     { term: `${prefix}OKLCH`, value: tone.oklch },
+    ...(alpha === undefined ? [] : [{ term: `${prefix}Alpha`, value: alpha }]),
   ];
-  return tone.alpha < 1
-    ? [...lines, { term: `${prefix}Alpha`, value: `${String(Math.round(tone.alpha * 1000) / 10)}%` }]
-    : lines;
 }
 
 /** How long a copied value says so, in ms. */

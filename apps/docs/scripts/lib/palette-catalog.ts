@@ -82,13 +82,17 @@ function sourceOklch(source: SourceColor): Oklch.Oklch {
   return source._tag === "Oklch" ? source : Oklch.fromSrgb(source);
 }
 
-/** A resolved color as the page shows it: canonical `oklch()`, hex and alpha. */
+/**
+ * A resolved color as the page shows it: canonical `oklch()`, hex and alpha, and for a translucent
+ * color the `#RRGGBBAA` the clipboard takes, so the page never formats a color itself.
+ */
 function toneOf(entry: ColorEntry | PrimitiveEntry): PaletteTone {
-  return {
+  const tone = {
     oklch: Oklch.format(sourceOklch(entry.source)),
     hex: Hex.formatOpaque(entry.value),
     alpha: entry.value.alpha,
   };
+  return entry.value.alpha < 1 ? { ...tone, hexAlpha: Hex.format(entry.value) } : tone;
 }
 
 /** One theme's palette in one scheme. */
@@ -98,16 +102,10 @@ function paletteScheme(
   pairs: readonly PalettePair[],
   where: string
 ): PaletteScheme {
-  const entries = tokens.map((name) => {
-    const entry = scheme.tokens[name];
-    if (!isColorEntry(entry)) {
-      throw new Error(`palette catalog: --${name} in ${where} is not a color`);
-    }
-    return entry;
-  });
+  const entries = tokens.map((name) => scheme.tokens[name]);
   return {
     values: entries.map(toneOf),
-    aliases: entries.map((entry) => (entry.reference === undefined ? null : `--${entry.reference.name}`)),
+    aliases: entries.map((entry) => entry.reference?.name ?? null),
     ratios: pairs.map(({ foreground, background }) => {
       const ratio = Wcag.contrastRatio(scheme.tokens[foreground].value, scheme.tokens[background].value);
       if (ratio._tag === "err") {
@@ -127,7 +125,7 @@ function primitives(catalog: ResolvedThemeCatalog): readonly PalettePrimitive[] 
     name: entry.name,
     group: entry.name.startsWith("neutral-") ? "neutral" : "brand",
     tone: toneOf(entry),
-    alias: entry.reference === undefined ? null : `--${entry.reference.name}`,
+    alias: entry.reference?.name ?? null,
   }));
 }
 

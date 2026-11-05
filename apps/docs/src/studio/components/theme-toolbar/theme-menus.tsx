@@ -16,11 +16,10 @@ import type { Density } from "@elmeragroup/fuse/theme";
 import { Toolbar } from "@elmeragroup/fuse/toolbar";
 
 import { TOKEN_SECTIONS, TOKEN_TABLE } from "../../../lib/token-sections";
-import type { SectionId } from "../../../lib/token-sections";
+import type { SectionId, TokenName } from "../../../lib/token-sections";
 import { STUDIO_METRICS } from "../../lib/density-metrics";
 import type { ArtboardSpec } from "../../lib/documents";
 import { matchesTokenQuery } from "../../lib/tokens";
-import type { TokenName } from "../../lib/tokens";
 import { menuPlacement } from "../../lib/viewport";
 import type { MenuPlacement } from "../../lib/viewport";
 import { METRIC_ROLES, MetricKnob } from "../density/density-panel";

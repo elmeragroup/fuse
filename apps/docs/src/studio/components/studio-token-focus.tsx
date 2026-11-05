@@ -3,8 +3,8 @@
 import { createContext, use, useCallback, useMemo, useRef, useState } from "react";
 import type { ReactElement, ReactNode } from "react";
 
+import type { TokenName } from "../../lib/token-sections";
 import type { ArtboardScheme } from "../lib/documents";
-import type { TokenName } from "../lib/tokens";
 
 /** A request to show one token's knob: each call is a new request, even for the same token. */
 export type TokenFocusRequest = {

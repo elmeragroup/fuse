@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import { DESKTOP_VIEWPORT, launchSuiteBrowser, waitForDocsShellHydration } from "./demo-page";
 import { docsBaseUrl } from "./docs-server";
+import { openFilterSubmenu } from "./filter-menu";
 
 const browser = launchSuiteBrowser();
 
@@ -22,24 +23,32 @@ const SIDEBAR_ROLES = 8;
 /** The brand columns in `BRAND_CODES` order. */
 const BRANDS = ["fkas", "tkas", "guen", "fkab", "fkse", "elma", "ngfi"] as const;
 
+/**
+ * Opens the palettes page once its inspector is live. The table hydrates after the docs shell, and
+ * a switch pressed before then changes nothing; the inspector stamps `data-palette-hydrated` from a
+ * passive effect once it is live.
+ */
 async function openInspector(page: Page): Promise<Locator> {
   await page.goto(`${docsBaseUrl()}/handbook/palettes`, { waitUntil: "load" });
   await waitForDocsShellHydration(page);
   const inspector = page.locator("[data-palette-inspector]");
+  await inspector.and(page.locator("[data-palette-hydrated]")).waitFor({ state: "attached" });
   await inspector.scrollIntoViewIfNeeded();
-  // The table hydrates after the shell, and a switch pressed before then changes nothing. On a
-  // loaded CI runner that takes longer than the poll's 1s default.
-  await expect
-    .poll(
-      async () => {
-        await inspector.getByRole("button", { name: "Dark", exact: true }).click();
-        return inspector.getByRole("button", { name: "Dark", exact: true }).getAttribute("aria-pressed");
-      },
-      { timeout: 10_000 }
-    )
-    .toBe("true");
-  await inspector.getByRole("button", { name: "Light", exact: true }).click();
   return inspector;
+}
+
+/** Opens a collection, or one of its groups, from the rail. */
+async function openCollection(inspector: Locator, name: string): Promise<void> {
+  await inspector
+    .getByRole("navigation", { name: "Collections" })
+    .getByRole("button", { name: new RegExp(`^${name}`, "u") })
+    .click();
+}
+
+/** Moves focus into the grid: Tab from the Filter button lands on the grid's one tab stop. */
+async function focusGrid(page: Page, inspector: Locator): Promise<void> {
+  await inspector.getByRole("button", { name: "Filter", exact: true }).focus();
+  await page.keyboard.press("Tab");
 }
 
 /** The table cell of a row in a brand's column. */
@@ -134,23 +143,12 @@ describe("palettes variables table", () => {
     await search.fill("");
 
     // A rail section sets the section filter, which the filter bar shows as a chip.
-    await inspector
-      .getByRole("navigation", { name: "Collections" })
-      .getByRole("button", { name: /^Sidebar/u })
-      .click();
+    await openCollection(inspector, "Sidebar");
     await expect.poll(() => rows(inspector).count()).toBe(SIDEBAR_ROLES);
     expect(await inspector.getByRole("group", { name: "Section filter" }).count()).toBe(1);
 
-    await inspector
-      .getByRole("navigation", { name: "Collections" })
-      .getByRole("button", { name: /^Contrast/u })
-      .click();
-    await inspector.getByRole("button", { name: "Filter", exact: true }).focus();
-    await page.keyboard.press("Enter");
-    await page.getByRole("searchbox", { name: "Search fields", exact: true }).fill("Contrast");
-    const field = page.getByRole("menuitem", { name: "Contrast", exact: true });
-    await expect.poll(() => field.getAttribute("data-highlighted")).not.toBeNull();
-    await page.keyboard.press("ArrowRight");
+    await openCollection(inspector, "Contrast");
+    await openFilterSubmenu(page, inspector, "Contrast");
     await page.getByRole("menuitemcheckbox", { name: /^Below AA/u }).click();
     await page.keyboard.press("Escape");
     const ids = await rows(inspector).evaluateAll((elements) =>
@@ -165,10 +163,7 @@ describe("palettes variables table", () => {
   it("tints a contrast cell below AA and counts it in the footer", async () => {
     const page = await browser().newPage({ viewport: DESKTOP_VIEWPORT, colorScheme: "light" });
     const inspector = await openInspector(page);
-    await inspector
-      .getByRole("navigation", { name: "Collections" })
-      .getByRole("button", { name: /^Contrast/u })
-      .click();
+    await openCollection(inspector, "Contrast");
     const brand = trigger(inspector, "brand-foreground/brand", "fkas");
     expect(await brand.getAttribute("data-contrast-cell")).toBe("below-aa");
     // WCAG luminance of #FF5604 is 0.279, so white on it is 1.05 / 0.329, 3.19 at 8-bit precision.
@@ -191,8 +186,7 @@ describe("palettes variables table", () => {
   it("opens a cell's readout from the keyboard and moves between cells with the arrow keys", async () => {
     const page = await browser().newPage({ viewport: DESKTOP_VIEWPORT, colorScheme: "light" });
     const inspector = await openInspector(page);
-    await inspector.getByRole("button", { name: "Filter", exact: true }).focus();
-    await page.keyboard.press("Tab");
+    await focusGrid(page, inspector);
     const focused = () =>
       page.evaluate(() => {
         const element = document.activeElement;
@@ -254,8 +248,7 @@ describe("palettes variables table", () => {
   it("keeps the focus ring on a focused cell that shares its color with others", async () => {
     const page = await browser().newPage({ viewport: DESKTOP_VIEWPORT, colorScheme: "light" });
     const inspector = await openInspector(page);
-    await inspector.getByRole("button", { name: "Filter", exact: true }).focus();
-    await page.keyboard.press("Tab");
+    await focusGrid(page, inspector);
     const background = trigger(inspector, "background", "fkas");
     await expect.poll(() => background.evaluate((element) => element === document.activeElement)).toBe(true);
     // `tokens/defaults.ts`: card is WHITE too, so focus outlines both.
@@ -287,6 +280,29 @@ describe("palettes variables table", () => {
     // Longer than the tooltip's exit animation, so a tooltip that closed has left the page.
     await page.waitForTimeout(500);
     expect(await openTooltip(page).count()).toBe(1);
+    await page.close();
+  });
+
+  it("redraws the outline when a switch recolors the cell under the pointer", async () => {
+    const page = await browser().newPage({ viewport: DESKTOP_VIEWPORT, colorScheme: "light" });
+    const inspector = await openInspector(page);
+    const background = trigger(inspector, "background", "fkas");
+    const card = trigger(inspector, "card", "fkas");
+    await hoverReadout(page, background);
+    // `tokens/defaults.ts`: internal background and card are both WHITE.
+    await expect.poll(() => card.getAttribute("data-same-tone")).toBe("");
+
+    // The pointer stays on the background cell while the keyboard picks External, so neither
+    // pointer-leave nor blur fires. External paints background shade-100 and keeps card WHITE.
+    await inspector.getByRole("button", { name: "External", exact: true }).focus();
+    await page.keyboard.press("Space");
+    await expect.poll(() => background.locator("[data-palette-pill]").textContent()).toBe("shade-100");
+    expect(await card.getAttribute("data-same-tone")).toBeNull();
+    const tone = await background.getAttribute("data-tone");
+    const outlinedTones = await inspector
+      .locator("[data-grid-cell][data-same-tone]")
+      .evaluateAll((elements) => elements.map((element) => element.getAttribute("data-tone")));
+    expect(outlinedTones.filter((outlined) => outlined !== tone)).toEqual([]);
     await page.close();
   });
 
@@ -362,12 +378,8 @@ describe("palettes variables table", () => {
     const page = await browser().newPage({ viewport: { width: 1280, height: 720 }, colorScheme: "light" });
     const inspector = await openInspector(page);
     // In Brand ramps the generated badge stacks under Elmera's name, so the header is taller.
-    await inspector
-      .getByRole("navigation", { name: "Collections" })
-      .getByRole("button", { name: /^Brand ramps/u })
-      .click();
-    await inspector.getByRole("button", { name: "Filter", exact: true }).focus();
-    await page.keyboard.press("Tab");
+    await openCollection(inspector, "Brand ramps");
+    await focusGrid(page, inspector);
     await page.keyboard.press("Control+End");
     for (let press = 0; press < 11; press += 1) {
       await page.keyboard.press("ArrowUp");
@@ -388,8 +400,7 @@ describe("palettes variables table", () => {
   it("keeps the page still when an arrow key meets the grid's edge", async () => {
     const page = await browser().newPage({ viewport: DESKTOP_VIEWPORT, colorScheme: "light" });
     const inspector = await openInspector(page);
-    await inspector.getByRole("button", { name: "Filter", exact: true }).focus();
-    await page.keyboard.press("Tab");
+    await focusGrid(page, inspector);
     await page.keyboard.press("Control+End");
     const focusedRow = () =>
       page.evaluate(() => document.activeElement?.closest("tr")?.getAttribute("data-table-row") ?? null);
@@ -410,10 +421,7 @@ describe("palettes variables table", () => {
   it("keeps each brand header, a generated ramp's badge too, within its column", async () => {
     const page = await browser().newPage({ viewport: DESKTOP_VIEWPORT, colorScheme: "light" });
     const inspector = await openInspector(page);
-    await inspector
-      .getByRole("navigation", { name: "Collections" })
-      .getByRole("button", { name: /^Brand ramps/u })
-      .click();
+    await openCollection(inspector, "Brand ramps");
     const headers = inspector.locator("thead th:has([data-brand-header])");
     await expect.poll(() => headers.count()).toBe(BRANDS.length);
     const overflow = await headers.evaluateAll((cells) =>

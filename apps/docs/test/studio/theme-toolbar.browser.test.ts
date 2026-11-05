@@ -3,8 +3,8 @@ import { describe, expect, it } from "vitest";
 
 import { STUDIO_SLOT_TOKENS } from "../../src/generated/studio-slot-tokens";
 import { TOKEN_TABLE } from "../../src/lib/token-sections";
+import type { TokenName } from "../../src/lib/token-sections";
 import { isTokenName } from "../../src/studio/lib/tokens";
-import type { TokenName } from "../../src/studio/lib/tokens";
 import { settleFrames } from "../landing-page";
 import { launchSuiteBrowser } from "../suite-browser";
 import {

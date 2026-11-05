@@ -19,11 +19,11 @@ import { Tooltip } from "@elmeragroup/fuse/tooltip";
 import { SingleToggle } from "../../components/single-toggle";
 import { STUDIO_PRIMITIVES } from "../../generated/studio-seeds";
 import { TOKEN_TABLE } from "../../lib/token-sections";
+import type { TokenName } from "../../lib/token-sections";
 import { FONT_STACKS, FONT_STACK_LABELS, isFontStack } from "../lib/font-stacks";
 import { RADIUS_STEPS, aliasTarget, canonicalColorCss, formatLength } from "../lib/token-values";
 import type { ParsedValue } from "../lib/token-values";
 import { STUDIO_TOKEN_NAMES, isTokenName } from "../lib/tokens";
-import type { TokenName } from "../lib/tokens";
 import { useStudioEdits } from "./studio-edits";
 
 const tokenKnobs = tv({

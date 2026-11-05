@@ -65,7 +65,6 @@ function targetFor(key: string, cell: HTMLElement, grid: HTMLElement, ctrl: bool
   if (td === null || !(row instanceof HTMLTableRowElement)) {
     return null;
   }
-  const all = [...grid.querySelectorAll<HTMLElement>(CELL)];
   switch (key) {
     case "ArrowRight":
       return horizontalTarget(row, td.cellIndex, 1);
@@ -76,9 +75,11 @@ function targetFor(key: string, cell: HTMLElement, grid: HTMLElement, ctrl: bool
     case "ArrowUp":
       return verticalTarget(row, td.cellIndex, -1);
     case "Home":
-      return ctrl ? (all[0] ?? null) : horizontalTarget(row, -1, 1);
+      return ctrl ? grid.querySelector<HTMLElement>(CELL) : horizontalTarget(row, -1, 1);
     case "End":
-      return ctrl ? (all.at(-1) ?? null) : horizontalTarget(row, row.cells.length, -1);
+      return ctrl
+        ? ([...grid.querySelectorAll<HTMLElement>(CELL)].at(-1) ?? null)
+        : horizontalTarget(row, row.cells.length, -1);
     default:
       return null;
   }
@@ -93,6 +94,45 @@ function moveTabStop(grid: HTMLElement, cell: HTMLElement): void {
     if (stop !== cell) stop.tabIndex = -1;
   }
   cell.tabIndex = 0;
+}
+
+/** The same-color outline: the cell it was drawn from and the cells it marks. */
+type Outline = { source: HTMLElement | null; cells: readonly HTMLElement[] };
+
+function clearOutline(outline: Outline): void {
+  for (const element of outline.cells) {
+    element.removeAttribute(SAME_TONE);
+  }
+  outline.cells = [];
+  outline.source = null;
+}
+
+/**
+ * Outlines every cell in `cell`'s brand column that holds its color. The pointer moving within the
+ * cell the outline was drawn from changes nothing; a change of rows clears the outline first.
+ */
+function drawOutline(outline: Outline, cell: HTMLElement, container: HTMLElement): void {
+  if (cell === outline.source) {
+    return;
+  }
+  clearOutline(outline);
+  outline.source = cell;
+  const tone = cell.dataset.tone;
+  const column = cell.dataset.column;
+  if (tone === undefined || column === undefined) {
+    return;
+  }
+  const same = [...container.querySelectorAll<HTMLElement>(`${CELL}[data-column="${column}"]`)].filter(
+    (candidate) => candidate.dataset.tone === tone
+  );
+  // One cell alone shares its color with nothing, so nothing outlines.
+  if (same.length < 2) {
+    return;
+  }
+  for (const element of same) {
+    element.setAttribute(SAME_TONE, "");
+  }
+  outline.cells = same;
 }
 
 /**
@@ -111,11 +151,12 @@ function moveTabStop(grid: HTMLElement, cell: HTMLElement): void {
  *
  * @param grid - The element that holds the grid's cells.
  * @param rows - The rows the grid renders; a new array means its cells may have changed, so the
- *   first cell takes the tab stop if the cell that held it is gone.
+ *   first cell takes the tab stop if the cell that held it is gone, and the same-color outline
+ *   redraws from its cell.
  * @returns The handlers for the grid's container.
  */
 export function useCellGrid<Row>(grid: RefObject<HTMLElement | null>, rows: readonly Row[]) {
-  const outlined = useRef<readonly HTMLElement[]>([]);
+  const outline = useRef<Outline>({ source: null, cells: [] });
 
   useLayoutEffect(() => {
     const element = grid.current;
@@ -142,44 +183,28 @@ export function useCellGrid<Row>(grid: RefObject<HTMLElement | null>, rows: read
     if (first !== null) moveTabStop(element, first);
   }, [grid, rows]);
 
-  const clearOutline = (): void => {
-    for (const element of outlined.current) {
-      element.removeAttribute(SAME_TONE);
+  // A switch can recolor the cell under the pointer or focus without unmounting it, and neither
+  // blur nor pointer-leave fires; redraw from that cell, or clear if the change unmounted it.
+  useLayoutEffect(() => {
+    const cell = outline.current.source;
+    clearOutline(outline.current);
+    const element = grid.current;
+    if (cell?.isConnected === true && element !== null) {
+      drawOutline(outline.current, cell, element);
     }
-    outlined.current = [];
-  };
-
-  const outline = (cell: HTMLElement, container: HTMLElement): void => {
-    clearOutline();
-    const tone = cell.dataset.tone;
-    const column = cell.dataset.column;
-    if (tone === undefined || column === undefined) {
-      return;
-    }
-    const same = [...container.querySelectorAll<HTMLElement>(`${CELL}[data-column="${column}"]`)].filter(
-      (candidate) => candidate.dataset.tone === tone
-    );
-    // One cell alone shares its color with nothing, so nothing outlines.
-    if (same.length < 2) {
-      return;
-    }
-    for (const element of same) {
-      element.setAttribute(SAME_TONE, "");
-    }
-    outlined.current = same;
-  };
+  }, [grid, rows]);
 
   return {
     onFocus: (event: FocusEvent<HTMLElement>) => {
       const cell = cellOf(event.target);
       if (cell !== null) {
         moveTabStop(event.currentTarget, cell);
-        outline(cell, event.currentTarget);
+        drawOutline(outline.current, cell, event.currentTarget);
       }
     },
     onBlur: (event: FocusEvent<HTMLElement>) => {
       if (!(event.relatedTarget instanceof Node) || !event.currentTarget.contains(event.relatedTarget)) {
-        clearOutline();
+        clearOutline(outline.current);
       }
     },
     onKeyDown: (event: KeyboardEvent<HTMLElement>) => {
@@ -200,9 +225,9 @@ export function useCellGrid<Row>(grid: RefObject<HTMLElement | null>, rows: read
     onPointerOver: (event: { readonly target: EventTarget; readonly currentTarget: HTMLElement }) => {
       const cell = cellOf(event.target);
       if (cell !== null) {
-        outline(cell, event.currentTarget);
+        drawOutline(outline.current, cell, event.currentTarget);
       }
     },
-    onPointerLeave: clearOutline,
+    onPointerLeave: () => clearOutline(outline.current),
   };
 }

@@ -8,12 +8,17 @@
  * (`scripts/lib/palette-catalog.ts`), so the page never parses or converts a color.
  */
 
-import * as Hex from "@elmeragroup/color/hex";
-import { getOrThrow } from "@elmeragroup/color/result";
-import * as Srgb from "@elmeragroup/color/srgb";
 import type { BrandCode, ThemeSegment, ThemeVariant } from "@elmeragroup/fuse/theme";
-import type { ResolvedColorScheme, RampOrigin, TokenEntry } from "@elmeragroup/fuse/theme-catalog";
+import { RAMP_SCALES, RAMP_STEPS } from "@elmeragroup/fuse/theme-catalog";
+import type {
+  ResolvedColorScheme,
+  RampOrigin,
+  RampScale,
+  RampStep,
+  TokenEntry,
+} from "@elmeragroup/fuse/theme-catalog";
 
+import { matchesEveryToken } from "./search";
 import { TOKEN_SECTIONS, TOKEN_TABLE } from "./token-sections";
 import type { SectionId } from "./token-sections";
 
@@ -66,12 +71,15 @@ export type PaletteTone = {
   readonly hex: string;
   /** The color's alpha, from 0 to 1. */
   readonly alpha: number;
+  /** A translucent color as `#RRGGBBAA`, which the clipboard takes. An opaque color has none. */
+  readonly hexAlpha?: string;
 };
 
 /**
  * A pair's kind. `text-grade` pairs are the ones Fuse's contrast gate holds at 4.5:1 in every
- * theme and scheme. `role` pairs are a role with its `-foreground`, or a pair in
- * {@link CONTRACT_PAIRS}, and no gate holds them.
+ * theme and scheme (`TEXT_GRADE_PAIRS`). `role` pairs are a role with its `-foreground`, or a pair
+ * in {@link CONTRACT_PAIRS}, and are outside that list. Fuse's contrast tests hold some of them to
+ * a floor of their own and leave the rest unchecked.
  */
 export type PalettePairKind = "text-grade" | "role";
 
@@ -89,7 +97,7 @@ export type PalettePair = {
 export type PaletteScheme = {
   /** Each token's resolved color. */
   readonly values: readonly PaletteTone[];
-  /** The custom property each token's declaration names when it is a single `var()`, or `null`. */
+  /** The custom property, without its dashes, a token's declaration names as a single `var()`, or `null`. */
   readonly aliases: readonly (string | null)[];
   /** Each pair's WCAG 2.2 contrast ratio, at full precision, so a grade never rounds up. */
   readonly ratios: readonly number[];
@@ -123,7 +131,7 @@ export type PalettePrimitive = {
   readonly name: string;
   readonly group: PrimitiveGroup;
   readonly tone: PaletteTone;
-  /** The primitive its declaration names when it is a single `var()`, or `null`. */
+  /** The primitive, without its dashes, its declaration names as a single `var()`, or `null`. */
   readonly alias: string | null;
 };
 
@@ -213,14 +221,7 @@ export function formatTone(tone: PaletteTone, format: ValueFormat): string {
  * @returns A color CSS parses, unlike the table's `#000000 · 5%` display.
  */
 export function copyValue(tone: PaletteTone, format: ValueFormat): string {
-  if (format === "oklch" || tone.alpha === 1) {
-    return format === "oklch" ? tone.oklch : tone.hex;
-  }
-  // The catalog's hex is the opaque channels; the alpha joins them as the fourth byte.
-  const channels = getOrThrow(Hex.parse(tone.hex));
-  return Hex.format(
-    getOrThrow(Srgb.make({ r: channels.r, g: channels.g, b: channels.b, alpha: tone.alpha }))
-  );
+  return format === "oklch" ? tone.oklch : (tone.hexAlpha ?? tone.hex);
 }
 
 /** The theme coordinates the switches above the table pick. Each column is one brand. */
@@ -316,11 +317,16 @@ export type PairCell =
       readonly background: PaletteTone;
     };
 
+/** A ramp token's place in Fuse's ramps. */
+export type RampPosition = { readonly scale: RampScale; readonly step: RampStep };
+
 /** One color token's row: a role or a ramp step. */
 export type TokenRow = {
   readonly _tag: "token";
   readonly id: string;
   readonly name: ColorTokenName;
+  /** A ramp step's scale and step, or `undefined` for a role. */
+  readonly ramp: RampPosition | undefined;
   /** The row's group: a contract section for a role, the scale for a ramp step. */
   readonly group: string;
   readonly cells: readonly TokenCell[];
@@ -363,38 +369,43 @@ export const COLLECTION_GROUPS = {
     { id: "text-grade", label: "Text-grade pairs" },
     { id: "role", label: "Other role pairs" },
   ],
-  ramps: [
-    { id: "neutral", label: "brand-neutral" },
-    { id: "shade", label: "brand-shade" },
-  ],
+  ramps: RAMP_SCALES.map((scale) => ({ id: scale, label: `brand-${scale}` })),
   primitives: [
     { id: "neutral", label: "neutral" },
     { id: "brand", label: "brand" },
   ],
 } as const satisfies Record<PaletteCollection, readonly RowGroup[]>;
 
-/** The scale of a ramp token, which groups the ramp rows. */
-function rampScale(name: ColorTokenName): string {
-  return name.startsWith("brand-neutral-") ? "neutral" : "shade";
+/** Each ramp token's scale and step, from Fuse's ramp structure rather than the token names. */
+const RAMP_POSITIONS: ReadonlyMap<string, RampPosition> = new Map(
+  RAMP_SCALES.flatMap((scale) =>
+    RAMP_STEPS.map((step) => [`brand-${scale}-${step}`, { scale, step }] as const)
+  )
+);
+
+/** A ramp step's pill label, such as `shade-100`. */
+function stepLabel({ scale, step }: RampPosition): string {
+  return `${scale}-${step}`;
 }
 
 /**
- * The ramp tokens a role is checked against for a step pill, shade first: where a brand's neutral
- * and shade share a step, as Fjordkraft's 100 does, the pill names the shade.
+ * Each color a column's ramps paint, with the step that paints it. Neutral goes in first so that
+ * shade wins: where a brand's neutral and shade share a step, as Fjordkraft's 100 does, the pill
+ * names the shade.
  */
-function rampIndices(catalog: PaletteCatalog): readonly number[] {
-  const ramp = catalog.tokens.flatMap((name, index) =>
-    tokenSection(name) === "ramps" ? [{ name, index }] : []
+function rampSteps(catalog: PaletteCatalog, palette: PaletteScheme): ReadonlyMap<string, string> {
+  const ramps = catalog.tokens.flatMap((name, index) => {
+    const position = RAMP_POSITIONS.get(name);
+    const tone = palette.values[index];
+    return position === undefined || tone === undefined ? [] : [{ position, tone }];
+  });
+  return new Map(
+    RAMP_SCALES.flatMap((scale) =>
+      ramps
+        .filter(({ position }) => position.scale === scale)
+        .map(({ position, tone }) => [toneKey(tone), stepLabel(position)] as const)
+    )
   );
-  return [
-    ...ramp.filter(({ name }) => rampScale(name) === "shade"),
-    ...ramp.filter(({ name }) => rampScale(name) === "neutral"),
-  ].map(({ index }) => index);
-}
-
-/** A ramp token's pill label, such as `shade-100` for `brand-shade-100`. */
-function stepLabel(name: ColorTokenName): string {
-  return name.replace(/^brand-/u, "");
 }
 
 /**
@@ -411,35 +422,24 @@ export function tokenRows(
   columns: readonly BrandColumn[],
   collection: "roles" | "ramps"
 ): readonly TokenRow[] {
-  const ramps = rampIndices(catalog);
+  const steps = columns.map((column) =>
+    collection === "roles" && column._tag === "theme" ? rampSteps(catalog, column.palette) : undefined
+  );
   return catalog.tokens.flatMap((name, index): TokenRow[] => {
     const section = tokenSection(name);
     if ((section === "ramps") !== (collection === "ramps")) {
       return [];
     }
-    const cells = columns.map((column): TokenCell => {
+    const cells = columns.map((column, at): TokenCell => {
       if (column._tag === "pinned") {
         return { _tag: "pinned", only: column.only };
       }
-      const { palette } = column;
-      const tone = required(palette.values, index, `value for --${name}`);
-      const alias = required(palette.aliases, index, `alias entry for --${name}`);
-      const stepIndex =
-        collection === "roles"
-          ? ramps.find((ramp) => {
-              const step = palette.values[ramp];
-              return step !== undefined && toneKey(step) === toneKey(tone);
-            })
-          : undefined;
-      return {
-        _tag: "value",
-        tone,
-        alias: alias === null ? undefined : alias.replace(/^--/u, ""),
-        step:
-          stepIndex === undefined ? undefined : stepLabel(required(catalog.tokens, stepIndex, "ramp token")),
-      };
+      const tone = required(column.palette.values, index, `value for --${name}`);
+      const alias = required(column.palette.aliases, index, `alias entry for --${name}`);
+      return { _tag: "value", tone, alias: alias ?? undefined, step: steps[at]?.get(toneKey(tone)) };
     });
-    return [{ _tag: "token", id: name, name, group: section === "ramps" ? rampScale(name) : section, cells }];
+    const ramp = RAMP_POSITIONS.get(name);
+    return [{ _tag: "token", id: name, name, ramp, group: ramp?.scale ?? section, cells }];
   });
 }
 
@@ -522,13 +522,11 @@ function cellText(cell: TokenCell | PairCell): string {
 function rowSearchText(row: TokenRow | PairRow | PrimitiveRow): string {
   switch (row._tag) {
     case "token":
-      return [row.name, `--${row.name}`, ...row.cells.map(cellText)].join(" ").toLowerCase();
+      return [`--${row.name}`, ...row.cells.map(cellText)].join(" ");
     case "pair":
-      return [row.pair.foreground, row.pair.background, ...row.cells.map(cellText)].join(" ").toLowerCase();
+      return [row.pair.foreground, row.pair.background, ...row.cells.map(cellText)].join(" ");
     case "primitive":
-      return [row.primitive.name, `--${row.primitive.name}`, row.primitive.tone.hex, row.primitive.tone.oklch]
-        .join(" ")
-        .toLowerCase();
+      return [`--${row.primitive.name}`, row.primitive.tone.hex, row.primitive.tone.oklch].join(" ");
   }
 }
 
@@ -540,7 +538,5 @@ function rowSearchText(row: TokenRow | PairRow | PrimitiveRow): string {
  * @returns `true` for an empty search.
  */
 export function matchesSearch(row: TokenRow | PairRow | PrimitiveRow, search: string): boolean {
-  const words = search.toLowerCase().split(/\s+/u).filter(Boolean);
-  const text = rowSearchText(row);
-  return words.every((word) => text.includes(word));
+  return matchesEveryToken(rowSearchText(row), search);
 }

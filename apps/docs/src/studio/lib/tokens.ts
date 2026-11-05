@@ -1,8 +1,12 @@
-import { FONT_VARIABLES, TOKEN_TABLE, isFontVariable } from "../../lib/token-sections";
-import type { FontVariable, SectionId, TokenKind, TokenName } from "../../lib/token-sections";
+import { FONT_VARIABLES, TOKEN_TABLE } from "../../lib/token-sections";
+import type { FontVariable, SectionId, TokenName } from "../../lib/token-sections";
 
-export { FONT_VARIABLES, isFontVariable };
-export type { FontVariable, TokenKind, TokenName };
+const FONT_VARIABLE_NAMES: ReadonlySet<string> = new Set(FONT_VARIABLES);
+
+/** Whether `name` is a font variable rather than a theme token. */
+export function isFontVariable(name: string): name is FontVariable {
+  return FONT_VARIABLE_NAMES.has(name);
+}
 
 /** Every contract token, in the contract's order, then the font variables. */
 export const STUDIO_TOKEN_NAMES: readonly TokenName[] = Object.keys(TOKEN_TABLE).filter(
@@ -30,14 +34,14 @@ export function sectionTokens(section: SectionId): readonly TokenName[] {
 }
 
 /**
- * The keys a dark palette keeps from light: the brand ramps, which hold one value per brand and
- * segment in both schemes, geometry, the card edge, section divider and shadow
+ * The keys a dark palette keeps from light: geometry, the card edge, section divider and shadow
  * colors, the outline and selection border and divider colors, the disabled selection row's fill,
- * stripe and text colors, the pressed Toggle's fill and text colors, the selection title weight, the paragraph line heights, the heading
- * scale and the heading font. The set is Fuse's private `LIGHT_ONLY_KEYS`
- * (`packages/fuse/src/theme/tokens/contract.ts`) plus `font-heading`, which the studio seeds the
- * same in both schemes. The studio tests check every one declares the same value in both schemes
- * of every theme. An edit to one applies to both schemes.
+ * stripe and text colors, the pressed Toggle's fill and text colors, the selection title weight,
+ * the paragraph line heights, the heading scale, the brand ramps and the heading font. The set is
+ * Fuse's private `LIGHT_ONLY_KEYS` (`packages/fuse/src/theme/tokens/contract.ts`), plus the brand
+ * ramps, which hold one value per brand and segment in both schemes, and `font-heading`, which the
+ * studio seeds the same in both schemes. The studio tests check every one declares the same value
+ * in both schemes of every theme. An edit to one applies to both schemes.
  */
 export const LIGHT_ONLY_TOKENS: ReadonlySet<TokenName> = new Set<TokenName>([
   "card-border",
@@ -53,28 +57,7 @@ export const LIGHT_ONLY_TOKENS: ReadonlySet<TokenName> = new Set<TokenName>([
   "selection-disabled-foreground",
   "toggle-pressed",
   "toggle-pressed-foreground",
-  "brand-neutral-50",
-  "brand-neutral-100",
-  "brand-neutral-200",
-  "brand-neutral-300",
-  "brand-neutral-400",
-  "brand-neutral-500",
-  "brand-neutral-600",
-  "brand-neutral-700",
-  "brand-neutral-800",
-  "brand-neutral-900",
-  "brand-neutral-950",
-  "brand-shade-50",
-  "brand-shade-100",
-  "brand-shade-200",
-  "brand-shade-300",
-  "brand-shade-400",
-  "brand-shade-500",
-  "brand-shade-600",
-  "brand-shade-700",
-  "brand-shade-800",
-  "brand-shade-900",
-  "brand-shade-950",
+  ...sectionTokens("ramps"),
   "radius",
   "radius-button",
   "radius-field",

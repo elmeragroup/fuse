@@ -1,4 +1,4 @@
-import type { TokenName } from "./tokens";
+import type { TokenName } from "../../lib/token-sections";
 
 /** One token of a base theme in one scheme. */
 export type StudioSeedToken = {

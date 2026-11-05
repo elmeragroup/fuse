@@ -16,6 +16,7 @@ import type {
   TokenCell,
   ValueFormat,
 } from "../../lib/palettes";
+import { SEGMENT_LABELS } from "../../lib/theme";
 import { GradeLabel, isCopied, Readout, Swatch, toneLines } from "./color-readout";
 import type { CopyFeedback, ReadoutLine } from "./color-readout";
 
@@ -32,8 +33,6 @@ const paletteCells = tv({
     pill: "shadow-xs inline-flex h-6 max-w-full min-w-0 items-center gap-1.5 rounded-md border border-border bg-background px-1.5",
     pillLabel: "truncate",
     value: "truncate font-mono tabular-nums",
-    contrast: "gap-2",
-    failing: "bg-error-soft text-error-soft-foreground hover:bg-error-soft",
     sample:
       "text-xs font-semibold flex h-6 w-7 flex-none items-center justify-center rounded-sm border border-foreground/15 bg-(--pair-bg) text-(--pair-fg)",
     ratio: "font-mono tabular-nums",
@@ -41,6 +40,10 @@ const paletteCells = tv({
     // same inset ring as a value cell.
     pinned:
       "text-xs palette-hatch flex h-full min-h-10 w-full items-center px-2.5 text-muted-foreground outline-hidden select-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset",
+  },
+  variants: {
+    // A contrast cell below AA.
+    failing: { true: { trigger: "bg-error-soft text-error-soft-foreground hover:bg-error-soft" } },
   },
 });
 
@@ -53,7 +56,7 @@ const styles = paletteCells();
 export function PinnedCellView({ cell, column }: { cell: PinnedCell; column: number }): ReactElement {
   return (
     <span tabIndex={-1} className={styles.pinned()} data-grid-cell data-column={column} data-pinned-cell>
-      {cell.only === "company" ? "Company only" : "Private only"}
+      {`${SEGMENT_LABELS[cell.only]} only`}
     </span>
   );
 }
@@ -99,7 +102,7 @@ export function primitiveValue(primitive: PalettePrimitive): CellValue {
     key: `primitive:${primitive.name}`,
     title: `--${primitive.name}`,
     tone: primitive.tone,
-    alias: primitive.alias?.replace(/^--/u, ""),
+    alias: primitive.alias ?? undefined,
     step: undefined,
     column: 0,
   };
@@ -175,9 +178,7 @@ export function PairCellView({ pair, cell, column, brand, copy }: PairCellViewPr
     <Tooltip.Root>
       <Tooltip.Trigger
         render={<button type="button" tabIndex={-1} />}
-        className={paletteCells().trigger({
-          className: [styles.contrast(), cell.grade === "below-aa" ? styles.failing() : ""],
-        })}
+        className={paletteCells({ failing: cell.grade === "below-aa" }).trigger()}
         data-grid-cell
         data-column={column}
         data-contrast-cell={cell.grade}
@@ -199,7 +200,7 @@ export function PairCellView({ pair, cell, column, brand, copy }: PairCellViewPr
           copied={isCopied(copy, key)}>
           {pair.kind === "text-grade"
             ? "Fuse's contrast gate holds this pair at 4.5:1 in every theme."
-            : "No contrast gate checks this pair."}
+            : "Outside the text-grade pairs. Fuse's contrast tests hold some of these pairs to a floor of their own and leave the rest unchecked."}
         </Readout>
       </Tooltip.Content>
     </Tooltip.Root>

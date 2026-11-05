@@ -11,7 +11,6 @@ import { fuseSrc } from "../scripts/lib/paths.ts";
 import { PALETTE_CATALOG } from "../src/generated/palette-catalog";
 import {
   brandColumns,
-  contrastGrade,
   formatRatio,
   matchesSearch,
   pairRows,
@@ -207,7 +206,7 @@ describe("primitive rows", () => {
     const rows = primitiveRows(PALETTE_CATALOG);
     expect(rows[0]?.primitive.name).toBe("neutral-50");
     // `tokens/primitives.ts`: brand-fkab is var(--brand-fkas).
-    expect(rows.find((row) => row.id === "brand-fkab")?.primitive.alias).toBe("--brand-fkas");
+    expect(rows.find((row) => row.id === "brand-fkab")?.primitive.alias).toBe("brand-fkas");
   });
 });
 
@@ -270,14 +269,6 @@ describe("grading", () => {
     const cell = fixturePairs(fixture(ratio))[0]?.cells[0];
     expect(cell?._tag === "value" ? cell.grade : undefined).toBe(grade);
     expect(formatRatio(ratio)).toBe(shown);
-  });
-
-  it.each([
-    [21, "AAA"],
-    [6.99, "AA"],
-    [4.49, "below-aa"],
-  ] as const)("grades %s:1 as %s", (ratio, grade) => {
-    expect(contrastGrade(ratio)).toBe(grade);
   });
 });
 

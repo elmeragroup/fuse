@@ -9,6 +9,7 @@ import { Button } from "@elmeragroup/fuse/button";
 import { densityAttributes, ThemeScope, themeSlug } from "@elmeragroup/fuse/theme";
 import type { Density, ThemeInput } from "@elmeragroup/fuse/theme";
 
+import type { TokenName } from "../../lib/token-sections";
 import { artboardStyle } from "../lib/artboard-style";
 import type { CustomProperties } from "../lib/artboard-style";
 import { metricStyle } from "../lib/density-metrics";
@@ -18,7 +19,6 @@ import { metricOverridesFor, overridesFor } from "../lib/edits";
 import type { StudioOverrides } from "../lib/edits";
 import type { StudioSeed } from "../lib/seed";
 import { artboardEdits, declarationsOf } from "../lib/token-values";
-import type { TokenName } from "../lib/tokens";
 import { ChromeScope } from "./chrome-scope";
 import { useStudioEdits } from "./studio-edits";
 import { useStudio } from "./studio-state";

@@ -77,9 +77,10 @@ export default function PalettesPage(): ReactElement {
           The <strong>text-grade pairs</strong> are the pairs Fuse&apos;s contrast gate holds at 4.5:1 in
           every theme and scheme. A theme that fails one does not build. The <strong>other role pairs</strong>{" "}
           are each remaining role with its <code>-foreground</code> on top, plus the pairs the token contract
-          names. No gate checks them, so some fall below AA. <code>feature-foreground</code> is decorative,
-          and the <Link href="/accessibility#accepted-deviations">accessibility page</Link> lists the other
-          deviations Fuse accepts. To see a theme&apos;s pairs in context, open the{" "}
+          names. They are outside the text-grade list. Fuse&apos;s contrast tests hold some of them to a floor
+          of their own and leave the rest unchecked, so some fall below AA. <code>feature-foreground</code> is
+          decorative, and the <Link href="/accessibility#accepted-deviations">accessibility page</Link> lists
+          the other deviations Fuse accepts. To see a theme&apos;s pairs in context, open the{" "}
           <Link href="/handbook/theme-matrix">theme matrix</Link>.
         </p>
       </div>

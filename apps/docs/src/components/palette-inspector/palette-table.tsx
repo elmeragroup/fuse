@@ -135,8 +135,6 @@ export function filteredSection(
   return group.value.values[0];
 }
 
-const SCHEME_NAMES = { light: "light", dark: "dark" } as const;
-
 type TableFooterProps = {
   readonly visible: readonly TableRow[];
   readonly collection: PaletteCollection;
@@ -158,7 +156,7 @@ function TableFooter({ visible, collection, axes, copy }: TableFooterProps): Rea
     <div className={styles.footer()}>
       <span>
         {visible.length} rows · {VARIANT_LABELS[axes.variant].toLowerCase()} ·{" "}
-        {SEGMENT_LABELS[axes.segment].toLowerCase()} · {SCHEME_NAMES[axes.scheme]}
+        {SEGMENT_LABELS[axes.segment].toLowerCase()} · {axes.scheme}
       </span>
       <CopyStatus copy={copy} />
       {collection === "contrast" ? (
@@ -238,9 +236,7 @@ function RowName({ row }: { row: TokenRow | PairRow | PrimitiveRow }): ReactElem
     case "token":
       return (
         <span className={styles.name()} data-palette-row={row.name}>
-          {row.group === "neutral" || row.group === "shade"
-            ? row.name.replace(/^brand-[a-z]+-/u, "")
-            : row.name}
+          {row.ramp?.step ?? row.name}
         </span>
       );
     case "pair":
@@ -346,6 +342,12 @@ export function PaletteTable({
   const gridRef = useRef<HTMLDivElement>(null);
   const visible = table.getRowModel().rows;
   const grid = useCellGrid(gridRef, visible);
+  // A group row heads the first row of each group that survives the search and filters.
+  const opensGroup = new Set(
+    visible.flatMap((row, index) =>
+      visible[index - 1]?.original.group === row.original.group ? [] : [row.id]
+    )
+  );
   const groups: readonly { readonly id: string; readonly label: string }[] = COLLECTION_GROUPS[collection];
   const groupLabel = (id: string) => groups.find((group) => group.id === id)?.label ?? id;
 
@@ -396,32 +398,26 @@ export function PaletteTable({
                   </Empty.Content>
                 </Empty.Root>
               }>
-              {(row) => {
-                // A group row heads the first row of each group that survives the search and filters.
-                const rendered = table.getRowModel().rows;
-                const previous = rendered[rendered.indexOf(row) - 1];
-                const opensGroup = previous === undefined || previous.original.group !== row.original.group;
-                return (
-                  <>
-                    {opensGroup ? (
-                      <Table.Row data-group-row>
-                        <Table.Cell
-                          role="rowheader"
-                          colSpan={1 + (collection === "primitives" ? 1 : brands.length)}
-                          className={styles.groupCell()}>
-                          <span className={styles.groupLabel()}>{groupLabel(row.original.group)}</span>
-                        </Table.Cell>
-                      </Table.Row>
-                    ) : null}
-                    <Table.Row data-table-row={row.original.id}>
-                      <Table.Cell role="rowheader">
-                        <RowName row={row.original.row} />
+              {(row) => (
+                <>
+                  {opensGroup.has(row.id) ? (
+                    <Table.Row data-group-row>
+                      <Table.Cell
+                        role="rowheader"
+                        colSpan={1 + (collection === "primitives" ? 1 : brands.length)}
+                        className={styles.groupCell()}>
+                        <span className={styles.groupLabel()}>{groupLabel(row.original.group)}</span>
                       </Table.Cell>
-                      <RowCells row={row.original.row} brands={brands} format={format} copy={copy} />
                     </Table.Row>
-                  </>
-                );
-              }}
+                  ) : null}
+                  <Table.Row data-table-row={row.original.id}>
+                    <Table.Cell role="rowheader">
+                      <RowName row={row.original.row} />
+                    </Table.Cell>
+                    <RowCells row={row.original.row} brands={brands} format={format} copy={copy} />
+                  </Table.Row>
+                </>
+              )}
             </table.Content>
           </div>
           <TableFooter

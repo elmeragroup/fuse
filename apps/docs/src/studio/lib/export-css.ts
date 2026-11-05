@@ -1,12 +1,12 @@
 import { DENSITIES, themeAttributes } from "@elmeragroup/fuse/theme";
 
+import type { TokenName } from "../../lib/token-sections";
 import { restatedAliases } from "./artboard-style";
 import type { Declarations } from "./artboard-style";
 import { STUDIO_METRICS } from "./density-metrics";
 import type { DensityOverrides } from "./density-metrics";
 import type { StudioDocument, TokenOverrides } from "./edits";
 import { STUDIO_TOKEN_NAMES, isLightOnly } from "./tokens";
-import type { TokenName } from "./tokens";
 
 const DARK = `[data-theme="dark"]`;
 
