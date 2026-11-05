@@ -241,6 +241,48 @@ export function everyFrame<T>(read: () => T): FrameWatch<T> {
 }
 
 /**
+ * Pause the glides a pointer step just started under `host`, in the task that dispatched it, and
+ * read the chart at every `every` ms of their way, then once more after they finish, where the
+ * marks rest. The glides are Web Animations on the document's timeline, which no frame clock
+ * drives, and a loaded runner delivers fewer frames during one, so a count of frames measures the
+ * runner. Their own time, set by hand, reads the same places on any runner. A step's glides start
+ * together, so one time places them all.
+ *
+ * @param host - The rendered chart's host.
+ * @param read - The reader, called at each instant.
+ * @param every - Milliseconds between instants.
+ * @returns The readings, from the glides' start to their rest.
+ */
+export function sweepGlides<T>(host: HTMLElement, read: () => T, every = 1): T[] {
+  const glides = host.getAnimations({ subtree: true }).filter(({ playState }) => playState === "running");
+  if (glides.length === 0) throw new Error("no glide");
+  for (const glide of glides) glide.pause();
+  const end = Math.max(...glides.map((glide) => Number(glide.effect?.getComputedTiming().endTime)));
+  const readings: T[] = [];
+  for (let time = 0; time < end; time += every) {
+    for (const glide of glides) glide.currentTime = time;
+    readings.push(read());
+  }
+  for (const glide of glides) glide.finish();
+  readings.push(read());
+  return readings;
+}
+
+/**
+ * The places a glide shows on its way: those more than 1 px from both where it starts and where it
+ * rests. A mark that moves at once shows none.
+ *
+ * @param places - A sweep's places, from start to rest.
+ * @returns The places in between.
+ */
+export function onTheWay<T extends { readonly x: number; readonly y: number }>(places: readonly T[]): T[] {
+  const [start, rest] = [places[0], places.at(-1)];
+  if (start === undefined || rest === undefined) return [];
+  const apart = (a: T, b: T) => Math.hypot(a.x - b.x, a.y - b.y) > 1;
+  return places.filter((place) => apart(place, start) && apart(place, rest));
+}
+
+/**
  * Read every shown active dot in every animation frame until stopped.
  *
  * @param host - The rendered chart's host.

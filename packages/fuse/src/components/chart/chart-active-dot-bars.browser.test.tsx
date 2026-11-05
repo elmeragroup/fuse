@@ -8,7 +8,13 @@ import "../../../dist/themes.css";
 import { nextFrames } from "../../../test/animation-frames";
 import { READINGS, shown } from "../../../test/chart/active-dot";
 import { offPolyline } from "../../../test/chart/polyline";
-import { dispatchSlotMove, everyFrame, watchDots } from "../../../test/chart/tooltip-glide";
+import {
+  dispatchSlotMove,
+  dotFrame,
+  everyFrame,
+  onTheWay,
+  sweepGlides,
+} from "../../../test/chart/tooltip-glide";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
 import { Chart } from "./chart-namespace";
@@ -106,11 +112,8 @@ describe("an active dot on bars, on a fast step across several slots", () => {
       moveToBand(host, 1, 2);
       await nextFrames(1);
       moveToBand(host, 5);
-      const { frames, stop } = everyFrame(() => shown(host));
-      await nextFrames(60);
-      stop();
-      const moving = frames.filter(({ gliding }) => gliding);
-      expect(moving.length, JSON.stringify(frames)).toBeGreaterThan(3);
+      const frames = sweepGlides(host, () => shown(host));
+      expect(onTheWay(frames).length, JSON.stringify(frames)).toBeGreaterThan(3);
       for (const frame of frames) {
         expect(offPolyline(frame, ends), JSON.stringify(frame)).toBeLessThanOrEqual(1);
         expect(Math.abs(frame.x - frame.crosshair), JSON.stringify(frame)).toBeLessThanOrEqual(1);
@@ -199,17 +202,14 @@ function GroupChart({ dot, order, stacked = false }: Group) {
   );
 }
 
-/** A fast pointer step from one of five band slots to another, frame by frame until it rests. */
+/** A fast pointer step from one of five band slots to another, read every millisecond until it rests. */
 async function fastStep(host: HTMLElement, from: number, to: number) {
   moveToBand(host, from, 0, 5);
   await nextFrames(40);
   moveToBand(host, from, 2, 5);
   await nextFrames(1);
   moveToBand(host, to, 0, 5);
-  const { frames, stop } = watchDots(host);
-  await nextFrames(60);
-  stop();
-  return frames.flat();
+  return sweepGlides(host, () => dotFrame(host)).flat();
 }
 
 describe("an active dot on bars after its bars change", () => {
@@ -234,7 +234,7 @@ describe("an active dot on bars after its bars change", () => {
     await nextFrames(2);
     const frames = await fastStep(host, 0, 4);
     const ends = barEnds(host, 1, [false, false, false, false, false]);
-    expect(frames.filter(({ gliding }) => gliding).length, JSON.stringify(frames)).toBeGreaterThan(3);
+    expect(onTheWay(frames).length, JSON.stringify(frames)).toBeGreaterThan(3);
     for (const frame of frames) {
       expect(offPolyline(frame, ends), JSON.stringify(frame)).toBeLessThanOrEqual(1);
       expect(frame.x, JSON.stringify(frame)).toBeLessThanOrEqual((ends[4]?.x ?? 0) + 0.5);
@@ -304,10 +304,8 @@ describe("an active dot on a BarGroup drawn as paths", () => {
     move(0, 2);
     await nextFrames(1);
     move(6);
-    const { frames, stop } = everyFrame(() => shown(host));
-    await nextFrames(60);
-    stop();
-    expect(frames.filter(({ gliding }) => gliding).length, JSON.stringify(frames)).toBeGreaterThan(3);
+    const frames = sweepGlides(host, () => shown(host));
+    expect(onTheWay(frames).length, JSON.stringify(frames)).toBeGreaterThan(3);
     for (const frame of frames)
       expect(offPolyline(frame, rests), JSON.stringify(frame)).toBeLessThanOrEqual(1);
   });
