@@ -102,7 +102,7 @@ describe("BrandLogo", () => {
         const lettering: string[] = [];
         const mark = new Set<string>();
         for (const part of svg.querySelectorAll("path, polygon, rect")) {
-          if (part.closest("defs, clipPath, mask") !== null) continue;
+          if (part.closest("defs, clipPath") !== null) continue;
           const rect = part.getBoundingClientRect();
           // Empty geometry paints nothing, whatever its fill says.
           if (rect.width === 0 || rect.height === 0) continue;
