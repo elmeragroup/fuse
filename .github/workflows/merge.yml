@@ -328,6 +328,10 @@ jobs:
     uses: ./.github/workflows/publish-release.yml
     with:
       source_commit: ${{ github.sha }}
+    # A called workflow sees only the secrets its caller passes. Its notify job announces the
+    # release in Slack; npm authenticates over OIDC, so no npm token is passed.
+    secrets:
+      SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
 
   version:
     needs: [checks, browser]

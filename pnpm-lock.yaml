@@ -93,6 +93,9 @@ catalogs:
     '@types/d3-shape':
       specifier: 3.2.0
       version: 3.2.0
+    '@types/mdast':
+      specifier: 4.0.4
+      version: 4.0.4
     '@types/node':
       specifier: 25.9.5
       version: 25.9.5
@@ -138,6 +141,15 @@ catalogs:
     libphonenumber-js:
       specifier: 1.13.13
       version: 1.13.13
+    mdast-util-from-markdown:
+      specifier: 2.0.3
+      version: 2.0.3
+    mdast-util-gfm-strikethrough:
+      specifier: 2.0.0
+      version: 2.0.0
+    micromark-extension-gfm-strikethrough:
+      specifier: 2.1.0
+      version: 2.1.0
     next:
       specifier: 16.4.2
       version: 16.4.2
@@ -722,6 +734,46 @@ importers:
       '@types/pngjs':
         specifier: 'catalog:'
         version: 6.0.5
+      tsrs:
+        specifier: 'catalog:'
+        version: 0.21.0-ts7.1.0-beta
+      typescript:
+        specifier: 'catalog:'
+        version: 7.1.0-beta
+      vitest:
+        specifier: 'catalog:'
+        version: 5.0.0(@types/node@25.9.5)(@vitest/browser-playwright@5.0.0)(@vitest/ui@5.0.0)(vite@8.3.0(@types/node@25.9.5)(jiti@2.7.0)(yaml@2.9.1))
+
+  tooling/release-announcement:
+    dependencies:
+      '@effect/platform-node':
+        specifier: 'catalog:'
+        version: 4.0.6(effect@4.0.6)(redis@6.2.1)
+      effect:
+        specifier: 'catalog:'
+        version: 4.0.6
+      mdast-util-from-markdown:
+        specifier: 'catalog:'
+        version: 2.0.3(supports-color@8.1.1)
+      mdast-util-gfm-strikethrough:
+        specifier: 'catalog:'
+        version: 2.0.0(supports-color@8.1.1)
+      micromark-extension-gfm-strikethrough:
+        specifier: 'catalog:'
+        version: 2.1.0
+    devDependencies:
+      '@effect/vitest':
+        specifier: 'catalog:'
+        version: 4.0.6(effect@4.0.6)(vitest@5.0.0)
+      '@elmeragroup/typescript-config':
+        specifier: workspace:*
+        version: link:../typescript
+      '@types/mdast':
+        specifier: 'catalog:'
+        version: 4.0.4
+      '@types/node':
+        specifier: 'catalog:'
+        version: 25.9.5
       tsrs:
         specifier: 'catalog:'
         version: 0.21.0-ts7.1.0-beta

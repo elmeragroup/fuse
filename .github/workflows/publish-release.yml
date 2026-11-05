@@ -8,6 +8,10 @@ on:
       source_commit:
         required: true
         type: string
+    # Only the notify job reads it; npm authenticates over OIDC, so no npm token is passed.
+    secrets:
+      SLACK_BOT_TOKEN:
+        required: false
   workflow_dispatch:
     inputs:
       record_tag:
@@ -15,20 +19,29 @@ on:
         required: true
         type: string
 
-# id-token: write lets npm exchange the job's OIDC token for a publish token (trusted publishing).
-permissions:
-  contents: write
-  pull-requests: read
-  id-token: write
+# Each job declares its own grant, so the notify job's read-only token never inherits the
+# publish job's write and OIDC grants.
+permissions: {}
 
 jobs:
   publish:
     if: github.ref == 'refs/heads/main'
+    # id-token: write lets npm exchange the job's OIDC token for a publish token (trusted
+    # publishing).
+    permissions:
+      contents: write
+      pull-requests: read
+      id-token: write
     # npm's trusted-publisher entries name this environment, and only main can deploy to it, so an
     # OIDC token from any other job cannot publish.
     environment: npm
     runs-on: ubuntu-latest
     timeout-minutes: 40
+    # The release this run published, for the notify job: its record tag, empty when the run
+    # published none, and the release as JSON.
+    outputs:
+      release-tag: ${{ steps.release.outputs.tag }}
+      release: ${{ steps.release.outputs.release }}
     concurrency:
       # `queue: max` keeps waiting publications instead of replacing the newest one, so a
       # stable Version Packages merge cannot be silently dropped by a later canary commit.
@@ -82,3 +95,69 @@ jobs:
           else
             pnpm release publish "$SOURCE_COMMIT"
           fi
+
+      # The lookup runs inside the npm-release group, so it sees the records as this run's engine
+      # left them; tooling/release-announcement/src/release-announcement.ts explains the candidates.
+      # An announcement must never fail a finished publication, so a failed lookup fails only this
+      # step, with an error annotation, and leaves the release unannounced.
+      - name: Find the release this run published
+        id: release
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_COMMIT: ${{ inputs.source_commit }}
+          RECORD_TAG: ${{ inputs.record_tag }}
+        run: node tooling/release-announcement/src/find-release.ts
+
+  # Announces the release this run published in Slack (scripts/RELEASE.md#slack-announcements):
+  # stable to SLACK_RELEASES_CHANNEL and canary to SLACK_CANARY_CHANNEL. It runs after both the
+  # publish and the retry path, since a retry is the real publication of its record, from the
+  # release the publish job found under the npm-release lock; another publication may run once that
+  # lock is released. It holds the Slack token and a read-only GitHub token, and installs only the
+  # announcement's runtime dependencies, without their install scripts (scripts/RELEASE.md explains
+  # why the token shares a job with them). Publication is finished by now, so a failed
+  # announcement fails only this job.
+  notify:
+    needs: publish
+    if: needs.publish.outputs.release-tag != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    # The history check and the post run one at a time per release, so a publication's notify
+    # and a retry's for the same record cannot both find no announcement and both post. Waiting
+    # jobs queue rather than replace each other. A run that found no release keys on its own run
+    # ID, so it never shares a group with another run.
+    concurrency:
+      group: slack-announcement-${{ needs.publish.outputs.release-tag || github.run_id }}
+      cancel-in-progress: false
+      queue: max
+    steps:
+      # The full history holds a retried record's commit, whose changelog or subject is the notes.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile --ignore-scripts --prod --filter @elmeragroup/release-announcement
+
+      # Slack is the delivery receipt: each post carries the release's tag as message metadata,
+      # and the announcement checks the channel for an earlier one before it posts once, without
+      # retrying. An unset token or channel variable skips the post with a notice, so publishing
+      # can go live before Slack is set up.
+      - name: Announce the release in Slack
+        id: announce
+        env:
+          RELEASE: ${{ needs.publish.outputs.release }}
+          SLACK_RELEASES_CHANNEL: ${{ vars.SLACK_RELEASES_CHANNEL }}
+          SLACK_CANARY_CHANNEL: ${{ vars.SLACK_CANARY_CHANNEL }}
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+        run: node tooling/release-announcement/src/announce-release.ts

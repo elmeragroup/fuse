@@ -39,6 +39,7 @@ catalog:
   "@types/node": 25.9.5
   "@types/d3-array": 3.2.2
   "@types/d3-shape": 3.2.0
+  "@types/mdast": 4.0.4
   "@types/picomatch": 4.0.3
   "@types/pngjs": 6.0.5
   "@types/react": 19.3.0
@@ -58,6 +59,13 @@ catalog:
   eslint-plugin-turbo: 2.10.12
   fast-check: 4.10.2
   "libphonenumber-js": 1.13.13
+  # The release announcement's Markdown reader, at the versions the docs app's remark already
+  # resolves, all past the minimum release age. Of GitHub's extensions it takes strikethrough
+  # alone: the full set's autolink-literal extension is quadratic on a long paragraph with an
+  # unclosed `[` (tooling/release-announcement/src/release-notes.ts).
+  mdast-util-from-markdown: 2.0.3
+  mdast-util-gfm-strikethrough: 2.0.0
+  micromark-extension-gfm-strikethrough: 2.1.0
   next: 16.4.2
   oxc-parser: 0.148.0
   oxc-transform: 0.148.0

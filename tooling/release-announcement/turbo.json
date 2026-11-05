@@ -1,0 +1,10 @@
+{
+  "extends": ["//"],
+  "tasks": {
+    // The suites run the announcement against local stand-ins for git, GitHub and Slack, so they
+    // do not wait for the Fuse build that the root `test` task depends on.
+    "test": {
+      "dependsOn": []
+    }
+  }
+}
