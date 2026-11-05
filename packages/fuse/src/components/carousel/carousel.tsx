@@ -15,6 +15,7 @@ import { CarouselContext, useCarouselContext } from "./carousel-context";
 import type {
   CarouselActions,
   CarouselContextValue,
+  CarouselControlReason,
   CarouselIndexChangeDetails,
   CarouselIndexChangeReason,
   CarouselMeta,
@@ -23,6 +24,7 @@ import type {
 } from "./carousel-context";
 import { createCarouselEngine } from "./carousel-engine";
 import type { CarouselEngine, CarouselOrientation, CarouselSnapshot } from "./carousel-engine";
+import { clampIndex } from "./carousel-pages";
 import { useCarouselRotation } from "./carousel-rotation";
 import { carouselVariants } from "./carousel-variants";
 import { carouselStrings } from "./intl";
@@ -68,10 +70,8 @@ export type CarouselViewportProps = useRender.ComponentProps<"div">;
 /** `Carousel.Slide` takes a `div`'s props plus Base UI's `render`. */
 export type CarouselSlideProps = useRender.ComponentProps<"div">;
 
-function clampIndex(index: number, pageCount: number): number {
-  const floor = Math.max(0, Math.trunc(index));
-  return pageCount === 0 ? floor : Math.min(pageCount - 1, floor);
-}
+const styles = carouselVariants();
+const verticalStyles = carouselVariants({ orientation: "vertical" });
 
 /**
  * The provider every Carousel part reads, and the carousel container APG describes: a `region`
@@ -148,10 +148,8 @@ export function CarouselRoot({
 
   // A control press is the user's, so it stops rotation, even when the page stays.
   const navigate = useCallback(
-    (requested: number, reason: CarouselIndexChangeReason) => {
-      if (reason !== "autoplay") {
-        stop();
-      }
+    (requested: number, reason: CarouselControlReason) => {
+      stop();
       resolve(requested, reason);
     },
     [resolve, stop]
@@ -244,7 +242,7 @@ export function CarouselRoot({
         {
           role: "region",
           "aria-roledescription": strings.format("carousel"),
-          className: cn(carouselVariants().root(), className),
+          className: cn(styles.root(), className),
           children,
           ...rotation.rootHandlers,
         },
@@ -279,7 +277,7 @@ export function CarouselViewport({ className, render, ref, ...props }: CarouselV
           tabIndex: 0,
           "aria-live": wiring.live,
           "aria-atomic": false,
-          className: cn(carouselVariants({ orientation: meta.orientation }).viewport(), className),
+          className: cn((meta.orientation === "vertical" ? verticalStyles : styles).viewport(), className),
         },
         definedProps(props)
       ),
@@ -343,7 +341,7 @@ export function CarouselSlide({ className, render, ref, ...props }: CarouselSlid
           role: "group",
           "aria-roledescription": strings.format("slide"),
           ...definedProps({ "aria-label": label, inert: outOfView || undefined }),
-          className: cn(carouselVariants().slide(), className),
+          className: cn(styles.slide(), className),
           onFocus: () => setFocusWithin(true),
           onBlur: (event: FocusEvent<HTMLDivElement>) => {
             const next = event.relatedTarget;

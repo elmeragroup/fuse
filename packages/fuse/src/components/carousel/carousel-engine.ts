@@ -4,12 +4,13 @@
  * Root creates one per viewport and turns its reports into state, so no part reads it directly.
  *
  * The browser's own scroller runs every gesture. The engine listens to `scroll` passively and
- * reads one `scrollLeft` or `scrollTop` per frame, so it never delays a swipe, a wheel turn or a
+ * reads one `scrollLeft` or `scrollTop` per frame, with a horizontal viewport's computed
+ * `direction`, so it never delays a swipe, a wheel turn or a
  * keyboard scroll, and it never writes a transform. A page change calls `scrollTo` without
  * `behavior`, so the viewport's own `scroll-behavior: smooth` animates it and the central
  * reduced-motion rule in `fuse.css` turns that animation off.
  *
- * The engine has two paths, kept apart:
+ * The engine keeps these apart:
  *
  * - Reconciliation. The Root's commit and every invalidation, a resize, a change to the viewport's
  *   subtree, a slide mounting or unmounting, end in one `flush`. It measures the layout at most
@@ -57,8 +58,9 @@
  * since the ratio is read with the boxes. A rotated or skewed ancestor is not supported: a box's
  * bounds are then not a scaled copy of its layout.
  */
+import { documentOrder } from "../../internal/dom-node";
 import { createCarouselInput } from "./carousel-input";
-import { nearestPage, pagesOf, parseSnapAlign, visibleSlides } from "./carousel-pages";
+import { clampIndex, nearestPage, pagesOf, parseSnapAlign, samePages, visibleSlides } from "./carousel-pages";
 import type { Pages, ScrollPort, SlideGeometry, SnapAxis } from "./carousel-pages";
 
 /** The axis a carousel scrolls on. */
@@ -89,8 +91,8 @@ export type CarouselEngineListener = {
    * that snaps back.
    */
   readonly onInteract: () => void;
-  /** A scroll ended, on `page`. */
-  readonly onSettle: (page: number) => void;
+  /** A scroll ended. */
+  readonly onSettle: () => void;
 };
 
 /** What the Root has committed: the page it shows, and how many scrolls have ended. */
@@ -212,25 +214,15 @@ function layoutSizeOf(style: CSSStyleDeclaration): Size {
   };
 }
 
-function documentOrder(left: HTMLElement, right: HTMLElement): number {
-  return left.compareDocumentPosition(right) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1;
-}
-
-function samePages(left: Pages, right: Pages): boolean {
-  return (
-    left.positions.length === right.positions.length &&
-    left.positions.every(
-      (value, index) => Math.abs(value - (right.positions[index] ?? Number.NaN)) < ARRIVED
-    ) &&
-    left.leadingSlides.every((value, index) => value === right.leadingSlides[index])
-  );
-}
-
 function sameSnapshot(left: CarouselSnapshot, right: CarouselSnapshot): boolean {
+  // One measurement's slides and pages are the same references until the layout is measured again.
+  const sameLayout =
+    (left.slides === right.slides && left.pages === right.pages) ||
+    (left.slides.length === right.slides.length &&
+      left.slides.every((slide, index) => slide === right.slides[index]) &&
+      samePages(left.pages, right.pages));
   return (
-    left.slides.length === right.slides.length &&
-    left.slides.every((slide, index) => slide === right.slides[index]) &&
-    samePages(left.pages, right.pages) &&
+    sameLayout &&
     left.visible.size === right.visible.size &&
     [...left.visible].every((slide) => right.visible.has(slide))
   );
@@ -307,6 +299,16 @@ export function createCarouselEngine(
   /** The scroll position in the last measured direction. */
   function position(): number {
     return positionIn(layout?.rtl === true);
+  }
+
+  /** The last measurement, unless the latest found no usable layout. */
+  function usable(): Layout | null {
+    return unmeasured ? null : layout;
+  }
+
+  /** Where the engine's own scroll is heading, in the last measurement. */
+  function ownDestination(): number | undefined {
+    return target === null ? undefined : layout?.pages.positions[target];
   }
 
   /** A measurement with no usable layout: keep the last one, and retry once there may be one. */
@@ -507,7 +509,7 @@ export function createCarouselEngine(
       return;
     }
     const last = positions.length - 1;
-    const wanted = Math.min(last, Math.max(0, Math.trunc(committed.index)));
+    const wanted = clampIndex(committed.index, positions.length);
     // Read before `applied` takes this commit: whether any page has been put in place yet.
     const first = applied === null;
     const requested = first || applied?.index !== committed.index || applied.settled !== committed.settled;
@@ -538,7 +540,8 @@ export function createCarouselEngine(
     // Every check runs, so the watched slides always end up equal to the members.
     const membersChanged = syncMembers();
     const moved = pending.some(movesSlides);
-    const mirrored = layout !== null && !unmeasured && readsRtl() !== layout.rtl;
+    const current = usable();
+    const mirrored = current !== null && readsRtl() !== current.rtl;
     if (membersChanged || moved || mirrored) {
       dirty = true;
     }
@@ -551,11 +554,12 @@ export function createCarouselEngine(
       }
       restore = result === "restore" || strandedUnderOwnScroll();
     }
-    if (unmeasured || layout === null) {
+    const fresh = usable();
+    if (fresh === null) {
       return;
     }
-    apply(layout, restore);
-    publish(layout);
+    apply(fresh, restore);
+    publish(fresh);
   }
 
   /**
@@ -593,10 +597,11 @@ export function createCarouselEngine(
 
   /** Report the nearest page and the slides in view for the current scroll position. */
   function track(): void {
-    if (layout === null || unmeasured) {
+    const current = usable();
+    if (current === null) {
       return;
     }
-    if (readsRtl() !== layout.rtl) {
+    if (readsRtl() !== current.rtl) {
       // Mirrored under the last measurement: reconcile before reading positions in it again.
       invalidate();
       return;
@@ -607,10 +612,13 @@ export function createCarouselEngine(
       dirty = true;
       flush();
     }
-    publish(layout);
-    // Only a live session reports its page as it goes; any other scroll waits for its end.
-    if (session === "live" && target === null) {
-      observe(layout);
+    // The session's fresh measurement, when it just took one.
+    const measured = layout ?? current;
+    publish(measured);
+    // Only a live session reports its page as it goes; any other scroll waits for its end. The
+    // engine's own scroll, which is heading to its page, has ended any session.
+    if (session === "live") {
+      observe(measured);
     }
   }
 
@@ -679,7 +687,7 @@ export function createCarouselEngine(
     // such as a script's jump. A quiet spell tells them apart: the engine's scroll keeps sending
     // scroll events, each of which restarts it, until its own end arrives; a superseded scroll
     // leaves the viewport at rest, and the spell ends it.
-    const destination = target === null ? undefined : layout?.pages.positions[target];
+    const destination = ownDestination();
     if (destination !== undefined && Math.abs(position() - destination) >= ARRIVED) {
       owe(ended);
       return;
@@ -691,7 +699,7 @@ export function createCarouselEngine(
   /** A scroll ended: read where, from a fresh measurement, and tell the Root. */
   function ended(): void {
     // Ending the engine's own scroll: where its page started in the layout it was measured against.
-    const own = target === null ? undefined : layout?.pages.positions[target];
+    const own = ownDestination();
     ending = own === undefined || layout === null ? null : { pages: layout.pages, start: own };
     target = null;
     session = "idle";
@@ -700,10 +708,11 @@ export function createCarouselEngine(
     dirty = true;
     flush();
     ending = null;
-    if (layout !== null && !unmeasured) {
-      observe(layout);
+    const settled = usable();
+    if (settled !== null) {
+      observe(settled);
     }
-    listener.onSettle(page);
+    listener.onSettle();
   }
 
   function onScroll(): void {
@@ -715,11 +724,10 @@ export function createCarouselEngine(
     }
     // A scroll event starts the spell over. Without `scrollend` a spell ends every scroll; with it,
     // a spell counts only for a scroll end that was deferred or arrived short.
-    if (owed !== null) {
-      countQuiet();
-    } else if (!hasScrollEnd) {
-      owe(settle);
+    if (owed === null && !hasScrollEnd) {
+      owed = settle;
     }
+    countQuiet();
   }
 
   /**
@@ -745,11 +753,10 @@ export function createCarouselEngine(
     if (session === "armed") {
       session = "idle";
     }
-    if (owed !== null) {
-      countQuiet();
-    } else if (session === "live") {
-      owe(settle);
+    if (owed === null && session === "live") {
+      owed = settle;
     }
+    countQuiet();
   }
 
   function onWheel(event: WheelEvent): void {

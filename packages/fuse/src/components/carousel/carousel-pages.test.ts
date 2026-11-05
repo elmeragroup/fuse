@@ -5,7 +5,7 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { nearestPage, pagesOf, parseSnapAlign, visibleSlides } from "./carousel-pages";
+import { clampIndex, nearestPage, pagesOf, parseSnapAlign, samePages, visibleSlides } from "./carousel-pages";
 import type { ScrollPort, SlideGeometry, SnapAlign } from "./carousel-pages";
 
 /** `count` slides of `size` px from the scroll origin, `gap` px apart, all aligned `align`. */
@@ -70,14 +70,24 @@ describe("pagesOf", () => {
     expect(pagesOf(port(600), slides)).toEqual({ positions: [0, 300], leadingSlides: [0, 3] });
   });
 
-  it("merges positions within a pixel, keeping the earliest slide", () => {
-    const slides = [
-      { start: 0, size: 300, marginStart: 0, marginEnd: 0, align: "start" as const },
-      { start: 300.4, size: 299.6, marginStart: 0, marginEnd: 0, align: "start" as const },
-      { start: 600, size: 300, marginStart: 0, marginEnd: 0, align: "start" as const },
-    ];
-    expect(pagesOf(port(900), slides)).toEqual({ positions: [0, 300.4, 600], leadingSlides: [0, 1, 2] });
-    expect(pagesOf(port(600), slides).leadingSlides).toEqual([0, 1]);
+  /** A start-aligned slide at `start`, `size` px long. */
+  function slideAt(start: number, size: number): SlideGeometry {
+    return { start, size, marginStart: 0, marginEnd: 0, align: "start" };
+  }
+
+  it("merges snap positions under a pixel apart into the earlier, led by the first slide in document order", () => {
+    // Slide 1 snaps at 300.6 and slide 2, which overlaps it, at 300: both well inside the 900px
+    // scroll range, so neither clamps. One page at 300, led by slide 1.
+    const slides = [slideAt(0, 300), slideAt(300.6, 299.4), slideAt(300, 300), slideAt(600, 300)];
+    expect(pagesOf(port(1200), slides)).toEqual({ positions: [0, 300, 600], leadingSlides: [0, 1, 3] });
+  });
+
+  it("keeps snap positions a pixel apart as two pages", () => {
+    const slides = [slideAt(0, 300), slideAt(300, 1), slideAt(301, 299), slideAt(600, 300)];
+    expect(pagesOf(port(1200), slides)).toEqual({
+      positions: [0, 300, 301, 600],
+      leadingSlides: [0, 1, 2, 3],
+    });
   });
 
   it("has no pages without slides, and one when no slide snaps", () => {
@@ -127,5 +137,32 @@ describe("parseSnapAlign", () => {
     expect(parseSnapAlign("none end", "block")).toBe("none");
     expect(parseSnapAlign("", "inline")).toBe("none");
     expect(parseSnapAlign("unknown", "inline")).toBe("none");
+  });
+});
+
+describe("samePages", () => {
+  const pages = { positions: [0, 300], leadingSlides: [0, 1] };
+
+  it("matches positions under a pixel apart, led by the same slides", () => {
+    expect(samePages(pages, { positions: [0, 300.6], leadingSlides: [0, 1] })).toBe(true);
+  });
+
+  it("tells apart a pixel's move, another leading slide and another page count", () => {
+    expect(samePages(pages, { positions: [0, 301], leadingSlides: [0, 1] })).toBe(false);
+    expect(samePages(pages, { positions: [0, 300], leadingSlides: [0, 2] })).toBe(false);
+    expect(samePages(pages, { positions: [0, 300, 600], leadingSlides: [0, 1, 2] })).toBe(false);
+  });
+});
+
+describe("clampIndex", () => {
+  it("truncates to a whole page and clamps to the first and last", () => {
+    expect(clampIndex(2.7, 5)).toBe(2);
+    expect(clampIndex(-1, 3)).toBe(0);
+    expect(clampIndex(9, 3)).toBe(2);
+  });
+
+  it("clamps only from below before any page is measured", () => {
+    expect(clampIndex(7, 0)).toBe(7);
+    expect(clampIndex(-2, 0)).toBe(0);
   });
 });

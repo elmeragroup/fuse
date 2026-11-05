@@ -19,6 +19,9 @@ export type CarouselIndexChangeReason =
   /** `useCarousel().actions`, from a custom control. */
   | "action";
 
+/** The reasons a press or an action gives: neither the viewport's scroll nor rotation. */
+export type CarouselControlReason = Exclude<CarouselIndexChangeReason, "scroll" | "autoplay">;
+
 /** What `onIndexChange` receives beside the new page. */
 export type CarouselIndexChangeDetails = {
   /** What changed the page. */
@@ -81,8 +84,8 @@ export type CarouselWiring = {
    * measurement.
    */
   readonly snapshot: CarouselSnapshot | null;
-  /** Change the page for a reason, as a control does. A control press stops rotation. */
-  readonly navigate: (index: number, reason: CarouselIndexChangeReason) => void;
+  /** Change the page for a control's reason. A control press stops rotation. */
+  readonly navigate: (index: number, reason: CarouselControlReason) => void;
   /** Mount `Carousel.Autoplay`. The returned function unmounts it. */
   readonly mountAutoplay: () => () => void;
   /** Set the rotation's delay, in ms, keeping the user's choice to play or stop. */

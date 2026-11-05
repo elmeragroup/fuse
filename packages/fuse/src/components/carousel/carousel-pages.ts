@@ -135,6 +135,38 @@ export function pagesOf(port: ScrollPort, slides: readonly SlideGeometry[]): Pag
 }
 
 /**
+ * Whether two measurements make the same pages: as many, each at the same position within a
+ * pixel, as `pagesOf` merges positions, and each led by the same slide.
+ *
+ * @param left - One measurement's pages.
+ * @param right - The other's.
+ * @returns `true` when every page matches.
+ */
+export function samePages(left: Pages, right: Pages): boolean {
+  return (
+    left.positions.length === right.positions.length &&
+    left.positions.every(
+      (value, index) => Math.abs(value - (right.positions[index] ?? Number.NaN)) < SAME_POSITION
+    ) &&
+    left.leadingSlides.every((value, index) => value === right.leadingSlides[index])
+  );
+}
+
+/**
+ * A requested page as one the layout has: truncated to a whole page, and clamped to the first
+ * and last. Without pages nothing clamps it from above, so a page asked for before the first
+ * measurement stands until one arrives.
+ *
+ * @param index - The requested page.
+ * @param pageCount - How many pages there are, `0` before any measurement.
+ * @returns The page.
+ */
+export function clampIndex(index: number, pageCount: number): number {
+  const floor = Math.max(0, Math.trunc(index));
+  return pageCount === 0 ? floor : Math.min(pageCount - 1, floor);
+}
+
+/**
  * The page whose position is nearest a scroll position. A position halfway between two pages
  * belongs to the earlier one.
  *

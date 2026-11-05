@@ -61,7 +61,6 @@ export const carouselVariants = tv({
       },
       vertical: {
         viewport: "snap-y flex-col overflow-x-hidden overflow-y-auto overscroll-y-contain",
-        edgeIcon: "",
       },
     },
   },
