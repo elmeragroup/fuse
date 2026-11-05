@@ -84,9 +84,10 @@ type HeaderFit = { readonly _tag: "Fits" } | { readonly _tag: "Overflows"; reado
 /**
  * Folds the header into its menu Sheet whenever a row's content is wider than the row, measured
  * rather than keyed to a width: the copy's width depends on the font the platform draws, and
- * Roboto falls back to a wider face on Linux than on macOS. It measures before the first paint,
- * then again whenever the header or a row's part resizes, as when a web font swaps in. A folded
- * header unfolds once the header is as wide as it measured it needs.
+ * before Roboto loads, or in a host that loads none, the fallback is wider on Linux than on macOS.
+ * It measures before the first paint, then again whenever the header or a row's part resizes, as
+ * when a web font swaps in. A folded header unfolds once the header is as wide as it measured it
+ * needs.
  */
 function useHeaderFit(header: RefObject<HTMLElement | null>): HeaderFit {
   const [fit, setFit] = useState<HeaderFit>({ _tag: "Fits" });

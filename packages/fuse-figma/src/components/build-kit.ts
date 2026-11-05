@@ -5,9 +5,8 @@
  */
 import { Effect, Result } from "effect";
 
-import { resolveThemeCatalog } from "@elmeragroup/fuse/theme-catalog";
-
 import { fuseVariableSet } from "../fuse-variable-set";
+import { KIT_BODY_FAMILY } from "../kit-fonts";
 import type { CollectionSpec, VariableSpec } from "../variable-set";
 import { KitSourceInvalid, KitUnmappable } from "./build-errors";
 import { buildSetsInOrder } from "./component-builder";
@@ -294,10 +293,10 @@ export const buildKit = Effect.fn("buildKit")(function* (registry: readonly KitE
   );
 
   const fontStyles = [...new Set(built.flatMap((set) => set.fontStyles))];
-  const family = fontStyles.length === 0 ? "" : yield* Effect.fromResult(defaultFontFamily());
   const spec: KitSpec = {
     pages: [...componentPages.map(pageSpec), ICONS_PAGE],
-    fonts: fontStyles.map((style) => ({ family, style })),
+    // A kit label binds `font-sans`, which holds the kit's body family in every theme.
+    fonts: fontStyles.map((style) => ({ family: KIT_BODY_FAMILY, style })),
     glyphFont: GLYPH_FONT,
     icons,
     componentSets: built.map((set) => set.componentSet),
@@ -398,26 +397,10 @@ function extremes(
 }
 
 /**
- * The glyphs the kit's text holds that Roboto, the family `font-sans` resolves to, lacks: ⇧ (U+21E7)
+ * The glyphs the kit's text holds that Roboto, the family the kit's `font-sans` holds, lacks: ⇧ (U+21E7)
  * and ⌘ (U+2318), in the Dropdown menu shortcuts. Inter draws both, and Figma ships it (G1).
  */
 const GLYPH_FONT: GlyphFontSpec = { family: "Inter", glyphs: ["\u21E7", "\u2318"] };
-
-/** The family `font-sans` resolves to, which every theme shares. The plugin loads it. */
-function defaultFontFamily(): Result.Result<string, KitSourceInvalid> {
-  const families = new Set(
-    resolveThemeCatalog().themes.flatMap((theme) =>
-      Object.values(theme.schemes).map((scheme) => scheme.tokens["font-sans"].value)
-    )
-  );
-  const [family, ...others] = families;
-  if (family === undefined || others.length > 0) {
-    return Result.fail(
-      new KitSourceInvalid({ message: `the themes disagree on font-sans: ${[...families].join(", ")}` })
-    );
-  }
-  return Result.succeed(family);
-}
 
 const OUTCOME_ORDER: readonly CoverageOutcome[] = ["unmapped", "dropped", "bound", "literal"];
 

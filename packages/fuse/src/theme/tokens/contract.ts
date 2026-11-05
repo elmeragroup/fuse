@@ -132,8 +132,6 @@ export const TOKEN_NAMES = [
   "heading-3-size",
   "heading-3-leading",
   "heading-3-weight",
-  "font-sans",
-  "font-heading",
 ] as const;
 
 export type TokenName = (typeof TOKEN_NAMES)[number];
@@ -246,7 +244,7 @@ export function derivedRoleSources(name: DerivedTokenName): readonly LayerTokenN
 const LAYER_TOKEN_NAMES: readonly LayerTokenName[] = TOKEN_NAMES.filter(isLayerTokenName);
 
 /** What a token's CSS value holds, which decides how exporters translate it. */
-export type TokenKind = "color" | "dimension" | "fontFamily" | "fontWeight";
+export type TokenKind = "color" | "dimension" | "fontWeight";
 
 /**
  * The kind of every token. A new token without a kind fails to compile, so no exporter
@@ -386,8 +384,6 @@ export const TOKEN_KINDS = {
   "heading-3-size": "dimension",
   "heading-3-leading": "dimension",
   "heading-3-weight": "fontWeight",
-  "font-sans": "fontFamily",
-  "font-heading": "fontFamily",
 } as const satisfies Record<TokenName, TokenKind>;
 
 /** A contract token whose value is a color. */
@@ -775,9 +771,6 @@ export const TOKEN_DESCRIPTIONS = {
     "The line height of a level 3 Heading without a size prop. Internal themes keep the snug 1.375 ratio, and external themes set the 20/32 heading xsmall style.",
   "heading-3-weight":
     "The font weight of a level 3 Heading without a font prop. Internal themes keep 500, and external themes set the bold heading xsmall style.",
-  "font-sans": "The body font stack, with Roboto first.",
-  "font-heading":
-    "The heading font. It follows font-sans unless the theme sets its own, such as Neo Sans in external Fjordkraft themes.",
 } as const satisfies Record<TokenName, string>;
 
 /**
@@ -844,7 +837,6 @@ export const EXTERNAL_RESET_KEYS = [
   "heading-3-size",
   "heading-3-leading",
   "heading-3-weight",
-  "font-heading",
 ] as const;
 
 export type ExternalResetKey = (typeof EXTERNAL_RESET_KEYS)[number];
@@ -921,7 +913,6 @@ const LIGHT_ONLY_KEYS: ReadonlySet<TokenName> = new Set([
   "heading-3-size",
   "heading-3-leading",
   "heading-3-weight",
-  "font-heading",
 ]);
 
 /**

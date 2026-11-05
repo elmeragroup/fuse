@@ -84,6 +84,13 @@ export const STATIC_PAGES: readonly StaticPage[] = [
     group: "handbook",
   },
   {
+    href: "/handbook/fonts",
+    label: "Fonts",
+    description:
+      "How an app loads its fonts and sets --font-sans and --font-heading, per brand and in nested themes, and the fonts on the brand sites.",
+    group: "handbook",
+  },
+  {
     href: "/handbook/icons",
     label: "Icons",
     description: "The icon system: per-icon exports, sizing, stroke weight and accessible naming.",

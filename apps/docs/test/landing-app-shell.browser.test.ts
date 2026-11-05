@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import { resolveThemeCatalog } from "@elmeragroup/fuse/theme-catalog";
 
 import { DESKTOP_VIEWPORT, expectInside } from "./demo-page";
+import { drawnFace } from "./drawn-face";
 import {
   IDA_METER_POINT,
   OPEN_COUNTS,
@@ -14,6 +15,7 @@ import {
   openNewOrder,
   openOrderSearch,
   row,
+  showSide,
   DASHBOARD_FIRST,
 } from "./landing-dashboard";
 import { auditTargets, collectPageErrors, expectTargets, launchLandingSuite } from "./landing-page";
@@ -91,6 +93,23 @@ async function openView(page: Page, label: string): Promise<void> {
 }
 
 describe("landing Dashboard window", () => {
+  // On the External side the document takes the external variant. The site's own chrome keeps
+  // Inter, the brand site's external ThemeScope draws Roboto, and the Dashboard stays mounted,
+  // inert, in its internal ThemeScope, which draws Inter. An inert subtree has no role a query
+  // reaches, so the row is found by its customer attribute, and the brand site's button by the
+  // scope's theme attribute.
+  it("keeps the site chrome and the internal Dashboard in Inter, and the external site in Roboto", async () => {
+    const page = await openLanding(DESKTOP_VIEWPORT);
+    await showSide(page, "External");
+    await expect.poll(() => page.locator("html").getAttribute("data-theme-variant")).toBe("external");
+    expect({
+      nav: await drawnFace(page.getByRole("navigation", { name: "Primary" }).getByRole("button").first()),
+      site: await drawnFace(page.locator('[data-theme-variant="external"]:not(html) button').first()),
+      dashboard: await drawnFace(page.locator('[data-customer="Ola Nordmann"]').first()),
+    }).toEqual({ nav: "--font-inter", site: "--font-roboto", dashboard: "--font-inter" });
+    await page.context().close();
+  });
+
   it("drives the detail pane from a row click", async () => {
     const page = await openLanding(DESKTOP_VIEWPORT);
     const app = dashboard(page);

@@ -11,7 +11,6 @@ import { FIGMA_THEME_FILES, FIGMA_THEME_INDEX } from "../src/generated/theme-cat
 import type {
   FigmaColorToken,
   FigmaDimensionToken,
-  FigmaFontToken,
   FigmaFontWeightToken,
   FigmaThemeDocument,
 } from "../src/lib/docs-model";
@@ -88,8 +87,9 @@ describe("Figma DTCG documents", () => {
       expect(Object.keys(file.color).filter((key) => key !== "$type")).toEqual(names);
       expect(file.color.$type).toBe("color");
       expect(file.size.$type).toBe("dimension");
-      expect(file.font.$type).toBe("fontFamily");
       expect(file.weight.$type).toBe("fontWeight");
+      // Themes name no fonts, so a document holds no font group.
+      expect(Object.keys(file)).toEqual(["color", "size", "weight"]);
     }
   });
 
@@ -131,11 +131,6 @@ describe("Figma DTCG documents", () => {
     expect(token<FigmaDimensionToken>(document.size, "radius-step")).toEqual({
       $type: "dimension",
       $value: { value: 2, unit: "px" },
-    });
-    expect(token<FigmaFontToken>(document.font, "sans")).toEqual({ $type: "fontFamily", $value: "Roboto" });
-    expect(token<FigmaFontToken>(document.font, "heading")).toEqual({
-      $type: "fontFamily",
-      $value: "Neo Sans",
     });
     // The external variant layer's medium selection row title, a DTCG number.
     expect(token<FigmaFontWeightToken>(document.weight, "selection-title-weight")).toEqual({
@@ -255,10 +250,6 @@ describe("Figma DTCG documents", () => {
     expect(token<FigmaDimensionToken>(document.size, "radius")).toEqual({
       $type: "dimension",
       $value: { value: 6, unit: "px" },
-    });
-    expect(token<FigmaFontToken>(document.font, "heading")).toEqual({
-      $type: "fontFamily",
-      $value: "{font.sans}",
     });
   });
 });

@@ -1,6 +1,29 @@
-import type { TokenKind, TokenName } from "@elmeragroup/fuse/theme-catalog";
+import type {
+  TokenKind as ThemeTokenKind,
+  TokenName as ThemeTokenName,
+} from "@elmeragroup/fuse/theme-catalog";
 
-export type { TokenKind, TokenName };
+/**
+ * The font variables Fuse applies, which the editor edits beside the theme tokens. Themes name no
+ * fonts, so an app sets these, and the studio seeds and writes them as the docs app does.
+ */
+export const FONT_VARIABLES = ["font-sans", "font-heading"] as const;
+
+/** A font variable the editor edits. */
+export type FontVariable = (typeof FONT_VARIABLES)[number];
+
+const FONT_VARIABLE_NAMES: ReadonlySet<string> = new Set(FONT_VARIABLES);
+
+/** Whether `name` is a font variable rather than a theme token. */
+export function isFontVariable(name: string): name is FontVariable {
+  return FONT_VARIABLE_NAMES.has(name);
+}
+
+/** A name the editor edits: a theme token, or a font variable. */
+export type TokenName = ThemeTokenName | FontVariable;
+
+/** The kind of value a knob edits: a theme token's kind, or a font stack. */
+export type TokenKind = ThemeTokenKind | "fontFamily";
 
 /** An inspector section of the token editor. */
 export type SectionId =
@@ -35,9 +58,9 @@ export type TokenRow = { readonly section: SectionId; readonly kind: TokenKind }
 const color = (section: SectionId): TokenRow => ({ section, kind: "color" });
 
 /**
- * Every contract token, keyed by name in the contract's order, with its section and kind. The
- * record type makes a contract token without a row a compile error; the studio tests check the
- * order and the kinds against the resolved catalog.
+ * Every contract token, keyed by name in the contract's order, then the font variables, with its
+ * section and kind. The record type makes a name without a row a compile error; the studio tests
+ * check the order and the kinds against the resolved catalog.
  */
 export const TOKEN_TABLE = {
   background: color("surfaces"),
@@ -177,14 +200,14 @@ export const TOKEN_TABLE = {
   "font-heading": { section: "typography", kind: "fontFamily" },
 } as const satisfies Record<TokenName, TokenRow>;
 
-/** Every contract token, in the contract's order. */
+/** Every contract token, in the contract's order, then the font variables. */
 export const STUDIO_TOKEN_NAMES: readonly TokenName[] = Object.keys(TOKEN_TABLE).filter(
   (name): name is TokenName => Object.hasOwn(TOKEN_TABLE, name)
 );
 
 const KNOWN_NAMES: ReadonlySet<string> = new Set(STUDIO_TOKEN_NAMES);
 
-/** Whether `name` is a contract token. */
+/** Whether `name` is a contract token or a font variable. */
 export function isTokenName(name: string): name is TokenName {
   return KNOWN_NAMES.has(name);
 }
@@ -206,9 +229,10 @@ export function sectionTokens(section: SectionId): readonly TokenName[] {
  * The keys a dark palette keeps from light: geometry, the card edge, section divider and shadow
  * colors, the outline and selection border and divider colors, the disabled selection row's fill,
  * stripe and text colors, the pressed Toggle's fill and text colors, the selection title weight, the paragraph line heights, the heading
- * scale and the heading font. Fuse keeps this set private as `LIGHT_ONLY_KEYS` in
- * `packages/fuse/src/theme/tokens/contract.ts`; the studio tests check every one declares the
- * same value in both schemes of every theme. An edit to one applies to both schemes.
+ * scale and the heading font. The set is Fuse's private `LIGHT_ONLY_KEYS`
+ * (`packages/fuse/src/theme/tokens/contract.ts`) plus `font-heading`, which the studio seeds the
+ * same in both schemes. The studio tests check every one declares the same value in both schemes
+ * of every theme. An edit to one applies to both schemes.
  */
 export const LIGHT_ONLY_TOKENS: ReadonlySet<TokenName> = new Set<TokenName>([
   "card-border",

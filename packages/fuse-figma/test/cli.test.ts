@@ -4,6 +4,7 @@ import { TestClock } from "effect/testing";
 
 import { resolveThemeCatalog } from "@elmeragroup/fuse/theme-catalog";
 
+import { KIT_FONT_DESCRIPTIONS, KIT_FONT_NAMES } from "../src/kit-fonts.ts";
 import {
   BRAND_MODES,
   errors,
@@ -224,11 +225,15 @@ describe("fuse-figma sync", () => {
       yield* run(figma, ["--file-key", FILE_KEY, "sync"]);
 
       // Unit under test: the descriptions the sync stores. Oracle: the theme catalog's own
-      // description of each token, rung, primitive and density metric.
+      // description of each token, rung, primitive and density metric, and `kit-fonts.ts`'s of
+      // each font variable, which the kit owns since themes name no fonts.
       const catalog = resolveThemeCatalog();
       const [theme] = catalog.themes;
       const described = [
         ...Object.values(theme.schemes.light.tokens).map((entry) => ["Fuse tokens", entry] as const),
+        ...KIT_FONT_NAMES.map(
+          (name) => ["Fuse tokens", { name, description: KIT_FONT_DESCRIPTIONS[name] }] as const
+        ),
         ...Object.values(theme.schemes.light.rungs)
           .filter((rung) => rung.name !== "radius-popover")
           .map((entry) => ["Fuse tokens", entry] as const),

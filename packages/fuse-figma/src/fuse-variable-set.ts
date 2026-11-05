@@ -69,6 +69,14 @@ import type {
   TokenPaint,
 } from "@elmeragroup/fuse/theme-catalog";
 
+import {
+  hasOwnHeadingFamily,
+  KIT_BODY_FAMILY,
+  KIT_FONT_DESCRIPTIONS,
+  KIT_FONT_NAMES,
+  KIT_HEADING_FAMILY,
+} from "./kit-fonts.ts";
+import type { KitFontName } from "./kit-fonts.ts";
 import { FILL_SCOPES, makeVariableSet } from "./variable-set.ts";
 import type {
   AliasCycle,
@@ -153,7 +161,6 @@ function densityIn(mode: DensityMode, variant: ThemeVariant): Density {
 const VARIABLE_TYPES = {
   color: "COLOR",
   dimension: "FLOAT",
-  fontFamily: "STRING",
   fontWeight: "FLOAT",
 } as const satisfies Record<TokenKind, VariableType>;
 
@@ -552,7 +559,7 @@ const DIMENSION_SCOPES = {
 const FONT_SCOPES = {
   fontFamily: ["FONT_FAMILY"],
   fontWeight: ["FONT_STYLE"],
-} as const satisfies Record<Exclude<TokenKind, "color" | "dimension">, readonly VariableScope[]>;
+} as const satisfies Record<"fontFamily" | "fontWeight", readonly VariableScope[]>;
 
 /**
  * The pickers that offer a color for each place Fuse paints it. A surface fills frames and
@@ -588,7 +595,6 @@ function tokenScopes(entry: TokenEntry): readonly VariableScope[] {
       return paintScopes(entry.paints);
     case "dimension":
       return DIMENSION_SCOPES[entry.name];
-    case "fontFamily":
     case "fontWeight":
       return FONT_SCOPES[entry.kind];
   }
@@ -613,6 +619,7 @@ function isSyncedRung(entry: RungEntry): entry is RungEntry<SyncedRungName> {
 type BoundVariable = {
   readonly name:
     | TokenName
+    | KitFontName
     | SyncedRungName
     | `${ColorTokenName}/${number}`
     | FormulaReading<"theme">["name"]
@@ -631,8 +638,8 @@ type BoundVariable = {
   /** What the token or rung is for, from the catalog. */
   readonly description: string;
 
-  /** The value `Fuse brand` holds for a theme's scheme at a theme path. */
-  readonly leafIn: (scheme: ResolvedScheme, path: ThemePath) => VariableValue;
+  /** The value `Fuse brand` holds for a theme's scheme at a theme path, in the brand's mode. */
+  readonly leafIn: (scheme: ResolvedScheme, path: ThemePath, brand: BrandCode) => VariableValue;
 };
 
 /** Where a theme's value sits along the scheme, variant and segment axes. */
@@ -702,7 +709,30 @@ function boundVariables(template: ResolvedScheme, metrics: MetricsByDensity): re
       }),
     }))
   );
-  return [...tokens, ...rungs, ...tints, ...formulas, ...perDensity];
+  return [...tokens, ...kitFontVariables(), ...rungs, ...tints, ...formulas, ...perDensity];
+}
+
+/**
+ * The kit's font variables, which follow the role tokens as the contract once listed them. Fuse's
+ * themes name no fonts, so `kit-fonts.ts` holds the families: Roboto for body text, which headings
+ * follow, and Neo Sans for headings in Fjordkraft's external themes.
+ */
+function kitFontVariables(): readonly BoundVariable[] {
+  return KIT_FONT_NAMES.map((name): BoundVariable => ({
+    name,
+    type: "STRING",
+    scopes: FONT_SCOPES.fontFamily,
+    webSyntax: `var(--${name})`,
+    description: KIT_FONT_DESCRIPTIONS[name],
+    leafIn: (_scheme, path, brand) => {
+      if (name === "font-sans") {
+        return { _tag: "String", value: KIT_BODY_FAMILY };
+      }
+      return hasOwnHeadingFamily(path.variant, brand)
+        ? { _tag: "String", value: KIT_HEADING_FAMILY }
+        : alias(BRAND_COLLECTION, brandVariableName(path, "font-sans"));
+    },
+  }));
 }
 
 /** The hidden `Fuse tokens` variable holding a formula over tokens and metrics for one density mode. */
@@ -835,14 +865,14 @@ const THEME_PATHS: readonly ThemePath[] = SCHEMES.flatMap((scheme) =>
 function brandCollection(catalog: ResolvedThemeCatalog, bound: readonly BoundVariable[]): CollectionSpec {
   const variables = THEME_PATHS.flatMap((path) => {
     const shown = BRAND_CODES.map(
-      (brand) => [brandModeName(brand), shownTheme(catalog, path, brand)] as const
+      (brand) => [brandModeName(brand), shownTheme(catalog, path, brand), brand] as const
     );
     return bound.map((variable): VariableSpec => ({
       name: brandVariableName(path, variable.name),
       type: variable.type,
       ...HIDDEN_METADATA,
       values: new Map(
-        shown.map(([mode, theme]) => [mode, variable.leafIn(theme.schemes[path.scheme], path)])
+        shown.map(([mode, theme, brand]) => [mode, variable.leafIn(theme.schemes[path.scheme], path, brand)])
       ),
     }));
   });
@@ -1050,8 +1080,6 @@ function literalValue(entry: AnyEntry): LiteralValue {
     }
     case "dimension":
       return { _tag: "Float", value: entry.value };
-    case "fontFamily":
-      return { _tag: "String", value: entry.value };
     case "fontWeight":
       return { _tag: "Float", value: entry.value };
   }

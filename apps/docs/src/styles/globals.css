@@ -14,6 +14,30 @@
   --spacing-docs-header: 3.5rem;
 }
 
+/* The docs set their fonts as the fonts handbook page tells an app to. `components/site-fonts.ts`
+   loads the faces into --font-inter and --font-roboto. The site root draws Inter whatever theme it
+   carries. A theme scope below it, such as a demo stage or a landing app window, draws Roboto for an
+   external theme. So does a block preview's root, which `data-block-preview` marks. Every scope
+   sets --font-heading again, because a `var(--font-sans)` resolves where it is declared. */
+:root,
+[data-theme-variant] {
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-heading: var(--font-sans);
+}
+
+[data-theme-variant="external"]:not(:root),
+:root[data-block-preview][data-theme-variant="external"] {
+  --font-sans: var(--font-roboto), ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Each scope sets its own font-family, because an ancestor's `font-family: var(--font-sans)`
+   resolved at the ancestor. The rule sits in the base layer, so a utility on the scope wins. */
+@layer base {
+  [data-theme-variant]:not(:root) {
+    font-family: var(--font-sans);
+  }
+}
+
 @utility prose-docs {
   --tw-prose-body: var(--foreground);
   --tw-prose-headings: var(--foreground);

@@ -24,8 +24,8 @@ const ILLEGAL_SLUGS = [
 // the pressed Toggle fill and label, the selection row title weight, the three paragraph line
 // heights, the size, line height and weight of h1 to h3, the modal fill and text, and the 26
 // chart roles: 8 slot foregrounds, Other and its foreground, 7 ramp steps, 7 diverging steps and
-// 2 sentiments.
-const ROLE_TOKEN_COUNT = 135;
+// 2 sentiments. Themes name no fonts, so `font-sans` and `font-heading` are not tokens.
+const ROLE_TOKEN_COUNT = 133;
 
 function catalogTheme(slug: string): ThemeCatalogEntry {
   const theme = THEME_CATALOG.themes.find((entry) => entry.slug === slug);
@@ -60,7 +60,7 @@ describe("theme catalog payload", () => {
     const tokenKeys = Object.keys(firstCatalogTheme().tokens);
     expect(tokenKeys).toHaveLength(ROLE_TOKEN_COUNT);
     expect(tokenKeys[0]).toBe("--background");
-    expect(tokenKeys.at(-1)).toBe("--font-heading");
+    expect(tokenKeys.at(-1)).toBe("--heading-3-weight");
     for (const theme of THEME_CATALOG.themes) {
       const density = theme.variant === "internal" ? "dense" : "comfortable";
       expect(theme.density).toBe(density);

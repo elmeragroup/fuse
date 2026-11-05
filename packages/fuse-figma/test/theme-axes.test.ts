@@ -21,8 +21,6 @@ function storedForm(entry: AnyEntry): ReturnType<InMemoryFigma["resolve"]> {
     case "dimension":
     case "fontWeight":
       return Math.fround(entry.value);
-    case "fontFamily":
-      return entry.value;
   }
 }
 

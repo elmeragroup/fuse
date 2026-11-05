@@ -5,10 +5,17 @@
  */
 
 import * as Hex from "@elmeragroup/color/hex";
-import type { ResolvedThemeCatalog, ResolvedScheme, TokenEntry } from "@elmeragroup/fuse/theme-catalog";
+import type {
+  ResolvedThemeCatalog,
+  ResolvedScheme,
+  ThemeVariant,
+  TokenEntry,
+} from "@elmeragroup/fuse/theme-catalog";
 
+import { FONT_STACK_LABELS, FONT_STACKS } from "../lib/font-stacks.ts";
 import { referencesOf } from "../lib/references.ts";
 import type { StudioSchemeSeed, StudioSeed, StudioSeedToken } from "../lib/seed.ts";
+import type { FontVariable } from "../lib/tokens.ts";
 
 /**
  * The roles the theme rules declare as a live `color-mix()` instead of the literal the catalog
@@ -29,22 +36,37 @@ function displayValue(entry: TokenEntry): string {
         : Hex.formatOpaque(entry.value);
     case "dimension":
       return `${String(entry.value)}px`;
-    case "fontFamily":
-      return entry.value;
     case "fontWeight":
       return String(entry.value);
   }
 }
 
-function schemeSeed(scheme: ResolvedScheme): StudioSchemeSeed {
-  // SAFETY: `scheme.tokens` holds an entry for every token name, so the record has every key
-  // StudioSchemeSeed names. Object.fromEntries cannot carry that.
-  return Object.fromEntries(
-    Object.values(scheme.tokens).map((entry): [string, StudioSeedToken] => [
-      entry.name,
-      { css: LIVE_MIXES.get(entry.name) ?? entry.css, value: displayValue(entry) },
-    ])
-  ) as StudioSchemeSeed;
+/**
+ * The font variables as the docs set them for a theme's variant (`styles/globals.css`): Inter for
+ * internal themes and Roboto for external ones, with headings following the body font. Themes
+ * name no fonts, so the docs, as an app, choose them.
+ */
+function fontSeeds(variant: ThemeVariant) {
+  const body = variant === "internal" ? "inter" : "roboto";
+  return {
+    "font-sans": { css: FONT_STACKS[body], value: FONT_STACK_LABELS[body] },
+    "font-heading": { css: FONT_STACKS.body, value: FONT_STACK_LABELS[body] },
+  } satisfies Record<FontVariable, StudioSeedToken>;
+}
+
+function schemeSeed(scheme: ResolvedScheme, variant: ThemeVariant): StudioSchemeSeed {
+  // SAFETY: `scheme.tokens` holds an entry for every token name and `fontSeeds` one for every font
+  // variable, so the record has every key StudioSchemeSeed names. Object.fromEntries cannot carry
+  // that.
+  return {
+    ...Object.fromEntries(
+      Object.values(scheme.tokens).map((entry): [string, StudioSeedToken] => [
+        entry.name,
+        { css: LIVE_MIXES.get(entry.name) ?? entry.css, value: displayValue(entry) },
+      ])
+    ),
+    ...fontSeeds(variant),
+  } as StudioSchemeSeed;
 }
 
 /**
@@ -56,8 +78,8 @@ function schemeSeed(scheme: ResolvedScheme): StudioSchemeSeed {
 export function buildStudioSeeds(catalog: ResolvedThemeCatalog): StudioSeed[] {
   return catalog.themes.map((theme) => ({
     slug: theme.slug,
-    light: schemeSeed(theme.schemes.light),
-    dark: schemeSeed(theme.schemes.dark),
+    light: schemeSeed(theme.schemes.light, theme.input.variant),
+    dark: schemeSeed(theme.schemes.dark, theme.input.variant),
   }));
 }
 

@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import { launchSuiteBrowser, readThemeAttributes, waitForDocsShellHydration } from "./demo-page";
 import { docsBaseUrl } from "./docs-server";
+import { drawnFace } from "./drawn-face";
 
 const browser = launchSuiteBrowser();
 
@@ -38,6 +39,17 @@ async function expectPreview(page: Page, variant: string, brand: string, segment
     });
 }
 
+/**
+ * The faces the docs chrome and a demo stage draw: a nav link, and a stage button. The site draws
+ * Inter whatever theme it shows, and a stage draws its variant's face.
+ */
+async function drawnFaces(page: Page): Promise<{ nav: string; stage: string }> {
+  return {
+    nav: await drawnFace(page.getByRole("navigation", { name: "Main navigation" }).getByRole("link").first()),
+    stage: await drawnFace(page.locator("[data-demo-stage] button").first()),
+  };
+}
+
 async function expectFocused(locator: Locator): Promise<void> {
   await expect.poll(() => locator.evaluate((element) => element === document.activeElement)).toBe(true);
 }
@@ -50,6 +62,7 @@ describe("docs theme settings", () => {
       expect(await menu.getByRole("group", { name, exact: true }).count()).toBe(1);
     }
     await expectPreview(page, "internal", "fkas", "private");
+    expect(await drawnFaces(page)).toEqual({ nav: "--font-inter", stage: "--font-inter" });
     const initialPaint = await menu.evaluate((element) => ({
       background: getComputedStyle(element).backgroundColor,
       font: getComputedStyle(element).fontFamily,
@@ -60,6 +73,7 @@ describe("docs theme settings", () => {
     await choice(menu, "TrøndelagKraft").click();
     await choice(menu, "Company").click();
     await expectPreview(page, "external", "tkas", "company");
+    await expect.poll(() => drawnFaces(page)).toEqual({ nav: "--font-inter", stage: "--font-roboto" });
     expect(await menu.isVisible()).toBe(true);
     await expectFocused(choice(menu, "Company"));
     expect(

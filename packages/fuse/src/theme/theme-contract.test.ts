@@ -220,6 +220,16 @@ describe("theme contract", () => {
     }
   });
 
+  it("declares no font in any theme rule", () => {
+    // The owner ruling: themes name no fonts, and an app sets --font-sans and --font-heading.
+    const declared = rules.flatMap((rule) =>
+      rule.declarations
+        .filter((entry) => entry.name.startsWith("font"))
+        .map((entry) => `${rule.selector} ${entry.name}`)
+    );
+    expect(declared).toEqual([]);
+  });
+
   it("matches the committed themes.css snapshot", async () => {
     await expect(css).toMatchFileSnapshot("./__snapshots__/themes.css");
   });
@@ -299,10 +309,10 @@ describe("theme contract", () => {
         expect(reset.has(name), `${name} rebinds to ${target}`).toBe(true);
       }
     }
-    // The brand pair and the locked sans stack are the brand-pointer layer's and the
-    // defaults'; every other role is a key some palette can change, or reads one. The sidebar
-    // brand pair reads the sidebar, which every dark palette sets.
-    const brandPointerRoles = new Set<string>(["brand", "brand-foreground", "font-sans"]);
+    // The brand pair is the brand-pointer layer's; every other role is a key some palette can
+    // change, or reads one. The sidebar brand pair reads the sidebar, which every dark palette
+    // sets.
+    const brandPointerRoles = new Set<string>(["brand", "brand-foreground"]);
     expect(THEME_RESET_KEYS).toEqual(TOKEN_NAMES.filter((name) => !brandPointerRoles.has(name)));
   });
 
@@ -352,8 +362,6 @@ describe("theme contract", () => {
         "heading-3-size",
         "heading-3-leading",
         "heading-3-weight",
-        "font-sans",
-        "font-heading",
       ] as const) {
         expect(dark[key]).toBe(light[key]);
       }

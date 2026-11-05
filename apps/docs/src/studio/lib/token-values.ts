@@ -6,6 +6,7 @@ import { STUDIO_BASE_REFERENCES, STUDIO_PRIMITIVES } from "../../generated/studi
 import type { ArtboardScheme } from "./documents";
 import { overrideOf, resetNames } from "./edits";
 import type { StudioDocument, StudioOverrides } from "./edits";
+import { fontStackFamilies } from "./font-stacks";
 import { referencedNames, referencesOf } from "./references";
 import type { BaseReferences } from "./references";
 import type { StudioSeed } from "./seed";
@@ -125,17 +126,6 @@ const PRIMITIVE_NAMES: ReadonlySet<string> = new Set(STUDIO_PRIMITIVES.map((prim
 /** `--radius-step` takes only the two values the corner formulas support (CONTEXT.md). */
 export const RADIUS_STEPS = ["0px", "2px"] as const;
 
-/** A CSS identifier without escapes, such as `Segoe` or `-apple-system`; never `123`. */
-const IDENTIFIER = String.raw`(?:--|-?[\p{L}_])[\p{L}\p{N}_-]*`;
-
-/**
- * One family: a quoted name of free text without quotes or backslashes, or identifiers between
- * spaces, such as `Segoe UI` or `ui-sans-serif`.
- */
-const FAMILY = String.raw`(?:"[^"'\\]+"|'[^"'\\]+'|${IDENTIFIER}(?:\s+${IDENTIFIER})*)`;
-
-const FONT_STACK = new RegExp(`^${FAMILY}(?:\\s*,\\s*${FAMILY})*$`, "u");
-
 /** The names CSS reserves from an unquoted family, in any case: the CSS-wide keywords and `default`. */
 const RESERVED_FAMILY_WORDS: ReadonlySet<string> = new Set([
   "inherit",
@@ -146,14 +136,12 @@ const RESERVED_FAMILY_WORDS: ReadonlySet<string> = new Set([
   "default",
 ]);
 
-const QUOTED_FAMILY = /"[^"'\\]+"|'[^"'\\]+'/gu;
-
-/** Whether a stack {@link FONT_STACK} matches has an unquoted word CSS reserves. */
-function hasReservedFamilyWord(css: string): boolean {
-  return css
-    .replace(QUOTED_FAMILY, ",")
-    .split(/[\s,]+/u)
-    .some((word) => RESERVED_FAMILY_WORDS.has(word.toLowerCase()));
+/** Whether an unquoted family of a font stack holds a word CSS reserves. */
+function isReservedFamily(family: string): boolean {
+  return (
+    !/^["']/u.test(family) &&
+    family.split(/\s+/u).some((word) => RESERVED_FAMILY_WORDS.has(word.toLowerCase()))
+  );
 }
 
 const NUMBER = /^(?:\d+(?:\.\d+)?|\.\d+)$/u;
@@ -326,11 +314,15 @@ function parseLiteral(name: TokenName, css: string): ParsedValue {
       const px = lengthPx(css);
       return px !== undefined && px >= 0 ? accept(css) : refuse("Not a px or rem length");
     }
-    case "fontFamily":
-      if (!FONT_STACK.test(css)) {
+    case "fontFamily": {
+      const families = fontStackFamilies(css);
+      if (families === undefined) {
         return refuse("Not a font stack: names, quoted or plain, between commas");
       }
-      return hasReservedFamilyWord(css) ? refuse("Quote a family named like a CSS keyword") : accept(css);
+      return families.some(isReservedFamily)
+        ? refuse("Quote a family named like a CSS keyword")
+        : accept(css);
+    }
     case "fontWeight": {
       const weight = Number(css);
       return NUMBER.test(css) && weight >= 1 && weight <= 1000

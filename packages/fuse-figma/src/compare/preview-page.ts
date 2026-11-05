@@ -7,7 +7,9 @@
  * later one wins. The page names the layers first, in the order `styles.css` declares them, so
  * preflight's import does not reorder them. The docs layout sets `font-sans text-foreground` on `<body>`, and the kit's labels
  * inherit both, so the page body does the same. Preflight matters too: without it a native form
- * control keeps the browser's own font.
+ * control keeps the browser's own font. Fuse's themes name no fonts, so the page sets
+ * `--font-sans` and `--font-heading` on the themed `<body>` from the kit's own families, as an app
+ * sets its fonts (`kit-fonts.ts`).
  *
  * Each cell sits in its own absolutely placed slot at whole CSS pixels, with its element at a
  * fixed padding from the slot's corner, so every crop starts on a device pixel. The page stops
@@ -15,6 +17,7 @@
  */
 
 import type { Cell, ComponentDefinition, ElementSelector } from "../components/component-spec.ts";
+import { kitFontCss } from "../kit-fonts.ts";
 import type { ThemeStamps } from "./preview-theme.ts";
 
 /** The origin the browser loads the page and its assets from, served by request interception. */
@@ -393,6 +396,7 @@ ${hostCss}
 }
 *,*::before,*::after{animation:none!important;transition:none!important}
 html,body{background:transparent!important}
+${kitFontCss("body")}
 body{margin:0;font-family:var(--font-sans);color:var(--foreground);-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
 [data-compare-cell]{position:absolute;display:flex;align-items:flex-start;padding:${layout.padding}px}
 ${BACKGROUND_PROBE}{position:absolute;left:0;top:0;width:4px;height:4px;background:var(--background)}
