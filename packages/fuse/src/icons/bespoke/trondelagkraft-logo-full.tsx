@@ -4,9 +4,10 @@ import { decorativeSvgProps } from "../bespoke-svg";
 import type { BespokeSvgProps } from "../bespoke-svg";
 
 /**
- * The full TrøndelagKraft logo: the lamp mark beside the wordmark. The letterforms and the lamp's
- * ring and base paint in `currentColor`; the lamp's light keeps its brand yellow. A nonempty `title`
- * names it as an image; without one it renders decorative.
+ * The full TrøndelagKraft logo: the lamp mark beside the wordmark. The letterforms paint in
+ * `currentColor`, and the lamp's ring and base in `--logo-mark-ink`, falling back to `currentColor`;
+ * the lamp's light keeps its brand yellow. A nonempty `title` names it as an image; without one it
+ * renders decorative.
  *
  * @param props - SVG props, plus the optional accessible `title`.
  * @returns The full logo as an SVG.
@@ -74,12 +75,16 @@ export function TrondelagkraftLogoFull({ title, ...props }: BespokeSvgProps): Re
         d="M530.672 61.0184C528.008 61.0184 525.273 60.9501 525.273 55.9316V43.7779H531.674V35.5389H525.273V29.428H518.213L516.221 35.5389H511.329V43.7779H515.749V57.2175C515.749 67.8349 523.611 68.8591 527.607 68.8591C529.21 68.8591 532.475 68.347 533.807 67.8349V60.6997C533.336 60.768 531.143 61.0184 530.672 61.0184ZM493.33 35.5503H488.544V43.7893H493.118L493.33 67.9146H502.854V43.7893H509.136V35.5503H502.854V35.3569C502.854 30.6001 505.588 28.8817 509.584 28.8817C509.714 28.8817 509.914 28.8817 510.115 28.95V21.2345C509.254 21.1093 508.252 21.041 507.18 21.041C500.52 21.041 493.318 23.7722 493.318 35.5503H493.33Z"
         fill="currentColor"
       />
-      <path d="M47.4081 76.0285V67.9033H15.4059V76.0285H47.4081Z" fill="currentColor" />
-      <path d="M47.3963 88.216V80.0908H15.3941V88.216H47.3963Z" fill="currentColor" />
-      <path
-        d="M55.0344 13.7924L60.3976 5.65578L51.0032 0L43.6952 5.84924C39.9233 4.30158 35.7624 3.43671 31.4011 3.43671C14.0621 3.42533 0 17.0015 0 33.7412C0 50.481 14.0621 64.0571 31.4011 64.0571C48.7401 64.0571 62.8022 50.481 62.8022 33.7412C62.8022 26.1054 59.8672 19.1295 55.0344 13.7924ZM31.4011 54.7256C19.3546 54.7256 9.583 45.2918 9.583 33.6616C9.583 22.0314 19.3428 12.5975 31.4011 12.5975C43.4594 12.5975 53.2192 22.0314 53.2192 33.6616C53.2192 45.2918 43.4476 54.7256 31.4011 54.7256Z"
-        fill="currentColor"
-      />
+      <g
+        // oxlint-disable-next-line shadcn/no-inline-styles -- var() with a fallback works only in a style declaration, not a presentation attribute, and the default needs no Fuse CSS
+        style={{ color: "var(--logo-mark-ink, currentColor)" }}>
+        <path d="M47.4081 76.0285V67.9033H15.4059V76.0285H47.4081Z" fill="currentColor" />
+        <path d="M47.3963 88.216V80.0908H15.3941V88.216H47.3963Z" fill="currentColor" />
+        <path
+          d="M55.0344 13.7924L60.3976 5.65578L51.0032 0L43.6952 5.84924C39.9233 4.30158 35.7624 3.43671 31.4011 3.43671C14.0621 3.42533 0 17.0015 0 33.7412C0 50.481 14.0621 64.0571 31.4011 64.0571C48.7401 64.0571 62.8022 50.481 62.8022 33.7412C62.8022 26.1054 59.8672 19.1295 55.0344 13.7924ZM31.4011 54.7256C19.3546 54.7256 9.583 45.2918 9.583 33.6616C9.583 22.0314 19.3428 12.5975 31.4011 12.5975C43.4594 12.5975 53.2192 22.0314 53.2192 33.6616C53.2192 45.2918 43.4476 54.7256 31.4011 54.7256Z"
+          fill="currentColor"
+        />
+      </g>
       <path
         d="M31.4011 50.0825C22.0067 50.0825 14.3922 42.7311 14.3922 33.6613C14.3922 24.5916 22.0067 17.2402 31.4011 17.2402C40.7955 17.2402 48.41 24.5916 48.41 33.6613C48.41 42.7311 40.7955 50.0825 31.4011 50.0825Z"
         fill="#FCE300"
