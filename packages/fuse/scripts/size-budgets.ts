@@ -157,9 +157,9 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = derive([
   // along the value axis, grown from the zero rule and kept inside the plot, its projection
   // kept apart from its neighbour's, and a stack settles which segment keeps that pixel on
   // each side in every frame through the batched floor registry, which bars, path-form
-  // columns, emphasis boxes and the active overlay read, which measured 3136 bytes on this
-  // entry (161040 to 164176). The ceiling keeps about 100 bytes of headroom.
-  { name: "chart", entryFile: "chart.js", measuredGzip: 97044, ceilingGzip: 164276 },
+  // columns, emphasis boxes and the active overlay read, which measured 2860 bytes on this
+  // entry (161040 to 163900). The ceiling keeps about 100 bytes of headroom.
+  { name: "chart", entryFile: "chart.js", measuredGzip: 97044, ceilingGzip: 164000 },
   // 2026-10-13: new entry, measured at 29180. Pure wrappers over Base UI's toolbar and its roving focus.
   { name: "toolbar", entryFile: "toolbar.js", measuredGzip: 29180, ceilingGzip: 43770 },
   // 2026-10-12: new entries. Command is Base UI's Autocomplete in the InputGroup, with the Dialog
@@ -351,16 +351,16 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // inside the plot, its projection kept apart from its neighbour's, and a stack settles
     // which segment keeps that pixel on each side in every frame through the batched floor
     // registry, which bars, path-form columns, emphasis boxes and the active overlay read,
-    // which measured 3121 bytes on Chart (147298 to 150419) and on BarChart (147300 to
-    // 150421). Each ceiling keeps about 100 bytes of headroom.
-    ceilingGzip: 150519,
+    // which measured 2869 bytes on Chart (147298 to 150167) and on BarChart (147300 to
+    // 150169). Each ceiling keeps about 100 bytes of headroom.
+    ceilingGzip: 150267,
   },
   {
     name: "chart/BarChart",
     entryFile: "chart.js",
     exportName: "BarChart",
     measuredGzip: 95989,
-    ceilingGzip: 150521,
+    ceilingGzip: 150269,
   },
   { name: "chart/PieChart", entryFile: "chart.js", exportName: "PieChart", measuredGzip: 79885 },
   { name: "chart/RadialChart", entryFile: "chart.js", exportName: "RadialChart", measuredGzip: 79858 },
@@ -432,9 +432,9 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // the value axis, grown from the zero rule and kept inside the plot, its projection kept
     // apart from its neighbour's, and a stack settles which segment keeps that pixel on each
     // side in every frame through the batched floor registry, which bars, path-form columns,
-    // emphasis boxes and the active overlay read, which measured 3100 bytes on this route
-    // (75668 to 78768). The ceiling keeps about 100 bytes of headroom.
-    ceilingGzip: 78868,
+    // emphasis boxes and the active overlay read, which measured 2876 bytes on this route
+    // (75668 to 78544). The ceiling keeps about 100 bytes of headroom.
+    ceilingGzip: 78644,
   },
   {
     name: "chart/PieChart.Root",

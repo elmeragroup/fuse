@@ -1,15 +1,6 @@
 "use client";
 
-import {
-  useCallback,
-  useEffect,
-  useId,
-  useInsertionEffect,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { ReactElement, ReactNode } from "react";
 
 import { useMediaQuery } from "../../hooks/use-media-query";
@@ -48,7 +39,7 @@ import {
 } from "./chart-readout";
 import { createChartRiders } from "./chart-riders";
 import { PlotLoader } from "./chart-skeleton";
-import { discardStackFloors } from "./chart-stack-floors";
+import { discardStackFloors, flushStackFloors } from "./chart-stack-floors";
 import { sameConfig, sameShallow, useSteady } from "./chart-steady";
 import { createChartStore } from "./chart-store";
 import type { ChartSnapshot, EmphasisEntry } from "./chart-store";
@@ -466,13 +457,10 @@ export function ChartRoot<
   const reduced = useMediaQuery(REDUCED_MOTION);
   const [followers] = useState(createChartFollowers);
   const [motion] = useState(() => browserMotion(reduced, followers));
-  // Every mark of a commit places itself in a layout effect before Root's own, so the commit's
-  // writes form one batch: opened before any layout effect runs, closed in Root's first one.
-  useInsertionEffect(() => {
-    motion.openCommit();
-  });
+  // Every mark a commit renders places itself in a layout effect before Root's own, so Root's
+  // first one settles the stack floors they drew once for the commit, before any reader paints.
   useLayoutEffect(() => {
-    motion.closeCommit();
+    flushStackFloors(motion);
   });
   // Once Root unmounts, the stack floors its leaving marks invalidate have nothing to paint.
   useLayoutEffect(

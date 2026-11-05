@@ -805,11 +805,13 @@ export function snapBody(
 }
 
 /**
- * The floored body of a body already snapped with no floor, as `frameRect` draws it for an outer
- * segment, so a caller that needs both snaps the body once.
+ * The body that owns its stack side's value-axis pixel floor, from its body snapped with no floor,
+ * the one route every floored body takes: a bar, a path column, an emphasis box, the active overlay
+ * and the stack floors' proposals. The floor reads the body's whole length from its base to its
+ * tip, so a body whose seam takes all of it still keeps its pixel.
  *
  * @param frame - The layout's frame.
- * @param plain - The body as `frameRect` draws it for an inner segment.
+ * @param plain - The body as `frameRect` snaps it, with no floor.
  * @param across - The body's unsnapped base and tip along the value axis, base first.
  * @returns The body with the value-axis pixel floor.
  */
@@ -863,32 +865,28 @@ function floorValue(
 }
 
 /**
- * A snapped rectangle from a span along the slot axis and a base and tip along the value axis.
+ * A snapped rectangle from a span along the slot axis and two coordinates along the value axis,
+ * with no value-axis pixel floor, which `floorBody` adds to the body that owns it.
  *
  * @param frame - The layout's frame.
  * @param along - The start and end along the slot axis.
- * @param across - The body's base and its tip along the value axis, base first. A body whose tip
- *   lies before its base, up a vertical frame or left across a horizontal one, grows that way.
- * @param place - Where the body sits in its stack, which decides whether it takes the value floor.
+ * @param across - Two coordinates along the value axis, in either order.
  * @returns The rectangle, every edge on the device pixel grid, through `snapBody`.
  */
 export function frameRect(
   frame: PlotFrame,
   along: readonly [number, number],
-  across: readonly [base: number, tip: number],
-  place: StackPlace
+  across: readonly [number, number]
 ): PlotRect {
-  const [base, tip] = across;
-  const start = Math.min(base, tip);
-  const size = Math.abs(tip - base);
+  const start = Math.min(across[0], across[1]);
+  const size = Math.abs(across[1] - across[0]);
   const span = Math.max(0, along[1] - along[0]);
-  const floor: ValueFloor = place === "inner" ? "none" : tip < base ? "start" : "end";
   return snapBody(
     frame,
     frame.orientation === "vertical"
       ? { x: along[0], width: span, y: start, height: size }
       : { x: start, width: size, y: along[0], height: span },
-    floor
+    "none"
   );
 }
 

@@ -9,16 +9,42 @@ import { expect } from "vitest";
 import type { ChartBarVariant } from "../../src/components/chart/chart-types";
 import { drawnRect } from "./bar-box";
 import type { FloorMark } from "./floor-marks";
+import { SERIAL } from "./world-model";
 import { pathRects } from "./world-reader";
-
-/** How far a computed style may stray from what it stands for: it serializes six decimals. */
-export const SERIAL = 1e-5;
 
 /** Above this many slots the path form draws one column per M4 bucket, per section 8.12. */
 export const DECIMATE_ABOVE = 2000;
 
 /** The buckets a decimated window splits into, slot b × n / 500 rounded up starting bucket b. */
 const BUCKETS = 500;
+
+/**
+ * What breaks the floored-body contract for the body of a reading other than 0: it is one device
+ * pixel long or more, its base lies on the zero rule, its far edge lies away from zero by the
+ * reading's sign, and it stays inside the plot.
+ *
+ * @param span - The body's span along the value axis, in CSS pixels from the plot's drawn origin.
+ * @param plot - The zero rule's near edge and the plot's drawn length along the value axis.
+ * @param body - Whether the plot is vertical, the reading's sign and the pixel ratio.
+ * @returns What breaks the contract, or null.
+ */
+export function floorFault(
+  [start, end]: readonly [number, number],
+  plot: { readonly zero: number; readonly length: number },
+  body: { readonly vertical: boolean; readonly sign: 1 | -1; readonly dpr: number }
+): string | null {
+  const { vertical, sign, dpr } = body;
+  // Up a vertical frame and right across a horizontal one is positive.
+  const growsToStart = vertical ? sign === 1 : sign === -1;
+  const [base, far] = growsToStart ? [end, start] : [start, end];
+  if (end - start < 1 / dpr - SERIAL) return `length ${String(end - start)} under a device pixel`;
+  if (Math.abs(base - plot.zero) >= SERIAL)
+    return `base ${String(base)} off the zero rule ${String(plot.zero)}`;
+  if (growsToStart ? !(far < base) : !(far > base)) return `far edge ${String(far)} not away from zero`;
+  if (start < -SERIAL || end > plot.length + SERIAL)
+    return `${String(start)}–${String(end)} outside the plot's 0–${String(plot.length)}`;
+  return null;
+}
 
 /** One random dense chart and the guides drawn on it. */
 export type Dense = {

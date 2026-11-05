@@ -246,10 +246,8 @@ export type ChartMotion = {
   /**
    * Tell a party when the loop writes a batch of marks: one frame's moving marks, a finish or a
    * resize's remapping. A write outside a batch, such as a placement's, stands alone.
-   *
-   * @returns A function that stops telling it.
    */
-  readonly batches: (party: MotionBatch) => () => void;
+  readonly batches: (party: MotionBatch) => void;
   /**
    * Write a batch of marks outside the loop's own frames, as a reader that draws each mark where it
    * lands and back does, so the parties `batches` tells settle once for the batch.
@@ -258,16 +256,6 @@ export type ChartMotion = {
    * @returns What `writes` returns.
    */
   readonly batch: <T>(writes: () => T) => T;
-  /**
-   * Open a batch for a React commit, whose marks place themselves in their layout effects, before
-   * Root's own. Root opens it in an insertion effect, which runs before any layout effect of the
-   * commit, and closes it in its first layout effect. Opening an open batch, or closing a closed
-   * one, changes nothing. A batch a commit leaves open, as an error between the two effects would,
-   * closes in the next microtask or at the next frame.
-   */
-  readonly openCommit: () => void;
-  /** Close the batch `openCommit` opened, if one is open. */
-  readonly closeCommit: () => void;
 };
 
 type Tween = {
@@ -404,18 +392,6 @@ export function createChartMotion(
   const marks = new Map<string, Mark>();
   // The parties a batch of writes tells, and the batch they hear.
   const parties = new Set<MotionBatch>();
-  let commitOpen = false;
-  const closeCommit = (): void => {
-    if (!commitOpen) return;
-    commitOpen = false;
-    for (const party of parties) party.end();
-  };
-  const openCommit = (): void => {
-    if (commitOpen) return;
-    commitOpen = true;
-    for (const party of parties) party.begin();
-    queueMicrotask(closeCommit);
-  };
   const batch = <T>(writes: () => T): T => {
     for (const party of parties) party.begin();
     try {
@@ -526,7 +502,6 @@ export function createChartMotion(
   };
 
   const step = (time: number): void => {
-    closeCommit();
     handle = null;
     commitTime = null;
     const running = batch(() => {
@@ -856,13 +831,8 @@ export function createChartMotion(
     // A tween the entrance holds has not started.
     running: () => !held && moving.size > 0,
     batch,
-    openCommit,
-    closeCommit,
     batches(party) {
       parties.add(party);
-      return () => {
-        parties.delete(party);
-      };
     },
     eachLanding(visit) {
       for (const { tween, write, drawn, axes } of moving) {

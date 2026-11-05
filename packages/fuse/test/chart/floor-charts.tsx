@@ -13,26 +13,22 @@ import { userEvent } from "vitest/browser";
 import { Chart } from "../../src/components/chart/chart-namespace";
 import type { ChartConfig, ChartSeriesConfig, ChartStyle } from "../../src/components/chart/chart-types";
 import { LocaleProvider } from "../../src/intl/locale-context";
+import { nextFrames } from "../animation-frames";
 import { emulatePixelRatio } from "../page-metrics";
 import { renderThemed } from "../themed-browser-render";
 import { drawnRect } from "./bar-box";
 import type { DrawnRect } from "./bar-box";
+import { floorFault } from "./floor-walkers";
 import { installFrameClock } from "./frame-clock";
 import { barLayerBox, bars } from "./marks";
+import { SERIAL } from "./world-model";
 import { pathRects, stroke } from "./world-reader";
 import type { Rect } from "./world-reader";
 
 /** The issue's chart config: one series of completed carts. */
 const CONFIG = { carts: { label: "Completed carts", color: "chart-1" } } as const satisfies ChartConfig;
 
-/** How far a drawn coordinate may stray from what it stands for: attributes serialize floats. */
-export const SERIAL = 1e-5;
-
 const RATIOS = [1, 1.5, 2] as const;
-
-export async function frame(): Promise<void> {
-  await new Promise((resolve) => requestAnimationFrame(resolve));
-}
 
 /** One chart at a sub-pixel offset of its plot along the value axis. */
 function placed(offset: number, orientation: "vertical" | "horizontal", chart: ReactNode) {
@@ -83,21 +79,8 @@ export function expectFloored(
   plot: Drawn,
   options: { readonly vertical: boolean; readonly sign: 1 | -1; readonly dpr: number; readonly what: string }
 ): void {
-  const { vertical, sign, dpr, what } = options;
-  const [start, end] = across(rect, vertical);
-  expect(end - start, `${what}: length`).toBeGreaterThanOrEqual(1 / dpr - SERIAL);
-  // Up a vertical frame and right across a horizontal one is positive.
-  const growsToStart = vertical ? sign === 1 : sign === -1;
-  const [base, far] = growsToStart ? [end, start] : [start, end];
-  expect(
-    Math.abs(base - plot.zero),
-    `${what}: base ${String(base)} on the zero rule ${String(plot.zero)}`
-  ).toBeLessThan(SERIAL);
-  expect(growsToStart ? far < base : far > base, `${what}: far edge ${String(far)} away from zero`).toBe(
-    true
-  );
-  expect(start, `${what}: inside the plot`).toBeGreaterThanOrEqual(-SERIAL);
-  expect(end, `${what}: inside the plot`).toBeLessThanOrEqual(plot.length + SERIAL);
+  const { vertical, what } = options;
+  expect(floorFault(across(rect, vertical), plot, options), what).toBeNull();
 }
 
 /**
@@ -117,8 +100,7 @@ export async function sweep(
       const offset = step / steps;
       const { host, unmount } = mount(placed(offset, orientation, chart));
       try {
-        await frame();
-        await frame();
+        await nextFrames(2);
         check(host, drawnPlot(host, orientation === "vertical", dpr), dpr, offset);
       } finally {
         unmount();
@@ -208,11 +190,7 @@ function bodyOf(host: HTMLElement, form: "bars" | "path", series: number): Drawn
     const bar = bars(host, series)[0];
     return bar === undefined ? flat : drawnRect(bar);
   }
-  // DOM audit: the path form's paths are aria-hidden plot output, one layer per series.
-  const path = host.querySelector(
-    `[data-slot="chart-bar-series"][data-series="${String(series)}"] [data-slot="chart-bar-path"][data-part="fill"]`
-  );
-  return pathRects(path?.getAttribute("d") ?? "")[0] ?? flat;
+  return seriesColumns(host, series)[0] ?? flat;
 }
 
 /**
@@ -288,6 +266,91 @@ export async function run(
     clock.restore();
   }
   expect(judged, `${transition.what}, ${form}: frames judged while moving`).toBeGreaterThanOrEqual(least);
+}
+
+/**
+ * Render a chart through the suite's own mount, the themed harness, update it, and hand `each` the
+ * frames of the update's tween at the given times after it starts, on the frame clock at a pixel
+ * ratio.
+ *
+ * @param mount - The suite's mount.
+ * @param before - The chart before the update.
+ * @param after - The chart after it.
+ * @param options - The pixel ratio, the frame times in milliseconds, and what to do once the
+ *   chart before the update draws, such as activating a slot.
+ * @param each - Read one frame.
+ */
+export async function tweenFrames(
+  mount: typeof renderThemed,
+  before: ReactNode,
+  after: ReactNode,
+  options: {
+    readonly dpr?: number;
+    readonly times: readonly number[];
+    readonly ready?: (host: HTMLElement) => Promise<void> | void;
+  },
+  each: (host: HTMLElement, time: number) => void
+): Promise<void> {
+  await emulatePixelRatio(options.dpr ?? 1);
+  const clock = installFrameClock();
+  const { host, rerender, unmount } = mount(before);
+  try {
+    await options.ready?.(host);
+    const start = clock.now();
+    rerender(after);
+    for (const time of options.times) {
+      clock.frameAt(start + time);
+      each(host, time);
+    }
+  } finally {
+    unmount();
+    clock.restore();
+  }
+}
+
+/**
+ * Frame times from `from` to `to` milliseconds, `step` apart.
+ *
+ * @param from - The first time.
+ * @param to - The last time, included where a step lands on it.
+ * @param step - The time between two frames.
+ * @returns The times.
+ */
+export function times(from: number, to: number, step: number): number[] {
+  return Array.from({ length: Math.floor((to - from) / step) + 1 }, (_, index) => from + index * step);
+}
+
+/**
+ * A stacked chart with no seam and no intro: its plot `height` px tall over `include`, in a box
+ * `width` px wide, a `left` fraction of a pixel in from the page's edge, with each config key's
+ * Bar in order unless `children` draws the plot.
+ */
+export function stackChart(chart: {
+  readonly config: ChartConfig;
+  readonly data: readonly Readonly<Record<string, string | number | null>>[];
+  readonly include: readonly number[];
+  readonly height: number;
+  readonly width: number;
+  readonly left?: number;
+  readonly children?: ReactNode;
+}) {
+  const { config, data, include, height, width, left, children } = chart;
+  return (
+    <LocaleProvider locale="en-US">
+      <div style={{ width, paddingLeft: left }}>
+        <Chart.Root
+          data-intro="none"
+          data={data}
+          config={config}
+          xKey="day"
+          yInclude={[...include]}
+          style={{ "--chart-plot-height": `${String(height)}px`, "--chart-bar-seam": "0px" }}
+          aria-label="Stack">
+          {children ?? Object.keys(config).map((key) => <Chart.Bar key={key} dataKey={key} />)}
+        </Chart.Root>
+      </div>
+    </LocaleProvider>
+  );
 }
 
 /** The drawn segments on each side of the zero rule, with length. */

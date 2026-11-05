@@ -11,6 +11,7 @@ import {
   WHOLE_BAND,
   barSpan,
   centreOf,
+  floorBody,
   frameRect,
   hairline,
   optionBand,
@@ -29,7 +30,7 @@ import {
   strokeCentre,
   valueAt,
 } from "./plot-frame";
-import type { PlotBox } from "./plot-frame";
+import type { PlotBox, PlotFrame } from "./plot-frame";
 
 function box(width: number, height: number, dpr = 1, left = 0, top = 0): PlotBox {
   return { width, height, dpr, left, top };
@@ -392,9 +393,9 @@ describe("the value axis", () => {
     // B2-1: 0.5 px from 3 px snaps both edges to 3 at 1x, and 0.2 px from 3 px both to 3 at 2x.
     const one = plotFrame(box(400, 200), "vertical", 1, [0, 1]);
     const two = plotFrame(box(400, 200, 2), "vertical", 1, [0, 1]);
-    expect(frameRect(one, [3, 3.5], [0, 100], "outer")).toEqual({ x: 3, y: 0, width: 1, height: 100 });
-    expect(frameRect(two, [3, 3.2], [0, 100], "outer")).toEqual({ x: 3, y: 0, width: 0.5, height: 100 });
-    expect(frameRect(one, [3, 3], [0, 100], "outer").width).toBe(0);
+    expect(frameRect(one, [3, 3.5], [0, 100])).toEqual({ x: 3, y: 0, width: 1, height: 100 });
+    expect(frameRect(two, [3, 3.2], [0, 100])).toEqual({ x: 3, y: 0, width: 0.5, height: 100 });
+    expect(frameRect(one, [3, 3], [0, 100]).width).toBe(0);
   });
 
   it("keeps the device pixel a value span's middle lies in, inside the plot, and none of an empty span", () => {
@@ -413,19 +414,19 @@ describe("the value axis", () => {
   it("builds a rectangle from a slot span and a base and tip on either side of it", () => {
     const vertical = plotFrame(box(300, 200), "vertical", 1, [0, 1]);
     const horizontal = plotFrame(box(300, 200), "horizontal", 1, [0, 1]);
-    expect(frameRect(vertical, [10, 40], [150, 50], "outer")).toEqual({
+    expect(frameRect(vertical, [10, 40], [150, 50])).toEqual({
       x: 10,
       y: 50,
       width: 30,
       height: 100,
     });
-    expect(frameRect(vertical, [10, 40], [50, 150], "outer")).toEqual({
+    expect(frameRect(vertical, [10, 40], [50, 150])).toEqual({
       x: 10,
       y: 50,
       width: 30,
       height: 100,
     });
-    expect(frameRect(horizontal, [10, 40], [150, 50], "outer")).toEqual({
+    expect(frameRect(horizontal, [10, 40], [150, 50])).toEqual({
       x: 50,
       y: 10,
       width: 100,
@@ -439,31 +440,33 @@ describe("the value axis", () => {
     // its base, a negative bar, keeps 74 to 75, and right of it 75 to 76.
     const vertical = plotFrame(box(300, 200), "vertical", 1, [0, 1]);
     const horizontal = plotFrame(box(300, 200), "horizontal", 1, [0, 1]);
-    expect(frameRect(vertical, [10, 40], [50.8, 50.6], "outer")).toEqual({
+    const floored = (frame: PlotFrame, along: readonly [number, number], across: readonly [number, number]) =>
+      floorBody(frame, frameRect(frame, along, across), across);
+    expect(floored(vertical, [10, 40], [50.8, 50.6])).toEqual({
       x: 10,
       y: 50,
       width: 30,
       height: 1,
     });
-    expect(frameRect(vertical, [10, 40], [50.6, 50.8], "outer")).toEqual({
+    expect(floored(vertical, [10, 40], [50.6, 50.8])).toEqual({
       x: 10,
       y: 51,
       width: 30,
       height: 1,
     });
-    expect(frameRect(horizontal, [10, 40], [75, 74.8], "outer")).toEqual({
+    expect(floored(horizontal, [10, 40], [75, 74.8])).toEqual({
       x: 74,
       y: 10,
       width: 1,
       height: 30,
     });
-    expect(frameRect(horizontal, [10, 40], [74.8, 75], "outer")).toEqual({
+    expect(floored(horizontal, [10, 40], [74.8, 75])).toEqual({
       x: 75,
       y: 10,
       width: 1,
       height: 30,
     });
-    expect(frameRect(vertical, [10, 40], [50.8, 50.6], "inner").height).toBe(0);
+    expect(frameRect(vertical, [10, 40], [50.8, 50.6]).height).toBe(0);
   });
 });
 

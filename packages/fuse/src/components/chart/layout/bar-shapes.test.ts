@@ -319,7 +319,7 @@ describe("the pixel floor", () => {
             }
           }
           // The active overlay and the tooltip row draw the band's own rectangles.
-          const row = frameRect(frame, barSpan(frame, at % count, metrics, WHOLE_BAND), [0, across], "outer");
+          const row = frameRect(frame, barSpan(frame, at % count, metrics, WHOLE_BAND), [0, across]);
           expect(along(frame, row).size).toBeGreaterThanOrEqual(1 / dpr - 1e-9);
         }
       )
@@ -441,7 +441,7 @@ describe("the pixel floor", () => {
 
   it("keeps an empty span empty", () => {
     const frame = frameOf(100, 100);
-    expect(frameRect(frame, [3, 3], [0, 50], "outer").width).toBe(0);
+    expect(frameRect(frame, [3, 3], [0, 50]).width).toBe(0);
     for (const variant of VARIANTS) {
       const parts = drawnBar(
         frame,

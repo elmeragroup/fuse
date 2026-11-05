@@ -5,7 +5,7 @@
  * frame, and it decides from them alone, never from the data an update ends on.
  */
 import { floorAcross } from "./plot-frame";
-import type { PlotFrame } from "./plot-frame";
+import type { PlotFrame, PlotRect } from "./plot-frame";
 
 /** One stack segment as a frame draws it: its ends and the pixels its plain snap covers. */
 export type StackSegment = {
@@ -31,17 +31,50 @@ export type FloorSpan = {
 };
 
 /**
- * The side of zero a segment's tip lies on from its base: above for up a vertical frame or right
- * across a horizontal one, or null for a segment with no length.
+ * The side of zero a body's tip lies on from its base: above for up a vertical frame or right
+ * across a horizontal one. A body of no length lies on neither side, so it takes no floor and reads
+ * no place.
  *
- * @param segment - The segment.
  * @param frame - The layout's frame.
+ * @param base - The body's base along the value axis, unsnapped.
+ * @param tip - Its tip, likewise.
  * @returns The side, or null.
  */
-export function segmentSide(segment: StackSegment, frame: PlotFrame): "above" | "below" | null {
-  const { base, tip } = segment;
+export function zeroSide(frame: PlotFrame, base: number, tip: number): "above" | "below" | null {
   if (tip === base) return null;
   return (frame.orientation === "vertical" ? tip < base : tip > base) ? "above" : "below";
+}
+
+/**
+ * The span a body draws, or reads the stack floors at: the device pixel columns its plain snap
+ * covers along the slot axis and its segment.
+ *
+ * @param frame - The layout's frame.
+ * @param plain - The body snapped with no floor, as `frameRect` draws it.
+ * @param series - The series it draws, by config key.
+ * @param across - Its unsnapped base and tip along the value axis, base first.
+ * @returns The span.
+ */
+export function floorSpanOf(
+  frame: PlotFrame,
+  plain: PlotRect,
+  series: string,
+  [base, tip]: readonly [base: number, tip: number]
+): FloorSpan {
+  const { dpr } = frame.box;
+  const vertical = frame.orientation === "vertical";
+  const [alongFrom, alongTo] = vertical
+    ? [plain.x, plain.x + plain.width]
+    : [plain.y, plain.y + plain.height];
+  const [plainFrom, plainTo] = vertical
+    ? [plain.y, plain.y + plain.height]
+    : [plain.x, plain.x + plain.width];
+  return {
+    from: Math.round(alongFrom * dpr),
+    to: Math.round(alongTo * dpr),
+    series,
+    segment: { base, tip, plainFrom, plainTo },
+  };
 }
 
 /** How far two snapped spans may share an edge's float error and still count as apart. */
@@ -102,12 +135,12 @@ export function settleFloors(spans: readonly FloorSpan[], frame: PlotFrame): Uin
     }
     ranks[id] = lastRank;
     const { base, tip } = span.segment;
-    if (tip === base) continue;
+    const side = zeroSide(frame, base, tip);
+    if (side === null) continue;
     // How far the tip lies in the positive direction: up a vertical frame, right across a horizontal one.
     const up = vertical ? -tip : tip;
-    const above = up > (vertical ? -base : base);
-    sides[id] = above ? 1 : -1;
-    reaches[id] = above ? up : -up;
+    sides[id] = side === "above" ? 1 : -1;
+    reaches[id] = side === "above" ? up : -up;
   }
   // Each device pixel column's starting and ending spans, as linked lists.
   const width = high - low + 1;

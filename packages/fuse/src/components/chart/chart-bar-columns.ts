@@ -19,7 +19,7 @@ import type { PathKind } from "./chart-path-draw";
 import {
   apartEnds,
   bucketColumns,
-  floorPlace,
+  floorPlaces,
   isNegative,
   projectedEnds,
   rectsPath,
@@ -78,7 +78,7 @@ export type ColumnEntry = {
    */
   readonly leaving: boolean;
   /**
-   * Whether its column owns its stack side's pixel floor at rest, from `floorPlace`, which the first
+   * Whether its column owns its stack side's pixel floor at rest, from `floorPlaces`, which the first
    * draw takes before the stack floors decide it in each frame. A loose column always owns it.
    */
   readonly place: StackPlace;
@@ -141,17 +141,6 @@ export type ColumnsDrawing = {
 type ColumnsContext = Pick<ChartRootContextValue, "model" | "update">;
 
 /**
- * The key a slot's entry renders under in the path form, which its route and the stack floors read.
- *
- * @param context - Root's model, and the key each slot renders under.
- * @param slot - The slot.
- * @returns The key.
- */
-export function columnKey(context: ColumnsContext, slot: number): string {
-  return context.update.keys[slot] ?? slotId(context.model.domain, slot);
-}
-
-/**
  * Lay out a path-form series' entries.
  *
  * @param context - Root's model, and the key each slot renders under.
@@ -207,7 +196,8 @@ export function layoutColumns(
         reading.quality === "estimated" ? "estimated" : slot >= series.projectedFrom ? "projected" : "fill",
     };
   };
-  const keyOf = (slot: number) => columnKey(context, slot);
+  const keyOf = (slot: number) => update.keys[slot] ?? slotId(model.domain, slot);
+  const placeAt = floorPlaces(model, series);
   /** The entry of one own slot's column, its tick and its box, across every Root slot it covers. */
   const slotEntry = (slot: number): Entry => {
     const { position, span } = ownSpan(series, window, slot);
@@ -235,7 +225,7 @@ export function layoutColumns(
         missing: reading?.kind === "missing" && !model.empty,
         emphasis,
         leaving: false,
-        place: floorPlace(model, series, slot),
+        place: placeAt(slot),
       },
       // The emphasis box paints the step of its slot's value, as the column under it does.
       paint: emphasis ? readingPaint(paint, reading) : undefined,
@@ -256,12 +246,11 @@ export function layoutColumns(
       // The side of zero the column's own reading lies on, in value space.
       const side = own && isNegative(own) ? "negative" : "positive";
       const [top, bottom] = apartEnds(toY(column.top), toY(column.bottom), side);
-      const key = `bucket ${keyOf(column.first)} ${column.side}`;
       // A column keeps its upper end in the tip's place and its lower end in the base's, whichever
       // side of zero it stands for, so a tween between two columns of a bucket moves each end to
       // its own new place, and `baseAt` names its base.
       return {
-        key,
+        key: `bucket ${keyOf(column.first)} ${column.side}`,
         at: (column.x0 + column.x1) / 2 - 0.5,
         numbers: [(x0 + x1) / 2, top, x0, x1, bottom, x0, x0, x0, x0],
         entry: {
@@ -270,7 +259,7 @@ export function layoutColumns(
           missing: false,
           emphasis: false,
           leaving: false,
-          place: floorPlace(model, series, column.slot),
+          place: placeAt(column.slot),
         },
       };
     });
@@ -279,9 +268,8 @@ export function layoutColumns(
       .filter((slot) => (series.readings[slot]?.kind === "missing" && !model.empty) || emphasised.has(slot))
       .map((slot): Entry => {
         const own = slotEntry(slot);
-        const key = `note ${own.key}`;
         const entry: ColumnEntry = { ...own.entry, fill: -1, part: "fill" };
-        return { ...own, key, entry };
+        return { ...own, key: `note ${own.key}`, entry };
       });
     entries = [...buckets, ...notes].toSorted((a, b) => a.at - b.at);
   }
@@ -333,13 +321,9 @@ export function columnsDrawing(
   topology.entries.forEach((entry, index) => {
     const at = (offset: number) => values[index * COLUMN_STRIDE + offset] ?? 0;
     const place = placeOf(entry, index);
-    const known = bodies?.[index];
-    const rect =
-      known === undefined
-        ? columnBody(frame, values, index, entry, place)
-        : place === "outer"
-          ? floorBody(frame, known, columnEnds(values, index, entry))
-          : known;
+    const ends = columnEnds(values, index, entry);
+    const plain = bodies?.[index] ?? columnBody(frame, values, index, entry);
+    const rect = place === "outer" ? floorBody(frame, plain, ends) : plain;
     const drawn = entry.fill >= 0 && (!entry.leaving || rect.height > 0);
     if (drawn) paths[entry.part][entry.fill]?.push(rect);
     if (entry.missing) {
@@ -349,10 +333,10 @@ export function columnsDrawing(
       const [from, to] = snapBarSpan(frame, at(5), at(6), bandAt((at(5) + at(6)) / 2));
       missing += `M${String(from)} ${String(missingTickAt(frame, at(4)))}H${String(to)}`;
     }
-    if (entry.emphasis)
-      emphasis.push(
-        frameRect(frame, emphasisSpan(frame, values, index), columnEnds(values, index, entry), place)
-      );
+    if (entry.emphasis) {
+      const box = frameRect(frame, emphasisSpan(frame, values, index), ends);
+      emphasis.push(place === "outer" ? floorBody(frame, box, ends) : box);
+    }
   });
   return {
     fill: paths.fill.map((rects) => rectsPath(rects)),
@@ -364,27 +348,26 @@ export function columnsDrawing(
 }
 
 /**
- * One entry's column in a frame, every edge on the device pixel grid. A column of one slot keeps
- * its pixel among the pixels of the slot its middle lies in, as a bar does.
+ * One entry's column in a frame with no value-axis pixel floor, every edge on the device pixel
+ * grid, which `floorBody` floors where the column owns its stack side's floor. A column of one slot
+ * keeps its pixel among the pixels of the slot its middle lies in, as a bar does.
  *
  * @param frame - The vertical frame.
  * @param values - The entries' numbers.
  * @param index - The entry's index among them.
  * @param entry - The entry.
- * @param place - Whether the column owns its stack side's pixel floor in this frame.
  * @returns The column's rectangle.
  */
 export function columnBody(
   frame: PlotFrame,
   values: MarkValues,
   index: number,
-  entry: ColumnEntry,
-  place: StackPlace
+  entry: ColumnEntry
 ): PlotRect {
   const at = (offset: number) => values[index * COLUMN_STRIDE + offset] ?? 0;
   const columnSpan = frame.count > DECIMATE_ABOVE ? snapSpan : snapBarSpan;
   const span = columnSpan(frame, at(2), at(3), slotBandAt(frame, at(0), "band"));
-  return frameRect(frame, span, columnEnds(values, index, entry), place);
+  return frameRect(frame, span, columnEnds(values, index, entry));
 }
 
 /**

@@ -5,7 +5,7 @@
  * estimated path, then the missing ticks and the emphasised overlays. The series grows from the zero
  * line in Root's entrance as one transform, which holds one registration with Root's loop.
  */
-import { useCallback, useId, useLayoutEffect, useMemo, useRef } from "react";
+import { useCallback, useLayoutEffect, useMemo, useRef } from "react";
 import type { ReactElement } from "react";
 
 import {
@@ -27,11 +27,12 @@ import type { MarkValues } from "./chart-motion";
 import { placementOf, useCommitMotion, useFirstDraw, useMotionMark } from "./chart-motion-mark";
 import { topologyAt } from "./chart-path-draw";
 import { usePathMark } from "./chart-series-path";
-import { stackFloorsOf } from "./chart-stack-floors";
-import type { StackFloors } from "./chart-stack-floors";
+import { useStackSeat } from "./chart-stack-floors";
+import type { StackSeat } from "./chart-stack-floors";
 import type { ChartBarVariant } from "./chart-types";
+import { floorSpanOf } from "./layout/floor-settle";
 import type { FloorSpan } from "./layout/floor-settle";
-import { snapY, tickWidth, valueAt } from "./layout/plot-frame";
+import { frameRect, snapY, tickWidth, valueAt } from "./layout/plot-frame";
 import type { PlotFrame, PlotRect, StackPlace } from "./layout/plot-frame";
 
 /**
@@ -60,15 +61,7 @@ type ColumnsLook = {
   readonly topology: ColumnTopology;
   /** The topology of the route a data update tweens, while it runs. */
   readonly moving: { current: ColumnTopology | null };
-  readonly seat: ColumnsSeat | null;
-};
-
-/** A stacked series' seat among the stack floors: the registry, its mark's name, its stack and its key. */
-type ColumnsSeat = {
-  readonly floors: StackFloors;
-  readonly mark: string;
-  readonly stack: string;
-  readonly series: string;
+  readonly seat: StackSeat | null;
 };
 
 /** The parts a paint step's paths take, which a path's `data-part` names. */
@@ -100,54 +93,38 @@ function drawColumns(group: SVGGElement, look: ColumnsLook | null, values: MarkV
   // its own copy.
   const own = [...values];
   const { frame } = look;
-  const { dpr } = frame.box;
   const spans: FloorSpan[] = [];
-  const bodies: (PlotRect | undefined)[] = [];
+  /** Each entry's column with no floor, which the batch's own paint reuses and then lets go. */
+  let bodies: (PlotRect | undefined)[] | undefined = [];
   /** Each entry's span's position in `spans`, -1 for an entry with no column. */
-  const spanAt: number[] = [];
-  /** Each column-less emphasis box's device pixel columns and side, which read the columns under it. */
-  const boxes: (
-    | { readonly from: number; readonly to: number; readonly side: "above" | "below" }
-    | undefined
-  )[] = [];
+  const spanAt = new Int32Array(topology.entries.length).fill(-1);
+  /** Each column-less emphasis box's span, which reads the place of its series' spans under it. */
+  const boxes: (FloorSpan | undefined)[] = [];
   topology.entries.forEach((entry, index) => {
-    spanAt[index] = -1;
-    const [base, tip] = columnEnds(own, index, entry);
+    const ends = columnEnds(own, index, entry);
     if (entry.fill < 0) {
       if (!entry.emphasis) return;
-      const [from, to] = emphasisSpan(frame, own, index);
-      boxes[index] = {
-        from: Math.round(from * dpr),
-        to: Math.round(to * dpr),
-        side: tip > base ? "below" : "above",
-      };
+      const box = frameRect(frame, emphasisSpan(frame, own, index), ends);
+      boxes[index] = floorSpanOf(frame, box, seat.series, ends);
       return;
     }
-    const plain = columnBody(frame, own, index, entry, "inner");
-    bodies[index] = plain;
+    const plain = columnBody(frame, own, index, entry);
+    if (bodies !== undefined) bodies[index] = plain;
     spanAt[index] = spans.length;
-    spans.push({
-      from: Math.round(plain.x * dpr),
-      to: Math.round((plain.x + plain.width) * dpr),
-      series: seat.series,
-      segment: { base, tip, plainFrom: plain.y, plainTo: plain.y + plain.height },
-    });
+    spans.push(floorSpanOf(frame, plain, seat.series, ends));
   });
-  // A column takes its own span's place, an emphasis box with no column of its own the place of
-  // its series' spans under it, and either its resting place where the floors hold nothing for it.
-  const placeOf = (entry: ColumnEntry, index: number): StackPlace => {
-    const at = spanAt[index] ?? -1;
-    if (at !== -1) return seat.floors.place(seat.mark, at) ?? entry.place;
-    const box = boxes[index];
-    return (
-      (box === undefined
-        ? undefined
-        : seat.floors.placeOver(seat.stack, seat.series, box.from, box.to, box.side)) ?? entry.place
-    );
-  };
-  seat.floors.draw(seat.mark, seat.stack, spans, frame, () =>
-    paintColumns(group, columnsDrawing(frame, topology, own, placeOf, bodies))
-  );
+  seat.floors.draw(seat.mark, seat.stack, spans, frame, (kept) => {
+    // A column takes its own span's place, and an emphasis box with no column of its own the place
+    // of its series' spans under it, or its resting place where they draw none.
+    const placeOf = (entry: ColumnEntry, index: number): StackPlace => {
+      const at = spanAt[index] ?? -1;
+      if (at !== -1) return kept[at] === 1 ? "outer" : "inner";
+      const box = boxes[index];
+      return (box === undefined ? undefined : seat.floors.placeOver(seat.stack, box, frame)) ?? entry.place;
+    };
+    paintColumns(group, columnsDrawing(frame, topology, own, placeOf, bodies));
+    bodies = undefined;
+  });
 }
 
 /** Write a drawing onto the columns' paths and emphasis boxes. */
@@ -265,19 +242,7 @@ export function SeriesPaths({
     );
   });
   const moving = useRef<ColumnTopology | null>(null);
-  const { stack, key } = series;
-  // The series' paths' name among the stack floors, one per mounted series.
-  const mark = useId();
-  const seat = useMemo(
-    (): ColumnsSeat | null =>
-      stack === undefined ? null : { floors: stackFloorsOf(motion), mark, stack, series: key },
-    [motion, mark, stack, key]
-  );
-  // A series that unmounts leaves its stack, whose floors may pass to another series.
-  useLayoutEffect(() => {
-    if (seat === null) return undefined;
-    return () => seat.floors.forget(seat.mark);
-  }, [seat]);
+  const seat = useStackSeat(motion, series.stack, series.key);
   const look = useMemo((): ColumnsLook => ({ frame, topology, moving, seat }), [frame, topology, seat]);
   const kind = useMemo(() => columnKind(frame.grid.step, valueAt(frame, 0)), [frame]);
   const placed = useMemo(

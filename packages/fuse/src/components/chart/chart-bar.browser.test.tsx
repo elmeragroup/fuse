@@ -12,11 +12,11 @@ import { userEvent } from "vitest/browser";
 import "../../../dist/styles.css";
 import { barBox, drawnRect } from "../../../test/chart/bar-box";
 import type { BarBox } from "../../../test/chart/bar-box";
+import { seriesColumns } from "../../../test/chart/floor-charts";
 import { installFrameClock } from "../../../test/chart/frame-clock";
 import { barLayerBox, bars } from "../../../test/chart/marks";
 import frames from "../../../test/chart/motion-frames.json" with { type: "json" };
 import { pathRects } from "../../../test/chart/world-reader";
-import type { Rect } from "../../../test/chart/world-reader";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
 import type { SupportedLocale } from "../../intl/locale-context";
@@ -418,14 +418,11 @@ describe("structural counts per form", () => {
   });
 });
 
-/** The rectangles of a path-form fill, in x order. */
-function fillRects(path: Element | null | undefined): Rect[] {
-  return pathRects(path?.getAttribute("d") ?? "").toSorted((a, b) => a.x - b.x);
-}
-
 /** The heights of a path-form fill's columns, in x order. */
 function columnHeights(path: Element | null | undefined): number[] {
-  return fillRects(path).map(({ height }) => height);
+  return pathRects(path?.getAttribute("d") ?? "")
+    .toSorted((a, b) => a.x - b.x)
+    .map(({ height }) => height);
 }
 
 /** The oracle's eased progress 120 ms into a 480 ms tween. */
@@ -488,8 +485,7 @@ describe("path form motion", () => {
           await userEvent.keyboard("{End}");
           clock.frameAt(clock.now() + 1);
           // DOM audit: the path form's fill and the active overlay are aria-hidden plot output.
-          const column = () =>
-            fillRects(host.querySelector('[data-slot="chart-bar-path"][data-part="fill"]')).at(-1);
+          const column = () => seriesColumns(host, 0).at(-1);
           const overlay = () => drawnRect(host.querySelector('[data-slot="chart-bar-active"]'));
           const start = clock.now();
           rerender(chart(rows(to)));
@@ -726,10 +722,7 @@ describe("decimated path form", () => {
       );
       const { host, rerender } = renderThemed(chart(rows(0)));
       // DOM audit: the path form's fill is aria-hidden plot output.
-      const tall = () =>
-        fillRects(host.querySelector('[data-slot="chart-bar-path"][data-part="fill"]')).filter(
-          ({ height }) => height > 150
-        );
+      const tall = () => seriesColumns(host, 0).filter(({ height }) => height > 150);
       expect(tall().map(({ x, width, height }) => [x, width, height])).toEqual([[402, 2, 200]]);
       const start = clock.now();
       rerender(chart(rows(5)));
@@ -738,9 +731,7 @@ describe("decimated path form", () => {
       expect(moving).toHaveLength(1);
       expect(Math.abs((moving[0]?.x ?? 0) - (402 - 2 * easedAt120()))).toBeLessThanOrEqual(0.5);
       // No column grows or shrinks in place on the way: each stays 2 or 200 px tall.
-      const heights = fillRects(host.querySelector('[data-slot="chart-bar-path"][data-part="fill"]')).map(
-        ({ height }) => height
-      );
+      const heights = seriesColumns(host, 0).map(({ height }) => height);
       expect(heights.filter((height) => height > 3 && height < 199)).toEqual([]);
       clock.frameAt(start + 600);
       expect(tall().map(({ x, width, height }) => [x, width, height])).toEqual([[400, 2, 200]]);
@@ -785,10 +776,7 @@ describe("decimated path form", () => {
         const { host, rerender, unmount } = renderThemed(chart(rows(from)));
         try {
           // DOM audit: the path form's fill is aria-hidden plot output.
-          const heights = () =>
-            fillRects(host.querySelector('[data-slot="chart-bar-path"][data-part="fill"]')).map(
-              ({ height }) => height
-            );
+          const heights = () => seriesColumns(host, 0).map(({ height }) => height);
           expect(heights()).toEqual([length]);
           const start = clock.now();
           rerender(chart(rows(to)));
@@ -841,7 +829,7 @@ describe("decimated path form", () => {
     const rule = host.querySelector('[data-slot="chart-grid-line"][data-zero]');
     const zero =
       Number(rule?.getAttribute("y1")) - Number.parseFloat(getComputedStyle(rule ?? host).strokeWidth) / 2;
-    const columns = fillRects(host.querySelector('[data-slot="chart-bar-path"][data-part="fill"]'));
+    const columns = seriesColumns(host, 0);
     expect(columns).toHaveLength(1);
     expect(columns[0]?.height).toBeCloseTo(1, 6);
     expect((columns[0]?.y ?? 0) + (columns[0]?.height ?? 0)).toBeCloseTo(zero, 6);

@@ -26,13 +26,14 @@ import { FLOOR_MARKS } from "../../../test/chart/floor-marks";
 import type { FloorMark } from "../../../test/chart/floor-marks";
 import {
   DECIMATE_ABOVE,
-  SERIAL,
   WALKERS,
+  floorFault,
   missingAt,
   reading,
   ruleBox,
 } from "../../../test/chart/floor-walkers";
 import type { Dense, Span, Walk } from "../../../test/chart/floor-walkers";
+import { SERIAL } from "../../../test/chart/world-model";
 import { emulatePixelRatio } from "../../../test/page-metrics";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
@@ -358,22 +359,15 @@ describe("every drawn mark under the pixel floor", () => {
                   failures.push(`${what} reading 0: ${String(start)}–${String(end)}, zero ${String(zero)}`);
                 return;
               }
-              // Up a vertical plot and right across a horizontal one is positive.
-              const toStart = vertical ? value > 0 : value < 0;
-              const [base, far] = toStart ? [end, start] : [start, end];
-              const away = toStart ? far < base : far > base;
-              if (
-                zero === null ||
-                end - start < 1 / dpr - SERIAL ||
-                Math.abs(base - zero) > SERIAL ||
-                !away ||
-                start < -SERIAL ||
-                end > drawnBreadth + SERIAL
-              ) {
-                failures.push(
-                  `${what} reading ${String(value)}: ${String(start)}–${String(end)}, zero ${String(zero)}, in 0–${String(drawnBreadth)}`
-                );
-              }
+              const fault =
+                zero === null
+                  ? "no zero rule"
+                  : floorFault(
+                      [start, end],
+                      { zero, length: drawnBreadth },
+                      { vertical, sign: value > 0 ? 1 : -1, dpr }
+                    );
+              if (fault !== null) failures.push(`${what} reading ${String(value)}: ${fault}`);
             },
             inPlot: (what, [start, end]) => {
               // A rule may start on the plot's far edge, as the zero line runs past the bars' base.

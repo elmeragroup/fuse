@@ -14,6 +14,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
+import { nextFrames } from "../../../test/animation-frames";
 import { drawnRect } from "../../../test/chart/bar-box";
 import {
   activateFirst,
@@ -22,21 +23,23 @@ import {
   drawnPlot,
   expectApart,
   expectFloored,
-  frame,
   PATH_SLOTS,
   PROBE,
   run,
-  SERIAL,
   seriesColumns,
   sides,
+  stackChart,
   stacked,
   sweep,
+  times,
   turnsIn,
+  tweenFrames,
   week,
 } from "../../../test/chart/floor-charts";
 import type { Transition } from "../../../test/chart/floor-charts";
 import { installFrameClock } from "../../../test/chart/frame-clock";
 import { barLayerBox, bars } from "../../../test/chart/marks";
+import { SERIAL } from "../../../test/chart/world-model";
 import { emulatePixelRatio } from "../../../test/page-metrics";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
@@ -184,13 +187,8 @@ describe("a stack of segments under a device pixel through a data update", () =>
           }
           for (const series of floored) {
             const own = drawn[series];
-            drawn.forEach((other, index) => {
-              if (own === undefined || index === series || other.height <= SERIAL) return;
-              const overlap = Math.min(own.y + own.height, other.y + other.height) - Math.max(own.y, other.y);
-              expect(overlap, `${log}: floor of s${String(series)} on s${String(index)}`).toBeLessThanOrEqual(
-                SERIAL
-              );
-            });
+            const others = drawn.filter((other, index) => index !== series && other.height > SERIAL);
+            if (own !== undefined) expectApart([own], others, `${log}: floor of s${String(series)}`);
           }
           return true;
         });
@@ -220,39 +218,33 @@ describe("a stack of segments under a device pixel through a data update", () =>
   }
 });
 
-describe("the stack floors' addresses and their readers", () => {
-  it("keeps two stacks whose names run together apart (both tiny columns draw)", async () => {
-    // 120 categories, so the bars draw as paths, the first named "b c" and the second "c". Stack
-    // "a" reads 0.001 at "b c" and stack "a b" 0.001 at "c", each over a series of zeros, side by
-    // side in a BarGroup, with 1,000 elsewhere: both are far under a device pixel on 0..1,200
-    // over 256 px. Joined with a space, "a" and "b c" name the same slot as "a b" and "c".
-    const names = Array.from({ length: PATH_SLOTS }, (_, slot) =>
-      slot === 0 ? "b c" : slot === 1 ? "c" : `k${String(slot)}`
-    );
+describe("the stack floors' stacks and their readers", () => {
+  it("floors the tiny column of each of two stacks side by side in a BarGroup", async () => {
+    // 120 categories, so the bars draw as paths. Stack "a" reads 0.001 at c0 and stack "b" 0.001
+    // at c1, each over a series of zeros, side by side in a BarGroup, with 1,000 elsewhere: both
+    // are far under a device pixel on 0..1,200 over 256 px, and each keeps its own pixel.
     const config = {
       p: { label: "P", color: "chart-1", stack: "a" },
       pz: { label: "P0", color: "chart-1", stack: "a" },
-      q: { label: "Q", color: "chart-2", stack: "a b" },
-      qz: { label: "Q0", color: "chart-2", stack: "a b" },
+      q: { label: "Q", color: "chart-2", stack: "b" },
+      qz: { label: "Q0", color: "chart-2", stack: "b" },
     } as const satisfies ChartConfig;
-    const data = names.map((name, slot) => ({
-      name,
+    const data = Array.from({ length: PATH_SLOTS }, (_, slot) => ({
+      day: `c${String(slot)}`,
       p: slot === 0 ? 0.001 : slot === 50 ? 1000 : 0,
       pz: 0,
       q: slot === 1 ? 0.001 : slot === 60 ? 1000 : 0,
       qz: 0,
     }));
     const { host } = renderThemed(
-      <LocaleProvider locale="en-US">
-        <div style={{ width: 600 }}>
-          <Chart.Root
-            data-intro="none"
-            data={data}
-            config={config}
-            xKey="name"
-            yInclude={[1200]}
-            style={{ "--chart-plot-height": "256px" }}
-            aria-label="Stacks">
+      stackChart({
+        config,
+        data,
+        include: [1200],
+        height: 256,
+        width: 600,
+        children: (
+          <>
             <Chart.Grid />
             <Chart.BarGroup series={["p", "pz", "q", "qz"]}>
               <Chart.Bar dataKey="p" />
@@ -260,17 +252,17 @@ describe("the stack floors' addresses and their readers", () => {
               <Chart.Bar dataKey="q" />
               <Chart.Bar dataKey="qz" />
             </Chart.BarGroup>
-          </Chart.Root>
-        </div>
-      </LocaleProvider>
+          </>
+        ),
+      })
     );
-    await frame();
+    await nextFrames();
     const plot = drawnPlot(host, true, devicePixelRatio);
     // DOM audit: the path form's paths are aria-hidden plot output, one layer per series.
     const column = (series: number) => seriesColumns(host, series)[0] ?? drawnRect(null);
     for (const [series, what] of [
-      [0, "a at b c"],
-      [2, "a b at c"],
+      [0, "a at c0"],
+      [2, "b at c1"],
     ] as const) {
       const rect = column(series);
       expectFloored(rect, plot, { vertical: true, sign: 1, dpr: devicePixelRatio, what });
@@ -287,35 +279,22 @@ describe("the stack floors' addresses and their readers", () => {
       s1: { label: "S1", color: "chart-2", stack: "s" },
       s2: { label: "S2", color: "chart-3", stack: "s" },
     } as const satisfies ChartConfig;
-    const chart = (values: readonly [number, number, number]) => (
-      <LocaleProvider locale="en-US">
-        <div style={{ width: 400 }}>
-          <Chart.Root
-            data-intro="none"
-            data={[{ day: "d1", s0: values[0], s1: values[1], s2: values[2] }]}
-            config={config}
-            xKey="day"
-            yInclude={[-1000, 1000]}
-            style={{ "--chart-plot-height": "200px", "--chart-bar-seam": "0px" }}
-            aria-label="Stack">
-            <Chart.Bar dataKey="s0" />
-            <Chart.Bar dataKey="s1" />
-            <Chart.Bar dataKey="s2" />
-          </Chart.Root>
-        </div>
-      </LocaleProvider>
-    );
-    await emulatePixelRatio(1);
-    const clock = installFrameClock();
-    const { host, rerender, unmount } = renderThemed(chart([1, 1, -10]));
-    try {
-      // DOM audit: the plot's single tab stop is the listbox's option.
-      await activateFirst(host);
-      const start = clock.now();
-      rerender(chart([1, -10, 1]));
-      let owned = 0;
-      for (let time = 0; time <= 600; time += 20) {
-        clock.frameAt(start + time);
+    const chart = ([s0, s1, s2]: readonly [number, number, number]) =>
+      stackChart({
+        config,
+        data: [{ day: "d1", s0, s1, s2 }],
+        include: [-1000, 1000],
+        height: 200,
+        width: 400,
+      });
+    let owned = 0;
+    // DOM audit: the plot's single tab stop is the listbox's option.
+    await tweenFrames(
+      renderThemed,
+      chart([1, 1, -10]),
+      chart([1, -10, 1]),
+      { times: times(0, 600, 20), ready: activateFirst },
+      (host, time) => {
         const bar = drawnRect(bars(host, 0)[0]);
         const overlay = activeOverlay(host, 0);
         const what = `${String(time)} ms: bar ${String(bar.y)}+${String(bar.height)}, overlay ${String(overlay.y)}+${String(overlay.height)}`;
@@ -323,12 +302,9 @@ describe("the stack floors' addresses and their readers", () => {
         expect(overlay.height, what).toBeCloseTo(bar.height, 6);
         if (bar.height > SERIAL) owned += 1;
       }
-      // The first segment takes the floor in some frame, so the check saw a change.
-      expect(owned).toBeGreaterThan(0);
-    } finally {
-      unmount();
-      clock.restore();
-    }
+    );
+    // The first segment takes the floor in some frame, so the check saw a change.
+    expect(owned).toBeGreaterThan(0);
   });
 
   for (const form of ["bars", "path"] as const) {
@@ -341,48 +317,36 @@ describe("the stack floors' addresses and their readers", () => {
         a: { label: "A", color: "chart-1", stack: "s" },
         b: { label: "B", color: "chart-2", stack: "s" },
       } as const satisfies ChartConfig;
-      const rows = (shift: number) =>
-        Array.from({ length: count }, (_, index) => {
-          const slot = index + shift;
-          return { day: `c${String(slot)}`, a: slot === 0 ? 1 : 0, b: slot === 1 ? 1 : 0 };
+      const chart = (shift: number) =>
+        stackChart({
+          config,
+          data: Array.from({ length: count }, (_, index) => {
+            const slot = index + shift;
+            return { day: `c${String(slot)}`, a: slot === 0 ? 1 : 0, b: slot === 1 ? 1 : 0 };
+          }),
+          include: [1200],
+          height: 256,
+          width: 1200,
         });
-      const chart = (shift: number) => (
-        <LocaleProvider locale="en-US">
-          <div style={{ width: 1200 }}>
-            <Chart.Root
-              data-intro="none"
-              data={rows(shift)}
-              config={config}
-              xKey="day"
-              yInclude={[1200]}
-              style={{ "--chart-plot-height": "256px", "--chart-bar-seam": "0px" }}
-              aria-label="Slide">
-              <Chart.Bar dataKey="a" />
-              <Chart.Bar dataKey="b" />
-            </Chart.Root>
-          </div>
-        </LocaleProvider>
-      );
-      await emulatePixelRatio(1);
-      const clock = installFrameClock();
-      const { host, rerender, unmount } = renderThemed(chart(0));
       /** How long b draws along the value axis, over every slot. */
-      const drawnB = () =>
+      const drawnB = (host: HTMLElement) =>
         form === "bars"
           ? bars(host, 1).reduce((sum, bar) => sum + drawnRect(bar).height, 0)
           : seriesColumns(host, 1).reduce((sum, { height }) => sum + height, 0);
-      try {
-        expect(drawnB(), "at rest").toBeCloseTo(1, 6);
-        const start = clock.now();
-        rerender(chart(1));
-        for (let time = 0; time <= 600; time += 20) {
-          clock.frameAt(start + time);
-          expect(drawnB(), `${String(time)} ms`).toBeCloseTo(1, 6);
+      await tweenFrames(
+        renderThemed,
+        chart(0),
+        chart(1),
+        {
+          times: times(0, 600, 20),
+          ready: (host) => {
+            expect(drawnB(host), "at rest").toBeCloseTo(1, 6);
+          },
+        },
+        (host, time) => {
+          expect(drawnB(host), `${String(time)} ms`).toBeCloseTo(1, 6);
         }
-      } finally {
-        unmount();
-        clock.restore();
-      }
+      );
     });
   }
 
@@ -430,18 +394,16 @@ describe("the stack floors' addresses and their readers", () => {
         </div>
       </LocaleProvider>
     );
-    await emulatePixelRatio(1);
-    const frames = (stacked: boolean): string[] => {
-      const clock = installFrameClock();
-      const { host, rerender, unmount } = renderThemed(chart(stacked, [-10, -10], 10));
-      try {
-        // DOM audit: the upper Panel draws the first two bars, one layer per series.
-        const panel = host.querySelector<HTMLElement>('[data-slot="chart-panel"]') ?? host;
-        const start = clock.now();
-        rerender(chart(stacked, [10, 1], 20));
-        const drawn: string[] = [];
-        for (let time = 0; time <= 600; time += 20) {
-          clock.frameAt(start + time);
+    const frames = async (stacked: boolean): Promise<string[]> => {
+      const drawn: string[] = [];
+      await tweenFrames(
+        renderThemed,
+        chart(stacked, [-10, -10], 10),
+        chart(stacked, [10, 1], 20),
+        { times: times(0, 600, 20) },
+        (host, time) => {
+          // DOM audit: the upper Panel draws the first two bars, one layer per series.
+          const panel = host.querySelector<HTMLElement>('[data-slot="chart-panel"]') ?? host;
           drawn.push(
             `${String(time)} ms ${JSON.stringify(
               [0, 1].map((series) => {
@@ -451,13 +413,10 @@ describe("the stack floors' addresses and their readers", () => {
             )}`
           );
         }
-        return drawn;
-      } finally {
-        unmount();
-        clock.restore();
-      }
+      );
+      return drawn;
     };
-    expect(frames(true)).toEqual(frames(false));
+    expect(await frames(true)).toEqual(await frames(false));
   });
 
   for (const [orientation, dpr] of [
@@ -501,7 +460,7 @@ describe("the stack floors' addresses and their readers", () => {
           </div>
         </LocaleProvider>
       );
-      await frame();
+      await nextFrames();
       const hour = bars(host, 0).map((bar) => drawnRect(bar));
       const quarters = bars(host, 1).map((bar) => drawnRect(bar));
       // The stack shows: one series or the other draws a pixel.
@@ -520,24 +479,20 @@ describe("a stack whose marks leave", () => {
   const MOVED = { inner: 2, outer: 3 };
 
   function chart(row: { readonly inner: number; readonly outer: number }, outer: ReactNode) {
-    return (
-      <LocaleProvider locale="en-US">
-        <div style={{ width: 400 }}>
-          <Chart.Root
-            data-intro="none"
-            data={[{ day: "d1", ...row }]}
-            config={STACK}
-            xKey="day"
-            yInclude={[1200]}
-            style={{ "--chart-plot-height": "256px", "--chart-bar-seam": "0px" }}
-            aria-label="Stack">
-            <Chart.Grid />
-            {outer}
-            <Chart.Bar dataKey="inner" />
-          </Chart.Root>
-        </div>
-      </LocaleProvider>
-    );
+    return stackChart({
+      config: STACK,
+      data: [{ day: "d1", ...row }],
+      include: [1200],
+      height: 256,
+      width: 400,
+      children: (
+        <>
+          <Chart.Grid />
+          {outer}
+          <Chart.Bar dataKey="inner" />
+        </>
+      ),
+    });
   }
 
   it("hands the floor to the segment that stays before the next frame when a segment leaves mid-tween", async () => {
@@ -617,4 +572,86 @@ describe("a stack whose marks leave", () => {
       clock.restore();
     }
   });
+});
+
+describe("a stack whose marks draw in a commit Root does not render", () => {
+  // Every slot stacks inner 1 and outer 1 on 0..1,200 over 256 px, 0.21 CSS px each, so only the
+  // outer segment keeps a pixel. React renders each mark's resting geometry, which the stack floors
+  // decide alike, so no mark writes its geometry again however many draw in the commit. A stack
+  // that settled once a mark would floor each inner segment while it draws alone, then take the
+  // floor back.
+  for (const form of ["bars", "path"] as const) {
+    it(`writes no mark again when the chart mounts or late Bars mount (${form})`, async () => {
+      const count = form === "bars" ? 12 : PATH_SLOTS;
+      let show: (shown: boolean) => void = () => undefined;
+      function Late() {
+        const [shown, setShown] = useState(true);
+        useLayoutEffect(() => {
+          show = setShown;
+        }, []);
+        return shown ? (
+          <>
+            <Chart.Bar dataKey="inner" />
+            <Chart.Bar dataKey="outer" />
+          </>
+        ) : null;
+      }
+      const data = Array.from({ length: count }, (_, slot) => ({
+        day: `c${String(slot)}`,
+        inner: 1,
+        outer: 1,
+      }));
+      const records: MutationRecord[] = [];
+      const observer = new MutationObserver((found) => {
+        records.push(...found);
+      });
+      observer.observe(document.body, { subtree: true, attributes: true, attributeFilter: ["points", "d"] });
+      /** The marks whose geometry changed since the last call, by slot and series. */
+      const rewritten = () => {
+        records.push(...observer.takeRecords());
+        const marks = records.flatMap(({ target }) =>
+          target instanceof Element && target.matches('[data-slot="chart-bar"], [data-slot="chart-bar-path"]')
+            ? [target.getAttribute("data-series")]
+            : []
+        );
+        records.length = 0;
+        return marks;
+      };
+      await emulatePixelRatio(1);
+      const { host, unmount } = renderThemed(
+        stackChart({
+          config: STACK,
+          data,
+          include: [1200],
+          height: 256,
+          width: 600,
+          children: (
+            <>
+              <Chart.Grid />
+              <Late />
+            </>
+          ),
+        })
+      );
+      try {
+        await nextFrames();
+        expect(rewritten(), "the chart mounts").toEqual([]);
+        flushSync(() => {
+          show(false);
+        });
+        flushSync(() => {
+          show(true);
+        });
+        await nextFrames();
+        expect(rewritten(), "late Bars mount").toEqual([]);
+        // The outer segment keeps the stack's pixel, so the check looked at a floored stack.
+        const outer =
+          form === "bars" ? drawnRect(bars(host, 1)[0]) : (seriesColumns(host, 1)[0] ?? drawnRect(null));
+        expectFloored(outer, drawnPlot(host, true, 1), { vertical: true, sign: 1, dpr: 1, what: "outer" });
+      } finally {
+        observer.disconnect();
+        unmount();
+      }
+    });
+  }
 });

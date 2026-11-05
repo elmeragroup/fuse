@@ -13,66 +13,58 @@ import {
   activateFirst,
   activeOverlay,
   expectApart,
-  SERIAL,
   seriesColumns,
   shownColumns,
+  stackChart,
+  times,
   turnsIn,
+  tweenFrames,
 } from "../../../test/chart/floor-charts";
-import { installFrameClock } from "../../../test/chart/frame-clock";
 import { barLayerBox } from "../../../test/chart/marks";
-import { emulatePixelRatio } from "../../../test/page-metrics";
+import { SERIAL } from "../../../test/chart/world-model";
 import { renderThemed } from "../../../test/themed-browser-render";
-import { LocaleProvider } from "../../intl/locale-context";
-import { Chart } from "./chart-namespace";
 import type { ChartConfig } from "./chart-types";
 import "./chart.css";
+
+const AB = {
+  a: { label: "A", color: "chart-1", stack: "s" },
+  b: { label: "B", color: "chart-2", stack: "s" },
+} as const satisfies ChartConfig;
+
+/** 2,500 categories, the decimated path form's, from c{shift} on, each category's readings by `row`. */
+function categories(row: (slot: number) => Readonly<Record<string, number | null>>, shift = 0) {
+  return Array.from({ length: 2500 }, (_, index) => {
+    const slot = index + shift;
+    return { day: `c${String(slot)}`, ...row(slot) };
+  });
+}
 
 describe("decimated columns' stack floors and their readers", () => {
   it("gives a decimated window's active overlay its bucket column's floor in every frame", async () => {
     // 2,500 categories stack a = 1 and b = 1, 0.21 CSS px each on 0..1,200 over 256 px, and b falls
     // to 0. The first category is active, and its overlay draws a's geometry: in the first bucket
     // every slot reads alike, so the overlay draws what a's first column draws, floor and all.
-    const config = {
-      a: { label: "A", color: "chart-1", stack: "s" },
-      b: { label: "B", color: "chart-2", stack: "s" },
-    } as const satisfies ChartConfig;
-    const chart = (b: number) => (
-      <LocaleProvider locale="en-US">
-        <div style={{ width: 1000 }}>
-          <Chart.Root
-            data-intro="none"
-            data={Array.from({ length: 2500 }, (_, slot) => ({ day: `c${String(slot)}`, a: 1, b }))}
-            config={config}
-            xKey="day"
-            yInclude={[1200]}
-            style={{ "--chart-plot-height": "256px", "--chart-bar-seam": "0px" }}
-            aria-label="Decimated">
-            <Chart.Bar dataKey="a" />
-            <Chart.Bar dataKey="b" />
-          </Chart.Root>
-        </div>
-      </LocaleProvider>
-    );
-    await emulatePixelRatio(1);
-    const clock = installFrameClock();
-    const { host, rerender, unmount } = renderThemed(chart(1));
-    try {
-      // DOM audit: the plot's single tab stop is the listbox's option.
-      await activateFirst(host);
-      const start = clock.now();
-      rerender(chart(0));
-      for (let time = 0; time <= 300; time += 20) {
-        clock.frameAt(start + time);
+    const chart = (b: number) =>
+      stackChart({
+        config: AB,
+        data: categories(() => ({ a: 1, b })),
+        include: [1200],
+        height: 256,
+        width: 1000,
+      });
+    await tweenFrames(
+      renderThemed,
+      chart(1),
+      chart(0),
+      { times: times(0, 300, 20), ready: activateFirst },
+      (host, time) => {
         const column = seriesColumns(host, 0)[0] ?? { y: 0, height: 0 };
         const overlay = activeOverlay(host, 0);
         const what = `${String(time)} ms: column ${String(column.y)}+${String(column.height)}, overlay ${String(overlay.y)}+${String(overlay.height)}`;
         expect(overlay.height, what).toBeCloseTo(column.height, 6);
         if (column.height > SERIAL) expect(overlay.y, what).toBeCloseTo(column.y, 6);
       }
-    } finally {
-      unmount();
-      clock.restore();
-    }
+    );
   });
 
   it("never floors two series on one pixel while a slide regroups decimated buckets", async () => {
@@ -80,59 +72,41 @@ describe("decimated columns' stack floors and their readers", () => {
     // all far under a device pixel on 0..1,200 over 256 px, so every pixel either series draws is
     // a floor. c0 to c2499 becomes c1 to c2500, a slide by a fifth of a bucket, so the old and the
     // new buckets' columns share pixels mid-tween. Each pixel takes one floor at most.
-    const config = {
-      a: { label: "A", color: "chart-1", stack: "s" },
-      b: { label: "B", color: "chart-2", stack: "s" },
-    } as const satisfies ChartConfig;
-    const rows = (shift: number) =>
-      Array.from({ length: 2500 }, (_, index) => {
-        const slot = index + shift;
-        return {
-          day: `c${String(slot)}`,
-          a: slot === 0 ? 1 : slot === 1 ? 0 : 0.001,
-          b: slot === 0 ? 0 : slot === 1 ? 1 : 0.001,
-        };
+    const chart = (shift: number) =>
+      stackChart({
+        config: AB,
+        data: categories(
+          (slot) => ({
+            a: slot === 0 ? 1 : slot === 1 ? 0 : 0.001,
+            b: slot === 0 ? 0 : slot === 1 ? 1 : 0.001,
+          }),
+          shift
+        ),
+        include: [1200],
+        height: 256,
+        width: 1000,
       });
-    const chart = (shift: number) => (
-      <LocaleProvider locale="en-US">
-        <div style={{ width: 1000 }}>
-          <Chart.Root
-            data-intro="none"
-            data={rows(shift)}
-            config={config}
-            xKey="day"
-            yInclude={[1200]}
-            style={{ "--chart-plot-height": "256px", "--chart-bar-seam": "0px" }}
-            aria-label="Regroup">
-            <Chart.Bar dataKey="a" />
-            <Chart.Bar dataKey="b" />
-          </Chart.Root>
-        </div>
-      </LocaleProvider>
-    );
-    await emulatePixelRatio(1);
-    const clock = installFrameClock();
-    const { host, rerender, unmount } = renderThemed(chart(0));
-    const columns = (series: number) => shownColumns(host, series);
-    try {
-      // Zero lies where no rounding turn falls within the 0.43 px the stacks reach, so no column
-      // covers a pixel on its own: every drawn pixel is a floor.
-      const page = barLayerBox(host).top + 256;
-      expect(turnsIn(1, page, page - 0.43)).toBe(false);
-      const start = clock.now();
-      rerender(chart(1));
-      let drawn = 0;
-      for (let time = 20; time <= 460; time += 20) {
-        clock.frameAt(start + time);
-        const [a, b] = [columns(0), columns(1)];
+    let drawn = 0;
+    await tweenFrames(
+      renderThemed,
+      chart(0),
+      chart(1),
+      {
+        times: times(20, 460, 20),
+        ready: (host) => {
+          // Zero lies where no rounding turn falls within the 0.43 px the stacks reach, so no column
+          // covers a pixel on its own: every drawn pixel is a floor.
+          const page = barLayerBox(host).top + 256;
+          expect(turnsIn(1, page, page - 0.43)).toBe(false);
+        },
+      },
+      (host, time) => {
+        const [a, b] = [shownColumns(host, 0), shownColumns(host, 1)];
         drawn += a.length + b.length;
         expectApart(a, b, `${String(time)} ms: a and b`);
       }
-      expect(drawn).toBeGreaterThan(0);
-    } finally {
-      unmount();
-      clock.restore();
-    }
+    );
+    expect(drawn).toBeGreaterThan(0);
   });
 
   for (const [domain, height] of [
@@ -144,60 +118,40 @@ describe("decimated columns' stack floors and their readers", () => {
       // pixel on -domain..domain. The first category is active. Its overlay draws a's geometry on
       // the side a's drawn tip lies in each frame, so every pixel it draws is one a's own columns
       // over the first bucket draw too.
-      const config = {
-        a: { label: "A", color: "chart-1", stack: "s" },
-        b: { label: "B", color: "chart-2", stack: "s" },
-      } as const satisfies ChartConfig;
-      const chart = (a: number) => (
-        <LocaleProvider locale="en-US">
-          <div style={{ width: 1000 }}>
-            <Chart.Root
-              data-intro="none"
-              data={Array.from({ length: 2500 }, (_, slot) => ({ day: `c${String(slot)}`, a, b: 1 }))}
-              config={config}
-              xKey="day"
-              yInclude={[-domain, domain]}
-              style={{ "--chart-plot-height": `${String(height)}px`, "--chart-bar-seam": "0px" }}
-              aria-label="Turn">
-              <Chart.Bar dataKey="a" />
-              <Chart.Bar dataKey="b" />
-            </Chart.Root>
-          </div>
-        </LocaleProvider>
-      );
-      await emulatePixelRatio(1);
-      const clock = installFrameClock();
-      const { host, rerender, unmount } = renderThemed(chart(1));
-      try {
-        // DOM audit: the plot's single tab stop is the listbox's option.
-        await activateFirst(host);
-        const start = clock.now();
-        rerender(chart(-1));
-        let floored = 0;
-        for (let time = 0; time <= 600; time += 20) {
-          clock.frameAt(start + time);
+      const chart = (a: number) =>
+        stackChart({
+          config: AB,
+          data: categories(() => ({ a, b: 1 })),
+          include: [-domain, domain],
+          height,
+          width: 1000,
+        });
+      let floored = 0;
+      await tweenFrames(
+        renderThemed,
+        chart(1),
+        chart(-1),
+        { times: times(0, 600, 20), ready: activateFirst },
+        (host, time) => {
           const overlay = activeOverlay(host, 0);
-          if (overlay.height <= SERIAL) continue;
+          if (overlay.height <= SERIAL) return;
           floored += 1;
           const columns = seriesColumns(host, 0, "every");
           const under = columns.filter(
-            ({ x, y, width, height }) =>
+            ({ x, y, width, height: tall }) =>
               x <= overlay.x + SERIAL &&
               x + width >= overlay.x + overlay.width - SERIAL &&
               y <= overlay.y + SERIAL &&
-              y + height >= overlay.y + overlay.height - SERIAL
+              y + tall >= overlay.y + overlay.height - SERIAL
           );
           expect(
             under.length,
             `${String(time)} ms: overlay ${JSON.stringify(overlay)} over a's ${JSON.stringify(columns.filter(({ x }) => x < overlay.x + overlay.width + 2))}`
           ).toBeGreaterThan(0);
         }
-        // Once a turns over it owns the negative side, so its overlay draws the floor there.
-        expect(floored).toBeGreaterThan(0);
-      } finally {
-        unmount();
-        clock.restore();
-      }
+      );
+      // Once a turns over it owns the negative side, so its overlay draws the floor there.
+      expect(floored).toBeGreaterThan(0);
     });
   }
 
@@ -206,8 +160,7 @@ describe("decimated columns' stack floors and their readers", () => {
     // plot at 1.5x, 0.3 px in from the left. Every reading is null but a few, and the window slides
     // by one category: the columns above and below zero arrive and leave in different buckets.
     const config = {
-      a: { label: "A", color: "chart-1", stack: "s" },
-      b: { label: "B", color: "chart-2", stack: "s" },
+      ...AB,
       c: { label: "C", color: "chart-3", stack: "s" },
     } as const satisfies ChartConfig;
     type Reading = { readonly a?: number; readonly b?: number; readonly c?: number };
@@ -222,45 +175,26 @@ describe("decimated columns' stack floors and their readers", () => {
       [7, { c: 1 }],
       [10, { b: -1 }],
     ]);
-    const rows = (shift: number, readings: ReadonlyMap<number, Reading>) =>
-      Array.from({ length: 2500 }, (_, index) => {
-        const slot = index + shift;
-        const own = readings.get(slot) ?? {};
-        return { day: `c${String(slot)}`, a: own.a ?? null, b: own.b ?? null, c: own.c ?? null };
+    const chart = (shift: number, readings: ReadonlyMap<number, Reading>) =>
+      stackChart({
+        config,
+        data: categories((slot) => {
+          const own = readings.get(slot) ?? {};
+          return { a: own.a ?? null, b: own.b ?? null, c: own.c ?? null };
+        }, shift),
+        include: [-1000, 1000],
+        height: 200,
+        width: 120,
+        left: 0.3,
       });
-    const chart = (shift: number, readings: ReadonlyMap<number, Reading>) => (
-      <LocaleProvider locale="en-US">
-        <div style={{ width: 120, paddingLeft: 0.3 }}>
-          <Chart.Root
-            data-intro="none"
-            data={rows(shift, readings)}
-            config={config}
-            xKey="day"
-            yInclude={[-1000, 1000]}
-            style={{ "--chart-plot-height": "200px", "--chart-bar-seam": "0px" }}
-            aria-label="Slide">
-            <Chart.Bar dataKey="a" />
-            <Chart.Bar dataKey="b" />
-            <Chart.Bar dataKey="c" />
-          </Chart.Root>
-        </div>
-      </LocaleProvider>
-    );
-    await emulatePixelRatio(1.5);
-    const clock = installFrameClock();
-    const { host, rerender, unmount } = renderThemed(chart(0, before));
-    const columns = (series: number) => shownColumns(host, series);
-    try {
-      const start = clock.now();
-      rerender(chart(1, after));
-      for (let time = 8; time <= 480; time += 8) {
-        clock.frameAt(start + time);
-        const [b, c] = [columns(1), columns(2)];
-        expectApart(b, c, `${String(time)} ms: b and c`);
+    await tweenFrames(
+      renderThemed,
+      chart(0, before),
+      chart(1, after),
+      { dpr: 1.5, times: times(8, 480, 8) },
+      (host, time) => {
+        expectApart(shownColumns(host, 1), shownColumns(host, 2), `${String(time)} ms: b and c`);
       }
-    } finally {
-      unmount();
-      clock.restore();
-    }
+    );
   });
 });
