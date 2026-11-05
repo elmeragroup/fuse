@@ -123,13 +123,14 @@ export type ClockSeries = {
   readonly rest: readonly number[];
   /** Each slot's reading, or null. */
   readonly values: readonly (number | null)[];
-  /** The slots the series' columns draw: every slot up to 100, M4's past it. */
+  /** Every slot, which a Column decimates by M4 to the drawn dial's circumference past 2,000. */
   readonly shown: readonly number[];
 };
 
 /** What a series' slots hold beside their numbers, as `layout/clock-path.ts` reads them. */
 export type ClockSlotDraw = {
-  readonly states: readonly ("reading" | "missing" | "pending")[];
+  /** "covered" for a Root slot a coarse slot draws from its first Root slot, which draws nothing itself. */
+  readonly states: readonly ("reading" | "missing" | "pending" | "covered")[];
   readonly marked: readonly boolean[];
   readonly missing: "gap" | "connect";
 };

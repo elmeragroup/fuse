@@ -666,6 +666,7 @@
     --chart-polar-size: 12.5rem;
     --chart-intro: 1000ms;
     --chart-stagger: 80ms;
+    container: polar-figure / inline-size;
   }
 
   [data-slot="chart-polar-frame"] {
@@ -698,9 +699,42 @@
       "table table table";
   }
 
+  /*
+    A legend under or over the dial, a headline or a takeaway spans the frame's three columns. It
+    sizes from the width it gets and gives the side columns none of its own, so a long legend wraps
+    instead of narrowing the dial.
+  */
+  [data-slot="chart-polar-frame"]
+    > :is(
+      [data-slot="chart-legend"]:not([data-side="start"], [data-side="end"]),
+      [data-slot="chart-headline"],
+      [data-slot="chart-takeaway"]
+    ) {
+    contain: inline-size;
+    justify-self: stretch;
+  }
+
+  /*
+    A figure narrower than a dial, its label room and a side legend drops the side legend under the
+    dial, in a row that wraps, so a phone keeps the dial at its size.
+  */
+  @container polar-figure (width < 30rem) {
+    [data-slot="chart-polar-frame"] > [data-slot="chart-legend"]:is([data-side="start"], [data-side="end"]) {
+      grid-area: legend-bottom;
+      flex-direction: row;
+      padding: 0.5rem 0 0;
+      contain: inline-size;
+      justify-self: stretch;
+    }
+  }
+
+  /*
+    A label past the rim reaches 1.1 of the radius and then its 16 px line, so the room above and
+    below the dial holds a twentieth of the widest dial and the line, with 2 px to spare.
+  */
   [data-slot="chart-polar-frame"]:has(> [data-polar-layer][data-outside]) {
     --_room-x: calc(var(--chart-slice-pop) + 4.5rem);
-    --_room-y: calc(var(--chart-slice-pop) + 1.25rem);
+    --_room-y: calc(var(--chart-slice-pop) + 0.05 * var(--chart-polar-size) + 1.125rem);
   }
 
   /*
@@ -750,6 +784,14 @@
     left: 0;
     width: auto;
     border-radius: 50%;
+  }
+
+  /*
+    A dial scrubs round its whole turn, so a finger that lands on it keeps every direction: no pan
+    starts there, and a pinch still zooms. The page scrolls from beside the dial.
+  */
+  [data-polar] [data-slot="chart-surface"] {
+    touch-action: pinch-zoom;
   }
 
   /*
@@ -987,12 +1029,23 @@
     color: var(--_on, var(--foreground));
   }
 
+  /* Inside its slice, a label's value and share read in the slice's on-colour too, never muted. */
+  [data-slot="pie-chart-label"][data-placement="inside"]
+    :is([data-slot="chart-legend-value"], [data-slot="chart-legend-share"]) {
+    color: inherit;
+  }
+
   [data-slot="pie-chart-label"][data-side="end"] {
     translate: 0.25rem -50%;
   }
 
   [data-slot="pie-chart-label"][data-side="start"] {
     translate: calc(-100% - 0.25rem) -50%;
+  }
+
+  /* A label hides while its slice draws no arc, as a slice waits for its entrance. */
+  [data-slot="pie-chart-label"][data-empty] {
+    opacity: 0;
   }
 
   /* The centre's parts stack in the square inscribed in the hole, sized to it (Q11). */
@@ -1011,8 +1064,12 @@
     color: var(--muted-foreground);
   }
 
+  /*
+    The value scales with the hole but never below the label's 12 px, so it always leads. A hole
+    narrower than 4rem holds the value alone, as the label beneath would wrap into the rings.
+  */
   [data-slot="pie-chart-center-value"] {
-    font-size: min(var(--heading-2-size, 1.25rem), 22cqmin);
+    font-size: max(0.75rem, min(var(--heading-2-size, 1.25rem), 22cqmin));
     font-weight: var(--heading-2-weight, 600);
     line-height: 1.2;
     color: var(--foreground);
@@ -1021,6 +1078,12 @@
   [data-slot="pie-chart-center-share"],
   [data-slot="pie-chart-center-max"] {
     color: var(--foreground);
+  }
+
+  @container (width < 4rem) {
+    [data-slot="pie-chart-center-label"] {
+      display: none;
+    }
   }
 
   /* A number's digits are reels of 0 to 9 in tabular figures, each slid to its digit (S3). */
@@ -1559,8 +1622,17 @@
     width that holds its stride. The ring values sit beside the 12 o'clock spoke. All are 12 px text
     placed in the cell (S12).
   */
-  [data-slot="clock-chart-angle-axis"] {
-    container: clock-chart-dial / inline-size;
+  /*
+    A dial's labels thin as the dial narrows: each axis is its own size container, so a label hides
+    below the narrowest width that holds its stride. The width buckets are tick-fit's.
+  */
+  :is(
+    [data-slot="clock-chart-angle-axis"],
+    [data-slot="clock-chart-radius-axis"],
+    [data-slot="radar-chart-angle-axis"],
+    [data-slot="radar-chart-radius-axis"]
+  ) {
+    container: polar-dial / inline-size;
   }
 
   :is(
@@ -1583,16 +1655,32 @@
     color: var(--foreground);
   }
 
-  [data-slot="clock-chart-angle-label"][data-hidden] {
+  :is(
+    [data-slot="clock-chart-angle-label"],
+    [data-slot="clock-chart-radius-label"],
+    [data-slot="radar-chart-angle-label"],
+    [data-slot="radar-chart-radius-label"]
+  )[data-hidden] {
     display: none;
   }
 
-  [data-slot="clock-chart-radius-label"] {
+  /*
+    A ring value sits on its chip of the surface, so it reads over the marks it crosses, as an axis
+    label reads beside them.
+  */
+  :is([data-slot="clock-chart-radius-label"], [data-slot="radar-chart-radius-label"]) {
     padding: 0 0.125rem;
     border-radius: 0.25rem;
-    background: color-mix(in oklab, var(--background) 80%, transparent);
+    background: var(--background);
     color: var(--muted-foreground);
     font-variant-numeric: tabular-nums;
+  }
+
+  [data-slot="clock-chart-now"] > [data-part="label"] {
+    padding: 0 0.25rem;
+    border-radius: 0.25rem;
+    background: var(--background);
+    color: var(--chart-tone);
   }
 
   [data-slot="clock-chart-value-label"] {
@@ -1603,116 +1691,211 @@
     font-variant-numeric: tabular-nums;
   }
 
-  @container clock-chart-dial (width < 7.5rem) {
-    [data-slot="clock-chart-angle-label"][data-min="120"] {
+  @container polar-dial (width < 7.5rem) {
+    :is(
+      [data-slot="clock-chart-angle-label"],
+      [data-slot="clock-chart-radius-label"],
+      [data-slot="radar-chart-angle-label"],
+      [data-slot="radar-chart-radius-label"]
+    )[data-min="120"] {
       display: none;
     }
   }
 
-  @container clock-chart-dial (width < 10rem) {
-    [data-slot="clock-chart-angle-label"][data-min="160"] {
+  @container polar-dial (width < 10rem) {
+    :is(
+      [data-slot="clock-chart-angle-label"],
+      [data-slot="clock-chart-radius-label"],
+      [data-slot="radar-chart-angle-label"],
+      [data-slot="radar-chart-radius-label"]
+    )[data-min="160"] {
       display: none;
     }
   }
 
-  @container clock-chart-dial (width < 12.5rem) {
-    [data-slot="clock-chart-angle-label"][data-min="200"] {
+  @container polar-dial (width < 12.5rem) {
+    :is(
+      [data-slot="clock-chart-angle-label"],
+      [data-slot="clock-chart-radius-label"],
+      [data-slot="radar-chart-angle-label"],
+      [data-slot="radar-chart-radius-label"]
+    )[data-min="200"] {
       display: none;
     }
   }
 
-  @container clock-chart-dial (width < 15rem) {
-    [data-slot="clock-chart-angle-label"][data-min="240"] {
+  @container polar-dial (width < 15rem) {
+    :is(
+      [data-slot="clock-chart-angle-label"],
+      [data-slot="clock-chart-radius-label"],
+      [data-slot="radar-chart-angle-label"],
+      [data-slot="radar-chart-radius-label"]
+    )[data-min="240"] {
       display: none;
     }
   }
 
-  @container clock-chart-dial (width < 17.5rem) {
-    [data-slot="clock-chart-angle-label"][data-min="280"] {
+  @container polar-dial (width < 17.5rem) {
+    :is(
+      [data-slot="clock-chart-angle-label"],
+      [data-slot="clock-chart-radius-label"],
+      [data-slot="radar-chart-angle-label"],
+      [data-slot="radar-chart-radius-label"]
+    )[data-min="280"] {
       display: none;
     }
   }
 
-  @container clock-chart-dial (width < 20rem) {
-    [data-slot="clock-chart-angle-label"][data-min="320"] {
+  @container polar-dial (width < 20rem) {
+    :is(
+      [data-slot="clock-chart-angle-label"],
+      [data-slot="clock-chart-radius-label"],
+      [data-slot="radar-chart-angle-label"],
+      [data-slot="radar-chart-radius-label"]
+    )[data-min="320"] {
       display: none;
     }
   }
 
-  @container clock-chart-dial (width < 22.5rem) {
-    [data-slot="clock-chart-angle-label"][data-min="360"] {
+  @container polar-dial (width < 22.5rem) {
+    :is(
+      [data-slot="clock-chart-angle-label"],
+      [data-slot="clock-chart-radius-label"],
+      [data-slot="radar-chart-angle-label"],
+      [data-slot="radar-chart-radius-label"]
+    )[data-min="360"] {
       display: none;
     }
   }
 
-  @container clock-chart-dial (width < 25rem) {
-    [data-slot="clock-chart-angle-label"][data-min="400"] {
+  @container polar-dial (width < 25rem) {
+    :is(
+      [data-slot="clock-chart-angle-label"],
+      [data-slot="clock-chart-radius-label"],
+      [data-slot="radar-chart-angle-label"],
+      [data-slot="radar-chart-radius-label"]
+    )[data-min="400"] {
       display: none;
     }
   }
 
-  @container clock-chart-dial (width < 27.5rem) {
-    [data-slot="clock-chart-angle-label"][data-min="440"] {
+  @container polar-dial (width < 27.5rem) {
+    :is(
+      [data-slot="clock-chart-angle-label"],
+      [data-slot="clock-chart-radius-label"],
+      [data-slot="radar-chart-angle-label"],
+      [data-slot="radar-chart-radius-label"]
+    )[data-min="440"] {
       display: none;
     }
   }
 
-  @container clock-chart-dial (width < 30rem) {
-    [data-slot="clock-chart-angle-label"][data-min="480"] {
+  @container polar-dial (width < 30rem) {
+    :is(
+      [data-slot="clock-chart-angle-label"],
+      [data-slot="clock-chart-radius-label"],
+      [data-slot="radar-chart-angle-label"],
+      [data-slot="radar-chart-radius-label"]
+    )[data-min="480"] {
       display: none;
     }
   }
 
-  @container clock-chart-dial (width < 35rem) {
-    [data-slot="clock-chart-angle-label"][data-min="560"] {
+  @container polar-dial (width < 35rem) {
+    :is(
+      [data-slot="clock-chart-angle-label"],
+      [data-slot="clock-chart-radius-label"],
+      [data-slot="radar-chart-angle-label"],
+      [data-slot="radar-chart-radius-label"]
+    )[data-min="560"] {
       display: none;
     }
   }
 
-  @container clock-chart-dial (width < 40rem) {
-    [data-slot="clock-chart-angle-label"][data-min="640"] {
+  @container polar-dial (width < 40rem) {
+    :is(
+      [data-slot="clock-chart-angle-label"],
+      [data-slot="clock-chart-radius-label"],
+      [data-slot="radar-chart-angle-label"],
+      [data-slot="radar-chart-radius-label"]
+    )[data-min="640"] {
       display: none;
     }
   }
 
-  @container clock-chart-dial (width < 45rem) {
-    [data-slot="clock-chart-angle-label"][data-min="720"] {
+  @container polar-dial (width < 45rem) {
+    :is(
+      [data-slot="clock-chart-angle-label"],
+      [data-slot="clock-chart-radius-label"],
+      [data-slot="radar-chart-angle-label"],
+      [data-slot="radar-chart-radius-label"]
+    )[data-min="720"] {
       display: none;
     }
   }
 
-  @container clock-chart-dial (width < 50rem) {
-    [data-slot="clock-chart-angle-label"][data-min="800"] {
+  @container polar-dial (width < 50rem) {
+    :is(
+      [data-slot="clock-chart-angle-label"],
+      [data-slot="clock-chart-radius-label"],
+      [data-slot="radar-chart-angle-label"],
+      [data-slot="radar-chart-radius-label"]
+    )[data-min="800"] {
       display: none;
     }
   }
 
-  @container clock-chart-dial (width < 55rem) {
-    [data-slot="clock-chart-angle-label"][data-min="880"] {
+  @container polar-dial (width < 55rem) {
+    :is(
+      [data-slot="clock-chart-angle-label"],
+      [data-slot="clock-chart-radius-label"],
+      [data-slot="radar-chart-angle-label"],
+      [data-slot="radar-chart-radius-label"]
+    )[data-min="880"] {
       display: none;
     }
   }
 
-  @container clock-chart-dial (width < 60rem) {
-    [data-slot="clock-chart-angle-label"][data-min="960"] {
+  @container polar-dial (width < 60rem) {
+    :is(
+      [data-slot="clock-chart-angle-label"],
+      [data-slot="clock-chart-radius-label"],
+      [data-slot="radar-chart-angle-label"],
+      [data-slot="radar-chart-radius-label"]
+    )[data-min="960"] {
       display: none;
     }
   }
 
-  @container clock-chart-dial (width < 65rem) {
-    [data-slot="clock-chart-angle-label"][data-min="1040"] {
+  @container polar-dial (width < 65rem) {
+    :is(
+      [data-slot="clock-chart-angle-label"],
+      [data-slot="clock-chart-radius-label"],
+      [data-slot="radar-chart-angle-label"],
+      [data-slot="radar-chart-radius-label"]
+    )[data-min="1040"] {
       display: none;
     }
   }
 
-  @container clock-chart-dial (width < 70rem) {
-    [data-slot="clock-chart-angle-label"][data-min="1120"] {
+  @container polar-dial (width < 70rem) {
+    :is(
+      [data-slot="clock-chart-angle-label"],
+      [data-slot="clock-chart-radius-label"],
+      [data-slot="radar-chart-angle-label"],
+      [data-slot="radar-chart-radius-label"]
+    )[data-min="1120"] {
       display: none;
     }
   }
 
-  @container clock-chart-dial (width < 75rem) {
-    [data-slot="clock-chart-angle-label"][data-min="1200"] {
+  @container polar-dial (width < 75rem) {
+    :is(
+      [data-slot="clock-chart-angle-label"],
+      [data-slot="clock-chart-radius-label"],
+      [data-slot="radar-chart-angle-label"],
+      [data-slot="radar-chart-radius-label"]
+    )[data-min="1200"] {
       display: none;
     }
   }
@@ -1732,8 +1915,14 @@
     color: var(--muted-foreground);
   }
 
+  /*
+    The value scales with the hole and wraps between its number and its unit, balanced, so a long
+    reading such as a year's total stays inside the square the hole holds.
+  */
   [data-slot="clock-chart-center"] [data-slot="clock-chart-active-value"] {
-    font-size: min(var(--heading-2-size, 1.25rem), 30cqmin);
+    max-width: 100%;
+    text-wrap: balance;
+    font-size: min(var(--heading-2-size, 1.25rem), 24cqmin);
     font-weight: var(--heading-2-weight, 600);
     line-height: 1.2;
     color: var(--foreground);

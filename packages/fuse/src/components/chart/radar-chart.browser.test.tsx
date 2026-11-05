@@ -273,7 +273,7 @@ describe("the grid and the axes (R4, S12)", () => {
 
   it("places the ring values beside spoke 0 at the ring radii and each spoke label past the rim", async () => {
     const { host } = renderThemed(
-      <Radar data={rows([1, 2, 3, 4])} max={4}>
+      <Radar data={rows([4, 4, 3, 4])} max={4}>
         <RadarChart.Grid />
         <RadarChart.AngleAxis />
         <RadarChart.RadiusAxis />
@@ -284,11 +284,19 @@ describe("the grid and the axes (R4, S12)", () => {
     const radius = (grid?.width ?? 0) / 2;
     const centre = { x: (grid?.left ?? 0) + radius, y: (grid?.top ?? 0) + radius };
     // DOM audit: axis labels are aria-hidden plot text, read by their slots.
-    const values = [...host.querySelectorAll('[data-slot="radar-chart-radius-label"]')];
-    expect(values.map((label) => label.textContent)).toEqual(["0", "1", "2", "3", "4"]);
+    // The spoke labels' gutter leaves a dial 176 px across in the 320 px frame, so the 160 px bucket's
+    // stride holds: R = 80 there, the values sit 20 px apart, 0 sits on the centre, and the rim's 4
+    // would end at 90 px, past the spoke label's edge at 88. The series' edge from the rim at spoke 0
+    // to the rim at spoke 1 passes (10, −70), through the chip of 3, which sits 60 ± 8 px up and
+    // from 4 px right of the spoke, so 3 hides; 1 and 2 sit well left of that edge.
+    expect(radius * 2).toBeCloseTo(176, 0);
+    const values = [...host.querySelectorAll('[data-slot="radar-chart-radius-label"]')].filter(
+      (label) => label.getClientRects().length > 0
+    );
+    expect(values.map((label) => label.textContent)).toEqual(["1", "2"]);
     values.forEach((label, index) => {
       const box = label.getBoundingClientRect();
-      expect(Math.abs(box.top + box.height / 2 - (centre.y - (index / 4) * radius))).toBeLessThan(0.5);
+      expect(Math.abs(box.top + box.height / 2 - (centre.y - ((index + 1) / 4) * radius))).toBeLessThan(0.5);
       expect(Math.abs(box.left - (centre.x + 4))).toBeLessThan(0.5);
     });
     const spokes = [...host.querySelectorAll('[data-slot="radar-chart-angle-label"]')];

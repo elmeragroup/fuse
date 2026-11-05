@@ -12,6 +12,7 @@ import { renderToString } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import "../../../dist/styles.css";
+import { clockLayer, clockPath, dotPoints } from "../../../test/chart/clock";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
 import "./chart.css";
@@ -230,7 +231,7 @@ describe("hydration (D18)", () => {
     }
   });
 
-  it("sends a 25-hour clock's wedges, curve, labels and Now from the server, and hydrates them as they are", async () => {
+  it("sends a 25-hour clock's wedges, dots, curve, labels and Now from the server, and hydrates them as they are", async () => {
     // The 25-hour 26 October 2025 in Oslo, whose slot angles, labels and hands all run through
     // trigonometry and zone rules the server and each engine must round alike.
     const start = Date.parse("2025-10-25T22:00:00Z");
@@ -254,6 +255,7 @@ describe("hydration (D18)", () => {
               <ClockChart.AngleAxis />
               <ClockChart.Column dataKey="kwh" />
               <ClockChart.Line dataKey="kwh" />
+              <ClockChart.Dots dataKey="kwh" />
               <ClockChart.Now />
               <ClockChart.Center />
             </ClockChart.Root>
@@ -268,6 +270,16 @@ describe("hydration (D18)", () => {
     const host = document.createElement("div");
     host.innerHTML = html;
     document.body.append(host);
+    // With no script run yet, the server's markup holds one wedge and one dot per hour, and the curve.
+    // DOM audit: the wedges are aria-hidden plot output, read by their layer's slot.
+    const subpaths = (slot: string): number =>
+      [...host.querySelectorAll(`[data-slot="${slot}"] path`)].reduce(
+        (count, path) => count + ((path.getAttribute("d") ?? "").match(/M/gu) ?? []).length,
+        0
+      );
+    expect(subpaths("clock-chart-column")).toBe(25);
+    expect(dotPoints(clockPath(clockLayer(host, "clock-chart-dots"), "step-0"))).toHaveLength(25);
+    expect(clockPath(clockLayer(host, "clock-chart-line"), "solid")).not.toBe("");
     const recover = vi.fn();
     const hydrated = Promise.withResolvers<void>();
     const root = hydrateRoot(host, <Clock onHydrated={hydrated.resolve} />, { onRecoverableError: recover });

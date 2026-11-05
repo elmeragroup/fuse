@@ -3,15 +3,64 @@
 import { RadarChart } from "@elmeragroup/fuse/chart";
 import type { ChartConfig } from "@elmeragroup/fuse/chart";
 
-// Illustrative values: each consumption group's use per metering point in four price areas, as an
-// index where 100 is the group's mean over the areas.
-const groups = [
-  { group: "Households", no1: 104, no2: 96, no3: 98, no4: 112 },
-  { group: "Cabins", no1: 88, no2: 131, no3: 84, no4: 97 },
-  { group: "Primary", no1: 92, no2: 79, no3: 126, no4: 118 },
-  { group: "Industry", no1: 83, no2: 141, no3: 107, no4: 76 },
-  { group: "Services", no1: 109, no2: 94, no3: 101, no4: 89 },
+// Consumption per metering point on 16 October 2026 for every price area and consumption group,
+// computed from the Elhub dataset CONSUMPTION_PER_GROUP_MBA_HOUR at https://api.elhub.no. Elhub
+// licenses its datasets under CC BY 4.0, https://creativecommons.org/licenses/by/4.0/.
+export const NO_GROUPS_2026_10_16 = [
+  { area: "NO1", group: "household", kwh: 39525296.7, meteringPoints: 1126105 },
+  { area: "NO1", group: "cabin", kwh: 2004591.9, meteringPoints: 111343 },
+  { area: "NO1", group: "primary", kwh: 1050539.6, meteringPoints: 7464 },
+  { area: "NO1", group: "secondary", kwh: 13121739.2, meteringPoints: 15214 },
+  { area: "NO1", group: "tertiary", kwh: 28681425.8, meteringPoints: 97272 },
+  { area: "NO2", group: "household", kwh: 23576759.9, meteringPoints: 637518 },
+  { area: "NO2", group: "cabin", kwh: 1532338.4, meteringPoints: 107085 },
+  { area: "NO2", group: "primary", kwh: 1979897.7, meteringPoints: 5789 },
+  { area: "NO2", group: "secondary", kwh: 53213877.5, meteringPoints: 12910 },
+  { area: "NO2", group: "tertiary", kwh: 16530672.2, meteringPoints: 74927 },
+  { area: "NO3", group: "household", kwh: 16176910.8, meteringPoints: 413861 },
+  { area: "NO3", group: "cabin", kwh: 1003913.8, meteringPoints: 63111 },
+  { area: "NO3", group: "primary", kwh: 2238770.3, meteringPoints: 10155 },
+  { area: "NO3", group: "secondary", kwh: 42524615.2, meteringPoints: 9295 },
+  { area: "NO3", group: "tertiary", kwh: 12566279.5, meteringPoints: 52627 },
+  { area: "NO4", group: "household", kwh: 12138228.9, meteringPoints: 246900 },
+  { area: "NO4", group: "cabin", kwh: 962531.9, meteringPoints: 44651 },
+  { area: "NO4", group: "primary", kwh: 1787005.7, meteringPoints: 4001 },
+  { area: "NO4", group: "secondary", kwh: 28809582.9, meteringPoints: 6233 },
+  { area: "NO4", group: "tertiary", kwh: 10627723.0, meteringPoints: 40742 },
+  { area: "NO5", group: "household", kwh: 9622327.0, meteringPoints: 261386 },
+  { area: "NO5", group: "cabin", kwh: 981402.2, meteringPoints: 49000 },
+  { area: "NO5", group: "primary", kwh: 338967.9, meteringPoints: 1957 },
+  { area: "NO5", group: "secondary", kwh: 27987457.4, meteringPoints: 5055 },
+  { area: "NO5", group: "tertiary", kwh: 6759071.6, meteringPoints: 28385 },
 ];
+
+const GROUPS = [
+  ["household", "Households"],
+  ["cabin", "Cabins"],
+  ["primary", "Primary"],
+  ["secondary", "Industry"],
+  ["tertiary", "Services"],
+] as const;
+
+/**
+ * Each group's use per metering point in an area as an index, where 100 is the group's use per
+ * metering point over all five areas.
+ */
+function indexOf(area: string, group: string): number {
+  const rows = NO_GROUPS_2026_10_16.filter((row) => row.group === group);
+  const mean =
+    rows.reduce((sum, row) => sum + row.kwh, 0) / rows.reduce((sum, row) => sum + row.meteringPoints, 0);
+  const own = rows.find((row) => row.area === area);
+  return own === undefined ? 0 : Math.round((own.kwh / own.meteringPoints / mean) * 1000) / 10;
+}
+
+const groups = GROUPS.map(([group, name]) => ({
+  group: name,
+  no1: indexOf("NO1", group),
+  no2: indexOf("NO2", group),
+  no3: indexOf("NO3", group),
+  no4: indexOf("NO4", group),
+}));
 
 const config = {
   no1: { label: "NO1", color: "chart-1" },

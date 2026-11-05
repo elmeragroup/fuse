@@ -49,12 +49,15 @@ function Dial({
   config = { kwh: { label: "kWh", color: "chart-1" } },
   scale,
   now,
+  size,
   children,
 }: {
   readonly data?: readonly Record<string, number>[];
   readonly config?: ChartConfig;
   readonly scale?: "radial" | "linear";
   readonly now?: number;
+  /** The dial's `--chart-polar-size`, as a consumer sets it. */
+  readonly size?: string;
   readonly children: React.ReactNode;
 }) {
   return (
@@ -69,6 +72,7 @@ function Dial({
           radiusScale={scale}
           now={now}
           data-intro="none"
+          style={size === undefined ? undefined : { "--chart-polar-size": size }}
           aria-label="Døgn">
           {children}
         </ClockChart.Root>
@@ -161,9 +165,9 @@ describe("a threshold ring (D23)", () => {
     expect(page.getByText("Under snittet").elements()).toHaveLength(1);
   });
 
-  it("glows a value-painted line through a filter that blurs its own pixels", async () => {
+  it("glows a value-painted line through a filter that blurs its own pixels at the drawn radius", async () => {
     const { host } = renderThemed(
-      <Dial config={split}>
+      <Dial config={split} size="15rem">
         <ClockChart.Glow>
           <ClockChart.Line dataKey="kwh" />
         </ClockChart.Glow>
@@ -172,8 +176,12 @@ describe("a threshold ring (D23)", () => {
     await painted();
     const line = clockLayer(host, "clock-chart-line");
     expect(line.getAttribute("data-paint")).toBe("value");
-    // A line's halo is 9.5 px, which the dial's 100 px nominal radius makes 0.095 of its units.
-    expect(Number(line.querySelector("feGaussianBlur")?.getAttribute("stdDeviation"))).toBeCloseTo(0.095, 9);
+    // A line's halo is 9.5 px. The dial draws 240 px across, a 120 px radius, so 9.5 / 120 of its units.
+    expect(line.getBoundingClientRect().width).toBe(240);
+    expect(Number(line.querySelector("feGaussianBlur")?.getAttribute("stdDeviation"))).toBeCloseTo(
+      9.5 / 120,
+      9
+    );
     expect(getComputedStyle(line.querySelector("g") ?? line).filter).toMatch(/^url\("?#/u);
   });
 
@@ -243,6 +251,102 @@ describe("the pixel floor (D24)", () => {
 });
 
 describe("the 25-hour day", () => {
+  it("draws an hourly series on a quarter-hour dial as one wedge per hour, each across its four slots", async () => {
+    const quarters = slots["quarter-hour"]["Europe/Oslo"]["2025-10-25"].utc_start.map((start) =>
+      Date.parse(start)
+    );
+    // The hourly series sits on the :00 rows alone, as a coarse series does.
+    const rows = quarters.map((start, slot) =>
+      slot % 4 === 0 ? { start, price: 1, kwh: 2 } : { start, price: 1 }
+    );
+    const { host } = renderThemed(
+      <LocaleProvider locale="nb-NO" timeZone="Europe/Oslo">
+        <div style={{ width: 320 }}>
+          <ClockChart.Root
+            data={rows}
+            config={{
+              price: { label: "kr", color: "chart-2" },
+              kwh: { label: "kWh", color: "chart-1", interval: "hour" },
+            }}
+            xKey="start"
+            cycle="day"
+            interval="quarter-hour"
+            yInclude={[0, 4]}
+            data-intro="none"
+            aria-label="Døgn">
+            <ClockChart.Column dataKey="kwh" />
+          </ClockChart.Root>
+        </div>
+      </LocaleProvider>
+    );
+    await painted();
+    const layer = clockLayer(host, "clock-chart-column");
+    // DOM audit: each wedge is a subpath of its group's path, read by their part or group.
+    const wedges = [...layer.querySelectorAll("path")]
+      .flatMap((path) => (path.getAttribute("d") ?? "").split("M").filter((part) => part !== ""))
+      .map((wedge) => {
+        // Its outer arc runs from its first point to the first arc's end, clockwise.
+        const [x0 = 0, y0 = 0] = wedge.split(/[AL]/u)[0]?.split(",").map(Number) ?? [];
+        const arc = /A[^A]*?(-?[\d.]+),(-?[\d.]+)(?=[LAZ]|$)/u.exec(wedge);
+        const from = angleOf(x0, y0);
+        const to = angleOf(Number(arc?.[1]), Number(arc?.[2]));
+        // The last hour ends on 12 o'clock, a full turn past its start.
+        return { from, to: to < from ? to + 360 : to };
+      })
+      .toSorted((a, b) => a.from - b.from);
+    // 96 quarter-hours of 3.75°: hour h spans 15h° to 15(h + 1)°, less any pad, read back from a path
+    // rounded to 3 decimals of the radius, a few hundredths of a degree.
+    expect(wedges).toHaveLength(24);
+    wedges.forEach(({ from, to }, hour) => {
+      expect(from).toBeGreaterThan(15 * hour - 0.1);
+      expect(from).toBeLessThan(15 * hour + 1);
+      expect(to).toBeGreaterThan(15 * (hour + 1) - 1);
+      expect(to).toBeLessThan(15 * (hour + 1) + 0.1);
+    });
+  });
+
+  it("decimates an hourly year to four wedges per pixel column of the dial it draws", async () => {
+    // 8,760 hours of 2025 in Oslo, each a scrambled 0 to 100, so each column's first, last, lowest
+    // and highest hours differ.
+    const year = Array.from({ length: 8760 }, (_, hour) => ({
+      start: Date.parse("2024-12-31T23:00:00Z") + hour * HOUR,
+      kwh: (hour * 7919) % 101,
+    }));
+    const wedgesAt = async (size: string): Promise<number> => {
+      const { host } = renderThemed(
+        <LocaleProvider locale="nb-NO" timeZone="Europe/Oslo">
+          <div style={{ width: 320 }}>
+            <ClockChart.Root
+              data={year}
+              config={{ kwh: { label: "kWh", color: "chart-1" } }}
+              xKey="start"
+              cycle="year"
+              interval="hour"
+              data-intro="none"
+              style={{ "--chart-polar-size": size }}
+              aria-label="År">
+              <ClockChart.Column dataKey="kwh" />
+            </ClockChart.Root>
+          </div>
+        </LocaleProvider>
+      );
+      await painted();
+      const layer = clockLayer(host, "clock-chart-column");
+      return [...layer.querySelectorAll("path")].reduce(
+        (count, path) => count + ((path.getAttribute("d") ?? "").match(/M/gu) ?? []).length,
+        0
+      );
+    };
+    // A 200 px dial's rim runs round(2π · 100) = 628 columns, and a 240 px dial's 754: M4 keeps at
+    // most four hours of each, so the small dial draws at most 2,512 and the large one more.
+    const small = await wedgesAt("12.5rem");
+    const large = await wedgesAt("15rem");
+    expect(small).toBeLessThanOrEqual(4 * 628);
+    expect(small).toBeGreaterThan(3 * 628);
+    expect(large).toBeGreaterThan(4 * 628);
+    expect(large).toBeLessThanOrEqual(4 * 754);
+  });
+
   it("draws 25 equal slots and puts 06 at 100.8°, where its slot starts", async () => {
     const starts = slots.hour["Europe/Oslo"]["2025-10-26"].utc_start.map((start) => Date.parse(start));
     const { host } = renderThemed(

@@ -1,0 +1,182 @@
+{
+ "source": "Elhub Energy Data API, dataset CONSUMPTION_PER_GROUP_MBA_HOUR, https://api.elhub.no/energy-data/v0/price-areas?dataset=CONSUMPTION_PER_GROUP_MBA_HOUR&startDate=2026-10-16T00:00:00%2B02:00&endDate=2026-10-17T00:00:00%2B02:00, fetched 2026-11-05. Each row is one price area's and consumption group's day: its hours' quantityKwh summed, and the mean of its hours' meteringPointCount.",
+ "licence": "CC BY 4.0",
+ "date": "2026-10-16",
+ "rows": [
+  {
+   "area": "NO1",
+   "group": "household",
+   "kwh": 39525296.7,
+   "meteringPoints": 1126105,
+   "hours": 24
+  },
+  {
+   "area": "NO1",
+   "group": "cabin",
+   "kwh": 2004591.9,
+   "meteringPoints": 111343,
+   "hours": 24
+  },
+  {
+   "area": "NO1",
+   "group": "primary",
+   "kwh": 1050539.6,
+   "meteringPoints": 7464,
+   "hours": 24
+  },
+  {
+   "area": "NO1",
+   "group": "secondary",
+   "kwh": 13121739.2,
+   "meteringPoints": 15214,
+   "hours": 24
+  },
+  {
+   "area": "NO1",
+   "group": "tertiary",
+   "kwh": 28681425.8,
+   "meteringPoints": 97272,
+   "hours": 24
+  },
+  {
+   "area": "NO2",
+   "group": "household",
+   "kwh": 23576759.9,
+   "meteringPoints": 637518,
+   "hours": 24
+  },
+  {
+   "area": "NO2",
+   "group": "cabin",
+   "kwh": 1532338.4,
+   "meteringPoints": 107085,
+   "hours": 24
+  },
+  {
+   "area": "NO2",
+   "group": "primary",
+   "kwh": 1979897.7,
+   "meteringPoints": 5789,
+   "hours": 24
+  },
+  {
+   "area": "NO2",
+   "group": "secondary",
+   "kwh": 53213877.5,
+   "meteringPoints": 12910,
+   "hours": 24
+  },
+  {
+   "area": "NO2",
+   "group": "tertiary",
+   "kwh": 16530672.2,
+   "meteringPoints": 74927,
+   "hours": 24
+  },
+  {
+   "area": "NO3",
+   "group": "household",
+   "kwh": 16176910.8,
+   "meteringPoints": 413861,
+   "hours": 24
+  },
+  {
+   "area": "NO3",
+   "group": "cabin",
+   "kwh": 1003913.8,
+   "meteringPoints": 63111,
+   "hours": 24
+  },
+  {
+   "area": "NO3",
+   "group": "primary",
+   "kwh": 2238770.3,
+   "meteringPoints": 10155,
+   "hours": 24
+  },
+  {
+   "area": "NO3",
+   "group": "secondary",
+   "kwh": 42524615.2,
+   "meteringPoints": 9295,
+   "hours": 24
+  },
+  {
+   "area": "NO3",
+   "group": "tertiary",
+   "kwh": 12566279.5,
+   "meteringPoints": 52627,
+   "hours": 24
+  },
+  {
+   "area": "NO4",
+   "group": "household",
+   "kwh": 12138228.9,
+   "meteringPoints": 246900,
+   "hours": 24
+  },
+  {
+   "area": "NO4",
+   "group": "cabin",
+   "kwh": 962531.9,
+   "meteringPoints": 44651,
+   "hours": 24
+  },
+  {
+   "area": "NO4",
+   "group": "primary",
+   "kwh": 1787005.7,
+   "meteringPoints": 4001,
+   "hours": 24
+  },
+  {
+   "area": "NO4",
+   "group": "secondary",
+   "kwh": 28809582.9,
+   "meteringPoints": 6233,
+   "hours": 24
+  },
+  {
+   "area": "NO4",
+   "group": "tertiary",
+   "kwh": 10627723.0,
+   "meteringPoints": 40742,
+   "hours": 24
+  },
+  {
+   "area": "NO5",
+   "group": "household",
+   "kwh": 9622327.0,
+   "meteringPoints": 261386,
+   "hours": 24
+  },
+  {
+   "area": "NO5",
+   "group": "cabin",
+   "kwh": 981402.2,
+   "meteringPoints": 49000,
+   "hours": 24
+  },
+  {
+   "area": "NO5",
+   "group": "primary",
+   "kwh": 338967.9,
+   "meteringPoints": 1957,
+   "hours": 24
+  },
+  {
+   "area": "NO5",
+   "group": "secondary",
+   "kwh": 27987457.4,
+   "meteringPoints": 5055,
+   "hours": 24
+  },
+  {
+   "area": "NO5",
+   "group": "tertiary",
+   "kwh": 6759071.6,
+   "meteringPoints": 28385,
+   "hours": 24
+  }
+ ]
+}

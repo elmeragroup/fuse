@@ -116,7 +116,35 @@ export function fitClockLabels(
   cycle: ClockCycle,
   reach: number
 ): (number | "always" | "none")[] {
-  const { strides } = TIERS[cycle];
+  return fitStridedLabels(labels, widths, TIERS[cycle].strides, reach);
+}
+
+/** A label round a dial as the stride fit reads it: its angle, and its unit's count, which a stride divides. */
+export type StridedLabel = {
+  /** Its angle in degrees from 12 o'clock. */
+  readonly angle: number;
+  /** Its unit's count from the cycle's start, such as the hour of the day or the spoke's index. */
+  readonly unit: number;
+};
+
+/**
+ * The narrowest container width, from `TICK_BUCKETS`, at which each label round a dial shows,
+ * `"always"` for the first label and `"none"` for one no width shows. Each bucket takes the
+ * smallest stride whose labels fit round the dial among the strides that divide the last bucket's,
+ * so a wider bucket shows every label a narrower one does.
+ *
+ * @param labels - The labels in order round the dial.
+ * @param widths - Each label's estimated width in CSS pixels.
+ * @param strides - The strides the labels may thin to, finest first.
+ * @param reach - The label radius as a share of the dial's radius.
+ * @returns Each label's visibility.
+ */
+export function fitStridedLabels(
+  labels: readonly StridedLabel[],
+  widths: readonly number[],
+  strides: readonly number[],
+  reach: number
+): (number | "always" | "none")[] {
   const shownAt = labels.map((): number | "always" | "none" => "none");
   if (labels.length === 0) return shownAt;
   shownAt[0] = "always";
@@ -139,7 +167,7 @@ export function fitClockLabels(
 
 /** Whether a stride's labels, the first always among them, fit round a dial at a label radius. */
 function fits(
-  labels: readonly ClockLabelSlot[],
+  labels: readonly StridedLabel[],
   widths: readonly number[],
   stride: number,
   radius: number

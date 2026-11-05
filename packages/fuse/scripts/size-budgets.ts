@@ -195,7 +195,13 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = derive([
   // floors, its labels fitted round the dial, its hands, references, centre and value parts, the
   // threshold rings, and the shared seams it floors, glows and totals through, which measured
   // 13205 bytes on this entry (190512 to 203717). The ceiling keeps about 100 bytes of headroom.
-  { name: "chart", entryFile: "chart.js", measuredGzip: 97044, ceilingGzip: 203817 },
+  // Raised again from 203817 on 2026-11-05. The feel pass: the ring values' fit against the angle
+  // labels and the marks with its choice of spoke, the radar's spoke labels thinned by stride, the
+  // radar's and clock's active dots on the loop with the clock's curve registry, the pie labels that
+  // follow the slices' frame, the coarse clock slots, the glow and decimation measured from the
+  // drawn dial, and the entrance's pace read from the figure, which measured 2665 bytes on this
+  // entry (203717 to 206382). The ceiling keeps about 100 bytes of headroom.
+  { name: "chart", entryFile: "chart.js", measuredGzip: 97044, ceilingGzip: 206482 },
   // 2026-10-13: new entry, measured at 29180. Pure wrappers over Base UI's toolbar and its roving focus.
   { name: "toolbar", entryFile: "toolbar.js", measuredGzip: 29180, ceilingGzip: 43770 },
   // 2026-10-12: new entries. Command is Base UI's Autocomplete in the InputGroup, with the Dialog
@@ -705,7 +711,13 @@ export const CSS_BUDGETS: readonly CssBudget[] = derive([
   // width buckets, centre, dims, glow and forced-colour rules, and the radar's and clock's stop
   // colours, which measured 1744 bytes over the stylesheet (20110 to 21854). The ceiling keeps
   // about 100 bytes of headroom.
-  { name: "chart.css", file: "chart.css", measuredGzip: 10089, ceilingGzip: 21954 },
+  // Raised again from 21954 on 2026-11-05. The feel pass: the ring values' chips and the Now label's
+  // chip, the radar's spoke labels in the dial's width buckets, the room above and below a dial
+  // for its 12 o'clock label, the spanning parts that give the side columns no width, the side
+  // legend that drops under a narrow dial, the centre values that scale and wrap in their hole, and
+  // the inside labels' on-colour shares, which measured 960 bytes over the stylesheet (21854 to
+  // 22814). The ceiling keeps about 100 bytes of headroom.
+  { name: "chart.css", file: "chart.css", measuredGzip: 10089, ceilingGzip: 22914 },
 ] satisfies readonly Measured<CssBudget>[]);
 
 export const FLAG_RAW_BUDGETS: readonly FlagRawBudget[] = [

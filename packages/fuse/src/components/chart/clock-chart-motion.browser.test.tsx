@@ -157,6 +157,71 @@ describe("the clock's updates", () => {
 });
 
 describe("the clock's followers (SPEC's Motion table)", () => {
+  it("keeps the active dot on its slot's dot in every frame as an update moves the radius", async () => {
+    const { host, rerender } = renderThemed(
+      <Dial intro="none" value={() => 4}>
+        <ClockChart.ActiveDot dataKey="kwh" />
+      </Dial>
+    );
+    await userEvent.tab();
+    for (const animation of host.getAnimations({ subtree: true })) animation.finish();
+    rerender(
+      <Dial intro="none" value={() => 2}>
+        <ClockChart.ActiveDot dataKey="kwh" />
+      </Dial>
+    );
+    const dot = clockLayer(host, "clock-chart-active-dot");
+    const seen: { readonly dot: number; readonly slot: number }[] = [];
+    const start = performance.now();
+    while (performance.now() - start < 700) {
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+      const [point] = dotPoints(clockPath(dot, "dots"));
+      const [own] = dotPoints(clockPath(clockLayer(host, "clock-chart-dots"), "step-0"));
+      if (point !== undefined && own !== undefined)
+        seen.push({ dot: Math.hypot(point.x, point.y), slot: Math.hypot(own.x, own.y) });
+    }
+    // Slot 0's radius moves from the rim to √0.545, and the active dot reads the same in every frame.
+    expect(seen.some(({ slot }) => slot > Math.sqrt(0.545) + 0.05 && slot < 0.95)).toBe(true);
+    for (const frame of seen) expect(Math.abs(frame.dot - frame.slot)).toBeLessThan(0.002);
+  });
+
+  it("rides the active dot along the curve its Line draws, not the default one", async () => {
+    const { host } = renderThemed(
+      <Dial intro="none" value={(slot) => (slot % 2 === 0 ? 4 : 1)}>
+        <ClockChart.Line dataKey="kwh" curve="step" />
+        <ClockChart.ActiveDot dataKey="kwh" />
+      </Dial>
+    );
+    await userEvent.tab();
+    for (const animation of host.getAnimations({ subtree: true })) animation.finish();
+    await userEvent.keyboard("{ArrowRight}");
+    const dot = clockLayer(host, "clock-chart-active-dot");
+    const line = clockLayer(host, "clock-chart-line").querySelector<SVGPathElement>(
+      'path[data-part="solid"]'
+    );
+    // DOM audit: the dot rides in its follow group, read by data-follow.
+    const ride = dot.querySelector("[data-follow]")?.getAnimations()[0];
+    const frames = ride?.effect instanceof KeyframeEffect ? ride.effect.getKeyframes() : [];
+    expect(frames.length).toBeGreaterThan(3);
+    // Each keyframe is an offset from slot 1's dot in CSS pixels: back in the dial's units, it lies
+    // on the step curve the Line draws, sampled finely along its length.
+    const [target] = dotPoints(clockPath(dot, "dots"));
+    const scale = dot.getBoundingClientRect().width / 2;
+    const length = line?.getTotalLength() ?? 0;
+    const samples = Array.from({ length: 4000 }, (_, at) => line?.getPointAtLength((length * at) / 3999));
+    for (const frame of frames) {
+      const [dx = 0, dy = 0] = String(frame.translate)
+        .split(" ")
+        .map((part) => Number.parseFloat(part) / scale);
+      const x = (target?.x ?? 0) + dx;
+      const y = (target?.y ?? 0) + dy;
+      const nearest = Math.min(
+        ...samples.map((point) => Math.hypot((point?.x ?? 0) - x, (point?.y ?? 0) - y))
+      );
+      expect(nearest).toBeLessThan(0.01);
+    }
+  });
+
   it("rides the active dot along the drawn curve to the next slot, on the follow spring", async () => {
     const { host } = renderThemed(
       <Dial intro="none" value={(slot) => (slot % 2 === 0 ? 4 : 2)}>

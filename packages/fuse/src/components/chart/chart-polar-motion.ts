@@ -16,7 +16,8 @@ import type { RefCallback } from "react";
 import { SAME_PLOT } from "./chart-motion";
 import type { ChartMotion, MarkValues, Placement } from "./chart-motion";
 import type { PolarContextValue, PolarUpdate } from "./chart-polar-context";
-import { introDelay, introTiming } from "./layout/polar-motion";
+import { cssTime, DEFAULT_PACE, introDelay, introTiming } from "./layout/polar-motion";
+import type { IntroPace } from "./layout/polar-motion";
 import { sameItems } from "./layout/same-items";
 
 /** Writes the loop's numbers onto a polar mark's node, in the look it draws. */
@@ -28,6 +29,8 @@ export type PolarMark<T extends Element> = {
   readonly ref: RefCallback<T>;
   /** Place the mark's numbers for this commit. */
   readonly place: (target: MarkValues, placement: Placement) => void;
+  /** The node the mark renders now, or null before it mounts. */
+  readonly node: () => T | null;
 };
 
 /**
@@ -74,7 +77,8 @@ export function usePolarMark<T extends Element, L>(
     },
     [motion, id]
   );
-  return useMemo(() => ({ ref, place }), [ref, place]);
+  const shown = useCallback(() => node.current, []);
+  return useMemo(() => ({ ref, place, node: shown }), [ref, place, shown]);
 }
 
 /**
@@ -85,13 +89,16 @@ export function usePolarMark<T extends Element, L>(
  * tween finish. An update never replays the entrance.
  *
  * @param polar - The mark's Root.
+ * @param anchor - The mark's node, which inherits the figure's pace. The marks place their entrance
+ *   before the Root's figure ref attaches, so the entrance reads its pace through the mark.
  * @returns A function the mark's layout effect calls once per draw, with the mark's place in its
  *   family's stagger, a slice, a ring or a series, where it starts when it enters: zero width at its
  *   start angle, or radius 0, and for an update whose numbers change in length the route between
  *   them, as a clock's slots pair across a change of slot count.
  */
 export function usePolarCommit(
-  polar: Pick<PolarContextValue, "update" | "entrance" | "model">
+  polar: Pick<PolarContextValue, "update" | "entrance" | "model" | "kernel">,
+  anchor: () => Element | null
 ): (
   index: number,
   from: MarkValues,
@@ -112,11 +119,12 @@ export function usePolarCommit(
     if (previous === null) {
       if (polar.update.kind === "data") return { kind: "enter", from, delay: 0 };
       if (!polar.entrance) return { kind: "snap" };
+      const pace = introPace(polar.kernel.root() ?? anchor(), polar.update);
       return {
         kind: "enter",
         from,
-        delay: introDelay(polar.model.family, index),
-        ...introTiming(polar.model.family),
+        delay: introDelay(polar.model.family, index, pace),
+        ...introTiming(polar.model.family, pace),
       };
     }
     // The dial scales with its cell, so a commit with no new data leaves the numbers in place.
@@ -124,6 +132,31 @@ export function usePolarCommit(
     // A clock that changes its slot count moves along the route that pairs its old slots with its new.
     return via === undefined ? { kind: "move" } : { kind: "move", via };
   };
+}
+
+/** Each commit's pace, read once from the figure for every mark the commit places. */
+const paces = new WeakMap<PolarUpdate, IntroPace>();
+
+/**
+ * The entrance's pace as the figure's style sets it: `--chart-intro` and `--chart-stagger`, so a
+ * consumer's override changes the entrance. A commit reads it once, from the first element that
+ * reaches it, and an entrance placed with no element yet takes the stylesheet's pace unread.
+ *
+ * @param figure - The Root's figure, or any element inside it, whose custom properties it inherits.
+ * @param update - The commit, which keys the reading.
+ * @returns The pace.
+ */
+export function introPace(figure: Element | null, update: PolarUpdate): IntroPace {
+  const known = paces.get(update);
+  if (known !== undefined) return known;
+  if (figure === null) return DEFAULT_PACE;
+  const style = getComputedStyle(figure);
+  const pace = {
+    intro: cssTime(style.getPropertyValue("--chart-intro")) ?? DEFAULT_PACE.intro,
+    stagger: cssTime(style.getPropertyValue("--chart-stagger")) ?? DEFAULT_PACE.stagger,
+  };
+  paces.set(update, pace);
+  return pace;
 }
 
 /** Draws a ghost's numbers onto its path. */

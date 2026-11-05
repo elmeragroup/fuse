@@ -7,21 +7,26 @@
  * sits outside with a leader from the rim, its elbow 8 % past it and a run sideways. Outside labels
  * on one side move apart by their own heights. The server sizes each box from the label width
  * table, and the client places the labels again from their measured boxes whenever the pie or the
- * cell changes, with no React commit. Outside labels ask the frame for a gutter beside the dial.
+ * cell changes, with no React commit. As the slices tween, each label follows the angles its slice
+ * draws in that frame, which the pie's frame reports, from the boxes measured last; a label keeps the
+ * side, inside or outside, its slice takes at rest, and hides while its slice draws no arc. Outside
+ * labels ask the frame for a gutter beside the dial.
  */
-import { useLayoutEffect, useMemo, useRef } from "react";
+import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { ReactElement, ReactNode } from "react";
 
 import { useLocale } from "../../intl/locale-context";
 import { writeAttribute, writeStyle } from "./chart-dom";
 import { ChartLegendShare } from "./chart-legend";
-import { viewBoxOf } from "./chart-pie-frame";
+import { pieFrameOf, viewBoxOf } from "./chart-pie-frame";
 import { pieDrawingIn, usePolarContext } from "./chart-polar-context";
 import type { PieDrawing } from "./chart-polar-context";
 import { ChartRowContext } from "./chart-readout";
 import { ChartSeriesLabel } from "./chart-series";
 import type { ChartLayerProps } from "./chart-types";
+import { arcCentroid } from "./layout/arc-path";
 import { labelWidth } from "./layout/label-width";
+import type { SliceAngles } from "./layout/pie";
 import type { SweepBox } from "./layout/polar-angle";
 import { insideLabel, outsideLabels } from "./layout/polar-labels";
 import type { LabelSize } from "./layout/polar-labels";
@@ -69,13 +74,16 @@ type Placed =
  * @param sizes - Each label's box in CSS pixels.
  * @param scale - CSS pixels per unit of the outer radius.
  * @param position - Where the labels ask to sit.
+ * @param drawn - Each slice's angles in this frame, where they differ from its rest, as a tween
+ *   draws them. A label keeps the side its slice's rest takes and sits where the slice draws.
  * @returns Each slice's placement, null for one that draws no arc.
  */
 function placeLabels(
   pie: PieDrawing,
   sizes: readonly LabelSize[],
   scale: number,
-  position: "inside" | "outside"
+  position: "inside" | "outside",
+  drawn: readonly (SliceAngles | null)[] = pie.slices.map(({ angles }) => angles)
 ): readonly Placed[] {
   const unit = (size: LabelSize | undefined): LabelSize =>
     size === undefined ? { width: 0, height: 0 } : { width: size.width / scale, height: size.height / scale };
@@ -94,8 +102,8 @@ function placeLabels(
       ON_COLOUR.test(slice.role)
     );
   });
-  const outside = pie.slices.flatMap((slice, index) => {
-    const angles = slice.angles;
+  const outside = pie.slices.flatMap((_, index) => {
+    const angles = drawn[index] ?? null;
     if (angles === null || inside[index]?.placement === "inside") return [];
     return [{ index, bisector: (angles.start + angles.end) / 2 }];
   });
@@ -106,9 +114,16 @@ function placeLabels(
   );
   const placed: Placed[] = pie.slices.map(() => null);
   inside.forEach((label, index) => {
-    if (label?.placement !== "inside") return;
-    const { box } = label;
-    placed[index] = { placement: "inside", x: box.left + box.width / 2, y: box.top + box.height / 2 };
+    const angles = drawn[index] ?? null;
+    if (label?.placement !== "inside" || angles === null) return;
+    const [x, y] = arcCentroid({
+      innerRadius: pie.innerRadius,
+      outerRadius: 1,
+      startAngle: angles.start,
+      endAngle: angles.end,
+      padAngle: angles.pad,
+    });
+    placed[index] = { placement: "inside", x, y };
   });
   outside.forEach(({ index }, place) => {
     const leader = leaders[place];
@@ -154,7 +169,8 @@ export function PieChartLabels({
   className,
   style,
 }: PieChartLabelsProps): ReactElement {
-  const { model, box } = usePolarContext("PieChart.Labels", ["pie"]);
+  const polar = usePolarContext("PieChart.Labels", ["pie"]);
+  const { model, box } = polar;
   const pie = pieDrawingIn(model, "PieChart.Labels");
   const { locale } = useLocale();
   const layer = useRef<HTMLDivElement>(null);
@@ -170,23 +186,27 @@ export function PieChartLabels({
       ),
     [pie, width, position]
   );
-  // The client places them again from their measured boxes, as the pie or the cell changes.
+  // The pie's frame, which reports the angles each slice draws as it tweens.
+  const [frame] = useState(() =>
+    pieFrameOf(polar.motion, {
+      innerRadius: pie.innerRadius,
+      cornerRadius: 0,
+      sweep: pie.fill,
+      track: pie.track,
+    })
+  );
+  // The client places them again from their measured boxes, as the pie or the cell changes, and
+  // from the boxes it measured last as the slices tween, so a frame reads no layout.
   useLayoutEffect(() => {
     const node = layer.current;
     if (node === null) return undefined;
-    const place = (): void => {
-      const scale = node.getBoundingClientRect().width / width;
-      if (!(scale > 0)) return;
-      const labels = [...node.querySelectorAll<HTMLElement>('[data-slot="pie-chart-label"]')];
-      const sizes = pie.slices.map((_, index) => {
-        const label = labels.find((element) => element.dataset.index === String(index));
-        return label === undefined
-          ? { width: 0, height: 0 }
-          : { width: label.offsetWidth, height: label.offsetHeight };
-      });
-      const measured = placeLabels(pie, sizes, scale, position);
-      for (const label of labels) {
-        const at = measured[Number(label.dataset.index)];
+    let sizes: readonly LabelSize[] = [];
+    let scale = 0;
+    const write = (measured: readonly Placed[], hidden: (index: number) => boolean): void => {
+      for (const label of node.querySelectorAll<HTMLElement>('[data-slot="pie-chart-label"]')) {
+        const index = Number(label.dataset.index);
+        writeAttribute(label, "data-empty", hidden(index) ? "" : null);
+        const at = measured[index];
         if (at === null || at === undefined) continue;
         const [left, top] = percent(box, at.x, at.y);
         writeStyle(label, "--_x", left);
@@ -195,18 +215,39 @@ export function PieChartLabels({
         writeAttribute(label, "data-side", at.placement === "outside" ? at.side : null);
       }
       for (const leader of node.querySelectorAll<SVGPolylineElement>('[data-slot="pie-chart-leader"]')) {
-        const at = measured[Number(leader.dataset.index)];
-        leader.setAttribute("points", at?.placement === "outside" ? at.leader : "");
+        const index = Number(leader.dataset.index);
+        const at = measured[index];
+        leader.setAttribute("points", at?.placement === "outside" && !hidden(index) ? at.leader : "");
       }
       writeAttribute(node, "data-outside", measured.some((at) => at?.placement === "outside") ? "" : null);
+    };
+    const place = (): void => {
+      scale = node.getBoundingClientRect().width / width;
+      if (!(scale > 0)) return;
+      const labels = [...node.querySelectorAll<HTMLElement>('[data-slot="pie-chart-label"]')];
+      sizes = pie.slices.map((_, index) => {
+        const label = labels.find((element) => element.dataset.index === String(index));
+        return label === undefined
+          ? { width: 0, height: 0 }
+          : { width: label.offsetWidth, height: label.offsetHeight };
+      });
+      write(placeLabels(pie, sizes, scale, position), () => false);
     };
     place();
     const observer = new ResizeObserver(place);
     observer.observe(node);
+    const leave = frame.listen((angles) => {
+      if (!(scale > 0)) return;
+      const drawn = pie.slices.map((slice) =>
+        angles.has(slice.key) ? (angles.get(slice.key) ?? null) : slice.angles
+      );
+      write(placeLabels(pie, sizes, scale, position, drawn), (index) => drawn[index] === null);
+    });
     return () => {
       observer.disconnect();
+      leave();
     };
-  }, [pie, box, width, position, locale]);
+  }, [pie, box, width, position, locale, frame]);
   return (
     <div
       ref={layer}

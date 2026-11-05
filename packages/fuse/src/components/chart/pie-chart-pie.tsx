@@ -106,8 +106,8 @@ function PieSector({
     () => ({ frame, key: slice.key, pad, order: index }),
     [frame, slice.key, pad, index]
   );
-  const { ref, place } = usePolarMark(polar.motion, writeSector, sectorLook);
-  const commit = usePolarCommit(polar);
+  const { ref, place, node: anchor } = usePolarMark(polar.motion, writeSector, sectorLook);
+  const commit = usePolarCommit(polar, anchor);
   const [start, end] = target;
   useLayoutEffect(() => {
     place([start, end], commit(index, [start, start]));

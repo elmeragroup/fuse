@@ -10,8 +10,9 @@
  * outside a batch, as a commit's placements do, records too, and the frame paints in the next
  * microtask, before the browser paints. A leaving slice's ghost draws as it is, with no floor, as it
  * collapses to nothing. A mirror, such as `PieChart.Glow`'s halo, takes a slice's path and pop in
- * every frame, so it follows the slice with no writer of its own. One loop holds one pie's frame,
- * which the Pie and the Glow both reach through `pieFrameOf`.
+ * every frame, so it follows the slice with no writer of its own, and a listener, such as
+ * `PieChart.Labels`, hears every slice's angles once each frame paints. One loop holds one pie's
+ * frame, which the Pie, the Glow and the Labels reach through `pieFrameOf`.
  */
 import { writeStyle } from "./chart-dom";
 import type { ChartMotion, MarkValues } from "./chart-motion";
@@ -44,6 +45,7 @@ export type PieMeasure = {
 
 /** One slice the frame holds: the node it paints, its angles this frame and its place in the sweep. */
 type Entry = {
+  readonly key: string;
   node: Element;
   start: number;
   end: number;
@@ -85,12 +87,22 @@ export type PieFrame = {
    */
   readonly mirror: (key: string, node: Element) => () => void;
   /**
+   * Hear the angles every slice draws, floored, keyed by the slice's key, after each frame paints. A
+   * slice that draws no arc this frame maps to null.
+   *
+   * @returns The listener's removal.
+   */
+  readonly listen: (listener: PieListener) => () => void;
+  /**
    * Hear the loop's batches, so a frame's slices paint once together.
    *
    * @returns The frame's leave, as the pie unmounts.
    */
   readonly attach: () => () => void;
 };
+
+/** Hears a frame's slices, each key's angles as it painted them. */
+export type PieListener = (drawn: ReadonlyMap<string, SliceAngles | null>) => void;
 
 /** A number for a style, kept short. */
 function short(value: number): string {
@@ -108,6 +120,7 @@ export function createPieFrame(motion: ChartMotion, look: PieLook): PieFrame {
   const entries = new Map<string, Entry>();
   const mirrors = new Map<string, Set<Element>>();
   const tracks = new Set<Element>();
+  const listeners = new Set<PieListener>();
   let current = look;
   let measure: PieMeasure | null = null;
   let batching = 0;
@@ -154,6 +167,9 @@ export function createPieFrame(motion: ChartMotion, look: PieLook): PieFrame {
         }
       }
     }
+    if (listeners.size === 0) return;
+    const drawn = new Map(slices.map((entry, index) => [entry.key, floored[index] ?? null]));
+    for (const listener of listeners) listener(drawn);
   };
   const paintTracks = (): void => {
     const d = arcPath({
@@ -183,7 +199,7 @@ export function createPieFrame(motion: ChartMotion, look: PieLook): PieFrame {
     record: (key, node, values, place) => {
       const [start = 0, end = start] = values;
       const known = entries.get(key);
-      if (known === undefined) entries.set(key, { node, start, end, ...place });
+      if (known === undefined) entries.set(key, { key, node, start, end, ...place });
       else Object.assign(known, { node, start, end, ...place });
       schedule();
     },
@@ -211,6 +227,12 @@ export function createPieFrame(motion: ChartMotion, look: PieLook): PieFrame {
       schedule();
       return () => {
         known.delete(node);
+      };
+    },
+    listen: (listener) => {
+      listeners.add(listener);
+      return () => {
+        listeners.delete(listener);
       };
     },
     attach: () => {

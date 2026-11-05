@@ -203,8 +203,8 @@ function useSeriesLayer(polar: PolarContextValue, layer: SeriesLayer): ReactElem
   const series = radar.series.find(({ key }) => key === layer.dataKey);
   const spokes = useMemo(() => spokeStatesOf(radar, series), [radar, series]);
   const look = useMemo((): SeriesLook => ({ spokes, paths: layer.paths }), [spokes, layer.paths]);
-  const { ref, place } = usePolarMark(polar.motion, writeSeries, look);
-  const commit = usePolarCommit(polar);
+  const { ref, place, node: anchor } = usePolarMark(polar.motion, writeSeries, look);
+  const commit = usePolarCommit(polar, anchor);
   const live = useRef<SVGGElement>(null);
   const outgoing = useRef<SVGGElement>(null);
   const drawnCount = useRef<number | null>(null);
@@ -395,10 +395,27 @@ function pixelsPerUnit(svg: SVGSVGElement, box: SweepBox): number {
   return width > 0 ? svg.getBoundingClientRect().width / width : 0;
 }
 
+/** What an active dot's writer reads: its spokes, the spoke it shows and the radii it drew last. */
+type ActiveDotLook = {
+  readonly spokes: SpokeStates;
+  readonly shown: { current: number | null };
+  readonly drawn: { current: MarkValues | null };
+};
+
+/** Draw the active dot at its spoke's vertex in this frame's radii, so it follows its series' tween. */
+function drawActiveDot(group: SVGGElement, look: ActiveDotLook, radii: MarkValues): void {
+  look.drawn.current = radii;
+  const spoke = look.shown.current;
+  const vertex = spoke === null ? null : (verticesAt(look.spokes, radii)[spoke] ?? null);
+  if (vertex === null) return;
+  for (const path of group.children) writeAttribute(path, "d", dotsPath([vertex]));
+}
+
 /**
- * The dot on one series at the active spoke. A step rides the polygon's edges to the new spoke the
- * short way round, through each vertex between, on the follow spring, which a fast pointer
- * stiffens. A missing reading at the active spoke shows no dot.
+ * The dot on one series at the active spoke. It moves with its series as the series tweens, and a
+ * step rides the polygon's edges to the new spoke the short way round, through each vertex between,
+ * on the follow spring, which a fast pointer stiffens. A missing reading at the active spoke shows no
+ * dot.
  *
  * @beta
  */
@@ -411,15 +428,32 @@ export function RadarChartActiveDot({ dataKey, className, style }: RadarChartAct
   const series = radar.series.find(({ key }) => key === dataKey);
   const spokes = useMemo(() => spokeStatesOf(radar, series), [radar, series]);
   const svg = useRef<SVGSVGElement>(null);
-  const dot = useRef<SVGGElement>(null);
+  const dot = useRef<SVGGElement | null>(null);
   const shown = useRef<number | null>(null);
-  // The vertices at rest, which the dot sits on and rides between.
-  const vertices = useMemo(() => verticesAt(spokes, radiiOf(radar, series)), [spokes, radar, series]);
+  const drawn = useRef<MarkValues | null>(null);
+  const look = useMemo((): ActiveDotLook => ({ spokes, shown, drawn }), [spokes, shown, drawn]);
+  const { ref, place, node: anchor } = usePolarMark(polar.motion, drawActiveDot, look);
+  const commit = usePolarCommit(polar, anchor);
+  const radii = useMemo(() => radiiOf(radar, series), [radar, series]);
+  const index = series?.index ?? 0;
+  const count = radar.count;
+  const placed = useRef<number | null>(null);
+  useLayoutEffect(() => {
+    const placement = commit(
+      index,
+      radii.map(() => 0)
+    );
+    // A change of spoke count pairs no radius with another, so the dot snaps with its series.
+    const turned = placed.current !== null && placed.current !== count;
+    placed.current = count;
+    place(radii, turned ? { kind: "snap" } : placement);
+  });
   const paint = (active: ActiveSlot, cause: FollowerCause): void => {
     const node = dot.current;
     const layer = svg.current;
     if (node === null || layer === null) return;
     const slot = active?.slot ?? null;
+    const vertices = verticesAt(spokes, drawn.current ?? radii);
     const vertex = slot === null ? null : (vertices[slot] ?? null);
     const before = shown.current;
     shown.current = vertex === null ? null : slot;
@@ -463,7 +497,12 @@ export function RadarChartActiveDot({ dataKey, className, style }: RadarChartAct
       viewBox={viewBoxOf(box)}
       className={className}
       style={{ "--chart-series": series?.index ?? 0, "--_base": series?.paint ?? "currentColor", ...style }}>
-      <g ref={dot} data-follow="">
+      <g
+        ref={(element) => {
+          dot.current = element;
+          ref(element);
+        }}
+        data-follow="">
         <path data-slot="radar-chart-dot" data-part="halo" d="" />
         <path data-slot="radar-chart-dot" data-part="dots" d="" />
       </g>

@@ -20,7 +20,7 @@ import { writeAttribute, writeStyle } from "./chart-dom";
 import { useChartFollower } from "./chart-followers";
 import type { ActiveSlot, FollowerCause } from "./chart-followers";
 import { PATH_GLOW, BAR_GLOW, valueGlow } from "./chart-glow-filter";
-import type { MarkValues, Placement } from "./chart-motion";
+import type { ChartMotion, MarkValues, Placement } from "./chart-motion";
 import { seriesPaintOf, stackedScaleError } from "./chart-paint";
 import { viewBoxOf } from "./chart-pie-frame";
 import { clockDrawingIn, usePolarContext } from "./chart-polar-context";
@@ -46,6 +46,7 @@ import {
   slotVertex,
 } from "./layout/clock-path";
 import { keywordSlots, listedSlots } from "./layout/datum";
+import { DECIMATE_ABOVE, m4Indexes } from "./layout/decimate";
 import { ChartCompositionError } from "./layout/errors";
 import { angleLabel } from "./layout/polar-labels";
 import { pathNumber } from "./layout/rounding";
@@ -438,13 +439,30 @@ function SeriesLayer({
     (): SeriesLook | null => (series === undefined ? null : { series, clock, curve }),
     [series, clock, curve]
   );
-  const { ref, place } = usePolarMark(polar.motion, writeLook(draw), look);
-  const commit = usePolarCommit(polar);
+  const { ref, place, node: anchor } = usePolarMark(polar.motion, writeLook(draw), look);
+  const commit = usePolarCommit(polar, anchor);
   useClockPlacement(clock, series, commit, place);
   const prefix = useId();
   const glow = series === undefined ? null : valueGlow(paintOf(clock, series), prefix, halo);
   // React writes the paths once at rest, and the loop writes them from then on.
   const [first] = useState(() => (series === undefined ? new Map<string, string>() : rest(series, curve)));
+  const svg = useRef<SVGSVGElement>(null);
+  const glowing = glow !== null;
+  // A value glow blurs in the dial's units, so its blur follows the dial's drawn size.
+  useLayoutEffect(() => {
+    const node = svg.current;
+    if (node === null || !glowing) return undefined;
+    const read = (): void => {
+      const width = polar.box.right - polar.box.left;
+      retuneGlow(node, width > 0 ? node.getBoundingClientRect().width / width : 0, halo);
+    };
+    read();
+    const observer = new ResizeObserver(read);
+    observer.observe(node);
+    return () => {
+      observer.disconnect();
+    };
+  }, [polar.box, glowing, halo]);
   const paint =
     series === undefined
       ? "currentColor"
@@ -455,6 +473,7 @@ function SeriesLayer({
           : series.paint;
   return (
     <svg
+      ref={svg}
       data-slot={dataSlot}
       data-variant={variant}
       data-clock-series=""
@@ -534,6 +553,8 @@ export function ClockChartLine({
   className,
   style,
 }: ClockChartLineProps): ReactElement {
+  const polar = usePolarContext("ClockChart.Line", ["clock"]);
+  useLineCurve(polar.motion, dataKey, curve);
   return (
     <SeriesLayer
       dataSlot="clock-chart-line"
@@ -661,43 +682,86 @@ function groupOf(series: ClockSeries, clock: ClockDrawing, slot: number): string
 }
 
 /** Draw a column's frame: every wedge with its pad and its floor, and its stack's floors settled. */
+/** The slots a series' columns draw at a radius: every slot, or past 2,000 M4's set at the dial's circumference. */
+function shownAt(series: ClockSeries, radius: number): readonly number[] {
+  if (series.values.length <= DECIMATE_ABOVE) return series.shown;
+  const known = decimations.get(series);
+  const columns = Math.round(2 * Math.PI * radius);
+  if (known?.columns === columns) return known.shown;
+  const shown = m4Indexes(series.values, columns);
+  decimations.set(series, { columns, shown });
+  return shown;
+}
+
+/** Each series' decimated slots for the last dial width it drew at. */
+const decimations = new WeakMap<
+  ClockSeries,
+  { readonly columns: number; readonly shown: readonly number[] }
+>();
+
+/**
+ * A series' wedges in a frame, by group, at a measured dial: each wedge's pad and its floor along its
+ * radius, unless `keeps` says its stack's floor lies on another segment.
+ */
+function wedgeGroups(
+  series: ClockSeries,
+  clock: ClockDrawing,
+  values: MarkValues,
+  measure: DialMeasure,
+  emphasised: ReadonlySet<number>,
+  keeps: ReadonlyMap<number, boolean> | null
+): Map<string, string> {
+  const radius = measure.scale > 0 ? measure.scale : NOMINAL_RADIUS;
+  const { dpr } = measure;
+  const axis = columnAxis(radius, dpr);
+  const pad = wedgePad(clock.count, clock.inner * radius, radius, WEDGE_GAP, dpr);
+  const padded = { padAngle: pad.padAngle, padRadius: pad.padRadius / radius };
+  const span = (slot: number, base: number, tip: number): readonly [number, number] => {
+    if (keeps === null || keeps.get(slot) === true) {
+      const [from, to] = columnSpan(axis, base * radius, tip * radius);
+      return [from / radius, to / radius];
+    }
+    const snap = (edge: number): number => Math.round(edge * radius * dpr) / dpr / radius;
+    return [snap(Math.min(base, tip)), snap(Math.max(base, tip))];
+  };
+  const shown = shownAt(series, radius);
+  const groups = clockWedges(values, series.slots, shown, padded, span, (slot) =>
+    series.slots.marked[slot] === true ? "marked" : groupOf(series, clock, slot)
+  );
+  const emphasis = clockWedges(
+    values,
+    series.slots,
+    shown.filter((slot) => emphasised.has(slot)),
+    padded,
+    span,
+    () => "emphasis"
+  );
+  const all = new Map(groups);
+  all.set("emphasis", emphasis.get("emphasis") ?? "");
+  return all;
+}
+
+/** Draw a column's frame: every wedge with its pad and its floor, and its stack's floors settled. */
 function drawColumns(group: SVGGElement, look: ColumnLook | null, values: MarkValues): void {
   if (look === null) return;
   look.drawn.current = values;
   const frame = entranceFrame(values);
   const { series, clock, seat, emphasised } = look;
-  const { scale, dpr } = look.measure.current;
-  const radius = scale > 0 ? scale : NOMINAL_RADIUS;
-  const axis = columnAxis(radius, dpr);
-  const pad = wedgePad(clock.count, clock.inner * radius, radius, WEDGE_GAP, dpr);
-  const padded = { padAngle: pad.padAngle, padRadius: pad.padRadius / radius };
-  const write = (span: (slot: number, base: number, tip: number) => readonly [number, number]): void => {
-    const groups = clockWedges(frame.values, series.slots, series.shown, padded, span, (slot) =>
-      series.slots.marked[slot] === true ? "marked" : groupOf(series, clock, slot)
-    );
-    const emphasis = clockWedges(
-      frame.values,
-      series.slots,
-      series.shown.filter((slot) => emphasised.has(slot)),
-      padded,
-      span,
-      () => "emphasis"
-    );
+  const measure = look.measure.current;
+  const write = (keeps: ReadonlyMap<number, boolean> | null): void => {
+    const groups = wedgeGroups(series, clock, frame.values, measure, emphasised, keeps);
     for (const path of group.querySelectorAll("path[data-group]")) {
-      const name = path.getAttribute("data-group") ?? "";
-      writeAttribute(path, "d", (name === "emphasis" ? emphasis.get(name) : groups.get(name)) ?? "");
+      writeAttribute(path, "d", groups.get(path.getAttribute("data-group") ?? "") ?? "");
     }
     writeReveal(group, frame.reveal);
   };
-  const floored = (slot: number, base: number, tip: number): readonly [number, number] => {
-    const [from, to] = columnSpan(axis, base * radius, tip * radius);
-    return [from / radius, to / radius];
-  };
   if (seat === null) {
-    write(floored);
+    write(null);
     return;
   }
-  const spans = series.shown.flatMap((slot) => {
+  const radius = measure.scale > 0 ? measure.scale : NOMINAL_RADIUS;
+  const axis = columnAxis(radius, measure.dpr);
+  const spans = shownAt(series, radius).flatMap((slot) => {
     if (series.slots.states[slot] !== "reading") return [];
     const at = 1 + slot * 4;
     return [
@@ -711,15 +775,26 @@ function drawColumns(group: SVGGElement, look: ColumnLook | null, values: MarkVa
     ];
   });
   seat.floors.draw(seat.mark, seat.stack, spans, axis, (kept) => {
-    const keeps = new Map(spans.map((span, index) => [span.from, kept[index] === 1]));
-    write((slot, base, tip) => {
-      if (keeps.get(slot) === true) return floored(slot, base, tip);
-      const [from, to] = [Math.min(base, tip) * radius, Math.max(base, tip) * radius].map(
-        (edge) => Math.round(edge * dpr) / dpr
-      );
-      return [(from ?? 0) / radius, (to ?? 0) / radius];
-    });
+    write(new Map(spans.map((span, index) => [span.from, kept[index] === 1])));
   });
+}
+
+/**
+ * Tune a value glow's blur to the dial as it draws: the halo's CSS pixels over the dial's pixels per
+ * unit, and the filter's region past the dial by three of them.
+ */
+function retuneGlow(svg: SVGSVGElement, unit: number, halo: typeof PATH_GLOW): void {
+  if (!(unit > 0)) return;
+  const deviation = halo.deviation / unit;
+  const margin = 3 * deviation;
+  for (const filter of svg.querySelectorAll("filter")) {
+    writeAttribute(filter, "x", -1.5 - margin);
+    writeAttribute(filter, "y", -1.5 - margin);
+    writeAttribute(filter, "width", 3 + 2 * margin);
+    writeAttribute(filter, "height", 3 + 2 * margin);
+    const blur = filter.querySelector("feGaussianBlur");
+    if (blur !== null) writeAttribute(blur, "stdDeviation", deviation);
+  }
 }
 
 /**
@@ -763,14 +838,14 @@ export function ClockChartColumn({
     };
   }, [kernel, dataKey, picked, emphasisLabel]);
   const measure = useRef<DialMeasure>({ scale: 0, dpr: 1 });
-  const [drawn] = useState<{ current: MarkValues | null }>(() => ({ current: null }));
+  const drawn = useRef<MarkValues | null>(null);
   const look = useMemo(
     (): ColumnLook | null =>
       series === undefined ? null : { series, clock, measure, seat, emphasised, drawn },
     [series, clock, seat, emphasised, drawn]
   );
-  const { ref, place } = usePolarMark(polar.motion, drawColumns, look);
-  const commit = usePolarCommit(polar);
+  const { ref, place, node: anchor } = usePolarMark(polar.motion, drawColumns, look);
+  const commit = usePolarCommit(polar, anchor);
   useClockPlacement(clock, series, commit, place);
   const svg = useRef<SVGSVGElement>(null);
   const group = useRef<SVGGElement | null>(null);
@@ -784,6 +859,7 @@ export function ClockChartColumn({
         scale: width > 0 ? node.getBoundingClientRect().width / width : 0,
         dpr: window.devicePixelRatio || 1,
       };
+      retuneGlow(node, measure.current.scale, BAR_GLOW);
       const values = drawn.current;
       if (group.current !== null && values !== null) drawColumns(group.current, look, values);
     };
@@ -799,6 +875,13 @@ export function ClockChartColumn({
   const glow = paint === null ? null : valueGlow(paint, prefix, BAR_GLOW);
   const steps = series?.steps ?? [{ paint: series?.paint ?? "currentColor", from: 0 }];
   const variant = clock.text.config[dataKey]?.barVariant === "gradient" ? "gradient" : "default";
+  // React writes the wedges once at rest on the nominal dial, so the server's chart shows them with
+  // JavaScript off, and the loop writes them from then on.
+  const [first] = useState(() =>
+    series === undefined
+      ? new Map<string, string>()
+      : wedgeGroups(series, clock, series.rest, { scale: NOMINAL_RADIUS, dpr: 1 }, emphasised, null)
+  );
   return (
     <svg
       ref={svg}
@@ -847,12 +930,18 @@ export function ClockChartColumn({
               data-slot="clock-chart-wedge"
               data-group={`step-${String(index)}${time}`}
               data-time={time === "" ? undefined : "past"}
+              d={first.get(`step-${String(index)}${time}`)}
               style={{ "--_wedge": step, "--_fade": `url(#${prefix}-fade)` }}
             />
           ))
         )}
-        <path data-slot="clock-chart-wedge" data-group="marked" data-part="marked" />
-        <path data-slot="clock-chart-wedge" data-group="emphasis" data-part="emphasis" />
+        <path data-slot="clock-chart-wedge" data-group="marked" data-part="marked" d={first.get("marked")} />
+        <path
+          data-slot="clock-chart-wedge"
+          data-group="emphasis"
+          data-part="emphasis"
+          d={first.get("emphasis")}
+        />
       </g>
     </svg>
   );
@@ -865,10 +954,8 @@ type DotsLook = {
   readonly only: ReadonlySet<number> | null;
 };
 
-/** Draw a series' dots, in their step groups, at the vertices this frame draws. */
-function drawDots(group: SVGGElement, look: DotsLook | null, values: MarkValues): void {
-  if (look === null) return;
-  const frame = entranceFrame(values);
+/** A series' dots in a frame, in their step groups: every reading, or the slots a Marker names. */
+function dotGroups(look: DotsLook, values: MarkValues): Map<string, string> {
   const { series, clock, only } = look;
   const slots =
     only === null
@@ -877,7 +964,14 @@ function drawDots(group: SVGGElement, look: DotsLook | null, values: MarkValues)
           ...series.slots,
           states: series.slots.states.map((state, slot) => (only.has(slot) ? state : ("pending" as const))),
         };
-  const groups = clockDots(frame.values, slots, (slot) => groupOf(series, clock, slot).replace("-past", ""));
+  return clockDots(values, slots, (slot) => groupOf(series, clock, slot).replace("-past", ""));
+}
+
+/** Draw a series' dots, in their step groups, at the vertices this frame draws. */
+function drawDots(group: SVGGElement, look: DotsLook | null, values: MarkValues): void {
+  if (look === null) return;
+  const frame = entranceFrame(values);
+  const groups = dotGroups(look, frame.values);
   for (const path of group.querySelectorAll("path[data-group]")) {
     writeAttribute(path, "d", groups.get(path.getAttribute("data-group") ?? "") ?? "");
   }
@@ -911,8 +1005,12 @@ function DotLayer({
       series === undefined ? null : { series, clock, only: picked === null ? null : new Set(picked) },
     [series, clock, picked]
   );
-  const { ref, place } = usePolarMark(polar.motion, drawDots, look);
-  const commit = usePolarCommit(polar);
+  const { ref, place, node: anchor } = usePolarMark(polar.motion, drawDots, look);
+  // React writes the dots once at rest, so the server's chart shows them, and the loop from then on.
+  const [first] = useState(() =>
+    look === null ? new Map<string, string>() : dotGroups(look, look.series.rest)
+  );
+  const commit = usePolarCommit(polar, anchor);
   useClockPlacement(clock, series, commit, place);
   const prefix = useId();
   const steps = series?.steps ?? [{ paint: series?.paint ?? "currentColor", from: 0 }];
@@ -942,10 +1040,25 @@ function DotLayer({
           {steps.map(({ paint }, index) => (
             <g key={index} style={{ "--_dot": paint }}>
               {variant === "ping" ? (
-                <path data-slot="clock-chart-dot" data-part="ping" data-group={`step-${String(index)}`} />
+                <path
+                  data-slot="clock-chart-dot"
+                  data-part="ping"
+                  data-group={`step-${String(index)}`}
+                  d={first.get(`step-${String(index)}`)}
+                />
               ) : null}
-              <path data-slot="clock-chart-dot" data-part="halo" data-group={`step-${String(index)}`} />
-              <path data-slot="clock-chart-dot" data-part="dots" data-group={`step-${String(index)}`} />
+              <path
+                data-slot="clock-chart-dot"
+                data-part="halo"
+                data-group={`step-${String(index)}`}
+                d={first.get(`step-${String(index)}`)}
+              />
+              <path
+                data-slot="clock-chart-dot"
+                data-part="dots"
+                data-group={`step-${String(index)}`}
+                d={first.get(`step-${String(index)}`)}
+              />
             </g>
           ))}
         </g>
@@ -1080,10 +1193,51 @@ function pixelsPerUnit(svg: SVGSVGElement, box: PolarContextValue["box"]): numbe
   return width > 0 ? svg.getBoundingClientRect().width / width : 0;
 }
 
+/** Each loop's Lines' curves by series, which an ActiveDot rides between slots. */
+const curves = new WeakMap<ChartMotion, Map<string, ChartCurve>>();
+
+/** Note the curve a Line draws its series in, for as long as it is mounted. */
+function useLineCurve(motion: ChartMotion, key: string, curve: ChartCurve): void {
+  useLayoutEffect(() => {
+    const byKey = curves.get(motion) ?? new Map<string, ChartCurve>();
+    curves.set(motion, byKey);
+    byKey.set(key, curve);
+    return () => {
+      if (byKey.get(key) === curve) byKey.delete(key);
+    };
+  }, [motion, key, curve]);
+}
+
+/** The slot whose vertex a slot's reading draws at: its own, or the first slot of its coarse slot. */
+function vertexSlot(series: ClockSeries, slot: number): number {
+  let at = slot;
+  while (at > 0 && series.slots.states[at] === "covered") at -= 1;
+  return at;
+}
+
+/** What an active dot's writer reads: its series, the slot it shows and the numbers it drew last. */
+type DotLook = {
+  readonly series: ClockSeries;
+  readonly shown: { current: number | null };
+  readonly drawn: { current: MarkValues | null };
+};
+
+/** Draw the active dot at its slot's vertex in this frame's numbers, so it follows its series' tween. */
+function drawActiveDot(group: SVGGElement, look: DotLook | null, values: MarkValues): void {
+  if (look === null) return;
+  look.drawn.current = values;
+  const slot = look.shown.current;
+  if (slot === null) return;
+  const { x, y } = clockXY(slotVertex(entranceFrame(values).values, vertexSlot(look.series, slot)));
+  for (const path of group.querySelectorAll("path"))
+    writeAttribute(path, "d", `M${pathNumber(x)},${pathNumber(y)}h0`);
+}
+
 /**
- * The dot on one series at the active slot. A step rides the series' drawn curve to the new slot the
- * short way round, on the follow spring, which a fast pointer stiffens. A missing reading at the
- * active slot shows no dot. It paints its value's step of a threshold or a scale.
+ * The dot on one series at the active slot. It moves with its series as the series tweens, and a
+ * step rides the curve its Line draws to the new slot the short way round, on the follow spring,
+ * which a fast pointer stiffens. A missing reading at the active slot shows no dot. It paints its
+ * value's step of a threshold or a scale.
  *
  * @beta
  */
@@ -1093,37 +1247,47 @@ export function ClockChartActiveDot({
   className,
   style,
 }: ClockChartActiveDotProps): ReactElement {
-  const { polar, series } = useClockSeries("ClockChart.ActiveDot", dataKey);
+  const { polar, clock, series } = useClockSeries("ClockChart.ActiveDot", dataKey);
   const { kernel, box } = polar;
   const svg = useRef<SVGSVGElement>(null);
-  const dot = useRef<SVGGElement>(null);
+  const dot = useRef<SVGGElement | null>(null);
   const shown = useRef<number | null>(null);
+  const drawn = useRef<MarkValues | null>(null);
+  const look = useMemo(
+    (): DotLook | null => (series === undefined ? null : { series, shown, drawn }),
+    [series, shown, drawn]
+  );
+  const { ref, place, node: anchor } = usePolarMark(polar.motion, drawActiveDot, look);
+  const commit = usePolarCommit(polar, anchor);
+  useClockPlacement(clock, series, commit, place);
   const paint = (active: ActiveSlot, cause: FollowerCause): void => {
-    const node = dot.current;
+    const group = dot.current;
     const layer = svg.current;
-    if (node === null || layer === null || series === undefined) return;
+    if (group === null || layer === null || series === undefined || look === null) return;
     const slot = active?.slot ?? null;
-    const reading = slot !== null && series.slots.states[slot] === "reading";
+    const reading = slot !== null && series.slots.states[vertexSlot(series, slot)] === "reading";
     const before = shown.current;
     shown.current = reading ? slot : null;
-    for (const animation of node.getAnimations()) animation.cancel();
-    writeAttribute(node, "data-value", reading ? "" : null);
+    for (const animation of group.getAnimations()) animation.cancel();
+    writeAttribute(group, "data-value", reading ? "" : null);
     if (!reading) return;
-    const vertex = slotVertex(series.rest, slot);
-    const { x, y } = clockXY(vertex);
+    const values = drawn.current ?? series.rest;
+    drawActiveDot(group, look, values);
     const step = series.steps?.[series.stepAt[slot] ?? 0]?.paint ?? series.paint;
-    writeStyle(node, "--_dot", step);
-    for (const path of node.querySelectorAll("path"))
-      writeAttribute(path, "d", `M${pathNumber(x)},${pathNumber(y)}h0`);
+    writeStyle(group, "--_dot", step);
     if (cause !== "step" || before === null || before === slot || polar.motion.reduced()) return;
     const scale = pixelsPerUnit(layer, box);
     const timing = springTiming(stepSpring(kernel.store));
     if (scale === 0 || !timing.spring) return;
-    const route = curveRoute(series.rest, series.slots, "monotone", before, slot).map(clockXY);
+    const curve = curves.get(polar.motion)?.get(dataKey) ?? "monotone";
+    const from = vertexSlot(series, before);
+    const to = vertexSlot(series, slot);
+    const route = curveRoute(values, series.slots, curve, from, to).map(clockXY);
+    const { x, y } = clockXY(slotVertex(values, to));
     if (route.length < 2) return;
     const lengths = route.slice(1).map((point, index) => {
-      const from = route[index] ?? point;
-      return Math.hypot(point.x - from.x, point.y - from.y);
+      const start = route[index] ?? point;
+      return Math.hypot(point.x - start.x, point.y - start.y);
     });
     const total = lengths.reduce((sum, length) => sum + length, 0);
     let reached = 0;
@@ -1134,7 +1298,7 @@ export function ClockChartActiveDot({
         translate: `${((point.x - x) * scale).toFixed(2)}px ${((point.y - y) * scale).toFixed(2)}px`,
       };
     });
-    node.animate(frames, { duration: timing.duration, easing: timing.easing });
+    group.animate(frames, { duration: timing.duration, easing: timing.easing });
   };
   useChartFollower("ClockChart.ActiveDot", paint);
   return (
@@ -1150,7 +1314,12 @@ export function ClockChartActiveDot({
       viewBox={viewBoxOf(box)}
       className={className}
       style={{ "--chart-series": series?.index ?? 0, "--_base": series?.paint ?? "currentColor", ...style }}>
-      <g ref={dot} data-follow="">
+      <g
+        ref={(element) => {
+          dot.current = element;
+          ref(element);
+        }}
+        data-follow="">
         {variant === "ping" ? <path data-slot="clock-chart-dot" data-part="ping" d="" /> : null}
         <path data-slot="clock-chart-dot" data-part="halo" d="" />
         <path data-slot="clock-chart-dot" data-part="dots" d="" />

@@ -23,16 +23,12 @@ import { clockRadius, instantAngle, slotAngles } from "./layout/clock";
 import type { ClockCycle, RadiusScale } from "./layout/clock";
 import { clockLabelSlots, clockTier, fitClockLabels, pageSlot } from "./layout/clock-labels";
 import { isRoleList } from "./layout/color-key";
-import { m4Indexes } from "./layout/decimate";
 import { labelWidth } from "./layout/label-width";
 import { pointerAngle, sweepOf } from "./layout/polar-angle";
 import { slotOf } from "./layout/x-domain";
 
 /** The radius a spoke label sits at, as a share of the outer radius. */
 export const CLOCK_LABEL_REACH = 1.1;
-
-/** The dial's nominal radius in CSS pixels, half of `--chart-polar-size`'s 12.5rem, for the server's decimation. */
-const NOMINAL_RADIUS = 100;
 
 /** What a clock model reads from its Root. */
 export type ClockInput = {
@@ -68,14 +64,18 @@ function clockSeries(
   const color = config[key]?.color ?? "chart-1";
   const paint = seriesPaintOf(key, color, series);
   const rest: number[] = [1];
-  const states: ("reading" | "missing" | "pending")[] = [];
+  const states: ("reading" | "missing" | "pending" | "covered")[] = [];
   const marked: boolean[] = [];
   const values: (number | null)[] = [];
   const stepAt: number[] = [];
   // A base or a tip outside the domain stays inside the hole's edge, as a bar stays inside its plot.
   const placed = (value: number): number => Math.max(inner, radius(value));
   for (let slot = 0; slot < count; slot += 1) {
-    const { start, end } = slotAngles(slot, count);
+    // A coarse slot draws once, from its first Root slot across every Root slot it holds.
+    const first = series.coarse?.first[slot] ?? slot;
+    const last = series.coarse?.last[slot] ?? slot;
+    const { start } = slotAngles(first, count);
+    const { end } = slotAngles(last, count);
     const reading = series.readings[slot];
     const extent = series.extents[slot] ?? null;
     let base = placed(0);
@@ -85,7 +85,7 @@ function clockSeries(
       [base, tip] = reading.value < 0 ? [placed(high), placed(low)] : [placed(low), placed(high)];
     }
     rest.push(start, end, base, tip);
-    states.push(reading?.kind ?? "pending");
+    states.push(first === slot ? (reading?.kind ?? "pending") : "covered");
     marked.push(
       (reading?.kind === "reading" && reading.quality === "estimated") ||
         (reading?.kind === "reading" && slot >= series.projectedFrom)
@@ -103,13 +103,6 @@ function clockSeries(
           from: index === 0 ? 0 : Math.max(0, radius(paint.edges[index - 1] ?? 0)),
         }));
   const missing = config[key]?.missing ?? "gap";
-  // Past 100 slots the columns draw as one path, and past M4's threshold they decimate to the
-  // dial's circumference in pixels.
-  const tips = values.map((value, slot) => (value === null ? null : (rest[1 + slot * 4 + 3] ?? 0)));
-  const shown =
-    count <= 100
-      ? Array.from({ length: count }, (_, slot) => slot)
-      : m4Indexes(tips, Math.round(2 * Math.PI * NOMINAL_RADIUS));
   return {
     key,
     index: series.seriesIndex,
@@ -122,7 +115,7 @@ function clockSeries(
     slots: { states, marked, missing },
     rest,
     values,
-    shown,
+    shown: Array.from({ length: count }, (_, slot) => slot),
   };
 }
 

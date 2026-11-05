@@ -169,6 +169,19 @@ describe("the rings' motion (SPEC's Motion table)", () => {
     });
   });
 
+  it("scales the active ring to 1.03 and the rings outside it to 1.02, and leaves those inside it", async () => {
+    const { host } = renderThemed(<Chart kwh={[50, 75, 25]} intro="none" />);
+    await userEvent.tab();
+    await userEvent.keyboard("{ArrowRight}");
+    for (const animation of host.getAnimations({ subtree: true })) animation.finish();
+    // DOM audit: each ring's group carries data-ring, which the hover scale is written on.
+    const scales = [...host.querySelectorAll("[data-ring]:not([data-ring-track])")].map((ring) =>
+      Number(getComputedStyle(ring).scale === "none" ? 1 : getComputedStyle(ring).scale)
+    );
+    // Ring 1 is active; ring 0 lies outside it and ring 2 inside.
+    expect(scales.map((scale) => Math.round(scale * 1000) / 1000)).toEqual([1.02, 1.03, 1]);
+  });
+
   it("scales the active ring on the 400/25 spring", async () => {
     const { host } = renderThemed(<Chart kwh={[50, 75, 25]} intro="none" />);
     await userEvent.tab();

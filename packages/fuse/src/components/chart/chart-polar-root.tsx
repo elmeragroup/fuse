@@ -30,6 +30,7 @@ import type { ChartMotion } from "./chart-motion";
 import { ChartOwnScope } from "./chart-own-scope";
 import { PolarContext } from "./chart-polar-context";
 import type { PolarContextValue, PolarKernel, PolarModel, PolarUpdate } from "./chart-polar-context";
+import { introPace } from "./chart-polar-motion";
 import { PolarSurface } from "./chart-polar-surface";
 import { ChartReadoutContext, ChartSelectionContext } from "./chart-readout-port";
 import type { PointerSlot } from "./chart-readout-port";
@@ -308,6 +309,8 @@ export function usePolarRoot(props: PolarRootProps): PolarRootState {
   useLayoutEffect(() => {
     items.current = entranceItems(model);
   });
+  // The entrance reads its pace once, keyed on the Root's first model.
+  const [pacing] = useState<PolarUpdate>(() => ({ kind: "initial", keys: [] }));
   useLayoutEffect(() => {
     if (!entrance) return undefined;
     let timer: number | null = null;
@@ -317,7 +320,8 @@ export function usePolarRoot(props: PolarRootProps): PolarRootState {
       if (timer !== null) window.clearTimeout(timer);
       writeAttribute(figure, "data-entering", "");
       writeAttribute(figure, "data-grow", grow ? "" : null);
-      const span = entranceSpan(items.current, ENTRANCE_SPRINGS);
+      // The figure's own pace, so a consumer's --chart-intro or --chart-stagger holds the state as long.
+      const span = entranceSpan(items.current, ENTRANCE_SPRINGS, introPace(figure, pacing));
       timer = window.setTimeout(() => {
         timer = null;
         writeAttribute(figure, "data-entering", null);
@@ -338,7 +342,7 @@ export function usePolarRoot(props: PolarRootProps): PolarRootState {
       marking.current = () => undefined;
       if (timer !== null) window.clearTimeout(timer);
     };
-  }, [store, entrance, served]);
+  }, [store, entrance, served, pacing]);
   // A chart that leaves its empty state grows its grid and tracks, as nothing painted them before.
   useLayoutEffect(() => {
     const before = wasEmpty.current;

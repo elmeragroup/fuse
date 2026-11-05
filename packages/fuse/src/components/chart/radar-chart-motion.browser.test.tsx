@@ -218,6 +218,35 @@ describe("the radar's updates (R11, S5)", () => {
 });
 
 describe("the radar's followers (SPEC's Motion table)", () => {
+  it("keeps the active dot on its series' vertex in every frame as an update moves the polygon", async () => {
+    const { host, rerender } = renderThemed(
+      <Chart a={[4, 4, 4, 4]} intro="none">
+        <RadarChart.ActiveDot dataKey="a" />
+      </Chart>
+    );
+    await userEvent.tab();
+    for (const animation of host.getAnimations({ subtree: true })) animation.finish();
+    rerender(
+      <Chart a={[2, 4, 4, 4]} intro="none">
+        <RadarChart.ActiveDot dataKey="a" />
+      </Chart>
+    );
+    const [dot] = radarLayers(host, "radar-chart-active-dot");
+    const [line] = radarLayers(host, "radar-chart-line");
+    const seen: { readonly dot: number; readonly vertex: number }[] = [];
+    const start = performance.now();
+    while (performance.now() - start < 700) {
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+      const [point] = pathPoints(layerPath(dot, "dots").getAttribute("d") ?? "");
+      const [vertex] = pathPoints(layerPath(line, "solid").getAttribute("d") ?? "");
+      if (point !== undefined && vertex !== undefined)
+        seen.push({ dot: Math.hypot(point.x, point.y), vertex: Math.hypot(vertex.x, vertex.y) });
+    }
+    // Spoke 0's radius moves from 1 to 0.5, and the dot reads the same radius in every frame.
+    expect(seen.some(({ vertex }) => vertex > 0.55 && vertex < 0.95)).toBe(true);
+    for (const frame of seen) expect(Math.abs(frame.dot - frame.vertex)).toBeLessThan(ROUNDED);
+  });
+
   it("rides the active dot along the polygon's edges through each vertex between, on the follow spring", async () => {
     const { host } = renderThemed(
       <Chart a={[4, 2, 3, 1]} intro="none">

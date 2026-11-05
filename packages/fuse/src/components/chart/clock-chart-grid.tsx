@@ -25,14 +25,20 @@ import { formatValue } from "./format/value-format";
 import { slotAngles } from "./layout/clock";
 import { ringPath, sectorPath } from "./layout/clock-path";
 import { ChartCompositionError } from "./layout/errors";
+import { labelWidth } from "./layout/label-width";
 import { CHART_SPRINGS } from "./layout/motion";
 import { polarPoint } from "./layout/polar-angle";
 import type { SweepBox } from "./layout/polar-angle";
 import { angleLabel } from "./layout/polar-labels";
+import { fitRingLabels, ringAnchor } from "./layout/ring-labels";
+import type { MarkCover } from "./layout/ring-labels";
 import { pathNumber } from "./layout/rounding";
 
 /** The radius a cycle label sits at, as a share of the outer radius. */
 const LABEL_REACH = 1.1;
+
+/** Where Now's label sits along its hand, just inside the rim, as a share of the outer radius. */
+const NOW_REACH = 0.96;
 
 /**
  * Props for `ClockChart.Grid`, a closed part.
@@ -178,6 +184,16 @@ function labelPlace(box: SweepBox, angle: number, reach: number): LabelPlace {
   return { x, y, alignX: `${String(-alignX * 100)}%`, alignY: `${String(-alignY * 100)}%` };
 }
 
+/**
+ * A label's place just inside the rim at an angle, reading toward the centre, so its box stays
+ * inside the dial and never reaches the labels past the rim.
+ */
+function insidePlace(box: SweepBox, angle: number, reach: number): LabelPlace {
+  const { point, alignX, alignY } = angleLabel(angle, reach);
+  const [x, y] = percent(box, point.x, point.y);
+  return { x, y, alignX: `${String(-(1 - alignX) * 100)}%`, alignY: `${String(-(1 - alignY) * 100)}%` };
+}
+
 /** A label placed past the rim, its place written as the stylesheet's custom properties. */
 function PlacedLabel({
   place,
@@ -202,6 +218,26 @@ function PlacedLabel({
       {children}
     </span>
   );
+}
+
+/**
+ * Whether a clock's marks at rest cover a point: any slot's band between its base and its tip, at
+ * the slot's angles, in every series, as its Column, Area or Line would draw it. A Line draws only
+ * its tip, so the band is the most a series' mark can cover.
+ */
+function clockCover(clock: ClockDrawing): MarkCover {
+  return (x, y, radius) => {
+    const share = Math.hypot(x, y) / radius;
+    const angle = ((((Math.atan2(x, -y) * 180) / Math.PI) % 360) + 360) % 360;
+    return clock.series.some((series) => {
+      for (let at = 1; at + 3 < series.rest.length; at += 4) {
+        const [start = 0, end = 0, base = 0, tip = 0] = series.rest.slice(at, at + 4);
+        if (angle >= start && angle <= end && share >= Math.min(base, tip) && share <= Math.max(base, tip))
+          return true;
+      }
+      return false;
+    });
+  };
 }
 
 /** The narrowest width a label or its spoke shows at, for the stylesheet's container rules. */
@@ -318,6 +354,28 @@ export function ClockChartRadiusAxis({ format, className, style }: ClockChartRad
   const { model, box } = usePolarContext("ClockChart.RadiusAxis", ["clock"]);
   const clock = clockDrawingIn(model, "ClockChart.RadiusAxis");
   const { locale } = useLocale();
+  const rings = clock.ticks.flatMap((tick) => {
+    const radius = clock.radius(tick);
+    return radius < clock.inner - 1e-9 || radius > 1 + 1e-9 ? [] : [{ tick, radius }];
+  });
+  // Values stay clear of the angle labels the axis shows past the rim, of the marks at rest, and of
+  // the centre text in the hole, along whichever of 12 and 6 o'clock leaves them more room.
+  const values = rings.map(({ tick, radius }) => ({
+    radius,
+    width: labelWidth(formatValue(locale, tick, format ?? clock.format, "tick").text),
+  }));
+  const clearance = {
+    reach: LABEL_REACH,
+    inner: (clock.inner * Math.SQRT2) / 2,
+    angles: clock.labels.map((label) => ({
+      angle: label.angle,
+      width: labelWidth(label.text.text),
+      shownAt: label.visibility,
+    })),
+    marks: clockCover(clock),
+  };
+  const anchor = ringAnchor(values, clearance);
+  const shown = fitRingLabels(values, { ...clearance, anchor });
   return (
     <div
       data-slot="clock-chart-radius-axis"
@@ -325,15 +383,19 @@ export function ClockChartRadiusAxis({ format, className, style }: ClockChartRad
       aria-hidden="true"
       className={className}
       style={style}>
-      {clock.ticks.flatMap((tick) => {
-        const radius = clock.radius(tick);
-        if (radius < clock.inner - 1e-9 || radius > 1 + 1e-9) return [];
-        const [left, top] = percent(box, 0, -radius);
-        return [
-          <span key={tick} data-slot="clock-chart-radius-label" style={{ "--_x": left, "--_y": top }}>
+      {rings.map(({ tick, radius }, index) => {
+        const [left, top] = percent(box, 0, anchor === 180 ? radius : -radius);
+        const min = shown[index] ?? "none";
+        return (
+          <span
+            key={tick}
+            data-slot="clock-chart-radius-label"
+            data-min={min === "none" ? undefined : min}
+            data-hidden={min === "none" ? "" : undefined}
+            style={{ "--_x": left, "--_y": top }}>
             {formatValue(locale, tick, format ?? clock.format, "tick").text}
-          </span>,
-        ];
+          </span>
+        );
       })}
     </div>
   );
@@ -514,7 +576,8 @@ export function ClockChartScrubber({
 }
 
 /**
- * A hand at Root's `now`, to the minute, with a ping at its tip and an optional label past the rim.
+ * A hand at Root's `now`, to the minute, with a ping at its tip and an optional label just inside the
+ * rim along the hand, which never covers the cycle's labels past the rim.
  * It draws nothing when `now` lies outside the cycle.
  *
  * @beta
@@ -557,7 +620,7 @@ export function ClockChartNow({
             />
           </svg>
           {label === undefined ? null : (
-            <PlacedLabel place={labelPlace(box, now.angle, LABEL_REACH)}>{label}</PlacedLabel>
+            <PlacedLabel place={insidePlace(box, now.angle, NOW_REACH)}>{label}</PlacedLabel>
           )}
         </>
       )}

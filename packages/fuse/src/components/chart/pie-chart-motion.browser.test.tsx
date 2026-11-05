@@ -59,9 +59,17 @@ const width = (arc: readonly [number, number] | null | undefined): number => (ar
 function Chart({
   data,
   intro,
+  labels,
+  pace,
+  center = false,
 }: {
   readonly data: readonly { part: string; kr: number }[];
   readonly intro?: "none";
+  readonly labels?: "inside" | "outside";
+  /** The figure's `--chart-intro` and `--chart-stagger`, as a consumer overrides them. */
+  readonly pace?: { readonly intro: string; readonly stagger: string };
+  /** Whether the centre prints the total. */
+  readonly center?: boolean;
 }) {
   return (
     <LocaleProvider locale="nb-NO">
@@ -81,8 +89,17 @@ function Chart({
           valueKey="kr"
           innerRadius={0.5}
           data-intro={intro}
+          style={
+            pace === undefined ? undefined : { "--chart-intro": pace.intro, "--chart-stagger": pace.stagger }
+          }
           aria-label="Regning">
           <PieChart.Pie />
+          {labels === undefined ? null : <PieChart.Labels position={labels} />}
+          {center ? (
+            <PieChart.Center>
+              <PieChart.CenterValue />
+            </PieChart.Center>
+          ) : null}
         </PieChart.Root>
       </div>
     </LocaleProvider>
@@ -126,6 +143,114 @@ describe("the pie's motion (SPEC's Motion table)", () => {
         expect(w).toBeGreaterThanOrEqual((widths[at - 1]?.width ?? 0) - ROUNDED);
       });
     });
+  });
+
+  it("takes its pace from the figure's --chart-intro and --chart-stagger", async () => {
+    // 0.6 s and 200 ms: slice i sweeps from 100 + i·200 ms over 600 ms, so d waits until 700 ms.
+    const { host } = renderThemed(<Chart data={QUARTET} pace={{ intro: "0.6s", stagger: "200ms" }} />);
+    const figure = polarFigure(host);
+    let from: number | null = null;
+    const frames = await record(
+      host,
+      () => {
+        if (from === null && figure.hasAttribute("data-drawn")) from = performance.now();
+        return from;
+      },
+      1500
+    );
+    [180, 108, 54, 18].forEach((angle, index) => {
+      const begins = 100 + 200 * index;
+      const widths = frames.map((frame) => ({ t: frame.t, width: width(frame.slices[index]) }));
+      expect(widths.filter(({ t }) => t < begins - SLACK).every(({ width: w }) => w === 0)).toBe(true);
+      expect(
+        widths
+          .filter(({ t }) => t > begins + 600 + SLACK)
+          .every(({ width: w }) => Math.abs(w - angle) < ROUNDED)
+      ).toBe(true);
+    });
+  });
+
+  it.each(["inside", "outside"] as const)(
+    "carries each %s label and its leader on its slice's bisector, frame by frame, as an update moves it",
+    async (position) => {
+      const { host, rerender } = renderThemed(<Chart data={QUARTET} intro="none" labels={position} />);
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+      rerender(
+        <Chart
+          data={[
+            { part: "a", kr: 20 },
+            { part: "b", kr: 30 },
+            { part: "c", kr: 30 },
+            { part: "d", kr: 20 },
+          ]}
+          intro="none"
+          labels={position}
+        />
+      );
+      // DOM audit: the labels and leaders are aria-hidden plot output, read by their slot.
+      const pie = host.querySelector('[data-slot="pie-chart-pie"]');
+      const label = host.querySelector<HTMLElement>('[data-slot="pie-chart-label"][data-index="0"]');
+      const leader = host.querySelector('[data-slot="pie-chart-leader"][data-index="0"]');
+      const bearing = (x: number, y: number): number => ((Math.atan2(x, -y) * 180) / Math.PI + 360) % 360;
+      // Where slice a's label hangs off the dial: the label's centre inside, the leader's anchor outside.
+      const hung = (): number => {
+        if (position === "outside") {
+          const [x = 0, y = 0] =
+            (leader?.getAttribute("points") ?? "").split(" ")[0]?.split(",").map(Number) ?? [];
+          return bearing(x, y);
+        }
+        const dial = pie?.getBoundingClientRect();
+        const box = label?.getBoundingClientRect();
+        if (dial === undefined || box === undefined) return Number.NaN;
+        return bearing(
+          box.left + box.width / 2 - (dial.left + dial.width / 2),
+          box.top + box.height / 2 - (dial.top + dial.height / 2)
+        );
+      };
+      const seen: { readonly bisector: number; readonly hung: number }[] = [];
+      const start = performance.now();
+      while (performance.now() - start < 700) {
+        await new Promise((resolve) => requestAnimationFrame(resolve));
+        const arc = outerArc(sectors(host)[0]?.getAttribute("d") ?? "");
+        if (arc !== null) seen.push({ bisector: (arc[0] + arc[1]) / 2, hung: hung() });
+      }
+      // Slice a's bisector moves from 90° to 36°, and the label rides it through the frames between.
+      expect(seen.some(({ bisector }) => bisector < 89 && bisector > 37)).toBe(true);
+      for (const frame of seen)
+        expect(Math.abs(frame.hung - frame.bisector)).toBeLessThan(position === "inside" ? 2 : 0.5);
+    }
+  );
+
+  it("counts the centre total up over the entrance, then rolls its digits on the 400/35 ticker spring", async () => {
+    // The ticker's damping ratio 35 / (2·√400) = 0.875 at ω = 20 settles within 0.1 % once its
+    // envelope e^(−17.5t) / √(1 − 0.875²) does, by ln 2066 / 17.5 ≈ 436.2 ms, 437 in whole milliseconds.
+    const { host } = renderThemed(<Chart data={QUARTET} center />);
+    const figure = polarFigure(host);
+    // DOM audit: the centre's digits are reels whose slide is a CSS transition, read from its animations.
+    const slide = (): { readonly duration: number; readonly delay: number } | null => {
+      for (const reel of host.querySelectorAll("[data-reel]")) {
+        const timing = reel
+          .getAnimations()
+          .find(
+            (animation) => animation instanceof CSSTransition && animation.transitionProperty === "translate"
+          )
+          ?.effect?.getComputedTiming();
+        if (timing !== undefined) return { duration: Number(timing.duration), delay: Number(timing.delay) };
+      }
+      return null;
+    };
+    await expect.poll(() => figure.hasAttribute("data-entering") && slide() !== null).toBe(true);
+    expect(slide()).toEqual({ duration: 1000, delay: 100 });
+    await expect.poll(() => figure.hasAttribute("data-entering"), { timeout: 3000 }).toBe(false);
+    for (const animation of host.getAnimations({ subtree: true })) animation.finish();
+    // The total's 100 swaps to a's 50, a text of another shape; a's 50 rolls to b's 30.
+    await userEvent.tab();
+    for (const animation of host.getAnimations({ subtree: true })) animation.finish();
+    await userEvent.keyboard("{ArrowRight}");
+    await expect.poll(() => slide() !== null).toBe(true);
+    const roll = slide();
+    expect(roll?.duration).toBeGreaterThan(300);
+    expect(roll?.duration).toBeLessThanOrEqual(437);
   });
 
   it("moves every slice to new data over 480 ms, each edge between its old and its new angle", async () => {

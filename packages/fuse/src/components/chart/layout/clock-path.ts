@@ -18,8 +18,11 @@ import { pathNumber } from "./rounding";
 /** The numbers one slot draws from: its start and end angle in degrees, its base radius and its tip. */
 export const CLOCK_STRIDE = 4;
 
-/** How a slot draws: a reading, a missing reading, or nothing yet. */
-export type ClockSlotState = "reading" | "missing" | "pending";
+/**
+ * How a slot draws: a reading, a missing reading, nothing yet, or nothing of its own, as a Root slot
+ * a coarse slot covers from its first Root slot.
+ */
+export type ClockSlotState = "reading" | "missing" | "pending" | "covered";
 
 /** A point in unrolled space: θ in degrees from 12 o'clock, r in units of the outer radius. */
 export type ClockPoint = { readonly angle: number; readonly radius: number };
@@ -206,6 +209,7 @@ function runsOf(slots: ClockSlots): Run[] {
   for (let slot = 0; slot < count; slot += 1) {
     const state = states[slot];
     if (state === "reading") run.push(slot);
+    else if (state === "covered") continue;
     else if (state === "pending" || missing === "gap") {
       if (run.length > 0) runs.push(run);
       run = [];
@@ -309,18 +313,26 @@ function polyline(points: readonly ClockPoint[], closed: boolean): string {
 /** The angle ranges a run dashes: each segment that touches a marked slot, and each bridge. */
 function markedRanges(run: Run, angles: readonly number[], slots: ClockSlots): [number, number][] {
   const ranges: [number, number][] = [];
-  const count = slots.states.length;
   run.slots.forEach((slot, index) => {
     const here = angles[index] ?? 0;
     const before = angles[index - 1];
     const after = angles[index + 1];
     if (slots.marked[slot] === true) ranges.push([before ?? here, after ?? here]);
     const next = run.slots[index + 1];
-    // A bridge crosses one or more missing slots between two readings.
-    if (next !== undefined && after !== undefined && (next - slot + count) % count !== 1)
+    // A bridge crosses one or more missing slots between two readings, and a covered slot is none.
+    if (next !== undefined && after !== undefined && bridges(slots.states, slot, next))
       ranges.push([here, after]);
   });
   return ranges;
+}
+
+/** Whether a missing slot lies between two slots of a run, going round from the first. */
+function bridges(states: readonly ClockSlotState[], from: number, to: number): boolean {
+  const count = states.length;
+  for (let slot = (from + 1) % count; slot !== to; slot = (slot + 1) % count) {
+    if (states[slot] === "missing") return true;
+  }
+  return false;
 }
 
 /** Split a sampled curve into its plain pieces and the pieces inside the marked ranges. */

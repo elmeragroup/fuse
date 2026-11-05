@@ -113,8 +113,8 @@ function RadialRingMark({
     [ring.band.radius, band, look]
   );
   const ringLook = useMemo(() => ({ frame, key: ring.key, place }), [frame, ring.key, place]);
-  const { ref, place: placeRing } = usePolarMark(polar.motion, writeRing, ringLook);
-  const commit = usePolarCommit(polar);
+  const { ref, place: placeRing, node: anchor } = usePolarMark(polar.motion, writeRing, ringLook);
+  const commit = usePolarCommit(polar, anchor);
   const { angle } = ring;
   useLayoutEffect(() => {
     placeRing([angle], commit(index, [0]));

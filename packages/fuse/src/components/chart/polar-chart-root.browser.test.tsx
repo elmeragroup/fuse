@@ -387,8 +387,8 @@ function writeValue(path: SVGPathElement, _look: null, values: MarkValues): void
 /** One test item: a path whose `data-value` is the number the loop writes, its place plus one, times 10. */
 function TestItem({ itemKey, index }: { readonly itemKey: string; readonly index: number }): ReactNode {
   const polar = usePolarContext("Test.Item", ["pie", "radial", "radar"]);
-  const { ref, place } = usePolarMark(polar.motion, writeValue, null);
-  const commit = usePolarCommit(polar);
+  const { ref, place, node: anchor } = usePolarMark(polar.motion, writeValue, null);
+  const commit = usePolarCommit(polar, anchor);
   useLayoutEffect(() => {
     place([(index + 1) * 10], commit(index, [0]));
   });
