@@ -2,7 +2,7 @@
  * The SSR layer of the chart Flight fixture. It reads a Flight payload on stdin, decodes it with
  * React's Flight client the way Next's SSR does, loads each referenced client module as real code,
  * and prerenders the result. It also prerenders the scenario's page, `ChartPage` or the
- * `ComposedPage` that its first argument names, with no Flight at all, which is the oracle the
+ * `ComposedPage` or `PolarPage` that its first argument names, with no Flight at all, which is the oracle the
  * Flight path must reproduce, and prints both HTML strings as JSON.
  */
 import { createElement } from "react";
@@ -13,7 +13,7 @@ import { createRequire } from "node:module";
 import { Readable } from "node:stream";
 import { prerenderToNodeStream } from "react-dom/static";
 
-import { ChartPage, ComposedPage } from "./rsc-chart-page.tsx";
+import { ChartPage, ComposedPage, PolarPage } from "./rsc-chart-page.tsx";
 import { flightClientReferences } from "./rsc-flight-payload.ts";
 
 type FlightClient = {
@@ -35,6 +35,12 @@ async function html(node: ReactNode): Promise<string> {
   }
   return Buffer.concat(parts).toString("utf8");
 }
+
+/** The pages a scenario other than the default `page` names. */
+const PAGES = new Map([
+  ["composed", ComposedPage],
+  ["polar", PolarPage],
+]);
 
 const payload = readFileSync(0, "utf8");
 /** The client modules the payload references, loaded as real code, keyed by reference id. */
@@ -58,6 +64,6 @@ process.stdout.write(
   JSON.stringify({
     clientModules: [...modules.keys()],
     flight: await html(tree),
-    clientOnly: await html(createElement(process.argv[2] === "composed" ? ComposedPage : ChartPage)),
+    clientOnly: await html(createElement(PAGES.get(process.argv[2] ?? "") ?? ChartPage)),
   })
 );

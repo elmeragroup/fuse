@@ -23,7 +23,6 @@ import { assertKnownKey, ChartCompositionError } from "./layout/errors";
 import type { ChartDataRule, ChartHintRule } from "./layout/errors";
 import type { PathMotion } from "./layout/path-motion";
 
-export { ChartPendingRootContext } from "./chart-pending-root";
 export { assertKnownKey } from "./layout/errors";
 import type { ValueDomain } from "./layout/value-domain";
 

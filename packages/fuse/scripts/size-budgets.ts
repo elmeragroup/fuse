@@ -170,7 +170,12 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = derive([
   // dismissal filter and class, the series label, the role helpers and the Empty and Skeleton
   // bodies, which measured 2096 bytes on this entry (163778 to 165874). The ceiling keeps about
   // 100 bytes of headroom.
-  { name: "chart", entryFile: "chart.js", measuredGzip: 97044, ceilingGzip: 165974 },
+  // Raised again from 165974 on 2026-11-05. The polar Roots draw through their own kernel: the
+  // Root and its aspect-locked cell, the listbox surface with the polar key maps, the item and
+  // series adapters, the polar Tooltip's anchor and orbit, the polar Tables, the polar motion
+  // binder and exit ghosts, and the polar words in their own dictionary, which measured 11441
+  // bytes on this entry (165874 to 177315). The ceiling keeps about 100 bytes of headroom.
+  { name: "chart", entryFile: "chart.js", measuredGzip: 97044, ceilingGzip: 177415 },
   // 2026-10-13: new entry, measured at 29180. Pure wrappers over Base UI's toolbar and its roving focus.
   { name: "toolbar", entryFile: "toolbar.js", measuredGzip: 29180, ceilingGzip: 43770 },
   // 2026-10-12: new entries. Command is Base UI's Autocomplete in the InputGroup, with the Dialog
@@ -381,14 +386,20 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // the surface's element, the listbox's naming and the status region, which measured 255 bytes
     // on Chart (152433 to 152688) and on BarChart (152436 to 152691), while the whole entry, which
     // ships both surfaces, fell by 86. Each ceiling keeps about 100 bytes of headroom.
-    ceilingGzip: 152788,
+    // Raised again from 152788 on 2026-11-05, with BarChart's from 152791. Every Root takes the
+    // own scope from its own leaf, the shared data rules name the three polar rules' messages, the
+    // loop's entrance takes its own duration, each Tooltip's anchor gives its side and align
+    // offsets, and the glide's path route says whether it keeps its side or the popup's centre,
+    // which measured 332 bytes on Chart (152688 to 153020) and on BarChart (152691 to 153023).
+    // Each ceiling keeps about 100 bytes of headroom.
+    ceilingGzip: 153120,
   },
   {
     name: "chart/BarChart",
     entryFile: "chart.js",
     exportName: "BarChart",
     measuredGzip: 95989,
-    ceilingGzip: 152791,
+    ceilingGzip: 153123,
   },
   { name: "chart/PieChart", entryFile: "chart.js", exportName: "PieChart", measuredGzip: 79885 },
   { name: "chart/RadialChart", entryFile: "chart.js", exportName: "RadialChart", measuredGzip: 79858 },
@@ -471,14 +482,35 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // ScatterChart's, the option handoff, the press's end with the surface's element, the
     // listbox's naming and the status region, which measured 234 bytes on this route (79926 to
     // 80160). The ceiling keeps about 100 bytes of headroom.
-    ceilingGzip: 80260,
+    // Raised from 80260 on 2026-11-05. Root takes the own scope from its own leaf, the shared
+    // data rules name the three polar rules' messages, and the loop's entrance takes its own
+    // duration, which measured 271 bytes on this route (80160 to 80431). The ceiling keeps about
+    // 100 bytes of headroom.
+    ceilingGzip: 80531,
   },
+  // 2026-11-05: PieChart.Root draws through the polar kernel, no longer a pending stub, so its row
+  // starts again at 41609 with the derived ceiling, beside new rows for the RadialChart and
+  // RadarChart Roots at 40138 and 48586. None ships cartesian geometry (S15).
   {
     name: "chart/PieChart.Root",
     entryFile: "chart.js",
     exportName: "PieChart",
     members: ["Root"],
-    measuredGzip: 404,
+    measuredGzip: 41609,
+  },
+  {
+    name: "chart/RadialChart.Root",
+    entryFile: "chart.js",
+    exportName: "RadialChart",
+    members: ["Root"],
+    measuredGzip: 40138,
+  },
+  {
+    name: "chart/RadarChart.Root",
+    entryFile: "chart.js",
+    exportName: "RadarChart",
+    members: ["Root"],
+    measuredGzip: 48586,
   },
   // 2026-11-04: new rows, measured at 84628 for the whole ScatterChart namespace and 41808 for its
   // Root alone, each with the derived ceiling.
@@ -550,7 +582,12 @@ export const CSS_BUDGETS: readonly CssBudget[] = derive([
   // by a dot's radius and a segment reference's label at its last end, less the three entrance
   // wipes ScatterChart never runs. That is 720 bytes over the stylesheet with the threshold colours
   // (15120 to 15840) and over the derived 15134, so the ceiling keeps about 100 bytes of headroom.
-  { name: "chart.css", file: "chart.css", measuredGzip: 10089, ceilingGzip: 15940 },
+  // Raised from 15940 on 2026-11-05. The polar Roots' tokens, their frame's grid areas, the
+  // aspect-locked cell, the first paint that hides polar marks until the entrance starts with
+  // scripting on and shows them in print (D18), and the pie, radial and radar skeleton shapes
+  // measured 784 bytes over the stylesheet (15840 to 16624). The ceiling keeps about 100 bytes of
+  // headroom.
+  { name: "chart.css", file: "chart.css", measuredGzip: 10089, ceilingGzip: 16724 },
 ] satisfies readonly Measured<CssBudget>[]);
 
 export const FLAG_RAW_BUDGETS: readonly FlagRawBudget[] = [

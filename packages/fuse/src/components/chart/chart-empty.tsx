@@ -3,7 +3,6 @@
 import type { ReactElement } from "react";
 
 import { ChartEmptyBody } from "./chart-empty-body";
-import { usePendingOr } from "./chart-pending-root";
 import { useChartReadout } from "./chart-readout";
 import type { ChartDomProps } from "./chart-types";
 
@@ -23,10 +22,6 @@ export type ChartEmptyProps = ChartDomProps<"div">;
  * @beta
  */
 export function ChartEmpty(props: ChartEmptyProps): ReactElement {
-  return usePendingOr(props, ChartEmptyPart);
-}
-
-function ChartEmptyPart(props: ChartEmptyProps): ReactElement {
   const { locale, empty } = useChartReadout("Chart.Empty");
   return <ChartEmptyBody locale={locale} empty={empty} {...props} />;
 }

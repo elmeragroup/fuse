@@ -33,7 +33,6 @@ export type ChartStrings = {
   readonly referenceArea: (value: string) => string;
   readonly valueRange: (from: string, to: string) => string;
   readonly other: string;
-  readonly otherCount: (count: string) => string;
   readonly ofMax: (value: string, max: string) => string;
   readonly showTable: string;
   readonly hideTable: string;
@@ -119,7 +118,6 @@ const NB_NO: ChartStrings = {
   referenceArea: (value) => `Område: ${value}`,
   valueRange: (from, to) => `${from} til ${to}`,
   other: "Annet",
-  otherCount: (count) => `${count} kategorier`,
   ofMax: (value, max) => `${value} av ${max}`,
   showTable: "Vis som tabell",
   hideTable: "Skjul tabell",
@@ -192,7 +190,6 @@ const SV_SE: ChartStrings = {
   referenceArea: (value) => `Område: ${value}`,
   valueRange: (from, to) => `${from} till ${to}`,
   other: "Övrigt",
-  otherCount: (count) => `${count} kategorier`,
   ofMax: (value, max) => `${value} av ${max}`,
   showTable: "Visa som tabell",
   hideTable: "Dölj tabell",
@@ -265,7 +262,6 @@ const FI_FI: ChartStrings = {
   referenceArea: (value) => `Alue: ${value}`,
   valueRange: (from, to) => `${from}–${to}`,
   other: "Muut",
-  otherCount: (count) => `${count} luokkaa`,
   ofMax: (value, max) => `${value} / ${max}`,
   showTable: "Näytä taulukkona",
   hideTable: "Piilota taulukko",
@@ -338,7 +334,6 @@ const EN_US: ChartStrings = {
   referenceArea: (value) => `Range: ${value}`,
   valueRange: (from, to) => `${from} to ${to}`,
   other: "Other",
-  otherCount: (count) => `${count} categories`,
   ofMax: (value, max) => `${value} of ${max}`,
   showTable: "Show as table",
   hideTable: "Hide table",

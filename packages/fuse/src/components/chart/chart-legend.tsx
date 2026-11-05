@@ -7,7 +7,6 @@ import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
 
 import { ToggleGroupItem, ToggleGroupRoot } from "../toggle-group/toggle-group";
-import { usePendingOr } from "./chart-pending-root";
 import {
   ChartLegendSideContext,
   ChartRowContext,
@@ -114,11 +113,7 @@ export type ChartLegendToggleProps = ChartLayerProps & {
  *
  * @beta
  */
-export function ChartLegend(props: ChartLegendProps): ReactElement {
-  return usePendingOr(props, ChartLegendBody);
-}
-
-function ChartLegendBody({
+export function ChartLegend({
   side = "bottom",
   render,
   className,
@@ -203,11 +198,7 @@ function LegendEntry({
  *
  * @beta
  */
-export function ChartLegendItem(props: ChartLegendItemProps): ReactElement {
-  return usePendingOr(props, ChartLegendItemBody);
-}
-
-function ChartLegendItemBody({
+export function ChartLegendItem({
   dataKey,
   render,
   className,
@@ -244,11 +235,7 @@ function ChartLegendItemBody({
  *
  * @beta
  */
-export function ChartLegendValue(props: ChartLegendValueProps): ReactElement {
-  return usePendingOr(props, ChartLegendValueBody);
-}
-
-function ChartLegendValueBody({
+export function ChartLegendValue({
   dataKey,
   fallback = "last",
   format,
@@ -274,11 +261,7 @@ function ChartLegendValueBody({
  *
  * @beta
  */
-export function ChartLegendShare(props: ChartLegendShareProps): ReactElement {
-  return usePendingOr(props, ChartLegendShareBody);
-}
-
-function ChartLegendShareBody({
+export function ChartLegendShare({
   dataKey,
   format,
   render,
@@ -306,11 +289,7 @@ function ChartLegendShareBody({
  *
  * @beta
  */
-export function ChartLegendToggleGroup(props: ChartLegendToggleGroupProps): ReactElement {
-  return usePendingOr(props, ChartLegendToggleGroupBody);
-}
-
-function ChartLegendToggleGroupBody({
+export function ChartLegendToggleGroup({
   "aria-label": ariaLabel,
   side = "bottom",
   className,
@@ -348,11 +327,7 @@ function ChartLegendToggleGroupBody({
  *
  * @beta
  */
-export function ChartLegendToggle(props: ChartLegendToggleProps): ReactElement {
-  return usePendingOr(props, ChartLegendToggleBody);
-}
-
-function ChartLegendToggleBody({
+export function ChartLegendToggle({
   dataKey,
   className,
   style,

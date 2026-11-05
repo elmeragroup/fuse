@@ -79,7 +79,16 @@ export type Placement =
     }
   | { readonly kind: "settle"; readonly scale: PlotScale }
   | { readonly kind: "join"; readonly leads: readonly JoinLead[] }
-  | { readonly kind: "enter"; readonly from: MarkValues; readonly delay: number };
+  | {
+      readonly kind: "enter";
+      readonly from: MarkValues;
+      readonly delay: number;
+      /**
+       * How long the entrance moves the mark, in milliseconds, the update's 480 ms by default. The
+       * polar entrance runs over `--chart-intro`, 1 s.
+       */
+      readonly duration?: number;
+    };
 
 /**
  * One mark a follower joins. A lead either reads the follower's numbers from that mark's, or lends
@@ -263,6 +272,8 @@ type Tween = {
   /** When the clock started, or infinity for an entrance the hold keeps waiting. */
   readonly start: number;
   readonly delay: number;
+  /** How long the tween runs, the update's duration when undefined. */
+  readonly duration?: number;
 };
 
 /**
@@ -512,7 +523,10 @@ export function createChartMotion(
         // An entrance that waited starts in the first frame after `play`, so its first painted frame
         // draws its start, however long the plot waited or the tab stayed hidden.
         if (tween.start === Number.POSITIVE_INFINITY) mark.tween = tween = { ...tween, start: time };
-        const progress = Math.min(1, Math.max(0, (time - tween.start - tween.delay) / CHART_UPDATE_MS));
+        const progress = Math.min(
+          1,
+          Math.max(0, (time - tween.start - tween.delay) / (tween.duration ?? CHART_UPDATE_MS))
+        );
         mark.eased = progress >= 1 ? 1 : ease(progress);
         // The last frame writes the target itself, so the DOM ends on the numbers React rendered.
         if (progress >= 1) mark.drawn = tween.rest ?? tween.to;
@@ -672,7 +686,9 @@ export function createChartMotion(
         for (const mark of moving) {
           if (mark.tween === null) continue;
           // A frame's list is drawn into again, so the restart keeps a copy.
-          mark.tween = { ...mark.tween, from: [...mark.drawn], start, delay: 0 };
+          // A restart runs on the update's clock, so an entrance it interrupts takes 480 ms from here.
+          const { duration: _entrance, ...restarted } = mark.tween;
+          mark.tween = { ...restarted, from: [...mark.drawn], start, delay: 0 };
           mark.eased = 0;
         }
       }
@@ -723,12 +739,14 @@ export function createChartMotion(
       return;
     }
     if (placement.kind === "enter") {
-      const tween = {
+      const entering: Tween = {
         from: placement.from,
         to: target,
         start: held ? Number.POSITIVE_INFINITY : startTime(),
         delay: placement.delay,
       };
+      const tween =
+        placement.duration === undefined ? entering : { ...entering, duration: placement.duration };
       run(id, write, tween, axes, owner);
       return;
     }

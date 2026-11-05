@@ -495,7 +495,7 @@
           "origin": "declared",
           "type": "number | undefined",
           "shortType": null,
-          "defaultValue": null,
+          "defaultValue": "0.3",
           "description": "A fraction of the outer radius, as on Root.",
           "required": false
         },
@@ -595,7 +595,7 @@
     {
       "name": "RadialChart.Tooltip",
       "rsc": "client",
-      "sourcePath": "packages/fuse/src/components/chart/chart-tooltip.tsx",
+      "sourcePath": "packages/fuse/src/components/chart/polar-chart-tooltip.tsx",
       "forwardedFrom": [],
       "forwardedCount": 0,
       "props": [
@@ -649,7 +649,7 @@
     {
       "name": "RadialChart.TooltipLabel",
       "rsc": "client",
-      "sourcePath": "packages/fuse/src/components/chart/chart-tooltip.tsx",
+      "sourcePath": "packages/fuse/src/components/chart/chart-tooltip-parts.tsx",
       "forwardedFrom": [
         "@base-ui/react",
         "@types/react"
@@ -690,7 +690,7 @@
     {
       "name": "RadialChart.TooltipItems",
       "rsc": "client",
-      "sourcePath": "packages/fuse/src/components/chart/chart-tooltip.tsx",
+      "sourcePath": "packages/fuse/src/components/chart/chart-tooltip-parts.tsx",
       "forwardedFrom": [
         "@base-ui/react",
         "@types/react"
@@ -722,7 +722,7 @@
     {
       "name": "RadialChart.TooltipValue",
       "rsc": "client",
-      "sourcePath": "packages/fuse/src/components/chart/chart-tooltip.tsx",
+      "sourcePath": "packages/fuse/src/components/chart/chart-tooltip-parts.tsx",
       "forwardedFrom": [
         "@base-ui/react",
         "@types/react"
@@ -772,7 +772,7 @@
     {
       "name": "RadialChart.TooltipShare",
       "rsc": "client",
-      "sourcePath": "packages/fuse/src/components/chart/chart-tooltip.tsx",
+      "sourcePath": "packages/fuse/src/components/chart/chart-tooltip-parts.tsx",
       "forwardedFrom": [
         "@base-ui/react",
         "@types/react"
@@ -863,7 +863,7 @@
           "origin": "declared",
           "type": "\"bar\" | \"circle\" | \"circle-outline\" | \"line\" | \"square\" | \"square-outline\" | undefined",
           "shortType": "Union",
-          "defaultValue": null,
+          "defaultValue": "\"square\"",
           "description": "The swatch's shape. \"square\" by default.",
           "required": false
         }
@@ -977,7 +977,7 @@
           "origin": "declared",
           "type": "\"bottom\" | \"end\" | \"start\" | \"top\" | undefined",
           "shortType": "Union",
-          "defaultValue": null,
+          "defaultValue": "\"bottom\"",
           "description": "Where the legend sits around the plot. \"bottom\" by default.",
           "required": false
         },
@@ -1057,7 +1057,7 @@
           "origin": "declared",
           "type": "ChartFallback | undefined",
           "shortType": null,
-          "defaultValue": null,
+          "defaultValue": "\"last\"",
           "description": "The datum to print when nothing is active. \"last\" by default.",
           "required": false
         },
@@ -1181,7 +1181,7 @@
           "origin": "declared",
           "type": "\"bottom\" | \"end\" | \"start\" | \"top\" | undefined",
           "shortType": "Union",
-          "defaultValue": null,
+          "defaultValue": "\"bottom\"",
           "description": "Where the group sits around the plot. \"bottom\" by default.",
           "required": false
         },
@@ -1244,7 +1244,7 @@
     {
       "name": "RadialChart.Table",
       "rsc": "client",
-      "sourcePath": "packages/fuse/src/components/chart/chart-table.tsx",
+      "sourcePath": "packages/fuse/src/components/chart/polar-chart-table.tsx",
       "forwardedFrom": [],
       "forwardedCount": 0,
       "props": [
@@ -1316,7 +1316,7 @@
     {
       "name": "RadialChart.TableColumn",
       "rsc": "client",
-      "sourcePath": "packages/fuse/src/components/chart/chart-table.tsx",
+      "sourcePath": "packages/fuse/src/components/chart/chart-table-body.tsx",
       "forwardedFrom": [],
       "forwardedCount": 0,
       "props": [

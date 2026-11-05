@@ -1617,7 +1617,7 @@
           "origin": "declared",
           "type": "\"point\" | \"top\" | undefined",
           "shortType": "Union",
-          "defaultValue": null,
+          "defaultValue": "\"point\"",
           "description": "Where the popup rests on a vertical chart. \"point\", the default, centres it on the active slot inside the chart's box and rests it 8 px above the highest mark under its own width. \"top\" pins it to the plot top and tracks x only, as a chart with Panels always does. A horizontal chart places it over or under the active row either way.",
           "required": false
         },
@@ -1653,7 +1653,7 @@
           "origin": "declared",
           "type": "\"default\" | \"frosted\" | undefined",
           "shortType": "Union",
-          "defaultValue": null,
+          "defaultValue": "\"default\"",
           "description": "The popup's surface. \"default\" by default.",
           "required": false
         }
@@ -1662,7 +1662,7 @@
     {
       "name": "Chart.TooltipLabel",
       "rsc": "client",
-      "sourcePath": "packages/fuse/src/components/chart/chart-tooltip.tsx",
+      "sourcePath": "packages/fuse/src/components/chart/chart-tooltip-parts.tsx",
       "forwardedFrom": [
         "@base-ui/react",
         "@types/react"
@@ -1703,7 +1703,7 @@
     {
       "name": "Chart.TooltipItems",
       "rsc": "client",
-      "sourcePath": "packages/fuse/src/components/chart/chart-tooltip.tsx",
+      "sourcePath": "packages/fuse/src/components/chart/chart-tooltip-parts.tsx",
       "forwardedFrom": [
         "@base-ui/react",
         "@types/react"
@@ -1735,7 +1735,7 @@
     {
       "name": "Chart.TooltipValue",
       "rsc": "client",
-      "sourcePath": "packages/fuse/src/components/chart/chart-tooltip.tsx",
+      "sourcePath": "packages/fuse/src/components/chart/chart-tooltip-parts.tsx",
       "forwardedFrom": [
         "@base-ui/react",
         "@types/react"
@@ -1785,7 +1785,7 @@
     {
       "name": "Chart.TooltipShare",
       "rsc": "client",
-      "sourcePath": "packages/fuse/src/components/chart/chart-tooltip.tsx",
+      "sourcePath": "packages/fuse/src/components/chart/chart-tooltip-parts.tsx",
       "forwardedFrom": [
         "@base-ui/react",
         "@types/react"
@@ -1876,7 +1876,7 @@
           "origin": "declared",
           "type": "\"bar\" | \"circle\" | \"circle-outline\" | \"line\" | \"square\" | \"square-outline\" | undefined",
           "shortType": "Union",
-          "defaultValue": null,
+          "defaultValue": "\"square\"",
           "description": "The swatch's shape. \"square\" by default.",
           "required": false
         }
@@ -1990,7 +1990,7 @@
           "origin": "declared",
           "type": "\"bottom\" | \"end\" | \"start\" | \"top\" | undefined",
           "shortType": "Union",
-          "defaultValue": null,
+          "defaultValue": "\"bottom\"",
           "description": "Where the legend sits around the plot. \"bottom\" by default.",
           "required": false
         },
@@ -2070,7 +2070,7 @@
           "origin": "declared",
           "type": "ChartFallback | undefined",
           "shortType": null,
-          "defaultValue": null,
+          "defaultValue": "\"last\"",
           "description": "The datum to print when nothing is active. \"last\" by default.",
           "required": false
         },
@@ -2194,7 +2194,7 @@
           "origin": "declared",
           "type": "\"bottom\" | \"end\" | \"start\" | \"top\" | undefined",
           "shortType": "Union",
-          "defaultValue": null,
+          "defaultValue": "\"bottom\"",
           "description": "Where the group sits around the plot. \"bottom\" by default.",
           "required": false
         },
@@ -2329,7 +2329,7 @@
     {
       "name": "Chart.TableColumn",
       "rsc": "client",
-      "sourcePath": "packages/fuse/src/components/chart/chart-table.tsx",
+      "sourcePath": "packages/fuse/src/components/chart/chart-table-body.tsx",
       "forwardedFrom": [],
       "forwardedCount": 0,
       "props": [

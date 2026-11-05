@@ -10,7 +10,14 @@ import type { ReactElement } from "react";
 import { readFileSync } from "node:fs";
 
 import { LocaleProvider } from "@elmeragroup/fuse";
-import { Chart, formatChartValue, Sparkline } from "@elmeragroup/fuse/chart";
+import {
+  Chart,
+  formatChartValue,
+  PieChart,
+  RadarChart,
+  RadialChart,
+  Sparkline,
+} from "@elmeragroup/fuse/chart";
 import type { ChartConfig } from "@elmeragroup/fuse/chart";
 import { House } from "@elmeragroup/fuse/icons";
 
@@ -145,6 +152,75 @@ export function ComposedPage(): ReactElement {
           </Chart.Panel>
           <Chart.Table />
         </Chart.Root>
+      </main>
+    </LocaleProvider>
+  );
+}
+
+/** October's bill in kroner, 1 200 in all. */
+const BILL = [
+  { part: "strom", kr: 612 },
+  { part: "nettleie", kr: 348 },
+  { part: "avgifter", kr: 240 },
+];
+
+/** A day's mean spot price in three price areas, in øre per kilowatt-hour. */
+const AREAS = [
+  { area: "no1", ore: 92 },
+  { area: "no2", ore: 88 },
+  { area: "no4", ore: 31 },
+];
+
+/** Each season's mean spot price in NO1 and NO4, in øre per kilowatt-hour. */
+const SEASONS = [
+  { season: "Vinter", no1: 120, no4: 45 },
+  { season: "Vår", no1: 80, no4: 30 },
+  { season: "Sommer", no1: 40, no4: 20 },
+  { season: "Høst", no1: 95, no4: 38 },
+];
+
+/**
+ * The polar Roots as a directive-free server page: a bill as a pie with its legend and table,
+ * three price areas as rings against 150 øre with their table, and two areas' seasons as a radar
+ * with its legend.
+ */
+export function PolarPage(): ReactElement {
+  return (
+    <LocaleProvider locale="nb-NO" timeZone="Europe/Oslo">
+      <main>
+        <PieChart.Root
+          data={BILL}
+          config={{
+            strom: { label: "Strøm", color: "chart-1" },
+            nettleie: { label: "Nettleie", color: "chart-2" },
+            avgifter: { label: "Avgifter", color: "chart-3" },
+          }}
+          nameKey="part"
+          valueKey="kr"
+          aria-label="Strømregning i oktober">
+          <PieChart.Legend />
+          <PieChart.Table />
+        </PieChart.Root>
+        <RadialChart.Root
+          data={AREAS}
+          config={{
+            no1: { label: "NO1", color: "chart-1" },
+            no2: { label: "NO2", color: "chart-2" },
+            no4: { label: "NO4", color: "chart-4" },
+          }}
+          nameKey="area"
+          valueKey="ore"
+          max={150}
+          aria-label="Spotpris per område">
+          <RadialChart.Table />
+        </RadialChart.Root>
+        <RadarChart.Root
+          data={SEASONS}
+          config={{ no1: { label: "NO1", color: "chart-1" }, no4: { label: "NO4", color: "chart-4" } }}
+          nameKey="season"
+          aria-label="Spotpris per sesong">
+          <RadarChart.Legend />
+        </RadarChart.Root>
       </main>
     </LocaleProvider>
   );

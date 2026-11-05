@@ -5,12 +5,13 @@
  */
 import { createElement } from "react";
 
-import { ChartPage, ComposedPage, FunctionFormatPage } from "./rsc-chart-page.tsx";
+import { ChartPage, ComposedPage, FunctionFormatPage, PolarPage } from "./rsc-chart-page.tsx";
 import { renderFlight } from "./rsc-flight-server.ts";
 
 const SCENARIOS = new Map([
   ["page", ChartPage],
   ["composed", ComposedPage],
+  ["polar", PolarPage],
   ["function-format", FunctionFormatPage],
 ]);
 const scenario = process.argv[2] ?? "";

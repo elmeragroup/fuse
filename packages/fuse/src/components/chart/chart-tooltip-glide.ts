@@ -31,11 +31,14 @@ export type GlideTurns = (
 
 /**
  * How a step's glide travels. "path" glides through the turns its family's route gives for the side
- * the popup is on, and shows the next place at once when the route gives none. "straight" glides in
- * a line, as along the plot's top lane or a horizontal chart's rows.
+ * the popup is on, and shows the next place at once when the route gives none. Its `keeps` names
+ * what the glide holds still: "side", as over the cartesian roof, where a place on another side
+ * shows at once and a popup that changes size keeps the edge that faces the plot, or "centre", as
+ * round a polar dial, where the popup may change side on its way and keeps its centre on the ray.
+ * "straight" glides in a line, as along the plot's top lane or a horizontal chart's rows.
  */
 export type GlideRoute =
-  | { readonly kind: "path"; readonly turns: GlideTurns }
+  | { readonly kind: "path"; readonly keeps: "side" | "centre"; readonly turns: GlideTurns }
   | { readonly kind: "straight" };
 
 /**
@@ -93,17 +96,25 @@ export function createTooltipGlider(positioner: HTMLElement, chart: HTMLElement 
     // Where the popup shows, at its new size with the edge that faces the plot kept where it was,
     // so new content that makes it larger grows it away from the marks.
     const shown = running === null ? placed : shownShift(positioner);
-    const from =
-      shown === null ? null : facingKept(shown, placedSize, size, positioner.getAttribute("data-side"));
+    const before = placedSize;
     placed = target;
     placedSize = size;
-    // A place Base UI writes after the glide ended, or on another side, shows at once.
-    if (armed === null || from === null || positioner.getAttribute("data-side") !== armed.side) {
+    // A place Base UI writes after the glide ended shows at once.
+    if (armed === null || shown === null) {
       stop();
       return;
     }
+    const side = positioner.getAttribute("data-side");
+    const route = armed.route();
+    const centred = route.kind === "path" && route.keeps === "centre";
+    // A place on another side shows at once, unless the route keeps the popup's centre.
+    if (!centred && side !== armed.side) {
+      stop();
+      return;
+    }
+    const from = centred ? centreKept(shown, before, size) : facingKept(shown, before, size, side);
     const timing = glideTiming(positioner);
-    const keyframes = timing === null ? null : glideKeyframes(positioner, from, target, armed);
+    const keyframes = timing === null ? null : glideKeyframes(positioner, from, target, armed.side, route);
     if (timing === null || keyframes === null) {
       stop();
       return;
@@ -153,6 +164,11 @@ function facingKept(shift: Shift, before: PlaceSize, after: PlaceSize, side: str
   return shift;
 }
 
+/** A translation moved so a box that changed size keeps its centre where it was. */
+function centreKept(shift: Shift, before: PlaceSize, after: PlaceSize): Shift {
+  return { x: shift.x + (before.width - after.width) / 2, y: shift.y + (before.height - after.height) / 2 };
+}
+
 /** Copy the chart's glide duration onto the positioner. */
 function takeDuration(positioner: HTMLElement, chart: HTMLElement | null): void {
   if (chart === null) return;
@@ -199,9 +215,14 @@ function milliseconds(value: string): number | null {
  * the popup moves at once. A path turns where its route turns it, measured in client pixels from
  * the positioner's box and taken back into the positioner's own pixels.
  */
-function glideKeyframes(positioner: HTMLElement, from: Shift, to: Shift, armed: Armed): Keyframe[] | null {
+function glideKeyframes(
+  positioner: HTMLElement,
+  from: Shift,
+  to: Shift,
+  side: string | null,
+  route: GlideRoute
+): Keyframe[] | null {
   const straight: Keyframe[] = [{ transform: translate(from) }, { transform: translate(to) }];
-  const route = armed.route();
   if (route.kind === "straight") return straight;
   // The positioner's box at the target, which is where Base UI's translation puts it.
   const shownBox = positioner.getBoundingClientRect();
@@ -219,7 +240,7 @@ function glideKeyframes(positioner: HTMLElement, from: Shift, to: Shift, armed: 
     bottom: end.bottom + (from.y - to.y) * scale,
   };
   const size = { width: shownBox.width, height: shownBox.height };
-  const turns = route.turns(start, end, size, armed.side);
+  const turns = route.turns(start, end, size, side);
   if (turns === null) return null;
   const lengths = turns.map((turn, index) => {
     const before = turns[index - 1];

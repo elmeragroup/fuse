@@ -1,9 +1,12 @@
 "use client";
 
+import { useMemo } from "react";
 import type { ReactElement, ReactNode } from "react";
 
-import { definedProps } from "../../internal/defined-props";
-import { ChartPendingRootContext } from "./chart-pending-root";
+import { useLocale } from "../../intl/locale-context";
+import { pieModel } from "./chart-polar-item";
+import { PolarRoot } from "./chart-polar-root";
+import { sameConfig, useSteady } from "./chart-steady";
 import type {
   ChartAccessibleName,
   ChartCategoryConfigCheck,
@@ -17,6 +20,9 @@ import type {
   ChartSeriesKey,
   ValueFormat,
 } from "./chart-types";
+import { seriesLabel } from "./format/series-label";
+import { OTHER_KEY } from "./layout/pie";
+import { sweepOf } from "./layout/polar-angle";
 
 /**
  * Props for `PieChart.Root`, the root of pie and donut charts and of gauge pies.
@@ -93,33 +99,82 @@ export function PieChartRoot<
   TValueKey extends ChartSeriesKey<TRow>,
 >(props: PieChartRootProps<TRow, TConfig, TNameKey, TValueKey>): ReactElement {
   const {
-    data: _data,
-    config: _config,
-    nameKey: _nameKey,
-    valueKey: _valueKey,
-    qualityKey: _qualityKey,
-    valueFormat: _valueFormat,
+    data,
+    config,
+    nameKey,
+    valueKey,
+    qualityKey,
+    valueFormat,
     innerRadius: _innerRadius,
-    padAngle: _padAngle,
-    startAngle: _startAngle,
-    endAngle: _endAngle,
-    max: _max,
-    maxSlices: _maxSlices,
-    otherLabel: _otherLabel,
-    defaultActiveKey: _defaultActiveKey,
-    selectedKey: _selectedKey,
-    defaultSelectedKey: _defaultSelectedKey,
-    onSelectedKeyChange: _onSelectedKeyChange,
-    description: _description,
+    padAngle = 0,
+    startAngle = 0,
+    endAngle = 360,
+    max,
+    maxSlices = 6,
+    otherLabel,
+    defaultActiveKey,
+    selectedKey,
+    defaultSelectedKey,
+    onSelectedKeyChange,
+    description,
     children,
     ...figure
   } = props;
-  // Until the polar layer gives this Root a readout of its own, the shared parts inside it render
-  // nothing, and every other child renders as written.
+  const { locale } = useLocale();
+  const steadyConfig = useSteady<ChartConfig>(config, sameConfig);
+  const name = "aria-label" in figure ? figure["aria-label"] : undefined;
+  const model = useMemo(
+    () =>
+      pieModel({
+        rows: data,
+        config: steadyConfig,
+        nameKey,
+        valueKey,
+        qualityKey,
+        valueFormat,
+        sweep: sweepOf(startAngle, endAngle),
+        locale,
+        name,
+        part: "PieChart.Root",
+        maxSlices,
+        padAngle,
+        max,
+        otherLabel,
+      }),
+    [
+      data,
+      steadyConfig,
+      nameKey,
+      valueKey,
+      qualityKey,
+      valueFormat,
+      startAngle,
+      endAngle,
+      locale,
+      name,
+      maxSlices,
+      padAngle,
+      max,
+      otherLabel,
+    ]
+  );
+  // A default that names a folded category activates Other, the item that stands for its row.
+  const own = defaultActiveKey === undefined ? -1 : model.keys.indexOf(defaultActiveKey);
+  const folded = own === -1 && defaultActiveKey !== undefined ? model.keys.indexOf(OTHER_KEY) : -1;
+  const defaultActive = own !== -1 ? own : folded;
   return (
-    <figure data-slot="pie-chart" {...definedProps(figure)}>
-      <ChartPendingRootContext value>{children}</ChartPendingRootContext>
-    </figure>
+    <PolarRoot
+      model={model}
+      figure={figure}
+      defaultActive={defaultActive === -1 ? null : defaultActive}
+      selectedKey={selectedKey}
+      defaultSelectedKey={defaultSelectedKey}
+      onSelectedKeyChange={onSelectedKeyChange}
+      labelOf={(key) => seriesLabel({ config: steadyConfig }, key).text}
+      description={description}
+      locale={locale}>
+      {children}
+    </PolarRoot>
   );
 }
 

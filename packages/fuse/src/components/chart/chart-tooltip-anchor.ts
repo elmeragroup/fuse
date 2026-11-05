@@ -19,7 +19,7 @@ import type { GlideRoute } from "./chart-tooltip-glide";
 import { viewportSize } from "./chart-tooltip-popup";
 import { createChartRoof } from "./chart-tooltip-roof";
 import { WHOLE_BAND, barSpan, centreOf, optionBand } from "./layout/plot-frame";
-import { TOOLTIP_EDGE, glidePath, roofRest } from "./layout/tooltip-place";
+import { TOOLTIP_EDGE, glidePath, roofRest, tooltipSideOffset } from "./layout/tooltip-place";
 import type { PopupPlace } from "./layout/tooltip-place";
 import { roofOver } from "./layout/tooltip-roof";
 
@@ -154,6 +154,7 @@ export function useCartesianTooltipAnchor(input: AnchorInput): TooltipAnchor {
         shift: (rest.left + width / 2 - centre) * scaleX,
         route: {
           kind: "path",
+          keeps: "side",
           turns: (from, to, size, side) =>
             side === "top" ? glidePath(from, to, size, clientRoof, TOOLTIP_EDGE) : [from, to],
         },
@@ -225,5 +226,17 @@ export function useCartesianTooltipAnchor(input: AnchorInput): TooltipAnchor {
     const toward = side === "top" || side === "bottom" ? dy > dx : dx > dy;
     return start !== null && start.slot === store.get().active && toward;
   };
-  return { virtual, side: "top", bridge: roofed, revision, forget, watch, freezes };
+  // The popup touches its anchor, so a pointer that crosses to it never leaves both. Its height
+  // stops at the viewport's, where it scrolls.
+  const sideOffset = (placed: string, size: { readonly width: number; readonly height: number }) =>
+    virtual === null ? 0 : tooltipSideOffset(placed, virtual.placed().box, size, viewportSize());
+  // Above or below, the popup moves along x to stay inside the chart Root's box. Base UI applies the
+  // offset in the positioner's own pixels, and Floating UI mirrors it in a right-to-left popup, so
+  // the client shift is scaled and mirrored back.
+  const alignOffset = (placed: string, node: HTMLElement) => {
+    if (virtual === null || (placed !== "top" && placed !== "bottom")) return 0;
+    const mirror = getComputedStyle(node).direction === "rtl" ? -1 : 1;
+    return (virtual.placed().shift / clientScale(node).x) * mirror;
+  };
+  return { virtual, side: "top", bridge: roofed, revision, forget, watch, freezes, sideOffset, alignOffset };
 }

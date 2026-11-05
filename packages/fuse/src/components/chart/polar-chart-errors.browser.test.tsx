@@ -1,0 +1,132 @@
+// The polar data and composition rules in a development build (S10). Units under test: the polar
+// Roots and a shared part inside them. Each case renders to a string and expects the thrown
+// error's name and rule, written by hand from CONTRACT section 8.1's table and S10's polar rows.
+// The production fallbacks run in polar-chart-errors.production.browser.test.
+import type { ReactElement } from "react";
+
+import { renderToString } from "react-dom/server";
+import { describe, expect, it } from "vitest";
+import { page } from "vitest/browser";
+
+import { renderThemed } from "../../../test/themed-browser-render";
+import { LocaleProvider } from "../../intl/locale-context";
+import type { ChartConfig } from "./chart-types";
+import { OTHER_KEY } from "./layout/pie";
+import { PieChart } from "./pie-chart-namespace";
+import { RadarChart } from "./radar-chart-namespace";
+import { RadialChart } from "./radial-chart-namespace";
+
+/** The name and rule of what a render throws, or null when it renders. */
+function thrown(element: ReactElement): { readonly name: string; readonly rule: string } | null {
+  try {
+    renderToString(<LocaleProvider locale="nb-NO">{element}</LocaleProvider>);
+    return null;
+  } catch (error) {
+    if (!(error instanceof Error) || !("rule" in error)) throw error;
+    return { name: error.name, rule: String(error.rule) };
+  }
+}
+
+const data = (rule: string) => ({ name: "ChartDataError", rule });
+const composition = (rule: string) => ({ name: "ChartCompositionError", rule });
+
+const CONFIG = {
+  strom: { label: "Strøm", color: "chart-1" },
+  nettleie: { label: "Nettleie", color: "chart-2" },
+} as const;
+
+const ROWS = [
+  { name: "strom", v: 60 },
+  { name: "nettleie", v: 40 },
+];
+
+/** Five price areas, one past the radar's cap, as a config built at run time. */
+const AREAS: ChartConfig = {
+  no1: { label: "NO1", color: "chart-1" },
+  no2: { label: "NO2", color: "chart-2" },
+  no3: { label: "NO3", color: "chart-3" },
+  no4: { label: "NO4", color: "chart-4" },
+  no5: { label: "NO5", color: "chart-5" },
+};
+
+describe("the polar rules in development", () => {
+  it.each([
+    [
+      "a negative pie reading",
+      <PieChart.Root
+        key="pie"
+        data={[
+          { name: "strom", v: 60 },
+          { name: "nettleie", v: -1 },
+        ]}
+        config={CONFIG}
+        nameKey="name"
+        valueKey="v"
+        aria-label="Regning"
+      />,
+      data("negative-polar-value"),
+    ],
+    [
+      "a negative ring reading",
+      <RadialChart.Root
+        key="radial"
+        data={[{ name: "strom", v: -5 }]}
+        config={CONFIG}
+        nameKey="name"
+        valueKey="v"
+        max={10}
+        aria-label="Ringer"
+      />,
+      data("negative-polar-value"),
+    ],
+    [
+      "a category the config lacks",
+      <PieChart.Root
+        key="pie"
+        data={[...ROWS, { name: "fjernvarme", v: 5 }]}
+        config={CONFIG}
+        nameKey="name"
+        valueKey="v"
+        aria-label="Regning"
+      />,
+      data("unknown-category"),
+    ],
+    [
+      "a fifth radar series",
+      <RadarChart.Root
+        key="radar"
+        data={[{ season: "Vinter", no1: 1, no2: 2, no3: 3, no4: 4, no5: 5 }]}
+        config={AREAS}
+        nameKey="season"
+        aria-label="Områder"
+      />,
+      data("radar-series-cap"),
+    ],
+    [
+      "a Swatch that names the Other slice",
+      <PieChart.Root key="pie" data={ROWS} config={CONFIG} nameKey="name" valueKey="v" aria-label="Regning">
+        <PieChart.Swatch dataKey={OTHER_KEY} />
+      </PieChart.Root>,
+      composition("unknown-key"),
+    ],
+    ["a Table outside its Root", <PieChart.Table key="table" />, composition("part-outside-root")],
+    [
+      "a pie Table inside a radar",
+      <RadarChart.Root key="radar" data={[]} config={{}} nameKey="season" aria-label="Områder">
+        <PieChart.Table />
+      </RadarChart.Root>,
+      composition("part-outside-root"),
+    ],
+  ])("throws for %s", (_, element, expected) => {
+    expect(thrown(element)).toEqual(expected);
+  });
+
+  it("renders a pie whose rows all keep the rules, on the server and in the browser", () => {
+    const pie = (
+      <PieChart.Root data={ROWS} config={CONFIG} nameKey="name" valueKey="v" aria-label="Regning" />
+    );
+    expect(thrown(pie)).toBeNull();
+    renderThemed(<LocaleProvider locale="nb-NO">{pie}</LocaleProvider>);
+    expect(page.getByRole("figure", { name: "Regning" }).elements()).toHaveLength(1);
+  });
+});

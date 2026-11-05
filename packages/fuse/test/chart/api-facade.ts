@@ -62,6 +62,16 @@ import { PieChartLabels, PieChartPie } from "../../src/components/chart/pie-char
 import { PieChartRoot } from "../../src/components/chart/pie-chart-root";
 import { PieChartSkeleton } from "../../src/components/chart/pie-chart-skeleton";
 import {
+  PieChartTable,
+  RadarChartTable,
+  RadialChartTable,
+} from "../../src/components/chart/polar-chart-table";
+import {
+  PieChartTooltip,
+  RadarChartTooltip,
+  RadialChartTooltip,
+} from "../../src/components/chart/polar-chart-tooltip";
+import {
   RadarChartAngleAxis,
   RadarChartGrid,
   RadarChartRadiusAxis,
@@ -165,7 +175,7 @@ export const PieChart = {
   Skeleton: PieChartSkeleton,
   Headline: ChartHeadline,
   Takeaway: ChartTakeaway,
-  Tooltip: ChartTooltip,
+  Tooltip: PieChartTooltip,
   TooltipLabel: ChartTooltipLabel,
   TooltipItems: ChartTooltipItems,
   TooltipValue: ChartTooltipValue,
@@ -179,7 +189,7 @@ export const PieChart = {
   LegendShare: ChartLegendShare,
   LegendToggleGroup: ChartLegendToggleGroup,
   LegendToggle: ChartLegendToggle,
-  Table: ChartTable,
+  Table: PieChartTable,
   TableColumn: ChartTableColumn,
   Empty: ChartEmpty,
   Background: ChartBackground,
@@ -198,7 +208,7 @@ export const RadialChart = {
   Skeleton: RadialChartSkeleton,
   Headline: ChartHeadline,
   Takeaway: ChartTakeaway,
-  Tooltip: ChartTooltip,
+  Tooltip: RadialChartTooltip,
   TooltipLabel: ChartTooltipLabel,
   TooltipItems: ChartTooltipItems,
   TooltipValue: ChartTooltipValue,
@@ -212,7 +222,7 @@ export const RadialChart = {
   LegendShare: ChartLegendShare,
   LegendToggleGroup: ChartLegendToggleGroup,
   LegendToggle: ChartLegendToggle,
-  Table: ChartTable,
+  Table: RadialChartTable,
   TableColumn: ChartTableColumn,
   Empty: ChartEmpty,
   Background: ChartBackground,
@@ -231,7 +241,7 @@ export const RadarChart = {
   Skeleton: RadarChartSkeleton,
   Headline: ChartHeadline,
   Takeaway: ChartTakeaway,
-  Tooltip: ChartTooltip,
+  Tooltip: RadarChartTooltip,
   TooltipLabel: ChartTooltipLabel,
   TooltipItems: ChartTooltipItems,
   TooltipValue: ChartTooltipValue,
@@ -245,7 +255,7 @@ export const RadarChart = {
   LegendShare: ChartLegendShare,
   LegendToggleGroup: ChartLegendToggleGroup,
   LegendToggle: ChartLegendToggle,
-  Table: ChartTable,
+  Table: RadarChartTable,
   TableColumn: ChartTableColumn,
   Empty: ChartEmpty,
   Background: ChartBackground,

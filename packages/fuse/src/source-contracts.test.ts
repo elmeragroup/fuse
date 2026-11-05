@@ -593,11 +593,17 @@ describe("chart plot marks", () => {
 describe("chart motion classification", () => {
   // Why not a lint rule: the rule is about which module may decide a placement, which no lint rule
   // expresses. Every mark that moves registers through useMotionMark, and asks the one commit
-  // classifier, useCommitMotion, or its follower form, how to reach a commit's geometry.
+  // classifier, useCommitMotion, or its follower form, how to reach a commit's geometry. A polar
+  // mark registers through usePolarMark and asks usePolarCommit, since useMotionMark reads the
+  // cartesian layout no polar route ships, and chart-polar-motion.ts also owns the exit ghosts.
   const chart = [...SOURCE_TREE.values()].filter(
     (record) => record.relative.startsWith("components/chart/") && !record.relative.includes(".test.")
   );
-  const owners = new Set(["components/chart/chart-motion.ts", "components/chart/chart-motion-mark.ts"]);
+  const owners = new Set([
+    "components/chart/chart-motion.ts",
+    "components/chart/chart-motion-mark.ts",
+    "components/chart/chart-polar-motion.ts",
+  ]);
 
   it("places marks on Root's loop only through useMotionMark", () => {
     expect(
@@ -616,8 +622,8 @@ describe("chart motion classification", () => {
         .filter((record) => !owners.has(record.relative))
         .map((record) => ({
           module: record.relative,
-          marks: count(record.code, /\buseMotionMark\b(?:<[^>]*>)?\(/gu),
-          asks: count(record.code, /\b(?:useCommitMotion|useFollowerPlacement)\(/gu),
+          marks: count(record.code, /\b(?:useMotionMark|usePolarMark)\b(?:<[^>]*>)?\(/gu),
+          asks: count(record.code, /\b(?:useCommitMotion|useFollowerPlacement|usePolarCommit)\(/gu),
         }))
         .filter(({ marks, asks }) => marks !== asks)
     ).toEqual([]);

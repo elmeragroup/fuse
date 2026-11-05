@@ -19,19 +19,11 @@ import type { ActiveSlot, ChartFollowers } from "./chart-followers";
 import { createChartLabels } from "./chart-labels";
 import { BROWSER_FRAMES, createChartMotion, createFrameOwner } from "./chart-motion";
 import type { ChartMotion, FrameOwner } from "./chart-motion";
+import { ChartOwnScope } from "./chart-own-scope";
 import { colourFamilyError, nonFiniteThresholds } from "./chart-paint";
 import { createChartPaths } from "./chart-paths";
-import { ChartPendingRootContext } from "./chart-pending-root";
 import { ChartPlotContext, ChartRootPlotContext, usePanelSpan } from "./chart-plot";
 import { PlotReadsContext, useMeasuredPlot } from "./chart-plot-measure";
-import {
-  ChartCrosshairContext,
-  ChartDatumContext,
-  ChartHeadlineContext,
-  ChartLegendSideContext,
-  ChartLiveContext,
-  ChartRowContext,
-} from "./chart-readout";
 import { cartesianReadout } from "./chart-readout-cartesian";
 import { ChartReadoutContext, ChartSelectionContext } from "./chart-readout-port";
 import { createChartRiders } from "./chart-riders";
@@ -290,31 +282,6 @@ function browserMotion(reduced: boolean, followers: ChartFollowers): ChartMotion
   return createChartMotion(BROWSER_FRAMES, reduced, () => {
     followers.refresh();
   });
-}
-
-/**
- * A Root starts its own scope, so an outer chart's row, legend side, pending family, Tooltip,
- * Headline, Crosshair, Marker or ActiveValueLine never reaches a part of this one, such as a
- * sparkline in a legend item. This chart's own Tooltip, Headline, Crosshair, Marker and
- * ActiveValueLine set theirs again for their children. A BarGroup's and a Table row's contexts stay
- * out, because a Root can't sit in a BarGroup's aria-hidden plot layer or inside a table row.
- */
-function OwnScope({ children }: { readonly children: ReactNode }): ReactElement {
-  return (
-    <ChartRowContext value={null}>
-      <ChartLegendSideContext value={null}>
-        <ChartPendingRootContext value={false}>
-          <ChartLiveContext value={false}>
-            <ChartHeadlineContext value={false}>
-              <ChartCrosshairContext value={false}>
-                <ChartDatumContext value={null}>{children}</ChartDatumContext>
-              </ChartCrosshairContext>
-            </ChartHeadlineContext>
-          </ChartLiveContext>
-        </ChartPendingRootContext>
-      </ChartLegendSideContext>
-    </ChartRowContext>
-  );
 }
 
 /**
@@ -858,7 +825,7 @@ export function ChartRoot<
   // The description reads every series over the window, so it waits for a change of what it says.
   const spokenDescription = useMemo(() => description ?? chartDescription(text), [description, text]);
   return (
-    <OwnScope>
+    <ChartOwnScope>
       <ChartRootContext value={context}>
         <ReadoutScope>
           <ChartSelectionContext value={selected}>
@@ -901,7 +868,7 @@ export function ChartRoot<
           </ChartSelectionContext>
         </ReadoutScope>
       </ChartRootContext>
-    </OwnScope>
+    </ChartOwnScope>
   );
 }
 

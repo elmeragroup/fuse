@@ -385,10 +385,10 @@ export type ChartLayerProps = {
 };
 
 // @beta
-function ChartLegend(props: ChartLegendProps): ReactElement;
+function ChartLegend(input: ChartLegendProps): ReactElement;
 
 // @beta
-function ChartLegendItem(props: ChartLegendItemProps): ReactElement;
+function ChartLegendItem(input: ChartLegendItemProps): ReactElement;
 
 // @beta
 export type ChartLegendItemProps = ChartDomProps<"li"> & {
@@ -401,7 +401,7 @@ export type ChartLegendProps = ChartDomProps<"ul"> & {
 };
 
 // @beta
-function ChartLegendShare(props: ChartLegendShareProps): ReactElement;
+function ChartLegendShare(input: ChartLegendShareProps): ReactElement;
 
 // @beta
 export type ChartLegendShareProps = ChartDomProps<"span"> & {
@@ -410,10 +410,10 @@ export type ChartLegendShareProps = ChartDomProps<"span"> & {
 };
 
 // @beta
-function ChartLegendToggle(props: ChartLegendToggleProps): ReactElement;
+function ChartLegendToggle(input: ChartLegendToggleProps): ReactElement;
 
 // @beta
-function ChartLegendToggleGroup(props: ChartLegendToggleGroupProps): ReactElement;
+function ChartLegendToggleGroup(input: ChartLegendToggleGroupProps): ReactElement;
 
 // @beta
 export type ChartLegendToggleGroupProps = ChartLayerProps & {
@@ -429,7 +429,7 @@ export type ChartLegendToggleProps = ChartLayerProps & {
 };
 
 // @beta
-function ChartLegendValue(props: ChartLegendValueProps): ReactElement;
+function ChartLegendValue(input: ChartLegendValueProps): ReactElement;
 
 // @beta
 export type ChartLegendValueProps = ChartDomProps<"span"> & {
@@ -683,7 +683,7 @@ export type ChartSeriesConfigCheck<TConfig, TRow> = string extends keyof TConfig
     }; };
 
 // @beta
-function ChartSeriesIcon(props: ChartSeriesIconProps): ReactElement;
+function ChartSeriesIcon(input: ChartSeriesIconProps): ReactElement;
 
 // @beta
 export type ChartSeriesIconProps = ChartDomProps<"span"> & {
@@ -694,7 +694,7 @@ export type ChartSeriesIconProps = ChartDomProps<"span"> & {
 export type ChartSeriesKey<TRow> = ChartKeyOf<TRow, number | null | undefined>;
 
 // @beta
-function ChartSeriesLabel(props: ChartSeriesLabelProps): ReactElement;
+function ChartSeriesLabel(input: ChartSeriesLabelProps): ReactElement;
 
 // @beta
 export type ChartSeriesLabelProps = ChartDomProps<"span"> & {
@@ -744,7 +744,7 @@ export type ChartStyleVars = {
 };
 
 // @beta
-function ChartSwatch(props: ChartSwatchProps): ReactElement;
+function ChartSwatch(input: ChartSwatchProps): ReactElement;
 
 // @beta
 export type ChartSwatchProps = ChartDomProps<"span"> & {
@@ -756,7 +756,7 @@ export type ChartSwatchProps = ChartDomProps<"span"> & {
 function ChartTable(props: ChartTableProps): ReactElement;
 
 // @beta
-function ChartTableColumn(props: ChartTableColumnProps): ReactElement;
+function ChartTableColumn(input: ChartTableColumnProps): ReactElement;
 
 // @beta
 export type ChartTableColumnProps = ChartLayerProps & {
@@ -820,16 +820,16 @@ export type ChartTimeFields = {
 export type ChartTone = "default" | "muted" | "error";
 
 // @beta
-function ChartTooltip(props: ChartTooltipProps): ReactElement;
+function ChartTooltip(input: ChartTooltipProps): ReactElement;
 
 // @beta
-function ChartTooltipItems(props: ChartTooltipItemsProps): ReactElement;
+function ChartTooltipItems(input: ChartTooltipItemsProps): ReactElement;
 
 // @beta
 export type ChartTooltipItemsProps = ChartDomProps<"div">;
 
 // @beta
-function ChartTooltipLabel(props: ChartTooltipLabelProps): ReactElement;
+function ChartTooltipLabel(input: ChartTooltipLabelProps): ReactElement;
 
 // @beta
 export type ChartTooltipLabelProps = ChartDomProps<"span"> & {
@@ -844,7 +844,7 @@ export type ChartTooltipProps = ChartLayerProps & {
 };
 
 // @beta
-function ChartTooltipShare(props: ChartTooltipShareProps): ReactElement;
+function ChartTooltipShare(input: ChartTooltipShareProps): ReactElement;
 
 // @beta
 export type ChartTooltipShareProps = ChartDomProps<"span"> & {
@@ -863,7 +863,7 @@ export type ChartTooltipTotalProps = ChartDomProps<"div"> & {
 };
 
 // @beta
-function ChartTooltipValue(props: ChartTooltipValueProps): ReactElement;
+function ChartTooltipValue(input: ChartTooltipValueProps): ReactElement;
 
 // @beta
 export type ChartTooltipValueProps = ChartDomProps<"span"> & {
@@ -1015,10 +1015,10 @@ declare namespace PieChart {
         ChartSeriesLabel as SeriesLabel,
         PieChartSkeleton as Skeleton,
         ChartSwatch as Swatch,
-        ChartTable as Table,
+        PieChartTable as Table,
         ChartTableColumn as TableColumn,
         ChartTakeaway as Takeaway,
-        ChartTooltip as Tooltip,
+        PieChartTooltip as Tooltip,
         ChartTooltipItems as TooltipItems,
         ChartTooltipLabel as TooltipLabel,
         ChartTooltipShare as TooltipShare,
@@ -1117,13 +1117,19 @@ export type PieChartRootProps<TRow extends ChartRowOf<TRow> = ChartRow, TConfig 
 };
 
 // @beta
-function PieChartSkeleton(_props: PieChartSkeletonProps): ReactElement;
+function PieChartSkeleton(input: PieChartSkeletonProps): ReactElement;
 
 // @beta
 export type PieChartSkeletonProps = Omit<ChartDomProps<"div">, "children" | "render"> & {
     innerRadius?: number;
     label?: string;
 };
+
+// @beta
+function PieChartTable(props: ChartTableProps): ReactElement;
+
+// @beta
+function PieChartTooltip(props: ChartTooltipProps): ReactElement;
 
 // @beta
 function PieChartTrack(_props: PieChartTrackProps): ReactElement;
@@ -1155,10 +1161,10 @@ declare namespace RadarChart {
         ChartSeriesLabel as SeriesLabel,
         RadarChartSkeleton as Skeleton,
         ChartSwatch as Swatch,
-        ChartTable as Table,
+        RadarChartTable as Table,
         ChartTableColumn as TableColumn,
         ChartTakeaway as Takeaway,
-        ChartTooltip as Tooltip,
+        RadarChartTooltip as Tooltip,
         ChartTooltipItems as TooltipItems,
         ChartTooltipLabel as TooltipLabel,
         ChartTooltipShare as TooltipShare,
@@ -1246,12 +1252,18 @@ export type RadarChartRootProps<TRow extends ChartRowOf<TRow> = ChartRow, TConfi
 };
 
 // @beta
-function RadarChartSkeleton(_props: RadarChartSkeletonProps): ReactElement;
+function RadarChartSkeleton(input: RadarChartSkeletonProps): ReactElement;
 
 // @beta
 export type RadarChartSkeletonProps = Omit<ChartDomProps<"div">, "children" | "render"> & {
     label?: string;
 };
+
+// @beta
+function RadarChartTable(props: ChartTableProps): ReactElement;
+
+// @beta
+function RadarChartTooltip(props: ChartTooltipProps): ReactElement;
 
 declare namespace RadialChart {
     export {
@@ -1276,10 +1288,10 @@ declare namespace RadialChart {
         ChartSeriesLabel as SeriesLabel,
         RadialChartSkeleton as Skeleton,
         ChartSwatch as Swatch,
-        ChartTable as Table,
+        RadialChartTable as Table,
         ChartTableColumn as TableColumn,
         ChartTakeaway as Takeaway,
-        ChartTooltip as Tooltip,
+        RadialChartTooltip as Tooltip,
         ChartTooltipItems as TooltipItems,
         ChartTooltipLabel as TooltipLabel,
         ChartTooltipShare as TooltipShare,
@@ -1323,13 +1335,19 @@ export type RadialChartRootProps<TRow extends ChartRowOf<TRow> = ChartRow, TConf
 });
 
 // @beta
-function RadialChartSkeleton(_props: RadialChartSkeletonProps): ReactElement;
+function RadialChartSkeleton(input: RadialChartSkeletonProps): ReactElement;
 
 // @beta
 export type RadialChartSkeletonProps = Omit<ChartDomProps<"div">, "children" | "render"> & {
     innerRadius?: number;
     label?: string;
 };
+
+// @beta
+function RadialChartTable(props: ChartTableProps): ReactElement;
+
+// @beta
+function RadialChartTooltip(props: ChartTooltipProps): ReactElement;
 
 declare namespace ScatterChart {
     export {

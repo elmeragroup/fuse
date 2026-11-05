@@ -45,7 +45,10 @@ export type ChartDataRule =
   | "table-column-format"
   | "non-finite-x"
   | "non-finite-y"
-  | "unknown-series";
+  | "unknown-series"
+  | "negative-polar-value"
+  | "radar-series-cap"
+  | "unknown-category";
 
 /** The development hints, which warn in development only. */
 export type ChartHintRule =
@@ -122,6 +125,12 @@ export const DATA_MESSAGES = {
     "received a y cell that is not a finite number within ±1e15. Pass numbers, null or undefined. Production skips the row.",
   "unknown-series":
     "received a series cell that names no config key. Add the value to config, or pass one of its keys. Production skips the row.",
+  "negative-polar-value":
+    "received a value below 0. A slice is a share of a whole and a ring fills a share of its maximum, so neither has a negative reading. Show a credit as a text row beside the chart, or draw it in a Chart.Bar stack. Production draws the value as 0, and the Table and the texts keep its sign.",
+  "radar-series-cap":
+    "received more than 4 series. A radar chart compares at most 4 polygons, so pick the 4 that matter, or split the chart. Production draws the first 4 config keys.",
+  "unknown-category":
+    "received a row whose category has no config entry. Add the category to config. Production folds the row into the Other slice.",
 } as const satisfies { readonly [R in ChartDataRule]: string };
 
 /**

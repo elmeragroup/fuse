@@ -5,7 +5,6 @@ import type { ReactElement } from "react";
 import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
 
-import { usePendingOr } from "./chart-pending-root";
 import { useActiveItem, useChartReadout, useLegendSide, useReadoutKey } from "./chart-readout";
 import type { ChartDomProps } from "./chart-types";
 import { seriesPaint } from "./layout/color-key";
@@ -50,11 +49,7 @@ export type ChartSeriesIconProps = ChartDomProps<"span"> & {
  *
  * @beta
  */
-export function ChartSwatch(props: ChartSwatchProps): ReactElement {
-  return usePendingOr(props, ChartSwatchBody);
-}
-
-function ChartSwatchBody({
+export function ChartSwatch({
   dataKey,
   variant = "square",
   render,
@@ -95,11 +90,12 @@ function ChartSwatchBody({
  *
  * @beta
  */
-export function ChartSeriesLabel(props: ChartSeriesLabelProps): ReactElement {
-  return usePendingOr(props, ChartSeriesLabelBody);
-}
-
-function ChartSeriesLabelBody({ dataKey, render, className, ...props }: ChartSeriesLabelProps): ReactElement {
+export function ChartSeriesLabel({
+  dataKey,
+  render,
+  className,
+  ...props
+}: ChartSeriesLabelProps): ReactElement {
   const readout = useChartReadout("Chart.SeriesLabel");
   const point = useActiveItem(readout);
   const key = useReadoutKey("Chart.SeriesLabel", readout, dataKey, point.key);
@@ -121,11 +117,12 @@ function ChartSeriesLabelBody({ dataKey, render, className, ...props }: ChartSer
  *
  * @beta
  */
-export function ChartSeriesIcon(props: ChartSeriesIconProps): ReactElement {
-  return usePendingOr(props, ChartSeriesIconBody);
-}
-
-function ChartSeriesIconBody({ dataKey, render, className, ...props }: ChartSeriesIconProps): ReactElement {
+export function ChartSeriesIcon({
+  dataKey,
+  render,
+  className,
+  ...props
+}: ChartSeriesIconProps): ReactElement {
   const readout = useChartReadout("Chart.SeriesIcon");
   const point = useActiveItem(readout);
   const key = useReadoutKey("Chart.SeriesIcon", readout, dataKey, point.key);

@@ -12,21 +12,13 @@ import { Tooltip as TooltipPrimitive } from "@base-ui/react/tooltip";
 import { flushSync } from "react-dom";
 
 import { OverlayPortal } from "../overlay/overlay-portal";
-import { clientScale } from "./chart-dom";
 import { useChartFollower } from "./chart-followers";
 import { ChartLiveContext, useActiveIndex, useChartReadout } from "./chart-readout";
 import type { TooltipPlacer } from "./chart-readout-port";
 import { createTooltipGlider } from "./chart-tooltip-glide";
 import type { GlideRoute, TooltipGlider } from "./chart-tooltip-glide";
-import {
-  chartTakesPress,
-  TOOLTIP_POSITIONER,
-  tooltipPopupClass,
-  viewportSize,
-  watchOverflow,
-} from "./chart-tooltip-popup";
+import { chartTakesPress, TOOLTIP_POSITIONER, tooltipPopupClass, watchOverflow } from "./chart-tooltip-popup";
 import type { ChartLayerProps } from "./chart-types";
-import { tooltipSideOffset } from "./layout/tooltip-place";
 
 /** What a family's Tooltip part passes the shared body. */
 export type ChartTooltipBodyProps = ChartLayerProps & {
@@ -81,12 +73,13 @@ export function ChartTooltipBody({
   useChartFollower("Chart.Tooltip", (current, cause) => {
     if (cause === "step") stepped.current = current?.slot ?? null;
   });
-  const { virtual, side, bridge, revision, forget, watch, freezes } = placer.useAnchor({
-    active,
-    positioner,
-    placement,
-    measures,
-  });
+  const { virtual, side, bridge, revision, forget, watch, freezes, sideOffset, alignOffset } =
+    placer.useAnchor({
+      active,
+      positioner,
+      placement,
+      measures,
+    });
   const pick = readout.usePick();
   const glider = useRef<TooltipGlider | null>(null);
   const watchPositioner = useCallback(
@@ -153,19 +146,12 @@ export function ChartTooltipBody({
           {...TOOLTIP_POSITIONER}
           anchor={virtual}
           side={side}
-          // The popup touches its anchor, so a pointer that crosses to it never leaves both. Its
-          // height stops at the viewport's, where it scrolls.
-          sideOffset={({ side: placed, positioner: size }) =>
-            virtual === null ? 0 : tooltipSideOffset(placed, virtual.placed().box, size, viewportSize())
-          }
-          // Along its side, the popup moves to stay inside the chart Root's box. Base UI applies the
-          // offset in the positioner's own pixels, and Floating UI mirrors it in a right-to-left
-          // popup, so the client shift is scaled and mirrored back.
+          // The family's anchor sets where the popup sits on the side Base UI tries, and how far it
+          // moves along it.
+          sideOffset={({ side: placed, positioner: size }) => sideOffset(placed, size)}
           alignOffset={({ side: placed }) => {
             const node = positioner.current;
-            if (virtual === null || node === null || (placed !== "top" && placed !== "bottom")) return 0;
-            const mirror = getComputedStyle(node).direction === "rtl" ? -1 : 1;
-            return (virtual.placed().shift / clientScale(node).x) * mirror;
+            return node === null ? 0 : alignOffset(placed, node);
           }}
           ref={watchPositioner}>
           <TooltipPrimitive.Popup

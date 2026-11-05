@@ -12,6 +12,12 @@ const CONTRACT_ROLES = {
   "radial-chart": "layout",
   "radar-chart": "layout",
   "chart-frame": "layout",
+  // The polar frame, its aspect-locked cell and the cell's server SVG, which SPEC's section 10
+  // amendment adds: the frame lays out its parts as the cartesian frame does, and the cell and
+  // its SVG are plot output at the polar size, which follows no density.
+  "chart-polar-frame": "layout",
+  "chart-polar-cell": "fixed",
+  "chart-polar-plot": "fixed",
   "chart-panel": "layout",
   "chart-plot": "fixed",
   "chart-surface": "fixed",

@@ -621,6 +621,125 @@
     filter: var(--_glow);
   }
 
+  /*
+    A polar chart: PieChart, RadialChart and RadarChart. The figure is a grid like the cartesian
+    one, and its plot area holds the aspect-locked cell, min(100%, --chart-polar-size) wide (D20),
+    whose aspect ratio is the sweep's box, so the server's markup is final at any width. The frame
+    names the same areas as the cartesian frame, so every shared part takes its area as it does
+    there, and a family's mark layers stack in the plot area over the cell.
+  */
+  [data-polar] {
+    display: grid;
+    width: 100%;
+    margin: 0;
+    min-width: 0;
+    grid-template-columns: minmax(0, 1fr);
+    --chart-stroke: 2px;
+    --chart-area-opacity: 0.1;
+    --chart-hover-dim: 0.45;
+    --chart-ease: cubic-bezier(0, 0.7, 0.5, 1);
+    --chart-update: 480ms;
+    --chart-glide: 924ms;
+    --chart-polar-size: 12.5rem;
+    --chart-intro: 1000ms;
+    --chart-stagger: 80ms;
+  }
+
+  [data-slot="chart-polar-frame"] {
+    position: relative;
+    isolation: isolate;
+    display: grid;
+    min-width: 0;
+    font-size: 0.75rem;
+    line-height: 1rem;
+    color: var(--muted-foreground);
+    grid-template-columns: [legend-start] auto [plot] minmax(0, var(--chart-polar-size)) [legend-end] auto;
+    justify-content: center;
+    grid-template-areas:
+      "headline headline headline"
+      "takeaway takeaway takeaway"
+      "legend-top legend-top legend-top"
+      "toggles-top toggles-top toggles-top"
+      "legend-start plot legend-end"
+      "legend-bottom legend-bottom legend-bottom"
+      "toggles-bottom toggles-bottom toggles-bottom"
+      "table table table";
+  }
+
+  [data-slot="chart-polar-cell"] {
+    grid-area: plot;
+    position: relative;
+    width: 100%;
+    aspect-ratio: var(--chart-polar-aspect, 1);
+  }
+
+  [data-slot="chart-polar-plot"] {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+  }
+
+  /* The cell's one pointer target and tab stop covers the whole cell, its single option too. */
+  /* The whole cell is the target, and each family's pick drops a point past the rim. */
+  [data-slot="chart-polar-cell"] > [data-slot="chart-surface"] {
+    position: absolute;
+    inset: 0;
+  }
+
+  [data-polar] [data-slot="chart-point"] {
+    inset: 0;
+    left: 0;
+    width: auto;
+    border-radius: 50%;
+  }
+
+  /*
+    First paint (D18). With JavaScript on, a polar mark stays hidden behind the tracks and the grid
+    until the chart comes into view and its entrance starts, which writes data-drawn on the figure.
+    With JavaScript off, and in print, the full chart shows.
+  */
+  @media (scripting: enabled) {
+    [data-polar]:not([data-drawn]) [data-polar-mark] {
+      visibility: hidden;
+    }
+  }
+
+  @media print {
+    [data-polar] [data-polar-mark] {
+      visibility: visible;
+    }
+  }
+
+  /* A polar placeholder sketches one disc, annulus or hexagon in the aspect-locked cell. */
+  [data-slot="chart-skeleton"]:is([data-variant="pie"], [data-variant="radial"], [data-variant="radar"]) {
+    display: block;
+    width: min(100%, var(--chart-polar-size, 12.5rem));
+    height: auto;
+    aspect-ratio: 1;
+    margin-inline: auto;
+  }
+
+  [data-slot="chart-skeleton"]:is([data-variant="pie"], [data-variant="radial"], [data-variant="radar"])
+    [data-slot="chart-skeleton-mark"] {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    border-radius: 50%;
+    mask: radial-gradient(
+      circle,
+      transparent calc(var(--chart-skeleton-hole, 0) * 50%),
+      #000 calc(var(--chart-skeleton-hole, 0) * 50% + 0.5px)
+    );
+  }
+
+  [data-slot="chart-skeleton"][data-variant="radar"] [data-slot="chart-skeleton-mark"] {
+    border-radius: 0;
+    mask: none;
+    clip-path: polygon(50% 0, 93.3% 25%, 93.3% 75%, 50% 100%, 6.7% 75%, 6.7% 25%);
+  }
+
   /* The skeleton sketches 12 bars over the default plot height, with the loader in its middle. */
   [data-slot="chart-skeleton"] {
     position: relative;

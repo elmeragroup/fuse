@@ -120,6 +120,13 @@ export type TooltipAnchor = {
    * it from the active datum, which holds the active index while it crosses the popup.
    */
   readonly freezes: (from: ClientPoint, to: ClientPoint, side: string | null) => boolean;
+  /**
+   * How far the popup sits from its anchor on the side Base UI tries, in CSS pixels, negative to
+   * reach over it.
+   */
+  readonly sideOffset: (side: string, size: { readonly width: number; readonly height: number }) => number;
+  /** How far the popup moves along that side, in the positioner's own pixels. */
+  readonly alignOffset: (side: string, positioner: HTMLElement) => number;
 };
 
 /** One table page: its key, the indexes it lists, and its period as the pagination shows and speaks it. */

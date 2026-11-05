@@ -2,6 +2,8 @@
 
 import type { ReactElement } from "react";
 
+import { Skeleton } from "../skeleton/skeleton";
+import { ChartSkeletonBody } from "./chart-skeleton-body";
 import type { ChartDomProps } from "./chart-types";
 
 /**
@@ -15,12 +17,20 @@ export type RadarChartSkeletonProps = Omit<ChartDomProps<"div">, "children" | "r
 };
 
 /**
- * A loading placeholder that renders in place of `RadarChart.Root`, for example as a Suspense fallback.
+ * A loading placeholder that renders in place of `RadarChart.Root`, for example as a Suspense
+ * fallback. One Fuse Skeleton hexagon sketches the polygons, and one Fuse Loader names the wait.
  *
  * @beta
  */
-export function RadarChartSkeleton(_props: RadarChartSkeletonProps): ReactElement {
-  return <></>;
+export function RadarChartSkeleton({ label, ...props }: RadarChartSkeletonProps): ReactElement {
+  return (
+    <ChartSkeletonBody
+      variant="radar"
+      label={label}
+      marks={<Skeleton data-slot="chart-skeleton-mark" />}
+      {...props}
+    />
+  );
 }
 
 Object.assign(RadarChartSkeleton, { displayName: "RadarChart.Skeleton" });

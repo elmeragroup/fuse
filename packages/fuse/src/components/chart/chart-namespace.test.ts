@@ -24,11 +24,14 @@ const NAMESPACES: ReadonlyArray<readonly [string, Readonly<Record<string, Part>>
   ["RadarChart", RadarChart],
 ];
 
-/** The 20 parts every namespace shares under the same key, from CONTRACT.md section 3. */
+/**
+ * The 18 parts every namespace shares as one component under the same key, from CONTRACT.md
+ * section 3. Tooltip and Table hold their family's anchor and rows, so each family has its own
+ * under the same key, which the test below pins.
+ */
 const SHARED_KEYS = [
   "Headline",
   "Takeaway",
-  "Tooltip",
   "TooltipLabel",
   "TooltipItems",
   "TooltipValue",
@@ -42,7 +45,6 @@ const SHARED_KEYS = [
   "LegendShare",
   "LegendToggleGroup",
   "LegendToggle",
-  "Table",
   "TableColumn",
   "Empty",
   "Background",
@@ -77,9 +79,25 @@ describe("chart namespaces", () => {
     }
   });
 
+  it.each(["Tooltip", "Table"] as const)(
+    "give each family a %s of its own, named after the family",
+    (key) => {
+      // Each family's Tooltip rests on its own anchor and each Table lists its own rows, so no polar
+      // route ships Chart's (D22, the L1a decisions).
+      const parts = NAMESPACES.map(([, namespace]) => namespace[key]);
+      expect(new Set(parts).size).toBe(NAMESPACES.length);
+      expect(
+        NAMESPACES.map(([, namespace]) => {
+          const part = namespace[key];
+          return part === undefined ? undefined : displayNameOf(part);
+        })
+      ).toEqual(NAMESPACES.map(([name]) => `${name}.${key}`));
+    }
+  );
+
   it("pins the canonical owner's dotted name on parts that other namespaces reuse", () => {
     expect(displayNameOf(BarChart.Root)).toBe("Chart.Root");
-    expect(displayNameOf(PieChart.Tooltip)).toBe("Chart.Tooltip");
+    expect(displayNameOf(PieChart.TooltipLabel)).toBe("Chart.TooltipLabel");
     expect(displayNameOf(RadarChart.TableColumn)).toBe("Chart.TableColumn");
     expect(displayNameOf(RadialChart.Center)).toBe("PieChart.Center");
     expect(displayNameOf(RadialChart.Glow)).toBe("PieChart.Glow");

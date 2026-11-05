@@ -16,13 +16,13 @@ export {
 export { PieChartGlow as Glow } from "./pie-chart-glow";
 export { PieChartSkeleton as Skeleton } from "./pie-chart-skeleton";
 export { ChartHeadline as Headline, ChartTakeaway as Takeaway } from "./chart-headline";
+export { PieChartTooltip as Tooltip } from "./polar-chart-tooltip";
 export {
-  ChartTooltip as Tooltip,
   ChartTooltipLabel as TooltipLabel,
   ChartTooltipItems as TooltipItems,
   ChartTooltipValue as TooltipValue,
   ChartTooltipShare as TooltipShare,
-} from "./chart-tooltip";
+} from "./chart-tooltip-parts";
 export {
   ChartSwatch as Swatch,
   ChartSeriesLabel as SeriesLabel,
@@ -36,6 +36,7 @@ export {
   ChartLegendToggleGroup as LegendToggleGroup,
   ChartLegendToggle as LegendToggle,
 } from "./chart-legend";
-export { ChartTable as Table, ChartTableColumn as TableColumn } from "./chart-table";
+export { PieChartTable as Table } from "./polar-chart-table";
+export { ChartTableColumn as TableColumn } from "./chart-table-body";
 export { ChartEmpty as Empty } from "./chart-empty";
 export { ChartBackground as Background } from "./chart-background";

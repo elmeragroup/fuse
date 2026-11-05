@@ -2,6 +2,8 @@
 
 import type { ReactElement } from "react";
 
+import { Skeleton } from "../skeleton/skeleton";
+import { ChartSkeletonBody } from "./chart-skeleton-body";
 import type { ChartDomProps } from "./chart-types";
 
 /**
@@ -17,12 +19,25 @@ export type RadialChartSkeletonProps = Omit<ChartDomProps<"div">, "children" | "
 };
 
 /**
- * A loading placeholder that renders in place of `RadialChart.Root`, for example as a Suspense fallback.
+ * A loading placeholder that renders in place of `RadialChart.Root`, for example as a Suspense
+ * fallback. One Fuse Skeleton annulus from the Root's hole to the rim sketches the rings, and one
+ * Fuse Loader names the wait.
  *
  * @beta
  */
-export function RadialChartSkeleton(_props: RadialChartSkeletonProps): ReactElement {
-  return <></>;
+export function RadialChartSkeleton({
+  innerRadius = 0.3,
+  label,
+  ...props
+}: RadialChartSkeletonProps): ReactElement {
+  return (
+    <ChartSkeletonBody
+      variant="radial"
+      label={label}
+      marks={<Skeleton data-slot="chart-skeleton-mark" style={{ "--chart-skeleton-hole": innerRadius }} />}
+      {...props}
+    />
+  );
 }
 
 Object.assign(RadialChartSkeleton, { displayName: "RadialChart.Skeleton" });
