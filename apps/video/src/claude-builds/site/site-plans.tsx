@@ -3,7 +3,9 @@ import type { ReactElement } from "react";
 import { Badge } from "@elmeragroup/fuse/badge";
 import { Button } from "@elmeragroup/fuse/button";
 import { Card } from "@elmeragroup/fuse/card";
+import { Heading } from "@elmeragroup/fuse/heading";
 import { Check } from "@elmeragroup/fuse/icons";
+import { Text } from "@elmeragroup/fuse/text";
 import type { BrandCode } from "@elmeragroup/fuse/theme";
 
 import type { PlanCopy } from "../../copy/catalog";
@@ -36,9 +38,9 @@ function PlanCard({
         <Card.Description>{plan.text}</Card.Description>
       </Card.Header>
       <Card.Content className="flex flex-1 flex-col gap-4">
-        <p className="text-2xl font-semibold tracking-tight m-0 font-heading tabular-nums">
+        <Text className="text-2xl font-semibold tracking-tight m-0 font-heading tabular-nums">
           {plans.perMonth(fee)}
-        </p>
+        </Text>
         <ul className="text-sm m-0 flex list-none flex-col gap-2 p-0">
           {plan.features.map((feature) => (
             <li key={feature} className="flex items-center gap-2">
@@ -58,7 +60,8 @@ function PlanCard({
 }
 
 /**
- * The site's plans: a heading over three plan cards with their fees in the brand's currency.
+ * The site's plans: a Fuse heading and lede over three plan cards with their fees in the brand's
+ * currency. The headings and paragraphs keep the line heights the section's layout was set in.
  *
  * @param props.brand - The brand, whose market sets the currency.
  * @returns The plans, filling their section.
@@ -70,8 +73,12 @@ export function SitePlans({ brand }: { readonly brand: BrandCode }): ReactElemen
   return (
     <section className="flex h-full flex-col gap-8 bg-background px-10 pt-4 text-foreground">
       <div className="flex flex-col items-center gap-2 text-center">
-        <h2 className="text-3xl font-semibold tracking-tight m-0 font-heading">{plans.title}</h2>
-        <p className="m-0 text-muted-foreground">{plans.lede}</p>
+        <Heading size="3xl" font="semi-bold" className="tracking-tight m-0 leading-9">
+          {plans.title}
+        </Heading>
+        <Text variant="muted" className="text-base m-0">
+          {plans.lede}
+        </Text>
       </div>
       <div className="grid grid-cols-3 gap-5">
         {PLANS.map((plan) => (

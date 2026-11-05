@@ -1,8 +1,9 @@
-import { act } from "react";
+import { act, useMemo } from "react";
 import type { ReactElement, ReactNode } from "react";
 
 import { createRoot } from "react-dom/client";
 import type { Root } from "react-dom/client";
+import { Internals } from "remotion";
 
 import { LocaleProvider } from "@elmeragroup/fuse/theme";
 import type { BrandCode } from "@elmeragroup/fuse/theme";
@@ -58,6 +59,40 @@ export async function play(frames: readonly number[], node: (frame: number) => R
     render(node(frame));
     await settleAnimations((frame / FPS) * 1000);
   }
+}
+
+/** The composition id the test timeline files its frame under. */
+const TEST_COMPOSITION = "test";
+
+/**
+ * Remotion's timeline at a frame, so a part that calls `useCurrentFrame` renders in a test, and
+ * renders again whenever the frame changes, as it does in a film. With no composition registered,
+ * Remotion reads the frame's value as 0; a part that needs the value takes a clock instead.
+ *
+ * @param props.frame - The frame the timeline stands on.
+ * @returns The children on the timeline.
+ */
+export function Timeline({
+  frame,
+  children,
+}: {
+  readonly frame: number;
+  readonly children: ReactNode;
+}): ReactElement {
+  const timeline = useMemo(
+    () => ({
+      frame: { [TEST_COMPOSITION]: frame },
+      isPlaying: () => false,
+      isInsideFreeze: false,
+      audioAndVideoTags: { current: [] },
+    }),
+    [frame]
+  );
+  return (
+    <Internals.CanUseRemotionHooksProvider>
+      <Internals.TimelineContext value={timeline}>{children}</Internals.TimelineContext>
+    </Internals.CanUseRemotionHooksProvider>
+  );
 }
 
 /** Props for {@link Scope}. */

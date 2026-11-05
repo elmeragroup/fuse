@@ -1,33 +1,36 @@
 import type { ReactElement } from "react";
 
-import { tv } from "tailwind-variants";
+import { BarChart } from "@elmeragroup/fuse/chart";
+import type { ChartConfig } from "@elmeragroup/fuse/chart";
 
-import { useVideoLocale } from "../copy/copy";
-import { dateTimeFormat, numberFormat } from "../copy/intl";
+import { useCopy } from "../copy/copy";
+import { numberFormat } from "../copy/intl";
+import { FrameChart } from "../primitives/frame-chart";
 import { CURRENT_DAYS, WEEK_KWH } from "./customer-data";
 
 /** Monday 12 October 2026, the first day of the charted week, read in UTC so every render agrees. */
 const WEEK_START_UTC = Date.UTC(2026, 9, 12);
 const DAY_MS = 86_400_000;
 
-/** The week's tallest day, which a full-height bar draws. */
-const MAX_KWH = Math.max(...WEEK_KWH);
+/** One row per day of the week, built once so every frame hands the chart the same data. */
+const DAYS = WEEK_KWH.map((kwh, index) => ({ day: new Date(WEEK_START_UTC + index * DAY_MS), kwh }));
 
-/** The chart's parts; a current day's bar takes the primary role, the rest a tint of it. */
-const weekBars = tv({
-  slots: {
-    root: "flex min-h-0 flex-1 items-end",
-    day: "flex h-full min-w-0 flex-1 flex-col justify-end gap-2",
-    bar: "rounded-t-sm",
-    weekday: "text-xs text-center font-mono text-muted-foreground",
-  },
-  variants: {
-    current: {
-      true: { bar: "bg-primary" },
-      false: { bar: "bg-primary/30" },
-    },
-  },
-});
+/**
+ * Noon on the first of the week's current days. The chart fades every day that ended before it, so
+ * the earlier days dim and the current days keep their full paint.
+ */
+const NOW = new Date(WEEK_START_UTC + (WEEK_KWH.length - CURRENT_DAYS + 0.5) * DAY_MS);
+
+/**
+ * The brand's primary role as the series' paint, through Fuse's consumer override. Fuse's chart roles
+ * are the same for every brand and follow only the scheme, and these bars wear the brand, as a
+ * brand flip around them must show. `bg-primary` reads the same variable, since Fuse declares its
+ * colours inline.
+ */
+const BRAND_PAINT = { "--chart-color-kwh": "var(--primary)" } as const;
+
+/** Each weekday's short name in the video's locale, such as "Mon", under its bar. */
+const WEEKDAY_FORMAT = { weekday: "short" } as const;
 
 /**
  * The week's total use in whole kWh, formatted for the video's locale.
@@ -44,34 +47,44 @@ export function weekTotal(locale: string): string {
 export type WeekBarsProps = {
   /** Names each day under its bar in the video's locale. */
   readonly weekdays?: boolean;
-  /** Spaces the bars. */
-  readonly className?: string;
 };
 
 /**
- * A week of use as one bar per day, scaled to the week's tallest day, with the current days marked.
+ * A week of use as a Fuse bar chart, one bar per day on a UTC day axis in the brand's primary role,
+ * with the current days marked: the chart's `now` falls on the first of them, and the days before it
+ * fade. The config names the first chart role, which keeps the series typed, and `BRAND_PAINT`
+ * overrides it with the brand's primary, because Fuse's chart roles do not change with the brand.
+ * It fills the height its flex container leaves it, which it never grows, and draws at rest on
+ * every frame (see {@link FrameChart}).
  *
- * @returns The chart, filling the height its container leaves it.
+ * @returns The chart.
  */
-export function WeekBars({ weekdays = false, className }: WeekBarsProps): ReactElement {
-  const locale = useVideoLocale();
-  const slots = weekBars();
-  const weekday = dateTimeFormat(locale, { weekday: "short", timeZone: "UTC" });
+export function WeekBars({ weekdays = false }: WeekBarsProps): ReactElement {
+  const { usage } = useCopy().brandMorph;
+  const config = {
+    kwh: {
+      label: usage,
+      color: "chart-1",
+      format: { preset: "energy", unit: "kWh", maximumFractionDigits: 1 },
+    },
+  } as const satisfies ChartConfig;
   return (
-    <div className={slots.root({ className })}>
-      {WEEK_KWH.map((value, index) => (
-        <div key={index} className={slots.day()}>
-          <div
-            className={slots.bar({ current: index >= WEEK_KWH.length - CURRENT_DAYS })}
-            style={{ height: `${String((value / MAX_KWH) * 100)}%` }}
-          />
-          {weekdays ? (
-            <span className={slots.weekday()}>
-              {weekday.format(new Date(WEEK_START_UTC + index * DAY_MS))}
-            </span>
-          ) : null}
-        </div>
-      ))}
+    // The chart sits out of flow, so its plot never sizes the box: the box takes what the card leaves.
+    <div className="relative min-h-0 flex-1">
+      <FrameChart
+        className="absolute inset-0"
+        data={DAYS}
+        config={config}
+        xKey="day"
+        interval="day"
+        timeZone="UTC"
+        now={NOW}
+        data-fade="past"
+        style={BRAND_PAINT}
+        aria-label={usage}>
+        {weekdays ? <BarChart.XAxis format={WEEKDAY_FORMAT} /> : null}
+        <BarChart.Bar dataKey="kwh" />
+      </FrameChart>
     </div>
   );
 }

@@ -126,6 +126,8 @@ export const NB_NO: Copy = {
         average: "Snitt",
         low: "Lavest",
         high: "Høyest",
+        below: "Under snittet",
+        above: "Over snittet",
         perKwh: (amount) => `${amount} per kWh`,
       },
       plans: {
