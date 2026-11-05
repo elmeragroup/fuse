@@ -26,9 +26,17 @@ import { BROWSER_FRAMES, createChartMotion, createFrameOwner, REDUCED_MOTION } f
 import type { ChartMotion, FrameOwner } from "./chart-motion";
 import { colourFamilyError, nonFiniteThresholds } from "./chart-paint";
 import { createChartPaths } from "./chart-paths";
+import { ChartPendingRootContext } from "./chart-pending-root";
 import { ChartPlotContext, ChartRootPlotContext, usePanelSpan } from "./chart-plot";
 import { PlotReadsContext, useMeasuredPlot } from "./chart-plot-measure";
-import { ChartLegendSideContext, ChartRowContext } from "./chart-readout";
+import {
+  ChartCrosshairContext,
+  ChartDatumContext,
+  ChartHeadlineContext,
+  ChartLegendSideContext,
+  ChartLiveContext,
+  ChartRowContext,
+} from "./chart-readout";
 import { createChartRiders } from "./chart-riders";
 import { PlotLoader } from "./chart-skeleton";
 import { sameConfig, sameShallow, useSteady } from "./chart-steady";
@@ -273,6 +281,31 @@ function browserMotion(reduced: boolean, followers: ChartFollowers): ChartMotion
   return createChartMotion(BROWSER_FRAMES, reduced, () => {
     followers.refresh();
   });
+}
+
+/**
+ * A Root starts its own scope, so an outer chart's row, legend side, pending family, Tooltip,
+ * Headline, Crosshair, Marker or ActiveValueLine never reaches a part of this one, such as a
+ * sparkline in a legend item. This chart's own Tooltip, Headline, Crosshair, Marker and
+ * ActiveValueLine set theirs again for their children. A BarGroup's and a Table row's contexts stay
+ * out, because a Root can't sit in a BarGroup's aria-hidden plot layer or inside a table row.
+ */
+function OwnScope({ children }: { readonly children: ReactNode }): ReactElement {
+  return (
+    <ChartRowContext value={null}>
+      <ChartLegendSideContext value={null}>
+        <ChartPendingRootContext value={false}>
+          <ChartLiveContext value={false}>
+            <ChartHeadlineContext value={false}>
+              <ChartCrosshairContext value={false}>
+                <ChartDatumContext value={null}>{children}</ChartDatumContext>
+              </ChartCrosshairContext>
+            </ChartHeadlineContext>
+          </ChartLiveContext>
+        </ChartPendingRootContext>
+      </ChartLegendSideContext>
+    </ChartRowContext>
+  );
 }
 
 /**
@@ -803,53 +836,49 @@ export function ChartRoot<
   const slots = model.window === null ? 0 : model.window.last - model.window.first + 1;
   // The description reads every series over the window, so it waits for a change of what it says.
   const spokenDescription = useMemo(() => description ?? chartDescription(text), [description, text]);
-  // A Root starts its own rows and legend entries, so an outer chart's template row or threshold
-  // side never reaches a part of this one, such as a sparkline nested in a legend item.
   return (
-    <ChartRowContext value={null}>
-      <ChartLegendSideContext value={null}>
-        <ChartRootContext value={context}>
-          <ChartSelectionContext value={selected}>
-            <ChartLayoutContext value={layout}>
-              <figure
-                ref={figureRef}
-                data-slot="chart"
-                data-orientation={orientation}
-                data-x-scale={xScale}
-                data-selected={selected === null ? undefined : ""}
-                style={{
-                  "--chart-selected":
-                    selected === null ? undefined : Object.keys(modelConfig).indexOf(selected),
-                  ...style,
-                }}
-                {...figureProps}>
-                <p id={`${id}-description`} data-slot="chart-description">
-                  {spokenDescription}
-                </p>
-                <p id={`${id}-instructions`} data-slot="chart-instructions">
-                  {strings.instructionsCartesian}
-                </p>
-                <div ref={frameRef} data-slot="chart-frame" style={{ "--chart-slots": slots }}>
-                  <div ref={plotRef} data-slot="chart-plot" aria-hidden="true">
-                    {probe}
-                    {plot === null && !model.empty ? <PlotLoader /> : null}
-                  </div>
-                  <ChartRootPlotContext value={plot}>
-                    <ChartPlotContext value={plot}>
-                      <PlotReadsContext value={reads}>
-                        <ChartSurface name={name} labelledBy={labelledBy} />
-                        {children}
-                      </PlotReadsContext>
-                    </ChartPlotContext>
-                  </ChartRootPlotContext>
+    <OwnScope>
+      <ChartRootContext value={context}>
+        <ChartSelectionContext value={selected}>
+          <ChartLayoutContext value={layout}>
+            <figure
+              ref={figureRef}
+              data-slot="chart"
+              data-orientation={orientation}
+              data-x-scale={xScale}
+              data-selected={selected === null ? undefined : ""}
+              style={{
+                "--chart-selected":
+                  selected === null ? undefined : Object.keys(modelConfig).indexOf(selected),
+                ...style,
+              }}
+              {...figureProps}>
+              <p id={`${id}-description`} data-slot="chart-description">
+                {spokenDescription}
+              </p>
+              <p id={`${id}-instructions`} data-slot="chart-instructions">
+                {strings.instructionsCartesian}
+              </p>
+              <div ref={frameRef} data-slot="chart-frame" style={{ "--chart-slots": slots }}>
+                <div ref={plotRef} data-slot="chart-plot" aria-hidden="true">
+                  {probe}
+                  {plot === null && !model.empty ? <PlotLoader /> : null}
                 </div>
-                <ChartStatus />
-              </figure>
-            </ChartLayoutContext>
-          </ChartSelectionContext>
-        </ChartRootContext>
-      </ChartLegendSideContext>
-    </ChartRowContext>
+                <ChartRootPlotContext value={plot}>
+                  <ChartPlotContext value={plot}>
+                    <PlotReadsContext value={reads}>
+                      <ChartSurface name={name} labelledBy={labelledBy} />
+                      {children}
+                    </PlotReadsContext>
+                  </ChartPlotContext>
+                </ChartRootPlotContext>
+              </div>
+              <ChartStatus />
+            </figure>
+          </ChartLayoutContext>
+        </ChartSelectionContext>
+      </ChartRootContext>
+    </OwnScope>
   );
 }
 
