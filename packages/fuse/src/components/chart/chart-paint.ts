@@ -4,25 +4,14 @@
  * reads the consumer's `--chart-color-<key>` first, so an override wins for a role, a role list, a
  * scale and both sides of a threshold alike.
  */
-import type { ChartColor, ChartConfig, ChartScale, ChartThresholdColor } from "./chart-types";
+import type { ChartColor, ChartConfig, ChartScale } from "./chart-types";
 import type { SeriesModel } from "./layout/cartesian-model";
 import { binEdges, colorBins } from "./layout/color-bins";
 import type { ColorBins } from "./layout/color-bins";
-import { seriesPaint } from "./layout/color-key";
+import { isRoleList, isThresholdColor, seriesPaint } from "./layout/color-key";
 import { ChartCompositionError } from "./layout/errors";
 import type { Reading } from "./layout/readings";
 import type { StackOffset } from "./layout/stack";
-
-/** Whether a colour is a decorative role list. */
-export function isRoleList(color: ChartColor): color is Extract<ChartColor, readonly unknown[]> {
-  return Array.isArray(color);
-}
-
-/** Whether a colour is a threshold, which splits the series at one value. */
-export function isThresholdColor(color: ChartColor): color is ChartThresholdColor {
-  // oxlint-disable-next-line anti-slop/no-runtime-typeof -- consumer-owned config: a colour arrives as a role string, a role list or a threshold object
-  return typeof color === "object" && !isRoleList(color);
-}
 
 /** The scale a colour names, or undefined for every other colour. */
 function scaleOf(color: ChartColor): ChartScale | undefined {

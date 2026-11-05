@@ -2,11 +2,10 @@
 
 import type { ReactElement } from "react";
 
-import { useLocale } from "../../intl/locale-context";
 import { Loader } from "../loader/loader";
 import { Skeleton } from "../skeleton/skeleton";
+import { ChartSkeletonBody } from "./chart-skeleton-body";
 import type { ChartDomProps } from "./chart-types";
-import { CHART_STRINGS } from "./format/chart-strings";
 
 /**
  * Props for `Chart.Skeleton`, a `div` without `render` or children.
@@ -32,30 +31,27 @@ const SKELETON_BARS = [42, 64, 35, 78, 52, 30, 68, 46, 74, 38, 58, 26] as const;
  *
  * @beta
  */
-export function ChartSkeleton({
-  variant = "bar",
-  label,
-  className,
-  style,
-  ...props
-}: ChartSkeletonProps): ReactElement {
-  const { locale } = useLocale();
+export function ChartSkeleton({ variant = "bar", label, ...props }: ChartSkeletonProps): ReactElement {
   return (
-    <div data-slot="chart-skeleton" data-variant={variant} className={className} style={style} {...props}>
-      {variant === "bar" ? (
-        SKELETON_BARS.map((height, index) => (
-          <Skeleton
-            // The bars never reorder, so the position is their identity.
-            key={index}
-            data-slot="chart-skeleton-mark"
-            style={{ "--chart-skeleton-height": `${String(height)}%` }}
-          />
-        ))
-      ) : (
-        <Skeleton data-slot="chart-skeleton-mark" />
-      )}
-      <Loader aria-label={label ?? CHART_STRINGS[locale].loading} />
-    </div>
+    <ChartSkeletonBody
+      variant={variant}
+      label={label}
+      marks={
+        variant === "bar" ? (
+          SKELETON_BARS.map((height, index) => (
+            <Skeleton
+              // The bars never reorder, so the position is their identity.
+              key={index}
+              data-slot="chart-skeleton-mark"
+              style={{ "--chart-skeleton-height": `${String(height)}%` }}
+            />
+          ))
+        ) : (
+          <Skeleton data-slot="chart-skeleton-mark" />
+        )
+      }
+      {...props}
+    />
   );
 }
 

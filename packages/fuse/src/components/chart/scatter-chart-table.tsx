@@ -8,10 +8,11 @@ import { ChartTableShell, PAGE_ROWS, Twin, useTableDisclosure } from "./chart-ta
 import type { ChartLayerProps } from "./chart-types";
 import { CHART_STRINGS, countOf } from "./format/chart-strings";
 import type { FormattedText } from "./format/formatted-text";
+import { seriesLabel } from "./format/series-label";
 import { pointOf } from "./layout/scatter-model";
 import { useScatterRoot } from "./scatter-chart-context";
 import type { ScatterRootContextValue } from "./scatter-chart-context";
-import { axisNames, scatterSeriesLabel, xValueText, yValueText } from "./scatter-chart-text";
+import { axisNames, xValueText, yValueText } from "./scatter-chart-text";
 
 /**
  * Props for `ScatterChart.Table`, a closed part.
@@ -40,7 +41,7 @@ function pageRows(
   return Array.from({ length: to - from }, (_, offset) => {
     const { key, x, y } = pointOf(model, model.order[from + offset] ?? 0);
     return {
-      series: scatterSeriesLabel(context, key),
+      series: seriesLabel(context, key),
       x: xValueText(context, x, "full"),
       y: yValueText(context, key, y, "full"),
     };

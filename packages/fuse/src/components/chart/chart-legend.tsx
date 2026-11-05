@@ -7,23 +7,19 @@ import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
 
 import { ToggleGroupItem, ToggleGroupRoot } from "../toggle-group/toggle-group";
-import { assertKnownKey, ChartSelectionContext, useChartRoot } from "./chart-context";
-import type { ChartRootContextValue } from "./chart-context";
-import { isThresholdColor } from "./chart-paint";
 import { usePendingOr } from "./chart-pending-root";
 import {
   ChartLegendSideContext,
   ChartRowContext,
-  fallbackSlot,
-  readingText,
   shareDigits,
   shareText,
-  useActiveSlot,
+  useActiveIndex,
+  useChartReadout,
   useReadoutKey,
-  windowShares,
 } from "./chart-readout";
+import { ChartSelectionContext } from "./chart-readout-port";
+import type { ChartReadout } from "./chart-readout-port";
 import { ChartSeriesLabel, ChartSwatch } from "./chart-series";
-import { seriesLabel } from "./chart-text";
 import type {
   ChartDomProps,
   ChartFallback,
@@ -33,7 +29,6 @@ import type {
   ValueFormat,
 } from "./chart-types";
 import { CHART_STRINGS } from "./format/chart-strings";
-import { seriesOf } from "./layout/series-of";
 
 /**
  * Props for `Chart.Legend`, a `ul` with Base UI's `render`.
@@ -130,9 +125,8 @@ function ChartLegendBody({
   children,
   ...props
 }: ChartLegendProps): ReactElement {
-  const context = useChartRoot("Chart.Legend");
-  const items =
-    children ?? Object.keys(context.config).map((key) => <ChartLegendItem key={key} dataKey={key} />);
+  const readout = useChartReadout("Chart.Legend");
+  const items = children ?? readout.legendKeys.map((key) => <ChartLegendItem key={key} dataKey={key} />);
   return useRender({
     defaultTagName: "ul",
     render,
@@ -148,9 +142,8 @@ function ChartLegendBody({
  * The legend entries of one series: one per side of a threshold colour, the upper side first as
  * the value axis reads, or one entry with no side for every other colour.
  */
-function entrySides(context: ChartRootContextValue, key: string): readonly (ChartThresholdSide | null)[] {
-  const color = context.config[key]?.color;
-  return color !== undefined && isThresholdColor(color) ? [color.above, color.below] : [null];
+function entrySides(readout: ChartReadout, key: string): readonly (ChartThresholdSide | null)[] {
+  return readout.item(key)?.sides ?? [null];
 }
 
 /** One legend entry's own element. */
@@ -169,9 +162,9 @@ function LegendEntry({
   readonly children: ReactNode;
   readonly props: Omit<ChartLegendItemProps, "dataKey" | "render" | "className" | "children">;
 }): ReactElement {
-  const context = useChartRoot("Chart.LegendItem");
+  const readout = useChartReadout("Chart.LegendItem");
   const selectedKey = use(ChartSelectionContext);
-  const seriesIndex = seriesOf(context.model, itemKey)?.seriesIndex;
+  const seriesIndex = readout.item(itemKey)?.index;
   const element = useRender({
     defaultTagName: "li",
     render,
@@ -221,13 +214,13 @@ function ChartLegendItemBody({
   children,
   ...props
 }: ChartLegendItemProps): ReactElement {
-  const context = useChartRoot("Chart.LegendItem");
-  if (dataKey !== undefined) assertKnownKey("Chart.LegendItem", context.config, dataKey);
-  const keys = dataKey === undefined ? Object.keys(context.config) : [dataKey];
+  const readout = useChartReadout("Chart.LegendItem");
+  if (dataKey !== undefined) readout.assertKey("Chart.LegendItem", dataKey);
+  const keys = dataKey === undefined ? readout.legendKeys : [dataKey];
   return (
     <>
       {keys.flatMap((key) =>
-        entrySides(context, key).map((side, index) => (
+        entrySides(readout, key).map((side, index) => (
           <LegendEntry
             // A series' sides never reorder, so their position tells its entries apart.
             key={`${key}\u0000${String(index)}`}
@@ -263,11 +256,11 @@ function ChartLegendValueBody({
   className,
   ...props
 }: ChartLegendValueProps): ReactElement {
-  const context = useChartRoot("Chart.LegendValue");
-  const active = useActiveSlot(context, true);
-  const key = useReadoutKey("Chart.LegendValue", context, dataKey, null);
-  const slot = key === null ? null : (active ?? fallbackSlot(context, key, fallback));
-  const text = key === null || slot === null ? null : readingText(context, key, slot, format);
+  const readout = useChartReadout("Chart.LegendValue");
+  const active = useActiveIndex(readout, true);
+  const key = useReadoutKey("Chart.LegendValue", readout, dataKey, null);
+  const at = key === null ? null : readout.legendAt(key, active, fallback);
+  const text = key === null || at === null ? null : readout.valueText(key, at, format);
   return useRender({
     defaultTagName: "span",
     render,
@@ -292,12 +285,10 @@ function ChartLegendShareBody({
   className,
   ...props
 }: ChartLegendShareProps): ReactElement {
-  const context = useChartRoot("Chart.LegendShare");
-  const key = useReadoutKey("Chart.LegendShare", context, dataKey, null);
+  const readout = useChartReadout("Chart.LegendShare");
+  const key = useReadoutKey("Chart.LegendShare", readout, dataKey, null);
   const text =
-    key === null
-      ? null
-      : shareText(context, windowShares(context, shareDigits(format)).get(key) ?? null, format);
+    key === null ? null : shareText(readout.locale, readout.legendShare(key, shareDigits(format)), format);
   return useRender({
     defaultTagName: "span",
     render,
@@ -326,8 +317,8 @@ function ChartLegendToggleGroupBody({
   style,
   children,
 }: ChartLegendToggleGroupProps): ReactElement {
-  const context = useChartRoot("Chart.LegendToggleGroup");
-  const { registerToggleGroup, select, locale } = context;
+  const readout = useChartReadout("Chart.LegendToggleGroup");
+  const { registerToggleGroup, select, locale } = readout;
   const selectedKey = use(ChartSelectionContext);
   useEffect(() => registerToggleGroup(), [registerToggleGroup]);
   return (
@@ -342,7 +333,10 @@ function ChartLegendToggleGroupBody({
       }}
       className={className}
       style={style}>
-      {children ?? Object.keys(context.config).map((key) => <ChartLegendToggle key={key} dataKey={key} />)}
+      {children ??
+        readout.legendKeys
+          .filter((key) => readout.item(key)?.selectable === true)
+          .map((key) => <ChartLegendToggle key={key} dataKey={key} />)}
     </ToggleGroupRoot>
   );
 }
@@ -364,26 +358,26 @@ function ChartLegendToggleBody({
   style,
   children,
 }: ChartLegendToggleProps): ReactElement {
-  const context = useChartRoot("Chart.LegendToggle");
-  assertKnownKey("Chart.LegendToggle", context.config, dataKey);
-  const seriesIndex = seriesOf(context.model, dataKey)?.seriesIndex;
+  const readout = useChartReadout("Chart.LegendToggle");
+  readout.assertKey("Chart.LegendToggle", dataKey);
+  const item = readout.item(dataKey);
   return (
     <ToggleGroupItem
       value={dataKey}
       size="xs"
       data-slot="chart-legend-toggle"
-      data-series={seriesIndex}
+      data-series={item?.index}
       className={className}
       style={style}
-      onPointerEnter={() => context.highlight(dataKey)}
-      onPointerLeave={() => context.highlight(null)}
-      onFocus={() => context.highlight(dataKey)}
-      onBlur={() => context.highlight(null)}>
+      onPointerEnter={() => readout.highlight(dataKey)}
+      onPointerLeave={() => readout.highlight(null)}
+      onFocus={() => readout.highlight(dataKey)}
+      onBlur={() => readout.highlight(null)}>
       <ChartRowContext value={dataKey}>
         {children ?? (
           <>
             <ChartSwatch />
-            <span>{seriesLabel(context, dataKey).text}</span>
+            <span>{item?.label.text ?? dataKey}</span>
           </>
         )}
       </ChartRowContext>

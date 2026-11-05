@@ -7,20 +7,14 @@ import { mergeProps } from "@base-ui/react/merge-props";
 import { Tooltip as TooltipPrimitive } from "@base-ui/react/tooltip";
 import { useRender } from "@base-ui/react/use-render";
 
-import { cn } from "../../styles/cn";
-import { tooltipShellClass } from "../../styles/inner-corner/tooltip";
-import {
-  overlayPopupMotionClass,
-  overlayPopupSurfaceClass,
-  overlayPositionerClass,
-} from "../overlay/overlay-classes";
 import { OverlayPortal } from "../overlay/overlay-portal";
-import { tooltipPopup, watchOverflow } from "./chart-tooltip-popup";
+import { chartTakesPress, TOOLTIP_POSITIONER, tooltipPopupClass, watchOverflow } from "./chart-tooltip-popup";
 import type { ChartDomProps, ChartLayerProps, ValueFormat } from "./chart-types";
+import { seriesLabel } from "./format/series-label";
 import { formatValue } from "./format/value-format";
 import { dotCentre } from "./layout/scatter-frame";
 import { pointOf } from "./layout/scatter-model";
-import { ROOF_GAP, TOOLTIP_EDGE } from "./layout/tooltip-place";
+import { ROOF_GAP } from "./layout/tooltip-place";
 import {
   dotOf,
   scatterPaint,
@@ -33,7 +27,7 @@ import type { ScatterRootContextValue } from "./scatter-chart-context";
 import { SeriesSwatch } from "./scatter-chart-legend";
 import { useScatterStore } from "./scatter-chart-store";
 import { pickPoint, tapPoint } from "./scatter-chart-surface";
-import { axisNames, scatterSeriesLabel, yFormatOf } from "./scatter-chart-text";
+import { axisNames, yFormatOf } from "./scatter-chart-text";
 
 /**
  * Props for `ScatterChart.Tooltip`, a closed part.
@@ -153,47 +147,18 @@ export function ScatterChartTooltip({
     <TooltipPrimitive.Root
       open={open}
       onOpenChange={(next, details) => {
-        if (next) return;
-        // A press on the chart picks or pins a point. Every other dismissal Base UI reports, such
-        // as a press outside the chart or Escape with focus elsewhere, takes the one dismissal.
-        const target = details.event.target;
-        if (
-          details.reason === "outside-press" &&
-          target instanceof Node &&
-          context.root()?.contains(target) === true
-        )
-          return;
+        if (next || chartTakesPress(details, context.root())) return;
         store.dismiss(model);
       }}>
       <OverlayPortal portal={TooltipPrimitive.Portal} keepMounted={kept}>
-        <TooltipPrimitive.Positioner
-          anchor={anchor}
-          side="top"
-          align="center"
-          collisionAvoidance={{ side: "flip", align: "shift", fallbackAxisSide: "end" }}
-          // Base UI's flip adds 1 px to the collision padding, and 1 px more on the side opposite
-          // the preferred top, so these paddings make every flip test read TOOLTIP_EDGE, 8 px.
-          collisionPadding={{
-            top: TOOLTIP_EDGE - 1,
-            right: TOOLTIP_EDGE - 1,
-            bottom: TOOLTIP_EDGE - 2,
-            left: TOOLTIP_EDGE - 1,
-          }}
-          data-slot="chart-tooltip-positioner"
-          className={overlayPositionerClass}>
+        <TooltipPrimitive.Positioner {...TOOLTIP_POSITIONER} anchor={anchor}>
           <TooltipPrimitive.Popup
             data-slot="chart-tooltip"
             data-variant={variant}
             data-input={touchInput ? "touch" : undefined}
             aria-hidden="true"
             ref={watchOverflow}
-            className={cn(
-              overlayPopupSurfaceClass,
-              tooltipShellClass,
-              overlayPopupMotionClass,
-              tooltipPopup({ variant }),
-              className
-            )}
+            className={tooltipPopupClass(variant, className)}
             style={style}
             onPointerDown={(event) => {
               if (event.pointerType === "mouse") return;
@@ -304,7 +269,7 @@ export function ScatterChartTooltipLabel({
             (key === null ? null : (
               <>
                 <SeriesSwatch paint={scatterPaint(context.config, key)} />
-                {scatterSeriesLabel(context, key).text}
+                {seriesLabel(context, key).text}
               </>
             )),
         },

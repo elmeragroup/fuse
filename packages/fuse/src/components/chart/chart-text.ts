@@ -11,6 +11,7 @@ import type { EmphasisEntry } from "./chart-store";
 import type { ChartSeriesConfig, XFormat } from "./chart-types";
 import { CHART_STRINGS, countOf } from "./format/chart-strings";
 import type { FormattedText } from "./format/formatted-text";
+import { seriesLabel } from "./format/series-label";
 import { formatSlot, LABEL_PRESETS, wallClock } from "./format/time-format";
 import type { Interval } from "./format/time-format";
 import { formatUnitLabel, formatUnitless, formatValue } from "./format/value-format";
@@ -166,20 +167,6 @@ function ownSlotDated(context: TextContext, key: string, slot: number): Formatte
   const coarse = seriesOf(context.model, key)?.coarse;
   if (coarse === undefined || domain.kind !== "time") return null;
   return datedLabel(context, domain.timeZone, coarse.start[slot] ?? 0, coarse.interval, undefined);
-}
-
-/**
- * A series' name. A plain string reads verbatim in both forms, and a `FormattedText` keeps its
- * spoken form for options, the description and the table.
- *
- * @param context - The config.
- * @param key - A config key.
- * @returns The visual and spoken name.
- */
-export function seriesLabel(context: TextContext, key: string): FormattedText {
-  const label = context.config[key]?.label ?? key;
-  // oxlint-disable-next-line anti-slop/no-runtime-typeof -- consumer-owned union: a config label is a string or a FormattedText
-  return typeof label === "string" ? { text: label, spoken: label } : label;
 }
 
 /**

@@ -9,12 +9,7 @@ import { definedProps } from "../../internal/defined-props";
 import { useLocale } from "../../intl/locale-context";
 import { createAxisRecord } from "./chart-axis-format";
 import { keyDomains, useChartCommit } from "./chart-commit";
-import {
-  ChartLayoutContext,
-  ChartRootContext,
-  ChartSelectionContext,
-  partOutsidePanel,
-} from "./chart-context";
+import { ChartLayoutContext, ChartRootContext, partOutsidePanel, useChartRoot } from "./chart-context";
 import type { ChartLayoutContextValue, ChartRootContextValue, PanelEntry } from "./chart-context";
 import { writeAttribute, writeStyle } from "./chart-dom";
 import { openDrawingSoon, useClientMount } from "./chart-draw-gate";
@@ -37,6 +32,8 @@ import {
   ChartLiveContext,
   ChartRowContext,
 } from "./chart-readout";
+import { cartesianReadout } from "./chart-readout-cartesian";
+import { ChartReadoutContext, ChartSelectionContext } from "./chart-readout-port";
 import { createChartRiders } from "./chart-riders";
 import { PlotLoader } from "./chart-skeleton";
 import { discardStackFloors, flushStackFloors } from "./chart-stack-floors";
@@ -44,7 +41,7 @@ import { sameConfig, sameShallow, useSteady } from "./chart-steady";
 import { createChartStore } from "./chart-store";
 import type { ChartSnapshot, EmphasisEntry } from "./chart-store";
 import { ChartStatus, ChartSurface } from "./chart-surface";
-import { chartDescription, seriesLabel } from "./chart-text";
+import { chartDescription } from "./chart-text";
 import type { TextContext } from "./chart-text";
 import type {
   ChartAccessibleName,
@@ -66,6 +63,7 @@ import type {
   ChartXValue,
 } from "./chart-types";
 import { CHART_STRINGS } from "./format/chart-strings";
+import { seriesLabel } from "./format/series-label";
 import { buildCartesianModel } from "./layout/cartesian-model";
 import type { CartesianModel } from "./layout/cartesian-model";
 import { intervalNests } from "./layout/coarse-slots";
@@ -272,6 +270,16 @@ function markActive(root: HTMLElement, snapshot: ChartSnapshot, active: ActiveSl
   writeAttribute(root, "data-active", active === null ? null : (snapshot.source ?? ""));
   writeAttribute(root, "data-pinned", snapshot.pinned && active !== null ? "" : null);
   writeAttribute(root, "data-near", active !== null && snapshot.near !== null ? snapshot.near : null);
+}
+
+/**
+ * Provide the Root's readout, which the shared parts read the Root through. It changes with the
+ * Root's context alone, so a pointer move renders no part that reads only the readout.
+ */
+function ReadoutScope({ children }: { readonly children: ReactNode }): ReactElement {
+  const context = useChartRoot("Chart.Root");
+  const readout = useMemo(() => cartesianReadout(context), [context]);
+  return <ChartReadoutContext value={readout}>{children}</ChartReadoutContext>;
 }
 
 /**
@@ -852,44 +860,46 @@ export function ChartRoot<
   return (
     <OwnScope>
       <ChartRootContext value={context}>
-        <ChartSelectionContext value={selected}>
-          <ChartLayoutContext value={layout}>
-            <figure
-              ref={figureRef}
-              data-slot="chart"
-              data-orientation={orientation}
-              data-x-scale={xScale}
-              data-selected={selected === null ? undefined : ""}
-              style={{
-                "--chart-selected":
-                  selected === null ? undefined : Object.keys(modelConfig).indexOf(selected),
-                ...style,
-              }}
-              {...figureProps}>
-              <p id={`${id}-description`} data-slot="chart-description">
-                {spokenDescription}
-              </p>
-              <p id={`${id}-instructions`} data-slot="chart-instructions">
-                {strings.instructionsCartesian}
-              </p>
-              <div ref={frameRef} data-slot="chart-frame" style={{ "--chart-slots": slots }}>
-                <div ref={plotRef} data-slot="chart-plot" aria-hidden="true">
-                  {probe}
-                  {plot === null && !model.empty ? <PlotLoader /> : null}
+        <ReadoutScope>
+          <ChartSelectionContext value={selected}>
+            <ChartLayoutContext value={layout}>
+              <figure
+                ref={figureRef}
+                data-slot="chart"
+                data-orientation={orientation}
+                data-x-scale={xScale}
+                data-selected={selected === null ? undefined : ""}
+                style={{
+                  "--chart-selected":
+                    selected === null ? undefined : Object.keys(modelConfig).indexOf(selected),
+                  ...style,
+                }}
+                {...figureProps}>
+                <p id={`${id}-description`} data-slot="chart-description">
+                  {spokenDescription}
+                </p>
+                <p id={`${id}-instructions`} data-slot="chart-instructions">
+                  {strings.instructionsCartesian}
+                </p>
+                <div ref={frameRef} data-slot="chart-frame" style={{ "--chart-slots": slots }}>
+                  <div ref={plotRef} data-slot="chart-plot" aria-hidden="true">
+                    {probe}
+                    {plot === null && !model.empty ? <PlotLoader /> : null}
+                  </div>
+                  <ChartRootPlotContext value={plot}>
+                    <ChartPlotContext value={plot}>
+                      <PlotReadsContext value={reads}>
+                        <ChartSurface name={name} labelledBy={labelledBy} />
+                        {children}
+                      </PlotReadsContext>
+                    </ChartPlotContext>
+                  </ChartRootPlotContext>
                 </div>
-                <ChartRootPlotContext value={plot}>
-                  <ChartPlotContext value={plot}>
-                    <PlotReadsContext value={reads}>
-                      <ChartSurface name={name} labelledBy={labelledBy} />
-                      {children}
-                    </PlotReadsContext>
-                  </ChartPlotContext>
-                </ChartRootPlotContext>
-              </div>
-              <ChartStatus />
-            </figure>
-          </ChartLayoutContext>
-        </ChartSelectionContext>
+                <ChartStatus />
+              </figure>
+            </ChartLayoutContext>
+          </ChartSelectionContext>
+        </ReadoutScope>
       </ChartRootContext>
     </OwnScope>
   );

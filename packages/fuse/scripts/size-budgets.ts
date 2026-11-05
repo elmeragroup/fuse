@@ -163,7 +163,14 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = derive([
   // each side in every frame through the batched floor registry, which bars, path-form
   // columns, emphasis boxes and the active overlay read, which measured 2860 bytes on this
   // entry (161040 to 163900). The ceiling keeps about 100 bytes of headroom.
-  { name: "chart", entryFile: "chart.js", measuredGzip: 97044, ceilingGzip: 164000 },
+  // Raised again from 164000 on 2026-11-05. The shared readout parts read their Root through the
+  // readout port, which each Root builds over its own model: the cartesian readout, its series
+  // readout and its pick, the tooltip and table bodies the family's Tooltip and Table parts hand
+  // their anchor and rows, and the leaves ScatterChart now shares, the popup's positioner, its
+  // dismissal filter and class, the series label, the role helpers and the Empty and Skeleton
+  // bodies, which measured 2096 bytes on this entry (163778 to 165874). The ceiling keeps about
+  // 100 bytes of headroom.
+  { name: "chart", entryFile: "chart.js", measuredGzip: 97044, ceilingGzip: 165974 },
   // 2026-10-13: new entry, measured at 29180. Pure wrappers over Base UI's toolbar and its roving focus.
   { name: "toolbar", entryFile: "toolbar.js", measuredGzip: 29180, ceilingGzip: 43770 },
   // 2026-10-12: new entries. Command is Base UI's Autocomplete in the InputGroup, with the Dialog
@@ -363,14 +370,20 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // registry, which bars, path-form columns, emphasis boxes and the active overlay read,
     // which measured 2869 bytes on Chart (147298 to 150167) and on BarChart (147300 to
     // 150169). Each ceiling keeps about 100 bytes of headroom.
-    ceilingGzip: 150267,
+    // Raised again from 150267 on 2026-11-05, with BarChart's from 150269. The shared readout
+    // parts read Root through its readout port: the cartesian readout over the series readout and
+    // the pick, the tooltip body that the cartesian Tooltip hands its anchor, the table body that
+    // the cartesian Table hands its rows, and the popup leaves ScatterChart now shares, which
+    // measured 2420 bytes on Chart (150013 to 152433) and 2421 on BarChart (150015 to 152436).
+    // Each ceiling keeps about 100 bytes of headroom.
+    ceilingGzip: 152533,
   },
   {
     name: "chart/BarChart",
     entryFile: "chart.js",
     exportName: "BarChart",
     measuredGzip: 95989,
-    ceilingGzip: 150269,
+    ceilingGzip: 152536,
   },
   { name: "chart/PieChart", entryFile: "chart.js", exportName: "PieChart", measuredGzip: 79885 },
   { name: "chart/RadialChart", entryFile: "chart.js", exportName: "RadialChart", measuredGzip: 79858 },
@@ -444,7 +457,12 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // side in every frame through the batched floor registry, which bars, path-form columns,
     // emphasis boxes and the active overlay read, which measured 2876 bytes on this route
     // (75668 to 78544). The ceiling keeps about 100 bytes of headroom.
-    ceilingGzip: 78644,
+    // Raised from 78644 on 2026-11-05. Root builds the readout port the shared parts read: the
+    // cartesian readout, the series readout's reading text, shares and fallback slot, and the
+    // swatch's paint and look. The tooltip anchor and the table rows ride with their own parts,
+    // so this route ships neither. That measured 1291 bytes on this route (78635 to 79926). The
+    // ceiling keeps about 100 bytes of headroom.
+    ceilingGzip: 80026,
   },
   {
     name: "chart/PieChart.Root",

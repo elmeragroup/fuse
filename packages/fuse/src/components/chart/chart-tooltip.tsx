@@ -1,44 +1,27 @@
 "use client";
 
-import { use, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { use } from "react";
 import type { ReactElement, ReactNode } from "react";
 
 import { mergeProps } from "@base-ui/react/merge-props";
-import { Tooltip as TooltipPrimitive } from "@base-ui/react/tooltip";
 import { useRender } from "@base-ui/react/use-render";
-import { flushSync } from "react-dom";
 
-import { cn } from "../../styles/cn";
-import { tooltipShellClass } from "../../styles/inner-corner/tooltip";
-import {
-  overlayPopupMotionClass,
-  overlayPopupSurfaceClass,
-  overlayPositionerClass,
-} from "../overlay/overlay-classes";
-import { OverlayPortal } from "../overlay/overlay-portal";
-import { ChartSelectionContext, useChartRoot } from "./chart-context";
-import { clientScale, writeStyle } from "./chart-dom";
-import { useChartFollower } from "./chart-followers";
+import { useChartRoot } from "./chart-context";
 import { usePendingOr } from "./chart-pending-root";
-import { useRootFrame } from "./chart-plot";
 import {
-  ChartLiveContext,
   ChartRowContext,
-  readingText,
   shareDigits,
   shareText,
-  slotShares,
-  useActivePoint,
-  useActiveSlot,
+  useActiveIndex,
+  useActiveItem,
+  useChartReadout,
   useReadoutKey,
 } from "./chart-readout";
+import { ChartSelectionContext } from "./chart-readout-port";
+import type { TooltipPlacer } from "./chart-readout-port";
 import { ChartSeriesLabel, ChartSwatch } from "./chart-series";
-import { pointerSlot } from "./chart-surface";
-import { slotLabel } from "./chart-text";
-import { createTooltipGlider } from "./chart-tooltip-glide";
-import type { GlideRoute, TooltipGlider } from "./chart-tooltip-glide";
-import { tooltipPopup, watchOverflow } from "./chart-tooltip-popup";
-import { createChartRoof } from "./chart-tooltip-roof";
+import { useCartesianTooltipAnchor } from "./chart-tooltip-anchor";
+import { ChartTooltipBody } from "./chart-tooltip-body";
 import { ChartTooltipTotal } from "./chart-tooltip-total";
 import type {
   ChartDomProps,
@@ -47,10 +30,6 @@ import type {
   ValueFormat,
   XFormat,
 } from "./chart-types";
-import { WHOLE_BAND, barSpan, centreOf, optionBand } from "./layout/plot-frame";
-import { TOOLTIP_EDGE, roofRest, tooltipSideOffset } from "./layout/tooltip-place";
-import type { PlaceSize, PopupPlace } from "./layout/tooltip-place";
-import { roofOver } from "./layout/tooltip-roof";
 
 /**
  * Props for `Chart.Tooltip`, a closed part.
@@ -117,57 +96,6 @@ export type ChartTooltipShareProps = ChartDomProps<"span"> & {
 };
 
 /**
- * A virtual anchor over the active slot, measured from the plot surface at position time. It names
- * the surface as its context element, so Base UI follows the scroll containers around the plot.
- */
-type Anchor = {
-  readonly getBoundingClientRect: () => DOMRect;
-  readonly contextElement: Element | undefined;
-  /** The anchor's last measure. */
-  readonly placed: () => Measure;
-};
-
-/** One measure of the anchor, in client pixels. */
-type Measure = {
-  readonly box: DOMRect;
-  /** How far the popup moves along x from the anchor's centre to stay inside the chart Root's box. */
-  readonly shift: number;
-  /** How a step's glide travels to this place. */
-  readonly route: GlideRoute;
-};
-
-const STRAIGHT: GlideRoute = { kind: "straight" };
-
-/** The viewport's size, which every side test and the popup's place along x keep inside. */
-function viewportSize(): PlaceSize {
-  return { width: document.documentElement.clientWidth, height: document.documentElement.clientHeight };
-}
-
-/**
- * Where the popup rested over the plot before the active slot's step, and where it rests at that
- * slot, so a slot's repeated measures all start from the same place and the next step starts from
- * the last one.
- */
-type RestMemory = { slot: number | null; from: PopupPlace | null; last: PopupPlace | null };
-
-const FORGOTTEN: RestMemory = { slot: null, from: null, last: null };
-
-/** The popup's resting place at a slot, which remembers it as the next step's start. */
-function restAt(
-  memory: RestMemory,
-  slot: number,
-  place: (from: PopupPlace | null) => PopupPlace
-): PopupPlace {
-  if (memory.slot !== slot) {
-    memory.from = memory.last;
-    memory.slot = slot;
-  }
-  const rest = place(memory.from);
-  memory.last = rest;
-  return rest;
-}
-
-/**
  * The popup over the active slot, which a pointer can move into and pin. On a vertical chart it
  * centres on the active slot, held inside the chart Root's box, and rests 8 px above the highest
  * mark under its own width: bars, stack tops, line and area strokes between readings, and dots. A
@@ -189,324 +117,22 @@ function restAt(
  * @beta
  */
 export function ChartTooltip(props: ChartTooltipProps): ReactElement {
-  return usePendingOr(props, ChartTooltipBody);
+  return usePendingOr(props, ChartTooltipPart);
 }
 
-function ChartTooltipBody({
+/** The cartesian anchor, which rests the popup on the marks under it. */
+const CARTESIAN_PLACER: TooltipPlacer = { useAnchor: useCartesianTooltipAnchor };
+
+function ChartTooltipPart({
   variant = "default",
   anchor = "point",
-  className,
-  style,
   children,
+  ...props
 }: ChartTooltipProps): ReactElement {
-  const context = useChartRoot("Chart.Tooltip");
-  const { store, model, id, xScale, orientation, root: rootOf, motion, riders } = context;
-  const slot = useActiveSlot(context, true);
-  const window = model.window;
-  const open = slot !== null;
-  // Once open, the portal stays mounted. Its node sits after the scope's last child, so mounting
-  // and dropping it on each open and close flips that child's :last-child and restyles all of it,
-  // the whole chart when the chart is the scope's last child.
-  const [kept, setKept] = useState(false);
-  if (open && !kept) setKept(true);
-  const drawn = useRootFrame("Chart.Tooltip");
-  const positioner = useRef<HTMLDivElement | null>(null);
-  const memory = useRef<RestMemory>({ ...FORGOTTEN });
-  // The marks' roof, which the anchor reads at most once per commit.
-  const [roofs] = useState(createChartRoof);
-  // A count that asks Base UI to place the popup again, after the marks draw something new or a
-  // data update's tween lands, so the anchor measures the roof afresh.
-  const [measures, setMeasures] = useState(0);
-  // The slot a reader's pointer, key or touch step moved to last. Root carries the active slot over
-  // a data update as a commit, which never lands here, so that move shows at once.
-  const stepped = useRef<number | null>(null);
-  useChartFollower("Chart.Tooltip", (active, cause) => {
-    if (cause === "step") stepped.current = active?.slot ?? null;
-  });
-  // With Panels each Panel has a value axis of its own, so the popup keeps the plot's top lane.
-  const roofed = anchor === "point" && orientation === "vertical" && context.panels.length === 0;
-  const virtual = useMemo((): Anchor | null => {
-    if (slot === null || window === null || drawn === null) return null;
-    const { frame, metrics } = drawn;
-    const position = slot - window.first;
-    const surfaceOf = () => document.getElementById(`${id}-surface`);
-    const measure = (): Measure => {
-      const surface = surfaceOf()?.getBoundingClientRect();
-      if (surface === undefined) return { box: new DOMRect(), shift: 0, route: STRAIGHT };
-      const { box } = frame;
-      // Plot coordinates are layout pixels, and the surface's client box carries every transform
-      // above the plot, so a coordinate scales by the client box's share of the layout box.
-      const scaleX = box.width === 0 ? 1 : surface.width / box.width;
-      const scaleY = box.height === 0 ? 1 : surface.height / box.height;
-      const client = (x: number, y: number, width: number, height: number) =>
-        new DOMRect(surface.left + x * scaleX, surface.top + y * scaleY, width * scaleX, height * scaleY);
-      // The anchor's span along the slot axis, resolved before the orientation: the point itself
-      // under a point scale, the drawn bar row on a horizontal band chart, so the popup's edge
-      // meets the bars, and the focused option's and the crosshair's columns on a vertical one.
-      const along = (): readonly [number, number] => {
-        if (xScale === "point") {
-          const centre = centreOf(frame, position, "point");
-          return [centre, centre];
-        }
-        if (orientation === "vertical") return optionBand(frame, position, "band");
-        return barSpan(frame, position, metrics, WHOLE_BAND);
-      };
-      const [start, end] = along();
-      // A horizontal anchor spans the plot's width. The popup sits beside it, so it never covers it.
-      if (orientation === "horizontal") {
-        return { box: client(0, start, box.width, end - start), shift: 0, route: STRAIGHT };
-      }
-      // Under anchor="top" and with Panels, a vertical anchor runs the plot's whole height.
-      // Otherwise it runs from the popup's resting edge down to the plot's bottom, so the popup
-      // touches it there.
-      const root = roofed ? rootOf() : null;
-      if (root === null) return { box: client(start, 0, end - start, box.height), shift: 0, route: STRAIGHT };
-      const outer = root.getBoundingClientRect();
-      const popup = positioner.current?.getBoundingClientRect() ?? new DOMRect();
-      const width = popup.width / scaleX;
-      const centre = (start + end) / 2;
-      const plotX = (x: number) => (x - surface.left) / scaleX;
-      const within = [plotX(outer.left), plotX(outer.right)] as const;
-      const viewport = viewportSize();
-      const profile = roofs.read({
-        root,
-        surface,
-        scale: { x: scaleX, y: scaleY },
-        // The Root's box holds the popup, and no series mark draws outside it.
-        stretch: [Math.min(0, within[0]), Math.max(box.width, within[1])],
-        frame,
-        motion,
-        riders,
-      });
-      const roof = (spanStart: number, spanEnd: number) => roofOver(profile, spanStart, spanEnd);
-      const rest = restAt(memory.current, slot, (from) =>
-        roofRest({
-          centre,
-          width,
-          within,
-          viewport: [plotX(TOOLTIP_EDGE), plotX(viewport.width - TOOLTIP_EDGE)],
-          roof,
-          floor: box.height,
-          from,
-        })
-      );
-      const column = client(start, rest.bottom, end - start, box.height - rest.bottom);
-      // The bridge under a popup that rests above the plot reaches down to the plot's top, past the
-      // gap over the roof, so a pointer moving straight up never leaves both the surface and the
-      // popup. Over the plot the surface already holds the slot, and keeps its clicks.
-      const node = positioner.current;
-      if (node !== null) {
-        const bridge = (Math.max(0, -rest.bottom) * scaleY) / clientScale(node).x;
-        writeStyle(node, "--_bridge", `${String(bridge)}px`);
-      }
-      // When no side of the column holds the popup, it overlays the plot at the viewport's top gap,
-      // under the roof, so any path over the roof leaves the viewport and the step jumps.
-      return {
-        box: column,
-        shift: (rest.left + width / 2 - centre) * scaleX,
-        route: {
-          kind: "roof",
-          roof: (left, right) => {
-            const top = roof(plotX(left), plotX(right));
-            return top === null ? null : surface.top + top * scaleY;
-          },
-        },
-      };
-    };
-    let latest: Measure | null = null;
-    return {
-      getBoundingClientRect: () => {
-        latest = measure();
-        return latest.box;
-      },
-      get contextElement() {
-        return surfaceOf() ?? undefined;
-      },
-      placed: () => latest ?? measure(),
-    };
-    // oxlint-disable-next-line react-hooks/exhaustive-deps -- a new `measures` count asks Base UI to place the popup again over marks that drew something new
-  }, [slot, window, xScale, model, roofed, id, orientation, drawn, rootOf, motion, roofs, measures]);
-  const glider = useRef<TooltipGlider | null>(null);
-  const watchPositioner = useCallback(
-    (node: HTMLDivElement | null) => {
-      positioner.current = node;
-      glider.current = node === null ? null : createTooltipGlider(node, rootOf());
-      return () => {
-        glider.current?.dispose();
-        glider.current = null;
-        positioner.current = null;
-      };
-    },
-    [rootOf]
-  );
-  // The anchor Base UI measures last, whose roof a glide armed before that measure reads.
-  const latestAnchor = useRef(virtual);
-  // A slot step glides the popup to its next place. Opening, a data update and a resize of the plot
-  // move it at once, and closing forgets where it rested.
-  const before = useRef<{ slot: number | null; model: typeof model; drawn: typeof drawn }>({
-    slot: null,
-    model,
-    drawn,
-  });
-  useLayoutEffect(() => {
-    latestAnchor.current = virtual;
-  }, [virtual]);
-  useLayoutEffect(() => {
-    const last = before.current;
-    before.current = { slot, model, drawn };
-    if (slot === null) memory.current = { ...FORGOTTEN };
-    // The roof reads the marks again when the popup opens and after every commit.
-    if (last.slot === null || last.model !== model || last.drawn !== drawn) roofs.forget();
-    // Only a reader's step glides. A data update moves the popup at once, the active slot Root
-    // carries over with it included.
-    const steps =
-      last.slot !== null &&
-      slot !== null &&
-      last.slot !== slot &&
-      stepped.current === slot &&
-      last.model === model &&
-      last.drawn === drawn;
-    stepped.current = null;
-    if (steps) glider.current?.arm(() => latestAnchor.current?.placed().route ?? STRAIGHT);
-    else glider.current?.stop();
-  }, [slot, model, drawn, roofs]);
-  // While the popup shows, marks that draw something new, such as a new curve, style or transform,
-  // place it again before the browser paints. A tween's frames change the marks too, and its
-  // commit already read where they land, so they place the popup again only once the tween ends.
-  useEffect(() => {
-    const root = rootOf();
-    if (!roofed || !open || root === null) return undefined;
-    const measureAgain = () => {
-      roofs.forget();
-      glider.current?.stop();
-      flushSync(() => setMeasures((count) => count + 1));
-    };
-    const unwatch = roofs.watch(root, measureAgain, () => motion.running());
-    let frame = 0;
-    if (motion.running()) {
-      frame = requestAnimationFrame(function landing() {
-        if (motion.running()) frame = requestAnimationFrame(landing);
-        else measureAgain();
-      });
-    }
-    return () => {
-      unwatch();
-      cancelAnimationFrame(frame);
-    };
-  }, [roofed, open, motion, model, drawn, roofs, rootOf]);
-  // Whether the pointer entered the popup by moving straight toward it from the active slot. Only
-  // that entry freezes the slot, as CONTRACT section 9.5's safe triangle does for polar charts, so
-  // a scrub that crosses the popup keeps following x. The surface records the last plot position.
-  const frozen = useRef(false);
-  const pick = (clientX: number, clientY: number) => {
-    const surface = document.getElementById(`${id}-surface`);
-    return surface === null
-      ? null
-      : pointerSlot(context, drawn?.frame ?? null, surface.getBoundingClientRect(), clientX, clientY);
-  };
-  // The input that last moved the active slot, read on each render the slot change causes.
-  const touchInput = ["touch", "pen"].includes(store.pointer()?.type ?? "");
-  const content = children ?? <DefaultTooltip />;
   return (
-    <TooltipPrimitive.Root
-      open={open}
-      onOpenChange={(next, details) => {
-        if (next) return;
-        // A press on the chart itself picks or pins a slot. Every other dismissal Base UI reports,
-        // such as a press outside the chart or Escape with focus elsewhere, takes the one dismissal.
-        const target = details.event.target;
-        if (
-          details.reason === "outside-press" &&
-          target instanceof Node &&
-          context.root()?.contains(target) === true
-        )
-          return;
-        store.dismiss();
-      }}>
-      <OverlayPortal portal={TooltipPrimitive.Portal} keepMounted={kept}>
-        <TooltipPrimitive.Positioner
-          anchor={virtual}
-          side="top"
-          align="center"
-          // The popup flips above or below the column, or the row of a horizontal chart, so it
-          // stays off a sideways scrub. When neither holds its content, as at 400 % zoom, it sits
-          // beside the column, and when no side does, it overlays the plot, per CONTRACT section
-          // 9.5. It touches its anchor, so a pointer that crosses to it never leaves both. Its
-          // height stops at the viewport's, where it scrolls.
-          collisionAvoidance={{ side: "flip", align: "shift", fallbackAxisSide: "end" }}
-          // Base UI's flip adds 1 px to the collision padding, and 1 px more on the side opposite
-          // the preferred top, so these paddings make every flip test read TOOLTIP_EDGE, 8 px,
-          // the same inset the overlay offset tests.
-          collisionPadding={{ top: 7, right: 7, bottom: 6, left: 7 }}
-          sideOffset={({ side, positioner: size }) =>
-            virtual === null ? 0 : tooltipSideOffset(side, virtual.placed().box, size, viewportSize())
-          }
-          // Above or below, the popup moves along x to stay inside the chart Root's box. Base UI
-          // applies the offset in the positioner's own pixels, and Floating UI mirrors it in a
-          // right-to-left popup, so the client shift is scaled and mirrored back.
-          alignOffset={({ side }) => {
-            const node = positioner.current;
-            if (virtual === null || node === null || (side !== "top" && side !== "bottom")) return 0;
-            const mirror = getComputedStyle(node).direction === "rtl" ? -1 : 1;
-            return (virtual.placed().shift / clientScale(node).x) * mirror;
-          }}
-          ref={watchPositioner}
-          data-slot="chart-tooltip-positioner"
-          className={overlayPositionerClass}>
-          <TooltipPrimitive.Popup
-            data-slot="chart-tooltip"
-            data-variant={variant}
-            data-input={touchInput ? "touch" : undefined}
-            aria-hidden="true"
-            ref={watchOverflow}
-            className={cn(
-              overlayPopupSurfaceClass,
-              tooltipShellClass,
-              overlayPopupMotionClass,
-              tooltipPopup({ variant }),
-              className
-            )}
-            style={style}
-            onClick={(event) => {
-              // A popup that scrolls takes touch, so a tap on it, which never scrolled, takes the
-              // one dismissal a tap beside the chart would.
-              if (event.currentTarget.dataset.input === "touch") store.dismiss();
-            }}
-            onPointerEnter={(event) => {
-              const from = store.pointer();
-              // The pointer must come from the active slot and move along the axis that leads to
-              // the popup, up or down to a popup above or below and across to one beside a row.
-              const start = from === null ? null : pick(from.x, from.y);
-              const dx = Math.abs(from === null ? 0 : event.clientX - from.x);
-              const dy = Math.abs(from === null ? 0 : event.clientY - from.y);
-              const side = event.currentTarget.getAttribute("data-side");
-              const toward = side === "top" || side === "bottom" ? dy > dx : dx > dy;
-              frozen.current = start !== null && start.slot === store.get().active && toward;
-            }}
-            onPointerMove={(event) => {
-              const snapshot = store.get();
-              if (frozen.current || snapshot.pinned || snapshot.source === "keyboard") return;
-              const next = pick(event.clientX, event.clientY);
-              if (next !== null && next.slot !== snapshot.active)
-                store.set({ active: next.slot, source: "pointer", near: next.near });
-            }}
-            onPointerLeave={(event) => {
-              const surface = document.getElementById(`${id}-surface`);
-              if (
-                surface !== null &&
-                event.relatedTarget instanceof Node &&
-                surface.contains(event.relatedTarget)
-              )
-                return;
-              if (store.get().source === "pointer" && !store.get().pinned)
-                store.set({ active: null, source: null, near: null });
-            }}>
-            <ChartLiveContext value={true}>{content}</ChartLiveContext>
-            {roofed ? <span data-slot="chart-tooltip-bridge" /> : null}
-          </TooltipPrimitive.Popup>
-        </TooltipPrimitive.Positioner>
-      </OverlayPortal>
-    </TooltipPrimitive.Root>
+    <ChartTooltipBody variant={variant} placement={anchor} placer={CARTESIAN_PLACER} {...props}>
+      {children ?? <DefaultTooltip />}
+    </ChartTooltipBody>
   );
 }
 
@@ -543,15 +169,15 @@ function ChartTooltipLabelBody({
   className,
   ...props
 }: ChartTooltipLabelProps): ReactElement {
-  const context = useChartRoot("Chart.TooltipLabel");
-  const slot = useActiveSlot(context);
+  const readout = useChartReadout("Chart.TooltipLabel");
+  const active = useActiveIndex(readout);
   return useRender({
     defaultTagName: "span",
     render,
     props: {
       "data-slot": "chart-tooltip-label",
       ...mergeProps<"span">(
-        { className, children: slot === null ? null : slotLabel(context, slot, format).text },
+        { className, children: active === null ? null : readout.activeLabel(active, format) },
         props
       ),
     },
@@ -574,13 +200,15 @@ function ChartTooltipItemsBody({
   children,
   ...props
 }: ChartTooltipItemsProps): ReactElement {
-  const context = useChartRoot("Chart.TooltipItems");
+  const readout = useChartReadout("Chart.TooltipItems");
   const selectedKey = use(ChartSelectionContext);
-  const rows = context.model.series.map(({ key, seriesIndex }) => (
+  // Only a readout whose rows follow the active item renders on a step.
+  const active = useActiveIndex(readout, readout.itemsFollowActive ? undefined : false);
+  const rows = readout.tooltipKeys(active).map((key) => (
     <ChartRowContext key={key} value={key}>
       <div
         data-slot="chart-tooltip-item"
-        data-series={seriesIndex}
+        data-series={readout.item(key)?.index}
         data-dimmed={selectedKey !== null && selectedKey !== key ? "" : undefined}>
         {children}
       </div>
@@ -610,10 +238,10 @@ function ChartTooltipValueBody({
   className,
   ...props
 }: ChartTooltipValueProps): ReactElement {
-  const context = useChartRoot("Chart.TooltipValue");
-  const point = useActivePoint(context);
-  const key = useReadoutKey("Chart.TooltipValue", context, dataKey, point.key);
-  const text = key === null || point.slot === null ? null : readingText(context, key, point.slot, format);
+  const readout = useChartReadout("Chart.TooltipValue");
+  const point = useActiveItem(readout);
+  const key = useReadoutKey("Chart.TooltipValue", readout, dataKey, point.key);
+  const text = key === null || point.index === null ? null : readout.valueText(key, point.index, format);
   return useRender({
     defaultTagName: "span",
     render,
@@ -646,13 +274,13 @@ function ChartTooltipShareBody({
   className,
   ...props
 }: ChartTooltipShareProps): ReactElement {
-  const context = useChartRoot("Chart.TooltipShare");
-  const point = useActivePoint(context);
-  const key = useReadoutKey("Chart.TooltipShare", context, dataKey, point.key);
+  const readout = useChartReadout("Chart.TooltipShare");
+  const point = useActiveItem(readout);
+  const key = useReadoutKey("Chart.TooltipShare", readout, dataKey, point.key);
   const text =
-    key === null || point.slot === null
+    key === null || point.index === null
       ? null
-      : shareText(context, slotShares(context, point.slot, shareDigits(format)).get(key) ?? null, format);
+      : shareText(readout.locale, readout.share(key, point.index, shareDigits(format)), format);
   return useRender({
     defaultTagName: "span",
     render,

@@ -19,13 +19,8 @@ import { useChartFollower } from "./chart-followers";
 import type { JoinLead, MarkValues } from "./chart-motion";
 import { useFirstDraw } from "./chart-motion-mark";
 import { useChartFrame } from "./chart-plot";
-import {
-  ChartDatumContext,
-  ChartHeadlineContext,
-  fallbackSlot,
-  readingAt,
-  useActiveSlot,
-} from "./chart-readout";
+import { ChartDatumContext, ChartHeadlineContext } from "./chart-readout";
+import { fallbackSlot, readingAt, useActiveSlot } from "./chart-series-readout";
 import type { ChartFallback, ChartLayerProps, ValueFormat } from "./chart-types";
 import { formatValue } from "./format/value-format";
 import { barCellAt, barEndValue, barTip } from "./layout/bar-geometry";

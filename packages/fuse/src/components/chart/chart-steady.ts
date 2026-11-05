@@ -7,8 +7,8 @@
  */
 import { useState } from "react";
 
-import { isThresholdColor } from "./chart-paint";
 import type { ChartColor, ChartConfig, ChartSeriesConfig } from "./chart-types";
+import { isThresholdColor } from "./layout/color-key";
 import { sameItems } from "./layout/same-items";
 
 /**

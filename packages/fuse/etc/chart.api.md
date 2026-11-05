@@ -1364,7 +1364,7 @@ export type ScatterChartActiveDotProps = ChartLayerProps & {
 };
 
 // @beta
-function ScatterChartEmpty(input: ScatterChartEmptyProps): ReactElement;
+function ScatterChartEmpty(props: ScatterChartEmptyProps): ReactElement;
 
 // @beta
 export type ScatterChartEmptyProps = ChartDomProps<"div">;

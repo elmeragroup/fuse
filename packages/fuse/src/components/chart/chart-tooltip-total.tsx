@@ -6,7 +6,7 @@ import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
 
 import { useChartRoot } from "./chart-context";
-import { stackTotal, useActiveSlot } from "./chart-readout";
+import { stackTotal, useActiveSlot } from "./chart-series-readout";
 import type { ChartDomProps, ValueFormat } from "./chart-types";
 import { CHART_STRINGS } from "./format/chart-strings";
 import { formatValue } from "./format/value-format";

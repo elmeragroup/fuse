@@ -1,10 +1,8 @@
 "use client";
 
-import { useChartRoot } from "./chart-context";
-import { useActivePoint } from "./chart-readout";
-import { slotLabel } from "./chart-text";
-import type { ChartPoint, ChartQuality } from "./chart-types";
-import { slotX } from "./layout/x-domain";
+import { useActiveIndex, useChartReadout } from "./chart-readout";
+import { useChartStore } from "./chart-store";
+import type { ChartPoint } from "./chart-types";
 
 /**
  * The active point of the enclosing chart, or null when nothing is active. The caller renders on
@@ -16,23 +14,8 @@ import { slotX } from "./layout/x-domain";
  * @beta
  */
 export function useChartPoint(): ChartPoint | null {
-  const context = useChartRoot("useChartPoint");
-  const { slot, key } = useActivePoint(context, true);
-  if (slot === null) return null;
-  const values: Record<string, number | null> = {};
-  const quality: Record<string, ChartQuality> = {};
-  for (const series of context.model.series) {
-    const reading = series.readings[slot];
-    values[series.key] = reading?.kind === "reading" ? reading.value : null;
-    if (reading?.kind === "reading") quality[series.key] = reading.quality;
-    else if (reading?.kind === "missing") quality[series.key] = "missing";
-  }
-  return {
-    index: slot,
-    x: slotX(context.model.domain, slot),
-    label: slotLabel(context, slot),
-    key,
-    values,
-    quality,
-  };
+  const readout = useChartReadout("useChartPoint");
+  const active = useActiveIndex(readout, true);
+  const near = useChartStore(readout.store, (snapshot) => snapshot.near);
+  return active === null ? null : readout.point(active, near);
 }

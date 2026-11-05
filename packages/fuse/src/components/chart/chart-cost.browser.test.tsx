@@ -144,6 +144,11 @@ describe("pointer cost", () => {
     expect(commits.get("crosshair") ?? 0).toBe(0);
     expect(commits.get("legend") ?? 0).toBe(0);
     expect(commits.get("tooltip") ?? 0).toBeGreaterThan(0);
+    // The tooltip renders a few times per change of active slot, never per step. Main measured 85
+    // to 89 tooltip commits over this sweep in five runs on 2026-11-05, median 87, before the
+    // readout port, and the ceiling is that median × 1.5. A tooltip that renders on every step
+    // commits at least 240.
+    expect(commits.get("tooltip") ?? 0).toBeLessThanOrEqual(130);
     // 24 slots, so at most 24 changes of the active slot, each rendering the legend value once.
     expect(
       commits.get("legend-value") ?? 0,

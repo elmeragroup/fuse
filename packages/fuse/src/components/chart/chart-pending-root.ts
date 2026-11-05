@@ -14,7 +14,7 @@ export const ChartPendingRootContext = createContext(false);
  * Render a shared part's body, or nothing inside a Root whose family has no readout yet.
  *
  * @param props - The part's props.
- * @param Body - The part's body, which reads the cartesian Root.
+ * @param Body - The part's body, which reads its Root's readout.
  * @returns The body, or an empty fragment under a pending Root.
  */
 export function usePendingOr<P extends object>(props: P, Body: ComponentType<P>): ReactElement {

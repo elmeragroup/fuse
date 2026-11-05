@@ -1,7 +1,45 @@
 /**
- * The per-key colour property of CONTRACT section 11. Fuse never writes `--chart-color-<key>`. Each
- * mark reads it with the config role as the fallback, so a consumer's property on Root wins.
+ * The per-key colour property of CONTRACT section 11, and the role helpers every chart family reads
+ * a config colour through. Fuse never writes `--chart-color-<key>`. Each mark reads it with the
+ * config role as the fallback, so a consumer's property on Root wins.
  */
+import type { ChartColor, ChartThresholdColor } from "../chart-types";
+
+/**
+ * Whether a colour is a decorative role list.
+ *
+ * @param color - A config colour.
+ * @returns True for a role list.
+ */
+export function isRoleList(color: ChartColor): color is Extract<ChartColor, readonly unknown[]> {
+  return Array.isArray(color);
+}
+
+/**
+ * Whether a colour is a threshold, which splits the series at one value.
+ *
+ * @param color - A config colour.
+ * @returns True for a threshold.
+ */
+export function isThresholdColor(color: ChartColor): color is ChartThresholdColor {
+  // oxlint-disable-next-line anti-slop/no-runtime-typeof -- consumer-owned config: a colour arrives as a role string, a role list or a threshold object
+  return typeof color === "object" && !isRoleList(color);
+}
+
+/**
+ * The one role a series paints with where a family draws a single role per series. A list takes its
+ * first role, a threshold its `below` side, and a scale its middle step.
+ *
+ * @param color - The config colour, or undefined for a key the config lacks.
+ * @returns The role, `chart-1` without a colour.
+ */
+export function singleRole(color: ChartColor | undefined): string {
+  if (color === undefined) return "chart-1";
+  if (isRoleList(color)) return color[0];
+  if (isThresholdColor(color)) return color.below.color;
+  if (color === "chart-seq" || color === "chart-diverging") return `${color}-4`;
+  return color;
+}
 
 /** Whether a code point stays as it is: an ASCII letter, an ASCII digit or `-`. */
 function isKept(code: number): boolean {

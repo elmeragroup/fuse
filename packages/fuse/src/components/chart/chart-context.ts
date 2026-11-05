@@ -211,12 +211,6 @@ export type ChartLayoutContextValue = {
 };
 
 export const ChartRootContext = createContext<ChartRootContextValue | null>(null);
-
-/**
- * Root's selected config key, or null. It lives apart from the root context, so a selection
- * renders the legend, the tooltip and the surface that show it, and no mark.
- */
-export const ChartSelectionContext = createContext<string | null>(null);
 export const ChartLayoutContext = createContext<ChartLayoutContextValue | null>(null);
 
 /**

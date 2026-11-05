@@ -2,15 +2,10 @@
 
 import type { ReactElement } from "react";
 
-import { mergeProps } from "@base-ui/react/merge-props";
-import { useRender } from "@base-ui/react/use-render";
-
-import { useLocale } from "../../intl/locale-context";
-import { Empty } from "../empty/empty";
-import { Loader } from "../loader/loader";
 import { Skeleton } from "../skeleton/skeleton";
+import { ChartEmptyBody } from "./chart-empty-body";
+import { ChartSkeletonBody } from "./chart-skeleton-body";
 import type { ChartDomProps } from "./chart-types";
-import { CHART_STRINGS } from "./format/chart-strings";
 import { useScatterRoot } from "./scatter-chart-context";
 
 /**
@@ -56,32 +51,9 @@ const SKELETON_DOTS = [
  *
  * @beta
  */
-export function ScatterChartEmpty({
-  render,
-  className,
-  children,
-  ...props
-}: ScatterChartEmptyProps): ReactElement {
-  const context = useScatterRoot("ScatterChart.Empty");
-  const element = useRender({
-    defaultTagName: "div",
-    render,
-    props: {
-      "data-slot": "chart-empty",
-      ...mergeProps<"div">(
-        {
-          className,
-          children: (
-            <Empty.Root>
-              {children ?? <Empty.Description>{CHART_STRINGS[context.locale].noData}</Empty.Description>}
-            </Empty.Root>
-          ),
-        },
-        props
-      ),
-    },
-  });
-  return context.model.empty ? element : <></>;
+export function ScatterChartEmpty(props: ScatterChartEmptyProps): ReactElement {
+  const { locale, model } = useScatterRoot("ScatterChart.Empty");
+  return <ChartEmptyBody locale={locale} empty={model.empty} {...props} />;
 }
 
 /**
@@ -90,16 +62,12 @@ export function ScatterChartEmpty({
  *
  * @beta
  */
-export function ScatterChartSkeleton({
-  label,
-  className,
-  style,
-  ...props
-}: ScatterChartSkeletonProps): ReactElement {
-  const { locale } = useLocale();
+export function ScatterChartSkeleton({ label, ...props }: ScatterChartSkeletonProps): ReactElement {
   return (
-    <div data-slot="chart-skeleton" data-variant="points" className={className} style={style} {...props}>
-      {SKELETON_DOTS.map(([left, top], index) => (
+    <ChartSkeletonBody
+      variant="points"
+      label={label}
+      marks={SKELETON_DOTS.map(([left, top], index) => (
         <Skeleton
           // The dots never reorder, so the position is their identity.
           key={index}
@@ -107,8 +75,8 @@ export function ScatterChartSkeleton({
           style={{ "--chart-skeleton-x": left, "--chart-skeleton-y": top }}
         />
       ))}
-      <Loader aria-label={label ?? CHART_STRINGS[locale].loading} />
-    </div>
+      {...props}
+    />
   );
 }
 
