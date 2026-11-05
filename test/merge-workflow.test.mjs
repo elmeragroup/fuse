@@ -308,8 +308,9 @@ describe("merge workflow", () => {
     // invisible until activation.
     const releaseWith = asRecord(release.with, "release with");
     expect(releaseWith.source_commit).toBe("${{ github.sha }}");
-    // npm authenticates over OIDC, so the call passes no secrets.
-    expect(release.secrets).toBeUndefined();
+    // npm authenticates over OIDC, so the call passes no npm token; the one secret is the Slack
+    // token the notify job posts with, passed by name rather than `inherit`.
+    expect(release.secrets).toEqual({ SLACK_BOT_TOKEN: "${{ secrets.SLACK_BOT_TOKEN }}" });
     const version = asRecord(jobs.version, "version job");
     expect(version.needs).toEqual(["checks", "browser"]);
     expect(version.if).toBe(activatedPush);

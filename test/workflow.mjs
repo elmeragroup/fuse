@@ -126,6 +126,17 @@ export function requiredRunStep(steps, prefix) {
 }
 
 /**
+ * Finds the step with `id`, which GitHub requires to be unique in its job.
+ * @param {Record<string, unknown>[]} steps
+ * @param {string} id
+ */
+export function requiredStepById(steps, id) {
+  const found = steps.find((step) => step.id === id);
+  if (found === undefined) throw new Error(`expected a step with id ${id}`);
+  return found;
+}
+
+/**
  * Finds the single step that runs `action` at any ref. The ref itself is the pin sweep's concern
  * (`action-pins.test.mjs`), so a second step with the same action fails here as a duplicate.
  * @param {Record<string, unknown>[]} steps

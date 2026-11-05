@@ -7,10 +7,29 @@ import { describe, expect, it } from "vitest";
 import { USAGE } from "../scripts/release.ts";
 import { asRecord, asString, readJsonObject } from "./json-object.mjs";
 import { repoRoot } from "./repo-tree.mjs";
-import { jobSteps, readWorkflow, requiredRunStep, requiredUsesStep, turboTasks } from "./workflow.mjs";
+import {
+  jobSteps,
+  readWorkflow,
+  requiredRunStep,
+  requiredStepById,
+  requiredUsesStep,
+  turboTasks,
+} from "./workflow.mjs";
 
 function rootScripts() {
   return asRecord(readJsonObject(join(repoRoot, "package.json")).scripts, "scripts");
+}
+
+/**
+ * The publish job's one step that runs the release engine.
+ * @param {Record<string, unknown>[]} steps
+ */
+function engineStep(steps) {
+  const matches = steps.filter(
+    (step) => step.run !== undefined && asString(step.run, "publish run").includes("pnpm release ")
+  );
+  expect(matches, "expected one release engine step").toHaveLength(1);
+  return matches[0];
 }
 
 describe("release wiring", () => {
@@ -110,11 +129,7 @@ describe("release wiring", () => {
     // The publish job carries its own `if`, so read its steps through jobSteps rather than
     // through requiredJobSteps, which asserts an unconditional job.
     const steps = jobSteps(readWorkflow("publish-release"), "publish");
-    const engineSteps = steps.filter(
-      (step) => step.run !== undefined && asString(step.run, "publish run").includes("pnpm release ")
-    );
-    expect(engineSteps).toHaveLength(1);
-    const engine = engineSteps[0];
+    const engine = engineStep(steps);
     const command = asString(engine.run, "publish run");
     expect(command).toContain('pnpm release retry "$RECORD_TAG"');
     expect(command).toContain('pnpm release publish "$SOURCE_COMMIT"');
@@ -165,10 +180,7 @@ describe("release wiring", () => {
       major > 11 || (major === 11 && minor >= 21),
       `npm ${version.slice(1).join(".")} must be at least 11.21.0`
     ).toBe(true);
-    const engine = steps.findIndex(
-      (step) => step.run !== undefined && asString(step.run, "publish run").includes("pnpm release ")
-    );
-    expect(steps.indexOf(pin)).toBeLessThan(engine);
+    expect(steps.indexOf(pin)).toBeLessThan(steps.indexOf(engineStep(steps)));
   });
 
   it("publishes from the npm environment that npm's trusted-publisher entries name", () => {
@@ -201,21 +213,111 @@ describe("release wiring", () => {
     expect(asRecord(callInputs.source_commit, "source_commit").required).toBe(true);
     // A caller cannot request a retry; that path stays dispatch-only.
     expect(callInputs.record_tag).toBeUndefined();
-    // npm authenticates over OIDC, so the caller passes no npm token.
-    expect(call.secrets).toBeUndefined();
+    // npm authenticates over OIDC, so the caller passes no npm token, only the optional Slack token.
+    expect(call.secrets).toEqual({ SLACK_BOT_TOKEN: { required: false } });
     const dispatch = asRecord(events.workflow_dispatch, "workflow_dispatch");
     const dispatchInputs = asRecord(dispatch.inputs, "dispatch inputs");
     expect(asRecord(dispatchInputs.record_tag, "record_tag").required).toBe(true);
   });
 
-  it("grants the publish workflow the permissions the release path needs", () => {
+  it("grants the publish job the permissions the release path needs and nothing to other jobs", () => {
     // A dropped grant would stay invisible until the next real publication; the caller cannot
     // elevate the called workflow above these. `id-token: write` lets npm exchange the job's OIDC
-    // token for a publish token.
-    expect(readWorkflow("publish-release").permissions).toEqual({
+    // token for a publish token. The workflow grants nothing, so a job without its own grant gets
+    // no token rights rather than the publish job's.
+    const workflow = readWorkflow("publish-release");
+    expect(workflow.permissions).toEqual({});
+    const publish = asRecord(asRecord(workflow.jobs, "publish jobs").publish, "publish job");
+    expect(publish.permissions).toEqual({
       contents: "write",
       "pull-requests": "read",
       "id-token": "write",
+    });
+  });
+
+  // The announcement only runs after a real publication, so a broken wire here would stay
+  // invisible until a release went unannounced, was announced twice, or the Slack token reached
+  // a job or step it was not meant for.
+  describe("Slack announcement", () => {
+    const workflow = readWorkflow("publish-release");
+    const jobs = asRecord(workflow.jobs, "publish jobs");
+    const notify = asRecord(jobs.notify, "notify job");
+    const publishSteps = jobSteps(workflow, "publish");
+    const notifySteps = jobSteps(workflow, "notify");
+    /** @param {Record<string, unknown>[]} steps */
+    const runs = (steps) =>
+      steps.flatMap((candidate) => (candidate.run === undefined ? [] : [asString(candidate.run, "run")]));
+
+    it("finds the published release in the publish job, after the engine and under its lock", () => {
+      const lookup = requiredStepById(publishSteps, "release");
+      expect(lookup.run).toBe("node tooling/release-announcement/src/find-release.ts");
+      // A failed lookup must not fail a finished publication.
+      expect(lookup["continue-on-error"]).toBe(true);
+      expect(lookup.if).toBeUndefined();
+      expect(asRecord(lookup.env, "lookup env")).toEqual({
+        GH_TOKEN: "${{ github.token }}",
+        SOURCE_COMMIT: "${{ inputs.source_commit }}",
+        RECORD_TAG: "${{ inputs.record_tag }}",
+      });
+      expect(publishSteps.indexOf(lookup)).toBeGreaterThan(publishSteps.indexOf(engineStep(publishSteps)));
+      // The lookup runs the announcement package, which the job's full install provides.
+      expect(requiredRunStep(publishSteps, "pnpm install --frozen-lockfile").run).toBe(
+        "pnpm install --frozen-lockfile"
+      );
+      expect(asRecord(asRecord(jobs.publish, "publish job").outputs, "publish outputs")).toEqual({
+        "release-tag": "${{ steps.release.outputs.tag }}",
+        release: "${{ steps.release.outputs.release }}",
+      });
+    });
+
+    it("announces from one read-only job that installs only the announcement's runtime packages", () => {
+      expect(Object.keys(jobs).sort()).toEqual(["notify", "publish"]);
+      expect(notify.needs).toBe("publish");
+      // A run that published nothing, or whose lookup failed, leaves the tag empty.
+      expect(notify.if).toBe("needs.publish.outputs.release-tag != ''");
+      expect(notify.permissions).toEqual({ contents: "read" });
+      expect(notify.environment).toBeUndefined();
+      expect(JSON.stringify(notify)).not.toContain("github.token");
+      // The exact install: the frozen lockfile, no install scripts, and only the production
+      // dependencies of the announcement package, so the token's job runs nothing else installed.
+      expect(runs(notifySteps)).toEqual([
+        "pnpm install --frozen-lockfile --ignore-scripts --prod --filter @elmeragroup/release-announcement",
+        "node tooling/release-announcement/src/announce-release.ts",
+      ]);
+      expect(
+        notifySteps.flatMap((candidate) =>
+          candidate.uses === undefined ? [] : [asString(candidate.uses, "uses").split("@")[0]]
+        )
+      ).toEqual(["actions/checkout", "pnpm/action-setup", "actions/setup-node"]);
+      const checkout = requiredUsesStep(notifySteps, "actions/checkout");
+      // The full history holds a retried record's commit.
+      expect(asRecord(checkout.with, "checkout inputs")).toEqual({
+        "fetch-depth": 0,
+        "persist-credentials": false,
+      });
+      const announce = requiredStepById(notifySteps, "announce");
+      expect(announce.run).toBe("node tooling/release-announcement/src/announce-release.ts");
+      // A failed announcement fails the job, so a release is never silently left unannounced.
+      expect(announce["continue-on-error"]).toBeUndefined();
+      expect(asRecord(announce.env, "announce env")).toEqual({
+        RELEASE: "${{ needs.publish.outputs.release }}",
+        SLACK_RELEASES_CHANNEL: "${{ vars.SLACK_RELEASES_CHANNEL }}",
+        SLACK_CANARY_CHANNEL: "${{ vars.SLACK_CANARY_CHANNEL }}",
+        SLACK_BOT_TOKEN: "${{ secrets.SLACK_BOT_TOKEN }}",
+      });
+      // Slack is the receipt, so no Actions cache stands in for one.
+      expect(notifySteps.filter((candidate) => String(candidate.uses).startsWith("actions/cache"))).toEqual(
+        []
+      );
+    });
+
+    it("announces one release at a time, queueing rather than dropping", () => {
+      expect(notify.concurrency).toEqual({
+        // An empty tag falls back to the run's own ID, so unrelated runs never share a group.
+        group: "slack-announcement-${{ needs.publish.outputs.release-tag || github.run_id }}",
+        "cancel-in-progress": false,
+        queue: "max",
+      });
     });
   });
 });

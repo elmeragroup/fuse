@@ -1,0 +1,31 @@
+{
+  "name": "@elmeragroup/release-announcement",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Announces each published @elmeragroup/fuse release in Slack.",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "type-check": "tsrs --noEmit"
+  },
+  "dependencies": {
+    "@effect/platform-node": "catalog:",
+    "effect": "catalog:",
+    "mdast-util-from-markdown": "catalog:",
+    "mdast-util-gfm-strikethrough": "catalog:",
+    "micromark-extension-gfm-strikethrough": "catalog:"
+  },
+  "devDependencies": {
+    "@effect/vitest": "catalog:",
+    "@elmeragroup/typescript-config": "workspace:*",
+    "@types/mdast": "catalog:",
+    "@types/node": "catalog:",
+    "tsrs": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "engines": {
+    "node": ">=24.13.0 <25"
+  }
+}
