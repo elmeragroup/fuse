@@ -362,7 +362,13 @@ function sweepChart(kind: "hours" | "quarters" | "months" | "categories" | "hori
   );
 }
 
-describe("the width sweep", () => {
+/**
+ * Each sweep awaits a frame and reads layout at 131 widths, or 261 at 4 px. On CI runners the
+ * WebKit hours case took 11–17 s, past the 15 s default.
+ */
+const SWEEP_TIMEOUT = 60_000;
+
+describe("the width sweep", { timeout: SWEEP_TIMEOUT }, () => {
   it.each(["hours", "quarters", "months", "categories"] as const)(
     "never shows fewer %s labels as the root widens from 160 to 1,200 px, and at least two on a 160 px plot",
     async (kind) => {
