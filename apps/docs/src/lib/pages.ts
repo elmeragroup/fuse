@@ -60,13 +60,20 @@ export const STATIC_PAGES: readonly StaticPage[] = [
     href: "/handbook/theming",
     label: "Theming",
     description:
-      "The three theme axes, how the cascade resolves them, and when to reach for ThemeScope instead of the document provider.",
+      "The three theme axes, identity, brand and segment, how the cascade resolves them, and when to reach for ThemeScope instead of the document provider.",
+    group: "handbook",
+  },
+  {
+    href: "/handbook/density",
+    label: "Density",
+    description:
+      "Density is a document axis: each page picks dense or comfortable, and a Next app splits its root layouts by route group to give a dashboard and a promo page their own.",
     group: "handbook",
   },
   {
     href: "/handbook/theme-matrix",
     label: "Theme matrix",
-    description: "All 24 legal brand × segment × variant permutations rendered side by side.",
+    description: "All 24 legal identity × brand × segment permutations rendered side by side.",
     group: "handbook",
   },
   {

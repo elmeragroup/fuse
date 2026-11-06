@@ -60,7 +60,7 @@ export function unchangedByDesign(
 
 /**
  * The theme's color of each token, for a preview's theme: the literal at the end of the token's
- * reference chain in the theme's variant, brand and segment, in its scheme.
+ * reference chain in the theme's identity, brand and segment, in its scheme.
  *
  * @param theme - The theme a preview stamps.
  * @returns The color of a color token, or undefined for any other name, or for every name where the
@@ -69,7 +69,7 @@ export function unchangedByDesign(
 export function tokenColorsIn(theme: PreviewTheme): TokenColorOf {
   const resolved = resolveThemeCatalog().themes.find(
     ({ input }) =>
-      input.variant === theme.variant && input.brand === theme.brand && input.segment === theme.segment
+      input.identity === theme.identity && input.brand === theme.brand && input.segment === theme.segment
   );
   const tokens = resolved?.schemes[theme.scheme].tokens;
   return (name) => {

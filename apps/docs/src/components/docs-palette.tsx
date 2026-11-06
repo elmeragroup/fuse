@@ -3,11 +3,17 @@
 import { useMemo } from "react";
 import type { ReactElement, ReactNode } from "react";
 
-import { BRAND_CODES, BRANDS, THEME_SEGMENTS, THEME_VARIANTS, useColorScheme } from "@elmeragroup/fuse/theme";
+import {
+  BRAND_CODES,
+  BRANDS,
+  THEME_SEGMENTS,
+  THEME_IDENTITIES,
+  useColorScheme,
+} from "@elmeragroup/fuse/theme";
 import type { ThemeSegment } from "@elmeragroup/fuse/theme";
 import { Toast } from "@elmeragroup/fuse/toast";
 
-import { DEFAULT_THEME, SEGMENT_LABELS, VARIANT_LABELS } from "../lib/theme";
+import { DEFAULT_THEME, SEGMENT_LABELS, IDENTITY_LABELS } from "../lib/theme";
 import { usePreviewTheme } from "./preview-theme";
 import { SitePaletteDialog, SitePaletteProvider } from "./site-palette/site-palette";
 import { colorSchemeOptions } from "./site-palette/site-palette-model";
@@ -35,15 +41,15 @@ function useDocsSettings(): SiteSettings {
           options: colorSchemeOptions(colorScheme, setColorScheme),
         },
         {
-          id: "variant",
-          label: "Variant",
+          id: "identity",
+          label: "Identity",
           keywords: PREVIEW_KEYWORDS,
-          options: THEME_VARIANTS.map((variant) => ({
-            id: variant,
-            label: VARIANT_LABELS[variant],
-            state: variant === theme.variant ? "current" : "available",
+          options: THEME_IDENTITIES.map((identity) => ({
+            id: identity,
+            label: IDENTITY_LABELS[identity],
+            state: identity === theme.identity ? "current" : "available",
             apply: () => {
-              commitTheme({ ...theme, variant }, setTheme);
+              commitTheme({ ...theme, identity }, setTheme);
             },
           })),
         },

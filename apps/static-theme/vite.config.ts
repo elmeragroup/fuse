@@ -5,14 +5,9 @@ import type { Plugin } from "vite";
 
 import type { ColorScheme, ColorSchemeOptions } from "@elmeragroup/fuse/theme";
 
-import {
-  colorSchemeScriptSource,
-  defaultDensityForVariant,
-  densityAttributes,
-  themeAttributes,
-} from "../../packages/fuse/dist/theme.js";
+import { colorSchemeScriptSource, documentAttributes } from "../../packages/fuse/dist/theme.js";
 import { applyHostRootAttributes } from "./src/host-html.ts";
-import { DOCUMENT_COLOR_SCHEME, DOCUMENT_THEME } from "./src/theme.ts";
+import { DOCUMENT_COLOR_SCHEME, DOCUMENT_DENSITY, DOCUMENT_THEME } from "./src/theme.ts";
 
 const fixtureRoot = path.dirname(fileURLToPath(import.meta.url));
 const MODULE_ENTRY_SCRIPT = /<script\b[^>]*\btype=(["'])module\1[^>]*>/i;
@@ -38,13 +33,8 @@ function colorSchemeOptionsForDocument(filename: string, urlPath: string): Color
 }
 
 function stampHostRootAttributes(html: string, filename: string, urlPath: string): string {
-  const attributes = themeAttributes(DOCUMENT_THEME);
-  const density = densityAttributes(
-    isComfortableDocument(filename, urlPath)
-      ? "comfortable"
-      : defaultDensityForVariant(DOCUMENT_THEME.variant)
-  );
-  return applyHostRootAttributes(html, attributes, density);
+  const density = isComfortableDocument(filename, urlPath) ? "comfortable" : DOCUMENT_DENSITY;
+  return applyHostRootAttributes(html, documentAttributes({ theme: DOCUMENT_THEME, density }));
 }
 
 function hoistStylesheetsBefore(html: string, beforeIndex: number): string {

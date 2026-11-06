@@ -92,11 +92,11 @@ describe("search matching", () => {
   });
 
   it.each([
-    ["every word, in any order", "internal telinet", true],
+    ["every word, in any order", "neutral telinet", true],
     ["regardless of case", "TELINET", true],
     ["a blank query", "  ", true],
     ["not when one word is missing", "telinet company", false],
   ] as const)("matches a row's text on %s: %s → %s", (_case, query, expected) => {
-    expect(matchesEveryToken("Telinet · Private · Internal", query)).toBe(expected);
+    expect(matchesEveryToken("Telinet · Private · Neutral", query)).toBe(expected);
   });
 });

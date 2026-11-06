@@ -15,7 +15,7 @@ import type { EditAction, EditHistory, StudioDocument } from "../../src/studio/l
 import { decodeShare, encodeShare } from "../../src/studio/lib/share-codec";
 import { documentCycles } from "../../src/studio/lib/token-values";
 
-const ELMA = { variant: "external", brand: "elma", segment: "private" } as const satisfies ThemeInput;
+const ELMA = { identity: "branded", brand: "elma", segment: "private" } as const satisfies ThemeInput;
 
 const EMPTY: StudioDocument = { theme: ELMA, overrides: NO_OVERRIDES };
 
@@ -124,7 +124,7 @@ describe("metric edits in share text", () => {
 
   it("reads the documented payload", () => {
     expect(
-      decodeShare(shareText({ t: "external-elma-private", m: { comfortable: { "control-h-md": 56 } } }))
+      decodeShare(shareText({ t: "branded-elma-private", m: { comfortable: { "control-h-md": 56 } } }))
         ?.overrides.density
     ).toEqual({ comfortable: { "control-h-md": 56 } });
   });
@@ -137,6 +137,6 @@ describe("metric edits in share text", () => {
     ["a value past the knob's range", { dense: { "row-h": 97 } }],
     ["a list in place of a group", { dense: [40] }],
   ])("refuses %s", (_case, metrics) => {
-    expect(decodeShare(shareText({ t: "external-elma-private", m: metrics }))).toBeUndefined();
+    expect(decodeShare(shareText({ t: "branded-elma-private", m: metrics }))).toBeUndefined();
   });
 });

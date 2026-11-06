@@ -1,7 +1,13 @@
-import { BRANDS, COLOR_SCHEMES, THEME_SEGMENTS, THEME_VARIANTS } from "@elmeragroup/fuse/theme";
-import type { BrandCode, ColorScheme, ThemeInput, ThemeSegment, ThemeVariant } from "@elmeragroup/fuse/theme";
+import { BRANDS, COLOR_SCHEMES, THEME_SEGMENTS, THEME_IDENTITIES } from "@elmeragroup/fuse/theme";
+import type {
+  BrandCode,
+  ColorScheme,
+  ThemeInput,
+  ThemeSegment,
+  ThemeIdentity,
+} from "@elmeragroup/fuse/theme";
 
-import { COLOR_SCHEME_LABELS, SEGMENT_LABELS, VARIANT_LABELS } from "../../../../lib/theme";
+import { COLOR_SCHEME_LABELS, SEGMENT_LABELS, IDENTITY_LABELS } from "../../../../lib/theme";
 import { useMediaQuery } from "../../../../lib/use-media-query";
 import { PICKER_BRANDS } from "../landing-facts";
 import { useLandingTheme } from "../landing-theme";
@@ -19,18 +25,21 @@ export type AxisOption<Value extends string> = {
 export type ThemePicker = {
   readonly theme: ThemeInput;
   readonly colorScheme: ColorScheme;
-  /** "Fjordkraft · Private · External". */
+  /** "Fjordkraft · Private · Branded". */
   readonly summary: string;
   readonly brands: readonly AxisOption<BrandCode>[];
   readonly segments: readonly AxisOption<ThemeSegment>[];
-  readonly variants: readonly AxisOption<ThemeVariant>[];
+  readonly identities: readonly AxisOption<ThemeIdentity>[];
   readonly schemes: readonly AxisOption<ColorScheme>[];
   readonly changeTheme: (change: ThemeChange) => void;
   readonly changeColorScheme: (scheme: ColorScheme) => void;
 };
 
 const BRAND_OPTIONS = PICKER_BRANDS.map((brand) => ({ value: brand, label: BRANDS[brand].displayName }));
-const VARIANT_OPTIONS = THEME_VARIANTS.map((variant) => ({ value: variant, label: VARIANT_LABELS[variant] }));
+const IDENTITY_OPTIONS = THEME_IDENTITIES.map((identity) => ({
+  value: identity,
+  label: IDENTITY_LABELS[identity],
+}));
 const SCHEME_OPTIONS = COLOR_SCHEMES.map((scheme) => ({ value: scheme, label: COLOR_SCHEME_LABELS[scheme] }));
 
 /**
@@ -51,7 +60,7 @@ export function useThemePicker(): ThemePicker {
     summary: themeSummary(theme),
     brands: BRAND_OPTIONS,
     segments,
-    variants: VARIANT_OPTIONS,
+    identities: IDENTITY_OPTIONS,
     schemes: SCHEME_OPTIONS,
     changeTheme,
     changeColorScheme,

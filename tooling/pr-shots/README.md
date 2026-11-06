@@ -25,26 +25,26 @@ after parsing prints its message and exits 1.
 
 To find the role and accessible name, see [Finding the target](#finding-the-target).
 
-| Flag                         | Default                     | Does                                                                                                                                                                                                                                                                                                                                              |
-| ---------------------------- | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `--route <path>`             | required                    | The docs path to open, such as `/components/phone-number-field`. It starts with a single `/` and has no backslash, so it stays on the source's origin.                                                                                                                                                                                            |
-| `--target <role>:<name>`     | none                        | The element, by ARIA role and exact accessible name. Only the first colon separates them. Without it the shot covers the page: see [Pages other than component demos](#pages-other-than-component-demos).                                                                                                                                         |
-| `--nth <n>`                  | `0`                         | Which match to take when several share the role and name.                                                                                                                                                                                                                                                                                         |
-| `--click <role>:<name>[@n]`  | none                        | Clicks an element before the shot, found like `--target`. Repeat it for more steps; they run in order. A trailing `@n` picks the match, counting from 0, as `--nth` does. A name that itself ends in `@` and digits keeps them with `@0` after it: `--click 'button:Seat@3@0'` clicks `Seat@3`. See [Clicking first](#clicking-first).            |
-| `--fill <text>`              | none                        | Clicks the target, types the text and blurs it before the shot.                                                                                                                                                                                                                                                                                   |
-| `--frame <frame>`            | `auto`                      | `stage` clips the closest `[data-demo-stage]` ancestor, which holds the label and description. `target` clips the element alone. Both take in a popup a control in them holds open. `viewport` is the window: at the top of the page, or with `--click` where the steps and the fill left it. `page` is the whole page. `auto` picks one of them. |
-| `--pad <px>`                 | `12`                        | CSS pixels added on every side of the frame. The clip stops at the page edges.                                                                                                                                                                                                                                                                    |
-| `--themes <slug,...>`        | the page's preview theme    | Theme slugs such as `external-tkas-company`. The run picks each one in the header's theme settings menu by its roles and names. The stage then takes the deployment-default density for the variant.                                                                                                                                              |
-| `--densities <list>`         | the theme's default density | `dense`, `comfortable` or both. An override: see [Overrides](#overrides).                                                                                                                                                                                                                                                                         |
-| `--engines <list>`           | `chromium`                  | Any of `chromium`, `webkit`, `firefox`. Install a missing engine with `pnpm exec playwright install <engine>`.                                                                                                                                                                                                                                    |
-| `--viewports <WxH,...>`      | `1280x900`                  | Window sizes in CSS pixels, such as `1280x800,390x844`. Each size is an axis of the matrix, like engines.                                                                                                                                                                                                                                         |
-| `--scale <n>`                | `2`                         | The device scale factor, above 0 and at most 4.                                                                                                                                                                                                                                                                                                   |
-| `--color-scheme light\|dark` | `light`                     | The color scheme the browser reports to the page.                                                                                                                                                                                                                                                                                                 |
-| `--before <source>`          | `prod`                      | Where the base comes from: `prod`, `local` or a URL.                                                                                                                                                                                                                                                                                              |
-| `--after <source>`           | `local`                     | Where the change comes from: `prod`, `local` or a URL.                                                                                                                                                                                                                                                                                            |
-| `--threshold <0..1>`         | `0.1`                       | pixelmatch's matching threshold for the diff. Smaller counts fainter changes.                                                                                                                                                                                                                                                                     |
-| `--no-diff`                  | diff on                     | Skips the pixel diff and leaves the Diff column out of the table.                                                                                                                                                                                                                                                                                 |
-| `--pr <n>`                   | none                        | Uploads the shots to pull request `<n>`.                                                                                                                                                                                                                                                                                                          |
+| Flag                         | Default                  | Does                                                                                                                                                                                                                                                                                                                                              |
+| ---------------------------- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--route <path>`             | required                 | The docs path to open, such as `/components/phone-number-field`. It starts with a single `/` and has no backslash, so it stays on the source's origin.                                                                                                                                                                                            |
+| `--target <role>:<name>`     | none                     | The element, by ARIA role and exact accessible name. Only the first colon separates them. Without it the shot covers the page: see [Pages other than component demos](#pages-other-than-component-demos).                                                                                                                                         |
+| `--nth <n>`                  | `0`                      | Which match to take when several share the role and name.                                                                                                                                                                                                                                                                                         |
+| `--click <role>:<name>[@n]`  | none                     | Clicks an element before the shot, found like `--target`. Repeat it for more steps; they run in order. A trailing `@n` picks the match, counting from 0, as `--nth` does. A name that itself ends in `@` and digits keeps them with `@0` after it: `--click 'button:Seat@3@0'` clicks `Seat@3`. See [Clicking first](#clicking-first).            |
+| `--fill <text>`              | none                     | Clicks the target, types the text and blurs it before the shot.                                                                                                                                                                                                                                                                                   |
+| `--frame <frame>`            | `auto`                   | `stage` clips the closest `[data-demo-stage]` ancestor, which holds the label and description. `target` clips the element alone. Both take in a popup a control in them holds open. `viewport` is the window: at the top of the page, or with `--click` where the steps and the fill left it. `page` is the whole page. `auto` picks one of them. |
+| `--pad <px>`                 | `12`                     | CSS pixels added on every side of the frame. The clip stops at the page edges.                                                                                                                                                                                                                                                                    |
+| `--themes <slug,...>`        | the page's preview theme | Theme slugs such as `branded-tkas-company`. The run picks each one in the header's theme settings menu by its roles and names. The stage then takes the docs site's density for the identity.                                                                                                                                                     |
+| `--densities <list>`         | the theme's docs density | `dense`, `comfortable` or both. An override: see [Overrides](#overrides).                                                                                                                                                                                                                                                                         |
+| `--engines <list>`           | `chromium`               | Any of `chromium`, `webkit`, `firefox`. Install a missing engine with `pnpm exec playwright install <engine>`.                                                                                                                                                                                                                                    |
+| `--viewports <WxH,...>`      | `1280x900`               | Window sizes in CSS pixels, such as `1280x800,390x844`. Each size is an axis of the matrix, like engines.                                                                                                                                                                                                                                         |
+| `--scale <n>`                | `2`                      | The device scale factor, above 0 and at most 4.                                                                                                                                                                                                                                                                                                   |
+| `--color-scheme light\|dark` | `light`                  | The color scheme the browser reports to the page.                                                                                                                                                                                                                                                                                                 |
+| `--before <source>`          | `prod`                   | Where the base comes from: `prod`, `local` or a URL.                                                                                                                                                                                                                                                                                              |
+| `--after <source>`           | `local`                  | Where the change comes from: `prod`, `local` or a URL.                                                                                                                                                                                                                                                                                            |
+| `--threshold <0..1>`         | `0.1`                    | pixelmatch's matching threshold for the diff. Smaller counts fainter changes.                                                                                                                                                                                                                                                                     |
+| `--no-diff`                  | diff on                  | Skips the pixel diff and leaves the Diff column out of the table.                                                                                                                                                                                                                                                                                 |
+| `--pr <n>`                   | none                     | Uploads the shots to pull request `<n>`.                                                                                                                                                                                                                                                                                                          |
 
 A source is one of three things.
 
@@ -124,11 +124,11 @@ pnpm shots phone-dial --route /components/phone-number-field --target textbox:Mo
   --fill 123123 --densities dense,comfortable --pr 182
 ```
 
-A theme matrix in two engines, with each theme at its own default density:
+A theme matrix in two engines, with each theme at the density the docs site previews it at:
 
 ```sh
 pnpm shots button-themes --route /components/button --target button:Save \
-  --themes internal-fkas-private,external-tkas-company,external-fkse-private --engines chromium,webkit
+  --themes neutral-fkas-private,branded-tkas-company,branded-fkse-private --engines chromium,webkit
 ```
 
 ## Finding the target
@@ -200,12 +200,12 @@ open one. A control without `aria-expanded`, such as a tab, is only clicked. Whe
 re-renders the control as a new node, the wait follows the node that now has the step's role and
 name.
 
-The landing's Rows per page Select is in the Order search view of the hero window's Internal side,
-and the page opens on External:
+The landing's Rows per page Select is in the Order search view of the hero window's Neutral side,
+and the page opens on Branded:
 
 ```sh
 pnpm shots landing-page-size --route / \
-  --click button:Internal --click 'button:Order search' --click 'combobox:Rows per page' \
+  --click button:Neutral --click 'button:Order search' --click 'combobox:Rows per page' \
   --target 'combobox:Rows per page' --frame target --viewports 1280x800
 ```
 
@@ -231,14 +231,24 @@ How the steps meet each frame:
   target that a step renders is found.
 - `--fill` runs after the steps. It blurs the target, which closes a popup the target opened.
 
+## Pre-identity deployments
+
+`--themes` takes identity slugs only, such as `neutral-fkas-private`. A deployment built before
+Fuse renamed its theme variant to identity stamps `data-theme-variant="internal"` or `"external"`
+and labels its picker "Variant" with "Internal" and "External". Such a page is usually the
+"before" side of the run that renames it, so the capture reads which vocabulary each page speaks
+and picks and reads the theme in it, translating `internal` to `neutral` and `external` to
+`branded`. `src/legacy-theme-vocabulary.ts` holds that mapping and can go once no deployment
+predates the rename.
+
 ## Overrides
 
 Two flags render a stage the docs page itself never shows. File names and alt text say so.
 
 - `--densities` stamps `data-density` on the target's demo stage after the theme is set. On the
-  docs page a stage always takes the deployment default for its variant: `dense` for internal
-  themes, `comfortable` for external ones. A run that passes `--themes external-tkas-company
-  --densities dense` shows an external theme at a density no deployment uses.
+  docs page a stage always takes the docs site's density for its identity: `dense` for neutral
+  themes, `comfortable` for branded ones. A run that passes `--themes branded-tkas-company
+  --densities dense` shows a branded theme at a density the docs page never previews.
 - `--color-scheme` sets the color scheme the browser reports. The docs site follows it until a
   visitor picks Light or Dark in the menu, so the page matches what a visitor with that system
   setting sees.

@@ -19,7 +19,7 @@ import {
   stampDocumentTheme,
   stampTheme,
 } from "../../../test/themed-browser-render";
-import { LEGAL_THEMES, themeSlug } from "../../theme/tokens/themes";
+import { LEGAL_THEMES, themeSlug } from "../../theme/theme-input";
 import { Dialog } from "../dialog/index";
 import { Sheet } from "../sheet/index";
 import { Toast } from "./index";
@@ -429,7 +429,7 @@ describe("Toast contrast", () => {
   });
 
   it.each(["error", "info", "success", "warning"] as const)(
-    "paints the %s title and description with the paired soft foreground in internal dark",
+    "paints the %s title and description with the paired soft foreground in neutral dark",
     async (status) => {
       stampDocumentTheme(fkasPrivate, "dark");
 
@@ -456,7 +456,7 @@ describe("Toast contrast", () => {
   );
 
   it.each(["neutral", "loading"] as const)(
-    "keeps the %s description on the muted-foreground fallback in internal dark",
+    "keeps the %s description on the muted-foreground fallback in neutral dark",
     async (status) => {
       stampDocumentTheme(fkasPrivate, "dark");
 

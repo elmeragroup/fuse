@@ -5,7 +5,7 @@ import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import {
   cssVarColor,
-  fkasExternal,
+  fkasBranded,
   fkasPrivate,
   px,
   renderThemed,
@@ -146,15 +146,15 @@ describe("Text", () => {
 
   /**
    * A Text's default line height comes from the theme's paragraph roles at sm, default and lg.
-   * The expected heights are the design values, written by hand: the internal relaxed ratio,
-   * 1.625 × 14, 16 and 18px, and the external paragraph styles 14/20, 16/22 and 18/24.
+   * The expected heights are the design values, written by hand: the neutral relaxed ratio,
+   * 1.625 × 14, 16 and 18px, and the branded paragraph styles 14/20, 16/22 and 18/24.
    * `text-without-themes.browser.test.tsx` covers a host without `themes.css`.
    */
   describe("paragraph line height", () => {
     const ROLE_SIZES = ["sm", "default", "lg"] as const;
     const PLAIN_SIZES = ["xs", "xl", "2xl"] as const;
-    const INTERNAL = { sm: 22.75, default: 26, lg: 29.25 } as const;
-    const EXTERNAL = { sm: 20, default: 22, lg: 24 } as const;
+    const NEUTRAL = { sm: 22.75, default: 26, lg: 29.25 } as const;
+    const BRANDED = { sm: 20, default: 22, lg: 24 } as const;
     // relaxed 1.625 × 12, 20 and 24px, in every theme.
     const RELAXED = { xs: 19.5, xl: 32.5, "2xl": 39 } as const;
 
@@ -172,62 +172,62 @@ describe("Text", () => {
       return px(getComputedStyle(textNamed(name)).lineHeight);
     }
 
-    it("sets sm, default and lg from the theme's role in internal and external themes, in light and dark", () => {
+    it("sets sm, default and lg from the theme's role in neutral and branded themes, in light and dark", () => {
       renderThemed(
         <>
-          <SizedTexts prefix="Internal" />
-          <ThemeScope theme={fkasExternal}>
-            <SizedTexts prefix="External" />
+          <SizedTexts prefix="Neutral" />
+          <ThemeScope theme={fkasBranded}>
+            <SizedTexts prefix="Branded" />
           </ThemeScope>
           <div data-theme="dark">
             <ThemeScope theme={fkasPrivate}>
-              <SizedTexts prefix="Dark internal" />
+              <SizedTexts prefix="Dark neutral" />
             </ThemeScope>
-            <ThemeScope theme={fkasExternal}>
-              <SizedTexts prefix="Dark external" />
+            <ThemeScope theme={fkasBranded}>
+              <SizedTexts prefix="Dark branded" />
             </ThemeScope>
           </div>
         </>
       );
       for (const size of ROLE_SIZES) {
-        expect(lineHeightNamed(`Internal ${size}`), size).toBe(INTERNAL[size]);
-        expect(lineHeightNamed(`External ${size}`), size).toBe(EXTERNAL[size]);
-        expect(lineHeightNamed(`Dark internal ${size}`), size).toBe(INTERNAL[size]);
-        expect(lineHeightNamed(`Dark external ${size}`), size).toBe(EXTERNAL[size]);
+        expect(lineHeightNamed(`Neutral ${size}`), size).toBe(NEUTRAL[size]);
+        expect(lineHeightNamed(`Branded ${size}`), size).toBe(BRANDED[size]);
+        expect(lineHeightNamed(`Dark neutral ${size}`), size).toBe(NEUTRAL[size]);
+        expect(lineHeightNamed(`Dark branded ${size}`), size).toBe(BRANDED[size]);
       }
     });
 
-    it("keeps xs, xl and 2xl relaxed in internal and external themes", () => {
+    it("keeps xs, xl and 2xl relaxed in neutral and branded themes", () => {
       renderThemed(
         <>
-          <SizedTexts prefix="Internal" />
-          <ThemeScope theme={fkasExternal}>
-            <SizedTexts prefix="External" />
+          <SizedTexts prefix="Neutral" />
+          <ThemeScope theme={fkasBranded}>
+            <SizedTexts prefix="Branded" />
           </ThemeScope>
         </>
       );
       for (const size of PLAIN_SIZES) {
-        expect(lineHeightNamed(`Internal ${size}`), size).toBe(RELAXED[size]);
-        expect(lineHeightNamed(`External ${size}`), size).toBe(RELAXED[size]);
+        expect(lineHeightNamed(`Neutral ${size}`), size).toBe(RELAXED[size]);
+        expect(lineHeightNamed(`Branded ${size}`), size).toBe(RELAXED[size]);
       }
     });
 
-    it("resets the roles in an internal scope nested in an external one", () => {
+    it("resets the roles in a neutral scope nested in a branded one", () => {
       renderThemed(
-        <ThemeScope theme={fkasExternal}>
-          <Text>Outer external</Text>
+        <ThemeScope theme={fkasBranded}>
+          <Text>Outer branded</Text>
           <ThemeScope theme={fkasPrivate}>
-            <Text>Nested internal</Text>
+            <Text>Nested neutral</Text>
           </ThemeScope>
         </ThemeScope>
       );
-      expect(lineHeightNamed("Outer external")).toBe(22);
-      expect(lineHeightNamed("Nested internal")).toBe(26);
+      expect(lineHeightNamed("Outer branded")).toBe(22);
+      expect(lineHeightNamed("Nested neutral")).toBe(26);
     });
 
-    it("lets an explicit leading or a className leading replace the external role", () => {
+    it("lets an explicit leading or a className leading replace the branded role", () => {
       renderThemed(
-        <ThemeScope theme={fkasExternal}>
+        <ThemeScope theme={fkasBranded}>
           <Text leading="snug" size="lg">
             Snug prop
           </Text>
@@ -241,9 +241,9 @@ describe("Text", () => {
       expect(lineHeightNamed("Tight class")).toBe(20);
     });
 
-    it("gives a link and a child paragraph the external role", () => {
+    it("gives a link and a child paragraph the branded role", () => {
       renderThemed(
-        <ThemeScope theme={fkasExternal}>
+        <ThemeScope theme={fkasBranded}>
           <Text size="sm">
             Read the <a href="#terms">terms</a>
           </Text>

@@ -266,7 +266,7 @@ export type ThemeCatalogTokenMap = {
 
 export type ThemeCatalogEntry = {
   slug: ThemeSlug;
-  variant: ThemeInput["variant"];
+  identity: ThemeInput["identity"];
   brand: ThemeInput["brand"];
   segment: ThemeInput["segment"];
   density: Density;

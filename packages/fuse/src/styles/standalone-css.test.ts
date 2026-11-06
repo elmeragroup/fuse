@@ -3,8 +3,8 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
+import { BRANDED_IDENTITY_LAYER } from "../theme/tokens/brand-palettes";
 import { LAYER_DEFAULTS } from "../theme/tokens/defaults";
-import { EXTERNAL_VARIANT_LAYER } from "../theme/tokens/external-palettes";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const wrapperPath = join(here, "../../scripts/standalone.css");
@@ -76,12 +76,12 @@ describe("standalone stylesheet source set", () => {
 });
 
 describe("variant-layer role reads", () => {
-  it("fall back to the internal default wherever the compiled sheet reads them", () => {
+  it("fall back to the neutral default wherever the compiled sheet reads them", () => {
     // Only themes.css declares the variant-layer roles Fuse adds to the shadcn grammar, so a
     // host without it reads every fallback. `--ring` is a shadcn base role, which such a host
     // declares itself, as it does `--primary`, so it is read bare. Unit under test: each
-    // `var(--K` in dist/styles.css for K in EXTERNAL_VARIANT_LAYER. Oracle: LAYER_DEFAULTS[K],
-    // the role's internal default. A default that aliases another role this loop validates, such
+    // `var(--K` in dist/styles.css for K in BRANDED_IDENTITY_LAYER. Oracle: LAYER_DEFAULTS[K],
+    // the role's neutral default. A default that aliases another role this loop validates, such
     // as the selection divider's `var(--selection-border)`, is read with that role's own fallback,
     // `var(--selection-border, var(--border))`, which the loop checks under that role's own key,
     // so only then is the nested fallback stripped before comparing.
@@ -89,7 +89,7 @@ describe("variant-layer role reads", () => {
     const css = readFileSync(compiledCssPath, "utf8");
     const defaults: Readonly<Record<string, string>> = LAYER_DEFAULTS;
     const shadcnBaseRoles = new Set(["ring"]);
-    for (const key of Object.keys(EXTERNAL_VARIANT_LAYER)) {
+    for (const key of Object.keys(BRANDED_IDENTITY_LAYER)) {
       if (shadcnBaseRoles.has(key)) continue;
       const fallbacks = varFallbacks(css, key);
       expect(fallbacks.length, key).toBeGreaterThan(0);
@@ -97,7 +97,7 @@ describe("variant-layer role reads", () => {
         const inner = /^var\(--([\w-]+)\s*,[\s\S]*\)$/u.exec(fallback ?? "");
         const role = inner?.[1];
         const compared =
-          role !== undefined && Object.hasOwn(EXTERNAL_VARIANT_LAYER, role) ? `var(--${role})` : fallback;
+          role !== undefined && Object.hasOwn(BRANDED_IDENTITY_LAYER, role) ? `var(--${role})` : fallback;
         expect(compared, key).toBe(defaults[key]);
       }
     }

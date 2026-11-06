@@ -457,9 +457,9 @@ describe("the studio's Screens page", () => {
     }
   });
 
-  it("refuses a Selection edit that loops through the base theme, not only the part's variant", async () => {
-    // The opening base is external elma, which declares button-outline: var(--foreground).
-    // Internal themes declare button-outline: var(--border), so the internal admin table alone
+  it("refuses a Selection edit that loops through the base theme, not only the part's identity", async () => {
+    // The opening base is branded elma, which declares button-outline: var(--foreground).
+    // Neutral themes declare button-outline: var(--border), so the neutral admin table alone
     // would admit the alias, yet the edit applies to every Light artboard.
     const { context, page, errors } = await openStudio(browser(), { route: SCREENS_PAGE });
     try {
@@ -480,15 +480,15 @@ describe("the studio's Screens page", () => {
     }
   });
 
-  it("admits an edit that would loop only in a variant no artboard renders any more", async () => {
-    // Internal elma declares button-outline: var(--border), external elma a literal --border and
-    // button-outline: var(--foreground). Once both internal screens turn external, no theme on
+  it("admits an edit that would loop only in an identity no artboard renders any more", async () => {
+    // Neutral elma declares button-outline: var(--border), branded elma a literal --border and
+    // button-outline: var(--foreground). Once both neutral screens turn branded, no theme on
     // screen loops --border through --button-outline.
     const { context, page, errors } = await openStudio(browser(), { route: SCREENS_PAGE });
     try {
       for (const name of [SETTINGS, ADMIN]) {
-        await toggle(await selectBoard(page, name), "Variant", "External").click();
-        await expect.poll(() => themeOf(page, name)).toBe("external-elma-private");
+        await toggle(await selectBoard(page, name), "Identity", "Branded").click();
+        await expect.poll(() => themeOf(page, name)).toBe("branded-elma-private");
       }
       await openTokenSection(page, "Lines and focus");
       await tokenRow(page, "border").getByRole("button", { name: "Edit --border", exact: true }).click();
@@ -509,7 +509,7 @@ describe("the studio's Screens page", () => {
     }
   });
 
-  it("admits an edit that loops only in an internal screen's variant, which skips it", async () => {
+  it("admits an edit that loops only in a neutral screen's identity, which skips it", async () => {
     const { context, page, errors } = await openStudio(browser(), { route: SCREENS_PAGE });
     try {
       await selectBoard(page, ADMIN);
@@ -521,7 +521,7 @@ describe("the studio's Screens page", () => {
       const note = inspector(page).getByText(/^Skips --border,/u);
       await note.waitFor();
       expect(await note.textContent()).toBe(
-        "Skips --border, which would loop through the aliases of Elmera · Internal · Private."
+        "Skips --border, which would loop through the aliases of Elmera · Neutral · Private."
       );
       expect(errors).toEqual([]);
     } finally {
@@ -529,7 +529,7 @@ describe("the studio's Screens page", () => {
     }
   });
 
-  it("describes a part in its artboard's scheme and pinned variant, whichever scheme the inspector edits", async () => {
+  it("describes a part in its artboard's scheme and pinned identity, whichever scheme the inspector edits", async () => {
     const { context, page, errors } = await openStudio(browser(), { route: SCREENS_PAGE });
     try {
       const button = artboard(page, SELF_SERVICE).getByRole("button", { name: "Change plan", exact: true });
@@ -546,12 +546,12 @@ describe("the studio's Screens page", () => {
       await frames(page, 2);
       expect(await swatchOffBy(selectionSwatch(page, "primary"), painted)).toBeLessThanOrEqual(1);
 
-      // And in its artboard's pinned variant: self-service pins the external variant and the admin
-      // table the internal one, so one of the two differs from the base theme whichever it is.
-      const internal = artboard(page, ADMIN).getByRole("button", { name: "Add customer", exact: true });
-      const pinned = await paintedBackground(internal);
+      // And in its artboard's pinned identity: self-service pins the branded identity and the admin
+      // table the neutral one, so one of the two differs from the base theme whichever it is.
+      const neutral = artboard(page, ADMIN).getByRole("button", { name: "Add customer", exact: true });
+      const pinned = await paintedBackground(neutral);
       expect(pinned).not.toEqual(painted);
-      await internal.click({ modifiers: ["Alt"] });
+      await neutral.click({ modifiers: ["Alt"] });
       await expect.poll(() => swatchOffBy(selectionSwatch(page, "primary"), pinned)).toBeLessThanOrEqual(1);
       expect(errors).toEqual([]);
     } finally {
@@ -560,11 +560,11 @@ describe("the studio's Screens page", () => {
   });
 
   it("shows on a pinned part the declaration its artboard wears after a source token's edit", async () => {
-    // External elma restates button-outline: var(--foreground) beside a --foreground edit;
-    // the internal admin table wears its own variant's button-outline: var(--border) instead.
+    // Branded elma restates button-outline: var(--foreground) beside a --foreground edit;
+    // the neutral admin table wears its own identity's button-outline: var(--border) instead.
     const { context, page, errors } = await openStudio(browser(), {
       route: SCREENS_PAGE,
-      hash: hashOf('{"t":"external-elma-private","l":{"foreground":"#ff0000"}}'),
+      hash: hashOf('{"t":"branded-elma-private","l":{"foreground":"#ff0000"}}'),
     });
     try {
       const board = artboard(page, ADMIN);
@@ -587,16 +587,16 @@ describe("the studio's Screens page", () => {
     }
   });
 
-  it("offers one retry when a pinned variant's values fail, and the Selection rows fill after it", async () => {
+  it("offers one retry when a pinned identity's values fail, and the Selection rows fill after it", async () => {
     let failing = true;
     const { context, page, errors } = await openStudio(browser(), {
       route: SCREENS_PAGE,
-      // The opening base is external elma, so the internal screens pin the one other seed.
+      // The opening base is branded elma, so the neutral screens pin the one other seed.
       prepare: async (opening) => {
         await opening.route("**/_next/static/chunks/**", async (route) => {
           const response = await route.fetch();
           const body = await response.text();
-          if (failing && /slug"?:"internal-elma-private"/u.test(body)) {
+          if (failing && /slug"?:"neutral-elma-private"/u.test(body)) {
             await route.abort();
             return;
           }

@@ -3,7 +3,7 @@ import { page } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
-import { cssVarColor, fkasExternal, px, renderThemed } from "../../../test/themed-browser-render";
+import { cssVarColor, fkasBranded, px, renderThemed } from "../../../test/themed-browser-render";
 import { ThemeScope } from "../../theme";
 import { Span } from "./span";
 
@@ -69,17 +69,17 @@ describe("Span", () => {
     expect(px(getComputedStyle(child).fontSize)).toBe(16);
   });
 
-  it("stays snug in an external theme instead of taking the paragraph role", () => {
+  it("stays snug in a branded theme instead of taking the paragraph role", () => {
     renderThemed(
-      <ThemeScope theme={fkasExternal}>
-        <Span size="sm">Small external</Span>
-        <Span>Default external</Span>
-        <Span size="lg">Large external</Span>
+      <ThemeScope theme={fkasBranded}>
+        <Span size="sm">Small branded</Span>
+        <Span>Default branded</Span>
+        <Span size="lg">Large branded</Span>
       </ThemeScope>
     );
-    // snug 1.375 × 14, 16 and 18px, not the external 20, 22 and 24.
-    expect(px(getComputedStyle(spanNamed("Small external")).lineHeight)).toBe(19.25);
-    expect(px(getComputedStyle(spanNamed("Default external")).lineHeight)).toBe(22);
-    expect(px(getComputedStyle(spanNamed("Large external")).lineHeight)).toBe(24.75);
+    // snug 1.375 × 14, 16 and 18px, not the branded 20, 22 and 24.
+    expect(px(getComputedStyle(spanNamed("Small branded")).lineHeight)).toBe(19.25);
+    expect(px(getComputedStyle(spanNamed("Default branded")).lineHeight)).toBe(22);
+    expect(px(getComputedStyle(spanNamed("Large branded")).lineHeight)).toBe(24.75);
   });
 });

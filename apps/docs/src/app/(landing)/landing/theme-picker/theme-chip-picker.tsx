@@ -186,16 +186,16 @@ function SegmentToggle({ labelledBy }: { labelledBy: string }): ReactElement {
   );
 }
 
-/** The variant row; the hero window's Internal/External switch moves the same value. */
-function VariantToggle({ labelledBy }: { labelledBy: string }): ReactElement {
-  const { theme, variants, changeTheme } = useThemePicker();
+/** The identity row; the hero window's Neutral/Branded switch moves the same value. */
+function IdentityToggle({ labelledBy }: { labelledBy: string }): ReactElement {
+  const { theme, identities, changeTheme } = useThemePicker();
   return (
     <AxisToggle
       labelledBy={labelledBy}
-      options={variants}
-      value={theme.variant}
-      onChange={(variant) => {
-        changeTheme({ variant });
+      options={identities}
+      value={theme.identity}
+      onChange={(identity) => {
+        changeTheme({ identity });
       }}
     />
   );
@@ -256,7 +256,7 @@ function PanelRow({
 }
 
 /**
- * All four axes as labelled rows: brand tiles, segment, variant and scheme. `currentTile` holds the
+ * All four axes as labelled rows: brand tiles, segment, identity and scheme. `currentTile` holds the
  * current brand's tile, where the shortcut puts focus.
  */
 function ThemePanel({ currentTile }: { currentTile: RefObject<HTMLButtonElement | null> }): ReactElement {
@@ -264,7 +264,7 @@ function ThemePanel({ currentTile }: { currentTile: RefObject<HTMLButtonElement 
     <div className={styles.panel()}>
       <PanelRow label="Brand">{(id) => <BrandTiles labelledBy={id} currentTile={currentTile} />}</PanelRow>
       <PanelRow label="Segment">{(id) => <SegmentToggle labelledBy={id} />}</PanelRow>
-      <PanelRow label="Variant">{(id) => <VariantToggle labelledBy={id} />}</PanelRow>
+      <PanelRow label="Identity">{(id) => <IdentityToggle labelledBy={id} />}</PanelRow>
       <PanelRow label="Colour scheme">{(id) => <SchemeToggle labelledBy={id} />}</PanelRow>
     </div>
   );

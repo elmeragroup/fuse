@@ -7,10 +7,10 @@ import { tv } from "tailwind-variants";
 import { Button } from "@elmeragroup/fuse/button";
 import { DropdownMenu } from "@elmeragroup/fuse/dropdown-menu";
 import { CaretDown } from "@elmeragroup/fuse/icons";
-import { BRAND_CODES, BRANDS, THEME_SEGMENTS, THEME_VARIANTS } from "@elmeragroup/fuse/theme";
+import { BRAND_CODES, BRANDS, THEME_SEGMENTS, THEME_IDENTITIES } from "@elmeragroup/fuse/theme";
 import type { ThemeSegment } from "@elmeragroup/fuse/theme";
 
-import { SEGMENT_LABELS, VARIANT_LABELS } from "../../lib/theme";
+import { SEGMENT_LABELS, IDENTITY_LABELS } from "../../lib/theme";
 import { themeLabel, themeWith } from "../lib/theme-axes";
 import type { ThemeAxes } from "../lib/theme-axes";
 import { useStudio } from "./studio-state";
@@ -29,7 +29,7 @@ const styles = studioThemePicker();
 
 /**
  * The base theme, which every artboard follows unless it has a theme of its own. A change of it
- * resets those. Variant, brand and segment go through Fuse's `coerceTheme`, so only a legal theme
+ * resets those. Identity, brand and segment go through Fuse's `coerceTheme`, so only a legal theme
  * is ever picked.
  */
 export function StudioThemePicker(): ReactElement {
@@ -61,14 +61,14 @@ export function StudioThemePicker(): ReactElement {
         </DropdownMenu.RadioGroup>
         <DropdownMenu.Separator />
         <DropdownMenu.RadioGroup
-          value={theme.variant}
-          onValueChange={(variant) => {
-            commit({ variant });
+          value={theme.identity}
+          onValueChange={(identity) => {
+            commit({ identity });
           }}>
-          <DropdownMenu.Label>Variant</DropdownMenu.Label>
-          {THEME_VARIANTS.map((variant) => (
-            <DropdownMenu.RadioItem key={variant} value={variant} closeOnClick={false}>
-              {VARIANT_LABELS[variant]}
+          <DropdownMenu.Label>Identity</DropdownMenu.Label>
+          {THEME_IDENTITIES.map((identity) => (
+            <DropdownMenu.RadioItem key={identity} value={identity} closeOnClick={false}>
+              {IDENTITY_LABELS[identity]}
             </DropdownMenu.RadioItem>
           ))}
         </DropdownMenu.RadioGroup>

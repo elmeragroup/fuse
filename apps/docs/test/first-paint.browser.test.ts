@@ -21,7 +21,7 @@ type ColorSchemeBootstrapManifest = {
 };
 
 type FirstPaintProbe = {
-  variant: string | null;
+  identity: string | null;
   brand: string | null;
   segment: string | null;
   density: string | null;
@@ -64,7 +64,7 @@ async function probeFirstPaint(page: Page): Promise<FirstPaintProbe> {
     const manifest = globalThis.__ELMERA_COLOR_SCHEME_BOOTSTRAP__;
     const styles = getComputedStyle(root);
     return {
-      variant: root.getAttribute("data-theme-variant"),
+      identity: root.getAttribute("data-theme-identity"),
       brand: root.getAttribute("data-theme-brand"),
       segment: root.getAttribute("data-theme-segment"),
       density: root.getAttribute("data-density"),
@@ -86,8 +86,8 @@ async function probeFirstPaint(page: Page): Promise<FirstPaintProbe> {
   });
 }
 
-function expectFixedDocumentBrand(probe: Pick<FirstPaintProbe, "variant" | "brand" | "segment">): void {
-  expect(probe.variant).toBe(DOCUMENT_BRAND.variant);
+function expectFixedDocumentBrand(probe: Pick<FirstPaintProbe, "identity" | "brand" | "segment">): void {
+  expect(probe.identity).toBe(DOCUMENT_BRAND.identity);
   expect(probe.brand).toBe(DOCUMENT_BRAND.brand);
   expect(probe.segment).toBe(DOCUMENT_BRAND.segment);
 }
@@ -155,7 +155,7 @@ describe("docs JavaScript-disabled brand", () => {
     await page.goto(`${docsBaseUrl()}/docs`, { waitUntil: "load" });
 
     const html = page.locator("html");
-    expect(await html.getAttribute("data-theme-variant")).toBe(DOCUMENT_BRAND.variant);
+    expect(await html.getAttribute("data-theme-identity")).toBe(DOCUMENT_BRAND.identity);
     expect(await html.getAttribute("data-theme-brand")).toBe(DOCUMENT_BRAND.brand);
     expect(await html.getAttribute("data-theme-segment")).toBe(DOCUMENT_BRAND.segment);
     expect(await html.getAttribute("data-density")).toBe("dense");
@@ -229,7 +229,7 @@ describe("docs enforcing nonce", () => {
 });
 
 describe("docs picker vs document theme", () => {
-  it("themes only preview scopes and leaves the document on internal/elma/private", async () => {
+  it("themes only preview scopes and leaves the document on neutral/elma/private", async () => {
     const page = await browser().newPage();
     const hydrationWarnings: string[] = [];
     page.on("console", (message) => {
@@ -246,11 +246,11 @@ describe("docs picker vs document theme", () => {
       const stage = document.querySelector("[data-demo-stage]");
       return {
         documentBrand: root.getAttribute("data-theme-brand"),
-        documentVariant: root.getAttribute("data-theme-variant"),
+        documentIdentity: root.getAttribute("data-theme-identity"),
         documentSegment: root.getAttribute("data-theme-segment"),
         documentDensity: root.getAttribute("data-density"),
         stageBrand: stage?.getAttribute("data-theme-brand") ?? null,
-        stageVariant: stage?.getAttribute("data-theme-variant") ?? null,
+        stageIdentity: stage?.getAttribute("data-theme-identity") ?? null,
         stageSegment: stage?.getAttribute("data-theme-segment") ?? null,
         stageDensity: stage?.getAttribute("data-density") ?? null,
         documentToken: getComputedStyle(root).getPropertyValue("--brand").trim(),
@@ -258,12 +258,12 @@ describe("docs picker vs document theme", () => {
       };
     });
 
-    expect(initial.documentVariant).toBe(DOCUMENT_BRAND.variant);
+    expect(initial.documentIdentity).toBe(DOCUMENT_BRAND.identity);
     expect(initial.documentBrand).toBe(DOCUMENT_BRAND.brand);
     expect(initial.documentSegment).toBe(DOCUMENT_BRAND.segment);
     expect(initial.documentDensity).toBe("dense");
     expect(initial.stageDensity).toBe("dense");
-    expect(initial.stageVariant).toBe(DEFAULT_THEME.variant);
+    expect(initial.stageIdentity).toBe(DEFAULT_THEME.identity);
     expect(initial.stageBrand).toBe(DEFAULT_THEME.brand);
     expect(initial.stageSegment).toBe(DEFAULT_THEME.segment);
     expect(initial.documentToken).not.toBe(initial.stageToken);
@@ -276,7 +276,7 @@ describe("docs picker vs document theme", () => {
       const stage = document.querySelector("[data-demo-stage]");
       return {
         documentBrand: root.getAttribute("data-theme-brand"),
-        documentVariant: root.getAttribute("data-theme-variant"),
+        documentIdentity: root.getAttribute("data-theme-identity"),
         documentSegment: root.getAttribute("data-theme-segment"),
         documentDensity: root.getAttribute("data-density"),
         stageBrand: stage?.getAttribute("data-theme-brand") ?? null,
@@ -286,7 +286,7 @@ describe("docs picker vs document theme", () => {
       };
     });
 
-    expect(next.documentVariant).toBe("internal");
+    expect(next.documentIdentity).toBe("neutral");
     expect(next.documentBrand).toBe("elma");
     expect(next.documentSegment).toBe("private");
     expect(next.documentDensity).toBe("dense");
@@ -299,7 +299,7 @@ describe("docs picker vs document theme", () => {
     await page.close();
   });
 
-  it("retargets demo-stage control metrics to the preview variant default without restamping the document", async () => {
+  it("retargets demo-stage control metrics to the preview identity's docs density without restamping the document", async () => {
     const page = await browser().newPage();
     await page.goto(`${docsBaseUrl()}/components/button`, { waitUntil: "networkidle" });
     await page.getByRole("heading", { name: "Button", exact: true, level: 1 }).waitFor();
@@ -311,7 +311,7 @@ describe("docs picker vs document theme", () => {
       return {
         documentDensity: root.getAttribute("data-density"),
         stageDensity: stage?.getAttribute("data-density") ?? null,
-        stageVariant: stage?.getAttribute("data-theme-variant") ?? null,
+        stageIdentity: stage?.getAttribute("data-theme-identity") ?? null,
         documentControlH: getComputedStyle(root).getPropertyValue("--control-h-md").trim(),
         stageControlH:
           stage === null ? "" : getComputedStyle(stage).getPropertyValue("--control-h-md").trim(),
@@ -321,22 +321,22 @@ describe("docs picker vs document theme", () => {
 
     expect(initial.documentDensity).toBe("dense");
     expect(initial.stageDensity).toBe("dense");
-    expect(initial.stageVariant).toBe("internal");
+    expect(initial.stageIdentity).toBe("neutral");
     expect(initial.documentControlH).toBe("2.25rem");
     expect(initial.stageControlH).toBe("2.25rem");
     expect(initial.buttonHeight).toBe("36px");
 
     await page.getByRole("button", { name: "Theme settings", exact: true }).click();
-    await page.getByRole("menuitemradio", { name: "External", exact: true }).click();
+    await page.getByRole("menuitemradio", { name: "Branded", exact: true }).click();
 
     const next = await page.evaluate(() => {
       const root = document.documentElement;
       const stage = document.querySelector("[data-demo-stage]");
       const button = stage?.querySelector("button");
       return {
-        documentVariant: root.getAttribute("data-theme-variant"),
+        documentIdentity: root.getAttribute("data-theme-identity"),
         documentDensity: root.getAttribute("data-density"),
-        stageVariant: stage?.getAttribute("data-theme-variant") ?? null,
+        stageIdentity: stage?.getAttribute("data-theme-identity") ?? null,
         stageDensity: stage?.getAttribute("data-density") ?? null,
         documentControlH: getComputedStyle(root).getPropertyValue("--control-h-md").trim(),
         stageControlH:
@@ -345,9 +345,9 @@ describe("docs picker vs document theme", () => {
       };
     });
 
-    expect(next.documentVariant).toBe("internal");
+    expect(next.documentIdentity).toBe("neutral");
     expect(next.documentDensity).toBe("dense");
-    expect(next.stageVariant).toBe("external");
+    expect(next.stageIdentity).toBe("branded");
     expect(next.stageDensity).toBe("comfortable");
     expect(next.documentControlH).toBe("2.25rem");
     expect(next.stageControlH).toBe("2.75rem");

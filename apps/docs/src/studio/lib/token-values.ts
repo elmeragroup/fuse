@@ -1,6 +1,7 @@
 import * as CssColor from "@elmeragroup/color/css-color";
 import { themeSlug } from "@elmeragroup/fuse/theme";
 import type { ThemeInput } from "@elmeragroup/fuse/theme";
+import { CORNER_STEPS } from "@elmeragroup/fuse/theme-catalog";
 
 import { STUDIO_BASE_REFERENCES, STUDIO_PRIMITIVES } from "../../generated/studio-seeds";
 import type { ArtboardScheme } from "./documents";
@@ -123,8 +124,8 @@ const KIND_NAMES = {
 
 const PRIMITIVE_NAMES: ReadonlySet<string> = new Set(STUDIO_PRIMITIVES.map((primitive) => primitive.name));
 
-/** `--radius-step` takes only the two values the corner formulas support (CONTEXT.md). */
-export const RADIUS_STEPS = ["0px", "2px"] as const;
+/** `--radius-step` takes only the two values the corner formulas support, Fuse's corner steps. */
+export const RADIUS_STEPS = CORNER_STEPS;
 
 /** The names CSS reserves from an unquoted family, in any case: the CSS-wide keywords and `default`. */
 const RESERVED_FAMILY_WORDS: ReadonlySet<string> = new Set([
@@ -444,10 +445,10 @@ export type ArtboardEdits = {
 };
 
 /**
- * The edits an artboard rendering `theme`, its own brand, variant and segment, wears in `scheme`:
+ * The edits an artboard rendering `theme`, its own brand, identity and segment, wears in `scheme`:
  * every edit but those on an alias cycle against that theme's own declarations, the only alias
- * graph the check reads, and, in the other variant than the base theme's, the `--radius-step`
- * edit, since the variant owns its step. The session guards the base theme alone, so an edit can
+ * graph the check reads, and, in the other identity than the base theme's, the `--radius-step`
+ * edit, since the identity owns its step. The session guards the base theme alone, so an edit can
  * loop in any other theme on screen. A skipped token falls back to the theme's own declaration,
  * which can loop another edit, so the check repeats until nothing loops.
  *
@@ -475,7 +476,7 @@ export function artboardEdits(
     skipped.push(...next);
     overrides = resetNames(overrides, scheme, next);
   }
-  if (theme.variant !== base.variant) {
+  if (theme.identity !== base.identity) {
     overrides = resetNames(overrides, scheme, ["radius-step"]);
   }
   return { overrides, skipped: skipped.sort() };

@@ -1,12 +1,12 @@
 import { BRANDS, coerceTheme } from "@elmeragroup/fuse/theme";
-import type { BrandCode, ThemeInput, ThemeSegment, ThemeVariant } from "@elmeragroup/fuse/theme";
+import type { BrandCode, ThemeInput, ThemeSegment, ThemeIdentity } from "@elmeragroup/fuse/theme";
 
-import { SEGMENT_LABELS, VARIANT_LABELS } from "../../lib/theme";
+import { SEGMENT_LABELS, IDENTITY_LABELS } from "../../lib/theme";
 
 /** A change to one or more of a theme's axes. */
 export type ThemeAxes = {
   readonly brand?: BrandCode;
-  readonly variant?: ThemeVariant;
+  readonly identity?: ThemeIdentity;
   readonly segment?: ThemeSegment;
 };
 
@@ -19,7 +19,7 @@ export function themeWith(theme: ThemeInput, axes: ThemeAxes): ThemeInput {
   return coerceTheme({ ...theme, ...axes }) ?? theme;
 }
 
-/** A theme as the studio names it: brand, variant and segment, such as "Elmera · External · Private". */
+/** A theme as the studio names it: brand, identity and segment, such as "Elmera · Branded · Private". */
 export function themeLabel(theme: ThemeInput): string {
-  return `${BRANDS[theme.brand].displayName} · ${VARIANT_LABELS[theme.variant]} · ${SEGMENT_LABELS[theme.segment]}`;
+  return `${BRANDS[theme.brand].displayName} · ${IDENTITY_LABELS[theme.identity]} · ${SEGMENT_LABELS[theme.segment]}`;
 }

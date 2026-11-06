@@ -46,7 +46,7 @@ export function restatedAliases(declared: Iterable<string>, base: Declarations) 
  * the aliases that read one, restated so they resolve against the edit on the scope (see
  * {@link restatedAliases}). The aliases come from the theme the artboard renders: an artboard in
  * a theme of its own restates its own, since the base theme's would carry their aliases over it,
- * as an internal `--radius-button: var(--radius)` replaces an external literal.
+ * as a neutral `--radius-button: var(--radius)` replaces a branded literal.
  *
  * @param overrides - The edits that apply in the artboard's scheme.
  * @param theme - The artboard's theme's declared CSS in that scheme, keyed by token name, or

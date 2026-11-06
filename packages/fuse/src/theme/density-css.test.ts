@@ -63,9 +63,9 @@ describe("density CSS", () => {
     expect(declaring).toEqual([DENSITY_SELECTORS.dense, DENSITY_SELECTORS.comfortable]);
   });
 
-  it("does not key density metrics on data-theme-variant or a nested attribute selector", () => {
+  it("does not key density metrics on data-theme-identity or a nested attribute selector", () => {
     for (const prefix of DENSITY_METRIC_PREFIXES) {
-      expect(fuseCss).not.toMatch(new RegExp(String.raw`\[data-theme-variant[^\]]*\][^{]*--${prefix}`, "s"));
+      expect(fuseCss).not.toMatch(new RegExp(String.raw`\[data-theme-identity[^\]]*\][^{]*--${prefix}`, "s"));
     }
     expect(fuseCss).not.toMatch(/(?<!:root)\[data-density="comfortable"\]/);
   });

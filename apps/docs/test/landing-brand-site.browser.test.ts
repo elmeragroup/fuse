@@ -26,7 +26,7 @@ import type { LandingOptions } from "./landing-page";
 const { openLanding } = launchLandingSuite();
 
 /**
- * Opens the landing on `facts`' brand with the External side showing, and waits for its site.
+ * Opens the landing on `facts`' brand with the Branded side showing, and waits for its site.
  * The address names the theme, so the site renders from the server: the switch and the brand
  * picker that also lead there keep their own tests in the hero window and theme picker suites.
  */
@@ -39,7 +39,7 @@ async function openSite(
   const segment = facts.brand === "fkab" ? "company" : "private";
   const page = await openLanding(viewport, {
     ...options,
-    search: `?theme=external-${facts.brand}-${segment}`,
+    search: `?theme=branded-${facts.brand}-${segment}`,
   });
   const site = brandSite(page, facts.site);
   await site.getByRole("heading", { level: 1 }).waitFor();
@@ -273,7 +273,7 @@ async function paintedLogo(site: Locator, name: string): Promise<PaintedLogo> {
   };
 }
 
-describe("landing hero window, External side", () => {
+describe("landing hero window, Branded side", () => {
   it("re-themes the landing from a brand card on Elmera Group's site and moves focus into the new site", async () => {
     const { page, site } = await openSite(ELMERA, DESKTOP_VIEWPORT);
     const brands = site.getByRole("list", { name: "Our brands" });

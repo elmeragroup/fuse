@@ -10,7 +10,7 @@ import {
   computedContrast,
   cssVarColor,
   formNamed,
-  guenExternal,
+  guenBranded,
   headingNamed,
   renderThemed,
   roleNamed,
@@ -123,15 +123,15 @@ describe("Checkbox", () => {
   it("draws the unchecked edge at 3:1 against the box's fill and the page in light themes", () => {
     renderThemed(
       <>
-        <Checkbox aria-label="Internal" />
-        <ThemeScope theme={guenExternal}>
-          <Checkbox aria-label="External" />
+        <Checkbox aria-label="Neutral" />
+        <ThemeScope theme={guenBranded}>
+          <Checkbox aria-label="Branded" />
         </ThemeScope>
       </>
     );
     // WCAG 1.4.11: the edge is the only thing that shows an unchecked box, so it must reach
     // 3:1 against the fill inside it and the page around it.
-    for (const name of ["Internal", "External"]) {
+    for (const name of ["Neutral", "Branded"]) {
       const box = roleNamed("checkbox", name);
       const { borderTopColor, backgroundColor } = getComputedStyle(box);
       expect(computedContrast(borderTopColor, backgroundColor), `${name} fill`).toBeGreaterThanOrEqual(3);

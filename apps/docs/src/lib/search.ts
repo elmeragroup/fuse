@@ -88,8 +88,8 @@ export function queryTokens(query: string): readonly string[] {
 }
 
 /**
- * Whether every token of a query appears in `text`, in any order, so `internal telinet` finds
- * "Telinet · Private · Internal". A blank query matches everything.
+ * Whether every token of a query appears in `text`, in any order, so `neutral telinet` finds
+ * "Telinet · Private · Neutral". A blank query matches everything.
  *
  * @param text - The text a row shows.
  * @param query - What the user typed.

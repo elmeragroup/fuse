@@ -11,8 +11,10 @@ export { LocaleProvider, useLocale } from "./intl/locale-context";
 export type { LocaleContextValue, LocaleProviderProps, SupportedLocale } from "./intl/locale-context";
 export { ForceColorScheme } from "./theme/force-color-scheme";
 export type { ForceColorSchemeProps } from "./theme/force-color-scheme";
-export { defaultDensityForVariant, DENSITIES, densityAttributes } from "./theme/density";
+export { DENSITIES, densityAttributes } from "./theme/density";
 export type { Density, DensityAttributes } from "./theme/density";
+export { documentAttributes } from "./theme/document-attributes";
+export type { DocumentAttributes, DocumentAttributesInput } from "./theme/document-attributes";
 export { themeAttributes } from "./theme/theme-attributes";
 export type { ThemeAttributes } from "./theme/theme-attributes";
 export type { Theme } from "./theme/theme-context";
@@ -26,10 +28,10 @@ export {
   isBrandCode,
   LEGAL_THEMES,
   parseThemeSlug,
+  THEME_IDENTITIES,
   THEME_SEGMENTS,
-  THEME_VARIANTS,
   themeSlug,
-} from "./theme/tokens/themes";
-export type { BrandCode, ThemeInput, ThemeSegment, ThemeSlug, ThemeVariant } from "./theme/tokens/themes";
+} from "./theme/theme-input";
+export type { BrandCode, ThemeIdentity, ThemeInput, ThemeSegment, ThemeSlug } from "./theme/theme-input";
 export { useColorScheme } from "./theme/use-color-scheme";
 export { coerceTheme, validateTheme } from "./theme/validate-theme";

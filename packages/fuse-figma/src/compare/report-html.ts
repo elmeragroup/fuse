@@ -93,7 +93,7 @@ function summaryRows(report: CompareReport): string {
       const theme =
         preview.theme === null
           ? "not rendered"
-          : `${preview.theme.variant}-${preview.theme.brand}-${preview.theme.segment}, ${preview.theme.scheme}, ${preview.theme.density}`;
+          : `${preview.theme.identity}-${preview.theme.brand}-${preview.theme.segment}, ${preview.theme.scheme}, ${preview.theme.density}`;
       // A rendered preview whose cells show no text checks no font, and reports an empty one.
       const font = preview.font === "" ? "no text" : (preview.font ?? "");
       return `<tr><td>${escape(preview.name)}</td><td>${escape(theme)}</td><td>${escape(font)}</td><td>${String(rows.length)}</td><td>${String(sized)}</td><td>${percent(worst)}</td><td>${percent(mean)}</td><td>${String(skipped)}</td></tr>`;

@@ -5,7 +5,7 @@ import { PhoneNumberField } from "@elmeragroup/fuse/phone-number-field";
 import "../../dist/styles.css";
 import "../../dist/themes.css";
 import { withLocale } from "../../test/locale-matrix";
-import { cssVarColor, fkasExternal, renderThemed, roleNamed } from "../../test/themed-browser-render";
+import { cssVarColor, fkasBranded, renderThemed, roleNamed } from "../../test/themed-browser-render";
 import { Accordion } from "../components/accordion";
 import { Attachment } from "../components/attachment";
 import { Breadcrumb } from "../components/breadcrumb";
@@ -222,7 +222,7 @@ describe("native face resets under the classes around them", () => {
     renderThemed(
       withLocale(
         "en-US",
-        <ThemeScope theme={fkasExternal}>
+        <ThemeScope theme={fkasBranded}>
           <StyledRenders />
         </ThemeScope>
       )
@@ -272,9 +272,9 @@ describe("native face resets under the classes around them", () => {
 
 describe.each(["light", "dark"] as const)("native faces without preflight, %s", (scheme) => {
   function mount(): void {
-    // fkas external tints the page, so a leftover browser grey or link blue reads as a mismatch.
+    // fkas branded tints the page, so a leftover browser grey or link blue reads as a mismatch.
     const scope = (
-      <ThemeScope theme={fkasExternal}>
+      <ThemeScope theme={fkasBranded}>
         <Parts />
       </ThemeScope>
     );
@@ -478,7 +478,7 @@ describe("block resets without preflight", () => {
     renderThemed(
       withLocale(
         "en-US",
-        <ThemeScope theme={fkasExternal}>
+        <ThemeScope theme={fkasBranded}>
           <Blocks />
         </ThemeScope>
       )

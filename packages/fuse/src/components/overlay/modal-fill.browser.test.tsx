@@ -15,8 +15,8 @@ import {
 } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
 import type { ResolvedColorScheme } from "../../theme/color-scheme-types";
+import type { ThemeInput, ThemeIdentity } from "../../theme/theme-input";
 import { ThemeScope } from "../../theme/theme-scope";
-import type { ThemeInput, ThemeVariant } from "../../theme/tokens/themes";
 import { AlertDialog } from "../alert-dialog";
 import { Command } from "../command";
 import { Dialog } from "../dialog";
@@ -39,16 +39,16 @@ afterEach(async () => {
 const SCOPE_NAME = "Order flow";
 
 function Scope({
-  variant,
+  identity,
   style,
   children,
 }: {
-  variant: ThemeVariant;
+  identity: ThemeIdentity;
   style?: CSSProperties;
   children: ReactNode;
 }): ReactElement {
   // fkas is the brand whose light page tint sits furthest from its white card.
-  const theme = { variant, brand: "fkas", segment: "private" } as const satisfies ThemeInput;
+  const theme = { identity, brand: "fkas", segment: "private" } as const satisfies ThemeInput;
   return (
     <LocaleProvider locale="en-US">
       <ThemeScope theme={theme} role="region" aria-label={SCOPE_NAME} style={style}>
@@ -119,33 +119,33 @@ function scopeColor(token: string): string {
 
 describe("modal fill", () => {
   // Unit under test: the fill and text colour of each modal popup. Oracle: the issue's contract,
-  // the page pair in external light and the popover pair everywhere else, read as the scope's own
+  // the page pair in branded light and the popover pair everywhere else, read as the scope's own
   // custom properties.
   const cases = [
-    { variant: "external", scheme: "light", fill: "--background", text: "--foreground" },
-    { variant: "internal", scheme: "light", fill: "--popover", text: "--popover-foreground" },
-    { variant: "external", scheme: "dark", fill: "--popover", text: "--popover-foreground" },
-    { variant: "internal", scheme: "dark", fill: "--popover", text: "--popover-foreground" },
+    { identity: "branded", scheme: "light", fill: "--background", text: "--foreground" },
+    { identity: "neutral", scheme: "light", fill: "--popover", text: "--popover-foreground" },
+    { identity: "branded", scheme: "dark", fill: "--popover", text: "--popover-foreground" },
+    { identity: "neutral", scheme: "dark", fill: "--popover", text: "--popover-foreground" },
   ] as const satisfies readonly {
-    variant: ThemeVariant;
+    identity: ThemeIdentity;
     scheme: ResolvedColorScheme;
     fill: string;
     text: string;
   }[];
 
-  for (const { variant, scheme, fill, text } of cases) {
-    it.each(MODALS)(`fills $label from ${fill} in ${variant} ${scheme}`, async ({ role, name, node }) => {
+  for (const { identity, scheme, fill, text } of cases) {
+    it.each(MODALS)(`fills $label from ${fill} in ${identity} ${scheme}`, async ({ role, name, node }) => {
       document.documentElement.setAttribute("data-theme", scheme);
-      render(<Scope variant={variant}>{node}</Scope>);
+      render(<Scope identity={identity}>{node}</Scope>);
       const style = getComputedStyle(await openModal(name, role));
       expect(style.backgroundColor).toBe(scopeColor(fill));
       expect(style.color).toBe(scopeColor(text));
     });
   }
 
-  it("tints the external light modal away from the white card and popover", async () => {
+  it("tints the branded light modal away from the white card and popover", async () => {
     document.documentElement.setAttribute("data-theme", "light");
-    render(<Scope variant="external">{MODALS[0].node}</Scope>);
+    render(<Scope identity="branded">{MODALS[0].node}</Scope>);
     const style = getComputedStyle(await openModal(MODALS[0].name));
     expect(style.backgroundColor).not.toBe(scopeColor("--card"));
     expect(style.backgroundColor).not.toBe(scopeColor("--popover"));
@@ -157,7 +157,7 @@ describe("modal fill", () => {
       document.documentElement.setAttribute("data-theme", "light");
       const custom = { "--dialog": "oklch(0.5 0.1 20)", "--dialog-foreground": "oklch(0.98 0.01 20)" };
       render(
-        <Scope variant="external" style={custom}>
+        <Scope identity="branded" style={custom}>
           {node}
         </Scope>
       );
@@ -173,7 +173,7 @@ describe("modal fill", () => {
   it("lets a className put one modal back on the popover fill", async () => {
     document.documentElement.setAttribute("data-theme", "light");
     render(
-      <Scope variant="external">
+      <Scope identity="branded">
         <Dialog.Root>
           <Dialog.Trigger>Open</Dialog.Trigger>
           <Dialog.Content className="bg-popover text-popover-foreground">
@@ -188,14 +188,14 @@ describe("modal fill", () => {
   });
 });
 
-describe("surfaces that keep their own fill in external light", () => {
+describe("surfaces that keep their own fill in branded light", () => {
   beforeEach(() => {
     document.documentElement.setAttribute("data-theme", "light");
   });
 
   it("keeps Command.Content on the popover", async () => {
     render(
-      <Scope variant="external">
+      <Scope identity="branded">
         <Command.Root items={["Invoices"]}>
           <Command.Trigger>Open</Command.Trigger>
           <Command.Content aria-label="Search the site" />
@@ -209,7 +209,7 @@ describe("surfaces that keep their own fill in external light", () => {
 
   it("keeps Popover.Content on the popover", async () => {
     render(
-      <Scope variant="external">
+      <Scope identity="branded">
         <Popover.Root>
           <Popover.Trigger>Open</Popover.Trigger>
           <Popover.Content aria-label="Price details">Monthly fee and spot price.</Popover.Content>
@@ -222,7 +222,7 @@ describe("surfaces that keep their own fill in external light", () => {
 
   it("keeps Select.Content on the popover", async () => {
     render(
-      <Scope variant="external">
+      <Scope identity="branded">
         <Select.Root items={{ fixed: "Fixed price", spot: "Spot price" }}>
           <Select.Trigger aria-label="Agreement">
             <Select.Value placeholder="Pick an agreement" />
@@ -246,7 +246,7 @@ describe("surfaces that keep their own fill in external light", () => {
     await page.viewport(MOBILE.width, MOBILE.height);
     let isMobile = false;
     render(
-      <Scope variant="external">
+      <Scope identity="branded">
         <Sidebar.Provider>
           <Sidebar.Root>
             <Sidebar.Content />

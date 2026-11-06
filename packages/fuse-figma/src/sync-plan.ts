@@ -1,9 +1,10 @@
 /**
  * Diffs a desired variable set against a file and produces the one change batch that
  * makes the file match. Matching is by name, so every collection, mode and variable that
- * survives keeps its Figma id, and so do the bindings designers made to it. The plan
- * touches only the collections the set names, and deletes the local collections the set
- * retires. Inside the collections it holds the set is authoritative, so the plan deletes
+ * survives keeps its Figma id, and so do the bindings designers made to it. A collection the
+ * set renames is first renamed in place, with its modes, so it matches under its new name and
+ * keeps its id and its mode ids. The plan touches only the collections the set names, and
+ * deletes the local collections the set retires. Inside the collections it holds the set is authoritative, so the plan deletes
  * modes and variables it does not name.
  *
  * Planning walks each desired collection once and emits one planned change per write. A
@@ -41,9 +42,22 @@ export type PlannedChange =
       readonly write: Extract<CollectionChange, { readonly _tag: "CreateCollection" }>;
     }
   | {
+      readonly _tag: "RenameCollection";
+      readonly collection: string;
+      readonly from: string;
+      readonly write: Extract<CollectionChange, { readonly _tag: "RenameCollection" }>;
+    }
+  | {
       readonly _tag: "DeleteCollection";
       readonly collection: string;
       readonly write: Extract<CollectionChange, { readonly _tag: "DeleteCollection" }>;
+    }
+  | {
+      readonly _tag: "RenameMode";
+      readonly collection: string;
+      readonly from: string;
+      readonly mode: string;
+      readonly write: Extract<ModeChange, { readonly _tag: "RenameMode" }>;
     }
   | {
       readonly _tag: "CreateMode";
@@ -106,8 +120,56 @@ export class DuplicateCollection extends Schema.TaggedError<DuplicateCollection>
   collection: Schema.String,
 }) {}
 
+/**
+ * The file holds more than one local collection with a renamed collection's old name, so the
+ * sync cannot tell which one to rename in place and refuses rather than create a fresh one.
+ */
+export class AmbiguousRenameSource extends Schema.TaggedError<AmbiguousRenameSource>()(
+  "AmbiguousRenameSource",
+  {
+    message: Schema.String,
+    from: Schema.String,
+    to: Schema.String,
+    count: Schema.Number,
+  }
+) {}
+
+/**
+ * Renaming a collection's modes would give two modes one name: the collection already holds a
+ * mode with a target name, or two of its modes rename to the same name. Renaming around it
+ * would let reconciliation delete a mode and drop the frames pinned to it.
+ */
+export class RenameModeConflict extends Schema.TaggedError<RenameModeConflict>()("RenameModeConflict", {
+  message: Schema.String,
+  collection: Schema.String,
+  mode: Schema.String,
+  target: Schema.String,
+}) {}
+
+/**
+ * The file holds both a renamed collection's new name and a collection with its old name. The
+ * migration is not complete, and the sync cannot merge the two, so it refuses until a designer
+ * repins the frames on the old collection and deletes it.
+ */
+export class UnresolvedLegacyCollection extends Schema.TaggedError<UnresolvedLegacyCollection>()(
+  "UnresolvedLegacyCollection",
+  {
+    message: Schema.String,
+    from: Schema.String,
+    to: Schema.String,
+  }
+) {}
+
 /** Everything that stops a plan from being made. */
-export type PlanConflict = DuplicateCollection | VariableTypeConflict;
+export type PlanConflict =
+  | AmbiguousRenameSource
+  | DuplicateCollection
+  | RenameModeConflict
+  | UnresolvedLegacyCollection
+  | VariableTypeConflict;
+
+/** The conflicts a collection rename can raise before any write is planned. */
+type RenameConflict = AmbiguousRenameSource | RenameModeConflict | UnresolvedLegacyCollection;
 
 /**
  * Channel and number differences below this are round-trip noise. Figma stores values as
@@ -150,15 +212,17 @@ export function isInSync(plan: SyncPlan): boolean {
  */
 export function planSync(desired: VariableSet, file: FileVariables): Result.Result<SyncPlan, PlanConflict> {
   return Result.gen(function* () {
+    const renamed = yield* renames(desired, file);
     const matches: CollectionMatch[] = [];
     for (const [index, spec] of desired.collections.entries()) {
-      matches.push(yield* matchCollection(spec, index, file));
+      matches.push(yield* matchCollection(spec, index, renamed.file));
     }
     // Aliases cross collections, so values resolve only once every variable has an id.
     const ids = variableIds(matches);
     const values = matches.flatMap((match) => valueChanges(match, ids));
     return {
       changes: [
+        ...renamed.changes,
         ...retirements(desired, file),
         ...matches.flatMap((match) => match.changes),
         ...aliasTargetsFirst(desired, values),
@@ -181,6 +245,126 @@ function retirements(desired: VariableSet, file: FileVariables): readonly Planne
       collection: collection.name,
       write: { _tag: "DeleteCollection", id: collection.id },
     }));
+}
+
+/** The file as it reads once the set's renames apply, and the writes that rename it. */
+type RenamedFile = {
+  readonly file: FileVariables;
+  readonly changes: readonly PlannedChange[];
+};
+
+/**
+ * Rename each collection the set renames, with its modes, when the file holds exactly one
+ * local collection with its old name and none with its new name. The result is the file as it
+ * reads after the renames, which the rest of the plan matches against, and the rename writes,
+ * which apply before every other collection and mode write. A file that holds only the new
+ * name keeps it, and any of its modes that still carry an old name are renamed by id too, so a
+ * collection a designer renamed by hand keeps its pins. Every other case fails before any write: two
+ * collections with the old name, the old and the new name side by side, or a mode rename that
+ * would give two modes one name. Falling through would create a fresh collection or delete a
+ * mode, and either drops the frames pinned to the old modes.
+ */
+function renames(desired: VariableSet, file: FileVariables): Result.Result<RenamedFile, RenameConflict> {
+  return Result.gen(function* () {
+    const changes: PlannedChange[] = [];
+    const renamedIds = new Map<CollectionId, FileCollection>();
+    for (const rename of desired.renamedCollections) {
+      const sources = file.collections.filter((collection) => collection.name === rename.from);
+      const [source] = sources;
+      if (source === undefined) {
+        // The collection already has its new name, perhaps renamed by hand, but its modes may
+        // still carry the old names. Rename them by id, so their pins survive reconciliation.
+        // Two destinations are left to the duplicate-collection conflict below.
+        const destinations = file.collections.filter((collection) => collection.name === rename.to);
+        const [destination] = destinations;
+        if (destination === undefined || destinations.length > 1) continue;
+        const modes = yield* renamedModes(destination, rename.to, rename.modes);
+        changes.push(...modeRenames(destination, modes, rename.to));
+        renamedIds.set(destination.id, { ...destination, modes });
+        continue;
+      }
+      if (file.collections.some((collection) => collection.name === rename.to)) {
+        return yield* Result.fail(
+          new UnresolvedLegacyCollection({
+            message: `The file holds both "${rename.to}" and the collection it replaces, "${rename.from}". Repin the frames that use "${rename.from}" to "${rename.to}", delete "${rename.from}", then sync again.`,
+            from: rename.from,
+            to: rename.to,
+          })
+        );
+      }
+      if (sources.length > 1) {
+        return yield* Result.fail(
+          new AmbiguousRenameSource({
+            message: `The file has ${String(sources.length)} local collections named "${rename.from}", which the sync renames to "${rename.to}". Delete all but one, then sync again.`,
+            from: rename.from,
+            to: rename.to,
+            count: sources.length,
+          })
+        );
+      }
+      const modes = yield* renamedModes(source, rename.to, rename.modes);
+      changes.push({
+        _tag: "RenameCollection",
+        collection: rename.to,
+        from: rename.from,
+        write: { _tag: "RenameCollection", id: source.id, name: rename.to },
+      });
+      changes.push(...modeRenames(source, modes, rename.to));
+      renamedIds.set(source.id, { ...source, name: rename.to, modes });
+    }
+    const collections = file.collections.map((collection) => renamedIds.get(collection.id) ?? collection);
+    return { file: { collections }, changes };
+  });
+}
+
+/** The writes that rename `collection`'s modes to `modes`, one per mode whose name changes. */
+function modeRenames(
+  collection: FileCollection,
+  modes: readonly FileMode[],
+  to: string
+): readonly PlannedChange[] {
+  return modes.flatMap((mode, index): PlannedChange[] => {
+    const before = collection.modes[index];
+    if (before === undefined || before.name === mode.name) return [];
+    return [
+      {
+        _tag: "RenameMode",
+        collection: to,
+        from: before.name,
+        mode: mode.name,
+        write: { _tag: "RenameMode", collectionId: collection.id, id: mode.id, name: mode.name },
+      },
+    ];
+  });
+}
+
+/**
+ * A renamed collection's modes after the rename, in file order, or the conflict when two
+ * modes would end up with one name.
+ */
+function renamedModes(
+  source: FileCollection,
+  to: string,
+  targets: ReadonlyMap<string, string>
+): Result.Result<readonly FileMode[], RenameModeConflict> {
+  const modes = source.modes.map((mode): FileMode => ({
+    ...mode,
+    name: targets.get(mode.name) ?? mode.name,
+  }));
+  for (const [index, mode] of modes.entries()) {
+    const clash = modes.findIndex((other, position) => position !== index && other.name === mode.name);
+    const original = source.modes[index];
+    if (clash === -1 || original === undefined || original.name === mode.name) continue;
+    return Result.fail(
+      new RenameModeConflict({
+        message: `${source.name === to ? `In "${to}", renaming` : `Renaming "${source.name}" to "${to}" would rename`} its mode "${original.name}" to "${mode.name}" would clash with another of its modes, which already is or becomes "${mode.name}". Rename or delete one of them in Figma, then sync again.`,
+        collection: source.name,
+        mode: original.name,
+        target: mode.name,
+      })
+    );
+  }
+  return Result.succeed(modes);
 }
 
 type PlannedValueChange = Extract<PlannedChange, { readonly _tag: "SetValue" }>;
@@ -517,10 +701,12 @@ export function changeBatch({ changes }: SyncPlan): ChangeBatch {
   for (const change of changes) {
     switch (change._tag) {
       case "CreateCollection":
+      case "RenameCollection":
       case "DeleteCollection":
         collections.push(change.write);
         break;
       case "CreateMode":
+      case "RenameMode":
       case "DeleteMode":
         modes.push(change.write);
         break;

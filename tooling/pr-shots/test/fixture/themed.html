@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" data-theme-variant="external" data-theme-brand="elma" data-theme-segment="private">
+<html lang="en" data-theme-identity="branded" data-theme-brand="elma" data-theme-segment="private">
   <head>
     <meta charset="utf-8" />
     <title>pr-shots fixture: a landing-style page whose target needs a theme</title>
@@ -17,7 +17,7 @@
       main {
         padding: 40px;
       }
-      /* A fixed, whole-pixel target that exists only in the Internal variant, as the landing's
+      /* A fixed, whole-pixel target that exists only in the Neutral identity, as the landing's
          Dashboard does. */
       [aria-label="Dashboard"] {
         box-sizing: border-box;
@@ -32,13 +32,13 @@
   </head>
   <body>
     <header role="banner">
-      <button type="button" id="chip">Theme: Elmera · Private · External</button>
+      <button type="button" id="chip">Theme: Elmera · Private · Branded</button>
     </header>
     <div role="dialog" aria-label="Theme" hidden>
-      <p id="variant">Variant</p>
-      <div role="group" aria-labelledby="variant">
-        <button type="button" data-axis="variant" data-value="internal">Internal</button>
-        <button type="button" data-axis="variant" data-value="external">External</button>
+      <p id="identity">Identity</p>
+      <div role="group" aria-labelledby="identity">
+        <button type="button" data-axis="identity" data-value="neutral">Neutral</button>
+        <button type="button" data-axis="identity" data-value="branded">Branded</button>
       </div>
       <p id="brand">Brand</p>
       <div role="group" aria-labelledby="brand">
@@ -63,10 +63,8 @@
           const current = root.getAttribute(`data-theme-${button.dataset.axis}`);
           button.setAttribute("aria-pressed", String(current === button.dataset.value));
         }
-        const internal = root.getAttribute("data-theme-variant") === "internal";
-        main.innerHTML = internal
-          ? '<section aria-label="Dashboard">Orders</section>'
-          : "<p>No dashboard</p>";
+        const neutral = root.getAttribute("data-theme-identity") === "neutral";
+        main.innerHTML = neutral ? '<section aria-label="Dashboard">Orders</section>' : "<p>No dashboard</p>";
       }
 
       chip.addEventListener("click", () => {

@@ -112,7 +112,7 @@ function sameColors(a: ReadonlyMap<TokenName, ResolvedColor>, b: ReadonlyMap<Tok
  * which `@elmeragroup/color` reads whatever notation the token holds, and one style pass
  * resolves them all.
  *
- * @param scope - The theme and declarations to probe, such as an artboard's pinned variant;
+ * @param scope - The theme and declarations to probe, such as an artboard's pinned identity;
  *   omitted, the base theme wearing the scheme's edits.
  */
 export function useResolvedColors(scheme: ArtboardScheme, scope?: ArtboardScope) {
@@ -188,7 +188,7 @@ export type TokenRowProps = {
   colors: ReadonlyMap<TokenName, ResolvedColor>;
   /**
    * The artboard scope the row describes, in its scheme and with the declarations it wears, such
-   * as a pinned variant's; omitted, the base theme in the edited scheme. An edit applies to that
+   * as a pinned identity's; omitted, the base theme in the edited scheme. An edit applies to that
    * scheme on every artboard, so it is checked against the base theme; an artboard in any other
    * theme skips it if it would loop there.
    */

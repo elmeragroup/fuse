@@ -141,15 +141,15 @@ describe("unchangedByDesign", () => {
 
 // Unit under test: `tokenColorsIn`, the theme a preview stamps resolved for each token. Oracle:
 // `defaults.ts`, which gives `sidebar-foreground` and `sidebar-accent-foreground` both
-// `NEUTRAL_950` and `sidebar-accent` `NEUTRAL_LINE`, and `internal-dark-palette.ts`, which gives the
-// first two `oklch(0.985 0 0)` in the internal dark theme.
+// `NEUTRAL_950` and `sidebar-accent` `NEUTRAL_LINE`, and `neutral-dark-palette.ts`, which gives the
+// first two `oklch(0.985 0 0)` in the neutral dark theme.
 describe("tokenColorsIn", () => {
   it.each(["light", "dark"] as const)(
-    "resolves the internal Fjordkraft private %s theme's sidebar text tokens to one color, and the accent fill to another",
+    "resolves the neutral Fjordkraft private %s theme's sidebar text tokens to one color, and the accent fill to another",
     (scheme) => {
       const colorOf = tokenColorsIn({
         scheme,
-        variant: "internal",
+        identity: "neutral",
         brand: "fkas",
         segment: "private",
         density: "dense",

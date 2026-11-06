@@ -91,9 +91,9 @@ export const BRAND_MODES = new Map([
   ["ngfi", "Nordic Green Energy"],
 ]);
 
-const VARIANT_MODES = new Map([
-  ["internal", "Internal"],
-  ["external", "External"],
+const IDENTITY_MODES = new Map([
+  ["neutral", "Neutral"],
+  ["branded", "Branded"],
 ]);
 
 const SEGMENT_MODES = new Map([
@@ -103,10 +103,10 @@ const SEGMENT_MODES = new Map([
 
 /**
  * The modes a designer sets on a frame to preview a theme slug, such as
- * `external-fkas-private`, in one color scheme.
+ * `branded-fkas-private`, in one color scheme.
  */
 export function frame(scheme: "Light" | "Dark", slug: string) {
-  const [variant = "", brand = "", segment = ""] = slug.split("-");
+  const [identity = "", brand = "", segment = ""] = slug.split("-");
   const mode = (modes: ReadonlyMap<string, string>, code: string): string => {
     const found = modes.get(code);
     if (found === undefined) throw new Error(`${slug} names no mode for ${code}`);
@@ -114,7 +114,7 @@ export function frame(scheme: "Light" | "Dark", slug: string) {
   };
   return {
     "Fuse tokens": scheme,
-    "Fuse variant": mode(VARIANT_MODES, variant),
+    "Fuse identity": mode(IDENTITY_MODES, identity),
     "Fuse segment": mode(SEGMENT_MODES, segment),
     "Fuse brand": mode(BRAND_MODES, brand),
   };

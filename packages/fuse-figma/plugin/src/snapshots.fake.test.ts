@@ -59,13 +59,13 @@ describe("Export snapshots from an applied file", () => {
     expect(first?.modes).toEqual(
       expect.arrayContaining([
         { collection: "Fuse tokens", mode: "Light" },
-        { collection: "Fuse density", mode: "Auto" },
+        { collection: "Fuse density", mode: "Dense" },
       ])
     );
     const [instance] = first?.instances ?? [];
     expect(new Set(Object.keys(instance ?? {}))).toEqual(new Set(["key", "variant", "box", "image"]));
     expect(instance?.key).toBe(
-      "preview/button/internal-fkas-private-light/button/variant=default,size=default,state=rest,icon=none"
+      "preview/button/neutral-fkas-private-light/button/variant=default,size=default,state=rest,icon=none"
     );
     expect(instance?.variant).toBe("button/variant=default,size=default,state=rest,icon=none");
     expect(new Set(Object.keys(instance?.box ?? {}))).toEqual(new Set(["x", "y", "width", "height"]));
@@ -91,19 +91,19 @@ describe("Export snapshots from an applied file", () => {
     );
     expect(
       new Set(Object.keys(badgePreview?.resolvedVariableModes ?? {}).map((id) => names.get(id)))
-    ).toEqual(new Set(["Fuse brand", "Fuse segment", "Fuse variant", "Fuse tokens"]));
-    const pins = (tokens: string, variant: string) => [
+    ).toEqual(new Set(["Fuse brand", "Fuse segment", "Fuse identity", "Fuse tokens"]));
+    const pins = (tokens: string, identity: string) => [
       { collection: "Fuse brand", mode: "Fjordkraft" },
-      { collection: "Fuse density", mode: "Auto" },
+      { collection: "Fuse density", mode: identity === "Neutral" ? "Dense" : "Comfortable" },
+      { collection: "Fuse identity", mode: identity },
       { collection: "Fuse segment", mode: "Private" },
       { collection: "Fuse tokens", mode: tokens },
-      { collection: "Fuse variant", mode: variant },
     ];
     const themes = [
-      pins("Light", "Internal"),
-      pins("Dark", "Internal"),
-      pins("Light", "External"),
-      pins("Dark", "External"),
+      pins("Light", "Neutral"),
+      pins("Dark", "Neutral"),
+      pins("Light", "Branded"),
+      pins("Dark", "Branded"),
     ];
     expect(snapshot.previews.map((preview) => [preview.name, preview.modes])).toEqual([
       ...previewsOn(BADGE).map(({ name }, index) => [name, themes[index]]),

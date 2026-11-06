@@ -10,7 +10,7 @@ import "../../../dist/themes.css";
 import { shadowLayerLengths, shadowLayers } from "../../../test/assert-invalid-ring";
 import { render } from "../../../test/browser-render";
 import { withLocale } from "../../../test/locale-matrix";
-import { fkasPrivate, fkseExternal, guenExternal } from "../../../test/theme-fixtures";
+import { fkasPrivate, fkseBranded, guenBranded } from "../../../test/theme-fixtures";
 import { fieldRootFrom, roleNamed, textNamed } from "../../../test/themed-browser-render";
 import { ThemeScope } from "../../theme/theme-scope";
 import { CheckboxCard } from "../checkbox-card/checkbox-card";
@@ -82,16 +82,16 @@ function expectClassOverride(): void {
 
 describe("the card shadow role", () => {
   it.each([
-    ["internal light", (node: ReactNode) => <ThemeScope theme={fkasPrivate}>{node}</ThemeScope>],
+    ["neutral light", (node: ReactNode) => <ThemeScope theme={fkasPrivate}>{node}</ThemeScope>],
     [
-      "internal dark",
+      "neutral dark",
       (node: ReactNode) => (
         <div data-theme="dark">
           <ThemeScope theme={fkasPrivate}>{node}</ThemeScope>
         </div>
       ),
     ],
-  ] as const)("casts Tailwind's shadow-xs under internal cards, %s", (_, scope) => {
+  ] as const)("casts Tailwind's shadow-xs under neutral cards, %s", (_, scope) => {
     render(scope(<CardShadowParts />));
     expect(castShadows(roleNamed("group", "Card"))).toEqual(SHADOW_XS);
     expectShadowKeepers();
@@ -99,11 +99,11 @@ describe("the card shadow role", () => {
   });
 
   it.each([
-    ["guen light", guenExternal, false],
-    ["fkse light", fkseExternal, false],
-    ["guen dark", guenExternal, true],
-    ["fkse dark", fkseExternal, true],
-  ] as const)("casts a transparent shadow under external cards, %s", (_, theme, dark) => {
+    ["guen light", guenBranded, false],
+    ["fkse light", fkseBranded, false],
+    ["guen dark", guenBranded, true],
+    ["fkse dark", fkseBranded, true],
+  ] as const)("casts a transparent shadow under branded cards, %s", (_, theme, dark) => {
     const scoped = (
       <ThemeScope theme={theme}>
         <CardShadowParts />
@@ -117,7 +117,7 @@ describe("the card shadow role", () => {
 
   it("takes a --card-shadow override from any wrapper", () => {
     render(
-      <ThemeScope theme={guenExternal}>
+      <ThemeScope theme={guenBranded}>
         <div style={{ "--card-shadow": "rgb(0 0 0 / 0.2)" }}>
           <Card.Root role="group" aria-label="Recoloured" />
         </div>

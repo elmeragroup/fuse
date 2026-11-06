@@ -32,7 +32,7 @@ export const textFieldVariants = tv({
         // The card is the field box, so it takes the read-only fill and the borderless input
         // inside it cancels its own, which would paint a band across the card. It keeps the
         // `--border` edge, the field's boundary, and the plain `shadow-xs` of every field box,
-        // where Card's `--card-border` and `--card-shadow` go transparent in external themes.
+        // where Card's `--card-border` and `--card-shadow` go transparent in branded themes.
         base: cn(
           cardVariants().base(),
           textFieldCardShellClass,

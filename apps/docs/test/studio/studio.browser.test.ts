@@ -233,7 +233,7 @@ describe("theme studio", () => {
 
     await expect.poll(async () => computedPrimary(target)).not.toBe(before.board);
     expect(await computedPrimary(chrome)).toBe(before.chrome);
-    expect(await inspector(page).getByText("external-fkas-private", { exact: true }).isVisible()).toBe(true);
+    expect(await inspector(page).getByText("branded-fkas-private", { exact: true }).isVisible()).toBe(true);
     await page.close();
   });
 

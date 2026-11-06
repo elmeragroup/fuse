@@ -6,24 +6,27 @@
  */
 
 import * as CssColor from "@elmeragroup/color/css-color";
+import { RADIUS_RUNG_NAMES, RADIUS_RUNGS } from "@elmeragroup/fuse/theme-catalog";
+import type { RadiusRungName } from "@elmeragroup/fuse/theme-catalog";
 
 import { formatPx } from "./measure";
 
+/** A rung's short name, such as `md` for `--radius-md`, the suffix of its `rounded-*` utility. */
+export type RungId = RadiusRungName extends `radius-${infer Id}` ? Id : never;
+
+function rungId(name: RadiusRungName): RungId {
+  // SAFETY: every RadiusRungName is `radius-` followed by its id, which RungId names.
+  return name.slice("radius-".length) as RungId;
+}
+
 /**
- * Each rung's distance from `--radius`, in `--radius-step` lengths, as fuse.css declares it.
- * Fuse keeps the table private (`theme/tokens/radius-scale.ts`); the Shape page's browser test
+ * Each rung's distance from `--radius`, in `--radius-step` lengths, in fuse.css order. Fuse's
+ * corners module owns the table, read through the theme catalog; the Shape page's browser test
  * holds these against the radii the browser computes from fuse.css.
  */
-export const RUNGS = [
-  { id: "xs", steps: -3 },
-  { id: "sm", steps: -2 },
-  { id: "md", steps: -1 },
-  { id: "lg", steps: 0 },
-  { id: "xl", steps: 2 },
-  { id: "popover", steps: -4 },
-] as const satisfies readonly { id: string; steps: number }[];
-
-export type RungId = (typeof RUNGS)[number]["id"];
+export const RUNGS: readonly { readonly id: RungId; readonly steps: number }[] = RADIUS_RUNG_NAMES.map(
+  (name) => ({ id: rungId(name), steps: RADIUS_RUNGS[name].steps })
+);
 
 /** A rung's formula in words, such as `radius − 2 × step`. */
 export function rungFormula(steps: number): string {

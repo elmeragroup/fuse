@@ -12,10 +12,10 @@ const appsRoot = join(here, "../../");
 
 /** The four permutations the pin table forbids. */
 const ILLEGAL_SLUGS = [
-  "internal-fkab-private",
-  "external-fkab-private",
-  "internal-fkse-company",
-  "external-fkse-company",
+  "neutral-fkab-private",
+  "branded-fkab-private",
+  "neutral-fkse-company",
+  "branded-fkse-company",
 ] as const;
 
 // Counts the derived `secondary-hover` role, the `radius-step` rung spacing, the
@@ -55,17 +55,17 @@ describe("theme catalog payload", () => {
     }
   });
 
-  it("locks density to variant and stamps matching attributes on every row", () => {
+  it("pairs each identity with the docs site.s density and stamps matching attributes on every row", () => {
     // The first and last role in TOKEN_NAMES order; the fuse catalog suite pins the full order.
     const tokenKeys = Object.keys(firstCatalogTheme().tokens);
     expect(tokenKeys).toHaveLength(ROLE_TOKEN_COUNT);
     expect(tokenKeys[0]).toBe("--background");
     expect(tokenKeys.at(-1)).toBe("--heading-3-weight");
     for (const theme of THEME_CATALOG.themes) {
-      const density = theme.variant === "internal" ? "dense" : "comfortable";
+      const density = theme.identity === "neutral" ? "dense" : "comfortable";
       expect(theme.density).toBe(density);
       expect(theme.attributes).toEqual({
-        "data-theme-variant": theme.variant,
+        "data-theme-identity": theme.identity,
         "data-theme-brand": theme.brand,
         "data-theme-segment": theme.segment,
         "data-density": density,
@@ -79,34 +79,34 @@ describe("theme catalog payload", () => {
     }
   });
 
-  it("names the variant on the same object as that theme's token values, as the cascade writes them", () => {
-    const external = catalogTheme("external-fkas-private");
-    expect(external.variant).toBe("external");
-    expect(external.brand).toBe("fkas");
-    expect(external.segment).toBe("private");
-    expect(external.density).toBe("comfortable");
-    expect(external.tokens["--primary"]).toBe("oklch(0.3209 0.10325 38.8)");
-    expect(external.tokens["--primary-foreground"]).toBe("oklch(1 0 0)");
+  it("names the identity on the same object as that theme's token values, as the cascade writes them", () => {
+    const branded = catalogTheme("branded-fkas-private");
+    expect(branded.identity).toBe("branded");
+    expect(branded.brand).toBe("fkas");
+    expect(branded.segment).toBe("private");
+    expect(branded.density).toBe("comfortable");
+    expect(branded.tokens["--primary"]).toBe("oklch(0.3209 0.10325 38.8)");
+    expect(branded.tokens["--primary-foreground"]).toBe("oklch(1 0 0)");
 
-    const internal = catalogTheme("internal-elma-private");
-    expect(internal.variant).toBe("internal");
-    expect(internal.brand).toBe("elma");
-    expect(internal.segment).toBe("private");
-    expect(internal.density).toBe("dense");
-    expect(internal.tokens["--primary"]).toBe("oklch(0.16 0 0)");
-    expect(internal.tokens["--primary-foreground"]).toBe("oklch(1 0 0)");
+    const neutral = catalogTheme("neutral-elma-private");
+    expect(neutral.identity).toBe("neutral");
+    expect(neutral.brand).toBe("elma");
+    expect(neutral.segment).toBe("private");
+    expect(neutral.density).toBe("dense");
+    expect(neutral.tokens["--primary"]).toBe("oklch(0.16 0 0)");
+    expect(neutral.tokens["--primary-foreground"]).toBe("oklch(1 0 0)");
 
     // CSS custom-property names and var() values stay as the cascade writes them.
-    expect(external.attributes).toEqual({
-      "data-theme-variant": "external",
+    expect(branded.attributes).toEqual({
+      "data-theme-identity": "branded",
       "data-theme-brand": "fkas",
       "data-theme-segment": "private",
       "data-density": "comfortable",
     });
-    expect(external.tokens["--brand"]).toBe("var(--brand-fkas)");
-    expect(external.tokens["--brand-foreground"]).toBe("var(--brand-fkas-foreground)");
-    expect(external.tokens["--destructive"]).toBe("var(--error)");
-    expect(external.tokens["--sidebar-brand-foreground"]).toBe("var(--brand-foreground)");
+    expect(branded.tokens["--brand"]).toBe("var(--brand-fkas)");
+    expect(branded.tokens["--brand-foreground"]).toBe("var(--brand-fkas-foreground)");
+    expect(branded.tokens["--destructive"]).toBe("var(--error)");
+    expect(branded.tokens["--sidebar-brand-foreground"]).toBe("var(--brand-foreground)");
 
     expect(THEME_CATALOG.primitives["--brand-fkas"]).toBe("oklch(0.68 0.21747 38.8)");
     expect(THEME_CATALOG.primitives["--brand-fkab"]).toBe("var(--brand-fkas)");

@@ -7,7 +7,7 @@ import "../../../dist/styles.css";
 import {
   CONTROL_MD,
   fieldRootFrom,
-  fkasExternal,
+  fkasBranded,
   formNamed,
   inputNamed,
   px,
@@ -314,7 +314,7 @@ describe("TextField density metrics", () => {
 
     stampDensity("dense");
     rerender(
-      <ThemeScope theme={fkasExternal}>
+      <ThemeScope theme={fkasBranded}>
         <TextField label="Meter" />
       </ThemeScope>
     );

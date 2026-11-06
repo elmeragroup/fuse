@@ -1,5 +1,5 @@
+import type { BrandCode } from "../theme-input";
 import type { TokenContract } from "./contract";
-import type { BrandCode } from "./themes";
 
 export type BrandPointer = Pick<TokenContract, "brand" | "brand-foreground">;
 

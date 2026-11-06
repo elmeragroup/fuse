@@ -15,7 +15,7 @@ import {
   CONTROL_MD,
   computedContrast,
   computedOklch,
-  fkasExternal,
+  fkasBranded,
   px,
   renderThemed,
   roleNamed,
@@ -452,12 +452,12 @@ describe("nested NavigationMenu", () => {
     await openedLink("Spot price");
   });
 
-  describe("in external fkas dark, whose primary-soft is its popover", () => {
+  describe("in branded fkas dark, whose primary-soft is its popover", () => {
     let restoreDocumentTheme: () => void;
 
     beforeEach(() => {
       restoreDocumentTheme = snapshotDocumentTheme();
-      stampDocumentTheme(fkasExternal, "dark");
+      stampDocumentTheme(fkasBranded, "dark");
     });
 
     afterEach(() => {
@@ -847,7 +847,7 @@ describe("NavigationMenu trigger density metrics", () => {
     expect(measure("nested").height).toBe(CONTROL_MD.dense.height);
 
     renderThemed(
-      <ThemeScope theme={fkasExternal}>
+      <ThemeScope theme={fkasBranded}>
         <Single label="scoped" />
       </ThemeScope>
     );

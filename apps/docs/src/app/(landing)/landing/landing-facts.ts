@@ -4,7 +4,7 @@ import {
   DENSITIES,
   LEGAL_THEMES,
   THEME_SEGMENTS,
-  THEME_VARIANTS,
+  THEME_IDENTITIES,
 } from "@elmeragroup/fuse/theme";
 import type { BrandCode, Density } from "@elmeragroup/fuse/theme";
 
@@ -49,7 +49,7 @@ export const FACTS = {
   themes: LEGAL_THEMES.length,
   brands: BRAND_CODES.length,
   segments: THEME_SEGMENTS.length,
-  variants: THEME_VARIANTS.length,
+  identities: THEME_IDENTITIES.length,
   brandSegmentPairs,
   locales: LANDING_FACTS.locales.length,
   localeNames: listFormat.format(
@@ -61,7 +61,7 @@ export const FACTS = {
 } as const;
 
 /** The one sentence the hero and the page metadata both use to describe Fuse. */
-export const LANDING_SUMMARY = `${String(FACTS.components)} React components for ${String(FACTS.brands)} brands, ${String(FACTS.segments)} segments and ${String(FACTS.variants)} variants. One attribute sets the theme.`;
+export const LANDING_SUMMARY = `${String(FACTS.components)} React components for ${String(FACTS.brands)} brands, ${String(FACTS.segments)} segments and ${String(FACTS.identities)} identities. One attribute sets the theme.`;
 
 /** A component page the landing names or links to. */
 export type LandingComponent = Pick<ComponentPageEntry, "slug" | "title" | "lede"> & { href: string };

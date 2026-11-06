@@ -31,7 +31,7 @@ const SPECS: readonly Spec[] = [
   {
     value: FACTS.themes,
     label: "Themes",
-    note: `${String(FACTS.variants)} variants × ${String(FACTS.brandSegmentPairs)} brand and segment pairs.`,
+    note: `${String(FACTS.identities)} identities × ${String(FACTS.brandSegmentPairs)} brand and segment pairs.`,
   },
   { value: FACTS.locales, label: "Locales", note: `${FACTS.localeNames}.` },
   { value: FACTS.densities, label: "Densities", note: `Medium controls at ${FACTS.mediumControlPx}.` },

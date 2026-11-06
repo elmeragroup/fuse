@@ -74,7 +74,7 @@ function kroner(amount: number): string {
 }
 
 /**
- * A sign-up checkout in the external look: contact fields with a live email error, the phone and
+ * A sign-up checkout in the branded look: contact fields with a live email error, the phone and
  * start date, optional extras, and an order summary that follows the picks. "Confirm order"
  * submits the Form, which checks every field and the start date first; a valid order is
  * confirmed in place.

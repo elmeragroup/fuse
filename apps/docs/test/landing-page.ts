@@ -17,7 +17,7 @@ export type LandingOptions = {
   readonly colorScheme?: "light" | "dark";
   /** Runs before navigation, for routes, clocks, permissions and init scripts. */
   readonly prepare?: (page: Page) => Promise<void>;
-  /** The query the landing opens with, such as `?theme=internal-fkas-private`. */
+  /** The query the landing opens with, such as `?theme=neutral-fkas-private`. */
   readonly search?: string;
   /**
    * Wait for the app to hydrate, as it does unless set false. A test that keeps the app's scripts
@@ -78,7 +78,7 @@ export function launchLandingSuite({
         await waitForLandingHydration(page);
         // A server-rendered Dashboard's toast viewport portals into its theme scope once the
         // scope has mounted, so the region shows only after the Dashboard has hydrated. The
-        // landing opens on External without a Dashboard, which has nothing to wait for.
+        // landing opens on Branded without a Dashboard, which has nothing to wait for.
         const app = page.getByRole("region", { name: "Dashboard", exact: true });
         if ((await app.count()) > 0) {
           await app.getByRole("region", { name: "Dashboard notifications" }).waitFor({ state: "attached" });

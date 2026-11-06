@@ -6,8 +6,8 @@ import { renderToString } from "react-dom/server";
 
 import { Chart } from "../../src/components/chart/chart-namespace";
 import { LocaleProvider } from "../../src/intl/locale-context";
+import type { ThemeInput } from "../../src/theme/theme-input";
 import { ThemeScope } from "../../src/theme/theme-scope";
-import type { ThemeInput } from "../../src/theme/tokens/themes";
 
 const ROWS = [
   { name: "x", a: 2, b: 1 },

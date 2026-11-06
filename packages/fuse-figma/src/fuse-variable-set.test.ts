@@ -41,34 +41,34 @@ const alias = (collectionName: string, variable: string): VariableValue => ({
 });
 
 describe("fuseVariableSet", () => {
-  it("chains every bound variable through variant, segment and brand", () => {
-    expect(value("Fuse tokens", "primary", "Dark")).toEqual(alias("Fuse variant", "dark/primary"));
-    expect(value("Fuse variant", "dark/primary", "External")).toEqual(
-      alias("Fuse segment", "dark/external/primary")
+  it("chains every bound variable through identity, segment and brand", () => {
+    expect(value("Fuse tokens", "primary", "Dark")).toEqual(alias("Fuse identity", "dark/primary"));
+    expect(value("Fuse identity", "dark/primary", "Branded")).toEqual(
+      alias("Fuse segment", "dark/branded/primary")
     );
-    expect(value("Fuse segment", "dark/external/primary", "Company")).toEqual(
-      alias("Fuse brand", "dark/external/company/primary")
+    expect(value("Fuse segment", "dark/branded/primary", "Company")).toEqual(
+      alias("Fuse brand", "dark/branded/company/primary")
     );
-    // A rung takes the same four hops, though only the variant changes its value.
-    expect(value("Fuse tokens", "radius-md", "Light")).toEqual(alias("Fuse variant", "light/radius-md"));
-    expect(value("Fuse segment", "light/internal/radius-md", "Private")).toEqual(
-      alias("Fuse brand", "light/internal/private/radius-md")
+    // A rung takes the same four hops, though only the identity changes its value.
+    expect(value("Fuse tokens", "radius-md", "Light")).toEqual(alias("Fuse identity", "light/radius-md"));
+    expect(value("Fuse segment", "light/neutral/radius-md", "Private")).toEqual(
+      alias("Fuse brand", "light/neutral/private/radius-md")
     );
   });
 
   it("writes each kind's resolved literal in its Figma form", () => {
     // `#5c6773` in DEFAULTS is a hex literal, not oklch.
-    expect(value("Fuse brand", "light/internal/private/sh-identifier", "Fjordkraft")).toEqual({
+    expect(value("Fuse brand", "light/neutral/private/sh-identifier", "Fjordkraft")).toEqual({
       _tag: "Color",
       color: { r: 0x5c / 255, g: 0x67 / 255, b: 0x73 / 255, a: 1 },
     });
-    // The internal dark field border is white at 40% alpha, which Figma keeps as `a`.
-    expect(value("Fuse brand", "dark/internal/private/input", "Fjordkraft")).toEqual({
+    // The neutral dark field border is white at 40% alpha, which Figma keeps as `a`.
+    expect(value("Fuse brand", "dark/neutral/private/input", "Fjordkraft")).toEqual({
       _tag: "Color",
       color: { r: 1, g: 1, b: 1, a: 0.4 },
     });
-    expect(value("Fuse brand", "light/external/private/radius-button", "Fjordkraft")).toEqual(px(29));
-    expect(value("Fuse brand", "light/external/private/font-heading", "Fjordkraft")).toEqual({
+    expect(value("Fuse brand", "light/branded/private/radius-button", "Fjordkraft")).toEqual(px(29));
+    expect(value("Fuse brand", "light/branded/private/font-heading", "Fjordkraft")).toEqual({
       _tag: "String",
       value: "Neo Sans",
     });
@@ -82,8 +82,8 @@ describe("fuseVariableSet", () => {
       type: "FLOAT",
       scopes: ["STROKE_FLOAT"],
     });
-    expect(value("Fuse brand", "light/external/private/button-outline-width", "Fjordkraft")).toEqual(px(2));
-    expect(value("Fuse brand", "light/internal/private/button-outline-width", "Fjordkraft")).toEqual(px(1));
+    expect(value("Fuse brand", "light/branded/private/button-outline-width", "Fjordkraft")).toEqual(px(2));
+    expect(value("Fuse brand", "light/neutral/private/button-outline-width", "Fjordkraft")).toEqual(px(1));
     expect(spec("Fuse tokens", "font-sans")).toMatchObject({ type: "STRING", scopes: ["FONT_FAMILY"] });
     // A font weight syncs as a FLOAT variable that only the font weight picker offers, and
     // keeps its value in both schemes. A real file stores that picker's scope as FONT_STYLE.
@@ -92,30 +92,30 @@ describe("fuseVariableSet", () => {
       scopes: ["FONT_STYLE"],
     });
     for (const scheme of ["light", "dark"]) {
-      expect(value("Fuse brand", `${scheme}/external/private/selection-title-weight`, "Fjordkraft")).toEqual(
+      expect(value("Fuse brand", `${scheme}/branded/private/selection-title-weight`, "Fjordkraft")).toEqual(
         px(500)
       );
-      expect(value("Fuse brand", `${scheme}/internal/private/selection-title-weight`, "Fjordkraft")).toEqual(
+      expect(value("Fuse brand", `${scheme}/neutral/private/selection-title-weight`, "Fjordkraft")).toEqual(
         px(400)
       );
     }
     // A paragraph line height syncs as a FLOAT the line height picker offers, kept in both
-    // schemes: the external 16/22 paragraph style and the internal relaxed 1.625 × 16px.
+    // schemes: the branded 16/22 paragraph style and the neutral relaxed 1.625 × 16px.
     expect(spec("Fuse tokens", "paragraph-leading-base")).toMatchObject({
       type: "FLOAT",
       scopes: ["LINE_HEIGHT"],
     });
     for (const scheme of ["light", "dark"]) {
-      expect(value("Fuse brand", `${scheme}/external/private/paragraph-leading-base`, "Fjordkraft")).toEqual(
+      expect(value("Fuse brand", `${scheme}/branded/private/paragraph-leading-base`, "Fjordkraft")).toEqual(
         px(22)
       );
-      expect(value("Fuse brand", `${scheme}/internal/private/paragraph-leading-base`, "Fjordkraft")).toEqual(
+      expect(value("Fuse brand", `${scheme}/neutral/private/paragraph-leading-base`, "Fjordkraft")).toEqual(
         px(26)
       );
     }
     // An h1's heading scale syncs as FLOATs the font size, line height and font weight pickers
-    // offer, kept in both schemes: the external bold heading small, 24/32 at 700, and the
-    // internal 24px at the snug 1.375 ratio, 33px, at 500.
+    // offer, kept in both schemes: the branded bold heading small, 24/32 at 700, and the
+    // neutral 24px at the snug 1.375 ratio, 33px, at 500.
     expect(spec("Fuse tokens", "heading-1-size")).toMatchObject({ type: "FLOAT", scopes: ["FONT_SIZE"] });
     expect(spec("Fuse tokens", "heading-1-leading")).toMatchObject({
       type: "FLOAT",
@@ -123,21 +123,21 @@ describe("fuseVariableSet", () => {
     });
     expect(spec("Fuse tokens", "heading-1-weight")).toMatchObject({ type: "FLOAT", scopes: ["FONT_STYLE"] });
     for (const scheme of ["light", "dark"]) {
-      for (const [name, external, internal] of [
+      for (const [name, branded, neutral] of [
         ["heading-1-size", 24, 24],
         ["heading-1-leading", 32, 33],
       ] as const) {
-        expect(value("Fuse brand", `${scheme}/external/private/${name}`, "Fjordkraft"), name).toEqual(
-          px(external)
+        expect(value("Fuse brand", `${scheme}/branded/private/${name}`, "Fjordkraft"), name).toEqual(
+          px(branded)
         );
-        expect(value("Fuse brand", `${scheme}/internal/private/${name}`, "Fjordkraft"), name).toEqual(
-          px(internal)
+        expect(value("Fuse brand", `${scheme}/neutral/private/${name}`, "Fjordkraft"), name).toEqual(
+          px(neutral)
         );
       }
-      expect(value("Fuse brand", `${scheme}/external/private/heading-1-weight`, "Fjordkraft")).toEqual(
+      expect(value("Fuse brand", `${scheme}/branded/private/heading-1-weight`, "Fjordkraft")).toEqual(
         px(700)
       );
-      expect(value("Fuse brand", `${scheme}/internal/private/heading-1-weight`, "Fjordkraft")).toEqual(
+      expect(value("Fuse brand", `${scheme}/neutral/private/heading-1-weight`, "Fjordkraft")).toEqual(
         px(500)
       );
     }
@@ -151,23 +151,23 @@ describe("fuseVariableSet", () => {
       webSyntax: "color-mix(in oklab, var(--error) 10%, transparent)",
     });
     expect(spec("Fuse tokens", "error/10")?.description).toMatch(/^error at 10% opacity/);
-    expect(value("Fuse tokens", "error/10", "Light")).toEqual(alias("Fuse variant", "light/error/10"));
-    expect(value("Fuse segment", "dark/external/success/20", "Company")).toEqual(
-      alias("Fuse brand", "dark/external/company/success/20")
+    expect(value("Fuse tokens", "error/10", "Light")).toEqual(alias("Fuse identity", "light/error/10"));
+    expect(value("Fuse segment", "dark/branded/success/20", "Company")).toEqual(
+      alias("Fuse brand", "dark/branded/company/success/20")
     );
     // A tint holds a literal even where its role is one, since an alias cannot change alpha.
-    // The role is pinned first: Fjordkraft's internal light theme takes `:root`'s
+    // The role is pinned first: Fjordkraft's neutral light theme takes `:root`'s
     // `--error: oklch(0.4526 0.17845 30.42)` in themes.css, which is sRGB 0.6353 0.0588 0.0038
     // through the OKLab reference matrices, worked by hand.
-    const role = value("Fuse brand", "light/internal/private/error", "Fjordkraft");
-    if (role?._tag !== "Color") throw new Error("the internal light error role is no literal color");
+    const role = value("Fuse brand", "light/neutral/private/error", "Fjordkraft");
+    if (role?._tag !== "Color") throw new Error("the neutral light error role is no literal color");
     expect(role.color.r).toBeCloseTo(0.6353, 3);
     expect(role.color.g).toBeCloseTo(0.0588, 3);
     expect(role.color.b).toBeCloseTo(0.0038, 3);
     expect(role.color.a).toBe(1);
     // A cross-check, not a tautology: the unit under test is the tint derivation, and its oracle
     // is the role it derives from, at the tint's alpha.
-    expect(value("Fuse brand", "light/internal/private/error/10", "Fjordkraft")).toEqual({
+    expect(value("Fuse brand", "light/neutral/private/error/10", "Fjordkraft")).toEqual({
       _tag: "Color",
       color: { ...role.color, a: 0.1 },
     });
@@ -253,9 +253,9 @@ describe("fuseVariableSet", () => {
       scopes: ["FRAME_FILL", "SHAPE_FILL", "STROKE_COLOR"],
       webSyntax: "color-mix(in oklab, var(--input) 50%, transparent)",
     });
-    // themes.css: the internal dark input is oklch(1 0 0 / 40%), white at 40%, so half of it is
+    // themes.css: the neutral dark input is oklch(1 0 0 / 40%), white at 40%, so half of it is
     // white at 20%.
-    expect(value("Fuse brand", "dark/internal/private/input/50", "Fjordkraft")).toEqual({
+    expect(value("Fuse brand", "dark/neutral/private/input/50", "Fjordkraft")).toEqual({
       _tag: "Color",
       color: { r: 1, g: 1, b: 1, a: 0.2 },
     });
@@ -270,18 +270,18 @@ describe("fuseVariableSet", () => {
     expect(spec("Fuse tokens", "button-outline-shadow-spread")?.webSyntax).toBe(
       "min(0px, 2px - 2 * var(--button-outline-width, 1px))"
     );
-    // themes.css: internal themes draw a 1px outline, which casts Tailwind's shadow-xs, 0 1px 2px.
-    expect(value("Fuse brand", "light/internal/private/button-outline-width", "Fjordkraft")).toEqual(px(1));
-    expect(value("Fuse brand", "light/internal/private/button-outline-shadow-blur", "Fjordkraft")).toEqual(
+    // themes.css: neutral themes draw a 1px outline, which casts Tailwind's shadow-xs, 0 1px 2px.
+    expect(value("Fuse brand", "light/neutral/private/button-outline-width", "Fjordkraft")).toEqual(px(1));
+    expect(value("Fuse brand", "light/neutral/private/button-outline-shadow-blur", "Fjordkraft")).toEqual(
       px(2)
     );
-    expect(value("Fuse brand", "light/internal/private/button-outline-shadow-spread", "Fjordkraft")).toEqual(
+    expect(value("Fuse brand", "light/neutral/private/button-outline-shadow-spread", "Fjordkraft")).toEqual(
       px(0)
     );
-    // External themes draw 2px, where the shadow has no blur and shrinks inside the border box.
-    expect(value("Fuse brand", "dark/external/company/button-outline-width", "Elmera")).toEqual(px(2));
-    expect(value("Fuse brand", "dark/external/company/button-outline-shadow-blur", "Elmera")).toEqual(px(0));
-    expect(value("Fuse brand", "dark/external/company/button-outline-shadow-spread", "Elmera")).toEqual(
+    // Branded themes draw 2px, where the shadow has no blur and shrinks inside the border box.
+    expect(value("Fuse brand", "dark/branded/company/button-outline-width", "Elmera")).toEqual(px(2));
+    expect(value("Fuse brand", "dark/branded/company/button-outline-shadow-blur", "Elmera")).toEqual(px(0));
+    expect(value("Fuse brand", "dark/branded/company/button-outline-shadow-spread", "Elmera")).toEqual(
       px(-2)
     );
   });
@@ -293,12 +293,12 @@ describe("fuseVariableSet", () => {
       webSyntax:
         "min(calc(var(--radius) - var(--radius-step, 0px)), max(10px, var(--radius) - 1000 * var(--radius-step, 0px)))",
     });
-    // themes.css: internal themes set --radius 0.5rem and step 0px, so the corner is --radius.
-    expect(value("Fuse brand", "light/internal/private/radius-compact", "Fjordkraft")).toEqual(px(8));
-    // External themes step 2px, so the corner is min(radius - 2px, 10px). Elmera sets 0.375rem,
+    // themes.css: neutral themes set --radius 0.5rem and step 0px, so the corner is --radius.
+    expect(value("Fuse brand", "light/neutral/private/radius-compact", "Fjordkraft")).toEqual(px(8));
+    // Branded themes step 2px, so the corner is min(radius - 2px, 10px). Elmera sets 0.375rem,
     // 6px, under the cap, and TrøndelagKraft sets 1rem, 16px, over it.
-    expect(value("Fuse brand", "dark/external/company/radius-compact", "Elmera")).toEqual(px(4));
-    expect(value("Fuse brand", "light/external/private/radius-compact", "TrøndelagKraft")).toEqual(px(10));
+    expect(value("Fuse brand", "dark/branded/company/radius-compact", "Elmera")).toEqual(px(4));
+    expect(value("Fuse brand", "light/branded/private/radius-compact", "TrøndelagKraft")).toEqual(px(10));
   });
 
   it("syncs the checkbox corner as its formula gives it for each theme's radius", () => {
@@ -307,13 +307,13 @@ describe("fuseVariableSet", () => {
       scopes: ["CORNER_RADIUS"],
       webSyntax: "min(calc(var(--radius) - var(--radius-step, 0px)), 4px)",
     });
-    // themes.css: the corner is radius-md, radius - step, capped at 4px. Fjordkraft's internal
-    // theme sets 0.5rem and steps 0px, so radius-md is 8px. Elmera's external theme sets 0.375rem
+    // themes.css: the corner is radius-md, radius - step, capped at 4px. Fjordkraft's neutral
+    // theme sets 0.5rem and steps 0px, so radius-md is 8px. Elmera's branded theme sets 0.375rem
     // and steps 2px, so radius-md is 4px, at the cap. TrøndelagKraft's sets 1rem, so radius-md is
     // 14px. Every theme's radius-md reaches the cap.
-    expect(value("Fuse brand", "light/internal/private/radius-checkbox", "Fjordkraft")).toEqual(px(4));
-    expect(value("Fuse brand", "dark/external/company/radius-checkbox", "Elmera")).toEqual(px(4));
-    expect(value("Fuse brand", "light/external/private/radius-checkbox", "TrøndelagKraft")).toEqual(px(4));
+    expect(value("Fuse brand", "light/neutral/private/radius-checkbox", "Fjordkraft")).toEqual(px(4));
+    expect(value("Fuse brand", "dark/branded/company/radius-checkbox", "Elmera")).toEqual(px(4));
+    expect(value("Fuse brand", "light/branded/private/radius-checkbox", "TrøndelagKraft")).toEqual(px(4));
   });
 
   it("syncs the field box corner as its clamp gives it for each theme's radius", () => {
@@ -324,13 +324,13 @@ describe("fuseVariableSet", () => {
         "clamp(var(--radius) - 1000 * var(--radius-step, 0px), var(--radius-field, var(--radius)), var(--radius) + 1000 * var(--radius-step, 0px))",
     });
     // themes.css, through clamp(radius - 1000 * step, radius-field, radius + 1000 * step).
-    // Fjordkraft's internal theme sets 0.5rem and steps 0px, so both bounds are 8px and the corner
-    // is radius. External themes step 2px, so the bounds lie 4000px apart and the corner is
+    // Fjordkraft's neutral theme sets 0.5rem and steps 0px, so both bounds are 8px and the corner
+    // is radius. Branded themes step 2px, so the bounds lie 4000px apart and the corner is
     // radius-field, which every theme aliases to radius: 0.375rem, 6px, for Elmera and 1rem, 16px,
     // for TrøndelagKraft. Their radius-md is 4px and 14px.
-    expect(value("Fuse brand", "light/internal/private/radius-field-box", "Fjordkraft")).toEqual(px(8));
-    expect(value("Fuse brand", "dark/external/company/radius-field-box", "Elmera")).toEqual(px(6));
-    expect(value("Fuse brand", "light/external/private/radius-field-box", "TrøndelagKraft")).toEqual(px(16));
+    expect(value("Fuse brand", "light/neutral/private/radius-field-box", "Fjordkraft")).toEqual(px(8));
+    expect(value("Fuse brand", "dark/branded/company/radius-field-box", "Elmera")).toEqual(px(6));
+    expect(value("Fuse brand", "light/branded/private/radius-field-box", "TrøndelagKraft")).toEqual(px(16));
   });
 
   it("syncs the corner inside a radius-lg shell padded 8px as its formula gives it for each theme", () => {
@@ -345,19 +345,15 @@ describe("fuseVariableSet", () => {
     expect(spec("Fuse tokens", "radius-inner/lg-pad-8px")?.description).toMatch(
       /Figma variables cannot compute, so the sync writes the result for each theme\.$/
     );
-    // themes.css: radius-lg is --radius. Fjordkraft's internal theme sets 0.5rem, 8px, which
-    // leaves 0. Its external theme sets 0.75rem, 12px, and TrøndelagKraft's 1rem, 16px, which
+    // themes.css: radius-lg is --radius. Fjordkraft's neutral theme sets 0.5rem, 8px, which
+    // leaves 0. Its branded theme sets 0.75rem, 12px, and TrøndelagKraft's 1rem, 16px, which
     // leave 4px and 8px. Elmera's 0.375rem, 6px, leaves 0.
-    expect(value("Fuse brand", "light/internal/private/radius-inner/lg-pad-8px", "Fjordkraft")).toEqual(
-      px(0)
-    );
-    expect(value("Fuse brand", "light/external/private/radius-inner/lg-pad-8px", "Fjordkraft")).toEqual(
-      px(4)
-    );
-    expect(value("Fuse brand", "dark/external/company/radius-inner/lg-pad-8px", "TrøndelagKraft")).toEqual(
+    expect(value("Fuse brand", "light/neutral/private/radius-inner/lg-pad-8px", "Fjordkraft")).toEqual(px(0));
+    expect(value("Fuse brand", "light/branded/private/radius-inner/lg-pad-8px", "Fjordkraft")).toEqual(px(4));
+    expect(value("Fuse brand", "dark/branded/company/radius-inner/lg-pad-8px", "TrøndelagKraft")).toEqual(
       px(8)
     );
-    expect(value("Fuse brand", "light/external/company/radius-inner/lg-pad-8px", "Elmera")).toEqual(px(0));
+    expect(value("Fuse brand", "light/branded/company/radius-inner/lg-pad-8px", "Elmera")).toEqual(px(0));
   });
 
   it("syncs each formula over density metrics as a density metric of its own", () => {
@@ -417,11 +413,8 @@ describe("fuseVariableSet", () => {
       );
       expect(value("Fuse density", name, "Dense")).toEqual(px(dense));
       expect(value("Fuse density", name, "Comfortable")).toEqual(px(comfortable));
-      // Auto follows the variant as the metrics do: internal themes deploy dense and external
-      // themes comfortable.
-      expect(value("Fuse density", name, "Auto")).toEqual(alias("Fuse variant", `density/${name}`));
-      expect(value("Fuse variant", `density/${name}`, "Internal")).toEqual(px(dense));
-      expect(value("Fuse variant", `density/${name}`, "External")).toEqual(px(comfortable));
+      // No identity implies a density, so the identity collection holds no density lengths.
+      expect(spec("Fuse identity", `density/${name}`)).toBeUndefined();
     }
   });
 
@@ -476,7 +469,7 @@ describe("fuseVariableSet", () => {
         /Figma variables cannot compute, so the sync writes the result for each theme and density\.$/
       );
       // No picker offers the values behind each density mode, and they carry no code.
-      for (const mode of ["auto", "dense", "comfortable"]) {
+      for (const mode of ["dense", "comfortable"]) {
         expect(spec("Fuse tokens", `${name}/${mode}`)).toMatchObject({
           type: "FLOAT",
           scopes: [],
@@ -484,39 +477,49 @@ describe("fuseVariableSet", () => {
           description: "",
         });
       }
+      expect(spec("Fuse tokens", `${name}/auto`)).toBeUndefined();
     }
   });
 
   it("turns var() references into aliases at the same theme path or to primitives", () => {
-    expect(value("Fuse brand", "dark/external/private/destructive", "Gudbrandsdal Energi")).toEqual(
-      alias("Fuse brand", "dark/external/private/error")
+    expect(value("Fuse brand", "dark/branded/private/destructive", "Gudbrandsdal Energi")).toEqual(
+      alias("Fuse brand", "dark/branded/private/error")
     );
-    expect(value("Fuse brand", "light/external/company/brand", "Fjordkraft Företag (company only)")).toEqual(
+    expect(value("Fuse brand", "light/branded/company/brand", "Fjordkraft Företag (company only)")).toEqual(
       alias("Fuse primitives", "brand-fkab")
     );
     // fkab shares Fjordkraft's accent by policy.
     expect(value("Fuse primitives", "brand-fkab", "Value")).toEqual(alias("Fuse primitives", "brand-fkas"));
-    // The external outline Button rings in the text color, and internal themes keep the
+    // The branded outline Button rings in the text color, and neutral themes keep the
     // border role's hairline.
-    expect(value("Fuse brand", "dark/external/private/button-outline", "TrøndelagKraft")).toEqual(
-      alias("Fuse brand", "dark/external/private/foreground")
+    expect(value("Fuse brand", "dark/branded/private/button-outline", "TrøndelagKraft")).toEqual(
+      alias("Fuse brand", "dark/branded/private/foreground")
     );
-    expect(value("Fuse brand", "light/internal/private/button-outline", "TrøndelagKraft")).toEqual(
-      alias("Fuse brand", "light/internal/private/border")
+    expect(value("Fuse brand", "light/neutral/private/button-outline", "TrøndelagKraft")).toEqual(
+      alias("Fuse brand", "light/neutral/private/border")
     );
   });
 
-  it("gives Auto density the variant's default density and keeps Dense and Comfortable literal", () => {
-    // fuse.css: --control-h-md is 2.25rem on :root and 2.75rem when comfortable. Apps deploy
-    // internal themes dense and external themes comfortable.
-    expect(value("Fuse density", "control-h-md", "Auto")).toEqual(
-      alias("Fuse variant", "density/control-h-md")
-    );
-    expect(value("Fuse variant", "density/control-h-md", "Internal")).toEqual(px(36));
-    expect(value("Fuse variant", "density/control-h-md", "External")).toEqual(px(44));
+  it("offers only Dense and Comfortable density, each literal, since no identity implies one", () => {
+    // fuse.css: --control-h-md is 2.25rem on :root and 2.75rem when comfortable.
+    expect(collection("Fuse density").modes).toEqual(["Dense", "Comfortable"]);
     expect(value("Fuse density", "control-h-md", "Dense")).toEqual(px(36));
     expect(value("Fuse density", "control-h-md", "Comfortable")).toEqual(px(44));
-    expect(spec("Fuse variant", "density/control-h-md")).toMatchObject({ scopes: [], webSyntax: undefined });
+    expect(spec("Fuse identity", "density/control-h-md")).toBeUndefined();
+  });
+
+  it("renames Fuse variant to Fuse identity, with its Internal and External modes, in place", () => {
+    expect(collection("Fuse identity").modes).toEqual(["Neutral", "Branded"]);
+    expect(variableSet().renamedCollections).toEqual([
+      {
+        from: "Fuse variant",
+        to: "Fuse identity",
+        modes: new Map([
+          ["Internal", "Neutral"],
+          ["External", "Branded"],
+        ]),
+      },
+    ]);
   });
 });
 

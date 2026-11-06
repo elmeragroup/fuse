@@ -5,7 +5,7 @@ export const BOOTSTRAP_MANIFEST_KEY = "__ELMERA_COLOR_SCHEME_BOOTSTRAP__";
 export const INJECTED_BOOTSTRAP_SOURCE_KEY = "elmera.colorScheme.bootstrapSource";
 
 export const DOCUMENT_BRAND = {
-  variant: "internal",
+  identity: "neutral",
   brand: "elma",
   segment: "private",
 } as const;
@@ -18,7 +18,7 @@ export const EXPECTED_BOOTSTRAP_MANIFEST = {
 } as const;
 
 export type DocumentBrand = {
-  variant: string | null;
+  identity: string | null;
   brand: string | null;
   segment: string | null;
 };
@@ -46,10 +46,10 @@ export function tagAttribute(open: string, name: string): string | null {
 export function readDocumentBrand(html: string): DocumentBrand {
   const htmlTag = openTag(html, "html");
   if (htmlTag === null) {
-    return { variant: null, brand: null, segment: null };
+    return { identity: null, brand: null, segment: null };
   }
   return {
-    variant: tagAttribute(htmlTag, "data-theme-variant"),
+    identity: tagAttribute(htmlTag, "data-theme-identity"),
     brand: tagAttribute(htmlTag, "data-theme-brand"),
     segment: tagAttribute(htmlTag, "data-theme-segment"),
   };

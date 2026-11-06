@@ -23,7 +23,7 @@
         width: 200px;
         height: 30px;
       }
-      #internal {
+      #neutral {
         left: 40px;
         top: 400px;
       }
@@ -182,8 +182,8 @@
          the Edit dialog hides main. -->
     <button type="button" id="edit-ghost">Edit</button>
     <main>
-      <!-- Opening the Rows per page combobox needs a step first, as the landing's Internal side does. -->
-      <button type="button" id="internal">Internal</button>
+      <!-- Opening the Rows per page combobox needs a step first, as the landing's Neutral side does. -->
+      <button type="button" id="neutral">Neutral</button>
       <button type="button" id="rows" role="combobox" aria-label="Rows per page" aria-expanded="false" hidden>
         10
       </button>
@@ -249,7 +249,7 @@
     <script>
       const byId = (id) => document.getElementById(id);
 
-      byId("internal").addEventListener("click", () => {
+      byId("neutral").addEventListener("click", () => {
         byId("rows").hidden = false;
       });
 

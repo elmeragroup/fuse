@@ -11,7 +11,7 @@ import type { ResolvedThemeCatalog } from "@elmeragroup/fuse/theme-catalog";
  * The theme the card paints: the landing's opening theme, `OPENING_THEME` in `src/lib/theme.ts`,
  * as its slug.
  */
-const CARD_THEME = "external-elma-private";
+const CARD_THEME = "branded-elma-private";
 
 /**
  * Renders the generated module: the dark scheme's background, foreground and muted foreground

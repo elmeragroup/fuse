@@ -2,17 +2,12 @@ import type { ReactElement, ReactNode } from "react";
 
 import type { Metadata } from "next";
 
-import {
-  ColorSchemeScript,
-  defaultDensityForVariant,
-  densityAttributes,
-  themeAttributes,
-} from "@elmeragroup/fuse/theme";
+import { ColorSchemeScript, documentAttributes } from "@elmeragroup/fuse/theme";
 
 import { DocumentRoot } from "../../components/document-root";
 import { BLOCK_SESSION_THEME_KEY } from "../../lib/block-preview";
 import { siteOrigin } from "../../lib/site-origin";
-import { DEFAULT_THEME, DOCUMENT_COLOR_SCHEME } from "../../lib/theme";
+import { DEFAULT_THEME, docsDensityFor, DOCUMENT_COLOR_SCHEME } from "../../lib/theme";
 import { slugAttributesJson, THEME_QUERY } from "../../lib/theme-address";
 import "../../styles/globals.css";
 import { BlockPreviewTheme } from "./block-preview-theme";
@@ -31,10 +26,9 @@ export const metadata: Metadata = {
 };
 
 /** Every slug Fuse's slug parser accepts, mapped to the theme and density attributes it stamps. */
-const SLUG_ATTRIBUTES = slugAttributesJson((theme) => ({
-  ...themeAttributes(theme),
-  ...densityAttributes(defaultDensityForVariant(theme.variant)),
-}));
+const SLUG_ATTRIBUTES = slugAttributesJson((theme) =>
+  documentAttributes({ theme, density: docsDensityFor(theme) })
+);
 
 /**
  * Stamps a preview opened in its own tab with its linked theme before the browser can paint. The

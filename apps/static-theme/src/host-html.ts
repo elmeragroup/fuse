@@ -1,19 +1,15 @@
-import type { DensityAttributes, ThemeAttributes } from "@elmeragroup/fuse/theme";
+import type { DocumentAttributes } from "@elmeragroup/fuse/theme";
 
 const HTML_OPEN_TAG = /<html\b[^>]*>/i;
 
-export function applyHostRootAttributes(
-  html: string,
-  attributes: ThemeAttributes,
-  density: DensityAttributes
-): string {
+export function applyHostRootAttributes(html: string, attributes: DocumentAttributes): string {
   const open = HTML_OPEN_TAG.exec(html);
   if (open === null) {
     throw new Error("Vite HTML is missing the <html> tag");
   }
 
   const tag = open[0];
-  const stamped = Object.entries({ ...attributes, ...density });
+  const stamped = Object.entries(attributes);
   for (const [name] of stamped) {
     if (new RegExp(`\\s${name}=`, "i").test(tag)) {
       throw new Error(

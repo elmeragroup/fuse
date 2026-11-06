@@ -9,18 +9,18 @@ import { studioPageMetadata } from "../../../../studio/components/studio-metadat
 export const metadata = studioPageMetadata("/studio/shape");
 
 /**
- * The studio's Shape page: the radius rungs in each variant, Fuse's own shells and the
+ * The studio's Shape page: the radius rungs in each identity, Fuse's own shells and the
  * concentric explainer. The inspector leads with the Shape tokens here, and the corner X-ray
  * draws every inner corner's numbers over the canvas.
  */
 export default function StudioCornersPage(): ReactElement {
   return (
     <>
-      <StudioArtboard id="shape-rungs-internal">
-        <RungsBoard variant="internal" />
+      <StudioArtboard id="shape-rungs-neutral">
+        <RungsBoard identity="neutral" />
       </StudioArtboard>
-      <StudioArtboard id="shape-rungs-external">
-        <RungsBoard variant="external" />
+      <StudioArtboard id="shape-rungs-branded">
+        <RungsBoard identity="branded" />
       </StudioArtboard>
       <StudioArtboard id="shape-shells">
         <ShellsBoard />

@@ -7,8 +7,8 @@ import { render } from "../../test/browser-render";
 import { px, renderThemed, roleNamed } from "../../test/themed-browser-render";
 import { Button } from "../components/button/button";
 import { DropdownMenu } from "../components/dropdown-menu";
-import { BRAND_CODES, BRANDS } from "../theme/tokens/themes";
-import type { BrandCode, ThemeInput } from "../theme/tokens/themes";
+import { BRAND_CODES, BRANDS } from "../theme/theme-input";
+import type { BrandCode, ThemeInput } from "../theme/theme-input";
 import { BrandLogo } from "./brand-logo";
 
 const DRAWN_BRANDS = BRAND_CODES.filter((code): code is Exclude<BrandCode, "elma"> => code !== "elma");

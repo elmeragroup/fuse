@@ -29,7 +29,7 @@ const LIGHT_NEIGHBOUR = ARTBOARDS[2];
 const DARK_NEIGHBOUR = ARTBOARDS[3];
 const GLANCE_BOARD = ARTBOARDS[4];
 
-const INTERNAL_RUNGS = CORNERS_PAGE.artboard;
+const NEUTRAL_RUNGS = CORNERS_PAGE.artboard;
 const SHELLS = "Shells in Fuse";
 
 const LIGHT_SIDEBAR = "Sidebar · Light";
@@ -41,13 +41,13 @@ describe("an artboard's own brand, variant and segment", () => {
     const { context, page, errors } = await openStudio(browser());
     try {
       const save = (name: string) => artboard(page, name).getByRole("button", { name: "Save", exact: true });
-      // Both light boards render the base theme, external Elmera private, alike.
-      expect(await themeOf(page, LIGHT_BOARD)).toBe("external-elma-private");
+      // Both light boards render the base theme, branded Elmera private, alike.
+      expect(await themeOf(page, LIGHT_BOARD)).toBe("branded-elma-private");
       expect(await background(save(LIGHT_BOARD))).toBe(await background(save(LIGHT_NEIGHBOUR)));
 
       await pickBrand(page, await selectBoard(page, LIGHT_BOARD), "Fjordkraft");
-      await expect.poll(() => themeOf(page, LIGHT_BOARD)).toBe("external-fkas-private");
-      expect(await themeOf(page, LIGHT_NEIGHBOUR)).toBe("external-elma-private");
+      await expect.poll(() => themeOf(page, LIGHT_BOARD)).toBe("branded-fkas-private");
+      expect(await themeOf(page, LIGHT_NEIGHBOUR)).toBe("branded-elma-private");
       // Fjordkraft's primary action color is not Elmera's.
       await expect
         .poll(async () => (await background(save(LIGHT_BOARD))) !== (await background(save(LIGHT_NEIGHBOUR))))
@@ -63,17 +63,17 @@ describe("an artboard's own brand, variant and segment", () => {
     try {
       const bar = await selectBoard(page, LIGHT_BOARD);
       await toggle(bar, "Segment", "Company").click();
-      await expect.poll(() => themeOf(page, LIGHT_BOARD)).toBe("external-elma-company");
+      await expect.poll(() => themeOf(page, LIGHT_BOARD)).toBe("branded-elma-company");
 
       // Telinet serves private customers only.
       await pickBrand(page, bar, "Telinet");
-      await expect.poll(() => themeOf(page, LIGHT_BOARD)).toBe("external-fkse-private");
+      await expect.poll(() => themeOf(page, LIGHT_BOARD)).toBe("branded-fkse-private");
       expect(await toggle(bar, "Segment", "Private").getAttribute("aria-pressed")).toBe("true");
       expect(await toggle(bar, "Segment", "Company").isDisabled()).toBe(true);
 
       // Fjordkraft Företag serves companies only.
       await pickBrand(page, bar, "Fjordkraft Företag");
-      await expect.poll(() => themeOf(page, LIGHT_BOARD)).toBe("external-fkab-company");
+      await expect.poll(() => themeOf(page, LIGHT_BOARD)).toBe("branded-fkab-company");
       expect(await toggle(bar, "Segment", "Private").isDisabled()).toBe(true);
     } finally {
       await context.close();
@@ -84,14 +84,14 @@ describe("an artboard's own brand, variant and segment", () => {
     const { context, page } = await openStudio(browser(), { route: CORNERS_PAGE });
     try {
       let bar = await selectBoard(page, SHELLS);
-      expect(await toggle(bar, "Variant", "External").getAttribute("aria-pressed")).toBe("true");
-      await toggle(bar, "Variant", "Internal").click();
-      await expect.poll(() => themeOf(page, SHELLS)).toBe("internal-elma-private");
+      expect(await toggle(bar, "Identity", "Branded").getAttribute("aria-pressed")).toBe("true");
+      await toggle(bar, "Identity", "Neutral").click();
+      await expect.poll(() => themeOf(page, SHELLS)).toBe("neutral-elma-private");
 
-      bar = await selectBoard(page, INTERNAL_RUNGS);
-      expect(await toggle(bar, "Variant", "Internal").getAttribute("aria-pressed")).toBe("true");
-      await toggle(bar, "Variant", "External").click();
-      await expect.poll(() => themeOf(page, INTERNAL_RUNGS)).toBe("external-elma-private");
+      bar = await selectBoard(page, NEUTRAL_RUNGS);
+      expect(await toggle(bar, "Identity", "Neutral").getAttribute("aria-pressed")).toBe("true");
+      await toggle(bar, "Identity", "Branded").click();
+      await expect.poll(() => themeOf(page, NEUTRAL_RUNGS)).toBe("branded-elma-private");
     } finally {
       await context.close();
     }
@@ -101,7 +101,7 @@ describe("an artboard's own brand, variant and segment", () => {
     const { context, page } = await openStudio(browser());
     try {
       await pickBrand(page, await selectBoard(page, LIGHT_BOARD), "Fjordkraft");
-      await expect.poll(() => themeOf(page, LIGHT_BOARD)).toBe("external-fkas-private");
+      await expect.poll(() => themeOf(page, LIGHT_BOARD)).toBe("branded-fkas-private");
       await openTokenSection(page, "Actions");
       await setTokenColor(page, "primary", "#ff0000");
       const save = artboard(page, LIGHT_BOARD).getByRole("button", { name: "Save", exact: true });
@@ -118,7 +118,7 @@ describe("an artboard's own brand, variant and segment", () => {
         await opening.route("**/_next/static/chunks/**", async (route) => {
           const response = await route.fetch();
           const body = await response.text();
-          if (/slug"?:"external-fkas-private"/u.test(body)) {
+          if (/slug"?:"branded-fkas-private"/u.test(body)) {
             await route.abort();
             return;
           }
@@ -146,14 +146,14 @@ describe("an artboard's own brand, variant and segment", () => {
   });
 
   it("skips on a re-branded artboard an edit that loops only in its brand, and names it in the inspector", async () => {
-    // External Elmera declares a literal --sidebar-brand in dark themes and Fjordkraft
+    // Branded Elmera declares a literal --sidebar-brand in dark themes and Fjordkraft
     // sidebar-brand: var(--brand) (the theming handbook's sidebar brand section). So on the dark
     // boards --brand: var(--sidebar-brand) is admitted over the Elmera base, and loops on a dark
     // Fjordkraft board.
     const { context, page } = await openStudio(browser());
     try {
       await pickBrand(page, await selectBoard(page, DARK_BOARD), "Fjordkraft");
-      await expect.poll(() => themeOf(page, DARK_BOARD)).toBe("external-fkas-private");
+      await expect.poll(() => themeOf(page, DARK_BOARD)).toBe("branded-fkas-private");
       await openTokenSection(page, "Actions");
       await setTokenColor(page, "brand", "var(--sidebar-brand)");
 
@@ -166,7 +166,7 @@ describe("an artboard's own brand, variant and segment", () => {
       const note = inspector(page).getByText(/^Skips --brand,/u);
       await note.waitFor();
       expect(await note.textContent()).toBe(
-        "Skips --brand, which would loop through the aliases of Fjordkraft · External · Private."
+        "Skips --brand, which would loop through the aliases of Fjordkraft · Branded · Private."
       );
     } finally {
       await context.close();
@@ -176,25 +176,25 @@ describe("an artboard's own brand, variant and segment", () => {
   it("resets every artboard's brand, variant and segment with the base theme, keeping scheme and density", async () => {
     const { context, page } = await openStudio(browser(), { route: CORNERS_PAGE });
     try {
-      let bar = await selectBoard(page, INTERNAL_RUNGS);
+      let bar = await selectBoard(page, NEUTRAL_RUNGS);
       await pickBrand(page, bar, "Fjordkraft");
-      await toggle(bar, "Variant", "External").click();
+      await toggle(bar, "Identity", "Branded").click();
       await toggle(bar, "Scheme", "Dark").click();
       bar = await selectBoard(page, SHELLS);
       await pickBrand(page, bar, "TrøndelagKraft");
       await toggle(bar, "Segment", "Company").click();
       await toggle(bar, "Density", "Comfortable").click();
-      await expect.poll(() => themeOf(page, INTERNAL_RUNGS)).toBe("external-fkas-private");
-      await expect.poll(() => themeOf(page, SHELLS)).toBe("external-tkas-company");
+      await expect.poll(() => themeOf(page, NEUTRAL_RUNGS)).toBe("branded-fkas-private");
+      await expect.poll(() => themeOf(page, SHELLS)).toBe("branded-tkas-company");
 
       await page.getByRole("button", { name: /^Base theme/u }).click();
       await page.getByRole("menuitemradio", { name: "Nordic Green Energy", exact: true }).click();
       await page.keyboard.press("Escape");
 
       // Each follows the new base theme, and the rungs board returns to the variant its spec pins.
-      await expect.poll(() => themeOf(page, INTERNAL_RUNGS)).toBe("internal-ngfi-private");
-      await expect.poll(() => themeOf(page, SHELLS)).toBe("external-ngfi-private");
-      expect(await artboard(page, INTERNAL_RUNGS).getAttribute("data-theme")).toBe("dark");
+      await expect.poll(() => themeOf(page, NEUTRAL_RUNGS)).toBe("neutral-ngfi-private");
+      await expect.poll(() => themeOf(page, SHELLS)).toBe("branded-ngfi-private");
+      expect(await artboard(page, NEUTRAL_RUNGS).getAttribute("data-theme")).toBe("dark");
       expect(await artboard(page, SHELLS).getAttribute("data-density")).toBe("comfortable");
     } finally {
       await context.close();
@@ -208,11 +208,11 @@ describe("an artboard's own brand, variant and segment", () => {
       await page.getByRole("menuitemradio", { name: "Nordic Green Energy", exact: true }).click();
       await page.keyboard.press("Escape");
       await pickBrand(page, await selectBoard(page, LIGHT_BOARD), "Fjordkraft");
-      await expect.poll(() => themeOf(page, LIGHT_BOARD)).toBe("external-fkas-private");
+      await expect.poll(() => themeOf(page, LIGHT_BOARD)).toBe("branded-fkas-private");
 
       // The undo returns the base to the studio's opening theme, and the board with it.
       await canvas(page).getByRole("button", { name: "Undo", exact: true }).click();
-      await expect.poll(() => themeOf(page, LIGHT_BOARD)).toBe("external-elma-private");
+      await expect.poll(() => themeOf(page, LIGHT_BOARD)).toBe("branded-elma-private");
     } finally {
       await context.close();
     }
@@ -233,12 +233,12 @@ describe("an artboard's own brand, variant and segment", () => {
       await expect
         .poll(async () => toggle(section, "Segment", "Company").getAttribute("aria-pressed"))
         .toBe("true");
-      await toggle(section, "Variant", "Internal").click();
+      await toggle(section, "Identity", "Neutral").click();
       await expect
-        .poll(async () => toggle(bar, "Variant", "Internal").getAttribute("aria-pressed"))
+        .poll(async () => toggle(bar, "Identity", "Neutral").getAttribute("aria-pressed"))
         .toBe("true");
       expect(await brandIn(section, "TrøndelagKraft").isVisible()).toBe(true);
-      await expect.poll(() => themeOf(page, LIGHT_BOARD)).toBe("internal-tkas-company");
+      await expect.poll(() => themeOf(page, LIGHT_BOARD)).toBe("neutral-tkas-company");
     } finally {
       await context.close();
     }
@@ -246,7 +246,7 @@ describe("an artboard's own brand, variant and segment", () => {
 
   it("labels the glance board's radius ladder with the re-branded artboard's radius", async () => {
     // The lg rung is --radius (fuse.css: --radius-lg: var(--radius)). The composed themes declare
-    // --radius 0.375rem for external Elmera and 0.75rem for external Fjordkraft
+    // --radius 0.375rem for branded Elmera and 0.75rem for branded Fjordkraft
     // (packages/fuse/src/theme/__snapshots__/themes.css).
     const { context, page } = await openStudio(browser());
     try {
@@ -256,7 +256,7 @@ describe("an artboard's own brand, variant and segment", () => {
       await expect.poll(async () => lg.textContent()).toBe("lg 6px");
 
       await pickBrand(page, await selectBoard(page, GLANCE_BOARD), "Fjordkraft");
-      await expect.poll(() => themeOf(page, GLANCE_BOARD)).toBe("external-fkas-private");
+      await expect.poll(() => themeOf(page, GLANCE_BOARD)).toBe("branded-fkas-private");
       await expect.poll(async () => lg.textContent()).toBe("lg 12px");
     } finally {
       await context.close();
@@ -272,7 +272,7 @@ describe("an artboard's own brand, variant and segment", () => {
       await expect.poll(async () => source.textContent()).toBe("→ brand");
 
       await pickBrand(page, await selectBoard(page, LIGHT_SIDEBAR), "Fjordkraft");
-      await expect.poll(() => themeOf(page, LIGHT_SIDEBAR)).toBe("external-fkas-private");
+      await expect.poll(() => themeOf(page, LIGHT_SIDEBAR)).toBe("branded-fkas-private");
       await expect.poll(async () => source.textContent()).toBe("Literal");
     } finally {
       await context.close();

@@ -1,8 +1,8 @@
 import { expect, vi } from "vitest";
 
 import type { ColorScheme, ColorSchemeBootstrapManifest } from "../src/theme/color-scheme";
+import type { ThemeInput } from "../src/theme/theme-input";
 import { useTheme } from "../src/theme/theme-provider";
-import type { ThemeInput } from "../src/theme/tokens/themes";
 import { useColorScheme } from "../src/theme/use-color-scheme";
 import { stampTheme } from "./theme-fixtures";
 
@@ -22,7 +22,7 @@ export function stampDocumentBrand(theme: ThemeInput) {
 
 export function readDocumentBrand() {
   return {
-    variant: document.documentElement.getAttribute("data-theme-variant"),
+    identity: document.documentElement.getAttribute("data-theme-identity"),
     brand: document.documentElement.getAttribute("data-theme-brand"),
     segment: document.documentElement.getAttribute("data-theme-segment"),
   };
@@ -35,7 +35,7 @@ export function readDocumentBrand() {
 export function resetThemeDocument() {
   const root = document.documentElement;
   root.removeAttribute("data-theme");
-  root.removeAttribute("data-theme-variant");
+  root.removeAttribute("data-theme-identity");
   root.removeAttribute("data-theme-brand");
   root.removeAttribute("data-theme-segment");
   root.style.removeProperty("color-scheme");

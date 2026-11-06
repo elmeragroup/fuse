@@ -34,7 +34,7 @@ describe("Text paragraph line height without themes.css", () => {
   });
 
   it("sets the line height from the host's own paragraph roles", () => {
-    // The external paragraph styles, mapped by a host that keeps its own tokens.
+    // The branded paragraph styles, mapped by a host that keeps its own tokens.
     render(
       <SizedTexts
         prefix="Mapped"

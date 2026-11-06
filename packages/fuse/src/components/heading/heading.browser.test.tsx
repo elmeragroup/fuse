@@ -4,7 +4,7 @@ import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import {
   cssVarColor,
-  fkasExternal,
+  fkasBranded,
   fkasPrivate,
   headingNamed,
   px,
@@ -90,14 +90,14 @@ function typeOf(name: string, level?: (typeof LEVELS)[number]) {
 }
 
 /**
- * Levels 1 to 3 read the theme's heading scale. The expected type is written by hand: internal
+ * Levels 1 to 3 read the theme's heading scale. The expected type is written by hand: neutral
  * themes keep h1 text-2xl, h2 text-lg and h3 text-base at the snug 1.375 ratio and 500, and
- * external themes set h1 to heading small, 24/32, and h2 and h3 to heading xsmall, 20/32, all
+ * branded themes set h1 to heading small, 24/32, and h2 and h3 to heading xsmall, 20/32, all
  * at 700. h4 to h6 are 16/22 at 500 in every theme. `heading-without-themes.browser.test.tsx`
  * covers a host without `themes.css`.
  */
 describe("Heading level scale", () => {
-  const INTERNAL = {
+  const NEUTRAL = {
     1: { size: 24, leading: 33, weight: "500" },
     2: { size: 18, leading: 24.75, weight: "500" },
     3: { size: 16, leading: 22, weight: "500" },
@@ -105,7 +105,7 @@ describe("Heading level scale", () => {
     5: { size: 16, leading: 22, weight: "500" },
     6: { size: 16, leading: 22, weight: "500" },
   } as const;
-  const EXTERNAL = {
+  const BRANDED = {
     1: { size: 24, leading: 32, weight: "700" },
     2: { size: 20, leading: 32, weight: "700" },
     3: { size: 20, leading: 32, weight: "700" },
@@ -124,60 +124,60 @@ describe("Heading level scale", () => {
     );
   }
 
-  it("sets each level's type in internal and external themes, in light and dark", () => {
+  it("sets each level's type in neutral and branded themes, in light and dark", () => {
     renderThemed(
       <>
-        <LevelHeadings prefix="Internal" />
-        <ThemeScope theme={fkasExternal}>
-          <LevelHeadings prefix="External" />
+        <LevelHeadings prefix="Neutral" />
+        <ThemeScope theme={fkasBranded}>
+          <LevelHeadings prefix="Branded" />
         </ThemeScope>
         <div data-theme="dark">
           <ThemeScope theme={fkasPrivate}>
-            <LevelHeadings prefix="Dark internal" />
+            <LevelHeadings prefix="Dark neutral" />
           </ThemeScope>
-          <ThemeScope theme={fkasExternal}>
-            <LevelHeadings prefix="Dark external" />
+          <ThemeScope theme={fkasBranded}>
+            <LevelHeadings prefix="Dark branded" />
           </ThemeScope>
         </div>
       </>
     );
     for (const level of LEVELS) {
-      expect(typeOf(`Internal ${String(level)}`, level), `h${String(level)}`).toEqual(INTERNAL[level]);
-      expect(typeOf(`External ${String(level)}`, level), `h${String(level)}`).toEqual(EXTERNAL[level]);
-      expect(typeOf(`Dark internal ${String(level)}`, level), `h${String(level)}`).toEqual(INTERNAL[level]);
-      expect(typeOf(`Dark external ${String(level)}`, level), `h${String(level)}`).toEqual(EXTERNAL[level]);
+      expect(typeOf(`Neutral ${String(level)}`, level), `h${String(level)}`).toEqual(NEUTRAL[level]);
+      expect(typeOf(`Branded ${String(level)}`, level), `h${String(level)}`).toEqual(BRANDED[level]);
+      expect(typeOf(`Dark neutral ${String(level)}`, level), `h${String(level)}`).toEqual(NEUTRAL[level]);
+      expect(typeOf(`Dark branded ${String(level)}`, level), `h${String(level)}`).toEqual(BRANDED[level]);
     }
   });
 
-  it("resets the scale in an internal scope nested in an external one", () => {
+  it("resets the scale in a neutral scope nested in a branded one", () => {
     renderThemed(
-      <ThemeScope theme={fkasExternal}>
-        <Heading level={1}>Outer external</Heading>
+      <ThemeScope theme={fkasBranded}>
+        <Heading level={1}>Outer branded</Heading>
         <ThemeScope theme={fkasPrivate}>
-          <Heading level={1}>Nested internal</Heading>
+          <Heading level={1}>Nested neutral</Heading>
         </ThemeScope>
       </ThemeScope>
     );
-    expect(typeOf("Outer external", 1)).toEqual(EXTERNAL[1]);
-    expect(typeOf("Nested internal", 1)).toEqual(INTERNAL[1]);
+    expect(typeOf("Outer branded", 1)).toEqual(BRANDED[1]);
+    expect(typeOf("Nested neutral", 1)).toEqual(NEUTRAL[1]);
   });
 
   it("reads level 2's roles when level is omitted", () => {
     renderThemed(
       <>
-        <Heading>Internal default</Heading>
-        <ThemeScope theme={fkasExternal}>
-          <Heading>External default</Heading>
+        <Heading>Neutral default</Heading>
+        <ThemeScope theme={fkasBranded}>
+          <Heading>Branded default</Heading>
         </ThemeScope>
       </>
     );
-    expect(typeOf("Internal default", 2)).toEqual(INTERNAL[2]);
-    expect(typeOf("External default", 2)).toEqual(EXTERNAL[2]);
+    expect(typeOf("Neutral default", 2)).toEqual(NEUTRAL[2]);
+    expect(typeOf("Branded default", 2)).toEqual(BRANDED[2]);
   });
 
-  it("lets an explicit size, an explicit font or both replace the external roles, each on its own", () => {
+  it("lets an explicit size, an explicit font or both replace the branded roles, each on its own", () => {
     renderThemed(
-      <ThemeScope theme={fkasExternal}>
+      <ThemeScope theme={fkasBranded}>
         <Heading level={1} size="xl">
           Sized
         </Heading>
@@ -196,9 +196,9 @@ describe("Heading level scale", () => {
     expect(typeOf("Both", 3)).toEqual({ size: 24, leading: 33, weight: "600" });
   });
 
-  it("lets a className size, line height or weight replace the external roles", () => {
+  it("lets a className size, line height or weight replace the branded roles", () => {
     renderThemed(
-      <ThemeScope theme={fkasExternal}>
+      <ThemeScope theme={fkasBranded}>
         <Heading level={1} className="text-3xl">
           Large class
         </Heading>
@@ -243,24 +243,24 @@ describe("TimelineList title scale", () => {
     );
   }
 
-  it("keeps each level's earlier type in internal and external themes", () => {
+  it("keeps each level's earlier type in neutral and branded themes", () => {
     renderThemed(
       <>
-        <Titles prefix="Internal" />
-        <ThemeScope theme={fkasExternal}>
-          <Titles prefix="External" />
+        <Titles prefix="Neutral" />
+        <ThemeScope theme={fkasBranded}>
+          <Titles prefix="Branded" />
         </ThemeScope>
       </>
     );
     for (const level of TITLE_LEVELS) {
-      expect(typeOf(`Internal ${String(level)}`, level), `h${String(level)}`).toEqual(TITLE[level]);
-      expect(typeOf(`External ${String(level)}`, level), `h${String(level)}`).toEqual(TITLE[level]);
+      expect(typeOf(`Neutral ${String(level)}`, level), `h${String(level)}`).toEqual(TITLE[level]);
+      expect(typeOf(`Branded ${String(level)}`, level), `h${String(level)}`).toEqual(TITLE[level]);
     }
   });
 
   it("keeps the type when a wrapper forwards an undefined size and font", () => {
     renderThemed(
-      <ThemeScope theme={fkasExternal}>
+      <ThemeScope theme={fkasBranded}>
         <TimelineList.Root>
           <TimelineList.Item>
             <TimelineList.Title level={1} size={undefined} font={undefined}>
@@ -275,7 +275,7 @@ describe("TimelineList title scale", () => {
 
   it("lets a size or font prop replace the title's type", () => {
     renderThemed(
-      <ThemeScope theme={fkasExternal}>
+      <ThemeScope theme={fkasBranded}>
         <TimelineList.Root>
           <TimelineList.Item>
             <TimelineList.Title size="xl" font="semi-bold">

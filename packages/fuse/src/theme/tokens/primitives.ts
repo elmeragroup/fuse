@@ -1,6 +1,6 @@
+import { BRANDS } from "../theme-input";
+import type { BrandCode } from "../theme-input";
 import type { TokenPaint } from "./contract";
-import { BRANDS } from "./themes";
-import type { BrandCode } from "./themes";
 
 export const WHITE = "oklch(1 0 0)";
 
@@ -8,9 +8,9 @@ export const WHITE = "oklch(1 0 0)";
  * The focus ring's default colour in every theme and both colour schemes: one neutral grey.
  * Status Toasts and the warning and info Alerts rebind `--ring` on their soft fills. Lightness 0.6 meets
  * the 3:1 floor on every gated light and dark surface (page, card, card-soft and the muted Tabs
- * list track), the lowest measuring about 3.15:1 on the elma external dark muted track, so a
+ * list track), the lowest measuring about 3.15:1 on the elma branded dark muted track, so a
  * ring drawn flush against a control still separates from the surface around it.
- * `contrast-matrix.test.ts` holds that floor. `EXTERNAL_VARIANT_LAYER` describes how a brand
+ * `contrast-matrix.test.ts` holds that floor. `BRANDED_IDENTITY_LAYER` describes how a brand
  * tunes its ring.
  */
 export const NEUTRAL_RING = "oklch(0.6 0 0)";

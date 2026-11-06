@@ -1,50 +1,50 @@
-import type { ThemeInput } from "../src/theme/tokens/themes";
+import type { ThemeInput } from "../src/theme/theme-input";
 
-/** fkas/private, internal: the theme every component browser suite mounts under. */
+/** fkas/private, neutral: the theme every component browser suite mounts under. */
 export const fkasPrivate = {
-  variant: "internal",
+  identity: "neutral",
   brand: "fkas",
   segment: "private",
 } as const satisfies ThemeInput;
 
-/** fkas/private, external: the same brand reached through the segment path. */
-export const fkasExternal = {
-  variant: "external",
+/** fkas/private, branded: the same brand reached through the segment path. */
+export const fkasBranded = {
+  identity: "branded",
   brand: "fkas",
   segment: "private",
 } as const satisfies ThemeInput;
 
-/** tkas/company, external: a brand/segment pair with no segment sheet. */
+/** tkas/company, branded: a brand/segment pair with no segment sheet. */
 export const tkasCompany = {
-  variant: "external",
+  identity: "branded",
   brand: "tkas",
   segment: "company",
 } as const satisfies ThemeInput;
 
-/** guen/private, external: the light page tint closest to the shared field border. */
-export const guenExternal = {
-  variant: "external",
+/** guen/private, branded: the light page tint closest to the shared field border. */
+export const guenBranded = {
+  identity: "branded",
   brand: "guen",
   segment: "private",
 } as const satisfies ThemeInput;
 
-/** fkse/private, external: among the faintest light card steps off the page and the faintest dark one. */
-export const fkseExternal = {
-  variant: "external",
+/** fkse/private, branded: among the faintest light card steps off the page and the faintest dark one. */
+export const fkseBranded = {
+  identity: "branded",
   brand: "fkse",
   segment: "private",
 } as const satisfies ThemeInput;
 
-/** guen/private, internal: a second internal brand for scope fixtures. */
+/** guen/private, neutral: a second neutral brand for scope fixtures. */
 export const guenPrivate = {
-  variant: "internal",
+  identity: "neutral",
   brand: "guen",
   segment: "private",
 } as const satisfies ThemeInput;
 
 /** Stamp a theme's three axes onto an element, the way `ThemeScope` writes them. */
 export function stampTheme(element: HTMLElement, theme: ThemeInput): void {
-  element.setAttribute("data-theme-variant", theme.variant);
+  element.setAttribute("data-theme-identity", theme.identity);
   element.setAttribute("data-theme-brand", theme.brand);
   element.setAttribute("data-theme-segment", theme.segment);
 }

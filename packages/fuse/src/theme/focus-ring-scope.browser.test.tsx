@@ -2,13 +2,13 @@ import { describe, expect, it } from "vitest";
 
 import { computedColor } from "../../test/assert-invalid-ring";
 import { render } from "../../test/browser-render";
-import { fkasExternal, guenPrivate, tkasCompany } from "../../test/theme-fixtures";
+import { fkasBranded, guenPrivate, tkasCompany } from "../../test/theme-fixtures";
 import type { ResolvedColorScheme } from "./color-scheme-types";
 import { composeTheme } from "./compose-theme";
 import { generateThemesCss } from "./generate-css";
+import { themeSlug } from "./theme-input";
+import type { ThemeInput } from "./theme-input";
 import { ThemeScope } from "./theme-scope";
-import { themeSlug } from "./tokens/themes";
-import type { ThemeInput } from "./tokens/themes";
 
 /** A host's own ring colour, set on an outer scope the way a host restyles one subtree. */
 const HOST_RING = "rgb(10, 20, 30)";
@@ -38,7 +38,7 @@ describe("the focus ring colour per theme scope", () => {
         <>
           <style>{generateThemesCss()}</style>
           <div data-theme={colorScheme}>
-            <ThemeScope theme={fkasExternal} style={{ "--ring": HOST_RING }}>
+            <ThemeScope theme={fkasBranded} style={{ "--ring": HOST_RING }}>
               <RingProbe testId="outer" />
               <ThemeScope theme={inner}>
                 <RingProbe testId="inner" />

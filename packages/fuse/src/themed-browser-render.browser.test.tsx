@@ -6,7 +6,7 @@ import "../dist/themes.css";
 import { render } from "../test/browser-render";
 import {
   cssVarColor,
-  fkasExternal,
+  fkasBranded,
   headingNamed,
   renderThemed,
   roleNamed,
@@ -54,32 +54,32 @@ describe("headingNamed", () => {
 });
 
 describe("cssVarColor", () => {
-  it("reads a role token that differs between the internal and external fkas themes", () => {
-    renderThemed(<h2>internal primary</h2>);
-    const internal = cssVarColor(headingNamed("internal primary", 2), "--primary");
+  it("reads a role token that differs between the neutral and branded fkas themes", () => {
+    renderThemed(<h2>neutral primary</h2>);
+    const neutral = cssVarColor(headingNamed("neutral primary", 2), "--primary");
 
     render(
-      <ThemeScope theme={fkasExternal}>
-        <h2>external primary</h2>
+      <ThemeScope theme={fkasBranded}>
+        <h2>branded primary</h2>
       </ThemeScope>
     );
-    const externalHeading = headingNamed("external primary", 2);
-    const external = cssVarColor(externalHeading, "--primary");
+    const brandedHeading = headingNamed("branded primary", 2);
+    const branded = cssVarColor(brandedHeading, "--primary");
 
-    // themes.css: internal --primary is the neutral near-black, external-fkas is Fjordkraft's
+    // themes.css: neutral --primary is the neutral near-black, branded-fkas is Fjordkraft's
     // dark red-brown text color.
-    expect(internal).toBe("oklch(0.16 0 0)");
-    expect(external).toBe("oklch(0.3209 0.10325 38.8)");
-    // Fjordkraft's external --primary is that red-brown; currentColor, the fallback an undefined
+    expect(neutral).toBe("oklch(0.16 0 0)");
+    expect(branded).toBe("oklch(0.3209 0.10325 38.8)");
+    // Fjordkraft's branded --primary is that red-brown; currentColor, the fallback an undefined
     // var leaves behind, would be the black the document inherits, since no ThemeScope sets a
     // text color.
-    expect(external).not.toBe(getComputedStyle(externalHeading).color);
+    expect(branded).not.toBe(getComputedStyle(brandedHeading).color);
   });
 
   it("throws on the renderThemed host, which sits outside the ThemeScope", () => {
     const { host } = renderThemed(<h2>inside</h2>);
 
-    // :root declares a --primary, so the host silently reads the internal default rather than the
+    // :root declares a --primary, so the host silently reads the neutral default rather than the
     // scope's value; the guard is on the ThemeScope boundary, not on the token being defined.
     expect(getComputedStyle(host).getPropertyValue("--primary").trim()).not.toBe("");
     expect(() => cssVarColor(host, "--primary")).toThrow(/needs an element under a ThemeScope/);

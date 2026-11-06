@@ -3,35 +3,38 @@ import type { ReactElement } from "react";
 import { expect } from "vitest";
 
 import { menuPopupShellClass } from "../src/styles/inner-corner/menu";
+import type { ThemeInput } from "../src/theme/theme-input";
 import { ThemeScope } from "../src/theme/theme-scope";
-import type { ThemeInput } from "../src/theme/tokens/themes";
 import { render } from "./browser-render";
-import { fkasExternal, fkasPrivate, guenExternal, tkasCompany } from "./theme-fixtures";
+import { fkasBranded, fkasPrivate, guenBranded, tkasCompany } from "./theme-fixtures";
 import { px, roleNamed } from "./themed-browser-render";
 
 /** The four themes the inner-corner suites measure. */
-export type Variant = "internal" | "fkas" | "tkas" | "guen";
+export type CornerCase = "neutral" | "fkas" | "tkas" | "guen";
 
 /** Each case names the theme under test and a document theme with different radii. */
-export const CASES: readonly (readonly [Variant, ThemeInput, ThemeInput])[] = [
-  ["internal", fkasPrivate, tkasCompany],
-  ["fkas", fkasExternal, fkasPrivate],
+export const CASES: readonly (readonly [CornerCase, ThemeInput, ThemeInput])[] = [
+  ["neutral", fkasPrivate, tkasCompany],
+  ["fkas", fkasBranded, fkasPrivate],
   ["tkas", tkasCompany, fkasPrivate],
-  ["guen", guenExternal, tkasCompany],
+  ["guen", guenBranded, tkasCompany],
 ];
 
 /**
  * Each theme's `--radius` in px, the corner of an inner part outside any shell: 0.5rem
- * internal, and 0.75rem for fkas, 1rem for tkas and 0.5rem for guen.
+ * neutral, and 0.75rem for fkas, 1rem for tkas and 0.5rem for guen.
  */
-export const RADIUS = { internal: 8, fkas: 12, tkas: 16, guen: 8 } as const satisfies Record<Variant, number>;
+export const RADIUS = { neutral: 8, fkas: 12, tkas: 16, guen: 8 } as const satisfies Record<
+  CornerCase,
+  number
+>;
 
 /**
  * Each theme's `rounded-md` in px: `--radius` less one 2px step externally, and `--radius`
  * itself internally.
  */
-export const RADIUS_MD = { internal: 8, fkas: 10, tkas: 14, guen: 6 } as const satisfies Record<
-  Variant,
+export const RADIUS_MD = { neutral: 8, fkas: 10, tkas: 14, guen: 6 } as const satisfies Record<
+  CornerCase,
   number
 >;
 
@@ -39,8 +42,8 @@ export const RADIUS_MD = { internal: 8, fkas: 10, tkas: 14, guen: 6 } as const s
 export const RADIUS_LG = RADIUS;
 
 /** Each theme's `rounded-xl` in px: `--radius` plus two 2px steps externally. */
-export const RADIUS_XL = { internal: 8, fkas: 16, tkas: 20, guen: 12 } as const satisfies Record<
-  Variant,
+export const RADIUS_XL = { neutral: 8, fkas: 16, tkas: 20, guen: 12 } as const satisfies Record<
+  CornerCase,
   number
 >;
 
@@ -71,7 +74,7 @@ export function cornerRadius(element: HTMLElement): number {
 /** A ThemeScope that is also a menu shell, with one inner part directly inside it. */
 function SameElementShell(): ReactElement {
   return (
-    <ThemeScope theme={fkasExternal} className={menuPopupShellClass}>
+    <ThemeScope theme={fkasBranded} className={menuPopupShellClass}>
       <div role="group" aria-label="Scope row" className="rounded-inner" />
     </ThemeScope>
   );

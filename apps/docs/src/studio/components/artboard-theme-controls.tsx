@@ -3,11 +3,11 @@
 import type { ReactElement } from "react";
 
 import { Select } from "@elmeragroup/fuse/select";
-import { BRAND_CODES, BRANDS, DENSITIES, THEME_SEGMENTS, THEME_VARIANTS } from "@elmeragroup/fuse/theme";
+import { BRAND_CODES, BRANDS, DENSITIES, THEME_SEGMENTS, THEME_IDENTITIES } from "@elmeragroup/fuse/theme";
 import type { ThemeInput, ThemeSegment } from "@elmeragroup/fuse/theme";
 
 import { SingleToggle } from "../../components/single-toggle";
-import { SEGMENT_LABELS, VARIANT_LABELS } from "../../lib/theme";
+import { SEGMENT_LABELS, IDENTITY_LABELS } from "../../lib/theme";
 import type { ArtboardScheme, ArtboardSpec } from "../lib/documents";
 import { DENSITY_LABELS, SCHEME_LABELS } from "../lib/labels";
 import { themeWith } from "../lib/theme-axes";
@@ -21,7 +21,7 @@ export const BRAND_NAMES = Object.fromEntries(
   BRAND_CODES.map((code) => [code, BRANDS[code].displayName])
 ) satisfies Record<string, string>;
 
-/** The theme an artboard renders, and the command that changes its brand, variant or segment. */
+/** The theme an artboard renders, and the command that changes its brand, identity or segment. */
 export type ArtboardTheme = {
   readonly theme: ThemeInput;
   /** Lays `axes` over the artboard's theme. A brand that serves one segment drags the segment. */
@@ -53,18 +53,18 @@ export function BrandOptions(): ReactElement {
   );
 }
 
-/** An artboard's variant, as a segmented toggle. */
-export function VariantToggle({ artboard }: { artboard: ArtboardSpec }): ReactElement {
+/** An artboard's identity, as a segmented toggle. */
+export function IdentityToggle({ artboard }: { artboard: ArtboardSpec }): ReactElement {
   const { theme, change } = useArtboardTheme(artboard);
   return (
     <SingleToggle
-      label="Variant"
+      label="Identity"
       size="sm"
-      options={THEME_VARIANTS}
-      labels={VARIANT_LABELS}
-      value={theme.variant}
-      onValueChange={(variant) => {
-        change({ variant });
+      options={THEME_IDENTITIES}
+      labels={IDENTITY_LABELS}
+      value={theme.identity}
+      onValueChange={(identity) => {
+        change({ identity });
       }}
     />
   );

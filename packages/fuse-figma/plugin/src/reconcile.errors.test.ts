@@ -78,7 +78,7 @@ describe("reconcile's failures", () => {
       // The kit check finds `font-sans` by name. Its alias target is gone when the run follows it to
       // require the font of a set it creates, as after a designer deletes the brand variable.
       const { file } = fixture("Roboto", false);
-      const gone = file.variable("Fuse brand", "light/external/private/font-sans").id;
+      const gone = file.variable("Fuse brand", "light/branded/private/font-sans").id;
       const variables: Pick<VariablesAPI, "getVariableByIdAsync"> = {
         getVariableByIdAsync: (id) =>
           id === gone ? Promise.resolve(null) : file.figma.variables.getVariableByIdAsync(id),

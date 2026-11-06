@@ -84,27 +84,27 @@ describe("static theme built HTML", () => {
 
   it("throws when source HTML already contains theme or density attributes", () => {
     const attributes = {
-      "data-theme-variant": "internal",
+      "data-theme-identity": "neutral",
       "data-theme-brand": "elma",
       "data-theme-segment": "private",
+      "data-density": "dense",
     } as const;
-    const density = { "data-density": "dense" } as const;
 
-    expect(() => applyHostRootAttributes('<html data-theme-brand="fkas">', attributes, density)).toThrow(
+    expect(() => applyHostRootAttributes('<html data-theme-brand="fkas">', attributes)).toThrow(
       /must not already contain data-theme-brand/
     );
-    expect(() =>
-      applyHostRootAttributes('<html data-theme-variant="external">', attributes, density)
-    ).toThrow(/must not already contain data-theme-variant/);
-    expect(() => applyHostRootAttributes('<html data-theme-segment="company">', attributes, density)).toThrow(
+    expect(() => applyHostRootAttributes('<html data-theme-identity="branded">', attributes)).toThrow(
+      /must not already contain data-theme-identity/
+    );
+    expect(() => applyHostRootAttributes('<html data-theme-segment="company">', attributes)).toThrow(
       /must not already contain data-theme-segment/
     );
-    expect(() => applyHostRootAttributes('<html data-density="comfortable">', attributes, density)).toThrow(
+    expect(() => applyHostRootAttributes('<html data-density="comfortable">', attributes)).toThrow(
       /must not already contain data-density/
     );
 
-    const stamped = applyHostRootAttributes('<html lang="nb">', attributes, density);
-    expect(stamped).toContain('data-theme-variant="internal"');
+    const stamped = applyHostRootAttributes('<html lang="nb">', attributes);
+    expect(stamped).toContain('data-theme-identity="neutral"');
     expect(stamped).toContain('data-theme-brand="elma"');
     expect(stamped).toContain('data-theme-segment="private"');
     expect(stamped).toContain('data-density="dense"');

@@ -8,7 +8,7 @@ import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import {
   cssVarColor,
-  fkasExternal,
+  fkasBranded,
   fkasPrivate,
   renderThemed,
   roleNamed,
@@ -44,29 +44,29 @@ const LAYOUTS = {
 };
 
 /**
- * The role pair each theme variant fills a pressed toggle with, and the pair the other variant
- * uses. Internal themes keep the quiet muted face on their neutral page; external themes fill
+ * The role pair each theme identity fills a pressed toggle with, and the pair the other identity
+ * uses. Neutral themes keep the quiet muted face on their neutral page; branded themes fill
  * with primary, since muted barely clears their tinted brand pages.
  */
 const PRESSED_ROLES = {
-  internal: {
+  neutral: {
     theme: fkasPrivate,
     fill: "--muted",
     text: "--foreground",
     otherFill: "--primary",
   },
-  external: {
-    theme: fkasExternal,
+  branded: {
+    theme: fkasBranded,
     fill: "--primary",
     text: "--primary-foreground",
     otherFill: "--muted",
   },
 } as const;
 
-const CASES = (["internal", "external"] as const).flatMap((themeVariant) =>
+const CASES = (["neutral", "branded"] as const).flatMap((identity) =>
   (["standalone", "joined", "spaced"] as const).flatMap((layout) =>
     (["default", "outline"] as const).flatMap((variant) =>
-      (["light", "dark"] as const).map((scheme) => [themeVariant, layout, variant, scheme] as const)
+      (["light", "dark"] as const).map((scheme) => [identity, layout, variant, scheme] as const)
     )
   )
 );
@@ -82,12 +82,12 @@ async function faceOf(name: string): Promise<{ fill: string; text: string }> {
 describe("Toggle pressed face", () => {
   it.each(CASES)(
     "fills a pressed %s %s %s toggle with its variant's pressed pair, in %s",
-    async (themeVariant, layout, variant, scheme) => {
+    async (identity, layout, variant, scheme) => {
       // Unit under test: the pressed and hover faces `toggleVariants` gives Toggle and
       // ToggleGroup.Item. Oracle: the scope's own role values, on the fkas private page: its
-      // `--muted` and `--foreground` for an internal pressed toggle, its `--primary` and
-      // `--primary-foreground` for an external one, and `--muted` and `--foreground` on hover.
-      const roles = PRESSED_ROLES[themeVariant];
+      // `--muted` and `--foreground` for a neutral pressed toggle, its `--primary` and
+      // `--primary-foreground` for a branded one, and `--muted` and `--foreground` on hover.
+      const roles = PRESSED_ROLES[identity];
       const toggles = <ThemeScope theme={roles.theme}>{LAYOUTS[layout](variant)}</ThemeScope>;
       renderThemed(scheme === "dark" ? <div data-theme="dark">{toggles}</div> : toggles);
       const host = roleNamed("button", "Pressed");
@@ -112,7 +112,7 @@ describe("Toggle pressed face", () => {
 
   it("follows a host override of the pressed pair", async () => {
     // Unit under test: the `toggle-pressed` utilities. Oracle: literal colours the host sets on
-    // an internal scope, which no theme declares.
+    // a neutral scope, which no theme declares.
     renderThemed(
       <div
         style={{ "--toggle-pressed": "rgb(1, 2, 3)", "--toggle-pressed-foreground": "rgb(250, 251, 252)" }}>

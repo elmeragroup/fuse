@@ -18,9 +18,9 @@ export type RadioItemProps = SelectionItemRootProps & {
   /**
    * Forwards `disabled` to the inner control, which dims to 50%, and shows the disabled row: the
    * theme's `--selection-disabled-background` fill and `--selection-disabled-hatch` stripes
-   * (internal themes stripe a muted fill, external themes keep the card fill without stripes)
+   * (neutral themes stripe a muted fill, branded themes keep the card fill without stripes)
    * and the `not-allowed` cursor. The title and other label row text take
-   * `--selection-disabled-foreground`, the muted foreground in external themes; a SubSection
+   * `--selection-disabled-foreground`, the muted foreground in branded themes; a SubSection
    * keeps its colours. A disabled group shows its rows the same way.
    */
   isDisabled?: boolean;

@@ -7,6 +7,7 @@ import type {
   ColorSchemeScriptProps,
   Density,
   DensityAttributes,
+  DocumentAttributes,
   LocaleProviderProps,
   ForceColorSchemeProps,
   SupportedLocale,
@@ -15,20 +16,20 @@ import type {
   ThemeSlug,
   ThemeProviderProps,
   ThemeScopeProps,
-  ThemeVariant,
+  ThemeIdentity,
   UseColorSchemeResult,
 } from "../theme";
 import {
   coerceTheme,
   ColorSchemeScript,
   colorSchemeScriptSource,
-  defaultDensityForVariant,
   DENSITIES,
   densityAttributes,
+  documentAttributes,
   ForceColorScheme,
   LEGAL_THEMES,
   THEME_SEGMENTS,
-  THEME_VARIANTS,
+  THEME_IDENTITIES,
   useColorScheme,
 } from "../theme";
 import type * as ThemeApi from "../theme";
@@ -36,51 +37,51 @@ import type { ColorSchemeRootProps } from "./color-scheme-root";
 
 test("ThemeInput and ThemeSlug reject illegal pinned-brand permutations", () => {
   expectTypeOf<{
-    variant: "internal";
+    identity: "neutral";
     brand: "fkab";
     segment: "company";
   }>().toExtend<ThemeInput>();
   expectTypeOf<{
-    variant: "external";
+    identity: "branded";
     brand: "fkse";
     segment: "private";
   }>().toExtend<ThemeInput>();
   expectTypeOf<{
-    variant: "internal";
+    identity: "neutral";
     brand: "elma";
     segment: "private";
   }>().toExtend<ThemeInput>();
   expectTypeOf<{
-    variant: "external";
+    identity: "branded";
     brand: "elma";
     segment: "company";
   }>().toExtend<ThemeInput>();
 
   expectTypeOf<{
-    variant: "external";
+    identity: "branded";
     brand: "ngfi";
     segment: "company";
   }>().toExtend<ThemeInput>();
 
   expectTypeOf<{
-    variant: "internal";
+    identity: "neutral";
     brand: "fkab";
     segment: "private";
   }>().not.toExtend<ThemeInput>();
   expectTypeOf<{
-    variant: "external";
+    identity: "branded";
     brand: "fkse";
     segment: "company";
   }>().not.toExtend<ThemeInput>();
 
-  expectTypeOf<"internal-fkab-company">().toExtend<ThemeSlug>();
-  expectTypeOf<"external-fkse-private">().toExtend<ThemeSlug>();
-  expectTypeOf<"internal-elma-private">().toExtend<ThemeSlug>();
-  expectTypeOf<"external-elma-company">().toExtend<ThemeSlug>();
-  expectTypeOf<"internal-ngfi-private">().toExtend<ThemeSlug>();
-  expectTypeOf<"external-ngfi-company">().toExtend<ThemeSlug>();
-  expectTypeOf<"internal-fkab-private">().not.toExtend<ThemeSlug>();
-  expectTypeOf<"external-fkse-company">().not.toExtend<ThemeSlug>();
+  expectTypeOf<"neutral-fkab-company">().toExtend<ThemeSlug>();
+  expectTypeOf<"branded-fkse-private">().toExtend<ThemeSlug>();
+  expectTypeOf<"neutral-elma-private">().toExtend<ThemeSlug>();
+  expectTypeOf<"branded-elma-company">().toExtend<ThemeSlug>();
+  expectTypeOf<"neutral-ngfi-private">().toExtend<ThemeSlug>();
+  expectTypeOf<"branded-ngfi-company">().toExtend<ThemeSlug>();
+  expectTypeOf<"neutral-fkab-private">().not.toExtend<ThemeSlug>();
+  expectTypeOf<"branded-fkse-company">().not.toExtend<ThemeSlug>();
 });
 
 test("SupportedLocale is the four shipped locales and locale is required", () => {
@@ -117,22 +118,22 @@ test("SupportedLocale is the four shipped locales and locale is required", () =>
 
   const _fkabPrivate: ThemeProviderProps = {
     // @ts-expect-error fkab cannot be private
-    theme: { variant: "internal", brand: "fkab", segment: "private" },
+    theme: { identity: "neutral", brand: "fkab", segment: "private" },
     children: null,
   };
 
   const _fkseCompany: ThemeProviderProps = {
     // @ts-expect-error fkse cannot be company
-    theme: { variant: "external", brand: "fkse", segment: "company" },
+    theme: { identity: "branded", brand: "fkse", segment: "company" },
     children: null,
   };
 });
 
 test("theme constant tuples are public /theme values", () => {
-  expectTypeOf(THEME_VARIANTS).toEqualTypeOf<readonly ["internal", "external"]>();
+  expectTypeOf(THEME_IDENTITIES).toEqualTypeOf<readonly ["neutral", "branded"]>();
   expectTypeOf(THEME_SEGMENTS).toEqualTypeOf<readonly ["private", "company"]>();
   expectTypeOf(LEGAL_THEMES).toEqualTypeOf<readonly ThemeInput[]>();
-  expectTypeOf<(typeof THEME_VARIANTS)[number]>().toEqualTypeOf<ThemeVariant>();
+  expectTypeOf<(typeof THEME_IDENTITIES)[number]>().toEqualTypeOf<ThemeIdentity>();
   expectTypeOf<(typeof THEME_SEGMENTS)[number]>().toEqualTypeOf<ThemeSegment>();
   expectTypeOf<typeof ThemeApi>().toHaveProperty("LEGAL_THEMES");
   expectTypeOf<typeof ThemeApi>().not.toHaveProperty("composeTheme");
@@ -148,10 +149,19 @@ test("density helpers stamp a two-rung document attribute", () => {
   expectTypeOf(DENSITIES).toEqualTypeOf<readonly ["dense", "comfortable"]>();
   expectTypeOf<(typeof DENSITIES)[number]>().toEqualTypeOf<Density>();
   expectTypeOf<DensityAttributes>().toEqualTypeOf<{ "data-density": Density }>();
-  expectTypeOf(defaultDensityForVariant).parameter(0).toEqualTypeOf<ThemeVariant>();
-  expectTypeOf(defaultDensityForVariant).returns.toEqualTypeOf<Density>();
   expectTypeOf(densityAttributes).parameter(0).toEqualTypeOf<Density>();
   expectTypeOf(densityAttributes).returns.toEqualTypeOf<DensityAttributes>();
+});
+
+test("documentAttributes takes the theme and a required density", () => {
+  expectTypeOf(documentAttributes).returns.toEqualTypeOf<DocumentAttributes>();
+  expectTypeOf<DocumentAttributes>().toHaveProperty("data-density");
+  expectTypeOf<DocumentAttributes>().toHaveProperty("data-theme-identity");
+  // @ts-expect-error -- no identity implies a density, so a document must name one.
+  documentAttributes({ theme: { identity: "branded", brand: "fkas", segment: "private" } });
+  const retired = { identity: "external", brand: "fkas", segment: "private" } as const;
+  // @ts-expect-error -- the identity values are neutral and branded.
+  documentAttributes({ theme: retired, density: "dense" });
 });
 
 test("color-scheme bootstrap exports share ColorSchemeOptions including document force", () => {
