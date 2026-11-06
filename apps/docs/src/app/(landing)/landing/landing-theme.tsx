@@ -26,7 +26,13 @@ import {
   themeSlug,
   useColorScheme,
 } from "@elmeragroup/fuse/theme";
-import type { BrandCode, ColorScheme, ThemeInput, ThemeSegment, ThemeVariant } from "@elmeragroup/fuse/theme";
+import type {
+  BrandCode,
+  ColorScheme,
+  ThemeInput,
+  ThemeSegment,
+  ThemeIdentity,
+} from "@elmeragroup/fuse/theme";
 
 import { DOCUMENT_COLOR_SCHEME, OPENING_THEME } from "../../../lib/theme";
 import { THEME_QUERY } from "../../../lib/theme-address";
@@ -38,13 +44,13 @@ type RevealOrigin = { x: number; y: number };
 
 /** The axes one control moves; the rest keep their values. */
 export type ThemeChange = {
-  readonly variant?: ThemeVariant;
+  readonly identity?: ThemeIdentity;
   readonly brand?: BrandCode;
   readonly segment?: ThemeSegment;
 };
 
 type LandingThemeValue = {
-  /** The theme the document wears, and the hero window's side through its variant. */
+  /** The theme the document wears, and the hero window's side through its identity. */
   theme: ThemeInput;
   /**
    * Moves one or more axes under the circle reveal and announces the result. A brand pinned to one
@@ -112,7 +118,7 @@ function useRouteTheme(): ThemeInput {
 /**
  * Owns the landing's theme and colour scheme. It writes only the `data-theme-*` attributes:
  * `data-density` stays as the layout stamped it from `OPENING_THEME`, so the page keeps its
- * comfortable metrics in either variant. Hosts own density (AGENTS.md), and a density change would
+ * comfortable metrics in either identity. Hosts own density (AGENTS.md), and a density change would
  * reflow the whole page under the visitor's cursor. The hero window's Dashboard is dense on its
  * own demo stage.
  */

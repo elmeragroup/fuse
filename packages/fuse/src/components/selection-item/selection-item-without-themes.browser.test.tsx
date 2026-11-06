@@ -41,13 +41,13 @@ function titleWeights(prefix: string): readonly string[] {
 }
 
 describe("SelectionItem title weight without themes.css", () => {
-  it("sets row titles at the internal 400 when the host sets no --selection-title-weight", () => {
+  it("sets row titles at the neutral 400 when the host sets no --selection-title-weight", () => {
     render(<TitleRows prefix="Host" />);
     expect(titleWeights("Host")).toEqual(["400", "400"]);
   });
 
   it("sets row titles at the host's own --selection-title-weight", () => {
-    // The external themes' medium title, mapped by a host that keeps its own tokens.
+    // The branded themes' medium title, mapped by a host that keeps its own tokens.
     render(<TitleRows prefix="Mapped" style={{ "--selection-title-weight": "500" }} />);
     expect(titleWeights("Mapped")).toEqual(["500", "500"]);
   });
@@ -99,7 +99,7 @@ function disabledLooks(
 
 describe("SelectionItem disabled row without themes.css", () => {
   it("fills a disabled row, checked or in a disabled group, with the host's --muted under black stripes at 2% and its --foreground text", () => {
-    // The internal look, from the fallbacks in fuse.css: the host maps only the shared roles.
+    // The neutral look, from the fallbacks in fuse.css: the host maps only the shared roles.
     render(
       <DisabledRows
         prefix="Host"
@@ -116,7 +116,7 @@ describe("SelectionItem disabled row without themes.css", () => {
   });
 
   it("fills a disabled row with the host's own disabled roles", () => {
-    // The external look, mapped by a host: the card fill, no stripes and the muted text, even on
+    // The branded look, mapped by a host: the card fill, no stripes and the muted text, even on
     // a checked row.
     render(
       <DisabledRows

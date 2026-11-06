@@ -7,7 +7,7 @@ import { parseThemeSearch, sameTheme } from "./app/(landing)/landing/landing-the
 import { OPENING_THEME } from "./lib/theme";
 
 /**
- * Serves a shared landing address, `/?theme=internal-fkas-company`, from the landing prerendered in
+ * Serves a shared landing address, `/?theme=neutral-fkas-company`, from the landing prerendered in
  * that theme, while the address bar keeps the query. It reads every `theme` value the way the
  * landing does, so only a single legal slug reaches the themed route. A missing, repeated or illegal
  * value falls through to the static `/` in the opening theme. A `next.config.ts` rewrite cannot make

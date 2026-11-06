@@ -74,14 +74,14 @@ const STATIC_HANDLERS = ["/api/themes", "/api/themes/figma", "/og/landing", "/og
 
 /** The landing's opening theme, as its theme trigger names it and its layout stamps it. */
 const OPENING = {
-  label: "Theme: Elmera · Private · External",
-  brand: { variant: "external", brand: "elma", segment: "private" },
+  label: "Theme: Elmera · Private · Branded",
+  brand: { identity: "branded", brand: "elma", segment: "private" },
 } as const;
 
 /** A shared address's theme, by its slug and as the trigger names it. */
 const SHARED = {
-  slug: "internal-fkas-company",
-  label: "Theme: Fjordkraft · Company · Internal",
+  slug: "neutral-fkas-company",
+  label: "Theme: Fjordkraft · Company · Neutral",
 } as const;
 
 /**
@@ -90,8 +90,8 @@ const SHARED = {
  */
 const OPENING_ADDRESSES = [
   "/?theme=not-a-theme",
-  `/?theme=${SHARED.slug}&theme=external-elma-private`,
-  `/?theme=external-elma-private&theme=${SHARED.slug}`,
+  `/?theme=${SHARED.slug}&theme=branded-elma-private`,
+  `/?theme=branded-elma-private&theme=${SHARED.slug}`,
 ] as const;
 
 /** The hero heading's id, which one copy of the landing renders once. */

@@ -13,8 +13,8 @@ import {
 import type { EditAction, EditHistory, GuardedHistory, StudioDocument } from "../../src/studio/lib/edits";
 import { artboardEdits, documentCycles } from "../../src/studio/lib/token-values";
 
-const ELMA = { variant: "external", brand: "elma", segment: "private" } as const satisfies ThemeInput;
-const FKAS = { variant: "internal", brand: "fkas", segment: "private" } as const satisfies ThemeInput;
+const ELMA = { identity: "branded", brand: "elma", segment: "private" } as const satisfies ThemeInput;
+const FKAS = { identity: "neutral", brand: "fkas", segment: "private" } as const satisfies ThemeInput;
 
 const EMPTY: StudioDocument = { theme: ELMA, overrides: { light: {}, dark: {}, shared: {} } };
 
@@ -224,11 +224,11 @@ describe("replace", () => {
 /**
  * Unit: `reduceGuarded` with `documentCycles`, the session's cycle invariant over the generated
  * base references. Oracle: the theme rules as written in Fuse's theme sources, pinned here. Every
- * theme declares `destructive: var(--error)`; an internal theme declares
- * `radius-button: var(--radius)`, an external one a literal.
+ * theme declares `destructive: var(--error)`; a neutral theme declares
+ * `radius-button: var(--radius)`, a branded one a literal.
  */
 describe("the cycle invariant", () => {
-  const INTERNAL = { variant: "internal", brand: "elma", segment: "private" } as const satisfies ThemeInput;
+  const NEUTRAL = { identity: "neutral", brand: "elma", segment: "private" } as const satisfies ThemeInput;
 
   function guarded(...actions: EditAction[]): GuardedHistory {
     return actions.reduce(
@@ -282,7 +282,7 @@ describe("the cycle invariant", () => {
   it("refuses a theme change whose base declarations close a cycle with the edits", () => {
     const linked = guarded({ type: "set", scheme: "light", name: "radius", value: "var(--radius-button)" });
     expect(linked.refusal).toBeUndefined();
-    const changed = reduceGuarded(linked, { type: "theme", theme: INTERNAL }, documentCycles);
+    const changed = reduceGuarded(linked, { type: "theme", theme: NEUTRAL }, documentCycles);
     expect(changed.history.present.theme).toEqual(ELMA);
     expect(changed.refusal?.names).toEqual(["radius", "radius-button"]);
   });
@@ -312,34 +312,34 @@ describe("the cycle invariant", () => {
 });
 
 /**
- * Unit: `artboardEdits` for an artboard in another variant than the base theme. Oracle: the theme
- * rules as written in Fuse's theme sources: an internal theme declares
- * `radius-button: var(--radius)`, and an external one a literal button radius. So
- * `--radius: var(--radius-button)` loops only in the internal variant.
+ * Unit: `artboardEdits` for an artboard in another identity than the base theme. Oracle: the theme
+ * rules as written in Fuse's theme sources: a neutral theme declares
+ * `radius-button: var(--radius)`, and a branded one a literal button radius. So
+ * `--radius: var(--radius-button)` loops only in the neutral identity.
  */
-describe("pinned variants", () => {
+describe("pinned identities", () => {
   const radiusToButton: StudioDocument = {
     ...EMPTY,
     overrides: { light: {}, dark: {}, shared: { radius: "var(--radius-button)" } },
   };
-  it("skips the edit that loops in the pinned variant and applies the rest", () => {
+  it("skips the edit that loops in the pinned identity and applies the rest", () => {
     const document: StudioDocument = {
       ...radiusToButton,
       overrides: { ...radiusToButton.overrides, light: { primary: "#ff0000" } },
     };
-    const internal = artboardEdits(document.overrides, { ...ELMA, variant: "internal" }, ELMA, "light");
-    expect(overridesFor(internal.overrides, "light")).toEqual({ primary: "#ff0000" });
-    expect(internal.skipped).toEqual(["radius"]);
-    const external = artboardEdits(document.overrides, ELMA, ELMA, "light");
-    expect(overridesFor(external.overrides, "light")).toEqual({
+    const neutral = artboardEdits(document.overrides, { ...ELMA, identity: "neutral" }, ELMA, "light");
+    expect(overridesFor(neutral.overrides, "light")).toEqual({ primary: "#ff0000" });
+    expect(neutral.skipped).toEqual(["radius"]);
+    const branded = artboardEdits(document.overrides, ELMA, ELMA, "light");
+    expect(overridesFor(branded.overrides, "light")).toEqual({
       primary: "#ff0000",
       radius: "var(--radius-button)",
     });
-    expect(external.skipped).toEqual([]);
+    expect(branded.skipped).toEqual([]);
   });
 
   it("skips again when a skipped token's own declaration loops another edit", () => {
-    // Round one drops the button/field loop; the internal button then reads --radius again,
+    // Round one drops the button/field loop; the neutral button then reads --radius again,
     // which reads the button: round two drops --radius.
     const document: StudioDocument = {
       ...EMPTY,
@@ -353,7 +353,7 @@ describe("pinned variants", () => {
         },
       },
     };
-    const result = artboardEdits(document.overrides, { ...ELMA, variant: "internal" }, ELMA, "dark");
+    const result = artboardEdits(document.overrides, { ...ELMA, identity: "neutral" }, ELMA, "dark");
     expect(overridesFor(result.overrides, "dark")).toEqual({});
     expect(result.skipped).toEqual(["radius", "radius-button", "radius-field"]);
   });
@@ -368,13 +368,13 @@ describe("pinned variants", () => {
  * scheme's `--sidebar-brand` reads `--brand`.
  */
 describe("an artboard in another brand", () => {
-  const FKAS_EXTERNAL = {
-    variant: "external",
+  const FKAS_BRANDED = {
+    identity: "branded",
     brand: "fkas",
     segment: "private",
   } as const satisfies ThemeInput;
   const brandToSidebar = (scheme: "light" | "dark"): StudioDocument => ({
-    theme: scheme === "light" ? FKAS_EXTERNAL : ELMA,
+    theme: scheme === "light" ? FKAS_BRANDED : ELMA,
     overrides: {
       light: scheme === "light" ? { brand: "var(--sidebar-brand)" } : {},
       dark: scheme === "dark" ? { brand: "var(--sidebar-brand)" } : {},
@@ -394,7 +394,7 @@ describe("an artboard in another brand", () => {
     expect(elma.skipped).toEqual(["brand"]);
     const tkas = artboardEdits(
       document.overrides,
-      { ...FKAS_EXTERNAL, brand: "tkas" },
+      { ...FKAS_BRANDED, brand: "tkas" },
       document.theme,
       "light"
     );
@@ -404,31 +404,31 @@ describe("an artboard in another brand", () => {
 
   it("skips the edit on a dark Fjordkraft artboard over an Elmera base, and leaves the light scheme alone", () => {
     const document = brandToSidebar("dark");
-    const dark = artboardEdits(document.overrides, FKAS_EXTERNAL, document.theme, "dark");
+    const dark = artboardEdits(document.overrides, FKAS_BRANDED, document.theme, "dark");
     expect(overridesFor(dark.overrides, "dark")).toEqual({});
     expect(dark.skipped).toEqual(["brand"]);
-    const light = artboardEdits(document.overrides, FKAS_EXTERNAL, document.theme, "light");
+    const light = artboardEdits(document.overrides, FKAS_BRANDED, document.theme, "light");
     expect(overridesFor(light.overrides, "light")).toEqual({});
     expect(light.skipped).toEqual([]);
   });
 });
 
 /**
- * Unit: `artboardEdits` for a `--radius-step` edit over an external base theme. Oracle: CONTEXT.md,
- * "Radius step": set once per variant. So an artboard in the base theme's variant wears the step
- * edit whatever its brand, and one in the other variant keeps its own step.
+ * Unit: `artboardEdits` for a `--radius-step` edit over a branded base theme. Oracle: CONTEXT.md,
+ * "Radius step": set once per identity. So an artboard in the base theme's identity wears the step
+ * edit whatever its brand, and one in the other identity keeps its own step.
  */
 describe("the radius step in an artboard's own theme", () => {
   const edits = { light: {}, dark: {}, shared: { "radius-step": "0px", radius: "20px" } };
 
-  it("wears the step edit in the base theme's variant, in another brand", () => {
+  it("wears the step edit in the base theme's identity, in another brand", () => {
     expect(
       overridesFor(artboardEdits(edits, { ...ELMA, brand: "fkas" }, ELMA, "light").overrides, "light")
     ).toEqual({ "radius-step": "0px", radius: "20px" });
   });
 
-  it("withholds the step edit in the other variant, without naming it a skipped loop", () => {
-    const result = artboardEdits(edits, { ...ELMA, variant: "internal" }, ELMA, "light");
+  it("withholds the step edit in the other identity, without naming it a skipped loop", () => {
+    const result = artboardEdits(edits, { ...ELMA, identity: "neutral" }, ELMA, "light");
     expect(overridesFor(result.overrides, "light")).toEqual({ radius: "20px" });
     expect(result.skipped).toEqual([]);
   });

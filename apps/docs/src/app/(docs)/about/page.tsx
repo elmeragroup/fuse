@@ -14,7 +14,7 @@ export default function AboutPage(): ReactElement {
       <h2 id="what-it-is">What it is</h2>
       <p>
         <code>@elmeragroup/fuse</code> is the Elmera Group design system: one React component library that has
-        to look right for seven brands across two customer segments and two visual variants — twenty-four
+        to look right for seven brands across two customer segments and two visual identities — twenty-four
         legal themes in all — without forking a component or shipping twenty-four bundles.
       </p>
       <p>
@@ -80,7 +80,7 @@ export default function AboutPage(): ReactElement {
         docs build rather than rendering an empty cell, so a table on this site is either correct or absent.
       </p>
       <p>
-        The docs chrome uses the library's internal Elmera theme in both light and dark mode. Demo surfaces
+        The docs chrome uses the library's neutral Elmera theme in both light and dark mode. Demo surfaces
         keep their own brand and segment scopes. Use the picker in the header to view any demo under any of
         the twenty-four themes, or the <Link href="/handbook/theme-matrix">Theme matrix</Link> to see them all
         at once.

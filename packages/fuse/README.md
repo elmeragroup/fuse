@@ -63,7 +63,7 @@ A host that migrates one component at a time can keep its own design tokens and 
 
 Import `fuse/css` before your own `@theme` so your values win where both define one. Each component page in the docs lists the tokens that component reads under "Tokens consumed"; map those, and add the next component's list when you adopt it. Role tokens are whole colours (`oklch()`, `hsl()`, hex), not channel triplets.
 
-Button's `outline` variant reads `--button-outline` and `--button-outline-width`. Without them it draws a 1px hairline in your `--border`, as internal themes do. For the external themes' outline, a 2px ring in the text colour with no shadow, set both:
+Button's `outline` variant reads `--button-outline` and `--button-outline-width`. Without them it draws a 1px hairline in your `--border`, as neutral themes do. For the branded themes' outline, a 2px ring in the text colour with no shadow, set both:
 
 ```css
 :root {
@@ -72,7 +72,7 @@ Button's `outline` variant reads `--button-outline` and `--button-outline-width`
 }
 ```
 
-A `Card` and a `card` Accordion item draw their edge in `--card-border`, and a `Card` casts its small shadow in `--card-shadow`. Without them they take your `--border` and Tailwind's 5% black shadow, as internal themes do, and `CheckboxCard` and the TextField `card` box always do. For the external themes' look, where a card stands on the page by its fill alone, set both to a transparent colour. The border keeps its 1px width, so the layout does not move, but a card on a `--card`-coloured surface, such as a nested `Card`, has no outline:
+A `Card` and a `card` Accordion item draw their edge in `--card-border`, and a `Card` casts its small shadow in `--card-shadow`. Without them they take your `--border` and Tailwind's 5% black shadow, as neutral themes do, and `CheckboxCard` and the TextField `card` box always do. For the branded themes' look, where a card stands on the page by its fill alone, set both to a transparent colour. The border keeps its 1px width, so the layout does not move, but a card on a `--card`-coloured surface, such as a nested `Card`, has no outline:
 
 ```css
 :root {
@@ -81,9 +81,9 @@ A `Card` and a `card` Accordion item draw their edge in `--card-border`, and a `
 }
 ```
 
-The line between a card's stacked `Card.Section` and `Card.SectionButton` parts is `--card-section-divider`. Without it, it takes your `--border`. External themes draw it in the page tint, `var(--background)`.
+The line between a card's stacked `Card.Section` and `Card.SectionButton` parts is `--card-section-divider`. Without it, it takes your `--border`. Branded themes draw it in the page tint, `var(--background)`.
 
-A `RadioItem` or `CheckboxItem` row draws its edge in `--selection-border`, and a checked row in `--selection-checked-border`. The line between stacked rows reads `--selection-divider`, and above and below a checked row `--selection-checked-divider`. Without them the row and its dividers take your `--border` and a checked row your `--primary`, as internal themes do. For the external themes' look, where stacked rows keep a grey separator but no outer edge and the control alone shows the selection, set the edge to a transparent colour, point the checked edge at it, and draw both dividers in `--border`. The border keeps its 1px width, so rows join and inset as before, but a row on a `--card`-coloured surface has no outline:
+A `RadioItem` or `CheckboxItem` row draws its edge in `--selection-border`, and a checked row in `--selection-checked-border`. The line between stacked rows reads `--selection-divider`, and above and below a checked row `--selection-checked-divider`. Without them the row and its dividers take your `--border` and a checked row your `--primary`, as neutral themes do. For the branded themes' look, where stacked rows keep a grey separator but no outer edge and the control alone shows the selection, set the edge to a transparent colour, point the checked edge at it, and draw both dividers in `--border`. The border keeps its 1px width, so rows join and inset as before, but a row on a `--card`-coloured surface has no outline:
 
 ```css
 :root {
@@ -94,7 +94,7 @@ A `RadioItem` or `CheckboxItem` row draws its edge in `--selection-border`, and 
 }
 ```
 
-A disabled `RadioItem` or `CheckboxItem` row, disabled itself or through its group, fills with `--selection-disabled-background` under a 45° hatch striped in `--selection-disabled-hatch`, its title and other label row text take `--selection-disabled-foreground`, and its control dims to 50%. Without them the row takes your `--muted` under black stripes at 2% alpha with `--foreground` text, as internal themes do. For the external themes' look, where a disabled row keeps the card fill of an enabled row, draws no stripes and greys its title, set:
+A disabled `RadioItem` or `CheckboxItem` row, disabled itself or through its group, fills with `--selection-disabled-background` under a 45° hatch striped in `--selection-disabled-hatch`, its title and other label row text take `--selection-disabled-foreground`, and its control dims to 50%. Without them the row takes your `--muted` under black stripes at 2% alpha with `--foreground` text, as neutral themes do. For the branded themes' look, where a disabled row keeps the card fill of an enabled row, draws no stripes and greys its title, set:
 
 ```css
 :root {
@@ -112,7 +112,7 @@ The checked row's tint and the disabled fill win over a background class on the 
 }
 ```
 
-A pressed `Toggle` or `ToggleGroup.Item` fills with `--toggle-pressed` and sets its label in `--toggle-pressed-foreground`. Without them it takes your `--muted` with `--foreground` text, as internal themes do. For the external themes' face, which stands apart from a tinted page, set:
+A pressed `Toggle` or `ToggleGroup.Item` fills with `--toggle-pressed` and sets its label in `--toggle-pressed-foreground`. Without them it takes your `--muted` with `--foreground` text, as neutral themes do. For the branded themes' face, which stands apart from a tinted page, set:
 
 ```css
 :root {
@@ -121,7 +121,7 @@ A pressed `Toggle` or `ToggleGroup.Item` fills with `--toggle-pressed` and sets 
 }
 ```
 
-`RadioItem` and `CheckboxItem` row titles read `--selection-title-weight`. Without it they are 400, as internal themes set them. For the external themes' medium title, which matches the group legend and `CheckboxCard` titles, set:
+`RadioItem` and `CheckboxItem` row titles read `--selection-title-weight`. Without it they are 400, as neutral themes set them. For the branded themes' medium title, which matches the group legend and `CheckboxCard` titles, set:
 
 ```css
 :root {
@@ -129,7 +129,7 @@ A pressed `Toggle` or `ToggleGroup.Item` fills with `--toggle-pressed` and sets 
 }
 ```
 
-A `Text` at `sm`, the default size and `lg` reads its line height from `--paragraph-leading-sm`, `--paragraph-leading-base` and `--paragraph-leading-lg`. Without them it keeps the relaxed 1.625 ratio, as internal themes do. For the external themes' paragraph styles, 14/20, 16/22 and 18/24, set:
+A `Text` at `sm`, the default size and `lg` reads its line height from `--paragraph-leading-sm`, `--paragraph-leading-base` and `--paragraph-leading-lg`. Without them it keeps the relaxed 1.625 ratio, as neutral themes do. For the branded themes' paragraph styles, 14/20, 16/22 and 18/24, set:
 
 ```css
 :root {
@@ -141,7 +141,7 @@ A `Text` at `sm`, the default size and `lg` reads its line height from `--paragr
 
 A `leading` prop or a `className` leading on the Text replaces the role. `Span` keeps its own snug default.
 
-A `Heading` at level 1, 2 or 3 reads its size and line height from `--heading-<level>-size` and `--heading-<level>-leading` when it has no `size` prop, and its weight from `--heading-<level>-weight` when it has no `font` prop. Without them h1 is 24/33, h2 18/24.75 and h3 16/22, all at 500, as in internal themes. For the external themes' heading styles, a bold 24/32 h1 and 20/32 h2 and h3, set:
+A `Heading` at level 1, 2 or 3 reads its size and line height from `--heading-<level>-size` and `--heading-<level>-leading` when it has no `size` prop, and its weight from `--heading-<level>-weight` when it has no `font` prop. Without them h1 is 24/33, h2 18/24.75 and h3 16/22, all at 500, as in neutral themes. For the branded themes' heading styles, a bold 24/32 h1 and 20/32 h2 and h3, set:
 
 ```css
 :root {
@@ -159,7 +159,7 @@ A `Heading` at level 1, 2 or 3 reads its size and line height from `--heading-<l
 
 h4 to h6 have no roles and stay 16/22 at 500. A `size` or `font` prop, or a `className` size or weight, replaces the roles. `headingVariants()` on its own knows no level and keeps the plain scale.
 
-`Dialog.Content`, `AlertDialog.Content` and `Sheet.Content` fill with `--dialog` and take `--dialog-foreground` as their text colour. Without them a modal takes your `--popover` and `--popover-foreground`, as internal themes and every dark theme do. For the external light look, where a modal fills with the page tint so the card-coloured fields and selection rows inside it stand apart as they do on the page, set the pair in your light rules and point it back at the popover pair in your dark ones, as the themes do:
+`Dialog.Content`, `AlertDialog.Content` and `Sheet.Content` fill with `--dialog` and take `--dialog-foreground` as their text colour. Without them a modal takes your `--popover` and `--popover-foreground`, as neutral themes and every dark theme do. For the branded light look, where a modal fills with the page tint so the card-coloured fields and selection rows inside it stand apart as they do on the page, set the pair in your light rules and point it back at the popover pair in your dark ones, as the themes do:
 
 ```css
 :root {
@@ -173,7 +173,7 @@ h4 to h6 have no roles and stay 16/22 at 500. A `size` or `font` prop, or a `cla
 }
 ```
 
-Field boxes round with your `--radius`, as cards and the themes' fields do. For the external look, set the external step. It spreads the `rounded-*` scale in 2px steps around `--radius` and gives the calendar its external 4px corner. Fields then round with `--radius-field` where you set one, and with your `--radius` otherwise, so set it only for a field corner of your own:
+Field boxes round with your `--radius`, as cards and the themes' fields do. For the branded look, set the branded step. It spreads the `rounded-*` scale in 2px steps around `--radius` and gives the calendar its branded 4px corner. Fields then round with `--radius-field` where you set one, and with your `--radius` otherwise, so set it only for a field corner of your own:
 
 ```css
 :root {
@@ -199,13 +199,11 @@ import {
   ColorSchemeScript,
   LocaleProvider,
   ThemeProvider,
-  defaultDensityForVariant,
-  densityAttributes,
-  themeAttributes,
+  documentAttributes,
 } from "@elmeragroup/fuse/theme";
 ```
 
-Brand is a controlled host value: spread `themeAttributes(theme)` on `<html>` and pass the same object to `ThemeProvider`. Stamp density with `densityAttributes(defaultDensityForVariant(theme.variant))` on the same document root — both `dense` and `comfortable` are explicit. Color scheme uses a host-placed `ColorSchemeScript` or `colorSchemeScriptSource` **before** paintable content — the provider is not a first-paint adapter (`injectColorSchemeScript` defaults false). Next App Router and Vite recipes are fixture-verified; Next Pages, TanStack Start, and React Router 7 are written recipes only. Full recipes: [theme integration](<../../apps/docs/src/app/(docs)/handbook/theming/page.tsx>).
+Brand is a controlled host value: spread `documentAttributes({ theme, density })` on `<html>` and pass the same theme to `ThemeProvider`. It stamps the `data-theme-identity`, `data-theme-brand` and `data-theme-segment` attributes and `data-density` together. The density is required, `dense` or `comfortable`, because no identity implies one: a branded customer dashboard can be dense and a neutral page comfortable. Density is per document, so an app that needs both gives each its own root layout ([density](<../../apps/docs/src/app/(docs)/handbook/density/page.tsx>)). Color scheme uses a host-placed `ColorSchemeScript` or `colorSchemeScriptSource` **before** paintable content — the provider is not a first-paint adapter (`injectColorSchemeScript` defaults false). Next App Router and Vite recipes are fixture-verified; Next Pages, TanStack Start, and React Router 7 are written recipes only. Full recipes: [theme integration](<../../apps/docs/src/app/(docs)/handbook/theming/page.tsx>).
 
 Workspace apps import the same public subpaths. Do not deep-import `src/` internals.
 

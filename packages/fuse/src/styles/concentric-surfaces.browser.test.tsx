@@ -15,7 +15,7 @@ import {
   RADIUS_MD,
   RADIUS_XL,
 } from "../../test/inner-corner-specimens";
-import type { PartEdge, Variant } from "../../test/inner-corner-specimens";
+import type { PartEdge, CornerCase } from "../../test/inner-corner-specimens";
 import { withLocale } from "../../test/locale-matrix";
 import { setupSidebarBrowser } from "../../test/sidebar-browser-fixtures";
 import { fkasPrivate, tkasCompany } from "../../test/theme-fixtures";
@@ -139,9 +139,9 @@ const EXPECTED = {
   "card section block": (v, d) => floor(RADIUS_LG[v] - 1 - SURFACE_PAD.md[d]),
   "toolbar block": (v) => floor(RADIUS_LG[v] - 1 - 4),
   "dialog block": (v, d) => floor(RADIUS_XL[v] - SURFACE_PAD.lg[d]),
-} as const satisfies Record<PairName, (variant: Variant, density: Density) => number>;
+} as const satisfies Record<PairName, (variant: CornerCase, density: Density) => number>;
 
-function expectedFor(name: PairName, variant: Variant, density: Density): number {
+function expectedFor(name: PairName, variant: CornerCase, density: Density): number {
   return EXPECTED[name](variant, density);
 }
 
@@ -487,7 +487,7 @@ describe("concentric inner corners on fields and surfaces", () => {
       ["label", slotAround(textNamed("Workspace"), "sidebar-group-label")],
       ["action", roleNamed("button", "More")],
     ] as const) {
-      expect(cornerRadius(element), name).toBe(RADIUS_MD.internal);
+      expect(cornerRadius(element), name).toBe(RADIUS_MD.neutral);
     }
   });
 
@@ -526,7 +526,7 @@ describe("concentric inner corners on fields and surfaces", () => {
   });
 
   it.each([
-    // An internal theme at a 32px radius, dense: every rung is 32px. A rounded item pads 12px,
+    // A neutral theme at a 32px radius, dense: every rung is 32px. A rounded item pads 12px,
     // the medium tier, and a bordered card item 13px. An unrounded infodropdown item is no
     // shell, so a block in it rounds with --radius.
     ["default", "none", 20],

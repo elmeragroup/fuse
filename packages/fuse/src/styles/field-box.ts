@@ -7,8 +7,8 @@ import { selfFocusRingClass, withinFocusRingClass } from "./utils";
 
 /**
  * The field box chrome: elevation, the field corner, hairline border, fill and the transition
- * that animates them. The corner is `--radius-field` in external themes and `--radius` in
- * internal ones (`corner-radius.ts`), and the box publishes it less its border as the inner
+ * that animates them. The corner is `--radius-field` in branded themes and `--radius` in
+ * neutral ones (`corner-radius.ts`), and the box publishes it less its border as the inner
  * corner of the parts inside (`inner-corner/field.ts`). {@link fieldBox} paints it for Input and Textarea. RAC
  * `fieldGroupVariants`, Select's trigger, NumberField's group and InputGroup's root paint it
  * without being `fieldBox` variants. Focus leaves the `--input` border alone on every one of

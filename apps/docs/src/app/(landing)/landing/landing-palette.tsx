@@ -39,7 +39,7 @@ function useLandingSettings(): SiteSettings {
         {
           id: "landing-theme",
           label: "Landing theme",
-          keywords: ["brand", "segment", "variant"],
+          keywords: ["brand", "segment", "identity"],
           options: LANDING_THEMES.map((option) => ({
             id: themeSlug(option),
             label: themeSummary(option),

@@ -38,25 +38,25 @@ describe("fuse-figma sync", () => {
         "Fuse primitives",
         "Fuse brand",
         "Fuse segment",
-        "Fuse variant",
+        "Fuse identity",
         "Fuse tokens",
         "Fuse density",
       ]);
       assert.deepStrictEqual(figma.modeNames("Fuse tokens"), ["Light", "Dark"]);
-      assert.deepStrictEqual(figma.modeNames("Fuse variant"), ["Internal", "External"]);
+      assert.deepStrictEqual(figma.modeNames("Fuse identity"), ["Neutral", "Branded"]);
       assert.deepStrictEqual(figma.modeNames("Fuse segment"), ["Private", "Company"]);
       assert.deepStrictEqual(figma.modeNames("Fuse brand"), [...BRAND_MODES.values()]);
       assert.deepStrictEqual(figma.modeNames("Fuse primitives"), ["Value"]);
-      assert.deepStrictEqual(figma.modeNames("Fuse density"), ["Auto", "Dense", "Comfortable"]);
+      assert.deepStrictEqual(figma.modeNames("Fuse density"), ["Dense", "Comfortable"]);
       // 135 contract tokens, 5 radius rungs, 19 role tints, 2 outline shadow lengths, the compact,
-      // checkbox and field box corners and 1 inner corner, which make 165, plus the Auto, Dense
-      // and Comfortable values behind each of the 9 inner corners in `Fuse density`.
-      assert.strictEqual(figma.variableNames("Fuse tokens").length, 165 + 9 * 3);
-      // Those 192 per scheme, plus 39 density metrics and 7 formulas over them.
-      assert.strictEqual(figma.variableNames("Fuse variant").length, 384 + 39 + 7);
-      // Per scheme and variant, then per scheme, variant and segment.
-      assert.strictEqual(figma.variableNames("Fuse segment").length, 768);
-      assert.strictEqual(figma.variableNames("Fuse brand").length, 1536);
+      // checkbox and field box corners and 1 inner corner, which make 165, plus the Dense and
+      // Comfortable values behind each of the 9 inner corners in `Fuse density`.
+      assert.strictEqual(figma.variableNames("Fuse tokens").length, 165 + 9 * 2);
+      // Those 183 per scheme. No identity implies a density, so it holds no density lengths.
+      assert.strictEqual(figma.variableNames("Fuse identity").length, 366);
+      // Per scheme and identity, then per scheme, identity and segment.
+      assert.strictEqual(figma.variableNames("Fuse segment").length, 732);
+      assert.strictEqual(figma.variableNames("Fuse brand").length, 1464);
       assert.strictEqual(figma.variableNames("Fuse primitives").length, 25);
       // 26 control metrics, 4 row, 2 label, 3 surface padding and 4 surface gap metrics, 7
       // formulas over metrics and 9 inner corners, which read tokens and metrics.
@@ -120,10 +120,9 @@ describe("fuse-figma sync", () => {
       // The hidden variables only feed aliases, so no picker offers them and they carry no code.
       for (const [collection, variable] of [
         ["Fuse tokens", "radius-inner/lg-pad-sm/dense"],
-        ["Fuse variant", "light/primary"],
-        ["Fuse variant", "density/control-h-md"],
-        ["Fuse segment", "light/external/primary"],
-        ["Fuse brand", "light/external/company/primary"],
+        ["Fuse identity", "light/primary"],
+        ["Fuse segment", "light/branded/primary"],
+        ["Fuse brand", "light/branded/company/primary"],
       ] as const) {
         assert.deepStrictEqual(pickers(figma, collection, variable), { scopes: [], codeSyntax: {} });
       }
@@ -143,7 +142,7 @@ describe("fuse-figma sync", () => {
       assert.deepStrictEqual(pickers(figma, "Fuse tokens", "radius-xl").codeSyntax, {
         WEB: "calc(var(--radius) + 2 * var(--radius-step, 0px))",
       });
-      assert.deepStrictEqual(pickers(figma, "Fuse brand", "dark/internal/private/radius-md"), {
+      assert.deepStrictEqual(pickers(figma, "Fuse brand", "dark/neutral/private/radius-md"), {
         scopes: [],
         codeSyntax: {},
       });
@@ -248,7 +247,7 @@ describe("fuse-figma sync", () => {
       );
       assert.strictEqual(described.length, 140 + 25 + 39);
       assert.include(figma.metadata("Fuse tokens", "feature-foreground").description, "not text-grade");
-      for (const collection of ["Fuse variant", "Fuse segment", "Fuse brand"]) {
+      for (const collection of ["Fuse identity", "Fuse segment", "Fuse brand"]) {
         const blank = figma
           .variableNames(collection)
           .filter((variable) => figma.metadata(collection, variable).description !== "");
@@ -317,8 +316,8 @@ describe("fuse-figma sync", () => {
       const figma = new InMemoryFigma(FILE_KEY, TOKEN);
       yield* run(figma, ["--file-key", FILE_KEY, "sync"]);
       const idsBefore = figma.variableIds();
-      const synced = hex(figma.resolve("Fuse tokens", "primary", light("external-fkas-private")));
-      figma.setValue("Fuse brand", "light/external/private/primary", "Fjordkraft", drift(figma));
+      const synced = hex(figma.resolve("Fuse tokens", "primary", light("branded-fkas-private")));
+      figma.setValue("Fuse brand", "light/branded/private/primary", "Fjordkraft", drift(figma));
 
       yield* run(figma, ["--file-key", FILE_KEY, "sync"]);
 
@@ -326,10 +325,7 @@ describe("fuse-figma sync", () => {
       const repair = figma.acceptedWrites.at(-1);
       assert.deepStrictEqual(repair?.variableModeValues?.length, 1);
       assert.strictEqual(repair?.variables?.length ?? 0, 0);
-      assert.strictEqual(
-        hex(figma.resolve("Fuse tokens", "primary", light("external-fkas-private"))),
-        synced
-      );
+      assert.strictEqual(hex(figma.resolve("Fuse tokens", "primary", light("branded-fkas-private"))), synced);
     })
   );
 
@@ -337,9 +333,9 @@ describe("fuse-figma sync", () => {
     Effect.gen(function* () {
       const figma = new InMemoryFigma(FILE_KEY, TOKEN);
       yield* run(figma, ["--file-key", FILE_KEY, "sync"]);
-      const id = figma.variableIds().get("Fuse segment/light/external/primary");
-      if (id === undefined) throw new Error("the first sync creates light/external/primary");
-      figma.setMetadata("Fuse segment", "light/external/primary", {
+      const id = figma.variableIds().get("Fuse segment/light/branded/primary");
+      if (id === undefined) throw new Error("the first sync creates light/branded/primary");
+      figma.setMetadata("Fuse segment", "light/branded/primary", {
         scopes: ["ALL_SCOPES"],
         codeSyntax: { WEB: "var(--designer)", ANDROID: "R.color.designer" },
         description: "A designer's note.",
@@ -351,7 +347,7 @@ describe("fuse-figma sync", () => {
       assert.deepStrictEqual(figma.acceptedWrites.at(-1)?.variables, [
         { action: "UPDATE", id, scopes: [], description: "" },
       ]);
-      assert.deepStrictEqual(figma.metadata("Fuse segment", "light/external/primary"), {
+      assert.deepStrictEqual(figma.metadata("Fuse segment", "light/branded/primary"), {
         scopes: [],
         codeSyntax: { WEB: "var(--designer)", ANDROID: "R.color.designer" },
         description: "",
@@ -414,13 +410,13 @@ describe("fuse-figma sync", () => {
         "Fuse primitives",
         "Fuse brand",
         "Fuse segment",
-        "Fuse variant",
+        "Fuse identity",
         "Fuse tokens",
         "Fuse density",
       ]);
       assert.isTrue(figma.hasCollection(extensionId));
       assert.isTrue(figma.hasCollection(libraryId));
-      assert.strictEqual(figma.variableNames("Fuse brand").length, 1536);
+      assert.strictEqual(figma.variableNames("Fuse brand").length, 1464);
       assert.deepStrictEqual(figma.variableById(libraryPrimary).values, [
         { r: 0, g: 0, b: 0, a: 1 },
         { r: 0, g: 0, b: 0, a: 1 },
@@ -443,7 +439,7 @@ describe("fuse-figma sync", () => {
       assert.notStrictEqual(primary, deleted);
       assert.isTrue(figma.variableById(deleted).deletedButReferenced);
       assert.strictEqual(
-        hex(figma.resolve("Fuse tokens", "primary", light("external-elma-company"))),
+        hex(figma.resolve("Fuse tokens", "primary", light("branded-elma-company"))),
         "#00313C"
       );
     })
@@ -453,7 +449,7 @@ describe("fuse-figma sync", () => {
     Effect.gen(function* () {
       const figma = new InMemoryFigma(FILE_KEY, TOKEN);
       figma.afterNextWrite(() =>
-        figma.setValue("Fuse brand", "light/external/private/primary", "Fjordkraft", {
+        figma.setValue("Fuse brand", "light/branded/private/primary", "Fjordkraft", {
           r: 1,
           g: 0,
           b: 0,
@@ -480,10 +476,10 @@ describe("fuse-figma sync", () => {
       // A designer points error at destructive, the reverse of the tokens. Figma refuses a
       // cycle, so destructive first gets a literal in every brand.
       for (const brand of figma.modeNames("Fuse brand")) {
-        figma.setValue("Fuse brand", "light/external/company/destructive", brand, { r: 1, g: 0, b: 0, a: 1 });
+        figma.setValue("Fuse brand", "light/branded/company/destructive", brand, { r: 1, g: 0, b: 0, a: 1 });
       }
-      const destructive = figma.variableIds().get("Fuse brand/light/external/company/destructive") ?? "";
-      figma.setValue("Fuse brand", "light/external/company/error", "Elmera", {
+      const destructive = figma.variableIds().get("Fuse brand/light/branded/company/destructive") ?? "";
+      figma.setValue("Fuse brand", "light/branded/company/error", "Elmera", {
         type: "VARIABLE_ALIAS",
         id: destructive,
       });
@@ -493,8 +489,8 @@ describe("fuse-figma sync", () => {
       yield* run(figma, ["--file-key", FILE_KEY, "sync"]);
 
       assert.deepStrictEqual(
-        figma.aliasChain("Fuse tokens", "destructive", light("external-elma-company")).slice(3, 5),
-        ["Fuse brand/light/external/company/destructive", "Fuse brand/light/external/company/error"]
+        figma.aliasChain("Fuse tokens", "destructive", light("branded-elma-company")).slice(3, 5),
+        ["Fuse brand/light/branded/company/destructive", "Fuse brand/light/branded/company/error"]
       );
       assert.include(yield* output, "reading it back matches the tokens");
     })
@@ -549,11 +545,12 @@ describe("fuse-figma check", () => {
       assert.include(printed, "Fuse tokens: create mode Light");
       assert.include(printed, "Fuse tokens: create mode Dark");
       assert.include(printed, "Fuse brand: create mode Telinet (private only)");
-      assert.include(printed, "Fuse brand: create variable ×1536");
-      assert.notInclude(printed, "Fuse brand: create variable light/external/private/primary");
-      assert.include(printed, "Fuse segment: create variable ×768");
-      assert.include(printed, "Fuse variant: create variable ×430");
-      assert.include(printed, "Fuse density: create mode Auto");
+      assert.include(printed, "Fuse brand: create variable ×1464");
+      assert.notInclude(printed, "Fuse brand: create variable light/branded/private/primary");
+      assert.include(printed, "Fuse segment: create variable ×732");
+      assert.include(printed, "Fuse identity: create variable ×366");
+      assert.include(printed, "Fuse density: create mode Dense");
+      assert.notInclude(printed, "Fuse density: create mode Auto");
       assert.include(printed, "Fuse density: create mode Comfortable");
       assert.include(printed, "Fuse density: create variable ×55");
     })

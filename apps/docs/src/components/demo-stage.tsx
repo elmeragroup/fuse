@@ -4,8 +4,9 @@ import type { ReactElement, ReactNode } from "react";
 
 import { tv } from "tailwind-variants";
 
-import { defaultDensityForVariant, densityAttributes, ThemeScope } from "@elmeragroup/fuse/theme";
+import { densityAttributes, ThemeScope } from "@elmeragroup/fuse/theme";
 
+import { docsDensityFor } from "../lib/theme";
 import { usePreviewTheme } from "./preview-theme";
 
 type DemoStageProps = {
@@ -37,13 +38,13 @@ const demoStage = tv({
  * A client component, because it consumes the docs-local preview context: driving the header
  * picker re-renders the stage while the frame chrome and the source stay server-rendered. The
  * stage's own theme attributes and `data-density` name the coordinate it renders under, for the
- * tests and tools that need it. Density is the *deployment default* for the previewed variant,
+ * tests and tools that need it. Density is the docs site's density for the previewed identity,
  * stamped on the stage so the demo-stage density re-scope in `globals.css` can take effect inside
  * the sandbox. `data-stage-layout` switches on the rules that lay out the demo's roots.
  */
 export function DemoStage({ children }: DemoStageProps): ReactElement {
   const { theme } = usePreviewTheme();
-  const density = defaultDensityForVariant(theme.variant);
+  const density = docsDensityFor(theme);
 
   return (
     <ThemeScope

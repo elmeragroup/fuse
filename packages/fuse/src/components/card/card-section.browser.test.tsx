@@ -6,7 +6,7 @@ import "../../../dist/themes.css";
 import { expectActivationCancelled, resetHashAroundEach } from "../../../test/aria-disabled-activation";
 import { ringLayers, settleTransitions } from "../../../test/assert-invalid-ring";
 import { RADIUS_LG } from "../../../test/inner-corner-specimens";
-import { cssVarColor, fkasExternal, px, renderThemed, roleNamed } from "../../../test/themed-browser-render";
+import { cssVarColor, fkasBranded, px, renderThemed, roleNamed } from "../../../test/themed-browser-render";
 import { ThemeScope } from "../../theme/theme-scope";
 import { Dialog } from "../dialog";
 import { Card } from "./card";
@@ -47,17 +47,17 @@ function ThreeSections({ hiddenEnds = false }: { readonly hiddenEnds?: boolean }
 }
 
 describe("Card.Section", () => {
-  // The card's `rounded-lg` is the theme's --radius in both variants (RADIUS_LG, written out by
+  // The card's `rounded-lg` is the theme's --radius in both identities (RADIUS_LG, written out by
   // hand), and a section sits inside its 1px border, so its outer corners are one pixel less.
   it.each([
-    ["an internal", false, RADIUS_LG.internal - 1],
-    ["an external", true, RADIUS_LG.fkas - 1],
+    ["a neutral", false, RADIUS_LG.neutral - 1],
+    ["a branded", true, RADIUS_LG.fkas - 1],
   ] as const)(
     "rounds the first and last sections with the card's inner corner in %s theme, and leaves the middle square",
-    (_label, external, corner) => {
+    (_label, branded, corner) => {
       renderThemed(
-        external ? (
-          <ThemeScope theme={fkasExternal}>
+        branded ? (
+          <ThemeScope theme={fkasBranded}>
             <ThreeSections />
           </ThemeScope>
         ) : (
@@ -72,7 +72,7 @@ describe("Card.Section", () => {
 
   it("skips hidden sections when it picks the first and last", () => {
     renderThemed(<ThreeSections hiddenEnds />);
-    const corner = RADIUS_LG.internal - 1;
+    const corner = RADIUS_LG.neutral - 1;
     expect(corners(roleNamed("group", "First")), "first visible").toEqual([corner, corner, 0, 0]);
     expect(px(getComputedStyle(roleNamed("group", "First")).borderTopWidth), "no divider above").toBe(0);
     expect(corners(roleNamed("group", "Last")), "last visible").toEqual([0, 0, corner, corner]);
@@ -96,15 +96,15 @@ describe("Card.Section", () => {
     expect(corners(roleNamed("group", "Loose"))).toEqual([0, 0, 0, 0]);
   });
 
-  // The divider aliases --border in internal themes and the page tint, --background, in external
-  // ones (tokens/defaults.ts and tokens/external-palettes.ts).
+  // The divider aliases --border in neutral themes and the page tint, --background, in branded
+  // ones (tokens/defaults.ts and tokens/brand-palettes.ts).
   it.each([
-    ["internal", false, "--border"],
-    ["external", true, "--background"],
-  ] as const)("draws a 1px divider between sections only in an %s theme", (_label, external, role) => {
+    ["neutral", false, "--border"],
+    ["branded", true, "--background"],
+  ] as const)("draws a 1px divider between sections only in an %s theme", (_label, branded, role) => {
     renderThemed(
-      external ? (
-        <ThemeScope theme={fkasExternal}>
+      branded ? (
+        <ThemeScope theme={fkasBranded}>
           <ThreeSections />
         </ThemeScope>
       ) : (
@@ -186,7 +186,7 @@ describe("Card.Section", () => {
         </Card.Section>
       </Card.Root>
     );
-    const corner = RADIUS_LG.internal - 1;
+    const corner = RADIUS_LG.neutral - 1;
     const header = roleNamed("group", "Header");
     const first = roleNamed("group", "First");
     expect(px(getComputedStyle(first).borderTopWidth), "divider under the header").toBe(1);
@@ -414,7 +414,7 @@ describe("Card.Section", () => {
     const trigger = roleNamed("button", "Change plan");
     expect(trigger.getAttribute("type")).toBe("button");
     expect(getComputedStyle(trigger).cursor).toBe("pointer");
-    const corner = RADIUS_LG.internal - 1;
+    const corner = RADIUS_LG.neutral - 1;
     expect(corners(trigger)).toEqual([0, 0, corner, corner]);
     expect(px(getComputedStyle(trigger).borderTopWidth), "divider above").toBe(1);
     await userEvent.click(trigger);

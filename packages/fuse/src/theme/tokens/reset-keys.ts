@@ -1,9 +1,9 @@
 import { cssVarReference } from "../css-values";
+import { LEGAL_THEMES } from "../theme-input";
 import { assignedTokenNames, derivedRoleSources, isDerivedTokenName, TOKEN_NAMES } from "./contract";
 import type { TokenLayer, TokenName } from "./contract";
 import { DEFAULTS } from "./defaults";
 import { paletteLayers } from "./palette-layers";
-import { LEGAL_THEMES } from "./themes";
 
 /**
  * The roles a token's value reads. A derived role reads its sources, a `var(--role)` default
@@ -52,7 +52,7 @@ function resetKeysFor(layers: readonly (TokenLayer | undefined)[]): readonly Tok
 
 // Seed from the palette layers themselves, so this module cannot claim a key no layer
 // supplies. The theme tests pin the light layers' key union to the documented
-// `EXTERNAL_RESET_KEYS` literal.
+// `LIGHT_RESET_KEYS` literal.
 const paletteLayerList = LEGAL_THEMES.flatMap((theme) => [
   ...paletteLayers(theme, "light"),
   ...paletteLayers(theme, "dark"),

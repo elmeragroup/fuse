@@ -32,20 +32,20 @@ import type {
 import { baseBorderColor, compileUtilities } from "./utility-css";
 
 /**
- * A theme the previews pin: Fjordkraft private in one variant and color scheme. Density `Auto`
- * follows the variant, so an internal theme renders dense and an external one comfortable, as a
- * Fuse host renders them.
+ * A theme the previews pin: Fjordkraft private in one identity, color scheme and density. No
+ * identity implies a density, so each preview pins one: neutral dense and branded comfortable,
+ * the pairing the docs and the previews drew before density became explicit.
  */
-function previewTheme(variant: "Internal" | "External", scheme: "Light" | "Dark") {
+function previewTheme(identity: "Neutral" | "Branded", scheme: "Light" | "Dark") {
   return {
-    key: `${variant.toLowerCase()}-fkas-private-${scheme.toLowerCase()}`,
-    name: `Fjordkraft ${variant.toLowerCase()} private, ${scheme.toLowerCase()}`,
+    key: `${identity.toLowerCase()}-fkas-private-${scheme.toLowerCase()}`,
+    name: `Fjordkraft ${identity.toLowerCase()} private, ${scheme.toLowerCase()}`,
     modes: {
       "Fuse tokens": scheme,
-      "Fuse variant": variant,
+      "Fuse identity": identity,
       "Fuse segment": "Private",
       "Fuse brand": "Fjordkraft",
-      "Fuse density": "Auto",
+      "Fuse density": identity === "Neutral" ? "Dense" : "Comfortable",
     },
   };
 }
@@ -55,10 +55,10 @@ function previewTheme(variant: "Internal" | "External", scheme: "Light" | "Dark"
  * the others.
  */
 const PREVIEW_THEMES = [
-  previewTheme("Internal", "Light"),
-  previewTheme("Internal", "Dark"),
-  previewTheme("External", "Light"),
-  previewTheme("External", "Dark"),
+  previewTheme("Neutral", "Light"),
+  previewTheme("Neutral", "Dark"),
+  previewTheme("Branded", "Light"),
+  previewTheme("Branded", "Dark"),
 ];
 
 /** The page that holds the icon library alone. */

@@ -31,7 +31,7 @@ describe("component page anatomy", () => {
     const stages = [...html.matchAll(/<div[^>]*data-demo-stage[^>]*>/g)].map(([tag]) => tag);
     expect(stages).toHaveLength(BUTTON_DEMOS.length);
     for (const stage of stages) {
-      expect(stage).toMatch(/data-theme-variant="[a-z]+"/u);
+      expect(stage).toMatch(/data-theme-identity="[a-z]+"/u);
       expect(stage).toMatch(/data-theme-brand="[a-z]+"/u);
       expect(stage).toMatch(/data-density="(?:dense|comfortable)"/u);
     }

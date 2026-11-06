@@ -56,7 +56,7 @@ export const STUDIO_PAGES: readonly StudioPage[] = [
     label: "Screens",
     title: "Theme studio · Screens",
     description:
-      "Whole product screens in the base theme's external and internal looks: self-service, an admin table, a checkout form and a settings dialog.",
+      "Whole product screens in the base theme's branded and neutral looks: self-service, an admin table, a checkout form and a settings dialog.",
   },
 ];
 

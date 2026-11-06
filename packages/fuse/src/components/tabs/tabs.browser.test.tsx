@@ -14,8 +14,8 @@ import {
   computedOklch,
   CONTROL_MD,
   cssVarColor,
-  fkasExternal,
-  guenExternal,
+  fkasBranded,
+  guenBranded,
   px,
   renderThemed,
   stampDensity,
@@ -191,12 +191,12 @@ describe("Tabs", () => {
 
   it("emits data-variant=line and leaves the active trigger unfilled, in page text", async () => {
     renderThemed(
-      <ThemeScope theme={fkasExternal}>
+      <ThemeScope theme={fkasBranded}>
         <AccountPassword variant="line" />
       </ThemeScope>
     );
     const list = htmlTablist();
-    // Oracle sanity: fkas external light sets card text apart from page text.
+    // Oracle sanity: fkas branded light sets card text apart from page text.
     expect(cssVarColor(list, "--card-foreground")).not.toBe(cssVarColor(list, "--foreground"));
 
     expect(list.getAttribute("data-variant")).toBe("line");
@@ -207,15 +207,15 @@ describe("Tabs", () => {
   });
 
   it.each([
-    ["fkas private light", fkasExternal, "light"],
-    ["fkas private dark", fkasExternal, "dark"],
-    ["guen light", guenExternal, "light"],
-    ["guen dark", guenExternal, "dark"],
+    ["fkas private light", fkasBranded, "light"],
+    ["fkas private dark", fkasBranded, "dark"],
+    ["guen light", guenBranded, "light"],
+    ["guen dark", guenBranded, "dark"],
   ] as const)(
     "fills the active default trigger with the card on its muted list, %s",
     async (_name, theme, scheme) => {
       // Unit under test: the active trigger's fill and text. Oracle: the scope's own `--card`,
-      // `--card-foreground` and `--muted`. These external themes tint the page darker than
+      // `--card-foreground` and `--muted`. These branded themes tint the page darker than
       // `--muted` in light.
       const tabs = (
         <ThemeScope theme={theme}>
@@ -240,8 +240,8 @@ describe("Tabs", () => {
   );
 
   it.each([
-    ["fkas private", fkasExternal],
-    ["guen", guenExternal],
+    ["fkas private", fkasBranded],
+    ["guen", guenBranded],
   ] as const)(
     "lifts the active default trigger above its list on a tinted light page, %s",
     async (_name, theme) => {
@@ -320,7 +320,7 @@ describe("Tabs", () => {
     expect(px(getComputedStyle(nested).height)).toBe(CONTROL_MD.dense.height);
 
     rerender(
-      <ThemeScope theme={fkasExternal}>
+      <ThemeScope theme={fkasBranded}>
         <Tabs.Root defaultValue="account">
           <Tabs.List>
             <Tabs.Trigger value="account">Scoped</Tabs.Trigger>

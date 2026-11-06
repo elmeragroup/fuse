@@ -172,17 +172,17 @@ describe("the studio's Shape page", () => {
     }
   });
 
-  it("wears a --radius-step edit on every board in the base theme's variant, in any brand", async () => {
+  it("wears a --radius-step edit on every board in the base theme's identity, in any brand", async () => {
     const { context, page, errors } = await openStudio(browser(), { route: CORNERS_PAGE });
     try {
       await setRadius(page, 20);
-      await toggle(inspector(page), "--radius-step", "0px · internal").click();
-      // At a 0px step every rung equals --radius (CONTEXT.md, "Radius rung"), where the external
+      await toggle(inspector(page), "--radius-step", "0px · neutral").click();
+      // At a 0px step every rung equals --radius (CONTEXT.md, "Radius rung"), where the branded
       // step alone draws 14/16/18/20/24px.
       await expect
-        .poll(() => cornerValues(page, "Radius rungs · External"))
+        .poll(() => cornerValues(page, "Radius rungs · Branded"))
         .toMatchObject({ xs: "20px", sm: "20px", md: "20px", lg: "20px", xl: "20px" });
-      // Fjordkraft shares the external base's variant, so its board wears the step edit too.
+      // Fjordkraft shares the branded base's identity, so its board wears the step edit too.
       await pickBrand(page, await selectBoard(page, SHELLS), "Fjordkraft");
       await expect.poll(() => tokenOn(page, SHELLS, "--radius-step")).toBe("0px");
       expect(errors).toEqual([]);
@@ -280,19 +280,19 @@ describe("the studio's Shape page", () => {
   });
 
   it.each([
-    ["internal", hashOf('{"t":"internal-elma-private"}')],
-    ["external", ""],
+    ["neutral", hashOf('{"t":"neutral-elma-private"}')],
+    ["branded", ""],
   ])(
-    "labels each pinned variant's rungs and role corners as the browser computes them over a %s base theme",
+    "labels each pinned identity's rungs and role corners as the browser computes them over a %s base theme",
     async (_base, hash) => {
       const { context, page, errors } = await openStudio(browser(), { route: CORNERS_PAGE, hash });
       try {
         await setRadius(page, 20);
-        // fuse.css's rungs at a 20px radius: every one 20px at the internal 0px step, and whole
-        // 2px steps from 20px at the external step (CONTEXT.md, "Radius rung"). The internal variant
+        // fuse.css's rungs at a 20px radius: every one 20px at the neutral 0px step, and whole
+        // 2px steps from 20px at the branded step (CONTEXT.md, "Radius rung"). The neutral identity
         // aliases both role corners to --radius (fuse's tokens/defaults.ts).
         await expect
-          .poll(() => cornerValues(page, "Radius rungs · Internal"))
+          .poll(() => cornerValues(page, "Radius rungs · Neutral"))
           .toMatchObject({
             xs: "20px",
             sm: "20px",
@@ -302,10 +302,10 @@ describe("the studio's Shape page", () => {
             button: "20px",
             field: "20px",
           });
-        // External elma keeps its own 0.375rem button (tokens/external-palettes.ts) whatever the
-        // radius, and its field aliases the radius in every variant (tokens/defaults.ts).
+        // Branded elma keeps its own 0.375rem button (tokens/brand-palettes.ts) whatever the
+        // radius, and its field aliases the radius in every corner set (tokens/defaults.ts).
         await expect
-          .poll(() => cornerValues(page, "Radius rungs · External"))
+          .poll(() => cornerValues(page, "Radius rungs · Branded"))
           .toMatchObject({
             xs: "14px",
             sm: "16px",
@@ -470,18 +470,18 @@ describe("the studio's Shape page", () => {
     }
   });
 
-  it("offers a retry when a pinned variant's values fail to load, and restores its alias closure", async () => {
+  it("offers a retry when a pinned identity's values fail to load, and restores its alias closure", async () => {
     let failing = true;
     const { context, page, errors } = await openStudio(browser(), {
       route: CORNERS_PAGE,
-      // An internal base theme, so the External board pins the one other seed, and an --error
-      // edit, which external elma's `--destructive: var(--error)` reads.
-      hash: hashOf('{"t":"internal-elma-private","l":{"error":"#ff0000"}}'),
+      // A neutral base theme, so the Branded board pins the one other seed, and an --error
+      // edit, which branded elma's `--destructive: var(--error)` reads.
+      hash: hashOf('{"t":"neutral-elma-private","l":{"error":"#ff0000"}}'),
       prepare: async (opening) => {
         await opening.route("**/_next/static/chunks/**", async (route) => {
           const response = await route.fetch();
           const body = await response.text();
-          if (failing && /slug"?:"external-elma-private"/u.test(body)) {
+          if (failing && /slug"?:"branded-elma-private"/u.test(body)) {
             await route.abort();
             return;
           }
@@ -490,7 +490,7 @@ describe("the studio's Shape page", () => {
       },
     });
     try {
-      const board = artboard(page, "Radius rungs · External");
+      const board = artboard(page, "Radius rungs · Branded");
       const destructive = () =>
         board.evaluate((element) => {
           const style = getComputedStyle(element);
@@ -522,30 +522,30 @@ describe("the studio's Shape page", () => {
     }
   });
 
-  it("skips on a pinned board an edit that loops only in its variant, and names it in the inspector", async () => {
-    // On the Overview's external base, --radius: var(--radius-button) is admitted: external elma
-    // declares a literal button corner. Internal themes declare radius-button: var(--radius)
-    // (fuse's tokens/defaults.ts), so on the Internal board the two would loop.
+  it("skips on a pinned board an edit that loops only in its identity, and names it in the inspector", async () => {
+    // On the Overview's branded base, --radius: var(--radius-button) is admitted: branded elma
+    // declares a literal button corner. Neutral themes declare radius-button: var(--radius)
+    // (fuse's tokens/defaults.ts), so on the Neutral board the two would loop.
     const { context, page, errors } = await openStudio(browser(), {
-      hash: hashOf('{"t":"external-elma-private","s":{"radius":"var(--radius-button)"}}'),
+      hash: hashOf('{"t":"branded-elma-private","s":{"radius":"var(--radius-button)"}}'),
     });
     try {
       await layers(page).getByRole("link", { name: "Shape", exact: true }).click();
-      const internal = "Radius rungs · Internal";
-      await artboard(page, internal).waitFor({ state: "visible" });
+      const neutral = "Radius rungs · Neutral";
+      await artboard(page, neutral).waitFor({ state: "visible" });
       // With the loop, --radius and --radius-button would be invalid and every rung 0px. Skipped,
-      // the board keeps internal elma's own radius, which both role corners alias.
+      // the board keeps neutral elma's own radius, which both role corners alias.
       await expect
-        .poll(async () => Number.parseFloat((await cornerValues(page, internal)).lg ?? "0"))
+        .poll(async () => Number.parseFloat((await cornerValues(page, neutral)).lg ?? "0"))
         .toBeGreaterThan(0);
-      const values = await cornerValues(page, internal);
+      const values = await cornerValues(page, neutral);
       expect(values.button).toBe(values.lg);
       expect(values.field).toBe(values.lg);
-      await layers(page).getByRole("button", { name: internal, exact: true }).click();
+      await layers(page).getByRole("button", { name: neutral, exact: true }).click();
       const note = inspector(page).getByText(/^Skips --radius,/u);
       await note.waitFor();
       expect(await note.textContent()).toBe(
-        "Skips --radius, which would loop through the aliases of Elmera · Internal · Private."
+        "Skips --radius, which would loop through the aliases of Elmera · Neutral · Private."
       );
       expect(errors).toEqual([]);
     } finally {

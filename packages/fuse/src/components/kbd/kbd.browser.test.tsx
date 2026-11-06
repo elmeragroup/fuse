@@ -72,7 +72,7 @@ describe("Kbd", () => {
   });
 
   it("rounds a free group's caps with the group's rung, and an addon's group and caps with its inner corner", () => {
-    // With the internal theme at a 16px --radius, every rung is 16px. The addon publishes the field
+    // With the neutral theme at a 16px --radius, every rung is 16px. The addon publishes the field
     // corner less its 1px border and its 5.6px padding beside a kbd, which gives 9.4px.
     stampDensity("dense");
     render(

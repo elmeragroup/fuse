@@ -10,7 +10,7 @@ import { render } from "../../test/browser-render";
 import { edgeInset } from "../../test/inner-corner-specimens";
 import type { PartEdge } from "../../test/inner-corner-specimens";
 import { withLocale } from "../../test/locale-matrix";
-import { fkasExternal, fkasPrivate, tkasCompany } from "../../test/theme-fixtures";
+import { fkasBranded, fkasPrivate, tkasCompany } from "../../test/theme-fixtures";
 import {
   px,
   roleNamed,
@@ -48,14 +48,14 @@ import { SearchField } from "../react-aria/search-field/search-field";
 import { UiProviders } from "../react-aria/ui-providers/ui-providers";
 import { DENSITIES } from "./density";
 import type { Density } from "./density";
+import { LEGAL_THEMES, themeSlug } from "./theme-input";
+import type { BrandCode, ThemeInput } from "./theme-input";
 import { ThemeScope } from "./theme-scope";
-import { EXTERNAL_VARIANT_LAYER } from "./tokens/external-palettes";
-import { LEGAL_THEMES, themeSlug } from "./tokens/themes";
-import type { BrandCode, ThemeInput } from "./tokens/themes";
+import { BRANDED_IDENTITY_LAYER } from "./tokens/brand-palettes";
 
 const BUTTON_SIZES = ["default", "xs", "sm", "lg", "icon", "icon-xs", "icon-sm", "icon-lg"] as const;
 
-const guenExternal = { variant: "external", brand: "guen", segment: "private" } as const satisfies ThemeInput;
+const guenBranded = { identity: "branded", brand: "guen", segment: "private" } as const satisfies ThemeInput;
 
 type Specimen =
   | "button"
@@ -82,32 +82,32 @@ type Specimen =
   | "preset"
   | "chip remove";
 
-type Variant = "internal" | "fkas" | "tkas" | "guen";
+type CornerCase = "neutral" | "fkas" | "tkas" | "guen";
 
 /**
- * Corner radii in px. Internal rounds every outer element with `--radius`, 0.5rem (8px), except
- * the Checkbox and the GridList selection box, which every variant caps at 4px. An
- * external button rounds with the brand's `--radius-button`, which is 1.8125rem (29px) for
- * fkas, 1rem (16px) for tkas and 0.5rem (8px) for guen. An external field box rounds with
+ * Corner radii in px. Neutral rounds every outer element with `--radius`, 0.5rem (8px), except
+ * the Checkbox and the GridList selection box, which every identity caps at 4px. An
+ * branded button rounds with the brand's `--radius-button`, which is 1.8125rem (29px) for
+ * fkas, 1rem (16px) for tkas and 0.5rem (8px) for guen. A branded field box rounds with
  * `--radius-field`, which aliases the brand's `--radius` as a card's `rounded-lg` does: 12px
- * fkas, 16px tkas and 8px guen. The other outer external values are the ones Chromium
+ * fkas, 16px tkas and 8px guen. The other outer branded values are the ones Chromium
  * measured on origin/main (e178f6d7) with each theme on the document. The tkas row has since
  * moved 0.8px with its `--radius`, from 0.95rem to 1rem.
  *
- * Inner parts round with the field corner (8px internal, 12px fkas, 16px tkas, 8px guen) or
+ * Inner parts round with the field corner (8px neutral, 12px fkas, 16px tkas, 8px guen) or
  * their shell's rung less the inset, floored at 0. The xs and sm addons, the phone trigger and
- * the search clear button sit 5px in: 3px internal, 7px fkas, 11px tkas and 3px guen. The kbd
- * sits 6.6px in: 1.4px internal, 5.4px fkas, 9.4px tkas and 1.4px guen. The date trigger sits
- * flush behind the 1px border: 7px internal, 11px fkas, 15px tkas and 7px guen. A date segment
+ * the search clear button sit 5px in: 3px neutral, 7px fkas, 11px tkas and 3px guen. The kbd
+ * sits 6.6px in: 1.4px neutral, 5.4px fkas, 9.4px tkas and 1.4px guen. The date trigger sits
+ * flush behind the 1px border: 7px neutral, 11px fkas, 15px tkas and 7px guen. A date segment
  * sits behind the border and the dense 10px control inset, 11px in: 1px fkas, 5px tkas and 0px
- * internal and guen. The chips sit 7px in and the chip remove button 2px inside a chip, 9px in
- * all: 3px fkas, 7px tkas and 0px internal and guen. A tab sits 4px inside the list's
- * `rounded-lg`: 4px internal, 8px fkas, 12px tkas and 4px guen. A preset sits 5px inside the
- * popover's `rounded-md`, its 1px border and the 4px small surface tier: 3px internal, 5px fkas,
+ * neutral and guen. The chips sit 7px in and the chip remove button 2px inside a chip, 9px in
+ * all: 3px fkas, 7px tkas and 0px neutral and guen. A tab sits 4px inside the list's
+ * `rounded-lg`: 4px neutral, 8px fkas, 12px tkas and 4px guen. A preset sits 5px inside the
+ * popover's `rounded-md`, its 1px border and the 4px small surface tier: 3px neutral, 5px fkas,
  * 9px tkas and 1px guen.
  */
 const EXPECTED = {
-  internal: {
+  neutral: {
     button: 8,
     "grouped button": 8,
     card: 8,
@@ -207,16 +207,16 @@ const EXPECTED = {
     preset: 1,
     "chip remove": 0,
   },
-} as const satisfies Record<Variant, Record<Specimen, number>>;
+} as const satisfies Record<CornerCase, Record<Specimen, number>>;
 
 /**
- * The internal radii at a 1rem (16px) `--radius`: every outer element at 16px except the Checkbox
+ * The neutral radii at a 1rem (16px) `--radius`: every outer element at 16px except the Checkbox
  * and the GridList selection box, which keep their 4px cap, and each inner part 16px less its inset
  * from {@link EXPECTED}: 6.6px for the kbd, 5px for the addons, the phone trigger and the search
  * clear button, 1px for the date trigger, 11px for a date segment, 4px for a tab and 5px for a
  * preset. The chip remove button sits 2px inside a chip that sits 7px in, so it takes 7px.
  */
-const INTERNAL_AT_16PX = {
+const NEUTRAL_AT_16PX = {
   button: 16,
   "grouped button": 16,
   card: 16,
@@ -315,10 +315,10 @@ function Specimens(): ReactElement {
 }
 
 /**
- * A host that keeps its own tokens: `--radius` and `--border` are its own, and the
- * variant-layer roles (`--radius-step` and the button outline roles) and `--radius-field`,
- * which only themes.css sets, are not declared. The variant layer leaves `--radius-field` at
- * its default, so the role is reset by name. `initial` resets each inherited role to the
+ * A host that keeps its own tokens: `--radius` and `--border` are its own, and the corner
+ * roles `--radius-step` and `--radius-field`, the Button label floor and the branded identity
+ * layer's roles (such as the button outline roles), which only themes.css sets, are not
+ * declared. The corner roles are no layer's, so they are reset by name. `initial` resets each inherited role to the
  * guaranteed invalid value, so every `var(--radius-step, 0px)`, `var(--radius-field,
  * var(--radius))` and outline role read takes its fallback here.
  */
@@ -326,7 +326,9 @@ const HOST_WITHOUT_THEMES = {
   "--radius": "8px",
   "--border": "rgb(10, 20, 30)",
   "--radius-field": "initial",
-  ...Object.fromEntries(Object.keys(EXTERNAL_VARIANT_LAYER).map((key) => [`--${key}`, "initial"])),
+  "--radius-step": "initial",
+  "--button-label-px-min": "initial",
+  ...Object.fromEntries(Object.keys(BRANDED_IDENTITY_LAYER).map((key) => [`--${key}`, "initial"])),
 } as const;
 
 function HostSpecimens({ style = HOST_WITHOUT_THEMES }: { style?: CSSProperties }): ReactElement {
@@ -351,7 +353,7 @@ function HostSpecimens({ style = HOST_WITHOUT_THEMES }: { style?: CSSProperties 
 }
 
 /**
- * Each external brand's `--radius` in px at the 16px root, the corner of its cards and
+ * Each branded brand's `--radius` in px at the 16px root, the corner of its cards and
  * selection rows: 0.75rem for fkas, fkab and fkse, 1rem for tkas, 0.5rem for guen and
  * 0.375rem for elma and ngfi.
  */
@@ -583,40 +585,40 @@ function expectConcentric(context: string): void {
 /**
  * The radii that differ when comfortable. An addon pads with `--control-px-icon-md`, 12px
  * comfortable, so a button pulled 4px into it, an addon button or the phone field's country
- * trigger, sits 9px inside the field box: 0px internal and guen, 3px fkas and 7px tkas. A kbd
- * pulled 0.15rem into it sits 10.6px in: 1.4px fkas, 5.4px tkas and 0px internal and guen. A date
+ * trigger, sits 9px inside the field box: 0px neutral and guen, 3px fkas and 7px tkas. A kbd
+ * pulled 0.15rem into it sits 10.6px in: 1.4px fkas, 5.4px tkas and 0px neutral and guen. A date
  * segment sits behind the border and the 14px comfortable control inset, 15px in: 0px fkas and 1px
  * tkas. The other inner parts keep their dense insets.
  */
 const COMFORTABLE = {
-  internal: { "addon xs": 0, "addon sm": 0, "phone trigger": 0, kbd: 0 },
+  neutral: { "addon xs": 0, "addon sm": 0, "phone trigger": 0, kbd: 0 },
   fkas: { "addon xs": 3, "addon sm": 3, "phone trigger": 3, kbd: 1.4, "date segment": 0 },
   tkas: { "addon xs": 7, "addon sm": 7, "phone trigger": 7, kbd: 5.4, "date segment": 1 },
   guen: { "addon xs": 0, "addon sm": 0, "phone trigger": 0, kbd: 0 },
-} as const satisfies { readonly [V in Variant]: { readonly [S in Specimen]?: number } };
+} as const satisfies { readonly [V in CornerCase]: { readonly [S in Specimen]?: number } };
 
 /** The comfortable radius of `specimen` where it differs from the dense one. */
-function comfortableRadius(variant: Variant, specimen: Specimen): number | undefined {
-  const overrides: { readonly [S in Specimen]?: number } = COMFORTABLE[variant];
+function comfortableRadius(corners: CornerCase, specimen: Specimen): number | undefined {
+  const overrides: { readonly [S in Specimen]?: number } = COMFORTABLE[corners];
   return overrides[specimen];
 }
 
-function expectRadii(variant: Variant, context: string, density: Density = "dense"): void {
+function expectRadii(corners: CornerCase, context: string, density: Density = "dense"): void {
   for (const [specimen, name, measured] of measure()) {
     const expected =
-      (density === "comfortable" ? comfortableRadius(variant, specimen) : undefined) ??
-      EXPECTED[variant][specimen];
+      (density === "comfortable" ? comfortableRadius(corners, specimen) : undefined) ??
+      EXPECTED[corners][specimen];
     expect(measured, `${context} ${name}`).toBeCloseTo(expected, 1);
   }
 }
 
-const CASES: readonly (readonly [Variant, ThemeInput, ThemeInput])[] = [
+const CASES: readonly (readonly [CornerCase, ThemeInput, ThemeInput])[] = [
   // Each case names the theme under test and a document theme with different radii, so a
   // value resolved against the document root instead of the scope shows up as a mismatch.
-  ["internal", fkasPrivate, tkasCompany],
-  ["fkas", fkasExternal, fkasPrivate],
+  ["neutral", fkasPrivate, tkasCompany],
+  ["fkas", fkasBranded, fkasPrivate],
   ["tkas", tkasCompany, fkasPrivate],
-  ["guen", guenExternal, tkasCompany],
+  ["guen", guenBranded, tkasCompany],
 ];
 
 describe("radius roles", () => {
@@ -634,10 +636,10 @@ describe("radius roles", () => {
   });
 
   it("rounds every element from the document theme's radius roles", () => {
-    for (const [variant, theme] of CASES) {
+    for (const [corners, theme] of CASES) {
       stampDocumentTheme(theme, "light");
       const { unmount } = render(<Specimens />);
-      expectRadii(variant, `document ${variant}`);
+      expectRadii(corners, `document ${corners}`);
       unmount();
     }
   });
@@ -645,34 +647,34 @@ describe("radius roles", () => {
   it("rounds a nested theme scope from its own radius roles, each inner part inside its shell, at both densities", () => {
     for (const density of DENSITIES) {
       stampDensity(density);
-      for (const [variant, theme, documentTheme] of CASES) {
+      for (const [corners, theme, documentTheme] of CASES) {
         stampDocumentTheme(documentTheme, "light");
         const { unmount } = render(
           <ThemeScope theme={theme}>
             <Specimens />
           </ThemeScope>
         );
-        expectRadii(variant, `${density} ${variant}`, density);
-        expectConcentric(`${density} ${variant}`);
+        expectRadii(corners, `${density} ${corners}`, density);
+        expectConcentric(`${density} ${corners}`);
         unmount();
       }
     }
   });
 
-  it("moves every internal element with a document --radius override, inner parts inside it", () => {
+  it("moves every neutral element with a document --radius override, inner parts inside it", () => {
     stampDocumentTheme(fkasPrivate, "light");
     document.documentElement.style.setProperty("--radius", "1rem");
     try {
       render(<Specimens />);
       for (const [specimen, name, measured] of measure()) {
-        expect(measured, name).toBeCloseTo(INTERNAL_AT_16PX[specimen], 1);
+        expect(measured, name).toBeCloseTo(NEUTRAL_AT_16PX[specimen], 1);
       }
     } finally {
       document.documentElement.style.removeProperty("--radius");
     }
   });
 
-  it("moves every internal element with a nested scope's --radius override, inner parts inside it", () => {
+  it("moves every neutral element with a nested scope's --radius override, inner parts inside it", () => {
     stampDocumentTheme(tkasCompany, "light");
     render(
       <ThemeScope theme={fkasPrivate} style={{ "--radius": "1rem" }}>
@@ -680,13 +682,13 @@ describe("radius roles", () => {
       </ThemeScope>
     );
     for (const [specimen, name, measured] of measure()) {
-      expect(measured, name).toBeCloseTo(INTERNAL_AT_16PX[specimen], 1);
+      expect(measured, name).toBeCloseTo(NEUTRAL_AT_16PX[specimen], 1);
     }
   });
 
-  it("moves internal fields, not buttons, with a --radius override on a plain wrapper", () => {
+  it("moves neutral fields, not buttons, with a --radius override on a plain wrapper", () => {
     // The theme element resolves --radius-button, so a wrapper below it leaves buttons alone.
-    // Internal fields read --radius on the element itself, as cards do.
+    // Neutral fields read --radius on the element itself, as cards do.
     stampDocumentTheme(fkasPrivate, "light");
     render(
       <div style={{ "--radius": "1rem" }}>
@@ -698,13 +700,13 @@ describe("radius roles", () => {
     expect(radius(roleNamed("button", "Wrapped button"))).toBe(8);
   });
 
-  it("rounds every field box with the brand radius, a card's and a selection row's corner, in every external theme", () => {
+  it("rounds every field box with the brand radius, a card's and a selection row's corner, in every branded theme", () => {
     for (const theme of LEGAL_THEMES) {
-      if (theme.variant !== "external") continue;
+      if (theme.identity !== "branded") continue;
       const slug = themeSlug(theme);
       const expected = BRAND_RADIUS[theme.brand];
       // A document theme with another radius, so a corner resolved outside the scope shows.
-      stampDocumentTheme(theme.brand === "tkas" ? fkasExternal : tkasCompany, "light");
+      stampDocumentTheme(theme.brand === "tkas" ? fkasBranded : tkasCompany, "light");
       const { unmount } = render(
         <ThemeScope theme={theme}>
           <FieldBoxes />
@@ -723,17 +725,17 @@ describe("radius roles", () => {
     ["a ThemeScope", "scope"],
     ["the document", "document"],
   ] as const)(
-    "rounds external fields with a --radius-field override on %s and insets their parts from it",
+    "rounds branded fields with a --radius-field override on %s and insets their parts from it",
     (_, host) => {
       const override = { "--radius-field": "0.125rem" };
       if (host === "document") {
-        stampDocumentTheme(fkasExternal, "light");
+        stampDocumentTheme(fkasBranded, "light");
         document.documentElement.style.setProperty("--radius-field", override["--radius-field"]);
         render(<Specimens />);
       } else {
         stampDocumentTheme(tkasCompany, "light");
         render(
-          <ThemeScope theme={fkasExternal} style={override}>
+          <ThemeScope theme={fkasBranded} style={override}>
             <Specimens />
           </ThemeScope>
         );
@@ -763,10 +765,10 @@ describe("radius roles", () => {
     const host = (
       <div role="group" aria-label="Host button" style={{ borderRadius: "var(--radius-button)" }} />
     );
-    // Internal themes alias the button radius to --radius, 0.5rem. fkas sets 1.8125rem.
+    // Neutral themes alias the button radius to --radius, 0.5rem. fkas sets 1.8125rem.
     for (const [theme, expected] of [
       [fkasPrivate, 8],
-      [fkasExternal, 29],
+      [fkasBranded, 29],
     ] as const) {
       stampDocumentTheme(theme, "light");
       const { unmount } = render(host);
@@ -797,7 +799,7 @@ describe("a host without themes.css", () => {
     expect(radius(roleNamed("button", "Host addon xs")), "addon xs").toBe(3);
   });
 
-  it("rounds fields with its own --radius-field once it sets the external --radius-step", () => {
+  it("rounds fields with its own --radius-field once it sets the branded --radius-step", () => {
     const host = (step: Record<string, string>) =>
       render(<HostSpecimens style={{ ...HOST_WITHOUT_THEMES, "--radius-step": "2px", ...step }} />);
     // A 4px field corner: the xs addon sits 5px and the kbd 6.6px inside it, so both are square.

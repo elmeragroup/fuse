@@ -53,7 +53,7 @@ describe("chart foreground roles", () => {
   // The slot picks below come from each slot's two ratios, computed by an OKLCH to sRGB
   // conversion written apart from this package.
   it("compose each slot's pick in light, from the light slot literals", () => {
-    const light = composeTheme({ variant: "internal", brand: "fkas", segment: "private" });
+    const light = composeTheme({ identity: "neutral", brand: "fkas", segment: "private" });
     expect(NAMES.map((name) => light[name])).toEqual([
       WHITE,
       NEUTRAL_950,
@@ -68,7 +68,7 @@ describe("chart foreground roles", () => {
   });
 
   it("compose each slot's pick again in dark, from the dark slot literals", () => {
-    const dark = composeTheme({ variant: "external", brand: "guen", segment: "private" }, "dark");
+    const dark = composeTheme({ identity: "branded", brand: "guen", segment: "private" }, "dark");
     expect(NAMES.map((name) => dark[name])).toEqual([
       NEUTRAL_950,
       NEUTRAL_950,

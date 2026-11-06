@@ -51,7 +51,7 @@ beforeEach(() => {
 
 afterEach(() => {
   document.documentElement.removeAttribute("data-theme");
-  document.documentElement.removeAttribute("data-theme-variant");
+  document.documentElement.removeAttribute("data-theme-identity");
   document.documentElement.removeAttribute("data-theme-brand");
   document.documentElement.removeAttribute("data-theme-segment");
   document.documentElement.style.removeProperty("color-scheme");
@@ -146,7 +146,7 @@ describe("ThemeProvider committed color-scheme options", () => {
         </ThemeProvider>
       </Suspense>
     );
-    await mountedColorScheme(host, "internal-fkas-private:light/light");
+    await mountedColorScheme(host, "neutral-fkas-private:light/light");
 
     rerender(
       <Suspense fallback={<span>Waiting</span>}>
@@ -180,7 +180,7 @@ describe("ThemeProvider committed color-scheme options", () => {
       </Suspense>
     );
     expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
-    await mountedColorScheme(host, "internal-fkas-private:light/dark");
+    await mountedColorScheme(host, "neutral-fkas-private:light/dark");
   });
 });
 
@@ -192,7 +192,7 @@ describe("ThemeProvider data-theme recovery", () => {
         <ColorSchemeOutput />
       </ThemeProvider>
     );
-    await mountedColorScheme(host, "internal-fkas-private:dark/dark");
+    await mountedColorScheme(host, "neutral-fkas-private:dark/dark");
 
     document.documentElement.setAttribute("data-theme", "light");
     rerender(
@@ -202,7 +202,7 @@ describe("ThemeProvider data-theme recovery", () => {
     );
 
     expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
-    expect(readDocumentBrand()).toEqual({ variant: "external", brand: "tkas", segment: "company" });
+    expect(readDocumentBrand()).toEqual({ identity: "branded", brand: "tkas", segment: "company" });
   });
 });
 
@@ -216,7 +216,7 @@ describe("ThemeProvider transition suppression", () => {
         <ColorSchemeSetter value="dark" />
       </ThemeProvider>
     );
-    await mountedColorScheme(host, "internal-fkas-private:light/light");
+    await mountedColorScheme(host, "neutral-fkas-private:light/light");
     expect(transitionStyles()).toEqual([]);
 
     roleNamed("button", "set").click();
@@ -236,18 +236,18 @@ describe("ThemeProvider on the real browser platform", () => {
         <ColorSchemeSetter value="dark" />
       </ThemeProvider>
     );
-    await mountedColorScheme(host, "internal-fkas-private:light/light");
+    await mountedColorScheme(host, "neutral-fkas-private:light/light");
 
     roleNamed("button", "set").click();
     expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
     expect(window.localStorage.getItem(DEFAULT_COLOR_SCHEME_STORAGE_KEY)).toBe("dark");
-    expect(readDocumentBrand()).toEqual({ variant: "internal", brand: "fkas", segment: "private" });
+    expect(readDocumentBrand()).toEqual({ identity: "neutral", brand: "fkas", segment: "private" });
     expect(document.documentElement.style.colorScheme).toBe("");
-    await mountedColorScheme(host, "internal-fkas-private:dark/dark");
+    await mountedColorScheme(host, "neutral-fkas-private:dark/dark");
 
     emitStorageChange(DEFAULT_COLOR_SCHEME_STORAGE_KEY, "light");
     expect(document.documentElement.getAttribute("data-theme")).toBe("light");
-    await mountedColorScheme(host, "internal-fkas-private:light/light");
+    await mountedColorScheme(host, "neutral-fkas-private:light/light");
   });
 
   it("resolves system from the real media query and removes its listener on unmount", async () => {
@@ -261,7 +261,7 @@ describe("ThemeProvider on the real browser platform", () => {
         <ColorSchemeOutput />
       </ThemeProvider>
     );
-    await mountedColorScheme(host, `internal-fkas-private:system/${expected}`);
+    await mountedColorScheme(host, `neutral-fkas-private:system/${expected}`);
     expect(document.documentElement.getAttribute("data-theme")).toBe(expected);
     const changeListeners = added.mock.calls
       .filter(([type]) => type === "change")
@@ -291,7 +291,7 @@ describe("ThemeProvider around a streamed Suspense boundary", () => {
     expect(server.template).not.toBeNull();
     expect(server.fallback).not.toBeNull();
 
-    await mountedColorScheme(host, "internal-fkas-private:dark/dark");
+    await mountedColorScheme(host, "neutral-fkas-private:dark/dark");
     await settleScheduledWork();
 
     // A client render deletes the server's markers, so the streamed segment has nowhere to land.
@@ -324,7 +324,7 @@ describe("ThemeProvider around a streamed Suspense boundary", () => {
       ),
       <StreamedScheme />
     );
-    await mountedColorScheme(page.host, "internal-fkas-private:dark/dark");
+    await mountedColorScheme(page.host, "neutral-fkas-private:dark/dark");
 
     await page.finishStreaming();
 
@@ -345,13 +345,13 @@ describe("useColorScheme under StrictMode", () => {
         </ThemeProvider>
       </StrictMode>
     );
-    await mountedColorScheme(host, "internal-fkas-private:light/light");
+    await mountedColorScheme(host, "neutral-fkas-private:light/light");
 
     roleNamed("button", "set").click();
-    await mountedColorScheme(host, "internal-fkas-private:dark/dark");
+    await mountedColorScheme(host, "neutral-fkas-private:dark/dark");
 
     emitStorageChange(DEFAULT_COLOR_SCHEME_STORAGE_KEY, "system");
     const expected = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-    await mountedColorScheme(host, `internal-fkas-private:system/${expected}`);
+    await mountedColorScheme(host, `neutral-fkas-private:system/${expected}`);
   });
 });

@@ -29,7 +29,7 @@ import { closeContext } from "./suite-browser";
 const { openLanding } = launchLandingSuite({ search: DASHBOARD_FIRST });
 
 /** The chrome's caption while the window shows the Dashboard. */
-const INTERNAL_CAPTION = "Dashboard: an internal sales and back-office app built with Fuse";
+const DASHBOARD_CAPTION = "Dashboard: an internal sales and back-office app built with Fuse";
 
 /** The computed opacity of a window side, read as a number. */
 async function opacity(side: Locator): Promise<number> {
@@ -114,7 +114,7 @@ async function expectReachable(page: Page, side: Locator, unlocked: string): Pro
  * modal, as Safari's does: WebKit focuses no button on a click, while Chromium's mousedown
  * would move focus to the switch before the modal closes and hide where the close sends it.
  */
-async function pressSwitchPastModal(page: Page, side: "Internal" | "External"): Promise<void> {
+async function pressSwitchPastModal(page: Page, side: "Neutral" | "Branded"): Promise<void> {
   const button = sideSwitch(page, { includeHidden: true }).getByRole("button", {
     name: side,
     exact: true,
@@ -134,7 +134,7 @@ async function pressSwitchPastModal(page: Page, side: "Internal" | "External"): 
  * Waits for the close a flip started to settle, then expects focus on the switch's `side`
  * button outside any inert subtree, rather than on a trigger on the side that went inert.
  */
-async function expectFocusOnSwitch(page: Page, side: "Internal" | "External"): Promise<void> {
+async function expectFocusOnSwitch(page: Page, side: "Neutral" | "Branded"): Promise<void> {
   const button = sideSwitch(page).getByRole("button", { name: side, exact: true });
   // Base UI returns focus after the dialog unmounts; two frames let a late return land first.
   await settleFrames(page);
@@ -146,8 +146,8 @@ async function expectFocusOnSwitch(page: Page, side: "Internal" | "External"): P
   ).toEqual({ focused: true, inert: false });
 }
 
-describe("landing hero window, External side", () => {
-  it("flips the content, the variant and the caption with the switch, keeps the window's height, and loads no site image before", async () => {
+describe("landing hero window, Branded side", () => {
+  it("flips the content, the identity and the caption with the switch, keeps the window's height, and loads no site image before", async () => {
     const siteImages: string[] = [];
     const page = await openLanding(DESKTOP_VIEWPORT, {
       prepare: (opening) => {
@@ -160,29 +160,29 @@ describe("landing hero window, External side", () => {
       },
     });
     expect(await readThemeAttributes(page.locator("html"))).toEqual({
-      variant: "internal",
+      identity: "neutral",
       brand: "elma",
       segment: "private",
     });
 
     // DOM audit: ThemeScope's element has no role; each side's scope is its only themed element.
-    const internalScope = dashboard(page).locator("[data-theme-variant]");
-    expect(await readThemeAttributes(internalScope)).toEqual({
-      variant: "internal",
+    const neutralScope = dashboard(page).locator("[data-theme-identity]");
+    expect(await readThemeAttributes(neutralScope)).toEqual({
+      identity: "neutral",
       brand: "elma",
       segment: "private",
     });
-    expect(await windowCaption(page)).toBe(`Live demo${INTERNAL_CAPTION}`);
+    expect(await windowCaption(page)).toBe(`Live demo${DASHBOARD_CAPTION}`);
     expect(await brandSite(page, ELMERA.site).count()).toBe(0);
     expect(siteImages).toEqual([]);
 
-    // Fjordkraft's site has photos; picking it while Internal shows must not fetch them.
+    // Fjordkraft's site has photos; picking it while Neutral shows must not fetch them.
     await pickBrand(page, FJORDKRAFT.brand);
     expect(await brandSite(page, FJORDKRAFT.site).count()).toBe(0);
     expect(siteImages).toEqual([]);
 
     const before = await liveDemo(page).boundingBox();
-    await showSide(page, "External");
+    await showSide(page, "Branded");
     const site = brandSite(page, FJORDKRAFT.site);
     await site.getByRole("heading", { level: 1, name: FJORDKRAFT.heading }).waitFor();
     expect((await liveDemo(page).boundingBox())?.height).toBe(before?.height);
@@ -199,8 +199,8 @@ describe("landing hero window, External side", () => {
       image instanceof HTMLImageElement ? image.currentSrc : ""
     );
     expect(siteImages).toContain(heroSrc);
-    expect(await readThemeAttributes(site.locator("[data-theme-variant]"))).toEqual({
-      variant: "external",
+    expect(await readThemeAttributes(site.locator("[data-theme-identity]"))).toEqual({
+      identity: "branded",
       brand: "fkas",
       segment: "private",
     });
@@ -208,19 +208,19 @@ describe("landing hero window, External side", () => {
       `${FJORDKRAFT.domain}Fjordkraft's public website, built with Fuse`
     );
     expect(await isInert(dashboard(page))).toBe(true);
-    // The switch moves the landing's own variant: the document wears the side the window shows.
+    // The switch moves the landing's own identity: the document wears the side the window shows.
     expect(await readThemeAttributes(page.locator("html"))).toEqual({
-      variant: "external",
+      identity: "branded",
       brand: "fkas",
       segment: "private",
     });
 
-    await showSide(page, "Internal");
+    await showSide(page, "Neutral");
     await expect.poll(async () => isInert(site)).toBe(true);
-    expect(await windowCaption(page)).toBe(`Live demo${INTERNAL_CAPTION}`);
-    expect((await readThemeAttributes(internalScope)).variant).toBe("internal");
+    expect(await windowCaption(page)).toBe(`Live demo${DASHBOARD_CAPTION}`);
+    expect((await readThemeAttributes(neutralScope)).identity).toBe("neutral");
     expect(await readThemeAttributes(page.locator("html"))).toEqual({
-      variant: "internal",
+      identity: "neutral",
       brand: "fkas",
       segment: "private",
     });
@@ -236,13 +236,13 @@ describe("landing hero window, External side", () => {
     expect(await row(app, "Jonas Eide").getAttribute("aria-current")).toBe("true");
     await openNewOrder(app);
 
-    await pressSwitchPastModal(page, "External");
+    await pressSwitchPastModal(page, "Branded");
     const site = brandSite(page, ELMERA.site);
     await expectReachable(page, site, unlocked);
     await site.getByRole("heading", { level: 1, name: ELMERA.heading }).waitFor();
-    await expectFocusOnSwitch(page, "External");
+    await expectFocusOnSwitch(page, "Branded");
 
-    await showSide(page, "Internal");
+    await showSide(page, "Neutral");
     await expect.poll(async () => isInert(app)).toBe(false);
     expect(await row(app, "Jonas Eide").getAttribute("aria-current")).toBe("true");
     expect(
@@ -263,12 +263,12 @@ describe("landing hero window, External side", () => {
     await page.getByRole("menuitem", { name: "Cancel order…" }).click();
     await page.getByRole("alertdialog", { name: /^Cancel order/u }).waitFor();
 
-    await pressSwitchPastModal(page, "External");
+    await pressSwitchPastModal(page, "Branded");
     const site = brandSite(page, ELMERA.site);
     await expectReachable(page, site, unlocked);
-    await expectFocusOnSwitch(page, "External");
+    await expectFocusOnSwitch(page, "Branded");
 
-    await showSide(page, "Internal");
+    await showSide(page, "Neutral");
     await expect.poll(async () => isInert(app)).toBe(false);
     // The seeds put Jonas Eide's order in Awaiting customer approval; a dismissal leaves it there.
     expect(await status.getAttribute("aria-label")).toBe("Status: Awaiting customer approval");
@@ -290,8 +290,8 @@ describe("landing hero window, External side", () => {
     await page.keyboard.press("ControlOrMeta+j");
     const picker = page.getByRole("dialog", { name: "Theme" });
     await picker
-      .getByRole("group", { name: "Variant" })
-      .getByRole("button", { name: "External", exact: true })
+      .getByRole("group", { name: "Identity" })
+      .getByRole("button", { name: "Branded", exact: true })
       .click();
     // DOM audit: the window's modals sit on the inert side once the flip lands, past any role query.
     await expect.poll(async () => liveDemo(page).locator(MODAL).count()).toBe(0);
@@ -301,7 +301,7 @@ describe("landing hero window, External side", () => {
     const site = brandSite(page, ELMERA.site);
     await expectReachable(page, site, unlocked);
 
-    await showSide(page, "Internal");
+    await showSide(page, "Neutral");
     await expect.poll(async () => isInert(app)).toBe(false);
     await row(app, "Jonas Eide").click();
     // The seeds put Jonas Eide's order in Awaiting customer approval; a dismissal leaves it there.
@@ -315,7 +315,7 @@ describe("landing hero window, External side", () => {
   });
 
   it("closes the phone's Order details Sheet and its Cancel order confirmation when Forward flips the window", async () => {
-    const page = await openLanding(PHONE_VIEWPORT, { search: "?theme=internal-fkas-company" });
+    const page = await openLanding(PHONE_VIEWPORT, { search: "?theme=neutral-fkas-company" });
     const unlocked = await documentStyles(page);
     await page.getByRole("banner").getByRole("link", { name: "Fuse" }).click();
     await expect.poll(() => new URL(page.url()).search).toBe("");
@@ -328,12 +328,12 @@ describe("landing hero window, External side", () => {
     await page.getByRole("menuitem", { name: "Cancel order…" }).click();
     await page.getByRole("alertdialog", { name: /^Cancel order/u }).waitFor();
 
-    // The route, not a control, moves the variant: `/` opens on External.
+    // The route, not a control, moves the identity: `/` opens on Branded.
     await page.goForward();
     await expect.poll(() => new URL(page.url()).search).toBe("");
     await expectReachable(page, brandSite(page, ELMERA.site), unlocked);
 
-    await showSide(page, "Internal");
+    await showSide(page, "Neutral");
     await expect.poll(async () => isInert(app)).toBe(false);
     await expectReachable(page, app, unlocked);
     await row(app, "Jonas Eide").click();
@@ -349,7 +349,7 @@ describe("landing hero window, External side", () => {
 
   it("closes Order search's Columns menu and Rows per page Select when Forward flips the window, and keeps the table's state and layout", async () => {
     const page = await openLanding(DESKTOP_VIEWPORT, {
-      search: "?theme=internal-fkas-company",
+      search: "?theme=neutral-fkas-company",
       reducedMotion: "no-preference",
     });
     const unlocked = await documentStyles(page);
@@ -492,16 +492,16 @@ describe("landing hero window, External side", () => {
     // On a phone the order opens as a Sheet: the first flip closes it.
     await page.getByRole("dialog").waitFor();
 
-    await pressSwitchPastModal(page, "External");
+    await pressSwitchPastModal(page, "Branded");
     const site = brandSite(page, ELMERA.site);
     await expectReachable(page, site, unlocked);
-    await expectFocusOnSwitch(page, "External");
+    await expectFocusOnSwitch(page, "Branded");
     await site.getByRole("button", { name: ELMERA.menuButton, exact: true }).click();
     await page.getByRole("dialog", { name: ELMERA.menuButton }).waitFor();
 
-    await pressSwitchPastModal(page, "Internal");
+    await pressSwitchPastModal(page, "Neutral");
     await expectReachable(page, app, unlocked);
-    await expectFocusOnSwitch(page, "Internal");
+    await expectFocusOnSwitch(page, "Neutral");
     expect(await row(app, "Jonas Eide").getAttribute("aria-current")).toBe("true");
     await page.context().close();
   });
@@ -510,7 +510,7 @@ describe("landing hero window, External side", () => {
     const page = await openLanding(DESKTOP_VIEWPORT, { reducedMotion: "reduce" });
     // A frozen clock holds any transition the flip starts, however late the reads below run.
     await freezeAnimations(page);
-    await showSide(page, "External");
+    await showSide(page, "Branded");
     const site = brandSite(page, ELMERA.site);
     await site.getByRole("heading", { level: 1 }).waitFor();
     expect(await sideTransitions(dashboard(page))).toEqual([]);
@@ -524,7 +524,7 @@ describe("landing hero window, External side", () => {
     const page = await openLanding(DESKTOP_VIEWPORT, { reducedMotion: "no-preference" });
     const app = dashboard(page);
     await freezeAnimations(page);
-    await showSide(page, "External");
+    await showSide(page, "Branded");
     const site = brandSite(page, ELMERA.site);
     // The flip re-themes the page under the circle reveal, which commits the new side once the
     // view transition has captured the old one.
@@ -540,7 +540,7 @@ describe("landing hero window, External side", () => {
 
     // The reversal starts from the opacity the exit reached: no jump in either direction. The
     // frozen reveal keeps the page out of hit testing, as any reveal does while it plays, so the
-    // reversal comes from the keyboard: the flip left focus on the pressed External button.
+    // reversal comes from the keyboard: the flip left focus on the pressed Branded button.
     await page.keyboard.press("ArrowLeft");
     await page.keyboard.press("Space");
     await expect.poll(async () => isInert(app)).toBe(false);
@@ -554,28 +554,28 @@ describe("landing hero window, External side", () => {
   });
 });
 
-describe("landing hero window, opening on External", () => {
-  it("leaves the Dashboard out until Internal first shows, then keeps it and its state through a round trip", async () => {
+describe("landing hero window, opening on Branded", () => {
+  it("leaves the Dashboard out until Neutral first shows, then keeps it and its state through a round trip", async () => {
     const page = await openLanding(DESKTOP_VIEWPORT, { search: "" });
-    expect(await shownSide(page)).toBe("External");
+    expect(await shownSide(page)).toBe("Branded");
     expect(await dashboard(page).count()).toBe(0);
 
-    await showSide(page, "Internal");
+    await showSide(page, "Neutral");
     const app = dashboard(page);
     const scope = app.getByRole("group", { name: "Orders to show" });
     await scope.getByRole("button", { name: "All", exact: true }).click();
     await expect.poll(async () => scope.getByRole("button", { pressed: true }).textContent()).toBe("All");
 
-    await showSide(page, "External");
+    await showSide(page, "Branded");
     await expect.poll(async () => isInert(app)).toBe(true);
-    await showSide(page, "Internal");
+    await showSide(page, "Neutral");
     await expect.poll(async () => isInert(app)).toBe(false);
     expect(await scope.getByRole("button", { pressed: true }).textContent()).toBe("All");
     await page.context().close();
   });
 });
 
-describe("landing hero window, opening on Internal", () => {
+describe("landing hero window, opening on Neutral", () => {
   it("keeps the server's Dashboard on screen while its code is still loading, until it hydrates", async () => {
     let held: HeldChunks | undefined;
     const page = await openLanding(DESKTOP_VIEWPORT, {
@@ -589,7 +589,7 @@ describe("landing hero window, opening on Internal", () => {
         await target.addInitScript(() => {
           new MutationObserver(() => {
             const region = document.querySelector("[role='region'][aria-label='Dashboard']");
-            if (region?.querySelector("[data-theme-variant]") === null) {
+            if (region?.querySelector("[data-theme-identity]") === null) {
               document.documentElement.dataset.dashboardEmptied = "";
             }
           }).observe(document, { childList: true, subtree: true });

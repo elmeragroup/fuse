@@ -26,50 +26,50 @@ describe("buildStudioSeeds", () => {
 
   // Each expected value is copied from the theme source module named beside it.
   it("holds the declared CSS and the resolved value of a literal", () => {
-    // external-palettes.ts, fkas: radius 0.75rem, 12px at the 16px root.
-    expect(seed("external-fkas-private").light.radius).toEqual({ css: "0.75rem", value: "12px" });
-    // external-dark-palettes.ts, fkas: secondary oklch(0.8009687 0.1043361 49.42), #F5AA81.
-    expect(seed("external-fkas-private").dark.secondary).toEqual({
+    // brand-palettes.ts, fkas: radius 0.75rem, 12px at the 16px root.
+    expect(seed("branded-fkas-private").light.radius).toEqual({ css: "0.75rem", value: "12px" });
+    // brand-dark-palettes.ts, fkas: secondary oklch(0.8009687 0.1043361 49.42), #F5AA81.
+    expect(seed("branded-fkas-private").dark.secondary).toEqual({
       css: "oklch(0.8009687 0.1043361 49.42)",
       value: "#F5AA81",
     });
-    // internal-dark-palette.ts: primary oklch(0.922 0 0).
-    expect(seed("internal-elma-private").dark.primary.css).toBe("oklch(0.922 0 0)");
+    // neutral-dark-palette.ts: primary oklch(0.922 0 0).
+    expect(seed("neutral-elma-private").dark.primary.css).toBe("oklch(0.922 0 0)");
   });
 
   // Unit under test: buildStudioSeeds' alias entries. Oracle: literals pinned from the theme
   // source modules, never another entry of the same seed run.
   it("holds an alias as its var() and the value at the end of its chain", () => {
-    const internal = seed("internal-fkas-private").light;
+    const neutral = seed("neutral-fkas-private").light;
     // defaults.ts: button-outline var(--border), and border NEUTRAL_LINE, oklch(0.9219 0 0).
     // L 0.9219 is linear 0.9219³ = 0.7835, sRGB-encoded 0.8980, the byte 229: #E5E5E5.
-    expect(internal["button-outline"]).toEqual({ css: "var(--border)", value: "#E5E5E5" });
+    expect(neutral["button-outline"]).toEqual({ css: "var(--border)", value: "#E5E5E5" });
     // defaults.ts: radius-button var(--radius), and radius 0.5rem, 8px at the 16px root.
-    expect(internal["radius-button"]).toEqual({ css: "var(--radius)", value: "8px" });
+    expect(neutral["radius-button"]).toEqual({ css: "var(--radius)", value: "8px" });
     // Themes name no fonts, so the seeds hold the docs' choice as family names: Inter body text in
-    // an internal theme, Roboto in an external one, and headings that follow the body font.
-    expect([internal["font-sans"], internal["font-heading"]]).toEqual([
+    // a neutral theme, Roboto in a branded one, and headings that follow the body font.
+    expect([neutral["font-sans"], neutral["font-heading"]]).toEqual([
       { css: "Inter, ui-sans-serif, system-ui, sans-serif", value: "Inter" },
       { css: "var(--font-sans)", value: "Inter" },
     ]);
-    expect(seed("external-fkas-private").light["font-sans"]).toEqual({
+    expect(seed("branded-fkas-private").light["font-sans"]).toEqual({
       css: "Roboto, ui-sans-serif, system-ui, sans-serif",
       value: "Roboto",
     });
-    expect(internal["selection-title-weight"]).toEqual({ css: "400", value: "400" });
+    expect(neutral["selection-title-weight"]).toEqual({ css: "400", value: "400" });
   });
 
   it("holds a mixed role as the color-mix() the theme rules declare", () => {
     for (const scheme of ["light", "dark"] as const) {
-      expect(seed("external-elma-private")[scheme]["secondary-hover"].css).toBe(
+      expect(seed("branded-elma-private")[scheme]["secondary-hover"].css).toBe(
         "color-mix(in oklch, var(--secondary), var(--foreground) 5%)"
       );
     }
   });
 
   it("keeps a light-only key's light declaration in dark", () => {
-    // external-palettes.ts, fkas: radius 0.75rem, which the dark palette keeps.
-    expect(seed("external-fkas-private").dark.radius.css).toBe("0.75rem");
+    // brand-palettes.ts, fkas: radius 0.75rem, which the dark palette keeps.
+    expect(seed("branded-fkas-private").dark.radius.css).toBe("0.75rem");
   });
 });
 

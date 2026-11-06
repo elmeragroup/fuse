@@ -6,7 +6,7 @@ import { MAX_SHARE_LENGTH, MAX_VALUE_LENGTH } from "../../src/studio/lib/size-po
 import { STUDIO_TOKEN_NAMES, TOKEN_TABLE, isLightOnly } from "../../src/studio/lib/tokens";
 
 const EDITED: StudioDocument = {
-  theme: { variant: "external", brand: "elma", segment: "private" },
+  theme: { identity: "branded", brand: "elma", segment: "private" },
   overrides: { light: { primary: "#ff0000" }, dark: {}, shared: { radius: "1rem" } },
 };
 
@@ -26,12 +26,12 @@ function shareText(document: StudioDocument): string {
 
 /** A light payload holding one edit, for the decoder's per-kind checks. */
 function lightEdit(name: string, css: string): string {
-  return `1.${payload(JSON.stringify({ t: "external-elma-private", l: { [name]: css } }))}`;
+  return `1.${payload(JSON.stringify({ t: "branded-elma-private", l: { [name]: css } }))}`;
 }
 
 /** A shared payload holding one edit of a light-only token. */
 function sharedEdit(name: string, css: string): string {
-  return `1.${payload(JSON.stringify({ t: "external-elma-private", s: { [name]: css } }))}`;
+  return `1.${payload(JSON.stringify({ t: "branded-elma-private", s: { [name]: css } }))}`;
 }
 
 /**
@@ -49,21 +49,21 @@ const TOO_LARGE: StudioDocument = (() => {
 
 describe("encodeShare", () => {
   it("writes the version, then the compact payload as unpadded base64url", () => {
-    // The base64url of {"t":"external-elma-private","l":{"primary":"#ff0000"},"s":{"radius":"1rem"}},
+    // The base64url of {"t":"branded-elma-private","l":{"primary":"#ff0000"},"s":{"radius":"1rem"}},
     // produced with `base64 | tr '+/' '-_' | tr -d '='`. Empty override groups are left out.
     expect(shareText(EDITED)).toBe(
-      "1.eyJ0IjoiZXh0ZXJuYWwtZWxtYS1wcml2YXRlIiwibCI6eyJwcmltYXJ5IjoiI2ZmMDAwMCJ9LCJzIjp7InJhZGl1cyI6IjFyZW0ifX0"
+      "1.eyJ0IjoiYnJhbmRlZC1lbG1hLXByaXZhdGUiLCJsIjp7InByaW1hcnkiOiIjZmYwMDAwIn0sInMiOnsicmFkaXVzIjoiMXJlbSJ9fQ"
     );
   });
 
   it("carries non-ASCII text in a value as UTF-8", () => {
     const document: StudioDocument = {
-      theme: { variant: "internal", brand: "fkas", segment: "private" },
+      theme: { identity: "neutral", brand: "fkas", segment: "private" },
       overrides: { light: {}, dark: { "font-sans": '"Søk", serif' }, shared: {} },
     };
-    // {"t":"internal-fkas-private","d":{"font-sans":"\"Søk\", serif"}}, ø as the bytes C3 B8.
+    // {"t":"neutral-fkas-private","d":{"font-sans":"\"Søk\", serif"}}, ø as the bytes C3 B8.
     expect(shareText(document)).toBe(
-      "1.eyJ0IjoiaW50ZXJuYWwtZmthcy1wcml2YXRlIiwiZCI6eyJmb250LXNhbnMiOiJcIlPDuGtcIiwgc2VyaWYifX0"
+      "1.eyJ0IjoibmV1dHJhbC1ma2FzLXByaXZhdGUiLCJkIjp7ImZvbnQtc2FucyI6IlwiU8O4a1wiLCBzZXJpZiJ9fQ"
     );
     expect(decodeShare(shareText(document))).toEqual(document);
   });
@@ -102,26 +102,26 @@ describe("decodeShare", () => {
     ["a payload that is not base64url", "1.%%%"],
     ["a payload that is not JSON", `1.${payload("not json")}`],
     ["a JSON array", `1.${payload("[1,2]")}`],
-    ["an old version", `0.${payload('{"t":"external-elma-private"}')}`],
-    ["a future version", `2.${payload('{"t":"external-elma-private"}')}`],
-    ["an illegal theme", `1.${payload('{"t":"external-elma-company2"}')}`],
+    ["an old version", `0.${payload('{"t":"branded-elma-private"}')}`],
+    ["a future version", `2.${payload('{"t":"branded-elma-private"}')}`],
+    ["an illegal theme", `1.${payload('{"t":"branded-elma-company2"}')}`],
     ["a missing theme", `1.${payload('{"l":{"primary":"#ff0000"}}')}`],
-    ["an unknown token", `1.${payload('{"t":"external-elma-private","l":{"brand-new":"#ff0000"}}')}`],
+    ["an unknown token", `1.${payload('{"t":"branded-elma-private","l":{"brand-new":"#ff0000"}}')}`],
     [
       "a light-only token in a scheme group",
-      `1.${payload('{"t":"external-elma-private","d":{"radius":"1rem"}}')}`,
+      `1.${payload('{"t":"branded-elma-private","d":{"radius":"1rem"}}')}`,
     ],
     [
       "a scheme token in the shared group",
-      `1.${payload('{"t":"external-elma-private","s":{"primary":"#f00"}}')}`,
+      `1.${payload('{"t":"branded-elma-private","s":{"primary":"#f00"}}')}`,
     ],
-    ["a value that is not a string", `1.${payload('{"t":"external-elma-private","l":{"primary":1}}')}`],
+    ["a value that is not a string", `1.${payload('{"t":"branded-elma-private","l":{"primary":1}}')}`],
     [
       "a value that ends the declaration",
-      `1.${payload('{"t":"external-elma-private","l":{"primary":"red;color:blue"}}')}`,
+      `1.${payload('{"t":"branded-elma-private","l":{"primary":"red;color:blue"}}')}`,
     ],
-    ["a value that opens a block", `1.${payload('{"t":"external-elma-private","l":{"primary":"red}a{"}}')}`],
-    ["an empty value", `1.${payload('{"t":"external-elma-private","l":{"primary":""}}')}`],
+    ["a value that opens a block", `1.${payload('{"t":"branded-elma-private","l":{"primary":"red}a{"}}')}`],
+    ["an empty value", `1.${payload('{"t":"branded-elma-private","l":{"primary":""}}')}`],
   ])("reads %s as no state", (_label, text) => {
     expect(decodeShare(text)).toBeUndefined();
   });
@@ -152,7 +152,7 @@ describe("decodeShare", () => {
   });
 
   it("reads a hash longer than the limit as no state, before decoding it", () => {
-    const padded = `1.${payload(`{"t":"external-elma-private","l":{"primary":"#ff0000"},"x":"${"a".repeat(MAX_SHARE_LENGTH)}"}`)}`;
+    const padded = `1.${payload(`{"t":"branded-elma-private","l":{"primary":"#ff0000"},"x":"${"a".repeat(MAX_SHARE_LENGTH)}"}`)}`;
     expect(padded.length).toBeGreaterThan(MAX_SHARE_LENGTH);
     expect(decodeShare(padded)).toBeUndefined();
   });

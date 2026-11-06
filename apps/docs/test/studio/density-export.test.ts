@@ -4,7 +4,7 @@ import { NO_OVERRIDES } from "../../src/studio/lib/edits";
 import type { StudioDocument, StudioOverrides } from "../../src/studio/lib/edits";
 import { exportCss } from "../../src/studio/lib/export-css";
 
-const THEME = { variant: "external", brand: "elma", segment: "private" } as const;
+const THEME = { identity: "branded", brand: "elma", segment: "private" } as const;
 
 function exported(overrides: Partial<StudioOverrides>): string {
   const document: StudioDocument = { theme: THEME, overrides: { ...NO_OVERRIDES, ...overrides } };
@@ -51,9 +51,9 @@ describe("exportCss density section", () => {
       .toBe(`/* After the Fuse stylesheet, on the element that carries the theme attributes. */
 
 /* Both schemes: a dark palette keeps these from light. */
-[data-theme-variant="external"][data-theme-brand="elma"][data-theme-segment="private"],
-[data-theme="dark"] [data-theme-variant="external"][data-theme-brand="elma"][data-theme-segment="private"],
-[data-theme-variant="external"][data-theme-brand="elma"][data-theme-segment="private"][data-theme="dark"] {
+[data-theme-identity="branded"][data-theme-brand="elma"][data-theme-segment="private"],
+[data-theme="dark"] [data-theme-identity="branded"][data-theme-brand="elma"][data-theme-segment="private"],
+[data-theme-identity="branded"][data-theme-brand="elma"][data-theme-segment="private"][data-theme="dark"] {
   --radius: 1rem;
 }
 

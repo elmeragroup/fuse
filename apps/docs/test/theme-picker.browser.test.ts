@@ -20,12 +20,12 @@ function choice(menu: Locator, name: string): Locator {
   return menu.getByRole("menuitemradio", { name, exact: true });
 }
 
-async function expectPreview(page: Page, variant: string, brand: string, segment: string): Promise<void> {
+async function expectPreview(page: Page, identity: string, brand: string, segment: string): Promise<void> {
   // DOM audit: the preview stage and document own distinct theme attribute triples.
   await expect
     .poll(() => readThemeAttributes(page.locator("[data-demo-stage]").first()))
     .toEqual({
-      variant,
+      identity,
       brand,
       segment,
     });
@@ -33,7 +33,7 @@ async function expectPreview(page: Page, variant: string, brand: string, segment
   await expect
     .poll(() => readThemeAttributes(page.locator("html")))
     .toEqual({
-      variant: "internal",
+      identity: "neutral",
       brand: "elma",
       segment: "private",
     });
@@ -41,7 +41,7 @@ async function expectPreview(page: Page, variant: string, brand: string, segment
 
 /**
  * The faces the docs chrome and a demo stage draw: a nav link, and a stage button. The site draws
- * Inter whatever theme it shows, and a stage draws its variant's face.
+ * Inter whatever theme it shows, and a stage draws its identity's face.
  */
 async function drawnFaces(page: Page): Promise<{ nav: string; stage: string }> {
   return {
@@ -58,10 +58,10 @@ describe("docs theme settings", () => {
   it("labels each group and changes previews while the menu keeps the document theme", async () => {
     const page = await browser().newPage({ colorScheme: "light" });
     const menu = await openSettings(page);
-    for (const name of ["Appearance", "Variant", "Brand", "Segment"]) {
+    for (const name of ["Appearance", "Identity", "Brand", "Segment"]) {
       expect(await menu.getByRole("group", { name, exact: true }).count()).toBe(1);
     }
-    await expectPreview(page, "internal", "fkas", "private");
+    await expectPreview(page, "neutral", "fkas", "private");
     expect(await drawnFaces(page)).toEqual({ nav: "--font-inter", stage: "--font-inter" });
     const initialPaint = await menu.evaluate((element) => ({
       background: getComputedStyle(element).backgroundColor,
@@ -69,10 +69,10 @@ describe("docs theme settings", () => {
       brand: getComputedStyle(element).getPropertyValue("--brand"),
       height: getComputedStyle(element).getPropertyValue("--control-h-sm"),
     }));
-    await choice(menu, "External").click();
+    await choice(menu, "Branded").click();
     await choice(menu, "TrøndelagKraft").click();
     await choice(menu, "Company").click();
-    await expectPreview(page, "external", "tkas", "company");
+    await expectPreview(page, "branded", "tkas", "company");
     await expect.poll(() => drawnFaces(page)).toEqual({ nav: "--font-inter", stage: "--font-roboto" });
     expect(await menu.isVisible()).toBe(true);
     await expectFocused(choice(menu, "Company"));
@@ -93,24 +93,24 @@ describe("docs theme settings", () => {
     const page = await browser().newPage({ colorScheme: "light" });
     const menu = await openSettings(page);
     await choice(menu, "Dark").click();
-    await choice(menu, "External").click();
+    await choice(menu, "Branded").click();
     await choice(menu, "Fjordkraft Företag").click();
-    await expectPreview(page, "external", "fkab", "company");
+    await expectPreview(page, "branded", "fkab", "company");
     expect(await choice(menu, "Private").getAttribute("aria-disabled")).toBe("true");
     expect(await choice(menu, "Company").getAttribute("aria-checked")).toBe("true");
     expect(await menu.getByText("This brand supports Company only.", { exact: false }).count()).toBe(1);
     await choice(menu, "Private").focus();
     await page.keyboard.press("Enter");
     await page.keyboard.press("Space");
-    await expectPreview(page, "external", "fkab", "company");
+    await expectPreview(page, "branded", "fkab", "company");
     await choice(menu, "Telinet").click();
-    await expectPreview(page, "external", "fkse", "private");
+    await expectPreview(page, "branded", "fkse", "private");
     expect(await choice(menu, "Company").getAttribute("aria-disabled")).toBe("true");
     await choice(menu, "Fjordkraft").click();
     expect(await choice(menu, "Company").getAttribute("aria-disabled")).not.toBe("true");
     await choice(menu, "Company").click();
     await menu.getByRole("menuitem", { name: "Reset preview theme", exact: true }).click();
-    await expectPreview(page, "internal", "fkas", "private");
+    await expectPreview(page, "neutral", "fkas", "private");
     expect(await menu.isVisible()).toBe(true);
     expect(await choice(menu, "Dark").getAttribute("aria-checked")).toBe("true");
     expect(await page.locator("html").getAttribute("data-theme")).toBe("dark");

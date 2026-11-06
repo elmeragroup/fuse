@@ -20,6 +20,8 @@ popup spreads `definedProps(props)` so `undefined` cannot erase automatic wiring
 
 Style components with role tokens and shared recipes. Theme layers own colors.
 Declare each part's density role in `density-roles.ts`; role metrics follow document density, not subtree theming.
+Derive theme axes from `THEME_AXES`; a document names its density through `documentAttributes`.
+Take corners from the identity's set in `theme/corners/`, never from a palette layer.
 Use Field for label/error wiring and the shared focus, overlay and locale owners.
 Parse, convert, mix and measure colors through `@elmeragroup/color`, never ad hoc.
 Keep explicit string overrides ahead of dictionary defaults.

@@ -10,7 +10,7 @@ import { cornerRadius, RADIUS_XL } from "../../../test/inner-corner-specimens";
 import { withLocale } from "../../../test/locale-matrix";
 import { bySlot } from "../../../test/sidebar-browser-fixtures";
 import {
-  fkasExternal,
+  fkasBranded,
   fkasPrivate,
   metricPx,
   px,
@@ -55,10 +55,10 @@ async function openPalette(): Promise<HTMLElement> {
   return roleNamed("dialog", "Command palette");
 }
 
-/** One internal theme, whose row corners round to 0, and one external, whose corners are positive. */
+/** One neutral theme, whose row corners round to 0, and one branded, whose corners are positive. */
 const GEOMETRY_CASES = [
-  ["internal", fkasPrivate, fkasExternal],
-  ["fkas", fkasExternal, fkasPrivate],
+  ["neutral", fkasPrivate, fkasBranded],
+  ["fkas", fkasBranded, fkasPrivate],
 ] as const;
 
 describe("Command.Content geometry", () => {

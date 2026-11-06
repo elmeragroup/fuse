@@ -10,7 +10,7 @@ import {
   CONTROL_SM,
   CONTROL_XS,
   FIXED_CONTROL_TYPE,
-  fkasExternal,
+  fkasBranded,
   px,
   renderThemed,
   roleNamed,
@@ -591,7 +591,7 @@ describe("control size: density scope", () => {
             </Select.Trigger>
           </Select.Root>
         </div>
-        <ThemeScope theme={fkasExternal}>
+        <ThemeScope theme={fkasBranded}>
           <Button>scoped button</Button>
           <Toggle>scoped toggle</Toggle>
           <Select.Root>

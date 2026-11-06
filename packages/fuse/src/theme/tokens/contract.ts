@@ -1,3 +1,5 @@
+import type { ThemeIdentity } from "../theme-input";
+
 export const TOKEN_NAMES = [
   "background",
   "foreground",
@@ -546,7 +548,7 @@ export function isColorTokenName(name: string): name is ColorTokenName {
 /**
  * What each contract token is for, in one or two sentences for a designer picking a variable.
  * Each names the rule a designer could break, where the code states one, such as a pair that
- * is not text-grade or a value that turns transparent in a variant. Exporters, such as the
+ * is not text-grade or a value that turns transparent in an identity. Exporters, such as the
  * Figma sync, and the docs token list show it. A new token without one fails to compile. No
  * description holds `& < > " '`, which the Figma sync refuses (`descriptionProblem` in
  * `packages/fuse-figma/src/variable-set.ts`).
@@ -554,7 +556,7 @@ export function isColorTokenName(name: string): name is ColorTokenName {
 // oxlint-disable-next-line elmera/no-raw-class-map -- the values are prose for designers, not classes; "text-grade" reads as a text- utility
 export const TOKEN_DESCRIPTIONS = {
   background:
-    "The page fill. External light themes tint it with the brand, so a card stands out on it by its fill.",
+    "The page fill. Branded light themes tint it with the brand, so a card stands out on it by its fill.",
   foreground:
     "Body text and icons on the page, text-grade on background and muted. Tooltips fill with it and set their text in background.",
   card: "The fill of Card, a card Accordion item, selection rows, checkboxes, field boxes and the active Tabs trigger. Set text on it in card-foreground.",
@@ -566,7 +568,7 @@ export const TOKEN_DESCRIPTIONS = {
     "The fill of anchored popups, such as Popover, Select and menu lists. Set text on it in popover-foreground.",
   "popover-foreground": "Text and icons in anchored popups, on popover.",
   dialog:
-    "The fill of Dialog, AlertDialog and Sheet. External light themes fill it with the page tint, and internal and dark themes use popover.",
+    "The fill of Dialog, AlertDialog and Sheet. Branded light themes fill it with the page tint, and neutral and dark themes use popover.",
   "dialog-foreground": "Text and icons in Dialog, AlertDialog and Sheet, text-grade on dialog.",
   muted:
     "A quiet fill for hover tints, the Tabs list track, Skeleton and Kbd, and the edge of a disabled GridList checkbox. Text on it takes foreground or muted-foreground.",
@@ -631,30 +633,30 @@ export const TOKEN_DESCRIPTIONS = {
     "The border of text fields, Select, NumberField and Toggle, and the fill of a disabled field at reduced alpha. Light input can fall under 3:1 on the page, so selection controls draw their edge in muted-foreground.",
   ring: "The focus ring, a neutral grey that holds 3:1 on the page, cards, dialog and muted. Status Toasts, the info and warning Alerts and default Accordion items swap in their soft foreground.",
   "card-border":
-    "The edge of a Card and a card Accordion item. Internal themes draw it in border, and external themes make it transparent.",
+    "The edge of a Card and a card Accordion item. Neutral themes draw it in border, and branded themes make it transparent.",
   "card-section-divider":
-    "The 1px line between stacked Card.Section parts, edge to edge. Internal themes draw it in border, and external themes in the page background, so a white card reads as segments.",
+    "The 1px line between stacked Card.Section parts, edge to edge. Neutral themes draw it in border, and branded themes in the page background, so a white card reads as segments.",
   "card-shadow":
-    "The color of the small shadow under a Card. Internal themes cast it in black at 5%, and external themes make it transparent.",
+    "The color of the small shadow under a Card. Neutral themes cast it in black at 5%, and branded themes make it transparent.",
   "button-outline":
-    "The border of the outline Button, at button-outline-width. Internal themes draw it in border, and external themes in foreground.",
+    "The border of the outline Button, at button-outline-width. Neutral themes draw it in border, and branded themes in foreground.",
   "selection-border":
-    "The resting edge of a selection row, RadioItem or CheckboxItem. Internal themes draw it in border, and external themes make it transparent.",
+    "The resting edge of a selection row, RadioItem or CheckboxItem. Neutral themes draw it in border, and branded themes make it transparent.",
   "selection-checked-border":
-    "The edge of a checked selection row. Internal themes draw it in primary, and external themes keep the resting edge, so the control alone shows the choice.",
+    "The edge of a checked selection row. Neutral themes draw it in primary, and branded themes keep the resting edge, so the control alone shows the choice.",
   "selection-divider":
-    "The line between two stacked selection rows. Internal themes draw the edge of the row itself, and external themes a border line.",
+    "The line between two stacked selection rows. Neutral themes draw the edge of the row itself, and branded themes a border line.",
   "selection-checked-divider": "The line above and below a checked row in a stack of selection rows.",
   "selection-disabled-background":
-    "The fill of a disabled selection row. Internal themes fill it with muted, and external themes keep the card fill.",
+    "The fill of a disabled selection row. Neutral themes fill it with muted, and branded themes keep the card fill.",
   "selection-disabled-hatch":
-    "The stripe color of the hatch on a disabled selection row. Internal themes stripe it in a faint black, and external themes make it transparent.",
+    "The stripe color of the hatch on a disabled selection row. Neutral themes stripe it in a faint black, and branded themes make it transparent.",
   "selection-disabled-foreground":
-    "The label text of a disabled selection row. It is not text-grade. Internal themes set it in foreground, and external themes in muted-foreground.",
+    "The label text of a disabled selection row. It is not text-grade. Neutral themes set it in foreground, and branded themes in muted-foreground.",
   "toggle-pressed":
-    "The fill of a pressed Toggle and ToggleGroup item. Internal themes fill it with muted, and external themes with primary, so it stands apart from the tinted page. Set text on it in toggle-pressed-foreground.",
+    "The fill of a pressed Toggle and ToggleGroup item. Neutral themes fill it with muted, and branded themes with primary, so it stands apart from the tinted page. Set text on it in toggle-pressed-foreground.",
   "toggle-pressed-foreground":
-    "The label text and icons of a pressed Toggle and ToggleGroup item, text-grade on toggle-pressed. Internal themes set it in foreground, and external themes in primary-foreground.",
+    "The label text and icons of a pressed Toggle and ToggleGroup item, text-grade on toggle-pressed. Neutral themes set it in foreground, and branded themes in primary-foreground.",
   sidebar: "The fill of the Sidebar. Set text on it in sidebar-foreground.",
   "sidebar-foreground": "Text and icons on the Sidebar.",
   "sidebar-accent":
@@ -738,48 +740,48 @@ export const TOKEN_DESCRIPTIONS = {
   radius:
     "The corner radius of the theme, the corner of cards, selection rows and fields. The radius-xs to radius-xl rungs step around it.",
   "radius-button":
-    "The corner of Button. Internal themes use radius, and external brands can set their own, as external Fjordkraft does.",
+    "The corner of Button. Neutral themes use radius, and branded brands can set their own, as branded Fjordkraft does.",
   "radius-field":
-    "The corner of every field box, such as Input, Select and Textarea. It follows radius in every variant.",
+    "The corner of every field box, such as Input, Select and Textarea. It follows radius in every corner set.",
   "radius-step":
-    "The spacing of the radius rungs, which differs between internal and external themes. It switches the corner rules between the variants, so no layer rounds with it.",
+    "The spacing of the radius rungs, which differs between neutral and branded themes. It switches the corner rules between the two corner sets, so no layer rounds with it.",
   "button-outline-width":
-    "The border width of the outline Button, which differs between internal and external themes.",
+    "The border width of the outline Button, which differs between neutral and branded themes.",
   "selection-title-weight":
-    "The font weight of a selection row title, which differs between internal and external themes.",
+    "The font weight of a selection row title, which differs between neutral and branded themes.",
   "paragraph-leading-sm":
-    "The line height of a small Text (size sm, 14px). Internal themes keep the relaxed 1.625 ratio, and external themes set the 14/20 paragraph style.",
+    "The line height of a small Text (size sm, 14px). Neutral themes keep the relaxed 1.625 ratio, and branded themes set the 14/20 paragraph style.",
   "paragraph-leading-base":
-    "The line height of a default-size Text (16px). Internal themes keep the relaxed 1.625 ratio, and external themes set the 16/22 paragraph style.",
+    "The line height of a default-size Text (16px). Neutral themes keep the relaxed 1.625 ratio, and branded themes set the 16/22 paragraph style.",
   "paragraph-leading-lg":
-    "The line height of a large Text (size lg, 18px). Internal themes keep the relaxed 1.625 ratio, and external themes set the 18/24 paragraph style.",
+    "The line height of a large Text (size lg, 18px). Neutral themes keep the relaxed 1.625 ratio, and branded themes set the 18/24 paragraph style.",
   "heading-1-size":
-    "The font size of a level 1 Heading without a size prop. Internal themes keep 24px, and external themes set the 24/32 heading small style.",
+    "The font size of a level 1 Heading without a size prop. Neutral themes keep 24px, and branded themes set the 24/32 heading small style.",
   "heading-1-leading":
-    "The line height of a level 1 Heading without a size prop. Internal themes keep the snug 1.375 ratio, and external themes set the 24/32 heading small style.",
+    "The line height of a level 1 Heading without a size prop. Neutral themes keep the snug 1.375 ratio, and branded themes set the 24/32 heading small style.",
   "heading-1-weight":
-    "The font weight of a level 1 Heading without a font prop. Internal themes keep 500, and external themes set the bold heading small style.",
+    "The font weight of a level 1 Heading without a font prop. Neutral themes keep 500, and branded themes set the bold heading small style.",
   "heading-2-size":
-    "The font size of a level 2 Heading without a size prop. Internal themes keep 18px, and external themes set the 20/32 heading xsmall style.",
+    "The font size of a level 2 Heading without a size prop. Neutral themes keep 18px, and branded themes set the 20/32 heading xsmall style.",
   "heading-2-leading":
-    "The line height of a level 2 Heading without a size prop. Internal themes keep the snug 1.375 ratio, and external themes set the 20/32 heading xsmall style.",
+    "The line height of a level 2 Heading without a size prop. Neutral themes keep the snug 1.375 ratio, and branded themes set the 20/32 heading xsmall style.",
   "heading-2-weight":
-    "The font weight of a level 2 Heading without a font prop. Internal themes keep 500, and external themes set the bold heading xsmall style.",
+    "The font weight of a level 2 Heading without a font prop. Neutral themes keep 500, and branded themes set the bold heading xsmall style.",
   "heading-3-size":
-    "The font size of a level 3 Heading without a size prop. Internal themes keep 16px, and external themes set the 20/32 heading xsmall style.",
+    "The font size of a level 3 Heading without a size prop. Neutral themes keep 16px, and branded themes set the 20/32 heading xsmall style.",
   "heading-3-leading":
-    "The line height of a level 3 Heading without a size prop. Internal themes keep the snug 1.375 ratio, and external themes set the 20/32 heading xsmall style.",
+    "The line height of a level 3 Heading without a size prop. Neutral themes keep the snug 1.375 ratio, and branded themes set the 20/32 heading xsmall style.",
   "heading-3-weight":
-    "The font weight of a level 3 Heading without a font prop. Internal themes keep 500, and external themes set the bold heading xsmall style.",
+    "The font weight of a level 3 Heading without a font prop. Neutral themes keep 500, and branded themes set the bold heading xsmall style.",
 } as const satisfies Record<TokenName, string>;
 
 /**
- * The roles a light theme rule resets. They are every key the external variant layer, an
- * external palette or a segment delta can assign, plus each derived role computed from them
+ * The roles a light theme rule resets. They are every key the branded identity layer, a
+ * brand palette or a segment delta can assign, plus each derived role computed from them
  * and each alias that reads one of them. `--sidebar-ring` defaults to `var(--ring)`, so the
  * rule restates it and the alias resolves against the scope's own ring.
  */
-export const EXTERNAL_RESET_KEYS = [
+export const LIGHT_RESET_KEYS = [
   "background",
   "foreground",
   "card",
@@ -819,10 +821,6 @@ export const EXTERNAL_RESET_KEYS = [
   "toggle-pressed",
   "toggle-pressed-foreground",
   "sidebar-ring",
-  "radius",
-  "radius-button",
-  "radius-field",
-  "radius-step",
   "button-outline-width",
   "selection-title-weight",
   "paragraph-leading-sm",
@@ -839,9 +837,9 @@ export const EXTERNAL_RESET_KEYS = [
   "heading-3-weight",
 ] as const;
 
-export type ExternalResetKey = (typeof EXTERNAL_RESET_KEYS)[number];
+export type LightResetKey = (typeof LIGHT_RESET_KEYS)[number];
 
-export const MUST_OVERRIDE_EXTERNAL = [
+const MUST_OVERRIDE_BRANDED = [
   "background",
   "foreground",
   "card",
@@ -863,13 +861,22 @@ export const MUST_OVERRIDE_EXTERNAL = [
   "feature-foreground",
   "border",
   "input",
-  "radius",
-  "radius-button",
   "brand",
   "brand-foreground",
 ] as const;
 
-export const MUST_OVERRIDE_INTERNAL = ["brand", "brand-foreground"] as const;
+const MUST_OVERRIDE_NEUTRAL = ["brand", "brand-foreground"] as const;
+
+/**
+ * The roles each identity's light composition must supply through its non-default layers.
+ * Branded themes supply their brand, surface and interactive identity; neutral themes supply
+ * the brand pair and inherit the neutral system. Corners are no layer's obligation: the full
+ * `Corners` record type of `theme/corners/corners.ts` guarantees every set.
+ */
+export const MUST_OVERRIDE_BY_IDENTITY = {
+  neutral: MUST_OVERRIDE_NEUTRAL,
+  branded: MUST_OVERRIDE_BRANDED,
+} as const satisfies Record<ThemeIdentity, readonly TokenName[]>;
 
 /**
  * What a dark palette keeps from the light composition: geometry, typography, a Card's edge,
@@ -877,7 +884,7 @@ export const MUST_OVERRIDE_INTERNAL = ["brand", "brand-foreground"] as const;
  * divider colors, a disabled selection row's fill, stripe and label text colors and a pressed
  * Toggle's fill and label colors. Each color is
  * either an alias, such as `var(--border)`, `var(--muted)` or `var(--foreground)`, so it follows
- * the dark role it names, or a value that does not depend on the scheme, such as the external
+ * the dark role it names, or a value that does not depend on the scheme, such as the branded
  * card and row edges' zero alpha, the card shadow's black at 5% or the disabled row's black
  * stripe at 2% alpha.
  */
@@ -895,10 +902,6 @@ const LIGHT_ONLY_KEYS: ReadonlySet<TokenName> = new Set([
   "selection-disabled-foreground",
   "toggle-pressed",
   "toggle-pressed-foreground",
-  "radius",
-  "radius-button",
-  "radius-field",
-  "radius-step",
   "button-outline-width",
   "selection-title-weight",
   "paragraph-leading-sm",
@@ -924,10 +927,10 @@ const ALIAS_RESET_KEYS: ReadonlySet<TokenName> = new Set(["sidebar-ring"]);
 /**
  * The roles every dark palette must override. The `LIGHT_ONLY_KEYS` keep their light
  * values, the `ALIAS_RESET_KEYS` follow their target, and composition computes each derived
- * role, so those are the only `EXTERNAL_RESET_KEYS` entries a dark palette need not name.
+ * role, so those are the only `LIGHT_RESET_KEYS` entries a dark palette need not name.
  */
-export const MUST_OVERRIDE_DARK = EXTERNAL_RESET_KEYS.filter(
-  (key): key is Extract<ExternalResetKey, LayerTokenName> =>
+export const MUST_OVERRIDE_DARK = LIGHT_RESET_KEYS.filter(
+  (key): key is Extract<LightResetKey, LayerTokenName> =>
     isLayerTokenName(key) && !LIGHT_ONLY_KEYS.has(key) && !ALIAS_RESET_KEYS.has(key)
 );
 

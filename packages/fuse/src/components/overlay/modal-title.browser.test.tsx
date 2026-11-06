@@ -7,8 +7,8 @@ import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import { render } from "../../../test/browser-render";
 import {
-  fkasExternal,
-  guenExternal,
+  fkasBranded,
+  guenBranded,
   headingNamed,
   metricPx,
   px,
@@ -98,8 +98,8 @@ describe("modal title type", () => {
   // label text that `DENSITY_METRICS` defines.
   const themes = [
     // fkas sets its headings in Neo Sans; guen's heading font is the sans body font.
-    { name: "fkas", theme: fkasExternal },
-    { name: "guen", theme: guenExternal },
+    { name: "fkas", theme: fkasBranded },
+    { name: "guen", theme: guenBranded },
   ] as const;
   const densities = ["dense", "comfortable"] as const satisfies readonly Density[];
 
@@ -116,7 +116,7 @@ describe("modal title type", () => {
   }
 
   it.each(MODALS)("stands $label above comfortable control and label text", async (modal) => {
-    stampDocumentTheme(fkasExternal, "light");
+    stampDocumentTheme(fkasBranded, "light");
     stampDensity("comfortable");
     const fontSize = px(getComputedStyle(await openTitle(modal)).fontSize);
     expect(fontSize).toBeGreaterThan(metricPx("control-text", "comfortable"));
@@ -124,7 +124,7 @@ describe("modal title type", () => {
   });
 
   it("lets a className put Dialog.Title back on the 16px tight line", async () => {
-    stampDocumentTheme(fkasExternal, "light");
+    stampDocumentTheme(fkasBranded, "light");
     const node = (
       <Dialog.Root>
         <Dialog.Trigger>Open</Dialog.Trigger>

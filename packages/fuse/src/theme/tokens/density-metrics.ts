@@ -35,8 +35,8 @@ type SingleFamilySpec = FamilySpec & { description: string };
 
 /**
  * The families with one metric per control size, such as `control-h-md`, in `fuse.css` order.
- * `control-px-button` is Button's label inset. Dense matches `control-px`, and comfortable,
- * the external default, takes the side padding of the customer-facing reference button,
+ * `control-px-button` is Button's label inset. Dense matches `control-px`, and comfortable
+ * takes the side padding of the customer-facing reference button,
  * except at xs, which keeps `control-px` until design picks one. `control-px-button-icon` is
  * the edge beside a leading or trailing icon on those labels. Dense matches `control-px-icon`,
  * and comfortable, from sm up, keeps it at three quarters of the label inset, so the icon and

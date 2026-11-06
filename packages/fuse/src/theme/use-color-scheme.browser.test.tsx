@@ -24,7 +24,7 @@ beforeEach(() => {
 
 afterEach(() => {
   document.documentElement.removeAttribute("data-theme");
-  document.documentElement.removeAttribute("data-theme-variant");
+  document.documentElement.removeAttribute("data-theme-identity");
   document.documentElement.removeAttribute("data-theme-brand");
   document.documentElement.removeAttribute("data-theme-segment");
   document.documentElement.style.removeProperty("color-scheme");
@@ -85,8 +85,8 @@ describe("useColorScheme", () => {
       </ThemeProvider>
     );
 
-    expect(first[0]).toBe("internal-fkas-private:system/pending");
-    await mountedColorScheme(host, "internal-fkas-private:dark/dark");
+    expect(first[0]).toBe("neutral-fkas-private:system/pending");
+    await mountedColorScheme(host, "neutral-fkas-private:dark/dark");
     expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
   });
 
@@ -149,7 +149,7 @@ describe("forced color-scheme", () => {
         <LayoutChild />
       </ThemeProvider>
     );
-    await mountedColorScheme(host, "internal-fkas-private:light/dark");
+    await mountedColorScheme(host, "neutral-fkas-private:light/dark");
     expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
 
     rerender(
@@ -160,7 +160,7 @@ describe("forced color-scheme", () => {
     );
     expect(seen.at(-1)).toBe("light");
     expect(document.documentElement.getAttribute("data-theme")).toBe("light");
-    await mountedColorScheme(host, "internal-fkas-private:light/light");
+    await mountedColorScheme(host, "neutral-fkas-private:light/light");
 
     rerender(
       <ThemeProvider theme={fkasPrivate} forcedColorScheme="system">
@@ -170,14 +170,14 @@ describe("forced color-scheme", () => {
     );
     expect(seen.at(-1)).toBe("dark");
     expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
-    await mountedColorScheme(host, "internal-fkas-private:light/dark");
+    await mountedColorScheme(host, "neutral-fkas-private:light/dark");
 
     media.setPrefersDark(false);
     expect(document.documentElement.getAttribute("data-theme")).toBe("light");
-    await mountedColorScheme(host, "internal-fkas-private:light/light");
+    await mountedColorScheme(host, "neutral-fkas-private:light/light");
     media.setPrefersDark(true);
     expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
-    await mountedColorScheme(host, "internal-fkas-private:light/dark");
+    await mountedColorScheme(host, "neutral-fkas-private:light/dark");
   });
 
   it("applies descendant runtime force and restores nested locks without treating them as first paint", async () => {
@@ -201,7 +201,7 @@ describe("forced color-scheme", () => {
     );
 
     expect(first[0]).toBe("light");
-    await mountedColorScheme(host, "internal-fkas-private:light/dark");
+    await mountedColorScheme(host, "neutral-fkas-private:light/dark");
     expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
 
     rerender(
@@ -214,7 +214,7 @@ describe("forced color-scheme", () => {
       </ThemeProvider>
     );
     expect(document.documentElement.getAttribute("data-theme")).toBe("light");
-    await mountedColorScheme(host, "internal-fkas-private:light/light");
+    await mountedColorScheme(host, "neutral-fkas-private:light/light");
 
     rerender(
       <ThemeProvider theme={fkasPrivate}>
@@ -224,7 +224,7 @@ describe("forced color-scheme", () => {
       </ThemeProvider>
     );
     expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
-    await mountedColorScheme(host, "internal-fkas-private:light/dark");
+    await mountedColorScheme(host, "neutral-fkas-private:light/dark");
 
     rerender(
       <ThemeProvider theme={fkasPrivate}>
@@ -232,7 +232,7 @@ describe("forced color-scheme", () => {
       </ThemeProvider>
     );
     expect(document.documentElement.getAttribute("data-theme")).toBe("light");
-    await mountedColorScheme(host, "internal-fkas-private:light/light");
+    await mountedColorScheme(host, "neutral-fkas-private:light/light");
   });
 
   it("applies the innermost lock on the first commit of nested ForceColorScheme", async () => {
@@ -259,7 +259,7 @@ describe("forced color-scheme", () => {
 
     expect(seen[0]).toBe("light");
     expect(document.documentElement.getAttribute("data-theme")).toBe("light");
-    await mountedColorScheme(host, "internal-fkas-private:dark/light");
+    await mountedColorScheme(host, "neutral-fkas-private:dark/light");
 
     rerender(
       <ThemeProvider theme={fkasPrivate}>
@@ -271,6 +271,6 @@ describe("forced color-scheme", () => {
     );
     expect(seen.at(-1)).toBe("dark");
     expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
-    await mountedColorScheme(host, "internal-fkas-private:dark/dark");
+    await mountedColorScheme(host, "neutral-fkas-private:dark/dark");
   });
 });

@@ -2,7 +2,7 @@ import { LEGAL_THEMES, themeSlug } from "@elmeragroup/fuse/theme";
 import type { ThemeInput } from "@elmeragroup/fuse/theme";
 
 /**
- * The search parameter that carries a shared theme, as Fuse's slug: `internal-fkas-company`. The
+ * The search parameter that carries a shared theme, as Fuse's slug: `neutral-fkas-company`. The
  * landing's shared addresses and a block preview opened in its own tab both read it.
  */
 export const THEME_QUERY = "theme";

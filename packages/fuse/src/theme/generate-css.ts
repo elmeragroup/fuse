@@ -1,15 +1,16 @@
 import type { ResolvedColorScheme } from "./color-scheme-types";
 import { composeTheme } from "./compose-theme";
+import { cornerRules } from "./corners/corners";
+import { BRAND_CODES, BRANDS, LEGAL_THEMES, themeAxisSelector } from "./theme-input";
+import type { BrandCode, ThemeIdentity, ThemeInput } from "./theme-input";
 import { brandPointer } from "./tokens/brand-pointers";
 import type { BrandPointer } from "./tokens/brand-pointers";
-import { derivedRoleSources, EXTERNAL_RESET_KEYS, isDerivedTokenName, TOKEN_NAMES } from "./tokens/contract";
+import { derivedRoleSources, LIGHT_RESET_KEYS, isDerivedTokenName, TOKEN_NAMES } from "./tokens/contract";
 import type { TokenContract, TokenName } from "./tokens/contract";
 import { DEFAULTS } from "./tokens/defaults";
 import { derivedRoleCss } from "./tokens/derived-tokens";
 import { PRIMITIVE_NAMES, PRIMITIVES } from "./tokens/primitives";
 import { THEME_RESET_KEYS } from "./tokens/reset-keys";
-import { BRAND_CODES, BRANDS, LEGAL_THEMES } from "./tokens/themes";
-import type { BrandCode, ThemeInput } from "./tokens/themes";
 
 const GENERATED_FILE_HEADER = `/**
  * AUTO-GENERATED FILE — DO NOT EDIT DIRECTLY.
@@ -68,8 +69,13 @@ function rootDeclarations(): (readonly [string, string])[] {
   return [...primitives, ...roles];
 }
 
+/** The selector of one value of the identity axis, such as `[data-theme-identity="branded"]`. */
+function identitySelector(identity: ThemeIdentity): string {
+  return themeAxisSelector("identity", identity);
+}
+
 /**
- * Light layers declare `EXTERNAL_RESET_KEYS` only, so a host override of a role no
+ * Light layers declare `LIGHT_RESET_KEYS` only, so a host override of a role no
  * palette owns (`--popover`, `--chart-*`) inherits through the scope. Dark
  * layers materialize `THEME_RESET_KEYS`, every key any light or dark palette can change.
  */
@@ -81,7 +87,7 @@ function resetDeclarations(
 }
 
 function resetKeys(colorScheme: ResolvedColorScheme): readonly TokenName[] {
-  return colorScheme === "dark" ? THEME_RESET_KEYS : EXTERNAL_RESET_KEYS;
+  return colorScheme === "dark" ? THEME_RESET_KEYS : LIGHT_RESET_KEYS;
 }
 
 function emitRoot(): string {
@@ -97,7 +103,7 @@ const POINTER_KEYS: ReadonlySet<TokenName> = new Set([
  * The derived roles that read the brand pointer. A host restyles a brand at the pointer's
  * weight, one attribute such as `.app[data-theme-brand="tkas"]`, so no rule declares these
  * roles at more than that weight. The brand pointer carries their light values, and every
- * dark palette rule leaves them to a companion rule that puts its scheme and variant
+ * dark palette rule leaves them to a companion rule that puts its scheme and identity
  * qualifiers in `:where()`.
  */
 const BRAND_SCOPED_KEYS = TOKEN_NAMES.filter(
@@ -123,7 +129,7 @@ function darkPaletteDeclarations(tokens: TokenContract): (readonly [string, stri
  * pointer's weight that comes later wins over it.
  */
 function darkBrandScopedRule(qualifiers: string, brand: BrandCode, tokens: TokenContract): string {
-  const subject = `[data-theme-brand="${brand}"]`;
+  const subject = themeAxisSelector("brand", brand);
   return cssRule(
     [
       `:where([data-theme="dark"]${qualifiers})${subject}`,
@@ -133,12 +139,12 @@ function darkBrandScopedRule(qualifiers: string, brand: BrandCode, tokens: Token
   );
 }
 
-function internalTheme(brand: BrandCode): ThemeInput {
+function neutralTheme(brand: BrandCode): ThemeInput {
   const theme = LEGAL_THEMES.find(
-    (candidate) => candidate.variant === "internal" && candidate.brand === brand
+    (candidate) => candidate.identity === "neutral" && candidate.brand === brand
   );
   if (theme === undefined) {
-    throw new Error(`Brand ${brand} has no legal internal theme`);
+    throw new Error(`Brand ${brand} has no legal neutral theme`);
   }
   return theme;
 }
@@ -147,45 +153,52 @@ function emitBrandPointers(): string {
   return BRAND_CODES.map((code) => {
     const pointer = brandPointer(code);
     return cssRule(
-      [`[data-theme-brand="${code}"]`],
+      [themeAxisSelector("brand", code)],
       [
         ["brand", pointer.brand],
         ["brand-foreground", pointer["brand-foreground"]],
-        ...brandScopedDeclarations(composeTheme(internalTheme(code), "light")),
+        ...brandScopedDeclarations(composeTheme(neutralTheme(code), "light")),
       ]
     );
   }).join("\n\n");
 }
 
-function emitInternalReset(): string {
-  return themeRule(`[data-theme-variant="internal"]`, resetDeclarations({}, resetKeys("light")), "light");
+function emitNeutralReset(): string {
+  return themeRule(identitySelector("neutral"), resetDeclarations({}, resetKeys("light")), "light");
 }
 
 /**
- * The internal variant has one palette for every brand, so one composed internal dark
+ * The neutral identity has one palette for every brand, so one composed neutral dark
  * theme names the dark scope's declarations. Its brand pointer is not part of
  * `THEME_RESET_KEYS`, so the choice of brand and segment does not matter.
  */
-function internalDarkTheme(): ThemeInput {
-  const theme = LEGAL_THEMES.find((candidate) => candidate.variant === "internal");
+function neutralDarkTheme(): ThemeInput {
+  const theme = LEGAL_THEMES.find((candidate) => candidate.identity === "neutral");
   if (theme === undefined) {
-    throw new Error("No internal theme is legal");
+    throw new Error("No neutral theme is legal");
   }
   return theme;
 }
 
-function emitInternalDarkPalette(): string {
-  const variant = `[data-theme-variant="internal"]`;
+function emitNeutralDarkPalette(): string {
+  const identity = identitySelector("neutral");
   const palette = themeRule(
-    variant,
-    darkPaletteDeclarations(composeTheme(internalDarkTheme(), "dark")),
+    identity,
+    darkPaletteDeclarations(composeTheme(neutralDarkTheme(), "dark")),
     "dark"
   );
   // The shared palette is brand-agnostic, but the brand-scoped roles follow the brand.
   const brandScoped = BRAND_CODES.map((code) =>
-    darkBrandScopedRule(variant, code, composeTheme(internalTheme(code), "dark"))
+    darkBrandScopedRule(identity, code, composeTheme(neutralTheme(code), "dark"))
   );
   return [palette, ...brandScoped].join("\n\n");
+}
+
+/** The corner rules `corners.ts` owns, formatted like every other rule. */
+function emitCorners(): string {
+  return cornerRules()
+    .map((rule) => cssRule([rule.selector], rule.declarations))
+    .join("\n\n");
 }
 
 /**
@@ -211,14 +224,14 @@ function differsFrom(base: TokenContract, tokens: TokenContract): boolean {
  * segment rules materialize the full reset set like every other dark rule.
  *
  * A segment that departs only in light still gets a dark rule: the light segment selector
- * (`[variant][brand][segment]`) ties the dark brand selector (`[dark][variant][brand]`),
+ * (`[identity][brand][segment]`) ties the dark brand selector (`[dark][identity][brand]`),
  * so without the four-attribute dark segment rule a dark scope would resolve that tie by
  * emission order instead of by specificity.
  */
 function emitBrandPalettes(colorScheme: ResolvedColorScheme): string {
   const rules: string[] = [];
   for (const brand of BRAND_CODES) {
-    const themes = LEGAL_THEMES.filter((theme) => theme.variant === "external" && theme.brand === brand);
+    const themes = LEGAL_THEMES.filter((theme) => theme.identity === "branded" && theme.brand === brand);
     // Resolve the base by the brand's first segment rather than `themes[0]`, so base
     // selection does not depend on `LEGAL_THEMES` ordering. Its rule carries no
     // `data-theme-segment`, so it is the fallback an element without a segment — or
@@ -226,17 +239,17 @@ function emitBrandPalettes(colorScheme: ResolvedColorScheme): string {
     const [baseSegment] = BRANDS[brand].segments;
     const baseTheme = themes.find((theme) => theme.segment === baseSegment);
     if (baseTheme === undefined) {
-      throw new Error(`Brand ${brand} has no legal external themes`);
+      throw new Error(`Brand ${brand} has no legal branded themes`);
     }
     const base = composeTheme(baseTheme, colorScheme);
     // The dark arm also asks whether the segment departs in light, so it needs the light
     // base beside the composed base it already holds.
     const lightBase = colorScheme === "dark" ? composeTheme(baseTheme, "light") : base;
-    const variant = `[data-theme-variant="external"]`;
-    const selector = `${variant}[data-theme-brand="${brand}"]`;
+    const identity = identitySelector("branded");
+    const selector = `${identity}${themeAxisSelector("brand", brand)}`;
     if (colorScheme === "dark") {
       rules.push(themeRule(selector, darkPaletteDeclarations(base), "dark"));
-      rules.push(darkBrandScopedRule(variant, brand, base));
+      rules.push(darkBrandScopedRule(identity, brand, base));
     } else {
       rules.push(themeRule(selector, resetDeclarations(base, resetKeys("light")), "light"));
     }
@@ -250,11 +263,11 @@ function emitBrandPalettes(colorScheme: ResolvedColorScheme): string {
       // tkas, guen, elma and ngfi have a company segment but no sheet, so they get no rule in
       // either scheme.
       if (!departs) continue;
-      const segment = `[data-theme-segment="${theme.segment}"]`;
+      const segment = themeAxisSelector("segment", theme.segment);
       if (colorScheme === "dark") {
         rules.push(themeRule(`${selector}${segment}`, darkPaletteDeclarations(tokens), "dark"));
         // It follows the base companion at the same weight, so the segment's values win.
-        rules.push(darkBrandScopedRule(`${variant}${segment}`, brand, tokens));
+        rules.push(darkBrandScopedRule(`${identity}${segment}`, brand, tokens));
       } else {
         const declarations = changedKeys(base, tokens).map(
           (key) => [key, cssValue(key, tokens[key])] as const
@@ -285,9 +298,10 @@ export function generateThemesCss(): string {
     GENERATED_FILE_HEADER.trimEnd(),
     emitRoot(),
     emitBrandPointers(),
-    emitInternalReset(),
+    emitNeutralReset(),
     emitBrandPalettes("light"),
-    emitInternalDarkPalette(),
+    emitCorners(),
+    emitNeutralDarkPalette(),
     emitBrandPalettes("dark"),
     "",
   ].join("\n\n");

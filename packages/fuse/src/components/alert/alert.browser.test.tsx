@@ -28,7 +28,7 @@ import {
   textNamed,
 } from "../../../test/themed-browser-render";
 import { DENSITIES } from "../../theme/density";
-import { LEGAL_THEMES, themeSlug } from "../../theme/tokens/themes";
+import { LEGAL_THEMES, themeSlug } from "../../theme/theme-input";
 import { Badge } from "../badge/badge";
 import { Item } from "../item";
 import { PopoverContent, PopoverRoot, PopoverTrigger } from "../popover/popover";

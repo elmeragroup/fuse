@@ -5,7 +5,7 @@ import type { ReactElement, ReactNode } from "react";
 
 import { isHTMLElement, windowOf } from "../../internal/dom-node";
 import { cn } from "../../styles/cn";
-import { RADIUS_RUNGS } from "../../theme/tokens/radius-scale";
+import { RADIUS_RUNGS } from "../../theme/corners/radius-scale";
 import { skeletonClass } from "./skeleton-class";
 import { watchFontSet } from "./skeleton-font-watch";
 import { measureGhost } from "./skeleton-measure";

@@ -423,10 +423,10 @@ export const ICONS_PAGE = { key: "page/icons", name: "Icons" } as const;
 
 /** The four Fjordkraft private themes each component page previews, in frame order. */
 const PREVIEW_THEMES = [
-  { key: "internal-fkas-private-light", name: "Fjordkraft internal private, light" },
-  { key: "internal-fkas-private-dark", name: "Fjordkraft internal private, dark" },
-  { key: "external-fkas-private-light", name: "Fjordkraft external private, light" },
-  { key: "external-fkas-private-dark", name: "Fjordkraft external private, dark" },
+  { key: "neutral-fkas-private-light", name: "Fjordkraft neutral private, light" },
+  { key: "neutral-fkas-private-dark", name: "Fjordkraft neutral private, dark" },
+  { key: "branded-fkas-private-light", name: "Fjordkraft branded private, light" },
+  { key: "branded-fkas-private-dark", name: "Fjordkraft branded private, dark" },
 ] as const;
 
 /**
@@ -458,8 +458,8 @@ export function inventoryPage(slug: string): InventoryPage {
  * The previews on a component page, in frame order.
  *
  * @param page - The page.
- * @returns Each preview's key, such as `preview/button/internal-fkas-private-light`, and name, such
- *   as `Button / Fjordkraft internal private, light`.
+ * @returns Each preview's key, such as `preview/button/neutral-fkas-private-light`, and name, such
+ *   as `Button / Fjordkraft neutral private, light`.
  */
 export function previewsOn(page: InventoryPage): readonly { readonly key: string; readonly name: string }[] {
   return PREVIEW_THEMES.map((theme) => ({

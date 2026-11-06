@@ -116,7 +116,7 @@ function matching(customers: readonly Customer[], { query, status, region }: Fil
 }
 
 /**
- * An internal customer list in the dense, internal look: a toolbar whose search, status and
+ * An internal customer list in the dense, neutral look: a toolbar whose search, status and
  * region filter the table, a table with row selection and a menu per row, and pagination over
  * the matching customers. The selection is kept by customer, so it survives paging and
  * filtering, and every count reads the same list. A row's menu opens the customer's profile,

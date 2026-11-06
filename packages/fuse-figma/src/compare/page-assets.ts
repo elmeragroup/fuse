@@ -41,7 +41,7 @@ const FONT_WEIGHTS = [100, 200, 300, 400, 500, 600, 700, 800, 900] as const;
 export const LICENSED_FAMILIES: ReadonlyMap<string, string> = new Map([
   [
     KIT_HEADING_FAMILY,
-    "the external Fjordkraft themes' --font-heading. On 2026-10-27 the real file's external Dialog title bound font-heading to Neo Sans Medium with hasMissingFont true, listAvailableFontsAsync held no Neo Sans, and its export drew the title in Roboto Medium, as the page's CSS stack falls back to Roboto",
+    "the branded Fjordkraft themes' --font-heading. On 2026-10-27 the real file's branded Dialog title bound font-heading to Neo Sans Medium with hasMissingFont true, listAvailableFontsAsync held no Neo Sans, and its export drew the title in Roboto Medium, as the page's CSS stack falls back to Roboto",
   ],
 ]);
 

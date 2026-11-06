@@ -22,7 +22,7 @@ type LevelRoleClasses = {
 
 /**
  * The theme roles of levels 1 to 3. Levels 4 to 6 have none and keep the recipe's default size,
- * line height and weight. Each fallback is the internal value the role defaults to, so a host
+ * line height and weight. Each fallback is the neutral value the role defaults to, so a host
  * without `themes.css` keeps the scale these levels had before the roles: h1 text-2xl, h2 text-lg
  * and h3 text-base at the snug 1.375 ratio, all at 500. `oxfmt` sorts the classes inside one
  * string, so the leading is its own `cn` argument to stay after the size: tailwind-merge drops a
@@ -63,8 +63,8 @@ export type HeadingProps = useRender.ComponentProps<"h2"> &
      * Document-outline level — `1`–`6` picks the rendered `h1`–`h6`. Defaults to `2`.
      * For levels 1 to 3 it also picks the theme's default size, line height and weight:
      * `--heading-<level>-size` and `--heading-<level>-leading` apply when `size` is omitted,
-     * and `--heading-<level>-weight` when `font` is omitted. Internal themes keep h1 at 24/33,
-     * h2 at 18/24.75 and h3 at 16/22, all at 500; external themes set h1 to 24/32 and h2 and h3
+     * and `--heading-<level>-weight` when `font` is omitted. Neutral themes keep h1 at 24/33,
+     * h2 at 18/24.75 and h3 at 16/22, all at 500; branded themes set h1 to 24/32 and h2 and h3
      * to 20/32, all at 700. Levels 4 to 6 are 16/22 at 500 in every theme.
      */
     level?: HeadingLevel;

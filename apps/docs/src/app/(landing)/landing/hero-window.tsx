@@ -7,12 +7,12 @@ import dynamic from "next/dynamic";
 import { tv } from "tailwind-variants";
 
 import { Lock } from "@elmeragroup/fuse/icons";
-import { THEME_VARIANTS, ThemeScope } from "@elmeragroup/fuse/theme";
-import type { BrandCode, ThemeVariant } from "@elmeragroup/fuse/theme";
+import { THEME_IDENTITIES, ThemeScope } from "@elmeragroup/fuse/theme";
+import type { BrandCode, ThemeIdentity } from "@elmeragroup/fuse/theme";
 
 import { RetryBoundary } from "../../../components/retry-boundary";
 import { SingleToggle } from "../../../components/single-toggle";
-import { VARIANT_LABELS } from "../../../lib/theme";
+import { IDENTITY_LABELS } from "../../../lib/theme";
 import { BrandSite } from "./brand-site/brand-site";
 import { SITES } from "./brand-site/sites";
 import { useLandingTheme } from "./landing-theme";
@@ -28,7 +28,7 @@ const heroWindow = tv({
     caption: "landing-swap flex min-w-0 flex-1 items-center gap-3",
     chromeName: "font-semibold shrink-0 text-foreground",
     chromeNote: "sm:inline hidden truncate text-muted-foreground",
-    // A browser's address field, so the External side reads as a website.
+    // A browser's address field, so the Branded side reads as a website.
     address:
       "text-xs font-medium flex h-7 min-w-0 shrink-0 items-center gap-1.5 rounded-md bg-background px-2.5 text-foreground ring-1 ring-border",
     addressIcon: "size-3.5 shrink-0 text-muted-foreground",
@@ -41,36 +41,36 @@ const heroWindow = tv({
     siteScope: "h-full transform-gpu overflow-clip",
   },
   variants: {
-    // Each side leaves toward its end of the switch: Internal to the left, External to the right.
+    // Each side leaves toward its end of the switch: Neutral to the left, Branded to the right.
     side: {
-      internal: { side: "data-[shown=false]:-translate-x-6" },
-      external: { side: "data-[shown=false]:translate-x-6" },
+      neutral: { side: "data-[shown=false]:-translate-x-6" },
+      branded: { side: "data-[shown=false]:translate-x-6" },
     },
   },
 });
 
 const styles = heroWindow();
 
-// The landing opens on External, so the Dashboard's code loads apart from the page's. It keeps
-// SSR: a shared internal theme still paints the Dashboard on the server, and Next preloads its
+// The landing opens on Branded, so the Dashboard's code loads apart from the page's. It keeps
+// SSR: a shared neutral theme still paints the Dashboard on the server, and Next preloads its
 // code in that page's HTML. With SSR on, `dynamic` adds no Suspense boundary; `DashboardSide`
 // decides where the Dashboard waits for its code.
 const DashboardApp = dynamic(async () => (await import("./app-shell/dashboard-app")).DashboardApp);
 
-/** Starts fetching the Dashboard's code ahead of a flip to Internal. */
+/** Starts fetching the Dashboard's code ahead of a flip to Neutral. */
 function prefetchDashboard(): void {
   // A failed fetch is not an error yet: the flip imports the module again.
   import("./app-shell/dashboard-app").catch(() => undefined);
 }
 
-/** Pointing at or focusing Internal starts fetching the Dashboard's code before the press. */
-const INTERNAL_PREFETCH = {
-  internal: { onPointerEnter: prefetchDashboard, onFocus: prefetchDashboard },
+/** Pointing at or focusing Neutral starts fetching the Dashboard's code before the press. */
+const DASHBOARD_PREFETCH = {
+  neutral: { onPointerEnter: prefetchDashboard, onFocus: prefetchDashboard },
 } as const;
 
 /**
- * How the Dashboard first mounted: in the server's HTML, because the page opened on Internal, or
- * on the first flip to Internal.
+ * How the Dashboard first mounted: in the server's HTML, because the page opened on Neutral, or
+ * on the first flip to Neutral.
  */
 type DashboardArrival = "server" | "flip";
 
@@ -96,37 +96,37 @@ function DashboardSide({ arrival }: { arrival: DashboardArrival }): ReactElement
   );
 }
 
-/** The window's sides are the theme's variants: the switch and the nav's picker move one value. */
-type Side = ThemeVariant;
+/** The window's sides are the theme's identities: the switch and the nav's picker move one value. */
+type Side = ThemeIdentity;
 
 /**
- * The hero's live demo: one window, two sides. Internal runs Dashboard, the back-office app,
- * in the internal variant; External shows the picked brand's public website in the external
- * variant, behind a browser's address field. The side is the landing theme's variant, so the
+ * The hero's live demo: one window, two sides. Neutral runs Dashboard, the back-office app,
+ * in the neutral identity at dense density; Branded shows the picked brand's public website in
+ * the branded identity, behind a browser's address field. The side is the landing theme's identity, so the
  * window's switch and the nav's theme picker move the same value and re-theme the page together.
  * Each side mounts the first time it shows and stays mounted, so the Dashboard keeps its state
  * through a round trip, and the site's photos and the Dashboard's code load only once a visitor
- * asks. Pointing at or focusing Internal starts fetching the Dashboard's code before the flip.
+ * asks. Pointing at or focusing Neutral starts fetching the Dashboard's code before the flip.
  * Each side fails on its own: a side that cannot render, such as a Dashboard whose code chunk a
  * redeploy removed, shows a reload prompt while the nav and the other side keep working.
  */
 export function HeroWindow(): ReactElement {
   const { theme, changeTheme } = useLandingTheme();
-  const side = theme.variant;
-  const [dashboardArrival] = useState<DashboardArrival>(side === "internal" ? "server" : "flip");
-  const [dashboardMounted, setDashboardMounted] = useState(side === "internal");
-  if (side === "internal" && !dashboardMounted) {
+  const side = theme.identity;
+  const [dashboardArrival] = useState<DashboardArrival>(side === "neutral" ? "server" : "flip");
+  const [dashboardMounted, setDashboardMounted] = useState(side === "neutral");
+  if (side === "neutral" && !dashboardMounted) {
     setDashboardMounted(true);
   }
-  const [siteMounted, setSiteMounted] = useState(side === "external");
-  if (side === "external" && !siteMounted) {
+  const [siteMounted, setSiteMounted] = useState(side === "branded");
+  if (side === "branded" && !siteMounted) {
     setSiteMounted(true);
   }
   const captionId = useId();
   const siteSide = useRef<HTMLDivElement>(null);
   const sideSwitch = useRef<HTMLSpanElement>(null);
   const site = SITES[theme.brand];
-  const external = side === "external";
+  const branded = side === "branded";
 
   // A brand card on a site unmounts with that site, so the card's pick moves focus to the new
   // site's heading once it mounts. A pick in the landing's brand picker leaves focus there.
@@ -144,13 +144,13 @@ export function HeroWindow(): ReactElement {
   }, [site.brand]);
 
   const flip = (next: Side) => {
-    changeTheme({ variant: next });
+    changeTheme({ identity: next });
     // A pointer press leaves focus where it was in Safari, which focuses no button on a click:
     // in a closed dialog, whose focus return targets its trigger on the side going inert, or
     // on that side itself. Focus moves to the pressed button before the return runs, so the
     // return finds focus outside the dialog and leaves it there. The switch renders one button
     // per side, in order.
-    sideSwitch.current?.querySelectorAll("button")[THEME_VARIANTS.indexOf(next)]?.focus();
+    sideSwitch.current?.querySelectorAll("button")[THEME_IDENTITIES.indexOf(next)]?.focus();
   };
 
   return (
@@ -158,7 +158,7 @@ export function HeroWindow(): ReactElement {
       <div className={styles.fade()}>
         <section aria-label="Live demo" aria-describedby={captionId} className={styles.window()}>
           <div className={styles.chrome()}>
-            {external ? (
+            {branded ? (
               <p key={site.domain} id={captionId} className={styles.caption()}>
                 <span className={styles.address()}>
                   <Lock aria-hidden className={styles.addressIcon()} />
@@ -167,7 +167,7 @@ export function HeroWindow(): ReactElement {
                 <span className={styles.chromeNote()}>{site.caption}</span>
               </p>
             ) : (
-              <p key="internal" id={captionId} className={styles.caption()}>
+              <p key="neutral" id={captionId} className={styles.caption()}>
                 <span className={styles.chromeName()}>Live demo</span>
                 <span className={styles.chromeNote()}>
                   Dashboard: an internal sales and back-office app built with Fuse
@@ -178,11 +178,11 @@ export function HeroWindow(): ReactElement {
               <SingleToggle
                 label="Window content"
                 size="sm"
-                options={THEME_VARIANTS}
-                labels={VARIANT_LABELS}
+                options={THEME_IDENTITIES}
+                labels={IDENTITY_LABELS}
                 value={side}
                 onValueChange={flip}
-                optionProps={INTERNAL_PREFETCH}
+                optionProps={DASHBOARD_PREFETCH}
               />
             </span>
           </div>
@@ -191,10 +191,10 @@ export function HeroWindow(): ReactElement {
               <div
                 role="region"
                 aria-label="Dashboard"
-                data-shown={!external}
-                inert={external}
-                className={styles.side({ side: "internal" })}>
-                <WindowSide shown={!external}>
+                data-shown={!branded}
+                inert={branded}
+                className={styles.side({ side: "neutral" })}>
+                <WindowSide shown={!branded}>
                   <RetryBoundary subject="The Dashboard">
                     <DashboardSide arrival={dashboardArrival} />
                   </RetryBoundary>
@@ -202,7 +202,7 @@ export function HeroWindow(): ReactElement {
               </div>
             ) : (
               // Until the first flip the side is an empty cell, so the Dashboard's code waits for a visitor who asks for it.
-              <div data-shown={false} inert className={styles.side({ side: "internal" })} />
+              <div data-shown={false} inert className={styles.side({ side: "neutral" })} />
             )}
             {siteMounted ? (
               <div
@@ -210,11 +210,11 @@ export function HeroWindow(): ReactElement {
                 role="region"
                 aria-label={`${site.name} website`}
                 lang={site.locale}
-                data-shown={external}
-                inert={!external}
-                className={styles.side({ side: "external" })}>
-                <WindowSide shown={external}>
-                  <ThemeScope theme={{ ...theme, variant: "external" }} className={styles.siteScope()}>
+                data-shown={branded}
+                inert={!branded}
+                className={styles.side({ side: "branded" })}>
+                <WindowSide shown={branded}>
+                  <ThemeScope theme={{ ...theme, identity: "branded" }} className={styles.siteScope()}>
                     <RetryBoundary key={site.brand} subject="The website">
                       <BrandSite site={site} onPickBrand={pickFromCard} />
                     </RetryBoundary>
@@ -223,7 +223,7 @@ export function HeroWindow(): ReactElement {
               </div>
             ) : (
               // Until the first flip the side is an empty cell, so the site's photos wait for a visitor who asks for it.
-              <div data-shown={false} inert className={styles.side({ side: "external" })} />
+              <div data-shown={false} inert className={styles.side({ side: "branded" })} />
             )}
           </div>
         </section>

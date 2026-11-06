@@ -27,14 +27,17 @@ export const metadata = componentMetadata("button");
 <Prose>
 
 The label sizes pad with Button's own inset, the `--control-px-button-*` metrics, and the side of a
-`data-icon="inline-start"` or `"inline-end"` icon pads with `--control-px-button-icon-*`. Comfortable density, the
-external default, widens both past the other controls; dense matches them. The tokens handbook page lists their
-values. A `px-*` class in `className` replaces the label padding only: the icon
+`data-icon="inline-start"` or `"inline-end"` icon pads with `--control-px-button-icon-*`. Comfortable density widens
+both past the other controls; dense matches them. The document picks its density, whatever the theme's identity, and the
+tokens handbook page lists both densities' values. A branded button rounds with the brand's `--radius-button`, often a
+pill, so its label edges take at least 12px of padding: at dense density a branded label pads 12px where a neutral one
+pads 10px, or 8px at `xs`. Comfortable padding is 12px or more already, the icon side keeps its icon padding, and a
+button in a `ButtonGroup` keeps the dense inset, since the group rounds it with its own corner. A `px-*` class in `className` replaces the label padding only: the icon
 side keeps its icon padding, which a `has-data-[icon=inline-start]:pl-*` or `has-data-[icon=inline-end]:pr-*`
 class replaces.
 
-The `outline` variant takes its border from the theme. Internal themes draw a 1px `--border` hairline with a
-small shadow, and external themes a 2px ring in the text colour with no shadow.
+The `outline` variant takes its border from the theme. Neutral themes draw a 1px `--border` hairline with a
+small shadow, and branded themes a 2px ring in the text colour with no shadow.
 
 </Prose>
 

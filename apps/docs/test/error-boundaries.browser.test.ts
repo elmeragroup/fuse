@@ -16,14 +16,14 @@ const AUTOSAVE_KEY = "fuse-studio-v1";
  * A share link holding one readable edit. The studio restores it and keeps it saved; text it
  * cannot read would be dropped from the autosave once the session settles as pristine.
  */
-const EDITED_SESSION = hashOf(JSON.stringify({ t: "external-elma-private", l: { primary: "#ff0000" } }));
+const EDITED_SESSION = hashOf(JSON.stringify({ t: "branded-elma-private", l: { primary: "#ff0000" } }));
 
 describe("render failures stay inside the part that failed", () => {
   it("shows a reload prompt in place of a Dashboard whose code chunk is gone, and keeps the rest of the landing", async () => {
     const page = await openLanding(DESKTOP_VIEWPORT);
     // A redeploy removed the chunks this tab's build names.
     await page.route("**/_next/static/chunks/**", async (route) => route.abort());
-    await showSide(page, "Internal");
+    await showSide(page, "Neutral");
 
     const failure = liveDemo(page).getByRole("alert").filter({ hasText: "The Dashboard could not load." });
     await failure.waitFor();
@@ -33,7 +33,7 @@ describe("render failures stay inside the part that failed", () => {
     expect(await page.getByRole("navigation").count()).toBeGreaterThan(0);
 
     await page.unrouteAll({ behavior: "ignoreErrors" });
-    await showSide(page, "External");
+    await showSide(page, "Branded");
     const site = liveDemo(page).getByRole("region", { name: /website$/u });
     await expect.poll(async () => site.getByRole("heading", { level: 1 }).count()).toBeGreaterThan(0);
     await page.context().close();
