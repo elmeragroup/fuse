@@ -1,10 +1,12 @@
 // The polar tooltip's side lanes, in Chromium with motion on. Units under test: the polar tooltip's
 // lane anchor over PieChart, RadialChart, RadarChart and ClockChart (MOTION-REVIEW Fix R2, R2.10,
-// R2.11, R2.14). Oracles: the rendered boxes of every label past the rim, of the Root's figure and
-// of a title above it, which the popup may never overlap or leave, with the active ray every 15°
-// round the dial; and the lane rule, which keeps a lane until the ray is 20° into the other half, so
-// a pointer that turns from 9 o'clock through 12 to 3 o'clock switches lanes once, and one that
-// wiggles 15° either side of 12 o'clock switches none.
+// R2.11, R2.14, and MOTION-VERIFY N2 and N3). Oracles: the rendered boxes of every label past the
+// rim and of a title above the chart, which the popup may never overlap; the figure, whose sides
+// and top the popup stays inside, and the viewport, which it stays inside below (R2.3 as amended);
+// the popup's padding box, which holds every run of its text, so no value is cut, with the active
+// ray every 15° round the dial; and the lane rule, which keeps a lane until the ray is 20° into the
+// other half, so a pointer that turns from 9 o'clock through 12 to 3 o'clock switches lanes once,
+// and one that wiggles 15° either side of 12 o'clock switches none.
 import type { ReactElement } from "react";
 
 import { beforeEach, describe, expect, it } from "vitest";
@@ -81,6 +83,39 @@ const FAMILIES: readonly (readonly [string, ReactElement])[] = [
     </RadarChart.Root>,
   ],
   [
+    "a clock of 24 hourly prices in a 560 px box, whose side lanes hold about 140 px and whose values carry a unit and a VAT basis that cannot wrap",
+    <div key="price" style={{ width: 560 }}>
+      <ClockChart.Root
+        data={Array.from({ length: 24 }, (_, hour) => ({
+          start: DAY + hour * 3_600_000,
+          ore: 30 + (hour % 7) * 4.3,
+        }))}
+        config={{
+          ore: {
+            label: "Spotpris",
+            color: "chart-1",
+            format: {
+              preset: "unit-price",
+              currency: "NOK",
+              minor: true,
+              vat: "excluded",
+              maximumFractionDigits: 1,
+            },
+          },
+        }}
+        xKey="start"
+        cycle="day"
+        interval="hour"
+        data-intro="none"
+        aria-label="Spotpris">
+        <ClockChart.Grid />
+        <ClockChart.AngleAxis />
+        <ClockChart.Column dataKey="ore" />
+        <ClockChart.Tooltip />
+      </ClockChart.Root>
+    </div>,
+  ],
+  [
     "a clock of 24 hours",
     <ClockChart.Root
       key="clock"
@@ -107,8 +142,27 @@ function overlap(a: Box, b: Box): number {
   return width > 0 && height > 0 ? width * height : 0;
 }
 
+/** The first run of the popup's text that reaches past its padding box, or null when all fit. */
+function clipped(node: HTMLElement): string | null {
+  if (node.scrollWidth > node.clientWidth)
+    return `scrolls ${String(node.scrollWidth)} > ${String(node.clientWidth)}`;
+  const box = node.getBoundingClientRect();
+  const left = box.left + node.clientLeft;
+  const right = left + node.clientWidth;
+  const walker = document.createTreeWalker(node, NodeFilter.SHOW_TEXT);
+  for (let text = walker.nextNode(); text !== null; text = walker.nextNode()) {
+    if ((text.textContent ?? "").trim() === "") continue;
+    const range = document.createRange();
+    range.selectNodeContents(text);
+    for (const run of range.getClientRects())
+      if (run.left < left - 0.5 || run.right > right + 0.5)
+        return `"${text.textContent ?? ""}" past the padding`;
+  }
+  return null;
+}
+
 /** The open popup and its positioner. */
-function popup(): { readonly box: DOMRect; readonly side: string | null } | null {
+function popup(): { readonly box: DOMRect; readonly side: string | null; readonly node: HTMLElement } | null {
   // DOM audit: the tooltip is aria-hidden and portalled, read by its slot.
   const node = document.querySelector<HTMLElement>('[data-slot="chart-tooltip"]');
   if (node === null || Number(getComputedStyle(node).opacity) < 0.5) return null;
@@ -117,6 +171,7 @@ function popup(): { readonly box: DOMRect; readonly side: string | null } | null
   return {
     box,
     side: node.closest('[data-slot="chart-tooltip-positioner"]')?.getAttribute("data-side") ?? null,
+    node,
   };
 }
 
@@ -138,7 +193,7 @@ function Card({ children }: { readonly children: ReactElement }): ReactElement {
 
 describe("the polar tooltip's side lanes (R2.10)", () => {
   it.each(FAMILIES)(
-    "keeps the popup of %s off every label and the title, inside the figure, at every ray",
+    "keeps the popup of %s off every label and the title, inside the figure above and the viewport below, its text whole, at every ray",
     async (_, chart) => {
       const { host } = renderThemed(<Card>{chart}</Card>);
       await userEvent.tab();
@@ -165,13 +220,11 @@ describe("the polar tooltip's side lanes (R2.10)", () => {
             faults.push(`step ${String(step)}: over a label`);
           if (overlap(box, title.getBoundingClientRect()) > 0)
             faults.push(`step ${String(step)}: over the title`);
-          if (
-            box.left < bounds.left - 0.5 ||
-            box.right > bounds.right + 0.5 ||
-            box.top < bounds.top - 0.5 ||
-            box.bottom > bounds.bottom + 0.5
-          )
-            faults.push(`step ${String(step)}: outside the figure`);
+          if (box.left < bounds.left - 0.5 || box.right > bounds.right + 0.5 || box.top < bounds.top - 0.5)
+            faults.push(`step ${String(step)}: outside the figure's sides or top`);
+          if (box.bottom > window.innerHeight + 0.5) faults.push(`step ${String(step)}: below the viewport`);
+          const cut = clipped(shown.node);
+          if (cut !== null) faults.push(`step ${String(step)}: ${cut}`);
         }
         await userEvent.keyboard("{ArrowRight}");
       }
@@ -197,7 +250,7 @@ describe("the polar tooltip's lane switches (R2.11)", () => {
     return sides.filter((side, index) => index > 0 && side !== sides[index - 1]).length;
   }
 
-  const clock = (FAMILIES[3] ?? FAMILIES[0])?.[1];
+  const clock = (FAMILIES[4] ?? FAMILIES[0])?.[1];
 
   it("switches once on a turn from 9 o'clock through 12 to 3 o'clock", async () => {
     const { host } = renderThemed(<Card>{clock ?? <span />}</Card>);

@@ -41,7 +41,7 @@ import { introPace } from "./chart-polar-motion";
 import { paintedOf } from "./chart-polar-painted";
 import { PolarSurface } from "./chart-polar-surface";
 import { ChartReadoutContext, ChartSelectionContext } from "./chart-readout-port";
-import { stepSpring } from "./chart-spring";
+import { leapSpring, stepSpring } from "./chart-spring";
 import { createChartStore, useChartStore } from "./chart-store";
 import type { ChartSnapshot, ChartStore } from "./chart-store";
 import type { ChartChangeEventDetails, ChartFigureProps, ChartSelectionChangeReason } from "./chart-types";
@@ -263,6 +263,7 @@ export function usePolarRoot(props: PolarRootProps): PolarRootState {
       frames: BROWSER_FRAMES,
       reduced: () => motion.reduced(),
       spring: () => stepSpring(store),
+      leapSpring,
       maxTurn: (radius) => maxTurn(radius, store),
     })
   );
@@ -511,14 +512,16 @@ export function usePolarRoot(props: PolarRootProps): PolarRootState {
 
 /**
  * The most CSS pixels a mark on the dial may travel in one frame of a step, by the pointer's speed:
- * 8 at 200 px/s or slower, 20 at 800 and 48 at 2,000 or faster, straight between, and the fastest
- * for a keyboard step. A step that reaches far, such as a radar's spoke or a month of a year, glides
- * no faster than the pointer moves it.
+ * MOTION-REVIEW's 8 at 200 px/s or slower, 20 at 800 and 48 at 2,000 or faster, straight between,
+ * and the fastest for a keyboard step. Each is read at a tenth above its speed, since the speed the
+ * Root reads from the pointer's events runs a few percent over its true speed. A step that reaches
+ * far, such as a radar's spoke or a month of a year, glides no faster than the pointer moves it,
+ * unless it would take longer than the follower's leap allows.
  */
 const FRAME_TRAVEL = [
-  [200, 8],
-  [800, 20],
-  [2000, 48],
+  [220, 8],
+  [880, 20],
+  [2200, 48],
 ] as const;
 
 /** CSS pixels a frame may carry a mark at a pointer speed in CSS pixels per second. */
@@ -550,7 +553,8 @@ const DEAD_BAND = 2;
  * The pick over a polar cell: a client point maps through the listbox's client box, which spans the
  * cell and so the sweep's box, into units of the outer radius from the centre. A pointer that holds
  * an option keeps it while a point 2 CSS px along its arc or its radius still picks it, so a hand's
- * tremor near a dense dial's hole changes nothing.
+ * tremor near a dense dial's hole changes nothing. Within 2 CSS px of the centre a point has no
+ * angle to read, so it picks nothing new and keeps the option the pointer holds (N5).
  *
  * @param id - The Root's id prefix.
  * @param model - The latest model.
@@ -577,10 +581,11 @@ function polarPick(id: string, model: { readonly current: PolarModel }, motion: 
       near: held?.near ?? null,
       nearFirm: held?.firm ?? false,
     };
-    const found = model.current.pick(point, pixels);
     const distance = Math.hypot(point.x, point.y);
-    if (held == null || found === null || found.slot === held.slot || distance < 1e-9) return found;
     const reach = DEAD_BAND / scale;
+    if (distance < reach) return held == null ? null : { slot: held.slot, near: held.near };
+    const found = model.current.pick(point, pixels);
+    if (held == null || found === null || found.slot === held.slot) return found;
     const radial = { x: point.x / distance, y: point.y / distance };
     const offsets = [
       { x: -radial.y, y: radial.x },

@@ -2,8 +2,10 @@
 
 /**
  * The polar families' Tooltip parts. Each is the shared tooltip body over the polar anchor, which
- * rests the popup in a side lane beside the dial at the active ray's height and moves it with the
- * Root's angle follower, and shows the active slice's, ring's or spoke's label and rows by default.
+ * rests the popup in a lane beside or below the dial, and shows the active slice's, ring's or
+ * spoke's label and rows by default. Where a popup may go is one rule for every family (R2.3, as
+ * amended): like `Chart.Tooltip`'s, it may reach past its chart's box, below the figure, and it stays
+ * inside the viewport, but it never covers its own dial, its labels or its title.
  */
 import type { ReactElement } from "react";
 
@@ -46,12 +48,14 @@ export function PolarTooltip({
 }
 
 /**
- * The popup over the active slice. It rests in a side lane beside the dial, outside the labels and
- * inside the chart, at the height where the slice's bisector meets the rim, and moves with the
- * active slice. A change of lane fades it in. A pointer that moves toward it past the rim keeps the
- * slice. Escape closes it and keeps the reader's place. It is hidden from screen readers, which
- * read the same values from the option. `anchor` does nothing here, since the lane decides where
- * the popup rests.
+ * The popup over the active slice. It rests at the dial's height in a side lane beside the dial,
+ * outside the labels, and only its content changes from slice to slice. A side lane takes it only
+ * when the lane's room holds its content; otherwise it rests below the dial and its labels. Like
+ * `Chart.Tooltip`'s, it may reach past the chart's box, below it, and stays inside the viewport, but
+ * it never covers its dial, its labels or its title. A change of lane fades it in. A pointer that
+ * moves toward it past the rim keeps the slice. Escape closes it and keeps the reader's place. It is
+ * hidden from screen readers, which read the same values from the option. `anchor` does nothing
+ * here, since the lane decides where the popup rests.
  *
  * @beta
  */
@@ -60,9 +64,12 @@ export function PieChartTooltip(props: ChartTooltipProps): ReactElement {
 }
 
 /**
- * The popup over the active ring, in a side lane beside the dial at the height where the ray
- * through the ring's value end meets the rim. Escape closes it and keeps the reader's place.
- * `anchor` does nothing here, since the lane decides where the popup rests.
+ * The popup over the active ring. It rests at the dial's height in the side lane it opened in, beside
+ * the dial and outside the labels, and only its content changes from ring to ring. A side lane takes
+ * it only when the lane's room holds its content; otherwise it rests below the dial and its labels.
+ * Like `Chart.Tooltip`'s, it may reach past the chart's box, below it, and stays inside the viewport,
+ * but it never covers its dial, its labels or its title. Escape closes it and keeps the reader's
+ * place. `anchor` does nothing here, since the lane decides where the popup rests.
  *
  * @beta
  */
@@ -72,8 +79,12 @@ export function RadialChartTooltip(props: ChartTooltipProps): ReactElement {
 
 /**
  * The popup over the active spoke, with one row per series, in a side lane beside the dial at the
- * height where the spoke meets the outer ring. It moves with the hand. Escape closes it and keeps
- * the reader's place. `anchor` does nothing here, since the lane decides where the popup rests.
+ * height where the hand meets the outer ring, moving with the hand. A step that leaps across the dial
+ * fades it in where the step lands, as a change of lane does. A side lane takes it only when the
+ * lane's room holds its content; otherwise it rests below the dial and its labels. Like
+ * `Chart.Tooltip`'s, it may reach past the chart's box, below it, and stays inside the viewport, but
+ * it never covers its dial, its labels or its title. Escape closes it and keeps the reader's place.
+ * `anchor` does nothing here, since the lane decides where the popup rests.
  *
  * @beta
  */

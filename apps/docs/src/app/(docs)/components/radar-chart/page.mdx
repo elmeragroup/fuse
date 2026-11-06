@@ -20,7 +20,7 @@ export const metadata = componentMetadata("radar-chart");
 
 The chart entry is a preview. Names and props can change until Fuse's first stable release. The first row's spoke points to 12 o'clock and the rest follow clockwise. The radius is a value axis: the centre is 0, or the domain's minimum when a value is negative, and the rim is the largest value or `max`. A filled radar is an Area and a Line, and an outline radar is a Line alone.
 
-Hover a spoke, or focus the chart and use the arrow keys, to read it. Left and right move between spokes, and up and down move between series. The series other than the nearest dim, and the active dot rides the polygon's edges to the next spoke. The grid and the labels draw at once, and each series grows from the centre the first time the chart comes into view. On a touch screen, a drag that starts on the dial scrubs round it instead of scrolling the page, which scrolls from beside the dial. A tap pins the tooltip, and a second tap on the same spoke releases it.
+Hover a spoke, or focus the chart and use the arrow keys, to read it. Left and right move between spokes, and up and down move between series. The series other than the nearest dim, and the active dot rides the polygon's edges to the next spoke. Where a reading is missing, the Line leaves out the edges either side of it, and the dot fades out over that break and back in past it. The grid and the labels draw at once, and each series grows from the centre the first time the chart comes into view. On a touch screen, a drag that starts on the dial scrubs round it instead of scrolling the page, which scrolls from beside the dial. A tap pins the tooltip, and a second tap on the same spoke releases it.
 
 </Prose>
 

@@ -1,10 +1,11 @@
 // The radar's angle follower under a moving pointer, in Chromium with motion on. Units under test:
-// RadarChart.ActiveDot and the Grid's hand on the Root's follower (MOTION-REVIEW Fix R1, R1.9).
-// Oracles, worked by hand: seven spokes 360/7° apart on a [0, 5] domain, the vertex of value v on
-// spoke i at radius v/5 and angle 360i/7; spoke 2 is missing, so the polygon's edge there runs
-// straight from spoke 1's vertex to spoke 3's. The dot must lie on one of these straight edges in
-// every frame, mapped to the screen by the layer's own CTM, and the hand's computed rotation must
-// match the dot's angle about the dial's rendered centre.
+// RadarChart.ActiveDot and the Grid's hand on the Root's follower (MOTION-REVIEW Fix R1, R1.9, and
+// MOTION-VERIFY N9). Oracles, worked by hand: seven spokes 360/7° apart on a [0, 5] domain, the
+// vertex of value v on spoke i at radius v/5 and angle 360i/7. Spoke 2 is missing, so the Line
+// draws no edge from spoke 1 to 2 or from 2 to 3, and the dot shows on the drawn edges only: in
+// every frame it shows, it lies on one of them, mapped to the screen by the layer's own CTM, and the
+// hand's computed rotation matches the dot's angle about the dial's rendered centre. Between
+// spoke 1, at 51.43°, and spoke 3, at 154.29°, the dot shows nothing and fades out where it left.
 import type { ReactElement } from "react";
 
 import { describe, expect, it } from "vitest";
@@ -20,11 +21,12 @@ import { RadarChart } from "./radar-chart-namespace";
 
 const VALUES = [5, 4, null, 3, 5, 2, 4] as const;
 
-function Spokes(): ReactElement {
+function Spokes({ size }: { readonly size?: string }): ReactElement {
   return (
     <LocaleProvider locale="nb-NO">
-      <div style={{ width: 320 }}>
+      <div style={{ width: size === undefined ? 320 : 720 }}>
         <RadarChart.Root
+          style={size === undefined ? undefined : { "--chart-polar-size": size }}
           data={VALUES.map((value, index) => ({ spoke: `s${String(index)}`, a: value }))}
           config={{ a: { label: "NO1", color: "chart-1" } }}
           nameKey="spoke"
@@ -71,15 +73,17 @@ describe("the radar's active dot on the Root's follower (R1.9)", () => {
       const group = layer.querySelector("[data-follow]");
       const hand = host.querySelector<SVGLineElement>('[data-slot="radar-chart-spoke"][data-part="hand"]');
       if (dot === null || group === null || hand === null) throw new Error("no parts");
-      const vertices = VALUES.flatMap((value, index) => {
-        if (value === null) return [];
+      const vertices = VALUES.map((value, index) => {
+        if (value === null) return null;
         const point = dialPoint((360 * index) / 7, value / 5);
         const [x, y] = clientPoint(layer, point.x, point.y);
-        return [{ x, y }];
+        return { x, y };
       });
-      const edges = vertices.map(
-        (vertex, index) => [vertex, vertices[(index + 1) % vertices.length] ?? vertex] as const
-      );
+      // The drawn edges, between neighbouring spokes that both hold a reading.
+      const edges = vertices.flatMap((vertex, index) => {
+        const next = vertices[(index + 1) % vertices.length] ?? null;
+        return vertex === null || next === null ? [] : [[vertex, next] as const];
+      });
       const centre = clientPoint(layer, 0, 0);
       const spokeAt = (spoke: number) => {
         const point = dialPoint((360 * spoke) / 7 + 2, 0.7);
@@ -115,4 +119,102 @@ describe("the radar's active dot on the Root's follower (R1.9)", () => {
       expect(Math.max(...turn)).toBeLessThanOrEqual(0.5);
     }
   );
+
+  it("fades the dot out over the break at spoke 2 and back in past it (N9)", async () => {
+    const { host } = renderThemed(<Spokes />);
+    const layer = radarLayer(host, "radar-chart-active-dot");
+    // DOM audit: the dot's own path and the hand are aria-hidden plot output, read by their parts.
+    const dot = layer.querySelector<SVGPathElement>('path[data-part="dots"]');
+    const group = layer.querySelector<SVGGElement>("[data-follow]");
+    const hand = host.querySelector<SVGLineElement>('[data-slot="radar-chart-spoke"][data-part="hand"]');
+    if (dot === null || group === null || hand === null) throw new Error("no parts");
+    const spokeAt = (spoke: number) => {
+      const point = dialPoint((360 * spoke) / 7 + 2, 0.7);
+      return clientPoint(layer, point.x, point.y);
+    };
+    await hoverAt(...spokeAt(0));
+    for (let wait = 0; wait < 20; wait += 1) await new Promise((resolve) => requestAnimationFrame(resolve));
+    page
+      .getByRole("listbox")
+      .element()
+      .dispatchEvent(
+        new PointerEvent("pointermove", {
+          bubbles: true,
+          clientX: spokeAt(3)[0],
+          clientY: spokeAt(3)[1],
+          pointerType: "mouse",
+        })
+      );
+    const spoke1 = 360 / 7;
+    const spoke3 = (3 * 360) / 7;
+    const inBreak: boolean[] = [];
+    const shownOutside: boolean[] = [];
+    let leftAt: string | null = null;
+    let lowest = 1;
+    const start = performance.now();
+    while (performance.now() - start < 700) {
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+      const angle = ((Number.parseFloat(getComputedStyle(hand).rotate) % 360) + 360) % 360;
+      const shows = group.hasAttribute("data-value");
+      if (angle > spoke1 + 0.5 && angle < spoke3 - 0.5) {
+        inBreak.push(shows);
+        // The dot stays where it left the drawn edge while it fades.
+        leftAt ??= dot.getAttribute("d");
+        expect(dot.getAttribute("d")).toBe(leftAt);
+        lowest = Math.min(lowest, Number.parseFloat(getComputedStyle(group).opacity));
+      } else if (angle <= spoke1 - 0.5 || angle >= spoke3 + 0.05) {
+        // Short of spoke 1, or past spoke 3 as the spring overshoots it, the dot rides a drawn edge.
+        shownOutside.push(shows);
+      }
+    }
+    expect(inBreak.length).toBeGreaterThan(3);
+    expect(inBreak.every((shows) => !shows)).toBe(true);
+    expect(lowest).toBeLessThan(0.5);
+    expect(shownOutside.length).toBeGreaterThan(3);
+    expect(shownOutside.every(Boolean)).toBe(true);
+    // At rest on spoke 3 the dot shows again, faded back in.
+    await expect.poll(() => getComputedStyle(group).opacity).toBe("1");
+  });
+
+  // MOTION-VERIFY N1. Oracle: the 300 ms ceiling on UI motion. A pointer that rests on spoke 0 and
+  // then jumps to spoke 3, 154.29° round, moves at a resting pace, which alone would carry the hand
+  // 8 px of rim a frame: 4.6° on a 12.5rem dial of radius 100 px, so 34 frames, and 2.3° on a 25rem
+  // one, so 67. Floored by the step's own span over 10 frames, as a step wider than 90°, on the
+  // fastest follow spring, the hand lands within 1° of spoke 3 within 300 ms at both.
+  it.each(["12.5rem", "25rem"])("lands a 154° step within 300 ms on a %s dial (N1)", async (size) => {
+    const { host } = renderThemed(<Spokes size={size} />);
+    const layer = radarLayer(host, "radar-chart-active-dot");
+    // DOM audit: the hand is aria-hidden plot output, read by its part.
+    const hand = host.querySelector<SVGLineElement>('[data-slot="radar-chart-spoke"][data-part="hand"]');
+    if (hand === null) throw new Error("no hand");
+    const spokeAt = (spoke: number) => {
+      const point = dialPoint((360 * spoke) / 7, 0.7);
+      return clientPoint(layer, point.x, point.y);
+    };
+    await hoverAt(...spokeAt(0));
+    for (let wait = 0; wait < 30; wait += 1) await new Promise((resolve) => requestAnimationFrame(resolve));
+    const target = (3 * 360) / 7;
+    const start = performance.now();
+    page
+      .getByRole("listbox")
+      .element()
+      .dispatchEvent(
+        new PointerEvent("pointermove", {
+          bubbles: true,
+          clientX: spokeAt(3)[0],
+          clientY: spokeAt(3)[1],
+          pointerType: "mouse",
+        })
+      );
+    let landed: number | null = null;
+    while (performance.now() - start < 1500) {
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+      const angle = Number.parseFloat(getComputedStyle(hand).rotate);
+      const off = Math.abs(apart(angle, target));
+      if (off <= 1) landed ??= performance.now() - start;
+      else landed = null;
+    }
+    expect(landed).not.toBeNull();
+    expect(landed ?? Number.POSITIVE_INFINITY).toBeLessThanOrEqual(300);
+  });
 });

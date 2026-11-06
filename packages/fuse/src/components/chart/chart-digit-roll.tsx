@@ -1,7 +1,5 @@
 "use client";
 
-"use client";
-
 /**
  * A number that rolls its digits (D8, S3). Each digit of the formatted text is a reel of 0 to 9,
  * which the stylesheet slides to the digit on the ticker spring, in tabular figures, and every

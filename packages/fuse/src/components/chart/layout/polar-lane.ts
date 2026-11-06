@@ -73,20 +73,40 @@ export function laneY(angle: number, dial: LaneDial, height: number, bounds: Lan
 /** The narrowest side lane a popup takes, in CSS pixels; a narrower lane sends it below the dial. */
 export const LANE_MIN = 128;
 
+/** The widest a side lane's popup grows, in CSS pixels, 16rem; wider content wraps. */
+export const LANE_WIDEST = 256;
+
 /**
- * Where the popup rests for a ray: in its side lane when that lane holds `LANE_MIN` pixels inside
- * the bounds, else in the other side lane when that one does, else below the labels. The choice reads
- * the room, never the popup's own width, which changes with its text from step to step, so a lane
- * never flips for a longer label; the popup takes the lane's room as its widest. A side lane's inner
- * edge sits one gap outside the further of the rim and the labels, and the bottom lane's top one gap
- * below them, centred on the dial and never moved vertically.
+ * How much more room than its content a popup asks of a side lane when it takes one, so a longer
+ * label later in the same turn still fits and the popup seldom has to leave for the bottom lane.
+ */
+export const LANE_SLACK = 1.15;
+
+/**
+ * The width a popup needs in a side lane to show its content without clipping: its max-content
+ * width, at least `LANE_MIN` and at most `LANE_WIDEST`, past which its text wraps.
+ *
+ * @param content - The popup's max-content width.
+ * @returns The width it needs.
+ */
+export function laneNeed(content: number): number {
+  return Math.max(LANE_MIN, Math.min(content, LANE_WIDEST));
+}
+
+/**
+ * Where the popup rests for a ray: in its side lane when that lane's room inside the bounds holds
+ * the popup's content with `LANE_SLACK` to spare (`laneNeed`), else in the other side lane when that
+ * one does, else below the labels. A side lane's inner edge sits one gap outside the further of the rim and the labels, and
+ * its box is the lane's room up to `LANE_WIDEST`, which the popup fills up to its content. The bottom
+ * lane's top sits one gap below them, centred on the dial and never moved vertically.
  *
  * @param angle - The ray's angle in degrees.
  * @param side - The side lane `laneSide` chose.
  * @param dial - The dial.
  * @param labels - The union of the labels past the rim, or null for none.
  * @param size - The popup's size.
- * @param bounds - The box the popup stays inside, the Root's figure.
+ * @param bounds - The box the popup stays inside beside the dial, the Root's figure.
+ * @param content - The popup's max-content width.
  * @returns The lane it rests in, its box, and the widest the popup may be there.
  */
 export function laneRest(
@@ -95,7 +115,8 @@ export function laneRest(
   dial: LaneDial,
   labels: LaneBox | null,
   size: PlaceSize,
-  bounds: LaneBox
+  bounds: LaneBox,
+  content: number
 ): LaneRest {
   const { centre, radius } = dial;
   const right = Math.max(centre.x + radius, labels?.right ?? Number.NEGATIVE_INFINITY) + LANE_GAP;
@@ -105,7 +126,7 @@ export function laneRest(
   const rooms = { right: bounds.right - right, left: left - bounds.left };
   const lane = (at: "right" | "left"): LaneRest => {
     const room = rooms[at];
-    const width = Math.min(size.width, room);
+    const width = Math.min(room, LANE_WIDEST);
     const box =
       at === "right"
         ? { left: right, top, right: right + width, bottom: top + size.height }
@@ -113,8 +134,9 @@ export function laneRest(
     return { side: at, box, room };
   };
   const other = side === "right" ? "left" : "right";
-  if (rooms[side] >= LANE_MIN) return lane(side);
-  if (rooms[other] >= LANE_MIN) return lane(other);
+  const need = laneNeed(content * LANE_SLACK);
+  if (rooms[side] >= need) return lane(side);
+  if (rooms[other] >= need) return lane(other);
   const below =
     Math.max(centre.y + (dial.bottom ?? radius), labels?.bottom ?? Number.NEGATIVE_INFINITY) + LANE_GAP;
   const room = bounds.right - bounds.left;

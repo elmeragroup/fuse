@@ -1349,10 +1349,10 @@
   }
 
   /*
-    The dot shows and leaves in place over 120 ms on a strong ease-out, as the hand fades beside it,
-    and never moves while it fades. Reduced motion keeps the fade, which moves nothing.
+    The dot and the hand show and leave together, in place, over 120 ms on a strong ease-out, and
+    never move while they fade. Reduced motion keeps the fade, which moves nothing (MOTION-VERIFY N7).
   */
-  [data-slot="radar-chart-active-dot"] [data-follow] {
+  :is([data-slot="radar-chart-active-dot"] [data-follow], [data-slot="radar-chart-spoke"][data-part="hand"]) {
     transition: opacity 120ms cubic-bezier(0.23, 1, 0.32, 1);
   }
 
@@ -1636,10 +1636,13 @@
   }
 
   /*
-    The dot shows and leaves in place over 120 ms on a strong ease-out, as the hand fades beside it,
-    and never moves while it fades. Reduced motion keeps the fade, which moves nothing.
+    The dot and the hand show and leave together, in place, over 120 ms on a strong ease-out, and
+    never move while they fade. Reduced motion keeps the fade, which moves nothing (MOTION-VERIFY N7).
   */
-  [data-slot="clock-chart-active-dot"] [data-follow] {
+  :is(
+    [data-slot="clock-chart-active-dot"] [data-follow],
+    [data-slot="clock-chart-scrubber"] [data-part="hand"]
+  ) {
     transition: opacity 120ms cubic-bezier(0.23, 1, 0.32, 1);
   }
 
@@ -3770,12 +3773,10 @@
         backwards;
     }
 
-    [data-slot="radar-chart-spoke"][data-part="hand"],
     [data-radar-series] {
       transition: opacity 150ms ease-out;
     }
 
-    [data-slot="clock-chart-scrubber"] [data-part="hand"],
     [data-clock-series] {
       transition: opacity 150ms ease-out;
     }

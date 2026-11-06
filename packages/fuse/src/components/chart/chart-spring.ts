@@ -105,6 +105,16 @@ export function stepSpring(store: ChartStore): Spring {
 }
 
 /**
+ * The spring of a polar step that leaps across the dial, faster than the pointer's pace would carry
+ * it: `FOLLOW_FASTEST`, the keyboard step's, since the pointer is already where the step lands.
+ *
+ * @returns The spring.
+ */
+export function leapSpring(): Spring {
+  return followSpring(FOLLOW_SPEEDS.fast);
+}
+
+/**
  * Glide an element onto the place it rests, from `by` CSS pixels away along x and y, plus whatever
  * offset a running glide shows.
  *

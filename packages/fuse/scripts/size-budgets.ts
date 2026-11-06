@@ -232,7 +232,10 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = derive([
   // labels' ray placement and ink measure, the dots' curve reads and the hatch by pixel column
   // (MOTION-REVIEW R1 to R4, F5 to F11), 209108 to 212860. The ceiling keeps about 100 bytes of
   // headroom.
-  { name: "chart", entryFile: "chart.js", measuredGzip: 97044, ceilingGzip: 212960 },
+  // Phase M2 on 2026-11-06: the follower's leap and its marks' stretch, the side lane chosen by
+  // its widest content, and the opening popup held until placed (MOTION-VERIFY N1 to N9),
+  // 212860 to 214091. The ceiling keeps about 100 bytes of headroom.
+  { name: "chart", entryFile: "chart.js", measuredGzip: 97044, ceilingGzip: 214191 },
   // 2026-10-13: new entry, measured at 29180. Pure wrappers over Base UI's toolbar and its roving focus.
   { name: "toolbar", entryFile: "toolbar.js", measuredGzip: 29180, ceilingGzip: 43770 },
   // 2026-10-12: new entries. Command is Base UI's Autocomplete in the InputGroup, with the Dialog
@@ -509,7 +512,10 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // labels' ray placement and ink measure, the dots' curve reads and the hatch by pixel column
     // (MOTION-REVIEW R1 to R4, F5 to F11), 106799 to 110278. The ceiling keeps about 100 bytes of
     // headroom.
-    ceilingGzip: 110378,
+    // Phase M2 on 2026-11-06: the follower's leap and its marks' stretch, the side lane chosen by
+    // its widest content, and the opening popup held until placed (MOTION-VERIFY N1 to N9),
+    // 110278 to 111355. The ceiling keeps about 100 bytes of headroom.
+    ceilingGzip: 111455,
   },
   // Set from its measurement on 2026-11-05, when the polar families landed: the whole namespace: rings on their frame in three looks, Track, Glow, the Center parts and the polar readouts. The ceiling
   // keeps about 100 bytes of headroom.
@@ -535,7 +541,10 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // headroom.
     // CenterName on 2026-11-06: the centre's active name line, a new shared pie and radial part,
     // 106563 to 106858. The ceiling keeps about 100 bytes of headroom.
-    ceilingGzip: 106958,
+    // Phase M2 on 2026-11-06: the follower's leap and its marks' stretch, the side lane chosen by
+    // its widest content, and the opening popup held until placed (MOTION-VERIFY N1 to N9),
+    // 106858 to 107874. The ceiling keeps about 100 bytes of headroom.
+    ceilingGzip: 107974,
   },
   // Set from its measurement on 2026-11-05, when the polar families landed: the whole namespace: grid, spoke and ring labels fitted to the dial, Area, Line, Dots, an ActiveDot on the loop, Glow and the polar readouts. The ceiling
   // keeps about 100 bytes of headroom.
@@ -555,7 +564,10 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // labels' ray placement and ink measure, the dots' curve reads and the hatch by pixel column
     // (MOTION-REVIEW R1 to R4, F5 to F11), 107893 to 110766. The ceiling keeps about 100 bytes of
     // headroom.
-    ceilingGzip: 110866,
+    // Phase M2 on 2026-11-06: the follower's leap and its marks' stretch, the side lane chosen by
+    // its widest content, and the opening popup held until placed (MOTION-VERIFY N1 to N9),
+    // 110766 to 111862. The ceiling keeps about 100 bytes of headroom.
+    ceilingGzip: 111962,
   },
   // Set from its measurement on 2026-11-05, when the polar families landed: the whole namespace: the zoned dial model, curves, wedges with floors and coarse slots, labels and ring values fitted to the dial, hands, Now, references, centre and value parts, and the polar readouts. The ceiling
   // keeps about 100 bytes of headroom.
@@ -585,7 +597,10 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // labels' ray placement and ink measure, the dots' curve reads and the hatch by pixel column
     // (MOTION-REVIEW R1 to R4, F5 to F11), 124639 to 128234. The ceiling keeps about 100 bytes of
     // headroom.
-    ceilingGzip: 128334,
+    // Phase M2 on 2026-11-06: the follower's leap and its marks' stretch, the side lane chosen by
+    // its widest content, and the opening popup held until placed (MOTION-VERIFY N1 to N9),
+    // 128234 to 129321. The ceiling keeps about 100 bytes of headroom.
+    ceilingGzip: 129421,
   },
   {
     name: "chart/Chart.Root",
@@ -701,7 +716,10 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // labels' ray placement and ink measure, the dots' curve reads and the hatch by pixel column
     // (MOTION-REVIEW R1 to R4, F5 to F11), 44570 to 46221. The ceiling keeps about 100 bytes of
     // headroom.
-    ceilingGzip: 46321,
+    // Phase M2 on 2026-11-06: the follower's leap and its marks' stretch, the side lane chosen by
+    // its widest content, and the opening popup held until placed (MOTION-VERIFY N1 to N9),
+    // 46221 to 46440. The ceiling keeps about 100 bytes of headroom.
+    ceilingGzip: 46540,
   },
   // 2026-11-05: new row, the typical pie route, as the bar route is Chart's: Root, Pie, the Center
   // parts, Legend and Tooltip, which the owner set beside the whole-namespace row, with the derived
@@ -738,7 +756,10 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // labels' ray placement and ink measure, the dots' curve reads and the hatch by pixel column
     // (MOTION-REVIEW R1 to R4, F5 to F11), 88179 to 91556. The ceiling keeps about 100 bytes of
     // headroom.
-    ceilingGzip: 91656,
+    // Phase M2 on 2026-11-06: the follower's leap and its marks' stretch, the side lane chosen by
+    // its widest content, and the opening popup held until placed (MOTION-VERIFY N1 to N9),
+    // 91556 to 92610. The ceiling keeps about 100 bytes of headroom.
+    ceilingGzip: 92710,
   },
   // 2026-11-05: new row, the typical radial route: Root, Bar, the Center parts, Legend and Tooltip,
   // which the owner set beside the whole-namespace row, with the derived ceiling.
@@ -776,7 +797,10 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // headroom.
     // CenterName on 2026-11-06: the centre's active name line, a new shared pie and radial part,
     // 87511 to 87628. The ceiling keeps about 100 bytes of headroom.
-    ceilingGzip: 87728,
+    // Phase M2 on 2026-11-06: the follower's leap and its marks' stretch, the side lane chosen by
+    // its widest content, and the opening popup held until placed (MOTION-VERIFY N1 to N9),
+    // 87628 to 88618. The ceiling keeps about 100 bytes of headroom.
+    ceilingGzip: 88718,
   },
   {
     name: "chart/RadialChart.Root",
@@ -799,7 +823,10 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // labels' ray placement and ink measure, the dots' curve reads and the hatch by pixel column
     // (MOTION-REVIEW R1 to R4, F5 to F11), 43369 to 44996. The ceiling keeps about 100 bytes of
     // headroom.
-    ceilingGzip: 45096,
+    // Phase M2 on 2026-11-06: the follower's leap and its marks' stretch, the side lane chosen by
+    // its widest content, and the opening popup held until placed (MOTION-VERIFY N1 to N9),
+    // 44996 to 45202. The ceiling keeps about 100 bytes of headroom.
+    ceilingGzip: 45302,
   },
   {
     name: "chart/RadarChart.Root",
@@ -819,7 +846,10 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // labels' ray placement and ink measure, the dots' curve reads and the hatch by pixel column
     // (MOTION-REVIEW R1 to R4, F5 to F11), 51297 to 52971. The ceiling keeps about 100 bytes of
     // headroom.
-    ceilingGzip: 53071,
+    // Phase M2 on 2026-11-06: the follower's leap and its marks' stretch, the side lane chosen by
+    // its widest content, and the opening popup held until placed (MOTION-VERIFY N1 to N9),
+    // 52971 to 53184. The ceiling keeps about 100 bytes of headroom.
+    ceilingGzip: 53284,
   },
   // 2026-11-05: new row, the typical radar route: Root, Grid, both axes, Area, Line, Legend and
   // Tooltip, which the owner set beside the whole-namespace row, with the derived ceiling.
@@ -842,7 +872,10 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // labels' ray placement and ink measure, the dots' curve reads and the hatch by pixel column
     // (MOTION-REVIEW R1 to R4, F5 to F11), 94603 to 97649. The ceiling keeps about 100 bytes of
     // headroom.
-    ceilingGzip: 97749,
+    // Phase M2 on 2026-11-06: the follower's leap and its marks' stretch, the side lane chosen by
+    // its widest content, and the opening popup held until placed (MOTION-VERIFY N1 to N9),
+    // 97649 to 98596. The ceiling keeps about 100 bytes of headroom.
+    ceilingGzip: 98696,
   },
   // 2026-11-05: new rows, ClockChart's Root alone and its typical route: Root, Line, Grid,
   // AngleAxis, Center, Legend and Tooltip, which the owner set, each with the derived ceiling.
@@ -865,7 +898,10 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // labels' ray placement and ink measure, the dots' curve reads and the hatch by pixel column
     // (MOTION-REVIEW R1 to R4, F5 to F11), 54868 to 56540. The ceiling keeps about 100 bytes of
     // headroom.
-    ceilingGzip: 56640,
+    // Phase M2 on 2026-11-06: the follower's leap and its marks' stretch, the side lane chosen by
+    // its widest content, and the opening popup held until placed (MOTION-VERIFY N1 to N9),
+    // 56540 to 56746. The ceiling keeps about 100 bytes of headroom.
+    ceilingGzip: 56846,
   },
   {
     name: "chart/ClockChart route",
@@ -895,7 +931,10 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // labels' ray placement and ink measure, the dots' curve reads and the hatch by pixel column
     // (MOTION-REVIEW R1 to R4, F5 to F11), 103832 to 107939. The ceiling keeps about 100 bytes of
     // headroom.
-    ceilingGzip: 108039,
+    // Phase M2 on 2026-11-06: the follower's leap and its marks' stretch, the side lane chosen by
+    // its widest content, and the opening popup held until placed (MOTION-VERIFY N1 to N9),
+    // 107939 to 108836. The ceiling keeps about 100 bytes of headroom.
+    ceilingGzip: 108936,
   },
   // 2026-11-04: new rows, measured at 84628 for the whole ScatterChart namespace and 41808 for its
   // Root alone, each with the derived ceiling.

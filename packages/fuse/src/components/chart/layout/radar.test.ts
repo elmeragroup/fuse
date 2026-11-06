@@ -256,12 +256,19 @@ describe("edgePoint (R1.11)", () => {
     expect(point?.y).toBeCloseTo(expected.y, 9);
   });
 
-  it("crosses a missing vertex on the straight edge between the present ones", () => {
-    // With (1, 0) missing, 90° lies on the edge from (0, −1) to (0, 1), the vertical through the
-    // centre, which the ray at 90° meets at the centre.
-    const point = edgePoint([square[0] ?? null, null, square[2] ?? null, square[3] ?? null], 90);
-    expect(point?.x).toBeCloseTo(0, 9);
-    expect(point?.y).toBeCloseTo(0, 9);
+  it("meets nothing on either edge beside a missing vertex, and the present vertices on their spokes (N9)", () => {
+    // With (1, 0) missing, the edges from 0° to 90° and from 90° to 180° touch it and draw nothing.
+    // The spokes at 0° and 180° still hold their vertices, and the edge from 180° to 270°, from
+    // (0, 1) to (−1, 0), meets the ray at 225° at (−½, ½).
+    const broken = [square[0] ?? null, null, square[2] ?? null, square[3] ?? null];
+    expect(edgePoint(broken, 45)).toBeNull();
+    expect(edgePoint(broken, 90)).toBeNull();
+    expect(edgePoint(broken, 135)).toBeNull();
+    expect(edgePoint(broken, 0)).toEqual({ x: 0, y: -1 });
+    expect(edgePoint(broken, 180)).toEqual({ x: 0, y: 1 });
+    const point = edgePoint(broken, 225);
+    expect(point?.x).toBeCloseTo(-0.5, 9);
+    expect(point?.y).toBeCloseTo(0.5, 9);
     expect(edgePoint([null, null, null, null], 45)).toBeNull();
   });
 });

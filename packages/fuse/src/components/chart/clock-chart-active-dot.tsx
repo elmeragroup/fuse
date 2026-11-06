@@ -13,6 +13,7 @@ import type { ActiveSlot } from "./chart-followers";
 import type { ChartMotion, MarkValues } from "./chart-motion";
 import { viewBoxOf } from "./chart-pie-frame";
 import type { ClockSeries } from "./chart-polar-context";
+import { STRETCH_SPAN } from "./chart-polar-follow";
 import type { PolarFollow } from "./chart-polar-follow";
 import { usePolarCommit, usePolarMark } from "./chart-polar-motion";
 import type { ChartLayerProps } from "./chart-types";
@@ -73,6 +74,21 @@ function placeDot(group: SVGGElement, look: DotLook, values: MarkValues): void {
     writeAttribute(path, "d", `M${pathNumber(x)},${pathNumber(y)}h0`);
 }
 
+/**
+ * How far the dot moves per radian of turn at an angle, in outer radii, along its series' curve:
+ * the curve's radius and its slope together, so a steep flank stretches the turn. Null while no slot
+ * is active or the series draws nothing about the angle.
+ */
+function dotStretch(look: DotLook, angle: number): number | null {
+  if (!look.active.current) return null;
+  const values = entranceFrame(look.drawn.current ?? look.series.rest).values;
+  const at = radiusAt(look, values, angle);
+  const before = radiusAt(look, values, angle - STRETCH_SPAN);
+  const after = radiusAt(look, values, angle + STRETCH_SPAN);
+  if (at === null || before === null || after === null) return null;
+  return Math.hypot(at, (after - before) / ((2 * STRETCH_SPAN * Math.PI) / 180));
+}
+
 /** Draw the active dot in this loop frame's numbers, so it follows its series' tween. */
 function drawActiveDot(group: SVGGElement, look: DotLook | null, values: MarkValues): void {
   if (look === null) return;
@@ -120,10 +136,16 @@ export function ClockChartActiveDot({
   });
   useLayoutEffect(() => {
     if (look === null) return undefined;
-    return follow.subscribe(() => {
+    const stop = follow.subscribe(() => {
       const group = dot.current;
       if (group !== null) placeDot(group, look, drawn.current ?? look.series.rest);
     });
+    // The follower turns no faster than the pointer's pace carries the dot along its curve.
+    const forget = follow.stretch((angle) => dotStretch(look, angle));
+    return () => {
+      stop();
+      forget();
+    };
   }, [follow, look]);
   return (
     <svg

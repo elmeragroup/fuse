@@ -777,6 +777,42 @@ describe("the centre's name line (CenterName)", () => {
   });
 });
 
+describe("the pick at the dial's centre (MOTION-VERIFY N5)", () => {
+  // Unit under test: the polar pick. Oracle: a point within 2 CSS px of the centre has no angle to
+  // read, so it keeps the slice the pointer holds; 3 px out, toward 3 o'clock, it reads Strøm, whose
+  // slice spans 0° to 159.0°.
+  it("keeps the held slice at the centre, and picks again 3 px out", async () => {
+    const { host } = renderThemed(
+      <LocaleProvider locale="nb-NO">
+        <div style={{ width: 320 }}>
+          <PieChart.Root
+            data={BILL}
+            config={HALVES_CONFIG}
+            nameKey="part"
+            valueKey="kr"
+            valueFormat={NOK}
+            innerRadius={0.62}
+            data-intro="none"
+            aria-label="Regning">
+            <PieChart.Pie />
+          </PieChart.Root>
+        </div>
+      </LocaleProvider>
+    );
+    const svg = pieSvg(host);
+    const point = dialPoint(215, 0.8);
+    await hoverAt(...clientPoint(svg, point.x, point.y));
+    expect(activeSlice(host)).toBe(1);
+    const [x, y] = clientPoint(svg, 0, 0);
+    await hoverAt(x, y);
+    expect(activeSlice(host)).toBe(1);
+    await hoverAt(x + 1, y + 1);
+    expect(activeSlice(host)).toBe(1);
+    await hoverAt(x + 3, y);
+    expect(activeSlice(host)).toBe(0);
+  });
+});
+
 describe("the centre's text floor and fit guard (R3.4)", () => {
   const painted = async (): Promise<void> => {
     await new Promise((resolve) => requestAnimationFrame(resolve));

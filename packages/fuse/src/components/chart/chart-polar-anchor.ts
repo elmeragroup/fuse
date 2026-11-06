@@ -6,41 +6,146 @@
  * height at the rim, and Base UI keeps it inside the figure without changing its side. A step moves
  * it with the Root's angle follower: the popup rests at the target ray's height and shows the
  * follower's height through a vertical `translate`, so the popup, the hand and the dots move as one.
- * A change of lane fades the popup in over 120 ms instead of travelling. A pointer that moves toward
- * the popup past the rim, inside the triangle from where it left the plot to the popup's near edge,
- * keeps the active part.
+ * A change of lane fades the popup in over 120 ms instead of travelling, and so does a step that
+ * leaps across the dial faster than the pointer's pace. A side lane takes the popup only when its
+ * room holds the popup's content, so no value is cut; the positioner takes the lane's width, and
+ * the popup fills it, so new text never makes Base UI place it again. A popup stays transparent until Base UI has placed it in its lane, so its first frame
+ * never paints elsewhere. A pointer that moves toward the popup past the rim, inside the triangle
+ * from where it left the plot to the popup's near edge, keeps the active part.
  */
 import { use, useCallback, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 import { writeStyle } from "./chart-dom";
 import { PolarContext } from "./chart-polar-context";
-import type { AnchorInput, AnchorMeasure, ClientPoint, TooltipAnchor } from "./chart-readout-port";
+import { useChartReadout } from "./chart-readout";
+import type {
+  AnchorInput,
+  AnchorMeasure,
+  ChartReadout,
+  ClientPoint,
+  TooltipAnchor,
+} from "./chart-readout-port";
 import { useChartStore } from "./chart-store";
 import type { GlideRoute } from "./chart-tooltip-glide";
-import { inTriangle, laneRest, laneSide, laneY, nearEdge } from "./layout/polar-lane";
+import { inTriangle, LANE_WIDEST, laneNeed, laneRest, laneSide, laneY, nearEdge } from "./layout/polar-lane";
 import type { LaneBox, LaneDial, LaneSide } from "./layout/polar-lane";
 
 const STRAIGHT: GlideRoute = { kind: "straight" };
 
-/** The labels a lane stays outside of, past the rim: angle, outside pie, Now, reference and ring-value labels. */
+/**
+ * The labels a lane stays outside of, past the rim: angle, outside pie, Now, reference, value and
+ * ring-value labels, such as a radar's "200" hanging below the rim at 6 o'clock.
+ */
 const LABELS =
-  '[data-slot$="angle-label"], [data-slot="pie-chart-label"], [data-slot="clock-chart-now"] [data-part="label"], [data-slot$="value-label"], [data-slot$="reference-label"]';
-
-/** The widest a side lane's popup grows, in CSS pixels, 16rem. */
-const LANE_WIDEST = 256;
+  '[data-slot$="angle-label"], [data-slot="pie-chart-label"], [data-slot="clock-chart-now"] [data-part="label"], [data-slot$="value-label"], [data-slot$="reference-label"], [data-slot$="radius-label"]';
 
 /** How a lane switch fades the popup in. */
 const LANE_FADE = { duration: 120, easing: "cubic-bezier(0.23, 1, 0.32, 1)" } as const;
 
+/** The most frames a popup waits, transparent, for Base UI to place it in its lane. */
+const PLACE_FRAMES = 6;
+
+/** The popup inside a positioner. */
+function popupOf(positioner: HTMLElement | null): HTMLElement | null {
+  return positioner?.querySelector<HTMLElement>('[data-slot="chart-tooltip"]') ?? null;
+}
+
+/** One canvas the label measures share, made on first use. */
+let measuring: CanvasRenderingContext2D | null | undefined;
+
+/** The widest item label a readout prints in one font, measured once. */
+type WidestLabel = { readonly readout: ChartReadout; readonly font: string; readonly text: string };
+
+/**
+ * The label any item prints that is widest in the popup's label font, measured once per readout and
+ * font, or null for a popup with no label line.
+ */
+function widestLabel(
+  label: HTMLElement,
+  readout: ChartReadout,
+  cache: { current: WidestLabel | null }
+): string | null {
+  if (readout.window === null) return null;
+  if (measuring === undefined) measuring = document.createElement("canvas").getContext("2d");
+  if (measuring === null) return null;
+  const style = getComputedStyle(label);
+  const font = `${style.fontStyle} ${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+  if (cache.current?.readout !== readout || cache.current.font !== font) {
+    measuring.font = font;
+    let text = "";
+    let width = -1;
+    for (let index = readout.window.first; index <= readout.window.last; index += 1) {
+      const next = readout.activeLabel(index, undefined);
+      const measured = measuring.measureText(next).width;
+      if (measured > width) {
+        width = measured;
+        text = next;
+      }
+    }
+    cache.current = { readout, font, text };
+  }
+  return cache.current.text;
+}
+
+/**
+ * The widest the popup's content will be on any step: its max-content width with the widest item
+ * label in place of the current one, wherever the popup prints it, in the label line and in the rows
+ * that name the item, each in its own font. A popup's lines are its item's label and rows that name
+ * it, so its width follows the label, and a lane chosen for the widest label never has to change
+ * for a longer one later. The text goes back before the measure returns, in the same task, so
+ * nothing paints it and React's text nodes end as they were.
+ *
+ * @param popup - The popup.
+ * @param readout - The Root's readout, whose items' labels the popup prints.
+ * @param cache - The widest label measured last.
+ * @returns The width in CSS pixels.
+ */
+function widestContent(
+  popup: HTMLElement | null,
+  readout: ChartReadout,
+  cache: { current: WidestLabel | null }
+): number {
+  const label = popup?.querySelector<HTMLElement>('[data-slot="chart-tooltip-label"]');
+  if (popup == null || label == null) return contentWidth(popup ?? null);
+  const now = label.textContent;
+  const widest = widestLabel(label, readout, cache);
+  if (widest === null || widest === now || now === "") return contentWidth(popup);
+  const swapped: Text[] = [];
+  const walker = document.createTreeWalker(popup, NodeFilter.SHOW_TEXT);
+  for (let node = walker.nextNode(); node !== null; node = walker.nextNode())
+    if (node instanceof Text && node.data === now) swapped.push(node);
+  for (const node of swapped) node.data = widest;
+  const width = contentWidth(popup);
+  for (const node of swapped) node.data = now;
+  return width;
+}
+
+/**
+ * The popup's max-content width, its widest unwrapped line with its padding, measured by lifting its
+ * width for one forced layout and putting it back.
+ */
+function contentWidth(popup: HTMLElement | null): number {
+  if (popup === null) return 0;
+  const { width, maxWidth } = popup.style;
+  popup.style.setProperty("width", "max-content");
+  popup.style.setProperty("max-width", "none");
+  const measured = popup.offsetWidth;
+  popup.style.setProperty("width", width);
+  popup.style.setProperty("max-width", maxWidth);
+  return measured;
+}
+
 /**
  * The scene a lane reads, measured on resize ticks and never per pointer move, relative to the
- * dial's centre: the outer radius, the labels past the rim, the figure's box and the popup's size.
+ * dial's centre: the outer radius, the labels past the rim, the figure's box, the popup's size and
+ * its content's max-content width.
  */
 type Scene = {
   readonly radius: number;
   readonly labels: LaneBox | null;
   readonly bounds: LaneBox;
   readonly size: { readonly width: number; readonly height: number };
+  readonly content: number;
 };
 
 /**
@@ -116,6 +221,8 @@ export function usePolarTooltipAnchor(input: AnchorInput): TooltipAnchor {
   if (polar === null)
     throw new Error("A polar Tooltip renders inside its polar Root, which provides the context.");
   const { model, kernel, box, motion } = polar;
+  const readout = useChartReadout("Chart.Tooltip");
+  const spread = useRef<WidestLabel | null>(null);
   const { active, positioner, measures } = input;
   const near = useChartStore(kernel.store, (snapshot) => snapshot.near);
   const ray = active === null ? null : model.ray(active, near);
@@ -130,6 +237,13 @@ export function usePolarTooltipAnchor(input: AnchorInput): TooltipAnchor {
     return { centre: { x: rect.left - box.left * scale, y: rect.top - box.top * scale }, scale };
   }, [surfaceOf, box]);
   const [scene, setScene] = useState<Scene | null>(null);
+  // The widest content the popup has shown on this model, so a shorter readout never sends it back
+  // to a lane a longer one left, and the lane never flips from step to step or between opens. It
+  // resets when the model changes.
+  const widest = useRef(0);
+  useLayoutEffect(() => {
+    widest.current = 0;
+  }, [model]);
   const open = angle !== null;
   // The scene is measured when the popup opens, on every measure tick and whenever the figure or
   // the popup changes size.
@@ -159,7 +273,10 @@ export function usePolarTooltipAnchor(input: AnchorInput): TooltipAnchor {
               };
       }
       const size = { width: node?.offsetWidth ?? 0, height: node?.offsetHeight ?? 0 };
-      setScene({ radius, labels, bounds: shifted(figure.getBoundingClientRect(), -x, -y), size });
+      const popup = popupOf(node);
+      widest.current = Math.max(widest.current, widestContent(popup, readout, spread));
+      const content = widest.current;
+      setScene({ radius, labels, bounds: shifted(figure.getBoundingClientRect(), -x, -y), size, content });
     };
     measure();
     const sizes = new ResizeObserver(measure);
@@ -169,7 +286,7 @@ export function usePolarTooltipAnchor(input: AnchorInput): TooltipAnchor {
     return () => {
       sizes.disconnect();
     };
-  }, [open, measures, dialOf, kernel, positioner]);
+  }, [open, measures, dialOf, kernel, positioner, readout]);
   // The lane the popup is in, kept across steps until the ray turns 20° into the other half.
   // A radial chart's ray is a ring's value end, which jumps between unrelated angles as the pointer
   // crosses rings, so its popup keeps the lane it opened in until it closes. A pie's or a radial
@@ -190,7 +307,7 @@ export function usePolarTooltipAnchor(input: AnchorInput): TooltipAnchor {
   const placed =
     angle === null || preferred === null || scene === null || origin === null
       ? null
-      : laneRest(angle, preferred, origin, scene.labels, scene.size, scene.bounds);
+      : laneRest(angle, preferred, origin, scene.labels, scene.size, scene.bounds, scene.content);
   // A closing popup keeps the lane it showed in while it fades out.
   const [shownSide, setShownSide] = useState<LaneSide>("right");
   if (placed !== null && placed.side !== shownSide) setShownSide(placed.side);
@@ -208,6 +325,12 @@ export function usePolarTooltipAnchor(input: AnchorInput): TooltipAnchor {
           ? placed.box.right
           : (scene?.bounds.left ?? 0);
   const anchorY = placed === null ? null : placed.side === "bottom" ? placed.box.top : 0;
+  // Where Base UI should put the positioner's near edge, in client pixels, read by the check that
+  // keeps a newly opened popup transparent until it is there.
+  const corner = useRef<{ readonly side: LaneSide; readonly x: number; readonly y: number } | null>(null);
+  useLayoutEffect(() => {
+    corner.current = anchorX === null || anchorY === null ? null : { side, x: anchorX, y: anchorY };
+  }, [side, anchorX, anchorY]);
   const virtual = useMemo(() => {
     if (anchorX === null || anchorY === null) return null;
     const measure = (): AnchorMeasure => {
@@ -235,12 +358,32 @@ export function usePolarTooltipAnchor(input: AnchorInput): TooltipAnchor {
   const lane = useRef<LaneNow | null>(null);
   const before = useRef<LaneSide | null>(null);
   const sizing = useRef<number | null>(null);
+  const placing = useRef<number | null>(null);
   useLayoutEffect(
     () => () => {
       if (sizing.current !== null) cancelAnimationFrame(sizing.current);
+      if (placing.current !== null) cancelAnimationFrame(placing.current);
     },
     []
   );
+  /**
+   * Whether Base UI has put the positioner's near edge on the lane's corner: a side lane's inner edge,
+   * or the bottom lane's top, within a pixel.
+   */
+  const onLane = useCallback((): boolean => {
+    const node = positioner.current;
+    const want = corner.current;
+    const dial = dialOf();
+    if (node === null || want === null || dial === null) return false;
+    const rect = node.getBoundingClientRect();
+    const at =
+      want.side === "right"
+        ? rect.left - (dial.centre.x + want.x)
+        : want.side === "left"
+          ? rect.right - (dial.centre.x + want.x)
+          : rect.top - (dial.centre.y + want.y);
+    return Math.abs(at) <= 1;
+  }, [positioner, dialOf]);
   useLayoutEffect(() => {
     // A closing popup keeps its place, its width and its lane while it fades out.
     if (angle === null) {
@@ -248,12 +391,19 @@ export function usePolarTooltipAnchor(input: AnchorInput): TooltipAnchor {
       return;
     }
     // A change of lane fades the popup in where it rests, instead of carrying it across the dial, and
-    // it holds there until the next step.
+    // it holds there until the next step. So does a step that leaps across the dial, which holds
+    // there until the follower stops leaping (N1).
     const was = before.current;
     before.current = side;
+    const opening = was === null;
     const switched = was !== null && was !== side;
     const last = lane.current;
-    const holds = switched || (last !== null && last.holds && last.angle === angle);
+    // Only a side lane's popup rides the follower, so only there does a leap fade it in; the bottom
+    // lane's never moves, and its content swaps in place.
+    const leaped =
+      turns && side !== "bottom" && (last === null || last.angle !== angle) && kernel.follow.leaps();
+    const holds =
+      switched || leaped || (last !== null && last.holds && (last.angle === angle || kernel.follow.leaps()));
     if (scene !== null)
       lane.current = { angle, side, scene, holds, turns, size: lane.current?.size ?? scene.size };
     shiftPopup(positioner.current, lane.current, kernel.follow.shown());
@@ -266,21 +416,43 @@ export function usePolarTooltipAnchor(input: AnchorInput): TooltipAnchor {
       if (node === null || now === null) return;
       lane.current = { ...now, size: { width: node.offsetWidth, height: node.offsetHeight } };
       shiftPopup(node, lane.current, kernel.follow.shown());
+      // Content that outgrows its side lane sends the popup to a lane that holds it.
+      if (now.side === "bottom" || room === null) return;
+      const popup = popupOf(node);
+      widest.current = Math.max(widest.current, widestContent(popup, readout, spread));
+      const content = widest.current;
+      if (laneNeed(content) > Math.min(room, LANE_WIDEST)) setScene((last) => last && { ...last, content });
     });
-    // The popup takes its lane's room as its widest, so a long label wraps instead of moving it.
-    const popup = positioner.current?.querySelector<HTMLElement>('[data-slot="chart-tooltip"]');
-    // A side lane's popup takes a fixed width, its lane's room up to 16rem, so new text never changes
-    // its width and Base UI never moves it a frame later; the bottom lane's takes the room as its
-    // widest. A closing popup keeps the width it showed.
-    if (popup != null && room !== null) {
-      const fixed = side === "bottom" ? null : `${Math.min(room, LANE_WIDEST).toFixed(2)}px`;
-      writeStyle(popup, "width", fixed);
-      writeStyle(popup, "max-width", `${room.toFixed(2)}px`);
+    const node = positioner.current;
+    const popup = popupOf(node);
+    // A side lane's positioner takes the lane's width, its room up to 16rem, and the popup fills
+    // it, so new text never changes its width, its far edge never moves from step to step, and Base
+    // UI never moves it a frame later; a label longer than the lane wraps. The bottom lane's popup
+    // takes the figure's width as its widest. A closing popup keeps the width it showed.
+    if (node !== null && popup !== null && room !== null) {
+      const lanes = side !== "bottom";
+      writeStyle(node, "width", lanes ? `${Math.min(room, LANE_WIDEST).toFixed(2)}px` : null);
+      writeStyle(popup, "max-width", lanes ? null : `${room.toFixed(2)}px`);
     }
-    if (switched && popup != null && !motion.reduced()) {
+    if ((switched || leaped) && popup !== null && !motion.reduced()) {
       popup.animate([{ opacity: 0 }, { opacity: 1 }], LANE_FADE);
     }
-  }, [angle, side, room, scene, turns, kernel.follow, positioner, motion]);
+    // A popup that opens stays transparent until Base UI has placed it in its lane (N4).
+    if (opening && popup !== null && placing.current === null) {
+      writeStyle(popup, "opacity", "0");
+      let frames = 0;
+      const check = (): void => {
+        frames += 1;
+        if (onLane() || frames >= PLACE_FRAMES) {
+          placing.current = null;
+          writeStyle(popup, "opacity", null);
+          return;
+        }
+        placing.current = requestAnimationFrame(check);
+      };
+      placing.current = requestAnimationFrame(check);
+    }
+  }, [angle, side, room, scene, turns, kernel.follow, positioner, motion, onLane, readout]);
   useLayoutEffect(
     () =>
       kernel.follow.subscribe((shown) => {

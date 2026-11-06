@@ -22,9 +22,11 @@ describe("the chart API report's forgotten-export filter", () => {
   it("reads every namespace part from the committed report", () => {
     const parts = namespaceParts(readFileSync(join(packageRoot, "etc/chart.api.md"), "utf8"));
     // Chart's 44 parts and Chart.SlotLabel, then the pie, radial and radar parts of their own, each
-    // family's Tooltip and Table among them.
-    expect(parts).toHaveLength(45 + 11 + 3 + 10 + 6);
+    // family's Tooltip and Table among them; the pie's twelve include CenterName, which the centre's
+    // active name line added.
+    expect(parts).toHaveLength(45 + 12 + 3 + 10 + 6);
     expect(parts).toContain("PieChartCenter");
+    expect(parts).toContain("PieChartCenterName");
     expect(parts).toContain("RadialChartBar");
     expect(parts).not.toContain("Chart");
     expect(parts).not.toContain("Sparkline");

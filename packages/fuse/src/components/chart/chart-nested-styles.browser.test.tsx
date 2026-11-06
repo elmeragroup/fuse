@@ -353,12 +353,20 @@ function differences(actual: ReturnType<typeof styles>, expected: ReturnType<typ
   );
 }
 
-/** Activate the option under the middle of a chart's own plot with the pointer. */
+/**
+ * Activate the option under the middle of a chart's own plot with the pointer, or on a polar chart
+ * three quarters across it: a dial's middle is its centre, which has no angle to pick, so it picks
+ * nothing (MOTION-VERIFY N5).
+ */
 async function activateOwn(figure: HTMLElement): Promise<void> {
   // DOM audit: the plot's listbox is the chart's one pointer target.
   const listbox = figure.querySelector<HTMLElement>('[role="listbox"]');
   if (listbox === null) throw new Error("no listbox");
-  await userEvent.hover(listbox);
+  const box = listbox.getBoundingClientRect();
+  await userEvent.hover(
+    listbox,
+    figure.hasAttribute("data-polar") ? { position: { x: box.width * 0.75, y: box.height / 2 } } : undefined
+  );
   await expect.poll(() => figure.hasAttribute("data-active")).toBe(true);
 }
 

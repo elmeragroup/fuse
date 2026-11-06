@@ -13,6 +13,7 @@ import type { ActiveSlot } from "./chart-followers";
 import type { MarkValues } from "./chart-motion";
 import { viewBoxOf } from "./chart-pie-frame";
 import { radarDrawingIn, usePolarContext } from "./chart-polar-context";
+import { STRETCH_SPAN } from "./chart-polar-follow";
 import type { PolarFollow } from "./chart-polar-follow";
 import { usePolarCommit, usePolarMark } from "./chart-polar-motion";
 import { useChartReadout } from "./chart-readout";
@@ -41,7 +42,8 @@ type ActiveDotLook = {
 
 /**
  * Place the dot where the ray at the follower's angle meets the series' polygon in these radii, in
- * the dial's own units. A missing reading at the active spoke shows no dot.
+ * the dial's own units. A missing reading at the active spoke shows no dot, and on an edge beside a
+ * missing reading, which the Line does not draw, the dot fades out where it left the drawn edge.
  */
 function placeDot(group: SVGGElement, look: ActiveDotLook, radii: MarkValues): void {
   const angle = look.follow.shown();
@@ -54,6 +56,19 @@ function placeDot(group: SVGGElement, look: ActiveDotLook, radii: MarkValues): v
   for (const path of group.children) writeAttribute(path, "d", dotsPath([point]));
 }
 
+/**
+ * How far the dot moves per radian of turn at an angle, in outer radii, along its series' edge.
+ * Null while no spoke is active or the edge breaks about the angle.
+ */
+function dotStretch(look: ActiveDotLook, radii: MarkValues, angle: number): number | null {
+  if (look.active.current === null) return null;
+  const vertices = verticesAt(look.spokes, radii);
+  const before = edgePoint(vertices, angle - STRETCH_SPAN);
+  const after = edgePoint(vertices, angle + STRETCH_SPAN);
+  if (before === null || after === null) return null;
+  return Math.hypot(after.x - before.x, after.y - before.y) / ((2 * STRETCH_SPAN * Math.PI) / 180);
+}
+
 /** Draw the active dot in this loop frame's radii, so it follows its series' tween. */
 function drawActiveDot(group: SVGGElement, look: ActiveDotLook, radii: MarkValues): void {
   look.drawn.current = radii;
@@ -63,8 +78,9 @@ function drawActiveDot(group: SVGGElement, look: ActiveDotLook, radii: MarkValue
 /**
  * The dot on one series at the active spoke. It sits on the polygon's edge at the Root's follower
  * angle, so a step carries it along the edges to the new spoke the short way round, through each
- * vertex between, with the hand, and it moves with its series as the series tweens. A missing
- * reading at the active spoke shows no dot.
+ * vertex between, with the hand, and it moves with its series as the series tweens. Over an edge
+ * beside a missing reading, which the Line does not draw, it fades out in place and fades back in
+ * past it, and a missing reading at the active spoke shows no dot.
  *
  * @beta
  */
@@ -106,14 +122,18 @@ export function RadarChartActiveDot({ dataKey, className, style }: RadarChartAct
     active.current = current?.slot ?? null;
     placeDot(node, look, drawn.current ?? radii);
   });
-  useLayoutEffect(
-    () =>
-      follow.subscribe(() => {
-        const node = dot.current;
-        if (node !== null) placeDot(node, look, drawn.current ?? radii);
-      }),
-    [follow, look, radii]
-  );
+  useLayoutEffect(() => {
+    const stop = follow.subscribe(() => {
+      const node = dot.current;
+      if (node !== null) placeDot(node, look, drawn.current ?? radii);
+    });
+    // The follower turns no faster than the pointer's pace carries the dot along its edge.
+    const forget = follow.stretch((angle) => dotStretch(look, drawn.current ?? radii, angle));
+    return () => {
+      stop();
+      forget();
+    };
+  }, [follow, look, radii]);
   return (
     <svg
       data-slot="radar-chart-active-dot"

@@ -161,14 +161,15 @@ export function spokeAt(angle: number, count: number): number {
 }
 
 /**
- * Where the ray at an angle meets a series' polygon: on the straight edge between the present
- * vertices either side of the angle, skipping a missing vertex as a ride between spokes does. An
- * angle on a present vertex's spoke lands on that vertex. The active dot rides here, so it stays on
- * the polygon however far the angle has turned between spokes.
+ * Where the ray at an angle meets a series' polygon: on the straight edge between the vertices of
+ * the spokes either side of the angle. An edge that touches a missing vertex draws nothing, as the
+ * Line breaks there, so the ray meets nothing on it and the active dot fades out over the break, as
+ * the clock's dot does in a gap (MOTION-VERIFY N9). An angle on a present vertex's spoke lands on
+ * that vertex, and a lone vertex is the whole polygon.
  *
  * @param vertices - The series' vertex per spoke, null for a missing one.
  * @param angle - The angle in degrees from 12 o'clock, in any turn.
- * @returns The point, or null when no vertex is present.
+ * @returns The point, or null on a break or when no vertex is present.
  */
 export function edgePoint(vertices: readonly (PolarPoint | null)[], angle: number): PolarPoint | null {
   const count = vertices.length;
@@ -176,18 +177,10 @@ export function edgePoint(vertices: readonly (PolarPoint | null)[], angle: numbe
   const step = 360 / count;
   const turned = ((angle % 360) + 360) % 360;
   const below = Math.floor(turned / step + 1e-9) % count;
-  // The present vertex at or before the angle, and the next present one after it.
-  let before = below;
-  while (vertices[before] == null) {
-    before = (before - 1 + count) % count;
-    if (before === below) return null;
-  }
-  let after = (below + 1) % count;
-  while (vertices[after] == null) after = (after + 1) % count;
-  const a = vertices[before];
-  const b = vertices[after];
-  if (a == null || b == null) return null;
-  if (Math.abs(turned - spokeAngle(before, count)) < 1e-9 || before === after) return a;
+  const a = vertices[below] ?? null;
+  if (count === 1 || Math.abs(turned - spokeAngle(below, count)) < 1e-9) return a;
+  const b = vertices[(below + 1) % count] ?? null;
+  if (a === null || b === null) return null;
   const radians = (turned * Math.PI) / 180;
   const ray = { x: Math.sin(radians), y: -Math.cos(radians) };
   const edge = { x: b.x - a.x, y: b.y - a.y };
