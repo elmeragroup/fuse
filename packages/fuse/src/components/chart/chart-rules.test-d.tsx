@@ -86,7 +86,15 @@ type Namespaces = {
 type SharedClosed = "Tooltip" | "LegendToggleGroup" | "LegendToggle" | "Table" | "TableColumn" | "Background";
 
 /** The pie and radial closed parts that `PieChart` owns and `RadialChart` shares. */
-type PolarClosed = "Track" | "Center" | "CenterValue" | "CenterShare" | "CenterMax" | "CenterLabel" | "Glow";
+type PolarClosed =
+  | "Track"
+  | "Center"
+  | "CenterValue"
+  | "CenterShare"
+  | "CenterMax"
+  | "CenterLabel"
+  | "CenterName"
+  | "Glow";
 
 /** Each namespace's closed parts by member name, whose own keys are every key past `className` and `style`. */
 type ClosedNames = {

@@ -533,7 +533,9 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // labels' ray placement and ink measure, the dots' curve reads and the hatch by pixel column
     // (MOTION-REVIEW R1 to R4, F5 to F11), 103205 to 106563. The ceiling keeps about 100 bytes of
     // headroom.
-    ceilingGzip: 106663,
+    // CenterName on 2026-11-06: the centre's active name line, a new shared pie and radial part,
+    // 106563 to 106858. The ceiling keeps about 100 bytes of headroom.
+    ceilingGzip: 106958,
   },
   // Set from its measurement on 2026-11-05, when the polar families landed: the whole namespace: grid, spoke and ring labels fitted to the dial, Area, Line, Dots, an ActiveDot on the loop, Glow and the polar readouts. The ceiling
   // keeps about 100 bytes of headroom.
@@ -716,6 +718,7 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
       "CenterShare",
       "CenterMax",
       "CenterLabel",
+      "CenterName",
       "Legend",
       "Tooltip",
     ],
@@ -751,6 +754,7 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
       "CenterShare",
       "CenterMax",
       "CenterLabel",
+      "CenterName",
       "Legend",
       "Tooltip",
     ],
@@ -770,7 +774,9 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // labels' ray placement and ink measure, the dots' curve reads and the hatch by pixel column
     // (MOTION-REVIEW R1 to R4, F5 to F11), 84173 to 87511. The ceiling keeps about 100 bytes of
     // headroom.
-    ceilingGzip: 87611,
+    // CenterName on 2026-11-06: the centre's active name line, a new shared pie and radial part,
+    // 87511 to 87628. The ceiling keeps about 100 bytes of headroom.
+    ceilingGzip: 87728,
   },
   {
     name: "chart/RadialChart.Root",

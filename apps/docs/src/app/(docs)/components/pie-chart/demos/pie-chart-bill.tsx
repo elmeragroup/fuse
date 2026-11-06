@@ -62,7 +62,7 @@ export function PieChartBill() {
         <PieChart.Pie cornerRadius={0.04} />
         <PieChart.Center>
           <PieChart.CenterValue />
-          <PieChart.CenterLabel>Total</PieChart.CenterLabel>
+          <PieChart.CenterName>Total</PieChart.CenterName>
         </PieChart.Center>
         <PieChart.LegendToggleGroup />
         <PieChart.Tooltip>

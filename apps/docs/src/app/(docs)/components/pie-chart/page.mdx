@@ -27,7 +27,7 @@ The active slice moves out along its bisector by `--chart-slice-pop`, 8 px by de
 
 ## Bills and shares
 
-The month switch tweens the slices to the new bill, and the centre rolls its digits to the new total. Hover a slice, or focus the chart and use the arrow keys, to read one slice.
+The month switch tweens the slices to the new bill, and the centre rolls its digits to the new total. Hover a slice, or focus the chart and use the arrow keys, to read one slice. The centre then prints that slice's value, and the `CenterName` line under it names the slice. With nothing active, `CenterName` prints its children, here "Total". A `CenterLabel` line keeps its text whatever is active.
 
 <Demo slug="pie-chart" id="bill" title="Bill" file="pie-chart-bill.tsx">
   <PieChartBill />

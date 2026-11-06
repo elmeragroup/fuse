@@ -20,6 +20,7 @@ const LABELS = [
   '[data-slot="clock-chart-now"] > [data-part="label"]',
   '[data-slot="pie-chart-center-value"]',
   '[data-slot="pie-chart-center-label"]',
+  '[data-slot="pie-chart-center-name"]',
   '[data-slot="pie-chart-center-share"]',
   '[data-slot="pie-chart-center-max"]',
   '[data-slot="clock-chart-center-label"]',

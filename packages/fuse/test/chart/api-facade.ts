@@ -67,7 +67,11 @@ import { ClockChartSkeleton } from "../../src/components/chart/clock-chart-skele
 import { ClockChartTooltip } from "../../src/components/chart/clock-chart-tooltip";
 import { ClockChartTooltipTotal } from "../../src/components/chart/clock-chart-tooltip-total";
 import { ClockChartValueLabel } from "../../src/components/chart/clock-chart-value-label";
-import { PieChartCenter, PieChartCenterLabel } from "../../src/components/chart/pie-chart-center";
+import {
+  PieChartCenter,
+  PieChartCenterLabel,
+  PieChartCenterName,
+} from "../../src/components/chart/pie-chart-center";
 import {
   PieChartCenterMax,
   PieChartCenterShare,
@@ -184,6 +188,7 @@ export const PieChart = {
   CenterShare: PieChartCenterShare,
   CenterMax: PieChartCenterMax,
   CenterLabel: PieChartCenterLabel,
+  CenterName: PieChartCenterName,
   Glow: PieChartGlow,
   Skeleton: PieChartSkeleton,
   Headline: ChartHeadline,
@@ -217,6 +222,7 @@ export const RadialChart = {
   CenterShare: PieChartCenterShare,
   CenterMax: PieChartCenterMax,
   CenterLabel: PieChartCenterLabel,
+  CenterName: PieChartCenterName,
   Glow: PieChartGlow,
   Skeleton: RadialChartSkeleton,
   Headline: ChartHeadline,

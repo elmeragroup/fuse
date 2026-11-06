@@ -153,6 +153,7 @@ test("the family sketches compile", () => {
       <PieChart.Labels position="outside" />
       <PieChart.Center>
         <PieChart.CenterValue />
+        <PieChart.CenterName>besøk</PieChart.CenterName>
         <PieChart.CenterLabel>besøk</PieChart.CenterLabel>
       </PieChart.Center>
       <PieChart.Tooltip>
@@ -182,6 +183,7 @@ test("the family sketches compile", () => {
       <RadialChart.Bar variant="dotted" />
       <RadialChart.Center>
         <RadialChart.CenterValue />
+        <RadialChart.CenterName>I alt</RadialChart.CenterName>
         <RadialChart.CenterLabel>av</RadialChart.CenterLabel>
         <RadialChart.CenterMax />
       </RadialChart.Center>

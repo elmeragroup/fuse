@@ -1280,6 +1280,7 @@ declare namespace PieChart {
         PieChartCenter as Center,
         PieChartCenterLabel as CenterLabel,
         PieChartCenterMax as CenterMax,
+        PieChartCenterName as CenterName,
         PieChartCenterShare as CenterShare,
         PieChartCenterValue as CenterValue,
         ChartEmpty as Empty,
@@ -1327,6 +1328,14 @@ function PieChartCenterMax(input: PieChartCenterMaxProps): ReactElement;
 // @beta
 export type PieChartCenterMaxProps = ChartLayerProps & {
     format?: ValueFormat;
+};
+
+// @beta
+function PieChartCenterName(input: PieChartCenterNameProps): ReactElement;
+
+// @beta
+export type PieChartCenterNameProps = ChartLayerProps & {
+    children?: ReactNode;
 };
 
 // @beta
@@ -1555,6 +1564,7 @@ declare namespace RadialChart {
         PieChartCenter as Center,
         PieChartCenterLabel as CenterLabel,
         PieChartCenterMax as CenterMax,
+        PieChartCenterName as CenterName,
         PieChartCenterShare as CenterShare,
         PieChartCenterValue as CenterValue,
         ChartEmpty as Empty,

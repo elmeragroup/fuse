@@ -4,6 +4,8 @@
 // pick must agree with (Q8); CONTRACT section 8.4's on-colour label rule over the theme's
 // `chart-*-foreground` roles; section 8.13's centre table with the largest-remainder shares; D3's
 // pop and S2's dims; R10's halo; Q12's gradient; and S9's category word.
+import { Profiler } from "react";
+
 import { describe, expect, it } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
@@ -13,6 +15,7 @@ import {
   activeSlice,
   centreText,
   clientPoint,
+  dialPoint,
   hoverAt,
   pieSvg,
   polarFigure,
@@ -628,6 +631,149 @@ describe("Glow and gradients (R10, Q12)", () => {
     expect(getComputedStyle(stops[1] ?? host).stopColor).toBe(getComputedStyle(probe).color);
     expect(getComputedStyle(sectors(host)[0] ?? host).fill).toBe(`url("#${gradient?.id ?? ""}")`);
     expect(polarFigure(host)).toBeTruthy();
+  });
+});
+
+describe("the centre's name line (CenterName)", () => {
+  // Unit under test: CenterName. Oracle: the config's labels, "Nettleie" for the slice the pointer
+  // is on and "Elbil" for the ring the keys reach, and the children with nothing active, as
+  // CenterValue prints the active item's value and, at rest, the total.
+  const nameOf = (host: HTMLElement): string | null =>
+    // DOM audit: the centre is aria-hidden plot text, read by its slot.
+    host.querySelector('[data-slot="pie-chart-center-name"]')?.textContent ?? null;
+
+  it("names the slice under the pointer, and prints its children at rest", async () => {
+    const { host } = renderThemed(
+      <LocaleProvider locale="nb-NO">
+        <div style={{ width: 320 }}>
+          <PieChart.Root
+            data={BILL}
+            config={HALVES_CONFIG}
+            nameKey="part"
+            valueKey="kr"
+            valueFormat={NOK}
+            innerRadius={0.62}
+            data-intro="none"
+            aria-label="Regning">
+            <PieChart.Pie />
+            <PieChart.Center>
+              <PieChart.CenterValue />
+              <PieChart.CenterName>Totalt</PieChart.CenterName>
+            </PieChart.Center>
+          </PieChart.Root>
+        </div>
+      </LocaleProvider>
+    );
+    expect(nameOf(host)).toBe("Totalt");
+    expect(centreText(host, "pie-chart-center-value")).toBe("1\u00a0386\u00a0kr");
+    // Strøm's 44.16 % spans 0° to 159.0°, and Nettleie's 31.60 % from there to 272.7°.
+    const point = dialPoint(215, 0.8);
+    await hoverAt(...clientPoint(pieSvg(host), point.x, point.y));
+    expect(nameOf(host)).toBe("Nettleie");
+    expect(centreText(host, "pie-chart-center-value")).toBe("438\u00a0kr");
+    // The pointer leaves the plot for the page, and after the leave's grace the centre rests.
+    page
+      .getByRole("listbox")
+      .element()
+      .dispatchEvent(
+        new PointerEvent("pointerout", {
+          bubbles: true,
+          relatedTarget: document.body,
+          pointerType: "mouse",
+          clientX: 0,
+          clientY: 0,
+        })
+      );
+    await expect.poll(() => nameOf(host)).toBe("Totalt");
+    expect(centreText(host, "pie-chart-center-value")).toBe("1\u00a0386\u00a0kr");
+  });
+
+  it("commits once per slice it names, never on a pointer move within the slice", async () => {
+    // Unit under test: CenterName's renders. Oracle: CONTRACT section 4's cost rule, a part that
+    // follows the active item commits when it changes and never on a move within it.
+    let commits = 0;
+    const { host } = renderThemed(
+      <LocaleProvider locale="nb-NO">
+        <div style={{ width: 320 }}>
+          <PieChart.Root
+            data={BILL}
+            config={HALVES_CONFIG}
+            nameKey="part"
+            valueKey="kr"
+            valueFormat={NOK}
+            innerRadius={0.62}
+            data-intro="none"
+            aria-label="Regning">
+            <PieChart.Pie />
+            <PieChart.Center>
+              <Profiler
+                id="name"
+                onRender={() => {
+                  commits += 1;
+                }}>
+                <PieChart.CenterName>Totalt</PieChart.CenterName>
+              </Profiler>
+            </PieChart.Center>
+          </PieChart.Root>
+        </div>
+      </LocaleProvider>
+    );
+    const svg = pieSvg(host);
+    const at = (angle: number) => {
+      const point = dialPoint(angle, 0.8);
+      return clientPoint(svg, point.x, point.y);
+    };
+    commits = 0;
+    // Three moves inside Nettleie, from 159.0° to 272.7°, then one into Avgifter, to 347.3°.
+    for (const angle of [200, 215, 230]) await hoverAt(...at(angle));
+    expect(nameOf(host)).toBe("Nettleie");
+    expect(commits).toBe(1);
+    await hoverAt(...at(300));
+    expect(nameOf(host)).toBe("Avgifter");
+    expect(commits).toBe(2);
+  });
+
+  it("names the active ring, beside a CenterLabel that keeps its children and its maximum", async () => {
+    const { host } = renderThemed(
+      <LocaleProvider locale="nb-NO">
+        <div style={{ width: 320 }}>
+          <RadialChart.Root
+            data={[
+              { use: "varme", kwh: 100, limit: 200 },
+              { use: "elbil", kwh: 50, limit: 100 },
+            ]}
+            config={{
+              varme: { label: "Varme", color: "chart-1" },
+              elbil: { label: "Elbil", color: "chart-2" },
+            }}
+            nameKey="use"
+            valueKey="kwh"
+            maxKey="limit"
+            valueFormat={{ preset: "energy", unit: "kWh" }}
+            data-intro="none"
+            aria-label="Forbruk">
+            <RadialChart.Bar />
+            <RadialChart.Center>
+              <RadialChart.CenterValue />
+              <RadialChart.CenterName>I alt</RadialChart.CenterName>
+              <RadialChart.CenterLabel>
+                av <RadialChart.CenterMax />
+              </RadialChart.CenterLabel>
+            </RadialChart.Center>
+          </RadialChart.Root>
+        </div>
+      </LocaleProvider>
+    );
+    // DOM audit: the centre is aria-hidden plot text, read by its slot.
+    const label = host.querySelector('[data-slot="pie-chart-center-label"]');
+    expect(nameOf(host)).toBe("I alt");
+    expect(label?.firstChild?.textContent).toBe("av ");
+    expect(centreText(host, "pie-chart-center-max")).toBe("300\u00a0kWh");
+    await userEvent.tab();
+    await userEvent.keyboard("{ArrowDown}");
+    expect([centreText(host, "pie-chart-center-value"), nameOf(host)]).toEqual(["50\u00a0kWh", "Elbil"]);
+    expect(label?.firstChild?.textContent).toBe("av ");
+    expect(centreText(host, "pie-chart-center-max")).toBe("100\u00a0kWh");
   });
 });
 

@@ -55,8 +55,9 @@ describe("chart namespaces", () => {
     expect(NAMESPACES.map(([name, namespace]) => [name, Object.keys(namespace).length])).toEqual([
       // 44 in section 3, and Chart.SlotLabel, which the polish run added.
       ["Chart", 45],
-      ["PieChart", 31],
-      ["RadialChart", 30],
+      // Each with CenterName, which the centre's active name line added past section 3.
+      ["PieChart", 32],
+      ["RadialChart", 31],
       ["RadarChart", 30],
     ]);
   });

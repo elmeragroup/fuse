@@ -561,6 +561,7 @@ export function pieModel(input: PieInput): PolarModel {
         sliceOf: (category) => (folded.some(({ key }) => key === category) ? category : OTHER_KEY),
       },
       centre: {
+        label: (index) => items[index]?.label.text ?? null,
         value: (index) => items[index]?.value ?? null,
         format: (index) => items[index]?.format ?? valueFormat ?? {},
         total: sharedFormat(items) === null ? null : { value: total, format: sharedFormat(items) ?? {} },
@@ -726,6 +727,7 @@ function radialCentre(
   const maxima = fills.flatMap(({ max }) => (max === null ? [] : [max]));
   const maxSum = maxima.length === fills.length ? maxima.reduce((total, max) => total + max, 0) : null;
   return {
+    label: (index) => items[index]?.label.text ?? null,
     value: (index) => items[index]?.value ?? null,
     format: (index) => items[index]?.format ?? valueFormat ?? {},
     total: format === null ? null : { value: sum, format },

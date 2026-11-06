@@ -35,7 +35,7 @@ export function PieChartServer() {
       <PieChart.Labels position="outside" />
       <PieChart.Center>
         <PieChart.CenterValue />
-        <PieChart.CenterLabel>Total</PieChart.CenterLabel>
+        <PieChart.CenterName>Total</PieChart.CenterName>
       </PieChart.Center>
       <PieChart.Table />
     </PieChart.Root>

@@ -5,11 +5,15 @@
  * the square inscribed in the hole, and a CenterLabel is a text line among them. The numbers are
  * parts of their own, in `pie-chart-center-value`, so a route that names none ships no digit roll
  * (Q1). The Center is plot output, hidden from readers, who read the same numbers from the options.
+ * Every part that follows the active item reads it here, from the store, so it renders when the
+ * active item changes and never on a pointer move within one.
  */
 import type { ReactElement, ReactNode } from "react";
 
 import { useCentreFit } from "./chart-centre-fit";
-import { pieDrawingOf, radialDrawingOf, usePolarContext } from "./chart-polar-context";
+import { centreOf, pieDrawingOf, radialDrawingOf, usePolarContext } from "./chart-polar-context";
+import type { CentreModel } from "./chart-polar-context";
+import { useChartStore } from "./chart-store";
 import type { ChartLayerProps } from "./chart-types";
 
 /**
@@ -31,6 +35,32 @@ export type PieChartCenterLabelProps = ChartLayerProps & {
   /** The label text, such as "av" between the value and the maximum. */
   children?: ReactNode;
 };
+
+/**
+ * Props for `PieChart.CenterName`, a closed part.
+ *
+ * @beta
+ */
+export type PieChartCenterNameProps = ChartLayerProps & {
+  /** The text with nothing active, such as "Total" under the total. */
+  children?: ReactNode;
+};
+
+/** The centre's numbers, null under a family with no centre, and the active item. */
+type CentreItem = { readonly centre: CentreModel | null; readonly active: number | null };
+
+/**
+ * The centre's numbers and the active slice's or ring's index, or null while nothing is active.
+ *
+ * @param part - The part, which a misplaced use names.
+ * @returns The centre and the active index.
+ */
+export function useCentreItem(part: string): CentreItem {
+  const { model, kernel } = usePolarContext(part, ["pie", "radial"]);
+  const centre = centreOf(model);
+  const active = useChartStore(kernel.store, (snapshot) => snapshot.active);
+  return { centre, active: active !== null && active >= 0 && active < model.count ? active : null };
+}
 
 /**
  * The text in the hole of a donut or a gauge: its parts sit in the square inscribed in the hole,
@@ -79,7 +109,9 @@ export function PieChartCenter({ children, className, style }: PieChartCenterPro
 }
 
 /**
- * A text line in the centre, such as the word between the value and the maximum.
+ * A text line in the centre, such as the word between the value and the maximum. Its text stays
+ * the same whatever is active, and it may hold the centre's numbers, as in "av" before a
+ * `CenterMax`. A line that names the active item is a `CenterName`.
  *
  * @beta
  */
@@ -92,5 +124,26 @@ export function PieChartCenterLabel({ children, className, style }: PieChartCent
   );
 }
 
+/**
+ * A text line in the centre that names the active slice or ring by its config label, and prints its
+ * children with nothing active, as `CenterValue` prints the active item's value and, with nothing
+ * active, the total. So "Total" under the total reads "Grid rent" under that slice's value. It
+ * renders when the active item changes, never on a pointer move within one, and it is a text line
+ * as a `CenterLabel` is: the same size and colour, and left out of a hole narrower than 4rem or one
+ * whose fit keeps only the value.
+ *
+ * @beta
+ */
+export function PieChartCenterName({ children, className, style }: PieChartCenterNameProps): ReactElement {
+  const { centre, active } = useCentreItem("PieChart.CenterName");
+  const name = centre === null || active === null ? null : centre.label(active);
+  return (
+    <span data-slot="pie-chart-center-name" className={className} style={style}>
+      {name ?? children}
+    </span>
+  );
+}
+
 Object.assign(PieChartCenter, { displayName: "PieChart.Center" });
 Object.assign(PieChartCenterLabel, { displayName: "PieChart.CenterLabel" });
+Object.assign(PieChartCenterName, { displayName: "PieChart.CenterName" });

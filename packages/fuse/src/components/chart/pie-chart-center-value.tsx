@@ -10,14 +10,12 @@ import type { ReactElement } from "react";
 
 import { useLocale } from "../../intl/locale-context";
 import { ChartDigitRoll } from "./chart-digit-roll";
-import { centreOf, usePolarContext } from "./chart-polar-context";
-import type { CentreModel } from "./chart-polar-context";
 import { shareDigits, shareText } from "./chart-readout";
-import { useChartStore } from "./chart-store";
 import type { ChartFractionDigits, ChartLayerProps, ValueFormat } from "./chart-types";
 import { CHART_STRINGS } from "./format/chart-strings";
 import { numberAndUnit } from "./format/formatted-text";
 import { formatValue } from "./format/value-format";
+import { useCentreItem } from "./pie-chart-center";
 
 /**
  * Props for `PieChart.CenterValue`, a closed part.
@@ -49,7 +47,6 @@ export type PieChartCenterMaxProps = ChartLayerProps & {
   format?: ValueFormat;
 };
 
-/** The centre's numbers, null under a family with no centre, and the active item. */
 /**
  * A value as its number, whose digits roll, and its unit, in the order the formatter wrote them and
  * joined by a breakable space, so a value too wide for the hole wraps between them instead of
@@ -75,16 +72,6 @@ function RollingValue({ text, step }: { readonly text: string; readonly step: nu
   );
 }
 
-type ActiveItem = { readonly centre: CentreModel | null; readonly active: number | null };
-
-/** The active slice's or ring's index, or null while nothing is active. */
-function useActiveItem(part: string): ActiveItem {
-  const { model, kernel } = usePolarContext(part, ["pie", "radial"]);
-  const centre = centreOf(model);
-  const active = useChartStore(kernel.store, (snapshot) => snapshot.active);
-  return { centre, active: active !== null && active >= 0 && active < model.count ? active : null };
-}
-
 /**
  * The active slice's or ring's value. With nothing active, the total, or nothing when the
  * categories' formats differ, because a sum of kWh and kr means nothing. Its digits roll from one
@@ -93,7 +80,7 @@ function useActiveItem(part: string): ActiveItem {
  * @beta
  */
 export function PieChartCenterValue({ format, className, style }: PieChartCenterValueProps): ReactElement {
-  const { centre, active } = useActiveItem("PieChart.CenterValue");
+  const { centre, active } = useCentreItem("PieChart.CenterValue");
   const { locale } = useLocale();
   let text: string | null = null;
   if (centre !== null && active !== null) {
@@ -122,7 +109,7 @@ export function PieChartCenterValue({ format, className, style }: PieChartCenter
  * @beta
  */
 export function PieChartCenterShare({ format, className, style }: PieChartCenterShareProps): ReactElement {
-  const { centre, active } = useActiveItem("PieChart.CenterShare");
+  const { centre, active } = useCentreItem("PieChart.CenterShare");
   const { locale } = useLocale();
   const digits = shareDigits(format);
   const share =
@@ -148,7 +135,7 @@ export function PieChartCenterShare({ format, className, style }: PieChartCenter
  * @beta
  */
 export function PieChartCenterMax({ format, className, style }: PieChartCenterMaxProps): ReactElement {
-  const { centre, active } = useActiveItem("PieChart.CenterMax");
+  const { centre, active } = useCentreItem("PieChart.CenterMax");
   const { locale } = useLocale();
   const max = centre === null ? null : active === null ? centre.totalMax : centre.max(active);
   const shown =

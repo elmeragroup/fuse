@@ -5,7 +5,11 @@
  */
 export { RadialChartRoot as Root } from "./radial-chart-root";
 export { RadialChartBar as Bar } from "./radial-chart-bar";
-export { PieChartCenter as Center, PieChartCenterLabel as CenterLabel } from "./pie-chart-center";
+export {
+  PieChartCenter as Center,
+  PieChartCenterLabel as CenterLabel,
+  PieChartCenterName as CenterName,
+} from "./pie-chart-center";
 export {
   PieChartCenterValue as CenterValue,
   PieChartCenterShare as CenterShare,

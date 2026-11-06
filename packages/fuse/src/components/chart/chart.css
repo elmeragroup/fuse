@@ -1208,7 +1208,7 @@
   }
 
   @container (width < 4rem) {
-    [data-slot="pie-chart-center-label"] {
+    :is([data-slot="pie-chart-center-label"], [data-slot="pie-chart-center-name"]) {
       display: none;
     }
   }

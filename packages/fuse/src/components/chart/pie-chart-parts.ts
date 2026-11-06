@@ -6,7 +6,11 @@
 export { PieChartRoot as Root } from "./pie-chart-root";
 export { PieChartPie as Pie } from "./pie-chart-pie";
 export { PieChartLabels as Labels } from "./pie-chart-labels";
-export { PieChartCenter as Center, PieChartCenterLabel as CenterLabel } from "./pie-chart-center";
+export {
+  PieChartCenter as Center,
+  PieChartCenterLabel as CenterLabel,
+  PieChartCenterName as CenterName,
+} from "./pie-chart-center";
 export {
   PieChartCenterValue as CenterValue,
   PieChartCenterShare as CenterShare,

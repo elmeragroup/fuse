@@ -140,7 +140,11 @@ export type {
   ChartTooltipValueProps,
 } from "./components/chart/chart-tooltip";
 export type { ChartTooltipTotalProps } from "./components/chart/chart-tooltip-total";
-export type { PieChartCenterLabelProps, PieChartCenterProps } from "./components/chart/pie-chart-center";
+export type {
+  PieChartCenterLabelProps,
+  PieChartCenterNameProps,
+  PieChartCenterProps,
+} from "./components/chart/pie-chart-center";
 export type {
   PieChartCenterMaxProps,
   PieChartCenterShareProps,

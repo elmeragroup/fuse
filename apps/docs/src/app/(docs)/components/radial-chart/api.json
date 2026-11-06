@@ -446,6 +446,42 @@
       ]
     },
     {
+      "name": "RadialChart.CenterName",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/pie-chart-center.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The text with nothing active, such as \"Total\" under the total.",
+          "required": false
+        },
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Classes on the part's element.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        }
+      ]
+    },
+    {
       "name": "RadialChart.Glow",
       "rsc": "client",
       "sourcePath": "packages/fuse/src/components/chart/pie-chart-glow.tsx",

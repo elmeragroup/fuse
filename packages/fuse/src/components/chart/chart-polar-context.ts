@@ -232,6 +232,8 @@ export type RadarDrawing = {
 
 /** The numbers a centre prints, per item and with nothing active (CONTRACT section 8.13). */
 export type CentreModel = {
+  /** An item's visible label from config, Other's for the folded slice, or null past the items. */
+  readonly label: (index: number) => string | null;
   /** An item's reading, its sign kept, or null for a missing one. */
   readonly value: (index: number) => number | null;
   /** An item's format. */
