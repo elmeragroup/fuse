@@ -19,7 +19,7 @@ import type { Srgb } from "@elmeragroup/color/srgb";
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import { computedColor } from "../../../test/assert-invalid-ring";
-import { angleOf, clockLayer, clockPath, dotPoints, wedgeRadii } from "../../../test/chart/clock";
+import { angleOf, clockLayer, clockPath, dotPoints, labelInk, wedgeRadii } from "../../../test/chart/clock";
 import { clientPoint, hoverAt, polarFigure } from "../../../test/chart/pie";
 import { emulatePixelRatio } from "../../../test/page-metrics";
 import { renderThemed } from "../../../test/themed-browser-render";
@@ -85,6 +85,43 @@ function Dial({
   );
 }
 
+/** How far a label's centre lies off its ray, across it and along it, in steps of 0.75 px. */
+type RayOffsets = { readonly across: number; readonly along: number };
+
+/**
+ * How far a label lies off its ray, across it and along it from where the ray rule puts it: its
+ * middle at R + 6 px plus its half-extent along the ray, |sin θ| · w/2 + |cos θ| · h/2. A bare label
+ * reads its ink, from the font's metrics (`labelInk`), and Now's chip reads its box. Each is rounded
+ * down to whole steps of 0.75 px, half a device pixel at 2× and the review's tolerance, so a centred
+ * label reads 0 and 0.
+ */
+function rayOffsets(
+  host: HTMLElement,
+  label: HTMLElement | undefined,
+  angle: number,
+  side: "outside" | "inside" = "outside"
+): RayOffsets {
+  if (label === undefined) throw new Error("no label");
+  // DOM audit: every SVG on the dial maps its units to the screen by its viewBox; the first serves.
+  const layer = host.querySelector<SVGSVGElement>("svg[viewBox]");
+  if (layer === null) throw new Error("no layer");
+  const [cx, cy] = clientPoint(layer, 0, 0);
+  const [rx] = clientPoint(layer, 1, 0);
+  const radius = rx - cx;
+  const box = side === "outside" ? labelInk(label) : label.getBoundingClientRect();
+  const width = box.right - box.left;
+  const height = box.bottom - box.top;
+  const radians = (angle * Math.PI) / 180;
+  const ux = Math.sin(radians);
+  const uy = -Math.cos(radians);
+  const dx = (box.left + box.right) / 2 - cx;
+  const dy = (box.top + box.bottom) / 2 - cy;
+  const support = (Math.abs(ux) * width) / 2 + (Math.abs(uy) * height) / 2;
+  const expected = side === "outside" ? radius + 6 + support : radius - 6 - support;
+  const step = (value: number): number => Math.trunc(value / 0.75) + 0;
+  return { across: step(Math.abs(dx * uy - dy * ux)), along: step(Math.abs(dx * ux + dy * uy - expected)) };
+}
+
 async function painted(): Promise<void> {
   await new Promise((resolve) => requestAnimationFrame(resolve));
 }
@@ -118,9 +155,10 @@ describe("the dial's geometry (D11, D13)", () => {
     const column = clockLayer(host, "clock-chart-column");
     const figure = polarFigure(host);
     let checked = 0;
+    // Each probe sits at a slot's middle, past the 2 px dead band a held slot keeps (R2.5).
     for (let ring = 0; ring < 3; ring += 1) {
       for (let step = 0; step < 36; step += 1) {
-        const angle = step * 10 + 3;
+        const angle = ((step * 7) % 24) * 15 + 7.5;
         const radius = 0.35 + ring * 0.25;
         const radians = (angle * Math.PI) / 180;
         await hoverAt(...clientPoint(column, radius * Math.sin(radians), -radius * Math.cos(radians)));
@@ -489,16 +527,9 @@ describe("the 25-hour day", () => {
     const six = [...host.querySelectorAll<HTMLElement>('[data-slot="clock-chart-angle-label"]')].find(
       (label) => label.textContent === "06"
     );
-    // 1.1 R at 100.8° lies at x = 1.1 sin 100.8°, y = −1.1 cos 100.8°, in a box from −1 to 1.
-    const radians = (100.8 * Math.PI) / 180;
-    expect(Number.parseFloat(six?.style.getPropertyValue("--_x") ?? "")).toBeCloseTo(
-      ((1.1 * Math.sin(radians) + 1) / 2) * 100,
-      2
-    );
-    expect(Number.parseFloat(six?.style.getPropertyValue("--_y") ?? "")).toBeCloseTo(
-      ((-1.1 * Math.cos(radians) + 1) / 2) * 100,
-      2
-    );
+    // The label's ink sits with its middle on the ray at 100.8°, its nearest edge 6 px past the rim
+    // (Fix R4).
+    expect(rayOffsets(host, six, 100.8)).toEqual({ across: 0, along: 0 });
   });
 });
 
@@ -527,12 +558,23 @@ describe("the seam (D16), Now and the keys", () => {
     expect(angleOf(Number(x), Number(y))).toBeCloseTo(172.5, 1);
   });
 
-  it("shows Now's label past the rim only where it clears every cycle label shown", async () => {
+  it("shows Now's label on its hand inside the rim only where it clears the hole", async () => {
     // DOM audit: Now's label is aria-hidden plot text, read by its part.
     const nowLabel = (host: HTMLElement) =>
       host.querySelector<HTMLElement>('[data-slot="clock-chart-now"] > [data-part="label"]');
-    // At 11:30, 172.5°, Now's label would sit 7.5° from "12 PM", whose box it meets on this dial, so
-    // only the hand and its dot show.
+    // At 11:30, 172.5°, the label sits on the hand by 6 o'clock, about R − 20 px from the centre at
+    // its nearest edge. A hole of 0.9 R leaves it no room on this dial, so only the hand and its dot
+    // show; the default 0.3 R hole leaves it room, and it sits inside the rim, clear of "12 PM".
+    const tight = renderThemed(
+      <Dial now={DAY + 11.5 * HOUR} inner={0.9}>
+        <ClockChart.AngleAxis />
+        <ClockChart.Now label="Nå" />
+      </Dial>
+    );
+    await painted();
+    expect(nowLabel(tight.host)?.checkVisibility()).toBe(false);
+    expect(tight.host.querySelector('[data-slot="clock-chart-now"] [data-part="hand"]')).not.toBeNull();
+    tight.unmount();
     const day = renderThemed(
       <Dial now={DAY + 11.5 * HOUR}>
         <ClockChart.AngleAxis />
@@ -540,11 +582,22 @@ describe("the seam (D16), Now and the keys", () => {
       </Dial>
     );
     await painted();
-    expect(nowLabel(day.host)?.checkVisibility()).toBe(false);
-    expect(day.host.querySelector('[data-slot="clock-chart-now"] [data-part="hand"]')).not.toBeNull();
+    expect(nowLabel(day.host)?.checkVisibility()).toBe(true);
+    const near = nowLabel(day.host)?.getBoundingClientRect() ?? new DOMRect();
+    // DOM audit: the hour labels are aria-hidden plot text, read by their slot.
+    for (const hour of day.host.querySelectorAll('[data-slot="clock-chart-angle-label"]')) {
+      if (!hour.checkVisibility()) continue;
+      const other = hour.getBoundingClientRect();
+      expect(
+        near.left < other.right &&
+          near.right > other.left &&
+          near.top < other.bottom &&
+          near.bottom > other.top
+      ).toBe(false);
+    }
     day.unmount();
-    // A week from Monday 20 October 2025. At Thursday 00:30, 154.4°, the label reads right and down
-    // from 1.1 R, 26° clear of Thursday's label at 180° and Wednesday's at 128.6°, so it shows.
+    // A week from Monday 20 October 2025. At Thursday 00:30, 154.4°, the label clears Thursday's
+    // label and Wednesday's, so it shows.
     const monday = Date.parse("2025-10-19T22:00:00Z");
     const week = renderThemed(
       <LocaleProvider locale="nb-NO" timeZone="Europe/Oslo">
@@ -568,10 +621,13 @@ describe("the seam (D16), Now and the keys", () => {
     const label = nowLabel(week.host);
     expect(label?.checkVisibility()).toBe(true);
     const box = label?.getBoundingClientRect() ?? new DOMRect();
-    const dial = clockLayer(week.host, "clock-chart-now").getBoundingClientRect();
-    const centre = { x: dial.left + dial.width / 2, y: dial.top + dial.height / 2 };
-    // Its near corner lies past the rim, and it meets no weekday label.
-    expect(Math.hypot(box.left - centre.x, box.top - centre.y)).toBeGreaterThan(dial.width / 2);
+    // The week holds the 25-hour Sunday of 26 October, 169 equal hours, so Now's hand lies at
+    // 72.5 / 169 of a turn. The label's centre sits on it, its nearest edge 6 px inside the rim
+    // (Fix R4.2), and it meets no weekday label.
+    expect(rayOffsets(week.host, label ?? undefined, (72.5 / 169) * 360, "inside")).toEqual({
+      across: 0,
+      along: 0,
+    });
     // DOM audit: the weekday labels are aria-hidden plot text, read by their slot.
     for (const weekday of week.host.querySelectorAll('[data-slot="clock-chart-angle-label"]')) {
       const other = weekday.getBoundingClientRect();
@@ -975,5 +1031,65 @@ describe("the readouts", () => {
       /^Klokkediagram med 1 serie\. /u
     );
     expect(host.querySelectorAll("tbody tr")).toHaveLength(24);
+  });
+});
+
+describe("the centre's text floor and fit guard (R3.4)", () => {
+  // A 200 px dial, R = 100 px, holds a hole square of side √2 · inner · 100: inner radii of 0.2121,
+  // 0.3394 and 0.5657 give squares of 30, 48 and 80 px. The value, 18 370 kWh, needs about 38 px for
+  // its number at the 12 px floor. The line "Totalt hittil i år" wraps onto two 16 px lines in a 48 px
+  // hole, under the value's two 14.4 px lines, 60.8 px in all, and fits on one line in an 80 px hole.
+  function Total({ inner }: { readonly inner: number }) {
+    return (
+      <Dial
+        data={hours(Array.from({ length: 24 }, () => 18_370))}
+        config={{ kwh: { label: "kWh", color: "chart-1", format: { preset: "energy", unit: "kWh" } } }}
+        inner={inner}>
+        <ClockChart.Column dataKey="kwh" />
+        <ClockChart.Center>
+          <ClockChart.ActiveValue dataKey="kwh" fallback="first" />
+          <span data-slot="test-centre-line">Totalt hittil i år</span>
+        </ClockChart.Center>
+      </Dial>
+    );
+  }
+
+  function parts(host: HTMLElement) {
+    // DOM audit: the centre is aria-hidden plot text, read by its slot and part.
+    const hole = host.querySelector<HTMLElement>('[data-slot="clock-chart-center"] > [data-part="hole"]');
+    const value = host.querySelector<HTMLElement>('[data-slot="clock-chart-active-value"]');
+    const line = host.querySelector<HTMLElement>('[data-slot="test-centre-line"]');
+    if (hole === null || value === null || line === null) throw new Error("no centre");
+    return { hole, value, line };
+  }
+
+  it("drops the whole centre in a 30 px hole, where the number alone overflows", async () => {
+    const { host } = renderThemed(<Total inner={0.2121} />);
+    await painted();
+    const { hole, value } = parts(host);
+    expect(hole.getBoundingClientRect().width).toBeCloseTo(30, 0);
+    expect(hole.getAttribute("data-fit")).toBe("none");
+    expect(getComputedStyle(value).display).toBe("none");
+  });
+
+  it("keeps the value alone in a 48 px hole, at the 12 px floor and on two lines", async () => {
+    const { host } = renderThemed(<Total inner={0.3394} />);
+    await painted();
+    const { hole, value, line } = parts(host);
+    expect(hole.getBoundingClientRect().width).toBeCloseTo(48, 0);
+    expect(hole.getAttribute("data-fit")).toBe("value");
+    expect(getComputedStyle(line).display).toBe("none");
+    expect(getComputedStyle(value).fontSize).toBe("12px");
+    expect(value.getBoundingClientRect().height).toBeGreaterThanOrEqual(2 * 12 * 1.2 - 0.5);
+  });
+
+  it("shows the value and the line in an 80 px hole", async () => {
+    const { host } = renderThemed(<Total inner={0.5657} />);
+    await painted();
+    const { hole, value, line } = parts(host);
+    expect(hole.getBoundingClientRect().width).toBeCloseTo(80, 0);
+    expect(hole.hasAttribute("data-fit")).toBe(false);
+    expect(getComputedStyle(value).display).not.toBe("none");
+    expect(getComputedStyle(line).display).not.toBe("none");
   });
 });

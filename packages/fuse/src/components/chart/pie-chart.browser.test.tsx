@@ -630,3 +630,132 @@ describe("Glow and gradients (R10, Q12)", () => {
     expect(polarFigure(host)).toBeTruthy();
   });
 });
+
+describe("the centre's text floor and fit guard (R3.4)", () => {
+  const painted = async (): Promise<void> => {
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+  };
+  // A 200 px dial, R = 100 px, holds a hole square of side √2 · inner · 100: inner radii of 0.2121,
+  // 0.3394 and 0.5657 give squares of 30, 48 and 80 px. The value, 18 370 kWh, needs about 38 px for
+  // its number at the 12 px floor, and the label "Totalt i år" needs more than 48 px.
+  function Total({
+    inner,
+    money = false,
+    kwh = [12_000, 6370],
+  }: {
+    readonly inner: number;
+    readonly money?: boolean;
+    readonly kwh?: readonly [number, number];
+  }) {
+    return (
+      <LocaleProvider locale={money ? "en-US" : "nb-NO"}>
+        <div style={{ width: 320 }}>
+          <PieChart.Root
+            data={[
+              { part: "varme", kwh: kwh[0] },
+              { part: "lys", kwh: kwh[1] },
+            ]}
+            config={{
+              varme: { label: "Varme", color: "chart-1" },
+              lys: { label: "Lys", color: "chart-2" },
+            }}
+            nameKey="part"
+            valueKey="kwh"
+            valueFormat={
+              money
+                ? { style: "currency", currency: "NOK", maximumFractionDigits: 0 }
+                : { preset: "energy", unit: "kWh" }
+            }
+            innerRadius={inner}
+            data-intro="none"
+            aria-label="Forbruk">
+            <PieChart.Pie />
+            <PieChart.Center>
+              <PieChart.CenterValue />
+              <PieChart.CenterLabel>Totalt i år</PieChart.CenterLabel>
+            </PieChart.Center>
+          </PieChart.Root>
+        </div>
+      </LocaleProvider>
+    );
+  }
+
+  /** The hole, its value and its label, by their slots and parts. */
+  function parts(host: HTMLElement) {
+    // DOM audit: the centre is aria-hidden plot text, read by its slot and part.
+    const hole = host.querySelector<HTMLElement>('[data-slot="pie-chart-center"] > [data-part="hole"]');
+    const value = host.querySelector<HTMLElement>('[data-slot="pie-chart-center-value"]');
+    const label = host.querySelector<HTMLElement>('[data-slot="pie-chart-center-label"]');
+    if (hole === null || value === null || label === null) throw new Error("no centre");
+    return { hole, value, label };
+  }
+
+  it.each([
+    [0.2121, 30],
+    [0.3394, 48],
+    [0.5657, 80],
+  ])("lays a hole of inner radius %s out as a %s px square", async (inner, side) => {
+    const { host } = renderThemed(<Total inner={inner} />);
+    await painted();
+    expect(parts(host).hole.getBoundingClientRect().width).toBeCloseTo(side, 0);
+  });
+
+  it("drops the whole centre in a 30 px hole, where the number alone overflows", async () => {
+    const { host } = renderThemed(<Total inner={0.2121} />);
+    await painted();
+    const { hole, value } = parts(host);
+    expect(hole.getAttribute("data-fit")).toBe("none");
+    expect(getComputedStyle(value).display).toBe("none");
+  });
+
+  it("drops a value that fits the 30 px square but comes within 2 px of the hole's edge", async () => {
+    const { host } = renderThemed(<Total inner={0.2121} kwh={[1413, 300]} />);
+    await painted();
+    const { hole, value } = parts(host);
+    // 1 713 kWh wraps to "1 713" over "kWh" at the 12 px floor. Four 6 px figures and the group
+    // space make the number about 27 px wide on a 14.4 px line, so it fits the 30 px square, but its
+    // top corners lie about 19.7 px from the centre, past the hole's 21.2 px radius less the 2 px
+    // every label keeps (19.2 px), so the guard drops it.
+    expect(hole.getAttribute("data-fit")).toBe("none");
+    expect(getComputedStyle(value).display).toBe("none");
+  });
+
+  it("keeps the value alone in a 48 px hole, at the 12 px floor and on two lines", async () => {
+    const { host } = renderThemed(<Total inner={0.3394} />);
+    await painted();
+    const { hole, value, label } = parts(host);
+    // A hole under 4rem leaves the label out, and the value then fits on its own.
+    expect(hole.getAttribute("data-fit")).not.toBe("none");
+    expect(getComputedStyle(label).display).toBe("none");
+    expect(getComputedStyle(value).fontSize).toBe("12px");
+    // Two lines of 12 px at a 1.2 line height.
+    expect(value.getBoundingClientRect().height).toBeGreaterThanOrEqual(2 * 12 * 1.2 - 0.5);
+  });
+
+  it("shows the value and the label in an 80 px hole", async () => {
+    const { host } = renderThemed(<Total inner={0.5657} />);
+    await painted();
+    const { hole, value, label } = parts(host);
+    expect(hole.hasAttribute("data-fit")).toBe(false);
+    expect(getComputedStyle(value).display).not.toBe("none");
+    expect(getComputedStyle(label).display).not.toBe("none");
+    expect(Number.parseFloat(getComputedStyle(label).fontSize)).toBeGreaterThanOrEqual(12);
+  });
+
+  it("wraps a currency written before its number, NOK 18,370, onto two lines in an 80 px hole", async () => {
+    const { host } = renderThemed(<Total inner={0.5657} money />);
+    await painted();
+    const { hole, value } = parts(host);
+    // en-US writes "NOK 18,370", about 90 px at the hole's font size, so it fits only when the code
+    // and the number break apart, the code on the first line.
+    expect(hole.getAttribute("data-fit")).not.toBe("none");
+    expect(getComputedStyle(value).display).not.toBe("none");
+    // DOM audit: the value's number and unit are aria-hidden plot text, read by their parts.
+    const code = value.querySelector('[data-part="unit"]');
+    const number = value.querySelector('[data-part="number"]');
+    if (code === null || number === null) throw new Error("no parts");
+    expect(code.textContent).toBe("NOK");
+    expect(code.getBoundingClientRect().bottom).toBeLessThanOrEqual(number.getBoundingClientRect().top + 0.5);
+  });
+});

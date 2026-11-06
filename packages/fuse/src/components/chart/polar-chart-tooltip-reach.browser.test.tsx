@@ -1,14 +1,16 @@
 // A pointer that heads for a polar tooltip, in Chromium. Units under test: the polar surface's pick
-// and the tooltip's popup, on a RadialChart, a PieChart and a ClockChart. Oracle: CONTRACT section
-// 9.5's hoverable tooltip and its safe triangle (B1): a pointer that moves straight from the active
-// part to its popup keeps that part active, over the rings or slots it crosses and across the 8 px
-// gap between the rim and the popup, so the popup keeps the part's label until the pointer rests on
-// it. Each start is worked by hand: the inner ring's centre line sits 5 · 0.7 / 6 in from the rim
-// and its 25 of 100 ends at 90°; the pie's Strøm of 50, 30 and 20 spans 0° to 180°; hour 6 of 24
-// spans 90° to 105°.
+// and the tooltip's popup in its side lane, on a RadialChart, a PieChart and a ClockChart. Oracle:
+// CONTRACT section 9.5's hoverable tooltip and its safe triangle, past the rim only (B1,
+// MOTION-REVIEW Fix R2.4): a pointer that moves straight from the active part to its popup keeps
+// that part over the label band and the gap between the rim and the popup, so the popup keeps the
+// part's label until the pointer rests on it; and inside the dial the pick always wins, so a point
+// on the triangle's own median that lies over another part takes that part. Each start is worked by
+// hand: the outer ring's centre line sits 0.7 / 12 in from the rim and its 75 of 100 ends at 270°;
+// the pie's Strøm of 50, 30 and 20 spans 0° to 180°; hour 6 of 24 spans 90° to 105°.
 import type { ReactNode } from "react";
 
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
+import { page } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import { label, pointerAt, popup } from "../../../test/chart/marks";
@@ -19,6 +21,10 @@ import "./chart.css";
 import { ClockChart } from "./clock-chart-namespace";
 import { PieChart } from "./pie-chart-namespace";
 import { RadialChart } from "./radial-chart-namespace";
+
+beforeEach(async () => {
+  await page.viewport(1024, 768);
+});
 
 /** Midnight in Oslo on 25 October 2025, a 24-hour day. */
 const DAY = Date.parse("2025-10-24T22:00:00Z");
@@ -33,7 +39,7 @@ type Case = {
 
 const CASES: readonly (readonly [string, Case])[] = [
   [
-    "the inner ring of a radial chart, across the two rings outside it",
+    "the outer ring of a radial chart",
     {
       chart: (
         <RadialChart.Root
@@ -57,8 +63,8 @@ const CASES: readonly (readonly [string, Case])[] = [
           <RadialChart.Tooltip />
         </RadialChart.Root>
       ),
-      start: [90, 1 - (5 * 0.7) / 6],
-      label: "Elbil",
+      start: [260, 1 - 0.7 / 12],
+      label: "Varme",
     },
   ],
   [
@@ -84,7 +90,7 @@ const CASES: readonly (readonly [string, Case])[] = [
           <PieChart.Tooltip />
         </PieChart.Root>
       ),
-      start: [60, 0.5],
+      start: [90, 0.9],
       label: "Strøm",
     },
   ],
@@ -107,7 +113,7 @@ const CASES: readonly (readonly [string, Case])[] = [
           <ClockChart.Tooltip />
         </ClockChart.Root>
       ),
-      start: [93, 0.5],
+      start: [97.5, 0.95],
       label: "06–07",
     },
   ],
@@ -121,13 +127,13 @@ function plotSvg(host: HTMLElement): SVGSVGElement {
   return svg;
 }
 
-describe("a pointer heading for a polar tooltip keeps its part (B1)", () => {
+describe("a pointer heading for a polar tooltip keeps its part past the rim (B1, R2.4)", () => {
   it.each(CASES)(
     "keeps the popup of %s while the pointer crosses to it",
     async (_, { chart, start, label: name }) => {
       const { host } = renderThemed(
         <LocaleProvider locale="nb-NO" timeZone="Europe/Oslo">
-          <div style={{ width: 320, margin: 48 }}>{chart}</div>
+          <div style={{ width: 600, margin: 48 }}>{chart}</div>
         </LocaleProvider>
       );
       const point = dialPoint(...start);
@@ -147,4 +153,42 @@ describe("a pointer heading for a polar tooltip keeps its part (B1)", () => {
       expect(seen.filter((shown) => shown !== name)).toEqual([]);
     }
   );
+
+  it("takes another hour inside the dial, even inside the triangle to the popup", async () => {
+    const clock = CASES[2];
+    if (clock === undefined) throw new Error("no clock case");
+    const [, { chart }] = clock;
+    const { host } = renderThemed(
+      <LocaleProvider locale="nb-NO" timeZone="Europe/Oslo">
+        <div style={{ width: 600, margin: 48 }}>{chart}</div>
+      </LocaleProvider>
+    );
+    // Hour 6 near the hole: its popup rests in the right lane.
+    const start = dialPoint(97.5, 0.3);
+    const [x, y] = clientPoint(plotSvg(host), start.x, start.y);
+    await pointerAt(x, y);
+    await expect.poll(label).toBe("06–07");
+    const box = popup()?.getBoundingClientRect();
+    if (box === undefined) throw new Error("no popup");
+    // The triangle from the start to the popup's near edge, by the signs of its corners' cross products.
+    const corners = [
+      { x, y },
+      { x: box.left, y: box.top },
+      { x: box.left, y: box.bottom },
+    ] as const;
+    const side = (a: { x: number; y: number }, b: { x: number; y: number }, p: { x: number; y: number }) =>
+      (b.x - a.x) * (p.y - a.y) - (b.y - a.y) * (p.x - a.x);
+    const inside = (p: { x: number; y: number }) => {
+      const [a, b, c] = corners;
+      const signs = [side(a, b, p), side(b, c, p), side(c, a, p)];
+      return signs.every((value) => value >= 0) || signs.every((value) => value <= 0);
+    };
+    // A point on the dial at 0.9 R over hour 5, from 75° to 90°, that lies inside the triangle.
+    const candidate = [88, 86, 84, 82, 80, 78, 76]
+      .map((angle) => clientPoint(plotSvg(host), dialPoint(angle, 0.9).x, dialPoint(angle, 0.9).y))
+      .find(([px, py]) => inside({ x: px, y: py }));
+    if (candidate === undefined) throw new Error("no point over hour 5 inside the triangle");
+    await pointerAt(...candidate);
+    await expect.poll(label).toBe("05–06");
+  });
 });

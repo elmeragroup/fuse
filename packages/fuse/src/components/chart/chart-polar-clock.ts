@@ -25,6 +25,7 @@ import { clockLabelSlots, clockTier, fitClockLabels, pageSlot } from "./layout/c
 import { ownerSlot } from "./layout/clock-path";
 import { isRoleList } from "./layout/color-key";
 import { labelWidth } from "./layout/label-width";
+import { nearestHeld } from "./layout/near-series";
 import { pointerAngle, sweepOf } from "./layout/polar-angle";
 import { slotOf } from "./layout/x-domain";
 
@@ -221,25 +222,20 @@ export function clockModel(input: ClockInput): PolarModel {
     series: model.series.length,
     page: (index, direction) => pageSlot(starts, timeZone, cycle, index, direction),
     optionName: (index, focus, order, emphasis) => optionName(context, index, focus, order, emphasis),
-    pick: (point) => {
+    pick: (point, pixels) => {
       if (count === 0) return null;
       const slot = Math.min(count - 1, Math.floor((pointerAngle(point.x, point.y) / 360) * count));
       if (series.length < 2) return { slot, near: null };
-      // The nearest series by its tip's radius at the slot, skipping a series with no reading there.
-      // A coarse series reads at every slot it covers, through the slot that owns its reading.
+      // The nearest series by its tip's radius at the slot, skipping a series with no reading there,
+      // and keeping the held series unless another is clearly nearer (Fix R2.6). A coarse series
+      // reads at every slot it covers, through the slot that owns its reading.
       const distance = Math.hypot(point.x, point.y);
-      let near: number | null = null;
-      let best = Number.POSITIVE_INFINITY;
-      series.forEach((entry, index) => {
+      const gaps = series.map((entry) => {
         const own = ownerSlot(entry.slots.states, slot);
-        if (entry.slots.states[own] !== "reading") return;
-        const gap = Math.abs((entry.rest[1 + own * 4 + 3] ?? 0) - distance);
-        if (gap < best) {
-          best = gap;
-          near = index;
-        }
+        if (entry.slots.states[own] !== "reading") return null;
+        return Math.abs((entry.rest[1 + own * 4 + 3] ?? 0) - distance);
       });
-      return { slot, near };
+      return { slot, near: nearestHeld(gaps, pixels.near ?? null, pixels.nearFirm === true) };
     },
     ray: (index) =>
       index < 0 || index >= count ? null : { angle: slotAngles(index, count).centre, radius: 1 },

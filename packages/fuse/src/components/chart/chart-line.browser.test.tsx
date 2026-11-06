@@ -648,15 +648,18 @@ describe("Line and Area motion", () => {
     const live = host.querySelector('[data-slot="chart-marker"]:not([data-outgoing])');
     const old = host.querySelector('[data-slot="chart-marker"][data-outgoing]');
     expect(old?.parentElement?.closest('[data-slot="chart-marker"]')).toBeNull();
-    // Over the 150 ms linear fade the old marker goes from 1 to 0 and the live one from 0 to 1,
-    // each as composited through its ancestors.
+    // Over the 150 ms fade on cubic-bezier(0.23, 1, 0.32, 1) the old marker goes from 1 to 0 and the
+    // live one from 0 to 1, each as composited through its ancestors (MOTION-REVIEW F9). Halfway in
+    // time the curve has come y(t) of the way, where x(t) = ½.
+    const progress = easeAt(0.23, 1, 0.32, 1, 0.5);
     expect([effectiveOpacityAt(old, 0), effectiveOpacityAt(live, 0)]).toEqual([1, 0]);
-    expect(effectiveOpacityAt(old, 75)).toBeCloseTo(0.5, 2);
-    expect(effectiveOpacityAt(live, 75)).toBeCloseTo(0.5, 2);
+    expect(effectiveOpacityAt(old, 75)).toBeCloseTo(1 - progress, 2);
+    expect(effectiveOpacityAt(live, 75)).toBeCloseTo(progress, 2);
     for (const animation of document.getAnimations()) animation.finish();
     // A second window that grows on the start side crossfades again, and fades one copy, the
     // marker the first fade left, at 10, which holds no copy of its own.
     rerender(chart([...named([5], "f"), ...second]));
+    // DOM audit: the copies are aria-hidden plot output, read by their slot and data-outgoing.
     const copies = [...host.querySelectorAll('[data-slot="chart-marker"][data-outgoing]')];
     expect(copies).toHaveLength(1);
     expect(copies[0]?.querySelector("[data-outgoing]")).toBeNull();
@@ -1062,3 +1065,20 @@ describe("point marks after a commit that changes what they draw (review 2, Y1 a
     ]);
   });
 });
+
+/**
+ * A cubic Bézier easing's output at an input, the curve through (0, 0), (x1, y1), (x2, y2) and
+ * (1, 1), found by bisecting its parameter, as CSS Easing 1 defines it.
+ */
+function easeAt(x1: number, y1: number, x2: number, y2: number, x: number): number {
+  const along = (a: number, b: number, t: number): number =>
+    3 * (1 - t) * (1 - t) * t * a + 3 * (1 - t) * t * t * b + t * t * t;
+  let low = 0;
+  let high = 1;
+  for (let step = 0; step < 60; step += 1) {
+    const middle = (low + high) / 2;
+    if (along(x1, x2, middle) < x) low = middle;
+    else high = middle;
+  }
+  return along(y1, y2, (low + high) / 2);
+}

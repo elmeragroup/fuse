@@ -346,6 +346,52 @@ function clip(line: readonly ClockPoint[], from: number, to: number): ClockPoint
   return clipAll(line, [[from, to]])[0] ?? [];
 }
 
+/**
+ * The radius a series' drawn curve reaches at an angle, or null where it draws nothing there: in a
+ * gap or past an open run's end. The curve is the one the Line and Area draw from the same numbers,
+ * read between its samples as the drawn polyline joins them, so a point at this radius lies on the
+ * drawn path. A closed run reads the angle in its own turn, and a lone reading's slot reads its tip,
+ * where its dot sits.
+ *
+ * @param values - The loop's numbers: the progress, then each slot's angles, base and tip.
+ * @param slots - Each slot's state and mark, and the missing rule.
+ * @param curve - The curve.
+ * @param angle - The angle in degrees from 12 o'clock, in any turn.
+ * @returns The radius, or null.
+ */
+export function curveRadiusAt(
+  values: readonly number[],
+  slots: ClockSlots,
+  curve: ChartCurve,
+  angle: number
+): number | null {
+  for (const run of runsOf(slots)) {
+    if (run.slots.length < 2) {
+      // A lone reading draws a dot in its slot's middle, which the active dot covers at rest.
+      const [start, end, , tip] = slotAt(values, run.slots[0] ?? 0);
+      const at = start + ((((angle - start) % 360) + 360) % 360);
+      if (at <= end) return tip;
+      continue;
+    }
+    const line = runCurve(values, run, curve, "tip");
+    const first = line[0];
+    const last = line.at(-1);
+    if (first === undefined || last === undefined) continue;
+    const at = first.angle + ((((angle - first.angle) % 360) + 360) % 360);
+    if (at > last.angle) continue;
+    // The last sample at or before the angle, by halves.
+    let low = 0;
+    let high = line.length - 1;
+    while (high - low > 1) {
+      const middle = (low + high) >> 1;
+      if ((line[middle]?.angle ?? 0) <= at) low = middle;
+      else high = middle;
+    }
+    return reaching(line, high, at);
+  }
+  return null;
+}
+
 /** Sampled points as path data in the dial's x and y, open or closed. */
 function polyline(points: readonly ClockPoint[], closed: boolean): string {
   if (points.length === 0) return "";
@@ -539,6 +585,26 @@ export function clockLine(values: readonly number[], slots: ClockSlots, curve: C
   return { solid, marked: dashed, lone };
 }
 
+/**
+ * Each slot's mark, taken from its pixel column round the rim when slots are narrower than a device
+ * pixel: every slot in a column is marked when any one is. Slots take equal angles (D11), so slot i
+ * of n lies in column ⌊(i + ½) · columns / n⌋.
+ *
+ * @param marked - Each slot's own mark.
+ * @param columns - The device pixels round the rim.
+ * @returns The marks to hatch by, the slots' own when each slot spans a pixel or more.
+ */
+export function pixelMarks(marked: readonly boolean[], columns: number): readonly boolean[] {
+  const count = marked.length;
+  if (columns <= 0 || count <= columns) return marked;
+  const columnOf = (slot: number): number => Math.floor(((slot + 0.5) * columns) / count);
+  const hatched = new Set<number>();
+  marked.forEach((mark, slot) => {
+    if (mark) hatched.add(columnOf(slot));
+  });
+  return marked.map((_, slot) => hatched.has(columnOf(slot)));
+}
+
 /** An Area's paths: its whole fill, and the hatched pieces over its marked ranges. */
 export type ClockAreaPaths = { readonly solid: string; readonly marked: string };
 
@@ -556,11 +622,21 @@ function region(top: readonly ClockPoint[], base: readonly ClockPoint[]): string
  * @param values - The loop's numbers: the progress, then each slot's angles, base and tip.
  * @param slots - Each slot's state and mark, and the missing rule.
  * @param curve - The curve.
+ * @param columns - The device pixels round the rim, below which slots hatch by pixel column, or
+ *   undefined before the dial is measured.
  * @returns The paths.
  */
-export function clockArea(values: readonly number[], slots: ClockSlots, curve: ChartCurve): ClockAreaPaths {
+export function clockArea(
+  values: readonly number[],
+  slots: ClockSlots,
+  curve: ChartCurve,
+  columns?: number
+): ClockAreaPaths {
   let solid = "";
   let hatched = "";
+  // Slots narrower than a device pixel hatch by pixel column, as the columns decimate: a column is
+  // hatched when any reading in it is marked, so the hatch draws one region per run of columns.
+  const hatching = columns === undefined ? slots : { ...slots, marked: pixelMarks(slots.marked, columns) };
   for (const run of runsOf(slots)) {
     if (run.slots.length < 2) continue;
     const top = runCurve(values, run, curve, "tip");
@@ -573,7 +649,7 @@ export function clockArea(values: readonly number[], slots: ClockSlots, curve: C
       Math.max(top[0]?.angle ?? 0, base[0]?.angle ?? 0),
       Math.min(top.at(-1)?.angle ?? 0, base.at(-1)?.angle ?? 0),
     ];
-    const ranges = markedRanges(run, angles, slots, bounds, stepsAcrossSlots(curve) ? edges : null);
+    const ranges = markedRanges(run, angles, hatching, bounds, stepsAcrossSlots(curve) ? edges : null);
     const bases = clipAll(base, ranges);
     clipAll(top, ranges).forEach((part, index) => {
       hatched += region(part, bases[index] ?? []);

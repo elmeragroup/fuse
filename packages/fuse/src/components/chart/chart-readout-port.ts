@@ -260,6 +260,12 @@ export type ChartReadout = {
 export type TooltipPlacer = {
   /** The tooltip's anchor. It is a hook with the same calls for the Tooltip's whole life. */
   readonly useAnchor: (input: AnchorInput) => TooltipAnchor;
+  /**
+   * "lane" keeps the popup on the side its anchor names and inside the Root's figure, shifting it
+   * along that side only, and never glides it between steps, since the anchor moves it itself.
+   * "viewport", the default, flips and shifts it against the viewport and glides it.
+   */
+  readonly keeps?: "lane" | "viewport";
 };
 
 /** The enclosing Root's readout, or null outside every Root that has one. */

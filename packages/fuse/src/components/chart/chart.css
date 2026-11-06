@@ -853,12 +853,13 @@
   }
 
   /*
-    A label past the rim reaches 1.1 of the radius and then its 16 px line, so the room above and
-    below the dial holds a twentieth of the widest dial and the line, with 2 px to spare.
+    A label past the rim sits 6 px out, its centre on its ray (MOTION-REVIEW Fix R4), so the room
+    above and below the dial holds the gap and its 16 px line, and the room beside it the gap and the
+    widest label.
   */
   [data-slot="chart-polar-frame"]:has(> [data-polar-layer][data-outside]) {
     --_room-x: calc(var(--chart-slice-pop) + 4.5rem);
-    --_room-y: calc(var(--chart-slice-pop) + 0.05 * var(--chart-polar-size) + 1.125rem);
+    --_room-y: calc(var(--chart-slice-pop) + 1.375rem);
   }
 
   /*
@@ -1191,11 +1192,11 @@
   }
 
   /*
-    The value scales with the hole, so it fits inside it at any size, and leads the label beneath it,
-    which a hole narrower than 4rem leaves out, as it would wrap into the rings.
+    The value scales with the hole, never below the 12 px floor (CONTRACT section 10), and leads the
+    label beneath it, which a hole narrower than 4rem leaves out, as it would wrap into the rings.
   */
   [data-slot="pie-chart-center-value"] {
-    font-size: min(var(--heading-2-size, 1.25rem), 22cqmin);
+    font-size: clamp(0.75rem, 22cqmin, var(--heading-2-size, 1.25rem));
     font-weight: var(--heading-2-weight, 600);
     line-height: 1.2;
     color: var(--foreground);
@@ -1347,8 +1348,16 @@
     stroke: var(--_ring-hole, var(--background));
   }
 
+  /*
+    The dot shows and leaves in place over 120 ms on a strong ease-out, as the hand fades beside it,
+    and never moves while it fades. Reduced motion keeps the fade, which moves nothing.
+  */
+  [data-slot="radar-chart-active-dot"] [data-follow] {
+    transition: opacity 120ms cubic-bezier(0.23, 1, 0.32, 1);
+  }
+
   [data-slot="radar-chart-active-dot"] [data-follow]:not([data-value]) {
-    visibility: hidden;
+    opacity: 0;
   }
 
   /*
@@ -1626,8 +1635,16 @@
     stroke-width: 14px;
   }
 
+  /*
+    The dot shows and leaves in place over 120 ms on a strong ease-out, as the hand fades beside it,
+    and never moves while it fades. Reduced motion keeps the fade, which moves nothing.
+  */
+  [data-slot="clock-chart-active-dot"] [data-follow] {
+    transition: opacity 120ms cubic-bezier(0.23, 1, 0.32, 1);
+  }
+
   [data-slot="clock-chart-active-dot"] [data-follow]:not([data-value]) {
-    visibility: hidden;
+    opacity: 0;
   }
 
   [data-clock-series] {
@@ -1784,6 +1801,17 @@
     line-height: 1rem;
     white-space: nowrap;
     translate: var(--_align-x, 0.25rem) var(--_align-y, -50%);
+  }
+
+  /*
+    A label on its ray trims its box to its cap height and the font's descent, which holds every
+    descender, and takes back the offset of its ink's middle from its box's, which the client
+    measures, so the middle of its ink sits on the ray (MOTION-REVIEW Fix R4). The :not() lifts it
+    over the placement rule above, whose :is() takes its Now-label argument's two attributes.
+  */
+  :is([data-slot="radar-chart-angle-label"], [data-slot="clock-chart-angle-label"]):not([data-hidden]) {
+    text-box: trim-both cap text;
+    translate: calc(var(--_align-x) + var(--_ink-dx, 0px)) calc(var(--_align-y) + var(--_ink-dy, 0px));
   }
 
   [data-slot="clock-chart-angle-label"] {
@@ -2071,13 +2099,12 @@
   }
 
   /*
-    The value scales with the hole and wraps between its number and its unit, balanced, so a long
-    reading such as a year's total stays inside the square the hole holds.
+    The value scales with the hole, never below the 12 px floor, and wraps between its number and its
+    unit, so a long reading such as a year's total stays inside the square the hole holds.
   */
   [data-slot="clock-chart-center"] [data-slot="clock-chart-active-value"] {
     max-width: 100%;
-    text-wrap: balance;
-    font-size: min(var(--heading-2-size, 1.25rem), 24cqmin);
+    font-size: clamp(0.75rem, 24cqmin, var(--heading-2-size, 1.25rem));
     font-weight: var(--heading-2-weight, 600);
     line-height: 1.2;
     color: var(--foreground);
@@ -2085,8 +2112,42 @@
   }
 
   [data-slot="clock-chart-center-label"] {
-    font-size: min(0.75rem, 18cqmin);
-    line-height: 1.2;
+    font-size: 0.75rem;
+    line-height: 1rem;
+  }
+
+  @container (width < 4rem) {
+    [data-slot="clock-chart-center-label"] {
+      display: none;
+    }
+  }
+
+  /*
+    A centre value's number and unit sit on one line while they fit, and on two, centred, when the
+    hole is too narrow for both (MOTION-REVIEW Fix R3.2).
+  */
+  :is(
+    [data-slot="pie-chart-center-value"],
+    [data-slot="pie-chart-center-max"],
+    [data-slot="clock-chart-center"] [data-slot="clock-chart-active-value"]
+  ) {
+    display: inline-flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    column-gap: 0.25em;
+  }
+
+  /*
+    The fit guard: a centre whose lines overflow the hole at the floor keeps only its value, and one
+    whose value alone overflows shows nothing, since the tooltip, legend and table carry it (R3.3).
+  */
+  :is([data-slot="pie-chart-center"], [data-slot="clock-chart-center"])
+    > [data-part="hole"][data-fit="value"]
+    > :not([data-slot="pie-chart-center-value"], [data-slot="clock-chart-active-value"]),
+  :is([data-slot="pie-chart-center"], [data-slot="clock-chart-center"])
+    > [data-part="hole"][data-fit="none"]
+    > * {
+    display: none;
   }
 
   /* A polar placeholder sketches one disc, annulus or hexagon in the aspect-locked cell. */
@@ -2177,6 +2238,16 @@
     The table sits under the chart behind its toggle. Collapsed, its parts stay in the
     accessibility tree, visually hidden. Its text keeps Fuse Table's own type and row metrics.
   */
+  /*
+    A polar Root writes the active and near places on its figure on every step, which only its marks
+    read. The table and the legend stop both here, so a hover restyles the marks and not a table of
+    every slot under them (MOTION-REVIEW R2.9).
+  */
+  [data-polar] :is([data-slot="chart-table"], [data-slot="chart-legend"]) {
+    --chart-active: initial;
+    --chart-near: initial;
+  }
+
   [data-slot="chart-table"] {
     --_order: 2;
     grid-area: table;
@@ -2836,11 +2907,27 @@
     flex-direction: column;
   }
 
+  /*
+    A legend item's swatch sits on its label's first line, centred on it, so a label that wraps keeps
+    its swatch beside its first words (MOTION-REVIEW F10).
+  */
   [data-slot="chart-legend-item"] {
     display: inline-flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 0.25rem;
     transition: opacity 150ms ease;
+  }
+
+  [data-slot="chart-legend-item"] > [data-slot="chart-swatch"] {
+    margin-block-start: calc((1lh - 0.5rem) / 2);
+  }
+
+  [data-slot="chart-legend-item"] > [data-slot="chart-swatch"][data-variant="line"] {
+    margin-block-start: calc((1lh - 2px) / 2);
+  }
+
+  [data-slot="chart-legend-item"] > [data-slot="chart-swatch"][data-variant="bar"] {
+    margin-block-start: calc((1lh - 0.75rem) / 2);
   }
 
   [data-slot="chart-legend-value"],
@@ -3635,8 +3722,11 @@
         translate var(--_spring-duration) var(--_spring-easing);
     }
 
-    /* While the entrance plays, the digits count up over it, and afterwards roll on their spring. */
-    [data-slot="pie-chart-center"] [data-part="reel"] {
+    /*
+      While the entrance plays, the digits count up over it, and afterwards roll on their spring,
+      except while data-snap swaps them on a hover step that came fast (MOTION-REVIEW F7).
+    */
+    [data-slot="pie-chart-center"] [data-part="digits"]:not([data-snap]) [data-part="reel"] {
       --_reel-entering: var(--_if-root-entering) translate var(--chart-intro) var(--chart-ease) 100ms;
       transition: var(--_reel-entering, translate var(--_spring-duration) var(--_spring-easing));
     }

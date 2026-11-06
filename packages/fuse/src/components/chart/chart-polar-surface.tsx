@@ -20,6 +20,7 @@ import { useChartStore } from "./chart-store";
 import { useTapLift } from "./chart-tap-lift";
 import type { OptionOrder } from "./chart-text";
 import { corridorOf } from "./chart-tooltip-corridor";
+import { sweepBox } from "./layout/polar-angle";
 
 /** What one option names: the active option and the series focus. */
 type OptionState = {
@@ -33,6 +34,12 @@ type OptionState = {
 type Step = "next" | "previous" | "first" | "last";
 
 /** The option move a key makes in a family's map. */
+/** How long, in milliseconds, a mouse that left the dial keeps its option before it lets go. */
+const LEAVE_GRACE_MS = 120;
+
+/** How long, in milliseconds, a pointer's near series holds after it changes. */
+const NEAR_FIRM_MS = 150;
+
 function stepOf(model: PolarModel, key: string): Step | undefined {
   switch (key) {
     case "ArrowRight":
@@ -94,6 +101,26 @@ export function PolarSurface(): ReactElement | null {
   // The slots a clock's Columns emphasise, whose options append the emphasis word.
   const emphasis = useChartStore(store, (snapshot) => snapshot.emphasis);
   const pick = kernel.usePick();
+  // A mouse that leaves the dial gives up its option a moment later, unless it comes back first, so a
+  // pointer that grazes the edge or crosses the label band and returns keeps a steady readout.
+  const leaving = useRef<number | null>(null);
+  const stayed = (): void => {
+    if (leaving.current !== null) window.clearTimeout(leaving.current);
+    leaving.current = null;
+  };
+  const leaveSoon = (): void => {
+    stayed();
+    leaving.current = window.setTimeout(() => {
+      leaving.current = null;
+      const snapshot = store.get();
+      if (snapshot.source === "pointer" && !snapshot.pinned)
+        store.set({ active: null, source: null, near: null });
+    }, LEAVE_GRACE_MS);
+  };
+  useEffect(() => stayed, []);
+  // When the near series last changed, which holds it for a moment, so a fast pointer that crosses
+  // three series never flickers the dims (Fix R2.6).
+  const nearSince = useRef(Number.NEGATIVE_INFINITY);
   // Where the pointer last stood on the active part, the corner a move toward the popup leaves from.
   const apex = useRef<ClientPoint | null>(null);
   // The watch that follows a pointer across the gap between the plot and the popup, while it runs.
@@ -198,18 +225,43 @@ export function PolarSurface(): ReactElement | null {
     handoff.reset({ index: current.index, focus: current.focus, order: "slot-first" });
   };
 
-  /** The option and series under a pointer, or null where nothing picks. */
-  const pickAt = (event: MouseEvent<HTMLDivElement>): PointerSlot | null =>
-    pick(event.clientX, event.clientY);
+  /**
+   * The option and series under a pointer, or null where nothing picks. A pointer that holds an
+   * option keeps it across the pick's 2 px dead band, and keeps its series unless another is clearly
+   * nearer (Fix R2.5, R2.6).
+   */
+  const pickAt = (event: MouseEvent<HTMLDivElement>): PointerSlot | null => {
+    const { active, near, source } = store.get();
+    const firm = event.timeStamp - nearSince.current < NEAR_FIRM_MS;
+    const held = source === "pointer" && active !== null ? { slot: active, near, firm } : null;
+    const found = pick(event.clientX, event.clientY, held);
+    if (found !== null && found.near !== near) nearSince.current = event.timeStamp;
+    return found;
+  };
+
+  /** Whether a client point lies on the dial, within its outer radius of its centre. */
+  const insideDial = (point: ClientPoint): boolean => {
+    const rect = listbox.current?.getBoundingClientRect();
+    const box = sweepBox(model.sweep);
+    const width = box.right - box.left;
+    if (rect === undefined || !(rect.width > 0) || !(width > 0)) return false;
+    const scale = rect.width / width;
+    const x = box.left + (point.x - rect.left) / scale;
+    const y = box.top + (point.y - rect.top) / scale;
+    return Math.hypot(x, y) <= 1;
+  };
 
   /**
-   * Whether a pointer at a point heads for the open popup from the active part: inside the triangle
-   * from where it last stood on that part to the popup's near edge (CONTRACT section 9.5, B1).
+   * Whether a pointer at a point heads for the open popup from the active part: past the rim, inside
+   * the triangle from where it last stood on that part to the popup's near edge (CONTRACT section
+   * 9.5, B1). Inside the dial the pick always wins, so the triangle never holds a part the pointer
+   * has left (Fix R2.4).
    */
   const heading = (to: ClientPoint): boolean => {
     const from = apex.current;
     const corridor = corridorOf(store);
-    return from !== null && (corridor?.(from, to) ?? false);
+    if (from === null || corridor === undefined || insideDial(to)) return false;
+    return corridor(from, to);
   };
 
   /**
@@ -242,6 +294,7 @@ export function PolarSurface(): ReactElement | null {
 
   const hover = (event: PointerEvent<HTMLDivElement>): void => {
     crossing.current?.();
+    stayed();
     store.track(event.clientX, event.clientY, event.pointerType, event.timeStamp);
     const { pinned: isPinned, dismissed, active, source } = store.get();
     if (isPinned) return;
@@ -304,7 +357,7 @@ export function PolarSurface(): ReactElement | null {
         // A pointer that leaves toward the popup keeps the part across the gap to it.
         if (snapshot.source === "pointer" && !snapshot.pinned) {
           if (heading({ x: event.clientX, y: event.clientY })) crossGap();
-          else store.set({ active: null, source: null, near: null });
+          else leaveSoon();
         }
         if (snapshot.dismissed !== null) store.set({ dismissed: null });
       }}

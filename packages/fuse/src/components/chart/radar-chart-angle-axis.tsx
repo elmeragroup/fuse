@@ -1,17 +1,20 @@
 "use client";
 
 /**
- * The radar's AngleAxis: a label per spoke past the rim, reading away from the centre, thinned by a
+ * The radar's AngleAxis: a label per spoke past the rim, centred on its spoke 6 px out, thinned by a
  * stride that divides the spoke count. The first paint draws it at rest (D18), and only a chart
  * nothing painted before fades its labels in as the entrance starts.
  */
 import type { ReactElement } from "react";
 
+import { useLabelWidths } from "./chart-label-widths";
 import { radarDrawingIn, usePolarContext } from "./chart-polar-context";
 import type { ChartLayerProps } from "./chart-types";
-import { angleLabel } from "./layout/polar-labels";
+import { labelWidth } from "./layout/label-width";
+import { polarPoint } from "./layout/polar-angle";
+import { rayLabelOffset } from "./layout/polar-labels";
 import { spokeAngle } from "./layout/radar";
-import { LABEL_REACH, percent, spokeLabelFit } from "./radar-chart-dial";
+import { percent, spokeLabelFit } from "./radar-chart-dial";
 
 /**
  * Props for `RadarChart.AngleAxis`, a closed part.
@@ -21,7 +24,7 @@ import { LABEL_REACH, percent, spokeLabelFit } from "./radar-chart-dial";
 export type RadarChartAngleAxisProps = ChartLayerProps;
 
 /**
- * The spoke labels, one per row, each past the rim on its spoke and reading away from the centre.
+ * The spoke labels, one per row, each centred on its spoke past the rim, its nearest edge 6 px out.
  * They never rotate, and they take the frame's gutter beside the dial.
  *
  * @beta
@@ -30,8 +33,10 @@ export function RadarChartAngleAxis({ className, style }: RadarChartAngleAxisPro
   const { model, box } = usePolarContext("RadarChart.AngleAxis", ["radar"]);
   const radar = radarDrawingIn(model, "RadarChart.AngleAxis");
   const shown = spokeLabelFit(radar);
+  const measured = useLabelWidths();
   return (
     <div
+      ref={measured}
       data-slot="radar-chart-angle-axis"
       data-polar-layer=""
       data-outside=""
@@ -39,8 +44,10 @@ export function RadarChartAngleAxis({ className, style }: RadarChartAngleAxisPro
       className={className}
       style={style}>
       {radar.labels.map((label, index) => {
-        const { point, alignX, alignY } = angleLabel(spokeAngle(index, radar.count), LABEL_REACH);
-        const [left, top] = percent(box, point.x, point.y);
+        const angle = spokeAngle(index, radar.count);
+        const rim = polarPoint(angle, 1);
+        const [left, top] = percent(box, rim.x, rim.y);
+        const offset = rayLabelOffset(angle, labelWidth(label.text), "outside");
         const min = shown[index] ?? "none";
         return (
           <span
@@ -49,10 +56,10 @@ export function RadarChartAngleAxis({ className, style }: RadarChartAngleAxisPro
             data-min={min === "always" || min === "none" ? undefined : min}
             data-hidden={min === "none" ? "" : undefined}
             style={{
-              "--_x": left,
-              "--_y": top,
-              "--_align-x": `${String(-alignX * 100)}%`,
-              "--_align-y": `${String(-alignY * 100)}%`,
+              "--_x": `calc(${left} + ${offset.x})`,
+              "--_y": `calc(${top} + ${offset.y})`,
+              "--_align-x": "-50%",
+              "--_align-y": "-50%",
               "--chart-slot": index,
             }}>
             {label.text}

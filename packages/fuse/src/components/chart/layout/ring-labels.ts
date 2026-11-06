@@ -7,7 +7,7 @@
  * neighbours, of every angle label the dial shows at that width, of the marks at rest and of the
  * hole's centre text.
  */
-import { angleLabel } from "./polar-labels";
+import { LABEL_GAP } from "./polar-labels";
 import { TICK_BUCKETS } from "./tick-fit";
 
 /** A ring value's line box in CSS pixels, 12 px text on a 16 px line. */
@@ -44,10 +44,8 @@ export type MarkCover = (x: number, y: number, radius: number) => boolean;
 /** The spoke the values run along: 0 for 12 o'clock, 180 for 6 o'clock. */
 export type RingAnchor = 0 | 180;
 
-/** What a dial's ring values keep clear of: its angle labels at their reach, the marks and the hole's text. */
+/** What a dial's ring values keep clear of: its angle labels on their rays, the marks and the hole's text. */
 export type RingClearance = {
-  /** The angle labels' radius, as a share of the dial's. */
-  readonly reach: number;
   /** The radius, as a share of the dial's, below which a value would cover the hole's centre text. */
   readonly inner: number;
   readonly angles: readonly AngleObstacle[];
@@ -99,7 +97,7 @@ function roomAt(rings: readonly RingLabel[], clear: RingClearance, bucket: numbe
   const radius = bucket / 2;
   const obstacles = clear.angles.flatMap((label) =>
     label.shownAt === "always" || (label.shownAt !== "none" && label.shownAt <= bucket)
-      ? [angleBox(label, clear.reach * radius)]
+      ? [angleBox(label, radius)]
       : []
   );
   return rings.map((ring) => {
@@ -134,31 +132,43 @@ export function ringAnchor(rings: readonly RingLabel[], clear: RingClearance): R
 }
 
 /**
- * The narrowest container width, from `TICK_BUCKETS`, from which a label placed past the rim at an
- * angle, as an angle label is, clears every angle label the axis shows at that width and at every
- * wider one, or "none" where no width keeps it clear.
+ * The narrowest container width, from `TICK_BUCKETS`, from which a label on a hand, its middle on
+ * the hand's ray inside the rim as the hand's label sits (Fix R4), keeps the gap from the hole and
+ * its centre text, or "none" where no width does. The label nears the rim as the dial grows, so a
+ * width it clears at, it clears at every wider one.
  *
  * @param label - Its angle and its box's width in CSS pixels.
- * @param reach - The label radius, as a share of the dial's, which the angle labels share.
- * @param angles - The angle labels and the widths they show from.
+ * @param inner - The hole's radius as a share of the dial's.
  * @returns The width it shows from.
  */
-export function fitRimLabel(
+export function fitHandLabel(
   label: { readonly angle: number; readonly width: number },
-  reach: number,
-  angles: readonly AngleObstacle[]
+  inner: number
 ): number | "none" {
-  const clear = TICK_BUCKETS.map((bucket) => {
-    const radius = (bucket / 2) * reach;
-    const own = angleBox({ ...label, shownAt: "always" }, radius);
-    return angles.every(
-      (other) =>
-        !(other.shownAt === "always" || (other.shownAt !== "none" && other.shownAt <= bucket)) ||
-        !meets(own, angleBox(other, radius))
-    );
+  const from = TICK_BUCKETS.find((bucket) => {
+    const radius = bucket / 2;
+    return nearestPoint(handBox(label, radius)) >= inner * radius + GAP;
   });
-  const from = clear.findIndex((_, at) => clear.slice(at).every(Boolean));
-  return from === -1 ? "none" : (TICK_BUCKETS[from] ?? "none");
+  return from ?? "none";
+}
+
+/**
+ * A hand label's box on a dial of a radius in CSS pixels: its middle on its ray at the rim less the
+ * gap and its support along the ray, its box a whole line tall.
+ */
+function handBox(label: { readonly angle: number; readonly width: number }, radius: number): Box {
+  const radians = (label.angle * Math.PI) / 180;
+  const sin = Math.sin(radians);
+  const cos = Math.cos(radians);
+  const reach = radius - LABEL_GAP - (Math.abs(sin) * label.width) / 2 - (Math.abs(cos) * CAP) / 2;
+  const x = sin * reach;
+  const y = -cos * reach;
+  return { left: x - label.width / 2, right: x + label.width / 2, top: y - LINE / 2, bottom: y + LINE / 2 };
+}
+
+/** How far a box's nearest point lies from the dial's centre, 0 when the box covers it. */
+function nearestPoint(box: Box): number {
+  return Math.hypot(Math.max(box.left, Math.min(0, box.right)), Math.max(box.top, Math.min(0, box.bottom)));
 }
 
 /** Whether a mark covers any of a chip's corners, edge middles or centre, the chip grown by the gap. */
@@ -169,12 +179,21 @@ function covered(chip: Box, marks: MarkCover | undefined, radius: number): boole
   return xs.some((x) => ys.some((y) => marks(x, y, radius)));
 }
 
-/** An angle label's box at a label radius in CSS pixels, read away from the centre as the axis places it. */
-function angleBox(label: AngleObstacle, reach: number): Box {
-  const { point, alignX, alignY } = angleLabel(label.angle, reach);
-  const left = point.x - alignX * label.width;
-  const top = point.y - alignY * LINE;
-  return { left, right: left + label.width, top, bottom: top + LINE };
+/** The cap height of 12 px chart text, about 0.73 em, which a label's support along its ray reads. */
+const CAP = 8.75;
+
+/**
+ * An angle label's box on a dial of a radius in CSS pixels, as the axis places it: its middle on its
+ * ray at the rim plus the gap and its support along the ray (Fix R4), its box a whole line tall.
+ */
+function angleBox(label: AngleObstacle, radius: number): Box {
+  const radians = (label.angle * Math.PI) / 180;
+  const sin = Math.sin(radians);
+  const cos = Math.cos(radians);
+  const reach = radius + LABEL_GAP + (Math.abs(sin) * label.width) / 2 + (Math.abs(cos) * CAP) / 2;
+  const x = sin * reach;
+  const y = -cos * reach;
+  return { left: x - label.width / 2, right: x + label.width / 2, top: y - LINE / 2, bottom: y + LINE / 2 };
 }
 
 /** Whether two boxes come within the gap of each other. */

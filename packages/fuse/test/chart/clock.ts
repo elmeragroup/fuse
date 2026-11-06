@@ -45,3 +45,35 @@ export function wedgeRadii(d: string): (readonly [number, number])[] {
       return [inner, outer] as const;
     });
 }
+
+/** A label's ink box in client pixels. */
+export type LabelInk = {
+  readonly left: number;
+  readonly right: number;
+  readonly top: number;
+  readonly bottom: number;
+};
+
+/**
+ * A label's ink box from the font's own metrics: its text drawn from its box's left edge, on a
+ * baseline the font's descent above its box's bottom, as a box trimmed to its cap height and the
+ * font's descent lays it out. The ink reaches the text's actual bounding box about that origin.
+ *
+ * @param label - The label.
+ * @returns Its ink box.
+ */
+export function labelInk(label: HTMLElement): LabelInk {
+  const context = document.createElement("canvas").getContext("2d");
+  if (context === null) throw new Error("no canvas");
+  const style = getComputedStyle(label);
+  context.font = `${style.fontStyle} ${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+  const metrics = context.measureText(label.textContent);
+  const box = label.getBoundingClientRect();
+  const baseline = box.bottom - metrics.fontBoundingBoxDescent;
+  return {
+    left: box.left - metrics.actualBoundingBoxLeft,
+    right: box.left + metrics.actualBoundingBoxRight,
+    top: baseline - metrics.actualBoundingBoxAscent,
+    bottom: baseline + metrics.actualBoundingBoxDescent,
+  };
+}

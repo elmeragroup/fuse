@@ -130,6 +130,38 @@ export function outsideLabels(
   });
 }
 
+/** The gap between the rim and an angle label's nearest edge along its ray, in CSS pixels (Fix R4). */
+export const LABEL_GAP = 6;
+
+/** A label centre's offset from its rim point, as CSS length expressions along x and y. */
+export type RayLabelOffset = { readonly x: string; readonly y: string };
+
+/** A number as a short CSS literal. */
+function cssNumber(value: number): string {
+  return String(Number(value.toFixed(4)));
+}
+
+/**
+ * How far a label's centre sits from its rim point along the ray, as CSS lengths along x and y: the
+ * gap, then the box's half-extent along the ray, its support, `|sin θ| · w/2 + |cos θ| · h/2`, so its
+ * nearest edge keeps the gap at any angle and its centre stays on the ray (MOTION-REVIEW Fix R4).
+ * The width and the height read `--_w` and `--_h`, the ink's size, which the client measures, and
+ * fall back to the server's width estimate and one cap height.
+ *
+ * @param angle - The ray's angle in degrees from 12 o'clock.
+ * @param width - The label's estimated width in CSS pixels, from the label-width table.
+ * @param side - "outside" past the rim, or "inside" toward the centre.
+ * @returns The offsets along x and y, each a CSS length expression for `calc()`.
+ */
+export function rayLabelOffset(angle: number, width: number, side: "outside" | "inside"): RayLabelOffset {
+  const radians = (angle * Math.PI) / 180;
+  const sin = Math.sin(radians);
+  const cos = Math.cos(radians);
+  const sign = side === "outside" ? 1 : -1;
+  const support = `(${String(LABEL_GAP)}px + ${cssNumber(Math.abs(sin) / 2)} * var(--_w, ${cssNumber(width)}px) + ${cssNumber(Math.abs(cos) / 2)} * var(--_h, 1cap))`;
+  return { x: `${cssNumber(sign * sin)} * ${support}`, y: `${cssNumber(-sign * cos)} * ${support}` };
+}
+
 /** Where an angle label sits and how it aligns: the share of its box that lies before its point on each axis. */
 export type AngleLabel = {
   readonly point: PolarPoint;

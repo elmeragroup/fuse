@@ -14,17 +14,21 @@ const HOUR = 3_600_000;
 const monday = Date.parse("2025-10-12T22:00:00Z");
 const first = (monday - Date.parse(HOURLY_AUTUMN_START)) / HOUR;
 
-// Each hour lands in the weekday column or the weekend one, so the two colours split the week.
-const hours = HOURLY_AUTUMN_KWH.slice(first, first + 168).map((kwh, hour) => {
-  const start = monday + hour * HOUR;
-  return hour < 120 ? { start, weekday: kwh } : { start, weekend: kwh };
-});
+// One reading an hour for the whole week. The weekend's sector marks Saturday and Sunday, so every
+// hour's tooltip lists the one reading it has.
+const hours = HOURLY_AUTUMN_KWH.slice(first, first + 168).map((kwh, hour) => ({
+  start: monday + hour * HOUR,
+  kwh,
+}));
+
+/** Saturday 00:00 and Sunday 23:00, the weekend's first and last hours. */
+const saturday = monday + 120 * HOUR;
+const lastHour = monday + 167 * HOUR;
 
 const energy = { preset: "energy", unit: "kWh", maximumFractionDigits: 2 } as const;
 
 const config = {
-  weekday: { label: "Weekday", color: "chart-1", format: energy },
-  weekend: { label: "Weekend", color: "chart-4", format: energy },
+  kwh: { label: "Consumption", color: "chart-1", format: energy },
 } as const satisfies ChartConfig;
 
 export function ClockChartWeek() {
@@ -38,9 +42,9 @@ export function ClockChartWeek() {
       interval="hour"
       aria-label="A household's week, weekdays against the weekend">
       <ClockChart.Grid />
+      <ClockChart.ReferenceArea x1={saturday} x2={lastHour} label="Weekend" />
       <ClockChart.AngleAxis />
-      <ClockChart.Column dataKey="weekday" />
-      <ClockChart.Column dataKey="weekend" />
+      <ClockChart.Column dataKey="kwh" />
       <ClockChart.Legend />
       <ClockChart.Tooltip />
       <ClockChart.Table />

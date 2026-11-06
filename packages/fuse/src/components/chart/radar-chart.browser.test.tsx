@@ -13,6 +13,7 @@ import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
+import { labelInk } from "../../../test/chart/clock";
 import { clientPoint, hoverAt, polarFigure } from "../../../test/chart/pie";
 import { layerPath, pathPoints, radarLayer, radarLayers, subpaths } from "../../../test/chart/radar";
 import { renderThemed } from "../../../test/themed-browser-render";
@@ -220,7 +221,7 @@ describe("quality (R5)", () => {
 });
 
 describe("the pick (R6) and hover (D19)", () => {
-  it("picks the nearest spoke by angle and the series whose drawn vertex lies nearest", async () => {
+  it("picks the nearest spoke by angle and the series whose drawn vertex lies nearest, with hysteresis", async () => {
     const a = [3, 1, 4, 2, 5, 1];
     const b = [1, 4, 2, 5, 2, 3];
     const { host } = renderThemed(
@@ -234,9 +235,10 @@ describe("the pick (R6) and hover (D19)", () => {
     const drawn = lines.map((line) => pathPoints(layerPath(line, "solid").getAttribute("d") ?? ""));
     const figure = polarFigure(host);
     let checked = 0;
-    for (let row = 0; row < 11; row += 1) {
-      for (let column = 0; column < 11; column += 1) {
-        const point = { x: -0.95 + column * 0.19, y: -0.95 + row * 0.19 };
+    let held: number | null = null;
+    for (let row = 0; row < 9; row += 1) {
+      for (let column = 0; column < 9; column += 1) {
+        const point = { x: -0.95 + column * 0.2375, y: -0.95 + row * 0.2375 };
         const radius = Math.hypot(point.x, point.y);
         if (radius > 1 || radius < 0.05) continue;
         // Brute force: the spoke at the least angular distance, then the drawn vertex there nearest.
@@ -246,19 +248,31 @@ describe("the pick (R6) and hover (D19)", () => {
           return Math.min(gap, 360 - gap);
         });
         const spoke = distances.indexOf(Math.min(...distances));
+        // A point within the 2 px dead band of a spoke's edge may keep the last spoke (R2.5).
+        const edge = radius * Math.sin(((30 - Math.min(...distances)) * Math.PI) / 180);
+        if (edge < 0.03) continue;
         const gaps = drawn.map((points) => {
           const vertex = points[spoke];
           return vertex === undefined
             ? Number.POSITIVE_INFINITY
             : Math.hypot(vertex.x - point.x, vertex.y - point.y);
         });
+        // The series held from the last probe stays unless another lies nearer by more than 0.06 R
+        // (R2.6).
+        const nearest = gaps.indexOf(Math.min(...gaps));
+        const kept: boolean = held !== null && (gaps[held] ?? Infinity) - Math.min(...gaps) <= 0.06;
+        held = kept ? held : nearest;
+        // A near series holds for 150 ms after it changes, so each probe waits that out (R2.6).
+        const settled = performance.now();
+        while (performance.now() - settled < 160)
+          await new Promise((resolve) => requestAnimationFrame(resolve));
         await hoverAt(...clientPoint(radarLayer(host, "radar-chart-line"), point.x, point.y));
         expect(figure.style.getPropertyValue("--chart-active")).toBe(String(spoke));
-        expect(figure.getAttribute("data-near")).toBe(String(gaps.indexOf(Math.min(...gaps))));
+        expect(figure.getAttribute("data-near")).toBe(String(held));
         checked += 1;
       }
     }
-    expect(checked).toBeGreaterThan(50);
+    expect(checked).toBeGreaterThan(30);
   });
 
   it("dims the series other than the nearest and doubles the nearest's fill", async () => {
@@ -303,7 +317,7 @@ describe("the grid and the axes (R4, S12)", () => {
     expect(ringPaths().every((d) => d.includes("A"))).toBe(true);
   });
 
-  it("places the ring values beside spoke 0 at the ring radii and each spoke label past the rim", async () => {
+  it("places the ring values beside spoke 0 at the ring radii and each spoke label centred past the rim", async () => {
     const { host } = renderThemed(
       <Radar data={rows([4, 4, 3, 4])} max={4}>
         <RadarChart.Grid />
@@ -333,13 +347,18 @@ describe("the grid and the axes (R4, S12)", () => {
     });
     const spokes = [...host.querySelectorAll('[data-slot="radar-chart-angle-label"]')];
     expect(spokes.map((label) => label.textContent)).toEqual(["s0", "s1", "s2", "s3"]);
-    // Spoke 1 points to 3 o'clock, so its label's left edge sits 1.1 R right of the centre.
-    const east = spokes[1]?.getBoundingClientRect();
-    expect(Math.abs((east?.left ?? 0) - (centre.x + 1.1 * radius))).toBeLessThan(0.5);
-    expect(Math.abs((east?.top ?? 0) + (east?.height ?? 0) / 2 - centre.y)).toBeLessThan(0.5);
-    // Spoke 0's label sits above the rim, its bottom edge 1.1 R up.
-    const north = spokes[0]?.getBoundingClientRect();
-    expect(Math.abs((north?.bottom ?? 0) - (centre.y - 1.1 * radius))).toBeLessThan(0.5);
+    // Each label's ink, read from the font's metrics, sits with its middle on its spoke and its
+    // nearest edge 6 px past the rim (Fix R4): spoke 1 points to 3 o'clock, so its ink's left edge
+    // sits R + 6 px right of the centre, centred on y.
+    const [s0, s1] = spokes;
+    if (!(s0 instanceof HTMLElement) || !(s1 instanceof HTMLElement)) throw new Error("no spoke labels");
+    const east = labelInk(s1);
+    expect(Math.abs(east.left - (centre.x + radius + 6))).toBeLessThan(0.5);
+    expect(Math.abs((east.top + east.bottom) / 2 - centre.y)).toBeLessThan(0.5);
+    // Spoke 0's label sits above the rim, its ink's bottom R + 6 px up, centred on x.
+    const north = labelInk(s0);
+    expect(Math.abs(north.bottom - (centre.y - radius - 6))).toBeLessThan(0.5);
+    expect(Math.abs((north.left + north.right) / 2 - centre.x)).toBeLessThan(0.5);
   });
 });
 
@@ -356,7 +375,8 @@ describe("the active dot and the glow", () => {
     // DOM audit: the dot's group carries data-value while it shows, which the stylesheet reads.
     const group = dot?.querySelector("[data-follow]");
     expect(group?.hasAttribute("data-value")).toBe(true);
-    expect(layerPath(dot, "dots").getAttribute("d")).toBe("M0.5,0h0");
+    // The dot glides there on the Root's follower and rests on the vertex.
+    await expect.poll(() => layerPath(dot, "dots").getAttribute("d")).toBe("M0.5,0h0");
     await userEvent.keyboard("{ArrowRight}");
     expect(group?.hasAttribute("data-value")).toBe(false);
     expect(page.getByRole("listbox").element()).toBeTruthy();

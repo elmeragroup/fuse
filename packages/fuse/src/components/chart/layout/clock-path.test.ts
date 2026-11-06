@@ -15,8 +15,10 @@ import {
   clockDots,
   clockLine,
   clockWedges,
+  curveRadiusAt,
   curveRoute,
   entranceFrame,
+  pixelMarks,
   sampleCurve,
 } from "./clock-path";
 import type { ClockSlots } from "./clock-path";
@@ -533,5 +535,68 @@ describe("the label fit", () => {
       1.1
     );
     expect(shown.slice(1, 4)).toEqual([360, 360, 120]);
+  });
+});
+
+describe("curveRadiusAt (R1.11)", () => {
+  // Two linear slots, their vertices at 90° (0.4) and 270° (0.8). Two readings never close round
+  // the dial (D16 closes three or more), so in unrolled space the line runs straight from one vertex
+  // to the other, reads 0.6 halfway at 180°, and draws nothing across 12 o'clock.
+  const two = numbers([0.4, 0.8]);
+  it.each([
+    [90, 0.4],
+    [180, 0.6],
+    [540, 0.6],
+    [270, 0.8],
+  ])("reads a two-slot linear line at %s° as %s", (angle, radius) => {
+    expect(curveRadiusAt(two, readings(2), "linear", angle)).toBeCloseTo(radius, 9);
+  });
+
+  it("reads nothing across 12 o'clock on a two-slot line", () => {
+    expect(curveRadiusAt(two, readings(2), "linear", 0)).toBeNull();
+  });
+
+  it("reads nothing past an open run's end, and a lone reading's tip in its slot", () => {
+    // Slot 3 of 4 is pending, so the run of slots 0 to 2 ends at slot 2's vertex, 225°.
+    const open: ClockSlots = { ...readings(4), states: ["reading", "reading", "reading", "pending"] };
+    expect(curveRadiusAt(numbers([0.5, 0.5, 0.5, 0.5]), open, "linear", 300)).toBeNull();
+    const lone: ClockSlots = { ...readings(4), states: ["missing", "reading", "missing", "missing"] };
+    expect(curveRadiusAt(numbers([0.5, 0.7, 0.5, 0.5]), lone, "linear", 100)).toBe(0.7);
+    expect(curveRadiusAt(numbers([0.5, 0.7, 0.5, 0.5]), lone, "linear", 200)).toBeNull();
+  });
+});
+
+describe("the hatch by pixel column (Phase M)", () => {
+  // Slot i of n lies in column ⌊(i + ½) · columns / n⌋: of 8 slots on 4 columns, slots 0 and 1 share
+  // column 0, 2 and 3 column 1, and so on, and a column hatches when any of its slots is marked.
+  it("marks every slot of a column that holds a marked slot", () => {
+    expect(pixelMarks([true, false, false, false, false, false, false, true], 4)).toEqual([
+      true,
+      true,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+    ]);
+  });
+
+  it("keeps each slot's own mark when every slot spans a pixel or more", () => {
+    const marks = [true, false, true, false];
+    expect(pixelMarks(marks, 4)).toBe(marks);
+    expect(pixelMarks(marks, 400)).toBe(marks);
+  });
+
+  it("hatches an hourly year of alternating estimates as one region on a 1,257-pixel rim", () => {
+    // A 100 px dial at 2× has 2π · 100 · 2 ≈ 1,257 device pixels round its rim, so each column holds
+    // about seven hours, at least one of them estimated, and the whole closed loop hatches.
+    const tips = Array.from({ length: 8760 }, (_, hour) => 0.4 + (0.5 * ((hour * 7) % 13)) / 13);
+    const slots: ClockSlots = {
+      ...readings(8760),
+      marked: Array.from({ length: 8760 }, (_, hour) => hour % 2 === 1),
+    };
+    const { marked } = clockArea(numbers(tips), slots, "step-after", 1257);
+    expect(marked.split("M").length - 1).toBe(1);
   });
 });

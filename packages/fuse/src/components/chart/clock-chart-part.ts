@@ -206,23 +206,44 @@ export function retuneGlow(svg: SVGSVGElement, unit: number, halo: typeof PATH_G
   }
 }
 
-/** CSS pixels per unit of the outer radius, as the layer shows now. */
-export function pixelsPerUnit(svg: SVGSVGElement, box: PolarContextValue["box"]): number {
-  const width = box.right - box.left;
-  return width > 0 ? svg.getBoundingClientRect().width / width : 0;
+/** Each loop's drawn curves by series and by part, which an ActiveDot rides between slots. */
+const curves = new WeakMap<ChartMotion, Map<string, Map<"line" | "area", ChartCurve>>>();
+
+/**
+ * Note the curve a Line or an Area draws its series in, for as long as it is mounted.
+ *
+ * @param motion - The Root's loop.
+ * @param key - The series.
+ * @param curve - The curve it draws.
+ * @param part - Which part draws it.
+ */
+export function useSeriesCurve(
+  motion: ChartMotion,
+  key: string,
+  curve: ChartCurve,
+  part: "line" | "area"
+): void {
+  useLayoutEffect(() => {
+    const byKey = curves.get(motion) ?? new Map<string, Map<"line" | "area", ChartCurve>>();
+    curves.set(motion, byKey);
+    const byPart = byKey.get(key) ?? new Map<"line" | "area", ChartCurve>();
+    byKey.set(key, byPart);
+    byPart.set(part, curve);
+    return () => {
+      if (byPart.get(part) === curve) byPart.delete(part);
+    };
+  }, [motion, key, curve, part]);
 }
 
-/** Each loop's Lines' curves by series, which an ActiveDot rides between slots. */
-export const curves = new WeakMap<ChartMotion, Map<string, ChartCurve>>();
-
-/** Note the curve a Line draws its series in, for as long as it is mounted. */
-export function useLineCurve(motion: ChartMotion, key: string, curve: ChartCurve): void {
-  useLayoutEffect(() => {
-    const byKey = curves.get(motion) ?? new Map<string, ChartCurve>();
-    curves.set(motion, byKey);
-    byKey.set(key, curve);
-    return () => {
-      if (byKey.get(key) === curve) byKey.delete(key);
-    };
-  }, [motion, key, curve]);
+/**
+ * The curve a series' ActiveDot rides: its Line's, else its Area's top edge, or null for a series
+ * drawn only as Columns or Dots.
+ *
+ * @param motion - The Root's loop.
+ * @param key - The series.
+ * @returns The curve, or null.
+ */
+export function seriesCurve(motion: ChartMotion, key: string): ChartCurve | null {
+  const byPart = curves.get(motion)?.get(key);
+  return byPart?.get("line") ?? byPart?.get("area") ?? null;
 }

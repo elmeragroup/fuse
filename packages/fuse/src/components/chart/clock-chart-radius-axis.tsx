@@ -11,7 +11,7 @@ import { useLocale } from "../../intl/locale-context";
 import { clockDrawingIn, usePolarContext } from "./chart-polar-context";
 import type { ClockDrawing } from "./chart-polar-context";
 import type { ChartLayerProps, ValueFormat } from "./chart-types";
-import { LABEL_REACH, percent } from "./clock-chart-dial";
+import { percent } from "./clock-chart-dial";
 import { formatValue } from "./format/value-format";
 import { labelWidth } from "./layout/label-width";
 import { fitRingLabels, ringAnchor } from "./layout/ring-labels";
@@ -70,7 +70,6 @@ export function ClockChartRadiusAxis({ format, className, style }: ClockChartRad
     width: labelWidth(formatValue(locale, tick, format ?? clock.format, "tick").text),
   }));
   const clearance = {
-    reach: LABEL_REACH,
     inner: (clock.inner * Math.SQRT2) / 2,
     angles: clock.labels.map((label) => ({
       angle: label.angle,

@@ -205,7 +205,10 @@ describe("the pace of a step", () => {
     expect(fast).toBeLessThanOrEqual(130);
   });
 
-  it("follows a keyboard step on the floor spring", async () => {
+  it("follows a keyboard step on the fastest spring, which keeps a held arrow key from trailing", async () => {
+    // A keyboard step takes FOLLOW_FASTEST, stiffness 5300 at follow's damping ratio, so damping
+    // 2 · (30 / (2√300)) · √5300 ≈ 126.1 (MOTION-REVIEW F6).
+    const fastest = settling(5300, (30 / Math.sqrt(300)) * Math.sqrt(5300));
     const { host } = renderThemed(<RideChart curve="monotone" />);
     host.querySelector("button")?.focus();
     await userEvent.keyboard("{Tab}");
@@ -213,8 +216,8 @@ describe("the pace of a step", () => {
     await nextFrames(40);
     await userEvent.keyboard("{ArrowRight}");
     await nextFrames(1);
-    expect(Math.abs(glideLength(dotLayer(host)) - floor)).toBeLessThanOrEqual(1);
-    expect(Math.abs(glideLength(crosshairLayer(host)) - floor)).toBeLessThanOrEqual(1);
+    expect(Math.abs(glideLength(dotLayer(host)) - fastest)).toBeLessThanOrEqual(1);
+    expect(Math.abs(glideLength(crosshairLayer(host)) - fastest)).toBeLessThanOrEqual(1);
   });
 });
 

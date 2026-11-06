@@ -32,7 +32,7 @@ import {
   writeParts,
   paintOf,
   retuneGlow,
-  useLineCurve,
+  useSeriesCurve,
   assertClockBaseline,
 } from "./clock-chart-part";
 import { clockArea, clockLine, entranceFrame } from "./layout/clock-path";
@@ -78,6 +78,10 @@ type SeriesLook = {
   readonly series: ClockSeries;
   readonly clock: ClockDrawing;
   readonly curve: ChartCurve;
+  /** The device pixels round the rim, measured once the dial draws, below which an Area hatches by pixel column. */
+  readonly columns: { current: number | undefined };
+  /** The numbers it drew last, which a new measure redraws. */
+  readonly drawn: { current: MarkValues | null };
 };
 
 /** Draw a line's frame. */
@@ -97,8 +101,9 @@ function drawLine(group: SVGGElement, look: SeriesLook, values: MarkValues): voi
 
 /** Draw an area's frame. */
 function drawArea(group: SVGGElement, look: SeriesLook, values: MarkValues): void {
+  look.drawn.current = values;
   const frame = entranceFrame(values);
-  const { solid, marked } = clockArea(frame.values, look.series.slots, look.curve);
+  const { solid, marked } = clockArea(frame.values, look.series.slots, look.curve, look.columns.current);
   writeParts(
     group,
     new Map([
@@ -209,8 +214,10 @@ function SeriesLayer({
     const error = stackedScaleError(part, color, series.stack !== undefined, clock.stackOffset);
     if (error !== null) throw error;
   }
+  const columns = useRef<number | undefined>(undefined);
+  const drawn = useRef<MarkValues | null>(null);
   const look = useMemo(
-    (): SeriesLook | null => (series === undefined ? null : { series, clock, curve }),
+    (): SeriesLook | null => (series === undefined ? null : { series, clock, curve, columns, drawn }),
     [series, clock, curve]
   );
   const { ref, place, node: anchor } = usePolarMark(polar.motion, writeLook(draw), look);
@@ -237,6 +244,28 @@ function SeriesLayer({
       observer.disconnect();
     };
   }, [polar.box, glowing, halo]);
+  // The device pixels round the rim, which an Area's hatch decimates to on a dial of slots
+  // narrower than a pixel; a new count redraws the last numbers.
+  useLayoutEffect(() => {
+    const node = svg.current;
+    if (node === null || look === null) return undefined;
+    const read = (): void => {
+      const width = polar.box.right - polar.box.left;
+      const radius = width > 0 ? node.getBoundingClientRect().width / width : 0;
+      const count =
+        radius > 0 ? Math.round(2 * Math.PI * radius * (window.devicePixelRatio || 1)) : undefined;
+      if (count === columns.current) return;
+      columns.current = count;
+      const group = anchor();
+      if (group !== null && drawn.current !== null) draw(group, look, drawn.current);
+    };
+    read();
+    const observer = new ResizeObserver(read);
+    observer.observe(node);
+    return () => {
+      observer.disconnect();
+    };
+  }, [polar.box, look, draw, anchor]);
   const paint =
     series === undefined
       ? "currentColor"
@@ -328,7 +357,7 @@ export function ClockChartLine({
   style,
 }: ClockChartLineProps): ReactElement {
   const polar = usePolarContext("ClockChart.Line", ["clock"]);
-  useLineCurve(polar.motion, dataKey, curve);
+  useSeriesCurve(polar.motion, dataKey, curve, "line");
   return (
     <SeriesLayer
       dataSlot="clock-chart-line"
@@ -419,8 +448,9 @@ export function ClockChartArea({
   className,
   style,
 }: ClockChartAreaProps): ReactElement {
-  const { model } = usePolarContext("ClockChart.Area", ["clock"]);
+  const { model, motion } = usePolarContext("ClockChart.Area", ["clock"]);
   assertClockBaseline(clockDrawingIn(model, "ClockChart.Area"), "ClockChart.Area", "a band");
+  useSeriesCurve(motion, dataKey, curve, "area");
   return (
     <SeriesLayer
       dataSlot="clock-chart-area"

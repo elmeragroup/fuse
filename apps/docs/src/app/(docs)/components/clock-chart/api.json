@@ -962,7 +962,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The visible label past the hand's tip, such as \"Nå\".",
+          "description": "The visible label on the hand inside its tip, such as \"Nå\".",
           "required": false
         },
         {

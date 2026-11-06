@@ -227,7 +227,12 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = derive([
   // Q1), the 12 o'clock step on a split line, references checked against the domain (B2), and
   // undefined format options dropped before comparing (Q2), 208835 to 209108. The ceiling keeps
   // about 100 bytes of headroom.
-  { name: "chart", entryFile: "chart.js", measuredGzip: 97044, ceilingGzip: 209208 },
+  // Phase M on 2026-11-06: the polar Root's angle follower and its paced turn, the tooltip's side
+  // lanes, the pick's dead band and near hold, the centre's fit guard and breakable value, the
+  // labels' ray placement and ink measure, the dots' curve reads and the hatch by pixel column
+  // (MOTION-REVIEW R1 to R4, F5 to F11), 209108 to 212860. The ceiling keeps about 100 bytes of
+  // headroom.
+  { name: "chart", entryFile: "chart.js", measuredGzip: 97044, ceilingGzip: 212960 },
   // 2026-10-13: new entry, measured at 29180. Pure wrappers over Base UI's toolbar and its roving focus.
   { name: "toolbar", entryFile: "toolbar.js", measuredGzip: 29180, ceilingGzip: 43770 },
   // 2026-10-12: new entries. Command is Base UI's Autocomplete in the InputGroup, with the Dialog
@@ -459,7 +464,12 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // Fix round 3 on 2026-11-05: each Root's depth on its figure and the orientation the parts that
     // read it carry (B6), and formats compared in any key order (B4), 153402 to 153643. The ceiling
     // keeps about 100 bytes of headroom.
-    ceilingGzip: 153743,
+    // Phase M on 2026-11-06: the polar Root's angle follower and its paced turn, the tooltip's side
+    // lanes, the pick's dead band and near hold, the centre's fit guard and breakable value, the
+    // labels' ray placement and ink measure, the dots' curve reads and the hatch by pixel column
+    // (MOTION-REVIEW R1 to R4, F5 to F11), 153643 to 153776. The ceiling keeps about 100 bytes of
+    // headroom.
+    ceilingGzip: 153876,
   },
   {
     name: "chart/BarChart",
@@ -471,7 +481,12 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // Fix round 3 on 2026-11-05: each Root's depth on its figure and the orientation the parts that
     // read it carry (B6), and formats compared in any key order (B4), 153405 to 153645. The ceiling
     // keeps about 100 bytes of headroom.
-    ceilingGzip: 153745,
+    // Phase M on 2026-11-06: the polar Root's angle follower and its paced turn, the tooltip's side
+    // lanes, the pick's dead band and near hold, the centre's fit guard and breakable value, the
+    // labels' ray placement and ink measure, the dots' curve reads and the hatch by pixel column
+    // (MOTION-REVIEW R1 to R4, F5 to F11), 153645 to 153779. The ceiling keeps about 100 bytes of
+    // headroom.
+    ceilingGzip: 153879,
   },
   // Set from its measurement on 2026-11-05, when the polar families landed: the whole namespace: slices on their frame with the rim floor and ghosts, labels and leaders that ride the frame, Track, Center parts, Glow and the polar readouts. The ceiling
   // keeps about 100 bytes of headroom.
@@ -489,7 +504,12 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // drawing weights (Q2, B3), Other's quality (Q1), formats compared in any key order (B4), and
     // each Root's depth on its figure (B6), 106238 to 106799. The ceiling keeps about 100 bytes of
     // headroom.
-    ceilingGzip: 106899,
+    // Phase M on 2026-11-06: the polar Root's angle follower and its paced turn, the tooltip's side
+    // lanes, the pick's dead band and near hold, the centre's fit guard and breakable value, the
+    // labels' ray placement and ink measure, the dots' curve reads and the hatch by pixel column
+    // (MOTION-REVIEW R1 to R4, F5 to F11), 106799 to 110278. The ceiling keeps about 100 bytes of
+    // headroom.
+    ceilingGzip: 110378,
   },
   // Set from its measurement on 2026-11-05, when the polar families landed: the whole namespace: rings on their frame in three looks, Track, Glow, the Center parts and the polar readouts. The ceiling
   // keeps about 100 bytes of headroom.
@@ -508,7 +528,12 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // drawing weights (Q2, B3), Other's quality (Q1), formats compared in any key order (B4), and
     // each Root's depth on its figure (B6), 102737 to 103205. The ceiling keeps about 100 bytes of
     // headroom.
-    ceilingGzip: 103305,
+    // Phase M on 2026-11-06: the polar Root's angle follower and its paced turn, the tooltip's side
+    // lanes, the pick's dead band and near hold, the centre's fit guard and breakable value, the
+    // labels' ray placement and ink measure, the dots' curve reads and the hatch by pixel column
+    // (MOTION-REVIEW R1 to R4, F5 to F11), 103205 to 106563. The ceiling keeps about 100 bytes of
+    // headroom.
+    ceilingGzip: 106663,
   },
   // Set from its measurement on 2026-11-05, when the polar families landed: the whole namespace: grid, spoke and ring labels fitted to the dial, Area, Line, Dots, an ActiveDot on the loop, Glow and the polar readouts. The ceiling
   // keeps about 100 bytes of headroom.
@@ -523,7 +548,12 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // Fix round 3 on 2026-11-05: the tooltip's corridor (B1), formats compared in any key order
     // (B4), and each Root's depth on its figure (B6), 107489 to 107893. The ceiling keeps about 100
     // bytes of headroom.
-    ceilingGzip: 107993,
+    // Phase M on 2026-11-06: the polar Root's angle follower and its paced turn, the tooltip's side
+    // lanes, the pick's dead band and near hold, the centre's fit guard and breakable value, the
+    // labels' ray placement and ink measure, the dots' curve reads and the hatch by pixel column
+    // (MOTION-REVIEW R1 to R4, F5 to F11), 107893 to 110766. The ceiling keeps about 100 bytes of
+    // headroom.
+    ceilingGzip: 110866,
   },
   // Set from its measurement on 2026-11-05, when the polar families landed: the whole namespace: the zoned dial model, curves, wedges with floors and coarse slots, labels and ring values fitted to the dial, hands, Now, references, centre and value parts, and the polar readouts. The ceiling
   // keeps about 100 bytes of headroom.
@@ -548,7 +578,12 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // (B1, Q1), the 12 o'clock step on a split line, references checked against the domain (B2),
     // and undefined format options dropped before comparing (Q2), 124386 to 124639. The ceiling
     // keeps about 100 bytes of headroom.
-    ceilingGzip: 124739,
+    // Phase M on 2026-11-06: the polar Root's angle follower and its paced turn, the tooltip's side
+    // lanes, the pick's dead band and near hold, the centre's fit guard and breakable value, the
+    // labels' ray placement and ink measure, the dots' curve reads and the hatch by pixel column
+    // (MOTION-REVIEW R1 to R4, F5 to F11), 124639 to 128234. The ceiling keeps about 100 bytes of
+    // headroom.
+    ceilingGzip: 128334,
   },
   {
     name: "chart/Chart.Root",
@@ -659,7 +694,12 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // Fix round 3 on 2026-11-05: the fold's drawing weights (Q2, B3), Other's quality (Q1), formats
     // compared in any key order (B4), the corridor the surface reads (B1), and the Root's depth
     // (B6), 44160 to 44570. The ceiling keeps about 100 bytes of headroom.
-    ceilingGzip: 44670,
+    // Phase M on 2026-11-06: the polar Root's angle follower and its paced turn, the tooltip's side
+    // lanes, the pick's dead band and near hold, the centre's fit guard and breakable value, the
+    // labels' ray placement and ink measure, the dots' curve reads and the hatch by pixel column
+    // (MOTION-REVIEW R1 to R4, F5 to F11), 44570 to 46221. The ceiling keeps about 100 bytes of
+    // headroom.
+    ceilingGzip: 46321,
   },
   // 2026-11-05: new row, the typical pie route, as the bar route is Chart's: Root, Pie, the Center
   // parts, Legend and Tooltip, which the owner set beside the whole-namespace row, with the derived
@@ -690,7 +730,12 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // drawing weights (Q2, B3), Other's quality (Q1), formats compared in any key order (B4), and
     // each Root's depth on its figure (B6), 87694 to 88179. The ceiling keeps about 100 bytes of
     // headroom.
-    ceilingGzip: 88279,
+    // Phase M on 2026-11-06: the polar Root's angle follower and its paced turn, the tooltip's side
+    // lanes, the pick's dead band and near hold, the centre's fit guard and breakable value, the
+    // labels' ray placement and ink measure, the dots' curve reads and the hatch by pixel column
+    // (MOTION-REVIEW R1 to R4, F5 to F11), 88179 to 91556. The ceiling keeps about 100 bytes of
+    // headroom.
+    ceilingGzip: 91656,
   },
   // 2026-11-05: new row, the typical radial route: Root, Bar, the Center parts, Legend and Tooltip,
   // which the owner set beside the whole-namespace row, with the derived ceiling.
@@ -720,7 +765,12 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // drawing weights (Q2, B3), Other's quality (Q1), formats compared in any key order (B4), and
     // each Root's depth on its figure (B6), 83773 to 84173. The ceiling keeps about 100 bytes of
     // headroom.
-    ceilingGzip: 84273,
+    // Phase M on 2026-11-06: the polar Root's angle follower and its paced turn, the tooltip's side
+    // lanes, the pick's dead band and near hold, the centre's fit guard and breakable value, the
+    // labels' ray placement and ink measure, the dots' curve reads and the hatch by pixel column
+    // (MOTION-REVIEW R1 to R4, F5 to F11), 84173 to 87511. The ceiling keeps about 100 bytes of
+    // headroom.
+    ceilingGzip: 87611,
   },
   {
     name: "chart/RadialChart.Root",
@@ -738,7 +788,12 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // Fix round 3 on 2026-11-05: formats compared in any key order (B4), the corridor the surface
     // reads (B1), and the Root's depth (B6), 43026 to 43369. The ceiling keeps about 100 bytes of
     // headroom.
-    ceilingGzip: 43469,
+    // Phase M on 2026-11-06: the polar Root's angle follower and its paced turn, the tooltip's side
+    // lanes, the pick's dead band and near hold, the centre's fit guard and breakable value, the
+    // labels' ray placement and ink measure, the dots' curve reads and the hatch by pixel column
+    // (MOTION-REVIEW R1 to R4, F5 to F11), 43369 to 44996. The ceiling keeps about 100 bytes of
+    // headroom.
+    ceilingGzip: 45096,
   },
   {
     name: "chart/RadarChart.Root",
@@ -753,7 +808,12 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // Fix round 3 on 2026-11-05: the corridor the surface reads (B1), formats compared in any key
     // order (B4), and the Root's depth (B6), 50972 to 51297. The ceiling keeps about 100 bytes of
     // headroom.
-    ceilingGzip: 51397,
+    // Phase M on 2026-11-06: the polar Root's angle follower and its paced turn, the tooltip's side
+    // lanes, the pick's dead band and near hold, the centre's fit guard and breakable value, the
+    // labels' ray placement and ink measure, the dots' curve reads and the hatch by pixel column
+    // (MOTION-REVIEW R1 to R4, F5 to F11), 51297 to 52971. The ceiling keeps about 100 bytes of
+    // headroom.
+    ceilingGzip: 53071,
   },
   // 2026-11-05: new row, the typical radar route: Root, Grid, both axes, Area, Line, Legend and
   // Tooltip, which the owner set beside the whole-namespace row, with the derived ceiling.
@@ -771,7 +831,12 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // Fix round 3 on 2026-11-05: the tooltip's corridor (B1), formats compared in any key order
     // (B4), and the Root's depth (B6), 94191 to 94603. The ceiling keeps about 100 bytes of
     // headroom.
-    ceilingGzip: 94703,
+    // Phase M on 2026-11-06: the polar Root's angle follower and its paced turn, the tooltip's side
+    // lanes, the pick's dead band and near hold, the centre's fit guard and breakable value, the
+    // labels' ray placement and ink measure, the dots' curve reads and the hatch by pixel column
+    // (MOTION-REVIEW R1 to R4, F5 to F11), 94603 to 97649. The ceiling keeps about 100 bytes of
+    // headroom.
+    ceilingGzip: 97749,
   },
   // 2026-11-05: new rows, ClockChart's Root alone and its typical route: Root, Line, Grid,
   // AngleAxis, Center, Legend and Tooltip, which the owner set, each with the derived ceiling.
@@ -789,7 +854,12 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // Fix round 3 on 2026-11-05: the corridor the surface reads (B1), the baseline the dial carries
     // (B2), formats compared in any key order (B4), and the Root's depth (B6), 54512 to 54868. The
     // ceiling keeps about 100 bytes of headroom.
-    ceilingGzip: 54968,
+    // Phase M on 2026-11-06: the polar Root's angle follower and its paced turn, the tooltip's side
+    // lanes, the pick's dead band and near hold, the centre's fit guard and breakable value, the
+    // labels' ray placement and ink measure, the dots' curve reads and the hatch by pixel column
+    // (MOTION-REVIEW R1 to R4, F5 to F11), 54868 to 56540. The ceiling keeps about 100 bytes of
+    // headroom.
+    ceilingGzip: 56640,
   },
   {
     name: "chart/ClockChart route",
@@ -814,7 +884,12 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // (B1, Q1), the 12 o'clock step on a split line, references checked against the domain (B2),
     // and undefined format options dropped before comparing (Q2), 103601 to 103832. The ceiling
     // keeps about 100 bytes of headroom.
-    ceilingGzip: 103932,
+    // Phase M on 2026-11-06: the polar Root's angle follower and its paced turn, the tooltip's side
+    // lanes, the pick's dead band and near hold, the centre's fit guard and breakable value, the
+    // labels' ray placement and ink measure, the dots' curve reads and the hatch by pixel column
+    // (MOTION-REVIEW R1 to R4, F5 to F11), 103832 to 107939. The ceiling keeps about 100 bytes of
+    // headroom.
+    ceilingGzip: 108039,
   },
   // 2026-11-04: new rows, measured at 84628 for the whole ScatterChart namespace and 41808 for its
   // Root alone, each with the derived ceiling.
@@ -923,7 +998,12 @@ export const CSS_BUDGETS: readonly CssBudget[] = derive([
   // the hover rules listed once per Root depth so a hover restyles only its parts, and the
   // orientation rules keyed on the parts that carry it (B6), which measured 1089 bytes over the
   // stylesheet (22948 to 24037). The ceiling keeps about 100 bytes of headroom.
-  { name: "chart.css", file: "chart.css", measuredGzip: 10089, ceilingGzip: 24137 },
+  // Phase M on 2026-11-06: the polar Root's angle follower and its paced turn, the tooltip's side
+  // lanes, the pick's dead band and near hold, the centre's fit guard and breakable value, the
+  // labels' ray placement and ink measure, the dots' curve reads and the hatch by pixel column
+  // (MOTION-REVIEW R1 to R4, F5 to F11), 24037 to 24859. The ceiling keeps about 100 bytes of
+  // headroom.
+  { name: "chart.css", file: "chart.css", measuredGzip: 10089, ceilingGzip: 24959 },
 ] satisfies readonly Measured<CssBudget>[]);
 
 export const FLAG_RAW_BUDGETS: readonly FlagRawBudget[] = [

@@ -1,6 +1,6 @@
 // The radar's layout. Unit under test: radarDomain, radarRadius, spokeAngle, radarVertices,
 // zeroPolygon, radarQuads, polygonsPath, radarEdges, radarAreas, loneVertices, dotsPath, spokeAt and
-// nearestVertex. Oracles, written
+// edgePoint. Oracles, written
 // by hand: ticket 10's R1 vertices for values 1 to 4 on a [0, 4] domain at radius R, which are
 // (0, −R/4), (R/2, 0), (0, 3R/4) and (−R, 0); CONTRACT section 8.4's [−2, 1, 3] fixture, whose
 // domain is [−2, 3] with the zero ring at two fifths of R; R2's `max` above and below the data;
@@ -13,9 +13,9 @@ import { describe, expect, it } from "vitest";
 
 import { pointerAngle } from "./polar-angle";
 import {
+  edgePoint,
   dotsPath,
   loneVertices,
-  nearestVertex,
   polygonsPath,
   radarAreas,
   radarDomain,
@@ -234,16 +234,34 @@ describe("the pick (R6)", () => {
       )
     );
   });
+});
 
-  it("picks the series whose vertex lies nearest, skipping one with no reading", () => {
-    const vertices = [{ x: 0, y: -80 }, null, { x: 0, y: -40 }];
-    expect(nearestVertex({ x: 0, y: -50 }, vertices)).toBe(2);
-    expect(
-      nearestVertex({ x: 0, y: -60 }, [
-        { x: 0, y: -80 },
-        { x: 0, y: -40 },
-      ])
-    ).toBe(0);
-    expect(nearestVertex({ x: 0, y: 0 }, [null, null])).toBeNull();
+describe("edgePoint (R1.11)", () => {
+  // A square of radius 1: spokes at 0°, 90°, 180° and 270°, vertices (0, −1), (1, 0), (0, 1) and
+  // (−1, 0). The ray at 45° meets the edge from (0, −1) to (1, 0) at (½, −½).
+  const square = [
+    { x: 0, y: -1 },
+    { x: 1, y: 0 },
+    { x: 0, y: 1 },
+    { x: -1, y: 0 },
+  ];
+  it.each([
+    [0, { x: 0, y: -1 }],
+    [45, { x: 0.5, y: -0.5 }],
+    [90, { x: 1, y: 0 }],
+    [405, { x: 0.5, y: -0.5 }],
+  ])("meets the square at %s°", (angle, expected) => {
+    const point = edgePoint(square, angle);
+    expect(point?.x).toBeCloseTo(expected.x, 9);
+    expect(point?.y).toBeCloseTo(expected.y, 9);
+  });
+
+  it("crosses a missing vertex on the straight edge between the present ones", () => {
+    // With (1, 0) missing, 90° lies on the edge from (0, −1) to (0, 1), the vertical through the
+    // centre, which the ray at 90° meets at the centre.
+    const point = edgePoint([square[0] ?? null, null, square[2] ?? null, square[3] ?? null], 90);
+    expect(point?.x).toBeCloseTo(0, 9);
+    expect(point?.y).toBeCloseTo(0, 9);
+    expect(edgePoint([null, null, null, null], 45)).toBeNull();
   });
 });

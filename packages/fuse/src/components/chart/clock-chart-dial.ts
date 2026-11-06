@@ -11,10 +11,13 @@ import type { ChartX } from "./chart-types";
 import { ChartCompositionError } from "./layout/errors";
 import { polarPoint } from "./layout/polar-angle";
 import type { SweepBox } from "./layout/polar-angle";
-import { angleLabel } from "./layout/polar-labels";
+import { angleLabel, rayLabelOffset } from "./layout/polar-labels";
 import { pathNumber } from "./layout/rounding";
 
-/** The radius a cycle label sits at, as a share of the outer radius. */
+/**
+ * The radius the label fit measures a cycle label's room at, as a share of the outer radius. Labels
+ * sit closer, 6 px past the rim (`rayPlace`), so the fit errs toward room to spare.
+ */
 export const LABEL_REACH = 1.1;
 
 /** A point's place in the cell, as percentages of the sweep's box. */
@@ -37,6 +40,28 @@ export function labelPlace(box: SweepBox, angle: number, reach: number): LabelPl
   const { point, alignX, alignY } = angleLabel(angle, reach);
   const [x, y] = percent(box, point.x, point.y);
   return { x, y, alignX: `${String(-alignX * 100)}%`, alignY: `${String(-alignY * 100)}%` };
+}
+
+/**
+ * A label's place on its ray: its centre at the rim point plus the gap and its support along the
+ * ray, past the rim or inside it, so it sits centred on its spoke at a constant gap (Fix R4).
+ *
+ * @param box - The sweep's box.
+ * @param angle - The ray's angle in degrees.
+ * @param width - The label's estimated width in CSS pixels.
+ * @param side - "outside" past the rim, "inside" toward the centre.
+ * @returns The place, centred on its point.
+ */
+export function rayPlace(
+  box: SweepBox,
+  angle: number,
+  width: number,
+  side: "outside" | "inside"
+): LabelPlace {
+  const rim = polarPoint(angle, 1);
+  const [x, y] = percent(box, rim.x, rim.y);
+  const offset = rayLabelOffset(angle, width, side);
+  return { x: `calc(${x} + ${offset.x})`, y: `calc(${y} + ${offset.y})`, alignX: "-50%", alignY: "-50%" };
 }
 
 /** The narrowest width a label or its spoke shows at, for the stylesheet's container rules. */

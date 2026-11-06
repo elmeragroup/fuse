@@ -25,7 +25,8 @@ export function activeSlice(host: HTMLElement): number | null {
 }
 
 /**
- * The text a centre part shows: each digit reel's digit and every other character as it is.
+ * The text a centre part shows, as the formatter wrote it: each digit reel's digit and every other
+ * character as it is, then the unit after a no-break space.
  *
  * @param part - The part, such as `pie-chart-center-value`.
  * @param host - The rendered chart's host.
@@ -37,12 +38,18 @@ export function centreText(host: HTMLElement, part: string): string {
   if (element === null) throw new Error(`no ${part}`);
   const digits = element.querySelector('[data-part="digits"]');
   if (digits === null) return "";
-  return [...digits.children]
+  const number = [...digits.children]
     .map((child) => {
       const reel = child.querySelector<HTMLElement>('[data-part="reel"]');
       return reel === null ? child.textContent : reel.style.getPropertyValue("--_digit");
     })
     .join("");
+  // A value lays its unit apart, on the side the formatter wrote it, so it can wrap, and the
+  // formatter joins the two by a no-break space.
+  const unit = element.querySelector('[data-part="unit"]');
+  if (unit === null) return number;
+  const before = (unit.compareDocumentPosition(digits) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
+  return before ? `${unit.textContent}\u00a0${number}` : `${number}\u00a0${unit.textContent}`;
 }
 
 /** A point in the dial's units, from the centre, as client pixels over the pie's SVG. */

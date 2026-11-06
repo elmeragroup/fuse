@@ -18,7 +18,7 @@ import { polarPoint } from "./layout/polar-angle";
 import { radarRadius, spokeAngle } from "./layout/radar";
 import { fitRingLabels, ringAnchor } from "./layout/ring-labels";
 import type { MarkCover } from "./layout/ring-labels";
-import { LABEL_REACH, percent, spokeLabelFit } from "./radar-chart-dial";
+import { percent, spokeLabelFit } from "./radar-chart-dial";
 
 /**
  * Props for `RadarChart.RadiusAxis`, a closed part.
@@ -82,7 +82,6 @@ export function RadarChartRadiusAxis({ format, className, style }: RadarChartRad
     width: labelWidth(formatValue(locale, tick, format ?? radar.format, "tick").text),
   }));
   const clearance = {
-    reach: LABEL_REACH,
     inner: 0,
     angles: radar.labels.map((label, index) => ({
       angle: spokeAngle(index, radar.count),

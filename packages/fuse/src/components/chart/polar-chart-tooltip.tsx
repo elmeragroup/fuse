@@ -2,8 +2,8 @@
 
 /**
  * The polar families' Tooltip parts. Each is the shared tooltip body over the polar anchor, which
- * rests the popup's centre on the active ray just outside the rim and orbits it round the dial, and
- * shows the active slice's, ring's or spoke's label and rows by default.
+ * rests the popup in a side lane beside the dial at the active ray's height and moves it with the
+ * Root's angle follower, and shows the active slice's, ring's or spoke's label and rows by default.
  */
 import type { ReactElement } from "react";
 
@@ -14,8 +14,8 @@ import type { ChartTooltipProps } from "./chart-tooltip";
 import { ChartTooltipBody } from "./chart-tooltip-body";
 import { ChartTooltipItems, ChartTooltipLabel, ChartTooltipValue } from "./chart-tooltip-parts";
 
-/** The polar anchor, which rests the popup on the active ray. */
-const POLAR_PLACER: TooltipPlacer = { useAnchor: usePolarTooltipAnchor };
+/** The polar anchor, which rests the popup in a side lane beside the dial. */
+const POLAR_PLACER: TooltipPlacer = { useAnchor: usePolarTooltipAnchor, keeps: "lane" };
 
 /** The default content: the active item's label, then its rows, each a swatch, a label and a value. */
 export function DefaultPolarTooltip(): ReactElement {
@@ -31,7 +31,7 @@ export function DefaultPolarTooltip(): ReactElement {
   );
 }
 
-/** The polar tooltip, its `anchor` prop left out because the ray decides where it rests. */
+/** The polar tooltip, its `anchor` prop left out because the lane decides where it rests. */
 export function PolarTooltip({
   variant = "default",
   anchor: _anchor,
@@ -46,11 +46,12 @@ export function PolarTooltip({
 }
 
 /**
- * The popup over the active slice. Its centre sits on the slice's bisector just outside the rim, at
- * any angle, and a step glides it round the dial the short way, so it never crosses the centre. A
- * pointer that moves toward it from the slice keeps the slice. Escape closes it and keeps the
- * reader's place. It is hidden from screen readers, which read the same values from the option.
- * `anchor` does nothing here, since the ray decides where the popup rests.
+ * The popup over the active slice. It rests in a side lane beside the dial, outside the labels and
+ * inside the chart, at the height where the slice's bisector meets the rim, and moves with the
+ * active slice. A change of lane fades it in. A pointer that moves toward it past the rim keeps the
+ * slice. Escape closes it and keeps the reader's place. It is hidden from screen readers, which
+ * read the same values from the option. `anchor` does nothing here, since the lane decides where
+ * the popup rests.
  *
  * @beta
  */
@@ -59,9 +60,9 @@ export function PieChartTooltip(props: ChartTooltipProps): ReactElement {
 }
 
 /**
- * The popup over the active ring, centred on the ray through the ring's value end just outside
- * the rim. It glides round the dial the short way. Escape closes it and keeps the reader's place.
- * `anchor` does nothing here, since the ray decides where the popup rests.
+ * The popup over the active ring, in a side lane beside the dial at the height where the ray
+ * through the ring's value end meets the rim. Escape closes it and keeps the reader's place.
+ * `anchor` does nothing here, since the lane decides where the popup rests.
  *
  * @beta
  */
@@ -70,9 +71,9 @@ export function RadialChartTooltip(props: ChartTooltipProps): ReactElement {
 }
 
 /**
- * The popup over the active spoke, centred on the spoke just outside the outer ring, with one row
- * per series. It glides round the dial the short way. Escape closes it and keeps the reader's place.
- * `anchor` does nothing here, since the ray decides where the popup rests.
+ * The popup over the active spoke, with one row per series, in a side lane beside the dial at the
+ * height where the spoke meets the outer ring. It moves with the hand. Escape closes it and keeps
+ * the reader's place. `anchor` does nothing here, since the lane decides where the popup rests.
  *
  * @beta
  */

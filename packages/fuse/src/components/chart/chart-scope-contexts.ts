@@ -34,6 +34,12 @@ export const ChartLegendSideContext = createContext<LegendSide | null>(null);
  */
 export const ChartLiveContext = createContext(false);
 
+/**
+ * The index a closing tooltip keeps showing while it fades out, so its content never empties and
+ * shrinks before the fade, or null while it is open or shut.
+ */
+export const ChartHeldIndexContext = createContext<number | null>(null);
+
 /** Whether a part sits inside a Crosshair, which a SlotLabel needs. */
 export const ChartCrosshairContext = createContext(false);
 

@@ -1,14 +1,13 @@
 // RadarChart's motion against SPEC's Motion table, in Chromium with motion on. Units under test:
 // RadarChart.Line on its Root's loop, the Grid's and the AngleAxis's entrance in the stylesheet,
-// ActiveDot's ride and the Grid's hand. Oracles, written by hand from the Motion table and S5:
+// ActiveDot on its series' tween and the Grid's hand. Oracles, written by hand from the Motion table and S5:
 // series s grows from the centre at 600 + s·150 ms over 1000 ms; rings scale out 80 ms apart on
 // 100/15 and spokes extend 50 ms apart on 80/15, both with ζω = 7.5, whose envelopes settle within
 // 0.1 % by ln 1512 / 7.5 ≈ 976 ms and ln 1835 / 7.5 ≈ 1002 ms; labels fade over 500 ms from 400 ms,
 // 50 ms apart; a hydrated grid stays at rest (the owner's L6 decision); an update moves each
 // spoke's radius over 480 ms; a change of spoke count crossfades over 150 ms; the active dot rides
-// the polygon's edges on the 300/30 follow spring, ln 2000 / 15 ≈ 507 ms for a key step; and the
-// hand turns the short way on 420/42, overdamped, its slow root 21 − √(21² − 420) ≈ 16.4 settling
-// by about 483 ms. The entrance runs on a hand-driven frame clock, read on the loop's own time; the
+// the polygon with its series' tween; and a key step turns the hand the short way on the keyboard's
+// follow spring, FOLLOW_FASTEST 5300/126, at rest within 0.01° by about 155 ms. The entrance runs on a hand-driven frame clock, read on the loop's own time; the
 // rest read each frame's own timestamp.
 import { hydrateRoot } from "react-dom/client";
 import { renderToString } from "react-dom/server";
@@ -257,50 +256,26 @@ describe("the radar's followers (SPEC's Motion table)", () => {
     for (const frame of seen) expect(Math.abs(frame.dot - frame.vertex)).toBeLessThan(ROUNDED);
   });
 
-  it("rides the active dot along the polygon's edges through each vertex between, on the follow spring", async () => {
-    const { host } = renderThemed(
-      <Chart a={[4, 2, 3, 1]} intro="none">
-        <RadarChart.ActiveDot dataKey="a" />
-      </Chart>
-    );
-    await userEvent.tab();
-    await userEvent.keyboard("{ArrowRight}");
-    for (const animation of host.getAnimations({ subtree: true })) animation.finish();
-    await userEvent.keyboard("{End}");
-    const [dot] = radarLayers(host, "radar-chart-active-dot");
-    // DOM audit: the dot rides in its follow group, read by data-follow.
-    const group = dot?.querySelector("[data-follow]");
-    const ride = group?.getAnimations()[0];
-    const frames = ride?.effect instanceof KeyframeEffect ? ride.effect.getKeyframes() : [];
-    // From spoke 1 at (0.5, 0) through spoke 2 at (0, 0.75) to spoke 3 at (−0.25, 0), the short way.
-    const scale = (dot?.getBoundingClientRect().width ?? 0) / 2;
-    const offsets = frames.map((frame) =>
-      String(frame.translate)
-        .split(" ")
-        .map((part) => Number.parseFloat(part) / scale)
-    );
-    expect(offsets.map(([x = 0, y = 0]) => [Math.round(x * 100) / 100, Math.round(y * 100) / 100])).toEqual([
-      [0.75, 0],
-      [0.25, 0.75],
-      [0, 0],
-    ]);
-    const duration = Number(ride?.effect?.getComputedTiming().duration);
-    expect(duration).toBeGreaterThan(400);
-    expect(duration).toBeLessThanOrEqual(507);
-  });
-
-  it("turns the hand to the active spoke the short way round on 420/42", async () => {
+  it("turns the hand to the active spoke the short way round, at rest by the keyboard spring's settle", async () => {
     const { host } = renderThemed(<Chart a={[4, 2, 3, 1]} intro="none" />);
     await userEvent.tab();
     // DOM audit: the hand is the grid's spoke whose part is "hand".
     const hand = host.querySelector<SVGLineElement>('[data-slot="radar-chart-spoke"][data-part="hand"]');
+    if (hand === null) throw new Error("no hand");
     await userEvent.keyboard("{ArrowLeft}");
-    const turn = hand?.getAnimations()[0];
-    const frames = turn?.effect instanceof KeyframeEffect ? turn.effect.getKeyframes() : [];
-    // Spoke 0 to spoke 3 is a quarter turn back, not three quarters forward.
-    expect(frames.map((frame) => frame.rotate)).toEqual(["0deg", "-90deg"]);
-    const duration = Number(turn?.effect?.getComputedTiming().duration);
-    expect(duration).toBeGreaterThan(400);
-    expect(duration).toBeLessThanOrEqual(483);
+    const turns: { readonly t: number; readonly angle: number }[] = [];
+    const start = performance.now();
+    while (performance.now() - start < 400) {
+      const now = await new Promise<number>((resolve) => requestAnimationFrame(resolve));
+      turns.push({ t: now - start, angle: Number.parseFloat(getComputedStyle(hand).rotate) });
+    }
+    // Spoke 0 to spoke 3 is a quarter turn back, not three quarters forward: no frame turns forward
+    // of 0°, and none overshoots −90° by more than FOLLOW_FASTEST's e^(−πζ/√(1−ζ²)) ≈ 0.44 % of 90°.
+    for (const { angle } of turns) {
+      expect(angle).toBeLessThanOrEqual(0.001);
+      expect(angle).toBeGreaterThanOrEqual(-90 - 0.4);
+    }
+    // ζω = 126 / 2 = 63 per second, so 90° · e^(−63 t) / √(1 − ζ²) is under 0.01° by 155 ms.
+    for (const { t, angle } of turns) if (t > 200) expect(angle).toBeCloseTo(-90, 2);
   });
 });

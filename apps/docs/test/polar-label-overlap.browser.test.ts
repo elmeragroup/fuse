@@ -1,8 +1,8 @@
 // Unit under test: every polar and clock demo's labels as the docs build serves them, from a
 // 320 px phone to a 728 px tablet in 8 px steps. Oracle: SPEC's L8 label check, written as three
 // rules of geometry: no two shown labels of one chart overlap, no shown label leaves its chart's
-// own box, and every line the centre prints lies inside its hole, the circle round the square the
-// centre stacks in, 2 px in from its edge. A label is any text the dial places: slice labels and leaders' text, angle and
+// own box, and the text of every line the centre prints lies inside its hole, the circle round the
+// square the centre stacks in, 2 px in from its edge. A label is any text the dial places: slice labels and leaders' text, angle and
 // ring values, Now's label, a value label and the centre's lines. A label hidden by thinning, by
 // `data-hidden` or by an empty slice shows nothing, so it takes no room.
 import { beforeAll, describe, expect, it } from "vitest";
@@ -87,6 +87,28 @@ describe("polar labels from 320 to 728 px", () => {
               const holes = [
                 ...chart.querySelectorAll<HTMLElement>('[data-slot$="-center"] > [data-part="hole"]'),
               ];
+              // A line's printed text: each text run's boxes, and a rolling digit's window, since
+              // the rest of its reel sits clipped outside it. A value that wraps between its number
+              // and its unit fills the square's width with its own box, but not with its text.
+              const printed = (line: Element): DOMRect[] => {
+                const rects: DOMRect[] = [];
+                const walk = (node: Node): void => {
+                  if (node instanceof Element && node.matches('[data-part="digit"]')) {
+                    rects.push(node.getBoundingClientRect());
+                    return;
+                  }
+                  if (node.nodeType === Node.TEXT_NODE) {
+                    if ((node.textContent ?? "").trim() === "") return;
+                    const range = document.createRange();
+                    range.selectNodeContents(node);
+                    rects.push(...range.getClientRects());
+                    return;
+                  }
+                  for (const child of node.childNodes) walk(child);
+                };
+                walk(line);
+                return rects;
+              };
               const outside = holes.flatMap((hole) => {
                 const square = hole.getBoundingClientRect();
                 const cx = square.left + square.width / 2;
@@ -94,13 +116,15 @@ describe("polar labels from 320 to 728 px", () => {
                 const room = (square.width * Math.SQRT2) / 2 - 2;
                 return [...hole.children].flatMap((line) => {
                   if (!line.checkVisibility() || line.textContent.trim() === "") return [];
-                  const box = line.getBoundingClientRect();
-                  const corners = [
-                    [box.left, box.top],
-                    [box.right, box.top],
-                    [box.left, box.bottom],
-                    [box.right, box.bottom],
-                  ] as const;
+                  const corners = printed(line).flatMap(
+                    (box) =>
+                      [
+                        [box.left, box.top],
+                        [box.right, box.top],
+                        [box.left, box.bottom],
+                        [box.right, box.bottom],
+                      ] as const
+                  );
                   return corners.some(([x, y]) => Math.hypot(x - cx, y - cy) > room)
                     ? [
                         `${String(at)} px ${demo}: the centre's "${line.textContent.trim()}" reaches past its hole`,

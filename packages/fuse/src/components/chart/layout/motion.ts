@@ -24,13 +24,13 @@ export const CHART_CROSSFADE_MS = 150;
 /**
  * The chart's springs, mass 1, which `springEasing` samples into CSS `linear()` easings for the
  * glides that follow the pointer. `follow` is the tooltip dot's spring, which the line crosshair
- * and the active dots share on each step: a keyboard step and a slow pointer take it as it is, and a faster
- * pointer stiffens it, `FOLLOW_FASTEST` at most. `glide` moves the tooltip, whose duration is
+ * and the active dots share on each step: a slow pointer takes it as it is, a faster pointer
+ * stiffens it, `FOLLOW_FASTEST` at most, and a keyboard step takes `FOLLOW_FASTEST`. `glide` moves the tooltip, whose duration is
  * `--chart-glide` in `chart.css`, and keeps its softer spring at every speed. `ticker` moves
  * Chart.SlotLabel's pill and its rolling parts and a pie's centre digits. `pop` moves the active
  * slice out along its bisector (D3) and scales the active ring. `grow` scales a ring's track or a
- * radar's ring out as the entrance starts, `extend` grows a radar's spokes, and `hand` turns a
- * radar's spoke hand to the active spoke. Each glide starts from what the mark shows, so a step
+ * radar's ring out as the entrance starts, and `extend` grows a radar's spokes. A polar Root's hand
+ * and dots turn on the follow springs too, through its angle follower. Each glide starts from what the mark shows, so a step
  * mid-glide retargets it.
  */
 export const CHART_SPRINGS = {
@@ -40,7 +40,6 @@ export const CHART_SPRINGS = {
   pop: { stiffness: 400, damping: 25 },
   grow: { stiffness: 100, damping: 15 },
   extend: { stiffness: 80, damping: 15 },
-  hand: { stiffness: 420, damping: 42 },
 } as const satisfies Record<string, Spring>;
 
 /**

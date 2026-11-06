@@ -161,25 +161,40 @@ export function spokeAt(angle: number, count: number): number {
 }
 
 /**
- * The series whose drawn vertex on a spoke lies nearest a pointer, skipping a series with no
- * reading there, a tie going to the earlier config key.
+ * Where the ray at an angle meets a series' polygon: on the straight edge between the present
+ * vertices either side of the angle, skipping a missing vertex as a ride between spokes does. An
+ * angle on a present vertex's spoke lands on that vertex. The active dot rides here, so it stays on
+ * the polygon however far the angle has turned between spokes.
  *
- * @param pointer - The pointer's point from the centre.
- * @param vertices - Each series' vertex on the spoke, null for a missing one, in config order.
- * @returns The series' index, or null when no series holds a reading there.
+ * @param vertices - The series' vertex per spoke, null for a missing one.
+ * @param angle - The angle in degrees from 12 o'clock, in any turn.
+ * @returns The point, or null when no vertex is present.
  */
-export function nearestVertex(pointer: PolarPoint, vertices: readonly (PolarPoint | null)[]): number | null {
-  let best: number | null = null;
-  let distance = Number.POSITIVE_INFINITY;
-  vertices.forEach((vertex, index) => {
-    if (vertex === null) return;
-    const gap = Math.hypot(vertex.x - pointer.x, vertex.y - pointer.y);
-    if (gap < distance) {
-      best = index;
-      distance = gap;
-    }
-  });
-  return best;
+export function edgePoint(vertices: readonly (PolarPoint | null)[], angle: number): PolarPoint | null {
+  const count = vertices.length;
+  if (count === 0) return null;
+  const step = 360 / count;
+  const turned = ((angle % 360) + 360) % 360;
+  const below = Math.floor(turned / step + 1e-9) % count;
+  // The present vertex at or before the angle, and the next present one after it.
+  let before = below;
+  while (vertices[before] == null) {
+    before = (before - 1 + count) % count;
+    if (before === below) return null;
+  }
+  let after = (below + 1) % count;
+  while (vertices[after] == null) after = (after + 1) % count;
+  const a = vertices[before];
+  const b = vertices[after];
+  if (a == null || b == null) return null;
+  if (Math.abs(turned - spokeAngle(before, count)) < 1e-9 || before === after) return a;
+  const radians = (turned * Math.PI) / 180;
+  const ray = { x: Math.sin(radians), y: -Math.cos(radians) };
+  const edge = { x: b.x - a.x, y: b.y - a.y };
+  const across = ray.x * edge.y - ray.y * edge.x;
+  if (Math.abs(across) < 1e-12) return a;
+  const reach = (a.x * edge.y - a.y * edge.x) / across;
+  return { x: ray.x * reach, y: ray.y * reach };
 }
 
 /** A series' drawing split by quality (R5): the plain and the marked parts, each one path. */

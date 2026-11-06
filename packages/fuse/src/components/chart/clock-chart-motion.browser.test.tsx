@@ -1,12 +1,12 @@
 // ClockChart's motion against SPEC's Motion table, in Chromium with motion on. Units under test:
-// the clock's series marks on the Root's loop, ActiveDot's ride and the Scrubber's turn. Oracles,
+// the clock's series marks on the Root's loop, ActiveDot on its series' tween and the Scrubber's turn. Oracles,
 // written by hand from the Motion table: one 1,250 ms progress opens the wedge over 750 ms, and slot
 // i of 24, whose start lies at 15i°, rises from its base over 500 ms on an ease-out cubic from
 // 31.25 · i ms, so it reads base + (tip − base)(1 − (1 − t)³) with t = (ms − 31.25 i) / 500; an
 // update moves each radius over 480 ms; a switch from the 24- to the 25-hour day turns each hour to
-// its new angle, so 06:00 runs from 90° to 100.8° and never cuts a chord; the active dot rides the
-// drawn curve on the follow spring, ln 2000 / 15 ≈ 507 ms for a key step; and the Scrubber turns the
-// short way on 420/42, settling by about 483 ms. The entrance runs on a hand-driven frame clock,
+// its new angle, so 06:00 runs from 90° to 100.8° and never cuts a chord; and a key step turns the
+// Scrubber the short way on the keyboard's follow spring, FOLLOW_FASTEST 5300/126, at rest within
+// 0.01° by about 127 ms. The entrance runs on a hand-driven frame clock,
 // read on the loop's own time; the rest read each frame's own timestamp.
 import { describe, expect, it } from "vitest";
 import { userEvent } from "vitest/browser";
@@ -202,65 +202,7 @@ describe("the clock's followers (SPEC's Motion table)", () => {
     for (const frame of seen) expect(Math.abs(frame.dot - frame.slot)).toBeLessThan(0.002);
   });
 
-  it("rides the active dot along the curve its Line draws, not the default one", async () => {
-    const { host } = renderThemed(
-      <Dial intro="none" value={(slot) => (slot % 2 === 0 ? 4 : 1)}>
-        <ClockChart.Line dataKey="kwh" curve="step" />
-        <ClockChart.ActiveDot dataKey="kwh" />
-      </Dial>
-    );
-    await userEvent.tab();
-    for (const animation of host.getAnimations({ subtree: true })) animation.finish();
-    await userEvent.keyboard("{ArrowRight}");
-    const dot = clockLayer(host, "clock-chart-active-dot");
-    const line = clockLayer(host, "clock-chart-line").querySelector<SVGPathElement>(
-      'path[data-part="solid"]'
-    );
-    // DOM audit: the dot rides in its follow group, read by data-follow.
-    const ride = dot.querySelector("[data-follow]")?.getAnimations()[0];
-    const frames = ride?.effect instanceof KeyframeEffect ? ride.effect.getKeyframes() : [];
-    expect(frames.length).toBeGreaterThan(3);
-    // Each keyframe is an offset from slot 1's dot in CSS pixels: back in the dial's units, it lies
-    // on the step curve the Line draws, sampled finely along its length.
-    const [target] = dotPoints(clockPath(dot, "dots"));
-    const scale = dot.getBoundingClientRect().width / 2;
-    const length = line?.getTotalLength() ?? 0;
-    const samples = Array.from({ length: 4000 }, (_, at) => line?.getPointAtLength((length * at) / 3999));
-    for (const frame of frames) {
-      const [dx = 0, dy = 0] = String(frame.translate)
-        .split(" ")
-        .map((part) => Number.parseFloat(part) / scale);
-      const x = (target?.x ?? 0) + dx;
-      const y = (target?.y ?? 0) + dy;
-      const nearest = Math.min(
-        ...samples.map((point) => Math.hypot((point?.x ?? 0) - x, (point?.y ?? 0) - y))
-      );
-      expect(nearest).toBeLessThan(0.01);
-    }
-  });
-
-  it("rides the active dot along the drawn curve to the next slot, on the follow spring", async () => {
-    const { host } = renderThemed(
-      <Dial intro="none" value={(slot) => (slot % 2 === 0 ? 4 : 2)}>
-        <ClockChart.ActiveDot dataKey="kwh" />
-      </Dial>
-    );
-    await userEvent.tab();
-    for (const animation of host.getAnimations({ subtree: true })) animation.finish();
-    await userEvent.keyboard("{ArrowRight}");
-    const dot = clockLayer(host, "clock-chart-active-dot");
-    // DOM audit: the dot rides in its follow group, read by data-follow.
-    const ride = dot.querySelector("[data-follow]")?.getAnimations()[0];
-    const frames = ride?.effect instanceof KeyframeEffect ? ride.effect.getKeyframes() : [];
-    // From slot 0 at 7.5° on the rim to slot 1 at 22.5° on √0.545: sampled along the curve, more than
-    // a straight line's two points, and every point between the two angles.
-    expect(frames.length).toBeGreaterThan(3);
-    const duration = Number(ride?.effect?.getComputedTiming().duration);
-    expect(duration).toBeGreaterThan(400);
-    expect(duration).toBeLessThanOrEqual(507);
-  });
-
-  it("turns the Scrubber to the active slot the short way round on 420/42", async () => {
+  it("turns the Scrubber the short way round, at rest by the keyboard spring's settle", async () => {
     const { host } = renderThemed(
       <Dial intro="none">
         <ClockChart.Scrubber />
@@ -268,14 +210,22 @@ describe("the clock's followers (SPEC's Motion table)", () => {
     );
     await userEvent.tab();
     // DOM audit: the Scrubber's hand is its part "hand".
-    const hand = host.querySelector('[data-slot="clock-chart-scrubber"] [data-part="hand"]');
+    const hand = host.querySelector<SVGGElement>('[data-slot="clock-chart-scrubber"] [data-part="hand"]');
+    if (hand === null) throw new Error("no hand");
     await userEvent.keyboard("{ArrowLeft}");
-    const turn = hand?.getAnimations()[0];
-    const frames = turn?.effect instanceof KeyframeEffect ? turn.effect.getKeyframes() : [];
-    // Slot 0's middle at 7.5° to slot 23's at 352.5° is 15° back, not 345° forward.
-    expect(frames.map((frame) => frame.rotate)).toEqual(["7.5deg", "-7.5deg"]);
-    const duration = Number(turn?.effect?.getComputedTiming().duration);
-    expect(duration).toBeGreaterThan(400);
-    expect(duration).toBeLessThanOrEqual(483);
+    const turns: { readonly t: number; readonly angle: number }[] = [];
+    const start = performance.now();
+    while (performance.now() - start < 400) {
+      const now = await new Promise<number>((resolve) => requestAnimationFrame(resolve));
+      turns.push({ t: now - start, angle: Number.parseFloat(getComputedStyle(hand).rotate) });
+    }
+    // Slot 0's middle at 7.5° to slot 23's at 352.5° is 15° back, not 345° forward: no frame turns
+    // past 7.5°, and none overshoots −7.5° by more than FOLLOW_FASTEST's 0.44 % of 15°.
+    for (const { angle } of turns) {
+      expect(angle).toBeLessThanOrEqual(7.5001);
+      expect(angle).toBeGreaterThanOrEqual(-7.5 - 0.07);
+    }
+    // ζω = 63 per second, so 15° · e^(−63 t) / √(1 − ζ²) is under 0.01° by 127 ms.
+    for (const { t, angle } of turns) if (t > 200) expect(angle).toBeCloseTo(-7.5, 2);
   });
 });

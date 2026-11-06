@@ -15,7 +15,7 @@ import { OverlayPortal } from "../overlay/overlay-portal";
 import { useChartFollower } from "./chart-followers";
 import { useActiveIndex, useChartReadout } from "./chart-readout";
 import type { TooltipPlacer } from "./chart-readout-port";
-import { ChartLiveContext } from "./chart-scope-contexts";
+import { ChartHeldIndexContext, ChartLiveContext } from "./chart-scope-contexts";
 import { shareCorridor } from "./chart-tooltip-corridor";
 import { createTooltipGlider } from "./chart-tooltip-glide";
 import type { GlideRoute, TooltipGlider } from "./chart-tooltip-glide";
@@ -35,6 +35,20 @@ export type ChartTooltipBodyProps = ChartLayerProps & {
 };
 
 const STRAIGHT: GlideRoute = { kind: "straight" };
+
+/**
+ * The positioner props of a popup that keeps its lane: Base UI puts its corner at the lane's anchor
+ * and never moves it to avoid a collision, since the anchor places it inside the Root's figure.
+ */
+function laneProps(figure: HTMLElement | null) {
+  return {
+    ...TOOLTIP_POSITIONER,
+    align: "start",
+    collisionAvoidance: { side: "none", align: "none" },
+    collisionPadding: 0,
+    collisionBoundary: figure ?? "clipping-ancestors",
+  } as const;
+}
 
 /**
  * The popup over the active datum. A pointer, key or touch step to another datum glides it there
@@ -57,6 +71,8 @@ export function ChartTooltipBody({
   children,
 }: ChartTooltipBodyProps): ReactElement {
   const readout = useChartReadout("Chart.Tooltip");
+  // A lane keeps its side inside the Root's figure and moves itself, so it never glides.
+  const lane = placer.keeps === "lane";
   const { store, id, root: rootOf } = readout;
   const active = useActiveIndex(readout, true);
   const open = active !== null;
@@ -65,6 +81,9 @@ export function ChartTooltipBody({
   // the whole chart when the chart is the scope's last child.
   const [kept, setKept] = useState(false);
   if (open && !kept) setKept(true);
+  // The index the popup showed last, which its content keeps while it fades out.
+  const [shown, setShown] = useState<number | null>(null);
+  if (active !== null && active !== shown) setShown(active);
   const positioner = useRef<HTMLDivElement | null>(null);
   // A count that asks Base UI to place the popup again, after the marks draw something new or a
   // data update's tween lands, so the anchor measures afresh.
@@ -102,14 +121,14 @@ export function ChartTooltipBody({
   const watchPositioner = useCallback(
     (node: HTMLDivElement | null) => {
       positioner.current = node;
-      glider.current = node === null ? null : createTooltipGlider(node, rootOf());
+      glider.current = node === null || lane ? null : createTooltipGlider(node, rootOf());
       return () => {
         glider.current?.dispose();
         glider.current = null;
         positioner.current = null;
       };
     },
-    [rootOf]
+    [rootOf, lane]
   );
   // The anchor Base UI measures last, whose route a glide armed before that measure reads.
   const latestAnchor = useRef(virtual);
@@ -160,7 +179,7 @@ export function ChartTooltipBody({
       }}>
       <OverlayPortal portal={TooltipPrimitive.Portal} keepMounted={kept}>
         <TooltipPrimitive.Positioner
-          {...TOOLTIP_POSITIONER}
+          {...(lane ? laneProps(rootOf()) : TOOLTIP_POSITIONER)}
           anchor={virtual}
           side={side}
           // The family's anchor sets where the popup sits on the side Base UI tries, and how far it
@@ -212,7 +231,9 @@ export function ChartTooltipBody({
               if (store.get().source === "pointer" && !store.get().pinned)
                 store.set({ active: null, source: null, near: null });
             }}>
-            <ChartLiveContext value={true}>{children}</ChartLiveContext>
+            <ChartLiveContext value={true}>
+              <ChartHeldIndexContext value={open ? null : shown}>{children}</ChartHeldIndexContext>
+            </ChartLiveContext>
             {bridge ? <span data-slot="chart-tooltip-bridge" /> : null}
           </TooltipPrimitive.Popup>
         </TooltipPrimitive.Positioner>

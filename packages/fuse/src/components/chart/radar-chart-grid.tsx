@@ -5,9 +5,10 @@
  * below 0 the zero ring draws solid, as the bar's zero line does (R4). A ring is a polygon through
  * the spokes or a circle. The first paint draws it at rest (D18), and only a chart nothing painted
  * before, a client mount or one that leaves its empty state, scales its rings and spokes out as the
- * entrance starts. Its hand turns to the active spoke the short way round.
+ * entrance starts. Its hand turns to the active spoke the short way round, on the Root's angle
+ * follower, so the active dots turn with it.
  */
-import { useRef } from "react";
+import { useLayoutEffect, useRef } from "react";
 import type { ReactElement } from "react";
 
 import { writeAttribute, writeStyle } from "./chart-dom";
@@ -15,7 +16,6 @@ import { useChartFollower } from "./chart-followers";
 import { viewBoxOf } from "./chart-pie-frame";
 import { radarDrawingIn, usePolarContext } from "./chart-polar-context";
 import type { RadarDrawing } from "./chart-polar-context";
-import { springTiming } from "./chart-spring";
 import type { ChartLayerProps } from "./chart-types";
 import { CHART_SPRINGS } from "./layout/motion";
 import { polarPoint } from "./layout/polar-angle";
@@ -57,47 +57,31 @@ function ringsOf(radar: RadarDrawing): readonly { readonly radius: number; reado
   });
 }
 
-/** The angle a hand shows now, a running glide included, in its rest's turn. */
-function shownAngle(node: SVGLineElement, rest: number): number {
-  const shown = Number.parseFloat(getComputedStyle(node).rotate);
-  if (!Number.isFinite(shown)) return rest;
-  // The computed angle may come back in another turn than the one the hand keeps.
-  return rest + ((((shown - rest) % 360) + 540) % 360) - 180;
-}
-
 /**
  * The rings and spokes. When the radius domain reaches below 0 it draws the zero ring solid. Its
- * hand marks the active spoke and turns to the next one the short way round.
+ * hand marks the active spoke and turns to the next one the short way round, with the active dots.
  *
  * @beta
  */
 export function RadarChartGrid({ variant = "polygon", className, style }: RadarChartGridProps): ReactElement {
-  const { model, motion, box } = usePolarContext("RadarChart.Grid", ["radar"]);
+  const { model, box, kernel } = usePolarContext("RadarChart.Grid", ["radar"]);
   const radar = radarDrawingIn(model, "RadarChart.Grid");
   const hand = useRef<SVGLineElement>(null);
-  const turned = useRef<number | null>(null);
   const count = radar.count;
-  // The hand turns to the active spoke by the short way, so it keeps an angle that never wraps.
-  useChartFollower("RadarChart.Grid", (active, cause) => {
+  useChartFollower("RadarChart.Grid", (active) => {
     const node = hand.current;
-    if (node === null) return;
-    writeAttribute(node, "data-shown", active === null ? null : "");
-    if (active === null || count === 0) return;
-    const target = spokeAngle(active.slot, count);
-    const from = turned.current;
-    const shown = from === null ? null : shownAngle(node, from);
-    for (const animation of node.getAnimations()) animation.cancel();
-    const rest = shown === null ? target : shown + ((((target - shown) % 360) + 540) % 360) - 180;
-    turned.current = rest;
-    writeStyle(node, "rotate", `${String(rest)}deg`);
-    if (shown === null || cause !== "step" || motion.reduced() || Math.abs(rest - shown) < 1e-6) return;
-    const timing = springTiming(CHART_SPRINGS.hand);
-    if (!timing.spring) return;
-    node.animate([{ rotate: `${String(shown)}deg` }, { rotate: `${String(rest)}deg` }], {
-      duration: timing.duration,
-      easing: timing.easing,
-    });
+    if (node !== null) writeAttribute(node, "data-shown", active === null || count === 0 ? null : "");
   });
+  const { follow } = kernel;
+  useLayoutEffect(() => {
+    const turn = (angle: number): void => {
+      const node = hand.current;
+      if (node !== null) writeStyle(node, "rotate", `${String(angle)}deg`);
+    };
+    const shown = follow.shown();
+    if (shown !== null) turn(shown);
+    return follow.subscribe(turn);
+  }, [follow]);
   return (
     <svg
       data-slot="radar-chart-grid"

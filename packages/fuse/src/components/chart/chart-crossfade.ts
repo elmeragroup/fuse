@@ -45,8 +45,16 @@ export function crossfade(
     }
   }
   outgoing.append(copy);
-  const timing = { duration: CHART_CROSSFADE_MS, easing: "linear" } as const;
-  const out = copy.animate([{ opacity: 1 }, { opacity: 0 }], { ...timing, fill: "forwards" });
+  // A strong ease-out, with a 2 px blur on the outgoing copy, bridges the two shapes into one
+  // perceived change (MOTION-REVIEW F9).
+  const timing = { duration: CHART_CROSSFADE_MS, easing: "cubic-bezier(0.23, 1, 0.32, 1)" } as const;
+  const out = copy.animate(
+    [
+      { opacity: 1, filter: "blur(0px)" },
+      { opacity: 0, filter: "blur(2px)" },
+    ],
+    { ...timing, fill: "forwards" }
+  );
   const leave = (): void => {
     copy.remove();
   };

@@ -1,22 +1,19 @@
 "use client";
 
 /**
- * The clock's Scrubber: the active slot's hand, or its sector, which turns to the next slot the
- * short way round on 420/42. The first paint draws it at rest (D18).
+ * The clock's Scrubber: the active slot's hand, or its sector, which turns with the Root's angle
+ * follower, so the active dots and the tooltip turn with it. The first paint draws it at rest (D18).
  */
-import { useRef } from "react";
+import { useLayoutEffect, useRef } from "react";
 import type { ReactElement } from "react";
 
 import { writeAttribute, writeStyle } from "./chart-dom";
 import { useChartFollower } from "./chart-followers";
 import { viewBoxOf } from "./chart-pie-frame";
 import { clockDrawingIn, usePolarContext } from "./chart-polar-context";
-import { springTiming } from "./chart-spring";
 import type { ChartLayerProps } from "./chart-types";
 import { spokePath } from "./clock-chart-dial";
-import { slotAngles } from "./layout/clock";
 import { sectorPath } from "./layout/clock-path";
-import { CHART_SPRINGS } from "./layout/motion";
 
 /**
  * Props for `ClockChart.Scrubber`, a closed part.
@@ -28,16 +25,10 @@ export type ClockChartScrubberProps = ChartLayerProps & {
   variant?: "line" | "band";
 };
 
-/** The angle a hand shows now, a running glide included, in its rest's turn. */
-function shownAngle(node: SVGElement, rest: number): number {
-  const shown = Number.parseFloat(getComputedStyle(node).rotate);
-  if (!Number.isFinite(shown)) return rest;
-  return rest + ((((shown - rest) % 360) + 540) % 360) - 180;
-}
-
 /**
- * The active slot's hand, or its whole sector under "band", which turns to the next slot the short
- * way round on 420/42, through 12 o'clock when that is shorter.
+ * The active slot's hand, or its whole sector under "band". It turns to the next slot the short way
+ * round on the Root's angle follower, which keeps its speed across steps and stiffens with a fast
+ * pointer, so it turns with the active dots.
  *
  * @beta
  */
@@ -46,32 +37,26 @@ export function ClockChartScrubber({
   className,
   style,
 }: ClockChartScrubberProps): ReactElement {
-  const { model, box, motion } = usePolarContext("ClockChart.Scrubber", ["clock"]);
+  const { model, box, kernel } = usePolarContext("ClockChart.Scrubber", ["clock"]);
   const clock = clockDrawingIn(model, "ClockChart.Scrubber");
   const hand = useRef<SVGGElement>(null);
-  const turned = useRef<number | null>(null);
   const { count } = clock;
-  useChartFollower("ClockChart.Scrubber", (active, cause) => {
+  useChartFollower("ClockChart.Scrubber", (active) => {
     const node = hand.current;
-    if (node === null) return;
-    writeAttribute(node, "data-shown", active === null ? null : "");
-    if (active === null || count === 0) return;
-    const { start, centre } = slotAngles(active.slot, count);
-    const target = variant === "band" ? start : centre;
-    const from = turned.current;
-    const shown = from === null ? null : shownAngle(node, from);
-    for (const animation of node.getAnimations()) animation.cancel();
-    const rest = shown === null ? target : shown + ((((target - shown) % 360) + 540) % 360) - 180;
-    turned.current = rest;
-    writeStyle(node, "rotate", `${String(rest)}deg`);
-    if (shown === null || cause !== "step" || motion.reduced() || Math.abs(rest - shown) < 1e-6) return;
-    const timing = springTiming(CHART_SPRINGS.hand);
-    if (!timing.spring) return;
-    node.animate([{ rotate: `${String(shown)}deg` }, { rotate: `${String(rest)}deg` }], {
-      duration: timing.duration,
-      easing: timing.easing,
-    });
+    if (node !== null) writeAttribute(node, "data-shown", active === null || count === 0 ? null : "");
   });
+  // The follower's angle is the slot's middle, so the band, drawn from 0°, turns half a slot less.
+  const lead = variant === "band" && count > 0 ? 180 / count : 0;
+  const { follow } = kernel;
+  useLayoutEffect(() => {
+    const turn = (angle: number): void => {
+      const node = hand.current;
+      if (node !== null) writeStyle(node, "rotate", `${String(angle - lead)}deg`);
+    };
+    const shown = follow.shown();
+    if (shown !== null) turn(shown);
+    return follow.subscribe(turn);
+  }, [follow, lead]);
   const width = count === 0 ? 0 : 360 / count;
   return (
     <svg

@@ -33,12 +33,11 @@ export type GlideTurns = (
  * How a step's glide travels. "path" glides through the turns its family's route gives for the side
  * the popup is on, and shows the next place at once when the route gives none. Its `keeps` names
  * what the glide holds still: "side", as over the cartesian roof, where a place on another side
- * shows at once and a popup that changes size keeps the edge that faces the plot, or "centre", as
- * round a polar dial, where the popup may change side on its way and keeps its centre on the ray.
- * "straight" glides in a line, as along the plot's top lane or a horizontal chart's rows.
+ * shows at once and a popup that changes size keeps the edge that faces the plot. "straight" glides
+ * in a line, as along the plot's top lane or a horizontal chart's rows.
  */
 export type GlideRoute =
-  | { readonly kind: "path"; readonly keeps: "side" | "centre"; readonly turns: GlideTurns }
+  | { readonly kind: "path"; readonly keeps: "side"; readonly turns: GlideTurns }
   | { readonly kind: "straight" };
 
 /**
@@ -106,13 +105,12 @@ export function createTooltipGlider(positioner: HTMLElement, chart: HTMLElement 
     }
     const side = positioner.getAttribute("data-side");
     const route = armed.route();
-    const centred = route.kind === "path" && route.keeps === "centre";
-    // A place on another side shows at once, unless the route keeps the popup's centre.
-    if (!centred && side !== armed.side) {
+    // A place on another side shows at once.
+    if (side !== armed.side) {
       stop();
       return;
     }
-    const from = centred ? centreKept(shown, before, size) : facingKept(shown, before, size, side);
+    const from = facingKept(shown, before, size, side);
     const timing = glideTiming(positioner);
     const keyframes = timing === null ? null : glideKeyframes(positioner, from, target, armed.side, route);
     if (timing === null || keyframes === null) {
@@ -162,11 +160,6 @@ function facingKept(shift: Shift, before: PlaceSize, after: PlaceSize, side: str
   if (side === "top") return { x: shift.x, y: shift.y + before.height - after.height };
   if (side === "left") return { x: shift.x + before.width - after.width, y: shift.y };
   return shift;
-}
-
-/** A translation moved so a box that changed size keeps its centre where it was. */
-function centreKept(shift: Shift, before: PlaceSize, after: PlaceSize): Shift {
-  return { x: shift.x + (before.width - after.width) / 2, y: shift.y + (before.height - after.height) / 2 };
 }
 
 /** Copy the chart's glide duration onto the positioner. */

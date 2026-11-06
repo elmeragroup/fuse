@@ -10,6 +10,7 @@ import { createContext, use } from "react";
 import type { SupportedLocale } from "../../intl/locale-context";
 import type { ChartFollowers } from "./chart-followers";
 import type { ChartMotion } from "./chart-motion";
+import type { PolarFollow } from "./chart-polar-follow";
 import type { PaintedAngles } from "./chart-polar-painted";
 import type { ChartReadout, ChartTableModel, PointerSlot } from "./chart-readout-port";
 import type { ChartStore, EmphasisEntry } from "./chart-store";
@@ -69,12 +70,21 @@ export type PolarModel = {
    * where nothing picks.
    *
    * @param point - The point.
-   * @param pixels - CSS pixels per unit, the device pixel ratio, and the slice angles a frame
-   *   painted at rest, which the pie picks over, undefined while a mark tweens.
+   * @param pixels - CSS pixels per unit, the device pixel ratio, the slice angles a frame painted
+   *   at rest, which the pie picks over, undefined while a mark tweens, and the series the pointer
+   *   holds.
    */
   readonly pick: (
     point: PolarPoint,
-    pixels: { readonly scale: number; readonly dpr: number; readonly painted?: PaintedAngles | undefined }
+    pixels: {
+      readonly scale: number;
+      readonly dpr: number;
+      readonly painted?: PaintedAngles | undefined;
+      /** The series the pointer holds, which a series pick keeps unless another is clearly nearer. */
+      readonly near?: number | null | undefined;
+      /** Whether the held series stays while it has a reading, as it does just after it changed. */
+      readonly nearFirm?: boolean | undefined;
+    }
   ) => PointerSlot | null;
   /** The ray the tooltip rests on for an option and a series, or null when nothing draws there. */
   readonly ray: (index: number, near: number | null) => PolarRay | null;
@@ -325,14 +335,29 @@ export type PolarKernel = {
   readonly root: () => HTMLElement | null;
   readonly store: ChartStore;
   readonly followers: ChartFollowers;
+  /** The angle follower that turns the hand, the active dots and the tooltip's lane offset. */
+  readonly follow: PolarFollow;
   readonly select: (key: string | null, reason: ChartSelectionChangeReason, event: Event | undefined) => void;
   readonly registerToggleGroup: () => () => void;
   readonly hasToggles: () => boolean;
   readonly highlight: (key: string | null) => void;
   readonly warnOnce: (rule: ChartDataRule | ChartHintRule, subject: string, message: string) => void;
-  /** The pick a pointer makes over the cell, a hook with the same calls for the Root's life. */
-  readonly usePick: () => (clientX: number, clientY: number) => PointerSlot | null;
+  /**
+   * The pick a pointer makes over the cell, a hook with the same calls for the Root's life. Given
+   * the option and series the pointer holds, it keeps them across a pick's edge (Fix R2.5, R2.6).
+   */
+  readonly usePick: () => PolarPickAt;
 };
+
+/**
+ * A pick at a client point. `held` is what the pointer holds now: within 2 CSS px of it, along the
+ * pointer's arc or its radius, the pick keeps the held option, and it keeps the held series unless
+ * another lies nearer by more than 0.06 of the outer radius.
+ */
+export type PolarPickAt = (clientX: number, clientY: number, held?: PolarHeld | null) => PointerSlot | null;
+
+/** What a pointer holds: its option and series, and whether its series changed a moment ago. */
+export type PolarHeld = PointerSlot & { readonly firm: boolean };
 
 /** What produced the current model: the first render, or new data. */
 export type PolarUpdate = { readonly kind: "initial" | "data"; readonly keys: readonly string[] };

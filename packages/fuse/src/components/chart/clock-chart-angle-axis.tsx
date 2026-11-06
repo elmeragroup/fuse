@@ -1,16 +1,18 @@
 "use client";
 
 /**
- * The clock's AngleAxis: the cycle's hours, weekdays or months past the rim, thinned by stride to
- * the dial's width. The first paint draws it at rest (D18).
+ * The clock's AngleAxis: the cycle's hours, weekdays or months past the rim, each centred on its
+ * ray 6 px out, thinned by stride to the dial's width. The first paint draws it at rest (D18).
  */
 import type { ReactElement } from "react";
 
+import { useLabelWidths } from "./chart-label-widths";
 import { clockDrawingIn, usePolarContext } from "./chart-polar-context";
 import type { ChartLayerProps, XFormat } from "./chart-types";
-import { LABEL_REACH, labelPlace, minOf } from "./clock-chart-dial";
+import { minOf, rayPlace } from "./clock-chart-dial";
 import { PlacedLabel } from "./clock-chart-placed-label";
 import { formatSlot } from "./format/time-format";
+import { labelWidth } from "./layout/label-width";
 
 /**
  * Props for `ClockChart.AngleAxis`, a closed part.
@@ -33,8 +35,14 @@ export function ClockChartAngleAxis({ format, className, style }: ClockChartAngl
   const { model, box, kernel } = usePolarContext("ClockChart.AngleAxis", ["clock"]);
   const clock = clockDrawingIn(model, "ClockChart.AngleAxis");
   const timeZone = clock.text.model.domain.kind === "time" ? clock.text.model.domain.timeZone : "UTC";
+  const text = (label: (typeof clock.labels)[number]): string =>
+    format === undefined
+      ? label.text.text
+      : formatSlot(kernel.locale, timeZone, label.start, label.unit, format, "tick").text;
+  const measured = useLabelWidths();
   return (
     <div
+      ref={measured}
       data-slot="clock-chart-angle-axis"
       data-polar-layer=""
       data-outside=""
@@ -47,10 +55,8 @@ export function ClockChartAngleAxis({ format, className, style }: ClockChartAngl
           dataSlot="clock-chart-angle-label"
           min={minOf(label.visibility)}
           hidden={label.visibility === "none"}
-          place={labelPlace(box, label.angle, LABEL_REACH)}>
-          {format === undefined
-            ? label.text.text
-            : formatSlot(kernel.locale, timeZone, label.start, label.unit, format, "tick").text}
+          place={rayPlace(box, label.angle, labelWidth(text(label)), "outside")}>
+          {text(label)}
         </PlacedLabel>
       ))}
     </div>

@@ -1,23 +1,23 @@
 "use client";
 
 /**
- * The clock's ActiveDot: the dot on one series at the active slot, which moves with its series'
- * tween and rides its Line's curve to the next slot on the follow spring.
+ * The clock's ActiveDot: the dot on one series at the Root's follower angle, on the curve its Line or
+ * Area draws, which moves with its series' tween and turns with the hand.
  */
-import { useMemo, useRef } from "react";
+import { useLayoutEffect, useMemo, useRef } from "react";
 import type { ReactElement } from "react";
 
 import { writeAttribute, writeStyle } from "./chart-dom";
 import { useChartFollower } from "./chart-followers";
-import type { ActiveSlot, FollowerCause } from "./chart-followers";
-import type { MarkValues } from "./chart-motion";
+import type { ActiveSlot } from "./chart-followers";
+import type { ChartMotion, MarkValues } from "./chart-motion";
 import { viewBoxOf } from "./chart-pie-frame";
 import type { ClockSeries } from "./chart-polar-context";
+import type { PolarFollow } from "./chart-polar-follow";
 import { usePolarCommit, usePolarMark } from "./chart-polar-motion";
-import { springTiming, stepSpring } from "./chart-spring";
 import type { ChartLayerProps } from "./chart-types";
-import { useClockSeries, useClockPlacement, pixelsPerUnit, curves } from "./clock-chart-part";
-import { clockXY, curveRoute, entranceFrame, ownerSlot, slotVertex } from "./layout/clock-path";
+import { seriesCurve, useClockPlacement, useClockSeries } from "./clock-chart-part";
+import { clockXY, curveRadiusAt, entranceFrame, ownerSlot, slotVertex } from "./layout/clock-path";
 import { pathNumber } from "./layout/rounding";
 
 /**
@@ -32,31 +32,59 @@ export type ClockChartActiveDotProps = ChartLayerProps & {
   variant?: "default" | "ring" | "halo" | "ping";
 };
 
-/** What an active dot's writer reads: its series, the slot it shows and the numbers it drew last. */
+/** What an active dot's writer reads: its series, whether a slot is active, and the numbers it drew last. */
 type DotLook = {
   readonly series: ClockSeries;
-  readonly shown: { current: number | null };
+  readonly key: string;
+  readonly motion: ChartMotion;
+  readonly follow: PolarFollow;
+  readonly active: { current: boolean };
   readonly drawn: { current: MarkValues | null };
 };
 
-/** Draw the active dot at its slot's vertex in this frame's numbers, so it follows its series' tween. */
-function drawActiveDot(group: SVGGElement, look: DotLook | null, values: MarkValues): void {
-  if (look === null) return;
-  look.drawn.current = values;
-  const slot = look.shown.current;
-  if (slot === null) return;
-  const { x, y } = clockXY(
-    slotVertex(entranceFrame(values).values, ownerSlot(look.series.slots.states, slot))
-  );
+/**
+ * The radius the series draws at an angle: its Line's or Area's curve, or, for a series drawn only
+ * as Columns or Dots, the tip of the reading that owns the slot under the angle.
+ */
+function radiusAt(look: DotLook, values: readonly number[], angle: number): number | null {
+  const { slots } = look.series;
+  const curve = seriesCurve(look.motion, look.key);
+  if (curve !== null) return curveRadiusAt(values, slots, curve, angle);
+  const count = slots.states.length;
+  if (count === 0) return null;
+  const turned = ((angle % 360) + 360) % 360;
+  const own = ownerSlot(slots.states, Math.min(count - 1, Math.floor((turned / 360) * count)));
+  return slots.states[own] === "reading" ? slotVertex(values, own).radius : null;
+}
+
+/**
+ * Place the dot on its series at the follower's angle in this frame's numbers, in the dial's own
+ * units, so it lies on what its series draws and follows its tween. It shows only while a slot is
+ * active and the series draws something at that angle.
+ */
+function placeDot(group: SVGGElement, look: DotLook, values: MarkValues): void {
+  const angle = look.follow.shown();
+  const radius =
+    angle === null || !look.active.current ? null : radiusAt(look, entranceFrame(values).values, angle);
+  writeAttribute(group, "data-value", radius === null ? null : "");
+  if (angle === null || radius === null) return;
+  const { x, y } = clockXY({ angle, radius });
   for (const path of group.querySelectorAll("path"))
     writeAttribute(path, "d", `M${pathNumber(x)},${pathNumber(y)}h0`);
 }
 
+/** Draw the active dot in this loop frame's numbers, so it follows its series' tween. */
+function drawActiveDot(group: SVGGElement, look: DotLook | null, values: MarkValues): void {
+  if (look === null) return;
+  look.drawn.current = values;
+  placeDot(group, look, values);
+}
+
 /**
- * The dot on one series at the active slot. It moves with its series as the series tweens, and a
- * step rides the curve its Line draws to the new slot the short way round, on the follow spring,
- * which a fast pointer stiffens. A missing reading at the active slot shows no dot. It paints its
- * value's step of a threshold or a scale.
+ * The dot on one series at the active slot. It sits on the curve its Line draws, or its Area's top
+ * edge, at the Root's follower angle, so a step carries it along the curve with the hand, and it
+ * moves with its series as the series tweens. A missing reading at the active slot shows no dot. It
+ * paints its value's step of a threshold or a scale.
  *
  * @beta
  */
@@ -67,62 +95,38 @@ export function ClockChartActiveDot({
   style,
 }: ClockChartActiveDotProps): ReactElement {
   const { polar, clock, series } = useClockSeries("ClockChart.ActiveDot", dataKey);
-  const { kernel, box } = polar;
-  const svg = useRef<SVGSVGElement>(null);
+  const { kernel, box, motion } = polar;
+  const { follow } = kernel;
   const dot = useRef<SVGGElement | null>(null);
-  const shown = useRef<number | null>(null);
+  const active = useRef(false);
   const drawn = useRef<MarkValues | null>(null);
   const look = useMemo(
-    (): DotLook | null => (series === undefined ? null : { series, shown, drawn }),
-    [series, shown, drawn]
+    (): DotLook | null =>
+      series === undefined ? null : { series, key: dataKey, motion, follow, active, drawn },
+    [series, dataKey, motion, follow, active, drawn]
   );
-  const { ref, place, node: anchor } = usePolarMark(polar.motion, drawActiveDot, look);
+  const { ref, place, node: anchor } = usePolarMark(motion, drawActiveDot, look);
   const commit = usePolarCommit(polar, anchor);
   useClockPlacement(clock, series, commit, place);
-  const paint = (active: ActiveSlot, cause: FollowerCause): void => {
+  useChartFollower("ClockChart.ActiveDot", (current: ActiveSlot) => {
     const group = dot.current;
-    const layer = svg.current;
-    if (group === null || layer === null || series === undefined || look === null) return;
-    const slot = active?.slot ?? null;
-    const reading = slot !== null && series.slots.states[ownerSlot(series.slots.states, slot)] === "reading";
-    const before = shown.current;
-    shown.current = reading ? slot : null;
-    for (const animation of group.getAnimations()) animation.cancel();
-    writeAttribute(group, "data-value", reading ? "" : null);
-    if (!reading) return;
-    const values = drawn.current ?? series.rest;
-    drawActiveDot(group, look, values);
-    const step = series.steps?.[series.stepAt[slot] ?? 0]?.paint ?? series.paint;
-    writeStyle(group, "--_dot", step);
-    if (cause !== "step" || before === null || before === slot || polar.motion.reduced()) return;
-    const scale = pixelsPerUnit(layer, box);
-    const timing = springTiming(stepSpring(kernel.store));
-    if (scale === 0 || !timing.spring) return;
-    const curve = curves.get(polar.motion)?.get(dataKey) ?? "monotone";
-    const from = ownerSlot(series.slots.states, before);
-    const to = ownerSlot(series.slots.states, slot);
-    const route = curveRoute(values, series.slots, curve, from, to).map(clockXY);
-    const { x, y } = clockXY(slotVertex(values, to));
-    if (route.length < 2) return;
-    const lengths = route.slice(1).map((point, index) => {
-      const start = route[index] ?? point;
-      return Math.hypot(point.x - start.x, point.y - start.y);
+    if (group === null || series === undefined || look === null) return;
+    active.current = current !== null;
+    if (current !== null) {
+      const step = series.steps?.[series.stepAt[current.slot] ?? 0]?.paint ?? series.paint;
+      writeStyle(group, "--_dot", step);
+    }
+    placeDot(group, look, drawn.current ?? series.rest);
+  });
+  useLayoutEffect(() => {
+    if (look === null) return undefined;
+    return follow.subscribe(() => {
+      const group = dot.current;
+      if (group !== null) placeDot(group, look, drawn.current ?? look.series.rest);
     });
-    const total = lengths.reduce((sum, length) => sum + length, 0);
-    let reached = 0;
-    const frames = route.map((point, index) => {
-      if (index > 0) reached += lengths[index - 1] ?? 0;
-      return {
-        offset: total === 0 ? index / (route.length - 1) : reached / total,
-        translate: `${((point.x - x) * scale).toFixed(2)}px ${((point.y - y) * scale).toFixed(2)}px`,
-      };
-    });
-    group.animate(frames, { duration: timing.duration, easing: timing.easing });
-  };
-  useChartFollower("ClockChart.ActiveDot", paint);
+  }, [follow, look]);
   return (
     <svg
-      ref={svg}
       data-slot="clock-chart-active-dot"
       data-variant={variant}
       data-clock-series=""

@@ -16,6 +16,7 @@ import { shareDigits, shareText } from "./chart-readout";
 import { useChartStore } from "./chart-store";
 import type { ChartFractionDigits, ChartLayerProps, ValueFormat } from "./chart-types";
 import { CHART_STRINGS } from "./format/chart-strings";
+import { numberAndUnit } from "./format/formatted-text";
 import { formatValue } from "./format/value-format";
 
 /**
@@ -49,6 +50,31 @@ export type PieChartCenterMaxProps = ChartLayerProps & {
 };
 
 /** The centre's numbers, null under a family with no centre, and the active item. */
+/**
+ * A value as its number, whose digits roll, and its unit, in the order the formatter wrote them and
+ * joined by a breakable space, so a value too wide for the hole wraps between them instead of
+ * overflowing.
+ */
+function RollingValue({ text, step }: { readonly text: string; readonly step: number | null }): ReactElement {
+  const parts = numberAndUnit(text);
+  const number = (
+    <span data-part="number">
+      <ChartDigitRoll text={parts.number} step={step} />
+    </span>
+  );
+  if (parts.unit === null) return number;
+  const unit = <span data-part="unit">{parts.unit}</span>;
+  return parts.side === "before" ? (
+    <>
+      {unit} {number}
+    </>
+  ) : (
+    <>
+      {number} {unit}
+    </>
+  );
+}
+
 type ActiveItem = { readonly centre: CentreModel | null; readonly active: number | null };
 
 /** The active slice's or ring's index, or null while nothing is active. */
@@ -81,7 +107,7 @@ export function PieChartCenterValue({ format, className, style }: PieChartCenter
   }
   return (
     <span data-slot="pie-chart-center-value" className={className} style={style}>
-      {text === null ? null : <ChartDigitRoll text={text} />}
+      {text === null ? null : <RollingValue text={text} step={active} />}
     </span>
   );
 }
@@ -107,7 +133,7 @@ export function PieChartCenterShare({ format, className, style }: PieChartCenter
         : centre.share(active, digits);
   return (
     <span data-slot="pie-chart-center-share" className={className} style={style}>
-      {share === undefined ? null : <ChartDigitRoll text={shareText(locale, share, format)} />}
+      {share === undefined ? null : <ChartDigitRoll text={shareText(locale, share, format)} step={active} />}
     </span>
   );
 }
@@ -134,7 +160,9 @@ export function PieChartCenterMax({ format, className, style }: PieChartCenterMa
         : centre.format(active));
   return (
     <span data-slot="pie-chart-center-max" className={className} style={style}>
-      {max === null ? null : <ChartDigitRoll text={formatValue(locale, max, shown, "full").text} />}
+      {max === null ? null : (
+        <RollingValue text={formatValue(locale, max, shown, "full").text} step={active} />
+      )}
     </span>
   );
 }

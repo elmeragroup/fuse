@@ -29,12 +29,19 @@ import { BROWSER_FRAMES, createChartMotion } from "./chart-motion";
 import type { ChartMotion } from "./chart-motion";
 import { ChartOwnScope, useChartDepth } from "./chart-own-scope";
 import { PolarContext } from "./chart-polar-context";
-import type { PolarContextValue, PolarKernel, PolarModel, PolarUpdate } from "./chart-polar-context";
+import type {
+  PolarContextValue,
+  PolarKernel,
+  PolarModel,
+  PolarPickAt,
+  PolarUpdate,
+} from "./chart-polar-context";
+import { createPolarFollow } from "./chart-polar-follow";
 import { introPace } from "./chart-polar-motion";
 import { paintedOf } from "./chart-polar-painted";
 import { PolarSurface } from "./chart-polar-surface";
 import { ChartReadoutContext, ChartSelectionContext } from "./chart-readout-port";
-import type { PointerSlot } from "./chart-readout-port";
+import { stepSpring } from "./chart-spring";
 import { createChartStore, useChartStore } from "./chart-store";
 import type { ChartSnapshot, ChartStore } from "./chart-store";
 import type { ChartChangeEventDetails, ChartFigureProps, ChartSelectionChangeReason } from "./chart-types";
@@ -99,6 +106,11 @@ function entranceItems(model: PolarModel): EntranceItems {
 }
 
 /** The active option and series, or null while nothing is active. */
+/** The angle the follower turns to for the active option, or null while none is active. */
+function rayAngle(model: PolarModel, active: ActiveSlot): number | null {
+  return active === null ? null : (model.ray(active.slot, active.near)?.angle ?? null);
+}
+
 function activeOf(snapshot: ChartSnapshot, count: number): ActiveSlot {
   const { active, near } = snapshot;
   if (active === null || active < 0 || active >= count) return null;
@@ -246,6 +258,14 @@ export function usePolarRoot(props: PolarRootProps): PolarRootState {
       followers.refresh();
     })
   );
+  const [follow] = useState(() =>
+    createPolarFollow({
+      frames: BROWSER_FRAMES,
+      reduced: () => motion.reduced(),
+      spring: () => stepSpring(store),
+      maxTurn: (radius) => maxTurn(radius, store),
+    })
+  );
   const rootRef = useRef<HTMLElement>(null);
   const figureRef = useMergedRefs(rootRef, ref);
   const cellRef = useRef<HTMLDivElement>(null);
@@ -273,17 +293,37 @@ export function usePolarRoot(props: PolarRootProps): PolarRootState {
 
   // The active option keeps its place across new data while it still exists, and leaves otherwise.
   const countRef = useRef(model.count);
+  const latestModel = useRef(model);
   const paintedRef = useRef<readonly [number | null, number | null]>([null, null]);
   useLayoutEffect(() => {
+    const cell = cellRef.current;
+    if (cell === null) return undefined;
+    const read = (): void => {
+      const box = sweepBox(latestModel.current.sweep);
+      const width = box.right - box.left;
+      // CSS pixels per unit of the outer radius, measured as the cell resizes, never on a step.
+      follow.measure(width > 0 ? cell.getBoundingClientRect().width / width : 0);
+    };
+    read();
+    const sizes = new ResizeObserver(read);
+    sizes.observe(cell);
+    return () => {
+      sizes.disconnect();
+    };
+  }, [follow]);
+
+  useLayoutEffect(() => {
     countRef.current = model.count;
+    latestModel.current = model;
     const snapshot = store.get();
     if (snapshot.active !== null && snapshot.active >= model.count) {
       store.set({ active: model.count === 0 ? null : model.count - 1 });
     }
     const active = activeOf(store.get(), model.count);
     if (rootRef.current) markActive(rootRef.current, store.get(), active);
+    follow.retarget(rayAngle(model, active), "commit");
     followers.paint(active, "commit");
-  }, [model, store, followers]);
+  }, [model, store, followers, follow]);
   useLayoutEffect(
     () =>
       store.subscribe(() => {
@@ -293,9 +333,10 @@ export function usePolarRoot(props: PolarRootProps): PolarRootState {
         const [was, near] = paintedRef.current;
         if (snapshot.active === was && snapshot.near === near) return;
         paintedRef.current = [snapshot.active, snapshot.near];
+        follow.retarget(rayAngle(latestModel.current, active), "step");
         followers.paint(active, "step");
       }),
-    [store, followers]
+    [store, followers, follow]
   );
 
   const entrance = figureProps["data-intro"] !== "none" && !reduced;
@@ -430,6 +471,7 @@ export function usePolarRoot(props: PolarRootProps): PolarRootState {
       root: getRoot,
       store,
       followers,
+      follow,
       select,
       registerToggleGroup,
       hasToggles,
@@ -444,6 +486,7 @@ export function usePolarRoot(props: PolarRootProps): PolarRootState {
       getRoot,
       store,
       followers,
+      follow,
       select,
       registerToggleGroup,
       hasToggles,
@@ -467,20 +510,55 @@ export function usePolarRoot(props: PolarRootProps): PolarRootState {
 }
 
 /**
+ * The most CSS pixels a mark on the dial may travel in one frame of a step, by the pointer's speed:
+ * 8 at 200 px/s or slower, 20 at 800 and 48 at 2,000 or faster, straight between, and the fastest
+ * for a keyboard step. A step that reaches far, such as a radar's spoke or a month of a year, glides
+ * no faster than the pointer moves it.
+ */
+const FRAME_TRAVEL = [
+  [200, 8],
+  [800, 20],
+  [2000, 48],
+] as const;
+
+/** CSS pixels a frame may carry a mark at a pointer speed in CSS pixels per second. */
+function frameTravel(speed: number): number {
+  const [first, ...rest] = FRAME_TRAVEL;
+  if (speed <= first[0]) return first[1];
+  let previous: readonly [number, number] = first;
+  for (const point of rest) {
+    if (speed <= point[0]) {
+      return previous[1] + ((point[1] - previous[1]) * (speed - previous[0])) / (point[0] - previous[0]);
+    }
+    previous = point;
+  }
+  return previous[1];
+}
+
+/** The most degrees the follower turns in a frame: a frame's travel at the outer radius. */
+function maxTurn(radius: number, store: ChartStore): number {
+  if (!(radius > 0)) return Number.POSITIVE_INFINITY;
+  const keyboard = store.get().source === "keyboard";
+  const speed = keyboard ? Number.POSITIVE_INFINITY : (store.pointer()?.speed ?? 0) * 1000;
+  return (frameTravel(speed) / radius) * (180 / Math.PI);
+}
+
+/** The dead band round a pick's edge, in CSS pixels (Fix R2.5). */
+const DEAD_BAND = 2;
+
+/**
  * The pick over a polar cell: a client point maps through the listbox's client box, which spans the
- * cell and so the sweep's box, into units of the outer radius from the centre.
+ * cell and so the sweep's box, into units of the outer radius from the centre. A pointer that holds
+ * an option keeps it while a point 2 CSS px along its arc or its radius still picks it, so a hand's
+ * tremor near a dense dial's hole changes nothing.
  *
  * @param id - The Root's id prefix.
  * @param model - The latest model.
  * @param motion - The Root's loop, whose frame shares the angles it painted once it rests.
  * @returns The pick, null before the listbox mounts.
  */
-function polarPick(
-  id: string,
-  model: { readonly current: PolarModel },
-  motion: ChartMotion
-): (clientX: number, clientY: number) => PointerSlot | null {
-  return (clientX, clientY) => {
+function polarPick(id: string, model: { readonly current: PolarModel }, motion: ChartMotion): PolarPickAt {
+  return (clientX, clientY, held) => {
     const surface = document.getElementById(`${id}-surface`);
     if (surface === null) return null;
     const rect = surface.getBoundingClientRect();
@@ -492,11 +570,29 @@ function polarPick(
     // While a mark tweens, an entrance's slices among them, the pick reads the model, as every
     // family's and the cartesian pick do, so a finger on a slice still sweeping in picks it. At rest
     // it reads the floored, seamed angles the frame painted (D24).
-    return model.current.pick(point, {
+    const pixels = {
       scale,
       dpr: window.devicePixelRatio || 1,
       painted: motion.running() ? undefined : paintedOf(motion),
-    });
+      near: held?.near ?? null,
+      nearFirm: held?.firm ?? false,
+    };
+    const found = model.current.pick(point, pixels);
+    const distance = Math.hypot(point.x, point.y);
+    if (held == null || found === null || found.slot === held.slot || distance < 1e-9) return found;
+    const reach = DEAD_BAND / scale;
+    const radial = { x: point.x / distance, y: point.y / distance };
+    const offsets = [
+      { x: -radial.y, y: radial.x },
+      { x: radial.y, y: -radial.x },
+      radial,
+      { x: -radial.x, y: -radial.y },
+    ];
+    for (const { x, y } of offsets) {
+      const kept = model.current.pick({ x: point.x + x * reach, y: point.y + y * reach }, pixels);
+      if (kept?.slot === held.slot) return kept;
+    }
+    return found;
   };
 }
 

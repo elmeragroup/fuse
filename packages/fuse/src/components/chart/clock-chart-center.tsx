@@ -10,12 +10,14 @@
 import { use } from "react";
 import type { ReactElement, ReactNode } from "react";
 
+import { useCentreFit } from "./chart-centre-fit";
 import { clockDrawingIn, usePolarContext } from "./chart-polar-context";
 import type { ClockDrawing } from "./chart-polar-context";
 import { ChartHeadlineContext } from "./chart-scope-contexts";
 import { fallbackSlot, readingAt, useActiveSlot } from "./chart-series-readout";
 import { slotLabel } from "./chart-text";
 import type { ChartFallback, ChartLayerProps, ValueFormat } from "./chart-types";
+import { numberAndUnit } from "./format/formatted-text";
 import { formatValue } from "./format/value-format";
 import { assertKnownKey } from "./layout/errors";
 
@@ -45,6 +47,26 @@ export type ClockChartActiveValueProps = ChartLayerProps & {
   /** The value format. The series' config `format` is the default. */
   format?: ValueFormat;
 };
+
+/**
+ * A value as its number and its unit, in the order the formatter wrote them and joined by a
+ * breakable space, so a value too wide for the hole wraps between them instead of overflowing.
+ */
+function ValueParts({ text }: { readonly text: string }): ReactElement {
+  const parts = numberAndUnit(text);
+  const number = <span data-part="number">{parts.number}</span>;
+  if (parts.unit === null) return number;
+  const unit = <span data-part="unit">{parts.unit}</span>;
+  return parts.side === "before" ? (
+    <>
+      {unit} {number}
+    </>
+  ) : (
+    <>
+      {number} {unit}
+    </>
+  );
+}
 
 /** The slot a value part prints: the active slot, or the fallback's. */
 function useShownSlot(clock: ClockDrawing, dataKey: string, fallback: ChartFallback): number | null {
@@ -88,8 +110,10 @@ export function ClockChartActiveValue({
       aria-hidden={exposed ? undefined : "true"}
       className={className}
       style={style}>
-      {label === null || !exposed || label.text === label.spoken ? (
-        label?.text
+      {label === null ? null : !exposed ? (
+        <ValueParts text={label.text} />
+      ) : label.text === label.spoken ? (
+        label.text
       ) : (
         <>
           <span aria-hidden="true">{label.text}</span>
@@ -117,13 +141,16 @@ function DefaultCentre({ clock }: { readonly clock: ClockDrawing }): ReactElemen
 
 /**
  * The text in the dial's hole: its children sit in the square inscribed in the hole. The first
- * series' value at the active slot, or at `now`, over the slot's label is the default.
+ * series' value at the active slot, or at `now`, over the slot's label is the default. Its text never
+ * shrinks below 12 px: when the lines overflow the square it drops every line but the value, and
+ * then the value.
  *
  * @beta
  */
 export function ClockChartCenter({ children, className, style }: ClockChartCenterProps): ReactElement {
   const { model, box } = usePolarContext("ClockChart.Center", ["clock"]);
   const clock = clockDrawingIn(model, "ClockChart.Center");
+  const fitted = useCentreFit();
   const half = (Math.SQRT2 * clock.inner) / 2;
   const width = box.right - box.left;
   const height = box.bottom - box.top;
@@ -136,6 +163,7 @@ export function ClockChartCenter({ children, className, style }: ClockChartCente
       className={className}
       style={style}>
       <div
+        ref={fitted}
         data-part="hole"
         style={{
           "--_left": percent(-half - box.left, width),

@@ -29,9 +29,10 @@ import { formatValue } from "./format/value-format";
 import type { CartesianModel } from "./layout/cartesian-model";
 import { isRoleList, isThresholdColor, seriesPaint, singleRole } from "./layout/color-key";
 import { assertKnownKey } from "./layout/errors";
+import { nearestHeld } from "./layout/near-series";
 import { pointerAngle } from "./layout/polar-angle";
 import type { Sweep } from "./layout/polar-angle";
-import { nearestVertex, radarDomain, radarRadius, radarVertices, spokeAngle, spokeAt } from "./layout/radar";
+import { radarDomain, radarRadius, radarVertices, spokeAngle, spokeAt } from "./layout/radar";
 import { seriesOf } from "./layout/series-of";
 import { slotX } from "./layout/x-domain";
 
@@ -149,17 +150,18 @@ export function radarModel(input: RadarInput): PolarModel {
     series: model.series.length,
     page: null,
     optionName: (index, focus, order) => optionName(context, index, focus, order),
-    pick: (point) => {
+    pick: (point, pixels) => {
       // Distance from the centre changes nothing, as R6 says.
       if (count === 0) return null;
       const spoke = spokeAt(pointerAngle(point.x, point.y), count);
+      // The nearest series' vertex on the spoke, keeping the held series unless another is clearly
+      // nearer (Fix R2.6).
+      const gaps = vertices.map((series) => {
+        const vertex = series[spoke] ?? null;
+        return vertex === null ? null : Math.hypot(vertex.x - point.x, vertex.y - point.y);
+      });
       const near =
-        model.series.length > 1
-          ? nearestVertex(
-              point,
-              vertices.map((series) => series[spoke] ?? null)
-            )
-          : null;
+        model.series.length > 1 ? nearestHeld(gaps, pixels.near ?? null, pixels.nearFirm === true) : null;
       return { slot: spoke, near };
     },
     ray: (index) => (index < 0 || index >= count ? null : { angle: spokeAngle(index, count), radius: 1 }),

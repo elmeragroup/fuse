@@ -12,7 +12,12 @@ import { use } from "react";
 import type { SupportedLocale } from "../../intl/locale-context";
 import { ChartReadoutContext } from "./chart-readout-port";
 import type { ChartReadout } from "./chart-readout-port";
-import { ChartLegendSideContext, ChartLiveContext, ChartRowContext } from "./chart-scope-contexts";
+import {
+  ChartHeldIndexContext,
+  ChartLegendSideContext,
+  ChartLiveContext,
+  ChartRowContext,
+} from "./chart-scope-contexts";
 import { useChartStore } from "./chart-store";
 import type { ChartFractionDigits, ChartThresholdSide } from "./chart-types";
 import { formatValue } from "./format/value-format";
@@ -84,8 +89,10 @@ export function useReadoutKey(
  */
 export function useActiveIndex(readout: ChartReadout, live?: boolean): number | null {
   const scoped = use(ChartLiveContext);
+  const held = use(ChartHeldIndexContext);
   const follow = live ?? scoped;
-  const active = useChartStore(readout.store, (snapshot) => (follow ? snapshot.active : null));
+  const followed = useChartStore(readout.store, (snapshot) => (follow ? snapshot.active : null));
+  const active = followed ?? (follow ? held : null);
   const window = readout.window;
   return active !== null && window !== null && active >= window.first && active <= window.last
     ? active

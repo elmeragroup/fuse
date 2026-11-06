@@ -8,6 +8,7 @@
  */
 import type { ReactElement, ReactNode } from "react";
 
+import { useCentreFit } from "./chart-centre-fit";
 import { pieDrawingOf, radialDrawingOf, usePolarContext } from "./chart-polar-context";
 import type { ChartLayerProps } from "./chart-types";
 
@@ -33,13 +34,16 @@ export type PieChartCenterLabelProps = ChartLayerProps & {
 
 /**
  * The text in the hole of a donut or a gauge: its parts sit in the square inscribed in the hole,
- * centred on the dial and kept to the sweep's box, so a semicircle's sits above its flat edge. Every part prints the active slice, or with nothing active the pie's own
- * number.
+ * centred on the dial and kept to the sweep's box, so a semicircle's sits above its flat edge.
+ * Every part prints the active slice, or with nothing active the pie's own number. Its text never
+ * shrinks below 12 px: when the lines overflow the square it drops every line but the value, and
+ * then the value.
  *
  * @beta
  */
 export function PieChartCenter({ children, className, style }: PieChartCenterProps): ReactElement {
   const { model, box } = usePolarContext("PieChart.Center", ["pie", "radial"]);
+  const fitted = useCentreFit();
   const hole = pieDrawingOf(model)?.innerRadius ?? radialDrawingOf(model)?.innerRadius;
   if (hole === undefined) return <></>;
   // A pie with no hole lays its centre in the square inscribed in half the radius. The square
@@ -60,6 +64,7 @@ export function PieChartCenter({ children, className, style }: PieChartCenterPro
       className={className}
       style={style}>
       <div
+        ref={fitted}
         data-part="hole"
         style={{
           "--_left": percent(left - box.left, width),
