@@ -88,6 +88,10 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = derive([
   // `pnpm gen component` appends a 0-ceiling row below this marker, so a brand-new packed
   // entry cannot slip through unbudgeted. Replace the 0 with measured × 1.5.
   // plop:js-entry-budget
+  // 2026-11-05: new entry, measured at 36764. Button and its Base UI root for the controls, Base UI's
+  // useRender and mergeProps, the four caret and two rotation icons, the shared focus ring, and
+  // the React-free page math and scroll-snap engine.
+  { name: "carousel", entryFile: "carousel.js", measuredGzip: 36764 },
   // 2026-10-28: new entries. AutocompleteField and ComboboxField put the Autocomplete and Combobox
   // parts in the FieldFrame that SelectField wears.
   { name: "autocomplete-field", entryFile: "autocomplete-field.js", measuredGzip: 80251 },

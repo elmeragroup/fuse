@@ -28,6 +28,7 @@ import { Avatar } from "@elmeragroup/fuse/avatar";
 import { Breadcrumb } from "@elmeragroup/fuse/breadcrumb";
 import { ButtonGroup } from "@elmeragroup/fuse/button-group";
 import { Card } from "@elmeragroup/fuse/card";
+import { Carousel } from "@elmeragroup/fuse/carousel";
 import { CheckboxItem } from "@elmeragroup/fuse/checkbox";
 import { Collapsible } from "@elmeragroup/fuse/collapsible";
 import { Combobox } from "@elmeragroup/fuse/combobox";
@@ -176,6 +177,18 @@ function namespaceElements(): ReactElement[] {
         "SectionMedia",
       ],
     }),
+    ...renderNamespace("Carousel", Carousel, [
+      "Root",
+      "Viewport",
+      "Slide",
+      "Controls",
+      "Previous",
+      "Next",
+      "Indicators",
+      "Indicator",
+      "Status",
+      "Autoplay",
+    ]),
     ...renderNamespace("Collapsible", Collapsible, ["Root", "Trigger", "Content"]),
     ...renderNamespace("Combobox", Combobox, [
       "Root",
@@ -486,6 +499,42 @@ function attachmentTree(): ReactElement {
   );
 }
 
+const CAROUSEL_OFFERS = ["Spot price this winter", "Fixed price for a year"] as const;
+
+/** A server component: the Flight payload holds its output, not a reference to it. */
+function CarouselOffer({ title }: { readonly title: string }): ReactElement {
+  return createElement("p", { "data-carousel-offer": title }, title);
+}
+
+/**
+ * Carousel.Root and its parts are client components that a server tree renders, here around
+ * slides whose content is a server component's output.
+ */
+function carouselTree(): ReactElement {
+  return createElement(
+    "section",
+    { "data-fixture": "carousel" },
+    createElement(
+      Carousel.Root,
+      { "aria-label": "Offers" },
+      createElement(
+        Carousel.Viewport,
+        null,
+        ...CAROUSEL_OFFERS.map((title) =>
+          createElement(Carousel.Slide, { key: title }, createElement(CarouselOffer, { title }))
+        )
+      ),
+      createElement(
+        Carousel.Controls,
+        null,
+        createElement(Carousel.Previous),
+        createElement(Carousel.Indicators),
+        createElement(Carousel.Next)
+      )
+    )
+  );
+}
+
 const SELECT_FIELD_PLACEHOLDER = "Choose a plan";
 
 /**
@@ -612,7 +661,8 @@ function Fixture(): ReactElement {
     selectionItemTrees(),
     selectFieldTree(),
     labeledComboboxTrees(),
-    attachmentTree()
+    attachmentTree(),
+    carouselTree()
   );
 }
 
@@ -690,6 +740,19 @@ const attachmentFrame = models.flatMap(flightElements).some(
 );
 if (!attachmentFrame) {
   throw new Error(`Attachment.AspectRatio was not rendered on the server:\n${payload.slice(0, 1500)}`);
+}
+
+// Each offer is the server component's own `<p>`, and the Root is a client reference.
+for (const title of CAROUSEL_OFFERS) {
+  const rendered = models
+    .flatMap(flightElements)
+    .some(({ type, props }) => type === "p" && props["data-carousel-offer"] === title);
+  if (!rendered) {
+    throw new Error(`Carousel slide content was not rendered on the server:\n${payload.slice(0, 1500)}`);
+  }
+}
+if (!payload.includes("/components/carousel/carousel.tsx")) {
+  throw new Error(`Carousel.Root is not a client reference in the payload:\n${payload.slice(0, 1500)}`);
 }
 
 process.stdout.write("RSC_OK\n");

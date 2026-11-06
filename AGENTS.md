@@ -61,6 +61,8 @@ The `browser-reduced-motion` project runs them in all three engines with that pr
 Keyboard and focus tests run in the plain `browser` project, since each file gets its own page.
 Put tests that emulate touch or tap through Playwright's touchscreen in `*.touch.browser.test.tsx`.
 The `browser-touch` project runs them one file at a time in Chromium with touch on.
+Put tests of what WebKit decides on a phone, such as its scroll snapping at three device pixels,
+in `*.iphone.browser.test.tsx`. The `browser-iphone` project runs them in WebKit as an iPhone 15.
 Put unit tests whose result can depend on the process time zone in `*.zones.test.ts`. `unit`
 runs them in Europe/Oslo, and `unit-new-york` and `unit-tokyo` run them again in their zones.
 Put necessary source contracts in the central suite with the reason lint or an

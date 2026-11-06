@@ -1,4 +1,5 @@
 import { playwright } from "@vitest/browser-playwright";
+import { devices } from "playwright";
 import { defineConfig } from "vitest/config";
 import type { TestProjectInlineConfiguration } from "vitest/config";
 
@@ -22,6 +23,16 @@ const PRODUCTION_TESTS = "**/*.production.browser.test.tsx";
 
 /** Browser files whose output every engine must write alike, as `.ts` or `.tsx`. */
 const ENGINES_TESTS = "**/*.engines.browser.test.{ts,tsx}";
+
+/**
+ * Browser files that run in WebKit configured as an iPhone, named by convention: its viewport,
+ * three device pixels per CSS pixel, touch and the mobile viewport rules. Playwright drags no
+ * finger in WebKit, so these cover what WebKit's own layout and scrolling decide on a phone.
+ */
+const IPHONE_TESTS = "**/*.iphone.browser.test.tsx";
+
+/** Playwright's iPhone 15 context. The project picks the engine, WebKit, itself. */
+const { defaultBrowserType: _iphoneEngine, ...IPHONE } = devices["iPhone 15"];
 
 /** Browser files that run under `prefers-reduced-motion: reduce` in every engine, named by convention. */
 const REDUCED_MOTION_TESTS = "**/*.reduced-motion.browser.test.tsx";
@@ -73,10 +84,17 @@ function unitProject(name: string, timeZone: string, include: string[]): TestPro
 
 function browserProject(
   name: string,
-  options: { include?: string[]; exclude?: string[]; fileParallelism?: boolean; groupOrder?: number },
+  options: {
+    include?: string[];
+    exclude?: string[];
+    fileParallelism?: boolean;
+    groupOrder?: number;
+  },
   browsers: readonly ("chromium" | "firefox" | "webkit")[] = ["chromium"],
   provider: Parameters<typeof playwright>[0] = {}
 ): TestProjectInlineConfiguration {
+  // A device the provider's context emulates sets the frame's viewport too.
+  const viewport = provider.contextOptions?.viewport ?? VIEWPORT;
   return {
     optimizeDeps: {
       include: [
@@ -124,10 +142,10 @@ function browserProject(
       browser: {
         enabled: true,
         headless: true,
-        viewport: VIEWPORT,
+        viewport,
         provider: playwright({
           ...provider,
-          contextOptions: { viewport: VIEWPORT, ...provider.contextOptions },
+          contextOptions: { ...provider.contextOptions, viewport },
         }),
         instances: browsers.map((browser) => ({ browser })),
         commands: { ...pointerCommands, ...mediaCommands, ...pageSizeCommands },
@@ -153,7 +171,14 @@ export default defineConfig({
       unitProject("unit-new-york", "America/New_York", [ZONE_TESTS]),
       unitProject("unit-tokyo", "Asia/Tokyo", [ZONE_TESTS]),
       browserProject("browser", {
-        exclude: [CLIPBOARD_TESTS, ENGINES_TESTS, PRODUCTION_TESTS, TOUCH_TESTS, REDUCED_MOTION_TESTS],
+        exclude: [
+          CLIPBOARD_TESTS,
+          ENGINES_TESTS,
+          PRODUCTION_TESTS,
+          TOUCH_TESTS,
+          REDUCED_MOTION_TESTS,
+          IPHONE_TESTS,
+        ],
       }),
       // Node and each engine carry their own Intl data, and one differing space fails hydration.
       browserProject("browser-engines", { include: [`src/${ENGINES_TESTS}`] }, [
@@ -202,6 +227,12 @@ export default defineConfig({
         ["chromium"],
         { contextOptions: { hasTouch: true } }
       ),
+      // iOS Safari is WebKit, and an iPhone's viewport, pixel density and touch change how it lays
+      // out and snaps a scroller. The context takes Playwright's iPhone 15 descriptor; the frame
+      // takes its viewport, so the page is as wide as the phone's.
+      browserProject("browser-iphone", { include: [`src/${IPHONE_TESTS}`] }, ["webkit"], {
+        contextOptions: IPHONE,
+      }),
     ],
   },
 });

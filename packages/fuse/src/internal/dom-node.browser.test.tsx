@@ -1,7 +1,7 @@
 import { describe, expect, it, onTestFinished } from "vitest";
 
 import { hasFocus } from "./active-element";
-import { isFocusRoot, isHTMLElement, isNode } from "./dom-node";
+import { containsAcrossShadowRoots, isFocusRoot, isHTMLElement, isNode } from "./dom-node";
 
 /** A same-origin frame's document, whose nodes belong to the frame's realm. */
 function frameDocument(): Document {
@@ -47,5 +47,33 @@ describe("realm-independent DOM checks", () => {
     expect(isHTMLElement(svg)).toBe(false);
     expect(isFocusRoot(frameDoc.createDocumentFragment())).toBe(false);
     expect(isFocusRoot(frameDoc.body)).toBe(false);
+  });
+});
+
+describe("containsAcrossShadowRoots", () => {
+  it("finds a node through nested shadow roots, open and closed, and nowhere else", () => {
+    // outer > host > (open shadow) inner host > (closed shadow) field, and a sibling beside outer.
+    const outer = document.createElement("div");
+    const sibling = document.createElement("div");
+    const host = document.createElement("div");
+    outer.append(host);
+    document.body.append(outer, sibling);
+    onTestFinished(() => {
+      outer.remove();
+      sibling.remove();
+    });
+    const innerHost = document.createElement("span");
+    host.attachShadow({ mode: "open" }).append(innerHost);
+    const field = document.createElement("input");
+    innerHost.attachShadow({ mode: "closed" }).append(field);
+
+    // The premise: a plain `contains` stops at the first shadow root.
+    expect(outer.contains(field)).toBe(false);
+    expect(containsAcrossShadowRoots(outer, field)).toBe(true);
+    expect(containsAcrossShadowRoots(host, field)).toBe(true);
+    expect(containsAcrossShadowRoots(innerHost, field)).toBe(true);
+    expect(containsAcrossShadowRoots(outer, outer)).toBe(true);
+    expect(containsAcrossShadowRoots(sibling, field)).toBe(false);
+    expect(containsAcrossShadowRoots(field, outer)).toBe(false);
   });
 });

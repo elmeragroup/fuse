@@ -158,9 +158,6 @@ export const BROWSER_FRAMES: MotionHost = {
   },
 };
 
-/** The reader's motion preference, which snaps every chart update and turns the entrance off. */
-export const REDUCED_MOTION = "(prefers-reduced-motion: reduce)";
-
 /**
  * One mark a tween moves: its writer, where it lands, where it shows, what its numbers measure, and
  * where its route ends, which a path that slides holds more numbers for than its resting target.

@@ -3,8 +3,8 @@
 import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { ReactElement, ReactNode } from "react";
 
-import { useMediaQuery } from "../../hooks/use-media-query";
 import { useMergedRefs } from "../../hooks/use-merged-refs";
+import { useReducedMotion } from "../../hooks/use-reduced-motion";
 import { definedProps } from "../../internal/defined-props";
 import { useLocale } from "../../intl/locale-context";
 import { createAxisRecord } from "./chart-axis-format";
@@ -22,7 +22,7 @@ import { useEntrance } from "./chart-entrance";
 import { createChartFollowers } from "./chart-followers";
 import type { ActiveSlot, ChartFollowers } from "./chart-followers";
 import { createChartLabels } from "./chart-labels";
-import { BROWSER_FRAMES, createChartMotion, createFrameOwner, REDUCED_MOTION } from "./chart-motion";
+import { BROWSER_FRAMES, createChartMotion, createFrameOwner } from "./chart-motion";
 import type { ChartMotion, FrameOwner } from "./chart-motion";
 import { colourFamilyError, nonFiniteThresholds } from "./chart-paint";
 import { createChartPaths } from "./chart-paths";
@@ -454,7 +454,7 @@ export function ChartRoot<
       windowRange,
     ]
   );
-  const reduced = useMediaQuery(REDUCED_MOTION);
+  const reduced = useReducedMotion();
   const [followers] = useState(createChartFollowers);
   const [motion] = useState(() => browserMotion(reduced, followers));
   // Every mark a commit renders places itself in a layout effect before Root's own, so Root's

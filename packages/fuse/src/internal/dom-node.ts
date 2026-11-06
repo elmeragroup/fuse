@@ -39,3 +39,34 @@ export function isFocusRoot(node: Node): node is Document | ShadowRoot {
     node.nodeType === Node.DOCUMENT_NODE || (node.nodeType === Node.DOCUMENT_FRAGMENT_NODE && "host" in node)
   );
 }
+
+/**
+ * Whether `node` is inside `element`, or inside a shadow root hosted there, at any depth. A plain
+ * `contains` stops at a shadow root, such as one a custom control renders into.
+ *
+ * @param element - The element that may hold `node`.
+ * @param node - The node to look for, such as the element that has focus.
+ * @returns `true` when `node` is `element` or inside it.
+ */
+export function containsAcrossShadowRoots(element: Element, node: Node): boolean {
+  let current: Node | null = node;
+  while (current !== null) {
+    if (element.contains(current)) {
+      return true;
+    }
+    const root = current.getRootNode();
+    current = isFocusRoot(root) && "host" in root ? root.host : null;
+  }
+  return false;
+}
+
+/**
+ * Compare two nodes by document order, for sorting.
+ *
+ * @param left - One node.
+ * @param right - The other node.
+ * @returns A negative number when `left` comes first, a positive one otherwise.
+ */
+export function documentOrder(left: Node, right: Node): number {
+  return left.compareDocumentPosition(right) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1;
+}

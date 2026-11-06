@@ -58,6 +58,15 @@ const CLIENT_COMPONENTS: ReadonlyArray<readonly [string, readonly string[]]> = [
   ["button", ["components/button/button.tsx"]],
   ["button-group", ["components/button-group/button-group.tsx"]],
   ["calendar", ["react-aria/calendar/calendar.tsx"]],
+  [
+    "carousel",
+    [
+      "components/carousel/carousel.tsx",
+      "components/carousel/carousel-context.ts",
+      "components/carousel/carousel-controls.tsx",
+      "components/carousel/carousel-rotation.ts",
+    ],
+  ],
   ["checkbox", ["components/checkbox/checkbox.tsx"]],
   ["checkbox-card", ["components/checkbox-card/checkbox-card.tsx"]],
   ["collapsible", ["components/collapsible/collapsible.tsx"]],
@@ -364,6 +373,10 @@ describe("RSC classification", () => {
     ["components/command/command-markup.tsx", "server"],
     // The data table filter's model holds no state and imports no React or TanStack runtime, so
     // a server parses request input and filters rows with the same predicates the client runs.
+    // The carousel's page math and its DOM engine import no React, so they carry no directive;
+    // only the parts that call them are client modules.
+    ["components/carousel/carousel-pages.ts", "server"],
+    ["components/carousel/carousel-engine.ts", "server"],
     ["components/data-table-filter/filter-model.ts", "server"],
     ["components/data-table-filter/filter-match.ts", "server"],
     ["components/data-table-filter/filter-fields.ts", "server"],
@@ -390,6 +403,7 @@ describe("RSC classification", () => {
     ["avatar", "Avatar"],
     ["breadcrumb", "Breadcrumb"],
     ["button-group", "ButtonGroup"],
+    ["carousel", "Carousel"],
     ["collapsible", "Collapsible"],
     ["combobox", "Combobox"],
     ["command", "Command"],
@@ -876,6 +890,17 @@ describe("runtime listeners and layout motion", () => {
   // say the list is complete. Each owner's browser test covers its own cleanup.
   it("installs event listeners only from the reviewed owners", () => {
     expect(filesContainingCode(".addEventListener(").toSorted()).toEqual([
+      // The viewport's passive `scroll`, `scrollend` and `wheel`: the engine reads the native
+      // scroller's position once a frame. React's `onScroll` would re-render the Root on every
+      // frame, and React has no `scrollend` handler.
+      "components/carousel/carousel-engine.ts",
+      // Pointer and key down on the viewport, and while input is held, its releases on the
+      // document in the capture phase and the window's blur: a release can land outside the
+      // viewport, or in another window, where no React handler of the carousel's sees it.
+      "components/carousel/carousel-input.ts",
+      // Document `visibilitychange`, through useSyncExternalStore: rotation pauses while the tab
+      // is hidden, and React has no document listener.
+      "components/carousel/carousel-rotation.ts",
       // Root's figure `animationend`: the first entrance wipe to end drops `data-entrance`, so no
       // layer wipes again once hidden and shown. A React `onAnimationEnd` on Root would sit beside
       // a consumer's own handler, which Root's spread props replace. The same owner listens on
@@ -936,6 +961,8 @@ describe("runtime listeners and layout motion", () => {
       .filter((record) => layoutTransition.test(record.code))
       .map((record) => record.relative);
     expect(owners.toSorted()).toEqual([
+      // The current page's indicator grows from a dot into a pill.
+      "components/carousel/carousel-variants.ts",
       // The data table filter's value popover follows Base UI's --popup-height and glides its
       // positioner from chip to chip, and its add menu morphs its height between the field list
       // and an editor drilled into in place.
@@ -1374,10 +1401,20 @@ function renderElementWiring(relativePath: string, source: string): string[] {
 }
 
 function isDefinedPropsCall(expression: Expression): boolean {
+  if (expression.type !== "CallExpression" || expression.callee.type !== "Identifier") {
+    return false;
+  }
+  if (expression.callee.name === "definedProps") {
+    return true;
+  }
+  // `mergeProps(defaults, definedProps(props))`: the part's own handlers merge first, so the
+  // consumer's run first and can cancel them, and the consumer's props are still filtered.
+  const last = expression.arguments.at(-1);
   return (
-    expression.type === "CallExpression" &&
-    expression.callee.type === "Identifier" &&
-    expression.callee.name === "definedProps"
+    expression.callee.name === "mergeProps" &&
+    last !== undefined &&
+    last.type !== "SpreadElement" &&
+    isDefinedPropsCall(last)
   );
 }
 
@@ -1404,6 +1441,8 @@ const WIRING_PARTS = {
     "AutocompletePrimitive.Input",
   ],
   "components/button/button.tsx": ["ButtonPrimitive"],
+  // Previous, Next and Autoplay are Buttons whose disabled state and name the part wires.
+  "components/carousel/carousel-controls.tsx": ["Button"],
   "components/checkbox-card/checkbox-card.tsx": ["FieldPrimitive.Label", "CheckboxPrimitive.Root"],
   "components/checkbox/checkbox.tsx": ["CheckboxPrimitive.Root", "CheckboxGroupPrimitive"],
   "components/combobox/combobox.tsx": [
@@ -1461,6 +1500,12 @@ describe("Base UI prop wiring", () => {
     expect(wiringPartSpreads("probe.tsx", "<S.Root {...props} />", parts)).toEqual(["S.Root raw"]);
     expect(wiringPartSpreads("probe.tsx", "<S.Root {...definedProps(props)} />", parts)).toEqual(["S.Root"]);
     expect(wiringPartSpreads("probe.tsx", "<S.Thumb {...props} />", parts)).toEqual([]);
+    expect(
+      wiringPartSpreads("probe.tsx", "<S.Root {...mergeProps({ onClick }, definedProps(props))} />", parts)
+    ).toEqual(["S.Root"]);
+    expect(wiringPartSpreads("probe.tsx", "<S.Root {...mergeProps({ onClick }, props)} />", parts)).toEqual([
+      "S.Root raw",
+    ]);
   });
 
   it("keeps state and wiring off every inline render element", () => {

@@ -89,6 +89,18 @@ export const PART_DENSITY = {
   "card-section-button": "surface",
   "card-section-media": "fixed",
 
+  carousel: "surface",
+  "carousel-viewport": "layout",
+  "carousel-slide": "layout",
+  "carousel-controls": "surface",
+  "carousel-previous": "control",
+  "carousel-next": "control",
+  "carousel-autoplay": "control",
+  // The dots and their 24px targets keep one size at both densities, as the design draws them.
+  "carousel-indicators": "fixed",
+  "carousel-indicator": "fixed",
+  "carousel-status": "label",
+
   // CONTRACT section 10. Each chart layer declares the slots it writes, in the change that writes
   // them. Chart text reads 12 px on a 16 px line at both densities, so text slots are fixed.
   chart: "layout",

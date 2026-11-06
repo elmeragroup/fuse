@@ -1,0 +1,55 @@
+"use client";
+
+import { useState } from "react";
+
+import { Carousel, useCarousel } from "@elmeragroup/fuse/carousel";
+import { ToggleGroup } from "@elmeragroup/fuse/toggle-group";
+
+const PLANS = ["Basic", "Plus", "Premium"];
+
+/** A custom control: it reads the carousel's state and acts through `useCarousel`. */
+function PlanPicker() {
+  const { state, actions } = useCarousel();
+  return (
+    <ToggleGroup.Root
+      aria-label="Plan"
+      size="sm"
+      variant="outline"
+      className="self-center"
+      value={[PLANS[state.index] ?? ""]}
+      onValueChange={(next) => {
+        // Pressing the selected plan again would empty the group; the page stays instead.
+        const picked = PLANS.indexOf(next[0] ?? "");
+        if (picked !== -1) {
+          actions.goTo(picked);
+        }
+      }}>
+      {PLANS.map((plan) => (
+        <ToggleGroup.Item key={plan} value={plan}>
+          {plan}
+        </ToggleGroup.Item>
+      ))}
+    </ToggleGroup.Root>
+  );
+}
+
+export function CarouselControlled() {
+  const [index, setIndex] = useState(1);
+  return (
+    <div className="max-w-md flex w-full flex-col gap-3">
+      <Carousel.Root aria-label="Plans" index={index} onIndexChange={setIndex}>
+        <Carousel.Viewport>
+          {PLANS.map((plan) => (
+            <Carousel.Slide key={plan} aria-label={plan} className="me-4 last:me-0">
+              <div className="text-lg font-medium flex h-36 items-center justify-center rounded-lg bg-muted">
+                {plan}
+              </div>
+            </Carousel.Slide>
+          ))}
+        </Carousel.Viewport>
+        <PlanPicker />
+      </Carousel.Root>
+      <p className="text-sm text-center text-muted-foreground">Selected: {PLANS[index]}</p>
+    </div>
+  );
+}

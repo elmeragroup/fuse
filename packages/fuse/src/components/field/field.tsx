@@ -10,6 +10,7 @@ import type { VariantProps } from "tailwind-variants";
 
 import { useMergedRefs } from "../../hooks/use-merged-refs";
 import { definedProps } from "../../internal/defined-props";
+import { documentOrder } from "../../internal/dom-node";
 import { cn } from "../../styles/cn";
 import { mergeClassName } from "../../styles/merge-class-name";
 import { Separator } from "../separator/separator";
@@ -244,10 +245,6 @@ export function FieldDescription({ className, ...props }: FieldDescriptionProps)
       {...props}
     />
   );
-}
-
-function documentOrder(left: Node, right: Node): number {
-  return left.compareDocumentPosition(right) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1;
 }
 
 function UnownedDescription({

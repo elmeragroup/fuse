@@ -3,7 +3,7 @@
  * shadow roots and same-origin frames too. The Root owns when they run.
  */
 import { deepActiveElement, hasFocus } from "../../internal/active-element";
-import { isFocusRoot } from "../../internal/dom-node";
+import { containsAcrossShadowRoots, isFocusRoot } from "../../internal/dom-node";
 
 const FOCUSABLE = "input:not([type=hidden]), button, [tabindex]:not([tabindex='-1'])";
 
@@ -53,22 +53,6 @@ export function focusMovedElsewhere(popup: HTMLElement | null, owned: Iterable<E
     }
   }
   return true;
-}
-
-/**
- * Whether `node` is inside `element`, or inside a shadow root hosted there, at any depth. A plain
- * `contains` stops at a shadow root, such as one a custom editor control renders into.
- */
-function containsAcrossShadowRoots(element: Element, node: Element): boolean {
-  let current: Node | null = node;
-  while (current !== null) {
-    if (element.contains(current)) {
-      return true;
-    }
-    const root = current.getRootNode();
-    current = isFocusRoot(root) && "host" in root ? root.host : null;
-  }
-  return false;
 }
 
 /**
