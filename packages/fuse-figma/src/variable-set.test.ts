@@ -161,6 +161,37 @@ describe("makeVariableSet", () => {
     );
   });
 
+  it("renames only from an unheld, unretired name onto a held collection and its modes", () => {
+    const rename = (from: string, to: string, modes: ReadonlyMap<string, string>, retired: string[] = []) => {
+      const result = makeVariableSet([palette([])], retired, [{ from, to, modes }]);
+      return Result.isFailure(result) ? result.failure.message : result.success.renamedCollections.length;
+    };
+    const lightDark = new Map([["Day", "Light"]]);
+    expect(rename("Colors", "Palette", lightDark)).toBe(1);
+    expect(rename("Colors", "Swatches", lightDark)).toBe(
+      'The Figma variable set is invalid: "Colors" is renamed to "Swatches", which the set does not hold.'
+    );
+    expect(rename("Palette", "Palette", lightDark)).toBe(
+      'The Figma variable set is invalid: "Palette" is both held and renamed.'
+    );
+    expect(rename("Colors", "Palette", lightDark, ["Colors"])).toBe(
+      'The Figma variable set is invalid: "Colors" is both retired and renamed.'
+    );
+    expect(rename("Colors", "Palette", new Map([["Day", "Noon"]]))).toBe(
+      'The Figma variable set is invalid: "Colors" renames a mode to "Noon", which "Palette" lacks.'
+    );
+    expect(
+      rename(
+        "Colors",
+        "Palette",
+        new Map([
+          ["Day", "Light"],
+          ["Noon", "Light"],
+        ])
+      )
+    ).toBe('The Figma variable set is invalid: "Colors" renames two modes to one name.');
+  });
+
   it("refuses aliases that lead back to where they started, in any mode", () => {
     const alias = (collection: string, name: string): VariableValue => ({
       _tag: "Alias",

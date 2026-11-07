@@ -14,7 +14,7 @@ Neo Sans headings included:
   --font-heading: var(--font-sans);
 }
 
-[data-theme-variant="external"][data-theme-brand="fkas"] {
+[data-theme-identity="branded"][data-theme-brand="fkas"] {
   --font-heading: var(--font-neo-sans), var(--font-sans);
 }
 ```

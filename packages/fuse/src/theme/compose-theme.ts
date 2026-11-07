@@ -1,18 +1,18 @@
 import type { ResolvedColorScheme } from "./color-scheme-types";
+import { cornersOf } from "./corners/corners";
+import type { ThemeIdentity, ThemeInput } from "./theme-input";
+import { themeSlug } from "./theme-input";
 import { brandPointer } from "./tokens/brand-pointers";
 import {
   assignedTokenNames,
+  MUST_OVERRIDE_BY_IDENTITY,
   MUST_OVERRIDE_DARK,
-  MUST_OVERRIDE_EXTERNAL,
-  MUST_OVERRIDE_INTERNAL,
   overlayTokenLayers,
 } from "./tokens/contract";
 import type { TokenContract, TokenName } from "./tokens/contract";
 import { LAYER_DEFAULTS } from "./tokens/defaults";
 import { withDerivedTokens } from "./tokens/derived-tokens";
 import { paletteLayers } from "./tokens/palette-layers";
-import { themeSlug } from "./tokens/themes";
-import type { ThemeInput, ThemeVariant } from "./tokens/themes";
 
 /** Every token name the brand pointer and the scheme's palette layers assign. */
 function suppliedTokenNames(theme: ThemeInput, colorScheme: ResolvedColorScheme): Set<TokenName> {
@@ -25,39 +25,61 @@ function suppliedTokenNames(theme: ThemeInput, colorScheme: ResolvedColorScheme)
   return supplied;
 }
 
-function mustOverrideKeys(variant: ThemeVariant, colorScheme: ResolvedColorScheme): readonly TokenName[] {
-  if (colorScheme === "dark") {
-    return MUST_OVERRIDE_DARK;
-  }
-  return variant === "internal" ? MUST_OVERRIDE_INTERNAL : MUST_OVERRIDE_EXTERNAL;
+function mustOverrideKeys(identity: ThemeIdentity, colorScheme: ResolvedColorScheme): readonly TokenName[] {
+  return colorScheme === "dark" ? MUST_OVERRIDE_DARK : MUST_OVERRIDE_BY_IDENTITY[identity];
 }
 
+/**
+ * Throws when the layers of a theme leave one of its must-override tokens to the defaults.
+ *
+ * @param supplied - The token names the theme's non-default layers assign.
+ * @param identity - The theme's identity, which picks the light obligations.
+ * @param colorScheme - The scheme whose obligations apply.
+ * @param slug - The theme's slug, for the message.
+ * @throws When a must-override token is missing, a defect in the theme tables.
+ */
 export function assertMustOverrideCoverage(
   supplied: ReadonlySet<TokenName>,
-  variant: ThemeVariant,
+  identity: ThemeIdentity,
   colorScheme: ResolvedColorScheme,
   slug: string
 ): void {
-  const missing = mustOverrideKeys(variant, colorScheme).filter((key) => !supplied.has(key));
+  const missing = mustOverrideKeys(identity, colorScheme).filter((key) => !supplied.has(key));
   if (missing.length > 0) {
     throw new Error(`Theme ${slug} is missing must-override tokens: ${missing.join(", ")}`);
   }
 }
 
+/**
+ * Composes a theme's full token contract in one scheme: the defaults, the brand pointer, the
+ * identity's palette layers and its corner set.
+ *
+ * @param theme - A legal theme.
+ * @param colorScheme - The scheme, light by default.
+ * @returns Every token's composed value.
+ * @throws When the theme misses a must-override token, a defect in the theme tables.
+ */
 export function composeTheme(theme: ThemeInput, colorScheme: ResolvedColorScheme = "light"): TokenContract {
   const slug = themeSlug(theme);
   // The light layers always run — every composition overlays them — and a dark composition
   // adds the dark layers' gate.
   const gates: readonly ResolvedColorScheme[] = colorScheme === "dark" ? ["light", "dark"] : ["light"];
   for (const gate of gates) {
-    assertMustOverrideCoverage(suppliedTokenNames(theme, gate), theme.variant, gate, slug);
+    assertMustOverrideCoverage(suppliedTokenNames(theme, gate), theme.identity, gate, slug);
   }
+  // Corners overlay last and only in light: no palette assigns them, and the dark composition
+  // keeps them from the light one.
   const light = withDerivedTokens(
-    overlayTokenLayers(LAYER_DEFAULTS, brandPointer(theme.brand), ...paletteLayers(theme, "light"))
+    overlayTokenLayers(
+      LAYER_DEFAULTS,
+      brandPointer(theme.brand),
+      ...paletteLayers(theme, "light"),
+      cornersOf(theme)
+    )
   );
   if (colorScheme === "dark") {
     // Dark layers overlay the light composition, so roles no dark palette names, such as
-    // radius and typography, keep their light values. Composition computes the derived
+    // corners and typography, keep their light values. Composition computes the derived
     // roles again from the dark roles.
     return withDerivedTokens(overlayTokenLayers(light, ...paletteLayers(theme, "dark")));
   }

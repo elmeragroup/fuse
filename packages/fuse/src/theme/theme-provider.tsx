@@ -9,7 +9,7 @@ import { DocumentWriterContext, useDocumentBrand } from "./document-brand";
 import type { ThemeAttributes } from "./theme-attributes";
 import { ThemeContext, useResolvedTheme } from "./theme-context";
 import type { Theme } from "./theme-context";
-import type { ThemeInput } from "./tokens/themes";
+import type { ThemeInput } from "./theme-input";
 
 export type ThemeProviderProps = ColorSchemeOptions & {
   theme: ThemeInput;

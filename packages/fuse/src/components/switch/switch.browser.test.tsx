@@ -14,7 +14,7 @@ import {
   computedContrast,
   cssVarColor,
   formNamed,
-  guenExternal,
+  guenBranded,
   px,
   renderThemed,
   snapshotDocumentTheme,
@@ -125,13 +125,13 @@ describe("Switch", () => {
       document.documentElement.setAttribute("data-theme", scheme);
       renderThemed(
         <>
-          <Switch aria-label="Internal off" />
-          <Switch aria-label="Internal on" defaultChecked />
-          <ThemeScope theme={guenExternal}>
+          <Switch aria-label="Neutral off" />
+          <Switch aria-label="Neutral on" defaultChecked />
+          <ThemeScope theme={guenBranded}>
             <Switch aria-label="Guen off" />
             <Switch aria-label="Guen on" defaultChecked />
           </ThemeScope>
-          <ThemeScope theme={{ variant: "external", brand: "ngfi", segment: "private" }}>
+          <ThemeScope theme={{ identity: "branded", brand: "ngfi", segment: "private" }}>
             <Switch aria-label="Ngfi off" />
             <Switch aria-label="Ngfi on" defaultChecked />
           </ThemeScope>
@@ -140,7 +140,7 @@ describe("Switch", () => {
       // WCAG 1.4.11: the unchecked edge shows where the switch is and its thumb shows the state,
       // so each reaches 3:1 on what the switch sits on. The unchecked track paints no fill, so on
       // versus off reads as outline versus fill whatever the palette.
-      for (const scope of ["Internal", "Guen", "Ngfi"]) {
+      for (const scope of ["Neutral", "Guen", "Ngfi"]) {
         const off = switchNamed(`${scope} off`);
         const offStyle = getComputedStyle(off);
         const offThumb = getComputedStyle(switchThumb(off, `${scope} off`)).backgroundColor;

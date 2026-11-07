@@ -6,8 +6,8 @@ import type { StudioSchemeSeed, StudioSeed } from "../../src/studio/lib/seed";
 import { createSeedCache } from "../../src/studio/lib/seed-store";
 import type { SeedState } from "../../src/studio/lib/seed-store";
 
-const ELMA: ThemeSlug = "external-elma-private";
-const FKAS: ThemeSlug = "internal-fkas-private";
+const ELMA: ThemeSlug = "branded-elma-private";
+const FKAS: ThemeSlug = "neutral-fkas-private";
 
 /** A seed the loader under test hands back; the cache never reads into it. */
 function fakeSeed(slug: ThemeSlug): StudioSeed {

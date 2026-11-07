@@ -407,7 +407,7 @@ describe("the Toggle component sets", () => {
     expect([hover.fill, firstColor(hover)]).toEqual([paint("muted"), paint("foreground")]);
     // aria-pressed:bg-toggle-pressed outranks enabled-hover:bg-muted, which adds no specificity,
     // so a pressed Toggle keeps its face on hover. The kit binds the pair itself, so each Figma
-    // theme mode resolves it: muted in internal themes, primary in external ones.
+    // theme mode resolves it: muted in neutral themes, primary in branded ones.
     for (const state of ["rest", "hover"]) {
       const pressed = toggle("default", "default", state, "on");
       expect([pressed.fill, firstColor(pressed)], state).toEqual([
@@ -874,16 +874,16 @@ describe("the preview frames", () => {
     expect(spec.icons.page).toBe(ICONS_PAGE.key);
   });
 
-  it("pin four Fjordkraft private themes at Auto density on each component page, each on all five axes", () => {
+  it("pin four Fjordkraft private themes, neutral dense and branded comfortable, on each component page, each on all five axes", () => {
     expect(spec.previews.map((preview) => [preview.key, preview.page])).toEqual(
       KIT_PAGES.flatMap((page) => previewsOn(page).map(({ key }) => [key, pageKey(page)]))
     );
     expect(spec.previews[3]?.modes).toEqual([
       { collection: "Fuse tokens", mode: "Dark" },
-      { collection: "Fuse variant", mode: "External" },
+      { collection: "Fuse identity", mode: "Branded" },
       { collection: "Fuse segment", mode: "Private" },
       { collection: "Fuse brand", mode: "Fjordkraft" },
-      { collection: "Fuse density", mode: "Auto" },
+      { collection: "Fuse density", mode: "Comfortable" },
     ]);
   });
 
@@ -982,7 +982,7 @@ describe("the kit check the build runs", () => {
     );
     expect([failure, failure.message]).toEqual([
       expect.any(KitContradiction),
-      "Kbd / Fjordkraft internal private, light places kbd/content=chord, which Kbd does not define.",
+      "Kbd / Fjordkraft neutral private, light places kbd/content=chord, which Kbd does not define.",
     ]);
   });
 

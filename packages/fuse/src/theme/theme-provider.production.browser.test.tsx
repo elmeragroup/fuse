@@ -11,8 +11,8 @@ import {
   writeManifest,
 } from "../../test/theme-browser-fixtures";
 import type { ColorScheme } from "./color-scheme";
+import type { ThemeInput } from "./theme-input";
 import { ThemeProvider, useTheme } from "./theme-provider";
-import type { ThemeInput } from "./tokens/themes";
 
 beforeEach(() => {
   writeManifest(DEFAULT_BOOTSTRAP_MANIFEST);
@@ -27,7 +27,7 @@ function ThemeProbe() {
   const theme = useTheme();
   return (
     <span>
-      {theme.variant}-{theme.brand}-{theme.segment}
+      {theme.identity}-{theme.brand}-{theme.segment}
     </span>
   );
 }
@@ -41,7 +41,7 @@ type PinnedProviderOptions = {
 function PinnedSegmentProvider(options: PinnedProviderOptions) {
   // A fresh, equal literal on every render, as an inline CMS-driven prop would be.
   // @ts-expect-error untyped CMS/env input is the runtime boundary
-  const theme: ThemeInput = { variant: "internal", brand: "fkab", segment: "private" };
+  const theme: ThemeInput = { identity: "neutral", brand: "fkab", segment: "private" };
   return (
     <ThemeProvider theme={theme} {...options}>
       <ThemeProbe />
@@ -67,8 +67,8 @@ describe("ThemeProvider in production", () => {
     rerender(<PinnedSegmentProvider nonce="b" disableTransitionOnChange defaultColorScheme="dark" />);
 
     expect(warn.mock.calls).toEqual([[coercion]]);
-    expect(host.textContent).toBe("internal-fkab-company");
-    expect(readDocumentBrand()).toEqual({ variant: "internal", brand: "fkab", segment: "company" });
+    expect(host.textContent).toBe("neutral-fkab-company");
+    expect(readDocumentBrand()).toEqual({ identity: "neutral", brand: "fkab", segment: "company" });
   });
 
   it("recovers mismatched server brand attributes without warning", () => {
@@ -81,7 +81,7 @@ describe("ThemeProvider in production", () => {
       </ThemeProvider>
     );
 
-    expect(readDocumentBrand()).toEqual({ variant: "internal", brand: "fkas", segment: "private" });
+    expect(readDocumentBrand()).toEqual({ identity: "neutral", brand: "fkas", segment: "private" });
     expect(warn).not.toHaveBeenCalled();
   });
 });

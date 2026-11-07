@@ -8,7 +8,7 @@ const modes = (entries: Readonly<Record<string, string>>) =>
 
 const FJORDKRAFT_LIGHT = {
   "Fuse tokens": "Light",
-  "Fuse variant": "Internal",
+  "Fuse identity": "Neutral",
   "Fuse segment": "Private",
   "Fuse brand": "Fjordkraft",
   "Fuse density": "Dense",
@@ -18,7 +18,7 @@ describe("parsePreviewTheme", () => {
   it("reads the modes figma:sync names", () => {
     expect(Result.getOrThrow(parsePreviewTheme(modes(FJORDKRAFT_LIGHT)))).toEqual({
       scheme: "light",
-      variant: "internal",
+      identity: "neutral",
       brand: "fkas",
       segment: "private",
       density: "dense",
@@ -28,7 +28,7 @@ describe("parsePreviewTheme", () => {
         parsePreviewTheme(
           modes({
             "Fuse tokens": "Dark",
-            "Fuse variant": "External",
+            "Fuse identity": "Branded",
             "Fuse segment": "Company",
             "Fuse brand": "Elmera",
             "Fuse density": "Comfortable",
@@ -37,7 +37,7 @@ describe("parsePreviewTheme", () => {
       )
     ).toEqual({
       scheme: "dark",
-      variant: "external",
+      identity: "branded",
       brand: "elma",
       segment: "company",
       density: "comfortable",
@@ -52,13 +52,13 @@ describe("parsePreviewTheme", () => {
     ).toMatchObject({ brand: "fkas" });
   });
 
-  it("reads Auto density as the variant's default: dense inside, comfortable outside", () => {
-    const auto = (variant: string) =>
-      Result.getOrThrow(
-        parsePreviewTheme(modes({ ...FJORDKRAFT_LIGHT, "Fuse variant": variant, "Fuse density": "Auto" }))
-      ).density;
-    expect(auto("Internal")).toBe("dense");
-    expect(auto("External")).toBe("comfortable");
+  it("reads the density the preview pins, whatever its identity, and refuses Auto", () => {
+    const density = (identity: string, mode: string) =>
+      parsePreviewTheme(modes({ ...FJORDKRAFT_LIGHT, "Fuse identity": identity, "Fuse density": mode }));
+    expect(Result.getOrThrow(density("Branded", "Dense")).density).toBe("dense");
+    expect(Result.getOrThrow(density("Neutral", "Comfortable")).density).toBe("comfortable");
+    // No identity implies a density, so the Auto mode an older sync wrote renders nothing.
+    expect(Result.isFailure(density("Neutral", "Auto"))).toBe(true);
   });
 
   it("shows a brand pinned to one segment in that segment under either segment mode", () => {
@@ -89,14 +89,14 @@ describe("themeStamps", () => {
     expect(
       themeStamps({
         scheme: "dark",
-        variant: "internal",
+        identity: "neutral",
         brand: "elma",
         segment: "company",
         density: "comfortable",
       })
     ).toEqual({
       root: { "data-theme": "dark", "data-density": "comfortable" },
-      body: { "data-theme-variant": "internal", "data-theme-brand": "elma", "data-theme-segment": "company" },
+      body: { "data-theme-identity": "neutral", "data-theme-brand": "elma", "data-theme-segment": "company" },
     });
   });
 });

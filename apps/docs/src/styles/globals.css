@@ -16,24 +16,24 @@
 
 /* The docs set their fonts as the fonts handbook page tells an app to. `components/site-fonts.ts`
    loads the faces into --font-inter and --font-roboto. The site root draws Inter whatever theme it
-   carries. A theme scope below it, such as a demo stage or a landing app window, draws Roboto for an
-   external theme. So does a block preview's root, which `data-block-preview` marks. Every scope
+   carries. A theme scope below it, such as a demo stage or a landing app window, draws Roboto for a
+   branded theme. So does a block preview's root, which `data-block-preview` marks. Every scope
    sets --font-heading again, because a `var(--font-sans)` resolves where it is declared. */
 :root,
-[data-theme-variant] {
+[data-theme-identity] {
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --font-heading: var(--font-sans);
 }
 
-[data-theme-variant="external"]:not(:root),
-:root[data-block-preview][data-theme-variant="external"] {
+[data-theme-identity="branded"]:not(:root),
+:root[data-block-preview][data-theme-identity="branded"] {
   --font-sans: var(--font-roboto), ui-sans-serif, system-ui, sans-serif;
 }
 
 /* Each scope sets its own font-family, because an ancestor's `font-family: var(--font-sans)`
    resolved at the ancestor. The rule sits in the base layer, so a utility on the scope wins. */
 @layer base {
-  [data-theme-variant]:not(:root) {
+  [data-theme-identity]:not(:root) {
     font-family: var(--font-sans);
   }
 }
@@ -276,7 +276,7 @@
   }
 }
 
-/* One side of the hero window. The Internal/External switch moves the sides with `data-shown`:
+/* One side of the hero window. The Neutral/Branded switch moves the sides with `data-shown`:
    the outgoing side fades and drifts toward its end of the switch while the incoming one settles.
    The exit fades and blurs in 120ms, all but gone in its first 60ms, and the entrance waits 100ms,
    so one screen dominates every frame of the flip. Transitions, not keyframes, so flipping back
@@ -304,7 +304,7 @@
   }
 }
 
-/* The demo sites' dark-scheme surfaces. Fuse's dark external sheets turn `primary` and
+/* The demo sites' dark-scheme surfaces. Fuse's dark branded sheets turn `primary` and
    `secondary` into light ink for text, so a band filled with them would end a dark site on light
    stripes; a part that fills a band names its dark-scheme role through this variant. */
 @custom-variant landing-dark (&:where([data-theme="dark"] *));

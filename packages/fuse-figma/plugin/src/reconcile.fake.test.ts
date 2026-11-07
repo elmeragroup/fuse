@@ -121,7 +121,7 @@ const CREATE_SETS = setsInBuildOrder().map(
   ({ page, set }) => `${page.name}: create the component set ${set.name} with ${set.variants} variants`
 );
 
-/** The gray `ring` holds in Fjordkraft's internal private light theme, the file's default modes. */
+/** The gray `ring` holds in Fjordkraft's neutral private light theme, the file's default modes. */
 const RING_GRAY = 0.502;
 
 /** Plan a kit, the whole kit unless given, and return its change lines. */
@@ -261,7 +261,7 @@ describe("Apply on a synced file without the kit pages", () => {
     expect((await kitPage(file, ICONS_PAGE.key)).children.map((node) => node.name)).toEqual(["Icons"]);
   });
 
-  it("pins each preview's theme at Auto density, with a row of instances per set on the page", async () => {
+  it("pins each preview's theme and density, with a row of instances per set on the page", async () => {
     const page = await kitPage(file);
     const sets = new Map(
       page.children.flatMap((node) =>
@@ -269,13 +269,13 @@ describe("Apply on a synced file without the kit pages", () => {
       )
     );
     const previews = page.children.filter((node): node is FrameNode => node.type === "FRAME");
-    const internal = { "Fuse variant": "Internal", "Fuse segment": "Private", "Fuse brand": "Fjordkraft" };
-    const external = { ...internal, "Fuse variant": "External" };
+    const neutral = { "Fuse identity": "Neutral", "Fuse segment": "Private", "Fuse brand": "Fjordkraft" };
+    const branded = { ...neutral, "Fuse identity": "Branded" };
     expect(await Promise.all(previews.map((preview) => pinnedModes(file, preview)))).toEqual([
-      { "Fuse tokens": "Light", ...internal, "Fuse density": "Auto" },
-      { "Fuse tokens": "Dark", ...internal, "Fuse density": "Auto" },
-      { "Fuse tokens": "Light", ...external, "Fuse density": "Auto" },
-      { "Fuse tokens": "Dark", ...external, "Fuse density": "Auto" },
+      { "Fuse tokens": "Light", ...neutral, "Fuse density": "Dense" },
+      { "Fuse tokens": "Dark", ...neutral, "Fuse density": "Dense" },
+      { "Fuse tokens": "Light", ...branded, "Fuse density": "Comfortable" },
+      { "Fuse tokens": "Dark", ...branded, "Fuse density": "Comfortable" },
     ]);
     for (const preview of previews) {
       const groups = preview.children.filter((node): node is FrameNode => node.type === "FRAME");
@@ -842,12 +842,12 @@ describe("the Button page's previews on an applied file", () => {
 
   it("unclips a preview group a designer set to clip, in one Apply", async () => {
     const { file } = await appliedKitOn(BUTTON_PAGE);
-    const preview = childNamed(await kitPage(file), "FRAME", "Button / Fjordkraft internal private, light");
+    const preview = childNamed(await kitPage(file), "FRAME", "Button / Fjordkraft neutral private, light");
     const group = childNamed(preview, "FRAME", "Button");
     group.clipsContent = true;
 
     expect(await applies(file, buttonKit)).toEqual([
-      "Button / Fjordkraft internal private, light / Button: clipsContent → false",
+      "Button / Fjordkraft neutral private, light / Button: clipsContent → false",
       PLACE,
     ]);
     expect(group.clipsContent).toBe(false);
@@ -856,7 +856,7 @@ describe("the Button page's previews on an applied file", () => {
 
   it("warns about a layer a designer dropped into a preview, and keeps it", async () => {
     const { file } = await appliedKitOn(BUTTON_PAGE);
-    const preview = childNamed(await kitPage(file), "FRAME", "Button / Fjordkraft internal private, light");
+    const preview = childNamed(await kitPage(file), "FRAME", "Button / Fjordkraft neutral private, light");
     const note = file.figma.createFrame();
     note.name = "Note";
     preview.appendChild(note);
@@ -866,7 +866,7 @@ describe("the Button page's previews on an applied file", () => {
     expect(await reconcileKit(file.figma, buttonKit, true)).toEqual({
       changes: [PLACE],
       warnings: [
-        "Button / Fjordkraft internal private, light: keeps the layer Note, which the kit does not own",
+        "Button / Fjordkraft neutral private, light: keeps the layer Note, which the kit does not own",
       ],
     });
     expect(preview.children).toContain(note);

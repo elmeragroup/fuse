@@ -19,9 +19,9 @@
  *
  * Without a `leading` prop, the `sm`, `default` and `lg` arms set the line height from the
  * theme's paragraph roles, `--paragraph-leading-sm`, `--paragraph-leading-base` and
- * `--paragraph-leading-lg`: the relaxed 1.625 ratio in internal themes and the 14/20, 16/22
- * and 18/24 paragraph styles in external ones. On a host without `themes.css`, each falls back
- * to its internal default, the same relaxed line height as a length. The `xs`, `xl` and `2xl`
+ * `--paragraph-leading-lg`: the relaxed 1.625 ratio in neutral themes and the 14/20, 16/22
+ * and 18/24 paragraph styles in branded ones. On a host without `themes.css`, each falls back
+ * to its neutral default, the same relaxed line height as a length. The `xs`, `xl` and `2xl`
  * arms keep a plain `leading-relaxed`.
  * The leading class must follow the arm's `text-<size>`, because tailwind-merge drops a
  * leading class that a later font-size class follows. An explicit `leading` prop comes after

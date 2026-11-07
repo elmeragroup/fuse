@@ -1,5 +1,5 @@
 {
-  "dark external-elma-company": {
+  "dark branded-elma-company": {
     "categorical": {
       "cyclicCvd": 10,
       "cyclicNormal": 20.1,
@@ -27,7 +27,7 @@
       "smallestStep": 0.077,
     },
   },
-  "dark external-elma-private": {
+  "dark branded-elma-private": {
     "categorical": {
       "cyclicCvd": 10,
       "cyclicNormal": 20.1,
@@ -55,7 +55,7 @@
       "smallestStep": 0.077,
     },
   },
-  "dark external-fkab-company": {
+  "dark branded-fkab-company": {
     "categorical": {
       "cyclicCvd": 10,
       "cyclicNormal": 20.1,
@@ -83,7 +83,7 @@
       "smallestStep": 0.077,
     },
   },
-  "dark external-fkas-company": {
+  "dark branded-fkas-company": {
     "categorical": {
       "cyclicCvd": 10,
       "cyclicNormal": 20.1,
@@ -111,7 +111,7 @@
       "smallestStep": 0.077,
     },
   },
-  "dark external-fkas-private": {
+  "dark branded-fkas-private": {
     "categorical": {
       "cyclicCvd": 10,
       "cyclicNormal": 20.1,
@@ -139,7 +139,7 @@
       "smallestStep": 0.077,
     },
   },
-  "dark external-fkse-private": {
+  "dark branded-fkse-private": {
     "categorical": {
       "cyclicCvd": 10,
       "cyclicNormal": 20.1,
@@ -167,7 +167,7 @@
       "smallestStep": 0.077,
     },
   },
-  "dark external-guen-company": {
+  "dark branded-guen-company": {
     "categorical": {
       "cyclicCvd": 10,
       "cyclicNormal": 20.1,
@@ -195,7 +195,7 @@
       "smallestStep": 0.077,
     },
   },
-  "dark external-guen-private": {
+  "dark branded-guen-private": {
     "categorical": {
       "cyclicCvd": 10,
       "cyclicNormal": 20.1,
@@ -223,7 +223,7 @@
       "smallestStep": 0.077,
     },
   },
-  "dark external-ngfi-company": {
+  "dark branded-ngfi-company": {
     "categorical": {
       "cyclicCvd": 10,
       "cyclicNormal": 20.1,
@@ -251,7 +251,7 @@
       "smallestStep": 0.077,
     },
   },
-  "dark external-ngfi-private": {
+  "dark branded-ngfi-private": {
     "categorical": {
       "cyclicCvd": 10,
       "cyclicNormal": 20.1,
@@ -279,7 +279,7 @@
       "smallestStep": 0.077,
     },
   },
-  "dark external-tkas-company": {
+  "dark branded-tkas-company": {
     "categorical": {
       "cyclicCvd": 10,
       "cyclicNormal": 20.1,
@@ -307,7 +307,7 @@
       "smallestStep": 0.077,
     },
   },
-  "dark external-tkas-private": {
+  "dark branded-tkas-private": {
     "categorical": {
       "cyclicCvd": 10,
       "cyclicNormal": 20.1,
@@ -335,7 +335,7 @@
       "smallestStep": 0.077,
     },
   },
-  "dark internal-elma-company": {
+  "dark neutral-elma-company": {
     "categorical": {
       "cyclicCvd": 10,
       "cyclicNormal": 20.1,
@@ -363,7 +363,7 @@
       "smallestStep": 0.077,
     },
   },
-  "dark internal-elma-private": {
+  "dark neutral-elma-private": {
     "categorical": {
       "cyclicCvd": 10,
       "cyclicNormal": 20.1,
@@ -391,7 +391,7 @@
       "smallestStep": 0.077,
     },
   },
-  "dark internal-fkab-company": {
+  "dark neutral-fkab-company": {
     "categorical": {
       "cyclicCvd": 10,
       "cyclicNormal": 20.1,
@@ -419,7 +419,7 @@
       "smallestStep": 0.077,
     },
   },
-  "dark internal-fkas-company": {
+  "dark neutral-fkas-company": {
     "categorical": {
       "cyclicCvd": 10,
       "cyclicNormal": 20.1,
@@ -447,7 +447,7 @@
       "smallestStep": 0.077,
     },
   },
-  "dark internal-fkas-private": {
+  "dark neutral-fkas-private": {
     "categorical": {
       "cyclicCvd": 10,
       "cyclicNormal": 20.1,
@@ -475,7 +475,7 @@
       "smallestStep": 0.077,
     },
   },
-  "dark internal-fkse-private": {
+  "dark neutral-fkse-private": {
     "categorical": {
       "cyclicCvd": 10,
       "cyclicNormal": 20.1,
@@ -503,7 +503,7 @@
       "smallestStep": 0.077,
     },
   },
-  "dark internal-guen-company": {
+  "dark neutral-guen-company": {
     "categorical": {
       "cyclicCvd": 10,
       "cyclicNormal": 20.1,
@@ -531,7 +531,7 @@
       "smallestStep": 0.077,
     },
   },
-  "dark internal-guen-private": {
+  "dark neutral-guen-private": {
     "categorical": {
       "cyclicCvd": 10,
       "cyclicNormal": 20.1,
@@ -559,7 +559,7 @@
       "smallestStep": 0.077,
     },
   },
-  "dark internal-ngfi-company": {
+  "dark neutral-ngfi-company": {
     "categorical": {
       "cyclicCvd": 10,
       "cyclicNormal": 20.1,
@@ -587,7 +587,7 @@
       "smallestStep": 0.077,
     },
   },
-  "dark internal-ngfi-private": {
+  "dark neutral-ngfi-private": {
     "categorical": {
       "cyclicCvd": 10,
       "cyclicNormal": 20.1,
@@ -615,7 +615,7 @@
       "smallestStep": 0.077,
     },
   },
-  "dark internal-tkas-company": {
+  "dark neutral-tkas-company": {
     "categorical": {
       "cyclicCvd": 10,
       "cyclicNormal": 20.1,
@@ -643,7 +643,7 @@
       "smallestStep": 0.077,
     },
   },
-  "dark internal-tkas-private": {
+  "dark neutral-tkas-private": {
     "categorical": {
       "cyclicCvd": 10,
       "cyclicNormal": 20.1,
@@ -671,7 +671,7 @@
       "smallestStep": 0.077,
     },
   },
-  "light external-elma-company": {
+  "light branded-elma-company": {
     "categorical": {
       "cyclicCvd": 12.7,
       "cyclicNormal": 21.6,
@@ -699,7 +699,7 @@
       "smallestStep": 0.069,
     },
   },
-  "light external-elma-private": {
+  "light branded-elma-private": {
     "categorical": {
       "cyclicCvd": 12.7,
       "cyclicNormal": 21.6,
@@ -727,7 +727,7 @@
       "smallestStep": 0.069,
     },
   },
-  "light external-fkab-company": {
+  "light branded-fkab-company": {
     "categorical": {
       "cyclicCvd": 12.7,
       "cyclicNormal": 21.6,
@@ -755,7 +755,7 @@
       "smallestStep": 0.069,
     },
   },
-  "light external-fkas-company": {
+  "light branded-fkas-company": {
     "categorical": {
       "cyclicCvd": 12.7,
       "cyclicNormal": 21.6,
@@ -783,7 +783,7 @@
       "smallestStep": 0.069,
     },
   },
-  "light external-fkas-private": {
+  "light branded-fkas-private": {
     "categorical": {
       "cyclicCvd": 12.7,
       "cyclicNormal": 21.6,
@@ -811,7 +811,7 @@
       "smallestStep": 0.069,
     },
   },
-  "light external-fkse-private": {
+  "light branded-fkse-private": {
     "categorical": {
       "cyclicCvd": 12.7,
       "cyclicNormal": 21.6,
@@ -839,7 +839,7 @@
       "smallestStep": 0.069,
     },
   },
-  "light external-guen-company": {
+  "light branded-guen-company": {
     "categorical": {
       "cyclicCvd": 12.7,
       "cyclicNormal": 21.6,
@@ -867,7 +867,7 @@
       "smallestStep": 0.069,
     },
   },
-  "light external-guen-private": {
+  "light branded-guen-private": {
     "categorical": {
       "cyclicCvd": 12.7,
       "cyclicNormal": 21.6,
@@ -895,7 +895,7 @@
       "smallestStep": 0.069,
     },
   },
-  "light external-ngfi-company": {
+  "light branded-ngfi-company": {
     "categorical": {
       "cyclicCvd": 12.7,
       "cyclicNormal": 21.6,
@@ -923,7 +923,7 @@
       "smallestStep": 0.069,
     },
   },
-  "light external-ngfi-private": {
+  "light branded-ngfi-private": {
     "categorical": {
       "cyclicCvd": 12.7,
       "cyclicNormal": 21.6,
@@ -951,7 +951,7 @@
       "smallestStep": 0.069,
     },
   },
-  "light external-tkas-company": {
+  "light branded-tkas-company": {
     "categorical": {
       "cyclicCvd": 12.7,
       "cyclicNormal": 21.6,
@@ -979,7 +979,7 @@
       "smallestStep": 0.069,
     },
   },
-  "light external-tkas-private": {
+  "light branded-tkas-private": {
     "categorical": {
       "cyclicCvd": 12.7,
       "cyclicNormal": 21.6,
@@ -1007,7 +1007,7 @@
       "smallestStep": 0.069,
     },
   },
-  "light internal-elma-company": {
+  "light neutral-elma-company": {
     "categorical": {
       "cyclicCvd": 12.7,
       "cyclicNormal": 21.6,
@@ -1035,7 +1035,7 @@
       "smallestStep": 0.069,
     },
   },
-  "light internal-elma-private": {
+  "light neutral-elma-private": {
     "categorical": {
       "cyclicCvd": 12.7,
       "cyclicNormal": 21.6,
@@ -1063,7 +1063,7 @@
       "smallestStep": 0.069,
     },
   },
-  "light internal-fkab-company": {
+  "light neutral-fkab-company": {
     "categorical": {
       "cyclicCvd": 12.7,
       "cyclicNormal": 21.6,
@@ -1091,7 +1091,7 @@
       "smallestStep": 0.069,
     },
   },
-  "light internal-fkas-company": {
+  "light neutral-fkas-company": {
     "categorical": {
       "cyclicCvd": 12.7,
       "cyclicNormal": 21.6,
@@ -1119,7 +1119,7 @@
       "smallestStep": 0.069,
     },
   },
-  "light internal-fkas-private": {
+  "light neutral-fkas-private": {
     "categorical": {
       "cyclicCvd": 12.7,
       "cyclicNormal": 21.6,
@@ -1147,7 +1147,7 @@
       "smallestStep": 0.069,
     },
   },
-  "light internal-fkse-private": {
+  "light neutral-fkse-private": {
     "categorical": {
       "cyclicCvd": 12.7,
       "cyclicNormal": 21.6,
@@ -1175,7 +1175,7 @@
       "smallestStep": 0.069,
     },
   },
-  "light internal-guen-company": {
+  "light neutral-guen-company": {
     "categorical": {
       "cyclicCvd": 12.7,
       "cyclicNormal": 21.6,
@@ -1203,7 +1203,7 @@
       "smallestStep": 0.069,
     },
   },
-  "light internal-guen-private": {
+  "light neutral-guen-private": {
     "categorical": {
       "cyclicCvd": 12.7,
       "cyclicNormal": 21.6,
@@ -1231,7 +1231,7 @@
       "smallestStep": 0.069,
     },
   },
-  "light internal-ngfi-company": {
+  "light neutral-ngfi-company": {
     "categorical": {
       "cyclicCvd": 12.7,
       "cyclicNormal": 21.6,
@@ -1259,7 +1259,7 @@
       "smallestStep": 0.069,
     },
   },
-  "light internal-ngfi-private": {
+  "light neutral-ngfi-private": {
     "categorical": {
       "cyclicCvd": 12.7,
       "cyclicNormal": 21.6,
@@ -1287,7 +1287,7 @@
       "smallestStep": 0.069,
     },
   },
-  "light internal-tkas-company": {
+  "light neutral-tkas-company": {
     "categorical": {
       "cyclicCvd": 12.7,
       "cyclicNormal": 21.6,
@@ -1315,7 +1315,7 @@
       "smallestStep": 0.069,
     },
   },
-  "light internal-tkas-private": {
+  "light neutral-tkas-private": {
     "categorical": {
       "cyclicCvd": 12.7,
       "cyclicNormal": 21.6,

@@ -3,37 +3,37 @@
  *
  * Figma resolves an alias that crosses into another collection with the frame's mode for the
  * target collection, inherited from any ancestor. Each theme axis therefore becomes one
- * collection with one mode per value, and designers pick color scheme, variant, segment and
+ * collection with one mode per value, and designers pick color scheme, identity, segment and
  * brand separately in a frame's Appearance panel, as they do in the docs theme picker.
  *
  * - `Fuse tokens` holds one variable per role token, per radius rung a component uses, per
  *   role tint the component kit binds and per formula a recipe writes over the tokens, with a
  *   Light and a Dark mode. These are the variables designers bind. Each one aliases
- *   `<scheme>/<token>` in `Fuse variant` for its scheme mode. It also holds the hidden values
+ *   `<scheme>/<token>` in `Fuse identity` for its scheme mode. It also holds the hidden values
  *   behind each formula over tokens and density metrics, one per `Fuse density` mode.
- * - `Fuse variant` has an Internal and an External mode. `<scheme>/<token>` aliases
- *   `<scheme>/<variant>/<token>` in `Fuse segment`. `density/<metric>` holds the metric in
- *   the variant's default density, which the Auto mode of `Fuse density` reads.
- * - `Fuse segment` has a Private and a Company mode. `<scheme>/<variant>/<token>` aliases
- *   `<scheme>/<variant>/<segment>/<token>` in `Fuse brand`.
+ * - `Fuse identity` has a Neutral and a Branded mode. `<scheme>/<token>` aliases
+ *   `<scheme>/<identity>/<token>` in `Fuse segment`.
+ * - `Fuse segment` has a Private and a Company mode. `<scheme>/<identity>/<token>` aliases
+ *   `<scheme>/<identity>/<segment>/<token>` in `Fuse brand`.
  * - `Fuse brand` has one mode per brand and holds each theme's values at
- *   `<scheme>/<variant>/<segment>/<token>`. Figma cannot disable a mode, so a brand pinned to
+ *   `<scheme>/<identity>/<segment>/<token>`. Figma cannot disable a mode, so a brand pinned to
  *   one segment holds that segment's values under the other segment too.
  * - `Fuse primitives` holds the neutral ramp and brand accents in a single mode. The neutral
  *   ramp is hidden from pickers, because it holds one value in every theme, and stays an alias
  *   target. The brand accents stay in the fill and text pickers for cross-brand artwork.
- * - `Fuse density` holds the density metrics and the formulas that read them, with an Auto, a
- *   Dense and a Comfortable mode. Auto follows the frame's variant, as apps do. A formula that
- *   also reads tokens aliases its hidden `Fuse tokens` value for each mode, and so takes the
- *   frame's theme too.
+ * - `Fuse density` holds the density metrics and the formulas that read them, with a Dense and
+ *   a Comfortable mode. Density is a document axis that no identity implies, so a frame pins
+ *   one, as an app's document does. A formula that also reads tokens aliases its hidden
+ *   `Fuse tokens` value for each mode, and so takes the frame's theme too.
  *
  * Every bound variable takes all four hops, so a hidden variable's name never depends on
- * which axes a token varies on. The variables of `Fuse variant`, `Fuse segment` and
+ * which axes a token varies on. The variables of `Fuse identity`, `Fuse segment` and
  * `Fuse brand` are hidden from pickers and carry no code syntax and an empty description,
  * because they only feed aliases. A color is offered only in the pickers for where Fuse paints
  * it, and every variable a designer can bind carries the catalog's description. The sync
  * deletes the retired `Fuse themes` collection, which held one mode per theme slug before the
- * axes split.
+ * axes split, and renames `Fuse variant` to `Fuse identity` in place, with its Internal and
+ * External modes to Neutral and Branded, so the frames pinned to them keep their pins.
  */
 
 import type { Result } from "effect";
@@ -41,10 +41,9 @@ import type { Result } from "effect";
 import {
   BRAND_CODES,
   BRANDS,
-  defaultDensityForVariant,
   resolveThemeCatalog,
   THEME_SEGMENTS,
-  THEME_VARIANTS,
+  THEME_IDENTITIES,
 } from "@elmeragroup/fuse/theme-catalog";
 import type {
   AnyEntry,
@@ -62,7 +61,7 @@ import type {
   ResolvedThemeCatalog,
   RungEntry,
   ThemeSegment,
-  ThemeVariant,
+  ThemeIdentity,
   TokenEntry,
   TokenKind,
   TokenName,
@@ -81,6 +80,7 @@ import { FILL_SCOPES, makeVariableSet } from "./variable-set.ts";
 import type {
   AliasCycle,
   AliasValue,
+  CollectionRename,
   CollectionSpec,
   InvalidVariableSet,
   LiteralValue,
@@ -94,8 +94,8 @@ import type {
 /** The collection designers bind to, with Light and Dark modes. */
 const TOKENS_COLLECTION = "Fuse tokens";
 
-/** The collection with one mode per theme variant. */
-const VARIANT_COLLECTION = "Fuse variant";
+/** The collection with one mode per theme identity. */
+const IDENTITY_COLLECTION = "Fuse identity";
 
 /** The collection with one mode per theme segment. */
 const SEGMENT_COLLECTION = "Fuse segment";
@@ -106,7 +106,7 @@ const BRAND_COLLECTION = "Fuse brand";
 /** The collection holding the scheme-independent palette. */
 const PRIMITIVES_COLLECTION = "Fuse primitives";
 
-/** The collection with the density metrics and one mode per density, plus Auto. */
+/** The collection with the density metrics and one mode per density. */
 const DENSITY_COLLECTION = "Fuse density";
 
 /**
@@ -121,11 +121,27 @@ const SCHEME_MODES = { light: "Light", dark: "Dark" } as const satisfies Record<
 
 const SCHEMES = ["light", "dark"] as const satisfies readonly ResolvedColorScheme[];
 
-/** The variant labels the docs theme picker shows. */
-const VARIANT_MODES = { internal: "Internal", external: "External" } as const satisfies Record<
-  ThemeVariant,
+/** The identity labels the docs theme picker shows. */
+const IDENTITY_MODES = { neutral: "Neutral", branded: "Branded" } as const satisfies Record<
+  ThemeIdentity,
   string
 >;
+
+/**
+ * Collections earlier syncs wrote under another name, which this one renames in place.
+ * `Fuse identity` was `Fuse variant`, whose Internal and External modes became Neutral and
+ * Branded with the variant-to-identity rename. Renaming by id keeps every frame's mode pin.
+ */
+const RENAMED_COLLECTIONS: readonly CollectionRename[] = [
+  {
+    from: "Fuse variant",
+    to: IDENTITY_COLLECTION,
+    modes: new Map([
+      ["Internal", IDENTITY_MODES.neutral],
+      ["External", IDENTITY_MODES.branded],
+    ]),
+  },
+];
 
 /** The segment labels the docs theme picker shows. */
 const SEGMENT_MODES = { private: "Private", company: "Company" } as const satisfies Record<
@@ -133,29 +149,12 @@ const SEGMENT_MODES = { private: "Private", company: "Company" } as const satisf
   string
 >;
 
-/** The mode that follows the frame's variant, first so that a new collection defaults to it. */
-const AUTO_DENSITY_MODE = "Auto";
-
 const DENSITY_MODES = { dense: "Dense", comfortable: "Comfortable" } as const satisfies Record<
   Density,
   string
 >;
 
 const DENSITIES = ["dense", "comfortable"] as const satisfies readonly Density[];
-
-/** Each `Fuse density` mode by its lowercase key, which names the hidden values behind a formula. */
-const DENSITY_MODE_NAMES = { auto: AUTO_DENSITY_MODE, ...DENSITY_MODES } as const;
-
-/** A `Fuse density` mode: Auto, which follows the frame's variant, or a density it pins. */
-type DensityMode = keyof typeof DENSITY_MODE_NAMES;
-
-/** The `Fuse density` modes in collection order. */
-const DENSITY_COLLECTION_MODES = ["auto", ...DENSITIES] as const satisfies readonly DensityMode[];
-
-/** The density a `Fuse density` mode shows in a theme variant: Auto shows the variant's default. */
-function densityIn(mode: DensityMode, variant: ThemeVariant): Density {
-  return mode === "auto" ? defaultDensityForVariant(variant) : mode;
-}
 
 /** The Figma variable type each token kind syncs as. */
 const VARIABLE_TYPES = {
@@ -220,11 +219,11 @@ type MetricAt = (name: DensityMetricName) => number;
  *
  * - `theme`: theme tokens alone. A `Fuse tokens` variable holds what it gives for each theme.
  * - `density`: density metrics alone. A `Fuse density` variable holds what it gives for each
- *   density, and its Auto mode reads `density/<name>` in `Fuse variant`, as a metric's does.
+ *   density, as a metric's does.
  * - `theme and density`: both. A `Fuse density` variable aliases `<name>/<mode>` in `Fuse tokens`
- *   for each of its modes, `auto`, `dense` and `comfortable`. Those hidden variables take the
- *   four hops of every `Fuse tokens` variable and hold what the formula gives for each theme at
- *   their density, and `auto` at the theme variant's default density.
+ *   for each of its modes, `dense` and `comfortable`. Those hidden variables take the four hops
+ *   of every `Fuse tokens` variable and hold what the formula gives for each theme at their
+ *   density.
  *
  * A formula that reads a metric syncs in `Fuse density` even when the metric holds one value at
  * both densities, as `surface-pad-sm` does, so a later density change never moves its variable
@@ -256,14 +255,14 @@ type FormulaVariable = {
  *   give Tailwind's `shadow-xs`. From 2px the shadow stays inside the border box, where it
  *   paints nothing.
  * - The compact corner is `compactCornerClass` in `corner-radius.ts`, which the xs Toggle
- *   rounds with. Internal themes step 0px, which gives `--radius`, and external themes step
+ *   rounds with. Neutral themes step 0px, which gives `--radius`, and branded themes step
  *   2px, which gives `radius-md` capped at 10px.
  * - The checkbox corner is `checkboxCornerClass` in `corner-radius.ts`, which the Checkbox box
  *   rounds with: `radius-md` capped at 4px.
  * - The field box corner is the `clamp()` that `fieldCornerClass` in `corner-radius.ts` declares
  *   as `--field-corner` and rounds Input, Textarea and the other field boxes with. Its bounds lie
- *   1000 steps either side of `--radius`, so internal themes, which step 0px, get `--radius`, and
- *   external themes, which step 2px, get `--radius-field`.
+ *   1000 steps either side of `--radius`, so neutral themes, which step 0px, get `--radius`, and
+ *   branded themes, which step 2px, get `--radius-field`.
  * - An inner corner is the `--shell-inner` a shell in `inner-corner/` publishes and `rounded-inner`
  *   reads: `max(0px, rung - border - padding)`. Several components' shells compile to the same
  *   formula, and the builder binds by code syntax, so each corner is named for its shell's rung,
@@ -312,7 +311,7 @@ const FORMULA_VARIABLES = [
       ),
     scopes: ["CORNER_RADIUS"],
     description:
-      "The corner of a compact button in a toolbar, such as the xs Toggle: radius in internal themes, and radius-md capped at 10px in external ones. Figma variables cannot compute, so the sync writes the result for each theme.",
+      "The corner of a compact button in a toolbar, such as the xs Toggle: radius in neutral themes, and radius-md capped at 10px in branded ones. Figma variables cannot compute, so the sync writes the result for each theme.",
   },
   {
     name: "radius-checkbox",
@@ -331,7 +330,7 @@ const FORMULA_VARIABLES = [
     length: (scheme: ResolvedScheme) => fieldCorner(scheme),
     scopes: ["CORNER_RADIUS"],
     description:
-      "The corner of a field box, such as Input or Textarea: radius in internal themes, and radius-field in external ones. Figma variables cannot compute, so the sync writes the result for each theme.",
+      "The corner of a field box, such as Input or Textarea: radius in neutral themes, and radius-field in branded ones. Figma variables cannot compute, so the sync writes the result for each theme.",
   },
   {
     name: "radius-inner/lg-pad-8px",
@@ -530,7 +529,7 @@ const THEME_DENSITY_FORMULAS = FORMULA_VARIABLES.filter(
  * The pickers that offer each dimension token. A length can round corners, space a gap or
  * size a stroke, so the kind alone does not pick a scope. A new dimension token fails to
  * compile until it has an entry here. `radius-step` spaces the radius rungs and switches
- * between the internal and external variants, so no layer rounds with it. It syncs hidden
+ * between the neutral and branded corner families, so no layer rounds with it. It syncs hidden
  * from every picker and keeps its code syntax for developers.
  */
 const DIMENSION_SCOPES = {
@@ -613,7 +612,7 @@ function isSyncedRung(entry: RungEntry): entry is RungEntry<SyncedRungName> {
 
 /**
  * One variable in `Fuse tokens`: a variable designers bind, or a hidden value a `Fuse density`
- * formula aliases. `Fuse brand` holds its value per theme, and the variant and segment
+ * formula aliases. `Fuse brand` holds its value per theme, and the identity and segment
  * collections pass the frame's choice of each axis along.
  */
 type BoundVariable = {
@@ -623,7 +622,7 @@ type BoundVariable = {
     | SyncedRungName
     | `${ColorTokenName}/${number}`
     | FormulaReading<"theme">["name"]
-    | `${FormulaReading<"theme and density">["name"]}/${DensityMode}`;
+    | `${FormulaReading<"theme and density">["name"]}/${Density}`;
   readonly type: VariableType;
 
   /** The pickers that offer the `Fuse tokens` variable. */
@@ -642,10 +641,10 @@ type BoundVariable = {
   readonly leafIn: (scheme: ResolvedScheme, path: ThemePath, brand: BrandCode) => VariableValue;
 };
 
-/** Where a theme's value sits along the scheme, variant and segment axes. */
+/** Where a theme's value sits along the scheme, identity and segment axes. */
 type ThemePath = {
   readonly scheme: ResolvedColorScheme;
-  readonly variant: ThemeVariant;
+  readonly identity: ThemeIdentity;
   readonly segment: ThemeSegment;
 };
 
@@ -699,14 +698,11 @@ function boundVariables(template: ResolvedScheme, metrics: MetricsByDensity): re
     leafIn: (scheme) => ({ _tag: "Float", value: length(scheme) }),
   }));
   const perDensity = THEME_DENSITY_FORMULAS.flatMap(({ name, length }) =>
-    DENSITY_COLLECTION_MODES.map((mode): BoundVariable => ({
+    DENSITIES.map((mode): BoundVariable => ({
       name: perDensityName(name, mode),
       type: VARIABLE_TYPES.dimension,
       ...HIDDEN_METADATA,
-      leafIn: (scheme, path) => ({
-        _tag: "Float",
-        value: length(scheme, metrics[densityIn(mode, path.variant)]),
-      }),
+      leafIn: (scheme) => ({ _tag: "Float", value: length(scheme, metrics[mode]) }),
     }))
   );
   return [...tokens, ...kitFontVariables(), ...rungs, ...tints, ...formulas, ...perDensity];
@@ -715,7 +711,7 @@ function boundVariables(template: ResolvedScheme, metrics: MetricsByDensity): re
 /**
  * The kit's font variables, which follow the role tokens as the contract once listed them. Fuse's
  * themes name no fonts, so `kit-fonts.ts` holds the families: Roboto for body text, which headings
- * follow, and Neo Sans for headings in Fjordkraft's external themes.
+ * follow, and Neo Sans for headings in Fjordkraft's branded themes.
  */
 function kitFontVariables(): readonly BoundVariable[] {
   return KIT_FONT_NAMES.map((name): BoundVariable => ({
@@ -728,7 +724,7 @@ function kitFontVariables(): readonly BoundVariable[] {
       if (name === "font-sans") {
         return { _tag: "String", value: KIT_BODY_FAMILY };
       }
-      return hasOwnHeadingFamily(path.variant, brand)
+      return hasOwnHeadingFamily(path.identity, brand)
         ? { _tag: "String", value: KIT_HEADING_FAMILY }
         : alias(BRAND_COLLECTION, brandVariableName(path, "font-sans"));
     },
@@ -736,7 +732,7 @@ function kitFontVariables(): readonly BoundVariable[] {
 }
 
 /** The hidden `Fuse tokens` variable holding a formula over tokens and metrics for one density mode. */
-function perDensityName<Name extends string>(name: Name, mode: DensityMode): `${Name}/${DensityMode}` {
+function perDensityName<Name extends string>(name: Name, mode: Density): `${Name}/${Density}` {
   return `${name}/${mode}`;
 }
 
@@ -766,7 +762,7 @@ function metricsByDensity(density: readonly DensityMetricEntry[]): MetricsByDens
 
 /**
  * A `Fuse density` variable whose value depends on the density alone: a density metric, or a
- * formula over metrics. Auto reads `density/<name>` in `Fuse variant`.
+ * formula over metrics.
  */
 type DensityLength = {
   readonly name: string;
@@ -801,8 +797,8 @@ function densityLengths(
 /**
  * Build the variable set for every legal theme in both color schemes and every density.
  *
- * @returns The six Fuse collections with `Fuse themes` retired, or the variable set rule the
- *   projection breaks.
+ * @returns The six Fuse collections with `Fuse themes` retired and `Fuse variant` renamed, or
+ *   the variable set rule the projection breaks.
  * @throws Error when the theme catalog meets a token value it cannot resolve, which is a
  *   defect in a Fuse token module.
  */
@@ -818,11 +814,12 @@ export function fuseVariableSet(): Result.Result<VariableSet, InvalidVariableSet
       primitivesCollection(catalog.primitives),
       brandCollection(catalog, bound),
       segmentCollection(bound),
-      variantCollection(bound, lengths),
+      identityCollection(bound),
       tokensCollection(bound),
       densityCollection(lengths),
     ],
-    RETIRED_COLLECTIONS
+    RETIRED_COLLECTIONS,
+    RENAMED_COLLECTIONS
   );
 }
 
@@ -845,7 +842,7 @@ function primitivesCollection(primitives: ResolvedThemeCatalog["primitives"]): C
 
 /**
  * The picker metadata of a hidden collection's variable. Only designers' pickers read scopes and
- * descriptions, and the brand, segment and variant variables are reached through aliases.
+ * descriptions, and the brand, segment and identity variables are reached through aliases.
  */
 const HIDDEN_METADATA = {
   scopes: [],
@@ -853,9 +850,9 @@ const HIDDEN_METADATA = {
   description: "",
 } as const satisfies Pick<VariableSpec, "scopes" | "webSyntax" | "description">;
 
-/** Every scheme, variant and segment, in the order the hidden collections list them. */
+/** Every scheme, identity and segment, in the order the hidden collections list them. */
 const THEME_PATHS: readonly ThemePath[] = SCHEMES.flatMap((scheme) =>
-  THEME_VARIANTS.flatMap((variant) => THEME_SEGMENTS.map((segment) => ({ scheme, variant, segment })))
+  THEME_IDENTITIES.flatMap((identity) => THEME_SEGMENTS.map((segment) => ({ scheme, identity, segment })))
 );
 
 /**
@@ -886,14 +883,14 @@ function brandCollection(catalog: ResolvedThemeCatalog, bound: readonly BoundVar
  */
 function shownTheme(catalog: ResolvedThemeCatalog, path: ThemePath, brand: BrandCode): ResolvedTheme {
   const ofBrand = catalog.themes.filter(
-    (theme) => theme.input.variant === path.variant && theme.input.brand === brand
+    (theme) => theme.input.identity === path.identity && theme.input.brand === brand
   );
   const shown =
     ofBrand.find((theme) => theme.input.segment === path.segment) ??
     (ofBrand.length === 1 ? ofBrand[0] : undefined);
   if (shown === undefined) {
     throw new Error(
-      `The theme catalog has no ${path.variant} theme for brand ${brand} to show under ${path.segment}, a defect in Fuse's theme table.`
+      `The theme catalog has no ${path.identity} theme for brand ${brand} to show under ${path.segment}, a defect in Fuse's theme table.`
     );
   }
   return shown;
@@ -909,18 +906,18 @@ function brandModeName(code: BrandCode): string {
   return others.length === 0 ? `${displayName} (${only} only)` : displayName;
 }
 
-/** One variable per bound variable for each scheme and variant, aliasing the brand leaf of each segment. */
+/** One variable per bound variable for each scheme and identity, aliasing the brand leaf of each segment. */
 function segmentCollection(bound: readonly BoundVariable[]): CollectionSpec {
   const variables = SCHEMES.flatMap((scheme) =>
-    THEME_VARIANTS.flatMap((variant) =>
+    THEME_IDENTITIES.flatMap((identity) =>
       bound.map((variable): VariableSpec => ({
-        name: segmentVariableName(scheme, variant, variable.name),
+        name: segmentVariableName(scheme, identity, variable.name),
         type: variable.type,
         ...HIDDEN_METADATA,
         values: new Map(
           THEME_SEGMENTS.map((segment) => [
             SEGMENT_MODES[segment],
-            alias(BRAND_COLLECTION, brandVariableName({ scheme, variant, segment }, variable.name)),
+            alias(BRAND_COLLECTION, brandVariableName({ scheme, identity, segment }, variable.name)),
           ])
         ),
       }))
@@ -933,43 +930,25 @@ function segmentCollection(bound: readonly BoundVariable[]): CollectionSpec {
   };
 }
 
-/**
- * One variable per bound variable for each scheme, aliasing the segment variable of each
- * variant, and one variable per density metric or formula over metrics holding its length in
- * the variant's default density.
- */
-function variantCollection(
-  bound: readonly BoundVariable[],
-  lengths: readonly DensityLength[]
-): CollectionSpec {
-  const tokens = SCHEMES.flatMap((scheme) =>
+/** One variable per bound variable for each scheme, aliasing the segment variable of each identity. */
+function identityCollection(bound: readonly BoundVariable[]): CollectionSpec {
+  const variables = SCHEMES.flatMap((scheme) =>
     bound.map((variable): VariableSpec => ({
-      name: variantVariableName(scheme, variable.name),
+      name: identityVariableName(scheme, variable.name),
       type: variable.type,
       ...HIDDEN_METADATA,
       values: new Map(
-        THEME_VARIANTS.map((variant) => [
-          VARIANT_MODES[variant],
-          alias(SEGMENT_COLLECTION, segmentVariableName(scheme, variant, variable.name)),
+        THEME_IDENTITIES.map((identity) => [
+          IDENTITY_MODES[identity],
+          alias(SEGMENT_COLLECTION, segmentVariableName(scheme, identity, variable.name)),
         ])
       ),
     }))
   );
-  const metrics = lengths.map((length): VariableSpec => ({
-    name: variantDensityName(length.name),
-    type: VARIABLE_TYPES.dimension,
-    ...HIDDEN_METADATA,
-    values: new Map(
-      THEME_VARIANTS.map((variant) => [
-        VARIANT_MODES[variant],
-        { _tag: "Float", value: length.px[defaultDensityForVariant(variant)] },
-      ])
-    ),
-  }));
   return {
-    name: VARIANT_COLLECTION,
-    modes: THEME_VARIANTS.map((variant) => VARIANT_MODES[variant]),
-    variables: [...tokens, ...metrics],
+    name: IDENTITY_COLLECTION,
+    modes: THEME_IDENTITIES.map((identity) => IDENTITY_MODES[identity]),
+    variables,
   };
 }
 
@@ -983,40 +962,34 @@ function tokensCollection(bound: readonly BoundVariable[]): CollectionSpec {
     values: new Map(
       SCHEMES.map((scheme) => [
         SCHEME_MODES[scheme],
-        alias(VARIANT_COLLECTION, variantVariableName(scheme, variable.name)),
+        alias(IDENTITY_COLLECTION, identityVariableName(scheme, variable.name)),
       ])
     ),
   }));
   return { name: TOKENS_COLLECTION, modes: SCHEMES.map((scheme) => SCHEME_MODES[scheme]), variables };
 }
 
-/** The `Fuse variant` variable for one bound variable in one scheme. */
-function variantVariableName(scheme: ResolvedColorScheme, name: string): string {
+/** The `Fuse identity` variable for one bound variable in one scheme. */
+function identityVariableName(scheme: ResolvedColorScheme, name: string): string {
   return `${scheme}/${name}`;
 }
 
-/** The `Fuse variant` variable holding one density length in the variant's default density. */
-function variantDensityName(name: string): string {
-  return `density/${name}`;
-}
-
-/** The `Fuse segment` variable for one bound variable in one scheme and variant. */
-function segmentVariableName(scheme: ResolvedColorScheme, variant: ThemeVariant, name: string): string {
-  return `${scheme}/${variant}/${name}`;
+/** The `Fuse segment` variable for one bound variable in one scheme and identity. */
+function segmentVariableName(scheme: ResolvedColorScheme, identity: ThemeIdentity, name: string): string {
+  return `${scheme}/${identity}/${name}`;
 }
 
 /** The `Fuse brand` variable holding one bound variable's value at a theme path. */
 function brandVariableName(path: ThemePath, name: string): string {
-  return `${path.scheme}/${path.variant}/${path.segment}/${name}`;
+  return `${path.scheme}/${path.identity}/${path.segment}/${name}`;
 }
 
 /**
  * One FLOAT variable per density metric, named after its custom property, and one per formula
  * over metrics or over tokens and metrics. Dense and Comfortable hold a metric's literals, and
- * Auto aliases the metric in `Fuse variant`, so it follows the frame's variant the way apps pick
- * a variant's default density. A formula over metrics alone takes the same shape. A formula over
- * tokens and metrics aliases its hidden `Fuse tokens` value for each mode instead, which takes the
- * frame's theme. A metric's kind decides its scopes.
+ * a formula over metrics alone takes the same shape. A formula over tokens and metrics aliases
+ * its hidden `Fuse tokens` value for each mode instead, which takes the frame's theme. A
+ * metric's kind decides its scopes. Dense comes first, so a frame that pins no density gets it.
  */
 function densityCollection(lengths: readonly DensityLength[]): CollectionSpec {
   const literal = lengths.map((length): VariableSpec => ({
@@ -1025,13 +998,12 @@ function densityCollection(lengths: readonly DensityLength[]): CollectionSpec {
     scopes: length.scopes,
     webSyntax: length.webSyntax,
     description: length.description,
-    values: new Map<string, VariableValue>([
-      [AUTO_DENSITY_MODE, alias(VARIANT_COLLECTION, variantDensityName(length.name))],
-      ...DENSITIES.map((mode): [string, VariableValue] => [
+    values: new Map<string, VariableValue>(
+      DENSITIES.map((mode): [string, VariableValue] => [
         DENSITY_MODES[mode],
         { _tag: "Float", value: length.px[mode] },
-      ]),
-    ]),
+      ])
+    ),
   }));
   const themed = THEME_DENSITY_FORMULAS.map(({ name, formula, scopes, description }): VariableSpec => ({
     name,
@@ -1040,15 +1012,12 @@ function densityCollection(lengths: readonly DensityLength[]): CollectionSpec {
     webSyntax: formula,
     description,
     values: new Map(
-      DENSITY_COLLECTION_MODES.map((mode) => [
-        DENSITY_MODE_NAMES[mode],
-        alias(TOKENS_COLLECTION, perDensityName(name, mode)),
-      ])
+      DENSITIES.map((mode) => [DENSITY_MODES[mode], alias(TOKENS_COLLECTION, perDensityName(name, mode))])
     ),
   }));
   return {
     name: DENSITY_COLLECTION,
-    modes: DENSITY_COLLECTION_MODES.map((mode) => DENSITY_MODE_NAMES[mode]),
+    modes: DENSITIES.map((mode) => DENSITY_MODES[mode]),
     variables: [...literal, ...themed],
   };
 }

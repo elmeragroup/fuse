@@ -68,7 +68,7 @@ describe("useResolvedPortalContainer", () => {
 
   it("falls back to the nearest ThemeScope element once it is attached", () => {
     const seen = resolutions((record) => (
-      <ThemeScope theme={{ variant: "internal", brand: "fkas", segment: "private" }}>
+      <ThemeScope theme={{ identity: "neutral", brand: "fkas", segment: "private" }}>
         <Probe onResolve={record} />
       </ThemeScope>
     ));
@@ -83,7 +83,7 @@ describe("useResolvedPortalContainer", () => {
   it("prefers an explicit container over an enclosing ThemeScope", () => {
     const target = document.createElement("div");
     const seen = resolutions((record) => (
-      <ThemeScope theme={{ variant: "external", brand: "tkas", segment: "company" }}>
+      <ThemeScope theme={{ identity: "branded", brand: "tkas", segment: "company" }}>
         <Probe container={target} onResolve={record} />
       </ThemeScope>
     ));
@@ -113,7 +113,7 @@ describe("useResolvedPortalContainer", () => {
   });
 });
 
-const scopeTheme = { variant: "internal", brand: "fkas", segment: "private" } as const;
+const scopeTheme = { identity: "neutral", brand: "fkas", segment: "private" } as const;
 
 function scopeElements(seen: Resolved[]): HTMLElement[] {
   return seen.filter((resolved): resolved is HTMLElement => resolved instanceof HTMLElement);

@@ -12,19 +12,19 @@ const { openLanding } = launchLandingSuite();
 type Step = {
   readonly brand: string;
   readonly segment: "Private" | "Company";
-  readonly variant: "Internal" | "External";
+  readonly identity: "Neutral" | "Branded";
   readonly attributes: ThemeAttributes;
   /** The query the page must carry once the step is applied. */
   readonly slug: string;
 };
 
-/** What the landing opens on: Elmera, private, external, with the window on the site. */
+/** What the landing opens on: Elmera, private, branded, with the window on the site. */
 const OPENING: Step = {
   brand: "Elmera",
   segment: "Private",
-  variant: "External",
-  attributes: { variant: "external", brand: "elma", segment: "private" },
-  slug: "external-elma-private",
+  identity: "Branded",
+  attributes: { identity: "branded", brand: "elma", segment: "private" },
+  slug: "branded-elma-private",
 };
 
 /** Three picks, each moving one axis: brand, then segment, then variant. */
@@ -32,23 +32,23 @@ const STEPS: readonly Step[] = [
   {
     brand: "Fjordkraft",
     segment: "Private",
-    variant: "External",
-    attributes: { variant: "external", brand: "fkas", segment: "private" },
-    slug: "external-fkas-private",
+    identity: "Branded",
+    attributes: { identity: "branded", brand: "fkas", segment: "private" },
+    slug: "branded-fkas-private",
   },
   {
     brand: "Fjordkraft",
     segment: "Company",
-    variant: "External",
-    attributes: { variant: "external", brand: "fkas", segment: "company" },
-    slug: "external-fkas-company",
+    identity: "Branded",
+    attributes: { identity: "branded", brand: "fkas", segment: "company" },
+    slug: "branded-fkas-company",
   },
   {
     brand: "Fjordkraft",
     segment: "Company",
-    variant: "Internal",
-    attributes: { variant: "internal", brand: "fkas", segment: "company" },
-    slug: "internal-fkas-company",
+    identity: "Neutral",
+    attributes: { identity: "neutral", brand: "fkas", segment: "company" },
+    slug: "neutral-fkas-company",
   },
 ];
 
@@ -87,7 +87,7 @@ async function choose(page: Page, step: Step): Promise<void> {
     .click();
   for (const [axis, value] of [
     ["Segment", step.segment],
-    ["Variant", step.variant],
+    ["Identity", step.identity],
   ] as const) {
     await root.getByRole("group", { name: axis }).getByRole("button", { name: value, exact: true }).click();
   }
@@ -132,7 +132,7 @@ function recordThemeAtBody(): void {
     const root = document.documentElement;
     Object.assign(window, {
       themeAtBody: {
-        variant: root.getAttribute("data-theme-variant"),
+        identity: root.getAttribute("data-theme-identity"),
         brand: root.getAttribute("data-theme-brand"),
         segment: root.getAttribute("data-theme-segment"),
       },
@@ -153,19 +153,19 @@ describe("landing theme picker", () => {
   it("moves the document's theme, the window's side and the URL with each axis, and announces each change politely", async () => {
     const page = await openLanding(DESKTOP_VIEWPORT);
     expect(await documentTheme(page)).toEqual(OPENING.attributes);
-    expect(await shownSide(page)).toBe(OPENING.variant);
+    expect(await shownSide(page)).toBe(OPENING.identity);
     expect(urlTheme(page)).toBeNull();
     expect(await announcer(page).count()).toBe(0);
 
     for (const step of STEPS) {
       await choose(page, step);
       await expect.poll(async () => documentTheme(page)).toEqual(step.attributes);
-      await expect.poll(async () => shownSide(page)).toBe(step.variant);
+      await expect.poll(async () => shownSide(page)).toBe(step.identity);
       await expect.poll(() => urlTheme(page)).toBe(step.slug);
       // Before any colour-scheme pick, which announces through its own callback.
       await expect
         .poll(async () => announcer(page).textContent())
-        .toBe(`Theme: ${step.brand}, ${step.segment.toLowerCase()}, ${step.variant.toLowerCase()}, system`);
+        .toBe(`Theme: ${step.brand}, ${step.segment.toLowerCase()}, ${step.identity.toLowerCase()}, system`);
     }
 
     // The context prefers light, so Dark comes first: a pick that moves nothing would prove nothing.
@@ -181,7 +181,7 @@ describe("landing theme picker", () => {
       expect(await scheme.getByRole("button", { pressed: true }).textContent()).toBe(label);
       await expect
         .poll(async () => announcer(page).textContent())
-        .toBe(`Theme: Fjordkraft, company, internal, ${spoken}`);
+        .toBe(`Theme: Fjordkraft, company, neutral, ${spoken}`);
     }
     // System follows the preference both ways.
     await page.emulateMedia({ colorScheme: "dark" });
@@ -194,21 +194,21 @@ describe("landing theme picker", () => {
   it("keeps the picker and the window's switch in step both ways", async () => {
     const page = await openLanding(DESKTOP_VIEWPORT);
 
-    await showSide(page, "Internal");
+    await showSide(page, "Neutral");
     await expect
       .poll(async () => documentTheme(page))
-      .toEqual({ ...OPENING.attributes, variant: "internal" });
+      .toEqual({ ...OPENING.attributes, identity: "neutral" });
     const root = await openPicker(page);
     await expect
       .poll(async () =>
-        root.getByRole("group", { name: "Variant" }).getByRole("button", { pressed: true }).textContent()
+        root.getByRole("group", { name: "Identity" }).getByRole("button", { pressed: true }).textContent()
       )
-      .toBe("Internal");
+      .toBe("Neutral");
     await page.keyboard.press("Escape");
     await expect.poll(async () => pickerDialog(page).count()).toBe(0);
 
-    await choose(page, { ...OPENING, variant: "External" });
-    await expect.poll(async () => shownSide(page)).toBe("External");
+    await choose(page, { ...OPENING, identity: "Branded" });
+    await expect.poll(async () => shownSide(page)).toBe("Branded");
     await page.context().close();
   });
 
@@ -231,13 +231,13 @@ describe("landing theme picker", () => {
       expect(
         await painted.evaluate(() => ("themeAtBody" in window ? window.themeAtBody : undefined))
       ).toEqual(wears.attributes);
-      expect(await shownSide(painted)).toBe(wears.variant);
+      expect(await shownSide(painted)).toBe(wears.identity);
       await painted.context().close();
 
       const hydrated = await openLanding(DESKTOP_VIEWPORT, { search: address });
       await settleFrames(hydrated);
       expect(await documentTheme(hydrated)).toEqual(wears.attributes);
-      expect(await shownSide(hydrated)).toBe(wears.variant);
+      expect(await shownSide(hydrated)).toBe(wears.identity);
       await hydrated.context().close();
     }
   );
@@ -254,12 +254,12 @@ describe("landing theme picker", () => {
     await home.click();
     await expect.poll(() => urlTheme(page)).toBeNull();
     await expect.poll(async () => documentTheme(page)).toEqual(OPENING.attributes);
-    expect(await trigger(page).getAttribute("aria-label")).toBe("Theme: Elmera · Private · External");
+    expect(await trigger(page).getAttribute("aria-label")).toBe("Theme: Elmera · Private · Branded");
 
     await page.goBack();
     await expect.poll(() => urlTheme(page)).toBe(SHARED.slug);
     await expect.poll(async () => documentTheme(page)).toEqual(SHARED.attributes);
-    expect(await trigger(page).getAttribute("aria-label")).toBe("Theme: Fjordkraft · Company · Internal");
+    expect(await trigger(page).getAttribute("aria-label")).toBe("Theme: Fjordkraft · Company · Neutral");
 
     expect(await sameDocument()).toBe(true);
     await page.context().close();
@@ -282,7 +282,7 @@ describe("landing theme picker", () => {
     await expect.poll(async () => documentTheme(page)).toEqual(served);
     await expect
       .poll(async () => trigger(page).getAttribute("aria-label"))
-      .toBe("Theme: Elmera · Private · External");
+      .toBe("Theme: Elmera · Private · Branded");
     // The opening theme needs no parameter, so the address drops both values.
     await expect.poll(() => new URL(page.url()).search).toBe("");
     await page.context().close();
@@ -301,12 +301,12 @@ describe("landing theme picker", () => {
     await page.goBack();
     await expect.poll(() => urlTheme(page)).toBe(FIRST_PICK.slug);
     await expect.poll(async () => documentTheme(page)).toEqual(FIRST_PICK.attributes);
-    expect(await trigger(page).getAttribute("aria-label")).toBe("Theme: Fjordkraft · Private · External");
+    expect(await trigger(page).getAttribute("aria-label")).toBe("Theme: Fjordkraft · Private · Branded");
 
     await page.goForward();
     await expect.poll(() => urlTheme(page)).toBeNull();
     await expect.poll(async () => documentTheme(page)).toEqual(OPENING.attributes);
-    expect(await trigger(page).getAttribute("aria-label")).toBe("Theme: Elmera · Private · External");
+    expect(await trigger(page).getAttribute("aria-label")).toBe("Theme: Elmera · Private · Branded");
     await page.context().close();
   });
 
@@ -317,7 +317,7 @@ describe("landing theme picker", () => {
     expect(await pickerDialog(page).isVisible()).toBe(true);
     // DOM audit: a region under `aria-hidden` has no role a query could reach, so the check reads the attribute.
     const region = page.locator("[role='status']").filter({ hasText: /^Theme:/u });
-    await expect.poll(async () => region.textContent()).toBe("Theme: Fjordkraft, private, external, system");
+    await expect.poll(async () => region.textContent()).toBe("Theme: Fjordkraft, private, branded, system");
     expect(
       await region.evaluate((element) => element.closest("[aria-hidden='true'], [inert]") === null)
     ).toBe(true);
@@ -328,7 +328,7 @@ describe("landing theme picker", () => {
     const page = await openLanding(PHONE_VIEWPORT);
     expect(await trigger(page).isVisible()).toBe(true);
     const root = await openPicker(page);
-    for (const axis of ["Brand", "Segment", "Variant", "Colour scheme"]) {
+    for (const axis of ["Brand", "Segment", "Identity", "Colour scheme"]) {
       await root.getByRole("group", { name: axis }).waitFor();
     }
 
@@ -352,13 +352,13 @@ describe("landing theme picker", () => {
     await choose(page, {
       brand: "Fjordkraft Företag",
       segment: "Company",
-      variant: "External",
-      attributes: { variant: "external", brand: "fkab", segment: "company" },
-      slug: "external-fkab-company",
+      identity: "Branded",
+      attributes: { identity: "branded", brand: "fkab", segment: "company" },
+      slug: "branded-fkab-company",
     });
     await expect
       .poll(async () => documentTheme(page))
-      .toEqual({ variant: "external", brand: "fkab", segment: "company" });
+      .toEqual({ identity: "branded", brand: "fkab", segment: "company" });
 
     const root = await openPicker(page);
     const blocked = root.getByRole("group", { name: "Segment" }).getByRole("button", { name: "Private" });
@@ -382,7 +382,7 @@ describe("landing theme picker", () => {
 
 describe("landing theme picker shortcut", () => {
   /** Opens on Fjordkraft, so the focused tile is the current brand's, not the grid's first. */
-  const search = "?theme=external-fkas-private";
+  const search = "?theme=branded-fkas-private";
 
   it("names ⌘J or Ctrl+J on the chip and in its tooltip", async () => {
     const page = await openLanding(DESKTOP_VIEWPORT, { search });
@@ -416,17 +416,17 @@ describe("landing theme picker shortcut", () => {
   });
 
   it("gives focus to the chip when the side it came from went inert", async () => {
-    const page = await openLanding(DESKTOP_VIEWPORT, { search: "?theme=internal-fkas-private" });
+    const page = await openLanding(DESKTOP_VIEWPORT, { search: "?theme=neutral-fkas-private" });
     const app = dashboard(page);
     await app.scrollIntoViewIfNeeded();
     await row(app, "Jonas Eide").focus();
 
     await page.keyboard.press("ControlOrMeta+j");
     await pickerDialog(page)
-      .getByRole("group", { name: "Variant" })
-      .getByRole("button", { name: "External", exact: true })
+      .getByRole("group", { name: "Identity" })
+      .getByRole("button", { name: "Branded", exact: true })
       .click();
-    await expect.poll(async () => shownSide(page)).toBe("External");
+    await expect.poll(async () => shownSide(page)).toBe("Branded");
     await page.keyboard.press("Escape");
     await expect.poll(async () => pickerDialog(page).count()).toBe(0);
     await expect.poll(async () => isFocused(trigger(page))).toBe(true);

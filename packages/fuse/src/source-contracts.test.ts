@@ -814,7 +814,11 @@ describe("density stays out of subtree theming", () => {
   // document-root stamp the host owns, so nothing ThemeProvider or ThemeScope pulls in may
   // reach the density owners or write `data-density`; a specifier ban would miss the
   // attribute and any indirect import.
-  const DENSITY_OWNERS = ["theme/density.ts", "theme/tokens/density-metrics.ts"];
+  const DENSITY_OWNERS = [
+    "theme/density.ts",
+    "theme/document-attributes.ts",
+    "theme/tokens/density-metrics.ts",
+  ];
 
   it("keeps the density owners and the data-density stamp off the ThemeProvider and ThemeScope graph", () => {
     const graph = walkImportedSourceFiles(PACKAGE_ROOT, [
@@ -826,6 +830,16 @@ describe("density stays out of subtree theming", () => {
     expect(graph).toEqual(expect.arrayContaining(["theme/theme-attributes.ts", "theme/validate-theme.ts"]));
     expect(graph.filter((file) => DENSITY_OWNERS.includes(file))).toEqual([]);
     expect(graph.filter((file) => readCode(file).includes("data-density"))).toEqual([]);
+  });
+
+  it("keeps the density axis free of the theme modules", () => {
+    // Density is no function of identity, so density.ts reaches no other theme module. A host
+    // joins the two only through document-attributes.ts. Other dependencies are not this
+    // contract's concern.
+    const graph = walkImportedSourceFiles(PACKAGE_ROOT, ["src/theme/density.ts"]);
+    expect(graph.filter((file) => file.startsWith("src/theme/") && file !== "src/theme/density.ts")).toEqual(
+      []
+    );
   });
 });
 
@@ -948,7 +962,7 @@ describe("runtime listeners and layout motion", () => {
     const owners = ["theme/color-scheme-browser-platform.ts", "theme/color-scheme-script.tsx"];
     expect(inTheme("matchMedia")).toEqual(owners);
     expect(inTheme("localStorage")).toEqual(owners);
-    // The closing quote keeps `data-theme-variant` and the other data-theme-* attributes out.
+    // The closing quote keeps `data-theme-identity` and the other data-theme-* attributes out.
     expect(inTheme('"data-theme"')).toEqual(owners);
   });
 

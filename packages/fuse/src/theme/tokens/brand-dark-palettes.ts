@@ -1,14 +1,14 @@
+import type { ThemeSegment } from "../theme-input";
+import type { BrandDarkSheet } from "./brand-dark-sheet";
+import type { PaletteBrandCode } from "./brand-palettes";
 import type { TokenLayer } from "./contract";
 import { DARK_DEFAULTS } from "./dark-defaults";
 import { mixOklchLiteral } from "./derived-tokens";
-import type { ExternalDarkSheet } from "./external-dark-sheet";
-import type { ExternalBrandCode } from "./external-palettes";
 import { segmentSheet } from "./segment-sheets";
-import type { ThemeSegment } from "./themes";
 
 // Custom Figma color collections in Dark mode, read 2026-09-15.
 // Exact sRGB colors are retained in comments; OKLCH is the library's color format.
-const EXTERNAL_DARK_PALETTES = {
+const BRAND_DARK_PALETTES = {
   // NSsyvuE7xs3CcbbJggoN1b, collection 4006:10608, mode 4006:8.
   fkas: {
     background: "oklch(0.1749487 0.003804 164.5613)", // #0F1110
@@ -130,26 +130,26 @@ const EXTERNAL_DARK_PALETTES = {
     "feature-bright": "oklch(0.2386117 0.0070183 164.349003)", // #1C201E surface-container, the card tone
     "feature-foreground": "oklch(0.9218728 0.0894512 168.1399808)", // #A9F9DA on-primary-container
   },
-} as const satisfies Record<ExternalBrandCode, ExternalDarkSheet>;
+} as const satisfies Record<PaletteBrandCode, BrandDarkSheet>;
 
 /**
- * The share of foreground in a dark hover tint, matching internal dark's step from card and
+ * The share of foreground in a dark hover tint, matching neutral dark's step from card and
  * popover (0.205) to muted and accent (0.269).
  */
 const HOVER_LIFT_PERCENT = 8;
 
 /** The dark sheet for one brand and segment, preferring a segment sheet over the brand base. */
-function darkSheet(brand: ExternalBrandCode, segment: ThemeSegment): ExternalDarkSheet {
-  return segmentSheet(brand, segment)?.dark ?? EXTERNAL_DARK_PALETTES[brand];
+function darkSheet(brand: PaletteBrandCode, segment: ThemeSegment): BrandDarkSheet {
+  return segmentSheet(brand, segment)?.dark ?? BRAND_DARK_PALETTES[brand];
 }
 
 /**
- * The dark palette layer for one external brand and segment. A segment sheet replaces its
+ * The dark palette layer for one branded brand and segment. A segment sheet replaces its
  * brand's dark sheet; the roles the selected sheet does not name derive from it, and a
- * role a sheet does name is never clobbered. Internal themes compose
- * `INTERNAL_DARK_PALETTE` instead.
+ * role a sheet does name is never clobbered. Neutral themes compose
+ * `NEUTRAL_DARK_PALETTE` instead.
  */
-export function externalDarkPalette(brand: ExternalBrandCode, segment: ThemeSegment): TokenLayer {
+export function brandDarkPalette(brand: PaletteBrandCode, segment: ThemeSegment): TokenLayer {
   const palette = darkSheet(brand, segment);
   const popover = palette.popover ?? palette.card;
   return {
@@ -159,7 +159,7 @@ export function externalDarkPalette(brand: ExternalBrandCode, segment: ThemeSegm
     popover,
     "popover-foreground": palette["popover-foreground"] ?? palette["card-foreground"],
     // `hover:bg-muted` tints controls that sit on a card or popover, so muted lifts the card
-    // toward the foreground rather than repeating it: the step internal dark takes from card
+    // toward the foreground rather than repeating it: the step neutral dark takes from card
     // to muted. No sheet names muted yet; one that does keeps its own.
     muted: palette.muted ?? mixOklchLiteral(palette.card, palette.foreground, HOVER_LIFT_PERCENT),
     // Menus paint a highlighted row with `accent` over the popover. Most sheets set

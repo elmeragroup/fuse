@@ -11,10 +11,10 @@ import { Dialog } from "../components/dialog";
 import { LocaleProvider } from "../intl/locale-context";
 import type { ResolvedColorScheme } from "./color-scheme-types";
 import { composeTheme } from "./compose-theme";
+import { LEGAL_THEMES, themeSlug } from "./theme-input";
+import type { ThemeInput } from "./theme-input";
 import { ThemeScope } from "./theme-scope";
 import { TOKEN_NAMES } from "./tokens/contract";
-import { LEGAL_THEMES, themeSlug } from "./tokens/themes";
-import type { ThemeInput } from "./tokens/themes";
 
 let restoreDocumentTheme: () => void;
 
@@ -72,7 +72,7 @@ describe("dark CSS", () => {
 
   it("keeps all 400 nested combinations isolated while the document switches light, dark, and back", () => {
     const { host } = render(null);
-    stampDocumentTheme({ variant: "internal", brand: "elma", segment: "private" }, "light");
+    stampDocumentTheme({ identity: "neutral", brand: "elma", segment: "private" }, "light");
     const scopes = LEGAL_THEMES.flatMap((outer) => {
       const outerElement = document.createElement("section");
       stampTheme(outerElement, outer);
@@ -102,36 +102,36 @@ describe("dark CSS", () => {
     }
   });
 
-  it("lets a host-owned role inherit through a nested internal scope in light", () => {
+  it("lets a host-owned role inherit through a nested neutral scope in light", () => {
     const { host } = render(null);
     document.documentElement.setAttribute("data-theme", "light");
-    document.documentElement.removeAttribute("data-theme-variant");
+    document.documentElement.removeAttribute("data-theme-identity");
     const wrapper = document.createElement("div");
     wrapper.style.setProperty("--popover", "oklch(0.5 0.1 20)");
     wrapper.style.setProperty("--background", "oklch(0.5 0.1 20)");
     const inner = document.createElement("div");
-    stampTheme(inner, { variant: "internal", brand: "elma", segment: "private" });
+    stampTheme(inner, { identity: "neutral", brand: "elma", segment: "private" });
     wrapper.append(inner);
     host.append(wrapper);
 
     const innerStyle = getComputedStyle(inner);
     // Roles no light palette owns keep inheriting; the light reset set does not clobber them.
     expect(innerStyle.getPropertyValue("--popover").trim()).toBe("oklch(0.5 0.1 20)");
-    // Roles the internal reset owns return to the defaults, not the host's override.
+    // Roles the neutral reset owns return to the defaults, not the host's override.
     expect(innerStyle.getPropertyValue("--background").trim()).toBe(
       getComputedStyle(document.documentElement).getPropertyValue("--background").trim()
     );
   });
 
-  it.each(["internal", "external"] as const)(
-    "keeps a portaled %s dialog dark through nested variant scopes",
-    async (variant) => {
+  it.each(["neutral", "branded"] as const)(
+    "keeps a portaled %s dialog dark through nested identity scopes",
+    async (identity) => {
       document.documentElement.setAttribute("data-theme", "dark");
-      stampTheme(document.documentElement, { variant: "external", brand: "fkas", segment: "company" });
-      const theme = { variant, brand: "guen", segment: "private" } as const;
+      stampTheme(document.documentElement, { identity: "branded", brand: "fkas", segment: "company" });
+      const theme = { identity, brand: "guen", segment: "private" } as const;
       const { host } = render(
         <LocaleProvider locale="en-US">
-          <ThemeScope theme={{ variant: "internal", brand: "elma", segment: "private" }}>
+          <ThemeScope theme={{ identity: "neutral", brand: "elma", segment: "private" }}>
             <ThemeScope theme={theme} role="region" aria-label="Customer account">
               <Dialog.Root>
                 <Dialog.Trigger>Open account details</Dialog.Trigger>

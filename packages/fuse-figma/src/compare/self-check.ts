@@ -43,23 +43,23 @@ import type { InstanceSnapshot, KitSnapshot, PreviewSnapshot } from "./snapshot.
 import { tokenColorsIn, unchangedByDesign } from "./unchanged-by-design.ts";
 import type { TokenColorOf } from "./unchanged-by-design.ts";
 
-/** The fake previews: a light internal theme at dense, and a dark company theme at comfortable. */
+/** The fake previews: a light neutral theme at dense, and a dark company theme at comfortable. */
 const PREVIEWS = [
   {
-    key: "preview/self-check/internal-fkas-private-light/dense",
+    key: "preview/self-check/neutral-fkas-private-light/dense",
     modes: {
       "Fuse tokens": "Light",
-      "Fuse variant": "Internal",
+      "Fuse identity": "Neutral",
       "Fuse segment": "Private",
       "Fuse brand": "Fjordkraft",
       "Fuse density": "Dense",
     },
   },
   {
-    key: "preview/self-check/internal-elma-company-dark/comfortable",
+    key: "preview/self-check/neutral-elma-company-dark/comfortable",
     modes: {
       "Fuse tokens": "Dark",
-      "Fuse variant": "Internal",
+      "Fuse identity": "Neutral",
       "Fuse segment": "Company",
       "Fuse brand": "Elmera",
       "Fuse density": "Comfortable",

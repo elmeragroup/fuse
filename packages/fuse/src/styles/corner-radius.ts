@@ -1,23 +1,23 @@
 import { cn } from "./cn";
 
-// The corners here leave the `rounded-*` scale in external themes and round with `--radius`
-// in internal ones, except the Checkbox's, which caps `rounded-md` at 4px in both. Each class
+// The corners here leave the `rounded-*` scale in branded themes and round with `--radius`
+// in neutral ones, except the Checkbox's, which caps `rounded-md` at 4px in both. Each class
 // reads the element's own `--radius` and `--radius-step`, directly or through a rung, so it
 // follows the enclosing theme scope and a `--radius` override on the theme element.
-// `--radius-step` doubles as the variant switch. It is 0px in the internal variant and 2px
-// in the external one, and the formulas support no other value. `--radius - 1000 * step`
+// `--radius-step` doubles as the corner family switch. It is 0px in the neutral identity and 2px
+// in the branded one, and the formulas support no other value. `--radius - 1000 * step`
 // equals `--radius` at a 0px step and lies 2000px below it at a 2px step. A `max()` with it
-// raises a cap to at least `--radius` internally and leaves the cap as written externally.
+// raises a cap to at least `--radius` for neutral corners and leaves the cap as written for branded ones.
 // Each read of the step falls back to 0px, as the rungs in fuse.css do, so a host without
 // themes.css rounds these corners with its own `--radius` instead of losing them.
 // Tailwind generates a class only from its whole literal, so each class spells its value.
 //
 // The field box declares its corner once, as `--field-corner`, the clamp `clamp(--radius -
 // 1000 * step, --radius-field, --radius + 1000 * step)`. Its bounds meet at `--radius` at a
-// 0px step, so internal fields keep reading `--radius` on the box itself and follow a
+// 0px step, so neutral fields keep reading `--radius` on the box itself and follow a
 // `--radius` override on a plain wrapper. At a 2px step they lie 4000px apart, and the theme's
 // `--radius-field` applies. Every theme aliases it to `var(--radius)`, resolved on the theme
-// element as `--radius-button` is, so external fields round with the brand radius and a host
+// element as `--radius-button` is, so branded fields round with the brand radius and a host
 // that sets the role still overrides it. The read of `--radius-field` falls back to `--radius`
 // for a host that sets the step but not the role. The property is unregistered, so the box
 // substitutes its own `var()` reads and the parts inside inherit the box's corner. The box
@@ -63,16 +63,16 @@ import { cn } from "./cn";
 /**
  * The field box corner: Input, Textarea, the Select trigger, NumberField, InputGroup, the
  * Combobox chips box and the React Aria field group. It declares `--field-corner` for the parts
- * inside the box and rounds with it. External themes round it with `--radius-field`, and
- * internal themes with `--radius`.
+ * inside the box and rounds with it. Branded themes round it with `--radius-field`, and
+ * neutral themes with `--radius`.
  */
 export const fieldCornerClass = cn(
   "rounded-(--field-corner) [--field-corner:clamp(var(--radius)-1000*var(--radius-step,0px),var(--radius-field,var(--radius)),var(--radius)+1000*var(--radius-step,0px))]"
 );
 
 /**
- * The corner of a compact button that sits in a toolbar, the xs Toggle. External themes round it with `rounded-md` capped at 10px, and
- * internal themes with `--radius`.
+ * The corner of a compact button that sits in a toolbar, the xs Toggle. Branded themes round it with `rounded-md` capped at 10px, and
+ * neutral themes with `--radius`.
  */
 export const compactCornerClass = cn(
   "rounded-[min(--theme(--radius-md),max(10px,var(--radius)-1000*var(--radius-step,0px)))]"
@@ -80,14 +80,14 @@ export const compactCornerClass = cn(
 
 /**
  * The corner of the Checkbox and the GridList selection box, `rounded-md` capped at 4px in
- * every variant. At a large `--radius` the cap stops the box from rounding into a circle that
+ * every identity. At a large `--radius` the cap stops the box from rounding into a circle that
  * reads as a Radio.
  */
 export const checkboxCornerClass = cn("rounded-[min(--theme(--radius-md),4px)]");
 
 /**
- * The corner of the standalone Calendar. External themes keep the reference's 4px whatever
- * the brand radius, and internal themes round it with `--radius`. The clamp's bounds meet at
+ * The corner of the standalone Calendar. Branded themes keep the reference's 4px whatever
+ * the brand radius, and neutral themes round it with `--radius`. The clamp's bounds meet at
  * `--radius` at a 0px step and lie 4000px apart at a 2px step, where the preferred 4px
  * applies.
  */

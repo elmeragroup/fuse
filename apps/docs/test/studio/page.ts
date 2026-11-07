@@ -29,10 +29,10 @@ export const OVERVIEW: StudioRoute = { path: "/studio", artboard: ARTBOARDS[0] }
 export const DENSITY_PAGE: StudioRoute = { path: "/studio/density", artboard: "Twin · Dense" };
 
 /**
- * The Shape page, framed once its first rungs board shows. Its rung artboards pin a variant in
+ * The Shape page, framed once its first rungs board shows. Its rung artboards pin an identity in
  * their spec; its Shells board does not.
  */
-export const CORNERS_PAGE: StudioRoute = { path: "/studio/shape", artboard: "Radius rungs · Internal" };
+export const CORNERS_PAGE: StudioRoute = { path: "/studio/shape", artboard: "Radius rungs · Neutral" };
 
 /** The Color page, ready once its light role pairs show. */
 export const COLOR_PAGE: StudioRoute = { path: "/studio/color", artboard: "Role pairs · Light" };
@@ -266,8 +266,8 @@ export async function background(locator: Locator): Promise<string> {
 
 /** The theme an artboard's scope renders, as its theme attributes name it. */
 export async function themeOf(page: Page, name: string): Promise<string> {
-  const { variant, brand, segment } = await readThemeAttributes(artboard(page, name));
-  return [variant, brand, segment].join("-");
+  const { identity, brand, segment } = await readThemeAttributes(artboard(page, name));
+  return [identity, brand, segment].join("-");
 }
 
 /** A custom property as the artboard's scope element computes it. */

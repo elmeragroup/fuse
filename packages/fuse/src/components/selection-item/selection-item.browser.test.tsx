@@ -15,7 +15,7 @@ import { HOSTS, centreY, firstLineCentreY, hostCss } from "../../../test/first-l
 import { checkboxNamed, RowTitle, settled, shellFrom } from "../../../test/selection-row";
 import {
   cssVarColor,
-  fkasExternal,
+  fkasBranded,
   fkasPrivate,
   headingNamed,
   px,
@@ -902,7 +902,7 @@ describe("SelectionItem", () => {
     expect(checkboxNamed("Shell row", true).getAttribute("aria-checked")).toBe("true");
     await settled(shell);
     expect(getComputedStyle(shell).backgroundColor).toBe(tokenBackgroundColor(shell, "bg-muted"));
-    // Internal themes keep the `--primary` edge through `--selection-checked-border`.
+    // Neutral themes keep the `--primary` edge through `--selection-checked-border`.
     expect(getComputedStyle(shell).borderTopColor).toBe(cssVarColor(shell, "--primary"));
     expect(getComputedStyle(shell).borderTopWidth).not.toBe("0px");
     expect(getComputedStyle(shell).marginTop).toBe("-1px");
@@ -933,8 +933,8 @@ describe("SelectionItem", () => {
     renderThemed(
       <>
         <Rows prefix="" />
-        <ThemeScope theme={fkasExternal}>
-          <Rows prefix="External " />
+        <ThemeScope theme={fkasBranded}>
+          <Rows prefix="Branded " />
         </ThemeScope>
       </>
     );
@@ -952,13 +952,13 @@ describe("SelectionItem", () => {
     expect(style.marginTop).toBe("0px");
     expect(style.borderTopWidth).toBe("0px");
 
-    const external = shellFrom("External Bundle");
-    await settled(external);
-    expect(checkboxNamed("External Bundle").getAttribute("aria-checked")).toBe("false");
-    expect(checkboxNamed("External Router").getAttribute("aria-checked")).toBe("true");
-    expect(tokenBackgroundColor(external, "bg-muted")).not.toBe(cssVarColor(external, "--card"));
-    expect(getComputedStyle(external).backgroundColor).toBe(cssVarColor(external, "--card"));
-    expect(getComputedStyle(external).marginTop).toBe("0px");
+    const branded = shellFrom("Branded Bundle");
+    await settled(branded);
+    expect(checkboxNamed("Branded Bundle").getAttribute("aria-checked")).toBe("false");
+    expect(checkboxNamed("Branded Router").getAttribute("aria-checked")).toBe("true");
+    expect(tokenBackgroundColor(branded, "bg-muted")).not.toBe(cssVarColor(branded, "--card"));
+    expect(getComputedStyle(branded).backgroundColor).toBe(cssVarColor(branded, "--card"));
+    expect(getComputedStyle(branded).marginTop).toBe("0px");
   });
 
   it("shows every line of a long title and description on a phone-width row", () => {
@@ -1291,7 +1291,7 @@ describe.each(HOSTS)("selection row first line in a %s host", (host) => {
 
 /**
  * A row title's weight comes from the theme's `--selection-title-weight`. The expected weights
- * are the design decisions, written by hand: the internal row's regular 400 and the external
+ * are the design decisions, written by hand: the neutral row's regular 400 and the branded
  * radio card's medium 500. `selection-item-without-themes.browser.test.tsx` covers a host
  * without `themes.css`.
  */
@@ -1324,58 +1324,58 @@ describe("SelectionItem title weight", () => {
     );
   }
 
-  it("sets row titles at 400 in internal themes and 500 in external ones, in light and dark", () => {
+  it("sets row titles at 400 in neutral themes and 500 in branded ones, in light and dark", () => {
     renderThemed(
       <>
-        <TitleRows prefix="Internal" />
-        <ThemeScope theme={fkasExternal}>
-          <TitleRows prefix="External" />
+        <TitleRows prefix="Neutral" />
+        <ThemeScope theme={fkasBranded}>
+          <TitleRows prefix="Branded" />
         </ThemeScope>
         <div data-theme="dark">
           <ThemeScope theme={fkasPrivate}>
-            <TitleRows prefix="Dark internal" />
+            <TitleRows prefix="Dark neutral" />
           </ThemeScope>
-          <ThemeScope theme={fkasExternal}>
-            <TitleRows prefix="Dark external" />
+          <ThemeScope theme={fkasBranded}>
+            <TitleRows prefix="Dark branded" />
           </ThemeScope>
         </div>
       </>
     );
 
-    expect(titleWeights("Internal")).toEqual(["400", "400"]);
-    expect(titleWeights("External")).toEqual(["500", "500"]);
-    expect(titleWeights("Dark internal")).toEqual(["400", "400"]);
-    expect(titleWeights("Dark external")).toEqual(["500", "500"]);
+    expect(titleWeights("Neutral")).toEqual(["400", "400"]);
+    expect(titleWeights("Branded")).toEqual(["500", "500"]);
+    expect(titleWeights("Dark neutral")).toEqual(["400", "400"]);
+    expect(titleWeights("Dark branded")).toEqual(["500", "500"]);
   });
 
-  it("resets row titles to 400 in an internal scope nested in an external one", () => {
+  it("resets row titles to 400 in a neutral scope nested in a branded one", () => {
     renderThemed(
-      <ThemeScope theme={fkasExternal}>
-        <TitleRows prefix="Outer external" />
+      <ThemeScope theme={fkasBranded}>
+        <TitleRows prefix="Outer branded" />
         <ThemeScope theme={fkasPrivate}>
-          <TitleRows prefix="Nested internal" />
+          <TitleRows prefix="Nested neutral" />
         </ThemeScope>
       </ThemeScope>
     );
 
-    expect(titleWeights("Outer external")).toEqual(["500", "500"]);
-    expect(titleWeights("Nested internal")).toEqual(["400", "400"]);
+    expect(titleWeights("Outer branded")).toEqual(["500", "500"]);
+    expect(titleWeights("Nested neutral")).toEqual(["400", "400"]);
   });
 
   it("takes a className weight over the theme's in either variant", () => {
     renderThemed(
       <>
-        <TitleRows prefix="Internal medium" className="font-medium" />
-        <ThemeScope theme={fkasExternal}>
-          <TitleRows prefix="External semibold" className="font-semibold" />
-          <TitleRows prefix="External normal" className="font-normal" />
+        <TitleRows prefix="Neutral medium" className="font-medium" />
+        <ThemeScope theme={fkasBranded}>
+          <TitleRows prefix="Branded semibold" className="font-semibold" />
+          <TitleRows prefix="Branded normal" className="font-normal" />
         </ThemeScope>
       </>
     );
 
-    expect(titleWeights("Internal medium")).toEqual(["500", "500"]);
-    expect(titleWeights("External semibold")).toEqual(["600", "600"]);
-    expect(titleWeights("External normal")).toEqual(["400", "400"]);
+    expect(titleWeights("Neutral medium")).toEqual(["500", "500"]);
+    expect(titleWeights("Branded semibold")).toEqual(["600", "600"]);
+    expect(titleWeights("Branded normal")).toEqual(["400", "400"]);
   });
 });
 

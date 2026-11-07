@@ -39,8 +39,8 @@ const LIGHT_BOARD = ARTBOARDS[0];
 const DARK_BOARD = ARTBOARDS[1];
 
 /**
- * A rungs board of the Shape page, whose spec pins a variant (Internal). Every artboard bar
- * carries the Variant toggle.
+ * A rungs board of the Shape page, whose spec pins an identity (Neutral). Every artboard bar
+ * carries the Identity toggle.
  */
 const PINNED_BOARD = CORNERS_PAGE.artboard;
 
@@ -747,7 +747,7 @@ describe("the studio's theme toolbar", () => {
     try {
       const bar = await selectBoard(page, PINNED_BOARD);
       const brand = bar.getByRole("combobox", { name: "Brand", exact: true });
-      for (const group of ["Variant", "Segment", "Scheme", "Density"]) {
+      for (const group of ["Identity", "Segment", "Scheme", "Density"]) {
         expect(await bar.getByRole("group", { name: group, exact: true }).count(), group).toBe(1);
       }
       const frame = await box(canvas(page));
@@ -759,14 +759,14 @@ describe("the studio's theme toolbar", () => {
       }
 
       // The arrow keys still run through every control in order, wrapping from the first, the
-      // Brand Select, to the last, and on from the Brand Select into the Variant and Segment toggles.
+      // Brand Select, to the last, and on from the Brand Select into the Identity and Segment toggles.
       await brand.focus();
       await page.keyboard.press("ArrowLeft");
       expect(await isFocused(menuButton(bar, "Density"))).toBe(true);
       await page.keyboard.press("ArrowRight");
       expect(await isFocused(brand)).toBe(true);
       await page.keyboard.press("ArrowRight");
-      expect(await isFocused(toggle(bar, "Variant", "Internal"))).toBe(true);
+      expect(await isFocused(toggle(bar, "Identity", "Neutral"))).toBe(true);
       await page.keyboard.press("ArrowRight");
       await page.keyboard.press("ArrowRight");
       expect(await isFocused(toggle(bar, "Segment", "Private"))).toBe(true);
@@ -868,7 +868,7 @@ describe("the studio's theme toolbar", () => {
       await page.keyboard.press("Tab");
       expect(await isFocused(bar.getByRole("combobox", { name: "Brand", exact: true }))).toBe(true);
       await page.keyboard.press("ArrowRight");
-      expect(await isFocused(toggle(bar, "Variant", "Internal"))).toBe(true);
+      expect(await isFocused(toggle(bar, "Identity", "Neutral"))).toBe(true);
     } finally {
       await context.close();
     }

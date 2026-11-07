@@ -25,7 +25,7 @@ import { Card } from "../card/card";
 
 const checkboxCardStyles = tv({
   // The card is a control, so it keeps the `--border` edge and the plain `shadow-xs` where Card's
-  // `--card-border` and `--card-shadow` go transparent in external themes.
+  // `--card-border` and `--card-shadow` go transparent in branded themes.
   base: "shadow-xs border-border",
   variants: {
     variant: {

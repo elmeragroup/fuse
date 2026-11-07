@@ -440,11 +440,11 @@ const LENGTH_KNOBS = {
   "radius-button": { max: 40, step: 1, unit: "rem" },
   "radius-field": { max: 40, step: 1, unit: "rem" },
   "button-outline-width": { max: 4, step: 0.5, unit: "px" },
-  // A quarter-pixel step reaches the internal relaxed heights, 22.75 and 29.25px.
+  // A quarter-pixel step reaches the neutral relaxed heights, 22.75 and 29.25px.
   "paragraph-leading-sm": { max: 48, step: 0.25, unit: "rem" },
   "paragraph-leading-base": { max: 48, step: 0.25, unit: "rem" },
   "paragraph-leading-lg": { max: 48, step: 0.25, unit: "rem" },
-  // The heading scale: whole-pixel sizes, and line heights in quarter pixels for the internal
+  // The heading scale: whole-pixel sizes, and line heights in quarter pixels for the neutral
   // snug 24.75px h2.
   "heading-1-size": { max: 64, step: 1, unit: "rem" },
   "heading-1-leading": { max: 64, step: 0.25, unit: "rem" },
@@ -488,7 +488,10 @@ export function LengthKnob({
   );
 }
 
-const RADIUS_STEP_LABELS = { "0px": "0px · internal", "2px": "2px · external" } as const;
+const RADIUS_STEP_LABELS = { "0px": "0px · neutral", "2px": "2px · branded" } as const satisfies Record<
+  (typeof RADIUS_STEPS)[number],
+  string
+>;
 
 /** `--radius-step` takes only the two values the corner formulas support, so its knob toggles. */
 export function RadiusStepKnob({

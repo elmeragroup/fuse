@@ -70,7 +70,7 @@ A click on a `SubSection` stays outside the click target, so a field or button i
 
 ## Theming
 
-A row's edges come from four theme roles. In a vertical group, the rows share one line per join. In a horizontal group, each row is a card of its own and draws no divider. Internal themes outline every row in `--border` and box a checked row in `--primary`. External themes draw no outer edge, only a grey line between stacked rows, so the control alone shows which row is checked.
+A row's edges come from four theme roles. In a vertical group, the rows share one line per join. In a horizontal group, each row is a card of its own and draws no divider. Neutral themes outline every row in `--border` and box a checked row in `--primary`. Branded themes draw no outer edge, only a grey line between stacked rows, so the control alone shows which row is checked.
 
 </Prose>
 
@@ -96,7 +96,7 @@ A row's edges come from four theme roles. In a vertical group, the rows share on
 
 <Prose>
 
-| Role                              | Internal                          | External                   | Draws                                           |
+| Role                              | Neutral                           | Branded                    | Draws                                           |
 | --------------------------------- | --------------------------------- | -------------------------- | ----------------------------------------------- |
 | `--selection-border`              | `var(--border)`                   | `oklch(0 0 0 / 0)`         | A row's outer edge                              |
 | `--selection-checked-border`      | `var(--primary)`                  | `var(--selection-border)`  | A checked row's edge: the box around it         |
@@ -106,9 +106,9 @@ A row's edges come from four theme roles. In a vertical group, the rows share on
 | `--selection-disabled-hatch`      | `oklch(0 0 0 / 0.02)`             | `oklch(0 0 0 / 0)`         | The stripes of a disabled row's 45° hatch       |
 | `--selection-disabled-foreground` | `var(--foreground)`               | `var(--muted-foreground)`  | A disabled row's title and other label row text |
 
-The theme settings menu in the docs header switches the demos above between internal and external themes, so both looks show on the same rows.
+The theme settings menu in the docs header switches the demos above between the neutral and the branded identity, so both looks show on the same rows.
 
-A row disabled on its own, or through a disabled group, takes the three disabled roles. Switch the theme on the two demos below to compare them. Internal themes fill the row with `--muted` under faint black stripes and keep the title's colour. External themes keep the card fill of an enabled row with no stripes. What marks an external disabled row is its control at 50%, its title greyed to `--muted-foreground` and the `not-allowed` cursor. A description keeps its own muted text, and a `SubSection` keeps its colours.
+A row disabled on its own, or through a disabled group, takes the three disabled roles. Switch the theme on the two demos below to compare them. Neutral themes fill the row with `--muted` under faint black stripes and keep the title's colour. Branded themes keep the card fill of an enabled row with no stripes. What marks a branded disabled row is its control at 50%, its title greyed to `--muted-foreground` and the `not-allowed` cursor. A description keeps its own muted text, and a `SubSection` keeps its colours.
 
 </Prose>
 
@@ -132,7 +132,7 @@ A row disabled on its own, or through a disabled group, takes the three disabled
 
 A checked row's `bg-muted` tint and a disabled row's fill win over a background class on the row, such as `bg-background` for a list that shows its surface through. To change the disabled fill, set `--selection-disabled-background` instead, for example to `var(--background)`.
 
-The theme rules resolve these roles on the element that carries the theme attributes, which is `<html>` or a `ThemeScope`. Set an override there. On a plain wrapper, a `--border` override reaches `CheckboxCard`, but the rows keep the edges and dividers the theme element resolved, and cards keep their `--card-border` edge. To give external rows back an outer edge:
+The theme rules resolve these roles on the element that carries the theme attributes, which is `<html>` or a `ThemeScope`. Set an override there. On a plain wrapper, a `--border` override reaches `CheckboxCard`, but the rows keep the edges and dividers the theme element resolved, and cards keep their `--card-border` edge. To give branded rows back an outer edge:
 
 ```tsx
 import type { CSSProperties } from "react";
@@ -142,7 +142,7 @@ import type { CSSProperties } from "react";
 </ThemeScope>;
 ```
 
-The [theming handbook](/handbook/theming#how-it-resolves) explains how the variant layers set these roles.
+The [theming handbook](/handbook/theming#how-it-resolves) explains how the identity layers set these roles.
 
 </Prose>
 

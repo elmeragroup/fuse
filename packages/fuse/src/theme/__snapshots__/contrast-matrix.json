@@ -1,5 +1,5 @@
 {
-  "external-elma-company": {
+  "branded-elma-company": {
     "card-foreground/card": 17.14,
     "card-soft-foreground/card-soft": 13.62,
     "dialog-foreground/dialog": 13.28,
@@ -24,7 +24,7 @@
     "warning-foreground/warning": 7.08,
     "warning-soft-foreground/warning-soft": 5.84,
   },
-  "external-elma-private": {
+  "branded-elma-private": {
     "card-foreground/card": 17.14,
     "card-soft-foreground/card-soft": 13.62,
     "dialog-foreground/dialog": 13.28,
@@ -49,7 +49,7 @@
     "warning-foreground/warning": 7.08,
     "warning-soft-foreground/warning-soft": 5.84,
   },
-  "external-fkab-company": {
+  "branded-fkab-company": {
     "card-foreground/card": 15.71,
     "card-soft-foreground/card-soft": 12.85,
     "dialog-foreground/dialog": 12.6,
@@ -74,7 +74,7 @@
     "warning-foreground/warning": 7.08,
     "warning-soft-foreground/warning-soft": 5.84,
   },
-  "external-fkas-company": {
+  "branded-fkas-company": {
     "card-foreground/card": 15.71,
     "card-soft-foreground/card-soft": 12.85,
     "dialog-foreground/dialog": 12.6,
@@ -99,7 +99,7 @@
     "warning-foreground/warning": 7.08,
     "warning-soft-foreground/warning-soft": 5.84,
   },
-  "external-fkas-private": {
+  "branded-fkas-private": {
     "card-foreground/card": 17.12,
     "card-soft-foreground/card-soft": 12.44,
     "dialog-foreground/dialog": 11.68,
@@ -124,7 +124,7 @@
     "warning-foreground/warning": 7.08,
     "warning-soft-foreground/warning-soft": 5.84,
   },
-  "external-fkse-private": {
+  "branded-fkse-private": {
     "card-foreground/card": 17.09,
     "card-soft-foreground/card-soft": 10.26,
     "dialog-foreground/dialog": 10,
@@ -149,7 +149,7 @@
     "warning-foreground/warning": 7.08,
     "warning-soft-foreground/warning-soft": 5.84,
   },
-  "external-guen-company": {
+  "branded-guen-company": {
     "card-foreground/card": 20.09,
     "card-soft-foreground/card-soft": 18.16,
     "dialog-foreground/dialog": 16.26,
@@ -174,7 +174,7 @@
     "warning-foreground/warning": 7.08,
     "warning-soft-foreground/warning-soft": 5.84,
   },
-  "external-guen-private": {
+  "branded-guen-private": {
     "card-foreground/card": 20.09,
     "card-soft-foreground/card-soft": 18.16,
     "dialog-foreground/dialog": 16.26,
@@ -199,7 +199,7 @@
     "warning-foreground/warning": 7.08,
     "warning-soft-foreground/warning-soft": 5.84,
   },
-  "external-ngfi-company": {
+  "branded-ngfi-company": {
     "card-foreground/card": 17.22,
     "card-soft-foreground/card-soft": 15.54,
     "dialog-foreground/dialog": 16.36,
@@ -224,7 +224,7 @@
     "warning-foreground/warning": 7.08,
     "warning-soft-foreground/warning-soft": 5.84,
   },
-  "external-ngfi-private": {
+  "branded-ngfi-private": {
     "card-foreground/card": 17.22,
     "card-soft-foreground/card-soft": 15.54,
     "dialog-foreground/dialog": 16.36,
@@ -249,7 +249,7 @@
     "warning-foreground/warning": 7.08,
     "warning-soft-foreground/warning-soft": 5.84,
   },
-  "external-tkas-company": {
+  "branded-tkas-company": {
     "card-foreground/card": 17.12,
     "card-soft-foreground/card-soft": 12.83,
     "dialog-foreground/dialog": 12.5,
@@ -274,7 +274,7 @@
     "warning-foreground/warning": 7.08,
     "warning-soft-foreground/warning-soft": 5.84,
   },
-  "external-tkas-private": {
+  "branded-tkas-private": {
     "card-foreground/card": 17.12,
     "card-soft-foreground/card-soft": 12.83,
     "dialog-foreground/dialog": 12.5,
@@ -299,7 +299,7 @@
     "warning-foreground/warning": 7.08,
     "warning-soft-foreground/warning-soft": 5.84,
   },
-  "internal-elma-company": {
+  "neutral-elma-company": {
     "card-foreground/card": 19.68,
     "card-soft-foreground/card-soft": 18.05,
     "dialog-foreground/dialog": 19.68,
@@ -324,7 +324,7 @@
     "warning-foreground/warning": 7.08,
     "warning-soft-foreground/warning-soft": 5.84,
   },
-  "internal-elma-private": {
+  "neutral-elma-private": {
     "card-foreground/card": 19.68,
     "card-soft-foreground/card-soft": 18.05,
     "dialog-foreground/dialog": 19.68,
@@ -349,7 +349,7 @@
     "warning-foreground/warning": 7.08,
     "warning-soft-foreground/warning-soft": 5.84,
   },
-  "internal-fkab-company": {
+  "neutral-fkab-company": {
     "card-foreground/card": 19.68,
     "card-soft-foreground/card-soft": 18.05,
     "dialog-foreground/dialog": 19.68,
@@ -374,7 +374,7 @@
     "warning-foreground/warning": 7.08,
     "warning-soft-foreground/warning-soft": 5.84,
   },
-  "internal-fkas-company": {
+  "neutral-fkas-company": {
     "card-foreground/card": 19.68,
     "card-soft-foreground/card-soft": 18.05,
     "dialog-foreground/dialog": 19.68,
@@ -399,7 +399,7 @@
     "warning-foreground/warning": 7.08,
     "warning-soft-foreground/warning-soft": 5.84,
   },
-  "internal-fkas-private": {
+  "neutral-fkas-private": {
     "card-foreground/card": 19.68,
     "card-soft-foreground/card-soft": 18.05,
     "dialog-foreground/dialog": 19.68,
@@ -424,7 +424,7 @@
     "warning-foreground/warning": 7.08,
     "warning-soft-foreground/warning-soft": 5.84,
   },
-  "internal-fkse-private": {
+  "neutral-fkse-private": {
     "card-foreground/card": 19.68,
     "card-soft-foreground/card-soft": 18.05,
     "dialog-foreground/dialog": 19.68,
@@ -449,7 +449,7 @@
     "warning-foreground/warning": 7.08,
     "warning-soft-foreground/warning-soft": 5.84,
   },
-  "internal-guen-company": {
+  "neutral-guen-company": {
     "card-foreground/card": 19.68,
     "card-soft-foreground/card-soft": 18.05,
     "dialog-foreground/dialog": 19.68,
@@ -474,7 +474,7 @@
     "warning-foreground/warning": 7.08,
     "warning-soft-foreground/warning-soft": 5.84,
   },
-  "internal-guen-private": {
+  "neutral-guen-private": {
     "card-foreground/card": 19.68,
     "card-soft-foreground/card-soft": 18.05,
     "dialog-foreground/dialog": 19.68,
@@ -499,7 +499,7 @@
     "warning-foreground/warning": 7.08,
     "warning-soft-foreground/warning-soft": 5.84,
   },
-  "internal-ngfi-company": {
+  "neutral-ngfi-company": {
     "card-foreground/card": 19.68,
     "card-soft-foreground/card-soft": 18.05,
     "dialog-foreground/dialog": 19.68,
@@ -524,7 +524,7 @@
     "warning-foreground/warning": 7.08,
     "warning-soft-foreground/warning-soft": 5.84,
   },
-  "internal-ngfi-private": {
+  "neutral-ngfi-private": {
     "card-foreground/card": 19.68,
     "card-soft-foreground/card-soft": 18.05,
     "dialog-foreground/dialog": 19.68,
@@ -549,7 +549,7 @@
     "warning-foreground/warning": 7.08,
     "warning-soft-foreground/warning-soft": 5.84,
   },
-  "internal-tkas-company": {
+  "neutral-tkas-company": {
     "card-foreground/card": 19.68,
     "card-soft-foreground/card-soft": 18.05,
     "dialog-foreground/dialog": 19.68,
@@ -574,7 +574,7 @@
     "warning-foreground/warning": 7.08,
     "warning-soft-foreground/warning-soft": 5.84,
   },
-  "internal-tkas-private": {
+  "neutral-tkas-private": {
     "card-foreground/card": 19.68,
     "card-soft-foreground/card-soft": 18.05,
     "dialog-foreground/dialog": 19.68,

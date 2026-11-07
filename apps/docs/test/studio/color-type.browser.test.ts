@@ -230,7 +230,7 @@ describe("the studio's Type page", () => {
       const board = artboard(page, "Specimen");
       // The Specimen's first four rows are H1 to H4, in order.
       const reading = (level: number) => board.locator("[data-type-reading]").nth(level - 1);
-      // external-palettes.ts: h1 heading small 24/32 and h2 and h3 heading xsmall 20/32, all at
+      // brand-palettes.ts: h1 heading small 24/32 and h2 and h3 heading xsmall 20/32, all at
       // 700; h4 has no roles and keeps 16px at snug 1.375, 22px, at 500.
       await expect.poll(() => reading(1).textContent()).toBe("24 / 32 px · 700");
       expect(await reading(2).textContent()).toBe("20 / 32 px · 700");
@@ -258,7 +258,7 @@ describe("the studio's Type page", () => {
     try {
       // The Specimen's last row is the selection title, the one row that reports its weight.
       const reading = artboard(page, "Specimen").locator("[data-type-reading]").last();
-      // external-palettes.ts: every external theme declares selection-title-weight: 500.
+      // brand-palettes.ts: every branded theme declares selection-title-weight: 500.
       await expect.poll(() => reading.textContent()).toMatch(/ · 500$/u);
 
       const field = tokenRow(page, "selection-title-weight").getByRole("textbox", {

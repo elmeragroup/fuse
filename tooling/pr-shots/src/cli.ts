@@ -66,7 +66,7 @@ const shotFlags = {
   ),
   clicks: Flag.String("click").pipe(
     Flag.withDescription(
-      "Clicks an element before the shot, as <role>:<exact accessible name>[@n], such as tab:Internal. Repeat it for more steps; they run in order. @n picks the match, counting from 0; a name ending in @ and digits keeps them with @0 after it, as in button:Seat@3@0."
+      "Clicks an element before the shot, as <role>:<exact accessible name>[@n], such as tab:Neutral. Repeat it for more steps; they run in order. @n picks the match, counting from 0; a name ending in @ and digits keeps them with @0 after it, as in button:Seat@3@0."
     ),
     Flag.withMetavar("role:name[@n]"),
     Flag.withSchema(ClickStepFromText),
@@ -92,7 +92,7 @@ const shotFlags = {
   ),
   themes: Flag.String("themes").pipe(
     Flag.withDescription(
-      "Theme slugs such as external-tkas-company, picked in the header's theme menu. Default: the page's preview theme."
+      "Theme slugs such as branded-tkas-company, picked in the header's theme menu. Default: the page's preview theme."
     ),
     Flag.withMetavar("slug,..."),
     Flag.withSchema(Themes),

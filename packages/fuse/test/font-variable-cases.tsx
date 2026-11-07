@@ -11,7 +11,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { Heading } from "../src/components/heading/heading";
 import { Text } from "../src/components/text/text";
 import { render } from "./browser-render";
-import { fkasExternal, fkasPrivate } from "./theme-fixtures";
+import { fkasBranded, fkasPrivate } from "./theme-fixtures";
 import { headingNamed, snapshotDocumentTheme, stampDocumentTheme, textNamed } from "./themed-browser-render";
 
 /** The first family of an element's computed `font-family`, without quotes. */
@@ -26,32 +26,32 @@ function firstFamily(element: Element): string {
  */
 const CASES = [
   [
-    "names no family in an internal theme, so text draws the system stack",
+    "names no family in a neutral theme, so text draws the system stack",
     fkasPrivate,
     "",
     ["ui-sans-serif", "ui-sans-serif"],
   ],
   [
-    "names no family in an external theme, so text draws the system stack",
-    fkasExternal,
+    "names no family in a branded theme, so text draws the system stack",
+    fkasBranded,
     "",
     ["ui-sans-serif", "ui-sans-serif"],
   ],
   [
     "lets an unlayered rule on :root set the body font, which headings follow",
-    fkasExternal,
+    fkasBranded,
     ':root { --font-sans: "App Sans", sans-serif; }',
     ["App Sans", "App Sans"],
   ],
   [
     "lets a rule on html in a later base layer set the body font, which headings follow",
-    fkasExternal,
+    fkasBranded,
     '@layer base { html { --font-sans: "App Sans", sans-serif; } }',
     ["App Sans", "App Sans"],
   ],
   [
     "lets a brand rule in a later base layer set the heading font alone",
-    fkasExternal,
+    fkasBranded,
     '@layer base { [data-theme-brand="fkas"] { --font-heading: "Brand Heading", serif; } }',
     ["ui-sans-serif", "Brand Heading"],
   ],

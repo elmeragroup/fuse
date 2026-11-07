@@ -8,23 +8,23 @@ const HREF = "/handbook/fonts";
 export const metadata = pageMetadata(HREF);
 
 /**
- * The app CSS each recipe ends with. The internal fonts go on the root and on every internal scope,
- * so an internal scope inside an external one resets them. The Fjordkraft heading rule names the
- * external variant, so it outweighs the variant rule.
+ * The app CSS each recipe ends with. The neutral fonts go on the root and on every neutral scope,
+ * so a neutral scope inside a branded one resets them. The Fjordkraft heading rule names the
+ * branded identity, so it outweighs the identity rule.
  */
 function appFontCss(inter: string, roboto: string, neoSans: string): string {
   return `:root,
-[data-theme-variant="internal"] {
+[data-theme-identity="neutral"] {
   --font-sans: ${inter}, ui-sans-serif, system-ui, sans-serif;
   --font-heading: var(--font-sans);
 }
 
-[data-theme-variant="external"] {
+[data-theme-identity="branded"] {
   --font-sans: ${roboto}, ui-sans-serif, system-ui, sans-serif;
   --font-heading: var(--font-sans);
 }
 
-[data-theme-variant="external"]:is([data-theme-brand="fkas"], [data-theme-brand="fkab"]) {
+[data-theme-identity="branded"]:is([data-theme-brand="fkas"], [data-theme-brand="fkab"]) {
   --font-heading: ${neoSans}, var(--font-sans);
 }`;
 }
@@ -101,7 +101,7 @@ const FONT_FACE = `@font-face {
 ${appFontCss('"Inter"', '"Roboto"', '"Neo Sans"')}`;
 
 const NESTED = `@layer base {
-  [data-theme-variant] {
+  [data-theme-identity] {
     font-family: var(--font-sans);
   }
 }`;
@@ -116,7 +116,7 @@ export default function FontsPage(): ReactElement {
         <code>theme</code> layer, so your own CSS sets them without <code>!important</code>.
       </p>
       <p>
-        Internal apps use Inter and external apps use Roboto. Fjordkraft headings use Neo Sans, a licensed
+        Neutral themes use Inter and branded themes use Roboto. Fjordkraft headings use Neo Sans, a licensed
         font that your app loads from its own files. Fuse parts set the weights 400, 500, 600 and 700.
       </p>
 
@@ -159,21 +159,21 @@ export default function FontsPage(): ReactElement {
 
       <h2 id="per-brand">Per brand</h2>
       <p>
-        Each recipe ends with the Fjordkraft heading rule. It names the external variant as well as the brand,
-        so it outweighs the variant rule.
+        Each recipe ends with the Fjordkraft heading rule. It names the branded identity as well as the brand,
+        so it outweighs the identity rule.
       </p>
 
       <h2 id="nested-themes">Nested themes</h2>
       <p>
         The <code>font-family</code> on <code>&lt;body&gt;</code> resolves the variables once, at the body. If
-        a page nests a <code>ThemeScope</code> of another variant, set the font on each scope:
+        a page nests a <code>ThemeScope</code> of another identity, set the font on each scope:
       </p>
       <pre>
         <code>{NESTED}</code>
       </pre>
       <p>
         To keep the page chrome in one font while its scopes switch, add <code>:not(:root)</code> to the
-        variant and scope rules.
+        identity and scope rules.
       </p>
 
       <h2 id="brand-sites">Fonts on the brand sites</h2>

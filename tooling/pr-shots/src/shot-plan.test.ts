@@ -13,7 +13,7 @@ describe("planShots", () => {
         "--target",
         "button:Save",
         "--themes",
-        "internal-fkas-private,external-tkas-company",
+        "neutral-fkas-private,branded-tkas-company",
         "--densities",
         "dense",
         "--engines",
@@ -25,36 +25,36 @@ describe("planShots", () => {
     );
     expect(rows.map((row) => [row.before.file, row.after.file])).toEqual([
       [
-        "before-internal-fkas-private-dense-override-light-chromium-1280x800-stage.png",
-        "after-internal-fkas-private-dense-override-light-chromium-1280x800-stage.png",
+        "before-neutral-fkas-private-dense-override-light-chromium-1280x800-stage.png",
+        "after-neutral-fkas-private-dense-override-light-chromium-1280x800-stage.png",
       ],
       [
-        "before-internal-fkas-private-dense-override-light-chromium-390x844-stage.png",
-        "after-internal-fkas-private-dense-override-light-chromium-390x844-stage.png",
+        "before-neutral-fkas-private-dense-override-light-chromium-390x844-stage.png",
+        "after-neutral-fkas-private-dense-override-light-chromium-390x844-stage.png",
       ],
       [
-        "before-internal-fkas-private-dense-override-light-webkit-1280x800-stage.png",
-        "after-internal-fkas-private-dense-override-light-webkit-1280x800-stage.png",
+        "before-neutral-fkas-private-dense-override-light-webkit-1280x800-stage.png",
+        "after-neutral-fkas-private-dense-override-light-webkit-1280x800-stage.png",
       ],
       [
-        "before-internal-fkas-private-dense-override-light-webkit-390x844-stage.png",
-        "after-internal-fkas-private-dense-override-light-webkit-390x844-stage.png",
+        "before-neutral-fkas-private-dense-override-light-webkit-390x844-stage.png",
+        "after-neutral-fkas-private-dense-override-light-webkit-390x844-stage.png",
       ],
       [
-        "before-external-tkas-company-dense-override-light-chromium-1280x800-stage.png",
-        "after-external-tkas-company-dense-override-light-chromium-1280x800-stage.png",
+        "before-branded-tkas-company-dense-override-light-chromium-1280x800-stage.png",
+        "after-branded-tkas-company-dense-override-light-chromium-1280x800-stage.png",
       ],
       [
-        "before-external-tkas-company-dense-override-light-chromium-390x844-stage.png",
-        "after-external-tkas-company-dense-override-light-chromium-390x844-stage.png",
+        "before-branded-tkas-company-dense-override-light-chromium-390x844-stage.png",
+        "after-branded-tkas-company-dense-override-light-chromium-390x844-stage.png",
       ],
       [
-        "before-external-tkas-company-dense-override-light-webkit-1280x800-stage.png",
-        "after-external-tkas-company-dense-override-light-webkit-1280x800-stage.png",
+        "before-branded-tkas-company-dense-override-light-webkit-1280x800-stage.png",
+        "after-branded-tkas-company-dense-override-light-webkit-1280x800-stage.png",
       ],
       [
-        "before-external-tkas-company-dense-override-light-webkit-390x844-stage.png",
-        "after-external-tkas-company-dense-override-light-webkit-390x844-stage.png",
+        "before-branded-tkas-company-dense-override-light-webkit-390x844-stage.png",
+        "after-branded-tkas-company-dense-override-light-webkit-390x844-stage.png",
       ],
     ]);
   });
@@ -76,7 +76,7 @@ describe("planShots", () => {
     expect(row?.before.file).toBe("before-default-theme-stage-density-dark-chromium-1280x900-stage.png");
     expect(row?.diffFile).toBe("default-theme-stage-density-dark-chromium-1280x900-stage-diff.png");
     expect(row?.after.alt).toBe(
-      `After: textbox "Mobile" in its demo stage on /components/phone-number-field, the page's default theme, the theme's default density, dark mode, Chromium, 1280 × 900 window`
+      `After: textbox "Mobile" in its demo stage on /components/phone-number-field, the page's default theme, the theme's docs density, dark mode, Chromium, 1280 × 900 window`
     );
   });
 
@@ -93,7 +93,7 @@ describe("planShots", () => {
         "--frame",
         "target",
         "--themes",
-        "external-elma-company",
+        "branded-elma-company",
         "--densities",
         "comfortable",
         "--engines",
@@ -102,10 +102,10 @@ describe("planShots", () => {
       "target"
     );
     expect(row?.before.file).toBe(
-      "before-external-elma-company-comfortable-override-light-firefox-1280x900-target.png"
+      "before-branded-elma-company-comfortable-override-light-firefox-1280x900-target.png"
     );
     expect(row?.before.alt).toBe(
-      `Before: textbox "Mobile" on /components/phone-number-field, filled with "123123", external-elma-company theme, comfortable density (override), light mode, Firefox, 1280 × 900 window`
+      `Before: textbox "Mobile" on /components/phone-number-field, filled with "123123", branded-elma-company theme, comfortable density (override), light mode, Firefox, 1280 × 900 window`
     );
   });
 
@@ -115,11 +115,11 @@ describe("planShots", () => {
     const [whole] = planShots(landing, "page");
     expect(inWindow?.after.file).toBe("after-default-theme-page-density-light-chromium-390x844-viewport.png");
     expect(inWindow?.after.alt).toBe(
-      "After: the visible part of /, the page's default theme, the theme's default density, light mode, Chromium, 390 × 844 window"
+      "After: the visible part of /, the page's default theme, the theme's docs density, light mode, Chromium, 390 × 844 window"
     );
     expect(whole?.before.file).toBe("before-default-theme-page-density-light-chromium-390x844-page.png");
     expect(whole?.before.alt).toBe(
-      "Before: the whole of /, the page's default theme, the theme's default density, light mode, Chromium, 390 × 844 window"
+      "Before: the whole of /, the page's default theme, the theme's docs density, light mode, Chromium, 390 × 844 window"
     );
   });
 
@@ -139,7 +139,7 @@ describe("planShots", () => {
       "page"
     );
     expect(row?.after.alt).toBe(
-      `After: the whole of /, with searchbox "Search" filled with "button", the page's default theme, the theme's default density, light mode, Chromium, 1280 × 900 window`
+      `After: the whole of /, with searchbox "Search" filled with "button", the page's default theme, the theme's docs density, light mode, Chromium, 1280 × 900 window`
     );
   });
 
@@ -149,7 +149,7 @@ describe("planShots", () => {
       "--route",
       "/",
       "--click",
-      "button:Internal",
+      "button:Neutral",
       "--click",
       "combobox:Rows per page",
       "--target",
@@ -161,14 +161,14 @@ describe("planShots", () => {
     ]);
     const [row] = planShots(run, "target");
     expect(row?.after.alt).toBe(
-      `After: combobox "Rows per page" on /, after clicking button "Internal", then combobox "Rows per page", filled with "25", the page's default theme, the theme's default density, light mode, Chromium, 1280 × 900 window`
+      `After: combobox "Rows per page" on /, after clicking button "Neutral", then combobox "Rows per page", filled with "25", the page's default theme, the theme's docs density, light mode, Chromium, 1280 × 900 window`
     );
     const [inWindow] = planShots(
       options(["landing-menu", "--route", "/", "--click", "menuitem:Open"]),
       "viewport"
     );
     expect(inWindow?.before.alt).toBe(
-      `Before: the visible part of /, after clicking menuitem "Open", the page's default theme, the theme's default density, light mode, Chromium, 1280 × 900 window`
+      `Before: the visible part of /, after clicking menuitem "Open", the page's default theme, the theme's docs density, light mode, Chromium, 1280 × 900 window`
     );
   });
 });
@@ -180,7 +180,7 @@ describe("firstCoordinate", () => {
       "--route",
       "/",
       "--themes",
-      "internal-fkas-private,external-tkas-company",
+      "neutral-fkas-private,branded-tkas-company",
       "--densities",
       "comfortable,dense",
       "--engines",
@@ -191,8 +191,8 @@ describe("firstCoordinate", () => {
     expect(firstCoordinate(run)).toEqual({
       theme: {
         _tag: "picked",
-        slug: "internal-fkas-private",
-        variant: "internal",
+        slug: "neutral-fkas-private",
+        identity: "neutral",
         brand: "fkas",
         segment: "private",
       },

@@ -352,6 +352,108 @@ describe("planSync", () => {
     expect(plan({ collections: [syncedPalette()] }, retiring.success).changes).toEqual([]);
   });
 
+  it("renames a collection the set renames in place, with its modes, before any other write", () => {
+    const renaming = makeVariableSet(
+      variableSet().collections,
+      [],
+      [
+        {
+          from: "Colors",
+          to: "Palette",
+          modes: new Map([
+            ["Day", "Light"],
+            ["Night", "Dark"],
+          ]),
+        },
+      ]
+    );
+    if (Result.isFailure(renaming)) throw new Error(renaming.failure.message);
+    const day: FileMode = { id: LIGHT.id, name: "Day" };
+    const night: FileMode = { id: DARK.id, name: "Night" };
+    const colors = { ...syncedPalette([day, night]), name: "Colors" };
+
+    const { batch, changes } = plan({ collections: [colors] }, renaming.success);
+    expect(batch.collections).toEqual([
+      { _tag: "RenameCollection", id: "VariableCollectionId:1:1", name: "Palette" },
+    ]);
+    expect(batch.modes).toEqual([
+      { _tag: "RenameMode", collectionId: "VariableCollectionId:1:1", id: "1:0", name: "Light" },
+      { _tag: "RenameMode", collectionId: "VariableCollectionId:1:1", id: "1:1", name: "Dark" },
+    ]);
+    // After the rename the collection matches the set, so its variables and values stay.
+    expect(changes.map((change) => change._tag)).toEqual(["RenameCollection", "RenameMode", "RenameMode"]);
+    expect(changes[1]).toMatchObject({ collection: "Palette", from: "Day", mode: "Light" });
+
+    // A file that holds only the new name has migrated: no rename, a normal sync.
+    expect(plan({ collections: [syncedPalette()] }, renaming.success).changes).toEqual([]);
+
+    // A collection renamed by hand that kept its old mode names: its modes are renamed by id.
+    const handRenamed = plan({ collections: [{ ...colors, name: "Palette" }] }, renaming.success);
+    expect(handRenamed.batch.collections).toEqual([]);
+    expect(handRenamed.batch.modes).toEqual([
+      { _tag: "RenameMode", collectionId: "VariableCollectionId:1:1", id: "1:0", name: "Light" },
+      { _tag: "RenameMode", collectionId: "VariableCollectionId:1:1", id: "1:1", name: "Dark" },
+    ]);
+    expect(handRenamed.changes.map((change) => change._tag)).toEqual(["RenameMode", "RenameMode"]);
+  });
+
+  it("refuses a rename it cannot apply in place rather than create a fresh collection or drop a mode", () => {
+    const renaming = makeVariableSet(
+      variableSet().collections,
+      [],
+      [
+        {
+          from: "Colors",
+          to: "Palette",
+          modes: new Map([
+            ["Day", "Light"],
+            ["Night", "Dark"],
+          ]),
+        },
+      ]
+    );
+    if (Result.isFailure(renaming)) throw new Error(renaming.failure.message);
+    const day: FileMode = { id: LIGHT.id, name: "Day" };
+    const night: FileMode = { id: DARK.id, name: "Night" };
+    const colors = { ...syncedPalette([day, night]), name: "Colors" };
+    const failure = (file: FileVariables) => {
+      const result = planSync(renaming.success, file);
+      if (Result.isSuccess(result)) throw new Error("the rename must not plan");
+      return result.failure;
+    };
+
+    // Two collections with the old name: the sync cannot tell which one to rename.
+    expect(
+      failure({ collections: [colors, { ...colors, id: CollectionId("VariableCollectionId:1:9") }] })
+    ).toMatchObject({ _tag: "AmbiguousRenameSource", from: "Colors", to: "Palette", count: 2 });
+
+    // A mode that already holds a target name: renaming Day would leave two Light modes.
+    const light: FileMode = { id: ModeId("1:7"), name: "Light" };
+    const collided = failure({ collections: [{ ...colors, modes: [day, night, light] }] });
+    expect(collided).toMatchObject({
+      _tag: "RenameModeConflict",
+      collection: "Colors",
+      mode: "Day",
+      target: "Light",
+    });
+
+    // A hand-renamed collection holding an old and a new mode name: Day would become a second Light.
+    const light2: FileMode = { id: ModeId("1:8"), name: "Light" };
+    expect(
+      failure({ collections: [{ ...colors, name: "Palette", modes: [day, night, light2] }] })
+    ).toMatchObject({
+      _tag: "RenameModeConflict",
+      collection: "Palette",
+      mode: "Day",
+      target: "Light",
+    });
+
+    // The old and the new collection side by side: the migration is not complete.
+    const legacy = failure({ collections: [colors, syncedPalette()] });
+    expect(legacy).toMatchObject({ _tag: "UnresolvedLegacyCollection", from: "Colors", to: "Palette" });
+    expect(legacy.message).toContain('delete "Colors"');
+  });
+
   it("keeps mode ids when the set orders the modes differently from the file", () => {
     // Figma appends a mode created in an existing collection, so a file can hold a set's modes
     // in another order. Matching is by name, so the order alone changes nothing.

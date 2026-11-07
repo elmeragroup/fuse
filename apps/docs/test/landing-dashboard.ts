@@ -1,5 +1,5 @@
 /**
- * What the hero window's browser suites share: the window and its Internal/External switch, the
+ * What the hero window's browser suites share: the window and its Neutral/Branded switch, the
  * Dashboard and its rows, Order search's table, the brand sites, and the fixture facts more than
  * one suite asserts.
  */
@@ -19,11 +19,11 @@ export const WIDE_VIEWPORT = { width: 1440, height: 900 } as const;
 export const OPEN_COUNTS = { "My orders": "26", Drafts: "12", "Establishment stopped": "12" } as const;
 
 /**
- * The landing opens on the External side. A suite that exercises the Dashboard opens with this
- * query instead: the opening brand and segment in the internal variant, so the window shows the
+ * The landing opens on the Branded side. A suite that exercises the Dashboard opens with this
+ * query instead: the opening brand and segment in the neutral identity, so the window shows the
  * Dashboard from the first paint.
  */
-export const DASHBOARD_FIRST = "?theme=internal-elma-private";
+export const DASHBOARD_FIRST = "?theme=neutral-elma-private";
 
 /** The hero's live demo window: its chrome, the switch, and the side it shows. */
 export function liveDemo(page: Page): Locator {
@@ -32,7 +32,7 @@ export function liveDemo(page: Page): Locator {
 
 /**
  * The window's description: the chrome's caption, which names what the window shows, such as
- * the site's domain on the External side.
+ * the site's domain on the Branded side.
  */
 export async function windowCaption(page: Page): Promise<string> {
   // DOM audit: Playwright exposes no accessible description, so the read follows aria-describedby.
@@ -41,12 +41,12 @@ export async function windowCaption(page: Page): Promise<string> {
   );
 }
 
-/** The window's Dashboard, the Internal side. */
+/** The window's Dashboard, the Neutral side. */
 export function dashboard(page: Page): Locator {
   return page.getByRole("region", { name: "Dashboard", exact: true });
 }
 
-/** A brand's website on the External side, named after the site: "Fjordkraft website". */
+/** A brand's website on the Branded side, named after the site: "Fjordkraft website". */
 export function brandSite(page: Page, site: string): Locator {
   return page.getByRole("region", { name: `${site} website`, exact: true });
 }
@@ -57,14 +57,14 @@ export async function isInert(side: Locator): Promise<boolean> {
   return side.evaluate((element) => element.closest("[inert]") !== null);
 }
 
-/** Presses one side of the window's Internal/External switch. */
-export async function showSide(page: Page, side: "Internal" | "External"): Promise<void> {
+/** Presses one side of the window's Neutral/Branded switch. */
+export async function showSide(page: Page, side: "Neutral" | "Branded"): Promise<void> {
   await liveDemo(page).scrollIntoViewIfNeeded();
   await sideSwitch(page).getByRole("button", { name: side, exact: true }).click();
 }
 
 /**
- * The window's Internal/External switch. `includeHidden` reaches it while an open modal hides
+ * The window's Neutral/Branded switch. `includeHidden` reaches it while an open modal hides
  * everything outside itself from assistive technology.
  */
 export function sideSwitch(
@@ -77,16 +77,16 @@ export function sideSwitch(
 /**
  * The side the window shows: the switch's pressed button, checked against the side that is not
  * inert, so a switch that disagrees with its window fails here. A Dashboard that has not mounted
- * yet, because Internal never showed, counts as hidden.
+ * yet, because Neutral never showed, counts as hidden.
  */
-export async function shownSide(page: Page): Promise<"Internal" | "External" | "mismatch"> {
+export async function shownSide(page: Page): Promise<"Neutral" | "Branded" | "mismatch"> {
   const pressed = (await sideSwitch(page).getByRole("button", { pressed: true }).textContent()) ?? "";
   const dashboardInert = (await dashboard(page).count()) === 0 || (await isInert(dashboard(page)));
-  if (pressed === "Internal" && !dashboardInert) {
-    return "Internal";
+  if (pressed === "Neutral" && !dashboardInert) {
+    return "Neutral";
   }
-  if (pressed === "External" && dashboardInert) {
-    return "External";
+  if (pressed === "Branded" && dashboardInert) {
+    return "Branded";
   }
   return "mismatch";
 }
@@ -153,7 +153,7 @@ export async function openNewOrder(app: Locator): Promise<Locator> {
 /** The window's theme scope: the box its Sheets fill and its popups stay in. */
 export function windowScope(app: Locator): Locator {
   // DOM audit: ThemeScope's element has no role; it is the window's only themed element.
-  return app.locator("[data-theme-variant]");
+  return app.locator("[data-theme-identity]");
 }
 
 /**

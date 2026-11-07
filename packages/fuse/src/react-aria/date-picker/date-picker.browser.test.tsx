@@ -32,7 +32,7 @@ import { emulateReducedMotion } from "../../../test/reduced-motion";
 import {
   CONTROL_MD,
   cssVarColor,
-  fkasExternal,
+  fkasBranded,
   px,
   renderThemed,
   roleNamed,
@@ -576,7 +576,7 @@ describe("DatePicker density metrics", () => {
 
     stampDensity("dense");
     rerender(
-      <ThemeScope theme={fkasExternal}>
+      <ThemeScope theme={fkasBranded}>
         <UiProviders locale="en-US" navigate={() => undefined}>
           <div data-density="comfortable">
             <DatePicker label="Meter" defaultValue={july14} />

@@ -1,11 +1,11 @@
 import type { ResolvedColorScheme } from "./color-scheme-types";
 import { composeTheme } from "./compose-theme";
 import { cssVarReference } from "./css-values";
+import { LEGAL_THEMES, themeSlug } from "./theme-input";
+import type { ThemeSlug } from "./theme-input";
 import { literalContrast } from "./token-color";
 import { TOKEN_KINDS } from "./tokens/contract";
 import type { TokenContract, TokenName } from "./tokens/contract";
-import { LEGAL_THEMES, themeSlug } from "./tokens/themes";
-import type { ThemeSlug } from "./tokens/themes";
 
 /**
  * The surfaces a chart, syntax or control role must separate itself from: the page, the cards

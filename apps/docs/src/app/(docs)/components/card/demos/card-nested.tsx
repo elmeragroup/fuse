@@ -3,7 +3,7 @@
 import { Card } from "@elmeragroup/fuse/card";
 
 /**
- * Cards on a card-coloured surface. External themes draw no card edge, so the inner cards have
+ * Cards on a card-coloured surface. Branded themes draw no card edge, so the inner cards have
  * no outline there; their headers and spacing carry the grouping. Each card's header is a size
  * container with no intrinsic width, so the outer card takes an explicit one.
  */

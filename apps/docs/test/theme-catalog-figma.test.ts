@@ -17,10 +17,10 @@ import type {
 import { docsBaseUrl } from "./docs-server";
 
 const ILLEGAL_SLUGS = [
-  "internal-fkab-private",
-  "external-fkab-private",
-  "internal-fkse-company",
-  "external-fkse-company",
+  "neutral-fkab-private",
+  "branded-fkab-private",
+  "neutral-fkse-company",
+  "branded-fkse-company",
 ] as const;
 
 /** Object.prototype names: a plain `in`/index lookup on the file map would find these. */
@@ -80,7 +80,7 @@ describe("Figma DTCG documents", () => {
       expect(LEGAL_SLUGS).not.toContain(slug);
     }
 
-    const names = Object.keys(figmaDocument("internal-fkas-private").color).filter((key) => key !== "$type");
+    const names = Object.keys(figmaDocument("neutral-fkas-private").color).filter((key) => key !== "$type");
     expect(names.length).toBeGreaterThan(70);
     for (const slug of LEGAL_SLUGS) {
       const file = figmaDocument(slug);
@@ -93,8 +93,8 @@ describe("Figma DTCG documents", () => {
     }
   });
 
-  it("converts CSS-honest values into Figma-importable DTCG, aliasing the internal button radius to the one radius with a zero step", () => {
-    const document = figmaDocumentFromScheme(lightScheme("external-fkas-private"), CATALOG.primitives);
+  it("converts CSS-honest values into Figma-importable DTCG, aliasing the neutral button radius to the one radius with a zero step", () => {
+    const document = figmaDocumentFromScheme(lightScheme("branded-fkas-private"), CATALOG.primitives);
     expect(token<FigmaColorToken>(document.color, "brand")).toEqual({
       $type: "color",
       $value: "{color.brand-fkas}",
@@ -132,49 +132,49 @@ describe("Figma DTCG documents", () => {
       $type: "dimension",
       $value: { value: 2, unit: "px" },
     });
-    // The external variant layer's medium selection row title, a DTCG number.
+    // The branded identity layer's medium selection row title, a DTCG number.
     expect(token<FigmaFontWeightToken>(document.weight, "selection-title-weight")).toEqual({
       $type: "fontWeight",
       $value: 500,
     });
 
-    const internal = figmaDocumentFromScheme(lightScheme("internal-fkas-private"), CATALOG.primitives);
-    // Internal themes keep the default radius, 0.5rem, 8px at the 16px root.
-    expect(token<FigmaDimensionToken>(internal.size, "radius")).toEqual({
+    const neutral = figmaDocumentFromScheme(lightScheme("neutral-fkas-private"), CATALOG.primitives);
+    // Neutral themes keep the default radius, 0.5rem, 8px at the 16px root.
+    expect(token<FigmaDimensionToken>(neutral.size, "radius")).toEqual({
       $type: "dimension",
       $value: { value: 8, unit: "px" },
     });
-    expect(token<FigmaDimensionToken>(internal.size, "radius-button")).toEqual({
+    expect(token<FigmaDimensionToken>(neutral.size, "radius-button")).toEqual({
       $type: "dimension",
       $value: "{size.radius}",
     });
-    expect(token<FigmaDimensionToken>(internal.size, "radius-step")).toEqual({
+    expect(token<FigmaDimensionToken>(neutral.size, "radius-step")).toEqual({
       $type: "dimension",
       $value: { value: 0, unit: "px" },
     });
-    expect(token<FigmaFontWeightToken>(internal.weight, "selection-title-weight")).toEqual({
+    expect(token<FigmaFontWeightToken>(neutral.weight, "selection-title-weight")).toEqual({
       $type: "fontWeight",
       $value: 400,
     });
-    // The paragraph line heights in px: external 14/20, 16/22 and 18/24, and internal relaxed
+    // The paragraph line heights in px: branded 14/20, 16/22 and 18/24, and neutral relaxed
     // 1.625 × 14, 16 and 18.
-    for (const [name, external, relaxed] of [
+    for (const [name, branded, relaxed] of [
       ["paragraph-leading-sm", 20, 22.75],
       ["paragraph-leading-base", 22, 26],
       ["paragraph-leading-lg", 24, 29.25],
     ] as const) {
       expect(token<FigmaDimensionToken>(document.size, name), name).toEqual({
         $type: "dimension",
-        $value: { value: external, unit: "px" },
+        $value: { value: branded, unit: "px" },
       });
-      expect(token<FigmaDimensionToken>(internal.size, name), name).toEqual({
+      expect(token<FigmaDimensionToken>(neutral.size, name), name).toEqual({
         $type: "dimension",
         $value: { value: relaxed, unit: "px" },
       });
     }
-    // The h1 to h3 scale in px and weights: external heading small 24/32 and heading xsmall
-    // 20/32 at 700, and internal 24, 18 and 16px at the snug 1.375 ratio at 500.
-    for (const [level, external, internalType] of [
+    // The h1 to h3 scale in px and weights: branded heading small 24/32 and heading xsmall
+    // 20/32 at 700, and neutral 24, 18 and 16px at the snug 1.375 ratio at 500.
+    for (const [level, branded, neutralType] of [
       [1, { size: 24, leading: 32 }, { size: 24, leading: 33 }],
       [2, { size: 20, leading: 32 }, { size: 18, leading: 24.75 }],
       [3, { size: 20, leading: 32 }, { size: 16, leading: 22 }],
@@ -183,11 +183,11 @@ describe("Figma DTCG documents", () => {
         const name = `heading-${String(level)}-${part}`;
         expect(token<FigmaDimensionToken>(document.size, name), name).toEqual({
           $type: "dimension",
-          $value: { value: external[part], unit: "px" },
+          $value: { value: branded[part], unit: "px" },
         });
-        expect(token<FigmaDimensionToken>(internal.size, name), name).toEqual({
+        expect(token<FigmaDimensionToken>(neutral.size, name), name).toEqual({
           $type: "dimension",
-          $value: { value: internalType[part], unit: "px" },
+          $value: { value: neutralType[part], unit: "px" },
         });
       }
       const weight = `heading-${String(level)}-weight`;
@@ -195,7 +195,7 @@ describe("Figma DTCG documents", () => {
         $type: "fontWeight",
         $value: 700,
       });
-      expect(token<FigmaFontWeightToken>(internal.weight, weight), weight).toEqual({
+      expect(token<FigmaFontWeightToken>(neutral.weight, weight), weight).toEqual({
         $type: "fontWeight",
         $value: 500,
       });
@@ -207,7 +207,7 @@ describe("Figma DTCG documents", () => {
     // 0.182353 * 255 = 46.500015, which rounds to 47 = 0x2F. Built from the unrounded
     // channel, hex would be #2E2E2E and disagree with components.
     const channel = 46.4999 / 255;
-    const scheme = lightScheme("external-fkas-private");
+    const scheme = lightScheme("branded-fkas-private");
     const document = figmaDocumentFromScheme(
       {
         ...scheme,
@@ -240,12 +240,12 @@ describe("Figma DTCG documents", () => {
   });
 
   it("emits the Elma theme's own values, not the Fjordkraft ones", () => {
-    const document = figmaDocument("external-elma-company");
+    const document = figmaDocument("branded-elma-company");
     expect(token<FigmaColorToken>(document.color, "brand")).toEqual({
       $type: "color",
       $value: "{color.brand-elma}",
     });
-    // external-palettes.ts, elma: primary oklch(0.28898 0.051828 217.7), sRGB #00313C.
+    // brand-palettes.ts, elma: primary oklch(0.28898 0.051828 217.7), sRGB #00313C.
     expect(token<FigmaColorToken>(document.color, "primary").$value).toMatchObject({ hex: "#00313C" });
     expect(token<FigmaDimensionToken>(document.size, "radius")).toEqual({
       $type: "dimension",
@@ -261,14 +261,14 @@ describe("GET /api/themes/figma", () => {
     expect(response.headers.get("content-type")).toContain("application/json");
     const body: unknown = await response.json();
     expect(body).toEqual(FIGMA_THEME_INDEX);
-    expect(FIGMA_THEME_INDEX.files[0]?.href).toBe("/api/themes/figma/internal-fkas-private");
+    expect(FIGMA_THEME_INDEX.files[0]?.href).toBe("/api/themes/figma/neutral-fkas-private");
   });
 
   // The handler's 404 branch runs per slug below. Over HTTP, one legal slug proves the success
   // path with its headers and one inherited slug the Next 404 mapping, since GET returns
   // FIGMA_THEME_FILES[slug], which the per-theme document tests above already cover.
   it("returns DTCG JSON for a legal slug", async () => {
-    const slug = "external-fkas-private";
+    const slug = "branded-fkas-private";
     await expectThemeFile(await fetch(new URL(`/api/themes/figma/${slug}`, docsBaseUrl())), slug);
   });
 

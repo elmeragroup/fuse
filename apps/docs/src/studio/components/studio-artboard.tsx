@@ -57,7 +57,7 @@ export type ArtboardScope = {
   readonly style: CustomProperties;
   /**
    * The token edits the artboard wears: the session's, less those its own theme skips and the
-   * step another variant owns. With {@link ArtboardScope.seed} they give each token's declaration
+   * step another identity owns. With {@link ArtboardScope.seed} they give each token's declaration
    * there.
    */
   readonly overrides: StudioOverrides;
@@ -83,7 +83,7 @@ export function useArtboardScope(): ArtboardScope {
 
 /**
  * Whether `theme` is a theme of the artboard's own: one that differs from the base theme in
- * brand, variant or segment, so it needs its own declarations and loop checks.
+ * brand, identity or segment, so it needs its own declarations and loop checks.
  */
 function ownTheme(theme: ThemeInput, base: ThemeInput): ThemeInput | undefined {
   return themeSlug(theme) === themeSlug(base) ? undefined : theme;
@@ -142,7 +142,7 @@ export type StudioArtboardProps = {
  * and the overlays opened inside it portal into it. The token edits for its scheme and the metric
  * edits for its density are inline declarations on the scope element itself, where the theme rules
  * resolve their aliases and every part inside inherits the metrics. An artboard in a theme of its
- * own, the brand, variant and segment the visitor picks or the variant its spec pins, renders that
+ * own, the brand, identity and segment the visitor picks or the identity its spec pins, renders that
  * theme with its aliases restated, and skips the edits that would loop there. Its content reads the
  * scope through {@link useArtboardScope}.
  */

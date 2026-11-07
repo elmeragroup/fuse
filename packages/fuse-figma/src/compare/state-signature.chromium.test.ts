@@ -24,7 +24,7 @@ import { planCells, renderables } from "./run-compare";
 const THEME = parsePreviewTheme(
   Object.entries({
     "Fuse tokens": "Light",
-    "Fuse variant": "Internal",
+    "Fuse identity": "Neutral",
     "Fuse segment": "Private",
     "Fuse brand": "Fjordkraft",
     "Fuse density": "Dense",

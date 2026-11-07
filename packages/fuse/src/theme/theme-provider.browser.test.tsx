@@ -15,9 +15,9 @@ import {
   writeManifest,
 } from "../../test/theme-browser-fixtures";
 import { DEFAULT_COLOR_SCHEME_STORAGE_KEY } from "./color-scheme";
+import type { ThemeInput } from "./theme-input";
 import { ThemeProvider, useTheme } from "./theme-provider";
 import { ThemeScope } from "./theme-scope";
-import type { ThemeInput } from "./tokens/themes";
 
 beforeEach(() => {
   writeManifest(DEFAULT_BOOTSTRAP_MANIFEST);
@@ -35,7 +35,7 @@ function ThemeProbe() {
     const theme = useTheme();
     return (
       <span>
-        {theme.variant}-{theme.brand}-{theme.segment}-{theme.slug}
+        {theme.identity}-{theme.brand}-{theme.segment}-{theme.slug}
       </span>
     );
   } catch (error) {
@@ -46,7 +46,7 @@ function ThemeProbe() {
 function brandAttributeWrites(calls: ReadonlyArray<readonly unknown[]>) {
   return calls.filter(
     (call) =>
-      call[0] === "data-theme-variant" || call[0] === "data-theme-brand" || call[0] === "data-theme-segment"
+      call[0] === "data-theme-identity" || call[0] === "data-theme-brand" || call[0] === "data-theme-segment"
   );
 }
 
@@ -62,14 +62,14 @@ describe("ThemeProvider / ThemeScope", () => {
         theme={fkasPrivate}
         {...{
           "data-theme-brand": "tkas",
-          "data-theme-variant": "external",
+          "data-theme-identity": "branded",
           "data-theme-segment": "company",
         }}
       />
     );
     const scope = host.querySelector("[data-theme-brand]");
     expect(scope?.getAttribute("data-theme-brand")).toBe("fkas");
-    expect(scope?.getAttribute("data-theme-variant")).toBe("internal");
+    expect(scope?.getAttribute("data-theme-identity")).toBe("neutral");
     expect(scope?.getAttribute("data-theme-segment")).toBe("private");
   });
 
@@ -79,7 +79,7 @@ describe("ThemeProvider / ThemeScope", () => {
     function LayoutChild() {
       useLayoutEffect(() => {
         const brand = readDocumentBrand();
-        seen.push(`${brand.variant}-${brand.brand}-${brand.segment}`);
+        seen.push(`${brand.identity}-${brand.brand}-${brand.segment}`);
       });
       return null;
     }
@@ -92,9 +92,9 @@ describe("ThemeProvider / ThemeScope", () => {
       </ThemeProvider>
     );
 
-    expect(host.textContent).toBe("internal-fkas-private-internal-fkas-private");
-    expect(readDocumentBrand()).toEqual({ variant: "internal", brand: "fkas", segment: "private" });
-    expect(seen).toEqual(["internal-fkas-private"]);
+    expect(host.textContent).toBe("neutral-fkas-private-neutral-fkas-private");
+    expect(readDocumentBrand()).toEqual({ identity: "neutral", brand: "fkas", segment: "private" });
+    expect(seen).toEqual(["neutral-fkas-private"]);
     expect(warn).not.toHaveBeenCalled();
 
     rerender(
@@ -104,9 +104,9 @@ describe("ThemeProvider / ThemeScope", () => {
       </ThemeProvider>
     );
 
-    expect(host.textContent).toBe("external-tkas-company-external-tkas-company");
-    expect(readDocumentBrand()).toEqual({ variant: "external", brand: "tkas", segment: "company" });
-    expect(seen).toEqual(["internal-fkas-private", "external-tkas-company"]);
+    expect(host.textContent).toBe("branded-tkas-company-branded-tkas-company");
+    expect(readDocumentBrand()).toEqual({ identity: "branded", brand: "tkas", segment: "company" });
+    expect(seen).toEqual(["neutral-fkas-private", "branded-tkas-company"]);
     expect(document.documentElement.getAttribute("data-theme")).toMatch(/^(light|dark)$/);
   });
 
@@ -129,7 +129,7 @@ describe("ThemeProvider / ThemeScope", () => {
       </ThemeProvider>
     );
 
-    expect(readDocumentBrand()).toEqual({ variant: "external", brand: "tkas", segment: "company" });
+    expect(readDocumentBrand()).toEqual({ identity: "branded", brand: "tkas", segment: "company" });
     expect(localGet.mock.calls.length).toBeGreaterThan(0);
     expect(localGet.mock.calls.every((call) => call[0] === DEFAULT_COLOR_SCHEME_STORAGE_KEY)).toBe(true);
     expect(localSet).not.toHaveBeenCalled();
@@ -144,15 +144,15 @@ describe("ThemeProvider / ThemeScope", () => {
     {
       name: "mismatched server brand attributes",
       stamp: () => stampDocumentBrand(tkasCompany),
-      found: 'data-theme-variant="external" data-theme-brand="tkas" data-theme-segment="company"',
+      found: 'data-theme-identity="branded" data-theme-brand="tkas" data-theme-segment="company"',
     },
     {
       name: "a partially stamped document",
       stamp: () => {
-        document.documentElement.setAttribute("data-theme-variant", "internal");
+        document.documentElement.setAttribute("data-theme-identity", "neutral");
         document.documentElement.setAttribute("data-theme-segment", "private");
       },
-      found: 'data-theme-variant="internal" data-theme-brand="null" data-theme-segment="private"',
+      found: 'data-theme-identity="neutral" data-theme-brand="null" data-theme-segment="private"',
     },
     { name: "a blank document", stamp: () => undefined, found: undefined },
   ])("diagnoses $name only when it disagrees and lands on the validated theme", ({ stamp, found }) => {
@@ -165,13 +165,13 @@ describe("ThemeProvider / ThemeScope", () => {
       </ThemeProvider>
     );
 
-    expect(readDocumentBrand()).toEqual({ variant: "internal", brand: "fkas", segment: "private" });
+    expect(readDocumentBrand()).toEqual({ identity: "neutral", brand: "fkas", segment: "private" });
     expect(warn.mock.calls).toEqual(
       found === undefined
         ? []
         : [
             [
-              `ThemeProvider controlled theme does not match document brand attributes. Expected data-theme-variant="internal" data-theme-brand="fkas" data-theme-segment="private", found ${found}. Recovering to the validated controlled theme.`,
+              `ThemeProvider controlled theme does not match document brand attributes. Expected data-theme-identity="neutral" data-theme-brand="fkas" data-theme-segment="private", found ${found}. Recovering to the validated controlled theme.`,
             ],
           ]
     );
@@ -180,7 +180,7 @@ describe("ThemeProvider / ThemeScope", () => {
   it("throws the validator error for an illegal nested theme without a hooks-count mismatch", () => {
     stampDocumentBrand(fkasPrivate);
     // @ts-expect-error untyped CMS/env input is the runtime boundary
-    const illegalPinned: ThemeInput = { variant: "internal", brand: "fkab", segment: "private" };
+    const illegalPinned: ThemeInput = { identity: "neutral", brand: "fkab", segment: "private" };
     const { host } = render(
       <ThemeProvider theme={fkasPrivate}>
         <CaughtError>
@@ -193,7 +193,7 @@ describe("ThemeProvider / ThemeScope", () => {
 
     expect(host.textContent).toBe("Invalid theme: fkab is pinned to company.");
     expect(host.textContent).not.toMatch(/Rendered fewer hooks|Rendered more hooks|hook/i);
-    expect(readDocumentBrand()).toEqual({ variant: "internal", brand: "fkas", segment: "private" });
+    expect(readDocumentBrand()).toEqual({ identity: "neutral", brand: "fkas", segment: "private" });
   });
 
   it("restores an overwritten document brand on commits that change only color-scheme props", () => {
@@ -209,7 +209,7 @@ describe("ThemeProvider / ThemeScope", () => {
         <ThemeProbe />
       </ThemeProvider>
     );
-    expect(readDocumentBrand()).toEqual({ variant: "internal", brand: "fkas", segment: "private" });
+    expect(readDocumentBrand()).toEqual({ identity: "neutral", brand: "fkas", segment: "private" });
 
     document.documentElement.setAttribute("data-theme-brand", "tkas");
     rerender(
@@ -217,7 +217,7 @@ describe("ThemeProvider / ThemeScope", () => {
         <ThemeProbe />
       </ThemeProvider>
     );
-    expect(readDocumentBrand()).toEqual({ variant: "internal", brand: "fkas", segment: "private" });
+    expect(readDocumentBrand()).toEqual({ identity: "neutral", brand: "fkas", segment: "private" });
   });
 
   it("owns the document when mounted inside a lone ThemeScope", () => {
@@ -229,10 +229,10 @@ describe("ThemeProvider / ThemeScope", () => {
       </ThemeScope>
     );
 
-    expect(host.textContent).toBe("internal-fkas-private-internal-fkas-private");
-    expect(readDocumentBrand()).toEqual({ variant: "internal", brand: "fkas", segment: "private" });
+    expect(host.textContent).toBe("neutral-fkas-private-neutral-fkas-private");
+    expect(readDocumentBrand()).toEqual({ identity: "neutral", brand: "fkas", segment: "private" });
     expect(host.querySelector("[data-theme-brand]")?.getAttribute("data-theme-brand")).toBe("tkas");
-    expect(host.querySelector("[data-theme-variant]")?.getAttribute("data-theme-variant")).toBe("external");
+    expect(host.querySelector("[data-theme-identity]")?.getAttribute("data-theme-identity")).toBe("branded");
     expect(host.querySelector("[data-theme-segment]")?.getAttribute("data-theme-segment")).toBe("company");
   });
 
@@ -247,8 +247,8 @@ describe("ThemeProvider / ThemeScope", () => {
       </ThemeProvider>
     );
 
-    expect(host.textContent).toBe("external-tkas-company-external-tkas-company");
-    expect(readDocumentBrand()).toEqual({ variant: "internal", brand: "fkas", segment: "private" });
+    expect(host.textContent).toBe("branded-tkas-company-branded-tkas-company");
+    expect(readDocumentBrand()).toEqual({ identity: "neutral", brand: "fkas", segment: "private" });
     expect(host.querySelector("[data-theme-brand]")?.getAttribute("data-theme-brand")).toBe("tkas");
   });
 
@@ -266,8 +266,8 @@ describe("ThemeProvider / ThemeScope", () => {
     const inner = host.querySelector(".inner");
     expect(outer?.getAttribute("data-theme-brand")).toBe("fkas");
     expect(inner?.getAttribute("data-theme-brand")).toBe("tkas");
-    expect(host.textContent).toBe("external-tkas-company-external-tkas-company");
-    expect(readDocumentBrand()).toEqual({ variant: "internal", brand: "fkas", segment: "private" });
+    expect(host.textContent).toBe("branded-tkas-company-branded-tkas-company");
+    expect(readDocumentBrand()).toEqual({ identity: "neutral", brand: "fkas", segment: "private" });
 
     rerender(
       <ThemeScope theme={fkasPrivate} className="outer">
@@ -277,14 +277,14 @@ describe("ThemeProvider / ThemeScope", () => {
       </ThemeScope>
     );
 
-    expect(outer?.getAttribute("data-theme-variant")).toBe("internal");
+    expect(outer?.getAttribute("data-theme-identity")).toBe("neutral");
     expect(outer?.getAttribute("data-theme-brand")).toBe("fkas");
     expect(outer?.getAttribute("data-theme-segment")).toBe("private");
-    expect(inner?.getAttribute("data-theme-variant")).toBe("internal");
+    expect(inner?.getAttribute("data-theme-identity")).toBe("neutral");
     expect(inner?.getAttribute("data-theme-brand")).toBe("guen");
     expect(inner?.getAttribute("data-theme-segment")).toBe("private");
-    expect(host.textContent).toBe("internal-guen-private-internal-guen-private");
-    expect(readDocumentBrand()).toEqual({ variant: "internal", brand: "fkas", segment: "private" });
+    expect(host.textContent).toBe("neutral-guen-private-neutral-guen-private");
+    expect(readDocumentBrand()).toEqual({ identity: "neutral", brand: "fkas", segment: "private" });
   });
 
   it("throws the validator error — not a hooks-count mismatch — after a valid-then-illegal update", () => {
@@ -305,11 +305,11 @@ describe("ThemeProvider / ThemeScope", () => {
 
     for (const tree of trees) {
       const { host, rerender } = render(<CaughtError>{tree(fkasPrivate)}</CaughtError>);
-      expect(host.textContent).toBe("internal-fkas-private-internal-fkas-private");
+      expect(host.textContent).toBe("neutral-fkas-private-neutral-fkas-private");
 
       rerender(<CaughtError>{tree(untyped)}</CaughtError>);
 
-      expect(host.textContent).toBe("Invalid theme: expected an object with variant, brand, and segment.");
+      expect(host.textContent).toBe("Invalid theme: expected an object with identity, brand, and segment.");
       expect(host.textContent).not.toMatch(/Rendered fewer hooks|Rendered more hooks|hook/i);
     }
   });
@@ -327,7 +327,7 @@ describe("ThemeProvider equal-axis theme identity", () => {
     }
 
     const { host, rerender } = render(
-      <ThemeProvider theme={{ variant: "internal", brand: "fkas", segment: "private" }}>
+      <ThemeProvider theme={{ identity: "neutral", brand: "fkas", segment: "private" }}>
         <IdentityProbe />
       </ThemeProvider>
     );
@@ -336,29 +336,29 @@ describe("ThemeProvider equal-axis theme identity", () => {
     const firstTheme = themes.at(-1);
     expect(brandWritesAfterFirst).toBeGreaterThan(0);
     expect(firstTheme).toBeDefined();
-    expect(host.textContent).toBe("internal-fkas-private-internal-fkas-private");
+    expect(host.textContent).toBe("neutral-fkas-private-neutral-fkas-private");
 
     rerender(
-      <ThemeProvider theme={{ variant: "internal", brand: "fkas", segment: "private" }}>
+      <ThemeProvider theme={{ identity: "neutral", brand: "fkas", segment: "private" }}>
         <IdentityProbe />
       </ThemeProvider>
     );
 
     expect(brandAttributeWrites(setAttribute.mock.calls).length).toBe(brandWritesAfterFirst);
     expect(themes.at(-1)).toBe(firstTheme);
-    expect(readDocumentBrand()).toEqual({ variant: "internal", brand: "fkas", segment: "private" });
+    expect(readDocumentBrand()).toEqual({ identity: "neutral", brand: "fkas", segment: "private" });
 
     rerender(
-      <ThemeProvider theme={{ variant: "internal", brand: "tkas", segment: "private" }}>
+      <ThemeProvider theme={{ identity: "neutral", brand: "tkas", segment: "private" }}>
         <IdentityProbe />
       </ThemeProvider>
     );
 
     expect(brandAttributeWrites(setAttribute.mock.calls).length).toBeGreaterThan(brandWritesAfterFirst);
     expect(themes.at(-1)).not.toBe(firstTheme);
-    expect(readDocumentBrand()).toEqual({ variant: "internal", brand: "tkas", segment: "private" });
-    expect(host.textContent).toBe("internal-tkas-private-internal-tkas-private");
-    expect(document.documentElement.getAttribute("data-theme-variant")).toBe("internal");
+    expect(readDocumentBrand()).toEqual({ identity: "neutral", brand: "tkas", segment: "private" });
+    expect(host.textContent).toBe("neutral-tkas-private-neutral-tkas-private");
+    expect(document.documentElement.getAttribute("data-theme-identity")).toBe("neutral");
     expect(document.documentElement.getAttribute("data-theme-brand")).toBe("tkas");
     expect(document.documentElement.getAttribute("data-theme-segment")).toBe("private");
   });

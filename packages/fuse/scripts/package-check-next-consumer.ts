@@ -74,6 +74,7 @@ async function checkServerHtml(url: string): Promise<void> {
   for (const [marker, meaning] of [
     ['data-slot="item-title"', "the server page rendered no Item.Title markup part"],
     ["Rendered on the server", "the server page's Item.Title text is missing"],
+    ['data-theme-identity="branded"', "the server HTML lacks the theme identity attribute"],
     ['data-theme-brand="fkas"', "the server HTML lacks the theme brand attribute"],
     ['data-density="comfortable"', "the server HTML lacks the density attribute"],
     ['aria-label="Orders"', "the server HTML lacks the data-table client island"],

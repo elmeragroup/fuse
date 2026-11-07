@@ -49,8 +49,8 @@ describe("fieldBoxChromeClass", () => {
     expect(tokens(fieldBoxChromeClass)).toEqual([
       "shadow-xs",
       "box-border",
-      // The field corner, declared for the parts inside the box: --radius-field at the external
-      // 2px step, --radius at the internal 0px.
+      // The field corner, declared for the parts inside the box: --radius-field at the branded
+      // 2px step, --radius at the neutral 0px.
       "rounded-(--field-corner)",
       "[--field-corner:clamp(var(--radius)-1000*var(--radius-step,0px),var(--radius-field,var(--radius)),var(--radius)+1000*var(--radius-step,0px))]",
       // The inner corner the box publishes for the parts inside it: its corner less its border.

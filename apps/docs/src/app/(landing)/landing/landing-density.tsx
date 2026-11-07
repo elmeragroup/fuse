@@ -39,8 +39,8 @@ const DENSITY_LABELS = {
 } as const satisfies Record<Density, string>;
 
 const DENSITY_USES = {
-  dense: "Internal tools",
-  comfortable: "Customer apps",
+  dense: "Dashboards and tools",
+  comfortable: "Sites and promo pages",
 } as const satisfies Record<Density, string>;
 
 /**

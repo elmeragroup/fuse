@@ -13,13 +13,14 @@ import { shotOptions } from "./parse-argv.ts";
 
 /**
  * The fixture pages: a demo stage holding a textbox, a 2000px page with no demo stage, a page
- * whose target needs a theme, controls that open popups outside their own box, and a scrolled
+ * whose target needs a theme (also in the pre-identity vocabulary a "before" deployment shows), controls that open popups outside their own box, and a scrolled
  * strip whose edges fade on its scroll timeline.
  */
 const pages = new Map([
   ["/demo", await readFile(path.join(import.meta.dirname, "fixture/demo.html"))],
   ["/page", await readFile(path.join(import.meta.dirname, "fixture/page.html"))],
   ["/themed", await readFile(path.join(import.meta.dirname, "fixture/themed.html"))],
+  ["/themed-legacy", await readFile(path.join(import.meta.dirname, "fixture/themed-legacy.html"))],
   ["/popup", await readFile(path.join(import.meta.dirname, "fixture/popup.html"))],
   ["/scroll-fade", await readFile(path.join(import.meta.dirname, "fixture/scroll-fade.html"))],
 ]);
@@ -143,11 +144,11 @@ describe.concurrent("Capture", () => {
               "--route",
               "/popup",
               "--click",
-              "button:Internal",
+              "button:Neutral",
               "--click",
               "button:Nope",
               "--target",
-              "button:Internal",
+              "button:Neutral",
             ]),
           })
         );
@@ -225,13 +226,13 @@ describe.concurrent("Capture", () => {
 
   it.live("resolves auto after picking the theme, for a target that only the picked theme renders", () =>
     Effect.gen(function* () {
-      // The Dashboard region exists only in the Internal variant; the page opens External.
+      // The Dashboard region exists only in the Neutral identity; the page opens Branded.
       const { frame, png } = yield* shoot([
         "fixture",
         "--route",
         "/themed",
         "--themes",
-        "internal-fkas-private",
+        "neutral-fkas-private",
         "--target",
         "region:Dashboard",
         "--pad",
@@ -242,6 +243,30 @@ describe.concurrent("Capture", () => {
       assert.strictEqual(frame, "target");
       assert.deepStrictEqual(pngSize(png), { width: 320, height: 160 });
     }).pipe(Effect.provide(Capture.layer))
+  );
+
+  it.live(
+    "picks a theme by its new slug on a pre-identity page, which labels and stamps the retired variant",
+    () =>
+      Effect.gen(function* () {
+        // The page speaks the retired vocabulary: a "Variant" group with Internal and External, and
+        // `data-theme-variant`. The Dashboard exists only under Internal; the page opens External.
+        const { frame, png } = yield* shoot([
+          "fixture",
+          "--route",
+          "/themed-legacy",
+          "--themes",
+          "neutral-fkas-private",
+          "--target",
+          "region:Dashboard",
+          "--pad",
+          "0",
+          "--scale",
+          "1",
+        ]);
+        assert.strictEqual(frame, "target");
+        assert.deepStrictEqual(pngSize(png), { width: 320, height: 160 });
+      }).pipe(Effect.provide(Capture.layer))
   );
 
   it.live("shoots the whole page at the document's height times the scale", () =>
@@ -266,7 +291,7 @@ describe.concurrent("Capture", () => {
   it.live("refuses --themes on a page without a theme picker, naming the flag and the route", () =>
     Effect.gen(function* () {
       const failure = yield* failedShot(
-        ["fixture", "--route", "/page", "--themes", "internal-fkas-private"],
+        ["fixture", "--route", "/page", "--themes", "neutral-fkas-private"],
         "viewport"
       );
       assert.strictEqual(failure._tag, "ThemesUnsupported");
@@ -318,13 +343,13 @@ describe.concurrent("Capture", () => {
 
   it.live("runs the clicks in order and clips the target together with the list it opened", () =>
     Effect.gen(function* () {
-      // Rows per page renders only after Internal is clicked, so the order of the steps matters.
+      // Rows per page renders only after Neutral is clicked, so the order of the steps matters.
       const { frame, png } = yield* shoot([
         "fixture",
         "--route",
         "/popup",
         "--click",
-        "button:Internal",
+        "button:Neutral",
         "--click",
         "combobox:Rows per page",
         "--target",
@@ -428,7 +453,7 @@ describe.concurrent("Capture", () => {
           "--route",
           "/popup",
           "--click",
-          "button:Internal",
+          "button:Neutral",
           "--target",
           "button:Inbox",
           "--frame",

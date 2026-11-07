@@ -39,7 +39,7 @@ function declaredLayers(): readonly string[] {
 
 const STAMPS = {
   root: { "data-theme": "light", "data-density": "dense" },
-  body: { "data-theme-variant": "internal", "data-theme-brand": "fkas", "data-theme-segment": "private" },
+  body: { "data-theme-identity": "neutral", "data-theme-brand": "fkas", "data-theme-segment": "private" },
 };
 
 /** The `<style>` block's lines, trimmed and without blanks. */

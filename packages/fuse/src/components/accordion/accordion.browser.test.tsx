@@ -19,7 +19,7 @@ import {
 } from "../../../test/themed-browser-render";
 import { CaretRight } from "../../icons/generated/caret-right";
 import { Plus } from "../../icons/generated/plus";
-import { LEGAL_THEMES, themeSlug } from "../../theme/tokens/themes";
+import { LEGAL_THEMES, themeSlug } from "../../theme/theme-input";
 import { Accordion } from "./index";
 
 function htmlControl(name: string): HTMLElement {

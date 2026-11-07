@@ -196,7 +196,7 @@ describe("Popover", () => {
 
   it("does not paint the popup outside a ThemeScope element that has not attached yet", async () => {
     renderThemed(
-      <ThemeScope theme={{ variant: "external", brand: "fkas", segment: "private" }}>
+      <ThemeScope theme={{ identity: "branded", brand: "fkas", segment: "private" }}>
         <Popover.Root open>
           <Popover.Content>
             <Popover.Title>Scoped</Popover.Title>
@@ -205,7 +205,7 @@ describe("Popover", () => {
       </ThemeScope>
     );
     const dialog = await mountedPopover();
-    const scope = dialog.closest("[data-theme-variant=external]");
+    const scope = dialog.closest("[data-theme-identity=branded]");
     expect(scope).not.toBeNull();
     expect([...document.body.children].includes(dialog)).toBe(false);
   });

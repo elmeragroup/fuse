@@ -19,7 +19,7 @@ function seedOf(light: Record<string, string>, dark: Record<string, string> = li
     Object.fromEntries(
       Object.entries(declared).map(([name, css]) => [name, { css, value: "" }])
     ) as StudioSchemeSeed;
-  return { slug: "internal-fkas-private", light: scheme(light), dark: scheme(dark) };
+  return { slug: "neutral-fkas-private", light: scheme(light), dark: scheme(dark) };
 }
 
 const SEED = seedOf({

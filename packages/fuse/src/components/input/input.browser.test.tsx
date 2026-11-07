@@ -5,7 +5,7 @@ import "../../../dist/styles.css";
 import { assertKeyboardFocusRingAtBothDensities } from "../../../test/assert-focus-ring";
 import {
   CONTROL_MD,
-  fkasExternal,
+  fkasBranded,
   px,
   renderThemed,
   roleNamed,
@@ -95,7 +95,7 @@ describe("Input", () => {
 
     stampDensity("dense");
     rerender(
-      <ThemeScope theme={fkasExternal}>
+      <ThemeScope theme={fkasBranded}>
         <Input aria-label="Meter" />
       </ThemeScope>
     );

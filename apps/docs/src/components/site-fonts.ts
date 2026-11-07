@@ -6,7 +6,7 @@
  */
 import localFont from "next/font/local";
 
-/** Inter, the site's own face and the internal themes' body font. */
+/** Inter, the site's own face and the neutral themes' body font. */
 export const inter = localFont({
   src: [
     { path: "../../node_modules/@fontsource/inter/files/inter-latin-400-normal.woff2", weight: "400" },
@@ -19,7 +19,7 @@ export const inter = localFont({
 });
 
 /**
- * Roboto, the external themes' body font, which the docs draw in external theme previews. The
+ * Roboto, the branded themes' body font, which the docs draw in branded theme previews. The
  * site chrome never draws Roboto, so it loads when a theme scope draws it, not as a preload on
  * every route.
  */

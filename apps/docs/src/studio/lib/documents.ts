@@ -1,4 +1,4 @@
-import type { Density, ThemeVariant } from "@elmeragroup/fuse/theme";
+import type { Density, ThemeIdentity } from "@elmeragroup/fuse/theme";
 
 import type { SectionId } from "./tokens";
 
@@ -18,12 +18,12 @@ export type ArtboardSpec = {
   readonly scheme: ArtboardScheme;
   readonly density: Density;
   /**
-   * The variant of the base theme the artboard opens in; the visitor can change it, and a change
-   * of the base theme returns the artboard to it. The variant owns `--radius-step`, so the
-   * artboard withholds a step edit only while its variant differs from the base theme's, and
+   * The identity of the base theme the artboard opens in; the visitor can change it, and a change
+   * of the base theme returns the artboard to it. The identity owns `--radius-step`, so the
+   * artboard withholds a step edit only while its identity differs from the base theme's, and
    * wears every other edit that does not loop in its theme.
    */
-  readonly variant?: ThemeVariant;
+  readonly identity?: ThemeIdentity;
 };
 
 const COMPONENT_BOARD_WIDTH = 560;
@@ -133,27 +133,27 @@ export const DENSITY_TWINS = ["density-twin-dense", "density-twin-comfortable"] 
 const RUNG_BOARD_WIDTH = 560;
 const RUNG_COLUMN = RUNG_BOARD_WIDTH + 120;
 
-/** The Shape page: the radius rungs in each variant, the concentric lab and Fuse's own shells. */
+/** The Shape page: the radius rungs in each identity, the concentric lab and Fuse's own shells. */
 const CORNER_PAGE_ARTBOARDS: readonly ArtboardSpec[] = [
   {
-    id: "shape-rungs-internal",
-    name: "Radius rungs · Internal",
+    id: "shape-rungs-neutral",
+    name: "Radius rungs · Neutral",
     x: 0,
     y: 0,
     width: RUNG_BOARD_WIDTH,
     scheme: "light",
     density: "dense",
-    variant: "internal",
+    identity: "neutral",
   },
   {
-    id: "shape-rungs-external",
-    name: "Radius rungs · External",
+    id: "shape-rungs-branded",
+    name: "Radius rungs · Branded",
     x: RUNG_COLUMN,
     y: 0,
     width: RUNG_BOARD_WIDTH,
     scheme: "light",
     density: "comfortable",
-    variant: "external",
+    identity: "branded",
   },
   {
     id: "shape-shells",
@@ -228,7 +228,7 @@ const COLOR_SECTIONS: readonly SectionId[] = [
   "actions",
   "status",
   "lines",
-  "variant",
+  "identity",
   "sidebar",
   "charts",
   "syntax",
@@ -289,8 +289,8 @@ const SCREEN_COLUMN = SCREEN_WIDTH + 120;
 const SCREEN_ROW = 1080;
 
 /**
- * The Screens page: four whole product screens. Each pins a variant, so one page shows the base
- * brand's external and internal looks side by side, and the inspector switches it.
+ * The Screens page: four whole product screens. Each pins an identity, so one page shows the base
+ * brand's branded and neutral looks side by side, and the inspector switches it.
  */
 const SCREENS_PAGE_ARTBOARDS: readonly ArtboardSpec[] = [
   {
@@ -301,7 +301,7 @@ const SCREENS_PAGE_ARTBOARDS: readonly ArtboardSpec[] = [
     width: SCREEN_WIDTH,
     scheme: "light",
     density: "comfortable",
-    variant: "external",
+    identity: "branded",
   },
   {
     id: "screen-admin-table",
@@ -311,7 +311,7 @@ const SCREENS_PAGE_ARTBOARDS: readonly ArtboardSpec[] = [
     width: TABLE_SCREEN_WIDTH,
     scheme: "light",
     density: "dense",
-    variant: "internal",
+    identity: "neutral",
   },
   {
     id: "screen-checkout",
@@ -321,7 +321,7 @@ const SCREENS_PAGE_ARTBOARDS: readonly ArtboardSpec[] = [
     width: SCREEN_WIDTH,
     scheme: "light",
     density: "comfortable",
-    variant: "external",
+    identity: "branded",
   },
   {
     id: "screen-settings",
@@ -331,7 +331,7 @@ const SCREENS_PAGE_ARTBOARDS: readonly ArtboardSpec[] = [
     width: TABLE_SCREEN_WIDTH,
     scheme: "light",
     density: "comfortable",
-    variant: "internal",
+    identity: "neutral",
   },
 ];
 

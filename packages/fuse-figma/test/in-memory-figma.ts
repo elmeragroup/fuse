@@ -511,10 +511,11 @@ export class InMemoryFigma {
     };
 
     for (const change of body.variableCollections ?? []) {
-      // The sync only creates and deletes collections. Failing loudly here catches a write that
-      // starts doing anything else before a real file sees it.
+      // The sync renames a collection only, so an update models the name alone.
       if (change.action === "UPDATE") {
-        throw new Error("The fake does not model collection updates");
+        if (change.name === undefined || change.name === "") reject("A collection needs a name");
+        editable(change.id).name = change.name ?? "";
+        continue;
       }
       if (change.action === "DELETE") {
         // Deleting a collection deletes its modes and variables. The REST documentation does

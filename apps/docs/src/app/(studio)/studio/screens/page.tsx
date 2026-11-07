@@ -10,8 +10,8 @@ import { studioPageMetadata } from "../../../../studio/components/studio-metadat
 export const metadata = studioPageMetadata("/studio/screens");
 
 /**
- * The studio's Screens page: whole product screens, each in the variant it pins, so the base
- * brand's external and internal looks sit side by side under every edit.
+ * The studio's Screens page: whole product screens, each in the identity it pins, so the base
+ * brand's branded and neutral looks sit side by side under every edit.
  */
 export default function StudioScreensPage(): ReactElement {
   return (

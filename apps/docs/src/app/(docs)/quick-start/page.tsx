@@ -18,16 +18,15 @@ import "@elmeragroup/fuse/styles.css";
 import "@elmeragroup/fuse/themes.css";`;
 
 const SCAFFOLD = `import { ColorSchemeScript, LocaleProvider, ThemeProvider } from "@elmeragroup/fuse/theme";
-import { defaultDensityForVariant, densityAttributes, themeAttributes } from "@elmeragroup/fuse/theme";
+import { documentAttributes } from "@elmeragroup/fuse/theme";
 
-const THEME = { variant: "external", brand: "fkas", segment: "private" } as const;
+const THEME = { identity: "branded", brand: "fkas", segment: "private" } as const;
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html
       lang="nb-NO"
-      {...themeAttributes(THEME)}
-      {...densityAttributes(defaultDensityForVariant(THEME.variant))}
+      {...documentAttributes({ theme: THEME, density: "comfortable" })}
       suppressHydrationWarning>
       <head>
         <ColorSchemeScript storageKey="color-scheme" defaultColorScheme="system" enableSystem />
@@ -110,8 +109,8 @@ export default function QuickStartPage(): ReactElement {
         </li>
         <li>
           <strong>Theme and density attributes</strong> on <code>&lt;html&gt;</code> so brand and density are
-          correct before any JavaScript runs. Both density values are stamped explicitly, including{" "}
-          <code>dense</code>.
+          correct before any JavaScript runs. <code>documentAttributes</code> stamps both, and the density is
+          always yours to name: <code>dense</code> or <code>comfortable</code>, whatever the identity.
         </li>
         <li>
           <strong>

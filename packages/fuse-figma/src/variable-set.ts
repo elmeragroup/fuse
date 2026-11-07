@@ -137,6 +137,8 @@ export type CollectionSpec = {
  * - Every collection has between 1 and 40 modes and at most 5,000 variables, and no mode
  *   name is longer than 40 characters, Figma's limits.
  * - No retired collection name is also the name of a collection the set holds.
+ * - Every renamed collection's new name is a collection the set holds, and its old name is
+ *   neither held nor retired. Each old mode name maps to a mode of the renamed collection.
  * - Every variable has exactly one value for each mode of its collection.
  * - Every scope applies to its variable's type. `ALL_SCOPES` stands alone, and `ALL_FILLS`
  *   stands alone among the fill scopes.
@@ -153,7 +155,27 @@ export type VariableSet = {
    * collection with one of these names and leaves library collections and extensions alone.
    */
   readonly retiredCollections: readonly string[];
+
+  /**
+   * Collections the sync once owned under another name. A sync renames a local collection
+   * with the old name, and its modes, in place by id, so the frames pinned to its modes keep
+   * their pins. A file that holds only the new name has migrated. A sync refuses to plan when
+   * the file holds the old name twice, holds both names, or would give two modes one name.
+   */
+  readonly renamedCollections: readonly CollectionRename[];
 } & Brand.Brand<"VariableSet">;
+
+/** A collection the sync renames in place, and the modes it renames with it. */
+export type CollectionRename = {
+  /** The name earlier syncs wrote. */
+  readonly from: string;
+
+  /** The name of the collection the set holds now. */
+  readonly to: string;
+
+  /** Each old mode name and the mode name it becomes. A mode left out keeps its name. */
+  readonly modes: ReadonlyMap<string, string>;
+};
 
 /** The collections given to {@link makeVariableSet} break one of a set's rules. */
 export class InvalidVariableSet extends Schema.TaggedError<InvalidVariableSet>()("InvalidVariableSet", {
@@ -234,11 +256,13 @@ export function qualifiedName(collection: string, variable: string): string {
  *
  * @param collections - The collections a sync should own, in the order it creates them.
  * @param retiredCollections - Names of collections a sync should delete from the file.
+ * @param renamedCollections - Collections a sync should rename in place from an older name.
  * @returns The set, the first rule a collection breaks, or an alias cycle.
  */
 export function makeVariableSet(
   collections: readonly CollectionSpec[],
-  retiredCollections: readonly string[] = []
+  retiredCollections: readonly string[] = [],
+  renamedCollections: readonly CollectionRename[] = []
 ): Result.Result<VariableSet, InvalidVariableSet | AliasCycle> {
   const variables = new Map<string, VariableSpec>();
   const collectionNames = new Set<string>();
@@ -288,6 +312,11 @@ export function makeVariableSet(
     return invalid(retired, collectionNames.has(retired) ? "is both held and retired" : "is retired twice");
   }
 
+  const renameProblem = renamedCollectionsProblem(collections, retiredCollections, renamedCollections);
+  if (renameProblem !== undefined) {
+    return invalid(renameProblem.location, renameProblem.problem);
+  }
+
   for (const collection of collections) {
     for (const variable of collection.variables) {
       const problem =
@@ -309,7 +338,41 @@ export function makeVariableSet(
       })
     );
   }
-  return Result.succeed(brandVariableSet({ collections, retiredCollections }));
+  return Result.succeed(brandVariableSet({ collections, retiredCollections, renamedCollections }));
+}
+
+/** The first rename that breaks a set's rename rules, with where it breaks them. */
+function renamedCollectionsProblem(
+  collections: readonly CollectionSpec[],
+  retiredCollections: readonly string[],
+  renamedCollections: readonly CollectionRename[]
+): { readonly location: string; readonly problem: string } | undefined {
+  const olds = new Set<string>();
+  for (const rename of renamedCollections) {
+    const held = collections.find((collection) => collection.name === rename.to);
+    if (held === undefined) {
+      return { location: rename.from, problem: `is renamed to "${rename.to}", which the set does not hold` };
+    }
+    if (collections.some((collection) => collection.name === rename.from)) {
+      return { location: rename.from, problem: "is both held and renamed" };
+    }
+    if (retiredCollections.includes(rename.from)) {
+      return { location: rename.from, problem: "is both retired and renamed" };
+    }
+    if (olds.has(rename.from)) {
+      return { location: rename.from, problem: "is renamed twice" };
+    }
+    olds.add(rename.from);
+    const targets = [...rename.modes.values()];
+    const missing = targets.find((mode) => !held.modes.includes(mode));
+    if (missing !== undefined) {
+      return { location: rename.from, problem: `renames a mode to "${missing}", which "${rename.to}" lacks` };
+    }
+    if (new Set(targets).size !== targets.length) {
+      return { location: rename.from, problem: "renames two modes to one name" };
+    }
+  }
+  return undefined;
 }
 
 /**

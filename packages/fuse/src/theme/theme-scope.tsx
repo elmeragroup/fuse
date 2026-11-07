@@ -5,16 +5,13 @@ import { useLayoutEffect, useState } from "react";
 import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
 
-import type { ThemeAttributes } from "./theme-attributes";
+import type { ThemeAttributeName, ThemeAttributes } from "./theme-attributes";
 import { ThemeContext, useResolvedTheme } from "./theme-context";
 import type { Theme } from "./theme-context";
+import type { ThemeInput } from "./theme-input";
 import { createThemeScopeContainerStore, ThemeScopeContainerContext } from "./theme-scope-container";
-import type { ThemeInput } from "./tokens/themes";
 
-export type ThemeScopeProps = Omit<
-  useRender.ComponentProps<"div">,
-  "data-theme-variant" | "data-theme-brand" | "data-theme-segment"
-> & {
+export type ThemeScopeProps = Omit<useRender.ComponentProps<"div">, ThemeAttributeName> & {
   theme: ThemeInput;
 };
 

@@ -19,7 +19,7 @@ it("opens the inner-corner demo's menu and rounds its custom block like the rows
     menu
       .getByText(text, { exact: true })
       .evaluate((element) => getComputedStyle(element).borderTopLeftRadius);
-  // The docs page renders the internal Elmera theme: an 8px popup corner less its 4px padding.
+  // The docs page renders the neutral Elmera theme: an 8px popup corner less its 4px padding.
   expect(await corner("Profile")).toBe("4px");
   expect(await corner("Signed in as kari@example.com")).toBe("4px");
 

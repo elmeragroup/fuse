@@ -1,7 +1,7 @@
 import { BRANDS } from "@elmeragroup/fuse/theme";
 import type { BrandCode, ColorScheme, ThemeInput, ThemeSegment } from "@elmeragroup/fuse/theme";
 
-import { COLOR_SCHEME_LABELS, SEGMENT_LABELS, VARIANT_LABELS } from "../../../../lib/theme";
+import { COLOR_SCHEME_LABELS, SEGMENT_LABELS, IDENTITY_LABELS } from "../../../../lib/theme";
 
 /**
  * The option data the theme picker renders: which combinations are legal, and how a theme reads
@@ -33,23 +33,23 @@ export function segmentBlock(brand: BrandCode, segment: ThemeSegment): string | 
 }
 
 /**
- * The theme in one line, as the chip reads it: "Fjordkraft · Private · External".
+ * The theme in one line, as the chip reads it: "Fjordkraft · Private · Branded".
  *
  * @param theme - The theme to name.
- * @returns The brand, segment and variant joined by middle dots.
+ * @returns The brand, segment and identity joined by middle dots.
  */
 export function themeSummary(theme: ThemeInput): string {
-  return `${BRANDS[theme.brand].displayName} · ${SEGMENT_LABELS[theme.segment]} · ${VARIANT_LABELS[theme.variant]}`;
+  return `${BRANDS[theme.brand].displayName} · ${SEGMENT_LABELS[theme.segment]} · ${IDENTITY_LABELS[theme.identity]}`;
 }
 
 /**
- * What the status region says after a change: "Theme: Fjordkraft, private, external, dark".
+ * What the status region says after a change: "Theme: Fjordkraft, private, branded, dark".
  *
  * @param theme - The theme just committed.
  * @param scheme - The colour scheme the visitor picked; `system` reads as "system".
  * @returns The sentence the polite region announces.
  */
 export function themeAnnouncement(theme: ThemeInput, scheme: ColorScheme): string {
-  const parts = [SEGMENT_LABELS[theme.segment], VARIANT_LABELS[theme.variant], COLOR_SCHEME_LABELS[scheme]];
+  const parts = [SEGMENT_LABELS[theme.segment], IDENTITY_LABELS[theme.identity], COLOR_SCHEME_LABELS[scheme]];
   return `Theme: ${[BRANDS[theme.brand].displayName, ...parts.map((part) => part.toLowerCase())].join(", ")}`;
 }

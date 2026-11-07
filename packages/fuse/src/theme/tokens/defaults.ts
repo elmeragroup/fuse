@@ -1,8 +1,9 @@
+import { NEUTRAL_CORNERS } from "../corners/corners";
 import type { LayerTokens, TokenContract } from "./contract";
 import { withDerivedTokens } from "./derived-tokens";
 import { NEUTRAL_RING, WHITE } from "./primitives";
 
-const INTERNAL_FOREGROUND = "oklch(0.15 0.0041 49.31)";
+const NEUTRAL_FOREGROUND = "oklch(0.15 0.0041 49.31)";
 const ERROR = "oklch(0.4526 0.17845 30.42)";
 const INFO = "oklch(0.4 0.09979 263.74)";
 const SUCCESS = "oklch(0.4277 0.13765 144.24)";
@@ -16,20 +17,20 @@ const SEQ_4 = "oklch(0.5255 0.1496 254.78)";
 const SEQ_6 = "oklch(0.3856 0.1167 254.88)";
 
 /**
- * The shared defaults before derivation, which are the internal light theme before its
+ * The shared defaults before derivation, which are the neutral light theme before its
  * brand pointer. Composition overlays the palette layers on these.
  */
 export const LAYER_DEFAULTS = {
   background: WHITE,
-  foreground: INTERNAL_FOREGROUND,
+  foreground: NEUTRAL_FOREGROUND,
   card: WHITE,
-  "card-foreground": INTERNAL_FOREGROUND,
+  "card-foreground": NEUTRAL_FOREGROUND,
   "card-soft": "oklch(0.9702 0 0)",
-  "card-soft-foreground": INTERNAL_FOREGROUND,
+  "card-soft-foreground": NEUTRAL_FOREGROUND,
   popover: WHITE,
-  "popover-foreground": INTERNAL_FOREGROUND,
+  "popover-foreground": NEUTRAL_FOREGROUND,
   // The fill and text of the modal surfaces, Dialog (and AlertDialog through it) and Sheet.
-  // Internal themes keep the popover pair the anchored popups use, and the external variant
+  // Neutral themes keep the popover pair the anchored popups use, and the branded identity
   // layer fills light modals with the page tint, so card-coloured fields and selection rows
   // inside keep the separation they have on the page. Dark keeps the popover pair.
   dialog: "var(--popover)",
@@ -75,48 +76,48 @@ export const LAYER_DEFAULTS = {
   border: NEUTRAL_LINE,
   input: NEUTRAL_LINE,
   ring: NEUTRAL_RING,
-  // The edge of a Card and of a `card` Accordion item. Internal themes draw it in the border
-  // role, and the external variant layer makes it transparent. `CheckboxCard` and the TextField
+  // The edge of a Card and of a `card` Accordion item. Neutral themes draw it in the border
+  // role, and the branded identity layer makes it transparent. `CheckboxCard` and the TextField
   // `card` box keep `--border`.
   "card-border": "var(--border)",
-  // The line between a Card's stacked sections. Internal themes draw it in the border role, and
-  // the external variant layer draws it in the page tint, so each card reads as split in segments.
+  // The line between a Card's stacked sections. Neutral themes draw it in the border role, and
+  // the branded identity layer draws it in the page tint, so each card reads as split in segments.
   "card-section-divider": "var(--border)",
-  // The colour of a Card's `shadow-xs`, Tailwind's own 5% black. The external variant layer
+  // The colour of a Card's `shadow-xs`, Tailwind's own 5% black. The branded identity layer
   // makes it transparent. `CheckboxCard` and the TextField `card` box keep the plain `shadow-xs`.
   "card-shadow": "oklch(0 0 0 / 0.05)",
-  // The outline Button's border. Internal themes draw it as a 1px hairline in the border
-  // role, and the external variant layer swaps both values for the reference's 2px ring
+  // The outline Button's border. Neutral themes draw it as a 1px hairline in the border
+  // role, and the branded identity layer swaps both values for the reference's 2px ring
   // in the text color.
   "button-outline": "var(--border)",
   // The resting edge of a SelectionItem row (RadioItem, CheckboxItem), which also divides the
-  // rows of a vertical group. Internal themes draw it in the border role, and the external
-  // variant layer makes it transparent.
+  // rows of a vertical group. Neutral themes draw it in the border role, and the branded
+  // identity layer makes it transparent.
   "selection-border": "var(--border)",
-  // The edge of a checked SelectionItem row. Internal themes mark the checked row with the
-  // primary role, and the external variant layer keeps the resting edge, so the control alone
+  // The edge of a checked SelectionItem row. Neutral themes mark the checked row with the
+  // primary role, and the branded identity layer keeps the resting edge, so the control alone
   // shows the selection.
   "selection-checked-border": "var(--primary)",
   // The line between two stacked rows of a vertical SelectionItem group: a row's bottom edge, and
-  // a checked row's top and bottom edges. Internal themes draw it as the row's own edge, so a
-  // checked row stays boxed in the primary role, and the external variant layer keeps the grey
+  // a checked row's top and bottom edges. Neutral themes draw it as the row's own edge, so a
+  // checked row stays boxed in the primary role, and the branded identity layer keeps the grey
   // border role here while the rows' outer edge goes transparent.
   "selection-divider": "var(--selection-border)",
   "selection-checked-divider": "var(--selection-checked-border)",
   // The fill of a disabled SelectionItem row, which wins over the checked row's muted tint.
-  // Internal themes fill it with the muted role, and the external variant layer keeps the
+  // Neutral themes fill it with the muted role, and the branded identity layer keeps the
   // card fill of an enabled row.
   "selection-disabled-background": "var(--muted)",
   // The stripe colour of the disabled row's 45° hatch, a black alpha that reads the same in
-  // both schemes. The external variant layer makes it transparent, which drops the stripes.
+  // both schemes. The branded identity layer makes it transparent, which drops the stripes.
   "selection-disabled-hatch": "oklch(0 0 0 / 0.02)",
   // The label row text of a disabled SelectionItem row. A token value can't be `currentColor`,
-  // so it names the foreground role rather than inheriting; internal `foreground` equals
-  // `card-foreground` in both schemes, so an internal disabled title keeps its colour. The
-  // external variant layer greys it to the muted foreground. It is not a text-grade role.
+  // so it names the foreground role rather than inheriting; neutral `foreground` equals
+  // `card-foreground` in both schemes, so a neutral disabled title keeps its colour. The
+  // branded identity layer greys it to the muted foreground. It is not a text-grade role.
   "selection-disabled-foreground": "var(--foreground)",
-  // The fill and label of a pressed Toggle and ToggleGroup item. Internal themes keep the quiet
-  // muted face on the neutral page, and the external variant layer fills with the primary
+  // The fill and label of a pressed Toggle and ToggleGroup item. Neutral themes keep the quiet
+  // muted face on the neutral page, and the branded identity layer fills with the primary
   // pair, since muted barely clears the tinted brand pages.
   "toggle-pressed": "var(--muted)",
   "toggle-pressed-foreground": "var(--foreground)",
@@ -174,34 +175,25 @@ export const LAYER_DEFAULTS = {
   "sh-jsxliterals": "#4cbf99",
   "sh-sign": "#ed9366",
   "sh-comment": "#abb0b6",
-  radius: "0.5rem",
-  // The internal variant rounds every outer element but the Checkbox with the one radius, and
-  // inner corners follow outer − inset (`styles/corner-radius.ts`). The Checkbox caps its
-  // corner at 4px in every variant. Buttons and fields alias the one radius,
-  // and a zero step collapses the `rounded-*` scale in `fuse.css` onto it. Each theme rule
-  // resolves the aliases against the `--radius` of the element it matches. External palettes
-  // set a brand button radius, and the external variant layer sets the step. Every variant
-  // keeps the field alias, so external fields round with the brand radius. Internal fields
-  // read `--radius` itself rather than this alias, so they also follow a `--radius` override
-  // on a plain wrapper (`styles/corner-radius.ts`).
-  "radius-button": "var(--radius)",
-  "radius-field": "var(--radius)",
-  "radius-step": "0px",
+  // The root rounds as a neutral theme does: one radius, buttons and fields aliasing it, and a
+  // zero step. The corner sets in `theme/corners/corners.ts` own every theme's corners, and
+  // their rules restate them on each theme element.
+  ...NEUTRAL_CORNERS,
   "button-outline-width": "1px",
-  // The weight of a SelectionItem row's title (RadioItem, CheckboxItem). Internal themes keep
-  // the regular weight the internal row was ported with, and the external variant layer sets
+  // The weight of a SelectionItem row's title (RadioItem, CheckboxItem). Neutral themes keep
+  // the regular weight the neutral row was ported with, and the branded identity layer sets
   // the customer-facing radio card's medium title.
   "selection-title-weight": "400",
-  // The line height of a Text at sm, default and lg size (`text-variants.ts`). Internal themes
+  // The line height of a Text at sm, default and lg size (`text-variants.ts`). Neutral themes
   // keep the relaxed ratio each size had before the roles, 1.625 × 14, 16 and 18px, and the
-  // external variant layer sets the customer-facing paragraph styles.
+  // branded identity layer sets the customer-facing paragraph styles.
   "paragraph-leading-sm": "1.421875rem",
   "paragraph-leading-base": "1.625rem",
   "paragraph-leading-lg": "1.828125rem",
   // The size, line height and weight of a level 1 to 3 Heading without a size or font prop
-  // (`heading.tsx`). Internal themes keep the scale those levels had before the roles: h1
+  // (`heading.tsx`). Neutral themes keep the scale those levels had before the roles: h1
   // text-2xl, h2 text-lg and h3 text-base, each at the snug 1.375 ratio as a length, and the
-  // medium weight. The external variant layer sets the customer-facing heading styles.
+  // medium weight. The branded identity layer sets the customer-facing heading styles.
   "heading-1-size": "1.5rem",
   "heading-1-leading": "2.0625rem",
   "heading-1-weight": "500",
@@ -214,7 +206,7 @@ export const LAYER_DEFAULTS = {
 } as const satisfies LayerTokens;
 
 /**
- * The complete shared defaults, which are the internal light theme before its brand
- * pointer. The `:root` rule and the internal reset emit these values.
+ * The complete shared defaults, which are the neutral light theme before its brand
+ * pointer. The `:root` rule and the neutral reset emit these values.
  */
 export const DEFAULTS: TokenContract = withDerivedTokens(LAYER_DEFAULTS);

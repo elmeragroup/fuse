@@ -21,6 +21,19 @@ import { selfFocusRingClass } from "../../styles/utils";
 // or trailing icon does not sit tight against one end of a wide button. The xs
 // glyph size and `icon-inline`, a square as tall as the surrounding line that follows no
 // density and inherits that line's type, stay local.
+// A label edge takes at least the identity's `--button-label-px-min`, which the corner rules in
+// themes.css declare on every theme element (`theme/corners/corners.ts`): 12px for a branded
+// theme, whose button often rounds as a pill, and 0px for a neutral one, so a neutral scope in a
+// branded page does not inherit the floor. It lifts only dense branded labels, since the
+// comfortable button inset is 12px or more. The icon edge keeps its own inset, square sizes
+// have no inline padding, and a ButtonGroup member, which rounds with the group, drops the
+// floor. Every Fuse part that replaces Button's corner drops it the same way, by setting
+// `--button-px-floor` to 0px: DataTableFilter's segments and header operator and the
+// date-picker presets. The padding reads the button's own `--button-px-floor`, which copies the theme's floor
+// and which a grouped button sets to 0px. The theme rules never declare that local property, so
+// a theme element that is itself the grouped button, whose unlayered theme rule declares the
+// floor, cannot bring it back.
+// A host without themes.css falls back to 0px and keeps the density inset.
 // Every size rounds with the theme's `--radius-button`. The arbitrary value keeps
 // tailwind-merge able to replace it with a consumer `rounded-*` class, which the custom
 // `rounded-button` utility would not be.
@@ -39,11 +52,11 @@ import { selfFocusRingClass } from "../../styles/utils";
 // `pendingIndicator={null}` the attribute is absent and nothing hides.
 // The outline rests transparent, so it shows the surface beneath it: the page, a Card, a Dialog
 // or a Popover. A page fill showed the page through a Card wherever the two differ, which is
-// external light and every dark theme. `bg-transparent` is explicit, so a preflight-free host
+// branded light and every dark theme. `bg-transparent` is explicit, so a preflight-free host
 // does not show the native button face.
 // The outline border reads the theme's `--button-outline` at `--button-outline-width`: a 1px
-// `--border` hairline in internal themes and the reference's 2px ring in the text color in
-// external ones. A host without themes.css declares neither, so both fall back to the 1px
+// `--border` hairline in neutral themes and the reference's 2px ring in the text color in
+// branded ones. A host without themes.css declares neither, so both fall back to the 1px
 // `--border` hairline. Only the hairline casts `shadow-xs`, so the shadow spells out
 // Tailwind's `shadow-xs` value as a function of the width, which a host `--shadow-xs`
 // override does not reach. It equals `shadow-xs` at 1px. From 2px its blur is 0 and its
@@ -57,7 +70,7 @@ import { selfFocusRingClass } from "../../styles/utils";
 // `/10` fill, a slightly stronger edge that is accepted.
 export const buttonVariants = tv({
   base: cn(
-    "group/button font-medium box-border inline-flex shrink-0 cursor-pointer items-center justify-center rounded-(--radius-button) border border-transparent p-0 whitespace-nowrap transition-[color,background-color,border-color,box-shadow,translate,opacity] select-none in-data-[slot=button-group]:rounded-md enabled-active:not-aria-[haspopup]:translate-y-px [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 data-[pending-indicator]:[&>svg:not([data-icon=inline-end])]:hidden",
+    "group/button font-medium box-border inline-flex shrink-0 cursor-pointer items-center justify-center rounded-(--radius-button) border border-transparent p-0 whitespace-nowrap transition-[color,background-color,border-color,box-shadow,translate,opacity] select-none [--button-px-floor:var(--button-label-px-min,0px)] in-data-[slot=button-group]:rounded-md in-data-[slot=button-group]:[--button-px-floor:0px] enabled-active:not-aria-[haspopup]:translate-y-px [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 data-[pending-indicator]:[&>svg:not([data-icon=inline-end])]:hidden",
     selfFocusRingClass,
     nativeStateFaceClass,
     dataStateFaceClass
@@ -82,25 +95,25 @@ export const buttonVariants = tv({
         size: "md",
         fit: "label",
         class:
-          "px-(--control-px-button-md) has-data-[icon=inline-end]:pr-(--control-px-button-icon-md) has-data-[icon=inline-start]:pl-(--control-px-button-icon-md)",
+          "px-[max(var(--control-px-button-md),var(--button-px-floor))] has-data-[icon=inline-end]:pr-(--control-px-button-icon-md) has-data-[icon=inline-start]:pl-(--control-px-button-icon-md)",
       }),
       xs: controlSize({
         size: "xs",
         fit: "label",
         class:
-          "px-(--control-px-button-xs) has-data-[icon=inline-end]:pr-(--control-px-button-icon-xs) has-data-[icon=inline-start]:pl-(--control-px-button-icon-xs) [&_svg:not([class*='size-'])]:size-3",
+          "px-[max(var(--control-px-button-xs),var(--button-px-floor))] has-data-[icon=inline-end]:pr-(--control-px-button-icon-xs) has-data-[icon=inline-start]:pl-(--control-px-button-icon-xs) [&_svg:not([class*='size-'])]:size-3",
       }),
       sm: controlSize({
         size: "sm",
         fit: "label",
         class:
-          "px-(--control-px-button-sm) has-data-[icon=inline-end]:pr-(--control-px-button-icon-sm) has-data-[icon=inline-start]:pl-(--control-px-button-icon-sm)",
+          "px-[max(var(--control-px-button-sm),var(--button-px-floor))] has-data-[icon=inline-end]:pr-(--control-px-button-icon-sm) has-data-[icon=inline-start]:pl-(--control-px-button-icon-sm)",
       }),
       lg: controlSize({
         size: "lg",
         fit: "label",
         class:
-          "px-(--control-px-button-lg) has-data-[icon=inline-end]:pr-(--control-px-button-icon-lg) has-data-[icon=inline-start]:pl-(--control-px-button-icon-lg)",
+          "px-[max(var(--control-px-button-lg),var(--button-px-floor))] has-data-[icon=inline-end]:pr-(--control-px-button-icon-lg) has-data-[icon=inline-start]:pl-(--control-px-button-icon-lg)",
       }),
       icon: controlSize({ size: "md", fit: "square" }),
       "icon-xs": controlSize({ size: "xs", fit: "square", class: "[&_svg:not([class*='size-'])]:size-3" }),

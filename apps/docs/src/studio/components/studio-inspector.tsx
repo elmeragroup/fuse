@@ -8,9 +8,9 @@ import { tv } from "tailwind-variants";
 import { Select } from "@elmeragroup/fuse/select";
 import { Span } from "@elmeragroup/fuse/span";
 import { Text } from "@elmeragroup/fuse/text";
-import { BRANDS, defaultDensityForVariant, themeSlug } from "@elmeragroup/fuse/theme";
+import { BRANDS, themeSlug } from "@elmeragroup/fuse/theme";
 
-import { SEGMENT_LABELS, VARIANT_LABELS } from "../../lib/theme";
+import { docsDensityFor, IDENTITY_LABELS, SEGMENT_LABELS } from "../../lib/theme";
 import { hasDensityPanel, leadSectionsFor } from "../lib/documents";
 import type { ArtboardSpec } from "../lib/documents";
 import { DENSITY_LABELS } from "../lib/labels";
@@ -21,7 +21,7 @@ import {
   DensityToggle,
   SchemeToggle,
   SegmentToggle,
-  VariantToggle,
+  IdentityToggle,
   useArtboardTheme,
 } from "./artboard-theme-controls";
 import { CornerReadout } from "./corner-xray";
@@ -56,10 +56,10 @@ function BaseThemeSection(): ReactElement {
         <ReadoutRow term="Slug" code>
           {themeSlug(theme)}
         </ReadoutRow>
-        <ReadoutRow term="Variant">{VARIANT_LABELS[theme.variant]}</ReadoutRow>
+        <ReadoutRow term="Identity">{IDENTITY_LABELS[theme.identity]}</ReadoutRow>
         <ReadoutRow term="Brand">{BRANDS[theme.brand].displayName}</ReadoutRow>
         <ReadoutRow term="Segment">{SEGMENT_LABELS[theme.segment]}</ReadoutRow>
-        <ReadoutRow term="Density">{DENSITY_LABELS[defaultDensityForVariant(theme.variant)]}</ReadoutRow>
+        <ReadoutRow term="Density">{DENSITY_LABELS[docsDensityFor(theme)]}</ReadoutRow>
       </ReadoutList>
       <Text size="sm" variant="muted" className={styles.note()}>
         Tune the tokens below. Each edit applies to every artboard, on every page.
@@ -71,7 +71,7 @@ function BaseThemeSection(): ReactElement {
 const TOKEN_LIST = new Intl.ListFormat("en", { type: "conjunction" });
 
 /**
- * With an artboard selected: its name and width, then its theme, brand, variant and segment, its
+ * With an artboard selected: its name and width, then its theme, brand, identity and segment, its
  * scheme and its density, all editable as on the theme toolbar. An artboard in a theme of its own
  * names the edits it skips because they would loop in that theme.
  */
@@ -111,9 +111,9 @@ function ArtboardSection({ artboard }: { artboard: ArtboardSpec }): ReactElement
       </div>
       <div className={styles.field()}>
         <Span size="sm" variant="muted">
-          Variant
+          Identity
         </Span>
-        <VariantToggle artboard={artboard} />
+        <IdentityToggle artboard={artboard} />
       </div>
       <div className={styles.field()}>
         <Span size="sm" variant="muted">

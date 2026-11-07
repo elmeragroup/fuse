@@ -214,9 +214,9 @@ export function fixture(family: string, withPage = true) {
     color("Fuse tokens", "background", { r: 1, g: 1, b: 1, a: 1 }),
     aliasOf("Fuse tokens", "font-sans", "STRING", {
       collection: "Fuse brand",
-      variable: "light/external/private/font-sans",
+      variable: "light/branded/private/font-sans",
     }),
-    string("Fuse brand", "light/external/private/font-sans", family),
+    string("Fuse brand", "light/branded/private/font-sans", family),
   ]);
   if (withPage) {
     const page = file.figma.createPage();

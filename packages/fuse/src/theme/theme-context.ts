@@ -4,8 +4,9 @@ import { createContext, useMemo } from "react";
 
 import { attributesOfValidatedTheme } from "./theme-attributes";
 import type { ThemeAttributes } from "./theme-attributes";
-import { themeSlug } from "./tokens/themes";
-import type { ThemeInput, ThemeSlug } from "./tokens/themes";
+import { themeSlug } from "./theme-input";
+import type { THEME_AXES } from "./theme-input";
+import type { ThemeInput, ThemeSlug } from "./theme-input";
 import { validateTheme } from "./validate-theme";
 
 export type Theme = ThemeInput & { slug: ThemeSlug };
@@ -29,6 +30,11 @@ export function useResolvedTheme(theme: ThemeInput): ResolvedTheme {
   // SAFETY: untyped CMS/env input is the boundary; optional axis reads keep memo deps from
   // throwing before the memo can validate and report the real error.
   const axes = theme as ThemeInput | null;
+  // Every theme axis is one memo key; the length check fails to compile when THEME_AXES gains
+  // an axis this list misses.
+  const [identity, brand, segment] = [axes?.identity, axes?.brand, axes?.segment] as const satisfies {
+    readonly length: (typeof THEME_AXES)["length"];
+  };
   return useMemo((): ResolvedTheme => {
     const validated = validateTheme(theme);
     return {
@@ -38,5 +44,5 @@ export function useResolvedTheme(theme: ThemeInput): ResolvedTheme {
       attributes: attributesOfValidatedTheme(validated),
     };
     // oxlint-disable-next-line react-hooks/exhaustive-deps -- axis primitives are the equality key; equal inline theme literals must not revalidate
-  }, [axes?.variant, axes?.brand, axes?.segment]);
+  }, [identity, brand, segment]);
 }

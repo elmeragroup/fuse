@@ -2,10 +2,10 @@ import { describe, expect, it } from "vitest";
 
 import { composeTheme } from "./compose-theme";
 import { cssVarReference } from "./css-values";
+import { LEGAL_THEMES, themeSlug } from "./theme-input";
 import { readTokenColor } from "./token-color";
 import { TOKEN_KINDS, TOKEN_NAMES } from "./tokens/contract";
 import { PRIMITIVES } from "./tokens/primitives";
-import { LEGAL_THEMES, themeSlug } from "./tokens/themes";
 
 describe("readTokenColor", () => {
   it.each<readonly [string, object]>([

@@ -33,7 +33,7 @@ import {
   DensityToggle,
   SchemeToggle,
   SegmentToggle,
-  VariantToggle,
+  IdentityToggle,
   useArtboardTheme,
 } from "../artboard-theme-controls";
 import { ChromeScope } from "../chrome-scope";
@@ -157,7 +157,7 @@ const BRAND_MENU = "Brand";
 
 /**
  * The selected artboard's settings, as the inspector's Artboard section sets them: its theme by
- * identity, brand, variant and segment, then its scheme and density. The Brand Select joins the
+ * identity, brand, identity and segment, then its scheme and density. The Brand Select joins the
  * toolbar's arrow-key order through a `Toolbar.Button` that renders its trigger, and opens as one
  * of the toolbar's menus in `menu`, so it closes when another menu opens or the toolbar's anchor
  * hides.
@@ -187,7 +187,7 @@ function ArtboardSettings({ artboard, menu }: { artboard: ArtboardSpec; menu: Op
           <BrandOptions />
         </Select.Content>
       </Select.Root>
-      <VariantToggle artboard={artboard} />
+      <IdentityToggle artboard={artboard} />
       <SegmentToggle artboard={artboard} />
       <SchemeToggle artboard={artboard} />
       <DensityToggle artboard={artboard} />

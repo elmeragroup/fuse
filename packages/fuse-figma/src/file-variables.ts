@@ -115,7 +115,8 @@ export type FileVariables = {
 
 /**
  * A change to one collection. Figma gives a collection a write creates one mode, which
- * `initialModeId` names for the rest of the write. Deleting a collection deletes its modes
+ * `initialModeId` names for the rest of the write. Renaming a collection keeps its id, so its
+ * modes, variables and the frames pinned to them stay. Deleting a collection deletes its modes
  * and variables with it.
  */
 export type CollectionChange =
@@ -125,15 +126,23 @@ export type CollectionChange =
       readonly name: string;
       readonly initialModeId: ModeId;
     }
+  | { readonly _tag: "RenameCollection"; readonly id: CollectionId; readonly name: string }
   | { readonly _tag: "DeleteCollection"; readonly id: CollectionId };
 
 /**
  * A change to one mode of a collection. `NameInitialMode` names the one mode Figma gives a
- * collection the same write creates; it is the only mode a write renames.
+ * collection the same write creates. `RenameMode` renames a mode of a renamed collection in
+ * place, keeping its id and so the frames pinned to it.
  */
 export type ModeChange =
   | {
       readonly _tag: "NameInitialMode" | "CreateMode";
+      readonly collectionId: CollectionId;
+      readonly id: ModeId;
+      readonly name: string;
+    }
+  | {
+      readonly _tag: "RenameMode";
       readonly collectionId: CollectionId;
       readonly id: ModeId;
       readonly name: string;

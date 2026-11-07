@@ -1,20 +1,17 @@
+import type { BrandCode } from "../theme-input";
 import type { TokenLayer } from "./contract";
 import { NEUTRAL_RING, WHITE } from "./primitives";
-import type { BrandCode } from "./themes";
 
-export type ExternalBrandCode = Exclude<BrandCode, "fkab">;
+/** A brand with its own palette: every brand but `fkab`, which aliases `fkas`. */
+export type PaletteBrandCode = Exclude<BrandCode, "fkab">;
 
 /**
- * The roles every external theme shares, whatever its brand. External rounding spreads the
- * `rounded-*` scale in 2px steps around the brand radius, so `rounded-md` sits 2px inside
- * `--radius` and `rounded-xl` 4px outside it. Design keeps this derived scale rather than
- * the Central design system's radius variables. Field boxes round with the brand radius, the
- * corner of a card or selection row: the layer leaves `--radius-field` at its `var(--radius)`
- * default, which each theme rule resolves against its own `--radius`. The outline Button
+ * The roles every branded theme shares, whatever its brand. Corners are not a palette role:
+ * `theme/corners/corners.ts` owns each identity's corner set. The outline Button
  * draws the customer-facing reference's outline, a 2px ring in the text color, which every
  * brand shares. A selection row draws no outer edge: its resting edge is a zero-alpha colour, not
  * a `transparent` keyword, which the token format does not read, and keeps the 1px border so the
- * rows' joins and insets stay. A checked row keeps that resting edge, as the external radio
+ * rows' joins and insets stay. A checked row keeps that resting edge, as the customer-facing radio
  * card does, and the faint `bg-muted` tint, which design keeps, so its control is the clear
  * cue. `RadioIconButton` is a button, not a row, so it keeps its `border-primary` checked edge
  * rather than reading the selection roles. Stacked rows keep a grey `--border` separator
@@ -22,12 +19,12 @@ export type ExternalBrandCode = Exclude<BrandCode, "fkab">;
  * enabled row and draws no stripes, so it is not a grey panel among the white rows; its title
  * greys to the muted foreground, and its control dims at 50%, as in every theme. A selection
  * row's title takes the medium weight of that radio card, so it matches the group legend and
- * `CheckboxCard` titles around it. The internal variant keeps the default 0px step, the 1px
+ * `CheckboxCard` titles around it. The neutral identity keeps the 1px
  * `--border` hairline, the `--border` row edge and divider, the `--primary` box around a checked
  * row, the muted, striped disabled row and the regular row title.
  *
  * A Card and a `card` Accordion item draw no edge either, and Card casts no shadow: a white card
- * stands on the page tint by its fill alone, as the external order flows draw it. The zero-alpha
+ * stands on the page tint by its fill alone, as the customer-facing order flows draw it. The zero-alpha
  * edge keeps the 1px border, so the cards' inner corners and layout stay, and the zero-alpha
  * shadow keeps Card's `shadow-xs` geometry, so a brand can tint it back. A card is a container,
  * not a control, so the faint step off the page, about 1.05:1 in the weakest light brands, is no
@@ -42,24 +39,24 @@ export type ExternalBrandCode = Exclude<BrandCode, "fkab">;
  * A light modal, Dialog, AlertDialog or Sheet, fills with the page tint and takes the page's
  * text colour, so card-coloured fields and selection rows inside it stand apart as they do on
  * the page. The anchored popups keep the white popover: their highlighted rows need the
- * `accent`-on-`popover` step, which the faint external accent cannot take on the page tint. The
+ * `accent`-on-`popover` step, which the faint branded accent cannot take on the page tint. The
  * dark sheets keep the popover pair, which `DARK_DEFAULTS` restates.
  *
- * The layer names the neutral focus ring so every external light rule declares `--ring`
+ * The layer names the neutral focus ring so every branded light rule declares `--ring`
  * (and restates the `--sidebar-ring` alias), and a nested scope gets its own theme's ring. To
  * tune one brand's ring:
  *
- * - Light: add `ring` to the brand's entry in {@link EXTERNAL_PALETTES}. A segment delta in
+ * - Light: add `ring` to the brand's entry in {@link BRAND_PALETTES}. A segment delta in
  *   `segment-sheets.ts` layers on top of it, so the ring carries through unless the delta
  *   names its own.
- * - Dark: add `ring` to the brand's sheet in `external-dark-palettes.ts`, and to each of the
+ * - Dark: add `ring` to the brand's sheet in `brand-dark-palettes.ts`, and to each of the
  *   brand's segment dark sheets in `segment-sheets.ts`, such as fkas-company's, since a
  *   segment sheet replaces the brand's dark sheet. A sheet without `ring` keeps the dark
  *   default's neutral ring.
  *
  * `contrast-matrix.test.ts` holds a tuned ring to 3:1 on the page and card surfaces.
  */
-export const EXTERNAL_VARIANT_LAYER = {
+export const BRANDED_IDENTITY_LAYER = {
   dialog: "var(--background)",
   "dialog-foreground": "var(--foreground)",
   ring: NEUTRAL_RING,
@@ -76,15 +73,14 @@ export const EXTERNAL_VARIANT_LAYER = {
   "selection-disabled-foreground": "var(--muted-foreground)",
   "toggle-pressed": "var(--primary)",
   "toggle-pressed-foreground": "var(--primary-foreground)",
-  "radius-step": "2px",
   "button-outline-width": "2px",
   "selection-title-weight": "500",
-  // The external paragraph styles: small 14/20, medium 16/22 and large 18/24, the same on
+  // The branded paragraph styles: small 14/20, medium 16/22 and large 18/24, the same on
   // desktop and mobile.
   "paragraph-leading-sm": "1.25rem",
   "paragraph-leading-base": "1.375rem",
   "paragraph-leading-lg": "1.5rem",
-  // The external desktop heading styles: h1 is heading small, 24/32, and h2 and h3 are heading
+  // The branded desktop heading styles: h1 is heading small, 24/32, and h2 and h3 are heading
   // xsmall, 20/32, all bold. h4 to h6 have no role and keep Heading's plain default.
   "heading-1-size": "1.5rem",
   "heading-1-leading": "2rem",
@@ -105,7 +101,7 @@ export const EXTERNAL_VARIANT_LAYER = {
  * the 70% value measured. Telinet (`fkse`) stops darker, at a tone that clears 4.5:1 on `muted`.
  * Nordic Green Energy keeps its sheet's opaque on-surface-variant.
  */
-export const EXTERNAL_PALETTES = {
+export const BRAND_PALETTES = {
   fkas: {
     background: "oklch(0.96042 0.0214 46.99)",
     foreground: "oklch(0.3209 0.10325 38.8)",
@@ -128,8 +124,6 @@ export const EXTERNAL_PALETTES = {
     "feature-foreground": "oklch(0.80097 0.10434 49.42)",
     border: "oklch(0.898 0.0026 48.72)",
     input: "oklch(0.9232 0.0026 48.72)",
-    radius: "0.75rem",
-    "radius-button": "1.8125rem",
   },
   tkas: {
     background: "oklch(0.97902 0.02928 188.87)",
@@ -153,8 +147,6 @@ export const EXTERNAL_PALETTES = {
     "feature-foreground": "oklch(0.90178 0.09399 190.62)",
     border: "oklch(0.921 0.0126 255.53)",
     input: "oklch(0.929 0.0126 255.53)",
-    radius: "1rem",
-    "radius-button": "1rem",
   },
   guen: {
     background: "oklch(0.95469 0.01887 279.53)",
@@ -178,8 +170,6 @@ export const EXTERNAL_PALETTES = {
     "feature-foreground": "oklch(0.84919 0.07412 279.64)",
     border: "oklch(0.894 0.0126 255.53)",
     input: "oklch(0.929 0.0126 255.53)",
-    radius: "0.5rem",
-    "radius-button": "0.5rem",
   },
   fkse: {
     background: "oklch(0.98014 0.01729 210.19)",
@@ -203,12 +193,9 @@ export const EXTERNAL_PALETTES = {
     "feature-foreground": "oklch(0.72225 0.16251 154.25)", // #36C275, the Telinet green
     border: "oklch(0.9232 0.0026 48.72)",
     input: "oklch(0.9232 0.0026 48.72)",
-    radius: "0.75rem",
-    "radius-button": "1.8125rem",
   },
   // Elmera Figma "Farger" sheet (file dWv89e4X0DXeCKMsJwD5zL, node 2106:18246). card-soft (P-99)
-  // and feature-bright (P-75) are interpolated tones between neighbouring sheet stops. Design has
-  // not specified the radius yet, so the palette sets a 6px `0.375rem` placeholder. No segment
+  // and feature-bright (P-75) are interpolated tones between neighbouring sheet stops. No segment
   // delta.
   elma: {
     background: "oklch(0.98177 0.011862 223.5)",
@@ -232,14 +219,10 @@ export const EXTERNAL_PALETTES = {
     "feature-foreground": "oklch(0.9094 0.046626 220.6)",
     border: "oklch(0.9219 0 0)",
     input: "oklch(0.9219 0 0)",
-    radius: "0.375rem",
-    "radius-button": "0.375rem",
   },
   // Nordic Green Energy Material 3 scheme, NGE/sys/light (Figma file q1sEYcZWmf1HUeuiaJFqm6,
   // section 129:12419), mapped to roles by meaning. The file's "Farger" sheets carry Gudbrandsdal
-  // Energi's palette, not NGE's. Design has not specified the radius yet, so the palette sets a
-  // 6px `0.375rem` placeholder, and the button radius takes the pill other external brands use.
-  // No segment delta.
+  // Energi's palette, not NGE's. No segment delta.
   ngfi: {
     background: "oklch(0.9817261 0.0061352 137.7733593)", // #F7FAF6 surface
     foreground: "oklch(0.2214543 0.0071419 164.2694873)", // #181C1A on-surface
@@ -262,15 +245,14 @@ export const EXTERNAL_PALETTES = {
     "feature-foreground": WHITE, // on-primary-container
     border: "oklch(0.8256644 0.0145962 162.3965393)", // #BEC9C3 outline-variant
     input: "oklch(0.8256644 0.0145962 162.3965393)", // #BEC9C3 outline-variant
-    radius: "0.375rem",
-    "radius-button": "1.8125rem",
   },
-} as const satisfies Record<ExternalBrandCode, TokenLayer>;
+} as const satisfies Record<PaletteBrandCode, TokenLayer>;
 
 /**
- * fkab is a permanent alias of fkas, resolved once in `paletteLayers`. Every palette table and
- * accessor takes `ExternalBrandCode`, so an unresolved brand cannot reach one.
+ * fkab is a permanent alias of fkas, resolved by each accessor that reads a per-brand table, such
+ * as `paletteLayers` and `cornersOf`. Every palette table and accessor takes `PaletteBrandCode`, so
+ * an unresolved brand cannot reach one.
  */
-export function paletteBrand(brand: BrandCode): ExternalBrandCode {
+export function paletteBrand(brand: BrandCode): PaletteBrandCode {
   return brand === "fkab" ? "fkas" : brand;
 }

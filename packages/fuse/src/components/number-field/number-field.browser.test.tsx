@@ -17,7 +17,7 @@ import {
   CONTROL_XS,
   cssVarColor,
   fieldRootFrom,
-  fkasExternal,
+  fkasBranded,
   fkasPrivate,
   px,
   renderThemed,
@@ -603,7 +603,7 @@ describe("NumberField density metrics", () => {
 
     stampDensity("dense");
     rerender(
-      <ThemeScope theme={fkasExternal}>
+      <ThemeScope theme={fkasBranded}>
         {withLocale(
           "en-US",
           <div data-density="comfortable">

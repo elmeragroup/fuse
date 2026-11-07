@@ -27,6 +27,26 @@ type Payload = {
   m?: DensityOverrides;
 };
 
+/** The identity prefixes slugs carried before the rename from `variant` to `identity`. */
+const LEGACY_IDENTITY_PREFIXES = [
+  ["internal-", "neutral-"],
+  ["external-", "branded-"],
+] as const;
+
+/**
+ * Reads share text written before the identity rename: an `internal-` or `external-` slug names
+ * the same theme as its `neutral-` or `branded-` successor, so old links and autosaves keep their
+ * edits. The public `parseThemeSlug` stays strict; only this decoder accepts the old prefixes.
+ */
+function currentThemeSlug(slug: string): string {
+  for (const [legacy, current] of LEGACY_IDENTITY_PREFIXES) {
+    if (slug.startsWith(legacy)) {
+      return `${current}${slug.slice(legacy.length)}`;
+    }
+  }
+  return slug;
+}
+
 function base64UrlEncode(text: string): string {
   const bytes = new TextEncoder().encode(text);
   let binary = "";
@@ -200,7 +220,7 @@ export function decodeShare(text: string): StudioDocument | undefined {
   if (!isRecord(payload) || typeof payload.t !== "string") {
     return undefined;
   }
-  const theme = parseThemeSlug(payload.t);
+  const theme = parseThemeSlug(currentThemeSlug(payload.t));
   const light = readGroup(payload.l, false);
   const dark = readGroup(payload.d, false);
   const shared = readGroup(payload.s, true);

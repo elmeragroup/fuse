@@ -23,7 +23,7 @@ import {
   cssVarColor,
   effectiveOpacity,
   formNamed,
-  guenExternal,
+  guenBranded,
   renderThemed,
   roleNamed,
   stampDensity,
@@ -110,18 +110,18 @@ describe("RadioGroup", () => {
   it("draws the unchecked edge at 3:1 against the page and a card in light themes", () => {
     renderThemed(
       <>
-        <RadioGroup label="Internal plan">
-          <Radio value="internal">Internal</Radio>
+        <RadioGroup label="Neutral plan">
+          <Radio value="neutral">Neutral</Radio>
         </RadioGroup>
-        <ThemeScope theme={guenExternal}>
-          <RadioGroup label="External plan">
-            <Radio value="external">External</Radio>
+        <ThemeScope theme={guenBranded}>
+          <RadioGroup label="Branded plan">
+            <Radio value="branded">Branded</Radio>
           </RadioGroup>
         </ThemeScope>
       </>
     );
     // WCAG 1.4.11: the unfilled circle shows only its edge, over whichever surface it sits on.
-    for (const name of ["Internal", "External"]) {
+    for (const name of ["Neutral", "Branded"]) {
       const radio = radioNamed(name);
       const edge = getComputedStyle(radio).borderTopColor;
       for (const surface of ["--background", "--card"]) {

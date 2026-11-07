@@ -5,20 +5,20 @@
 - Review GE dark semantics, Telinet's live collection, shared support roles and syntax colors.
 - Check dark states, fixed-color artwork and chart distinction in product screens.
 - Ask design for per-brand focus ring colors. Every theme draws the neutral `oklch(0.6 0 0)` ring;
-  a brand tunes it with a `ring` entry in its light palette (`external-palettes.ts`) and in its
-  dark sheet (`external-dark-palettes.ts`) plus each of its segment dark sheets
+  a brand tunes it with a `ring` entry in its light palette (`brand-palettes.ts`) and in its
+  dark sheet (`brand-dark-palettes.ts`) plus each of its segment dark sheets
   (`segment-sheets.ts`), which replace the brand's dark sheet. `contrast-matrix.test.ts` holds it to 3:1. Retain the
   [accepted contrast exceptions](<apps/docs/src/app/(docs)/accessibility/page.tsx>) until reviewed
   replacements exist.
-- Ask design to set the opaque light `muted-foreground` tones from `external-palettes.ts`,
+- Ask design to set the opaque light `muted-foreground` tones from `brand-palettes.ts`,
   `segment-sheets.ts` and `defaults.ts` in the brand Figma files, which set the brand foreground
   at 70% alpha. Running `figma:sync` for the new values waits on the owner.
 - Ask design for Nordic Green Energy's radius and button radius, and sign off its palette.
-  `external-palettes.ts` maps the NGE Material 3 scheme by meaning, sets a 6px `0.375rem`
+  `brand-palettes.ts` maps the NGE Material 3 scheme by meaning, sets a 6px `0.375rem`
   placeholder radius and takes the `1.8125rem` pill button that Fjordkraft and Telinet use,
   since the nordicgreen.fi buttons are pills. Running `figma:sync` for the new `Fuse brand`
   mode and two primitives waits on the owner.
-- Ask design for an external secondary hover tone. The fkas, tkas, guen, fkse and elma themes
+- Ask design for a branded secondary hover tone. The fkas, tkas, guen, fkse and elma themes
   paint `secondary` in the brand color, and `--secondary-hover`, 5% toward `foreground`, measures
   1.03–1.06:1 against it in light and 1.01–1.04:1 in dark, so the hover is faint. Nordic Green
   Energy sets `secondary` equal to `foreground`, so its hover equals `--secondary` and does not show.
@@ -27,42 +27,42 @@
   tkas, guen, fkse and elma themes, so a link Button reads as plain text until hover underlines it.
 - Ask design for a light `muted` that clears the 1.1:1 hover-tint floor on `card` and `popover`.
   The shared 0.97 on a white surface measures 1.09:1 on every light theme, so
-  `contrast-matrix.test.ts` holds `muted` to that floor in dark only. External light modals fill
+  `contrast-matrix.test.ts` holds `muted` to that floor in dark only. Branded light modals fill
   with the page tint (`--dialog`), where the same tint, such as the corner close button's hover,
   measures 1.03–1.04:1. On the fkas private and guen pages the tint is darker than `muted`, so a
   transparent outline or ghost Button there lightens on hover, by 1.03:1 and 1.04:1 (#423).
 - Ask design how edgeless selection rows should stand out in a dark Dialog or Sheet. Dark modals
   keep `--dialog` on the popover, which every dark palette sets equal to `card`, the row fill, and
-  external rows draw no outer edge, so a `RadioItem` or `CheckboxItem` group in a dark modal has
+  branded rows draw no outer edge, so a `RadioItem` or `CheckboxItem` group in a dark modal has
   no row outlines.
-- Ask design whether dark external cards keep an edge. `--card-border` and `--card-shadow` are
-  light-only keys, so the zero-alpha external edge and shadow carry into dark, where `Card` and the
+- Ask design whether dark branded cards keep an edge. `--card-border` and `--card-shadow` are
+  light-only keys, so the zero-alpha branded edge and shadow carry into dark, where `Card` and the
   `card` Accordion item stand off the page only by the dark `card` step: about 1.25:1 in fkas, tkas
   and fkab, but 1.09:1 in fkse and 1.13:1 in ngfi. Keeping an edge or shadow there means
   dropping `card-border` or `card-shadow` from `LIGHT_ONLY_KEYS` and naming it in each dark sheet.
-- Ask design whether `Popover` follows `Dialog` onto the page tint in external light. A Popover can
+- Ask design whether `Popover` follows `Dialog` onto the page tint in branded light. A Popover can
   hold a form, as the basic demo does, but the anchored popups share the `accent`-on-`popover`
-  1.1:1 floor in `contrast-matrix.test.ts`, which the external light accent, 1.00–1.07:1 on the
+  1.1:1 floor in `contrast-matrix.test.ts`, which the branded light accent, 1.00–1.07:1 on the
   page tint, would not clear.
 - Ask design for a text-grade foreground on dark `feature`, or lighter dark `feature` tones.
   White text on dark `feature` measures 4.49:1 for tkas, 4.38:1 for fkse and 4.49:1 for elma,
   under the 4.5:1 floor. Until design decides, the landing's brand sites fill strong bands and
   the promo hero with `primary-soft` in dark mode (`landing/brand-site/site-band.tsx`).
 - Ask design for a dark external `primary-soft` that differs from `card`. The default Accordion
-  item fills with `primary-soft`, and every external dark sheet except ngfi sets it equal to
-  `card` (`external-dark-palettes.ts`, `segment-sheets.ts`), so a default accordion inside a Card
+  item fills with `primary-soft`, and every branded dark sheet except ngfi sets it equal to
+  `card` (`brand-dark-palettes.ts`, `segment-sheets.ts`), so a default accordion inside a Card
   loses its box in dark mode.
 - Ask design for light tones that hold `muted-foreground` at 4.5:1 on `primary-soft`, the default
-  Accordion item's fill. It measures 4.43:1 on the internal default, 3.84:1 on fkas and 4.17:1 on
+  Accordion item's fill. It measures 4.43:1 on the neutral default, 3.84:1 on fkas and 4.17:1 on
   fkse, so a muted description inside the item falls under the text floor. `contrast-matrix.test.ts`
   holds the pair in dark only.
 - Confirm the external Button numbers with design. They come from the sales flow's own button
   recipe, not a published brand spec: the comfortable label inset of 16px at `sm` and 32px at
   `md` and `lg` (`theme/tokens/density-metrics.ts`) and the 2px outline in `--foreground`
-  (`EXTERNAL_VARIANT_LAYER`). Also confirm the comfortable icon edge, three quarters of that
+  (`BRANDED_IDENTITY_LAYER`). Also confirm the comfortable icon edge, three quarters of that
   inset (12px at `sm`, 24px at `md` and `lg`), and pick a comfortable `xs` inset and icon edge,
   which keep the 12px and 10px control values.
-- Confirm the external disabled selection row's grey with design. `EXTERNAL_VARIANT_LAYER`
+- Confirm the branded disabled selection row's grey with design. `BRANDED_IDENTITY_LAYER`
   keeps the card fill without stripes and greys the title and other label row text through
   `--selection-disabled-foreground: var(--muted-foreground)`, beside the control's 50% face.
   Ask whether that grey is the right value, and tune it together with the Central Text input's
@@ -70,10 +70,10 @@
 - Drop the old disabled-hatch string, `rgb(0_0_0/0.02)` stripes, from the
   `elmera/no-primitive-colors` allowlist in `@elmeragroup/internal/oxlint`. The selection row's
   hatch now reads `--selection-disabled-hatch`, so no class carries that literal any more.
-- Confirm with design the external selection row title weight, for `CheckboxItem` rows as well
-  as `RadioItem` rows. `--selection-title-weight` is 500 in `EXTERNAL_VARIANT_LAYER`, from the
+- Confirm with design the branded selection row title weight, for `CheckboxItem` rows as well
+  as `RadioItem` rows. `--selection-title-weight` is 500 in `BRANDED_IDENTITY_LAYER`, from the
   radio card the sales flow used before `RadioItem` (`text-base/5 font-medium`), and internal
-  themes keep the 400 the internal row was ported with.
+  themes keep the 400 the neutral row was ported with.
 - Ask design for the breakpoint of the external mobile heading step. The Figma mobile scale is
   heading large 32/40, medium 24/34, small 20/32 and xsmall 18/32, all at 700, so an external h1,
   heading small, would step from 24px to 20px below that breakpoint, and h2 and h3, heading
@@ -81,10 +81,10 @@
   `--heading-1-size` to `--heading-3-size` hold one value per theme, so the step needs a
   responsive value kind in the theme generator (`generateThemesCss`), such as a base value plus
   one value inside a media query.
-- Ask design for an external heading style below heading xsmall. External h4 to h6 have no heading
+- Ask design for a branded heading style below heading xsmall. Branded h4 to h6 have no heading
   roles and keep Heading's 16/22 at 500, the library's paragraph medium prominent, until then.
-- Ask design whether external themes keep the reference's 4px corner on the standalone
-  `Calendar` (`styles/corner-radius.ts`), or round it from the brand radius. Internal themes
+- Ask design whether branded themes keep the reference's 4px corner on the standalone
+  `Calendar` (`styles/corner-radius.ts`), or round it from the brand radius. Neutral themes
   round it with `--radius`.
 - Ask design about the remaining Central Text input deltas at comfortable density: 8px
   inline padding (Fuse 14px), 16px input text (Fuse 18px), a darker border on hover, grey
@@ -105,7 +105,7 @@
 - Ask design to confirm the two `--border` hairlines that sit well above the 1.19:1 page floor
   in `contrast-matrix.test.ts`. ngfi light, M3 `outline-variant` #BEC9C3, measures 1.62:1 on
   the page and 1.70:1 on card; every other light theme sits at 1.19–1.30:1 on the page. The
-  provisional external dark `#454746` (`dark-defaults.ts`) measures 1.93–2.02:1 on the page and
+  provisional branded dark `#454746` (`dark-defaults.ts`) measures 1.93–2.02:1 on the page and
   1.61–1.83:1 on card.
 - The interim GridList selection box (`react-aria/internal/checkbox.ts`) draws its unchecked edge in
   `--border`, under the 3:1 non-text floor that `Checkbox`, `Radio` and the unchecked `Switch`
@@ -113,14 +113,14 @@
   raising the resting edge needs a new pressed one.
 - Decide whether `PhoneNumberField` and `NumberField` name their wrapper `group` from the field's
   label or drop the role. The controls inside have names; the groups around them have none.
-- Ask design whether the `NumberField` steppers keep their own fill. In internal dark the
+- Ask design whether the `NumberField` steppers keep their own fill. In neutral dark the
   stepper buttons draw `bg-background` (`oklch(0.145 0 0)`) inside a field box that draws
-  `bg-card` (`oklch(0.205 0 0)`). In external light every brand's steppers draw the tinted page
+  `bg-card` (`oklch(0.205 0 0)`). In branded light every brand's steppers draw the tinted page
   `--background` (guen `oklch(0.95469 0.01887 279.53)`) inside a white `--card` field box. Only
-  internal light matches. Is that intended, or should the steppers follow the field-box fill?
+  neutral light matches. Is that intended, or should the steppers follow the field-box fill?
 - Decide, with design, the fill of the other parts that paint the page fill, `bg-background`, the
   way #423 made the outline Button, the Alert action and the DataTableFilter chip transparent.
-  Inside a white Card on an external light page each paints the page tint. They are `Frame`
+  Inside a white Card on a branded light page each paints the page tint. They are `Frame`
   (`frame/frame.tsx`), the Table container and its cells inside a Frame (`table/table.tsx`), the
   `inline` TextField's hover, focus and invalid fill (`text-field/text-field-variants.ts`), the
   checked Switch thumb (`switch/switch-variants.ts`), the Slider thumb
@@ -220,6 +220,13 @@
   opt-in file so `fuse/css` carries only what components need. Both are breaking for consumers
   that write Fuse's variants today, so they wait for a reviewed decision; the package README
   documents the current behaviour under "What `fuse/css` changes in your theme".
+- A host override of a light-only role on a theme element, such as `--button-outline-width`, a
+  `--heading-*` or `--paragraph-leading-*` metric or the card-border alias, flips back in dark:
+  `themes.css` dark rules restate `LIGHT_ONLY_KEYS` (`darkPaletteDeclarations` in
+  `theme/generate-css.ts`, the key list in `theme/tokens/contract.ts`), and only the corners got
+  their own light-only rules. Omit `LIGHT_ONLY_KEYS` from the dark declarations and fold the
+  corner declarations into the same-selector light rules. It changes host-override behaviour for
+  those keys, so it ships as its own reviewed change.
 - Two separate React roots on one document, each with its own `ThemeProvider`, each get a
   color-scheme runtime. They reconcile against the live `data-theme`, so they converge rather
   than ping-pong, but neither sees the other's `setColorScheme`: a document gets no `storage`
@@ -285,7 +292,7 @@
 - NumberField writes optional props such as `name`, `min` and `aria-label` as plain attributes,
   against the optional-prop rule in AGENTS.md. The `WIRING_PARTS` source contract flags only raw
   spreads, so it misses them. Spread them through `definedProps`.
-- A light theme rule declares only `EXTERNAL_RESET_KEYS`, so `--destructive` and
+- A light theme rule declares only `LIGHT_RESET_KEYS`, so `--destructive` and
   `--destructive-foreground` resolve their `var()` on `:root`. A host that overrides `--error` on a
   nested theme scope does not move them there. `--sidebar-ring` is a reset key now, so it follows
   a scope's `--ring`. The theme studio restates the aliases on each artboard and in its CSS export
@@ -322,7 +329,7 @@
 
 - Add a CI job running `figma:check` once a service account owns a personal access token.
 - Add named Figma variables for the private corners in `styles/corner-radius.ts`, such
-  as the compact corner that caps `rounded-md` at 10px in external themes, when the
+  as the compact corner that caps `rounded-md` at 10px in branded themes, when the
   component pilot needs them. The sync sends only the plain radius rungs, `radius-step`
   and the density metrics.
 - Remove the unused `--radius-popover` rung from `fuse.css` and `RADIUS_RUNGS` in a
@@ -423,7 +430,7 @@ Paths are relative to `packages/fuse-figma` unless they start with `packages/`.
 - Carry a label's text-alignment override through a swap. The fake's text-alignment rule in
   `plugin/src/fake-figma.ts` drops it there, since no probe swapped an instance with the override.
 - Add the floating Sidebar.
-- Add Neo Sans to the org's Figma fonts. The real file has no Neo Sans, so the external Fjordkraft
+- Add Neo Sans to the org's Figma fonts. The real file has no Neo Sans, so the branded Fjordkraft
   headings, such as the Alert dialog and Dialog titles, draw a fallback there. The compare can check
   Neo Sans only once it can load the face, until then it compares the Roboto fallback
   (`LICENSED_FAMILIES` in `packages/fuse-figma/src/compare/page-assets.ts`).
@@ -697,7 +704,7 @@ each stand-in once Fuse ships the part.
 - Add a Fjordkraft Företag logo to Fuse. Until then the landing's `brand-wordmark.tsx` draws
   that brand from a mask of `public/landing/logos/fkab.svg`.
 - Decide the outline `Button` on a block filled with `primary` or `secondary`. It rests transparent
-  and inherits the block's light text, but external themes draw its ring in `--button-outline`,
+  and inherits the block's light text, but branded themes draw its ring in `--button-outline`,
   which is `foreground`, so the ring does not follow the text. The promo hero in
   `brand-site/site-hero.tsx` passes `quiet="ghost"` for its second action instead.
 - Let `Sidebar.Inset` render an element other than `<main>`. A page that already has a `main`
@@ -729,6 +736,13 @@ that opens every overlay on a side before flipping the window.
 - When a theme should choose its own density, rather than the host stamping it on the document
   root, design theme-driven density as its own change. Subtree theming never rescopes the density
   metrics today, and the density coverage test assumes one density per document.
+- Make corners a host axis once a product needs a mismatched pair, such as neutral colours with
+  branded corners. Today each identity picks its corner set (`theme/corners/corners.ts`), and the
+  private Button label floor follows the identity rather than the corner a host overrides, so a
+  host that squares a branded button keeps the 12px dense label floor.
+- The Figma kit draws Button labels at the density inset and not the branded dense 12px floor
+  (`--button-label-px-min`), since Figma variables cannot pick a floor by identity. Add an identity
+  formula to the sync if designers need the branded dense padding in the kit.
 - Add brands and locales on product demand; reconsider locale subsetting near ten locales.
 - When behavioral tests miss a visual regression or manual theme review stops scaling,
   add visual regression coverage over demos to the publish gate.

@@ -8,7 +8,7 @@ import * as Hex from "@elmeragroup/color/hex";
 import type {
   ResolvedThemeCatalog,
   ResolvedScheme,
-  ThemeVariant,
+  ThemeIdentity,
   TokenEntry,
 } from "@elmeragroup/fuse/theme-catalog";
 
@@ -42,19 +42,19 @@ function displayValue(entry: TokenEntry): string {
 }
 
 /**
- * The font variables as the docs set them for a theme's variant (`styles/globals.css`): Inter for
- * internal themes and Roboto for external ones, with headings following the body font. Themes
+ * The font variables as the docs set them for a theme's identity (`styles/globals.css`): Inter for
+ * neutral themes and Roboto for branded ones, with headings following the body font. Themes
  * name no fonts, so the docs, as an app, choose them.
  */
-function fontSeeds(variant: ThemeVariant) {
-  const body = variant === "internal" ? "inter" : "roboto";
+function fontSeeds(identity: ThemeIdentity) {
+  const body = identity === "neutral" ? "inter" : "roboto";
   return {
     "font-sans": { css: FONT_STACKS[body], value: FONT_STACK_LABELS[body] },
     "font-heading": { css: FONT_STACKS.body, value: FONT_STACK_LABELS[body] },
   } satisfies Record<FontVariable, StudioSeedToken>;
 }
 
-function schemeSeed(scheme: ResolvedScheme, variant: ThemeVariant): StudioSchemeSeed {
+function schemeSeed(scheme: ResolvedScheme, identity: ThemeIdentity): StudioSchemeSeed {
   // SAFETY: `scheme.tokens` holds an entry for every token name and `fontSeeds` one for every font
   // variable, so the record has every key StudioSchemeSeed names. Object.fromEntries cannot carry
   // that.
@@ -65,7 +65,7 @@ function schemeSeed(scheme: ResolvedScheme, variant: ThemeVariant): StudioScheme
         { css: LIVE_MIXES.get(entry.name) ?? entry.css, value: displayValue(entry) },
       ])
     ),
-    ...fontSeeds(variant),
+    ...fontSeeds(identity),
   } as StudioSchemeSeed;
 }
 
@@ -78,8 +78,8 @@ function schemeSeed(scheme: ResolvedScheme, variant: ThemeVariant): StudioScheme
 export function buildStudioSeeds(catalog: ResolvedThemeCatalog): StudioSeed[] {
   return catalog.themes.map((theme) => ({
     slug: theme.slug,
-    light: schemeSeed(theme.schemes.light, theme.input.variant),
-    dark: schemeSeed(theme.schemes.dark, theme.input.variant),
+    light: schemeSeed(theme.schemes.light, theme.input.identity),
+    dark: schemeSeed(theme.schemes.dark, theme.input.identity),
   }));
 }
 

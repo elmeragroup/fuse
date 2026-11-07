@@ -1,7 +1,7 @@
+import type { ThemeSegment } from "../theme-input";
+import type { BrandDarkSheet } from "./brand-dark-sheet";
+import type { PaletteBrandCode } from "./brand-palettes";
 import type { TokenLayer } from "./contract";
-import type { ExternalDarkSheet } from "./external-dark-sheet";
-import type { ExternalBrandCode } from "./external-palettes";
-import type { ThemeSegment } from "./themes";
 
 /** Both schemes' sheets for one brand/segment pair that departs from its brand base. */
 export type SegmentSheets = {
@@ -9,12 +9,12 @@ export type SegmentSheets = {
   readonly light: TokenLayer;
 
   /** The dark sheet that replaces the brand's dark palette. */
-  readonly dark: ExternalDarkSheet;
+  readonly dark: BrandDarkSheet;
 };
 
 // fkas-company's light overrides on top of the fkas base palette. The generator emits only
 // the keys that differ from the base theme. `muted-foreground` is an opaque tone of the
-// foreground, chosen as the brand palettes' tones are (see `EXTERNAL_PALETTES`).
+// foreground, chosen as the brand palettes' tones are (see `BRAND_PALETTES`).
 const FKAS_COMPANY_DELTA = {
   background: "oklch(0.9823 0.01428 213.1)",
   foreground: "oklch(0.30579 0.03693 215.45)",
@@ -54,10 +54,10 @@ const FKAS_COMPANY_DARK_SHEET = {
   feature: "oklch(0.5573786 0.0697862 216.2687)", // #3E7E8E
   "feature-bright": "oklch(0.2661671 0.0034366 164.8011)", // #242625
   "feature-foreground": "oklch(0.3921674 0.071463 220.1224)", // #004E60
-} as const satisfies ExternalDarkSheet;
+} as const satisfies BrandDarkSheet;
 
 // Keyed by palette brand, so a pinned alias such as fkab cannot hold sheets of its own.
-const SEGMENT_SHEETS: ReadonlyMap<ExternalBrandCode, ReadonlyMap<ThemeSegment, SegmentSheets>> = new Map([
+const SEGMENT_SHEETS: ReadonlyMap<PaletteBrandCode, ReadonlyMap<ThemeSegment, SegmentSheets>> = new Map([
   [
     "fkas",
     new Map<ThemeSegment, SegmentSheets>([
@@ -71,6 +71,6 @@ const SEGMENT_SHEETS: ReadonlyMap<ExternalBrandCode, ReadonlyMap<ThemeSegment, S
  * `undefined` when it has none. Callers pass the palette brand (see `paletteBrand`), so
  * fkab-company takes fkas-company's sheets.
  */
-export function segmentSheet(brand: ExternalBrandCode, segment: ThemeSegment): SegmentSheets | undefined {
+export function segmentSheet(brand: PaletteBrandCode, segment: ThemeSegment): SegmentSheets | undefined {
   return SEGMENT_SHEETS.get(brand)?.get(segment);
 }

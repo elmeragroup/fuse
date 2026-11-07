@@ -136,8 +136,12 @@ function changeLabel(change: PlannedChange): ChangeLabel {
   switch (change._tag) {
     case "CreateCollection":
       return { kind: "create collection", detail: "create collection" };
+    case "RenameCollection":
+      return { kind: "rename collection", detail: `rename collection from ${change.from}` };
     case "DeleteCollection":
       return { kind: "delete collection", detail: "delete collection" };
+    case "RenameMode":
+      return { kind: "rename mode", detail: `rename mode ${change.from} to ${change.mode}` };
     case "CreateMode":
       return { kind: "create mode", detail: `create mode ${change.mode}` };
     case "DeleteMode":
