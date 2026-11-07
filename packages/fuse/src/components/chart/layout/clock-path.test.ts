@@ -364,8 +364,11 @@ describe("an hourly year's quality", () => {
   // entrance frame, so a call with every other hour estimated must cost about what the same call
   // with no hour estimated costs, and an Area what its plain fill costs: each piece found in one
   // pass, never a scan per edge, which cost about 50 times as much. The oracle is the same call on
-  // the plain hours, timed in the same run, so a slow or busy machine slows both alike. The fastest
-  // of seven calls is the cost, since a busy machine only slows the others.
+  // the plain hours, timed in turns with it in the same run, so a slow or busy machine slows both
+  // alike. The fastest of seven calls is each one's cost, since a busy machine only slows the
+  // others. The marked call measures 0.8 to 1 times the plain one on a quiet machine and up to
+  // about 3.2 on a shared CI runner, so the bound sits at 10, well under the scan's 50.
+  // `polar-chart-smoothness.production.browser.test.tsx` draws the same dial in a browser.
   const tips = Array.from({ length: 8760 }, (_, hour) => 0.4 + (0.5 * ((hour * 7) % 13)) / 13);
   const values = numbers(tips);
   const plain = readings(8760);
@@ -374,15 +377,18 @@ describe("an hourly year's quality", () => {
     marked: Array.from({ length: 8760 }, (_, hour) => hour % 2 === 1),
   };
   /** The most a call with every other hour estimated may cost, as a multiple of the plain call. */
-  const ALLOWED = 3;
-  const fastest = (draw: () => void): number => {
-    const costs: number[] = [];
+  const ALLOWED = 10;
+  /** The fastest of seven calls of each draw, taken in turns, as [plain, marked]. */
+  const fastest = (plainDraw: () => void, markedDraw: () => void): readonly [number, number] => {
+    const costs: [number[], number[]] = [[], []];
     for (let call = 0; call < 7; call += 1) {
-      const start = performance.now();
-      draw();
-      costs.push(performance.now() - start);
+      for (const [index, draw] of [plainDraw, markedDraw].entries()) {
+        const start = performance.now();
+        draw();
+        costs[index]?.push(performance.now() - start);
+      }
     }
-    return Math.min(...costs);
+    return [Math.min(...costs[0]), Math.min(...costs[1])];
   };
   const pieces = (d: string): number => d.split("M").length - 1;
 
@@ -414,15 +420,21 @@ describe("an hourly year's quality", () => {
     const { solid, marked } = clockLine(values, slots, "step-after");
     // The odd hours are dashed and the even ones plain, each across its own slot.
     expect([pieces(solid), pieces(marked)]).toEqual([4380, 4380]);
-    const base = fastest(() => clockLine(values, plain, "step-after"));
-    expect(fastest(() => clockLine(values, slots, "step-after"))).toBeLessThan(base * ALLOWED);
+    const [base, cost] = fastest(
+      () => clockLine(values, plain, "step-after"),
+      () => clockLine(values, slots, "step-after")
+    );
+    expect(cost).toBeLessThan(base * ALLOWED);
   });
 
   it("hatches each estimated hour of a step-after Area on its own, in about the time its fill takes", () => {
     const { marked } = clockArea(values, slots, "step-after");
     expect(pieces(marked)).toBe(4380);
-    const base = fastest(() => clockArea(values, plain, "step-after"));
-    expect(fastest(() => clockArea(values, slots, "step-after"))).toBeLessThan(base * ALLOWED);
+    const [base, cost] = fastest(
+      () => clockArea(values, plain, "step-after"),
+      () => clockArea(values, slots, "step-after")
+    );
+    expect(cost).toBeLessThan(base * ALLOWED);
   });
 });
 
