@@ -747,7 +747,9 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // 2026-11-05: each Root's depth on its figure and the orientation the bar
     // series, axes and crosshair carry since the last raise, 80593 to 80787. The ceiling keeps
     // about 100 bytes of headroom.
-    ceilingGzip: 80887,
+    // 2026-11-07: a chart's option keeps its place when the window loses focus, 80787 to
+    // 80889. The ceiling keeps about 100 bytes of headroom.
+    ceilingGzip: 80989,
   },
   // 2026-11-05: PieChart.Root draws through the polar kernel, no longer a pending stub, so its row
   // starts again at 41609 with the derived ceiling, beside new rows for the RadialChart and
@@ -774,7 +776,9 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // 2026-11-06: the follower's leap and its marks' stretch, the side lane chosen by
     // its widest content, and the opening popup held until placed,
     // 46221 to 46440. The ceiling keeps about 100 bytes of headroom.
-    ceilingGzip: 46540,
+    // 2026-11-07: a chart's option keeps its place when the window loses focus, 46440 to
+    // 46566. The ceiling keeps about 100 bytes of headroom.
+    ceilingGzip: 46666,
   },
   // 2026-11-05: new row, the typical pie route, as the bar route is Chart's: Root, Pie, the Center
   // parts, Legend and Tooltip, which the owner set beside the whole-namespace row, with the derived
@@ -898,7 +902,9 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // 2026-11-06: the follower's leap and its marks' stretch, the side lane chosen by
     // its widest content, and the opening popup held until placed,
     // 44996 to 45202. The ceiling keeps about 100 bytes of headroom.
-    ceilingGzip: 45302,
+    // 2026-11-07: a chart's option keeps its place when the window loses focus, 45202 to
+    // 45321. The ceiling keeps about 100 bytes of headroom.
+    ceilingGzip: 45421,
   },
   {
     name: "chart/RadarChart.Root",
@@ -920,7 +926,9 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // 2026-11-06: the follower's leap and its marks' stretch, the side lane chosen by
     // its widest content, and the opening popup held until placed,
     // 52971 to 53184. The ceiling keeps about 100 bytes of headroom.
-    ceilingGzip: 53284,
+    // 2026-11-07: a chart's option keeps its place when the window loses focus, 53184 to
+    // 53304. The ceiling keeps about 100 bytes of headroom.
+    ceilingGzip: 53404,
   },
   // 2026-11-05: new row, the typical radar route: Root, Grid, both axes, Area, Line, Legend and
   // Tooltip, which the owner set beside the whole-namespace row, with the derived ceiling.
@@ -982,7 +990,9 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // 2026-11-06: the follower's leap and its marks' stretch, the side lane chosen by
     // its widest content, and the opening popup held until placed,
     // 56540 to 56746. The ceiling keeps about 100 bytes of headroom.
-    ceilingGzip: 56846,
+    // 2026-11-07: a chart's option keeps its place when the window loses focus, 56746 to
+    // 56877. The ceiling keeps about 100 bytes of headroom.
+    ceilingGzip: 56977,
   },
   {
     name: "chart/ClockChart route",

@@ -205,7 +205,7 @@ export function ChartSurface({
   };
 
   const onBlur = (event: FocusEvent<HTMLDivElement>): void => {
-    if (handoff.within(event)) return;
+    if (handoff.within(event) || handoff.kept(event)) return;
     // A tap on the plot moves focus off an option that an earlier tap focused, and the slot it
     // pinned stays.
     const tapped = lift.tapFocus() || gesture.current !== null;

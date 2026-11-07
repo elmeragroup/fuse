@@ -217,7 +217,7 @@ export function PolarSurface(): ReactElement | null {
   };
 
   const onBlur = (event: FocusEvent<HTMLDivElement>): void => {
-    if (handoff.within(event)) return;
+    if (handoff.within(event) || handoff.kept(event)) return;
     const tapped = lift.tapFocus() || gesture.current !== null;
     if (!tapped && (store.get().source === "keyboard" || store.get().pinned)) {
       store.set({ active: null, source: null, near: null, pinned: false });

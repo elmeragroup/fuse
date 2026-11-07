@@ -43,6 +43,12 @@ export type OptionHandoff<T extends object> = {
    * landing, which the caller follows with `prune`.
    */
   readonly within: (event: FocusEvent<HTMLElement>) => boolean;
+  /**
+   * Whether a blur leaves the document's focus where it was, as when the window loses focus: the
+   * option stays the active element, and the browser gives it focus back when the window returns.
+   * A surface keeps its option and state through such a blur, so the option it gives back exists.
+   */
+  readonly kept: (event: FocusEvent<HTMLElement>) => boolean;
   /** Remove the option a step left, in the commit after the new one took focus. */
   readonly prune: () => void;
   /** Start over with one option that carries the description, for the next entry from outside. */
@@ -96,6 +102,7 @@ export function useOptionHandoff<T extends object>(
     },
     within: (event) =>
       event.relatedTarget instanceof Node && event.currentTarget.contains(event.relatedTarget),
+    kept: (event) => event.target === event.currentTarget.ownerDocument.activeElement,
     prune: () => {
       if (options.length > 1) setOptions((list) => list.slice(-1));
     },

@@ -212,7 +212,7 @@ export function ScatterSurface({
   };
 
   const onBlur = (event: FocusEvent<HTMLDivElement>): void => {
-    if (handoff.within(event)) return;
+    if (handoff.within(event) || handoff.kept(event)) return;
     if (!lift.tapFocus() && !pressing.current) store.release();
     // The next entry meets a new option that carries the description again.
     handoff.reset({});
