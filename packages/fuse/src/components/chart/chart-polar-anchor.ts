@@ -447,8 +447,8 @@ export function usePolarTooltipAnchor(input: AnchorInput): TooltipAnchor {
   /** The popup and the opacity it showed when its item closed, read before the close commits. */
   const closing = useRef<{ readonly popup: HTMLElement; readonly opacity: number } | null>(null);
   /**
-   * The lane fade that runs, which a close or a new open cancels: a script animation composites
-   * above the popup's CSS exit and its hold, so it would run out its 120 ms over either.
+   * The lane fade that runs, which a close, a new open or the next fade cancels: a script animation
+   * composites above the popup's CSS exit and its hold, so it would run out its 120 ms over either.
    */
   const fade = useRef<Animation | null>(null);
   // The popup's exit keyframes set only their end, so they start from its own opacity. A popup that
@@ -564,6 +564,7 @@ export function usePolarTooltipAnchor(input: AnchorInput): TooltipAnchor {
     // closing popup keeps the width it showed.
     if (node !== null && width !== null) writeStyle(node, "width", `${width.toFixed(2)}px`);
     if ((switched || leaped) && popup !== null && !motion.reduced()) {
+      fade.current?.cancel();
       fade.current = popup.animate([{ opacity: LANE_FADE_FROM }, { opacity: 1 }], LANE_FADE);
     }
     // A popup that opens stays transparent, and lets the pointer through, until Base UI has placed

@@ -872,9 +872,10 @@ describe("the opening hold when the popup closes during it", () => {
 });
 
 // A popup that closes while its lane fade runs fades out from where the fade got. Unit under test:
-// the lane fade and the close on a pie of four equal slices, where slice 0 (45°) rests in the right
-// lane and slice 3 (315°) in the left. Oracle: a fade-out starts from what is on screen, so in the 15
-// frames after the close nothing paints brighter than the brightest frame before it.
+// the lane fade and the close on a pie of four equal slices, where slices 0 (45°) and 1 (135°) rest
+// in the right lane and slice 3 (315°) in the left. Two switches a frame apart run two fades at once.
+// Oracle: a fade-out starts from what is on screen, so in the 15 frames after the close nothing
+// paints brighter than the brightest frame before it.
 describe("a close during the lane fade", () => {
   /** Each frame's painted opacity, read after the frame's animation callbacks, before it paints. */
   function paintedFrames() {
@@ -911,7 +912,23 @@ describe("a close during the lane fade", () => {
     };
   }
 
-  it("fades a popup closed two frames after a lane switch out from where the fade got", async () => {
+  it.each([
+    { close: "two frames after a lane switch", switches: [{ angle: 315, frames: 2 }] },
+    {
+      close: "right after a second lane switch inside the first's fade",
+      switches: [
+        { angle: 315, frames: 1 },
+        { angle: 135, frames: 0 },
+      ],
+    },
+    {
+      close: "two frames after a second lane switch inside the first's fade",
+      switches: [
+        { angle: 315, frames: 1 },
+        { angle: 135, frames: 2 },
+      ],
+    },
+  ])("fades a popup closed $close out from where the fade got", async ({ switches }) => {
     await commands.pointerGlide(1, 1, 1);
     const { host } = renderThemed(
       <Card>
@@ -972,8 +989,10 @@ describe("a close during the lane fade", () => {
         break;
     }
     await frames(1);
-    move(315);
-    await frames(2);
+    for (const step of switches) {
+      move(step.angle);
+      await frames(step.frames);
+    }
     // What is on screen at the close: the frames painted so far and the fade's value now, which a
     // close in a later frame callback reads one fade step on from the last painted frame.
     const before = Math.max(0, ...record.painted, Number(getComputedStyle(popup).opacity));
