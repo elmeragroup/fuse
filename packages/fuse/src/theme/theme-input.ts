@@ -25,7 +25,7 @@ export type ThemeSegment = (typeof THEME_SEGMENTS)[number];
  * legal theme list and the generated selectors. `fuse.css` cannot import TypeScript, so
  * `theme-api.test.ts` holds its `:where([data-theme-…])` reset to these attributes.
  */
-export const THEME_AXIS = {
+const THEME_AXIS = {
   identity: { name: "identity", attribute: "data-theme-identity", values: THEME_IDENTITIES },
   brand: { name: "brand", attribute: "data-theme-brand", values: BRAND_CODES },
   segment: { name: "segment", attribute: "data-theme-segment", values: THEME_SEGMENTS },
@@ -65,7 +65,7 @@ export type ThemeSlug =
  * @returns True when `value` is one of the axis's values.
  */
 // oxlint-disable-next-line anti-slop/no-unknown-parameters -- predicate over untyped axis values
-export function isThemeAxisValue<A extends ThemeAxis>(axis: A, value: unknown): value is A["values"][number] {
+function isThemeAxisValue<A extends ThemeAxis>(axis: A, value: unknown): value is A["values"][number] {
   return axis.values.some((candidate: string) => candidate === value);
 }
 
@@ -107,7 +107,7 @@ export const BRANDS = {
  */
 // oxlint-disable-next-line anti-slop/no-unknown-parameters -- public predicate over untyped axis values
 export function isBrandCode(value: unknown): value is BrandCode {
-  return BRAND_CODES.some((code) => code === value);
+  return isThemeAxisValue(THEME_AXIS.brand, value);
 }
 
 /**
@@ -149,17 +149,22 @@ export function parseThemeAxes(read: (axis: ThemeAxis, index: number) => Untyped
   return parsed as ThemeAxes;
 }
 
+/** The `data-theme-*` attributes that stamp a theme on an element, one per theme axis. */
+export type ThemeAttributes = {
+  readonly [A in ThemeAxis as A["attribute"]]: ThemeAxisValue<A["name"]>;
+};
+
 /**
- * The `data-theme-*` attributes of a theme, one per axis in {@link THEME_AXES} order. It is the
+ * The `data-theme-*` attributes of a theme, one per axis, in {@link THEME_AXES} order. It is the
  * pure projection, with no validation: callers pass a parsed theme.
  *
  * @param theme - One legal value per axis.
- * @returns Each axis's attribute name paired with its value.
+ * @returns Each axis's attribute name with its value.
  */
-export function themeAxisAttributes(
-  theme: ThemeAxes
-): readonly (readonly [ThemeAxis["attribute"], string])[] {
-  return THEME_AXES.map((axis) => [axis.attribute, theme[axis.name]] as const);
+export function themeAxisAttributes(theme: ThemeAxes): ThemeAttributes {
+  // SAFETY: the entries pair every THEME_AXES attribute with its own axis's value, which is exactly
+  // the mapped ThemeAttributes record; Object.fromEntries loses the key correlation.
+  return Object.fromEntries(THEME_AXES.map((axis) => [axis.attribute, theme[axis.name]])) as ThemeAttributes;
 }
 
 /**

@@ -2,7 +2,7 @@ import type { ResolvedColorScheme } from "./color-scheme-types";
 import { composeTheme } from "./compose-theme";
 import { cornerRules } from "./corners/corners";
 import { BRAND_CODES, BRANDS, LEGAL_THEMES, themeAxisSelector } from "./theme-input";
-import type { BrandCode, ThemeIdentity, ThemeInput } from "./theme-input";
+import type { BrandCode, ThemeInput } from "./theme-input";
 import { brandPointer } from "./tokens/brand-pointers";
 import type { BrandPointer } from "./tokens/brand-pointers";
 import { derivedRoleSources, LIGHT_RESET_KEYS, isDerivedTokenName, TOKEN_NAMES } from "./tokens/contract";
@@ -67,11 +67,6 @@ function rootDeclarations(): (readonly [string, string])[] {
   const primitives = PRIMITIVE_NAMES.map((name) => [name, PRIMITIVES[name]] as const);
   const roles = TOKEN_NAMES.map((name) => [name, cssValue(name, DEFAULTS[name])] as const);
   return [...primitives, ...roles];
-}
-
-/** The selector of one value of the identity axis, such as `[data-theme-identity="branded"]`. */
-function identitySelector(identity: ThemeIdentity): string {
-  return themeAxisSelector("identity", identity);
 }
 
 /**
@@ -164,7 +159,11 @@ function emitBrandPointers(): string {
 }
 
 function emitNeutralReset(): string {
-  return themeRule(identitySelector("neutral"), resetDeclarations({}, resetKeys("light")), "light");
+  return themeRule(
+    themeAxisSelector("identity", "neutral"),
+    resetDeclarations({}, resetKeys("light")),
+    "light"
+  );
 }
 
 /**
@@ -173,15 +172,11 @@ function emitNeutralReset(): string {
  * `THEME_RESET_KEYS`, so the choice of brand and segment does not matter.
  */
 function neutralDarkTheme(): ThemeInput {
-  const theme = LEGAL_THEMES.find((candidate) => candidate.identity === "neutral");
-  if (theme === undefined) {
-    throw new Error("No neutral theme is legal");
-  }
-  return theme;
+  return neutralTheme(BRAND_CODES[0]);
 }
 
 function emitNeutralDarkPalette(): string {
-  const identity = identitySelector("neutral");
+  const identity = themeAxisSelector("identity", "neutral");
   const palette = themeRule(
     identity,
     darkPaletteDeclarations(composeTheme(neutralDarkTheme(), "dark")),
@@ -245,7 +240,7 @@ function emitBrandPalettes(colorScheme: ResolvedColorScheme): string {
     // The dark arm also asks whether the segment departs in light, so it needs the light
     // base beside the composed base it already holds.
     const lightBase = colorScheme === "dark" ? composeTheme(baseTheme, "light") : base;
-    const identity = identitySelector("branded");
+    const identity = themeAxisSelector("identity", "branded");
     const selector = `${identity}${themeAxisSelector("brand", brand)}`;
     if (colorScheme === "dark") {
       rules.push(themeRule(selector, darkPaletteDeclarations(base), "dark"));

@@ -36,7 +36,7 @@ const LIGHT_SIDEBAR = "Sidebar · Light";
 
 const RED = "rgb(255, 0, 0)";
 
-describe("an artboard's own brand, variant and segment", () => {
+describe("an artboard's own brand, identity and segment", () => {
   it("re-themes one artboard to another brand while its neighbour keeps the base theme", async () => {
     const { context, page, errors } = await openStudio(browser());
     try {
@@ -80,7 +80,7 @@ describe("an artboard's own brand, variant and segment", () => {
     }
   });
 
-  it("changes the variant of an artboard that follows the base theme and of one its spec pins", async () => {
+  it("changes the identity of an artboard that follows the base theme and of one its spec pins", async () => {
     const { context, page } = await openStudio(browser(), { route: CORNERS_PAGE });
     try {
       let bar = await selectBoard(page, SHELLS);
@@ -173,7 +173,7 @@ describe("an artboard's own brand, variant and segment", () => {
     }
   });
 
-  it("resets every artboard's brand, variant and segment with the base theme, keeping scheme and density", async () => {
+  it("resets every artboard's brand, identity and segment with the base theme, keeping scheme and density", async () => {
     const { context, page } = await openStudio(browser(), { route: CORNERS_PAGE });
     try {
       let bar = await selectBoard(page, NEUTRAL_RUNGS);
@@ -191,7 +191,7 @@ describe("an artboard's own brand, variant and segment", () => {
       await page.getByRole("menuitemradio", { name: "Nordic Green Energy", exact: true }).click();
       await page.keyboard.press("Escape");
 
-      // Each follows the new base theme, and the rungs board returns to the variant its spec pins.
+      // Each follows the new base theme, and the rungs board returns to the identity its spec pins.
       await expect.poll(() => themeOf(page, NEUTRAL_RUNGS)).toBe("neutral-ngfi-private");
       await expect.poll(() => themeOf(page, SHELLS)).toBe("branded-ngfi-private");
       expect(await artboard(page, NEUTRAL_RUNGS).getAttribute("data-theme")).toBe("dark");

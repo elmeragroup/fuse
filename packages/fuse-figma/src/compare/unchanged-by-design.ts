@@ -12,7 +12,7 @@
 
 import { isDeepStrictEqual } from "node:util";
 
-import { resolveThemeCatalog } from "@elmeragroup/fuse/theme-catalog";
+import { resolveThemeCatalog, THEME_AXES } from "@elmeragroup/fuse/theme-catalog";
 
 import { variantKey } from "../components/component-spec.ts";
 import type { BoxSpec, ColorSpec, ComponentSetSpec, InstanceOverride } from "../components/kit-spec.ts";
@@ -67,9 +67,8 @@ export function unchangedByDesign(
  *   catalog holds no such theme.
  */
 export function tokenColorsIn(theme: PreviewTheme): TokenColorOf {
-  const resolved = resolveThemeCatalog().themes.find(
-    ({ input }) =>
-      input.identity === theme.identity && input.brand === theme.brand && input.segment === theme.segment
+  const resolved = resolveThemeCatalog().themes.find(({ input }) =>
+    THEME_AXES.every((axis) => input[axis.name] === theme[axis.name])
   );
   const tokens = resolved?.schemes[theme.scheme].tokens;
   return (name) => {

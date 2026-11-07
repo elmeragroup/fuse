@@ -529,7 +529,7 @@ const THEME_DENSITY_FORMULAS = FORMULA_VARIABLES.filter(
  * The pickers that offer each dimension token. A length can round corners, space a gap or
  * size a stroke, so the kind alone does not pick a scope. A new dimension token fails to
  * compile until it has an entry here. `radius-step` spaces the radius rungs and switches
- * between the neutral and branded corner sets, so no layer rounds with it. It syncs hidden
+ * between the neutral and branded corner families, so no layer rounds with it. It syncs hidden
  * from every picker and keeps its code syntax for developers.
  */
 const DIMENSION_SCOPES = {

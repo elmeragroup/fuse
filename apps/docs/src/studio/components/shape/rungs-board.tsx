@@ -11,6 +11,7 @@ import { Skeleton } from "@elmeragroup/fuse/skeleton";
 import { Text } from "@elmeragroup/fuse/text";
 import type { ThemeIdentity } from "@elmeragroup/fuse/theme";
 
+import { IDENTITY_LABELS } from "../../../lib/theme";
 import { RUNGS, rungFormula } from "../../lib/corners";
 import type { RungId } from "../../lib/corners";
 import { formatPx } from "../../lib/measure";
@@ -54,11 +55,6 @@ type Corner = RungId | "button";
 const ROLE_CORNERS = [
   { id: "button", name: "--radius-button", formula: "the theme's button role" },
 ] as const satisfies readonly { id: Corner; name: string; formula: string }[];
-
-const IDENTITY_NAMES = { neutral: "Neutral", branded: "Branded" } as const satisfies Record<
-  ThemeIdentity,
-  string
->;
 
 /**
  * Reads the radius every `[data-corner]` box under `root` computes, and the scope's `--radius`
@@ -127,7 +123,7 @@ export function RungsBoard({ identity }: { identity: ThemeIdentity }): ReactElem
     <div ref={root} className={styles.root()}>
       <div className={styles.head()}>
         <Heading level={2} size="lg">
-          {`Radius rungs · ${IDENTITY_NAMES[identity]}`}
+          {`Radius rungs · ${IDENTITY_LABELS[identity]}`}
         </Heading>
         <Text variant="muted" size="sm">
           Every rung sits whole steps from the theme&apos;s radius. The identity's corner set sets the step.
@@ -151,7 +147,7 @@ export function RungsBoard({ identity }: { identity: ThemeIdentity }): ReactElem
         ))}
         <div className={styles.rung()}>
           <Input
-            aria-label={`Field corner, ${IDENTITY_NAMES[identity]}`}
+            aria-label={`Field corner, ${IDENTITY_LABELS[identity]}`}
             defaultValue="Field"
             readOnly
             className={styles.field()}

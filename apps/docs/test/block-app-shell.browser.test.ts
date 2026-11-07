@@ -490,7 +490,7 @@ describe("the app shell block on its docs page", () => {
     await expect.poll(() => root.getAttribute("data-theme-brand")).toBe("tkas");
     await page.getByRole("menuitemradio", { name: "Branded", exact: true }).click();
     await expect.poll(() => root.getAttribute("data-theme-identity")).toBe("branded");
-    // The variant picks the density, as on the docs' demo stages.
+    // The docs' preview policy gives a branded theme comfortable density, as on its demo stages.
     await expect.poll(() => root.getAttribute("data-density")).toBe("comfortable");
     await expect.poll(() => drawnFace(title)).toBe("--font-roboto");
     await page.getByRole("menuitemradio", { name: "Dark", exact: true }).click();

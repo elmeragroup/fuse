@@ -5,8 +5,10 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import "../../dist/styles.css";
 import "../../dist/themes.css";
 import { render } from "../../test/browser-render";
+import { cornerRadius } from "../../test/inner-corner-specimens";
 import { withLocale } from "../../test/locale-matrix";
-import { px, roleNamed, snapshotDocumentTheme, stampDocumentTheme } from "../../test/themed-browser-render";
+import { fkasBranded, fkasPrivate, tkasCompany } from "../../test/theme-fixtures";
+import { roleNamed, snapshotDocumentTheme, stampDocumentTheme } from "../../test/themed-browser-render";
 import { Button } from "../components/button/button";
 import { Card } from "../components/card/card";
 import { Input } from "../components/input/input";
@@ -46,22 +48,18 @@ function Corners({ prefix }: { prefix: string }): ReactNode {
   );
 }
 
-function cornerOf(element: HTMLElement): number {
-  return px(getComputedStyle(element).borderTopLeftRadius);
-}
-
 function measured(prefix: string) {
   return {
-    card: cornerOf(roleNamed("group", `${prefix} card`)),
-    field: cornerOf(roleNamed("textbox", `${prefix} input`)),
-    button: cornerOf(roleNamed("button", `${prefix} button`)),
+    card: cornerRadius(roleNamed("group", `${prefix} card`)),
+    field: cornerRadius(roleNamed("textbox", `${prefix} input`)),
+    button: cornerRadius(roleNamed("button", `${prefix} button`)),
   };
 }
 
 /** A document theme of the other identity, with other corners, so a root-resolved corner shows. */
 function otherIdentity(theme: ThemeInput): ThemeInput {
   return theme.identity === "neutral"
-    ? { identity: "branded", brand: "tkas", segment: "private" }
+    ? tkasCompany
     : { identity: "neutral", brand: theme.brand === "fkab" ? "fkas" : theme.brand, segment: "private" };
 }
 
@@ -79,25 +77,27 @@ describe("corner sets", () => {
   });
 
   it.each(SCHEMES)("rounds every legal theme with its identity's corners on the document in %s", (scheme) => {
+    // Corners are CSS alone, so one tree reads every theme the document is restamped with.
+    render(<Corners prefix="Document" />);
     for (const theme of LEGAL_THEMES) {
       stampDocumentTheme(theme, scheme);
-      const { unmount } = render(<Corners prefix="Document" />);
       const { radius, button } = expectedCorners(theme);
       expect(measured("Document"), `${themeSlug(theme)} ${scheme}`).toEqual({
         card: radius,
         field: radius,
         button,
       });
-      unmount();
     }
   });
 
   it.each(SCHEMES)("rounds a scope of the other identity with its own corners in %s", (scheme) => {
     // Unit under test: the corner rules on a nested theme element. Each scope sits under a
     // document of the other identity, so a dark rule or an inherited corner would show.
+    // One tree per scheme: each theme rerenders the scope with its attributes.
+    const { rerender } = render(null);
     for (const theme of LEGAL_THEMES) {
       stampDocumentTheme(otherIdentity(theme), scheme);
-      const { unmount } = render(
+      rerender(
         <ThemeScope theme={theme}>
           <Corners prefix="Nested" />
         </ThemeScope>
@@ -108,14 +108,13 @@ describe("corner sets", () => {
         field: radius,
         button,
       });
-      unmount();
     }
   });
 
   it.each(SCHEMES)("keeps a host --radius override on the theme element in %s", (scheme) => {
     // A host restyles the corner on the element that carries the theme attributes, inline or
     // with a rule that ties the corner rule and follows themes.css. No dark rule outweighs it.
-    stampDocumentTheme({ identity: "neutral", brand: "fkas", segment: "private" }, scheme);
+    stampDocumentTheme(fkasPrivate, scheme);
     const style = document.createElement("style");
     style.textContent = '.host-corners[data-theme-brand="fkas"] { --radius: 1.25rem; }';
     document.head.append(style);
@@ -123,12 +122,10 @@ describe("corner sets", () => {
       const inline: CSSProperties = { "--radius": "0.25rem" };
       render(
         <>
-          <ThemeScope
-            theme={{ identity: "branded", brand: "fkas", segment: "private" }}
-            className="host-corners">
+          <ThemeScope theme={fkasBranded} className="host-corners">
             <Corners prefix="Rule" />
           </ThemeScope>
-          <ThemeScope theme={{ identity: "branded", brand: "fkas", segment: "private" }} style={inline}>
+          <ThemeScope theme={fkasBranded} style={inline}>
             <Corners prefix="Inline" />
           </ThemeScope>
         </>

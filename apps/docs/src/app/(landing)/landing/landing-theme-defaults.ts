@@ -1,4 +1,4 @@
-import { parseThemeSlug } from "@elmeragroup/fuse/theme";
+import { parseThemeSlug, themeSlug } from "@elmeragroup/fuse/theme";
 import type { Density, ThemeInput } from "@elmeragroup/fuse/theme";
 
 import { docsDensityFor, OPENING_THEME } from "../../../lib/theme";
@@ -13,7 +13,7 @@ export const LANDING_DENSITY: Density = docsDensityFor(OPENING_THEME);
 
 /** True when both themes name the same identity, brand and segment. */
 export function sameTheme(left: ThemeInput, right: ThemeInput): boolean {
-  return left.identity === right.identity && left.brand === right.brand && left.segment === right.segment;
+  return themeSlug(left) === themeSlug(right);
 }
 
 /**

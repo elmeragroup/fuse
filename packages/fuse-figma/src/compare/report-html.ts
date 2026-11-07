@@ -4,6 +4,9 @@
  * The pictures are PNG files next to the report, so the file opens straight from disk.
  */
 
+import { THEME_AXES } from "@elmeragroup/fuse/theme-catalog";
+
+import type { PreviewTheme } from "./preview-theme.ts";
 import type { CompareReport, ReportRow } from "./run-compare.ts";
 
 function escape(text: string): string {
@@ -80,6 +83,12 @@ function cellSection(row: ReportRow, rank: number): string {
 </section>`;
 }
 
+/** A rendered preview's theme: its slug, scheme and density, such as `branded-fkas-private, light, comfortable`. */
+function themeSummary(theme: PreviewTheme): string {
+  const slug = THEME_AXES.map((axis) => theme[axis.name]).join("-");
+  return `${slug}, ${theme.scheme}, ${theme.density}`;
+}
+
 function summaryRows(report: CompareReport): string {
   return report.previews
     .map((preview) => {
@@ -90,10 +99,7 @@ function summaryRows(report: CompareReport): string {
         tolerant.length === 0 ? 0 : tolerant.reduce((sum, value) => sum + value, 0) / tolerant.length;
       const sized = rows.filter((row) => row.verdict.flags.includes("size")).length;
       const skipped = report.skipped.filter((entry) => entry.preview === preview.key).length;
-      const theme =
-        preview.theme === null
-          ? "not rendered"
-          : `${preview.theme.identity}-${preview.theme.brand}-${preview.theme.segment}, ${preview.theme.scheme}, ${preview.theme.density}`;
+      const theme = preview.theme === null ? "not rendered" : themeSummary(preview.theme);
       // A rendered preview whose cells show no text checks no font, and reports an empty one.
       const font = preview.font === "" ? "no text" : (preview.font ?? "");
       return `<tr><td>${escape(preview.name)}</td><td>${escape(theme)}</td><td>${escape(font)}</td><td>${String(rows.length)}</td><td>${String(sized)}</td><td>${percent(worst)}</td><td>${percent(mean)}</td><td>${String(skipped)}</td></tr>`;

@@ -431,9 +431,7 @@ describe("exports map", () => {
       readFileSync(join(packageRoot, "src/theme/catalog.ts"), "utf8")
     );
     expect(catalog).toEqual([
-      "BRAND_CORNERS",
       "CORNER_STEPS",
-      "NEUTRAL_CORNERS",
       "RADIUS_RUNG_NAMES",
       "RADIUS_RUNGS",
       "resolveThemeCatalog",
@@ -445,6 +443,7 @@ describe("exports map", () => {
       "THEME_IDENTITIES",
       "THEME_SEGMENTS",
       "themeAxisAttributes",
+      "themeAxisSelector",
     ]);
   });
 

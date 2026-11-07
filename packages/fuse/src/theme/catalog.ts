@@ -5,12 +5,11 @@
  * translate resolved values into their own format and never parse CSS themselves, and the
  * part density table it carries, which the docs coverage test reads without resolving every
  * theme. It also carries the theme axes and the brand table, so a design tool can lay out
- * identity, brand and segment as separate choices. It carries the corner sets, the legal radius
- * steps and the radius rungs too, so the docs studio reads them instead of restating them.
+ * identity, brand and segment as separate choices. It carries the legal radius steps and the
+ * radius rungs too, so the docs studio reads them instead of restating them.
  */
 
-export { BRAND_CORNERS, CORNER_STEPS, NEUTRAL_CORNERS } from "./corners/corners";
-export type { CornerStep, Corners } from "./corners/corners";
+export { CORNER_STEPS } from "./corners/corners";
 export { RADIUS_RUNG_NAMES, RADIUS_RUNGS } from "./corners/radius-scale";
 export { resolveThemeCatalog } from "./resolve-theme-catalog";
 export { DENSITY_ROLES, PART_DENSITY } from "./tokens/density-roles";
@@ -42,5 +41,6 @@ export {
   THEME_IDENTITIES,
   THEME_SEGMENTS,
   themeAxisAttributes,
+  themeAxisSelector,
 } from "./theme-input";
 export type { BrandCode, ThemeAxes, ThemeAxis, ThemeIdentity, ThemeSegment, ThemeSlug } from "./theme-input";

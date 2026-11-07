@@ -5,7 +5,7 @@ import type { ReactElement, ReactNode } from "react";
 
 import { usePathname } from "next/navigation";
 
-import { parseThemeSlug, ThemeProvider } from "@elmeragroup/fuse/theme";
+import { densityAttributes, parseThemeSlug, ThemeProvider } from "@elmeragroup/fuse/theme";
 import type { ThemeInput } from "@elmeragroup/fuse/theme";
 
 import {
@@ -101,7 +101,9 @@ export function BlockPreviewTheme({ children }: BlockPreviewThemeProps): ReactEl
   // Before paint, so a theme change never shows a frame at the old identity's density.
   const density = docsDensityFor(theme);
   useLayoutEffect(() => {
-    document.documentElement.dataset.density = density;
+    for (const [name, value] of Object.entries(densityAttributes(density))) {
+      document.documentElement.setAttribute(name, value);
+    }
   }, [density]);
 
   return (

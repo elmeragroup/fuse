@@ -220,6 +220,13 @@
   opt-in file so `fuse/css` carries only what components need. Both are breaking for consumers
   that write Fuse's variants today, so they wait for a reviewed decision; the package README
   documents the current behaviour under "What `fuse/css` changes in your theme".
+- A host override of a light-only role on a theme element, such as `--button-outline-width`, a
+  `--heading-*` or `--paragraph-leading-*` metric or the card-border alias, flips back in dark:
+  `themes.css` dark rules restate `LIGHT_ONLY_KEYS` (`darkPaletteDeclarations` in
+  `theme/generate-css.ts`, the key list in `theme/tokens/contract.ts`), and only the corners got
+  their own light-only rules. Omit `LIGHT_ONLY_KEYS` from the dark declarations and fold the
+  corner declarations into the same-selector light rules. It changes host-override behaviour for
+  those keys, so it ships as its own reviewed change.
 - Two separate React roots on one document, each with its own `ThemeProvider`, each get a
   color-scheme runtime. They reconcile against the live `data-theme`, so they converge rather
   than ping-pong, but neither sees the other's `setColorScheme`: a document gets no `storage`
