@@ -10,8 +10,8 @@ and shares `Tooltip`, `Legend`, `LegendToggleGroup`, `Table`, `Empty`, `Skeleton
 - `PieChart` draws slices or a donut from one row per category, folds the smallest past
   `maxSlices` into Other, and keeps at least one device pixel of rim for every reading above 0.
   `Labels` sit inside a slice where they fit and outside with a leader otherwise. `Center` prints
-  the total, or the active slice's value and share, `Track` fills the sweep of a gauge, and the
-  active slice pops along its bisector.
+  the total, or the active slice's value and share, `CenterName` prints the active slice's name,
+  `Track` fills the sweep of a gauge, and the active slice pops along its bisector.
 - `RadialChart` draws one ring per category against `max`, in solid, dotted or segmented looks, with
   a `Track` under each ring and the same `Center` parts.
 - `RadarChart` draws series as polygons over spokes, with `Grid`, `AngleAxis`, `RadiusAxis`,
@@ -28,6 +28,13 @@ marks and the angle labels, and Now's label shows past the rim only where it cle
 labels. Each plot is one tab stop whose option walks the slices, rings, spokes or slots: arrows
 step, Home and End jump, and on a clock PageUp and PageDown move a label unit. A drag that starts on
 a dial scrubs round it and never scrolls the page, which scrolls from beside the dial.
+
+A clock's `Scrubber`, a radar's hand and every `ActiveDot` turn together on one follower. It keeps
+its speed from one pointer step to the next, never carries a mark faster than the pointer moves,
+and lands a step across the dial within 300 ms. The tooltip rests beside the dial, or below it when
+neither side holds its content, and never covers the dial, its labels, its title, the legend or the
+table toggle. A popup the pointer crosses within one frame never shows, and a closing popup fades
+out from the opacity it reached.
 
 The entrance plays once in view over `--chart-intro` with `--chart-stagger` between items, and a
 data update tweens over `--chart-update`, labels, leaders and active dots with their marks.
