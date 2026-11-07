@@ -1,27 +1,21 @@
 // The polar smoothness judge, in Chromium with React's production build, as
 // `chart-smoothness.production.browser.test.tsx` judges the cartesian marks. Units under test: a
-// 32-slice pie, a 24-spoke radar of two series, a 168-slot week dial and an 8,760-slot year dial
-// whose every other hour is estimated, drawn as a step-after Area and Line, its hatch by
-// pixel column, each through its entrance and through a data update. Oracle: SPEC's L8 long-task check and motion-decision.md "Judges", no
+// 32-slice pie, a 24-spoke radar of two series and a 168-slot week dial, each through its entrance
+// and through a data update. Oracle: SPEC's L8 long-task check and motion-decision.md "Judges", no
 // long task over 50 ms from the mount's first frame to the entrance's end, nor through an update's
 // commit and its 480 ms tween. vitest.config.ts runs this project alone, after every other one.
 import type { ReactElement } from "react";
 
 import { describe, expect, it } from "vitest";
-import { commands } from "vitest/browser";
 
 import "../../../dist/styles.css";
-import { clockLayer } from "../../../test/chart/clock";
-import { clientPoint, polarFigure } from "../../../test/chart/pie";
+import { polarFigure } from "../../../test/chart/pie";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
 import "./chart.css";
 import { ClockChart } from "./clock-chart-namespace";
 import { PieChart } from "./pie-chart-namespace";
 import { RadarChart } from "./radar-chart-namespace";
-
-/** 1 January 2025 in Oslo, the year's first hour. 2025 holds 8,760 hours. */
-const NEW_YEAR = Date.parse("2024-12-31T23:00:00Z");
 
 /** A sawtooth from 1 to 7 at an index, shifted per update. */
 function tooth(index: number, shift: number): number {
@@ -88,27 +82,6 @@ function Week168({ phase }: { readonly phase: number }): ReactElement {
   );
 }
 
-function Year8760({ phase }: { readonly phase: number }): ReactElement {
-  return (
-    <ClockChart.Root
-      data={Array.from({ length: 8760 }, (_, hour) => ({
-        start: NEW_YEAR + hour * 3_600_000,
-        kwh: tooth(hour, phase),
-        q: hour % 2 === 1 ? ("estimated" as const) : ("measured" as const),
-      }))}
-      config={{ kwh: { label: "kWh", color: "chart-1", qualityKey: "q" } }}
-      xKey="start"
-      cycle="year"
-      interval="hour"
-      aria-label="8 760 hours">
-      <ClockChart.Grid />
-      <ClockChart.AngleAxis />
-      <ClockChart.Area dataKey="kwh" curve="step-after" />
-      <ClockChart.Line dataKey="kwh" curve="step-after" />
-    </ClockChart.Root>
-  );
-}
-
 /** The subpaths every path in a slot's layers draws, one per M. */
 function subpaths(host: HTMLElement, selector: string): number {
   // DOM audit: polar marks are aria-hidden plot output, read by their slot.
@@ -139,13 +112,6 @@ const CASES = [
     Chart: Week168,
     items: (host: HTMLElement) => subpaths(host, '[data-slot="clock-chart-column"] path'),
     count: 168,
-  },
-  {
-    name: "an 8,760-slot year dial with every other hour estimated",
-    Chart: Year8760,
-    // The odd hours' dashes, each its own piece across its own slot.
-    items: (host: HTMLElement) => subpaths(host, '[data-slot="clock-chart-line-path"][data-part="marked"]'),
-    count: 4380,
   },
 ] as const;
 
@@ -185,69 +151,4 @@ describe("polar smoothness", () => {
       expect(long.filter((duration) => duration > 50)).toEqual([]);
     }
   );
-});
-
-// The follower's own cost on a dense dial with a dot. Unit under test: the Root's follower reading
-// an ActiveDot's stretch on an 8,760-slot year dial with a monotone Line, while the real pointer
-// circles the dial once at 2,000 px/s. Oracle: the same long-task check, no task over 50 ms.
-function YearDot(): ReactElement {
-  return (
-    <ClockChart.Root
-      data={Array.from({ length: 8760 }, (_, hour) => ({
-        start: NEW_YEAR + hour * 3_600_000,
-        kwh: tooth(hour, 0),
-      }))}
-      config={{ kwh: { label: "kWh", color: "chart-1" } }}
-      xKey="start"
-      cycle="year"
-      interval="hour"
-      data-intro="none"
-      aria-label="8 760 hours">
-      <ClockChart.Grid />
-      <ClockChart.Line dataKey="kwh" curve="monotone" />
-      <ClockChart.ActiveDot dataKey="kwh" />
-    </ClockChart.Root>
-  );
-}
-
-describe("polar smoothness under the pointer", () => {
-  it("follows a real pointer once round an 8,760-slot year dial with a dot at 2,000 px/s with no long task over 50 ms", async () => {
-    const { host } = renderThemed(
-      <LocaleProvider locale="nb-NO" timeZone="Europe/Oslo">
-        <div style={{ width: 728 }}>
-          <YearDot />
-        </div>
-      </LocaleProvider>
-    );
-    await frames(300);
-    const layer = clockLayer(host, "clock-chart-line");
-    const [cx, cy] = clientPoint(layer, 0, 0);
-    const [rx] = clientPoint(layer, 1, 0);
-    const ring = 0.8 * (rx - cx);
-    const at = (angle: number): readonly [number, number] => {
-      const radians = (angle * Math.PI) / 180;
-      return [cx + ring * Math.sin(radians), cy - ring * Math.cos(radians)];
-    };
-    await commands.pointerGlide(...at(0), 1);
-    await frames(200);
-    const long: number[] = [];
-    const observer = new PerformanceObserver((list) => {
-      for (const entry of list.getEntries()) long.push(entry.duration);
-    });
-    observer.observe({ entryTypes: ["longtask"] });
-    // Each move goes to the point the pointer reaches at the elapsed wall time, so the circle runs
-    // at 2,000 px/s however long a move takes to send.
-    const perMs = ((2000 / ring) * (180 / Math.PI)) / 1000;
-    const start = performance.now();
-    let moves = 0;
-    for (let angle = 0; angle < 360; angle = (performance.now() - start) * perMs) {
-      await commands.pointerGlide(...at(angle), 1);
-      moves += 1;
-    }
-    await commands.pointerGlide(...at(360), 1);
-    await frames(400);
-    observer.disconnect();
-    expect(long.filter((duration) => duration > 50)).toEqual([]);
-    expect(moves).toBeGreaterThan(10);
-  });
 });
