@@ -750,4 +750,123 @@ describe("the opening hold when the popup closes during it", () => {
     }
     expect(opacities.filter((opacity) => opacity > 0.05)).toEqual([]);
   });
+
+  /** A three-ring radial chart whose popup has opened once and closed, so it is mounted. */
+  async function mountedRadial() {
+    await commands.pointerGlide(1, 1, 1);
+    const { host } = renderThemed(
+      <Card>
+        <RadialChart.Root
+          data={[
+            { budget: "heat", kwh: 300 },
+            { budget: "car", kwh: 240 },
+            { budget: "water", kwh: 180 },
+          ]}
+          config={{
+            heat: { label: "Oppvarming", color: "chart-1" },
+            car: { label: "Elbil", color: "chart-2" },
+            water: { label: "Varmtvann", color: "chart-3" },
+          }}
+          nameKey="budget"
+          valueKey="kwh"
+          max={360}
+          data-intro="none"
+          aria-label="Budsjett">
+          <RadialChart.Track />
+          <RadialChart.Bar />
+          <RadialChart.Tooltip />
+        </RadialChart.Root>
+      </Card>
+    );
+    // DOM audit: the bars are aria-hidden plot output, read by their slot, for their screen CTM.
+    const layer = host.querySelector<SVGSVGElement>('[data-slot="radial-chart-bar"]');
+    if (layer === null) throw new Error("no bars");
+    const listbox = page.getByRole("listbox").element();
+    const move = (point: DOMPoint) => {
+      const [clientX, clientY] = clientPoint(layer, point.x, point.y);
+      listbox.dispatchEvent(
+        new PointerEvent("pointermove", { bubbles: true, clientX, clientY, pointerType: "mouse" })
+      );
+    };
+    move(dialPoint(30, 0.9));
+    await frames(20);
+    move(dialPoint(30, 0.12));
+    await frames(40);
+    // DOM audit: the tooltip is aria-hidden and portalled, read by its slot.
+    const popup = document.querySelector<HTMLElement>('[data-slot="chart-tooltip"]');
+    if (popup === null) throw new Error("no mounted popup");
+    /** Resolve once the popup's inline opacity reads a value. */
+    const inline = (value: string) =>
+      new Promise<void>((resolve) => {
+        const watch = new MutationObserver(() => {
+          if (popup.style.opacity !== value) return;
+          watch.disconnect();
+          resolve();
+        });
+        watch.observe(popup, { attributes: true, attributeFilter: ["style"] });
+      });
+    return { move, popup, inline };
+  }
+
+  // A popup that closes mid-entrance fades out from the opacity it reached. Oracle: a fade-out
+  // starts from what is on screen, so no frame after the close paints the popup brighter than the
+  // brightest frame before it.
+  it("fades a popup that closes mid-entrance out from the opacity it reached", async () => {
+    const { move, popup, inline } = await mountedRadial();
+    const held = inline("0");
+    move(dialPoint(30, 0.9));
+    await held;
+    await inline("");
+    const before: number[] = [Number(getComputedStyle(popup).opacity)];
+    await new Promise<void>((resolve) =>
+      requestAnimationFrame(() => {
+        before.push(Number(getComputedStyle(popup).opacity));
+        move(dialPoint(30, 0.12));
+        resolve();
+      })
+    );
+    const after: number[] = [];
+    for (let frame = 0; frame < 15; frame += 1) {
+      await frames(1);
+      after.push(Number(getComputedStyle(popup).opacity));
+    }
+    const reached = Math.max(...before);
+    expect(reached).toBeLessThan(1);
+    expect(after.filter((opacity) => opacity > reached + 0.001)).toEqual([]);
+  });
+
+  // A close and a reopen between two of the hold's checks. Oracle: a popup whose item survived no
+  // full frame never shows. A frame asked for before the move onto ring A runs ahead of the hold's
+  // first check and asks for the frame that moves onto ring B ahead of the second; a frame asked for
+  // once the hold is written runs after the first check and moves into the hole between them.
+  it("keeps a popup transparent when its item closes and another opens between the hold's checks", async () => {
+    const { move, popup, inline } = await mountedRadial();
+    const held = inline("0");
+    let closed = (): void => undefined;
+    const done = new Promise<void>((resolve) => {
+      closed = resolve;
+    });
+    // The frame after B opens, before its close: B's item has survived one check, so B is still
+    // held, and nothing of it paints.
+    const opacities: number[] = [];
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() => {
+        move(dialPoint(30, 0.62));
+        requestAnimationFrame(() => {
+          opacities.push(Number(getComputedStyle(popup).opacity));
+          move(dialPoint(30, 0.12));
+          closed();
+        });
+      })
+    );
+    move(dialPoint(30, 0.9));
+    await held;
+    requestAnimationFrame(() => move(dialPoint(30, 0.12)));
+    await done;
+    for (let frame = 0; frame < 15; frame += 1) {
+      await frames(1);
+      opacities.push(Number(getComputedStyle(popup).opacity));
+    }
+    expect(opacities.filter((opacity) => opacity > 0.05)).toEqual([]);
+  });
 });

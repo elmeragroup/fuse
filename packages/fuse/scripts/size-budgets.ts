@@ -562,7 +562,10 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // Phase M5 on 2026-11-07: a half-turn step takes the short way from the angle shown, and the
     // opening hold releases only once an item has stayed active for two frame checks, 108280 to
     // 108406. The ceiling keeps about 100 bytes of headroom.
-    ceilingGzip: 108506,
+    // Phase M6 on 2026-11-07: a popup that closes mid-entrance fades out from the opacity it
+    // reached, and every open starts a fresh hold, 108406 to 108519. The ceiling keeps about 100
+    // bytes of headroom.
+    ceilingGzip: 108619,
   },
   // Set from its measurement on 2026-11-05, when the polar families landed: the whole namespace:
   // grid, spoke and ring labels fitted to the dial, Area, Line, Dots, an ActiveDot on the loop,
@@ -592,7 +595,10 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // Phase M5 on 2026-11-07: a half-turn step takes the short way from the angle shown, and the
     // opening hold releases only once an item has stayed active for two frame checks, 112266 to
     // 112381. The ceiling keeps about 100 bytes of headroom.
-    ceilingGzip: 112481,
+    // Phase M6 on 2026-11-07: a popup that closes mid-entrance fades out from the opacity it
+    // reached, and every open starts a fresh hold, 112381 to 112483. The ceiling keeps about 100
+    // bytes of headroom.
+    ceilingGzip: 112583,
   },
   // Set from its measurement on 2026-11-05, when the polar families landed: the whole namespace:
   // the zoned dial model, curves, wedges with floors and coarse slots, labels and ring values
@@ -633,7 +639,10 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // Phase M5 on 2026-11-07: a half-turn step takes the short way from the angle shown, and the
     // opening hold releases only once an item has stayed active for two frame checks, 129755 to
     // 129871. The ceiling keeps about 100 bytes of headroom.
-    ceilingGzip: 129971,
+    // Phase M6 on 2026-11-07: a popup that closes mid-entrance fades out from the opacity it
+    // reached, and every open starts a fresh hold, 129871 to 129986. The ceiling keeps about 100
+    // bytes of headroom.
+    ceilingGzip: 130086,
   },
   {
     name: "chart/Chart.Root",
@@ -798,7 +807,10 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // Phase M5 on 2026-11-07: a half-turn step takes the short way from the angle shown, and the
     // opening hold releases only once an item has stayed active for two frame checks, 93001 to
     // 93120. The ceiling keeps about 100 bytes of headroom.
-    ceilingGzip: 93220,
+    // Phase M6 on 2026-11-07: a popup that closes mid-entrance fades out from the opacity it
+    // reached, and every open starts a fresh hold, 93120 to 93232. The ceiling keeps about 100
+    // bytes of headroom.
+    ceilingGzip: 93332,
   },
   // 2026-11-05: new row, the typical radial route: Root, Bar, the Center parts, Legend and Tooltip,
   // which the owner set beside the whole-namespace row, with the derived ceiling.
@@ -845,7 +857,10 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // Phase M5 on 2026-11-07: a half-turn step takes the short way from the angle shown, and the
     // opening hold releases only once an item has stayed active for two frame checks, 89012 to
     // 89148. The ceiling keeps about 100 bytes of headroom.
-    ceilingGzip: 89248,
+    // Phase M6 on 2026-11-07: a popup that closes mid-entrance fades out from the opacity it
+    // reached, and every open starts a fresh hold, 89148 to 89259. The ceiling keeps about 100
+    // bytes of headroom.
+    ceilingGzip: 89359,
   },
   {
     name: "chart/RadialChart.Root",
@@ -923,7 +938,10 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // Phase M5 on 2026-11-07: a half-turn step takes the short way from the angle shown, and the
     // opening hold releases only once an item has stayed active for two frame checks, 98993 to
     // 99110. The ceiling keeps about 100 bytes of headroom.
-    ceilingGzip: 99210,
+    // Phase M6 on 2026-11-07: a popup that closes mid-entrance fades out from the opacity it
+    // reached, and every open starts a fresh hold, 99110 to 99227. The ceiling keeps about 100
+    // bytes of headroom.
+    ceilingGzip: 99327,
   },
   // 2026-11-05: new rows, ClockChart's Root alone and its typical route: Root, Line, Grid,
   // AngleAxis, Center, Legend and Tooltip, which the owner set, each with the derived ceiling.
@@ -987,7 +1005,10 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // Phase M5 on 2026-11-07: a half-turn step takes the short way from the angle shown, and the
     // opening hold releases only once an item has stayed active for two frame checks, 109214 to
     // 109340. The ceiling keeps about 100 bytes of headroom.
-    ceilingGzip: 109440,
+    // Phase M6 on 2026-11-07: a popup that closes mid-entrance fades out from the opacity it
+    // reached, and every open starts a fresh hold, 109340 to 109444. The ceiling keeps about 100
+    // bytes of headroom.
+    ceilingGzip: 109544,
   },
   // 2026-11-04: new rows, measured at 84628 for the whole ScatterChart namespace and 41808 for its
   // Root alone, each with the derived ceiling.

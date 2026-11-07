@@ -9,9 +9,10 @@
  * A change of lane fades the popup in over 120 ms instead of travelling, and so does a step that
  * leaps across the dial faster than the pointer's pace. A side lane takes the popup only when its
  * room holds the popup's content, so no value is cut; the positioner takes the lane's width, and
- * the popup fills it, so new text never makes Base UI place it again. A popup stays transparent until Base UI has placed it in its lane, so its first frame
- * never paints elsewhere. A pointer that moves toward the popup past the rim, inside the triangle
- * from where it left the plot to the popup's near edge, keeps the active part.
+ * the popup fills it, so new text never makes Base UI place it again. A popup stays transparent
+ * until Base UI has placed it in its lane and its item has been active at two frame checks, so its
+ * first frame never paints elsewhere. A pointer that moves toward the popup past the rim, inside the
+ * triangle from where it left the plot to the popup's near edge, keeps the active part.
  */
 import { use, useCallback, useLayoutEffect, useMemo, useRef, useState } from "react";
 
@@ -443,6 +444,23 @@ export function usePolarTooltipAnchor(input: AnchorInput): TooltipAnchor {
   const before = useRef<LaneSide | null>(null);
   const sizing = useRef<number | null>(null);
   const placing = useRef<number | null>(null);
+  /** The popup and the opacity it showed when its item closed, read before the close commits. */
+  const closing = useRef<{ readonly popup: HTMLElement; readonly opacity: number } | null>(null);
+  // The popup's exit keyframes set only their end, so they start from its own opacity. A popup that
+  // closes mid-entrance would start its fade-out from full opacity; the opacity on screen when the
+  // store loses its item, before React commits the close, is written inline in the close instead.
+  useLayoutEffect(() => {
+    let last = kernel.store.get().active;
+    return kernel.store.subscribe(() => {
+      const now = kernel.store.get().active;
+      if (last !== null && now === null) {
+        const popup = popupOf(positioner.current);
+        closing.current =
+          popup?.style.opacity === "" ? { popup, opacity: Number(getComputedStyle(popup).opacity) } : null;
+      }
+      last = now;
+    });
+  }, [kernel.store, positioner]);
   useLayoutEffect(
     () => () => {
       if (sizing.current !== null) cancelAnimationFrame(sizing.current);
@@ -469,9 +487,14 @@ export function usePolarTooltipAnchor(input: AnchorInput): TooltipAnchor {
     return Math.abs(at) <= 1;
   }, [positioner, dialOf]);
   useLayoutEffect(() => {
-    // A closing popup keeps its place, its width and its lane while it fades out.
+    // A closing popup keeps its place, its width and its lane while it fades out, from the opacity it
+    // reached. The next open's hold overwrites that with 0, and its release clears it.
     if (angle === null) {
       before.current = null;
+      const reached = closing.current;
+      closing.current = null;
+      if (reached !== null && reached.opacity < 1)
+        writeStyle(reached.popup, "opacity", String(reached.opacity));
       return;
     }
     // A change of lane fades the popup in where it rests, instead of carrying it across the dial, and
@@ -538,11 +561,13 @@ export function usePolarTooltipAnchor(input: AnchorInput): TooltipAnchor {
     // A popup that opens stays transparent, and lets the pointer through, until Base UI has placed
     // it in its lane, so its first frame never paints or takes the pointer elsewhere. It shows only
     // once an item has been active in the Root's store at two frame checks in a row: the store is the
-    // live state the pick writes, but a flick's close can land after the check in the frame after
-    // the open, so one check is not enough. A popup shows once its item has survived a full frame,
-    // at most a frame later than it would have; a popup that follows the pointer on to another item
-    // is still open, and shows.
-    if (opening && popup !== null && placing.current === null) {
+    // live state the pick writes, but the first check can run in the open's own frame, before a
+    // flick's close, or before a close that lands after it in the next frame, so one check is not
+    // enough. A popup shows once its item has survived a full frame, at most a frame later than it
+    // would have; a popup that follows the pointer on to another item is still open, and shows.
+    // Every open starts a fresh hold, so a close and a reopen between two checks count again.
+    if (opening && popup !== null) {
+      if (placing.current !== null) cancelAnimationFrame(placing.current);
       writeStyle(popup, "opacity", "0");
       writeStyle(popup, "pointer-events", "none");
       let frames = 0;
