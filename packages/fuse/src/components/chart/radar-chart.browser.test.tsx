@@ -1,9 +1,9 @@
 // RadarChart's grid, axes and series marks in Chromium. Units under test: RadarChart.Grid,
 // AngleAxis, RadiusAxis, Area, Line, Dots, ActiveDot and Glow under RadarChart.Root. Oracles,
-// written by hand: ticket 10's R1 vertices for values 1 to 4 on a [0, 4] domain, (0, −R/4),
+// written by hand: the vertices of values 1 to 4 on a [0, 4] domain, (0, −R/4),
 // (R/2, 0), (0, 3R/4) and (−R, 0); CONTRACT section 8.4's [−2, 1, 3] fixture, whose domain is
 // [−2, 3] with the zero ring at 2/5 of R, spoke 0 filled inside 2/5 only and spoke 1 from 2/5 to
-// 3/5 only; R4's zero ring in the zero line's colour, the frame's muted foreground; R5's six-spoke
+// 3/5 only; the zero ring in the zero line's colour, the frame's muted foreground; R5's six-spoke
 // fixture, spoke 1 estimated and spoke 4 missing, with two dashed edges, two hatched quadrilaterals
 // and five dots; R6's nearest spoke by angle and nearest drawn vertex, found by brute force; D19's
 // hover, 0.45 on the other series and twice the area opacity on the nearest; and the axes' places,
@@ -85,7 +85,7 @@ function settle(host: HTMLElement): void {
   for (const animation of host.getAnimations({ subtree: true })) animation.finish();
 }
 
-describe("the spoke frame (R1, R4) and the negatives of section 8.4", () => {
+describe("the spoke frame and the negatives of section 8.4", () => {
   it("places values 1 to 4 at (0, −R/4), (R/2, 0), (0, 3R/4) and (−R, 0)", async () => {
     const { host } = renderThemed(
       <Radar data={rows([1, 2, 3, 4])}>
@@ -137,7 +137,7 @@ describe("the spoke frame (R1, R4) and the negatives of section 8.4", () => {
   });
 });
 
-describe("ring dots (B1)", () => {
+describe("ring dots", () => {
   it("moves a ring dot's halo with its dot when the readings change, and drops it where one goes missing", async () => {
     // Four spokes on [0, 4]: 4, 4, 4, 4 rest on the rim; 2, 4, null, 4 put spoke 0 at (0, −0.5), keep
     // spokes 1 and 3 on the rim at (1, 0) and (−1, 0), and draw no dot at spoke 2.
@@ -248,7 +248,7 @@ describe("the pick (R6) and hover (D19)", () => {
           return Math.min(gap, 360 - gap);
         });
         const spoke = distances.indexOf(Math.min(...distances));
-        // A point within the 2 px dead band of a spoke's edge may keep the last spoke (R2.5).
+        // A point within the 2 px dead band of a spoke's edge may keep the last spoke.
         const edge = radius * Math.sin(((30 - Math.min(...distances)) * Math.PI) / 180);
         if (edge < 0.03) continue;
         const gaps = drawn.map((points) => {
@@ -257,12 +257,11 @@ describe("the pick (R6) and hover (D19)", () => {
             ? Number.POSITIVE_INFINITY
             : Math.hypot(vertex.x - point.x, vertex.y - point.y);
         });
-        // The series held from the last probe stays unless another lies nearer by more than 0.06 R
-        // (R2.6).
+        // The series held from the last probe stays unless another lies nearer by more than 0.06 R.
         const nearest = gaps.indexOf(Math.min(...gaps));
         const kept: boolean = held !== null && (gaps[held] ?? Infinity) - Math.min(...gaps) <= 0.06;
         held = kept ? held : nearest;
-        // A near series holds for 150 ms after it changes, so each probe waits that out (R2.6).
+        // A near series holds for 150 ms after it changes, so each probe waits that out.
         const settled = performance.now();
         while (performance.now() - settled < 160)
           await new Promise((resolve) => requestAnimationFrame(resolve));
@@ -294,7 +293,7 @@ describe("the pick (R6) and hover (D19)", () => {
   });
 });
 
-describe("the grid and the axes (R4, S12)", () => {
+describe("the grid and the axes (S12)", () => {
   it("draws a ring per tick past the centre, as polygons or circles, and a spoke per row", () => {
     const { host, rerender } = renderThemed(
       <Radar data={rows([1, 2, 3, 4, 2])} max={4}>
@@ -348,7 +347,7 @@ describe("the grid and the axes (R4, S12)", () => {
     const spokes = [...host.querySelectorAll('[data-slot="radar-chart-angle-label"]')];
     expect(spokes.map((label) => label.textContent)).toEqual(["s0", "s1", "s2", "s3"]);
     // Each label's ink, read from the font's metrics, sits with its middle on its spoke and its
-    // nearest edge 6 px past the rim (Fix R4): spoke 1 points to 3 o'clock, so its ink's left edge
+    // nearest edge 6 px past the rim: spoke 1 points to 3 o'clock, so its ink's left edge
     // sits R + 6 px right of the centre, centred on y.
     const [s0, s1] = spokes;
     if (!(s0 instanceof HTMLElement) || !(s1 instanceof HTMLElement)) throw new Error("no spoke labels");

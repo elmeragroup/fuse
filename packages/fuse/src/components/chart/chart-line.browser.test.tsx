@@ -649,7 +649,7 @@ describe("Line and Area motion", () => {
     const old = host.querySelector('[data-slot="chart-marker"][data-outgoing]');
     expect(old?.parentElement?.closest('[data-slot="chart-marker"]')).toBeNull();
     // Over the 150 ms fade on cubic-bezier(0.23, 1, 0.32, 1) the old marker goes from 1 to 0 and the
-    // live one from 0 to 1, each as composited through its ancestors (MOTION-REVIEW F9). Halfway in
+    // live one from 0 to 1, each as composited through its ancestors. Halfway in
     // time the curve has come y(t) of the way, where x(t) = ½.
     const progress = easeAt(0.23, 1, 0.32, 1, 0.5);
     expect([effectiveOpacityAt(old, 0), effectiveOpacityAt(live, 0)]).toEqual([1, 0]);

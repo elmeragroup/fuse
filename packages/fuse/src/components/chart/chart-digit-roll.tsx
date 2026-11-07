@@ -7,7 +7,7 @@
  * another shape, such as one more digit or another unit, swaps at once instead of rolling, because
  * its reels would not line up. A hover step that lands less than 150 ms after the last one swaps the
  * digits at once, so a fast scrub never spins reels through digits that mean nothing, while the
- * entrance's count-up, a data update and a deliberate hover roll (MOTION-REVIEW F7). The server
+ * entrance's count-up, a data update and a deliberate hover roll. The server
  * writes every reel at rest. Under reduced motion the reels move at once, so the text swaps.
  */
 import { useLayoutEffect, useRef } from "react";

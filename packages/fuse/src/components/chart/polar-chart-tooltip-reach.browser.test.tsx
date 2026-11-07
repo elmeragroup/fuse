@@ -1,7 +1,7 @@
 // A pointer that heads for a polar tooltip, in Chromium. Units under test: the polar surface's pick
 // and the tooltip's popup in its side lane, on a RadialChart, a PieChart and a ClockChart. Oracle:
-// CONTRACT section 9.5's hoverable tooltip and its safe triangle, past the rim only (B1,
-// MOTION-REVIEW Fix R2.4): a pointer that moves straight from the active part to its popup keeps
+// CONTRACT section 9.5's hoverable tooltip and its safe triangle, past the rim only: a
+// pointer that moves straight from the active part to its popup keeps
 // that part over the label band and the gap between the rim and the popup, so the popup keeps the
 // part's label until the pointer rests on it; and inside the dial the pick always wins, so a point
 // on the triangle's own median that lies over another part takes that part. Each start is worked by
@@ -127,7 +127,7 @@ function plotSvg(host: HTMLElement): SVGSVGElement {
   return svg;
 }
 
-describe("a pointer heading for a polar tooltip keeps its part past the rim (B1, R2.4)", () => {
+describe("a pointer heading for a polar tooltip keeps its part past the rim", () => {
   it.each(CASES)(
     "keeps the popup of %s while the pointer crosses to it",
     async (_, { chart, start, label: name }) => {

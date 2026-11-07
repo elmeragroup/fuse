@@ -130,7 +130,7 @@ export function outsideLabels(
   });
 }
 
-/** The gap between the rim and an angle label's nearest edge along its ray, in CSS pixels (Fix R4). */
+/** The gap between the rim and an angle label's nearest edge along its ray, in CSS pixels. */
 export const LABEL_GAP = 6;
 
 /** A label centre's offset from its rim point, as CSS length expressions along x and y. */
@@ -144,7 +144,7 @@ function cssNumber(value: number): string {
 /**
  * How far a label's centre sits from its rim point along the ray, as CSS lengths along x and y: the
  * gap, then the box's half-extent along the ray, its support, `|sin θ| · w/2 + |cos θ| · h/2`, so its
- * nearest edge keeps the gap at any angle and its centre stays on the ray (MOTION-REVIEW Fix R4).
+ * nearest edge keeps the gap at any angle and its centre stays on the ray.
  * The width and the height read `--_w` and `--_h`, the ink's size, which the client measures, and
  * fall back to the server's width estimate and one cap height.
  *

@@ -1,5 +1,4 @@
-// Unit under test: numberAndUnit, the centre value's split before its unit (MOTION-REVIEW Fix
-// R3.2). Oracle, written by hand from Norwegian and English formats: nb-NO groups thousands with a
+// Unit under test: numberAndUnit, the centre value's split before its unit. Oracle, written by hand from Norwegian and English formats: nb-NO groups thousands with a
 // no-break space and writes the unit after a no-break space; en-US writes a currency code such as
 // `NOK` before the number and a no-break space, and `$` against the number.
 import { describe, expect, it } from "vitest";

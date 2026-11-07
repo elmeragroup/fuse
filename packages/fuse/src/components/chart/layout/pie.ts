@@ -39,7 +39,7 @@ export type PieItem = {
   readonly value: number | null;
   /**
    * What it draws: the sum of its rows' readings above 0, so a credit folded into Other draws as 0
-   * and never cancels a charge beside it, as a negative reading draws as 0 on its own (Q2, B3).
+   * and never cancels a charge beside it, as a negative reading draws as 0 on its own (Q2).
    */
   readonly weight: number;
   /** The rows it stands for, by index into the rows. */

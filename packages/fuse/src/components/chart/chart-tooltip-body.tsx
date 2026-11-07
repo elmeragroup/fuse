@@ -103,7 +103,7 @@ export function ChartTooltipBody({
     });
   const pick = readout.usePick();
   // While the popup shows, the plot reads its anchor's corridor, so a pointer heading for the popup
-  // keeps the active part over what it crosses and across the gap (B1).
+  // keeps the active part over what it crosses and across the gap.
   const latestFreezes = useRef(freezes);
   useLayoutEffect(() => {
     latestFreezes.current = freezes;

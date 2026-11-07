@@ -155,7 +155,7 @@ export function radarModel(input: RadarInput): PolarModel {
       if (count === 0) return null;
       const spoke = spokeAt(pointerAngle(point.x, point.y), count);
       // The nearest series' vertex on the spoke, keeping the held series unless another is clearly
-      // nearer (Fix R2.6).
+      // nearer.
       const gaps = vertices.map((series) => {
         const vertex = series[spoke] ?? null;
         return vertex === null ? null : Math.hypot(vertex.x - point.x, vertex.y - point.y);

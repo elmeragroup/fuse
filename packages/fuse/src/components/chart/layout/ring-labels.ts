@@ -133,7 +133,7 @@ export function ringAnchor(rings: readonly RingLabel[], clear: RingClearance): R
 
 /**
  * The narrowest container width, from `TICK_BUCKETS`, from which a label on a hand, its middle on
- * the hand's ray inside the rim as the hand's label sits (Fix R4), keeps the gap from the hole and
+ * the hand's ray inside the rim as the hand's label sits, keeps the gap from the hole and
  * its centre text, or "none" where no width does. The label nears the rim as the dial grows, so a
  * width it clears at, it clears at every wider one.
  *
@@ -184,7 +184,7 @@ const CAP = 8.75;
 
 /**
  * An angle label's box on a dial of a radius in CSS pixels, as the axis places it: its middle on its
- * ray at the rim plus the gap and its support along the ray (Fix R4), its box a whole line tall.
+ * ray at the rim plus the gap and its support along the ray, its box a whole line tall.
  */
 function angleBox(label: AngleObstacle, radius: number): Box {
   const radians = (label.angle * Math.PI) / 180;

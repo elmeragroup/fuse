@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * The fit guard of a polar centre (MOTION-REVIEW Fix R3.3). The centre's text never shrinks below
+ * The fit guard of a polar centre. The centre's text never shrinks below
  * the 12 px floor: when its printed text reaches past the square inscribed in the hole, or comes
  * within 2 px of the hole's edge, as a two-line value filling the square does at its corners, the
  * centre drops every line but the value, and when the value alone still reaches past, it drops the

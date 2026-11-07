@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * The way from a chart's active part to its open tooltip (CONTRACT section 9.5, B1). While the popup
+ * The way from a chart's active part to its open tooltip (CONTRACT section 9.5). While the popup
  * shows, the tooltip shares the test its anchor gives, so the plot keeps the active part for a
  * pointer that heads for the popup: over the parts it crosses on the way, and across the gap between
  * the plot and the popup, where no plot event reaches it.

@@ -1,13 +1,14 @@
-// Unit under test: the polar tooltip's lanes (MOTION-REVIEW Fix R2) and Q9's safe triangle.
-// Oracles, worked by hand in client pixels, where y grows downward: a dial of radius 100 centred at
-// (300, 200) inside a figure from (0, 0) to (600, 400); a popup of 80 by 40 whose content needs 80 px;
-// a side lane's inner edge 8 px past the rim or the labels, taken when its room holds the content
-// with 15% to spare, counted as at least 128 px and at most 256, and its box the room up to 256 px;
-// a ray's rim height
-// 200 − 100 cos θ; and the lane switch at 20° past 12 or 6 o'clock, sin 20° ≈ 0.342.
+// Unit under test: the polar tooltip's lanes and the safe triangle. Oracles, worked by hand in
+// client pixels, where y grows downward: a dial of radius 100 centred at (300, 200) inside a figure
+// from (0, 0) to (600, 400); a popup 40 px tall; a side lane's inner edge 8 px past the rim or the
+// labels, taken when its room holds the content and 12 px, counted as at least 128 px and at most
+// 256; a popup as wide as its widest content, at least 128 px and within its room; a ray's rim
+// height 200 − 100 cos θ; the lane switch at 20° past 12 or 6 o'clock, sin 20° ≈ 0.342; and the
+// bottom lane one gap below the labels and the Root's controls, unless that passes the viewport.
 import { describe, expect, it } from "vitest";
 
 import { inTriangle, laneNeed, laneRest, laneSide, laneY, nearEdge } from "./polar-lane";
+import type { LaneInput } from "./polar-lane";
 
 const DIAL = { centre: { x: 300, y: 200 }, radius: 100 };
 const FIGURE = { left: 0, top: 0, right: 600, bottom: 400 };
@@ -59,102 +60,128 @@ describe("laneNeed", () => {
 });
 
 describe("laneRest", () => {
-  it("puts a right lane's inner edge one gap past the rim, at the ray's height", () => {
-    // From 408 to the figure's 600 is 192 px of room.
-    expect(laneRest(90, "right", DIAL, null, SIZE, FIGURE, 80)).toEqual({
+  /** A ray at 90° over the default scene, with whatever a case changes. */
+  const rest = (change: Partial<LaneInput>) =>
+    laneRest({
+      angle: 90,
       side: "right",
-      box: { left: 408, top: 180, right: 600, bottom: 220 },
+      dial: DIAL,
+      labels: null,
+      controls: null,
+      size: SIZE,
+      bounds: FIGURE,
+      content: 80,
+      viewportBottom: Number.POSITIVE_INFINITY,
+      ...change,
+    });
+
+  it("puts a right lane's inner edge one gap past the rim, at the ray's height, as wide as its content's floor", () => {
+    // From 408 to the figure's 600 is 192 px of room; 80 px of content takes the 128 px floor.
+    expect(rest({})).toEqual({
+      side: "right",
+      box: { left: 408, top: 180, right: 536, bottom: 220 },
       room: 192,
+      bounds: FIGURE,
     });
   });
 
   it("puts a left lane's inner edge one gap past the labels when they reach further than the rim", () => {
     const labels = { left: 170, top: 80, right: 430, bottom: 330 };
     // 170 − 8 = 162 px of room; the ray at 300° meets the rim at 200 − 100 cos 300° = 150.
-    expect(laneRest(300, "left", DIAL, labels, SIZE, FIGURE, 80)).toEqual({
+    expect(rest({ angle: 300, side: "left", labels })).toEqual({
       side: "left",
-      box: { left: 0, top: 130, right: 162, bottom: 170 },
+      box: { left: 34, top: 130, right: 162, bottom: 170 },
       room: 162,
+      bounds: FIGURE,
     });
   });
 
   it("takes the other side lane when its own holds less than 128 px", () => {
     // The right lane runs from 408 to 450, 42 px; the left one from 0 to 192.
-    const { side } = laneRest(90, "right", DIAL, null, SIZE, { ...FIGURE, right: 450 }, 80);
-    expect(side).toBe("left");
+    expect(rest({ bounds: { ...FIGURE, right: 450 } }).side).toBe("left");
   });
 
-  it("takes the other side lane when its own room is narrower than the content (N2)", () => {
-    // 150 px of content asks 172.5 with its slack. From 408 to 560 is 152 px, which holds 128 but not
-    // 172.5; the left lane's 192 does.
-    const { side, room } = laneRest(90, "right", DIAL, null, SIZE, { ...FIGURE, right: 560 }, 150);
-    expect([side, room]).toEqual(["left", 192]);
+  it("asks a lane for the content and 12 px: 120 and 128 px take a 140 px lane, and 130 px does not", () => {
+    // The right lane runs from 408 to 548, 140 px, and the left from 120 to 192, 72 px. 120 px of
+    // content needs 132, which fits; 130 needs 142, which neither lane holds.
+    const bounds = { ...FIGURE, left: 120, right: 548 };
+    expect(rest({ bounds, content: 120 }).side).toBe("right");
+    expect(rest({ bounds, content: 130 }).side).toBe("bottom");
+    // 128 px, the popup's own floor, needs exactly 140, so a lane of 140 takes it.
+    expect(rest({ bounds, content: 128 }).side).toBe("right");
   });
 
-  it("asks a side lane for 15% more room than the content it opens with", () => {
-    // 140 px of content asks 161, which the right lane's 152 px does not hold, though the content
-    // alone would fit; with the left lane at 192 − 120 = 72 px, it rests below.
-    const { side } = laneRest(90, "right", DIAL, null, SIZE, { ...FIGURE, left: 120, right: 560 }, 140);
-    expect(side).toBe("bottom");
-  });
-
-  it("falls back below when neither side lane's room holds the content (N2)", () => {
-    // The right lane holds 152 px and the left one 192 − 120 = 72, both under 200 px of content's 230.
-    // Below the rim at 300 plus the gap, the 80 px popup centres on the dial at 260.
-    const { side, box } = laneRest(90, "right", DIAL, null, SIZE, { ...FIGURE, left: 120, right: 560 }, 200);
-    expect(side).toBe("bottom");
-    expect(box).toEqual({ left: 260, top: 308, right: 340, bottom: 348 });
+  it("takes the other side lane when its own room is narrower than the content, as wide as the content", () => {
+    // 150 px of content needs 162: the right lane's 152 px does not hold it, the left lane's 192 does.
+    expect(rest({ bounds: { ...FIGURE, right: 560 }, content: 150 })).toMatchObject({
+      side: "left",
+      box: { left: 42, right: 192 },
+      room: 192,
+    });
   });
 
   it("asks no more than 256 px of a side lane, where wider content wraps", () => {
-    // 400 px of content, 460 with its slack, needs 256, which the right lane's 300 px of room holds;
-    // its box is 256 wide.
-    expect(laneRest(90, "right", DIAL, null, SIZE, { ...FIGURE, right: 708 }, 400)).toEqual({
-      side: "right",
-      box: { left: 408, top: 180, right: 664, bottom: 220 },
-      room: 300,
+    // 400 px of content needs 256, which the right lane's 300 px holds; its box is 256 wide.
+    expect(rest({ bounds: { ...FIGURE, right: 708 }, content: 400 }).box).toEqual({
+      left: 408,
+      top: 180,
+      right: 664,
+      bottom: 220,
     });
   });
 
   it("falls back below the labels, centred on the dial, when neither side lane fits", () => {
+    // Both lanes hold 2 px. The labels reach 320, so the lane's top is 328, and the 128 px popup
+    // centres on the dial at 236.
     const labels = { left: 180, top: 85, right: 420, bottom: 320 };
-    const { side, box } = laneRest(
-      90,
-      "right",
-      DIAL,
-      labels,
-      SIZE,
-      {
-        left: 170,
-        top: 0,
-        right: 430,
-        bottom: 500,
-      },
-      80
-    );
-    expect(side).toBe("bottom");
-    expect(box).toEqual({ left: 260, top: 328, right: 340, bottom: 368 });
+    expect(rest({ labels, bounds: { left: 170, top: 0, right: 430, bottom: 500 } }).box).toEqual({
+      left: 236,
+      top: 328,
+      right: 364,
+      bottom: 368,
+    });
+  });
+
+  it("rests the bottom lane below the Root's legend and table toggle", () => {
+    // 300 px of content needs 256, more than either 192 px lane. The controls end at 380, so the
+    // lane's top is 388, and the 300 px popup centres on the dial at 150.
+    const controls = { left: 150, top: 340, right: 450, bottom: 380 };
+    expect(rest({ controls, content: 300 }).box).toEqual({ left: 150, top: 388, right: 450, bottom: 428 });
+  });
+
+  it("rests below the rim instead when below the controls would pass the viewport", () => {
+    // 388 + 40 = 428 passes a viewport ending at 420, so the lane's top is the rim's 300 + 8.
+    const controls = { left: 150, top: 340, right: 450, bottom: 380 };
+    expect(rest({ controls, content: 300, viewportBottom: 420 }).box.top).toBe(308);
+  });
+
+  it("keeps a side lane's popup above controls under it", () => {
+    // The right lane's 408 to 536 crosses controls from 350 to 550 whose top is 250, so its popup
+    // stays above 242. The ray at 180° meets the rim at 300, and the 40 px popup centres at 222.
+    const controls = { left: 350, top: 250, right: 550, bottom: 290 };
+    expect(rest({ angle: 180, controls })).toEqual({
+      side: "right",
+      box: { left: 408, top: 202, right: 536, bottom: 242 },
+      room: 192,
+      bounds: { ...FIGURE, bottom: 242 },
+    });
   });
 });
 
 describe("the bottom lane of a semicircle", () => {
   it("sits one gap below the flat edge, where the drawing ends, not below the missing half", () => {
     // A semicircle's drawing ends at its centre's height, 200, so the lane's top sits at 208.
-    const semicircle = { ...DIAL, bottom: 0 };
-    const { side, box } = laneRest(
-      90,
-      "right",
-      semicircle,
-      null,
-      SIZE,
-      {
-        left: 200,
-        top: 0,
-        right: 400,
-        bottom: 400,
-      },
-      80
-    );
+    const { side, box } = laneRest({
+      angle: 90,
+      side: "right",
+      dial: { ...DIAL, bottom: 0 },
+      labels: null,
+      controls: null,
+      size: SIZE,
+      bounds: { left: 200, top: 0, right: 400, bottom: 400 },
+      content: 80,
+      viewportBottom: Number.POSITIVE_INFINITY,
+    });
     expect(side).toBe("bottom");
     expect(box.top).toBe(208);
   });

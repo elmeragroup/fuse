@@ -512,7 +512,7 @@ export function usePolarRoot(props: PolarRootProps): PolarRootState {
 
 /**
  * The most CSS pixels a mark on the dial may travel in one frame of a step, by the pointer's speed:
- * MOTION-REVIEW's 8 at 200 px/s or slower, 20 at 800 and 48 at 2,000 or faster, straight between,
+ * 8 at 200 px/s or slower, 20 at 800 and 48 at 2,000 or faster, straight between,
  * and the fastest for a keyboard step. Each is read at a tenth above its speed, since the speed the
  * Root reads from the pointer's events runs a few percent over its true speed. A step that reaches
  * far, such as a radar's spoke or a month of a year, glides no faster than the pointer moves it,
@@ -546,7 +546,7 @@ function maxTurn(radius: number, store: ChartStore): number {
   return (frameTravel(speed) / radius) * (180 / Math.PI);
 }
 
-/** The dead band round a pick's edge, in CSS pixels (Fix R2.5). */
+/** The dead band round a pick's edge, in CSS pixels. */
 const DEAD_BAND = 2;
 
 /**
@@ -554,7 +554,7 @@ const DEAD_BAND = 2;
  * cell and so the sweep's box, into units of the outer radius from the centre. A pointer that holds
  * an option keeps it while a point 2 CSS px along its arc or its radius still picks it, so a hand's
  * tremor near a dense dial's hole changes nothing. Within 2 CSS px of the centre a point has no
- * angle to read, so it picks nothing new and keeps the option the pointer holds (N5).
+ * angle to read, so it picks nothing new and keeps the option the pointer holds.
  *
  * @param id - The Root's id prefix.
  * @param model - The latest model.

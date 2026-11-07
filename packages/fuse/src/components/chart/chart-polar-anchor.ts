@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * Where a polar tooltip rests (MOTION-REVIEW Fix R2, Q9). The popup sits in a side lane beside the
+ * Where a polar tooltip rests. The popup sits in a side lane beside the
  * dial, outside the labels past the rim and inside the Root's figure, centred on the active ray's
  * height at the rim, and Base UI keeps it inside the figure without changing its side. A step moves
  * it with the Root's angle follower: the popup rests at the target ray's height and shows the
@@ -27,7 +27,7 @@ import type {
 } from "./chart-readout-port";
 import { useChartStore } from "./chart-store";
 import type { GlideRoute } from "./chart-tooltip-glide";
-import { inTriangle, LANE_WIDEST, laneNeed, laneRest, laneSide, laneY, nearEdge } from "./layout/polar-lane";
+import { inTriangle, LANE_PAD, laneNeed, laneRest, laneSide, laneY, nearEdge } from "./layout/polar-lane";
 import type { LaneBox, LaneDial, LaneSide } from "./layout/polar-lane";
 
 const STRAIGHT: GlideRoute = { kind: "straight" };
@@ -38,6 +38,13 @@ const STRAIGHT: GlideRoute = { kind: "straight" };
  */
 const LABELS =
   '[data-slot$="angle-label"], [data-slot="pie-chart-label"], [data-slot="clock-chart-now"] [data-part="label"], [data-slot$="value-label"], [data-slot$="reference-label"], [data-slot$="radius-label"]';
+
+/**
+ * The Root's own controls, which the bottom lane rests below and a side lane above, so the popup
+ * never covers the control a pointer reaches for next.
+ */
+const CONTROLS =
+  '[data-slot="chart-legend"], [data-slot="chart-legend-toggle-group"], [data-slot="chart-table-toggle"]';
 
 /** How a lane switch fades the popup in. */
 const LANE_FADE = { duration: 120, easing: "cubic-bezier(0.23, 1, 0.32, 1)" } as const;
@@ -126,24 +133,45 @@ function widestContent(
  */
 function contentWidth(popup: HTMLElement | null): number {
   if (popup === null) return 0;
-  const { width, maxWidth } = popup.style;
+  // The popup's own floor, its `min-width`, comes off too, so a narrow readout measures as narrow
+  // and the lane's room is asked for what the text needs.
+  const { width, maxWidth, minWidth } = popup.style;
   popup.style.setProperty("width", "max-content");
   popup.style.setProperty("max-width", "none");
-  const measured = popup.offsetWidth;
+  popup.style.setProperty("min-width", "0");
+  // The used width, rounded up: offsetWidth rounds to the nearest pixel, and a lane cut to the
+  // widest content wraps a label rounded down. The box's rect would carry the popup's entry
+  // transform.
+  const style = getComputedStyle(popup);
+  const sides =
+    style.boxSizing === "border-box"
+      ? 0
+      : Number.parseFloat(style.paddingLeft) +
+        Number.parseFloat(style.paddingRight) +
+        Number.parseFloat(style.borderLeftWidth) +
+        Number.parseFloat(style.borderRightWidth);
+  // A popup with no box, closed or not yet laid out, has no used width, only `max-content`, and
+  // measures 0 as offsetWidth does.
+  const used = Number.parseFloat(style.width);
+  const measured = Number.isFinite(used) ? Math.ceil(used + sides - 0.001) : popup.offsetWidth;
   popup.style.setProperty("width", width);
   popup.style.setProperty("max-width", maxWidth);
+  popup.style.setProperty("min-width", minWidth);
   return measured;
 }
 
 /**
  * The scene a lane reads, measured on resize ticks and never per pointer move, relative to the
- * dial's centre: the outer radius, the labels past the rim, the figure's box, the popup's size and
- * its content's max-content width.
+ * dial's centre: the outer radius, a pie's popped slice included, the labels past the rim, the
+ * Root's own controls, the figure's box, the viewport's bottom, the popup's size and its widest
+ * content's max-content width.
  */
 type Scene = {
   readonly radius: number;
   readonly labels: LaneBox | null;
+  readonly controls: LaneBox | null;
   readonly bounds: LaneBox;
+  readonly viewportBottom: number;
   readonly size: { readonly width: number; readonly height: number };
   readonly content: number;
 };
@@ -157,6 +185,8 @@ type LaneNow = {
   readonly angle: number;
   readonly side: LaneSide;
   readonly scene: Scene;
+  /** The box the popup's middle stays inside in its lane: the figure, less any controls below it. */
+  readonly bounds: LaneBox;
   readonly holds: boolean;
   /** Whether the popup rides the ray's height at all, as a clock's and a radar's do. */
   readonly turns: boolean;
@@ -179,7 +209,8 @@ type LaneNow = {
  */
 function shiftPopup(positioner: HTMLElement | null, lane: LaneNow | null, shown: number | null): void {
   if (positioner === null || lane === null) return;
-  const { bounds, radius } = lane.scene;
+  const { radius } = lane.scene;
+  const { bounds } = lane;
   const { width, height } = lane.size;
   if (lane.side === "bottom") {
     // Centred on the dial by its own width in CSS, so a change of text keeps it centred in the same
@@ -198,6 +229,18 @@ function shiftPopup(positioner: HTMLElement | null, lane: LaneNow | null, shown:
   // Centred on the ray's height by its own height in CSS, so a change of text keeps it centred in
   // the same frame; clamped into the figure by the height measured last.
   writeStyle(positioner, "translate", `0px calc(${middle.toFixed(2)}px - 50%)`);
+}
+
+/** The smallest box holding a box and another, or the box alone. */
+function union(into: LaneBox | null, box: LaneBox): LaneBox {
+  return into === null
+    ? box
+    : {
+        left: Math.min(into.left, box.left),
+        top: Math.min(into.top, box.top),
+        right: Math.max(into.right, box.right),
+        bottom: Math.max(into.bottom, box.bottom),
+      };
 }
 
 /** A box moved by an offset. */
@@ -255,28 +298,39 @@ export function usePolarTooltipAnchor(input: AnchorInput): TooltipAnchor {
       const node = positioner.current;
       if (dial === null || figure === null) return;
       const { x, y } = dial.centre;
-      const radius = dial.scale;
+      // A pie's active slice pops out past the rim, so its side lane keeps its gap from the slice.
+      const pop =
+        model.drawing.kind === "pie"
+          ? Number.parseFloat(getComputedStyle(figure).getPropertyValue("--chart-slice-pop")) || 0
+          : 0;
+      const radius = dial.scale + pop;
       let labels: LaneBox | null = null;
       for (const label of figure.querySelectorAll(LABELS)) {
         const rect = label.getBoundingClientRect();
         if (rect.width === 0 || rect.height === 0) continue;
         const own = shifted(rect, -x, -y);
-        if (!pastRim(own, radius)) continue;
-        labels =
-          labels === null
-            ? own
-            : {
-                left: Math.min(labels.left, own.left),
-                top: Math.min(labels.top, own.top),
-                right: Math.max(labels.right, own.right),
-                bottom: Math.max(labels.bottom, own.bottom),
-              };
+        if (!pastRim(own, dial.scale)) continue;
+        labels = union(labels, own);
+      }
+      let controls: LaneBox | null = null;
+      for (const control of figure.querySelectorAll(CONTROLS)) {
+        const rect = control.getBoundingClientRect();
+        if (rect.width === 0 || rect.height === 0) continue;
+        controls = union(controls, shifted(rect, -x, -y));
       }
       const size = { width: node?.offsetWidth ?? 0, height: node?.offsetHeight ?? 0 };
       const popup = popupOf(node);
       widest.current = Math.max(widest.current, widestContent(popup, readout, spread));
       const content = widest.current;
-      setScene({ radius, labels, bounds: shifted(figure.getBoundingClientRect(), -x, -y), size, content });
+      setScene({
+        radius,
+        labels,
+        controls,
+        bounds: shifted(figure.getBoundingClientRect(), -x, -y),
+        viewportBottom: window.innerHeight - y,
+        size,
+        content,
+      });
     };
     measure();
     const sizes = new ResizeObserver(measure);
@@ -286,7 +340,7 @@ export function usePolarTooltipAnchor(input: AnchorInput): TooltipAnchor {
     return () => {
       sizes.disconnect();
     };
-  }, [open, measures, dialOf, kernel, positioner, readout]);
+  }, [open, measures, dialOf, kernel, positioner, readout, model]);
   // The lane the popup is in, kept across steps until the ray turns 20° into the other half.
   // A radial chart's ray is a ring's value end, which jumps between unrelated angles as the pointer
   // crosses rings, so its popup keeps the lane it opened in until it closes. A pie's or a radial
@@ -307,12 +361,26 @@ export function usePolarTooltipAnchor(input: AnchorInput): TooltipAnchor {
   const placed =
     angle === null || preferred === null || scene === null || origin === null
       ? null
-      : laneRest(angle, preferred, origin, scene.labels, scene.size, scene.bounds, scene.content);
+      : laneRest({
+          angle,
+          side: preferred,
+          dial: origin,
+          labels: scene.labels,
+          controls: scene.controls,
+          size: scene.size,
+          bounds: scene.bounds,
+          content: scene.content,
+          viewportBottom: scene.viewportBottom,
+        });
   // A closing popup keeps the lane it showed in while it fades out.
   const [shownSide, setShownSide] = useState<LaneSide>("right");
   if (placed !== null && placed.side !== shownSide) setShownSide(placed.side);
   const side: LaneSide = placed?.side ?? shownSide;
   const room = placed?.room ?? null;
+  // The popup's one width in its lane, and the lowest its middle may ride, kept as numbers so the
+  // effects below run when they change and not on every render.
+  const width = placed === null ? null : placed.box.right - placed.box.left;
+  const floor = placed?.bounds.bottom ?? null;
   // The anchor is the lane's corner, relative to the dial's centre: a side lane's inner edge at the
   // dial's own height, or the bottom lane's top at the figure's left. It never moves on a step, so
   // Base UI places the popup again only when its lane changes, and `shiftPopup` places it within.
@@ -392,7 +460,7 @@ export function usePolarTooltipAnchor(input: AnchorInput): TooltipAnchor {
     }
     // A change of lane fades the popup in where it rests, instead of carrying it across the dial, and
     // it holds there until the next step. So does a step that leaps across the dial, which holds
-    // there until the follower stops leaping (N1).
+    // there until the follower stops leaping.
     const was = before.current;
     before.current = side;
     const opening = was === null;
@@ -405,7 +473,15 @@ export function usePolarTooltipAnchor(input: AnchorInput): TooltipAnchor {
     const holds =
       switched || leaped || (last !== null && last.holds && (last.angle === angle || kernel.follow.leaps()));
     if (scene !== null)
-      lane.current = { angle, side, scene, holds, turns, size: lane.current?.size ?? scene.size };
+      lane.current = {
+        angle,
+        side,
+        scene,
+        bounds: floor === null ? scene.bounds : { ...scene.bounds, bottom: floor },
+        holds,
+        turns,
+        size: lane.current?.size ?? scene.size,
+      };
     shiftPopup(positioner.current, lane.current, kernel.follow.shown());
     // The step's new content is measured in this frame's animation callback, before it paints, with
     // the frame's own style pass instead of a forced one in the pointer's event.
@@ -416,43 +492,44 @@ export function usePolarTooltipAnchor(input: AnchorInput): TooltipAnchor {
       if (node === null || now === null) return;
       lane.current = { ...now, size: { width: node.offsetWidth, height: node.offsetHeight } };
       shiftPopup(node, lane.current, kernel.follow.shown());
-      // Content that outgrows its side lane sends the popup to a lane that holds it.
-      if (now.side === "bottom" || room === null) return;
+      // Content wider than any the popup has shown widens it once, and content that outgrows its
+      // side lane sends it to a lane that holds it.
       const popup = popupOf(node);
       widest.current = Math.max(widest.current, widestContent(popup, readout, spread));
       const content = widest.current;
-      if (laneNeed(content) > Math.min(room, LANE_WIDEST)) setScene((last) => last && { ...last, content });
+      const outgrows = now.side !== "bottom" && room !== null && laneNeed(content + LANE_PAD) > room;
+      if (outgrows || (width !== null && content > width))
+        setScene((last) => (last === null || last.content >= content ? last : { ...last, content }));
     });
     const node = positioner.current;
     const popup = popupOf(node);
-    // A side lane's positioner takes the lane's width, its room up to 16rem, and the popup fills
-    // it, so new text never changes its width, its far edge never moves from step to step, and Base
-    // UI never moves it a frame later; a label longer than the lane wraps. The bottom lane's popup
-    // takes the figure's width as its widest. A closing popup keeps the width it showed.
-    if (node !== null && popup !== null && room !== null) {
-      const lanes = side !== "bottom";
-      writeStyle(node, "width", lanes ? `${Math.min(room, LANE_WIDEST).toFixed(2)}px` : null);
-      writeStyle(popup, "max-width", lanes ? null : `${room.toFixed(2)}px`);
-    }
+    // The positioner takes the popup's one width in its lane, its widest content within the room,
+    // and the popup fills it, so new text never changes its width, its edges never move from step
+    // to step, and Base UI never moves it a frame later; a label longer than the lane wraps. A
+    // closing popup keeps the width it showed.
+    if (node !== null && width !== null) writeStyle(node, "width", `${width.toFixed(2)}px`);
     if ((switched || leaped) && popup !== null && !motion.reduced()) {
       popup.animate([{ opacity: 0 }, { opacity: 1 }], LANE_FADE);
     }
-    // A popup that opens stays transparent until Base UI has placed it in its lane (N4).
+    // A popup that opens stays transparent, and lets the pointer through, until Base UI has placed
+    // it in its lane, so its first frame never paints or takes the pointer elsewhere.
     if (opening && popup !== null && placing.current === null) {
       writeStyle(popup, "opacity", "0");
+      writeStyle(popup, "pointer-events", "none");
       let frames = 0;
       const check = (): void => {
         frames += 1;
         if (onLane() || frames >= PLACE_FRAMES) {
           placing.current = null;
           writeStyle(popup, "opacity", null);
+          writeStyle(popup, "pointer-events", null);
           return;
         }
         placing.current = requestAnimationFrame(check);
       };
       placing.current = requestAnimationFrame(check);
     }
-  }, [angle, side, room, scene, turns, kernel.follow, positioner, motion, onLane, readout]);
+  }, [angle, side, room, width, floor, scene, turns, kernel.follow, positioner, motion, onLane, readout]);
   useLayoutEffect(
     () =>
       kernel.follow.subscribe((shown) => {

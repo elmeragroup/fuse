@@ -1,8 +1,7 @@
 // The polar tooltip's side lanes, in Chromium with motion on. Units under test: the polar tooltip's
-// lane anchor over PieChart, RadialChart, RadarChart and ClockChart (MOTION-REVIEW Fix R2, R2.10,
-// R2.11, R2.14, and MOTION-VERIFY N2 and N3). Oracles: the rendered boxes of every label past the
-// rim and of a title above the chart, which the popup may never overlap; the figure, whose sides
-// and top the popup stays inside, and the viewport, which it stays inside below (R2.3 as amended);
+// lane anchor over PieChart, RadialChart, RadarChart and ClockChart. Oracles: the rendered boxes of every label past
+// the rim and of a title above the chart, which the popup may never overlap; the figure, whose sides
+// and top the popup stays inside, and the viewport, which it stays inside below;
 // the popup's padding box, which holds every run of its text, so no value is cut, with the active
 // ray every 15° round the dial; and the lane rule, which keeps a lane until the ray is 20° into the
 // other half, so a pointer that turns from 9 o'clock through 12 to 3 o'clock switches lanes once,
@@ -13,7 +12,9 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
+import { pointerAt, pointerTarget } from "../../../test/chart/marks";
 import { clientPoint, dialPoint, hoverAt, polarFigure } from "../../../test/chart/pie";
+import { glidePointerTo } from "../../../test/pointer-press";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
 import type { ChartConfig } from "./chart-types";
@@ -191,7 +192,7 @@ function Card({ children }: { readonly children: ReactElement }): ReactElement {
   );
 }
 
-describe("the polar tooltip's side lanes (R2.10)", () => {
+describe("the polar tooltip's side lanes", () => {
   it.each(FAMILIES)(
     "keeps the popup of %s off every label and the title, inside the figure above and the viewport below, its text whole, at every ray",
     async (_, chart) => {
@@ -233,7 +234,7 @@ describe("the polar tooltip's side lanes (R2.10)", () => {
   );
 });
 
-describe("the polar tooltip's lane switches (R2.11)", () => {
+describe("the polar tooltip's lane switches", () => {
   /** Turn the pointer round the clock at 0.8 R through the angles given, and count lane changes. */
   async function switches(host: HTMLElement, angles: readonly number[]): Promise<number> {
     // DOM audit: the line layer is aria-hidden plot output, read by its slot, for its screen CTM.
@@ -267,4 +268,204 @@ describe("the polar tooltip's lane switches (R2.11)", () => {
     const wiggle = Array.from({ length: 24 }, (_, step) => 15 * Math.sin((step * Math.PI) / 4));
     expect(await switches(host, wiggle)).toBe(0);
   });
+
+  it("keeps a side lane for the keys after a pointer has opened the popup and left", async () => {
+    const { host } = renderThemed(<Card>{clock ?? <span />}</Card>);
+    // DOM audit: the line layer is aria-hidden plot output, read by its slot, for its screen CTM.
+    const layer = host.querySelector<SVGSVGElement>('[data-slot="clock-chart-line"]');
+    if (layer === null) throw new Error("no layer");
+    const point = dialPoint(60, 0.6);
+    await pointerAt(...clientPoint(layer, point.x, point.y));
+    await frames(20);
+    expect(popup()?.side).toBe("right");
+    // The popup closes after the pointer leaves, and the keys open it again on a side lane.
+    await pointerAt(2, 2);
+    await frames(30);
+    await userEvent.tab();
+    const sides: (string | null)[] = [];
+    for (let step = 0; step < 6; step += 1) {
+      await frames(14);
+      sides.push(popup()?.side ?? null);
+      await userEvent.keyboard("{ArrowRight}");
+    }
+    expect(sides).toEqual(["right", "right", "right", "right", "right", "right"]);
+  });
+});
+
+// The Root's own controls. Unit under test: the polar tooltip's lanes beside a Legend and a Table.
+// Oracles: the rendered boxes of the legend and of the table toggle, which the popup may never
+// overlap, in a side lane at a wide width or in the bottom lane at a narrow one; and the toggle,
+// which a pointer gliding from the dial to its centre opens on the first click.
+describe("the polar tooltip beside the Root's legend and table toggle", () => {
+  const SERIES_KEYS = Array.from({ length: 24 }, (_, index) => `T${String(index)}`);
+
+  function Radar({ width }: { readonly width: number }): ReactElement {
+    return (
+      <LocaleProvider locale="nb-NO" timeZone="Europe/Oslo">
+        <section style={{ width, padding: 24 }}>
+          <h2 style={{ margin: 0 }}>Forbruk per time</h2>
+          <RadarChart.Root
+            data={SERIES_KEYS.map((spoke, index) => ({ spoke, NO1: 2 + (index % 3), NO2: 1 + (index % 4) }))}
+            config={{ NO1: { label: "NO1", color: "chart-1" }, NO2: { label: "NO2", color: "chart-2" } }}
+            nameKey="spoke"
+            data-intro="none"
+            aria-label="Radar">
+            <RadarChart.Grid />
+            <RadarChart.AngleAxis />
+            <RadarChart.Line dataKey="NO1" />
+            <RadarChart.Line dataKey="NO2" />
+            <RadarChart.Legend />
+            <RadarChart.Tooltip />
+            <RadarChart.Table />
+          </RadarChart.Root>
+        </section>
+      </LocaleProvider>
+    );
+  }
+
+  it.each([
+    [728, "a side lane"],
+    [360, "the bottom lane"],
+  ] as const)(
+    "keeps the popup off the legend and the toggle at every ray at %s px, in %s",
+    async (width, lane) => {
+      const { host } = renderThemed(<Radar width={width} />);
+      await userEvent.tab();
+      const figure = polarFigure(host);
+      // DOM audit: the legend and the toggle are the Root's own controls, read by their slots.
+      const controls = [
+        ...figure.querySelectorAll('[data-slot="chart-legend"], [data-slot="chart-table-toggle"]'),
+      ].map((control) => control.getBoundingClientRect());
+      expect(controls).toHaveLength(2);
+      const faults: string[] = [];
+      const sides = new Set<string | null>();
+      for (let step = 0; step < 24; step += 1) {
+        await frames(14);
+        const shown = popup();
+        if (shown === null) faults.push(`step ${String(step)}: no popup`);
+        else {
+          sides.add(shown.side);
+          for (const control of controls) {
+            const covered = overlap(shown.box, control);
+            if (covered > 0) faults.push(`step ${String(step)}: ${covered.toFixed(0)} px² over a control`);
+          }
+        }
+        await userEvent.keyboard("{ArrowRight}");
+      }
+      expect(faults).toEqual([]);
+      if (lane === "the bottom lane") expect([...sides]).toEqual(["bottom"]);
+      else expect(sides.has("bottom")).toBe(false);
+    }
+  );
+
+  it("lets a pointer glide from the dial to the table toggle and open the table on the first click", async () => {
+    const { host } = renderThemed(
+      <LocaleProvider locale="nb-NO" timeZone="Europe/Oslo">
+        <div style={{ width: 360 }}>
+          <RadialChart.Root
+            data={[
+              { measure: "energy", used: 287, budget: 450 },
+              { measure: "cost", used: 612, budget: 900 },
+            ]}
+            config={{
+              energy: { label: "Forbruk", color: "chart-1", format: { preset: "energy", unit: "kWh" } },
+              cost: { label: "Kostnad", color: "chart-2", format: { style: "currency", currency: "NOK" } },
+            }}
+            nameKey="measure"
+            valueKey="used"
+            maxKey="budget"
+            innerRadius={0.45}
+            data-intro="none"
+            aria-label="Hittil i måneden">
+            <RadialChart.Track />
+            <RadialChart.Bar />
+            <RadialChart.Legend />
+            <RadialChart.Tooltip />
+            <RadialChart.Table />
+          </RadialChart.Root>
+        </div>
+      </LocaleProvider>
+    );
+    await frames(10);
+    // DOM audit: the ring layer is aria-hidden plot output, read by its slot, for its screen CTM.
+    const layer = host.querySelector<SVGSVGElement>('[data-slot="radial-chart-bar"]');
+    if (layer === null) throw new Error("no rings");
+    // At 0.6 R the inner ring, Kostnad, lies under the pointer, 120° round.
+    const point = dialPoint(120, 0.6);
+    await pointerAt(...clientPoint(layer, point.x, point.y));
+    await expect.poll(() => popup() !== null).toBe(true);
+    const toggle = page.getByRole("button", { name: "Vis som tabell" }).element();
+    await glidePointerTo(toggle, 20);
+    const box = toggle.getBoundingClientRect();
+    const shown = popup();
+    expect(shown === null ? 0 : overlap(shown.box, box)).toBe(0);
+    // The click lands on whatever lies under the toggle's centre, as a hand's does.
+    await userEvent.click(...pointerTarget(box.left + box.width / 2, box.top + box.height / 2));
+    await expect.poll(() => page.getByRole("button", { name: "Skjul tabell" }).query()).not.toBeNull();
+  });
+});
+
+describe("the bottom lane's width, the widest readout's", () => {
+  /** A solar day of 96 quarter-hours, whose widest label, "11:45 AM – 12:00 PM", sets the lane. */
+  const SOLAR = Array.from({ length: 96 }, (_, quarter) => ({
+    start: DAY + quarter * 900_000,
+    solar: quarter >= 28 && quarter < 76 ? 0.05 + 1.2 * Math.sin((Math.PI * (quarter - 28)) / 48) : 0.004,
+  }));
+
+  /** The first run of the popup's text that breaks over two lines, or null when every run is one. */
+  function wrapped(node: HTMLElement): string | null {
+    const walker = document.createTreeWalker(node, NodeFilter.SHOW_TEXT);
+    for (let text = walker.nextNode(); text !== null; text = walker.nextNode()) {
+      if ((text.textContent ?? "").trim() === "") continue;
+      const range = document.createRange();
+      range.selectNodeContents(text);
+      if (range.getClientRects().length > 1) return text.textContent;
+    }
+    return null;
+  }
+
+  // The letter spacing moves the widest label's width by 19 × 0.02 = 0.38 px a case, so across 1.5 px
+  // some case leaves a fraction under half a pixel, which a rounded measure gives away.
+  it.each([0, 0.02, 0.04, 0.06, 0.08])(
+    "keeps every line of the readout whole at every step with %s px letter spacing",
+    async (spacing) => {
+      const { host } = renderThemed(
+        <LocaleProvider locale="en-US" timeZone="Europe/Oslo">
+          <style>{`[data-slot="chart-tooltip"] { letter-spacing: ${String(spacing)}px; }`}</style>
+          <div style={{ width: 360 }}>
+            <ClockChart.Root
+              data={SOLAR}
+              config={{
+                solar: { label: "Solar", color: "chart-1", format: { preset: "energy", unit: "kWh" } },
+              }}
+              xKey="start"
+              cycle="day"
+              interval="quarter-hour"
+              data-intro="none"
+              aria-label="Solar">
+              <ClockChart.Grid />
+              <ClockChart.AngleAxis />
+              <ClockChart.Line dataKey="solar" />
+              <ClockChart.Tooltip />
+            </ClockChart.Root>
+          </div>
+        </LocaleProvider>
+      );
+      await userEvent.tab();
+      expect(polarFigure(host)).not.toBeNull();
+      const faults: string[] = [];
+      for (let step = 0; step < 96; step += 1) {
+        await frames(3);
+        const shown = popup();
+        if (shown === null) faults.push(`step ${String(step)}: no popup`);
+        else {
+          if (shown.side !== "bottom") faults.push(`step ${String(step)}: ${String(shown.side)} lane`);
+          const broken = wrapped(shown.node);
+          if (broken !== null) faults.push(`step ${String(step)}: "${broken}" on two lines`);
+        }
+        await userEvent.keyboard("{ArrowRight}");
+      }
+      expect(faults).toEqual([]);
+    }
+  );
 });

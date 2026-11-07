@@ -1,6 +1,6 @@
 // The polar angle follower under the reader's reduced-motion preference, in every engine. Units
 // under test: the clock's Scrubber and ActiveDot and the radar's hand and ActiveDot on the Root's
-// follower (MOTION-REVIEW R1.12). Oracle, written by hand: under reduced motion a pointer step puts
+// follower. Oracle, written by hand: under reduced motion a pointer step puts
 // the hand and the dot on the new slot at once, so the hand reads the slot's middle, 15i + 7.5° of a
 // 24-hour day or 90i° of four spokes, before any frame runs, no animation plays, and the follower
 // asks for no frame.

@@ -1,7 +1,7 @@
 /**
  * Which series a pointer is nearest on a radar spoke or a clock slot, with hysteresis: the series
  * the pointer holds stays until another lies nearer by more than `NEAR_HOLD` of the outer radius,
- * so two close series never flicker under a moving pointer (MOTION-REVIEW Fix R2.6).
+ * so two close series never flicker under a moving pointer.
  */
 
 /** How much nearer, in units of the outer radius, another series must be to take over: about 6 px on a 100 px dial. */

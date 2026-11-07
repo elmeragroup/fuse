@@ -1,6 +1,5 @@
 // The radar's angle follower under a moving pointer, in Chromium with motion on. Units under test:
-// RadarChart.ActiveDot and the Grid's hand on the Root's follower (MOTION-REVIEW Fix R1, R1.9, and
-// MOTION-VERIFY N9). Oracles, worked by hand: seven spokes 360/7° apart on a [0, 5] domain, the
+// RadarChart.ActiveDot and the Grid's hand on the Root's follower. Oracles, worked by hand: seven spokes 360/7° apart on a [0, 5] domain, the
 // vertex of value v on spoke i at radius v/5 and angle 360i/7. Spoke 2 is missing, so the Line
 // draws no edge from spoke 1 to 2 or from 2 to 3, and the dot shows on the drawn edges only: in
 // every frame it shows, it lies on one of them, mapped to the screen by the layer's own CTM, and the
@@ -57,7 +56,7 @@ function apart(a: number, b: number): number {
   return ((((a - b) % 360) + 540) % 360) - 180;
 }
 
-describe("the radar's active dot on the Root's follower (R1.9)", () => {
+describe("the radar's active dot on the Root's follower", () => {
   it.each([
     [0, 1],
     [0, 3],
@@ -120,7 +119,7 @@ describe("the radar's active dot on the Root's follower (R1.9)", () => {
     }
   );
 
-  it("fades the dot out over the break at spoke 2 and back in past it (N9)", async () => {
+  it("fades the dot out over the break at spoke 2 and back in past it", async () => {
     const { host } = renderThemed(<Spokes />);
     const layer = radarLayer(host, "radar-chart-active-dot");
     // DOM audit: the dot's own path and the hand are aria-hidden plot output, read by their parts.
@@ -176,12 +175,12 @@ describe("the radar's active dot on the Root's follower (R1.9)", () => {
     await expect.poll(() => getComputedStyle(group).opacity).toBe("1");
   });
 
-  // MOTION-VERIFY N1. Oracle: the 300 ms ceiling on UI motion. A pointer that rests on spoke 0 and
+  // Oracle: the 300 ms ceiling on UI motion. A pointer that rests on spoke 0 and
   // then jumps to spoke 3, 154.29° round, moves at a resting pace, which alone would carry the hand
   // 8 px of rim a frame: 4.6° on a 12.5rem dial of radius 100 px, so 34 frames, and 2.3° on a 25rem
   // one, so 67. Floored by the step's own span over 10 frames, as a step wider than 90°, on the
   // fastest follow spring, the hand lands within 1° of spoke 3 within 300 ms at both.
-  it.each(["12.5rem", "25rem"])("lands a 154° step within 300 ms on a %s dial (N1)", async (size) => {
+  it.each(["12.5rem", "25rem"])("lands a 154° step within 300 ms on a %s dial", async (size) => {
     const { host } = renderThemed(<Spokes size={size} />);
     const layer = radarLayer(host, "radar-chart-active-dot");
     // DOM audit: the hand is aria-hidden plot output, read by its part.

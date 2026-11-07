@@ -1,4 +1,4 @@
-// Unit under test: the near series' hysteresis (MOTION-REVIEW Fix R2.6, R2.12). Oracle, worked by
+// Unit under test: the near series' hysteresis. Oracle, worked by
 // hand from the rule: the held series stays until another lies nearer by more than 0.06 of the
 // outer radius, a tie keeps it, and with nothing held the nearest wins, a tie going to the earlier. A
 // firm hold, just after the near series changed, keeps it while it has a reading.

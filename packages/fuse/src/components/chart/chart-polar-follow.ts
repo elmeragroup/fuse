@@ -8,7 +8,7 @@
  * the curve it rides, which a steep flank stretches, so a ring or spoke step glides with the
  * pointer. It never turns so slowly that a step takes more than 12 frames at that pace, or 10 for a
  * step wider than 90°, so a step
- * across the dial lands within 300 ms at any dial size instead of crawling (N1).
+ * across the dial lands within 300 ms at any dial size instead of crawling.
  * Each frame it calls its subscribers with the angle it shows, and each one writes attributes and
  * styles. It renders nothing and commits nothing.
  */
@@ -39,13 +39,20 @@ const LEAP_NEAR = 90;
 const STRETCH_MOST = 4;
 
 /**
- * How much more a dot's stretch counts than it reads: the stretch is read at a frame's two ends, and
- * a curve that bends between them carries the dot a little further.
+ * How much more a dot's stretch counts than it reads: the stretch is read at points across a frame's
+ * turn, and a curve that bends between two of them carries the dot a little further.
  */
 const STRETCH_MARGIN = 1.05;
 
 /** Half the angle, in degrees, over which a mark's stretch is read. */
 export const STRETCH_SPAN = 0.5;
+
+/**
+ * The most degrees between two reads of a mark's stretch across a frame's turn. A monotone curve is
+ * flat at its knots and steepest between them, so a frame read at its two ends alone misses the
+ * steepest middle of a slot it crosses, and its dot outruns the pace.
+ */
+const STRETCH_STEP = STRETCH_SPAN / 2;
 
 /**
  * How far a mark moves at an angle, in outer radii per radian of turn: 1 for a point on the rim, and
@@ -126,12 +133,16 @@ export function createPolarFollow(host: FollowHost): PolarFollow {
   const call = (angle: number): void => {
     for (const listener of listeners) listener(angle);
   };
-  /** The most any mark stretches at either of two angles, at least the rim's 1 and at most 4. */
+  /**
+   * The most any mark stretches between two angles, read every `STRETCH_STEP` degrees, at least the
+   * rim's 1 and at most 4.
+   */
   const widest = (from: number, to: number): number => {
     let most = 1;
+    const reads = Math.max(1, Math.ceil(Math.abs(to - from) / STRETCH_STEP));
     for (const stretch of stretches) {
-      for (const angle of [from, to]) {
-        const value = stretch(angle);
+      for (let read = 0; read <= reads; read += 1) {
+        const value = stretch(from + ((to - from) * read) / reads);
         if (value !== null && value * STRETCH_MARGIN > most) most = value * STRETCH_MARGIN;
       }
     }

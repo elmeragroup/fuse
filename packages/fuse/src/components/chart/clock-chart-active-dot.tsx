@@ -76,13 +76,19 @@ function placeDot(group: SVGGElement, look: DotLook, values: MarkValues): void {
 
 /**
  * How far the dot moves per radian of turn at an angle, in outer radii, along its series' curve:
- * the curve's radius and its slope together, so a steep flank stretches the turn. Null while no slot
- * is active or the series draws nothing about the angle.
+ * the curve's radius and its slope together, so a steep flank stretches the turn, or the radius
+ * alone on a stepped series. Null while no slot is active or the series draws nothing about the
+ * angle.
  */
 function dotStretch(look: DotLook, angle: number): number | null {
   if (!look.active.current) return null;
   const values = entranceFrame(look.drawn.current ?? look.series.rest).values;
   const at = radiusAt(look, values, angle);
+  // A stepped series, a Column's tips or a step curve, holds its radius across a slot and jumps at
+  // the slot's edge, a jump the dot makes in one frame at any pace, so slowing the hand there buys
+  // nothing and stutters it: its stretch is the radius alone.
+  const curve = seriesCurve(look.motion, look.key);
+  if (curve === null || curve === "step" || curve === "step-before" || curve === "step-after") return at;
   const before = radiusAt(look, values, angle - STRETCH_SPAN);
   const after = radiusAt(look, values, angle + STRETCH_SPAN);
   if (at === null || before === null || after === null) return null;

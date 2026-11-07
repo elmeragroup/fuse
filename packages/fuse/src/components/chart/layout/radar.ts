@@ -164,7 +164,7 @@ export function spokeAt(angle: number, count: number): number {
  * Where the ray at an angle meets a series' polygon: on the straight edge between the vertices of
  * the spokes either side of the angle. An edge that touches a missing vertex draws nothing, as the
  * Line breaks there, so the ray meets nothing on it and the active dot fades out over the break, as
- * the clock's dot does in a gap (MOTION-VERIFY N9). An angle on a present vertex's spoke lands on
+ * the clock's dot does in a gap. An angle on a present vertex's spoke lands on
  * that vertex, and a lone vertex is the whole polygon.
  *
  * @param vertices - The series' vertex per spoke, null for a missing one.

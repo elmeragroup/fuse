@@ -356,7 +356,7 @@ function differences(actual: ReturnType<typeof styles>, expected: ReturnType<typ
 /**
  * Activate the option under the middle of a chart's own plot with the pointer, or on a polar chart
  * three quarters across it: a dial's middle is its centre, which has no angle to pick, so it picks
- * nothing (MOTION-VERIFY N5).
+ * nothing.
  */
 async function activateOwn(figure: HTMLElement): Promise<void> {
   // DOM audit: the plot's listbox is the chart's one pointer target.

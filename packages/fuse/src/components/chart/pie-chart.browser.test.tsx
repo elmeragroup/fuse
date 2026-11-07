@@ -777,7 +777,7 @@ describe("the centre's name line (CenterName)", () => {
   });
 });
 
-describe("the pick at the dial's centre (MOTION-VERIFY N5)", () => {
+describe("the pick at the dial's centre", () => {
   // Unit under test: the polar pick. Oracle: a point within 2 CSS px of the centre has no angle to
   // read, so it keeps the slice the pointer holds; 3 px out, toward 3 o'clock, it reads Strøm, whose
   // slice spans 0° to 159.0°.
@@ -813,7 +813,7 @@ describe("the pick at the dial's centre (MOTION-VERIFY N5)", () => {
   });
 });
 
-describe("the centre's text floor and fit guard (R3.4)", () => {
+describe("the centre's text floor and fit guard", () => {
   const painted = async (): Promise<void> => {
     await new Promise((resolve) => requestAnimationFrame(resolve));
     await new Promise((resolve) => requestAnimationFrame(resolve));

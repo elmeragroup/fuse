@@ -937,7 +937,7 @@ describe("runtime listeners and layout motion", () => {
       "components/chart/chart-entrance.ts",
       // Document `pointermove`, in the capture phase, only while a pointer crosses the gap from a
       // polar plot to its tooltip: no element of the chart lies under the gap, so no React handler
-      // sees the move, and the popup and the plot take over once it reaches either (B1).
+      // sees the move, and the popup and the plot take over once it reaches either.
       "components/chart/chart-polar-surface.tsx",
       // `document.fonts` `loadingdone`: a web font that loads after the pill measured its label
       // widths changes them, and React has no FontFaceSet handler.

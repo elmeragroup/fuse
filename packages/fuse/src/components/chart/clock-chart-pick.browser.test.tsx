@@ -1,5 +1,5 @@
 // The clock's pick under a resting hand, in Chromium. Unit under test: the polar pick's 2 px dead
-// band (MOTION-REVIEW Fix R2.5, R2.13). Oracle, worked by hand: on a 168-hour week dial of radius
+// band. Oracle, worked by hand: on a 168-hour week dial of radius
 // 100 px, 0.35 R is a 35 px circle, where one hour spans 2π · 35 / 168 ≈ 1.31 px of arc. A tremor of
 // ±1 px across the ray lands 2 px from where it last picked, within the dead band, so it keeps the
 // hour it first took. A 3 px move from an hour's middle lands 2.3 hours away, and even its point 2 px
@@ -52,7 +52,7 @@ function nearHour(layer: SVGSVGElement, hour: number, across: number): readonly 
 
 const active = (host: HTMLElement) => polarFigure(host).style.getPropertyValue("--chart-active");
 
-describe("the pick's dead band (R2.13)", () => {
+describe("the pick's dead band", () => {
   it("keeps the hour a ±1 px tremor near the hole first took", async () => {
     const { host } = renderThemed(<Week />);
     const layer = clockLayer(host, "clock-chart-column");

@@ -1,5 +1,5 @@
 // A pie centre's digits under hover steps, in Chromium with motion on. Unit under test:
-// PieChart.CenterValue's digit roll (MOTION-REVIEW F7). Oracle, from the rule: a hover step that
+// PieChart.CenterValue's digit roll. Oracle, from the rule: a hover step that
 // lands less than 150 ms after the last one swaps the digits at once, with no reel transition, while
 // one that comes 150 ms or more after the last rolls its reels. The slices hold 412, 268 and 154 kr,
 // three digits each, so their reels line up and a step that rolls moves every changed reel.
@@ -55,7 +55,7 @@ async function frames(ms: number): Promise<void> {
   while (performance.now() - start < ms) await new Promise((resolve) => requestAnimationFrame(resolve));
 }
 
-describe("the centre's digits on hover steps (F7)", () => {
+describe("the centre's digits on hover steps", () => {
   it("rolls on a deliberate step and swaps at once on a fast one", async () => {
     const { host } = renderThemed(<Bill />);
     const svg = pieSvg(host);

@@ -241,7 +241,7 @@ describe("the polar rules in development", () => {
       </ClockChart.Root>,
       composition("x-type-mismatch"),
     ],
-    // B2: a Column's wedge and an Area's band encode their value as the length from 0, which a
+    // A Column's wedge and an Area's band encode their value as the length from 0, which a
     // yBaseline="none" domain cuts off at the hole, as the cartesian Bar and Area rule says.
     [
       'a clock Column under yBaseline="none"',
@@ -268,7 +268,7 @@ describe("the polar rules in development", () => {
     expect(thrown(element)).toEqual(expected);
   });
 
-  it('draws a clock Line under yBaseline="none", which encodes its value by position (B2)', () => {
+  it('draws a clock Line under yBaseline="none", which encodes its value by position', () => {
     expect(
       thrown(
         <ClockChart.Root {...DIAL} yBaseline="none">

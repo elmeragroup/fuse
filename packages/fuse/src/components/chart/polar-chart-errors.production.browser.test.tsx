@@ -137,7 +137,7 @@ describe("the polar data rules in production", () => {
     expect(host.querySelector('[data-slot="chart-description"]')?.textContent).toContain("totalt 1.");
   });
 
-  // Q2 and B3: folding keeps each item's drawing weight, the sum of its rows' readings above 0,
+  // Q2: folding keeps each item's drawing weight, the sum of its rows' readings above 0,
   // apart from its signed value. A credit inside Other draws as 0 and never cancels a charge beside
   // it, so Other's arc and the centre's total read the charges alone, worked by hand: 2 of 402 is
   // 1.7910°, and 10 of 1010 is 3.5644°.

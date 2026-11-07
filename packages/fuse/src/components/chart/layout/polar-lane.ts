@@ -1,5 +1,5 @@
 /**
- * Where a polar tooltip rests (MOTION-REVIEW Fix R2). The popup sits in a side lane beside the dial,
+ * Where a polar tooltip rests. The popup sits in a side lane beside the dial,
  * outside the labels past the rim and inside the Root's figure, with its vertical centre on the
  * active ray's height at the rim. A ray right of 12 o'clock takes the right lane and a ray left of
  * it the left, and a popup keeps its lane until the ray is 20° past 12 or 6 o'clock on the other
@@ -29,8 +29,16 @@ export type LaneSide = "right" | "left" | "bottom";
  */
 export type LaneDial = { readonly centre: LanePoint; readonly radius: number; readonly bottom?: number };
 
-/** Where a popup rests: the lane it takes, its box there, and the widest it may be in that lane. */
-export type LaneRest = { readonly side: LaneSide; readonly box: LaneBox; readonly room: number };
+/**
+ * Where a popup rests: the lane it takes, its box there, the widest it may be in that lane, and the
+ * box its middle stays inside as it rides the hand, the figure less any controls below it.
+ */
+export type LaneRest = {
+  readonly side: LaneSide;
+  readonly box: LaneBox;
+  readonly room: number;
+  readonly bounds: LaneBox;
+};
 
 /** The gap between the dial or its labels and the popup, in CSS pixels, the overlay's 8 px. */
 export const LANE_GAP = 8;
@@ -77,16 +85,16 @@ export const LANE_MIN = 128;
 export const LANE_WIDEST = 256;
 
 /**
- * How much more room than its content a popup asks of a side lane when it takes one, so a longer
- * label later in the same turn still fits and the popup seldom has to leave for the bottom lane.
+ * The room past its content a popup asks of a side lane, in CSS pixels: the widest label is already
+ * in the measured content, and the rows grow by a few pixels at most from item to item.
  */
-export const LANE_SLACK = 1.15;
+export const LANE_PAD = 12;
 
 /**
  * The width a popup needs in a side lane to show its content without clipping: its max-content
  * width, at least `LANE_MIN` and at most `LANE_WIDEST`, past which its text wraps.
  *
- * @param content - The popup's max-content width.
+ * @param content - The popup's max-content width, with any room it asks past it.
  * @returns The width it needs.
  */
 export function laneNeed(content: number): number {
@@ -94,58 +102,88 @@ export function laneNeed(content: number): number {
 }
 
 /**
- * Where the popup rests for a ray: in its side lane when that lane's room inside the bounds holds
- * the popup's content with `LANE_SLACK` to spare (`laneNeed`), else in the other side lane when that
- * one does, else below the labels. A side lane's inner edge sits one gap outside the further of the rim and the labels, and
- * its box is the lane's room up to `LANE_WIDEST`, which the popup fills up to its content. The bottom
- * lane's top sits one gap below them, centred on the dial and never moved vertically.
+ * The width a popup takes in a lane, the same on every step: its widest content, at least
+ * `LANE_MIN`, the popup's own floor, and at most the room and `LANE_WIDEST`.
  *
- * @param angle - The ray's angle in degrees.
- * @param side - The side lane `laneSide` chose.
- * @param dial - The dial.
- * @param labels - The union of the labels past the rim, or null for none.
- * @param size - The popup's size.
- * @param bounds - The box the popup stays inside beside the dial, the Root's figure.
- * @param content - The popup's max-content width.
- * @returns The lane it rests in, its box, and the widest the popup may be there.
+ * @param room - The lane's room.
+ * @param content - The widest content the popup shows.
+ * @param widest - The most the lane lets the popup grow.
+ * @returns The width.
  */
-export function laneRest(
-  angle: number,
-  side: "right" | "left",
-  dial: LaneDial,
-  labels: LaneBox | null,
-  size: PlaceSize,
-  bounds: LaneBox,
-  content: number
-): LaneRest {
+function laneWidth(room: number, content: number, widest: number): number {
+  return Math.min(room, widest, Math.max(LANE_MIN, content));
+}
+
+/** What a popup's lane reads: the ray, the dial, what it stays clear of, and its own size. */
+export type LaneInput = {
+  /** The ray's angle in degrees. */
+  readonly angle: number;
+  /** The side lane `laneSide` chose. */
+  readonly side: "right" | "left";
+  readonly dial: LaneDial;
+  /** The union of the labels past the rim, or null for none. */
+  readonly labels: LaneBox | null;
+  /** The union of the Root's own controls, its legend and table toggle, or null for none. */
+  readonly controls: LaneBox | null;
+  /** The popup's size. */
+  readonly size: PlaceSize;
+  /** The box the popup stays inside beside the dial, the Root's figure. */
+  readonly bounds: LaneBox;
+  /** The widest content the popup shows, its max-content width. */
+  readonly content: number;
+  /** The viewport's bottom edge, which the bottom lane stays above when it can. */
+  readonly viewportBottom: number;
+};
+
+/**
+ * Where the popup rests for a ray: in its side lane when that lane's room holds the popup's widest
+ * content and `LANE_PAD` (`laneNeed`), else in the other side lane when that one does, else in the
+ * bottom lane. A side lane's inner edge sits one gap outside the further of the rim and the labels,
+ * and a side lane over the Root's controls keeps the popup's bottom one gap above them. The bottom
+ * lane's top sits one gap below the labels and the controls, so the popup never covers the legend
+ * or the table toggle a pointer reaches for next, unless that would push it past the viewport,
+ * where it rests below the labels. In either lane the popup takes one width on every step: its
+ * widest content, within the room.
+ *
+ * @param input - The ray, the dial, the obstacles and the popup.
+ * @returns The lane it rests in, its box, its room and the box its middle stays inside.
+ */
+export function laneRest(input: LaneInput): LaneRest {
+  const { angle, side, dial, labels, controls, size, bounds, content, viewportBottom } = input;
   const { centre, radius } = dial;
   const right = Math.max(centre.x + radius, labels?.right ?? Number.NEGATIVE_INFINITY) + LANE_GAP;
   const left = Math.min(centre.x - radius, labels?.left ?? Number.POSITIVE_INFINITY) - LANE_GAP;
-  const middle = laneY(angle, dial, size.height, bounds);
-  const top = middle - size.height / 2;
   const rooms = { right: bounds.right - right, left: left - bounds.left };
   const lane = (at: "right" | "left"): LaneRest => {
     const room = rooms[at];
-    const width = Math.min(room, LANE_WIDEST);
-    const box =
-      at === "right"
-        ? { left: right, top, right: right + width, bottom: top + size.height }
-        : { left: left - width, top, right: left, bottom: top + size.height };
-    return { side: at, box, room };
+    const width = laneWidth(room, content, LANE_WIDEST);
+    const from = at === "right" ? right : left - width;
+    const over = controls !== null && from < controls.right && from + width > controls.left;
+    const kept = over ? { ...bounds, bottom: Math.min(bounds.bottom, controls.top - LANE_GAP) } : bounds;
+    const top = laneY(angle, dial, size.height, kept) - size.height / 2;
+    return {
+      side: at,
+      box: { left: from, top, right: from + width, bottom: top + size.height },
+      room,
+      bounds: kept,
+    };
   };
   const other = side === "right" ? "left" : "right";
-  const need = laneNeed(content * LANE_SLACK);
+  const need = laneNeed(content + LANE_PAD);
   if (rooms[side] >= need) return lane(side);
   if (rooms[other] >= need) return lane(other);
-  const below =
+  const rim =
     Math.max(centre.y + (dial.bottom ?? radius), labels?.bottom ?? Number.NEGATIVE_INFINITY) + LANE_GAP;
+  const clear = controls === null ? rim : Math.max(rim, controls.bottom + LANE_GAP);
+  const below = clear + size.height > viewportBottom ? rim : clear;
   const room = bounds.right - bounds.left;
-  const width = Math.min(size.width, room);
+  const width = laneWidth(room, content, room);
   const x = Math.min(bounds.right - width, Math.max(bounds.left, centre.x - width / 2));
   return {
     side: "bottom",
     box: { left: x, top: below, right: x + width, bottom: below + size.height },
     room,
+    bounds,
   };
 }
 

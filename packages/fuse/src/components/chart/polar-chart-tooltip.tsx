@@ -3,8 +3,7 @@
 /**
  * The polar families' Tooltip parts. Each is the shared tooltip body over the polar anchor, which
  * rests the popup in a lane beside or below the dial, and shows the active slice's, ring's or
- * spoke's label and rows by default. Where a popup may go is one rule for every family (R2.3, as
- * amended): like `Chart.Tooltip`'s, it may reach past its chart's box, below the figure, and it stays
+ * spoke's label and rows by default. Where a popup may go is one rule for every family: like `Chart.Tooltip`'s, it may reach past its chart's box, below the figure, and it stays
  * inside the viewport, but it never covers its own dial, its labels or its title.
  */
 import type { ReactElement } from "react";

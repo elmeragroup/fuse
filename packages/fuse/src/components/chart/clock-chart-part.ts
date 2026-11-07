@@ -29,7 +29,7 @@ export const DIAL_REGION = { x: -1.5, y: -1.5, width: 3, height: 3, unit: NOMINA
 /**
  * Throw `baseline-required` for a part that encodes its value as the length from 0, as a Column's
  * wedge and an Area's band do, under a Root whose `yBaseline="none"` domain cuts that length off at
- * the hole, as the cartesian Bar and Area rule says (B2).
+ * the hole, as the cartesian Bar and Area rule says.
  *
  * @param clock - The dial.
  * @param part - The part's display name.

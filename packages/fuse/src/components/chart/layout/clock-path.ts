@@ -320,7 +320,7 @@ function leaving(line: readonly ClockPoint[], past: number, angle: number): numb
  * The parts of a sampled curve between pairs of angles, ascending and apart, each with its ends cut
  * where they fall, in one pass along the curve. A cut on a step's edge keeps the side of the step
  * inside the part: the radius the curve leaves its start at, and the one it reaches its end at, so a
- * hatch over a step follows the step (r4 B1).
+ * hatch over a step follows the step.
  */
 function clipAll(
   line: readonly ClockPoint[],

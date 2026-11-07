@@ -1,10 +1,10 @@
 // The radar's layout. Unit under test: radarDomain, radarRadius, spokeAngle, radarVertices,
 // zeroPolygon, radarQuads, polygonsPath, radarEdges, radarAreas, loneVertices, dotsPath, spokeAt and
 // edgePoint. Oracles, written
-// by hand: ticket 10's R1 vertices for values 1 to 4 on a [0, 4] domain at radius R, which are
+// by hand: the vertices of values 1 to 4 on a [0, 4] domain at radius R, which are
 // (0, −R/4), (R/2, 0), (0, 3R/4) and (−R, 0); CONTRACT section 8.4's [−2, 1, 3] fixture, whose
-// domain is [−2, 3] with the zero ring at two fifths of R; R2's `max` above and below the data;
-// R3's per-edge quadrilaterals on a three-spoke fixture; and R6's centre cases, where offsets of
+// domain is [−2, 3] with the zero ring at two fifths of R; a `max` above and below the data;
+// the per-edge quadrilaterals on a three-spoke fixture; and R6's centre cases, where offsets of
 // 0.001 px toward 3, 6 and 9 o'clock pick spokes 1, 2 and 3 of four; and R5's counts on a six-spoke
 // fixture, whose spoke 1 is estimated and spoke 4 missing: two dashed edges and two hatched
 // quadrilaterals beside spoke 1, two plain edges and quadrilaterals, and two removed beside spoke 4.
@@ -30,7 +30,7 @@ import {
 
 const R = 100;
 
-describe("the spoke frame (R1)", () => {
+describe("the spoke frame", () => {
   it("places values 1 to 4 on a [0, 4] domain clockwise from 12 o'clock", () => {
     const { domain } = radarDomain([1, 2, 3, 4], undefined);
     expect(domain).toEqual([0, 4]);
@@ -52,7 +52,7 @@ describe("the spoke frame (R1)", () => {
   });
 });
 
-describe("the radius domain (R2) and the negatives of section 8.4", () => {
+describe("the radius domain and the negatives of section 8.4", () => {
   it("runs [−2, 1, 3] over [−2, 3] with the zero ring at two fifths of R", () => {
     const { domain, ticks } = radarDomain([-2, 1, 3], undefined);
     expect(domain).toEqual([-2, 3]);
@@ -87,7 +87,7 @@ describe("the radius domain (R2) and the negatives of section 8.4", () => {
   });
 });
 
-describe("the zero polygon and the quadrilaterals (R3)", () => {
+describe("the zero polygon and the quadrilaterals", () => {
   // Three spokes on [0, 4], so 0 sits at the centre, with readings 4 and 2 and a missing third.
   const radius = radarRadius([0, 4], R);
   const vertices = radarVertices([4, 2, null], radius);
@@ -236,7 +236,7 @@ describe("the pick (R6)", () => {
   });
 });
 
-describe("edgePoint (R1.11)", () => {
+describe("edgePoint", () => {
   // A square of radius 1: spokes at 0°, 90°, 180° and 270°, vertices (0, −1), (1, 0), (0, 1) and
   // (−1, 0). The ray at 45° meets the edge from (0, −1) to (1, 0) at (½, −½).
   const square = [
@@ -256,7 +256,7 @@ describe("edgePoint (R1.11)", () => {
     expect(point?.y).toBeCloseTo(expected.y, 9);
   });
 
-  it("meets nothing on either edge beside a missing vertex, and the present vertices on their spokes (N9)", () => {
+  it("meets nothing on either edge beside a missing vertex, and the present vertices on their spokes", () => {
     // With (1, 0) missing, the edges from 0° to 90° and from 90° to 180° touch it and draw nothing.
     // The spokes at 0° and 180° still hold their vertices, and the edge from 180° to 270°, from
     // (0, 1) to (−1, 0), meets the ray at 225° at (−½, ½).

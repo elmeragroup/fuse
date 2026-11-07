@@ -853,7 +853,7 @@
   }
 
   /*
-    A label past the rim sits 6 px out, its centre on its ray (MOTION-REVIEW Fix R4), so the room
+    A label past the rim sits 6 px out, its centre on its ray, so the room
     above and below the dial holds the gap and its 16 px line, and the room beside it the gap and the
     widest label.
   */
@@ -1236,7 +1236,7 @@
 
   /*
     A radar's grid: rings at the radius ticks in the border role, the zero ring solid in the zero
-    line's colour (R4), spokes from the centre to the rim, and the hand along the active spoke.
+    line's colour, spokes from the centre to the rim, and the hand along the active spoke.
     Each stroke keeps 1 px at any dial size.
   */
   [data-slot="radar-chart-grid"] {
@@ -1350,7 +1350,7 @@
 
   /*
     The dot and the hand show and leave together, in place, over 120 ms on a strong ease-out, and
-    never move while they fade. Reduced motion keeps the fade, which moves nothing (MOTION-VERIFY N7).
+    never move while they fade. Reduced motion keeps the fade, which moves nothing.
   */
   :is([data-slot="radar-chart-active-dot"] [data-follow], [data-slot="radar-chart-spoke"][data-part="hand"]) {
     transition: opacity 120ms cubic-bezier(0.23, 1, 0.32, 1);
@@ -1637,7 +1637,7 @@
 
   /*
     The dot and the hand show and leave together, in place, over 120 ms on a strong ease-out, and
-    never move while they fade. Reduced motion keeps the fade, which moves nothing (MOTION-VERIFY N7).
+    never move while they fade. Reduced motion keeps the fade, which moves nothing.
   */
   :is(
     [data-slot="clock-chart-active-dot"] [data-follow],
@@ -1809,7 +1809,7 @@
   /*
     A label on its ray trims its box to its cap height and the font's descent, which holds every
     descender, and takes back the offset of its ink's middle from its box's, which the client
-    measures, so the middle of its ink sits on the ray (MOTION-REVIEW Fix R4). The :not() lifts it
+    measures, so the middle of its ink sits on the ray. The :not() lifts it
     over the placement rule above, whose :is() takes its Now-label argument's two attributes.
   */
   :is([data-slot="radar-chart-angle-label"], [data-slot="clock-chart-angle-label"]):not([data-hidden]) {
@@ -2127,7 +2127,7 @@
 
   /*
     A centre value's number and unit sit on one line while they fit, and on two, centred, when the
-    hole is too narrow for both (MOTION-REVIEW Fix R3.2).
+    hole is too narrow for both.
   */
   :is(
     [data-slot="pie-chart-center-value"],
@@ -2142,7 +2142,7 @@
 
   /*
     The fit guard: a centre whose lines overflow the hole at the floor keeps only its value, and one
-    whose value alone overflows shows nothing, since the tooltip, legend and table carry it (R3.3).
+    whose value alone overflows shows nothing, since the tooltip, legend and table carry it.
   */
   :is([data-slot="pie-chart-center"], [data-slot="clock-chart-center"])
     > [data-part="hole"][data-fit="value"]
@@ -2244,7 +2244,7 @@
   /*
     A polar Root writes the active and near places on its figure on every step, which only its marks
     read. The table and the legend stop both here, so a hover restyles the marks and not a table of
-    every slot under them (MOTION-REVIEW R2.9).
+    every slot under them.
   */
   [data-polar] :is([data-slot="chart-table"], [data-slot="chart-legend"]) {
     --chart-active: initial;
@@ -2912,7 +2912,7 @@
 
   /*
     A legend item's swatch sits on its label's first line, centred on it, so a label that wraps keeps
-    its swatch beside its first words (MOTION-REVIEW F10).
+    its swatch beside its first words.
   */
   [data-slot="chart-legend-item"] {
     display: inline-flex;
@@ -3727,7 +3727,7 @@
 
     /*
       While the entrance plays, the digits count up over it, and afterwards roll on their spring,
-      except while data-snap swaps them on a hover step that came fast (MOTION-REVIEW F7).
+      except while data-snap swaps them on a hover step that came fast.
     */
     [data-slot="pie-chart-center"] [data-part="digits"]:not([data-snap]) [data-part="reel"] {
       --_reel-entering: var(--_if-root-entering) translate var(--chart-intro) var(--chart-ease) 100ms;

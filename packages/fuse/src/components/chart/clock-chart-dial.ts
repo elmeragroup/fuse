@@ -44,7 +44,7 @@ export function labelPlace(box: SweepBox, angle: number, reach: number): LabelPl
 
 /**
  * A label's place on its ray: its centre at the rim point plus the gap and its support along the
- * ray, past the rim or inside it, so it sits centred on its spoke at a constant gap (Fix R4).
+ * ray, past the rim or inside it, so it sits centred on its spoke at a constant gap.
  *
  * @param box - The sweep's box.
  * @param angle - The ray's angle in degrees.

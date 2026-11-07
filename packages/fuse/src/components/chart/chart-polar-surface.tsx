@@ -119,7 +119,7 @@ export function PolarSurface(): ReactElement | null {
   };
   useEffect(() => stayed, []);
   // When the near series last changed, which holds it for a moment, so a fast pointer that crosses
-  // three series never flickers the dims (Fix R2.6).
+  // three series never flickers the dims.
   const nearSince = useRef(Number.NEGATIVE_INFINITY);
   // Where the pointer last stood on the active part, the corner a move toward the popup leaves from.
   const apex = useRef<ClientPoint | null>(null);
@@ -228,7 +228,7 @@ export function PolarSurface(): ReactElement | null {
   /**
    * The option and series under a pointer, or null where nothing picks. A pointer that holds an
    * option keeps it across the pick's 2 px dead band, and keeps its series unless another is clearly
-   * nearer (Fix R2.5, R2.6).
+   * nearer.
    */
   const pickAt = (event: MouseEvent<HTMLDivElement>): PointerSlot | null => {
     const { active, near, source } = store.get();
@@ -254,8 +254,8 @@ export function PolarSurface(): ReactElement | null {
   /**
    * Whether a pointer at a point heads for the open popup from the active part: past the rim, inside
    * the triangle from where it last stood on that part to the popup's near edge (CONTRACT section
-   * 9.5, B1). Inside the dial the pick always wins, so the triangle never holds a part the pointer
-   * has left (Fix R2.4).
+   * 9.5). Inside the dial the pick always wins, so the triangle never holds a part the pointer
+   * has left.
    */
   const heading = (to: ClientPoint): boolean => {
     const from = apex.current;

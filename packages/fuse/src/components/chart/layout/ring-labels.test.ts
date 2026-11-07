@@ -1,7 +1,7 @@
 // Unit under test: fitRingLabels, which thins a RadiusAxis by the room along its spoke. Oracles,
 // worked by hand. Each value is a 16 px line on a chip 4 px right of the spoke, padded 2 px either
 // side, and keeps 2 px from anything else. An angle label sits with its middle on its ray at
-// R + 6 + |sin θ| · w/2 + |cos θ| · 8.75/2, a cap height, its box a 16 px line tall (Fix R4): at
+// R + 6 + |sin θ| · w/2 + |cos θ| · 8.75/2, a cap height, its box a 16 px line tall: at
 // 12 o'clock a 30 px label spans x from −15 to 15 and y from −(R + 18.375) to −(R + 2.375), and at
 // 15° a 30 px label's middle lies R + 14.108 out, so its left edge sits at 0.2588 (R + 14.108) − 15.
 import { describe, expect, it } from "vitest";

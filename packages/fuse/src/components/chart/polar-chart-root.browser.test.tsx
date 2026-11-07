@@ -11,7 +11,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
-import { label } from "../../../test/chart/marks";
+import { label, pointerAt } from "../../../test/chart/marks";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
 import type { MarkValues } from "./chart-motion";
@@ -111,12 +111,12 @@ function pointAt(host: HTMLElement, angle: number, share: number): readonly [num
   ];
 }
 
+/**
+ * Move the real pointer to a point, so the pointer the chart reads and the cursor the browser hit
+ * tests are one, wherever an earlier test left the cursor.
+ */
 async function hover(x: number, y: number): Promise<void> {
-  const surface = page.getByRole("listbox").element();
-  surface.dispatchEvent(
-    new PointerEvent("pointermove", { bubbles: true, clientX: x, clientY: y, pointerType: "mouse" })
-  );
-  await new Promise((resolve) => requestAnimationFrame(resolve));
+  await pointerAt(x, y);
 }
 
 describe("the polar Root's structure (sections 9.2 and 9.3)", () => {
@@ -314,9 +314,10 @@ describe("the dial as one target (Q8)", () => {
   });
 
   it("picks by angle past the rim too, in the cell's corners (Q8)", async () => {
-    // Nettleie sweeps 223.2° to 345.6°, so 300° picks it at any distance inside the cell.
+    // Nettleie sweeps 223.2° to 345.6°, so 315° picks it at any distance inside the cell. At 1.3 R
+    // the point lies 0.92 R left of and above the centre, in the cell's top-left corner, past the rim.
     const { host } = renderThemed(<Pie />);
-    await hover(...pointAt(host, 300, 1.3));
+    await hover(...pointAt(host, 315, 1.3));
     // DOM audit: Root writes the active option's place on the figure, which the slices pop against.
     expect(figureOf(host).style.getPropertyValue("--chart-active")).toBe("1");
   });

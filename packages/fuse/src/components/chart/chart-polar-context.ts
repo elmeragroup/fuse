@@ -191,7 +191,7 @@ export type ClockDrawing = {
   readonly format: ValueFormat;
   /** How stacks combine, which decides whether a Line or an Area may paint by value. */
   readonly stackOffset: "diverging" | "expand";
-  /** Root's `yBaseline`, which a Column and an Area need at "zero" (B2). */
+  /** Root's `yBaseline`, which a Column and an Area need at "zero". */
   readonly baseline: "zero" | "none";
   /** The series model and its words, which the value parts read. */
   readonly text: TextContext;
@@ -219,11 +219,11 @@ export type RadarDrawing = {
   readonly count: number;
   /** Each spoke's label. */
   readonly labels: readonly FormattedText[];
-  /** The radius domain, its minimum at the centre and its maximum at the rim (R2). */
+  /** The radius domain, its minimum at the centre and its maximum at the rim. */
   readonly domain: readonly [number, number];
   /** The ring values, the domain's own ticks. */
   readonly ticks: readonly number[];
-  /** The radius of 0 when the domain reaches below it, where the solid zero ring sits (R4), or null. */
+  /** The radius of 0 when the domain reaches below it, where the solid zero ring sits, or null. */
   readonly zero: number | null;
   readonly series: readonly RadarSeries[];
   /** The first series' format, which the RadiusAxis prints its ticks in. */
@@ -346,7 +346,7 @@ export type PolarKernel = {
   readonly warnOnce: (rule: ChartDataRule | ChartHintRule, subject: string, message: string) => void;
   /**
    * The pick a pointer makes over the cell, a hook with the same calls for the Root's life. Given
-   * the option and series the pointer holds, it keeps them across a pick's edge (Fix R2.5, R2.6).
+   * the option and series the pointer holds, it keeps them across a pick's edge.
    */
   readonly usePick: () => PolarPickAt;
 };

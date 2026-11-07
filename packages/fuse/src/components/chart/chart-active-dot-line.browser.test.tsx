@@ -207,7 +207,7 @@ describe("the pace of a step", () => {
 
   it("follows a keyboard step on the fastest spring, which keeps a held arrow key from trailing", async () => {
     // A keyboard step takes FOLLOW_FASTEST, stiffness 5300 at follow's damping ratio, so damping
-    // 2 · (30 / (2√300)) · √5300 ≈ 126.1 (MOTION-REVIEW F6).
+    // 2 · (30 / (2√300)) · √5300 ≈ 126.1.
     const fastest = settling(5300, (30 / Math.sqrt(300)) * Math.sqrt(5300));
     const { host } = renderThemed(<RideChart curve="monotone" />);
     host.querySelector("button")?.focus();

@@ -436,7 +436,7 @@ export function pieModel(input: PieInput): PolarModel {
     };
   });
   // The slices, the gauge and the drawn total read each item's weight, its readings above 0, and the
-  // text and the Table keep the signed values (Q2, B3).
+  // text and the Table keep the signed values (Q2).
   const drawn = folded.map(({ weight }) => weight);
   const total = drawn.reduce((sum, value) => sum + value, 0);
   const gauge = input.max === undefined ? null : gaugeFill(input.sweep, total, input.max);

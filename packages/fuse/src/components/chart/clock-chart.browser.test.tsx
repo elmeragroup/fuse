@@ -155,7 +155,7 @@ describe("the dial's geometry (D11, D13)", () => {
     const column = clockLayer(host, "clock-chart-column");
     const figure = polarFigure(host);
     let checked = 0;
-    // Each probe sits at a slot's middle, past the 2 px dead band a held slot keeps (R2.5).
+    // Each probe sits at a slot's middle, past the 2 px dead band a held slot keeps.
     for (let ring = 0; ring < 3; ring += 1) {
       for (let step = 0; step < 36; step += 1) {
         const angle = ((step * 7) % 24) * 15 + 7.5;
@@ -207,7 +207,7 @@ describe("a threshold ring (D23)", () => {
     expect(page.getByText("Under snittet").elements()).toHaveLength(1);
   });
 
-  it("keeps an estimated wedge in its own side's paint, hatched, and in the past where it lies (Q4, B2)", async () => {
+  it("keeps an estimated wedge in its own side's paint, hatched, and in the past where it lies (Q4)", async () => {
     // The 4 at 00:00 is estimated, above 1.5, and before Now at 11:30, so it lies in the past.
     const rows = hours(VALUES).map((row, hour) => (hour === 0 ? { ...row, q: "estimated" } : row));
     const { host } = renderThemed(
@@ -229,7 +229,7 @@ describe("a threshold ring (D23)", () => {
     expect(Oklab.deltaE(srgb(getComputedStyle(hatch ?? column).stopColor), role)).toBeLessThanOrEqual(3);
   });
 
-  it("hatches an estimated stretch of an Area over the area's own value paint (B2)", async () => {
+  it("hatches an estimated stretch of an Area over the area's own value paint", async () => {
     // The 4 at 06:00 is estimated and above 1.5. Its hatched stretch must paint through the same
     // threshold gradient as the solid area, so it reads red above the threshold, with the hatch as a
     // texture over that paint.
@@ -278,7 +278,7 @@ describe("a threshold ring (D23)", () => {
       ] as const,
     ])
   )(
-    "keeps a %s Area's hatch over %s inside hour 6 and inside the fill (r4 B1)",
+    "keeps a %s Area's hatch over %s inside hour 6 and inside the fill",
     async (curve, _, usual, hour5, config, low, high) => {
       const rows = Array.from({ length: 24 }, (_, hour) => ({
         start: DAY + hour * HOUR,
@@ -527,8 +527,7 @@ describe("the 25-hour day", () => {
     const six = [...host.querySelectorAll<HTMLElement>('[data-slot="clock-chart-angle-label"]')].find(
       (label) => label.textContent === "06"
     );
-    // The label's ink sits with its middle on the ray at 100.8°, its nearest edge 6 px past the rim
-    // (Fix R4).
+    // The label's ink sits with its middle on the ray at 100.8°, its nearest edge 6 px past the rim.
     expect(rayOffsets(host, six, 100.8)).toEqual({ across: 0, along: 0 });
   });
 });
@@ -623,7 +622,7 @@ describe("the seam (D16), Now and the keys", () => {
     const box = label?.getBoundingClientRect() ?? new DOMRect();
     // The week holds the 25-hour Sunday of 26 October, 169 equal hours, so Now's hand lies at
     // 72.5 / 169 of a turn. The label's centre sits on it, its nearest edge 6 px inside the rim
-    // (Fix R4.2), and it meets no weekday label.
+    // , and it meets no weekday label.
     expect(rayOffsets(week.host, label ?? undefined, (72.5 / 169) * 360, "inside")).toEqual({
       across: 0,
       along: 0,
@@ -657,7 +656,7 @@ describe("the seam (D16), Now and the keys", () => {
   });
 });
 
-describe("an Area's gradients on every sign mix (B3, B5)", () => {
+describe("an Area's gradients on every sign mix (B5)", () => {
   // Under "linear" the zero sits at its own radius: at the hole's 0.3 for readings 0 to 4, at the
   // rim for −2 to 0, and at 0.3 + 0.7 · 2/6 ≈ 0.533 for −2 to 4. "gradient" fades from the value
   // toward zero, so it is more solid at each reading's extreme than at zero; "gradient-reverse" is
@@ -705,7 +704,7 @@ describe("an Area's gradients on every sign mix (B3, B5)", () => {
   );
 });
 
-describe("a datum on a coarse reading (B3)", () => {
+describe("a datum on a coarse reading", () => {
   it("marks and emphasises an hourly reading from any quarter of its hour", async () => {
     // A quarter-hour dial with an hourly reading of 3 on each :00 row and Now at 00:15, the second
     // quarter, which the 00:00 reading covers. The Marker's dot sits at that reading's vertex, its
@@ -836,7 +835,7 @@ describe("a reference inside the dial's bounds (B5)", () => {
     expect(text).toBe(label);
   });
 
-  // r4 B2: with no hole the area-true scale clamps a value below the domain to the centre, so the
+  // With no hole the area-true scale clamps a value below the domain to the centre, so the
   // bounds come from the value domain, 0 to 200, never from the radius. A value v sits at √(v / 200):
   // 50 at 0.5 and 100 at about 0.7071. A band clipped to the centre is a full disc, which d3 writes
   // as two half arcs with no centre point.
@@ -1034,7 +1033,7 @@ describe("the readouts", () => {
   });
 });
 
-describe("the centre's text floor and fit guard (R3.4)", () => {
+describe("the centre's text floor and fit guard", () => {
   // A 200 px dial, R = 100 px, holds a hole square of side √2 · inner · 100: inner radii of 0.2121,
   // 0.3394 and 0.5657 give squares of 30, 48 and 80 px. The value, 18 370 kWh, needs about 38 px for
   // its number at the 12 px floor. The line "Totalt hittil i år" wraps onto two 16 px lines in a 48 px

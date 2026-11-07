@@ -190,7 +190,7 @@ function insideEvenOdd(d: string, x: number, y: number): boolean {
   return inside;
 }
 
-describe("an Area's quality hatch (Q3, B1)", () => {
+describe("an Area's quality hatch (Q3)", () => {
   // 24 linear slots of 15°, vertex i at 15i + 7.5°, the base at the hole's 0.3 and tips that vary:
   // 0.5 at midnight, rising 0.015 a slot, and 0.9 at slot 23. A linear curve draws straight in angle
   // and radius between vertices, so the tip at an angle is the interpolation of its two vertices.
@@ -288,7 +288,7 @@ describe("a step curve's quality (Q3, B7)", () => {
   });
 });
 
-describe("a step area's hatch at its slot's edges (r4 B1)", () => {
+describe("a step area's hatch at its slot's edges", () => {
   // A step draws each reading flat across its slot, so the hatch of hour 6, from 90° to 105°, must
   // take hour 6's own top and base right up to each edge, not the neighbour's on the far side of
   // the step. Hour 5 reads 0.9 beside 0.45 everywhere else, and in the stacked case its base sits at
@@ -538,7 +538,7 @@ describe("the label fit", () => {
   });
 });
 
-describe("curveRadiusAt (R1.11)", () => {
+describe("curveRadiusAt", () => {
   // Two linear slots, their vertices at 90° (0.4) and 270° (0.8). Two readings never close round
   // the dial (D16 closes three or more), so in unrolled space the line runs straight from one vertex
   // to the other, reads 0.6 halfway at 180°, and draws nothing across 12 o'clock.
