@@ -7,7 +7,7 @@
 import { Effect, Result, Schema, SchemaGetter, SchemaIssue } from "effect";
 import type { Page } from "playwright";
 
-import type { THEME_IDENTITIES, THEME_SEGMENTS } from "./theme-axes.ts";
+import { THEME_IDENTITIES, THEME_SEGMENTS } from "@elmeragroup/fuse/theme-catalog";
 
 /** An ARIA role as Playwright's `getByRole` accepts it. */
 type PlaywrightRole = Parameters<Page["getByRole"]>[0];
@@ -134,23 +134,20 @@ export const ClickStep = Schema.Struct({
 /** One `--click` step. */
 export type ClickStep = typeof ClickStep.Type;
 
-/** The identities a theme slug may name, with the label the docs theme picker shows. */
+/** A theme identity, one of Fuse's `THEME_IDENTITIES`. */
+export type Identity = (typeof THEME_IDENTITIES)[number];
+
+/** A theme segment, one of Fuse's `THEME_SEGMENTS`. */
+export type Segment = (typeof THEME_SEGMENTS)[number];
+
+/** Each identity a theme slug may name, with the label the docs theme picker shows. */
 const IDENTITY_LABELS = { neutral: "Neutral", branded: "Branded" } as const satisfies Record<
-  (typeof THEME_IDENTITIES)[number],
+  Identity,
   string
 >;
 
-/** The segments a theme slug may name, with the label the docs theme picker shows. */
-const SEGMENT_LABELS = { private: "Private", company: "Company" } as const satisfies Record<
-  (typeof THEME_SEGMENTS)[number],
-  string
->;
-
-/** A theme identity. */
-export type Identity = keyof typeof IDENTITY_LABELS;
-
-/** A theme segment. */
-export type Segment = keyof typeof SEGMENT_LABELS;
+/** Each segment a theme slug may name, with the label the docs theme picker shows. */
+const SEGMENT_LABELS = { private: "Private", company: "Company" } as const satisfies Record<Segment, string>;
 
 /** The theme a shot renders the demo stage in. */
 export const ThemeChoice = Schema.Union([
@@ -161,11 +158,11 @@ export const ThemeChoice = Schema.Union([
     /** The slug as given, such as `branded-tkas-company`. */
     slug: Schema.String,
     /** The identity part of the slug. */
-    identity: Schema.Literals(["neutral", "branded"]),
+    identity: Schema.Literals(THEME_IDENTITIES),
     /** The brand code part of the slug. */
     brand: Schema.String,
     /** The segment part of the slug. */
-    segment: Schema.Literals(["private", "company"]),
+    segment: Schema.Literals(THEME_SEGMENTS),
   }),
 ]);
 
@@ -530,11 +527,11 @@ function isAriaRole(role: string): role is AriaRole {
 }
 
 function isIdentity(value: string): value is Identity {
-  return Object.hasOwn(IDENTITY_LABELS, value);
+  return THEME_IDENTITIES.some((identity) => identity === value);
 }
 
 function isSegment(value: string): value is Segment {
-  return Object.hasOwn(SEGMENT_LABELS, value);
+  return THEME_SEGMENTS.some((segment) => segment === value);
 }
 
 /**

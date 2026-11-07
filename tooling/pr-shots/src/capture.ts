@@ -10,6 +10,8 @@ import path from "node:path";
 import { chromium, firefox, webkit } from "playwright";
 import type { Browser, BrowserType, Locator, Page, PageScreenshotOptions } from "playwright";
 
+import { THEME_AXES } from "@elmeragroup/fuse/theme-catalog";
+
 import {
   identityAxisLabel,
   identityOptionLabel,
@@ -18,7 +20,7 @@ import {
   THEME_READING,
 } from "./legacy-theme-vocabulary.ts";
 import type { ThemeVocabulary } from "./legacy-theme-vocabulary.ts";
-import { identityLabel, segmentLabel } from "./options.ts";
+import { segmentLabel } from "./options.ts";
 import type {
   ClickStep,
   Engine,
@@ -31,7 +33,6 @@ import type {
 } from "./options.ts";
 import { firstCoordinate } from "./shot-plan.ts";
 import type { Coordinate, Shot } from "./shot-plan.ts";
-import { BRAND_ATTRIBUTE } from "./theme-axes.ts";
 
 /** How long the target may take to appear after the page loads. */
 const TARGET_TIMEOUT_MS = 15_000;
@@ -576,7 +577,7 @@ async function pickInDocsMenu(
 
   await choose(
     menu.getByRole("menuitemradio", {
-      name: identityOptionLabel(theme.identity, identityLabel(theme.identity), vocabulary),
+      name: identityOptionLabel(theme.identity, vocabulary),
       exact: true,
     }),
     checked
@@ -614,13 +615,7 @@ async function pickInLandingDialog(page: Page, chip: Locator, theme: Picked): Pr
   const axis = (name: string, label: string) =>
     dialog.getByRole("group", { name, exact: true }).getByRole("button", { name: label, exact: true });
 
-  await choose(
-    axis(
-      identityAxisLabel(vocabulary),
-      identityOptionLabel(theme.identity, identityLabel(theme.identity), vocabulary)
-    ),
-    pressed
-  );
+  await choose(axis(identityAxisLabel(vocabulary), identityOptionLabel(theme.identity, vocabulary)), pressed);
   const brands = dialog.getByRole("group", { name: "Brand", exact: true }).getByRole("button");
   if (!(await chooseBrand(brands, root, theme.brand, pressed))) {
     return { _tag: "failed", reason: `The theme picker has no brand with the code "${theme.brand}"` };
@@ -656,6 +651,17 @@ async function dropPickerFocus(page: Page): Promise<void> {
     }
   });
   await page.getByRole("tooltip").waitFor({ state: "hidden", timeout: SETTLE_TIMEOUT_MS });
+}
+
+/** The attribute that names a theme's brand, read from Fuse's axis registry. */
+const BRAND_ATTRIBUTE = brandAttribute();
+
+function brandAttribute(): string {
+  const axis = THEME_AXES.find((candidate) => candidate.name === "brand");
+  if (axis === undefined) {
+    throw new Error("Fuse's THEME_AXES has no brand axis");
+  }
+  return axis.attribute;
 }
 
 /** Chooses each brand in turn until `themed` reports `code`. Returns whether it got there. */

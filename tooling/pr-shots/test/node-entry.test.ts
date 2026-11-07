@@ -15,7 +15,8 @@ function shotsScriptArguments(): string[] {
 
 describe("the Node entry point", () => {
   // Vitest transforms TypeScript on its own, so only a real Node run proves the `shots` script
-  // loads the Effect modules by stripping types, and that the runtime exits with the status the
+  // loads the Effect modules, and Fuse's theme catalog through its extension-less import loader,
+  // by stripping types, and that the runtime exits with the status the
   // command line sets. `cli.test.ts` owns the help text and each parse error.
   it("loads under plain Node and exits 2 on a command line that does not parse", () => {
     const result = spawnSync(
