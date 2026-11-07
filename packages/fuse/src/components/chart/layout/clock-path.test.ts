@@ -359,17 +359,22 @@ describe("a step area's hatch at its slot's edges", () => {
   });
 });
 
-describe("an hourly year's quality (r4 Q1)", () => {
+describe("an hourly year's quality", () => {
   // 2025 holds 8,760 hours, every other one estimated, drawn as a step. A Line redraws on every
-  // entrance frame, so one call must cost what it cost before the step edges came in (about 9 ms
-  // here), and an Area what its fill costs: each piece found in one pass, never a scan per edge.
-  // The fastest of seven calls is the cost, since a busy machine only slows the others.
+  // entrance frame, so a call with every other hour estimated must cost about what the same call
+  // with no hour estimated costs, and an Area what its plain fill costs: each piece found in one
+  // pass, never a scan per edge, which cost about 50 times as much. The oracle is the same call on
+  // the plain hours, timed in the same run, so a slow or busy machine slows both alike. The fastest
+  // of seven calls is the cost, since a busy machine only slows the others.
   const tips = Array.from({ length: 8760 }, (_, hour) => 0.4 + (0.5 * ((hour * 7) % 13)) / 13);
   const values = numbers(tips);
+  const plain = readings(8760);
   const slots: ClockSlots = {
-    ...readings(8760),
+    ...plain,
     marked: Array.from({ length: 8760 }, (_, hour) => hour % 2 === 1),
   };
+  /** The most a call with every other hour estimated may cost, as a multiple of the plain call. */
+  const ALLOWED = 3;
   const fastest = (draw: () => void): number => {
     const costs: number[] = [];
     for (let call = 0; call < 7; call += 1) {
@@ -409,13 +414,15 @@ describe("an hourly year's quality (r4 Q1)", () => {
     const { solid, marked } = clockLine(values, slots, "step-after");
     // The odd hours are dashed and the even ones plain, each across its own slot.
     expect([pieces(solid), pieces(marked)]).toEqual([4380, 4380]);
-    expect(fastest(() => clockLine(values, slots, "step-after"))).toBeLessThan(25);
+    const base = fastest(() => clockLine(values, plain, "step-after"));
+    expect(fastest(() => clockLine(values, slots, "step-after"))).toBeLessThan(base * ALLOWED);
   });
 
   it("hatches each estimated hour of a step-after Area on its own, in about the time its fill takes", () => {
     const { marked } = clockArea(values, slots, "step-after");
     expect(pieces(marked)).toBe(4380);
-    expect(fastest(() => clockArea(values, slots, "step-after"))).toBeLessThan(40);
+    const base = fastest(() => clockArea(values, plain, "step-after"));
+    expect(fastest(() => clockArea(values, slots, "step-after"))).toBeLessThan(base * ALLOWED);
   });
 });
 
@@ -566,7 +573,7 @@ describe("curveRadiusAt", () => {
   });
 });
 
-describe("the hatch by pixel column (Phase M)", () => {
+describe("the hatch by pixel column", () => {
   // Slot i of n lies in column ⌊(i + ½) · columns / n⌋: of 8 slots on 4 columns, slots 0 and 1 share
   // column 0, 2 and 3 column 1, and so on, and a column hatches when any of its slots is marked.
   it("marks every slot of a column that holds a marked slot", () => {

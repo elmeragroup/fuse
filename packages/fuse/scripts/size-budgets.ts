@@ -222,25 +222,25 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = derive([
   // formats compared in any key order, and the orientation the cartesian parts carry, which
   // measured 968 bytes on this entry (207867 to 208835). The ceiling keeps about 100 bytes of
   // headroom.
-  // Fix round 4 on 2026-11-06: the step clip's one-sided edges and the one-pass clip and split, the
+  // 2026-11-06: the step clip's one-sided edges and the one-pass clip and split, the
   // 12 o'clock step on a split line, references checked against the domain, and undefined format
   // options dropped before comparing, 208835 to 209108. The ceiling keeps about 100 bytes of
   // headroom.
-  // Phase M on 2026-11-06: the polar Root's angle follower and its paced turn, the tooltip's side
+  // 2026-11-06: the polar Root's angle follower and its paced turn, the tooltip's side
   // lanes, the pick's dead band and near hold, the centre's fit guard and breakable value, the
   // labels' ray placement and ink measure, the dots' curve reads and the hatch by pixel column,
   // 209108 to 212860. The ceiling keeps about 100 bytes of headroom.
-  // Phase M2 on 2026-11-06: the follower's leap and its marks' stretch, the side lane chosen by
+  // 2026-11-06: the follower's leap and its marks' stretch, the side lane chosen by
   // its widest content, and the opening popup held until placed,
   // 212860 to 214091. The ceiling keeps about 100 bytes of headroom.
-  // Phase M3 on 2026-11-07: the stepped dot's stretch, the bottom lane below the Root's legend and
+  // 2026-11-07: the stepped dot's stretch, the bottom lane below the Root's legend and
   // table toggle, lanes cut to their widest content, the stretch read across a frame's turn, and
   // the popup's used width rounded up, 214091 to 214543. The ceiling keeps about 100 bytes of
   // headroom.
-  // Phase M5 on 2026-11-07: a half-turn step takes the short way from the angle shown, and the
+  // 2026-11-07: a half-turn step takes the short way from the angle shown, and the
   // opening hold releases only once an item has stayed active for two frame checks, 214543 to
   // 214660. The ceiling keeps about 100 bytes of headroom.
-  // Phase M7 on 2026-11-07: the lane fade is kept and cancelled at a close and at every open's
+  // 2026-11-07: the lane fade is kept and cancelled at a close and at every open's
   // hold, 214660 to 214778. The ceiling keeps about 100 bytes of headroom.
   { name: "chart", entryFile: "chart.js", measuredGzip: 97044, ceilingGzip: 214878 },
   // 2026-10-13: new entry, measured at 29180. Pure wrappers over Base UI's toolbar and its roving focus.
@@ -471,10 +471,10 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // so a part under a nested Root of another family reaches no outer Root, which measured
     // 111 bytes on Chart (153291 to 153402) and on BarChart (153294 to 153405). Each ceiling
     // keeps about 100 bytes of headroom.
-    // Fix round 3 on 2026-11-05: each Root's depth on its figure and the orientation the parts that
+    // 2026-11-05: each Root's depth on its figure and the orientation the parts that
     // read it carry, and formats compared in any key order, 153402 to 153643. The ceiling
     // keeps about 100 bytes of headroom.
-    // Phase M on 2026-11-06: the polar Root's angle follower and its paced turn, the tooltip's side
+    // 2026-11-06: the polar Root's angle follower and its paced turn, the tooltip's side
     // lanes, the pick's dead band and near hold, the centre's fit guard and breakable value, the
     // labels' ray placement and ink measure, the dots' curve reads and the hatch by pixel column,
     // 153643 to 153776. The ceiling keeps about 100 bytes of headroom.
@@ -487,10 +487,10 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     measuredGzip: 95989,
     // Raised from 153123 on 2026-11-05 with Chart's, for the same cause.
     // Raised again from 153394 on 2026-11-05 with Chart's, for polar fix round 2's own-scope reset.
-    // Fix round 3 on 2026-11-05: each Root's depth on its figure and the orientation the parts that
+    // 2026-11-05: each Root's depth on its figure and the orientation the parts that
     // read it carry, and formats compared in any key order, 153405 to 153645. The ceiling
     // keeps about 100 bytes of headroom.
-    // Phase M on 2026-11-06: the polar Root's angle follower and its paced turn, the tooltip's side
+    // 2026-11-06: the polar Root's angle follower and its paced turn, the tooltip's side
     // lanes, the pick's dead band and near hold, the centre's fit guard and breakable value, the
     // labels' ray placement and ink measure, the dots' curve reads and the hatch by pixel column,
     // 153645 to 153779. The ceiling keeps about 100 bytes of headroom.
@@ -505,30 +505,30 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     entryFile: "chart.js",
     exportName: "PieChart",
     measuredGzip: 105684,
-    // Fix round 1 on 2026-11-05: reading-rule errors and warnings on items and the pick over the
+    // 2026-11-05: reading-rule errors and warnings on items and the pick over the
     // frame's painted angles, 105684 to 106075. The ceiling keeps about 100 bytes of headroom.
-    // Fix round 2 on 2026-11-05: duplicate categories, the centre's numbers in their own
+    // 2026-11-05: duplicate categories, the centre's numbers in their own
     // module, and every Root's own scope resetting each family's Root contexts from one light
     // leaf, 106075 to 106238. The ceiling keeps about 100 bytes of headroom.
-    // Fix round 3 on 2026-11-05: the tooltip's corridor from a part to its popup, the fold's
+    // 2026-11-05: the tooltip's corridor from a part to its popup, the fold's
     // drawing weights, Other's quality, formats compared in any key order, and
     // each Root's depth on its figure, 106238 to 106799. The ceiling keeps about 100 bytes of
     // headroom.
-    // Phase M on 2026-11-06: the polar Root's angle follower and its paced turn, the tooltip's side
+    // 2026-11-06: the polar Root's angle follower and its paced turn, the tooltip's side
     // lanes, the pick's dead band and near hold, the centre's fit guard and breakable value, the
     // labels' ray placement and ink measure, the dots' curve reads and the hatch by pixel column,
     // 106799 to 110278. The ceiling keeps about 100 bytes of headroom.
-    // Phase M2 on 2026-11-06: the follower's leap and its marks' stretch, the side lane chosen by
+    // 2026-11-06: the follower's leap and its marks' stretch, the side lane chosen by
     // its widest content, and the opening popup held until placed,
     // 110278 to 111355. The ceiling keeps about 100 bytes of headroom.
-    // Phase M3 on 2026-11-07: the stepped dot's stretch, the bottom lane below the Root's legend
+    // 2026-11-07: the stepped dot's stretch, the bottom lane below the Root's legend
     // and table toggle, lanes cut to their widest content, the stretch read across a frame's turn,
     // and the popup's used width rounded up, 111355 to 111759. The ceiling keeps about 100 bytes of
     // headroom.
-    // Phase M5 on 2026-11-07: a half-turn step takes the short way from the angle shown, and the
+    // 2026-11-07: a half-turn step takes the short way from the angle shown, and the
     // opening hold releases only once an item has stayed active for two frame checks, 111759 to
     // 111887. The ceiling keeps about 100 bytes of headroom.
-    // Phase M7 on 2026-11-07: the lane fade is kept and cancelled at a close and at every open's
+    // 2026-11-07: the lane fade is kept and cancelled at a close and at every open's
     // hold, 111887 to 112007. The ceiling keeps about 100 bytes of headroom.
     ceilingGzip: 112107,
   },
@@ -540,33 +540,33 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     entryFile: "chart.js",
     exportName: "RadialChart",
     measuredGzip: 102151,
-    // Fix round 1 on 2026-11-05: reading-rule errors and warnings on items and the painted-angle
+    // 2026-11-05: reading-rule errors and warnings on items and the painted-angle
     // registry, 102151 to 102522. The ceiling keeps about 100 bytes of headroom.
-    // Fix round 2 on 2026-11-05: duplicate categories with each ring's maximum kept on its own row,
+    // 2026-11-05: duplicate categories with each ring's maximum kept on its own row,
     // the dotted ring's one-dot floor, the centre's numbers in their own module, and every Root's
     // own scope resetting each family's Root contexts from one light leaf, 102522 to 102737. The
     // ceiling keeps about 100 bytes of headroom.
-    // Fix round 3 on 2026-11-05: the tooltip's corridor from a part to its popup, the fold's
+    // 2026-11-05: the tooltip's corridor from a part to its popup, the fold's
     // drawing weights, Other's quality, formats compared in any key order, and
     // each Root's depth on its figure, 102737 to 103205. The ceiling keeps about 100 bytes of
     // headroom.
-    // Phase M on 2026-11-06: the polar Root's angle follower and its paced turn, the tooltip's side
+    // 2026-11-06: the polar Root's angle follower and its paced turn, the tooltip's side
     // lanes, the pick's dead band and near hold, the centre's fit guard and breakable value, the
     // labels' ray placement and ink measure, the dots' curve reads and the hatch by pixel column,
     // 103205 to 106563. The ceiling keeps about 100 bytes of headroom. CenterName on 2026-11-06:
     // the centre's active name line, a new shared pie and radial part, 106563 to 106858. The
     // ceiling keeps about 100 bytes of headroom.
-    // Phase M2 on 2026-11-06: the follower's leap and its marks' stretch, the side lane chosen by
+    // 2026-11-06: the follower's leap and its marks' stretch, the side lane chosen by
     // its widest content, and the opening popup held until placed,
     // 106858 to 107874. The ceiling keeps about 100 bytes of headroom.
-    // Phase M3 on 2026-11-07: the stepped dot's stretch, the bottom lane below the Root's legend
+    // 2026-11-07: the stepped dot's stretch, the bottom lane below the Root's legend
     // and table toggle, lanes cut to their widest content, the stretch read across a frame's turn,
     // and the popup's used width rounded up, 107874 to 108280. The ceiling keeps about 100 bytes of
     // headroom.
-    // Phase M5 on 2026-11-07: a half-turn step takes the short way from the angle shown, and the
+    // 2026-11-07: a half-turn step takes the short way from the angle shown, and the
     // opening hold releases only once an item has stayed active for two frame checks, 108280 to
     // 108406. The ceiling keeps about 100 bytes of headroom.
-    // Phase M6 on 2026-11-07: a popup that closes mid-entrance fades out from the opacity it
+    // 2026-11-07: a popup that closes mid-entrance fades out from the opacity it
     // reached, and every open starts a fresh hold, 108406 to 108519. The ceiling keeps about 100
     // bytes of headroom.
     ceilingGzip: 108619,
@@ -579,27 +579,27 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     entryFile: "chart.js",
     exportName: "RadarChart",
     measuredGzip: 107377,
-    // Fix round 2 on 2026-11-05: Grid, both axes, ActiveDot and Glow in modules of their own,
+    // 2026-11-05: Grid, both axes, ActiveDot and Glow in modules of their own,
     // and every Root's own scope resetting each family's Root contexts from one light leaf,
     // 107377 to 107489. The ceiling keeps about 100 bytes of headroom.
-    // Fix round 3 on 2026-11-05: the tooltip's corridor, formats compared in any key order, and
+    // 2026-11-05: the tooltip's corridor, formats compared in any key order, and
     // each Root's depth on its figure, 107489 to 107893. The ceiling keeps about 100 bytes of
     // headroom.
-    // Phase M on 2026-11-06: the polar Root's angle follower and its paced turn, the tooltip's side
+    // 2026-11-06: the polar Root's angle follower and its paced turn, the tooltip's side
     // lanes, the pick's dead band and near hold, the centre's fit guard and breakable value, the
     // labels' ray placement and ink measure, the dots' curve reads and the hatch by pixel column,
     // 107893 to 110766. The ceiling keeps about 100 bytes of headroom.
-    // Phase M2 on 2026-11-06: the follower's leap and its marks' stretch, the side lane chosen by
+    // 2026-11-06: the follower's leap and its marks' stretch, the side lane chosen by
     // its widest content, and the opening popup held until placed,
     // 110766 to 111862. The ceiling keeps about 100 bytes of headroom.
-    // Phase M3 on 2026-11-07: the stepped dot's stretch, the bottom lane below the Root's legend
+    // 2026-11-07: the stepped dot's stretch, the bottom lane below the Root's legend
     // and table toggle, lanes cut to their widest content, the stretch read across a frame's turn,
     // and the popup's used width rounded up, 111862 to 112266. The ceiling keeps about 100 bytes of
     // headroom.
-    // Phase M5 on 2026-11-07: a half-turn step takes the short way from the angle shown, and the
+    // 2026-11-07: a half-turn step takes the short way from the angle shown, and the
     // opening hold releases only once an item has stayed active for two frame checks, 112266 to
     // 112381. The ceiling keeps about 100 bytes of headroom.
-    // Phase M6 on 2026-11-07: a popup that closes mid-entrance fades out from the opacity it
+    // 2026-11-07: a popup that closes mid-entrance fades out from the opacity it
     // reached, and every open starts a fresh hold, 112381 to 112483. The ceiling keeps about 100
     // bytes of headroom.
     ceilingGzip: 112583,
@@ -613,37 +613,37 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     entryFile: "chart.js",
     exportName: "ClockChart",
     measuredGzip: 122917,
-    // Fix round 1 on 2026-11-05: the parts split into modules over a shared leaf, the tooltip's
+    // 2026-11-05: the parts split into modules over a shared leaf, the tooltip's
     // stack totals, the reference area's time range and the coarse owner in the pick, 122917 to
     // 123362. The ceiling keeps about 100 bytes of headroom.
-    // Fix round 2 on 2026-11-05: the grid, axes, references and hands in modules of their own,
+    // 2026-11-05: the grid, axes, references and hands in modules of their own,
     // the hatch folded into the sampled turn, the Area's quality mask, the gradient's zero
     // from the scale, the datum slots resolved to their owner, and every Root's own scope
     // resetting each family's Root contexts and the clock Marker's from light leaves, 123362 to
     // 123645. The ceiling keeps about 100 bytes of headroom.
-    // Fix round 3 on 2026-11-05: the tooltip's corridor, the step curves' slot ranges, routes that
+    // 2026-11-05: the tooltip's corridor, the step curves' slot ranges, routes that
     // end on their vertex, the Column's and Area's baseline rule, references bounded to the dial,
     // formats compared in any key order, and each Root's depth on its figure, 123645 to 124386. The
     // ceiling keeps about 100 bytes of headroom.
-    // Fix round 4 on 2026-11-06: the step clip's one-sided edges and the one-pass clip and split,
+    // 2026-11-06: the step clip's one-sided edges and the one-pass clip and split,
     // the 12 o'clock step on a split line, references checked against the domain, and undefined
     // format options dropped before comparing, 124386 to 124639. The ceiling keeps about 100 bytes
     // of headroom.
-    // Phase M on 2026-11-06: the polar Root's angle follower and its paced turn, the tooltip's side
+    // 2026-11-06: the polar Root's angle follower and its paced turn, the tooltip's side
     // lanes, the pick's dead band and near hold, the centre's fit guard and breakable value, the
     // labels' ray placement and ink measure, the dots' curve reads and the hatch by pixel column,
     // 124639 to 128234. The ceiling keeps about 100 bytes of headroom.
-    // Phase M2 on 2026-11-06: the follower's leap and its marks' stretch, the side lane chosen by
+    // 2026-11-06: the follower's leap and its marks' stretch, the side lane chosen by
     // its widest content, and the opening popup held until placed,
     // 128234 to 129321. The ceiling keeps about 100 bytes of headroom.
-    // Phase M3 on 2026-11-07: the stepped dot's stretch, the bottom lane below the Root's legend
+    // 2026-11-07: the stepped dot's stretch, the bottom lane below the Root's legend
     // and table toggle, lanes cut to their widest content, the stretch read across a frame's turn,
     // and the popup's used width rounded up, 129321 to 129755. The ceiling keeps about 100 bytes of
     // headroom.
-    // Phase M5 on 2026-11-07: a half-turn step takes the short way from the angle shown, and the
+    // 2026-11-07: a half-turn step takes the short way from the angle shown, and the
     // opening hold releases only once an item has stayed active for two frame checks, 129755 to
     // 129871. The ceiling keeps about 100 bytes of headroom.
-    // Phase M6 on 2026-11-07: a popup that closes mid-entrance fades out from the opacity it
+    // 2026-11-07: a popup that closes mid-entrance fades out from the opacity it
     // reached, and every open starts a fresh hold, 129871 to 129986. The ceiling keeps about 100
     // bytes of headroom.
     ceilingGzip: 130086,
@@ -735,7 +735,7 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // reads a region with its unit, and the loop's entrance takes a linear curve, so a clock dial
     // floors and glows through the same code without the plot frame, which measured 145 bytes on
     // this route (80448 to 80593). The ceiling keeps about 100 bytes of headroom.
-    // Fix round 3 on 2026-11-05: each Root's depth on its figure and the orientation the bar
+    // 2026-11-05: each Root's depth on its figure and the orientation the bar
     // series, axes and crosshair carry since the last raise, 80593 to 80787. The ceiling keeps
     // about 100 bytes of headroom.
     ceilingGzip: 80887,
@@ -752,17 +752,17 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // Set from its measurement on 2026-11-05, when the polar families landed: the Root through the
     // polar kernel, its listbox, readouts and entrance. The ceiling keeps about 100 bytes of
     // headroom.
-    // Fix rounds 1 and 2 on 2026-11-05: the item reading rules, duplicate categories, and
+    // 2026-11-05: the item reading rules, duplicate categories, and
     // every Root's own scope resetting each family's Root contexts from one light leaf, 43915
     // to 44160. The ceiling keeps about 100 bytes of headroom.
-    // Fix round 3 on 2026-11-05: the fold's drawing weights, Other's quality, formats compared in
+    // 2026-11-05: the fold's drawing weights, Other's quality, formats compared in
     // any key order, the corridor the surface reads, and the Root's depth, 44160 to 44570. The
     // ceiling keeps about 100 bytes of headroom.
-    // Phase M on 2026-11-06: the polar Root's angle follower and its paced turn, the tooltip's side
+    // 2026-11-06: the polar Root's angle follower and its paced turn, the tooltip's side
     // lanes, the pick's dead band and near hold, the centre's fit guard and breakable value, the
     // labels' ray placement and ink measure, the dots' curve reads and the hatch by pixel column,
     // 44570 to 46221. The ceiling keeps about 100 bytes of headroom.
-    // Phase M2 on 2026-11-06: the follower's leap and its marks' stretch, the side lane chosen by
+    // 2026-11-06: the follower's leap and its marks' stretch, the side lane chosen by
     // its widest content, and the opening popup held until placed,
     // 46221 to 46440. The ceiling keeps about 100 bytes of headroom.
     ceilingGzip: 46540,
@@ -789,29 +789,29 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     measuredGzip: 87143,
     // Set from its measurement on 2026-11-05, when the polar families landed: Root, Pie, the Center
     // parts, Legend and Tooltip. The ceiling keeps about 100 bytes of headroom.
-    // Fix round 1 on 2026-11-05: B9 and Q2 as on the namespace row, 87143 to 87534. The ceiling
+    // 2026-11-05: B9 and Q2 as on the namespace row, 87143 to 87534. The ceiling
     // keeps about 100 bytes of headroom.
-    // Fix round 2 on 2026-11-05: B4, Q1 and Q2 as on the namespace row, 87534 to 87694. The ceiling
+    // 2026-11-05: B4, Q1 and Q2 as on the namespace row, 87534 to 87694. The ceiling
     // keeps about 100 bytes of headroom.
-    // Fix round 3 on 2026-11-05: the tooltip's corridor from a part to its popup, the fold's
+    // 2026-11-05: the tooltip's corridor from a part to its popup, the fold's
     // drawing weights, Other's quality, formats compared in any key order, and
     // each Root's depth on its figure, 87694 to 88179. The ceiling keeps about 100 bytes of
     // headroom.
-    // Phase M on 2026-11-06: the polar Root's angle follower and its paced turn, the tooltip's side
+    // 2026-11-06: the polar Root's angle follower and its paced turn, the tooltip's side
     // lanes, the pick's dead band and near hold, the centre's fit guard and breakable value, the
     // labels' ray placement and ink measure, the dots' curve reads and the hatch by pixel column,
     // 88179 to 91556. The ceiling keeps about 100 bytes of headroom.
-    // Phase M2 on 2026-11-06: the follower's leap and its marks' stretch, the side lane chosen by
+    // 2026-11-06: the follower's leap and its marks' stretch, the side lane chosen by
     // its widest content, and the opening popup held until placed,
     // 91556 to 92610. The ceiling keeps about 100 bytes of headroom.
-    // Phase M3 on 2026-11-07: the stepped dot's stretch, the bottom lane below the Root's legend
+    // 2026-11-07: the stepped dot's stretch, the bottom lane below the Root's legend
     // and table toggle, lanes cut to their widest content, the stretch read across a frame's turn,
     // and the popup's used width rounded up, 92610 to 93001. The ceiling keeps about 100 bytes of
     // headroom.
-    // Phase M5 on 2026-11-07: a half-turn step takes the short way from the angle shown, and the
+    // 2026-11-07: a half-turn step takes the short way from the angle shown, and the
     // opening hold releases only once an item has stayed active for two frame checks, 93001 to
     // 93120. The ceiling keeps about 100 bytes of headroom.
-    // Phase M6 on 2026-11-07: a popup that closes mid-entrance fades out from the opacity it
+    // 2026-11-07: a popup that closes mid-entrance fades out from the opacity it
     // reached, and every open starts a fresh hold, 93120 to 93232. The ceiling keeps about 100
     // bytes of headroom.
     ceilingGzip: 93332,
@@ -837,31 +837,31 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     measuredGzip: 83225,
     // Set from its measurement on 2026-11-05, when the polar families landed: Root, Bar, the Center
     // parts, Legend and Tooltip. The ceiling keeps about 100 bytes of headroom.
-    // Fix round 1 on 2026-11-05: B9 and Q2 as on the namespace row, 83225 to 83551. The ceiling
+    // 2026-11-05: B9 and Q2 as on the namespace row, 83225 to 83551. The ceiling
     // keeps about 100 bytes of headroom.
-    // Fix round 2 on 2026-11-05: B4, B6, Q1 and Q2 as on the namespace row, 83551 to 83773. The
+    // 2026-11-05: B4, B6, Q1 and Q2 as on the namespace row, 83551 to 83773. The
     // ceiling keeps about 100 bytes of headroom.
-    // Fix round 3 on 2026-11-05: the tooltip's corridor from a part to its popup, the fold's
+    // 2026-11-05: the tooltip's corridor from a part to its popup, the fold's
     // drawing weights, Other's quality, formats compared in any key order, and
     // each Root's depth on its figure, 83773 to 84173. The ceiling keeps about 100 bytes of
     // headroom.
-    // Phase M on 2026-11-06: the polar Root's angle follower and its paced turn, the tooltip's side
+    // 2026-11-06: the polar Root's angle follower and its paced turn, the tooltip's side
     // lanes, the pick's dead band and near hold, the centre's fit guard and breakable value, the
     // labels' ray placement and ink measure, the dots' curve reads and the hatch by pixel column,
     // 84173 to 87511. The ceiling keeps about 100 bytes of headroom. CenterName on 2026-11-06: the
     // centre's active name line, a new shared pie and radial part, 87511 to 87628. The ceiling
     // keeps about 100 bytes of headroom.
-    // Phase M2 on 2026-11-06: the follower's leap and its marks' stretch, the side lane chosen by
+    // 2026-11-06: the follower's leap and its marks' stretch, the side lane chosen by
     // its widest content, and the opening popup held until placed,
     // 87628 to 88618. The ceiling keeps about 100 bytes of headroom.
-    // Phase M3 on 2026-11-07: the stepped dot's stretch, the bottom lane below the Root's legend
+    // 2026-11-07: the stepped dot's stretch, the bottom lane below the Root's legend
     // and table toggle, lanes cut to their widest content, the stretch read across a frame's turn,
     // and the popup's used width rounded up, 88618 to 89012. The ceiling keeps about 100 bytes of
     // headroom.
-    // Phase M5 on 2026-11-07: a half-turn step takes the short way from the angle shown, and the
+    // 2026-11-07: a half-turn step takes the short way from the angle shown, and the
     // opening hold releases only once an item has stayed active for two frame checks, 89012 to
     // 89148. The ceiling keeps about 100 bytes of headroom.
-    // Phase M6 on 2026-11-07: a popup that closes mid-entrance fades out from the opacity it
+    // 2026-11-07: a popup that closes mid-entrance fades out from the opacity it
     // reached, and every open starts a fresh hold, 89148 to 89259. The ceiling keeps about 100
     // bytes of headroom.
     ceilingGzip: 89359,
@@ -874,19 +874,19 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     measuredGzip: 42428,
     // Set from its measurement on 2026-11-05, when the polar families landed: the Root through the
     // polar kernel. The ceiling keeps about 100 bytes of headroom.
-    // Fix round 1 on 2026-11-05: B9's reading rules in the item model and Q2's registry, 42428 to
+    // 2026-11-05: B9's reading rules in the item model and Q2's registry, 42428 to
     // 42766. The ceiling keeps about 100 bytes of headroom.
-    // Fix round 2 on 2026-11-05: duplicate categories with each ring's maximum kept on its own row,
+    // 2026-11-05: duplicate categories with each ring's maximum kept on its own row,
     // and every Root's own scope resetting each family's Root contexts from one light leaf, 42766
     // to 43026. The ceiling keeps about 100 bytes of headroom.
-    // Fix round 3 on 2026-11-05: formats compared in any key order, the corridor the surface
+    // 2026-11-05: formats compared in any key order, the corridor the surface
     // reads, and the Root's depth, 43026 to 43369. The ceiling keeps about 100 bytes of
     // headroom.
-    // Phase M on 2026-11-06: the polar Root's angle follower and its paced turn, the tooltip's side
+    // 2026-11-06: the polar Root's angle follower and its paced turn, the tooltip's side
     // lanes, the pick's dead band and near hold, the centre's fit guard and breakable value, the
     // labels' ray placement and ink measure, the dots' curve reads and the hatch by pixel column,
     // 43369 to 44996. The ceiling keeps about 100 bytes of headroom.
-    // Phase M2 on 2026-11-06: the follower's leap and its marks' stretch, the side lane chosen by
+    // 2026-11-06: the follower's leap and its marks' stretch, the side lane chosen by
     // its widest content, and the opening popup held until placed,
     // 44996 to 45202. The ceiling keeps about 100 bytes of headroom.
     ceilingGzip: 45302,
@@ -899,16 +899,16 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     measuredGzip: 50817,
     // Set from its measurement on 2026-11-05, when the polar families landed: the Root through the
     // polar kernel. The ceiling keeps about 100 bytes of headroom.
-    // Fix round 2 on 2026-11-05: every Root's own scope resetting each family's Root contexts from
+    // 2026-11-05: every Root's own scope resetting each family's Root contexts from
     // one light leaf, 50817 to 50972. The ceiling keeps about 100 bytes of headroom.
-    // Fix round 3 on 2026-11-05: the corridor the surface reads, formats compared in any key
+    // 2026-11-05: the corridor the surface reads, formats compared in any key
     // order, and the Root's depth, 50972 to 51297. The ceiling keeps about 100 bytes of
     // headroom.
-    // Phase M on 2026-11-06: the polar Root's angle follower and its paced turn, the tooltip's side
+    // 2026-11-06: the polar Root's angle follower and its paced turn, the tooltip's side
     // lanes, the pick's dead band and near hold, the centre's fit guard and breakable value, the
     // labels' ray placement and ink measure, the dots' curve reads and the hatch by pixel column,
     // 51297 to 52971. The ceiling keeps about 100 bytes of headroom.
-    // Phase M2 on 2026-11-06: the follower's leap and its marks' stretch, the side lane chosen by
+    // 2026-11-06: the follower's leap and its marks' stretch, the side lane chosen by
     // its widest content, and the opening popup held until placed,
     // 52971 to 53184. The ceiling keeps about 100 bytes of headroom.
     ceilingGzip: 53284,
@@ -923,26 +923,26 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     measuredGzip: 94894,
     // Set from its measurement on 2026-11-05, when the polar families landed: Root, Grid, both
     // axes, Area, Line, Legend and Tooltip. The ceiling keeps about 100 bytes of headroom.
-    // Fix round 2 on 2026-11-05: lowered to the route's new measurement, 94894 to 94191. The split,
+    // 2026-11-05: lowered to the route's new measurement, 94894 to 94191. The split,
     // which keeps ActiveDot and Glow off a route of Area and Line, saved more than the own scope's
     // reset added.
-    // Fix round 3 on 2026-11-05: the tooltip's corridor, formats compared in any key order, and the
+    // 2026-11-05: the tooltip's corridor, formats compared in any key order, and the
     // Root's depth, 94191 to 94603. The ceiling keeps about 100 bytes of headroom.
-    // Phase M on 2026-11-06: the polar Root's angle follower and its paced turn, the tooltip's side
+    // 2026-11-06: the polar Root's angle follower and its paced turn, the tooltip's side
     // lanes, the pick's dead band and near hold, the centre's fit guard and breakable value, the
     // labels' ray placement and ink measure, the dots' curve reads and the hatch by pixel column,
     // 94603 to 97649. The ceiling keeps about 100 bytes of headroom.
-    // Phase M2 on 2026-11-06: the follower's leap and its marks' stretch, the side lane chosen by
+    // 2026-11-06: the follower's leap and its marks' stretch, the side lane chosen by
     // its widest content, and the opening popup held until placed,
     // 97649 to 98596. The ceiling keeps about 100 bytes of headroom.
-    // Phase M3 on 2026-11-07: the stepped dot's stretch, the bottom lane below the Root's legend
+    // 2026-11-07: the stepped dot's stretch, the bottom lane below the Root's legend
     // and table toggle, lanes cut to their widest content, the stretch read across a frame's turn,
     // and the popup's used width rounded up, 98596 to 98993. The ceiling keeps about 100 bytes of
     // headroom.
-    // Phase M5 on 2026-11-07: a half-turn step takes the short way from the angle shown, and the
+    // 2026-11-07: a half-turn step takes the short way from the angle shown, and the
     // opening hold releases only once an item has stayed active for two frame checks, 98993 to
     // 99110. The ceiling keeps about 100 bytes of headroom.
-    // Phase M6 on 2026-11-07: a popup that closes mid-entrance fades out from the opacity it
+    // 2026-11-07: a popup that closes mid-entrance fades out from the opacity it
     // reached, and every open starts a fresh hold, 99110 to 99227. The ceiling keeps about 100
     // bytes of headroom.
     ceilingGzip: 99327,
@@ -957,17 +957,17 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     measuredGzip: 54320,
     // Set from its measurement on 2026-11-05, when the polar families landed: the Root over the
     // zoned dial model. The ceiling keeps about 100 bytes of headroom.
-    // Fix rounds 1 and 2 on 2026-11-05: the coarse owner in the pick, and every Root's own
+    // 2026-11-05: the coarse owner in the pick, and every Root's own
     // scope resetting each family's Root contexts and the clock Marker's from light leaves,
     // 54320 to 54512. The ceiling keeps about 100 bytes of headroom.
-    // Fix round 3 on 2026-11-05: the corridor the surface reads, the baseline the dial carries,
+    // 2026-11-05: the corridor the surface reads, the baseline the dial carries,
     // formats compared in any key order, and the Root's depth, 54512 to 54868. The ceiling keeps
     // about 100 bytes of headroom.
-    // Phase M on 2026-11-06: the polar Root's angle follower and its paced turn, the tooltip's side
+    // 2026-11-06: the polar Root's angle follower and its paced turn, the tooltip's side
     // lanes, the pick's dead band and near hold, the centre's fit guard and breakable value, the
     // labels' ray placement and ink measure, the dots' curve reads and the hatch by pixel column,
     // 54868 to 56540. The ceiling keeps about 100 bytes of headroom.
-    // Phase M2 on 2026-11-06: the follower's leap and its marks' stretch, the side lane chosen by
+    // 2026-11-06: the follower's leap and its marks' stretch, the side lane chosen by
     // its widest content, and the opening popup held until placed,
     // 56540 to 56746. The ceiling keeps about 100 bytes of headroom.
     ceilingGzip: 56846,
@@ -980,36 +980,36 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     measuredGzip: 110462,
     // Set from its measurement on 2026-11-05, when the polar families landed: Root, Line, Grid,
     // AngleAxis, Center, Legend and Tooltip. The ceiling keeps about 100 bytes of headroom.
-    // Fix round 1 on 2026-11-05: lowered by the 5321 bytes the split saved, since Line, Grid,
+    // 2026-11-05: lowered by the 5321 bytes the split saved, since Line, Grid,
     // AngleAxis and Center no longer ship Column, Marker, ValueLabel, ActiveDot, the stack floors
     // or M4, 110462 to 105141.
-    // Fix round 2 on 2026-11-05: lowered to the route's new measurement, 105141 to 102986. The
+    // 2026-11-05: lowered to the route's new measurement, 105141 to 102986. The
     // second split, which keeps RadiusAxis, the references, Scrubber, Now, their label fitting
     // and TooltipTotal off a route of Grid, AngleAxis and Center, saved more than the own scope's
     // reset added.
-    // Fix round 3 on 2026-11-05: the tooltip's corridor, the step curves' slot ranges, routes that
+    // 2026-11-05: the tooltip's corridor, the step curves' slot ranges, routes that
     // end on their vertex, the Column's and Area's baseline rule, references bounded to the dial,
     // formats compared in any key order, and each Root's depth on its figure, 102986 to 103601. The
     // ceiling keeps about 100 bytes of headroom.
-    // Fix round 4 on 2026-11-06: the step clip's one-sided edges and the one-pass clip and split,
+    // 2026-11-06: the step clip's one-sided edges and the one-pass clip and split,
     // the 12 o'clock step on a split line, references checked against the domain, and undefined
     // format options dropped before comparing, 103601 to 103832. The ceiling keeps about 100 bytes
     // of headroom.
-    // Phase M on 2026-11-06: the polar Root's angle follower and its paced turn, the tooltip's side
+    // 2026-11-06: the polar Root's angle follower and its paced turn, the tooltip's side
     // lanes, the pick's dead band and near hold, the centre's fit guard and breakable value, the
     // labels' ray placement and ink measure, the dots' curve reads and the hatch by pixel column,
     // 103832 to 107939. The ceiling keeps about 100 bytes of headroom.
-    // Phase M2 on 2026-11-06: the follower's leap and its marks' stretch, the side lane chosen by
+    // 2026-11-06: the follower's leap and its marks' stretch, the side lane chosen by
     // its widest content, and the opening popup held until placed,
     // 107939 to 108836. The ceiling keeps about 100 bytes of headroom.
-    // Phase M3 on 2026-11-07: the stepped dot's stretch, the bottom lane below the Root's legend
+    // 2026-11-07: the stepped dot's stretch, the bottom lane below the Root's legend
     // and table toggle, lanes cut to their widest content, the stretch read across a frame's turn,
     // and the popup's used width rounded up, 108836 to 109214. The ceiling keeps about 100 bytes of
     // headroom.
-    // Phase M5 on 2026-11-07: a half-turn step takes the short way from the angle shown, and the
+    // 2026-11-07: a half-turn step takes the short way from the angle shown, and the
     // opening hold releases only once an item has stayed active for two frame checks, 109214 to
     // 109340. The ceiling keeps about 100 bytes of headroom.
-    // Phase M6 on 2026-11-07: a popup that closes mid-entrance fades out from the opacity it
+    // 2026-11-07: a popup that closes mid-entrance fades out from the opacity it
     // reached, and every open starts a fresh hold, 109340 to 109444. The ceiling keeps about 100
     // bytes of headroom.
     ceilingGzip: 109544,
@@ -1121,7 +1121,7 @@ export const CSS_BUDGETS: readonly CssBudget[] = derive([
   // the hover rules listed once per Root depth so a hover restyles only its parts, and the
   // orientation rules keyed on the parts that carry it, which measured 1089 bytes over the
   // stylesheet (22948 to 24037). The ceiling keeps about 100 bytes of headroom.
-  // Phase M on 2026-11-06: the polar Root's angle follower and its paced turn, the tooltip's side
+  // 2026-11-06: the polar Root's angle follower and its paced turn, the tooltip's side
   // lanes, the pick's dead band and near hold, the centre's fit guard and breakable value, the
   // labels' ray placement and ink measure, the dots' curve reads and the hatch by pixel column,
   // 24037 to 24859. The ceiling keeps about 100 bytes of headroom.

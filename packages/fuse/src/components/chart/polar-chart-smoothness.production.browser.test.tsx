@@ -1,8 +1,8 @@
 // The polar smoothness judge, in Chromium with React's production build, as
 // `chart-smoothness.production.browser.test.tsx` judges the cartesian marks. Units under test: a
 // 32-slice pie, a 24-spoke radar of two series, a 168-slot week dial and an 8,760-slot year dial
-// whose every other hour is estimated, drawn as a step-after Area and Line (r4 Q1), its hatch by
-// pixel column (Phase M), each through its entrance and through a data update. Oracle: SPEC's L8 long-task check and motion-decision.md "Judges", no
+// whose every other hour is estimated, drawn as a step-after Area and Line, its hatch by
+// pixel column, each through its entrance and through a data update. Oracle: SPEC's L8 long-task check and motion-decision.md "Judges", no
 // long task over 50 ms from the mount's first frame to the entrance's end, nor through an update's
 // commit and its 480 ms tween. vitest.config.ts runs this project alone, after every other one.
 import type { ReactElement } from "react";

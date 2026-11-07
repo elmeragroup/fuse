@@ -478,7 +478,7 @@ function bridges(states: readonly ClockSlotState[], from: number, to: number): b
 /**
  * Split a sampled curve into its plain pieces and the pieces inside the marked ranges, in one pass:
  * the samples, the cuts and the ranges each advance a cursor, so an 8,760-hour year splits in about
- * the time it samples (r4 Q1).
+ * the time it samples.
  *
  * @param line - The sampled curve, its angles ascending.
  * @param ranges - The marked ranges, ascending and apart, as `markedRanges` merges them.
