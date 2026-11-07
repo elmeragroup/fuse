@@ -59,8 +59,10 @@ never write density.
 **Branded dense buttons pad their labels at 12px.** A branded button rounds with the brand's
 button radius, often a pill. At dense density its label edges now take at least 12px of inline
 padding, so the label clears the curve. Icon edges, square icon buttons and ButtonGroup members keep
-their inset, and nothing changes for neutral themes or at comfortable density, where the padding is
-already 12px or more. This is the only visual change.
+their inset, as do the Fuse parts that render a Button with a corner of their own: DataTableFilter
+segments and header operator, and date-picker presets. Nothing changes for
+neutral themes or at comfortable density, where the padding is already 12px or more. This is the
+only visual change.
 
 **Corners no longer change in dark.** The radius roles, `--radius`, `--radius-button`,
 `--radius-field` and `--radius-step`, are emitted in their own light-only rules, one per identity

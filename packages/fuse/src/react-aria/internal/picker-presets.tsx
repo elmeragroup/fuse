@@ -102,8 +102,9 @@ export function PickerPresetItem({
           }),
           // A preset is a row in the preset group, so it reads the group's inner corner
           // instead of Button's `--radius-button`. `cn` knows `rounded-inner` as a radius, so
-          // it replaces the recipe's corner, which the recipe's own merge would keep.
-          "rounded-inner"
+          // it replaces the recipe's corner, which the recipe's own merge would keep. With the
+          // corner goes Button's branded label floor, so the preset keeps the control inset.
+          "rounded-inner [--button-px-floor:0px]"
         )
       )}
       onDoubleClick={(event) => {
