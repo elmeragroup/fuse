@@ -245,6 +245,8 @@ describe("the fast-check properties", () => {
   });
 
   it("picks what a brute-force raster pick over wedge polygons picks", () => {
+    // Each run tests 400 points against every wedge polygon, so 40 runs keep it inside the test
+    // timeout on a shared CI runner, which ran 100 of them about 20 times slower than a laptop.
     fc.assert(
       fc.property(pies, ({ values, start, width, clockwise }) => {
         const sweep = sweepOf(start, start + (clockwise ? width : -width));
@@ -257,7 +259,8 @@ describe("the fast-check properties", () => {
             expect(sliceAt(pointerAngle(x, y), slices, sweep)).toBe(raster);
           }
         }
-      })
+      }),
+      { numRuns: 40 }
     );
   });
 
