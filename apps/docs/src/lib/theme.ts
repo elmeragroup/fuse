@@ -50,7 +50,7 @@ export const IDENTITY_LABELS = {
  * policy, not a Fuse rule. Fuse ties no density to an identity, and a host picks one per document,
  * such as a branded dashboard at dense.
  */
-export const DOCS_DENSITY_BY_IDENTITY = {
+const DOCS_DENSITY_BY_IDENTITY = {
   neutral: "dense",
   branded: "comfortable",
 } as const satisfies Record<ThemeIdentity, Density>;

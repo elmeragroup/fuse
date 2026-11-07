@@ -132,9 +132,13 @@ const EXPECTED_DARK_SELECTORS = [
 /** The derived roles that read the brand pointer, which only companion rules declare in dark. */
 const BRAND_SCOPED_ROLES = ["sidebar-brand", "sidebar-brand-foreground"];
 
+/** The generated themes.css, and its style rules, parsed once for every suite that reads them. */
+const THEMES_CSS = generateThemesCss();
+const THEME_RULES = parseStyleRules(THEMES_CSS);
+
 describe("theme contract", () => {
-  const css = generateThemesCss();
-  const rules = parseStyleRules(css);
+  const css = THEMES_CSS;
+  const rules = THEME_RULES;
 
   it("retains the light selectors and scopes dark rules to a theme identity", () => {
     const lightRules = rules.filter((rule) => !rule.selector.includes('[data-theme="dark"]'));
@@ -416,7 +420,7 @@ describe("theme contract", () => {
 
 describe("elma identity", () => {
   const elmaThemes = LEGAL_THEMES.filter((theme) => theme.brand === "elma");
-  const elmaRules = parseStyleRules(generateThemesCss());
+  const elmaRules = THEME_RULES;
 
   it("accepts the four legal elma slugs and pins the Elmera brand pair", () => {
     expect(elmaThemes).toHaveLength(4);
@@ -560,7 +564,7 @@ describe("derived roles", () => {
   });
 
   it("declares the live hover mix in the root rule and in each rule that resets its sources", () => {
-    const rules = parseStyleRules(generateThemesCss());
+    const rules = THEME_RULES;
     for (const selector of [
       ":root",
       '[data-theme-identity="neutral"]',
@@ -577,7 +581,7 @@ describe("derived roles", () => {
 });
 
 describe("branded identity layer roles", () => {
-  const rules = parseStyleRules(generateThemesCss());
+  const rules = THEME_RULES;
 
   it("sets the transparent card edge and shadow, the page-tinted card section divider, the reference's 2px text-color outline, the transparent selection row edge, checked or not, the grey divider between stacked rows, the card-filled unstriped disabled row with its muted text, the primary pressed toggle, the medium selection row title, the 14/20, 16/22 and 18/24 paragraph line heights and the bold 24/32 h1 and 20/32 h2 and h3 once for the branded identity", () => {
     const branded = {
@@ -668,7 +672,7 @@ describe("branded identity layer roles", () => {
 });
 
 describe("corner rules", () => {
-  const rules = parseStyleRules(generateThemesCss());
+  const rules = THEME_RULES;
   const cornerRules = rules.filter(isCornerRule);
 
   /** The declarations of the one corner rule whose selector is `selector`. */

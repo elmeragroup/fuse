@@ -5,6 +5,7 @@
  * every theme. Headings are Neo Sans in Fjordkraft's branded themes, fkas and fkab.
  */
 
+import { themeAxisSelector } from "@elmeragroup/fuse/theme-catalog";
 import type { BrandCode, ThemeIdentity } from "@elmeragroup/fuse/theme-catalog";
 
 /** The two font variables the kit binds, in the order the `Fuse tokens` collection lists them. */
@@ -48,9 +49,9 @@ export function hasOwnHeadingFamily(identity: ThemeIdentity, brand: BrandCode): 
  * @returns The rules, unlayered, so they win over Fuse's layered defaults.
  */
 export function kitFontCss(themed: string): string {
-  const own = [...HEADING_BRANDS].map((brand) => `[data-theme-brand="${brand}"]`).join(",");
+  const own = [...HEADING_BRANDS].map((brand) => themeAxisSelector("brand", brand)).join(",");
   return [
     `${themed}{--font-sans:${KIT_BODY_FAMILY},ui-sans-serif,system-ui,sans-serif;--font-heading:var(--font-sans)}`,
-    `[data-theme-identity="branded"]:is(${own}){--font-heading:"${KIT_HEADING_FAMILY}",var(--font-sans)}`,
+    `${themeAxisSelector("identity", "branded")}:is(${own}){--font-heading:"${KIT_HEADING_FAMILY}",var(--font-sans)}`,
   ].join("\n");
 }

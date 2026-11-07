@@ -40,7 +40,7 @@ const DARK_BOARD = ARTBOARDS[1];
 
 /**
  * A rungs board of the Shape page, whose spec pins an identity (Neutral). Every artboard bar
- * carries the Variant toggle.
+ * carries the Identity toggle.
  */
 const PINNED_BOARD = CORNERS_PAGE.artboard;
 
@@ -759,7 +759,7 @@ describe("the studio's theme toolbar", () => {
       }
 
       // The arrow keys still run through every control in order, wrapping from the first, the
-      // Brand Select, to the last, and on from the Brand Select into the Variant and Segment toggles.
+      // Brand Select, to the last, and on from the Brand Select into the Identity and Segment toggles.
       await brand.focus();
       await page.keyboard.press("ArrowLeft");
       expect(await isFocused(menuButton(bar, "Density"))).toBe(true);

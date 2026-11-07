@@ -1,11 +1,8 @@
 import { THEME_AXES, themeAxisAttributes } from "./theme-input";
-import type { ThemeAxis, ThemeAxisValue, ThemeInput } from "./theme-input";
+import type { ThemeAttributes, ThemeInput } from "./theme-input";
 import { validateTheme } from "./validate-theme";
 
-/** The `data-theme-*` attributes that stamp a theme on an element, one per theme axis. */
-export type ThemeAttributes = {
-  readonly [A in ThemeAxis as A["attribute"]]: ThemeAxisValue<A["name"]>;
-};
+export type { ThemeAttributes } from "./theme-input";
 
 /** One of the `data-theme-*` attribute names a theme stamps on its element. */
 export type ThemeAttributeName = keyof ThemeAttributes;
@@ -20,9 +17,7 @@ export const THEME_ATTRIBUTE_NAMES: readonly ThemeAttributeName[] = THEME_AXES.m
  * @returns The attributes that stamp `theme` on an element.
  */
 export function attributesOfValidatedTheme(theme: ThemeInput): ThemeAttributes {
-  // SAFETY: themeAxisAttributes pairs every THEME_AXES attribute with its own axis's value, which
-  // is exactly the mapped ThemeAttributes record; Object.fromEntries loses the key correlation.
-  return Object.fromEntries(themeAxisAttributes(theme)) as ThemeAttributes;
+  return themeAxisAttributes(theme);
 }
 
 /**

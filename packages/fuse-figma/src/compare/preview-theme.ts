@@ -112,8 +112,6 @@ export type ThemeStamps = {
 export function themeStamps(theme: PreviewTheme): ThemeStamps {
   return {
     root: { "data-theme": theme.scheme, "data-density": theme.density },
-    // SAFETY: themeAxisAttributes pairs every theme axis's attribute with that axis's value, the
-    // body record; Object.fromEntries loses the key correlation.
-    body: Object.fromEntries(themeAxisAttributes(theme)) as ThemeStamps["body"],
+    body: themeAxisAttributes(theme),
   };
 }

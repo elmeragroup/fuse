@@ -17,16 +17,13 @@
  * variables.
  */
 
-import { BRAND_CODES, LEGAL_THEMES, themeAxisSelector } from "../theme-input";
-import type { BrandCode, ThemeIdentity, ThemeInput } from "../theme-input";
+import { BRAND_CODES, themeAxisSelector } from "../theme-input";
+import type { ThemeIdentity, ThemeInput } from "../theme-input";
 import { paletteBrand } from "../tokens/brand-palettes";
 import type { PaletteBrandCode } from "../tokens/brand-palettes";
 
 /** The radius roles a corner set assigns, in `TOKEN_NAMES` order. */
 export const CORNER_TOKEN_NAMES = ["radius", "radius-button", "radius-field", "radius-step"] as const;
-
-/** One radius role a corner set assigns. */
-export type CornerTokenName = (typeof CORNER_TOKEN_NAMES)[number];
 
 /** The `--radius-step` values the corner formulas support: neutral `0px`, branded `2px`. */
 export const CORNER_STEPS = ["0px", "2px"] as const;
@@ -113,7 +110,7 @@ export const BRAND_CORNERS = {
  * already, so the floor changes only branded dense buttons. The neutral identity declares 0px,
  * so a neutral scope inside a branded page does not inherit the branded floor.
  */
-export const BUTTON_LABEL_PX_MIN = {
+const BUTTON_LABEL_PX_MIN = {
   neutral: "0px",
   branded: "0.75rem",
 } as const satisfies Record<ThemeIdentity, string>;
@@ -140,25 +137,13 @@ export type CornerRule = {
   readonly declarations: readonly (readonly [string, string])[];
 };
 
-/** A legal theme of `identity` and `brand`, the representative whose corners a rule states. */
-function representative(identity: ThemeIdentity, brand: BrandCode): ThemeInput {
-  const theme = LEGAL_THEMES.find(
-    (candidate) => candidate.identity === identity && candidate.brand === brand
-  );
-  if (theme === undefined) {
-    throw new Error(`Brand ${brand} has no legal ${identity} theme`);
-  }
-  return theme;
-}
-
-/** A rule for the theme elements of `selector`, rounding as `theme` does. */
-function cornerRule(selector: string, theme: ThemeInput): CornerRule {
-  const corners = cornersOf(theme);
+/** A rule for the theme elements of `selector`: the `corners` set and `identity`'s label floor. */
+function cornerRule(selector: string, corners: Corners, identity: ThemeIdentity): CornerRule {
   return {
     selector,
     declarations: [
       ...CORNER_TOKEN_NAMES.map((name) => [name, corners[name]] as const),
-      [BUTTON_LABEL_PX_MIN_PROPERTY, BUTTON_LABEL_PX_MIN[theme.identity]],
+      [BUTTON_LABEL_PX_MIN_PROPERTY, BUTTON_LABEL_PX_MIN[identity]],
     ],
   };
 }
@@ -173,13 +158,13 @@ function cornerRule(selector: string, theme: ThemeInput): CornerRule {
  * @returns The rules in emission order.
  */
 export function cornerRules(): readonly CornerRule[] {
-  const [firstBrand] = BRAND_CODES;
   return [
-    cornerRule(themeAxisSelector("identity", "neutral"), representative("neutral", firstBrand)),
+    cornerRule(themeAxisSelector("identity", "neutral"), NEUTRAL_CORNERS, "neutral"),
     ...BRAND_CODES.map((brand) =>
       cornerRule(
         `${themeAxisSelector("identity", "branded")}${themeAxisSelector("brand", brand)}`,
-        representative("branded", brand)
+        BRAND_CORNERS[paletteBrand(brand)],
+        "branded"
       )
     ),
   ];

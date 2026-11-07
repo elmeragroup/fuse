@@ -194,8 +194,7 @@ export const BRAND_PALETTES = {
     input: "oklch(0.9232 0.0026 48.72)",
   },
   // Elmera Figma "Farger" sheet (file dWv89e4X0DXeCKMsJwD5zL, node 2106:18246). card-soft (P-99)
-  // and feature-bright (P-75) are interpolated tones between neighbouring sheet stops. Design has
-  // not specified the radius yet, so the palette sets a 6px `0.375rem` placeholder. No segment
+  // and feature-bright (P-75) are interpolated tones between neighbouring sheet stops. No segment
   // delta.
   elma: {
     background: "oklch(0.98177 0.011862 223.5)",
@@ -222,9 +221,7 @@ export const BRAND_PALETTES = {
   },
   // Nordic Green Energy Material 3 scheme, NGE/sys/light (Figma file q1sEYcZWmf1HUeuiaJFqm6,
   // section 129:12419), mapped to roles by meaning. The file's "Farger" sheets carry Gudbrandsdal
-  // Energi's palette, not NGE's. Design has not specified the radius yet, so the palette sets a
-  // 6px `0.375rem` placeholder, and the button radius takes the pill other branded brands use.
-  // No segment delta.
+  // Energi's palette, not NGE's. No segment delta.
   ngfi: {
     background: "oklch(0.9817261 0.0061352 137.7733593)", // #F7FAF6 surface
     foreground: "oklch(0.2214543 0.0071419 164.2694873)", // #181C1A on-surface
@@ -251,8 +248,9 @@ export const BRAND_PALETTES = {
 } as const satisfies Record<PaletteBrandCode, TokenLayer>;
 
 /**
- * fkab is a permanent alias of fkas, resolved once in `paletteLayers`. Every palette table and
- * accessor takes `PaletteBrandCode`, so an unresolved brand cannot reach one.
+ * fkab is a permanent alias of fkas, resolved by each accessor that reads a per-brand table, such
+ * as `paletteLayers` and `cornersOf`. Every palette table and accessor takes `PaletteBrandCode`, so
+ * an unresolved brand cannot reach one.
  */
 export function paletteBrand(brand: BrandCode): PaletteBrandCode {
   return brand === "fkab" ? "fkas" : brand;

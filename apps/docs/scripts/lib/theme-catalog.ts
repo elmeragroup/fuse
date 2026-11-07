@@ -8,7 +8,7 @@
 import type { ResolvedThemeCatalog } from "@elmeragroup/fuse/theme-catalog";
 
 import type { ThemeCatalog, ThemeCatalogEntry, ThemeCatalogTokenMap } from "../../src/lib/docs-model.ts";
-import { DOCS_DENSITY_BY_IDENTITY } from "../../src/lib/theme.ts";
+import { docsDensityFor } from "../../src/lib/theme.ts";
 
 /** Each entry's declared CSS under its `--name` key, in the record's own order. */
 function cssCustomProperties(entries: {
@@ -25,15 +25,18 @@ function cssCustomProperties(entries: {
  * @returns The `/api/themes` payload.
  */
 export function buildThemeCatalog(catalog: ResolvedThemeCatalog): ThemeCatalog {
-  const themes = catalog.themes.map((theme): ThemeCatalogEntry => ({
-    slug: theme.slug,
-    identity: theme.input.identity,
-    brand: theme.input.brand,
-    segment: theme.input.segment,
-    density: DOCS_DENSITY_BY_IDENTITY[theme.input.identity],
-    attributes: { ...theme.attributes, "data-density": DOCS_DENSITY_BY_IDENTITY[theme.input.identity] },
-    tokens: cssCustomProperties(theme.schemes.light.tokens),
-  }));
+  const themes = catalog.themes.map((theme): ThemeCatalogEntry => {
+    const density = docsDensityFor(theme.input);
+    return {
+      slug: theme.slug,
+      identity: theme.input.identity,
+      brand: theme.input.brand,
+      segment: theme.input.segment,
+      density,
+      attributes: { ...theme.attributes, "data-density": density },
+      tokens: cssCustomProperties(theme.schemes.light.tokens),
+    };
+  });
   return {
     legalThemeCount: themes.length,
     themes,

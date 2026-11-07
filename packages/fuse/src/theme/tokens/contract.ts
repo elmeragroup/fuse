@@ -740,11 +740,11 @@ export const TOKEN_DESCRIPTIONS = {
   radius:
     "The corner radius of the theme, the corner of cards, selection rows and fields. The radius-xs to radius-xl rungs step around it.",
   "radius-button":
-    "The corner of Button. Neutral themes use radius, and branded brands can set their own, as branded Fjordkraft does.",
+    "The corner of Button. Neutral themes use radius, and brands can set their own for branded themes, as branded Fjordkraft does.",
   "radius-field":
     "The corner of every field box, such as Input, Select and Textarea. It follows radius in every corner set.",
   "radius-step":
-    "The spacing of the radius rungs, which differs between neutral and branded themes. It switches the corner rules between the two corner sets, so no layer rounds with it.",
+    "The spacing of the radius rungs, which differs between neutral and branded themes. It switches the corner rules between the two corner families, so no layer rounds with it.",
   "button-outline-width":
     "The border width of the outline Button, which differs between neutral and branded themes.",
   "selection-title-weight":
