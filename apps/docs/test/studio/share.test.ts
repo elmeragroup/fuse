@@ -91,6 +91,25 @@ describe("decodeShare", () => {
     expect(decodeShare(shareText(EDITED))).toEqual(EDITED);
   });
 
+  it.each([
+    [
+      "external-",
+      // {"t":"external-fkas-private","l":{"primary":"#ff0000"}}, written by hand before the rename.
+      "1.eyJ0IjoiZXh0ZXJuYWwtZmthcy1wcml2YXRlIiwibCI6eyJwcmltYXJ5IjoiI2ZmMDAwMCJ9fQ",
+      { identity: "branded", brand: "fkas", segment: "private" },
+    ],
+    [
+      "internal-",
+      `1.${payload('{"t":"internal-fkas-private","l":{"primary":"#ff0000"}}')}`,
+      { identity: "neutral", brand: "fkas", segment: "private" },
+    ],
+  ] as const)("reads an %s slug from before the identity rename with its edits", (_prefix, text, theme) => {
+    expect(decodeShare(text)).toEqual({
+      theme,
+      overrides: { light: { primary: "#ff0000" }, dark: {}, shared: {} },
+    });
+  });
+
   it("reads a document with no edits", () => {
     const empty: StudioDocument = { ...EDITED, overrides: { light: {}, dark: {}, shared: {} } };
     expect(decodeShare(shareText(empty))).toEqual(empty);
