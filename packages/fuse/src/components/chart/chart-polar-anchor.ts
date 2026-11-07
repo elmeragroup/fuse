@@ -443,8 +443,6 @@ export function usePolarTooltipAnchor(input: AnchorInput): TooltipAnchor {
   const before = useRef<LaneSide | null>(null);
   const sizing = useRef<number | null>(null);
   const placing = useRef<number | null>(null);
-  /** The open ray's angle, or null once the popup has closed, which the opening hold reads. */
-  const live = useRef<number | null>(null);
   useLayoutEffect(
     () => () => {
       if (sizing.current !== null) cancelAnimationFrame(sizing.current);
@@ -472,7 +470,6 @@ export function usePolarTooltipAnchor(input: AnchorInput): TooltipAnchor {
   }, [positioner, dialOf]);
   useLayoutEffect(() => {
     // A closing popup keeps its place, its width and its lane while it fades out.
-    live.current = angle;
     if (angle === null) {
       before.current = null;
       return;
@@ -539,21 +536,28 @@ export function usePolarTooltipAnchor(input: AnchorInput): TooltipAnchor {
       popup.animate([{ opacity: LANE_FADE_FROM }, { opacity: 1 }], LANE_FADE);
     }
     // A popup that opens stays transparent, and lets the pointer through, until Base UI has placed
-    // it in its lane, so its first frame never paints or takes the pointer elsewhere.
+    // it in its lane, so its first frame never paints or takes the pointer elsewhere. It shows only
+    // once an item has been active in the Root's store at two frame checks in a row: the store is the
+    // live state the pick writes, but a flick's close can land after the check in the frame after
+    // the open, so one check is not enough. A popup shows once its item has survived a full frame,
+    // at most a frame later than it would have; a popup that follows the pointer on to another item
+    // is still open, and shows.
     if (opening && popup !== null && placing.current === null) {
       writeStyle(popup, "opacity", "0");
       writeStyle(popup, "pointer-events", "none");
       let frames = 0;
+      let survived = 0;
       const check = (): void => {
         frames += 1;
-        // A popup that closed during the hold was never shown, so it stays transparent and only
-        // lets the pointer through again; the next open's hold writes both.
-        if (live.current === null) {
+        // A popup whose item closed during the hold was never shown, so it stays transparent and
+        // only lets the pointer through again; the next open's hold writes both.
+        if (kernel.store.get().active === null) {
           placing.current = null;
           writeStyle(popup, "pointer-events", null);
           return;
         }
-        if (onLane() || frames >= PLACE_FRAMES) {
+        survived += 1;
+        if (survived >= 2 && (onLane() || frames >= PLACE_FRAMES)) {
           placing.current = null;
           writeStyle(popup, "opacity", null);
           writeStyle(popup, "pointer-events", null);
@@ -563,7 +567,21 @@ export function usePolarTooltipAnchor(input: AnchorInput): TooltipAnchor {
       };
       placing.current = requestAnimationFrame(check);
     }
-  }, [angle, side, room, width, floor, scene, turns, kernel.follow, positioner, motion, onLane, readout]);
+  }, [
+    angle,
+    side,
+    room,
+    width,
+    floor,
+    scene,
+    turns,
+    kernel.follow,
+    kernel.store,
+    positioner,
+    motion,
+    onLane,
+    readout,
+  ]);
   useLayoutEffect(
     () =>
       kernel.follow.subscribe((shown) => {

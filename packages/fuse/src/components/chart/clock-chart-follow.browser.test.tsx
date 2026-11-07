@@ -489,6 +489,22 @@ describe("the follower behind a pointer that outruns it", () => {
     expect(turned.filter((turn) => turn < 0)).toEqual([]);
   });
 
+  it("takes the short way from the angle shown on a step half a turn from the target it chases", () => {
+    const { follow, frames, shown } = behind();
+    // A half-turn step spans 180°, past the near leap's 90°, so its floor of 180 / 10 = 18° a frame
+    // outruns the 4° pace: three frames show 18°, 36° and 54°.
+    follow.retarget(180, "step");
+    for (let frame = 0; frame < 3; frame += 1) frames.step();
+    expect(shown.slice(1)).toEqual([18, 36, 54]);
+    // Back to 0°, half a turn from the chased 180° either way, as a pointer through the centre
+    // steps: it takes the short way from the shown 54°, back to 0°, not on round to 360°.
+    const from = shown.length;
+    follow.retarget(0, "step");
+    for (let frame = 0; frame < 120 && frames.step(); frame += 1);
+    expect(shown.at(-1)).toBe(0);
+    expect(shown.slice(from).filter((angle) => angle > 54)).toEqual([]);
+  });
+
   it("drops a whole turn of lag, and turns only the rest of the way", () => {
     const { follow, frames, shown } = behind();
     // 90°, 180° and 270° unwrap as above, 0° to 360°, a whole turn ahead of the shown 0°, so the
@@ -498,5 +514,94 @@ describe("the follower behind a pointer that outruns it", () => {
     expect(shown.at(-1)).toBe(450);
     // The snapped 0° aside, every shown angle lies in the last quarter turn, from 360° to 450°.
     expect(shown.slice(1).filter((angle) => angle <= 360 || angle > 450)).toEqual([]);
+  });
+});
+
+// A pointer swinging through the dial's centre. Unit under test: the follower's step on an even
+// count, where crossing the centre lands half a turn from the target it chases. Oracle: a pointer
+// swinging along one line asks for at most half a turn at a time, so the hand never turns more
+// than half a turn and a slot one way.
+describe("the follower under a pointer swinging through the centre", () => {
+  function Hours(): ReactElement {
+    return (
+      <LocaleProvider locale="nb-NO" timeZone="Europe/Oslo">
+        <div style={{ width: 320 }}>
+          <ClockChart.Root
+            data={Array.from({ length: 24 }, (_, hour) => ({
+              start: DAY + hour * 3_600_000,
+              kwh: 1 + (hour % 4),
+            }))}
+            config={{ kwh: { label: "Forbruk", color: "chart-1" } }}
+            xKey="start"
+            cycle="day"
+            interval="hour"
+            data-intro="none"
+            aria-label="Døgn">
+            <ClockChart.Grid />
+            <ClockChart.Line dataKey="kwh" />
+            <ClockChart.Scrubber />
+          </ClockChart.Root>
+        </div>
+      </LocaleProvider>
+    );
+  }
+
+  it("never turns the hand more than 190° one way over three round trips through the centre at 2,000 px/s", async () => {
+    const { host } = renderThemed(<Hours />);
+    await settle();
+    const layer = clockLayer(host, "clock-chart-line");
+    const [cx, cy] = clientPoint(layer, 0, 0);
+    const [rx] = clientPoint(layer, 1, 0);
+    const radius = rx - cx;
+    // DOM audit: the Scrubber's hand is aria-hidden plot output, read by its part.
+    const hand = host.querySelector<SVGGElement>('[data-slot="clock-chart-scrubber"] [data-part="hand"]');
+    if (hand === null) throw new Error("no hand");
+    const listbox = page.getByRole("listbox").element();
+    // The 97.5° to 277.5° diameter, from 0.9 R through the exact centre to 0.9 R and back.
+    const along = (97.5 * Math.PI) / 180;
+    const ux = Math.sin(along);
+    const uy = -Math.cos(along);
+    const move = (offset: number) =>
+      listbox.dispatchEvent(
+        new PointerEvent("pointermove", {
+          bubbles: true,
+          clientX: cx + offset * ux,
+          clientY: cy + offset * uy,
+          pointerType: "mouse",
+        })
+      );
+    const leg = 1.8 * radius;
+    move(0.9 * radius);
+    await settle();
+    const start = await nextFrame();
+    let unwrapped: number | null = null;
+    const hands: number[] = [];
+    for (;;) {
+      const now = await nextFrame();
+      const travelled = (2000 * (now - start)) / 1000;
+      if (travelled > 6 * leg) break;
+      const into = travelled % (2 * leg);
+      move(0.9 * radius - (into < leg ? into : 2 * leg - into));
+      const raw = Number.parseFloat(getComputedStyle(hand).rotate);
+      unwrapped = unwrapped === null ? raw : unwrapped + ((((raw - unwrapped) % 360) + 540) % 360) - 180;
+      hands.push(unwrapped);
+    }
+    for (let wait = 0; wait < 30; wait += 1) {
+      await nextFrame();
+      const raw = Number.parseFloat(getComputedStyle(hand).rotate);
+      unwrapped = unwrapped === null ? raw : unwrapped + ((((raw - unwrapped) % 360) + 540) % 360) - 180;
+      hands.push(unwrapped);
+    }
+    // The longest one-way run of the hand, summing frames that turn the same way.
+    let run = 0;
+    let longest = 0;
+    hands.slice(1).forEach((angle, index) => {
+      const turn = angle - (hands[index] ?? angle);
+      if (Math.abs(turn) < 0.01) return;
+      run = Math.sign(turn) === Math.sign(run) ? run + turn : turn;
+      longest = Math.max(longest, Math.abs(run));
+    });
+    expect(hands.length).toBeGreaterThan(20);
+    expect(longest).toBeLessThanOrEqual(190);
   });
 });

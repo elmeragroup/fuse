@@ -33,6 +33,11 @@ const LEAP_FRAMES = { near: 12, far: 10 } as const;
 const LEAP_NEAR = 90;
 
 /**
+ * How near half a turn, in degrees, a step lands from the chased target to have no way of its own.
+ */
+const HALF_TURN_TIE = 0.5;
+
+/**
  * The most a mark's stretch slows the pace, so a stepped curve's riser, which a dot climbs in one
  * frame whatever the pace, never holds the hand back.
  */
@@ -183,7 +188,14 @@ export function createPolarFollow(host: FollowHost): PolarFollow {
       // of taking the short way back. Whole turns of lag drop from the shown angle, so the hand
       // never chases an extra turn: every subscriber draws the angle through its sine, cosine or
       // remainder of 360°, or as a `rotate` with no transition on it, so the shift shows nothing.
-      const next = shortTarget(target ?? state?.angle ?? angle, angle);
+      // A step half a turn from the chased target, as a pointer through the dial's centre takes on an
+      // even count, has no way of its own, so it takes the short way from the angle shown.
+      const chased = target ?? state?.angle ?? angle;
+      const ahead = shortTarget(chased, angle);
+      const next =
+        state !== null && Math.abs(Math.abs(ahead - chased) - 180) < HALF_TURN_TIE
+          ? shortTarget(state.angle, angle)
+          : ahead;
       if (state !== null) {
         const laps = Math.trunc((next - state.angle) / 360);
         if (laps !== 0) state = { ...state, angle: state.angle + 360 * laps };

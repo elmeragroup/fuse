@@ -678,4 +678,76 @@ describe("the opening hold when the popup closes during it", () => {
     }
     expect(opacities.filter((opacity) => opacity > 0.05)).toEqual([]);
   });
+
+  // The order the docs build records on a flick at 2,000 px/s: the open, then in the next frame the
+  // hold's check finds the popup on its lane, and only after that does the pointer's move into the
+  // hole close the item. The hold's frame is asked for in the open's layout effect, so a frame asked
+  // for once the hold is written runs after the check, and the move into the hole goes there.
+  it("keeps a popup transparent when its item closes in the frame after it opens, after the check", async () => {
+    await commands.pointerGlide(1, 1, 1);
+    const { host } = renderThemed(
+      <Card>
+        <RadialChart.Root
+          data={[
+            { budget: "heat", kwh: 300 },
+            { budget: "car", kwh: 240 },
+            { budget: "water", kwh: 180 },
+          ]}
+          config={{
+            heat: { label: "Oppvarming", color: "chart-1" },
+            car: { label: "Elbil", color: "chart-2" },
+            water: { label: "Varmtvann", color: "chart-3" },
+          }}
+          nameKey="budget"
+          valueKey="kwh"
+          max={360}
+          data-intro="none"
+          aria-label="Budsjett">
+          <RadialChart.Track />
+          <RadialChart.Bar />
+          <RadialChart.Tooltip />
+        </RadialChart.Root>
+      </Card>
+    );
+    // DOM audit: the bars are aria-hidden plot output, read by their slot, for their screen CTM.
+    const layer = host.querySelector<SVGSVGElement>('[data-slot="radial-chart-bar"]');
+    if (layer === null) throw new Error("no bars");
+    const listbox = page.getByRole("listbox").element();
+    const move = (point: DOMPoint) => {
+      const [clientX, clientY] = clientPoint(layer, point.x, point.y);
+      listbox.dispatchEvent(
+        new PointerEvent("pointermove", { bubbles: true, clientX, clientY, pointerType: "mouse" })
+      );
+    };
+    // The popup opens once and closes, so it is mounted, as the portal keeps it from its first open.
+    move(dialPoint(30, 0.9));
+    await frames(20);
+    move(dialPoint(30, 0.12));
+    await frames(40);
+    // DOM audit: the tooltip is aria-hidden and portalled, read by its slot.
+    const popup = document.querySelector<HTMLElement>('[data-slot="chart-tooltip"]');
+    if (popup === null) throw new Error("no mounted popup");
+    const held = new Promise<void>((resolve) => {
+      const watch = new MutationObserver(() => {
+        if (popup.style.opacity !== "0") return;
+        watch.disconnect();
+        resolve();
+      });
+      watch.observe(popup, { attributes: true, attributeFilter: ["style"] });
+    });
+    move(dialPoint(30, 0.9));
+    await held;
+    await new Promise<void>((resolve) =>
+      requestAnimationFrame(() => {
+        move(dialPoint(30, 0.12));
+        resolve();
+      })
+    );
+    const opacities: number[] = [];
+    for (let frame = 0; frame < 15; frame += 1) {
+      await frames(1);
+      opacities.push(Number(getComputedStyle(popup).opacity));
+    }
+    expect(opacities.filter((opacity) => opacity > 0.05)).toEqual([]);
+  });
 });
