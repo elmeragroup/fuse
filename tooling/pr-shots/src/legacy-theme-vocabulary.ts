@@ -8,8 +8,10 @@
  * rename.
  */
 
+import { THEME_AXES } from "@elmeragroup/fuse/theme-catalog";
+
+import { identityLabel } from "./options.ts";
 import type { Identity } from "./options.ts";
-import { THEME_AXIS_ATTRIBUTES } from "./theme-axes.ts";
 
 /** Which theme vocabulary a page speaks. */
 export type ThemeVocabulary = "identity" | "variant";
@@ -43,12 +45,12 @@ export function identityAxisLabel(vocabulary: ThemeVocabulary): string {
  * The picker's label for an identity in the page's vocabulary.
  *
  * @param identity - The identity the run asked for.
- * @param label - Its label in the identity vocabulary, such as `Branded`.
  * @param vocabulary - The page's vocabulary.
- * @returns `label`, or the retired label, such as `External`, on a pre-identity page.
+ * @returns Its picker label, such as `Branded`, or the retired label, such as `External`, on a
+ *   pre-identity page.
  */
-export function identityOptionLabel(identity: Identity, label: string, vocabulary: ThemeVocabulary): string {
-  return vocabulary === "identity" ? label : LEGACY_IDENTITY[identity].label;
+export function identityOptionLabel(identity: Identity, vocabulary: ThemeVocabulary): string {
+  return vocabulary === "identity" ? identityLabel(identity) : LEGACY_IDENTITY[identity].label;
 }
 
 /** What the slug reader passes into the page: the attribute names and the retired value map. */
@@ -63,7 +65,7 @@ export type ThemeReading = {
 
 /** The serialisable reading a page evaluates in {@link readThemeSlug}. */
 export const THEME_READING: ThemeReading = {
-  attributes: [...THEME_AXIS_ATTRIBUTES],
+  attributes: THEME_AXES.map((axis) => axis.attribute),
   legacyAttribute: LEGACY_IDENTITY_ATTRIBUTE,
   legacyValues: Object.fromEntries(
     Object.entries(LEGACY_IDENTITY).map(([identity, { value }]) => [value, identity])

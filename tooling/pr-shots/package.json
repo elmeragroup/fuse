@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@effect/platform-node": "catalog:",
+    "@elmeragroup/fuse": "workspace:*",
     "effect": "catalog:",
     "pixelmatch": "catalog:",
     "playwright": "catalog:",
