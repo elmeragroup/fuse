@@ -240,7 +240,9 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = derive([
   // Phase M5 on 2026-11-07: a half-turn step takes the short way from the angle shown, and the
   // opening hold releases only once an item has stayed active for two frame checks, 214543 to
   // 214660. The ceiling keeps about 100 bytes of headroom.
-  { name: "chart", entryFile: "chart.js", measuredGzip: 97044, ceilingGzip: 214760 },
+  // Phase M7 on 2026-11-07: the lane fade is kept and cancelled at a close and at every open's
+  // hold, 214660 to 214778. The ceiling keeps about 100 bytes of headroom.
+  { name: "chart", entryFile: "chart.js", measuredGzip: 97044, ceilingGzip: 214878 },
   // 2026-10-13: new entry, measured at 29180. Pure wrappers over Base UI's toolbar and its roving focus.
   { name: "toolbar", entryFile: "toolbar.js", measuredGzip: 29180, ceilingGzip: 43770 },
   // 2026-10-12: new entries. Command is Base UI's Autocomplete in the InputGroup, with the Dialog
@@ -526,7 +528,9 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // Phase M5 on 2026-11-07: a half-turn step takes the short way from the angle shown, and the
     // opening hold releases only once an item has stayed active for two frame checks, 111759 to
     // 111887. The ceiling keeps about 100 bytes of headroom.
-    ceilingGzip: 111987,
+    // Phase M7 on 2026-11-07: the lane fade is kept and cancelled at a close and at every open's
+    // hold, 111887 to 112007. The ceiling keeps about 100 bytes of headroom.
+    ceilingGzip: 112107,
   },
   // Set from its measurement on 2026-11-05, when the polar families landed: the whole namespace:
   // rings on their frame in three looks, Track, Glow, the Center parts and the polar readouts. The

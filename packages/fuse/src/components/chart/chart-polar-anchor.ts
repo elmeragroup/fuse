@@ -446,6 +446,11 @@ export function usePolarTooltipAnchor(input: AnchorInput): TooltipAnchor {
   const placing = useRef<number | null>(null);
   /** The popup and the opacity it showed when its item closed, read before the close commits. */
   const closing = useRef<{ readonly popup: HTMLElement; readonly opacity: number } | null>(null);
+  /**
+   * The lane fade that runs, which a close or a new open cancels: a script animation composites
+   * above the popup's CSS exit and its hold, so it would run out its 120 ms over either.
+   */
+  const fade = useRef<Animation | null>(null);
   // The popup's exit keyframes set only their end, so they start from its own opacity. A popup that
   // closes mid-entrance would start its fade-out from full opacity; the opacity on screen when the
   // store loses its item, before React commits the close, is written inline in the close instead.
@@ -491,6 +496,9 @@ export function usePolarTooltipAnchor(input: AnchorInput): TooltipAnchor {
     // reached. The next open's hold overwrites that with 0, and its release clears it.
     if (angle === null) {
       before.current = null;
+      // The store read before the close includes the fade's value, so the exit runs from there.
+      fade.current?.cancel();
+      fade.current = null;
       const reached = closing.current;
       closing.current = null;
       if (reached !== null && reached.opacity < 1)
@@ -556,7 +564,7 @@ export function usePolarTooltipAnchor(input: AnchorInput): TooltipAnchor {
     // closing popup keeps the width it showed.
     if (node !== null && width !== null) writeStyle(node, "width", `${width.toFixed(2)}px`);
     if ((switched || leaped) && popup !== null && !motion.reduced()) {
-      popup.animate([{ opacity: LANE_FADE_FROM }, { opacity: 1 }], LANE_FADE);
+      fade.current = popup.animate([{ opacity: LANE_FADE_FROM }, { opacity: 1 }], LANE_FADE);
     }
     // A popup that opens stays transparent, and lets the pointer through, until Base UI has placed
     // it in its lane, so its first frame never paints or takes the pointer elsewhere. It shows only
@@ -568,6 +576,8 @@ export function usePolarTooltipAnchor(input: AnchorInput): TooltipAnchor {
     // Every open starts a fresh hold, so a close and a reopen between two checks count again.
     if (opening && popup !== null) {
       if (placing.current !== null) cancelAnimationFrame(placing.current);
+      fade.current?.cancel();
+      fade.current = null;
       writeStyle(popup, "opacity", "0");
       writeStyle(popup, "pointer-events", "none");
       let frames = 0;

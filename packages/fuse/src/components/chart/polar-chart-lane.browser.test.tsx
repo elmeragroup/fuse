@@ -870,3 +870,119 @@ describe("the opening hold when the popup closes during it", () => {
     expect(opacities.filter((opacity) => opacity > 0.05)).toEqual([]);
   });
 });
+
+// A popup that closes while its lane fade runs fades out from where the fade got. Unit under test:
+// the lane fade and the close on a pie of four equal slices, where slice 0 (45°) rests in the right
+// lane and slice 3 (315°) in the left. Oracle: a fade-out starts from what is on screen, so in the 15
+// frames after the close nothing paints brighter than the brightest frame before it.
+describe("a close during the lane fade", () => {
+  /** Each frame's painted opacity, read after the frame's animation callbacks, before it paints. */
+  function paintedFrames() {
+    const painted: number[] = [];
+    let on = true;
+    let frame = 0;
+    const probe = document.createElement("div");
+    probe.style.cssText = "position:fixed;left:-40px;top:0;width:1px;height:1px;visibility:hidden";
+    document.body.append(probe);
+    const observer = new ResizeObserver(() => {
+      if (!on) return;
+      // DOM audit: the tooltip is aria-hidden and portalled, read by its slot.
+      const popup = document.querySelector<HTMLElement>('[data-slot="chart-tooltip"]');
+      const box = popup?.getBoundingClientRect();
+      painted.push(
+        popup && box && box.width > 0 && box.height > 0 ? Number(getComputedStyle(popup).opacity) : 0
+      );
+    });
+    observer.observe(probe);
+    const tick = () => {
+      if (!on) return;
+      frame += 1;
+      probe.style.width = frame % 2 === 0 ? "1px" : "2px";
+      requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+    return {
+      painted,
+      stop: () => {
+        on = false;
+        observer.disconnect();
+        probe.remove();
+      },
+    };
+  }
+
+  it("fades a popup closed two frames after a lane switch out from where the fade got", async () => {
+    await commands.pointerGlide(1, 1, 1);
+    const { host } = renderThemed(
+      <Card>
+        <PieChart.Root
+          data={[
+            { part: "a", kr: 10 },
+            { part: "b", kr: 10 },
+            { part: "c", kr: 10 },
+            { part: "d", kr: 10 },
+          ]}
+          config={{
+            a: { label: "Nettleie", color: "chart-1" },
+            b: { label: "Strøm", color: "chart-2" },
+            c: { label: "Avgifter", color: "chart-3" },
+            d: { label: "Påslag", color: "chart-4" },
+          }}
+          nameKey="part"
+          valueKey="kr"
+          data-intro="none"
+          aria-label="Regning">
+          <PieChart.Pie />
+          <PieChart.Tooltip />
+        </PieChart.Root>
+      </Card>
+    );
+    await frames(20);
+    // DOM audit: the pie is aria-hidden plot output, read by its slot, for its screen CTM.
+    const layer = host.querySelector<SVGSVGElement>('[data-slot="pie-chart-pie"]');
+    if (layer === null) throw new Error("no pie");
+    const listbox = page.getByRole("listbox").element();
+    const move = (angle: number) => {
+      const point = dialPoint(angle, 0.6);
+      const [clientX, clientY] = clientPoint(layer, point.x, point.y);
+      listbox.dispatchEvent(
+        new PointerEvent("pointermove", { bubbles: true, clientX, clientY, pointerType: "mouse" })
+      );
+    };
+    const escape = () =>
+      document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+    // Mounted by an open and a dismiss on slice 1, so slice 0 opens again after it.
+    move(135);
+    await frames(30);
+    escape();
+    await frames(45);
+    // DOM audit: the tooltip is aria-hidden and portalled, read by its slot.
+    const popup = document.querySelector<HTMLElement>('[data-slot="chart-tooltip"]');
+    if (popup === null) throw new Error("no mounted popup");
+    const record = paintedFrames();
+    move(45);
+    // The release: the first frame the popup is open, holds no inline opacity and paints.
+    for (let wait = 0; wait < 20; wait += 1) {
+      await frames(1);
+      if (
+        popup.hasAttribute("data-open") &&
+        popup.style.opacity === "" &&
+        Number(getComputedStyle(popup).opacity) > 0.01
+      )
+        break;
+    }
+    await frames(1);
+    move(315);
+    await frames(2);
+    // What is on screen at the close: the frames painted so far and the fade's value now, which a
+    // close in a later frame callback reads one fade step on from the last painted frame.
+    const before = Math.max(0, ...record.painted, Number(getComputedStyle(popup).opacity));
+    const at = record.painted.length;
+    escape();
+    await frames(16);
+    record.stop();
+    const after = record.painted.slice(at, at + 15);
+    expect(after.length).toBeGreaterThan(10);
+    expect(after.filter((opacity) => opacity > before + 0.001)).toEqual([]);
+  });
+});
