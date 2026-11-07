@@ -242,7 +242,10 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = derive([
   // 214660. The ceiling keeps about 100 bytes of headroom.
   // 2026-11-07: the lane fade is kept and cancelled at a close and at every open's
   // hold, 214660 to 214778. The ceiling keeps about 100 bytes of headroom.
-  { name: "chart", entryFile: "chart.js", measuredGzip: 97044, ceilingGzip: 214878 },
+  // 2026-11-07: ring values and the angle labels they clear fitted by each label's bound, the
+  // widest any common sans draws it, 214778 to 215034. The ceiling keeps about 100 bytes of
+  // headroom.
+  { name: "chart", entryFile: "chart.js", measuredGzip: 97044, ceilingGzip: 215134 },
   // 2026-10-13: new entry, measured at 29180. Pure wrappers over Base UI's toolbar and its roving focus.
   { name: "toolbar", entryFile: "toolbar.js", measuredGzip: 29180, ceilingGzip: 43770 },
   // 2026-10-12: new entries. Command is Base UI's Autocomplete in the InputGroup, with the Dialog
@@ -602,7 +605,10 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // 2026-11-07: a popup that closes mid-entrance fades out from the opacity it
     // reached, and every open starts a fresh hold, 112381 to 112483. The ceiling keeps about 100
     // bytes of headroom.
-    ceilingGzip: 112583,
+    // 2026-11-07: ring values and the angle labels they clear fitted by each label's bound,
+    // the widest any common sans draws it, 112483 to 112688. The ceiling keeps about 100
+    // bytes of headroom.
+    ceilingGzip: 112788,
   },
   // Set from its measurement on 2026-11-05, when the polar families landed: the whole namespace:
   // the zoned dial model, curves, wedges with floors and coarse slots, labels and ring values
@@ -646,7 +652,10 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // 2026-11-07: a popup that closes mid-entrance fades out from the opacity it
     // reached, and every open starts a fresh hold, 129871 to 129986. The ceiling keeps about 100
     // bytes of headroom.
-    ceilingGzip: 130086,
+    // 2026-11-07: ring values and the angle labels they clear fitted by each label's bound,
+    // the widest any common sans draws it, 129986 to 130263. The ceiling keeps about 100
+    // bytes of headroom.
+    ceilingGzip: 130363,
   },
   {
     name: "chart/Chart.Root",
@@ -945,7 +954,10 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // 2026-11-07: a popup that closes mid-entrance fades out from the opacity it
     // reached, and every open starts a fresh hold, 99110 to 99227. The ceiling keeps about 100
     // bytes of headroom.
-    ceilingGzip: 99327,
+    // 2026-11-07: ring values and the angle labels they clear fitted by each label's bound,
+    // the widest any common sans draws it, 99227 to 99463. The ceiling keeps about 100 bytes
+    // of headroom.
+    ceilingGzip: 99563,
   },
   // 2026-11-05: new rows, ClockChart's Root alone and its typical route: Root, Line, Grid,
   // AngleAxis, Center, Legend and Tooltip, which the owner set, each with the derived ceiling.

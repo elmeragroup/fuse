@@ -13,7 +13,7 @@ import { radarDrawingIn, usePolarContext } from "./chart-polar-context";
 import type { RadarDrawing } from "./chart-polar-context";
 import type { ChartLayerProps, ValueFormat } from "./chart-types";
 import { formatValue } from "./format/value-format";
-import { labelWidth } from "./layout/label-width";
+import { labelBound } from "./layout/label-bound";
 import { polarPoint } from "./layout/polar-angle";
 import { radarRadius, spokeAngle } from "./layout/radar";
 import { fitRingLabels, ringAnchor } from "./layout/ring-labels";
@@ -75,17 +75,18 @@ export function RadarChartRadiusAxis({ format, className, style }: RadarChartRad
   const { locale } = useLocale();
   const radius = radarRadius(radar.domain, 1);
   // Values stay clear of the spoke labels the axis shows past the rim, of the series' edges and
-  // dots, and off the centre, along whichever of 12 and 6 o'clock leaves them more room.
+  // dots, and off the centre, along whichever of 12 and 6 o'clock leaves them more room. Each width
+  // is the label's bound, the widest any common sans draws it, since the page picks the font.
   const spokes = spokeLabelFit(radar);
   const values = radar.ticks.map((tick) => ({
     radius: radius(tick),
-    width: labelWidth(formatValue(locale, tick, format ?? radar.format, "tick").text),
+    width: labelBound(formatValue(locale, tick, format ?? radar.format, "tick").text),
   }));
   const clearance = {
     inner: 0,
     angles: radar.labels.map((label, index) => ({
       angle: spokeAngle(index, radar.count),
-      width: labelWidth(label.text),
+      width: labelBound(label.text),
       shownAt: spokes[index] ?? "none",
     })),
     marks: radarCover(radar),

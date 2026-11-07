@@ -1,3 +1,4 @@
+import interUrl from "@fontsource/inter/files/inter-latin-400-normal.woff2?url";
 // ClockChart's dial, marks and readouts in Chromium. Units under test: ClockChart.Root with its
 // Grid, AngleAxis, Line, Area, Column, Dots, Now, Center and the shared readouts. Oracles, written
 // by hand: D11's equal slots, slot i of 24 centred at 15i + 7.5°; D13's radii on a [0, 4] domain
@@ -8,7 +9,7 @@
 // pixel floor, one device pixel along the radius, and the stack's floor on its outer segment alone;
 // the 25-hour 26 October 2025, where "06" sits at 100.8°; D16's seam; Now at 11:30, 172.5°; and the
 // clock key map, where PageDown moves six hours.
-import { describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import * as CssColor from "@elmeragroup/color/css-color";
@@ -1090,5 +1091,98 @@ describe("the centre's text floor and fit guard", () => {
     expect(hole.hasAttribute("data-fit")).toBe(false);
     expect(getComputedStyle(value).display).not.toBe("none");
     expect(getComputedStyle(line).display).not.toBe("none");
+  });
+});
+
+describe("the ring values beside the angle labels", () => {
+  // Unit under test: ClockChart.RadiusAxis's fit of its ring values against the AngleAxis's month
+  // labels, on dials of 160 to 400 px. Oracle: ring-labels.ts's rule that a value shows only where
+  // its chip keeps 2 px from every angle label the dial shows, checked on the boxes the page draws.
+  // The dial draws in Inter, the internal themes' face, whose tabular figures set "1,500 kWh" 13%
+  // wider than Roboto's, so the fit holds only if its widths bound the font the page renders. NO1
+  // household consumption per metering point and month in 2025, from Elhub's
+  // CONSUMPTION_PER_GROUP_MBA_HOUR (CC BY 4.0), as the docs' heating-year demo draws it: its ring
+  // values run 0 to 2,000 kWh, and "1,500 kWh" sits level with "May".
+  const KWH = [
+    1837.12, 1603.55, 1398.42, 1004.97, 863.99, 715.08, 592.65, 683.19, 781.47, 1125.71, 1413.92, 1582.73,
+  ];
+  const YEAR = KWH.map((kwh, month) => ({
+    // Each month's first midnight in Oslo: CEST from April to October, CET otherwise.
+    start: Date.parse(
+      `2025-${String(month + 1).padStart(2, "0")}-01T00:00:00${month >= 3 && month <= 9 ? "+02:00" : "+01:00"}`
+    ),
+    kwh,
+  }));
+
+  beforeAll(async () => {
+    const inter = new FontFace("Fuse Test Inter", `url(${interUrl})`);
+    document.fonts.add(await inter.load());
+  });
+
+  /** A year dial of the given size in Inter, and the ring values and month labels it shows. */
+  async function yearDial(size: string) {
+    const { host } = renderThemed(
+      <LocaleProvider locale="en-US" timeZone="Europe/Oslo">
+        <div style={{ width: 728, fontFamily: '"Fuse Test Inter"' }}>
+          <ClockChart.Root
+            data={YEAR}
+            config={{
+              kwh: {
+                label: "Household",
+                color: "chart-1",
+                format: { preset: "energy", unit: "kWh", maximumFractionDigits: 0 },
+              },
+            }}
+            xKey="start"
+            cycle="year"
+            interval="month"
+            data-intro="none"
+            style={{ "--chart-polar-size": size }}
+            aria-label="Year">
+            <ClockChart.Grid />
+            <ClockChart.AngleAxis />
+            <ClockChart.RadiusAxis />
+            <ClockChart.Column dataKey="kwh" />
+          </ClockChart.Root>
+        </div>
+      </LocaleProvider>
+    );
+    await document.fonts.ready;
+    await painted();
+    await painted();
+    const shown = (slot: string) =>
+      // DOM audit: the ring values and month labels are aria-hidden plot text, read by their slot.
+      [...host.querySelectorAll<HTMLElement>(`[data-slot="${slot}"]`)]
+        .filter((label) => label.checkVisibility() && label.textContent.trim() !== "")
+        .map((label) => ({ text: label.textContent.trim(), box: label.getBoundingClientRect() }));
+    return { values: shown("clock-chart-radius-label"), months: shown("clock-chart-angle-label") };
+  }
+
+  it.each(["160px", "200px", "240px", "280px", "320px", "400px"])(
+    "keeps every ring value it shows 2 px from every month label on a %s dial",
+    async (size) => {
+      const { values, months } = await yearDial(size);
+      expect(months.length).toBeGreaterThan(0);
+      const crowded = values.flatMap((value) =>
+        months.flatMap((month) => {
+          const across = Math.max(month.box.left - value.box.right, value.box.left - month.box.right);
+          const along = Math.max(month.box.top - value.box.bottom, value.box.top - month.box.bottom);
+          return across < 2 && along < 2
+            ? [
+                `"${value.text}" ${across.toFixed(2)} px across and ${along.toFixed(2)} px along from "${month.text}"`,
+              ]
+            : [];
+        })
+      );
+      expect(crowded).toEqual([]);
+    }
+  );
+
+  it("shows both ring values beside the spoke on a 400 px dial, where they keep their room", async () => {
+    // On a 400 px dial, R = 200 px, the area-true scale with its 0.3 hole puts "1,000 kWh" and
+    // "1,500 kWh" at √(0.09 + 0.91 · v/2000) R, 148 and 176 px below the centre. Their chips end
+    // about 71 px right of the spoke, and "May", the nearest month label, starts about 142 px right.
+    const { values } = await yearDial("400px");
+    expect(values.map(({ text }) => text)).toEqual(["1,000\u00a0kWh", "1,500\u00a0kWh"]);
   });
 });

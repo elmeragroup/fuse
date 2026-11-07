@@ -13,7 +13,7 @@ import type { ClockDrawing } from "./chart-polar-context";
 import type { ChartLayerProps, ValueFormat } from "./chart-types";
 import { percent } from "./clock-chart-dial";
 import { formatValue } from "./format/value-format";
-import { labelWidth } from "./layout/label-width";
+import { labelBound } from "./layout/label-bound";
 import { fitRingLabels, ringAnchor } from "./layout/ring-labels";
 import type { MarkCover } from "./layout/ring-labels";
 
@@ -64,16 +64,17 @@ export function ClockChartRadiusAxis({ format, className, style }: ClockChartRad
     return radius < clock.inner - 1e-9 || radius > 1 + 1e-9 ? [] : [{ tick, radius }];
   });
   // Values stay clear of the angle labels the axis shows past the rim, of the marks at rest, and of
-  // the centre text in the hole, along whichever of 12 and 6 o'clock leaves them more room.
+  // the centre text in the hole, along whichever of 12 and 6 o'clock leaves them more room. Each
+  // width is the label's bound, the widest any common sans draws it, since the page picks the font.
   const values = rings.map(({ tick, radius }) => ({
     radius,
-    width: labelWidth(formatValue(locale, tick, format ?? clock.format, "tick").text),
+    width: labelBound(formatValue(locale, tick, format ?? clock.format, "tick").text),
   }));
   const clearance = {
     inner: (clock.inner * Math.SQRT2) / 2,
     angles: clock.labels.map((label) => ({
       angle: label.angle,
-      width: labelWidth(label.text.text),
+      width: labelBound(label.text.text),
       shownAt: label.visibility,
     })),
     marks: clockCover(clock),

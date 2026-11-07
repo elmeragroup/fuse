@@ -18,6 +18,8 @@ The three packages are released under the ISC licence. Each folder holds its pac
 
 `roboto-advances-12px.json` holds Roboto Regular's advance widths at 12 px, read from the `hmtx` table of `@fontsource/roboto` 5.3.0's latin WOFF file by `roboto_advances.py`. `label-width.ts` must hold the same table.
 
+`inter-advances-12px.json`, `dejavu-sans-advances-12px.json` and `liberation-sans-advances-12px.json` hold the same characters' advances in Inter Regular (`@fontsource/inter` 5.3.0's latin WOFF), DejaVu Sans (Ubuntu 24.04's `fonts-dejavu-core` 2.37-8) and Liberation Sans Regular (`fonts-liberation` 2.1.5-3). Each holds a character's default glyph under `advances` and its `tnum` substitute under `tabular`, since ring values set tabular figures. `.scratch/polar-charts/ci-labels/advances.py` reads them with fontTools, and gives Roboto's file the same table as `roboto-advances-12px.json`. `label-bound.ts` must hold each character's widest advance across the four faces, rounded up to a whole pixel.
+
 ## Slot judges
 
 `slot-judges.ts` compares the time axis's slots with the zoneinfo slot lists in `../../format/fixtures/slots.json`. `../x-domain.zones.test.ts` runs them in the unit project's zone and again in each zone project's.
