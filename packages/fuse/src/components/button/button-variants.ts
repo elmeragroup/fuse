@@ -27,7 +27,9 @@ import { selfFocusRingClass } from "../../styles/utils";
 // branded page does not inherit the floor. It lifts only dense branded labels, since the
 // comfortable button inset is 12px or more. The icon edge keeps its own inset, square sizes
 // have no inline padding, and a ButtonGroup member, which rounds with the group, drops the
-// floor. The padding reads the button's own `--button-px-floor`, which copies the theme's floor
+// floor. Every Fuse part that replaces Button's corner drops it the same way, by setting
+// `--button-px-floor` to 0px: DataTableFilter's segments and header operator and the
+// date-picker presets. The padding reads the button's own `--button-px-floor`, which copies the theme's floor
 // and which a grouped button sets to 0px. The theme rules never declare that local property, so
 // a theme element that is itself the grouped button, whose unlayered theme rule declares the
 // floor, cannot bring it back.
@@ -93,25 +95,25 @@ export const buttonVariants = tv({
         size: "md",
         fit: "label",
         class:
-          "px-[max(var(--control-px-button-md),var(--button-px-floor,0px))] has-data-[icon=inline-end]:pr-(--control-px-button-icon-md) has-data-[icon=inline-start]:pl-(--control-px-button-icon-md)",
+          "px-[max(var(--control-px-button-md),var(--button-px-floor))] has-data-[icon=inline-end]:pr-(--control-px-button-icon-md) has-data-[icon=inline-start]:pl-(--control-px-button-icon-md)",
       }),
       xs: controlSize({
         size: "xs",
         fit: "label",
         class:
-          "px-[max(var(--control-px-button-xs),var(--button-px-floor,0px))] has-data-[icon=inline-end]:pr-(--control-px-button-icon-xs) has-data-[icon=inline-start]:pl-(--control-px-button-icon-xs) [&_svg:not([class*='size-'])]:size-3",
+          "px-[max(var(--control-px-button-xs),var(--button-px-floor))] has-data-[icon=inline-end]:pr-(--control-px-button-icon-xs) has-data-[icon=inline-start]:pl-(--control-px-button-icon-xs) [&_svg:not([class*='size-'])]:size-3",
       }),
       sm: controlSize({
         size: "sm",
         fit: "label",
         class:
-          "px-[max(var(--control-px-button-sm),var(--button-px-floor,0px))] has-data-[icon=inline-end]:pr-(--control-px-button-icon-sm) has-data-[icon=inline-start]:pl-(--control-px-button-icon-sm)",
+          "px-[max(var(--control-px-button-sm),var(--button-px-floor))] has-data-[icon=inline-end]:pr-(--control-px-button-icon-sm) has-data-[icon=inline-start]:pl-(--control-px-button-icon-sm)",
       }),
       lg: controlSize({
         size: "lg",
         fit: "label",
         class:
-          "px-[max(var(--control-px-button-lg),var(--button-px-floor,0px))] has-data-[icon=inline-end]:pr-(--control-px-button-icon-lg) has-data-[icon=inline-start]:pl-(--control-px-button-icon-lg)",
+          "px-[max(var(--control-px-button-lg),var(--button-px-floor))] has-data-[icon=inline-end]:pr-(--control-px-button-icon-lg) has-data-[icon=inline-start]:pl-(--control-px-button-icon-lg)",
       }),
       icon: controlSize({ size: "md", fit: "square" }),
       "icon-xs": controlSize({ size: "xs", fit: "square", class: "[&_svg:not([class*='size-'])]:size-3" }),

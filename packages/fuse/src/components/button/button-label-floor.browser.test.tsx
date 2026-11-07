@@ -3,6 +3,8 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import { render } from "../../../test/browser-render";
+import { Orders, STATUS_THREE } from "../../../test/data-table-filter-fixture";
+import { withLocale } from "../../../test/locale-matrix";
 import { fkasBranded, fkasPrivate } from "../../../test/theme-fixtures";
 import {
   px,
@@ -11,15 +13,30 @@ import {
   stampDensity,
   stampDocumentTheme,
 } from "../../../test/themed-browser-render";
+import { DatePickerPresetGroup, DatePickerPresetItem } from "../../react-aria/date-picker/date-picker";
 import type { Density } from "../../theme/density";
 import { ThemeScope } from "../../theme/theme-scope";
 import { ButtonGroup } from "../button-group";
 import { Button } from "./button";
 
-/** The inline padding of a button's start and end edges, in px. */
-function inlinePadding(name: string) {
-  const style = getComputedStyle(roleNamed("button", name));
+/** The inline padding of an element's start and end edges, in px. */
+function paddingOf(element: Element) {
+  const style = getComputedStyle(element);
   return { start: px(style.paddingLeft), end: px(style.paddingRight) };
+}
+
+/** The inline padding of a control's start and end edges, in px. */
+function inlinePadding(name: string, role: "button" | "combobox" = "button") {
+  return paddingOf(roleNamed(role, name));
+}
+
+/** The box of a preset, the label that wraps its visually hidden radio input. */
+function presetBox(name: string): Element {
+  const label = roleNamed("radio", name).closest("label");
+  if (label === null) {
+    throw new Error(`expected the ${name} preset's label`);
+  }
+  return label;
 }
 
 function Icon() {
@@ -32,21 +49,15 @@ function Icon() {
 
 describe("Button label floor", () => {
   let restoreDocumentTheme: () => void = () => undefined;
-  let restoreDensity: () => void = () => undefined;
 
+  // `themed-browser-render` clears `data-density` after every test.
   beforeEach(() => {
     restoreDocumentTheme = snapshotDocumentTheme();
-    const density = document.documentElement.getAttribute("data-density");
-    restoreDensity = () => {
-      if (density === null) document.documentElement.removeAttribute("data-density");
-      else document.documentElement.setAttribute("data-density", density);
-    };
     document.documentElement.style.fontSize = "16px";
   });
 
   afterEach(() => {
     restoreDocumentTheme();
-    restoreDensity();
     document.documentElement.style.removeProperty("font-size");
   });
 
@@ -127,5 +138,26 @@ describe("Button label floor", () => {
       </ThemeScope>
     );
     expect(inlinePadding("Branded scope")).toEqual({ start: 12, end: 12 });
+  });
+
+  it("keeps the dense inset on Fuse parts that replace Button's corner", () => {
+    // Oracle: dense `--control-px-button-sm` is 10px at the 16px root. A DataTableFilter segment
+    // squares Button and a date-picker preset rounds with the inner corner, so neither rounds as
+    // the branded pill the floor is for.
+    stampDensity("dense");
+    stampDocumentTheme(fkasBranded, "light");
+    render(
+      withLocale(
+        "en-US",
+        <>
+          <Orders initial={STATUS_THREE} />
+          <DatePickerPresetGroup aria-label="Presets">
+            <DatePickerPresetItem value="today">Today</DatePickerPresetItem>
+          </DatePickerPresetGroup>
+        </>
+      )
+    );
+    expect(inlinePadding("Status operator", "combobox")).toEqual({ start: 10, end: 10 });
+    expect(paddingOf(presetBox("Today"))).toEqual({ start: 10, end: 10 });
   });
 });

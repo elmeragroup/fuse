@@ -44,11 +44,12 @@ export const dataTableFilterVariants = tv({
     /**
      * control. A chip's button: square inside, the last one rounding its end with the chip's
      * corner less the 1px border, a hairline before each, and raised while focused so its ring
-     * paints over the neighbour. Under a coarse pointer each reaches 44px tall through
+     * paints over the neighbour. It replaces Button's corner, so it zeroes Button's branded label
+     * floor and keeps the control inset. Under a coarse pointer each reaches 44px tall through
      * `hit-area-*`, vertically only, so neighbouring hit areas never overlap.
      */
     segment:
-      "h-full rounded-none border-0 border-s border-s-border last:rounded-e-[calc(var(--radius-md)-1px)] focus-visible:relative focus-visible:z-10 pointer-coarse:hit-area-[max(0px,calc((44px_-_100%)/2))] pointer-coarse:[--hit-area-l:0px] pointer-coarse:[--hit-area-r:0px]",
+      "h-full rounded-none border-0 border-s border-s-border [--button-px-floor:0px] last:rounded-e-[calc(var(--radius-md)-1px)] focus-visible:relative focus-visible:z-10 pointer-coarse:hit-area-[max(0px,calc((44px_-_100%)/2))] pointer-coarse:[--hit-area-l:0px] pointer-coarse:[--hit-area-r:0px]",
     /** control. Static text, the field's icon and name. Not focusable. */
     subject:
       "font-medium flex items-center gap-(--control-gap-sm) px-(--control-px-sm) whitespace-nowrap select-none [&_svg]:size-4 [&_svg]:shrink-0 [&_svg]:text-muted-foreground",
@@ -169,9 +170,12 @@ export const dataTableFilterVariants = tv({
       "text-sm font-medium flex min-w-0 flex-1 items-center gap-(--control-gap-sm) px-(--control-px-icon-sm) [&_svg]:size-4 [&_svg]:shrink-0 [&_svg]:text-muted-foreground",
     /** The title's text. */
     titleText: "truncate",
-    /** control. The header's operator, the chip operator's quiet face, at the header's end. */
+    /**
+     * control. The header's operator, the chip operator's quiet face, at the header's end. It
+     * rounds with the inner corner instead of Button's, so it zeroes Button's branded label floor.
+     */
     headerOperator:
-      "font-normal shrink-0 rounded-inner text-muted-foreground pointer-coarse:hit-area-[max(0px,calc((44px_-_100%)/2))] pointer-coarse:[--hit-area-l:0px] pointer-coarse:[--hit-area-r:0px]",
+      "font-normal shrink-0 rounded-inner text-muted-foreground [--button-px-floor:0px] pointer-coarse:hit-area-[max(0px,calc((44px_-_100%)/2))] pointer-coarse:[--hit-area-l:0px] pointer-coarse:[--hit-area-r:0px]",
     /** surface. A text, number or date editor's body. */
     body: "flex flex-col gap-(--surface-gap-md) p-(--surface-pad-md)",
     /** The text editor's Enter hint. */
