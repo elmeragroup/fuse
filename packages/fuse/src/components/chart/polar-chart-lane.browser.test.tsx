@@ -9,11 +9,12 @@
 import type { ReactElement } from "react";
 
 import { beforeEach, describe, expect, it } from "vitest";
-import { page, userEvent } from "vitest/browser";
+import { commands, page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import { pointerAt, pointerTarget } from "../../../test/chart/marks";
 import { clientPoint, dialPoint, hoverAt, polarFigure } from "../../../test/chart/pie";
+import { radarLayer } from "../../../test/chart/radar";
 import { glidePointerTo } from "../../../test/pointer-press";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
@@ -468,4 +469,213 @@ describe("the bottom lane's width, the widest readout's", () => {
       expect(faults).toEqual([]);
     }
   );
+});
+
+// A side-lane leap and a lane switch fade the popup in where it rests. Unit under test: that fade on
+// a five-spoke radar in a side lane, whose every spoke step at 200 px/s leaps. Oracle: the readout
+// never vanishes while the user still points at an item, so from the popup's first opaque frame its
+// computed opacity stays at half or more in every frame an option is active.
+describe("the side lane's fade on a leap", () => {
+  it("never shows the readout under half opacity while an option is active on a ring at 200 px/s", async () => {
+    // The real mouse leaves the chart first: an earlier test may have left it where this chart
+    // renders, and its own hover would race the synthetic moves.
+    await commands.pointerGlide(1, 1, 1);
+    const { host } = renderThemed(
+      <Card>
+        <RadarChart.Root
+          data={["Households", "Cabins", "Primary", "Industry", "Services"].map((spoke, index) => ({
+            spoke,
+            NO1: 90 + 10 * index,
+          }))}
+          config={{ NO1: { label: "NO1", color: "chart-1" } }}
+          nameKey="spoke"
+          data-intro="none"
+          aria-label="Prisområder">
+          <RadarChart.Grid />
+          <RadarChart.AngleAxis />
+          <RadarChart.Line dataKey="NO1" />
+          <RadarChart.Tooltip />
+        </RadarChart.Root>
+      </Card>
+    );
+    const figure = polarFigure(host);
+    const layer = radarLayer(host, "radar-chart-line");
+    const [cx, cy] = clientPoint(layer, 0, 0);
+    const [rx] = clientPoint(layer, 1, 0);
+    const radius = rx - cx;
+    const listbox = page.getByRole("listbox").element();
+    const move = (angle: number) => {
+      const radians = (angle * Math.PI) / 180;
+      listbox.dispatchEvent(
+        new PointerEvent("pointermove", {
+          bubbles: true,
+          clientX: cx + 0.8 * radius * Math.sin(radians),
+          clientY: cy - 0.8 * radius * Math.cos(radians),
+          pointerType: "mouse",
+        })
+      );
+    };
+    move(10);
+    const omega = (200 / (0.8 * radius)) * (180 / Math.PI);
+    const start = await new Promise<number>((resolve) => requestAnimationFrame(resolve));
+    const reads: { readonly opacity: number; readonly active: boolean; readonly side: string | null }[] = [];
+    /** The popup's computed opacity, and whether an option is active, as the frame stands. */
+    const read = () => {
+      // DOM audit: the tooltip is aria-hidden and portalled, read by its slot.
+      const node = document.querySelector<HTMLElement>('[data-slot="chart-tooltip"]');
+      reads.push({
+        opacity: node === null ? 0 : Number(getComputedStyle(node).opacity),
+        active: figure.hasAttribute("data-active"),
+        side: node?.closest('[data-slot="chart-tooltip-positioner"]')?.getAttribute("data-side") ?? null,
+      });
+    };
+    for (;;) {
+      const now = await new Promise<number>((resolve) => requestAnimationFrame(resolve));
+      const angle = 10 + (omega * (now - start)) / 1000;
+      if (angle > 370) break;
+      // Read as the frame starts, then again once the move's commit has landed, so a fade that
+      // starts in either place shows its first value.
+      read();
+      move(angle);
+      await Promise.resolve();
+      read();
+    }
+    const opened = reads.findIndex((sample) => sample.opacity >= 0.99);
+    expect(opened).toBeGreaterThanOrEqual(0);
+    const after = reads.slice(opened);
+    expect(after.filter((sample) => sample.side === "bottom")).toEqual([]);
+    expect(after.filter((sample) => sample.active && sample.opacity < 0.5)).toEqual([]);
+  });
+});
+
+// A row wider than any the popup has shown widens it before that frame paints. Unit under test: the
+// bottom lane's fixed width on a 24-hour clock whose readings stop at 6 PM, where the 6 PM slot's
+// row reads "no data yet", wider than any reading. Oracle: the popup's own height before and after
+// the step, which no rendered frame between them may pass, since a row that wrapped for a frame
+// would.
+describe("the bottom lane's width when a wider row first shows", () => {
+  it("never grows the popup past its height before and after a key step from 5 PM to 6 PM", async () => {
+    /** Wednesday 15 October 2025 in Oslo, and the day's readings until 5:20 PM. */
+    const today = Date.parse("2025-10-14T22:00:00Z");
+    const now = Date.parse("2025-10-15T15:20:00Z");
+    renderThemed(
+      <LocaleProvider locale="en-US" timeZone="Europe/Oslo">
+        <div style={{ width: 360 }}>
+          <ClockChart.Root
+            data={Array.from({ length: 18 }, (_, hour) => ({
+              start: today + hour * 3_600_000,
+              kwh: 0.4 + (hour % 5) * 0.27,
+            }))}
+            config={{
+              kwh: {
+                label: "Today",
+                color: "chart-1",
+                format: { preset: "energy", unit: "kWh", maximumFractionDigits: 2 },
+              },
+            }}
+            xKey="start"
+            cycle="day"
+            timeZone="Europe/Oslo"
+            interval="hour"
+            now={now}
+            data-intro="none"
+            aria-label="Today">
+            <ClockChart.Grid />
+            <ClockChart.AngleAxis />
+            <ClockChart.Column dataKey="kwh" />
+            <ClockChart.Tooltip />
+          </ClockChart.Root>
+        </div>
+      </LocaleProvider>
+    );
+    await userEvent.tab();
+    await userEvent.keyboard("{Home}");
+    for (let hour = 0; hour < 17; hour += 1) await userEvent.keyboard("{ArrowRight}");
+    await frames(20);
+    // DOM audit: the tooltip is aria-hidden and portalled, read by its slot.
+    const node = document.querySelector<HTMLElement>('[data-slot="chart-tooltip"]');
+    if (node === null) throw new Error("no popup");
+    expect(node.textContent).toMatch(/5\s*–\s*6\s*PM/u);
+    const before = node.getBoundingClientRect().height;
+    // A resize observer reports the size each rendered frame lays out, after the frame's animation
+    // callbacks and before its paint, so it reads what every painted frame shows.
+    const heights: number[] = [];
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) heights.push(entry.borderBoxSize[0]?.blockSize ?? 0);
+    });
+    observer.observe(node);
+    await userEvent.keyboard("{ArrowRight}");
+    await frames(30);
+    observer.disconnect();
+    expect(node.textContent).toContain("no data yet");
+    const after = node.getBoundingClientRect().height;
+    expect(heights.filter((height) => height > Math.max(before, after) + 0.5)).toEqual([]);
+  });
+});
+
+// A popup that closes while it waits, transparent, for its lane stays transparent. Unit under test:
+// the opening hold on a radial chart whose popup has shown once, when a pointer crosses a ring for
+// one frame and moves into the hole. Oracle: the readout was never shown, so it never paints: its computed opacity stays at
+// most 0.05 in each of the next 15 frames.
+describe("the opening hold when the popup closes during it", () => {
+  it("keeps a popup the pointer crossed for one frame transparent as it closes", async () => {
+    // The real mouse leaves the chart first: an earlier test may have left it where this chart
+    // renders, and its own hover would race the synthetic moves.
+    await commands.pointerGlide(1, 1, 1);
+    const { host } = renderThemed(
+      <Card>
+        <RadialChart.Root
+          data={[
+            { budget: "heat", kwh: 300 },
+            { budget: "car", kwh: 240 },
+            { budget: "water", kwh: 180 },
+          ]}
+          config={{
+            heat: { label: "Oppvarming", color: "chart-1" },
+            car: { label: "Elbil", color: "chart-2" },
+            water: { label: "Varmtvann", color: "chart-3" },
+          }}
+          nameKey="budget"
+          valueKey="kwh"
+          max={360}
+          data-intro="none"
+          aria-label="Budsjett">
+          <RadialChart.Track />
+          <RadialChart.Bar />
+          <RadialChart.Tooltip />
+        </RadialChart.Root>
+      </Card>
+    );
+    // DOM audit: the bars are aria-hidden plot output, read by their slot, for their screen CTM.
+    const layer = host.querySelector<SVGSVGElement>('[data-slot="radial-chart-bar"]');
+    if (layer === null) throw new Error("no bars");
+    const listbox = page.getByRole("listbox").element();
+    const move = (point: DOMPoint) => {
+      const [clientX, clientY] = clientPoint(layer, point.x, point.y);
+      listbox.dispatchEvent(
+        new PointerEvent("pointermove", { bubbles: true, clientX, clientY, pointerType: "mouse" })
+      );
+    };
+    // A browser sends a frame's pointer move before that frame's animation callbacks, so the move
+    // into the hole lands in the frame after the ring's, before the hold's check runs: the frame is
+    // asked for before the ring's move, which asks for the check's.
+    // The popup opens once and closes, as on any page where it has shown before, so it is mounted
+    // and the next open holds it.
+    move(dialPoint(30, 0.9));
+    await frames(20);
+    move(dialPoint(30, 0.12));
+    await frames(40);
+    const next = new Promise((resolve) => requestAnimationFrame(resolve));
+    move(dialPoint(30, 0.9));
+    await next;
+    move(dialPoint(30, 0.12));
+    const opacities: number[] = [];
+    for (let frame = 0; frame < 15; frame += 1) {
+      await frames(1);
+      // DOM audit: the tooltip is aria-hidden and portalled, read by its slot.
+      const node = document.querySelector<HTMLElement>('[data-slot="chart-tooltip"]');
+      opacities.push(node === null ? 0 : Number(getComputedStyle(node).opacity));
+    }
+    expect(opacities.filter((opacity) => opacity > 0.05)).toEqual([]);
+  });
 });

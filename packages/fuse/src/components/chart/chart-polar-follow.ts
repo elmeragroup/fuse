@@ -39,20 +39,13 @@ const LEAP_NEAR = 90;
 const STRETCH_MOST = 4;
 
 /**
- * How much more a dot's stretch counts than it reads: the stretch is read at points across a frame's
- * turn, and a curve that bends between two of them carries the dot a little further.
+ * How much more a dot's stretch counts than it reads: the stretch is read at a frame's two ends and
+ * its middle, and a curve that bends between them carries the dot a little further.
  */
-const STRETCH_MARGIN = 1.05;
+const STRETCH_MARGIN = 1.07;
 
 /** Half the angle, in degrees, over which a mark's stretch is read. */
 export const STRETCH_SPAN = 0.5;
-
-/**
- * The most degrees between two reads of a mark's stretch across a frame's turn. A monotone curve is
- * flat at its knots and steepest between them, so a frame read at its two ends alone misses the
- * steepest middle of a slot it crosses, and its dot outruns the pace.
- */
-const STRETCH_STEP = STRETCH_SPAN / 2;
 
 /**
  * How far a mark moves at an angle, in outer radii per radian of turn: 1 for a point on the rim, and
@@ -134,12 +127,12 @@ export function createPolarFollow(host: FollowHost): PolarFollow {
     for (const listener of listeners) listener(angle);
   };
   /**
-   * The most any mark stretches between two angles, read every `STRETCH_STEP` degrees, at least the
-   * rim's 1 and at most 4.
+   * The most any mark stretches between two angles, read at a frame's two ends and its middle, at
+   * least the rim's 1 and at most 4.
    */
   const widest = (from: number, to: number): number => {
     let most = 1;
-    const reads = Math.max(1, Math.ceil(Math.abs(to - from) / STRETCH_STEP));
+    const reads = 2;
     for (const stretch of stretches) {
       for (let read = 0; read <= reads; read += 1) {
         const value = stretch(from + ((to - from) * read) / reads);
@@ -185,8 +178,17 @@ export function createPolarFollow(host: FollowHost): PolarFollow {
         target = null;
         return;
       }
+      // A step unwraps against the target the follower already chases, not the angle it shows, so a
+      // hand trailing a fast whirl by more than half a turn keeps turning the pointer's way instead
+      // of taking the short way back. Whole turns of lag drop from the shown angle, so the hand
+      // never chases an extra turn: every subscriber draws the angle through its sine, cosine or
+      // remainder of 360°, or as a `rotate` with no transition on it, so the shift shows nothing.
+      const next = shortTarget(target ?? state?.angle ?? angle, angle);
+      if (state !== null) {
+        const laps = Math.trunc((next - state.angle) / 360);
+        if (laps !== 0) state = { ...state, angle: state.angle + 360 * laps };
+      }
       const shown = state?.angle ?? angle;
-      const next = shortTarget(shown, angle);
       const stepSpring = host.spring();
       const glides =
         cause === "step" &&

@@ -182,6 +182,81 @@ describe("the clock's active dot on the Root's follower", () => {
 // one frame at any pace, so the dot may not slow the hand there: no frame turns backwards, no turn
 // after the first 12 frames drops under half the median turn, and the median lag behind the pointer
 // stays within 1.25 times the dial's lag without a dot.
+const nextFrame = () => new Promise<number>((resolve) => requestAnimationFrame(resolve));
+
+/**
+ * Turn the pointer round the dial at 0.8 R at a speed in CSS px/s, one move per animation frame,
+ * and read the Scrubber's unwrapped rotation each frame after the first 12.
+ */
+async function ring(host: HTMLElement, speed: number, turns: number) {
+  const layer = clockLayer(host, "clock-chart-line");
+  const [cx, cy] = clientPoint(layer, 0, 0);
+  const [rx] = clientPoint(layer, 1, 0);
+  const radius = rx - cx;
+  // DOM audit: the Scrubber's hand is aria-hidden plot output, read by its part.
+  const hand = host.querySelector<SVGGElement>('[data-slot="clock-chart-scrubber"] [data-part="hand"]');
+  if (hand === null) throw new Error("no hand");
+  const listbox = page.getByRole("listbox").element();
+  const move = (angle: number) => {
+    const radians = (angle * Math.PI) / 180;
+    listbox.dispatchEvent(
+      new PointerEvent("pointermove", {
+        bubbles: true,
+        clientX: cx + 0.8 * radius * Math.sin(radians),
+        clientY: cy - 0.8 * radius * Math.cos(radians),
+        pointerType: "mouse",
+      })
+    );
+  };
+  move(1);
+  for (let wait = 0; wait < 30; wait += 1) await nextFrame();
+  const omega = (speed / (0.8 * radius)) * (180 / Math.PI);
+  const start = await nextFrame();
+  const rows: { pointer: number; hand: number }[] = [];
+  let unwrapped: number | null = null;
+  let stopped = start;
+  const read = (): number => {
+    const raw = Number.parseFloat(getComputedStyle(hand).rotate);
+    unwrapped = unwrapped === null ? raw : unwrapped + ((((raw - unwrapped) % 360) + 540) % 360) - 180;
+    return unwrapped;
+  };
+  for (;;) {
+    const now = await nextFrame();
+    const pointer = 1 + (omega * (now - start)) / 1000;
+    if (pointer > turns * 360) break;
+    move(pointer);
+    stopped = now;
+    rows.push({ pointer, hand: read() });
+  }
+  // After the last move the hand comes to rest on the pointer's slot. It lands, as the sweeps'
+  // landing reads it, in the first frame within 0.5° of where it rests, in milliseconds after the
+  // frame of that last move.
+  const after: { readonly at: number; readonly hand: number }[] = [];
+  for (let wait = 0; wait < 40; wait += 1) {
+    const now = await nextFrame();
+    after.push({ at: now - stopped, hand: read() });
+  }
+  const rest = after.at(-1)?.hand ?? 0;
+  const landed = after.find((frame) => Math.abs(frame.hand - rest) < 0.5)?.at ?? null;
+  const moving = rows.slice(12);
+  const lags = moving.map((row) => row.pointer - row.hand).sort((a, b) => a - b);
+  const turned = moving.slice(1).map((row, index) => row.hand - (moving[index]?.hand ?? row.hand));
+  const median = [...turned].sort((a, b) => a - b)[Math.floor(turned.length / 2)] ?? 0;
+  return {
+    lag: lags[Math.floor(lags.length / 2)] ?? 0,
+    lagMax: lags.at(-1) ?? 0,
+    landed,
+    median,
+    dips: turned.filter((turn) => turn < 0.5 * median).length,
+    backwards: turned.filter((turn) => turn < -0.01).length,
+    frames: moving.length,
+  };
+}
+
+async function settle(): Promise<void> {
+  for (let wait = 0; wait < 20; wait += 1) await nextFrame();
+}
+
 describe("the follower beside a stepped series' dot", () => {
   /** 96 quarter-hourly prices, a stepped day that moves at every quarter. */
   const PRICES = Array.from({ length: 96 }, (_, quarter) => ({
@@ -211,64 +286,6 @@ describe("the follower beside a stepped series' dot", () => {
     );
   }
 
-  const nextFrame = () => new Promise<number>((resolve) => requestAnimationFrame(resolve));
-
-  /**
-   * Turn the pointer round the dial at 0.8 R at a speed in CSS px/s, one move per animation frame,
-   * and read the Scrubber's unwrapped rotation each frame after the first 12.
-   */
-  async function ring(host: HTMLElement, speed: number, turns: number) {
-    const layer = clockLayer(host, "clock-chart-line");
-    const [cx, cy] = clientPoint(layer, 0, 0);
-    const [rx] = clientPoint(layer, 1, 0);
-    const radius = rx - cx;
-    // DOM audit: the Scrubber's hand is aria-hidden plot output, read by its part.
-    const hand = host.querySelector<SVGGElement>('[data-slot="clock-chart-scrubber"] [data-part="hand"]');
-    if (hand === null) throw new Error("no hand");
-    const listbox = page.getByRole("listbox").element();
-    const move = (angle: number) => {
-      const radians = (angle * Math.PI) / 180;
-      listbox.dispatchEvent(
-        new PointerEvent("pointermove", {
-          bubbles: true,
-          clientX: cx + 0.8 * radius * Math.sin(radians),
-          clientY: cy - 0.8 * radius * Math.cos(radians),
-          pointerType: "mouse",
-        })
-      );
-    };
-    move(1);
-    for (let wait = 0; wait < 30; wait += 1) await nextFrame();
-    const omega = (speed / (0.8 * radius)) * (180 / Math.PI);
-    const start = await nextFrame();
-    const rows: { pointer: number; hand: number }[] = [];
-    let unwrapped: number | null = null;
-    for (;;) {
-      const now = await nextFrame();
-      const pointer = 1 + (omega * (now - start)) / 1000;
-      if (pointer > turns * 360) break;
-      move(pointer);
-      const raw = Number.parseFloat(getComputedStyle(hand).rotate);
-      unwrapped = unwrapped === null ? raw : unwrapped + ((((raw - unwrapped) % 360) + 540) % 360) - 180;
-      rows.push({ pointer, hand: unwrapped });
-    }
-    const moving = rows.slice(12);
-    const lags = moving.map((row) => row.pointer - row.hand).sort((a, b) => a - b);
-    const turned = moving.slice(1).map((row, index) => row.hand - (moving[index]?.hand ?? row.hand));
-    const median = [...turned].sort((a, b) => a - b)[Math.floor(turned.length / 2)] ?? 0;
-    return {
-      lag: lags[Math.floor(lags.length / 2)] ?? 0,
-      median,
-      dips: turned.filter((turn) => turn < 0.5 * median).length,
-      backwards: turned.filter((turn) => turn < -0.01).length,
-      frames: moving.length,
-    };
-  }
-
-  async function settle(): Promise<void> {
-    for (let wait = 0; wait < 20; wait += 1) await nextFrame();
-  }
-
   it("keeps pace with a pointer at 800 px/s, as the dial without a dot does", async () => {
     const plain = renderThemed(<Stepped dot={false} />);
     await settle();
@@ -289,6 +306,61 @@ describe("the follower beside a stepped series' dot", () => {
     const result = await ring(host, 2000, 3);
     expect(result.frames).toBeGreaterThan(30);
     expect(result.backwards).toBe(0);
+  });
+});
+
+describe("the follower beside the docs Solar day's dot under a fast circle", () => {
+  /** The docs Solar demo's day: 92 quarter-hours of 29 March 2026, the short day of the spring change, in kWh. */
+  const KWH = [
+    0.0025, 0.0026, 0.0032, 0.0039, 0.006, 0.0064, 0.0069, 0.0068, 0.0053, 0.0039, 0.0071, 0.0086, 0.0085,
+    0.0085, 0.0087, 0.0084, 0.0086, 0.0091, 0.0088, 0.0089, 0.0084, 0.0082, 0.008, 0.0085, 0.0124, 0.0124,
+    0.0173, 0.0264, 0.0956, 0.1097, 0.1257, 0.1488, 0.3323, 0.3578, 0.3844, 0.4133, 0.6903, 0.7201, 0.7444,
+    0.7746, 1.0426, 1.069, 1.0904, 1.1017, 1.2334, 1.2424, 1.2451, 1.25, 1.1754, 1.1661, 1.1509, 1.1144,
+    0.9432, 0.9489, 0.9026, 0.8629, 0.6007, 0.564, 0.494, 0.4526, 0.2146, 0.1972, 0.1802, 0.1584, 0.0876,
+    0.0774, 0.0744, 0.0641, 0.0313, 0.0252, 0.0187, 0.0154, 0.0064, 0.0047, 0.004, 0.0034, 0.0029, 0.0029,
+    0.003, 0.003, 0.0029, 0.0028, 0.0028, 0.0028, 0.0027, 0.0027, 0.0028, 0.0027, 0.0027, 0.0027, 0.0027,
+    0.0027,
+  ];
+  /** Midnight in Oslo on 29 March 2026. */
+  const SPRING = Date.parse("2026-03-28T23:00:00Z");
+
+  function SolarDay(): ReactElement {
+    return (
+      <LocaleProvider locale="en-US" timeZone="Europe/Oslo">
+        <div style={{ width: 320 }}>
+          <ClockChart.Root
+            data={KWH.map((solar, quarter) => ({ start: SPRING + quarter * QUARTER, solar }))}
+            config={{
+              solar: { label: "Solar", color: "chart-3", format: { preset: "energy", unit: "kWh" } },
+            }}
+            xKey="start"
+            cycle="day"
+            interval="quarter-hour"
+            data-intro="none"
+            aria-label="Solar">
+            <ClockChart.Grid />
+            <ClockChart.AngleAxis />
+            <ClockChart.Area dataKey="solar" />
+            <ClockChart.Line dataKey="solar" />
+            <ClockChart.Scrubber />
+            <ClockChart.ActiveDot dataKey="solar" />
+          </ClockChart.Root>
+        </div>
+      </LocaleProvider>
+    );
+  }
+
+  // Four turns at 2,000 px/s: under the dot's pace the hand trails the pointer, by more than half a
+  // turn at times, and keeps turning the pointer's way; it lands within 300 ms once the pointer stops.
+  it("never turns backwards over four turns at 2,000 px/s, trails by under a turn, and lands within 300 ms", async () => {
+    const { host } = renderThemed(<SolarDay />);
+    await settle();
+    const result = await ring(host, 2000, 4);
+    expect(result.frames).toBeGreaterThan(30);
+    expect(result.backwards).toBe(0);
+    expect(result.lagMax).toBeLessThan(360);
+    expect(result.landed).not.toBeNull();
+    expect(result.landed ?? Number.POSITIVE_INFINITY).toBeLessThanOrEqual(300);
   });
 });
 
@@ -381,4 +453,50 @@ describe("the follower's pace on a curve steepest between a frame's two ends", (
       ).toBe(true);
     }
   );
+});
+
+// The follower under steps that outrun it, on frames the test steps by hand. Unit under test:
+// createPolarFollow's retarget, which unwraps each step against the target it already chases and
+// drops whole turns of lag. Oracle: the angles worked by hand below, with the hand held at 0° while
+// the pointer whirls ahead, as no frame runs between the steps.
+describe("the follower behind a pointer that outruns it", () => {
+  function behind() {
+    const frames = handFrames();
+    const follow = createPolarFollow({
+      frames,
+      reduced: () => false,
+      spring: () => ({ stiffness: 5000, damping: 141 }),
+      leapSpring: () => ({ stiffness: 5000, damping: 141 }),
+      maxTurn: () => 4,
+    });
+    follow.measure(R);
+    const shown: number[] = [];
+    follow.subscribe((angle) => shown.push(angle));
+    follow.retarget(0, "commit");
+    return { follow, frames, shown };
+  }
+
+  it("keeps turning the pointer's way once the pointer leads by more than half a turn", () => {
+    const { follow, frames, shown } = behind();
+    // The pointer steps 90°, 180° and 270° ahead while the hand still shows 0°. Against the chased
+    // target the steps unwrap to 90°, 180° and 270°; against the shown 0°, 270° would be -90°.
+    follow.retarget(90, "step");
+    follow.retarget(180, "step");
+    follow.retarget(270, "step");
+    for (let frame = 0; frame < 120 && frames.step(); frame += 1);
+    expect(shown.at(-1)).toBe(270);
+    const turned = shown.slice(1).map((angle, index) => angle - (shown[index] ?? angle));
+    expect(turned.filter((turn) => turn < 0)).toEqual([]);
+  });
+
+  it("drops a whole turn of lag, and turns only the rest of the way", () => {
+    const { follow, frames, shown } = behind();
+    // 90°, 180° and 270° unwrap as above, 0° to 360°, a whole turn ahead of the shown 0°, so the
+    // shown angle drops to 360°; then 90° unwraps to 450°, a quarter turn on.
+    for (const angle of [90, 180, 270, 0, 90]) follow.retarget(angle, "step");
+    for (let frame = 0; frame < 120 && frames.step(); frame += 1);
+    expect(shown.at(-1)).toBe(450);
+    // The snapped 0° aside, every shown angle lies in the last quarter turn, from 360° to 450°.
+    expect(shown.slice(1).filter((angle) => angle <= 360 || angle > 450)).toEqual([]);
+  });
 });

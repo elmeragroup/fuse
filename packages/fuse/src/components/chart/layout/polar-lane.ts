@@ -110,7 +110,7 @@ export function laneNeed(content: number): number {
  * @param widest - The most the lane lets the popup grow.
  * @returns The width.
  */
-function laneWidth(room: number, content: number, widest: number): number {
+export function laneWidth(room: number, content: number, widest: number): number {
   return Math.min(room, widest, Math.max(LANE_MIN, content));
 }
 

@@ -27,7 +27,17 @@ import type {
 } from "./chart-readout-port";
 import { useChartStore } from "./chart-store";
 import type { GlideRoute } from "./chart-tooltip-glide";
-import { inTriangle, LANE_PAD, laneNeed, laneRest, laneSide, laneY, nearEdge } from "./layout/polar-lane";
+import {
+  inTriangle,
+  LANE_PAD,
+  LANE_WIDEST,
+  laneNeed,
+  laneRest,
+  laneSide,
+  laneWidth,
+  laneY,
+  nearEdge,
+} from "./layout/polar-lane";
 import type { LaneBox, LaneDial, LaneSide } from "./layout/polar-lane";
 
 const STRAIGHT: GlideRoute = { kind: "straight" };
@@ -48,6 +58,12 @@ const CONTROLS =
 
 /** How a lane switch fades the popup in. */
 const LANE_FADE = { duration: 120, easing: "cubic-bezier(0.23, 1, 0.32, 1)" } as const;
+
+/**
+ * The opacity a lane change or a leap fades the popup in from: never blank, so the readout never
+ * blinks out between two items.
+ */
+const LANE_FADE_FROM = 0.5;
 
 /** The most frames a popup waits, transparent, for Base UI to place it in its lane. */
 const PLACE_FRAMES = 6;
@@ -427,6 +443,8 @@ export function usePolarTooltipAnchor(input: AnchorInput): TooltipAnchor {
   const before = useRef<LaneSide | null>(null);
   const sizing = useRef<number | null>(null);
   const placing = useRef<number | null>(null);
+  /** The open ray's angle, or null once the popup has closed, which the opening hold reads. */
+  const live = useRef<number | null>(null);
   useLayoutEffect(
     () => () => {
       if (sizing.current !== null) cancelAnimationFrame(sizing.current);
@@ -454,6 +472,7 @@ export function usePolarTooltipAnchor(input: AnchorInput): TooltipAnchor {
   }, [positioner, dialOf]);
   useLayoutEffect(() => {
     // A closing popup keeps its place, its width and its lane while it fades out.
+    live.current = angle;
     if (angle === null) {
       before.current = null;
       return;
@@ -498,6 +517,14 @@ export function usePolarTooltipAnchor(input: AnchorInput): TooltipAnchor {
       widest.current = Math.max(widest.current, widestContent(popup, readout, spread));
       const content = widest.current;
       const outgrows = now.side !== "bottom" && room !== null && laneNeed(content + LANE_PAD) > room;
+      // A row wider than any the popup has shown widens it before this frame paints, so the row
+      // never wraps for a frame while the scene catches up.
+      if (room !== null && width !== null && content > width)
+        writeStyle(
+          node,
+          "width",
+          `${laneWidth(room, content, now.side === "bottom" ? room : LANE_WIDEST).toFixed(2)}px`
+        );
       if (outgrows || (width !== null && content > width))
         setScene((last) => (last === null || last.content >= content ? last : { ...last, content }));
     });
@@ -509,7 +536,7 @@ export function usePolarTooltipAnchor(input: AnchorInput): TooltipAnchor {
     // closing popup keeps the width it showed.
     if (node !== null && width !== null) writeStyle(node, "width", `${width.toFixed(2)}px`);
     if ((switched || leaped) && popup !== null && !motion.reduced()) {
-      popup.animate([{ opacity: 0 }, { opacity: 1 }], LANE_FADE);
+      popup.animate([{ opacity: LANE_FADE_FROM }, { opacity: 1 }], LANE_FADE);
     }
     // A popup that opens stays transparent, and lets the pointer through, until Base UI has placed
     // it in its lane, so its first frame never paints or takes the pointer elsewhere.
@@ -519,6 +546,13 @@ export function usePolarTooltipAnchor(input: AnchorInput): TooltipAnchor {
       let frames = 0;
       const check = (): void => {
         frames += 1;
+        // A popup that closed during the hold was never shown, so it stays transparent and only
+        // lets the pointer through again; the next open's hold writes both.
+        if (live.current === null) {
+          placing.current = null;
+          writeStyle(popup, "pointer-events", null);
+          return;
+        }
         if (onLane() || frames >= PLACE_FRAMES) {
           placing.current = null;
           writeStyle(popup, "opacity", null);

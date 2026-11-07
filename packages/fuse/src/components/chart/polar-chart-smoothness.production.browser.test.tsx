@@ -8,9 +8,11 @@
 import type { ReactElement } from "react";
 
 import { describe, expect, it } from "vitest";
+import { commands } from "vitest/browser";
 
 import "../../../dist/styles.css";
-import { polarFigure } from "../../../test/chart/pie";
+import { clockLayer } from "../../../test/chart/clock";
+import { clientPoint, polarFigure } from "../../../test/chart/pie";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
 import "./chart.css";
@@ -183,4 +185,69 @@ describe("polar smoothness", () => {
       expect(long.filter((duration) => duration > 50)).toEqual([]);
     }
   );
+});
+
+// The follower's own cost on a dense dial with a dot. Unit under test: the Root's follower reading
+// an ActiveDot's stretch on an 8,760-slot year dial with a monotone Line, while the real pointer
+// circles the dial once at 2,000 px/s. Oracle: the same long-task check, no task over 50 ms.
+function YearDot(): ReactElement {
+  return (
+    <ClockChart.Root
+      data={Array.from({ length: 8760 }, (_, hour) => ({
+        start: NEW_YEAR + hour * 3_600_000,
+        kwh: tooth(hour, 0),
+      }))}
+      config={{ kwh: { label: "kWh", color: "chart-1" } }}
+      xKey="start"
+      cycle="year"
+      interval="hour"
+      data-intro="none"
+      aria-label="8 760 hours">
+      <ClockChart.Grid />
+      <ClockChart.Line dataKey="kwh" curve="monotone" />
+      <ClockChart.ActiveDot dataKey="kwh" />
+    </ClockChart.Root>
+  );
+}
+
+describe("polar smoothness under the pointer", () => {
+  it("follows a real pointer once round an 8,760-slot year dial with a dot at 2,000 px/s with no long task over 50 ms", async () => {
+    const { host } = renderThemed(
+      <LocaleProvider locale="nb-NO" timeZone="Europe/Oslo">
+        <div style={{ width: 728 }}>
+          <YearDot />
+        </div>
+      </LocaleProvider>
+    );
+    await frames(300);
+    const layer = clockLayer(host, "clock-chart-line");
+    const [cx, cy] = clientPoint(layer, 0, 0);
+    const [rx] = clientPoint(layer, 1, 0);
+    const ring = 0.8 * (rx - cx);
+    const at = (angle: number): readonly [number, number] => {
+      const radians = (angle * Math.PI) / 180;
+      return [cx + ring * Math.sin(radians), cy - ring * Math.cos(radians)];
+    };
+    await commands.pointerGlide(...at(0), 1);
+    await frames(200);
+    const long: number[] = [];
+    const observer = new PerformanceObserver((list) => {
+      for (const entry of list.getEntries()) long.push(entry.duration);
+    });
+    observer.observe({ entryTypes: ["longtask"] });
+    // Each move goes to the point the pointer reaches at the elapsed wall time, so the circle runs
+    // at 2,000 px/s however long a move takes to send.
+    const perMs = ((2000 / ring) * (180 / Math.PI)) / 1000;
+    const start = performance.now();
+    let moves = 0;
+    for (let angle = 0; angle < 360; angle = (performance.now() - start) * perMs) {
+      await commands.pointerGlide(...at(angle), 1);
+      moves += 1;
+    }
+    await commands.pointerGlide(...at(360), 1);
+    await frames(400);
+    observer.disconnect();
+    expect(long.filter((duration) => duration > 50)).toEqual([]);
+    expect(moves).toBeGreaterThan(10);
+  });
 });
