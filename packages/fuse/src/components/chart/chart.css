@@ -1215,11 +1215,17 @@
     }
   }
 
-  /* A number's digits are reels of 0 to 9 in tabular figures, each slid to its digit (S3). */
+  /*
+    A number's digits are reels of 0 to 9 in tabular figures, each slid to its digit (S3). Their line
+    is a whole number of pixels tall, so every reel rests on a whole-pixel translate: Chromium and
+    WebKit draw the text of a reel moved by a fraction of a pixel up to two device pixels off the
+    plain text beside it, a different distance for each digit.
+  */
   [data-slot="pie-chart-center"] [data-part="digits"] {
     display: inline-flex;
     font-variant-numeric: tabular-nums;
     white-space: pre;
+    line-height: round(1lh, 1px);
   }
 
   [data-slot="pie-chart-center"] [data-part="digit"] {
