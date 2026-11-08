@@ -1,6 +1,6 @@
 /**
  * Badge, as one component set: every variant of the recipe at its three sizes, 57 cells. A Badge
- * is a non-interactive `<div data-slot="badge">`, so the set has no state axis, and its columns
+ * is a non-interactive `<span data-slot="badge">`, so the set has no state axis, and its columns
  * are the sizes.
  *
  * - Every variant draws the base's 1px border. Most color it, transparent on the filled ones,

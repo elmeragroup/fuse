@@ -628,8 +628,7 @@
    the step; inline-level children never do, because a top margin on an inline-block child (a
    button, a badge, or a Popover.Trigger that gains focus-guard siblings while open) would raise
    its sentence's line box. The block set is every conforming element the HTML rendering rules
-   display as block or table by default that can be a direct flow child, `dialog` aside. It keys
-   on default display, so Fuse's Badge, an inline-flex `div`, is excluded by its slot. Preflight
+   display as block or table by default that can be a direct flow child, `dialog` aside. Preflight
    displays media as blocks, so media takes the step only right after a block, where it starts a
    new line on any host; inside a sentence it never does. The block variant zeroes those blocks'
    user-agent block margins on a host without preflight, so the owner's gap and step are the only
@@ -669,7 +668,7 @@
       section,
       table,
       ul
-    ):where(:not([data-slot="badge"])) {
+    ) {
     @slot;
   }
 }
