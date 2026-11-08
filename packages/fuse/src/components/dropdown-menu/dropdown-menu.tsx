@@ -68,7 +68,7 @@ function DropdownMenuPopup({
 }
 
 export function DropdownMenuRoot(props: ComponentProps<typeof MenuPrimitive.Root>): ReactElement {
-  return <MenuPrimitive.Root data-slot="dropdown-menu" {...props} />;
+  return <MenuPrimitive.Root {...props} />;
 }
 
 export function DropdownMenuTrigger({
@@ -302,7 +302,7 @@ export function DropdownMenuShortcut({ className, ...props }: ComponentProps<"sp
 }
 
 export function DropdownMenuSub(props: ComponentProps<typeof MenuPrimitive.SubmenuRoot>): ReactElement {
-  return <MenuPrimitive.SubmenuRoot data-slot="dropdown-menu-sub" closeParentOnEsc {...props} />;
+  return <MenuPrimitive.SubmenuRoot closeParentOnEsc {...props} />;
 }
 
 export type DropdownMenuSubTriggerProps = ComponentProps<typeof MenuPrimitive.SubmenuTrigger> & {

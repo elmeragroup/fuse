@@ -76,7 +76,7 @@ export type SheetRootProps = Omit<
 export function SheetRoot({ side = "right", children, ...props }: SheetRootProps): ReactElement {
   return (
     <SheetSideContext value={side}>
-      <SheetPrimitive.Root data-slot="sheet" swipeDirection={SIDE_TO_SWIPE_DIRECTION[side]} {...props}>
+      <SheetPrimitive.Root swipeDirection={SIDE_TO_SWIPE_DIRECTION[side]} {...props}>
         <SheetPrimitive.VirtualKeyboardProvider>{children}</SheetPrimitive.VirtualKeyboardProvider>
       </SheetPrimitive.Root>
     </SheetSideContext>
