@@ -1,6 +1,7 @@
 /**
  * Field's text parts beside Label, as four component sets on the Field page: the description, the
- * error, the legend and the title, each the slot of `fieldVariants` its part renders.
+ * error, the legend and the title, each drawn from the recipe its part renders: the legend's own
+ * `fieldLegendVariants`, and the other three their slot of `fieldVariants`.
  *
  * - The description is Base UI's `<p data-slot="field-description">` and the error its
  *   `<div data-slot="field-error">`, each in a `Field.Root`, which the build names by its recipe
@@ -20,7 +21,7 @@
  *   `group-has-data-horizontal/field:` balances its lines in a Field that holds a horizontal Field,
  *   and the legend's `mb-3` spaces it from what follows. None of that is drawn in a set.
  */
-import { fieldVariants } from "@elmeragroup/fuse/recipe-catalog";
+import { fieldLegendVariants, fieldVariants } from "@elmeragroup/fuse/recipe-catalog";
 
 import type { Cell, ComponentDefinition, LabelDefinition } from "./component-spec";
 import { userAgentDisplay } from "./element-defaults";
@@ -139,7 +140,7 @@ export const FIELD_LEGEND: ComponentDefinition = {
   elementDefaults: userAgentDisplay("div"),
   axes: [{ name: "variant", values: LEGEND_VARIANTS }],
   columnAxis: "variant",
-  classesFor: (cell) => fieldVariants({ variant: legendVariantFor(cell) }).legend(),
+  classesFor: (cell) => fieldLegendVariants({ variant: legendVariantFor(cell) }),
   states: {},
   label: text(FIELD_LEGEND_TEXT),
 };

@@ -343,6 +343,7 @@ describe("exports map", () => {
       "dropdownMenuVariants",
       "emptyMediaVariants",
       "emptyVariants",
+      "fieldLegendVariants",
       "fieldVariants",
       "fieldFrameVariants",
       "fileUploadVariants",

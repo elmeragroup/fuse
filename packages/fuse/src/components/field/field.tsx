@@ -14,7 +14,7 @@ import { documentOrder } from "../../internal/dom-node";
 import { cn } from "../../styles/cn";
 import { mergeClassName } from "../../styles/merge-class-name";
 import { Separator } from "../separator/separator";
-import { fieldVariants } from "./field-variants";
+import { fieldLegendVariants, fieldVariants } from "./field-variants";
 
 /** How a `Field.Set` collects the description elements it holds. */
 type DescriptionRegistry = {
@@ -41,8 +41,7 @@ export function FieldRoot({
   className,
   orientation = "vertical",
   ...props
-}: ComponentProps<typeof FieldPrimitive.Root> &
-  Pick<VariantProps<typeof fieldVariants>, "orientation">): ReactElement {
+}: ComponentProps<typeof FieldPrimitive.Root> & VariantProps<typeof fieldVariants>): ReactElement {
   return (
     <DescriptionOwnerContext.Provider value={fieldDescriptionOwner}>
       <FieldPrimitive.Root
@@ -129,7 +128,7 @@ export function FieldLegend({
     <FieldsetPrimitive.Legend
       data-slot="field-legend"
       data-variant={variant}
-      className={mergeClassName(className, fieldVariants({ variant }).legend())}
+      className={mergeClassName(className, fieldLegendVariants({ variant }))}
       {...definedProps(props)}
     />
   );
