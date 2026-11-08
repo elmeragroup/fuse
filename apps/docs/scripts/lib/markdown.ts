@@ -123,14 +123,16 @@ const ENTRY_STYLESHEETS = new Map<string, string>([
 
 /** Renders one component's markdown endpoint. */
 export function renderComponentMarkdown(component: DocsComponent): string {
-  const stylesheet = ENTRY_STYLESHEETS.get(component.entry);
+  // The stylesheet belongs to the page's own entry; an extra entry styles through it.
+  const stylesheet = ENTRY_STYLESHEETS.get(component.apis[0].entry);
   const lines: string[] = [
     `# ${component.title}`,
     "",
     component.lede,
     "",
     ...(component.intro === "" ? [] : [component.intro, ""]),
-    `- Import: \`import { ... } from "${component.entry}";\``,
+    // One import line per entry the API reference documents, the page's own first.
+    ...component.apis.map(({ entry }) => `- Import: \`import { ... } from "${entry}";\``),
     ...(stylesheet === undefined
       ? []
       : [`- Stylesheet: \`import "${stylesheet}";\`, once, beside Fuse's own`]),

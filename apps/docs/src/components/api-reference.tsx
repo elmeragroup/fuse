@@ -3,12 +3,12 @@ import type { ReactElement, ReactNode } from "react";
 
 import { tv } from "tailwind-variants";
 
-import { API_FUNCTIONS, API_SAME_AS } from "../generated/api-reference-extras";
+import { API_EXTRA_ENTRIES, API_FUNCTIONS, API_SAME_AS } from "../generated/api-reference-extras";
 import { readComponentApi } from "../lib/api-source";
 import { toPartView } from "../lib/api-view";
 import type { ApiPartView } from "../lib/api-view";
 import { CLIENT_PART_NOTE } from "../lib/docs-model";
-import type { ApiFunction } from "../lib/docs-model";
+import type { ApiFunction, ApiPart } from "../lib/docs-model";
 import { API_SECTION_ID, apiPartAnchor } from "../lib/nav";
 import { componentHref } from "../lib/pages";
 import { ApiPropRows } from "./api-prop-rows";
@@ -30,6 +30,9 @@ const apiReference = tv({
     partRsc:
       "text-xs rounded-full border border-border px-1.5 py-0.5 font-mono whitespace-nowrap text-muted-foreground data-[rsc=server]:border-success/30 data-[rsc=server]:bg-success-soft data-[rsc=server]:text-success-soft-foreground",
     partNote: "text-xs mt-[0.6rem] text-muted-foreground",
+    entry: "mt-10",
+    entryHeading: "font-semibold text-base m-0 scroll-mt-[calc(var(--spacing-docs-header)_+_1rem)]",
+    entryHeadingCode: "text-sm",
     propGroupHeading: "font-medium text-xs mt-[1.2rem] mb-[0.55rem] text-muted-foreground",
     sameAsNote:
       "text-sm mt-[0.6rem] [&_a]:border-b [&_a]:border-border [&_a]:no-underline [&_a:hover]:border-current",
@@ -45,6 +48,9 @@ const {
   partHeadingCode,
   partRsc,
   partNote,
+  entry,
+  entryHeading,
+  entryHeadingCode,
   propGroupHeading,
   sameAsNote,
   functionText,
@@ -93,7 +99,8 @@ function PartHeader({ partView, badge }: { partView: ApiPartView; badge?: ReactN
 
 /**
  * A component page's API reference: one expandable table per
- * compound part, in the order the entry facade exports them.
+ * compound part, in the order the entry facade exports them, and then the parts of each extra
+ * entry the page documents under a heading naming that entry.
  *
  * A server component reading the page's committed `api.json` — the same seam the demo
  * frame uses for demo sources. Everything except the row mechanics is decided here, on the
@@ -123,32 +130,63 @@ export function ApiReference({ slug }: ApiReferenceProps): ReactElement {
   }
   const api = readComponentApi(slug);
   const functions = API_FUNCTIONS[slug];
+  const renderPart = (apiPart: ApiPart): ReactElement => {
+    const partView = toPartView(apiPart);
+    const owner = shared?.parts[apiPart.name];
+    const reference = functions?.[apiPart.name];
+    if (owner !== undefined) {
+      return (
+        <section className={part()} key={partView.name} aria-labelledby={partView.anchor}>
+          <PartHeader partView={partView} />
+          <SameAsLine
+            name={partView.name}
+            href={`${componentHref(owner.slug)}#${apiPartAnchor(owner.name)}`}
+            owner={owner.name}
+          />
+        </section>
+      );
+    }
+    return reference === undefined ? (
+      <PartReference key={partView.name} partView={partView} />
+    ) : (
+      <FunctionReference key={partView.name} partView={partView} reference={reference} />
+    );
+  };
 
   return (
     <section aria-labelledby={API_SECTION_ID}>
       <DocsSectionHeading id={API_SECTION_ID}>API reference</DocsSectionHeading>
-      {api.parts.map((apiPart) => {
-        const partView = toPartView(apiPart);
-        const owner = shared?.parts[apiPart.name];
-        const reference = functions?.[apiPart.name];
-        if (owner !== undefined) {
-          return (
-            <section className={part()} key={partView.name} aria-labelledby={partView.anchor}>
-              <PartHeader partView={partView} />
-              <SameAsLine
-                name={partView.name}
-                href={`${componentHref(owner.slug)}#${apiPartAnchor(owner.name)}`}
-                owner={owner.name}
-              />
-            </section>
-          );
-        }
-        return reference === undefined ? (
-          <PartReference key={partView.name} partView={partView} />
-        ) : (
-          <FunctionReference key={partView.name} partView={partView} reference={reference} />
-        );
-      })}
+      {api.parts.map(renderPart)}
+      {(API_EXTRA_ENTRIES[slug] ?? []).map((extra) => (
+        <ExtraEntryReference key={extra.slug} slug={extra.slug} entry={extra.entry}>
+          {readComponentApi(slug, extra.slug).parts.map(renderPart)}
+        </ExtraEntryReference>
+      ))}
+    </section>
+  );
+}
+
+/**
+ * The parts of an entry the page documents beside its own, such as `CommandVirtual` on the Command
+ * page. Its parts' headings stay at the page's part level, so the TOC lists them like the page's
+ * own; this heading only names the import they need, which differs from the page's.
+ */
+function ExtraEntryReference({
+  slug,
+  entry: specifier,
+  children,
+}: {
+  slug: string;
+  entry: string;
+  children: ReactNode;
+}): ReactElement {
+  const id = `api-entry-${slug}`;
+  return (
+    <section className={entry()} aria-labelledby={id}>
+      <h3 className={entryHeading()} id={id}>
+        From <code className={entryHeadingCode()}>{specifier}</code>
+      </h3>
+      {children}
     </section>
   );
 }

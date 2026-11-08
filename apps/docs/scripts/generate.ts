@@ -8,7 +8,8 @@
  * owns:
  *
  *   • each component's `api.json`, written *next to its page* and **committed**, so an API
- *     change is a reviewable diff; a drift check fails when a committed one is stale;
+ *     change is a reviewable diff, plus an `<entry>.api.json` beside it for each extra entry
+ *     the page documents; a drift check fails when a committed one is stale;
  *   • the component-page manifest the page intros and metadata import, and its client
  *     outline, which the nav, the QuickNav and the site palette import;
  *   • the tokens each component's recipe reads, and the site-wide token reference;
@@ -38,6 +39,7 @@ import type { ApiArtifactDiagnostic, GeneratedApiComponent } from "@elmeragroup/
 import { pageAliases, sameAsLinks } from "../src/lib/api-same-as.ts";
 import type { ApiAlias, ApiSameAs } from "../src/lib/api-same-as.ts";
 import type {
+  ApiEntry,
   ApiFunction,
   ComponentOutline,
   ComponentPageEntry,
@@ -49,6 +51,7 @@ import { API_REGEN_COMMAND } from "../src/lib/docs-model.ts";
 import { studioGeneratedFiles } from "../src/studio/registration.ts";
 import { generateDocsApiArtifacts } from "./lib/api-artifact.ts";
 import { resolveComponentPaths, SHARED_ENTRY_PAGES } from "./lib/components.ts";
+import type { ApiEntryPaths } from "./lib/components.ts";
 import { buildDensityCatalog, renderDensityCatalog } from "./lib/density-catalog.ts";
 import {
   componentInspections,
@@ -57,7 +60,7 @@ import {
   inspectGlobalDocs,
   readRscStatus,
 } from "./lib/docs-inspection.ts";
-import type { ComponentInspection } from "./lib/docs-inspection.ts";
+import type { ComponentInspection, DocsApiComponent } from "./lib/docs-inspection.ts";
 import { ProblemLog } from "./lib/errors.ts";
 import { functionReferences } from "./lib/function-reference.ts";
 import { openFuseProgram } from "./lib/fuse-program.ts";
@@ -125,14 +128,20 @@ function pruneStale(directory: string): void {
   }
 }
 
+/** What the rendered site reads of one entry a page documents. */
+function toApiEntry({ slug, entry }: ApiEntryPaths): ApiEntry {
+  return { slug, entry };
+}
+
 function buildComponent(
   inspection: ComponentInspection,
   demos: readonly DocsDemo[],
   apiParts: GeneratedApiComponent["parts"],
-  functions: ReadonlyMap<string, ApiFunction> | undefined,
+  functions: ReadonlyMap<string, ApiFunction>,
   colors: ColorTokenMap
 ): DocsComponent {
   const { slug, page, paths } = inspection;
+  const [own, ...extras] = paths.apis;
   const recipe = collectRecipeSources(paths.componentDir);
   const tokens = extractTokens({ sources: recipe.sources, stylesheets: recipe.stylesheets, colors });
 
@@ -141,7 +150,7 @@ function buildComponent(
     title: paths.title,
     lede: page.lede,
     intro: page.intro,
-    entry: paths.entry,
+    apis: [toApiEntry(own), ...extras.map(toApiEntry)],
     sourcePath: repoRelative(paths.sourceFile),
     sourceUrl: `${REPO_BLOB_BASE}/${repoRelative(paths.sourceFile)}`,
     markdownUrl: `/components/${slug}.md`,
@@ -152,7 +161,7 @@ function buildComponent(
     headings: page.headings,
     demos,
     parts: apiParts.map((part) => {
-      const reference = functions?.get(part.name);
+      const reference = functions.get(part.name);
       return reference === undefined ? part : { ...part, function: reference };
     }),
     tokens,
@@ -195,8 +204,9 @@ function sharedParts(fuse: FuseProgram, slugs: ReadonlySet<string>): SharedParts
     [...SHARED_ENTRY_PAGES.keys()]
       .filter((slug) => slugs.has(slug))
       .map((slug) => {
-        const paths = resolveComponentPaths(slug);
-        return { slug, entryFile: paths.entryFile, exportNames: paths.apiExportNames };
+        // The page's own entry, read through its public module rather than the extractor's facade.
+        const [{ entryFile, exportNames }] = resolveComponentPaths(slug).apis;
+        return { slug, entryFile, exportNames };
       })
   );
   const pages = [...identities].map(([slug, parts]) => ({ slug, parts }));
@@ -217,11 +227,40 @@ function readLibrary(inspections: readonly ComponentInspection[]) {
   try {
     const shared = sharedParts(fuse, new Set(inspections.map(({ slug }) => slug)));
     // An alias page repeats its owner's reference, so it has no API artifact of its own.
-    const inventory = docsApiInventory(inspections).filter(({ slug }) => !shared.aliases.has(slug));
+    const inventory = docsApiInventory(inspections).filter(({ page }) => !shared.aliases.has(page));
     return { shared, inventory, functions: functionReferences(fuse, inventory) };
   } finally {
     close();
   }
+}
+
+/**
+ * A page's parts and function references across every artifact it renders, its own entry's first
+ * and then each extra entry's, in the order its API reference shows them. A part name is the
+ * part's anchor, so two artifacts of one page that name the same part fail the run.
+ */
+function pageApi(
+  slug: string,
+  inventory: readonly DocsApiComponent[],
+  artifacts: ReadonlyMap<string, GeneratedApiComponent>,
+  functions: ReadonlyMap<string, ReadonlyMap<string, ApiFunction>>
+) {
+  const parts: GeneratedApiComponent["parts"][number][] = [];
+  const references = new Map<string, ApiFunction>();
+  for (const artifact of inventory.filter(({ page }) => page === slug)) {
+    const generated = artifacts.get(artifact.slug);
+    if (generated === undefined) {
+      throw new Error(`no generated API artifact for "${artifact.slug}" on component page "${slug}"`);
+    }
+    for (const part of generated.parts) {
+      if (parts.some(({ name }) => name === part.name)) {
+        throw new Error(`component page "${slug}" documents the API part ${part.name} twice`);
+      }
+      parts.push(part);
+    }
+    for (const [name, reference] of functions.get(artifact.slug) ?? []) references.set(name, reference);
+  }
+  return { parts, functions: references };
 }
 
 /** Marks each repeated part with its owner, and an alias page with the page it repeats. */
@@ -255,7 +294,7 @@ function toOutline(component: DocsComponent): ComponentOutline {
     // A page that repeats another page whole renders one sentence and no part anchors.
     partNames: component.alias === undefined ? component.parts.map((part) => part.name) : [],
     hasTokens: component.tokens.length > 0,
-    chart: component.entry === CHART_ENTRY,
+    chart: component.apis[0].entry === CHART_ENTRY,
   };
 }
 
@@ -295,7 +334,8 @@ export const COMPONENT_OUTLINES: readonly ComponentOutline[] = ${JSON.stringify(
 }
 
 /**
- * Records which committed `api.json` files the generation pass had to rewrite.
+ * Records which committed API artifacts the generation pass had to rewrite, each page's
+ * `api.json` and every extra entry's `<entry>.api.json`.
  *
  * The artifacts are tracked, unlike everything under `src/generated`: the point is the
  * reviewable diff. That makes staleness possible, so the pass records which artifacts
@@ -311,7 +351,8 @@ function emitApiDrift(artifacts: Iterable<GeneratedApiComponent>): void {
   writeFile(
     path.join(generatedDir, "api-drift.ts"),
     `${BANNER}/**
- * Slugs whose committed \`api.json\` did not match the library when the last generation
+ * Artifact slugs (a page's, or an extra entry's such as \`command-virtual\`) whose committed
+ * API artifact did not match the library when the last generation
  * pass ran, and were rewritten. Non-empty means the artifacts in the working tree were
  * stale — the drift check fails on it, naming \`${API_REGEN_COMMAND}\`.
  */
@@ -322,7 +363,8 @@ export const API_ARTIFACTS_REWRITTEN: readonly string[] = ${JSON.stringify(stale
 
 /**
  * What `ApiReference` reads beside the committed `api.json`, per page. A repeated part renders one
- * line naming its owner, an alias page one sentence, and a function part its signature reference.
+ * line naming its owner, an alias page one sentence, a function part its signature reference, and
+ * each extra entry its own committed artifact after the page's.
  */
 function emitApiReferenceExtras(components: readonly DocsComponent[]): void {
   const sameAs = Object.fromEntries(
@@ -343,9 +385,12 @@ function emitApiReferenceExtras(components: readonly DocsComponent[]): void {
       return Object.keys(references).length === 0 ? [] : [[component.slug, references]];
     })
   );
+  const extraEntries = Object.fromEntries(
+    components.flatMap(({ slug, apis: [, ...extras] }) => (extras.length === 0 ? [] : [[slug, extras]]))
+  );
   writeFile(
     path.join(generatedDir, "api-reference-extras.ts"),
-    `${BANNER}import type { ApiFunction } from "../lib/docs-model";
+    `${BANNER}import type { ApiEntry, ApiFunction } from "../lib/docs-model";
 import type { ApiPageSameAs } from "../lib/api-same-as";
 
 /** Per shared-entry page, its alias owner and the owner of each part it repeats. */
@@ -353,6 +398,9 @@ export const API_SAME_AS: Readonly<Partial<Record<string, ApiPageSameAs>>> = ${J
 
 /** Per page, the signature reference of each function part, keyed by part name. */
 export const API_FUNCTIONS: Readonly<Partial<Record<string, Readonly<Record<string, ApiFunction>>>>> = ${JSON.stringify(functions, null, 2)};
+
+/** Per page, the other entries whose committed artifacts its reference renders after its own. */
+export const API_EXTRA_ENTRIES: Readonly<Partial<Record<string, readonly ApiEntry[]>>> = ${JSON.stringify(extraEntries, null, 2)};
 `
   );
 }
@@ -491,17 +539,9 @@ async function main(): Promise<void> {
     process.stderr.write(`docs: ${warning}\n`);
   }
   const components = inspected.map(({ inspection, demos }) => {
-    const api = generated.artifacts.get(inspection.slug);
-    if (api === undefined && !shared.aliases.has(inspection.slug)) {
-      throw new Error(`no generated API artifact for component "${inspection.slug}"`);
-    }
-    const component = buildComponent(
-      inspection,
-      demos,
-      api?.parts ?? [],
-      functions.pages.get(inspection.slug),
-      colors
-    );
+    // An alias page is in no inventory row, so it gets no parts; every other page's own artifact is.
+    const api = pageApi(inspection.slug, inventory, generated.artifacts, functions.pages);
+    const component = buildComponent(inspection, demos, api.parts, api.functions, colors);
     return linkSharedParts(component, shared);
   });
 

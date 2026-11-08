@@ -1,8 +1,9 @@
 /**
  * The committed per-component API artifact.
  *
- * Each component page has an `api.json` next to it, generated from the library's types
- * and JSDoc by `@elmeragroup/internal` and **committed**: an API change then shows up as
+ * Each component page has an `api.json` next to it, and an `<entry>.api.json` beside that for
+ * each extra entry the page documents (`EXTRA_API_ENTRIES` in `components.ts`), generated from
+ * the library's types and JSDoc by `@elmeragroup/internal` and **committed**: an API change then shows up as
  * a reviewable diff in the same PR that changes the component, and the page renders the
  * artifact directly rather than re-deriving it. Because the file is committed, it can go
  * stale — so generation records each file it rewrote, and the drift check
@@ -55,14 +56,15 @@ const GENERATED_BANNER =
   "Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.";
 
 type GeneratedApi = {
-  /** One artifact per inventory entry, keyed by slug. */
+  /** One artifact per inventory entry, keyed by artifact slug (a page's or an extra entry's). */
   readonly artifacts: ReadonlyMap<string, GeneratedApiComponent>;
   /** Warnings the package accepted rather than failed on; the generation pass prints them. */
   readonly diagnostics: readonly ApiArtifactDiagnostic[];
 };
 
 /**
- * Generates every component's `api.json` through `@elmeragroup/internal`.
+ * Generates every committed API artifact of the inventory through `@elmeragroup/internal`: each
+ * page's `api.json` and each extra entry's `<entry>.api.json`.
  *
  * A file is written only when its bytes change, and `changed` reports which committed
  * artifacts were stale. Extraction problems (missing JSDoc, unresolvable types) fail with a
@@ -82,7 +84,7 @@ export async function generateDocsApiArtifacts(
       allowedWarningCodes: ALLOWED_WARNING_CODES,
       components: inventory.map((component) => ({
         slug: component.slug,
-        entryFile: component.entryFile,
+        entryFile: component.apiEntryFile,
         exportNames: component.exportNames,
         outputFile: component.apiFile,
       })),

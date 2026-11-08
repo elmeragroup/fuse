@@ -96,6 +96,23 @@ describe("component page anatomy", () => {
     expect(html).toContain("showCloseButton");
   });
 
+  it("renders an extra entry's parts under a heading naming its import", async () => {
+    // Oracle: the Command page documents `@elmeragroup/fuse/command-virtual`, whose
+    // `CommandVirtual.List` declares `estimateSize` and `overscan`.
+    const html = await fetchText("/components/command");
+    const api = html.slice(html.indexOf('id="api-reference"'));
+    expect(api).toMatch(
+      /<h3[^>]*id="api-entry-command-virtual"[^>]*>From <code[^>]*>@elmeragroup\/fuse\/command-virtual<\/code>/
+    );
+    expect(api.indexOf('id="api-entry-command-virtual"')).toBeGreaterThan(
+      api.indexOf('id="api-command-root"')
+    );
+    expect(api).toContain('id="api-commandvirtual-list"');
+    expect(api).toContain('id="api-commandvirtual-list-estimateSize"');
+    expect(api).toContain('id="api-commandvirtual-list-overscan"');
+    expect(html).toContain('href="#api-commandvirtual-list"');
+  });
+
   it("lists the page's generated sections in the on-page TOC", async () => {
     const html = await fetchText("/components/scroll-area");
     expect(html).toContain('href="#api-reference"');

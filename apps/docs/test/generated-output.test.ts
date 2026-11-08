@@ -41,7 +41,20 @@ function api(slug: string): ComponentApiArtifact {
   // SAFETY: every api.json is written by one serialiser from `ComponentApiArtifact`; generation
   // rewrites a committed file that disagrees, and the drift check (`api-artifact.test.ts`)
   // fails on that rewrite.
-  return JSON.parse(readFileSync(resolveComponentPaths(slug).apiFile, "utf8")) as ComponentApiArtifact;
+  return JSON.parse(
+    readFileSync(resolveComponentPaths(slug).apis[0].apiFile, "utf8")
+  ) as ComponentApiArtifact;
+}
+
+/**
+ * Every part a page's API reference renders, read from its committed artifacts: its own `api.json`,
+ * then each extra entry's `<entry>.api.json`, in reading order.
+ */
+function pageParts(slug: string): ComponentApiArtifact["parts"] {
+  return resolveComponentPaths(slug).apis.flatMap(
+    // SAFETY: as for `api` above, one serialiser writes every committed artifact.
+    ({ apiFile }) => (JSON.parse(readFileSync(apiFile, "utf8")) as ComponentApiArtifact).parts
+  );
 }
 
 /** The component's generated markdown endpoint. */
@@ -128,7 +141,7 @@ describe("component page manifest", () => {
   it("reports per-part directives and the reviewed page RSC status", () => {
     for (const [slug, reviewed] of COMPONENT_INVENTORY) {
       // Each part's badge is the leading directive of the module that declares it.
-      for (const part of ALIAS_PAGES.has(slug) ? [] : api(slug).parts) {
+      for (const part of ALIAS_PAGES.has(slug) ? [] : pageParts(slug)) {
         expect(part.rsc, `${slug} ${part.name}`).toBe(declaredRsc(part.sourcePath));
       }
       // The page's own status appears on the markdown endpoint, not in the manifest.
@@ -247,7 +260,7 @@ describe("component outlines", () => {
     // alias pages CONTRACT.md section 13 names, whose reference is one sentence with no part anchor.
     for (const outline of COMPONENT_OUTLINES) {
       expect(outline.partNames, outline.slug).toEqual(
-        ALIAS_PAGES.has(outline.slug) ? [] : api(outline.slug).parts.map((part) => part.name)
+        ALIAS_PAGES.has(outline.slug) ? [] : pageParts(outline.slug).map((part) => part.name)
       );
     }
   });
@@ -255,16 +268,16 @@ describe("component outlines", () => {
 
 describe("committed api.json", () => {
   it("walks only the export names resolveComponentPaths lists", () => {
-    expect(resolveComponentPaths("table").apiExportNames).toEqual(["Table", "VerticalTable"]);
-    expect(resolveComponentPaths("checkbox-card").apiExportNames).toEqual(["CheckboxCard"]);
-    expect(resolveComponentPaths("checkbox").apiExportNames).toEqual([
+    expect(resolveComponentPaths("table").apis[0].exportNames).toEqual(["Table", "VerticalTable"]);
+    expect(resolveComponentPaths("checkbox-card").apis[0].exportNames).toEqual(["CheckboxCard"]);
+    expect(resolveComponentPaths("checkbox").apis[0].exportNames).toEqual([
       "Checkbox",
       "CheckboxGroup",
       "CheckboxItem",
       "CheckboxItemGroup",
       "CheckboxDescription",
     ]);
-    expect(resolveComponentPaths("radio-group").apiExportNames).toEqual([
+    expect(resolveComponentPaths("radio-group").apis[0].exportNames).toEqual([
       "RadioGroup",
       "RadioGroupItem",
       "Radio",
@@ -272,50 +285,99 @@ describe("committed api.json", () => {
       "RadioItemGroup",
       "RadioIconButton",
     ]);
-    expect(resolveComponentPaths("combobox").apiExportNames).toEqual(["Combobox", "useComboboxAnchor"]);
+    expect(resolveComponentPaths("combobox").apis[0].exportNames).toEqual(["Combobox", "useComboboxAnchor"]);
     // KbdGroup has its own props type, so its table guards it against drift too.
-    expect(resolveComponentPaths("kbd").apiExportNames).toEqual(["Kbd", "KbdGroup"]);
-    expect(resolveComponentPaths("button").apiExportNames).toEqual(["Button"]);
-    expect(resolveComponentPaths("meter").apiExportNames).toEqual(["Meter"]);
-    expect(resolveComponentPaths("pagination").apiExportNames).toEqual(["Pagination"]);
-    expect(resolveComponentPaths("breadcrumb").apiExportNames).toEqual(["Breadcrumb"]);
-    expect(resolveComponentPaths("alert").apiExportNames).toEqual(["Alert"]);
-    expect(resolveComponentPaths("ui-providers").entry).toBe("@elmeragroup/fuse/react-aria/ui-providers");
-    expect(resolveComponentPaths("ui-providers").apiExportNames).toEqual(["UiProviders"]);
-    expect(resolveComponentPaths("link").entry).toBe("@elmeragroup/fuse/link");
-    expect(resolveComponentPaths("link").apiExportNames).toEqual(["Link"]);
-    expect(resolveComponentPaths("search-field").entry).toBe("@elmeragroup/fuse/react-aria/search-field");
-    expect(resolveComponentPaths("search-field").apiExportNames).toEqual(["SearchField"]);
-    expect(resolveComponentPaths("file-trigger").entry).toBe("@elmeragroup/fuse/react-aria/file-trigger");
-    expect(resolveComponentPaths("file-trigger").apiExportNames).toEqual(["FileTrigger"]);
-    expect(resolveComponentPaths("focusable").entry).toBe("@elmeragroup/fuse/react-aria/focusable");
-    expect(resolveComponentPaths("focusable").apiExportNames).toEqual(["Focusable", "useFocusable"]);
-    expect(resolveComponentPaths("grid-list").entry).toBe("@elmeragroup/fuse/react-aria/grid-list");
-    expect(resolveComponentPaths("grid-list").apiExportNames).toEqual(["GridList", "GridListItem"]);
-    expect(resolveComponentPaths("date-field").entry).toBe("@elmeragroup/fuse/react-aria/date-field");
-    expect(resolveComponentPaths("date-field").apiExportNames).toEqual(["DateField", "DateInput"]);
-    expect(resolveComponentPaths("calendar").entry).toBe("@elmeragroup/fuse/react-aria/calendar");
-    expect(resolveComponentPaths("calendar").apiExportNames).toEqual([
+    expect(resolveComponentPaths("kbd").apis[0].exportNames).toEqual(["Kbd", "KbdGroup"]);
+    expect(resolveComponentPaths("button").apis[0].exportNames).toEqual(["Button"]);
+    expect(resolveComponentPaths("meter").apis[0].exportNames).toEqual(["Meter"]);
+    expect(resolveComponentPaths("pagination").apis[0].exportNames).toEqual(["Pagination"]);
+    expect(resolveComponentPaths("breadcrumb").apis[0].exportNames).toEqual(["Breadcrumb"]);
+    expect(resolveComponentPaths("alert").apis[0].exportNames).toEqual(["Alert"]);
+    expect(resolveComponentPaths("ui-providers").apis[0].entry).toBe(
+      "@elmeragroup/fuse/react-aria/ui-providers"
+    );
+    expect(resolveComponentPaths("ui-providers").apis[0].exportNames).toEqual(["UiProviders"]);
+    expect(resolveComponentPaths("link").apis[0].entry).toBe("@elmeragroup/fuse/link");
+    expect(resolveComponentPaths("link").apis[0].exportNames).toEqual(["Link"]);
+    expect(resolveComponentPaths("search-field").apis[0].entry).toBe(
+      "@elmeragroup/fuse/react-aria/search-field"
+    );
+    expect(resolveComponentPaths("search-field").apis[0].exportNames).toEqual(["SearchField"]);
+    expect(resolveComponentPaths("file-trigger").apis[0].entry).toBe(
+      "@elmeragroup/fuse/react-aria/file-trigger"
+    );
+    expect(resolveComponentPaths("file-trigger").apis[0].exportNames).toEqual(["FileTrigger"]);
+    expect(resolveComponentPaths("focusable").apis[0].entry).toBe("@elmeragroup/fuse/react-aria/focusable");
+    expect(resolveComponentPaths("focusable").apis[0].exportNames).toEqual(["Focusable", "useFocusable"]);
+    expect(resolveComponentPaths("grid-list").apis[0].entry).toBe("@elmeragroup/fuse/react-aria/grid-list");
+    expect(resolveComponentPaths("grid-list").apis[0].exportNames).toEqual(["GridList", "GridListItem"]);
+    expect(resolveComponentPaths("date-field").apis[0].entry).toBe("@elmeragroup/fuse/react-aria/date-field");
+    expect(resolveComponentPaths("date-field").apis[0].exportNames).toEqual(["DateField", "DateInput"]);
+    expect(resolveComponentPaths("calendar").apis[0].entry).toBe("@elmeragroup/fuse/react-aria/calendar");
+    expect(resolveComponentPaths("calendar").apis[0].exportNames).toEqual([
       "Calendar",
       "CalendarHeader",
       "CalendarGridHeader",
     ]);
-    expect(resolveComponentPaths("range-calendar").entry).toBe("@elmeragroup/fuse/react-aria/range-calendar");
-    expect(resolveComponentPaths("range-calendar").apiExportNames).toEqual(["RangeCalendar"]);
-    expect(resolveComponentPaths("date-picker").entry).toBe("@elmeragroup/fuse/react-aria/date-picker");
-    expect(resolveComponentPaths("date-picker").apiExportNames).toEqual([
+    expect(resolveComponentPaths("range-calendar").apis[0].entry).toBe(
+      "@elmeragroup/fuse/react-aria/range-calendar"
+    );
+    expect(resolveComponentPaths("range-calendar").apis[0].exportNames).toEqual(["RangeCalendar"]);
+    expect(resolveComponentPaths("date-picker").apis[0].entry).toBe(
+      "@elmeragroup/fuse/react-aria/date-picker"
+    );
+    expect(resolveComponentPaths("date-picker").apis[0].exportNames).toEqual([
       "DatePicker",
       "DatePickerPresetGroup",
       "DatePickerPresetItem",
     ]);
-    expect(resolveComponentPaths("date-range-picker").entry).toBe(
+    expect(resolveComponentPaths("date-range-picker").apis[0].entry).toBe(
       "@elmeragroup/fuse/react-aria/date-range-picker"
     );
-    expect(resolveComponentPaths("date-range-picker").apiExportNames).toEqual([
+    expect(resolveComponentPaths("date-range-picker").apis[0].exportNames).toEqual([
       "DateRangePicker",
       "DateRangePickerPresetGroup",
       "DateRangePickerPresetItem",
     ]);
+  });
+
+  it("lists a page's own entry first, then each extra entry it documents", () => {
+    // Oracle: `@elmeragroup/fuse/command` exports `Command`, and `@elmeragroup/fuse/command-virtual`,
+    // which has no page of its own, exports `CommandVirtual`; the Command page documents both.
+    expect(
+      resolveComponentPaths("command").apis.map(({ slug, entry, exportNames }) => ({
+        slug,
+        entry,
+        exportNames,
+      }))
+    ).toEqual([
+      { slug: "command", entry: "@elmeragroup/fuse/command", exportNames: ["Command"] },
+      {
+        slug: "command-virtual",
+        entry: "@elmeragroup/fuse/command-virtual",
+        exportNames: ["CommandVirtual"],
+      },
+    ]);
+    expect(resolveComponentPaths("button").apis.map(({ slug }) => slug)).toEqual(["button"]);
+  });
+
+  it("documents CommandVirtual.List, which has no page of its own, on the Command page", () => {
+    // Unit under test: the Command page's generated API output. Oracle: `CommandVirtualListProps` in
+    // packages/fuse/src/components/command-virtual/command-virtual.tsx, which declares `children`,
+    // `estimateSize` and `overscan` with `@default 8`, and the facade it is imported from.
+    const list = pageParts("command").find((part) => part.name === "CommandVirtual.List");
+    expect(list?.sourcePath).toBe("packages/fuse/src/components/command-virtual/command-virtual.tsx");
+    expect(list?.props.map((prop) => prop.name)).toEqual(
+      expect.arrayContaining(["children", "estimateSize", "overscan"])
+    );
+    expect(list?.props.find((prop) => prop.name === "overscan")?.defaultValue).toBe("8");
+    expect(COMPONENT_OUTLINES.find(({ slug }) => slug === "command")?.partNames).toContain(
+      "CommandVirtual.List"
+    );
+    const markdown = endpoint("command");
+    expect(markdown).toContain('- Import: `import { ... } from "@elmeragroup/fuse/command-virtual";`');
+    expect(markdown).toContain("### CommandVirtual.List · RSC: client");
+    expect(markdown).toContain("| `estimateSize` |");
   });
 
   it("documents DateInput's own props and the forwarded RAC remainder", () => {
@@ -329,7 +391,7 @@ describe("committed api.json", () => {
 
   it("never leaves a documented prop without a description or an unresolved type, and publishes only documented dependency props", () => {
     for (const entry of COMPONENT_PAGES.filter(({ slug }) => !ALIAS_PAGES.has(slug))) {
-      for (const part of api(entry.slug).parts) {
+      for (const part of pageParts(entry.slug)) {
         for (const prop of part.props) {
           expect(prop.type).not.toBe("");
           if (prop.origin === "declared") {
@@ -348,10 +410,10 @@ describe("committed api.json", () => {
 
   it("publishes only parts rooted at a facade export, each named once", () => {
     for (const entry of COMPONENT_PAGES.filter(({ slug }) => !ALIAS_PAGES.has(slug))) {
-      const committed = api(entry.slug).parts;
+      const committed = pageParts(entry.slug);
       // Every facade export yields at least one part — a facade that only re-exports a
       // dependency publishes it as a part with no props and the dependency in `forwardedFrom`.
-      const roots = resolveComponentPaths(entry.slug).apiExportNames;
+      const roots = resolveComponentPaths(entry.slug).apis.flatMap(({ exportNames }) => exportNames);
       expect(committed.length, entry.slug).toBeGreaterThan(0);
       expect(new Set(committed.map((part) => part.name)).size, entry.slug).toBe(committed.length);
 
@@ -477,7 +539,7 @@ describe("generated markdown endpoints", () => {
         expect(markdown, entry.slug).toContain("[`Chart`](/components/chart.md) under another name.");
         continue;
       }
-      for (const part of api(entry.slug).parts) {
+      for (const part of pageParts(entry.slug)) {
         // A chart page part may repeat a part of an earlier chart page, and then it is one line
         // that names the owner, which `shared-entry-pages.test.ts` pins.
         if (CHART_PAGES.has(entry.slug) && markdown.includes(`### ${part.name}\n\n\`${part.name}\` is [`)) {

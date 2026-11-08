@@ -48,7 +48,7 @@ function studioEntry(page: StudioPage): SearchEntry {
 function componentEntry(component: DocsComponent): SearchEntry {
   const keywords = [
     component.slug,
-    component.entry,
+    ...component.apis.map(({ entry }) => entry),
     ...component.parts.map((part) => part.name),
     ...(component.aliasParts ?? []),
     ...component.demos.map((demo) => demo.title),

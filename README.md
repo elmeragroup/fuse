@@ -74,7 +74,7 @@ Package-scoped scripts worth knowing:
 | `pnpm --filter @elmeragroup/fuse pack`             | Produces the single tarball that `package:check` and `size-limit` consume             |
 | `pnpm --filter @elmeragroup/fuse package:check`    | publint / attw / exports-map / emitted-directive checks against that tarball          |
 | `pnpm --filter @elmeragroup/fuse size-limit`       | Bundle budgets against that tarball                                                   |
-| `pnpm --filter docs generate`                      | Regenerates the docs API tables and each component's committed `api.json`             |
+| `pnpm --filter docs generate`                      | Regenerates the docs API tables and each component page's committed API artifacts     |
 | `pnpm --filter @elmeragroup/fuse-figma figma:sync` | Writes the tokens into a Figma file; `figma:check` prints the plan and fails on drift |
 
 `@elmeragroup/fuse` has no work of its own to do under `check` or `ci:checks`: its gates are separate turbo tasks that the aggregates already depend on. Its `check` and `ci:checks` scripts are therefore no-op anchors that let `turbo run check` and `turbo run ci:checks` fan out, and they say so; the same note is in [`turbo.json`](turbo.json).
@@ -102,7 +102,7 @@ The API extractor and the `elmera/*` and `anti-slop/*` lint rules come from [`@e
 4. **Changeset and labels** — `pnpm changeset` for anything user-facing. Internal-only PRs (CI, docs site, tests) carry the `no-changeset` GitHub label instead. Add `no-canary` when the packed package is unchanged and `no-preview` when the docs site is unchanged. A PR that changes only contributor docs, such as this README, carries all three. Never edit an existing changeset to move a gate; edit one only to correct what it says shipped.
 5. **Gate** — `pnpm check` green locally before review. The merge workflow runs the full `ci:checks` stages, which add the e2e and packed-artifact tier, plus the label-aware changeset check. [AGENTS.md](AGENTS.md#tests) says when to run that tier locally.
 
-**After rebasing, regenerate the generated artifacts before running the gate**: `pnpm --filter docs generate` rewrites the committed per-component `api.json` files. They are derived from the library's public API, so a rebase that picks up an API change leaves them stale and fails the docs drift check on work that is otherwise correct.
+**After rebasing, regenerate the generated artifacts before running the gate**: `pnpm --filter docs generate` rewrites the committed per-component `api.json` files, and the `<entry>.api.json` beside a page that documents a second entry. They are derived from the library's public API, so a rebase that picks up an API change leaves them stale and fails the docs drift check on work that is otherwise correct.
 
 ## Release
 
