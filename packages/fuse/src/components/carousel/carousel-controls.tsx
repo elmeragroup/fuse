@@ -18,7 +18,7 @@ import { definedProps } from "../../internal/defined-props";
 import { cn } from "../../styles/cn";
 import { Button } from "../button/button";
 import type { IconButtonProps, IconButtonSize } from "../button/button";
-import { useCarouselContext } from "./carousel-context";
+import { useCarouselContext, useCarouselSnapshot } from "./carousel-context";
 import { carouselVariants } from "./carousel-variants";
 import { carouselStrings } from "./intl";
 
@@ -215,12 +215,13 @@ export function CarouselIndicator({
   ...props
 }: CarouselIndicatorProps): ReactElement {
   const { state, wiring } = useCarouselContext("Carousel.Indicator");
+  const snapshot = useCarouselSnapshot();
   const strings = useLocalizedStrings(carouselStrings);
   const current = state.index === index;
-  const slide = wiring.snapshot?.pages.leadingSlides[index] ?? index;
+  const slide = snapshot?.pages.leadingSlides[index] ?? index;
   const label =
     children === undefined
-      ? strings.format("indicator", { position: slide + 1, count: wiring.snapshot?.slides.length ?? 0 })
+      ? strings.format("indicator", { position: slide + 1, count: snapshot?.slides.length ?? 0 })
       : undefined;
 
   return useRender({
