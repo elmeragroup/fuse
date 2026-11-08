@@ -275,9 +275,10 @@
   every Checkbox, Switch, CheckboxCard and radio now subscribes, so a DataTable with a `SelectRow`
   checkbox per row adds a listener per row. Pool subscribers per root, with one listener that
   dispatches to the subscribers whose control is in the reset form.
-- NumberField writes optional props such as `name`, `min` and `aria-label` as plain attributes,
-  against the optional-prop rule in AGENTS.md. The `WIRING_PARTS` source contract flags only raw
-  spreads, so it misses them. Spread them through `definedProps`.
+- RadioGroup and CheckboxGroup write optional props such as `id`, `name`, `value` and
+  `defaultValue` as plain attributes on their Base UI roots, against the optional-prop rule in
+  AGENTS.md. Spread them through `definedProps`, as NumberField does. The `WIRING_PARTS` source
+  contract checks only spreads; why it cannot check attributes is written beside it.
 - A light theme rule declares only `EXTERNAL_RESET_KEYS`, so `--destructive` and
   `--destructive-foreground` resolve their `var()` on `:root`. A host that overrides `--error` on a
   nested theme scope does not move them there. `--sidebar-ring` is a reset key now, so it follows
