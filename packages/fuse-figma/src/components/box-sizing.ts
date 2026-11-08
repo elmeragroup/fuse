@@ -1335,7 +1335,7 @@ function readAxis(
  * minimum wins a conflict. Figma would clamp a fixed length to a limit on every resize, so the
  * limits fold into the length: one that moves it sets it, and one that never moves it drops. A
  * length bound to a variable that every limit binds too never moves in any mode, as the md control
- * rung's `min-h-(--control-h-md)` beside its `h-(--control-h-md)`, so those limits drop. A fold to a
+ * size's `min-h-(--control-h-md)` beside its `h-(--control-h-md)`, so those limits drop. A fold to a
  * length of zero or less, and a limit that any other bound or non-literal value on either side keeps
  * from comparing, stay unmapped.
  */

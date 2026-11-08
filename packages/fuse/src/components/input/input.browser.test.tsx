@@ -65,7 +65,7 @@ describe("Input", () => {
     expect(document.activeElement).toBe(roleNamed("button", "After"));
   });
 
-  it("matches the signed md rung at both densities and ignores a nested data-density stamp or ThemeScope", () => {
+  it("matches the signed md control size at both densities and ignores a nested data-density stamp or ThemeScope", () => {
     const { rerender } = renderThemed(
       <>
         <Input aria-label="Meter" />

@@ -422,7 +422,7 @@ describe("control size: square fit", () => {
       if (phoneGroup === null) {
         throw new Error("expected the phone field's input group around its input");
       }
-      // The md rung is rem, so the box follows the root.
+      // The md control size is rem, so the box follows the root.
       expect(measureElement(phoneGroup).height, `${density} ${root}px phone field height`).toBe(
         (expectedMetrics("md", density).height * root) / 16
       );

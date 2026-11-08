@@ -563,7 +563,7 @@ describe("DatePicker preset pane geometry", () => {
 });
 
 describe("DatePicker density metrics", () => {
-  it("pins the field box to the signed md rung at both densities and does not rescope", () => {
+  it("pins the field box to the signed md control size at both densities and does not rescope", () => {
     const { rerender } = renderPicker(<DatePicker label="Meter" defaultValue={july14} />);
     for (const density of ["dense", "comfortable"] as const) {
       stampDensity(density);

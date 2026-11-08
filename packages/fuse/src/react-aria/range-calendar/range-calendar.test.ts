@@ -18,7 +18,7 @@ function everyEmittedClass(): string {
 }
 
 describe("rangeCalendarVariants", () => {
-  it("emits no control rung", () => {
+  it("emits no control size", () => {
     // The day square is decorative, so nothing reads a `--control-*` variable.
     expect(everyEmittedClass()).not.toContain("--control-");
   });

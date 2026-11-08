@@ -125,7 +125,7 @@ describe("FileTrigger", () => {
     await assertFocusRingAtBothDensities(roleNamed("button", "Before"), roleNamed("button", "Attach files"));
   });
 
-  it("follows the signed sm rung at both densities and ignores a nested stamp", () => {
+  it("follows the signed sm control size at both densities and ignores a nested stamp", () => {
     renderThemed(
       <>
         <FileTrigger>Root</FileTrigger>
@@ -140,9 +140,9 @@ describe("FileTrigger", () => {
     // `:root[data-density="comfortable"]`, so a nested attribute rescopes nothing.
     for (const density of ["dense", "comfortable"] as const) {
       stampDensity(density);
-      const rung = CONTROL_SM[density].height;
-      expect(px(getComputedStyle(roleNamed("button", "Root")).height)).toBe(rung);
-      expect(px(getComputedStyle(roleNamed("button", "Nested")).height)).toBe(rung);
+      const controlHeight = CONTROL_SM[density].height;
+      expect(px(getComputedStyle(roleNamed("button", "Root")).height)).toBe(controlHeight);
+      expect(px(getComputedStyle(roleNamed("button", "Nested")).height)).toBe(controlHeight);
     }
   });
 

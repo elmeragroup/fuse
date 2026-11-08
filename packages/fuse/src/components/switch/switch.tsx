@@ -17,7 +17,7 @@ export type SwitchProps = Omit<ComponentProps<typeof SwitchPrimitive.Root>, "cla
   className?: string;
   /**
    * Optical size of the track and thumb, also emitted as `data-size`. Pixel-fixed at both density
-   * stamps — not a control-box density rung.
+   * stamps — not a control size.
    */
   size?: "sm" | "default";
 };

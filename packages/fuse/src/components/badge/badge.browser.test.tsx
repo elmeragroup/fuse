@@ -143,7 +143,7 @@ describe("Badge", () => {
     expect(Number.parseFloat(large.fontSize)).toBeGreaterThan(Number.parseFloat(medium.fontSize));
   });
 
-  it("is density-independent: the decorative size axis is not a control rung", () => {
+  it("is density-independent: the decorative size axis is not a control size", () => {
     renderThemed(<Badge>Active</Badge>);
     const dense = getComputedStyle(badgeNamed("Active"));
     const denseMetrics = { px: dense.paddingLeft, font: dense.fontSize };

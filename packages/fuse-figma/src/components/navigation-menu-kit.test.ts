@@ -1,12 +1,12 @@
 /**
  * Unit under test: Navigation menu's four bar and row sets as the build produces them. Oracle: the
  * Fuse variable or literal each Figma field of a cell must carry, read by hand from
- * `navigationMenuVariants` in `navigation-menu-variants.ts`, the md control rung in
+ * `navigationMenuVariants` in `navigation-menu-variants.ts`, the md control size in
  * `control-size-md.ts`, the focus ring in `styles/utils.ts`, the state face in `state-face.ts`,
  * Tailwind's spacing and type scales, the attributes Base UI's static markup stamps on a trigger and
  * a link, and the docs demos:
  *
- * - The bar trigger hugs `Customers` and a 16px CaretDown on the md control rung: `control-h-md` tall,
+ * - The bar trigger hugs `Customers` and a 16px CaretDown on the md control size: `control-h-md` tall,
  *   `control-px-md` across, `control-gap-md` apart, centered, on `rounded-md`, at Medium in the
  *   control type pair and the page's `foreground`. Hover and open fill it `muted`. Its caret paints
  *   `muted-foreground` and turns half a turn while open, disabled too, through
@@ -20,7 +20,7 @@
  *   `data-[side=right]:-rotate-90` turns the caret a quarter turn counterclockwise, 90 in Figma, in
  *   every cell. Hover and open fill the row `accent` and paint the label and, through `**:`, the caret
  *   `accent-foreground`.
- * - The bar link hugs `Overview` on the md control rung at Medium, which `data-active:font-medium`
+ * - The bar link hugs `Overview` on the md control size at Medium, which `data-active:font-medium`
  *   repeats, in `foreground`, which `data-active:text-foreground` repeats, so an active bar link draws
  *   as an inactive one. Hover fills it `muted`.
  * - The row link is the docs Basic demo's 256px row, `Electricity` at 14/20 in `foreground`, Medium
@@ -104,7 +104,7 @@ function face(state: string, fill: ReturnType<typeof paint> | undefined) {
   };
 }
 
-/** The md control rung's box, which the bar trigger and the bar link take, hugging their content. */
+/** The md control size's box, which the bar trigger and the bar link take, hugging their content. */
 const BAR_BOX = {
   direction: "HORIZONTAL",
   sizing: { horizontal: HUG, vertical: fixed(density("control-h-md")) },
@@ -126,7 +126,7 @@ const rowBox = (width: number, primary: string) => ({
   corner: token("radius-sm"),
 });
 
-/** The label of a bar part on the md control rung at Medium in the page's `foreground`. */
+/** The label of a bar part on the md control size at Medium in the page's `foreground`. */
 const barLabel = (characters: string) => ({
   characters,
   textProperty: "Label",

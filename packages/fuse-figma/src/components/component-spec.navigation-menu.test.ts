@@ -258,7 +258,7 @@ describe("a class for every element below the box", () => {
 
 // Oracle: CSS 2.1 §10.7, where a box's height is raised to its `min-height`, so a minimum that holds
 // the same value as the height never moves it, in any mode of the variable both read, as the md
-// control rung sets `h-(--control-h-md) min-h-(--control-h-md)`.
+// control size sets `h-(--control-h-md) min-h-(--control-h-md)`.
 describe("a minimum that reads the variable its fixed length reads", () => {
   const variables = makeVariableIndex([
     { ref: { collection: "Fuse density", name: "control-h-md" }, webSyntax: "var(--control-h-md)" },

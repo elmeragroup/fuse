@@ -113,7 +113,7 @@ export const cardSectionVariants = tv({
  * Not exported from `@elmeragroup/fuse/card` — there is no borrow
  * pattern. Kept off `cardVariants` because `direction="horizontal"` already
  * sets `cardTitle: "text-xl/snug"`; a second `size` axis on that slot would fight
- * through twMerge. `size` is a type-scale axis, not a density control-box rung:
+ * through twMerge. `size` is a type-scale axis, not a control size:
  * it does not read `--control-*`.
  */
 export const cardTitleVariants = tv({

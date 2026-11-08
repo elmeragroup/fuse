@@ -117,7 +117,7 @@ describe("control size: the text-entry touch floor", () => {
         expect(px(style.fontSize), `${label} font`).toBe(font);
         expect(px(style.lineHeight), `${label} leading`).toBe(md.leading);
       }
-      // Only the type moves: the box keeps the md rung, so the 16px glyphs fit the dense box.
+      // Only the type moves: the box keeps the md control size, so the 16px glyphs fit the dense box.
       expect(
         px(getComputedStyle(roleNamed("textbox", "entry input")).height),
         `${density} ${pointer} input height`
@@ -225,7 +225,7 @@ describe("control size: the text-entry touch floor", () => {
         // Only the font size moves: the sm leading stays 20px, so the taller glyphs fit the box.
         expect(px(style.lineHeight), `${label} leading`).toBe(sm.leading);
       }
-      // The boxes keep the sm rung under the floor, a single row of chips included.
+      // The boxes keep the sm control size under the floor, a single row of chips included.
       expect(
         px(getComputedStyle(roleNamed("textbox", "sm input")).height),
         `${density} ${pointer} sm input height`

@@ -30,7 +30,7 @@ describe("inputGroupAddonVariants", () => {
 });
 
 describe("inputGroupButtonVariants", () => {
-  it("defaults to the xs rung, squares icon-xs on the xs rung and icon-sm on the field's inner square, and gives sm the field height", () => {
+  it("defaults to the xs control size, squares icon-xs on the xs control size and icon-sm on the field's inner square, and gives sm the field height", () => {
     expect(tokens(inputGroupButtonVariants())).toContain("h-[max(var(--control-h-xs),24px)]");
 
     expect(tokens(inputGroupButtonVariants({ size: "icon-xs" }))).toEqual(
@@ -61,8 +61,8 @@ describe("inputGroupButtonVariants", () => {
     );
   });
 
-  it("reads only existing rungs and the field height, and no density variants", () => {
-    // Every size keeps the field's md icon edge. The box reads the xs rung, or the field's inner
+  it("reads only existing control sizes and the field height, and no density variants", () => {
+    // Every size keeps the field's md icon edge. The box reads the xs control size, or the field's inner
     // square with its sm fallback for icon-sm, and sm reads the field height and inset with their
     // md fallbacks.
     const expected = {

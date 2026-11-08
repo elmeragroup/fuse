@@ -11,7 +11,7 @@ test("TextareaProps is the native textarea surface plus the field size, with no 
   const _area = <Textarea aria-label="Notes" maxLength={200} rows={4} />;
   const _sm = <Textarea size="sm" aria-label="Notes" />;
 
-  // @ts-expect-error the field size has no lg; the min-h floor is not a control rung
+  // @ts-expect-error the field size has no lg; the min-h floor is not a control size
   const _noLarge = <Textarea size="lg" />;
   // @ts-expect-error the box is not variant-axed
   const _noVariant = <Textarea variant="ghost" />;

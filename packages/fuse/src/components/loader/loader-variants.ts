@@ -6,7 +6,7 @@ import { tv } from "../../styles/tv";
  *
  * - `variant` is intentionally single-valued (`default`) so future arms
  *   (muted/inverse) are additive, not breaking.
- * - `size` is a decorative icon-glyph axis, not a density rung:
+ * - `size` is a decorative icon-glyph axis, not a control size:
  * wrapper padding stays `p-4`.
  */
 export const loaderVariants = tv({
@@ -27,15 +27,15 @@ export const loaderVariants = tv({
       small: {
         icon: "size-3",
       },
-      // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- decorative icon-glyph axis, not a control-box rung
+      // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- decorative icon-glyph axis, not a control size
       medium: {
         icon: "size-6",
       },
-      // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- decorative icon-glyph axis, not a control-box rung
+      // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- decorative icon-glyph axis, not a control size
       large: {
         icon: "size-8",
       },
-      // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- decorative icon-glyph axis, not a control-box rung
+      // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- decorative icon-glyph axis, not a control size
       xl: {
         icon: "size-10",
       },

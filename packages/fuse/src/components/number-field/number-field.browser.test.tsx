@@ -625,7 +625,7 @@ describe("NumberField density metrics", () => {
     }
   });
 
-  it("pins the field box to the signed md rung and sizes each stepper xs-wide and full-height at both densities, without rescoping", () => {
+  it("pins the field box to the signed md control size and sizes each stepper xs-wide and full-height at both densities, without rescoping", () => {
     const { rerender, unmount: unmountMetrics } = renderField(<NumberField label="Meter" defaultValue={1} />);
     for (const density of ["dense", "comfortable"] as const) {
       stampDensity(density);

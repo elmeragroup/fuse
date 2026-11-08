@@ -5,7 +5,7 @@
  *
  * `emptyVariants` holds a slot per part but Media: `variant` on Root is the frame, and `empty.tsx`
  * resolves the other slots once at module scope. `emptyMediaVariants` is Media's own recipe, whose
- * `variant` is the icon or illustration box. Neither axis is a density rung.
+ * `variant` is the icon or illustration box. Neither axis is a control size.
  */
 import { emptyBorderedShellClass, emptyShellClass } from "../../styles/inner-corner/empty";
 import { tv } from "../../styles/tv";

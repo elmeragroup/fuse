@@ -10,7 +10,7 @@ import { tv } from "../../styles/tv";
  *   soft status tokens on their tinted surface.
  * - Badge is deliberately non-interactive. The recipe drops the ref's bare `:focus` ring
  *   and its `hover:` fills, so no state suggests an affordance a <span> does not have.
- * - `size` is a decorative pill axis, not a density rung:
+ * - `size` is a decorative pill axis, not a control size:
  *   it pins no control box, so it does not read `--control-*`.
  */
 export const badgeVariants = tv({
