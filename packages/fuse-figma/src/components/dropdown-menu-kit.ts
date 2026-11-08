@@ -38,11 +38,7 @@
  * while the others fill (probe PM), and a row instance that hugs draws its text at its own width
  * while the row set's text fills (see U39-T3's report).
  */
-import {
-  dropdownMenuVariants,
-  menuItemIndicatorClass,
-  menuItemIndicatorRoomClass,
-} from "@elmeragroup/fuse/recipe-catalog";
+import { dropdownMenuVariants } from "@elmeragroup/fuse/recipe-catalog";
 
 import type {
   AncestorDefinition,
@@ -64,7 +60,7 @@ import { SURFACE_PAD_SM } from "./kit-lengths";
 import { DROPDOWN_POPUP_ANCESTOR, DROPDOWN_POPUP_FACTS } from "./menu-kit";
 import { always, never, openPopupFacts } from "./popup-facts";
 
-const { item, shortcut, subTrigger, subTriggerCaret } = dropdownMenuVariants();
+const { checkableItem, item, itemIndicator, shortcut, subTrigger, subTriggerCaret } = dropdownMenuVariants();
 
 /**
  * The width a row takes in a Dropdown menu popup at its minimum: `min-w-32`, 128px, less
@@ -246,7 +242,7 @@ function indicatorOf(slot: string): PartDefinition {
     key: "indicator",
     slot,
     shownIn: isChecked,
-    classesFor: () => menuItemIndicatorClass,
+    classesFor: () => itemIndicator(),
     label: undefined,
     iconsFor: () => [CHECK],
   };
@@ -278,7 +274,7 @@ function checkableRow(fields: {
       { name: "state", values: ["rest", "highlighted", "focus", "disabled"] },
     ],
     columnAxis: "state",
-    classesFor: () => `${item()} ${menuItemIndicatorRoomClass}`,
+    classesFor: () => checkableItem(),
     previewWidth: DROPDOWN_ROW_CELL_WIDTH,
     ancestorsFor: () => [DROPDOWN_POPUP_ANCESTOR, ...fields.group],
     states: ROW_STATES,

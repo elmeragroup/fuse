@@ -63,12 +63,7 @@ export { METER_CONSTANTS } from "./meter/meter-constants";
 export { meterToneCell } from "./meter/meter-tone";
 export { meterVariants } from "./meter/meter-variants";
 export { navigationMenuVariants } from "./navigation-menu/navigation-menu-variants";
-export {
-  menuGroupLabelClass,
-  menuItemIndicatorClass,
-  menuItemIndicatorRoomClass,
-  menuSeparatorClass,
-} from "./overlay/menu-row-classes";
+export { menuGroupLabelClass, menuSeparatorClass } from "./overlay/menu-row-classes";
 export { numberFieldVariants } from "./number-field/number-field-variants";
 export { overlayModalPopupClass } from "./overlay/overlay-classes";
 export { overlayCornerCloseClass } from "./overlay/overlay-corner-close-class";

@@ -2,7 +2,14 @@ import { cn } from "../../styles/cn";
 import { menuPopupShellClass } from "../../styles/inner-corner/menu";
 import { tv } from "../../styles/tv";
 import { selfFocusRingClass } from "../../styles/utils";
-import { menuGroupLabelClass, menuItemClass, menuItemInsetClass } from "../overlay/menu-row-classes";
+import {
+  menuGroupLabelClass,
+  menuItemClass,
+  menuItemIndicatorClass,
+  menuItemIndicatorRoomClass,
+  menuItemInsetClass,
+  menuSeparatorClass,
+} from "../overlay/menu-row-classes";
 import { overlayPositionerClass, overlayTimedPopupClass } from "../overlay/overlay-classes";
 
 const itemClass = cn(
@@ -21,10 +28,14 @@ const itemClass = cn(
  * - `positioner` is the shared positioner, which never shows an outline.
  * - `content` and `subContent` are the shared timed popup on the menu shell, which rounds, pads and
  *   publishes `--inner-corner`. A submenu raises its shadow and is at least 96px wide.
- * - `item` is the row Item, LinkItem, CheckboxItem and RadioItem render, with the destructive tone.
+ * - `item` is the row Item and LinkItem render, with the destructive tone.
+ * - `checkableItem` is the row CheckboxItem and RadioItem render: `item` with room at its end for
+ *   the indicator.
+ * - `itemIndicator` is the shared trailing check slot.
  * - `subTrigger` is the row, which keeps the highlight while its submenu is open.
  * - `subTriggerCaret` pushes CaretRight to the row's end.
  * - `label` is the shared group label, inset with the rows, at Medium weight.
+ * - `separator` is the shared hairline.
  * - `shortcut` sets its keys at 12px with wide tracking at the row's end, muted until the row
  *   takes focus.
  */
@@ -40,12 +51,15 @@ export const dropdownMenuVariants = tv({
     ],
     subContent: [overlayTimedPopupClass, menuPopupShellClass, "shadow-lg w-auto min-w-[96px]"],
     item: itemClass,
+    checkableItem: [itemClass, menuItemIndicatorRoomClass],
+    itemIndicator: menuItemIndicatorClass,
     subTrigger: [
       itemClass,
       "data-popup-open:bg-accent data-popup-open:text-accent-foreground data-open:bg-accent data-open:text-accent-foreground",
     ],
     subTriggerCaret: "ml-auto",
     label: [menuGroupLabelClass, menuItemInsetClass, "font-medium"],
+    separator: menuSeparatorClass,
     shortcut:
       "text-xs tracking-widest ml-auto text-muted-foreground group-focus/dropdown-menu-item:text-accent-foreground",
   },

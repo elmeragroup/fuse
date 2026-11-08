@@ -10,18 +10,17 @@ import { Check } from "../../icons/generated/check";
 import { cn } from "../../styles/cn";
 import { mergeClassName } from "../../styles/merge-class-name";
 import { selfFocusRingClass } from "../../styles/utils";
-import {
-  menuItemIndicatorClass,
-  menuItemIndicatorRoomClass,
-  menuSeparatorClass,
-} from "../overlay/menu-row-classes";
 import { OverlayPortal } from "../overlay/overlay-portal";
 import type { OverlayContainerProps, OverlayPositionerProps } from "../overlay/overlay-props";
 import { dropdownMenuVariants } from "./dropdown-menu-variants";
 
 const dropdownMenuSlots = dropdownMenuVariants();
-/** Shared item face. Module-private — Item, LinkItem, CheckboxItem, RadioItem, and SubTrigger compose it. */
+/** Shared item face. Module-private — Item and LinkItem render it. */
 const dropdownMenuItemClassName = dropdownMenuSlots.item();
+/** CheckboxItem's and RadioItem's face: the item with room for the trailing indicator. */
+const dropdownMenuCheckableItemClassName = dropdownMenuSlots.checkableItem();
+const dropdownMenuItemIndicatorClassName = dropdownMenuSlots.itemIndicator();
+const dropdownMenuSeparatorClassName = dropdownMenuSlots.separator();
 
 export function DropdownMenuPortal(props: ComponentProps<typeof MenuPrimitive.Portal>): ReactElement {
   return <MenuPrimitive.Portal data-slot="dropdown-menu-portal" {...props} />;
@@ -203,10 +202,10 @@ export function DropdownMenuCheckboxItem({
     <MenuPrimitive.CheckboxItem
       data-slot="dropdown-menu-checkbox-item"
       data-inset={inset ? true : undefined}
-      className={mergeClassName(className, dropdownMenuItemClassName, menuItemIndicatorRoomClass)}
+      className={mergeClassName(className, dropdownMenuCheckableItemClassName)}
       checked={checked}
       {...props}>
-      <span className={menuItemIndicatorClass} data-slot="dropdown-menu-checkbox-item-indicator">
+      <span className={dropdownMenuItemIndicatorClassName} data-slot="dropdown-menu-checkbox-item-indicator">
         <MenuPrimitive.CheckboxItemIndicator>
           <Check />
         </MenuPrimitive.CheckboxItemIndicator>
@@ -266,9 +265,9 @@ export function DropdownMenuRadioItem({
     <MenuPrimitive.RadioItem
       data-slot="dropdown-menu-radio-item"
       data-inset={inset ? true : undefined}
-      className={mergeClassName(className, dropdownMenuItemClassName, menuItemIndicatorRoomClass)}
+      className={mergeClassName(className, dropdownMenuCheckableItemClassName)}
       {...props}>
-      <span className={menuItemIndicatorClass} data-slot="dropdown-menu-radio-item-indicator">
+      <span className={dropdownMenuItemIndicatorClassName} data-slot="dropdown-menu-radio-item-indicator">
         <MenuPrimitive.RadioItemIndicator>
           <Check />
         </MenuPrimitive.RadioItemIndicator>
@@ -285,7 +284,7 @@ export function DropdownMenuSeparator({
   return (
     <MenuPrimitive.Separator
       data-slot="dropdown-menu-separator"
-      className={mergeClassName(className, menuSeparatorClass)}
+      className={mergeClassName(className, dropdownMenuSeparatorClassName)}
       {...props}
     />
   );

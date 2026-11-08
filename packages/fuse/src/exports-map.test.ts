@@ -368,8 +368,6 @@ describe("exports map", () => {
       "meterVariants",
       "navigationMenuVariants",
       "menuGroupLabelClass",
-      "menuItemIndicatorClass",
-      "menuItemIndicatorRoomClass",
       "menuSeparatorClass",
       "numberFieldVariants",
       "overlayModalPopupClass",
