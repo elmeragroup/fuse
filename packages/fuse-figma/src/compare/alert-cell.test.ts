@@ -9,13 +9,13 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { rendersIn } from "../../test/markup-tree";
-import { elementsOf } from "../../test/static-markup";
 import { ALERT } from "../components/alert-kit";
 import type { BoxDefinition, Cell } from "../components/component-spec";
 import { framePartsOf } from "../components/definition-parts";
 import { alert } from "./alert-cell";
 import { renderCellHtml } from "./cell-renderers";
+import { rendersIn } from "./markup-tree";
+import { elementsOf } from "./static-markup";
 
 /** The classes the definition gives each frame a cell shows with the given properties on, by `data-slot`. */
 function definedClasses(

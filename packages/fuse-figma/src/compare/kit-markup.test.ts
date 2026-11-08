@@ -51,9 +51,10 @@
  * behind a property that starts false must be absent there, and a definition with such a part
  * renders each cell once more with each such property on, where the part must be there.
  *
- * `test/markup-check.ts` holds the assertions, `test/markup-tree.ts` the queries over the markup and
- * `test/markup-variants.ts` the variant tables. This suite runs them on every kit definition, each
- * in a test of its own, and on hand-written fixtures.
+ * `markup-check.ts` holds the checks, `markup-tree.ts` the queries over the markup and
+ * `markup-variants.ts` the variant tables, and `test/markup-check.ts` fails a test on their
+ * diagnostics. This suite runs them on every kit definition, each in a test of its own, and on
+ * hand-written fixtures.
  */
 
 import { createElement } from "react";
@@ -64,19 +65,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
 import { chip, dot, ICON } from "../../test/fixture-sets";
-import { checkMarkup, expectedLabel } from "../../test/markup-check";
-import { markupLabel } from "../../test/markup-tree";
-import {
-  ATTRIBUTE_VARIANTS,
-  NAMED_ATTRIBUTE_VARIANTS,
-  GROUP_VARIANTS,
-  HAS_VARIANTS,
-  NOT_ATTRIBUTES,
-  PARENT_VARIANTS,
-  PEER_VARIANTS,
-  TAG_VARIANTS,
-} from "../../test/markup-variants";
-import { elementsOf } from "../../test/static-markup";
+import { checkMarkup } from "../../test/markup-check";
 import { splitClassName } from "../components/class-name";
 import { definitionClasses } from "../components/component-spec";
 import type {
@@ -91,6 +80,19 @@ import { KIT } from "../components/kit-registry";
 import { makeStateTable } from "../components/state-table";
 import { isClientRenderer, loadRenderers } from "./cell-renderers";
 import type { CellRendering } from "./cell-renderers";
+import { expectedLabel } from "./markup-check";
+import { markupLabel } from "./markup-tree";
+import {
+  ATTRIBUTE_VARIANTS,
+  NAMED_ATTRIBUTE_VARIANTS,
+  GROUP_VARIANTS,
+  HAS_VARIANTS,
+  NOT_ATTRIBUTES,
+  PARENT_VARIANTS,
+  PEER_VARIANTS,
+  TAG_VARIANTS,
+} from "./markup-variants";
+import { elementsOf } from "./static-markup";
 
 /**
  * The kit sets whose renderer mounts on the compare page, by key, written by hand so a new one is a

@@ -7,8 +7,8 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { elementsOf } from "../../test/static-markup";
 import { renderCellHtml } from "./cell-renderers";
+import { elementsOf } from "./static-markup";
 import { toolbar } from "./toolbar-cell";
 
 describe("the Toolbar renderer", () => {

@@ -5,9 +5,9 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { elementsOf } from "../../test/static-markup";
 import { badge } from "./badge-cell";
 import { renderCellHtml } from "./cell-renderers";
+import { elementsOf } from "./static-markup";
 
 describe("the Badge renderer", () => {
   it("renders one badge div whose own text is the label", () => {

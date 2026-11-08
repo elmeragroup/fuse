@@ -6,8 +6,8 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { elementsOf } from "../../test/static-markup";
 import { renderCellHtml } from "./cell-renderers";
+import { elementsOf } from "./static-markup";
 import { toggleGroup } from "./toggle-group-cell";
 
 describe("the Toggle group renderer", () => {

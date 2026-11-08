@@ -344,8 +344,6 @@ Paths are relative to `packages/fuse-figma` unless they start with `packages/`.
   inner variant. Nine kit modules set the flag by hand, and a new set that needs it cuts its rings
   at the root's edge until a real-file compare catches it. The change flips `clipsContent` on
   earlier sets whose roots cast no shadow, so plan it with a real-file run.
-- Move the markup validator from `test/markup-check.ts` into `src` and return diagnostics. The
-  compare CLI reaches it through `src/compare/client-markup.ts` and so loads Vitest's `expect`.
 - Mount each client cell a second time with its default-false BOOLEAN properties on. Today every
   mount uses the defaults, so the Dropdown menu item's Icon is never checked turned on. Add a
   negative control that fails when the optional icon is missing.

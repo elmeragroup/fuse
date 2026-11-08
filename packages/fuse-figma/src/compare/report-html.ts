@@ -1,9 +1,11 @@
 /**
  * The comparison report as one HTML file: a summary per preview, then every cell worst first
- * with its Figma, browser and diff pictures, and filters by preview and by each variant axis.
- * The pictures are PNG files next to the report, so the file opens straight from disk.
+ * with its Figma, browser and diff pictures and any markup difference, and filters by preview and
+ * by each variant axis. The pictures are PNG files next to the report, so the file opens straight
+ * from disk.
  */
 
+import type { MarkupDiagnostic } from "./markup-check.ts";
 import type { CompareReport, ReportRow } from "./run-compare.ts";
 
 function escape(text: string): string {
@@ -54,6 +56,13 @@ function picture(path: string | null, caption: string, row: ReportRow): string {
   return `<figure>${image}<figcaption>${escape(caption)}</figcaption></figure>`;
 }
 
+/** How a cell's mounted markup differs from its definition, as a list, or nothing. */
+function markupList(markup: readonly MarkupDiagnostic[]): string {
+  return markup.length === 0
+    ? ""
+    : `<ul class="markup">${markup.map(({ message }) => `<li>${escape(message)}</li>`).join("")}</ul>`;
+}
+
 function cellSection(row: ReportRow, rank: number): string {
   const { verdict } = row;
   const data = Object.entries(row.axes)
@@ -73,10 +82,11 @@ function cellSection(row: ReportRow, rank: number): string {
       ? "no Figma picture"
       : `tolerant ${percent(verdict.tolerantPercent)} (${String(row.pixels.tolerant)} px), raw ${percent(verdict.rawPercent)} (${String(row.pixels.raw)} px)`,
   ].join(" · ");
+  const markup = markupList(row.markup);
   return `<section class="cell" data-preview="${escape(row.preview)}" data-flagged="${verdict.flags.length > 0 ? "yes" : "no"}"${data}>
 <h3><span class="rank">#${String(rank)}</span> ${escape(row.variant)} ${flags}${note}</h3>
 <p>${facts}</p>
-<div class="pictures">${picture(row.images.figma, "Figma", row)}${picture(row.images.browser, "Browser", row)}${picture(row.images.diff, "Diff", row)}</div>
+${markup}<div class="pictures">${picture(row.images.figma, "Figma", row)}${picture(row.images.browser, "Browser", row)}${picture(row.images.diff, "Diff", row)}</div>
 </section>`;
 }
 
@@ -111,6 +121,7 @@ table{border-collapse:collapse;background:#fff}td,th{border:1px solid #ddd;paddi
 .cell p{margin:4px 0 8px;color:#555;font-size:12px}
 .rank{color:#888}.flag{display:inline-block;padding:0 6px;border-radius:4px;background:#fee4e2;color:#b42318;font-family:system-ui,sans-serif}
 .note{display:inline-block;padding:0 6px;border-radius:4px;background:#eef2f6;color:#475467;font-family:system-ui,sans-serif}
+.markup{margin:0 0 8px;padding-left:20px;color:#b42318;font-family:ui-monospace,monospace;font-size:12px}
 .pictures{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start}
 figure{margin:0}figcaption{font-size:11px;color:#777}
 img,.none{display:block;width:calc(var(--w) * var(--zoom,2));image-rendering:pixelated;outline:1px solid #ddd}
@@ -158,7 +169,7 @@ export function renderReportHtml(report: CompareReport): string {
       : `<h2>Skipped (${String(report.skipped.length)})</h2><ul>${report.skipped
           .map(
             (entry) =>
-              `<li><code>${escape(entry.variant)}</code> in ${escape(entry.preview)}: ${escape(entry.reason)}</li>`
+              `<li><code>${escape(entry.variant)}</code> in ${escape(entry.preview)}: ${escape(entry.reason)}${markupList(entry.markup)}</li>`
           )
           .join("")}</ul>`;
   return `<!doctype html>

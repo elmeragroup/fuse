@@ -9,9 +9,9 @@ import { describe, expect, it } from "vitest";
 
 import { METER_CONSTANTS, meterToneCell, meterVariants } from "@elmeragroup/fuse/recipe-catalog";
 
-import { elementsOf } from "../../test/static-markup";
 import { renderCellHtml } from "./cell-renderers";
 import { meter } from "./meter-cell";
+import { elementsOf } from "./static-markup";
 
 /** The Meter level each `level` value of the set draws, by the docs Modes demo's values. */
 const LEVELS = {

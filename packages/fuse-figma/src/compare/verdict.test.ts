@@ -73,11 +73,13 @@ describe("worstFirst", () => {
       row("no picture", { flags: ["no-figma-image"] }),
       row("subpixel only", { flags: ["subpixel-size"], tolerantPercent: 0.5 }),
       row("missing state", { flags: ["state-missing"], tolerantPercent: 0.1 }),
+      row("wrong markup", { flags: ["markup"] }),
     ];
     expect(worstFirst(rows).map((entry) => entry.name)).toEqual([
       "missing state",
       "size",
       "no picture",
+      "wrong markup",
       "high tolerant",
       "low tolerant, high raw",
       "low tolerant, low raw",

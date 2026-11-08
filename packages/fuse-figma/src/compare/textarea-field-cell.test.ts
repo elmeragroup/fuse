@@ -10,8 +10,8 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { attributesNamed, bySlot, elementsOf } from "../../test/static-markup";
 import { renderCellHtml } from "./cell-renderers";
+import { attributesNamed, bySlot, elementsOf } from "./static-markup";
 import { textareaField } from "./textarea-field-cell";
 
 /** The attributes that tell the cells apart, on the element that carries them. */

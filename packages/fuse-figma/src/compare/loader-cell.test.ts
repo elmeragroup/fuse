@@ -6,9 +6,9 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { elementsOf } from "../../test/static-markup";
 import { renderCellHtml } from "./cell-renderers";
 import { loader } from "./loader-cell";
+import { elementsOf } from "./static-markup";
 
 describe("the Loader renderer", () => {
   it("renders a status div around a hidden spinner and the visually hidden label", () => {

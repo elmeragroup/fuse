@@ -13,10 +13,10 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { elementsOf } from "../../test/static-markup";
 import { CALENDAR_DAY_LABEL } from "../components/calendar-day-kit";
 import { calendarDay } from "./calendar-day-cell";
 import { forcedAttributesFor, renderCellHtml } from "./cell-renderers";
+import { elementsOf } from "./static-markup";
 
 /** The cell's day and the calendar's heading, as the static markup holds them. */
 function render(cell: Readonly<Record<string, string>>) {

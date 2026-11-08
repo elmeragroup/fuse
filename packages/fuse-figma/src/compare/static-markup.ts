@@ -1,5 +1,6 @@
 /**
- * Read the HTML `renderToStaticMarkup` writes, shared by the compare renderers' tests. React
+ * Read the HTML `renderToStaticMarkup` writes, shared by the markup check and the compare renderers'
+ * tests. React
  * writes every element with a closing tag except the void ones, quotes every attribute value
  * and escapes `"` and `>` inside them, so a tag scan finds each element, its parent and its own
  * text. The module also finds the element a cell renders for its component's root, matches an
@@ -7,7 +8,7 @@
  * vary.
  */
 
-import type { ElementSelector } from "../src/components/component-spec.ts";
+import type { ElementSelector } from "../components/component-spec.ts";
 
 /** Elements HTML never closes. */
 const VOID_ELEMENTS = new Set([

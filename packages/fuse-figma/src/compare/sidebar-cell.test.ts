@@ -13,7 +13,6 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { elementsOf } from "../../test/static-markup";
 import type { Cell, ComponentDefinition } from "../components/component-spec";
 import {
   SIDEBAR_GROUP_LABEL,
@@ -43,6 +42,7 @@ import {
   sidebarMenuSubButton,
   sidebarPanel,
 } from "./sidebar-cell";
+import { elementsOf } from "./static-markup";
 
 /**
  * The host's style and class, its rail marker, and the class of the element carrying the definition's

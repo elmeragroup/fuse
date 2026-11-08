@@ -327,6 +327,12 @@ function judgeSelfCheck(
   for (const row of flagged.slice(0, 10)) {
     lines.push(`  flagged: ${row.preview} ${row.variant} [${row.verdict.flags.join(", ")}]`);
   }
+  // A markup difference flags its cell, which fails the check above, and the line says what differs.
+  for (const row of [...report.rows, ...report.skipped]) {
+    for (const { message } of row.markup) {
+      lines.push(`markup: ${row.preview} ${message}`);
+    }
+  }
   const passed =
     topMatches &&
     worstTolerant === 0 &&

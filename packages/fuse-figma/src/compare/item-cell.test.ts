@@ -8,10 +8,10 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { elementsOf } from "../../test/static-markup";
 import { renderCellHtml } from "./cell-renderers";
 import type { CellRendering } from "./cell-renderers";
 import { item, itemLink } from "./item-cell";
+import { elementsOf } from "./static-markup";
 
 /** The host, the row's variant and the media's variant a cell renders. */
 function looks(renderer: CellRendering, cell: Record<string, string>) {

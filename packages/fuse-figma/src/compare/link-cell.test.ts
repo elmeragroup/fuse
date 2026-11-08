@@ -8,12 +8,12 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { elementsOf } from "../../test/static-markup";
 import { matrixCells } from "../components/component-spec";
 import type { Cell } from "../components/component-spec";
 import { LINK } from "../components/link-kit";
 import { renderCellHtml } from "./cell-renderers";
 import { link } from "./link-cell";
+import { elementsOf } from "./static-markup";
 
 function classes(value: string): ReadonlySet<string> {
   return new Set(value.split(" "));

@@ -8,9 +8,9 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { elementsOf } from "../../test/static-markup";
 import { renderCellHtml } from "./cell-renderers";
 import { empty } from "./empty-cell";
+import { elementsOf } from "./static-markup";
 
 describe("the Empty renderer", () => {
   it.each(["default", "outline", "outline-dashed"])(

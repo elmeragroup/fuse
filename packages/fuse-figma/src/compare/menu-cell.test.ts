@@ -6,9 +6,9 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { elementsOf } from "../../test/static-markup";
 import { renderCellHtml } from "./cell-renderers";
 import { menuSeparator } from "./menu-cell";
+import { elementsOf } from "./static-markup";
 
 describe("the Menu separator renderer", () => {
   it("renders one empty separator div in its host", () => {

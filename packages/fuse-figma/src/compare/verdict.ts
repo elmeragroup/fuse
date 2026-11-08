@@ -20,6 +20,8 @@ export type BoxSize = { readonly width: number; readonly height: number };
  *   styles, so the page hovered or focused the element for real.
  * - `state-missing`: the browser did not show the state at all, so the browser side is wrong.
  * - `no-figma-image`: Figma drew nothing for the instance.
+ * - `markup`: the markup the page mounted for a client cell differs from its definition, as the
+ *   row's `markup` diagnostics say, so the picture compares another variant than the kit draws.
  */
 export type CellFlag =
   | "size"
@@ -27,10 +29,11 @@ export type CellFlag =
   | "png-size"
   | "state-by-interaction"
   | "state-missing"
-  | "no-figma-image";
+  | "no-figma-image"
+  | "markup";
 
 /** The flags that put a cell at the top of the report whatever its pixels say. */
-const SEVERE: readonly CellFlag[] = ["no-figma-image", "state-missing", "size"];
+const SEVERE: readonly CellFlag[] = ["markup", "no-figma-image", "state-missing", "size"];
 
 /** A box side may differ by this much before it counts as a size difference. */
 const SIZE_TOLERANCE = 0.5;

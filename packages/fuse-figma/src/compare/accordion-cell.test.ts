@@ -8,12 +8,12 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { elementsOf } from "../../test/static-markup";
 import { ACCORDION_ITEM } from "../components/accordion-kit";
 import type { BoxDefinition, Cell } from "../components/component-spec";
 import { framePartsOf } from "../components/definition-parts";
 import { accordionItem } from "./accordion-cell";
 import { renderCellHtml } from "./cell-renderers";
+import { elementsOf } from "./static-markup";
 
 /** The classes the definition gives each box with a `data-slot` that a cell shows, by `data-slot`. */
 function definedClasses(

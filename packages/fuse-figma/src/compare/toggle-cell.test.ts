@@ -7,9 +7,9 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { elementsOf } from "../../test/static-markup";
 import type { Cell } from "../components/component-spec";
 import { renderCellHtml } from "./cell-renderers";
+import { elementsOf } from "./static-markup";
 import { iconToggle, labelToggle } from "./toggle-cell";
 
 /** The attributes of the toggle button the cell renders first. */

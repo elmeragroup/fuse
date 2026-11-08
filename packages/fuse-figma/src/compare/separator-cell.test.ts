@@ -6,9 +6,9 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { elementsOf } from "../../test/static-markup";
 import { renderCellHtml } from "./cell-renderers";
 import { separator } from "./separator-cell";
+import { elementsOf } from "./static-markup";
 
 describe("the Separator renderer", () => {
   it.each(["horizontal", "vertical"])("renders one empty %s separator div", (orientation) => {
