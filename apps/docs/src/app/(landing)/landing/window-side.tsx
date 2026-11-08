@@ -33,6 +33,10 @@ export function useSideShown(): boolean {
  * assistive technology. The reset happens in the render that hides the side, and Base UI closes
  * the controlled popup in the same commit. The rest of the side keeps its state.
  *
+ * A hidden side reads `closed` whatever the setter last stored, and the stored value resets again
+ * when the side shows. Base UI opens a pressed trigger's popup a frame after the press, so a flip
+ * in that frame would otherwise open the popup on the side it just hid.
+ *
  * @template T - The overlay's open state, such as a boolean or a nav panel's value.
  * @param closed - The value that closes the overlay; also the initial value.
  * @returns The current value and its setter, as `useState` returns them.
@@ -43,30 +47,7 @@ export function useSideOverlay<T>(closed: T): readonly [T, Dispatch<SetStateActi
   const [wasShown, setWasShown] = useState(shown);
   if (wasShown !== shown) {
     setWasShown(shown);
-    if (!shown) {
-      setValue(closed);
-    }
+    setValue(closed);
   }
-  return [value, setValue] as const;
-}
-
-/**
- * A remount key for a part on one side of the hero window that keeps its overlay's open state
- * where `useSideOverlay` cannot reach it. The key changes in the render that hides the side, so a
- * keyed part remounts there: its popup closes and drops any scroll lock, while the part stays in
- * the side's layout through the flip. State the part reads from its owner survives the remount.
- *
- * @returns A number that changes each time the caller's side hides.
- */
-export function useSideRemountKey(): number {
-  const shown = useSideShown();
-  const [hides, setHides] = useState(0);
-  const [wasShown, setWasShown] = useState(shown);
-  if (wasShown !== shown) {
-    setWasShown(shown);
-    if (!shown) {
-      setHides(hides + 1);
-    }
-  }
-  return hides;
+  return [shown ? value : closed, setValue] as const;
 }

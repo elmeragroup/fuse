@@ -164,6 +164,15 @@
       "forwardedCount": 279,
       "props": [
         {
+          "name": "defaultPageSizeOpen",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Whether the rows-per-page list starts open when `pageSizeOpen` is not passed. Defaults to `false`.",
+          "required": false
+        },
+        {
           "name": "firstPageLabel",
           "origin": "declared",
           "type": "string | undefined",
@@ -197,6 +206,24 @@
           "shortType": null,
           "defaultValue": null,
           "description": "Accessible name of the next-page button. Defaults to the locale dictionary.",
+          "required": false
+        },
+        {
+          "name": "onPageSizeOpenChange",
+          "origin": "declared",
+          "type": "((open: boolean, eventDetails: SelectRootOpenChangeEventDetails) => void) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Called with the next open state and Base UI's change details when the rows-per-page list opens or closes.",
+          "required": false
+        },
+        {
+          "name": "pageSizeOpen",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Whether the rows-per-page select's list is open. Pass it with `onPageSizeOpenChange` to control the list, for example to close it when the host hides the table. The names carry the `pageSize` prefix because the pagination bar itself has no popup.",
           "required": false
         },
         {
@@ -416,6 +443,15 @@
           "required": false
         },
         {
+          "name": "defaultOpen",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Whether the menu starts open when `open` is not passed. Defaults to `false`.",
+          "required": false
+        },
+        {
           "name": "delay",
           "origin": {
             "packageName": "@base-ui/react"
@@ -475,6 +511,24 @@
           "shortType": null,
           "defaultValue": "true",
           "description": "Whether the component renders a native `<button>` element when replacing it via the `render` prop. Set to `false` if the rendered element is not a button (for example, `<div>`).",
+          "required": false
+        },
+        {
+          "name": "onOpenChange",
+          "origin": "declared",
+          "type": "((open: boolean, eventDetails: MenuRootChangeEventDetails) => void) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Called with the next open state and Base UI's change details when the menu opens or closes.",
+          "required": false
+        },
+        {
+          "name": "open",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Whether the menu is open. Pass it with `onOpenChange` to control the menu, for example to close it when the host hides the table.",
           "required": false
         },
         {

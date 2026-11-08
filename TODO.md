@@ -461,10 +461,6 @@ Paths are relative to `packages/fuse-figma` unless they start with `packages/`.
   expands mapped `Intl` types.
 - Faceted filters, toolbars, search, URL state, editable cells, virtualization, column resizing,
   pinning, grouping and expanding are out of the first entry.
-- Give `DataTable.ColumnToggle` and `DataTable.Pagination`'s Rows per page Select a controlled
-  open state. Neither takes `open` or `onOpenChange`, so a host that must close their popups
-  remounts them, as the landing's Order search does
-  (`apps/docs/src/app/(landing)/landing/app-shell/order-search.tsx`).
 
 ## Data table filter
 
@@ -654,8 +650,8 @@ each stand-in once Fuse ships the part.
   next to the `inset` rail.
 
 Every overlay on a side of the hero window must close when that side hides, through
-`useSideOverlay` or `useSideRemountKey` in `landing/window-side.tsx`. Nothing enforces this, so a
-new overlay that skips both keeps its scroll lock after a flip. Add a lint rule, or a browser test
+`useSideOverlay` in `landing/window-side.tsx`. Nothing enforces this, so a new overlay that skips
+it keeps its scroll lock after a flip. Add a lint rule, or a browser test
 that opens every overlay on a side before flipping the window.
 
 ## Product-triggered work

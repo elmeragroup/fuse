@@ -360,10 +360,18 @@ describe("landing hero window, External side", () => {
     const app = await openOrderSearch(page);
     const site = brandSite(page, ELMERA.site);
     const rowsPerPage = app.getByRole("combobox", { name: "Rows per page" });
-    // DOM audit: a popup left behind on the inert side has no role a query could reach.
-    const popups = page.locator("[role='menu'], [role='listbox']");
+    // DOM audit: a popup left behind on the inert side has no role a query could reach. Once its
+    // trigger has had focus, Base UI keeps a closed Select's list in the DOM, inside a hidden
+    // positioner, so a list counts as left behind while it is open or rendered.
+    const leftBehind = async () =>
+      page
+        .locator("[role='menu'], [role='listbox']")
+        .evaluateAll(
+          (lists) =>
+            lists.filter((list) => list.closest("[data-closed]") === null || list.checkVisibility()).length
+        );
 
-    // Each control holds its own open state; the route flips the window.
+    // Each control's popup closes with its side; the route flips the window.
     const openers = [
       async () => {
         await app.getByRole("button", { name: "Columns" }).click();
@@ -376,14 +384,16 @@ describe("landing hero window, External side", () => {
         await app.getByRole("button", { name: "Go to next page" }).click();
         await app.getByText("Page 2 of 3").waitFor();
         await rowsPerPage.click();
-        await page.getByRole("listbox").waitFor();
+        // The list the pick closed can still be mounted, so wait on the trigger: Base UI opens the
+        // list a frame after the press.
+        await expect.poll(async () => rowsPerPage.getAttribute("aria-expanded")).toBe("true");
       },
     ];
     for (const open of openers) {
       await open();
       await page.goForward();
       await expect.poll(() => new URL(page.url()).search).toBe("");
-      await expect.poll(async () => popups.count()).toBe(0);
+      await expect.poll(leftBehind).toBe(0);
       await expectReachable(page, site, unlocked);
       await page.goBack();
       await expect.poll(async () => isInert(app)).toBe(false);
@@ -416,6 +426,60 @@ describe("landing hero window, External side", () => {
       expect((await control.boundingBox())?.height ?? 0, selector).toBeGreaterThan(0);
     }
     expect(await bodyHeight()).toBe(before);
+    await page.context().close();
+  });
+
+  it("keeps Order search's Rows per page Select closed when its open lands after Forward hid the Dashboard, and after Back shows it", async () => {
+    const page = await openLanding(DESKTOP_VIEWPORT, { search: "?theme=internal-fkas-company" });
+    const unlocked = await documentStyles(page);
+    await page.getByRole("banner").getByRole("link", { name: "Fuse" }).click();
+    await expect.poll(() => new URL(page.url()).search).toBe("");
+    await page.goBack();
+    await expect.poll(async () => isInert(dashboard(page))).toBe(false);
+    const app = await openOrderSearch(page);
+    // The trigger sits in the inert side for most reads, so the query includes hidden elements.
+    const rowsPerPage = app.getByRole("combobox", { name: "Rows per page", includeHidden: true });
+    const expanded = async () => rowsPerPage.getAttribute("aria-expanded");
+
+    // Base UI opens a pressed Select a frame after mousedown. Hold the frames the press requests,
+    // and only those, so the open lands where the test puts it: after the flip. The settle first
+    // drains any frame already pending, so the press schedules its own.
+    const releaseHeldFrames = await page.evaluateHandle(() => {
+      const native = window.requestAnimationFrame.bind(window);
+      const held: FrameRequestCallback[] = [];
+      let holding = false;
+      window.requestAnimationFrame = (callback) => {
+        if (!holding) return native(callback);
+        held.push(callback);
+        return -held.length;
+      };
+      window.addEventListener("mousedown", () => (holding = true), { capture: true });
+      // The window's bubble listener runs after React's, on the root below it.
+      window.addEventListener("mousedown", () => (holding = false));
+      return () => {
+        const now = performance.now();
+        return held.splice(0).map((callback) => callback(now)).length;
+      };
+    });
+    await settleFrames(page);
+    await rowsPerPage.click();
+    expect(await expanded()).toBe("false");
+
+    await page.goForward();
+    await expect.poll(async () => isInert(app)).toBe(true);
+    expect(await releaseHeldFrames.evaluate((release) => release())).toBeGreaterThan(0);
+    // Two frames give React time to commit whatever the late open set.
+    await settleFrames(page);
+    expect(await expanded()).toBe("false");
+    // DOM audit: an open list on the inert side has no role a query could reach.
+    expect(await page.locator("[role='listbox']:not([data-closed], [data-closed] *)").count()).toBe(0);
+    await expectReachable(page, brandSite(page, ELMERA.site), unlocked);
+
+    await page.goBack();
+    await expect.poll(async () => isInert(app)).toBe(false);
+    await settleFrames(page);
+    expect(await expanded()).toBe("false");
+    await expectReachable(page, app, unlocked);
     await page.context().close();
   });
 
