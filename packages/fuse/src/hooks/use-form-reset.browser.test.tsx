@@ -96,6 +96,95 @@ describe("useFormReset", () => {
     expect(resetCalls(add)).toHaveLength(listeners);
   });
 
+  it("shares one root listener across subscribers until the last one unmounts", async () => {
+    const callbacks = Array.from({ length: 5 }, () => vi.fn());
+
+    function Rows({ count }: { count: number }) {
+      return (
+        <form aria-label="Rows">
+          {callbacks.slice(0, count).map((onReset, index) => (
+            <Row key={index} onReset={onReset} />
+          ))}
+        </form>
+      );
+    }
+
+    function Row({ onReset }: { onReset: () => void }) {
+      const element = useRef<HTMLInputElement>(null);
+      useFormReset(element, onReset);
+      return <input aria-label="Row" ref={element} />;
+    }
+
+    async function resetRows(): Promise<void> {
+      vi.useFakeTimers();
+      try {
+        formNamed("Rows").reset();
+        await vi.runOnlyPendingTimersAsync();
+      } finally {
+        vi.useRealTimers();
+      }
+    }
+
+    const add = vi.spyOn(document, "addEventListener");
+    const remove = vi.spyOn(document, "removeEventListener");
+    const { rerender, unmount } = render(<Rows count={5} />);
+    expect(resetCalls(add), "five subscribers, one listener").toHaveLength(1);
+
+    await resetRows();
+    expect(callbacks.map((onReset) => onReset.mock.calls.length)).toEqual([1, 1, 1, 1, 1]);
+
+    rerender(<Rows count={4} />);
+    expect(resetCalls(remove), "the remaining subscribers keep the listener").toEqual([]);
+    await resetRows();
+    expect(callbacks.map((onReset) => onReset.mock.calls.length)).toEqual([2, 2, 2, 2, 1]);
+
+    unmount();
+    expect(resetCalls(remove), "the last unsubscribe removes the listener it added").toEqual(resetCalls(add));
+  });
+
+  it("adds one listener per root for subscribers in the document and a shadow root", async () => {
+    const shadowHost = document.createElement("div");
+    document.body.append(shadowHost);
+    const shadow = shadowHost.attachShadow({ mode: "open" });
+    const mountPoint = document.createElement("div");
+    shadow.append(mountPoint);
+    const light = [vi.fn(), vi.fn()];
+    const shadowed = [vi.fn(), vi.fn()];
+
+    function Pair({ label, callbacks }: { label: string; callbacks: Array<() => void> }) {
+      const first = useRef<HTMLInputElement>(null);
+      const second = useRef<HTMLInputElement>(null);
+      useFormReset(first, callbacks[0] ?? null);
+      useFormReset(second, callbacks[1] ?? null);
+      return (
+        <form aria-label={label}>
+          <input aria-label={`${label} first`} ref={first} />
+          <input aria-label={`${label} second`} ref={second} />
+        </form>
+      );
+    }
+
+    const documentAdd = vi.spyOn(document, "addEventListener");
+    const shadowAdd = vi.spyOn(shadow, "addEventListener");
+    const { unmount } = render(
+      <>
+        <Pair label="Light" callbacks={light} />
+        {createPortal(<Pair label="Shadowed" callbacks={shadowed} />, mountPoint)}
+      </>
+    );
+    expect(resetCalls(documentAdd)).toHaveLength(1);
+    expect(resetCalls(shadowAdd)).toHaveLength(1);
+
+    formNamed("Shadowed").reset();
+    await vi.waitFor(() => {
+      expect(shadowed.map((onReset) => onReset.mock.calls.length)).toEqual([1, 1]);
+    });
+    expect(light.map((onReset) => onReset.mock.calls.length)).toEqual([0, 0]);
+
+    unmount();
+    shadowHost.remove();
+  });
+
   it("calls the callback once per native reset under StrictMode's double mount", async () => {
     const onReset = vi.fn();
     render(

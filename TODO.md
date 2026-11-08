@@ -268,10 +268,6 @@
   not return to `defaultChecked` or `defaultValue` the way a native checkbox does. Base UI 1.8's
   checked controls do not observe `reset`. Report it upstream; a Fuse-side restore means holding
   the uncontrolled value in Fuse and tracking each group's member inputs (#144).
-- `useFormReset` (`hooks/use-form-reset.ts`) adds one capture `reset` listener per subscriber, and
-  every Checkbox, Switch, CheckboxCard and radio now subscribes, so a DataTable with a `SelectRow`
-  checkbox per row adds a listener per row. Pool subscribers per root, with one listener that
-  dispatches to the subscribers whose control is in the reset form.
 - RadioGroup and CheckboxGroup write optional props such as `id`, `name`, `value` and
   `defaultValue` as plain attributes on their Base UI roots, against the optional-prop rule in
   AGENTS.md. Spread them through `definedProps`, as NumberField does. The `WIRING_PARTS` source
