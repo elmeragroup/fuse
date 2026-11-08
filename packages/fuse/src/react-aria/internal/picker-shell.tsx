@@ -85,7 +85,7 @@ export function PickerShell({
   // pane that read Fuse strings mount only when the popover opens, which would defer the
   // error to the first click on the trigger.
   useLocale();
-  const { dialog, group, icon, trigger } = pickerVariants({ range });
+  const { group, icon, trigger } = pickerVariants({ range });
   const button = (
     // oxlint-disable-next-line elmera/require-icon-button-label -- RAC's DatePicker and DateRangePicker fill this default Button slot and supply the trigger's localized accessible name ("Calendar"); a local label would shadow it. Asserted in both browser suites.
     <Button size="icon-sm" variant="ghost" className={trigger()}>
@@ -104,7 +104,7 @@ export function PickerShell({
       <FieldError>{errorMessage}</FieldError>
       {description ? <Description>{description}</Description> : null}
       <Popover container={container} placement="bottom right">
-        <Dialog className={dialog()}>{popover}</Dialog>
+        <Dialog>{popover}</Dialog>
       </Popover>
     </>
   );

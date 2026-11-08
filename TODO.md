@@ -294,10 +294,6 @@
   group as its inset does.
 - Sweep the older "not a control rung" lint-disable reasons and other "rung" wording on
   control metrics to "control size"; "rung" is reserved for radius rungs.
-- Remove or tier `racDialogShellClass`'s padding (`p-6`, placed `p-4`) in
-  `styles/inner-corner/picker.ts`. It never renders: the only shipped consumer, `PickerShell`,
-  overrides it with `pickerDialogShellClass`'s `p-0`, and the Calendar and presets inside pad
-  with the small surface tier themselves.
 - The Figma component kit draws the Input, Textarea and InputGroup field boxes at the default
   size only. Add their `size` axis (`"default"`, `"sm"`) once the owner wants the sm fields in
   Figma.

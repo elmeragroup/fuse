@@ -1,6 +1,5 @@
 import { cn } from "./cn";
 import { fieldEntryClass, fieldReads } from "./field-size";
-import { pickerDialogShellClass } from "./inner-corner/picker";
 import { tv } from "./tv";
 
 /**
@@ -46,12 +45,6 @@ export const pickerVariants = tv({
      * Button's `icon-sm` square.
      */
     trigger: cn("rounded-inner", fieldReads.inner()),
-    /**
-     * The styled Dialog inside the popover. Both padding utilities are needed: the dialog
-     * recipe sets `p-6` on its base and `p-4` under `[data-placement]`, which is exactly the
-     * popover case.
-     */
-    dialog: pickerDialogShellClass,
     /** The public Calendar / RangeCalendar inside the dialog — see the `range` axis. */
     calendar: "",
     /**
@@ -95,7 +88,7 @@ export const pickerVariants = tv({
           "hidden text-foreground group-disabled:text-muted-foreground @min-[24rem]/picker:col-start-2 @min-[24rem]/picker:inline forced-colors:text-[ButtonText] forced-colors:group-disabled:text-[GrayText]",
         trigger:
           "col-start-2 row-span-2 row-start-1 @min-[24rem]/picker:col-start-4 @min-[24rem]/picker:row-span-1",
-        // RangeCalendar's root is bare and this dialog is `p-0`, so the grid would otherwise
+        // RangeCalendar's root is bare and the dialog pads nothing, so the grid would otherwise
         // sit flush against the popover border. It pads with the small surface tier, as
         // Calendar's own shell does in the single picker.
         calendar: "p-(--surface-pad-sm)",
