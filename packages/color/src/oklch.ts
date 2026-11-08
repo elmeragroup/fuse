@@ -9,7 +9,6 @@ import { clampToUnitInterval, outOfRange, UNIT_RANGE } from "./component-range.t
 import type { ComponentRange } from "./component-range.ts";
 import { CSS_NUMBER, readAlpha } from "./css-number.ts";
 import { InvalidColor } from "./invalid-color.ts";
-import { apply, LMS_TO_LINEAR_SRGB, OKLAB_TO_LMS } from "./matrix3.ts";
 import * as Oklab from "./oklab.ts";
 import type { OutOfRange } from "./out-of-range.ts";
 import { err, ok } from "./result-constructors.ts";
@@ -249,6 +248,21 @@ function shorterArcHue(fromHue: number, toHue: number, weight: number): number {
 }
 
 /**
+ * Convert a color to OKLab, its Cartesian form: `a` is the chroma times the cosine of the hue
+ * and `b` the chroma times its sine.
+ *
+ * @param color - The color to convert.
+ * @returns The OKLab color, with the same lightness and alpha.
+ */
+export function toOklab(color: Oklch): Oklab.Oklab {
+  const hue = (color.h * Math.PI) / 180;
+  // OKLab's axis bound equals the chroma bound, so both axes are in range.
+  return getOrThrow(
+    Oklab.make({ l: color.l, a: color.c * Math.cos(hue), b: color.c * Math.sin(hue), alpha: color.alpha })
+  );
+}
+
+/**
  * Convert a color to linear-light sRGB through OKLab, without clipping. A color outside the
  * sRGB gamut keeps channels beyond `0..1`, so a caller chooses how to map it.
  *
@@ -256,14 +270,7 @@ function shorterArcHue(fromHue: number, toHue: number, weight: number): number {
  * @returns The linear-light sRGB color, with the same alpha.
  */
 export function toLinearSrgb(color: Oklch): Srgb.LinearSrgb {
-  const hue = (color.h * Math.PI) / 180;
-  const a = color.c * Math.cos(hue);
-  const b = color.c * Math.sin(hue);
-  // Ottosson's OKLab to LMS and LMS to linear sRGB matrices, with the cube between them.
-  const [l, m, s] = apply(OKLAB_TO_LMS, [color.l, a, b]);
-  const [r, g, blue] = apply(LMS_TO_LINEAR_SRGB, [l ** 3, m ** 3, s ** 3]);
-  // The chroma bound keeps every term finite, so the channels always construct.
-  return getOrThrow(Srgb.makeLinear({ r, g, b: blue, alpha: color.alpha }));
+  return Oklab.toLinearSrgb(toOklab(color));
 }
 
 /**
