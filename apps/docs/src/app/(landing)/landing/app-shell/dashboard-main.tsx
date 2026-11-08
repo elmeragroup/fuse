@@ -11,6 +11,7 @@ import { Button } from "@elmeragroup/fuse/button";
 import { DropdownMenu } from "@elmeragroup/fuse/dropdown-menu";
 import { MagnifyingGlass, SidebarSimple, SlidersHorizontal, X } from "@elmeragroup/fuse/icons";
 import { Sheet } from "@elmeragroup/fuse/sheet";
+import { Sidebar } from "@elmeragroup/fuse/sidebar";
 import { BRANDS } from "@elmeragroup/fuse/theme";
 import { Tooltip } from "@elmeragroup/fuse/tooltip";
 
@@ -28,10 +29,10 @@ import { OrderList } from "./order-list";
 
 const dashboardMain = tv({
   slots: {
-    // A size container, so the breadcrumb follows the pane's width. Against the inset rail it
-    // reads as a raised panel, the way Sidebar.Inset draws one; Sidebar.Inset itself renders a
-    // `<main>`, and the landing already has its own.
-    root: "md:m-2 md:ml-0 md:rounded-xl md:shadow-sm md:peer-data-[state=collapsed]:ml-2 @container relative flex min-w-0 flex-1 flex-col overflow-hidden bg-background text-foreground",
+    // A size container, so the breadcrumb follows the pane's width. Sidebar.Inset draws the
+    // raised panel against the inset rail; it renders a `<div>` because the landing already has
+    // its own `<main>`.
+    root: "@container min-w-0 overflow-hidden text-foreground",
     header: "flex h-12 shrink-0 items-center gap-2 border-b border-border px-3",
     crumbs: "min-w-0",
     crumbHidden: "@xl:inline-flex hidden",
@@ -232,7 +233,7 @@ export function DashboardMain({ sheetOpen, onSheetOpenChange }: DashboardMainPro
     import("./order-search").catch(() => undefined);
   }, []);
   return (
-    <div className={styles.root()}>
+    <Sidebar.Inset render={<div />} className={styles.root()}>
       <header className={styles.header()}>
         <SidebarToggle />
         <Crumbs />
@@ -264,6 +265,6 @@ export function DashboardMain({ sheetOpen, onSheetOpenChange }: DashboardMainPro
         </div>
         <Detail sheetOpen={sheetOpen} onSheetOpenChange={onSheetOpenChange} />
       </div>
-    </div>
+    </Sidebar.Inset>
   );
 }

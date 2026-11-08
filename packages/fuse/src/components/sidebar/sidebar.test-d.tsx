@@ -117,6 +117,11 @@ test("the context surface and part props match the public API", () => {
     </Sidebar.Provider>
   );
 
+  // Sidebar.Inset composes through render, so a host with its own `<main>` renders a `<div>`.
+  const _divInset = <Sidebar.Inset render={<div />} className="min-w-0" />;
+  // @ts-expect-error render takes an element or a render function, never a tag name
+  const _tagInset = <Sidebar.Inset render="div" />;
+
   // @ts-expect-error polymorphism is never an as prop
   const _noAs = <Sidebar.MenuButton as="a" />;
   // @ts-expect-error locale is provider-only
