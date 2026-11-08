@@ -11,11 +11,11 @@
  * dims the series other than the nearest and strengthens the nearest's fill (D19), and selection
  * and highlight dim the rest. ActiveDot and Glow keep modules of their own (Q1).
  */
-import { useId, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, ReactElement, ReactNode } from "react";
 
 import { crossfade } from "./chart-crossfade";
-import { writeAttribute } from "./chart-dom";
+import { useSvgIdPrefix, writeAttribute } from "./chart-dom";
 import type { MarkValues } from "./chart-motion";
 import { viewBoxOf } from "./chart-pie-frame";
 import { radarDrawingIn, usePolarContext } from "./chart-polar-context";
@@ -171,7 +171,7 @@ function useSeriesLayer(polar: PolarContextValue, layer: SeriesLayer): ReactElem
     }
     place(radii, placement);
   });
-  const prefix = useId();
+  const prefix = useSvgIdPrefix("radar-chart-series");
   const ids = { hatch: `${prefix}-hatch`, gradient: `${prefix}-paint` };
   // React writes the paths once at rest, and the loop writes them from then on.
   const [first] = useState(() => layer.paths(spokes, radii));

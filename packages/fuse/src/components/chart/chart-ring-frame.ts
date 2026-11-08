@@ -128,7 +128,7 @@ export type RingFrame = {
  * @param sweep - The chart's sweep as it first renders.
  * @returns The frame.
  */
-export function createRingFrame(motion: ChartMotion, sweep: Sweep): RingFrame {
+function createRingFrame(motion: ChartMotion, sweep: Sweep): RingFrame {
   const rings = new Map<string, { node: Element; angle: number; place: RingPlace }>();
   const tracks = new Map<Element, RingPlace>();
   const mirrors = new Map<string, Set<Element>>();

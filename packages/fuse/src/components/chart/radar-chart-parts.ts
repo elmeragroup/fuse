@@ -32,7 +32,7 @@ export {
   ChartLegendToggleGroup as LegendToggleGroup,
   ChartLegendToggle as LegendToggle,
 } from "./chart-legend";
-export { RadarChartTable as Table } from "./polar-chart-table";
+export { RadarChartTable as Table } from "./polar-series-table";
 export { ChartTableColumn as TableColumn } from "./chart-table-column";
 export { ChartEmpty as Empty } from "./chart-empty";
 export { ChartBackground as Background } from "./chart-background";

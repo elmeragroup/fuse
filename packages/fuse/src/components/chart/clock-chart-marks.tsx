@@ -11,9 +11,10 @@
  * threshold's radius (D23). Column, Dots, Marker, ValueLabel, ActiveDot and Glow live in their own
  * modules, so a route that names one part ships only its own.
  */
-import { useId, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, ReactElement, ReactNode } from "react";
 
+import { useSvgIdPrefix } from "./chart-dom";
 import { PATH_GLOW, valueGlow } from "./chart-glow-filter";
 import type { MarkValues } from "./chart-motion";
 import { stackedScaleError } from "./chart-paint";
@@ -220,10 +221,10 @@ function SeriesLayer({
     (): SeriesLook | null => (series === undefined ? null : { series, clock, curve, columns, drawn }),
     [series, clock, curve]
   );
-  const { ref, place, node: anchor } = usePolarMark(polar.motion, writeLook(draw), look);
+  const { ref, place, node: anchor, drawn: drawnFrame } = usePolarMark(polar.motion, writeLook(draw), look);
   const commit = usePolarCommit(polar, anchor);
-  useClockPlacement(clock, series, commit, place);
-  const prefix = useId();
+  useClockPlacement(clock, series, look, { commit, place, drawn: drawnFrame });
+  const prefix = useSvgIdPrefix("clock-chart-series");
   const glow = series === undefined ? null : valueGlow(paintOf(clock, series), prefix, halo);
   // React writes the paths once at rest, and the loop writes them from then on.
   const [first] = useState(() => (series === undefined ? new Map<string, string>() : rest(series, curve)));

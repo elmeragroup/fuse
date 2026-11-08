@@ -9,10 +9,13 @@ import type { ReactElement } from "react";
 
 import { viewBoxOf } from "./chart-pie-frame";
 import { clockDrawingIn, usePolarContext } from "./chart-polar-context";
+import { referenceSentence } from "./chart-reference-text";
 import type { ChartLayerProps, ChartTone, ChartX, ValueFormat, XFormat } from "./chart-types";
 import { labelPlace, slotOfX } from "./clock-chart-dial";
 import type { LabelPlace } from "./clock-chart-dial";
 import { PlacedLabel } from "./clock-chart-placed-label";
+import { CHART_STRINGS } from "./format/chart-strings";
+import type { FormattedText } from "./format/formatted-text";
 import { formatSlot, nextSlotStart } from "./format/time-format";
 import { formatValue } from "./format/value-format";
 import { slotAngles } from "./layout/clock";
@@ -64,7 +67,8 @@ export type ClockChartReferenceAreaProps = ChartLayerProps &
  * An annulus between two values, as `y1` and `y2`, or a sector from one instant's slot to another's,
  * as `x1` and `x2`, with an optional label. The annulus clips to the radius domain, from the hole
  * to the rim, and one outside it draws nothing, as a sector outside the cycle draws nothing, the
- * label included.
+ * label included. Readers hear it as a visually hidden sentence with the range, as the cartesian
+ * ReferenceArea's.
  *
  * @beta
  */
@@ -72,8 +76,11 @@ export function ClockChartReferenceArea({ style, ...props }: ClockChartReference
   const { label, tone = "default", className } = props;
   const { model, box, kernel } = usePolarContext("ClockChart.ReferenceArea", ["clock"]);
   const clock = clockDrawingIn(model, "ClockChart.ReferenceArea");
+  const strings = CHART_STRINGS[kernel.locale];
   let d: string;
-  let text: string | undefined;
+  let value: FormattedText;
+  // Whether the band draws, its label included. Readers hear its sentence either way.
+  let drawn: boolean;
   let place: LabelPlace;
   if (props.y1 !== undefined) {
     // The band clips to the radius domain, from the hole to the rim, and a band outside it draws
@@ -82,17 +89,19 @@ export function ClockChartReferenceArea({ style, ...props }: ClockChartReference
     const [min, max] = clock.domain;
     const from = Math.max(min, Math.min(props.y1, props.y2));
     const to = Math.min(max, Math.max(props.y1, props.y2));
-    const inside = to > from;
+    drawn = to > from;
     const low = clock.radius(from);
     const high = clock.radius(to);
-    d = inside ? sectorPath(0, 360, low, high) : "";
+    d = drawn ? sectorPath(0, 360, low, high) : "";
     const valueFormat = props.format ?? clock.format;
-    text = inside
-      ? label?.replace(
-          "{value}",
-          `${formatValue(kernel.locale, props.y1, valueFormat, "full").text}–${formatValue(kernel.locale, props.y2, valueFormat, "full").text}`
-        )
-      : undefined;
+    const first = formatValue(kernel.locale, props.y1, valueFormat, "full");
+    const second = formatValue(kernel.locale, props.y2, valueFormat, "full");
+    // Readers hear the range low to high, as the cartesian ReferenceArea says it.
+    const [lowEnd, highEnd] = props.y1 <= props.y2 ? [first, second] : [second, first];
+    value = {
+      text: `${first.text}\u2013${second.text}`,
+      spoken: strings.valueRange(lowEnd.spoken, highEnd.spoken),
+    };
     place = labelPlace(box, 0, high);
   } else {
     const first = slotOfX(clock, "ClockChart.ReferenceArea", props.x1);
@@ -114,26 +123,35 @@ export function ClockChartReferenceArea({ style, ...props }: ClockChartReference
         : props.format === "time-range"
           ? "time"
           : (props.format ?? "time");
-    const at = (instant: number): string =>
-      formatSlot(kernel.locale, timeZone, instant, interval, format, "full").text;
-    text =
-      !ok || from === undefined || until === undefined
-        ? undefined
-        : label?.replace("{value}", `${at(from)}\u2013${at(nextSlotStart(until, interval, timeZone))}`);
+    const at = (instant: number): FormattedText =>
+      formatSlot(kernel.locale, timeZone, instant, interval, format, "full");
+    // A sector outside the cycle draws nothing, its label included, and has no range to print, as a
+    // cartesian x range outside the axis has none.
+    drawn = ok && from !== undefined && until !== undefined;
+    if (!ok || from === undefined || until === undefined) value = { text: "", spoken: "" };
+    else {
+      const head = at(from);
+      const tail = at(nextSlotStart(until, interval, timeZone));
+      value = {
+        text: `${head.text}\u2013${tail.text}`,
+        spoken: strings.valueRange(head.spoken, tail.spoken),
+      };
+    }
     place = labelPlace(box, (start + end) / 2, 1.02);
   }
+  const text = referenceSentence(label, value, strings.referenceArea);
   return (
     <div
       data-slot="clock-chart-reference-area"
       data-tone={tone}
       data-polar-layer=""
-      aria-hidden="true"
       className={className}
       style={style}>
-      <svg viewBox={viewBoxOf(box)} focusable="false">
+      <svg viewBox={viewBoxOf(box)} aria-hidden="true" focusable="false">
         <path data-slot="clock-chart-reference-path" data-part="area" d={d} />
       </svg>
-      {text === undefined ? null : <PlacedLabel place={place}>{text}</PlacedLabel>}
+      {label === undefined || !drawn ? null : <PlacedLabel place={place}>{text.text}</PlacedLabel>}
+      <span data-slot="chart-reference-text">{text.spoken}</span>
     </div>
   );
 }

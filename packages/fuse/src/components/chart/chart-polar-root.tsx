@@ -105,12 +105,12 @@ function entranceItems(model: PolarModel): EntranceItems {
   };
 }
 
-/** The active option and series, or null while nothing is active. */
 /** The angle the follower turns to for the active option, or null while none is active. */
 function rayAngle(model: PolarModel, active: ActiveSlot): number | null {
   return active === null ? null : (model.ray(active.slot, active.near)?.angle ?? null);
 }
 
+/** The active option and series, or null while nothing is active. */
 function activeOf(snapshot: ChartSnapshot, count: number): ActiveSlot {
   const { active, near } = snapshot;
   if (active === null || active < 0 || active >= count) return null;
@@ -244,7 +244,7 @@ type PolarRootState = {
  * @param props - The Root's props.
  * @returns What the Root renders with.
  */
-export function usePolarRoot(props: PolarRootProps): PolarRootState {
+function usePolarRoot(props: PolarRootProps): PolarRootState {
   const { model, locale } = props;
   const { ref, ...figure } = props.figure;
   const figureProps = definedProps(figure);
@@ -253,11 +253,17 @@ export function usePolarRoot(props: PolarRootProps): PolarRootState {
   const [store] = useState(() => createChartStore(props.defaultActive));
   const [followers] = useState(createChartFollowers);
   const reduced = useReducedMotion();
-  const [motion] = useState(() =>
-    createChartMotion(BROWSER_FRAMES, reduced, () => {
+  const entrance = figureProps["data-intro"] !== "none" && !reduced;
+  const [motion] = useState(() => {
+    const loop = createChartMotion(BROWSER_FRAMES, reduced, () => {
       followers.refresh();
-    })
-  );
+    });
+    // The marks place their entrance in their own layout effects, which run before the Root's
+    // entrance effect holds the loop, so a Root that may have an entrance holds it from the start.
+    // Otherwise a chart that mounts out of view plays its entrance unseen.
+    if (entrance) loop.wait();
+    return loop;
+  });
   const [follow] = useState(() =>
     createPolarFollow({
       frames: BROWSER_FRAMES,
@@ -286,10 +292,10 @@ export function usePolarRoot(props: PolarRootProps): PolarRootState {
 
   // Which commit produced the model: the first render, or new data, which moves the marks.
   const [seen, setSeen] = useState(model);
-  const [update, setUpdate] = useState<PolarUpdate>(() => ({ kind: "initial", keys: model.keys }));
+  const [update, setUpdate] = useState<PolarUpdate>(() => ({ kind: "initial" }));
   if (seen !== model) {
     setSeen(model);
-    setUpdate({ kind: "data", keys: model.keys });
+    setUpdate({ kind: "data" });
   }
 
   // The active option keeps its place across new data while it still exists, and leaves otherwise.
@@ -340,7 +346,6 @@ export function usePolarRoot(props: PolarRootProps): PolarRootState {
     [store, followers, follow]
   );
 
-  const entrance = figureProps["data-intro"] !== "none" && !reduced;
   useEntrance(store, motion, rootRef, cellRef, entrance);
   // While the entrance plays, the figure carries `data-entering`, so the centre's digits count up
   // over the entrance's span instead of rolling on their own spring. A grid or track the first
@@ -355,7 +360,7 @@ export function usePolarRoot(props: PolarRootProps): PolarRootState {
     items.current = entranceItems(model);
   });
   // The entrance reads its pace once, keyed on the Root's first model.
-  const [pacing] = useState<PolarUpdate>(() => ({ kind: "initial", keys: [] }));
+  const [pacing] = useState<PolarUpdate>(() => ({ kind: "initial" }));
   useLayoutEffect(() => {
     if (!entrance) return undefined;
     let timer: number | null = null;

@@ -1,5 +1,5 @@
 // The clock dial's paths and labels. Units under test: entranceFrame, clockLine, clockArea,
-// clockWedges, clockDots, curveRoute, sampleCurve and fitClockLabels. Oracles, written by hand: the
+// clockWedges, clockDots, curveRadiusAt, sampleCurve and fitClockLabels. Oracles, written by hand: the
 // Motion table's clock entrance, a 750 ms wedge and a 500 ms ease-out cubic rise from the moment the
 // wedge reaches a slot, inside one 1,250 ms progress; D16's seam, which closes when both end slots
 // hold readings and stays open otherwise; R5's rule as the cartesian Line keeps it, a dashed segment
@@ -16,7 +16,6 @@ import {
   clockLine,
   clockWedges,
   curveRadiusAt,
-  curveRoute,
   entranceFrame,
   pixelMarks,
   sampleCurve,
@@ -430,61 +429,7 @@ describe("the columns", () => {
   });
 });
 
-describe("a ride along the curve", () => {
-  it("takes the short way round, through 12 o'clock when that is shorter", () => {
-    const route = curveRoute(numbers([0.6, 0.6, 0.6, 0.6, 0.6, 0.6]), readings(6), "linear", 5, 0);
-    // From slot 5 at 330° to slot 0 at 30°, 60° forward across the seam, never through 180°.
-    expect(route[0]?.angle).toBeCloseTo(330, 6);
-    expect((route.at(-1)?.angle ?? 0) % 360).toBeCloseTo(30, 6);
-    for (const { angle } of route) expect(angle % 360 > 300 || angle % 360 < 60).toBe(true);
-  });
-
-  it("rides the closing edge back across midnight to the last slot's own reading (B6)", () => {
-    // A linear day with radii 0.5 at slot 0, 0.6 at slot 1, 0.9 at slot 23 and 0.7 elsewhere. A
-    // step back from slot 0, at 7.5°, to slot 23, at 352.5°, runs 15° back along the closing edge,
-    // straight from 0.5 to 0.9, and ends on 0.9.
-    const tips = Array.from({ length: 24 }, (_, slot) =>
-      slot === 0 ? 0.5 : slot === 1 ? 0.6 : slot === 23 ? 0.9 : 0.7
-    );
-    const route = curveRoute(numbers(tips), readings(24), "linear", 0, 23);
-    expect(route[0]?.radius).toBeCloseTo(0.5, 6);
-    expect(route.at(-1)?.radius).toBeCloseTo(0.9, 6);
-    expect((((route.at(-1)?.angle ?? 0) % 360) + 360) % 360).toBeCloseTo(352.5, 6);
-    for (const { radius } of route) {
-      expect(radius).toBeGreaterThanOrEqual(0.5 - 1e-9);
-      expect(radius).toBeLessThanOrEqual(0.9 + 1e-9);
-    }
-  });
-
-  it.each([
-    ["from slot 1 back across midnight to slot 23", 1, 23, 0.5, 22.5, 0.9, 352.5],
-    ["from slot 23 on across midnight to slot 1", 23, 1, 0.9, 352.5, 0.5, 22.5],
-  ] as const)(
-    "ends an open run's ride %s on the destination's own vertex, never past the samples (B8)",
-    (_, from, to, startRadius, startAngle, endRadius, endAngle) => {
-      // A linear day with slot 0 missing, so slots 1 to 23 form one open run: radii 0.5 at slot 1,
-      // 0.6 at slot 2, 0.9 at slot 23 and 0.7 elsewhere. The short way between 1 and 23 crosses
-      // midnight, outside the run's samples, so the ride goes straight from vertex to vertex.
-      const tips = Array.from({ length: 24 }, (_, slot) =>
-        slot === 1 ? 0.5 : slot === 2 ? 0.6 : slot === 23 ? 0.9 : 0.7
-      );
-      const slots: ClockSlots = {
-        ...readings(24),
-        states: Array.from({ length: 24 }, (_, slot) => (slot === 0 ? "missing" : "reading")),
-      };
-      const route = curveRoute(numbers(tips), slots, "linear", from, to);
-      const turn = (angle: number) => ((angle % 360) + 360) % 360;
-      expect(route[0]?.radius).toBeCloseTo(startRadius, 6);
-      expect(turn(route[0]?.angle ?? 0)).toBeCloseTo(startAngle, 6);
-      expect(route.at(-1)?.radius).toBeCloseTo(endRadius, 6);
-      expect(turn(route.at(-1)?.angle ?? 0)).toBeCloseTo(endAngle, 6);
-      for (const { radius } of route) {
-        expect(radius).toBeGreaterThanOrEqual(0.5 - 1e-9);
-        expect(radius).toBeLessThanOrEqual(0.9 + 1e-9);
-      }
-    }
-  );
-
+describe("a curve between equal radii", () => {
   it("samples a segment between equal radii as an arc", () => {
     const line = sampleCurve(
       [
@@ -542,6 +487,35 @@ describe("curveRadiusAt", () => {
 
   it("reads nothing across 12 o'clock on a two-slot line", () => {
     expect(curveRadiusAt(two, readings(2), "linear", 0)).toBeNull();
+  });
+
+  it("reads a closed day's closing edge across 12 o'clock, straight from slot 23 to slot 0 (B6)", () => {
+    // A linear day with radii 0.5 at slot 0, 0.6 at slot 1, 0.9 at slot 23 and 0.7 elsewhere. Its
+    // closing edge runs straight in unrolled space from slot 23's vertex, 352.5° at 0.9, to slot
+    // 0's, 7.5° at 0.5, so it reads 0.7 at 12 o'clock, halfway, in either turn.
+    const tips = Array.from({ length: 24 }, (_, slot) =>
+      slot === 0 ? 0.5 : slot === 1 ? 0.6 : slot === 23 ? 0.9 : 0.7
+    );
+    expect(curveRadiusAt(numbers(tips), readings(24), "linear", 352.5)).toBeCloseTo(0.9, 9);
+    expect(curveRadiusAt(numbers(tips), readings(24), "linear", 0)).toBeCloseTo(0.7, 9);
+    expect(curveRadiusAt(numbers(tips), readings(24), "linear", 360)).toBeCloseTo(0.7, 9);
+    expect(curveRadiusAt(numbers(tips), readings(24), "linear", 7.5)).toBeCloseTo(0.5, 9);
+  });
+
+  it("reads nothing across 12 o'clock where a missing first slot opens the day's run (B8)", () => {
+    // Slot 0 missing under "gap" leaves one open run from slot 1, 22.5° at 0.5, to slot 23, 352.5°
+    // at 0.9. Between those vertices, across midnight, the curve draws nothing.
+    const tips = Array.from({ length: 24 }, (_, slot) =>
+      slot === 1 ? 0.5 : slot === 2 ? 0.6 : slot === 23 ? 0.9 : 0.7
+    );
+    const slots: ClockSlots = {
+      ...readings(24),
+      states: Array.from({ length: 24 }, (_, slot) => (slot === 0 ? "missing" : "reading")),
+    };
+    expect(curveRadiusAt(numbers(tips), slots, "linear", 22.5)).toBeCloseTo(0.5, 9);
+    expect(curveRadiusAt(numbers(tips), slots, "linear", 352.5)).toBeCloseTo(0.9, 9);
+    for (const angle of [0, 7.5, 355, 20])
+      expect(curveRadiusAt(numbers(tips), slots, "linear", angle)).toBeNull();
   });
 
   it("reads nothing past an open run's end, and a lone reading's tip in its slot", () => {

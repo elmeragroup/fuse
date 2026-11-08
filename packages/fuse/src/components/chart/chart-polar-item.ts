@@ -11,13 +11,13 @@ import type { ReactNode } from "react";
 
 import type { SupportedLocale } from "../../intl/locale-context";
 import type { CentreModel, PolarIssue, PolarKernel, PolarModel } from "./chart-polar-context";
-import type { ChartReadout, ChartTableCell, ChartTableModel, ReadoutItem } from "./chart-readout-port";
+import type { ChartReadout, ReadoutItem } from "./chart-readout-port";
 import type { ChartConfig, ChartQuality, ChartRow, ValueFormat } from "./chart-types";
 import { CHART_STRINGS, countOf } from "./format/chart-strings";
 import type { FormattedText } from "./format/formatted-text";
 import { POLAR_STRINGS } from "./format/polar-strings";
 import { seriesLabel } from "./format/series-label";
-import { formatUnitLabel, formatUnitless, formatValue, sameFormat } from "./format/value-format";
+import { formatValue, sameFormat } from "./format/value-format";
 import { isRoleList, seriesPaint, singleRole } from "./layout/color-key";
 import {
   assertKnownKey,
@@ -49,8 +49,6 @@ export type PolarItem = {
   readonly icon: ReactNode;
   /** The paint a swatch and a mark read. */
   readonly paint: string;
-  /** The rows the item stands for, by index into Root's data. */
-  readonly rows: readonly number[];
 };
 
 /** What every item model reads from its Root. */
@@ -70,7 +68,7 @@ export type ItemInput = {
 };
 
 /** One row as the items read it: its category, its reading and whether config holds the category. */
-type ItemRow = {
+export type ItemRow = {
   readonly category: string;
   readonly reading: Reading;
   readonly known: boolean;
@@ -79,7 +77,7 @@ type ItemRow = {
 };
 
 /** A reading's quality state, or undefined for a measured or pending one. */
-function qualityOf(reading: Reading): "estimated" | "corrected" | "missing" | undefined {
+export function qualityOf(reading: Reading): "estimated" | "corrected" | "missing" | undefined {
   if (reading.kind === "missing") return "missing";
   if (reading.kind === "reading" && reading.quality !== "measured") return reading.quality;
   return undefined;
@@ -102,7 +100,7 @@ function foldedQuality(readings: readonly Reading[]): "estimated" | "corrected" 
 }
 
 /** A reading's value, or null for a missing or pending one. */
-function valueOf(reading: Reading): number | null {
+export function valueOf(reading: Reading): number | null {
   return reading.kind === "reading" ? reading.value : null;
 }
 
@@ -192,7 +190,7 @@ function valueText(locale: SupportedLocale, item: PolarItem, format: ValueFormat
 }
 
 /** A share in percent as text in both forms, or the dictionary dash. */
-function shareWords(locale: SupportedLocale, share: number | null, digits: number): FormattedText {
+export function shareWords(locale: SupportedLocale, share: number | null, digits: number): FormattedText {
   if (share === null) return { text: "–", spoken: "–" };
   return formatValue(
     locale,
@@ -203,7 +201,7 @@ function shareWords(locale: SupportedLocale, share: number | null, digits: numbe
 }
 
 /** What the item readout and table read beside the items. */
-type ItemSource = {
+export type ItemSource = {
   readonly items: readonly PolarItem[];
   readonly rows: readonly ItemRow[];
   readonly input: ItemInput;
@@ -235,7 +233,6 @@ function itemReadout(source: ItemSource, kernel: PolarKernel, empty: boolean): C
   const itemAt = (key: string) => items[indexOf.get(key) ?? -1];
   return {
     id: kernel.id,
-    name: kernel.name,
     locale,
     root: kernel.root,
     store: kernel.store,
@@ -294,80 +291,11 @@ function itemReadout(source: ItemSource, kernel: PolarKernel, empty: boolean): C
 }
 
 /** Whether every item reads one format, so the table's headers carry the unit and the cells none. */
-function sharedFormat(items: readonly { readonly format: ValueFormat }[]): ValueFormat | null {
+export function sharedFormat(items: readonly { readonly format: ValueFormat }[]): ValueFormat | null {
   const [first] = items;
   if (first === undefined) return null;
   // Two formats that name the same options in another key order are one format (B4).
   return items.every(({ format }) => sameFormat(format, first.format)) ? first.format : null;
-}
-
-/** The rows of an item table: every original row unfolded, with its value and its share or maximum. */
-function itemTable(source: ItemSource, rowShares: (digits: number) => (number | null)[]): ChartTableModel {
-  const { rows, input } = source;
-  const { locale, config, valueFormat } = input;
-  const strings = CHART_STRINGS[locale];
-  const polarStrings = POLAR_STRINGS[locale];
-  const formatOf = (category: string): ValueFormat => config[category]?.format ?? valueFormat ?? {};
-  const shared = sharedFormat(rows.map(({ category }) => ({ format: formatOf(category) })));
-  const unit = shared === null ? null : formatUnitLabel(locale, shared);
-  const header = (word: string): FormattedText =>
-    unit === null
-      ? { text: word, spoken: word }
-      : { text: `${word} (${unit.text})`, spoken: `${word} (${unit.spoken})` };
-  const numberCell = (
-    key: string,
-    value: number | null,
-    format: ValueFormat,
-    words: readonly string[]
-  ): ChartTableCell => {
-    if (value === null)
-      return { kind: "value", key, text: { text: "–", spoken: strings.missing }, words: [], rows: 1 };
-    const text =
-      shared === null ? formatValue(locale, value, format, "full") : formatUnitless(locale, value, format);
-    return { kind: "value", key, text, words, rows: 1 };
-  };
-  const page = { key: 0, slots: rows.map((_, index) => index), label: "", spoken: "" };
-  return {
-    pages: () => [page],
-    caption: () => input.name ?? "",
-    xHeader: () => strings.xHeaderCategory,
-    heads: () => [
-      header(polarStrings.valueHeader),
-      source.third === "share"
-        ? { text: polarStrings.shareHeader, spoken: polarStrings.shareHeader }
-        : header(polarStrings.maxHeader),
-    ],
-    rows: () => {
-      const shares = rowShares(0);
-      return rows.map((row, index) => {
-        const format = formatOf(row.category);
-        const quality = qualityOf(row.reading);
-        const words = quality === undefined || quality === "missing" ? [] : [strings[quality]];
-        const third: ChartTableCell =
-          source.third === "share"
-            ? {
-                kind: "value",
-                key: "share",
-                text: shareWords(locale, shares[index] ?? null, 0),
-                words: [],
-                rows: 1,
-              }
-            : numberCell("max", source.max(index), format, []);
-        return {
-          key: `${row.category}\u0000${String(index)}`,
-          slot: index,
-          head: row.known
-            ? seriesLabel({ config }, row.category)
-            : { text: row.category, spoken: row.category },
-          cells: [numberCell("value", valueOf(row.reading), format, words), third],
-        };
-      });
-    },
-    // A slot is a kept row, so a table column reads the row it came from in `data`.
-    cell: (slot, column) => input.rows[rows[slot]?.row ?? -1]?.[column],
-    hasColumn: (column) => input.rows.some((row) => Object.hasOwn(row, column)),
-    timeZone: "UTC",
-  };
 }
 
 /** What a pie reads beside every item model's input. */
@@ -420,7 +348,6 @@ export function pieModel(input: PieInput): PolarModel {
         format: valueFormat ?? {},
         icon: undefined,
         paint: "var(--chart-other)",
-        rows: members,
       };
     }
     const row = rows[members[0] ?? -1];
@@ -432,7 +359,6 @@ export function pieModel(input: PieInput): PolarModel {
       format: config[key]?.format ?? valueFormat ?? {},
       icon: config[key]?.icon,
       paint: paintOf(config, key),
-      rows: members,
     };
   });
   // The slices, the gauge and the drawn total read each item's weight, its readings above 0, and the
@@ -525,7 +451,7 @@ export function pieModel(input: PieInput): PolarModel {
       return key === undefined || key === OTHER_KEY || !Object.hasOwn(config, key) ? null : key;
     },
     selectable: Object.keys(config),
-    table: itemTable(source, rowShares),
+    table: { kind: "items", source, shares: rowShares },
     readout: (kernel) => itemReadout(source, kernel, empty),
     issues,
     drawing: {
@@ -547,15 +473,10 @@ export function pieModel(input: PieInput): PolarModel {
                 ? color.map((stop) => seriesPaint(item.key, stop))
                 : undefined,
             series: Object.keys(config).indexOf(item.key),
-            value: item.value,
-            format: item.format,
             angles: slices[index] ?? null,
             quality: item.quality,
           };
         }),
-        total,
-        totalFormat: sharedFormat(items) ?? null,
-        max: input.max ?? null,
         over: gauge?.over ?? false,
         share: source.share,
         sliceOf: (category) => (folded.some(({ key }) => key === category) ? category : OTHER_KEY),
@@ -584,7 +505,7 @@ export type RadialInput = ItemInput & {
 };
 
 /** The share of each ring's band its stroke fills, `--chart-ring-fill`'s default (Q4). */
-export const RING_FILL = 0.7;
+const RING_FILL = 0.7;
 
 /**
  * A radial chart's model: one ring per row, the first outermost, each filling its maximum, with the
@@ -617,7 +538,6 @@ export function radialModel(input: RadialInput): PolarModel {
     format: config[category]?.format ?? valueFormat ?? {},
     icon: config[category]?.icon,
     paint: known ? paintOf(config, category) : "var(--chart-other)",
-    rows: [index],
   }));
   const bands: readonly RingBand[] = ringBands(items.length, {
     outer: 1,
@@ -680,7 +600,7 @@ export function radialModel(input: RadialInput): PolarModel {
       return key !== undefined && Object.hasOwn(config, key) ? key : null;
     },
     selectable: Object.keys(config),
-    table: itemTable(source, (digits) => items.map((_, index) => share(index, digits))),
+    table: { kind: "items", source, shares: (digits) => items.map((_, index) => share(index, digits)) },
     readout: (kernel) => itemReadout(source, kernel, empty),
     issues,
     drawing: {
@@ -693,7 +613,6 @@ export function radialModel(input: RadialInput): PolarModel {
           const fill = fills[index] ?? { max: null, share: null, over: false };
           return {
             key: item.key,
-            label: item.label,
             paint: item.paint,
             stops:
               color !== undefined && isRoleList(color)

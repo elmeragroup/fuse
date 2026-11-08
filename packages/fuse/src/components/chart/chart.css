@@ -897,8 +897,10 @@
     overflow: visible;
   }
 
-  /* The cell's one pointer target and tab stop covers the whole cell, its single option too. */
-  /* The whole cell is the target, and each family's pick drops a point past the rim. */
+  /*
+    The cell's one pointer target and tab stop covers the whole cell, its single option too, and
+    each family's pick drops a point past the rim.
+  */
   [data-slot="chart-polar-cell"] > [data-slot="chart-surface"] {
     position: absolute;
     inset: 0;
@@ -1486,6 +1488,11 @@
     z-index: 4;
   }
 
+  /* A Marker's pills sit at its dots' rest, so they hide while the dots enter or tween. */
+  [data-slot="clock-chart-value-labels"][data-moving] {
+    visibility: hidden;
+  }
+
   [data-slot="clock-chart-line-path"] {
     fill: none;
     stroke: var(--_paint);
@@ -1771,14 +1778,10 @@
   }
 
   /*
-    The cycle's labels sit past the rim, each reading away from the centre, and thin by stride as
-    the dial narrows: the axis is its own size container, so each label hides below the narrowest
-    width that holds its stride. The ring values sit beside the 12 o'clock spoke. All are 12 px text
-    placed in the cell (S12).
-  */
-  /*
-    A dial's labels thin as the dial narrows: each axis is its own size container, so a label hides
-    below the narrowest width that holds its stride. The width buckets are tick-fit's.
+    The cycle's labels sit past the rim, each reading away from the centre, and the ring values
+    beside the 12 o'clock spoke, all 12 px text placed in the cell (S12). They thin as the dial
+    narrows: each axis is its own size container, so a label hides below the narrowest width that
+    holds its stride. The width buckets are tick-fit's.
   */
   :is(
     [data-slot="clock-chart-angle-axis"],
@@ -2238,10 +2241,6 @@
   }
 
   /*
-    The table sits under the chart behind its toggle. Collapsed, its parts stay in the
-    accessibility tree, visually hidden. Its text keeps Fuse Table's own type and row metrics.
-  */
-  /*
     A polar Root writes the active and near places on its figure on every step, which only its marks
     read. The table and the legend stop both here, so a hover restyles the marks and not a table of
     every slot under them.
@@ -2251,6 +2250,10 @@
     --chart-near: initial;
   }
 
+  /*
+    The table sits under the chart behind its toggle. Collapsed, its parts stay in the
+    accessibility tree, visually hidden. Its text keeps Fuse Table's own type and row metrics.
+  */
   [data-slot="chart-table"] {
     --_order: 2;
     grid-area: table;

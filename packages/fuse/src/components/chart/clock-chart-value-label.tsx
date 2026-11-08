@@ -7,6 +7,7 @@ import { use } from "react";
 import type { ReactElement } from "react";
 
 import { useLocale } from "../../intl/locale-context";
+import { writeAttribute } from "./chart-dom";
 import { ClockMarkerContext } from "./chart-marker-context";
 import { clockDrawingIn, usePolarContext } from "./chart-polar-context";
 import type { ChartLayerProps, ValueFormat } from "./chart-types";
@@ -26,8 +27,9 @@ export type ClockChartValueLabelProps = ChartLayerProps & {
 };
 
 /**
- * The value of each slot its Marker marks, as a pill past the dot, reading away from the centre.
- * Outside a Marker it throws `part-outside-root`.
+ * The value of each slot its Marker marks, as a pill past the dot at rest, reading away from the
+ * centre. The pills hide while their Marker's dots enter or tween to new data, and show once the
+ * dots rest. Outside a Marker it throws `part-outside-root`.
  *
  * @beta
  */
@@ -44,10 +46,20 @@ export function ClockChartValueLabel({ format, className, style }: ClockChartVal
   }
   const clock = clockDrawingIn(polar.model, "ClockChart.ValueLabel");
   const { box } = polar;
-  const { series, slots } = marker;
+  const { series, slots, labels } = marker;
   const valueFormat = format ?? clock.text.config[series.key]?.format ?? {};
   return (
     <div
+      ref={(node) => {
+        if (node === null) return undefined;
+        labels.nodes.add(node);
+        writeAttribute(node, "data-moving", labels.moving ? "" : null);
+        return () => {
+          labels.nodes.delete(node);
+          // Suspense keeps a hidden label's node, so it returns clean and takes the flag anew.
+          node.removeAttribute("data-moving");
+        };
+      }}
       data-slot="clock-chart-value-labels"
       data-polar-layer=""
       aria-hidden="true"

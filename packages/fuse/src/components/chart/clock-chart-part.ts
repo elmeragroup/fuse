@@ -111,7 +111,7 @@ export function useClockSeries(part: string, dataKey: string): ClockPart {
  * dial turns. A slot with no old twin, as the repeated hour of a 25-hour day, opens from zero width
  * at the end of the slot before it, at that slot's base and tip.
  */
-export function pairedFrom(
+function pairedFrom(
   previous: { readonly pairs: readonly string[]; readonly values: MarkValues },
   pairs: readonly string[]
 ): number[] {
@@ -141,23 +141,43 @@ export function pairedFrom(
 
 /**
  * Place a series mark for a commit through the classifier: the entrance, an update, or a turn of
- * the dial when the slot count changes, along the route that pairs the old slots with the new.
+ * the dial when the slot count changes, along the route that pairs the old slots with the new. A
+ * turn starts from what the mark draws, mid-tween too, so its first frame never jumps. It places
+ * only when the dial, the series, the writer's look or the commit changes, so a render that changes
+ * none of them, such as the parent's unrelated state, redraws nothing.
+ *
+ * @param clock - The dial.
+ * @param series - The series the mark draws.
+ * @param look - What the mark's writer reads beside its numbers.
+ * @param mark - The mark's commit classifier, its placement and the numbers it drew last.
  */
-export function useClockPlacement(
+export function useClockPlacement<L>(
   clock: ClockDrawing,
   series: ClockSeries | undefined,
-  commit: ReturnType<typeof usePolarCommit>,
-  place: (target: MarkValues, placement: Placement) => void
+  look: L,
+  mark: {
+    readonly commit: ReturnType<typeof usePolarCommit>;
+    readonly place: (target: MarkValues, placement: Placement) => void;
+    readonly drawn: () => MarkValues | null;
+  }
 ): void {
-  const last = useRef<{ readonly pairs: readonly string[]; readonly values: MarkValues } | null>(null);
+  const { commit, place, drawn } = mark;
+  const last = useRef<readonly string[] | null>(null);
   useLayoutEffect(() => {
     if (series === undefined) return;
     const previous = last.current;
-    last.current = { pairs: clock.pairs, values: series.rest };
-    const turns = previous !== null && previous.pairs.length !== clock.pairs.length;
-    const via = turns ? { from: pairedFrom(previous, clock.pairs), to: series.rest } : undefined;
-    place(series.rest, commit(series.index, [0, ...series.rest.slice(1)], via));
-  });
+    last.current = clock.pairs;
+    const turns = previous !== null && previous.length !== clock.pairs.length;
+    const via = turns
+      ? {
+          from: pairedFrom({ pairs: previous, values: drawn() ?? series.rest }, clock.pairs),
+          to: series.rest,
+        }
+      : undefined;
+    const from = series.rest.slice();
+    from[0] = 0;
+    place(series.rest, commit(series.index, from, via));
+  }, [clock, series, look, commit, place, drawn]);
 }
 
 /** Write the entrance's open wedge onto a mark's clip path, or none once the dial is whole. */

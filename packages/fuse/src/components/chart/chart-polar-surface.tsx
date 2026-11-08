@@ -33,13 +33,13 @@ type OptionState = {
 /** The option move a key makes, or undefined for a key the map leaves alone. */
 type Step = "next" | "previous" | "first" | "last";
 
-/** The option move a key makes in a family's map. */
 /** How long, in milliseconds, a mouse that left the dial keeps its option before it lets go. */
 const LEAVE_GRACE_MS = 120;
 
 /** How long, in milliseconds, a pointer's near series holds after it changes. */
 const NEAR_FIRM_MS = 150;
 
+/** The option move a key makes in a family's map. */
 function stepOf(model: PolarModel, key: string): Step | undefined {
   switch (key) {
     case "ArrowRight":

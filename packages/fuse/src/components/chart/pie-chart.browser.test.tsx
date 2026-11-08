@@ -4,7 +4,7 @@
 // pick must agree with (Q8); CONTRACT section 8.4's on-colour label rule over the theme's
 // `chart-*-foreground` roles; section 8.13's centre table with the largest-remainder shares; D3's
 // pop and S2's dims; R10's halo; Q12's gradient; and S9's category word.
-import { Profiler } from "react";
+import { Profiler, useEffect, useState } from "react";
 
 import { describe, expect, it } from "vitest";
 import { page, userEvent } from "vitest/browser";
@@ -205,6 +205,58 @@ describe("the labels (section 8.4, Q10)", () => {
     const [x = Number.NaN, y = Number.NaN] = (leader.split(" ")[0] ?? "").split(",").map(Number);
     expect(x).toBeCloseTo(-Math.SQRT1_2, 3);
     expect(y).toBeCloseTo(Math.SQRT1_2, 3);
+  });
+});
+
+/** A label template that grows to a sentence on the window's `grow` event, with no render of Labels. */
+function GrowingLabel() {
+  const [long, setLong] = useState(false);
+  useEffect(() => {
+    const grow = () => setLong(true);
+    window.addEventListener("grow", grow);
+    return () => window.removeEventListener("grow", grow);
+  }, []);
+  return long ? "En etikett som er langt bredere enn hele kaken" : "Ok";
+}
+
+describe("labels whose own size changes (A1-06)", () => {
+  it("moves a label outside once its template grows too wide for its slice", async () => {
+    // Two halves of a 320 px dial, each in a role with an on-colour. A two-letter label fits inside
+    // its half; the same label grown to a sentence is far wider than the dial's radius, so it no
+    // longer fits its slice and, as the Labels JSDoc says, draws outside with a leader. Only the
+    // template's own state changes, as when a web font swaps in, so Labels never renders again.
+    const { host } = renderThemed(
+      <LocaleProvider locale="nb-NO">
+        <div style={{ width: 320 }}>
+          <PieChart.Root
+            data={[
+              { part: "strom", kr: 50 },
+              { part: "nettleie", kr: 50 },
+            ]}
+            config={{
+              strom: { label: "Strøm", color: "chart-1" },
+              nettleie: { label: "Nettleie", color: "chart-2" },
+            }}
+            nameKey="part"
+            valueKey="kr"
+            data-intro="none"
+            aria-label="Regning">
+            <PieChart.Pie />
+            <PieChart.Labels>
+              <GrowingLabel />
+            </PieChart.Labels>
+          </PieChart.Root>
+        </div>
+      </LocaleProvider>
+    );
+    // DOM audit: labels are aria-hidden plot output, read by their slot.
+    const placements = () =>
+      [...host.querySelectorAll('[data-slot="pie-chart-label"]')].map((label) =>
+        label.getAttribute("data-placement")
+      );
+    expect(placements()).toEqual(["inside", "inside"]);
+    window.dispatchEvent(new Event("grow"));
+    await expect.poll(placements).toEqual(["outside", "outside"]);
   });
 });
 

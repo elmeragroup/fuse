@@ -117,7 +117,7 @@ function short(value: number): string {
  * @param look - The pie's look as it first renders.
  * @returns The frame.
  */
-export function createPieFrame(motion: ChartMotion, look: PieLook): PieFrame {
+function createPieFrame(motion: ChartMotion, look: PieLook): PieFrame {
   const entries = new Map<string, Entry>();
   const mirrors = new Map<string, Set<Element>>();
   const tracks = new Set<Element>();

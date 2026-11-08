@@ -9,9 +9,8 @@
  */
 import type { SupportedLocale } from "../../intl/locale-context";
 import { seriesPaintOf } from "./chart-paint";
-import type { ClockDrawing, ClockLabel, ClockSeries, PolarIssue, PolarModel } from "./chart-polar-context";
+import type { ClockDrawing, ClockSeries, PolarIssue, PolarModel } from "./chart-polar-context";
 import { seriesReadout } from "./chart-polar-series";
-import { seriesTable } from "./chart-series-readout";
 import { chartDescription, optionName } from "./chart-text";
 import type { TextContext } from "./chart-text";
 import type { ChartConfig, ChartRow, XFormat } from "./chart-types";
@@ -30,7 +29,7 @@ import { pointerAngle, sweepOf } from "./layout/polar-angle";
 import { slotOf } from "./layout/x-domain";
 
 /** The radius a spoke label sits at, as a share of the outer radius. */
-export const CLOCK_LABEL_REACH = 1.1;
+const CLOCK_LABEL_REACH = 1.1;
 
 /** What a clock model reads from its Root. */
 export type ClockInput = {
@@ -115,7 +114,6 @@ function clockSeries(
     steps,
     stepAt,
     stack: series.stack,
-    missing,
     slots: { states, marked, missing },
     rest,
     values,
@@ -123,31 +121,34 @@ function clockSeries(
   };
 }
 
-/** The cycle's labels, printed and fitted. */
+/** The cycle's labels, printed and fitted, and the fit for texts of a format of its own. */
 function labelsOf(
   starts: readonly number[],
   timeZone: string,
   cycle: ClockCycle,
   locale: SupportedLocale
-): ClockLabel[] {
+): Pick<ClockDrawing, "labels" | "fitLabels"> {
   const tier = clockTier(cycle);
   const slots = clockLabelSlots(starts, timeZone, cycle);
+  const fitLabels = (texts: readonly string[]) =>
+    fitClockLabels(
+      slots,
+      texts.map((text) => labelWidth(text)),
+      cycle,
+      CLOCK_LABEL_REACH
+    );
   const texts = slots.map(({ slot }) =>
     formatSlot(locale, timeZone, starts[slot] ?? 0, tier.unit, tier.preset, "tick")
   );
-  const shown = fitClockLabels(
-    slots,
-    texts.map(({ text }) => labelWidth(text)),
-    cycle,
-    CLOCK_LABEL_REACH
-  );
-  return slots.map(({ slot, angle }, index) => ({
+  const shown = fitLabels(texts.map(({ text }) => text));
+  const labels = slots.map(({ slot, angle }, index) => ({
     angle,
     start: starts[slot] ?? 0,
     unit: tier.unit,
     text: texts[index] ?? { text: "", spoken: "" },
     visibility: shown[index] ?? "none",
   }));
+  return { labels, fitLabels };
 }
 
 /**
@@ -196,7 +197,7 @@ export function clockModel(input: ClockInput): PolarModel {
     radius,
     zero: domain[0] < 0 && domain[1] > 0 ? radius(0) : null,
     series,
-    labels: labelsOf(starts, timeZone, cycle, locale),
+    ...labelsOf(starts, timeZone, cycle, locale),
     now,
     format: config[model.series[0]?.key ?? ""]?.format ?? {},
     stackOffset: input.stackOffset,
@@ -241,7 +242,7 @@ export function clockModel(input: ClockInput): PolarModel {
       index < 0 || index >= count ? null : { angle: slotAngles(index, count).centre, radius: 1 },
     selectKey: (_index, focus) => model.series[focus]?.key ?? null,
     selectable: Object.keys(config),
-    table: seriesTable({ ...context, name: input.name, rows: input.rows }, keys),
+    table: { kind: "series", context: { ...context, name: input.name, rows: input.rows }, keys },
     readout: (kernel) => seriesReadout(context, kernel),
     issues: input.issues,
     drawing: { kind: "clock", clock },

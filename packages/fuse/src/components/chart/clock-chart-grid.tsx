@@ -9,7 +9,7 @@ import type { ReactElement } from "react";
 import { viewBoxOf } from "./chart-pie-frame";
 import { clockDrawingIn, usePolarContext } from "./chart-polar-context";
 import type { ChartLayerProps } from "./chart-types";
-import { minOf, spokePath } from "./clock-chart-dial";
+import { spokePath } from "./clock-chart-dial";
 import { ringPath } from "./layout/clock-path";
 
 /**
@@ -55,13 +55,7 @@ export function ClockChartGrid({ variant = "solid", className, style }: ClockCha
         />
       ))}
       {clock.labels.map((label) => (
-        <path
-          key={label.start}
-          data-slot="clock-chart-spoke"
-          data-min={minOf(label.visibility)}
-          data-hidden={label.visibility === "none" ? "" : undefined}
-          d={spokePath(label.angle, clock.inner, 1)}
-        />
+        <path key={label.start} data-slot="clock-chart-spoke" d={spokePath(label.angle, clock.inner, 1)} />
       ))}
     </svg>
   );

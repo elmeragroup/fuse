@@ -15,6 +15,7 @@ import {
   ChartDatumContext,
   ChartDepthContext,
   ChartHeadlineContext,
+  ChartHeldIndexContext,
   ChartLegendSideContext,
   ChartLiveContext,
   ChartRowContext,
@@ -29,7 +30,7 @@ import {
 } from "./chart-scope-contexts";
 
 /**
- * A Root starts its own scope, so an outer chart's row, legend side, Tooltip, Headline, Crosshair,
+ * A Root starts its own scope, so an outer chart's row, legend side, Tooltip and the index its closing popup holds, Headline, Crosshair,
  * Marker or ActiveValueLine, an outer Root of any family with its readout, selection, layout and
  * plots, or an outer clock Marker never reaches a part of this one, such as a sparkline in a legend
  * item or a pie in a tooltip. A part of another family under this Root therefore throws
@@ -48,13 +49,15 @@ export function ChartOwnScope({ children }: { readonly children: ReactNode }): R
       <ChartRowContext value={null}>
         <ChartLegendSideContext value={null}>
           <ChartLiveContext value={false}>
-            <ChartHeadlineContext value={false}>
-              <ChartCrosshairContext value={false}>
-                <ChartDatumContext value={null}>
-                  <RootContexts>{children}</RootContexts>
-                </ChartDatumContext>
-              </ChartCrosshairContext>
-            </ChartHeadlineContext>
+            <ChartHeldIndexContext value={null}>
+              <ChartHeadlineContext value={false}>
+                <ChartCrosshairContext value={false}>
+                  <ChartDatumContext value={null}>
+                    <RootContexts>{children}</RootContexts>
+                  </ChartDatumContext>
+                </ChartCrosshairContext>
+              </ChartHeadlineContext>
+            </ChartHeldIndexContext>
           </ChartLiveContext>
         </ChartLegendSideContext>
       </ChartRowContext>

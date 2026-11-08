@@ -31,13 +31,13 @@ export type GlideTurns = (
 
 /**
  * How a step's glide travels. "path" glides through the turns its family's route gives for the side
- * the popup is on, and shows the next place at once when the route gives none. Its `keeps` names
- * what the glide holds still: "side", as over the cartesian roof, where a place on another side
- * shows at once and a popup that changes size keeps the edge that faces the plot. "straight" glides
- * in a line, as along the plot's top lane or a horizontal chart's rows.
+ * the popup is on, and shows the next place at once when the route gives none, as over the
+ * cartesian roof, where a place on another side shows at once and a popup that changes size keeps
+ * the edge that faces the plot. "straight" glides in a line, as along the plot's top lane or a
+ * horizontal chart's rows.
  */
 export type GlideRoute =
-  | { readonly kind: "path"; readonly keeps: "side"; readonly turns: GlideTurns }
+  | { readonly kind: "path"; readonly turns: GlideTurns }
   | { readonly kind: "straight" };
 
 /**

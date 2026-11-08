@@ -11,17 +11,34 @@ import type { SupportedLocale } from "../../intl/locale-context";
 import type { ChartFollowers } from "./chart-followers";
 import type { ChartMotion } from "./chart-motion";
 import type { PolarFollow } from "./chart-polar-follow";
+import type { ItemSource } from "./chart-polar-item";
 import type { PaintedAngles } from "./chart-polar-painted";
-import type { ChartReadout, ChartTableModel, PointerSlot } from "./chart-readout-port";
+import type { ChartReadout, PointerSlot } from "./chart-readout-port";
+import type { SeriesTableContext } from "./chart-series-readout";
 import type { ChartStore, EmphasisEntry } from "./chart-store";
 import type { OptionOrder, TextContext } from "./chart-text";
 import type { ChartSelectionChangeReason, ChartX, ValueFormat } from "./chart-types";
 import type { FormattedText } from "./format/formatted-text";
+import type { ClockSlots } from "./layout/clock-path";
 import { ChartCompositionError } from "./layout/errors";
 import type { ChartDataRule, ChartHintRule } from "./layout/errors";
 import type { SliceAngles } from "./layout/pie";
 import type { PolarPoint, Sweep, SweepBox } from "./layout/polar-angle";
 import type { RingBand } from "./layout/rings";
+
+/**
+ * What a polar Table builds its table from: a series model's words over its keys, as the radar and
+ * the clock list them, or the items with their shares, as a pie and a radial chart list them. The
+ * Table part builds it, so a Root with no Table never builds one.
+ */
+export type PolarTableInput =
+  | { readonly kind: "series"; readonly context: SeriesTableContext; readonly keys: readonly string[] }
+  | {
+      readonly kind: "items";
+      readonly source: ItemSource;
+      /** Each row's share in percent at some digits, or null where it has none. */
+      readonly shares: (digits: number) => (number | null)[];
+    };
 
 /** The polar families. */
 export type PolarFamily = "pie" | "radial" | "radar" | "clock";
@@ -92,8 +109,8 @@ export type PolarModel = {
   readonly selectKey: (index: number, focus: number) => string | null;
   /** Every config key a selection may name. */
   readonly selectable: readonly string[];
-  /** The rows the family's Table lists. */
-  readonly table: ChartTableModel;
+  /** What the family's Table builds the rows it lists from, which only a Table part reads. */
+  readonly table: PolarTableInput;
   /** Build the family's readout over the kernel, once per model. */
   readonly readout: (kernel: PolarKernel) => ChartReadout;
   /** The data rules the rows broke, with their production fallback already applied. */
@@ -129,22 +146,13 @@ export type ClockSeries = {
   /** Each reading's step, 0 for the lowest, which a wedge, a dot or the active dot paints in. */
   readonly stepAt: readonly number[];
   readonly stack: string | undefined;
-  readonly missing: "gap" | "connect";
-  readonly slots: ClockSlotDraw;
+  readonly slots: ClockSlots;
   /** The numbers the series rests on: 1, then each slot's start and end angle, base radius and tip. */
   readonly rest: readonly number[];
   /** Each slot's reading, or null. */
   readonly values: readonly (number | null)[];
   /** Every slot, which a Column decimates by M4 to the drawn dial's circumference past 2,000. */
   readonly shown: readonly number[];
-};
-
-/** What a series' slots hold beside their numbers, as `layout/clock-path.ts` reads them. */
-export type ClockSlotDraw = {
-  /** "covered" for a Root slot a coarse slot draws from its first Root slot, which draws nothing itself. */
-  readonly states: readonly ("reading" | "missing" | "pending" | "covered")[];
-  readonly marked: readonly boolean[];
-  readonly missing: "gap" | "connect";
 };
 
 /** One label round a clock dial: where it sits, what it reads and from which width it shows. */
@@ -185,6 +193,11 @@ export type ClockDrawing = {
   readonly series: readonly ClockSeries[];
   /** The cycle's labels: hours round a day, weekdays round a week, months round a year. */
   readonly labels: readonly ClockLabel[];
+  /**
+   * The visibility each label takes for texts of its own, in the labels' order, thinned by stride
+   * as the cycle's labels are for theirs, which an AngleAxis `format` prints.
+   */
+  readonly fitLabels: (texts: readonly string[]) => readonly (number | "always" | "none")[];
   /** The angle of Root's `now` and its slot, or null when `now` lies outside the cycle. */
   readonly now: { readonly slot: number; readonly angle: number } | null;
   /** The first series' format, which the RadiusAxis prints its ticks in. */
@@ -254,7 +267,6 @@ export type CentreModel = {
 export type RadialRing = {
   /** The item's key, a category, or `OTHER_KEY` and its place for a category config lacks. */
   readonly key: string;
-  readonly label: FormattedText;
   readonly paint: string;
   /** A role list's stops from the tip to the base, which paint along the sweep (Q12). */
   readonly stops: readonly string[] | undefined;
@@ -290,9 +302,6 @@ export type PieSlice = {
   readonly stops: readonly string[] | undefined;
   /** The category's place among the config keys, which selection and highlight name, or -1. */
   readonly series: number;
-  /** The reading the texts print, its sign kept, or null for a missing one. */
-  readonly value: number | null;
-  readonly format: ValueFormat;
   /** The slice's angles at rest, before the rim floor, or null where it draws no arc. */
   readonly angles: SliceAngles | null;
   /** The reading's quality: an estimated slice draws hatched, and a missing one draws no arc. */
@@ -308,12 +317,6 @@ export type PieDrawing = {
   /** The hole's radius as a share of the outer radius. */
   readonly innerRadius: number;
   readonly slices: readonly PieSlice[];
-  /** The sum of the drawn readings. */
-  readonly total: number;
-  /** The format every slice shares, which the total prints through, or null where they differ. */
-  readonly totalFormat: ValueFormat | null;
-  /** A gauge's maximum, or null for a plain pie. */
-  readonly max: number | null;
   /** Whether a gauge's total passes its maximum. */
   readonly over: boolean;
   /** A slice's share in the pie's one largest-remainder set at `digits`, or null. */
@@ -362,7 +365,7 @@ export type PolarPickAt = (clientX: number, clientY: number, held?: PolarHeld | 
 export type PolarHeld = PointerSlot & { readonly firm: boolean };
 
 /** What produced the current model: the first render, or new data. */
-export type PolarUpdate = { readonly kind: "initial" | "data"; readonly keys: readonly string[] };
+export type PolarUpdate = { readonly kind: "initial" | "data" };
 
 /** What a polar part reads from its Root. */
 export type PolarContextValue = {

@@ -8,7 +8,10 @@ import type { ReactElement, ReactNode } from "react";
 
 import type { LabelPlace } from "./clock-chart-dial";
 
-/** A label placed past the rim, its place written as the stylesheet's custom properties. */
+/**
+ * A label placed past the rim, its place written as the stylesheet's custom properties. It is
+ * drawing, hidden from readers, so a part that speaks says so in text of its own.
+ */
 export function PlacedLabel({
   place,
   dataSlot,
@@ -25,6 +28,7 @@ export function PlacedLabel({
   return (
     <span
       data-slot={dataSlot}
+      aria-hidden="true"
       data-part={dataSlot === undefined ? "label" : undefined}
       data-min={min}
       data-hidden={hidden === true ? "" : undefined}

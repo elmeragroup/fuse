@@ -71,7 +71,7 @@
           "type": "\"past\" | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "\"past\" fades the slots before `now`.",
+          "description": "\"past\" fades the Column wedges whose slot ended before `now`.",
           "required": false
         },
         {
@@ -1888,7 +1888,7 @@
     {
       "name": "ClockChart.Table",
       "rsc": "client",
-      "sourcePath": "packages/fuse/src/components/chart/polar-chart-table.tsx",
+      "sourcePath": "packages/fuse/src/components/chart/polar-series-table.tsx",
       "forwardedFrom": [],
       "forwardedCount": 0,
       "props": [

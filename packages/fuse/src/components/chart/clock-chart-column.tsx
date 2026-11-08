@@ -5,10 +5,10 @@
  * device pixel along its radius (D24), stacked through the stack floors, and past 2,000 slots
  * decimated by M4 to the dial's circumference.
  */
-import { useId, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { ReactElement, RefObject } from "react";
 
-import { writeAttribute } from "./chart-dom";
+import { useSvgIdPrefix, writeAttribute } from "./chart-dom";
 import { BAR_GLOW, valueGlow } from "./chart-glow-filter";
 import type { MarkValues } from "./chart-motion";
 import { viewBoxOf } from "./chart-pie-frame";
@@ -219,9 +219,9 @@ export function ClockChartColumn({
       series === undefined ? null : { series, clock, measure, seat, emphasised, drawn },
     [series, clock, seat, emphasised, drawn]
   );
-  const { ref, place, node: anchor } = usePolarMark(polar.motion, drawColumns, look);
+  const { ref, place, node: anchor, drawn: drawnFrame } = usePolarMark(polar.motion, drawColumns, look);
   const commit = usePolarCommit(polar, anchor);
-  useClockPlacement(clock, series, commit, place);
+  useClockPlacement(clock, series, look, { commit, place, drawn: drawnFrame });
   const svg = useRef<SVGSVGElement>(null);
   const group = useRef<SVGGElement | null>(null);
   // The writer measures the dial's pixels for the floor and the pad, and redraws as the cell resizes.
@@ -245,7 +245,7 @@ export function ClockChartColumn({
       observer.disconnect();
     };
   }, [polar.box, look, drawn]);
-  const prefix = useId();
+  const prefix = useSvgIdPrefix("clock-chart-column");
   const paint = series === undefined ? null : paintOf(clock, series);
   const glow = paint === null ? null : valueGlow(paint, prefix, BAR_GLOW);
   const steps = series?.steps ?? [{ paint: series?.paint ?? "currentColor", from: 0 }];

@@ -14,12 +14,6 @@ import type { SweepBox } from "./layout/polar-angle";
 import { angleLabel, rayLabelOffset } from "./layout/polar-labels";
 import { pathNumber } from "./layout/rounding";
 
-/**
- * The radius the label fit measures a cycle label's room at, as a share of the outer radius. Labels
- * sit closer, 6 px past the rim (`rayPlace`), so the fit errs toward room to spare.
- */
-export const LABEL_REACH = 1.1;
-
 /** A point's place in the cell, as percentages of the sweep's box. */
 export function percent(box: SweepBox, x: number, y: number): readonly [string, string] {
   const left = ((x - box.left) / (box.right - box.left)) * 100;

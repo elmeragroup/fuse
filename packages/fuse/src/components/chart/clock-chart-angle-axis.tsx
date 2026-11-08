@@ -27,7 +27,8 @@ export type ClockChartAngleAxisProps = ChartLayerProps & {
 /**
  * The cycle's labels past the rim: hours on their slot's start round a day, weekdays and months
  * centred on their span. They never rotate, they thin by stride as the dial narrows, keeping the
- * cycle's first, and they take the frame's gutter beside the dial.
+ * cycle's first, by the widths of the text they print, a `format`'s included, and they take the
+ * frame's gutter beside the dial.
  *
  * @beta
  */
@@ -39,6 +40,11 @@ export function ClockChartAngleAxis({ format, className, style }: ClockChartAngl
     format === undefined
       ? label.text.text
       : formatSlot(kernel.locale, timeZone, label.start, label.unit, format, "tick").text;
+  // A format of its own thins its labels by the widths it prints, as the cycle's labels thin by theirs.
+  const visibility =
+    format === undefined
+      ? clock.labels.map((label) => label.visibility)
+      : clock.fitLabels(clock.labels.map(text));
   const measured = useLabelWidths();
   return (
     <div
@@ -49,12 +55,12 @@ export function ClockChartAngleAxis({ format, className, style }: ClockChartAngl
       aria-hidden="true"
       className={className}
       style={style}>
-      {clock.labels.map((label) => (
+      {clock.labels.map((label, index) => (
         <PlacedLabel
           key={label.start}
           dataSlot="clock-chart-angle-label"
-          min={minOf(label.visibility)}
-          hidden={label.visibility === "none"}
+          min={minOf(visibility[index] ?? "none")}
+          hidden={(visibility[index] ?? "none") === "none"}
           place={rayPlace(box, label.angle, labelWidth(text(label)), "outside")}>
           {text(label)}
         </PlacedLabel>

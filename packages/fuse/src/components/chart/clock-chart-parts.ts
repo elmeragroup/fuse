@@ -41,7 +41,7 @@ export {
   ChartLegendToggleGroup as LegendToggleGroup,
   ChartLegendToggle as LegendToggle,
 } from "./chart-legend";
-export { ClockChartTable as Table } from "./polar-chart-table";
+export { ClockChartTable as Table } from "./polar-series-table";
 export { ChartTableColumn as TableColumn } from "./chart-table-column";
 export { ChartEmpty as Empty } from "./chart-empty";
 export { ChartBackground as Background } from "./chart-background";

@@ -1,7 +1,7 @@
 // The polar Root kernel, in Chromium. Unit under test: PieChart.Root, RadialChart.Root and
 // RadarChart.Root with their shared parts, Table, Empty and Skeleton, before any family's marks
-// land. Oracles, written by hand: CONTRACT section 9.2's DOM order, section 9.3's names and
-// section 9.4's key maps and Escape rule, section 9.5's pinning, the drafted dictionary's words,
+// land, and ClockChart.Root's model across renders. Oracles, written by hand: CONTRACT section
+// 9.2's DOM order, section 9.3's names and section 9.4's key maps and Escape rule, section 9.5's pinning, the drafted dictionary's words,
 // the sweep boxes of polar-angle.test.ts, D18's first paint, and D5's and D17's placements, read
 // through a test-only mark that places one number per item on the Root's loop.
 import { useLayoutEffect, useRef } from "react";
@@ -18,6 +18,7 @@ import type { MarkValues } from "./chart-motion";
 import { usePolarContext } from "./chart-polar-context";
 import { placeExit, usePolarCommit, usePolarMark } from "./chart-polar-motion";
 import "./chart.css";
+import { ClockChart } from "./clock-chart-namespace";
 import { PieChart } from "./pie-chart-namespace";
 import { RadarChart } from "./radar-chart-namespace";
 import { RadialChart } from "./radial-chart-namespace";
@@ -474,5 +475,78 @@ describe("the loop's placements (D5, D17, D18)", () => {
     expect(host.querySelectorAll("[data-ghost]")).toHaveLength(1);
     await expect.poll(() => host.querySelectorAll("[data-ghost]").length, { timeout: 2000 }).toBe(0);
     expect(host.querySelector('[data-key="avgifter"]')?.getAttribute("data-value")).toBe("20");
+  });
+});
+
+/** Records the polar model each render reads, so a test can tell a rebuilt model from a kept one. */
+function ModelProbe({ seen }: { readonly seen: unknown[] }): ReactNode {
+  seen.push(usePolarContext("Test.ModelProbe", ["pie", "radial", "clock"]).model);
+  return null;
+}
+
+describe("an inline format object (A1-14)", () => {
+  // A Root reads a format that names the same options as no change, as the cartesian Root does with
+  // its xFormat, so a parent render that writes the format inline keeps the model it built.
+  const DAY = Date.parse("2025-10-24T22:00:00Z");
+  const HOURS = Array.from({ length: 24 }, (_, hour) => ({ start: DAY + hour * 3_600_000, kwh: 1 }));
+  const KWH = { kwh: { label: "kWh", color: "chart-1" } } as const;
+  it.each([
+    [
+      "PieChart.Root's valueFormat",
+      (seen: unknown[]) => (
+        <PieChart.Root
+          data={BILL}
+          config={BILL_CONFIG}
+          nameKey="name"
+          valueKey="v"
+          valueFormat={{ maximumFractionDigits: 0 }}
+          aria-label="Kake">
+          <ModelProbe seen={seen} />
+        </PieChart.Root>
+      ),
+    ],
+    [
+      "RadialChart.Root's valueFormat",
+      (seen: unknown[]) => (
+        <RadialChart.Root
+          data={BILL}
+          config={BILL_CONFIG}
+          nameKey="name"
+          valueKey="v"
+          valueFormat={{ maximumFractionDigits: 0 }}
+          aria-label="Ringer">
+          <ModelProbe seen={seen} />
+        </RadialChart.Root>
+      ),
+    ],
+    [
+      "ClockChart.Root's xFormat",
+      (seen: unknown[]) => (
+        <ClockChart.Root
+          data={HOURS}
+          config={KWH}
+          xKey="start"
+          cycle="day"
+          interval="hour"
+          xFormat={{ hour: "2-digit" }}
+          aria-label="Døgn">
+          <ModelProbe seen={seen} />
+        </ClockChart.Root>
+      ),
+    ],
+  ])("keeps the model across a render with an equal inline %s", (_, chart) => {
+    const seen: unknown[] = [];
+    const { rerender } = renderThemed(
+      <LocaleProvider locale="nb-NO" timeZone="Europe/Oslo">
+        {chart(seen)}
+      </LocaleProvider>
+    );
+    rerender(
+      <LocaleProvider locale="nb-NO" timeZone="Europe/Oslo">
+        {chart(seen)}
+      </LocaleProvider>
+    );
+    expect(seen.length).toBeGreaterThan(1);
+    expect(new Set(seen).size).toBe(1);
   });
 });

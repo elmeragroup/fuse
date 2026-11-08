@@ -1,22 +1,30 @@
 "use client";
 
 /**
- * What a series model reads out: the active slot and series, a reading as a tooltip row or a legend
- * value prints it, the shares, the stack totals, a fallback keyword's slot, and the rows of the
- * table. A cartesian Root's readout reads it, and so does any family that builds a
- * `CartesianModel`. It reads no plot geometry.
+ * What a series model reads out: the readout the shared parts read, the active slot and series, a
+ * reading as a tooltip row or a legend value prints it, the shares, the stack totals, a fallback
+ * keyword's slot, and the rows of the table. A cartesian Root's readout reads it, and so does any
+ * family that builds a `CartesianModel`. It reads no plot geometry.
  */
 import { use } from "react";
 
 import type { SupportedLocale } from "../../intl/locale-context";
-import type { ChartTableCell, ChartTableModel, ChartTablePage, ChartTableRow } from "./chart-readout-port";
+import { readingPaint, seriesPaintOf, swatchPaint } from "./chart-paint";
+import type {
+  ChartReadout,
+  ChartTableCell,
+  ChartTableModel,
+  ChartTablePage,
+  ChartTableRow,
+  ReadoutItem,
+} from "./chart-readout-port";
 import { ChartLiveContext } from "./chart-scope-contexts";
 import { useChartStore } from "./chart-store";
 import type { ChartStore } from "./chart-store";
 import { PAGE_ROWS } from "./chart-table-shell";
 import { ownSlotLabel, qualityWords, slotLabel, stackTotalAt } from "./chart-text";
 import type { TextContext } from "./chart-text";
-import type { ChartFallback, ChartRow, ValueFormat } from "./chart-types";
+import type { ChartFallback, ChartQuality, ChartRow, ValueFormat } from "./chart-types";
 import { CHART_STRINGS } from "./format/chart-strings";
 import type { FormattedText } from "./format/formatted-text";
 import { seriesLabel } from "./format/series-label";
@@ -25,10 +33,13 @@ import type { Interval, TimePreset } from "./format/time-format";
 import { formatUnitLabel, formatUnitless, formatValue } from "./format/value-format";
 import type { CartesianModel } from "./layout/cartesian-model";
 import { ownWindowSlots, rowSpans } from "./layout/coarse-slots";
+import { isThresholdColor } from "./layout/color-key";
 import { keywordSlots, nowSlotOf } from "./layout/datum";
+import { assertKnownKey } from "./layout/errors";
 import type { Reading } from "./layout/readings";
 import { seriesOf } from "./layout/series-of";
 import { roundShares } from "./layout/shares";
+import { slotX } from "./layout/x-domain";
 
 /** What the active-point hooks read: the model's window and series, and the store. */
 type SeriesActive = { readonly model: CartesianModel; readonly store: ChartStore };
@@ -271,7 +282,7 @@ function tableIndexOf(model: CartesianModel, locale: SupportedLocale): TableInde
 }
 
 /** What the table reads: the series model's words, the chart's name and the Root's rows. */
-type SeriesTableContext = TextContext & {
+export type SeriesTableContext = TextContext & {
   readonly name: string | undefined;
   readonly rows: readonly ChartRow[];
 };
@@ -414,5 +425,99 @@ export function seriesTable(context: SeriesTableContext, keys: readonly string[]
     },
     hasColumn: (column) => context.rows.some((entry) => Object.hasOwn(entry, column)),
     timeZone: model.domain.kind === "time" ? model.domain.timeZone : "UTC",
+  };
+}
+
+/** What a series readout takes from its Root beside the series model: its identity, store and calls. */
+export type SeriesReadoutHost = Pick<
+  ChartReadout,
+  | "id"
+  | "root"
+  | "store"
+  | "followers"
+  | "select"
+  | "registerToggleGroup"
+  | "highlight"
+  | "warnOnce"
+  | "usePick"
+>;
+
+/**
+ * The readout over a series model, which every family that builds a `CartesianModel` shares: an
+ * index is a slot, the legend lists every config key, a threshold series listing both sides, and the
+ * tooltip rows list every series at the active slot.
+ *
+ * @param context - The family's series model and words.
+ * @param host - The Root's identity, store, calls and pick.
+ * @param look - The look a key's marks draw in, which its swatch wears, or undefined for none.
+ * @returns The readout.
+ */
+export function seriesReadoutOf(
+  context: TextContext,
+  host: SeriesReadoutHost,
+  look: (key: string) => string | undefined = () => undefined
+): ChartReadout {
+  const { model, config } = context;
+  const legendKeys = Object.keys(config);
+  const seriesKeys = model.series.map(({ key }) => key);
+  const items = new Map<string, ReadoutItem>();
+  const item = (key: string): ReadoutItem | undefined => {
+    const known = items.get(key);
+    if (known !== undefined) return known;
+    const entry = config[key];
+    if (entry === undefined) return undefined;
+    const color = entry.color;
+    const made: ReadoutItem = {
+      index: seriesOf(model, key)?.seriesIndex ?? legendKeys.indexOf(key),
+      label: seriesLabel(context, key),
+      icon: entry.icon,
+      selectable: true,
+      sides: isThresholdColor(color) ? [color.above, color.below] : null,
+    };
+    items.set(key, made);
+    return made;
+  };
+  return {
+    ...host,
+    locale: context.locale,
+    window: model.window,
+    empty: model.empty,
+    legendKeys,
+    toggleGroupName: CHART_STRINGS[context.locale].seriesGroup,
+    item,
+    assertKey: (part, key) => {
+      assertKnownKey(part, config, key);
+    },
+    pointKey: (_active, near) => (near === null ? null : (model.series[near]?.key ?? null)),
+    itemsFollowActive: false,
+    tooltipKeys: () => seriesKeys,
+    activeLabel: (active, format) => slotLabel(context, active, format).text,
+    valueText: (key, at, format) => readingText(context, key, at, format),
+    share: (key, at, digits) => slotShares(context, at, digits).get(key) ?? null,
+    legendAt: (key, active, fallback) => active ?? fallbackSlot(context, key, fallback),
+    legendShare: (key, digits) => windowShares(context, digits).get(key) ?? null,
+    swatch: (key, at) => {
+      const paint = seriesPaintOf(key, config[key]?.color ?? "chart-1", seriesOf(model, key));
+      const step = at === null ? undefined : readingPaint(paint, readingAt(context, key, at));
+      return { paint: swatchPaint(paint, step), look: look(key) };
+    },
+    point: (active, near) => {
+      const values: Record<string, number | null> = {};
+      const quality: Record<string, ChartQuality> = {};
+      for (const series of model.series) {
+        const reading = series.readings[active];
+        values[series.key] = reading?.kind === "reading" ? reading.value : null;
+        if (reading?.kind === "reading") quality[series.key] = reading.quality;
+        else if (reading?.kind === "missing") quality[series.key] = "missing";
+      }
+      return {
+        index: active,
+        x: slotX(model.domain, active),
+        label: slotLabel(context, active),
+        key: near === null ? null : (model.series[near]?.key ?? null),
+        values,
+        quality,
+      };
+    },
   };
 }

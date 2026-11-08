@@ -36,7 +36,7 @@ type D3ArcInput = {
 };
 
 /** The d3 arc generator for one spec, its corner and pad radius set. */
-function generatorOf(spec: ArcSpec) {
+function generatorOf(spec: Pick<ArcSpec, "cornerRadius" | "padRadius">) {
   return d3Arc<D3ArcInput>()
     .digits(PATH_DIGITS)
     .cornerRadius(spec.cornerRadius ?? 0)
@@ -44,7 +44,7 @@ function generatorOf(spec: ArcSpec) {
 }
 
 /** One spec as d3's arc reads it. */
-function inputOf(spec: ArcSpec): D3ArcInput {
+function inputOf(spec: Omit<ArcSpec, "cornerRadius" | "padRadius">): D3ArcInput {
   return {
     innerRadius: spec.innerRadius,
     outerRadius: spec.outerRadius,
@@ -62,6 +62,20 @@ function inputOf(spec: ArcSpec): D3ArcInput {
  */
 export function arcPath(spec: ArcSpec): string {
   return generatorOf(spec)(inputOf(spec)) ?? "";
+}
+
+/**
+ * One generator for many arcs that share a corner radius and a pad radius, such as a clock's
+ * wedges in one frame, which draws each arc as `arcPath` does.
+ *
+ * @param shared - The corner radius and the pad radius every arc takes.
+ * @returns A writer of each arc's path data.
+ */
+export function arcWriter(
+  shared: Pick<ArcSpec, "cornerRadius" | "padRadius">
+): (spec: Omit<ArcSpec, "cornerRadius" | "padRadius">) => string {
+  const generator = generatorOf(shared);
+  return (spec) => generator(inputOf(spec)) ?? "";
 }
 
 /**

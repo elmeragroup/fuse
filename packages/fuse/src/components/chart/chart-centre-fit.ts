@@ -73,7 +73,7 @@ function overflows(hole: HTMLElement): boolean {
  *
  * @param hole - The centre's hole, whose `data-fit` the stylesheet reads.
  */
-export function fitCentre(hole: HTMLElement): void {
+function fitCentre(hole: HTMLElement): void {
   writeAttribute(hole, "data-fit", null);
   if (!overflows(hole)) return;
   writeAttribute(hole, "data-fit", "value");
@@ -103,10 +103,8 @@ export function useCentreFit(): RefObject<HTMLDivElement | null> {
       for (const line of hole.querySelectorAll(":scope > *, :scope > * > *")) sizes.observe(line);
     };
     watch();
-    const lines = new MutationObserver(() => {
-      watch();
-      fit();
-    });
+    // Observing the lines anew reports each one's size, so the ResizeObserver fits before paint.
+    const lines = new MutationObserver(watch);
     lines.observe(hole, { childList: true, subtree: true, characterData: true });
     return () => {
       sizes.disconnect();

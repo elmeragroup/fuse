@@ -83,17 +83,13 @@ import { PieChartPie } from "../../src/components/chart/pie-chart-pie";
 import { PieChartRoot } from "../../src/components/chart/pie-chart-root";
 import { PieChartSkeleton } from "../../src/components/chart/pie-chart-skeleton";
 import { PieChartTrack } from "../../src/components/chart/pie-chart-track";
-import {
-  PieChartTable,
-  RadarChartTable,
-  ClockChartTable,
-  RadialChartTable,
-} from "../../src/components/chart/polar-chart-table";
+import { PieChartTable, RadialChartTable } from "../../src/components/chart/polar-chart-table";
 import {
   PieChartTooltip,
   RadarChartTooltip,
   RadialChartTooltip,
 } from "../../src/components/chart/polar-chart-tooltip";
+import { ClockChartTable, RadarChartTable } from "../../src/components/chart/polar-series-table";
 import { RadarChartActiveDot } from "../../src/components/chart/radar-chart-active-dot";
 import { RadarChartAngleAxis } from "../../src/components/chart/radar-chart-angle-axis";
 import { RadarChartGlow } from "../../src/components/chart/radar-chart-glow";

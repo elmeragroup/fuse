@@ -9,9 +9,10 @@
  * seam otherwise. The server writes every slice at rest, and the first paint keeps the slices hidden
  * until the chart comes into view (D18).
  */
-import { useId, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { ReactElement } from "react";
 
+import { useSvgIdPrefix } from "./chart-dom";
 import type { MarkValues } from "./chart-motion";
 import { pieFrameOf, POP_DURATION, POP_EASING, viewBoxOf } from "./chart-pie-frame";
 import type { PieFrame, PieLook } from "./chart-pie-frame";
@@ -143,7 +144,7 @@ export function PieChartPie({ cornerRadius = 0, className, style }: PieChartPieP
   const [frame] = useState(() => pieFrameOf(motion, look));
   const svg = useRef<SVGSVGElement>(null);
   const ghosts = useRef<SVGGElement>(null);
-  const prefix = useId();
+  const prefix = useSvgIdPrefix("pie-chart-pie");
   const targets = useMemo(() => targetsOf(pie), [pie]);
   useLayoutEffect(() => frame.attach(), [frame]);
   // The frame measures the pie's CSS pixels per unit, its pop, its seam and the dpr, as the cell resizes.

@@ -15,9 +15,10 @@
  * its maximum fills the sweep with `data-over-max`. The active ring scales to 1.03 and the rings
  * outside it to 1.02 on a spring, and the rest dim, with no React commit.
  */
-import { useId, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { ReactElement } from "react";
 
+import { useSvgIdPrefix } from "./chart-dom";
 import type { MarkValues } from "./chart-motion";
 import { viewBoxOf } from "./chart-pie-frame";
 import { radialDrawingIn, usePolarContext } from "./chart-polar-context";
@@ -199,7 +200,7 @@ export function RadialChartBar({ variant = "default", className, style }: Radial
   const radial = radialDrawingIn(model, "RadialChart.Bar");
   const [frame] = useState(() => ringFrameOf(motion, radial.sweep));
   const svg = useRef<SVGSVGElement>(null);
-  const prefix = useId();
+  const prefix = useSvgIdPrefix("radial-chart-bar");
   useLayoutEffect(() => frame.attach(), [frame]);
   // The frame measures CSS pixels per unit, the dpr and the ring fill, as the cell resizes.
   useLayoutEffect(() => {

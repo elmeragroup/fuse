@@ -886,6 +886,87 @@ describe("a reference inside the dial's bounds (B5)", () => {
   });
 });
 
+describe("the ActiveDot over a connected gap (A1-04)", () => {
+  it("shows no dot at a missing slot that its Line bridges, and one at a slot with a reading", async () => {
+    // Hour 2 has no reading, and missing: "connect" bridges it from 01:00 to 03:00. ActiveDot's JSDoc:
+    // a missing reading at the active slot shows no dot, though the bridge draws a curve there.
+    const { host } = renderThemed(
+      <Dial
+        data={hours([4, 2, null, 2, ...Array.from({ length: 20 }, () => 1)])}
+        config={{ kwh: { label: "kWh", color: "chart-1", missing: "connect" } }}>
+        <ClockChart.Line dataKey="kwh" />
+        <ClockChart.ActiveDot dataKey="kwh" />
+      </Dial>
+    );
+    await painted();
+    const layer = clockLayer(host, "clock-chart-line");
+    // DOM audit: the dot is aria-hidden plot output; its group states a drawn dot on data-value.
+    const group = clockLayer(host, "clock-chart-active-dot").querySelector("[data-follow]");
+    /** Hover the middle of an hour's slot, 15° wide, halfway out. */
+    const hoverHour = (hour: number) => {
+      const radians = ((hour + 0.5) * 15 * Math.PI) / 180;
+      return hoverAt(...clientPoint(layer, 0.6 * Math.sin(radians), -0.6 * Math.cos(radians)));
+    };
+    await hoverHour(1);
+    await expect.poll(() => group?.hasAttribute("data-value")).toBe(true);
+    await hoverHour(2);
+    // The hand glides from 01:00 to 02:00, so the dot has had every frame of it to leave.
+    const start = performance.now();
+    while (performance.now() - start < 600) await new Promise((resolve) => requestAnimationFrame(resolve));
+    expect(group?.hasAttribute("data-value")).toBe(false);
+  });
+});
+
+describe("a reference's sentence (A1-02)", () => {
+  // The cartesian references' contract: the drawing and the label are hidden from readers, and one
+  // visually hidden sentence, outside any aria-hidden subtree, always carries the value or the range,
+  // in the dictionary's pattern without a label and as "label: value" with one. nb-NO's patterns are
+  // "Referanselinje: …", "Område: …" and "… til …", and it speaks a clock time as "kl. 06:00",
+  // joined by a no-break space. A reference that draws nothing keeps its sentence.
+  const rows = hours(Array.from({ length: 24 }, (_, hour) => (hour % 2 === 0 ? 100 : 200)));
+
+  it.each([
+    ["a value line with a label", <ClockChart.ReferenceLine key="r" y={150} label="Mål" />, "Mål: 150"],
+    ["a value line past the rim", <ClockChart.ReferenceLine key="r" y={300} label="Mål" />, "Mål: 300"],
+    ["a value line with no label", <ClockChart.ReferenceLine key="r" y={150} />, "Referanselinje: 150"],
+    [
+      "a spoke at 06:00",
+      <ClockChart.ReferenceLine key="r" x={DAY + 6 * HOUR} label="Start" />,
+      "Start: kl.\u00a006:00",
+    ],
+    [
+      "a value band with no label",
+      <ClockChart.ReferenceArea key="r" y1={200} y2={100} />,
+      "Område: 100 til 200",
+    ],
+    [
+      "a sector from 17:00 to 20:00",
+      <ClockChart.ReferenceArea
+        key="r"
+        x1={DAY + 17 * HOUR}
+        x2={DAY + 19 * HOUR}
+        label="Topp"
+        format="time"
+      />,
+      "Topp: kl.\u00a017:00 til kl.\u00a020:00",
+    ],
+  ] as const)("speaks %s", async (_, reference, spoken) => {
+    const { host } = renderThemed(
+      <Dial data={rows} scale="linear">
+        {reference}
+      </Dial>
+    );
+    await painted();
+    // DOM audit: the sentence is visually hidden text on its slot, the cartesian references' own.
+    const sentence = host.querySelector('[data-slot="chart-reference-text"]');
+    expect(sentence?.textContent).toBe(spoken);
+    expect(sentence?.closest('[aria-hidden="true"]')).toBeNull();
+    // The visible drawing stays hidden from readers.
+    const drawing = host.querySelector('[data-slot^="clock-chart-reference"]');
+    expect(drawing?.querySelector("svg")?.getAttribute("aria-hidden")).toBe("true");
+  });
+});
+
 describe("the default tooltip over a stack (B11)", () => {
   it("adds one total row for a stack of two series, as the table and the option do", async () => {
     // Household 2 and cabin 1 at 00:00 stack to 3, which the total row prints.
@@ -1175,6 +1256,49 @@ describe("the ring values beside the angle labels", () => {
         })
       );
       expect(crowded).toEqual([]);
+    }
+  );
+
+  // A1-03. Unit under test: the AngleAxis's thinning under a format of its own. Oracle: the axis's
+  // JSDoc, labels that thin as the dial narrows so they never collide, checked on the boxes the page
+  // draws. "September 2025" is several times as wide as "Sep", so on a narrow dial the long labels
+  // must thin further than the cycle's own would.
+  it.each(["160px", "200px", "240px", "320px", "400px"])(
+    "keeps every month label a custom format prints clear of the next on a %s dial",
+    async (size) => {
+      const { host } = renderThemed(
+        <LocaleProvider locale="en-US" timeZone="Europe/Oslo">
+          <div style={{ width: 728, fontFamily: '"Fuse Test Inter"' }}>
+            <ClockChart.Root
+              data={YEAR}
+              config={{ kwh: { label: "Household", color: "chart-1" } }}
+              xKey="start"
+              cycle="year"
+              interval="month"
+              data-intro="none"
+              style={{ "--chart-polar-size": size }}
+              aria-label="Year">
+              <ClockChart.AngleAxis format={{ month: "long", year: "numeric" }} />
+              <ClockChart.Column dataKey="kwh" />
+            </ClockChart.Root>
+          </div>
+        </LocaleProvider>
+      );
+      await document.fonts.ready;
+      await painted();
+      // DOM audit: the month labels are aria-hidden plot text, read by their slot.
+      const months = [...host.querySelectorAll<HTMLElement>('[data-slot="clock-chart-angle-label"]')]
+        .filter((label) => label.checkVisibility() && label.textContent.trim() !== "")
+        .map((label) => ({ text: label.textContent.trim(), box: label.getBoundingClientRect() }));
+      expect(months.length).toBeGreaterThan(0);
+      const collisions = months.flatMap((a, index) =>
+        months.slice(index + 1).flatMap((b) => {
+          const across = Math.max(a.box.left - b.box.right, b.box.left - a.box.right);
+          const along = Math.max(a.box.top - b.box.bottom, b.box.top - a.box.bottom);
+          return across < 0 && along < 0 ? [`"${a.text}" over "${b.text}"`] : [];
+        })
+      );
+      expect(collisions).toEqual([]);
     }
   );
 

@@ -10,7 +10,7 @@ import { curveBasis, curveBumpX, curveLinear, curveMonotoneX, curveNatural, curv
 import type { CurveFactory } from "d3-shape";
 
 import type { ChartCurve } from "../chart-types";
-import { arcPath } from "./arc-path";
+import { arcPath, arcWriter } from "./arc-path";
 import type { PolarPoint } from "./polar-angle";
 import { CLOCK_INTRO } from "./polar-motion";
 import { pathNumber } from "./rounding";
@@ -202,7 +202,19 @@ type Run = { readonly slots: readonly number[]; readonly closed: boolean };
  * "gap", and a run that holds both end slots, either one through the coarse reading that covers it,
  * crosses 12 o'clock, closing when it holds every slot.
  */
-function runsOf(slots: ClockSlots): Run[] {
+function runsOf(slots: ClockSlots): readonly Run[] {
+  const known = runsBySlots.get(slots);
+  if (known !== undefined) return known;
+  const runs = findRuns(slots);
+  runsBySlots.set(slots, runs);
+  return runs;
+}
+
+/** Each slots' runs, found once, since the Line, the Area and an ActiveDot read them every frame. */
+const runsBySlots = new WeakMap<ClockSlots, readonly Run[]>();
+
+/** The runs of `runsOf`, found anew. */
+function findRuns(slots: ClockSlots): Run[] {
   const { states, missing } = slots;
   const count = states.length;
   const runs: number[][] = [];
@@ -347,6 +359,70 @@ function clip(line: readonly ClockPoint[], from: number, to: number): ClockPoint
 }
 
 /**
+ * A series' drawn curve indexed for `radiusInCurve`: each run's sampled tip line, or a lone
+ * reading's slot and tip. It holds for one frame's numbers, so a reader that asks many angles of one
+ * frame, as an ActiveDot does, builds it once.
+ */
+export type CurveIndex = readonly (
+  | { readonly kind: "lone"; readonly start: number; readonly end: number; readonly tip: number }
+  | { readonly kind: "line"; readonly line: readonly ClockPoint[] }
+)[];
+
+/**
+ * Index a series' drawn curve in one frame's numbers, for `radiusInCurve`.
+ *
+ * @param values - The loop's numbers: the progress, then each slot's angles, base and tip.
+ * @param slots - Each slot's state and mark, and the missing rule.
+ * @param curve - The curve.
+ * @returns The index.
+ */
+export function curveIndex(values: readonly number[], slots: ClockSlots, curve: ChartCurve): CurveIndex {
+  return runsOf(slots).flatMap((run): CurveIndex => {
+    if (run.slots.length < 2) {
+      const [start, end, , tip] = slotAt(values, run.slots[0] ?? 0);
+      return [{ kind: "lone" as const, start, end, tip }];
+    }
+    const line = runCurve(values, run, curve, "tip");
+    return line.length === 0 ? [] : [{ kind: "line" as const, line }];
+  });
+}
+
+/**
+ * The radius an indexed curve reaches at an angle, or null where it draws nothing there, as
+ * `curveRadiusAt` reads it.
+ *
+ * @param index - The curve, from `curveIndex`.
+ * @param angle - The angle in degrees from 12 o'clock, in any turn.
+ * @returns The radius, or null.
+ */
+export function radiusInCurve(index: CurveIndex, angle: number): number | null {
+  for (const run of index) {
+    if (run.kind === "lone") {
+      // A lone reading draws a dot in its slot's middle, which the active dot covers at rest.
+      const at = run.start + ((((angle - run.start) % 360) + 360) % 360);
+      if (at <= run.end) return run.tip;
+      continue;
+    }
+    const { line } = run;
+    const first = line[0];
+    const last = line.at(-1);
+    if (first === undefined || last === undefined) continue;
+    const at = first.angle + ((((angle - first.angle) % 360) + 360) % 360);
+    if (at > last.angle) continue;
+    // The last sample at or before the angle, by halves.
+    let low = 0;
+    let high = line.length - 1;
+    while (high - low > 1) {
+      const middle = (low + high) >> 1;
+      if ((line[middle]?.angle ?? 0) <= at) low = middle;
+      else high = middle;
+    }
+    return reaching(line, high, at);
+  }
+  return null;
+}
+
+/**
  * The radius a series' drawn curve reaches at an angle, or null where it draws nothing there: in a
  * gap or past an open run's end. The curve is the one the Line and Area draw from the same numbers,
  * read between its samples as the drawn polyline joins them, so a point at this radius lies on the
@@ -365,31 +441,7 @@ export function curveRadiusAt(
   curve: ChartCurve,
   angle: number
 ): number | null {
-  for (const run of runsOf(slots)) {
-    if (run.slots.length < 2) {
-      // A lone reading draws a dot in its slot's middle, which the active dot covers at rest.
-      const [start, end, , tip] = slotAt(values, run.slots[0] ?? 0);
-      const at = start + ((((angle - start) % 360) + 360) % 360);
-      if (at <= end) return tip;
-      continue;
-    }
-    const line = runCurve(values, run, curve, "tip");
-    const first = line[0];
-    const last = line.at(-1);
-    if (first === undefined || last === undefined) continue;
-    const at = first.angle + ((((angle - first.angle) % 360) + 360) % 360);
-    if (at > last.angle) continue;
-    // The last sample at or before the angle, by halves.
-    let low = 0;
-    let high = line.length - 1;
-    while (high - low > 1) {
-      const middle = (low + high) >> 1;
-      if ((line[middle]?.angle ?? 0) <= at) low = middle;
-      else high = middle;
-    }
-    return reaching(line, high, at);
-  }
-  return null;
+  return radiusInCurve(curveIndex(values, slots, curve), angle);
 }
 
 /** Sampled points as path data in the dial's x and y, open or closed. */
@@ -683,18 +735,19 @@ export function clockWedges(
   groupOf: (slot: number) => string
 ): Map<string, string> {
   const groups = new Map<string, string>();
+  // Every wedge shares the pad radius, so one generator draws them all.
+  const wedge = arcWriter({ padRadius: pad.padRadius });
   for (const slot of shown) {
     if (slots.states[slot] !== "reading") continue;
     const [start, end, base, tip] = slotAt(values, slot);
     const [inner, outer] = span(slot, base, tip);
     if (!(outer > inner)) continue;
-    const path = arcPath({
+    const path = wedge({
       innerRadius: inner,
       outerRadius: outer,
       startAngle: start,
       endAngle: end,
       padAngle: pad.padAngle,
-      padRadius: pad.padRadius,
     });
     const group = groupOf(slot);
     groups.set(group, (groups.get(group) ?? "") + path);
@@ -761,58 +814,6 @@ export function slotVertex(values: readonly number[], slot: number): ClockPoint 
 export function clockXY(point: ClockPoint): PolarPoint {
   const radians = (point.angle * Math.PI) / 180;
   return { x: point.radius * Math.sin(radians), y: -point.radius * Math.cos(radians) };
-}
-
-/**
- * The points a follower rides along a series' curve from one slot's vertex to another's, the short
- * way round the dial, a tie going clockwise. The route starts and ends on the two vertices. Where
- * the curve does not run between them, across another run or past an open run's end, it goes
- * straight from one vertex to the other and never extrapolates the curve.
- *
- * @param values - The loop's numbers.
- * @param slots - Each slot's state and mark, and the missing rule.
- * @param curve - The curve.
- * @param from - The slot the follower showed on.
- * @param to - The active slot.
- * @returns The route's points in unrolled space, from the old vertex to the new.
- */
-export function curveRoute(
-  values: readonly number[],
-  slots: ClockSlots,
-  curve: ChartCurve,
-  from: number,
-  to: number
-): ClockPoint[] {
-  const count = slots.states.length;
-  const run = runsOf(slots).find((each) => each.slots.includes(from) && each.slots.includes(to));
-  const start = slotVertex(values, from);
-  const end = slotVertex(values, to);
-  if (run === undefined) return [start, end];
-  const ahead = (((to - from) % count) + count) % count;
-  const forward = ahead <= count - ahead;
-  const line = runCurve(values, run, curve, "tip");
-  // The curve's samples hold one turn from the run's first vertex, so each end finds its angle there.
-  const first = line[0]?.angle ?? 0;
-  const inTurn = (angle: number): number => first + ((((angle - first) % 360) + 360) % 360);
-  const a = inTurn(start.angle);
-  let b = inTurn(end.angle);
-  if (forward && b < a) b += 360;
-  if (!forward && b > a) b -= 360;
-  const low = Math.min(a, b);
-  const high = Math.max(a, b);
-  // A closed run repeats a turn either side, so a step back across the seam, which ends before the
-  // run's first vertex, and a step forward past its last both read the curve. An open run's short
-  // way can leave its samples, across midnight, and then the ride goes straight (B8).
-  if (!run.closed && (low < first - 1e-9 || high > (line.at(-1)?.angle ?? first) + 1e-9)) return [start, end];
-  const shift = (turn: number) => line.map((point) => ({ angle: point.angle + turn, radius: point.radius }));
-  const twice = run.closed ? [...shift(-360), ...line, ...shift(360)] : line;
-  const route = twice.filter((point) => point.angle > low && point.angle < high);
-  const path = [
-    { angle: a, radius: start.radius },
-    ...(forward ? route : route.toReversed()),
-    { angle: b, radius: end.radius },
-  ];
-  return path;
 }
 
 /**

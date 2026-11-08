@@ -245,7 +245,14 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = derive([
   // 2026-11-07: ring values and the angle labels they clear fitted by each label's bound, the
   // widest any common sans draws it, 214778 to 215034. The ceiling keeps about 100 bytes of
   // headroom.
-  { name: "chart", entryFile: "chart.js", measuredGzip: 97044, ceilingGzip: 215134 },
+  // 2026-11-07: the polar review fixes: the clock references' sentences, an AngleAxis format's own fit, the
+  // Marker's pills hidden while it moves, no ActiveDot on a missing slot, pie labels refitted on their own
+  // size, the indexed curve read and the tables built in their Table parts, 215079 to 215264. The ceiling
+  // keeps about 100 bytes of headroom.
+  // 2026-11-08: the second polar review fixes: a Marker's pills flagged on its own labels, its paths
+  // repainted on a variant change and the entrance frame cached with the curve index, 215264 to 215361.
+  // The ceiling keeps about 100 bytes of headroom.
+  { name: "chart", entryFile: "chart.js", measuredGzip: 97044, ceilingGzip: 215461 },
   // 2026-10-13: new entry, measured at 29180. Pure wrappers over Base UI's toolbar and its roving focus.
   { name: "toolbar", entryFile: "toolbar.js", measuredGzip: 29180, ceilingGzip: 43770 },
   // 2026-10-12: new entries. Command is Base UI's Autocomplete in the InputGroup, with the Dialog
@@ -533,7 +540,10 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // 111887. The ceiling keeps about 100 bytes of headroom.
     // 2026-11-07: the lane fade is kept and cancelled at a close and at every open's
     // hold, 111887 to 112007. The ceiling keeps about 100 bytes of headroom.
-    ceilingGzip: 112107,
+    // 2026-11-07: the item table built in its Table part, pie labels refitted on their own size, the steady
+    // valueFormat and a nested Root's held index reset, 112030 to 112121. The ceiling keeps about 100 bytes
+    // of headroom.
+    ceilingGzip: 112221,
   },
   // Set from its measurement on 2026-11-05, when the polar families landed: the whole namespace:
   // rings on their frame in three looks, Track, Glow, the Center parts and the polar readouts. The
@@ -572,7 +582,9 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // 2026-11-07: a popup that closes mid-entrance fades out from the opacity it
     // reached, and every open starts a fresh hold, 108406 to 108519. The ceiling keeps about 100
     // bytes of headroom.
-    ceilingGzip: 108619,
+    // 2026-11-07: the item table built in its Table part, the steady valueFormat and a nested Root's held
+    // index reset, 108571 to 108661. The ceiling keeps about 100 bytes of headroom.
+    ceilingGzip: 108761,
   },
   // Set from its measurement on 2026-11-05, when the polar families landed: the whole namespace:
   // grid, spoke and ring labels fitted to the dial, Area, Line, Dots, an ActiveDot on the loop,
@@ -608,7 +620,10 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // 2026-11-07: ring values and the angle labels they clear fitted by each label's bound,
     // the widest any common sans draws it, 112483 to 112688. The ceiling keeps about 100
     // bytes of headroom.
-    ceilingGzip: 112788,
+    // 2026-11-07: the series table built in its Table part, the shared series readout, and the description's
+    // unit through chartDescription's sentence, 112702 to 112908. The ceiling keeps about 100 bytes of
+    // headroom.
+    ceilingGzip: 113008,
   },
   // Set from its measurement on 2026-11-05, when the polar families landed: the whole namespace:
   // the zoned dial model, curves, wedges with floors and coarse slots, labels and ring values
@@ -655,7 +670,14 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // 2026-11-07: ring values and the angle labels they clear fitted by each label's bound,
     // the widest any common sans draws it, 129986 to 130263. The ceiling keeps about 100
     // bytes of headroom.
-    ceilingGzip: 130363,
+    // 2026-11-07: the references' spoken sentences, an AngleAxis format's own fit, the Marker's pills hidden
+    // while its dots move, no ActiveDot on a missing slot, a turn from the drawn numbers, the placement keyed
+    // on its inputs, the indexed curve read and the series table built in its Table part, 130289 to 130926.
+    // The ceiling keeps about 100 bytes of headroom.
+    // 2026-11-08: a Marker's pills flagged on its own labels, its paths repainted on a variant change
+    // and the entrance frame cached with the curve index, 130926 to 131025. The ceiling keeps about
+    // 100 bytes of headroom.
+    ceilingGzip: 131125,
   },
   {
     name: "chart/Chart.Root",
@@ -778,7 +800,9 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // 46221 to 46440. The ceiling keeps about 100 bytes of headroom.
     // 2026-11-07: a chart's option keeps its place when the window loses focus, 46440 to
     // 46566. The ceiling keeps about 100 bytes of headroom.
-    ceilingGzip: 46666,
+    // 2026-11-07: each polar Table builds its table on demand, so a Root without one builds none, 46566 to
+    // 45717. The ceiling keeps about 100 bytes of headroom.
+    ceilingGzip: 45817,
   },
   // 2026-11-05: new row, the typical pie route, as the bar route is Chart's: Root, Pie, the Center
   // parts, Legend and Tooltip, which the owner set beside the whole-namespace row, with the derived
@@ -827,7 +851,9 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // 2026-11-07: a popup that closes mid-entrance fades out from the opacity it
     // reached, and every open starts a fresh hold, 93120 to 93232. The ceiling keeps about 100
     // bytes of headroom.
-    ceilingGzip: 93332,
+    // 2026-11-07: each polar Table builds its table on demand, so a route without one builds none, 93279 to
+    // 92536. The ceiling keeps about 100 bytes of headroom.
+    ceilingGzip: 92636,
   },
   // 2026-11-05: new row, the typical radial route: Root, Bar, the Center parts, Legend and Tooltip,
   // which the owner set beside the whole-namespace row, with the derived ceiling.
@@ -877,7 +903,9 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // 2026-11-07: a popup that closes mid-entrance fades out from the opacity it
     // reached, and every open starts a fresh hold, 89148 to 89259. The ceiling keeps about 100
     // bytes of headroom.
-    ceilingGzip: 89359,
+    // 2026-11-07: each polar Table builds its table on demand, so a route without one builds none, 89308 to
+    // 88506. The ceiling keeps about 100 bytes of headroom.
+    ceilingGzip: 88606,
   },
   {
     name: "chart/RadialChart.Root",
@@ -904,7 +932,9 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // 44996 to 45202. The ceiling keeps about 100 bytes of headroom.
     // 2026-11-07: a chart's option keeps its place when the window loses focus, 45202 to
     // 45321. The ceiling keeps about 100 bytes of headroom.
-    ceilingGzip: 45421,
+    // 2026-11-07: each polar Table builds its table on demand, so a Root without one builds none, 45321 to
+    // 44472. The ceiling keeps about 100 bytes of headroom.
+    ceilingGzip: 44572,
   },
   {
     name: "chart/RadarChart.Root",
@@ -928,7 +958,9 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // 52971 to 53184. The ceiling keeps about 100 bytes of headroom.
     // 2026-11-07: a chart's option keeps its place when the window loses focus, 53184 to
     // 53304. The ceiling keeps about 100 bytes of headroom.
-    ceilingGzip: 53404,
+    // 2026-11-07: each polar Table builds its table on demand, so a Root without one builds none, 53304 to
+    // 52288. The ceiling keeps about 100 bytes of headroom.
+    ceilingGzip: 52388,
   },
   // 2026-11-05: new row, the typical radar route: Root, Grid, both axes, Area, Line, Legend and
   // Tooltip, which the owner set beside the whole-namespace row, with the derived ceiling.
@@ -965,7 +997,9 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // 2026-11-07: ring values and the angle labels they clear fitted by each label's bound,
     // the widest any common sans draws it, 99227 to 99463. The ceiling keeps about 100 bytes
     // of headroom.
-    ceilingGzip: 99563,
+    // 2026-11-07: each polar Table builds its table on demand, so a route without one builds none, 99488 to
+    // 98454. The ceiling keeps about 100 bytes of headroom.
+    ceilingGzip: 98554,
   },
   // 2026-11-05: new rows, ClockChart's Root alone and its typical route: Root, Line, Grid,
   // AngleAxis, Center, Legend and Tooltip, which the owner set, each with the derived ceiling.
@@ -992,7 +1026,9 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // 56540 to 56746. The ceiling keeps about 100 bytes of headroom.
     // 2026-11-07: a chart's option keeps its place when the window loses focus, 56746 to
     // 56877. The ceiling keeps about 100 bytes of headroom.
-    ceilingGzip: 56977,
+    // 2026-11-07: each polar Table builds its table on demand, so a Root without one builds none, 56877 to
+    // 55800. The ceiling keeps about 100 bytes of headroom.
+    ceilingGzip: 55900,
   },
   {
     name: "chart/ClockChart route",
@@ -1034,7 +1070,9 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // 2026-11-07: a popup that closes mid-entrance fades out from the opacity it
     // reached, and every open starts a fresh hold, 109340 to 109444. The ceiling keeps about 100
     // bytes of headroom.
-    ceilingGzip: 109544,
+    // 2026-11-07: each polar Table builds its table on demand, so a route without one builds none, 109495 to
+    // 108487. The ceiling keeps about 100 bytes of headroom.
+    ceilingGzip: 108587,
   },
   // 2026-11-04: new rows, measured at 84628 for the whole ScatterChart namespace and 41808 for its
   // Root alone, each with the derived ceiling.

@@ -348,6 +348,36 @@ function withUnit(context: TextContext, key: string, label: string): UnitLabel {
   };
 }
 
+/** A reading at a slot, as a series' lowest or highest. */
+export type SlotReading = { readonly slot: number; readonly value: number };
+
+/**
+ * One series' extremes as the description speaks them, its unit stated once after its label:
+ * `Forbruk i kilowattimer: lavest 0,33 kl. 03 til 04, høyest …`.
+ *
+ * @param context - The model, config and locale.
+ * @param key - The series.
+ * @param low - Its lowest reading.
+ * @param high - Its highest reading.
+ * @returns The sentence.
+ */
+export function extremesSentence(
+  context: TextContext,
+  key: string,
+  low: SlotReading,
+  high: SlotReading
+): string {
+  const extremes = withUnit(context, key, seriesLabel(context, key).spoken);
+  const at = (slot: number) => (ownSlotDated(context, key, slot) ?? slotLabel(context, slot)).spoken;
+  return CHART_STRINGS[context.locale].descriptionSeries(
+    extremes.label,
+    extremes.value(low.value),
+    at(low.slot),
+    extremes.value(high.value),
+    at(high.slot)
+  );
+}
+
 /**
  * The label a description span uses for a slot: the date for sub-day slots, with its year when the
  * domain spans more than one calendar year, else the slot label.
@@ -401,17 +431,7 @@ export function chartDescription(context: TextContext): string {
     if (coarse === undefined) for (let slot = window.first; slot <= window.last; slot += 1) visit(slot);
     else for (const slot of ownWindowSlots(entry, window)) visit(slot);
     if (low === undefined || high === undefined) continue;
-    const extremes = withUnit(context, key, seriesLabel(context, key).spoken);
-    const at = (slot: number) => (ownSlotDated(context, key, slot) ?? slotLabel(context, slot)).spoken;
-    sentences.push(
-      strings.descriptionSeries(
-        extremes.label,
-        extremes.value(low.value),
-        at(low.slot),
-        extremes.value(high.value),
-        at(high.slot)
-      )
-    );
+    sentences.push(extremesSentence(context, key, low, high));
   }
   // Each multi-series stack's lowest and highest total over the window, after the series.
   for (const { id, keys } of model.stacks) {

@@ -1190,7 +1190,7 @@
     {
       "name": "RadarChart.Table",
       "rsc": "client",
-      "sourcePath": "packages/fuse/src/components/chart/polar-chart-table.tsx",
+      "sourcePath": "packages/fuse/src/components/chart/polar-series-table.tsx",
       "forwardedFrom": [],
       "forwardedCount": 0,
       "props": [

@@ -16,9 +16,17 @@ import type { ClockSeries } from "./chart-polar-context";
 import { STRETCH_SPAN } from "./chart-polar-follow";
 import type { PolarFollow } from "./chart-polar-follow";
 import { usePolarCommit, usePolarMark } from "./chart-polar-motion";
-import type { ChartLayerProps } from "./chart-types";
+import type { ChartCurve, ChartLayerProps } from "./chart-types";
 import { seriesCurve, useClockPlacement, useClockSeries } from "./clock-chart-part";
-import { clockXY, curveRadiusAt, entranceFrame, ownerSlot, slotVertex } from "./layout/clock-path";
+import {
+  clockXY,
+  curveIndex,
+  entranceFrame,
+  ownerSlot,
+  radiusInCurve,
+  slotVertex,
+} from "./layout/clock-path";
+import type { CurveIndex } from "./layout/clock-path";
 import { pathNumber } from "./layout/rounding";
 
 /**
@@ -33,7 +41,10 @@ export type ClockChartActiveDotProps = ChartLayerProps & {
   variant?: "default" | "ring" | "halo" | "ping";
 };
 
-/** What an active dot's writer reads: its series, whether a slot is active, and the numbers it drew last. */
+/**
+ * What an active dot's writer reads: its series, whether a slot with a reading is active, and the
+ * numbers it drew last.
+ */
 type DotLook = {
   readonly series: ClockSeries;
   readonly key: string;
@@ -41,16 +52,46 @@ type DotLook = {
   readonly follow: PolarFollow;
   readonly active: { current: boolean };
   readonly drawn: { current: MarkValues | null };
+  /**
+   * The loop numbers read last, their entrance frame and its curve index, which the follower reads
+   * at several angles a frame. Every loop write clears it, since the loop draws into the same lists
+   * again.
+   */
+  readonly index: { current: RisenFrame | null };
 };
 
-/**
- * The radius the series draws at an angle: its Line's or Area's curve, or, for a series drawn only
- * as Columns or Dots, the tip of the reading that owns the slot under the angle.
- */
-function radiusAt(look: DotLook, values: readonly number[], angle: number): number | null {
-  const { slots } = look.series;
+/** A loop frame's numbers risen as far as the entrance has, and their curve's index, if any. */
+type RisenFrame = {
+  readonly raw: MarkValues;
+  readonly curve: ChartCurve | null;
+  readonly values: readonly number[];
+  readonly index: CurveIndex | null;
+};
+
+/** The entrance frame of the loop's numbers and its curve index, built once per loop frame and curve. */
+function risenFrame(look: DotLook, raw: MarkValues): RisenFrame {
   const curve = seriesCurve(look.motion, look.key);
-  if (curve !== null) return curveRadiusAt(values, slots, curve, angle);
+  const known = look.index.current;
+  if (known?.raw === raw && known.curve === curve) return known;
+  const { values } = entranceFrame(raw);
+  const frame = {
+    raw,
+    curve,
+    values,
+    index: curve === null ? null : curveIndex(values, look.series.slots, curve),
+  };
+  look.index.current = frame;
+  return frame;
+}
+
+/**
+ * The radius the series draws at an angle in a loop frame: its Line's or Area's curve, or, for a
+ * series drawn only as Columns or Dots, the tip of the reading that owns the slot under the angle.
+ */
+function radiusAt(look: DotLook, raw: MarkValues, angle: number): number | null {
+  const { slots } = look.series;
+  const { values, index } = risenFrame(look, raw);
+  if (index !== null) return radiusInCurve(index, angle);
   const count = slots.states.length;
   if (count === 0) return null;
   const turned = ((angle % 360) + 360) % 360;
@@ -65,8 +106,7 @@ function radiusAt(look: DotLook, values: readonly number[], angle: number): numb
  */
 function placeDot(group: SVGGElement, look: DotLook, values: MarkValues): void {
   const angle = look.follow.shown();
-  const radius =
-    angle === null || !look.active.current ? null : radiusAt(look, entranceFrame(values).values, angle);
+  const radius = angle === null || !look.active.current ? null : radiusAt(look, values, angle);
   writeAttribute(group, "data-value", radius === null ? null : "");
   if (angle === null || radius === null) return;
   const { x, y } = clockXY({ angle, radius });
@@ -82,7 +122,7 @@ function placeDot(group: SVGGElement, look: DotLook, values: MarkValues): void {
  */
 function dotStretch(look: DotLook, angle: number): number | null {
   if (!look.active.current) return null;
-  const values = entranceFrame(look.drawn.current ?? look.series.rest).values;
+  const values = look.drawn.current ?? look.series.rest;
   const at = radiusAt(look, values, angle);
   // A stepped series, a Column's tips or a step curve, holds its radius across a slot and jumps at
   // the slot's edge, a jump the dot makes in one frame at any pace, so slowing the hand there buys
@@ -99,6 +139,7 @@ function dotStretch(look: DotLook, angle: number): number | null {
 function drawActiveDot(group: SVGGElement, look: DotLook | null, values: MarkValues): void {
   if (look === null) return;
   look.drawn.current = values;
+  look.index.current = null;
   placeDot(group, look, values);
 }
 
@@ -122,18 +163,22 @@ export function ClockChartActiveDot({
   const dot = useRef<SVGGElement | null>(null);
   const active = useRef(false);
   const drawn = useRef<MarkValues | null>(null);
+  const index = useRef<DotLook["index"]["current"]>(null);
   const look = useMemo(
     (): DotLook | null =>
-      series === undefined ? null : { series, key: dataKey, motion, follow, active, drawn },
-    [series, dataKey, motion, follow, active, drawn]
+      series === undefined ? null : { series, key: dataKey, motion, follow, active, drawn, index },
+    [series, dataKey, motion, follow, active, drawn, index]
   );
-  const { ref, place, node: anchor } = usePolarMark(motion, drawActiveDot, look);
+  const { ref, place, node: anchor, drawn: drawnFrame } = usePolarMark(motion, drawActiveDot, look);
   const commit = usePolarCommit(polar, anchor);
-  useClockPlacement(clock, series, commit, place);
+  useClockPlacement(clock, series, look, { commit, place, drawn: drawnFrame });
   useChartFollower("ClockChart.ActiveDot", (current: ActiveSlot) => {
     const group = dot.current;
     if (group === null || series === undefined || look === null) return;
-    active.current = current !== null;
+    // A slot whose reading is missing draws no dot, though a connected series bridges a curve
+    // across it, as the tooltip reports no reading there.
+    const { states } = series.slots;
+    active.current = current !== null && states[ownerSlot(states, current.slot)] === "reading";
     if (current !== null) {
       const step = series.steps?.[series.stepAt[current.slot] ?? 0]?.paint ?? series.paint;
       writeStyle(group, "--_dot", step);

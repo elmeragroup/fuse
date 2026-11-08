@@ -196,8 +196,8 @@ export function PieChartLabels({
       track: pie.track,
     })
   );
-  // The client places them again from their measured boxes, as the pie or the cell changes, and
-  // from the boxes it measured last as the slices tween, so a frame reads no layout.
+  // The client places them again from their measured boxes, as the pie, the cell or a label's box
+  // changes, and from the boxes it measured last as the slices tween, so a frame reads no layout.
   useLayoutEffect(() => {
     const node = layer.current;
     if (node === null) return undefined;
@@ -238,8 +238,11 @@ export function PieChartLabels({
       write(placeLabels(pie, sizes, scale, position), () => false, true);
     };
     place();
+    // Each label's own box refits them too, as a template prints longer text or a web font swaps
+    // in after the first paint. A label's box never depends on its place, since it never wraps.
     const observer = new ResizeObserver(place);
     observer.observe(node);
+    for (const label of node.querySelectorAll('[data-slot="pie-chart-label"]')) observer.observe(label);
     const leave = frame.listen((angles) => {
       if (!(scale > 0)) return;
       const drawn = pie.slices.map((slice) =>

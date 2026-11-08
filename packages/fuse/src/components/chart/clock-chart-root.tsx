@@ -8,7 +8,7 @@ import { colourFamilyError, nonFiniteThresholds } from "./chart-paint";
 import { clockModel } from "./chart-polar-clock";
 import type { PolarIssue } from "./chart-polar-context";
 import { PolarRoot } from "./chart-polar-root";
-import { sameConfig, useSteady } from "./chart-steady";
+import { sameConfig, sameShallow, useSteady } from "./chart-steady";
 import type {
   ChartAccessibleName,
   ChartClockCycle,
@@ -109,7 +109,7 @@ export type ClockChartRootProps<
     defaultActiveX?: ChartXValue<TRow[TXKey]>;
     /** "none" turns the entrance off. */
     "data-intro"?: "none";
-    /** "past" fades the slots before `now`. */
+    /** "past" fades the Column wedges whose slot ended before `now`. */
     "data-fade"?: "past";
     /** Replaces the generated description verbatim. */
     description?: string;
@@ -200,6 +200,8 @@ export function ClockChartRoot<
   const steadyConfig = useSteady<ChartConfig>(config, sameConfig);
   const include = useSteady(yInclude, sameList);
   const steadyPeriod = useSteady(period, sameList);
+  // An inline xFormat object that names the same options is no change either.
+  const steadyFormat = useSteady(xFormat, sameShallow);
   const colourError = useMemo(
     () => colourFamilyError("ClockChart.Root", steadyConfig, Object.keys(steadyConfig)),
     [steadyConfig]
@@ -269,7 +271,7 @@ export function ClockChartRoot<
       inner: Math.min(0.9, Math.max(0, innerRadius)),
       scale: radiusScale,
       now: nowInstant,
-      xFormat,
+      xFormat: steadyFormat,
       name,
       issues,
       stackOffset,
@@ -291,7 +293,7 @@ export function ClockChartRoot<
     cycle,
     innerRadius,
     radiusScale,
-    xFormat,
+    steadyFormat,
     name,
   ]);
   const defaultSlot =

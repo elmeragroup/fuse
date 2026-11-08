@@ -6,7 +6,7 @@ import type { ReactElement, ReactNode } from "react";
 import { useLocale } from "../../intl/locale-context";
 import { radialModel } from "./chart-polar-item";
 import { PolarRoot } from "./chart-polar-root";
-import { sameConfig, useSteady } from "./chart-steady";
+import { sameConfig, sameShallow, useSteady } from "./chart-steady";
 import type {
   ChartAccessibleName,
   ChartCategoryConfigCheck,
@@ -126,6 +126,8 @@ export function RadialChartRoot<
   } = props;
   const { locale } = useLocale();
   const steadyConfig = useSteady<ChartConfig>(config, sameConfig);
+  // An inline valueFormat object that names the same options is no change either.
+  const steadyFormat = useSteady(valueFormat, sameShallow);
   const name = "aria-label" in figure ? figure["aria-label"] : undefined;
   const model = useMemo(() => {
     const maxima: RingMaxima =
@@ -140,7 +142,7 @@ export function RadialChartRoot<
       nameKey,
       valueKey,
       qualityKey,
-      valueFormat,
+      valueFormat: steadyFormat,
       sweep: sweepOf(startAngle, endAngle),
       locale,
       name,
@@ -154,7 +156,7 @@ export function RadialChartRoot<
     nameKey,
     valueKey,
     qualityKey,
-    valueFormat,
+    steadyFormat,
     startAngle,
     endAngle,
     locale,

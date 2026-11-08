@@ -8,6 +8,8 @@
 // Scrubber the short way on the keyboard's follow spring, FOLLOW_FASTEST 5300/126, at rest within
 // 0.01° by about 127 ms. The entrance runs on a hand-driven frame clock,
 // read on the loop's own time; the rest read each frame's own timestamp.
+import { Suspense, use, useLayoutEffect, useState } from "react";
+
 import { describe, expect, it } from "vitest";
 import { userEvent } from "vitest/browser";
 
@@ -134,6 +136,68 @@ describe("the clock's entrance (SPEC's Motion table)", () => {
   });
 });
 
+describe("a change of slot count mid-tween (A1-07)", () => {
+  it("turns the dial from what it draws, so 00:00's dot never jumps on the switch", async () => {
+    // 00:00 falls from the rim toward √0.545 over 480 ms. About 100 ms in, the 24-hour day gives
+    // way to the 25-hour one with the same readings, whose 00:00 pairs with the old 00:00. The
+    // route starts where the dot is drawn, so the first frame after the switch lies within one
+    // frame's travel of the last frame before it: the whole fall is 0.26, and no 16 ms frame of an
+    // ease-out over 480 ms covers a sixth of it.
+    const { host, rerender } = renderThemed(<Dial intro="none" value={() => 4} />);
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+    rerender(<Dial intro="none" value={() => 2} />);
+    const midnight = () => {
+      const [dot] = dotPoints(clockPath(clockLayer(host, "clock-chart-dots"), "step-0"));
+      return Math.hypot(dot?.x ?? 0, dot?.y ?? 0);
+    };
+    const start = performance.now();
+    while (performance.now() - start < 100) await new Promise((resolve) => requestAnimationFrame(resolve));
+    const before = midnight();
+    expect(before).toBeGreaterThan(Math.sqrt(0.545) + 0.05);
+    rerender(<Dial intro="none" starts={OCT_26} value={() => 2} />);
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+    expect(Math.abs(midnight() - before)).toBeLessThan(0.26 / 6);
+  });
+});
+
+describe("a render that changes nothing (A1-13)", () => {
+  it("leaves an entrance that waits to come into view waiting, to play once it does", async () => {
+    // The Motion table: slot 23 of 24 rises from the hole's 0.3 only from 31.25 · 23 ≈ 719 ms, so
+    // in the entrance's first frames it sits at the hole. A render that changes neither the data
+    // nor any part's props places nothing, so it never snaps the waiting marks to rest.
+    const rows = OCT_25.map((start) => ({ start, kwh: 4 }));
+    const config = { kwh: { label: "kWh", color: "chart-1" } } as const;
+    const chart = () => (
+      <LocaleProvider locale="nb-NO" timeZone="Europe/Oslo">
+        <div style={{ paddingTop: "200vh", width: 320 }}>
+          <ClockChart.Root
+            data={rows}
+            config={config}
+            xKey="start"
+            cycle="day"
+            interval="hour"
+            yInclude={[4]}
+            aria-label="Døgn">
+            <ClockChart.Dots dataKey="kwh" />
+          </ClockChart.Root>
+        </div>
+      </LocaleProvider>
+    );
+    const { host, rerender } = renderThemed(chart());
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+    rerender(chart());
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+    const figure = polarFigure(host);
+    figure.scrollIntoView();
+    await expect.poll(() => figure.hasAttribute("data-drawn")).toBe(true);
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+    const dots = dotPoints(clockPath(clockLayer(host, "clock-chart-dots"), "step-0"));
+    expect(dots).toHaveLength(24);
+    const last = dots[23];
+    expect(Math.hypot(last?.x ?? 1, last?.y ?? 1)).toBeLessThan(0.5);
+  });
+});
+
 describe("the clock's updates", () => {
   it("moves each radius over 480 ms, between its old and its new", async () => {
     const { host, rerender } = renderThemed(<Dial intro="none" value={() => 4} />);
@@ -200,6 +264,199 @@ describe("the clock's followers (SPEC's Motion table)", () => {
     // Slot 0's radius moves from the rim to √0.545, and the active dot reads the same in every frame.
     expect(seen.some(({ slot }) => slot > Math.sqrt(0.545) + 0.05 && slot < 0.95)).toBe(true);
     for (const frame of seen) expect(Math.abs(frame.dot - frame.slot)).toBeLessThan(0.002);
+  });
+
+  it("shows a Marker's ValueLabel only while its dot rests, as an update moves the radius (A1-05)", async () => {
+    // The pill sits past the dot's rest, so in no frame may it show while the dot is elsewhere.
+    // Slot 0's radius moves from the rim to √0.545 over 480 ms; the pill shows again once it rests.
+    const dial = (value: number) => (
+      <Dial intro="none" value={() => value}>
+        <ClockChart.Marker dataKey="kwh" at="first">
+          <ClockChart.ValueLabel />
+        </ClockChart.Marker>
+      </Dial>
+    );
+    const { host, rerender } = renderThemed(dial(4));
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+    // DOM audit: the marker's dot and its pill are aria-hidden plot output, read by their slots.
+    const pill = () => host.querySelector<HTMLElement>('[data-slot="clock-chart-value-label"]');
+    expect(pill()?.checkVisibility({ visibilityProperty: true })).toBe(true);
+    rerender(dial(2));
+    const marker = clockLayer(host, "clock-chart-marker");
+    const seen: { readonly radius: number; readonly shown: boolean }[] = [];
+    const start = performance.now();
+    while (performance.now() - start < 700) {
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+      const [point] = dotPoints(clockPath(marker, "dots"));
+      if (point !== undefined)
+        seen.push({
+          radius: Math.hypot(point.x, point.y),
+          shown: pill()?.checkVisibility({ visibilityProperty: true }) ?? false,
+        });
+    }
+    const rest = Math.sqrt(0.545);
+    // The dot travels: some frame draws it between the rim and its rest.
+    expect(seen.some(({ radius }) => radius > rest + 0.05 && radius < 0.95)).toBe(true);
+    for (const { radius, shown } of seen) if (shown) expect(radius).toBeCloseTo(rest, 3);
+    expect(seen.at(-1)?.shown).toBe(true);
+  });
+
+  it("keeps a still Marker's ValueLabel shown while another Marker's dot moves (A2-02)", async () => {
+    // Only slot 0 changes, so the last slot's dot never leaves its rest and its pill never hides.
+    const dial = (first: number) => (
+      <Dial intro="none" value={(slot) => (slot === 0 ? first : 4)}>
+        <ClockChart.Marker dataKey="kwh" at="first">
+          <ClockChart.ValueLabel />
+        </ClockChart.Marker>
+        <ClockChart.Marker dataKey="kwh" at="last">
+          <ClockChart.ValueLabel />
+        </ClockChart.Marker>
+      </Dial>
+    );
+    const { host, rerender } = renderThemed(dial(4));
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+    // DOM audit: the markers' pills are aria-hidden plot output, read by their slots.
+    const pills = () => [...host.querySelectorAll<HTMLElement>('[data-slot="clock-chart-value-label"]')];
+    expect(pills().map((pill) => pill.checkVisibility({ visibilityProperty: true }))).toEqual([true, true]);
+    rerender(dial(2));
+    const seen: { readonly first: boolean; readonly last: boolean }[] = [];
+    const start = performance.now();
+    while (performance.now() - start < 700) {
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+      const [first, last] = pills().map((pill) => pill.checkVisibility({ visibilityProperty: true }));
+      seen.push({ first: first ?? false, last: last ?? false });
+    }
+    // The first Marker's pill hides for its tween, and the last one's shows in every frame.
+    expect(seen.some(({ first }) => !first)).toBe(true);
+    for (const { last } of seen) expect(last).toBe(true);
+  });
+
+  it("hides a ValueLabel that mounts while its Marker's entrance waits to come into view (A3-01)", async () => {
+    // The entrance's placement draws the marker's dot at its start, and the frame clock runs no
+    // frame after it, so the pill, which sits past the dot's rest, hides from the moment it mounts
+    // and shows once the entrance has played. The label mounts from a child's own state, so nothing
+    // but that child renders again.
+    let mount = (): void => undefined;
+    function Late() {
+      const [shown, setShown] = useState(false);
+      useLayoutEffect(() => {
+        mount = () => {
+          setShown(true);
+        };
+      }, []);
+      return shown ? <ClockChart.ValueLabel /> : null;
+    }
+    const clock = installFrameClock();
+    try {
+      const { host } = renderThemed(
+        <LocaleProvider locale="nb-NO" timeZone="Europe/Oslo">
+          <div style={{ paddingTop: "200vh", width: 320 }}>
+            <ClockChart.Root
+              data={OCT_25.map((start) => ({ start, kwh: 4 }))}
+              config={{ kwh: { label: "kWh", color: "chart-1" } }}
+              xKey="start"
+              cycle="day"
+              interval="hour"
+              yInclude={[4]}
+              aria-label="Døgn">
+              <ClockChart.Marker dataKey="kwh" at="first">
+                <Late />
+              </ClockChart.Marker>
+            </ClockChart.Root>
+          </div>
+        </LocaleProvider>
+      );
+      const figure = polarFigure(host);
+      expect(figure.getAttribute("data-entrance")).toBe("waiting");
+      mount();
+      // DOM audit: the marker's pill is aria-hidden plot output, read by its slot.
+      const pill = () => host.querySelector<HTMLElement>('[data-slot="clock-chart-value-label"]');
+      await expect.poll(pill).not.toBeNull();
+      expect(pill()?.checkVisibility({ visibilityProperty: true })).toBe(false);
+      figure.scrollIntoView();
+      await expect
+        .poll(() => {
+          clock.frameAt(clock.now() + 100);
+          return pill()?.checkVisibility({ visibilityProperty: true });
+        })
+        .toBe(true);
+    } finally {
+      clock.restore();
+    }
+  });
+
+  it("shows a ValueLabel that Suspense hid mid-tween once it returns after the dot rests (A3-01)", async () => {
+    // Suspense hides the label's subtree while slot 0's dot moves, and reveals it once the dot
+    // has rested; the pill then sits beside a resting dot, so it shows. The gate suspends and
+    // resumes from its own state, so the Marker never renders again for either.
+    const never = new Promise<never>(() => undefined);
+    let setHold = (_hold: boolean): void => undefined;
+    function Gate({ children }: { readonly children: React.ReactNode }) {
+      const [hold, set] = useState(false);
+      useLayoutEffect(() => {
+        setHold = set;
+      }, []);
+      if (hold) use(never);
+      return children;
+    }
+    const dial = (value: number) => (
+      <Dial intro="none" value={() => value}>
+        <ClockChart.Marker dataKey="kwh" at="first">
+          <Suspense fallback={null}>
+            <Gate>
+              <ClockChart.ValueLabel />
+            </Gate>
+          </Suspense>
+        </ClockChart.Marker>
+      </Dial>
+    );
+    const { host, rerender } = renderThemed(dial(4));
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+    // DOM audit: the marker's pill is aria-hidden plot output, read by its slot.
+    const pill = () => host.querySelector<HTMLElement>('[data-slot="clock-chart-value-label"]');
+    rerender(dial(2));
+    await expect.poll(() => pill()?.checkVisibility({ visibilityProperty: true })).toBe(false);
+    setHold(true);
+    await expect.poll(() => pill()?.checkVisibility()).toBe(false);
+    const start = performance.now();
+    while (performance.now() - start < 700) await new Promise((resolve) => requestAnimationFrame(resolve));
+    setHold(false);
+    await expect.poll(() => pill()?.checkVisibility()).toBe(true);
+    expect(pill()?.checkVisibility({ visibilityProperty: true })).toBe(true);
+  });
+
+  it("draws a Marker switched to ping on its dot at the reading it rests on (A2-01)", async () => {
+    // The update moves slot 0's dot to √0.545; the ping that mounts afterwards rings that dot.
+    // The data keeps its identity across the switch, so the variant is the only change.
+    const four = OCT_25.map((start) => ({ start, kwh: 4 }));
+    const two = OCT_25.map((start) => ({ start, kwh: 2 }));
+    const dial = (data: typeof four, variant: "default" | "ping") => (
+      <LocaleProvider locale="nb-NO" timeZone="Europe/Oslo">
+        <div style={{ width: 320 }}>
+          <ClockChart.Root
+            data={data}
+            config={{ kwh: { label: "kWh", color: "chart-1" } }}
+            xKey="start"
+            cycle="day"
+            interval="hour"
+            yInclude={[4]}
+            data-intro="none"
+            aria-label="Døgn">
+            <ClockChart.Marker dataKey="kwh" at="first" variant={variant} />
+          </ClockChart.Root>
+        </div>
+      </LocaleProvider>
+    );
+    const { host, rerender } = renderThemed(dial(four, "default"));
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+    rerender(dial(two, "default"));
+    const start = performance.now();
+    while (performance.now() - start < 700) await new Promise((resolve) => requestAnimationFrame(resolve));
+    rerender(dial(two, "ping"));
+    const marker = clockLayer(host, "clock-chart-marker");
+    const [dot] = dotPoints(clockPath(marker, "dots"));
+    expect(Math.hypot(dot?.x ?? 0, dot?.y ?? 0)).toBeCloseTo(Math.sqrt(0.545), 3);
+    expect(clockPath(marker, "ping")).toBe(clockPath(marker, "dots"));
   });
 
   it("turns the Scrubber the short way round, at rest by the keyboard spring's settle", async () => {

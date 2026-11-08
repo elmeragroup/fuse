@@ -250,3 +250,22 @@ export function valuePaint(paint: SeriesPaint, value: number): string | undefine
 export function readingPaint(paint: SeriesPaint, reading: Reading | undefined): string | undefined {
   return reading?.kind === "reading" ? valuePaint(paint, reading.value) : undefined;
 }
+
+/**
+ * The CSS paint of a swatch, the marks' own stops: a role paints itself, a role list its roles as a
+ * gradient, a scale its 7-step ramp and a threshold its two sides split in half, lower side first.
+ * A step the active value picks paints alone.
+ *
+ * @param paint - The series' paint.
+ * @param step - The step the active reading picks, or undefined.
+ * @returns The CSS paint.
+ */
+export function swatchPaint(paint: SeriesPaint, step: string | undefined): string {
+  if (step !== undefined) return step;
+  const { stops, ramp } = paint;
+  if (stops !== undefined) return `linear-gradient(to right, ${stops.join(", ")})`;
+  if (ramp === undefined) return paint.base;
+  if (!isThresholdColor(paint.color)) return `linear-gradient(to right, ${ramp.join(", ")})`;
+  const [below = paint.base, above = paint.base] = ramp;
+  return `linear-gradient(to right, ${below} 50%, ${above} 50%)`;
+}

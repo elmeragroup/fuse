@@ -221,6 +221,37 @@ describe("a Root nested in another chart's part", () => {
     expect(figure.querySelector('[data-slot="chart-series-label"]')?.textContent).toBe("");
   });
 
+  it("prints its own fallback LegendValue inside an outer Tooltip that has closed (A1-01)", async () => {
+    // The outer chart's first slot is active, then the pointer leaves, and the closed popup keeps
+    // its content mounted. The nested Root's own slots are never active, so its LegendValue prints
+    // its fallback, the last reading of v in ROWS: 3, never v at the outer active slot, 1.
+    const { host } = renderThemed(
+      <LocaleProvider locale="nb-NO">
+        <div style={{ padding: "320px 24px 24px", width: 600, boxSizing: "border-box" }}>
+          <Chart.Root data={ROWS} config={CONFIG} xKey="name" data-intro="none" aria-label="Ytre">
+            <Chart.Bar dataKey="v" />
+            <Chart.Tooltip>
+              <Nested>
+                <Chart.LegendValue dataKey="v" />
+              </Nested>
+            </Chart.Tooltip>
+          </Chart.Root>
+        </div>
+      </LocaleProvider>
+    );
+    const [first] = bars(host);
+    if (first === undefined) throw new Error("no bars");
+    await pointerAt(...centreOf(first.getBoundingClientRect()));
+    await expect.poll(popupOpen).toBe(true);
+    const shell = host.getBoundingClientRect();
+    await pointerAt(shell.left + 4, shell.top + 4);
+    await expect.poll(popupOpen).toBe(false);
+    // DOM audit: the closed popup stays mounted under its slot, aria-hidden, so the value's slot is
+    // the only locator.
+    const value = document.querySelector('[data-slot="chart-tooltip"] [data-slot="chart-legend-value"]');
+    expect(value?.textContent).toBe("3");
+  });
+
   it("draws its ActiveValue as plot output inside an outer Headline", () => {
     const { host } = renderThemed(
       <LocaleProvider locale="nb-NO">

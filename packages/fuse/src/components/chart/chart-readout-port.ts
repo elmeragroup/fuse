@@ -185,8 +185,6 @@ export type ChartTableModel = {
 export type ChartReadout = {
   /** The id prefix every generated id of the Root starts with. */
   readonly id: string;
-  /** Root's `aria-label`, or undefined when `aria-labelledby` names the chart. */
-  readonly name: string | undefined;
   readonly locale: SupportedLocale;
   /** The Root's figure once it has mounted. */
   readonly root: () => HTMLElement | null;

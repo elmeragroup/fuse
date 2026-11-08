@@ -31,6 +31,8 @@ export type PolarMark<T extends Element> = {
   readonly place: (target: MarkValues, placement: Placement) => void;
   /** The node the mark renders now, or null before it mounts. */
   readonly node: () => T | null;
+  /** The numbers the loop drew the mark at last, mid-tween too, or null before it places one. */
+  readonly drawn: () => MarkValues | null;
 };
 
 /**
@@ -78,7 +80,8 @@ export function usePolarMark<T extends Element, L>(
     [motion, id]
   );
   const shown = useCallback(() => node.current, []);
-  return useMemo(() => ({ ref, place, node: shown }), [ref, place, shown]);
+  const drawn = useCallback(() => motion.drawn(id), [motion, id]);
+  return useMemo(() => ({ ref, place, node: shown, drawn }), [ref, place, shown, drawn]);
 }
 
 /**
@@ -86,7 +89,9 @@ export function usePolarMark<T extends Element, L>(
  * mark's first draw in the Root's first commit plays the entrance, or snaps without one. A mark
  * that first draws in a data update enters: it grows from its start on the update's clock, as its
  * key is new. A later data update moves it from what it drew, and any other commit lets a running
- * tween finish. An update never replays the entrance.
+ * tween finish. An update never replays the entrance. While the entrance still waits for the chart
+ * to come into view, every commit places the entrance again under its numbers, so the chart plays
+ * it with the latest data.
  *
  * @param polar - The mark's Root.
  * @param anchor - The mark's node, which inherits the figure's pace. The marks place their entrance
@@ -113,25 +118,34 @@ export function usePolarCommit(
     },
     []
   );
-  return (index, from, via) => {
-    const previous = last.current;
-    last.current = polar.update;
-    if (previous === null) {
-      if (polar.update.kind === "data") return { kind: "enter", from, delay: 0 };
-      if (!polar.entrance) return { kind: "snap" };
-      const pace = introPace(polar.kernel.root() ?? anchor(), polar.update);
-      return {
-        kind: "enter",
-        from,
-        delay: introDelay(polar.model.family, index, pace),
-        ...introTiming(polar.model.family, pace),
-      };
-    }
-    // The dial scales with its cell, so a commit with no new data leaves the numbers in place.
-    if (previous === polar.update) return { kind: "settle", scale: SAME_PLOT };
-    // A clock that changes its slot count moves along the route that pairs its old slots with its new.
-    return via === undefined ? { kind: "move" } : { kind: "move", via };
-  };
+  const { update, entrance, kernel, model } = polar;
+  // It changes with the commit's inputs alone, so a part that places only when they change may key
+  // its effect on it.
+  return useCallback(
+    (index, from, via) => {
+      const previous = last.current;
+      last.current = update;
+      // While Root's entrance waits, every commit places the entrance again under its numbers, as a
+      // bar does, since the held loop would snap a move or a settle to rest.
+      const waiting = entrance && kernel.store.get().phase === "waiting";
+      if (previous === null || waiting) {
+        if (update.kind === "data" && !waiting) return { kind: "enter", from, delay: 0 };
+        if (!entrance) return { kind: "snap" };
+        const pace = introPace(kernel.root() ?? anchor(), update);
+        return {
+          kind: "enter",
+          from,
+          delay: introDelay(model.family, index, pace),
+          ...introTiming(model.family, pace),
+        };
+      }
+      // The dial scales with its cell, so a commit with no new data leaves the numbers in place.
+      if (previous === update) return { kind: "settle", scale: SAME_PLOT };
+      // A clock that changes its slot count moves along the route that pairs its old slots with its new.
+      return via === undefined ? { kind: "move" } : { kind: "move", via };
+    },
+    [update, entrance, kernel, model, anchor]
+  );
 }
 
 /** Each commit's pace, read once from the figure for every mark the commit places. */

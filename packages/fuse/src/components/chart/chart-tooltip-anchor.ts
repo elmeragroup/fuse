@@ -154,7 +154,6 @@ export function useCartesianTooltipAnchor(input: AnchorInput): TooltipAnchor {
         shift: (rest.left + width / 2 - centre) * scaleX,
         route: {
           kind: "path",
-          keeps: "side",
           turns: (from, to, size, side) =>
             side === "top" ? glidePath(from, to, size, clientRoof, TOOLTIP_EDGE) : [from, to],
         },

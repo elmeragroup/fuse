@@ -394,3 +394,29 @@ describe("the active dot and the glow", () => {
     expect(getComputedStyle(line).filter).toMatch(/^drop-shadow\(.+ 0px 0px 9\.5px\)$/u);
   });
 });
+
+describe("the description (A1-17)", () => {
+  it("states a series' unit once after its label, as every series family's description does", () => {
+    // CONTRACT section 9.3's form, `Forbruk i kilowattimer: lavest 0,33`: the unit follows the
+    // label, and the extremes print without it. Forbruk reads 3, 1,5 and 7 kWh over NO1 to NO3, so
+    // its lowest is 1,5 at NO2 and its highest 7 at NO3. A count joins its word by a no-break space.
+    const { host } = renderThemed(
+      <LocaleProvider locale="nb-NO">
+        <RadarChart.Root
+          data={[
+            { zone: "NO1", kwh: 3 },
+            { zone: "NO2", kwh: 1.5 },
+            { zone: "NO3", kwh: 7 },
+          ]}
+          config={{ kwh: { label: "Forbruk", color: "chart-1", format: { preset: "energy", unit: "kWh" } } }}
+          nameKey="zone"
+          aria-label="Forbruk per sone"
+        />
+      </LocaleProvider>
+    );
+    // DOM audit: the description is the figure's visually hidden paragraph on its slot.
+    expect(host.querySelector('[data-slot="chart-description"]')?.textContent).toBe(
+      "Radardiagram med 1\u00a0serie over 3\u00a0kategorier. Forbruk i kilowattimer: lavest 1,5 NO2, høyest 7 NO3."
+    );
+  });
+});
