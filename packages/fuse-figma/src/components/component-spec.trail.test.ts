@@ -5,19 +5,13 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { HUG } from "../../test/built-kit";
+import { HUG, partNotesOf } from "../../test/built-kit";
 import { buildFixture, buildFixtures, chip, dot, frameOf } from "../../test/fixture-sets";
 import type { FixtureContext } from "../../test/fixture-sets";
 import { BREADCRUMB_ELLIPSIS } from "./breadcrumb-kit";
 import type { LabelDefinition } from "./component-spec";
 import type { CoverageRow } from "./coverage";
 import { makeVariableIndex } from "./css-values";
-
-/** The part, property, outcome and detail of each coverage row of one class. */
-const notesOf = (coverage: readonly CoverageRow[], className: string) =>
-  coverage
-    .filter((row) => row.className === className)
-    .map((row) => [row.part, row.property, row.outcome, row.detail]);
 
 /** The outcomes of the coverage rows of one class, each once. */
 const outcomesOf = (coverage: readonly CoverageRow[], className: string) =>
@@ -60,7 +54,7 @@ describe("a box that breaks overflowing words", () => {
       chip(`block wrap-break-word ${TYPE}`, { label: TEXT }),
       TEXT_CONTEXT
     );
-    expect(notesOf(coverage, "wrap-break-word")).toEqual([
+    expect(partNotesOf(coverage, "wrap-break-word")).toEqual([
       [
         "chip",
         "overflow-wrap",
@@ -72,7 +66,7 @@ describe("a box that breaks overflowing words", () => {
 
   it("drops `wrap-break-word` on a box with no text in it or below it", async () => {
     const { coverage } = await buildFixture(chip("flex wrap-break-word", { parts: [dot("size-[8px]")] }));
-    expect(notesOf(coverage, "wrap-break-word")).toEqual([
+    expect(partNotesOf(coverage, "wrap-break-word")).toEqual([
       ["chip", "overflow-wrap", "dropped", "the cell shows no text"],
     ]);
   });
@@ -109,7 +103,7 @@ describe("a class that spaces a box's children", () => {
     );
     const reason =
       "`:not(:last-child)` styles every child but the last, and the box holds one, so the class styles nothing the set draws";
-    expect(notesOf(coverage, "space-y-4")).toEqual([
+    expect(partNotesOf(coverage, "space-y-4")).toEqual([
       ["chip", "--tw-space-y-reverse", "dropped", reason],
       ["chip", "margin-block-start", "dropped", reason],
       ["chip", "margin-block-end", "dropped", reason],
@@ -129,7 +123,9 @@ describe("a class that spaces a box's children", () => {
 
   it("leaves `space-y-4` unmapped on a box whose definition does not count its element children", async () => {
     const { coverage } = await buildFixture(chip("flex flex-col space-y-4", { parts: [ONE] }));
-    expect(notesOf(coverage, "space-y-4").map(([, , outcome, detail]) => [outcome, detail])).toContainEqual([
+    expect(
+      partNotesOf(coverage, "space-y-4").map(([, , outcome, detail]) => [outcome, detail])
+    ).toContainEqual([
       "unmapped",
       "the definition does not count the element children the box's markup holds, so the build cannot tell which is the last",
     ]);
@@ -165,7 +161,7 @@ describe("a class that spaces a box's children", () => {
         ancestorsFor: () => [{ slot: "chip-list", classes: "space-y-4", undrawn: "the list is not drawn" }],
       })
     );
-    expect(notesOf(coverage, "space-y-4")).toEqual(
+    expect(partNotesOf(coverage, "space-y-4")).toEqual(
       ["--tw-space-y-reverse", "margin-block-start", "margin-block-end"].map((property) => [
         "chip-list",
         property,
@@ -188,7 +184,7 @@ describe("a block-level root's `w-full` with no preview width", () => {
       chip("flex w-full mx-auto", { parts: [dot("size-[8px]")] })
     );
     expect(variant?.root.sizing.horizontal).toEqual(HUG);
-    expect(notesOf(coverage, "w-full")).toEqual([
+    expect(partNotesOf(coverage, "w-full")).toEqual([
       [
         "chip",
         "width",
@@ -212,7 +208,7 @@ describe("a part's `max-w-full`", () => {
   it("drops in a parent that hugs its width with nothing bounding it", async () => {
     const { variant, coverage } = await buildFixture(chip("flex", { parts: [dot("max-w-full size-[8px]")] }));
     expect(frameOf(variant?.root)?.limits.maxWidth).toBeUndefined();
-    expect(notesOf(coverage, "max-w-full")).toEqual([
+    expect(partNotesOf(coverage, "max-w-full")).toEqual([
       [
         "chip-dot",
         "max-width",

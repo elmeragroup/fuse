@@ -10,10 +10,9 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { FILL, HUG, literal } from "../../test/built-kit";
+import { FILL, HUG, literal, notesOf } from "../../test/built-kit";
 import { buildFixture, chip, dot } from "../../test/fixture-sets";
 import type { PartDefinition } from "./component-spec";
-import type { CoverageRow } from "./coverage";
 
 /** Three 32px rows, each a part with its own key and slot, as a list's items. */
 const ROWS: readonly PartDefinition[] = ["first", "second", "third"].map((key) => ({
@@ -21,10 +20,6 @@ const ROWS: readonly PartDefinition[] = ["first", "second", "third"].map((key) =
   key,
   slot: `chip-${key}`,
 }));
-
-/** The outcome and detail of each coverage row of one class. */
-const notesOf = (coverage: readonly CoverageRow[], className: string) =>
-  coverage.filter((row) => row.className === className).map((row) => [row.property, row.outcome, row.detail]);
 
 describe("a grid with no template", () => {
   it("draws as a column packed at its start, its rows filling a definite width, spaced by the gap", async () => {

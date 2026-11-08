@@ -9,13 +9,8 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { HUG } from "../../test/built-kit";
+import { HUG, notesOf } from "../../test/built-kit";
 import { buildFixture, chip, dot, frameOf } from "../../test/fixture-sets";
-import type { CoverageRow } from "./coverage";
-
-/** The outcome and detail of each coverage row of one class. */
-const notesOf = (coverage: readonly CoverageRow[], className: string) =>
-  coverage.filter((row) => row.className === className).map((row) => [row.property, row.outcome, row.detail]);
 
 const AUTO_HEIGHT =
   "the parent's height depends on its content, so a percentage height computes to auto, which hugs (CSS 2.1 §10.5)";

@@ -16,14 +16,10 @@ import type {
   NestedPropertiesSpec,
   TextLayerSpec,
 } from "../../src/components/kit-spec.ts";
-import { applyTo, literal } from "./button-kit-fixture.ts";
+import { applyTo, BLACK, HUG, literal, ONE_PAGE, setOnPage } from "./button-kit-fixture.ts";
 import type { FakeFigma } from "./fake-figma.ts";
 import { childNamed, color, fixtureFile, float, GLYPH_FONT } from "./fake-fixtures.ts";
-import { keyOf } from "./identity.ts";
 import { reconcileKit } from "./reconcile.ts";
-
-const HUG = { kind: "hug" } as const;
-const BLACK = { kind: "literal", color: { r: 0, g: 0, b: 0, a: 1 } } as const;
 
 /** A label a `Label` property sets. */
 function label(key: string, characters: string): TextLayerSpec {
@@ -149,10 +145,9 @@ function kitWith(
     ])
   );
   return {
-    pages: [{ key: "page", name: "Fuse components" }],
+    ...ONE_PAGE,
     fonts: [{ family: "Roboto", style: "Medium" }],
     glyphFont: GLYPH_FONT,
-    icons: { key: "icons", page: "page", name: "Icons", size: 16, color: BLACK, icons: [] },
     componentSets: [CAP, GROUP, item, list],
     previews: [],
   };
@@ -168,10 +163,7 @@ function tokenFile(): FakeFigma {
 
 /** The row instance in the list's variant, and what its caps show through exposure. */
 async function listRow(file: FakeFigma) {
-  const page = file.figma.root.children.find((node) => keyOf(node) === "page");
-  await page?.loadAsync();
-  const set = page?.children.find((node) => keyOf(node) === "list");
-  const [variant] = set?.type === "COMPONENT_SET" ? set.children : [];
+  const [variant] = (await setOnPage(file, "list")).children;
   if (variant?.type !== "COMPONENT") {
     throw new Error("the list set holds no variant");
   }

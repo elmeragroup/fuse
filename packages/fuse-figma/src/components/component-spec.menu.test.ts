@@ -5,7 +5,7 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { density, FILL, fixed, HUG, literal } from "../../test/built-kit";
+import { density, FILL, fixed, HUG, literal, notesOf, textOf } from "../../test/built-kit";
 import { buildFixture, buildFixtures, chip, dot, ICON } from "../../test/fixture-sets";
 import type {
   ComponentDefinition,
@@ -16,10 +16,6 @@ import type {
 import type { CoverageRow } from "./coverage";
 import { makeVariableIndex } from "./css-values";
 import type { BoxSpec } from "./kit-spec";
-
-/** The property, outcome and detail of each coverage row of one class. */
-const notesOf = (coverage: readonly CoverageRow[], className: string) =>
-  coverage.filter((row) => row.className === className).map((row) => [row.property, row.outcome, row.detail]);
 
 /** The rows no Figma field reads. */
 const unmapped = (coverage: readonly CoverageRow[]) => coverage.filter((row) => row.outcome === "unmapped");
@@ -155,7 +151,6 @@ describe("an auto start margin on the last of two layers", () => {
       label: WORDS,
       iconsFor: () => icons,
     });
-  const textOf = (box: BoxSpec | undefined) => box?.children.find((child) => child.kind === "text");
 
   it.each(["ml-auto", "ms-auto"])("fills the label and keeps the gap under %s", async (margin) => {
     const { variant, coverage } = await buildFixture(row([caret(margin, "end")]), { variables: SYNCED });
@@ -240,7 +235,6 @@ describe("an auto start margin on the last of several layers, after the label", 
       label: { ...TEXT, characters },
       iconsFor: () => [caret("", "start"), caret("ml-auto", "end")],
     });
-  const textOf = (box: BoxSpec | undefined) => box?.children.find((child) => child.kind === "text");
 
   it.each(["Two words", "One"])(
     "fills the label %s and packs the row at its start with its gap",

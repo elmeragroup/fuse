@@ -5,16 +5,12 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { FILL, fixed, literal } from "../../test/built-kit";
+import { FILL, fixed, literal, notesOf, token } from "../../test/built-kit";
 import { buildFixture, chip, dot, frameOf } from "../../test/fixture-sets";
 import type { LabelDefinition, OuterDeclaration } from "./component-spec";
 import type { CoverageRow } from "./coverage";
 import { makeVariableIndex } from "./css-values";
 import type { BoxSpec, FrameLayerSpec } from "./kit-spec";
-
-/** The property, outcome and detail of each coverage row of one class. */
-const notesOf = (coverage: readonly CoverageRow[], className: string) =>
-  coverage.filter((row) => row.className === className).map((row) => [row.property, row.outcome, row.detail]);
 
 /** The display the browser's default style sheet gives a `<div>`. */
 const BLOCK: readonly OuterDeclaration[] = [
@@ -92,9 +88,6 @@ const TEXT: LabelDefinition = {
 };
 
 const RED = { kind: "literal", color: { r: 1, g: 0, b: 0, a: 1 } } as const;
-const token = (name: string) =>
-  ({ kind: "variable", variable: { collection: "Fuse tokens", name } }) as const;
-
 /** The fill of a box and the color of the text it holds. */
 function paintOf(box: BoxSpec | FrameLayerSpec | undefined) {
   const text = box?.children.find((child) => child.kind === "text");

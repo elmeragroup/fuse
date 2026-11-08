@@ -16,13 +16,11 @@ import type {
   KitSpec,
   TextLayerSpec,
 } from "../../src/components/kit-spec.ts";
-import { BLACK, literal } from "./button-kit-fixture.ts";
+import { BLACK, HUG, literal, ONE_PAGE, setOnPage } from "./button-kit-fixture.ts";
 import type { FakeFigma } from "./fake-figma.ts";
 import { childNamed, color, fixtureFile, GLYPH_FONT, string } from "./fake-fixtures.ts";
 import { keyOf } from "./identity.ts";
 import { reconcileKit } from "./reconcile.ts";
-
-const HUG = { kind: "hug" } as const;
 
 /** The row's shortcut, whose `Shortcut keys` property sets its characters and whose family follows `font-sans`. */
 const KEYS: TextLayerSpec = {
@@ -100,10 +98,9 @@ function shortcut(key: string, keys: string | undefined): InstanceLayerSpec {
 /** The kit: the item, then the popup that holds Profile at the default and Billing at `⌘B`. */
 function kitWith(glyphs: readonly string[]): KitSpec {
   return {
-    pages: [{ key: "page", name: "Fuse components" }],
+    ...ONE_PAGE,
     fonts: [{ family: "Roboto", style: "Regular" }],
     glyphFont: { ...GLYPH_FONT, glyphs },
-    icons: { key: "icons", page: "page", name: "Icons", size: 16, color: BLACK, icons: [] },
     componentSets: [
       set("item", [{ name: "Shortcut keys", defaultValue: "⇧⌘P" }], [KEYS]),
       set("popup", [], [shortcut("profile", undefined), shortcut("billing", "⌘B")]),
@@ -219,10 +216,7 @@ describe("the glyph font on a shortcut and on the instances that override it", (
   ])("draws the ranges again after %s, in one Apply", async (_case, edit) => {
     const file = robotoFile();
     await reconcileKit(file.figma, KIT, true);
-    const page = file.figma.root.children.find((node) => keyOf(node) === "page");
-    await page?.loadAsync();
-    const item = page?.children.find((node) => keyOf(node) === "item");
-    const [variant] = item?.type === "COMPONENT_SET" ? item.children : [];
+    const [variant] = (await setOnPage(file, "item")).children;
     if (variant?.type !== "COMPONENT") {
       throw new Error("the kit page holds no item variant");
     }

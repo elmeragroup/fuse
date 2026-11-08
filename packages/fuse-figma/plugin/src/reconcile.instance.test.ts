@@ -17,14 +17,11 @@ import type {
   KitSpec,
   TextLayerSpec,
 } from "../../src/components/kit-spec.ts";
-import { applyTo, FILL, frame, literal } from "./button-kit-fixture.ts";
+import { applyTo, BLACK, FILL, frame, HUG, literal, setOnPage } from "./button-kit-fixture.ts";
 import type { FakeFigma } from "./fake-figma.ts";
 import { childNamed, color, fixtureFile, float, GLYPH_FONT } from "./fake-fixtures.ts";
 import { keyOf } from "./identity.ts";
 import { reconcileKit } from "./reconcile.ts";
-
-const BLACK: ColorSpec = { kind: "literal", color: { r: 0, g: 0, b: 0, a: 1 } };
-const HUG = { kind: "hug" } as const;
 
 const token = (name: string): ColorSpec => ({
   kind: "variable",
@@ -236,20 +233,9 @@ function tokenFile(): FakeFigma {
   ]);
 }
 
-/** A component set of the kit page by its key. */
-async function setOf(file: FakeFigma, key: string): Promise<ComponentSetNode> {
-  const page = file.figma.root.children.find((node) => keyOf(node) === "page");
-  await page?.loadAsync();
-  const set = page?.children.find((node) => keyOf(node) === key);
-  if (set?.type !== "COMPONENT_SET") {
-    throw new Error(`the kit page holds no set ${key}`);
-  }
-  return set;
-}
-
 /** The Alert variant and the action instance it holds. */
 async function alertAction(file: FakeFigma) {
-  const [variant] = (await setOf(file, "alert")).children;
+  const [variant] = (await setOnPage(file, "alert")).children;
   if (variant?.type !== "COMPONENT") {
     throw new Error("the Alert set holds no variant");
   }
@@ -283,7 +269,7 @@ async function shownBy(file: FakeFigma, action: InstanceNode) {
       ]
     )
   );
-  const linked = Object.entries((await setOf(file, "alert")).componentPropertyDefinitions).find(
+  const linked = Object.entries((await setOnPage(file, "alert")).componentPropertyDefinitions).find(
     ([id]) => id === action.componentPropertyReferences?.visible
   );
   return {
@@ -788,7 +774,7 @@ describe("an icon that hides behind a BOOLEAN property and swaps through another
   it("links the icon's visibility and glyph in one Apply, and a second Plan lists nothing", async () => {
     const file = await applyTo(tokenFile(), kit);
     expect(await reconcileKit(file.figma, kit, false)).toEqual({ changes: [], warnings: [] });
-    const set = await setOf(file, "button");
+    const set = await setOnPage(file, "button");
     const [variant] = set.children;
     if (variant?.type !== "COMPONENT") {
       throw new Error("the Button set holds no variant");

@@ -13,6 +13,7 @@ import type {
   ComponentRootSpec,
   FrameLayerSpec,
   KitSpec,
+  TextLayerSpec,
 } from "../src/components/kit-spec.ts";
 import { deepFrozen } from "./frozen.ts";
 
@@ -59,6 +60,71 @@ export function variantRoot(spec: Pick<KitSpec, "componentSets">, key: string): 
     throw new Error(`the kit has no ${key}`);
   }
   return found.root;
+}
+
+/**
+ * A component set of the built kit.
+ *
+ * @param spec - The built component sets.
+ * @param key - The set's key, such as `sidebar-menu-button`.
+ * @returns The set, or undefined where the kit has no such set.
+ */
+export function setOf(spec: Pick<KitSpec, "componentSets">, key: string) {
+  return spec.componentSets.find((candidate) => candidate.key === key);
+}
+
+/**
+ * The property, outcome and detail of each coverage row of one class, in table order.
+ *
+ * @param coverage - The coverage rows.
+ * @param className - The class whose rows to read.
+ * @returns One `[property, outcome, detail]` triple per row.
+ */
+export const notesOf = (coverage: readonly CoverageRow[], className: string) =>
+  coverage.filter((row) => row.className === className).map((row) => [row.property, row.outcome, row.detail]);
+
+/**
+ * The part, property, outcome and detail of each coverage row of one class, in table order.
+ *
+ * @param coverage - The coverage rows.
+ * @param className - The class whose rows to read.
+ * @returns One `[part, property, outcome, detail]` row per coverage row.
+ */
+export const partNotesOf = (coverage: readonly CoverageRow[], className: string) =>
+  coverage
+    .filter((row) => row.className === className)
+    .map((row) => [row.part, row.property, row.outcome, row.detail]);
+
+/**
+ * The part, outcome and detail of each coverage row of one class, in table order.
+ *
+ * @param coverage - The coverage rows.
+ * @param className - The class whose rows to read.
+ * @returns One `[part, outcome, detail]` triple per row.
+ */
+export const partOutcomesOf = (coverage: readonly CoverageRow[], className: string) =>
+  coverage.filter((row) => row.className === className).map((row) => [row.part, row.outcome, row.detail]);
+
+/**
+ * The first text layer a box holds directly.
+ *
+ * @param box - A root or frame, or undefined where the caller found none.
+ * @returns The text layer, or undefined where the box holds none directly.
+ */
+export function textOf(box: BoxSpec | undefined): TextLayerSpec | undefined {
+  const found = box?.children.find((child) => child.kind === "text");
+  return found?.kind === "text" ? found : undefined;
+}
+
+/**
+ * The text layer a box leads with, as a field's value or placeholder leads its box.
+ *
+ * @param box - A variant's root.
+ * @returns The first child where it is a text layer, or undefined.
+ */
+export function leadingTextOf(box: ComponentRootSpec): TextLayerSpec | undefined {
+  const [first] = box.children;
+  return first?.kind === "text" ? first : undefined;
 }
 
 /**

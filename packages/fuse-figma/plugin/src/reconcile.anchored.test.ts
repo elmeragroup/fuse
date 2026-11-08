@@ -11,20 +11,25 @@ import { describe, expect, it } from "vitest";
 import { HUGGING_TEXT, TOP_LEFT } from "../../src/components/kit-spec.ts";
 import type {
   AnchoredSpec,
-  ColorSpec,
   ComponentSetSpec,
   InstanceLayerSpec,
   KitSpec,
 } from "../../src/components/kit-spec.ts";
-import { bareRoot, FILL, literal, oneVariant } from "./button-kit-fixture.ts";
+import {
+  bareRoot,
+  BLACK,
+  FILL,
+  HUG,
+  literal,
+  ONE_PAGE,
+  oneVariant,
+  setOnPage,
+} from "./button-kit-fixture.ts";
 import { createFakeFigma } from "./fake-figma.ts";
 import type { FakeFigma } from "./fake-figma.ts";
 import { childNamed, GLYPH_FONT } from "./fake-fixtures.ts";
-import { keyOf } from "./identity.ts";
 import { reconcileKit } from "./reconcile.ts";
 
-const BLACK: ColorSpec = { kind: "literal", color: { r: 0, g: 0, b: 0, a: 1 } };
-const HUG = { kind: "hug" } as const;
 const ROW_H = { kind: "variable", variable: { collection: "Fuse density", name: "row-h" } } as const;
 
 /** The row: as tall as `row-h`, hugging across. */
@@ -110,10 +115,9 @@ function itemSet(
 /** The kit: the row, the badge and the item, with no preview. */
 function kitWith(item: ComponentSetSpec = itemSet()): KitSpec {
   return {
-    pages: [{ key: "page", name: "Fuse components" }],
+    ...ONE_PAGE,
     fonts: [{ family: "Roboto", style: "Medium" }],
     glyphFont: GLYPH_FONT,
-    icons: { key: "icons", page: "page", name: "Icons", size: 16, color: BLACK, icons: [] },
     componentSets: [ROW, BADGE, item],
     previews: [],
   };
@@ -160,10 +164,7 @@ function densityFile(): FakeFigma {
 
 /** The Item variant, its row and its badge, each read so it settles, the instances first (PI). */
 async function itemLayers(file: FakeFigma) {
-  const page = file.figma.root.children.find((node) => keyOf(node) === "page");
-  await page?.loadAsync();
-  const set = page?.children.find((node) => keyOf(node) === "item");
-  const [variant] = set?.type === "COMPONENT_SET" ? set.children : [];
+  const [variant] = (await setOnPage(file, "item")).children;
   if (variant?.type !== "COMPONENT") {
     throw new Error("the kit page holds no Item variant");
   }

@@ -5,16 +5,10 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { density } from "../../test/built-kit";
+import { density, notesOf, textOf } from "../../test/built-kit";
 import { buildFixture, chip, ICON } from "../../test/fixture-sets";
 import type { LabelDefinition } from "./component-spec";
-import type { CoverageRow } from "./coverage";
 import { makeVariableIndex } from "./css-values";
-import type { BoxSpec, TextLayerSpec } from "./kit-spec";
-
-/** The property, outcome and detail of each coverage row of one class. */
-const notesOf = (coverage: readonly CoverageRow[], className: string) =>
-  coverage.filter((row) => row.className === className).map((row) => [row.property, row.outcome, row.detail]);
 
 const LABEL: LabelDefinition = {
   key: "label",
@@ -23,12 +17,6 @@ const LABEL: LabelDefinition = {
   textProperty: "Label",
   shownIn: () => true,
 };
-
-/** The first text layer a box holds. */
-function textOf(box: BoxSpec | undefined): TextLayerSpec | undefined {
-  const found = box?.children.find((child) => child.kind === "text");
-  return found?.kind === "text" ? found : undefined;
-}
 
 // Oracle: CSS Inline 3 §4.4, where a unitless `line-height` is a factor of the element's own font
 // size, so the line is that share of the size at every density; and Figma's percent line height,

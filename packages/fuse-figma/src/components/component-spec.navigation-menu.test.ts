@@ -5,16 +5,10 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { density, FILL, fixed, HUG, literal } from "../../test/built-kit";
+import { density, FILL, fixed, HUG, literal, notesOf, textOf, token } from "../../test/built-kit";
 import { buildFixture, chip, dot, frameOf, ICON } from "../../test/fixture-sets";
 import type { LabelDefinition } from "./component-spec";
-import type { CoverageRow } from "./coverage";
 import { makeVariableIndex } from "./css-values";
-import type { BoxSpec } from "./kit-spec";
-
-/** The property, outcome and detail of each coverage row of one class. */
-const notesOf = (coverage: readonly CoverageRow[], className: string) =>
-  coverage.filter((row) => row.className === className).map((row) => [row.property, row.outcome, row.detail]);
 
 /** The synced variables the fixtures bind. */
 const SYNCED = makeVariableIndex(
@@ -35,15 +29,6 @@ const TEXT: LabelDefinition = {
   textProperty: undefined,
   shownIn: () => true,
 };
-
-const token = (name: string) =>
-  ({ kind: "variable", variable: { collection: "Fuse tokens", name } }) as const;
-
-/** The text layer a root holds. */
-function textOf(box: BoxSpec | undefined) {
-  const text = box?.children.find((child) => child.kind === "text");
-  return text?.kind === "text" ? text : undefined;
-}
 
 // Oracle: CSS Cascade 4 §7.3.1, where `inherit` gives an element its parent's computed value, and
 // the page is the parent of the root, as `<body>` holds a Navigation menu trigger whose

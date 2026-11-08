@@ -4,16 +4,10 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { literal } from "../../test/built-kit";
+import { literal, partNotesOf } from "../../test/built-kit";
 import { buildFixture, chip, dot } from "../../test/fixture-sets";
 import type { PartDefinition } from "./component-spec";
 import type { CoverageRow } from "./coverage";
-
-/** The part, property, outcome and detail of each coverage row of one class. */
-const notesOf = (coverage: readonly CoverageRow[], className: string) =>
-  coverage
-    .filter((row) => row.className === className)
-    .map((row) => [row.part, row.property, row.outcome, row.detail]);
 
 /** The outcomes of the coverage rows of one class, each once. */
 const outcomesOf = (coverage: readonly CoverageRow[], className: string) =>
@@ -43,7 +37,7 @@ describe("a row that overlaps its children by a negative `space-x`", () => {
     expect(variant?.root.direction).toBe("HORIZONTAL");
     expect(variant?.root.itemSpacing).toEqual(literal(-8));
     expect(variant?.root.firstOnTop).toBeUndefined();
-    expect(notesOf(coverage, "-space-x-2")).toEqual([
+    expect(partNotesOf(coverage, "-space-x-2")).toEqual([
       [
         "chip",
         "--tw-space-x-reverse",
@@ -134,7 +128,7 @@ describe("a class that styles every child at no specificity", () => {
 describe("a part's `vertical-align`", () => {
   it("drops on a part in a flex row", async () => {
     const { coverage } = await buildFixture(chip("flex", { parts: [circle("first", "align-middle")] }));
-    expect(notesOf(coverage, "align-middle")).toEqual([
+    expect(partNotesOf(coverage, "align-middle")).toEqual([
       ["chip-first", "vertical-align", "dropped", "a flex item sits in no line box, so no line aligns it"],
     ]);
   });

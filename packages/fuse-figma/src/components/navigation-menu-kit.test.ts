@@ -39,6 +39,8 @@ import {
   HUG,
   literal,
   paint,
+  setOf,
+  textOf,
   token,
   variantRoot,
 } from "../../test/built-kit";
@@ -69,11 +71,6 @@ function link(set: string, state: string, active: string): ComponentRootSpec {
   return variantRoot(spec, `navigation-menu-${set}-link/state=${state},active=${active}`);
 }
 
-/** The set with a key. */
-function setOf(key: string) {
-  return spec.componentSets.find((candidate) => candidate.key === key);
-}
-
 /** The root's box: its direction, sizing, limits, paddings, gap, alignments and corner. */
 function boxOf(root: ComponentRootSpec) {
   return {
@@ -85,12 +82,6 @@ function boxOf(root: ComponentRootSpec) {
     align: [root.primaryAlign, root.counterAlign],
     corner: root.cornerRadius,
   };
-}
-
-/** The root's text layer. */
-function textOf(root: ComponentRootSpec) {
-  const text = root.children.find((child) => child.kind === "text");
-  return text?.kind === "text" ? text : undefined;
 }
 
 /** The root's caret. */
@@ -181,7 +172,7 @@ describe("Navigation menu's bar and row sets", () => {
       "navigation-menu-vertical-trigger",
       "navigation-menu-bar-link",
       "navigation-menu-row-link",
-    ].map(setOf);
+    ].map((key) => setOf(spec, key));
     expect(sets.map((set) => [set?.name, set?.page, set?.columnAxis, set?.variants.length])).toEqual([
       ["Navigation menu bar trigger", "page/navigation-menu", "state", 8],
       ["Navigation menu vertical trigger", "page/navigation-menu", "state", 8],

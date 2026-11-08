@@ -28,9 +28,12 @@ import {
   density,
   FILL,
   fixed,
+  FOCUS_RING,
   HUG,
   literal,
   paint,
+  setOf,
+  textOf,
   token,
   variantRoot,
 } from "../../test/built-kit";
@@ -65,23 +68,10 @@ function subButton(size: string, active: string, state: string): ComponentRootSp
   return variantRoot(spec, `sidebar-menu-sub-button/size=${size},active=${active},state=${state}`);
 }
 
-/** The set with a key. */
-function setOf(key: string) {
-  return spec.componentSets.find((candidate) => candidate.key === key);
-}
-
 /** The root's paddings, top, right, bottom, left. */
 function paddings(root: ComponentRootSpec) {
   return [root.paddingTop, root.paddingRight, root.paddingBottom, root.paddingLeft];
 }
-
-/** The text layer a root holds. */
-function textOf(root: ComponentRootSpec) {
-  return root.children.find((child) => child.kind === "text");
-}
-
-/** The 2px ring the focus ring draws around a focused row. */
-const FOCUS_RING = { color: paint("ring"), offsetX: 0, offsetY: 0, radius: literal(0), spread: literal(2) };
 
 /** A 1px ring of a color, as the outline row's `shadow-[0_0_0_1px_…]` draws. */
 const outlineRing = (color: string) => ({
@@ -99,7 +89,7 @@ describe("Sidebar's row sets", () => {
       "sidebar-menu-sub-button",
       "sidebar-group-label",
       "sidebar-menu-badge",
-    ].map(setOf);
+    ].map((key) => setOf(spec, key));
     expect(sets.map((set) => [set?.name, set?.page, set?.columnAxis, set?.variants.length])).toEqual([
       ["Sidebar menu button", "page/sidebar", "state", 96],
       ["Sidebar menu sub button", "page/sidebar", "state", 16],
