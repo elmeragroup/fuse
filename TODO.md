@@ -480,9 +480,6 @@ Paths are relative to `packages/fuse-figma` unless they start with `packages/`.
 - Make the Number field denomination's `px-2` a control metric in
   `packages/fuse/src/components/number-field/number-field-variants.ts`. It changes the look, so it needs a patch
   changeset.
-- Check a disabled Toolbar button for a hydration mismatch. The server markup has `disabled=""` and
-  a client render only `aria-disabled="true"`
-  (`packages/fuse/src/components/toolbar/toolbar.tsx`).
 
 ## Autocomplete
 

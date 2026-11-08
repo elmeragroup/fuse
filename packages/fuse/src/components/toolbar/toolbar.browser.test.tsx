@@ -1,3 +1,5 @@
+import { hydrateRoot } from "react-dom/client";
+import { renderToString } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
@@ -19,6 +21,46 @@ async function press(key: string, role: QueryableRole, name: string): Promise<vo
 }
 
 describe("Toolbar", () => {
+  it("hydrates a disabled button without a mismatch and leaves it focusable but aria-disabled", async () => {
+    const element = (
+      <Toolbar.Root aria-label="Message">
+        <Toolbar.Button disabled>Archive</Toolbar.Button>
+        <Toolbar.Button render={<Button variant="ghost" size="sm" />} disabled>
+          Delete
+        </Toolbar.Button>
+      </Toolbar.Root>
+    );
+    const host = document.createElement("div");
+    host.innerHTML = renderToString(element);
+    document.body.append(host);
+    const recover = vi.fn();
+    // React 19 reports an attribute mismatch through console.error, not onRecoverableError.
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    let root: ReturnType<typeof hydrateRoot> | undefined;
+    try {
+      // A rendered Button passes `disabled` on to the native button, so the server markup
+      // disables it, and only a client layout effect clears the property again.
+      const serverDelete = [...host.querySelectorAll("button")].find((b) => b.textContent === "Delete");
+      expect(serverDelete?.hasAttribute("disabled")).toBe(true);
+      root = hydrateRoot(host, element, { onRecoverableError: recover });
+      // The layout effect that clears `disabled` runs in the hydration commit.
+      await vi.waitFor(() => {
+        expect(roleNamed("button", "Delete")).toHaveProperty("disabled", false);
+      });
+      expect(recover).not.toHaveBeenCalled();
+      expect(consoleError).not.toHaveBeenCalled();
+      for (const name of ["Archive", "Delete"]) {
+        const button = roleNamed("button", name);
+        expect(button, name).toHaveProperty("disabled", false);
+        expect(button.getAttribute("aria-disabled"), name).toBe("true");
+      }
+    } finally {
+      root?.unmount();
+      host.remove();
+      consoleError.mockRestore();
+    }
+  });
+
   it("keeps a rendered Button that a disabled item, group or root disables in the arrow-key order without letting it activate, but never a link", async () => {
     const onArchive = vi.fn();
     const onSave = vi.fn();
