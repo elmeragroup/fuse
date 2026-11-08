@@ -3,6 +3,7 @@ import { controlLabel } from "../../styles/control-size";
 import { fieldBoxChromeClass } from "../../styles/field-box";
 import { selectGroupShellClass, selectPopupShellClass } from "../../styles/inner-corner/select";
 import { dataStateFaceClass, nativeStateFaceClass } from "../../styles/state-face";
+import { triggerCaretClass } from "../../styles/trigger-caret";
 import { tv } from "../../styles/tv";
 import { selfFocusRingClass } from "../../styles/utils";
 import {
@@ -27,15 +28,14 @@ import { overlayTimedPopupClass } from "../overlay/overlay-classes";
  *   line, mutes the text while `data-placeholder` marks the placeholder, lays out the value, and
  *   sizes an `<svg>` without a size class to 16px.
  * - `value` grows to fill the row and sets its text at the left.
- * - `caret` draws CaretDown at 16px in the muted color, and turns it half a turn while the trigger
- *   carries `data-popup-open`.
+ * - `caret` draws CaretDown as the shared trigger caret (`triggerCaretClass`), and turns it half a
+ *   turn while the trigger carries `data-popup-open`.
  */
 export const selectTriggerVariants = tv({
   slots: {
     trigger: cn(selfFocusRingClass, fieldBoxChromeClass, nativeStateFaceClass, dataStateFaceClass),
     value: "flex flex-1 text-left",
-    caret:
-      "ease-in-out pointer-events-none size-4 text-muted-foreground transition-transform duration-200 group-data-[popup-open]/select-trigger:rotate-180",
+    caret: [triggerCaretClass, "group-data-[popup-open]/select-trigger:rotate-180"],
   },
   variants: {
     size: {

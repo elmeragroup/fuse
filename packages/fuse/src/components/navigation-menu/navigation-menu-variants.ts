@@ -6,6 +6,7 @@ import {
   navigationPopupShellClass,
 } from "../../styles/inner-corner/navigation";
 import { nativeStateFaceClass } from "../../styles/state-face";
+import { triggerCaretClass } from "../../styles/trigger-caret";
 import { tv } from "../../styles/tv";
 import { selfFocusRingClass } from "../../styles/utils";
 import { overlayPopupSurfaceClass, overlayPositionerClass } from "../overlay/overlay-classes";
@@ -64,10 +65,11 @@ export const navigationMenuVariants = tv({
       // oxlint-disable-next-line elmera/no-local-focus-ring -- native outline off; the ring comes from the shared adapter
       "group/navigation-menu-trigger relative inline-flex cursor-pointer items-center border-0 bg-transparent text-inherit outline-none select-none",
     ],
-    // The caret writes its Root's popup `data-side` and points there: physical sides stay put
-    // in RTL and logical sides flip. Only a `bottom` caret turns while open.
+    // The shared trigger caret writes its Root's popup `data-side` and points there: physical
+    // sides stay put in RTL and logical sides flip. Only a `bottom` caret turns while open.
     triggerIcon: [
-      "ease-in-out pointer-events-none size-4 shrink-0 text-muted-foreground transition-transform duration-200",
+      triggerCaretClass,
+      "shrink-0",
       "data-[side=bottom]:group-data-popup-open/navigation-menu-trigger:rotate-180 data-[side=left]:rotate-90 data-[side=right]:-rotate-90 data-[side=top]:rotate-180",
       "data-[side=inline-end]:ltr:-rotate-90 data-[side=inline-start]:ltr:rotate-90 data-[side=inline-end]:rtl:rotate-90 data-[side=inline-start]:rtl:-rotate-90",
     ],
