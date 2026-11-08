@@ -6,6 +6,7 @@ import type { VariantProps } from "tailwind-variants";
 
 import { useLocalizedStrings } from "../../hooks/use-localized-strings";
 import { Info } from "../../icons/generated/info";
+import { definedProps } from "../../internal/defined-props";
 import { tv } from "../../styles/tv";
 import type { ButtonProps } from "../button/button";
 import { Button } from "../button/button";
@@ -112,23 +113,61 @@ export function PopoverInfoButton({
   const accessibleName = label ?? strings.format("moreInformation");
   const { icon, content, body } = popoverInfoButtonStyles({ contentSize });
 
+  // The Button keeps only its presentation and `ref`, whose element type is the Button's;
+  // state, ARIA, handlers and `disabled` go through PopoverTrigger. Base UI merges a `render`
+  // element's props over the part's, so a forwarded key on the Button, even an undefined one,
+  // would beat the trigger's own value, such as `aria-expanded`. `nativeButton` goes to both:
+  // each runs its own `useButton`. `className` and `style` callbacks read the Button's state,
+  // where `isPending` disables the button while the trigger stays enabled. `disabled` and
+  // `focusableWhenDisabled` go to both: Popover.Trigger states a non-native disabled trigger
+  // through `aria-disabled` alone, so without its own `disabled` the Button would style itself
+  // enabled and keep `onIntent` live.
+  const {
+    className,
+    style,
+    isVisuallyDisabled,
+    isPending,
+    pendingIndicator,
+    predictionZoneSize,
+    onIntent,
+    render,
+    nativeButton,
+    ref,
+    ...wiring
+  } = other;
   // SAFETY: PopoverInfoButtonProps is a distributive Omit of ButtonProps. Reassembling
   // the icon/label union after destructuring is a TypeScript limitation; the runtime
-  // props are the same Button surface plus the owned aria-label.
+  // props are the Button's presentation surface plus the owned aria-label.
   const trigger = (
     <Button
-      {...({
-        ...other,
+      {...(definedProps({
         size,
         variant,
         "aria-label": accessibleName,
-      } as ButtonProps)}
+        className,
+        style,
+        isVisuallyDisabled,
+        isPending,
+        pendingIndicator,
+        predictionZoneSize,
+        onIntent,
+        render,
+        nativeButton,
+        disabled: wiring.disabled,
+        focusableWhenDisabled: wiring.focusableWhenDisabled,
+        ref,
+      }) as ButtonProps)}
     />
   );
 
+  // Popover.Trigger has no `focusableWhenDisabled`: its `useButton` gives a disabled non-native
+  // trigger `tabIndex={-1}`, which reaches the Button through the merge. A consumer `tabIndex`
+  // on the trigger wins over that generated one, so a focusable disabled trigger states its own.
+  const tabIndex = wiring.focusableWhenDisabled === true ? (wiring.tabIndex ?? 0) : wiring.tabIndex;
+
   return (
     <PopoverRoot>
-      <PopoverTrigger render={trigger}>
+      <PopoverTrigger {...definedProps({ ...wiring, nativeButton, tabIndex })} render={trigger}>
         <Info aria-hidden="true" className={icon()} />
       </PopoverTrigger>
       {/* Base UI names the dialog only through a mounted `Popover.Title` (`aria-labelledby`).

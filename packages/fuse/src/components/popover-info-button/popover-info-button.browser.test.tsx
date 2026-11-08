@@ -147,6 +147,78 @@ describe("PopoverInfoButton", () => {
     expect(trigger.getAttribute("aria-expanded")).toBe("true");
   });
 
+  // Oracle: the WAI-ARIA disclosure contract. An open popup's trigger reads aria-expanded="true",
+  // whatever undefined value the consumer forwards for the key.
+  it("keeps the trigger's aria-expanded when the consumer forwards it as undefined", async () => {
+    renderInfo(
+      <div style={{ padding: 240 }}>
+        <PopoverInfoButton aria-expanded={undefined}>{EXPLAINER}</PopoverInfoButton>
+      </div>
+    );
+    const trigger = roleNamed("button", "More information");
+    await openInfo();
+    expect(trigger.getAttribute("aria-expanded")).toBe("true");
+  });
+
+  // Oracle: Button's documented state, where `isPending` makes the button disabled. A style
+  // callback sees that state, not Popover.Trigger's, whose `disabled` stays false while pending.
+  it("evaluates a style callback against the pending Button's disabled state", () => {
+    renderInfo(
+      <PopoverInfoButton isPending style={(state) => ({ outlineColor: state.disabled ? "red" : "blue" })}>
+        {EXPLAINER}
+      </PopoverInfoButton>
+    );
+    expect(roleNamed("button", "More information").style.outlineColor).toBe("red");
+  });
+
+  // Oracle: the consumer's own `disabled` prop. Popover.Trigger states a non-native disabled
+  // trigger through `aria-disabled` alone, so the Button must still read `disabled` itself.
+  it("evaluates a style callback against a disabled non-native trigger's disabled state", () => {
+    renderInfo(
+      <PopoverInfoButton
+        disabled
+        nativeButton={false}
+        render={<span />}
+        style={(state) => ({ outlineColor: state.disabled ? "red" : "blue" })}>
+        {EXPLAINER}
+      </PopoverInfoButton>
+    );
+    expect(roleNamed("button", "More information").style.outlineColor).toBe("red");
+  });
+
+  // Oracle: Base UI's `focusableWhenDisabled` contract, under which a disabled button stays in
+  // the Tab order. Popover.Trigger has no such prop, so its own disabled tabindex must not win.
+  it.each([
+    {
+      kind: "a non-native",
+      trigger: (
+        <PopoverInfoButton disabled focusableWhenDisabled nativeButton={false} render={<span />}>
+          {EXPLAINER}
+        </PopoverInfoButton>
+      ),
+    },
+    {
+      kind: "a native",
+      trigger: (
+        <PopoverInfoButton disabled focusableWhenDisabled>
+          {EXPLAINER}
+        </PopoverInfoButton>
+      ),
+    },
+  ])("keeps $kind disabled, focusableWhenDisabled trigger in the Tab order", async ({ trigger }) => {
+    renderInfo(
+      <>
+        <button type="button">Before</button>
+        {trigger}
+      </>
+    );
+    const button = roleNamed("button", "More information");
+    roleNamed("button", "Before").focus();
+    await userEvent.tab();
+    expect(document.activeElement).toBe(button);
+    expect(button.getAttribute("aria-disabled")).toBe("true");
+  });
+
   it("maps contentSize onto the content max-width class and forwards Button props to the trigger", async () => {
     const { rerender } = renderInfo(
       <div style={{ padding: 240 }}>
