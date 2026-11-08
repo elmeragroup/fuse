@@ -14,8 +14,7 @@
  * - The `sidebar` variant draws its 1px edge border on the end side, in the layout, so its sections
  *   draw 255px wide, or 47px in the rail. The `inset` variant pads 8px instead, on the `sidebar` fill
  *   the Provider's wrapper paints behind it, so its sections draw 240px wide, or 50px in the rail.
- * - The separator is as wide as the content past its 8px start margin, so the content's clip cuts
- *   its end.
+ * - The separator is inset 8px from each side of the content.
  * - It stands as tall as the app frame demo's 28rem frame, which the Root's `h-full` takes.
  *
  * The gap beside the panel is a flow spacer and the Rail paints only on hover, so neither draws. No

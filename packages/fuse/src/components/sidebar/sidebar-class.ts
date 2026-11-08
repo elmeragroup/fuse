@@ -53,8 +53,12 @@ export const sidebarInputClass = cn("h-(--row-h) w-full bg-background shadow-non
  */
 export const sidebarSectionClass = cn(sidebarSectionShellClass, "flex flex-col gap-2");
 
-/** `Sidebar.Separator`: the hairline in the sidebar border colour, inset 8px from each side. */
-export const sidebarSeparatorClass = cn("mx-2 w-auto bg-sidebar-border");
+/**
+ * `Sidebar.Separator`: the hairline in the sidebar border colour, inset 8px from each side. The
+ * width carries `separatorClass`'s `data-horizontal:` modifier, so tailwind-merge drops that
+ * `w-full`, which would otherwise outrank a bare `w-auto` and push the hairline 8px past the end.
+ */
+export const sidebarSeparatorClass = cn("mx-2 bg-sidebar-border data-horizontal:w-auto");
 
 /**
  * `Sidebar.Content`: the column between header and footer that takes the remaining height and
