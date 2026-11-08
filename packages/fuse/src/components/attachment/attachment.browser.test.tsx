@@ -1,7 +1,7 @@
 import { useState } from "react";
 import type { ReactElement } from "react";
 
-import { DirectionProvider } from "@base-ui/react";
+import { DirectionProvider } from "@base-ui/react/direction-provider";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 

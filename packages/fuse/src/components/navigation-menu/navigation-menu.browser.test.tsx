@@ -1,7 +1,6 @@
 import { useState } from "react";
 
-// The root entry, which the browser projects pre-bundle; a new subpath would load a second React.
-import { DirectionProvider } from "@base-ui/react";
+import { DirectionProvider } from "@base-ui/react/direction-provider";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
