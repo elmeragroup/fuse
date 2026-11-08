@@ -31,6 +31,7 @@ import {
 import { LocaleProvider } from "../../intl/locale-context";
 import { ThemeScope } from "../../theme";
 import { Input } from "../input/input";
+import { NumberField } from "../number-field/number-field";
 import { PhoneNumberField } from "../phone-number-field/phone-number-field";
 import { InputGroup } from "./index";
 
@@ -262,6 +263,34 @@ describe("InputGroup", () => {
       textboxNamed("Search"),
       rootNamed("Search")
     );
+  });
+
+  // Oracle: the within ring belongs to the box whose own control is focused. A NumberField in an
+  // addon is its own field box, so its group rings and the outer Root, whose control is not the
+  // focused one, stays unpainted.
+  it("rings only a nested NumberField's own group, not the Root around its addon", async () => {
+    renderThemed(
+      <LocaleProvider locale="en-US">
+        <button type="button">Before</button>
+        <InputGroup.Root>
+          <InputGroup.Input aria-label="Amount" />
+          <InputGroup.Addon align="inline-end">
+            <NumberField aria-label="Quantity" defaultValue={1} />
+          </InputGroup.Addon>
+        </InputGroup.Root>
+      </LocaleProvider>
+    );
+    const quantity = textboxNamed("Quantity");
+    const quantityGroup = quantity.parentElement;
+    if (!(quantityGroup instanceof HTMLElement)) {
+      throw new Error("expected the NumberField group");
+    }
+    roleNamed("button", "Before").focus();
+    await userEvent.keyboard("{Tab}{Tab}");
+    expect(document.activeElement).toBe(quantity);
+    expect(quantity.matches(":focus-visible")).toBe(true);
+    expectFocusRing(quantityGroup, "the NumberField's own group paints the ring");
+    expectNoFocusRing(rootNamed("Amount"), "the outer Root must not ring for a nested control");
   });
 
   it("leaves the group ring unpainted for mouse focus and for addon buttons", async () => {

@@ -9,8 +9,11 @@ import { tv } from "./tv";
  * `outline-hidden`, so forced-colors mode, which drops box-shadow, still draws an outline.
  *
  * - `self` paints on the element that matches `:focus-visible`.
- * - `within` paints on a group whose `data-focus-ring-control` descendant is focus-visible;
- *   its `control` slot cancels the control's own ring so the group paints once.
+ * - `within` paints on a group whose `data-focus-ring-control` direct child is focus-visible;
+ *   its `control` slot cancels the control's own ring so the group paints once. Only a direct
+ *   child counts, as in the within state face (`state-face.ts`), so a field box nested in the
+ *   group's addon, such as a NumberField, rings itself and leaves the outer group unpainted.
+ *   The owner keeps its control as a direct child.
  * - `state` paints from React Aria's `isFocusVisible` render prop, for a non-focusable host.
  *
  * A focused invalid control paints the invalid focus face from the constants below instead,
@@ -27,7 +30,7 @@ export const focusRing = tv({
         root: "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden",
       },
       within: {
-        root: "has-[[data-focus-ring-control]:focus-visible]:ring-2 has-[[data-focus-ring-control]:focus-visible]:ring-ring has-[[data-focus-ring-control]:focus-visible]:outline-hidden",
+        root: "has-[>[data-focus-ring-control]:focus-visible]:ring-2 has-[>[data-focus-ring-control]:focus-visible]:ring-ring has-[>[data-focus-ring-control]:focus-visible]:outline-hidden",
         control:
           "focus-visible:ring-0 focus-visible:outline-none aria-invalid:focus-visible:ring-0 aria-invalid:focus-visible:ring-offset-0",
       },

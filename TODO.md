@@ -170,10 +170,6 @@
   and configure the focus-ring owner path.
 - Replace the `state faces` source contract with `elmera/no-local-state-face` once the
   upstream plugin ships it with a configurable owner path and per-check allow lists.
-- Scope the within-target focus faces to the group's own control. `withinFocusRingClass`
-  still matches any descendant `data-focus-ring-control`, so a focused NumberField nested
-  in an InputGroup addon also rings the outer group. The state
-  face already reads only a direct child (`styles/state-face.ts`).
 - Give the root `test/*.mjs` suites, `plopfile.mjs`, `apps/docs/postcss.config.mjs`, the
   `tooling/pr-shots` fixtures and the packed-consumer configs a tsconfig program. Type-aware lint
   reads a file outside every program in an inferred one whose types come from what else the run

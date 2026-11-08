@@ -53,7 +53,7 @@ export function fillsWidth(cell: Cell): boolean {
  * the cell of that state.
  */
 export const WITHIN_CONTROL_FACTS: ReadonlyMap<string, (cell: Cell) => boolean> = new Map([
-  ["has-[[data-focus-ring-control]:focus-visible]", (cell: Cell) => cell.state === "focus"],
+  ["has-[>[data-focus-ring-control]:focus-visible]", (cell: Cell) => cell.state === "focus"],
   ["has-[>[data-focus-ring-control]:disabled]", (cell: Cell) => cell.state === "disabled"],
   ["has-[>[data-focus-ring-control][aria-invalid=true]]", (cell: Cell) => cell.state === "invalid"],
 ]);

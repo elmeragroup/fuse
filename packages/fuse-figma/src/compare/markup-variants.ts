@@ -374,7 +374,7 @@ export const NOT_ATTRIBUTES = new Set([
   "focus-visible",
   "focus",
   // Input group rings while its control has keyboard focus, which the page forces on the control.
-  "has-[[data-focus-ring-control]:focus-visible]",
+  "has-[>[data-focus-ring-control]:focus-visible]",
   // A File upload dropzone rings while its trigger has keyboard focus, which the page forces there.
   "has-focus-visible",
   // The page's browser meets `@supports (backdrop-filter: …)`, which the overlay scrim's blur reads.
