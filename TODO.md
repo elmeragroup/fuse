@@ -151,6 +151,10 @@
 
 ## Consumer and release verification
 
+- `scripts/RELEASE.md` and `.changeset/README.md` say a breaking change takes `major`, but while
+  `@elmeragroup/fuse` is 0.0.0 breaking changesets ship as `minor` with a **Breaking:** note
+  (`description-list-item.md`, `remove-radius-popover.md`), since `major` would publish 1.0.0.
+  Write the pre-1.0 rule into both documents, or decide when breaks start taking `major`.
 - Add first-paint fixtures for the written Next Pages, TanStack Start and React Router recipes.
 - Finish release activation, packed Next/Vite fixtures and authentication work in
   [the release runbook](scripts/RELEASE.md).
@@ -290,9 +294,6 @@
   as the compact corner that caps `rounded-md` at 10px in external themes, when the
   component pilot needs them. The sync sends only the plain radius rungs, `radius-step`
   and the density metrics.
-- Remove the unused `--radius-popover` rung from `fuse.css` and `RADIUS_RUNGS` in a
-  separate change. No component uses it, Fuse popups use `rounded-md`, and the Figma sync
-  already leaves it out.
 - After the first axes sync of a file that already holds `Fuse density`, move the `Auto`
   column all the way to the left of the variables view in Figma by hand, by dragging its header
   or through the header's right-click menu. The left-most mode is the default. The REST API

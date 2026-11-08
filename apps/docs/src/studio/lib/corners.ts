@@ -20,7 +20,6 @@ export const RUNGS = [
   { id: "md", steps: -1 },
   { id: "lg", steps: 0 },
   { id: "xl", steps: 2 },
-  { id: "popover", steps: -4 },
 ] as const satisfies readonly { id: string; steps: number }[];
 
 export type RungId = (typeof RUNGS)[number]["id"];

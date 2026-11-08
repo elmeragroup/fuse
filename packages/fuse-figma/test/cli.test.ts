@@ -234,9 +234,7 @@ describe("fuse-figma sync", () => {
         ...KIT_FONT_NAMES.map(
           (name) => ["Fuse tokens", { name, description: KIT_FONT_DESCRIPTIONS[name] }] as const
         ),
-        ...Object.values(theme.schemes.light.rungs)
-          .filter((rung) => rung.name !== "radius-popover")
-          .map((entry) => ["Fuse tokens", entry] as const),
+        ...Object.values(theme.schemes.light.rungs).map((entry) => ["Fuse tokens", entry] as const),
         ...Object.values(catalog.primitives).map((entry) => ["Fuse primitives", entry] as const),
         ...catalog.density.map((entry) => ["Fuse density", entry] as const),
       ];

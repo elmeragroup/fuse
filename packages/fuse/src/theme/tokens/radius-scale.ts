@@ -8,14 +8,7 @@
  */
 
 /** The derived radius custom properties, without their leading dashes, in `fuse.css` order. */
-export const RADIUS_RUNG_NAMES = [
-  "radius-xs",
-  "radius-sm",
-  "radius-md",
-  "radius-lg",
-  "radius-xl",
-  "radius-popover",
-] as const;
+export const RADIUS_RUNG_NAMES = ["radius-xs", "radius-sm", "radius-md", "radius-lg", "radius-xl"] as const;
 
 /** One derived radius rung, such as `radius-md`. */
 export type RadiusRungName = (typeof RADIUS_RUNG_NAMES)[number];
@@ -77,8 +70,4 @@ export const RADIUS_RUNGS = {
   "radius-md": rung(-1, "One radius-step length below radius."),
   "radius-lg": rung(0, "The corner at radius itself, in every theme."),
   "radius-xl": rung(2, "Two radius-step lengths above radius."),
-  "radius-popover": rung(
-    -4,
-    "Four radius-step lengths below radius. No component reads it, because Fuse popups use radius-md."
-  ),
 } as const satisfies Record<RadiusRungName, RadiusRung>;

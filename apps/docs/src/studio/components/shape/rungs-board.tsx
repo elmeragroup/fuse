@@ -24,8 +24,8 @@ const rungsBoard = tv({
     grid: "grid grid-cols-4 gap-x-4 gap-y-6",
     rung: "flex min-w-0 flex-col gap-1.5",
     // A Skeleton: Fuse's shape-only box, which takes its radius from the caller, never pulsing
-    // here. Its own `rounded-md` merges away under a t-shirt rung; `popover` and `button` are
-    // not in the merge's radius scale, so they are marked important to win over it.
+    // here. Its own `rounded-md` merges away under a t-shirt rung; `button` is not in the
+    // merge's radius scale, so it is marked important to win over it.
     box: "h-16 animate-none border-2 border-primary bg-primary-soft",
     field: "h-16",
     name: "text-xs font-medium font-mono text-foreground",
@@ -39,7 +39,6 @@ const rungsBoard = tv({
       md: { box: "rounded-md" },
       lg: { box: "rounded-lg" },
       xl: { box: "rounded-xl" },
-      popover: { box: "rounded-popover!" },
       button: { box: "rounded-button!" },
     },
   },
