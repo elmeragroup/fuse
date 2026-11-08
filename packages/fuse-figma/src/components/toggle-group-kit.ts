@@ -40,17 +40,15 @@ const slots = toggleGroupVariants();
 /**
  * What the group's `item` classes read on an item that no Toggle cell shows, by the item's place
  * among the three. The group is horizontal, which the items read through the root's
- * `group/toggle-group` marker, and spaced, so no `group-data-[spacing=0]/toggle-group:` or
- * `data-[spacing=0]:` arm holds: the segmented look, which the set leaves out (see `SEGMENTED`). The
- * other variants those arms chain, the item's `data-variant` and its place first or last, each hold
- * where the markup says. `focus:z-10` raises a focused item over its neighbours, and no item is
- * focused.
+ * `group/toggle-group` marker, and spaced, so no `data-[spacing=0]:` arm holds: the segmented look,
+ * which the set leaves out (see `SEGMENTED`). The other variants those arms chain, the item's
+ * `data-variant` and its place first or last, each hold where the markup says. `focus:z-10` raises
+ * a focused item over its neighbours, and no item is focused.
  */
 function itemFacts(index: number): ReadonlyMap<string, (cell: Cell) => boolean> {
   return new Map([
     ["group-data-horizontal/toggle-group", always],
     ["group-data-vertical/toggle-group", never],
-    ["group-data-[spacing=0]/toggle-group", never],
     // Base UI stamps the group's spacing and variant on each item too.
     ["data-[spacing=0]", never],
     ["data-[variant=outline]", (cell: Cell) => cell.variant === "outline"],
@@ -106,10 +104,7 @@ export const TOGGLE_GROUP: ComponentDefinition = {
     ["data-[variant=outline]", (cell: Cell) => cell.variant === "outline"],
   ]),
   omittedStates: new Set(),
-  omittedCompositions: new Map([
-    ["data-[spacing=0]", SEGMENTED],
-    ["group-data-[spacing=0]/toggle-group", SEGMENTED],
-  ]),
+  omittedCompositions: new Map([["data-[spacing=0]", SEGMENTED]]),
   label: undefined,
   iconsFor: () => [],
   parts: TOGGLE_GROUP_ITEMS.map(item),
