@@ -23,6 +23,7 @@ import {
   renderThemed,
   roleNamed,
   stampDensity,
+  textNamed,
   textboxNamed,
 } from "../../../test/themed-browser-render";
 import { ThemeScope } from "../../theme";
@@ -612,6 +613,18 @@ describe("NumberField onValueCommitted", () => {
 });
 
 describe("NumberField density metrics", () => {
+  // Oracle: the xs control inset in fuse.css, 0.5rem dense and 0.75rem comfortable at the 16px root.
+  it("insets the denomination by the xs control inset at both densities", () => {
+    renderField(<NumberField label="Meter" denomination="kWh" defaultValue={1} />);
+    const expected = { dense: 8, comfortable: 12 } as const;
+    for (const density of ["dense", "comfortable"] as const) {
+      stampDensity(density);
+      const denomination = getComputedStyle(textNamed("kWh"));
+      expect(px(denomination.paddingInlineStart), density).toBe(expected[density]);
+      expect(px(denomination.paddingInlineEnd), density).toBe(expected[density]);
+    }
+  });
+
   it("pins the field box to the signed md rung and sizes each stepper xs-wide and full-height at both densities, without rescoping", () => {
     const { rerender, unmount: unmountMetrics } = renderField(<NumberField label="Meter" defaultValue={1} />);
     for (const density of ["dense", "comfortable"] as const) {

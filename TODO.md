@@ -435,9 +435,6 @@ Paths are relative to `packages/fuse-figma` unless they start with `packages/`.
 - Draw Input group's 1px invalid band past its caret. The root draws the field's own ring, which
   Figma draws only on a clipping frame, so the root keeps clipping and its coverage rows list the
   cut band.
-- Make the Number field denomination's `px-2` a control metric in
-  `packages/fuse/src/components/number-field/number-field-variants.ts`. It changes the look, so it needs a patch
-  changeset.
 
 ## Autocomplete
 
