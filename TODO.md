@@ -348,12 +348,6 @@ Paths are relative to `packages/fuse-figma` unless they start with `packages/`.
   worker.
 - Let `compareSnapshot` take the self-check's prepared renderers, page assets, component sets and
   browser instead of building them again, and memoize `unchangedByDesign` per theme.
-- Give `dropdownMenuVariants` the `itemIndicator` and `separator` slots its Select and Combobox
-  siblings have, plus a new `checkableItem` slot that holds the item and
-  `menuItemIndicatorRoomClass`. `packages/fuse/src/components/dropdown-menu/dropdown-menu.tsx`,
-  `src/components/dropdown-menu-kit.ts` and, for the separator, `src/components/menu-kit.ts` then
-  read the slots in place of composing `menuItemIndicatorRoomClass` and `menuSeparatorClass` by
-  hand.
 - Compute each formula variable's values from its formula through `src/components/css-values.ts`,
   and derive its `reads`, in place of the hand-written lambda beside it in
   `src/fuse-variable-set.ts`. Nothing checks that the two agree.
