@@ -265,7 +265,6 @@
   --radius-md: calc(var(--radius) - var(--radius-step, 0px));
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 2 * var(--radius-step, 0px));
-  --radius-popover: calc(var(--radius) - 4 * var(--radius-step, 0px));
   --breakpoint-xs: 574px;
   --breakpoint-lg: 60rem;
   --breakpoint-3xl: 1920px;

@@ -24,12 +24,9 @@ function storedForm(entry: AnyEntry): ReturnType<InMemoryFigma["resolve"]> {
   }
 }
 
-/** Every token and synced rung of a theme's scheme, the entries `Fuse tokens` binds. */
+/** Every token and rung of a theme's scheme, the entries `Fuse tokens` binds. */
 function boundEntries(scheme: ResolvedScheme): readonly AnyEntry[] {
-  return [
-    ...Object.values(scheme.tokens),
-    ...Object.values(scheme.rungs).filter((rung) => rung.name !== "radius-popover"),
-  ];
+  return [...Object.values(scheme.tokens), ...Object.values(scheme.rungs)];
 }
 
 /**
@@ -163,9 +160,6 @@ describe("fuse-figma resolving Fuse tokens on a frame", () => {
       assert.deepStrictEqual(rungs(light("external-guen-private")), [2, 4, 6, 8, 12]);
       // external-tkas-private sets 1rem, 16px.
       assert.deepStrictEqual(rungs(light("external-tkas-private")), [10, 12, 14, 16, 20]);
-      // No component uses radius-popover, so the sync gives designers no variable for it.
-      assert.notInclude(figma.variableNames("Fuse tokens"), "radius-popover");
-      assert.notInclude(figma.variableNames("Fuse brand"), "light/internal/private/radius-popover");
 
       assert.deepStrictEqual(figma.aliasChain("Fuse tokens", "radius-md", dark("internal-tkas-company")), [
         "Fuse tokens/radius-md",

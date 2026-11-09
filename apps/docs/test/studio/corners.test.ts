@@ -26,7 +26,6 @@ describe("rungFormula", () => {
       "radius − step",
       "radius",
       "radius + 2 × step",
-      "radius − 4 × step",
     ]);
   });
 });

@@ -601,17 +601,6 @@ function tokenScopes(entry: TokenEntry): readonly VariableScope[] {
 }
 
 /**
- * The rungs the sync writes. It leaves out `radius-popover` because no component uses it.
- * Fuse popups use `radius-md`, so a designer who binds `radius-popover` to a popover gets a
- * radius the code never renders. `TODO.md` tracks removing the rung from `fuse.css`.
- */
-type SyncedRungName = Exclude<RadiusRungName, "radius-popover">;
-
-function isSyncedRung(entry: RungEntry): entry is RungEntry<SyncedRungName> {
-  return entry.name !== "radius-popover";
-}
-
-/**
  * One variable in `Fuse tokens`: a variable designers bind, or a hidden value a `Fuse density`
  * formula aliases. `Fuse brand` holds its value per theme, and the variant and segment
  * collections pass the frame's choice of each axis along.
@@ -620,7 +609,7 @@ type BoundVariable = {
   readonly name:
     | TokenName
     | KitFontName
-    | SyncedRungName
+    | RadiusRungName
     | `${ColorTokenName}/${number}`
     | FormulaReading<"theme">["name"]
     | `${FormulaReading<"theme and density">["name"]}/${DensityMode}`;
@@ -668,16 +657,14 @@ function boundVariables(template: ResolvedScheme, metrics: MetricsByDensity): re
     description: entry.description,
     leafIn: (scheme, path) => leafValue(scheme.tokens[entry.name], path),
   }));
-  const rungs = Object.values(template.rungs)
-    .filter(isSyncedRung)
-    .map((entry): BoundVariable => ({
-      name: entry.name,
-      type: VARIABLE_TYPES[entry.kind],
-      scopes: ["CORNER_RADIUS"],
-      webSyntax: entry.codeSyntax,
-      description: entry.description,
-      leafIn: (scheme, path) => leafValue(scheme.rungs[entry.name], path),
-    }));
+  const rungs = Object.values(template.rungs).map((entry): BoundVariable => ({
+    name: entry.name,
+    type: VARIABLE_TYPES[entry.kind],
+    scopes: ["CORNER_RADIUS"],
+    webSyntax: entry.codeSyntax,
+    description: entry.description,
+    leafIn: (scheme, path) => leafValue(scheme.rungs[entry.name], path),
+  }));
   const tints = ROLE_TINTS.map(([role, percent]): BoundVariable => ({
     name: `${role}/${percent}`,
     type: VARIABLE_TYPES.color,

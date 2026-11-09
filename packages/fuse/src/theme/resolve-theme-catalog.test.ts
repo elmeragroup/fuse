@@ -50,8 +50,8 @@ const SLUGS = [
 // 2 sentiments. Themes name no fonts, so `font-sans` and `font-heading` are not tokens.
 const TOKEN_COUNT = 133;
 
-// xs, sm, md, lg, xl and the unused popover rung.
-const RUNG_COUNT = 6;
+// xs, sm, md, lg and xl.
+const RUNG_COUNT = 5;
 
 const catalog = resolveThemeCatalog();
 
@@ -123,10 +123,10 @@ describe("resolveThemeCatalog", () => {
     // Internal themes keep 0.5rem, 8px, and step 0px, so every rung is 8px.
     expect(light("internal-elma-private").rungs["radius-xs"].value).toBe(8);
     expect(light("internal-elma-private").rungs["radius-xl"].value).toBe(8);
-    // The popover rung steps four times below --radius: 12 - 4 * 2.
-    expect(light("external-fkas-private").rungs["radius-popover"]).toMatchObject({
-      css: "calc(var(--radius) - 4 * var(--radius-step, 0px))",
-      value: 4,
+    // radius-xs counts its three steps in the CSS and steps them off 12px: 12 - 3 * 2.
+    expect(light("external-fkas-private").rungs["radius-xs"]).toMatchObject({
+      css: "calc(var(--radius) - 3 * var(--radius-step, 0px))",
+      value: 6,
     });
   });
 

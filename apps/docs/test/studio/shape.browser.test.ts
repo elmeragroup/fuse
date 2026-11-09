@@ -178,10 +178,10 @@ describe("the studio's Shape page", () => {
       await setRadius(page, 20);
       await toggle(inspector(page), "--radius-step", "0px · internal").click();
       // At a 0px step every rung equals --radius (CONTEXT.md, "Radius rung"), where the external
-      // step alone draws 14/16/18/20/24/12px.
+      // step alone draws 14/16/18/20/24px.
       await expect
         .poll(() => cornerValues(page, "Radius rungs · External"))
-        .toMatchObject({ xs: "20px", sm: "20px", md: "20px", lg: "20px", xl: "20px", popover: "20px" });
+        .toMatchObject({ xs: "20px", sm: "20px", md: "20px", lg: "20px", xl: "20px" });
       // Fjordkraft shares the external base's variant, so its board wears the step edit too.
       await pickBrand(page, await selectBoard(page, SHELLS), "Fjordkraft");
       await expect.poll(() => tokenOn(page, SHELLS, "--radius-step")).toBe("0px");
@@ -299,7 +299,6 @@ describe("the studio's Shape page", () => {
             md: "20px",
             lg: "20px",
             xl: "20px",
-            popover: "20px",
             button: "20px",
             field: "20px",
           });
@@ -313,7 +312,6 @@ describe("the studio's Shape page", () => {
             md: "18px",
             lg: "20px",
             xl: "24px",
-            popover: "12px",
             button: "6px",
             field: "20px",
           });

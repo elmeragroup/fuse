@@ -154,7 +154,7 @@ export type ResolvedScheme = {
   /** Every role token, in `TOKEN_NAMES` order. */
   readonly tokens: { readonly [N in TokenName]: TokenEntry<N> };
 
-  /** Every radius rung, in `fuse.css` order, including the unused `radius-popover`. */
+  /** Every radius rung, in `fuse.css` order. */
   readonly rungs: { readonly [N in RadiusRungName]: RungEntry<N> };
 };
 
