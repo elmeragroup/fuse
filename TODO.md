@@ -383,9 +383,6 @@ Paths are relative to `packages/fuse-figma` unless they start with `packages/`.
 - Have each padding rewrite in `src/components/box-mapping.ts` (bleed, translate, negative margin)
   return a per-side delta and sum them with `sumAffine`. Today a `??` chain picks one, so two rules
   on one box leave the loser unmapped.
-- On a no-change Plan, pass the main component into `heldLayers` instead of looking it up again
-  for each of the 162 instance layers, and return early from `requireHeldLabelFonts` when it has
-  nothing to check.
 - Decide whether `Sidebar.Separator`'s `w-auto` should beat `separatorClass`'s
   `data-horizontal:w-full`. Today the hairline overshoots by 8px and the content clips it, and the
   kit draws that look. The fix changes a shipped component.

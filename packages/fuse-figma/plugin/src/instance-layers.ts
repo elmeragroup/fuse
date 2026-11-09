@@ -224,16 +224,25 @@ function pathKey(path: readonly string[]): string {
   return JSON.stringify(path);
 }
 
+/** The main component an instance shows, or null where it has none. */
+function mainOf(instance: InstanceNode): Effect.Effect<ComponentNode | null> {
+  return Effect.promise(() => instance.getMainComponentAsync());
+}
+
 /**
  * The layer whose layers give an instance's sublayers their keys: its main component, or the instance
  * itself where a designer deleted the main, whose layers can no longer be read. Then each sublayer
  * gives its own key, as N3 read every sublayer but a swapped one.
+ *
+ * @param main - The instance's main component, as `mainOf` read it.
  */
+function keySourceOf(instance: InstanceNode, main: ComponentNode | null): ChildrenMixin {
+  return main === null || main.removed ? instance : main;
+}
+
+/** `keySourceOf` with the main component looked up. */
 function keySource(instance: InstanceNode): Effect.Effect<ChildrenMixin> {
-  return Effect.map(
-    Effect.promise(() => instance.getMainComponentAsync()),
-    (main): ChildrenMixin => (main === null || main.removed ? instance : main)
-  );
+  return Effect.map(mainOf(instance), (main) => keySourceOf(instance, main));
 }
 
 /**
@@ -265,8 +274,15 @@ function besideMain(
  * The instance and its keyed sublayers by key path, each found by the key of the main component's
  * layer it stands for (`besideMain`). The walk goes down through frames and stops at an icon or
  * another nested instance.
+ *
+ * @param main - The instance's main component, read since the run last wrote to the instance: a
+ *   property write can swap it.
  */
-const heldLayers = Effect.fnUntraced(function* (instance: InstanceNode, label: string) {
+function heldLayers(
+  instance: InstanceNode,
+  label: string,
+  main: ComponentNode | null
+): ReadonlyMap<string, HeldLayer> {
   const found = new Map<string, HeldLayer>([[pathKey([]), { node: instance, label, path: [] }]]);
   const walk = (
     parent: ChildrenMixin,
@@ -286,10 +302,9 @@ const heldLayers = Effect.fnUntraced(function* (instance: InstanceNode, label: s
       }
     }
   };
-  walk(instance, yield* keySource(instance), [], label);
-  const layers: ReadonlyMap<string, HeldLayer> = found;
-  return layers;
-});
+  walk(instance, keySourceOf(instance, main), [], label);
+  return found;
+}
 
 /**
  * The instance inside `instance` at a key path, found through frames and nested instances by the keys
@@ -638,6 +653,7 @@ function planLabelGlyphs(run: Run, layers: ReadonlyMap<string, HeldLayer>, root:
  * as they stand, the link to the outer set's BOOLEAN property and the exposure.
  *
  * @param held - `unknown` when the box that holds the instance turns in this run.
+ * @param main - The instance's main component, read since the run last wrote to the instance.
  */
 const planOverridesAndSizing = Effect.fnUntraced(function* (
   instance: InstanceNode,
@@ -645,10 +661,11 @@ const planOverridesAndSizing = Effect.fnUntraced(function* (
   spec: InstanceLayerSpec,
   inner: InnerVariant,
   links: InstanceLinks,
-  held: Held
+  held: Held,
+  main: ComponentNode | null
 ) {
   const run = yield* currentRun;
-  const layers = yield* heldLayers(instance, label);
+  const layers = heldLayers(instance, label, main);
   planOverrides(run, instance, layers, label, spec, inner.spec.root);
   planLabelGlyphs(run, layers, inner.spec.root);
   yield* planNested(instance, label, spec);
@@ -677,6 +694,7 @@ const planOverridesAndSizing = Effect.fnUntraced(function* (
  * against the sublayers it leaves. Plan lists that operation alone.
  *
  * @param held - `unknown` when the box that holds the instance turns in this run.
+ * @param main - The instance's main component, read since the run last wrote to the instance.
  */
 const planStages = Effect.fnUntraced(function* (
   instance: InstanceNode,
@@ -684,11 +702,12 @@ const planStages = Effect.fnUntraced(function* (
   spec: InstanceLayerSpec,
   inner: InnerVariant,
   links: InstanceLinks,
-  held: Held
+  held: Held,
+  main: ComponentNode | null
 ): Effect.fn.Return<void, PluginError, PlanServices> {
   const differ = differingProperties(instance, spec, inner, links.icons, label);
   if (differ.length === 0) {
-    yield* planOverridesAndSizing(instance, label, spec, inner, links, held);
+    yield* planOverridesAndSizing(instance, label, spec, inner, links, held, main);
     return;
   }
   const described = differ.map((desired) => `${desired.name} ${desired.shown}`).join(", ");
@@ -697,7 +716,12 @@ const planStages = Effect.fnUntraced(function* (
     `properties → ${described}`,
     Effect.gen(function* () {
       writeProperties(instance, label, inner, differ);
-      yield* planWhenRun(planOverridesAndSizing(instance, label, spec, inner, links, "read"));
+      // A variant property write shows another variant, so the main is read again once it runs.
+      yield* planWhenRun(
+        Effect.flatMap(mainOf(instance), (shown) =>
+          planOverridesAndSizing(instance, label, spec, inner, links, "read", shown)
+        )
+      );
     })
   );
 });
@@ -732,13 +756,15 @@ function changesFirst(
  * @param differ - The properties the instance's values differ in now, or undefined where its stages
  *   wait for an earlier operation, after which the run may write any of its TEXT properties and any
  *   nested value.
+ * @param main - The instance's main component, as it shows it now.
  */
 const requireHeldLabelFonts = Effect.fnUntraced(function* (
   instance: InstanceNode,
   label: string,
   inner: InnerVariant,
   spec: InstanceLayerSpec,
-  differ: readonly DesiredProperty[] | undefined
+  differ: readonly DesiredProperty[] | undefined,
+  main: ComponentNode | null
 ) {
   const run = yield* currentRun;
   const written = new Set(
@@ -759,8 +785,10 @@ const requireHeldLabelFonts = Effect.fnUntraced(function* (
       overriddenFields.includes("textAlignHorizontal") ? [id] : []
     )
   );
-  const instanceLayers = yield* heldLayers(instance, label);
-  for (const layer of instanceLayers.values()) {
+  // No label to check leaves the sublayers unread.
+  const instanceLayers =
+    keys.size === 0 && aligned.size === 0 ? [] : heldLayers(instance, label, main).values();
+  for (const layer of instanceLayers) {
     const { node } = layer;
     if (node.type === "TEXT" && (keys.has(layer.path.at(-1) ?? "") || aligned.has(node.id))) {
       for (const font of heldFonts(run, node)) {
@@ -777,7 +805,7 @@ const requireHeldLabelFonts = Effect.fnUntraced(function* (
     const at = `${label} / ${nested.path.join(" / ")}`;
     const writes =
       target !== undefined && (replaced || Object.keys(differingNested(target, nested, at)).length > 0);
-    const writtenLayers = writes ? (yield* heldLayers(target, at)).values() : [];
+    const writtenLayers = writes ? heldLayers(target, at, yield* mainOf(target)).values() : [];
     for (const layer of writtenLayers) {
       if (layer.node.type === "TEXT") {
         for (const font of heldFonts(run, layer.node)) {
@@ -825,13 +853,14 @@ export const planInstance = Effect.fnUntraced(function* (
   planScalar(run, label, "name", instance.name, spec.name, () => {
     instance.name = spec.name;
   });
-  const main = yield* Effect.promise(() => instance.getMainComponentAsync());
+  const main = yield* mainOf(instance);
   const shows = inner.node.existing !== undefined && main?.id === inner.node.existing.id;
   const now = shows && !changesFirst(spec, inner, links.icons);
   const differ = now ? differingProperties(instance, spec, inner, links.icons, label) : undefined;
-  yield* requireHeldLabelFonts(instance, label, inner, spec, differ);
+  yield* requireHeldLabelFonts(instance, label, inner, spec, differ, main);
   if (now) {
-    yield* planStages(instance, label, spec, inner, links, held);
+    // Nothing the run writes before these stages can swap the main, so they read it as looked up.
+    yield* planStages(instance, label, spec, inner, links, held, main);
     return;
   }
   const set = inner.set.spec.name;
@@ -845,7 +874,11 @@ export const planInstance = Effect.fnUntraced(function* (
       if (!shows) {
         instance.swapComponent(inner.node.get());
       }
-      yield* planWhenRun(planStages(instance, label, spec, inner, links, "read"));
+      yield* planWhenRun(
+        Effect.flatMap(mainOf(instance), (shown) =>
+          planStages(instance, label, spec, inner, links, "read", shown)
+        )
+      );
     })
   );
 });
@@ -868,5 +901,7 @@ export function planNewInstance(
   inner: InnerVariant,
   links: InstanceLinks
 ): Effect.Effect<void, PluginError, PlanServices> {
-  return planStages(instance, label, spec, inner, links, "read");
+  return Effect.flatMap(mainOf(instance), (main) =>
+    planStages(instance, label, spec, inner, links, "read", main)
+  );
 }

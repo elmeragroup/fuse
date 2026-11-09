@@ -4,7 +4,7 @@
  * real file did with a nested instance on 2026-10-23 and 2026-10-24 (N1 to N5, NS, NA), the change
  * lines Plan lists, and a second Plan that lists nothing.
  */
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { HUGGING_TEXT, NO_LIMITS, TOP_LEFT } from "../../src/components/kit-spec.ts";
 import type {
@@ -389,6 +389,20 @@ describe("a set that holds an instance of an earlier set's variant", () => {
       exposed: true,
       visibleFollows: ["Action", "BOOLEAN"],
     });
+  });
+
+  it("looks the action's main component up once on a Plan that changes nothing", async () => {
+    // The instance's main gives its sublayers their keys, and nothing in a Plan that changes nothing
+    // can swap it, so one lookup serves the main, the fonts and the overrides.
+    const file = await applyTo(tokenFile(), KIT);
+    const { action } = await alertAction(file);
+    const lookup = vi.spyOn(action, "getMainComponentAsync");
+    try {
+      expect(await reconcileKit(file.figma, KIT, false)).toEqual({ changes: [], warnings: [] });
+      expect(lookup).toHaveBeenCalledTimes(1);
+    } finally {
+      lookup.mockRestore();
+    }
   });
 
   it("keeps the action's node, properties and overrides through an in-place edit of its variant, in one Apply", async () => {
