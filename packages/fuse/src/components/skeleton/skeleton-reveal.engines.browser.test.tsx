@@ -5,7 +5,7 @@
  * from it must stand exactly where the content lands, in every engine's text layout and font
  * metrics.
  */
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, onTestFinished } from "vitest";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
@@ -165,5 +165,58 @@ describe("SkeletonReveal bones", () => {
     const earlyBar = bar();
     expect(lateBar.height).toBeCloseTo(earlyBar.height, 1);
     expect(lateBar.width).toBeCloseTo(earlyBar.width, 1);
+  });
+
+  it("redraw bars when a loaded face replaces another of the same family, keeping the set's size", async () => {
+    // A brand swap: the family's sans face goes and a serif one, loaded already, takes its name,
+    // in one task. The set holds as many faces as before, all loaded, and nothing loads.
+    const sans = 'local("Arial"), local("Helvetica"), local("Liberation Sans"), local("DejaVu Sans")';
+    const serif =
+      'local("Times New Roman"), local("Times"), local("Liberation Serif"), local("DejaVu Serif")';
+    const before = new FontFace("RevealProbeBrand", sans);
+    const after = new FontFace("RevealProbeBrand", serif);
+    // The oracle: the serif face under a name of its own, which no reveal has drawn before.
+    const reference = new FontFace("RevealProbeSerif", serif);
+    await Promise.all([before.load(), after.load(), reference.load()]);
+    document.fonts.add(before);
+    document.fonts.add(reference);
+    onTestFinished(() => {
+      for (const face of [before, after, reference]) document.fonts.delete(face);
+    });
+
+    const reveal = (family: string) => (
+      <SkeletonReveal loading label="Henter" reveal="together">
+        {/* One line whatever the face, so no size of the ghost changes with it: only the fonts do. */}
+        <p className="text-4xl w-96 whitespace-nowrap" style={{ fontFamily: `${family}, monospace` }}>
+          Planned maintenance
+        </p>
+      </SkeletonReveal>
+    );
+    const bar = (): DOMRect => {
+      // DOM audit: the bones have no role.
+      const bone = document.querySelector('[data-slot="skeleton-reveal-bone"]');
+      if (bone === null) throw new Error("expected a bar");
+      return bone.getBoundingClientRect();
+    };
+    const { unmount } = renderThemed(reveal("RevealProbeBrand"));
+    // Past the measures the mount schedules itself, the first observer report's among them, so
+    // none is left to run after the swap: only the fonts changing can redraw the bar then.
+    await nextFrames(4);
+    const sansBar = bar();
+    const size = document.fonts.size;
+    document.fonts.delete(before);
+    document.fonts.add(after);
+    expect(document.fonts.size).toBe(size);
+    await nextFrames(4);
+    const swappedBar = bar();
+    unmount();
+
+    renderThemed(reveal("RevealProbeSerif"));
+    await nextFrames(2);
+    const serifBar = bar();
+    // The two faces set the line apart, so a bar left from the sans face would not pass.
+    expect(Math.abs(serifBar.width - sansBar.width)).toBeGreaterThan(5);
+    expect(swappedBar.width).toBeCloseTo(serifBar.width, 1);
+    expect(swappedBar.height).toBeCloseTo(serifBar.height, 1);
   });
 });

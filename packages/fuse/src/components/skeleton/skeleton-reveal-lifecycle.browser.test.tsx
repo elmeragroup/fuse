@@ -6,12 +6,13 @@
  */
 import { Activity, Suspense, useEffect, useState } from "react";
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, onTestFinished } from "vitest";
 import { page } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import { nextFrames, wait } from "../../../test/animation-frames";
+import { installFrameClock } from "../../../test/chart/frame-clock";
 import {
   InvoiceCard,
   LONG,
@@ -488,5 +489,68 @@ describe("SkeletonReveal under Suspense and Activity", () => {
     expect(heightAnimation(root)).toBeUndefined();
     expect(root.style.overflow).toBe("");
     await expect.poll(() => revealed, { timeout: 2000 }).toBe(1);
+  });
+});
+
+describe("SkeletonReveal font watch", () => {
+  it("follows the document's fonts while any loading reveal is mounted, and stops with the last", async () => {
+    const face = new FontFace(
+      "RevealProbeWatch",
+      'local("Arial"), local("Helvetica"), local("Liberation Sans"), local("DejaVu Sans")'
+    );
+    await face.load();
+    onTestFinished(() => {
+      document.fonts.delete(face);
+    });
+    const reveal = (
+      <SkeletonReveal loading label="Henter" reveal="together">
+        <p className="text-4xl w-96" style={{ fontFamily: "RevealProbeWatch, monospace" }}>
+          Planned maintenance
+        </p>
+      </SkeletonReveal>
+    );
+    // Every frame the reveals ask for is queued on this clock, and runs only when the test says.
+    const clock = installFrameClock();
+    onTestFinished(() => clock.restore());
+    const frames = (count: number): void => {
+      for (let frame = 0; frame < count; frame += 1) clock.frameAt(clock.now() + 16);
+    };
+    /** The one reveal's bar, and the oracle: its ghost's line of text as the page lays it out now. */
+    const shown = () => {
+      // DOM audit: the bones and the ghost's paragraph have no role.
+      const bone = document.querySelector('[data-slot="skeleton-reveal-bone"]');
+      const text = document.querySelector('[data-slot="skeleton-reveal-ghost"] p')?.firstChild;
+      if (bone === null || text === null || text === undefined)
+        throw new Error("expected a bar and its text");
+      const range = document.createRange();
+      range.selectNodeContents(text);
+      return { bar: bone.getBoundingClientRect().width, line: range.getBoundingClientRect().width };
+    };
+
+    // Two reveals watch the fonts; one goes, and the other keeps following them.
+    const first = renderThemed(reveal);
+    const second = renderThemed(reveal);
+    frames(2);
+    first.unmount();
+    const fallback = shown();
+    expect(fallback.bar).toBeCloseTo(fallback.line, 1);
+    document.fonts.add(face);
+    frames(3);
+    const loaded = shown();
+    expect(Math.abs(loaded.line - fallback.line)).toBeGreaterThan(5);
+    expect(loaded.bar).toBeCloseTo(loaded.line, 1);
+
+    // With the last reveal gone, nothing the watch queued is left to run.
+    second.unmount();
+    expect(clock.pending()).toBe(false);
+
+    // A new reveal starts the watch again: it follows the face going away.
+    renderThemed(reveal);
+    frames(2);
+    document.fonts.delete(face);
+    frames(3);
+    const again = shown();
+    expect(again.line).toBeCloseTo(fallback.line, 1);
+    expect(again.bar).toBeCloseTo(again.line, 1);
   });
 });
