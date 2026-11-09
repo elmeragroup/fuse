@@ -474,10 +474,25 @@ export function SidebarRail({ className, ...props }: SidebarRailProps): ReactEle
   );
 }
 
-export type SidebarInsetProps = ComponentProps<"main">;
+export type SidebarInsetProps = useRender.ComponentProps<"main">;
 
-export function SidebarInset({ className, ...props }: SidebarInsetProps): ReactElement {
-  return <main data-slot="sidebar-inset" className={cn(sidebarInsetClass, className)} {...props} />;
+/**
+ * The main column beside the Sidebar. It renders a `<main>` landmark by default; a host that
+ * already has its own `<main>` passes `render={<div />}` and keeps the column's slot and look,
+ * including the inset card beside an `inset` panel.
+ */
+export function SidebarInset({ className, render, ...props }: SidebarInsetProps): ReactElement {
+  return useRender({
+    defaultTagName: "main",
+    props: mergeProps<"main">(
+      {
+        className: cn(sidebarInsetClass, className),
+      },
+      props
+    ),
+    render,
+    state: { slot: "sidebar-inset" },
+  });
 }
 
 /**

@@ -645,9 +645,6 @@ each stand-in once Fuse ships the part.
   and inherits the block's light text, but external themes draw its ring in `--button-outline`,
   which is `foreground`, so the ring does not follow the text. The promo hero in
   `brand-site/site-hero.tsx` passes `quiet="ghost"` for its second action instead.
-- Let `Sidebar.Inset` render an element other than `<main>`. A page that already has a `main`
-  landmark cannot use it, so `app-shell/dashboard-main.tsx` copies its inset classes onto a `div`
-  next to the `inset` rail.
 
 Every overlay on a side of the hero window must close when that side hides, through
 `useSideOverlay` in `landing/window-side.tsx`. Nothing enforces this, so a new overlay that skips
