@@ -7,16 +7,10 @@ import type { ReactElement } from "react";
  */
 import {
   columnFilteringFeature,
-  columnVisibilityFeature,
-  createColumnHelper,
   createFilteredRowModel,
   createPaginatedRowModel,
-  createSortedRowModel,
   filterFns,
   rowPaginationFeature,
-  rowSelectionFeature,
-  rowSortingFeature,
-  sortFns,
   tableFeatures,
   useTable,
 } from "@tanstack/react-table";
@@ -25,6 +19,20 @@ import { describe, expect, it } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
+import {
+  appColumns,
+  features,
+  NO_ORDERS,
+  ORDERS,
+  ORDERS_10,
+  ORDERS_25,
+  ORDERS_3,
+  plainColumns,
+  registeredColumns,
+  renderInEnglish,
+  useFuseTable,
+} from "../../../test/data-table-fixtures";
+import type { Order } from "../../../test/data-table-fixtures";
 import { withLocale } from "../../../test/locale-matrix";
 import { renderThemed, roleNamed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
@@ -38,62 +46,6 @@ import { NumberCell } from "./data-table-registered";
 import type { NumberCellProps, RegisteredRowProps } from "./data-table-registered";
 import { DataTable } from "./index";
 import { selectColumn } from "./select-column";
-
-type Order = { readonly id: number; readonly customer: string; readonly amount: number };
-
-function ordersOf(count: number): Order[] {
-  return Array.from({ length: count }, (_, index) => ({
-    id: index + 1,
-    customer: `Customer ${String(index + 1)}`,
-    amount: (index + 1) * 1000.5,
-  }));
-}
-
-// Module-level rows: TanStack resets the page index whenever `data` changes identity, so a fixture
-// must not build its rows during render.
-const ORDERS_3 = ordersOf(3);
-const ORDERS_10 = ordersOf(10);
-const ORDERS_25 = ordersOf(25);
-const NO_ORDERS: Order[] = [];
-
-const ORDERS: Order[] = [
-  { id: 1, customer: "Bergen", amount: 1234.5 },
-  { id: 2, customer: "Alta", amount: 20 },
-  { id: 3, customer: "Oslo", amount: 300 },
-];
-
-function renderInEnglish(node: ReactElement) {
-  return renderThemed(withLocale("en-US", node));
-}
-
-const features = tableFeatures({
-  columnVisibilityFeature,
-  rowPaginationFeature,
-  rowSelectionFeature,
-  rowSortingFeature,
-  paginatedRowModel: createPaginatedRowModel(),
-  sortedRowModel: createSortedRowModel(),
-  sortFns,
-});
-
-const { useAppTable: useFuseTable, createAppColumnHelper } = createFuseTableHook({
-  features,
-  getRowId: (order: Order) => String(order.id),
-});
-
-const appColumns = createAppColumnHelper<Order>();
-
-const registeredColumns = appColumns.columns([
-  appColumns.accessor("customer", {
-    header: ({ header }) => <header.SortButton>Customer</header.SortButton>,
-    cell: ({ cell }) => <cell.TextCell />,
-  }),
-  appColumns.accessor("amount", {
-    header: "Amount",
-    enableSorting: false,
-    cell: ({ cell }) => <cell.NumberCell maximumFractionDigits={1} />,
-  }),
-]);
 
 function RegisteredTable({ data = ORDERS }: { readonly data?: Order[] }): ReactElement {
   const table = useFuseTable({ columns: registeredColumns, data });
@@ -130,10 +82,6 @@ describe("DataTable sorting", () => {
     expect(page.getByRole("row").elements()[1]?.textContent).toContain("Oslo");
   });
 });
-
-const plainColumns = createColumnHelper<typeof features, Order>().columns([
-  createColumnHelper<typeof features, Order>().accessor("customer", { header: "Customer" }),
-]);
 
 function ClientPagedTable({ data }: { readonly data: Order[] }): ReactElement {
   const table = useTable({

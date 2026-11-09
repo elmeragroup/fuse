@@ -2,11 +2,14 @@
 
 import type { ComponentProps, ReactElement } from "react";
 
+import type { SelectRoot as SelectRootType } from "@base-ui/react/select";
+
 import { useLocalizedStrings } from "../../hooks/use-localized-strings";
 import { CaretDoubleLeft } from "../../icons/generated/caret-double-left";
 import { CaretDoubleRight } from "../../icons/generated/caret-double-right";
 import { CaretLeft } from "../../icons/generated/caret-left";
 import { CaretRight } from "../../icons/generated/caret-right";
+import { definedProps } from "../../internal/defined-props";
 import { cn } from "../../styles/cn";
 import { Button } from "../button/button";
 import { FieldLabel, FieldRoot } from "../field/field";
@@ -35,6 +38,19 @@ export type DataTablePaginationProps = Omit<ComponentProps<"div">, "children"> &
   pageSizes?: readonly number[];
   /** Label of the rows-per-page select. Defaults to the locale dictionary. */
   rowsPerPageLabel?: string;
+  /**
+   * Whether the rows-per-page select's list is open. Pass it with `onPageSizeOpenChange` to
+   * control the list, for example to close it when the host hides the table. The names carry the
+   * `pageSize` prefix because the pagination bar itself has no popup.
+   */
+  pageSizeOpen?: boolean;
+  /** Whether the rows-per-page list starts open when `pageSizeOpen` is not passed. Defaults to `false`. */
+  defaultPageSizeOpen?: boolean;
+  /**
+   * Called with the next open state and Base UI's change details when the rows-per-page list
+   * opens or closes.
+   */
+  onPageSizeOpenChange?: SelectRootType.Props<number>["onOpenChange"];
   /** Formats the page status. Defaults to the locale dictionary's "Page N of M" and "Page N". */
   formatStatus?: (status: PageStatus) => string;
   /** Accessible name of the first-page button. Defaults to the locale dictionary. */
@@ -64,6 +80,9 @@ export function DataTablePagination({
   total,
   pageSizes = DEFAULT_PAGE_SIZES,
   rowsPerPageLabel,
+  pageSizeOpen,
+  defaultPageSizeOpen,
+  onPageSizeOpenChange,
   formatStatus,
   firstPageLabel,
   previousPageLabel,
@@ -123,7 +142,12 @@ export function DataTablePagination({
             if (size !== null) {
               table.setPageSize(size);
             }
-          }}>
+          }}
+          {...definedProps({
+            open: pageSizeOpen,
+            defaultOpen: defaultPageSizeOpen,
+            onOpenChange: onPageSizeOpenChange,
+          })}>
           <SelectTrigger size="sm">
             <SelectValue />
           </SelectTrigger>

@@ -92,6 +92,55 @@ test("a slice-typed plain part accepts an app table with extra features and reje
   expectTypeOf(WithoutFeatures).toBeFunction();
 });
 
+test("ColumnToggle and Pagination take Base UI's controlled open pair for their popups", () => {
+  function Controlled(): ReactElement {
+    const table = useTable({ features: everyFeature, columns: [], data: orders });
+    const registered = full.useAppTable({ columns: [], data: orders });
+    return (
+      <>
+        <DataTable.ColumnToggle
+          table={table}
+          open
+          defaultOpen={false}
+          onOpenChange={(open, details) => {
+            expectTypeOf(open).toEqualTypeOf<boolean>();
+            expectTypeOf(details.reason).toExtend<string>();
+          }}
+        />
+        <DataTable.Pagination
+          table={table}
+          pageSizeOpen
+          defaultPageSizeOpen={false}
+          onPageSizeOpenChange={(open, details) => {
+            expectTypeOf(open).toEqualTypeOf<boolean>();
+            expectTypeOf(details.reason).toExtend<string>();
+          }}
+        />
+        <registered.AppTable>
+          <registered.ColumnToggle
+            open
+            onOpenChange={(open) => {
+              expectTypeOf(open).toEqualTypeOf<boolean>();
+            }}
+          />
+          <registered.Pagination
+            pageSizeOpen
+            onPageSizeOpenChange={(open) => {
+              expectTypeOf(open).toEqualTypeOf<boolean>();
+            }}
+          />
+          {/* @ts-expect-error -- open is a boolean */}
+          <registered.ColumnToggle open="yes" />
+          {/* @ts-expect-error -- the page-size pair is prefixed; Pagination has no popup of its own */}
+          <registered.Pagination open />
+        </registered.AppTable>
+      </>
+    );
+  }
+
+  expectTypeOf(Controlled).toBeFunction();
+});
+
 test("a header part rejects a table whose FlexRender takes another header type than its header groups hold", () => {
   type Header = {
     readonly id: string;

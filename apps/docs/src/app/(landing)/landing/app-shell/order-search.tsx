@@ -36,7 +36,7 @@ import { InputGroup } from "@elmeragroup/fuse/input-group";
 import { ScrollArea } from "@elmeragroup/fuse/scroll-area";
 import { Select } from "@elmeragroup/fuse/select";
 
-import { useSideOverlay, useSideRemountKey } from "../window-side";
+import { useSideOverlay } from "../window-side";
 import { useDashboard } from "./dashboard-context";
 import { ORDER_STATUSES, relativeDate, SELLERS, STATUS_ORDER } from "./dashboard-orders";
 import type { Order, OrderId } from "./dashboard-orders";
@@ -317,6 +317,8 @@ function OrderPagination({
   onPageSizeChange,
 }: OrderPaginationProps): ReactElement {
   const { pageIndex, pageSize } = pagination;
+  // Closed whenever the side hides, so the list drops its scroll lock through the flip.
+  const [sizesOpen, setSizesOpen] = useSideOverlay(false);
   const lastIndex = Math.max(pageCount, 1) - 1;
   const moves = [
     { label: "Go to first page", Icon: CaretDoubleLeft, target: 0, enabled: pageIndex > 0 },
@@ -335,7 +337,9 @@ function OrderPagination({
             if (size !== null) {
               onPageSizeChange(size);
             }
-          }}>
+          }}
+          open={sizesOpen}
+          onOpenChange={setSizesOpen}>
           <Select.Trigger size="sm">
             <Select.Value />
           </Select.Trigger>
@@ -389,11 +393,9 @@ type Paging = { readonly query: OrderQuery; readonly pagination: PaginationState
 export function OrderSearch(): ReactElement {
   const { state, dispatch, loading, openOrder, revealing } = useDashboard();
   const { orders, query, checked } = state;
-  // The Columns menu and the Rows per page Select keep their open state to themselves, out of
-  // `useSideOverlay`'s reach, so a hidden side remounts them, which closes them and drops any
-  // scroll lock they hold. They stay in the layout through the flip. The table, owned here,
-  // keeps the visible columns, the page size and the page.
-  const controlsKey = useSideRemountKey();
+  // The Columns menu closes whenever the side hides, so it drops its scroll lock through the
+  // flip, as OrderPagination's Rows per page Select does.
+  const [columnsOpen, setColumnsOpen] = useSideOverlay(false);
   const rows = useMemo(() => searchOrders(orders, query), [orders, query]);
   const data = useMemo(() => (loading ? [] : [...rows]), [loading, rows]);
   const rowSelection = useMemo(() => selectionOf(checked), [checked]);
@@ -472,7 +474,8 @@ export function OrderSearch(): ReactElement {
           </p>
           <table.AppTable>
             <table.ColumnToggle
-              key={controlsKey}
+              open={columnsOpen}
+              onOpenChange={setColumnsOpen}
               className={styles.columns()}
               getLabel={(column) => COLUMN_LABELS.get(column.id) ?? column.id}
             />
@@ -503,7 +506,6 @@ export function OrderSearch(): ReactElement {
         </ScrollArea.Root>
       </table.AppTable>
       <OrderPagination
-        key={controlsKey}
         pagination={pagination}
         pageCount={table.getPageCount()}
         onPageIndexChange={(pageIndex) => {
