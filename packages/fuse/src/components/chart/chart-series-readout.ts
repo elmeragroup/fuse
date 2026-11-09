@@ -1,13 +1,11 @@
 "use client";
 
 /**
- * What a series model reads out: the readout the shared parts read, the active slot and series, a
+ * What a series model reads out: the readout the shared parts read, a
  * reading as a tooltip row or a legend value prints it, the shares, the stack totals, a fallback
  * keyword's slot, and the rows of the table. A cartesian Root's readout reads it, and so does any
  * family that builds a `CartesianModel`. It reads no plot geometry.
  */
-import { use } from "react";
-
 import type { SupportedLocale } from "../../intl/locale-context";
 import { readingPaint, seriesPaintOf, swatchPaint } from "./chart-paint";
 import type {
@@ -18,9 +16,6 @@ import type {
   ChartTableRow,
   ReadoutItem,
 } from "./chart-readout-port";
-import { ChartLiveContext } from "./chart-scope-contexts";
-import { useChartStore } from "./chart-store";
-import type { ChartStore } from "./chart-store";
 import { PAGE_ROWS } from "./chart-table-shell";
 import { ownSlotLabel, qualityWords, slotLabel, stackTotalAt } from "./chart-text";
 import type { TextContext } from "./chart-text";
@@ -40,28 +35,6 @@ import type { Reading } from "./layout/readings";
 import { seriesOf } from "./layout/series-of";
 import { roundShares } from "./layout/shares";
 import { slotX } from "./layout/x-domain";
-
-/** What the active-point hooks read: the model's window and series, and the store. */
-type SeriesActive = { readonly model: CartesianModel; readonly store: ChartStore };
-
-/**
- * The active slot inside the effective window, or null, for a part that prints no series key. It
- * never renders when the pointer moves between series inside one slot. Outside a live scope it
- * reads null and never renders on a pointer move.
- *
- * @param context - The Root.
- * @param live - Whether to follow the store, which forces it on for parts such as LegendValue.
- * @returns The slot index.
- */
-export function useActiveSlot(context: SeriesActive, live?: boolean): number | null {
-  const scoped = use(ChartLiveContext);
-  const follow = live ?? scoped;
-  const active = useChartStore(context.store, (snapshot) => (follow ? snapshot.active : null));
-  const window = context.model.window;
-  return active !== null && window !== null && active >= window.first && active <= window.last
-    ? active
-    : null;
-}
 
 /**
  * One key's reading at one slot.

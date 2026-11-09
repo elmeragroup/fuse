@@ -10,15 +10,10 @@
 import { use } from "react";
 
 import type { SupportedLocale } from "../../intl/locale-context";
+import { useActivePoint } from "./chart-active-point";
 import { ChartReadoutContext } from "./chart-readout-port";
 import type { ChartReadout } from "./chart-readout-port";
-import {
-  ChartHeldIndexContext,
-  ChartLegendSideContext,
-  ChartLiveContext,
-  ChartRowContext,
-} from "./chart-scope-contexts";
-import { useChartStore } from "./chart-store";
+import { ChartLegendSideContext, ChartRowContext } from "./chart-scope-contexts";
 import type { ChartFractionDigits, ChartThresholdSide } from "./chart-types";
 import { formatValue } from "./format/value-format";
 import { ChartCompositionError } from "./layout/errors";
@@ -78,44 +73,20 @@ export function useReadoutKey(
   return own ?? row ?? near;
 }
 
-/**
- * The active index inside the readout's window, or null, for a part that prints no key. It never
- * renders when the pointer moves between series inside one slot. Outside a live scope it reads null
- * and never renders on a pointer move.
- *
- * @param readout - The Root's readout.
- * @param live - Whether to follow the store, which forces it on for parts such as LegendValue.
- * @returns The active index.
- */
-export function useActiveIndex(readout: ChartReadout, live?: boolean): number | null {
-  const scoped = use(ChartLiveContext);
-  const held = use(ChartHeldIndexContext);
-  const follow = live ?? scoped;
-  const followed = useChartStore(readout.store, (snapshot) => (follow ? snapshot.active : null));
-  const active = followed ?? (follow ? held : null);
-  const window = readout.window;
-  return active !== null && window !== null && active >= window.first && active <= window.last
-    ? active
-    : null;
-}
-
 /** The active index and the key a readout part prints there, each null when there is none. */
 export type ActiveItem = { readonly index: number | null; readonly key: string | null };
 
 /**
  * The active index inside the readout's window and the nearest or focused key there, or null.
- * Outside a live scope it reads null and never renders on a pointer move. A part that prints no key
- * reads `useActiveIndex`.
+ * Outside a live scope it reads null and never renders on a pointer move, and inside a closing
+ * tooltip it reads the point the popup held. A part that prints no key reads `useActiveIndex`.
  *
  * @param readout - The Root's readout.
  * @param live - Whether to follow the store, which forces it on for parts such as LegendValue.
  * @returns The active index and its key.
  */
 export function useActiveItem(readout: ChartReadout, live?: boolean): ActiveItem {
-  const scoped = use(ChartLiveContext);
-  const follow = live ?? scoped;
-  const index = useActiveIndex(readout, follow);
-  const near = useChartStore(readout.store, (snapshot) => (follow ? snapshot.near : null));
+  const { index, near } = useActivePoint(readout, live);
   return { index, key: readout.pointKey(index, near) };
 }
 

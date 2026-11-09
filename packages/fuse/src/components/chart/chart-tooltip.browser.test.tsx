@@ -662,3 +662,48 @@ describe("the tooltip anchor", () => {
     );
   });
 });
+
+describe("a closing tooltip's stack total", () => {
+  // DECISIONS.md M, R2.1–R2.3: a closing tooltip keeps its content until the popup has closed.
+  // Unit under test: Chart.TooltipTotal in the default Tooltip over a stack of heating 2 kWh and hot
+  // water 1 kWh. Oracle: the stack's total, 2 + 1 = 3, read on every frame the popup is on screen
+  // from Escape until its exit ends.
+  it("reads 3 on every frame of the exit after Escape", async () => {
+    const { host } = renderThemed(
+      <div style={{ padding: "160px 24px 24px", width: 600, boxSizing: "border-box" }}>
+        <LocaleProvider locale="en-US">
+          <Chart.Root
+            data={["k0", "k1", "k2", "k3"].map((name) => ({ name, heating: 2, water: 1 }))}
+            config={{
+              heating: { label: "Heating", color: "chart-1", stack: "use" },
+              water: { label: "Hot water", color: "chart-2", stack: "use" },
+            }}
+            xKey="name"
+            aria-label="Use">
+            <Chart.Bar dataKey="heating" />
+            <Chart.Bar dataKey="water" />
+            <Chart.Tooltip />
+          </Chart.Root>
+        </LocaleProvider>
+      </div>
+    );
+    const plot = surfaceBox(host);
+    await pointerTo(plot.left + plot.width * 0.375, plot.top + plot.height * 0.9);
+    expect(label()).toBe("k1");
+    const open = openPopup();
+    // DOM audit: the popup is aria-hidden, so the total row's slot is its only locator.
+    const total = () =>
+      open.querySelector('[data-slot="chart-tooltip-total"] > span:last-child')?.textContent;
+    expect(total()).toBe("3");
+    await userEvent.keyboard("{Escape}");
+    const read: (string | null | undefined)[] = [];
+    const start = performance.now();
+    while (open.isConnected && visible(open) && performance.now() - start < 2000) {
+      read.push(total());
+      await nextFrames(1);
+    }
+    expect(visible(open)).toBe(false);
+    expect(read.length).toBeGreaterThan(1);
+    expect(read.filter((text) => text !== "3")).toEqual([]);
+  });
+});

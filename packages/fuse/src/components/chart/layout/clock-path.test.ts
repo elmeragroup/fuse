@@ -153,6 +153,79 @@ describe("a line round the dial", () => {
   });
 });
 
+describe("two readings at the ends of a connected day (D16, L7)", () => {
+  // 24 hourly slots, readings at slots 0 and 23, both 0.6, and every other slot missing under
+  // "connect". Both end slots hold readings, so the seam closes: the curve runs solid across
+  // midnight between their vertices, 352.5° and 7.5°, and dashed the other way, over the missing
+  // slots from 7.5° to 352.5°. A curve that steps draws each reading across its own slot, so its
+  // solid piece runs from slot 23's start, 345°, to slot 0's end, 15°, and its bridge from 15° to
+  // 345°. Two equal radii draw an arc, so every point lies at 0.6.
+  const slots: ClockSlots = {
+    states: Array.from({ length: 24 }, (_, slot) => (slot === 0 || slot === 23 ? "reading" : "missing")),
+    marked: Array.from({ length: 24 }, () => false),
+    missing: "connect",
+  };
+  const tips = Array.from({ length: 24 }, () => 0.6);
+  const angleOf = (x: number, y: number) => ((((Math.atan2(x, -y) * 180) / Math.PI) % 360) + 360) % 360;
+  const points = (d: string) =>
+    [...d.matchAll(/[ML](-?[\d.]+),(-?[\d.]+)/gu)].map((match) => ({
+      angle: angleOf(Number(match[1]), Number(match[2])),
+      radius: Math.hypot(Number(match[1]), Number(match[2])),
+    }));
+  // Path coordinates round to 3 decimals, which at radius 0.6 moves a point's angle by up to
+  // 0.001 / 0.6 rad, about 0.1°, so angles compare within 0.15°.
+  const TOLERANCE = 0.15;
+  /** Whether an angle lies on the arc from one angle clockwise to another. */
+  const onArc = (angle: number, from: number, to: number) => {
+    const span = (((to - from) % 360) + 360) % 360;
+    const at = (((angle - from) % 360) + 360) % 360;
+    return at <= span + TOLERANCE || at >= 360 - TOLERANCE;
+  };
+  const near = (angle: number, target: number) =>
+    Math.abs(((((angle - target) % 360) + 540) % 360) - 180) < TOLERANCE;
+
+  it.each([
+    ["linear", 352.5, 7.5],
+    ["monotone", 352.5, 7.5],
+    ["natural", 352.5, 7.5],
+    ["bump", 352.5, 7.5],
+    ["basis", 352.5, 7.5],
+    ["step", 345, 15],
+    ["step-after", 345, 15],
+    ["step-before", 345, 15],
+  ] as const)(
+    "draws %s solid across midnight from %s° to %s° and dashed the other way",
+    (curve, from, to) => {
+      const { solid, marked, lone } = clockLine(numbers(tips), slots, curve);
+      const drawn = points(solid);
+      const dashed = points(marked);
+      expect(lone).toBe("");
+      expect(drawn.length).toBeGreaterThan(2);
+      expect(drawn.filter(({ angle }) => !onArc(angle, from, to))).toEqual([]);
+      expect(dashed.filter(({ angle }) => !onArc(angle, to, from))).toEqual([]);
+      for (const end of [from, to]) {
+        expect(drawn.some(({ angle }) => near(angle, end))).toBe(true);
+        expect(dashed.some(({ angle }) => near(angle, end))).toBe(true);
+      }
+      // The arc's 2° samples cross 12 o'clock.
+      expect(drawn.some(({ angle }) => angle < 2 || angle > 358)).toBe(true);
+      // Rounded coordinates read a radius back within 1e-3.
+      for (const { radius } of [...drawn, ...dashed]) expect(radius).toBeCloseTo(0.6, 2);
+      expect(curveRadiusAt(numbers(tips), slots, curve, 0)).toBeCloseTo(0.6, 9);
+    }
+  );
+
+  it("draws one lone reading at the first slot as a dot, closing nothing", () => {
+    const one: ClockSlots = {
+      ...slots,
+      states: slots.states.map((state, slot) => (slot === 23 ? "missing" : state)),
+    };
+    const { solid, marked, lone } = clockLine(numbers(tips), one, "linear");
+    expect({ solid, marked }).toEqual({ solid: "", marked: "" });
+    expect(lone).toMatch(/^M[\d.-]+,[\d.-]+h0$/u);
+  });
+});
+
 describe("an area round the dial", () => {
   it("fills a closed loop as the band between two closed outlines", () => {
     const { solid } = clockArea(numbers([0.8, 0.8, 0.8, 0.8], 0.3), readings(4), "linear");
@@ -472,9 +545,9 @@ describe("the label fit", () => {
 });
 
 describe("curveRadiusAt", () => {
-  // Two linear slots, their vertices at 90° (0.4) and 270° (0.8). Two readings never close round
-  // the dial (D16 closes three or more), so in unrolled space the line runs straight from one vertex
-  // to the other, reads 0.6 halfway at 180°, and draws nothing across 12 o'clock.
+  // Two linear slots, their vertices at 90° (0.4) and 270° (0.8). Both end slots hold readings, so
+  // the line closes round the dial (D16): in unrolled space it runs straight from one vertex to the
+  // other, reads 0.6 halfway at 180°, and closes from 270° on to 450°, halfway at 12 o'clock, 0.6.
   const two = numbers([0.4, 0.8]);
   it.each([
     [90, 0.4],
@@ -485,8 +558,9 @@ describe("curveRadiusAt", () => {
     expect(curveRadiusAt(two, readings(2), "linear", angle)).toBeCloseTo(radius, 9);
   });
 
-  it("reads nothing across 12 o'clock on a two-slot line", () => {
-    expect(curveRadiusAt(two, readings(2), "linear", 0)).toBeNull();
+  it("reads 0.6 across 12 o'clock on a two-slot line, halfway along its closing edge", () => {
+    expect(curveRadiusAt(two, readings(2), "linear", 0)).toBeCloseTo(0.6, 9);
+    expect(curveRadiusAt(two, readings(2), "linear", 315)).toBeCloseTo(0.7, 9);
   });
 
   it("reads a closed day's closing edge across 12 o'clock, straight from slot 23 to slot 0 (B6)", () => {

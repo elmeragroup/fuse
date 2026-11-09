@@ -12,10 +12,12 @@ import { Tooltip as TooltipPrimitive } from "@base-ui/react/tooltip";
 import { flushSync } from "react-dom";
 
 import { OverlayPortal } from "../overlay/overlay-portal";
+import { useActivePoint } from "./chart-active-point";
 import { useChartFollower } from "./chart-followers";
-import { useActiveIndex, useChartReadout } from "./chart-readout";
+import { useChartReadout } from "./chart-readout";
 import type { TooltipPlacer } from "./chart-readout-port";
-import { ChartHeldIndexContext, ChartLiveContext } from "./chart-scope-contexts";
+import { ChartHeldPointContext, ChartLiveContext } from "./chart-scope-contexts";
+import type { HeldPoint } from "./chart-scope-contexts";
 import { shareCorridor } from "./chart-tooltip-corridor";
 import { createTooltipGlider } from "./chart-tooltip-glide";
 import type { GlideRoute, TooltipGlider } from "./chart-tooltip-glide";
@@ -74,16 +76,19 @@ export function ChartTooltipBody({
   // A lane keeps its side inside the Root's figure and moves itself, so it never glides.
   const lane = placer.keeps === "lane";
   const { store, id, root: rootOf } = readout;
-  const active = useActiveIndex(readout, true);
+  const point = useActivePoint(readout, true);
+  const active = point.index;
   const open = active !== null;
   // Once open, the portal stays mounted. Its node sits after the scope's last child, so mounting
   // and dropping it on each open and close flips that child's :last-child and restyles all of it,
   // the whole chart when the chart is the scope's last child.
   const [kept, setKept] = useState(false);
   if (open && !kept) setKept(true);
-  // The index the popup showed last, which its content keeps while it fades out.
-  const [shown, setShown] = useState<number | null>(null);
-  if (active !== null && active !== shown) setShown(active);
+  // The point the popup showed last, its index and its near or focused series together, which its
+  // content keeps while it fades out.
+  const [shown, setShown] = useState<HeldPoint | null>(null);
+  if (active !== null && (active !== shown?.index || point.near !== shown.near))
+    setShown({ index: active, near: point.near });
   const positioner = useRef<HTMLDivElement | null>(null);
   // A count that asks Base UI to place the popup again, after the marks draw something new or a
   // data update's tween lands, so the anchor measures afresh.
@@ -232,7 +237,7 @@ export function ChartTooltipBody({
                 store.set({ active: null, source: null, near: null });
             }}>
             <ChartLiveContext value={true}>
-              <ChartHeldIndexContext value={open ? null : shown}>{children}</ChartHeldIndexContext>
+              <ChartHeldPointContext value={open ? null : shown}>{children}</ChartHeldPointContext>
             </ChartLiveContext>
             {bridge ? <span data-slot="chart-tooltip-bridge" /> : null}
           </TooltipPrimitive.Popup>

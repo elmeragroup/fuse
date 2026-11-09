@@ -2,8 +2,8 @@
 
 import type { ReactElement } from "react";
 
+import { useActiveIndex } from "./chart-active-point";
 import { useChartRoot } from "./chart-context";
-import { useActiveSlot } from "./chart-series-readout";
 import { TooltipTotalRow } from "./chart-tooltip-total-row";
 import type { ChartDomProps, ValueFormat } from "./chart-types";
 
@@ -30,7 +30,7 @@ export type ChartTooltipTotalProps = ChartDomProps<"div"> & {
  */
 export function ChartTooltipTotal(props: ChartTooltipTotalProps): ReactElement {
   const context = useChartRoot("Chart.TooltipTotal");
-  const slot = useActiveSlot(context);
+  const slot = useActiveIndex({ store: context.store, window: context.model.window });
   return <TooltipTotalRow part="Chart.TooltipTotal" context={context} at={slot} {...props} />;
 }
 

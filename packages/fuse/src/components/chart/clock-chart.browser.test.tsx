@@ -1310,3 +1310,107 @@ describe("the ring values beside the angle labels", () => {
     expect(values.map(({ text }) => text)).toEqual(["1,000\u00a0kWh", "1,500\u00a0kWh"]);
   });
 });
+
+describe("two connected readings at the ends of the day (D16)", () => {
+  it("draws the solid arc across midnight, and the ActiveDot rides it through 12 o'clock", async () => {
+    // 6 kWh at 00:00 and at 23:00, nothing between, and missing: "connect". Both end slots hold
+    // readings, so the seam closes (D16): the solid line runs from slot 23's vertex at 352.5° through
+    // 12 o'clock to slot 0's at 7.5°, an arc, since both readings draw at one radius, and the dashed
+    // bridge runs the other way over the missing hours. The ActiveDot lies on that curve, so as the
+    // hand glides from 23:00 to 00:00 it shows at the arc's radius through 12 o'clock.
+    const { host } = renderThemed(
+      <Dial
+        data={hours([6, ...Array.from({ length: 22 }, () => null), 6])}
+        config={{ kwh: { label: "kWh", color: "chart-1", missing: "connect" } }}>
+        <ClockChart.Line dataKey="kwh" curve="linear" />
+        <ClockChart.ActiveDot dataKey="kwh" />
+      </Dial>
+    );
+    await painted();
+    const layer = clockLayer(host, "clock-chart-line");
+    const pointsOf = (d: string) =>
+      [...d.matchAll(/[ML](-?[\d.]+),(-?[\d.]+)/gu)].map((match) => ({
+        angle: angleOf(Number(match[1]), Number(match[2])),
+        radius: Math.hypot(Number(match[1]), Number(match[2])),
+      }));
+    const solid = pointsOf(clockPath(layer, "solid"));
+    const marked = pointsOf(clockPath(layer, "marked"));
+    // Path coordinates round to 3 decimals, about 0.1° at the rim.
+    const across = (angle: number) => angle >= 352.3 || angle <= 7.7;
+    expect(solid.length).toBeGreaterThan(2);
+    expect(solid.filter(({ angle }) => !across(angle))).toEqual([]);
+    expect(solid.some(({ angle }) => angle < 1 || angle > 359)).toBe(true);
+    expect(marked.filter(({ angle }) => angle < 7.3 || angle > 352.7)).toEqual([]);
+    const rim = solid[0]?.radius ?? 0;
+    for (const { radius } of solid) expect(radius).toBeCloseTo(rim, 2);
+    // DOM audit: the dot is aria-hidden plot output; its group states a drawn dot on data-value.
+    const group = clockLayer(host, "clock-chart-active-dot").querySelector("[data-follow]");
+    const dot = () => {
+      const d = group?.querySelector("path")?.getAttribute("d") ?? "";
+      const [point] = pointsOf(d);
+      return group?.hasAttribute("data-value") === true ? point : undefined;
+    };
+    /** Hover the middle of an hour's slot, 15° wide, halfway out. */
+    const hoverHour = (hour: number) => {
+      const radians = ((hour + 0.5) * 15 * Math.PI) / 180;
+      return hoverAt(...clientPoint(layer, 0.6 * Math.sin(radians), -0.6 * Math.cos(radians)));
+    };
+    await hoverHour(23);
+    await expect.poll(() => dot()?.angle ?? 0).toBeCloseTo(352.5, 0);
+    await hoverHour(0);
+    const seen: { readonly angle: number; readonly radius: number }[] = [];
+    const start = performance.now();
+    while (performance.now() - start < 600) {
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+      const point = dot();
+      if (point !== undefined && (point.angle > 356 || point.angle < 4)) seen.push(point);
+    }
+    expect(seen.length).toBeGreaterThan(0);
+    for (const { radius } of seen) expect(radius).toBeCloseTo(rim, 2);
+  });
+});
+
+describe("a closing tooltip's stack total", () => {
+  // DECISIONS.md M, R2.1–R2.3: a closing tooltip keeps its place and content until the popup has
+  // closed. Unit under test: ClockChart.TooltipTotal in the default Tooltip over a stack of
+  // household 2 kWh and cabin 1 kWh. Oracle: the stack's total, 2 + 1 = 3, read on every frame the
+  // popup is on screen from Escape until its exit ends.
+  it("reads 3 on every frame of the exit after Escape", async () => {
+    const { host } = renderThemed(
+      <Dial
+        data={Array.from({ length: 24 }, (_, hour) => ({ start: DAY + hour * HOUR, household: 2, cabin: 1 }))}
+        config={{
+          household: { label: "Hus", color: "chart-1", stack: "home" },
+          cabin: { label: "Hytte", color: "chart-2", stack: "home" },
+        }}>
+        <ClockChart.Line dataKey="household" />
+        <ClockChart.Line dataKey="cabin" />
+        <ClockChart.Tooltip />
+      </Dial>
+    );
+    await painted();
+    const layer = clockLayer(host, "clock-chart-line");
+    const radians = (3.5 * 15 * Math.PI) / 180;
+    await hoverAt(...clientPoint(layer, 0.6 * Math.sin(radians), -0.6 * Math.cos(radians)));
+    // DOM audit: the popup is aria-hidden and portalled, read by its slot.
+    const popupNode = () => document.querySelector<HTMLElement>('[data-slot="chart-tooltip"]');
+    const total = () =>
+      popupNode()?.querySelector('[data-slot="chart-tooltip-total"] > span:last-child')?.textContent;
+    await expect.poll(() => total()).toBe("3");
+    await expect.poll(() => Number(getComputedStyle(popupNode() ?? document.body).opacity)).toBe(1);
+    const open = popupNode();
+    if (open === null) throw new Error("no popup");
+    await userEvent.keyboard("{Escape}");
+    const read: (string | null | undefined)[] = [];
+    const shown = () =>
+      open.isConnected && open.checkVisibility({ opacityProperty: true, visibilityProperty: true });
+    const start = performance.now();
+    while (shown() && performance.now() - start < 2000) {
+      read.push(total());
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+    }
+    expect(shown()).toBe(false);
+    expect(read.length).toBeGreaterThan(1);
+    expect(read.filter((text) => text !== "3")).toEqual([]);
+  });
+});

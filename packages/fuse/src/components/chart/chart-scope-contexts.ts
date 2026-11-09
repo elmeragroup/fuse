@@ -34,11 +34,14 @@ export const ChartLegendSideContext = createContext<LegendSide | null>(null);
  */
 export const ChartLiveContext = createContext(false);
 
+/** The point a closing tooltip keeps showing: its index and its near or focused series. */
+export type HeldPoint = { readonly index: number; readonly near: number | null };
+
 /**
- * The index a closing tooltip keeps showing while it fades out, so its content never empties and
- * shrinks before the fade, or null while it is open or shut.
+ * The point a closing tooltip keeps showing while it fades out, so its content never empties,
+ * shrinks or turns to another series before the fade, or null while it is open or shut.
  */
-export const ChartHeldIndexContext = createContext<number | null>(null);
+export const ChartHeldPointContext = createContext<HeldPoint | null>(null);
 
 /** Whether a part sits inside a Crosshair, which a SlotLabel needs. */
 export const ChartCrosshairContext = createContext(false);

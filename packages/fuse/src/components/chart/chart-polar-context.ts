@@ -323,6 +323,8 @@ export type PieDrawing = {
   readonly share: (index: number, digits: number) => number | null;
   /** The slice a category draws in: its own key, or `OTHER_KEY` when it folds. */
   readonly sliceOf: (category: string) => string;
+  /** Whether a category's row folds into Other, which a category with no row never does. */
+  readonly folds: (category: string) => boolean;
 };
 
 /** One data rule a polar Root's rows broke, which production warns once per subject. */

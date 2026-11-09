@@ -1,7 +1,7 @@
 "use client";
 
-import { useActiveIndex, useChartReadout } from "./chart-readout";
-import { useChartStore } from "./chart-store";
+import { useActivePoint } from "./chart-active-point";
+import { useChartReadout } from "./chart-readout";
 import type { ChartPoint } from "./chart-types";
 
 /**
@@ -15,7 +15,6 @@ import type { ChartPoint } from "./chart-types";
  */
 export function useChartPoint(): ChartPoint | null {
   const readout = useChartReadout("useChartPoint");
-  const active = useActiveIndex(readout, true);
-  const near = useChartStore(readout.store, (snapshot) => snapshot.near);
-  return active === null ? null : readout.point(active, near);
+  const { index, near } = useActivePoint(readout, true);
+  return index === null ? null : readout.point(index, near);
 }

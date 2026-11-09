@@ -5,15 +5,16 @@
  * the square inscribed in the hole, and a CenterLabel is a text line among them. The numbers are
  * parts of their own, in `pie-chart-center-value`, so a route that names none ships no digit roll
  * (Q1). The Center is plot output, hidden from readers, who read the same numbers from the options.
- * Every part that follows the active item reads it here, from the store, so it renders when the
- * active item changes and never on a pointer move within one.
+ * Every part that follows the active item reads it here, through `useActiveIndex`, so it renders
+ * when the active item changes and never on a pointer move within one, and inside a closing tooltip
+ * it keeps the item the popup held.
  */
 import type { ReactElement, ReactNode } from "react";
 
+import { useActiveIndex } from "./chart-active-point";
 import { useCentreFit } from "./chart-centre-fit";
 import { centreOf, pieDrawingOf, radialDrawingOf, usePolarContext } from "./chart-polar-context";
 import type { CentreModel } from "./chart-polar-context";
-import { useChartStore } from "./chart-store";
 import type { ChartLayerProps } from "./chart-types";
 
 /**
@@ -50,7 +51,8 @@ export type PieChartCenterNameProps = ChartLayerProps & {
 type CentreItem = { readonly centre: CentreModel | null; readonly active: number | null };
 
 /**
- * The centre's numbers and the active slice's or ring's index, or null while nothing is active.
+ * The centre's numbers and the active slice's or ring's index, or null while nothing is active. Inside
+ * a closing tooltip the index is the one the popup held.
  *
  * @param part - The part, which a misplaced use names.
  * @returns The centre and the active index.
@@ -58,8 +60,12 @@ type CentreItem = { readonly centre: CentreModel | null; readonly active: number
 export function useCentreItem(part: string): CentreItem {
   const { model, kernel } = usePolarContext(part, ["pie", "radial"]);
   const centre = centreOf(model);
-  const active = useChartStore(kernel.store, (snapshot) => snapshot.active);
-  return { centre, active: active !== null && active >= 0 && active < model.count ? active : null };
+  // The centre follows the store wherever it sits, over every item, and a closing tooltip's held one.
+  const active = useActiveIndex(
+    { store: kernel.store, window: model.count > 0 ? { first: 0, last: model.count - 1 } : null },
+    true
+  );
+  return { centre, active };
 }
 
 /**

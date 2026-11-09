@@ -163,9 +163,15 @@ export function PieChartRoot<
       otherLabel,
     ]
   );
-  // A default that names a folded category activates Other, the item that stands for its row.
+  // A default that names a folded category activates Other, the item that stands for its row. One
+  // with no row stands for nothing, so nothing starts active.
   const own = defaultActiveKey === undefined ? -1 : model.keys.indexOf(defaultActiveKey);
-  const folded = own === -1 && defaultActiveKey !== undefined ? model.keys.indexOf(OTHER_KEY) : -1;
+  const folds =
+    own === -1 &&
+    defaultActiveKey !== undefined &&
+    model.drawing.kind === "pie" &&
+    model.drawing.pie.folds(defaultActiveKey);
+  const folded = folds ? model.keys.indexOf(OTHER_KEY) : -1;
   const defaultActive = own !== -1 ? own : folded;
   return (
     <PolarRoot

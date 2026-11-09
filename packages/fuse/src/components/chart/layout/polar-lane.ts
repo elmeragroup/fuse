@@ -3,7 +3,8 @@
  * outside the labels past the rim and inside the Root's figure, with its vertical centre on the
  * active ray's height at the rim. A ray right of 12 o'clock takes the right lane and a ray left of
  * it the left, and a popup keeps its lane until the ray is 20° past 12 or 6 o'clock on the other
- * side. When neither lane fits beside the dial, the popup sits below the labels. A pointer that
+ * side. When neither side lane fits beside the dial inside the viewport, the popup sits below the
+ * labels, or above the chart where below would leave the viewport. A pointer that
  * moves toward the open popup inside the triangle from its last plot position to the popup's near
  * edge keeps the active part, past the rim only (Q9).
  */
@@ -21,7 +22,7 @@ export type LaneBox = {
 };
 
 /** The lanes a popup can take. */
-export type LaneSide = "right" | "left" | "bottom";
+export type LaneSide = "right" | "left" | "bottom" | "top";
 
 /**
  * The dial in client pixels: its centre, its outer radius, and how far below the centre its drawing
@@ -131,60 +132,169 @@ export type LaneInput = {
   readonly bounds: LaneBox;
   /** The widest content the popup shows, its max-content width. */
   readonly content: number;
-  /** The viewport's bottom edge, which the bottom lane stays above when it can. */
+  /** The visible area's bottom edge, the visual viewport's, which every lane stays above when it can. */
   readonly viewportBottom: number;
+  /** The visible area's top edge, the visual viewport's, which every lane stays below when it can. */
+  readonly viewportTop: number;
+  /** The visible area's left edge, the visual viewport's, which every lane stays right of. */
+  readonly viewportLeft: number;
+  /** The visible area's right edge, the visual viewport's, which every lane stays left of. */
+  readonly viewportRight: number;
+  /** The chart's title, the element its Root's `aria-labelledby` names and its Headline, or null. */
+  readonly title: LaneBox | null;
+  /**
+   * The lane the open popup shows, which it keeps while that lane fits when it is the bottom or the
+   * top lane, or null when it opens. A side lane follows `side`, which keeps its own hysteresis.
+   */
+  readonly keep: LaneSide | null;
 };
 
 /**
- * Where the popup rests for a ray: in its side lane when that lane's room holds the popup's widest
- * content and `LANE_PAD` (`laneNeed`), else in the other side lane when that one does, else in the
- * bottom lane. A side lane's inner edge sits one gap outside the further of the rim and the labels,
- * and a side lane over the Root's controls keeps the popup's bottom one gap above them. The bottom
- * lane's top sits one gap below the labels and the controls, so the popup never covers the legend
- * or the table toggle a pointer reaches for next, unless that would push it past the viewport,
- * where it rests below the labels. In either lane the popup takes one width on every step: its
- * widest content, within the room.
+ * Where the popup rests for a ray. Every lane is a candidate, in order: its side lane, the other side
+ * lane, the bottom lane below the Root's controls, the bottom lane below the rim, and the top lane.
+ * A side lane is a candidate only when its room holds the popup's widest content and `LANE_PAD`
+ * (`laneNeed`). Each candidate has a span, the vertical interval it may use: its own bounds, less
+ * any controls, cut to the viewport. It fits only when its span holds the popup's height, so a popup
+ * that fits anywhere rests inside the viewport and clear of the controls (R2.3); a span that controls
+ * cut below the popup's height, or to nothing, as a side legend can, never takes it.
+ * The popup takes the bottom or top lane it already shows (`keep`) while that lane fits, so a
+ * re-measure on scroll or resize moves no popup whose lane still fits, and otherwise the first
+ * candidate that fits. Where none fits, it takes the candidate that shows the most of its height
+ * inside its own span, the earlier on a tie.
  *
- * @param input - The ray, the dial, the obstacles and the popup.
+ * - A side lane's inner edge sits one gap outside the further of the rim and the labels. Across, its
+ *   span runs from there to the figure's outer side, both cut to the visible area's sides, so a pan
+ *   that hides the inner edge moves the popup's near side to the visible edge; its room is that
+ *   span's width. Its popup centres on the ray's rim height, clamped into its bounds: the Root's
+ *   figure, less any controls under it, cut to the viewport.
+ * - The bottom lane's top sits one gap below the labels and the controls, so the popup never covers
+ *   the legend or the table toggle a pointer reaches for next, or one gap below the rim, each moved
+ *   down to the viewport's top when the dial is scrolled above it. Its span runs from there to the
+ *   viewport's bottom.
+ * - The bottom and top lanes centre on the dial, inside the figure cut to the visible area's sides,
+ *   or inside the visible area alone where that cut is narrower than the popup's floor, and a side
+ *   lane's room ends at the cut too, so a pinch zoom that narrows the visible area keeps every lane
+ *   in it.
+ * - The top lane's bottom sits one gap above the highest of the dial, the labels, the controls and
+ *   the title, moved up to the viewport's bottom when the dial is scrolled below it. Its span runs
+ *   from the viewport's top to there.
+ *
+ * The bottom and top lanes never move on a step: the popup's content swaps in place. In every lane
+ * the popup takes one width on every step: its widest content, within the room.
+ *
+ * @param input - The ray, the dial, the obstacles, the viewport and the popup.
  * @returns The lane it rests in, its box, its room and the box its middle stays inside.
  */
 export function laneRest(input: LaneInput): LaneRest {
-  const { angle, side, dial, labels, controls, size, bounds, content, viewportBottom } = input;
+  const {
+    angle,
+    side,
+    dial,
+    labels,
+    controls,
+    size,
+    bounds,
+    content,
+    viewportBottom,
+    viewportTop,
+    viewportLeft,
+    viewportRight,
+    title,
+    keep,
+  } = input;
   const { centre, radius } = dial;
+  const { height } = size;
+  /** A box's vertical bounds cut to the viewport; the horizontal cut follows it. */
+  const visible = (box: LaneBox): LaneBox => ({
+    ...box,
+    top: Math.max(box.top, viewportTop),
+    bottom: Math.min(box.bottom, viewportBottom),
+  });
   const right = Math.max(centre.x + radius, labels?.right ?? Number.NEGATIVE_INFINITY) + LANE_GAP;
   const left = Math.min(centre.x - radius, labels?.left ?? Number.POSITIVE_INFINITY) - LANE_GAP;
-  const rooms = { right: bounds.right - right, left: left - bounds.left };
-  const lane = (at: "right" | "left"): LaneRest => {
+  // Across, every lane stays inside the figure cut to the visible area's sides, as `visible` cuts
+  // it down. A side lane's span runs from its inner edge, one gap past the rim and the labels, to
+  // the figure's outer side, both cut there, so a pan that hides the inner edge moves the popup's
+  // near side to the visible edge, and a span narrower than the popup's need is no candidate.
+  const wide = { left: Math.max(bounds.left, viewportLeft), right: Math.min(bounds.right, viewportRight) };
+  const sideSpans = {
+    right: { left: Math.max(right, wide.left), right: wide.right },
+    left: { left: wide.left, right: Math.min(left, wide.right) },
+  };
+  const rooms = {
+    right: sideSpans.right.right - sideSpans.right.left,
+    left: sideSpans.left.right - sideSpans.left.left,
+  };
+  /** A candidate lane and the vertical span it may use. */
+  type Candidate = {
+    readonly lane: LaneRest;
+    readonly span: { readonly top: number; readonly bottom: number };
+  };
+  /** How much of a candidate's popup lies inside its span. */
+  const shown = ({ lane, span }: Candidate): number =>
+    Math.max(0, Math.min(lane.box.bottom, span.bottom) - Math.max(lane.box.top, span.top));
+  /** Whether a candidate's span holds the popup's height. */
+  const fits = ({ span }: Candidate): boolean => span.bottom - span.top >= height - 1e-6;
+  const sideLane = (at: "right" | "left"): Candidate => {
     const room = rooms[at];
     const width = laneWidth(room, content, LANE_WIDEST);
-    const from = at === "right" ? right : left - width;
+    const from = at === "right" ? sideSpans.right.left : sideSpans.left.right - width;
     const over = controls !== null && from < controls.right && from + width > controls.left;
-    const kept = over ? { ...bounds, bottom: Math.min(bounds.bottom, controls.top - LANE_GAP) } : bounds;
-    const top = laneY(angle, dial, size.height, kept) - size.height / 2;
+    const kept = visible(
+      over ? { ...bounds, bottom: Math.min(bounds.bottom, controls.top - LANE_GAP) } : bounds
+    );
+    const top = laneY(angle, dial, height, kept) - height / 2;
     return {
-      side: at,
-      box: { left: from, top, right: from + width, bottom: top + size.height },
-      room,
-      bounds: kept,
+      lane: {
+        side: at,
+        box: { left: from, top, right: from + width, bottom: top + height },
+        room,
+        bounds: kept,
+      },
+      span: kept,
     };
   };
-  const other = side === "right" ? "left" : "right";
-  const need = laneNeed(content + LANE_PAD);
-  if (rooms[side] >= need) return lane(side);
-  if (rooms[other] >= need) return lane(other);
+  // The bottom and top lanes may leave the figure across, but not the visible area: where the
+  // figure's visible part is narrower than the popup's floor, they take the visible area's width.
+  const spread = wide.right - wide.left >= LANE_MIN ? wide : { left: viewportLeft, right: viewportRight };
+  const room = Math.max(0, spread.right - spread.left);
+  const width = laneWidth(room, content, room);
+  const x = Math.min(spread.right - width, Math.max(spread.left, centre.x - width / 2));
+  const across = (lane: "bottom" | "top", top: number): Candidate => ({
+    lane: {
+      side: lane,
+      box: { left: x, top, right: x + width, bottom: top + height },
+      room,
+      bounds: { ...bounds, ...spread },
+    },
+    span: lane === "bottom" ? { top, bottom: viewportBottom } : { top: viewportTop, bottom: top + height },
+  });
   const rim =
     Math.max(centre.y + (dial.bottom ?? radius), labels?.bottom ?? Number.NEGATIVE_INFINITY) + LANE_GAP;
   const clear = controls === null ? rim : Math.max(rim, controls.bottom + LANE_GAP);
-  const below = clear + size.height > viewportBottom ? rim : clear;
-  const room = bounds.right - bounds.left;
-  const width = laneWidth(room, content, room);
-  const x = Math.min(bounds.right - width, Math.max(bounds.left, centre.x - width / 2));
-  return {
-    side: "bottom",
-    box: { left: x, top: below, right: x + width, bottom: below + size.height },
-    room,
-    bounds,
-  };
+  const ceiling =
+    Math.min(
+      centre.y - radius,
+      labels?.top ?? Number.POSITIVE_INFINITY,
+      controls?.top ?? Number.POSITIVE_INFINITY,
+      title?.top ?? Number.POSITIVE_INFINITY
+    ) - LANE_GAP;
+  const other = side === "right" ? "left" : "right";
+  const need = laneNeed(content + LANE_PAD);
+  const candidates: Candidate[] = [
+    ...(rooms[side] >= need ? [sideLane(side)] : []),
+    ...(rooms[other] >= need ? [sideLane(other)] : []),
+    across("bottom", Math.max(clear, viewportTop)),
+    across("bottom", Math.max(rim, viewportTop)),
+    across("top", Math.min(ceiling, viewportBottom) - height),
+  ];
+  const kept =
+    keep === "bottom" || keep === "top"
+      ? candidates.find((candidate) => candidate.lane.side === keep && fits(candidate))
+      : undefined;
+  const first = kept ?? candidates.find(fits);
+  if (first !== undefined) return first.lane;
+  return candidates.reduce((best, candidate) => (shown(candidate) > shown(best) ? candidate : best)).lane;
 }
 
 /**

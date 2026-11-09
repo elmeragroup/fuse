@@ -10,11 +10,12 @@
 import { use } from "react";
 import type { ReactElement, ReactNode } from "react";
 
+import { useActiveIndex } from "./chart-active-point";
 import { useCentreFit } from "./chart-centre-fit";
 import { clockDrawingIn, usePolarContext } from "./chart-polar-context";
 import type { ClockDrawing } from "./chart-polar-context";
 import { ChartHeadlineContext } from "./chart-scope-contexts";
-import { fallbackSlot, readingAt, useActiveSlot } from "./chart-series-readout";
+import { fallbackSlot, readingAt } from "./chart-series-readout";
 import { slotLabel } from "./chart-text";
 import type { ChartFallback, ChartLayerProps, ValueFormat } from "./chart-types";
 import { numberAndUnit } from "./format/formatted-text";
@@ -71,7 +72,7 @@ function ValueParts({ text }: { readonly text: string }): ReactElement {
 /** The slot a value part prints: the active slot, or the fallback's. */
 function useShownSlot(clock: ClockDrawing, dataKey: string, fallback: ChartFallback): number | null {
   const { kernel } = usePolarContext("ClockChart.ActiveValue", ["clock"]);
-  const active = useActiveSlot({ model: clock.text.model, store: kernel.store }, true);
+  const active = useActiveIndex({ store: kernel.store, window: clock.text.model.window }, true);
   return active ?? fallbackSlot(clock.text, dataKey, fallback);
 }
 

@@ -153,7 +153,6 @@ test("the family sketches compile", () => {
       <PieChart.Labels position="outside" />
       <PieChart.Center>
         <PieChart.CenterValue />
-        <PieChart.CenterName>besøk</PieChart.CenterName>
         <PieChart.CenterLabel>besøk</PieChart.CenterLabel>
       </PieChart.Center>
       <PieChart.Tooltip>
@@ -286,6 +285,58 @@ test("config keys stay literal, so callbacks report the key union and instants r
     </>
   );
   expectTypeOf(charts).toExtend<ReactElement>();
+});
+
+test("a bill's centre names its active part, and its default names a config key", () => {
+  const bill = [
+    { part: "energi", kr: 640 },
+    { part: "nettleie", kr: 360 },
+    { part: "avgift", kr: 120 },
+  ] as const;
+  const config = {
+    energi: { label: "Energi", color: "chart-1" },
+    nettleie: { label: "Nettleie", color: "chart-2" },
+    avgift: { label: "Avgifter", color: "chart-3" },
+  } as const;
+  const pie = (
+    <PieChart.Root
+      data={bill}
+      config={config}
+      nameKey="part"
+      valueKey="kr"
+      defaultActiveKey="nettleie"
+      innerRadius={0.62}
+      aria-label="Regning">
+      <PieChart.Pie />
+      <PieChart.Center>
+        <PieChart.CenterValue />
+        <PieChart.CenterName>Totalt</PieChart.CenterName>
+      </PieChart.Center>
+    </PieChart.Root>
+  );
+  expectTypeOf(pie).toExtend<ReactElement>();
+  const unknownDefault = (
+    <PieChart.Root
+      data={bill}
+      config={config}
+      nameKey="part"
+      valueKey="kr"
+      // @ts-expect-error -- defaultActiveKey names a config key, and "moms" is none.
+      defaultActiveKey="moms"
+      aria-label="x"
+    />
+  );
+  const wordValue = (
+    <PieChart.Root
+      data={bill}
+      config={config}
+      nameKey="part"
+      // @ts-expect-error -- valueKey names a numeric column, and "part" holds the categories.
+      valueKey="part"
+      aria-label="x"
+    />
+  );
+  for (const element of [unknownDefault, wordValue]) expectTypeOf(element).toExtend<ReactElement>();
 });
 
 test("a widened config compiles under every Root", () => {

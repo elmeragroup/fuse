@@ -480,6 +480,11 @@ export function pieModel(input: PieInput): PolarModel {
         over: gauge?.over ?? false,
         share: source.share,
         sliceOf: (category) => (folded.some(({ key }) => key === category) ? category : OTHER_KEY),
+        folds: (category) =>
+          folded.some(
+            ({ key, rows: members }) =>
+              key === OTHER_KEY && members.some((member) => rows[member]?.category === category)
+          ),
       },
       centre: {
         label: (index) => items[index]?.label.text ?? null,

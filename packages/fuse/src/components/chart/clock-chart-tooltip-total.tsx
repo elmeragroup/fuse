@@ -7,8 +7,8 @@
  */
 import type { ReactElement } from "react";
 
+import { useActiveIndex } from "./chart-active-point";
 import { clockDrawingIn, usePolarContext } from "./chart-polar-context";
-import { useActiveSlot } from "./chart-series-readout";
 import type { ChartTooltipTotalProps } from "./chart-tooltip-total";
 import { TooltipTotalRow } from "./chart-tooltip-total-row";
 
@@ -21,7 +21,7 @@ import { TooltipTotalRow } from "./chart-tooltip-total-row";
 export function ClockChartTooltipTotal(props: ChartTooltipTotalProps): ReactElement {
   const { model, kernel } = usePolarContext("ClockChart.TooltipTotal", ["clock"]);
   const clock = clockDrawingIn(model, "ClockChart.TooltipTotal");
-  const slot = useActiveSlot({ model: clock.text.model, store: kernel.store });
+  const slot = useActiveIndex({ store: kernel.store, window: clock.text.model.window });
   return <TooltipTotalRow part="ClockChart.TooltipTotal" context={clock.text} at={slot} {...props} />;
 }
 

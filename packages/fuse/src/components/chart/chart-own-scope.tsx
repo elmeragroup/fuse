@@ -15,7 +15,7 @@ import {
   ChartDatumContext,
   ChartDepthContext,
   ChartHeadlineContext,
-  ChartHeldIndexContext,
+  ChartHeldPointContext,
   ChartLegendSideContext,
   ChartLiveContext,
   ChartRowContext,
@@ -49,7 +49,7 @@ export function ChartOwnScope({ children }: { readonly children: ReactNode }): R
       <ChartRowContext value={null}>
         <ChartLegendSideContext value={null}>
           <ChartLiveContext value={false}>
-            <ChartHeldIndexContext value={null}>
+            <ChartHeldPointContext value={null}>
               <ChartHeadlineContext value={false}>
                 <ChartCrosshairContext value={false}>
                   <ChartDatumContext value={null}>
@@ -57,7 +57,7 @@ export function ChartOwnScope({ children }: { readonly children: ReactNode }): R
                   </ChartDatumContext>
                 </ChartCrosshairContext>
               </ChartHeadlineContext>
-            </ChartHeldIndexContext>
+            </ChartHeldPointContext>
           </ChartLiveContext>
         </ChartLegendSideContext>
       </ChartRowContext>

@@ -6,6 +6,7 @@
 // pop and S2's dims; R10's halo; Q12's gradient; and S9's category word.
 import { Profiler, useEffect, useState } from "react";
 
+import { renderToString } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
@@ -991,5 +992,66 @@ describe("the centre's text floor and fit guard", () => {
     if (code === null || number === null) throw new Error("no parts");
     expect(code.textContent).toBe("NOK");
     expect(code.getBoundingClientRect().bottom).toBeLessThanOrEqual(number.getBoundingClientRect().top + 0.5);
+  });
+});
+
+describe("a default active category and the fold (L3)", () => {
+  // Eight appliance categories and seven rows, so the default six-slice cap keeps five and folds the
+  // two smallest, lys and lading, into Other. L3: a folding pie starts on Other when
+  // `defaultActiveKey` names a folded category. A category with no row is in no slice and folds into
+  // nothing, so the pie starts with nothing active, and CenterName prints its children.
+  const appliances = {
+    varme: { label: "Varme", color: "chart-1" },
+    vann: { label: "Varmtvann", color: "chart-2" },
+    kjokken: { label: "Kjøkken", color: "chart-3" },
+    vask: { label: "Vask", color: "chart-4" },
+    tork: { label: "Tørk", color: "chart-5" },
+    lys: { label: "Lys", color: "chart-6" },
+    lading: { label: "Lading", color: "chart-7" },
+    bad: { label: "Bad", color: "chart-8" },
+  } satisfies ChartConfig;
+  const rows = [
+    { part: "varme", kwh: 420 },
+    { part: "vann", kwh: 210 },
+    { part: "kjokken", kwh: 120 },
+    { part: "vask", kwh: 80 },
+    { part: "tork", kwh: 60 },
+    { part: "lys", kwh: 30 },
+    { part: "lading", kwh: 20 },
+  ];
+  const centreName = (key: keyof typeof appliances) => {
+    const host = document.createElement("div");
+    host.innerHTML = renderToString(
+      <LocaleProvider locale="nb-NO" timeZone="Europe/Oslo">
+        <PieChart.Root
+          data={rows}
+          config={appliances}
+          nameKey="part"
+          valueKey="kwh"
+          defaultActiveKey={key}
+          aria-label="Forbruk per apparat">
+          <PieChart.Pie />
+          <PieChart.Center>
+            <PieChart.CenterValue />
+            <PieChart.CenterName>Totalt</PieChart.CenterName>
+          </PieChart.Center>
+        </PieChart.Root>
+      </LocaleProvider>
+    );
+    // DOM audit: the centre is aria-hidden plot output, read by its slot.
+    return host.querySelector('[data-slot="pie-chart-center-name"]')?.textContent ?? null;
+  };
+
+  it("starts with nothing active when the default names a category with no row", () => {
+    expect(centreName("bad")).toBe("Totalt");
+  });
+
+  it("starts on Other when the default names a folded category", () => {
+    // The count joins its word with a no-break space.
+    expect(centreName("lading")).toBe("Annet, 2\u00a0kategorier");
+  });
+
+  it("starts on the slice when the default names a kept category", () => {
+    expect(centreName("vann")).toBe("Varmtvann");
   });
 });

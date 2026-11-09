@@ -11,14 +11,8 @@ import type { ReactElement } from "react";
 import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
 
-import {
-  shareDigits,
-  shareText,
-  useActiveIndex,
-  useActiveItem,
-  useChartReadout,
-  useReadoutKey,
-} from "./chart-readout";
+import { useActiveIndex } from "./chart-active-point";
+import { shareDigits, shareText, useActiveItem, useChartReadout, useReadoutKey } from "./chart-readout";
 import { ChartSelectionContext } from "./chart-readout-port";
 import { ChartRowContext } from "./chart-scope-contexts";
 import type { ChartDomProps, ChartFractionDigits, ValueFormat, XFormat } from "./chart-types";

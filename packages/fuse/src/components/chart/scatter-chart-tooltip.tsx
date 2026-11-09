@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { createContext, use, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import type { ReactElement, ReactNode } from "react";
 
 import { mergeProps } from "@base-ui/react/merge-props";
@@ -14,6 +14,7 @@ import { seriesLabel } from "./format/series-label";
 import { formatValue } from "./format/value-format";
 import { dotCentre } from "./layout/scatter-frame";
 import { pointOf } from "./layout/scatter-model";
+import type { ScatterModel } from "./layout/scatter-model";
 import { ROOF_GAP } from "./layout/tooltip-place";
 import {
   dotOf,
@@ -71,9 +72,24 @@ function plotSurface(id: string): HTMLElement | null {
   return document.getElementById(`${id}-surface`);
 }
 
-/** The active point's id in the Root's model, or null, which the readout parts render on. */
+/** The point a closing tooltip keeps showing, with the model its id belongs to. */
+type HeldPoint = { readonly model: ScatterModel; readonly id: number };
+
+/**
+ * The point a closing tooltip keeps showing while it fades out, so its content never empties
+ * before the fade, or null while it is open or shut. Its parts read it through `useActive`.
+ */
+const HeldPointContext = createContext<HeldPoint | null>(null);
+
+/**
+ * The active point's id in the Root's model, or null, which the readout parts render on: the walk's
+ * active point, or inside a closing tooltip the point it held, while the model is the one it held it
+ * in.
+ */
 function useActive(context: ScatterRootContextValue): number | null {
-  return useWalk(context).active;
+  const active = useWalk(context).active;
+  const held = use(HeldPointContext);
+  return active ?? (held !== null && held.model === context.model ? held.id : null);
 }
 
 /**
@@ -96,20 +112,25 @@ export function ScatterChartTooltip({
   const active = useActive(context);
   const frame = useScatterFrame(context);
   const open = active !== null && frame !== null;
+  // The point the popup showed last, which its content and its anchor keep while it fades out.
+  const [shown, setShown] = useState<HeldPoint | null>(null);
+  if (active !== null && (shown?.id !== active || shown.model !== model)) setShown({ model, id: active });
+  const held = shown?.model === model ? shown.id : null;
+  const placed = active ?? held;
   // Once open, the portal stays mounted, so a chart that is its scope's last child never restyles.
   const [kept, setKept] = useState(false);
   if (open && !kept) setKept(true);
   // The active point's dot diameter, which follows a change of its Points part's size, so the
   // popup moves clear of a larger point while it stays open.
-  const activeKey = active === null ? null : pointOf(model, active).key;
+  const activeKey = placed === null ? null : pointOf(model, placed).key;
   const diameter = useSyncExternalStore(
     marks.subscribe,
     () => (activeKey === null ? 0 : dotOf(marks.of(activeKey))),
     () => 0
   );
   const anchor = useMemo(() => {
-    if (active === null || frame === null) return null;
-    const point = pointOf(model, active);
+    if (placed === null || frame === null) return null;
+    const point = pointOf(model, placed);
     const centre = dotCentre(frame, point.x, point.y, diameter);
     // The anchor spans the point and the gap above it, so the popup rests clear of the point.
     const reach = diameter / 2 + ROOF_GAP;
@@ -131,7 +152,7 @@ export function ScatterChartTooltip({
         return plotSurface(id) ?? undefined;
       },
     };
-  }, [active, frame, model, diameter, id]);
+  }, [placed, frame, model, diameter, id]);
   const content = children ?? <DefaultTooltip />;
   // Whether the pointer entered the popup by moving straight toward it from the active point, as
   // Chart's tooltip rules it. Only that entry holds the point while the pointer crosses the popup,
@@ -213,7 +234,9 @@ export function ScatterChartTooltip({
                 return;
               store.leave();
             }}>
-            {content}
+            <HeldPointContext value={open || held === null ? null : { model, id: held }}>
+              {content}
+            </HeldPointContext>
           </TooltipPrimitive.Popup>
         </TooltipPrimitive.Positioner>
       </OverlayPortal>

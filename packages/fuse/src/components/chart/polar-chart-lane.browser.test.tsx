@@ -1005,3 +1005,70 @@ describe("a close during the lane fade", () => {
     expect(after.filter((opacity) => opacity > before + 0.001)).toEqual([]);
   });
 });
+
+// A bottom lane that would leave the viewport. Unit under test: the polar tooltip's lane anchor over
+// a two-slice PieChart with its default 200 px dial, near the bottom of a 390 × 600 viewport, whose
+// side lanes hold under 128 px. Oracle: R2.3 as amended, read from the rendered boxes: the popup
+// lies inside the viewport, and it overlaps neither the dial's drawing, the labels past the rim, nor
+// the title the Root's `aria-labelledby` names.
+describe("the polar tooltip near the viewport's bottom", () => {
+  it("rests inside the viewport, off the dial, its labels and its title, when below would leave it", async () => {
+    await page.viewport(390, 600);
+    const { host } = renderThemed(
+      <LocaleProvider locale="nb-NO" timeZone="Europe/Oslo">
+        <div data-spacer="" />
+        <h2 id="bill-title" style={{ margin: 0 }}>
+          Regning
+        </h2>
+        <PieChart.Root
+          data={[
+            { part: "energi", kr: 640 },
+            { part: "nettleie", kr: 360 },
+          ]}
+          config={{
+            energi: { label: "Energi", color: "chart-1" },
+            nettleie: { label: "Nettleie", color: "chart-2" },
+          }}
+          nameKey="part"
+          valueKey="kr"
+          data-intro="none"
+          aria-labelledby="bill-title">
+          <PieChart.Pie />
+          <PieChart.Labels position="outside" />
+          <PieChart.Tooltip />
+        </PieChart.Root>
+      </LocaleProvider>
+    );
+    const figure = polarFigure(host);
+    // DOM audit: the pie's drawing is aria-hidden plot output, read by its slot.
+    const dial = (): DOMRect => {
+      const drawing = figure.querySelector('[data-slot="pie-chart-pie"]');
+      if (drawing === null) throw new Error("no pie");
+      return drawing.getBoundingClientRect();
+    };
+    // The spacer lowers the chart until the figure ends 8 px above the viewport's 600.
+    const spacer = host.querySelector<HTMLElement>("[data-spacer]");
+    if (spacer === null) throw new Error("no spacer");
+    spacer.style.height = `${String(592 - figure.getBoundingClientRect().bottom)}px`;
+    await frames(2);
+    expect(dial().bottom).toBeGreaterThan(500);
+    await userEvent.tab();
+    await frames(14);
+    const shown = popup();
+    expect(shown).not.toBeNull();
+    const box = shown?.box ?? new DOMRect();
+    const title = host.querySelector("h2")?.getBoundingClientRect() ?? new DOMRect();
+    // DOM audit: the labels are aria-hidden plot output, read by their slot.
+    const labels = [...figure.querySelectorAll('[data-slot="pie-chart-label"]')]
+      .map((label) => label.getBoundingClientRect())
+      .filter((rect) => rect.width > 0);
+    expect(labels).toHaveLength(2);
+    expect({
+      top: box.top >= -0.5,
+      bottom: box.bottom <= window.innerHeight + 0.5,
+      dial: overlap(box, dial()),
+      labels: labels.map((label) => overlap(box, label)),
+      title: overlap(box, title),
+    }).toEqual({ top: true, bottom: true, dial: 0, labels: [0, 0], title: 0 });
+  });
+});

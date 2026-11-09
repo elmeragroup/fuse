@@ -935,6 +935,11 @@ describe("runtime listeners and layout motion", () => {
       // a consumer's own handler, which Root's spread props replace. The same owner listens on
       // the window for `beforeprint`, and for `scroll` and `resize` only while a plot waits.
       "components/chart/chart-entrance.ts",
+      // Document `scroll`, captured and passive, and window and visual viewport `resize` and
+      // `scroll`, only while a polar tooltip is open: they move the chart against the viewport
+      // without resizing anything a ResizeObserver sees, and the lane must measure again to stay
+      // inside it. A scroll in a container does not bubble, and React has no window listener.
+      "components/chart/chart-polar-anchor.ts",
       // Document `pointermove`, in the capture phase, only while a pointer crosses the gap from a
       // polar plot to its tooltip: no element of the chart lies under the gap, so no React handler
       // sees the move, and the popup and the plot take over once it reaches either.

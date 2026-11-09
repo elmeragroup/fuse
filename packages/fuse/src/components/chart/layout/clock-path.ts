@@ -200,7 +200,7 @@ type Run = { readonly slots: readonly number[]; readonly closed: boolean };
 /**
  * The runs a series' curve draws. A pending slot always breaks a run, a missing one breaks it under
  * "gap", and a run that holds both end slots, either one through the coarse reading that covers it,
- * crosses 12 o'clock, closing when it holds every slot.
+ * crosses 12 o'clock, closing when it is the only run and holds two readings or more.
  */
 function runsOf(slots: ClockSlots): readonly Run[] {
   const known = runsBySlots.get(slots);
@@ -235,7 +235,8 @@ function findRuns(slots: ClockSlots): Run[] {
   const [first] = runs;
   const last = runs.at(-1);
   if (first === undefined || last === undefined) return [];
-  if (runs.length === 1) return [{ slots: first, closed: first.length > 2 }];
+  // A run of two readings or more closes; a lone reading stays a dot, with nothing to join.
+  if (runs.length === 1) return [{ slots: first, closed: first.length >= 2 }];
   // The run that ends the cycle carries on into the one that starts it, across the seam.
   return [
     { slots: [...last, ...first], closed: false },

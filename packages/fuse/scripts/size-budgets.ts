@@ -252,7 +252,17 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = derive([
   // 2026-11-08: the second polar review fixes: a Marker's pills flagged on its own labels, its paths
   // repainted on a variant change and the entrance frame cached with the curve index, 215264 to 215361.
   // The ceiling keeps about 100 bytes of headroom.
-  { name: "chart", entryFile: "chart.js", measuredGzip: 97044, ceilingGzip: 215461 },
+  // 2026-11-09: the review round rb1 fixes: a top lane above the chart where the bottom one leaves the
+  // viewport, a two-reading seam that closes, a default that starts on Other only for a folded row, and the
+  // stack total read from the held index, 215361 to 215681. The ceiling keeps about 100 bytes of headroom.
+  // 2026-11-09: the review round rb2 fixes: every readout part reading its active point from one leaf that
+  // holds a closing tooltip's index and series together, and every lane cut to the viewport and the scene
+  // measured again on scroll and viewport resize, 215681 to 216006. The ceiling keeps about 100 bytes of
+  // headroom.
+  // 2026-11-09: the review round rb3 fixes: each lane's popup held inside its own span, the visible area read
+  // from the visual viewport, the centre parts reading the held point, and the scatter tooltip holding its
+  // last point while it closes, 216006 to 216354. The ceiling keeps about 100 bytes of headroom.
+  { name: "chart", entryFile: "chart.js", measuredGzip: 97044, ceilingGzip: 216454 },
   // 2026-10-13: new entry, measured at 29180. Pure wrappers over Base UI's toolbar and its roving focus.
   { name: "toolbar", entryFile: "toolbar.js", measuredGzip: 29180, ceilingGzip: 43770 },
   // 2026-10-12: new entries. Command is Base UI's Autocomplete in the InputGroup, with the Dialog
@@ -488,7 +498,10 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // lanes, the pick's dead band and near hold, the centre's fit guard and breakable value, the
     // labels' ray placement and ink measure, the dots' curve reads and the hatch by pixel column,
     // 153643 to 153776. The ceiling keeps about 100 bytes of headroom.
-    ceilingGzip: 153876,
+    // 2026-11-09: the review round rb2 fixes: every readout part reading its active point from one leaf that
+    // holds a closing tooltip's index and series together, 153776 to 153949. The ceiling keeps about 100
+    // bytes of headroom.
+    ceilingGzip: 154049,
   },
   {
     name: "chart/BarChart",
@@ -504,7 +517,10 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // lanes, the pick's dead band and near hold, the centre's fit guard and breakable value, the
     // labels' ray placement and ink measure, the dots' curve reads and the hatch by pixel column,
     // 153645 to 153779. The ceiling keeps about 100 bytes of headroom.
-    ceilingGzip: 153879,
+    // 2026-11-09: the review round rb2 fixes: every readout part reading its active point from one leaf that
+    // holds a closing tooltip's index and series together, 153779 to 153951. The ceiling keeps about 100
+    // bytes of headroom.
+    ceilingGzip: 154051,
   },
   // Set from its measurement on 2026-11-05, when the polar families landed: the whole namespace:
   // slices on their frame with the rim floor and ghosts, labels and leaders that ride the frame,
@@ -543,7 +559,17 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // 2026-11-07: the item table built in its Table part, pie labels refitted on their own size, the steady
     // valueFormat and a nested Root's held index reset, 112030 to 112121. The ceiling keeps about 100 bytes
     // of headroom.
-    ceilingGzip: 112221,
+    // 2026-11-09: the review round rb1 fixes: a top lane above the chart where the bottom one leaves the
+    // viewport, and a default that starts on Other only for a folded row, 112121 to 112433. The ceiling keeps
+    // about 100 bytes of headroom.
+    // 2026-11-09: the review round rb2 fixes: every readout part reading its active point from one leaf that
+    // holds a closing tooltip's index and series together, and every lane cut to the viewport and the scene
+    // measured again on scroll and viewport resize, 112433 to 112773. The ceiling keeps about 100 bytes of
+    // headroom.
+    // 2026-11-09: the review round rb3 fixes: each lane's popup held inside its own span, the visible area
+    // read from the visual viewport, and the centre parts reading the held point, 112773 to 112992. The
+    // ceiling keeps about 100 bytes of headroom.
+    ceilingGzip: 113092,
   },
   // Set from its measurement on 2026-11-05, when the polar families landed: the whole namespace:
   // rings on their frame in three looks, Track, Glow, the Center parts and the polar readouts. The
@@ -584,7 +610,17 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // bytes of headroom.
     // 2026-11-07: the item table built in its Table part, the steady valueFormat and a nested Root's held
     // index reset, 108571 to 108661. The ceiling keeps about 100 bytes of headroom.
-    ceilingGzip: 108761,
+    // 2026-11-09: the review round rb1 fixes: a top lane above the chart where the bottom one leaves the
+    // viewport, and the item model's fold membership, 108661 to 108925. The ceiling keeps about 100 bytes of
+    // headroom.
+    // 2026-11-09: the review round rb2 fixes: every readout part reading its active point from one leaf that
+    // holds a closing tooltip's index and series together, and every lane cut to the viewport and the scene
+    // measured again on scroll and viewport resize, 108925 to 109270. The ceiling keeps about 100 bytes of
+    // headroom.
+    // 2026-11-09: the review round rb3 fixes: each lane's popup held inside its own span, the visible area
+    // read from the visual viewport, and the centre parts reading the held point, 109270 to 109524. The
+    // ceiling keeps about 100 bytes of headroom.
+    ceilingGzip: 109624,
   },
   // Set from its measurement on 2026-11-05, when the polar families landed: the whole namespace:
   // grid, spoke and ring labels fitted to the dial, Area, Line, Dots, an ActiveDot on the loop,
@@ -623,7 +659,15 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // 2026-11-07: the series table built in its Table part, the shared series readout, and the description's
     // unit through chartDescription's sentence, 112702 to 112908. The ceiling keeps about 100 bytes of
     // headroom.
-    ceilingGzip: 113008,
+    // 2026-11-09: the review round rb1 fixes: a top lane above the chart where the bottom one leaves the
+    // viewport, 112908 to 113149. The ceiling keeps about 100 bytes of headroom.
+    // 2026-11-09: the review round rb2 fixes: every readout part reading its active point from one leaf that
+    // holds a closing tooltip's index and series together, and every lane cut to the viewport and the scene
+    // measured again on scroll and viewport resize, 113149 to 113497. The ceiling keeps about 100 bytes of
+    // headroom.
+    // 2026-11-09: the review round rb3 fixes: each lane's popup held inside its own span, the visible area
+    // read from the visual viewport, 113497 to 113720. The ceiling keeps about 100 bytes of headroom.
+    ceilingGzip: 113820,
   },
   // Set from its measurement on 2026-11-05, when the polar families landed: the whole namespace:
   // the zoned dial model, curves, wedges with floors and coarse slots, labels and ring values
@@ -677,7 +721,16 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // 2026-11-08: a Marker's pills flagged on its own labels, its paths repainted on a variant change
     // and the entrance frame cached with the curve index, 130926 to 131025. The ceiling keeps about
     // 100 bytes of headroom.
-    ceilingGzip: 131125,
+    // 2026-11-09: the review round rb1 fixes: a top lane above the chart where the bottom one leaves the
+    // viewport, a two-reading seam that closes, and the stack total read from the held index, 131025 to
+    // 131348. The ceiling keeps about 100 bytes of headroom.
+    // 2026-11-09: the review round rb2 fixes: every readout part reading its active point from one leaf that
+    // holds a closing tooltip's index and series together, and every lane cut to the viewport and the scene
+    // measured again on scroll and viewport resize, 131348 to 131627. The ceiling keeps about 100 bytes of
+    // headroom.
+    // 2026-11-09: the review round rb3 fixes: each lane's popup held inside its own span, the visible area
+    // read from the visual viewport, 131627 to 131849. The ceiling keeps about 100 bytes of headroom.
+    ceilingGzip: 131949,
   },
   {
     name: "chart/Chart.Root",
@@ -853,7 +906,17 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // bytes of headroom.
     // 2026-11-07: each polar Table builds its table on demand, so a route without one builds none, 93279 to
     // 92536. The ceiling keeps about 100 bytes of headroom.
-    ceilingGzip: 92636,
+    // 2026-11-09: the review round rb1 fixes: a top lane above the chart where the bottom one leaves the
+    // viewport, and a default that starts on Other only for a folded row, 92536 to 92841. The ceiling keeps
+    // about 100 bytes of headroom.
+    // 2026-11-09: the review round rb2 fixes: every readout part reading its active point from one leaf that
+    // holds a closing tooltip's index and series together, and every lane cut to the viewport and the scene
+    // measured again on scroll and viewport resize, 92841 to 93153. The ceiling keeps about 100 bytes of
+    // headroom.
+    // 2026-11-09: the review round rb3 fixes: each lane's popup held inside its own span, the visible area
+    // read from the visual viewport, and the centre parts reading the held point, 93153 to 93383. The ceiling
+    // keeps about 100 bytes of headroom.
+    ceilingGzip: 93483,
   },
   // 2026-11-05: new row, the typical radial route: Root, Bar, the Center parts, Legend and Tooltip,
   // which the owner set beside the whole-namespace row, with the derived ceiling.
@@ -905,7 +968,17 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // bytes of headroom.
     // 2026-11-07: each polar Table builds its table on demand, so a route without one builds none, 89308 to
     // 88506. The ceiling keeps about 100 bytes of headroom.
-    ceilingGzip: 88606,
+    // 2026-11-09: the review round rb1 fixes: a top lane above the chart where the bottom one leaves the
+    // viewport, and the item model's fold membership, 88506 to 88750. The ceiling keeps about 100 bytes of
+    // headroom.
+    // 2026-11-09: the review round rb2 fixes: every readout part reading its active point from one leaf that
+    // holds a closing tooltip's index and series together, and every lane cut to the viewport and the scene
+    // measured again on scroll and viewport resize, 88750 to 89063. The ceiling keeps about 100 bytes of
+    // headroom.
+    // 2026-11-09: the review round rb3 fixes: each lane's popup held inside its own span, the visible area
+    // read from the visual viewport, and the centre parts reading the held point, 89063 to 89269. The ceiling
+    // keeps about 100 bytes of headroom.
+    ceilingGzip: 89369,
   },
   {
     name: "chart/RadialChart.Root",
@@ -999,7 +1072,15 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // of headroom.
     // 2026-11-07: each polar Table builds its table on demand, so a route without one builds none, 99488 to
     // 98454. The ceiling keeps about 100 bytes of headroom.
-    ceilingGzip: 98554,
+    // 2026-11-09: the review round rb1 fixes: a top lane above the chart where the bottom one leaves the
+    // viewport, 98454 to 98705. The ceiling keeps about 100 bytes of headroom.
+    // 2026-11-09: the review round rb2 fixes: every readout part reading its active point from one leaf that
+    // holds a closing tooltip's index and series together, and every lane cut to the viewport and the scene
+    // measured again on scroll and viewport resize, 98705 to 99033. The ceiling keeps about 100 bytes of
+    // headroom.
+    // 2026-11-09: the review round rb3 fixes: each lane's popup held inside its own span, the visible area
+    // read from the visual viewport, 99033 to 99255. The ceiling keeps about 100 bytes of headroom.
+    ceilingGzip: 99355,
   },
   // 2026-11-05: new rows, ClockChart's Root alone and its typical route: Root, Line, Grid,
   // AngleAxis, Center, Legend and Tooltip, which the owner set, each with the derived ceiling.
@@ -1072,7 +1153,16 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // bytes of headroom.
     // 2026-11-07: each polar Table builds its table on demand, so a route without one builds none, 109495 to
     // 108487. The ceiling keeps about 100 bytes of headroom.
-    ceilingGzip: 108587,
+    // 2026-11-09: the review round rb1 fixes: a top lane above the chart where the bottom one leaves the
+    // viewport, a two-reading seam that closes, and the stack total read from the held index, 108487 to
+    // 108732. The ceiling keeps about 100 bytes of headroom.
+    // 2026-11-09: the review round rb2 fixes: every readout part reading its active point from one leaf that
+    // holds a closing tooltip's index and series together, and every lane cut to the viewport and the scene
+    // measured again on scroll and viewport resize, 108732 to 109041. The ceiling keeps about 100 bytes of
+    // headroom.
+    // 2026-11-09: the review round rb3 fixes: each lane's popup held inside its own span, the visible area
+    // read from the visual viewport, 109041 to 109280. The ceiling keeps about 100 bytes of headroom.
+    ceilingGzip: 109380,
   },
   // 2026-11-04: new rows, measured at 84628 for the whole ScatterChart namespace and 41808 for its
   // Root alone, each with the derived ceiling.

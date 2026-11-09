@@ -1,10 +1,12 @@
 "use client";
 
 /**
- * Where a polar tooltip rests. The popup sits in a side lane beside the
- * dial, outside the labels past the rim and inside the Root's figure, centred on the active ray's
- * height at the rim, and Base UI keeps it inside the figure without changing its side. A step moves
- * it with the Root's angle follower: the popup rests at the target ray's height and shows the
+ * Where a polar tooltip rests. The popup sits in a side lane beside the dial, outside the labels
+ * past the rim and inside the Root's figure, centred on the active ray's height at the rim, or below
+ * or above the dial, and every lane stays inside the viewport where any lane can hold it
+ * (`laneRest`). The scene is measured again on a resize of the figure, the popup or the viewport and
+ * on any scroll, once per frame, so a scroll or a resize moves the popup to a lane that fits. A step
+ * moves it with the Root's angle follower: the popup rests at the target ray's height and shows the
  * follower's height through a vertical `translate`, so the popup, the hand and the dots move as one.
  * A change of lane fades the popup in over 120 ms instead of travelling, and so does a step that
  * leaps across the dial faster than the pointer's pace. A side lane takes the popup only when its
@@ -180,7 +182,7 @@ function contentWidth(popup: HTMLElement | null): number {
 /**
  * The scene a lane reads, measured on resize ticks and never per pointer move, relative to the
  * dial's centre: the outer radius, a pie's popped slice included, the labels past the rim, the
- * Root's own controls, the figure's box, the viewport's bottom, the popup's size and its widest
+ * Root's own controls, the figure's box, the viewport's top and bottom, the chart's title, the popup's size and its widest
  * content's max-content width.
  */
 type Scene = {
@@ -189,6 +191,11 @@ type Scene = {
   readonly controls: LaneBox | null;
   readonly bounds: LaneBox;
   readonly viewportBottom: number;
+  readonly viewportTop: number;
+  readonly viewportLeft: number;
+  readonly viewportRight: number;
+  /** The chart's title, which the top lane stays above, or null for none. */
+  readonly title: LaneBox | null;
   readonly size: { readonly width: number; readonly height: number };
   readonly content: number;
 };
@@ -202,7 +209,10 @@ type LaneNow = {
   readonly angle: number;
   readonly side: LaneSide;
   readonly scene: Scene;
-  /** The box the popup's middle stays inside in its lane: the figure, less any controls below it. */
+  /**
+   * The box the popup's middle stays inside in its lane: the figure, less any controls below it, cut
+   * to the viewport.
+   */
   readonly bounds: LaneBox;
   readonly holds: boolean;
   /** Whether the popup rides the ray's height at all, as a clock's and a radar's do. */
@@ -215,21 +225,22 @@ type LaneNow = {
 };
 
 /**
- * Place the popup in its lane. Base UI puts the popup's corner at the lane's anchor: a side lane's top
- * at the dial's height, the bottom lane's left at the figure's left. The positioner's own
- * `translate`, which composes with the `transform` Base UI writes and which no open or close
- * animation touches, then centres it by its own size in CSS, so new text keeps it centred in the
- * same frame: a side lane's popup on the height of the ray at the follower's angle, so it moves with
- * the hand and the dots, and the bottom lane's on the dial, each clamped into the figure by the size
- * measured last. A pie's or a radial chart's side lane rests at the dial's height. Reduced motion
- * snaps the follower, so the popup shows the target's height at once.
+ * Place the popup in its lane. Base UI puts the popup's corner at the lane's anchor: a side lane's
+ * top at the dial's height, the bottom or top lane's left at its bounds' left, the figure cut to
+ * the visible area. The positioner's own `translate`, which composes with the `transform` Base UI
+ * writes and which no open or close animation touches, then centres it by its own size in CSS, so
+ * new text keeps it centred in the same frame: a side lane's popup on the height of the ray at the
+ * follower's angle, so it moves with the hand and the dots, and the bottom lane's on the dial, each
+ * clamped into the figure by the size measured last. A pie's or a radial chart's side lane rests at
+ * the dial's height. Reduced motion snaps the follower, so the popup shows the target's height at
+ * once.
  */
 function shiftPopup(positioner: HTMLElement | null, lane: LaneNow | null, shown: number | null): void {
   if (positioner === null || lane === null) return;
   const { radius } = lane.scene;
   const { bounds } = lane;
   const { width, height } = lane.size;
-  if (lane.side === "bottom") {
+  if (lane.side === "bottom" || lane.side === "top") {
     // Centred on the dial by its own width in CSS, so a change of text keeps it centred in the same
     // frame; clamped to the figure's edge by the width measured last.
     const left = Math.min(bounds.right - width, Math.max(bounds.left, -width / 2));
@@ -335,6 +346,24 @@ export function usePolarTooltipAnchor(input: AnchorInput): TooltipAnchor {
         if (rect.width === 0 || rect.height === 0) continue;
         controls = union(controls, shifted(rect, -x, -y));
       }
+      // The chart's title: what the Root's `aria-labelledby` names, and its Headline.
+      let title: LaneBox | null = null;
+      const named = (figure.getAttribute("aria-labelledby") ?? "").split(/\s+/u).filter((id) => id !== "");
+      for (const node of [
+        ...named.map((id) => document.getElementById(id)),
+        ...figure.querySelectorAll('[data-slot="chart-headline"]'),
+      ]) {
+        const rect = node?.getBoundingClientRect();
+        if (rect === undefined || rect.width === 0 || rect.height === 0) continue;
+        title = union(title, shifted(rect, -x, -y));
+      }
+      // The visible area is the visual viewport, which a pinch zoom shrinks and moves inside the
+      // layout viewport; client coordinates, which the scene uses, are the layout viewport's.
+      const visual = window.visualViewport;
+      const visibleTop = visual?.offsetTop ?? 0;
+      const visibleBottom = visual == null ? window.innerHeight : visual.offsetTop + visual.height;
+      const visibleLeft = visual?.offsetLeft ?? 0;
+      const visibleRight = visual == null ? window.innerWidth : visual.offsetLeft + visual.width;
       const size = { width: node?.offsetWidth ?? 0, height: node?.offsetHeight ?? 0 };
       const popup = popupOf(node);
       widest.current = Math.max(widest.current, widestContent(popup, readout, spread));
@@ -344,7 +373,11 @@ export function usePolarTooltipAnchor(input: AnchorInput): TooltipAnchor {
         labels,
         controls,
         bounds: shifted(figure.getBoundingClientRect(), -x, -y),
-        viewportBottom: window.innerHeight - y,
+        viewportBottom: visibleBottom - y,
+        viewportTop: visibleTop - y,
+        viewportLeft: visibleLeft - x,
+        viewportRight: visibleRight - x,
+        title,
         size,
         content,
       });
@@ -354,8 +387,28 @@ export function usePolarTooltipAnchor(input: AnchorInput): TooltipAnchor {
     const figure = kernel.root();
     if (figure !== null) sizes.observe(figure);
     if (positioner.current !== null) sizes.observe(positioner.current);
+    // A scroll of any ancestor and a resize of the viewport move the chart against the viewport
+    // without resizing it, so they measure again too, once per frame however many arrive. One
+    // captured listener on the document hears every scroll container's scroll.
+    let pending: number | null = null;
+    const soon = (): void => {
+      pending ??= requestAnimationFrame(() => {
+        pending = null;
+        measure();
+      });
+    };
+    const passive = { passive: true } as const;
+    document.addEventListener("scroll", soon, { capture: true, passive: true });
+    window.addEventListener("resize", soon, passive);
+    window.visualViewport?.addEventListener("resize", soon, passive);
+    window.visualViewport?.addEventListener("scroll", soon, passive);
     return () => {
       sizes.disconnect();
+      document.removeEventListener("scroll", soon, { capture: true });
+      window.removeEventListener("resize", soon);
+      window.visualViewport?.removeEventListener("resize", soon);
+      window.visualViewport?.removeEventListener("scroll", soon);
+      if (pending !== null) cancelAnimationFrame(pending);
     };
   }, [open, measures, dialOf, kernel, positioner, readout, model]);
   // The lane the popup is in, kept across steps until the ray turns 20° into the other half.
@@ -375,6 +428,9 @@ export function usePolarTooltipAnchor(input: AnchorInput): TooltipAnchor {
     scene === null
       ? null
       : { centre: { x: 0, y: 0 }, radius: scene.radius, bottom: box.bottom * scene.radius };
+  // A closing popup keeps the lane it showed in while it fades out, and an open one keeps its bottom
+  // or top lane while that lane still fits, so a scroll or a resize moves it only when it must.
+  const [shownSide, setShownSide] = useState<LaneSide>("right");
   const placed =
     angle === null || preferred === null || scene === null || origin === null
       ? null
@@ -388,18 +444,26 @@ export function usePolarTooltipAnchor(input: AnchorInput): TooltipAnchor {
           bounds: scene.bounds,
           content: scene.content,
           viewportBottom: scene.viewportBottom,
+          viewportTop: scene.viewportTop,
+          viewportLeft: scene.viewportLeft,
+          viewportRight: scene.viewportRight,
+          title: scene.title,
+          keep: shownSide,
         });
-  // A closing popup keeps the lane it showed in while it fades out.
-  const [shownSide, setShownSide] = useState<LaneSide>("right");
   if (placed !== null && placed.side !== shownSide) setShownSide(placed.side);
   const side: LaneSide = placed?.side ?? shownSide;
   const room = placed?.room ?? null;
-  // The popup's one width in its lane, and the lowest its middle may ride, kept as numbers so the
-  // effects below run when they change and not on every render.
+  // The popup's one width in its lane, and the highest and lowest its middle may ride, the lane's
+  // bounds cut to the viewport, kept as numbers so the effects below run when they change and not on
+  // every render.
   const width = placed === null ? null : placed.box.right - placed.box.left;
+  const ceiling = placed?.bounds.top ?? null;
   const floor = placed?.bounds.bottom ?? null;
+  const leftEdge = placed?.bounds.left ?? null;
+  const rightEdge = placed?.bounds.right ?? null;
   // The anchor is the lane's corner, relative to the dial's centre: a side lane's inner edge at the
-  // dial's own height, or the bottom lane's top at the figure's left. It never moves on a step, so
+  // dial's own height, the bottom lane's top or the top lane's bottom, at its bounds' left; Base UI
+  // puts a top-lane popup's bottom edge on it. It never moves on a step, so
   // Base UI places the popup again only when its lane changes, and `shiftPopup` places it within.
   const anchorX =
     placed === null
@@ -408,8 +472,15 @@ export function usePolarTooltipAnchor(input: AnchorInput): TooltipAnchor {
         ? placed.box.left
         : placed.side === "left"
           ? placed.box.right
-          : (scene?.bounds.left ?? 0);
-  const anchorY = placed === null ? null : placed.side === "bottom" ? placed.box.top : 0;
+          : (leftEdge ?? 0);
+  const anchorY =
+    placed === null
+      ? null
+      : placed.side === "bottom"
+        ? placed.box.top
+        : placed.side === "top"
+          ? placed.box.bottom
+          : 0;
   // Where Base UI should put the positioner's near edge, in client pixels, read by the check that
   // keeps a newly opened popup transparent until it is there.
   const corner = useRef<{ readonly side: LaneSide; readonly x: number; readonly y: number } | null>(null);
@@ -475,7 +546,7 @@ export function usePolarTooltipAnchor(input: AnchorInput): TooltipAnchor {
   );
   /**
    * Whether Base UI has put the positioner's near edge on the lane's corner: a side lane's inner edge,
-   * or the bottom lane's top, within a pixel.
+   * the bottom lane's top or the top lane's bottom, within a pixel.
    */
   const onLane = useCallback((): boolean => {
     const node = positioner.current;
@@ -488,7 +559,9 @@ export function usePolarTooltipAnchor(input: AnchorInput): TooltipAnchor {
         ? rect.left - (dial.centre.x + want.x)
         : want.side === "left"
           ? rect.right - (dial.centre.x + want.x)
-          : rect.top - (dial.centre.y + want.y);
+          : want.side === "bottom"
+            ? rect.top - (dial.centre.y + want.y)
+            : rect.bottom - (dial.centre.y + want.y);
     return Math.abs(at) <= 1;
   }, [positioner, dialOf]);
   useLayoutEffect(() => {
@@ -514,9 +587,12 @@ export function usePolarTooltipAnchor(input: AnchorInput): TooltipAnchor {
     const switched = was !== null && was !== side;
     const last = lane.current;
     // Only a side lane's popup rides the follower, so only there does a leap fade it in; the bottom
-    // lane's never moves, and its content swaps in place.
+    // and top lanes' never move, and their content swaps in place.
     const leaped =
-      turns && side !== "bottom" && (last === null || last.angle !== angle) && kernel.follow.leaps();
+      turns &&
+      (side === "right" || side === "left") &&
+      (last === null || last.angle !== angle) &&
+      kernel.follow.leaps();
     const holds =
       switched || leaped || (last !== null && last.holds && (last.angle === angle || kernel.follow.leaps()));
     if (scene !== null)
@@ -524,7 +600,10 @@ export function usePolarTooltipAnchor(input: AnchorInput): TooltipAnchor {
         angle,
         side,
         scene,
-        bounds: floor === null ? scene.bounds : { ...scene.bounds, bottom: floor },
+        bounds:
+          ceiling === null || floor === null || leftEdge === null || rightEdge === null
+            ? scene.bounds
+            : { top: ceiling, bottom: floor, left: leftEdge, right: rightEdge },
         holds,
         turns,
         size: lane.current?.size ?? scene.size,
@@ -544,15 +623,12 @@ export function usePolarTooltipAnchor(input: AnchorInput): TooltipAnchor {
       const popup = popupOf(node);
       widest.current = Math.max(widest.current, widestContent(popup, readout, spread));
       const content = widest.current;
-      const outgrows = now.side !== "bottom" && room !== null && laneNeed(content + LANE_PAD) > room;
+      const across = now.side === "bottom" || now.side === "top";
+      const outgrows = !across && room !== null && laneNeed(content + LANE_PAD) > room;
       // A row wider than any the popup has shown widens it before this frame paints, so the row
       // never wraps for a frame while the scene catches up.
       if (room !== null && width !== null && content > width)
-        writeStyle(
-          node,
-          "width",
-          `${laneWidth(room, content, now.side === "bottom" ? room : LANE_WIDEST).toFixed(2)}px`
-        );
+        writeStyle(node, "width", `${laneWidth(room, content, across ? room : LANE_WIDEST).toFixed(2)}px`);
       if (outgrows || (width !== null && content > width))
         setScene((last) => (last === null || last.content >= content ? last : { ...last, content }));
     });
@@ -608,7 +684,10 @@ export function usePolarTooltipAnchor(input: AnchorInput): TooltipAnchor {
     side,
     room,
     width,
+    ceiling,
     floor,
+    leftEdge,
+    rightEdge,
     scene,
     turns,
     kernel.follow,
