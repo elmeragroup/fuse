@@ -695,8 +695,6 @@ describe("a closing tooltip's stack total", () => {
     const total = () =>
       open.querySelector('[data-slot="chart-tooltip-total"] > span:last-child')?.textContent;
     expect(total()).toBe("3");
-    // The frames are recorded in the page from before the key, so a slow round trip for the key
-    // command cannot let the exit pass unseen.
     const shown = () => open.isConnected && visible(open);
     const recorded = recordFrames(
       () => ({ total: total(), shown: shown(), closing: shown() && !open.hasAttribute("data-open") }),

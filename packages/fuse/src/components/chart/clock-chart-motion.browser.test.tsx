@@ -14,6 +14,7 @@ import { describe, expect, it } from "vitest";
 import { userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
+import { nextFrames, recordFrames, wait } from "../../../test/animation-frames";
 import { angleOf, clockLayer, clockPath, dotPoints } from "../../../test/chart/clock";
 import { installFrameClock } from "../../../test/chart/frame-clock";
 import { polarFigure } from "../../../test/chart/pie";
@@ -73,6 +74,7 @@ async function record(
 > {
   const frames: { t: number; dots: { angle: number; radius: number }[] }[] = [];
   for (;;) {
+    // Kept as a direct frame wait: it needs the frame callback's timestamp, which nextFrames drops.
     const now = await new Promise<number>((resolve) => requestAnimationFrame(resolve));
     const from = start();
     if (from === null) continue;
@@ -144,18 +146,17 @@ describe("a change of slot count mid-tween (A1-07)", () => {
     // frame's travel of the last frame before it: the whole fall is 0.26, and no 16 ms frame of an
     // ease-out over 480 ms covers a sixth of it.
     const { host, rerender } = renderThemed(<Dial intro="none" value={() => 4} />);
-    await new Promise((resolve) => requestAnimationFrame(resolve));
+    await nextFrames(1);
     rerender(<Dial intro="none" value={() => 2} />);
     const midnight = () => {
       const [dot] = dotPoints(clockPath(clockLayer(host, "clock-chart-dots"), "step-0"));
       return Math.hypot(dot?.x ?? 0, dot?.y ?? 0);
     };
-    const start = performance.now();
-    while (performance.now() - start < 100) await new Promise((resolve) => requestAnimationFrame(resolve));
+    await wait(100);
     const before = midnight();
     expect(before).toBeGreaterThan(Math.sqrt(0.545) + 0.05);
     rerender(<Dial intro="none" starts={OCT_26} value={() => 2} />);
-    await new Promise((resolve) => requestAnimationFrame(resolve));
+    await nextFrames(1);
     expect(Math.abs(midnight() - before)).toBeLessThan(0.26 / 6);
   });
 });
@@ -184,13 +185,13 @@ describe("a render that changes nothing (A1-13)", () => {
       </LocaleProvider>
     );
     const { host, rerender } = renderThemed(chart());
-    await new Promise((resolve) => requestAnimationFrame(resolve));
+    await nextFrames(1);
     rerender(chart());
-    await new Promise((resolve) => requestAnimationFrame(resolve));
+    await nextFrames(1);
     const figure = polarFigure(host);
     figure.scrollIntoView();
     await expect.poll(() => figure.hasAttribute("data-drawn")).toBe(true);
-    await new Promise((resolve) => requestAnimationFrame(resolve));
+    await nextFrames(1);
     const dots = dotPoints(clockPath(clockLayer(host, "clock-chart-dots"), "step-0"));
     expect(dots).toHaveLength(24);
     const last = dots[23];
@@ -201,7 +202,7 @@ describe("a render that changes nothing (A1-13)", () => {
 describe("the clock's updates", () => {
   it("moves each radius over 480 ms, between its old and its new", async () => {
     const { host, rerender } = renderThemed(<Dial intro="none" value={() => 4} />);
-    await new Promise((resolve) => requestAnimationFrame(resolve));
+    await nextFrames(1);
     rerender(<Dial intro="none" value={() => 2} />);
     const from = performance.now();
     const frames = await record(host, () => from, 700);
@@ -220,7 +221,7 @@ describe("the clock's updates", () => {
 
   it("turns each hour to its new angle when the 24-hour day gives way to the 25-hour one", async () => {
     const { host, rerender } = renderThemed(<Dial intro="none" />);
-    await new Promise((resolve) => requestAnimationFrame(resolve));
+    await nextFrames(1);
     rerender(<Dial intro="none" starts={OCT_26} />);
     const from = performance.now();
     const frames = await record(host, () => from, 700);
@@ -252,15 +253,18 @@ describe("the clock's followers (SPEC's Motion table)", () => {
       </Dial>
     );
     const dot = clockLayer(host, "clock-chart-active-dot");
-    const seen: { readonly dot: number; readonly slot: number }[] = [];
-    const start = performance.now();
-    while (performance.now() - start < 700) {
-      await new Promise((resolve) => requestAnimationFrame(resolve));
-      const [point] = dotPoints(clockPath(dot, "dots"));
-      const [own] = dotPoints(clockPath(clockLayer(host, "clock-chart-dots"), "step-0"));
-      if (point !== undefined && own !== undefined)
-        seen.push({ dot: Math.hypot(point.x, point.y), slot: Math.hypot(own.x, own.y) });
-    }
+    const frames = await recordFrames(
+      () => {
+        const [point] = dotPoints(clockPath(dot, "dots"));
+        const [own] = dotPoints(clockPath(clockLayer(host, "clock-chart-dots"), "step-0"));
+        return point === undefined || own === undefined
+          ? null
+          : { dot: Math.hypot(point.x, point.y), slot: Math.hypot(own.x, own.y) };
+      },
+      () => false,
+      700
+    );
+    const seen = frames.filter((frame) => frame !== null);
     // Slot 0's radius moves from the rim to √0.545, and the active dot reads the same in every frame.
     expect(seen.some(({ slot }) => slot > Math.sqrt(0.545) + 0.05 && slot < 0.95)).toBe(true);
     for (const frame of seen) expect(Math.abs(frame.dot - frame.slot)).toBeLessThan(0.002);
@@ -277,23 +281,26 @@ describe("the clock's followers (SPEC's Motion table)", () => {
       </Dial>
     );
     const { host, rerender } = renderThemed(dial(4));
-    await new Promise((resolve) => requestAnimationFrame(resolve));
+    await nextFrames(1);
     // DOM audit: the marker's dot and its pill are aria-hidden plot output, read by their slots.
     const pill = () => host.querySelector<HTMLElement>('[data-slot="clock-chart-value-label"]');
     expect(pill()?.checkVisibility({ visibilityProperty: true })).toBe(true);
     rerender(dial(2));
     const marker = clockLayer(host, "clock-chart-marker");
-    const seen: { readonly radius: number; readonly shown: boolean }[] = [];
-    const start = performance.now();
-    while (performance.now() - start < 700) {
-      await new Promise((resolve) => requestAnimationFrame(resolve));
-      const [point] = dotPoints(clockPath(marker, "dots"));
-      if (point !== undefined)
-        seen.push({
-          radius: Math.hypot(point.x, point.y),
-          shown: pill()?.checkVisibility({ visibilityProperty: true }) ?? false,
-        });
-    }
+    const frames = await recordFrames(
+      () => {
+        const [point] = dotPoints(clockPath(marker, "dots"));
+        return point === undefined
+          ? null
+          : {
+              radius: Math.hypot(point.x, point.y),
+              shown: pill()?.checkVisibility({ visibilityProperty: true }) ?? false,
+            };
+      },
+      () => false,
+      700
+    );
+    const seen = frames.filter((frame) => frame !== null);
     const rest = Math.sqrt(0.545);
     // The dot travels: some frame draws it between the rim and its rest.
     expect(seen.some(({ radius }) => radius > rest + 0.05 && radius < 0.95)).toBe(true);
@@ -314,18 +321,19 @@ describe("the clock's followers (SPEC's Motion table)", () => {
       </Dial>
     );
     const { host, rerender } = renderThemed(dial(4));
-    await new Promise((resolve) => requestAnimationFrame(resolve));
+    await nextFrames(1);
     // DOM audit: the markers' pills are aria-hidden plot output, read by their slots.
     const pills = () => [...host.querySelectorAll<HTMLElement>('[data-slot="clock-chart-value-label"]')];
     expect(pills().map((pill) => pill.checkVisibility({ visibilityProperty: true }))).toEqual([true, true]);
     rerender(dial(2));
-    const seen: { readonly first: boolean; readonly last: boolean }[] = [];
-    const start = performance.now();
-    while (performance.now() - start < 700) {
-      await new Promise((resolve) => requestAnimationFrame(resolve));
-      const [first, last] = pills().map((pill) => pill.checkVisibility({ visibilityProperty: true }));
-      seen.push({ first: first ?? false, last: last ?? false });
-    }
+    const seen = await recordFrames(
+      () => {
+        const [first, last] = pills().map((pill) => pill.checkVisibility({ visibilityProperty: true }));
+        return { first: first ?? false, last: last ?? false };
+      },
+      () => false,
+      700
+    );
     // The first Marker's pill hides for its tween, and the last one's shows in every frame.
     expect(seen.some(({ first }) => !first)).toBe(true);
     for (const { last } of seen) expect(last).toBe(true);
@@ -411,15 +419,14 @@ describe("the clock's followers (SPEC's Motion table)", () => {
       </Dial>
     );
     const { host, rerender } = renderThemed(dial(4));
-    await new Promise((resolve) => requestAnimationFrame(resolve));
+    await nextFrames(1);
     // DOM audit: the marker's pill is aria-hidden plot output, read by its slot.
     const pill = () => host.querySelector<HTMLElement>('[data-slot="clock-chart-value-label"]');
     rerender(dial(2));
     await expect.poll(() => pill()?.checkVisibility({ visibilityProperty: true })).toBe(false);
     setHold(true);
     await expect.poll(() => pill()?.checkVisibility()).toBe(false);
-    const start = performance.now();
-    while (performance.now() - start < 700) await new Promise((resolve) => requestAnimationFrame(resolve));
+    await wait(700);
     setHold(false);
     await expect.poll(() => pill()?.checkVisibility()).toBe(true);
     expect(pill()?.checkVisibility({ visibilityProperty: true })).toBe(true);
@@ -448,10 +455,9 @@ describe("the clock's followers (SPEC's Motion table)", () => {
       </LocaleProvider>
     );
     const { host, rerender } = renderThemed(dial(four, "default"));
-    await new Promise((resolve) => requestAnimationFrame(resolve));
+    await nextFrames(1);
     rerender(dial(two, "default"));
-    const start = performance.now();
-    while (performance.now() - start < 700) await new Promise((resolve) => requestAnimationFrame(resolve));
+    await wait(700);
     rerender(dial(two, "ping"));
     const marker = clockLayer(host, "clock-chart-marker");
     const [dot] = dotPoints(clockPath(marker, "dots"));
@@ -473,6 +479,7 @@ describe("the clock's followers (SPEC's Motion table)", () => {
     const turns: { readonly t: number; readonly angle: number }[] = [];
     const start = performance.now();
     while (performance.now() - start < 400) {
+      // Kept as a direct frame wait: it needs the frame callback's timestamp, which nextFrames drops.
       const now = await new Promise<number>((resolve) => requestAnimationFrame(resolve));
       turns.push({ t: now - start, angle: Number.parseFloat(getComputedStyle(hand).rotate) });
     }

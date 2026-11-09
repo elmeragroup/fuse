@@ -5,6 +5,7 @@ import { expect, it } from "vitest";
 import { userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
+import { nextFrames } from "../../../test/animation-frames";
 import { centreText, sectors } from "../../../test/chart/pie";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
@@ -39,7 +40,7 @@ it("pops the active slice and swaps the centre's text at once", async () => {
   const [first] = sectors(host);
   const rest = first?.getBoundingClientRect().left ?? 0;
   await userEvent.tab();
-  await new Promise((resolve) => requestAnimationFrame(resolve));
+  await nextFrames(1);
   // Strøm's bisector points at 3 o'clock.
   expect((first?.getBoundingClientRect().left ?? 0) - rest).toBeCloseTo(8, 0);
   expect(centreText(host, "pie-chart-center-value")).toBe("50");

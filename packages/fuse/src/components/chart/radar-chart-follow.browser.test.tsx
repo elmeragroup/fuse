@@ -11,6 +11,7 @@ import { describe, expect, it } from "vitest";
 import { page } from "vitest/browser";
 
 import "../../../dist/styles.css";
+import { nextFrames, recordFrames } from "../../../test/animation-frames";
 import { clientPoint, dialPoint, hoverAt } from "../../../test/chart/pie";
 import { radarLayer } from "../../../test/chart/radar";
 import { renderThemed } from "../../../test/themed-browser-render";
@@ -89,7 +90,7 @@ describe("the radar's active dot on the Root's follower", () => {
         return clientPoint(layer, point.x, point.y);
       };
       await hoverAt(...spokeAt(from));
-      for (let wait = 0; wait < 20; wait += 1) await new Promise((resolve) => requestAnimationFrame(resolve));
+      await nextFrames(20);
       page
         .getByRole("listbox")
         .element()
@@ -101,18 +102,23 @@ describe("the radar's active dot on the Root's follower", () => {
             pointerType: "mouse",
           })
         );
-      const off: number[] = [];
-      const turn: number[] = [];
-      const start = performance.now();
-      while (performance.now() - start < 700) {
-        await new Promise((resolve) => requestAnimationFrame(resolve));
-        if (!group.hasAttribute("data-value")) continue;
-        const box = dot.getBoundingClientRect();
-        const point = { x: box.left + box.width / 2, y: box.top + box.height / 2 };
-        off.push(Math.min(...edges.map(([a, b]) => toSegment(point, a, b))));
-        const angle = (Math.atan2(point.x - centre[0], centre[1] - point.y) * 180) / Math.PI;
-        turn.push(Math.abs(apart(Number.parseFloat(getComputedStyle(hand).rotate), angle)));
-      }
+      const frames = await recordFrames(
+        () => {
+          if (!group.hasAttribute("data-value")) return null;
+          const box = dot.getBoundingClientRect();
+          const point = { x: box.left + box.width / 2, y: box.top + box.height / 2 };
+          const angle = (Math.atan2(point.x - centre[0], centre[1] - point.y) * 180) / Math.PI;
+          return {
+            off: Math.min(...edges.map(([a, b]) => toSegment(point, a, b))),
+            turn: Math.abs(apart(Number.parseFloat(getComputedStyle(hand).rotate), angle)),
+          };
+        },
+        () => false,
+        700
+      );
+      const shown = frames.filter((frame) => frame !== null);
+      const off = shown.map((frame) => frame.off);
+      const turn = shown.map((frame) => frame.turn);
       expect(off.length).toBeGreaterThan(20);
       expect(Math.max(...off)).toBeLessThanOrEqual(0.5);
       expect(Math.max(...turn)).toBeLessThanOrEqual(0.5);
@@ -132,7 +138,7 @@ describe("the radar's active dot on the Root's follower", () => {
       return clientPoint(layer, point.x, point.y);
     };
     await hoverAt(...spokeAt(0));
-    for (let wait = 0; wait < 20; wait += 1) await new Promise((resolve) => requestAnimationFrame(resolve));
+    await nextFrames(20);
     page
       .getByRole("listbox")
       .element()
@@ -146,26 +152,26 @@ describe("the radar's active dot on the Root's follower", () => {
       );
     const spoke1 = 360 / 7;
     const spoke3 = (3 * 360) / 7;
-    const inBreak: boolean[] = [];
-    const shownOutside: boolean[] = [];
-    let leftAt: string | null = null;
-    let lowest = 1;
-    const start = performance.now();
-    while (performance.now() - start < 700) {
-      await new Promise((resolve) => requestAnimationFrame(resolve));
-      const angle = ((Number.parseFloat(getComputedStyle(hand).rotate) % 360) + 360) % 360;
-      const shows = group.hasAttribute("data-value");
-      if (angle > spoke1 + 0.5 && angle < spoke3 - 0.5) {
-        inBreak.push(shows);
-        // The dot stays where it left the drawn edge while it fades.
-        leftAt ??= dot.getAttribute("d");
-        expect(dot.getAttribute("d")).toBe(leftAt);
-        lowest = Math.min(lowest, Number.parseFloat(getComputedStyle(group).opacity));
-      } else if (angle <= spoke1 - 0.5 || angle >= spoke3 + 0.05) {
-        // Short of spoke 1, or past spoke 3 as the spring overshoots it, the dot rides a drawn edge.
-        shownOutside.push(shows);
-      }
-    }
+    const frames = await recordFrames(
+      () => ({
+        angle: ((Number.parseFloat(getComputedStyle(hand).rotate) % 360) + 360) % 360,
+        shows: group.hasAttribute("data-value"),
+        d: dot.getAttribute("d"),
+        opacity: Number.parseFloat(getComputedStyle(group).opacity),
+      }),
+      () => false,
+      700
+    );
+    const breaking = frames.filter(({ angle }) => angle > spoke1 + 0.5 && angle < spoke3 - 0.5);
+    const inBreak = breaking.map(({ shows }) => shows);
+    // The dot stays where it left the drawn edge while it fades.
+    const leftAt = breaking[0]?.d ?? null;
+    for (const { d } of breaking) expect(d).toBe(leftAt);
+    const lowest = Math.min(1, ...breaking.map(({ opacity }) => opacity));
+    // Short of spoke 1, or past spoke 3 as the spring overshoots it, the dot rides a drawn edge.
+    const shownOutside = frames
+      .filter(({ angle }) => angle <= spoke1 - 0.5 || angle >= spoke3 + 0.05)
+      .map(({ shows }) => shows);
     expect(inBreak.length).toBeGreaterThan(3);
     expect(inBreak.every((shows) => !shows)).toBe(true);
     expect(lowest).toBeLessThan(0.5);
@@ -191,7 +197,7 @@ describe("the radar's active dot on the Root's follower", () => {
       return clientPoint(layer, point.x, point.y);
     };
     await hoverAt(...spokeAt(0));
-    for (let wait = 0; wait < 30; wait += 1) await new Promise((resolve) => requestAnimationFrame(resolve));
+    await nextFrames(30);
     const target = (3 * 360) / 7;
     const start = performance.now();
     page
@@ -205,12 +211,17 @@ describe("the radar's active dot on the Root's follower", () => {
           pointerType: "mouse",
         })
       );
+    const frames = await recordFrames(
+      () => ({
+        off: Math.abs(apart(Number.parseFloat(getComputedStyle(hand).rotate), target)),
+        at: performance.now() - start,
+      }),
+      () => performance.now() - start >= 1500,
+      Number.POSITIVE_INFINITY
+    );
     let landed: number | null = null;
-    while (performance.now() - start < 1500) {
-      await new Promise((resolve) => requestAnimationFrame(resolve));
-      const angle = Number.parseFloat(getComputedStyle(hand).rotate);
-      const off = Math.abs(apart(angle, target));
-      if (off <= 1) landed ??= performance.now() - start;
+    for (const { off, at } of frames) {
+      if (off <= 1) landed ??= at;
       else landed = null;
     }
     expect(landed).not.toBeNull();

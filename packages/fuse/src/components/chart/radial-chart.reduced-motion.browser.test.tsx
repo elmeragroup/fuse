@@ -6,6 +6,7 @@ import { expect, it } from "vitest";
 import { userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
+import { nextFrames } from "../../../test/animation-frames";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
 import "./chart.css";
@@ -31,7 +32,7 @@ it("scales the active ring at once and plays no scale-out", async () => {
     </LocaleProvider>
   );
   await userEvent.tab();
-  await new Promise((resolve) => requestAnimationFrame(resolve));
+  await nextFrames(1);
   // DOM audit: the ring groups carry data-ring, read by the attribute the stylesheet keys on.
   const group = host.querySelector("[data-ring]:not([data-ring-track])");
   expect(getComputedStyle(group ?? host).scale).toBe("1.03");

@@ -13,6 +13,7 @@ import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
+import { nextFrames, wait } from "../../../test/animation-frames";
 import { labelInk } from "../../../test/chart/clock";
 import { clientPoint, hoverAt, polarFigure } from "../../../test/chart/pie";
 import { layerPath, pathPoints, radarLayer, radarLayers, subpaths } from "../../../test/chart/radar";
@@ -75,11 +76,6 @@ function at(angle: number, radius: number): DOMPoint {
   );
 }
 
-/** Wait one frame, for the loop's first paint after a commit. */
-async function painted(): Promise<void> {
-  await new Promise((resolve) => requestAnimationFrame(resolve));
-}
-
 /** Finish every running transition in the host, so styles show their rest. */
 function settle(host: HTMLElement): void {
   for (const animation of host.getAnimations({ subtree: true })) animation.finish();
@@ -92,7 +88,7 @@ describe("the spoke frame and the negatives of section 8.4", () => {
         <RadarChart.Line dataKey="a" />
       </Radar>
     );
-    await painted();
+    await nextFrames(1);
     const line = radarLayer(host, "radar-chart-line");
     const points = pathPoints(layerPath(line, "solid").getAttribute("d") ?? "");
     expect(points).toEqual([
@@ -115,7 +111,7 @@ describe("the spoke frame and the negatives of section 8.4", () => {
         <RadarChart.Area dataKey="a" />
       </Radar>
     );
-    await painted();
+    await nextFrames(1);
     const [area] = radarLayers(host, "radar-chart-area");
     const fill = layerPath(area, "solid");
     // Points 3° past each spoke, inside the edge that leaves it, so none sits on a shared boundary.
@@ -146,7 +142,7 @@ describe("ring dots", () => {
         <RadarChart.Dots dataKey="a" variant="ring" />
       </Radar>
     );
-    await painted();
+    await nextFrames(1);
     rerender(
       <Radar data={rows([2, 4, null, 4])} max={4}>
         <RadarChart.Dots dataKey="a" variant="ring" />
@@ -191,7 +187,7 @@ describe("quality (R5)", () => {
         </div>
       </LocaleProvider>
     );
-    await painted();
+    await nextFrames(1);
     const [line] = radarLayers(host, "radar-chart-line");
     const marked = layerPath(line, "marked");
     // Spokes at 60° steps on the rim: the dashed run visits spokes 0, 1 and 2, two edges.
@@ -213,7 +209,7 @@ describe("quality (R5)", () => {
         <RadarChart.Line dataKey="a" />
       </Radar>
     );
-    await painted();
+    await nextFrames(1);
     const [line] = radarLayers(host, "radar-chart-line");
     expect(layerPath(line, "lone").getAttribute("d")).toBe("M0,-1h0M0,1h0");
     expect(layerPath(line, "solid").getAttribute("d")).toBe("");
@@ -230,7 +226,7 @@ describe("the pick (R6) and hover (D19)", () => {
         <RadarChart.Line dataKey="b" />
       </Radar>
     );
-    await painted();
+    await nextFrames(1);
     const lines = radarLayers(host, "radar-chart-line");
     const drawn = lines.map((line) => pathPoints(layerPath(line, "solid").getAttribute("d") ?? ""));
     const figure = polarFigure(host);
@@ -262,9 +258,7 @@ describe("the pick (R6) and hover (D19)", () => {
         const kept: boolean = held !== null && (gaps[held] ?? Infinity) - Math.min(...gaps) <= 0.06;
         held = kept ? held : nearest;
         // A near series holds for 150 ms after it changes, so each probe waits that out.
-        const settled = performance.now();
-        while (performance.now() - settled < 160)
-          await new Promise((resolve) => requestAnimationFrame(resolve));
+        await wait(160);
         await hoverAt(...clientPoint(radarLayer(host, "radar-chart-line"), point.x, point.y));
         expect(figure.style.getPropertyValue("--chart-active")).toBe(String(spoke));
         expect(figure.getAttribute("data-near")).toBe(String(held));
@@ -281,7 +275,7 @@ describe("the pick (R6) and hover (D19)", () => {
         <RadarChart.Area dataKey="b" />
       </Radar>
     );
-    await painted();
+    await nextFrames(1);
     const areas = radarLayers(host, "radar-chart-area");
     // Near series b's vertex on spoke 0, at half the radius.
     await hoverAt(...clientPoint(radarLayer(host, "radar-chart-area"), 0.02, -0.5));
@@ -324,7 +318,7 @@ describe("the grid and the axes (S12)", () => {
         <RadarChart.RadiusAxis />
       </Radar>
     );
-    await painted();
+    await nextFrames(1);
     const grid = radarLayers(host, "radar-chart-grid")[0]?.getBoundingClientRect();
     const radius = (grid?.width ?? 0) / 2;
     const centre = { x: (grid?.left ?? 0) + radius, y: (grid?.top ?? 0) + radius };
@@ -389,7 +383,7 @@ describe("the active dot and the glow", () => {
         </RadarChart.Glow>
       </Radar>
     );
-    await painted();
+    await nextFrames(1);
     const line = radarLayer(host, "radar-chart-line");
     expect(getComputedStyle(line).filter).toMatch(/^drop-shadow\(.+ 0px 0px 9\.5px\)$/u);
   });

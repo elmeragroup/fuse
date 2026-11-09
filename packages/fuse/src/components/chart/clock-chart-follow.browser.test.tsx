@@ -18,6 +18,7 @@ import { describe, expect, it } from "vitest";
 import { page } from "vitest/browser";
 
 import "../../../dist/styles.css";
+import { nextFrames, recordFrames } from "../../../test/animation-frames";
 import { clockLayer } from "../../../test/chart/clock";
 import { clientPoint, dialPoint, hoverAt } from "../../../test/chart/pie";
 import { renderThemed } from "../../../test/themed-browser-render";
@@ -120,17 +121,6 @@ function moveTo(x: number, y: number): void {
     );
 }
 
-/** Each animation frame's reading for `ms`. */
-async function frames(read: () => Frame, ms: number): Promise<Frame[]> {
-  const seen: Frame[] = [];
-  const start = performance.now();
-  while (performance.now() - start < ms) {
-    await new Promise((resolve) => requestAnimationFrame(resolve));
-    seen.push(read());
-  }
-  return seen;
-}
-
 describe("the clock's active dot on the Root's follower", () => {
   it.each([1, 5, 47])(
     "keeps the dot on the Line and the Scrubber on the dot through a %s-slot pointer step",
@@ -138,9 +128,9 @@ describe("the clock's active dot on the Root's follower", () => {
       const { host } = renderThemed(<Solar />);
       const { curve, centre, at, read } = setup(host);
       await hoverAt(...at(30));
-      await frames(read, 300);
+      await recordFrames(read, () => false, 300);
       await hoverAt(...at(30 + step));
-      const seen = await frames(read, 700);
+      const seen = await recordFrames(read, () => false, 700);
       const shown = seen.filter(
         (frame): frame is Frame & { dot: { x: number; y: number } } => frame.dot !== null
       );
@@ -162,11 +152,11 @@ describe("the clock's active dot on the Root's follower", () => {
     const { host } = renderThemed(<Solar />);
     const { at, read } = setup(host);
     await hoverAt(...at(30));
-    await frames(read, 300);
+    await recordFrames(read, () => false, 300);
     await hoverAt(...at(35));
-    const first = await frames(read, 80);
+    const first = await recordFrames(read, () => false, 80);
     moveTo(...at(40));
-    const [next] = await frames(read, 1);
+    const [next] = await recordFrames(read, () => false, 1);
     const travel = (a: Frame | undefined, b: Frame | undefined): number =>
       a?.dot == null || b?.dot == null ? 0 : Math.hypot(b.dot.x - a.dot.x, b.dot.y - a.dot.y);
     const before = travel(first.at(-2), first.at(-1));
@@ -182,6 +172,7 @@ describe("the clock's active dot on the Root's follower", () => {
 // one frame at any pace, so the dot may not slow the hand there: no frame turns backwards, no turn
 // after the first 12 frames drops under half the median turn, and the median lag behind the pointer
 // stays within 1.25 times the dial's lag without a dot.
+// Kept as a direct frame wait: it needs the frame callback's timestamp, which nextFrames drops.
 const nextFrame = () => new Promise<number>((resolve) => requestAnimationFrame(resolve));
 
 /**
@@ -209,7 +200,7 @@ async function ring(host: HTMLElement, speed: number, turns: number) {
     );
   };
   move(1);
-  for (let wait = 0; wait < 30; wait += 1) await nextFrame();
+  await nextFrames(30);
   const omega = (speed / (0.8 * radius)) * (180 / Math.PI);
   const start = await nextFrame();
   const rows: { pointer: number; hand: number }[] = [];
@@ -253,10 +244,6 @@ async function ring(host: HTMLElement, speed: number, turns: number) {
   };
 }
 
-async function settle(): Promise<void> {
-  for (let wait = 0; wait < 20; wait += 1) await nextFrame();
-}
-
 describe("the follower beside a stepped series' dot", () => {
   /** 96 quarter-hourly prices, a stepped day that moves at every quarter. */
   const PRICES = Array.from({ length: 96 }, (_, quarter) => ({
@@ -288,11 +275,11 @@ describe("the follower beside a stepped series' dot", () => {
 
   it("keeps pace with a pointer at 800 px/s, as the dial without a dot does", async () => {
     const plain = renderThemed(<Stepped dot={false} />);
-    await settle();
+    await nextFrames(20);
     const alone = await ring(plain.host, 800, 1.5);
     plain.unmount();
     const { host } = renderThemed(<Stepped dot />);
-    await settle();
+    await nextFrames(20);
     const beside = await ring(host, 800, 1.5);
     expect(beside.frames).toBeGreaterThan(30);
     expect(beside.backwards).toBe(0);
@@ -302,7 +289,7 @@ describe("the follower beside a stepped series' dot", () => {
 
   it("never turns backwards over three turns at 2,000 px/s", async () => {
     const { host } = renderThemed(<Stepped dot />);
-    await settle();
+    await nextFrames(20);
     const result = await ring(host, 2000, 3);
     expect(result.frames).toBeGreaterThan(30);
     expect(result.backwards).toBe(0);
@@ -354,7 +341,7 @@ describe("the follower beside the docs Solar day's dot under a fast circle", () 
   // turn at times, and keeps turning the pointer's way; it lands within 300 ms once the pointer stops.
   it("never turns backwards over four turns at 2,000 px/s, trails by under a turn, and lands within 300 ms", async () => {
     const { host } = renderThemed(<SolarDay />);
-    await settle();
+    await nextFrames(20);
     const result = await ring(host, 2000, 4);
     expect(result.frames).toBeGreaterThan(30);
     expect(result.backwards).toBe(0);
@@ -548,7 +535,7 @@ describe("the follower under a pointer swinging through the centre", () => {
 
   it("never turns the hand more than 190° one way over three round trips through the centre at 2,000 px/s", async () => {
     const { host } = renderThemed(<Hours />);
-    await settle();
+    await nextFrames(20);
     const layer = clockLayer(host, "clock-chart-line");
     const [cx, cy] = clientPoint(layer, 0, 0);
     const [rx] = clientPoint(layer, 1, 0);
@@ -572,7 +559,7 @@ describe("the follower under a pointer swinging through the centre", () => {
       );
     const leg = 1.8 * radius;
     move(0.9 * radius);
-    await settle();
+    await nextFrames(20);
     const start = await nextFrame();
     let unwrapped: number | null = null;
     const hands: number[] = [];
@@ -586,9 +573,13 @@ describe("the follower under a pointer swinging through the centre", () => {
       unwrapped = unwrapped === null ? raw : unwrapped + ((((raw - unwrapped) % 360) + 540) % 360) - 180;
       hands.push(unwrapped);
     }
-    for (let wait = 0; wait < 30; wait += 1) {
-      await nextFrame();
-      const raw = Number.parseFloat(getComputedStyle(hand).rotate);
+    let left = 30;
+    const tail = await recordFrames(
+      () => Number.parseFloat(getComputedStyle(hand).rotate),
+      () => (left -= 1) === 0,
+      Number.POSITIVE_INFINITY
+    );
+    for (const raw of tail) {
       unwrapped = unwrapped === null ? raw : unwrapped + ((((raw - unwrapped) % 360) + 540) % 360) - 180;
       hands.push(unwrapped);
     }

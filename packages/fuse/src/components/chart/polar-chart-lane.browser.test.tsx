@@ -12,6 +12,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { commands, page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
+import { nextFrames, recordFrames } from "../../../test/animation-frames";
 import { pointerAt, pointerTarget } from "../../../test/chart/marks";
 import { clientPoint, dialPoint, hoverAt, polarFigure } from "../../../test/chart/pie";
 import { radarLayer } from "../../../test/chart/radar";
@@ -177,11 +178,6 @@ function popup(): { readonly box: DOMRect; readonly side: string | null; readonl
   };
 }
 
-async function frames(count: number): Promise<void> {
-  for (let frame = 0; frame < count; frame += 1)
-    await new Promise((resolve) => requestAnimationFrame(resolve));
-}
-
 function Card({ children }: { readonly children: ReactElement }): ReactElement {
   return (
     <LocaleProvider locale="nb-NO" timeZone="Europe/Oslo">
@@ -212,7 +208,7 @@ describe("the polar tooltip's side lanes", () => {
       const bounds = figure.getBoundingClientRect();
       const faults: string[] = [];
       for (let step = 0; step < 24; step += 1) {
-        await frames(14);
+        await nextFrames(14);
         const shown = popup();
         if (shown === null) {
           faults.push(`step ${String(step)}: no popup`);
@@ -245,7 +241,7 @@ describe("the polar tooltip's lane switches", () => {
     for (const angle of angles) {
       const point = dialPoint(angle, 0.8);
       await hoverAt(...clientPoint(layer, point.x, point.y));
-      await frames(1);
+      await nextFrames(1);
       const shown = popup();
       if (shown !== null) sides.push(shown.side);
     }
@@ -277,15 +273,15 @@ describe("the polar tooltip's lane switches", () => {
     if (layer === null) throw new Error("no layer");
     const point = dialPoint(60, 0.6);
     await pointerAt(...clientPoint(layer, point.x, point.y));
-    await frames(20);
+    await nextFrames(20);
     expect(popup()?.side).toBe("right");
     // The popup closes after the pointer leaves, and the keys open it again on a side lane.
     await pointerAt(2, 2);
-    await frames(30);
+    await nextFrames(30);
     await userEvent.tab();
     const sides: (string | null)[] = [];
     for (let step = 0; step < 6; step += 1) {
-      await frames(14);
+      await nextFrames(14);
       sides.push(popup()?.side ?? null);
       await userEvent.keyboard("{ArrowRight}");
     }
@@ -341,7 +337,7 @@ describe("the polar tooltip beside the Root's legend and table toggle", () => {
       const faults: string[] = [];
       const sides = new Set<string | null>();
       for (let step = 0; step < 24; step += 1) {
-        await frames(14);
+        await nextFrames(14);
         const shown = popup();
         if (shown === null) faults.push(`step ${String(step)}: no popup`);
         else {
@@ -387,7 +383,7 @@ describe("the polar tooltip beside the Root's legend and table toggle", () => {
         </div>
       </LocaleProvider>
     );
-    await frames(10);
+    await nextFrames(10);
     // DOM audit: the ring layer is aria-hidden plot output, read by its slot, for its screen CTM.
     const layer = host.querySelector<SVGSVGElement>('[data-slot="radial-chart-bar"]');
     if (layer === null) throw new Error("no rings");
@@ -456,7 +452,7 @@ describe("the bottom lane's width, the widest readout's", () => {
       expect(polarFigure(host)).not.toBeNull();
       const faults: string[] = [];
       for (let step = 0; step < 96; step += 1) {
-        await frames(3);
+        await nextFrames(3);
         const shown = popup();
         if (shown === null) faults.push(`step ${String(step)}: no popup`);
         else {
@@ -517,6 +513,7 @@ describe("the side lane's fade on a leap", () => {
     };
     move(10);
     const omega = (200 / (0.8 * radius)) * (180 / Math.PI);
+    // Kept as a direct frame wait: it needs the frame callback's timestamp, which nextFrames drops.
     const start = await new Promise<number>((resolve) => requestAnimationFrame(resolve));
     const reads: { readonly opacity: number; readonly active: boolean; readonly side: string | null }[] = [];
     /** The popup's computed opacity, and whether an option is active, as the frame stands. */
@@ -530,6 +527,7 @@ describe("the side lane's fade on a leap", () => {
       });
     };
     for (;;) {
+      // Kept as a direct frame wait: it needs the frame callback's timestamp, which nextFrames drops.
       const now = await new Promise<number>((resolve) => requestAnimationFrame(resolve));
       const angle = 10 + (omega * (now - start)) / 1000;
       if (angle > 370) break;
@@ -591,7 +589,7 @@ describe("the bottom lane's width when a wider row first shows", () => {
     await userEvent.tab();
     await userEvent.keyboard("{Home}");
     for (let hour = 0; hour < 17; hour += 1) await userEvent.keyboard("{ArrowRight}");
-    await frames(20);
+    await nextFrames(20);
     // DOM audit: the tooltip is aria-hidden and portalled, read by its slot.
     const node = document.querySelector<HTMLElement>('[data-slot="chart-tooltip"]');
     if (node === null) throw new Error("no popup");
@@ -605,7 +603,7 @@ describe("the bottom lane's width when a wider row first shows", () => {
     });
     observer.observe(node);
     await userEvent.keyboard("{ArrowRight}");
-    await frames(30);
+    await nextFrames(30);
     observer.disconnect();
     expect(node.textContent).toContain("no data yet");
     const after = node.getBoundingClientRect().height;
@@ -662,20 +660,23 @@ describe("the opening hold when the popup closes during it", () => {
     // The popup opens once and closes, as on any page where it has shown before, so it is mounted
     // and the next open holds it.
     move(dialPoint(30, 0.9));
-    await frames(20);
+    await nextFrames(20);
     move(dialPoint(30, 0.12));
-    await frames(40);
-    const next = new Promise((resolve) => requestAnimationFrame(resolve));
+    await nextFrames(40);
+    const next = nextFrames(1);
     move(dialPoint(30, 0.9));
     await next;
     move(dialPoint(30, 0.12));
-    const opacities: number[] = [];
-    for (let frame = 0; frame < 15; frame += 1) {
-      await frames(1);
-      // DOM audit: the tooltip is aria-hidden and portalled, read by its slot.
-      const node = document.querySelector<HTMLElement>('[data-slot="chart-tooltip"]');
-      opacities.push(node === null ? 0 : Number(getComputedStyle(node).opacity));
-    }
+    let left = 15;
+    const opacities = await recordFrames(
+      () => {
+        // DOM audit: the tooltip is aria-hidden and portalled, read by its slot.
+        const node = document.querySelector<HTMLElement>('[data-slot="chart-tooltip"]');
+        return node === null ? 0 : Number(getComputedStyle(node).opacity);
+      },
+      () => (left -= 1) === 0,
+      Number.POSITIVE_INFINITY
+    );
     expect(opacities.filter((opacity) => opacity > 0.05)).toEqual([]);
   });
 
@@ -721,9 +722,9 @@ describe("the opening hold when the popup closes during it", () => {
     };
     // The popup opens once and closes, so it is mounted, as the portal keeps it from its first open.
     move(dialPoint(30, 0.9));
-    await frames(20);
+    await nextFrames(20);
     move(dialPoint(30, 0.12));
-    await frames(40);
+    await nextFrames(40);
     // DOM audit: the tooltip is aria-hidden and portalled, read by its slot.
     const popup = document.querySelector<HTMLElement>('[data-slot="chart-tooltip"]');
     if (popup === null) throw new Error("no mounted popup");
@@ -737,17 +738,19 @@ describe("the opening hold when the popup closes during it", () => {
     });
     move(dialPoint(30, 0.9));
     await held;
+    // Kept, reason 2: closing inside the frame callback schedules the close-check before the first read.
     await new Promise<void>((resolve) =>
       requestAnimationFrame(() => {
         move(dialPoint(30, 0.12));
         resolve();
       })
     );
-    const opacities: number[] = [];
-    for (let frame = 0; frame < 15; frame += 1) {
-      await frames(1);
-      opacities.push(Number(getComputedStyle(popup).opacity));
-    }
+    let left = 15;
+    const opacities = await recordFrames(
+      () => Number(getComputedStyle(popup).opacity),
+      () => (left -= 1) === 0,
+      Number.POSITIVE_INFINITY
+    );
     expect(opacities.filter((opacity) => opacity > 0.05)).toEqual([]);
   });
 
@@ -789,9 +792,9 @@ describe("the opening hold when the popup closes during it", () => {
       );
     };
     move(dialPoint(30, 0.9));
-    await frames(20);
+    await nextFrames(20);
     move(dialPoint(30, 0.12));
-    await frames(40);
+    await nextFrames(40);
     // DOM audit: the tooltip is aria-hidden and portalled, read by its slot.
     const popup = document.querySelector<HTMLElement>('[data-slot="chart-tooltip"]');
     if (popup === null) throw new Error("no mounted popup");
@@ -818,6 +821,7 @@ describe("the opening hold when the popup closes during it", () => {
     await held;
     await inline("");
     const before: number[] = [Number(getComputedStyle(popup).opacity)];
+    // Kept, reason 2: reading and closing inside the frame callback schedules the close-check first.
     await new Promise<void>((resolve) =>
       requestAnimationFrame(() => {
         before.push(Number(getComputedStyle(popup).opacity));
@@ -825,11 +829,12 @@ describe("the opening hold when the popup closes during it", () => {
         resolve();
       })
     );
-    const after: number[] = [];
-    for (let frame = 0; frame < 15; frame += 1) {
-      await frames(1);
-      after.push(Number(getComputedStyle(popup).opacity));
-    }
+    let left = 15;
+    const after = await recordFrames(
+      () => Number(getComputedStyle(popup).opacity),
+      () => (left -= 1) === 0,
+      Number.POSITIVE_INFINITY
+    );
     const reached = Math.max(...before);
     expect(reached).toBeLessThan(1);
     expect(after.filter((opacity) => opacity > reached + 0.001)).toEqual([]);
@@ -849,24 +854,26 @@ describe("the opening hold when the popup closes during it", () => {
     // The frame after B opens, before its close: B's item has survived one check, so B is still
     // held, and nothing of it paints.
     const opacities: number[] = [];
-    requestAnimationFrame(() =>
-      requestAnimationFrame(() => {
-        move(dialPoint(30, 0.62));
-        requestAnimationFrame(() => {
-          opacities.push(Number(getComputedStyle(popup).opacity));
-          move(dialPoint(30, 0.12));
-          closed();
-        });
-      })
-    );
+    void (async () => {
+      await nextFrames(2);
+      move(dialPoint(30, 0.62));
+      await nextFrames(1);
+      opacities.push(Number(getComputedStyle(popup).opacity));
+      move(dialPoint(30, 0.12));
+      closed();
+    })();
     move(dialPoint(30, 0.9));
     await held;
-    requestAnimationFrame(() => move(dialPoint(30, 0.12)));
+    void nextFrames(1).then(() => move(dialPoint(30, 0.12)));
     await done;
-    for (let frame = 0; frame < 15; frame += 1) {
-      await frames(1);
-      opacities.push(Number(getComputedStyle(popup).opacity));
-    }
+    let left = 15;
+    opacities.push(
+      ...(await recordFrames(
+        () => Number(getComputedStyle(popup).opacity),
+        () => (left -= 1) === 0,
+        Number.POSITIVE_INFINITY
+      ))
+    );
     expect(opacities.filter((opacity) => opacity > 0.05)).toEqual([]);
   });
 });
@@ -895,6 +902,7 @@ describe("a close during the lane fade", () => {
       );
     });
     observer.observe(probe);
+    // Kept as a frame callback: it resizes the probe in every frame callback, for ResizeObserver timing.
     const tick = () => {
       if (!on) return;
       frame += 1;
@@ -954,7 +962,7 @@ describe("a close during the lane fade", () => {
         </PieChart.Root>
       </Card>
     );
-    await frames(20);
+    await nextFrames(20);
     // DOM audit: the pie is aria-hidden plot output, read by its slot, for its screen CTM.
     const layer = host.querySelector<SVGSVGElement>('[data-slot="pie-chart-pie"]');
     if (layer === null) throw new Error("no pie");
@@ -970,35 +978,36 @@ describe("a close during the lane fade", () => {
       document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
     // Mounted by an open and a dismiss on slice 1, so slice 0 opens again after it.
     move(135);
-    await frames(30);
+    await nextFrames(30);
     escape();
-    await frames(45);
+    await nextFrames(45);
     // DOM audit: the tooltip is aria-hidden and portalled, read by its slot.
     const popup = document.querySelector<HTMLElement>('[data-slot="chart-tooltip"]');
     if (popup === null) throw new Error("no mounted popup");
     const record = paintedFrames();
     move(45);
     // The release: the first frame the popup is open, holds no inline opacity and paints.
-    for (let wait = 0; wait < 20; wait += 1) {
-      await frames(1);
-      if (
-        popup.hasAttribute("data-open") &&
-        popup.style.opacity === "" &&
-        Number(getComputedStyle(popup).opacity) > 0.01
-      )
-        break;
-    }
-    await frames(1);
+    let left = 20;
+    await recordFrames(
+      () => undefined,
+      () =>
+        (popup.hasAttribute("data-open") &&
+          popup.style.opacity === "" &&
+          Number(getComputedStyle(popup).opacity) > 0.01) ||
+        (left -= 1) === 0,
+      Number.POSITIVE_INFINITY
+    );
+    await nextFrames(1);
     for (const step of switches) {
       move(step.angle);
-      await frames(step.frames);
+      await nextFrames(step.frames);
     }
     // What is on screen at the close: the frames painted so far and the fade's value now, which a
     // close in a later frame callback reads one fade step on from the last painted frame.
     const before = Math.max(0, ...record.painted, Number(getComputedStyle(popup).opacity));
     const at = record.painted.length;
     escape();
-    await frames(16);
+    await nextFrames(16);
     record.stop();
     const after = record.painted.slice(at, at + 15);
     expect(after.length).toBeGreaterThan(10);
@@ -1050,10 +1059,10 @@ describe("the polar tooltip near the viewport's bottom", () => {
     const spacer = host.querySelector<HTMLElement>("[data-spacer]");
     if (spacer === null) throw new Error("no spacer");
     spacer.style.height = `${String(592 - figure.getBoundingClientRect().bottom)}px`;
-    await frames(2);
+    await nextFrames(2);
     expect(dial().bottom).toBeGreaterThan(500);
     await userEvent.tab();
-    await frames(14);
+    await nextFrames(14);
     const shown = popup();
     expect(shown).not.toBeNull();
     const box = shown?.box ?? new DOMRect();

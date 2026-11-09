@@ -13,6 +13,7 @@ import { describe, expect, it } from "vitest";
 import { userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
+import { nextFrames } from "../../../test/animation-frames";
 import { installFrameClock } from "../../../test/chart/frame-clock";
 import { polarFigure, rings } from "../../../test/chart/pie";
 import { renderThemed } from "../../../test/themed-browser-render";
@@ -41,6 +42,7 @@ async function record(
 ): Promise<{ readonly t: number; readonly extents: readonly number[] }[]> {
   const frames: { readonly t: number; readonly extents: readonly number[] }[] = [];
   for (;;) {
+    // Kept as a direct frame wait: it needs the frame callback's timestamp, which nextFrames drops.
     const now = await new Promise<number>((resolve) => requestAnimationFrame(resolve));
     const from = start();
     if (from === null) continue;
@@ -159,7 +161,7 @@ describe("the rings' motion (SPEC's Motion table)", () => {
 
   it("morphs each ring to new data over 480 ms, between its old angle and its new (Q5)", async () => {
     const { host, rerender } = renderThemed(<Chart kwh={[50, 75, 25]} intro="none" />);
-    await new Promise((resolve) => requestAnimationFrame(resolve));
+    await nextFrames(1);
     rerender(<Chart kwh={[25, 100, 50]} intro="none" />);
     const from = performance.now();
     const frames = await record(host, () => from, 700);

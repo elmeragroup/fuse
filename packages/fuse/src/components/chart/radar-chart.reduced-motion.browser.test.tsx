@@ -7,6 +7,7 @@ import { expect, it } from "vitest";
 import { userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
+import { nextFrames } from "../../../test/animation-frames";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
 import "./chart.css";
@@ -35,7 +36,7 @@ it("draws the series at rest at once and plays no scale-out, fade, ride or turn"
       </div>
     </LocaleProvider>
   );
-  await new Promise((resolve) => requestAnimationFrame(resolve));
+  await nextFrames(1);
   // DOM audit: the line's run is aria-hidden plot output, read by its slot and part.
   const line = host.querySelector('[data-slot="radar-chart-line-path"][data-part="solid"]');
   expect(line?.getAttribute("d")).toBe("M0,-1L0.5,0L0,0.75L-0.25,0Z");

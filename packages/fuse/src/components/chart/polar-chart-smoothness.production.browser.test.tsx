@@ -9,6 +9,7 @@ import type { ReactElement } from "react";
 import { describe, expect, it } from "vitest";
 
 import "../../../dist/styles.css";
+import { nextFrames, wait } from "../../../test/animation-frames";
 import { polarFigure } from "../../../test/chart/pie";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
@@ -115,12 +116,6 @@ const CASES = [
   },
 ] as const;
 
-/** Wait out `ms` of frames from now. */
-async function frames(ms: number): Promise<void> {
-  const from = performance.now();
-  while (performance.now() - from < ms) await new Promise((resolve) => requestAnimationFrame(resolve));
-}
-
 describe("polar smoothness", () => {
   it.each(CASES)(
     "draws $name's entrance and an update with no long task over 50 ms",
@@ -138,15 +133,15 @@ describe("polar smoothness", () => {
       });
       const { host, rerender } = renderThemed(shown(0));
       // The mount's own rendering task ends a frame later, so the observer starts after it.
-      await new Promise((resolve) => requestAnimationFrame(resolve));
+      await nextFrames(1);
       observer.observe({ entryTypes: ["longtask"] });
       // The entrance plays once the chart is in view: at most 1.25 s, after the radar's 600 ms wait
       // and the pie's 31 staggered slices, 100 + 31 · 80 + 1,000 ms.
-      await frames(3700);
+      await wait(3700);
       expect(polarFigure(host).hasAttribute("data-entering")).toBe(false);
       expect(items(host)).toBe(count);
       rerender(shown(3));
-      await frames(560);
+      await wait(560);
       observer.disconnect();
       expect(long.filter((duration) => duration > 50)).toEqual([]);
     }

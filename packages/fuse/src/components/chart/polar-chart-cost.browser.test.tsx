@@ -8,6 +8,7 @@ import { Profiler } from "react";
 import { describe, expect, it } from "vitest";
 
 import "../../../dist/styles.css";
+import { nextFrames } from "../../../test/animation-frames";
 import { activeSlice, clientPoint, dialPoint, hoverAt, polarFigure } from "../../../test/chart/pie";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
@@ -141,7 +142,7 @@ describe("a pointer on a polar chart (SPEC's L8 pointer cost)", () => {
           </div>
         </LocaleProvider>
       );
-      await new Promise((resolve) => requestAnimationFrame(resolve));
+      await nextFrames(1);
       commits = 0;
       // DOM audit: every polar layer is aria-hidden plot output in the dial's units.
       const layer = polarFigure(host).querySelector<SVGSVGElement>("svg[data-polar-layer]");

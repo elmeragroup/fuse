@@ -10,6 +10,7 @@ import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
+import { nextFrames } from "../../../test/animation-frames";
 import {
   activeSlice,
   centreText,
@@ -92,11 +93,6 @@ function extent(path: SVGPathElement): number {
   return start + length + cap;
 }
 
-/** Wait for the frame's microtask paint after a commit. */
-async function painted(): Promise<void> {
-  await new Promise((resolve) => requestAnimationFrame(resolve));
-}
-
 /** Finish every running transition in the host, so styles show their rest. */
 function settle(host: HTMLElement): void {
   for (const animation of host.getAnimations({ subtree: true })) animation.finish();
@@ -105,7 +101,7 @@ function settle(host: HTMLElement): void {
 describe("the rings (section 8.4, Q5, Q8)", () => {
   it("strokes each ring up to its value's angle, the third past its maximum all round, and picks the ring under the pointer", async () => {
     const { host } = renderThemed(<Budgets />);
-    await painted();
+    await nextFrames(1);
     const drawn = rings(host);
     expect(drawn).toHaveLength(3);
     // Each ring holds the middle of its value on its centre line, and no other ring does.
@@ -153,7 +149,7 @@ describe("the rings (section 8.4, Q5, Q8)", () => {
         ]}
       />
     );
-    await painted();
+    await nextFrames(1);
     const [tiny] = rings(host);
     const radius = (radialSvg(host).getBoundingClientRect().width / 2) * (1 - 0.7 / 4);
     const length = Number((tiny?.getAttribute("stroke-dasharray") ?? "").split(" ")[0]);
@@ -166,7 +162,7 @@ describe("the rings (section 8.4, Q5, Q8)", () => {
   it("fills whole dots of 40, its value's share of them, in the dotted look (Q12)", async () => {
     // 40 × 412 / 500 = 32.96, so 33 dots fill.
     const { host } = renderThemed(<Budgets variant="dotted" />);
-    await painted();
+    await nextFrames(1);
     // DOM audit: the dotted ring's mask carries its value as a dash over the dots, read by its part.
     const mask = host.querySelector('[data-slot="radial-chart-ring"][data-part="mask"]');
     expect(Number((mask?.getAttribute("stroke-dasharray") ?? "").split(" ")[0]) / (360 / 40)).toBeCloseTo(
@@ -189,7 +185,7 @@ describe("the rings (section 8.4, Q5, Q8)", () => {
         ]}
       />
     );
-    await painted();
+    await nextFrames(1);
     // DOM audit: each dotted ring's mask carries its value as a dash over the dots, read by its part.
     const masks = [...host.querySelectorAll('[data-slot="radial-chart-ring"][data-part="mask"]')];
     const dots = masks.map(
@@ -229,7 +225,7 @@ describe("the rings (section 8.4, Q5, Q8)", () => {
         <RadialChart.LegendToggleGroup />
       </Budgets>
     );
-    await painted();
+    await nextFrames(1);
     // DOM audit: tracks and the halo are aria-hidden plot output, read by their slots.
     const tracks = [...host.querySelectorAll('[data-slot="pie-chart-track"]')];
     expect(tracks).toHaveLength(3);
@@ -275,7 +271,7 @@ describe("quality (section 8.7)", () => {
         ]}
       />
     );
-    await painted();
+    await nextFrames(1);
     const [estimated, missing] = rings(host);
     const stroke = getComputedStyle(estimated ?? host).stroke;
     expect(stroke).toMatch(/^url\("#.+-hatch-0"\)$/u);
@@ -307,7 +303,7 @@ describe("quality (section 8.7)", () => {
         </div>
       </LocaleProvider>
     );
-    await painted();
+    await nextFrames(1);
     const [estimated, missing] = sectors(host);
     // DOM audit: the hatch is the slice's paint server, read by its tag.
     const hatch = host.querySelector("linearGradient");
@@ -339,7 +335,7 @@ describe("the gauge's Track (L5's corner fix)", () => {
         </div>
       </LocaleProvider>
     );
-    await painted();
+    await nextFrames(1);
     // DOM audit: the track is aria-hidden plot output, read by its slot.
     const track = host.querySelector('[data-slot="pie-chart-track"]')?.getAttribute("d");
     expect(sectors(host)[0]?.getAttribute("d")).toBe(track);

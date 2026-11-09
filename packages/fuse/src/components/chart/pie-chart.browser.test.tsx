@@ -12,6 +12,7 @@ import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
+import { nextFrames } from "../../../test/animation-frames";
 import {
   activeSlice,
   centreText,
@@ -87,7 +88,7 @@ describe("the slices (d3's pie rule, Q8)", () => {
     const drawn = sectors(host);
     expect(drawn).toHaveLength(4);
     // The frame writes the slices in a microtask after the commit.
-    await new Promise((resolve) => requestAnimationFrame(resolve));
+    await nextFrames(1);
 
     // Each slice's bisector, three quarters out, lies in its own fill and in no other.
     const bisectors = [90, 234, 315, 351];
@@ -447,8 +448,7 @@ describe("outside labels before the entrance (D18)", () => {
         </div>
       </LocaleProvider>
     );
-    await new Promise((resolve) => requestAnimationFrame(resolve));
-    await new Promise((resolve) => requestAnimationFrame(resolve));
+    await nextFrames(2);
     // DOM audit: the figure, its labels layer and its labels are the Root's own plot output.
     const figure = host.querySelector<HTMLElement>("[data-polar]");
     expect(figure?.hasAttribute("data-drawn")).toBe(false);
@@ -867,10 +867,6 @@ describe("the pick at the dial's centre", () => {
 });
 
 describe("the centre's text floor and fit guard", () => {
-  const painted = async (): Promise<void> => {
-    await new Promise((resolve) => requestAnimationFrame(resolve));
-    await new Promise((resolve) => requestAnimationFrame(resolve));
-  };
   // A 200 px dial, R = 100 px, holds a hole square of side √2 · inner · 100: inner radii of 0.2121,
   // 0.3394 and 0.5657 give squares of 30, 48 and 80 px. The value, 18 370 kWh, needs about 38 px for
   // its number at the 12 px floor, and the label "Totalt i år" needs more than 48 px.
@@ -932,13 +928,13 @@ describe("the centre's text floor and fit guard", () => {
     [0.5657, 80],
   ])("lays a hole of inner radius %s out as a %s px square", async (inner, side) => {
     const { host } = renderThemed(<Total inner={inner} />);
-    await painted();
+    await nextFrames(2);
     expect(parts(host).hole.getBoundingClientRect().width).toBeCloseTo(side, 0);
   });
 
   it("drops the whole centre in a 30 px hole, where the number alone overflows", async () => {
     const { host } = renderThemed(<Total inner={0.2121} />);
-    await painted();
+    await nextFrames(2);
     const { hole, value } = parts(host);
     expect(hole.getAttribute("data-fit")).toBe("none");
     expect(getComputedStyle(value).display).toBe("none");
@@ -946,7 +942,7 @@ describe("the centre's text floor and fit guard", () => {
 
   it("drops a value that fits the 30 px square but comes within 2 px of the hole's edge", async () => {
     const { host } = renderThemed(<Total inner={0.2121} kwh={[1413, 300]} />);
-    await painted();
+    await nextFrames(2);
     const { hole, value } = parts(host);
     // 1 713 kWh wraps to "1 713" over "kWh" at the 12 px floor. Four 6 px figures and the group
     // space make the number about 27 px wide on a 14.4 px line, so it fits the 30 px square, but its
@@ -958,7 +954,7 @@ describe("the centre's text floor and fit guard", () => {
 
   it("keeps the value alone in a 48 px hole, at the 12 px floor and on two lines", async () => {
     const { host } = renderThemed(<Total inner={0.3394} />);
-    await painted();
+    await nextFrames(2);
     const { hole, value, label } = parts(host);
     // A hole under 4rem leaves the label out, and the value then fits on its own.
     expect(hole.getAttribute("data-fit")).not.toBe("none");
@@ -970,7 +966,7 @@ describe("the centre's text floor and fit guard", () => {
 
   it("shows the value and the label in an 80 px hole", async () => {
     const { host } = renderThemed(<Total inner={0.5657} />);
-    await painted();
+    await nextFrames(2);
     const { hole, value, label } = parts(host);
     expect(hole.hasAttribute("data-fit")).toBe(false);
     expect(getComputedStyle(value).display).not.toBe("none");
@@ -980,7 +976,7 @@ describe("the centre's text floor and fit guard", () => {
 
   it("wraps a currency written before its number, NOK 18,370, onto two lines in an 80 px hole", async () => {
     const { host } = renderThemed(<Total inner={0.5657} money />);
-    await painted();
+    await nextFrames(2);
     const { hole, value } = parts(host);
     // en-US writes "NOK 18,370", about 90 px at the hole's font size, so it fits only when the code
     // and the number break apart, the code on the first line.

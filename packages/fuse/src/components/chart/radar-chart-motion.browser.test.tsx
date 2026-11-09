@@ -15,6 +15,7 @@ import { describe, expect, it } from "vitest";
 import { userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
+import { nextFrames, recordFrames } from "../../../test/animation-frames";
 import { installFrameClock } from "../../../test/chart/frame-clock";
 import { polarFigure } from "../../../test/chart/pie";
 import { layerPath, pathPoints, radarLayers } from "../../../test/chart/radar";
@@ -44,6 +45,7 @@ async function record(
 ): Promise<{ readonly t: number; readonly radii: readonly (readonly number[])[] }[]> {
   const frames: { readonly t: number; readonly radii: readonly (readonly number[])[] }[] = [];
   for (;;) {
+    // Kept as a direct frame wait: it needs the frame callback's timestamp, which nextFrames drops.
     const now = await new Promise<number>((resolve) => requestAnimationFrame(resolve));
     const from = start();
     if (from === null) continue;
@@ -188,7 +190,7 @@ describe("the radar's entrance (SPEC's Motion table)", () => {
 describe("the radar's updates (R11, S5)", () => {
   it("moves each spoke's radius over 480 ms, between its old and its new", async () => {
     const { host, rerender } = renderThemed(<Chart a={[4, 2, 3, 1]} intro="none" />);
-    await new Promise((resolve) => requestAnimationFrame(resolve));
+    await nextFrames(1);
     rerender(<Chart a={[2, 4, 1, 3]} intro="none" />);
     const from = performance.now();
     const frames = await record(host, () => from, 700);
@@ -208,7 +210,7 @@ describe("the radar's updates (R11, S5)", () => {
 
   it("crossfades a change of spoke count over 150 ms and draws the new spokes at once", async () => {
     const { host, rerender } = renderThemed(<Chart a={[4, 2, 3, 1]} intro="none" />);
-    await new Promise((resolve) => requestAnimationFrame(resolve));
+    await nextFrames(1);
     rerender(<Chart a={[4, 2, 3, 1, 2]} intro="none" />);
     const [line] = radarLayers(host, "radar-chart-line");
     // DOM audit: the old drawing fades out as a copy marked data-outgoing, beside the live group.
@@ -242,15 +244,18 @@ describe("the radar's followers (SPEC's Motion table)", () => {
     );
     const [dot] = radarLayers(host, "radar-chart-active-dot");
     const [line] = radarLayers(host, "radar-chart-line");
-    const seen: { readonly dot: number; readonly vertex: number }[] = [];
-    const start = performance.now();
-    while (performance.now() - start < 700) {
-      await new Promise((resolve) => requestAnimationFrame(resolve));
-      const [point] = pathPoints(layerPath(dot, "dots").getAttribute("d") ?? "");
-      const [vertex] = pathPoints(layerPath(line, "solid").getAttribute("d") ?? "");
-      if (point !== undefined && vertex !== undefined)
-        seen.push({ dot: Math.hypot(point.x, point.y), vertex: Math.hypot(vertex.x, vertex.y) });
-    }
+    const frames = await recordFrames(
+      () => {
+        const [point] = pathPoints(layerPath(dot, "dots").getAttribute("d") ?? "");
+        const [vertex] = pathPoints(layerPath(line, "solid").getAttribute("d") ?? "");
+        return point === undefined || vertex === undefined
+          ? null
+          : { dot: Math.hypot(point.x, point.y), vertex: Math.hypot(vertex.x, vertex.y) };
+      },
+      () => false,
+      700
+    );
+    const seen = frames.filter((frame) => frame !== null);
     // Spoke 0's radius moves from 1 to 0.5, and the dot reads the same radius in every frame.
     expect(seen.some(({ vertex }) => vertex > 0.55 && vertex < 0.95)).toBe(true);
     for (const frame of seen) expect(Math.abs(frame.dot - frame.vertex)).toBeLessThan(ROUNDED);
@@ -266,6 +271,7 @@ describe("the radar's followers (SPEC's Motion table)", () => {
     const turns: { readonly t: number; readonly angle: number }[] = [];
     const start = performance.now();
     while (performance.now() - start < 400) {
+      // Kept as a direct frame wait: it needs the frame callback's timestamp, which nextFrames drops.
       const now = await new Promise<number>((resolve) => requestAnimationFrame(resolve));
       turns.push({ t: now - start, angle: Number.parseFloat(getComputedStyle(hand).rotate) });
     }

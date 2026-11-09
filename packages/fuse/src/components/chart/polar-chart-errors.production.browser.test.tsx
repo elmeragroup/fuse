@@ -6,6 +6,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
+import { nextFrames } from "../../../test/animation-frames";
 import { label } from "../../../test/chart/marks";
 import { centreText, outerArc, sectors } from "../../../test/chart/pie";
 import { renderThemed } from "../../../test/themed-browser-render";
@@ -55,7 +56,7 @@ async function hoverAngle(angle: number): Promise<void> {
       pointerType: "mouse",
     })
   );
-  await new Promise((resolve) => requestAnimationFrame(resolve));
+  await nextFrames(1);
 }
 
 describe("the polar data rules in production", () => {

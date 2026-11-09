@@ -7,6 +7,7 @@ import { describe, expect, it } from "vitest";
 import { userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
+import { nextFrames } from "../../../test/animation-frames";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { switchWindowAndBack } from "../../../test/window-focus";
 import { LocaleProvider } from "../../intl/locale-context";
@@ -85,7 +86,7 @@ describe("an option through a window switch", () => {
       expect(left?.getAttribute("aria-posinset")).toBe("2");
       if (left === null) throw new Error("no focused option");
       switchWindowAndBack(left);
-      await new Promise((resolve) => requestAnimationFrame(resolve));
+      await nextFrames(1);
       expect(document.activeElement).toBe(left);
       expect(left.isConnected).toBe(true);
       await userEvent.keyboard("{ArrowRight}");

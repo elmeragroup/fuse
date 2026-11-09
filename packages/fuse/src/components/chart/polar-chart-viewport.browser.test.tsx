@@ -13,7 +13,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { page } from "vitest/browser";
 
 import "../../../dist/styles.css";
-import { nextFrames } from "../../../test/animation-frames";
+import { nextFrames, pollFrames } from "../../../test/animation-frames";
 import { hoverAt, polarFigure } from "../../../test/chart/pie";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
@@ -234,11 +234,7 @@ describe("a lane popup inside the viewport", () => {
         // The popup opens in a few frames, 2 to 5 measured: it waits for two frame checks and
         // Base UI's placement. Its wait counts frames, as the focus case's does, not milliseconds,
         // which a loaded runner that paints a few frames a second runs out of.
-        for (let frame = 0; frame < OPEN_FRAMES && popupBox() === null; frame += 1) await nextFrames(1);
-        expect(
-          popupBox(),
-          `hover, dial at ${String(at)}: no popup after ${String(OPEN_FRAMES)} frames`
-        ).not.toBeNull();
+        await pollFrames(() => popupBox() !== null, true, OPEN_FRAMES);
         await nextFrames(14);
         found.push(...faults(`hover, dial at ${String(at)}`));
         // React reads a pointer leaving the plot from pointerout toward an element outside it.

@@ -12,6 +12,7 @@ import { describe, expect, it } from "vitest";
 import { userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
+import { nextFrames, recordFrames } from "../../../test/animation-frames";
 import { installFrameClock } from "../../../test/chart/frame-clock";
 import { outerArc, polarFigure, sectors } from "../../../test/chart/pie";
 import { sweepGlides } from "../../../test/chart/tooltip-glide";
@@ -44,6 +45,7 @@ const ROUNDED = 0.1;
 async function record(host: HTMLElement, start: () => number | null, until: number): Promise<Frame[]> {
   const frames: Frame[] = [];
   for (;;) {
+    // Kept as a direct frame wait: it needs the frame callback's timestamp, which nextFrames drops.
     const now = await new Promise<number>((resolve) => requestAnimationFrame(resolve));
     const from = start();
     if (from === null) continue;
@@ -196,7 +198,7 @@ describe("the pie's motion (SPEC's Motion table)", () => {
     "carries each %s label and its leader on its slice's bisector, frame by frame, as an update moves it",
     async (position) => {
       const { host, rerender } = renderThemed(<Chart data={QUARTET} intro="none" labels={position} />);
-      await new Promise((resolve) => requestAnimationFrame(resolve));
+      await nextFrames(1);
       rerender(
         <Chart
           data={[
@@ -229,13 +231,15 @@ describe("the pie's motion (SPEC's Motion table)", () => {
           box.top + box.height / 2 - (dial.top + dial.height / 2)
         );
       };
-      const seen: { readonly bisector: number; readonly hung: number }[] = [];
-      const start = performance.now();
-      while (performance.now() - start < 700) {
-        await new Promise((resolve) => requestAnimationFrame(resolve));
-        const arc = outerArc(sectors(host)[0]?.getAttribute("d") ?? "");
-        if (arc !== null) seen.push({ bisector: (arc[0] + arc[1]) / 2, hung: hung() });
-      }
+      const frames = await recordFrames(
+        () => {
+          const arc = outerArc(sectors(host)[0]?.getAttribute("d") ?? "");
+          return arc === null ? null : { bisector: (arc[0] + arc[1]) / 2, hung: hung() };
+        },
+        () => false,
+        700
+      );
+      const seen = frames.filter((frame) => frame !== null);
       // Slice a's bisector moves from 90° to 36°, and the label rides it through the frames between.
       expect(seen.some(({ bisector }) => bisector < 89 && bisector > 37)).toBe(true);
       for (const frame of seen)
@@ -277,7 +281,7 @@ describe("the pie's motion (SPEC's Motion table)", () => {
 
   it("moves every slice to new data over 480 ms, each edge between its old and its new angle", async () => {
     const { host, rerender } = renderThemed(<Chart data={QUARTET} intro="none" />);
-    await new Promise((resolve) => requestAnimationFrame(resolve));
+    await nextFrames(1);
     rerender(
       <Chart
         data={[
@@ -310,7 +314,7 @@ describe("the pie's motion (SPEC's Motion table)", () => {
 
   it("collapses a leaving slice to its own seam over 480 ms, then drops its ghost (D5)", async () => {
     const { host, rerender } = renderThemed(<Chart data={QUARTET} intro="none" />);
-    await new Promise((resolve) => requestAnimationFrame(resolve));
+    await nextFrames(1);
     rerender(<Chart data={QUARTET.filter(({ part }) => part !== "c")} intro="none" />);
     const from = performance.now();
     const frames = await record(host, () => from, 700);
@@ -338,7 +342,7 @@ describe("the pie's motion (SPEC's Motion table)", () => {
       { part: "f", kr: 4 },
     ];
     const { host, rerender } = renderThemed(<Chart data={six} intro="none" />);
-    await new Promise((resolve) => requestAnimationFrame(resolve));
+    await nextFrames(1);
     rerender(<Chart data={[...six, { part: "g", kr: 10 }]} intro="none" />);
     const from = performance.now();
     const frames = await record(host, () => from, 700);
@@ -357,7 +361,7 @@ describe("the pie's motion (SPEC's Motion table)", () => {
 
   it("pops the active slice on the 400/25 spring, past its 8 px and back, and fades the dims over 150 ms", async () => {
     const { host } = renderThemed(<Chart data={QUARTET} intro="none" />);
-    await new Promise((resolve) => requestAnimationFrame(resolve));
+    await nextFrames(1);
     const [first, second] = sectors(host);
     const rest = first?.getBoundingClientRect().left ?? 0;
     await userEvent.tab();

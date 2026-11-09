@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 import { cdp } from "vitest/browser";
 
 import "../../../dist/styles.css";
+import { wait } from "../../../test/animation-frames";
 import { frame, rectOf } from "../../../test/chart/panel-readers";
 import { clientPoint, dialPoint, hoverAt, pieSvg } from "../../../test/chart/pie";
 import { emulatePixelRatio } from "../../../test/page-metrics";
@@ -51,11 +52,6 @@ function rolling(host: HTMLElement): number {
     .filter((animation) => animation instanceof CSSTransition).length;
 }
 
-async function frames(ms: number): Promise<void> {
-  const start = performance.now();
-  while (performance.now() - start < ms) await new Promise((resolve) => requestAnimationFrame(resolve));
-}
-
 describe("the centre's digits on hover steps", () => {
   // Oracle, from the rule: a hover step that lands less than 150 ms after the last one swaps the
   // digits at once, with no reel transition, while one that comes 150 ms or more after the last rolls
@@ -70,10 +66,10 @@ describe("the centre's digits on hover steps", () => {
       return clientPoint(svg, point.x, point.y);
     };
     await hoverAt(...at(90));
-    await frames(300);
+    await wait(300);
     await hoverAt(...at(230));
     expect(rolling(host)).toBeGreaterThan(0);
-    await frames(50);
+    await wait(50);
     await hoverAt(...at(330));
     expect(rolling(host)).toBe(0);
   });

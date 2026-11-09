@@ -95,8 +95,6 @@ async function closeAndRead(keys: string, expectOpen: (node: HTMLElement) => voi
   const shown = fingerprint(open);
   const visible = () =>
     open.isConnected && open.checkVisibility({ opacityProperty: true, visibilityProperty: true });
-  // The frames are recorded in the page from before the key, so a slow round trip for the key
-  // command cannot let the exit pass unseen.
   const recorded = recordFrames(
     () => ({
       print: fingerprint(open),

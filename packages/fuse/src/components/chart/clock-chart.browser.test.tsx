@@ -19,7 +19,7 @@ import type { Srgb } from "@elmeragroup/color/srgb";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
-import { recordFrames } from "../../../test/animation-frames";
+import { nextFrames, recordFrames, wait } from "../../../test/animation-frames";
 import { computedColor } from "../../../test/assert-invalid-ring";
 import { angleOf, clockLayer, clockPath, dotPoints, labelInk, wedgeRadii } from "../../../test/chart/clock";
 import { clientPoint, hoverAt, polarFigure } from "../../../test/chart/pie";
@@ -124,10 +124,6 @@ function rayOffsets(
   return { across: step(Math.abs(dx * uy - dy * ux)), along: step(Math.abs(dx * ux + dy * uy - expected)) };
 }
 
-async function painted(): Promise<void> {
-  await new Promise((resolve) => requestAnimationFrame(resolve));
-}
-
 describe("the dial's geometry (D11, D13)", () => {
   it.each([
     ["radial", [1, 0.3, Math.sqrt(0.09 + 0.455), Math.sqrt(0.09 + 0.2275)]],
@@ -138,7 +134,7 @@ describe("the dial's geometry (D11, D13)", () => {
         <ClockChart.Dots dataKey="kwh" />
       </Dial>
     );
-    await painted();
+    await nextFrames(1);
     const points = dotPoints(clockPath(clockLayer(host, "clock-chart-dots"), "step-0"));
     expect(points).toHaveLength(24);
     points.slice(0, 4).forEach(({ x, y }, slot) => {
@@ -153,7 +149,7 @@ describe("the dial's geometry (D11, D13)", () => {
         <ClockChart.Column dataKey="kwh" />
       </Dial>
     );
-    await painted();
+    await nextFrames(1);
     const column = clockLayer(host, "clock-chart-column");
     const figure = polarFigure(host);
     let checked = 0;
@@ -194,7 +190,7 @@ describe("a threshold ring (D23)", () => {
         <ClockChart.Legend />
       </Dial>
     );
-    await painted();
+    await nextFrames(1);
     const column = clockLayer(host, "clock-chart-column");
     // Readings 4 and 2 lie above 1.5, and 0 and the 1s at or below it.
     expect(wedgeRadii(clockPath(column, "step-1"))).toHaveLength(2);
@@ -217,7 +213,7 @@ describe("a threshold ring (D23)", () => {
         <ClockChart.Column dataKey="kwh" />
       </Dial>
     );
-    await painted();
+    await nextFrames(1);
     const column = clockLayer(host, "clock-chart-column");
     // DOM audit: each wedge group is aria-hidden plot output, read by its group.
     const marked = column.querySelector('[data-group="step-1-past-marked"]');
@@ -243,7 +239,7 @@ describe("a threshold ring (D23)", () => {
         <ClockChart.Area dataKey="kwh" variant="solid" />
       </Dial>
     );
-    await painted();
+    await nextFrames(1);
     const area = clockLayer(host, "clock-chart-area");
     // DOM audit: the area's paths are aria-hidden plot output, read by their part.
     const solid = area.querySelector('[data-part="solid"]');
@@ -292,7 +288,7 @@ describe("a threshold ring (D23)", () => {
           <ClockChart.Area dataKey="kwh" curve={curve} variant="solid" />
         </Dial>
       );
-      await painted();
+      await nextFrames(1);
       const area = clockLayer(host, "clock-chart-area");
       // DOM audit: the area's paths are aria-hidden plot output, read by their part.
       const solid = area.querySelector<SVGPathElement>('[data-part="solid"]');
@@ -338,7 +334,7 @@ describe("a threshold ring (D23)", () => {
         </ClockChart.Glow>
       </Dial>
     );
-    await painted();
+    await nextFrames(1);
     const line = clockLayer(host, "clock-chart-line");
     expect(line.getAttribute("data-paint")).toBe("value");
     // A line's halo is 9.5 px. The dial draws 240 px across, a 120 px radius, so 9.5 / 120 of its units.
@@ -356,7 +352,7 @@ describe("a threshold ring (D23)", () => {
         <ClockChart.Line dataKey="kwh" />
       </Dial>
     );
-    await painted();
+    await nextFrames(1);
     const line = clockLayer(host, "clock-chart-line");
     // DOM audit: the steps gradient is the line's paint server, read by its marker attribute.
     const stops = [...line.querySelectorAll("[data-steps] stop")].map((stop) =>
@@ -380,7 +376,7 @@ describe("the pixel floor (D24)", () => {
         <ClockChart.Column dataKey="kwh" />
       </Dial>
     );
-    await painted();
+    await nextFrames(1);
     const column = clockLayer(host, "clock-chart-column");
     const scale = column.getBoundingClientRect().width / 2;
     const tiny = wedgeRadii(clockPath(column, "step-0"))[1] ?? [0, 0];
@@ -403,8 +399,7 @@ describe("the pixel floor (D24)", () => {
         <ClockChart.Column dataKey="top" />
       </Dial>
     );
-    await painted();
-    await painted();
+    await nextFrames(2);
     const inner = wedgeRadii(clockPath(clockLayer(host, "clock-chart-column", 0), "step-0"));
     const outer = wedgeRadii(clockPath(clockLayer(host, "clock-chart-column", 1), "step-0"));
     const scale = clockLayer(host, "clock-chart-column").getBoundingClientRect().width / 2;
@@ -444,7 +439,7 @@ describe("the 25-hour day", () => {
         </div>
       </LocaleProvider>
     );
-    await painted();
+    await nextFrames(1);
     const layer = clockLayer(host, "clock-chart-column");
     // DOM audit: each wedge is a subpath of its group's path, read by their part or group.
     const wedges = [...layer.querySelectorAll("path")]
@@ -495,7 +490,7 @@ describe("the 25-hour day", () => {
           </div>
         </LocaleProvider>
       );
-      await painted();
+      await nextFrames(1);
       const layer = clockLayer(host, "clock-chart-column");
       return [...layer.querySelectorAll("path")].reduce(
         (count, path) => count + ((path.getAttribute("d") ?? "").match(/M/gu) ?? []).length,
@@ -520,7 +515,7 @@ describe("the 25-hour day", () => {
         <ClockChart.AngleAxis />
       </Dial>
     );
-    await painted();
+    await nextFrames(1);
     const points = dotPoints(clockPath(clockLayer(host, "clock-chart-dots"), "step-0"));
     expect(points).toHaveLength(25);
     // Slot 7's middle is 7.5 · 14.4 = 108°.
@@ -541,7 +536,7 @@ describe("the seam (D16), Now and the keys", () => {
         <ClockChart.Line dataKey="kwh" />
       </Dial>
     );
-    await painted();
+    await nextFrames(1);
     expect(clockPath(clockLayer(host, "clock-chart-line"), "solid").endsWith("Z")).toBe(true);
     // Readings until 11:00, and Now at 11:30, so the rest of the day is still to come.
     rerender(
@@ -550,7 +545,7 @@ describe("the seam (D16), Now and the keys", () => {
         <ClockChart.Now label="Nå" />
       </Dial>
     );
-    await painted();
+    await nextFrames(1);
     expect(clockPath(clockLayer(host, "clock-chart-line"), "solid").endsWith("Z")).toBe(false);
     // DOM audit: Now's hand is aria-hidden plot output, read by its part.
     const hand =
@@ -572,7 +567,7 @@ describe("the seam (D16), Now and the keys", () => {
         <ClockChart.Now label="Nå" />
       </Dial>
     );
-    await painted();
+    await nextFrames(1);
     expect(nowLabel(tight.host)?.checkVisibility()).toBe(false);
     expect(tight.host.querySelector('[data-slot="clock-chart-now"] [data-part="hand"]')).not.toBeNull();
     tight.unmount();
@@ -582,7 +577,7 @@ describe("the seam (D16), Now and the keys", () => {
         <ClockChart.Now label="Nå" />
       </Dial>
     );
-    await painted();
+    await nextFrames(1);
     expect(nowLabel(day.host)?.checkVisibility()).toBe(true);
     const near = nowLabel(day.host)?.getBoundingClientRect() ?? new DOMRect();
     // DOM audit: the hour labels are aria-hidden plot text, read by their slot.
@@ -618,7 +613,7 @@ describe("the seam (D16), Now and the keys", () => {
         </div>
       </LocaleProvider>
     );
-    await painted();
+    await nextFrames(1);
     const label = nowLabel(week.host);
     expect(label?.checkVisibility()).toBe(true);
     const box = label?.getBoundingClientRect() ?? new DOMRect();
@@ -682,7 +677,7 @@ describe("an Area's gradients on every sign mix (B5)", () => {
           <ClockChart.Area dataKey="kwh" variant={variant} />
         </Dial>
       );
-      await painted();
+      await nextFrames(1);
       const area = clockLayer(host, "clock-chart-area");
       // DOM audit: the look's ramp is aria-hidden paint, read by its stops.
       const stops = [...area.querySelectorAll("mask radialGradient stop")].map((stop) => ({
@@ -741,7 +736,7 @@ describe("a datum on a coarse reading", () => {
         </div>
       </LocaleProvider>
     );
-    await painted();
+    await nextFrames(1);
     // DOM audit: the marker's dots, its pill and the emphasis are aria-hidden plot output.
     const marker = clockLayer(host, "clock-chart-marker");
     expect(dotPoints(clockPath(marker, "dots"))).toHaveLength(1);
@@ -765,7 +760,7 @@ describe("a ReferenceArea's label (B10)", () => {
         />
       </Dial>
     );
-    await painted();
+    await nextFrames(1);
     // DOM audit: the area's label is aria-hidden plot text, read by its part.
     const text = host.querySelector(
       '[data-slot="clock-chart-reference-area"] > [data-part="label"]'
@@ -823,7 +818,7 @@ describe("a reference inside the dial's bounds (B5)", () => {
         {reference}
       </Dial>
     );
-    await painted();
+    await nextFrames(1);
     // DOM audit: a reference's path and label are aria-hidden plot output, read by their slot and part.
     const d = host.querySelector('[data-slot="clock-chart-reference-path"]')?.getAttribute("d") ?? "";
     const drawn = radiusSpan(d);
@@ -872,7 +867,7 @@ describe("a reference inside the dial's bounds (B5)", () => {
         {reference}
       </Dial>
     );
-    await painted();
+    await nextFrames(1);
     // DOM audit: a reference's path and label are aria-hidden plot output, read by their slot and part.
     const d = host.querySelector('[data-slot="clock-chart-reference-path"]')?.getAttribute("d") ?? "";
     const drawn = radiusSpan(d);
@@ -899,7 +894,7 @@ describe("the ActiveDot over a connected gap (A1-04)", () => {
         <ClockChart.ActiveDot dataKey="kwh" />
       </Dial>
     );
-    await painted();
+    await nextFrames(1);
     const layer = clockLayer(host, "clock-chart-line");
     // DOM audit: the dot is aria-hidden plot output; its group states a drawn dot on data-value.
     const group = clockLayer(host, "clock-chart-active-dot").querySelector("[data-follow]");
@@ -912,8 +907,7 @@ describe("the ActiveDot over a connected gap (A1-04)", () => {
     await expect.poll(() => group?.hasAttribute("data-value")).toBe(true);
     await hoverHour(2);
     // The hand glides from 01:00 to 02:00, so the dot has had every frame of it to leave.
-    const start = performance.now();
-    while (performance.now() - start < 600) await new Promise((resolve) => requestAnimationFrame(resolve));
+    await wait(600);
     expect(group?.hasAttribute("data-value")).toBe(false);
   });
 });
@@ -957,7 +951,7 @@ describe("a reference's sentence (A1-02)", () => {
         {reference}
       </Dial>
     );
-    await painted();
+    await nextFrames(1);
     // DOM audit: the sentence is visually hidden text on its slot, the cartesian references' own.
     const sentence = host.querySelector('[data-slot="chart-reference-text"]');
     expect(sentence?.textContent).toBe(spoken);
@@ -1007,7 +1001,7 @@ describe("a Column's gradient on every sign mix (B5's class)", () => {
         <ClockChart.Column dataKey="kwh" />
       </Dial>
     );
-    await painted();
+    await nextFrames(1);
     const column = clockLayer(host, "clock-chart-column");
     // DOM audit: the fade's ramp is aria-hidden paint, read by its stops.
     const stops = [...column.querySelectorAll("mask radialGradient stop")].map((stop) => ({
@@ -1060,7 +1054,7 @@ describe("a coarse series under the pointer (Q3, B5)", () => {
         </div>
       </LocaleProvider>
     );
-    await painted();
+    await nextFrames(1);
     const layer = clockLayer(host, "clock-chart-column");
     const at = {
       x: 0.879 * Math.sin((5.625 * Math.PI) / 180),
@@ -1090,7 +1084,7 @@ describe("the readouts", () => {
         <ClockChart.Center />
       </Dial>
     );
-    await painted();
+    await nextFrames(1);
     // DOM audit: the centre is aria-hidden plot text, read by its slot.
     const value = () => host.querySelector('[data-slot="clock-chart-active-value"]')?.textContent;
     expect(value()).toBe("2");
@@ -1147,7 +1141,7 @@ describe("the centre's text floor and fit guard", () => {
 
   it("drops the whole centre in a 30 px hole, where the number alone overflows", async () => {
     const { host } = renderThemed(<Total inner={0.2121} />);
-    await painted();
+    await nextFrames(1);
     const { hole, value } = parts(host);
     expect(hole.getBoundingClientRect().width).toBeCloseTo(30, 0);
     expect(hole.getAttribute("data-fit")).toBe("none");
@@ -1156,7 +1150,7 @@ describe("the centre's text floor and fit guard", () => {
 
   it("keeps the value alone in a 48 px hole, at the 12 px floor and on two lines", async () => {
     const { host } = renderThemed(<Total inner={0.3394} />);
-    await painted();
+    await nextFrames(1);
     const { hole, value, line } = parts(host);
     expect(hole.getBoundingClientRect().width).toBeCloseTo(48, 0);
     expect(hole.getAttribute("data-fit")).toBe("value");
@@ -1167,7 +1161,7 @@ describe("the centre's text floor and fit guard", () => {
 
   it("shows the value and the line in an 80 px hole", async () => {
     const { host } = renderThemed(<Total inner={0.5657} />);
-    await painted();
+    await nextFrames(1);
     const { hole, value, line } = parts(host);
     expect(hole.getBoundingClientRect().width).toBeCloseTo(80, 0);
     expect(hole.hasAttribute("data-fit")).toBe(false);
@@ -1230,8 +1224,7 @@ describe("the ring values beside the angle labels", () => {
       </LocaleProvider>
     );
     await document.fonts.ready;
-    await painted();
-    await painted();
+    await nextFrames(2);
     const shown = (slot: string) =>
       // DOM audit: the ring values and month labels are aria-hidden plot text, read by their slot.
       [...host.querySelectorAll<HTMLElement>(`[data-slot="${slot}"]`)]
@@ -1286,7 +1279,7 @@ describe("the ring values beside the angle labels", () => {
         </LocaleProvider>
       );
       await document.fonts.ready;
-      await painted();
+      await nextFrames(1);
       // DOM audit: the month labels are aria-hidden plot text, read by their slot.
       const months = [...host.querySelectorAll<HTMLElement>('[data-slot="clock-chart-angle-label"]')]
         .filter((label) => label.checkVisibility() && label.textContent.trim() !== "")
@@ -1327,7 +1320,7 @@ describe("two connected readings at the ends of the day (D16)", () => {
         <ClockChart.ActiveDot dataKey="kwh" />
       </Dial>
     );
-    await painted();
+    await nextFrames(1);
     const layer = clockLayer(host, "clock-chart-line");
     const pointsOf = (d: string) =>
       [...d.matchAll(/[ML](-?[\d.]+),(-?[\d.]+)/gu)].map((match) => ({
@@ -1393,7 +1386,7 @@ describe("a closing tooltip's stack total", () => {
         <ClockChart.Tooltip />
       </Dial>
     );
-    await painted();
+    await nextFrames(1);
     const layer = clockLayer(host, "clock-chart-line");
     const radians = (3.5 * 15 * Math.PI) / 180;
     await hoverAt(...clientPoint(layer, 0.6 * Math.sin(radians), -0.6 * Math.cos(radians)));
@@ -1407,8 +1400,6 @@ describe("a closing tooltip's stack total", () => {
     if (open === null) throw new Error("no popup");
     const shown = () =>
       open.isConnected && open.checkVisibility({ opacityProperty: true, visibilityProperty: true });
-    // The frames are recorded in the page from before the key, so a slow round trip for the key
-    // command cannot let the exit pass unseen.
     const recorded = recordFrames(
       () => ({ total: total(), shown: shown(), closing: shown() && !open.hasAttribute("data-open") }),
       () => !shown()

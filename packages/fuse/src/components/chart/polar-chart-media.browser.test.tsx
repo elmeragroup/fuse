@@ -11,6 +11,7 @@ import { server } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
+import { nextFrames } from "../../../test/animation-frames";
 import { installFrameClock } from "../../../test/chart/frame-clock";
 import { chromaticPixels, emulateMedia } from "../../../test/chart/media";
 import { polarFigure } from "../../../test/chart/pie";
@@ -148,12 +149,12 @@ async function settle(): Promise<void> {
 describe("forced colours", () => {
   it.runIf(FORCED).each(FAMILIES)("keeps the $family chart's series colours", async ({ chart, marks }) => {
     const host = render(chart("none"));
-    await new Promise((resolve) => requestAnimationFrame(resolve));
+    await nextFrames(1);
     const box = polarFigure(host).getBoundingClientRect();
     const [screen = 0] = await chromaticPixels([box]);
     await emulateMedia("screen", "active");
     expect(window.matchMedia("(forced-colors: active)").matches).toBe(true);
-    await new Promise((resolve) => requestAnimationFrame(resolve));
+    await nextFrames(1);
     for (const slot of marks) {
       // DOM audit: each mark layer's computed forced-color-adjust.
       const layer = host.querySelector(`[data-slot="${slot}"]`);
@@ -171,7 +172,7 @@ describe("print", () => {
     "draws every mark of a $family chart at rest when a print starts mid-entrance",
     async ({ chart, marks }) => {
       const rest = render(chart("none"));
-      await new Promise((resolve) => requestAnimationFrame(resolve));
+      await nextFrames(1);
       await settle();
       const resting = geometry(rest, marks);
       const clock = installFrameClock();

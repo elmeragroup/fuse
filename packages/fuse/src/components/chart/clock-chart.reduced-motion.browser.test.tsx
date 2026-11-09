@@ -6,6 +6,7 @@ import { expect, it } from "vitest";
 import { userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
+import { nextFrames } from "../../../test/animation-frames";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
 import "./chart.css";
@@ -31,7 +32,7 @@ it("draws the dial at rest at once and plays no entrance, ride or turn", async (
       </div>
     </LocaleProvider>
   );
-  await new Promise((resolve) => requestAnimationFrame(resolve));
+  await nextFrames(1);
   // DOM audit: the dots are aria-hidden plot output, read by their slot and group.
   const dots = host.querySelector('[data-slot="clock-chart-dot"][data-part="dots"]')?.getAttribute("d") ?? "";
   // Every reading is the domain's maximum, so every dot sits on the rim at once.

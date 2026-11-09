@@ -13,6 +13,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { cdp } from "vitest/browser";
 
 import "../../../dist/styles.css";
+import { nextFrames } from "../../../test/animation-frames";
 import { popupOpen } from "../../../test/chart/marks";
 import { activeSlice, clientPoint, dialPoint, polarFigure } from "../../../test/chart/pie";
 import { renderThemed } from "../../../test/themed-browser-render";
@@ -41,7 +42,7 @@ let down = false;
 async function touch(type: "touchStart" | "touchMove" | "touchEnd", point?: TouchPoint): Promise<void> {
   down = type !== "touchEnd";
   await session().send("Input.dispatchTouchEvent", { type, touchPoints: point === undefined ? [] : [point] });
-  await new Promise((resolve) => requestAnimationFrame(resolve));
+  await nextFrames(1);
 }
 
 const BILL = [
