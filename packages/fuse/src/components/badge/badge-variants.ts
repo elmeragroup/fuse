@@ -9,7 +9,7 @@ import { tv } from "../../styles/tv";
  *   that draws the status role as border and text, and a `soft-*` arm that uses the paired
  *   soft status tokens on their tinted surface.
  * - Badge is deliberately non-interactive. The recipe drops the ref's bare `:focus` ring
- *   and its `hover:` fills, so no state suggests an affordance a <div> does not have.
+ *   and its `hover:` fills, so no state suggests an affordance a <span> does not have.
  * - `size` is a decorative pill axis, not a density rung:
  *   it pins no control box, so it does not read `--control-*`.
  */

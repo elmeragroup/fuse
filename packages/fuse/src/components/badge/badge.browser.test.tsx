@@ -1,3 +1,4 @@
+import { renderToString } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
@@ -7,6 +8,7 @@ import { cssVarColor, renderThemed, stampDensity } from "../../../test/themed-br
 import { ThemeScope } from "../../theme/theme-scope";
 import { LEGAL_THEMES, themeSlug } from "../../theme/tokens/themes";
 import { Heading } from "../heading/heading";
+import { Item } from "../item";
 import { Span } from "../span/span";
 import { Text } from "../text/text";
 import { Badge } from "./badge";
@@ -46,11 +48,29 @@ describe("Badge", () => {
     renderThemed(<Badge>Active</Badge>);
     await expect.element(page.getByText("Active")).toBeInTheDocument();
     const badge = badgeNamed("Active");
-    expect(badge.tagName).toBe("DIV");
+    expect(badge.tagName).toBe("SPAN");
     expect(badge.textContent).toBe("Active");
     expect(badge.getAttribute("data-slot")).toBe("badge");
     expect(getComputedStyle(badge).display).toBe("inline-flex");
     expect(getComputedStyle(badge).borderTopWidth).toBe("1px");
+  });
+
+  // Oracle: the HTML parser. Phrasing content stays inside a `<p>`; a block-level `<div>` start
+  // tag closes the paragraph and lands after it, so server HTML would not match the tree React
+  // rendered. Item.Description renders a `<p>`.
+  it("parses inside Item.Description's paragraph from server HTML", () => {
+    const host = document.createElement("div");
+    host.innerHTML = renderToString(
+      <Item.Description>
+        Due <Badge>soon</Badge>
+      </Item.Description>
+    );
+    // DOM audit: the parsed fragment is never mounted, and the parser's tree is the unit under
+    // test, so the paragraph and the badge are located by their slots.
+    const paragraph = host.querySelector('[data-slot="item-description"]');
+    expect(paragraph?.tagName).toBe("P");
+    expect(paragraph?.querySelector('[data-slot="badge"]')?.textContent).toBe("soon");
+    expect(host.children).toHaveLength(1);
   });
 
   it("stays non-interactive: no role, no tabindex, no focus ring", () => {
@@ -134,7 +154,7 @@ describe("Badge", () => {
   });
 
   it("keeps every variant's paint while the pointer hovers it", async () => {
-    // Badge is a non-interactive <div>, so hover must not suggest an affordance.
+    // Badge is a non-interactive <span>, so hover must not suggest an affordance.
     // `transition-none` makes a hover rule, if one existed, apply at once.
     renderThemed(
       <>

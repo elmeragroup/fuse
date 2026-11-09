@@ -3,7 +3,7 @@ import { expectTypeOf, test } from "vitest";
 import type { BadgeProps } from "@elmeragroup/fuse/badge";
 import { Badge } from "@elmeragroup/fuse/badge";
 
-test("BadgeProps is native div props plus the recipe axes, and the element takes them with no polymorphic as prop", () => {
+test("BadgeProps is native span props plus the recipe axes, and the element takes them with no polymorphic as prop", () => {
   expectTypeOf<BadgeProps["variant"]>().toEqualTypeOf<
     | "default"
     | "secondary"
@@ -29,6 +29,9 @@ test("BadgeProps is native div props plus the recipe axes, and the element takes
   expectTypeOf<BadgeProps["size"]>().toEqualTypeOf<"sm" | "default" | "lg" | undefined>();
   expectTypeOf<BadgeProps["className"]>().toEqualTypeOf<string | undefined>();
   expectTypeOf<BadgeProps["id"]>().toEqualTypeOf<string | undefined>();
+  expectTypeOf<Parameters<NonNullable<BadgeProps["onClick"]>>[0]["currentTarget"]>().toEqualTypeOf<
+    EventTarget & HTMLSpanElement
+  >();
 
   const _basic = <Badge>Active</Badge>;
   const _statused = (
