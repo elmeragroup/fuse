@@ -17,6 +17,7 @@ import { describe, expect, it } from "vitest";
 import { commands, page } from "vitest/browser";
 
 import "../../../dist/styles.css";
+import { pollFrames } from "../../../test/animation-frames";
 import { serverRendered } from "../../../test/carousel-fixtures";
 import { carouselIndicators, carouselViewport, currentIndicator } from "../../../test/carousel-queries";
 import { withLocale } from "../../../test/locale-matrix";
@@ -61,9 +62,13 @@ async function tap(element: HTMLElement): Promise<void> {
   await commands.tap(box.left + box.width / 2, box.top + box.height / 2);
 }
 
-/** Device pixels are a third of a CSS pixel, so a landed scroll sits within one of them. */
+/**
+ * Device pixels are a third of a CSS pixel, so a landed scroll sits within one of them, half a CSS
+ * pixel from its position. A scroll moves only as the page renders, so this counts four seconds in
+ * frames.
+ */
 async function landsOn(viewport: HTMLElement, position: number): Promise<void> {
-  await expect.poll(() => Math.abs(viewport.scrollLeft - position), { timeout: 4000 }).toBeLessThan(0.5);
+  await pollFrames(() => viewport.scrollLeft, expect.closeTo(position, 0), 240);
 }
 
 describe("Carousel on an iPhone-sized WebKit", () => {
@@ -80,7 +85,7 @@ describe("Carousel on an iPhone-sized WebKit", () => {
 
   it("makes one page per snap position on fractional slide widths", async () => {
     renderThemed(<Fixture />);
-    await expect.poll(() => carouselIndicators().length).toBe(5);
+    await pollFrames(() => carouselIndicators().length, 5);
     const viewport = carouselViewport(roleNamed("region", "Offers"));
     for (const [page, position] of POSITIONS.entries()) {
       await tap(roleNamed("button", `Slide ${page + 1} of 5`));
@@ -92,17 +97,17 @@ describe("Carousel on an iPhone-sized WebKit", () => {
   it("follows WebKit's re-snap of a scroll that stops between slides", async () => {
     renderThemed(<Fixture />);
     const viewport = carouselViewport(roleNamed("region", "Offers"));
-    await expect.poll(currentIndicator).toBe(0);
+    await pollFrames(currentIndicator, 0);
     // 70% of the way to page 2: mandatory snapping moves it on to page 2's position.
     viewport.scrollTo({ left: 0.7 * STEP, behavior: "instant" });
     await landsOn(viewport, STEP);
-    await expect.poll(currentIndicator).toBe(1);
+    await pollFrames(currentIndicator, 1);
   });
 
   it("answers taps on Next and on the slide peeking in", async () => {
     renderThemed(<Fixture />);
     const viewport = carouselViewport(roleNamed("region", "Offers"));
-    await expect.poll(currentIndicator).toBe(0);
+    await pollFrames(currentIndicator, 0);
     // Slide 2 peeks 46.95px into the viewport, so it is not inert and takes a tap.
     const peek = roleNamed("button", "Offer 2");
     const box = peek.getBoundingClientRect();
@@ -141,7 +146,7 @@ describe("Carousel on an iPhone-sized WebKit", () => {
     expect(region.matches(":hover")).toBe(true);
     expect(matchMedia("(hover: hover)").matches).toBe(false);
     server.hydrate();
-    await expect.poll(currentIndicator, { timeout: 3000 }).toBe(1);
+    await pollFrames(currentIndicator, 1, 180);
     expect(carouselViewport(region).getAttribute("aria-live")).toBe("off");
     expect(server.recoverableErrors).toEqual([]);
   });

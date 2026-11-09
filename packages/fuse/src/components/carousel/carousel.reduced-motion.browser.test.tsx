@@ -10,7 +10,7 @@ import { describe, expect, it } from "vitest";
 import { userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
-import { nextFrames, wait } from "../../../test/animation-frames";
+import { nextFrames, pollFrames, wait } from "../../../test/animation-frames";
 import { carouselSlides } from "../../../test/carousel-fixtures";
 import { carouselIndicators, carouselViewport, settledOn } from "../../../test/carousel-queries";
 import { withLocale } from "../../../test/locale-matrix";
@@ -42,9 +42,10 @@ describe("Carousel under reduced motion", () => {
     expect(matchMedia("(prefers-reduced-motion: reduce)").matches).toBe(true);
     renderThemed(<Fixture autoplay={150} />);
     const viewport = carouselViewport(roleNamed("region", "Offers"));
-    await expect
-      .poll(() => roleNamed("button", "Start automatic slide show").getAttribute("aria-label"))
-      .toBe("Start automatic slide show");
+    await pollFrames(
+      () => roleNamed("button", "Start automatic slide show").getAttribute("aria-label"),
+      "Start automatic slide show"
+    );
     expect(viewport.getAttribute("aria-live")).toBe("polite");
     await wait(500);
     expect(viewport.scrollLeft).toBe(0);
@@ -60,7 +61,7 @@ describe("Carousel under reduced motion", () => {
   it("jumps to a page without a smooth scroll, and moves the pill without a transition", async () => {
     renderThemed(<Fixture />);
     const viewport = carouselViewport(roleNamed("region", "Offers"));
-    await expect.poll(() => carouselIndicators().length).toBe(3);
+    await pollFrames(() => carouselIndicators().length, 3);
     expect(getComputedStyle(viewport).scrollBehavior).toBe("auto");
     const pill = getComputedStyle(carouselIndicators()[1] ?? viewport, "::after");
     expect(pill.transitionProperty.split(", ")).not.toContain("width");

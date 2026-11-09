@@ -535,6 +535,11 @@ Paths are relative to `packages/fuse-figma` unless they start with `packages/`.
 - Move the wheel listener from the engine into `carousel-input.ts`, which owns every other input
   lifetime, and let a turn that arrives while the hold is pending extend it. A trackpad gesture
   now restarts the two-frame hold, its listeners and its quiet-spell timer every few frames.
+- Make the touch suite's quick flick hold under load. `touchSwipe` (`test/pointer-commands.ts`)
+  sends its moves in real time and Chromium stamps each on arrival, so a starved runner that
+  delivers two moves 2ms apart flings two pages instead of one. Stamping each move with its due
+  time through the protocol's `timestamp` keeps the velocity but left flicks snapping back to the
+  first page under the same load, so the cause past the timestamps is still open.
 - Make `movesSlides` walk ancestors against a `Set` of the measured slides. It now runs
   `contains` against every slide for each mutation record, so animated content in each slide
   costs O(slides) per record.

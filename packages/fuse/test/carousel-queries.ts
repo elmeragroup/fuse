@@ -1,5 +1,4 @@
-import { expect } from "vitest";
-
+import { pollFrames } from "./animation-frames";
 import { roleNamed } from "./themed-browser-render";
 
 /**
@@ -37,11 +36,12 @@ export function currentIndicator(): number {
 }
 
 /**
- * Wait until a horizontal viewport's scroll position comes to `left`, rounded to the pixel.
+ * Wait until a horizontal viewport's scroll position comes to `left`, rounded to the pixel, for as
+ * many frames as three seconds give: a scroll moves only as the page renders.
  *
  * @param viewport - The carousel's viewport.
  * @param left - The expected `scrollLeft`.
  */
 export async function settledOn(viewport: HTMLElement, left: number): Promise<void> {
-  await expect.poll(() => Math.round(viewport.scrollLeft), { timeout: 3000 }).toBe(left);
+  await pollFrames(() => Math.round(viewport.scrollLeft), left, 180);
 }

@@ -11,7 +11,7 @@ import { describe, expect, it } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
-import { nextFrames, wait } from "../../../test/animation-frames";
+import { nextFrames, pollFrames, wait } from "../../../test/animation-frames";
 import { carouselViewport, currentIndicator, settledOn } from "../../../test/carousel-queries";
 import { withLocale } from "../../../test/locale-matrix";
 import { renderThemed, roleNamed } from "../../../test/themed-browser-render";
@@ -66,7 +66,7 @@ describe.each([
   it("stops a directional scroll of nearly two slides at the next slide", async () => {
     renderThemed(<Fixture orientation={orientation} dir={dir} />);
     const viewport = carouselViewport(roleNamed("region", "Offers"));
-    await expect.poll(currentIndicator).toBe(0);
+    await pollFrames(currentIndicator, 0);
     // A relative scroll is directional, so `scroll-snap-stop: always` on each slide stops it at
     // the first slide it would pass, though the second is the snap position nearest 1.8 slides in.
     const distance = 1.8 * LENGTH;
@@ -75,7 +75,9 @@ describe.each([
         ? { top: distance, behavior: "instant" }
         : { left: dir === "rtl" ? -distance : distance, behavior: "instant" }
     );
-    await expect.poll(() => Math.round(read(viewport)), { timeout: 3000 }).toBe(LENGTH);
+    await pollFrames(() => Math.round(read(viewport)), LENGTH, 180);
+    // The indicator follows once the scroll has ended, and nothing moves on afterwards.
+    await pollFrames(currentIndicator, 1);
     await wait(300);
     expect(Math.round(read(viewport))).toBe(LENGTH);
     expect(currentIndicator()).toBe(1);
@@ -84,41 +86,41 @@ describe.each([
   it("scrolls to the page a control asks for and lands on its snap position", async () => {
     renderThemed(<Fixture orientation={orientation} dir={dir} />);
     const viewport = carouselViewport(roleNamed("region", "Offers"));
-    await expect.poll(currentIndicator).toBe(0);
+    await pollFrames(currentIndicator, 0);
 
     await userEvent.click(roleNamed("button", "Next slide"));
-    await expect.poll(() => Math.round(read(viewport)), { timeout: 3000 }).toBe(LENGTH);
+    await pollFrames(() => Math.round(read(viewport)), LENGTH, 180);
     expect(currentIndicator()).toBe(1);
 
     await userEvent.click(roleNamed("button", "Slide 4 of 4"));
-    await expect.poll(() => Math.round(read(viewport)), { timeout: 3000 }).toBe(3 * LENGTH);
+    await pollFrames(() => Math.round(read(viewport)), 3 * LENGTH, 180);
     expect(currentIndicator()).toBe(3);
     expect(roleNamed("button", "Next slide").getAttribute("aria-disabled")).toBe("true");
 
     await userEvent.click(roleNamed("button", "Previous slide"));
-    await expect.poll(() => Math.round(read(viewport)), { timeout: 3000 }).toBe(2 * LENGTH);
+    await pollFrames(() => Math.round(read(viewport)), 2 * LENGTH, 180);
     expect(currentIndicator()).toBe(2);
   });
 
   it("follows the page a native scroll lands on", async () => {
     renderThemed(<Fixture orientation={orientation} dir={dir} />);
     const viewport = carouselViewport(roleNamed("region", "Offers"));
-    await expect.poll(currentIndicator).toBe(0);
+    await pollFrames(currentIndicator, 0);
     const physical = orientation === "vertical" ? "top" : "left";
     const sign = dir === "rtl" ? -1 : 1;
     viewport.scrollTo({ [physical]: sign * 2 * LENGTH, behavior: "instant" });
-    await expect.poll(currentIndicator).toBe(2);
+    await pollFrames(currentIndicator, 2);
     viewport.scrollTo({ [physical]: sign * LENGTH, behavior: "instant" });
-    await expect.poll(currentIndicator).toBe(1);
+    await pollFrames(currentIndicator, 1);
   });
 
   it("shows only the slide in view to assistive technology", async () => {
     renderThemed(<Fixture orientation={orientation} dir={dir} />);
     const inert = () =>
       ["1 of 4", "2 of 4", "3 of 4", "4 of 4"].map((name) => roleNamed("group", name).hasAttribute("inert"));
-    await expect.poll(inert).toEqual([false, true, true, true]);
+    await pollFrames(inert, [false, true, true, true]);
     await userEvent.click(roleNamed("button", "Slide 3 of 4"));
-    await expect.poll(inert, { timeout: 3000 }).toEqual([true, true, false, true]);
+    await pollFrames(inert, [true, true, false, true], 180);
   });
 });
 
@@ -140,17 +142,17 @@ describe("Carousel direction change", () => {
     }
     renderThemed(<Switching />);
     const viewport = carouselViewport(roleNamed("region", "Offers"));
-    await expect.poll(currentIndicator).toBe(0);
+    await pollFrames(currentIndicator, 0);
     await userEvent.click(roleNamed("button", "Switch direction"));
 
     // After the switch, `scrollLeft` runs negative toward the end exactly when the carousel is
     // right to left.
     const logical = () => (to === "rtl" ? -viewport.scrollLeft : viewport.scrollLeft);
     await userEvent.click(roleNamed("button", "Next slide"));
-    await expect.poll(() => Math.round(logical()), { timeout: 3000 }).toBe(LENGTH);
+    await pollFrames(() => Math.round(logical()), LENGTH, 180);
     expect(currentIndicator()).toBe(1);
     await userEvent.click(roleNamed("button", "Slide 4 of 4"));
-    await expect.poll(() => Math.round(logical()), { timeout: 3000 }).toBe(3 * LENGTH);
+    await pollFrames(() => Math.round(logical()), 3 * LENGTH, 180);
     expect(currentIndicator()).toBe(3);
   });
 });
@@ -176,20 +178,20 @@ describe("Carousel direction change away from the first page", () => {
     const names = ["1 of 4", "2 of 4", "3 of 4", "4 of 4"];
     const inert = () => names.map((name) => roleNamed("group", name).hasAttribute("inert"));
     const logical = (rtl: boolean) => () => Math.round(rtl ? -viewport.scrollLeft : viewport.scrollLeft);
-    await expect.poll(logical(from === "rtl")).toBe(2 * LENGTH);
-    await expect.poll(currentIndicator).toBe(2);
+    await pollFrames(logical(from === "rtl"), 2 * LENGTH);
+    await pollFrames(currentIndicator, 2);
 
     await userEvent.click(roleNamed("button", "Switch direction"));
     // Page 3 stays selected and in view, at its place in the new direction.
-    await expect.poll(logical(to === "rtl"), { timeout: 3000 }).toBe(2 * LENGTH);
+    await pollFrames(logical(to === "rtl"), 2 * LENGTH, 180);
     expect(currentIndicator()).toBe(2);
     expect(page.getByRole("group", { name: "Choose slide to display" }).element().children).toHaveLength(4);
-    await expect.poll(inert).toEqual([true, true, false, true]);
+    await pollFrames(inert, [true, true, false, true]);
 
     await userEvent.click(roleNamed("button", "Previous slide"));
-    await expect.poll(logical(to === "rtl"), { timeout: 3000 }).toBe(LENGTH);
+    await pollFrames(logical(to === "rtl"), LENGTH, 180);
     expect(currentIndicator()).toBe(1);
-    await expect.poll(inert).toEqual([true, false, true, true]);
+    await pollFrames(inert, [true, false, true, true]);
   });
 });
 
@@ -219,11 +221,12 @@ describe("Carousel mounted at zero scale", () => {
     await expect.poll(() => page.getByRole("region", { name: "Offers" }).query()).not.toBeNull();
     const viewport = carouselViewport(roleNamed("region", "Offers"));
     await settledOn(viewport, 2 * LENGTH);
-    await expect.poll(currentIndicator).toBe(2);
+    await pollFrames(currentIndicator, 2);
     const names = ["1 of 4", "2 of 4", "3 of 4", "4 of 4"];
-    await expect
-      .poll(() => names.map((name) => roleNamed("group", name).hasAttribute("inert")))
-      .toEqual([true, true, false, true]);
+    await pollFrames(
+      () => names.map((name) => roleNamed("group", name).hasAttribute("inert")),
+      [true, true, false, true]
+    );
   });
 });
 
@@ -242,20 +245,20 @@ describe("Carousel under a scaled ancestor", () => {
       const read = () => (orientation === "vertical" ? viewport.scrollTop : viewport.scrollLeft);
       const names = ["1 of 4", "2 of 4", "3 of 4", "4 of 4"];
       const inert = () => names.map((name) => roleNamed("group", name).hasAttribute("inert"));
-      await expect.poll(inert).toEqual([false, true, true, true]);
+      await pollFrames(inert, [false, true, true, true]);
 
       await userEvent.click(roleNamed("button", "Next slide"));
-      await expect.poll(() => Math.round(read()), { timeout: 3000 }).toBe(LENGTH);
+      await pollFrames(() => Math.round(read()), LENGTH, 180);
       expect(currentIndicator()).toBe(1);
-      await expect.poll(inert).toEqual([true, false, true, true]);
+      await pollFrames(inert, [true, false, true, true]);
 
       viewport.scrollTo(
         orientation === "vertical"
           ? { top: 3 * LENGTH, behavior: "instant" }
           : { left: 3 * LENGTH, behavior: "instant" }
       );
-      await expect.poll(currentIndicator).toBe(3);
-      await expect.poll(inert).toEqual([true, true, true, false]);
+      await pollFrames(currentIndicator, 3);
+      await pollFrames(inert, [true, true, true, false]);
     }
   );
 });
@@ -357,7 +360,7 @@ describe.each([
       />
     );
     const viewport = carouselViewport(roleNamed("region", "Offers"));
-    await expect.poll(() => Math.round(read(viewport))).toBe(720);
+    await pollFrames(() => Math.round(read(viewport)), 720);
     await wait(400);
     expect(currentIndicator()).toBe(6);
 
@@ -368,7 +371,7 @@ describe.each([
     viewport.scrollTo(
       orientation === "vertical" ? { top: 720, behavior: "instant" } : { left: along, behavior: "instant" }
     );
-    await expect.poll(currentIndicator, { timeout: 3000 }).toBe(5);
+    await pollFrames(currentIndicator, 5, 180);
     await wait(400);
     expect(Math.round(read(viewport))).toBe(720);
     expect(currentIndicator()).toBe(5);
@@ -408,7 +411,7 @@ describe("Carousel input that never scrolls", () => {
         )
       );
       const viewport = carouselViewport(roleNamed("region", "Offers"));
-      await expect.poll(currentIndicator).toBe(0);
+      await pollFrames(currentIndicator, 0);
       if (input === "a click") {
         await userEvent.click(roleNamed("button", "Offer 1"));
       } else {
@@ -420,7 +423,7 @@ describe("Carousel input that never scrolls", () => {
       roleNamed("group", "Ancestor").style.setProperty("--gapped", "200px");
       // With the viewport's own smooth motion, so the scroll spans frames before it ends.
       viewport.scrollTo({ left: 400 });
-      await expect.poll(currentIndicator, { timeout: 3000 }).toBe(1);
+      await pollFrames(currentIndicator, 1, 180);
       await wait(300);
       expect(changes).toEqual([[1, "scroll"]]);
     }
@@ -451,7 +454,7 @@ describe("Carousel presses in quick succession", () => {
       )
     );
     const viewport = carouselViewport(roleNamed("region", "Offers"));
-    await expect.poll(currentIndicator).toBe(0);
+    await pollFrames(currentIndicator, 0);
     // Each press comes the moment the scroll before it arrives, before that scroll's `scrollend`,
     // which then reaches the carousel while the next page's scroll is under way.
     const pages = [2, 3, 4, 5, 6];

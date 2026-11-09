@@ -11,7 +11,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { commands, page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
-import { nextFrames, wait } from "../../../test/animation-frames";
+import { nextFrames, pollFrames, wait } from "../../../test/animation-frames";
 import {
   assertFocusRingAtBothDensities,
   assertKeyboardFocusRingAtBothDensities,
@@ -126,7 +126,7 @@ describe("Carousel pages", () => {
   it("makes one indicator per snap position, not per slide", async () => {
     // Six slides a third of the viewport wide stop at four positions: 0, 1, 2 and 3 slides in.
     renderThemed(<Fixture count={6} perView={3} />);
-    await expect.poll(() => carouselIndicators().length).toBe(4);
+    await pollFrames(() => carouselIndicators().length, 4);
     expect(carouselIndicators().map((button) => button.getAttribute("aria-label"))).toEqual([
       "Slide 1 of 6",
       "Slide 2 of 6",
@@ -140,7 +140,7 @@ describe("Carousel pages", () => {
     const viewport = carouselViewport(roleNamed("region", "Offers"));
     const previous = roleNamed("button", "Previous slide");
     const next = roleNamed("button", "Next slide");
-    await expect.poll(() => carouselIndicators().length).toBe(3);
+    await pollFrames(() => carouselIndicators().length, 3);
     expect(previous.getAttribute("aria-disabled")).toBe("true");
     expect(next.getAttribute("aria-disabled")).not.toBe("true");
 
@@ -165,7 +165,7 @@ describe("Carousel pages", () => {
   it("scrolls to the page an indicator names and marks it current for assistive technology", async () => {
     renderThemed(<Fixture count={4} />);
     const viewport = carouselViewport(roleNamed("region", "Offers"));
-    await expect.poll(() => carouselIndicators().length).toBe(4);
+    await pollFrames(() => carouselIndicators().length, 4);
     expect(currentIndicator()).toBe(0);
 
     await userEvent.click(roleNamed("button", "Slide 3 of 4"));
@@ -177,9 +177,9 @@ describe("Carousel pages", () => {
   it("follows a scroll of the viewport itself", async () => {
     renderThemed(<Fixture count={4} />);
     const viewport = carouselViewport(roleNamed("region", "Offers"));
-    await expect.poll(() => carouselIndicators().length).toBe(4);
+    await pollFrames(() => carouselIndicators().length, 4);
     viewport.scrollTo({ left: 3 * WIDTH, behavior: "instant" });
-    await expect.poll(currentIndicator).toBe(3);
+    await pollFrames(currentIndicator, 3);
   });
 
   it("starts on defaultIndex without a visible scroll", async () => {
@@ -187,7 +187,7 @@ describe("Carousel pages", () => {
     const viewport = carouselViewport(roleNamed("region", "Offers"));
     // Placed in a layout effect, so the first frame already shows page 3.
     expect(Math.round(viewport.scrollLeft)).toBe(2 * WIDTH);
-    await expect.poll(currentIndicator).toBe(2);
+    await pollFrames(currentIndicator, 2);
   });
 });
 
@@ -228,19 +228,19 @@ describe("Carousel slide order and layout changes", () => {
         const port = viewport.getBoundingClientRect();
         return Math.min(slide.right, port.right) - Math.max(slide.left, port.left) <= 1;
       });
-    await expect.poll(contents).toEqual(["Offer A", "Offer B", "Offer C", "Offer D"]);
-    await expect.poll(inert).toEqual([false, true, true, true]);
+    await pollFrames(contents, ["Offer A", "Offer B", "Offer C", "Offer D"]);
+    await pollFrames(inert, [false, true, true, true]);
 
     // The same four slides, moved, not remounted: the document now reads D, C, B, A. The browser
     // may keep the slide it had snapped to in view, so the slide in view is read, not assumed.
     await userEvent.click(roleNamed("button", "Reverse"));
-    await expect.poll(contents).toEqual(["Offer D", "Offer C", "Offer B", "Offer A"]);
-    await expect.poll(() => inert().join()).toBe(outOfView().join());
+    await pollFrames(contents, ["Offer D", "Offer C", "Offer B", "Offer A"]);
+    await pollFrames(() => inert().join(), outOfView().join());
     expect(inert().filter((hidden) => !hidden)).toHaveLength(1);
 
     await userEvent.click(roleNamed("button", "Slide 2 of 4"));
     await settledOn(viewport, WIDTH);
-    await expect.poll(inert).toEqual([true, false, true, true]);
+    await pollFrames(inert, [true, false, true, true]);
     expect(outOfView()).toEqual([true, false, true, true]);
     expect(roleNamed("group", "2 of 4").textContent).toBe("Offer C");
   });
@@ -418,25 +418,25 @@ describe("Carousel layout inherited from outside it", () => {
   it("pages by the gap an ancestor's custom property sets, after it changes", async () => {
     renderThemed(<Spaced />);
     const viewport = carouselViewport(roleNamed("region", "Offers"));
-    await expect.poll(inert).toEqual([false, true, true, true]);
+    await pollFrames(inert, [false, true, true, true]);
     // 240px slides 200px apart start every 440px; set on the ancestor, outside React.
     roleNamed("group", "Ancestor").style.setProperty("--offer-gap", "200px");
     await userEvent.click(roleNamed("button", "Slide 3 of 4"));
     await settledOn(viewport, 880);
     expect(currentIndicator()).toBe(2);
-    await expect.poll(inert).toEqual([true, true, false, true]);
+    await pollFrames(inert, [true, true, false, true]);
   });
 
   it("pages by the spacing a breakpoint class on an ancestor sets, after it changes", async () => {
     renderThemed(<Spaced />);
     const viewport = carouselViewport(roleNamed("region", "Offers"));
-    await expect.poll(inert).toEqual([false, true, true, true]);
+    await pollFrames(inert, [false, true, true, true]);
     // 240px slides 160px apart start every 400px.
     roleNamed("group", "Ancestor").classList.add("roomy");
     await userEvent.click(roleNamed("button", "Next slide"));
     await settledOn(viewport, 400);
     expect(currentIndicator()).toBe(1);
-    await expect.poll(inert).toEqual([true, false, true, true]);
+    await pollFrames(inert, [true, false, true, true]);
   });
 });
 
@@ -466,7 +466,7 @@ describe("Carousel snap grouping set from outside it", () => {
     );
     const viewport = carouselViewport(roleNamed("region", "Offers"));
     // Six 100px slides in a 300px viewport stop at 0, 100, 200 and 300: four pages.
-    await expect.poll(() => carouselIndicators().length).toBe(4);
+    await pollFrames(() => carouselIndicators().length, 4);
 
     // Snapping only at slides 1 and 4 leaves two pages, at 0 and 300. No box resizes and nothing
     // in the carousel mutates; the press reads the layout as it is.
@@ -511,7 +511,7 @@ describe("Carousel slides hidden by a host rule", () => {
 
     roleNamed("group", "Ancestor").classList.add("compact");
     // Seven slides with a box: seven pages, numbered of seven, and Offer 3 has no number.
-    await expect.poll(() => carouselIndicators().length).toBe(7);
+    await pollFrames(() => carouselIndicators().length, 7);
     expect(shown(7).map((name) => roleNamed("group", name).textContent)).toEqual([
       "Offer 1",
       "Offer 2",
@@ -523,21 +523,22 @@ describe("Carousel slides hidden by a host rule", () => {
     ]);
     expect(page.getByRole("group", { name: /of 8$/u }).elements()).toEqual([]);
     // The one slide in view and the current indicator agree, whichever slide the browser kept.
-    await expect.poll(() => inView(7)).toHaveLength(1);
+    await pollFrames(() => inView(7).length, 1);
     const [current] = inView(7);
     const number = Number.parseInt(current ?? "", 10);
-    await expect.poll(currentIndicator).toBe(number - 1);
+    await pollFrames(currentIndicator, number - 1);
     await settledOn(viewport, (number - 1) * WIDTH);
 
     // Previous moves the viewport one slide back, and the selection with it.
     await userEvent.click(roleNamed("button", "Previous slide"));
     await settledOn(viewport, (number - 2) * WIDTH);
     expect(currentIndicator()).toBe(number - 2);
-    expect(inView(7)).toEqual([`${number - 1} of 7`]);
+    // The slide left behind turns inert once the scroll has ended, after it lands.
+    await pollFrames(() => inView(7), [`${number - 1} of 7`]);
 
     // Shown again, the slide counts again.
     roleNamed("group", "Ancestor").classList.remove("compact");
-    await expect.poll(() => carouselIndicators().length).toBe(8);
+    await pollFrames(() => carouselIndicators().length, 8);
     expect(roleNamed("group", "3 of 8").textContent).toBe("Offer 3");
   });
 });
@@ -624,14 +625,15 @@ describe("Carousel held keys", () => {
     // Held: the first press scrolls, and its scroll ends while the key is still down, so its settle
     // waits for the release. The key then repeats, each repeat new input on the viewport.
     await userEvent.keyboard("{ArrowRight>}");
-    await expect.poll(() => viewport.scrollLeft, { timeout: 3000 }).toBeGreaterThan(0);
+    await pollFrames(() => viewport.scrollLeft > 0, true, 180);
     await wait(500);
     // Repeats until past the last page: three presses reach it, and the later ones scroll nothing.
     for (let repeat = 0; repeat < 5; repeat += 1) {
       await userEvent.keyboard("{ArrowRight>}");
       await wait(400);
     }
-    expect(Math.round(viewport.scrollLeft)).toBe(3 * WIDTH);
+    // Still held, so nothing has settled the parent's page back.
+    await settledOn(viewport, 3 * WIDTH);
     await userEvent.keyboard("{/ArrowRight}");
     // The parent keeps page 1, so once the key is up the carousel goes back to it.
     await settledOn(viewport, 0);
@@ -676,13 +678,13 @@ describe("Carousel emptied and filled again", () => {
       // The indicator and the slide in view agree: page 3 is both selected and shown.
       await settledOn(viewport, 2 * WIDTH);
       expect(currentIndicator()).toBe(2);
-      await expect
-        .poll(() =>
+      await pollFrames(
+        () =>
           ["1 of 4", "2 of 4", "3 of 4", "4 of 4"].map((name) =>
             roleNamed("group", name).hasAttribute("inert")
-          )
-        )
-        .toEqual([true, true, false, true]);
+          ),
+        [true, true, false, true]
+      );
     }
   );
 });
@@ -692,10 +694,10 @@ describe("Carousel keyboard and focus", () => {
     renderThemed(<Fixture count={4} />);
     const region = roleNamed("region", "Offers");
     const viewport = carouselViewport(region);
-    await expect.poll(() => carouselIndicators().length).toBe(4);
+    await pollFrames(() => carouselIndicators().length, 4);
     viewport.focus();
     await userEvent.keyboard("{ArrowRight}");
-    await expect.poll(currentIndicator, { timeout: 3000 }).toBe(1);
+    await pollFrames(currentIndicator, 1, 180);
     await settledOn(viewport, WIDTH);
   });
 
@@ -742,17 +744,17 @@ describe("Carousel keyboard and focus", () => {
     await expect.poll(() => page.getByRole("group", { name: "3 of 3" }).query()).not.toBeNull();
     const inert = () =>
       ["1 of 3", "2 of 3", "3 of 3"].map((name) => roleNamed("group", name).hasAttribute("inert"));
-    await expect.poll(inert).toEqual([false, true, true]);
+    await pollFrames(inert, [false, true, true]);
 
     // A slide that holds focus stays reachable while it scrolls out, and turns inert once focus
     // leaves it.
     roleNamed("link", "First offer").focus();
     const viewport = carouselViewport(roleNamed("region", "Offers"));
     viewport.scrollTo({ left: WIDTH, behavior: "instant" });
-    await expect.poll(inert).toEqual([false, false, true]);
+    await pollFrames(inert, [false, false, true]);
     expect(document.activeElement).toBe(roleNamed("link", "First offer"));
     roleNamed("button", "Next slide").focus();
-    await expect.poll(inert).toEqual([true, false, true]);
+    await pollFrames(inert, [true, false, true]);
   });
 
   it("draws the shared focus ring on the viewport and an indicator at both densities", async () => {
@@ -762,7 +764,7 @@ describe("Carousel keyboard and focus", () => {
         <Fixture count={3} />
       </>
     );
-    await expect.poll(() => carouselIndicators().length).toBe(3);
+    await pollFrames(() => carouselIndicators().length, 3);
     const viewport = carouselViewport(roleNamed("region", "Offers"));
     await assertKeyboardFocusRingAtBothDensities(roleNamed("button", "Before"), viewport);
     // The second and third: the first is current, which Playwright will not click.
@@ -777,7 +779,7 @@ describe("Carousel keyboard and focus", () => {
 describe("Carousel targets and sizes", () => {
   it("keeps every indicator a 24px target at both densities, the dot 8px and the pill 28px", async () => {
     renderThemed(<Fixture count={5} />);
-    await expect.poll(() => carouselIndicators().length).toBe(5);
+    await pollFrames(() => carouselIndicators().length, 5);
     for (const density of DENSITIES) {
       stampDensity(density);
       expectTargets(carouselIndicators(), `${density} indicators`);
@@ -800,7 +802,7 @@ describe("Carousel targets and sizes", () => {
         </Carousel.Indicators>
       </Fixture>
     );
-    await expect.poll(() => carouselIndicators().length).toBe(3);
+    await pollFrames(() => carouselIndicators().length, 3);
     for (const density of DENSITIES) {
       stampDensity(density);
       expectTargets(carouselIndicators(), `${density} custom indicators`);
@@ -845,7 +847,7 @@ describe("Carousel controlled index", () => {
     }
     renderThemed(<Controlled />);
     const viewport = carouselViewport(roleNamed("region", "Offers"));
-    await expect.poll(() => carouselIndicators().length).toBe(4);
+    await pollFrames(() => carouselIndicators().length, 4);
 
     await userEvent.click(roleNamed("button", "Next slide"));
     await settledOn(viewport, WIDTH);
@@ -854,7 +856,7 @@ describe("Carousel controlled index", () => {
     await userEvent.click(roleNamed("button", "Previous slide"));
     await settledOn(viewport, WIDTH);
     viewport.scrollTo({ left: 0, behavior: "instant" });
-    await expect.poll(currentIndicator).toBe(0);
+    await pollFrames(currentIndicator, 0);
     expect(changes).toEqual([
       [1, "next"],
       [2, "indicator"],
@@ -873,7 +875,7 @@ describe("Carousel controlled index", () => {
     const viewport = carouselViewport(roleNamed("region", "Offers"));
     await settledOn(viewport, WIDTH);
     viewport.scrollTo({ left: 3 * WIDTH, behavior: "instant" });
-    await expect.poll(() => onIndexChange.mock.calls.at(-1)?.[0]).toBe(3);
+    await pollFrames(() => onIndexChange.mock.calls.at(-1)?.[0], 3);
     await settledOn(viewport, WIDTH);
     expect(currentIndicator()).toBe(1);
   });
@@ -960,6 +962,6 @@ describe("Carousel custom parts", () => {
         <Carousel.Next />
       </CaughtError>
     );
-    await expect.poll(() => caughtError().message).toBe("Carousel.Next must be used within Carousel.Root.");
+    await pollFrames(() => caughtError().message, "Carousel.Next must be used within Carousel.Root.");
   });
 });

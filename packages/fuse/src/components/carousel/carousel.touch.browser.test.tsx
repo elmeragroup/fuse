@@ -14,7 +14,7 @@ import { describe, expect, it, onTestFinished } from "vitest";
 import { commands, page } from "vitest/browser";
 
 import "../../../dist/styles.css";
-import { nextFrames, wait } from "../../../test/animation-frames";
+import { nextFrames, pollFrames, wait } from "../../../test/animation-frames";
 import { carouselViewport, currentIndicator, settledOn } from "../../../test/carousel-queries";
 import { withLocale } from "../../../test/locale-matrix";
 import "../../../test/pointer-press";
@@ -65,7 +65,7 @@ async function swipe(viewport: HTMLElement, dx: number, dy: number, speed: numbe
 }
 
 async function settles(viewport: HTMLElement, left: number): Promise<void> {
-  await expect.poll(() => Math.round(viewport.scrollLeft), { timeout: 4000 }).toBe(left);
+  await pollFrames(() => Math.round(viewport.scrollLeft), left, 240);
   await wait(400);
   expect(Math.round(viewport.scrollLeft)).toBe(left);
 }
@@ -74,26 +74,26 @@ describe("Carousel swipe", () => {
   it("turns one page per quick flick, in either direction", async () => {
     renderThemed(<Fixture />);
     const viewport = carouselViewport(roleNamed("region", "Offers"));
-    await expect.poll(currentIndicator).toBe(0);
+    await pollFrames(currentIndicator, 0);
 
     // A 1500px/s flick a little past half a slide comes to rest one page on.
     await swipe(viewport, -(WIDTH * 0.6), 0, 1500);
     await settles(viewport, WIDTH);
-    await expect.poll(currentIndicator).toBe(1);
+    await pollFrames(currentIndicator, 1);
 
     await swipe(viewport, -(WIDTH * 0.6), 0, 1500);
     await settles(viewport, 2 * WIDTH);
-    await expect.poll(currentIndicator).toBe(2);
+    await pollFrames(currentIndicator, 2);
 
     await swipe(viewport, WIDTH * 0.6, 0, 1500);
     await settles(viewport, WIDTH);
-    await expect.poll(currentIndicator).toBe(1);
+    await pollFrames(currentIndicator, 1);
   });
 
   it("snaps a short drag released at rest back to the page it started on", async () => {
     renderThemed(<Fixture />);
     const viewport = carouselViewport(roleNamed("region", "Offers"));
-    await expect.poll(currentIndicator).toBe(0);
+    await pollFrames(currentIndicator, 0);
     await nextFrames(3);
     const box = viewport.getBoundingClientRect();
     const x = box.right - 20;
@@ -106,7 +106,7 @@ describe("Carousel swipe", () => {
         await wait(16);
       }
       // The viewport followed the finger, so the snap back below is the scroll's own.
-      await expect.poll(() => Math.round(viewport.scrollLeft)).toBeGreaterThan(20);
+      await pollFrames(() => Math.round(viewport.scrollLeft) > 20, true);
     } finally {
       await commands.touchEnd();
     }
@@ -117,12 +117,12 @@ describe("Carousel swipe", () => {
   it("leaves a vertical swipe to the page", async () => {
     renderThemed(<Fixture />);
     const viewport = carouselViewport(roleNamed("region", "Offers"));
-    await expect.poll(currentIndicator).toBe(0);
+    await pollFrames(currentIndicator, 0);
     expect(getComputedStyle(viewport).touchAction).toBe("auto");
     const before = document.scrollingElement?.scrollTop ?? 0;
     // A finger moving up scrolls the page down.
     await swipe(viewport, 0, -240, 1200);
-    await expect.poll(() => (document.scrollingElement?.scrollTop ?? 0) - before).toBeGreaterThan(100);
+    await pollFrames(() => (document.scrollingElement?.scrollTop ?? 0) - before > 100, true);
     expect(viewport.scrollLeft).toBe(0);
     expect(currentIndicator()).toBe(0);
     document.scrollingElement?.scrollTo({ top: 0, behavior: "instant" });
@@ -159,7 +159,7 @@ describe("Carousel swipe", () => {
     strip.scrollTo({ left: 550, behavior: "instant" });
     const viewport = carouselViewport(roleNamed("region", "Offers"));
     viewport.scrollTo({ left: 2 * WIDTH, behavior: "instant" });
-    await expect.poll(currentIndicator).toBe(2);
+    await pollFrames(currentIndicator, 2);
     expect(strip.scrollLeft).toBe(550);
 
     await swipe(viewport, -(WIDTH * 0.6), 0, 1500);
@@ -173,7 +173,7 @@ describe("Carousel live indicators", () => {
   it("follows the finger before it lifts", async () => {
     renderThemed(<Fixture />);
     const viewport = carouselViewport(roleNamed("region", "Offers"));
-    await expect.poll(currentIndicator).toBe(0);
+    await pollFrames(currentIndicator, 0);
     await nextFrames(3);
     const box = viewport.getBoundingClientRect();
     const x = box.left + box.width - 20;
@@ -184,7 +184,7 @@ describe("Carousel live indicators", () => {
       await commands.touchMove(x - step, y);
     }
     try {
-      await expect.poll(currentIndicator, { timeout: 2000 }).toBe(1);
+      await pollFrames(currentIndicator, 1, 120);
       expect(Math.round(viewport.scrollLeft)).toBeGreaterThan(WIDTH / 2);
     } finally {
       await commands.touchEnd();
@@ -198,7 +198,7 @@ describe("Carousel swipe and rotation", () => {
     // Longer than the drag takes to send, so rotation cannot advance before the finger is down.
     renderThemed(<Fixture autoplay={2500} />);
     const viewport = carouselViewport(roleNamed("region", "Offers"));
-    await expect.poll(currentIndicator).toBe(0);
+    await pollFrames(currentIndicator, 0);
     expect(roleNamed("button", "Stop automatic slide show")).toBeInstanceOf(HTMLButtonElement);
     await nextFrames(3);
     // A real finger through Chromium's touch input: down, 30px left, a rest, up.
@@ -311,7 +311,7 @@ describe("Carousel held gestures", () => {
     withoutScrollEnd();
     renderThemed(<Refusing />);
     const viewport = carouselViewport(roleNamed("region", "Offers"));
-    await expect.poll(currentIndicator).toBe(0);
+    await pollFrames(currentIndicator, 0);
     await nextFrames(3);
     await dragAndHold(viewport, 160);
     await atRest(viewport);
@@ -335,7 +335,7 @@ describe("Carousel held gestures", () => {
     withoutScrollEnd();
     renderThemed(<Refusing />);
     const viewport = carouselViewport(roleNamed("region", "Offers"));
-    await expect.poll(currentIndicator).toBe(0);
+    await pollFrames(currentIndicator, 0);
     const box = viewport.getBoundingClientRect();
     const finger = (identifier: number, x: number) =>
       new Touch({ identifier, target: viewport, clientX: x, clientY: box.top + box.height / 2 });
@@ -368,7 +368,7 @@ describe("Carousel held gestures", () => {
     withoutScrollEnd();
     renderThemed(<Refusing />);
     const viewport = carouselViewport(roleNamed("region", "Offers"));
-    await expect.poll(currentIndicator).toBe(0);
+    await pollFrames(currentIndicator, 0);
     await nextFrames(3);
     await dragAndHold(viewport, 160);
     const held = await atRest(viewport);
@@ -387,7 +387,7 @@ describe("Carousel held gestures", () => {
     withoutScrollEnd();
     renderThemed(<Refusing />);
     const viewport = carouselViewport(roleNamed("region", "Offers"));
-    await expect.poll(currentIndicator).toBe(0);
+    await pollFrames(currentIndicator, 0);
     roleNamed("button", "Slide 3 of 5").click();
     await settledOn(viewport, 2 * WIDTH);
     // Back past the middle toward page 2, held: nearer page 2 at 300px than the parent's page 3
