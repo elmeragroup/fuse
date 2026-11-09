@@ -373,10 +373,11 @@ describe("RSC classification", () => {
     ["components/command/command-markup.tsx", "server"],
     // The data table filter's model holds no state and imports no React or TanStack runtime, so
     // a server parses request input and filters rows with the same predicates the client runs.
-    // The carousel's page math and its DOM engine import no React, so they carry no directive;
-    // only the parts that call them are client modules.
+    // The carousel's page math, its DOM engine and the engine's measurement import no React, so
+    // they carry no directive; only the parts that call them are client modules.
     ["components/carousel/carousel-pages.ts", "server"],
     ["components/carousel/carousel-engine.ts", "server"],
+    ["components/carousel/carousel-measure.ts", "server"],
     ["components/data-table-filter/filter-model.ts", "server"],
     ["components/data-table-filter/filter-match.ts", "server"],
     ["components/data-table-filter/filter-fields.ts", "server"],

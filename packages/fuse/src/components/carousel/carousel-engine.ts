@@ -50,21 +50,33 @@
  *   spell starts for it, or for a live session still under way. Only the engine's own page change,
  *   whose scroll brings its own end, replaces what an earlier scroll was owed.
  *
- * Every length is in the viewport's scroll coordinates, the space of `scrollLeft`, `clientWidth`
- * and `scrollWidth`. A transform on an ancestor, such as `scale(0.5)`, scales the boxes
- * `getBoundingClientRect` reports but not the scroll range, so the engine divides each box by the
- * viewport's painted size over its layout size, per axis. That keeps sub-pixel slide widths, which
- * the integer `offsetLeft` and `offsetWidth` would round, and stays right while a scale animates,
- * since the ratio is read with the boxes. A rotated or skewed ancestor is not supported: a box's
- * bounds are then not a scaled copy of its layout.
+ * Measurement is `carousel-measure.ts`'s: every length is in the viewport's scroll coordinates,
+ * read from the painted boxes, and it says whether a reading is steady, taken with the viewport's
+ * box holding still, or unsteady, taken while an animating transform moved it, as WebKit samples a
+ * running transform afresh at each layout read. The engine treats an unsteady reading as it treats
+ * a box scaled to nothing: the viewport has no usable layout for now, and it measures again on the
+ * next frame. After `UNSTEADY_READINGS` unsteady readings in a row it accepts the latest as it is,
+ * and every one after it until one is steady, so an animation that never rests cannot stall the
+ * carousel. An accepted reading puts no page back, unlike one after a box that was gone: the
+ * viewport stayed scrollable, so the browser reset no scroll position.
+ *
+ * A scroll that ends while the reading is unsteady is owed its end again, as one that ends under
+ * held input is, and its end is read afresh after the next quiet spell, up to `END_READS` reads in
+ * all; the last accepts what it reads, as a reading past `UNSTEADY_READINGS` is accepted. Nothing
+ * from an earlier read is kept for a later one, no layout and no reckoning of the engine's own
+ * scroll, as each could be undone by what came between: a later scroll, a gap change or a
+ * navigation. So the end is read as the end of whatever scroll last moved the viewport, and every
+ * scroll event starts the count over, as the end owed is now that scroll's. Nothing else needs to:
+ * after the engine's own scroll begins or input goes down, an end is read only once a scroll event
+ * has come, and input that never scrolls, such as a tap, leaves the end owed to the same scroll.
  */
-import { documentOrder } from "../../internal/dom-node";
 import { createCarouselInput } from "./carousel-input";
-import { clampIndex, nearestPage, pagesOf, parseSnapAlign, samePages, visibleSlides } from "./carousel-pages";
-import type { Pages, ScrollPort, SlideGeometry, SnapAxis } from "./carousel-pages";
+import { measureCarousel, scrollPositionOf } from "./carousel-measure";
+import type { CarouselOrientation, CarouselReading, Size } from "./carousel-measure";
+import { clampIndex, nearestPage, pagesOf, samePages, visibleSlides } from "./carousel-pages";
+import type { Pages } from "./carousel-pages";
 
-/** The axis a carousel scrolls on. */
-export type CarouselOrientation = "horizontal" | "vertical";
+export type { CarouselOrientation } from "./carousel-measure";
 
 /** One measurement of the carousel: what the labels, the pages and the inert slides all read. */
 export type CarouselSnapshot = {
@@ -139,22 +151,24 @@ type Motion = "css" | "instant";
  * The engine's scroll session: `idle` with no user input that can scroll under way, `armed` while
  * such input lasts without having scrolled, and `live` from its first scroll frame until the scroll
  * ends. Only a live session reports pages frame by frame.
+ *
+ * `still` is where held input last left the viewport with nothing to take over: where it was when
+ * the input began, or when a page the Root committed came to wait under it for a usable reading,
+ * whichever came later. A scroll event whose viewport has moved from there is the held input's
+ * own, and supersedes the waiting page; one that left it there belongs to a scroll that came
+ * before, its event still on its way. A live session no input holds any more, such as inertia
+ * after a release, has none: armed input is always held.
  */
-type ScrollSession = "idle" | "armed" | "live";
+type ScrollSession =
+  | { readonly kind: "idle" }
+  | { readonly kind: "armed"; readonly still: number }
+  | { readonly kind: "live"; readonly still: number | null };
 
-/** The last measurement, in scroll coordinates. */
-type Layout = {
-  readonly slides: readonly HTMLElement[];
-  /** Each slide's place in `slides`; also how a mutation finds the slide it lies in. */
-  readonly numbers: ReadonlyMap<HTMLElement, number>;
-  readonly geometry: readonly SlideGeometry[];
-  readonly port: ScrollPort;
-  readonly pages: Pages;
-  readonly rtl: boolean;
-};
+/** The session with no user input that can scroll under way. */
+const IDLE: ScrollSession = { kind: "idle" };
 
-/** A box's layout size, in the viewport's scroll coordinates. */
-type Size = { readonly width: number; readonly height: number };
+/** The last measurement, in scroll coordinates, with the pages its snap positions make. */
+type Layout = Omit<CarouselReading, "sizes"> & { readonly pages: Pages };
 
 /**
  * A quiet spell: a scroll counts as ended once no `scroll` event has fired for this long. It ends
@@ -169,54 +183,26 @@ const ARRIVED = 1;
 /** A resize smaller than this is the rounding of a size the last measurement already read. */
 const SAME_SIZE = 0.5;
 
-/** The attributes whose change can move a slide without resizing anything. */
-const LAYOUT_ATTRIBUTES = ["class", "style", "dir", "hidden"];
-
-/** A computed length in px, resolving a percentage against `basis` and `auto` to `0`. */
-function lengthOf(value: string, basis: number): number {
-  const parsed = Number.parseFloat(value);
-  if (Number.isNaN(parsed)) {
-    return 0;
-  }
-  return value.trim().endsWith("%") ? (parsed / 100) * basis : parsed;
-}
-
-/** The physical sides of the scroll axis's start and end, for reading computed styles. */
-type AxisSides = { readonly start: "left" | "right" | "top"; readonly end: "left" | "right" | "bottom" };
-
-function sidesOf(orientation: CarouselOrientation, rtl: boolean): AxisSides {
-  if (orientation === "vertical") {
-    return { start: "top", end: "bottom" };
-  }
-  return rtl ? { start: "right", end: "left" } : { start: "left", end: "right" };
-}
-
-function sideValue(
-  style: CSSStyleDeclaration,
-  property: "scroll-padding" | "scroll-margin",
-  side: string
-): string {
-  return style.getPropertyValue(`${property}-${side}`);
-}
+/**
+ * The most unsteady readings in a row the engine sets aside before it accepts one. It measures
+ * again once a frame while it waits, so this is about half a second at 60 frames a second, which
+ * outlasts a popup's opening transition, typically 150 to 300ms; a loaded runner, which renders
+ * frames further apart, waits longer still. Past it, an animation that never rests gets what the
+ * engine read before it waited at all: a slow read may mix two samples, but the carousel gets pages
+ * and places its page rather than wait without end.
+ */
+const UNSTEADY_READINGS = 30;
 
 /**
- * An element's border-box size as layout gives it, before any transform, from its computed
- * style, which keeps fractions.
+ * The most reads of one scroll's end: one, and a quiet spell before each read after it while they
+ * are unsteady, so over half a second, as long as `UNSTEADY_READINGS` waits. The last accepts what
+ * it reads, so an end whose every read is unsteady settles though the next-frame retries between
+ * them hold still and start `UNSTEADY_READINGS` over.
  */
-function layoutSizeOf(style: CSSStyleDeclaration): Size {
-  const width = Number.parseFloat(style.width) || 0;
-  const height = Number.parseFloat(style.height) || 0;
-  if (style.boxSizing === "border-box") {
-    return { width, height };
-  }
-  const sum = (...values: string[]) =>
-    values.reduce((total, value) => total + (Number.parseFloat(value) || 0), 0);
-  return {
-    width: width + sum(style.paddingLeft, style.paddingRight, style.borderLeftWidth, style.borderRightWidth),
-    height:
-      height + sum(style.paddingTop, style.paddingBottom, style.borderTopWidth, style.borderBottomWidth),
-  };
-}
+const END_READS = 5;
+
+/** The attributes whose change can move a slide without resizing anything. */
+const LAYOUT_ATTRIBUTES = ["class", "style", "dir", "hidden"];
 
 function sameSnapshot(left: CarouselSnapshot, right: CarouselSnapshot): boolean {
   // One measurement's slides and pages are the same references until the layout is measured again.
@@ -249,7 +235,6 @@ export function createCarouselEngine(
   listener: CarouselEngineListener
 ): CarouselEngine {
   const view = viewport.ownerDocument.defaultView;
-  const axis: SnapAxis = orientation === "vertical" ? "block" : "inline";
   const vertical = orientation === "vertical";
   // The slides the resize observer watches, and the size each box had at the last measurement.
   const observed = new Set<HTMLElement>();
@@ -260,8 +245,18 @@ export function createCarouselEngine(
   let scheduled = false;
   let destroyed = false;
   // Whether the last measurement found no usable layout: no layout box, as under `display: none`,
-  // or a box scaled to nothing, as under `scale(0)`. The layout before it stands meanwhile.
+  // a box scaled to nothing, as under `scale(0)`, or an unsteady reading. The layout before it
+  // stands meanwhile.
   let unmeasured = false;
+  // Whether a measurement since the last usable one found no box or one scaled to nothing, so the
+  // browser may have reset the scroll position meanwhile.
+  let vanished = false;
+  // The unsteady readings in a row since the last steady one, or one that found no box. It stops at
+  // the bound, past which every reading is accepted until one is steady.
+  let unsteadyReadings = 0;
+  // The reads of the scroll end owed since an unsteady read of it, counting the one under way, or
+  // 0 with none owed so. A scroll event starts it over.
+  let endReads = 0;
   // A retry on the next frame, for a scale no observer reports the end of.
   let retryFrame: number | null = null;
   // The selected page. Scroll observations move it; so does applying the Root's page.
@@ -274,7 +269,7 @@ export function createCarouselEngine(
   // started in them. See `strandedUnderOwnScroll`.
   let ending: { readonly pages: Pages; readonly start: number } | null = null;
   // The scroll session live page reports belong to; see the module comment.
-  let session: ScrollSession = "idle";
+  let session: ScrollSession = IDLE;
   // The Root's latest commit, and the one last applied to a layout with pages: `null` until the
   // first placement, and again once the slides are gone, so returning slides are placed afresh.
   let committed: CarouselCommit = { index: 0, settled: 0 };
@@ -291,18 +286,9 @@ export function createCarouselEngine(
     return !vertical && getComputedStyle(viewport).direction === "rtl";
   }
 
-  /** The scroll position on the axis in a direction, positive from the start in either. */
-  function positionIn(rtl: boolean): number {
-    if (vertical) {
-      return viewport.scrollTop;
-    }
-    // Every engine reports a right-to-left `scrollLeft` as 0 at the start, negative toward the end.
-    return rtl ? -viewport.scrollLeft : viewport.scrollLeft;
-  }
-
   /** The scroll position in the last measured direction. */
   function position(): number {
-    return positionIn(layout?.rtl === true);
+    return scrollPositionOf(viewport, orientation, layout?.rtl === true);
   }
 
   /** The last measurement, unless the latest found no usable layout. */
@@ -315,13 +301,33 @@ export function createCarouselEngine(
     return target === null ? undefined : layout?.pages.positions[target];
   }
 
-  /** A measurement with no usable layout: keep the last one, and retry once there may be one. */
-  function unusable(retry: "on resize" | "next frame"): "unmeasurable" {
+  /**
+   * Whether the engine's own scroll is under way, short of its page: a scroll end that comes now is
+   * the end of a scroll before it, or of one that superseded it.
+   */
+  function short(): boolean {
+    const destination = ownDestination();
+    return destination !== undefined && Math.abs(position() - destination) >= ARRIVED;
+  }
+
+  /**
+   * A measurement with no usable layout: keep the last one, and retry once there may be one.
+   *
+   * @param retry - When to measure again.
+   * @param cause - Whether the box is gone or scaled to nothing, or the reading was unsteady.
+   */
+  function unusable(retry: "on resize" | "next frame", cause: "vanished" | "unsteady"): "unmeasurable" {
     unmeasured = true;
+    if (cause === "vanished") {
+      vanished = true;
+      unsteadyReadings = 0;
+    } else {
+      unsteadyReadings += 1;
+    }
     // Forgotten, so the box coming back reads as a resize.
     sizes.clear();
     if (retry === "next frame" && retryFrame === null && view !== null) {
-      // A transform changes no box size, so no observer reports the scale growing back.
+      // A transform changes no box size, so no observer reports the scale growing back or resting.
       retryFrame = view.requestAnimationFrame(() => {
         retryFrame = null;
         invalidate();
@@ -352,100 +358,42 @@ export function createCarouselEngine(
   }
 
   /**
-   * Read the layout, once: the viewport's box and style, then each slide's box and style. A
-   * viewport without a layout box, such as one under `display: none`, reads nothing and keeps the
-   * last layout and the selected page until it shows again.
+   * Measure the layout, once, and keep it if it is usable. What the measurement found decides: no
+   * box, as under `display: none`, waits for the resize that showing again brings; geometry that is
+   * not finite, as under `scale(0)`, and an unsteady reading are retried on the next frame, since
+   * no observer reports a transform changing; and an unsteady reading is accepted once
+   * `UNSTEADY_READINGS` have come in a row, or as the last of `END_READS` reads of a scroll's end.
+   * Meanwhile the last layout and the selected page stand: see the module comment.
    *
-   * @returns Whether the viewport is hidden, and otherwise whether the selected page must be put
-   *   back, as after showing again or a change of direction, since the browser may have reset or
-   *   mirrored the scroll position meanwhile.
+   * @returns Whether the viewport has no usable layout, and otherwise whether the selected page must
+   *   be put back, as after showing again or a change of direction, since the browser may have reset
+   *   or mirrored the scroll position meanwhile.
    */
   function measure(): "unmeasurable" | "restore" | "measured" {
-    // One read per box, the viewport's and each slide's: `getClientRects` is empty for an element
-    // with no layout box, as under `display: none`, and holds the one border box of a block or flex
-    // item otherwise.
-    const [rect] = viewport.getClientRects();
-    if (rect === undefined) {
-      // Showing again resizes the viewport, which the resize observer reports.
-      return unusable("on resize");
+    const result = measureCarousel(viewport, orientation, members);
+    if (result.kind === "no-box") {
+      return unusable("on resize", "vanished");
     }
-    const style = getComputedStyle(viewport);
-    const rtl = !vertical && style.direction === "rtl";
-    const sides = sidesOf(orientation, rtl);
-    const viewportSize = layoutSizeOf(style);
-    // Painted over layout size, per axis: 1 without a transform, 0.5 under `scale(0.5)`, and 0
-    // under `scale(0)`, where no box says where anything is.
-    const scaleX = viewportSize.width > 0 ? rect.width / viewportSize.width : 1;
-    const scaleY = viewportSize.height > 0 ? rect.height / viewportSize.height : 1;
-    if (!(Number.isFinite(scaleX) && Number.isFinite(scaleY) && scaleX > 0 && scaleY > 0)) {
-      return unusable("next frame");
+    if (result.kind === "non-finite") {
+      return unusable("next frame", "vanished");
     }
-    const size = vertical ? viewport.clientHeight : viewport.clientWidth;
-    const port: ScrollPort = {
-      size,
-      scrollSize: vertical ? viewport.scrollHeight : viewport.scrollWidth,
-      paddingStart: lengthOf(sideValue(style, "scroll-padding", sides.start), size),
-      paddingEnd: lengthOf(sideValue(style, "scroll-padding", sides.end), size),
-    };
-    // In the direction just read: a switch of direction mirrors the scroll position the previous
-    // layout's direction would read.
-    const scrolled = positionIn(rtl);
-    // The padding box's start edge on screen, from which the scroll origin is `scrolled` px back.
-    const originTop = rect.top + viewport.clientTop * scaleY;
-    const originLeft = rect.left + viewport.clientLeft * scaleX;
-    const originRight = originLeft + viewport.clientWidth * scaleX;
-    // A slide without a layout box, such as one a host rule hides, takes no page and no number:
-    // the user cannot reach it. It stays a member, and its resize reports it showing again.
-    const slides: HTMLElement[] = [];
-    const boxes: DOMRect[] = [];
-    for (const slide of [...members].filter((member) => member.isConnected).toSorted(documentOrder)) {
-      const [box] = slide.getClientRects();
-      if (box !== undefined) {
-        slides.push(slide);
-        boxes.push(box);
-      }
+    if (!result.steady && unsteadyReadings < UNSTEADY_READINGS && endReads < END_READS) {
+      return unusable("next frame", "unsteady");
     }
-    const slideSizes: Size[] = [];
-    const geometry = slides.map((slide, index) => {
-      const box = boxes[index] ?? new DOMRect();
-      const slideStyle = getComputedStyle(slide);
-      const width = box.width / scaleX;
-      const height = box.height / scaleY;
-      slideSizes.push({ width, height });
-      let offset: number;
-      if (vertical) {
-        offset = (box.top - originTop) / scaleY;
-      } else if (rtl) {
-        offset = (originRight - box.right) / scaleX;
-      } else {
-        offset = (box.left - originLeft) / scaleX;
-      }
-      return {
-        start: offset + scrolled,
-        size: vertical ? height : width,
-        marginStart: lengthOf(sideValue(slideStyle, "scroll-margin", sides.start), 0),
-        marginEnd: lengthOf(sideValue(slideStyle, "scroll-margin", sides.end), 0),
-        align: parseSnapAlign(slideStyle.getPropertyValue("scroll-snap-align"), axis),
-      } satisfies SlideGeometry;
-    });
-    const finite = geometry.every(
-      (slide) => Number.isFinite(slide.start) && Number.isFinite(slide.size) && slide.size >= 0
-    );
-    if (!finite) {
-      return unusable("next frame");
-    }
+    const { slides, numbers, geometry, port, rtl } = result;
     // Usable: the layout, and the sizes the resize observer compares against, are now this one's.
-    const restore = applied !== null && (unmeasured || (layout !== null && layout.rtl !== rtl));
+    const restore = applied !== null && (vanished || (layout !== null && layout.rtl !== rtl));
     unmeasured = false;
-    sizes.clear();
-    sizes.set(viewport, viewportSize);
-    for (const [index, slide] of slides.entries()) {
-      const size = slideSizes[index];
-      if (size !== undefined) {
-        sizes.set(slide, size);
-      }
+    vanished = false;
+    // Only a steady reading ends the unsteady period. One accepted past the bound leaves the count
+    // at the bound, so every reading after it is accepted too until one is steady.
+    if (result.steady) {
+      unsteadyReadings = 0;
     }
-    const numbers = new Map(slides.map((slide, index) => [slide, index]));
+    sizes.clear();
+    for (const [box, size] of result.sizes) {
+      sizes.set(box, size);
+    }
     layout = { slides, numbers, geometry, port, pages: pagesOf(port, geometry), rtl };
     return restore ? "restore" : "measured";
   }
@@ -468,7 +416,7 @@ export function createCarouselEngine(
   function scrollToPosition(destination: number, motion: Motion): void {
     // The engine's own scroll is no user's: it ends any session, and its own end replaces what an
     // earlier scroll was owed.
-    session = "idle";
+    session = IDLE;
     forgive();
     const physical = layout?.rtl === true ? -destination : destination;
     const options: ScrollToOptions = vertical ? { top: physical } : { left: physical };
@@ -612,18 +560,22 @@ export function createCarouselEngine(
       invalidate();
       return;
     }
-    if (session === "armed") {
+    if (session.kind === "armed") {
       // The user's input has begun to scroll: measure once, so this session reads a fresh layout.
-      session = "live";
+      // The input is still held, so where it left the viewport still carries over.
+      session = { kind: "live", still: session.still };
       dirty = true;
       flush();
     }
-    // The session's fresh measurement, when it just took one.
-    const measured = layout ?? current;
+    // The session's fresh measurement, when it just took one, which may have found no usable layout.
+    const measured = usable();
+    if (measured === null) {
+      return;
+    }
     publish(measured);
     // Only a live session reports its page as it goes; any other scroll waits for its end. The
     // engine's own scroll, which is heading to its page, has ended any session.
-    if (session === "live") {
+    if (session.kind === "live") {
       observe(measured);
     }
   }
@@ -693,8 +645,7 @@ export function createCarouselEngine(
     // such as a script's jump. A quiet spell tells them apart: the engine's scroll keeps sending
     // scroll events, each of which restarts it, until its own end arrives; a superseded scroll
     // leaves the viewport at rest, and the spell ends it.
-    const destination = ownDestination();
-    if (destination !== undefined && Math.abs(position() - destination) >= ARRIVED) {
+    if (short()) {
       owe(ended);
       return;
     }
@@ -702,18 +653,33 @@ export function createCarouselEngine(
     ended();
   }
 
-  /** A scroll ended: read where, from a fresh measurement, and tell the Root. */
+  /**
+   * A scroll ended: read where, from a fresh measurement, and tell the Root. A read that is unsteady
+   * leaves where the scroll ended unread, so its end is owed again, as under held input, up to
+   * `END_READS` reads: see the module comment.
+   */
   function ended(): void {
     // Ending the engine's own scroll: where its page started in the layout it was measured against.
     const own = ownDestination();
     ending = own === undefined || layout === null ? null : { pages: layout.pages, start: own };
     target = null;
-    session = "idle";
+    session = IDLE;
     // Where the scroll ended is read from a fresh measurement, so a re-snap after an inherited
     // layout change settles on the page it shows.
+    endReads += 1;
     dirty = true;
     flush();
     ending = null;
+    if (unmeasured && unsteadyReadings > 0) {
+      owe(ended);
+      return;
+    }
+    endReads = 0;
+    // A page the Root committed while no reading was usable, applied now, scrolls toward it: that
+    // scroll's end is the one to read.
+    if (short()) {
+      return;
+    }
     const settled = usable();
     if (settled !== null) {
       observe(settled);
@@ -722,6 +688,38 @@ export function createCarouselEngine(
   }
 
   function onScroll(): void {
+    // The end owed, if any, is now this scroll's: its reads count afresh.
+    endReads = 0;
+    if (
+      session.kind !== "idle" &&
+      session.still !== null &&
+      applied !== null &&
+      applied !== committed &&
+      Math.abs(position() - session.still) >= ARRIVED
+    ) {
+      // Held input has scrolled the viewport since a page the Root committed came to wait for a
+      // usable reading, so the scroll is the user's: the waiting page counts as applied, and the
+      // next usable reading moves nowhere under the finger. This holds in a live session too, which
+      // loses its usable reading whenever the readings turn unsteady. The Root learns the page this
+      // scroll ends on, and its next count of ended scrolls, a new commit, applies its page again
+      // then, so a controlled Root whose parent kept the page still brings it back once the scroll
+      // ends. Input that never scrolls, such as a tap, takes nothing over, and the waiting page
+      // applies as it would have. A scroll event alone does not show the input scrolled: one for a
+      // scroll that ended before the input began, or before the page came to wait, can arrive after
+      // it with the viewport still there, so only a move from `still`, by as much as the engine's
+      // own scroll counts as arriving, takes over.
+      applied = committed;
+      // The Root has already moved to the waiting page, so it is the page to observe from: a scroll
+      // that ends back on the page before it is still news to the Root, and a controlled Root's
+      // parent still hears of it. No reading is usable now, so the page is clamped against the last
+      // usable layout's pages, which `apply` would clamp against had the page applied; that layout
+      // had pages, or nothing would have been applied. Nothing scrolls, and `target` stays `null`,
+      // as the input took over any scroll of the engine's own.
+      const count = layout?.pages.positions.length ?? 0;
+      if (count > 0) {
+        page = clampIndex(committed.index, count);
+      }
+    }
     if (frame === null && view !== null) {
       frame = view.requestAnimationFrame(() => {
         frame = null;
@@ -745,8 +743,11 @@ export function createCarouselEngine(
     target = null;
     stopTimer();
     listener.onInteract();
-    if (session === "idle") {
-      session = "armed";
+    if (session.kind === "idle") {
+      session = { kind: "armed", still: position() };
+    } else if (session.kind === "live" && session.still === null) {
+      // Input held again over a live session's inertia: it holds from here.
+      session = { kind: "live", still: position() };
     }
   }
 
@@ -756,11 +757,12 @@ export function createCarouselEngine(
    * may not come by `scrollend`, as when a tap stops its inertia.
    */
   function released(): void {
-    if (session === "armed") {
-      session = "idle";
-    }
-    if (owed === null && session === "live") {
-      owed = settle;
+    if (session.kind === "armed") {
+      session = IDLE;
+    } else if (session.kind === "live") {
+      // Nothing holds the session any more, so its inertia supersedes nothing.
+      session = { kind: "live", still: null };
+      owed ??= settle;
     }
     countQuiet();
   }
@@ -840,6 +842,10 @@ export function createCarouselEngine(
     commit(next) {
       committed = next;
       flush();
+      if (session.kind !== "idle" && session.still !== null && applied !== null && applied !== committed) {
+        // The page waits for a usable reading under held input: only a move from here supersedes it.
+        session = { ...session, still: position() };
+      }
     },
     refresh() {
       dirty = true;
