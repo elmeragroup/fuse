@@ -430,7 +430,7 @@ describe("landing hero window, Branded side", () => {
   });
 
   it("keeps Order search's Rows per page Select closed when its open lands after Forward hid the Dashboard, and after Back shows it", async () => {
-    const page = await openLanding(DESKTOP_VIEWPORT, { search: "?theme=internal-fkas-company" });
+    const page = await openLanding(DESKTOP_VIEWPORT, { search: "?theme=neutral-fkas-company" });
     const unlocked = await documentStyles(page);
     await page.getByRole("banner").getByRole("link", { name: "Fuse" }).click();
     await expect.poll(() => new URL(page.url()).search).toBe("");
