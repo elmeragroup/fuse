@@ -16,7 +16,8 @@ import { withinFocusRingControlClass } from "../../styles/utils";
  *   read-only field.
  * - `input` fills the group's height and the width the denomination and steppers leave, with the
  *   field's inset and text-entry type.
- * - `denomination` is the muted unit suffix between the input and the steppers.
+ * - `denomination` is the muted unit suffix between the input and the steppers, inset by the xs
+ *   control padding (`--control-px-xs`).
  * - `steppers` is the full-height row that holds the two steppers.
  * - `stepper` is one stepper. It is a part of the control, not a whole control: the group's
  *   within-target state face dims the disabled field once, steppers included. A stepper disabled
@@ -35,8 +36,9 @@ export const numberFieldVariants = tv({
       withinFocusRingControlClass,
       withinStateFaceControlClass
     ),
-    // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- moved as-is from number-field.tsx, where the rule did not reach it; a control metric would change the look
-    denomination: "text-sm px-2 py-1 text-muted-foreground",
+    // The xs control inset, so the unit keeps its distance from the value and the steppers at
+    // both densities.
+    denomination: "text-sm px-(--control-px-xs) py-1 text-muted-foreground",
     steppers: "flex h-full",
     stepper:
       "box-border flex h-full w-[max(var(--control-h-xs),24px)] shrink-0 cursor-default items-center justify-center border-0 border-s border-input bg-background p-0 text-foreground transition-colors disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground enabled-hover:bg-muted",
