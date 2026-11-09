@@ -32,39 +32,6 @@ import type { SkeletonRevealMode } from "./skeleton-reveal-plan";
 failOnResizeObserverLoop();
 
 describe("SkeletonReveal leaving panes", () => {
-  it("keeps a leaving pane where it stood in a scrolled root", async () => {
-    const view = (loading: boolean, label: string) => (
-      <SkeletonReveal
-        loading={loading}
-        label="Henter"
-        reveal="together"
-        style={{ height: 150, overflow: "auto" }}>
-        <div style={{ width: 288, height: 400 }}>{label}</div>
-      </SkeletonReveal>
-    );
-    const { rerender } = renderThemed(view(false, "Balance"));
-    await nextFrames(2);
-    const root = slot("skeleton-reveal");
-    root.scrollTop = 50;
-    await nextFrames(2);
-    // A commit while scrolled, which the reveal tracks its pane's box at.
-    rerender(view(false, "Balance 1200 kr"));
-    await nextFrames(2);
-    const pane = currentPane("skeleton-reveal-content", root);
-    const before = pane.getBoundingClientRect();
-    expect(root.scrollTop).toBe(50);
-    rerender(view(true, "Balance 1200 kr"));
-    expect(pane.hasAttribute("data-exiting")).toBe(true);
-    expect(root.scrollTop).toBe(50);
-    const during = pane.getBoundingClientRect();
-    expect({ top: during.top, left: during.left, width: during.width, height: during.height }).toEqual({
-      top: before.top,
-      left: before.left,
-      width: before.width,
-      height: before.height,
-    });
-  });
-
   it("lets go of the hold on a frozen piece its own component removed while its pane left", async () => {
     // The test removes a status through its own part's state, as a timer or an image load would.
     // Each part, in the content and in the ghost drawn from it, registers against its own span.
@@ -387,6 +354,67 @@ describe("SkeletonReveal sequencing", () => {
     const delays = timings.map((timing) => timing.delay);
     expect(delays).toEqual(delays.toSorted((a, b) => a - b));
   });
+
+  it.each([
+    { name: "", transform: "none" },
+    { name: " under a scaled ancestor", transform: "scale(0.5)" },
+  ])(
+    "smart takes each bone away as its own text arrives, a 14 px note under a 16 px title$name",
+    async ({ transform }) => {
+      const rows = ROWS.slice(0, 3);
+      const view = (data: readonly Row[] | null) => (
+        <div style={{ transform, transformOrigin: "top left" }}>
+          <SkeletonReveal data={data} sample={rows} label="Henter" reveal="smart">
+            {(shown) => (
+              <ul className="flex w-72 flex-col gap-2">
+                {shown.map((row) => (
+                  <li key={row.title} className="flex flex-col">
+                    <span style={{ fontSize: 16, lineHeight: "24px" }}>{row.title}</span>
+                    <span style={{ fontSize: 14, lineHeight: "20px" }}>{row.note}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </SkeletonReveal>
+        </div>
+      );
+      const { rerender } = renderThemed(view(null));
+      // Past the 150 ms hold and up long enough that the reveal is not a flash.
+      await wait(400);
+      // DOM audit: the bones have no role; each one stands where its line of text lands.
+      const bones = [...document.querySelectorAll<HTMLElement>('[data-slot="skeleton-reveal-bone"]')];
+      rerender(view(rows));
+      const delayOf = (element: Element): number => {
+        const effect = scriptAnimations(element)[0]?.effect;
+        if (!(effect instanceof KeyframeEffect)) throw new Error(`expected a fade on ${element.outerHTML}`);
+        return Number(effect.getTiming().delay);
+      };
+      // DOM audit: the rows' spans have no role; their fades are what the test times.
+      const spans = [
+        ...currentPane("skeleton-reveal-content", slot("skeleton-reveal")).querySelectorAll("span"),
+      ];
+      expect(spans).toHaveLength(6);
+      const notes = spans.filter((span) => span.style.fontSize === "14px");
+      expect(notes).toHaveLength(3);
+      for (const span of spans) {
+        const line = span.getBoundingClientRect();
+        const bone = bones.find((candidate) => {
+          const box = candidate.getBoundingClientRect();
+          const x = box.left + box.width / 2;
+          const y = box.top + box.height / 2;
+          return x >= line.left && x <= line.right && y >= line.top && y <= line.bottom;
+        });
+        if (bone === undefined) throw new Error(`expected a bone over ${String(span.textContent)}`);
+        expect(delayOf(bone), String(span.textContent)).toBe(delayOf(span));
+      }
+      // The notes arrive after their titles, so the check above compares two different delays.
+      for (const note of notes) {
+        const title = note.previousElementSibling;
+        if (title === null) throw new Error("expected the note's title");
+        expect(delayOf(note)).toBeGreaterThan(delayOf(title));
+      }
+    }
+  );
 });
 
 describe("SkeletonReveal fades", () => {

@@ -57,7 +57,7 @@ export const PART_SKELETON = {
 } as const satisfies Record<string, SkeletonRole>;
 
 /** Elements drawn as one block by tag: they hold no text to measure, or paint their own. */
-export const SKELETON_BLOCK_TAGS: ReadonlySet<string> = new Set([
+const SKELETON_BLOCK_TAGS: ReadonlySet<string> = new Set([
   "audio",
   "canvas",
   "embed",

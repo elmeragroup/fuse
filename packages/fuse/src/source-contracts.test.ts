@@ -938,9 +938,8 @@ describe("runtime listeners and layout motion", () => {
       // paste in Firefox. The numeric filter strips a paste before maxlength.
       "components/input/input.tsx",
       "components/sidebar/sidebar.tsx",
-      // Capture `load` in the skeleton's ghost, which does not bubble, and `document.fonts`
-      // `loadingdone`: an image or a web font that loads after the bones were measured moves the
-      // text they stand for, and React has no FontFaceSet handler.
+      // Capture `load` in the skeleton's ghost, which does not bubble: an image that loads after the
+      // bones were measured moves the text they stand for.
       "components/skeleton/skeleton-pane.tsx",
       // Window `wheel`, `touchmove` and `keydown`, passive and in the capture phase, only while a
       // skeleton is up: input anywhere in the page means someone is mid-gesture, so the content

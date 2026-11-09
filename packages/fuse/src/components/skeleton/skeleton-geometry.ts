@@ -12,7 +12,7 @@
 import { windowOf } from "../../internal/dom-node";
 
 /** A border box in local layout pixels. */
-export type LocalSize = { readonly width: number; readonly height: number };
+type LocalSize = { readonly width: number; readonly height: number };
 
 /** An element's transform scale: its client rect over its local border box. */
 export type Scale = { readonly x: number; readonly y: number };
@@ -40,7 +40,7 @@ function verticalFrame(style: CSSStyleDeclaration): number {
  * @param element - The element to read.
  * @returns Its border-box width and height.
  */
-export function localSize(element: HTMLElement): LocalSize {
+function localSize(element: HTMLElement): LocalSize {
   const style = windowOf(element).getComputedStyle(element);
   const width = Number.parseFloat(style.width);
   const height = Number.parseFloat(style.height);

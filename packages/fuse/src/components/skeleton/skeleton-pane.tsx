@@ -5,16 +5,21 @@ import type { ReactElement, ReactNode } from "react";
 
 import { isHTMLElement, windowOf } from "../../internal/dom-node";
 import { cn } from "../../styles/cn";
+import { RADIUS_RUNGS } from "../../theme/tokens/radius-scale";
 import { skeletonClass } from "./skeleton-class";
 import { watchFontSet } from "./skeleton-font-watch";
 import { measureGhost } from "./skeleton-measure";
 import type { Bone } from "./skeleton-measure";
 import { PaneExclusion } from "./skeleton-reveal-exclusion";
-import { EXITING_ATTRIBUTE } from "./skeleton-reveal-motion";
+import { BONE_FONT_SIZE_ATTRIBUTE, EXITING_ATTRIBUTE } from "./skeleton-reveal-motion";
 
-/** The bar radius: the theme's medium corner, capped at half the bar so a thin bar stays a pill. */
+/**
+ * The bar radius: the theme's medium corner, capped at half the bar so a thin bar stays a pill. The
+ * rung's own formula, not `var(--radius-md)`, which reads the corner the document root computed,
+ * so a bar takes the corner of the theme scope it is drawn in.
+ */
 function barRadius(height: number): string {
-  return `min(var(--radius-md, 0.375rem), ${String(height / 2)}px)`;
+  return `min(${RADIUS_RUNGS["radius-md"].css}, ${String(height / 2)}px)`;
 }
 
 /** Draws bones into the layer, reusing the spans already there so the pulse keeps its phase. */
@@ -27,6 +32,7 @@ function drawBones(layer: HTMLElement, bones: readonly Bone[]): void {
       span = existing;
     } else {
       span = layer.ownerDocument.createElement("span");
+      // Written as a `slot:` property with a string literal, which the written-slots scanner reads.
       Object.assign(span.dataset, { slot: "skeleton-reveal-bone" });
       // Each bone is a Skeleton: the pulse and the `muted` surface, its corner set inline.
       span.className = cn(skeletonClass, "absolute");
@@ -39,6 +45,8 @@ function drawBones(layer: HTMLElement, bones: readonly Bone[]): void {
       height: `${String(bone.height)}px`,
       borderRadius: bone.corners.kind === "block" ? bone.corners.radius : barRadius(bone.height),
     });
+    // Read back when the bone leaves, which the reveal times as it times the text it stands for.
+    span.setAttribute(BONE_FONT_SIZE_ATTRIBUTE, String(bone.fontSize));
   });
 }
 
@@ -54,19 +62,23 @@ const COVERED_ATTRIBUTE = "data-skeleton-covered";
  * The bones follow the ghost through each commit, a resize, a change inside the ghost that leaves
  * its size alone, an image loading and the document's fonts changing.
  *
- * @param props - The stand-in content to draw, and the ref the reveal tracks its panes with.
+ * @param props - The stand-in content to draw, the ref the reveal tracks its panes with, and
+ *   whether the pane is on its way out, which it is not measured again for.
  * @returns The skeleton pane, with `data-slot="skeleton-reveal-skeleton"`.
  */
 export function SkeletonPane({
   standIn,
   paneRef,
+  leaving,
 }: {
   standIn: ReactNode;
   paneRef: (element: HTMLDivElement | null) => void;
+  leaving: boolean;
 }): ReactElement {
   const skeletonRef = useRef<HTMLDivElement | null>(null);
   const ghostRef = useRef<HTMLDivElement | null>(null);
   const layerRef = useRef<HTMLDivElement | null>(null);
+  const mutationsRef = useRef<MutationObserver | null>(null);
 
   const measure = (): void => {
     const skeleton = skeletonRef.current;
@@ -87,7 +99,14 @@ export function SkeletonPane({
   };
 
   // Every commit can change the ghost's layout, so the bones follow it before the browser paints.
-  useLayoutEffect(measure);
+  // The commit that replaces the skeleton runs this before the swap marks it leaving, so that one
+  // is skipped by the prop: its bones are about to fade as they stand.
+  useLayoutEffect(() => {
+    if (leaving) return;
+    measure();
+    // The measure has read this commit's changes to the ghost, so their records schedule no second.
+    mutationsRef.current?.takeRecords();
+  });
 
   // What changes the ghost without a commit of this pane: its size, a part's own state changing
   // its text, an image loading or the document's fonts changing. Each schedules one measure for the
@@ -110,6 +129,7 @@ export function SkeletonPane({
       if (records.some((record) => record.attributeName !== COVERED_ATTRIBUTE)) schedule();
     });
     mutations.observe(ghost, { subtree: true, childList: true, characterData: true, attributes: true });
+    mutationsRef.current = mutations;
     skeleton.addEventListener("load", schedule, true);
     // A font-set event misses a face added once loaded, so the set's own state is watched.
     const unwatchFonts = watchFontSet(skeleton, schedule);
@@ -117,6 +137,7 @@ export function SkeletonPane({
       view.cancelAnimationFrame(frame);
       resize.disconnect();
       mutations.disconnect();
+      mutationsRef.current = null;
       skeleton.removeEventListener("load", schedule, true);
       unwatchFonts();
     };
@@ -132,13 +153,14 @@ export function SkeletonPane({
       data-slot="skeleton-reveal-skeleton"
       aria-hidden="true"
       inert
-      // Out of scroll anchoring, as the content pane is: a root scrolled when a pane is inserted
-      // before another keeps its scroll, so a leaving pane stays where it stood.
+      // Out of scroll anchoring, as the content panes are while a swap is under way: a root scrolled
+      // when a pane is inserted before another keeps its scroll, so a leaving pane stays where it
+      // stood.
       className="pointer-events-none relative select-none [overflow-anchor:none]">
       {/* Layout-transparent, so the content lays out right in the pane as it does in the content
           pane: a percentage height or width resolves against the same boxes in both. */}
       <div ref={ghostRef} data-slot="skeleton-reveal-ghost" className="contents">
-        <PaneExclusion excluded>{standIn}</PaneExclusion>
+        <PaneExclusion excluded="ghost">{standIn}</PaneExclusion>
       </div>
       <div ref={layerRef} data-slot="skeleton-reveal-bones" className="absolute inset-0" />
     </div>

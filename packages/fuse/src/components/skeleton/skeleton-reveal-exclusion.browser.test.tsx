@@ -5,12 +5,13 @@
  * dialogs, focus and scroll lock, which a ghost must leave as they were.
  */
 import { describe, expect, it } from "vitest";
-import { page } from "vitest/browser";
+import { commands, page } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import { nextFrames } from "../../../test/animation-frames";
 import { withLocale } from "../../../test/locale-matrix";
+import { glidePointerTo } from "../../../test/pointer-press";
 import {
   currentPane,
   pageScrollState,
@@ -20,6 +21,7 @@ import {
 } from "../../../test/skeleton-reveal-fixtures";
 import { renderThemed, roleNamed } from "../../../test/themed-browser-render";
 import { AlertDialog } from "../alert-dialog";
+import { Button } from "../button/button";
 import { Command } from "../command";
 import { Dialog } from "../dialog";
 import { Field } from "../field";
@@ -134,6 +136,51 @@ describe("SkeletonReveal forms", () => {
     expect(leaving[0]?.textContent).toContain("Already registered");
     form.requestSubmit();
     expect(submitted).toEqual([{}, {}]);
+  });
+});
+
+describe("SkeletonReveal outgoing content", () => {
+  it("keeps its controls' own look while it leaves, and lets nobody focus or click them", async () => {
+    const pressed: string[] = [];
+    const view = (loading: boolean) => (
+      <SkeletonReveal loading={loading} label="Henter" reveal="smart">
+        <div className="flex w-72 flex-col gap-2">
+          <Input aria-label="Reference" defaultValue="4711" />
+          <Button onClick={() => pressed.push("pay")}>Pay</Button>
+        </div>
+      </SkeletonReveal>
+    );
+    const { rerender } = renderThemed(view(false));
+    await nextFrames(2);
+    // A refetch: under `smart` the content stays on screen through the skeleton's 150 ms hold.
+    rerender(view(true));
+    const leaving = currentPane("skeleton-reveal-skeleton", slot("skeleton-reveal")).nextElementSibling;
+    if (!(leaving instanceof HTMLElement)) throw new Error("expected the outgoing content pane");
+    expect(leaving.hasAttribute("data-exiting")).toBe(true);
+    // Hold the pane's exit so it cannot finish, and unmount the pane, while the presses run.
+    const exit = leaving.getAnimations();
+    expect(exit.length).toBeGreaterThan(0);
+    for (const animation of exit) animation.pause();
+    // DOM audit: the outgoing pane is inert, so its controls are out of the accessibility tree.
+    const input = leaving.querySelector("input");
+    const button = leaving.querySelector("button");
+    if (input === null || button === null) throw new Error("expected the outgoing input and button");
+    await nextFrames(2);
+    for (const control of [input, button]) {
+      expect(control.matches(":disabled")).toBe(false);
+      expect(getComputedStyle(control).opacity).toBe("1");
+      control.focus();
+      expect(document.activeElement).not.toBe(control);
+      const box = control.getBoundingClientRect();
+      const hit = document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2);
+      expect(hit === control || control.contains(hit)).toBe(false);
+      // A real press at the control's centre, through raw page coordinates, since the pane is inert.
+      await glidePointerTo(control, 1);
+      await commands.pointerDown();
+      await commands.pointerUp();
+    }
+    expect(leaving.isConnected).toBe(true);
+    expect(pressed).toEqual([]);
   });
 });
 

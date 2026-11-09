@@ -7,7 +7,7 @@
  */
 
 /** Of the font size: wider than a word space, narrower than a column gutter. */
-export const LINE_GAP = 0.4;
+const LINE_GAP = 0.4;
 
 /** One fragment of a line of text, in the bones layer's pixels. */
 export type LineFragment = {
@@ -29,6 +29,8 @@ export type LineBar = {
   readonly y: number;
   readonly width: number;
   readonly height: number;
+  /** The largest computed font size of the line's fragments, in pixels. */
+  readonly fontSize: number;
 };
 
 /** A line being merged, which later fragments on the same line extend. */
@@ -55,7 +57,7 @@ function continues(line: OpenLine, fragment: LineFragment): boolean {
  *
  * @param fragments - Every fragment of every text node, in any order.
  * @returns One bar per merged line, spanning its fragments across and from the highest bar top
- *   to the lowest bar bottom.
+ *   to the lowest bar bottom, at the largest font size among them.
  */
 export function mergeLineFragments(fragments: readonly LineFragment[]): LineBar[] {
   // Left to right, so each fragment only ever extends a line to its left.
@@ -80,5 +82,6 @@ export function mergeLineFragments(fragments: readonly LineFragment[]): LineBar[
     y: line.barTop,
     width: line.right - line.left,
     height: line.barBottom - line.barTop,
+    fontSize: line.fontSize,
   }));
 }

@@ -213,6 +213,33 @@ describe("SkeletonReveal bones", () => {
     }
   );
 
+  it("rounds a tall bar with the medium corner of its own theme scope, not the document's", async () => {
+    renderThemed(
+      <div style={{ "--radius": "11px" }}>
+        <SkeletonReveal loading label="Henter" reveal="together">
+          <p className="text-5xl w-72">Balance</p>
+        </SkeletonReveal>
+        <div data-probe="rounded-md" className="rounded-md" />
+      </div>
+    );
+    await nextFrames(2);
+    // DOM audit: the reference has no role; the probe marks the element `rounded-md` rounds.
+    const reference = document.querySelector('[data-probe="rounded-md"]');
+    if (reference === null) throw new Error("expected the rounded-md reference");
+    const corner = getComputedStyle(reference).borderTopLeftRadius;
+    const outside = document.createElement("div");
+    outside.className = "rounded-md";
+    document.body.append(outside);
+    const documentCorner = getComputedStyle(outside).borderTopLeftRadius;
+    outside.remove();
+    // The scope's corner must differ from the document's, or the test could not tell them apart.
+    expect(corner).not.toBe(documentCorner);
+    const bar = slot("skeleton-reveal-bone");
+    // A 48 px line's bar is far taller than twice the corner, so the corner is not capped.
+    expect(bar.getBoundingClientRect().height / 2).toBeGreaterThan(Number.parseFloat(corner));
+    expect(getComputedStyle(bar).borderTopLeftRadius).toBe(corner);
+  });
+
   it("draws a full-height block bone at the layer's fractional height", async () => {
     renderThemed(
       <SkeletonReveal loading label="Henter" reveal="together">

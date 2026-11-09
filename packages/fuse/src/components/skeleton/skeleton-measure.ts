@@ -20,6 +20,11 @@ export type Bone = {
   readonly y: number;
   readonly width: number;
   readonly height: number;
+  /**
+   * The computed font size of the text it stands for, in pixels: a bar's largest, a block's own.
+   * The reveal times the bone by it as it times that text.
+   */
+  readonly fontSize: number;
   /** A block's own `border-radius`, or `bar` for a line of text, which takes the bar radius. */
   readonly corners: { readonly kind: "bar" } | { readonly kind: "block"; readonly radius: string };
 };
@@ -270,6 +275,7 @@ export function measureGhost(root: Element, layer: HTMLElement): Measured {
             y: box.top,
             width: box.right - box.left,
             height: box.bottom - box.top,
+            fontSize: Number.parseFloat(style.fontSize) || 16,
             corners: { kind: "block", radius: roundedBy(clip, visible, radiusOf(node, style), style) },
           });
         }

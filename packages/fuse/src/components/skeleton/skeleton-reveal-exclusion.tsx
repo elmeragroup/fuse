@@ -111,19 +111,36 @@ function useRecordingLabelableScope(field: LabelableValue, excluded: boolean): L
 }
 
 /**
+ * How a pane is kept out of the page: not at all for the content on screen, as the skeleton's
+ * ghost, unseen and excluded in server HTML with no script, or as content on its way out, which is
+ * still seen.
+ */
+type PaneExclusionKind = false | "ghost" | "leaving";
+
+/** The listed form controls, which take a form owner and so a `form` attribute. */
+const LISTED_CONTROLS = "button, fieldset, input, object, output, select, textarea";
+
+/**
  * Package-private. Keeps a pane that is not the content on screen, a SkeletonReveal's ghost or
  * content on its way out, out of the page's forms and overlays, while it still looks the same.
  *
- * - Forms: a disabled fieldset removes every native control under it from submission and
- *   constraint validation; `display: contents` gives it no box, and `role="none"` keeps it out of
- *   the accessibility tree. Fuse's `Form` (Base UI's) serializes and validates its own registry of
- *   Fields instead, which every Field joins through the form context, disabled or not, so an
- *   excluded pane hands its Fields a registry of their own that no form reads. The form's
- *   displayed errors pass through read-only, so an excluded field shows the error the field it
- *   stands for shows, and takes its height; clearing one is a no-op. A Field around the reveal
- *   reaches an excluded control through the Field context instead, so that is detached too: the
- *   control keeps the Field's name, invalid state and validity for its look, while registering,
- *   validating and reporting touched, dirty, filled or focused state do nothing.
+ * - Forms: the ghost sits in a disabled fieldset, which removes every native control under it
+ *   from submission and constraint validation in server HTML too, before any script runs; it is
+ *   unseen behind its bones, so the disabled look its controls take never shows. Content on its
+ *   way out is still seen, and a disabled control takes Fuse's disabled look, so its fieldset is
+ *   `inert` instead, which has no look, and a layout effect sets `form=""` on every listed control
+ *   under it as it starts leaving: a control whose `form` names no form has no form owner, so it
+ *   is neither submitted nor validated, nor any form's default button. A leaving pane never comes
+ *   back, so nothing restores the attribute. Either fieldset is `display: contents`, with no box,
+ *   and `role="none"` keeps it out of the accessibility tree. Fuse's `Form` (Base UI's) serializes
+ *   and validates its own registry of Fields instead, which every Field joins through the form
+ *   context, disabled or not, so an excluded pane hands its Fields a registry of their own that no
+ *   form reads. The form's displayed errors pass through read-only, so an excluded field shows the
+ *   error the field it stands for shows, and takes its height; clearing one is a no-op. A Field
+ *   around the reveal reaches an excluded control through the Field context instead, so that is
+ *   detached too: the control keeps the Field's name, invalid state and validity for its look,
+ *   while registering, validating and reporting touched, dirty, filled or focused state do
+ *   nothing.
  * - Labels: a live pane registers its controls, label and messages in the Field's labelable scope
  *   through a recording scope, which takes back exactly those registrations when the pane is
  *   excluded. An excluded pane registers in a labelable scope of its own, so a copy never claims
@@ -136,16 +153,18 @@ function useRecordingLabelableScope(field: LabelableValue, excluded: boolean): L
  * The providers are always rendered, so a content pane that starts leaving keeps its DOM and
  * state: its Fields move from the form's registry to the excluded one.
  *
- * @param props - Whether the pane is excluded, and its content.
+ * @param props - Whether the pane is excluded, as the skeleton's ghost or as content on its way
+ *   out, and its content.
  * @returns The content, wrapped in the exclusion's providers and fieldset.
  */
 export function PaneExclusion({
-  excluded,
+  excluded: exclusion,
   children,
 }: {
-  excluded: boolean;
+  excluded: PaneExclusionKind;
   children: ReactNode;
 }): ReactElement {
+  const excluded = exclusion !== false;
   const form = useFormContext();
   const field = useFieldRootContext();
   const overlaysExcluded = useOverlayExcluded();
@@ -190,8 +209,21 @@ export function PaneExclusion({
     }),
     [field]
   );
+  const fieldsetRef = useRef<HTMLFieldSetElement | null>(null);
+  const leaving = exclusion === "leaving";
+  useLayoutEffect(() => {
+    const fieldset = fieldsetRef.current;
+    if (!leaving || fieldset === null) return;
+    for (const control of fieldset.querySelectorAll(LISTED_CONTROLS)) control.setAttribute("form", "");
+  }, [leaving]);
   const fieldset = (
-    <fieldset data-slot="skeleton-reveal-fieldset" role="none" disabled={excluded} className="contents">
+    <fieldset
+      ref={fieldsetRef}
+      data-slot="skeleton-reveal-fieldset"
+      role="none"
+      disabled={exclusion === "ghost"}
+      inert={leaving}
+      className="contents">
       {children}
     </fieldset>
   );

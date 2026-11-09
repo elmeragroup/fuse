@@ -38,7 +38,7 @@ export type PaneKind = "skeleton" | "content";
 export type MotionOutcome = "completed" | "cancelled";
 
 /** Where a pane stood within its root before it left, in local pixels: what it is pinned to. */
-export type PaneBox = {
+type PaneBox = {
   readonly top: number;
   readonly left: number;
   readonly width: number;
@@ -53,6 +53,8 @@ const BONES_SLOT = "skeleton-reveal-bones";
 const GHOST_SLOT = "skeleton-reveal-ghost";
 /** One bone's slot. */
 const BONE_SLOT = "skeleton-reveal-bone";
+/** The attribute on a bone holding the computed font size of the text it stands for, in pixels. */
+export const BONE_FONT_SIZE_ATTRIBUTE = "data-font-size";
 
 /** Completed only when every step completed. */
 function allCompleted(outcomes: readonly Promise<MotionOutcome>[]): Promise<MotionOutcome> {
@@ -72,7 +74,7 @@ function allCompleted(outcomes: readonly Promise<MotionOutcome>[]): Promise<Moti
  *   positioned child of it is placed: its scroll offset is added back, and since a right-to-left
  *   root scrolls by a negative `scrollLeft` from its start edge, the same sum holds there too.
  */
-export function boxOf(pane: HTMLElement, root: HTMLElement): PaneBox {
+function boxOf(pane: HTMLElement, root: HTMLElement): PaneBox {
   const scale = scaleOf(root);
   const rect = pane.getBoundingClientRect();
   const origin = root.getBoundingClientRect();
@@ -104,8 +106,8 @@ function popOut(pane: HTMLElement, box: PaneBox, layer: number): void {
   pane.setAttribute(EXITING_ATTRIBUTE, "");
 }
 
-/** What a piece of incoming content needs to be timed: its row and its text size. */
-type PieceInfo = { readonly unit: Element; readonly fontSize: number };
+/** A row or card of incoming content: its box, read once, and the largest text size of its pieces. */
+type SequenceUnit = { readonly rect: DOMRect; size: number };
 
 /** Whether an element holds text of its own, not only inside its child elements. */
 function hasOwnText(element: Element): boolean {
@@ -139,7 +141,13 @@ function piecesOf(root: Element): Element[] {
   };
   visit(root, root);
   // A boxed element that fades as a whole leaves no separate piece inside it.
-  return [...found].filter((piece) => ![...found].some((other) => other !== piece && other.contains(piece)));
+  return [...found].filter((piece) => {
+    for (let element = piece.parentElement; element !== null; element = element.parentElement) {
+      if (found.has(element)) return false;
+      if (element === root) break;
+    }
+    return true;
+  });
 }
 
 /** A row of a list or a card of a grid: the piece's nearest ancestor with two or more siblings like it. */
@@ -168,6 +176,12 @@ function fontSizeOf(element: Element): number {
   return Number.parseFloat(windowOf(element).getComputedStyle(element).fontSize) || 16;
 }
 
+/** An element's computed opacity, or null when the computed value is not a number. */
+function opacityOf(element: Element): number | null {
+  const opacity = Number.parseFloat(windowOf(element).getComputedStyle(element).opacity);
+  return Number.isNaN(opacity) ? null : opacity;
+}
+
 function containsCentre(outer: DOMRect, inner: DOMRect): boolean {
   const x = inner.left + inner.width / 2;
   const y = inner.top + inner.height / 2;
@@ -177,28 +191,37 @@ function containsCentre(outer: DOMRect, inner: DOMRect): boolean {
 /** The delays of one sequenced reveal, for its pieces and for the bones they replace. */
 type SequenceTiming = {
   readonly pieces: ReadonlyMap<Element, number | null>;
-  readonly bone: (rect: DOMRect) => number | null;
+  /** A bone's delay, from its box and the font size of the text it stands for. */
+  readonly bone: (rect: DOMRect, fontSize: number) => number | null;
 };
 
 /**
  * Times a sequence against the incoming content's own box, read before the root's height ease
  * starts: the ease clips the root to the outgoing height, which is not where the pieces land.
  */
-function sequenceTiming(content: HTMLElement, order: "position" | "row"): SequenceTiming {
+function sequenceTiming(
+  content: HTMLElement,
+  contentPieces: readonly Element[],
+  order: "position" | "row"
+): SequenceTiming {
   const reveal = toBox(content.getBoundingClientRect());
-  const info = new Map<Element, PieceInfo>();
-  const unitSize = new Map<Element, number>();
-  for (const piece of piecesOf(content)) {
-    const unit = unitOf(piece, content);
+  // Each unit's box, read once for its pieces and its bones alike.
+  const units = new Map<Element, SequenceUnit>();
+  const timed = contentPieces.map((piece) => {
+    const element = unitOf(piece, content);
     const fontSize = fontSizeOf(piece);
-    unitSize.set(unit, Math.max(unitSize.get(unit) ?? 0, fontSize));
-    info.set(piece, { unit, fontSize });
-  }
-  const units = [...unitSize.entries()].map(([unit, size]) => ({ rect: unit.getBoundingClientRect(), size }));
+    let unit = units.get(element);
+    if (unit === undefined) {
+      unit = { rect: element.getBoundingClientRect(), size: fontSize };
+      units.set(element, unit);
+    } else unit.size = Math.max(unit.size, fontSize);
+    return { piece, ownUnit: element === piece, unit, fontSize };
+  });
   const viewport = windowOf(content).innerHeight;
+  const unitBoxes = [...units.values()];
 
   const pieces = new Map<Element, number | null>();
-  for (const [piece, { unit, fontSize }] of info) {
+  for (const { piece, ownUnit, unit, fontSize } of timed) {
     const box = toBox(piece.getBoundingClientRect());
     if (order === "position") {
       pieces.set(piece, positionDelayMs(box, reveal));
@@ -206,26 +229,19 @@ function sequenceTiming(content: HTMLElement, order: "position" | "row"): Sequen
     }
     pieces.set(
       piece,
-      rowDelayMs(
-        {
-          box,
-          unit: unit === piece ? null : toBox(unit.getBoundingClientRect()),
-          secondary: fontSize < (unitSize.get(unit) ?? fontSize),
-        },
-        viewport
-      )
+      rowDelayMs({ box, unit: ownUnit ? null : toBox(unit.rect), secondary: fontSize < unit.size }, viewport)
     );
   }
 
-  const bone = (rect: DOMRect): number | null => {
+  const bone = (rect: DOMRect, fontSize: number): number | null => {
     if (order === "position") return positionDelayMs(toBox(rect), reveal);
-    const unit = units.find((candidate) => containsCentre(candidate.rect, rect));
+    const unit = unitBoxes.find((candidate) => containsCentre(candidate.rect, rect));
     return rowDelayMs(
       {
         box: toBox(rect),
         unit: unit === undefined ? null : toBox(unit.rect),
-        // A bar shorter than its row's largest type stands for smaller text.
-        secondary: unit !== undefined && rect.height < unit.size * 0.8,
+        // Smaller text than its row's largest, by the same rule as the pieces.
+        secondary: unit !== undefined && fontSize < unit.size,
       },
       viewport
     );
@@ -313,7 +329,7 @@ export class RevealMotion {
   /**
    * @param onHeightSettled - Called each time a height ease runs to its end.
    */
-  constructor(onHeightSettled: () => void = () => undefined) {
+  constructor(onHeightSettled: () => void) {
     this.#height = new RootHeight(onHeightSettled);
   }
 
@@ -333,11 +349,10 @@ export class RevealMotion {
    *
    * @param skeleton - The skeleton pane.
    * @param mode - The reveal mode.
-   * @returns How the skeleton's arrival ended.
    */
-  holdFirstSkeleton(skeleton: HTMLElement, mode: SkeletonRevealMode): Promise<MotionOutcome> {
+  holdFirstSkeleton(skeleton: HTMLElement, mode: SkeletonRevealMode): void {
     const hold = skeletonHoldMs(mode);
-    return hold > 0 ? this.#appear(skeleton, hold, REVEAL_FADE_MS) : Promise.resolve("completed");
+    if (hold > 0) void this.#appear(skeleton, hold, REVEAL_FADE_MS);
   }
 
   /**
@@ -361,10 +376,7 @@ export class RevealMotion {
     const rootBefore = tracked === null ? null : tracked.rootHeight;
     // Every fade under way in the leaving pane, its own and its pieces', is frozen where it got
     // to, so stopping it never brightens anything: a piece that had not started stays unseen.
-    const leavingOpacity = Number.parseFloat(
-      windowOf(leaving.element).getComputedStyle(leaving.element).opacity
-    );
-    const from = Number.isNaN(leavingOpacity) ? 1 : leavingOpacity;
+    const from = opacityOf(leaving.element) ?? 1;
     leaving.element.style.opacity = String(from);
     this.#settleWithin(leaving.element, "freeze");
     this.#left += 1;
@@ -400,11 +412,12 @@ export class RevealMotion {
       };
     }
 
+    const pieces = piecesOf(incoming.element);
     const plan = underPreference(
       planReveal(swap.mode, {
         ...swap.history,
         height: localHeight(incoming.element),
-        pieces: piecesOf(incoming.element).length,
+        pieces: pieces.length,
       }),
       swap.reducedMotion
     );
@@ -412,13 +425,13 @@ export class RevealMotion {
       this.#clearExiting(root);
       return { instant: true, entered: Promise.resolve("completed"), exited: Promise.resolve("completed") };
     }
-    const timing = plan.kind === "sequence" ? sequenceTiming(incoming.element, plan.order) : null;
+    const timing = plan.kind === "sequence" ? sequenceTiming(incoming.element, pieces, plan.order) : null;
     return {
       instant: false,
-      entered: this.#contentIn(incoming.element, plan, timing),
+      entered: this.#contentIn(incoming.element, pieces, plan.durationMs, timing),
       exited:
         leaving.kind === "skeleton"
-          ? this.#skeletonOut(leaving.element, plan, timing)
+          ? this.#skeletonOut(leaving.element, plan.durationMs, timing)
           : this.#vanish(leaving.element, 0, plan.durationMs, from),
     };
   }
@@ -539,11 +552,10 @@ export class RevealMotion {
    */
   #freeze(animation: Animation, target: Element, pane: Element): void {
     const rendered = target.isConnected && target.getClientRects().length > 0;
-    const shown = rendered
-      ? Number.parseFloat(windowOf(target).getComputedStyle(target).opacity)
-      : Number.NaN;
+    // Nothing to hold for a target that shows nothing, or whose opacity reads as no number.
+    const shown = rendered ? opacityOf(target) : null;
     animation.cancel();
-    if (Number.isNaN(shown) || this.#disposed) return;
+    if (shown === null || this.#disposed) return;
     const hold = target.animate([{ opacity: shown }, { opacity: shown }], { duration: 1, fill: "forwards" });
     this.#holds.set(hold, pane);
   }
@@ -562,7 +574,7 @@ export class RevealMotion {
     let from = 0;
     for (const pane of root.querySelectorAll<HTMLElement>(`:scope > [${EXITING_ATTRIBUTE}]`)) {
       if (pane === leaving || this.#kinds.get(pane) !== "content") continue;
-      from = Math.max(from, Number.parseFloat(windowOf(pane).getComputedStyle(pane).opacity) || 0);
+      from = Math.max(from, opacityOf(pane) ?? 0);
       this.#settleWithin(pane, "finish");
       pane.style.opacity = "0";
     }
@@ -578,19 +590,20 @@ export class RevealMotion {
   }
 
   /** Brings content's pieces in: its own surfaces show at once, its text and media fade. */
-  #contentIn(content: HTMLElement, plan: RevealPlan, timing: SequenceTiming | null): Promise<MotionOutcome> {
-    if (plan.kind === "instant") return Promise.resolve("completed");
-    const view = windowOf(content);
+  #contentIn(
+    content: HTMLElement,
+    contentPieces: readonly Element[],
+    durationMs: number,
+    timing: SequenceTiming | null
+  ): Promise<MotionOutcome> {
     // A piece shown at zero opacity of its own, such as a hidden status icon, stays unseen: it is
-    // not animated at all, so no fade can lift it.
-    const pieces = piecesOf(content).filter(
-      (piece) => Number.parseFloat(view.getComputedStyle(piece).opacity) > 0
-    );
-    if (pieces.length === 0) return this.#appear(content, 0, plan.durationMs);
+    // not animated at all, so no fade can lift it. One whose opacity reads as no number is too.
+    const pieces = contentPieces.filter((piece) => (opacityOf(piece) ?? 0) > 0);
+    if (pieces.length === 0) return this.#appear(content, 0, durationMs);
     return allCompleted(
       pieces.map((piece) => {
         const delay = timing === null ? 0 : (timing.pieces.get(piece) ?? null);
-        return delay === null ? Promise.resolve("completed") : this.#appear(piece, delay, plan.durationMs);
+        return delay === null ? Promise.resolve("completed") : this.#appear(piece, delay, durationMs);
       })
     );
   }
@@ -598,30 +611,32 @@ export class RevealMotion {
   /** Takes a skeleton away: its ghost's surfaces go at once, its bones fade as the plan times them. */
   #skeletonOut(
     skeleton: HTMLElement,
-    plan: RevealPlan,
+    durationMs: number,
     timing: SequenceTiming | null
   ): Promise<MotionOutcome> {
-    if (plan.kind === "instant") {
-      skeleton.style.opacity = "0";
-      return Promise.resolve("completed");
-    }
     for (const ghost of skeleton.querySelectorAll<HTMLElement>(`:scope > [data-slot="${GHOST_SLOT}"]`)) {
       ghost.style.visibility = "hidden";
     }
     const layers = [...skeleton.querySelectorAll<HTMLElement>(`:scope > [data-slot="${BONES_SLOT}"]`)];
-    if (timing === null) return allCompleted(layers.map((layer) => this.#vanish(layer, 0, plan.durationMs)));
-    const bones = layers.flatMap((layer) => [
-      ...layer.querySelectorAll<HTMLElement>(`[data-slot="${BONE_SLOT}"]`),
-    ]);
+    if (timing === null) return allCompleted(layers.map((layer) => this.#vanish(layer, 0, durationMs)));
     // Each bone leaves from what its pulse shows at the swap, held there through its delay, so a
-    // bone caught dim never brightens before it fades.
-    const view = windowOf(skeleton);
+    // bone caught dim never brightens before it fades. Every bone is read before any fade starts,
+    // so starting one never makes the next read lay the page out again.
+    const bones = layers
+      .flatMap((layer) => [...layer.querySelectorAll<HTMLElement>(`[data-slot="${BONE_SLOT}"]`)])
+      .map((bone) => ({
+        bone,
+        delay: timing.bone(
+          bone.getBoundingClientRect(),
+          Number.parseFloat(bone.getAttribute(BONE_FONT_SIZE_ATTRIBUTE) ?? "") || 16
+        ),
+        // A bone whose opacity reads as no number leaves from full.
+        shown: opacityOf(bone) ?? 1,
+      }));
     return allCompleted(
-      bones.map((bone) => {
-        const delay = timing.bone(bone.getBoundingClientRect());
-        const shown = Number.parseFloat(view.getComputedStyle(bone).opacity);
-        return delay === null ? this.#vanish(bone, 0, 0) : this.#vanish(bone, delay, plan.durationMs, shown);
-      })
+      bones.map(({ bone, delay, shown }) =>
+        delay === null ? this.#vanish(bone, 0, 0) : this.#vanish(bone, delay, durationMs, shown)
+      )
     );
   }
 }

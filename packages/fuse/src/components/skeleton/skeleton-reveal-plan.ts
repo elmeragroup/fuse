@@ -8,15 +8,15 @@
 export type SkeletonRevealMode = "smart" | "together" | "sequence";
 
 /** A skeleton up for less than this is a flash, so `smart` holds a client skeleton back this long. */
-export const SKELETON_HOLD_MS = 150;
+const SKELETON_HOLD_MS = 150;
 /** The crossfade of a `together` reveal, and of each piece in a sequence. */
 export const REVEAL_FADE_MS = 200;
 /** A refetch's crossfade: its skeleton was drawn from the content on screen, so it is familiar. */
-export const REFETCH_FADE_MS = 120;
+const REFETCH_FADE_MS = 120;
 /** From the first piece of a sequenced reveal to the last. */
-export const CASCADE_MS = 320;
+const CASCADE_MS = 320;
 /** How much later smaller text arrives than the main text of its row. */
-export const SECONDARY_DELAY_MS = 60;
+const SECONDARY_DELAY_MS = 60;
 /** Wheel, touch or key input this recent means someone is mid-gesture, so content lands at once. */
 export const INPUT_WINDOW_MS = 400;
 /** The ease from the skeleton's height to the content's. */

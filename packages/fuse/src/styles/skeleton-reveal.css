@@ -29,7 +29,7 @@
   }
   [data-slot="skeleton-reveal-ghost"]
     :is(
-      :not(:has(*)),
+      :not(:has(> *)),
       audio,
       canvas,
       embed,
@@ -52,22 +52,17 @@
      makes something visible again carries the same exclusion of the subtree. */
   /* The ghost and its fieldset are `display: contents`, so they have no box to decorate the text
      right inside them: the pane, the nearest box, strikes it through. */
-  [data-slot="skeleton-reveal-skeleton"]:not([data-measured]) {
+  [data-slot="skeleton-reveal-skeleton"]:not([data-measured]),
+  [data-slot="skeleton-reveal-skeleton"]:not([data-measured]) [data-slot="skeleton-reveal-ghost"],
+  [data-slot="skeleton-reveal-skeleton"]:not([data-measured]) [data-slot="skeleton-reveal-ghost"] * {
     text-decoration-line: line-through !important;
     text-decoration-color: var(--muted) !important;
     text-decoration-thickness: 0.72em !important;
     text-decoration-skip-ink: none !important;
   }
   [data-slot="skeleton-reveal-skeleton"]:not([data-measured]) [data-slot="skeleton-reveal-ghost"] {
-    & :not(:has(*)):not(svg *, [data-skeleton="ignore"], [data-skeleton="ignore"] *) {
+    & :not(:has(> *)):not(svg *, [data-skeleton="ignore"], [data-skeleton="ignore"] *) {
       visibility: visible !important;
-    }
-    &,
-    & * {
-      text-decoration-line: line-through !important;
-      text-decoration-color: var(--muted) !important;
-      text-decoration-thickness: 0.72em !important;
-      text-decoration-skip-ink: none !important;
     }
     &
       :is(input, select, svg, textarea, [data-skeleton="block"]):not(

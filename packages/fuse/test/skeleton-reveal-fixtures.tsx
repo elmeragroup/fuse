@@ -10,7 +10,6 @@ import { afterEach, beforeEach, expect } from "vitest";
 
 import { Button } from "../src/components/button/button";
 import { SkeletonReveal } from "../src/components/skeleton/skeleton-reveal";
-import type { SkeletonRevealMode } from "../src/components/skeleton/skeleton-reveal-plan";
 import { renderThemed } from "./themed-browser-render";
 
 /** An invoice: a title and its lines. */
@@ -46,10 +45,6 @@ export function InvoiceCard({ invoice }: { invoice: Invoice }): ReactElement {
 
 /** How `renderInvoice` sets up its reveal. */
 export type InvoiceOptions = {
-  /** The reveal mode; `together` unless given. */
-  readonly reveal?: SkeletonRevealMode;
-  /** Forces the skeleton over data. */
-  readonly loading?: boolean;
   /** Called when the reveal reports content in. */
   readonly onReveal?: () => void;
   /** Wraps the reveal, as a scaled ancestor does. */
@@ -57,20 +52,21 @@ export type InvoiceOptions = {
 };
 
 /**
- * Renders an invoice reveal drawn from `SAMPLE`, with a `show` that changes its data and loading.
+ * Renders a `together` invoice reveal drawn from `SAMPLE`, with a `show` that changes its data and
+ * loading.
  *
  * @param data - The invoice to show, or null while loading.
- * @param options - The reveal mode, forced loading, `onReveal` and a wrapper.
+ * @param options - `onReveal` and a wrapper.
  * @returns The themed render, with `show(next, loading?)`.
  */
 export function renderInvoice(data: Invoice | null, options: InvoiceOptions = {}) {
   const around = options.around ?? ((reveal: ReactElement) => reveal);
-  const view = (next: Invoice | null, loading = options.loading) =>
+  const view = (next: Invoice | null, loading?: boolean) =>
     around(
       <SkeletonReveal
         data={next}
         sample={SAMPLE}
-        reveal={options.reveal ?? "together"}
+        reveal="together"
         label="Henter faktura"
         loading={loading}
         onReveal={options.onReveal ?? (() => undefined)}>

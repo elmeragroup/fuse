@@ -17,40 +17,46 @@ describe("mergeLineFragments", () => {
   it("merges fragments on one line closer than 0.4 em, however they arrive", () => {
     // A link splits "Paid on 4 May" into three fragments 4 px and 6 px apart; 0.4 × 16 = 6.4.
     const bars = mergeLineFragments([fragment(80, 120), fragment(0, 40), fragment(44, 74)]);
-    expect(bars).toEqual([{ x: 0, y: 4, width: 120, height: 16 }]);
+    expect(bars).toEqual([{ x: 0, y: 4, width: 120, height: 16, fontSize: 16 }]);
   });
 
   it("keeps fragments a gutter apart as two bars", () => {
     const bars = mergeLineFragments([fragment(0, 40), fragment(47, 90)]);
     expect(bars).toEqual([
-      { x: 0, y: 4, width: 40, height: 16 },
-      { x: 47, y: 4, width: 43, height: 16 },
+      { x: 0, y: 4, width: 40, height: 16, fontSize: 16 },
+      { x: 47, y: 4, width: 43, height: 16, fontSize: 16 },
     ]);
   });
 
   it("reads the gap against the larger font of the two", () => {
     // 10 px apart: too far at 16 px (6.4), close enough beside 32 px text (12.8).
     const bars = mergeLineFragments([fragment(0, 40), fragment(50, 90, 0, 32)]);
-    expect(bars).toEqual([{ x: 0, y: 4, width: 90, height: 16 }]);
+    expect(bars).toEqual([{ x: 0, y: 4, width: 90, height: 16, fontSize: 32 }]);
   });
 
   it("keeps each wrapped line its own bar", () => {
     const bars = mergeLineFragments([fragment(0, 200), fragment(0, 120, 24)]);
     expect(bars).toEqual([
-      { x: 0, y: 4, width: 200, height: 16 },
-      { x: 0, y: 28, width: 120, height: 16 },
+      { x: 0, y: 4, width: 200, height: 16, fontSize: 16 },
+      { x: 0, y: 28, width: 120, height: 16, fontSize: 16 },
     ]);
   });
 
   it("joins fragments overlapping by half the shorter one, spanning both bars", () => {
     // 12 px of a 24 px box overlap: exactly half.
     const bars = mergeLineFragments([fragment(0, 40), fragment(42, 80, 12)]);
-    expect(bars).toEqual([{ x: 0, y: 4, width: 80, height: 28 }]);
+    expect(bars).toEqual([{ x: 0, y: 4, width: 80, height: 28, fontSize: 16 }]);
   });
 
   it("keeps fragments overlapping by less than half on separate lines", () => {
     const bars = mergeLineFragments([fragment(0, 40), fragment(42, 80, 13)]);
     expect(bars).toHaveLength(2);
+  });
+
+  it("reports the largest font size of the fragments a line merges", () => {
+    // A 32 px word between two 16 px fragments, 4 px and 2 px apart: one line, at 32 px.
+    const bars = mergeLineFragments([fragment(0, 40), fragment(44, 120, 0, 32), fragment(122, 160)]);
+    expect(bars.map((bar) => bar.fontSize)).toEqual([32]);
   });
 
   it("draws nothing for no text", () => {

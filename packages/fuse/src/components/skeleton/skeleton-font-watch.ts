@@ -57,13 +57,11 @@ function changedSince(fonts: FontFaceSet, seen: FontSetSnapshot): boolean {
 export function watchFontSet(node: Node, onChange: () => void): () => void {
   const view = windowOf(node);
   const { document } = view;
-  let watch = watches.get(document);
-  if (watch === undefined) {
-    watch = { watchers: new Set(), seen: snapshotOf(document.fonts), frame: 0 };
-    watches.set(document, watch);
-  }
-  const current = watch;
+  const existing = watches.get(document);
+  const current = existing ?? { watchers: new Set(), seen: { faces: [], statuses: [] }, frame: 0 };
+  if (existing === undefined) watches.set(document, current);
   if (current.watchers.size === 0) {
+    // A watch that starts, first or again, reads the set as it is now, once.
     current.seen = snapshotOf(document.fonts);
     const read = (): void => {
       if (changedSince(document.fonts, current.seen)) {
@@ -79,6 +77,5 @@ export function watchFontSet(node: Node, onChange: () => void): () => void {
     current.watchers.delete(onChange);
     if (current.watchers.size > 0) return;
     view.cancelAnimationFrame(current.frame);
-    current.frame = 0;
   };
 }

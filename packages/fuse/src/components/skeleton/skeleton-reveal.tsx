@@ -348,7 +348,7 @@ export function SkeletonReveal<T>(props: SkeletonRevealProps<T>): ReactElement {
         if (currentKind !== "skeleton") return;
         skeletonSince.current = servedAtMount.current ? Number.NEGATIVE_INFINITY : performance.now();
         const skeleton = panes.current.get(currentId);
-        if (skeleton !== undefined && !servedAtMount.current) void owner.holdFirstSkeleton(skeleton, reveal);
+        if (skeleton !== undefined && !servedAtMount.current) owner.holdFirstSkeleton(skeleton, reveal);
         return;
       }
       if (next.exiting.length > 0) setState((latest) => ({ ...latest, exiting: [] }));
@@ -418,21 +418,25 @@ export function SkeletonReveal<T>(props: SkeletonRevealProps<T>): ReactElement {
     reportWhenSettled();
   });
 
+  // A swap is under way while a pane is on its way out, from the commit that inserts the incoming
+  // pane before the leaving one.
+  const swapping = next.exiting.length > 0;
   const renderPane = (
     pane: { readonly id: number; readonly kind: PaneKind; readonly node: ReactNode },
     leavingNow: boolean
   ): ReactElement =>
     pane.kind === "skeleton" ? (
-      <SkeletonPane key={pane.id} standIn={pane.node} paneRef={paneRef(pane.id)} />
+      <SkeletonPane key={pane.id} standIn={pane.node} paneRef={paneRef(pane.id)} leaving={leavingNow} />
     ) : (
-      // Neither pane anchors the root's scroll: inserting the incoming pane before the leaving one
-      // would otherwise scroll a scrolled root by the incoming pane's height. See `SkeletonPane`.
+      // While a swap is under way neither content pane anchors a scrolled ancestor's scroll:
+      // inserting the incoming pane before the leaving one would otherwise scroll it by the incoming
+      // pane's height. Settled content anchors as any content does. See `SkeletonPane`.
       <div
         key={pane.id}
         ref={paneRef(pane.id)}
         data-slot="skeleton-reveal-content"
-        className="[overflow-anchor:none]">
-        <PaneExclusion excluded={leavingNow}>{pane.node}</PaneExclusion>
+        className={swapping ? "[overflow-anchor:none]" : undefined}>
+        <PaneExclusion excluded={leavingNow && "leaving"}>{pane.node}</PaneExclusion>
       </div>
     );
 
