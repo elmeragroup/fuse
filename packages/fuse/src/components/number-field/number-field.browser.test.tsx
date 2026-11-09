@@ -44,6 +44,16 @@ const ROLE_DESCRIPTION_COPY = {
   "fi-FI": "Numerokenttä",
 } as const;
 
+/** Every optional prop a forwarding wrapper passes through, as `undefined`. */
+const FORWARDED_UNDEFINED = {
+  id: undefined,
+  "aria-label": undefined,
+  autoFocus: undefined,
+  minValue: undefined,
+  maxValue: undefined,
+  formatOptions: undefined,
+} as const;
+
 function renderField(node: ReactNode, locale: (typeof SUPPORTED_LOCALES)[number] = "en-US") {
   return renderThemed(withLocale(locale, node));
 }
@@ -323,21 +333,30 @@ describe("NumberField", () => {
     expect(describedBy.split(/\s+/)).toContain(page.getByRole("alert").element().id);
   });
 
-  it("submits the numeric value through the hidden input", async () => {
-    const submitted: Array<FormDataEntryValue | null> = [];
-    renderField(
-      <form
-        onSubmit={(event) => {
-          event.preventDefault();
-          submitted.push(new FormData(event.currentTarget).get("qty"));
-        }}>
-        <NumberField label="Quantity" name="qty" defaultValue={6} />
-        <button type="submit">Save</button>
-      </form>
-    );
-    await userEvent.click(page.getByRole("button", { name: "Save", exact: true }));
-    expect(submitted).toEqual(["6"]);
-  });
+  // A wrapper that forwards its own optional props hands every one of them over as `undefined`;
+  // that must keep the Field label, skip autofocus and submit the same value as omitting them.
+  it.each([
+    { forwarded: "omitted", props: {} },
+    { forwarded: "explicitly undefined", props: FORWARDED_UNDEFINED },
+  ])(
+    "submits the numeric value through the hidden input with optional props $forwarded",
+    async ({ props }) => {
+      const submitted: Array<FormDataEntryValue | null> = [];
+      renderField(
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            submitted.push(new FormData(event.currentTarget).get("qty"));
+          }}>
+          <NumberField label="Quantity" name="qty" defaultValue={1234} {...props} />
+          <button type="submit">Save</button>
+        </form>
+      );
+      expect(document.activeElement).not.toBe(textboxNamed("Quantity"));
+      await userEvent.click(page.getByRole("button", { name: "Save", exact: true }));
+      expect(submitted).toEqual(["1234"]);
+    }
+  );
 
   it("submits a typed decimal under minValue when no step is given, and still steps by one", async () => {
     const submitted: Array<FormDataEntryValue | null> = [];

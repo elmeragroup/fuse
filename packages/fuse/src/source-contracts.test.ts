@@ -1537,6 +1537,10 @@ describe("Base UI prop wiring", () => {
       // Base UI's mergeProps copies a present undefined over the part's own value, so a
       // forwarded `aria-labelledby={undefined}` erased Field's label (#62). The module that
       // renders the part filters; the wrappers above it spread raw.
+      // A plain `attr={maybeUndefined}` on a wiring part is the same hazard, but whether an
+      // expression can be undefined is a type question: by syntax alone, a destructured prop
+      // without a default flags required props and hook results such as `locale`, and misses
+      // `cond ? x : undefined`. So only spreads are checked here; reviewers own the attributes.
       const found = wiringPartSpreads(file, readSrc(file), new Set(parts));
       expect(found.filter((site) => site.endsWith(" raw"))).toEqual([]);
       expect(new Set(found)).toEqual(new Set(parts));

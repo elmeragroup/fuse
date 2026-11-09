@@ -9,6 +9,7 @@ import { useLocalizedStrings } from "../../hooks/use-localized-strings";
 import { useResetRemount } from "../../hooks/use-reset-remount";
 import { Minus } from "../../icons/generated/minus";
 import { Plus } from "../../icons/generated/plus";
+import { definedProps } from "../../internal/defined-props";
 import { useLocale } from "../../intl/locale-context";
 import { FieldFrame } from "../field/field-frame";
 import { numberFieldStrings } from "./intl";
@@ -147,23 +148,25 @@ export function NumberField({
       errorMessage={errorMessage}>
       <NumberFieldPrimitive.Root
         key={reset.key}
-        name={name}
-        value={controlledValue}
-        defaultValue={defaultValue}
+        {...definedProps({
+          name,
+          value: controlledValue,
+          defaultValue,
+          min: minValue,
+          max: maxValue,
+          format: formatOptions,
+          id,
+        })}
         onValueChange={(next) => onChange?.(next ?? NaN)}
         onValueCommitted={(next) => onValueCommitted?.(next ?? NaN)}
-        min={minValue}
-        max={maxValue}
         // base-ui defaults `step` to 1 and puts it on the hidden validation input, so with `min`
         // an omitted step would reject any typed value off the 1-step grid from `min`, such as
         // 99.5 under a min of 1. "any" still steps by 1 but drops that step constraint.
         step={step ?? "any"}
-        format={formatOptions}
         locale={locale}
         disabled={isDisabled}
         readOnly={isReadOnly}
-        required={isRequired}
-        id={id}>
+        required={isRequired}>
         <NumberFieldPrimitive.Group
           aria-invalid={isInvalid || undefined}
           data-size={size}
@@ -172,10 +175,10 @@ export function NumberField({
             // The reset hook needs the visible control; Root's `inputRef` prop is the
             // validation input, not this one.
             ref={numberInputRef}
-            aria-label={ariaLabel}
+            {...definedProps({ "aria-label": ariaLabel })}
             // Base UI hard-codes the English "Number field"; announce it in the provider locale.
             aria-roledescription={strings.format("roleDescription")}
-            autoFocus={autoFocus && reset.isInitialMount}
+            autoFocus={autoFocus === true && reset.isInitialMount}
             data-focus-ring-control=""
             className={slots.input()}
           />
