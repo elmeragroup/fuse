@@ -41,7 +41,7 @@ export { confirmButtonVariants } from "./confirm-button/confirm-button-variants"
 export { dialogContentVariants, dialogVariants } from "./dialog/dialog-variants";
 export { dropdownMenuVariants } from "./dropdown-menu/dropdown-menu-variants";
 export { emptyMediaVariants, emptyVariants } from "./empty/empty-variants";
-export { fieldVariants } from "./field/field-variants";
+export { fieldLegendVariants, fieldVariants } from "./field/field-variants";
 export { fieldFrameVariants } from "./field/field-frame-variants";
 export { fileUploadVariants } from "./file-upload/file-upload-variants";
 export { inputClass, inputVariants } from "./input/input-class";

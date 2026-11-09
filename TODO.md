@@ -354,9 +354,6 @@ Paths are relative to `packages/fuse-figma` unless they start with `packages/`.
   `src/components/dropdown-menu-kit.ts` and, for the separator, `src/components/menu-kit.ts` then
   read the slots in place of composing `menuItemIndicatorRoomClass` and `menuSeparatorClass` by
   hand.
-- Split the Field legend's axis out of `fieldVariants` into a `fieldLegendVariants` recipe, as
-  Empty has `emptyMediaVariants`. The `Pick` in `packages/fuse/src/components/field/field.tsx` and
-  its type test then go.
 - Compute each formula variable's values from its formula through `src/components/css-values.ts`,
   and derive its `reads`, in place of the hand-written lambda beside it in
   `src/fuse-variable-set.ts`. Nothing checks that the two agree.

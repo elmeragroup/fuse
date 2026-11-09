@@ -1,12 +1,13 @@
 /**
  * Runtime-free Field recipes. Not exported from the public entry, since there is no proven
  * recipe-borrowing use; the workspace-only recipe catalog re-exports them for the Figma component
- * sync. `orientation` is the Root axis and `variant` the Legend's. The Title and the Label share
- * their heading classes: `title` puts its centering before them, and `label` its composition arms.
- * `description`, `error` and `legend` are the other text parts. `set` stacks a `Field.Set`'s parts, closer
- * around a checkbox or radio group. `field.tsx` resolves the slots of the
- * parts without an axis once at module scope. The headings, the description and the error read the
- * label type pair, as a label-variant legend does.
+ * sync. `fieldVariants` holds a slot per part but Legend, and `orientation` is the Root axis. The
+ * Title and the Label share their heading classes: `title` puts its centering before them, and
+ * `label` its composition arms. `description` and `error` are the other text parts. `set` stacks a
+ * `Field.Set`'s parts, closer around a checkbox or radio group. `field.tsx` resolves the slots of
+ * the parts without an axis once at module scope. `fieldLegendVariants` is Legend's own recipe,
+ * whose `variant` sets its text size. The headings, the description and the error read the label
+ * type pair, as a label-variant legend does.
  */
 import { cn } from "../../styles/cn";
 import { fieldLabelCardShellClass } from "../../styles/inner-corner/field-label";
@@ -31,7 +32,6 @@ export const fieldVariants = tv({
       "font-normal text-left text-pretty text-muted-foreground group-has-data-horizontal/field:text-balance last:mt-0 [&>a]:underline [&>a]:underline-offset-4 [&>a:hover]:text-primary [[data-variant=legend]+&]:-mt-1.5",
     ],
     error: [labelTypeClass, "font-normal text-error"],
-    legend: "font-medium mb-3 text-balance",
     set: "flex flex-col gap-(--surface-gap-xl) has-[>[data-slot=checkbox-group]]:gap-(--surface-gap-md) has-[>[data-slot=radio-group]]:gap-(--surface-gap-md)",
   },
   variants: {
@@ -57,15 +57,23 @@ export const fieldVariants = tv({
         root: "@md/field-group:flex-row @md/field-group:items-center @md/field-group:gap-(--surface-gap-md) @md/field-group:[&>:where(:not([data-slot=checkbox],[data-slot=switch]))]:w-auto @md/field-group:has-[>[data-slot=field-content]]:items-start @md/field-group:*:data-field-heading:flex-auto @md/field-group:has-[>[data-slot=field-content]]:[&>[role=checkbox],[role=radio]]:mt-px flex-col gap-1 [&>.sr-only]:w-auto [&>:where(:not([data-slot=checkbox],[data-slot=switch]))]:w-full",
       },
     },
-    // `legend` titles a fieldset at a fixed 16/24px, and `label` reads the label type pair to match a
-    // `Field.Label`.
-    variant: {
-      legend: { legend: "text-base" },
-      label: { legend: labelTypeClass },
-    },
   },
   defaultVariants: {
     orientation: "vertical",
+  },
+});
+
+export const fieldLegendVariants = tv({
+  base: "font-medium mb-3 text-balance",
+  variants: {
+    // `legend` titles a fieldset at a fixed 16/24px, and `label` reads the label type pair to match a
+    // `Field.Label`.
+    variant: {
+      legend: "text-base",
+      label: labelTypeClass,
+    },
+  },
+  defaultVariants: {
     variant: "legend",
   },
 });
