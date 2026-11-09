@@ -14,19 +14,12 @@ export const racPopoverShellClass = cn(
 );
 
 /**
- * The React Aria dialog. In a popover it pads 16px inside the popover's corner and border. Outside
- * one it is no rounded shell, so it publishes no corner.
+ * The React Aria dialog, which pads nothing: the calendar and presets inside it pad themselves
+ * with the small surface tier. In a popover it publishes the popover's corner inside its 1px
+ * border. Outside one it is no rounded shell, so it publishes no corner.
  */
 export const racDialogShellClass = cn(
-  "p-6 [--shell-inner:initial] [[data-placement]>&]:p-4 [[data-placement]>&]:[--shell-inner:max(0px,--theme(--radius-md)-1px-4*var(--spacing))]",
-  publishShellBoundary
-);
-
-/**
- * The date pickers' dialog, which pads nothing inside the popover.
- */
-export const pickerDialogShellClass = cn(
-  "p-0 [[data-placement]>&]:p-0 [[data-placement]>&]:[--shell-inner:max(0px,--theme(--radius-md)-1px)]",
+  "[--shell-inner:initial] [[data-placement]>&]:[--shell-inner:max(0px,--theme(--radius-md)-1px)]",
   publishShellBoundary
 );
 

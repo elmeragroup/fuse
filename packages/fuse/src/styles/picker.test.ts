@@ -17,7 +17,6 @@ function everyEmittedClass(): string {
           slots.separator(),
           slots.icon(),
           slots.trigger(),
-          slots.dialog(),
           slots.calendar(),
           slots.pane(),
         ];
@@ -37,16 +36,6 @@ describe("pickerVariants shared slots", () => {
   it("lays both roots out as a labelled column", () => {
     expect(pickerVariants().base()).toContain("flex-col");
     expect(pickerVariants({ range: true }).base()).toContain("@container/picker");
-  });
-
-  it("strips the styled Dialog's padding in both of its forms, on both axes", () => {
-    for (const range of [false, true]) {
-      const dialog = pickerVariants({ range }).dialog();
-      expect(dialog).toContain("p-0");
-      // The dialog recipe re-pads itself inside a positioned popover, so that arm is
-      // overridden too — otherwise the calendar would sit in 1rem of dead space.
-      expect(dialog).toContain("[[data-placement]>&]:p-0");
-    }
   });
 
   it("sizes the trigger glyph without an important flag — buttonVariants defers to it", () => {
