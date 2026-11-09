@@ -31,6 +31,9 @@ type Box = { readonly left: number; readonly top: number; readonly right: number
 
 const GAP = 8;
 
+/** The most frames a popup takes to open on a hover: six times the 5 measured at most. */
+const OPEN_FRAMES = 30;
+
 function overlap(a: Box, b: Box): boolean {
   return (
     Math.min(a.right, b.right) - Math.max(a.left, b.left) > 0.5 &&
@@ -228,7 +231,14 @@ describe("a lane popup inside the viewport", () => {
         const high = Math.min(centre.y + 0.9 * radius, height - 1);
         if (high - low < 8) continue;
         await hoverAt(centre.x + 0.3 * radius, Math.min(high - 2, Math.max(low + 2, centre.y)));
-        await expect.poll(popupBox).not.toBeNull();
+        // The popup opens in a few frames, 2 to 5 measured: it waits for two frame checks and
+        // Base UI's placement. Its wait counts frames, as the focus case's does, not milliseconds,
+        // which a loaded runner that paints a few frames a second runs out of.
+        for (let frame = 0; frame < OPEN_FRAMES && popupBox() === null; frame += 1) await nextFrames(1);
+        expect(
+          popupBox(),
+          `hover, dial at ${String(at)}: no popup after ${String(OPEN_FRAMES)} frames`
+        ).not.toBeNull();
         await nextFrames(14);
         found.push(...faults(`hover, dial at ${String(at)}`));
         // React reads a pointer leaving the plot from pointerout toward an element outside it.

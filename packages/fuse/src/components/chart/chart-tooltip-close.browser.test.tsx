@@ -14,7 +14,7 @@ import { describe, expect, it } from "vitest";
 import { userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
-import { nextFrames } from "../../../test/animation-frames";
+import { nextFrames, recordFrames } from "../../../test/animation-frames";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
 import { Chart } from "./chart-namespace";
@@ -93,18 +93,26 @@ async function closeAndRead(keys: string, expectOpen: (node: HTMLElement) => voi
   if (open === null) throw new Error("no popup");
   expectOpen(open);
   const shown = fingerprint(open);
-  await userEvent.keyboard("{Escape}");
-  const read: string[] = [];
   const visible = () =>
     open.isConnected && open.checkVisibility({ opacityProperty: true, visibilityProperty: true });
-  const start = performance.now();
-  while (visible() && performance.now() - start < 2000) {
-    read.push(fingerprint(open));
-    await nextFrames(1);
-  }
+  // The frames are recorded in the page from before the key, so a slow round trip for the key
+  // command cannot let the exit pass unseen.
+  const recorded = recordFrames(
+    () => ({
+      print: fingerprint(open),
+      shown: visible(),
+      closing: visible() && !open.hasAttribute("data-open"),
+    }),
+    () => !visible()
+  );
+  await userEvent.keyboard("{Escape}");
+  const frames = await recorded;
   expect(visible()).toBe(false);
-  expect(read.length).toBeGreaterThan(1);
-  return { shown, changed: read.filter((value) => value !== shown) };
+  expect(frames.some(({ closing }) => closing)).toBe(true);
+  return {
+    shown,
+    changed: frames.filter((frame) => frame.shown && frame.print !== shown).map(({ print }) => print),
+  };
 }
 
 function Locale({ children }: { readonly children: ReactElement }): ReactElement {

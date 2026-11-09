@@ -6,7 +6,7 @@ import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
-import { nextFrames } from "../../../test/animation-frames";
+import { nextFrames, recordFrames } from "../../../test/animation-frames";
 import { S06Chart } from "../../../test/chart/bar-charts";
 import {
   bars as drawnBars,
@@ -695,15 +695,17 @@ describe("a closing tooltip's stack total", () => {
     const total = () =>
       open.querySelector('[data-slot="chart-tooltip-total"] > span:last-child')?.textContent;
     expect(total()).toBe("3");
+    // The frames are recorded in the page from before the key, so a slow round trip for the key
+    // command cannot let the exit pass unseen.
+    const shown = () => open.isConnected && visible(open);
+    const recorded = recordFrames(
+      () => ({ total: total(), shown: shown(), closing: shown() && !open.hasAttribute("data-open") }),
+      () => !shown()
+    );
     await userEvent.keyboard("{Escape}");
-    const read: (string | null | undefined)[] = [];
-    const start = performance.now();
-    while (open.isConnected && visible(open) && performance.now() - start < 2000) {
-      read.push(total());
-      await nextFrames(1);
-    }
-    expect(visible(open)).toBe(false);
-    expect(read.length).toBeGreaterThan(1);
-    expect(read.filter((text) => text !== "3")).toEqual([]);
+    const frames = await recorded;
+    expect(shown()).toBe(false);
+    expect(frames.some(({ closing }) => closing)).toBe(true);
+    expect(frames.filter((frame) => frame.shown && frame.total !== "3")).toEqual([]);
   });
 });

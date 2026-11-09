@@ -75,12 +75,16 @@ describe("a polar tooltip under pinch zoom in Chromium", () => {
     }
   );
 
-  // A pan of the zoomed page. Unit under test: the side lane's inner edge. CDP's
-  // `Input.synthesizeScrollGesture` scrolls as a touch drag does, and on a page with no horizontal
-  // overflow, zoomed in, the drag pans the visual viewport across the layout viewport, so
-  // `visualViewport.offsetLeft` grows, as it does when a reader pans a pinch-zoomed page. At 3× in a
-  // 1280 × 900 viewport the visual viewport is 426.67 px wide, and a full pan right puts its left
-  // edge at 853.33, right of the right lane's inner edge, as the review's repro does. Oracle: R2.3 as
+  // A pan of the zoomed page. Unit under test: the side lane's inner edge. A horizontal mouse wheel
+  // (`page.mouse.wheel`) over a point outside any chart is a user scroll, which Chromium applies to
+  // the visual viewport first: on a page with no horizontal overflow, zoomed in, it pans the visual
+  // viewport across the layout viewport, so `visualViewport.offsetLeft` grows, as it does when a
+  // reader pans a pinch-zoomed page. The wheel's delta is in screen pixels, a third of that in CSS
+  // pixels at 3×, so 3,000 pans past the far edge, where the pan stops. At 3× in a 1280 × 900
+  // viewport the visual viewport is 426.67 px wide, and a full pan right puts its left edge at
+  // 853.33, right of the right lane's inner edge, as the review's repro does. A synthetic touch
+  // gesture (`Input.synthesizeScrollGesture`) pans it on macOS but not in Linux headless Chromium,
+  // with or without touch enabled, so the case uses the wheel, which pans on both. Oracle: R2.3 as
   // amended, read from the rendered boxes: the popup lies inside the visual viewport on all four
   // sides and does not intersect the dial.
   it(
@@ -101,15 +105,9 @@ describe("a polar tooltip under pinch zoom in Chromium", () => {
       const session = await context.newCDPSession(page);
       await session.send("Emulation.setPageScaleFactor", { pageScaleFactor: 3 });
       await settleFrames(page, 3);
-      // A drag from right to left pans the visual viewport rightward, here as far as it goes.
-      await session.send("Input.synthesizeScrollGesture", {
-        x: 200,
-        y: 100,
-        xDistance: -1200,
-        yDistance: 0,
-        gestureSourceType: "touch",
-        speed: 4000,
-      });
+      // The wheel pans the visual viewport rightward, here as far as it goes.
+      await page.mouse.move(20, 20);
+      await page.mouse.wheel(3000, 0);
       await settleFrames(page, 6);
       await surface.locator('[role="option"][tabindex="0"]').evaluate((option: HTMLElement) => {
         option.focus({ preventScroll: true });

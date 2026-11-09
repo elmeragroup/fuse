@@ -19,6 +19,7 @@ import type { Srgb } from "@elmeragroup/color/srgb";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
+import { recordFrames } from "../../../test/animation-frames";
 import { computedColor } from "../../../test/assert-invalid-ring";
 import { angleOf, clockLayer, clockPath, dotPoints, labelInk, wedgeRadii } from "../../../test/chart/clock";
 import { clientPoint, hoverAt, polarFigure } from "../../../test/chart/pie";
@@ -1355,15 +1356,19 @@ describe("two connected readings at the ends of the day (D16)", () => {
       const radians = ((hour + 0.5) * 15 * Math.PI) / 180;
       return hoverAt(...clientPoint(layer, 0.6 * Math.sin(radians), -0.6 * Math.cos(radians)));
     };
-    await hoverHour(23);
-    await expect.poll(() => dot()?.angle ?? 0).toBeCloseTo(352.5, 0);
-    await hoverHour(0);
+    // The glide's frames are recorded in the page from before each hover, and a frame mid-glide,
+    // strictly between the two rest angles, 352.5° and 7.5°, lies on the arc through 12 o'clock.
+    // A starved runner paints few frames per glide, so the crossing repeats until one lands there.
+    const crossing = (point: { readonly angle: number } | undefined) =>
+      point !== undefined && (point.angle > 353 || point.angle < 7);
     const seen: { readonly angle: number; readonly radius: number }[] = [];
-    const start = performance.now();
-    while (performance.now() - start < 600) {
-      await new Promise((resolve) => requestAnimationFrame(resolve));
-      const point = dot();
-      if (point !== undefined && (point.angle > 356 || point.angle < 4)) seen.push(point);
+    for (let attempt = 0; attempt < 5 && seen.length === 0; attempt += 1) {
+      await hoverHour(23);
+      await expect.poll(() => dot()?.angle ?? 0).toBeCloseTo(352.5, 0);
+      const start = performance.now();
+      const recorded = recordFrames(dot, () => performance.now() - start > 600);
+      await hoverHour(0);
+      for (const point of await recorded) if (point !== undefined && crossing(point)) seen.push(point);
     }
     expect(seen.length).toBeGreaterThan(0);
     for (const { radius } of seen) expect(radius).toBeCloseTo(rim, 2);
@@ -1400,17 +1405,18 @@ describe("a closing tooltip's stack total", () => {
     await expect.poll(() => Number(getComputedStyle(popupNode() ?? document.body).opacity)).toBe(1);
     const open = popupNode();
     if (open === null) throw new Error("no popup");
-    await userEvent.keyboard("{Escape}");
-    const read: (string | null | undefined)[] = [];
     const shown = () =>
       open.isConnected && open.checkVisibility({ opacityProperty: true, visibilityProperty: true });
-    const start = performance.now();
-    while (shown() && performance.now() - start < 2000) {
-      read.push(total());
-      await new Promise((resolve) => requestAnimationFrame(resolve));
-    }
+    // The frames are recorded in the page from before the key, so a slow round trip for the key
+    // command cannot let the exit pass unseen.
+    const recorded = recordFrames(
+      () => ({ total: total(), shown: shown(), closing: shown() && !open.hasAttribute("data-open") }),
+      () => !shown()
+    );
+    await userEvent.keyboard("{Escape}");
+    const frames = await recorded;
     expect(shown()).toBe(false);
-    expect(read.length).toBeGreaterThan(1);
-    expect(read.filter((text) => text !== "3")).toEqual([]);
+    expect(frames.some(({ closing }) => closing)).toBe(true);
+    expect(frames.filter((frame) => frame.shown && frame.total !== "3")).toEqual([]);
   });
 });
