@@ -202,6 +202,41 @@ describe("localization page", () => {
   });
 });
 
+describe("temporal migration page", () => {
+  it("covers the polyfill, the maps, boundaries, kinds, validation, behaviour changes and cancelable details", async () => {
+    const html = await fetchText("/handbook/temporal-migration");
+    for (const id of [
+      "install-temporal",
+      "component-map",
+      "composite-props",
+      "part-props",
+      "date-api",
+      "boundaries",
+      "kind-resolution",
+      "validation",
+      "form-error-checklist",
+      "behaviour-changes",
+      "divergences",
+      "pickers",
+      "selectors",
+      "cancelable-changes",
+    ]) {
+      expect(html, id).toContain(`id="${id}"`);
+    }
+    expect(html).toContain("import &quot;@elmeragroup/fuse/temporal-polyfill&quot;;");
+    expect(html).toContain("Temporal.Now.plainDateISO(tz)");
+    expect(html).toContain("closeOnDoubleClick");
+    // The conversion table renders from the recipes test/temporal-recipes.test.ts runs.
+    expect(html).toContain("Temporal.PlainDateTime.compare(a, b)");
+  });
+
+  it("shows the conversion and server-error demos", async () => {
+    const html = await fetchText("/handbook/temporal-migration");
+    expect(html).toContain('id="conversion"');
+    expect(html).toContain('id="server-errors"');
+  });
+});
+
 describe("quick start page", () => {
   it("shows the app page scaffold once — landmarks, skip link and lang", async () => {
     const html = await fetchText("/quick-start");

@@ -43,6 +43,7 @@ describe("SideNav inventory", () => {
       "Fonts",
       "Icons",
       "Localization",
+      "Temporal migration",
       "llms.txt",
     ]);
   });

@@ -414,6 +414,9 @@ importers:
       tailwindcss:
         specifier: 'catalog:'
         version: 4.3.3
+      temporal-polyfill:
+        specifier: 'catalog:'
+        version: 1.0.8
       tsrs:
         specifier: 'catalog:'
         version: 0.21.0-ts7.1.0-beta
