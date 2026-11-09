@@ -78,12 +78,6 @@ export type CarouselWiring = {
   readonly setViewport: (element: HTMLElement | null) => void;
   /** Track a mounted Slide. The returned function stops tracking it. */
   readonly registerSlide: (element: HTMLElement) => () => void;
-  /**
-   * The last measurement: the slides in document order, the pages and the slides in view. Every
-   * slide number, page and inert slide reads it, so they always agree. `null` before the first
-   * measurement.
-   */
-  readonly snapshot: CarouselSnapshot | null;
   /** Change the page for a control's reason. A control press stops rotation. */
   readonly navigate: (index: number, reason: CarouselControlReason) => void;
   /** Mount `Carousel.Autoplay`. The returned function unmounts it. */
@@ -104,6 +98,27 @@ export type CarouselContextValue = {
 
 /** The Root's context. `Carousel.Root` provides it. */
 export const CarouselContext = createContext<CarouselContextValue | null>(null);
+
+/**
+ * The Root's last measurement: the slides in document order, their numbers, the pages and the
+ * slides in view. Every slide number, indicator name and inert slide reads it, so they always agree.
+ * `null` before the first measurement. Private to the parts.
+ *
+ * It is a context of its own, apart from {@link CarouselContext}, because it changes on every
+ * change to the slides in view, about twice per slide a scroll passes, while `state`, `actions`,
+ * `meta` and the wiring keep their identity. Only the parts that read it, Slide and Indicator,
+ * re-render then, not every part and every `useCarousel()` caller.
+ */
+export const CarouselSnapshotContext = createContext<CarouselSnapshot | null>(null);
+
+/**
+ * The enclosing Root's last measurement, for a part that reads slide numbers or the slides in view.
+ *
+ * @returns The snapshot, or `null` before the first measurement or outside a Root.
+ */
+export function useCarouselSnapshot(): CarouselSnapshot | null {
+  return use(CarouselSnapshotContext);
+}
 
 /**
  * The enclosing Root's context, for a part.

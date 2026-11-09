@@ -70,6 +70,8 @@ export type CarouselOrientation = "horizontal" | "vertical";
 export type CarouselSnapshot = {
   /** The mounted slides, in document order. A slide's place in it is its number. */
   readonly slides: readonly HTMLElement[];
+  /** Each of `slides` by element, to its place in them, so a slide finds its number in one read. */
+  readonly numbers: ReadonlyMap<HTMLElement, number>;
   /** The pages, from the slides' snap positions. `leadingSlides` index into `slides`. */
   readonly pages: Pages;
   /** The slides with more than a pixel inside the viewport. */
@@ -143,6 +145,8 @@ type ScrollSession = "idle" | "armed" | "live";
 /** The last measurement, in scroll coordinates. */
 type Layout = {
   readonly slides: readonly HTMLElement[];
+  /** Each slide's place in `slides`; also how a mutation finds the slide it lies in. */
+  readonly numbers: ReadonlyMap<HTMLElement, number>;
   readonly geometry: readonly SlideGeometry[];
   readonly port: ScrollPort;
   readonly pages: Pages;
@@ -441,7 +445,8 @@ export function createCarouselEngine(
         sizes.set(slide, size);
       }
     }
-    layout = { slides, geometry, port, pages: pagesOf(port, geometry), rtl };
+    const numbers = new Map(slides.map((slide, index) => [slide, index]));
+    layout = { slides, numbers, geometry, port, pages: pagesOf(port, geometry), rtl };
     return restore ? "restore" : "measured";
   }
 
@@ -450,6 +455,7 @@ export function createCarouselEngine(
     const indexes = visibleSlides(current.port, current.geometry, position());
     const next: CarouselSnapshot = {
       slides: current.slides,
+      numbers: current.numbers,
       pages: current.pages,
       visible: new Set(current.slides.filter((_, index) => indexes.has(index))),
     };
@@ -763,10 +769,26 @@ export function createCarouselEngine(
    * Whether a mutation can have moved a slide. A change inside one slide's content cannot, except
    * by resizing that slide, which the resize observer reports; anything at or above the slides,
    * such as a reorder or a class on a slide or its wrapper, can.
+   *
+   * A record's target is the node whose children or attribute changed, so the test is on it alone,
+   * whatever the record's type: a target strictly inside a measured slide moves nothing, and any
+   * other target, a slide itself (its class, or children added to it), a wrapper or the viewport,
+   * can. The walk therefore starts at the target's parent, so a slide that is the target does not
+   * count as lying in itself, and climbs to the viewport, which no slide is inside. It costs the
+   * target's depth below the viewport, not one `contains` per slide.
    */
   function movesSlides(record: MutationRecord): boolean {
-    const changed = record.target;
-    return !(layout?.slides ?? []).some((slide) => slide !== changed && slide.contains(changed));
+    // Keyed by any node, so the walk needs no element check, which would fail across realms.
+    const numbers: ReadonlyMap<Node, number> | undefined = layout?.numbers;
+    if (numbers === undefined || record.target === viewport) {
+      return true;
+    }
+    for (let node = record.target.parentNode; node !== null && node !== viewport; node = node.parentNode) {
+      if (numbers.has(node)) {
+        return false;
+      }
+    }
+    return true;
   }
 
   /** Whether a resize report differs from the size the last measurement read. */

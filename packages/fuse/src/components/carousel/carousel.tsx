@@ -11,7 +11,12 @@ import { useMergedRefs } from "../../hooks/use-merged-refs";
 import { definedProps } from "../../internal/defined-props";
 import { isNode } from "../../internal/dom-node";
 import { cn } from "../../styles/cn";
-import { CarouselContext, useCarouselContext } from "./carousel-context";
+import {
+  CarouselContext,
+  CarouselSnapshotContext,
+  useCarouselContext,
+  useCarouselSnapshot,
+} from "./carousel-context";
 import type {
   CarouselActions,
   CarouselContextValue,
@@ -217,13 +222,12 @@ export function CarouselRoot({
     () => ({
       setViewport,
       registerSlide,
-      snapshot,
       navigate,
       mountAutoplay: rotation.mount,
       setAutoplayDelay: rotation.setDelay,
       live,
     }),
-    [registerSlide, snapshot, navigate, rotation.mount, rotation.setDelay, live]
+    [registerSlide, navigate, rotation.mount, rotation.setDelay, live]
   );
   const context = useMemo<CarouselContextValue>(
     () => ({ state, actions, meta, wiring }),
@@ -251,7 +255,11 @@ export function CarouselRoot({
     },
   });
 
-  return <CarouselContext value={context}>{rendered}</CarouselContext>;
+  return (
+    <CarouselContext value={context}>
+      <CarouselSnapshotContext value={snapshot}>{rendered}</CarouselSnapshotContext>
+    </CarouselContext>
+  );
 }
 
 /**
@@ -300,7 +308,8 @@ export function CarouselSlide({ className, render, ref, ...props }: CarouselSlid
   const strings = useLocalizedStrings(carouselStrings);
   const [element, setElement] = useState<HTMLElement | null>(null);
   const [focusWithin, setFocusWithin] = useState(false);
-  const { registerSlide, snapshot } = wiring;
+  const { registerSlide } = wiring;
+  const snapshot = useCarouselSnapshot();
   // The slide joins the members as its element attaches, in the commit that mounts it and before
   // any layout effect, so the Root's reconciliation in that commit already counts it.
   const slideRef = useCallback(
@@ -320,7 +329,7 @@ export function CarouselSlide({ className, render, ref, ...props }: CarouselSlid
   const mergedRef = useMergedRefs<HTMLElement>(ref, slideRef);
 
   // The number, the count and whether the slide is in view all come from one measurement.
-  const position = element === null || snapshot === null ? -1 : snapshot.slides.indexOf(element);
+  const position = (element === null ? undefined : snapshot?.numbers.get(element)) ?? -1;
   const named = props["aria-label"] !== undefined || props["aria-labelledby"] !== undefined;
   const label =
     snapshot === null || position < 0 || named
