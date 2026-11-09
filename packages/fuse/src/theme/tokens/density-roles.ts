@@ -292,7 +292,6 @@ export const PART_DENSITY = {
   "dialog-footer": "layout",
   "dialog-close": "control",
 
-  "dropdown-menu": "layout",
   "dropdown-menu-trigger": "control",
   "dropdown-menu-portal": "layout",
   "dropdown-menu-content": "surface",
@@ -308,7 +307,6 @@ export const PART_DENSITY = {
   "dropdown-menu-radio-item-indicator": "fixed",
   "dropdown-menu-separator": "fixed",
   "dropdown-menu-shortcut": "fixed",
-  "dropdown-menu-sub": "layout",
   "dropdown-menu-sub-trigger": "row",
 
   emoji: "fixed",
@@ -433,7 +431,6 @@ export const PART_DENSITY = {
   // Combobox's trigger.
   "phone-number-field-country-trigger": "fixed",
 
-  popover: "layout",
   "popover-trigger": "control",
   "popover-trigger[data-size=icon-inline]": "fixed",
   "popover-content": "surface",
@@ -475,7 +472,6 @@ export const PART_DENSITY = {
 
   separator: "fixed",
 
-  sheet: "layout",
   "sheet-trigger": "control",
   "sheet-portal": "layout",
   "sheet-overlay": "fixed",
@@ -599,8 +595,6 @@ export const PART_DENSITY = {
   "toolbar-input": "control",
   "toolbar-separator": "fixed",
 
-  "tooltip-provider": "layout",
-  tooltip: "layout",
   "tooltip-trigger": "control",
   // A trigger rendered through `Focusable`, which gives inline text a tab stop, reads no control
   // metric. A trigger styled as a control, such as a Button on an anchor, keeps `control`.

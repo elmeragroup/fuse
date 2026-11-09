@@ -19,7 +19,7 @@ import { dialogContentVariants, dialogVariants } from "./dialog-variants";
 const slots = dialogVariants();
 
 export function DialogRoot(props: ComponentProps<typeof DialogPrimitive.Root>): ReactElement {
-  return <DialogPrimitive.Root data-slot="dialog" {...props} />;
+  return <DialogPrimitive.Root {...props} />;
 }
 
 export function DialogTrigger({

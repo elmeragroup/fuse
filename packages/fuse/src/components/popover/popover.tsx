@@ -15,7 +15,7 @@ import { popoverVariants } from "./popover-variants";
 const popoverSlots = popoverVariants();
 
 export function PopoverRoot(props: ComponentProps<typeof PopoverPrimitive.Root>): ReactElement {
-  return <PopoverPrimitive.Root data-slot="popover" {...props} />;
+  return <PopoverPrimitive.Root {...props} />;
 }
 
 export function PopoverTrigger({

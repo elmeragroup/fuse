@@ -180,9 +180,6 @@
   lints: `oxlint test/action-pins.test.mjs` reports 14 unsafe-`error` hits that `oxlint test` does
   not, since `test/vitest.config.mjs` brings in node's types. The root tsconfig cannot take
   `allowJs` as it stands, since it has no `include` and would then read every built `.js`.
-- `DialogRoot` (`components/dialog/dialog.tsx`) stamps `data-slot="dialog"` on Base UI's
-  `Dialog.Root`, which renders no DOM: `useRenderDialogRoot` destructures only its named props,
-  so the attribute is discarded. Drop it, and fix any comment that claims the root carries a slot.
 - The docs `sheet-demos` browser test failed once during the RSC namespace work
   (2026-09-25, T3) and passed on every rerun. If it recurs, diagnose before raising any timeout.
 - No select demo shows `Select.Content alignItemWithTrigger`; only browser tests and the landing

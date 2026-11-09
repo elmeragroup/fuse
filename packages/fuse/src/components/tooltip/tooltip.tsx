@@ -34,7 +34,7 @@ export type TooltipProviderProps = Omit<ComponentProps<typeof TooltipPrimitive.P
 };
 
 export function TooltipProvider({ delay = 0, ...props }: TooltipProviderProps): ReactElement {
-  return <TooltipPrimitive.Provider data-slot="tooltip-provider" delay={delay} {...props} />;
+  return <TooltipPrimitive.Provider delay={delay} {...props} />;
 }
 
 export type TooltipRootProps = ComponentProps<typeof TooltipPrimitive.Root> & {
@@ -54,7 +54,7 @@ export function TooltipRoot({ delay, ...props }: TooltipRootProps): ReactElement
   // intentional: this tooltip opts out of the outer Provider's skip-delay hand-off.
   const root = (
     <TooltipDescriptionContext.Provider value={description}>
-      <TooltipPrimitive.Root data-slot="tooltip" {...props} />
+      <TooltipPrimitive.Root {...props} />
     </TooltipDescriptionContext.Provider>
   );
   if (delay !== undefined) {
