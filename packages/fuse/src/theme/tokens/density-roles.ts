@@ -525,6 +525,14 @@ export const PART_DENSITY = {
   "sidebar-menu-sub-button": "row",
 
   skeleton: "fixed",
+  "skeleton-reveal": "layout",
+  "skeleton-reveal-label": "fixed",
+  "skeleton-reveal-content": "layout",
+  "skeleton-reveal-fieldset": "layout",
+  "skeleton-reveal-skeleton": "layout",
+  "skeleton-reveal-ghost": "layout",
+  "skeleton-reveal-bones": "layout",
+  "skeleton-reveal-bone": "fixed",
 
   slider: "layout",
   "slider-control": "control",

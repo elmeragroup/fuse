@@ -70,3 +70,42 @@ export function containsAcrossShadowRoots(element: Element, node: Node): boolean
 export function documentOrder(left: Node, right: Node): number {
   return left.compareDocumentPosition(right) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1;
 }
+
+/**
+ * Whether a node is a text node, from any realm.
+ *
+ * @param node - A node.
+ * @returns `true` for a text node.
+ */
+export function isText(node: Node): node is Text {
+  return node.nodeType === Node.TEXT_NODE;
+}
+
+/**
+ * Whether a node is an element, from any realm.
+ *
+ * @param node - A node.
+ * @returns `true` for an element.
+ */
+export function isElement(node: Node): node is Element {
+  return node.nodeType === Node.ELEMENT_NODE;
+}
+
+/**
+ * The window a node belongs to: a same-origin frame's own for a node in the frame, so its
+ * computed styles, observers, frames and constructors are the ones that see it.
+ *
+ * @param node - A node in a document with a window.
+ * @returns The node's window.
+ * @throws Error for a node whose document has no window, as one that was never attached does not.
+ */
+export function windowOf(node: Node): Window & typeof globalThis {
+  const view = (node.ownerDocument ?? (isDocument(node) ? node : null))?.defaultView;
+  if (view === null || view === undefined) throw new Error("expected a node in a document with a window");
+  return view;
+}
+
+/** Whether a node is a document, from any realm. */
+function isDocument(node: Node): node is Document {
+  return node.nodeType === Node.DOCUMENT_NODE;
+}

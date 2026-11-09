@@ -199,6 +199,16 @@ const CLIENT_ISLANDS: ReadonlyArray<readonly [string, readonly string[]]> = [
   ["description-list", ["components/description-list/description-list-heading.tsx"]],
   // Loader stays a server component; only its dictionary default reads the client locale.
   ["loader", ["components/loader/loader-default-label.tsx"]],
+  // Skeleton stays a server component; SkeletonReveal measures and animates in the browser.
+  [
+    "skeleton",
+    [
+      "components/skeleton/skeleton-reveal.tsx",
+      "components/skeleton/skeleton-pane.tsx",
+      "components/skeleton/skeleton-reveal-exclusion.tsx",
+      "components/skeleton/skeleton-reveal-labelable.ts",
+    ],
+  ],
 ];
 
 const CLIENT_HOOKS = ["hooks/use-localized-strings.ts"] as const;
@@ -928,6 +938,14 @@ describe("runtime listeners and layout motion", () => {
       // paste in Firefox. The numeric filter strips a paste before maxlength.
       "components/input/input.tsx",
       "components/sidebar/sidebar.tsx",
+      // Capture `load` in the skeleton's ghost, which does not bubble, and `document.fonts`
+      // `loadingdone`: an image or a web font that loads after the bones were measured moves the
+      // text they stand for, and React has no FontFaceSet handler.
+      "components/skeleton/skeleton-pane.tsx",
+      // Window `wheel`, `touchmove` and `keydown`, passive and in the capture phase, only while a
+      // skeleton is up: input anywhere in the page means someone is mid-gesture, so the content
+      // lands at once. React has no window listener.
+      "components/skeleton/skeleton-reveal.tsx",
       // Capture `reset` on the control's root, the document or a shadow root, since `reset` is
       // not composed: the hook does not render the form it watches. Subscribers share one per root.
       "hooks/use-form-reset.ts",
@@ -981,6 +999,125 @@ describe("runtime listeners and layout motion", () => {
       "components/sidebar/sidebar-variants.ts",
       "styles/panel-height.ts",
     ]);
+  });
+});
+
+/** The Base UI primitives whose Root locks the page's scroll from the root itself, open or not shown. */
+const SCROLL_LOCKING_ROOTS: ReadonlySet<string> = new Set([
+  "@base-ui/react/alert-dialog",
+  "@base-ui/react/dialog",
+  "@base-ui/react/drawer",
+]);
+
+/** The module that owns the overlay root override, as an import source ends with it. */
+const OVERLAY_EXCLUSION_MODULE = "/internal/overlay-exclusion";
+
+/**
+ * Each `Local.Root` a module renders for a scroll-locking primitive, with whether its last
+ * attribute spreads a binding the module initialises by calling the overlay root override. The
+ * hook is matched by the binding its import declares, under any local name.
+ */
+function scrollLockingRoots(
+  relativePath: string,
+  source: string
+): Array<{ readonly tag: string; readonly overridden: boolean }> {
+  const parsed = parseSync(relativePath, source);
+  expect(parsed.errors, relativePath).toEqual([]);
+  const primitives = new Set<string>();
+  const overrideHooks = new Set<string>();
+  const overrides = new Set<string>();
+  const roots: Array<{ readonly tag: string; readonly overridden: boolean }> = [];
+  new Visitor({
+    ImportDeclaration: (declaration) => {
+      if (declaration.importKind === "type") return;
+      if (declaration.source.value.endsWith(OVERLAY_EXCLUSION_MODULE)) {
+        for (const specifier of declaration.specifiers) {
+          if (
+            specifier.type === "ImportSpecifier" &&
+            specifier.importKind !== "type" &&
+            specifier.imported.type === "Identifier" &&
+            specifier.imported.name === "useOverlayRootOverride"
+          ) {
+            overrideHooks.add(specifier.local.name);
+          }
+        }
+        return;
+      }
+      if (!SCROLL_LOCKING_ROOTS.has(declaration.source.value)) return;
+      for (const specifier of declaration.specifiers) {
+        if (specifier.type === "ImportSpecifier" && specifier.importKind !== "type")
+          primitives.add(specifier.local.name);
+      }
+    },
+    VariableDeclarator: (declarator) => {
+      const init = declarator.init;
+      if (
+        declarator.id.type === "Identifier" &&
+        init?.type === "CallExpression" &&
+        init.callee.type === "Identifier" &&
+        overrideHooks.has(init.callee.name)
+      ) {
+        overrides.add(declarator.id.name);
+      }
+    },
+    JSXOpeningElement: (element) => {
+      const name = element.name;
+      if (name.type !== "JSXMemberExpression" || name.property.name !== "Root") return;
+      if (name.object.type !== "JSXIdentifier" || !primitives.has(name.object.name)) return;
+      const last = element.attributes.at(-1);
+      roots.push({
+        tag: tagName(name),
+        overridden:
+          last?.type === "JSXSpreadAttribute" &&
+          last.argument.type === "Identifier" &&
+          overrides.has(last.argument.name),
+      });
+    },
+  }).visit(parsed.program);
+  return roots;
+}
+
+describe("overlay exclusion", () => {
+  // Why not a lint rule: the invariant spans an import's source, a hook call's binding and the
+  // attribute order of the JSX that renders it, which no configured rule relates. Base UI's Dialog,
+  // AlertDialog and Drawer roots lock the page's scroll from the root itself, so a root that skips
+  // the override keeps a SkeletonReveal's ghost locking the page while nothing shows.
+  it("spreads the overlay root override last on every scroll-locking primitive Root", () => {
+    const roots = [...SOURCE_TREE.values()].flatMap((record) =>
+      scrollLockingRoots(record.relative, record.source).map((root) => ({ file: record.relative, ...root }))
+    );
+    expect(roots.filter((root) => !root.overridden).map((root) => `${root.file} ${root.tag}`)).toEqual([]);
+    // The check reads Dialog, AlertDialog, Sheet's Drawer and Command's palette dialog.
+    expect(roots.map((root) => root.file).toSorted()).toEqual([
+      "components/alert-dialog/alert-dialog.tsx",
+      "components/command/command.tsx",
+      "components/dialog/dialog.tsx",
+      "components/sheet/sheet.tsx",
+    ]);
+  });
+
+  it("matches the override by its import binding, under an alias, and only that hook", () => {
+    const probe = (imports: string, call: string): boolean | undefined =>
+      scrollLockingRoots(
+        "probe.tsx",
+        `import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";\n${imports}\n` +
+          `function Root(props) { const override = ${call}(); return <DialogPrimitive.Root {...props} {...override} />; }`
+      )[0]?.overridden;
+    expect([
+      probe(
+        'import { useOverlayRootOverride } from "../../internal/overlay-exclusion";',
+        "useOverlayRootOverride"
+      ),
+      probe(
+        'import { useOverlayRootOverride as useClosed } from "../../internal/overlay-exclusion";',
+        "useClosed"
+      ),
+      probe('import { useOverlayRootOverride } from "./elsewhere";', "useOverlayRootOverride"),
+      probe(
+        'import { useOverlayExcluded as useClosed } from "../../internal/overlay-exclusion";',
+        "useClosed"
+      ),
+    ]).toEqual([true, true, false, false]);
   });
 });
 

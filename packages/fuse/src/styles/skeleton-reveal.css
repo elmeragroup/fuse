@@ -1,0 +1,99 @@
+/* SkeletonReveal's ghost and first paint, private to `fuse.css`, which imports this file. The
+   ghost's slots and the `data-skeleton` hints it reads are spelled in
+   `components/skeleton/skeleton-pane.tsx`, `skeleton-reveal-motion.ts` and
+   `theme/tokens/skeleton-roles.ts`, and the measuring in `skeleton-measure.ts` skips the same
+   ignored subtrees these rules hide. */
+
+/* SkeletonReveal's ghost: the real content rendered unseen with sample data, so the skeleton takes
+   exactly its space. Containers keep their own surface (a card's fill, border and shadow); text is
+   transparent; leaves, media and the parts drawn as one block are hidden, and the bones layer
+   measured from the ghost draws them instead. `visibility` keeps their layout, which the measuring
+   reads. Until the bones are drawn, as in server HTML before hydration or with scripting off, the
+   ghost strikes a thick `muted` bar through each line of text, fills form controls and opt-in
+   blocks with `muted` and covers media with it, so the first paint is never an empty card and
+   never shows embedded content. The bones keep the Skeleton's pulse,
+   which is opacity and stays on under reduced motion. The rules sit in the components layer, so
+   their `!important` outranks an important utility on the content, which sits in a later layer. */
+@layer components {
+  /* The glyphs' fill, not `color`, so a border or icon drawn in `currentColor` keeps its colour. */
+  [data-slot="skeleton-reveal-ghost"],
+  [data-slot="skeleton-reveal-ghost"] * {
+    -webkit-text-fill-color: transparent !important;
+    text-shadow: none !important;
+    text-decoration-color: transparent !important;
+    caret-color: transparent !important;
+  }
+  [data-slot="skeleton-reveal-ghost"] ::placeholder {
+    color: transparent !important;
+    -webkit-text-fill-color: transparent !important;
+  }
+  [data-slot="skeleton-reveal-ghost"]
+    :is(
+      :not(:has(*)),
+      audio,
+      canvas,
+      embed,
+      iframe,
+      img,
+      input,
+      object,
+      picture,
+      select,
+      svg,
+      textarea,
+      video,
+      [data-skeleton],
+      [data-skeleton-covered]
+    ):not(svg *) {
+    visibility: hidden !important;
+  }
+  /* `data-skeleton="ignore"` leaves a whole subtree out, as the measuring skips it: the rule above
+     hides the marked element, its descendants inherit that, and every fallback rule below that
+     makes something visible again carries the same exclusion of the subtree. */
+  /* The ghost and its fieldset are `display: contents`, so they have no box to decorate the text
+     right inside them: the pane, the nearest box, strikes it through. */
+  [data-slot="skeleton-reveal-skeleton"]:not([data-measured]) {
+    text-decoration-line: line-through !important;
+    text-decoration-color: var(--muted) !important;
+    text-decoration-thickness: 0.72em !important;
+    text-decoration-skip-ink: none !important;
+  }
+  [data-slot="skeleton-reveal-skeleton"]:not([data-measured]) [data-slot="skeleton-reveal-ghost"] {
+    & :not(:has(*)):not(svg *, [data-skeleton="ignore"], [data-skeleton="ignore"] *) {
+      visibility: visible !important;
+    }
+    &,
+    & * {
+      text-decoration-line: line-through !important;
+      text-decoration-color: var(--muted) !important;
+      text-decoration-thickness: 0.72em !important;
+      text-decoration-skip-ink: none !important;
+    }
+    &
+      :is(input, select, svg, textarea, [data-skeleton="block"]):not(
+        svg *,
+        [data-skeleton="ignore"],
+        [data-skeleton="ignore"] *
+      ) {
+      visibility: visible !important;
+      background: var(--muted) !important;
+    }
+    /* Replaced and embedded content paints above its own background, so a document in an iframe
+       or a video frame would show through a fill. An outline paints above the content instead: one
+       as wide as the box, drawn inward by the same width, covers it edge to edge, its corners
+       following the element's radius. */
+    &
+      :is(audio, canvas, embed, iframe, img, object, video):not(
+        [data-skeleton="ignore"],
+        [data-skeleton="ignore"] *
+      ) {
+      visibility: visible !important;
+      outline: 100vmax solid var(--muted) !important;
+      outline-offset: -100vmax !important;
+    }
+    & svg * {
+      fill: transparent !important;
+      stroke: transparent !important;
+    }
+  }
+}

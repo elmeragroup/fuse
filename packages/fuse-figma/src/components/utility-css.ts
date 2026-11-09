@@ -186,10 +186,14 @@ function buildConsumerCss(
     ["tailwindcss/theme.css", fileURLToPath(import.meta.resolve("tailwindcss/theme.css"))],
     ["tailwindcss/utilities.css", fileURLToPath(import.meta.resolve("tailwindcss/utilities.css"))],
     ["./fuse.css", fileURLToPath(import.meta.resolve("@elmeragroup/fuse/css"))],
-    // `fuse.css` imports its private Frame variants from beside itself.
+    // `fuse.css` imports its private sheets from beside itself.
     [
       "./frame-variants.css",
       fileURLToPath(new URL("frame-variants.css", import.meta.resolve("@elmeragroup/fuse/css"))),
+    ],
+    [
+      "./skeleton-reveal.css",
+      fileURLToPath(new URL("skeleton-reveal.css", import.meta.resolve("@elmeragroup/fuse/css"))),
     ],
     [
       "tw-animate-css",

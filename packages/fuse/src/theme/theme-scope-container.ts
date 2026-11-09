@@ -3,6 +3,8 @@
 import { createContext, use, useEffect, useReducer, useSyncExternalStore } from "react";
 import type { RefObject } from "react";
 
+import { useOverlayExcluded } from "../internal/overlay-exclusion";
+
 /** What `useResolvedPortalContainer` subscribes to for the enclosing scope's element. */
 type ScopeElementSource = {
   subscribe: (listener: () => void) => () => void;
@@ -116,6 +118,9 @@ function isElementRef(
  * - `undefined` — no scope and no explicit container, so the primitive's own default
  *   (`document.body`) stays in place.
  *
+ * Inside an overlay exclusion (`internal/overlay-exclusion.ts`) it is always `null`, so content
+ * that must open no overlay mounts no popup, focus trap, backdrop or anchored scroll lock.
+ *
  * The canonical call site is `if (resolved === null) return null;` followed by
  * forwarding the value to the primitive's portal/container prop. Package-private:
  * neither this hook nor the underlying context is exported.
@@ -123,6 +128,7 @@ function isElementRef(
 export function useResolvedPortalContainer(
   container?: HTMLElement | RefObject<HTMLElement | null>
 ): HTMLElement | null | undefined {
+  const excluded = useOverlayExcluded();
   const store = use(ThemeScopeContainerContext);
   const scope = container === undefined ? (store ?? NO_SCOPE) : NO_SCOPE;
   const scopeElement = useSyncExternalStore(scope.subscribe, scope.getSnapshot, scope.getServerSnapshot);
@@ -138,5 +144,6 @@ export function useResolvedPortalContainer(
     }
   }, [container, resolved]);
 
-  return resolved;
+  // Content that must open no overlay, such as a SkeletonReveal's ghost, renders no portal.
+  return excluded ? null : resolved;
 }

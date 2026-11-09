@@ -1,3 +1,4 @@
+import { StrictMode } from "react";
 import type { ReactNode } from "react";
 
 import { afterEach } from "vitest";
@@ -133,16 +134,34 @@ afterEach(() => {
   document.documentElement.removeAttribute("data-density");
 });
 
+/** How `renderThemed` mounts its tree. */
+export type RenderThemedOptions = {
+  /**
+   * Mount under `<StrictMode>` at the root, outside the ThemeScope. React 19 runs StrictMode's
+   * extra development effect cycle only for a StrictMode at the root of the tree it mounts; one
+   * nested inside the ThemeScope, or any other element, does not re-run effects.
+   */
+  readonly strictMode?: boolean;
+};
+
 /**
  * Mount under the fkas/private ThemeScope every component browser suite shares.
  * Nested ThemeScope / density stamps still go on the tree the caller passes in.
+ *
+ * @param node - The tree to mount.
+ * @param options - Whether to mount under a root-level StrictMode.
+ * @returns The render, with a `rerender` that keeps the same wrapping.
  */
-export function renderThemed(node: ReactNode) {
-  const result = render(<ThemeScope theme={fkasPrivate}>{node}</ThemeScope>);
+export function renderThemed(node: ReactNode, options: RenderThemedOptions = {}) {
+  const wrap = (tree: ReactNode): ReactNode => {
+    const themed = <ThemeScope theme={fkasPrivate}>{tree}</ThemeScope>;
+    return options.strictMode === true ? <StrictMode>{themed}</StrictMode> : themed;
+  };
+  const result = render(wrap(node));
   return {
     ...result,
     rerender: (next: ReactNode): void => {
-      result.rerender(<ThemeScope theme={fkasPrivate}>{next}</ThemeScope>);
+      result.rerender(wrap(next));
     },
   };
 }

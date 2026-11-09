@@ -23,6 +23,7 @@ import { CaretRight } from "../../icons/generated/caret-right";
 import { MagnifyingGlass } from "../../icons/generated/magnifying-glass";
 import { definedProps } from "../../internal/defined-props";
 import { isBackspaceOnEmpty } from "../../internal/is-backspace-on-empty";
+import { useOverlayRootOverride } from "../../internal/overlay-exclusion";
 import { cn } from "../../styles/cn";
 import { commandContentShellClass, commandListShellClass } from "../../styles/inner-corner/command";
 import { mergeClassName } from "../../styles/merge-class-name";
@@ -382,6 +383,8 @@ export function CommandContent({
 }: CommandContentProps): ReactElement {
   const strings = useLocalizedStrings(commandStrings);
   const { handle, dialog, registerContent, session } = usePalette("Command.Content");
+  // A palette in a SkeletonReveal's ghost stays closed: its dialog root would lock the page's scroll.
+  const override = useOverlayRootOverride();
   useLayoutEffect(registerContent, [registerContent]);
   // A new session mounts the children fresh, even in a popup an opening kept from its close. The
   // popup itself stays, so its focus manager keeps the element focus returns to on close. Absent
@@ -389,7 +392,7 @@ export function CommandContent({
   // passes through untouched: content it writes itself keeps its state.
   const sessionChildren = children === undefined ? undefined : <Fragment key={session}>{children}</Fragment>;
   return (
-    <DialogPrimitive.Root handle={handle} {...dialog}>
+    <DialogPrimitive.Root handle={handle} {...dialog} {...override}>
       <OverlayPortal portal={DialogPortal} container={container}>
         <DialogOverlay />
         <DialogPrimitive.Popup

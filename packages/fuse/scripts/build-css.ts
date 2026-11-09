@@ -8,7 +8,7 @@ import { packageRootFromScript } from "./paths";
 import { runCommand } from "./run-command";
 
 /** The stylesheets `fuse.css` imports from `src/styles`, which are not entries of their own. */
-const FUSE_CSS_PRIVATE_SHEETS = ["frame-variants.css"] as const;
+const FUSE_CSS_PRIVATE_SHEETS = ["frame-variants.css", "skeleton-reveal.css"] as const;
 
 type ToolingOnlyCssFile = (typeof TOOLING_ONLY_CSS_ENTRIES)[number]["distFile"];
 

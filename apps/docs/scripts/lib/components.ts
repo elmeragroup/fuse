@@ -113,6 +113,7 @@ const EXTRA_API_EXPORT_NAMES = new Map<string, readonly string[]>([
   ["date-range-picker", ["DateRangePicker", "DateRangePickerPresetGroup", "DateRangePickerPresetItem"]],
   ["combobox", ["Combobox", "useComboboxAnchor"]],
   ["kbd", ["Kbd", "KbdGroup"]],
+  ["skeleton", ["Skeleton", "SkeletonReveal"]],
   ["sidebar", ["Sidebar", "useSidebar"]],
   ["file-upload", ["FileUpload", "useFileUpload"]],
   ["carousel", ["Carousel", "useCarousel"]],

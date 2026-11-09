@@ -8,6 +8,7 @@ import { AlertDialog as AlertDialogPrimitive } from "@base-ui/react/alert-dialog
 import { useLocalizedStrings } from "../../hooks/use-localized-strings";
 import { Info } from "../../icons/generated/info";
 import { WarningOctagon } from "../../icons/generated/warning-octagon";
+import { useOverlayRootOverride } from "../../internal/overlay-exclusion";
 import { Button } from "../button/button";
 import {
   DialogContent,
@@ -30,7 +31,9 @@ import { alertDialogStrings } from "./intl";
  * context, so the self-focus ring and every other Dialog behaviour come with them.
  */
 export function AlertDialogRoot(props: ComponentProps<typeof AlertDialogPrimitive.Root>): ReactElement {
-  return <AlertDialogPrimitive.Root {...props} />;
+  // An alert dialog in a SkeletonReveal's ghost stays closed: its root would lock the page's scroll.
+  const override = useOverlayRootOverride();
+  return <AlertDialogPrimitive.Root {...props} {...override} />;
 }
 
 /**

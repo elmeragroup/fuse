@@ -1,7 +1,15 @@
 import { describe, expect, it, onTestFinished } from "vitest";
 
 import { hasFocus } from "./active-element";
-import { containsAcrossShadowRoots, isFocusRoot, isHTMLElement, isNode } from "./dom-node";
+import {
+  containsAcrossShadowRoots,
+  isElement,
+  isFocusRoot,
+  isHTMLElement,
+  isNode,
+  isText,
+  windowOf,
+} from "./dom-node";
 
 /** A same-origin frame's document, whose nodes belong to the frame's realm. */
 function frameDocument(): Document {
@@ -35,6 +43,27 @@ describe("realm-independent DOM checks", () => {
     button.focus();
     expect(frameDoc.activeElement).toBe(button);
     expect(hasFocus(button)).toBe(true);
+  });
+
+  it("tell a frame's text nodes and elements apart, and find the frame's own window", () => {
+    const frameDoc = frameDocument();
+    const text = frameDoc.createTextNode("x");
+    const paragraph = frameDoc.createElement("p");
+    frameDoc.body.append(paragraph, text);
+
+    // The premise: this window's constructors miss the frame's nodes.
+    expect(text instanceof Text).toBe(false);
+    expect(paragraph instanceof Element).toBe(false);
+    expect([isText(text), isElement(text), isText(paragraph), isElement(paragraph)]).toEqual([
+      true,
+      false,
+      false,
+      true,
+    ]);
+    expect(windowOf(paragraph)).toBe(frameDoc.defaultView);
+    expect(windowOf(frameDoc)).toBe(frameDoc.defaultView);
+    expect(windowOf(paragraph)).not.toBe(window);
+    expect(windowOf(document.body)).toBe(window);
   });
 
   it("reject what is not a node, an HTML element or a focus root", () => {

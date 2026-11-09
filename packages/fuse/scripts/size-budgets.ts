@@ -225,7 +225,13 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = derive([
   { name: "heading", entryFile: "heading.js", measuredGzip: 17413, ceilingGzip: 25924 },
   { name: "text", entryFile: "text.js", measuredGzip: 17418, ceilingGzip: 25919 },
   { name: "toggle", entryFile: "toggle.js", measuredGzip: 25703, ceilingGzip: 38223 },
-  { name: "skeleton", entryFile: "skeleton.js", measuredGzip: 8753, ceilingGzip: 13052 },
+  // 2026-11-09: skeleton measured 21310 once SkeletonReveal joined Skeleton in the entry, bringing
+  // Base UI's useRender and mergeProps, the locale dictionary, the ghost measuring, the pane swap
+  // with its fade and height owners and shared geometry reader, and the form, Field, label and
+  // overlay exclusion, which reads Base UI's Field and labelable wiring. Main, whose row still
+  // records 8753, re-measured 9067 the same day, so the change adds 12243 and the ceiling rises by
+  // that delta, from 13052.
+  { name: "skeleton", entryFile: "skeleton.js", measuredGzip: 21310, ceilingGzip: 25295 },
   { name: "number-field", entryFile: "number-field.js", measuredGzip: 42364, ceilingGzip: 60983 },
   { name: "meter", entryFile: "meter.js", measuredGzip: 27862, ceilingGzip: 41048 },
   { name: "tabs", entryFile: "tabs.js", measuredGzip: 26252, ceilingGzip: 38664 },

@@ -11,6 +11,92 @@
       ],
       "forwardedCount": 280,
       "props": []
+    },
+    {
+      "name": "SkeletonReveal",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/skeleton/skeleton-reveal.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 279,
+      "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "((data: T) => ReactNode) | ReactNode",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "The content, which is also what the skeleton is drawn from. Renders the data, or the sample the skeleton is drawn from.",
+          "required": true
+        },
+        {
+          "name": "data",
+          "origin": "declared",
+          "type": "T | null | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "The data to show. The skeleton shows while it is `null` or `undefined`.",
+          "required": false
+        },
+        {
+          "name": "label",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Read to screen readers while loading, in place of the skeleton, such as \"Loading invoices\". Defaults to the locale dictionary's \"Loading\".",
+          "required": false
+        },
+        {
+          "name": "loading",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Shows the skeleton drawn from `children` instead of `children` themselves. Shows the skeleton over `data` too, as for a refetch. It is drawn from the data on screen.",
+          "required": false
+        },
+        {
+          "name": "onReveal",
+          "origin": "declared",
+          "type": "(() => void) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Called once content has come in over a skeleton and finished arriving. A reveal interrupted by loading again, or by unmounting, does not call it. One that Suspense or a hidden `Activity` interrupted, or that came due while hidden, finishes at once when the reveal shows again and calls it then; one that a later load replaced while hidden does not.",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, {}> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "reveal",
+          "origin": "declared",
+          "type": "SkeletonRevealMode | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "How content replaces the skeleton. `smart`, the default, holds a client skeleton back 150 ms so a fast load never shows one, lands content at once over a skeleton that was up only a moment or while someone scrolls or types, crossfades a refetch and small content, and brings larger content in row by row. `together` crossfades it all at once; `sequence` brings each piece in by its place, top to bottom and then a little left to right.",
+          "required": false
+        },
+        {
+          "name": "sample",
+          "origin": "declared",
+          "type": "T | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Stands in for `data` to draw the skeleton before any data has loaded.",
+          "required": false
+        }
+      ]
     }
   ]
 }

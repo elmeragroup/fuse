@@ -777,7 +777,13 @@
   "skeleton": {
     "title": "Skeleton",
     "rsc": "server",
-    "demos": ["skeleton-basic.tsx", "skeleton-card.tsx"]
+    "demos": [
+      "skeleton-basic.tsx",
+      "skeleton-card.tsx",
+      "skeleton-reveal-fit.tsx",
+      "skeleton-reveal-modes.tsx",
+      "skeleton-reveal-height.tsx"
+    ]
   },
   "slider": {
     "title": "Slider",
