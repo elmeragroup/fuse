@@ -19,7 +19,7 @@ export type KbdProps = {
 /**
  * A keyboard shortcut hint, one cap per key. Decorative: the control it annotates carries the
  * shortcut in `aria-keyshortcuts`, so the caps are hidden from assistive technology.
- * It predates Fuse's `Kbd`, and TODO.md tracks replacing it.
+ * It predates Fuse's `Kbd`, and #520 tracks replacing it.
  */
 export function Kbd({ keys }: KbdProps): ReactElement {
   return (

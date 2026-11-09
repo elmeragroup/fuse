@@ -74,7 +74,7 @@ remove the test-only seams it unlocks. A moved suite keeps the filename suffix
 that routes it to its project in the owning `vitest.config.ts`. Update the
 reviewed inventories that list moved or deleted suites. Record the durable
 test-ownership rules this campaign's mistakes taught in the Tests section of
-`AGENTS.md`, and unresolved gaps in `TODO.md`.
+`AGENTS.md`, and open a GitHub issue for each unresolved gap.
 
 Done when every lane plan is applied and each lane's keepers pass.
 
@@ -97,8 +97,8 @@ every restored contract has a caught mutation.
 A baseline failure that survives into a keeper is a bug report. Fix it at its
 owner as a separate commit with its own changeset, and prove it through the
 real user flow. A **control** run reverts the fix and shows the old behavior.
-Record product discrepancies that no in-scope test exposes in `TODO.md` as
-follow-ups, and leave them out of the campaign.
+Open a GitHub issue for each product discrepancy that no in-scope test exposes,
+and leave them out of the campaign.
 
 Done when each repaired defect has a failing control and a passing candidate
 on the same harness.

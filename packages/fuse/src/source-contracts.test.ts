@@ -1257,7 +1257,7 @@ describe("state faces", () => {
   // Why not a lint rule: the `elmera` rules live in the external
   // `@elmeragroup/internal/oxlint` package, so this repo cannot add a sibling of
   // `no-local-focus-ring` in place, and that rule's owner path is not configurable yet
-  // (see the open-work list). The upstream proposal is `no-local-state-face`. Until it ships, this walk is
+  // (#506). The upstream proposal is `no-local-state-face`. Until it ships, this walk is
   // the gate: `styles/state-face.ts` owns the disabled dim, and hover and press faces sit
   // behind the `enabled-hover:` / `enabled-active:` variants from fuse.css.
   it("recognizes a local disabled dim and an ungated pointer face, and not the gated forms", () => {

@@ -116,7 +116,7 @@ Once publishing is activated, every push to `main` publishes a **canary** and th
 | Integrate the library into an app | [Package README](packages/fuse/README.md) and [theming](<apps/docs/src/app/(docs)/handbook/theming/page.tsx>) |
 | Diagnose build or test failures   | The failing workspace's scripts and [Turbo dependencies](turbo.json)                                          |
 | Understand theme vocabulary       | [Domain glossary](CONTEXT.md)                                                                                 |
-| Find unfinished work              | [TODO.md](TODO.md)                                                                                            |
+| Find unfinished work              | [GitHub issues](https://github.com/elmeragroup/fuse/issues)                                                   |
 | Prepare a release                 | [Release runbook](scripts/RELEASE.md)                                                                         |
 | Sync tokens to Figma              | [fuse-figma README](packages/fuse-figma/README.md)                                                            |
 

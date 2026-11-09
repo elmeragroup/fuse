@@ -34,10 +34,9 @@ export type ExternalBrandCode = Exclude<BrandCode, "fkab">;
  * 1.4.11 shortfall, and a card on a `card`-coloured surface, such as a nested Card, has no
  * boundary at all. `CheckboxCard` is a control and the TextField `card` box is a field boundary,
  * so both keep `--border` and the plain `shadow-xs`. Both roles are light-only, so dark cards
- * draw neither edge nor shadow; whether they should keep an edge is an open design question in
- * `TODO.md`. The line between a Card's
- * stacked sections takes the page tint, `--background`, so it reads as a gap between segments of
- * the card rather than a drawn rule.
+ * draw neither edge nor shadow; whether they should keep an edge is an open design question.
+ * The line between a Card's stacked sections takes the page tint, `--background`, so it reads as
+ * a gap between segments of the card rather than a drawn rule.
  *
  * A light modal, Dialog, AlertDialog or Sheet, fills with the page tint and takes the page's
  * text colour, so card-coloured fields and selection rows inside it stand apart as they do on

@@ -32,8 +32,8 @@
  *    - `test/site-inventory.test.ts`: the Studio section of `llms.txt`.
  *    - `test/og-images.test.ts`: the `(studio)` route group.
  *    - `test/document-html.test.ts`: the light studio document.
- * 8. In the repository root's `TODO.md`, rewrite or remove each line that references a studio
- *    file, and keep the unresolved Fuse issue it describes. The light-alias line names
+ * 8. Search the open GitHub issues for `apps/docs/src/studio`, rewrite or remove each item that
+ *    references a studio file, and keep the unresolved Fuse work it describes. The light-alias item in #507 names
  *    `apps/docs/src/studio/lib/artboard-style.ts`.
  * 9. Run `pnpm --filter docs generate`. It prunes the `studio-*` modules in `src/generated`.
  */

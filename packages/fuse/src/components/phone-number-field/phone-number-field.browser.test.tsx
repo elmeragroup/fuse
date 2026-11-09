@@ -200,7 +200,7 @@ describe("PhoneNumberField", () => {
   it("puts no aria-readonly on the read-only trigger, which the button role does not support", async () => {
     const { host } = renderField(<PhoneNumberField label="Mobile" isReadOnly />);
     expect(roleNamed("button", "Select country").hasAttribute("aria-readonly")).toBe(false);
-    // The trigger's name leaves out its visible dial code (WCAG 2.5.3); the open-work list records it.
+    // The trigger's name leaves out its visible dial code (WCAG 2.5.3); #246 tracks it.
     await assertNoAxeViolations(host, ["label-content-name-mismatch"]);
   });
 

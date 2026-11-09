@@ -14,7 +14,7 @@ const AXE_PAGE_RULES = ["color-contrast", "region"] as const;
  * support, a list that owns something other than list items, a region without a name.
  *
  * @param root - The rendered fixture, such as the element `renderThemed` returns as `host`.
- * @param knownRules - Rules a suite leaves out for a recorded reason, each named in `TODO.md`.
+ * @param knownRules - Rules a suite leaves out for a recorded reason, each with its open issue at the call.
  */
 export async function assertNoAxeViolations(
   root: Element,

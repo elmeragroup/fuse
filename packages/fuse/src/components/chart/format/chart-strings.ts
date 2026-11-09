@@ -1,7 +1,7 @@
 import { numberFormat } from "../../../internal/intl-cache";
 /**
- * The chart dictionary of CONTRACT section 12, in four locales. Every string is a draft that the
- * owner or the content owner signs off, as `TODO.md` lists. An explicit prop replaces its string
+ * The chart dictionary of CONTRACT section 12, in four locales. Every string is a draft until the
+ * owner or the content owner signs it off. An explicit prop replaces its string
  * verbatim. The module calls no hook, so a server component reads it too.
  */
 import { canonicalSpaces } from "../../../intl/canonical-spaces";
