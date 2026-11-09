@@ -25,3 +25,5 @@ next-env.d.ts
 apps/docs/src/generated/
 apps/docs/public/llms.txt
 apps/docs/public/components/
+# Local scratch output, such as `pnpm shots` screenshots (tooling/pr-shots)
+.scratch/
