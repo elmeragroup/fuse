@@ -263,6 +263,29 @@ describe("Carousel under a scaled ancestor", () => {
   );
 });
 
+describe("Carousel under an ancestor's endless scale animation", () => {
+  it("gets its pages and places its default page while the scale never rests", async () => {
+    renderThemed(
+      <>
+        <style>
+          {"@keyframes carousel-pulse { from { transform: scale(0.5); } to { transform: scale(1); } }"}
+        </style>
+        <div style={{ animation: "carousel-pulse 300ms linear infinite alternate", transformOrigin: "0 0" }}>
+          <Fixture defaultIndex={2} />
+        </div>
+      </>
+    );
+    const viewport = carouselViewport(roleNamed("region", "Offers"));
+    await settledOn(viewport, 2 * LENGTH);
+    await pollFrames(currentIndicator, 2);
+
+    // A pointer waits for its target to hold still, which nothing here ever does.
+    roleNamed("button", "Next slide").click();
+    await settledOn(viewport, 3 * LENGTH);
+    await pollFrames(currentIndicator, 3);
+  });
+});
+
 /**
  * Twelve slides three to a 360px viewport, so 120px each, placed on page 7 by `defaultIndex`. An
  * ancestor's `--spaced-gap` gives every slide a trailing gap along the axis, which nothing in the

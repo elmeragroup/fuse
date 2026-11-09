@@ -533,6 +533,25 @@ Paths are relative to `packages/fuse-figma` unless they start with `packages/`.
   delivers two moves 2ms apart flings two pages instead of one. Stamping each move with its due
   time through the protocol's `timestamp` keeps the velocity but left flicks snapping back to the
   first page under the same load, so the cause past the timestamps is still open.
+- Catch every mixed reading of the carousel's boxes under an animating transform in WebKit. WebKit
+  samples a running transform animation afresh at each layout read in a task, and on Linux a later
+  read in the same task has returned to an earlier sample. The engine waits for a steady reading,
+  which `measureCarousel` in `carousel-measure.ts` judges only by the viewport's box before and
+  after the slides' (`steady`), so it accepts slides read at another sample between two reads that
+  agree. Under an animation that never rests it waits out `UNSTEADY_READINGS` once, with no usable
+  layout meanwhile, and then accepts every reading, mixed or not, until one is steady. Comparing
+  each box with its layout offset would catch them, but cannot tell them from a transform on the
+  slide itself, such as a hover scale, whose box the browser's snap area follows.
+- Find why Firefox on a loaded machine snaps the carousel's smooth scroll to a page back to the
+  slide it last snapped to. On Linux, one CPU with six busy processes, the engine's `scrollTo` from
+  a snapped slide toward a pressed page came back to that slide in every run of two
+  `carousel-measure.engines.browser.test.tsx` cases while the `Resampled` fixture moved its
+  ancestor's scale between box reads just before the press: 400px toward 800px reached 610px or
+  725px, and 200px toward 400px reached 300px, with no other scroll from the engine and no input.
+  The engine then reads that scroll's end as any superseded scroll's and reports the page the
+  viewport shows. Without snapping the same case scrolled on in every run, and so did presses after
+  a steady scale of 0.5 to 0.69 with no box reads moving it. The case that needs a scroll still
+  under way now turns snapping off; nothing covers the snapping case.
 
 ## Charts
 

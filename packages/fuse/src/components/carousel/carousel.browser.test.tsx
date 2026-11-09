@@ -350,10 +350,11 @@ describe("Carousel reconciliation", () => {
     await expect.poll(() => page.getByRole("group", { name: "4 of 4" }).query()).not.toBeNull();
     await nextFrames(3);
 
-    // Counted per receiver: the viewport's box once per measurement, and each slide's box once, each
-    // through one `getClientRects` call, which also tells a box from none. An append is neither a
-    // navigation nor the end of a scroll, the two actions that measure again, so the batch's own
-    // reconciliation is the only measurement.
+    // Counted per receiver: the viewport's box twice per measurement, before and after the slides',
+    // which tells a box that held still from one an animating transform moved, and each slide's box
+    // once, each through one `getClientRects` call, which also tells a box from none. An append is
+    // neither a navigation nor the end of a scroll, the two actions that measure again, so the
+    // batch's own reconciliation is the only measurement.
     const reads = vi.spyOn(Element.prototype, "getClientRects");
     const counts = () => {
       const receivers = reads.mock.contexts;
@@ -374,8 +375,8 @@ describe("Carousel reconciliation", () => {
           .poll(() => page.getByRole("group", { name: `${total} of ${total}` }).query())
           .not.toBeNull();
         await nextFrames(3);
-        // One measurement for the whole batch: the viewport once, and every slide, old and new, once.
-        expect(counts(), button).toEqual({ viewport: 1, slides: total });
+        // One measurement for the whole batch: the viewport twice, and every slide, old and new, once.
+        expect(counts(), button).toEqual({ viewport: 2, slides: total });
         reads.mockClear();
       }
     } finally {
