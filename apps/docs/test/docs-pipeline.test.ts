@@ -35,7 +35,9 @@ describe("docs generation ownership", () => {
 
   it("lets Turbo own generate before build and type-check, never nesting it in the package scripts", () => {
     expect(scripts.build).toBe("next build");
-    expect(scripts["type-check"]).toBe("next typegen && tsrs --noEmit");
+    expect(scripts["type-check"]).toBe(
+      "next typegen && tsrs --noEmit && tsrs --noEmit -p tsconfig.node.json"
+    );
     expect(scripts.build).not.toContain("pnpm run generate");
     expect(scripts["type-check"]).not.toContain("pnpm run generate");
     expect(scripts.dev).toContain("pnpm run generate");

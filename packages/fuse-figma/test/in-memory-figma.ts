@@ -190,11 +190,13 @@ export class InMemoryFigma {
   private readonly scripted: ScriptedReply[] = [];
   private readonly droppedConnections: ("GET" | "POST")[] = [];
   private afterWrite: (() => void) | undefined;
+  private readonly fileKey: string;
+  private readonly token: string;
 
-  constructor(
-    private readonly fileKey: string,
-    private readonly token: string
-  ) {}
+  constructor(fileKey: string, token: string) {
+    this.fileKey = fileKey;
+    this.token = token;
+  }
 
   /** An `HttpClient` layer that routes every request to this file. */
   layer(): Layer.Layer<HttpClient.HttpClient> {

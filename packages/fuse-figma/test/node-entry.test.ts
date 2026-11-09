@@ -57,7 +57,7 @@ describe("the Node entry point", () => {
   // without the test runner. An out-of-range threshold stops the run after every module loaded and
   // before it writes anything.
   it("loads the compare entry under plain Node without Vitest", () => {
-    const [, ...args] = nodeArguments(packageJson.scripts["figma:compare"]);
+    const args = nodeArguments(packageJson.scripts["figma:compare"]);
     const entry = args.at(-1) ?? "";
     const result = spawnSync(
       process.execPath,
