@@ -48,19 +48,20 @@ export const LABEL: TextLayerSpec = {
   truncation: undefined,
 };
 
+/** Opaque black, the color the fixture's icons draw in. */
+export const BLACK = { kind: "literal", color: { r: 0, g: 0, b: 0, a: 1 } } as const;
+
+/** The one kit page and an Icons frame on it with no icons, which a small kit spreads into its spec. */
+export const ONE_PAGE = {
+  pages: [{ key: "page", name: "Fuse components" }],
+  icons: { key: "icons", page: "page", name: "Icons", size: 16, color: BLACK, icons: [] },
+} as const satisfies Pick<KitSpec, "pages" | "icons">;
+
 /** A kit with one Button variant, no icons and no previews, which bundles Roboto Medium. */
 export const KIT: KitSpec = {
-  pages: [{ key: "page", name: "Fuse components" }],
+  ...ONE_PAGE,
   fonts: [{ family: "Roboto", style: "Medium" }],
   glyphFont: GLYPH_FONT,
-  icons: {
-    key: "icons",
-    page: "page",
-    name: "Icons",
-    size: 16,
-    color: { kind: "literal", color: { r: 0, g: 0, b: 0, a: 1 } },
-    icons: [],
-  },
   componentSets: [
     {
       key: "button",
@@ -101,11 +102,11 @@ export const KIT: KitSpec = {
   previews: [],
 };
 
-/** Opaque black, the color the fixture's icons draw in. */
-export const BLACK = { kind: "literal", color: { r: 0, g: 0, b: 0, a: 1 } } as const;
-
 /** An axis that fills the room its parent's auto layout gives the layer. */
 export const FILL = { kind: "fill" } as const;
+
+/** An axis that hugs the layer's content. */
+export const HUG = { kind: "hug" } as const;
 
 /**
  * A frame layer with no padding, gap, corner, paint or ring, centered on both axes.
@@ -229,6 +230,24 @@ export function fixture(family: string, withPage = true) {
   }
   file.reopen({ unavailableFonts: [{ family: "Comic Sans" }] });
   return { file, setup: file.writes.length };
+}
+
+/**
+ * A component set of the kit page by its key.
+ *
+ * @param file - A file the kit was applied to.
+ * @param key - The set's key.
+ * @returns The set.
+ * @throws When the kit page holds no such set.
+ */
+export async function setOnPage(file: FakeFigma, key: string): Promise<ComponentSetNode> {
+  const page = file.figma.root.children.find((node) => keyOf(node) === "page");
+  await page?.loadAsync();
+  const set = page?.children.find((node) => keyOf(node) === key);
+  if (set?.type !== "COMPONENT_SET") {
+    throw new Error(`the kit page holds no set ${key}`);
+  }
+  return set;
 }
 
 /**

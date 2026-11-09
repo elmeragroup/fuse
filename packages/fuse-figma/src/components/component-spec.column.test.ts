@@ -4,14 +4,9 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { FILL, HUG } from "../../test/built-kit";
+import { FILL, HUG, partOutcomesOf } from "../../test/built-kit";
 import { buildFixture, chip, dot } from "../../test/fixture-sets";
-import type { CoverageRow } from "./coverage";
 import type { ChildLayerSpec } from "./kit-spec";
-
-/** The part, outcome and detail of each coverage row of one class. */
-const notesOf = (coverage: readonly CoverageRow[], className: string) =>
-  coverage.filter((row) => row.className === className).map((row) => [row.part, row.outcome, row.detail]);
 
 /** A fixture part with its own key and slot. */
 const part = (key: string, classes: string) => ({ ...dot(classes), key, slot: `chip-${key}` });
@@ -40,7 +35,7 @@ describe("a flex column layer whose top margin cancels the column's gap", () => 
       ["head-flush", { kind: "literal", value: 0 }, { horizontal: FILL, vertical: HUG }, ["head", "note"]],
       "body",
     ]);
-    expect(notesOf(coverage, "-mt-[12px]")).toEqual([
+    expect(partOutcomesOf(coverage, "-mt-[12px]")).toEqual([
       [
         "chip-note",
         "literal",
@@ -115,7 +110,9 @@ describe("a wrapping row of fixed width whose definition measured it fits one li
         fitsOneLine: "measured: both items end at 88px",
       })
     );
-    expect(notesOf(coverage, "flex-wrap")).toEqual([["chip", "dropped", "measured: both items end at 88px"]]);
+    expect(partOutcomesOf(coverage, "flex-wrap")).toEqual([
+      ["chip", "dropped", "measured: both items end at 88px"],
+    ]);
   });
 
   it("leaves it unmapped without one", async () => {
@@ -124,7 +121,7 @@ describe("a wrapping row of fixed width whose definition measured it fits one li
         parts: [part("a", "w-[40px] h-[20px]"), part("b", "w-[40px] h-[20px]")],
       })
     );
-    expect(notesOf(coverage, "flex-wrap").map(([, outcome]) => outcome)).toEqual(["unmapped"]);
+    expect(partOutcomesOf(coverage, "flex-wrap").map(([, outcome]) => outcome)).toEqual(["unmapped"]);
   });
 });
 

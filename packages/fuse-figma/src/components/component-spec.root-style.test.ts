@@ -9,13 +9,8 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { literal } from "../../test/built-kit";
+import { literal, notesOf } from "../../test/built-kit";
 import { buildFixture, chip, dot } from "../../test/fixture-sets";
-import type { CoverageRow } from "./coverage";
-
-/** The property, outcome and detail of each coverage row of one class. */
-const notesOf = (coverage: readonly CoverageRow[], className: string) =>
-  coverage.filter((row) => row.className === className).map((row) => [row.property, row.outcome, row.detail]);
 
 /** A fixture part with its own key and slot. */
 const part = (key: string, classes: string) => ({ ...dot(classes), key, slot: `chip-${key}` });

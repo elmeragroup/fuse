@@ -5,16 +5,11 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { FILL, HUG } from "../../test/built-kit";
+import { FILL, HUG, partOutcomesOf } from "../../test/built-kit";
 import { buildFixture, chip, dot, frameOf, ICON } from "../../test/fixture-sets";
 import { heightBounds } from "./box-sizing";
 import type { PartDefinition } from "./component-spec";
-import type { CoverageRow } from "./coverage";
 import { makeVariableIndex } from "./css-values";
-
-/** The outcome and detail of each coverage row of one class. */
-const notesOf = (coverage: readonly CoverageRow[], className: string) =>
-  coverage.filter((row) => row.className === className).map((row) => [row.part, row.outcome, row.detail]);
 
 /** The bytes a fixture image shows: the PNG signature, which the build carries without decoding. */
 const PICTURE = (): Uint8Array => Uint8Array.of(0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a);
@@ -94,11 +89,11 @@ describe("a part's own alignment across its row", () => {
       chip("flex items-center", { parts: [dot("size-[8px] self-start"), RING("size-[4px] self-start")] })
     );
     expect(variant?.root.counterAlign).toBe("MIN");
-    expect(notesOf(coverage, "self-start")).toEqual([
+    expect(partOutcomesOf(coverage, "self-start")).toEqual([
       ["chip-dot", "literal", "at the start of the counter axis, where the row places its layers"],
       ["chip-ring", "literal", "at the start of the counter axis, where the row places its layers"],
     ]);
-    expect(notesOf(coverage, "items-center")).toEqual([
+    expect(partOutcomesOf(coverage, "items-center")).toEqual([
       ["chip", "dropped", "every layer of the row sets its own `align-self`"],
     ]);
   });
@@ -117,7 +112,7 @@ describe("a part's own alignment across its row", () => {
     ]);
     expect(ring?.kind === "frame" && ring.counterAlign).toBe("CENTER");
     // The row settles its alignment once its layers map, so its row follows the ring's.
-    expect(notesOf(coverage, "items-center")).toEqual([
+    expect(partOutcomesOf(coverage, "items-center")).toEqual([
       ["chip-ring", "literal", "centered on the counter axis"],
       [
         "chip",
@@ -137,7 +132,7 @@ describe("a part's own alignment across its row", () => {
       chip("flex items-center", { parts: [dot("size-[8px] self-start"), RING("size-[4px]")] })
     );
     expect(variant?.root.counterAlign).toBe("MIN");
-    expect(notesOf(coverage, "items-center")).toEqual([["chip", "unmapped", UNSTRETCHED]]);
+    expect(partOutcomesOf(coverage, "items-center")).toEqual([["chip", "unmapped", UNSTRETCHED]]);
   });
 
   // CSS makes the row 40px tall, as tall as the ring's content, and tops the 8px dot in it. Stretched,
@@ -151,7 +146,7 @@ describe("a part's own alignment across its row", () => {
     );
     const ring = variant?.root.children[1];
     expect(ring?.kind === "frame" && ring.sizing.vertical).toEqual({ kind: "hug" });
-    expect(notesOf(coverage, "items-center")).toEqual([
+    expect(partOutcomesOf(coverage, "items-center")).toEqual([
       ["chip-ring", "literal", "centered on the counter axis"],
       ["chip", "unmapped", UNSTRETCHED],
     ]);
@@ -218,7 +213,7 @@ describe("a part's own alignment across its row", () => {
       const { variant, coverage } = await buildFixture(holding(setter, content), { variables });
       const ring = variant?.root.children[1];
       expect(ring?.kind === "frame" && ring.sizing.vertical).toEqual(FILL);
-      expect(notesOf(coverage, "items-center").find(([part]) => part === "chip")?.[1]).toBe("literal");
+      expect(partOutcomesOf(coverage, "items-center").find(([part]) => part === "chip")?.[1]).toBe("literal");
     });
 
     it.each([
@@ -242,7 +237,7 @@ describe("a part's own alignment across its row", () => {
       "leaves the row's alignment unmapped where %s can be shorter than its content",
       async (_setter, setter, content) => {
         const { coverage } = await buildFixture(holding(setter, content), { variables });
-        expect(notesOf(coverage, "items-center").find(([part]) => part === "chip")).toEqual([
+        expect(partOutcomesOf(coverage, "items-center").find(([part]) => part === "chip")).toEqual([
           "chip",
           "unmapped",
           UNSTRETCHED,
@@ -318,7 +313,7 @@ describe("a row that wraps", () => {
     ],
   ])("leaves `flex-wrap` unmapped on a hugging row inside %s", async (_bound, definition) => {
     const { coverage } = await buildFixture(definition);
-    expect(notesOf(coverage, "flex-wrap").map(([, outcome]) => outcome)).toEqual(["unmapped"]);
+    expect(partOutcomesOf(coverage, "flex-wrap").map(([, outcome]) => outcome)).toEqual(["unmapped"]);
   });
 
   it("leaves `flex-wrap` unmapped on a row whose width is its min-content, which no sizing reads", async () => {
@@ -330,12 +325,12 @@ describe("a row that wraps", () => {
         ],
       })
     );
-    expect(notesOf(coverage, "flex-wrap").map(([, outcome]) => outcome)).toEqual(["unmapped"]);
+    expect(partOutcomesOf(coverage, "flex-wrap").map(([, outcome]) => outcome)).toEqual(["unmapped"]);
   });
 
   it("drops `flex-wrap` where the row hugs its width and nothing bounds it", async () => {
     const { coverage } = await buildFixture(chip("flex flex-wrap", { parts: [dot("size-[8px]"), RING] }));
-    expect(notesOf(coverage, "flex-wrap")).toEqual([["chip", "dropped", HUGGING]]);
+    expect(partOutcomesOf(coverage, "flex-wrap")).toEqual([["chip", "dropped", HUGGING]]);
   });
 
   it.each([
@@ -348,14 +343,14 @@ describe("a row that wraps", () => {
     ],
   ])("leaves `flex-wrap` unmapped on a hugging row that %s caps", async (_cap, definition) => {
     const { coverage } = await buildFixture(definition);
-    expect(notesOf(coverage, "flex-wrap").map(([, outcome]) => outcome)).toEqual(["unmapped"]);
+    expect(partOutcomesOf(coverage, "flex-wrap").map(([, outcome]) => outcome)).toEqual(["unmapped"]);
   });
 
   it("drops `flex-wrap` where one layer grows to fill the row's fixed width", async () => {
     const { coverage } = await buildFixture(
       chip("flex flex-wrap w-[100px]", { parts: [dot("flex-1 h-[8px]"), RING] })
     );
-    expect(notesOf(coverage, "flex-wrap")).toEqual([
+    expect(partOutcomesOf(coverage, "flex-wrap")).toEqual([
       [
         "chip",
         "dropped",
@@ -366,7 +361,7 @@ describe("a row that wraps", () => {
 
   it("leaves `flex-wrap` unmapped on a row with no layer that grows", async () => {
     const { coverage } = await buildFixture(chip("flex flex-wrap w-[100px]", { parts: [RING] }));
-    expect(notesOf(coverage, "flex-wrap").map(([, outcome]) => outcome)).toEqual(["unmapped"]);
+    expect(partOutcomesOf(coverage, "flex-wrap").map(([, outcome]) => outcome)).toEqual(["unmapped"]);
   });
 });
 
@@ -385,7 +380,7 @@ describe("a part's `order` in its row", () => {
       chip("flex", { parts: [dot("size-[4px]"), RING("size-[8px] order-first")] })
     );
     expect(keysOf(variant?.root.children)).toEqual(["ring", "dot"]);
-    expect(notesOf(coverage, "order-first")).toEqual([
+    expect(partOutcomesOf(coverage, "order-first")).toEqual([
       ["chip-ring", "literal", "the layer sits first in the row's order-modified document order"],
     ]);
   });
@@ -414,7 +409,7 @@ describe("a part's `order` in its row", () => {
     ],
   ])("keeps document order and leaves `order` unmapped %s", async (_name, definition) => {
     const { coverage } = await buildFixture(definition);
-    expect(notesOf(coverage, "order-first").map(([, outcome]) => outcome)).toEqual(["unmapped"]);
+    expect(partOutcomesOf(coverage, "order-first").map(([, outcome]) => outcome)).toEqual(["unmapped"]);
   });
 });
 
@@ -429,7 +424,7 @@ describe("a class that styles a direct `<input>` child through `[&>input]:`", ()
     const { variant, coverage } = await buildFixture(chip("flex [&>input]:pr-[6px]", { parts: [CONTROL] }));
     const control = frameOf(variant?.root);
     expect(control?.paddingRight).toEqual({ kind: "literal", value: 6 });
-    expect(notesOf(coverage, "[&>input]:pr-[6px]").map(([part, outcome]) => [part, outcome])).toEqual([
+    expect(partOutcomesOf(coverage, "[&>input]:pr-[6px]").map(([part, outcome]) => [part, outcome])).toEqual([
       ["chip", "literal"],
     ]);
   });
@@ -440,7 +435,7 @@ describe("a class that styles a direct `<input>` child through `[&>input]:`", ()
     );
     const untagged = await buildFixture(chip("flex [&>input]:pr-[6px]", { parts: [UNTAGGED] }));
     for (const { coverage } of [nested, untagged]) {
-      expect(notesOf(coverage, "[&>input]:pr-[6px]")).toEqual([
+      expect(partOutcomesOf(coverage, "[&>input]:pr-[6px]")).toEqual([
         ["chip", "unmapped", "the definition draws no direct `<input>` child of chip"],
       ]);
     }
@@ -476,14 +471,14 @@ describe("a negative margin across a row on a box that paints nothing", () => {
       "frame",
       { kind: "variable", variable: { collection: "Fuse density", name: "p-tight" } },
     ]);
-    expect(notesOf(coverage, "-mr-1")).toEqual([
+    expect(partOutcomesOf(coverage, "-mr-1")).toEqual([
       [
         "chip-dot",
         "bound",
         "Fuse density / p-tight, the padding on its side less this margin, since the box paints nothing and its width hugs",
       ],
     ]);
-    expect(notesOf(coverage, "pr-(--p)")).toEqual([
+    expect(partOutcomesOf(coverage, "pr-(--p)")).toEqual([
       ["chip-dot", "bound", "Fuse density / p-tight, this padding less the negative margin on its side"],
     ]);
   });
@@ -494,7 +489,7 @@ describe("a negative margin across a row on a box that paints nothing", () => {
     ["a box in a column", chip("flex flex-col w-[100px]", { parts: [dot(ADDON)] }), 8],
   ])("leaves the margin unmapped on %s", async (_name, definition, minimum) => {
     const { coverage } = await buildFixture(definition, { variables: variablesWith(minimum) });
-    expect(notesOf(coverage, "-mr-1").map(([, outcome]) => outcome)).toEqual(["unmapped"]);
+    expect(partOutcomesOf(coverage, "-mr-1").map(([, outcome]) => outcome)).toEqual(["unmapped"]);
   });
 });
 
@@ -559,7 +554,7 @@ describe("a `justify-between` row of fixed width whose one layer grows", () => {
       variant?.root.itemSpacing,
       frameOf(variant?.root)?.sizing.horizontal,
     ]).toEqual(["MIN", { kind: "literal", value: 6 }, FILL]);
-    expect(notesOf(coverage, "justify-between")).toEqual([
+    expect(partOutcomesOf(coverage, "justify-between")).toEqual([
       [
         "chip",
         "literal",
@@ -578,7 +573,7 @@ describe("a `justify-between` row of fixed width whose one layer grows", () => {
       "SPACE_BETWEEN",
       { kind: "fixed", length: { kind: "literal", value: 8 } },
     ]);
-    expect(notesOf(coverage, "justify-between")).toEqual([
+    expect(partOutcomesOf(coverage, "justify-between")).toEqual([
       ["chip", "literal", "spaced out between the ends of the primary axis"],
     ]);
   });
@@ -592,7 +587,7 @@ describe("a `justify-between` row of fixed width that holds one layer", () => {
       chip("flex w-[200px] items-center justify-between", { parts: [dot("flex w-[8px] h-[8px]")] })
     );
     expect(variant?.root.primaryAlign).toBe("MIN");
-    expect(notesOf(coverage, "justify-between")).toEqual([
+    expect(partOutcomesOf(coverage, "justify-between")).toEqual([
       [
         "chip",
         "literal",
@@ -656,7 +651,7 @@ describe("an inline-block that holds only its own text", () => {
       }),
       { variables }
     );
-    expect(notesOf(coverage, "user agent style sheet, input")).toEqual([
+    expect(partOutcomesOf(coverage, "user agent style sheet, input")).toEqual([
       [
         "chip",
         "literal",

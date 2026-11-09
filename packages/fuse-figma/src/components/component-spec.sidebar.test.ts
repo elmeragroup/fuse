@@ -5,12 +5,11 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { FILL, fixed, fixedSize, HUG, literal } from "../../test/built-kit";
+import { FILL, fixed, fixedSize, HUG, literal, textOf } from "../../test/built-kit";
 import { buildFixture, buildFixtures, chip, dot, frameOf, ICON } from "../../test/fixture-sets";
 import type { ComponentDefinition, LabelDefinition } from "./component-spec";
 import type { CoverageRow } from "./coverage";
 import { makeVariableIndex } from "./css-values";
-import type { BoxSpec, TextLayerSpec } from "./kit-spec";
 
 /** The property, value, outcome and detail of each coverage row of one class, by property. */
 const rowsOf = (coverage: readonly CoverageRow[], className: string) =>
@@ -195,12 +194,6 @@ function buildLabelled(classes: string, fields: Parameters<typeof chip>[1] = {})
       { ref: { collection: "Fuse tokens", name: "font-sans" }, webSyntax: "var(--font-sans)" },
     ]),
   });
-}
-
-/** The first text layer a box holds. */
-function textOf(box: BoxSpec | undefined): TextLayerSpec | undefined {
-  const found = box?.children.find((child) => child.kind === "text");
-  return found?.kind === "text" ? found : undefined;
 }
 
 /** The property, outcome and detail of each coverage row of the truncating class, by property. */

@@ -10,21 +10,18 @@
 import { describe, expect, it } from "vitest";
 
 import type {
-  ColorSpec,
   ComponentSetSpec,
   InstanceLayerSpec,
   KitSpec,
   NumberSpec,
 } from "../../src/components/kit-spec.ts";
-import { applyTo, bareRoot, literal, oneVariant } from "./button-kit-fixture.ts";
+import { applyTo, bareRoot, HUG, literal, ONE_PAGE, oneVariant } from "./button-kit-fixture.ts";
 import { createFakeFigma } from "./fake-figma.ts";
 import type { FakeFigma } from "./fake-figma.ts";
 import { GLYPH_FONT } from "./fake-fixtures.ts";
 import { keyOf } from "./identity.ts";
 import { reconcileKit } from "./reconcile.ts";
 
-const BLACK: ColorSpec = { kind: "literal", color: { r: 0, g: 0, b: 0, a: 1 } };
-const HUG = { kind: "hug" } as const;
 const ROW_H = { kind: "variable", variable: { collection: "Fuse density", name: "row-h" } } as const;
 const ITEM_W = { kind: "variable", variable: { collection: "Fuse density", name: "item-w" } } as const;
 
@@ -63,10 +60,9 @@ function itemSet(width: NumberSpec): ComponentSetSpec {
 /** The kit: the row and the item, and a preview of the item pinned Comfortable. */
 function kitWith(width: NumberSpec): KitSpec {
   return {
-    pages: [{ key: "page", name: "Fuse components" }],
+    ...ONE_PAGE,
     fonts: [],
     glyphFont: GLYPH_FONT,
-    icons: { key: "icons", page: "page", name: "Icons", size: 16, color: BLACK, icons: [] },
     componentSets: [ROW, itemSet(width)],
     previews: [
       {

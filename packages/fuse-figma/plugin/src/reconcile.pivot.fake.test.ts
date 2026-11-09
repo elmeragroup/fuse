@@ -9,7 +9,16 @@
 import { describe, expect, it } from "vitest";
 
 import type { ComponentSetSpec, FrameLayerSpec, KitSpec, PivotSpec } from "../../src/components/kit-spec.ts";
-import { bareRoot, BLACK, buttonVariant, fixture, frame, literal, oneVariant } from "./button-kit-fixture.ts";
+import {
+  bareRoot,
+  BLACK,
+  buttonVariant,
+  fixture,
+  frame,
+  literal,
+  ONE_PAGE,
+  oneVariant,
+} from "./button-kit-fixture.ts";
 import type { FakeFigma } from "./fake-figma.ts";
 import { childNamed, GLYPH_FONT } from "./fake-fixtures.ts";
 import { reconcileKit } from "./reconcile.ts";
@@ -38,10 +47,9 @@ function kitWith(size: number): KitSpec {
     children: [arrow(size)],
   });
   return {
-    pages: [{ key: "page", name: "Fuse components" }],
+    ...ONE_PAGE,
     fonts: [],
     glyphFont: GLYPH_FONT,
-    icons: { key: "icons", page: "page", name: "Icons", size: 16, color: BLACK, icons: [] },
     componentSets: [popup],
     previews: [],
   };

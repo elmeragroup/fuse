@@ -22,6 +22,7 @@ import {
   fixed,
   FOCUS_RING,
   HUG,
+  leadingTextOf,
   literal,
   paint,
   SHADOW_XS,
@@ -31,7 +32,7 @@ import {
 } from "../../test/built-kit";
 import type { BuiltSets } from "../../test/built-kit";
 import type { CoverageRow } from "./coverage";
-import type { ComponentRootSpec, TextLayerSpec } from "./kit-spec";
+import type { ComponentRootSpec } from "./kit-spec";
 
 let spec: BuiltSets["spec"];
 let coverage: readonly CoverageRow[];
@@ -42,11 +43,6 @@ beforeAll(async () => {
 
 function textarea(content: string, state: string): ComponentRootSpec {
   return variantRoot(spec, `textarea/content=${content},state=${state}`);
-}
-
-function textOf(box: ComponentRootSpec): TextLayerSpec | undefined {
-  const [first] = box.children;
-  return first?.kind === "text" ? first : undefined;
 }
 
 const STATES = ["rest", "focus", "disabled", "readonly", "invalid"];
@@ -105,11 +101,11 @@ describe("the Textarea component set", () => {
       ],
     });
     // `toEqual` skips a field it expects undefined, so the absent truncation is checked on its own.
-    expect(textOf(textarea("placeholder", "rest"))?.truncation).toBeUndefined();
+    expect(leadingTextOf(textarea("placeholder", "rest"))?.truncation).toBeUndefined();
   });
 
   it("paints the placeholder muted-foreground, a value foreground, and an invalid value error", () => {
-    const colors = (content: string) => STATES.map((state) => textOf(textarea(content, state))?.color);
+    const colors = (content: string) => STATES.map((state) => leadingTextOf(textarea(content, state))?.color);
     expect(colors("placeholder")).toEqual(STATES.map(() => paint("muted-foreground")));
     expect(colors("value")).toEqual([
       paint("foreground"),

@@ -23,6 +23,7 @@ import type {
 } from "../../src/components/kit-spec.ts";
 import { planBox } from "./box.ts";
 import type { BoxPlace } from "./box.ts";
+import { FILL, HUG } from "./button-kit-fixture.ts";
 import { planChildren } from "./child-layers.ts";
 import { childNamed, color, fixtureFile, fixtureRun, float, onFixture } from "./fake-fixtures.ts";
 import { setKey } from "./identity.ts";
@@ -245,8 +246,6 @@ describe("planBox", () => {
 });
 
 const px = (value: number): NumberSpec => ({ kind: "literal", value });
-const HUG = { kind: "hug" } as const;
-const FILL = { kind: "fill" } as const;
 const fixed = (length: NumberSpec) => ({ kind: "fixed", length }) as const;
 
 /** A box with no limits, padding, gap, corner, paint, ring or layers, at the start of both axes, not clipping. */

@@ -13,14 +13,9 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { fixed, literal } from "../../test/built-kit";
+import { fixed, literal, notesOf } from "../../test/built-kit";
 import { buildFixture, chip, dot } from "../../test/fixture-sets";
 import type { InlineDeclaration } from "./component-spec";
-import type { CoverageRow } from "./coverage";
-
-/** The property, outcome and detail of each coverage row of one class. */
-const notesOf = (coverage: readonly CoverageRow[], className: string) =>
-  coverage.filter((row) => row.className === className).map((row) => [row.property, row.outcome, row.detail]);
 
 const ARROW_CLASSES =
   "absolute size-[10px] -bottom-[10px] translate-y-[calc(-50%-2px)] rotate-45 bg-[#000000]";

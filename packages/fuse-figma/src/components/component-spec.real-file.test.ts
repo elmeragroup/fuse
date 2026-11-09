@@ -5,14 +5,9 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { literal } from "../../test/built-kit";
+import { literal, notesOf } from "../../test/built-kit";
 import { buildFixture, chip, dot, frameOf, ICON } from "../../test/fixture-sets";
 import type { PartDefinition } from "./component-spec";
-import type { CoverageRow } from "./coverage";
-
-/** The property, outcome and detail of each coverage row of one class. */
-const notesOf = (coverage: readonly CoverageRow[], className: string) =>
-  coverage.filter((row) => row.className === className).map((row) => [row.property, row.outcome, row.detail]);
 
 const END_ICON = { ...ICON, side: "end", classes: "size-[16px]" } as const;
 
