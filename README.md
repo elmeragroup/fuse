@@ -121,3 +121,9 @@ Once publishing is activated, every push to `main` publishes a **canary** and th
 | Sync tokens to Figma              | [fuse-figma README](packages/fuse-figma/README.md)                                                            |
 
 Source and configuration own inventories, versions, values, and measurements. Documentation explains the policies and procedures that govern them.
+
+## Inspired by
+
+- [skullet](https://github.com/lochie/skullet) by Lochie Axon: `SkeletonReveal` ports its idea of
+  drawing a skeleton from the real content rendered with sample data, its text-line measuring and
+  its reveal planning and height easing.

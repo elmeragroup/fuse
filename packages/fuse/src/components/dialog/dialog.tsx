@@ -6,6 +6,7 @@ import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
 import type { VariantProps } from "tailwind-variants";
 
 import { useLocalizedStrings } from "../../hooks/use-localized-strings";
+import { useOverlayRootOverride } from "../../internal/overlay-exclusion";
 import { cn } from "../../styles/cn";
 import { mergeClassName } from "../../styles/merge-class-name";
 import { selfFocusRingClass } from "../../styles/utils";
@@ -19,7 +20,9 @@ import { dialogContentVariants, dialogVariants } from "./dialog-variants";
 const slots = dialogVariants();
 
 export function DialogRoot(props: ComponentProps<typeof DialogPrimitive.Root>): ReactElement {
-  return <DialogPrimitive.Root {...props} />;
+  // A dialog in a SkeletonReveal's ghost stays closed: its root would lock the page's scroll.
+  const override = useOverlayRootOverride();
+  return <DialogPrimitive.Root {...props} {...override} />;
 }
 
 export function DialogTrigger({

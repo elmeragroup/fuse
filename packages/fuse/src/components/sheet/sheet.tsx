@@ -7,6 +7,7 @@ import { Drawer as SheetPrimitive } from "@base-ui/react/drawer";
 import type { VariantProps } from "tailwind-variants";
 
 import { definedProps } from "../../internal/defined-props";
+import { useOverlayRootOverride } from "../../internal/overlay-exclusion";
 import { cn } from "../../styles/cn";
 import { mergeClassName } from "../../styles/merge-class-name";
 import { tv } from "../../styles/tv";
@@ -74,9 +75,11 @@ export type SheetRootProps = Omit<
 };
 
 export function SheetRoot({ side = "right", children, ...props }: SheetRootProps): ReactElement {
+  // A sheet in a SkeletonReveal's ghost stays closed: its root would lock the page's scroll.
+  const override = useOverlayRootOverride();
   return (
     <SheetSideContext value={side}>
-      <SheetPrimitive.Root swipeDirection={SIDE_TO_SWIPE_DIRECTION[side]} {...props}>
+      <SheetPrimitive.Root swipeDirection={SIDE_TO_SWIPE_DIRECTION[side]} {...props} {...override}>
         <SheetPrimitive.VirtualKeyboardProvider>{children}</SheetPrimitive.VirtualKeyboardProvider>
       </SheetPrimitive.Root>
     </SheetSideContext>

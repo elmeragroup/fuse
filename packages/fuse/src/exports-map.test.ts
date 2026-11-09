@@ -170,7 +170,7 @@ const EXPECTED_ENTRIES = {
       "Sidebar",
     ],
   },
-  skeleton: { inRootBarrel: true, runtimeExports: ["Skeleton"] },
+  skeleton: { inRootBarrel: true, runtimeExports: ["Skeleton", "SkeletonReveal"] },
   span: { inRootBarrel: true, runtimeExports: ["Span", "spanVariants"] },
   switch: { inRootBarrel: true, runtimeExports: ["Switch"] },
   table: { inRootBarrel: true, runtimeExports: ["Table", "VerticalTable"] },
