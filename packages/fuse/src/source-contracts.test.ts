@@ -926,6 +926,8 @@ describe("runtime listeners and layout motion", () => {
       // paste in Firefox. The numeric filter strips a paste before maxlength.
       "components/input/input.tsx",
       "components/sidebar/sidebar.tsx",
+      // Capture `reset` on the control's root, the document or a shadow root, since `reset` is
+      // not composed: the hook does not render the form it watches. Subscribers share one per root.
       "hooks/use-form-reset.ts",
       "hooks/use-media-query.ts",
       "hooks/use-predicted-events.ts",
