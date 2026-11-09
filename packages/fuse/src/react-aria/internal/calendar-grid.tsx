@@ -9,8 +9,8 @@ import {
   useLocale,
 } from "react-aria-components";
 
+import { weekdayStyle } from "../../components/calendar/weekday-style";
 import { calendarVariants } from "../../styles/calendar";
-import { weekdayStyle } from "./weekday-style";
 
 /** Props for the locale-aware weekday grid both calendar composites render. */
 export type LocaleCalendarGridProps = {

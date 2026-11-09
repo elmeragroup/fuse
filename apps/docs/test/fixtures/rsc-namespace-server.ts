@@ -27,6 +27,7 @@ import { AutocompleteField } from "@elmeragroup/fuse/autocomplete-field";
 import { Avatar } from "@elmeragroup/fuse/avatar";
 import { Breadcrumb } from "@elmeragroup/fuse/breadcrumb";
 import { ButtonGroup } from "@elmeragroup/fuse/button-group";
+import { Calendar } from "@elmeragroup/fuse/calendar";
 import { Card } from "@elmeragroup/fuse/card";
 import { Carousel } from "@elmeragroup/fuse/carousel";
 import { CheckboxItem } from "@elmeragroup/fuse/checkbox";
@@ -163,6 +164,24 @@ function namespaceElements(): ReactElement[] {
       "Ellipsis",
     ]),
     ...renderNamespace("ButtonGroup", ButtonGroup, ["Root", "Separator", "Text"]),
+    ...renderNamespace("Calendar", Calendar, [
+      "Root",
+      "Header",
+      "DecrementMonth",
+      "IncrementMonth",
+      "VisibleRangeHeading",
+      "Months",
+      "Month",
+      "MonthHeading",
+      "DayGrid",
+      "DayGridHeader",
+      "DayGridHeaderRow",
+      "DayGridHeaderCell",
+      "DayGridBody",
+      "DayGridRow",
+      "DayGridCell",
+      "DayButton",
+    ]),
     ...renderNamespace("Card", Card, ["SectionButton"], {
       server: [
         "Root",
@@ -535,6 +554,37 @@ function carouselTree(): ReactElement {
   );
 }
 
+/** The ISO dates a server component hands Calendar.Root, as a page reads them from its data. */
+const CALENDAR_DATES = {
+  defaultValue: "2026-10-14",
+  minValue: "2026-10-01",
+  maxValue: "2026-12-31T23:30:00",
+};
+
+/**
+ * A server component renders the whole Calendar with ISO text for every date prop, since a
+ * Temporal object reaches the client only as the string its `toJSON` prints. `Calendar.Months`
+ * renders its default months: a function child could not cross to the client.
+ */
+function calendarTree(): ReactElement {
+  return createElement(
+    "section",
+    { "data-fixture": "calendar" },
+    createElement(
+      Calendar.Root,
+      { "aria-label": "Delivery", visibleMonths: 2, ...CALENDAR_DATES },
+      createElement(
+        Calendar.Header,
+        null,
+        createElement(Calendar.DecrementMonth),
+        createElement(Calendar.VisibleRangeHeading),
+        createElement(Calendar.IncrementMonth)
+      ),
+      createElement(Calendar.Months)
+    )
+  );
+}
+
 const SELECT_FIELD_PLACEHOLDER = "Choose a plan";
 
 /**
@@ -662,7 +712,8 @@ function Fixture(): ReactElement {
     selectFieldTree(),
     labeledComboboxTrees(),
     attachmentTree(),
-    carouselTree()
+    carouselTree(),
+    calendarTree()
   );
 }
 
@@ -753,6 +804,23 @@ for (const title of CAROUSEL_OFFERS) {
 }
 if (!payload.includes("/components/carousel/carousel.tsx")) {
   throw new Error(`Carousel.Root is not a client reference in the payload:\n${payload.slice(0, 1500)}`);
+}
+
+// The Root crosses as a client reference whose date props are the ISO strings, unchanged.
+const calendarRoots = models
+  .flatMap(flightElements)
+  .filter(({ props }) => props["aria-label"] === "Delivery" && props.visibleMonths === 2);
+const calendarProps = calendarRoots[0]?.props;
+if (
+  calendarRoots.length !== 1 ||
+  calendarProps?.defaultValue !== CALENDAR_DATES.defaultValue ||
+  calendarProps.minValue !== CALENDAR_DATES.minValue ||
+  calendarProps.maxValue !== CALENDAR_DATES.maxValue
+) {
+  throw new Error(`Calendar.Root's ISO props did not cross intact:\n${payload.slice(0, 1500)}`);
+}
+if (!payload.includes("/components/calendar/calendar.tsx")) {
+  throw new Error(`Calendar.Root is not a client reference in the payload:\n${payload.slice(0, 1500)}`);
 }
 
 process.stdout.write("RSC_OK\n");

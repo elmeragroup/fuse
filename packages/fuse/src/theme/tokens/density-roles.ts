@@ -72,6 +72,25 @@ export const PART_DENSITY = {
   "button-group-separator": "layout",
   "button-group-text": "layout",
 
+  // The day circles and the weekday labels keep one 36px size at both densities, above the 24px
+  // target floor; the card pads with the small surface tier, as the interim Calendar does.
+  calendar: "surface",
+  "calendar-header": "layout",
+  "calendar-decrement-month": "control",
+  "calendar-increment-month": "control",
+  "calendar-visible-range-heading": "fixed",
+  "calendar-months": "layout",
+  "calendar-month": "layout",
+  "calendar-month-heading": "fixed",
+  "calendar-day-grid": "layout",
+  "calendar-day-grid-header": "layout",
+  "calendar-day-grid-header-row": "layout",
+  "calendar-day-grid-header-cell": "fixed",
+  "calendar-day-grid-body": "layout",
+  "calendar-day-grid-row": "layout",
+  "calendar-day-grid-cell": "layout",
+  "calendar-day-button": "fixed",
+
   card: "layout",
   "card[data-direction=horizontal]": "surface",
   "card-header": "surface",

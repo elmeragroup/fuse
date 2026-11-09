@@ -11,6 +11,7 @@ import { PreviewThemeProvider } from "./preview-theme";
 import { QuickNav } from "./quick-nav";
 import { SideNav } from "./side-nav";
 import { MAIN_CONTENT_ID } from "./skip-nav";
+import { TemporalPolyfill } from "./temporal-polyfill";
 
 const docsShell = tv({
   slots: {
@@ -29,6 +30,7 @@ type DocsShellProps = {
 export function DocsShell({ children }: DocsShellProps): ReactElement {
   return (
     <PreviewThemeProvider>
+      <TemporalPolyfill />
       <LocaleProvider locale="en-US">
         <DocsPalette>
           <div className={root()} data-docs-root>

@@ -222,6 +222,9 @@ const EXPECTED_ENTRIES = {
   form: { inRootBarrel: true, runtimeExports: ["Form"] },
   "navigation-menu": { inRootBarrel: true, runtimeExports: ["NavigationMenu"] },
   link: { inRootBarrel: true, runtimeExports: ["Link", "linkVariants"] },
+  // The Temporal Calendar is a permanent component in the barrel; the interim React Aria one stays
+  // behind its own subpath below.
+  calendar: { inRootBarrel: true, runtimeExports: ["Calendar"] },
   "react-aria/calendar": {
     inRootBarrel: false,
     runtimeExports: ["Calendar", "CalendarHeader", "CalendarGridHeader"],
