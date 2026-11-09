@@ -152,7 +152,7 @@ export function functionReferences(
   const warnings: string[] = [];
   const pages = new Map<string, ReadonlyMap<string, ApiFunction>>();
   for (const page of inventory) {
-    const exports = entryExports(fuse, page.entryFile);
+    const exports = entryExports(fuse, page.apiEntryFile);
     if (exports === undefined) continue;
     const functions = new Map<string, ApiFunction>();
     for (const exportName of page.exportNames) {

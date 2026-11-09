@@ -13,7 +13,7 @@ import path from "node:path";
 import { normalizeDemoSource } from "../../src/lib/docs-model.ts";
 import type { DocsDemo, RscStatus } from "../../src/lib/docs-model.ts";
 import { componentSlugs, resolveComponentPaths } from "./components.ts";
-import type { ComponentPaths } from "./components.ts";
+import type { ApiEntryPaths, ComponentPaths } from "./components.ts";
 import type { ProblemLog } from "./errors.ts";
 import { readComponentPage } from "./page-source.ts";
 import type { ComponentPageSource } from "./page-source.ts";
@@ -56,15 +56,13 @@ export const SERVER_DEMOS: ReadonlySet<string> = new Set([
   "apps/docs/src/app/(docs)/components/sparkline/demos/sparkline-variants.tsx",
 ]);
 
-/** One component the API generator extracts: its slug plus the entry surface to walk. */
-export type DocsApiComponent = {
-  readonly slug: string;
-  readonly entryFile: string;
-  /** Exact public exports the API generator walks. */
-  readonly exportNames: readonly string[];
-  readonly sourceFile: string;
-  /** The committed `api.json` the generator writes for this page. */
-  readonly apiFile: string;
+/**
+ * One committed artifact the API generator extracts: one row of a page's `apis`, plus the page
+ * whose reference renders it.
+ */
+export type DocsApiComponent = ApiEntryPaths & {
+  /** The component page whose API reference renders this artifact. */
+  readonly page: string;
 };
 
 /** A slug with its resolved inputs — what the API inventory is built from. */
@@ -85,25 +83,22 @@ export function componentInspections(): readonly ComponentInspection[] {
 }
 
 /**
- * The one API inventory: exactly the route-local component pages the generation pass
- * writes for, in production order. The pass and the `api.json` drift check both
- * extract from this list.
+ * The one API inventory: one artifact per row of each route-local component page's `apis`, each
+ * page's own entry first and then its extra ones, in production order. The pass and the
+ * `api.json` drift check both extract from this list. An artifact slug names one artifact, so an
+ * extra entry that shares a page's slug fails here.
  */
 export function docsApiInventory(components: readonly ResolvedComponent[]): readonly DocsApiComponent[] {
   const seen = new Set<string>();
-  return components.map(({ slug, paths }) => {
-    if (seen.has(slug)) {
-      throw new Error(`docs API inventory contains duplicate component "${slug}"`);
-    }
-    seen.add(slug);
-    return {
-      slug,
-      entryFile: paths.apiEntryFile ?? paths.entryFile,
-      exportNames: paths.apiExportNames,
-      sourceFile: paths.sourceFile,
-      apiFile: paths.apiFile,
-    };
-  });
+  return components.flatMap(({ slug, paths }) =>
+    paths.apis.map((api): DocsApiComponent => {
+      if (seen.has(api.slug)) {
+        throw new Error(`docs API inventory contains duplicate component "${api.slug}"`);
+      }
+      seen.add(api.slug);
+      return { ...api, page: slug };
+    })
+  );
 }
 
 /** Resolves and parses one route-local component page without writing artifacts. */
@@ -122,8 +117,10 @@ export function inspectComponentDemos(
   problems: ProblemLog
 ): readonly DocsDemo[] {
   const { slug, page, paths } = inspection;
-  if (!existsSync(paths.entryFile)) {
-    problems.add(`${slug}: no public entry module at ${repoRelative(paths.entryFile)}`);
+  for (const { entryFile } of paths.apis) {
+    if (!existsSync(entryFile)) {
+      problems.add(`${slug}: no public entry module at ${repoRelative(entryFile)}`);
+    }
   }
   if (!existsSync(paths.sourceFile)) {
     problems.add(`${slug}: no implementation file at ${repoRelative(paths.sourceFile)}`);

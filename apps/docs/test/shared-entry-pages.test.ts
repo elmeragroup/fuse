@@ -33,16 +33,20 @@ describe("pages that share the chart entry", () => {
     ["sparkline", "sparkline.tsx", ["Sparkline"]],
   ])("resolve %s to @elmeragroup/fuse/chart and %s", (slug, source, exportNames) => {
     const paths = resolveComponentPaths(slug);
-    expect(paths.entry).toBe("@elmeragroup/fuse/chart");
-    expect(relative(paths.entryFile)).toBe("packages/fuse/src/chart.ts");
+    const [own, ...extras] = paths.apis;
+    expect(own.entry).toBe("@elmeragroup/fuse/chart");
+    expect(relative(own.entryFile)).toBe("packages/fuse/src/chart.ts");
+    // `@elmeragroup/internal` reads the chart parts through the test facade, not the entry.
+    expect(relative(own.apiEntryFile)).toBe("packages/fuse/test/chart/api-facade.ts");
     expect(relative(paths.sourceFile)).toBe(`${CHART_SOURCE}/${source}`);
     expect(relative(paths.componentDir)).toBe(CHART_SOURCE);
-    expect(paths.apiExportNames).toEqual(exportNames);
+    expect(own.exportNames).toEqual(exportNames);
+    expect(extras).toEqual([]);
   });
 
   it("leaves a page with its own entry on the slug convention", () => {
     const paths = resolveComponentPaths("toggle-group");
-    expect(paths.entry).toBe("@elmeragroup/fuse/toggle-group");
+    expect(paths.apis[0].entry).toBe("@elmeragroup/fuse/toggle-group");
     expect(relative(paths.sourceFile)).toBe("packages/fuse/src/components/toggle-group/toggle-group.tsx");
   });
 });
@@ -99,10 +103,7 @@ describe("sameAs links", () => {
       try {
         return partIdentities(
           fuse,
-          slugs.map((slug) => {
-            const paths = resolveComponentPaths(slug);
-            return { slug, entryFile: paths.entryFile, exportNames: paths.apiExportNames };
-          })
+          slugs.map((slug) => resolveComponentPaths(slug).apis[0])
         );
       } finally {
         close();

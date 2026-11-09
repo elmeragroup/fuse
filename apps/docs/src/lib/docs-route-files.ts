@@ -51,3 +51,16 @@ export function docsRouteFile(section: DocsRouteSection, slug: string, ...segmen
     repoPath: [DOCS_PACKAGE, DOCS_ROUTES, section, slug, ...segments].join("/"),
   };
 }
+
+/**
+ * The file name of a committed API artifact inside a component page's route directory. The
+ * page's own entry writes `api.json`, and each other entry the page documents writes
+ * `<entry>.api.json` beside it, so `command/command-virtual.api.json` is `CommandVirtual`'s.
+ *
+ * @param page - The component page's slug.
+ * @param artifact - The slug of the entry the artifact describes: the page's own, or an extra one.
+ * @returns The artifact's file name inside the page's route directory.
+ */
+export function componentApiFileName(page: string, artifact: string): string {
+  return artifact === page ? "api.json" : `${artifact}.api.json`;
+}

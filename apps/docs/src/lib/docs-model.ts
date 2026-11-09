@@ -44,6 +44,17 @@ import type { ApiAlias, ApiSameAs } from "./api-same-as";
  */
 export type { ApiPart, ApiProp, ApiPropOrigin, ComponentApiArtifact, RscStatus };
 
+/**
+ * An entry a component page documents. The page's own entry's artifact is its route's `api.json`;
+ * an extra entry's is `<slug>.api.json` beside it.
+ */
+export type ApiEntry = {
+  /** The artifact's `slug`: the page's own, or the extra entry's, such as `command-virtual`. */
+  readonly slug: string;
+  /** Public import specifier, e.g. `@elmeragroup/fuse/command-virtual`. */
+  readonly entry: string;
+};
+
 /** What a client part's RSC status means for a page that composes it on the server. */
 export const CLIENT_PART_NOTE = "A Server Component can still render it and pass it serialisable props.";
 
@@ -212,8 +223,12 @@ export type ComponentOutline = Pick<ComponentPageEntry, "slug" | "title" | "mark
  * endpoints, `llms.txt` and the search index.
  */
 export type DocsComponent = ComponentPageEntry & {
-  /** Public import specifier, e.g. `@elmeragroup/fuse/button`. */
-  entry: string;
+  /**
+   * Every entry the page documents, in reading order: its own first (e.g. `@elmeragroup/fuse/button`),
+   * then each extra one, such as `@elmeragroup/fuse/command-virtual` on the Command page. `parts`
+   * holds their parts in the same order.
+   */
+  apis: readonly [ApiEntry, ...ApiEntry[]];
   /** The page's authored intro, the prose before its first demo, or `""` when it has none. */
   intro: string;
   /**

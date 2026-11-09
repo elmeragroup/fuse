@@ -19,6 +19,8 @@ import { describe, expect, it } from "vitest";
 
 import { STALE_HINT } from "../scripts/lib/api-artifact.ts";
 import { componentSlugs, resolveComponentPaths } from "../scripts/lib/components.ts";
+import { componentInspections, docsApiInventory } from "../scripts/lib/docs-inspection.ts";
+import { repoRelative } from "../scripts/lib/paths.ts";
 import { API_ARTIFACTS_REWRITTEN } from "../src/generated/api-drift";
 import { API_REGEN_COMMAND } from "../src/lib/docs-model.ts";
 import { ALIAS_PAGES } from "./component-inventory";
@@ -33,14 +35,44 @@ describe("committed api.json", () => {
 
   it("tells a reader in the file that it is generated, and how to regenerate it", () => {
     for (const slug of componentSlugs().filter((candidate) => !ALIAS_PAGES.has(candidate))) {
-      const text = readFileSync(resolveComponentPaths(slug).apiFile, "utf8");
-      expect(text, slug).toContain('"$generated"');
-      expect(text, slug).toContain(API_REGEN_COMMAND);
-      expect(text, slug).toContain("never hand-edit");
+      for (const { apiFile } of resolveComponentPaths(slug).apis) {
+        const text = readFileSync(apiFile, "utf8");
+        expect(text, apiFile).toContain('"$generated"');
+        expect(text, apiFile).toContain(API_REGEN_COMMAND);
+        expect(text, apiFile).toContain("never hand-edit");
+      }
     }
   });
 
+  it("checks CommandVirtual, an entry with no page, through an artifact beside the Command page's", () => {
+    // Unit under test: the inventory generation extracts and records drift for. Oracle: the
+    // `@elmeragroup/fuse/command-virtual` facade, packages/fuse/src/command-virtual.ts, which
+    // exports `CommandVirtual` and has no docs page; the Command page documents it.
+    const row = docsApiInventory(componentInspections()).find(({ slug }) => slug === "command-virtual");
+    expect(
+      row && {
+        ...row,
+        entryFile: repoRelative(row.entryFile),
+        apiEntryFile: repoRelative(row.apiEntryFile),
+        apiFile: repoRelative(row.apiFile),
+      }
+    ).toEqual({
+      slug: "command-virtual",
+      page: "command",
+      entry: "@elmeragroup/fuse/command-virtual",
+      entryFile: "packages/fuse/src/command-virtual.ts",
+      apiEntryFile: "packages/fuse/src/command-virtual.ts",
+      exportNames: ["CommandVirtual"],
+      apiFile: "apps/docs/src/app/(docs)/components/command/command-virtual.api.json",
+    });
+    const committed: unknown = JSON.parse(
+      readFileSync("src/app/(docs)/components/command/command-virtual.api.json", "utf8")
+    );
+    expect(committed).toMatchObject({ slug: "command-virtual" });
+  });
+
   it("writes none for a page that repeats another page whole", () => {
-    for (const slug of ALIAS_PAGES) expect(existsSync(resolveComponentPaths(slug).apiFile), slug).toBe(false);
+    for (const slug of ALIAS_PAGES)
+      expect(existsSync(resolveComponentPaths(slug).apis[0].apiFile), slug).toBe(false);
   });
 });

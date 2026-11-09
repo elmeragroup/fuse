@@ -242,7 +242,7 @@ describe("markdown endpoint rendering", () => {
     title: "Widget",
     lede: "A widget.",
     intro: "",
-    entry: "@elmeragroup/fuse/widget",
+    apis: [{ slug: "widget", entry: "@elmeragroup/fuse/widget" }],
     sourcePath: "packages/fuse/src/components/widget/widget.tsx",
     sourceUrl: "https://example.invalid/widget.tsx",
     markdownUrl: "/components/widget.md",

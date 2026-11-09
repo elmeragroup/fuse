@@ -543,9 +543,6 @@ Paths are relative to `packages/fuse-figma` unless they start with `packages/`.
 - `CommandVirtual.List` renders flat item lists only, so `virtualized` beside `grouped` throws. Add
   grouped virtual lists. They need a row per group label in the virtualizer's index space, and
   Base UI's item indexes kept separate from the row indexes.
-- Give `CommandVirtual` a committed API artifact. A docs page reads only its own entry, and the
-  `command-virtual` entry has no page, so the API diff and drift checks miss changes to
-  `CommandVirtual.List`. Add a `command-virtual` page, or let one page read several entries.
 - The palette insets its input, rows and footer with `--surface-gap-sm`, a surface gap used as an
   inset, because no padding tier is 8px dense and 12px comfortable. Ask design whether menus,
   Select, Combobox and the other `sm` shells want that inset too. If they do, add a padding tier

@@ -1,0 +1,44 @@
+{
+  "$generated": "Generated from packages/fuse types and JSDoc by pnpm --filter docs generate. Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "slug": "command-virtual",
+  "parts": [
+    {
+      "name": "CommandVirtual.List",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/command-virtual/command-virtual.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 279,
+      "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "((item: any, index: number) => ReactNode) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "The row function, which `Command.List` passes from its own children. It renders one filtered item, usually as a `Command.Item`.",
+          "required": false
+        },
+        {
+          "name": "estimateSize",
+          "origin": "declared",
+          "type": "((index: number) => number) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "A row's height before the virtualizer measures it. It defaults to the document density's row height, which a single-line `Command.Item` takes, and follows a change of density.",
+          "required": false
+        },
+        {
+          "name": "overscan",
+          "origin": "declared",
+          "type": "number | undefined",
+          "shortType": null,
+          "defaultValue": "8",
+          "description": "Rows rendered beyond each edge of the visible window.",
+          "required": false
+        }
+      ]
+    }
+  ]
+}

@@ -32,19 +32,27 @@ describe("search index", () => {
   });
 
   it("indexes each component under its import specifier and API part names", () => {
+    // An extra entry a page documents, such as CommandVirtual on the Command page, is indexed too.
+    const command = SEARCH_ENTRIES.find((candidate) => candidate.href === "/components/command");
+    expect(command?.keywords).toEqual(
+      expect.arrayContaining(["@elmeragroup/fuse/command-virtual", "CommandVirtual.List"])
+    );
     for (const component of COMPONENT_PAGES) {
       const entry = SEARCH_ENTRIES.find((candidate) => candidate.title === component.title);
       expect(entry, component.slug).toBeDefined();
-      const paths = resolveComponentPaths(component.slug);
-      expect(entry?.keywords).toContain(paths.entry);
+      const { apis } = resolveComponentPaths(component.slug);
+      for (const { entry: specifier } of apis) expect(entry?.keywords).toContain(specifier);
       // An alias page has no parts of its own.
       if (ALIAS_PAGES.has(component.slug)) continue;
-      // Oracle: the committed api.json, which owns the part names.
-      // SAFETY: generation rewrites any committed api.json that disagrees with its serialiser, and
-      // the drift check (`api-artifact.test.ts`) fails on that rewrite.
-      const api = JSON.parse(readFileSync(paths.apiFile, "utf8")) as ComponentApiArtifact;
-      for (const name of api.parts.map((part) => part.name)) {
-        expect(entry?.keywords, name).toContain(name);
+      // Oracle: the committed API artifacts, the page's own and each extra entry's, which own the
+      // part names.
+      for (const { apiFile } of apis) {
+        // SAFETY: generation rewrites any committed artifact that disagrees with its serialiser,
+        // and the drift check (`api-artifact.test.ts`) fails on that rewrite.
+        const api = JSON.parse(readFileSync(apiFile, "utf8")) as ComponentApiArtifact;
+        for (const name of api.parts.map((part) => part.name)) {
+          expect(entry?.keywords, name).toContain(name);
+        }
       }
     }
   });

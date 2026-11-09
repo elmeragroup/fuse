@@ -16,17 +16,18 @@ import { readFileSync } from "node:fs";
 
 import type { ComponentApiArtifact } from "./docs-model";
 import { API_REGEN_COMMAND } from "./docs-model";
-import { docsRouteFile } from "./docs-route-files";
+import { componentApiFileName, docsRouteFile } from "./docs-route-files";
 
 /**
- * Reads one component page's `api.json`.
+ * Reads one committed API artifact of a component page: its own `api.json` by default, or the
+ * `<artifact>.api.json` of an extra entry the page documents.
  *
  * A missing or mis-slugged artifact is a build failure: this runs during prerendering, so the
  * throw fails `next build` naming the file and the command that writes it, instead of
  * rendering an API section with no rows.
  */
-export function readComponentApi(slug: string): ComponentApiArtifact {
-  const location = docsRouteFile("components", slug, "api.json");
+export function readComponentApi(slug: string, artifactSlug: string = slug): ComponentApiArtifact {
+  const location = docsRouteFile("components", slug, componentApiFileName(slug, artifactSlug));
   let raw: string;
   try {
     raw = readFileSync(location.absolute, "utf8");
@@ -49,9 +50,9 @@ export function readComponentApi(slug: string): ComponentApiArtifact {
   // drift check regenerates and compares every committed file — a shape that disagrees with
   // `ComponentApiArtifact` fails there, before it can reach a render.
   const artifact = parsed as ComponentApiArtifact;
-  if (artifact.slug !== slug) {
+  if (artifact.slug !== artifactSlug) {
     throw new Error(
-      `${location.repoPath} is the artifact of "${artifact.slug}" but sits in the "${slug}" route. ` +
+      `${location.repoPath} is the artifact of "${artifact.slug}" but sits where "${artifactSlug}"'s belongs. ` +
         `Run \`${API_REGEN_COMMAND}\`.`
     );
   }
