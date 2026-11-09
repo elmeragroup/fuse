@@ -24,8 +24,8 @@ An electrical fuse connects the name to Elmera's energy business. To fuse means 
 
 ## Prerequisites
 
-- **Node**: `>=24.13 <25` — the version in [`.node-version`](.node-version) (`24.13.0`). The build, codegen and docs scripts run TypeScript directly through Node's type-stripping flags, so an older major fails.
-- **pnpm 11** — `packageManager` pins the exact version; use Corepack.
+- **Node**: `>=26.13 <27`, the version in [`.node-version`](.node-version), which is `26.13.0`. The build, codegen and docs scripts run their TypeScript files directly with Node, which strips the types.
+- **pnpm 11**: `packageManager` pins the exact version. Node 26 ships without Corepack, so install any pnpm 11 globally, for example with `npm install --global pnpm@11`. It switches to the pinned version on its own.
 - **macOS or Linux, on x64 or arm64.** The docs build generates its API tables with `@elmeragroup/internal`, which does not support Windows yet, so `pnpm build` fails there.
 - `.ref/` reference checkouts are needed only to lift new reference implementations or artwork. They are not needed to build, test, or run the repo.
 

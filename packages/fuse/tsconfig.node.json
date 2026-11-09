@@ -1,0 +1,15 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    // `node` runs these scripts and the source they import by stripping types, which cannot run
+    // enums or parameter properties.
+    "erasableSyntaxOnly": true,
+    // The scripts import `src` files outside `include`, which a composite program rejects.
+    "composite": false,
+    "declarationMap": false
+    // `lib` stays the package's DOM set. The scripts import theme modules that type their browser
+    // paths, and `package-check-standalone.ts` types a callback that Playwright runs in the page.
+  },
+  "include": ["scripts"],
+  "exclude": ["node_modules"]
+}

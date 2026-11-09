@@ -202,7 +202,7 @@ describe("toSrgb", () => {
 describe("parse on long input", () => {
   // At 50,000 characters each input below parses in about 1 ms, while the quadratic number
   // pattern `[+-]?\d*\.?\d+` the CSS_NUMBER comment warns about takes 900 ms or more on every
-  // one of them (measured on Node 24). The 200 ms ceiling sits far from both, so it neither
+  // one of them (measured on Node 26). The 200 ms ceiling sits far from both, so it neither
   // flakes on a slow machine nor passes a quadratic regex.
   const digits = "9".repeat(50_000);
   const cases = [

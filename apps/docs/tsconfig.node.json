@@ -1,0 +1,16 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    // `node` runs these scripts and the source they import by stripping types, which cannot run
+    // enums or parameter properties.
+    "erasableSyntaxOnly": true,
+    // The package program reads the `.mjs` test fixtures and keeps incremental state. This program
+    // checks only the scripts and writes nothing.
+    "allowJs": false,
+    "incremental": false
+    // `lib` stays the package's DOM set, since the scripts import Fuse theme modules that type their
+    // browser paths.
+  },
+  "include": ["scripts"],
+  "exclude": ["node_modules"]
+}

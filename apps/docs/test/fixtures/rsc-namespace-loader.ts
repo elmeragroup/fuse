@@ -5,11 +5,12 @@
  * Every other TypeScript module is transpiled and evaluated, so a directive-free
  * namespace object stays a real object whose properties are client references.
  *
- * Registered with `{ data: { layer: "ssr" } }`, it only transpiles TypeScript and keeps Node's
- * conditions, the way the SSR layer of an RSC bundler loads client modules as real code.
+ * In the `"ssr"` layer it only transpiles TypeScript and keeps Node's conditions, the way the SSR
+ * layer of an RSC bundler loads client modules as real code. Hooks passed to `registerHooks` run
+ * in the loading thread, so each one is synchronous.
  */
 import { existsSync, readFileSync } from "node:fs";
-import type { InitializeHook, LoadHook, ResolveHook } from "node:module";
+import type { RegisterHooksOptions } from "node:module";
 import { dirname, extname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { parseSync } from "oxc-parser";
@@ -21,13 +22,11 @@ const FLIGHT_SERVER_URL = pathToFileURL(
 ).href;
 const EXTENSIONS = [".ts", ".tsx", ".js", ".mjs"];
 
-/** Which RSC layer this process plays: the server, or the SSR renderer of client modules. */
-let layer: "server" | "ssr" = "server";
+/** Which RSC layer a process plays: the server, or the SSR renderer of client modules. */
+type Layer = "server" | "ssr";
 
-/** Reads the layer `register()` passes as `data`. */
-export const initialize: InitializeHook<{ readonly layer?: "server" | "ssr" } | undefined> = (data) => {
-  layer = data?.layer ?? "server";
-};
+type ResolveHook = NonNullable<RegisterHooksOptions["resolve"]>;
+type ResolveContext = Parameters<ResolveHook>[1];
 
 function fail(file: string, verb: string, errors: readonly { readonly message: string }[]): never {
   throw new Error(`${file} does not ${verb}: ${errors.map((error) => error.message).join("; ")}`);
@@ -95,7 +94,7 @@ function transpile(file: string, source: string): string {
   return result.code;
 }
 
-function withReactServer(context: Parameters<ResolveHook>[1]): Parameters<ResolveHook>[1] {
+function withReactServer(layer: Layer, context: ResolveContext): ResolveContext {
   if (layer === "ssr" || context.conditions.includes("react-server")) {
     return context;
   }
@@ -110,60 +109,75 @@ function isModuleNotFound(error: Error): boolean {
   return "code" in error && error.code === "ERR_MODULE_NOT_FOUND";
 }
 
-export const resolve: ResolveHook = async (specifier, context, nextResolve) => {
-  const nextContext = withReactServer(context);
-  if ((specifier.startsWith(".") || specifier.startsWith("/")) && nextContext.parentURL !== undefined) {
-    const base = fileFromParent(nextContext.parentURL, specifier);
-    const candidates =
-      extname(specifier) !== ""
-        ? [base]
-        : [
-            ...EXTENSIONS.map((extension) => `${base}${extension}`),
-            ...EXTENSIONS.map((extension) => join(base, `index${extension}`)),
-          ];
-    for (const candidate of candidates) {
-      if (existsSync(candidate)) {
-        return { url: pathToFileURL(candidate).href, shortCircuit: true };
+function resolve(layer: Layer): ResolveHook {
+  return (specifier, context, nextResolve) => {
+    const nextContext = withReactServer(layer, context);
+    if ((specifier.startsWith(".") || specifier.startsWith("/")) && nextContext.parentURL !== undefined) {
+      const base = fileFromParent(nextContext.parentURL, specifier);
+      const candidates =
+        extname(specifier) !== ""
+          ? [base]
+          : [
+              ...EXTENSIONS.map((extension) => `${base}${extension}`),
+              ...EXTENSIONS.map((extension) => join(base, `index${extension}`)),
+            ];
+      for (const candidate of candidates) {
+        if (existsSync(candidate)) {
+          return { url: pathToFileURL(candidate).href, shortCircuit: true };
+        }
       }
     }
-  }
-  try {
-    return await nextResolve(specifier, nextContext);
-  } catch (error) {
-    // Package exports point at .ts source. Node's default resolver rejects that
-    // extension; the load hook transpiles it.
-    if (
-      nextContext.parentURL !== undefined &&
-      error instanceof Error &&
-      isModuleNotFound(error) &&
-      (specifier.endsWith(".ts") || specifier.endsWith(".tsx"))
-    ) {
-      const candidate = fileFromParent(nextContext.parentURL, specifier);
-      if (existsSync(candidate)) {
-        return { url: pathToFileURL(candidate).href, shortCircuit: true };
+    try {
+      return nextResolve(specifier, nextContext);
+    } catch (error) {
+      // Package exports point at .ts source. Node's default resolver rejects that
+      // extension; the load hook transpiles it.
+      if (
+        nextContext.parentURL !== undefined &&
+        error instanceof Error &&
+        isModuleNotFound(error) &&
+        (specifier.endsWith(".ts") || specifier.endsWith(".tsx"))
+      ) {
+        const candidate = fileFromParent(nextContext.parentURL, specifier);
+        if (existsSync(candidate)) {
+          return { url: pathToFileURL(candidate).href, shortCircuit: true };
+        }
       }
+      throw error;
     }
-    throw error;
-  }
-};
+  };
+}
 
-export const load: LoadHook = async (url, context, nextLoad) => {
-  if (!url.startsWith("file:")) {
-    return nextLoad(url, context);
-  }
-  const file = fileURLToPath(url);
-  if (!file.endsWith(".ts") && !file.endsWith(".tsx")) {
-    return nextLoad(url, context);
-  }
-  if (file.endsWith(".d.ts")) {
-    return nextLoad(url, context);
-  }
-  const source = readFileSync(file, "utf8");
-  if (layer === "server" && file.includes("/packages/fuse/src/")) {
-    const parsed = parse(file, source);
-    if (isUseClient(parsed)) {
-      return { format: "module", source: clientStub(url, runtimeExportNames(parsed)), shortCircuit: true };
+function load(layer: Layer): NonNullable<RegisterHooksOptions["load"]> {
+  return (url, context, nextLoad) => {
+    if (!url.startsWith("file:")) {
+      return nextLoad(url, context);
     }
-  }
-  return { format: "module", source: transpile(file, source), shortCircuit: true };
-};
+    const file = fileURLToPath(url);
+    if (!file.endsWith(".ts") && !file.endsWith(".tsx")) {
+      return nextLoad(url, context);
+    }
+    if (file.endsWith(".d.ts")) {
+      return nextLoad(url, context);
+    }
+    const source = readFileSync(file, "utf8");
+    if (layer === "server" && file.includes("/packages/fuse/src/")) {
+      const parsed = parse(file, source);
+      if (isUseClient(parsed)) {
+        return { format: "module", source: clientStub(url, runtimeExportNames(parsed)), shortCircuit: true };
+      }
+    }
+    return { format: "module", source: transpile(file, source), shortCircuit: true };
+  };
+}
+
+/**
+ * The hooks that load Fuse source as one RSC layer, for `registerHooks`.
+ *
+ * @param layer - The server layer turns `"use client"` modules into client references and adds the
+ * `react-server` condition. The SSR layer only transpiles.
+ * @returns The resolve and load hooks of that layer.
+ */
+export function rscHooks(layer: Layer): RegisterHooksOptions {
+  return { resolve: resolve(layer), load: load(layer) };
+}

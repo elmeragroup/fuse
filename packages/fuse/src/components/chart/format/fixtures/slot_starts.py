@@ -11,9 +11,9 @@ that zoneinfo reads the pinned tzdata package:
 
     PYTHONTZPATH= .venv/bin/python3 -I slot_starts.py [<ground-truth>/time]
 
-One run computes every sample twice. The pinned source is tzdata 2025c, which
-Node 24.14 bundles. CI runs Node 24.13.0 with tzdata 2025b, which has the same
-transitions for every zone here. The system source is /usr/share/zoneinfo, which
+One run computes every sample twice. The pinned source is tzdata 2025c. CI runs
+Node 26.13.0 with tzdata 2026e, which has the same transitions at every sampled
+instant here. The system source is /usr/share/zoneinfo, which
 is 2026c on this machine. The script keeps a row only when both sources agree, writes
 slot-starts.json next to itself and exits non-zero when a self-check fails.
 README.md states the rule.

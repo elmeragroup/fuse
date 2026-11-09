@@ -8,6 +8,8 @@
     // and no incremental state is configured. Those files are deliberately checked both by this
     // program and by the Fuse package's program.
     "rootDir": "..",
+    // `node` runs this program's scripts by stripping types, which cannot run enums or parameter properties.
+    "erasableSyntaxOnly": true,
     "lib": ["ESNext"]
   },
   "include": ["**/*.ts"]

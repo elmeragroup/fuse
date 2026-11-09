@@ -2,6 +2,9 @@
   "extends": "@elmeragroup/typescript-config/base.json",
   "compilerOptions": {
     "lib": ["ESNext"],
+    // `node` runs the CLI and its scripts by stripping types, which cannot run enums or parameter
+    // properties.
+    "erasableSyntaxOnly": true,
     "exactOptionalPropertyTypes": true,
     "noFallthroughCasesInSwitch": true,
     "noImplicitOverride": true

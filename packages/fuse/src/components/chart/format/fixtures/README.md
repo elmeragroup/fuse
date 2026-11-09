@@ -33,7 +33,7 @@ The ISO week words are drafts that await the owner's sign-off, as `meta.week_lab
 
 The file encodes one rule. A day, ISO week, month or year starts at the earliest instant of its first local date. When local midnight falls in a gap, that is the transition instant, and when midnight repeats, it is the first occurrence. A second, minute, quarter-hour or hour slot steps its fixed length from the start of its instant's local date, and a day whose length is no multiple of that length ends its last slot early, at the next day's start.
 
-The data comes from the IANA tz database 2025c, through the PyPI `tzdata` package 2025.3. Its transitions in these zones match the 2025b that Node 24.13 bundles. Create a venv outside the repository once, then run the script from this folder with an empty `PYTHONTZPATH`, so `zoneinfo` reads the pinned package.
+The data comes from the IANA tz database 2025c, through the PyPI `tzdata` package 2025.3. Node 26.13 bundles tzdata 2026e, and `slot-starts.zones.test.ts` passes on every row under it, so the two releases agree at every sampled instant. Create a venv outside the repository once, then run the script from this folder with an empty `PYTHONTZPATH`, so `zoneinfo` reads the pinned package.
 
 ```sh
 /usr/bin/python3 -m venv ~/.cache/fuse-slot-starts

@@ -2,7 +2,7 @@
  * Unit under test: `formatDateTime`, alone and through the public `formatChartSlot`. Oracle:
  * labels written by hand from CLDR 48, the same ones the engine judges hold.
  *
- * Node 24's ICU prints CLDR 48's own date-time join, so in Node a helper that handed the join back
+ * Node 26's ICU prints CLDR 48's own date-time join, so in Node a helper that handed the join back
  * to Intl would print the right text by luck. WebKit's older CLDR joins differently, and printed
  * `Oct 18, 2026 at 12:30 PM` where CLDR 48 writes `Oct 18, 2026, 12:30 PM`. This file models such
  * an engine. While it runs, every `Intl.DateTimeFormat` whose options hold both date and time fields

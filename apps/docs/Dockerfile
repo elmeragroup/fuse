@@ -9,7 +9,7 @@
 # server, its static assets and the generated public files.
 
 # Keep in step with .node-version.
-ARG NODE_VERSION=24.13.0
+ARG NODE_VERSION=26.13.0
 
 FROM node:${NODE_VERSION}-bookworm-slim AS base
 ENV PNPM_HOME=/pnpm \
@@ -19,8 +19,8 @@ ENV PNPM_HOME=/pnpm \
 WORKDIR /repo
 
 FROM base AS build
-# Install the pnpm release named by `packageManager` rather than trusting whichever
-# Corepack happens to ship with this Node.
+# Install the pnpm release named by `packageManager` with npm, since Node 26 ships
+# without Corepack.
 COPY package.json ./
 RUN npm install --global "pnpm@$(node -p "require('./package.json').packageManager.split('@')[1]")"
 # Fetch the store from the lockfile alone, so this layer survives source-only changes.

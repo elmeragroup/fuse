@@ -1,3 +1,5 @@
-import { register } from "node:module";
+import { registerHooks } from "node:module";
 
-register("./rsc-namespace-loader.ts", import.meta.url, { data: { layer: "ssr" } });
+import { rscHooks } from "./rsc-namespace-loader.ts";
+
+registerHooks(rscHooks("ssr"));

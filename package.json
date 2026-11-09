@@ -13,9 +13,9 @@
     "gen": "plop --plopfile plopfile.mjs",
     "lint": "OXLINT_TSGOLINT_PATH=node_modules/.bin/tsrs-lint oxlint . --deny-warnings --report-unused-disable-directives-severity=error",
     "lint:fix": "OXLINT_TSGOLINT_PATH=node_modules/.bin/tsrs-lint oxlint --fix .",
-    "release": "node --experimental-strip-types --experimental-transform-types --import ./packages/fuse/scripts/ts-resolve.mjs scripts/release.ts",
+    "release": "node --import ./packages/fuse/scripts/ts-resolve.mjs scripts/release.ts",
     "release:version": "pnpm exec changeset version && pnpm install --lockfile-only",
-    "shots": "node --experimental-strip-types tooling/pr-shots/src/main.ts",
+    "shots": "node tooling/pr-shots/src/main.ts",
     "test": "turbo run test",
     "test:browser": "turbo run test:browser",
     "test:e2e": "turbo run test:e2e",
@@ -45,7 +45,7 @@
     "yaml": "catalog:"
   },
   "engines": {
-    "node": ">=24.13.0 <25"
+    "node": ">=26.13.0 <27"
   },
   "packageManager": "pnpm@11.20.0"
 }

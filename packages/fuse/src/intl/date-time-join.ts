@@ -1,6 +1,6 @@
 /**
  * A date-time that Fuse joins itself. Each engine's CLDR joins a date and a time in its own way.
- * Node 24 prints an en-US medium date-time as `Oct 18, 2026, 12:00 AM` where WebKit prints
+ * Node 26 prints an en-US medium date-time as `Oct 18, 2026, 12:00 AM` where WebKit prints
  * `Oct 18, 2026 at 12:00 AM`, so a server-rendered label would fail hydration in Safari. Fuse
  * formats each half through Intl and joins them with CLDR 48's pattern, as it already owns the
  * range separator.
