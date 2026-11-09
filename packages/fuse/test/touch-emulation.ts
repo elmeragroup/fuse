@@ -1,5 +1,5 @@
 import { expect } from "vitest";
-import { cdp } from "vitest/browser";
+import { cdp, commands } from "vitest/browser";
 
 type TouchEmulationCdp = {
   send: (
@@ -22,4 +22,14 @@ export async function emulatePointer(pointer: "fine" | "coarse"): Promise<void> 
     pointer === "coarse" ? { enabled: true, maxTouchPoints: 1 } : { enabled: false }
   );
   expect(matchMedia("(pointer: coarse)").matches, `${pointer} pointer emulated`).toBe(pointer === "coarse");
+}
+
+/**
+ * Tap an element's centre on Playwright's touchscreen.
+ *
+ * @param element - The element.
+ */
+export async function tapCenter(element: HTMLElement): Promise<void> {
+  const box = element.getBoundingClientRect();
+  await commands.tap(box.left + box.width / 2, box.top + box.height / 2);
 }

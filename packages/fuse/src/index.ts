@@ -29,6 +29,8 @@ export * from "./combobox-field";
 export * from "./command";
 export * from "./confirm-button";
 export * from "./date-field";
+export * from "./date-picker";
+export * from "./date-range-picker";
 export * from "./description-list";
 export * from "./dialog";
 export * from "./dropdown-menu";

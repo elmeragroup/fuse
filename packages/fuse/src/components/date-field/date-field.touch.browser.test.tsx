@@ -11,13 +11,9 @@ import "../../../dist/styles.css";
 import { withLocale } from "../../../test/locale-matrix";
 import "../../../test/pointer-press";
 import { renderThemed, roleNamed } from "../../../test/themed-browser-render";
+import { tapCenter } from "../../../test/touch-emulation";
 import "../../temporal-polyfill";
 import { DateField } from "./date-field";
-
-async function tapCenter(element: HTMLElement): Promise<void> {
-  const box = element.getBoundingClientRect();
-  await commands.tap(box.left + box.width / 2, box.top + box.height / 2);
-}
 
 describe("DateField taps", () => {
   it("focuses the segment a tap lands on", async () => {

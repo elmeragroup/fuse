@@ -1,6 +1,6 @@
 "use client";
 
-import type { ComponentProps, ReactElement, ReactNode } from "react";
+import type { ComponentProps, ReactElement } from "react";
 
 import { Radio as AriaRadio, RadioGroup as AriaRadioGroup } from "react-aria-components";
 
@@ -14,16 +14,6 @@ import { composeTailwindRenderProps } from "./compose-tailwind-render-props";
 // The preset pane both date pickers put beside their calendar. The public parts
 // (`DatePickerPreset*`, `DateRangePickerPreset*`) differ only in their `data-slot` and in
 // which RAC picker state an item closes, so each is a one-line wrapper over these.
-
-/**
- * Whether a node a caller handed us would paint anything. `presetGroup={showPresets &&
- * <PresetGroup />}` is the idiomatic conditional, so `false` — like `null`, `undefined`
- * and `""` — has to read as "no preset pane" and leave the dialog in its single-pane
- * layout.
- */
-export function isRenderableNode(node: ReactNode): boolean {
-  return node !== null && node !== undefined && node !== false && node !== "";
-}
 
 /** The slice of RAC's DatePicker and DateRangePicker states a preset item closes. */
 export type PickerOverlayState = { readonly isOpen: boolean; close(): void };

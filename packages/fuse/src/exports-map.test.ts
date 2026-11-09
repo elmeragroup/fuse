@@ -229,6 +229,9 @@ const EXPECTED_ENTRIES = {
   // DateInput's parts and the DateField composite share one entry, as the interim
   // `react-aria/date-field` exports both names.
   "date-field": { inRootBarrel: true, runtimeExports: ["DateField", "DateInput"] },
+  // Each picker's parts and its labeled composite share one entry, as `date-field` does.
+  "date-picker": { inRootBarrel: true, runtimeExports: ["DatePicker", "DatePickerField"] },
+  "date-range-picker": { inRootBarrel: true, runtimeExports: ["DateRangePicker", "DateRangePickerField"] },
   "react-aria/calendar": {
     inRootBarrel: false,
     runtimeExports: ["Calendar", "CalendarHeader", "CalendarGridHeader"],

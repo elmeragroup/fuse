@@ -61,6 +61,22 @@ function committed(): Locator {
   return named("status", "Committed value");
 }
 
+/**
+ * An element's text as the screen and the accessibility tree read it: `textContent` without the
+ * subtrees `hidden` removes from both. The Temporal tier's DateInput writes its "Selected Date: …"
+ * description as a `hidden` span inside the group, where React Aria appends it to the body.
+ */
+function shownText(element: Element): string {
+  return [...element.childNodes]
+    .map((node) => {
+      if (node instanceof Element) {
+        return node.hasAttribute("hidden") ? "" : shownText(node);
+      }
+      return node.textContent;
+    })
+    .join("");
+}
+
 /** Every segment's visible text, in DOM order. */
 function segmentTexts(): string[] {
   return page
@@ -513,6 +529,17 @@ describe.each(DATE_TIER_ADAPTERS)("date-tier parity: $name", (adapter) => {
       await expect.element(page.getByRole("dialog")).not.toBeInTheDocument();
     });
 
+    it("reports a cleared range once its start loses every segment, and keeps the end in its row", async () => {
+      mountRangePicker({ label: "Period", defaultValue: { start: "2026-10-05", end: "2026-10-09" } });
+      // Backspace empties the year a digit at a time, then each emptied segment hands focus back.
+      await userEvent.click(segment("year", "Start Date, Period"));
+      await userEvent.keyboard("{Backspace>10/}");
+      await userEvent.tab();
+
+      await expect.element(committed()).toHaveTextContent("null");
+      expect(segmentTexts()).toEqual(["mm", "dd", "yyyy", "10", "09", "2026"]);
+    });
+
     it("keeps the range picker's value when Escape drops an anchor and then closes the popover", async () => {
       mountRangePicker({ label: "Period", defaultValue: { start: "2026-10-05", end: "2026-10-09" } });
       await openCalendar("Calendar Period");
@@ -546,7 +573,7 @@ describe.each(DATE_TIER_ADAPTERS)("date-tier parity: $name", (adapter) => {
         ["minute", "30"],
       ]);
       expect(segmentTexts()).toEqual(["10", "12", "2026", "14", "30"]);
-      expect(roleNamed("group", "Starts").textContent).toBe(
+      expect(shownText(roleNamed("group", "Starts"))).toBe(
         `10/12/2026, ${LEFT_TO_RIGHT_ISOLATE}14:30${POP_DIRECTIONAL_ISOLATE}`
       );
     });

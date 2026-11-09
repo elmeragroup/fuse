@@ -86,6 +86,8 @@ export const BARE_COMPONENT_ENTRIES = [
   "calendar",
   "range-calendar",
   "date-field",
+  "date-picker",
+  "date-range-picker",
 ] as const;
 
 /** Allowlisted entries with no source until they ship. None today. */

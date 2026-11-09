@@ -1,7 +1,7 @@
 /**
  * Server module. Renders every public namespace part of the compound components whose
  * implementation is `"use client"`, plus Alert, SelectField, AutocompleteField, ComboboxField,
- * DateField and AspectRatio.
+ * DateField, DatePickerField, DateRangePickerField and AspectRatio.
  *
  * The part lists are the public namespace shape. They are not read from the
  * implementation: a missing or renamed part fails here even if the source still parses.
@@ -39,6 +39,8 @@ import { CommandVirtual } from "@elmeragroup/fuse/command-virtual";
 import { DataTable } from "@elmeragroup/fuse/data-table";
 import { DataTableFilter } from "@elmeragroup/fuse/data-table-filter";
 import { DateField, DateInput } from "@elmeragroup/fuse/date-field";
+import { DatePicker, DatePickerField } from "@elmeragroup/fuse/date-picker";
+import { DateRangePicker, DateRangePickerField } from "@elmeragroup/fuse/date-range-picker";
 import { Dialog } from "@elmeragroup/fuse/dialog";
 import { DropdownMenu } from "@elmeragroup/fuse/dropdown-menu";
 import { Field } from "@elmeragroup/fuse/field";
@@ -365,6 +367,31 @@ function namespaceElements(): ReactElement[] {
       "Ellipsis",
     ]),
     ...renderNamespace("DateInput", DateInput, ["Root", "Segment"]),
+    ...renderNamespace("DatePicker", DatePicker, [
+      "Root",
+      "Group",
+      "Input",
+      "Trigger",
+      "Popup",
+      "Calendar",
+      "Presets",
+      "PresetItem",
+    ]),
+    ...renderNamespace("DateRangePicker", DateRangePicker, [
+      "Root",
+      "Label",
+      "Group",
+      "StartInput",
+      "Separator",
+      "EndInput",
+      "Trigger",
+      "Error",
+      "Description",
+      "Popup",
+      "Calendar",
+      "Presets",
+      "PresetItem",
+    ]),
     ...renderNamespace("Popover", Popover, ["Root", "Trigger", "Content", "Header", "Title", "Description"]),
     ...renderNamespace("RangeCalendar", RangeCalendar, [
       "Root",
@@ -664,6 +691,54 @@ function dateFieldTree(): ReactElement {
   );
 }
 
+/** The ISO values and bounds a server component hands the pickers. */
+const DATE_PICKER_DATES = {
+  defaultValue: "2026-10-05",
+  minValue: "2026-10-01",
+};
+const DATE_RANGE_PICKER_DATES = {
+  defaultValue: { start: "2026-10-12T08:00", end: "2026-10-16T17:30" },
+  maxValue: "2026-12-31",
+};
+
+/**
+ * DatePickerField and DateRangePickerField own no state, so a server form runs them and hands the
+ * pickers' Roots ISO text, and a preset pane built of client parts, as nodes. Their calendars'
+ * default children need no function child.
+ */
+function datePickerTrees(): ReactElement {
+  for (const [name, composite] of [
+    ["DatePickerField", DatePickerField],
+    ["DateRangePickerField", DateRangePickerField],
+  ] as const) {
+    if (isClientReference(composite)) {
+      throw new Error(`${name} is a client reference; the server must run it`);
+    }
+  }
+  return createElement(
+    "section",
+    { "data-fixture": "date-pickers" },
+    createElement(DatePickerField, {
+      label: "Moving day",
+      name: "moving",
+      ...DATE_PICKER_DATES,
+      presetGroup: createElement(
+        DatePicker.Presets,
+        { value: "first" },
+        createElement(DatePicker.PresetItem, { value: "first" }, "First weekday")
+      ),
+    }),
+    createElement(DateRangePickerField, {
+      label: "Maintenance window",
+      startName: "from",
+      endName: "to",
+      granularity: "minute",
+      hourCycle: 24,
+      ...DATE_RANGE_PICKER_DATES,
+    })
+  );
+}
+
 const SELECT_FIELD_PLACEHOLDER = "Choose a plan";
 
 /**
@@ -818,7 +893,8 @@ function Fixture(): ReactElement {
     carouselTree(),
     calendarTree(),
     rangeCalendarTree(),
-    dateFieldTree()
+    dateFieldTree(),
+    datePickerTrees()
   );
 }
 
@@ -974,6 +1050,44 @@ if (
 }
 if (!payload.includes("/components/date-field/date-input.tsx")) {
   throw new Error(`DateInput.Root is not a client reference in the payload:\n${payload.slice(0, 1500)}`);
+}
+
+// The pickers' composites ran on the server: their labels are in the payload, and their Roots are
+// client references whose ISO values crossed as the same strings.
+for (const label of ["Moving day", "Maintenance window", "First weekday"]) {
+  if (!payload.includes(label)) {
+    throw new Error(`"${label}" is missing from the server payload:\n${payload.slice(0, 1500)}`);
+  }
+}
+const datePickerRoots = models
+  .flatMap(flightElements)
+  .filter(({ props }) => props.defaultValue === DATE_PICKER_DATES.defaultValue);
+if (datePickerRoots.length !== 1 || datePickerRoots[0]?.props.minValue !== DATE_PICKER_DATES.minValue) {
+  throw new Error(`DatePicker.Root's ISO value did not cross intact:\n${payload.slice(0, 1500)}`);
+}
+const rangeRoots = models.flatMap(flightElements).filter(({ props }) => {
+  const value = props.defaultValue;
+  return (
+    isFlightObject(value) &&
+    value.start === DATE_RANGE_PICKER_DATES.defaultValue.start &&
+    value.end === DATE_RANGE_PICKER_DATES.defaultValue.end
+  );
+});
+if (
+  rangeRoots.length !== 1 ||
+  rangeRoots[0]?.props.maxValue !== DATE_RANGE_PICKER_DATES.maxValue ||
+  rangeRoots[0].props.startName !== "from" ||
+  rangeRoots[0].props.endName !== "to"
+) {
+  throw new Error(`DateRangePicker.Root's ISO range did not cross intact:\n${payload.slice(0, 1500)}`);
+}
+for (const module of [
+  "/components/date-picker/date-picker.tsx",
+  "/components/date-range-picker/date-range-picker.tsx",
+]) {
+  if (!payload.includes(module)) {
+    throw new Error(`${module} is not a client reference in the payload:\n${payload.slice(0, 1500)}`);
+  }
 }
 
 process.stdout.write("RSC_OK\n");

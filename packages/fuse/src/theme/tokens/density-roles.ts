@@ -93,6 +93,19 @@ export const PART_DENSITY = {
   // RangeCalendar's Root, the same card as Calendar's; its parts are Calendar's.
   "range-calendar": "surface",
 
+  // The Temporal pickers. The Roots only stack their parts; the group is the `field-group` box
+  // (Field's row), the input row pads with the md control inset inside it, and the trigger is the
+  // field's inner square. The popup drops Popover's padding, since the calendar and the preset pane
+  // pad themselves; the preset pane pads with the small surface tier and each preset is a ghost sm
+  // button row, as the interim pickers' presets are. The range separator is a glyph.
+  "date-picker": "layout",
+  "date-range-picker": "layout",
+  "date-picker-input": "control",
+  "date-picker-trigger": "control",
+  "date-picker-popup": "layout",
+  "date-picker-presets": "surface",
+  "date-range-picker-separator": "fixed",
+
   // DateInput's segments are text runs inside the field box, whose `field-group` slot reads the
   // control metrics; a segment keeps one 2px padding at both densities.
   "date-input-segment": "fixed",
