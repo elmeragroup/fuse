@@ -93,6 +93,10 @@ export const PART_DENSITY = {
   // RangeCalendar's Root, the same card as Calendar's; its parts are Calendar's.
   "range-calendar": "surface",
 
+  // DateInput's segments are text runs inside the field box, whose `field-group` slot reads the
+  // control metrics; a segment keeps one 2px padding at both densities.
+  "date-input-segment": "fixed",
+
   card: "layout",
   "card[data-direction=horizontal]": "surface",
   "card-header": "surface",

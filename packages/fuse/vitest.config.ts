@@ -115,11 +115,13 @@ function browserProject(
         "@base-ui/react",
         "@base-ui/react/toast",
         "@base-ui/react/internals/field-constants",
+        "@base-ui/react/internals/field-register-control",
         "@base-ui/react/internals/field-root-context",
         "@base-ui/react/internals/form-context",
         "@base-ui/react/internals/labelable-provider",
         "@base-ui/react/internals/noop",
         "@base-ui/react/internals/useRenderElement",
+        "@base-ui/react/internals/useValueChanged",
         "@tanstack/react-table",
         "@tanstack/react-virtual",
         // The browser suites' accessibility pass.

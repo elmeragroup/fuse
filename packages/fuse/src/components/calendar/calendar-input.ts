@@ -1,13 +1,14 @@
-// The input boundary every calendar Root shares: the props both Roots take, date props parsed
-// from a Temporal value of any implementation or its ISO text, memoized by the text they print, the
-// bounds resolved to days, React Aria's weekday names resolved to ISO weekdays, and the props
-// resolved into the parts' settings. Each Root names itself in its diagnostics.
+// The input boundary every calendar Root shares, and DateInput.Root with it: the props both
+// calendar Roots take, date props parsed from a Temporal value of any implementation or its ISO
+// text, memoized by the text they print, the bounds resolved to days, React Aria's weekday names
+// resolved to ISO weekdays, and the props resolved into the parts' settings. Each Root names itself
+// in its diagnostics.
 
 import { useEffect, useMemo } from "react";
 
 import type { SupportedLocale } from "../../intl/locale-context";
 import { parseTemporal } from "../../temporal/temporal-value";
-import type { TemporalInput } from "../../temporal/temporal-value";
+import type { TemporalInput, TemporalValue } from "../../temporal/temporal-value";
 import { firstDayOfWeek } from "../../temporal/week-info";
 import type { IsoWeekday } from "../../temporal/week-info";
 import { isThemeDevelopment } from "../../theme/validate-theme";
@@ -76,6 +77,23 @@ export type CalendarViewProps = {
 export type CalendarOwner = "Calendar.Root" | "RangeCalendar.Root";
 
 /**
+ * A date prop's value, of the kind its text or object names.
+ *
+ * @param input - The prop.
+ * @param owner - The Root, named in the error.
+ * @param prop - The prop, named in the error.
+ * @returns The value.
+ * @throws TypeError naming the Root and prop when the input is text that is not an ISO value, a host defect.
+ */
+export function parseTemporalProp(input: TemporalInput, owner: string, prop: string): TemporalValue {
+  const parsed = parseTemporal(input);
+  if (parsed._tag === "err") {
+    throw new TypeError(`${owner} ${prop}: ${parsed.error.message}`);
+  }
+  return parsed.value;
+}
+
+/**
  * The day a calendar date prop names: a date-time or zoned value names its own wall-clock day.
  *
  * @param input - The prop.
@@ -89,11 +107,7 @@ export function parseCalendarDay(
   owner: CalendarOwner,
   prop: string
 ): Temporal.PlainDate {
-  const parsed = parseTemporal(input);
-  if (parsed._tag === "err") {
-    throw new TypeError(`${owner} ${prop}: ${parsed.error.message}`);
-  }
-  return boundDay(parsed.value);
+  return boundDay(parseTemporalProp(input, owner, prop));
 }
 
 /**
@@ -122,6 +136,29 @@ export function parseOptionalDay(
  */
 export function printedInput(input: TemporalInput | null | undefined): string | null | undefined {
   return input == null ? input : String(input);
+}
+
+/**
+ * A Temporal prop parsed once per printed value, so a parent passing a new object for the same
+ * value re-renders nothing below. Text no kind reads throws, a host defect.
+ *
+ * @param input - The prop.
+ * @param owner - The Root, named in the error.
+ * @param prop - The prop, named in the error.
+ * @returns The value, or `null` without one.
+ * @throws TypeError as `parseTemporalProp` does.
+ */
+export function useTemporalProp(
+  input: TemporalInput | null | undefined,
+  owner: string,
+  prop: string
+): TemporalValue | null {
+  const key = printedInput(input);
+  return useMemo(
+    () => (input == null ? null : parseTemporalProp(input, owner, prop)),
+    // oxlint-disable-next-line react-hooks/exhaustive-deps -- keyed by the printed value
+    [key, owner, prop]
+  );
 }
 
 /**

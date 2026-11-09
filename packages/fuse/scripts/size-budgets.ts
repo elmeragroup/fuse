@@ -95,6 +95,11 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = derive([
   // 2026-11-09: new entry, measured at 39867. Calendar's parts, store and navigation, which it
   // shares, plus the range rules, the range strings in four locales and the range description.
   { name: "range-calendar", entryFile: "range-calendar.js", measuredGzip: 39867 },
+  // 2026-11-09: new entry, measured at 45781. DateInput's segment model and Intl formatting, the
+  // DateField composite with FieldFrame, Base UI's Field, Form and Labelable wiring, useRender and
+  // mergeProps, the four-locale strings and the Temporal core's conversion, kind and bounds. The
+  // interim react-aria/date-field it replaces measures 73125.
+  { name: "date-field", entryFile: "date-field.js", measuredGzip: 45781 },
   // 2026-11-09: new entry, measured at 19482. temporal-polyfill's global install, including the
   // Intl.DateTimeFormat it installs beside Temporal, and the marker.
   { name: "temporal-polyfill", entryFile: "temporal-polyfill.js", measuredGzip: 19482 },

@@ -9,12 +9,14 @@ type FormatOptions =
   | Intl.NumberFormatOptions
   | Intl.DateTimeFormatOptions
   | Intl.ListFormatOptions
-  | Intl.PluralRulesOptions;
+  | Intl.PluralRulesOptions
+  | Intl.DisplayNamesOptions;
 
 const numberFormats = new Map<string, Intl.NumberFormat>();
 const dateTimeFormats = new Map<string, Intl.DateTimeFormat>();
 const listFormats = new Map<string, Intl.ListFormat>();
 const pluralRuleSets = new Map<string, Intl.PluralRules>();
+const displayNameSets = new Map<string, Intl.DisplayNames>();
 
 /**
  * A value built once per locale and options, under the key scheme every Intl cache here shares.
@@ -85,4 +87,16 @@ export function listFormat(locale: string, options: Intl.ListFormatOptions = {})
  */
 export function pluralRules(locale: string, options: Intl.PluralRulesOptions = {}): Intl.PluralRules {
   return cached(pluralRuleSets, locale, options, () => new Intl.PluralRules(locale, options));
+}
+
+/**
+ * The shared `Intl.DisplayNames` for a locale and options.
+ *
+ * @param locale - The locale.
+ * @param options - The display name options, such as `{ type: "dateTimeField" }`.
+ * @returns The display names.
+ * @throws {RangeError} When the engine does not support the options' `type`.
+ */
+export function displayNames(locale: string, options: Intl.DisplayNamesOptions): Intl.DisplayNames {
+  return cached(displayNameSets, locale, options, () => new Intl.DisplayNames(locale, options));
 }

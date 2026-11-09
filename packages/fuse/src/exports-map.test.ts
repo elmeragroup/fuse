@@ -226,6 +226,9 @@ const EXPECTED_ENTRIES = {
   // behind its own subpath below.
   calendar: { inRootBarrel: true, runtimeExports: ["Calendar"] },
   "range-calendar": { inRootBarrel: true, runtimeExports: ["RangeCalendar"] },
+  // DateInput's parts and the DateField composite share one entry, as the interim
+  // `react-aria/date-field` exports both names.
+  "date-field": { inRootBarrel: true, runtimeExports: ["DateField", "DateInput"] },
   "react-aria/calendar": {
     inRootBarrel: false,
     runtimeExports: ["Calendar", "CalendarHeader", "CalendarGridHeader"],

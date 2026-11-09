@@ -28,6 +28,7 @@ export * from "./combobox";
 export * from "./combobox-field";
 export * from "./command";
 export * from "./confirm-button";
+export * from "./date-field";
 export * from "./description-list";
 export * from "./dialog";
 export * from "./dropdown-menu";

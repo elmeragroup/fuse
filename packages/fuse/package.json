@@ -145,6 +145,10 @@
       "types": "./src/data-table-filter.ts",
       "import": "./src/data-table-filter.ts"
     },
+    "./date-field": {
+      "types": "./src/date-field.ts",
+      "import": "./src/date-field.ts"
+    },
     "./demo-stage-density.css": "./dist/demo-stage-density.css",
     "./description-list": {
       "types": "./src/description-list.ts",
