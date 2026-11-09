@@ -16,7 +16,7 @@ export type TimeCase = LiteralCase & {
 
 /**
  * Time literals written by hand. The calendar names follow CLDR 48 `ca-gregorian`, and the spoken
- * clock words are the drafted dictionary entries that `TODO.md` lists for sign-off. The month and
+ * clock words are drafted dictionary entries awaiting sign-off. The month and
  * year boundary cases read the offset from the EU summer-time rule: UTC+1 in winter and UTC+2 in
  * summer for Oslo and Stockholm, one hour more for Helsinki.
  */

@@ -544,7 +544,7 @@ describe("the price area chart", () => {
       await page.mouse.move(0, 0);
 
       // The chart is what the pick adds. The site around it keeps its own audits, and its muted
-      // figure labels on Fjordkraft Företag measure 4.48:1, an open item in the repository's task list.
+      // figure labels on Fjordkraft Företag measure 4.48:1, under the 4.5:1 text floor.
       const results = await new AxeBuilder({ page })
         .include("[data-site-scroller] [data-slot='chart']")
         .analyze();

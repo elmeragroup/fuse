@@ -28,7 +28,7 @@ export type ChartWords = {
   readonly rangeSeparator: string;
   /**
    * A slot finer than a day on a domain of more than one date, its date leading its own label,
-   * such as `onsdag 1. oktober, kl. 00 til 01`. A drafted word that `TODO.md` lists for sign-off.
+   * such as `onsdag 1. oktober, kl. 00 til 01`. A drafted word awaiting sign-off.
    */
   readonly slotOnDate: (date: string, slot: string) => string;
   /** The spoken form of one clock time, such as `kl. 14`. */

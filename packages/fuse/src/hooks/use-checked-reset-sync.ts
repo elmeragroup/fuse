@@ -17,7 +17,7 @@ import { useMergedRefs } from "./use-merged-refs";
  * The hook re-renders the control after each reset of its form, and React writes the shown state
  * back into the same hidden input. Every control subscribes, controlled or not, and a group member
  * reads its state from the group, so no group wiring is needed. The selection stays as it is:
- * an uncontrolled control does not return to its default (see `TODO.md`). Nothing remounts and
+ * an uncontrolled control does not return to its default (see #504). Nothing remounts and
  * no value changes, so focus, validity and `Form` errors stay. Returns `inputRef` merged with the
  * hidden input ref the subscription reads.
  */

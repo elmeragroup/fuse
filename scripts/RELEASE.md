@@ -119,7 +119,7 @@ the read limit cuts into, or that fill the sections Slack shows, are marked shor
 announcement links the GitHub release, the npm version and, when its notes are shortened, missing
 or not shown, the full notes in the changelog. It has no compare link to the previous stable
 release: the release record does not name that release, and telling it from tags or release
-listings proved unsafe (TODO.md).
+listings proved unsafe ([#506](https://github.com/elmeragroup/fuse/issues/506)).
 
 The Slack token and the step's other secrets never reach the code that parses the changelog. The
 child process that parses it gets an empty environment, and the step's own process, which holds the
@@ -257,7 +257,7 @@ environment, but a same-user process can still read any ancestor process's
 `/proc/<pid>/environ`. Closing that gap needs a publish job that never builds, which waits on a
 prepare-only engine operation. Keeping the original run's provenance on a retry needs an
 engine change in `elmeragroup/internal` that records the attestation and passes it back
-through `--provenance-file`.
+through `--provenance-file`. [#506](https://github.com/elmeragroup/fuse/issues/506) tracks both.
 
 The Next App Router fixture is `packages/fuse/scripts/package-check-next-consumer.ts`
 over `packages/fuse/test/packed-consumer/next-app-router/`. It installs the packed
