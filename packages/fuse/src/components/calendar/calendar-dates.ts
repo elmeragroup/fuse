@@ -246,6 +246,19 @@ export function initialVisibleMonths(
 }
 
 /**
+ * The months that show a day's month first, then kept inside the bounds: React Aria's
+ * `alignStart`. A range too long for the centred view opens this way, on its first month.
+ *
+ * @param day - The day whose month leads, already inside the bounds.
+ * @param count - How many months show.
+ * @param bounds - The first and last selectable days.
+ * @returns The visible months.
+ */
+export function startAlignedMonths(day: Temporal.PlainDate, count: number, bounds: DayBounds): VisibleMonths {
+  return { start: constrainStart(day.toPlainYearMonth(), count, bounds), count };
+}
+
+/**
  * The visible months once focus moves to a day: unchanged while the day shows; otherwise moved so
  * it shows. `"visible"` pages the way React Aria does, putting the day's month first when focus
  * leaves forward and last when it leaves backward. `"single"` moves the view the fewest months

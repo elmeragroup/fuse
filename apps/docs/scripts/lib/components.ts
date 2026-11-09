@@ -119,6 +119,7 @@ const EXTRA_API_EXPORT_NAMES = new Map<string, readonly string[]>([
   ["carousel", ["Carousel", "useCarousel"]],
   ["chart", ["Chart", "useChartPoint", "formatChartValue", "formatChartSlot"]],
   ["temporal-calendar", ["Calendar"]],
+  ["temporal-range-calendar", ["RangeCalendar"]],
 ]);
 
 /**
@@ -139,12 +140,17 @@ export const SHARED_ENTRY_PAGES = new Map<string, { readonly entry: string; read
 
 /**
  * Pages whose slug is not their entry's, because another page already holds the entry's slug.
- * `calendar` is the interim React Aria Calendar's page until that tier is removed, so the Temporal
- * Calendar of `@elmeragroup/fuse/calendar` documents itself as `temporal-calendar`. The entry's
+ * `calendar` and `range-calendar` are the interim React Aria calendars' pages until that tier is
+ * removed, so the Temporal calendars of `@elmeragroup/fuse/calendar` and
+ * `@elmeragroup/fuse/range-calendar` document themselves as `temporal-calendar` and
+ * `temporal-range-calendar`. The entry's
  * own conventions still apply: `src/calendar.ts`, `components/calendar/calendar.tsx` and the
  * `Calendar` export.
  */
-const ENTRY_SLUG_OF_PAGE = new Map<string, string>([["temporal-calendar", "calendar"]]);
+const ENTRY_SLUG_OF_PAGE = new Map<string, string>([
+  ["temporal-calendar", "calendar"],
+  ["temporal-range-calendar", "range-calendar"],
+]);
 
 /**
  * The module the API extractor reads for the chart entry's pages. `@elmeragroup/internal` cannot

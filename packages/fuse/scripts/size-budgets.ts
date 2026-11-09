@@ -92,6 +92,9 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = derive([
   // Base UI's useRender and mergeProps, two caret icons, the four-locale strings and the private
   // Temporal core's conversion, bounds, week table and month grid. Temporal itself is the host's.
   { name: "calendar", entryFile: "calendar.js", measuredGzip: 36792 },
+  // 2026-11-09: new entry, measured at 39867. Calendar's parts, store and navigation, which it
+  // shares, plus the range rules, the range strings in four locales and the range description.
+  { name: "range-calendar", entryFile: "range-calendar.js", measuredGzip: 39867 },
   // 2026-11-09: new entry, measured at 19482. temporal-polyfill's global install, including the
   // Intl.DateTimeFormat it installs beside Temporal, and the marker.
   { name: "temporal-polyfill", entryFile: "temporal-polyfill.js", measuredGzip: 19482 },

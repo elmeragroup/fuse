@@ -84,6 +84,7 @@ export const BARE_COMPONENT_ENTRIES = [
   "navigation-menu",
   "link",
   "calendar",
+  "range-calendar",
 ] as const;
 
 /** Allowlisted entries with no source until they ship. None today. */

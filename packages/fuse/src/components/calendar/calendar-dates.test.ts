@@ -17,6 +17,7 @@ import {
   movedDay,
   openView,
   pageTarget,
+  startAlignedMonths,
   visibleMonthCount,
 } from "./calendar-dates";
 import type { DayBounds, FocusMove, VisibleMonths } from "./calendar-dates";
@@ -183,6 +184,21 @@ describe("initialVisibleMonths", () => {
   it("ends no later than the maximum's month", () => {
     const bounds: DayBounds = { min: undefined, max: day("2026-11-05") };
     expect(printed(initialVisibleMonths(day("2026-11-01"), 3, bounds))).toBe("2026-09+3");
+  });
+});
+
+describe("startAlignedMonths", () => {
+  it.each([
+    [1, "2026-10+1"],
+    [2, "2026-10+2"],
+    [3, "2026-10+3"],
+  ])("puts October first with %i months as %s", (count, expected) => {
+    expect(printed(startAlignedMonths(day("2026-10-14"), count, NO_BOUNDS))).toBe(expected);
+  });
+
+  it("ends no later than the maximum's month", () => {
+    const bounds: DayBounds = { min: undefined, max: day("2026-11-05") };
+    expect(printed(startAlignedMonths(day("2026-10-14"), 3, bounds))).toBe("2026-09+3");
   });
 });
 

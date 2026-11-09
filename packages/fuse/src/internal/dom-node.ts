@@ -41,6 +41,37 @@ export function isFocusRoot(node: Node): node is Document | ShadowRoot {
 }
 
 /**
+ * A root node an event may cross on its way to a node, and the host of the next root node in,
+ * whose tree only a listener on that inner root sees into.
+ */
+export type RootNodeLink = { readonly root: Document | ShadowRoot; readonly innerHost: Element | undefined };
+
+/**
+ * The root nodes from the one holding `node` out to its document, innermost first. The innermost
+ * link has no `innerHost`; each outer one names the shadow host it holds the previous root through.
+ *
+ * @param node - The node whose root nodes to walk, such as a component's root element.
+ * @returns The chain, empty for a node in no document or shadow root.
+ */
+export function rootNodeChain(node: Node): RootNodeLink[] {
+  const chain: RootNodeLink[] = [];
+  let current: Node = node;
+  let innerHost: Element | undefined;
+  for (;;) {
+    const root = current.getRootNode();
+    if (!isFocusRoot(root)) {
+      return chain;
+    }
+    chain.push({ root, innerHost });
+    if (!("host" in root)) {
+      return chain;
+    }
+    innerHost = root.host;
+    current = root.host;
+  }
+}
+
+/**
  * Whether `node` is inside `element`, or inside a shadow root hosted there, at any depth. A plain
  * `contains` stops at a shadow root, such as one a custom control renders into.
  *
@@ -82,13 +113,13 @@ export function isText(node: Node): node is Text {
 }
 
 /**
- * Whether a node is an element, from any realm.
+ * Whether an event target is an element of any kind (HTML, SVG, MathML), from any realm.
  *
- * @param node - A node.
+ * @param target - The event target, such as a node.
  * @returns `true` for an element.
  */
-export function isElement(node: Node): node is Element {
-  return node.nodeType === Node.ELEMENT_NODE;
+export function isElement(target: EventTarget | null): target is Element {
+  return isNode(target) && target.nodeType === Node.ELEMENT_NODE;
 }
 
 /**

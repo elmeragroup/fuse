@@ -16,6 +16,7 @@ import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
+import { emulateForcedColors, systemColor } from "../../../test/forced-colors";
 import { withLocale } from "../../../test/locale-matrix";
 import { cssVarColor, renderThemed, roleNamed } from "../../../test/themed-browser-render";
 import { definedProps } from "../../internal/defined-props";
@@ -915,6 +916,9 @@ describe("Calendar selection owner", () => {
           dayFlags: (_state, _date, iso) => flags.get(iso) ?? NO_DAY_FLAGS,
           select: (date, reason) => inputs.push(`select ${date.toString()} ${reason}`),
           hover: (date, event) => inputs.push(`hover ${date.toString()} ${event.pointerType}`),
+          dayNamePrefix: () => "",
+          dayDescriptionId: undefined,
+          multiselectable: true,
         }),
       };
     });
@@ -1099,5 +1103,23 @@ describe("Calendar selected day face", () => {
       fill: cssVarColor(invalid, "--error"),
       text: cssVarColor(invalid, "--error-foreground"),
     });
+  });
+});
+
+describe("Calendar selected day in forced colors", () => {
+  afterEach(async () => {
+    await emulateForcedColors("none");
+  });
+
+  it("paints the selected day with the system's Highlight pair, not the theme's primary", async () => {
+    await emulateForcedColors("active");
+    mount(<Harness defaultValue="2026-10-14" />);
+    const selected = roleNamed("button", "Wednesday, October 14, 2026 selected");
+    const highlight = systemColor(selected, "Highlight");
+    // The premise: the system's Highlight is not the theme's primary.
+    expect(highlight).not.toBe(cssVarColor(selected, "--primary"));
+
+    expect(getComputedStyle(selected).backgroundColor).toBe(highlight);
+    expect(getComputedStyle(selected).color).toBe(systemColor(selected, "HighlightText"));
   });
 });

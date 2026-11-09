@@ -90,6 +90,8 @@ export const PART_DENSITY = {
   "calendar-day-grid-row": "layout",
   "calendar-day-grid-cell": "layout",
   "calendar-day-button": "fixed",
+  // RangeCalendar's Root, the same card as Calendar's; its parts are Calendar's.
+  "range-calendar": "surface",
 
   card: "layout",
   "card[data-direction=horizontal]": "surface",

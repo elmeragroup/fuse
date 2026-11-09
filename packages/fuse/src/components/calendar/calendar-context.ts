@@ -183,6 +183,23 @@ export type CalendarSelectionOwner = {
   ) => void;
   /** The pointer entered a day that is not disabled. */
   readonly hover: (date: Temporal.PlainDate, event: PointerEvent) => void;
+  /**
+   * Words a day's name starts with, or `""`, as a hook each day button calls once per render like
+   * `useDayFlags`. RangeCalendar names its range's ends with the whole range ("Selected Range:
+   * …"); Calendar's is always `""`.
+   */
+  readonly useDayNamePrefix: (date: Temporal.PlainDate, iso: string) => string;
+  /**
+   * The id of the text that says what selecting the tab-stop day does, which that day's button
+   * points `aria-describedby` at while it is selectable. RangeCalendar's says whether a press
+   * starts or finishes a range; Calendar has none, `undefined`.
+   */
+  readonly dayDescriptionId: string | undefined;
+  /**
+   * Whether the selection holds several days at once, which makes every grid
+   * `aria-multiselectable`: RangeCalendar's range does, Calendar's one day does not.
+   */
+  readonly multiselectable: boolean;
 };
 
 /**
@@ -191,22 +208,24 @@ export type CalendarSelectionOwner = {
  *
  * @template S - The Root's state.
  */
-export type CalendarSelectionModel<S> = Omit<CalendarSelectionOwner, "useDayFlags"> & {
+export type CalendarSelectionModel<S> = Omit<CalendarSelectionOwner, "useDayFlags" | "useDayNamePrefix"> & {
   /**
    * The flags of one day in a state. Pure, and cheap: it runs for every day on each store change.
    * It gets the day both as this runtime's PlainDate and as its ISO text, so it never parses one.
    */
   readonly dayFlags: (state: S, date: Temporal.PlainDate, iso: string) => CalendarDayFlags;
+  /** The words one day's name starts with in a state, or `""`; pure and cheap like `dayFlags`. */
+  readonly dayNamePrefix: (state: S, date: Temporal.PlainDate, iso: string) => string;
 };
 
 /**
- * A selection owner over a Root's store. Its `useDayFlags` subscribes each day to its own flags
- * through `useCalendarSelector`, so the store's initial state answers on the server and while a
- * part hydrates, for every Root alike.
+ * A selection owner over a Root's store. Its `useDayFlags` and `useDayNamePrefix` subscribe each
+ * day to its own answer through `useCalendarSelector`, so the store's initial state answers on the
+ * server and while a part hydrates, for every Root alike.
  *
  * @template S - The Root's state.
  * @param store - The Root's store.
- * @param model - The day flags and the selection inputs.
+ * @param model - The per-day answers and the selection inputs.
  * @returns The owner the parts read.
  */
 export function createSelectionOwner<S>(
@@ -217,6 +236,11 @@ export function createSelectionOwner<S>(
     useDayFlags(date, iso) {
       return useCalendarSelector(store, (state) => model.dayFlags(state, date, iso));
     },
+    useDayNamePrefix(date, iso) {
+      return useCalendarSelector(store, (state) => model.dayNamePrefix(state, date, iso));
+    },
+    dayDescriptionId: model.dayDescriptionId,
+    multiselectable: model.multiselectable,
     select: model.select,
     hover: model.hover,
   };

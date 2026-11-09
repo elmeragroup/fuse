@@ -1064,6 +1064,13 @@ describe("runtime listeners and layout motion", () => {
       // Native `beforeinput`: React's `onBeforeInput` is a `textInput`/`keypress` polyfill that misses
       // paste in Firefox. The numeric filter strips a paste before maxlength.
       "components/input/input.tsx",
+      // Capture-phase `pointerup` on the root node holding a RangeCalendar and every root node
+      // above it up to its document, and `pointerdown` on that document to note VoiceOver's
+      // virtual presses, only while a range is open: a press released outside the days and month
+      // buttons settles the range, as React Aria's window `pointerup` listener does, also when the
+      // pressed element stops propagation, and the innermost boundary sees into a closed shadow
+      // root. React's handlers see only the calendar's own subtree, in the bubble phase.
+      "components/range-calendar/use-outside-press.ts",
       "components/sidebar/sidebar.tsx",
       // Capture `load` in the skeleton's ghost, which does not bubble: an image that loads after the
       // bones were measured moves the text they stand for.
