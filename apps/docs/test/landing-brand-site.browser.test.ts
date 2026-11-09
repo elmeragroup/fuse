@@ -181,25 +181,14 @@ type PaintedLine = {
 
 /**
  * Every footer paragraph, and every visible header link on the utility row, with the opaque band
- * behind it. A line dims through its colour's alpha (`text-current/85`) and the opacity of each
- * element up to the band (`opacity-85`), so its ink carries their product as alpha. Chromium
- * serialises `currentcolor` mixed with transparent as `oklab()`, which `CssColor` does not parse,
- * so the ink takes the band's opaque `color` for its channels and a canvas reads the alpha.
+ * behind it. A line dims through its colour's alpha (`text-current/85`, which Chromium serialises
+ * as `oklab()`) and the opacity of each element up to the band (`opacity-85`), so its ink is its
+ * computed colour with that alpha times the opacities.
  */
 async function paintedLines(site: Locator): Promise<PaintedLine[]> {
   // DOM audit: the footer and utility row are band paint, which has no accessible form.
   const read = await site.locator("[data-site-scroller]").evaluate((scroller) => {
     const opaque = (color: string) => color !== "rgba(0, 0, 0, 0)" && !/^rgba|\/ /u.test(color);
-    const context = document.createElement("canvas").getContext("2d", { willReadFrequently: true });
-    if (context === null) {
-      throw new Error("expected a 2D canvas to read colour alpha");
-    }
-    const alphaOf = (color: string) => {
-      context.clearRect(0, 0, 1, 1);
-      context.fillStyle = color;
-      context.fillRect(0, 0, 1, 1);
-      return (context.getImageData(0, 0, 1, 1).data.at(3) ?? 0) / 255;
-    };
     const header = scroller.querySelector("header");
     const lines = [...scroller.querySelectorAll("footer p"), ...scroller.querySelectorAll("header a")];
     return lines.flatMap((line) => {
@@ -217,22 +206,19 @@ async function paintedLines(site: Locator): Promise<PaintedLine[]> {
         {
           name: line.textContent.trim().slice(0, 40),
           where: line.closest("footer") === null ? ("utility" as const) : ("footer" as const),
-          inkChannels: getComputedStyle(band).color,
-          alpha:
-            alphaOf(getComputedStyle(line).color) *
-            opacity *
-            Number.parseFloat(getComputedStyle(band).opacity),
+          ink: getComputedStyle(line).color,
+          opacity: opacity * Number.parseFloat(getComputedStyle(band).opacity),
           surface: getComputedStyle(band).backgroundColor,
         },
       ];
     });
   });
   return read.map((line) => {
-    const channels = CssColor.toSrgb(getOrThrow(CssColor.parse(line.inkChannels)));
+    const ink = CssColor.toSrgb(getOrThrow(CssColor.parse(line.ink)));
     return {
       name: line.name,
       where: line.where,
-      ink: getOrThrow(Srgb.make({ r: channels.r, g: channels.g, b: channels.b, alpha: line.alpha })),
+      ink: getOrThrow(Srgb.make({ r: ink.r, g: ink.g, b: ink.b, alpha: ink.alpha * line.opacity })),
       surface: CssColor.toSrgb(getOrThrow(CssColor.parse(line.surface))),
     };
   });

@@ -3,12 +3,13 @@
  */
 
 /** A notation the parsers read. `css-color` is the parser that accepts any of them. */
-export type ColorNotation = "css-color" | "hex" | "lab" | "oklch" | "rgb";
+export type ColorNotation = "css-color" | "hex" | "lab" | "oklab" | "oklch" | "rgb";
 
 const EXPECTED = {
-  "css-color": "an oklch(), lab(), rgb() or hex color",
+  "css-color": "an oklch(), oklab(), lab(), rgb() or hex color",
   hex: "a #rrggbb hex color",
   lab: "a lab() color",
+  oklab: "an oklab() color",
   oklch: "an oklch() color",
   rgb: "an rgb() color",
 } as const satisfies Record<ColorNotation, string>;

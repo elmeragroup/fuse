@@ -83,8 +83,9 @@ function computedSrgb(value: string): Srgb.Srgb {
 
 /**
  * The action label's contrast against the fill a reader sees: the button's background
- * composited over the alert surface beneath it. A transparent `rgba()` fill composites; an
- * `oklab()` translucent fill throws until `CssColor` parses `oklab()` (TODO.md).
+ * composited over the alert surface beneath it, as the browser paints a translucent fill,
+ * whether Chromium serializes it as a transparent `rgba()` or a `color-mix(in oklab, …)` tint's
+ * `oklab()`.
  */
 function actionContrast(action: HTMLElement, root: HTMLElement): number {
   const surface = computedSrgb(getComputedStyle(root).backgroundColor);
@@ -591,19 +592,9 @@ describe("Alert", () => {
         expect(getComputedStyle(action).backgroundColor, context).toBe(
           getComputedStyle(tint).backgroundColor
         );
-        // `CssColor` cannot read the computed `oklab()` hover fill yet, so the label is measured on
-        // `info` at 90% alpha composited in sRGB over the alert's `info-soft` surface.
-        const info = computedSrgb(cssVarColor(action, "--info"));
-        const hoverFill = Srgb.compositeOver(
-          getOrThrow(Srgb.make({ r: info.r, g: info.g, b: info.b, alpha: 0.9 })),
-          computedSrgb(getComputedStyle(root).backgroundColor)
-        );
-        expect
-          .soft(
-            getOrThrow(Wcag.contrastRatio(computedSrgb(getComputedStyle(action).color), hoverFill)),
-            context
-          )
-          .toBeGreaterThanOrEqual(AA_TEXT_CONTRAST);
+        // The label is measured on the computed `oklab()` hover fill composited over the alert's
+        // `info-soft` surface.
+        expect.soft(actionContrast(action, root), context).toBeGreaterThanOrEqual(AA_TEXT_CONTRAST);
       }
     }
   });

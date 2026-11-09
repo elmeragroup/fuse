@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import * as CssColor from "./css-color.ts";
 import * as Hex from "./hex.ts";
 import * as Lab from "./lab.ts";
+import * as Oklab from "./oklab.ts";
 import * as Oklch from "./oklch.ts";
 import * as Srgb from "./srgb.ts";
 
@@ -24,6 +25,8 @@ describe("parse", () => {
     expect(parsed("rgba(0, 0, 0, 0)")._tag).toBe("Srgb");
     expect(parsed("lab(100 0 0)")._tag).toBe("Lab");
     expect(parsed("LAB(50 0 0)")._tag).toBe("Lab");
+    expect(parsed("oklab(0.5 0 0)")._tag).toBe("Oklab");
+    expect(parsed("OKLAB(0.5 0.1 -0.1 / 0.9)")._tag).toBe("Oklab");
     expect(parsed("RGBA(0, 0, 0, 0.5)")._tag).toBe("Srgb");
   });
 
@@ -34,17 +37,12 @@ describe("parse", () => {
     expect(rgb._tag === "err" && rgb.error.notation).toBe("rgb");
     const lab = CssColor.parse("lab(50 0)");
     expect(lab._tag === "err" && lab.error.notation).toBe("lab");
-    for (const input of [
-      "white",
-      "transparent",
-      "oklab(0.5 0 0)",
-      "hsl(0 0% 100%)",
-      "color(srgb 1 1 1)",
-      "",
-    ]) {
+    const oklab = CssColor.parse("oklab(0.5 0)");
+    expect(oklab._tag === "err" && oklab.error.notation).toBe("oklab");
+    for (const input of ["white", "transparent", "hsl(0 0% 100%)", "color(srgb 1 1 1)", ""]) {
       const result = CssColor.parse(input);
       expect(result._tag === "err" && result.error.message, input).toBe(
-        `Expected an oklch(), lab(), rgb() or hex color, received ${JSON.stringify(input)}`
+        `Expected an oklch(), oklab(), lab(), rgb() or hex color, received ${JSON.stringify(input)}`
       );
     }
   });
@@ -79,6 +77,11 @@ const colorText = fc.oneof(
       opacity === undefined ? `lab(${l} ${a} ${b})` : `lab(${l} ${a} ${b} / ${opacity})`
     ),
   fc
+    .tuple(cssNumber, cssNumber, cssNumber, alpha)
+    .map(([l, a, b, opacity]) =>
+      opacity === undefined ? `oklab(${l} ${a} ${b})` : `oklab(${l} ${a} ${b} / ${opacity})`
+    ),
+  fc
     .tuple(cssNumber, cssNumber, cssNumber, fc.option(cssNumber, { nil: undefined }))
     .map(([r, g, b, a]) => (a === undefined ? `rgb(${r}, ${g}, ${b})` : `rgba(${r}, ${g}, ${b}, ${a})`)),
   hexDigits.map((digits) => `#${digits}`)
@@ -90,6 +93,8 @@ const EXTREMES = [
   "oklch(1 1e6 200)",
   "lab(0 1e6 -1e6)",
   "lab(100 -1e6 1e6)",
+  "oklab(0 1e6 -1e6)",
+  "oklab(1 -1e6 1e6)",
   "rgba(1e400, -1e400, 1e-400, 1e400)",
 ];
 
@@ -137,10 +142,60 @@ describe("toSrgb", () => {
       ["lab(5 10 -10)", "#1A0B1F"],
       ["lab(2 0 0)", "#070707"],
       ["lab(30 80 -110)", "#4E00FD"],
+      // An achromatic mid grey, Ottosson's published OKLab red (oklab.test.ts), a saturated
+      // in-gamut violet and a green far outside the gamut. culori 4.0.1 `clampRgb` agrees.
+      ["oklab(0.5 0 0)", "#636363"],
+      ["oklab(0.62796 0.22486 0.12585)", "#FF0000"],
+      ["oklab(0.6 0.1 -0.1)", "#9F63BA"],
+      ["oklab(0.9 -0.3 0.2)", "#00FF00"],
+      // The oklch rows above at seven decimals of C cos h and C sin h, which colorjs.io writes
+      // as the same hex.
+      ["oklab(0.7 -0.0939693 -0.034202)", "#40B1B7"],
+      ["oklab(0.5 0.0260472 -0.1477212)", "#5554B6"],
     ] as const;
     for (const [input, hex] of references) {
       expect(Hex.formatOpaque(CssColor.toSrgb(parsed(input))), input).toBe(hex);
     }
+  });
+
+  it("keeps a translucent oklab() color's alpha, numeric or percentage", () => {
+    // colorjs.io 0.5.2 and culori 4.0.1 both write #855641E6 and #85564180.
+    for (const [input, alpha] of [
+      ["oklab(0.5 0.05 0.05 / 0.9)", 0.9],
+      ["oklab(0.5 0.05 0.05 / 50%)", 0.5],
+    ] as const) {
+      const color = CssColor.toSrgb(parsed(input));
+      expect(Hex.formatOpaque(color), input).toBe("#855641");
+      expect(color.alpha, input).toBe(alpha);
+    }
+  });
+
+  it("converts an oklch() color and the oklab() spelling of the same color alike", () => {
+    // Unit: the oklab() parse and conversion. Oracle: CSS Color 4 defines oklch() as OKLab in
+    // polar form, a = C cos h and b = C sin h, so the oklch() spelling of each color, through
+    // its own parser, must land on the same sRGB.
+    fc.assert(
+      fc.property(
+        fc.double({ min: 0, max: 1, noNaN: true }),
+        fc.double({ min: 0, max: 0.4, noNaN: true }),
+        fc.double({ min: 0, max: 359.999, noNaN: true }),
+        fc.double({ min: 0, max: 1, noNaN: true }),
+        (l, c, h, alpha) => {
+          const radians = (h * Math.PI) / 180;
+          const polar = CssColor.toSrgb(
+            parsed(`oklch(${String(l)} ${String(c)} ${String(h)} / ${String(alpha)})`)
+          );
+          const cartesian = CssColor.toSrgb(
+            parsed(
+              `oklab(${String(l)} ${String(c * Math.cos(radians))} ${String(c * Math.sin(radians))} / ${String(alpha)})`
+            )
+          );
+          for (const channel of ["r", "g", "b", "alpha"] as const) {
+            expect(Math.abs(polar[channel] - cartesian[channel]), channel).toBeLessThan(1e-9);
+          }
+        }
+      )
+    );
   });
 });
 
@@ -155,6 +210,8 @@ describe("parse on long input", () => {
     ["oklch", (input: string) => Oklch.parse(input), `oklch(0.5 ${digits}x`],
     ["lab", (input: string) => Lab.parse(input), `lab(${digits}`],
     ["lab", (input: string) => Lab.parse(input), `lab(50 ${digits}x`],
+    ["oklab", (input: string) => Oklab.parse(input), `oklab(${digits}`],
+    ["oklab", (input: string) => Oklab.parse(input), `oklab(0.5 ${digits}x`],
     ["rgb", (input: string) => Srgb.parse(input), `rgb(${digits}`],
     ["rgb", (input: string) => Srgb.parse(input), `rgb(1, ${digits}x`],
     ["css-color", (input: string) => CssColor.parse(input), `oklch(${digits}`],
