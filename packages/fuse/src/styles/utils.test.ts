@@ -23,7 +23,7 @@ describe("focus-ring constants", () => {
       "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden"
     );
     expect(withinFocusRingClass).toBe(
-      "has-[[data-focus-ring-control]:focus-visible]:ring-2 has-[[data-focus-ring-control]:focus-visible]:ring-ring has-[[data-focus-ring-control]:focus-visible]:outline-hidden"
+      "has-[>[data-focus-ring-control]:focus-visible]:ring-2 has-[>[data-focus-ring-control]:focus-visible]:ring-ring has-[>[data-focus-ring-control]:focus-visible]:outline-hidden"
     );
     expect(withinFocusRingControlClass).toBe(
       "focus-visible:ring-0 focus-visible:outline-none aria-invalid:focus-visible:ring-0 aria-invalid:focus-visible:ring-offset-0"
