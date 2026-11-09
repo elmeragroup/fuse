@@ -532,9 +532,6 @@ Paths are relative to `packages/fuse-figma` unless they start with `packages/`.
   through the `ending` closure field, and only `strandedUnderOwnScroll` reads it, so the restore
   decision is split across `measure`, `flush` and `ended` (`carousel-engine.ts`). Verify the
   refactor in Firefox, whose missing re-snap it exists for.
-- Move the wheel listener from the engine into `carousel-input.ts`, which owns every other input
-  lifetime, and let a turn that arrives while the hold is pending extend it. A trackpad gesture
-  now restarts the two-frame hold, its listeners and its quiet-spell timer every few frames.
 - Make the touch suite's quick flick hold under load. `touchSwipe` (`test/pointer-commands.ts`)
   sends its moves in real time and Chromium stamps each on arrival, so a starved runner that
   delivers two moves 2ms apart flings two pages instead of one. Stamping each move with its due

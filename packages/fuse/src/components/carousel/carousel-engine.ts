@@ -759,17 +759,6 @@ export function createCarouselEngine(
     countQuiet();
   }
 
-  function onWheel(event: WheelEvent): void {
-    // Any movement along the axis scrolls it, a diagonal turn's included. Shift turns a vertical
-    // wheel sideways, onto a horizontal carousel's axis and off a vertical one's.
-    const along = vertical
-      ? event.deltaY !== 0 && !event.shiftKey
-      : event.deltaX !== 0 || (event.shiftKey && event.deltaY !== 0);
-    if (along) {
-      input.wheel();
-    }
-  }
-
   /**
    * Whether a mutation can have moved a slide. A change inside one slide's content cannot, except
    * by resizing that slide, which the resize observer reports; anything at or above the slides,
@@ -823,8 +812,7 @@ export function createCarouselEngine(
   const passive = { passive: true } as const;
   viewport.addEventListener("scroll", onScroll, passive);
   viewport.addEventListener("scrollend", settle, passive);
-  const input = createCarouselInput(viewport, { onInput: interact, onRelease: released });
-  viewport.addEventListener("wheel", onWheel, passive);
+  const input = createCarouselInput(viewport, orientation, { onInput: interact, onRelease: released });
 
   return {
     commit(next) {
@@ -844,7 +832,6 @@ export function createCarouselEngine(
       viewport.removeEventListener("scroll", onScroll);
       viewport.removeEventListener("scrollend", settle);
       input.destroy();
-      viewport.removeEventListener("wheel", onWheel);
       if (frame !== null) {
         view?.cancelAnimationFrame(frame);
       }
