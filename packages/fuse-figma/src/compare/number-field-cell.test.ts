@@ -8,10 +8,10 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { elementsOf } from "../../test/static-markup";
-import type { MarkupElement } from "../../test/static-markup";
 import { renderCellHtml } from "./cell-renderers";
 import { numberField, numberFieldStepper } from "./number-field-cell";
+import { elementsOf } from "./static-markup";
+import type { MarkupElement } from "./static-markup";
 
 /** Each stepper's label and state attributes. */
 function steppers(elements: readonly MarkupElement[]) {

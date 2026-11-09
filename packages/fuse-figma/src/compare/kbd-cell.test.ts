@@ -5,9 +5,9 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { elementsOf } from "../../test/static-markup";
 import { renderCellHtml } from "./cell-renderers";
 import { kbd } from "./kbd-cell";
+import { elementsOf } from "./static-markup";
 
 /** Each element's tag, `data-slot` and parent index, in document order. */
 function nesting(html: string) {

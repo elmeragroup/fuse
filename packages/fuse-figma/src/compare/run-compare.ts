@@ -3,7 +3,8 @@
  * renders every instance's cell on one browser page in the preview's theme and density, lays the
  * Figma PNG and the browser crop over the theme's background on one canvas with their boxes
  * aligned, and diffs them. It checks each client cell's mounted markup against its definition, as
- * `client-markup.ts` says. It writes three pictures per cell, `report.json` and `report.html`.
+ * `client-markup.ts` says, and records the differences on the cell's row with the `markup` flag.
+ * It writes three pictures per cell, `report.json` and `report.html`.
  */
 
 import { Effect, FileSystem, Result } from "effect";
@@ -25,6 +26,7 @@ import { checkClientMarkup } from "./client-markup.ts";
 import { fileFailure, makeDirectory, writeBytes, writeText } from "./compare-files.ts";
 import type { CompareFileFailed } from "./compare-files.ts";
 import type { FontNotLoaded } from "./font-check.ts";
+import type { MarkupDiagnostic } from "./markup-check.ts";
 import { locateFuseBuild, readPageAssets } from "./page-assets.ts";
 import type { FuseBuildMissing } from "./page-assets.ts";
 import { forcedSelector, measuredSelectors, slotSpan } from "./preview-page.ts";
@@ -80,11 +82,27 @@ export type ReportRow = {
    * change either, such as a pressed Toggle on hover. Such a cell gets no `state-missing` flag.
    */
   readonly unchangedByDesign: boolean;
+  /**
+   * How the markup the page mounted for a client cell differs from its definition: its first
+   * difference, as `markup-check.ts` reports one, or empty where it matches. A static cell's markup
+   * is checked by the kit's tests instead, so its row holds none. A row that holds any carries the
+   * `markup` flag.
+   */
+  readonly markup: readonly MarkupDiagnostic[];
   readonly images: CellImages;
 };
 
 /** An instance the run could not compare, and why. */
-export type SkippedInstance = { readonly preview: string; readonly variant: string; readonly reason: string };
+export type SkippedInstance = {
+  readonly preview: string;
+  readonly variant: string;
+  readonly reason: string;
+  /**
+   * How the client cell's mounted markup differs from its definition, as on a row, for a cell the
+   * page rendered and the run could not diff, such as one whose Figma PNG does not decode.
+   */
+  readonly markup: readonly MarkupDiagnostic[];
+};
 
 /** A preview as the run rendered it. */
 export type ReportPreview = {
@@ -398,10 +416,15 @@ const comparePreview = Effect.fnUntraced(function* (
   componentSets: readonly Pick<ComponentSetSpec, "key" | "axes" | "variants">[],
   options: CompareOptions
 ) {
-  const skip = (variant: string, reason: string): SkippedInstance => ({
+  const skip = (
+    variant: string,
+    reason: string,
+    markup: readonly MarkupDiagnostic[] = []
+  ): SkippedInstance => ({
     preview: preview.key,
     variant,
     reason,
+    markup,
   });
   const theme = parsePreviewTheme(preview.modes);
   if (Result.isFailure(theme)) {
@@ -427,12 +450,13 @@ const comparePreview = Effect.fnUntraced(function* (
       throw new Error(`the page returned no picture for ${request.id}`);
     }
     const { renderer } = definition;
-    if (cell.mounted !== undefined && isClientRenderer(renderer)) {
-      checkClientMarkup(definition, renderer.union, parsedCell, request, cell.mounted);
-    }
+    const markup =
+      cell.mounted !== undefined && isClientRenderer(renderer)
+        ? checkClientMarkup(definition, renderer.union, parsedCell, request, cell.mounted)
+        : [];
     const png = instance.image === null ? null : parsePng(Buffer.from(instance.image.png, "base64"));
     if (png !== null && Result.isFailure(png)) {
-      skipped.push(skip(instance.variant, png.failure.message));
+      skipped.push(skip(instance.variant, png.failure.message, markup));
       continue;
     }
     const figmaSide: FigmaSide = {
@@ -444,7 +468,11 @@ const comparePreview = Effect.fnUntraced(function* (
     };
     const stem = `p${String(previewIndex).padStart(2, "0")}-${request.id}`;
     const restsByDesign = request.restsByDesign && cell.state === "missing";
-    const compared = compareCell(figmaSide, cell, stateFlags(cell, restsByDesign), background, options);
+    const flags: CellFlag[] = [
+      ...(markup.length > 0 ? ["markup" as const] : []),
+      ...stateFlags(cell, restsByDesign),
+    ];
+    const compared = compareCell(figmaSide, cell, flags, background, options);
     const write = Effect.fnUntraced(function* (suffix: string, raster: Raster) {
       const path = `cells/${stem}-${suffix}.png`;
       const file = join(options.outDir, path);
@@ -473,6 +501,7 @@ const comparePreview = Effect.fnUntraced(function* (
       pixels: compared._tag === "Compared" ? { raw: compared.raw, tolerant: compared.tolerant } : null,
       verdict: compared.verdict,
       unchangedByDesign: restsByDesign,
+      markup,
       images: pictures,
     });
   }

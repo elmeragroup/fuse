@@ -11,9 +11,9 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { attributesNamed, bySlot, elementsOf } from "../../test/static-markup";
 import { renderCellHtml } from "./cell-renderers";
 import { selectField } from "./select-field-cell";
+import { attributesNamed, bySlot, elementsOf } from "./static-markup";
 
 /** The attributes that tell the cells apart, on the element that carries them. */
 const READ = ["data-placeholder", "disabled", "data-disabled", "aria-invalid", "data-invalid"];

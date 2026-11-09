@@ -7,9 +7,9 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { elementsOf } from "../../test/static-markup";
 import { renderCellHtml } from "./cell-renderers";
 import { confirmButton } from "./confirm-button-cell";
+import { elementsOf } from "./static-markup";
 
 /** The attributes of the HTML's first `<button>` tag, by name. */
 function buttonAttributes(html: string): ReadonlyMap<string, string> {

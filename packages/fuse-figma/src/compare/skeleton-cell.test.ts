@@ -6,9 +6,9 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { elementsOf } from "../../test/static-markup";
 import { renderCellHtml } from "./cell-renderers";
 import { skeleton } from "./skeleton-cell";
+import { elementsOf } from "./static-markup";
 
 describe("the Skeleton renderer", () => {
   it.each([

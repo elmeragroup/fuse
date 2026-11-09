@@ -7,9 +7,9 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { elementsOf } from "../../test/static-markup";
 import { renderCellHtml } from "./cell-renderers";
 import { label } from "./label-cell";
+import { elementsOf } from "./static-markup";
 
 /** Each element as its name, its parent's index, its `data-slot` and its disabled attributes. */
 function outline(state: string) {

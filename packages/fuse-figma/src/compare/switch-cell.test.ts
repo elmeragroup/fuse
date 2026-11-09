@@ -10,10 +10,10 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { rootOf, stateAttributes } from "../../test/static-markup";
-import type { MarkupNode } from "../../test/static-markup";
 import type { Cell } from "../components/component-spec";
 import { renderCellHtml } from "./cell-renderers";
+import { rootOf, stateAttributes } from "./static-markup";
+import type { MarkupNode } from "./static-markup";
 import { switchCell } from "./switch-cell";
 
 /** The switch's track the cell renders, wherever it sits, and the thumb inside it. */

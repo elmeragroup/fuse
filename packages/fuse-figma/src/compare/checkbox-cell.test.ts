@@ -10,10 +10,10 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { checkboxStateAttributes, rootOf } from "../../test/static-markup";
 import type { Cell } from "../components/component-spec";
 import { renderCellHtml } from "./cell-renderers";
 import { checkbox } from "./checkbox-cell";
+import { checkboxStateAttributes, rootOf } from "./static-markup";
 
 /** The checkbox the cell renders, wherever it sits, and the element names inside it. */
 function box(cell: Cell) {

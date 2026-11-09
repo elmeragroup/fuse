@@ -11,9 +11,9 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { elementsOf } from "../../test/static-markup";
 import { renderCellHtml } from "./cell-renderers";
 import { inputGroup } from "./input-group-cell";
+import { elementsOf } from "./static-markup";
 
 /** Each element with a `data-slot`, as its name, its slot and the attributes a state shows. */
 function outline(form: string, state: string) {

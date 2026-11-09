@@ -8,9 +8,9 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { elementsOf } from "../../test/static-markup";
 import { renderCellHtml } from "./cell-renderers";
 import { radioGroup } from "./radio-group-cell";
+import { elementsOf } from "./static-markup";
 
 function render(orientation: string, state: string) {
   const elements = elementsOf(renderCellHtml(radioGroup, { orientation, state }));

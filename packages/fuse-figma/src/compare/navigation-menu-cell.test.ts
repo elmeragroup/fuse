@@ -10,7 +10,6 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { elementsOf } from "../../test/static-markup";
 import type { Cell, ComponentDefinition } from "../components/component-spec";
 import {
   NAVIGATION_MENU_BAR_LINK,
@@ -26,6 +25,7 @@ import {
   navigationMenuRowLink,
   navigationMenuVerticalTrigger,
 } from "./navigation-menu-cell";
+import { elementsOf } from "./static-markup";
 
 /** The host's style, the class of the element carrying the definition's slot, and the slots it renders. */
 function rendered(renderer: CellRendering, definition: ComponentDefinition, cell: Cell) {

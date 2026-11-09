@@ -8,10 +8,10 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { elementsOf } from "../../test/static-markup";
 import { renderCellHtml } from "./cell-renderers";
 import type { CellRendering } from "./cell-renderers";
 import { fieldDescription, fieldError, fieldLegend, fieldTitle } from "./field-text-cell";
+import { elementsOf } from "./static-markup";
 
 /** A cell's outermost element as its tag and `style`, and the element carrying a `data-slot`. */
 function render(rendering: CellRendering, cell: Readonly<Record<string, string>>, slot: string) {

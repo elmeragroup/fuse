@@ -11,9 +11,9 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { elementsOf } from "../../test/static-markup";
-import type { MarkupElement } from "../../test/static-markup";
 import { renderCellHtml } from "./cell-renderers";
+import { elementsOf } from "./static-markup";
+import type { MarkupElement } from "./static-markup";
 import { textarea } from "./textarea-cell";
 
 /** The attributes that tell a textarea's text and state apart. */

@@ -58,7 +58,11 @@ const selfCheck = Effect.fn("compare.selfCheck")(function* (options: CompareOpti
   }
 });
 
-/** Compare a snapshot export and print the summary, the five worst cells and the report path. */
+/**
+ * Compare a snapshot export and print the summary, the five worst cells and the report path. A client
+ * cell whose mounted markup differs from its definition stops the run, after the report is written,
+ * with each difference on stderr.
+ */
 const compare = Effect.fn("compare.snapshot")(function* (snapshotPath: string, options: CompareOptions) {
   const path = resolve(snapshotPath);
   const snapshot = parseSnapshot(yield* readText(path));
@@ -81,6 +85,15 @@ const compare = Effect.fn("compare.snapshot")(function* (snapshotPath: string, o
     );
   }
   yield* Console.log(`Report: ${resolve(options.outDir, "report.html")}`);
+  const differences = [...report.rows, ...report.skipped].flatMap((entry) =>
+    entry.markup.map(({ message }) => `  ${message}  (${entry.preview})`)
+  );
+  if (differences.length > 0) {
+    yield* Console.error(
+      `The mounted markup of ${String(differences.length)} client cells differs from their definitions:\n${differences.join("\n")}`
+    );
+    return yield* new CompareStopped();
+  }
 });
 
 const program = Effect.gen(function* () {

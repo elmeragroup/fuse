@@ -6,7 +6,8 @@
 // `&amp;`.
 import { describe, expect, it } from "vitest";
 
-import { mountedMarkup } from "./client-markup";
+import { chip } from "../../test/fixture-sets";
+import { checkClientMarkup, mountedMarkup } from "./client-markup";
 
 const MOUNTED = {
   slot: '<div style="display: contents;"><button data-slot="t">Open</button></div><div><div data-slot="p">Body</div></div>',
@@ -28,5 +29,60 @@ describe("mountedMarkup", () => {
     expect(mountedMarkup('a"&b', ["t"], { slot: "", measured: ["<i></i>"] })).toBe(
       '<div data-slot="a&quot;&amp;b"><i></i></div>'
     );
+  });
+});
+
+// Unit under test: `checkClientMarkup`, the markup check of a client cell's mounted markup. Oracle: a
+// root its definition finds by its element must carry the `data-slot` its `elementSlot` names, as
+// a menu row finds its `role="menuitem"` and names the slot Fuse stamps on it, and a rendering
+// reports its first difference alone, so a wrong slot is the one diagnostic though the row's text
+// differs too.
+describe("checkClientMarkup", () => {
+  const ROW = chip("", {
+    element: { tag: "div", attributes: { role: "menuitem" } },
+    elementSlot: () => "menu-item",
+  });
+  const check = (html: string) =>
+    checkClientMarkup(
+      ROW,
+      undefined,
+      { state: "rest" },
+      { forcedAttributes: {} },
+      { slot: html, measured: [] }
+    );
+
+  it("reports nothing for a row that carries the slot its definition names", () => {
+    expect(check('<div role="menuitem" data-slot="menu-item"></div>')).toEqual([]);
+  });
+
+  it("reports a wrong data-slot as one diagnostic naming the rendering and both slots", () => {
+    expect(check('<div role="menuitem" data-slot="menu-row">Stray</div>')).toEqual([
+      {
+        rendering: "chip/state=rest",
+        subject: "the root's data-slot",
+        expected: '"menu-item"',
+        found: '"menu-row"',
+        message: 'chip/state=rest: the root\'s data-slot: expected "menu-item", found "menu-row"',
+      },
+    ]);
+  });
+
+  // A missing attribute is no value, which the diagnostic writes as JSON `null`, so `found` parses.
+  it("reports a row without a data-slot with null as the slot it found", () => {
+    expect(check('<div role="menuitem"></div>')).toEqual([
+      {
+        rendering: "chip/state=rest",
+        subject: "the root's data-slot",
+        expected: '"menu-item"',
+        found: "null",
+        message: 'chip/state=rest: the root\'s data-slot: expected "menu-item", found null',
+      },
+    ]);
+  });
+
+  it("reports the stray text once the slot holds, which the wrong slot's diagnostic stood before", () => {
+    expect(
+      check('<div role="menuitem" data-slot="menu-item">Stray</div>').map(({ subject }) => subject)
+    ).toEqual(["the label"]);
   });
 });

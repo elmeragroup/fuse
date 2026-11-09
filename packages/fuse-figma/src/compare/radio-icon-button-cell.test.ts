@@ -9,10 +9,10 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { rootOf, stateAttributes } from "../../test/static-markup";
 import type { Cell } from "../components/component-spec";
 import { renderCellHtml } from "./cell-renderers";
 import { radioIconButton } from "./radio-icon-button-cell";
+import { rootOf, stateAttributes } from "./static-markup";
 
 /** The radio the cell renders, wherever it sits in its group, and its child elements. */
 function radio(cell: Cell) {

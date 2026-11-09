@@ -4,8 +4,8 @@
  * `data-slot` around the root, and the parts, icons, labels and images the markup holds, each found
  * as the markup check's rules in `src/compare/kit-markup.test.ts` place them.
  */
-import { splitClasses } from "../src/components/cascade.ts";
-import { splitClassName } from "../src/components/class-name.ts";
+import { splitClasses } from "../components/cascade.ts";
+import { splitClassName } from "../components/class-name.ts";
 import type {
   BoxDefinition,
   Cell,
@@ -14,7 +14,7 @@ import type {
   IconSlot,
   InstanceDefinition,
   PartDefinition,
-} from "../src/components/component-spec.ts";
+} from "../components/component-spec.ts";
 import { selects } from "./static-markup.ts";
 import type { MarkupElement } from "./static-markup.ts";
 

@@ -13,10 +13,10 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { elementsOf } from "../../test/static-markup";
-import type { MarkupElement } from "../../test/static-markup";
 import { renderCellHtml } from "./cell-renderers";
 import { selectTrigger } from "./select-trigger-cell";
+import { elementsOf } from "./static-markup";
+import type { MarkupElement } from "./static-markup";
 
 /** The attributes that tell a trigger's size, text and state apart. */
 const READ = [

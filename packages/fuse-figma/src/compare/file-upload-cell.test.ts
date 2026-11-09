@@ -7,9 +7,9 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { elementsOf } from "../../test/static-markup";
 import { renderCellHtml } from "./cell-renderers";
 import { fileUploadDropzone } from "./file-upload-cell";
+import { elementsOf } from "./static-markup";
 
 /** The zone's state attributes and its trigger's, for one cell. */
 function states(state: string) {

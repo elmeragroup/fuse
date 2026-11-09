@@ -8,9 +8,9 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { elementsOf } from "../../test/static-markup";
 import { renderCellHtml } from "./cell-renderers";
 import { radioRow } from "./radio-row-cell";
+import { elementsOf } from "./static-markup";
 
 function render(cell: Readonly<Record<string, string>>) {
   const elements = elementsOf(renderCellHtml(radioRow, cell));

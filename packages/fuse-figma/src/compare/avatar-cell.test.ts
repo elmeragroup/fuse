@@ -10,9 +10,9 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
-import { elementsOf } from "../../test/static-markup";
 import { avatar, avatarGroup } from "./avatar-cell";
 import { renderCellHtml } from "./cell-renderers";
+import { elementsOf } from "./static-markup";
 
 const PORTRAIT_URI = `data:image/png;base64,${readFileSync(
   new URL("../components/portrait.png", import.meta.url)

@@ -1,15 +1,16 @@
 /**
  * The markup check of a client cell. `renderToStaticMarkup` cannot reach a portalled popup, so the
  * run reads the markup the compare page mounted, before it forces any state, and checks it with the
- * markup check the static sets' tests use. A popup part or a row is checked in its slot's whole HTML.
+ * markup check the static sets' tests use, which reports the differences it finds. A popup part or a row is checked in its slot's whole HTML.
  * An open composite has no one element around its trigger and its popup, since the popup portals
  * beside the trigger, so it is checked as its measured elements under one root that carries the
  * composite's `data-slot`, as its Figma frame holds both.
  */
 
-import { checkMountedMarkup } from "../../test/markup-check.ts";
 import type { ComponentDefinition } from "../components/component-spec.ts";
 import type { CellRequest, MountedHtml } from "./browser-render.ts";
+import { checkMountedMarkup } from "./markup-check.ts";
+import type { MarkupDiagnostic } from "./markup-check.ts";
 
 /**
  * The markup the check reads for a client cell.
@@ -40,7 +41,8 @@ export function mountedMarkup(
  * @param cell - The parsed cell.
  * @param request - The cell's request, whose forced attributes the check reads.
  * @param mounted - The markup the page mounted for the cell.
- * @throws An assertion error naming the cell and the first difference.
+ * @returns The first difference, naming the cell, or none where the markup holds what the
+ *   definition says.
  */
 export function checkClientMarkup(
   definition: ComponentDefinition,
@@ -48,8 +50,8 @@ export function checkClientMarkup(
   cell: Readonly<Record<string, string>>,
   request: Pick<CellRequest, "forcedAttributes">,
   mounted: MountedHtml
-): void {
-  checkMountedMarkup(
+): readonly MarkupDiagnostic[] {
+  return checkMountedMarkup(
     definition,
     cell,
     mountedMarkup(definition.slot, union, mounted),
