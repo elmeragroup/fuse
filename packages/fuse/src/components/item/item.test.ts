@@ -30,14 +30,14 @@ describe("itemVariants", () => {
 describe("itemGroupVariants", () => {
   it("keeps the default group's gaps and separator margin", () => {
     const { root, separator } = itemGroupVariants();
-    expect(root()).toContain("gap-(--surface-gap-lg)");
+    expect(root()).toContain("var(--surface-gap-lg)");
     expect(separator()).toContain("my-2");
   });
 
   it("drops the gaps, tightens rows and joins outline rows in the compact variant", () => {
     const { root, item, separator } = itemGroupVariants({ variant: "compact" });
     expect(root()).toContain("gap-0");
-    expect(root()).not.toContain("gap-(--surface-gap-lg)");
+    expect(root()).not.toContain("--surface-gap");
     // A default row keeps the Item's own medium-tier padding; only an sm row tightens.
     expect(item()).not.toMatch(/(^| )p-/u);
     expect(itemGroupVariants({ variant: "compact", size: "sm" }).item()).toContain("p-(--row-px)");

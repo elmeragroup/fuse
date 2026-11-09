@@ -33,6 +33,10 @@ type ItemGroupProps = ComponentProps<"div"> & Pick<VariantProps<typeof itemGroup
 /**
  * A list of Item rows. Every `Item.Root` and `Item.Separator` inside reads the group's
  * `variant`, so the compact look needs no props on the rows.
+ *
+ * The default look tightens its gap when one of its rows is `sm` or `xs`. A row is a direct
+ * child `Item.Root`, with or without a `render` element; an Item wrapped in another element or
+ * nested inside a row does not count. A `gap-*` class in `className` replaces the gap.
  */
 export function ItemGroup({ className, variant = "default", ...props }: ItemGroupProps): ReactElement {
   return (

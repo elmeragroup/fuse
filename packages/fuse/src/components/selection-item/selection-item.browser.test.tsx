@@ -18,6 +18,7 @@ import {
   fkasExternal,
   fkasPrivate,
   headingNamed,
+  metricPx,
   px,
   renderThemed,
   roleNamed,
@@ -26,6 +27,7 @@ import {
 } from "../../../test/themed-browser-render";
 import { ThemeScope } from "../../theme";
 import { DENSITIES } from "../../theme/density";
+import { Alert } from "../alert/alert";
 import { Badge } from "../badge/badge";
 import { Checkbox as UiCheckbox, CheckboxGroup, CheckboxItemGroup } from "../checkbox/checkbox";
 import { CheckboxItem } from "../checkbox/checkbox-item";
@@ -1512,6 +1514,66 @@ describe("selection group orientation map", () => {
     expect(layout(groupPrimitiveAround(checkboxNamed("Check card vertical")))).toEqual(VERTICAL_GROUP);
     expect(layout(groupPrimitiveAround(radioNamed("Radio card horizontal")))).toEqual(HORIZONTAL);
   });
+
+  // An Alert is an sm Item. Inside a row's SubSection it is not one of the card list's rows, so
+  // it must not change the list's gap, even while the SubSection is hidden.
+  it.each(
+    DENSITIES.flatMap(
+      (density) =>
+        [
+          // Stacked rows touch, as the divider and the checked row's border assume.
+          { density, orientation: "vertical", gap: "0px" },
+          { density, orientation: "horizontal", gap: `${metricPx("surface-gap-lg", density)}px` },
+        ] as const
+    )
+  )(
+    "keeps a $orientation card list's gap when a row's hidden SubSection holds an Alert, at $density",
+    ({ density, orientation, gap }) => {
+      stampDensity(density);
+      const note = (
+        <Alert.Root>
+          <Alert.Title>Note</Alert.Title>
+        </Alert.Root>
+      );
+      renderThemed(
+        <>
+          <CheckboxItemGroup label="Checks" orientation={orientation} defaultValue={["a"]}>
+            <CheckboxItem value="a">
+              <RowTitle>Check a</RowTitle>
+            </CheckboxItem>
+            <CheckboxItem value="b">
+              <RowTitle>Check b</RowTitle>
+              <CheckboxItem.SubSection mode="hidden">{note}</CheckboxItem.SubSection>
+            </CheckboxItem>
+          </CheckboxItemGroup>
+          <RadioItemGroup label="Radios" orientation={orientation} defaultValue="a">
+            <RadioItem value="a">
+              <RowTitle>Radio a</RowTitle>
+            </RadioItem>
+            <RadioItem value="b">
+              <RowTitle>Radio b</RowTitle>
+              <RadioItem.SubSection mode="hidden">{note}</RadioItem.SubSection>
+            </RadioItem>
+          </RadioItemGroup>
+        </>
+      );
+
+      for (const [family, control] of [
+        ["CheckboxItemGroup", checkboxNamed("Check a")],
+        ["RadioItemGroup", radioNamed("Radio a")],
+      ] as const) {
+        const list = itemListAround(control);
+        // DOM audit: the hidden SubSection is inert, so its Alert has no role to find it by; the
+        // group's size rule reads its public Item slot and size.
+        expect(
+          list.querySelector("[data-slot=item][data-size=sm]"),
+          `${family} holds the Alert`
+        ).not.toBeNull();
+        const style = getComputedStyle(list);
+        expect([style.rowGap, style.columnGap], family).toEqual([gap, gap]);
+      }
+    }
+  );
 
   it("collapses the plain vertical group gap when its direct children are shells", () => {
     renderThemed(

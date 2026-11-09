@@ -10,6 +10,13 @@ import { tv } from "../../styles/tv";
  * row's own size, so the compact padding lands as plain classes that a row's `className` can
  * still override.
  *
+ * The default variant spaces its rows by `--surface-gap-lg`, or by `--surface-gap-sm` when one
+ * of its own rows is `sm` or `xs`: a direct child Item, or the Item inside the `item-listitem`
+ * wrapper. An Item nested in a row, such as an Alert in a footer, is not one of its rows. The
+ * size rule sets the private `--item-group-gap` rather than `gap`, so a `gap-*` in the group's
+ * `className` replaces `gap-(--item-group-gap)` and wins whatever rows the group holds; a `has-`
+ * rule that wrote `gap` itself would outrank that class.
+ *
  * The compact variant draws one connected list: no gap, small rows padded with the row
  * inset on every side (default and `xs` rows keep their own padding) and flush separators. Outline rows drop their corners and bottom edge, so each
  * shared edge is one line; the group then rounds the outer corners and closes the bottom edge
@@ -32,7 +39,10 @@ export const itemGroupVariants = tv({
   variants: {
     variant: {
       default: {
-        root: "gap-(--surface-gap-lg) has-[[data-slot=item][data-size=sm]]:gap-(--surface-gap-sm) has-[[data-slot=item][data-size=xs]]:gap-(--surface-gap-sm)",
+        root: cn(
+          "gap-(--item-group-gap) [--item-group-gap:var(--surface-gap-lg)]",
+          "has-[>[data-slot=item]:is([data-size=sm],[data-size=xs]),>[data-slot=item-listitem]>[data-slot=item]:is([data-size=sm],[data-size=xs])]:[--item-group-gap:var(--surface-gap-sm)]"
+        ),
         separator: "my-2",
       },
       compact: {
