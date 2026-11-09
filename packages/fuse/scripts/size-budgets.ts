@@ -262,7 +262,9 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = derive([
   // 2026-11-09: the review round rb3 fixes: each lane's popup held inside its own span, the visible area read
   // from the visual viewport, the centre parts reading the held point, and the scatter tooltip holding its
   // last point while it closes, 216006 to 216354. The ceiling keeps about 100 bytes of headroom.
-  { name: "chart", entryFile: "chart.js", measuredGzip: 97044, ceilingGzip: 216454 },
+  // 2026-11-09: the clock wedge gap's cut-off measured at the rim, and each short wedge's pad narrowed so
+  // its tip keeps one device pixel (D24), 216354 to 216491. The ceiling keeps about 100 bytes of headroom.
+  { name: "chart", entryFile: "chart.js", measuredGzip: 97044, ceilingGzip: 216591 },
   // 2026-10-13: new entry, measured at 29180. Pure wrappers over Base UI's toolbar and its roving focus.
   { name: "toolbar", entryFile: "toolbar.js", measuredGzip: 29180, ceilingGzip: 43770 },
   // 2026-10-12: new entries. Command is Base UI's Autocomplete in the InputGroup, with the Dialog
@@ -730,7 +732,9 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // headroom.
     // 2026-11-09: the review round rb3 fixes: each lane's popup held inside its own span, the visible area
     // read from the visual viewport, 131627 to 131849. The ceiling keeps about 100 bytes of headroom.
-    ceilingGzip: 131949,
+    // 2026-11-09: the wedge gap's cut-off measured at the rim, and each short wedge's pad narrowed so its
+    // tip keeps one device pixel (D24), 131849 to 131981. The ceiling keeps about 100 bytes of headroom.
+    ceilingGzip: 132081,
   },
   {
     name: "chart/Chart.Root",

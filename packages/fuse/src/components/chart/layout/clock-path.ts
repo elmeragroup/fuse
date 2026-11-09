@@ -12,6 +12,7 @@ import type { CurveFactory } from "d3-shape";
 import type { ChartCurve } from "../chart-types";
 import { arcPath, arcWriter } from "./arc-path";
 import type { PolarPoint } from "./polar-angle";
+import { toDegrees, toRadians } from "./polar-angle";
 import { CLOCK_INTRO } from "./polar-motion";
 import { pathNumber } from "./rounding";
 
@@ -714,15 +715,48 @@ export function clockArea(
 /** How one wedge's radial span draws: its inner and outer radius, after any floor. */
 export type WedgeSpan = (slot: number, base: number, tip: number) => readonly [number, number];
 
+/** A dial's wedge pad in path units, and the device pixels one path unit spans. */
+export type WedgeGap = {
+  /** The pad angle in degrees, from `wedgePad`. */
+  readonly padAngle: number;
+  /** The radius the pad's width is measured at, in path units. */
+  readonly padRadius: number;
+  /** Device pixels per path unit: the rim's radius in CSS pixels times the pixel ratio. */
+  readonly devicePixels: number;
+};
+
+/**
+ * One wedge's pad angle in degrees, with D24's floor across its angle, measured at the radius of the
+ * value's tip, its outer edge for an outward column and its inner edge for an inward one: the full
+ * pad while the arc at the tip keeps at least one device pixel after it, a narrower pad that leaves
+ * exactly one device pixel there when the full gap would take more, and none when the slot's whole
+ * arc at the tip is under a device pixel. d3 takes `asin(g / 2r)` from each seam at radius r for a
+ * gap g, so the arc left at r is `r·(θ − 2·asin(g / 2r))`, and the gap that leaves w of it is
+ * `2r·sin((θ − w/r) / 2)`. The column's base, farther out for an inward column, is wider still.
+ */
+function wedgePadAngle(gap: WedgeGap, tip: number, start: number, end: number): number {
+  if (!(gap.padAngle > 0) || !(tip > 0)) return 0;
+  const sweep = toRadians(end - start);
+  const pixel = 1 / gap.devicePixels;
+  const width = 2 * gap.padRadius * Math.sin(toRadians(gap.padAngle) / 2);
+  if (tip * (sweep - 2 * Math.asin(Math.min(1, width / (2 * tip)))) >= pixel) return gap.padAngle;
+  if (tip * sweep <= pixel) return 0;
+  const narrowed = 2 * tip * Math.sin((sweep - pixel / tip) / 2);
+  return toDegrees(2 * Math.asin(Math.min(1, narrowed / (2 * gap.padRadius))));
+}
+
 /**
  * A series' columns: one wedge per reading, from its base to its tip, over its slot's angle less
  * the pad, each in the path of its group, such as its paint step, so each wedge paints its own
- * value's side of a threshold (D23).
+ * value's side of a threshold (D23). Every wedge keeps the full gap where the arc at its value's tip
+ * can afford it: the outer edge of an outward column, the inner edge of one that hangs inward from
+ * the zero ring. A wedge whose tip the gap would erase narrows its own pad until one device pixel of
+ * arc is left there, so a non-zero reading never draws as nothing (D24).
  *
  * @param values - The loop's numbers: the progress, then each slot's angles, base and tip.
  * @param slots - Each slot's state.
  * @param shown - The slots to draw, every slot or M4's decimated set.
- * @param pad - The pad angle in degrees and the radius it is measured at, from `wedgePad`.
+ * @param gap - The pad and the device pixels per path unit.
  * @param span - The span a wedge draws, its floor applied.
  * @param groupOf - The group a slot's wedge draws in.
  * @returns Each group's path data.
@@ -731,24 +765,26 @@ export function clockWedges(
   values: readonly number[],
   slots: ClockSlots,
   shown: readonly number[],
-  pad: { readonly padAngle: number; readonly padRadius: number },
+  gap: WedgeGap,
   span: WedgeSpan,
   groupOf: (slot: number) => string
 ): Map<string, string> {
   const groups = new Map<string, string>();
   // Every wedge shares the pad radius, so one generator draws them all.
-  const wedge = arcWriter({ padRadius: pad.padRadius });
+  const wedge = arcWriter({ padRadius: gap.padRadius });
   for (const slot of shown) {
     if (slots.states[slot] !== "reading") continue;
     const [start, end, base, tip] = slotAt(values, slot);
     const [inner, outer] = span(slot, base, tip);
     if (!(outer > inner)) continue;
+    // The value's tip: the outer edge of an outward column, the inner edge of an inward one.
+    const tipRadius = tip < base ? inner : outer;
     const path = wedge({
       innerRadius: inner,
       outerRadius: outer,
       startAngle: start,
       endAngle: end,
-      padAngle: pad.padAngle,
+      padAngle: wedgePadAngle(gap, tipRadius, start, end),
     });
     const group = groupOf(slot);
     groups.set(group, (groups.get(group) ?? "") + path);

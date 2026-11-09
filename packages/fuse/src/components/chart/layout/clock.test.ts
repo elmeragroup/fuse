@@ -1,8 +1,8 @@
 // The clock dial's geometry. Unit under test: slotAngles, instantAngle, clockRadius, wedgePad,
 // columnAxis, columnSpan and columnFloorSpan. Oracles, written by hand: D11's equal slots, where
 // slot i of n spans [360·i/n, 360·(i+1)/n); D13's radii, r = √(lerp(ri², R², t)) and lerp(ri, R, t);
-// D14's constant gap, whose width 2·padRadius·sin(padAngle/2) holds at every radius, vanishing once
-// the inner arc falls under 2 device pixels; and D24's floor, one device pixel along the radius away
+// D14's constant gap, whose width 2·padRadius·sin(padAngle/2) holds at every radius, kept while the
+// rim arc leaves at least one device pixel of wedge, (2π·R/n − gap)·dpr ≥ 1; and D24's floor, one device pixel along the radius away
 // from the zero ring, settled for a stack by floor-settle.ts's rule that the span reaching farthest
 // out wins.
 import { describe, expect, it } from "vitest";
@@ -51,14 +51,41 @@ describe("the radius (D13)", () => {
 
 describe("the wedge pad (D14)", () => {
   it("cuts a 2 px gap at every radius", () => {
-    const { padAngle, padRadius } = wedgePad(24, 30, 100, 2, 2);
+    const { padAngle, padRadius } = wedgePad(24, 100, 2, 2);
     expect(padRadius).toBe(100);
     expect(2 * padRadius * Math.sin(((padAngle / 2) * Math.PI) / 180)).toBeCloseTo(2, 12);
   });
 
-  it("drops the gap once a wedge's inner arc falls under 2 device pixels", () => {
-    // 8,760 hours around a 30 px hole leave 0.02 px of inner arc per wedge.
-    expect(wedgePad(8760, 30, 100, 2, 2).padAngle).toBe(0);
+  it("drops the gap once the rim leaves less than a device pixel of wedge", () => {
+    // 8,760 hours around a 100 px rim leave 0.07 px of rim arc per wedge, less than the gap.
+    expect(wedgePad(8760, 100, 2, 2).padAngle).toBe(0);
+  });
+
+  // The week dial: 168 hours, a 98 px rim. Its rim arc is 2π·98/168 = 3.665 px, so a 2 px gap leaves
+  // 1.665 px of wedge there, while its 30 px hole's arc is only 1.122 px: each wedge tapers to the hole.
+  it("keeps the week dial's gap at 1×, where the rim leaves 1.665 device pixels of wedge", () => {
+    const { padAngle, padRadius } = wedgePad(168, 98, 2, 1);
+    expect(padRadius).toBe(98);
+    // 2·asin(2 / (2·98)) = 0.0204086 rad = 1.16932°.
+    expect(padAngle).toBeCloseTo(1.16932, 5);
+  });
+
+  it("keeps the week dial's gap at 2×", () => {
+    expect(wedgePad(168, 98, 2, 2).padAngle).toBeCloseTo(1.16932, 5);
+  });
+
+  it("drops a year of days' gap at 1× and 2×, where the rim arc of 1.687 px is narrower than the gap", () => {
+    expect(wedgePad(365, 98, 2, 1).padAngle).toBe(0);
+    expect(wedgePad(365, 98, 2, 2).padAngle).toBe(0);
+  });
+
+  it("keeps the gap when the rim leaves exactly one device pixel, and drops it just under", () => {
+    // 6 slots on a 9/π px rim: a rim arc of 3 px, 1 px of wedge after a 2 px gap at 1×.
+    expect(wedgePad(6, 9 / Math.PI, 2, 1).padAngle).toBeGreaterThan(0);
+    expect(wedgePad(6, 9 / Math.PI - 1e-9, 2, 1).padAngle).toBe(0);
+    // 6 slots on a 7.5/π px rim: 0.5 CSS px of wedge after the gap, one device pixel at 2×.
+    expect(wedgePad(6, 7.5 / Math.PI, 2, 2).padAngle).toBeGreaterThan(0);
+    expect(wedgePad(6, 7.5 / Math.PI - 1e-9, 2, 2).padAngle).toBe(0);
   });
 });
 

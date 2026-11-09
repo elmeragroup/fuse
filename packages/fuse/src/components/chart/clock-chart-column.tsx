@@ -100,8 +100,8 @@ function wedgeGroups(
   const radius = measure.scale > 0 ? measure.scale : NOMINAL_RADIUS;
   const { dpr } = measure;
   const axis = columnAxis(radius, dpr);
-  const pad = wedgePad(clock.count, clock.inner * radius, radius, WEDGE_GAP, dpr);
-  const padded = { padAngle: pad.padAngle, padRadius: pad.padRadius / radius };
+  const pad = wedgePad(clock.count, radius, WEDGE_GAP, dpr);
+  const padded = { padAngle: pad.padAngle, padRadius: pad.padRadius / radius, devicePixels: radius * dpr };
   const span = (slot: number, base: number, tip: number): readonly [number, number] => {
     if (keeps === null || keeps.get(slot) === true) {
       const [from, to] = columnSpan(axis, base * radius, tip * radius);

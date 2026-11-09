@@ -22,6 +22,7 @@ import "../../../dist/themes.css";
 import { nextFrames, recordFrames, wait } from "../../../test/animation-frames";
 import { computedColor } from "../../../test/assert-invalid-ring";
 import { angleOf, clockLayer, clockPath, dotPoints, labelInk, wedgeRadii } from "../../../test/chart/clock";
+import { pagePixels, pixelAt } from "../../../test/chart/media";
 import { clientPoint, hoverAt, polarFigure } from "../../../test/chart/pie";
 import { emulatePixelRatio } from "../../../test/page-metrics";
 import { renderThemed } from "../../../test/themed-browser-render";
@@ -407,6 +408,190 @@ describe("the pixel floor (D24)", () => {
     expect(inner).toHaveLength(1);
     expect(outer).toHaveLength(23);
     for (const [from, to] of outer) expect((to - from) * scale).toBeGreaterThanOrEqual(0.99);
+  });
+});
+
+describe("the wedge gap at a pixel ratio of 1 (D14)", () => {
+  /** Monday 13 October 2025 in Oslo, the docs week demo's first hour. */
+  const MONDAY = Date.parse("2025-10-12T22:00:00Z");
+
+  // A week of equal hours, so every wedge reaches the rim, at the default --chart-polar-size of
+  // 12.5rem, the docs week demo's dial: a rim of 100 px around a hole of 30 px.
+  function Week() {
+    return (
+      <LocaleProvider locale="nb-NO" timeZone="Europe/Oslo">
+        <div style={{ width: 320 }}>
+          <ClockChart.Root
+            data={hours(
+              Array.from({ length: 168 }, () => 1),
+              MONDAY
+            )}
+            config={{ kwh: { label: "kWh", color: "chart-1" } }}
+            xKey="start"
+            cycle="week"
+            interval="hour"
+            data-intro="none"
+            aria-label="Uke">
+            <ClockChart.Column dataKey="kwh" />
+          </ClockChart.Root>
+        </div>
+      </LocaleProvider>
+    );
+  }
+
+  // Oracle, raster and independent of the code: around a circle at 0.85 of the rim's radius, a
+  // pixel counts as fill when its distance from the hole's background is over half the largest
+  // distance on the circle, and each fill-to-background step is one gap. At 0.85 R a week's slot
+  // holds 2π · 0.85 · 100 / 168 = 3.2 px, so a 2 px gap clears at least one whole device pixel and
+  // reads as background: 168 runs with gaps, 0 without. Antialiasing can merge a pair of runs where
+  // a wedge, about 1.2 px wide at that radius, covers no device pixel past half, so the bound is
+  // 150, a margin of 18.
+  it("keeps a week's 168 gaps at a pixel ratio of 1, where the rim leaves a pixel of wedge", async () => {
+    // The browser project runs at Playwright's default ratio of 1; the emulation pins it.
+    await emulatePixelRatio(1);
+    expect(devicePixelRatio).toBe(1);
+    const { host } = renderThemed(<Week />);
+    await nextFrames(2);
+    const layer = clockLayer(host, "clock-chart-column");
+    const [cx, cy] = clientPoint(layer, 0, 0);
+    const [rx] = clientPoint(layer, 1, 0);
+    const radius = rx - cx;
+    expect(radius).toBeGreaterThan(90);
+    const pixels = await pagePixels();
+    const background = pixelAt(pixels, cx, cy);
+    const samples = Math.round(2 * Math.PI * 0.85 * radius * 4);
+    const distances = Array.from({ length: samples }, (_, index) => {
+      const angle = (2 * Math.PI * index) / samples;
+      const x = cx + 0.85 * radius * Math.sin(angle);
+      const y = cy - 0.85 * radius * Math.cos(angle);
+      return Oklab.deltaE(pixelAt(pixels, x, y), background);
+    });
+    const full = Math.max(...distances);
+    expect(full).toBeGreaterThan(10);
+    const fill = distances.map((distance) => distance > full / 2);
+    const runs = fill.filter((filled, index) => filled && fill[(index + 1) % samples] === false).length;
+    expect(runs).toBeGreaterThanOrEqual(150);
+  });
+});
+
+describe("a short hour's tip on a week dial at a pixel ratio of 1 (D14, D24)", () => {
+  /** Monday 13 October 2025 in Oslo. */
+  const MONDAY = Date.parse("2025-10-12T22:00:00Z");
+  /** The short hour, Tuesday 18:00. */
+  const HOUR = 42;
+
+  /** The linear scale's two Root props, which a dial sets together or not at all. */
+  type LinearScale = { radiusScale?: "linear"; yInclude?: readonly number[] };
+
+  /** A week dial of hourly rows with one Column, at the default 12.5rem: a 100 px rim, a 30 px hole. */
+  function WeekColumn({
+    data,
+    dataKey,
+    label,
+    linear,
+  }: {
+    readonly data: readonly Record<string, number>[];
+    readonly dataKey: string;
+    readonly label: string;
+    /** The linear scale's domain, which the radial default leaves to the data. */
+    readonly linear?: readonly [number, number];
+  }) {
+    const scale: LinearScale = {};
+    if (linear !== undefined) {
+      scale.radiusScale = "linear";
+      scale.yInclude = linear;
+    }
+    return (
+      <LocaleProvider locale="nb-NO" timeZone="Europe/Oslo">
+        <div style={{ width: 320 }}>
+          <ClockChart.Root
+            data={data}
+            config={{ [dataKey]: { label, color: "chart-1" } }}
+            xKey="start"
+            cycle="week"
+            interval="hour"
+            {...scale}
+            data-intro="none"
+            aria-label={label}>
+            <ClockChart.Column dataKey={dataKey} />
+          </ClockChart.Root>
+        </div>
+      </LocaleProvider>
+    );
+  }
+
+  /**
+   * Oracle, raster: render the dial at a pixel ratio of 1 and sample hour 42's middle angle from
+   * `from` to `to` px, every quarter pixel, at each offset `across` the angle. A sample counts as
+   * painted when it lies nearer the series colour, the wedge's computed fill, than the hole's
+   * background. Expect at least one painted sample.
+   */
+  async function expectTipPainted(
+    chart: React.ReactElement,
+    { from, to }: { readonly from: number; readonly to: number },
+    across: readonly number[]
+  ): Promise<void> {
+    await emulatePixelRatio(1);
+    const { host } = renderThemed(chart);
+    await nextFrames(2);
+    const layer = clockLayer(host, "clock-chart-column");
+    const [cx, cy] = clientPoint(layer, 0, 0);
+    const [rx] = clientPoint(layer, 1, 0);
+    expect(rx - cx).toBeGreaterThan(90);
+    // DOM audit: a Column's wedge paths are aria-hidden plot output, read by their slot.
+    const wedge = layer.querySelector('[data-slot="clock-chart-wedge"]');
+    if (wedge === null) throw new Error("no wedge path");
+    const fill = srgb(getComputedStyle(wedge).fill);
+    const pixels = await pagePixels();
+    const background = pixelAt(pixels, cx, cy);
+    const contrast = Oklab.deltaE(fill, background);
+    expect(contrast).toBeGreaterThan(10);
+    const middle = ((HOUR + 0.5) * 2 * Math.PI) / 168;
+    let painted = 0;
+    for (let r = from; r <= to; r += 0.25) {
+      for (const offset of across) {
+        const x = cx + r * Math.sin(middle) + offset * Math.cos(middle);
+        const y = cy - r * Math.cos(middle) + offset * Math.sin(middle);
+        if (Oklab.deltaE(pixelAt(pixels, x, y), fill) < contrast / 2) painted += 1;
+      }
+    }
+    expect(painted).toBeGreaterThan(0);
+  }
+
+  // 168 hours of 1 kWh but hour 42 at 0.08 kWh, whose tip lies at 100 · √(0.09 + 0.91 · 0.08) =
+  // 40.4 px under the radial scale, inside the 53.5 px where a week's 2 px gap takes the whole slot
+  // (2 · 168 / 2π). Its neighbours have no reading, so nothing else paints its slot. Sampled from 34
+  // to 39 px and a quarter pixel either side: D24 keeps one device pixel of arc at the tip, so some
+  // samples are painted; with the full gap the wedge has no area, and none are.
+  it("paints a near-zero hour's tip in the series colour", async () => {
+    const values = Array.from({ length: 168 }, (_, hour): number | null =>
+      hour === HOUR ? 0.08 : hour === HOUR - 1 || hour === HOUR + 1 ? null : 1
+    );
+    await expectTipPainted(
+      <WeekColumn data={hours(values, MONDAY)} dataKey="kwh" label="kWh" />,
+      { from: 34, to: 39 },
+      [-0.25, 0, 0.25]
+    );
+  });
+
+  // Spot prices in øre/kWh under the linear scale on a [−3, 1] domain: 1 øre at Monday 00:00, and
+  // −17/7 øre at Tuesday 18:00, which hangs inward from the zero ring at 30 + 70 · 3/4 = 82.5 px,
+  // snapped to 83, to its tip at 30 + 70 · (3 − 17/7)/4 = 40 px, where its slot holds 2π · 40/168 =
+  // 1.496 px, less than the 2 px gap and a pixel. No other hour has a reading. Sampled from 40.5 to
+  // 44 px, the inward tip's end, and up to half a pixel either side, inside the slot's 0.75 px
+  // half-width there: pixelAt reads the device pixel whose corner lies nearest, so the half-pixel
+  // offsets reach both rows a 1 px tip can cover. A tip under the full gap tapers to a point, under
+  // 0.15 px wide within 4 px of it, and no sample is painted.
+  it("paints a negative hour's inward tip in the series colour", async () => {
+    const data = [
+      { start: MONDAY, ore: 1 },
+      { start: MONDAY + HOUR * 3_600_000, ore: -17 / 7 },
+    ];
+    await expectTipPainted(
+      <WeekColumn data={data} dataKey="ore" label="Spotpris" linear={[-3, 1]} />,
+      { from: 40.5, to: 44 },
+      [-0.5, -0.25, 0, 0.25, 0.5]
+    );
   });
 });
 

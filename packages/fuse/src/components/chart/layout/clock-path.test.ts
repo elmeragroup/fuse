@@ -485,12 +485,80 @@ describe("the columns", () => {
       numbers([0.5, 0.9, 0.5, 0.9]),
       readings(4),
       [0, 1, 2, 3],
-      { padAngle: 0, padRadius: 1 },
+      { padAngle: 0, padRadius: 1, devicePixels: 200 },
       (_, base, tip) => [base, tip],
       (slot) => (slot % 2 === 0 ? "low" : "high")
     );
     expect([...groups.keys()]).toEqual(["low", "high"]);
     expect(groups.get("low")?.match(/M/gu)).toHaveLength(2);
+  });
+
+  // A week dial at 1× in CSS pixels: 168 slots of 360/168°, a 98 px rim, a 2 px gap and one device
+  // pixel per path unit. Hour 1 reaches only 40 px, where its slot holds 2π·40/168 = 1.496 px, less
+  // than the gap and a pixel, so D24 narrows its pad until its tip keeps 1 px of arc. Hours 0 and 2
+  // reach the rim, where 1.665 px of wedge is left after the gap, and keep the full gap: each corner
+  // sits 1 px, half the gap, from its slot's edge. The widths are read from the paths' outer corners.
+  it("narrows a short wedge's pad until its tip keeps a device pixel, and leaves tall wedges the full gap", () => {
+    const step = 360 / 168;
+    const tips = Array.from({ length: 168 }, (_, slot) => (slot === 1 ? 40 : 98));
+    const groups = clockWedges(
+      numbers(tips, 30),
+      readings(168),
+      [0, 1, 2],
+      { padAngle: (2 * Math.asin(2 / (2 * 98)) * 180) / Math.PI, padRadius: 98, devicePixels: 1 },
+      (_, base, tip) => [base, tip],
+      (slot) => String(slot)
+    );
+    // The outer corners: the path's first point and the end of its first arc, at radius r.
+    const corners = (slot: number) => {
+      const match = /^M(-?[\d.]+),(-?[\d.]+)A([\d.]+),[\d.]+,0,0,1,(-?[\d.]+),(-?[\d.]+)/u.exec(
+        groups.get(String(slot)) ?? ""
+      );
+      if (match === null) throw new Error(`no outer arc on wedge ${String(slot)}`);
+      const [, x0, y0, r, x1, y1] = match.map(Number);
+      return {
+        from: Math.atan2(x0 ?? 0, -(y0 ?? 0)),
+        to: Math.atan2(x1 ?? 0, -(y1 ?? 0)),
+        r: r ?? 0,
+      };
+    };
+    const short = corners(1);
+    expect(short.r).toBe(40);
+    // 1 px of arc at the tip, within the path's 0.001 rounding over a 40 px radius.
+    expect(Math.abs(short.r * (short.to - short.from) - 1)).toBeLessThan(0.01);
+    // A corner's distance from its slot's edge ray, r · sin(Δangle): 1 px on each tall wedge.
+    const edge = (step * Math.PI) / 180;
+    const before = corners(0);
+    const after = corners(2);
+    expect(before.r * Math.sin(edge - before.to)).toBeCloseTo(1, 2);
+    expect(after.r * Math.sin(after.from - 2 * edge)).toBeCloseTo(1, 2);
+  });
+
+  // An inward column on the week dial at 1×, in CSS pixels with a 100 px rim: a negative hour runs
+  // from the zero ring at 83 px in to its tip at 40 px, where its slot holds 2π·40/168 = 1.496 px.
+  // D24's floor is measured at the value's tip, inward or outward, so the tip keeps 1 px of arc and
+  // the base at 83 px keeps the narrowed pad's wider wedge. The width is read from the path's inner
+  // arc, the one d3 draws counter-clockwise after the outer arc.
+  it("keeps a device pixel at an inward wedge's tip", () => {
+    const groups = clockWedges(
+      numbers(
+        Array.from({ length: 168 }, () => 40),
+        83
+      ),
+      readings(168),
+      [42],
+      { padAngle: (2 * Math.asin(2 / (2 * 100)) * 180) / Math.PI, padRadius: 100, devicePixels: 1 },
+      (_, base, tip) => [Math.min(base, tip), Math.max(base, tip)],
+      () => "inward"
+    );
+    const match = /L(-?[\d.]+),(-?[\d.]+)A([\d.]+),[\d.]+,0,0,0,(-?[\d.]+),(-?[\d.]+)Z$/u.exec(
+      groups.get("inward") ?? ""
+    );
+    if (match === null) throw new Error("no inner arc on the inward wedge");
+    const [, x0 = 0, y0 = 0, r = 0, x1 = 0, y1 = 0] = match.map(Number);
+    expect(r).toBe(40);
+    const width = r * (Math.atan2(x0, -y0) - Math.atan2(x1, -y1));
+    expect(Math.abs(width - 1)).toBeLessThan(0.01);
   });
 
   it("puts each dot at its slot's middle angle and its tip", () => {

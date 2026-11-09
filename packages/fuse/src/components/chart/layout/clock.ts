@@ -80,19 +80,22 @@ export type WedgePad = { readonly padAngle: number; readonly padRadius: number }
 /**
  * The pad that cuts a constant-width gap between two wedges (D14). d3's arc keeps its pad's width
  * `2·padRadius·sin(padAngle / 2)` at every radius, so the gap reads one width from hole to rim and
- * every wedge keeps an identical angle. The gap vanishes once a wedge's inner arc falls under 2
- * device pixels, where a gap would leave nothing to see.
+ * every wedge keeps an identical angle. The cut-off is measured at the rim, where a wedge is widest:
+ * the gap stays while the rim arc leaves at least one device pixel of wedge after it, and vanishes
+ * below that, where a gap would leave nothing to see. A wedge whose inner arc is narrower than the
+ * gap tapers to a point at the hole, as a week of hours does. This is the dial's pad: `clockWedges`
+ * narrows it for a short wedge whose outer arc the gap would erase, so the wedge keeps one device
+ * pixel of arc at its tip (D24).
  *
  * @param count - The cycle's slot count.
- * @param inner - The hole's radius in CSS pixels.
  * @param outer - The rim's radius in CSS pixels.
  * @param gap - The gap's width in CSS pixels.
  * @param dpr - Device pixels per CSS pixel.
  * @returns The pad, with a pad angle of 0 where the gap vanishes.
  */
-export function wedgePad(count: number, inner: number, outer: number, gap: number, dpr: number): WedgePad {
-  const innerArc = (2 * Math.PI * inner) / count;
-  if (innerArc * dpr < 2 || !(gap > 0) || !(outer > 0)) return { padAngle: 0, padRadius: outer };
+export function wedgePad(count: number, outer: number, gap: number, dpr: number): WedgePad {
+  const rimArc = (2 * Math.PI * outer) / count;
+  if ((rimArc - gap) * dpr < 1 || !(gap > 0) || !(outer > 0)) return { padAngle: 0, padRadius: outer };
   return { padAngle: toDegrees(2 * Math.asin(Math.min(1, gap / (2 * outer)))), padRadius: outer };
 }
 
