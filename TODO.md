@@ -297,8 +297,6 @@
   group as its inset does.
 - Sweep the older "not a control rung" lint-disable reasons and other "rung" wording on
   control metrics to "control size"; "rung" is reserved for radius rungs.
-- Give the trigger caret's base classes one owner. Select, Combobox and NavigationMenu each
-  spell out its size, muted colour and rotate transition by hand.
 - Remove or tier `racDialogShellClass`'s padding (`p-6`, placed `p-4`) in
   `styles/inner-corner/picker.ts`. It never renders: the only shipped consumer, `PickerShell`,
   overrides it with `pickerDialogShellClass`'s `p-0`, and the Calendar and presets inside pad

@@ -7,6 +7,7 @@ import {
   listboxPopupShellClass,
 } from "../../styles/inner-corner/listbox";
 import { withinStateFaceClass } from "../../styles/state-face";
+import { triggerCaretClass } from "../../styles/trigger-caret";
 import { tv } from "../../styles/tv";
 import { withinFocusRingClass } from "../../styles/utils";
 import {
@@ -26,8 +27,8 @@ import { overlayTimedPopupClass } from "../overlay/overlay-classes";
  * - `trigger` sizes an icon the consumer puts in `Combobox.Trigger` beside the caret to 16px.
  * - `inputTrigger` is the caret button `Combobox.Input` renders in its trailing addon. It hides
  *   while the group holds a clear button, and keeps no pressed fill while the popup is open.
- * - `caret` draws CaretDown at 16px in the muted color, and turns it half a turn while the popup
- *   is open.
+ * - `caret` draws CaretDown as the shared trigger caret (`triggerCaretClass`), and turns it half a
+ *   turn while the popup is open.
  * - `content` is the shared timed popup on the listbox shell. It is at least the anchor's width
  *   plus 28px, or the anchor's width against an external anchor. A search group the popup
  *   directly owns takes its own 4px inline margin and a width that fits inside it, which
@@ -47,8 +48,7 @@ export const comboboxVariants = tv({
   slots: {
     trigger: "[&_svg:not([class*='size-'])]:size-4",
     inputTrigger: "group-has-data-[slot=combobox-clear]/input-group:hidden data-pressed:bg-transparent",
-    caret:
-      "ease-in-out pointer-events-none size-4 text-muted-foreground transition-transform duration-200 in-data-popup-open:rotate-180",
+    caret: [triggerCaretClass, "in-data-popup-open:rotate-180"],
     content: [
       overlayTimedPopupClass,
       listboxPopupShellClass,
