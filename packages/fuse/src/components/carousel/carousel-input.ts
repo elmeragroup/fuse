@@ -3,19 +3,21 @@
  * it begins, and when every such input has ended. The engine asks it whether input is held, so a
  * scroll session goes live only on the user's own scroll and nothing settles under a held finger.
  *
- * Input begins on the viewport: a pointer down, a key down, or a wheel turn the engine counts as
- * along its axis. Its end can land anywhere, so while input is held the owner listens on the
- * viewport's document in the capture phase, which sees every release before any handler can stop
- * it: a pointer up or cancel, a touch end or cancel, a key up, and a lost pointer capture. The
- * window losing focus ends all of it, since its releases go to another window. Pointers are held
- * one by one, by `pointerId`, so one of two fingers lifting leaves the other held. A touch the
- * browser takes for panning cancels its pointer before the pan begins, so that cancel does not end
- * touch input: the finger is still down with no pointer, until a touch event reports no touches
- * left. Where touch events do not exist, nothing would report that, so the cancel ends that touch.
- * A wheel turn has no end event: its scroll, if any, begins within
- * two frames, since the compositor can deliver the first scroll event a frame after the turn, so it
- * ends then. The document listeners exist only while input is held, so an idle carousel adds none.
+ * Input begins on the viewport: a pointer down, a key down, or a wheel turn along its axis. Its end
+ * can land anywhere, so while input is held the owner listens on the viewport's document in the
+ * capture phase, which sees every release before any handler can stop it: a pointer up or cancel,
+ * a touch end or cancel, a key up, and a lost pointer capture. The window losing focus ends all of
+ * it, since its releases go to another window. Pointers are held one by one, by `pointerId`, so one
+ * of two fingers lifting leaves the other held. A touch the browser takes for panning cancels its
+ * pointer before the pan begins, so that cancel does not end touch input: the finger is still down
+ * with no pointer, until a touch event reports no touches left. Where touch events do not exist,
+ * nothing would report that, so the cancel ends that touch. A wheel turn has no end event: its
+ * scroll, if any, begins within two frames, since the compositor can deliver the first scroll event
+ * a frame after the turn, so it ends then. A turn that arrives while one is held moves that end to
+ * two frames after it, so a trackpad gesture is held once, from its first turn to two frames after
+ * its last. The document listeners exist only while input is held, so an idle carousel adds none.
  */
+import type { CarouselOrientation } from "./carousel-engine";
 
 /** What the owner reports. */
 export type CarouselInputListener = {
@@ -29,8 +31,6 @@ export type CarouselInputListener = {
 export type CarouselInput = {
   /** Whether any input that can scroll the viewport is held. */
   readonly held: () => boolean;
-  /** A wheel turn along the carousel's axis began, as the engine judged it. */
-  readonly wheel: () => void;
   /** Stop listening. */
   readonly destroy: () => void;
 };
@@ -39,11 +39,17 @@ export type CarouselInput = {
  * Own the input lifetimes of a viewport.
  *
  * @param viewport - The scroll container input begins on.
+ * @param orientation - The axis it scrolls on, which says which wheel turns can scroll it.
  * @param listener - Where the owner reports.
  * @returns The owner. Call `destroy` when the viewport unmounts.
  */
-export function createCarouselInput(viewport: HTMLElement, listener: CarouselInputListener): CarouselInput {
+export function createCarouselInput(
+  viewport: HTMLElement,
+  orientation: CarouselOrientation,
+  listener: CarouselInputListener
+): CarouselInput {
   const doc = viewport.ownerDocument;
+  const vertical = orientation === "vertical";
   const view = doc.defaultView;
   const touchEvents = view !== null && "ontouchstart" in view;
   // What is held: the pointers down, by `pointerId`, whether a touch the browser took for panning
@@ -134,6 +140,32 @@ export function createCarouselInput(viewport: HTMLElement, listener: CarouselInp
     }
   }
 
+  function onWheel(event: WheelEvent): void {
+    // Any movement along the axis scrolls it, a diagonal turn's included. Shift turns a vertical
+    // wheel sideways, onto a horizontal carousel's axis and off a vertical one's.
+    const along = vertical
+      ? event.deltaY !== 0 && !event.shiftKey
+      : event.deltaX !== 0 || (event.shiftKey && event.deltaY !== 0);
+    if (!along || view === null) {
+      return;
+    }
+    change(() => {
+      // A turn while the last one is held extends its hold to two frames from now, so a trackpad
+      // gesture, which turns every frame or so, stays one held input with one release at its end,
+      // rather than releasing and taking the document listeners again every other frame.
+      if (wheelFrame !== null) {
+        view.cancelAnimationFrame(wheelFrame);
+      }
+      wheelFrame = view.requestAnimationFrame(() => {
+        wheelFrame = view.requestAnimationFrame(() => {
+          change(() => {
+            wheelFrame = null;
+          }, false);
+        });
+      });
+    }, true);
+  }
+
   function listen(): void {
     doc.addEventListener("pointerup", onPointerUp, capture);
     doc.addEventListener("pointercancel", onPointerCancel, capture);
@@ -156,26 +188,14 @@ export function createCarouselInput(viewport: HTMLElement, listener: CarouselInp
 
   viewport.addEventListener("pointerdown", onPointerDown, passive);
   viewport.addEventListener("keydown", onKeyDown, passive);
+  viewport.addEventListener("wheel", onWheel, passive);
 
   return {
     held,
-    wheel() {
-      change(() => {
-        if (wheelFrame !== null || view === null) {
-          return;
-        }
-        wheelFrame = view.requestAnimationFrame(() => {
-          wheelFrame = view.requestAnimationFrame(() => {
-            change(() => {
-              wheelFrame = null;
-            }, false);
-          });
-        });
-      }, true);
-    },
     destroy() {
       viewport.removeEventListener("pointerdown", onPointerDown);
       viewport.removeEventListener("keydown", onKeyDown);
+      viewport.removeEventListener("wheel", onWheel);
       if (wheelFrame !== null) {
         view?.cancelAnimationFrame(wheelFrame);
         wheelFrame = null;

@@ -890,13 +890,14 @@ describe("runtime listeners and layout motion", () => {
   // say the list is complete. Each owner's browser test covers its own cleanup.
   it("installs event listeners only from the reviewed owners", () => {
     expect(filesContainingCode(".addEventListener(").toSorted()).toEqual([
-      // The viewport's passive `scroll`, `scrollend` and `wheel`: the engine reads the native
+      // The viewport's passive `scroll` and `scrollend`: the engine reads the native
       // scroller's position once a frame. React's `onScroll` would re-render the Root on every
       // frame, and React has no `scrollend` handler.
       "components/carousel/carousel-engine.ts",
-      // Pointer and key down on the viewport, and while input is held, its releases on the
-      // document in the capture phase and the window's blur: a release can land outside the
-      // viewport, or in another window, where no React handler of the carousel's sees it.
+      // Pointer down, key down and passive `wheel` on the viewport, and while input is held, its
+      // releases on the document in the capture phase and the window's blur: a release can land
+      // outside the viewport, or in another window, where no React handler of the carousel's sees
+      // it. The wheel's listener sits beside them so that one owner holds every input lifetime.
       "components/carousel/carousel-input.ts",
       // Document `visibilitychange`, through useSyncExternalStore: rotation pauses while the tab
       // is hidden, and React has no document listener.
