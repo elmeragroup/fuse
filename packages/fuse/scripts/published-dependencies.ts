@@ -13,7 +13,9 @@ export type WorkspaceCatalog = ReadonlyMap<string, string>;
 /**
  * Dependencies published at exactly their catalog version rather than a caret range: their
  * styling hooks, data attributes or generated output are part of the rendered result, so a
- * consumer resolving a newer release could change what Fuse renders.
+ * consumer resolving a newer release could change what Fuse renders. `temporal-polyfill` writes
+ * the dates and times the date components show in engines without Temporal, through the
+ * `Intl.DateTimeFormat` it installs.
  */
 const EXACT_DEPENDENCY_PINS: ReadonlySet<string> = new Set([
   "@base-ui/react",
@@ -21,6 +23,7 @@ const EXACT_DEPENDENCY_PINS: ReadonlySet<string> = new Set([
   "react-aria-components",
   "@phosphor-icons/react",
   "tailwindcss-react-aria-components",
+  "temporal-polyfill",
 ]);
 
 /**

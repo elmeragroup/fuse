@@ -108,7 +108,22 @@ export const RAC_ENTRIES = [
   "ui-providers",
 ] as const;
 
-export const NON_COMPONENT_JS_ENTRIES = [".", "theme", "icons", "illustrations", "flags"] as const;
+/**
+ * Opt-in entries a consumer imports bare for what they install, not for exports. Each source file
+ * is the installer itself rather than a facade, exports no value, and stays out of the root
+ * barrel. `generate-exports.ts` lists each in `package.json#sideEffects` by the path that manifest
+ * resolves, so bundlers keep it.
+ */
+const INSTALLER_ENTRIES = ["temporal-polyfill"] as const;
+
+export const NON_COMPONENT_JS_ENTRIES = [
+  ".",
+  "theme",
+  "icons",
+  "illustrations",
+  "flags",
+  ...INSTALLER_ENTRIES,
+] as const;
 
 /**
  * In-repo `package.json#exports` only. Neither packed nor in the root barrel.
@@ -144,6 +159,8 @@ export const runtimeDependencies = [
   "@internationalized/string",
   "sugar-high",
   "libphonenumber-js",
+  // Only the temporal-polyfill installer entry imports it.
+  "temporal-polyfill",
   // The chart layouts.
   "d3-array",
   "d3-shape",
@@ -358,7 +375,15 @@ function sortedNames(names: readonly string[]): string[] {
   return [...names].toSorted((left, right) => left.localeCompare(right));
 }
 
+/** Whether an entry is an installer: it exports nothing and its statements are the install. */
+export function isInstallerEntry(subpath: string): boolean {
+  return INSTALLER_ENTRIES.some((name) => name === subpath);
+}
+
 function facadeRuntimeExports(subpath: string, sourceFile: string, packageRoot: string): readonly string[] {
+  if (isInstallerEntry(subpath)) {
+    return [];
+  }
   const parsed = parseFacadeValueExports(sourceFile, readFileSync(join(packageRoot, sourceFile), "utf8"));
   if (subpath === "icons") {
     const roster = iconRuntimeExports();

@@ -16,6 +16,7 @@ describe("published dependency ranges", () => {
     ["tailwind-merge", "3.7.0"],
     ["tw-animate-css", "1.4.0"],
     ["sugar-high", "2.4.1"],
+    ["temporal-polyfill", "1.0.8"],
   ]);
 
   it("carets ordinary dependencies, pins exact ones and keeps named floors", () => {
@@ -29,6 +30,7 @@ describe("published dependency ranges", () => {
       "tailwind-merge": "^3.7.0",
       "tw-animate-css": "^1.4.0",
       "sugar-high": "^2.4.0",
+      "temporal-polyfill": "1.0.8",
     });
     // A floor override stays while the catalog version still clears it.
     expect(publishedDependencies({ "sugar-high": "catalog:" }, new Map([["sugar-high", "2.9.0"]]))).toEqual({

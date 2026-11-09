@@ -4,6 +4,7 @@ import { join } from "node:path";
 import {
   discoverEntries,
   exportKey,
+  isInstallerEntry,
   PUBLISHED_PEER_RANGES,
   publishCssTarget,
   publishExportTarget,
@@ -42,7 +43,6 @@ type WorkspaceManifest = PackageMetadata & {
   name: string;
   version: string;
   license: string;
-  sideEffects: string[];
   peerDependenciesMeta: Partial<Record<keyof WorkspacePeers, { optional: boolean }>>;
   dependencies: Dependencies;
 };
@@ -106,6 +106,19 @@ export function buildPublishExportMap(discovered: DiscoveredEntries): ExportBind
     bindings.push({ key: exportKey(pattern.subpath), target: `./${pattern.publishFile}` });
   }
   return bindings.toSorted((left, right) => sortExportKeys(left.key, right.key));
+}
+
+/**
+ * `package.json#sideEffects`: every stylesheet, and each installer entry by the file that
+ * manifest's exports resolve, since a bundler would drop a bare import of an entry that exports
+ * nothing. Each manifest names only its own files.
+ */
+export function buildSideEffects(
+  discovered: DiscoveredEntries,
+  target: (entry: JsExportEntry) => ExportCondition
+): string[] {
+  const installers = discovered.jsEntries.filter((entry) => isInstallerEntry(entry.subpath));
+  return ["**/*.css", ...installers.map((entry) => target(entry).import)];
 }
 
 export function exportBindingTarget(
@@ -183,7 +196,7 @@ function readWorkspaceManifest(path: string): WorkspaceManifest {
   // SAFETY: workspace package.json is the I/O boundary. Every field stays optional until a check
   // below rejects its absence; the checks test presence, not JSON type, so each present value is
   // trusted to have its declared type. That trust reaches the publish manifest unchanged for the
-  // scalar fields, `sideEffects` and `peerDependenciesMeta`; `dependencies` contributes only its names
+  // scalar fields and `peerDependenciesMeta`; `dependencies` contributes only its names
   // and their `catalog:` specifiers, since `publishedDependencies` derives every range from the catalog.
   const raw = readManifestObject(path) as Partial<WorkspaceManifest>;
   return {
@@ -191,7 +204,6 @@ function readWorkspaceManifest(path: string): WorkspaceManifest {
     version: requiredString(raw.version, "version"),
     ...packageMetadata(raw),
     license: requiredString(raw.license, "license"),
-    sideEffects: requiredStringArray(raw.sideEffects, "sideEffects"),
     peerDependenciesMeta: requiredObject(raw.peerDependenciesMeta, "peerDependenciesMeta"),
     dependencies: requiredObject(raw.dependencies, "dependencies"),
   };
@@ -263,6 +275,7 @@ export function writeSourceExports(packageRoot: string): DiscoveredEntries {
   // this script or not, keeps its value and position.
   const pkg = {
     ...readManifestObject(packageJsonPath),
+    sideEffects: buildSideEffects(discovered, sourceExportTarget),
     exports: exportBindingsObject(buildSourceExportMap(discovered)),
     publishConfig: { directory: "dist", access: "public", linkDirectory: false },
   };
@@ -290,7 +303,7 @@ export function writePublishManifest(packageRoot: string, release?: ReleaseStamp
     ...packageMetadata(workspace),
     license: workspace.license,
     type: "module",
-    sideEffects: workspace.sideEffects,
+    sideEffects: buildSideEffects(discovered, publishExportTarget),
     exports: exportBindingsObject(buildPublishExportMap(discovered)),
     peerDependencies: { ...PUBLISHED_PEER_RANGES },
     peerDependenciesMeta: workspace.peerDependenciesMeta,
