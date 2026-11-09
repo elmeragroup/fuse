@@ -225,9 +225,7 @@
   `PopoverTrigger` and keep only presentation on the Button.
 - Give Base UI's `DirectionProvider` an owner and document RTL setup. `LocaleProvider` carries
   only the locale, so a consumer must wrap the app in `DirectionProvider` and set `dir`, or
-  logical-side popups such as NavigationMenu's `inline-end` open on the LTR side. Also add
-  `@base-ui/react/direction-provider` to `optimizeDeps.include` in `packages/fuse/vitest.config.ts`;
-  until then the NavigationMenu browser test imports it from the `@base-ui/react` root entry.
+  logical-side popups such as NavigationMenu's `inline-end` open on the LTR side.
 - Report to Base UI that an anchored popup stays put when its anchor shrinks in place. The
   positioner watches the anchor with an IntersectionObserver whose threshold is the anchor's last
   box, so a transform that shrinks the anchor inside that box, such as a zoom out around a point

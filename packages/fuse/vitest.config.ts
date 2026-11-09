@@ -105,6 +105,7 @@ function browserProject(
         "react-dom/server",
         "react/jsx-runtime",
         "@base-ui/react/button",
+        "@base-ui/react/direction-provider",
         "@base-ui/react/drawer",
         "@base-ui/react/scroll-area",
         "@base-ui/react/merge-props",
