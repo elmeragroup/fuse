@@ -12,7 +12,7 @@ describe("defaultDensityForVariant", () => {
 });
 
 describe("densityAttributes", () => {
-  it("returns exactly one data-density attribute for each rung", () => {
+  it("returns exactly one data-density attribute for each density", () => {
     expect(densityAttributes("dense")).toEqual({ "data-density": "dense" });
     expect(densityAttributes("comfortable")).toEqual({ "data-density": "comfortable" });
     expect(Object.keys(densityAttributes("dense"))).toEqual(["data-density"]);

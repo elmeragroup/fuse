@@ -486,7 +486,7 @@ describe("InputGroup", () => {
     expect(getComputedStyle(rootNamed("Block")).flexDirection).toBe("column");
   });
 
-  it("pins the signed md rung at both densities and ignores a nested data-density stamp or ThemeScope", () => {
+  it("pins the signed md control size at both densities and ignores a nested data-density stamp or ThemeScope", () => {
     const { rerender } = renderThemed(
       <>
         <InputGroup.Root>
@@ -514,11 +514,11 @@ describe("InputGroup", () => {
     // `:root[data-density="comfortable"]`, so a nested attribute rescopes nothing.
     for (const density of ["dense", "comfortable"] as const) {
       stampDensity(density);
-      const rung = CONTROL_MD[density].height;
-      expect(px(getComputedStyle(rootNamed("Meter")).height)).toBe(rung);
-      expect(px(getComputedStyle(rootNamed("Nested comfortable")).height)).toBe(rung);
-      expect(px(getComputedStyle(rootNamed("Nested dense")).height)).toBe(rung);
-      // An addon button reads the xs rung, one below the field's own md box.
+      const controlHeight = CONTROL_MD[density].height;
+      expect(px(getComputedStyle(rootNamed("Meter")).height)).toBe(controlHeight);
+      expect(px(getComputedStyle(rootNamed("Nested comfortable")).height)).toBe(controlHeight);
+      expect(px(getComputedStyle(rootNamed("Nested dense")).height)).toBe(controlHeight);
+      // An addon button reads the xs control size, one below the field's own md box.
       expect(px(getComputedStyle(roleNamed("button", "Copy")).height), `${density} xs`).toBe(
         CONTROL_XS[density].height
       );
@@ -632,7 +632,7 @@ describe("InputGroup", () => {
     }
   });
 
-  it("grows past the md rung for block rails and textarea controls", () => {
+  it("grows past the md control size for block rails and textarea controls", () => {
     renderThemed(
       <InputGroup.Root>
         <InputGroup.Textarea aria-label="Notes" />

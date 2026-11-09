@@ -1,7 +1,7 @@
 /**
  * PUBLIC recipe. Extends `textVariants` and only overrides the
- * `leading` default to `snug` for inline use. Type-scale, not a density
- * control-box rung.
+ * `leading` default to `snug` for inline use. Type-scale, not a control
+ * size.
  *
  * Internal composition imports `textVariants` from the Text recipe module —
  * not a grab-bag styles barrel. Consumers use `@elmeragroup/fuse/span`.

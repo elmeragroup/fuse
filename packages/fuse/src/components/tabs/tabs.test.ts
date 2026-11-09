@@ -7,7 +7,7 @@ import { Tabs } from "./index";
 import { tabsListVariants } from "./tabs-variants";
 
 describe("tabsListVariants", () => {
-  it("defaults to variant=default and the field-box md rung", () => {
+  it("defaults to variant=default and the field-box md control size", () => {
     const resolved = tabsListVariants();
     expect(resolved).toContain("group/tabs-list");
     expect(resolved).toContain("bg-muted");

@@ -4,7 +4,7 @@
  * sync.
  *
  * `variant` is the status axis only. Item supplies `variant="outline"` / `size="sm"`
- * underneath; this recipe is not a density rung. The `media` and `title` slots add to Item.Media's
+ * underneath; this recipe is not a control size. The `media` and `title` slots add to Item.Media's
  * and Item.Title's own classes.
  */
 import { tv } from "../../styles/tv";

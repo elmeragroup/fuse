@@ -274,8 +274,10 @@
   classes from `group-data-[spacing=0]/toggle-group:` (any ancestor group) onto the
   item's own `data-[spacing=0]:`, which it already stamps, so they follow the nearest
   group as its inset does.
-- Sweep the older "not a control rung" lint-disable reasons and other "rung" wording on
-  control metrics to "control size"; "rung" is reserved for radius rungs.
+- Decide whether "rung" keeps naming the two fixed focus-ring targets (`styles/utils.ts`, above
+  `stateFocusRingClass`) and Sheet's `--overlay-width` steps (`components/sheet/sheet.tsx`,
+  `sheet.browser.test.tsx`). Neither is a control size nor a radius rung, so the control-size sweep
+  left them, as it left the overlay elevation and timing rungs.
 - The Figma component kit draws the Input, Textarea and InputGroup field boxes at the default
   size only. Add their `size` axis (`"default"`, `"sm"`) once the owner wants the sm fields in
   Figma.

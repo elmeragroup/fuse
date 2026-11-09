@@ -22,7 +22,7 @@ test("InputProps is the native input surface plus the numeric filter and the fie
   // @ts-expect-error the native numeric size attribute is gone
   const _noNativeSize = <Input size={20} />;
   // @ts-expect-error the field size has no md or lg name; `"default"` is the md control size
-  const _noRungName = <Input size="md" />;
+  const _noControlSizeName = <Input size="md" />;
   // @ts-expect-error the box is not variant-axed
   const _noVariant = <Input variant="ghost" />;
   // @ts-expect-error Input takes the native element only — no useRender polymorphism

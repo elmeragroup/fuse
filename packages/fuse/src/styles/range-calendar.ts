@@ -24,7 +24,7 @@ export const rangeCalendarVariants = tv({
     /**
      * The square band a day sits in: the layer that paints the range fill, the
      * start/end caps and the row-edge rounding, and the `group` the pill styles
-     * against. `size-9` is the ref's decorative day square, not a control-box rung,
+     * against. `size-9` is the ref's decorative day square, not a control size,
      * so it stays a literal and reads no
      * `--control-*` variable — the same classification Calendar's day cell has.
      */

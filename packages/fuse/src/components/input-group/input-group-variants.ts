@@ -62,15 +62,15 @@ export const inputGroupAddonVariants = tv({
   },
 });
 
-/** The xs control rung's parts, which the compact addon buttons read. */
+/** The xs control size's parts, which the compact addon buttons read. */
 const xsButton = controlMetrics({ size: "xs" });
 
 /**
  * Module-private recipe for the compact addon-button axis. A button inside a field reads a
- * control rung below the field's own box, so it fits inside it: `xs` and `icon-xs` take the xs
+ * control size below the field's own box, so it fits inside it: `xs` and `icon-xs` take the xs
  * height (floored at the 24px target) or square, with the xs gap and icon inset, and `icon-sm`
  * the group's inner square, `--field-inner` (`field-size.ts`): the sm square in a default
- * group, and the xs square floored at 24px in an sm one. The axis reads only the existing rungs
+ * group, and the xs square floored at 24px in an sm one. The axis reads only the existing sizes
  * and never adds a `--control-*` metric of its own. InputGroup.Button applies the values as
  * extra classes over Button's default size, the md label. `sm` keeps that label but takes the
  * group's field height, so it is the md height in a default group and the sm height in an sm one.

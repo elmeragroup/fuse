@@ -33,7 +33,7 @@ function renderField(node: ReactNode) {
 /**
  * The private RAC `FieldGroup` wrapping the named searchbox. It carries `role="group"`
  * but no accessible name of its own, so it is reached from the control it labels — it is
- * the field box that pins the `md` rung and hosts the shared
+ * the field box that pins the `md` control size and hosts the shared
  * `focusRing({ target: "state" })` ring.
  */
 function fieldGroupFor(name: string): HTMLElement {
@@ -160,7 +160,7 @@ describe("SearchField", () => {
     );
   });
 
-  it("pins the field box to the signed md rung at both densities and ignores a nested stamp", () => {
+  it("pins the field box to the signed md control size at both densities and ignores a nested stamp", () => {
     renderField(
       <>
         <SearchField label="Root" />
@@ -174,9 +174,9 @@ describe("SearchField", () => {
     // `:root[data-density="comfortable"]`, so a nested attribute rescopes nothing
     for (const density of ["dense", "comfortable"] as const) {
       stampDensity(density);
-      const rung = CONTROL_MD[density].height;
-      expect(px(getComputedStyle(fieldGroupFor("Root")).height)).toBe(rung);
-      expect(px(getComputedStyle(fieldGroupFor("Nested")).height)).toBe(rung);
+      const controlHeight = CONTROL_MD[density].height;
+      expect(px(getComputedStyle(fieldGroupFor("Root")).height)).toBe(controlHeight);
+      expect(px(getComputedStyle(fieldGroupFor("Nested")).height)).toBe(controlHeight);
     }
   });
 

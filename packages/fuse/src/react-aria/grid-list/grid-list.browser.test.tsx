@@ -164,7 +164,7 @@ describe("GridList", () => {
     await assertFocusRingAtBothDensities(rowNamed("Oslo"), handle);
   });
 
-  it("keeps the drag handle on the signed sm rung and pads each row with the row metrics", () => {
+  it("keeps the drag handle on the signed sm control size and pads each row with the row metrics", () => {
     renderList(<DraggableMeters />);
     const handle = roleNamed("button", DRAG_COPY["en-US"]);
     const gaps = new Set<string>();

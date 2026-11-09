@@ -303,7 +303,7 @@ describe("TextField inline focus chrome", () => {
 });
 
 describe("TextField density metrics", () => {
-  it("pins the inner input to the signed md control rung at both densities", () => {
+  it("pins the inner input to the signed md control size at both densities", () => {
     const { rerender } = renderThemed(<TextField label="Meter" />);
     for (const density of ["dense", "comfortable"] as const) {
       stampDensity(density);

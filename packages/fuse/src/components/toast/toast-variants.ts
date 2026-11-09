@@ -2,7 +2,7 @@ import { toastShellClass } from "../../styles/inner-corner/toast";
 /**
  * Module-private slot recipe. Not exported from the public entry —
  * there is no proven recipe-borrowing use. `status` is derived from the toast's
- * `type`, not a consumer prop, and is not a density rung.
+ * `type`, not a consumer prop, and is not a control size.
  */
 import { tv } from "../../styles/tv";
 import { overlayPopupFillClass } from "../overlay/overlay-classes";

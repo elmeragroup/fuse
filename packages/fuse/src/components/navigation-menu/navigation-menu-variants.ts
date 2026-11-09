@@ -25,7 +25,7 @@ const contentRowClass = cn(
 
 /**
  * The box and type of a bar trigger and of a link directly in a horizontal List. It is the md
- * control rung, so a bar that mixes links and triggers lines up with other controls.
+ * control size, so a bar that mixes links and triggers lines up with other controls.
  */
 const barBoxClass = cn(
   controlMd.height(),

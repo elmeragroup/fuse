@@ -1,7 +1,7 @@
 /**
  * PUBLIC recipe. Span and other package modules borrow it from
- * `@elmeragroup/fuse/text`. `size` is a type-scale axis, not a density control-box
- * rung: it does not read `--control-*`.
+ * `@elmeragroup/fuse/text`. `size` is a type-scale axis, not a control
+ * size: it does not read `--control-*`.
  *
  * Colour (`variant`) and start/center/end (`align`) come from the package-private
  * `typographyFragments` recipe via `extend`. This recipe adds `success` and

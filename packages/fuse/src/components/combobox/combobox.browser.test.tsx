@@ -907,9 +907,9 @@ describe("Combobox", () => {
       const probe = document.createElement("span");
       probe.style.width = "var(--control-h-sm)";
       group.append(probe);
-      const rung = px(getComputedStyle(probe).width);
+      const controlHeight = px(getComputedStyle(probe).width);
       probe.remove();
-      expect(px(getComputedStyle(group).height), density).toBe(rung);
+      expect(px(getComputedStyle(group).height), density).toBe(controlHeight);
     }
   });
 });

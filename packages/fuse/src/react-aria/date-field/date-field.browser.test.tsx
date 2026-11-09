@@ -290,7 +290,7 @@ describe("DateField", () => {
 });
 
 describe("DateField density metrics", () => {
-  it("pins DateInput to the signed md rung at both densities and does not rescope", () => {
+  it("pins DateInput to the signed md control size at both densities and does not rescope", () => {
     const { rerender } = renderField(<DateField label="Meter" defaultValue={july14} />);
     for (const density of ["dense", "comfortable"] as const) {
       stampDensity(density);

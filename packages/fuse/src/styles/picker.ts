@@ -6,7 +6,7 @@ import { tv } from "./tv";
  * Shared layout recipe for the two date pickers. The `range` axis selects one segment
  * row or two; both variants borrow their field box, popup, and grid surfaces from the
  * composed components. FieldGroup owns the read-only fill and writes the field size the
- * picker passes it — this recipe emits no control-height rung. A narrow range stacks two
+ * picker passes it — this recipe emits no control height. A narrow range stacks two
  * content-sized rows; this recipe adds no size axis or glyph background. The input reads the
  * field inset and type, which keeps segmented rows aligned with Input at both sizes and
  * densities, and the trigger reads the field's inner square.

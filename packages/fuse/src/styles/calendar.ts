@@ -15,7 +15,7 @@ import { stateFocusRingClass, stateFocusRingVisibleClass } from "./utils";
  * `src/styles/`.
  */
 export const cellVariants = tv({
-  // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- decorative day-cell circle, not a control-box rung
+  // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- decorative day-cell circle, not a control size
   base: cn(
     "text-sm flex size-9 cursor-default items-center justify-center rounded-full forced-color-adjust-none",
     // RAC disables every day outside the visible month, and a muted day reads as unavailable

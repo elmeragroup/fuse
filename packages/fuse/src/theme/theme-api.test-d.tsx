@@ -143,7 +143,7 @@ test("coerceTheme is the env-free pin-table parse", () => {
   expectTypeOf(coerceTheme).returns.toEqualTypeOf<ThemeInput | null>();
 });
 
-test("density helpers stamp a two-rung document attribute", () => {
+test("density helpers stamp a two-value document attribute", () => {
   expectTypeOf<Density>().toEqualTypeOf<"dense" | "comfortable">();
   expectTypeOf(DENSITIES).toEqualTypeOf<readonly ["dense", "comfortable"]>();
   expectTypeOf<(typeof DENSITIES)[number]>().toEqualTypeOf<Density>();
