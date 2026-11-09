@@ -5,7 +5,10 @@
     "jsx": "preserve",
     "declaration": false,
     "declarationMap": false,
-    "incremental": true
+    "incremental": true,
+    // Puts the `.mjs` test fixtures in this program, so type-aware lint reads them with this
+    // config's node types. Outside any program, their types depend on what else is linted.
+    "allowJs": true
   },
   "include": [
     "src",

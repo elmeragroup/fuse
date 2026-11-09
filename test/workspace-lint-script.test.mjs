@@ -1,8 +1,9 @@
+import { execFileSync } from "node:child_process";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { asRecord, asRecordArray, asString, isString, readJsonObject } from "./json-object.mjs";
-import { repoRoot } from "./repo-tree.mjs";
+import { findFiles, repoRelativePath, repoRoot } from "./repo-tree.mjs";
 
 /**
  * @param {Record<string, unknown>} override
@@ -185,5 +186,25 @@ describe("workspace lint script", () => {
         Object.hasOwn(asRecord(entry.rules, "override rules"), "shadcn/require-static-classes")
       )
     ).toEqual([]);
+  });
+
+  it("type-checks the docs app's JavaScript modules inside the docs program", () => {
+    // Type-aware lint reads a file outside every tsconfig program in an inferred program whose
+    // types come from whatever else the run lints, so `oxlint apps/docs` reported an unsafe
+    // `register` call in a fixture that `oxlint .` passed. Program membership keeps one answer.
+    const docs = join(repoRoot, "apps", "docs");
+    const modules = ["src", "test", "scripts"].flatMap((tree) =>
+      findFiles(join(docs, tree), (name) => /\.[cm]?js$/.test(name)).map((path) => repoRelativePath(path))
+    );
+    expect(modules).toContain("apps/docs/test/fixtures/rsc-namespace-register.mjs");
+    const program = new Set(
+      execFileSync(join(repoRoot, "node_modules", ".bin", "tsrs"), ["-p", docs, "--listFilesOnly"], {
+        encoding: "utf8",
+      })
+        .split("\n")
+        .filter((line) => line.length > 0)
+        .map((path) => repoRelativePath(path))
+    );
+    expect(modules.filter((module) => !program.has(module))).toEqual([]);
   });
 });

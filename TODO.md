@@ -174,10 +174,12 @@
   still matches any descendant `data-focus-ring-control`, so a focused NumberField nested
   in an InputGroup addon also rings the outer group. The state
   face already reads only a direct child (`styles/state-face.ts`).
-- `pnpm lint` never type-checks `apps/docs/test/fixtures/rsc-namespace-register.mjs`: `oxlint .`
-  reports nothing, while `oxlint apps/docs` reports `typescript(no-unsafe-call)` at line 3. Find
-  which root or tsconfig makes the difference so the fixture directory is not silently unlinted,
-  then fix or explicitly allow the call.
+- Give the root `test/*.mjs` suites, `plopfile.mjs`, `apps/docs/postcss.config.mjs`, the
+  `tooling/pr-shots` fixtures and the packed-consumer configs a tsconfig program. Type-aware lint
+  reads a file outside every program in an inferred one whose types come from what else the run
+  lints: `oxlint test/action-pins.test.mjs` reports 14 unsafe-`error` hits that `oxlint test` does
+  not, since `test/vitest.config.mjs` brings in node's types. The root tsconfig cannot take
+  `allowJs` as it stands, since it has no `include` and would then read every built `.js`.
 - `DialogRoot` (`components/dialog/dialog.tsx`) stamps `data-slot="dialog"` on Base UI's
   `Dialog.Root`, which renders no DOM: `useRenderDialogRoot` destructures only its named props,
   so the attribute is discarded. Drop it, and fix any comment that claims the root carries a slot.
