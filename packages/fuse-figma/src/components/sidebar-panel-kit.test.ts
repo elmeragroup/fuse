@@ -14,10 +14,10 @@
  * - The header and footer hug their height, and the content takes the rest (`flex-1`), clipping
  *   what overflows it (`overflow-auto`, or `overflow-hidden` in the rail) and stacking its group and
  *   separator (`flex-col gap-0`). Each section fills the surface across, as a stretched flex item does.
- * - The separator is 1px tall (`data-horizontal:h-px`) and as wide as the content
- *   (`data-horizontal:w-full`, which `w-auto` does not beat) past its 8px start margin (`mx-2`), so the
- *   content's clip cuts its end: Chromium draws it 255px wide at x 8 in the 255px content, showing
- *   247px, or 39px of the rail's 47px. It fills a frame padded 8px at the start in `sidebar-border`.
+ * - The separator is 1px tall (`data-horizontal:h-px`) and inset 8px from each side of the content
+ *   (`mx-2`, with `data-horizontal:w-auto` in place of `separatorClass`'s `data-horizontal:w-full`):
+ *   Chromium draws it 239px wide at x 8 in the 255px content, or 31px of the rail's 47px. It fills a
+ *   frame padded 8px at the start and the end in `sidebar-border`.
  * - `inset` pads the container 8px on every side with no border (`p-2`), 66px wide in the rail
  *   (`calc(var(--sidebar-width-icon)+(--spacing(4))+2px)`), on the `sidebar` fill the Provider's
  *   wrapper paints behind it (`has-data-[variant=inset]:bg-sidebar`). Chromium draws its surface 240px
@@ -139,13 +139,13 @@ describe("the Sidebar panel", () => {
   });
 
   it.each(["off", "on"])(
-    "draws the separator filling a frame padded 8px at the start, collapsed=%s",
+    "draws the separator filling a frame padded 8px at the start and the end, collapsed=%s",
     (collapsed) => {
       const root = variantRoot(spec, `sidebar/variant=sidebar,collapsed=${collapsed}`);
       expect(frameAt(root, ["inner", "content", "separator"])).toEqual({
         direction: "VERTICAL",
         sizing: { horizontal: FILL, vertical: HUG },
-        padding: [literal(0), literal(0), literal(0), literal(8)],
+        padding: [literal(0), literal(8), literal(0), literal(8)],
         gap: literal(0),
         clips: false,
         fill: undefined,
