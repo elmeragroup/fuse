@@ -138,17 +138,13 @@ export const GROUP_VARIANTS = new Map<string, (ancestor: MarkupElement) => boole
     `group-data-[side=${side}]`,
     (ancestor) => marks(ancestor, "group") && ancestor.attributes.get("data-side") === side,
   ]),
-  // A ToggleGroup root carries the `group/toggle-group` marker, its orientation in `data-orientation`
-  // and its spacing in `data-spacing`, which its items read.
+  // A ToggleGroup root carries the `group/toggle-group` marker and its orientation in
+  // `data-orientation`, which its items read.
   ...["horizontal", "vertical"].map((orientation): [string, (ancestor: MarkupElement) => boolean] => [
     `group-data-${orientation}/toggle-group`,
     (ancestor) =>
       marks(ancestor, "group/toggle-group") && ancestor.attributes.get("data-orientation") === orientation,
   ]),
-  [
-    "group-data-[spacing=0]/toggle-group",
-    (ancestor) => marks(ancestor, "group/toggle-group") && ancestor.attributes.get("data-spacing") === "0",
-  ],
 ]);
 
 /**

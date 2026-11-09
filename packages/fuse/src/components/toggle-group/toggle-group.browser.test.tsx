@@ -119,6 +119,24 @@ describe("ToggleGroup", () => {
     expect(fullWidth.style.getPropertyValue("--gap")).toBe("3");
   });
 
+  it("takes the segmented look from the item's own group, not from a segmented ancestor group", () => {
+    renderThemed(
+      <ToggleGroup.Root aria-label="Outer" spacing={0} variant="outline">
+        <ToggleGroup.Item value="outer">Outer</ToggleGroup.Item>
+        <ToggleGroup.Root aria-label="Inner" spacing={2} variant="outline">
+          <ToggleGroup.Item value="inner">Inner</ToggleGroup.Item>
+        </ToggleGroup.Root>
+      </ToggleGroup.Root>
+    );
+
+    // The spaced inner group's lone item is a free-standing toggle: every corner stays round.
+    const inner = getComputedStyle(buttonNamed("Inner"));
+    expect(px(inner.borderTopLeftRadius)).toBeGreaterThan(0);
+    expect(px(inner.borderTopRightRadius)).toBeGreaterThan(0);
+    expect(px(inner.borderBottomLeftRadius)).toBeGreaterThan(0);
+    expect(px(inner.borderBottomRightRadius)).toBeGreaterThan(0);
+  });
+
   it("uses recipe defaults on a standalone Item", () => {
     renderThemed(<ToggleGroup.Item value="alone">Standalone</ToggleGroup.Item>);
 

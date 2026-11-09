@@ -270,10 +270,6 @@
 - Docs token extraction is file-granular: Select lists xs/lg control metrics and the
   text-entry family lists gap-md/px-icon-md they don't bind; resolve per recipe (from
   built CSS, or aware of tv calls) instead of per file.
-- Move the segmented ToggleGroup item's remaining rounded-none, shadow-none and scale-100
-  classes from `group-data-[spacing=0]/toggle-group:` (any ancestor group) onto the
-  item's own `data-[spacing=0]:`, which it already stamps, so they follow the nearest
-  group as its inset does.
 - Decide whether "rung" keeps naming the two fixed focus-ring targets (`styles/utils.ts`, above
   `stateFocusRingClass`) and Sheet's `--overlay-width` steps (`components/sheet/sheet.tsx`,
   `sheet.browser.test.tsx`). Neither is a control size nor a radius rung, so the control-size sweep
