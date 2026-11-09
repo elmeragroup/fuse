@@ -23,6 +23,7 @@ import {
   finishMotion,
   Orders,
   flipsIn,
+  pickOption,
   renderOrders,
   renderOrdersInFrame,
   renderOrdersInShadowRoot,
@@ -96,13 +97,15 @@ describe("DataTableFilter bar", () => {
   it("offers an option chip only the operators of its value count, and keeps focus on the segment", async () => {
     renderOrders({ initial: [...STATUS_THREE, ...CUSTOMER_NORD] });
     await userEvent.click(roleNamed("combobox", "Status operator"));
-    const options = page
-      .getByRole("option")
-      .elements()
-      .map((option) => option.textContent);
-    expect(options).toEqual(["is any of", "is none of"]);
-    await finishMotion();
-    await userEvent.click(roleNamed("option", "is none of"));
+    await expect
+      .poll(() =>
+        page
+          .getByRole("option")
+          .elements()
+          .map((option) => option.textContent)
+      )
+      .toEqual(["is any of", "is none of"]);
+    await pickOption("is none of");
     await expect.poll(() => roleNamed("combobox", "Status operator").textContent).toBe("is none of");
     // Not paid, pending or overdue, and containing "nord": only Café Nord, a draft.
     expect(visibleOrders()).toBe("5");
@@ -421,8 +424,7 @@ describe("DataTableFilter editors", () => {
     await userEvent.click(roleNamed("button", "100–500"));
     const dialog = page.getByRole("dialog", { name: "Amount" });
     await userEvent.click(dialog.getByRole("combobox", { name: "Amount operator" }));
-    await finishMotion();
-    await userEvent.click(roleNamed("option", "is at most"));
+    await pickOption("is at most");
     await expect.poll(() => page.getByRole("textbox", { name: "Amount" }).query()).not.toBeNull();
     // At most 100: Nordlys Kafé at 60.
     await expect.poll(visibleOrders).toBe("4");
@@ -615,8 +617,7 @@ describe("DataTableFilter composition", () => {
       withLocale("en-US", <Orders initial={PAID} fields={WITHOUT_PAID} onColumnFiltersChange={count} />)
     );
     await userEvent.click(roleNamed("combobox", "Status operator"));
-    await finishMotion();
-    await userEvent.click(roleNamed("option", "is not"));
+    await pickOption("is not");
     await expect.poll(columnFilters).toEqual([]);
     expect(writes).toBe(1);
     // The chip went, and it was the only one, so focus goes to the Trigger.

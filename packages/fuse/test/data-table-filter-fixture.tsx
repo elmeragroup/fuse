@@ -21,8 +21,8 @@ import { functionalUpdate } from "@tanstack/react-table";
 import type { ColumnFiltersState, Updater } from "@tanstack/react-table";
 import { createPortal, flushSync } from "react-dom";
 import { createRoot } from "react-dom/client";
-import { onTestFinished, vi } from "vitest";
-import { page } from "vitest/browser";
+import { expect, onTestFinished, vi } from "vitest";
+import { page, userEvent } from "vitest/browser";
 
 import stylesCss from "../dist/styles.css?raw";
 import themesCss from "../dist/themes.css?raw";
@@ -623,6 +623,19 @@ export async function finishMotion(): Promise<void> {
     }
     await settled();
   }
+}
+/**
+ * Picks an option of an operator Select once its popup has rendered the option and finished its
+ * open zoom. Base UI opens a Select on the trigger's mousedown in the next animation frame, then
+ * React renders the popup, so the popup is not in the page when `userEvent.click` on the trigger
+ * resolves, and a synchronous query after it reads a frame late on a loaded runner.
+ *
+ * @param name - The option's exact accessible name.
+ */
+export async function pickOption(name: string): Promise<void> {
+  await expect.poll(() => page.getByRole("option", { name, exact: true }).query()).not.toBeNull();
+  await finishMotion();
+  await userEvent.click(roleNamed("option", name));
 }
 /** One painted frame of a popup: its side and its bottom edge in whole pixels. */
 export type SideFrame = readonly [side: string | null, bottom: number];

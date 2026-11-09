@@ -21,6 +21,7 @@ import {
   menuOpen,
   Orders,
   ORDERS,
+  pickOption,
   PRODUCTS,
   FIELDS,
   FIELDS_WITH_PRODUCT,
@@ -522,7 +523,7 @@ describe("DataTableFilter in-place editor", () => {
     expect(menuOpen()).toBe(true);
 
     await userEvent.click(operator);
-    await userEvent.click(roleNamed("option", "is at least"));
+    await pickOption("is at least");
     // At least 300: Fjellstue, Havbris, Café Nord and Bryggen.
     await expect.poll(visibleOrders).toBe("2 3 5 6");
     expect(menuOpen()).toBe(true);
@@ -1404,8 +1405,7 @@ describe("DataTableFilter toggles", () => {
       fields: FIELDS_WITH_RUSH_TOGGLE,
     });
     await userEvent.click(roleNamed("combobox", "Rush only operator"));
-    await expect.poll(() => page.getByRole("option", { name: "is", exact: true }).query()).not.toBeNull();
-    await userEvent.click(roleNamed("option", "is"));
+    await pickOption("is");
     await expect.poll(columnFilters).toEqual(RUSH_TRUE);
     await expect.poll(() => focusIs("button", "Remove Rush only filter")).toBe(true);
     expect(page.elementLocator(chip()).getByRole("combobox").query()).toBeNull();

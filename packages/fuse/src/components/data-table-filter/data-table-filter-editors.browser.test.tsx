@@ -22,6 +22,7 @@ import {
   focusIs,
   menuOpen,
   Orders,
+  pickOption,
   popoverOpen,
   renderCounted,
   renderOrders,
@@ -50,13 +51,6 @@ function focusOn(element: Element): void {
 
 /** Status is paid. */
 const STATUS_PAID = [{ id: "status", value: { kind: "option", operator: "is", values: ["paid"] } }];
-
-/** Picks an option once the Select's popup has rendered it and finished its open zoom. */
-async function pickOption(name: string): Promise<void> {
-  await expect.poll(() => page.getByRole("option", { name, exact: true }).query()).not.toBeNull();
-  await finishMotion();
-  await userEvent.click(roleNamed("option", name));
-}
 
 describe("DataTableFilter draft ownership", () => {
   // The typing pause cannot fire unless a test advances the clock, so every write below comes from
