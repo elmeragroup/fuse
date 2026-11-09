@@ -159,7 +159,12 @@ function createFontMetricsReader(ownerDocument: Document): FontMetricsReader {
   };
 }
 
-/** Where the bar goes in a line box: ascender to descender about the baseline the line centres. */
+/**
+ * Where the bar goes in a line box: ascender to descender about the baseline the line centres,
+ * kept inside the line box. A face's ink can reach past its own ascent or descent, as a substitute
+ * serif's descenders do on Linux, and a bar drawn to that ink would leave its line and reach into
+ * the next one's; the bar stands in for its line, so the line box bounds it.
+ */
 function barOf(
   line: Rect,
   style: CSSStyleDeclaration,
@@ -175,7 +180,10 @@ function barOf(
   }
   const baseline =
     line.top + (line.bottom - line.top - metrics.ascent - metrics.descent) / 2 + metrics.ascent;
-  return { barTop: baseline - metrics.ascender, barBottom: baseline + metrics.descender };
+  return {
+    barTop: Math.max(line.top, baseline - metrics.ascender),
+    barBottom: Math.min(line.bottom, baseline + metrics.descender),
+  };
 }
 
 function roleOf(element: Element): SkeletonRole | undefined {

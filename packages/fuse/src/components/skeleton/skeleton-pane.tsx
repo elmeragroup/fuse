@@ -6,6 +6,7 @@ import type { ReactElement, ReactNode } from "react";
 import { isHTMLElement, windowOf } from "../../internal/dom-node";
 import { cn } from "../../styles/cn";
 import { skeletonClass } from "./skeleton-class";
+import { watchFontSet } from "./skeleton-font-watch";
 import { measureGhost } from "./skeleton-measure";
 import type { Bone } from "./skeleton-measure";
 import { PaneExclusion } from "./skeleton-reveal-exclusion";
@@ -51,7 +52,7 @@ const COVERED_ATTRIBUTE = "data-skeleton-covered";
  * exactly the content's space, and a layer of bones measured from it. Neither is exposed to
  * assistive tech or reachable by keyboard, and the ghost is excluded from forms and overlays.
  * The bones follow the ghost through each commit, a resize, a change inside the ghost that leaves
- * its size alone, an image loading and a web font loading.
+ * its size alone, an image loading and the document's fonts changing.
  *
  * @param props - The stand-in content to draw, and the ref the reveal tracks its panes with.
  * @returns The skeleton pane, with `data-slot="skeleton-reveal-skeleton"`.
@@ -89,14 +90,14 @@ export function SkeletonPane({
   useLayoutEffect(measure);
 
   // What changes the ghost without a commit of this pane: its size, a part's own state changing
-  // its text, an image or a web font loading. Each schedules one measure for the next frame.
+  // its text, an image loading or the document's fonts changing. Each schedules one measure for the
+  // next frame.
   useEffect(() => {
     const skeleton = skeletonRef.current;
     const ghost = ghostRef.current;
     if (skeleton === null || ghost === null) return undefined;
     // The pane's own window: in a same-origin frame, the frame's frames, observers and fonts.
     const view = windowOf(skeleton);
-    const fonts = skeleton.ownerDocument.fonts;
     let frame = 0;
     const schedule = (): void => {
       view.cancelAnimationFrame(frame);
@@ -110,13 +111,14 @@ export function SkeletonPane({
     });
     mutations.observe(ghost, { subtree: true, childList: true, characterData: true, attributes: true });
     skeleton.addEventListener("load", schedule, true);
-    fonts.addEventListener("loadingdone", schedule);
+    // A font-set event misses a face added once loaded, so the set's own state is watched.
+    const unwatchFonts = watchFontSet(skeleton, schedule);
     return () => {
       view.cancelAnimationFrame(frame);
       resize.disconnect();
       mutations.disconnect();
       skeleton.removeEventListener("load", schedule, true);
-      fonts.removeEventListener("loadingdone", schedule);
+      unwatchFonts();
     };
     // Mount only: `measure` reads refs, and the layout effect above covers each commit.
   }, []);
