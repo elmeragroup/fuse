@@ -1,5 +1,7 @@
 import type { ESTree, Rule } from "@oxlint/plugins";
 
+import { baseUiBindings, baseUiReference, jsxSegments, noteBaseUiImport } from "../base-ui-import.ts";
+
 /** Base UI `Menu` members that are still preview APIs. */
 const PREVIEW_MEMBERS: ReadonlySet<string> = new Set([
   "FilterProvider",
@@ -10,15 +12,26 @@ const PREVIEW_MEMBERS: ReadonlySet<string> = new Set([
   "useFilter",
 ]);
 
-/** The entries that export Base UI's `Menu`: its own subpath and the package root. */
-const MENU_SOURCES: ReadonlySet<string> = new Set(["@base-ui/react/menu", "@base-ui/react"]);
+/** A member chain's identifiers, outermost first, or `undefined` past a computed or call step. */
+function chain(node: ESTree.Node): string[] | undefined {
+  if (node.type === "Identifier") return [node.name];
+  if (node.type === "MemberExpression" && !node.computed && node.property.type === "Identifier") {
+    const object = chain(node.object);
+    return object === undefined ? undefined : [...object, node.property.name];
+  }
+  if (node.type === "TSQualifiedName") {
+    const left = chain(node.left);
+    return left === undefined ? undefined : [...left, node.right.name];
+  }
+  return undefined;
+}
 
 /**
  * Base UI's preview `Menu` filtering members (`Menu.FilterProvider`, `Menu.Input`, `Menu.List`,
  * `Menu.Clear`, `Menu.Empty`, `Menu.useFilter`) are read in one module, the data table filter's
  * `searchable-menu.ts`, which the config exempts. Base UI renames preview APIs on their way out of
- * preview, so one owner keeps a rename to one edit. Reads through any alias of `Menu`, in code, JSX
- * and types, all count.
+ * preview, so one owner keeps a rename to one edit. Reads through any alias of `Menu` from its
+ * subpath or the package root, or through a namespace import, in code, JSX and types, all count.
  */
 export const noBaseUiPreviewMenu: Rule = {
   meta: {
@@ -31,32 +44,27 @@ export const noBaseUiPreviewMenu: Rule = {
     schema: [],
   },
   create(context) {
-    const aliases = new Set<string>();
-    const note = (node: ESTree.Node, object: string, member: string): void => {
-      if (aliases.has(object) && PREVIEW_MEMBERS.has(member)) {
-        context.report({ node, messageId: "preview", data: { read: `${object}.${member}` } });
+    const bindings = baseUiBindings();
+    const note = (node: ESTree.Node, segments: readonly string[] | undefined): void => {
+      if (segments === undefined) return;
+      const reference = baseUiReference(segments, bindings);
+      if (reference?.exported !== "Menu" || reference.member === undefined) return;
+      if (PREVIEW_MEMBERS.has(reference.member)) {
+        context.report({ node, messageId: "preview", data: { read: segments.join(".") } });
       }
     };
     return {
       ImportDeclaration(declaration) {
-        if (!MENU_SOURCES.has(declaration.source.value)) return;
-        for (const specifier of declaration.specifiers) {
-          if (specifier.type !== "ImportSpecifier") continue;
-          const imported =
-            specifier.imported.type === "Literal" ? specifier.imported.value : specifier.imported.name;
-          if (imported === "Menu") aliases.add(specifier.local.name);
-        }
+        noteBaseUiImport(declaration, bindings, "values-and-types");
       },
       MemberExpression(node) {
-        if (node.object.type === "Identifier" && !node.computed && node.property.type === "Identifier") {
-          note(node, node.object.name, node.property.name);
-        }
+        note(node, chain(node));
       },
       JSXMemberExpression(node) {
-        if (node.object.type === "JSXIdentifier") note(node, node.object.name, node.property.name);
+        note(node, jsxSegments(node));
       },
       TSQualifiedName(node) {
-        if (node.left.type === "Identifier") note(node, node.left.name, node.right.name);
+        note(node, chain(node));
       },
     };
   },

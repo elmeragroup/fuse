@@ -1,5 +1,6 @@
 import type { ESTree, Rule } from "@oxlint/plugins";
 
+import { baseUiBindings, baseUiReference, jsxSegments, noteBaseUiImport } from "../base-ui-import.ts";
 import { isTestFile } from "../source-file.ts";
 
 /**
@@ -47,7 +48,8 @@ function isDefinedProps(expression: ESTree.Expression): boolean {
  * popup spreads consumer props onto it only through `definedProps(…)`. Base UI's `mergeProps`
  * copies a present `undefined` over the part's own value, so a forwarded
  * `aria-labelledby={undefined}` erased Field's label (#62). The module that renders the part
- * filters; the wrappers above it spread raw.
+ * filters; the wrappers above it spread raw. A part counts from Base UI's root entry or a subpath,
+ * under any alias or through a namespace import.
  */
 export const definedPropsWiring: Rule = {
   meta: {
@@ -60,35 +62,19 @@ export const definedPropsWiring: Rule = {
   },
   create(context) {
     if (isTestFile(context.filename)) return {};
-    /** Local name of each imported Base UI export, mapped to its wiring members. */
-    const parts = new Map<string, readonly string[]>();
+    const bindings = baseUiBindings();
     return {
       ImportDeclaration(declaration) {
-        if (declaration.importKind === "type" || !declaration.source.value.startsWith("@base-ui/react"))
-          return;
-        for (const specifier of declaration.specifiers) {
-          if (specifier.type !== "ImportSpecifier" || specifier.importKind === "type") continue;
-          const imported =
-            specifier.imported.type === "Literal" ? specifier.imported.value : specifier.imported.name;
-          const members = WIRING_PARTS.get(imported);
-          if (members !== undefined) parts.set(specifier.local.name, members);
-        }
+        noteBaseUiImport(declaration, bindings);
       },
       JSXOpeningElement(element) {
-        const name = element.name;
-        let local: string;
-        let member: string;
-        if (name.type === "JSXIdentifier") {
-          local = name.name;
-          member = "self";
-        } else if (name.type === "JSXMemberExpression" && name.object.type === "JSXIdentifier") {
-          local = name.object.name;
-          member = name.property.name;
-        } else {
-          return;
-        }
-        if (parts.get(local)?.includes(member) !== true) return;
-        const part = member === "self" ? local : `${local}.${member}`;
+        const segments = jsxSegments(element.name);
+        if (segments === undefined) return;
+        const reference = baseUiReference(segments, bindings);
+        if (reference === undefined) return;
+        const member = reference.member ?? "self";
+        if (WIRING_PARTS.get(reference.exported)?.includes(member) !== true) return;
+        const part = segments.join(".");
         for (const attribute of element.attributes) {
           if (attribute.type === "JSXSpreadAttribute" && !isDefinedProps(attribute.argument)) {
             context.report({ node: attribute, messageId: "raw", data: { part } });

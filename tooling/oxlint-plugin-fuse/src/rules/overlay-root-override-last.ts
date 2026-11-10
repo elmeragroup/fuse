@@ -1,11 +1,9 @@
 import type { ESTree, Rule } from "@oxlint/plugins";
 
+import { baseUiBindings, baseUiReference, jsxSegments, noteBaseUiImport } from "../base-ui-import.ts";
+
 /** The Base UI primitives whose Root locks the page's scroll from the root itself, open or not shown. */
-const SCROLL_LOCKING_ROOTS: ReadonlySet<string> = new Set([
-  "@base-ui/react/alert-dialog",
-  "@base-ui/react/dialog",
-  "@base-ui/react/drawer",
-]);
+const SCROLL_LOCKING_ROOTS: ReadonlySet<string> = new Set(["AlertDialog", "Dialog", "Drawer"]);
 
 /** The module that owns the overlay root override, as an import source ends with it. */
 const OVERRIDE_MODULE = "/internal/overlay-exclusion";
@@ -16,7 +14,8 @@ const OVERRIDE_HOOK = "useOverlayRootOverride";
 /**
  * Every `<Primitive.Root>` of a scroll-locking Base UI primitive (Dialog, AlertDialog, Drawer)
  * spreads the overlay root override as its last attribute: a binding the module initialises by
- * calling `useOverlayRootOverride`, matched through its import under any local name. A root that
+ * calling `useOverlayRootOverride`, matched through its import under any local name. The primitive
+ * counts from its subpath or the package root, under any alias or through a namespace import. A root that
  * skips it keeps a SkeletonReveal's ghost locking the page while nothing shows.
  */
 export const overlayRootOverrideLast: Rule = {
@@ -30,21 +29,18 @@ export const overlayRootOverrideLast: Rule = {
     schema: [],
   },
   create(context) {
-    const primitives = new Set<string>();
+    const primitives = baseUiBindings();
     const overrideHooks = new Set<string>();
     const overrides = new Set<string>();
     const roots: ESTree.JSXOpeningElement[] = [];
     return {
       ImportDeclaration(declaration) {
         if (declaration.importKind === "type") return;
-        const source = declaration.source.value;
-        const fromOverride = source.endsWith(OVERRIDE_MODULE);
-        if (!fromOverride && !SCROLL_LOCKING_ROOTS.has(source)) return;
+        noteBaseUiImport(declaration, primitives);
+        if (!declaration.source.value.endsWith(OVERRIDE_MODULE)) return;
         for (const specifier of declaration.specifiers) {
           if (specifier.type !== "ImportSpecifier" || specifier.importKind === "type") continue;
-          if (!fromOverride) {
-            primitives.add(specifier.local.name);
-          } else if (specifier.imported.type === "Identifier" && specifier.imported.name === OVERRIDE_HOOK) {
+          if (specifier.imported.type === "Identifier" && specifier.imported.name === OVERRIDE_HOOK) {
             overrideHooks.add(specifier.local.name);
           }
         }
@@ -66,9 +62,10 @@ export const overlayRootOverrideLast: Rule = {
       // Judged once the whole module is read, so a binding declared below its use still counts.
       "Program:exit"() {
         for (const element of roots) {
-          const name = element.name;
-          if (name.type !== "JSXMemberExpression" || name.property.name !== "Root") continue;
-          if (name.object.type !== "JSXIdentifier" || !primitives.has(name.object.name)) continue;
+          const segments = jsxSegments(element.name);
+          if (segments === undefined) continue;
+          const part = baseUiReference(segments, primitives);
+          if (part?.member !== "Root" || !SCROLL_LOCKING_ROOTS.has(part.exported)) continue;
           const last = element.attributes.at(-1);
           const overridden =
             last?.type === "JSXSpreadAttribute" &&
@@ -78,7 +75,7 @@ export const overlayRootOverrideLast: Rule = {
             context.report({
               node: element,
               messageId: "missing",
-              data: { tag: `${name.object.name}.Root` },
+              data: { tag: segments.join(".") },
             });
           }
         }

@@ -11,7 +11,8 @@ type RestrictedImportsOptions = {
 
 /**
  * Library modules import none of the configured modules, type-only imports included, by any
- * static import, re-export or dynamic import whose specifier is a constant. Tests may import
+ * static import, re-export (named, `*` or `* as`), `import x = require(…)` or dynamic import whose
+ * specifier is a constant. Tests may import
  * anything they check. Unlike `no-restricted-imports`, each override configures its own list
  * without restating the package-wide one, and a list may match a module by a pattern.
  */
@@ -61,6 +62,9 @@ export const restrictedImports: Rule = {
       ExportNamedDeclaration: (node) => check(node.source),
       ExportAllDeclaration: (node) => check(node.source),
       ImportExpression: (node) => check(node.source),
+      TSImportEqualsDeclaration: (node) => {
+        if (node.moduleReference.type === "TSExternalModuleReference") check(node.moduleReference.expression);
+      },
     };
   },
 };

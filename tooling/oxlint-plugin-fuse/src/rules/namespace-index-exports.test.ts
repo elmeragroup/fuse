@@ -24,6 +24,11 @@ ruleTester.run("namespace-index-exports", namespaceIndexExports, {
       errors: [{ messageId: "namespace" }, { messageId: "export" }],
     },
     { code: 'export * from "./dialog";', errors: [{ messageId: "namespace" }, { messageId: "export" }] },
+    // A namespace re-export is not the namespace object, and it exports a module's every binding.
+    {
+      code: 'export const Dialog = {};\nexport * as Parts from "./dialog";',
+      errors: [{ messageId: "export" }],
+    },
     { code: "const Dialog = {};", errors: [{ messageId: "namespace" }] },
     {
       code: "export const Dialog = {};\nexport const Sheet = {};",

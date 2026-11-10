@@ -36,5 +36,12 @@ ruleTester.run("restricted-imports", restrictedImports, {
       options,
       errors: [{ messageId: "restricted" }],
     },
+    { code: 'export * as Color from "@elmeragroup/color";', options, errors: [{ messageId: "restricted" }] },
+    {
+      code: 'import polyfill = require("temporal-polyfill");',
+      options,
+      filename: "module.ts",
+      errors: [{ messageId: "restricted" }],
+    },
   ],
 });
