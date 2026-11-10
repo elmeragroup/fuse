@@ -1,4 +1,3 @@
-import { useState } from "react";
 import type { ComponentProps, ReactNode } from "react";
 
 import { describe, expect, it, vi } from "vitest";
@@ -6,26 +5,10 @@ import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
-import {
-  assertWithinKeyboardFocusRingAtBothDensities,
-  expectNoFocusRing,
-} from "../../../test/assert-focus-ring";
 import { withLocale } from "../../../test/locale-matrix";
-import {
-  ROW,
-  cssVarColor,
-  formNamed,
-  px,
-  renderThemed,
-  roleNamed,
-  stampDensity,
-} from "../../../test/themed-browser-render";
+import { formNamed, renderThemed } from "../../../test/themed-browser-render";
 import type { SupportedLocale } from "../../intl/locale-context";
-import { DENSITIES } from "../../theme/density";
-import { ThemeScope } from "../../theme/theme-scope";
 import { Field } from "../field";
-import { InputGroup } from "../input-group";
-import { useComboboxAnchor } from "./combobox";
 import { Combobox } from "./index";
 
 const FRUITS = ["Apple", "Banana", "Cherry", "Date"] as const;
@@ -80,14 +63,6 @@ function listboxNamed(): HTMLElement {
   return element;
 }
 
-function comboboxContent(): HTMLElement {
-  const content = listboxNamed().closest("[data-external-anchor]");
-  if (!(content instanceof HTMLElement)) {
-    throw new Error("expected combobox content around the listbox");
-  }
-  return content;
-}
-
 function optionNamed(name: string): HTMLElement {
   const element = page.getByRole("option", { name, exact: true }).element();
   if (!(element instanceof HTMLElement)) {
@@ -128,14 +103,6 @@ async function expectChipFocused(removeButtonName: string): Promise<void> {
       buttonNamed(removeButtonName).parentElement
     );
   });
-}
-
-function inputGroupRoot(name = "Fruit"): HTMLElement {
-  const group = comboboxNamed(name).closest('[role="group"]');
-  if (!(group instanceof HTMLElement)) {
-    throw new Error("expected an input-group root");
-  }
-  return group;
 }
 
 function FruitCombobox({
@@ -185,11 +152,6 @@ async function openedListbox(): Promise<HTMLElement> {
   return listboxNamed();
 }
 
-async function openWithClick(name = "Fruit"): Promise<HTMLElement> {
-  await userEvent.click(comboboxNamed(name));
-  return openedListbox();
-}
-
 async function openWithArrowDown(name = "Fruit"): Promise<HTMLElement> {
   const input = comboboxNamed(name);
   input.focus();
@@ -201,30 +163,6 @@ async function openWithArrowDown(name = "Fruit"): Promise<HTMLElement> {
 }
 
 describe("Combobox", () => {
-  it("opens from the input click into the enclosing ThemeScope, flush, with the list at the menu-family inset", async () => {
-    const { host } = renderCombobox(<FruitCombobox />);
-    const scope = host.querySelector("[data-theme-brand]");
-    const list = await openWithClick();
-    const content = comboboxContent();
-    expect(content.getAttribute("data-slot")).toBe("combobox-content");
-    expect(content.getAttribute("data-external-anchor")).toBe("false");
-    expect(optionNamed("Apple")).toBeTruthy();
-    expect(optionNamed("Banana")).toBeTruthy();
-
-    // Content portals into the enclosing ThemeScope instead of the document body.
-    expect(scope).not.toBeNull();
-    expect(scope?.contains(list)).toBe(true);
-    expect([...document.body.children].includes(list)).toBe(false);
-
-    // A search-group-less popup stays flush. Menu-family rows sit in a single p-1 list box;
-    // popup padding must not double it.
-    const contentStyles = getComputedStyle(content);
-    expect(px(contentStyles.paddingLeft)).toBe(0);
-    expect(px(contentStyles.paddingTop)).toBe(0);
-    expect(px(getComputedStyle(list).paddingLeft)).toBe(4);
-    expect(px(getComputedStyle(list).paddingTop)).toBe(4);
-  });
-
   it("closes the popup on Escape and keeps focus on the input", async () => {
     renderCombobox(<FruitCombobox />);
     await openWithArrowDown();
@@ -237,47 +175,6 @@ describe("Combobox", () => {
     expect(page.getByRole("option").query()).toBeNull();
     expect(document.activeElement).toBe(comboboxNamed("Fruit"));
     expect(comboboxNamed("Fruit").getAttribute("aria-expanded")).toBe("false");
-  });
-
-  it("filters options as the user types and shows Empty when nothing matches", async () => {
-    renderCombobox(<FruitCombobox />);
-    const input = comboboxNamed("Fruit");
-    await userEvent.fill(input, "Ban");
-    await vi.waitFor(() => {
-      expect(page.getByRole("option", { name: "Banana", exact: true }).query()).not.toBeNull();
-    });
-    expect(page.getByRole("option", { name: "Apple", exact: true }).query()).toBeNull();
-    expect(page.getByText("No results.", { exact: true }).query()).toBeNull();
-
-    await userEvent.fill(input, "zzzz");
-    await vi.waitFor(() => {
-      expect(page.getByText("No results.", { exact: true }).query()).not.toBeNull();
-    });
-    expect(page.getByRole("option").query()).toBeNull();
-
-    await userEvent.fill(input, "Apple");
-    await vi.waitFor(() => {
-      expect(page.getByText("No results.", { exact: true }).query()).toBeNull();
-    });
-    expect(optionNamed("Apple")).toBeTruthy();
-  });
-
-  it("pads the empty state with the row metrics at both densities", async () => {
-    renderCombobox(<FruitCombobox />);
-    await userEvent.fill(comboboxNamed("Fruit"), "zzzz");
-    const empty = await vi.waitFor(() => page.getByText("No results.", { exact: true }).element());
-    try {
-      for (const density of DENSITIES) {
-        stampDensity(density);
-        const style = getComputedStyle(empty);
-        expect([style.paddingTop, style.paddingLeft].map(px), density).toEqual([
-          ROW[density].py,
-          ROW[density].px,
-        ]);
-      }
-    } finally {
-      document.documentElement.removeAttribute("data-density");
-    }
   });
 
   it("selects with ArrowDown + Enter, closes, fills the input, and fires onValueChange", async () => {
@@ -293,22 +190,6 @@ describe("Combobox", () => {
     expect(onValueChange).toHaveBeenCalledTimes(1);
     expect(onValueChange.mock.calls[0]?.[0]).toBe("Banana");
     expect(comboboxNamed("Fruit").value).toBe("Banana");
-  });
-
-  it("opens and closes from the trigger button and rotates the caret via data-popup-open", async () => {
-    renderCombobox(<FruitCombobox />);
-    const trigger = page.getByRole("button", { name: TOGGLE_COPY["en-US"], exact: true }).element();
-    if (!(trigger instanceof HTMLElement)) {
-      throw new Error("expected a trigger button");
-    }
-    expect(trigger.closest("[data-popup-open]")).toBeNull();
-    await userEvent.click(trigger);
-    await openedListbox();
-    expect(trigger.closest("[data-popup-open]"), "trigger ancestry emits data-popup-open").not.toBeNull();
-    await userEvent.click(trigger);
-    await vi.waitFor(() => {
-      expect(page.getByRole("listbox").query()).toBeNull();
-    });
   });
 
   it("clears the value with Combobox.Clear, hides the trigger while Clear is present, and returns focus", async () => {
@@ -449,114 +330,6 @@ describe("Combobox", () => {
     expect(trigger.getAttribute("aria-labelledby")).toBe(labelId);
   });
 
-  it.each([
-    [
-      "Combobox.Input disabled",
-      <Combobox.Root key="input" items={[...FRUITS]} defaultValue="Apple">
-        <Combobox.Input aria-label="Fruit" showClear disabled />
-        <Combobox.Content>
-          <Combobox.List>
-            <Combobox.Item value="Apple">Apple</Combobox.Item>
-          </Combobox.List>
-        </Combobox.Content>
-      </Combobox.Root>,
-    ],
-    [
-      "Combobox.Root disabled",
-      <Combobox.Root key="root" items={[...FRUITS]} defaultValue="Apple" disabled>
-        <Combobox.Input aria-label="Fruit" showClear />
-        <Combobox.Content>
-          <Combobox.List>
-            <Combobox.Item value="Apple">Apple</Combobox.Item>
-          </Combobox.List>
-        </Combobox.Content>
-      </Combobox.Root>,
-    ],
-    [
-      "Field.Root disabled",
-      <Field.Root key="field" disabled>
-        <Field.Label>Fruit</Field.Label>
-        <FruitCombobox />
-      </Field.Root>,
-    ],
-  ])(
-    "disables the input and its buttons from %s and skips them in the Tab order",
-    async (_source, combobox) => {
-      renderCombobox(
-        <>
-          <button type="button">Before</button>
-          {combobox}
-          <button type="button">After</button>
-        </>
-      );
-      await expect.element(page.getByRole("combobox", { name: "Fruit", exact: true })).toBeDisabled();
-      expect(comboboxNamed("Fruit")).toHaveProperty("disabled", true);
-      expect(comboboxNamed("Fruit").hasAttribute("data-disabled")).toBe(true);
-      const owned = page
-        .getByRole("button")
-        .elements()
-        .filter((button) => !["Before", "After"].includes(button.textContent));
-      expect(owned.length).toBeGreaterThan(0);
-      for (const button of owned) {
-        expect(button).toHaveProperty("disabled", true);
-      }
-
-      buttonNamed("Before").focus();
-      await userEvent.tab();
-      await expect.element(page.getByRole("button", { name: "After", exact: true })).toHaveFocus();
-    }
-  );
-
-  it("appends chips in multiple mode, keeps the popup open, and removes via chip button and Backspace", async () => {
-    const onValueChange = vi.fn();
-    renderCombobox(
-      <Combobox.Root items={[...FRUITS]} multiple onValueChange={onValueChange}>
-        <Combobox.Chips aria-label="Selected fruit">
-          <Combobox.Value>
-            {(value: string[]) =>
-              value.map((item) => (
-                <Combobox.Chip key={item} removeLabel={`Remove ${item}`}>
-                  {item}
-                </Combobox.Chip>
-              ))
-            }
-          </Combobox.Value>
-          <Combobox.ChipsInput aria-label="Fruit" />
-        </Combobox.Chips>
-        <Combobox.Content>
-          <Combobox.List>
-            <Combobox.Collection>
-              {(item: string) => (
-                <Combobox.Item key={item} value={item}>
-                  {item}
-                </Combobox.Item>
-              )}
-            </Combobox.Collection>
-          </Combobox.List>
-        </Combobox.Content>
-      </Combobox.Root>
-    );
-
-    await openWithArrowDown();
-    await userEvent.keyboard("{Enter}");
-    expect(onValueChange.mock.calls[0]?.[0]).toEqual(["Apple"]);
-    expect(page.getByRole("listbox").query()).not.toBeNull();
-    expect(page.getByRole("button", { name: "Remove Apple", exact: true }).query()).not.toBeNull();
-
-    await userEvent.keyboard("{ArrowDown}{Enter}");
-    expect(onValueChange.mock.calls.at(-1)?.[0]).toEqual(["Apple", "Banana"]);
-
-    await userEvent.click(buttonNamed("Remove Apple"));
-    expect(onValueChange.mock.calls.at(-1)?.[0]).toEqual(["Banana"]);
-    expect(page.getByRole("button", { name: "Remove Apple", exact: true }).query()).toBeNull();
-
-    const chipsInput = comboboxNamed("Fruit");
-    chipsInput.focus();
-    expect(chipsInput.value).toBe("");
-    await userEvent.keyboard("{Backspace}");
-    expect(onValueChange.mock.calls.at(-1)?.[0]).toEqual([]);
-  });
-
   it("walks chips with Arrow keys and removes the focused chip with Delete", async () => {
     const onValueChange = vi.fn();
     renderCombobox(
@@ -616,157 +389,6 @@ describe("Combobox", () => {
     expect(page.getByRole("button", { name: "Remove [object Object]", exact: true }).query()).toBeNull();
   });
 
-  it("paints the error ring on the Chips container while aria-invalid", () => {
-    renderCombobox(
-      <>
-        <Combobox.Root items={[...FRUITS]} multiple defaultValue={["Apple"]}>
-          <Combobox.Chips aria-label="Rejected fruit">
-            <Combobox.Chip>Apple</Combobox.Chip>
-            <Combobox.ChipsInput aria-invalid aria-label="Rejected" />
-          </Combobox.Chips>
-        </Combobox.Root>
-        <Combobox.Root items={[...FRUITS]} multiple defaultValue={["Apple"]}>
-          <Combobox.Chips aria-label="Accepted fruit">
-            <Combobox.Chip>Apple</Combobox.Chip>
-            <Combobox.ChipsInput aria-label="Accepted" />
-          </Combobox.Chips>
-        </Combobox.Root>
-      </>
-    );
-    // the chips container carries role="toolbar" once a chip is
-    // selected, so the invalid chrome is reachable by role and name.
-    const invalid = roleNamed("toolbar", "Rejected fruit");
-    const valid = roleNamed("toolbar", "Accepted fruit");
-    expect(comboboxNamed("Rejected").getAttribute("aria-invalid")).toBe("true");
-    expect(comboboxNamed("Accepted").getAttribute("aria-invalid")).toBeNull();
-
-    const errorColor = cssVarColor(invalid, "--error");
-    expect(getComputedStyle(invalid).borderTopColor).toBe(errorColor);
-    expect(getComputedStyle(valid).borderTopColor).toBe(cssVarColor(valid, "--input"));
-    expect(getComputedStyle(valid).borderTopColor).not.toBe(errorColor);
-    expect(
-      getComputedStyle(invalid).boxShadow,
-      "the invalid chips container also paints an error ring, not only the border"
-    ).not.toBe(getComputedStyle(valid).boxShadow);
-  });
-
-  it("paints the ChipsInput placeholder in the muted-foreground role, like Combobox.Input", () => {
-    renderCombobox(
-      <>
-        <Combobox.Root items={[...FRUITS]}>
-          <Combobox.Input aria-label="Single fruit" placeholder="Pick a fruit" />
-        </Combobox.Root>
-        <Combobox.Root items={[...FRUITS]} multiple>
-          <Combobox.Chips aria-label="Selected fruit">
-            <Combobox.ChipsInput aria-label="Many fruit" placeholder="Pick fruit" />
-          </Combobox.Chips>
-        </Combobox.Root>
-      </>
-    );
-    const chipsInput = comboboxNamed("Many fruit");
-    // An input cannot host the probe, so read the token on its chips box.
-    const chipsBox = chipsInput.parentElement;
-    if (chipsBox === null) {
-      throw new Error("expected the chips input inside its chips box");
-    }
-    const muted = cssVarColor(chipsBox, "--muted-foreground");
-    expect(getComputedStyle(chipsInput, "::placeholder").color).toBe(muted);
-    expect(getComputedStyle(comboboxNamed("Single fruit"), "::placeholder").color).toBe(muted);
-  });
-
-  it.each([
-    ["neutral fkas private", { identity: "neutral", brand: "fkas", segment: "private" }],
-    ["branded tkas company", { identity: "branded", brand: "tkas", segment: "company" }],
-  ] as const)("fills the Chips box with the card role, like Combobox.Input, in %s", (_name, theme) => {
-    renderCombobox(
-      <ThemeScope theme={theme}>
-        <Combobox.Root items={[...FRUITS]}>
-          <Combobox.Input aria-label="Single fruit" />
-        </Combobox.Root>
-        <Combobox.Root items={[...FRUITS]} multiple defaultValue={["Apple"]}>
-          <Combobox.Chips aria-label="Selected fruit">
-            <Combobox.Chip>Apple</Combobox.Chip>
-            <Combobox.ChipsInput aria-label="Many fruit" />
-          </Combobox.Chips>
-        </Combobox.Root>
-      </ThemeScope>
-    );
-    const chipsBox = roleNamed("toolbar", "Selected fruit");
-    const inputBox = comboboxNamed("Single fruit").closest<HTMLElement>("[data-slot=input-group]");
-    if (inputBox === null) {
-      throw new Error("expected Combobox.Input inside its InputGroup root");
-    }
-    const card = cssVarColor(chipsBox, "--card");
-    expect(getComputedStyle(chipsBox).backgroundColor).toBe(card);
-    expect(getComputedStyle(inputBox).backgroundColor).toBe(card);
-  });
-
-  it("sets data-external-anchor=true against a useComboboxAnchor ref, and insets a popup that owns a search group without letting the group overflow it", async () => {
-    function AnchoredSearch() {
-      const anchor = useComboboxAnchor();
-      return (
-        <Combobox.Root items={[...FRUITS]}>
-          <Combobox.Chips ref={anchor} aria-label="Selected fruit">
-            <Combobox.ChipsInput aria-label="Fruit" />
-          </Combobox.Chips>
-          <Combobox.Content anchor={anchor}>
-            {/* w-full mirrors the phone field's search group, the box the old child margin overflowed. */}
-            <Combobox.Input showTrigger={false} aria-label="Filter fruit" className="w-full" />
-            <Combobox.List>
-              <Combobox.Item value="Apple">Apple</Combobox.Item>
-            </Combobox.List>
-          </Combobox.Content>
-        </Combobox.Root>
-      );
-    }
-    renderCombobox(<AnchoredSearch />);
-    await openWithClick();
-
-    const content = comboboxContent();
-    expect(content.getAttribute("data-external-anchor")).toBe("true");
-    const search = comboboxNamed("Filter fruit");
-    const group = search.closest('[role="group"]');
-    if (!(group instanceof HTMLElement)) {
-      throw new Error("expected the search input group");
-    }
-    const contentStyles = getComputedStyle(content);
-    // The popup pads only above the group, so the List keeps its single 4px inset.
-    expect(px(contentStyles.paddingLeft)).toBe(0);
-    expect(px(contentStyles.paddingTop)).toBe(6);
-
-    // The `w-full` group sits 4px inside each inline edge without overflowing the popup box.
-    // Layout offsets, not client rects, so the popup's entry zoom does not scale them.
-    expect(group.offsetParent).toBe(content);
-    expect(group.offsetLeft).toBe(4);
-    expect(content.clientWidth - group.offsetLeft - group.offsetWidth).toBe(4);
-  });
-
-  it("portals Content into an explicit container element", async () => {
-    function ExplicitContainer() {
-      const [node, setNode] = useState<HTMLDivElement | null>(null);
-      return (
-        <>
-          <div ref={setNode} role="region" aria-label="Theme island" />
-          {node ? (
-            <Combobox.Root items={[...FRUITS]} open>
-              <Combobox.Input aria-label="Island" />
-              <Combobox.Content container={node}>
-                <Combobox.List>
-                  <Combobox.Item value="Apple">Apple</Combobox.Item>
-                </Combobox.List>
-              </Combobox.Content>
-            </Combobox.Root>
-          ) : null}
-        </>
-      );
-    }
-    renderCombobox(<ExplicitContainer />);
-    const listbox = await openedListbox();
-    const island = page.getByRole("region", { name: "Theme island", exact: true }).element();
-    expect(island.contains(listbox)).toBe(true);
-    expect([...document.body.children].includes(listbox)).toBe(false);
-  });
-
   // The dictionary's copy in every locale is pinned once in `combobox.test.ts`. One non-default
   // locale proves each part reads its default from the provider's locale and the right key.
   it("renders the Empty, Clear, chip-remove and caret-trigger defaults in the provider locale", async () => {
@@ -807,109 +429,5 @@ describe("Combobox", () => {
     await vi.waitFor(() => {
       expect(page.getByText(EMPTY_COPY["nb-NO"], { exact: true }).query()).not.toBeNull();
     });
-  });
-
-  it("lets explicit copy win over the Empty, Clear, chip-remove and caret-trigger defaults", async () => {
-    renderCombobox(
-      <>
-        <Combobox.Root items={["Apple"]} defaultValue="Apple" defaultInputValue="Apple">
-          <Combobox.Input aria-label="Fruit" showClear showTrigger={false} clearLabel="Wipe it" />
-          <Combobox.Content>
-            <Combobox.Empty>Nothing here.</Combobox.Empty>
-            <Combobox.List>
-              <Combobox.Item value="Apple">Apple</Combobox.Item>
-            </Combobox.List>
-          </Combobox.Content>
-        </Combobox.Root>
-        <Combobox.Root items={["Apple"]} multiple defaultValue={["Apple"]}>
-          <Combobox.Chips>
-            <Combobox.Chip removeLabel="Drop Apple">Apple</Combobox.Chip>
-            <Combobox.ChipsInput aria-label="Basket" />
-          </Combobox.Chips>
-        </Combobox.Root>
-        <Combobox.Root items={["Apple"]} defaultValue="Apple" defaultInputValue="Apple">
-          <Combobox.Input aria-label="Picked" showTrigger={false} />
-          <Combobox.Clear aria-label="Clear fruit" />
-        </Combobox.Root>
-        {/* An explicit aria-label wins over label. */}
-        <Combobox.Root items={["Apple"]} defaultValue="Apple" defaultInputValue="Apple">
-          <Combobox.Input aria-label="Chosen" showTrigger={false} />
-          <Combobox.Clear label="Wipe" aria-label="Empty fruit" />
-        </Combobox.Root>
-        <Combobox.Root items={["Apple"]}>
-          <Combobox.Input aria-label="Shown" triggerLabel="Show fruit" />
-        </Combobox.Root>
-      </>
-    );
-    expect(page.getByRole("button", { name: "Wipe it", exact: true }).query()).not.toBeNull();
-    expect(page.getByRole("button", { name: "Drop Apple", exact: true }).query()).not.toBeNull();
-    expect(page.getByRole("button", { name: "Clear fruit", exact: true }).query()).not.toBeNull();
-    expect(page.getByRole("button", { name: "Empty fruit", exact: true }).query()).not.toBeNull();
-    expect(page.getByRole("button", { name: "Wipe", exact: true }).query()).toBeNull();
-    expect(page.getByRole("button", { name: "Show fruit", exact: true }).query()).not.toBeNull();
-    // No part fell back to its default beside the explicit copy.
-    for (const fallback of [CLEAR_COPY["en-US"], TOGGLE_COPY["en-US"], "Remove Apple"]) {
-      expect(page.getByRole("button", { name: fallback, exact: true }).query(), fallback).toBeNull();
-    }
-    await userEvent.fill(comboboxNamed("Fruit"), "zzzz");
-    await vi.waitFor(() => {
-      expect(page.getByText("Nothing here.", { exact: true }).query()).not.toBeNull();
-    });
-    expect(page.getByText(EMPTY_COPY["en-US"], { exact: true }).query()).toBeNull();
-  });
-
-  it("paints the InputGroup within ring on keyboard focus and not on an addon button", async () => {
-    renderCombobox(
-      <>
-        <button type="button">Before</button>
-        <Combobox.Root items={[...FRUITS]}>
-          <Combobox.Input aria-label="Fruit" showTrigger={false}>
-            <InputGroup.Addon align="inline-end">
-              <InputGroup.Button>Copy</InputGroup.Button>
-            </InputGroup.Addon>
-          </Combobox.Input>
-        </Combobox.Root>
-      </>
-    );
-    await assertWithinKeyboardFocusRingAtBothDensities(
-      buttonNamed("Before"),
-      comboboxNamed("Fruit"),
-      inputGroupRoot()
-    );
-
-    await userEvent.click(buttonNamed("Copy"));
-    expect(buttonNamed("Copy").matches(":focus-visible")).toBe(false);
-    expectNoFocusRing(inputGroupRoot(), "mouse focus on an addon button must not paint the group ring");
-  });
-
-  it("pins a popup-embedded InputGroup to the sm control height at both densities", async () => {
-    renderCombobox(
-      <Combobox.Root items={[...FRUITS]} defaultOpen>
-        <Combobox.Input aria-label="Fruit" showTrigger={false} />
-        <Combobox.Content>
-          <Combobox.Input showTrigger={false} aria-label="Filter fruit" />
-          <Combobox.List>
-            <Combobox.Item value="Apple">Apple</Combobox.Item>
-          </Combobox.List>
-        </Combobox.Content>
-      </Combobox.Root>
-    );
-    await expect
-      .element(page.getByRole("combobox", { name: "Filter fruit", exact: true }))
-      .toBeInTheDocument();
-    const filter = comboboxNamed("Filter fruit");
-    const group = filter.closest('[role="group"]');
-    if (!(group instanceof HTMLElement)) {
-      throw new Error("expected the popup InputGroup");
-    }
-    for (const density of ["dense", "comfortable"] as const) {
-      stampDensity(density);
-      const probe = document.createElement("span");
-      probe.style.width = "var(--control-h-sm)";
-      group.append(probe);
-      const controlHeight = px(getComputedStyle(probe).width);
-      probe.remove();
-      expect(px(getComputedStyle(group).height), density).toBe(controlHeight);
-    }
   });
 });

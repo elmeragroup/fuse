@@ -48,9 +48,7 @@ import { tv } from "./tv";
  * variant-prefixed floor class would instead survive the merge and shrink a larger consumer size,
  * such as the 18px TextField card input, to 16px. `ComboboxChipsInput` declares its own floor over
  * the chips box's inherited size.
- *
- * `field-size.browser.test.tsx` measures every field box at both sizes and densities against
- * `DENSITY_METRICS`; a new field box joins that matrix.
+
  */
 export const fieldSize = tv({
   slots: {

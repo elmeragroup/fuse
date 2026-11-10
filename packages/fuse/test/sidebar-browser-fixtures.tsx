@@ -61,18 +61,6 @@ export function sidebarRoot(): HTMLElement {
   throw new Error("expected sidebar root");
 }
 
-export function layoutChildren(root: HTMLElement): HTMLElement[] {
-  return [...root.children].filter((child): child is HTMLElement => child instanceof HTMLElement);
-}
-
-export function menuList(): HTMLElement {
-  const node = page.getByRole("list").element();
-  if (!(node instanceof HTMLElement)) {
-    throw new Error("expected a menu list");
-  }
-  return node;
-}
-
 /** Trigger is the only tab-stop named from sidebar.toggle; Rail is aria-hidden. */
 export function railNamed(name: string): HTMLButtonElement {
   const rail = page.getByTitle(name, { exact: true }).element();

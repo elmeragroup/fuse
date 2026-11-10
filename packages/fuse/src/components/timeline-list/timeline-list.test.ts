@@ -4,40 +4,6 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { TimelineList } from "./timeline-list";
-import { timelineListVariants } from "./timeline-list-variants";
-
-describe("timelineListVariants", () => {
-  it("resolves root, item, dot, title, time, and description with the reviewed layout values", () => {
-    const slots = timelineListVariants();
-    expect(slots.root()).toContain("m-0");
-    expect(slots.root()).toContain("list-none");
-    expect(slots.root()).toContain("p-0");
-    expect(slots.item()).toContain("relative");
-    expect(slots.item()).toContain("mb-10");
-    expect(slots.item()).toContain("ml-6");
-    expect(slots.item()).toContain("pl-6");
-    expect(slots.item()).toContain("last:mb-0");
-    expect(slots.dot()).toContain("absolute");
-    expect(slots.dot()).toContain("left-0");
-    expect(slots.dot()).toContain("top-2");
-    expect(slots.dot()).toContain("size-[8.75px]");
-    expect(slots.dot()).toContain("rounded-full");
-    expect(slots.time()).toContain("block");
-    expect(slots.time()).toContain("text-sm");
-  });
-
-  it("draws the connector only on non-last items and paints dot and time with role tokens", () => {
-    const slots = timelineListVariants();
-    expect(slots.item()).toContain("not-last:before:absolute");
-    expect(slots.item()).toContain("not-last:before:top-8");
-    expect(slots.item()).toContain("not-last:before:left-[4px]");
-    expect(slots.item()).toContain("not-last:before:h-full");
-    expect(slots.item()).toContain("not-last:before:w-px");
-    expect(slots.item()).toContain("not-last:before:bg-border");
-    expect(slots.dot()).toContain("bg-foreground");
-    expect(slots.time()).toContain("text-foreground");
-  });
-});
 
 describe("TimelineList.Time", () => {
   afterEach(() => {

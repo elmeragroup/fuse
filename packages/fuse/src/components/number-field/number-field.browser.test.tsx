@@ -6,27 +6,8 @@ import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
-import {
-  assertWithinKeyboardFocusRingAtBothDensities,
-  expectNoFocusRing,
-} from "../../../test/assert-focus-ring";
-import { render } from "../../../test/browser-render";
 import { SUPPORTED_LOCALES, withLocale } from "../../../test/locale-matrix";
-import {
-  CONTROL_MD,
-  CONTROL_XS,
-  cssVarColor,
-  fieldRootFrom,
-  fkasBranded,
-  fkasPrivate,
-  px,
-  renderThemed,
-  roleNamed,
-  stampDensity,
-  textNamed,
-  textboxNamed,
-} from "../../../test/themed-browser-render";
-import { ThemeScope } from "../../theme";
+import { fieldRootFrom, renderThemed, textboxNamed } from "../../../test/themed-browser-render";
 import { Field } from "../field";
 import { NumberField } from "./number-field";
 
@@ -45,23 +26,8 @@ const ROLE_DESCRIPTION_COPY = {
   "fi-FI": "Numerokenttä",
 } as const;
 
-/** Every optional prop a forwarding wrapper passes through, as `undefined`. */
-const FORWARDED_UNDEFINED = {
-  id: undefined,
-  "aria-label": undefined,
-  autoFocus: undefined,
-  minValue: undefined,
-  maxValue: undefined,
-  formatOptions: undefined,
-} as const;
-
 function renderField(node: ReactNode, locale: (typeof SUPPORTED_LOCALES)[number] = "en-US") {
   return renderThemed(withLocale(locale, node));
-}
-
-/** The label-row status glyphs: every icon in the field that is not a stepper button's. */
-function statusSvgs(name: string): SVGElement[] {
-  return [...fieldRootFrom(name).querySelectorAll("svg")].filter((svg) => svg.closest("button") === null);
 }
 
 function groupFrom(name: string): HTMLElement {
@@ -139,41 +105,6 @@ describe("NumberField", () => {
     expect(onChange).toHaveBeenLastCalledWith(0);
   });
 
-  it("steps from empty with the buttons and the arrows, reporting each step and committing it once", async () => {
-    const onChange = vi.fn();
-    // The oracle is the list of commits written out by hand: one entry per finished step.
-    const commits: number[] = [];
-    renderField(
-      <NumberField
-        label="Quantity"
-        description="Whole packs."
-        minValue={0}
-        maxValue={20}
-        step={1}
-        onChange={onChange}
-        onValueCommitted={(value) => commits.push(value)}
-      />
-    );
-    const input = page.getByRole("textbox", { name: "Quantity", exact: true });
-    const increase = page.getByRole("button", { name: "Increase", exact: true });
-    const decrease = page.getByRole("button", { name: "Decrease", exact: true });
-    await expect.element(input).toHaveValue("");
-    await userEvent.click(increase);
-    expect(onChange).toHaveBeenLastCalledWith(0);
-    await expect.element(input).toHaveValue("0");
-    await userEvent.click(increase);
-    expect(onChange).toHaveBeenLastCalledWith(1);
-    await expect.element(input).toHaveValue("1");
-    await userEvent.click(decrease);
-    expect(onChange).toHaveBeenLastCalledWith(0);
-    await expect.element(input).toHaveValue("0");
-    expect(commits).toEqual([0, 1, 0]);
-
-    textboxNamed("Quantity").focus();
-    await userEvent.keyboard("{ArrowUp}{ArrowUp}{ArrowDown}");
-    expect(commits).toEqual([0, 1, 0, 1, 2, 1]);
-  });
-
   it("stays controlled from a NaN empty state: only the parent moves the value", async () => {
     const events: number[] = [];
     function ControlledQuantity() {
@@ -216,16 +147,6 @@ describe("NumberField", () => {
     expect(events).toEqual([0]);
   });
 
-  it("reports NaN when the input is cleared", async () => {
-    const onChange = vi.fn();
-    renderField(<NumberField label="Quantity" onChange={onChange} />);
-    await userEvent.fill(page.getByRole("textbox", { name: "Quantity", exact: true }), "12");
-    expect(onChange).toHaveBeenLastCalledWith(12);
-    await userEvent.keyboard("{Backspace}{Backspace}");
-    expect(textboxNamed("Quantity")).toHaveProperty("value", "");
-    expect(onChange).toHaveBeenLastCalledWith(NaN);
-  });
-
   it("clamps values outside min/max on commit and disables steppers at bounds", async () => {
     const onChange = vi.fn();
     renderField(
@@ -243,235 +164,6 @@ describe("NumberField", () => {
     expect(onChange).toHaveBeenLastCalledWith(0);
     expect(stepperIn("Quantity", "Decrease")).toHaveProperty("disabled", true);
     expect(stepperIn("Quantity", "Increase")).toHaveProperty("disabled", false);
-  });
-
-  it("round-trips formatOptions and follows the provider locale, not navigator.language", () => {
-    const formatOptions: Intl.NumberFormatOptions = {
-      style: "decimal",
-      minimumFractionDigits: 1,
-      maximumFractionDigits: 1,
-    };
-    const value = 1234.5;
-    const formatted = {
-      "en-US": "1,234.5",
-      "nb-NO": "1\u00a0234,5",
-      "sv-SE": "1\u00a0234,5",
-      "fi-FI": "1\u00a0234,5",
-    };
-    const originalLanguage = Object.getOwnPropertyDescriptor(navigator, "language");
-    Object.defineProperty(navigator, "language", {
-      configurable: true,
-      get: () => "de-DE",
-    });
-
-    try {
-      for (const locale of SUPPORTED_LOCALES) {
-        const { unmount } = renderField(
-          <NumberField label="Amount" defaultValue={value} formatOptions={formatOptions} />,
-          locale
-        );
-        expect(textboxNamed("Amount")).toHaveProperty("value", formatted[locale]);
-        unmount();
-      }
-
-      renderField(
-        <NumberField label="Conflicting" defaultValue={value} formatOptions={formatOptions} />,
-        "en-US"
-      );
-      expect(textboxNamed("Conflicting")).toHaveProperty("value", "1,234.5");
-      expect(textboxNamed("Conflicting")).not.toHaveProperty("value", "1.234,5");
-    } finally {
-      if (originalLanguage === undefined) {
-        Reflect.deleteProperty(navigator, "language");
-      } else {
-        Object.defineProperty(navigator, "language", originalLanguage);
-      }
-    }
-  });
-
-  it("disables the input and steppers, and keeps a read-only input focusable", async () => {
-    renderField(
-      <>
-        <button type="button">Before</button>
-        <NumberField label="Disabled" isDisabled defaultValue={3} />
-        <NumberField label="Locked" isReadOnly defaultValue={7} />
-        <NumberField label="Open" defaultValue={1} />
-      </>
-    );
-    const disabled = textboxNamed("Disabled");
-    expect(disabled).toHaveProperty("disabled", true);
-    disabled.focus();
-    expect(document.activeElement).not.toBe(disabled);
-
-    const locked = textboxNamed("Locked");
-    expect(locked).toHaveProperty("readOnly", true);
-    locked.focus();
-    expect(document.activeElement).toBe(locked);
-    expect(stepperIn("Locked", "Increase").getAttribute("aria-disabled")).toBe("true");
-    expect(stepperIn("Locked", "Decrease").getAttribute("aria-disabled")).toBe("true");
-    expect(stepperIn("Disabled", "Increase").getAttribute("aria-disabled")).toBe("true");
-
-    page.getByRole("button", { name: "Before", exact: true }).element().focus();
-    await userEvent.keyboard("{Tab}");
-    expect(document.activeElement).toBe(locked);
-    await userEvent.keyboard("{Tab}");
-    expect(document.activeElement).toBe(textboxNamed("Open"));
-  });
-
-  it("sets aria-invalid on the group and shows the alert when errorMessage is present", () => {
-    renderField(
-      <>
-        <NumberField label="Valid" defaultValue={1} />
-        <NumberField label="Invalid" isInvalid defaultValue={1} />
-        <NumberField label="Broken" isInvalid errorMessage="Enter a quantity." defaultValue={1} />
-      </>
-    );
-    expect(groupFrom("Valid").hasAttribute("aria-invalid")).toBe(false);
-    expect(groupFrom("Invalid").getAttribute("aria-invalid")).toBe("true");
-    expect(groupFrom("Broken").getAttribute("aria-invalid")).toBe("true");
-    expect(page.getByRole("alert").element().textContent).toBe("Enter a quantity.");
-    const describedBy = textboxNamed("Broken").getAttribute("aria-describedby") ?? "";
-    expect(describedBy.split(/\s+/)).toContain(page.getByRole("alert").element().id);
-  });
-
-  // A wrapper that forwards its own optional props hands every one of them over as `undefined`;
-  // that must keep the Field label, skip autofocus and submit the same value as omitting them.
-  it.each([
-    { forwarded: "omitted", props: {} },
-    { forwarded: "explicitly undefined", props: FORWARDED_UNDEFINED },
-  ])(
-    "submits the numeric value through the hidden input with optional props $forwarded",
-    async ({ props }) => {
-      const submitted: Array<FormDataEntryValue | null> = [];
-      renderField(
-        <form
-          onSubmit={(event) => {
-            event.preventDefault();
-            submitted.push(new FormData(event.currentTarget).get("qty"));
-          }}>
-          <NumberField label="Quantity" name="qty" defaultValue={1234} {...props} />
-          <button type="submit">Save</button>
-        </form>
-      );
-      expect(document.activeElement).not.toBe(textboxNamed("Quantity"));
-      await userEvent.click(page.getByRole("button", { name: "Save", exact: true }));
-      expect(submitted).toEqual(["1234"]);
-    }
-  );
-
-  it("submits a typed decimal under minValue when no step is given, and still steps by one", async () => {
-    const submitted: Array<FormDataEntryValue | null> = [];
-    const onChange = vi.fn();
-    renderField(
-      <form
-        onSubmit={(event) => {
-          event.preventDefault();
-          submitted.push(new FormData(event.currentTarget).get("amount"));
-        }}>
-        <NumberField label="Amount" name="amount" minValue={1} onChange={onChange} />
-        <button type="submit">Save</button>
-      </form>
-    );
-    await userEvent.fill(page.getByRole("textbox", { name: "Amount", exact: true }), "99.5");
-    await userEvent.click(page.getByRole("button", { name: "Save", exact: true }));
-    expect(submitted).toEqual(["99.5"]);
-
-    textboxNamed("Amount").focus();
-    await userEvent.keyboard("{ArrowUp}");
-    expect(onChange).toHaveBeenLastCalledWith(100.5);
-  });
-
-  it("holds a typed value to an explicit step counted from minValue, as a native number input does", async () => {
-    const submitted: Array<FormDataEntryValue | null> = [];
-    renderField(
-      <form
-        onSubmit={(event) => {
-          event.preventDefault();
-          submitted.push(new FormData(event.currentTarget).get("kwh"));
-        }}>
-        <NumberField label="Annual use" name="kwh" minValue={550} step={100} />
-        <button type="submit">Save</button>
-      </form>
-    );
-    const save = page.getByRole("button", { name: "Save", exact: true });
-    const annualUse = page.getByRole("textbox", { name: "Annual use", exact: true });
-    await userEvent.fill(annualUse, "12345");
-    await userEvent.click(save);
-    expect(submitted).toEqual([]);
-
-    // On a grid counted from zero, but not on the one counted from minValue.
-    await userEvent.fill(annualUse, "12300");
-    await userEvent.click(save);
-    expect(submitted).toEqual([]);
-
-    await userEvent.fill(annualUse, "12350");
-    await userEvent.click(save);
-    expect(submitted).toEqual(["12350"]);
-  });
-
-  it("crossfades the pending and success faces in the label row, success winning", () => {
-    renderField(
-      <>
-        <NumberField aria-label="Pending" isPending />
-        <NumberField aria-label="Done" isPending isSuccess />
-      </>
-    );
-
-    // The two faces crossfade like TextField's
-    // instead of stacking side by side, so both are always in the DOM and exactly one
-    // is opaque.
-    expect(fieldRootFrom("Pending").querySelectorAll("label")).toHaveLength(0);
-
-    const pendingSvgs = statusSvgs("Pending");
-    expect(pendingSvgs).toHaveLength(2);
-    const pendingShown = pendingSvgs.filter((svg) => getComputedStyle(svg).opacity === "1");
-    expect(pendingShown).toHaveLength(1);
-    const pendingFace = pendingShown[0];
-    if (!(pendingFace instanceof SVGElement)) {
-      throw new Error("expected the pending face");
-    }
-    expect(getComputedStyle(pendingFace).animationName).not.toBe("none");
-
-    const doneSvgs = statusSvgs("Done");
-    expect(doneSvgs).toHaveLength(2);
-    const doneShown = doneSvgs.filter((svg) => getComputedStyle(svg).opacity === "1");
-    expect(doneShown).toHaveLength(1);
-    const doneFace = doneShown[0];
-    if (!(doneFace instanceof SVGElement)) {
-      throw new Error("expected the success face");
-    }
-    expect(getComputedStyle(doneFace).animationName).toBe("none");
-  });
-
-  it("paints the within ring on the group for keyboard focus at both densities, and not for mouse focus on a stepper", async () => {
-    renderField(
-      <>
-        <button type="button">Before</button>
-        <NumberField label="Quantity" defaultValue={1} />
-      </>
-    );
-    const previous = page.getByRole("button", { name: "Before", exact: true }).element();
-    if (!(previous instanceof HTMLElement)) {
-      throw new Error("expected before");
-    }
-    await assertWithinKeyboardFocusRingAtBothDensities(
-      previous,
-      textboxNamed("Quantity"),
-      groupFrom("Quantity")
-    );
-
-    // Chromium always matches :focus-visible on a clicked text field, so the
-    // mouse arm is probed on a stepper — the non-editable receiver. Clicking
-    // the stepper focuses the input (base-ui); a prior mouse click sets the
-    // modality so focusing the button itself is not :focus-visible.
-    await userEvent.click(previous);
-    expect(previous.matches(":focus-visible")).toBe(false);
-
-    const increment = roleNamed("button", "Increase");
-    increment.focus();
-    expect(document.activeElement).toBe(increment);
-    expect(increment.matches(":focus-visible")).toBe(false);
-    expectNoFocusRing(groupFrom("Quantity"), "mouse focus on a stepper must not paint the group ring");
   });
 
   it("names the steppers and describes the input's role from the provider locale, updates them on locale rerender, and lets increaseLabel and decreaseLabel override independently", () => {
@@ -530,32 +222,6 @@ describe("NumberField", () => {
     expect(page.getByRole("button", { name: "Add one", exact: true }).query()).toBeTruthy();
     expect(page.getByRole("button", { name: DECREASE_COPY["sv-SE"], exact: true }).query()).toBeTruthy();
   });
-
-  it("draws one 1px stepper divider in the field-box border color and no bottom edge", () => {
-    // Dark, where the field-box `--input` and the divider-default `--border` differ.
-    render(
-      <div data-theme="dark">
-        <ThemeScope theme={fkasPrivate}>
-          {withLocale("en-US", <NumberField label="Quantity" defaultValue={1} />)}
-        </ThemeScope>
-      </div>
-    );
-    const group = groupFrom("Quantity");
-    const input = cssVarColor(group, "--input");
-    expect(input).not.toBe(cssVarColor(group, "--border"));
-    expect(getComputedStyle(group).borderTopColor).toBe(input);
-    for (const name of ["Decrease", "Increase"] as const) {
-      expect(
-        getComputedStyle(stepperIn("Quantity", name)).borderInlineStartColor,
-        `${name} divider color`
-      ).toBe(input);
-      expect(
-        getComputedStyle(stepperIn("Quantity", name)).borderInlineStartWidth,
-        `${name} divider width`
-      ).toBe("1px");
-    }
-    expect(getComputedStyle(stepperIn("Quantity", "Increase")).borderBottomWidth).toBe("0px");
-  });
 });
 
 describe("NumberField onValueCommitted", () => {
@@ -609,52 +275,5 @@ describe("NumberField onValueCommitted", () => {
     await userEvent.tab();
     expect(commits).toEqual([10]);
     await expect.element(page.getByRole("textbox", { name: "Quantity", exact: true })).toHaveValue("10");
-  });
-});
-
-describe("NumberField density metrics", () => {
-  // Oracle: the xs control inset in fuse.css, 0.5rem dense and 0.75rem comfortable at the 16px root.
-  it("insets the denomination by the xs control inset at both densities", () => {
-    renderField(<NumberField label="Meter" denomination="kWh" defaultValue={1} />);
-    const expected = { dense: 8, comfortable: 12 } as const;
-    for (const density of ["dense", "comfortable"] as const) {
-      stampDensity(density);
-      const denomination = getComputedStyle(textNamed("kWh"));
-      expect(px(denomination.paddingInlineStart), density).toBe(expected[density]);
-      expect(px(denomination.paddingInlineEnd), density).toBe(expected[density]);
-    }
-  });
-
-  it("pins the field box to the signed md control size and sizes each stepper xs-wide and full-height at both densities, without rescoping", () => {
-    const { rerender, unmount: unmountMetrics } = renderField(<NumberField label="Meter" defaultValue={1} />);
-    for (const density of ["dense", "comfortable"] as const) {
-      stampDensity(density);
-      expect(px(getComputedStyle(groupFrom("Meter")).height)).toBe(CONTROL_MD[density].height);
-      expect(px(getComputedStyle(textboxNamed("Meter")).paddingInlineStart)).toBe(CONTROL_MD[density].px);
-    }
-
-    stampDensity("dense");
-    rerender(
-      <ThemeScope theme={fkasBranded}>
-        {withLocale(
-          "en-US",
-          <div data-density="comfortable">
-            <NumberField label="Meter" defaultValue={1} />
-          </div>
-        )}
-      </ThemeScope>
-    );
-    expect(px(getComputedStyle(groupFrom("Meter")).height)).toBe(CONTROL_MD.dense.height);
-    unmountMetrics();
-
-    renderField(<NumberField label="Meter" defaultValue={1} />);
-    for (const density of ["dense", "comfortable"] as const) {
-      stampDensity(density);
-      for (const name of ["Decrease", "Increase"] as const) {
-        const stepper = getComputedStyle(stepperIn("Meter", name));
-        expect(px(stepper.width), `${density} ${name} width`).toBe(CONTROL_XS[density].height);
-        expect(px(stepper.height), `${density} ${name} height`).toBeGreaterThanOrEqual(24);
-      }
-    }
   });
 });

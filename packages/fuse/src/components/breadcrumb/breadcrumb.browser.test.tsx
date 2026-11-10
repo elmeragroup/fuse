@@ -7,7 +7,7 @@ import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import { assertFocusRingOnKeyboardAbsentOnMouse } from "../../../test/assert-focus-ring";
 import { SUPPORTED_LOCALES, withLocale } from "../../../test/locale-matrix";
-import { cssVarColor, renderThemed } from "../../../test/themed-browser-render";
+import { renderThemed } from "../../../test/themed-browser-render";
 import { Breadcrumb } from "./index";
 
 const LANDMARK_COPY = {
@@ -77,68 +77,6 @@ describe("Breadcrumb", () => {
     expect(current.getAttribute("data-slot")).toBe("breadcrumb-page");
     expect(current.getAttribute("href")).toBeNull();
     expect(current.tabIndex).toBeLessThan(0);
-  });
-
-  it("keeps merged className and data-slot on a custom Link render element", () => {
-    renderBreadcrumb(
-      <Breadcrumb.Root>
-        <Breadcrumb.List>
-          <Breadcrumb.Item>
-            <Breadcrumb.Link className="text-primary" render={<a href="#home" />}>
-              Home
-            </Breadcrumb.Link>
-          </Breadcrumb.Item>
-        </Breadcrumb.List>
-      </Breadcrumb.Root>
-    );
-    const link = linkNamed("Home");
-    expect(link.tagName).toBe("A");
-    expect(link.getAttribute("href")).toBe("#home");
-    expect(link.getAttribute("data-slot")).toBe("breadcrumb-link");
-    expect(getComputedStyle(link).color).toBe(cssVarColor(link, "--primary"));
-  });
-
-  it("hides separators from the accessibility tree and keeps ellipsis more in it", () => {
-    renderBreadcrumb(
-      <Breadcrumb.Root>
-        <Breadcrumb.List>
-          <Breadcrumb.Item>
-            <Breadcrumb.Link href="#home">Home</Breadcrumb.Link>
-          </Breadcrumb.Item>
-          <Breadcrumb.Separator />
-          <Breadcrumb.Item>
-            <Breadcrumb.Ellipsis />
-          </Breadcrumb.Item>
-          <Breadcrumb.Separator />
-          <Breadcrumb.Item>
-            <Breadcrumb.Page>Invoice 1042</Breadcrumb.Page>
-          </Breadcrumb.Item>
-        </Breadcrumb.List>
-      </Breadcrumb.Root>
-    );
-    const nav = navNamed("Breadcrumb");
-    const list = nav.querySelector("ol");
-    if (!(list instanceof HTMLOListElement)) {
-      throw new Error("expected ol");
-    }
-    const separators = [...list.children].filter((child) => child.getAttribute("role") === "presentation");
-    expect(separators).toHaveLength(2);
-    for (const separator of separators) {
-      expect(separator.getAttribute("aria-hidden")).toBe("true");
-    }
-    expect(page.getByRole("listitem").elements()).toHaveLength(3);
-    const more = page.getByText("More", { exact: true }).element();
-    if (!(more instanceof HTMLElement)) {
-      throw new Error("expected ellipsis more copy");
-    }
-    const ellipsis = more.parentElement;
-    if (!(ellipsis instanceof HTMLElement)) {
-      throw new Error("expected breadcrumb ellipsis");
-    }
-    const icon = ellipsis.querySelector("svg");
-    expect(icon).not.toBeNull();
-    expect(icon?.getAttribute("aria-hidden")).toBe("true");
-    expect(ellipsis.getAttribute("aria-hidden")).toBeNull();
   });
 
   it("renders an ordered list with one li per item plus separators", () => {

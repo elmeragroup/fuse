@@ -28,13 +28,6 @@ export const guenBranded = {
   segment: "private",
 } as const satisfies ThemeInput;
 
-/** fkse/private, branded: among the faintest light card steps off the page and the faintest dark one. */
-export const fkseBranded = {
-  identity: "branded",
-  brand: "fkse",
-  segment: "private",
-} as const satisfies ThemeInput;
-
 /** guen/private, neutral: a second neutral brand for scope fixtures. */
 export const guenPrivate = {
   identity: "neutral",

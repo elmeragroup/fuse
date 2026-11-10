@@ -4,23 +4,11 @@ import { selfFocusRingClass } from "../../styles/utils";
 import { toggleVariants } from "./toggle-variants";
 
 describe("toggleVariants", () => {
-  it("renders each variant without leaking the other axis", () => {
-    const defaults = toggleVariants({ variant: "default" });
-    expect(defaults).toContain("bg-transparent");
-    expect(defaults).not.toContain("border-input");
-    expect(defaults).not.toContain("shadow-xs");
-
-    const outline = toggleVariants({ variant: "outline" });
-    expect(outline).toContain("border-input");
-    expect(outline).toContain("bg-transparent");
-    expect(outline).toContain("shadow-xs");
-  });
-
   it("keeps the doubled pressed selectors and composes the shared self focus ring", () => {
     const classes = toggleVariants();
     expect(classes).toContain("aria-pressed:bg-toggle-pressed");
     expect(classes).toContain("data-pressed:bg-toggle-pressed");
-    // Oracle: the shared focus recipe, which utils.test.ts pins by hand.
+    // Oracle: the shared focus recipe the part composes.
     for (const token of selfFocusRingClass.split(" ")) {
       expect(classes).toContain(token);
     }

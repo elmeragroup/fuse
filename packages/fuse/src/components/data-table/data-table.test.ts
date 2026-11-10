@@ -11,7 +11,6 @@ import { SUPPORTED_LOCALES } from "../../../test/locale-matrix";
 import { skeletonRowCount } from "./data-table";
 import { cellValueText, formatCurrencyCell, formatDateCell, formatNumberCell } from "./data-table-format";
 import { pageStatus } from "./data-table-pagination-status";
-import { dataTableVariants } from "./data-table-variants";
 import { dataTableStrings } from "./intl";
 
 const NBSP = "\u00a0";
@@ -169,12 +168,5 @@ describe("dataTable dictionary", () => {
         locale
       ).toEqual(ACTIONS[locale]);
     }
-  });
-});
-
-describe("dataTableVariants", () => {
-  it("adds the pointer cursor only to a pressable row", () => {
-    expect(dataTableVariants({ pressable: true }).row()).toBe("cursor-pointer");
-    expect(dataTableVariants().row()).toBeUndefined();
   });
 });

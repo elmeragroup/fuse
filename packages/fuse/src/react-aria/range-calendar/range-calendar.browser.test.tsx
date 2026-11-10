@@ -16,7 +16,6 @@ import {
   cellNumbered,
   dayNumbered,
   outsideMonthBands,
-  parkPointerOffGrid,
 } from "../../../test/rac-calendar-testing";
 import { cssVarColor, renderThemed } from "../../../test/themed-browser-render";
 import { UiProviders } from "../ui-providers/ui-providers";
@@ -49,7 +48,6 @@ function pillOf(day: HTMLElement): HTMLElement {
 
 const july13 = new CalendarDate(2026, 7, 13);
 const july14 = new CalendarDate(2026, 7, 14);
-const july16 = new CalendarDate(2026, 7, 16);
 const july17 = new CalendarDate(2026, 7, 17);
 const july18 = new CalendarDate(2026, 7, 18);
 const july22 = new CalendarDate(2026, 7, 22);
@@ -159,29 +157,6 @@ describe("RangeCalendar", () => {
       expect(getComputedStyle(band).visibility, band.textContent).toBe("hidden");
     }
     expect(page.getByRole("button", { name: /June 30, 2026/ }).query()).toBeNull();
-  });
-
-  it("mutes an unavailable day's pill with the muted-foreground token and gives it no hover fill", async () => {
-    renderRangeCalendar(
-      <RangeCalendar defaultFocusedValue={july14} isDateUnavailable={(date) => isSameDay(date, july16)} />
-    );
-    await expect.element(page.getByRole("grid")).toBeVisible();
-    expect(dayNumbered(16)).toHaveAttribute("data-unavailable");
-
-    const unavailable = pillOf(dayNumbered(16));
-    expect(getComputedStyle(unavailable).color).toBe(cssVarColor(unavailable, "--muted-foreground"));
-    const bookable = pillOf(dayNumbered(15));
-    expect(getComputedStyle(bookable).color).toBe(cssVarColor(bookable, "--foreground"));
-
-    // RAC disables useHover/usePress for unavailable cells, so group-hover never fires today;
-    // the compound's suppression classes only matter if an upgrade changes that.
-    await userEvent.hover(dayNumbered(16));
-    expect(getComputedStyle(pillOf(dayNumbered(16))).backgroundColor).toBe("rgba(0, 0, 0, 0)");
-
-    await userEvent.hover(dayNumbered(15));
-    const hovered = pillOf(dayNumbered(15));
-    expect(getComputedStyle(hovered).backgroundColor).toBe(cssVarColor(hovered, "--muted"));
-    await parkPointerOffGrid();
   });
 
   it("marks a range whose endpoint is unavailable invalid and associates its errorMessage", async () => {

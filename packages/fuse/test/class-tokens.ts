@@ -14,7 +14,7 @@ export function classTokens(code: string): string[] {
 }
 
 /** A class token split at the colons outside brackets. */
-export type SplitToken = {
+type SplitToken = {
   /** The variants before the utility, such as `hover` and `data-open`. */
   readonly variants: readonly string[];
 

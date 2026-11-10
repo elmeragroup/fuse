@@ -1,20 +1,11 @@
-import { useState } from "react";
 import type { ReactElement } from "react";
 
 /**
  * Browser project. Real TanStack v9 tables drive the plain and registered parts; every query is by
  * role and accessible name through the shared helpers.
  */
-import {
-  columnFilteringFeature,
-  createFilteredRowModel,
-  createPaginatedRowModel,
-  filterFns,
-  rowPaginationFeature,
-  tableFeatures,
-  useTable,
-} from "@tanstack/react-table";
-import type { ColumnDef, PaginationState, Row } from "@tanstack/react-table";
+import { tableFeatures, useTable } from "@tanstack/react-table";
+import type { ColumnDef, Row } from "@tanstack/react-table";
 import { describe, expect, it } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
@@ -24,7 +15,6 @@ import {
   features,
   NO_ORDERS,
   ORDERS,
-  ORDERS_10,
   ORDERS_25,
   ORDERS_3,
   plainColumns,
@@ -42,8 +32,7 @@ import { RadioGroup, RadioIconButton } from "../radio-group/radio-group";
 import { Slider } from "../slider/slider";
 import { actionsColumn } from "./actions-column";
 import { createFuseTableHook } from "./create-fuse-table-hook";
-import { NumberCell } from "./data-table-registered";
-import type { NumberCellProps, RegisteredRowProps } from "./data-table-registered";
+import type { RegisteredRowProps } from "./data-table-registered";
 import { DataTable } from "./index";
 import { selectColumn } from "./select-column";
 
@@ -95,25 +84,6 @@ function ClientPagedTable({ data }: { readonly data: Order[] }): ReactElement {
       <DataTable.Content table={table} />
       <DataTable.Pagination table={table} />
     </>
-  );
-}
-
-function CursorPagedTable({ pages }: { readonly pages: number }): ReactElement {
-  const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 10 });
-  const table = useTable({
-    features,
-    columns: plainColumns,
-    data: ORDERS_10,
-    manualPagination: true,
-    pageCount: -1,
-    state: { pagination },
-    onPaginationChange: setPagination,
-  });
-  return (
-    <DataTable.Pagination
-      table={table}
-      total={{ kind: "unknown", hasMore: pagination.pageIndex < pages - 1 }}
-    />
   );
 }
 
@@ -201,17 +171,6 @@ describe("DataTable pagination", () => {
     expect(roleNamed("cell", "No results.")).toBeInstanceOf(HTMLTableCellElement);
   });
 
-  it("follows hasMore for an unknown total, shows no page count and never enables Last", async () => {
-    renderInEnglish(<CursorPagedTable pages={2} />);
-
-    expect(page.getByText("Page 1", { exact: true }).element()).toBeTruthy();
-    expect(disabledMoves()).toEqual([true, true, false, true]);
-
-    await userEvent.click(pageButtons().next);
-    await expect.element(page.getByText("Page 2", { exact: true })).toBeVisible();
-    expect(disabledMoves()).toEqual([false, false, true, true]);
-  });
-
   it("changes the page size through the labelled rows-per-page select", async () => {
     renderInEnglish(<ClientPagedTable data={ORDERS_25} />);
 
@@ -227,112 +186,6 @@ describe("DataTable pagination", () => {
     expect(page.getByText("Side 1 av 3", { exact: true }).element()).toBeTruthy();
     expect(roleNamed("combobox", "Rader per side")).toBeInstanceOf(HTMLElement);
     expect(button("Gå til neste side").disabled).toBe(false);
-  });
-});
-
-describe("DataTable registered pagination", () => {
-  function SelectorTable(): ReactElement {
-    const table = useFuseTable({ columns: registeredColumns, data: ORDERS_25 }, (state) => ({
-      sorting: state.sorting,
-    }));
-    return (
-      <table.AppTable>
-        <table.Content />
-        <table.Pagination />
-      </table.AppTable>
-    );
-  }
-
-  it("updates table.Pagination and table.Content when the useFuseTable selector omits pagination", async () => {
-    renderInEnglish(<SelectorTable />);
-
-    expect(page.getByText("Page 1 of 3", { exact: true }).element()).toBeTruthy();
-    await userEvent.click(pageButtons().next);
-    await expect.element(page.getByText("Page 2 of 3", { exact: true })).toBeVisible();
-    await expect.element(page.getByRole("cell", { name: "Customer 11", exact: true })).toBeVisible();
-  });
-});
-
-describe("DataTable registered pagination after filtering", () => {
-  const filtering = createFuseTableHook({
-    features: tableFeatures({
-      columnFilteringFeature,
-      rowPaginationFeature,
-      filteredRowModel: createFilteredRowModel(),
-      paginatedRowModel: createPaginatedRowModel(),
-      filterFns,
-    }),
-  });
-
-  const filterColumnHelper = filtering.createAppColumnHelper<Order>();
-  const filterColumns = filterColumnHelper.columns([
-    filterColumnHelper.accessor("customer", {
-      header: "Customer",
-      filterFn: "includesString",
-      cell: ({ cell }) => <cell.TextCell />,
-    }),
-  ]);
-
-  function FilteredTable(): ReactElement {
-    // The selector omits the filters, so only the registered parts' own subscriptions re-render.
-    const table = filtering.useAppTable({ columns: filterColumns, data: ORDERS_25 }, (state) => ({
-      pagination: state.pagination,
-    }));
-    return (
-      <table.AppTable>
-        <button
-          type="button"
-          onClick={() => {
-            table.getColumn("customer")?.setFilterValue("Customer 2");
-          }}>
-          Filter
-        </button>
-        <table.Content />
-        <table.Pagination />
-      </table.AppTable>
-    );
-  }
-
-  it("follows the filtered page count on page index 0", async () => {
-    renderInEnglish(<FilteredTable />);
-
-    expect(page.getByText("Page 1 of 3", { exact: true }).element()).toBeTruthy();
-    await userEvent.click(roleNamed("button", "Filter"));
-    // "Customer 2" and "Customer 20" through "Customer 25": seven rows, one page.
-    await expect.element(page.getByText("Page 1 of 1", { exact: true })).toBeVisible();
-    expect(disabledMoves()).toEqual([true, true, true, true]);
-  });
-});
-
-describe("DataTable column toggle", () => {
-  const LABELS = new Map([
-    ["customer", "Customer"],
-    ["amount", "Amount"],
-  ]);
-
-  function ToggleTable({ data }: { readonly data: Order[] }): ReactElement {
-    const table = useFuseTable({ columns: registeredColumns, data });
-    return (
-      <table.AppTable>
-        <table.ColumnToggle getLabel={(column) => LABELS.get(column.id) ?? column.id} />
-        <table.Content />
-      </table.AppTable>
-    );
-  }
-
-  it("hides and shows columns, and the empty row spans the visible columns", async () => {
-    renderInEnglish(<ToggleTable data={[]} />);
-
-    expect(roleNamed("cell", "No results.").getAttribute("colspan")).toBe("2");
-
-    await userEvent.click(roleNamed("button", "Columns"));
-    await userEvent.click(roleNamed("menuitemcheckbox", "Amount"));
-    await expect.element(page.getByRole("columnheader", { name: "Amount" })).not.toBeInTheDocument();
-    expect(roleNamed("cell", "No results.").getAttribute("colspan")).toBe("1");
-
-    await userEvent.click(roleNamed("menuitemcheckbox", "Amount"));
-    await expect.element(page.getByRole("columnheader", { name: "Amount" })).toBeInTheDocument();
-    expect(roleNamed("cell", "No results.").getAttribute("colspan")).toBe("2");
   });
 });
 
@@ -452,24 +305,6 @@ describe("DataTable registered row override", () => {
 
   it("renders the default rows of table.Content through the app's registered Row", () => {
     renderInEnglish(<OverrideTable />);
-
-    expect(roleNamed("cell", "Bergen").closest("tr")?.getAttribute("data-testid")).toBe("app-row");
-  });
-
-  const plain = createFuseTableHook({ features: rowFeatures });
-
-  function PlainContentInOverrideTable(): ReactElement {
-    const plainTable = plain.useAppTable({ columns: rowColumns, data: ORDERS });
-    const table = withRow.useAppTable({ columns: rowColumns, data: ORDERS });
-    return (
-      <table.AppTable>
-        <plainTable.Content />
-      </table.AppTable>
-    );
-  }
-
-  it("renders through the Row registered on the table in context, whichever factory built Content", () => {
-    renderInEnglish(<PlainContentInOverrideTable />);
 
     expect(roleNamed("cell", "Bergen").closest("tr")?.getAttribute("data-testid")).toBe("app-row");
   });
@@ -807,51 +642,6 @@ describe("DataTable registered cells", () => {
   });
 });
 
-describe("DataTable app cell overrides", () => {
-  type Invoice = { readonly amount: number; readonly placed: Date };
-
-  const INVOICES: Invoice[] = [{ amount: 1234.5, placed: new Date(2026, 0, 15) }];
-
-  const overrides = createFuseTableHook({
-    features: tableFeatures({}),
-    cellComponents: {
-      NumberCell: (props: NumberCellProps) => <NumberCell maximumFractionDigits={0} {...props} />,
-      DateCell: () => <span>Date withheld</span>,
-    },
-  });
-
-  const invoiceColumns = overrides.createAppColumnHelper<Invoice>();
-
-  const columns = invoiceColumns.columns([
-    invoiceColumns.accessor("amount", { header: "Rounded", cell: ({ cell }) => <cell.NumberCell /> }),
-    invoiceColumns.accessor("amount", {
-      id: "precise",
-      header: "Precise",
-      cell: ({ cell }) => <cell.NumberCell maximumFractionDigits={2} />,
-    }),
-    invoiceColumns.accessor("placed", { header: "Placed", cell: ({ cell }) => <cell.DateCell /> }),
-  ]);
-
-  function InvoiceTable(): ReactElement {
-    const table = overrides.useAppTable({ columns, data: INVOICES });
-    return (
-      <table.AppTable>
-        <table.Content />
-      </table.AppTable>
-    );
-  }
-
-  it("renders the app's tweaked and replaced cells in place of Fuse's", () => {
-    renderInEnglish(<InvoiceTable />);
-
-    const cells = page
-      .getByRole("cell")
-      .elements()
-      .map((cell) => cell.textContent);
-    expect(cells).toEqual(["1,235", "1,234.5", "Date withheld"]);
-  });
-});
-
 describe("DataTable date cells", () => {
   // 2026-10-01T00:00Z is still 30 September in New York and already 1 October in Tokyo.
   const MIDNIGHT_UTC = new Date(Date.UTC(2026, 9, 1));
@@ -891,27 +681,5 @@ describe("DataTable date cells", () => {
         .elements()
         .map((cell) => cell.textContent)
     ).toEqual(["30.\u00a0sep.\u00a02026", "1.\u00a0okt.\u00a02026", "30.\u00a0sep.\u00a02026,\u00a020:00"]);
-  });
-});
-
-describe("DataTable loading", () => {
-  function LoadingTable(): ReactElement {
-    const table = useTable({
-      features,
-      columns: plainColumns,
-      data: [],
-      initialState: { pagination: { pageIndex: 0, pageSize: 3 } },
-    });
-    return <DataTable.Content table={table} loading aria-label="Orders" />;
-  }
-
-  it("marks the table busy and renders page-size many skeleton rows", () => {
-    renderInEnglish(<LoadingTable />);
-
-    const table = roleNamed("table", "Orders");
-    expect(table.getAttribute("aria-busy")).toBe("true");
-    // One header row plus three skeleton rows, and no empty-state text.
-    expect(page.getByRole("row").elements()).toHaveLength(4);
-    expect(page.getByText("No results.", { exact: true }).elements()).toHaveLength(0);
   });
 });

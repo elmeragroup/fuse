@@ -17,13 +17,13 @@ export const EXPECTED_BOOTSTRAP_MANIFEST = {
   forcedColorScheme: undefined,
 } as const;
 
-export type DocumentBrand = {
+type DocumentBrand = {
   identity: string | null;
   brand: string | null;
   segment: string | null;
 };
 
-export type ColorSchemeBootstrapFailureSentinel = {
+type ColorSchemeBootstrapFailureSentinel = {
   manifest: undefined;
   dataTheme: null;
 };

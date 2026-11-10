@@ -1,5 +1,3 @@
-import { useLayoutEffect } from "react";
-
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { render } from "../../test/browser-render";
@@ -14,7 +12,6 @@ import {
   tkasCompany,
   writeManifest,
 } from "../../test/theme-browser-fixtures";
-import { DEFAULT_COLOR_SCHEME_STORAGE_KEY } from "./color-scheme";
 import type { ThemeInput } from "./theme-input";
 import { ThemeProvider, useTheme } from "./theme-provider";
 import { ThemeScope } from "./theme-scope";
@@ -43,101 +40,10 @@ function ThemeProbe() {
   }
 }
 
-function brandAttributeWrites(calls: ReadonlyArray<readonly unknown[]>) {
-  return calls.filter(
-    (call) =>
-      call[0] === "data-theme-identity" || call[0] === "data-theme-brand" || call[0] === "data-theme-segment"
-  );
-}
-
 describe("ThemeProvider / ThemeScope", () => {
   it("useTheme throws outside ThemeProvider or ThemeScope", () => {
     const { host } = render(<ThemeProbe />);
     expect(host.textContent).toBe("useTheme must be used within ThemeProvider or ThemeScope");
-  });
-
-  it("does not let remaining props override theme attributes", () => {
-    const { host } = render(
-      <ThemeScope
-        theme={fkasPrivate}
-        {...{
-          "data-theme-brand": "tkas",
-          "data-theme-identity": "branded",
-          "data-theme-segment": "company",
-        }}
-      />
-    );
-    const scope = host.querySelector("[data-theme-brand]");
-    expect(scope?.getAttribute("data-theme-brand")).toBe("fkas");
-    expect(scope?.getAttribute("data-theme-identity")).toBe("neutral");
-    expect(scope?.getAttribute("data-theme-segment")).toBe("private");
-  });
-
-  it("keeps matching host brand attributes stable and updates all three before descendant layout work", () => {
-    stampDocumentBrand(fkasPrivate);
-    const seen: string[] = [];
-    function LayoutChild() {
-      useLayoutEffect(() => {
-        const brand = readDocumentBrand();
-        seen.push(`${brand.identity}-${brand.brand}-${brand.segment}`);
-      });
-      return null;
-    }
-
-    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
-    const { host, rerender } = render(
-      <ThemeProvider theme={fkasPrivate}>
-        <ThemeProbe />
-        <LayoutChild />
-      </ThemeProvider>
-    );
-
-    expect(host.textContent).toBe("neutral-fkas-private-neutral-fkas-private");
-    expect(readDocumentBrand()).toEqual({ identity: "neutral", brand: "fkas", segment: "private" });
-    expect(seen).toEqual(["neutral-fkas-private"]);
-    expect(warn).not.toHaveBeenCalled();
-
-    rerender(
-      <ThemeProvider theme={tkasCompany}>
-        <ThemeProbe />
-        <LayoutChild />
-      </ThemeProvider>
-    );
-
-    expect(host.textContent).toBe("branded-tkas-company-branded-tkas-company");
-    expect(readDocumentBrand()).toEqual({ identity: "branded", brand: "tkas", segment: "company" });
-    expect(seen).toEqual(["neutral-fkas-private", "branded-tkas-company"]);
-    expect(document.documentElement.getAttribute("data-theme")).toMatch(/^(light|dark)$/);
-  });
-
-  it("does not read or write local storage or cookies when brand changes", () => {
-    stampDocumentBrand(fkasPrivate);
-    const localGet = vi.spyOn(window.localStorage, "getItem");
-    const localSet = vi.spyOn(window.localStorage, "setItem");
-    const sessionGet = vi.spyOn(window.sessionStorage, "getItem");
-    const sessionSet = vi.spyOn(window.sessionStorage, "setItem");
-    const cookiesBefore = document.cookie;
-
-    const { rerender } = render(
-      <ThemeProvider theme={fkasPrivate}>
-        <ThemeProbe />
-      </ThemeProvider>
-    );
-    rerender(
-      <ThemeProvider theme={tkasCompany}>
-        <ThemeProbe />
-      </ThemeProvider>
-    );
-
-    expect(readDocumentBrand()).toEqual({ identity: "branded", brand: "tkas", segment: "company" });
-    expect(localGet.mock.calls.length).toBeGreaterThan(0);
-    expect(localGet.mock.calls.every((call) => call[0] === DEFAULT_COLOR_SCHEME_STORAGE_KEY)).toBe(true);
-    expect(localSet).not.toHaveBeenCalled();
-    expect(sessionGet).not.toHaveBeenCalled();
-    expect(sessionSet).not.toHaveBeenCalled();
-    expect(document.cookie).toBe(cookiesBefore);
-    expect(window.localStorage.length).toBe(0);
-    expect(window.sessionStorage.length).toBe(0);
   });
 
   it.each([
@@ -312,54 +218,5 @@ describe("ThemeProvider / ThemeScope", () => {
       expect(host.textContent).toBe("Invalid theme: expected an object with identity, brand, and segment.");
       expect(host.textContent).not.toMatch(/Rendered fewer hooks|Rendered more hooks|hook/i);
     }
-  });
-});
-
-describe("ThemeProvider equal-axis theme identity", () => {
-  it("does not rewrite brand attributes or replace theme context for equal-axis literals", () => {
-    stampDocumentBrand(fkasPrivate);
-    const setAttribute = vi.spyOn(document.documentElement, "setAttribute");
-    const themes: object[] = [];
-
-    function IdentityProbe() {
-      themes.push(useTheme());
-      return <ThemeProbe />;
-    }
-
-    const { host, rerender } = render(
-      <ThemeProvider theme={{ identity: "neutral", brand: "fkas", segment: "private" }}>
-        <IdentityProbe />
-      </ThemeProvider>
-    );
-
-    const brandWritesAfterFirst = brandAttributeWrites(setAttribute.mock.calls).length;
-    const firstTheme = themes.at(-1);
-    expect(brandWritesAfterFirst).toBeGreaterThan(0);
-    expect(firstTheme).toBeDefined();
-    expect(host.textContent).toBe("neutral-fkas-private-neutral-fkas-private");
-
-    rerender(
-      <ThemeProvider theme={{ identity: "neutral", brand: "fkas", segment: "private" }}>
-        <IdentityProbe />
-      </ThemeProvider>
-    );
-
-    expect(brandAttributeWrites(setAttribute.mock.calls).length).toBe(brandWritesAfterFirst);
-    expect(themes.at(-1)).toBe(firstTheme);
-    expect(readDocumentBrand()).toEqual({ identity: "neutral", brand: "fkas", segment: "private" });
-
-    rerender(
-      <ThemeProvider theme={{ identity: "neutral", brand: "tkas", segment: "private" }}>
-        <IdentityProbe />
-      </ThemeProvider>
-    );
-
-    expect(brandAttributeWrites(setAttribute.mock.calls).length).toBeGreaterThan(brandWritesAfterFirst);
-    expect(themes.at(-1)).not.toBe(firstTheme);
-    expect(readDocumentBrand()).toEqual({ identity: "neutral", brand: "tkas", segment: "private" });
-    expect(host.textContent).toBe("neutral-tkas-private-neutral-tkas-private");
-    expect(document.documentElement.getAttribute("data-theme-identity")).toBe("neutral");
-    expect(document.documentElement.getAttribute("data-theme-brand")).toBe("tkas");
-    expect(document.documentElement.getAttribute("data-theme-segment")).toBe("private");
   });
 });

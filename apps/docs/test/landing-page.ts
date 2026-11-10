@@ -8,7 +8,7 @@ import { launchSuiteBrowser } from "./suite-browser";
 export const TARGET_FLOOR_PX = 24;
 
 /** How a landing suite opens the page. */
-export type LandingOptions = {
+type LandingOptions = {
   /** Let the brand marks load, so the shaders draw. */
   readonly shaders?: boolean;
   /** The context's reduced-motion preference. Only a test that checks motion allows it. */
@@ -27,7 +27,7 @@ export type LandingOptions = {
 };
 
 /** The landing's opener for one suite file, bound to that file's browser. */
-export type LandingSuite = {
+type LandingSuite = {
   readonly openLanding: (
     viewport: { readonly width: number; readonly height: number },
     options?: LandingOptions
@@ -108,41 +108,6 @@ export async function waitForLandingHydration(page: Page): Promise<void> {
   });
 }
 
-/** Script chunks a test holds back, and the release that lets them through. */
-export type HeldChunks = {
-  /** The address of every chunk the hold has caught so far. */
-  readonly caught: () => readonly string[];
-  /** Lets every caught chunk, and every later one, through. */
-  readonly release: () => void;
-};
-
-/**
- * Holds back every script chunk whose code contains `marker` until `release`, so a test sees the
- * page while one part's code is still on its way. A marker is a string only that part's code
- * holds, such as a label it renders, or a pattern only it matches. Call it before navigation, as
- * `prepare` does. The hold fetches every chunk itself, so close the page's context with
- * `closeContext` (suite-browser.ts).
- */
-export async function holdChunks(page: Page, marker: string | RegExp): Promise<HeldChunks> {
-  const gate = Promise.withResolvers<undefined>();
-  const caught: string[] = [];
-  await page.route("**/_next/static/chunks/**", async (route) => {
-    const response = await route.fetch();
-    const body = await response.text();
-    if (marker instanceof RegExp ? marker.test(body) : body.includes(marker)) {
-      caught.push(route.request().url());
-      await gate.promise;
-    }
-    await route.fulfill({ response, body });
-  });
-  return {
-    caught: () => caught,
-    release: () => {
-      gate.resolve(undefined);
-    },
-  };
-}
-
 /**
  * Every unhandled error and rejection the page raises, collected from now on, and with `console`
  * every `console.error` call too, React's hydration reports among them.
@@ -182,7 +147,7 @@ export async function settleFrames(page: Page, frames = 2): Promise<void> {
 }
 
 /** What the WCAG floor probe found inside one scenario's root. */
-export type TargetAudit = { readonly targets: number; readonly misses: readonly string[] };
+type TargetAudit = { readonly targets: number; readonly misses: readonly string[] };
 
 /**
  * Every kind of control the window renders, including the items of open menus and the palette,

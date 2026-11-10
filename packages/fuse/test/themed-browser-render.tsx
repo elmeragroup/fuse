@@ -27,7 +27,7 @@ export function metricPx(name: DensityMetricName, density: Density): number {
 }
 
 /** The four control sizes a sized density family has one metric for. */
-export type ControlSizeName = "xs" | "sm" | "md" | "lg";
+type ControlSizeName = "xs" | "sm" | "md" | "lg";
 
 /**
  * One control size's box metrics in pixels at a density, read from `DENSITY_METRICS`: the
@@ -65,32 +65,6 @@ export const CONTROL_MD = {
 } as const;
 
 /**
- * Sm control-size metrics (`--control-*-sm`) in pixels. The size the RAC tier's
- * package-private Button defaults to, which FileTrigger's visible button and the GridList
- * drag handle use, so those suites read it here rather than restating the numbers. The sm
- * type is a fixed `text-sm`, not a density metric, so it has no type pair here.
- */
-export const CONTROL_SM = {
-  dense: controlBox("sm", "dense"),
-  comfortable: controlBox("sm", "comfortable"),
-} as const;
-
-/**
- * Xs control-size metrics (`--control-*-xs`) in pixels. Like {@link CONTROL_SM}, the xs type
- * is a fixed `text-xs` rather than a density metric.
- */
-export const CONTROL_XS = {
-  dense: controlBox("xs", "dense"),
-  comfortable: controlBox("xs", "comfortable"),
-} as const;
-
-/** Lg control-size metrics (`--control-*-lg` plus the control-type pair) in pixels. */
-export const CONTROL_LG = {
-  dense: controlBoxWithDensityType("lg", "dense"),
-  comfortable: controlBoxWithDensityType("lg", "comfortable"),
-} as const;
-
-/**
  * Row metrics (`--row-*`) in pixels, read from `DENSITY_METRICS`: one line of a collection's
  * minimum height, a table head's height, and the row's inline and block padding.
  */
@@ -120,22 +94,12 @@ export const LABEL = {
   },
 } as const;
 
-/**
- * The xs and sm control type in pixels: Tailwind's fixed `text-xs` and `text-sm` at the 16px
- * root, 0.75rem / 1rem and 0.875rem / 1.25rem. No density owns them, so they are written here
- * by hand.
- */
-export const FIXED_CONTROL_TYPE = {
-  xs: { font: 12, leading: 16 },
-  sm: { font: 14, leading: 20 },
-} as const;
-
 afterEach(() => {
   document.documentElement.removeAttribute("data-density");
 });
 
 /** How `renderThemed` mounts its tree. */
-export type RenderThemedOptions = {
+type RenderThemedOptions = {
   /**
    * Mount under `<StrictMode>` at the root, outside the ThemeScope. React 19 runs StrictMode's
    * extra development effect cycle only for a StrictMode at the root of the tree it mounts; one
@@ -211,23 +175,8 @@ export function px(value: string): number {
   return parsed;
 }
 
-/**
- * The height of one line of `element`'s font at `line-height: normal`, measured on a plain
- * block outside the component so no class under test reaches it.
- */
-export function normalLineHeightOf(element: HTMLElement): number {
-  const { fontFamily, fontSize, fontWeight } = getComputedStyle(element);
-  const probe = document.createElement("div");
-  probe.style.cssText = `position:absolute;visibility:hidden;line-height:normal;font-family:${fontFamily};font-size:${fontSize};font-weight:${fontWeight}`;
-  probe.textContent = element.textContent;
-  document.body.append(probe);
-  const height = probe.getBoundingClientRect().height;
-  probe.remove();
-  return height;
-}
-
 /** The lightness, chroma and hue of an opaque OKLCH color, as Chromium computes it. */
-export type ComputedOklch = { readonly l: number; readonly c: number; readonly h: number };
+type ComputedOklch = { readonly l: number; readonly c: number; readonly h: number };
 
 /**
  * Read a computed color that Chromium serializes as an opaque `oklch(L C H)`, through the

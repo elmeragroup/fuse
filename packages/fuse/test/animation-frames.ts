@@ -40,7 +40,7 @@ const POLL_FRAMES = 60;
  * @param frames - The most frames to wait.
  * @returns Whether it held.
  */
-export async function framesUntil(read: () => boolean, frames: number): Promise<boolean> {
+async function framesUntil(read: () => boolean, frames: number): Promise<boolean> {
   for (let frame = 0; frame < frames; frame += 1) {
     if (read()) return true;
     await nextFrames(1);
@@ -72,67 +72,5 @@ function matches<T>(actual: T, expected: T): boolean {
     return true;
   } catch {
     return false;
-  }
-}
-
-/**
- * Records `read()` on every animation frame, from the next frame until `done()` holds or `ms` pass.
- * Start it before the action under test, unawaited, and await it after: the frames run in the page
- * whatever the action's round trip to the test runner costs, so a loaded runner whose command
- * returns after an exit has ended still sees every frame of it.
- *
- * @param read - What to record each frame.
- * @param done - Whether to stop, checked after each frame's reading.
- * @param ms - The most time to record for, in milliseconds.
- * @returns Every frame's reading, in order.
- */
-export function recordFrames<T>(read: () => T, done: () => boolean, ms = 3000): Promise<T[]> {
-  const frames: T[] = [];
-  const start = performance.now();
-  return new Promise((resolve) => {
-    const tick = (): void => {
-      frames.push(read());
-      if (done() || performance.now() - start > ms) resolve(frames);
-      else requestAnimationFrame(tick);
-    };
-    requestAnimationFrame(tick);
-  });
-}
-
-/**
- * Records `read()` on each of the next `count` animation frames, however long they take, as
- * `recordFrames` does for a time.
- *
- * @param read - What to record each frame.
- * @param count - How many frames to record.
- * @returns Every frame's reading, in order.
- */
-export function recordFrameCount<T>(read: () => T, count: number): Promise<T[]> {
-  let left = count;
-  return recordFrames(read, () => (left -= 1) <= 0, Number.POSITIVE_INFINITY);
-}
-
-/**
- * Records `read()` on every animation frame once `start()` reads a time, each reading with `t`, its
- * frame's timestamp less that start, until a frame lies more than `until` ms past the start, which
- * it records too. Frames before `start()` reads a time record nothing.
- *
- * @param start - The start time, or null until the frame that should read it.
- * @param until - How long after the start to stop, in milliseconds.
- * @param read - What to record each frame.
- * @returns Every frame's reading from the start on, in order.
- */
-export async function recordSince<T extends object>(
-  start: () => number | null,
-  until: number,
-  read: () => T
-): Promise<(T & { readonly t: number })[]> {
-  const frames: (T & { readonly t: number })[] = [];
-  for (;;) {
-    const now = await nextFrames(1);
-    const from = start();
-    if (from === null) continue;
-    frames.push({ ...read(), t: now - from });
-    if (now - from > until) return frames;
   }
 }

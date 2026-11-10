@@ -19,13 +19,9 @@ import {
 } from "@tanstack/react-table";
 import { functionalUpdate } from "@tanstack/react-table";
 import type { ColumnFiltersState, Updater } from "@tanstack/react-table";
-import { createPortal, flushSync } from "react-dom";
-import { createRoot } from "react-dom/client";
-import { expect, onTestFinished, vi } from "vitest";
+import { expect } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
-import stylesCss from "../dist/styles.css?raw";
-import themesCss from "../dist/themes.css?raw";
 import { DataTableFilter } from "../src/components/data-table-filter";
 import type { DataTableFilterRootProps } from "../src/components/data-table-filter/data-table-filter";
 import { useDataTableFilter } from "../src/components/data-table-filter/data-table-filter-context";
@@ -35,10 +31,9 @@ import type { FilterFacets, FilterFieldMap } from "../src/components/data-table-
 import { createDataTableFilterFn } from "../src/components/data-table-filter/filter-fn";
 import { definedProps } from "../src/internal/defined-props";
 import type { SupportedLocale } from "../src/intl/locale-context";
-import { ThemeScope } from "../src/theme/theme-scope";
 import { nextFrames } from "./animation-frames";
 import { withLocale } from "./locale-matrix";
-import { fkasPrivate, renderThemed, roleNamed } from "./themed-browser-render";
+import { renderThemed, roleNamed } from "./themed-browser-render";
 
 type Status = "draft" | "pending" | "paid" | "overdue" | "cancelled";
 type Tag = "priority" | "export" | "manual";
@@ -208,12 +203,6 @@ export const FIELDS = defineOrderFields({
   created: { kind: "date", label: "Created" },
 });
 
-/** The same fields plus the 3,000-option Product field, ordered by count. */
-export const FIELDS_WITH_PRODUCT = defineOrderFields({
-  ...FIELDS,
-  product: { kind: "option", label: "Product", options: PRODUCTS, order: "count" },
-});
-
 /** The same fields plus Rush, a boolean field with a Yes and No list. */
 export const FIELDS_WITH_RUSH = defineOrderFields({ ...FIELDS, rush: { kind: "boolean", label: "Rush" } });
 
@@ -255,25 +244,6 @@ export const STATUS_THREE: ColumnFiltersState = [
 export const CUSTOMER_NORD: ColumnFiltersState = [
   { id: "customer", value: { kind: "text", operator: "contains", values: ["nord"] } },
 ];
-
-/** Created falls in September 2026. */
-export const CREATED_SEPTEMBER: ColumnFiltersState = [
-  { id: "created", value: { kind: "date", operator: "isBetween", values: ["2026-09-01", "2026-09-30"] } },
-];
-
-/**
- * A calendar's stand-in for a date editor's function child, at a month grid's size: seven 36px
- * columns by eight rows.
- *
- * @returns A button named Calendar.
- */
-export function CalendarStandIn(): ReactElement {
-  return (
-    <button type="button" style={{ width: 252, height: 288 }}>
-      Calendar
-    </button>
-  );
-}
 
 /** The fixture's props. */
 export type OrdersProps = {
@@ -434,7 +404,7 @@ export function renderCounted(orders: (onColumnFiltersChange: () => void) => Rea
 }
 
 /** The filter's actions, read from inside a Root, for a test that drives them from code. */
-export type CapturedActions = {
+type CapturedActions = {
   /** Renders nothing. Place it inside the Root whose actions `act` returns. */
   readonly Capture: () => null;
   /** The actions of the last render. Throws before `Capture` has rendered. */
@@ -464,92 +434,6 @@ export function captureActions(): CapturedActions {
       return captured;
     },
   };
-}
-
-/**
- * Freezes the clock at noon UTC on 2026-10-12 for the rest of the test, so date presets read a
- * fixed today. Order 3 was created that day, and no order the day before or after, so a preset
- * one day off changes the rows. Only `Date` is faked: timers stay real for the interactions.
- */
-export function freezeToday(): void {
-  vi.useFakeTimers({ toFake: ["Date"] });
-  vi.setSystemTime(new Date("2026-10-12T12:00:00Z"));
-  onTestFinished(() => {
-    vi.useRealTimers();
-  });
-}
-
-/**
- * Renders the fixture inside a shadow root, as a web-component host does: the shadow root loads
- * the stylesheets itself and holds the ThemeScope, so the overlays portal into it too. Unmounts
- * when the test finishes. Locators reach an open root only, so a test of a closed one queries the
- * returned root itself.
- *
- * @param props - The fixture's props.
- * @param mode - The shadow root's mode.
- * @returns The shadow root, whose `activeElement` names the focused element inside it.
- */
-export function renderOrdersInShadowRoot(props: OrdersProps, mode: ShadowRootMode = "open"): ShadowRoot {
-  const host = document.createElement("div");
-  document.body.append(host);
-  const shadow = host.attachShadow({ mode });
-  const style = document.createElement("style");
-  style.textContent = `${stylesCss}\n${themesCss}`;
-  const mount = document.createElement("div");
-  shadow.append(style, mount);
-  const root = createRoot(mount);
-  flushSync(() => {
-    root.render(<ThemeScope theme={fkasPrivate}>{withLocale("en-US", <Orders {...props} />)}</ThemeScope>);
-  });
-  onTestFinished(() => {
-    flushSync(() => {
-      root.unmount();
-    });
-    host.remove();
-  });
-  return shadow;
-}
-
-/**
- * Renders the fixture into a same-origin iframe from this window's React, through a portal, as an
- * editor that previews content in a frame does. The frame's document loads the stylesheets and
- * holds the ThemeScope, so the overlays portal into it too, and every node there belongs to the
- * frame's realm. Unmounts when the test finishes.
- *
- * @param props - The fixture's props.
- * @returns The frame's document, whose `activeElement` names the focused element in it.
- */
-export function renderOrdersInFrame(props: OrdersProps): Document {
-  const frame = document.createElement("iframe");
-  frame.style.width = "900px";
-  frame.style.height = "700px";
-  document.body.append(frame);
-  const frameDocument = frame.contentDocument;
-  if (frameDocument === null) {
-    throw new Error("expected a same-origin frame document");
-  }
-  const style = frameDocument.createElement("style");
-  style.textContent = `${stylesCss}\n${themesCss}`;
-  frameDocument.head.append(style);
-  const mount = document.createElement("div");
-  document.body.append(mount);
-  const root = createRoot(mount);
-  flushSync(() => {
-    root.render(
-      createPortal(
-        <ThemeScope theme={fkasPrivate}>{withLocale("en-US", <Orders {...props} />)}</ThemeScope>,
-        frameDocument.body
-      )
-    );
-  });
-  onTestFinished(() => {
-    flushSync(() => {
-      root.unmount();
-    });
-    mount.remove();
-    frame.remove();
-  });
-  return frameDocument;
 }
 
 /**
@@ -636,41 +520,6 @@ export async function pickOption(name: string): Promise<void> {
   await expect.poll(() => page.getByRole("option", { name, exact: true }).query()).not.toBeNull();
   await finishMotion();
   await userEvent.click(roleNamed("option", name));
-}
-/** One painted frame of a popup: its side and its bottom edge in whole pixels. */
-export type SideFrame = readonly [side: string | null, bottom: number];
-
-/**
- * Samples the open dialog's side and bottom edge on every animation frame, the frames a person
- * sees, until the returned function stops it.
- *
- * @returns A function that stops sampling and returns the frames.
- */
-export function watchSides(): () => SideFrame[] {
-  const frames: SideFrame[] = [];
-  let request = 0;
-  const sample = () => {
-    const [popup] = page.getByRole("dialog").elements();
-    if (popup !== undefined) {
-      frames.push([popup.getAttribute("data-side"), Math.round(popup.getBoundingClientRect().bottom)]);
-    }
-    request = requestAnimationFrame(sample);
-  };
-  request = requestAnimationFrame(sample);
-  return () => {
-    cancelAnimationFrame(request);
-    return frames;
-  };
-}
-
-/**
- * The number of side changes between consecutive frames.
- *
- * @param frames - The sampled frames.
- * @returns How many times the side changed.
- */
-export function flipsIn(frames: readonly SideFrame[]): number {
-  return frames.filter((frame, index) => index > 0 && frame[0] !== frames[index - 1]?.[0]).length;
 }
 
 /**

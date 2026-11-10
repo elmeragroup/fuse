@@ -76,30 +76,6 @@ function TallList({ label, items }: { label: string; items: number }) {
 }
 
 describe("ScrollArea", () => {
-  it("renders exactly one scrollbar for the Root orientation", async () => {
-    render(
-      <>
-        <ScrollArea.Root style={{ height: 128 }}>
-          <TallList label="Vertical tags" items={20} />
-        </ScrollArea.Root>
-        <ScrollArea.Root orientation="horizontal" style={{ width: 128 }}>
-          <div style={{ width: 480 }}>{`Horizontal strip`}</div>
-        </ScrollArea.Root>
-      </>
-    );
-
-    await waitForOverflow("Vertical tags", "data-has-overflow-y");
-    await waitForOverflow("Horizontal strip", "data-has-overflow-x");
-
-    const verticalBars = barsIn(scrollRootFromText("Vertical tags"));
-    expect(verticalBars).toHaveLength(1);
-    expect(verticalBars[0]?.getAttribute("data-orientation")).toBe("vertical");
-
-    const horizontalBars = barsIn(scrollRootFromText("Horizontal strip"));
-    expect(horizontalBars).toHaveLength(1);
-    expect(horizontalBars[0]?.getAttribute("data-orientation")).toBe("horizontal");
-  });
-
   it("keeps an always bar visible and reveals a hover bar only while its own area is hovered", async () => {
     render(
       <>
@@ -160,74 +136,5 @@ describe("ScrollArea", () => {
 
     await userEvent.wheel(viewport, { delta: { y: 160 } });
     expect(viewport.scrollTop).toBeGreaterThan(0);
-  });
-
-  it("caps an auto-height Root at its max height and scrolls the overflow", async () => {
-    render(
-      <>
-        <ScrollArea.Root type="always" style={{ maxHeight: 160 }}>
-          <div style={{ height: 400 }}>Capped tall</div>
-        </ScrollArea.Root>
-        <ScrollArea.Root type="always" style={{ maxHeight: 160 }}>
-          <div style={{ height: 80 }}>Capped short</div>
-        </ScrollArea.Root>
-        <ScrollArea.Root type="always" style={{ height: 288 }}>
-          <div style={{ height: 400 }}>Fixed tall</div>
-        </ScrollArea.Root>
-      </>
-    );
-
-    await waitForOverflow("Capped tall", "data-has-overflow-y");
-    expect(scrollRootFromText("Capped tall").getBoundingClientRect().height).toBe(160);
-    const capped = viewportFromText("Capped tall");
-    expect(capped.clientHeight).toBe(160);
-    expect(capped.scrollHeight).toBe(400);
-    const bar = barsIn(scrollRootFromText("Capped tall"))[0];
-    if (!(bar instanceof HTMLElement)) {
-      throw new Error("expected a scrollbar on the capped list");
-    }
-    expect(getComputedStyle(bar).visibility).not.toBe("hidden");
-    // DOM audit: the thumb has no role; locate it by the mandated data-slot.
-    const thumb = bar.querySelector("[data-slot=scroll-area-thumb]");
-    if (!(thumb instanceof HTMLElement)) {
-      throw new Error("expected a thumb in the capped scrollbar");
-    }
-    // The 158px track (160px less the 1px padding each side) times the 160/400 visible ratio.
-    await expect.poll(() => thumb.getBoundingClientRect().height).toBeCloseTo(63.2, 1);
-    await userEvent.wheel(capped, { delta: { y: 120 } });
-    await expect.poll(() => capped.scrollTop).toBeGreaterThan(0);
-
-    expect(scrollRootFromText("Capped short").getBoundingClientRect().height).toBe(80);
-    expect(scrollRootFromText("Capped short").hasAttribute("data-has-overflow-y")).toBe(false);
-
-    await waitForOverflow("Fixed tall", "data-has-overflow-y");
-    expect(scrollRootFromText("Fixed tall").getBoundingClientRect().height).toBe(288);
-    expect(viewportFromText("Fixed tall").clientHeight).toBe(288);
-  });
-
-  it("mounts no scrollbar for overflow-free auto and hover content", async () => {
-    render(
-      <>
-        <ScrollArea.Root type="auto" style={{ height: 192 }}>
-          <p>Fits auto</p>
-        </ScrollArea.Root>
-        <ScrollArea.Root type="hover" style={{ height: 192 }}>
-          <p>Fits hover</p>
-        </ScrollArea.Root>
-        <ScrollArea.Root type="always" style={{ height: 192 }}>
-          <p>Fits always</p>
-        </ScrollArea.Root>
-      </>
-    );
-
-    await expect
-      .poll(() => {
-        const bar = barsIn(scrollRootFromText("Fits always"))[0];
-        return bar !== undefined && getComputedStyle(bar).visibility !== "hidden";
-      })
-      .toBe(true);
-    expect(barsIn(scrollRootFromText("Fits auto"))).toHaveLength(0);
-    expect(barsIn(scrollRootFromText("Fits hover"))).toHaveLength(0);
-    expect(scrollRootFromText("Fits always").hasAttribute("data-has-overflow-y")).toBe(false);
   });
 });

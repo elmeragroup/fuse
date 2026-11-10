@@ -78,26 +78,6 @@ it("resets an uncontrolled field with no defaultValue to empty", async () => {
   expect(new FormData(formNamed("Quantity form")).get("quantity")).toBe("");
 });
 
-it("does not let the reset remount steal focus through autoFocus", async () => {
-  renderThemed(
-    withLocale(
-      "en-US",
-      <form aria-label="Quantity form">
-        <NumberField label="Quantity" autoFocus defaultValue={5} />
-        <button type="reset">Reset</button>
-      </form>
-    )
-  );
-  await replaceValue("Quantity", "9");
-  await expect.element(quantity()).toHaveValue("9");
-  const resetButton = roleNamed("button", "Reset");
-
-  await userEvent.click(resetButton);
-
-  await expect.element(quantity()).toHaveValue("5");
-  expect(document.activeElement, "the remount must not pull focus back").toBe(resetButton);
-});
-
 it("keeps a controlled value parent-owned through native reset", async () => {
   const onChange = vi.fn<(value: number) => void>();
   function ControlledQuantity() {

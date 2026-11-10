@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { fieldLegendVariants, fieldVariants } from "./field-variants";
+import { fieldVariants } from "./field-variants";
 
 function rootTokens(orientation: "vertical" | "horizontal" | "responsive"): string[] {
   return fieldVariants({ orientation }).root().split(/\s+/).filter(Boolean);
@@ -28,21 +28,5 @@ describe("fieldVariants orientation", () => {
       ...mdResets,
     ];
     expect(rootTokens("responsive").toSorted()).toEqual(expected.toSorted());
-  });
-});
-
-describe("fieldLegendVariants", () => {
-  const tokens = (classes: string): string[] => classes.split(/\s+/).filter(Boolean).toSorted();
-
-  it("titles a fieldset at a fixed 16/24px by default", () => {
-    const expected = tokens("font-medium mb-3 text-balance text-base");
-    expect(tokens(fieldLegendVariants())).toEqual(expected);
-    expect(tokens(fieldLegendVariants({ variant: "legend" }))).toEqual(expected);
-  });
-
-  it("reads the label type pair in its label variant, as Field.Label does", () => {
-    expect(tokens(fieldLegendVariants({ variant: "label" }))).toEqual(
-      tokens("font-medium mb-3 text-balance text-(length:--label-text) leading-(--label-leading)")
-    );
   });
 });

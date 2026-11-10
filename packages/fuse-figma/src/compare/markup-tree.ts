@@ -2,7 +2,7 @@
  * Queries over the static markup a kit cell renders, which `markup-check.ts` reads: an element's
  * ancestors, the elements inside the measured root that name a variant, the elements with a
  * `data-slot` around the root, and the parts, icons, labels and images the markup holds, each found
- * as the markup check's rules in `src/compare/kit-markup.test.ts` place them.
+ * as the markup check's rules place them.
  */
 import { splitClasses } from "../components/cascade.ts";
 import { splitClassName } from "../components/class-name.ts";

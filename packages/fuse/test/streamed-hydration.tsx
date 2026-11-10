@@ -7,9 +7,9 @@ import { renderToReadableStream } from "react-dom/server";
 import { afterEach } from "vitest";
 
 /** The server's fallback for the streamed boundary, which hydration must leave in place. */
-export const STREAMED_FALLBACK_TEXT = "Streaming";
+const STREAMED_FALLBACK_TEXT = "Streaming";
 
-export type StreamedPage = {
+type StreamedPage = {
   /** The hydrated host, holding the shell the server streamed first. */
   host: HTMLDivElement;
   /** Every error React reported through `onRecoverableError`, such as a hydration mismatch. */

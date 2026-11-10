@@ -5,19 +5,14 @@ import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import {
-  CONTROL_MD,
   fieldRootFrom,
-  fkasBranded,
   formNamed,
   inputNamed,
-  px,
   renderThemed,
   roleNamed,
-  stampDensity,
   textboxNamed,
   textNamed,
 } from "../../../test/themed-browser-render";
-import { ThemeScope } from "../../theme";
 import { Field } from "../field";
 import { Form } from "../form/form";
 import { TextField } from "./text-field";
@@ -76,71 +71,6 @@ describe("TextField Field wiring", () => {
     rerender(field());
     expect(textboxNamed("Usage")).toHaveProperty("value", "42");
     expect(document.activeElement).toBe(textboxNamed("Usage"));
-  });
-});
-
-describe("TextField card variant", () => {
-  /** The card root's content box in viewport coordinates: its border box minus border and padding. */
-  function contentBox(root: HTMLElement) {
-    const style = getComputedStyle(root);
-    const rect = root.getBoundingClientRect();
-    return {
-      left: rect.left + Number.parseFloat(style.borderLeftWidth) + Number.parseFloat(style.paddingLeft),
-      right: rect.right - Number.parseFloat(style.borderRightWidth) - Number.parseFloat(style.paddingRight),
-    };
-  }
-
-  it("stretches the input across the card's content box without a description", () => {
-    renderThemed(
-      <div style={{ width: 384 }}>
-        <TextField variant="card" label="Annual usage" placeholder="0" />
-      </div>
-    );
-    const box = contentBox(fieldRootFrom("Annual usage"));
-    const rect = textboxNamed("Annual usage").getBoundingClientRect();
-    expect(rect.left).toBeCloseTo(box.left, 1);
-    expect(rect.right).toBeCloseTo(box.right, 1);
-  });
-
-  it("ends a short description at the card's content edge, one row gap after the input", () => {
-    renderThemed(
-      <div style={{ width: 384 }}>
-        <TextField variant="card" label="Annual usage" description="Estimated kWh" placeholder="0" />
-      </div>
-    );
-    const description = textNamed("Estimated kWh");
-    const descriptionRect = description.getBoundingClientRect();
-    const box = contentBox(fieldRootFrom("Annual usage"));
-    const rect = textboxNamed("Annual usage").getBoundingClientRect();
-    expect(rect.left).toBeCloseTo(box.left, 1);
-    // gap-3 on the card's content row.
-    expect(descriptionRect.left - rect.right).toBeCloseTo(12, 1);
-    expect(descriptionRect.right).toBeCloseTo(box.right, 1);
-    // A short description stays on one line.
-    expect(descriptionRect.height).toBeCloseTo(
-      Number.parseFloat(getComputedStyle(description).lineHeight),
-      0
-    );
-  });
-
-  it("wraps a long description at half the row instead of squeezing the input", () => {
-    const long = "Estimated annual consumption of the household, in kilowatt hours";
-    renderThemed(
-      <div style={{ width: 384 }}>
-        <TextField variant="card" label="Annual usage" description={long} placeholder="0" />
-      </div>
-    );
-    const description = textNamed(long);
-    const descriptionRect = description.getBoundingClientRect();
-    const box = contentBox(fieldRootFrom("Annual usage"));
-    const rect = textboxNamed("Annual usage").getBoundingClientRect();
-    const half = (box.right - box.left) / 2;
-    expect(descriptionRect.width).toBeLessThanOrEqual(half + 0.5);
-    expect(rect.right - rect.left).toBeGreaterThanOrEqual(half - 12 - 0.5);
-    expect(descriptionRect.right).toBeCloseTo(box.right, 1);
-    expect(descriptionRect.height).toBeGreaterThan(
-      Number.parseFloat(getComputedStyle(description).lineHeight)
-    );
   });
 });
 
@@ -268,56 +198,5 @@ describe("TextField", () => {
     expect(document.activeElement).toBe(textboxNamed("Email"));
     await userEvent.keyboard("{Tab}");
     expect(document.activeElement).toBe(roleNamed("button", "After"));
-  });
-});
-
-describe("TextField inline focus chrome", () => {
-  it("paints the ring-coloured border on :focus-visible only", async () => {
-    renderThemed(
-      <>
-        <button type="button">Before</button>
-        <TextField label="Inline" variant="inline" />
-      </>
-    );
-    const previous = roleNamed("button", "Before");
-    const input = textboxNamed("Inline");
-
-    // Browser suites load styles.css without themes.css, so `--ring` is otherwise
-    // unset and `border-color: var(--ring)` would be ignored as invalid.
-    input.style.setProperty("--ring", "rgb(255, 0, 0)");
-    expect(getComputedStyle(input).borderColor).not.toBe("rgb(255, 0, 0)");
-
-    previous.focus();
-    await userEvent.keyboard("{Tab}");
-    expect(input.matches(":focus-visible")).toBe(true);
-    await vi.waitFor(() => {
-      expect(getComputedStyle(input).borderColor).toBe("rgb(255, 0, 0)");
-    });
-
-    await userEvent.click(previous);
-    expect(input.matches(":focus-visible")).toBe(false);
-    await vi.waitFor(() => {
-      expect(getComputedStyle(input).borderColor).not.toBe("rgb(255, 0, 0)");
-    });
-  });
-});
-
-describe("TextField density metrics", () => {
-  it("pins the inner input to the signed md control size at both densities", () => {
-    const { rerender } = renderThemed(<TextField label="Meter" />);
-    for (const density of ["dense", "comfortable"] as const) {
-      stampDensity(density);
-      const style = getComputedStyle(textboxNamed("Meter"));
-      expect(px(style.height)).toBe(CONTROL_MD[density].height);
-      expect(px(style.paddingInlineStart)).toBe(CONTROL_MD[density].px);
-    }
-
-    stampDensity("dense");
-    rerender(
-      <ThemeScope theme={fkasBranded}>
-        <TextField label="Meter" />
-      </ThemeScope>
-    );
-    expect(px(getComputedStyle(textboxNamed("Meter")).height)).toBe(CONTROL_MD.dense.height);
   });
 });

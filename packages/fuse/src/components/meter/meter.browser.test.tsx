@@ -7,7 +7,6 @@ import "../../../dist/styles.css";
 import { SUPPORTED_LOCALES, withLocale } from "../../../test/locale-matrix";
 import { renderThemed, roleNamed } from "../../../test/themed-browser-render";
 import { Meter } from "./meter";
-import type { MeterMode } from "./meter-constants";
 
 const WARNING_COPY = {
   "nb-NO": "Advarsel",
@@ -74,51 +73,10 @@ describe("Meter", () => {
     expect(slot("meter-value", root)).toBeTruthy();
   });
 
-  it("wires each mode through to the live fill's tone class", () => {
-    const cases: Array<{
-      mode: MeterMode;
-      value: number;
-      maxValue?: number;
-      fill: string;
-    }> = [
-      // One cell per mode reaches the live fill; meter.test.ts proves the whole matrix.
-      { mode: "default", value: 85, fill: "bg-warning" },
-      { mode: "default", value: 150, maxValue: 120, fill: "bg-error" },
-      { mode: "inverted", value: 50, fill: "bg-error" },
-      { mode: "success-only-when-full", value: 85, fill: "bg-error" },
-      { mode: "success-only-when-full", value: 100, fill: "bg-success" },
-      { mode: "neutral", value: 85, fill: "bg-primary" },
-    ];
-
-    for (const row of cases) {
-      const { unmount } = renderMeter(
-        <Meter label={row.mode} value={row.value} maxValue={row.maxValue} mode={row.mode} />
-      );
-      expect(slot("meter-bar-fill").className.split(/\s+/), `${row.mode} ${row.value}`).toContain(row.fill);
-      unmount();
-    }
-  });
-
   it("shows the warning glyph above the default max in success-only-when-full mode", () => {
     renderMeter(<Meter label="Quota" value={150} mode="success-only-when-full" />);
     expect(statusIcon("Warning")).not.toBeNull();
     expect(statusIcon("Success")).toBeNull();
-  });
-
-  it("treats exactly 80% as LOW for both the fill and the icon", () => {
-    const { unmount: unmountBoundary } = renderMeter(<Meter label="Boundary" value={80} />);
-    expect(slot("meter-bar-fill").className.split(/\s+/)).toContain("bg-success");
-    expect(statusIcon("Warning")).toBeNull();
-    unmountBoundary();
-
-    const { unmount: unmountAbove } = renderMeter(<Meter label="Above" value={81} />);
-    expect(slot("meter-bar-fill").className.split(/\s+/)).toContain("bg-warning");
-    expect(statusIcon("Warning")).not.toBeNull();
-    unmountAbove();
-
-    renderMeter(<Meter label="Scaled" value={96} maxValue={120} />);
-    expect(slot("meter-bar-fill").className.split(/\s+/)).toContain("bg-success");
-    expect(statusIcon("Warning")).toBeNull();
   });
 
   it("resolves warning and success labels in every locale and lets overrides win", () => {

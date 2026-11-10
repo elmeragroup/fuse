@@ -10,7 +10,6 @@ import { HUGGING_TEXT, NO_LIMITS, TOP_LEFT } from "../../src/components/kit-spec
 import type {
   ChildLayerSpec,
   ComponentRootSpec,
-  ComponentSetSpec,
   FrameLayerSpec,
   IconLayerSpec,
   KitSpec,
@@ -52,7 +51,7 @@ export const LABEL: TextLayerSpec = {
 export const BLACK = { kind: "literal", color: { r: 0, g: 0, b: 0, a: 1 } } as const;
 
 /** The one kit page and an Icons frame on it with no icons, which a small kit spreads into its spec. */
-export const ONE_PAGE = {
+const ONE_PAGE = {
   pages: [{ key: "page", name: "Fuse components" }],
   icons: { key: "icons", page: "page", name: "Icons", size: 16, color: BLACK, icons: [] },
 } as const satisfies Pick<KitSpec, "pages" | "icons">;
@@ -153,7 +152,7 @@ export const CHECK: IconLayerSpec = {
 };
 
 /** The Button variant's layers moved two frames down: Control holds Indicator, which holds both. */
-export const NESTED_LAYERS = [
+const NESTED_LAYERS = [
   frame("button/control", "Control", [frame("button/indicator", "Indicator", [CHECK, LABEL])]),
 ];
 
@@ -233,31 +232,13 @@ export function fixture(family: string, withPage = true) {
 }
 
 /**
- * A component set of the kit page by its key.
- *
- * @param file - A file the kit was applied to.
- * @param key - The set's key.
- * @returns The set.
- * @throws When the kit page holds no such set.
- */
-export async function setOnPage(file: FakeFigma, key: string): Promise<ComponentSetNode> {
-  const page = file.figma.root.children.find((node) => keyOf(node) === "page");
-  await page?.loadAsync();
-  const set = page?.children.find((node) => keyOf(node) === key);
-  if (set?.type !== "COMPONENT_SET") {
-    throw new Error(`the kit page holds no set ${key}`);
-  }
-  return set;
-}
-
-/**
  * The Button set the kit page holds.
  *
  * @param file - A file the kit was applied to.
  * @returns The set.
  * @throws When the kit page holds no set.
  */
-export async function buttonSet(file: FakeFigma): Promise<ComponentSetNode> {
+async function buttonSet(file: FakeFigma): Promise<ComponentSetNode> {
   const page = file.figma.root.children.find((node) => keyOf(node) === "page");
   await page?.loadAsync();
   const set = page?.children.find((node) => node.type === "COMPONENT_SET");
@@ -290,64 +271,6 @@ export const RELAYOUT = [
   "Button: lay out 1 variants in 1 columns and 1 rows",
   "Fuse components: place Button and Icons in a row",
 ];
-
-/**
- * A root with no paint, padding or layers.
- *
- * @param name - The root's name.
- * @param sizing - The root's sizing.
- * @returns The root.
- */
-export function bareRoot(name: string, sizing: ComponentRootSpec["sizing"]): ComponentRootSpec {
-  return {
-    name,
-    direction: "HORIZONTAL",
-    sizing,
-    limits: NO_LIMITS,
-    clips: true,
-    paddingTop: literal(0),
-    paddingRight: literal(0),
-    paddingBottom: literal(0),
-    paddingLeft: literal(0),
-    itemSpacing: literal(0),
-    primaryAlign: "MIN",
-    counterAlign: "CENTER",
-    cornerRadius: literal(0),
-    fill: undefined,
-    stroke: undefined,
-    shadows: [],
-    opacity: 1,
-    children: [],
-  };
-}
-
-/**
- * A set of one variant, `state=rest`, around a root.
- *
- * @param key - The set's key.
- * @param name - The set's name.
- * @param root - The variant's root.
- * @param text - Whether the set defines a `Count` TEXT property, `24` by default.
- * @returns The set, on the kit page.
- */
-export function oneVariant(
-  key: string,
-  name: string,
-  root: ComponentRootSpec,
-  text = false
-): ComponentSetSpec {
-  return {
-    key,
-    page: "page",
-    name,
-    axes: [{ name: "state", values: ["rest"] }],
-    columnAxis: "state",
-    textProperties: text ? [{ name: "Count", defaultValue: "24" }] : [],
-    booleanProperties: [],
-    swapProperties: [],
-    variants: [{ key: `${key}/state=rest`, properties: { state: "rest" }, root }],
-  };
-}
 
 /**
  * Apply a kit to a file and open the file again for the next run.

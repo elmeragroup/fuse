@@ -31,8 +31,7 @@
       // (src/lib/site-origin.ts), so both key the cache.
       "env": ["DOCS_ORIGIN", "PORT"]
     },
-    // The build the e2e suite serves: `build` plus Next's Instant Navigation testing API, which
-    // `instant()` needs (test/instant-navigation.browser.test.ts). Its script sets
+    // The build the e2e suite serves: `build` plus Next's Instant Navigation testing API. Its script sets
     // DOCS_TESTING_API, which also moves its output to .cache/next-e2e (next.config.ts), so `.next`
     // stays the production build the unit suite asserts on. Only this task declares the variable:
     // strict env mode hides it from `build`, which the container image runs.

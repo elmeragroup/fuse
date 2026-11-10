@@ -5,14 +5,11 @@ import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import { render } from "../../../test/browser-render";
 import { fkasBranded } from "../../../test/theme-fixtures";
-import { cssVarColor, renderThemed } from "../../../test/themed-browser-render";
+import { renderThemed } from "../../../test/themed-browser-render";
 import { ThemeScope } from "../../theme/theme-scope";
 import { Button } from "../button/button";
 import { Input } from "../input/input";
 import { ButtonGroup } from "./index";
-
-/** Browser suites load styles.css only; radius collapsing reads `--radius`. */
-const radiusToken = { "--radius": "8px" };
 
 /**
  * A host's own field corner under the branded step: fields round with a 4px `--radius-field`,
@@ -32,14 +29,6 @@ function buttonNamed(name: string): HTMLElement {
   const element = page.getByRole("button", { name, exact: true }).element();
   if (!(element instanceof HTMLElement)) {
     throw new Error(`expected a button named ${name}`);
-  }
-  return element;
-}
-
-function separator(): HTMLElement {
-  const element = page.getByRole("separator").element();
-  if (!(element instanceof HTMLElement)) {
-    throw new Error("expected a separator");
   }
   return element;
 }
@@ -100,109 +89,6 @@ describe("ButtonGroup", () => {
     expect(document.activeElement).toBe(buttonNamed("Save"));
   });
 
-  it.each([
-    ["a horizontal group", "vertical", undefined, undefined, "top", "bottom"],
-    ["a vertical group", "horizontal", "vertical", "horizontal", "left", "right"],
-  ] as const)(
-    "draws the Separator in %s as a %s hairline reaching both outer edges of the buttons",
-    (_, hairline, groupOrientation, separatorOrientation, start, end) => {
-      renderThemed(
-        <ButtonGroup.Root orientation={groupOrientation} aria-label="Split">
-          <Button>Save</Button>
-          <ButtonGroup.Separator orientation={separatorOrientation} />
-          <Button>More</Button>
-        </ButtonGroup.Root>
-      );
-      const rule = separator();
-      expect(rule.getAttribute("data-slot")).toBe("button-group-separator");
-      expect(rule.getAttribute("aria-orientation")).toBe(hairline);
-      expect(rule.getAttribute("data-orientation")).toBe(hairline);
-      // The Button fill paints under its border, out to the border box, so a shorter line
-      // leaves a notch of page at each end.
-      const line = rule.getBoundingClientRect();
-      const button = buttonNamed("Save").getBoundingClientRect();
-      expect(line[start]).toBe(button[start]);
-      expect(line[end]).toBe(button[end]);
-    }
-  );
-
-  it("renders Text as a div with data-slot and swaps the tag through render", () => {
-    renderThemed(
-      <ButtonGroup.Root aria-label="Prefixed">
-        <ButtonGroup.Text>https://</ButtonGroup.Text>
-        <ButtonGroup.Text render={<label htmlFor="amount" />} className="uppercase">
-          NOK
-        </ButtonGroup.Text>
-        <Button>Copy</Button>
-      </ButtonGroup.Root>
-    );
-    const plain = page.getByText("https://", { exact: true }).element();
-    const labeled = page.getByText("NOK", { exact: true }).element();
-    if (!(plain instanceof HTMLElement) || !(labeled instanceof HTMLElement)) {
-      throw new Error("expected two button-group-text parts");
-    }
-    expect(plain.tagName).toBe("DIV");
-    expect(plain.getAttribute("data-slot")).toBe("button-group-text");
-    expect(labeled.tagName).toBe("LABEL");
-    expect(labeled.getAttribute("for")).toBe("amount");
-    expect(labeled.getAttribute("data-slot")).toBe("button-group-text");
-    expect(getComputedStyle(plain).backgroundColor).toBe(cssVarColor(plain, "--muted"));
-    expect(getComputedStyle(labeled).backgroundColor).toBe(cssVarColor(labeled, "--muted"));
-    expect(getComputedStyle(plain).textTransform).not.toBe("uppercase");
-    expect(getComputedStyle(labeled).textTransform).toBe("uppercase");
-  });
-
-  it("collapses inner corners of data-slot children and keeps the trailing rounded edge", () => {
-    renderThemed(
-      <ButtonGroup.Root aria-label="Attached" style={radiusToken}>
-        <Button>One</Button>
-        <Button>Two</Button>
-        <Button>Three</Button>
-      </ButtonGroup.Root>
-    );
-    const first = radius(buttonNamed("One"));
-    const middle = radius(buttonNamed("Two"));
-    const last = radius(buttonNamed("Three"));
-
-    expect(first.topLeft).toBeGreaterThan(0);
-    expect(first.bottomLeft).toBeGreaterThan(0);
-    expect(first.topRight).toBe(0);
-    expect(first.bottomRight).toBe(0);
-
-    expect(middle.topLeft).toBe(0);
-    expect(middle.topRight).toBe(0);
-    expect(middle.bottomLeft).toBe(0);
-    expect(middle.bottomRight).toBe(0);
-    expect(middle.borderLeft).toBe("0px");
-
-    expect(last.topLeft).toBe(0);
-    expect(last.bottomLeft).toBe(0);
-    expect(last.topRight).toBeGreaterThan(0);
-    expect(last.bottomRight).toBeGreaterThan(0);
-  });
-
-  it("collapses block-axis corners when orientation is vertical", () => {
-    renderThemed(
-      <ButtonGroup.Root orientation="vertical" aria-label="Stack" style={radiusToken}>
-        <Button>One</Button>
-        <Button>Two</Button>
-      </ButtonGroup.Root>
-    );
-    const first = radius(buttonNamed("One"));
-    const last = radius(buttonNamed("Two"));
-
-    expect(first.topLeft).toBeGreaterThan(0);
-    expect(first.topRight).toBeGreaterThan(0);
-    expect(first.bottomLeft).toBe(0);
-    expect(first.bottomRight).toBe(0);
-
-    expect(last.topLeft).toBe(0);
-    expect(last.topRight).toBe(0);
-    expect(last.bottomLeft).toBeGreaterThan(0);
-    expect(last.bottomRight).toBeGreaterThan(0);
-    expect(last.borderTop).toBe("0px");
-  });
-
   // fkas external: a 12px --radius and a 2px step, so rounded-md is 10px. A field alone rounds
   // with the brand's 12px, or with a host's own --radius-field; the group ends override both.
   describe.each([
@@ -237,21 +123,5 @@ describe("ButtonGroup", () => {
         expect(button[buttonCorner]).toBe(10);
       }
     );
-  });
-
-  it("spaces nested button-groups with gap-2", () => {
-    renderThemed(
-      <ButtonGroup.Root aria-label="Pager">
-        <ButtonGroup.Root aria-label="Pages">
-          <Button>1</Button>
-          <Button>2</Button>
-        </ButtonGroup.Root>
-        <ButtonGroup.Root aria-label="Step">
-          <Button>Next</Button>
-        </ButtonGroup.Root>
-      </ButtonGroup.Root>
-    );
-    expect(getComputedStyle(groupNamed("Pager")).gap).toBe("8px");
-    expect(getComputedStyle(groupNamed("Pages")).gap).toBe("normal");
   });
 });

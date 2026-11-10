@@ -1,0 +1,60 @@
+import { describe, it } from "vitest";
+
+import "../../dist/styles.css";
+import "../../dist/themes.css";
+import { withLocale } from "../../test/locale-matrix";
+import { atHostRoots, expectTargets } from "../../test/target-size";
+import { renderThemed, roleNamed, stampDensity } from "../../test/themed-browser-render";
+import { Button } from "../components/button/button";
+import { Combobox } from "../components/combobox";
+import { NumberField } from "../components/number-field/number-field";
+import { DENSITIES } from "../theme/density";
+
+/**
+ * Unit under test: the 24px target floor (WCAG 2.5.8) the control sizes own, on the smallest
+ * targets Fuse draws: an icon-only inline Button, a NumberField's steppers inside the field box
+ * and a Combobox chip's remove button, at both densities and at the 16px root and a 14px host root. Oracle: the
+ * criterion's 24px square around each target's centre, which `test/target-size.ts` measures.
+ */
+describe("the 24px target floor", () => {
+  it("holds for the smallest targets at both densities and both host roots", () => {
+    renderThemed(
+      withLocale(
+        "en-US",
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "flex-start",
+            gap: 32,
+            padding: 32,
+          }}>
+          <Button size="icon-inline" aria-label="Edit">
+            ✎
+          </Button>
+          <NumberField aria-label="Amount" />
+          <Combobox.Root multiple defaultValue={["Apple", "Banana"]}>
+            <Combobox.Chips aria-label="Selected fruit">
+              <Combobox.Chip>Apple</Combobox.Chip>
+              <Combobox.Chip>Banana</Combobox.Chip>
+              <Combobox.ChipsInput aria-label="Fruit" />
+            </Combobox.Chips>
+          </Combobox.Root>
+        </div>
+      )
+    );
+    const targets = [
+      roleNamed("button", "Edit"),
+      roleNamed("button", "Increase"),
+      roleNamed("button", "Decrease"),
+      roleNamed("button", "Remove Apple"),
+      roleNamed("button", "Remove Banana"),
+    ];
+    atHostRoots([16, 14], (root) => {
+      for (const density of DENSITIES) {
+        stampDensity(density);
+        expectTargets(targets, `${density} ${String(root)}px`);
+      }
+    });
+  });
+});

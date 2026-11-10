@@ -1,5 +1,4 @@
-import type { Browser, Locator, Page } from "playwright";
-import { afterAll, beforeAll, expect } from "vitest";
+import type { Locator, Page } from "playwright";
 
 import { componentHref } from "../src/lib/pages";
 import { docsBaseUrl } from "./docs-server";
@@ -25,61 +24,14 @@ export async function openDemo(page: Page, slug: string, name: string): Promise<
  * @param pathname - The docs path, such as `/handbook/temporal-migration`.
  * @param name - The demo's title.
  */
-export async function openDemoAt(page: Page, pathname: string, name: string): Promise<Locator> {
+async function openDemoAt(page: Page, pathname: string, name: string): Promise<Locator> {
   page.setDefaultTimeout(5000);
   await page.goto(`${docsBaseUrl()}${pathname}`, { waitUntil: "load" });
   return sharedDemo(page, name);
 }
 
-/**
- * Waits until every demo frame on an open page has hydrated, within the page's default timeout.
- *
- * @param page - The open page.
- */
-export async function waitForAllDemos(page: Page): Promise<void> {
-  await page.waitForFunction(
-    () =>
-      document.querySelectorAll("[data-demo-frame]").length ===
-      document.querySelectorAll("[data-demo-frame][data-demo-hydrated]").length
-  );
-}
-
-/**
- * Opens one component page for a describe's read-only checks before its first test, and closes it
- * after its last, so the checks share one load. Each check takes its demo with {@link sharedDemo}.
- *
- * @param browser - The suite's browser.
- * @param slug - The component page.
- * @param viewport - The page's viewport.
- * @param timezoneId - The page's IANA zone, the browser's own by default.
- * @returns The open page, between the describe's first and last test.
- */
-export function shareDemoPage(
-  browser: () => Browser,
-  slug: string,
-  viewport: { readonly width: number; readonly height: number },
-  timezoneId?: string
-): () => Page {
-  let shared: Page | undefined;
-  beforeAll(async () => {
-    shared = await browser().newPage(timezoneId === undefined ? { viewport } : { viewport, timezoneId });
-    shared.setDefaultTimeout(5000);
-    await shared.goto(`${docsBaseUrl()}/components/${slug}`, { waitUntil: "load" });
-  });
-  afterAll(async () => {
-    await shared?.close();
-    shared = undefined;
-  });
-  return () => {
-    if (shared === undefined) {
-      throw new Error("The shared demo page is only open between beforeAll and afterAll.");
-    }
-    return shared;
-  };
-}
-
 /** The region around the demo titled `name` on an open component page, once it has hydrated. */
-export async function sharedDemo(page: Page, name: string): Promise<Locator> {
+async function sharedDemo(page: Page, name: string): Promise<Locator> {
   const demo = page.getByRole("region", { name, exact: true });
   await waitForDemoHydration(demo);
   return demo;
@@ -133,23 +85,4 @@ export async function readThemeAttributes(element: Locator): Promise<ThemeAttrib
     brand: node.getAttribute("data-theme-brand"),
     segment: node.getAttribute("data-theme-segment"),
   }));
-}
-
-/**
- * Polls until `element` sits inside `container` on the horizontal axis. Vertical
- * containment is deliberately not asserted: some demos scroll by design.
- */
-export async function expectInside(element: Locator, container: Locator): Promise<void> {
-  await expect
-    .poll(async () => {
-      const outer = await container.boundingBox();
-      const inner = await element.boundingBox();
-      return (
-        outer !== null &&
-        inner !== null &&
-        inner.x >= outer.x - 1 &&
-        inner.x + inner.width <= outer.x + outer.width + 1
-      );
-    })
-    .toBe(true);
 }

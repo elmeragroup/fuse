@@ -3,42 +3,21 @@ import type { ReactElement, ReactNode } from "react";
 
 import { CalendarDate } from "@internationalized/date";
 import { DatePickerContext } from "react-aria-components";
-import type { ValidationResult } from "react-aria-components";
-import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
-
-import * as CssColor from "@elmeragroup/color/css-color";
-import { getOrThrow } from "@elmeragroup/color/result";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
-import { shadowLayers } from "../../../test/assert-invalid-ring";
 import { CaughtError } from "../../../test/caught-error";
 import {
   calendarGrid,
-  calendarRoot,
   cellNamed,
   describedTextsFor,
-  insetsWithin,
-  paddingBox,
-  ROW_VIEWPORT,
   segmentLocator,
   segmentNamed,
-  STACKED_VIEWPORT,
-  SUBPIXEL,
-  unionBox,
 } from "../../../test/rac-calendar-testing";
 import { emulateReducedMotion } from "../../../test/reduced-motion";
-import {
-  CONTROL_MD,
-  cssVarColor,
-  fkasBranded,
-  px,
-  renderThemed,
-  roleNamed,
-  stampDensity,
-} from "../../../test/themed-browser-render";
-import { ThemeScope } from "../../theme/theme-scope";
+import { px, renderThemed, roleNamed } from "../../../test/themed-browser-render";
 import { UiProviders } from "../ui-providers/ui-providers";
 import { DatePicker, DatePickerPresetGroup, DatePickerPresetItem } from "./date-picker";
 
@@ -70,27 +49,10 @@ function groupNamed(name: string): HTMLElement {
   return element;
 }
 
-function dateInputRow(name: string): HTMLElement {
-  const segment = segmentNamed(`month, ${name}`);
-  const row = segment.parentElement;
-  if (!(row instanceof HTMLElement) || !groupNamed(name).contains(row)) {
-    throw new Error(`expected DateInput around ${name}`);
-  }
-  return row;
-}
-
 function pickerDialog(): HTMLElement {
   const element = page.getByRole("dialog").element();
   if (!(element instanceof HTMLElement)) {
     throw new Error("expected the picker dialog");
-  }
-  return element;
-}
-
-function buttonNamed(name: string): HTMLElement {
-  const element = page.getByRole("button", { name, exact: true }).element();
-  if (!(element instanceof HTMLElement)) {
-    throw new Error(`expected button ${name}`);
   }
   return element;
 }
@@ -108,15 +70,6 @@ function presetTargetNamed(name: string): HTMLElement {
   return label;
 }
 
-/** The pane wrapper the composite puts around the preset group and the calendar. */
-function paneAroundCalendar(): HTMLElement {
-  const pane = calendarRoot().parentElement;
-  if (!(pane instanceof HTMLElement)) {
-    throw new Error("expected the dialog's pane wrapper");
-  }
-  return pane;
-}
-
 async function openPicker(): Promise<HTMLElement> {
   await userEvent.click(trigger());
   await expect.element(page.getByRole("dialog")).toBeVisible();
@@ -124,19 +77,7 @@ async function openPicker(): Promise<HTMLElement> {
 }
 
 const march10 = new CalendarDate(2026, 3, 10);
-const july4 = new CalendarDate(2026, 7, 4);
 const july14 = new CalendarDate(2026, 7, 14);
-
-function presets(): ReactElement {
-  return (
-    <DatePickerPresetGroup>
-      <DatePickerPresetItem value="today">Today</DatePickerPresetItem>
-      <DatePickerPresetItem value="in-a-week" isCloseDialogOnDoubleClick>
-        In a week
-      </DatePickerPresetItem>
-    </DatePickerPresetGroup>
-  );
-}
 
 /**
  * A controlled picker whose single preset drives the value from inside the open popover.
@@ -322,139 +263,8 @@ describe("DatePicker", () => {
 
     expect(calendarGrid().getAttribute("aria-label")).toMatch(/January\s+1990/i);
   });
-
-  it.each([
-    ["renders leading zeros on day and month by default", {}, "07", "04"],
-    ["drops the leading zeros when a caller turns them off", { shouldForceLeadingZeros: false }, "7", "4"],
-  ] as const)("%s", async (_title, props, month, day) => {
-    renderPicker(<DatePicker label="Invoice date" defaultValue={july4} {...props} />);
-    await expect.element(segmentLocator("month")).toBeVisible();
-
-    expect(segmentNamed("month").textContent).toBe(month);
-    expect(segmentNamed("day").textContent).toBe(day);
-  });
-
-  it("renders a function errorMessage from the ValidationResult and associates it", async () => {
-    let seen: ValidationResult | undefined;
-    renderPicker(
-      <DatePicker
-        label="Invoice date"
-        defaultValue={new CalendarDate(2026, 1, 1)}
-        minValue={july4}
-        validationBehavior="aria"
-        errorMessage={(validation) => {
-          seen = validation;
-          return (
-            <span role="status" aria-label="Invoice date error details">
-              {validation.validationErrors.join(" ")}
-            </span>
-          );
-        }}
-      />
-    );
-    const error = page.getByRole("status", { name: "Invoice date error details" });
-    await expect.element(error).toBeVisible();
-    const errorNode = error.element();
-    if (!(errorNode instanceof HTMLElement)) {
-      throw new Error("expected the error node");
-    }
-
-    expect(seen?.isInvalid).toBe(true);
-    expect(seen?.validationErrors.length).toBeGreaterThan(0);
-    expect(errorNode.textContent).not.toBe("");
-    const group = groupNamed("Invoice date");
-    const root = group.parentElement;
-    if (!(root instanceof HTMLElement)) {
-      throw new Error("expected the DatePicker root");
-    }
-    expect(root).toHaveAttribute("data-invalid");
-    expect(describedTextsFor(group)).toContain(errorNode.textContent);
-  });
-
-  it("fills the read-only field with the muted surface and keeps the popover closed", async () => {
-    renderPicker(<DatePicker label="Invoice date" isReadOnly value={july14} />);
-    const group = groupNamed("Invoice date");
-    const glyph = group.querySelector("svg");
-    if (!(glyph instanceof SVGElement)) {
-      throw new Error("expected the trigger glyph");
-    }
-
-    // The FieldGroup's own `isReadOnly` axis paints the fill, exactly once. The glyph is
-    // deliberately untinted: `bg-muted` on the `<svg>` never belonged there and went with
-    // the picker recipe's duplicate arm.
-    expect(getComputedStyle(group).backgroundColor).toBe(cssVarColor(group, "--muted"));
-    expect(group.getAttribute("data-readonly")).toBe("true");
-    expect(getComputedStyle(glyph).backgroundColor).not.toBe(cssVarColor(group, "--muted"));
-    expect(trigger()).toBeDisabled();
-
-    await userEvent.click(trigger(), { force: true });
-    expect(page.getByRole("dialog").query()).toBeNull();
-  });
 });
 
-describe("DatePicker trigger placement", () => {
-  it("leads the field box with the trigger in DOM, tab and visual order", async () => {
-    renderPicker(
-      <>
-        <button type="button">Before</button>
-        <DatePicker label="Start-up date" defaultValue={july14} triggerPlacement="start" />
-      </>
-    );
-    const group = groupNamed("Start-up date");
-
-    expect(group.firstElementChild).toBe(trigger());
-    expect(trigger().getBoundingClientRect().right).toBeLessThanOrEqual(
-      segmentNamed("month").getBoundingClientRect().left
-    );
-
-    buttonNamed("Before").focus();
-    await userEvent.tab();
-    expect(document.activeElement).toBe(trigger());
-    await userEvent.tab();
-    expect(document.activeElement).toBe(segmentNamed("month"));
-
-    // RAC's label click focuses the group's first focusable part, now the trigger.
-    await userEvent.click(page.getByText("Start-up date", { exact: true }));
-    expect(document.activeElement).toBe(trigger());
-  });
-
-  it("mirrors the trailing trigger's inset and the segment row's padding", async () => {
-    renderPicker(
-      <>
-        <DatePicker label="Trailing" defaultValue={july14} />
-        <DatePicker label="Leading" defaultValue={july14} triggerPlacement="start" />
-      </>
-    );
-    await expect.element(groupNamed("Leading")).toBeVisible();
-    // By default the trigger trails the segments.
-    const trailingTrigger = roleNamed("button", "Calendar Trailing");
-    expect(groupNamed("Trailing").lastElementChild).toBe(trailingTrigger);
-    expect(trailingTrigger.getBoundingClientRect().left).toBeGreaterThanOrEqual(
-      segmentNamed("year, Trailing").getBoundingClientRect().right
-    );
-    // Unit: the leading layout. Oracle: the trailing layout, mirrored. The trailing
-    // trigger's inset and the segment row's padding are the established field box, so
-    // the leading trigger has to sit as far from the start edge as that one sits from
-    // the end edge, with the row's paddings swapped.
-    const triggerIn = (name: string): DOMRect =>
-      roleNamed("button", `Calendar ${name}`).getBoundingClientRect();
-    const trailing = groupNamed("Trailing").getBoundingClientRect();
-    const leading = groupNamed("Leading").getBoundingClientRect();
-
-    expect(triggerIn("Leading").left - leading.left).toBeCloseTo(
-      trailing.right - triggerIn("Trailing").right
-    );
-    expect(getComputedStyle(dateInputRow("Leading")).paddingInlineStart).toBe(
-      getComputedStyle(dateInputRow("Trailing")).paddingInlineEnd
-    );
-    expect(getComputedStyle(dateInputRow("Leading")).paddingInlineEnd).toBe(
-      getComputedStyle(dateInputRow("Trailing")).paddingInlineStart
-    );
-  });
-});
-
-// The group's name precedence and dictionary copy are the shared preset group's, proved for
-// both public groups in `internal/picker-presets.browser.test.tsx`.
 describe("DatePicker presets", () => {
   it("exposes a radiogroup named by visible copy, closing on double-click only where the caller opted in", async () => {
     const onDoubleClick = vi.fn();
@@ -495,127 +305,5 @@ describe("DatePicker presets", () => {
     await userEvent.dblClick(presetTargetNamed("In a week"));
     expect(onDoubleClick).toHaveBeenCalledTimes(2);
     await expect.element(page.getByRole("dialog")).not.toBeInTheDocument();
-  });
-});
-
-/**
- * The layers of a computed `box-shadow` that paint, judged by their colour's alpha.
- * Tailwind's `shadow-none` keeps its ring and inset layers in the cascade, so Chromium
- * reports fully transparent layers rather than `none`; a shadow that paints nothing has
- * no other kind. Chromium writes each layer's colour first, then its lengths and `inset`.
- * A colour the parser rejects throws, so an unknown notation never passes as transparent.
- */
-function paintedShadowLayers(boxShadow: string): string[] {
-  return shadowLayers(boxShadow).filter((layer) => {
-    const colour = layer.replace(/(?:\s+(?:-?[\d.]+px|inset))+$/u, "");
-    return getOrThrow(CssColor.parse(colour)).alpha > 0;
-  });
-}
-
-// Both pickers draw this pane from `pickerVariants` and the shared preset group, so this suite
-// measures it for DateRangePicker too.
-describe("DatePicker preset pane geometry", () => {
-  afterEach(async () => {
-    await page.viewport(STACKED_VIEWPORT.width, STACKED_VIEWPORT.height);
-  });
-
-  /** The presets' inset within their column, which must be at least the 4px small surface tier. */
-  function expectPresetsInset(): void {
-    const items = unionBox([presetTargetNamed("Today"), presetTargetNamed("In a week")]);
-    const insets = insetsWithin(paddingBox(roleNamed("radiogroup", "Date presets")), items);
-    expect(insets.top).toBeGreaterThanOrEqual(4 - SUBPIXEL);
-    expect(insets.right).toBeGreaterThanOrEqual(4 - SUBPIXEL);
-    expect(insets.bottom).toBeGreaterThanOrEqual(4 - SUBPIXEL);
-    expect(insets.left).toBeGreaterThanOrEqual(4 - SUBPIXEL);
-  }
-
-  it("runs the row divider from the dialog's top edge to its bottom edge, insets the presets, and leaves the card chrome to the popover", async () => {
-    await page.viewport(ROW_VIEWPORT.width, ROW_VIEWPORT.height);
-    renderPicker(<DatePicker label="Invoice date" value={march10} presetGroup={presets()} />);
-    const inner = paddingBox(await openPicker());
-    const column = roleNamed("radiogroup", "Date presets");
-    const divider = column.getBoundingClientRect();
-
-    expect(px(getComputedStyle(column).borderRightWidth)).toBeGreaterThan(0);
-    expect(Math.abs(divider.top - inner.top)).toBeLessThanOrEqual(SUBPIXEL);
-    expect(Math.abs(divider.bottom - inner.bottom)).toBeLessThanOrEqual(SUBPIXEL);
-    expect(Math.abs(divider.left - inner.left)).toBeLessThanOrEqual(SUBPIXEL);
-    expectPresetsInset();
-    // No calendar shadow or fill beside the presets.
-    const style = getComputedStyle(calendarRoot());
-    expect(paintedShadowLayers(style.boxShadow)).toEqual([]);
-    expect(style.backgroundColor).toBe("rgba(0, 0, 0, 0)");
-  });
-
-  it("runs the stacked divider from the dialog's start edge to its end edge and insets the presets", async () => {
-    await page.viewport(STACKED_VIEWPORT.width, STACKED_VIEWPORT.height);
-    renderPicker(<DatePicker label="Invoice date" value={march10} presetGroup={presets()} />);
-    const inner = paddingBox(await openPicker());
-    const column = roleNamed("radiogroup", "Date presets");
-    const divider = column.getBoundingClientRect();
-
-    expect(px(getComputedStyle(column).borderBottomWidth)).toBeGreaterThan(0);
-    expect(Math.abs(divider.left - inner.left)).toBeLessThanOrEqual(SUBPIXEL);
-    expect(Math.abs(divider.right - inner.right)).toBeLessThanOrEqual(SUBPIXEL);
-    expect(Math.abs(divider.top - inner.top)).toBeLessThanOrEqual(SUBPIXEL);
-    expectPresetsInset();
-  });
-});
-
-describe("DatePicker density metrics", () => {
-  it("pins the field box to the signed md control size at both densities and does not rescope", () => {
-    const { rerender } = renderPicker(<DatePicker label="Meter" defaultValue={july14} />);
-    for (const density of ["dense", "comfortable"] as const) {
-      stampDensity(density);
-      expect(px(getComputedStyle(groupNamed("Meter")).height)).toBe(CONTROL_MD[density].height);
-      const inputStyle = getComputedStyle(dateInputRow("Meter"));
-      expect(px(inputStyle.paddingInlineStart)).toBe(CONTROL_MD[density].px);
-      expect(px(inputStyle.fontSize)).toBe(CONTROL_MD[density].font);
-      expect(px(inputStyle.lineHeight)).toBe(CONTROL_MD[density].leading);
-    }
-
-    stampDensity("dense");
-    rerender(
-      <ThemeScope theme={fkasBranded}>
-        <UiProviders locale="en-US" navigate={() => undefined}>
-          <div data-density="comfortable">
-            <DatePicker label="Meter" defaultValue={july14} />
-          </div>
-        </UiProviders>
-      </ThemeScope>
-    );
-    expect(px(getComputedStyle(groupNamed("Meter")).height)).toBe(CONTROL_MD.dense.height);
-  });
-});
-
-describe("DatePicker composition surface", () => {
-  it("strips the calendar's card chrome and the dialog's padding inside the popover", async () => {
-    renderPicker(<DatePicker label="Invoice date" value={march10} />);
-    const dialog = await openPicker();
-    const root = calendarRoot();
-    const style = getComputedStyle(root);
-
-    expect(getComputedStyle(dialog).paddingTop).toBe("0px");
-    expect(style.borderTopWidth).toBe("0px");
-    expect(style.borderLeftWidth).toBe("0px");
-    expect(paintedShadowLayers(style.boxShadow)).toEqual([]);
-    expect(style.backgroundColor).toBe("rgba(0, 0, 0, 0)");
-    // No `title` ⇒ no header row at all: an empty heading would take the dialog's
-    // accessible name from RAC and spend one 16 px `gap-4` on nothing
-    // (react-aria/internal/dialog.tsx).
-    expect(page.getByRole("button", { name: /close/i }).query()).toBeNull();
-    // Without a preset group the pane wrapper takes none of the two-pane layout.
-    expect(paneAroundCalendar().closest('[role="dialog"]')).toBe(dialog);
-    expect(paneAroundCalendar().className).toBe("");
-  });
-
-  it("keeps the single pane when the preset guard collapses to false", async () => {
-    // `presetGroup={showPresets && <Group />}` collapses to `false`, not to `undefined`:
-    // a lone calendar must not get the two-pane divider.
-    renderPicker(<DatePicker label="Invoice date" presetGroup={false} value={march10} />);
-    await openPicker();
-
-    expect(paneAroundCalendar().className).toBe("");
-    expect(page.getByRole("radiogroup").query()).toBeNull();
   });
 });

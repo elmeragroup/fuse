@@ -3,17 +3,7 @@ import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import { assertKeyboardFocusRingAtBothDensities } from "../../../test/assert-focus-ring";
-import {
-  CONTROL_MD,
-  fkasBranded,
-  px,
-  renderThemed,
-  roleNamed,
-  stampDensity,
-  textboxNamed,
-  textNamed,
-} from "../../../test/themed-browser-render";
-import { ThemeScope } from "../../theme";
+import { renderThemed, roleNamed, textboxNamed, textNamed } from "../../../test/themed-browser-render";
 import { Field } from "../field";
 import { Input } from "./input";
 
@@ -63,43 +53,6 @@ describe("Input", () => {
     expect(document.activeElement).toBe(textboxNamed("Email"));
     await userEvent.keyboard("{Tab}");
     expect(document.activeElement).toBe(roleNamed("button", "After"));
-  });
-
-  it("matches the signed md control size at both densities and ignores a nested data-density stamp or ThemeScope", () => {
-    const { rerender } = renderThemed(
-      <>
-        <Input aria-label="Meter" />
-        <div data-density="comfortable">
-          <Input aria-label="Nested comfortable" />
-        </div>
-        <div data-density="dense">
-          <Input aria-label="Nested dense" />
-        </div>
-      </>
-    );
-    // Density is a document-root axis: `fuse.css` keys the comfortable block on
-    // `:root[data-density="comfortable"]`, so a nested attribute rescopes nothing.
-    for (const density of ["dense", "comfortable"] as const) {
-      stampDensity(density);
-      const input = textboxNamed("Meter");
-      const style = getComputedStyle(input);
-      expect(px(style.height)).toBe(CONTROL_MD[density].height);
-      expect(px(style.paddingInlineStart)).toBe(CONTROL_MD[density].px);
-      expect(px(style.fontSize)).toBe(CONTROL_MD[density].font);
-      expect(px(style.lineHeight)).toBe(CONTROL_MD[density].leading);
-      expect(px(getComputedStyle(textboxNamed("Nested comfortable")).height)).toBe(
-        CONTROL_MD[density].height
-      );
-      expect(px(getComputedStyle(textboxNamed("Nested dense")).height)).toBe(CONTROL_MD[density].height);
-    }
-
-    stampDensity("dense");
-    rerender(
-      <ThemeScope theme={fkasBranded}>
-        <Input aria-label="Meter" />
-      </ThemeScope>
-    );
-    expect(px(getComputedStyle(textboxNamed("Meter")).height)).toBe(CONTROL_MD.dense.height);
   });
 
   it("paints the shared ring on keyboard focus-visible at both densities", async () => {

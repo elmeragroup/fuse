@@ -23,13 +23,13 @@ import { paletteBrand } from "../tokens/brand-palettes";
 import type { PaletteBrandCode } from "../tokens/brand-palettes";
 
 /** The radius roles a corner set assigns, in `TOKEN_NAMES` order. */
-export const CORNER_TOKEN_NAMES = ["radius", "radius-button", "radius-field", "radius-step"] as const;
+const CORNER_TOKEN_NAMES = ["radius", "radius-button", "radius-field", "radius-step"] as const;
 
 /** The `--radius-step` values the corner formulas support: neutral `0px`, branded `2px`. */
 export const CORNER_STEPS = ["0px", "2px"] as const;
 
 /** A legal `--radius-step`. */
-export type CornerStep = (typeof CORNER_STEPS)[number];
+type CornerStep = (typeof CORNER_STEPS)[number];
 
 /** A full corner set: every radius role, with the field radius tied to `--radius`. */
 export type Corners = {
@@ -65,7 +65,7 @@ export const NEUTRAL_CORNERS = {
  * selection row, and buttons with the brand's own button radius, a pill for most brands.
  * `fkab` aliases `fkas`, as its palette does.
  */
-export const BRAND_CORNERS = {
+const BRAND_CORNERS = {
   fkas: {
     radius: "0.75rem",
     "radius-button": "1.8125rem",
@@ -129,7 +129,7 @@ export function cornersOf(theme: ThemeInput): Corners {
 }
 
 /** One corner rule: the selector of the theme elements it matches and its custom properties. */
-export type CornerRule = {
+type CornerRule = {
   /** The theme elements the rule matches, such as `[data-theme-identity="neutral"]`. */
   readonly selector: string;
 

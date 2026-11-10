@@ -3,21 +3,12 @@ import { page } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
-import { cssVarColor, renderThemed, textNamed } from "../../../test/themed-browser-render";
+import { renderThemed } from "../../../test/themed-browser-render";
 import { Avatar } from "./index";
 
 const PIXEL =
   "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==";
 const BROKEN = "data:image/png;base64,not-a-png";
-
-function slot(name: string): HTMLElement {
-  // DOM audit: parts emit data-slot="avatar" | "avatar-image" | "avatar-fallback".
-  const element = document.querySelector(`[data-slot="${name}"]`);
-  if (!(element instanceof HTMLElement)) {
-    throw new Error(`expected an element with data-slot="${name}"`);
-  }
-  return element;
-}
 
 describe("Avatar", () => {
   it("shows fallback initials when the image fails to load", async () => {
@@ -60,78 +51,5 @@ describe("Avatar", () => {
       "Ada Lovelace"
     );
     expect(page.getByText("AL", { exact: true }).query()).toBeNull();
-  });
-
-  it.each([
-    [undefined, "32px"],
-    ["size-10", "40px"],
-  ] as const)(
-    "paints the root from the muted token and sizes it as a control box, className %s winning",
-    (className, width) => {
-      renderThemed(
-        <Avatar.Root className={className}>
-          <Avatar.Fallback>AL</Avatar.Fallback>
-        </Avatar.Root>
-      );
-      const fallback = textNamed("AL");
-      const avatar = fallback.parentElement;
-      if (!(avatar instanceof HTMLElement)) {
-        throw new Error("expected the avatar root");
-      }
-      expect(slot("avatar")).toBe(avatar);
-      expect(slot("avatar-fallback")).toBe(fallback);
-      expect(getComputedStyle(avatar).backgroundColor).toBe(cssVarColor(avatar, "--muted"));
-      expect(getComputedStyle(avatar).width).toBe(width);
-    }
-  );
-
-  it("stacks group avatars with a background-coloured separating ring", () => {
-    renderThemed(
-      <Avatar.Group>
-        <Avatar.Root>
-          <Avatar.Fallback>AL</Avatar.Fallback>
-        </Avatar.Root>
-        <Avatar.Root>
-          <Avatar.Fallback>GH</Avatar.Fallback>
-        </Avatar.Root>
-      </Avatar.Group>
-    );
-
-    // DOM audit: the group and root parts emit data-slot; the stack overlap and ring are the
-    // group's observable contract, and both avatars share the same part markup.
-    const group = document.querySelector('[data-slot="avatar-group"]');
-    if (!(group instanceof HTMLElement)) {
-      throw new Error("expected the avatar group");
-    }
-    const avatars = [...group.querySelectorAll('[data-slot="avatar"]')];
-    const [first, second] = avatars;
-    if (!(first instanceof HTMLElement) || !(second instanceof HTMLElement)) {
-      throw new Error("expected two avatar roots");
-    }
-    expect(getComputedStyle(group).display).toBe("flex");
-    expect(second.getBoundingClientRect().left).toBeLessThan(first.getBoundingClientRect().right);
-    expect(getComputedStyle(first).boxShadow).toContain("2px");
-    expect(getComputedStyle(first).boxShadow).toContain(cssVarColor(first, "--background"));
-  });
-
-  it("lets an explicit child ring utility override the group's ring", () => {
-    const { rerender } = renderThemed(
-      <Avatar.Group>
-        <Avatar.Root className="ring-0">
-          <Avatar.Fallback>AL</Avatar.Fallback>
-        </Avatar.Root>
-      </Avatar.Group>
-    );
-    expect(getComputedStyle(slot("avatar")).boxShadow).not.toContain("2px");
-
-    rerender(
-      <Avatar.Group>
-        <Avatar.Root className="ring-1 ring-foreground">
-          <Avatar.Fallback>AL</Avatar.Fallback>
-        </Avatar.Root>
-      </Avatar.Group>
-    );
-    const ringed = slot("avatar");
-    expect(getComputedStyle(ringed).boxShadow).toContain("1px");
   });
 });

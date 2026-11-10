@@ -58,10 +58,10 @@ type FileState = {
 };
 
 /** The picker scopes, code syntax and description of a stored variable. */
-export type StoredMetadata = { scopes: string[]; codeSyntax: CodeSyntax; description: string };
+type StoredMetadata = { scopes: string[]; codeSyntax: CodeSyntax; description: string };
 
 /** A canned reply that replaces the next matching request's normal handling. */
-export type ScriptedReply = {
+type ScriptedReply = {
   readonly method: "GET" | "POST";
   readonly status: number;
   readonly headers?: Record<string, string>;

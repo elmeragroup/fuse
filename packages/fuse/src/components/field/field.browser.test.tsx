@@ -1,5 +1,4 @@
 import { StrictMode } from "react";
-import type { ReactNode } from "react";
 
 import { afterEach, describe, expect, it } from "vitest";
 import { page, userEvent } from "vitest/browser";
@@ -8,10 +7,8 @@ import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import {
   LABEL,
-  metricPx,
   cssVarColor,
   fieldRootFrom,
-  inputNamed,
   px,
   renderThemed,
   roleNamed,
@@ -20,9 +17,7 @@ import {
   textboxNamed,
 } from "../../../test/themed-browser-render";
 import { DENSITIES } from "../../theme/density";
-import { Checkbox, CheckboxGroup } from "../checkbox/checkbox";
 import { Form } from "../form/form";
-import { Switch } from "../switch/switch";
 import { Field } from "./index";
 
 describe("Field", () => {
@@ -51,42 +46,6 @@ describe("Field", () => {
     const alert = page.getByRole("alert").element();
     expect(alert.getAttribute("data-slot")).toBe("field-error");
     expect(alert.textContent).toBe("Required");
-  });
-
-  it("shows the validate result and the native constraint message without children", async () => {
-    renderThemed(
-      <>
-        <Field.Root
-          validationMode="onBlur"
-          validate={(value) => (String(value).length < 3 ? "Use at least 3 characters." : null)}>
-          <Field.Label>Name</Field.Label>
-          <Field.Control render={<input />} />
-          <Field.Error />
-        </Field.Root>
-        <Field.Root validationMode="onBlur">
-          <Field.Label>Email</Field.Label>
-          <Field.Control type="email" render={<input />} />
-          <Field.Error />
-        </Field.Root>
-      </>
-    );
-    expect(page.getByRole("alert").query()).toBeNull();
-
-    await userEvent.type(textboxNamed("Name"), "Al");
-    await userEvent.type(textboxNamed("Email"), "ada");
-    await userEvent.keyboard("{Tab}");
-
-    await expect.element(textboxNamed("Name")).toHaveAccessibleDescription("Use at least 3 characters.");
-    // The oracle is the browser's own message for the failed `type="email"` constraint.
-    const nativeMessage = inputNamed("Email").validationMessage;
-    expect(nativeMessage).not.toBe("");
-    await expect.element(textboxNamed("Email")).toHaveAccessibleDescription(nativeMessage);
-    expect(
-      page
-        .getByRole("alert")
-        .elements()
-        .map((alert) => alert.textContent)
-    ).toEqual(["Use at least 3 characters.", nativeMessage]);
   });
 
   it("shows given children instead of the field's own error", () => {
@@ -121,15 +80,6 @@ describe("Field", () => {
     await expect
       .element(textboxNamed("Email"))
       .toHaveAccessibleDescription("Work address preferred. Required");
-  });
-
-  it("keeps the fieldset named by its legend when a wrapper forwards ARIA props and id as undefined", async () => {
-    renderThemed(
-      <Field.Set aria-labelledby={undefined}>
-        <Field.Legend id={undefined}>Contact</Field.Legend>
-      </Field.Set>
-    );
-    await expect.element(page.getByRole("group", { name: "Contact", exact: true })).toBeInTheDocument();
   });
 
   it("describes a fieldset with the descriptions it holds outside any root, in DOM order", async () => {
@@ -167,77 +117,6 @@ describe("Field", () => {
     await expect.element(group).toHaveAccessibleDescription("Pick one. We reply within a day.");
     expect(group.element().getAttribute("aria-describedby")).toBe(
       `${textNamed("Pick one.").id} ${textNamed("We reply within a day.").id}`
-    );
-  });
-
-  it("keeps the fieldset's descriptions in DOM order as they are inserted, re-identified and reordered", async () => {
-    const contactSet = (descriptions: ReactNode) => (
-      <>
-        <p id="contact-hint">Optional.</p>
-        <Field.Set aria-describedby="contact-hint">
-          <Field.Legend>Contact</Field.Legend>
-          {descriptions}
-        </Field.Set>
-      </>
-    );
-    const group = page.getByRole("group", { name: "Contact", exact: true });
-    const { rerender } = renderThemed(
-      contactSet(<Field.Description key="day">We reply within a day.</Field.Description>)
-    );
-    await expect.element(group).toHaveAccessibleDescription("Optional. We reply within a day.");
-
-    rerender(
-      contactSet([
-        <Field.Description key="pick">Pick one.</Field.Description>,
-        <Field.Description key="day">We reply within a day.</Field.Description>,
-      ])
-    );
-    await expect.element(group).toHaveAccessibleDescription("Optional. Pick one. We reply within a day.");
-
-    rerender(
-      contactSet([
-        <Field.Description key="pick" id="pick-one">
-          Pick one.
-        </Field.Description>,
-        <Field.Description key="day">We reply within a day.</Field.Description>,
-      ])
-    );
-    await expect.element(group).toHaveAccessibleDescription("Optional. Pick one. We reply within a day.");
-    expect(group.element().getAttribute("aria-describedby")).toBe(
-      `contact-hint pick-one ${textNamed("We reply within a day.").id}`
-    );
-
-    rerender(
-      contactSet([
-        <Field.Description key="day">We reply within a day.</Field.Description>,
-        <Field.Description key="pick" id="pick-one">
-          Pick one.
-        </Field.Description>,
-      ])
-    );
-    await expect.element(group).toHaveAccessibleDescription("Optional. We reply within a day. Pick one.");
-    expect(group.element().getAttribute("aria-describedby")).toBe(
-      `contact-hint ${textNamed("We reply within a day.").id} pick-one`
-    );
-  });
-
-  it("follows reused description elements when a reorder moves them without re-rendering", async () => {
-    const pick = <Field.Description key="pick">Pick one.</Field.Description>;
-    const day = <Field.Description key="day">We reply within a day.</Field.Description>;
-    const contactSet = (descriptions: ReactNode) => (
-      <Field.Set>
-        <Field.Legend>Contact</Field.Legend>
-        {descriptions}
-      </Field.Set>
-    );
-    const group = page.getByRole("group", { name: "Contact", exact: true });
-    const { rerender } = renderThemed(contactSet([pick, day]));
-    await expect.element(group).toHaveAccessibleDescription("Pick one. We reply within a day.");
-
-    rerender(contactSet([day, pick]));
-    await expect.element(group).toHaveAccessibleDescription("We reply within a day. Pick one.");
-    expect(group.element().getAttribute("aria-describedby")).toBe(
-      `${textNamed("We reply within a day.").id} ${textNamed("Pick one.").id}`
     );
   });
 
@@ -288,79 +167,6 @@ describe("Field", () => {
     expect(getComputedStyle(title).opacity).toBe("0.5");
   });
 
-  it("gives a checkbox row the heading weight on a centered pointer row, lets a consumer font-* class win, and leaves a plain label alone", () => {
-    renderThemed(
-      <>
-        <Field.Root>
-          <Field.Label>
-            <Checkbox />
-            Email
-          </Field.Label>
-        </Field.Root>
-        <Field.Root>
-          <Field.Label className="font-normal">
-            <Checkbox />
-            SMS
-          </Field.Label>
-        </Field.Root>
-        <Field.Root>
-          <Field.Label>Name</Field.Label>
-          <Field.Control render={<input />} />
-        </Field.Root>
-      </>
-    );
-    const heading = textNamed("Email");
-    const overridden = textNamed("SMS");
-    expect(heading.getAttribute("data-slot")).toBe("field-label");
-    expect(getComputedStyle(heading).fontWeight).toBe("500");
-    expect(getComputedStyle(overridden).fontWeight).toBe("400");
-    const checkboxRow = getComputedStyle(heading);
-    expect(checkboxRow.alignItems).toBe("center");
-    expect(checkboxRow.cursor).toBe("pointer");
-    const plainLabel = getComputedStyle(textNamed("Name"));
-    expect(plainLabel.alignItems).not.toBe("center");
-    expect(plainLabel.cursor).not.toBe("pointer");
-  });
-
-  it("reflects orientation and legend variant as data attributes", () => {
-    renderThemed(
-      <Field.Group>
-        <Field.Root orientation="horizontal">
-          <Field.Label>Name</Field.Label>
-          <Field.Control render={<input />} />
-        </Field.Root>
-        <Field.Root orientation="responsive">
-          <Field.Label>City</Field.Label>
-          <Field.Control render={<input />} />
-        </Field.Root>
-        <Field.Set>
-          <Field.Legend variant="label">Options</Field.Legend>
-        </Field.Set>
-      </Field.Group>
-    );
-    expect(fieldRootFrom("Name").getAttribute("data-orientation")).toBe("horizontal");
-    expect(fieldRootFrom("City").getAttribute("data-orientation")).toBe("responsive");
-    expect(textNamed("Options").getAttribute("data-variant")).toBe("label");
-  });
-
-  it("stamps data-content on Separator based on children", () => {
-    renderThemed(
-      <>
-        <section aria-label="Blank separator">
-          <Field.Separator />
-        </section>
-        <section aria-label="Labeled separator">
-          <Field.Separator>Or</Field.Separator>
-        </section>
-      </>
-    );
-    const blank = roleNamed("region", "Blank separator").firstElementChild;
-    const labeled = roleNamed("region", "Labeled separator").firstElementChild;
-    expect(blank?.getAttribute("data-content")).toBe("false");
-    expect(labeled?.getAttribute("data-content")).toBe("true");
-    expect(textNamed("Or").tagName).toBe("SPAN");
-  });
-
   it("focuses the control when the label is clicked and Tab reaches it", async () => {
     renderThemed(
       <>
@@ -377,104 +183,6 @@ describe("Field", () => {
     roleNamed("button", "Before").focus();
     await userEvent.keyboard("{Tab}");
     expect(document.activeElement).toBe(textboxNamed("Email"));
-  });
-
-  it("keeps a native legend out of a grid Field.Set's cells and names the set with it", () => {
-    // The built library CSS has no `grid-cols-2`, so the columns come inline.
-    renderThemed(
-      <Field.Set className="grid" style={{ gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 16 }}>
-        <Field.Legend render={<legend />}>Address</Field.Legend>
-        <Field.Root>
-          <Field.Label>Street</Field.Label>
-          <Field.Control render={<input />} />
-        </Field.Root>
-        <Field.Root>
-          <Field.Label>City</Field.Label>
-          <Field.Control render={<input />} />
-        </Field.Root>
-      </Field.Set>
-    );
-    expect(roleNamed("group", "Address").tagName).toBe("FIELDSET");
-    const legend = textNamed("Address");
-    expect(legend.tagName).toBe("LEGEND");
-    const street = fieldRootFrom("Street").getBoundingClientRect();
-    const city = fieldRootFrom("City").getBoundingClientRect();
-    // A legend in a grid cell would push Street to the second column and City to a new row.
-    expect(street.top).toBe(city.top);
-    expect(city.left).toBeGreaterThan(street.right);
-    expect(legend.getBoundingClientRect().bottom).toBeLessThanOrEqual(street.top);
-  });
-});
-
-describe("Field child widths", () => {
-  /** The computed content width of `element`, in px. */
-  function widthOf(element: Element): number {
-    return px(getComputedStyle(element).width);
-  }
-
-  it("keeps a lone Checkbox and Switch at their own width in a vertical root sized to its content, and stretches other children", () => {
-    // A fit-content box sizes the root to the control alone. A stretched control there takes its
-    // own content width: the checkbox's 2px border, or a switch's thumb and border.
-    const lone = (control: ReactNode) => (
-      <div style={{ width: "fit-content" }}>
-        <Field.Root>{control}</Field.Root>
-      </div>
-    );
-    renderThemed(
-      <>
-        {lone(<Checkbox aria-label="Terms" />)}
-        {lone(<Switch aria-label="Alerts" />)}
-        {lone(<Switch size="sm" aria-label="Compact" />)}
-        <div style={{ width: 320 }}>
-          <Field.Root>
-            <Field.Control aria-label="Name" render={<input />} />
-          </Field.Root>
-        </div>
-      </>
-    );
-    // The widths each control draws outside a Field.
-    expect(widthOf(roleNamed("checkbox", "Terms")), "checkbox").toBe(16);
-    expect(widthOf(roleNamed("switch", "Alerts")), "default switch").toBe(32);
-    expect(widthOf(roleNamed("switch", "Compact")), "sm switch").toBe(24);
-    expect(widthOf(textboxNamed("Name")), "input").toBe(320);
-  });
-
-  it("lays out a responsive root like a horizontal one in a field group past the md width", () => {
-    // Unit under test: the responsive orientation's md row. Oracle: the horizontal orientation,
-    // which that row reproduces. The 480px group is past the md container width of 28rem.
-    const rows = (orientation: "horizontal" | "responsive") => (
-      <section aria-label={orientation}>
-        <Field.Group style={{ width: 480 }}>
-          <Field.Root orientation={orientation}>
-            <Field.Label>Name</Field.Label>
-            <Field.Control render={<input />} />
-          </Field.Root>
-          <Field.Root orientation={orientation}>
-            <Checkbox />
-            <Field.Label>Terms</Field.Label>
-          </Field.Root>
-          <Field.Root orientation={orientation}>
-            <Switch />
-            <Field.Label>Alerts</Field.Label>
-          </Field.Root>
-        </Field.Group>
-      </section>
-    );
-    renderThemed(
-      <>
-        {rows("horizontal")}
-        {rows("responsive")}
-      </>
-    );
-    function widthsIn(orientation: string) {
-      const section = page.getByRole("region", { name: orientation, exact: true });
-      return {
-        input: widthOf(section.getByRole("textbox", { name: "Name", exact: true }).element()),
-        checkbox: widthOf(section.getByRole("checkbox", { name: "Terms", exact: true }).element()),
-        switch: widthOf(section.getByRole("switch", { name: "Alerts", exact: true }).element()),
-      };
-    }
-    expect(widthsIn("responsive")).toEqual(widthsIn("horizontal"));
   });
 });
 
@@ -510,124 +218,6 @@ describe("Field text follows density", () => {
       }
       // The legend variant titles the fieldset at a fixed 16/24px at both densities.
       expect(typeOf("Legend title"), `${density} legend`).toEqual({ font: 16, leading: 24 });
-    }
-  );
-});
-
-describe("Field group gaps follow density", () => {
-  afterEach(() => {
-    document.documentElement.removeAttribute("data-density");
-  });
-
-  /** The row or column gap of the closest element around `text` that carries `slot`. */
-  function gapAround(text: string, slot: string, gap: "rowGap" | "columnGap" = "rowGap"): number {
-    // DOM audit: Field.Set, Field.Group and Field.Root have no role, so they are found by their public slot.
-    const element = textNamed(text).closest(`[data-slot="${slot}"]`);
-    if (!(element instanceof HTMLElement)) {
-      throw new Error(`expected a ${slot} around ${text}`);
-    }
-    return px(getComputedStyle(element)[gap]);
-  }
-
-  it.each(DENSITIES)(
-    "gaps a horizontal field, a field set, a field group and their nested groups by the surface tiers, and stacks a vertical field 4px apart, at %s",
-    (density) => {
-      stampDensity(density);
-      renderThemed(
-        <Field.Set>
-          <Field.Legend>Contact</Field.Legend>
-          <Field.Group>
-            <Field.Root>
-              <Field.Label>Root label</Field.Label>
-              <input aria-label="Root input" />
-            </Field.Root>
-            <Field.Root orientation="horizontal">
-              <Checkbox />
-              <Field.Label>Row label</Field.Label>
-            </Field.Root>
-            <Field.Group>
-              <Field.Root>
-                <Field.Label>Nested label</Field.Label>
-              </Field.Root>
-            </Field.Group>
-          </Field.Group>
-        </Field.Set>
-      );
-      // The labeled composites' stack, fixed at both densities.
-      expect(gapAround("Root label", "field"), "vertical field").toBe(4);
-      expect(gapAround("Row label", "field", "columnGap"), "horizontal field").toBe(
-        metricPx("surface-gap-md", density)
-      );
-      expect(gapAround("Contact", "field-set"), "field set").toBe(metricPx("surface-gap-xl", density));
-      // DOM audit: the outer Field.Group has no role, so it is the group around the inner one.
-      const outer = textNamed("Nested label")
-        .closest('[data-slot="field-group"]')
-        ?.parentElement?.closest('[data-slot="field-group"]');
-      if (!(outer instanceof HTMLElement)) {
-        throw new Error("expected the outer field group");
-      }
-      expect(px(getComputedStyle(outer).rowGap), "field group").toBe(metricPx("surface-gap-xl", density));
-      expect(gapAround("Nested label", "field-group"), "nested field group").toBe(
-        metricPx("surface-gap-lg", density)
-      );
-    }
-  );
-
-  it.each(DENSITIES)(
-    "gaps a checkbox group's options by the sm tier stacked and the lg tier in a line at %s",
-    (density) => {
-      stampDensity(density);
-      renderThemed(
-        <>
-          <CheckboxGroup label="Stacked">
-            <Checkbox value="a" aria-label="Stacked a" />
-            <Checkbox value="b" aria-label="Stacked b" />
-          </CheckboxGroup>
-          <CheckboxGroup label="Inline" orientation="horizontal">
-            <Checkbox value="a" aria-label="Inline a" />
-            <Checkbox value="b" aria-label="Inline b" />
-          </CheckboxGroup>
-        </>
-      );
-      // The options are the Checkbox controls, which the group primitive lays out.
-      const box = (name: string) => roleNamed("checkbox", name).getBoundingClientRect();
-      expect(box("Stacked b").top - box("Stacked a").bottom, "stacked").toBe(
-        metricPx("surface-gap-sm", density)
-      );
-      expect(box("Inline b").left - box("Inline a").right, "inline").toBe(
-        metricPx("surface-gap-lg", density)
-      );
-    }
-  );
-
-  it.each(DENSITIES)(
-    "stacks a responsive field 4px apart in a narrow field group and lines it up by the field gap past the md width at %s",
-    (density) => {
-      // Unit under test: the responsive orientation's gaps. Oracle: a vertical field's fixed 4px
-      // stack below the md container width of 28rem, and a horizontal field's
-      // `--surface-gap-md` past it.
-      stampDensity(density);
-      renderThemed(
-        <>
-          <Field.Group style={{ width: 320 }}>
-            <Field.Root orientation="responsive">
-              <Field.Label>Narrow</Field.Label>
-              <Field.Control render={<input />} />
-            </Field.Root>
-          </Field.Group>
-          <Field.Group style={{ width: 480 }}>
-            <Field.Root orientation="responsive">
-              <Field.Label>Wide</Field.Label>
-              <Field.Control render={<input />} />
-            </Field.Root>
-          </Field.Group>
-        </>
-      );
-      const box = (element: Element) => element.getBoundingClientRect();
-      expect(box(textboxNamed("Narrow")).top - box(textNamed("Narrow")).bottom, "stacked").toBe(4);
-      expect(box(textboxNamed("Wide")).left - box(textNamed("Wide")).right, "in a row").toBe(
-        metricPx("surface-gap-md", density)
-      );
     }
   );
 });

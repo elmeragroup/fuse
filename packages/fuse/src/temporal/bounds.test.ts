@@ -4,8 +4,7 @@ import { getOrThrow } from "@elmeragroup/color/result";
 
 /**
  * Unit under test: `checkBounds`. Oracle: React Aria's `value.compare(bound)` from
- * `@internationalized/date`, as the parity harness pins it
- * (`src/internal/date-tier-parity.browser.test.tsx`, bound semantics) and as its source reads:
+ * `@internationalized/date`, as its source reads:
  * a plain value reads the bound's own wall clock, a zoned value compares instants with a plain
  * bound read in the value's zone. Every value names its zone, so the results hold in each process
  * zone this file runs in.

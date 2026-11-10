@@ -18,7 +18,7 @@ import { Context, Effect } from "effect";
 import type { PluginError } from "./errors.ts";
 
 /** A write, or writes that must run together, and the line Plan shows for it. */
-export type Operation = {
+type Operation = {
   /** The node the operation touches, such as `Button / variant=default, size=sm`. */
   readonly label: string;
   /** What changes, such as `paddingLeft → control-px-button-sm`. */
@@ -32,7 +32,7 @@ export type Operation = {
  * plan in a run shares one registry, including the plans that new nodes make when their
  * operations run.
  */
-export type Requirements = {
+type Requirements = {
   readonly byKey: Map<string, Effect.Effect<void, PluginError>>;
   /** True once the run has met them. A requirement after that is one the pass missed. */
   met: boolean;
@@ -93,7 +93,7 @@ export type Target<Node> = {
 };
 
 /** A planning pass that has run to the end, and what its planner returned. */
-export type PlannedRun<Result> = {
+type PlannedRun<Result> = {
   readonly plan: PlanRecorder;
   readonly result: Result;
 };

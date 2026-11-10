@@ -1,9 +1,3 @@
-/**
- * Shared fixtures for the SkeletonReveal browser suites: an invoice card the reveal draws its
- * skeleton from, and readers for the reveal's panes, its height ease and the page's scroll lock.
- * No shipped module imports it, so it lives with the test tooling.
- */
-import { use } from "react";
 import type { ReactElement } from "react";
 
 import { afterEach, beforeEach, expect } from "vitest";
@@ -44,7 +38,7 @@ export function InvoiceCard({ invoice }: { invoice: Invoice }): ReactElement {
 }
 
 /** How `renderInvoice` sets up its reveal. */
-export type InvoiceOptions = {
+type InvoiceOptions = {
   /** Called when the reveal reports content in. */
   readonly onReveal?: () => void;
   /** Wraps the reveal, as a scaled ancestor does. */
@@ -105,23 +99,6 @@ export function querySlot(name: string): Element | null {
 }
 
 /**
- * DOM audit: the pane on screen is the one of a slot that is not leaving, which the swap marks
- * `data-exiting`.
- *
- * @param name - The pane's data-slot.
- * @param within - The root to look in; the document unless given.
- * @returns The current pane.
- * @throws Error when every pane of that slot is leaving.
- */
-export function currentPane(name: string, within: ParentNode = document): HTMLElement {
-  const pane = [...within.querySelectorAll<HTMLElement>(`:scope > [data-slot="${name}"]`)].find(
-    (element) => !element.hasAttribute("data-exiting")
-  );
-  if (pane === undefined) throw new Error(`expected a current ${name}`);
-  return pane;
-}
-
-/**
  * The root's own height animation, if one runs.
  *
  * @param root - The reveal's root.
@@ -135,18 +112,6 @@ export function heightAnimation(root: HTMLElement): Animation | undefined {
 }
 
 /**
- * The heights an animation's keyframes run through, in pixels.
- *
- * @param animation - A height animation.
- * @returns Each keyframe's height.
- */
-export function keyframeHeights(animation: Animation): number[] {
-  const effect = animation.effect;
-  if (!(effect instanceof KeyframeEffect)) throw new Error("expected a keyframe effect");
-  return effect.getKeyframes().map((frame) => Number.parseFloat(String(frame.height)));
-}
-
-/**
  * Every Web Animation the reveal started under `root`; the bones' CSS pulse is not one.
  *
  * @param root - Where to look, its subtree included.
@@ -154,39 +119,6 @@ export function keyframeHeights(animation: Animation): number[] {
  */
 export function scriptAnimations(root: Element): Animation[] {
   return root.getAnimations({ subtree: true }).filter((animation) => !(animation instanceof CSSAnimation));
-}
-
-/**
- * The page's scroll state, as a scroll lock would change it: html and body inline styles and
- * overflow.
- *
- * @returns The state as one comparable string.
- */
-export function pageScrollState(): string {
-  const { documentElement: html, body } = document;
-  return [
-    html.getAttribute("style"),
-    body.getAttribute("style"),
-    getComputedStyle(html).overflowY,
-    getComputedStyle(body).overflowY,
-  ].join("|");
-}
-
-/**
- * A sibling that suspends on a promise the test resolves, as a lazy part of the page would.
- *
- * @returns The suspending component, and `release` to resolve its promise.
- */
-export function createSuspender() {
-  let release: () => void = () => undefined;
-  const pending = new Promise<void>((resolve) => {
-    release = resolve;
-  });
-  function Suspender({ suspend }: { suspend: boolean }) {
-    if (suspend) use(pending);
-    return null;
-  }
-  return { Suspender, release: () => release() };
 }
 
 /**

@@ -125,8 +125,7 @@ minimumReleaseAgeExclude:
   - "@elmeragroup/internal@0.2.0-canary.19"
   # tsrs 0.21 (TypeScript 7.1 beta) is the version this internal canary depends on. The frozen
   # install checks every lockfile entry, including the optional platform binaries. Drop these
-  # entries, and their temporary allowance in test/internal-package.test.mjs, once the versions
-  # age past the guard on 2026-11-06T20:26Z.
+  # entries once the versions age past the guard on 2026-11-06T20:26Z.
   - tsrs@0.21.0-ts7.1.0-beta
   - "@tsrs/darwin-arm64@0.21.0-ts7.1.0-beta"
   - "@tsrs/darwin-x64@0.21.0-ts7.1.0-beta"

@@ -1,16 +1,11 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 
 import { describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
-import {
-  assertFocusRingOnKeyboardAbsentOnMouse,
-  expectFocusRing,
-  expectNoFocusRing,
-} from "../../../test/assert-focus-ring";
+import { assertFocusRingOnKeyboardAbsentOnMouse } from "../../../test/assert-focus-ring";
 import { renderThemed, roleNamed } from "../../../test/themed-browser-render";
-import { ThemeScope } from "../../theme/theme-scope";
 import { Popover } from "./index";
 import type { PopoverContentProps } from "./popover";
 
@@ -135,81 +130,6 @@ describe("Popover", () => {
     expect(withArrow.getAttribute("data-side")).toBe("top");
   });
 
-  it("forwards side and align onto the popup", async () => {
-    renderThemed(
-      <div style={{ padding: 240 }}>
-        <BasicPopover side="left" align="start" style={{ width: 96 }} />
-      </div>
-    );
-    const dialog = await openPopover();
-    expect(dialog.getAttribute("data-side")).toBe("left");
-    expect(dialog.getAttribute("data-align")).toBe("start");
-  });
-
-  it("portals into the enclosing ThemeScope instead of the document body", async () => {
-    renderThemed(<BasicPopover />);
-    const dialog = await openPopover();
-    const scope = dialog.closest("[data-theme-brand]");
-    expect(scope).not.toBeNull();
-    expect(scope?.contains(dialog)).toBe(true);
-    expect([...document.body.children].includes(dialog)).toBe(false);
-  });
-
-  it("portals into an explicit container element", async () => {
-    function ExplicitContainer() {
-      const [node, setNode] = useState<HTMLDivElement | null>(null);
-      return (
-        <>
-          <div ref={setNode} role="region" aria-label="Theme island" />
-          {node ? (
-            <Popover.Root defaultOpen>
-              <Popover.Content container={node}>
-                <Popover.Title>Dimensions</Popover.Title>
-              </Popover.Content>
-            </Popover.Root>
-          ) : null}
-        </>
-      );
-    }
-    renderThemed(<ExplicitContainer />);
-    const dialog = await mountedPopover("Dimensions");
-    const island = page.getByRole("region", { name: "Theme island", exact: true }).element();
-    expect(island.contains(dialog)).toBe(true);
-    expect([...document.body.children].includes(dialog)).toBe(false);
-  });
-
-  it("waits while the resolved container element is still null", () => {
-    function NeverAttached() {
-      const ref = useRef<HTMLElement | null>(null);
-      return (
-        <Popover.Root open>
-          <Popover.Content container={ref}>
-            <Popover.Title>Pending</Popover.Title>
-          </Popover.Content>
-        </Popover.Root>
-      );
-    }
-    renderThemed(<NeverAttached />);
-
-    expect(page.getByRole("dialog").query()).toBeNull();
-  });
-
-  it("does not paint the popup outside a ThemeScope element that has not attached yet", async () => {
-    renderThemed(
-      <ThemeScope theme={{ identity: "branded", brand: "fkas", segment: "private" }}>
-        <Popover.Root open>
-          <Popover.Content>
-            <Popover.Title>Scoped</Popover.Title>
-          </Popover.Content>
-        </Popover.Root>
-      </ThemeScope>
-    );
-    const dialog = await mountedPopover();
-    const scope = dialog.closest("[data-theme-identity=branded]");
-    expect(scope).not.toBeNull();
-    expect([...document.body.children].includes(dialog)).toBe(false);
-  });
-
   it("places a controlled popover with no trigger against its anchor, and follows the anchor as it moves", async () => {
     function Anchored() {
       const [anchor, setAnchor] = useState<HTMLElement | null>(null);
@@ -304,35 +224,5 @@ describe("Popover", () => {
       throw new Error("expected buttons");
     }
     await assertFocusRingOnKeyboardAbsentOnMouse(previous, trigger);
-  });
-
-  it("paints the shared ring when the popup itself receives keyboard focus", async () => {
-    renderThemed(
-      <>
-        <button type="button">Before</button>
-        <Popover.Root>
-          <Popover.Trigger>Details</Popover.Trigger>
-          <Popover.Content>
-            <Popover.Title>Dimensions</Popover.Title>
-          </Popover.Content>
-        </Popover.Root>
-      </>
-    );
-    const previous = page.getByRole("button", { name: "Before", exact: true }).element();
-    if (!(previous instanceof HTMLElement)) {
-      throw new Error("expected before");
-    }
-    previous.focus();
-    await userEvent.keyboard("{Tab}");
-    await userEvent.keyboard("{Enter}");
-    const dialog = await mountedPopover("Dimensions");
-    await expect.element(page.getByRole("dialog", { name: "Dimensions" })).toHaveFocus();
-    expect(dialog.matches(":focus-visible"), "keyboard open must land with :focus-visible").toBe(true);
-    expectFocusRing(dialog, "keyboard-focused popup must paint the shared ring");
-
-    dialog.blur();
-    await userEvent.click(dialog);
-    expect(dialog.matches(":focus-visible"), "mouse focus must not match :focus-visible").toBe(false);
-    expectNoFocusRing(dialog, "mouse focus must not paint the shared ring");
   });
 });

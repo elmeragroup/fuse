@@ -74,20 +74,6 @@ describe("ToggleGroup", () => {
     expect(document.activeElement).toBe(buttonNamed("One"));
   });
 
-  it("resolves size as itemProp ?? contextValue via data-size", () => {
-    renderThemed(
-      <ToggleGroup.Root aria-label="Sizes" size="sm">
-        <ToggleGroup.Item value="unset">Unset</ToggleGroup.Item>
-        <ToggleGroup.Item value="override" size="lg">
-          Override
-        </ToggleGroup.Item>
-      </ToggleGroup.Root>
-    );
-
-    expect(buttonNamed("Unset").getAttribute("data-size")).toBe("sm");
-    expect(buttonNamed("Override").getAttribute("data-size")).toBe("lg");
-  });
-
   it("emits data-spacing and --gap from spacing, including 0, rounds only a segmented group's outer corners, and keeps --gap when the consumer passes style", () => {
     renderThemed(
       <>

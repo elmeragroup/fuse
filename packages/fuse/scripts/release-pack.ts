@@ -14,7 +14,7 @@ const packageRoot = packageRootFromScript(import.meta.url);
  * Gates rerun against the exact tarball before publication. The merge suite supplies
  * the theme contract; `test:packed-consumer` includes the packed Next App Router and Vite
  * consumer fixtures. Every gate also runs in the merge `ci:checks` graph, which
- * `test/release-workflow.test.mjs` keeps pinned.
+ * `test/merge-task-graph.test.mjs` checks.
  */
 export const PUBLISH_GATES = ["package:check", "test:packed-consumer"] as const;
 

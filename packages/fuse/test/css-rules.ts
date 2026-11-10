@@ -10,13 +10,13 @@ export type CssDeclaration = {
 };
 
 /** A style rule, which is a selector with the declarations of its block. */
-export type CssStyleRule = {
+type CssStyleRule = {
   selector: string;
   declarations: CssDeclaration[];
 };
 
 /** A block of declarations with its prelude, which is a selector or an at-rule such as `@theme inline`. */
-export type CssBlock = {
+type CssBlock = {
   prelude: string;
   declarations: CssDeclaration[];
 };
@@ -46,7 +46,7 @@ function declarationsIn(statements: readonly string[]): CssDeclaration[] {
 }
 
 /** A block with the preludes of the blocks around it, outermost first. */
-export type ScopedBlock = {
+type ScopedBlock = {
   block: CssBlock;
   ancestors: readonly string[];
 };
@@ -110,7 +110,7 @@ export function parseScopedBlocks(css: string): ScopedBlock[] {
 }
 
 /** A declaration with the preludes of every block around it, outermost first. */
-export type CssScopedDeclaration = CssDeclaration & {
+type CssScopedDeclaration = CssDeclaration & {
   scope: readonly string[];
 };
 

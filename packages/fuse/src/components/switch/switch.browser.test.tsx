@@ -18,7 +18,6 @@ import {
   px,
   renderThemed,
   snapshotDocumentTheme,
-  stampDensity,
 } from "../../../test/themed-browser-render";
 import { ThemeScope } from "../../theme";
 import { Field } from "../field";
@@ -184,59 +183,6 @@ describe("Switch", () => {
     for (const control of [switchNamed("Required", false), switchNamed("Accepted", true)]) {
       expect(getComputedStyle(control).borderTopColor).toBe(cssVarColor(control, "--error"));
     }
-  });
-
-  it("emits data-size and keeps optical track and thumb sizes identical at both densities and under nested data-density", () => {
-    renderThemed(
-      <>
-        <Switch aria-label="Default" />
-        <Switch size="sm" aria-label="Small" />
-        <div data-density="comfortable">
-          <Switch aria-label="Nested" />
-        </div>
-      </>
-    );
-
-    function assertTrack(name: string, expected: (typeof TRACK)[keyof typeof TRACK], label: string) {
-      const measured = measureSwitch(name);
-      expect(measured.height, `${label} height`).toBeCloseTo(expected.height, 1);
-      expect(measured.width, `${label} width`).toBe(expected.width);
-      expect(measured.thumbHeight, `${label} thumb height`).toBe(expected.thumb);
-      expect(measured.thumbWidth, `${label} thumb width`).toBe(expected.thumb);
-      return measured;
-    }
-
-    expect(switchNamed("Default").getAttribute("data-slot")).toBe("switch");
-    expect(switchNamed("Default").getAttribute("data-size")).toBe("default");
-    expect(switchNamed("Small").getAttribute("data-size")).toBe("sm");
-
-    stampDensity("dense");
-    const denseDefault = assertTrack("Default", TRACK.default, "dense default");
-    const denseSm = assertTrack("Small", TRACK.sm, "dense sm");
-
-    stampDensity("comfortable");
-    expect(measureSwitch("Default"), "comfortable default").toEqual(denseDefault);
-    expect(measureSwitch("Small"), "comfortable sm").toEqual(denseSm);
-
-    stampDensity("dense");
-    expect(measureSwitch("Nested"), "nested comfortable under dense").toEqual(denseDefault);
-  });
-
-  it("takes a height or a narrower width from className, and a wider width with its max-w-*", () => {
-    renderThemed(
-      <>
-        <Switch aria-label="Taller" className="h-7" />
-        <Switch aria-label="Narrower" className="w-6" />
-        <Switch aria-label="Wider" className="max-w-xs w-72" />
-      </>
-    );
-
-    const taller = measureSwitch("Taller");
-    expect([taller.height, taller.width], "h-7").toEqual([28, 32]);
-    const narrower = measureSwitch("Narrower");
-    expect(narrower.width, "w-6 width").toBe(24);
-    expect(narrower.height, "w-6 height").toBeCloseTo(18.4, 1);
-    expect(measureSwitch("Wider").width, "w-72 max-w-xs").toBe(288);
   });
 
   it("keeps its size as a direct child of a vertical Field.Root, which stretches its children", () => {

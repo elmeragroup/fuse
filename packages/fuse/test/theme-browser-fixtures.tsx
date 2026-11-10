@@ -1,4 +1,4 @@
-import { expect, vi } from "vitest";
+import { expect } from "vitest";
 
 import type { ColorScheme, ColorSchemeBootstrapManifest } from "../src/theme/color-scheme";
 import type { ThemeInput } from "../src/theme/theme-input";
@@ -86,60 +86,4 @@ export function emitStorageChange(key: string, value: string) {
   window.dispatchEvent(
     new StorageEvent("storage", { key, oldValue, newValue: value, storageArea: window.localStorage })
   );
-}
-
-export function stubPrefersColorScheme(prefersDark: boolean) {
-  let matches = prefersDark;
-  const listeners = new Set<(event: MediaQueryListEvent) => void>();
-  // SAFETY: test double implements the MediaQueryList surface the provider listens to.
-  const media = {
-    get matches() {
-      return matches;
-    },
-    media: "(prefers-color-scheme: dark)",
-    onchange: null,
-    addEventListener(type: string, listener: EventListenerOrEventListenerObject) {
-      if (type !== "change") {
-        return;
-      }
-      listeners.add((event) => {
-        if ("handleEvent" in listener) {
-          listener.handleEvent(event);
-          return;
-        }
-        listener(event);
-      });
-    },
-    removeEventListener() {
-      return undefined;
-    },
-    addListener() {
-      return undefined;
-    },
-    removeListener() {
-      return undefined;
-    },
-    dispatchEvent() {
-      return true;
-    },
-  } as MediaQueryList;
-  const nativeMatchMedia = window.matchMedia.bind(window);
-
-  vi.spyOn(window, "matchMedia").mockImplementation((query) => {
-    if (query === "(prefers-color-scheme: dark)") {
-      return media;
-    }
-    return nativeMatchMedia(query);
-  });
-
-  return {
-    setPrefersDark(next: boolean) {
-      matches = next;
-      // SAFETY: listeners only read matches/media from the change payload.
-      const event = { matches: next, media: media.media } as MediaQueryListEvent;
-      for (const listener of listeners) {
-        listener(event);
-      }
-    },
-  };
 }

@@ -15,7 +15,7 @@ export type RingLayer = { readonly spread: string; readonly color: string; reado
 const INVALID_RING_COLOR = "color-mix(in oklab, var(--error) 20%, transparent)";
 
 /** Split a computed `box-shadow` into layers at the commas outside colour functions. */
-export function shadowLayers(boxShadow: string): string[] {
+function shadowLayers(boxShadow: string): string[] {
   if (boxShadow === "none") {
     return [];
   }
@@ -37,7 +37,7 @@ export function shadowLayers(boxShadow: string): string[] {
 }
 
 /** One box-shadow layer's lengths in px. */
-export type ShadowLengths = {
+type ShadowLengths = {
   readonly x: number;
   readonly y: number;
   readonly blur: number;
@@ -48,7 +48,7 @@ export type ShadowLengths = {
  * The lengths of one computed box-shadow layer. Chromium serializes a layer as its colour,
  * then x, y, blur and spread, so a layer without exactly those four lengths has none.
  */
-export function shadowLayerLengths(layer: string): ShadowLengths | undefined {
+function shadowLayerLengths(layer: string): ShadowLengths | undefined {
   const lengths = layer.match(/-?[\d.]+px/gu)?.map(Number.parseFloat) ?? [];
   const [x, y, blur, spread] = lengths;
   if (
@@ -153,16 +153,4 @@ export function expectInvalidFocusRing(label: string, element: HTMLElement): voi
     { spread: "1px", color: error, inset: false },
     { spread: "4px", color: computedColor(host, INVALID_RING_COLOR), inset: false },
   ]);
-}
-
-/**
- * Assert that an element paints no ring at all, as an embedded control whose group owns
- * the invalid ring must.
- *
- * @param label - The control's name in failure messages.
- * @param element - The embedded control.
- */
-export function expectNoRing(label: string, element: HTMLElement): void {
-  settleTransitions(element);
-  expect(ringLayers(element), `${label} ring`).toEqual([]);
 }

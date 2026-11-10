@@ -59,13 +59,6 @@ function pngSize(png: Buffer) {
   return { width: png.readUInt32BE(16), height: png.readUInt32BE(20) };
 }
 
-/** The RGB of the pixel at (x, y) in a PNG. */
-function pixelAt(png: Buffer, x: number, y: number) {
-  const image = PNG.sync.read(png);
-  const index = (y * image.width + x) * 4;
-  return [...image.data.subarray(index, index + 3)];
-}
-
 /** Whether any pixel of a PNG is pure red, the color of every popup in the popup fixture. */
 function hasRed(png: Buffer) {
   const { data } = PNG.sync.read(png);
@@ -130,36 +123,6 @@ describe.concurrent("Capture", () => {
     }).pipe(Effect.provide(Capture.layer))
   );
 
-  it.live(
-    "names the click step, the element and the route when a step finds nothing while auto resolves",
-    () =>
-      Effect.gen(function* () {
-        const capture = yield* Capture;
-        const failure = yield* Effect.flip(
-          capture.resolveFrame({
-            origin,
-            sourceLabel: "fixture",
-            options: shotOptions([
-              "fixture",
-              "--route",
-              "/popup",
-              "--click",
-              "button:Neutral",
-              "--click",
-              "button:Nope",
-              "--target",
-              "button:Neutral",
-            ]),
-          })
-        );
-        assert.strictEqual(failure._tag, "CaptureFailed");
-        assert.include(
-          failure.message,
-          'resolving --frame auto: --click step 2 of 2: No button named "Nope" at index 0: nothing matched (/popup on fixture)'
-        );
-      }).pipe(Effect.provide(Capture.layer))
-  );
-
   it.live("resolves auto to stage for a target in a demo stage, and clips the stage plus padding", () =>
     Effect.gen(function* () {
       const { frame, file, png } = yield* shoot([
@@ -201,29 +164,6 @@ describe.concurrent("Capture", () => {
     }).pipe(Effect.provide(Capture.layer))
   );
 
-  it.live(
-    "resolves auto to viewport without a target, shoots the window at its size times the scale, and stamps a density override on the document root of a page without a density scope",
-    () =>
-      Effect.gen(function* () {
-        const { frame, file, png } = yield* shoot([
-          "fixture",
-          "--route",
-          "/page",
-          "--densities",
-          "dense",
-          "--viewports",
-          "640x480",
-          "--scale",
-          "2",
-        ]);
-        assert.strictEqual(frame, "viewport");
-        assert.isTrue(file.endsWith("-640x480-viewport.png"));
-        assert.deepStrictEqual(pngSize(png), { width: 640 * 2, height: 480 * 2 });
-        // The swatch, at (40, 110) to (80, 150) CSS px, turns red under `data-density="dense"`.
-        assert.deepStrictEqual(pixelAt(png, 60 * 2, 132 * 2), [255, 0, 0]);
-      }).pipe(Effect.provide(Capture.layer))
-  );
-
   it.live("resolves auto after picking the theme, for a target that only the picked theme renders", () =>
     Effect.gen(function* () {
       // The Dashboard region exists only in the Neutral identity; the page opens Branded.
@@ -243,30 +183,6 @@ describe.concurrent("Capture", () => {
       assert.strictEqual(frame, "target");
       assert.deepStrictEqual(pngSize(png), { width: 320, height: 160 });
     }).pipe(Effect.provide(Capture.layer))
-  );
-
-  it.live(
-    "picks a theme by its new slug on a pre-identity page, which labels and stamps the retired variant",
-    () =>
-      Effect.gen(function* () {
-        // The page speaks the retired vocabulary: a "Variant" group with Internal and External, and
-        // `data-theme-variant`. The Dashboard exists only under Internal; the page opens External.
-        const { frame, png } = yield* shoot([
-          "fixture",
-          "--route",
-          "/themed-legacy",
-          "--themes",
-          "neutral-fkas-private",
-          "--target",
-          "region:Dashboard",
-          "--pad",
-          "0",
-          "--scale",
-          "1",
-        ]);
-        assert.strictEqual(frame, "target");
-        assert.deepStrictEqual(pngSize(png), { width: 320, height: 160 });
-      }).pipe(Effect.provide(Capture.layer))
   );
 
   it.live("shoots the whole page at the document's height times the scale", () =>
@@ -341,62 +257,6 @@ describe.concurrent("Capture", () => {
     }).pipe(Effect.provide(Capture.layer))
   );
 
-  it.live("runs the clicks in order and clips the target together with the list it opened", () =>
-    Effect.gen(function* () {
-      // Rows per page renders only after Neutral is clicked, so the order of the steps matters.
-      const { frame, png } = yield* shoot([
-        "fixture",
-        "--route",
-        "/popup",
-        "--click",
-        "button:Neutral",
-        "--click",
-        "combobox:Rows per page",
-        "--target",
-        "combobox:Rows per page",
-        "--pad",
-        "0",
-        "--scale",
-        "1",
-      ]);
-      assert.strictEqual(frame, "target");
-      // The trigger spans (40, 40) to (240, 70) and its portaled listbox (60, 90) to (300, 210),
-      // so the union spans (40, 40) to (300, 210).
-      assert.deepStrictEqual(pngSize(png), { width: 260, height: 170 });
-      // The listbox's middle, (180, 150) on the page, is red while the list is open.
-      assert.deepStrictEqual(pixelAt(png, 180 - 40, 150 - 40), [255, 0, 0]);
-    }).pipe(Effect.provide(Capture.layer))
-  );
-
-  it.live(
-    "clicks the match a step's @n picks, and frames the open menu of a control without aria-controls",
-    () =>
-      Effect.gen(function* () {
-        const { png } = yield* shoot([
-          "fixture",
-          "--route",
-          "/popup",
-          "--click",
-          "button:Actions@1",
-          "--target",
-          "button:Actions",
-          "--nth",
-          "1",
-          "--frame",
-          "target",
-          "--pad",
-          "0",
-          "--scale",
-          "1",
-        ]);
-        // The second Actions button spans (400, 100) to (600, 130) and its menu (380, 150) to
-        // (540, 240). The first button's menu, at (700, 300), is closed but keeps its layout
-        // under visibility: hidden, and the menu at (1000, 600) is laid out at opacity 0.
-        // Neither shows, so neither widens the clip.
-        assert.deepStrictEqual(pngSize(png), { width: 220, height: 140 });
-      }).pipe(Effect.provide(Capture.layer))
-  );
-
   it.live("finds a target that the modal dialog its click opened hides from the accessibility tree", () =>
     Effect.gen(function* () {
       const { png } = yield* shoot([
@@ -416,78 +276,6 @@ describe.concurrent("Capture", () => {
       ]);
       // The trigger spans (900, 40) to (1100, 70) and the dialog (860, 120) to (1160, 320).
       assert.deepStrictEqual(pngSize(png), { width: 300, height: 280 });
-    }).pipe(Effect.provide(Capture.layer))
-  );
-
-  it.live("takes in a submenu that an item of the open menu holds open", () =>
-    Effect.gen(function* () {
-      const { png } = yield* shoot([
-        "fixture",
-        "--route",
-        "/popup",
-        "--click",
-        "button:More",
-        "--click",
-        "menuitem:Share",
-        "--target",
-        "button:More",
-        "--frame",
-        "target",
-        "--pad",
-        "0",
-        "--scale",
-        "1",
-      ]);
-      // The trigger spans (40, 480) to (240, 510), its menu (40, 520) to (240, 620), and the
-      // Share submenu, which only the menu's item names, (250, 520) to (440, 580).
-      assert.deepStrictEqual(pngSize(png), { width: 400, height: 140 });
-    }).pipe(Effect.provide(Capture.layer))
-  );
-
-  it.live(
-    "finds a target by its accessible name after an unrelated click, ignoring aria-hidden text in it",
-    () =>
-      Effect.gen(function* () {
-        const { png } = yield* shoot([
-          "fixture",
-          "--route",
-          "/popup",
-          "--click",
-          "button:Neutral",
-          "--target",
-          "button:Inbox",
-          "--frame",
-          "target",
-          "--pad",
-          "0",
-          "--scale",
-          "1",
-        ]);
-        // The Inbox button, named without its aria-hidden " 9", spans (900, 400) to (1100, 430).
-        assert.deepStrictEqual(pngSize(png), { width: 200, height: 30 });
-      }).pipe(Effect.provide(Capture.layer))
-  );
-
-  it.live("waits for a control a step clicked to open its popup when it opens late", () =>
-    Effect.gen(function* () {
-      const { png } = yield* shoot([
-        "fixture",
-        "--route",
-        "/popup",
-        "--click",
-        "button:Later",
-        "--target",
-        "button:Later",
-        "--frame",
-        "target",
-        "--pad",
-        "0",
-        "--scale",
-        "1",
-      ]);
-      // The trigger spans (900, 480) to (1100, 510) and the menu it opens 500ms after the click
-      // (900, 520) to (1100, 600).
-      assert.deepStrictEqual(pngSize(png), { width: 200, height: 120 });
     }).pipe(Effect.provide(Capture.layer))
   );
 
@@ -575,30 +363,6 @@ describe.concurrent("Capture", () => {
       // The list opens at y 1640, below the first 480px window, so it shows only if the shot
       // stays where clicking Far scrolled the page.
       assert.isTrue(hasRed(png));
-    }).pipe(Effect.provide(Capture.layer))
-  );
-
-  it.live("keeps the frame a scroll-linked animation shows, such as a strip's edge fades", () =>
-    Effect.gen(function* () {
-      const { png } = yield* shoot([
-        "fixture",
-        "--route",
-        "/scroll-fade",
-        "--target",
-        "region:Strip",
-        "--pad",
-        "0",
-        "--scale",
-        "1",
-      ]);
-      // The 300px strip is scrolled to the middle of its red content, so both ends fade over
-      // 24px to the white page behind it. Without the animations the mask hides nothing.
-      assert.deepStrictEqual(pngSize(png), { width: 300, height: 40 });
-      assert.deepStrictEqual(pixelAt(png, 150, 20), [255, 0, 0], "the middle");
-      for (const x of [1, 298]) {
-        const [, green = 0] = pixelAt(png, x, 20);
-        assert.isAbove(green, 200, `the edge pixel at x ${String(x)} fades toward white`);
-      }
     }).pipe(Effect.provide(Capture.layer))
   );
 

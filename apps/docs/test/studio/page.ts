@@ -1,11 +1,10 @@
 import type { Browser, BrowserContext, Locator, Page } from "playwright";
-import { expect } from "vitest";
 
 import { readThemeAttributes } from "../demo-page";
 import { docsBaseUrl } from "../docs-server";
 import { collectPageErrors, settleFrames } from "../landing-page";
 
-export const STUDIO_DESKTOP = { width: 1440, height: 900 } as const;
+const STUDIO_DESKTOP = { width: 1440, height: 900 } as const;
 
 /** How long a studio page waits for an element to become ready, and for the seed to load. */
 const READY_TIMEOUT = 5000;
@@ -20,22 +19,10 @@ export const ARTBOARDS = [
 ] as const;
 
 /** A studio page to open: its path, and the artboard that shows once the first fit has placed it. */
-export type StudioRoute = { path: string; artboard: string };
+type StudioRoute = { path: string; artboard: string };
 
 /** The Overview, at `/studio`. */
-export const OVERVIEW: StudioRoute = { path: "/studio", artboard: ARTBOARDS[0] };
-
-/** The Density page, ready once its dense twin shows. */
-export const DENSITY_PAGE: StudioRoute = { path: "/studio/density", artboard: "Twin · Dense" };
-
-/**
- * The Shape page, framed once its first rungs board shows. Its rung artboards pin an identity in
- * their spec; its Shells board does not.
- */
-export const CORNERS_PAGE: StudioRoute = { path: "/studio/shape", artboard: "Radius rungs · Neutral" };
-
-/** The Color page, ready once its light role pairs show. */
-export const COLOR_PAGE: StudioRoute = { path: "/studio/color", artboard: "Role pairs · Light" };
+const OVERVIEW: StudioRoute = { path: "/studio", artboard: ARTBOARDS[0] };
 
 /** How a studio suite sets up the browser context it opens the studio in. */
 export type StudioContextOptions = {
@@ -59,7 +46,7 @@ export type StudioPage = {
 };
 
 /** A fresh context for the studio, desktop-sized, light and with reduced motion by default. */
-export async function newStudioContext(
+async function newStudioContext(
   browser: Browser,
   {
     viewport = STUDIO_DESKTOP,
@@ -81,7 +68,7 @@ export async function newStudioContext(
  * @param prepare - Runs before navigation, for routes and init scripts.
  * @param route - The page to open, the Overview by default.
  */
-export async function openStudioIn(
+async function openStudioIn(
   context: BrowserContext,
   hash = "",
   prepare?: (page: Page) => Promise<void>,
@@ -135,19 +122,6 @@ export function layer(page: Page, name: string): Locator {
   return layers(page).getByRole("button", { name, exact: true });
 }
 
-/** The floating theme toolbar over the selected artboard. */
-export function artboardBar(page: Page): Locator {
-  return canvas(page).getByRole("toolbar", { name: "Artboard theme", exact: true });
-}
-
-/** Selects the artboard `name` from Layers and waits for its bar. */
-export async function selectBoard(page: Page, name: string): Promise<Locator> {
-  await layer(page, name).click();
-  const bar = artboardBar(page);
-  await bar.waitFor({ state: "visible" });
-  return bar;
-}
-
 /**
  * Picks `brand` in the Brand Select inside `within`, the bar or the inspector, and waits for its
  * trigger to show it.
@@ -164,63 +138,6 @@ export function toggle(within: Locator, group: string, option: string): Locator 
   return within
     .getByRole("group", { name: group, exact: true })
     .getByRole("button", { name: option, exact: true });
-}
-
-/**
- * A token's row in a token editor.
- *
- * @param within - Where the row is: the inspector by default, or a theme toolbar menu.
- */
-export function tokenRow(page: Page, name: string, within: Locator = inspector(page)): Locator {
-  return within.getByRole("group", { name: `--${name}`, exact: true });
-}
-
-/**
- * Waits until a knob's control enables: it stays disabled and empty until the studio seed loads.
- * `isDisabled()` answers at once, so the poll carries the page's ready timeout itself.
- */
-export async function waitForSeed(control: Locator): Promise<void> {
-  await expect.poll(() => control.isDisabled(), { timeout: READY_TIMEOUT }).toBe(false);
-}
-
-/** Opens the token editor's section titled `title`, if it is closed. */
-export async function openTokenSection(page: Page, title: string): Promise<void> {
-  const trigger = inspector(page).getByRole("button", { name: title, exact: false }).first();
-  if ((await trigger.getAttribute("aria-expanded")) !== "true") {
-    await trigger.click();
-  }
-}
-
-/**
- * Types `value` into a color token's knob, in the edited scheme, and closes its popover.
- *
- * @param within - Where the token's row is: the inspector by default, or a theme toolbar menu.
- */
-export async function setTokenColor(
-  page: Page,
-  name: string,
-  value: string,
-  within: Locator = inspector(page)
-): Promise<void> {
-  await tokenRow(page, name, within)
-    .getByRole("button", { name: `Edit --${name}`, exact: true })
-    .click();
-  const field = page.getByRole("textbox", { name: "Color", exact: true });
-  await field.fill(value);
-  await page.keyboard.press("Escape");
-  await field.waitFor({ state: "hidden" });
-}
-
-/** Types a metric's px for one density into its NumberField, and commits it by leaving the field. */
-export async function setMetric(page: Page, name: string, density: string, px: number): Promise<void> {
-  const field = inspector(page).getByRole("textbox", { name: `--${name} ${density} in px`, exact: true });
-  await field.fill(String(px));
-  await field.press("Tab");
-}
-
-/** A studio share hash for `json`, the version-1 share text written out by hand. */
-export function hashOf(json: string): string {
-  return `#1.${Buffer.from(json, "utf8").toString("base64url")}`;
 }
 
 /** A box on the page, in CSS px from the viewport's top-left corner. */
@@ -268,29 +185,6 @@ export async function background(locator: Locator): Promise<string> {
 export async function themeOf(page: Page, name: string): Promise<string> {
   const { identity, brand, segment } = await readThemeAttributes(artboard(page, name));
   return [identity, brand, segment].join("-");
-}
-
-/** A custom property as the artboard's scope element computes it. */
-export async function tokenOn(page: Page, name: string, property: `--${string}`): Promise<string> {
-  return artboard(page, name).evaluate(
-    (element, token) => getComputedStyle(element).getPropertyValue(token).trim(),
-    property
-  );
-}
-
-/**
- * Counts `getBoundingClientRect` calls on HTML elements from now on. The wrapper sits on
- * `HTMLElement.prototype` and calls through to `Element.prototype`'s own method.
- */
-export async function countLayoutReads(page: Page): Promise<() => Promise<number>> {
-  await page.evaluate(() => {
-    sessionStorage.setItem("layoutReads", "0");
-    HTMLElement.prototype.getBoundingClientRect = function getBoundingClientRect(this: HTMLElement) {
-      sessionStorage.setItem("layoutReads", String(Number(sessionStorage.getItem("layoutReads")) + 1));
-      return Element.prototype.getBoundingClientRect.call(this);
-    };
-  });
-  return async () => page.evaluate(() => Number(sessionStorage.getItem("layoutReads")));
 }
 
 /** Waits `count` animation frames. */

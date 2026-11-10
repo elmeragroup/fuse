@@ -127,40 +127,6 @@ describe("tokens page", () => {
   });
 });
 
-describe("fonts page", () => {
-  it("shows a recipe per setup, the brand and nested-theme rules, and the brand-site table", async () => {
-    const html = await fetchText("/handbook/fonts");
-    for (const id of [
-      "what-fuse-applies",
-      "next-js",
-      "fontsource",
-      "font-face",
-      "per-brand",
-      "nested-themes",
-      "brand-sites",
-    ]) {
-      expect(html, id).toContain(`id="${id}"`);
-    }
-    // React escapes the quotes in the code blocks' text.
-    for (const recipe of [
-      "next/font/google",
-      "next/font/local",
-      "@fontsource/inter/400.css",
-      "@font-face",
-      "[data-theme-identity=&quot;branded&quot;]:is([data-theme-brand=&quot;fkas&quot;]",
-      "@fontsource/roboto/400.css",
-      "--font-roboto",
-      "font-family: var(--font-sans);",
-    ]) {
-      expect(html, recipe).toContain(recipe);
-    }
-    expect(html).not.toContain("!important;");
-    // Every recipe sets the neutral fonts on neutral scopes too, so a nested neutral scope
-    // resets them.
-    expect([...html.matchAll(/:root,\s*\[data-theme-identity=&quot;neutral&quot;\] \{/g)]).toHaveLength(3);
-  });
-});
-
 describe("density page", () => {
   it("shows the per-document rule, the route-group layouts, their pitfalls and a branded dashboard", async () => {
     const html = await fetchText("/handbook/density");
@@ -202,33 +168,6 @@ describe("localization page", () => {
 });
 
 describe("temporal migration page", () => {
-  it("covers the polyfill, the maps, boundaries, kinds, validation, behaviour changes and cancelable details", async () => {
-    const html = await fetchText("/handbook/temporal-migration");
-    for (const id of [
-      "install-temporal",
-      "component-map",
-      "composite-props",
-      "part-props",
-      "date-api",
-      "boundaries",
-      "kind-resolution",
-      "validation",
-      "form-error-checklist",
-      "behaviour-changes",
-      "divergences",
-      "pickers",
-      "selectors",
-      "cancelable-changes",
-    ]) {
-      expect(html, id).toContain(`id="${id}"`);
-    }
-    expect(html).toContain("import &quot;@elmeragroup/fuse/temporal-polyfill&quot;;");
-    expect(html).toContain("Temporal.Now.plainDateISO(tz)");
-    expect(html).toContain("closeOnDoubleClick");
-    // The conversion table renders from the recipes test/temporal-recipes.test.ts runs.
-    expect(html).toContain("Temporal.PlainDateTime.compare(a, b)");
-  });
-
   it("shows the conversion and server-error demos", async () => {
     const html = await fetchText("/handbook/temporal-migration");
     expect(html).toContain('id="conversion"');

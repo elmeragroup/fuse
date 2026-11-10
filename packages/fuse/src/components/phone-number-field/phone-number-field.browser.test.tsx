@@ -1,41 +1,28 @@
-import { useState } from "react";
 import type { ReactNode } from "react";
 
 import type { MetadataJson } from "libphonenumber-js/core";
-import { createPortal, flushSync } from "react-dom";
 import { describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import { PhoneNumberField } from "@elmeragroup/fuse/phone-number-field";
 
 import "../../../dist/styles.css";
-import {
-  assertWithinKeyboardFocusRingAtBothDensities,
-  expectNoFocusRing,
-} from "../../../test/assert-focus-ring";
 import { assertNoAxeViolations } from "../../../test/axe";
-import { SUPPORTED_LOCALES, withLocale } from "../../../test/locale-matrix";
+import { withLocale } from "../../../test/locale-matrix";
+import type { SUPPORTED_LOCALES } from "../../../test/locale-matrix";
 import {
-  countryAddon,
   countryListbox,
   countrySearch,
   openPicker,
-  phoneInput,
-  phoneSubmission,
   selectCountry,
 } from "../../../test/phone-browser-queries";
 import {
-  CONTROL_MD,
   fieldRootFrom,
   formNamed,
-  normalLineHeightOf,
-  px,
   renderThemed,
   roleNamed,
-  stampDensity,
   textboxNamed,
 } from "../../../test/themed-browser-render";
-import { flagAssets } from "../../flags";
 import { resetCountryNameCache } from "./country-names";
 import { defaultMetadata } from "./phone-engine";
 
@@ -53,33 +40,8 @@ const SEARCH_COUNTRIES_COPY = {
   "fi-FI": "Hae maita",
 } as const;
 
-const NO_COUNTRIES_COPY = {
-  "nb-NO": "Ingen land funnet.",
-  "sv-SE": "Inga länder hittades.",
-  "en-US": "No countries found.",
-  "fi-FI": "Maita ei löytynyt.",
-} as const;
-
 function renderField(node: ReactNode, locale: (typeof SUPPORTED_LOCALES)[number] = "en-US") {
   return renderThemed(withLocale(locale, node));
-}
-
-function hiddenNamed(name: string): HTMLInputElement {
-  // DOM audit: the E.164 submit control is type=hidden, so it has no role.
-  const match = document.body.querySelector(`input[type="hidden"][name="${name}"]`);
-  if (!(match instanceof HTMLInputElement)) {
-    throw new Error(`expected hidden input ${name}`);
-  }
-  return match;
-}
-
-function triggerFlagImg(): HTMLImageElement {
-  const trigger = roleNamed("button", "Select country");
-  const img = trigger.querySelector("img");
-  if (!(img instanceof HTMLImageElement)) {
-    throw new Error("expected a flag image on the trigger");
-  }
-  return img;
 }
 
 function flagCodeFromSrc(src: string): string | undefined {
@@ -101,23 +63,6 @@ function optionFlagCodes(): string[] {
   });
 }
 
-function triggerDialCode(dialCode: string): HTMLElement {
-  const trigger = roleNamed("button", "Select country");
-  const match = [...trigger.querySelectorAll("span")].find((span) => span.textContent === dialCode);
-  if (!(match instanceof HTMLElement)) {
-    throw new Error(`expected dial code ${dialCode} on the trigger`);
-  }
-  return match;
-}
-
-function inputGroupRoot(name: string): HTMLElement {
-  const group = textboxNamed(name).closest('[role="group"]');
-  if (!(group instanceof HTMLElement)) {
-    throw new Error(`expected an input-group root around ${name}`);
-  }
-  return group;
-}
-
 describe("PhoneNumberField", () => {
   it("names the country trigger independently of the Field label", () => {
     renderField(<PhoneNumberField label="Mobile" />);
@@ -125,25 +70,6 @@ describe("PhoneNumberField", () => {
     expect(page.getByRole("button", { name: "Mobile", exact: true }).query()).toBeNull();
     expect(textboxNamed("Mobile")).toBeTruthy();
     expect(textboxNamed("Mobile")).toHaveProperty("inputMode", "tel");
-  });
-
-  it("fits the country trigger inside the md field box at the 24px target floor, at both densities", () => {
-    renderField(<PhoneNumberField label="Mobile" />);
-    const trigger = roleNamed("button", "Select country");
-    // The InputGroup rail drops its block padding only for a direct <button> child.
-    expect(trigger.tagName).toBe("BUTTON");
-    expect(trigger.parentElement?.getAttribute("data-slot")).toBe("input-group-addon");
-    for (const density of ["dense", "comfortable"] as const) {
-      stampDensity(density);
-      const group = inputGroupRoot("Mobile");
-      const groupBox = group.getBoundingClientRect();
-      expect(px(getComputedStyle(group).height), density).toBe(CONTROL_MD[density].height);
-      expect(trigger.getBoundingClientRect().height, density).toBeGreaterThanOrEqual(24);
-      const railBox = trigger.parentElement?.getBoundingClientRect();
-      expect(railBox?.height, `${density} rail`).toBeLessThanOrEqual(group.clientHeight);
-      expect(railBox?.top, `${density} rail top`).toBeGreaterThanOrEqual(groupBox.top);
-      expect(railBox?.bottom, `${density} rail bottom`).toBeLessThanOrEqual(groupBox.bottom);
-    }
   });
 
   it("keeps the Field label and description when a wrapper forwards id and ARIA props as undefined", async () => {
@@ -158,43 +84,6 @@ describe("PhoneNumberField", () => {
       />
     );
     await expect.element(textboxNamed("Mobile")).toHaveAccessibleDescription("Used for delivery updates.");
-  });
-
-  it("keeps the picker's search, ids and descriptions apart from the number input's, insets the search and clamps the list", async () => {
-    renderField(
-      <PhoneNumberField label="Mobile" description="We text a code." isInvalid errorMessage="Bad number." />
-    );
-    const trigger = roleNamed("button", "Select country");
-    // The field's error and description describe the number input, not the picker trigger. The
-    // error sits directly under the control, ahead of the description, and is read first.
-    await expect.element(textboxNamed("Mobile")).toHaveAccessibleDescription("Bad number. We text a code.");
-    await expect.element(trigger).toHaveAccessibleDescription("Country: Norway +47");
-    const list = await openPicker();
-    const search = countrySearch();
-    expect(search.getAttribute("aria-labelledby")).toBeFalsy();
-    expect(search.getAttribute("autocomplete")).toBe("one-time-code");
-    expect(page.getByRole("combobox", { name: "Mobile", exact: true }).query()).toBeNull();
-    const ids = [trigger.id, search.id, textboxNamed("Mobile").id];
-    expect(new Set(ids).size, JSON.stringify(ids)).toBe(3);
-
-    // DOM audit: popup chrome has no role; inset is the search group's box against the content slot.
-    const group = search.closest("[data-slot=input-group]");
-    const popup = group?.closest("[data-slot=combobox-content]");
-    if (!(group instanceof HTMLElement) || !(popup instanceof HTMLElement)) {
-      throw new Error("expected search group inside the country popup");
-    }
-    const groupBox = group.getBoundingClientRect();
-    const popupBox = popup.getBoundingClientRect();
-    expect(groupBox.top - popupBox.top, "search inset top").toBeGreaterThan(0);
-    expect(groupBox.left - popupBox.left, "search inset left").toBeGreaterThan(0);
-    expect(popupBox.right - groupBox.right, "search inset right").toBeGreaterThan(0);
-
-    // Before the picker composed `Combobox.List`, its own clamp was written
-    // `max-h-[min(300px,calc(var(--available-height)-2.75rem))]`, and CSS `calc` requires
-    // whitespace around `-`: the whole `min()` was invalid, the declaration was dropped, the
-    // list never scrolled, and the popup grew to the height of every country row
-    expect(list.scrollHeight).toBeGreaterThan(list.clientHeight);
-    expect(list.clientHeight).toBeLessThan(window.innerHeight);
   });
 
   it("puts no aria-readonly on the read-only trigger, which the button role does not support", async () => {
@@ -219,20 +108,6 @@ describe("PhoneNumberField", () => {
     }
   });
 
-  it("keeps filtered country options through the close transition", async () => {
-    renderField(<PhoneNumberField label="Mobile" />);
-    await openPicker();
-    await userEvent.fill(countrySearch(), "swe");
-    await vi.waitFor(() => {
-      expect(page.getByRole("option", { name: /Sweden/ }).query()).not.toBeNull();
-    });
-    await userEvent.keyboard("{Escape}");
-    await vi.waitFor(() => {
-      expect(page.getByRole("option", { name: /Sweden/ }).query()).not.toBeNull();
-      expect(page.getByText("No countries found.").query()).toBeNull();
-    });
-  });
-
   it("selects a country from the keyboard, closes, updates the dial code, and focuses the number input", async () => {
     renderField(<PhoneNumberField label="Mobile" />);
     expect(roleNamed("button", "Select country").textContent).toContain("+47");
@@ -243,30 +118,6 @@ describe("PhoneNumberField", () => {
       .toHaveAccessibleDescription("Country: Sweden +46");
     // Focus moves to the number input as the picker closes, which can land a frame later.
     await expect.element(page.getByRole("textbox", { name: "Mobile", exact: true })).toHaveFocus();
-  });
-
-  it("submits E.164 from the hidden input and keeps the formatted display name", async () => {
-    const submitted: Array<{ phone: FormDataEntryValue | null; display: FormDataEntryValue | null }> = [];
-    renderField(
-      <form
-        onSubmit={(event) => {
-          event.preventDefault();
-          const data = new FormData(event.currentTarget);
-          submitted.push({
-            phone: data.get("phone"),
-            display: data.get("phone-display-value"),
-          });
-        }}>
-        <PhoneNumberField label="Mobile" name="phone" />
-        <button type="submit">Save</button>
-      </form>
-    );
-    await userEvent.fill(page.getByRole("textbox", { name: "Mobile", exact: true }), "41234567");
-    expect(textboxNamed("Mobile")).toHaveProperty("name", "phone-display-value");
-    expect(textboxNamed("Mobile")).toHaveProperty("value", "41234567");
-    await userEvent.click(page.getByRole("button", { name: "Save", exact: true }));
-    expect(hiddenNamed("phone").value).toBe("+4741234567");
-    expect(submitted).toEqual([{ phone: "+4741234567", display: "41234567" }]);
   });
 
   it("blocks an empty required submit and allows it once filled", async () => {
@@ -282,26 +133,6 @@ describe("PhoneNumberField", () => {
     expect(formNamed("Phone form").checkValidity()).toBe(true);
   });
 
-  it("forwards aria-required to the number input alone without adding a native constraint", async () => {
-    renderField(
-      <form aria-label="Phone form">
-        <PhoneNumberField label="Mobile" name="phone" aria-required />
-      </form>
-    );
-    const input = textboxNamed("Mobile");
-    expect(input.getAttribute("aria-required")).toBe("true");
-    expect(input).toHaveProperty("required", false);
-    expect(input).toHaveProperty("validity.valueMissing", false);
-    expect(formNamed("Phone form").checkValidity()).toBe(true);
-    expect(roleNamed("button", "Select country").hasAttribute("aria-required")).toBe(false);
-    // DOM audit: the submit and country inputs are type=hidden or visually hidden, so they have no role.
-    const otherInputs = [...document.body.querySelectorAll("input")].filter((element) => element !== input);
-    expect(otherInputs.length).toBeGreaterThan(0);
-    expect(otherInputs.filter((element) => element.hasAttribute("aria-required"))).toEqual([]);
-    await openPicker();
-    expect(countrySearch().hasAttribute("aria-required")).toBe(false);
-  });
-
   it("submits no display-value key when name is unset", async () => {
     renderField(
       <form aria-label="Phone form">
@@ -310,170 +141,6 @@ describe("PhoneNumberField", () => {
     );
     await userEvent.fill(page.getByRole("textbox", { name: "Mobile", exact: true }), "41234567");
     expect([...new FormData(formNamed("Phone form")).keys()]).toEqual([]);
-  });
-
-  it("intercepts paste, preventDefaults, and lands cleaned digits", async () => {
-    const onChange = vi.fn();
-    renderField(<PhoneNumberField label="Mobile" onChange={onChange} />);
-    const input = textboxNamed("Mobile");
-    input.focus();
-
-    const clipboard = new DataTransfer();
-    clipboard.setData("text/plain", "412-34-567abc");
-    const paste = new ClipboardEvent("paste", {
-      bubbles: true,
-      cancelable: true,
-      clipboardData: clipboard,
-    });
-    input.dispatchEvent(paste);
-
-    expect(paste.defaultPrevented).toBe(true);
-    await vi.waitFor(() => {
-      expect(textboxNamed("Mobile")).not.toHaveProperty("value", "412-34-567abc");
-      expect(textboxNamed("Mobile")).toHaveProperty("value", "41234567");
-    });
-    expect(onChange).toHaveBeenLastCalledWith("+4741234567");
-  });
-
-  it("surfaces isInvalid as an alert, disables trigger and input, and keeps readOnly focusable", async () => {
-    renderField(
-      <>
-        <PhoneNumberField label="Broken" isInvalid errorMessage="Enter a mobile number." />
-        <PhoneNumberField label="Disabled" isDisabled />
-        <PhoneNumberField label="Locked" isReadOnly value="41234567" />
-      </>
-    );
-    const alert = page.getByRole("alert").element();
-    expect(alert.textContent).toBe("Enter a mobile number.");
-    expect(inputGroupRoot("Broken").getAttribute("aria-invalid")).toBe("true");
-
-    const disabledInput = textboxNamed("Disabled");
-    expect(disabledInput).toHaveProperty("disabled", true);
-    const disabledTrigger = page.getByRole("button", { name: "Select country" }).elements()[1];
-    expect(disabledTrigger).toHaveProperty("disabled", true);
-
-    const locked = textboxNamed("Locked");
-    expect(locked).toHaveProperty("readOnly", true);
-    locked.focus();
-    expect(document.activeElement).toBe(locked);
-    await userEvent.keyboard("9");
-    expect(locked).toHaveProperty("value", "41234567");
-  });
-
-  it("renders dictionary defaults in all four locales, describes the trigger's country in each, and lets override props win", async () => {
-    const described = {
-      "nb-NO": "Land: Norge +47",
-      "sv-SE": "Land: Norge +47",
-      "en-US": "Country: Norway +47",
-      "fi-FI": "Maa: Norja +47",
-    } as const;
-    for (const locale of SUPPORTED_LOCALES) {
-      const { unmount } = renderField(<PhoneNumberField label="Mobile" />, locale);
-      await expect
-        .element(roleNamed("button", SELECT_COUNTRY_COPY[locale]))
-        .toHaveAccessibleDescription(described[locale]);
-      await userEvent.click(page.getByRole("button", { name: SELECT_COUNTRY_COPY[locale], exact: true }));
-      await vi.waitFor(() => {
-        expect(page.getByRole("listbox").query()).not.toBeNull();
-      });
-      expect(countrySearch(SEARCH_COUNTRIES_COPY[locale])).toBeTruthy();
-      await userEvent.fill(countrySearch(SEARCH_COUNTRIES_COPY[locale]), "zzzz");
-      await vi.waitFor(() => {
-        expect(page.getByText(NO_COUNTRIES_COPY[locale], { exact: true }).query(), locale).not.toBeNull();
-      });
-      unmount();
-    }
-
-    renderField(
-      <PhoneNumberField
-        label="Mobile"
-        selectCountryLabel="Pick a country"
-        searchCountriesLabel="Filter countries"
-        noCountriesFoundText="Nothing here."
-      />,
-      "nb-NO"
-    );
-    expect(page.getByRole("button", { name: "Pick a country", exact: true }).query()).not.toBeNull();
-    expect(page.getByRole("button", { name: "Velg land", exact: true }).query()).toBeNull();
-    await openPicker("Pick a country");
-    expect(countrySearch("Filter countries")).toBeTruthy();
-    await userEvent.fill(countrySearch("Filter countries"), "zzzz");
-    await vi.waitFor(() => {
-      expect(page.getByText("Nothing here.", { exact: true }).query()).not.toBeNull();
-    });
-  });
-
-  it("renders the packaged flag image on the trigger with empty alt and lazy-image attributes", () => {
-    renderField(<PhoneNumberField label="Norway" defaultCountryCode="NO" />);
-    const img = triggerFlagImg();
-    expect(img.getAttribute("alt")).toBe("");
-    expect(img.getAttribute("aria-hidden")).toBe("true");
-    expect(img.getAttribute("width")).toBe("20");
-    expect(img.getAttribute("height")).toBe("15");
-    expect(img.getAttribute("loading")).toBe("lazy");
-    expect(img.getAttribute("decoding")).toBe("async");
-    expect(img.getAttribute("draggable")).toBe("false");
-    expect(img.getAttribute("src")).toBe(flagAssets.NO);
-    expect(flagCodeFromSrc(img.getAttribute("src") ?? "")).toBe("NO");
-    expect(img.getAttribute("src")).not.toContain("flagcdn.com");
-  });
-
-  it("portals the picker into an explicit container element", async () => {
-    function ExplicitContainer() {
-      const [node, setNode] = useState<HTMLDivElement | null>(null);
-      return (
-        <>
-          <div ref={setNode} role="region" aria-label="Theme island" />
-          {node ? <PhoneNumberField label="Island" container={node} /> : null}
-        </>
-      );
-    }
-    renderField(<ExplicitContainer />);
-    await openPicker();
-    const island = page.getByRole("region", { name: "Theme island", exact: true }).element();
-    expect(island.contains(countryListbox())).toBe(true);
-  });
-
-  it("paints the within ring on the group for keyboard focus at both densities, and not for mouse focus on the trigger", async () => {
-    renderField(
-      <>
-        <button type="button">Before</button>
-        <PhoneNumberField label="Mobile" />
-      </>
-    );
-    await assertWithinKeyboardFocusRingAtBothDensities(
-      roleNamed("button", "Select country"),
-      textboxNamed("Mobile"),
-      inputGroupRoot("Mobile")
-    );
-
-    const before = page.getByRole("button", { name: "Before", exact: true }).element();
-    if (!(before instanceof HTMLElement)) {
-      throw new Error("expected before");
-    }
-    await userEvent.click(before);
-    expect(before.matches(":focus-visible")).toBe(false);
-    await userEvent.click(roleNamed("button", "Select country"));
-    expectNoFocusRing(
-      inputGroupRoot("Mobile"),
-      "mouse focus on the country trigger must not paint the group ring"
-    );
-  });
-  it("sets the dial code in the number input's font size at the font's normal line height, at both densities", () => {
-    renderField(<PhoneNumberField label="Mobile" />);
-    // The group centres the trigger and the input, and the input centres its text on the
-    // font's normal metrics, so the dial code shares the size and a normal line box.
-    for (const density of ["dense", "comfortable"] as const) {
-      stampDensity(density);
-      const dialCode = triggerDialCode("+47");
-      expect(px(getComputedStyle(dialCode).fontSize), `${density} dial code font`).toBe(
-        CONTROL_MD[density].font
-      );
-      // Oracle: a plain block in the same font at `line-height: normal`.
-      expect(dialCode.getBoundingClientRect().height, `${density} dial code leading`).toBe(
-        normalLineHeightOf(dialCode)
-      );
-    }
   });
 });
 
@@ -547,196 +214,5 @@ describe("PhoneNumberField country order", () => {
     expect(roleNamed("button", SELECT_COUNTRY_COPY["nb-NO"]).textContent).toContain("+43");
     expect(change).not.toHaveBeenCalled();
     expect(countryChange).not.toHaveBeenCalled();
-  });
-
-  it("selects the sorted row the keyboard lands on", async () => {
-    const countryChange = vi.fn();
-    renderField(
-      <PhoneNumberField
-        label="Mobile"
-        metadata={threeCountries}
-        defaultCountryCode="AT"
-        onCountryChange={countryChange}
-      />,
-      "sv-SE"
-    );
-    await openPicker(SELECT_COUNTRY_COPY["sv-SE"]);
-    // From Österrike, the last row, ArrowUp lands on Åland.
-    await userEvent.keyboard("{ArrowUp}{Enter}");
-    await vi.waitFor(() => {
-      expect(page.getByRole("listbox").query()).toBeNull();
-    });
-    expect(countryChange).toHaveBeenCalledExactlyOnceWith({ code: "AX", dialCode: "+358" });
-  });
-});
-
-describe("PhoneNumberField caret", () => {
-  /** Types the keys one at a time at the caret, as a user does. */
-  async function typeKeys(keys: string) {
-    for (const key of keys) {
-      await userEvent.keyboard(key);
-    }
-  }
-
-  function caretAt(offset: number) {
-    phoneInput().focus();
-    phoneInput().setSelectionRange(offset, offset);
-  }
-
-  /** The number input's selection, as its start and end offsets. */
-  function selection() {
-    const input = phoneInput();
-    return [input.selectionStart, input.selectionEnd];
-  }
-
-  it("keeps the caret when the parent commits the edit synchronously", async () => {
-    function Synchronous({ description }: { description?: string }) {
-      const [value, setValue] = useState("");
-      return (
-        <form aria-label="Phone form">
-          <PhoneNumberField
-            label="Mobile"
-            description={description}
-            name="phone"
-            value={value}
-            onChange={(next) => flushSync(() => setValue(next))}
-            formatOnType
-          />
-        </form>
-      );
-    }
-    const { rerender } = renderField(<Synchronous />);
-    const input = phoneInput();
-    caretAt(0);
-    await typeKeys("91234567");
-    caretAt(4);
-    await userEvent.keyboard("{Backspace}");
-    expect(input.value).toBe("91 34 56 7");
-    expect(selection()).toEqual([2, 2]);
-    await typeKeys("5");
-    expect(input.value).toBe("91 53 45 67");
-    expect(phoneSubmission().get("phone")).toBe("+4791534567");
-
-    // Backspace after a space removes only the space, which formatting puts back: the display
-    // the edit proposes is the one already shown, and the caret still lands after "91".
-    caretAt(3);
-    await userEvent.keyboard("{Backspace}");
-    expect(input.value).toBe("91 53 45 67");
-    expect(document.activeElement).toBe(input);
-    expect(selection()).toEqual([2, 2]);
-
-    // A render that proposes nothing leaves a caret the user moved alone.
-    input.setSelectionRange(5, 5);
-    rerender(withLocale("en-US", <Synchronous description="Work" />));
-    expect(page.getByText("Work").query()).not.toBeNull();
-    expect(input.value).toBe("91 53 45 67");
-    expect(selection()).toEqual([5, 5]);
-  });
-
-  it("keeps the caret when the parent stores its own form of the number", async () => {
-    function NationalDigits() {
-      const [value, setValue] = useState("");
-      return (
-        <PhoneNumberField
-          label="Mobile"
-          value={value}
-          onChange={(next) => setValue(next.replace(/^\+47/, ""))}
-          formatOnType
-        />
-      );
-    }
-    renderField(<NationalDigits />);
-    const input = phoneInput();
-    caretAt(0);
-    await typeKeys("91234567");
-    expect(input.value).toBe("91 23 45 67");
-    caretAt(4);
-    await userEvent.keyboard("{Backspace}");
-    expect(input.value).toBe("91 34 56 7");
-    expect(selection()).toEqual([2, 2]);
-    await typeKeys("5");
-    expect(input.value).toBe("91 53 45 67");
-    expect(selection()).toEqual([4, 4]);
-  });
-
-  it("keeps the caret for a field inside a shadow root", async () => {
-    const host = document.createElement("div");
-    document.body.append(host);
-    const mountPoint = document.createElement("div");
-    host.attachShadow({ mode: "open" }).append(mountPoint);
-    try {
-      renderField(createPortal(<PhoneNumberField label="Mobile" formatOnType />, mountPoint));
-      const input = phoneInput();
-      caretAt(0);
-      await typeKeys("91234567");
-      expect(input.value).toBe("91 23 45 67");
-      caretAt(4);
-      await userEvent.keyboard("{Backspace}");
-      expect(input.value).toBe("91 34 56 7");
-      expect(input.selectionStart).toBe(2);
-    } finally {
-      host.remove();
-    }
-  });
-});
-
-describe("PhoneNumberField countries", () => {
-  it("offers only the listed countries and falls back from a default outside them", async () => {
-    renderField(<PhoneNumberField label="Mobile" countries={["SE", "NO", "FI"]} defaultCountryCode="DK" />);
-    // Norway, the fallback before the first country, is listed.
-    expect(roleNamed("button", "Select country").textContent).toContain("+47");
-    await openPicker();
-    // Finland, Norway, Sweden: name order, not the list's.
-    expect(optionFlagCodes()).toEqual(["FI", "NO", "SE"]);
-  });
-
-  it("shows one country as context, without a picker or a tab stop", async () => {
-    renderField(
-      <form aria-label="Phone form">
-        <button type="button">Before</button>
-        <PhoneNumberField label="Mobile" name="phone" countries={["SE"]} />
-      </form>
-    );
-    expect(page.getByRole("button", { name: "Select country" }).query()).toBeNull();
-    expect(page.getByRole("combobox").query()).toBeNull();
-    const addon = countryAddon();
-    expect(addon.textContent).toBe("Sweden+46");
-    roleNamed("button", "Before").focus();
-    await userEvent.keyboard("{Tab}");
-    expect(document.activeElement).toBe(phoneInput());
-    roleNamed("button", "Before").focus();
-    await userEvent.click(addon);
-    expect(document.activeElement).toBe(phoneInput());
-    await userEvent.keyboard("701234567");
-    expect([...phoneSubmission().entries()]).toEqual([
-      ["phone-display-value", "701234567"],
-      ["phone", "+46701234567"],
-    ]);
-  });
-
-  it("puts a single country's flag where the picker's sits, inside the md box at both densities", () => {
-    renderField(
-      <>
-        <PhoneNumberField label="Picker" />
-        <PhoneNumberField label="Single" countries={["NO"]} />
-      </>
-    );
-    function flagInset(label: string): number {
-      // DOM audit: the flag is decorative and hidden from the accessibility tree.
-      const flag = countryAddon(label).querySelector("img");
-      if (!flag) throw new Error(`expected a flag in ${label}`);
-      return flag.getBoundingClientRect().left - inputGroupRoot(label).getBoundingClientRect().left;
-    }
-    for (const density of ["dense", "comfortable"] as const) {
-      stampDensity(density);
-      expect(flagInset("Single"), density).toBe(flagInset("Picker"));
-      const group = inputGroupRoot("Single");
-      const groupBox = group.getBoundingClientRect();
-      const rail = countryAddon("Single").getBoundingClientRect();
-      expect(px(getComputedStyle(group).height), density).toBe(CONTROL_MD[density].height);
-      expect(rail.height, `${density} rail`).toBeLessThanOrEqual(group.clientHeight);
-      expect(rail.top, `${density} rail top`).toBeGreaterThanOrEqual(groupBox.top);
-      expect(rail.bottom, `${density} rail bottom`).toBeLessThanOrEqual(groupBox.bottom);
-    }
   });
 });

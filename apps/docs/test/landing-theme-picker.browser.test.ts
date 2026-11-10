@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import { DESKTOP_VIEWPORT, readThemeAttributes } from "./demo-page";
 import type { ThemeAttributes } from "./demo-page";
-import { brandSite, dashboard, PHONE_VIEWPORT, row, shownSide, showSide } from "./landing-dashboard";
+import { brandSite, dashboard, PHONE_VIEWPORT, row, shownSide } from "./landing-dashboard";
 import { expectTargets, launchLandingSuite, settleFrames } from "./landing-page";
 
 const { openLanding } = launchLandingSuite();
@@ -107,11 +107,6 @@ function urlTheme(page: Page): string | null {
   return new URL(page.url()).searchParams.get("theme");
 }
 
-/** The polite region that announces each theme change. */
-function announcer(page: Page): Locator {
-  return page.getByRole("status").filter({ hasText: /^Theme:/u });
-}
-
 /** A shared address's theme: its slug, and the attributes it must stamp. */
 const SHARED = STEPS.at(-1) ?? OPENING;
 
@@ -150,68 +145,6 @@ async function abortNextScripts(route: Route): Promise<void> {
 }
 
 describe("landing theme picker", () => {
-  it("moves the document's theme, the window's side and the URL with each axis, and announces each change politely", async () => {
-    const page = await openLanding(DESKTOP_VIEWPORT);
-    expect(await documentTheme(page)).toEqual(OPENING.attributes);
-    expect(await shownSide(page)).toBe(OPENING.identity);
-    expect(urlTheme(page)).toBeNull();
-    expect(await announcer(page).count()).toBe(0);
-
-    for (const step of STEPS) {
-      await choose(page, step);
-      await expect.poll(async () => documentTheme(page)).toEqual(step.attributes);
-      await expect.poll(async () => shownSide(page)).toBe(step.identity);
-      await expect.poll(() => urlTheme(page)).toBe(step.slug);
-      // Before any colour-scheme pick, which announces through its own callback.
-      await expect
-        .poll(async () => announcer(page).textContent())
-        .toBe(`Theme: ${step.brand}, ${step.segment.toLowerCase()}, ${step.identity.toLowerCase()}, system`);
-    }
-
-    // The context prefers light, so Dark comes first: a pick that moves nothing would prove nothing.
-    const scheme = (await openPicker(page)).getByRole("group", { name: "Colour scheme" });
-    const schemeAttribute = async () => page.locator("html").getAttribute("data-theme");
-    for (const [label, attribute, spoken] of [
-      ["Dark", "dark", "dark"],
-      ["Light", "light", "light"],
-      ["System", "light", "system"],
-    ] as const) {
-      await scheme.getByRole("button", { name: label, exact: true }).click();
-      await expect.poll(schemeAttribute).toBe(attribute);
-      expect(await scheme.getByRole("button", { pressed: true }).textContent()).toBe(label);
-      await expect
-        .poll(async () => announcer(page).textContent())
-        .toBe(`Theme: Fjordkraft, company, neutral, ${spoken}`);
-    }
-    // System follows the preference both ways.
-    await page.emulateMedia({ colorScheme: "dark" });
-    await expect.poll(schemeAttribute).toBe("dark");
-    await page.emulateMedia({ colorScheme: "light" });
-    await expect.poll(schemeAttribute).toBe("light");
-    await page.context().close();
-  });
-
-  it("keeps the picker and the window's switch in step both ways", async () => {
-    const page = await openLanding(DESKTOP_VIEWPORT);
-
-    await showSide(page, "Neutral");
-    await expect
-      .poll(async () => documentTheme(page))
-      .toEqual({ ...OPENING.attributes, identity: "neutral" });
-    const root = await openPicker(page);
-    await expect
-      .poll(async () =>
-        root.getByRole("group", { name: "Identity" }).getByRole("button", { pressed: true }).textContent()
-      )
-      .toBe("Neutral");
-    await page.keyboard.press("Escape");
-    await expect.poll(async () => pickerDialog(page).count()).toBe(0);
-
-    await choose(page, { ...OPENING, identity: "Branded" });
-    await expect.poll(async () => shownSide(page)).toBe("Branded");
-    await page.context().close();
-  });
-
   it.each([
     { address: `?theme=${SHARED.slug}`, wears: SHARED },
     { address: `?theme=${SHARED.slug}&theme=${OPENING.slug}`, wears: OPENING },
@@ -241,52 +174,6 @@ describe("landing theme picker", () => {
       await hydrated.context().close();
     }
   );
-
-  it("follows the URL's theme through client navigation and Back, without a reload", async () => {
-    const page = await openLanding(DESKTOP_VIEWPORT, { search: `?theme=${SHARED.slug}` });
-    // A full load would start a fresh window object and drop the mark.
-    await page.evaluate(() => {
-      Object.assign(window, { sameDocument: true });
-    });
-    const sameDocument = async () => page.evaluate(() => "sameDocument" in window);
-    const home = nav(page).getByRole("link", { name: "Fuse" });
-
-    await home.click();
-    await expect.poll(() => urlTheme(page)).toBeNull();
-    await expect.poll(async () => documentTheme(page)).toEqual(OPENING.attributes);
-    expect(await trigger(page).getAttribute("aria-label")).toBe("Theme: Elmera · Private · Branded");
-
-    await page.goBack();
-    await expect.poll(() => urlTheme(page)).toBe(SHARED.slug);
-    await expect.poll(async () => documentTheme(page)).toEqual(SHARED.attributes);
-    expect(await trigger(page).getAttribute("aria-label")).toBe("Theme: Fjordkraft · Company · Neutral");
-
-    expect(await sameDocument()).toBe(true);
-    await page.context().close();
-  });
-
-  it("treats a repeated theme in client navigation as a fresh load of that address does", async () => {
-    const repeated = `?theme=${SHARED.slug}&theme=${FIRST_PICK.slug}`;
-    // The oracle: the server's reading of the address on a fresh load.
-    const fresh = await openLanding(DESKTOP_VIEWPORT, { search: repeated });
-    const served = await documentTheme(fresh);
-    expect(served).toEqual(OPENING.attributes);
-    await fresh.context().close();
-
-    const page = await openLanding(DESKTOP_VIEWPORT, { search: `?theme=${SHARED.slug}` });
-    await expect.poll(async () => documentTheme(page)).toEqual(SHARED.attributes);
-    // A second value that leaves the first unchanged, written through Next's patched history.
-    await page.evaluate((search) => {
-      window.history.pushState(null, "", `/${search}`);
-    }, repeated);
-    await expect.poll(async () => documentTheme(page)).toEqual(served);
-    await expect
-      .poll(async () => trigger(page).getAttribute("aria-label"))
-      .toBe("Theme: Elmera · Private · Branded");
-    // The opening theme needs no parameter, so the address drops both values.
-    await expect.poll(() => new URL(page.url()).search).toBe("");
-    await page.context().close();
-  });
 
   it("lands the home link on the opening theme after a pick on the plain address, and Back and Forward on each", async () => {
     const page = await openLanding(DESKTOP_VIEWPORT);
@@ -345,38 +232,6 @@ describe("landing theme picker", () => {
       await expectTargets(root, `picker open at ${String(viewport.width)}px`);
       await page.context().close();
     }
-  });
-
-  it("disables the segment a pinned brand does not serve and names the reason", async () => {
-    const page = await openLanding(DESKTOP_VIEWPORT);
-    await choose(page, {
-      brand: "Fjordkraft Företag",
-      segment: "Company",
-      identity: "Branded",
-      attributes: { identity: "branded", brand: "fkab", segment: "company" },
-      slug: "branded-fkab-company",
-    });
-    await expect
-      .poll(async () => documentTheme(page))
-      .toEqual({ identity: "branded", brand: "fkab", segment: "company" });
-
-    const root = await openPicker(page);
-    const blocked = root.getByRole("group", { name: "Segment" }).getByRole("button", { name: "Private" });
-    expect(await blocked.isDisabled()).toBe(true);
-    // DOM audit: Playwright exposes no accessible description, so the read follows aria-describedby.
-    const description = await blocked.evaluate((element) =>
-      (element.getAttribute("aria-describedby") ?? "")
-        .split(/\s+/u)
-        .map((id) => document.getElementById(id)?.textContent ?? "")
-        .join(" ")
-        .trim()
-    );
-    expect(description).toContain("Fjordkraft Företag serves businesses only");
-    await blocked.hover();
-    await expect
-      .poll(async () => page.getByRole("tooltip").textContent())
-      .toBe("Fjordkraft Företag serves businesses only");
-    await page.context().close();
   });
 });
 

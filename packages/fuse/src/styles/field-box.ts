@@ -13,11 +13,6 @@ import { selfFocusRingClass, withinFocusRingClass } from "./utils";
  * `fieldGroupVariants`, Select's trigger, NumberField's group and InputGroup's root paint it
  * without being `fieldBox` variants. Focus leaves the `--input` border alone on every one of
  * them: the shared focus ring marks focus, and only the invalid face recolours the border.
- *
- * `field-box.test.ts` pins the tokens. `internal-stack.test.ts` checks that each token
- * reaches every consumer's merged classes and that no consumer adds a second radius or
- * elevation rung. `date-field.browser.test.tsx` compares the computed radius and shadow of
- * two rendered boxes.
  */
 export const fieldBoxChromeClass = cn(
   "shadow-xs box-border",

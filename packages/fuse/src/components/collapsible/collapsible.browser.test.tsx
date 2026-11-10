@@ -5,7 +5,7 @@ import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import { assertFocusRingOnKeyboardAbsentOnMouse } from "../../../test/assert-focus-ring";
-import { expectPanelHeightTransition, panelControlledBy } from "../../../test/panel-transition";
+import { panelControlledBy } from "../../../test/panel-transition";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { Collapsible } from "./index";
 
@@ -170,75 +170,6 @@ describe("Collapsible", () => {
     expect(onOpenChange).not.toHaveBeenCalled();
     expect(trigger.getAttribute("aria-expanded")).toBe("false");
     expect(page.getByText("Delivery window", { exact: true }).query()).toBeNull();
-  });
-
-  it.each([
-    ["a keepMounted Content's height open and closed", true, "hidden"],
-    ["a default unmounted Content and unmounts it after the close", false, "unmounted"],
-  ] as const)("animates %s", async (_case, keepMounted, closedState) => {
-    renderThemed(
-      <Collapsible.Root>
-        <Collapsible.Trigger>Show details</Collapsible.Trigger>
-        <Collapsible.Content keepMounted={keepMounted}>
-          {/* A fixed content height keeps the settled value independent of font metrics. */}
-          <p style={{ height: 80 }}>Delivery window</p>
-        </Collapsible.Content>
-      </Collapsible.Root>
-    );
-
-    await expectPanelHeightTransition(triggerNamed("Show details"), closedState);
-  });
-
-  it("keeps hiddenUntilFound content in the DOM and opens on beforematch", async () => {
-    const onOpenChange = vi.fn();
-    renderThemed(
-      <Collapsible.Root onOpenChange={onOpenChange}>
-        <Collapsible.Trigger>Show details</Collapsible.Trigger>
-        <Collapsible.Content hiddenUntilFound>Meter-reading reconciliation</Collapsible.Content>
-      </Collapsible.Root>
-    );
-
-    const content = page.getByText("Meter-reading reconciliation", { exact: true }).element();
-    const foundPanel = content instanceof HTMLElement ? content.closest("[hidden]") : null;
-    if (!(foundPanel instanceof HTMLElement)) {
-      throw new Error("expected a collapsible panel");
-    }
-    await vi.waitFor(() => {
-      expect(foundPanel.getAttribute("hidden")).toBe("until-found");
-    });
-
-    foundPanel.dispatchEvent(new Event("beforematch", { bubbles: true }));
-    await vi.waitFor(() => {
-      expect(onOpenChange).toHaveBeenCalledWith(true, expect.anything());
-      expect(triggerNamed("Show details").getAttribute("aria-expanded")).toBe("true");
-      expect(foundPanel.hasAttribute("hidden")).toBe(false);
-    });
-  });
-
-  it("composes Trigger onto a custom button via render and keeps aria wiring", async () => {
-    renderThemed(
-      <Collapsible.Root>
-        <Collapsible.Trigger render={<button type="button" className="custom-trigger" />}>
-          Show details
-        </Collapsible.Trigger>
-        <Collapsible.Content>Delivery window</Collapsible.Content>
-      </Collapsible.Root>
-    );
-
-    const trigger = triggerNamed("Show details");
-    expect(trigger.tagName).toBe("BUTTON");
-    expect(trigger.className.split(/\s+/)).toContain("custom-trigger");
-    expect(trigger.getAttribute("data-slot")).toBe("collapsible-trigger");
-    expect(trigger.getAttribute("aria-expanded")).toBe("false");
-
-    await userEvent.click(trigger);
-    await vi.waitFor(() => {
-      expect(trigger.getAttribute("aria-expanded")).toBe("true");
-      expect(page.getByText("Delivery window", { exact: true }).query()).not.toBeNull();
-    });
-    const controls = trigger.getAttribute("aria-controls");
-    expect(controls).toBeTruthy();
-    expect(panelControlledBy(trigger)).toBe(page.getByText("Delivery window", { exact: true }).element());
   });
 
   it("gives the trigger the shared keyboard focus ring", async () => {

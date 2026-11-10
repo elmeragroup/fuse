@@ -1,4 +1,3 @@
-import { onTestFinished } from "vitest";
 import { cdp, server } from "vitest/browser";
 
 /** The device metrics Chromium emulates through its CDP session. */
@@ -39,28 +38,4 @@ export async function sizePageToFrame(): Promise<void> {
     deviceScaleFactor: 1,
     mobile: false,
   });
-}
-
-/** Whether the running test already sizes the page back to its frame once it finishes. */
-let restoring = false;
-
-/**
- * Emulate a device pixel ratio in Chromium for the rest of the running test, which then sizes the
- * page back to its frame at a ratio of 1 as it finishes. Call it inside a test.
- *
- * @param dpr - The device pixel ratio.
- * @param size - The page's size in CSS pixels while it emulates the ratio.
- */
-export async function emulatePixelRatio(
-  dpr: number,
-  size: { readonly width: number; readonly height: number } = { width: 1024, height: 768 }
-): Promise<void> {
-  if (!restoring) {
-    restoring = true;
-    onTestFinished(async () => {
-      restoring = false;
-      await sizePageToFrame();
-    });
-  }
-  await setMetrics({ ...size, deviceScaleFactor: dpr, mobile: false });
 }

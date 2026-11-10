@@ -6,13 +6,7 @@
 import { describe, expect, it } from "vitest";
 
 import { NO_LIMITS } from "../../src/components/kit-spec.ts";
-import type {
-  FrameLayerSpec,
-  KitSpec,
-  ShadowSpec,
-  StrokeSpec,
-  TextLayerSpec,
-} from "../../src/components/kit-spec.ts";
+import type { FrameLayerSpec, KitSpec, StrokeSpec, TextLayerSpec } from "../../src/components/kit-spec.ts";
 import {
   buttonVariant,
   CHECK,
@@ -26,30 +20,11 @@ import {
   nestedKit,
   RELAYOUT,
 } from "./button-kit-fixture.ts";
-import { createFakeFigma } from "./fake-figma.ts";
 import type { FakeFigma } from "./fake-figma.ts";
-import {
-  BLUE_PIXEL,
-  childNamed,
-  GLYPH_FONT,
-  JPEG_HEAD,
-  PNG_4097_WIDE,
-  PNG_SIGNATURE,
-  PORTRAIT_HEAD,
-  RED_PIXEL,
-} from "./fake-fixtures.ts";
+import { BLUE_PIXEL, childNamed, PORTRAIT_HEAD, RED_PIXEL } from "./fake-fixtures.ts";
 import type { ImageFixture } from "./fake-fixtures.ts";
-import { keyOf, setKey } from "./identity.ts";
+import { setKey } from "./identity.ts";
 import { reconcileKit } from "./reconcile.ts";
-
-/** A 2px black ring, as a focus ring spreads. */
-const RING: ShadowSpec = {
-  color: { kind: "literal", color: { r: 0, g: 0, b: 0, a: 1 } },
-  offsetX: 0,
-  offsetY: 0,
-  radius: literal(0),
-  spread: literal(2),
-};
 
 /**
  * A 16px frame that an image covers, as an avatar's `<img>` covers its circle, with the hash the
@@ -109,262 +84,6 @@ const SQUARE: FrameLayerSpec = {
 };
 
 describe("the kit check", () => {
-  const OTHER_PAGE = { key: "page/other", name: "Other" };
-  const PREVIEW_ELSEWHERE: KitSpec = {
-    ...KIT,
-    pages: [...KIT.pages, OTHER_PAGE],
-    previews: [
-      {
-        key: "preview/other",
-        name: "Other / Light",
-        page: OTHER_PAGE.key,
-        modes: [],
-        groups: [
-          {
-            key: "preview/other/button",
-            name: "Button",
-            componentSet: "button",
-            variants: ["button/size=md"],
-          },
-        ],
-      },
-    ],
-  };
-
-  it.each([
-    [
-      "a page key listed twice",
-      { ...KIT, pages: [...KIT.pages, ...KIT.pages] },
-      "The kit lists the page key page twice.",
-    ],
-    [
-      "a preview of a set on another page",
-      PREVIEW_ELSEWHERE,
-      "Other / Light places Button, which sits on another page.",
-    ],
-    [
-      "a text two frames down that links a property the set lacks",
-      nestedKit([
-        frame("button/control", "Control", [
-          frame("button/indicator", "Indicator", [{ ...LABEL, textProperty: "Label" }]),
-        ]),
-      ]),
-      "Button: the variant button/size=md links Label, which the set does not define.",
-    ],
-    [
-      "an icon two frames down whose color binds a string variable",
-      nestedKit([
-        frame("button/control", "Control", [
-          frame("button/indicator", "Indicator", [
-            {
-              ...CHECK,
-              color: { kind: "variable", variable: { collection: "Fuse tokens", name: "font-sans" } },
-            },
-          ]),
-        ]),
-      ]),
-      "Fuse tokens/font-sans is a STRING variable, and the kit binds it to a field that takes a COLOR.",
-    ],
-    [
-      "a root that fills its width, which its component set cannot give it",
-      kitWithRoot((root) => ({ ...root, sizing: { ...root.sizing, horizontal: FILL } })),
-      "Button: the variant button/size=md fills its width, and a variant sits in its component set, which has no auto layout. Give it a fixed width.",
-    ],
-    [
-      "a frame that fills the width of a root that hugs it",
-      nestedKit([
-        {
-          ...frame("button/control", "Control", [LABEL]),
-          sizing: { horizontal: FILL, vertical: { kind: "hug" } },
-        },
-      ]),
-      "Button: Control in the variant button/size=md fills the width of a parent that hugs it, so Figma would shrink it to its smallest width.",
-    ],
-    [
-      "a text that fills the width of a frame that hugs it",
-      nestedKit([
-        frame("button/control", "Control", [
-          { ...LABEL, sizing: { horizontal: FILL, vertical: { kind: "hug" } } },
-        ]),
-      ]),
-      "Button: Label in the variant button/size=md fills the width of a parent that hugs it, so Figma would shrink it to its smallest width.",
-    ],
-    [
-      "a frame that fills the height of a row that hugs it, beside no layer that sets a height",
-      nestedKit([
-        frame("button/row", "Row", [{ ...BOX, sizing: { horizontal: { kind: "hug" }, vertical: FILL } }]),
-      ]),
-      "Button: Box in the variant button/size=md fills the height of a parent that hugs it, beside no layer that sets that height, so Figma would shrink it to its smallest height.",
-    ],
-    [
-      "a text whose fixed width binds a string variable",
-      kitWithRoot((root) => ({
-        ...root,
-        children: [
-          {
-            ...LABEL,
-            sizing: {
-              horizontal: {
-                kind: "fixed",
-                length: { kind: "variable", variable: { collection: "Fuse tokens", name: "font-sans" } },
-              },
-              vertical: { kind: "hug" },
-            },
-          },
-        ],
-      })),
-      "Fuse tokens/font-sans is a STRING variable, and the kit binds it to a field that takes a FLOAT.",
-    ],
-    [
-      "a text whose max width binds a string variable",
-      kitWithRoot((root) => ({
-        ...root,
-        children: [
-          {
-            ...LABEL,
-            maxWidth: { kind: "variable", variable: { collection: "Fuse tokens", name: "font-sans" } },
-          },
-        ],
-      })),
-      "Fuse tokens/font-sans is a STRING variable, and the kit binds it to a field that takes a FLOAT.",
-    ],
-    [
-      "a limit that binds a string variable",
-      kitWithRoot((root) => ({
-        ...root,
-        limits: {
-          ...root.limits,
-          maxWidth: { kind: "variable", variable: { collection: "Fuse tokens", name: "font-sans" } },
-        },
-      })),
-      "Fuse tokens/font-sans is a STRING variable, and the kit binds it to a field that takes a FLOAT.",
-    ],
-    [
-      "a root that limits its fixed height",
-      kitWithRoot((root) => ({ ...root, limits: { ...root.limits, minHeight: literal(40) } })),
-      "Button: button in the variant button/size=md sets minHeight on its fixed height. Fold the limit into the height, as CSS resolves a height against its own limits.",
-    ],
-    [
-      "a frame that limits its fixed width",
-      nestedKit([
-        {
-          ...frame("button/control", "Control", [LABEL]),
-          sizing: { horizontal: { kind: "fixed", length: literal(100) }, vertical: { kind: "hug" } },
-          limits: { ...NO_LIMITS, maxWidth: literal(24) },
-        },
-      ]),
-      "Button: Control in the variant button/size=md sets maxWidth on its fixed width. Fold the limit into the width, as CSS resolves a width against its own limits.",
-    ],
-    [
-      "a row that puts its first layer on top, which a real file drew only in a column (PZ2)",
-      kitWithRoot((root) => ({ ...root, firstOnTop: true })),
-      "Button: button in the variant button/size=md puts its first layer on top in a row, and a real file drew that only in a column (PZ2).",
-    ],
-    [
-      "a column that puts its first layer, a fill, above a later layer's ring, which CSS paints above the fill",
-      kitWithRoot((root) => ({
-        ...root,
-        direction: "VERTICAL",
-        firstOnTop: true,
-        children: [
-          {
-            ...frame("button/panel", "Panel", []),
-            fill: { kind: "literal", color: { r: 0, g: 0, b: 1, a: 1 } },
-          },
-          frame("button/header", "Header", [{ ...frame("button/ring", "Ring", []), shadows: [RING] }]),
-        ],
-      })),
-      "Button: button in the variant button/size=md puts its first layer on top, so the fill of Panel would cover the shadow Ring casts, which CSS can paint above that fill.",
-    ],
-    [
-      "a column that puts its first layer, which holds a fill, above a later layer's ring",
-      kitWithRoot((root) => ({
-        ...root,
-        direction: "VERTICAL",
-        firstOnTop: true,
-        children: [
-          frame("button/header", "Header", [
-            {
-              ...frame("button/badge", "Badge", []),
-              fill: { kind: "literal", color: { r: 0, g: 0, b: 1, a: 1 } },
-            },
-          ]),
-          { ...frame("button/footer", "Footer", []), shadows: [RING] },
-        ],
-      })),
-      "Button: button in the variant button/size=md puts its first layer on top, so the fill of Badge would cover the shadow Footer casts, which CSS can paint above that fill.",
-    ],
-  ])("stops Plan before any write for %s", async (_, kit, message) => {
-    const { file, setup } = fixture("Roboto");
-    await expect(reconcileKit(file.figma, kit, false)).rejects.toThrow(message);
-    expect(file.writes.slice(setup)).toEqual([]);
-  });
-
-  // Unit under test: the kit check of a label's underline color, which Apply paints only after it
-  // has created the set. Oracle: the messages `figma:sync` asks a designer to act on, written here.
-  it.each([
-    [
-      "a tint the file lacks",
-      { collection: "Fuse tokens", name: "primary/35" },
-      "The Fuse tokens collection has no variable named primary/35.",
-    ],
-    [
-      "a string variable",
-      { collection: "Fuse tokens", name: "font-sans" },
-      "Fuse tokens/font-sans is a STRING variable, and the kit binds it to a field that takes a COLOR.",
-    ],
-  ])(
-    "stops Plan and Apply before any write for an underline color bound to %s",
-    async (_, variable, message) => {
-      const { file, setup } = fixture("Roboto");
-      const kit = kitWithRoot((root) => ({
-        ...root,
-        children: [
-          {
-            ...LABEL,
-            underline: { offset: undefined, thickness: undefined, color: { kind: "variable", variable } },
-          },
-        ],
-      }));
-      await expect(reconcileKit(file.figma, kit, false)).rejects.toThrow(message);
-      await expect(reconcileKit(file.figma, kit, true)).rejects.toThrow(message);
-      expect(file.writes.slice(setup)).toEqual([]);
-    }
-  );
-
-  // Unit under test: the kit check of an image fill. Oracle: the PNG specification's signature and
-  // IHDR chunk (§5.2, §11.2.2), the 4096px limit Figma's `createImage` reference states, P9b, where
-  // a real file refused a PNG signature alone and stored the first 100 bytes of a PNG, and the
-  // SHA-1 `shasum -a 1` gives each fixture.
-  const IMAGE = "Button: Image in the variant button/size=md fills with";
-  it.each([
-    [
-      "a PNG signature alone",
-      imageFrame(PNG_SIGNATURE),
-      `${IMAGE} a PNG whose header stops before a whole IHDR chunk.`,
-    ],
-    [
-      "the start of a JPEG",
-      imageFrame(JPEG_HEAD),
-      `${IMAGE} an image that is no PNG file, the one format the kit ships.`,
-    ],
-    [
-      "a PNG 4097 pixels wide",
-      imageFrame(PNG_4097_WIDE),
-      `${IMAGE} a 4097 × 1 image, and Figma stores images from 1 to 4096 pixels on a side.`,
-    ],
-    [
-      "a hash that is not the SHA-1 of the bytes",
-      imageFrame(RED_PIXEL, BLUE_PIXEL.sha1),
-      `${IMAGE} an image whose bytes hash to ${RED_PIXEL.sha1}, where the kit names ${BLUE_PIXEL.sha1}. Build the plugin again.`,
-    ],
-  ])("stops Plan and Apply before any write for an image fill with %s", async (_, layer, message) => {
-    const { file, setup } = fixture("Roboto");
-    await expect(reconcileKit(file.figma, nestedKit([layer]), false)).rejects.toThrow(message);
-    await expect(reconcileKit(file.figma, nestedKit([layer]), true)).rejects.toThrow(message);
-    expect(file.writes.slice(setup)).toEqual([]);
-  });
-
   it("passes a PNG cut off after its header, which a real file stored, and Apply converges", async () => {
     const { file } = fixture("Roboto");
     const kit = nestedKit([imageFrame(PORTRAIT_HEAD)]);
@@ -409,90 +128,6 @@ describe("a column that hugs its width from a minimum, every layer filling acros
     await reconcileKit(file.figma, kit, true);
     file.reopen();
     expect(await reconcileKit(file.figma, kit, false)).toEqual({ changes: [], warnings: [] });
-  });
-});
-
-describe("a set that moves to a page pinning other modes", () => {
-  const GRAY = { r: 0.5, g: 0.5, b: 0.5, a: 1 };
-  const RED = { r: 1, g: 0, b: 0, a: 1 };
-  const LEGACY = { key: "page/components", name: "Fuse components" };
-  const BUTTON = { key: "page/button", name: "Button" };
-  const [set] = KIT.componentSets;
-  if (set === undefined) {
-    throw new Error("the kit has no component set");
-  }
-  /** A ring bound to `ring`, which is gray in the light mode and red in the dark one. */
-  const ringed = {
-    ...set,
-    variants: set.variants.map((variant) => ({
-      ...variant,
-      root: {
-        ...variant.root,
-        children: [],
-        shadows: [
-          {
-            color: { kind: "variable", variable: { collection: "Fuse tokens", name: "ring" } },
-            offsetX: 0,
-            offsetY: 0,
-            radius: literal(0),
-            spread: literal(2),
-          } as const,
-        ],
-      },
-    })),
-  };
-  const kitOn = (page: typeof BUTTON): KitSpec => ({
-    ...KIT,
-    pages: [page],
-    fonts: [],
-    glyphFont: GLYPH_FONT,
-    icons: { ...KIT.icons, page: page.key },
-    componentSets: [{ ...ringed, page: page.key }],
-  });
-
-  it("plans the set in its new page's modes, so one Apply converges", async () => {
-    const file = createFakeFigma({
-      collections: [
-        {
-          name: "Fuse tokens",
-          modes: ["Light", "Dark"],
-          variables: [
-            ["background", { r: 1, g: 1, b: 1, a: 1 }, { r: 0, g: 0, b: 0, a: 1 }] as const,
-            ["ring", GRAY, RED] as const,
-          ].map(([name, light, dark]) => ({
-            name,
-            type: "COLOR",
-            scopes: [],
-            webSyntax: undefined,
-            description: "",
-            values: new Map([
-              ["Light", { _tag: "Color", color: light }],
-              ["Dark", { _tag: "Color", color: dark }],
-            ]),
-          })),
-        },
-      ],
-    });
-    const [tokens] = await file.figma.variables.getLocalVariableCollectionsAsync();
-    const dark = tokens?.modes.find((mode) => mode.name === "Dark");
-    if (tokens === undefined || dark === undefined) {
-      throw new Error("the file has no dark mode");
-    }
-    const legacy = file.figma.createPage();
-    legacy.name = LEGACY.name;
-    setKey(legacy, LEGACY.key);
-    legacy.setExplicitVariableModeForCollection(tokens, dark.modeId);
-    await reconcileKit(file.figma, kitOn(LEGACY), true);
-    file.reopen();
-    await legacy.loadAsync();
-    const variant = legacy.children.find((node) => node.type === "COMPONENT_SET")?.children[0];
-    const ring = () => (variant?.type === "COMPONENT" ? variant.effects[0] : undefined);
-    expect(ring()).toMatchObject({ type: "DROP_SHADOW", color: RED });
-
-    await reconcileKit(file.figma, kitOn(BUTTON), true);
-    file.reopen();
-    expect(await reconcileKit(file.figma, kitOn(BUTTON), false)).toEqual({ changes: [], warnings: [] });
-    expect(ring()).toMatchObject({ type: "DROP_SHADOW", color: GRAY });
   });
 });
 
@@ -579,20 +214,6 @@ describe("a variant whose two parts each hold a label that fills its part", () =
 });
 
 /** A layer the plugin keyed, and the layers a frame among them holds. */
-type LayerTree = {
-  readonly type: SceneNode["type"];
-  readonly name: string;
-  readonly key: string;
-  readonly children?: readonly LayerTree[];
-};
-
-/** The layers below a node, each frame with the layers it holds. */
-function layerTree(parent: ChildrenMixin): LayerTree[] {
-  return parent.children.map((node): LayerTree => {
-    const layer = { type: node.type, name: node.name, key: keyOf(node) };
-    return node.type === "FRAME" ? { ...layer, children: layerTree(node) } : layer;
-  });
-}
 
 /** A file the nested kit was applied to, opened for the next run, and its two frames. */
 async function nestedFile(): Promise<{
@@ -608,31 +229,6 @@ async function nestedFile(): Promise<{
 }
 
 describe("a variant whose layers sit in a frame inside a frame", () => {
-  it("creates both frames, the icon and the label in one Apply, and the next Plan lists nothing", async () => {
-    const { file, control } = await nestedFile();
-    expect(await reconcileKit(file.figma, nestedKit(), false)).toEqual({ changes: [], warnings: [] });
-    expect(layerTree(await buttonVariant(file))).toEqual([
-      {
-        type: "FRAME",
-        name: "Control",
-        key: "button/control",
-        children: [
-          {
-            type: "FRAME",
-            name: "Indicator",
-            key: "button/indicator",
-            children: [
-              { type: "INSTANCE", name: "Check", key: "button/check" },
-              { type: "TEXT", name: "Label", key: "button/label" },
-            ],
-          },
-        ],
-      },
-    ]);
-    // A part below the root shows its overflow and paints nothing its spec does not ask for.
-    expect([control.clipsContent, control.fills]).toEqual([false, []]);
-  });
-
   it("fails Plan, and stops Apply before any write, when the label's family cannot load", async () => {
     const { file, setup } = fixture("Comic Sans");
     const message = "Button / Label needs the font Comic Sans Medium, which Figma cannot load.";

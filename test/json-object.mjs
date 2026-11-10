@@ -1,5 +1,3 @@
-import { readFileSync } from "node:fs";
-
 /**
  * @param {unknown} value
  */
@@ -11,7 +9,7 @@ function tag(value) {
  * @param {unknown} value
  * @returns {value is Record<string, unknown>}
  */
-export function isPlainObject(value) {
+function isPlainObject(value) {
   return tag(value) === "[object Object]";
 }
 
@@ -21,19 +19,6 @@ export function isPlainObject(value) {
  */
 export function isString(value) {
   return tag(value) === "[object String]";
-}
-
-/**
- * @param {string} path
- * @returns {Record<string, unknown>}
- */
-export function readJsonObject(path) {
-  // SAFETY: JSON.parse is untyped; the object guard below is the contract.
-  const parsed = /** @type {unknown} */ (JSON.parse(readFileSync(path, "utf8")));
-  if (!isPlainObject(parsed)) {
-    throw new Error(`${path} is not a JSON object`);
-  }
-  return parsed;
 }
 
 /**

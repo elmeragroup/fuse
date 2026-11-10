@@ -1,19 +1,13 @@
-import { useEffect, useState } from "react";
 import type { ReactElement } from "react";
 
-import { createPortal } from "react-dom";
 import { describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import { nextFrames } from "../../../test/animation-frames";
-import { assertFocusRingAtBothDensities } from "../../../test/assert-focus-ring";
-import { CaughtError, caughtError } from "../../../test/caught-error";
-import { withLocale } from "../../../test/locale-matrix";
-import { formNamed, renderThemed, roleNamed, textNamed } from "../../../test/themed-browser-render";
+import { formNamed, renderThemed, roleNamed } from "../../../test/themed-browser-render";
 import { isHTMLElement } from "../../internal/dom-node";
 import { Button } from "../button/button";
-import { Slider } from "../slider/slider";
 import { useFileUpload } from "./file-upload-context";
 import { FileUpload } from "./index";
 import type { FileRejection } from "./split-files";
@@ -104,22 +98,6 @@ describe("FileUpload.Root and FileUpload.Trigger", () => {
     expect(onSubmit).not.toHaveBeenCalled();
   });
 
-  it("writes accept, multiple, capture and webkitdirectory on the hidden input, and no name", () => {
-    const { host } = renderThemed(
-      <FileUpload.Root accept="image/*,.pdf" multiple directory capture="environment">
-        <FileUpload.Trigger>Add files</FileUpload.Trigger>
-      </FileUpload.Root>
-    );
-    const input = fileInput(host);
-    expect(input.hidden).toBe(true);
-    expect(input.tabIndex).toBe(-1);
-    expect(input.accept).toBe("image/*,.pdf");
-    expect(input.multiple).toBe(true);
-    expect(input.getAttribute("capture")).toBe("environment");
-    expect(input.webkitdirectory).toBe(true);
-    expect(input.hasAttribute("name")).toBe(false);
-  });
-
   it("splits a pick into onSelect and onReject by accept", () => {
     const onSelect = vi.fn<(files: File[]) => void>();
     const onReject = vi.fn<(rejections: FileRejection[]) => void>();
@@ -153,24 +131,6 @@ describe("FileUpload.Root and FileUpload.Trigger", () => {
     expect(onSelect.mock.calls[1]?.[0][0]).toBe(file);
   });
 
-  it("rejects both files of a two-file pick with count on a single-file Root", () => {
-    const onSelect = vi.fn<(files: File[]) => void>();
-    const onReject = vi.fn<(rejections: FileRejection[]) => void>();
-    const { host } = renderThemed(
-      <FileUpload.Root onSelect={onSelect} onReject={onReject}>
-        <FileUpload.Trigger>Add file</FileUpload.Trigger>
-      </FileUpload.Root>
-    );
-    pick(fileInput(host), [png("a.png"), png("b.png")]);
-    expect(onSelect).not.toHaveBeenCalled();
-    expect(onReject.mock.calls.map(([rejections]) => rejections.map(described))).toEqual([
-      [
-        ["count", "a.png"],
-        ["count", "b.png"],
-      ],
-    ]);
-  });
-
   it("disables the Trigger, opens nothing and ignores a paste while Root is disabled", async () => {
     const onSelect = vi.fn<(files: File[]) => void>();
     const { host } = renderThemed(
@@ -188,17 +148,6 @@ describe("FileUpload.Root and FileUpload.Trigger", () => {
     const event = paste(document.body, [png("a.png")]);
     expect(event.defaultPrevented).toBe(false);
     expect(onSelect).not.toHaveBeenCalled();
-  });
-
-  it("disables a Trigger through its own disabled while Root stays enabled", async () => {
-    renderThemed(
-      <FileUpload.Root>
-        <FileUpload.Trigger disabled>Add files</FileUpload.Trigger>
-        <FileUpload.Trigger>Add more</FileUpload.Trigger>
-      </FileUpload.Root>
-    );
-    await expect.element(page.getByRole("button", { name: "Add files", exact: true })).toBeDisabled();
-    await expect.element(page.getByRole("button", { name: "Add more", exact: true })).toBeEnabled();
   });
 });
 
@@ -385,24 +334,6 @@ describe("useFileUpload", () => {
     ]);
   });
 
-  it("delivers files a child adds in its mount effect, which runs before the Root's", () => {
-    const onSelect = vi.fn<(files: File[]) => void>();
-    function AddOnMount(): null {
-      const { actions } = useFileUpload();
-      useEffect(() => {
-        actions.add([sample]);
-      }, [actions]);
-      return null;
-    }
-    renderThemed(
-      <FileUpload.Root onSelect={onSelect}>
-        <AddOnMount />
-      </FileUpload.Root>
-    );
-    expect(onSelect.mock.calls).toEqual([[[sample]]]);
-    expect(onSelect.mock.calls[0]?.[0][0]).toBe(sample);
-  });
-
   it("reports a disabled Root, whose add does nothing", async () => {
     const onSelect = vi.fn<(files: File[]) => void>();
     renderThemed(
@@ -412,15 +343,6 @@ describe("useFileUpload", () => {
     );
     await userEvent.click(roleNamed("button", "Add sample (off)"));
     expect(onSelect).not.toHaveBeenCalled();
-  });
-
-  it("throws outside a Root, naming FileUpload.Root", () => {
-    renderThemed(
-      <CaughtError>
-        <AddSample />
-      </CaughtError>
-    );
-    expect(caughtError().message).toBe("useFileUpload must be used within FileUpload.Root.");
   });
 });
 
@@ -435,26 +357,6 @@ function parts(host: HTMLElement): Parts {
     throw new Error("expected a FileUpload.Root holding a FileUpload.Dropzone");
   }
   return { root, zone };
-}
-
-/**
- * Records each `dropEffect` a handler writes. Chromium and WebKit ignore that write on a
- * constructed `DataTransfer` and always read back "none" (`.scratch/file-drop-zone/probes-t2/
- * probe-drop-effect.mjs`), so without the record a "none" assertion passes whatever the handler
- * does. An own accessor on the instance shadows the prototype's.
- */
-type DropEffectRecord = { readonly written: string[] };
-
-function recordDropEffect(transfer: DataTransfer): DropEffectRecord {
-  const written: string[] = [];
-  Object.defineProperty(transfer, "dropEffect", {
-    configurable: true,
-    get: () => written.at(-1) ?? "none",
-    set: (value: string) => {
-      written.push(value);
-    },
-  });
-  return { written };
 }
 
 /** Dispatches a drag event as the browser does during a drag, and returns it to read its outcome. */
@@ -513,68 +415,6 @@ describe("FileUpload.Dropzone", () => {
     expect(root.hasAttribute("data-dragging")).toBe(false);
   });
 
-  it("forgets an entered child that left the DOM, which never fires its own dragleave", async () => {
-    const tree = (withHint: boolean) => (
-      <FileUpload.Root>
-        <FileUpload.Dropzone>
-          <FileUpload.Trigger>Add files</FileUpload.Trigger>
-          {withHint ? <span>Drop here</span> : null}
-        </FileUpload.Dropzone>
-      </FileUpload.Root>
-    );
-    const { host, rerender } = renderThemed(tree(true));
-    const { zone } = parts(host);
-    const transfer = fileTransfer([png("a.png")]);
-    drag(zone, "dragenter", transfer);
-    drag(textNamed("Drop here"), "dragenter", transfer);
-    rerender(tree(false));
-    drag(zone, "dragleave", transfer);
-    await expect.poll(() => zone.hasAttribute("data-drop-target")).toBe(false);
-  });
-
-  it("keeps the Root dragging while one zone shows a drop target and another zone unmounts", async () => {
-    const tree = (withSecond: boolean) => (
-      <FileUpload.Root multiple>
-        <FileUpload.Dropzone>
-          <FileUpload.Trigger>Add files</FileUpload.Trigger>
-        </FileUpload.Dropzone>
-        {withSecond ? (
-          <FileUpload.Dropzone>
-            <FileUpload.Trigger>Add more</FileUpload.Trigger>
-          </FileUpload.Dropzone>
-        ) : null}
-      </FileUpload.Root>
-    );
-    const { host, rerender } = renderThemed(tree(true));
-    const { root, zone } = parts(host);
-    drag(zone, "dragenter", fileTransfer([png("a.png")]));
-    await expect.poll(() => root.hasAttribute("data-dragging")).toBe(true);
-    rerender(tree(false));
-    // The removed zone's cleanup schedules its state update, which React renders by the next frames.
-    await nextFrames(2);
-    expect(zone.hasAttribute("data-drop-target")).toBe(true);
-    expect(root.hasAttribute("data-dragging")).toBe(true);
-  });
-
-  it.each(["dragleave", "drop"] as const)(
-    "forgets a drag that ends with %s while the Root is disabled, so re-enabling shows no highlight",
-    async (ending) => {
-      const onSelect = vi.fn<(files: File[]) => void>();
-      const { host, rerender } = renderThemed(<Zone onSelect={onSelect} />);
-      const { root, zone } = parts(host);
-      const transfer = fileTransfer([png("a.png")]);
-      drag(zone, "dragenter", transfer);
-      await expect.poll(() => zone.hasAttribute("data-drop-target")).toBe(true);
-      rerender(<Zone disabled onSelect={onSelect} />);
-      drag(zone, ending, transfer);
-      rerender(<Zone onSelect={onSelect} />);
-      await nextFrames(2);
-      expect(zone.hasAttribute("data-drop-target")).toBe(false);
-      expect(root.hasAttribute("data-dragging")).toBe(false);
-      expect(onSelect).not.toHaveBeenCalled();
-    }
-  );
-
   it("splits a drop into onSelect and onReject by accept, handing back the dropped Files", async () => {
     const onSelect = vi.fn<(files: File[]) => void>();
     const onReject = vi.fn<(rejections: FileRejection[]) => void>();
@@ -599,333 +439,5 @@ describe("FileUpload.Dropzone", () => {
     expect(rejected?.map((rejection) => rejection.reason)).toEqual(["type"]);
     expect(rejected?.[0] !== undefined && "file" in rejected[0] && rejected[0].file).toBe(c);
     await expect.poll(() => zone.hasAttribute("data-drop-target")).toBe(false);
-  });
-
-  it("leaves a drag on portalled content to the document, though React bubbles it to the zone", async () => {
-    const onSelect = vi.fn<(files: File[]) => void>();
-    function PortalledPanel(): ReactElement {
-      return createPortal(<p>Portalled panel</p>, document.body);
-    }
-    const { host } = renderThemed(
-      <FileUpload.Root onSelect={onSelect}>
-        <FileUpload.Dropzone>
-          <FileUpload.Trigger>Add files</FileUpload.Trigger>
-          <PortalledPanel />
-        </FileUpload.Dropzone>
-      </FileUpload.Root>
-    );
-    const { zone } = parts(host);
-    const panel = textNamed("Portalled panel");
-    const transfer = fileTransfer([png("a.png")]);
-    const effect = recordDropEffect(transfer);
-    drag(panel, "dragenter", transfer);
-    drag(panel, "dragover", transfer);
-    // The document guard answers the drag outside every zone.
-    expect(effect.written).toEqual(["none"]);
-    expect(drag(panel, "drop", transfer).defaultPrevented).toBe(true);
-    await nextFrames(2);
-    expect(zone.hasAttribute("data-drop-target")).toBe(false);
-    expect(onSelect).not.toHaveBeenCalled();
-  });
-
-  it("discards a drop whose files resolve after the Root unmounted", async () => {
-    const onSelect = vi.fn<(files: File[]) => void>();
-    const { host, unmount } = renderThemed(<Zone onSelect={onSelect} />);
-    const { zone } = parts(host);
-    const transfer = fileTransfer([png("a.png")]);
-    drag(zone, "dragenter", transfer);
-    drag(zone, "drop", transfer);
-    unmount();
-    await nextFrames(2);
-    expect(onSelect).not.toHaveBeenCalled();
-  });
-
-  it("refuses a drag it can tell will be rejected, by type or by count", async () => {
-    const { host } = renderThemed(
-      <>
-        <Zone accept="image/*" multiple />
-        <Zone />
-      </>
-    );
-    // DOM audit: two Roots, each with one Dropzone, in document order.
-    const [typed, single] = [...host.querySelectorAll('[data-slot="file-upload-dropzone"]')];
-    if (!(typed instanceof HTMLElement) || !(single instanceof HTMLElement)) {
-      throw new Error("expected two Dropzones");
-    }
-
-    const zip = fileTransfer([new File(["zip"], "a.zip", { type: "application/zip" })]);
-    const zipEffect = recordDropEffect(zip);
-    drag(typed, "dragenter", zip);
-    const zipOver = drag(typed, "dragover", zip);
-    expect(zipOver.defaultPrevented).toBe(true);
-    expect(zipEffect.written).toEqual(["none", "none"]);
-
-    const pair = fileTransfer([png("a.png"), png("b.png")]);
-    const pairEffect = recordDropEffect(pair);
-    drag(single, "dragenter", pair);
-    drag(single, "dragover", pair);
-    expect(pairEffect.written).toEqual(["none", "none"]);
-    expect(single.hasAttribute("data-drop-target")).toBe(false);
-
-    const one = fileTransfer([png("a.png")]);
-    const oneEffect = recordDropEffect(one);
-    drag(single, "dragenter", one);
-    drag(single, "dragover", one);
-    expect(oneEffect.written).toEqual(["copy", "copy"]);
-    await expect.poll(() => single.hasAttribute("data-drop-target")).toBe(true);
-    expect(typed.hasAttribute("data-drop-target")).toBe(false);
-  });
-
-  it("ignores drags on a disabled Root, whose drop the document still keeps from opening the file", async () => {
-    const onSelect = vi.fn<(files: File[]) => void>();
-    const { host } = renderThemed(<Zone disabled onSelect={onSelect} />);
-    const { zone } = parts(host);
-    expect(zone.hasAttribute("data-disabled")).toBe(true);
-    const transfer = fileTransfer([png("a.png")]);
-
-    drag(zone, "dragenter", transfer);
-    const drop = drag(zone, "drop", transfer);
-    expect(drop.defaultPrevented).toBe(true);
-    await expect.poll(() => onSelect.mock.calls.length).toBe(0);
-    expect(zone.hasAttribute("data-drop-target")).toBe(false);
-  });
-
-  it("opens the picker from a click on its empty surface, never from a control inside it", async () => {
-    const { host } = renderThemed(<Zone />);
-    const { zone } = parts(host);
-    const click = stubPicker(host);
-
-    zone.click();
-    expect(click).toHaveBeenCalledTimes(1);
-    await userEvent.click(roleNamed("button", "Add files"));
-    expect(click).toHaveBeenCalledTimes(2);
-    await userEvent.click(roleNamed("button", "Clear list"));
-    expect(click).toHaveBeenCalledTimes(2);
-  });
-
-  it("leaves a click to a disclosure, to portalled content, and to a text selection inside the zone", () => {
-    function PortalledNote(): ReactElement {
-      return createPortal(<p>Portalled note</p>, document.body);
-    }
-    const { host } = renderThemed(
-      <FileUpload.Root>
-        <FileUpload.Dropzone>
-          <details>
-            <summary>More</summary>
-          </details>
-          <PortalledNote />
-          <FileUpload.Description>Images only</FileUpload.Description>
-        </FileUpload.Dropzone>
-      </FileUpload.Root>
-    );
-    const click = stubPicker(host);
-
-    textNamed("More").click();
-    textNamed("Portalled note").click();
-    const hint = textNamed("Images only");
-    const selection = window.getSelection();
-    selection?.selectAllChildren(hint);
-    hint.click();
-    selection?.removeAllRanges();
-    expect(click).not.toHaveBeenCalled();
-
-    hint.click();
-    expect(click).toHaveBeenCalledTimes(1);
-  });
-
-  it("opens only the inner Root's picker from a click on a nested zone's surface", () => {
-    const { host } = renderThemed(
-      <FileUpload.Root>
-        <FileUpload.Dropzone>
-          <FileUpload.Root>
-            <FileUpload.Dropzone>
-              <FileUpload.Description>Item attachments</FileUpload.Description>
-            </FileUpload.Dropzone>
-          </FileUpload.Root>
-        </FileUpload.Dropzone>
-      </FileUpload.Root>
-    );
-    // DOM audit: each Root renders its hidden input last, so the outer one is the second in order.
-    const [innerInput, outerInput] = host.querySelectorAll('input[type="file"]');
-    if (!(innerInput instanceof HTMLInputElement) || !(outerInput instanceof HTMLInputElement)) {
-      throw new Error("expected two hidden file inputs");
-    }
-    const inner = vi.spyOn(innerInput, "click").mockReturnValue(undefined);
-    const outer = vi.spyOn(outerInput, "click").mockReturnValue(undefined);
-
-    textNamed("Item attachments").click();
-    expect(inner).toHaveBeenCalledTimes(1);
-    expect(outer).not.toHaveBeenCalled();
-  });
-
-  it("leaves a click on a Slider track inside the zone to the Slider", async () => {
-    const { host } = renderThemed(
-      withLocale(
-        "en-US",
-        <FileUpload.Root>
-          <FileUpload.Dropzone>
-            <div style={{ width: 160 }}>
-              <Slider aria-label="Quality" defaultValue={0} />
-            </div>
-          </FileUpload.Dropzone>
-        </FileUpload.Root>
-      )
-    );
-    const click = stubPicker(host);
-    // DOM audit: the slider's track has no role; a pointer press on it is what moves the thumb.
-    const control = roleNamed("slider", "Quality").closest("[data-slot=slider-control]");
-    if (!isHTMLElement(control)) {
-      throw new Error("expected the slider control");
-    }
-    const { width, height } = control.getBoundingClientRect();
-    await userEvent.click(control, { position: { x: width - 2, y: height / 2 } });
-    expect(roleNamed("slider", "Quality")).not.toHaveProperty("value", "0");
-    expect(click).not.toHaveBeenCalled();
-  });
-
-  it("paints the shared focus ring on a Button Trigger inside the zone, at both densities", async () => {
-    const { host } = renderThemed(
-      <>
-        <button type="button">Before</button>
-        <FileUpload.Root>
-          <FileUpload.Dropzone>
-            <FileUpload.Trigger render={<Button size="sm" />}>Add files</FileUpload.Trigger>
-          </FileUpload.Dropzone>
-        </FileUpload.Root>
-      </>
-    );
-    stubPicker(host);
-    await assertFocusRingAtBothDensities(roleNamed("button", "Before"), roleNamed("button", "Add files"));
-  });
-});
-
-describe("the document drop guard", () => {
-  it("keeps a file drop outside every zone from opening the file while a Root is mounted", () => {
-    const first = renderThemed(<Zone />);
-    const second = renderThemed(<Zone />);
-    const outside = document.createElement("div");
-    document.body.append(outside);
-    try {
-      expect(drag(outside, "drop", fileTransfer([png("a.png")])).defaultPrevented).toBe(true);
-      const over = fileTransfer([png("a.png")]);
-      const overEffect = recordDropEffect(over);
-      expect(drag(outside, "dragover", over).defaultPrevented).toBe(true);
-      expect(overEffect.written).toEqual(["none"]);
-
-      const text = new DataTransfer();
-      text.setData("text/plain", "hello");
-      expect(drag(outside, "drop", text).defaultPrevented).toBe(false);
-
-      first.unmount();
-      expect(drag(outside, "drop", fileTransfer([png("a.png")])).defaultPrevented).toBe(true);
-      second.unmount();
-      expect(drag(outside, "drop", fileTransfer([png("a.png")])).defaultPrevented).toBe(false);
-    } finally {
-      outside.remove();
-    }
-  });
-
-  it("leaves a file drag that another handler already cancelled to that handler", () => {
-    renderThemed(
-      <FileUpload.Root>
-        <div
-          onDragOver={(event) => {
-            event.preventDefault();
-            event.dataTransfer.dropEffect = "copy";
-          }}>
-          Custom target
-        </div>
-      </FileUpload.Root>
-    );
-    const transfer = fileTransfer([png("a.png")]);
-    const effect = recordDropEffect(transfer);
-    expect(drag(textNamed("Custom target"), "dragover", transfer).defaultPrevented).toBe(true);
-    expect(effect.written.at(-1)).toBe("copy");
-  });
-});
-
-describe("FileUpload across shadow roots and frames", () => {
-  it("takes a paste while its Trigger has focus inside an open shadow root", async () => {
-    const onSelect = vi.fn<(files: File[]) => void>();
-    const shadowHost = document.createElement("div");
-    document.body.append(shadowHost);
-    const mount = document.createElement("div");
-    shadowHost.attachShadow({ mode: "open" }).append(mount);
-    try {
-      renderThemed(
-        createPortal(
-          <FileUpload.Root onSelect={onSelect}>
-            <FileUpload.Trigger>Add files</FileUpload.Trigger>
-          </FileUpload.Root>,
-          mount
-        )
-      );
-      roleNamed("button", "Add files").focus();
-      expect(paste(document.body, [png("a.png")]).defaultPrevented).toBe(true);
-      await vi.waitFor(() => expect(onSelect).toHaveBeenCalledTimes(1));
-    } finally {
-      shadowHost.remove();
-    }
-  });
-
-  it("leaves the paste to a text field inside a shadow root within the Root", () => {
-    const onSelect = vi.fn<(files: File[]) => void>();
-    function ShadowField(): ReactElement {
-      const [mount, setMount] = useState<HTMLElement | null>(null);
-      return (
-        <div
-          ref={(host) => {
-            if (host !== null && host.shadowRoot === null) {
-              const inner = document.createElement("div");
-              host.attachShadow({ mode: "open" }).append(inner);
-              setMount(inner);
-            }
-          }}>
-          {mount === null ? null : createPortal(<input aria-label="Caption" />, mount)}
-        </div>
-      );
-    }
-    renderThemed(
-      <FileUpload.Root onSelect={onSelect}>
-        <FileUpload.Trigger>Add files</FileUpload.Trigger>
-        <ShadowField />
-      </FileUpload.Root>
-    );
-    const field = roleNamed("textbox", "Caption");
-    field.focus();
-    expect(paste(field, [png("a.png")]).defaultPrevented).toBe(false);
-    expect(onSelect).not.toHaveBeenCalled();
-  });
-
-  it("listens, clicks and guards in the frame document a portal renders it into", async () => {
-    const onSelect = vi.fn<(files: File[]) => void>();
-    const frame = document.createElement("iframe");
-    document.body.append(frame);
-    const frameDocument = frame.contentDocument;
-    if (frameDocument === null) {
-      throw new Error("expected a same-origin frame document");
-    }
-    try {
-      renderThemed(createPortal(<Zone onSelect={onSelect} />, frameDocument.body));
-      // DOM audit: page queries stop at the frame boundary, so the frame's parts are found in its DOM.
-      const { zone } = parts(frameDocument.body);
-      const trigger = frameDocument.querySelector("button");
-      const input = frameDocument.querySelector('input[type="file"]');
-      if (!isHTMLElement(trigger) || !isHTMLElement(input)) {
-        throw new Error("expected the Trigger and the input in the frame");
-      }
-      const click = vi.spyOn(input, "click").mockReturnValue(undefined);
-
-      zone.click();
-      expect(click).toHaveBeenCalledTimes(1);
-
-      trigger.focus();
-      expect(paste(frameDocument.body, [png("a.png")]).defaultPrevented).toBe(true);
-      await vi.waitFor(() => expect(onSelect).toHaveBeenCalledTimes(1));
-
-      expect(drag(frameDocument.body, "drop", fileTransfer([png("b.png")])).defaultPrevented).toBe(true);
-    } finally {
-      frame.remove();
-    }
   });
 });

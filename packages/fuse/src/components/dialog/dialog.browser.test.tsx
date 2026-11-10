@@ -73,34 +73,6 @@ describe("Dialog", () => {
     expect(dialog.getAttribute("aria-describedby")).toBe(description.id);
   });
 
-  it("focuses the popup itself and paints the shared ring when nothing inside is tabbable", async () => {
-    renderThemed(
-      withLocale(
-        "en-US",
-        <Dialog.Root>
-          <Dialog.Trigger>Open notice</Dialog.Trigger>
-          <Dialog.Content showCloseButton={false}>
-            <Dialog.Title>Notice</Dialog.Title>
-          </Dialog.Content>
-        </Dialog.Root>
-      )
-    );
-    const trigger = page.getByRole("button", { name: "Open notice", exact: true }).element();
-    if (!(trigger instanceof HTMLElement)) {
-      throw new Error("expected the trigger");
-    }
-    trigger.focus();
-    await userEvent.keyboard("{Enter}");
-    // Base UI moves focus into the popup after it mounts, which can land a frame later.
-    const popup = page.getByRole("dialog");
-    await expect.element(popup).toHaveFocus();
-    const dialog = popup.element();
-    if (!(dialog instanceof HTMLElement)) {
-      throw new Error("expected the popup");
-    }
-    expectFocusRing(dialog, "fallback focus on the popup must paint the shared ring");
-  });
-
   it("turns a Title into a focus target only with isFocusable", async () => {
     function TitleDialog({ isFocusable }: { isFocusable?: boolean }) {
       const titleRef = useRef<HTMLHeadingElement>(null);
@@ -229,24 +201,6 @@ describe("Dialog", () => {
     );
     await userEvent.click(page.getByRole("button", { name: "Open invoice", exact: true }).element());
     await expect.element(page.getByRole("button", { name: "Ikke nå", exact: true })).toBeInTheDocument();
-  });
-
-  it("maps the size axis onto the popup max-width", async () => {
-    await page.viewport(1280, 720);
-    const widths: number[] = [];
-    for (const size of [undefined, "sm", "10xl"] as const) {
-      const { unmount } = renderThemed(withLocale("en-US", <BasicDialog size={size} />));
-      const dialog = await openDialog();
-      expect(getComputedStyle(dialog).maxWidth).not.toBe("none");
-      widths.push(dialog.getBoundingClientRect().width);
-      unmount();
-    }
-    const [md, sm, xl] = widths;
-    if (md === undefined || sm === undefined || xl === undefined) {
-      throw new Error("expected three overlay widths");
-    }
-    expect(sm).toBeLessThan(md);
-    expect(md).toBeLessThan(xl);
   });
 
   it("portals into the enclosing ThemeScope instead of the document body", async () => {

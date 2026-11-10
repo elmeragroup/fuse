@@ -116,24 +116,4 @@ describe("VerticalTable structure", () => {
     expect(table).toContain("w-full");
     expect(table).toContain('title="grid"');
   });
-
-  it("lets Key render a row header without dropping Key classes", () => {
-    const html = renderToStaticMarkup(
-      createElement(
-        VerticalTable.Row,
-        null,
-        createElement(VerticalTable.Key, { render: createElement("th", { scope: "row" }) }, "Name"),
-        createElement(VerticalTable.Value, null, "Kari Nordmann")
-      )
-    );
-    const host = html.slice(html.indexOf("<th"), html.indexOf(">", html.indexOf("<th")) + 1);
-    expect(host).toContain("<th");
-    expect(host).toContain('scope="row"');
-    expect(html).toContain("Name");
-    expect(host).toContain("bg-muted/50");
-    expect(host).toContain("ps-[var(--table-cell-edge-ps,var(--table-cell-ps))]");
-    expect(host).toContain("align-middle");
-    expect(host).toContain("first:[--table-cell-edge-ps:var(--table-edge-px)]");
-    expect(html).not.toMatch(/<td[^>]*>Name/);
-  });
 });

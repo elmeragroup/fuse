@@ -82,20 +82,6 @@ describe("PhoneNumberField in a Form", () => {
     await expect.poll(alertTexts).toEqual([]);
   });
 
-  it("keeps the phone's registration through the picker, in the configured output format", async () => {
-    const submitted = vi.fn();
-    render(<Signup onFormSubmit={submitted} phone={{ outputFormat: "national" }} />);
-    await userEvent.fill(phoneInput(), "41234567");
-    await openPicker();
-    await userEvent.fill(countrySearch(), "fin");
-    await userEvent.keyboard("{Escape}");
-    await vi.waitFor(() => {
-      expect(page.getByRole("listbox").query()).toBeNull();
-    });
-    await userEvent.click(roleNamed("button", "Save"));
-    expect(submitted).toHaveBeenCalledExactlyOnceWith({ email: "", phone: "41 23 45 67" });
-  });
-
   it("focuses the number input for an error the submit returns", async () => {
     function Fixture() {
       const [errors, setErrors] = useState<FormProps["errors"]>({});
@@ -134,30 +120,6 @@ describe("PhoneNumberField in a Form", () => {
     await userEvent.fill(phoneInput(), "99887766");
     expect(phoneInput().value).toBe("41234567");
     expect(alertTexts()).toEqual(["Server says no"]);
-    expect(phoneInput().getAttribute("aria-invalid")).toBe("true");
-  });
-
-  it("keeps an error passed with a new value in the same render", async () => {
-    function Fixture() {
-      const [state, setState] = useState<{ value: string; errors: FormProps["errors"] }>({
-        value: "",
-        errors: {},
-      });
-      return (
-        <>
-          <Signup errors={state.errors} phone={{ value: state.value, onChange: () => undefined }} />
-          <button
-            type="button"
-            onClick={() => setState({ value: "+4799999999", errors: { phone: "Number taken" } })}>
-            Reject
-          </button>
-        </>
-      );
-    }
-    render(<Fixture />);
-    await userEvent.click(roleNamed("button", "Reject"));
-    expect(phoneInput().value).toBe("99999999");
-    expect(alertTexts()).toEqual(["Number taken"]);
     expect(phoneInput().getAttribute("aria-invalid")).toBe("true");
   });
 

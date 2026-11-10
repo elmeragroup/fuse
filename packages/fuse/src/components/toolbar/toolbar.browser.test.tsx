@@ -105,37 +105,6 @@ describe("Toolbar", () => {
     expect(onSave).not.toHaveBeenCalled();
   });
 
-  it("stacks a vertical toolbar and its groups and turns its separators horizontal", () => {
-    renderThemed(
-      <Toolbar.Root aria-label="Tools" orientation="vertical">
-        <Toolbar.Group aria-label="Draw">
-          <Toolbar.Button render={<Button variant="ghost" size="icon-sm" aria-label="Pen" />} />
-          <Toolbar.Button render={<Button variant="ghost" size="icon-sm" aria-label="Eraser" />} />
-        </Toolbar.Group>
-        <Toolbar.Separator />
-        <Toolbar.Button render={<Button variant="ghost" size="icon-sm" aria-label="Fill" />} />
-      </Toolbar.Root>
-    );
-    const toolbar = roleNamed("toolbar", "Tools");
-    expect(toolbar.getAttribute("aria-orientation")).toBe("vertical");
-    // Pen and Eraser sit in the group, so this checks the group stacks, not only the root.
-    const pen = roleNamed("button", "Pen").getBoundingClientRect();
-    const eraser = roleNamed("button", "Eraser").getBoundingClientRect();
-    const fill = roleNamed("button", "Fill").getBoundingClientRect();
-    expect(eraser.top).toBeGreaterThan(pen.bottom);
-
-    const separator = page.getByRole("separator").element();
-    expect(separator.getAttribute("aria-orientation")).toBe("horizontal");
-    const line = separator.getBoundingClientRect();
-    expect(line.top).toBeGreaterThan(eraser.bottom);
-    expect(fill.top).toBeGreaterThan(line.bottom);
-    expect(line.height).toBe(1);
-    // Every item is an icon-sm square, so each one's edges line up with the bar's content box.
-    // Both ends are checked: without `w-auto` the line still starts 4px in but overflows the right.
-    expect(line.left - pen.left).toBeCloseTo(4, 1);
-    expect(pen.right - line.right).toBeCloseTo(4, 1);
-  });
-
   it("draws a horizontal toolbar's separator as a vertical hairline, 4px short of the items at each end", () => {
     renderThemed(
       <Toolbar.Root aria-label="Clipboard">

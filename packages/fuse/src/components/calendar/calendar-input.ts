@@ -74,7 +74,7 @@ export type CalendarViewProps = {
 };
 
 /** The Root a diagnostic names. */
-export type CalendarOwner = "Calendar.Root" | "RangeCalendar.Root";
+type CalendarOwner = "Calendar.Root" | "RangeCalendar.Root";
 
 /**
  * The error for text that reached a date prop past its types: from plain JavaScript, or from a
@@ -226,10 +226,7 @@ export function useCalendarBounds(
  * @param prop - The Root's `firstDayOfWeek`.
  * @returns The ISO weekday.
  */
-export function resolveFirstDay(
-  locale: SupportedLocale,
-  prop: CalendarFirstDayOfWeek | undefined
-): IsoWeekday {
+function resolveFirstDay(locale: SupportedLocale, prop: CalendarFirstDayOfWeek | undefined): IsoWeekday {
   return prop === undefined ? firstDayOfWeek(locale) : ISO_WEEKDAY[prop];
 }
 
@@ -255,7 +252,7 @@ export function useVisibleMonthCount(requested: number, owner: CalendarOwner): n
 }
 
 /** What a Root resolves its shared props to before `useCalendarSettings` assembles them. */
-export type CalendarSettingsInput = Omit<CalendarSettings, "firstDay"> & {
+type CalendarSettingsInput = Omit<CalendarSettings, "firstDay"> & {
   /** The Root's `firstDayOfWeek`, or `undefined` for the locale's. */
   readonly firstDayOfWeek: CalendarFirstDayOfWeek | undefined;
 };

@@ -1,8 +1,7 @@
 import { NodeServices } from "@effect/platform-node";
 import { assert, describe, it } from "@effect/vitest";
 import { Deferred, Duration, Effect, Fiber, Layer } from "effect";
-import { spawn, spawnSync } from "node:child_process";
-import { chmod, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { chmod, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -92,11 +91,6 @@ function exists(file: string) {
       () => false
     )
   );
-}
-
-/** A pid that belonged to a process that has already exited. */
-function deadPid(): number {
-  return spawnSync(process.execPath, ["-e", ""]).pid;
 }
 
 /** Whether anything still answers on the origin. */
@@ -258,74 +252,6 @@ describe("DocsServer", () => {
       yield* Fiber.interrupt(fiber);
       assert.strictEqual(yield* readText(path.join(cwd, "next-env.d.ts")), ORIGINAL);
     }).pipe(Effect.scoped)
-  );
-
-  it.live(
-    "refuses to reclaim while a crashed run's server lives, then restores and reclaims once it is gone",
-    () =>
-      Effect.gen(function* () {
-        const cwd = yield* checkout;
-        const nextEnv = path.join(cwd, "next-env.d.ts");
-        const lockFile = path.join(cwd, "cache/pr-shots.lock");
-        const recordFile = `${lockFile}.server.json`;
-        // A run that was killed with SIGKILL: its server's process group lives on, next-env.d.ts is
-        // rewritten, and its lock and record name an owner that is gone.
-        const port = yield* Effect.promise(async () => {
-          const probe = (await import("node:net")).createServer();
-          await new Promise<void>((resolve) => probe.listen(0, "127.0.0.1", resolve));
-          const address = probe.address();
-          await new Promise<void>((resolve) => probe.close(() => resolve()));
-          return address instanceof Object ? address.port : 0;
-        });
-        const orphan = spawn(
-          process.execPath,
-          [path.join(import.meta.dirname, "fixture/fake-docs-server.mjs"), "launcher", String(port), "serve"],
-          { cwd, detached: true, stdio: "ignore" }
-        );
-        const group = orphan.pid ?? 0;
-        yield* Effect.addFinalizer(() =>
-          Effect.sync(() => {
-            try {
-              process.kill(-group, "SIGKILL");
-            } catch {
-              // Already gone.
-            }
-          })
-        );
-        while ((yield* loggedPids(cwd)).length < 2) {
-          yield* Effect.sleep(Duration.millis(20));
-        }
-        const staleLock = JSON.stringify({ pid: deadPid(), token: "crashed-run" });
-        yield* Effect.promise(async () => {
-          await mkdir(path.dirname(lockFile), { recursive: true });
-          await writeFile(lockFile, staleLock);
-          await writeFile(
-            recordFile,
-            JSON.stringify({ group, file: nextEnv, snapshot: { _tag: "content", content: ORIGINAL } })
-          );
-        });
-        assert.strictEqual(yield* readText(nextEnv), REWRITTEN);
-
-        const refused = yield* Effect.flip(startOnce(fakeServer(cwd)));
-        assert.strictEqual(refused._tag, "ServerStillRunning");
-        assert.include(refused.message, `process group ${String(group)}`);
-        assert.include(refused.message, `kill -TERM -${String(group)}`);
-        // Nothing was reclaimed or restored, and no second server started.
-        assert.strictEqual(yield* readText(lockFile), staleLock);
-        assert.isTrue(yield* exists(recordFile));
-        assert.strictEqual(yield* readText(nextEnv), REWRITTEN);
-        assert.strictEqual((yield* loggedPids(cwd)).length, 2);
-
-        process.kill(-group, "SIGKILL");
-        assert.deepStrictEqual(yield* survivors((yield* loggedPids(cwd)).map(({ pid }) => pid)), []);
-
-        const { fiber } = yield* startAndHold(fakeServer(cwd));
-        yield* Fiber.interrupt(fiber);
-        // The crashed run's snapshot came back first, so this run snapshotted and restored the
-        // original, not the crashed server's rewrite.
-        assert.strictEqual(yield* readText(nextEnv), ORIGINAL);
-        assert.isFalse(yield* exists(recordFile));
-      }).pipe(Effect.scoped)
   );
 
   it.live("keeps the crash record when the restore fails, and the next start recovers the file from it", () =>

@@ -2,8 +2,7 @@
 // what a month button pages to, and whether it may. Pure: it takes Temporal values and returns
 // them, so the rules are unit-tested without React. The alignment rules reproduce React Aria's
 // `react-stately` calendar utilities (`alignCenter`, `alignStart`, `alignEnd`, `constrainStart`,
-// `constrainValue`), which the parity harness in `src/internal/date-tier-parity.browser.test.tsx`
-// pins for one month.
+// `constrainValue`).
 
 import { checkBounds } from "../../temporal/bounds";
 import { temporal } from "../../temporal/temporal";

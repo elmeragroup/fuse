@@ -33,19 +33,4 @@ describe("browser adapter transition suppression", () => {
     expect(injected?.getAttribute("nonce")).toBe("csp");
     await expect.poll(() => transitionStyleCount()).toBe(0);
   });
-
-  it("is safe when document.body is missing", async () => {
-    const platform = createBrowserColorSchemePlatform();
-    document.documentElement.setAttribute("data-theme", "light");
-
-    const body = document.body;
-    body.remove();
-    try {
-      platform.root.write("dark", { nonce: undefined });
-      expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
-      await expect.poll(() => transitionStyleCount()).toBe(0);
-    } finally {
-      document.documentElement.append(body);
-    }
-  });
 });

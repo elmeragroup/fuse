@@ -115,7 +115,7 @@ function planDashPattern(run: Run, node: LayerParent, label: string, desired: re
  * `parent` is `unknown` when the box that holds it turns in this run, which moves the frame's fill
  * to the other axis and can change its size.
  */
-export type BoxPlace = { readonly kind: "root" } | { readonly kind: "frame"; readonly parent: Held };
+type BoxPlace = { readonly kind: "root" } | { readonly kind: "frame"; readonly parent: Held };
 
 /**
  * Plan a box against the spec: a variant's root, or a frame layer below it. The box lays out its

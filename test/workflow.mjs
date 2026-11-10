@@ -1,29 +1,14 @@
 import { execFileSync } from "node:child_process";
-import { readdirSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { expect } from "vitest";
 import { parse } from "yaml";
 
-import { asRecord, asRecordArray, asString, isString } from "./json-object.mjs";
+import { asRecord, asRecordArray, asString } from "./json-object.mjs";
 import { repoRoot } from "./repo-tree.mjs";
 
 /** The directory every GitHub Actions workflow lives in. */
 const WORKFLOW_DIRECTORY = new URL("../.github/workflows/", import.meta.url);
-
-/**
- * Lists every workflow by the name `readWorkflow` and `readWorkflowText` take. GitHub also runs
- * `.yaml` files, so any other entry fails here instead of escaping the sweeps.
- *
- * @returns {string[]} Workflow file names without the `.yml` extension.
- */
-export function workflowNames() {
-  const files = readdirSync(WORKFLOW_DIRECTORY);
-  expect(
-    files.filter((file) => !file.endsWith(".yml")),
-    "workflows use the .yml extension"
-  ).toEqual([]);
-  return files.map((file) => file.slice(0, -".yml".length));
-}
 
 /**
  * Reads a workflow's raw YAML, for checks on comments the parser drops.
@@ -31,7 +16,7 @@ export function workflowNames() {
  * @param {string} name - Workflow file name without the `.yml` extension.
  * @returns {string} The workflow source text.
  */
-export function readWorkflowText(name) {
+function readWorkflowText(name) {
   return readFileSync(new URL(`${name}.yml`, WORKFLOW_DIRECTORY), "utf8");
 }
 
@@ -61,25 +46,10 @@ export function turboTasks(args) {
 }
 
 /**
- * Resolves references to literal matrix values, leaving unresolved references and other
- * GitHub expressions untouched.
- * @param {string} value
- * @param {Record<string, unknown>} entry
- * @returns {string}
- */
-export function resolveMatrixExpressions(value, entry) {
-  return value.replace(/\$\{\{\s*matrix\.([\w-]+)\s*\}\}/g, (expression, key) => {
-    const property = asString(key, "matrix property");
-    const literal = entry[property];
-    return isString(literal) && !literal.includes("${{") ? literal : expression;
-  });
-}
-
-/**
  * @param {Record<string, unknown>} workflow
  * @param {string} name
  */
-export function jobSteps(workflow, name) {
+function jobSteps(workflow, name) {
   const job = asRecord(asRecord(workflow.jobs, "workflow jobs")[name], name);
   return asRecordArray(job.steps, `${name} steps`);
 }
@@ -107,66 +77,4 @@ export function requiredRunStep(steps, prefix) {
   const step = matches[0];
   expect(step["continue-on-error"]).toBeUndefined();
   return step;
-}
-
-/**
- * Finds the step with `id`, which GitHub requires to be unique in its job.
- * @param {Record<string, unknown>[]} steps
- * @param {string} id
- */
-export function requiredStepById(steps, id) {
-  const found = steps.find((step) => step.id === id);
-  if (found === undefined) throw new Error(`expected a step with id ${id}`);
-  return found;
-}
-
-/**
- * Finds the single step that runs `action` at any ref. The ref itself is the pin sweep's concern
- * (`action-pins.test.mjs`), so a second step with the same action fails here as a duplicate.
- * @param {Record<string, unknown>[]} steps
- * @param {string} action The action path without a ref, such as `actions/checkout`.
- */
-export function requiredUsesStep(steps, action) {
-  const matches = steps.filter(
-    (step) => step.uses !== undefined && asString(step.uses, "step uses").startsWith(`${action}@`)
-  );
-  expect(matches, `expected one ${action} step`).toHaveLength(1);
-  return matches[0];
-}
-
-/**
- * Finds the single step that runs a cache `action` for `path`. A job can cache several things,
- * so a cache is known by what it stores; a second step caching the same path fails here as a
- * duplicate.
- * @param {Record<string, unknown>[]} steps
- * @param {string} action The action path without a ref, such as `actions/cache/restore`.
- * @param {string} path The cached path exactly as the step's `with.path` spells it.
- */
-export function requiredCacheStep(steps, action, path) {
-  const matches = steps.filter(
-    (step) =>
-      step.uses !== undefined &&
-      asString(step.uses, "step uses").startsWith(`${action}@`) &&
-      asRecord(step.with, `${action} inputs`).path === path
-  );
-  expect(matches, `expected one ${action} step for ${path}`).toHaveLength(1);
-  return matches[0];
-}
-
-/**
- * Local composite actions execute steps with the caller's token permissions, so the same
- * pin and shell/token checks that inspect workflows must inspect their steps too.
- */
-export function compositeActions() {
-  const directory = new URL("../.github/actions/", import.meta.url);
-  return readdirSync(directory, { withFileTypes: true })
-    .filter((entry) => entry.isDirectory())
-    .flatMap((entry) => {
-      const name = `.github/actions/${entry.name}/action.yml`;
-      const text = readFileSync(new URL(`${entry.name}/action.yml`, directory), "utf8");
-      const action = asRecord(parse(text), name);
-      const runs = asRecord(action.runs, `${name} runs`);
-      if (runs.using !== "composite") return [];
-      return [{ name, text, steps: asRecordArray(runs.steps, `${name} steps`) }];
-    });
 }

@@ -62,7 +62,8 @@ async function hydrateDemo(
   browser: Browser,
   pathname: string,
   demoName: string,
-  barCount = 0
+  barCount = 0,
+  serverHtml?: (html: string) => string
 ): Promise<Hydration> {
   const context = await browser.newContext({ timezoneId: BROWSER_TIME_ZONE });
   await context.addInitScript(() => {
@@ -85,6 +86,17 @@ async function hydrateDemo(
     await scriptsHeld.promise;
     await route.continue();
   });
+  if (serverHtml !== undefined) {
+    // The negative control: the page's HTML as the server sent it, edited before the browser parses
+    // it, so the server text and the client's first render differ where the edit lands.
+    await context.route(
+      (url) => url.pathname === pathname,
+      async (route) => {
+        const response = await route.fetch();
+        await route.fulfill({ response, body: serverHtml(await response.text()) });
+      }
+    );
+  }
   const page = await context.newPage();
   page.setDefaultTimeout(10_000);
   await page.goto(new URL(pathname, docsBaseUrl()).href, { waitUntil: "domcontentloaded" });
@@ -234,6 +246,24 @@ describe.each([
     });
   });
 
+  it("report a server text the client renders differently, as the negative control", async () => {
+    // The harness must fail where hydration does: the server HTML says 0,999 where the demo
+    // renders 0,412, so React reports its text mismatch (418) and the client rewrites the cell.
+    const hydration = await hydrateDemo(
+      browser(),
+      "/handbook/localization",
+      "Market time zone",
+      0,
+      (html) => {
+        expect(html).toContain(">0,412<");
+        return html.replace(">0,412<", ">0,999<");
+      }
+    );
+    expect(hydration.mutations).toBeGreaterThan(0);
+    expect(hydration.errors.some((error) => error.includes("418"))).toBe(true);
+    expect(hydration.cells[1]).toBe("0,412");
+  });
+
   it("hydrate a Bar whose Suspense boundary resolves after the chart's first effect, with no mutation, into the waiting entrance", async () => {
     const hydration = await hydrateDemo(browser(), "/components/bar-chart", "Streamed series", 12);
     expect(hydration.mutations).toBe(0);
@@ -256,15 +286,5 @@ describe.each([
       Array.from({ length: 6 }, () => 0)
     );
     expect(hydration.bars.map((bar) => bar.animations)).toEqual(Array.from({ length: 12 }, () => 0));
-  });
-
-  it("mismatch on a date demo with no zone, which the browser regenerates", async () => {
-    // The negative control: the client-paged DataTable demo formats UTC midnights in the runtime's
-    // zone. The server writes 30 September, and the browser rewrites the table as 1 October.
-    const hydration = await hydrateDemo(browser(), "/components/data-table", "Client-paged");
-    expect(hydration.mutations).toBeGreaterThan(0);
-    // React 418: the server HTML didn't match what the client rendered.
-    expect(hydration.errors.some((error) => error.includes("418"))).toBe(true);
-    expect(hydration.cells[3]).toBe("Oct\u00a01,\u00a02026");
   });
 });

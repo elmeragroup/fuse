@@ -193,7 +193,7 @@ export type OwnedChild<Node extends SceneNode, Fact> = {
 };
 
 /** One owned child as the plan leaves it. */
-export type PlannedChild<Spec, Node extends SceneNode, Fact> = {
+type PlannedChild<Spec, Node extends SceneNode, Fact> = {
   readonly spec: Spec;
   readonly node: Target<Node>;
   /** What `plan` returned for a found child, or undefined for one the run creates. */

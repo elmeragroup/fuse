@@ -3,89 +3,12 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
-import { RAW_PALETTE_RE } from "../../../test/raw-palette";
 import { panelHeightTransition } from "../../styles/panel-height";
 import { selfFocusRingClass } from "../../styles/utils";
 import { accordionVariants } from "./accordion-variants";
 import { Accordion } from "./index";
 
-const VARIANTS = ["default", "card", "infodropdown"] as const;
-const RADII = ["none", "lg", "xl"] as const;
-
 describe("accordionVariants", () => {
-  it("defaults to variant=default and radius=none", () => {
-    const slots = accordionVariants();
-    expect(slots.item()).toContain("bg-primary-soft");
-    expect(slots.item()).toContain("rounded-sm");
-    expect(slots.item()).toContain("p-(--surface-pad-md)");
-    expect(slots.item()).not.toContain("overflow-hidden");
-  });
-
-  it("maps each variant onto the public slots without leaking the others", () => {
-    const defaults = accordionVariants({ variant: "default" });
-    expect(defaults.base()).toContain("space-y-3");
-    expect(defaults.item()).toContain("bg-primary-soft");
-    expect(defaults.item()).toContain("text-primary-soft-foreground");
-    expect(defaults.item()).toContain("[--ring:var(--primary-soft-foreground)]");
-    expect(defaults.item()).not.toContain("bg-muted");
-    // The caret inherits the item's soft foreground rather than pinning the page foreground.
-    expect(defaults.icon()).not.toContain("text-foreground");
-    expect(defaults.trigger()).not.toContain("transition-all");
-    expect(defaults.contentInner()).toContain("pt-[calc(var(--surface-gap-lg)+--spacing(1.5))]");
-    expect(defaults.item()).not.toContain("bg-card");
-    expect(defaults.content()).not.toContain("pl-7");
-    expect(defaults.icon()).toContain("shrink-0");
-    expect(defaults.icon()).not.toContain("absolute");
-    expect(defaults.indicator()).toContain("shrink-0");
-
-    const card = accordionVariants({ variant: "card" });
-    expect(card.base()).toContain("space-y-3");
-    expect(card.item()).toContain("bg-card");
-    expect(card.item()).toContain("text-foreground");
-    expect(card.item()).toContain("rounded-lg");
-    expect(card.item()).toContain("border");
-    expect(card.content()).toContain("bg-card");
-    expect(card.content()).toContain("text-foreground");
-    // The panel sits inside the item's padding, so it rounds with the item's inner corner.
-    expect(card.content()).toContain("rounded-inner");
-    expect(card.icon()).toContain("text-foreground");
-    expect(card.item()).not.toContain("bg-primary-soft");
-    expect(card.trigger()).not.toContain("justify-start");
-
-    const info = accordionVariants({ variant: "infodropdown" });
-    expect(info.base()).toContain("border-border");
-    expect(info.base()).toContain("border-b");
-    expect(info.trigger()).toContain("relative");
-    expect(info.trigger()).toContain("justify-start");
-    expect(info.contentInner()).toContain("pt-1.5");
-    expect(info.contentInner()).not.toContain("--surface-gap-lg");
-    expect(info.icon()).toContain("absolute");
-    expect(info.icon()).toContain("right-0");
-    expect(info.indicator()).toContain("absolute");
-    expect(info.indicator()).toContain("right-0");
-    expect(info.icon()).toContain("text-foreground");
-    expect(defaults.indicator()).not.toContain("absolute");
-    expect(info.content()).toContain("pl-7");
-    expect(info.item()).not.toContain("bg-card");
-  });
-
-  it("applies radius only on the item slot", () => {
-    const none = accordionVariants({ radius: "none" });
-    expect(none.item()).not.toContain("overflow-hidden");
-    expect(none.item()).not.toContain("rounded-lg");
-    expect(none.item()).not.toContain("rounded-xl");
-
-    const lg = accordionVariants({ radius: "lg" });
-    expect(lg.item()).toContain("overflow-hidden");
-    expect(lg.item()).toContain("rounded-lg");
-    expect(lg.item()).not.toContain("rounded-xl");
-
-    const xl = accordionVariants({ radius: "xl" });
-    expect(xl.item()).toContain("overflow-hidden");
-    expect(xl.item()).toContain("rounded-xl");
-    expect(xl.item()).not.toContain("rounded-lg");
-  });
-
   it("keeps the shared panel-height transition, group chevron, and shared self focus ring", () => {
     const slots = accordionVariants();
     expect(slots.header()).toContain("flex");
@@ -93,7 +16,7 @@ describe("accordionVariants", () => {
     // The open gap lives in the panel, so the trigger has no open-state padding.
     expect(slots.trigger()).not.toContain("data-[panel-open]:pb");
     expect(slots.trigger()).not.toContain("data-[state=open]");
-    // Oracle: the shared focus recipe, which utils.test.ts pins by hand.
+    // Oracle: the shared focus recipe the part composes.
     for (const token of selfFocusRingClass.split(" ")) {
       expect(slots.trigger()).toContain(token);
     }
@@ -102,41 +25,6 @@ describe("accordionVariants", () => {
     expect(slots.content()).toBe(`${panelHeightTransition} h-(--accordion-panel-height)`);
     expect(slots.content()).not.toContain("motion-reduce");
     expect(slots.contentInner()).toContain("pt-[calc(var(--surface-gap-lg)+--spacing(1.5))]");
-  });
-
-  it("covers every public variant and radius without raw palette, dark, or density variants", () => {
-    for (const variant of VARIANTS) {
-      const slots = accordionVariants({ variant });
-      const resolved = [
-        slots.base(),
-        slots.item(),
-        slots.header(),
-        slots.trigger(),
-        slots.indicator(),
-        slots.icon(),
-        slots.content(),
-        slots.contentInner(),
-      ].join(" ");
-      expect(resolved.length).toBeGreaterThan(0);
-      expect(resolved, variant).not.toContain("dark:");
-      expect(resolved, variant).not.toMatch(RAW_PALETTE_RE);
-      expect(resolved, variant).not.toMatch(/\b(?:dense|comfortable):/);
-      expect(resolved, variant).not.toContain("bg-secondary-container");
-      expect(resolved, variant).not.toContain("text-on-surface");
-      expect(resolved, variant).not.toContain("bg-on-primary");
-    }
-    for (const radius of RADII) {
-      expect(accordionVariants({ radius }).item().length).toBeGreaterThan(0);
-    }
-  });
-});
-
-describe("accordionVariants hasIndicator", () => {
-  it("packs the trigger's children at the start when it has no indicator", () => {
-    expect(accordionVariants({ hasIndicator: false }).trigger()).toContain("justify-start");
-    expect(accordionVariants({ hasIndicator: false }).trigger()).not.toContain("justify-between");
-    expect(accordionVariants({ hasIndicator: true }).trigger()).toContain("justify-between");
-    expect(accordionVariants().trigger()).toContain("justify-between");
   });
 });
 

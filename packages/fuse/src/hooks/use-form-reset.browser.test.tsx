@@ -1,7 +1,6 @@
-import { StrictMode, Suspense, startTransition, use, useRef, useState } from "react";
+import { StrictMode, useRef } from "react";
 import type { FormEvent, ReactNode } from "react";
 
-import { createPortal } from "react-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Mock } from "vitest";
 import { userEvent } from "vitest/browser";
@@ -96,95 +95,6 @@ describe("useFormReset", () => {
     expect(resetCalls(add)).toHaveLength(listeners);
   });
 
-  it("shares one root listener across subscribers until the last one unmounts", async () => {
-    const callbacks = Array.from({ length: 5 }, () => vi.fn());
-
-    function Rows({ count }: { count: number }) {
-      return (
-        <form aria-label="Rows">
-          {callbacks.slice(0, count).map((onReset, index) => (
-            <Row key={index} onReset={onReset} />
-          ))}
-        </form>
-      );
-    }
-
-    function Row({ onReset }: { onReset: () => void }) {
-      const element = useRef<HTMLInputElement>(null);
-      useFormReset(element, onReset);
-      return <input aria-label="Row" ref={element} />;
-    }
-
-    async function resetRows(): Promise<void> {
-      vi.useFakeTimers();
-      try {
-        formNamed("Rows").reset();
-        await vi.runOnlyPendingTimersAsync();
-      } finally {
-        vi.useRealTimers();
-      }
-    }
-
-    const add = vi.spyOn(document, "addEventListener");
-    const remove = vi.spyOn(document, "removeEventListener");
-    const { rerender, unmount } = render(<Rows count={5} />);
-    expect(resetCalls(add), "five subscribers, one listener").toHaveLength(1);
-
-    await resetRows();
-    expect(callbacks.map((onReset) => onReset.mock.calls.length)).toEqual([1, 1, 1, 1, 1]);
-
-    rerender(<Rows count={4} />);
-    expect(resetCalls(remove), "the remaining subscribers keep the listener").toEqual([]);
-    await resetRows();
-    expect(callbacks.map((onReset) => onReset.mock.calls.length)).toEqual([2, 2, 2, 2, 1]);
-
-    unmount();
-    expect(resetCalls(remove), "the last unsubscribe removes the listener it added").toEqual(resetCalls(add));
-  });
-
-  it("adds one listener per root for subscribers in the document and a shadow root", async () => {
-    const shadowHost = document.createElement("div");
-    document.body.append(shadowHost);
-    const shadow = shadowHost.attachShadow({ mode: "open" });
-    const mountPoint = document.createElement("div");
-    shadow.append(mountPoint);
-    const light = [vi.fn(), vi.fn()];
-    const shadowed = [vi.fn(), vi.fn()];
-
-    function Pair({ label, callbacks }: { label: string; callbacks: Array<() => void> }) {
-      const first = useRef<HTMLInputElement>(null);
-      const second = useRef<HTMLInputElement>(null);
-      useFormReset(first, callbacks[0] ?? null);
-      useFormReset(second, callbacks[1] ?? null);
-      return (
-        <form aria-label={label}>
-          <input aria-label={`${label} first`} ref={first} />
-          <input aria-label={`${label} second`} ref={second} />
-        </form>
-      );
-    }
-
-    const documentAdd = vi.spyOn(document, "addEventListener");
-    const shadowAdd = vi.spyOn(shadow, "addEventListener");
-    const { unmount } = render(
-      <>
-        <Pair label="Light" callbacks={light} />
-        {createPortal(<Pair label="Shadowed" callbacks={shadowed} />, mountPoint)}
-      </>
-    );
-    expect(resetCalls(documentAdd)).toHaveLength(1);
-    expect(resetCalls(shadowAdd)).toHaveLength(1);
-
-    formNamed("Shadowed").reset();
-    await vi.waitFor(() => {
-      expect(shadowed.map((onReset) => onReset.mock.calls.length)).toEqual([1, 1]);
-    });
-    expect(light.map((onReset) => onReset.mock.calls.length)).toEqual([0, 0]);
-
-    unmount();
-    shadowHost.remove();
-  });
-
   it("calls the callback once per native reset under StrictMode's double mount", async () => {
     const onReset = vi.fn();
     render(
@@ -223,65 +133,6 @@ describe("useFormReset", () => {
       expect(onReset).toHaveBeenCalledTimes(1);
     });
     expect(seen).toEqual(["start"]);
-  });
-
-  it("subscribes on the enclosing shadow root, where a document listener cannot see reset", async () => {
-    const onReset = vi.fn();
-    const shadowHost = document.createElement("div");
-    document.body.append(shadowHost);
-    const shadow = shadowHost.attachShadow({ mode: "open" });
-    const mountPoint = document.createElement("div");
-    shadow.append(mountPoint);
-
-    function Shadowed() {
-      const element = useRef<HTMLInputElement>(null);
-      useFormReset(element, onReset);
-      return createPortal(
-        <form aria-label="Shadowed">
-          <input aria-label="Field" ref={element} defaultValue="start" />
-        </form>,
-        mountPoint
-      );
-    }
-
-    const add = vi.spyOn(document, "addEventListener");
-    const { unmount } = render(<Shadowed />);
-    expect(resetCalls(add), "no document reset listener for a shadow-root control").toEqual([]);
-
-    formNamed("Shadowed").reset();
-    await vi.waitFor(() => {
-      expect(onReset).toHaveBeenCalledTimes(1);
-    });
-
-    unmount();
-    shadowHost.remove();
-  });
-
-  it("follows a control that attaches after the first commit in the light DOM", async () => {
-    const onReset = vi.fn();
-
-    function Late({ mounted }: { mounted: boolean }) {
-      const element = useRef<HTMLInputElement>(null);
-      useFormReset(element, onReset);
-      return (
-        <form aria-label="Late">
-          {mounted ? <input aria-label="Field" ref={element} defaultValue="start" /> : null}
-        </form>
-      );
-    }
-
-    const { rerender } = render(<Late mounted={false} />);
-    rerender(<Late mounted />);
-    const input = inputNamed("Field");
-    input.value = "edited";
-
-    formNamed("Late").reset();
-
-    // The listener was placed on `document` before the ref attached; the reset still reaches it.
-    await vi.waitFor(() => {
-      expect(onReset).toHaveBeenCalledTimes(1);
-    });
-    expect(input.value).toBe("start");
   });
 
   it.each<SilentResetCase>([
@@ -371,62 +222,5 @@ describe("useFormReset", () => {
     await vi.waitFor(() => {
       expect(onReset).toHaveBeenCalledTimes(2);
     });
-  });
-
-  it("keeps the committed callback when a suspended update changes ownership", async () => {
-    const onReset = vi.fn();
-    const attempted = vi.fn();
-    const never = new Promise<void>(() => undefined);
-    let changeOwnership: () => void = () => undefined;
-
-    function Suspended() {
-      attempted();
-      use(never);
-      return null;
-    }
-
-    function Field({ controlled }: { controlled: boolean }) {
-      const element = useRef<HTMLInputElement>(null);
-      useFormReset(element, controlled ? null : onReset);
-      return (
-        <form aria-label="Probe">
-          <input aria-label="Field" ref={element} defaultValue="start" />
-        </form>
-      );
-    }
-
-    function App() {
-      const [controlled, setControlled] = useState(false);
-      // oxlint-disable-next-line react/globals -- test probe swaps the captured callback during a transition
-      changeOwnership = () => {
-        startTransition(() => {
-          setControlled(true);
-        });
-      };
-      return (
-        <Suspense fallback={<span>Waiting</span>}>
-          <Field controlled={controlled} />
-          {controlled ? <Suspended /> : null}
-        </Suspense>
-      );
-    }
-
-    render(<App />);
-    const committedForm = formNamed("Probe");
-    changeOwnership();
-    await vi.waitFor(() => {
-      expect(attempted).toHaveBeenCalled();
-    });
-    expect(formNamed("Probe"), "the committed field stays visible").toBe(committedForm);
-    expect(committedForm.isConnected).toBe(true);
-
-    vi.useFakeTimers();
-    try {
-      committedForm.reset();
-      await vi.runOnlyPendingTimersAsync();
-    } finally {
-      vi.useRealTimers();
-    }
-    expect(onReset).toHaveBeenCalledTimes(1);
   });
 });

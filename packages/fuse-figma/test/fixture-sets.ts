@@ -6,7 +6,7 @@
  */
 import { Effect } from "effect";
 
-import { buildComponentSet, buildSetsInOrder } from "../src/components/component-builder.ts";
+import { buildComponentSet } from "../src/components/component-builder.ts";
 import { definitionClasses } from "../src/components/component-spec.ts";
 import type {
   BuildContext,
@@ -101,7 +101,7 @@ export type FixtureContext = {
 };
 
 /** A fixture's built set, with the variant of its first cell. */
-export type BuiltFixture = BuiltComponent & {
+type BuiltFixture = BuiltComponent & {
   readonly variant: VariantSpec | undefined;
 };
 
@@ -138,26 +138,6 @@ export async function buildFixture(
 ): Promise<BuiltFixture> {
   const built = buildComponentSet(definition, await buildContext([definition], context));
   return { ...built, variant: built.componentSet.variants[0] };
-}
-
-/**
- * Build fixtures' component sets in their order, each with the sets before it, as the kit build
- * builds the sets its instance parts show first, compiling every class the definitions use and the
- * context's `registered` classes.
- *
- * @param definitions - The fixtures, each after the fixtures it holds instances of.
- * @param context - The extra classes, variables, and page and base-layer declarations.
- * @returns Each fixture's set, its coverage and font styles, in the definitions' order.
- */
-export async function buildFixtures(
-  definitions: readonly ComponentDefinition[],
-  context: FixtureContext = {}
-): Promise<readonly BuiltComponent[]> {
-  const built = buildSetsInOrder(
-    definitions.map((definition) => ({ definition })),
-    await buildContext(definitions, context)
-  );
-  return built.map(([, set]) => set);
 }
 
 /**

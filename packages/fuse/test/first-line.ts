@@ -19,7 +19,7 @@ export type Host = (typeof HOSTS)[number];
  * Tailwind preflight's base-layer box resets: margins and padding zeroed, and replaced and
  * embedded media displayed as blocks, aligned to the middle.
  */
-export const PREFLIGHT_BASE_LAYER =
+const PREFLIGHT_BASE_LAYER =
   "@layer base { *, ::before, ::after { margin: 0; padding: 0; } img, svg, video, canvas, audio, iframe, embed, object { display: block; vertical-align: middle; } }";
 
 /**
@@ -41,30 +41,4 @@ export function hostCss(host: Host): string {
 export function centreY(element: Element): number {
   const box = element.getBoundingClientRect();
   return box.top + box.height / 2;
-}
-
-/**
- * The viewport y of the middle of the first line `element`'s text renders on. A `Range` over the
- * first non-blank text node reports one rect per line; the first rect is the content area of the
- * first line's run. Half-leading pads a single font's content area equally above and below, so
- * its middle is the middle of the line box.
- *
- * @param element - The element whose text sets the line, such as a title.
- * @returns The first line's vertical centre in viewport pixels.
- */
-export function firstLineCentreY(element: Element): number {
-  const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, {
-    acceptNode: (node) => (node.textContent?.trim() ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT),
-  });
-  const text = walker.nextNode();
-  if (text === null) {
-    throw new Error("expected text inside the element");
-  }
-  const range = document.createRange();
-  range.selectNodeContents(text);
-  const [line] = range.getClientRects();
-  if (line === undefined) {
-    throw new Error("expected the text to render a line");
-  }
-  return line.top + line.height / 2;
 }

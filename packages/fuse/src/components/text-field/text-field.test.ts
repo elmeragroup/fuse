@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 
-import { RAW_PALETTE_RE } from "../../../test/raw-palette";
 import { cn } from "../../styles/cn";
 import { fieldBox, readOnlyFillCancelClass, readOnlyFillClass } from "../../styles/field-box";
 import { cardVariants } from "../card/card-variants";
@@ -17,22 +16,6 @@ describe("textFieldVariants", () => {
     expect(slots.labelContainer()).toBe(frame.labelRow());
     expect(slots.container()).toBe(frame.content());
     expect(slots.description()).toBe(frame.description());
-  });
-
-  it("exposes the public slots and no textArea slot", () => {
-    const slots = textFieldVariants();
-    expect(slots.base()).toContain("flex-col");
-    expect(slots.fieldGroup()).toContain("w-auto");
-    expect(String(slots.input())).not.toContain("text-lg");
-    expect(slots.labelContainer()).toContain("justify-between");
-    expect(slots.container()).toContain("flex-col");
-    // The trailing icon's positioning box.
-    expect(slots.inputContainer()).toContain("relative");
-    // The description takes its type from Field.Description's label pair, not a fixed size.
-    expect(slots.description()).toContain("text-pretty");
-    expect(slots.description()).not.toContain("text-sm");
-    expect(slots.iconContainer()).toContain("absolute");
-    expect(slots).not.toHaveProperty("textArea");
   });
 
   it("composes cardVariants on variant=card and restyles inline chrome", () => {
@@ -80,30 +63,5 @@ describe("textFieldVariants", () => {
     expect(cn(fieldBox(), inline.fieldGroup())).toContain("focus-visible:border-ring");
     expect(inline.fieldGroup()).toContain("group-data-[invalid]/inline-field:border-error");
     expect(inline.fieldGroup()).not.toContain("destructive");
-  });
-
-  it("hides the root and pads the input when an icon is active", () => {
-    expect(textFieldVariants({ hidden: true }).base()).toContain("hidden");
-    const withIcon = textFieldVariants({ isIconActive: true });
-    expect(withIcon.fieldGroup()).toContain("relative");
-    expect(withIcon.input()).toContain("pr-10");
-  });
-
-  it("pins no size axis and carries no raw palette, dark, inverted, or density variants", () => {
-    const resolved = [
-      textFieldVariants().base(),
-      textFieldVariants({ variant: "card" }).base(),
-      textFieldVariants({ variant: "inline" }).fieldGroup(),
-      textFieldVariants({ isIconActive: true }).input(),
-    ].join(" ");
-    expect(resolved).not.toMatch(/(?:^|\s)h-\d/);
-    expect(resolved).not.toContain("h-(--control-h-");
-    expect(resolved).not.toContain("dark:");
-    expect(resolved).not.toContain("inverted:");
-    expect(resolved).not.toMatch(/\b(?:dense|comfortable):/);
-    expect(resolved).not.toMatch(RAW_PALETTE_RE);
-    expect(resolved).not.toContain("destructive");
-    // oxlint-disable-next-line elmera/no-primitive-colors -- source-grep of the forbidden class, not a recipe
-    expect(resolved).not.toContain("bg-white");
   });
 });

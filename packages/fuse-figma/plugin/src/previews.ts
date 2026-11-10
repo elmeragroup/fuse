@@ -305,7 +305,7 @@ export const planPreviews = Effect.fnUntraced(function* (
 });
 
 /** A node of a page's row, such as a component set, and its name for the change line. */
-export type RowNode = {
+type RowNode = {
   readonly name: string;
   readonly node: Target<ComponentSetNode | FrameNode>;
 };

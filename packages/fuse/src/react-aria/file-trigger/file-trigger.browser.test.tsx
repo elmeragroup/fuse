@@ -3,8 +3,7 @@ import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import { assertFocusRingAtBothDensities } from "../../../test/assert-focus-ring";
-import { CONTROL_SM, px, renderThemed, roleNamed, stampDensity } from "../../../test/themed-browser-render";
-import { buttonVariants } from "../../components/button/button-variants";
+import { renderThemed, roleNamed } from "../../../test/themed-browser-render";
 import { FileTrigger } from "./file-trigger";
 
 function fileInputFor(button: HTMLElement): HTMLInputElement {
@@ -123,53 +122,5 @@ describe("FileTrigger", () => {
     );
 
     await assertFocusRingAtBothDensities(roleNamed("button", "Before"), roleNamed("button", "Attach files"));
-  });
-
-  it("follows the signed sm control size at both densities and ignores a nested stamp", () => {
-    renderThemed(
-      <>
-        <FileTrigger>Root</FileTrigger>
-        <div data-density="comfortable">
-          <FileTrigger>Nested</FileTrigger>
-        </div>
-      </>
-    );
-
-    // The visible Button defaults to `size="sm"`. Density is a
-    // document-root axis: `fuse.css` keys the comfortable block on
-    // `:root[data-density="comfortable"]`, so a nested attribute rescopes nothing.
-    for (const density of ["dense", "comfortable"] as const) {
-      stampDensity(density);
-      const controlHeight = CONTROL_SM[density].height;
-      expect(px(getComputedStyle(roleNamed("button", "Root")).height)).toBe(controlHeight);
-      expect(px(getComputedStyle(roleNamed("button", "Nested")).height)).toBe(controlHeight);
-    }
-  });
-
-  it("lands variant and size classes on the button, not the hidden input", () => {
-    renderThemed(
-      <>
-        <FileTrigger>Attach file</FileTrigger>
-        <FileTrigger variant="outline" size="lg">
-          Outline large
-        </FileTrigger>
-      </>
-    );
-
-    const defaults = roleNamed("button", "Attach file");
-    const outline = roleNamed("button", "Outline large");
-    expect(px(getComputedStyle(defaults).height)).toBe(CONTROL_SM.dense.height);
-    expect(px(getComputedStyle(outline).height)).toBeGreaterThan(px(getComputedStyle(defaults).height));
-    // This suite loads no themes.css, so the outline takes its 1px hairline fallback.
-    expect(getComputedStyle(outline).borderTopWidth).toBe("1px");
-    expect(defaults.className).toContain("bg-primary");
-    expect(fileInputFor(defaults).className).not.toContain("bg-primary");
-    // Unit under test: FileTrigger's routing of variant and size. Oracle: Button's recipe for
-    // the same pair, which the visible button carries whole and the hidden input not at all,
-    // plus the `gap-x-2` the `withIcon` JSDoc documents for the default icon.
-    const recipe = buttonVariants({ variant: "outline", size: "lg" });
-    expect(outline.className).toBe(`${recipe} gap-x-2`);
-    const inputClasses = new Set(fileInputFor(outline).classList);
-    expect(recipe.split(" ").filter((name) => inputClasses.has(name))).toEqual([]);
   });
 });

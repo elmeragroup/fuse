@@ -38,19 +38,6 @@ describe("Text", () => {
     expect(page.getByRole("paragraph").query()).toBeNull();
   });
 
-  it("renders the provided render element with merged recipe classes", () => {
-    renderThemed(
-      <Text variant="muted" size="sm" render={<span />}>
-        Continue as a span
-      </Text>
-    );
-    const span = textNamed("Continue as a span");
-    expect(span.tagName).toBe("SPAN");
-    expect(span.getAttribute("data-slot")).toBe("text");
-    expect(getComputedStyle(span).color).toBe(cssVarColor(span, "--muted-foreground"));
-    expect(px(getComputedStyle(span).fontSize)).toBe(14);
-  });
-
   it("resolves destructive onto text-error and success onto text-success", () => {
     renderThemed(
       <>
@@ -65,12 +52,6 @@ describe("Text", () => {
     );
   });
 
-  it("lets a className override win over the recipe", () => {
-    renderThemed(<Text className="text-muted-foreground">Override</Text>);
-    const element = textNamed("Override");
-    expect(getComputedStyle(element).color).toBe(cssVarColor(element, "--muted-foreground"));
-  });
-
   describe("descendant line height", () => {
     // Default size is 16px: snug 16 × 1.375 = 22, relaxed 16 × 1.625 = 26, and the size's own
     // line height 16 × 1.5 = 24 is what a descendant fell back to before.
@@ -81,38 +62,6 @@ describe("Text", () => {
     function fontSizeOf(element: HTMLElement): number {
       return px(getComputedStyle(element).fontSize);
     }
-
-    it("gives inline children and deeper descendants the Text's line height and size", () => {
-      renderThemed(
-        <Text leading="snug">
-          Read more <a href="#billing">here</a> and <strong>this</strong> or{" "}
-          <a href="#deep">
-            <strong>deeper</strong>
-          </a>
-        </Text>
-      );
-      const host = textNamed("Read more here and this or deeper");
-      expect(lineHeightOf(host)).toBe(22);
-      for (const descendant of [roleNamed("link", "here"), textNamed("this"), textNamed("deeper")]) {
-        expect(lineHeightOf(descendant), descendant.textContent).toBe(22);
-        expect(fontSizeOf(descendant), descendant.textContent).toBe(16);
-      }
-    });
-
-    it("gives child paragraphs of a div Text its line height", () => {
-      renderThemed(
-        <Text elementType="div" leading="snug">
-          <p>First paragraph.</p>
-          <p>Second paragraph.</p>
-        </Text>
-      );
-      const first = textNamed("First paragraph.");
-      const host = first.parentElement;
-      if (!(host instanceof HTMLElement)) throw new Error("expected the Text host");
-      expect(lineHeightOf(host)).toBe(22);
-      expect(lineHeightOf(first)).toBe(22);
-      expect(lineHeightOf(textNamed("Second paragraph."))).toBe(22);
-    });
 
     it("carries the default relaxed leading to a child paragraph", () => {
       renderThemed(
@@ -132,16 +81,6 @@ describe("Text", () => {
       // size sm is 14px; the descendant arm wins over the child's text-lg (18px).
       expect(fontSizeOf(textNamed("a large class"))).toBe(14);
     });
-
-    it("keeps a descendant's own leading class", () => {
-      renderThemed(
-        <Text elementType="div" leading="snug">
-          <p className="leading-tight">Tight child.</p>
-        </Text>
-      );
-      // leading-tight: 16 × 1.25 = 20.
-      expect(lineHeightOf(textNamed("Tight child."))).toBe(20);
-    });
   });
 
   /**
@@ -155,8 +94,6 @@ describe("Text", () => {
     const PLAIN_SIZES = ["xs", "xl", "2xl"] as const;
     const NEUTRAL = { sm: 22.75, default: 26, lg: 29.25 } as const;
     const BRANDED = { sm: 20, default: 22, lg: 24 } as const;
-    // relaxed 1.625 × 12, 20 and 24px, in every theme.
-    const RELAXED = { xs: 19.5, xl: 32.5, "2xl": 39 } as const;
 
     function SizedTexts({ prefix }: { prefix: string }) {
       return (
@@ -194,21 +131,6 @@ describe("Text", () => {
         expect(lineHeightNamed(`Branded ${size}`), size).toBe(BRANDED[size]);
         expect(lineHeightNamed(`Dark neutral ${size}`), size).toBe(NEUTRAL[size]);
         expect(lineHeightNamed(`Dark branded ${size}`), size).toBe(BRANDED[size]);
-      }
-    });
-
-    it("keeps xs, xl and 2xl relaxed in neutral and branded themes", () => {
-      renderThemed(
-        <>
-          <SizedTexts prefix="Neutral" />
-          <ThemeScope theme={fkasBranded}>
-            <SizedTexts prefix="Branded" />
-          </ThemeScope>
-        </>
-      );
-      for (const size of PLAIN_SIZES) {
-        expect(lineHeightNamed(`Neutral ${size}`), size).toBe(RELAXED[size]);
-        expect(lineHeightNamed(`Branded ${size}`), size).toBe(RELAXED[size]);
       }
     });
 

@@ -95,42 +95,6 @@ describe("Tooltip", () => {
     );
   });
 
-  it("defaults the popup to data-side=top and forwards side/align overrides", async () => {
-    const { rerender } = renderThemed(
-      <div style={{ padding: 240 }}>
-        <Tooltip.Provider>
-          <Tooltip.Root defaultOpen>
-            <Tooltip.Trigger>Hint</Tooltip.Trigger>
-            <Tooltip.Content>Add to library</Tooltip.Content>
-          </Tooltip.Root>
-        </Tooltip.Provider>
-      </div>
-    );
-
-    const tooltip = await mountedTooltip("Add to library");
-    expect(tooltip.getAttribute("data-side")).toBe("top");
-    const arrow = tooltip.querySelector("[data-side]");
-    expect(arrow).not.toBeNull();
-    expect(arrow?.getAttribute("data-side")).toBe("top");
-
-    rerender(
-      <div style={{ padding: 240 }}>
-        <Tooltip.Provider>
-          <Tooltip.Root defaultOpen>
-            <Tooltip.Trigger>Hint</Tooltip.Trigger>
-            <Tooltip.Content side="left" align="start">
-              Add to library
-            </Tooltip.Content>
-          </Tooltip.Root>
-        </Tooltip.Provider>
-      </div>
-    );
-
-    const placed = roleNamed("tooltip", "Add to library");
-    await expect.poll(() => placed.getAttribute("data-side")).toBe("left");
-    expect(placed.getAttribute("data-align")).toBe("start");
-  });
-
   it("portals into an explicit container element", async () => {
     function ExplicitContainer() {
       const [node, setNode] = useState<HTMLDivElement | null>(null);

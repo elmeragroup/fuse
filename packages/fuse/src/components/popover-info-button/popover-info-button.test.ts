@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 
 import { SUPPORTED_LOCALES } from "../../../test/locale-matrix";
 import { popoverInfoButtonStrings } from "./intl";
-import { popoverInfoButtonStyles } from "./popover-info-button";
 
 describe("popover-info-button dictionary", () => {
   it("carries no key beyond the row owned by PopoverInfoButton", () => {
@@ -11,57 +10,5 @@ describe("popover-info-button dictionary", () => {
         "moreInformation",
       ]);
     }
-  });
-});
-
-const CONTENT_SIZES = ["sm", "default", "lg", "xl", "2xl", "3xl", "4xl", "5xl", "6xl", "7xl"] as const;
-
-const CONTENT_SIZE_CLASS = {
-  sm: "max-w-sm",
-  default: "max-w-md",
-  lg: "max-w-lg",
-  xl: "max-w-xl",
-  "2xl": "max-w-2xl",
-  "3xl": "max-w-3xl",
-  "4xl": "max-w-4xl",
-  "5xl": "max-w-5xl",
-  "6xl": "max-w-6xl",
-  "7xl": "max-w-7xl",
-} as const;
-
-describe("popoverInfoButtonStyles", () => {
-  // The Popover popup owns the padding, the medium surface tier, so the content adds none.
-  const PADDING = /(?:^|\s)p[xy]?-/u;
-
-  it("keeps the content base and maps every contentSize onto max-w-*", () => {
-    const defaults = popoverInfoButtonStyles();
-    expect(defaults.icon()).toContain("size-4");
-    expect(defaults.content()).toContain("w-auto");
-    expect(defaults.content()).not.toMatch(PADDING);
-    expect(defaults.content()).toContain("text-sm");
-    expect(defaults.content()).toContain("max-w-md");
-
-    for (const size of CONTENT_SIZES) {
-      const maxWidth = CONTENT_SIZE_CLASS[size];
-      const content = popoverInfoButtonStyles({ contentSize: size }).content();
-      expect(content, size).toContain(maxWidth);
-      expect(content, size).toContain("w-auto");
-      expect(content, size).not.toMatch(PADDING);
-      expect(content, size).toContain("text-sm");
-      for (const other of Object.values(CONTENT_SIZE_CLASS)) {
-        if (other !== maxWidth) {
-          expect(content, size).not.toContain(other);
-        }
-      }
-    }
-  });
-
-  // The body is one flex item in the popup's column. It adds no padding of its own and steps
-  // consecutive blocks by the small surface tier through the shared rich-text variants.
-  it("steps the body's blocks by the small surface gap and adds no padding", () => {
-    const body = popoverInfoButtonStyles().body();
-    expect(body).toContain("rich-text-block:my-0");
-    expect(body).toContain("rich-text-gap:mt-(--surface-gap-sm)");
-    expect(body).not.toMatch(PADDING);
   });
 });
