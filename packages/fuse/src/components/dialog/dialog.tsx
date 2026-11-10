@@ -6,6 +6,7 @@ import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
 import type { VariantProps } from "tailwind-variants";
 
 import { useLocalizedStrings } from "../../hooks/use-localized-strings";
+import { definedProps } from "../../internal/defined-props";
 import { useOverlayRootOverride } from "../../internal/overlay-exclusion";
 import { cn } from "../../styles/cn";
 import { mergeClassName } from "../../styles/merge-class-name";
@@ -102,7 +103,7 @@ export function DialogContent({
       <DialogPrimitive.Popup
         data-slot="dialog-content"
         className={mergeClassName(className, dialogContentVariants({ size }))}
-        {...props}>
+        {...definedProps(props)}>
         {children}
         {showCloseButton ? (
           <DialogPrimitive.Close
