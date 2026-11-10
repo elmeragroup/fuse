@@ -23,6 +23,7 @@ import {
   textNamed,
 } from "../../../test/themed-browser-render";
 import { DENSITIES } from "../../theme/density";
+import { Alert } from "../alert/alert";
 import { Button } from "../button/button";
 import { Item } from "./index";
 
@@ -434,7 +435,7 @@ describe("Item", () => {
   });
 
   it.each(DENSITIES)(
-    "gaps an Item group by the lg tier, and a group of sm or xs Items by the sm tier, at %s",
+    "gaps an Item group by the lg tier, a group of its own sm or xs rows by the sm tier, and by a className gap over the sm tier, at %s",
     (density) => {
       stampDensity(density);
       renderThemed(
@@ -449,8 +450,44 @@ describe("Item", () => {
               </Item.Root>
             </Item.Group>
           ))}
+          {/* A link row sits in an item-listitem wrapper and is still one of the group's rows. */}
+          <Item.Group>
+            <Item.Root size="sm" render={<a href="#first" />}>
+              <Item.Title>linked first</Item.Title>
+            </Item.Root>
+            <Item.Root size="sm" render={<a href="#second" />}>
+              <Item.Title>linked second</Item.Title>
+            </Item.Root>
+          </Item.Group>
+          {/* An Alert nested in a default row is an sm Item, but not one of the group's rows. */}
+          <Item.Group>
+            <Item.Root>
+              <Item.Title>nested first</Item.Title>
+              <Item.Footer>
+                <Alert.Root>
+                  <Alert.Title>Note</Alert.Title>
+                </Alert.Root>
+              </Item.Footer>
+            </Item.Root>
+            <Item.Root>
+              <Item.Title>nested second</Item.Title>
+            </Item.Root>
+          </Item.Group>
+          <Item.Group className="gap-(--surface-gap-xl)">
+            <Item.Root size="sm">
+              <Item.Title>classed first</Item.Title>
+            </Item.Root>
+            <Item.Root size="sm">
+              <Item.Title>classed second</Item.Title>
+            </Item.Root>
+          </Item.Group>
         </div>
       );
+      // The nested Alert carries the sm Item's slot and size, which the group's size rule reads.
+      expect(
+        page.getByRole("alert").element().matches("[data-slot=item][data-size=sm]"),
+        "the nested Alert is an sm Item"
+      ).toBe(true);
       const between = (size: string) => {
         const first = textNamed(`${size} first`).parentElement;
         const second = textNamed(`${size} second`).parentElement;
@@ -462,6 +499,11 @@ describe("Item", () => {
       expect(between("default"), "default").toBe(metricPx("surface-gap-lg", density));
       expect(between("sm"), "sm").toBe(metricPx("surface-gap-sm", density));
       expect(between("xs"), "xs").toBe(metricPx("surface-gap-sm", density));
+      expect(between("linked"), "linked sm").toBe(metricPx("surface-gap-sm", density));
+      expect(between("nested"), "default rows, one holding an Alert").toBe(
+        metricPx("surface-gap-lg", density)
+      );
+      expect(between("classed"), "sm rows under a className gap").toBe(metricPx("surface-gap-xl", density));
     }
   );
 
