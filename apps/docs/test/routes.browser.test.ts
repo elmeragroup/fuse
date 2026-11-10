@@ -6,10 +6,12 @@ import { AxeBuilder } from "@axe-core/playwright";
 // it exists, and routes that serve no HTML page (API, Open Graph images, text endpoints) stay out.
 import { readFileSync } from "node:fs";
 import path from "node:path";
+import type { Page } from "playwright";
 import { describe, expect, it } from "vitest";
 
-import { DESKTOP_VIEWPORT, PAGE_WAIT_GUARD } from "./demo-page";
+import { DESKTOP_VIEWPORT, PAGE_WAIT_GUARD, waitForDocsShellHydration } from "./demo-page";
 import { docsBaseUrl, docsBuildDir } from "./docs-server";
+import { waitForLandingHydration } from "./landing-page";
 import { launchSuiteBrowser } from "./suite-browser";
 
 /**
@@ -50,6 +52,28 @@ function pageRoutes(): string[] {
 
 const ROUTES = pageRoutes();
 
+/** The landing and the shared addresses that render it in one theme. */
+const LANDING = /^\/(?:themed\/.+)?$/u;
+
+/**
+ * Waits until the parts that wire accessible names in effects have hydrated, so axe reads the
+ * page a visitor uses rather than its server HTML. `load` and `networkidle` can both come first:
+ * on a saturated CI runner axe once read Base UI switches, checkboxes and a meter before Field
+ * and the labelable parts had linked their labels. The landing, the docs shell and every demo
+ * frame each have their own signal.
+ */
+async function waitForHydration(page: Page, route: string): Promise<void> {
+  if (LANDING.test(route)) await waitForLandingHydration(page);
+  if ((await page.getByRole("navigation", { name: "Main navigation" }).count()) > 0) {
+    await waitForDocsShellHydration(page);
+  }
+  await page.waitForFunction(() =>
+    [...document.querySelectorAll("[data-demo-frame]")].every((frame) =>
+      frame.hasAttribute("data-demo-hydrated")
+    )
+  );
+}
+
 describe("every docs route", () => {
   const browser = launchSuiteBrowser();
 
@@ -81,6 +105,7 @@ describe("every docs route", () => {
       const response = await page.goto(`${docsBaseUrl()}${route}`, { waitUntil: "load" });
       expect(response?.status(), route).toBeLessThan(400);
       await page.waitForLoadState("networkidle");
+      await waitForHydration(page, route);
       // Frames stay out of the scan: the only framed content, the block previews under
       // /blocks/<block>/preview, is in ROUTES and checked as a route of its own. Legacy mode runs
       // one axe.run in the page, which honours iframes: false; the partial runner descends into
