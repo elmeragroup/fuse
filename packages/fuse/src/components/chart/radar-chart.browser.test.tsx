@@ -8,7 +8,7 @@
 // and five dots; R6's nearest spoke by angle and nearest drawn vertex, found by brute force; D19's
 // hover, 0.45 on the other series and twice the area opacity on the nearest; and the axes' places,
 // the ring values beside spoke 0 at the ring radii and each spoke label 1.1 R out.
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
@@ -412,5 +412,27 @@ describe("the description (A1-17)", () => {
     expect(host.querySelector('[data-slot="chart-description"]')?.textContent).toBe(
       "Radardiagram med 1\u00a0serie over 3\u00a0kategorier. Forbruk i kilowattimer: lavest 1,5 NO2, høyest 7 NO3."
     );
+  });
+});
+
+describe("a role list that names a role twice", () => {
+  it("keeps every stop of its Area's and its Line's gradients, with no duplicate-key warning", () => {
+    const errors = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    try {
+      const { host } = renderThemed(
+        <Radar
+          data={rows([1, 2, 3])}
+          config={{ a: { label: "A", color: ["chart-1", "chart-2", "chart-1"] } }}>
+          <RadarChart.Area dataKey="a" />
+          <RadarChart.Line dataKey="a" />
+        </Radar>
+      );
+      // DOM audit: the gradients are the series' paint servers, read by their tags.
+      expect(host.querySelectorAll('radialGradient[id$="-paint"] stop')).toHaveLength(3);
+      expect(host.querySelectorAll('linearGradient[id$="-paint"] stop')).toHaveLength(3);
+      expect(errors.mock.calls.filter((call) => String(call[0]).includes("same key"))).toEqual([]);
+    } finally {
+      errors.mockRestore();
+    }
   });
 });

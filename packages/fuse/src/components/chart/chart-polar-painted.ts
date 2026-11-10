@@ -2,7 +2,7 @@
 
 /**
  * The slice angles a polar frame last painted, by key, which a Root's pick reads so the pointer
- * picks the geometry the reader sees: floored, unpopped and with its seams (D24). The pie's frame
+ * picks the geometry the reader sees: floored, unpopped and with its seams. The pie's frame
  * shares its angles here as it paints, and a Root whose loop holds no frame picks its model's own.
  */
 import type { ChartMotion } from "./chart-motion";

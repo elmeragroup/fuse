@@ -552,9 +552,9 @@ describe("chart plot marks", () => {
   // viewBox outside any plot, with no pixel grid to hold its marks to.
   // ScatterChart's parts draw over two value axes with no slot grid, so their own floor oracle,
   // scatter-chart-floor.browser.test.tsx, walks them against the device pixel grid alone. The polar
-  // parts draw in a dial with no slot grid either: a slice keeps its rim floor (D24), which
+  // parts draw in a dial with no slot grid either: a slice keeps its rim floor, which
   // pie-chart-floor.browser.test.tsx checks, and its leaders, track and glow draw no reading. A clock
-  // column keeps its radial floor (D24), which clock-chart.browser.test.tsx checks at 1x and 2x.
+  // column keeps its radial floor, which clock-chart.browser.test.tsx checks at 1x and 2x.
   const isScatter = (relative: string): boolean => relative.startsWith("components/chart/scatter-chart-");
   const isPolar = (relative: string): boolean =>
     /^components\/chart\/(?:pie|radial|radar|clock)-chart-/u.test(relative);

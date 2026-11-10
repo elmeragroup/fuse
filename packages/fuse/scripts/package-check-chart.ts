@@ -169,7 +169,7 @@ const SCATTER_ROUTE_FORBIDDEN: readonly Forbidden[] = [
 ];
 
 /**
- * The cartesian geometry no polar route ships (S15): the cartesian Root's modules, its plot frame,
+ * The cartesian geometry no polar route ships: the cartesian Root's modules, its plot frame,
  * the bar geometry, the cartesian readout and tooltip anchor with its roof, and the cartesian
  * Tooltip and Table, whose shared parts a polar namespace reads from their neutral modules. A polar
  * Root shares the store, the readout hooks, the listbox and the motion loop.
@@ -187,7 +187,7 @@ const POLAR_ROUTE_FORBIDDEN: readonly Forbidden[] = [
 
 /**
  * What a clock route must not ship: the polar rule, the cartesian plot geometry and the cartesian
- * path code. A clock reads the series model, which it may ship, and draws its own dial (S15).
+ * path code. A clock reads the series model, which it may ship, and draws its own dial.
  */
 const CLOCK_ROUTE_FORBIDDEN: readonly Forbidden[] = [
   ...POLAR_ROUTE_FORBIDDEN,
@@ -203,7 +203,7 @@ function slotRule(label: string, slot: string): Forbidden {
 /**
  * A route of one polar part alone, what it must not ship, and the parts whose route ships all of
  * that, its control. Each part module keeps its display name beside its component, so a bundler
- * drops the parts a route never names (Q1).
+ * drops the parts a route never names.
  */
 type PartRoute = {
   readonly part: string;
@@ -321,13 +321,13 @@ const BAR_PARTS = "Chart.Root, Chart.Grid, Chart.XAxis, Chart.YAxis, Chart.Bar";
  * a bar route of Root, Grid, both axes and Bar ships no Tooltip, Table, LegendToggleGroup or
  * floating-ui code, and `ScatterChart.Root` ships no cartesian store, readout or model. Each polar
  * Root, and each polar namespace with its Tooltip, Legend and Table, ships no cartesian geometry,
- * and Pie's and Radial's ship no series model either (S15). A control route that adds Tooltip,
+ * and Pie's and Radial's ship no series model either. A control route that adds Tooltip,
  * Table and LegendToggleGroup to the bar route must trip each of the bar route's rules, the
  * scatter rules and the polar rules, so a detector that stops seeing them fails too. A clock route
  * also ships no cartesian plot geometry or path code, which a route of Chart's Line, Bar, Tooltip
  * and Table must trip. The radar namespace, which reads the series model, is the control for the
  * item rules' series model. A route of one polar part alone ships none of its siblings, and the
- * siblings' route trips each of its rules (Q1). The oracle is rolldown's module and import lists
+ * siblings' route trips each of its rules. The oracle is rolldown's module and import lists
  * per chunk and the package's `sideEffects` field, which lets a bundler drop every module a route
  * does not reach.
  *

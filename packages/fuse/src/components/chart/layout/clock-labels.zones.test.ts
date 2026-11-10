@@ -2,7 +2,7 @@
 // worked by hand from the tz rules: Australia/Lord_Howe springs from UTC+10:30 to UTC+11 at 02:00
 // on 5 October 2025, so the day runs 23.5 hours, from 13:30 UTC on the 4th to 13:00 UTC on the
 // 5th. Its hourly slots start at 00:00 and 01:00, then 02:30, 03:30 and so on to 23:30, 24 slots
-// on the 24 wall-clock hours 00 to 23, and each hour labels its slot (B12).
+// on the 24 wall-clock hours 00 to 23, and each hour labels its slot.
 import { describe, expect, it } from "vitest";
 
 import { slotStartsFrom } from "../format/time-format";

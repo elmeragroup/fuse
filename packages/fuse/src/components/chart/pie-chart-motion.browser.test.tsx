@@ -6,13 +6,14 @@
 // 25 / (2·√400) = 0.625 overshoots by e^(−π·0.625/√(1 − 0.625²)) ≈ 8.1 %; every dim fades over
 // 150 ms. The entrance runs on a hand-driven frame clock, read on the loop's own time; the rest
 // read each frame's own timestamp, never a count of frames.
+import { Activity } from "react";
 import type { ReactElement } from "react";
 
 import { describe, expect, it } from "vitest";
 import { userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
-import { nextFrames, recordFrames } from "../../../test/animation-frames";
+import { nextFrames, recordFrames, recordSince } from "../../../test/animation-frames";
 import { installFrameClock } from "../../../test/chart/frame-clock";
 import { outerArc, polarFigure, sectors } from "../../../test/chart/pie";
 import { sweepGlides } from "../../../test/chart/tooltip-glide";
@@ -42,22 +43,15 @@ const ROUNDED = 0.1;
  * @param until - How long after the start to stop.
  * @returns The frames from the start on.
  */
-async function record(host: HTMLElement, start: () => number | null, until: number): Promise<Frame[]> {
-  const frames: Frame[] = [];
-  for (;;) {
-    // Kept as a direct frame wait: it needs the frame callback's timestamp, which nextFrames drops.
-    const now = await new Promise<number>((resolve) => requestAnimationFrame(resolve));
-    const from = start();
-    if (from === null) continue;
+function record(host: HTMLElement, start: () => number | null, until: number): Promise<Frame[]> {
+  return recordSince(start, until, () => {
     // DOM audit: ghosts are aria-hidden plot output the loop writes, read by their slot.
     const ghosts = [...host.querySelectorAll('[data-slot="pie-chart-ghost"]')];
-    frames.push({
-      t: now - from,
+    return {
       slices: sectors(host).map((path) => outerArc(path.getAttribute("d") ?? "")),
       ghosts: ghosts.map((path) => outerArc(path.getAttribute("d") ?? "")),
-    });
-    if (now - from > until) return frames;
-  }
+    };
+  });
 }
 
 const width = (arc: readonly [number, number] | null | undefined): number => (arc ? arc[1] - arc[0] : 0);
@@ -375,5 +369,148 @@ describe("the pie's motion (SPEC's Motion table)", () => {
     expect(peak).toBeGreaterThan(8 * 1.06);
     expect(peak).toBeLessThan(8 * 1.1);
     expect(shifts.at(-1)).toBeCloseTo(8, 1);
+  });
+  it("keeps the staying slices on the leaving first slice's ghost, frame by frame", async () => {
+    // a's ghost collapses from [0°, 180°] to its seam at 0° while b's start runs from 180° to 0° on
+    // the same clock, so the ghost's end and b's start agree on every frame and the turn stays whole.
+    const { host, rerender } = renderThemed(<Chart data={QUARTET} intro="none" />);
+    await nextFrames(1);
+    rerender(<Chart data={QUARTET.filter(({ part }) => part !== "a")} intro="none" />);
+    const from = performance.now();
+    const frames = await record(host, () => from, 700);
+    const shared = frames.filter((frame) => frame.ghosts[0] != null);
+    expect(shared.length).toBeGreaterThan(0);
+    for (const frame of shared) {
+      expect(Math.abs((frame.ghosts[0]?.[1] ?? 0) - (frame.slices[0]?.[0] ?? 0))).toBeLessThan(1);
+      expect(Math.abs((frame.slices.at(-1)?.[1] ?? 0) - 360)).toBeLessThan(ROUNDED);
+    }
+  });
+});
+
+describe("the pie's entrance, once spent", () => {
+  /** Mount the chart with its entrance on and wait until the entrance has played out. */
+  async function played(chart: (mode: "visible" | "hidden", intro?: "none") => ReactElement) {
+    const view = renderThemed(chart("visible"));
+    const figure = polarFigure(view.host);
+    await expect.poll(() => figure.hasAttribute("data-entering")).toBe(true);
+    await expect.poll(() => figure.hasAttribute("data-entering"), { timeout: 5000 }).toBe(false);
+    await nextFrames(2);
+    return { ...view, figure };
+  }
+
+  /** Each slice's outer arc width, which the entrance would start again at 0. */
+  const widths = (host: HTMLElement) =>
+    sectors(host).map((path) => width(outerArc(path.getAttribute("d") ?? "")));
+
+  it("grows nothing again when React Activity hides the chart and shows it", async () => {
+    const chart = (mode: "visible" | "hidden") => (
+      <Activity mode={mode}>
+        <Chart data={QUARTET} />
+      </Activity>
+    );
+    const { host, rerender, figure } = await played(chart);
+    rerender(chart("hidden"));
+    await nextFrames(2);
+    rerender(chart("visible"));
+    // Every visible frame from the first on shows the slices at rest and no entrance state.
+    for (let count = 0; count < 20; count += 1) {
+      await nextFrames(1);
+      expect(figure.hasAttribute("data-entering")).toBe(false);
+      expect(figure.hasAttribute("data-grow")).toBe(false);
+      widths(host).forEach((w, index) => {
+        expect(Math.abs(w - ([180, 108, 54, 18][index] ?? 0))).toBeLessThan(ROUNDED);
+      });
+    }
+  });
+
+  it("snaps a slice that a data update adds while React Activity hides the chart, on show", async () => {
+    // Shares of 100: the four staying slices take 162°, 108°, 54° and 21.6°, the new one 14.4°.
+    const grown = [
+      { part: "a", kr: 45 },
+      { part: "b", kr: 30 },
+      { part: "c", kr: 15 },
+      { part: "d", kr: 6 },
+      { part: "e", kr: 4 },
+    ];
+    const chart = (mode: "visible" | "hidden", data: typeof QUARTET = QUARTET) => (
+      <Activity mode={mode}>
+        <Chart data={data} />
+      </Activity>
+    );
+    const { host, rerender } = await played((mode) => chart(mode));
+    rerender(chart("hidden"));
+    await nextFrames(2);
+    rerender(chart("hidden", grown));
+    await expect.poll(() => sectors(host).length).toBe(5);
+    rerender(chart("visible", grown));
+    // Every visible frame from the first on shows every slice at rest, the new one too.
+    for (let count = 0; count < 20; count += 1) {
+      await nextFrames(1);
+      widths(host).forEach((w, index) => {
+        expect(Math.abs(w - ([162, 108, 54, 21.6, 14.4][index] ?? 0))).toBeLessThan(ROUNDED);
+      });
+    }
+  });
+
+  it("drops a slice that a data update removes while React Activity hides the chart, on show", async () => {
+    // Shares of 95: the three staying slices take 360 × 50/95, 360 × 30/95 and 360 × 15/95 degrees.
+    const shrunk = QUARTET.slice(0, 3);
+    const chart = (mode: "visible" | "hidden", data: typeof QUARTET = QUARTET) => (
+      <Activity mode={mode}>
+        <Chart data={data} />
+      </Activity>
+    );
+    const { host, rerender } = await played((mode) => chart(mode));
+    rerender(chart("hidden"));
+    await nextFrames(2);
+    rerender(chart("hidden", shrunk));
+    await expect.poll(() => sectors(host).length).toBe(3);
+    rerender(chart("visible", shrunk));
+    // Every visible frame from the first on shows no ghost and the staying slices at rest.
+    for (let count = 0; count < 20; count += 1) {
+      await nextFrames(1);
+      // DOM audit: ghosts are aria-hidden plot output the loop writes, read by their slot.
+      expect(host.querySelectorAll('[data-slot="pie-chart-ghost"]')).toHaveLength(0);
+      widths(host).forEach((w, index) => {
+        expect(Math.abs(w - ([(360 * 50) / 95, (360 * 30) / 95, (360 * 15) / 95][index] ?? 0))).toBeLessThan(
+          ROUNDED
+        );
+      });
+    }
+  });
+
+  it("clears the entrance state when React Activity hides the chart mid-entrance and shows it", async () => {
+    const chart = (mode: "visible" | "hidden") => (
+      <Activity mode={mode}>
+        <Chart data={QUARTET} />
+      </Activity>
+    );
+    const { host, rerender } = renderThemed(chart("visible"));
+    const figure = polarFigure(host);
+    await expect.poll(() => figure.hasAttribute("data-entering")).toBe(true);
+    // A client mount grows its tracks, so the figure carries both while the entrance plays.
+    expect(figure.hasAttribute("data-grow")).toBe(true);
+    rerender(chart("hidden"));
+    await nextFrames(1);
+    rerender(chart("visible"));
+    await nextFrames(1);
+    expect(figure.hasAttribute("data-entering")).toBe(false);
+    expect(figure.hasAttribute("data-grow")).toBe(false);
+  });
+
+  it("marks no entrance again when data-intro turns off and back on", async () => {
+    const chart = (_: "visible" | "hidden", intro?: "none") => <Chart data={QUARTET} intro={intro} />;
+    const { host, rerender, figure } = await played(chart);
+    rerender(chart("visible", "none"));
+    await nextFrames(2);
+    rerender(chart("visible"));
+    for (let count = 0; count < 20; count += 1) {
+      await nextFrames(1);
+      expect(figure.hasAttribute("data-entering")).toBe(false);
+      expect(figure.hasAttribute("data-grow")).toBe(false);
+      widths(host).forEach((w, index) => {
+        expect(Math.abs(w - ([180, 108, 54, 18][index] ?? 0))).toBeLessThan(ROUNDED);
+      });
+    }
   });
 });

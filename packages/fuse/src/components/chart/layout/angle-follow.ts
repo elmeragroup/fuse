@@ -1,3 +1,4 @@
+import { turnOf } from "./polar-angle";
 /**
  * An angle that follows its target on a damped spring of mass 1 and keeps its velocity when the
  * target moves, so a step mid-glide never jumps and never stalls. A polar Root turns its hand, its
@@ -24,7 +25,7 @@ const SETTLED_SPEED = 0.1;
  * @returns The target in the turn nearest the shown angle.
  */
 export function shortTarget(shown: number, target: number): number {
-  const ahead = (((target - shown) % 360) + 360) % 360;
+  const ahead = turnOf(target - shown);
   return shown + (ahead > 180 ? ahead - 360 : ahead);
 }
 

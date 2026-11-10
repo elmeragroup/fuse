@@ -456,7 +456,10 @@ export type ChartPoint = {
    * and radial charts. It is null under "all series" focus and on the Other slice.
    */
   readonly key: string | null;
-  /** Each config key's reading at the point. A key that is pending or missing there reports null. */
+  /**
+   * Each config key's reading at the point. A key that is pending or missing there reports null. A
+   * pie's folded category keeps its own reading, and Other, which names no config key, has none.
+   */
   readonly values: Readonly<Record<string, number | null>>;
   /**
    * Each config key's quality at the point, decided per series. A missing reading reports

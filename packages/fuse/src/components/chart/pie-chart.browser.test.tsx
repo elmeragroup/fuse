@@ -1,13 +1,13 @@
 // PieChart's marks and readouts in Chromium. Units under test: PieChart.Pie, Labels, the Center
 // parts, Track, Glow and the polar LegendToggleGroup. Oracles, written by hand: d3's pie rule over
 // the rows, each slice spanning its value's share of 360°; the browser's own fill test, which the
-// pick must agree with (Q8); CONTRACT section 8.4's on-colour label rule over the theme's
+// pick must agree with; CONTRACT section 8.4's on-colour label rule over the theme's
 // `chart-*-foreground` roles; section 8.13's centre table with the largest-remainder shares; D3's
 // pop and S2's dims; R10's halo; Q12's gradient; and S9's category word.
 import { Profiler, useEffect, useState } from "react";
 
 import { renderToString } from "react-dom/server";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
@@ -345,6 +345,78 @@ describe("the Other fold (section 8.4)", () => {
   });
 });
 
+describe("a folded category named by its key", () => {
+  // Eight categories under the default cap of 6: the five largest draw, and f, g and h, 6, 4 and 2
+  // of 112, fold into Other. Each config key keeps its config label and paint, the consumer's
+  // --chart-color-<key> first, and its own reading in the point's values, which Other, naming no
+  // config key, is not a key of.
+  const KEYS = ["a", "b", "c", "d", "e", "f", "g", "h"] as const;
+  const VALUES = [30, 25, 20, 15, 10, 6, 4, 2];
+  const config = {
+    a: { label: "A", color: "chart-1" },
+    b: { label: "B", color: "chart-2" },
+    c: { label: "C", color: "chart-3" },
+    d: { label: "D", color: "chart-4" },
+    e: { label: "E", color: "chart-5" },
+    f: { label: "F", color: "chart-6" },
+    g: { label: "G", color: "chart-7" },
+    h: { label: "H", color: "chart-8" },
+  } as const satisfies ChartConfig;
+  const data = KEYS.map((part, index) => ({ part, kr: VALUES[index] ?? 0 }));
+
+  /** Prints the active point's values, as a consumer's headline would read them. */
+  function ValuesProbe() {
+    const point = useChartPoint();
+    return <output data-values="">{point === null ? "none" : JSON.stringify(point.values)}</output>;
+  }
+
+  it("shows the config label and paint in a LegendItem and a Swatch for a folded key", async () => {
+    const { host } = renderThemed(
+      <LocaleProvider locale="nb-NO">
+        <div style={{ width: 360 }}>
+          <PieChart.Root
+            data={data}
+            config={config}
+            nameKey="part"
+            valueKey="kr"
+            data-intro="none"
+            aria-label="Regning">
+            <PieChart.Pie />
+            <ul>
+              <PieChart.LegendItem dataKey="g" />
+            </ul>
+          </PieChart.Root>
+        </div>
+      </LocaleProvider>
+    );
+    await nextFrames(1);
+    const item = page.getByRole("listitem").element();
+    expect(item.textContent).toBe("G");
+    // A folded key draws no slice, so it carries no series ordinal.
+    expect(item.hasAttribute("data-series")).toBe(false);
+    // DOM audit: the swatch is aria-hidden decoration, read by its slot.
+    const swatch = host.querySelector<HTMLElement>('[data-slot="chart-swatch"]');
+    expect(swatch?.style.getPropertyValue("--chart-swatch-paint")).toBe(
+      "var(--chart-color-g, var(--chart-7))"
+    );
+    expect(swatch?.hasAttribute("data-series")).toBe(false);
+  });
+
+  it("keys the point's values by config key, the folded ones included, and Other by none", async () => {
+    renderThemed(
+      <LocaleProvider locale="nb-NO">
+        <PieChart.Root data={data} config={config} nameKey="part" valueKey="kr" aria-label="Regning">
+          <ValuesProbe />
+        </PieChart.Root>
+      </LocaleProvider>
+    );
+    await userEvent.tab();
+    // DOM audit: the probe is the test's own output, read by its attribute.
+    const shown = document.querySelector("[data-values]")?.textContent ?? "";
+    expect(JSON.parse(shown)).toEqual({ a: 30, b: 25, c: 20, d: 15, e: 10, f: 6, g: 4, h: 2 });
+  });
+});
+
 describe("Other's quality (section 8.7, Q1)", () => {
   // A household's consumption of 60, 30 and 10 kWh under a cap of 2: 30 and 10 fold into Other's
   // 40. Folding is a drawing rule, so Other keeps the quality of the readings it holds: estimated
@@ -654,6 +726,36 @@ describe("Glow and gradients (R10, Q12)", () => {
     const halo = host.querySelector('[data-slot="pie-chart-glow"]');
     expect(halo?.getAttribute("d")).toBe(sectors(host)[1]?.getAttribute("d"));
     expect(getComputedStyle(halo ?? host).filter).toMatch(/^drop-shadow\(/u);
+  });
+
+  it("keeps every stop of a role list that names a role twice, with no duplicate-key warning", () => {
+    const errors = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    try {
+      const { host } = renderThemed(
+        <LocaleProvider locale="nb-NO">
+          <div style={{ width: 320 }}>
+            <PieChart.Root
+              data={HALVES}
+              config={{
+                ...HALVES_CONFIG,
+                strom: { label: "Strøm", color: ["chart-1", "chart-2", "chart-1"] },
+              }}
+              nameKey="part"
+              valueKey="kr"
+              innerRadius={0.5}
+              data-intro="none"
+              aria-label="Regning">
+              <PieChart.Pie />
+            </PieChart.Root>
+          </div>
+        </LocaleProvider>
+      );
+      // DOM audit: the gradient is the slice's paint server, read by its tag.
+      expect(host.querySelectorAll("radialGradient stop")).toHaveLength(3);
+      expect(errors.mock.calls.filter((call) => String(call[0]).includes("same key"))).toEqual([]);
+    } finally {
+      errors.mockRestore();
+    }
   });
 
   it("paints a role list from the rim to the hole along each bisector", () => {

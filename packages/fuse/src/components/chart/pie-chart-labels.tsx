@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * One label per slice (Q10, S12). A label is HTML in the cell, placed in percentages of the
+ * One label per slice. A label is HTML in the cell, placed in percentages of the
  * sweep's box, so the server's markup holds at any width. An inside label sits at d3's centroid
  * when its slice's role has an on-colour role and its box fits the slice, and every other label
  * sits outside with a leader from the rim, its elbow 8 % past it and a run sideways. Outside labels
@@ -18,7 +18,7 @@ import type { ReactElement, ReactNode } from "react";
 import { useLocale } from "../../intl/locale-context";
 import { writeAttribute, writeStyle } from "./chart-dom";
 import { ChartLegendShare } from "./chart-legend";
-import { pieFrameOf, viewBoxOf } from "./chart-pie-frame";
+import { pieFrameOf } from "./chart-pie-frame";
 import { pieDrawingIn, usePolarContext } from "./chart-polar-context";
 import type { PieDrawing } from "./chart-polar-context";
 import { ChartRowContext } from "./chart-scope-contexts";
@@ -27,7 +27,7 @@ import type { ChartLayerProps } from "./chart-types";
 import { arcCentroid } from "./layout/arc-path";
 import { labelWidth } from "./layout/label-width";
 import type { SliceAngles } from "./layout/pie";
-import type { SweepBox } from "./layout/polar-angle";
+import { boxPercent, viewBoxOf } from "./layout/polar-angle";
 import { insideLabel, outsideLabels } from "./layout/polar-labels";
 import type { LabelSize } from "./layout/polar-labels";
 
@@ -140,13 +140,6 @@ function placeLabels(
   return placed;
 }
 
-/** A point's place in the cell, as percentages of the sweep's box. */
-function percent(box: SweepBox, x: number, y: number): readonly [string, string] {
-  const left = ((x - box.left) / (box.right - box.left)) * 100;
-  const top = ((y - box.top) / (box.bottom - box.top)) * 100;
-  return [`${left.toFixed(3)}%`, `${top.toFixed(3)}%`];
-}
-
 /** The text a default label prints, which the server sizes its box from. */
 function nominalText(pie: PieDrawing, index: number): string {
   const slice = pie.slices[index];
@@ -209,7 +202,7 @@ export function PieChartLabels({
         writeAttribute(label, "data-empty", hidden(index) ? "" : null);
         const at = measured[index];
         if (at === null || at === undefined) continue;
-        const [left, top] = percent(box, at.x, at.y);
+        const [left, top] = boxPercent(box, at.x, at.y);
         writeStyle(label, "--_x", left);
         writeStyle(label, "--_y", top);
         writeAttribute(label, "data-placement", at.placement);
@@ -221,7 +214,7 @@ export function PieChartLabels({
         leader.setAttribute("points", at?.placement === "outside" && !hidden(index) ? at.leader : "");
       }
       // The room past the rim follows the labels at rest, so it holds while the slices sweep in or
-      // wait for the entrance, and the dial never shifts as its first labels show (D18).
+      // wait for the entrance, and the dial never shifts as its first labels show.
       if (rest)
         writeAttribute(node, "data-outside", measured.some((at) => at?.placement === "outside") ? "" : null);
     };
@@ -281,7 +274,7 @@ export function PieChartLabels({
       {pie.slices.map((slice, index) => {
         const at = placed[index];
         if (at === null || at === undefined) return null;
-        const [left, top] = percent(box, at.x, at.y);
+        const [left, top] = boxPercent(box, at.x, at.y);
         return (
           <ChartRowContext key={slice.key} value={slice.key}>
             <span

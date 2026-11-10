@@ -6,7 +6,7 @@
  * side. When neither side lane fits beside the dial inside the viewport, the popup sits below the
  * labels, or above the chart where below would leave the viewport. A pointer that
  * moves toward the open popup inside the triangle from its last plot position to the popup's near
- * edge keeps the active part, past the rim only (Q9).
+ * edge keeps the active part, past the rim only.
  */
 import type { PlaceSize } from "./tooltip-place";
 
@@ -42,7 +42,7 @@ export type LaneRest = {
 };
 
 /** The gap between the dial or its labels and the popup, in CSS pixels, the overlay's 8 px. */
-export const LANE_GAP = 8;
+const LANE_GAP = 8;
 
 /** How far past 12 or 6 o'clock, as a sine, a ray must turn before the popup changes lane: sin 20°. */
 const SWITCH = Math.sin((20 * Math.PI) / 180);
@@ -80,7 +80,7 @@ export function laneY(angle: number, dial: LaneDial, height: number, bounds: Lan
 }
 
 /** The narrowest side lane a popup takes, in CSS pixels; a narrower lane sends it below the dial. */
-export const LANE_MIN = 128;
+const LANE_MIN = 128;
 
 /** The widest a side lane's popup grows, in CSS pixels, 16rem; wider content wraps. */
 export const LANE_WIDEST = 256;
@@ -143,10 +143,11 @@ export type LaneInput = {
   /** The chart's title, the element its Root's `aria-labelledby` names and its Headline, or null. */
   readonly title: LaneBox | null;
   /**
-   * The lane the open popup shows, which it keeps while that lane fits when it is the bottom or the
-   * top lane, or null when it opens. A side lane follows `side`, which keeps its own hysteresis.
+   * The side the popup last showed, kept across closes, so a popup that reopens starts from it. A
+   * bottom or top lane it names is kept while it fits. A side lane follows `side`, which keeps its
+   * own hysteresis.
    */
-  readonly keep: LaneSide | null;
+  readonly keep: LaneSide;
 };
 
 /**
@@ -155,12 +156,12 @@ export type LaneInput = {
  * A side lane is a candidate only when its room holds the popup's widest content and `LANE_PAD`
  * (`laneNeed`). Each candidate has a span, the vertical interval it may use: its own bounds, less
  * any controls, cut to the viewport. It fits only when its span holds the popup's height, so a popup
- * that fits anywhere rests inside the viewport and clear of the controls (R2.3); a span that controls
+ * that fits anywhere rests inside the viewport and clear of the controls; a span that controls
  * cut below the popup's height, or to nothing, as a side legend can, never takes it.
- * The popup takes the bottom or top lane it already shows (`keep`) while that lane fits, so a
- * re-measure on scroll or resize moves no popup whose lane still fits, and otherwise the first
- * candidate that fits. Where none fits, it takes the candidate that shows the most of its height
- * inside its own span, the earlier on a tie.
+ * The popup takes the bottom or top lane it last showed (`keep`, kept across closes, so a reopened
+ * popup starts from it) while that lane fits, so a re-measure on scroll or resize moves no popup
+ * whose lane still fits, and otherwise the first candidate that fits. Where none fits, it takes the
+ * candidate that shows the most of its height inside its own span, the earlier on a tie.
  *
  * - A side lane's inner edge sits one gap outside the further of the rim and the labels. Across, its
  *   span runs from there to the figure's outer side, both cut to the visible area's sides, so a pan

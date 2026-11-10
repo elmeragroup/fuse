@@ -32,11 +32,13 @@ export function cartesianReadout(context: ChartRootContextValue): ChartReadout {
       warnOnce: context.warnOnce,
       usePick: () => useCartesianPick(context, "Chart.Tooltip"),
     },
-    (key) => {
-      // The swatch wears the look the series' bars draw in, from config at render time, so the
-      // server HTML and the legend tell a hatched series apart before the chart hydrates.
-      const look = drawnBarVariant(config[key]?.barVariant ?? "default", barForm(model, orientation));
-      return look === "default" ? undefined : look;
+    {
+      look: (key) => {
+        // The swatch wears the look the series' bars draw in, from config at render time, so the
+        // server HTML and the legend tell a hatched series apart before the chart hydrates.
+        const look = drawnBarVariant(config[key]?.barVariant ?? "default", barForm(model, orientation));
+        return look === "default" ? undefined : look;
+      },
     }
   );
 }

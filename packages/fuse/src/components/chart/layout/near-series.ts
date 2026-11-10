@@ -5,7 +5,7 @@
  */
 
 /** How much nearer, in units of the outer radius, another series must be to take over: about 6 px on a 100 px dial. */
-export const NEAR_HOLD = 0.06;
+const NEAR_HOLD = 0.06;
 
 /**
  * The nearest series by its gap from the pointer, keeping the held one unless another is nearer by

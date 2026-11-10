@@ -19,7 +19,7 @@ import type {
 import { PAGE_ROWS } from "./chart-table-shell";
 import { ownSlotLabel, qualityWords, slotLabel, stackTotalAt } from "./chart-text";
 import type { TextContext } from "./chart-text";
-import type { ChartFallback, ChartQuality, ChartRow, ValueFormat } from "./chart-types";
+import type { ChartConfig, ChartFallback, ChartQuality, ChartRow, ValueFormat } from "./chart-types";
 import { CHART_STRINGS } from "./format/chart-strings";
 import type { FormattedText } from "./format/formatted-text";
 import { seriesLabel } from "./format/series-label";
@@ -62,7 +62,7 @@ export function readingAt(
  * @param format - A format that replaces the series' own.
  * @returns The visual text.
  */
-export function readingText(
+function readingText(
   context: TextContext,
   key: string,
   slot: number,
@@ -96,7 +96,7 @@ export function readingText(
  * @param digits - The fraction digits.
  * @returns Each key's share in percent, or null for a zero denominator.
  */
-export function slotShares(context: TextContext, slot: number, digits: number): Map<string, number | null> {
+function slotShares(context: TextContext, slot: number, digits: number): Map<string, number | null> {
   const { series } = context.model;
   const parts = series.map(({ readings }) => {
     const reading = readings[slot];
@@ -113,7 +113,7 @@ export function slotShares(context: TextContext, slot: number, digits: number): 
  * @param digits - The fraction digits.
  * @returns Each key's share in percent, or null for a zero denominator.
  */
-export function windowShares(context: TextContext, digits: number): Map<string, number | null> {
+function windowShares(context: TextContext, digits: number): Map<string, number | null> {
   const { series, window } = context.model;
   const totals = series.map((entry) => {
     if (window === null) return 0;
@@ -422,29 +422,40 @@ export type SeriesReadoutHost = Pick<
  *
  * @param context - The family's series model and words.
  * @param host - The Root's identity, store, calls and pick.
- * @param look - The look a key's marks draw in, which its swatch wears, or undefined for none.
+ * @param options - The readout's options.
+ * @param options.look - The look a key's marks draw in, which its swatch wears. None by default.
+ * @param options.known - The config a part's dataKey must name, the context's own by default. A
+ *   radar past its series cap draws a capped config, and a part may still name a key it leaves out,
+ *   which answers its label, icon and paint from this config at no index, and reads unselectable.
  * @returns The readout.
  */
 export function seriesReadoutOf(
   context: TextContext,
   host: SeriesReadoutHost,
-  look: (key: string) => string | undefined = () => undefined
+  {
+    look = () => undefined,
+    known = context.config,
+  }: {
+    readonly look?: (key: string) => string | undefined;
+    readonly known?: ChartConfig;
+  } = {}
 ): ChartReadout {
   const { model, config } = context;
   const legendKeys = Object.keys(config);
   const seriesKeys = model.series.map(({ key }) => key);
   const items = new Map<string, ReadoutItem>();
   const item = (key: string): ReadoutItem | undefined => {
-    const known = items.get(key);
-    if (known !== undefined) return known;
-    const entry = config[key];
+    const kept = items.get(key);
+    if (kept !== undefined) return kept;
+    const entry = known[key];
     if (entry === undefined) return undefined;
+    const drawn = Object.hasOwn(config, key);
     const color = entry.color;
     const made: ReadoutItem = {
-      index: seriesOf(model, key)?.seriesIndex ?? legendKeys.indexOf(key),
-      label: seriesLabel(context, key),
+      index: drawn ? (seriesOf(model, key)?.seriesIndex ?? legendKeys.indexOf(key)) : undefined,
+      label: seriesLabel({ config: known }, key),
       icon: entry.icon,
-      selectable: true,
+      selectable: drawn,
       sides: isThresholdColor(color) ? [color.above, color.below] : null,
     };
     items.set(key, made);
@@ -459,7 +470,7 @@ export function seriesReadoutOf(
     toggleGroupName: CHART_STRINGS[context.locale].seriesGroup,
     item,
     assertKey: (part, key) => {
-      assertKnownKey(part, config, key);
+      assertKnownKey(part, known, key);
     },
     pointKey: (_active, near) => (near === null ? null : (model.series[near]?.key ?? null)),
     itemsFollowActive: false,
@@ -470,7 +481,7 @@ export function seriesReadoutOf(
     legendAt: (key, active, fallback) => active ?? fallbackSlot(context, key, fallback),
     legendShare: (key, digits) => windowShares(context, digits).get(key) ?? null,
     swatch: (key, at) => {
-      const paint = seriesPaintOf(key, config[key]?.color ?? "chart-1", seriesOf(model, key));
+      const paint = seriesPaintOf(key, known[key]?.color ?? "chart-1", seriesOf(model, key));
       const step = at === null ? undefined : readingPaint(paint, readingAt(context, key, at));
       return { paint: swatchPaint(paint, step), look: look(key) };
     },

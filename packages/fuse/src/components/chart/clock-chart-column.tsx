@@ -2,7 +2,7 @@
 
 /**
  * The clock's Column: a series as wedges, one per slot, each painting its value's step, floored one
- * device pixel along its radius (D24), stacked through the stack floors, and past 2,000 slots
+ * device pixel along its radius, stacked through the stack floors, and past 2,000 slots
  * decimated by M4 to the dial's circumference.
  */
 import { useLayoutEffect, useMemo, useRef, useState } from "react";
@@ -11,7 +11,6 @@ import type { ReactElement, RefObject } from "react";
 import { useSvgIdPrefix, writeAttribute } from "./chart-dom";
 import { BAR_GLOW, valueGlow } from "./chart-glow-filter";
 import type { MarkValues } from "./chart-motion";
-import { viewBoxOf } from "./chart-pie-frame";
 import type { ClockDrawing, ClockSeries } from "./chart-polar-context";
 import { PolarHatch } from "./chart-polar-hatch";
 import { usePolarCommit, usePolarMark } from "./chart-polar-motion";
@@ -31,8 +30,9 @@ import {
   writeReveal,
 } from "./clock-chart-part";
 import { columnAxis, columnFloorSpan, columnSpan, wedgePad } from "./layout/clock";
-import { clockWedges, entranceFrame } from "./layout/clock-path";
+import { clockWedges, entranceFrame, slotAt } from "./layout/clock-path";
 import { DECIMATE_ABOVE, m4Indexes } from "./layout/decimate";
+import { viewBoxOf } from "./layout/polar-angle";
 
 /**
  * Props for `ClockChart.Column`, a closed part.
@@ -51,7 +51,7 @@ export type ClockChartColumnProps = ChartLayerProps & {
   emphasisLabel?: string;
 };
 
-/** The constant gap between two wedges, in CSS pixels (D14). */
+/** The constant gap between two wedges, in CSS pixels. */
 const WEDGE_GAP = 2;
 
 /** The measured dial: CSS pixels per unit of the outer radius and the device pixel ratio. */
@@ -155,16 +155,8 @@ function drawColumns(group: SVGGElement, look: ColumnLook | null, values: MarkVa
   const axis = columnAxis(radius, measure.dpr);
   const spans = shownAt(series, radius).flatMap((slot) => {
     if (series.slots.states[slot] !== "reading") return [];
-    const at = 1 + slot * 4;
-    return [
-      columnFloorSpan(
-        axis,
-        slot,
-        series.key,
-        (frame.values[at + 2] ?? 0) * radius,
-        (frame.values[at + 3] ?? 0) * radius
-      ),
-    ];
+    const [, , base, tip] = slotAt(frame.values, slot);
+    return [columnFloorSpan(axis, slot, series.key, base * radius, tip * radius)];
   });
   seat.floors.draw(seat.mark, seat.stack, spans, axis, (kept) => {
     write(new Map(spans.map((span, index) => [span.from, kept[index] === 1])));
@@ -173,10 +165,11 @@ function drawColumns(group: SVGGElement, look: ColumnLook | null, values: MarkVa
 
 /**
  * One series as a column of wedges, one per slot, each with the slot's whole angle less a pad that
- * keeps every gap one width from hole to rim (D14). A negative wedge hangs inward from the zero ring.
+ * keeps every gap one width from hole to rim. A negative wedge hangs inward from the zero ring.
  * Each wedge paints its own value's step of a threshold or a scale, keeps one device pixel along its
- * radius away from zero (D24), and stacks through config `stack`. Past 100 slots the wedges draw as
- * one path, and past 2,000 they decimate by M4 to the dial's circumference.
+ * radius away from zero, and stacks through config `stack`. The wedges draw as one path per
+ * paint group at any slot count, and past 2,000 slots they decimate by M4 to the dial's
+ * circumference.
  *
  * @beta
  */

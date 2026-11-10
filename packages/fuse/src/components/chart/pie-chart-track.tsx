@@ -7,7 +7,7 @@
 import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { ReactElement } from "react";
 
-import { pieFrameOf, POP_DURATION, POP_EASING, viewBoxOf } from "./chart-pie-frame";
+import { pieFrameOf, POP_DURATION, POP_EASING } from "./chart-pie-frame";
 import { pieDrawingOf, radialDrawingOf, usePolarContext } from "./chart-polar-context";
 import type { PieDrawing, PolarContextValue, RadialDrawing } from "./chart-polar-context";
 import { ringDash, ringFrameOf } from "./chart-ring-frame";
@@ -15,6 +15,7 @@ import type { RingPlace } from "./chart-ring-frame";
 import type { ChartLayerProps } from "./chart-types";
 import { arcPath, ringTrack } from "./layout/arc-path";
 import { CHART_SPRINGS } from "./layout/motion";
+import { viewBoxOf } from "./layout/polar-angle";
 import { springEasing } from "./layout/spring";
 
 /** A ring track's scale-out on the Motion table's 100/15 spring, sampled once. */
@@ -91,8 +92,8 @@ function RingTrack({
     <path
       ref={path}
       data-slot="pie-chart-track"
-      data-ring=""
-      data-ring-track=""
+      data-chart-ring=""
+      data-chart-ring-track=""
       d={ringTrack(radius, radial.sweep)}
       pathLength={radial.sweep.width}
       strokeDasharray={first.dasharray}

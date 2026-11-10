@@ -3,18 +3,18 @@
 /**
  * The pie's slices. Each slice is a mark of its own on the Root's loop, so it sweeps in on its own
  * stagger, tweens to new data and pops on its own, and the pie's frame paints every slice of a
- * frame together through the rim floor (D24). An estimated slice paints a hatch of its own colour,
- * and a missing one draws no arc (section 8.7). A slice that leaves collapses as a ghost (D5): to
- * Other's seam when it folds into Other, which grows as it takes the slice in (S6), and to its own
+ * frame together through the rim floor. An estimated slice paints a hatch of its own colour,
+ * and a missing one draws no arc (section 8.7). A slice that leaves collapses as a ghost: to
+ * Other's seam when it folds into Other, which grows as it takes the slice in, and to its own
  * seam otherwise. The server writes every slice at rest, and the first paint keeps the slices hidden
- * until the chart comes into view (D18).
+ * until the chart comes into view.
  */
 import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { ReactElement } from "react";
 
 import { useSvgIdPrefix } from "./chart-dom";
 import type { MarkValues } from "./chart-motion";
-import { pieFrameOf, POP_DURATION, POP_EASING, viewBoxOf } from "./chart-pie-frame";
+import { pieFrameOf, POP_DURATION, POP_EASING } from "./chart-pie-frame";
 import type { PieFrame, PieLook } from "./chart-pie-frame";
 import { pieDrawingIn, usePolarContext } from "./chart-polar-context";
 import type { PieDrawing, PieSlice, PolarContextValue } from "./chart-polar-context";
@@ -23,6 +23,7 @@ import { placeExit, usePolarCommit, usePolarMark } from "./chart-polar-motion";
 import type { ChartLayerProps } from "./chart-types";
 import { arcPath } from "./layout/arc-path";
 import { OTHER_KEY } from "./layout/pie";
+import { viewBoxOf } from "./layout/polar-angle";
 
 /**
  * Props for `PieChart.Pie`, a closed part.
@@ -119,7 +120,7 @@ function PieSector({
     <path
       ref={ref}
       data-slot="pie-chart-sector"
-      data-sector=""
+      data-chart-sector=""
       data-quality={slice.quality}
       d={first}
       style={{ "--chart-slot": index, "--chart-series": slice.series, "--_paint": fill }}
@@ -138,7 +139,7 @@ function PieSector({
  */
 export function PieChartPie({ cornerRadius = 0, className, style }: PieChartPieProps): ReactElement {
   const polar = usePolarContext("PieChart.Pie", ["pie"]);
-  const { model, motion, box, update } = polar;
+  const { model, motion, box, update, kernel } = polar;
   const pie = pieDrawingIn(model, "PieChart.Pie");
   const look = useMemo(() => lookOf(pie, cornerRadius), [pie, cornerRadius]);
   const [frame] = useState(() => pieFrameOf(motion, look));
@@ -175,7 +176,16 @@ export function PieChartPie({ cornerRadius = 0, className, style }: PieChartPieP
     const before = drawn.current;
     drawn.current = { pie, targets };
     const layer = ghosts.current;
-    if (before === null || before.pie === pie || layer === null || update.kind !== "data") return;
+    // A show draws every mark at rest, so a slice removed while Activity hid the chart leaves no ghost.
+    if (
+      before === null ||
+      before.pie === pie ||
+      layer === null ||
+      update.kind !== "data" ||
+      kernel.hidden()
+    ) {
+      return;
+    }
     const kept = new Set(pie.slices.map(({ key }) => key));
     before.pie.slices.forEach((slice, order) => {
       if (kept.has(slice.key)) return;
@@ -200,7 +210,7 @@ export function PieChartPie({ cornerRadius = 0, className, style }: PieChartPieP
         { "data-slot": "pie-chart-ghost", style: `fill: ${slice.paint}` }
       );
     });
-  }, [pie, targets, frame, motion, prefix, update]);
+  }, [pie, targets, frame, motion, prefix, update, kernel]);
   return (
     <svg
       ref={svg}
@@ -227,7 +237,8 @@ export function PieChartPie({ cornerRadius = 0, className, style }: PieChartPieP
               r="1">
               {slice.stops.toReversed().map((stop, place, stops) => (
                 <stop
-                  key={stop}
+                  // A role list may name a role twice, so a stop's place keys it.
+                  key={place}
                   offset={pie.innerRadius + ((1 - pie.innerRadius) * place) / Math.max(1, stops.length - 1)}
                   style={{ "--_stop": stop }}
                 />

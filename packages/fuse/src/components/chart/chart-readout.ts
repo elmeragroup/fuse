@@ -45,7 +45,7 @@ export function useChartReadout(part: string): ChartReadout {
     throw new ChartCompositionError(
       part,
       "part-outside-root",
-      "must be used within Chart.Root. Wrap the chart's parts in Chart.Root, or in BarChart.Root, AreaChart.Root or LineChart.Root."
+      "must be used within a chart's Root. Wrap the chart's parts in Chart.Root, BarChart.Root, AreaChart.Root, LineChart.Root, PieChart.Root, RadialChart.Root, RadarChart.Root or ClockChart.Root."
     );
   }
   return readout;

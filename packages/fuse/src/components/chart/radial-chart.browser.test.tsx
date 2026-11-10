@@ -2,7 +2,7 @@
 // Units under test: RadialChart.Bar, Track, Glow and the Center parts under RadialChart.Root, and
 // PieChart.Pie and Track for quality and the gauge's corners. Oracles, written by hand: CONTRACT
 // section 8.4's rings, three of them splitting the band from 0.3 to 1, each filling its value over
-// its maximum and never lapping; the browser's own stroke test, which the pick must agree with (Q8);
+// its maximum and never lapping; the browser's own stroke test, which the pick must agree with;
 // D24's device pixel of arc; Q12's 40 dots and 6° segments; section 8.7's hatched estimate and
 // missing reading; the Motion table's hover scales; section 8.13's centre; and S9's category word.
 import { describe, expect, it } from "vitest";
@@ -117,7 +117,7 @@ describe("the rings (section 8.4, Q5, Q8)", () => {
     expect(drawn.map((path) => Math.round(extent(path) * 100) / 100)).toEqual([296.64, 302.4, 360]);
     // DOM audit: the ring group states data-over-max, which the stylesheet and consumers read.
     expect(
-      [...host.querySelectorAll("[data-ring]:not([data-ring-track])")].map((ring) =>
+      [...host.querySelectorAll("[data-chart-ring]:not([data-chart-ring-track])")].map((ring) =>
         ring.hasAttribute("data-over-max")
       )
     ).toEqual([false, false, true]);
@@ -212,7 +212,7 @@ describe("the rings (section 8.4, Q5, Q8)", () => {
     await userEvent.tab();
     await userEvent.keyboard("{ArrowDown}");
     settle(host);
-    const groups = [...host.querySelectorAll("[data-ring]:not([data-ring-track])")];
+    const groups = [...host.querySelectorAll("[data-chart-ring]:not([data-chart-ring-track])")];
     expect(groups.map((group) => getComputedStyle(group).scale)).toEqual(["1.02", "1.03", "1"]);
     expect(groups.map((group) => getComputedStyle(group).opacity)).toEqual(["0.45", "1", "0.45"]);
   });

@@ -249,6 +249,25 @@ describe("the radar key map (section 9.4)", () => {
 });
 
 describe("Escape and pinning (sections 9.4 and 9.5)", () => {
+  it("lets a hover open the slice that Escape closed once focus has left the chart", async () => {
+    // Escape closes the focused Strøm, and the dismissal lasts only while the reader stays: a
+    // blur ends it, so the pointer that then moves over Strøm, 0° to 223.2°, opens it.
+    const { host } = renderThemed(
+      <Pie>
+        <PieChart.Tooltip />
+      </Pie>
+    );
+    await userEvent.tab();
+    await expect.poll(label).toBe("Strøm");
+    await userEvent.keyboard("{Escape}");
+    expect(figureOf(host).hasAttribute("data-active")).toBe(false);
+    if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+    await hover(...pointAt(host, 80, 0.5));
+    await hover(...pointAt(host, 100, 0.5));
+    await expect.poll(label).toBe("Strøm");
+    expect(figureOf(host).hasAttribute("data-active")).toBe(true);
+  });
+
   it("pins with Enter, hides the pin with the first Escape and lets the second propagate", async () => {
     const { host } = renderThemed(<Pie />);
     await userEvent.tab();

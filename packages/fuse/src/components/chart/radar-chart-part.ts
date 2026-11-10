@@ -3,7 +3,7 @@
 /**
  * What the radar's series marks and its ActiveDot share: a series' spoke states, its radius on each
  * spoke at rest, and each spoke's vertex at the radii a frame draws. Each part keeps its own
- * module, so a route ships only the parts it names (Q1).
+ * module, so a route ships only the parts it names.
  */
 import type { MarkValues } from "./chart-motion";
 import type { RadarDrawing, RadarSeries } from "./chart-polar-context";

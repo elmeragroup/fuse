@@ -5,7 +5,7 @@
  * minimum, and a fill always encodes distance from 0.
  */
 import { linearScale, scaleTicks } from "./linear-scale";
-import { polarPoint } from "./polar-angle";
+import { polarPoint, turnOf } from "./polar-angle";
 import type { PolarPoint } from "./polar-angle";
 import { pathNumber } from "./rounding";
 import { valueDomain } from "./value-domain";
@@ -175,7 +175,7 @@ export function edgePoint(vertices: readonly (PolarPoint | null)[], angle: numbe
   const count = vertices.length;
   if (count === 0) return null;
   const step = 360 / count;
-  const turned = ((angle % 360) + 360) % 360;
+  const turned = turnOf(angle);
   const below = Math.floor(turned / step + 1e-9) % count;
   const a = vertices[below] ?? null;
   if (count === 1 || Math.abs(turned - spokeAngle(below, count)) < 1e-9) return a;
@@ -190,7 +190,7 @@ export function edgePoint(vertices: readonly (PolarPoint | null)[], angle: numbe
   return { x: ray.x * reach, y: ray.y * reach };
 }
 
-/** A series' drawing split by quality (R5): the plain and the marked parts, each one path. */
+/** A series' drawing split by quality: the plain and the marked parts, each one path. */
 export type RadarSplit = { readonly plain: string; readonly marked: string };
 
 /** The edges a ring of n spokes draws: n closing edges from 3 spokes, one for 2, none for 1. */
@@ -199,7 +199,7 @@ function edgeCount(count: number): number {
 }
 
 /**
- * The Line's edges, split by quality (R5): an edge that touches an estimated spoke is marked, and
+ * The Line's edges, split by quality: an edge that touches an estimated spoke is marked, and
  * dashes, and one that touches a missing spoke draws nothing. Consecutive edges of one kind join
  * into one run, and a ring whose every edge is plain, or every edge marked, closes.
  *
@@ -254,7 +254,7 @@ export function radarEdges(vertices: readonly (PolarPoint | null)[], marked: rea
 }
 
 /**
- * The Area's quadrilaterals, split by quality (R5): a quadrilateral beside an estimated spoke is
+ * The Area's quadrilaterals, split by quality: a quadrilateral beside an estimated spoke is
  * marked, and hatches. A missing spoke removes both beside it, as `radarQuads` does.
  *
  * @param vertices - The series' vertex per spoke, null for a missing one.
@@ -284,7 +284,7 @@ export function radarAreas(
 
 /**
  * The vertices no edge reaches: a reading whose neighbours on both sides are missing, or the only
- * spoke. The Line draws each as a dot (R5).
+ * spoke. The Line draws each as a dot.
  *
  * @param vertices - The series' vertex per spoke, null for a missing one.
  * @returns The lone vertices.

@@ -25,6 +25,7 @@ import { PieChart } from "./pie-chart-namespace";
 import { RadarChart } from "./radar-chart-namespace";
 import { RadialChart } from "./radial-chart-namespace";
 import { ScatterChart } from "./scatter-chart-namespace";
+import { useChartPoint } from "./use-chart-point";
 
 const DAY = Date.parse("2025-10-24T22:00:00Z");
 const HOUR = 3_600_000;
@@ -328,5 +329,38 @@ describe("a closing tooltip keeps all its content", () => {
       expect(probeLabel(node)).toBe("Nettleie");
     });
     expect(changed).toEqual([]);
+  });
+});
+
+describe("a shut tooltip lets go of its point", () => {
+  /** Prints whether the enclosing chart has a point, as a custom tooltip child reads it. */
+  function PointProbe(): ReactElement {
+    const point = useChartPoint();
+    return <span data-point-probe="">{point === null ? "none" : "point"}</span>;
+  }
+
+  it("so useChartPoint() in a custom child reads null once the popup has closed", async () => {
+    renderThemed(
+      <Locale>
+        <Chart.Root
+          data={["k0", "k1", "k2"].map((name, index) => ({ name, heating: index + 1, water: index }))}
+          config={SERIES}
+          xKey="name"
+          aria-label="Forbruk">
+          <Chart.Bar dataKey="heating" />
+          <Chart.Tooltip>
+            <PointProbe />
+          </Chart.Tooltip>
+        </Chart.Root>
+      </Locale>
+    );
+    // DOM audit: the popup is aria-hidden and stays mounted once open, so the probe is read by its attribute.
+    const probe = () => document.querySelector("[data-point-probe]")?.textContent;
+    const { changed } = await closeAndRead("{ArrowRight}", () => {
+      expect(probe()).toBe("point");
+    });
+    // The fade keeps the point it showed; the shut popup holds none.
+    expect(changed).toEqual([]);
+    await expect.poll(probe).toBe("none");
   });
 });

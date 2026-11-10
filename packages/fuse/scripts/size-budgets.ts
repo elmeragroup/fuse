@@ -263,8 +263,12 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = derive([
   // from the visual viewport, the centre parts reading the held point, and the scatter tooltip holding its
   // last point while it closes, 216006 to 216354. The ceiling keeps about 100 bytes of headroom.
   // 2026-11-09: the clock wedge gap's cut-off measured at the rim, and each short wedge's pad narrowed so
-  // its tip keeps one device pixel (D24), 216354 to 216491. The ceiling keeps about 100 bytes of headroom.
-  { name: "chart", entryFile: "chart.js", measuredGzip: 97044, ceilingGzip: 216591 },
+  // its tip keeps one device pixel, 216354 to 216491. The ceiling keeps about 100 bytes of headroom.
+  // Raised again from 216591 on 2026-11-10, the round-1 and round-2 review fixes: the entrance spent once
+  // it starts and cleared when a hide cuts it short, the item readout answering every config key, the
+  // radar's full-config answers, the anchor's unionOf, the data-chart-* attribute names and the clock
+  // reference defaults, measured 216947. The ceiling keeps about 100 bytes of headroom.
+  { name: "chart", entryFile: "chart.js", measuredGzip: 97044, ceilingGzip: 217047 },
   // 2026-10-13: new entry, measured at 29180. Pure wrappers over Base UI's toolbar and its roving focus.
   { name: "toolbar", entryFile: "toolbar.js", measuredGzip: 29180, ceilingGzip: 43770 },
   // 2026-10-12: new entries. Command is Base UI's Autocomplete in the InputGroup, with the Dialog
@@ -503,7 +507,11 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // 2026-11-09: the review round rb2 fixes: every readout part reading its active point from one leaf that
     // holds a closing tooltip's index and series together, 153776 to 153949. The ceiling keeps about 100
     // bytes of headroom.
-    ceilingGzip: 154049,
+    // Raised again from 154049 on 2026-11-10, the round-1 and round-2 review fixes: the closed tooltip's
+    // point cleared and Escape's dismissal cleared on blur, the shared series readout taking its look and the
+    // radar's full config as named options, and answering a config key it draws no series for from that
+    // config at no index, measured 154078. The ceiling keeps about 100 bytes of headroom.
+    ceilingGzip: 154178,
   },
   {
     name: "chart/BarChart",
@@ -522,7 +530,11 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // 2026-11-09: the review round rb2 fixes: every readout part reading its active point from one leaf that
     // holds a closing tooltip's index and series together, 153779 to 153951. The ceiling keeps about 100
     // bytes of headroom.
-    ceilingGzip: 154051,
+    // Raised again from 154051 on 2026-11-10, the round-1 and round-2 review fixes: the closed tooltip's
+    // point cleared and Escape's dismissal cleared on blur, the shared series readout taking its look and the
+    // radar's full config as named options, and answering a config key it draws no series for from that
+    // config at no index, measured 154080. The ceiling keeps about 100 bytes of headroom.
+    ceilingGzip: 154180,
   },
   // Set from its measurement on 2026-11-05, when the polar families landed: the whole namespace:
   // slices on their frame with the rim floor and ghosts, labels and leaders that ride the frame,
@@ -571,7 +583,11 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // 2026-11-09: the review round rb3 fixes: each lane's popup held inside its own span, the visible area
     // read from the visual viewport, and the centre parts reading the held point, 112773 to 112992. The
     // ceiling keeps about 100 bytes of headroom.
-    ceilingGzip: 113092,
+    // Raised again from 113092 on 2026-11-10, the round-1 and round-2 review fixes: the entrance spent once
+    // it starts and cleared when a hide cuts it short, the item readout answering every config key, the
+    // anchor's unionOf and the data-chart-* attribute names, measured 113315. The ceiling keeps about 100
+    // bytes of headroom.
+    ceilingGzip: 113415,
   },
   // Set from its measurement on 2026-11-05, when the polar families landed: the whole namespace:
   // rings on their frame in three looks, Track, Glow, the Center parts and the polar readouts. The
@@ -622,7 +638,11 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // 2026-11-09: the review round rb3 fixes: each lane's popup held inside its own span, the visible area
     // read from the visual viewport, and the centre parts reading the held point, 109270 to 109524. The
     // ceiling keeps about 100 bytes of headroom.
-    ceilingGzip: 109624,
+    // Raised again from 109624 on 2026-11-10, the round-1 and round-2 review fixes: the entrance spent once
+    // it starts and cleared when a hide cuts it short, the item readout answering every config key, the
+    // anchor's unionOf and the data-chart-* attribute names, measured 109813. The ceiling keeps about 100
+    // bytes of headroom.
+    ceilingGzip: 109913,
   },
   // Set from its measurement on 2026-11-05, when the polar families landed: the whole namespace:
   // grid, spoke and ring labels fitted to the dial, Area, Line, Dots, an ActiveDot on the loop,
@@ -669,7 +689,11 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // headroom.
     // 2026-11-09: the review round rb3 fixes: each lane's popup held inside its own span, the visible area
     // read from the visual viewport, 113497 to 113720. The ceiling keeps about 100 bytes of headroom.
-    ceilingGzip: 113820,
+    // Raised again from 113820 on 2026-11-10, the round-1 and round-2 review fixes: the entrance spent once
+    // it starts and cleared when a hide cuts it short, the radar's full-config answers for a key past the
+    // cap, the anchor's unionOf and the data-chart-* attribute names, measured 113968. The ceiling keeps
+    // about 100 bytes of headroom.
+    ceilingGzip: 114068,
   },
   // Set from its measurement on 2026-11-05, when the polar families landed: the whole namespace:
   // the zoned dial model, curves, wedges with floors and coarse slots, labels and ring values
@@ -733,8 +757,12 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // 2026-11-09: the review round rb3 fixes: each lane's popup held inside its own span, the visible area
     // read from the visual viewport, 131627 to 131849. The ceiling keeps about 100 bytes of headroom.
     // 2026-11-09: the wedge gap's cut-off measured at the rim, and each short wedge's pad narrowed so its
-    // tip keeps one device pixel (D24), 131849 to 131981. The ceiling keeps about 100 bytes of headroom.
-    ceilingGzip: 132081,
+    // tip keeps one device pixel, 131849 to 131981. The ceiling keeps about 100 bytes of headroom.
+    // Raised again from 132081 on 2026-11-10, the round-1 and round-2 review fixes: the entrance spent once
+    // it starts and cleared when a hide cuts it short, the clock reference defaults by interval, the
+    // anchor's unionOf and the data-chart-* attribute names, measured 132321. The ceiling keeps about 100
+    // bytes of headroom.
+    ceilingGzip: 132421,
   },
   {
     name: "chart/Chart.Root",
@@ -828,11 +856,15 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // about 100 bytes of headroom.
     // 2026-11-07: a chart's option keeps its place when the window loses focus, 80787 to
     // 80889. The ceiling keeps about 100 bytes of headroom.
-    ceilingGzip: 80989,
+    // Raised again from 80989 on 2026-11-10, the round-1 and round-2 review fixes: the closed tooltip's point
+    // cleared and Escape's dismissal cleared on blur, the shared series readout taking its look and the
+    // radar's full config as named options, and answering a config key it draws no series for from that
+    // config at no index, measured 81033. The ceiling keeps about 100 bytes of headroom.
+    ceilingGzip: 81133,
   },
   // 2026-11-05: PieChart.Root draws through the polar kernel, no longer a pending stub, so its row
   // starts again at 41609 with the derived ceiling, beside new rows for the RadialChart and
-  // RadarChart Roots at 40138 and 48586. None ships cartesian geometry (S15).
+  // RadarChart Roots at 40138 and 48586. None ships cartesian geometry.
   {
     name: "chart/PieChart.Root",
     entryFile: "chart.js",
@@ -859,7 +891,10 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // 46566. The ceiling keeps about 100 bytes of headroom.
     // 2026-11-07: each polar Table builds its table on demand, so a Root without one builds none, 46566 to
     // 45717. The ceiling keeps about 100 bytes of headroom.
-    ceilingGzip: 45817,
+    // Raised again from 45817 on 2026-11-10, the round-1 and round-2 review fixes: the entrance spent once it
+    // starts and cleared when a hide cuts it short, the item readout answering every config key and the
+    // data-chart-* attribute names, measured 45912. The ceiling keeps about 100 bytes of headroom.
+    ceilingGzip: 46012,
   },
   // 2026-11-05: new row, the typical pie route, as the bar route is Chart's: Root, Pie, the Center
   // parts, Legend and Tooltip, which the owner set beside the whole-namespace row, with the derived
@@ -920,7 +955,11 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // 2026-11-09: the review round rb3 fixes: each lane's popup held inside its own span, the visible area
     // read from the visual viewport, and the centre parts reading the held point, 93153 to 93383. The ceiling
     // keeps about 100 bytes of headroom.
-    ceilingGzip: 93483,
+    // Raised again from 93483 on 2026-11-10, the round-1 and round-2 review fixes: the entrance spent once
+    // it starts and cleared when a hide cuts it short, the item readout answering every config key, the
+    // anchor's unionOf and the data-chart-* attribute names, measured 93688. The ceiling keeps about 100
+    // bytes of headroom.
+    ceilingGzip: 93788,
   },
   // 2026-11-05: new row, the typical radial route: Root, Bar, the Center parts, Legend and Tooltip,
   // which the owner set beside the whole-namespace row, with the derived ceiling.
@@ -982,7 +1021,11 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // 2026-11-09: the review round rb3 fixes: each lane's popup held inside its own span, the visible area
     // read from the visual viewport, and the centre parts reading the held point, 89063 to 89269. The ceiling
     // keeps about 100 bytes of headroom.
-    ceilingGzip: 89369,
+    // Raised again from 89369 on 2026-11-10, the round-1 and round-2 review fixes: the entrance spent once
+    // it starts and cleared when a hide cuts it short, the item readout answering every config key, the
+    // anchor's unionOf and the data-chart-* attribute names, measured 89539. The ceiling keeps about 100
+    // bytes of headroom.
+    ceilingGzip: 89639,
   },
   {
     name: "chart/RadialChart.Root",
@@ -1011,7 +1054,10 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // 45321. The ceiling keeps about 100 bytes of headroom.
     // 2026-11-07: each polar Table builds its table on demand, so a Root without one builds none, 45321 to
     // 44472. The ceiling keeps about 100 bytes of headroom.
-    ceilingGzip: 44572,
+    // Raised again from 44572 on 2026-11-10, the round-1 and round-2 review fixes: the entrance spent once it
+    // starts and cleared when a hide cuts it short, the item readout answering every config key and the
+    // data-chart-* attribute names, measured 44610. The ceiling keeps about 100 bytes of headroom.
+    ceilingGzip: 44710,
   },
   {
     name: "chart/RadarChart.Root",
@@ -1037,7 +1083,10 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // 53304. The ceiling keeps about 100 bytes of headroom.
     // 2026-11-07: each polar Table builds its table on demand, so a Root without one builds none, 53304 to
     // 52288. The ceiling keeps about 100 bytes of headroom.
-    ceilingGzip: 52388,
+    // Raised again from 52388 on 2026-11-10, the round-1 and round-2 review fixes: the entrance spent once it
+    // starts and cleared when a hide cuts it short, the radar's full-config answers for a key past the cap
+    // and the data-chart-* attribute names, measured 52424. The ceiling keeps about 100 bytes of headroom.
+    ceilingGzip: 52524,
   },
   // 2026-11-05: new row, the typical radar route: Root, Grid, both axes, Area, Line, Legend and
   // Tooltip, which the owner set beside the whole-namespace row, with the derived ceiling.
@@ -1084,7 +1133,11 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // headroom.
     // 2026-11-09: the review round rb3 fixes: each lane's popup held inside its own span, the visible area
     // read from the visual viewport, 99033 to 99255. The ceiling keeps about 100 bytes of headroom.
-    ceilingGzip: 99355,
+    // Raised again from 99355 on 2026-11-10, the round-1 and round-2 review fixes: the entrance spent once
+    // it starts and cleared when a hide cuts it short, the radar's full-config answers for a key past the
+    // cap, the anchor's unionOf and the data-chart-* attribute names, measured 99502. The ceiling keeps
+    // about 100 bytes of headroom.
+    ceilingGzip: 99602,
   },
   // 2026-11-05: new rows, ClockChart's Root alone and its typical route: Root, Line, Grid,
   // AngleAxis, Center, Legend and Tooltip, which the owner set, each with the derived ceiling.
@@ -1113,7 +1166,10 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // 56877. The ceiling keeps about 100 bytes of headroom.
     // 2026-11-07: each polar Table builds its table on demand, so a Root without one builds none, 56877 to
     // 55800. The ceiling keeps about 100 bytes of headroom.
-    ceilingGzip: 55900,
+    // Raised again from 55900 on 2026-11-10, the round-1 and round-2 review fixes: the entrance spent once it
+    // starts and cleared when a hide cuts it short, and the data-chart-* attribute names, measured 55970. The
+    // ceiling keeps about 100 bytes of headroom.
+    ceilingGzip: 56070,
   },
   {
     name: "chart/ClockChart route",
@@ -1166,7 +1222,10 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // headroom.
     // 2026-11-09: the review round rb3 fixes: each lane's popup held inside its own span, the visible area
     // read from the visual viewport, 109041 to 109280. The ceiling keeps about 100 bytes of headroom.
-    ceilingGzip: 109380,
+    // Raised again from 109380 on 2026-11-10, the round-1 and round-2 review fixes: the entrance spent once
+    // it starts and cleared when a hide cuts it short, the anchor's unionOf and the data-chart-* attribute
+    // names, measured 109502. The ceiling keeps about 100 bytes of headroom.
+    ceilingGzip: 109602,
   },
   // 2026-11-04: new rows, measured at 84628 for the whole ScatterChart namespace and 41808 for its
   // Root alone, each with the derived ceiling.
@@ -1240,16 +1299,16 @@ export const CSS_BUDGETS: readonly CssBudget[] = derive([
   // (15120 to 15840) and over the derived 15134, so the ceiling keeps about 100 bytes of headroom.
   // Raised from 15940 on 2026-11-05. The polar Roots' tokens, their frame's grid areas, the
   // aspect-locked cell, the first paint that hides polar marks until the entrance starts with
-  // scripting on and shows them in print (D18), and the pie, radial and radar skeleton shapes
+  // scripting on and shows them in print, and the pie, radial and radar skeleton shapes
   // measured 784 bytes over the stylesheet (15840 to 16624). The ceiling keeps about 100 bytes of
   // headroom.
   // Raised again from 16724 on 2026-11-05. The pie's rules: the layers over the cell with the pop's
   // room and the outside labels' gutter, the slices' seam, pop, dims and their state rules keyed on
-  // data-sector, the labels and leaders, the centre's square with its reels, the Track and the
+  // data-chart-sector, the labels and leaders, the centre's square with its reels, the Track and the
   // Glow, which measured 1513 bytes over the stylesheet (16624 to 18137). The ceiling keeps about
   // 100 bytes of headroom.
   // Raised again from 18237 on 2026-11-05. The rings' strokes, dots, masks and faint dots, their
-  // hover scale and dims keyed on data-ring, the tracks' scale-out keyframes, and
+  // hover scale and dims keyed on data-chart-ring, the tracks' scale-out keyframes, and
   // --chart-ring-fill's registration, which measured 675 bytes over the stylesheet (18137 to
   // 18812). The ceiling keeps about 100 bytes of headroom.
   // Raised again from 18912 on 2026-11-05. The radar's rings, zero ring, spokes and hand, its

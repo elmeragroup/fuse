@@ -109,15 +109,17 @@
   }
 
   /*
-    Each Root's state reaches its own parts and stops at a nested Root (S14). A Root writes its state
+    Each Root's state reaches its own parts and stops at a nested Root. A Root writes its state
     on its own figure, and every figure sets each flag below, so a part reads the nearest Root's state
     by inheritance and never an outer Root's. A cartesian or scatter Root's hover is the one
     state no variable carries, since a variable that changes on the figure restyles every element
     in it: its rules list one selector per depth instead, each bound to the Root at that depth,
-    which no other Root on a part's chain shares, so a hover restyles only the parts it styles. A number flag is 0 or 1 for arithmetic. A switch,
-    named --_if-root-…, is empty while on, so `var(--_if-root-x) value` reads the value, and
-    `initial` while off, so the declaration drops out, or `var(--_x, rest)` reads the rest. The
-    state variables a Root writes reset here too, and the Root writes its own over them.
+    which no other Root on a part's chain shares, so a hover restyles only the parts it styles.
+    Those rules list depths 0 to 3, so a Root inside more than three others shows no such hover.
+    A number flag is 0 or 1 for arithmetic. A switch, named --_if-root-…, is empty while on, so
+    `var(--_if-root-x) value` reads the value, and `initial` while off, so the declaration drops
+    out, or `var(--_x, rest)` reads the rest. The state variables a Root writes reset here too, and
+    the Root writes its own over them.
   */
   :is([data-slot="chart"], [data-polar]) {
     --chart-active: initial;
@@ -191,7 +193,7 @@
   }
 
   /*
-    First paint (D18). With JavaScript on, a polar Root waits until it comes into view and its
+    First paint. With JavaScript on, a polar Root waits until it comes into view and its
     entrance starts, which writes data-drawn on its figure. With JavaScript off, and in print, the
     full chart shows.
   */
@@ -770,7 +772,7 @@
 
   /*
     A polar chart: PieChart, RadialChart and RadarChart. The figure is a grid like the cartesian
-    one, and its plot area holds the aspect-locked cell, min(100%, --chart-polar-size) wide (D20),
+    one, and its plot area holds the aspect-locked cell, min(100%, --chart-polar-size) wide,
     whose aspect ratio is the sweep's box, so the server's markup is final at any width. The frame
     names the same areas as the cartesian frame, so every shared part takes its area as it does
     there, and a family's mark layers stack in the plot area over the cell.
@@ -939,7 +941,7 @@
     --chart-slice-seam: var(--chart-bar-seam);
   }
 
-  [data-layer="track"] {
+  :where([data-polar-layer])[data-layer="track"] {
     z-index: 0;
   }
 
@@ -947,7 +949,7 @@
     fill: var(--muted);
   }
 
-  [data-layer="glow"] {
+  :where([data-polar-layer])[data-layer="glow"] {
     z-index: 1;
   }
 
@@ -962,9 +964,9 @@
 
   /*
     A slice paints its own colour, or its role list's gradient, with the surface's seam along its
-    edges (Q3). It pops along its bisector by the frame's --_px and --_py, its pop's CSS pixels in
-    the dial's units, and dims to --chart-hover-dim while another slice is active (D3). A selected
-    or highlighted category dims the rest the same way (S2), and every dim fades over 150 ms.
+    edges. It pops along its bisector by the frame's --_px and --_py, its pop's CSS pixels in
+    the dial's units, and dims to --chart-hover-dim while another slice is active. A selected
+    or highlighted category dims the rest the same way, and every dim fades over 150 ms.
   */
   [data-slot="pie-chart-sector"],
   [data-slot="pie-chart-glow"] {
@@ -995,11 +997,11 @@
   }
 
   /*
-    The state rules lead with data-sector, which only slices and their halo carry, so Chromium
+    The state rules lead with data-chart-sector, which only slices and their halo carry, so Chromium
     restyles them alone when Root's state changes, and no cartesian mark. They read Root's flags,
     so a highlighted category dims the rest over a selected one's dim.
   */
-  [data-sector] {
+  [data-chart-sector] {
     --_dim-active: calc(var(--_root-active) * var(--_off));
     --_dim-series: calc(
       var(--_root-highlight) *
@@ -1026,16 +1028,16 @@
   }
 
   /* An estimated slice's or ring's hatch: a line of its paint, then a 30 % tint of it. */
-  [data-hatch] > stop {
+  [data-chart-hatch] > stop {
     stop-color: var(--_hatch);
   }
 
-  [data-hatch] > stop[data-part="tint"] {
+  [data-chart-hatch] > stop[data-part="tint"] {
     stop-color: color-mix(in oklab, var(--_hatch) 30%, transparent);
   }
 
   /*
-    A radial chart's rings are stroked centre lines whose dash the frame writes (Q5). Each stroke
+    A radial chart's rings are stroked centre lines whose dash the frame writes. Each stroke
     fills --chart-ring-fill of its band, which sets the ring's width and the gap to the next ring.
     A dotted ring's dots are round caps of zero-length dashes, faint where its value does not reach.
   */
@@ -1045,8 +1047,8 @@
 
   :is(
     [data-slot="radial-chart-ring"],
-    [data-slot="pie-chart-track"][data-ring],
-    [data-slot="pie-chart-glow"][data-ring]
+    [data-slot="pie-chart-track"][data-chart-ring],
+    [data-slot="pie-chart-glow"][data-chart-ring]
   ) {
     fill: none;
     stroke-width: calc(var(--chart-ring-fill) * var(--_band));
@@ -1072,20 +1074,21 @@
     stroke: color-mix(in oklab, var(--_paint) 22%, transparent);
   }
 
-  [data-slot="pie-chart-track"][data-ring] {
+  [data-slot="pie-chart-track"][data-chart-ring] {
     stroke: var(--muted);
   }
 
-  [data-slot="pie-chart-glow"][data-ring] {
+  [data-slot="pie-chart-glow"][data-chart-ring] {
     fill: none;
     stroke: var(--_paint);
   }
 
   /*
     The active ring scales to 1.03 and the rings outside it to 1.02 about the dial's centre, and
-    the other rings dim, as slices do (S2). The rules lead with data-ring, which only rings carry.
+    the other rings dim, as slices do. The rules lead with data-chart-ring, which only rings
+    carry.
   */
-  [data-ring] {
+  [data-chart-ring] {
     --_off: min(
       1,
       max(var(--chart-slot) - var(--chart-active, -2), var(--chart-active, -2) - var(--chart-slot))
@@ -1093,13 +1096,15 @@
     --_outside: clamp(0, var(--chart-active, -2) - var(--chart-slot), 1);
     transform-box: view-box;
     transform-origin: 0 0;
+    /* A ring's dim fades under reduced motion too, as a slice's does. */
+    transition: opacity 150ms ease-out;
   }
 
-  [data-ring]:not([data-ring-track]) {
+  [data-chart-ring]:not([data-chart-ring-track]) {
     opacity: calc(1 - (1 - var(--chart-hover-dim)) * max(var(--_dim-active, 0), var(--_dim-series, 0)));
   }
 
-  [data-ring] {
+  [data-chart-ring] {
     --_dim-active: calc(var(--_root-active) * var(--_off));
     --_dim-series: calc(
       var(--_root-highlight) *
@@ -1147,6 +1152,7 @@
     position: absolute;
     left: var(--_x);
     top: var(--_y);
+    transition: opacity 150ms ease-out;
     font-size: 0.75rem;
     line-height: 1rem;
     white-space: nowrap;
@@ -1177,7 +1183,7 @@
     opacity: 0;
   }
 
-  /* The centre's parts stack in the square inscribed in the hole, sized to it (Q11). */
+  /* The centre's parts stack in the square inscribed in the hole, sized to it. */
   [data-slot="pie-chart-center"] > [data-part="hole"] {
     position: absolute;
     left: var(--_left);
@@ -1216,7 +1222,7 @@
   }
 
   /*
-    A number's digits are reels of 0 to 9 in tabular figures, each slid to its digit (S3). Their line
+    A number's digits are reels of 0 to 9 in tabular figures, each slid to its digit. Their line
     is a whole number of pixels tall, so every reel rests on a whole-pixel translate: Chromium and
     WebKit draw the text of a reel moved by a fraction of a pixel up to two device pixels off the
     plain text beside it, a different distance for each digit.
@@ -1274,9 +1280,9 @@
   }
 
   /*
-    A series layer paints its own colour, or its role list's gradient (R9). The Area fills its
+    A series layer paints its own colour, or its role list's gradient. The Area fills its
     per-edge quadrilaterals even-odd at --chart-area-opacity, hatched beside an estimated spoke; the
-    Line strokes at --chart-stroke, dashed beside one (R5); and each dot is a round cap of a
+    Line strokes at --chart-stroke, dashed beside one; and each dot is a round cap of a
     zero-length subpath, in a ring of the surface, or hollow for "ring".
   */
   [data-slot="radar-chart-area"] {
@@ -1369,12 +1375,13 @@
   }
 
   /*
-    Hover dims the series other than the nearest and doubles the nearest's fill (D19), and a
+    Hover dims the series other than the nearest and doubles the nearest's fill, and a
     selected or highlighted series keeps full opacity while the rest dim, every dim over 150 ms. The
     rules lead with data-radar-series, which only radar layers carry.
   */
   [data-radar-series] {
     opacity: calc(1 - (1 - var(--chart-hover-dim)) * max(var(--_dim-near, 0), var(--_dim-series, 0)));
+    transition: opacity 150ms ease-out;
   }
 
   [data-radar-series] {
@@ -1400,7 +1407,7 @@
     );
   }
 
-  /* Glow casts each wrapped series' own colour, blurred as a line's glow is (R10). */
+  /* Glow casts each wrapped series' own colour, blurred as a line's glow is. */
   [data-slot="radar-chart-glow"] {
     display: contents;
   }
@@ -1411,7 +1418,7 @@
 
   /*
     The spoke labels sit past the rim, each reading away from the centre, and the ring values sit
-    beside the first spoke, each centred on its ring. Both are 12 px text placed in the cell (S12).
+    beside the first spoke, each centred on its ring. Both are 12 px text placed in the cell.
   */
   :is([data-slot="radar-chart-angle-axis"], [data-slot="radar-chart-radius-axis"]) {
     z-index: 3;
@@ -1665,6 +1672,7 @@
 
   [data-clock-series] {
     opacity: calc(1 - (1 - var(--chart-hover-dim)) * max(var(--_dim-near, 0), var(--_dim-series, 0)));
+    transition: opacity 150ms ease-out;
   }
 
   [data-clock-series] {
@@ -1785,7 +1793,7 @@
 
   /*
     The cycle's labels sit past the rim, each reading away from the centre, and the ring values
-    beside the 12 o'clock spoke, all 12 px text placed in the cell (S12). They thin as the dial
+    beside the 12 o'clock spoke, all 12 px text placed in the cell. They thin as the dial
     narrows: each axis is its own size container, so a label hides below the narrowest width that
     holds its stride. The width buckets are tick-fit's.
   */
@@ -3743,12 +3751,8 @@
       transition: var(--_reel-entering, translate var(--_spring-duration) var(--_spring-easing));
     }
 
-    [data-slot="pie-chart-label"] {
-      transition: opacity 150ms ease-out;
-    }
-
-    /* A ring scales on its spring, and dims over 150 ms. */
-    [data-ring] {
+    /* A ring scales on its spring, and dims over 150 ms as the base rule's fade does. */
+    [data-chart-ring] {
       transition:
         opacity 150ms ease-out,
         scale var(--_spring-duration) var(--_spring-easing);
@@ -3758,7 +3762,7 @@
       As the entrance starts on a chart nothing painted before, each ring's track scales out from
       the centre, i·80 ms apart. A hydrated chart's tracks stay at rest.
     */
-    [data-ring-track] {
+    [data-chart-ring-track] {
       animation: var(--_if-root-grow) chart-ring-grow var(--_grow-duration) var(--_grow-easing)
         calc(var(--chart-slot) * 80ms) backwards;
     }
@@ -3780,14 +3784,6 @@
     :is([data-slot="radar-chart-angle-label"], [data-slot="radar-chart-radius-label"]) {
       animation: var(--_if-root-grow) chart-fade-in 500ms ease-out calc(400ms + var(--chart-slot, 0) * 50ms)
         backwards;
-    }
-
-    [data-radar-series] {
-      transition: opacity 150ms ease-out;
-    }
-
-    [data-clock-series] {
-      transition: opacity 150ms ease-out;
     }
 
     [data-slot="clock-chart-line"][data-variant="flowing"]

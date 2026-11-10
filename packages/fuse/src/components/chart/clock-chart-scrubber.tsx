@@ -2,18 +2,18 @@
 
 /**
  * The clock's Scrubber: the active slot's hand, or its sector, which turns with the Root's angle
- * follower, so the active dots and the tooltip turn with it. The first paint draws it at rest (D18).
+ * follower, so the active dots and the tooltip turn with it. The first paint draws it at rest.
  */
 import { useLayoutEffect, useRef } from "react";
 import type { ReactElement } from "react";
 
 import { writeAttribute, writeStyle } from "./chart-dom";
 import { useChartFollower } from "./chart-followers";
-import { viewBoxOf } from "./chart-pie-frame";
 import { clockDrawingIn, usePolarContext } from "./chart-polar-context";
 import type { ChartLayerProps } from "./chart-types";
 import { spokePath } from "./clock-chart-dial";
 import { sectorPath } from "./layout/clock-path";
+import { viewBoxOf } from "./layout/polar-angle";
 
 /**
  * Props for `ClockChart.Scrubber`, a closed part.

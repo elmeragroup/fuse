@@ -8,7 +8,7 @@
  * order. A family hands it a `PolarModel`, which carries the family's geometry, words, pick, table
  * and readout, so the kernel never reads a family's data.
  *
- * First paint (D18): with JavaScript on, every polar mark stays hidden behind the tracks and grid
+ * First paint: with JavaScript on, every polar mark stays hidden behind the tracks and grid
  * until the chart comes into view and its entrance starts, which writes `data-drawn` on the
  * figure. With JavaScript off, and in print, the stylesheet shows the full chart.
  */
@@ -363,6 +363,7 @@ function usePolarRoot(props: PolarRootProps): PolarRootState {
   const [pacing] = useState<PolarUpdate>(() => ({ kind: "initial" }));
   useLayoutEffect(() => {
     if (!entrance) return undefined;
+    const marked = rootRef.current;
     let timer: number | null = null;
     const mark = (grow: boolean): void => {
       const figure = rootRef.current;
@@ -379,18 +380,24 @@ function usePolarRoot(props: PolarRootProps): PolarRootState {
       }, span);
     };
     marking.current = mark;
-    let started = false;
+    // Only the entrance's own start marks it. An entrance already spent when the effect runs, as
+    // when React Activity shows the chart again or the entrance is turned back on, marks nothing.
+    let started = store.get().phase === "started";
     const watch = (): void => {
       if (started || store.get().phase !== "started") return;
       started = true;
       mark(!served);
     };
-    watch();
     const stop = store.subscribe(watch);
     return () => {
       stop();
       marking.current = () => undefined;
-      if (timer !== null) window.clearTimeout(timer);
+      if (timer === null) return;
+      window.clearTimeout(timer);
+      // An entrance cut short, as React Activity hides it, never marks again, so its state leaves now.
+      if (marked === null) return;
+      writeAttribute(marked, "data-entering", null);
+      writeAttribute(marked, "data-grow", null);
     };
   }, [store, entrance, served, pacing]);
   // A chart that leaves its empty state grows its grid and tracks, as nothing painted them before.
@@ -453,6 +460,14 @@ function usePolarRoot(props: PolarRootProps): PolarRootState {
   }, []);
   const hasToggles = useCallback((): boolean => toggleGroups.current > 0, []);
   const getRoot = useCallback((): HTMLElement | null => rootRef.current, []);
+  const hiddenRef = useRef(false);
+  useLayoutEffect(() => {
+    hiddenRef.current = false;
+    return () => {
+      hiddenRef.current = true;
+    };
+  }, []);
+  const hidden = useCallback((): boolean => hiddenRef.current, []);
   const keysRef = useRef(model.selectable);
   useLayoutEffect(() => {
     keysRef.current = model.selectable;
@@ -475,6 +490,7 @@ function usePolarRoot(props: PolarRootProps): PolarRootState {
       name,
       locale,
       root: getRoot,
+      hidden,
       store,
       followers,
       follow,
@@ -490,6 +506,7 @@ function usePolarRoot(props: PolarRootProps): PolarRootState {
       name,
       locale,
       getRoot,
+      hidden,
       store,
       followers,
       follow,
@@ -578,7 +595,7 @@ function polarPick(id: string, model: { readonly current: PolarModel }, motion: 
     const point = { x: box.left + (clientX - rect.left) / scale, y: box.top + (clientY - rect.top) / scale };
     // While a mark tweens, an entrance's slices among them, the pick reads the model, as every
     // family's and the cartesian pick do, so a finger on a slice still sweeping in picks it. At rest
-    // it reads the floored, seamed angles the frame painted (D24).
+    // it reads the floored, seamed angles the frame painted.
     const pixels = {
       scale,
       dpr: window.devicePixelRatio || 1,

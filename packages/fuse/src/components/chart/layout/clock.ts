@@ -1,9 +1,9 @@
 /**
  * The clock dial's layout. A cycle, a day, an ISO week or a year in the data's zone, runs once
- * around the dial from 12 o'clock, and every slot takes an equal angle (D11), so a 25-hour day draws
- * 25 equal slots and the labels follow their slots. The radius is area-true by default (D13), a
- * threshold rings the dial at its value's radius (D23), and a column keeps one device pixel along
- * its radius (D24), which `floor-settle.ts` settles for a stack.
+ * around the dial from 12 o'clock, and every slot takes an equal angle, so a 25-hour day draws
+ * 25 equal slots and the labels follow their slots. The radius is area-true by default, a
+ * threshold rings the dial at its value's radius, and a column keeps one device pixel along
+ * its radius, which `floor-settle.ts` settles for a stack.
  */
 import type { FloorAxis, FloorSpan } from "./floor-settle";
 import { toDegrees } from "./polar-angle";
@@ -78,14 +78,14 @@ export function clockRadius(radii: ClockRadii): (value: number) => number {
 export type WedgePad = { readonly padAngle: number; readonly padRadius: number };
 
 /**
- * The pad that cuts a constant-width gap between two wedges (D14). d3's arc keeps its pad's width
+ * The pad that cuts a constant-width gap between two wedges. d3's arc keeps its pad's width
  * `2·padRadius·sin(padAngle / 2)` at every radius, so the gap reads one width from hole to rim and
  * every wedge keeps an identical angle. The cut-off is measured at the rim, where a wedge is widest:
  * the gap stays while the rim arc leaves at least one device pixel of wedge after it, and vanishes
  * below that, where a gap would leave nothing to see. A wedge whose inner arc is narrower than the
  * gap tapers to a point at the hole, as a week of hours does. This is the dial's pad: `clockWedges`
  * narrows it for a short wedge whose outer arc the gap would erase, so the wedge keeps one device
- * pixel of arc at its tip (D24).
+ * pixel of arc at its tip.
  *
  * @param count - The cycle's slot count.
  * @param outer - The rim's radius in CSS pixels.

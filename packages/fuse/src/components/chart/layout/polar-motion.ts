@@ -1,13 +1,13 @@
 /**
- * The polar families' motion timings, the Motion table's numbers (D17). `chart.css` mirrors the
+ * The polar families' motion timings, the Motion table's numbers. `chart.css` mirrors the
  * entrance's duration and stagger as `--chart-intro` and `--chart-stagger`.
  */
 
 /** How long the polar entrance moves a mark, in milliseconds. `--chart-intro` in `chart.css`. */
-export const CHART_INTRO_MS = 1000;
+const CHART_INTRO_MS = 1000;
 
 /** The delay between two items of the entrance, in milliseconds. `--chart-stagger` in `chart.css`. */
-export const CHART_INTRO_STAGGER_MS = 80;
+const CHART_INTRO_STAGGER_MS = 80;
 
 /** Where a pie's entrance starts its first slice, in milliseconds after the chart comes into view. */
 const PIE_INTRO_START_MS = 100;
@@ -93,7 +93,7 @@ export function introDelay(family: PolarIntro, index: number, pace: IntroPace = 
  * 50 ms apart, and spoke labels fade in over 500 ms from 400 ms, 50 ms apart. `chart.css` writes
  * the same numbers on the grid's scale-outs and the labels' fade.
  */
-export const RADAR_GRID_INTRO = {
+const RADAR_GRID_INTRO = {
   ringStep: 80,
   spokeStep: 50,
   labelStart: 400,

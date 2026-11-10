@@ -9,7 +9,7 @@ import interUrl from "@fontsource/inter/files/inter-latin-400-normal.woff2?url";
 // pixel floor, one device pixel along the radius, and the stack's floor on its outer segment alone;
 // the 25-hour 26 October 2025, where "06" sits at 100.8°; D16's seam; Now at 11:30, 172.5°; and the
 // clock key map, where PageDown moves six hours.
-import { beforeAll, describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import * as CssColor from "@elmeragroup/color/css-color";
@@ -171,6 +171,24 @@ describe("the dial's geometry (D11, D13)", () => {
 
 /** A colour as sRGB through `@elmeragroup/color`. */
 const srgb = (value: string): Srgb => CssColor.toSrgb(getOrThrow(CssColor.parse(value)));
+
+describe("a role list that names a role twice", () => {
+  it("keeps every stop of its Line's gradient, with no duplicate-key warning", () => {
+    const errors = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    try {
+      const { host } = renderThemed(
+        <Dial config={{ kwh: { label: "kWh", color: ["chart-1", "chart-2", "chart-1"] } }}>
+          <ClockChart.Line dataKey="kwh" />
+        </Dial>
+      );
+      // DOM audit: the gradient is the line's paint server, read by its tag.
+      expect(host.querySelectorAll('linearGradient[id$="-role"] stop')).toHaveLength(3);
+      expect(errors.mock.calls.filter((call) => String(call[0]).includes("same key"))).toEqual([]);
+    } finally {
+      errors.mockRestore();
+    }
+  });
+});
 
 describe("a threshold ring (D23)", () => {
   const split = {
@@ -803,8 +821,8 @@ describe("the seam (D16), Now and the keys", () => {
     expect(label?.checkVisibility()).toBe(true);
     const box = label?.getBoundingClientRect() ?? new DOMRect();
     // The week holds the 25-hour Sunday of 26 October, 169 equal hours, so Now's hand lies at
-    // 72.5 / 169 of a turn. The label's centre sits on it, its nearest edge 6 px inside the rim
-    // , and it meets no weekday label.
+    // 72.5 / 169 of a turn. The label's centre sits on it, its nearest edge 6 px inside the rim,
+    // and it meets no weekday label.
     expect(rayOffsets(week.host, label ?? undefined, (72.5 / 169) * 360, "inside")).toEqual({
       across: 0,
       along: 0,
@@ -931,6 +949,36 @@ describe("a datum on a coarse reading", () => {
   });
 });
 
+describe("a Marker at an inline instant", () => {
+  it("draws nothing again when its parent renders again with an equal new instant", async () => {
+    // Each render passes a new object holding a new Date for 05:00, which names the same slot, so
+    // the marked slots, the look and the dots stay as they were and the loop draws nothing. The
+    // rows stay the same array, so no data update draws either.
+    const rows = hours(VALUES);
+    const chart = () => (
+      <Dial data={rows}>
+        <ClockChart.Marker dataKey="kwh" at={{ x: new Date(DAY + 5 * HOUR) }} />
+      </Dial>
+    );
+    const { host, rerender } = renderThemed(chart());
+    await nextFrames(2);
+    // DOM audit: the marker's dot group and paths are aria-hidden plot output, read by their slots.
+    const group = host.querySelector<SVGGElement>('[data-slot="clock-chart-marker"] g[data-clip]');
+    const path = clockLayer(host, "clock-chart-marker").querySelector('[data-part="dots"]');
+    const before = path?.getAttribute("d");
+    if (group === null) throw new Error("no dot group");
+    // The dots writer reads its paths from the group on every draw.
+    const draws = vi.spyOn(group, "querySelectorAll");
+    rerender(chart());
+    rerender(chart());
+    await nextFrames(4);
+    expect(draws).not.toHaveBeenCalled();
+    expect(clockLayer(host, "clock-chart-marker").querySelector('[data-part="dots"]')).toBe(path);
+    expect(path?.getAttribute("d")).toBe(before);
+    expect(dotPoints(path?.getAttribute("d") ?? "")).toHaveLength(1);
+  });
+});
+
 describe("a ReferenceArea's label (B10)", () => {
   it("prints a time sector's range in Root's locale and zone through the label's {value}", async () => {
     // The sector holds the hours from 17:00 to 19:00 in Oslo, so it runs from 17:00 to 20:00, which
@@ -943,6 +991,20 @@ describe("a ReferenceArea's label (B10)", () => {
           label="Topp {value}"
           format="time"
         />
+      </Dial>
+    );
+    await nextFrames(1);
+    // DOM audit: the area's label is aria-hidden plot text, read by its part.
+    const text = host.querySelector(
+      '[data-slot="clock-chart-reference-area"] > [data-part="label"]'
+    )?.textContent;
+    expect(text).toBe("Topp 17:00\u201320:00");
+  });
+
+  it("prints the same range when the sector takes the default format", async () => {
+    const { host } = renderThemed(
+      <Dial>
+        <ClockChart.ReferenceArea x1={DAY + 17 * HOUR} x2={DAY + 19 * HOUR} label="Topp {value}" />
       </Dial>
     );
     await nextFrames(1);
@@ -1035,6 +1097,12 @@ describe("a reference inside the dial's bounds (B5)", () => {
       null,
     ],
     [
+      "a line at the domain's minimum, a ring of radius 0",
+      <ClockChart.ReferenceLine key="r" y={0} label="Mål {value}" />,
+      null,
+      null,
+    ],
+    [
       "a band reaching below the domain, clipped to the centre",
       <ClockChart.ReferenceArea key="r" y1={-100} y2={50} label="Lav" />,
       [0.5, 0.5],
@@ -1102,7 +1170,9 @@ describe("a reference's sentence (A1-02)", () => {
   // visually hidden sentence, outside any aria-hidden subtree, always carries the value or the range,
   // in the dictionary's pattern without a label and as "label: value" with one. nb-NO's patterns are
   // "Referanselinje: …", "Område: …" and "… til …", and it speaks a clock time as "kl. 06:00",
-  // joined by a no-break space. A reference that draws nothing keeps its sentence.
+  // joined by a no-break space. On a dial of hours a reference prints instants by default: a spoke
+  // its slot's start, a sector its first slot's start and its last slot's end. A reference that
+  // draws nothing keeps its sentence.
   const rows = hours(Array.from({ length: 24 }, (_, hour) => (hour % 2 === 0 ? 100 : 200)));
 
   it.each([
@@ -1112,6 +1182,11 @@ describe("a reference's sentence (A1-02)", () => {
     [
       "a spoke at 06:00",
       <ClockChart.ReferenceLine key="r" x={DAY + 6 * HOUR} label="Start" />,
+      "Start: kl.\u00a006:00",
+    ],
+    [
+      "a spoke at 06:00 in an explicit format",
+      <ClockChart.ReferenceLine key="r" x={DAY + 6 * HOUR} label="Start" format="time" />,
       "Start: kl.\u00a006:00",
     ],
     [
@@ -1130,6 +1205,11 @@ describe("a reference's sentence (A1-02)", () => {
       />,
       "Topp: kl.\u00a017:00 til kl.\u00a020:00",
     ],
+    [
+      "a sector from 17:00 to 20:00 in the default format",
+      <ClockChart.ReferenceArea key="r" x1={DAY + 17 * HOUR} x2={DAY + 19 * HOUR} label="Topp" />,
+      "Topp: kl.\u00a017:00 til kl.\u00a020:00",
+    ],
   ] as const)("speaks %s", async (_, reference, spoken) => {
     const { host } = renderThemed(
       <Dial data={rows} scale="linear">
@@ -1144,6 +1224,97 @@ describe("a reference's sentence (A1-02)", () => {
     // The visible drawing stays hidden from readers.
     const drawing = host.querySelector('[data-slot^="clock-chart-reference"]');
     expect(drawing?.querySelector("svg")?.getAttribute("aria-hidden")).toBe("true");
+  });
+});
+
+describe("a reference's default slot text on a coarse dial", () => {
+  // Every slot of a year of months and a week of days starts at local midnight, so a clock time
+  // would read 00:00 for each. The default names the slot as the cartesian references do: the
+  // month in en-US's "March 2025", joined by a no-break space, and the day as its date, never a
+  // time. en-US speaks a range as "… to …".
+  /** A year of months or a week of days, each slot starting at its first local midnight in Oslo. */
+  function Coarse({
+    cycle,
+    children,
+  }: {
+    readonly cycle: "year" | "week";
+    readonly children: React.ReactNode;
+  }) {
+    const starts =
+      cycle === "year"
+        ? Array.from({ length: 12 }, (_, month) =>
+            Date.parse(
+              `2025-${String(month + 1).padStart(2, "0")}-01T00:00:00${month >= 3 && month <= 9 ? "+02:00" : "+01:00"}`
+            )
+          )
+        : // Monday 27 October 2025 onwards, all in CET.
+          Array.from({ length: 7 }, (_, day) => Date.parse("2025-10-27T00:00:00+01:00") + day * 24 * HOUR);
+    return (
+      <LocaleProvider locale="en-US" timeZone="Europe/Oslo">
+        <div style={{ width: 320 }}>
+          <ClockChart.Root
+            data={starts.map((start) => ({ start, kwh: 1 }))}
+            config={{ kwh: { label: "kWh", color: "chart-1" } }}
+            xKey="start"
+            cycle={cycle}
+            interval={cycle === "year" ? "month" : "day"}
+            data-intro="none"
+            aria-label="Dial">
+            {children}
+          </ClockChart.Root>
+        </div>
+      </LocaleProvider>
+    );
+  }
+
+  /** The reference's visually hidden sentence. */
+  const sentence = (host: HTMLElement) =>
+    // DOM audit: the sentence is visually hidden text on its slot.
+    host.querySelector('[data-slot="chart-reference-text"]')?.textContent ?? "";
+
+  it("names the month on a year of months", async () => {
+    const { host } = renderThemed(
+      <Coarse cycle="year">
+        <ClockChart.ReferenceLine x={Date.parse("2025-03-01T00:00:00+01:00")} label="Start" />
+      </Coarse>
+    );
+    await nextFrames(1);
+    expect(sentence(host)).toBe("Start: March\u00a02025");
+  });
+
+  it("names the day on a week of days", async () => {
+    const { host } = renderThemed(
+      <Coarse cycle="week">
+        <ClockChart.ReferenceLine x={Date.parse("2025-10-29T00:00:00+01:00")} label="Start" />
+      </Coarse>
+    );
+    await nextFrames(1);
+    expect(sentence(host)).toMatch(/^Start: .*29/u);
+    expect(sentence(host)).not.toMatch(/00:00|12:00/u);
+  });
+
+  it("names the first and the last month of a sector", async () => {
+    const { host } = renderThemed(
+      <Coarse cycle="year">
+        <ClockChart.ReferenceArea
+          x1={Date.parse("2025-06-01T00:00:00+02:00")}
+          x2={Date.parse("2025-08-01T00:00:00+02:00")}
+          label="Summer"
+        />
+      </Coarse>
+    );
+    await nextFrames(1);
+    expect(sentence(host)).toBe("Summer: June\u00a02025 to August\u00a02025");
+  });
+
+  it("keeps an explicit format ahead of the default", async () => {
+    const { host } = renderThemed(
+      <Coarse cycle="year">
+        <ClockChart.ReferenceLine x={Date.parse("2025-03-01T00:00:00+01:00")} label="Start" format="year" />
+      </Coarse>
+    );
+    await nextFrames(1);
+    expect(sentence(host)).toBe("Start: 2025");
   });
 });
 
@@ -1493,7 +1664,7 @@ describe("the ring values beside the angle labels", () => {
 describe("two connected readings at the ends of the day (D16)", () => {
   it("draws the solid arc across midnight, and the ActiveDot rides it through 12 o'clock", async () => {
     // 6 kWh at 00:00 and at 23:00, nothing between, and missing: "connect". Both end slots hold
-    // readings, so the seam closes (D16): the solid line runs from slot 23's vertex at 352.5° through
+    // readings, so the seam closes: the solid line runs from slot 23's vertex at 352.5° through
     // 12 o'clock to slot 0's at 7.5°, an arc, since both readings draw at one radius, and the dashed
     // bridge runs the other way over the missing hours. The ActiveDot lies on that curve, so as the
     // hand glides from 23:00 to 00:00 it shows at the arc's radius through 12 o'clock.

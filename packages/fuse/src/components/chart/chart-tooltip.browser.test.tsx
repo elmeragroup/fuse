@@ -150,6 +150,28 @@ describe.each([
   });
 });
 
+describe("the tooltip after Escape and a blur", () => {
+  it("opens on the slot Escape closed once focus has left the chart", async () => {
+    // From the button before the chart, Tab and five steps reach 05–06, and Escape closes it. The
+    // dismissal lasts only while the reader stays, so after Tab moves on to the button after the
+    // chart, a pointer that moves over 05–06 opens it.
+    const { host } = chart();
+    page.getByRole("button", { name: "før" }).element().focus();
+    await userEvent.tab();
+    await userEvent.keyboard("{ArrowRight}{ArrowRight}{ArrowRight}{ArrowRight}{ArrowRight}");
+    await expect.poll(label).toBe("05–06");
+    await userEvent.keyboard("{Escape}");
+    await expect.poll(popup).toBeNull();
+    await userEvent.tab();
+    expect(document.activeElement?.textContent).toBe("etter");
+    const plot = surfaceBox(host);
+    const slotWidth = plot.width / 24;
+    await pointerTo(plot.left + slotWidth * 5.4, plot.top + plot.height * 0.9);
+    await pointerTo(plot.left + slotWidth * 5.6, plot.top + plot.height * 0.85);
+    await expect.poll(label).toBe("05–06");
+  });
+});
+
 describe("tooltip readings", () => {
   it("adds the projection word after a projected value, as the option and the table do", async () => {
     // q17 and s13: b is projected, and en-US spells the word "projected".

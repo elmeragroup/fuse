@@ -33,8 +33,8 @@ it("scales the active ring at once and plays no scale-out", async () => {
   );
   await userEvent.tab();
   await nextFrames(1);
-  // DOM audit: the ring groups carry data-ring, read by the attribute the stylesheet keys on.
-  const group = host.querySelector("[data-ring]:not([data-ring-track])");
+  // DOM audit: the ring groups carry data-chart-ring, read by the attribute the stylesheet keys on.
+  const group = host.querySelector("[data-chart-ring]:not([data-chart-ring-track])");
   expect(getComputedStyle(group ?? host).scale).toBe("1.03");
   const scaling = host
     .getAnimations({ subtree: true })

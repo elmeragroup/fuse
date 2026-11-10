@@ -1,6 +1,6 @@
 /**
  * The polar families' own words in the four locales, drafts until the content owner signs them off
- * with the rest of the chart dictionary (S11). They live apart from `CHART_STRINGS`, so a cartesian
+ * with the rest of the chart dictionary. They live apart from `CHART_STRINGS`, so a cartesian
  * route ships none of them.
  */
 import type { SupportedLocale } from "../../../intl/locale-context";
@@ -8,7 +8,7 @@ import type { Inflected } from "./inflection";
 
 /** The words a polar Root and its Table read. */
 export type PolarStrings = {
-  /** A pie's or a radial chart's LegendToggleGroup name, which lists categories, not series (S9). */
+  /** A pie's or a radial chart's LegendToggleGroup name, which lists categories, not series. */
   readonly categoryGroup: string;
   /** A pie's opening sentence: the family word, the slice count and the total. */
   readonly descriptionPie: (count: string, total: string) => string;

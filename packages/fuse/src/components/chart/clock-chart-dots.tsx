@@ -11,13 +11,15 @@ import { useSvgIdPrefix, writeAttribute } from "./chart-dom";
 import { ClockMarkerContext } from "./chart-marker-context";
 import type { MarkerLabels } from "./chart-marker-context";
 import type { MarkValues } from "./chart-motion";
-import { viewBoxOf } from "./chart-pie-frame";
 import type { ClockDrawing, ClockSeries } from "./chart-polar-context";
 import { usePolarCommit, usePolarMark } from "./chart-polar-motion";
+import { useSteady } from "./chart-steady";
 import type { ChartDatum, ChartLayerProps } from "./chart-types";
 import { clockDatumSlots, useClockSeries, useClockPlacement, writeReveal, groupOf } from "./clock-chart-part";
 import { clockDots, entranceFrame, slotVertex } from "./layout/clock-path";
 import type { EntranceFrame } from "./layout/clock-path";
+import { viewBoxOf } from "./layout/polar-angle";
+import { sameItems } from "./layout/same-items";
 
 /**
  * Props for `ClockChart.Dots`, a closed part.
@@ -101,6 +103,11 @@ function drawDots(group: SVGGElement, look: DotsLook | null, values: MarkValues)
   for (const node of look.labels.nodes) writeAttribute(node, "data-moving", look.labels.moving ? "" : null);
 }
 
+/** Whether two picks name the same slots, or both name every slot. */
+function sameSlots(a: readonly number[] | null, b: readonly number[] | null): boolean {
+  return a === null || b === null ? a === b : sameItems(a, b);
+}
+
 /** A dot layer over a series' vertices: every reading, or the slots a Marker names. */
 function DotLayer({
   dataSlot,
@@ -122,7 +129,12 @@ function DotLayer({
   readonly children?: ReactNode;
 }): ReactElement {
   const { polar, clock, series } = useClockSeries(part, dataKey);
-  const picked = useMemo(() => (series === undefined ? null : only(clock, series)), [only, clock, series]);
+  // A Marker's inline `at`, a new object on every render of its parent, picks the same slots, so
+  // they hold steady and nothing that builds on them draws again.
+  const picked = useSteady(
+    useMemo(() => (series === undefined ? null : only(clock, series)), [only, clock, series]),
+    sameSlots
+  );
   // Each of the Marker's own ValueLabels registers here, so the writer flags its labels alone.
   const [labels] = useState((): MarkerLabels => ({ nodes: new Set(), moving: false }));
   const look = useMemo(

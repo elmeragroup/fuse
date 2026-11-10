@@ -3,23 +3,16 @@
 /**
  * The dial geometry the clock's grid, axes, references and hands share: a spoke from the hole to
  * the rim, a label's place past the rim, and the slot of a reference's instant. Each part keeps its
- * own module, so a route ships only the parts it names (Q1), and the label that sits at a place is
+ * own module, so a route ships only the parts it names, and the label that sits at a place is
  * a component of its own, in `clock-chart-placed-label`.
  */
 import type { ClockDrawing } from "./chart-polar-context";
 import type { ChartX } from "./chart-types";
 import { ChartCompositionError } from "./layout/errors";
-import { polarPoint } from "./layout/polar-angle";
+import { boxPercent, polarPoint } from "./layout/polar-angle";
 import type { SweepBox } from "./layout/polar-angle";
 import { angleLabel, rayLabelOffset } from "./layout/polar-labels";
 import { pathNumber } from "./layout/rounding";
-
-/** A point's place in the cell, as percentages of the sweep's box. */
-export function percent(box: SweepBox, x: number, y: number): readonly [string, string] {
-  const left = ((x - box.left) / (box.right - box.left)) * 100;
-  const top = ((y - box.top) / (box.bottom - box.top)) * 100;
-  return [`${left.toFixed(3)}%`, `${top.toFixed(3)}%`];
-}
 
 /** A label's place past the rim at an angle, reading away from the centre: its point and its alignment. */
 export type LabelPlace = {
@@ -32,7 +25,7 @@ export type LabelPlace = {
 /** A label's place past the rim at an angle, reading away from the centre. */
 export function labelPlace(box: SweepBox, angle: number, reach: number): LabelPlace {
   const { point, alignX, alignY } = angleLabel(angle, reach);
-  const [x, y] = percent(box, point.x, point.y);
+  const [x, y] = boxPercent(box, point.x, point.y);
   return { x, y, alignX: `${String(-alignX * 100)}%`, alignY: `${String(-alignY * 100)}%` };
 }
 
@@ -53,7 +46,7 @@ export function rayPlace(
   side: "outside" | "inside"
 ): LabelPlace {
   const rim = polarPoint(angle, 1);
-  const [x, y] = percent(box, rim.x, rim.y);
+  const [x, y] = boxPercent(box, rim.x, rim.y);
   const offset = rayLabelOffset(angle, width, side);
   return { x: `calc(${x} + ${offset.x})`, y: `calc(${y} + ${offset.y})`, alignX: "-50%", alignY: "-50%" };
 }

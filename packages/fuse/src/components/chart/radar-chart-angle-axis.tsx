@@ -2,7 +2,7 @@
 
 /**
  * The radar's AngleAxis: a label per spoke past the rim, centred on its spoke 6 px out, thinned by a
- * stride that divides the spoke count. The first paint draws it at rest (D18), and only a chart
+ * stride that divides the spoke count. The first paint draws it at rest, and only a chart
  * nothing painted before fades its labels in as the entrance starts.
  */
 import type { ReactElement } from "react";
@@ -11,10 +11,10 @@ import { useLabelWidths } from "./chart-label-widths";
 import { radarDrawingIn, usePolarContext } from "./chart-polar-context";
 import type { ChartLayerProps } from "./chart-types";
 import { labelWidth } from "./layout/label-width";
-import { polarPoint } from "./layout/polar-angle";
+import { boxPercent, polarPoint } from "./layout/polar-angle";
 import { rayLabelOffset } from "./layout/polar-labels";
 import { spokeAngle } from "./layout/radar";
-import { percent, spokeLabelFit } from "./radar-chart-dial";
+import { spokeLabelFit } from "./radar-chart-dial";
 
 /**
  * Props for `RadarChart.AngleAxis`, a closed part.
@@ -46,7 +46,7 @@ export function RadarChartAngleAxis({ className, style }: RadarChartAngleAxisPro
       {radar.labels.map((label, index) => {
         const angle = spokeAngle(index, radar.count);
         const rim = polarPoint(angle, 1);
-        const [left, top] = percent(box, rim.x, rim.y);
+        const [left, top] = boxPercent(box, rim.x, rim.y);
         const offset = rayLabelOffset(angle, labelWidth(label.text), "outside");
         const min = shown[index] ?? "none";
         return (

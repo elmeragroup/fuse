@@ -4,13 +4,16 @@ import { expect } from "vitest";
  * Waits for animation frames, so React renders what the last state change scheduled.
  *
  * @param count - How many frames to wait.
+ * @returns The last frame's timestamp, as its frame callback reads it.
  */
-export async function nextFrames(count = 1): Promise<void> {
+export async function nextFrames(count = 1): Promise<number> {
+  let now = performance.now();
   for (let frame = 0; frame < count; frame += 1) {
-    await new Promise((resolve) => {
+    now = await new Promise<number>((resolve) => {
       requestAnimationFrame(resolve);
     });
   }
+  return now;
 }
 
 /**
@@ -29,6 +32,23 @@ export async function wait(ms: number): Promise<void> {
 const POLL_FRAMES = 60;
 
 /**
+ * Wait until `read` holds, checking once per animation frame for at most `frames` frames, without
+ * throwing, so a caller can name the step that missed and go on. A frame-exact step sees the state
+ * on the frame it first holds, since the wait ends without running another frame.
+ *
+ * @param read - Reads whether the state holds, once per frame.
+ * @param frames - The most frames to wait.
+ * @returns Whether it held.
+ */
+export async function framesUntil(read: () => boolean, frames: number): Promise<boolean> {
+  for (let frame = 0; frame < frames; frame += 1) {
+    if (read()) return true;
+    await nextFrames(1);
+  }
+  return read();
+}
+
+/**
  * Wait until `read` returns `expected`, by `toEqual`, checking once per animation frame for at
  * most `frames` frames.
  *
@@ -42,12 +62,7 @@ const POLL_FRAMES = 60;
  * @param frames - The most frames to wait: 60 per second a millisecond poll would have waited.
  */
 export async function pollFrames<T>(read: () => T, expected: T, frames = POLL_FRAMES): Promise<void> {
-  for (let frame = 0; frame < frames; frame += 1) {
-    if (matches(read(), expected)) {
-      return;
-    }
-    await nextFrames(1);
-  }
+  if (await framesUntil(() => matches(read(), expected), frames)) return;
   expect(read()).toEqual(expected);
 }
 
@@ -82,4 +97,42 @@ export function recordFrames<T>(read: () => T, done: () => boolean, ms = 3000): 
     };
     requestAnimationFrame(tick);
   });
+}
+
+/**
+ * Records `read()` on each of the next `count` animation frames, however long they take, as
+ * `recordFrames` does for a time.
+ *
+ * @param read - What to record each frame.
+ * @param count - How many frames to record.
+ * @returns Every frame's reading, in order.
+ */
+export function recordFrameCount<T>(read: () => T, count: number): Promise<T[]> {
+  let left = count;
+  return recordFrames(read, () => (left -= 1) <= 0, Number.POSITIVE_INFINITY);
+}
+
+/**
+ * Records `read()` on every animation frame once `start()` reads a time, each reading with `t`, its
+ * frame's timestamp less that start, until a frame lies more than `until` ms past the start, which
+ * it records too. Frames before `start()` reads a time record nothing.
+ *
+ * @param start - The start time, or null until the frame that should read it.
+ * @param until - How long after the start to stop, in milliseconds.
+ * @param read - What to record each frame.
+ * @returns Every frame's reading from the start on, in order.
+ */
+export async function recordSince<T extends object>(
+  start: () => number | null,
+  until: number,
+  read: () => T
+): Promise<(T & { readonly t: number })[]> {
+  const frames: (T & { readonly t: number })[] = [];
+  for (;;) {
+    const now = await nextFrames(1);
+    const from = start();
+    if (from === null) continue;
+    frames.push({ ...read(), t: now - from });
+    if (now - from > until) return frames;
+  }
 }

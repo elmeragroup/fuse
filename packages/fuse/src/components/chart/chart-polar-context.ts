@@ -121,7 +121,7 @@ export type PolarModel = {
 
 /**
  * What a family's marks draw: a pie's slices or a radial chart's rings, each with the numbers its
- * centre prints, or nothing yet for a radar.
+ * centre prints, a radar's spokes and series, or a clock's slots and series.
  */
 export type PolarDrawing =
   | { readonly kind: "pie"; readonly pie: PieDrawing; readonly centre: CentreModel }
@@ -136,11 +136,11 @@ export type ClockSeries = {
   readonly index: number;
   /** The series paint: a role, a role list's first stop, a scale's middle step or a threshold's lower side. */
   readonly paint: string;
-  /** A role list's stops from the tip to the base (R9). */
+  /** A role list's stops from the tip to the base. */
   readonly stops: readonly string[] | undefined;
   /**
    * A scale's or a threshold's steps, lowest first, each with the radius where it starts, the first
-   * at the hole: a curve's gradient turns hard at each radius (D23). Null for one paint.
+   * at the hole: a curve's gradient turns hard at each radius. Null for one paint.
    */
   readonly steps: readonly { readonly paint: string; readonly from: number }[] | null;
   /** Each reading's step, 0 for the lowest, which a wedge, a dot or the active dot paints in. */
@@ -218,11 +218,11 @@ export type RadarSeries = {
   /** The series' place among the config keys, which focus, selection and highlight name. */
   readonly index: number;
   readonly paint: string;
-  /** A role list's stops from the tip to the base (R9). */
+  /** A role list's stops from the tip to the base. */
   readonly stops: readonly string[] | undefined;
   /** Each spoke's reading, or null where it is missing. */
   readonly values: readonly (number | null)[];
-  /** Each spoke's quality: an estimated spoke dashes and hatches beside it, a missing one draws nothing (R5). */
+  /** Each spoke's quality: an estimated spoke dashes and hatches beside it, a missing one draws nothing. */
   readonly qualities: readonly ("estimated" | "corrected" | "missing" | undefined)[];
 };
 
@@ -268,7 +268,7 @@ export type RadialRing = {
   /** The item's key, a category, or `OTHER_KEY` and its place for a category config lacks. */
   readonly key: string;
   readonly paint: string;
-  /** A role list's stops from the tip to the base, which paint along the sweep (Q12). */
+  /** A role list's stops from the tip to the base, which paint along the sweep. */
   readonly stops: readonly string[] | undefined;
   /** The category's place among the config keys, which selection and highlight name, or -1. */
   readonly series: number;
@@ -298,7 +298,7 @@ export type PieSlice = {
   readonly role: string;
   /** The slice's paint, the consumer's per-key property first. */
   readonly paint: string;
-  /** A role list's stops from the tip to the base, which paint from the rim to the hole (Q12). */
+  /** A role list's stops from the tip to the base, which paint from the rim to the hole. */
   readonly stops: readonly string[] | undefined;
   /** The category's place among the config keys, which selection and highlight name, or -1. */
   readonly series: number;
@@ -340,6 +340,11 @@ export type PolarKernel = {
   readonly name: string | undefined;
   readonly locale: SupportedLocale;
   readonly root: () => HTMLElement | null;
+  /**
+   * Whether the Root's effects are torn down, as React Activity leaves them while it hides the
+   * chart, so a mark that draws again can tell a show from its own first mount.
+   */
+  readonly hidden: () => boolean;
   readonly store: ChartStore;
   readonly followers: ChartFollowers;
   /** The angle follower that turns the hand, the active dots and the tooltip's lane offset. */

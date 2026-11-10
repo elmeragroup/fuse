@@ -2,23 +2,24 @@
 
 /**
  * The clock's ReferenceLine: a ring at a value, as `y`, or a spoke at an instant's slot start, as
- * `x`, with an optional label. The first paint draws it at rest (D18).
+ * `x`, with an optional label. The first paint draws it at rest.
  */
 import type { ReactElement } from "react";
 
-import { viewBoxOf } from "./chart-pie-frame";
 import { clockDrawingIn, usePolarContext } from "./chart-polar-context";
 import { referenceSentence } from "./chart-reference-text";
+import { slotLabel } from "./chart-text";
 import type { ChartLayerProps, ChartTone, ChartX, ValueFormat, XFormat } from "./chart-types";
 import { labelPlace, slotOfX, spokePath } from "./clock-chart-dial";
 import type { LabelPlace } from "./clock-chart-dial";
 import { PlacedLabel } from "./clock-chart-placed-label";
 import { CHART_STRINGS } from "./format/chart-strings";
 import type { FormattedText } from "./format/formatted-text";
-import { formatSlot } from "./format/time-format";
+import { formatSlot, isClockInterval } from "./format/time-format";
 import { formatValue } from "./format/value-format";
 import { slotAngles } from "./layout/clock";
 import { ringPath } from "./layout/clock-path";
+import { viewBoxOf } from "./layout/polar-angle";
 
 /**
  * Props for `ClockChart.ReferenceLine`, a closed part. It takes either `y` or `x`.
@@ -40,7 +41,10 @@ export type ClockChartReferenceLineProps = ChartLayerProps &
         x: ChartX;
         /** Not on a spoke. */
         y?: never;
-        /** How `{value}` in `label` prints. */
+        /**
+         * How `{value}` in `label` prints the instant the spoke marks. By default a dial of slots
+         * shorter than a day prints it in "time", and a coarser dial prints its slot's label.
+         */
         format?: XFormat;
       }
   ) & {
@@ -65,7 +69,6 @@ export function ClockChartReferenceLine({ style, ...props }: ClockChartReference
   const { label, variant = "solid", tone = "default", className } = props;
   const { model, box, kernel } = usePolarContext("ClockChart.ReferenceLine", ["clock"]);
   const clock = clockDrawingIn(model, "ClockChart.ReferenceLine");
-  const timeZone = clock.text.model.domain.kind === "time" ? clock.text.model.domain.timeZone : "UTC";
   let d: string;
   let value: FormattedText;
   // Whether the line draws, its label included. Readers hear its sentence either way.
@@ -73,10 +76,11 @@ export function ClockChartReferenceLine({ style, ...props }: ClockChartReference
   let place: LabelPlace;
   if (props.y !== undefined) {
     const radius = clock.radius(props.y);
-    // A value outside the radius domain draws nothing (B5). It reads the value domain, since the
+    // A value outside the radius domain draws nothing. It reads the value domain, since the
     // area-true scale clamps a value below it to a dial with no hole's centre.
     const [min, max] = clock.domain;
-    drawn = props.y >= min && props.y <= max;
+    // A ring of radius 0, the minimum on a dial with no hole, has nothing to mark.
+    drawn = props.y >= min && props.y <= max && radius > 0;
     d = drawn ? ringPath(radius) : "";
     value = formatValue(kernel.locale, props.y, props.format ?? clock.format, "full");
     place = labelPlace(box, 0, radius);
@@ -85,20 +89,19 @@ export function ClockChartReferenceLine({ style, ...props }: ClockChartReference
     const angle = slot === -1 ? 0 : slotAngles(slot, clock.count).start;
     d = slot === -1 ? "" : spokePath(angle, clock.inner, 1);
     const start = clock.starts[slot];
+    const domain = clock.text.model.domain;
+    const interval = domain.kind === "time" ? domain.interval : "hour";
     // An instant outside the cycle draws nothing, its label included, and has no slot to print, as
-    // a cartesian x outside the axis has none.
+    // a cartesian x outside the axis has none. On a dial of slots shorter than a day, or with a
+    // format, it prints the instant its spoke marks, "time" by default. A coarser slot starts at
+    // midnight, so by default it prints the slot's label, as the cartesian line does.
     drawn = start !== undefined;
-    value =
-      start === undefined
-        ? { text: "", spoken: "" }
-        : formatSlot(
-            kernel.locale,
-            timeZone,
-            start,
-            clock.text.model.domain.kind === "time" ? clock.text.model.domain.interval : "hour",
-            props.format ?? "time",
-            "full"
-          );
+    if (start === undefined) value = { text: "", spoken: "" };
+    else if (props.format === undefined && !isClockInterval(interval)) value = slotLabel(clock.text, slot);
+    else {
+      const timeZone = domain.kind === "time" ? domain.timeZone : "UTC";
+      value = formatSlot(kernel.locale, timeZone, start, interval, props.format ?? "time", "full");
+    }
     place = labelPlace(box, angle, 1.02);
   }
   const text = referenceSentence(label, value, CHART_STRINGS[kernel.locale].referenceLine);

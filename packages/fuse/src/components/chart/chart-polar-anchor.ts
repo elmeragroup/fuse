@@ -282,6 +282,32 @@ function pastRim(box: LaneBox, radius: number): boolean {
 }
 
 /**
+ * The union of the boxes of some elements, each moved by an offset, skipping an element that is
+ * missing or draws no box, and one `keep` turns down.
+ *
+ * @param nodes - The elements, null where one is missing.
+ * @param x - The offset to the right.
+ * @param y - The offset down.
+ * @param keep - Whether a moved box counts, every one by default.
+ * @returns The union, or null when no box counts.
+ */
+function unionOf(
+  nodes: Iterable<Element | null>,
+  x: number,
+  y: number,
+  keep: (box: LaneBox) => boolean = () => true
+): LaneBox | null {
+  let into: LaneBox | null = null;
+  for (const element of nodes) {
+    const rect = element?.getBoundingClientRect();
+    if (rect === undefined || rect.width === 0 || rect.height === 0) continue;
+    const own = shifted(rect, x, y);
+    if (keep(own)) into = union(into, own);
+  }
+  return into;
+}
+
+/**
  * A polar Root's tooltip anchor in a side lane.
  *
  * @param input - The tooltip's active option, positioner and measure count.
@@ -291,7 +317,7 @@ export function usePolarTooltipAnchor(input: AnchorInput): TooltipAnchor {
   const polar = use(PolarContext);
   if (polar === null)
     throw new Error("A polar Tooltip renders inside its polar Root, which provides the context.");
-  const { model, kernel, box, motion } = polar;
+  const { model, kernel, box, motion, labelledBy } = polar;
   const readout = useChartReadout("Chart.Tooltip");
   const spread = useRef<WidestLabel | null>(null);
   const { active, positioner, measures } = input;
@@ -332,31 +358,18 @@ export function usePolarTooltipAnchor(input: AnchorInput): TooltipAnchor {
           ? Number.parseFloat(getComputedStyle(figure).getPropertyValue("--chart-slice-pop")) || 0
           : 0;
       const radius = dial.scale + pop;
-      let labels: LaneBox | null = null;
-      for (const label of figure.querySelectorAll(LABELS)) {
-        const rect = label.getBoundingClientRect();
-        if (rect.width === 0 || rect.height === 0) continue;
-        const own = shifted(rect, -x, -y);
-        if (!pastRim(own, dial.scale)) continue;
-        labels = union(labels, own);
-      }
-      let controls: LaneBox | null = null;
-      for (const control of figure.querySelectorAll(CONTROLS)) {
-        const rect = control.getBoundingClientRect();
-        if (rect.width === 0 || rect.height === 0) continue;
-        controls = union(controls, shifted(rect, -x, -y));
-      }
+      const labels = unionOf(figure.querySelectorAll(LABELS), -x, -y, (own) => pastRim(own, dial.scale));
+      const controls = unionOf(figure.querySelectorAll(CONTROLS), -x, -y);
       // The chart's title: what the Root's `aria-labelledby` names, and its Headline.
-      let title: LaneBox | null = null;
-      const named = (figure.getAttribute("aria-labelledby") ?? "").split(/\s+/u).filter((id) => id !== "");
-      for (const node of [
-        ...named.map((id) => document.getElementById(id)),
-        ...figure.querySelectorAll('[data-slot="chart-headline"]'),
-      ]) {
-        const rect = node?.getBoundingClientRect();
-        if (rect === undefined || rect.width === 0 || rect.height === 0) continue;
-        title = union(title, shifted(rect, -x, -y));
-      }
+      const named = (labelledBy ?? "").split(/\s+/u).filter((id) => id !== "");
+      const title = unionOf(
+        [
+          ...named.map((id) => document.getElementById(id)),
+          ...figure.querySelectorAll('[data-slot="chart-headline"]'),
+        ],
+        -x,
+        -y
+      );
       // The visible area is the visual viewport, which a pinch zoom shrinks and moves inside the
       // layout viewport; client coordinates, which the scene uses, are the layout viewport's.
       const visual = window.visualViewport;
@@ -389,9 +402,12 @@ export function usePolarTooltipAnchor(input: AnchorInput): TooltipAnchor {
     if (positioner.current !== null) sizes.observe(positioner.current);
     // A scroll of any ancestor and a resize of the viewport move the chart against the viewport
     // without resizing it, so they measure again too, once per frame however many arrive. One
-    // captured listener on the document hears every scroll container's scroll.
+    // captured listener on the document hears every scroll container's scroll, and a scroll of an
+    // element that does not hold the chart, such as the popup's own overflow, cannot move it. The
+    // visual viewport's events target no node, so they always measure.
     let pending: number | null = null;
-    const soon = (): void => {
+    const soon = (event: Event): void => {
+      if (figure !== null && event.target instanceof Node && !event.target.contains(figure)) return;
       pending ??= requestAnimationFrame(() => {
         pending = null;
         measure();
@@ -410,7 +426,7 @@ export function usePolarTooltipAnchor(input: AnchorInput): TooltipAnchor {
       window.visualViewport?.removeEventListener("scroll", soon);
       if (pending !== null) cancelAnimationFrame(pending);
     };
-  }, [open, measures, dialOf, kernel, positioner, readout, model]);
+  }, [open, measures, dialOf, kernel, positioner, readout, model, labelledBy]);
   // The lane the popup is in, kept across steps until the ray turns 20° into the other half.
   // A radial chart's ray is a ring's value end, which jumps between unrelated angles as the pointer
   // crosses rings, so its popup keeps the lane it opened in until it closes. A pie's or a radial

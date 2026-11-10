@@ -2,18 +2,17 @@
 
 /**
  * The clock's Now: a hand at Root's `now`, to the minute, with a ping at its tip and an optional
- * label centred on the hand just inside the rim. The first paint draws it at rest (D18).
+ * label centred on the hand just inside the rim. The first paint draws it at rest.
  */
 import type { ReactElement } from "react";
 
 import { useLabelWidths } from "./chart-label-widths";
-import { viewBoxOf } from "./chart-pie-frame";
 import { clockDrawingIn, usePolarContext } from "./chart-polar-context";
 import type { ChartLayerProps, ChartTone } from "./chart-types";
 import { rayPlace, spokePath } from "./clock-chart-dial";
 import { PlacedLabel } from "./clock-chart-placed-label";
 import { labelWidth } from "./layout/label-width";
-import { polarPoint } from "./layout/polar-angle";
+import { polarPoint, viewBoxOf } from "./layout/polar-angle";
 import { fitHandLabel } from "./layout/ring-labels";
 import { pathNumber } from "./layout/rounding";
 

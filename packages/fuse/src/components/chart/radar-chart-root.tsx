@@ -128,6 +128,7 @@ export function RadarChartRoot<
     return radarModel({
       model: spokes,
       config: drawn,
+      known: steadyConfig,
       rows: data,
       locale,
       sweep: sweepOf(0, 360),

@@ -32,7 +32,7 @@ export function PolarHatch({ id, paint }: { readonly id: string; readonly paint:
       y1="0"
       x2={reach}
       y2={-reach}
-      data-hatch=""
+      data-chart-hatch=""
       style={{ "--_hatch": paint }}>
       <stop offset="0" />
       <stop offset={LINE} />

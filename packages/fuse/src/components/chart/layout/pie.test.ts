@@ -204,6 +204,24 @@ describe("D24's rim floor, written by hand", () => {
     expect(widths[0]).toBeLessThan(widths[1] ?? 0);
     expect(widths[1]).toBeCloseTo(180 * (500 / 500.5), 9);
   });
+
+  it("leaves mid-tween slices where they are when none is under its floor", () => {
+    // The first of three slices left: the two staying slices still paint where they last drew,
+    // past the gap the leaving slice's ghost fills, so the floor must not pull them to 0°.
+    const slices = [null, { start: 90, end: 200, pad: 0 }, { start: 200, end: 360, pad: 0 }];
+    expect(floorSlices(slices, FULL, { radius: 100, dpr: 1, seam: 0 })).toEqual(slices);
+  });
+
+  it("lays a floor out from the first drawn slice's own start", () => {
+    const least = leastAngle(100, 1, 0);
+    const slices = [null, { start: 90, end: 90.1, pad: 0 }, { start: 90.1, end: 360, pad: 0 }];
+    const floored = floorSlices(slices, FULL, { radius: 100, dpr: 1, seam: 0 });
+    expect(floored[0]).toBeNull();
+    expect(floored[1]?.start).toBeCloseTo(90, 9);
+    expect(floored[1]?.end).toBeCloseTo(90 + least, 9);
+    expect(floored[2]?.start).toBeCloseTo(90 + least, 9);
+    expect(floored[2]?.end).toBeCloseTo(360, 9);
+  });
 });
 
 /** Arbitrary pies: up to 12 readings, some tiny, some zero, in any sweep. */

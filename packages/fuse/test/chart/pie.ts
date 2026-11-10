@@ -4,6 +4,8 @@
  */
 import { page } from "vitest/browser";
 
+import { nextFrames } from "../animation-frames";
+
 /** The pie's drawn slices, in sweep order. */
 export function sectors(host: HTMLElement): SVGPathElement[] {
   // DOM audit: slices are aria-hidden plot output, so their slot is the only locator.
@@ -68,13 +70,20 @@ export function pieSvg(host: HTMLElement): SVGSVGElement {
   return svg;
 }
 
+/** Dispatch a mouse pointer move onto the listbox at a client point, at once. */
+export function moveAt(x: number, y: number): void {
+  page
+    .getByRole("listbox")
+    .element()
+    .dispatchEvent(
+      new PointerEvent("pointermove", { bubbles: true, clientX: x, clientY: y, pointerType: "mouse" })
+    );
+}
+
 /** Dispatch a pointer move onto the listbox at a client point and wait one frame. */
 export async function hoverAt(x: number, y: number): Promise<void> {
-  const surface = page.getByRole("listbox").element();
-  surface.dispatchEvent(
-    new PointerEvent("pointermove", { bubbles: true, clientX: x, clientY: y, pointerType: "mouse" })
-  );
-  await new Promise((resolve) => requestAnimationFrame(resolve));
+  moveAt(x, y);
+  await nextFrames(1);
 }
 
 /**

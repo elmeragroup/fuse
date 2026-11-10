@@ -84,7 +84,7 @@ export function qualityOf(reading: Reading): "estimated" | "corrected" | "missin
 }
 
 /**
- * The quality of the readings Other holds (section 8.7, Q1). Folding is a drawing rule, so Other
+ * The quality of the readings Other holds (section 8.7). Folding is a drawing rule, so Other
  * keeps their uncertainty: estimated when any is estimated, corrected when any is corrected and none
  * estimated, missing only when every one is missing, and measured otherwise.
  *
@@ -230,6 +230,34 @@ function itemReadout(source: ItemSource, kernel: PolarKernel, empty: boolean): C
       },
     ])
   );
+  // A config key that draws no item, folded into Other or with no row, still answers its label and
+  // paint from config, as a cartesian key with no series does, at no index and with no value.
+  for (const key of Object.keys(input.config)) {
+    if (readoutItems.has(key)) continue;
+    readoutItems.set(key, {
+      index: undefined,
+      label: seriesLabel({ config: input.config }, key),
+      icon: input.config[key]?.icon,
+      selectable: false,
+      sides: null,
+    });
+  }
+  // Each config key's own reading, the row of its category, a folded one's included. Duplicates are
+  // already dropped, and lookups go by config key.
+  const ownRows = new Map(source.rows.map((row) => [row.category, row]));
+  // Each config key reads its own row, so a folded category keeps its reading, and Other, which
+  // names no config key, has none. Neither depends on the active item.
+  const values: Record<string, number | null> = {};
+  const quality: Record<string, ChartQuality> = {};
+  for (const key of Object.keys(input.config)) {
+    const row = ownRows.get(key);
+    const value = row === undefined ? null : valueOf(row.reading);
+    values[key] = value;
+    // A reading with no quality state is measured; a pending one, with no value, has no entry.
+    const state = row === undefined ? undefined : qualityOf(row.reading);
+    if (state !== undefined) quality[key] = state;
+    else if (value !== null) quality[key] = "measured";
+  }
   const itemAt = (key: string) => items[indexOf.get(key) ?? -1];
   return {
     id: kernel.id,
@@ -260,18 +288,11 @@ function itemReadout(source: ItemSource, kernel: PolarKernel, empty: boolean): C
     share: (key, _at, digits) => source.share(indexOf.get(key) ?? -1, digits),
     legendAt: (key) => indexOf.get(key) ?? null,
     legendShare: (key, digits) => source.share(indexOf.get(key) ?? -1, digits),
-    swatch: (key) => ({ paint: itemAt(key)?.paint ?? "", look: undefined }),
+    swatch: (key) => ({
+      paint: itemAt(key)?.paint ?? (Object.hasOwn(input.config, key) ? paintOf(input.config, key) : ""),
+      look: undefined,
+    }),
     point: (active) => {
-      const values: Record<string, number | null> = {};
-      const quality: Record<string, ChartQuality> = {};
-      for (const item of items) {
-        // Other names no config key, so its value reads under its label.
-        values[item.key === OTHER_KEY ? item.label.text : item.key] = item.value;
-        // A reading with no quality state is measured; a pending one, with no value, has no entry.
-        if (item.key === OTHER_KEY) continue;
-        if (item.quality !== undefined) quality[item.key] = item.quality;
-        else if (item.value !== null) quality[item.key] = "measured";
-      }
       const item = items[active];
       return {
         index: active,
@@ -294,7 +315,7 @@ function itemReadout(source: ItemSource, kernel: PolarKernel, empty: boolean): C
 export function sharedFormat(items: readonly { readonly format: ValueFormat }[]): ValueFormat | null {
   const [first] = items;
   if (first === undefined) return null;
-  // Two formats that name the same options in another key order are one format (B4).
+  // Two formats that name the same options in another key order are one format.
   return items.every(({ format }) => sameFormat(format, first.format)) ? first.format : null;
 }
 
@@ -362,7 +383,7 @@ export function pieModel(input: PieInput): PolarModel {
     };
   });
   // The slices, the gauge and the drawn total read each item's weight, its readings above 0, and the
-  // text and the Table keep the signed values (Q2).
+  // text and the Table keep the signed values.
   const drawn = folded.map(({ weight }) => weight);
   const total = drawn.reduce((sum, value) => sum + value, 0);
   const gauge = input.max === undefined ? null : gaugeFill(input.sweep, total, input.max);
@@ -431,8 +452,8 @@ export function pieModel(input: PieInput): PolarModel {
     page: null,
     optionName,
     pick: (point, pixels) => {
-      // The whole cell inside the sweep picks, the hole and the space past the rim too (Q8), over
-      // the angles the frame painted, floored and seamed, where it painted them (D24).
+      // The whole cell inside the sweep picks, the hole and the space past the rim too, over
+      // the angles the frame painted, floored and seamed, where it painted them.
       const drawn = slices.map((slice, index) => {
         const key = items[index]?.key;
         const angles = key === undefined ? undefined : pixels.painted?.(key);
@@ -509,7 +530,7 @@ export type RadialInput = ItemInput & {
   readonly innerRadius: number;
 };
 
-/** The share of each ring's band its stroke fills, `--chart-ring-fill`'s default (Q4). */
+/** The share of each ring's band its stroke fills, `--chart-ring-fill`'s default. */
 const RING_FILL = 0.7;
 
 /**

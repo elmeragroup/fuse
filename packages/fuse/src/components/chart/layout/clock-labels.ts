@@ -8,6 +8,7 @@
  */
 import { wallTimes } from "../format/time-format";
 import type { ClockCycle } from "./clock";
+import { turnOf } from "./polar-angle";
 import { LABEL_GAP, TICK_BUCKETS } from "./tick-fit";
 
 /** The wall clock unit each cycle labels, and the strides it may thin to, finest first. */
@@ -189,7 +190,7 @@ function fits(
   // Every neighbouring pair, and the pair that meets across 12 o'clock.
   return shown.every((label, index) => {
     const next = shown[(index + 1) % shown.length] ?? label;
-    const apart = (((next.angle - label.angle) % 360) + 360) % 360 || 360;
+    const apart = turnOf(next.angle - label.angle) || 360;
     const arc = (2 * Math.PI * radius * apart) / 360;
     return arc >= label.width / 2 + next.width / 2 + LABEL_GAP;
   });

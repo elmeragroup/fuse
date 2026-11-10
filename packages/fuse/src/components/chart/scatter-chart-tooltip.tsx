@@ -73,13 +73,13 @@ function plotSurface(id: string): HTMLElement | null {
 }
 
 /** The point a closing tooltip keeps showing, with the model its id belongs to. */
-type HeldPoint = { readonly model: ScatterModel; readonly id: number };
+type ScatterHeldPoint = { readonly model: ScatterModel; readonly id: number };
 
 /**
  * The point a closing tooltip keeps showing while it fades out, so its content never empties
  * before the fade, or null while it is open or shut. Its parts read it through `useActive`.
  */
-const HeldPointContext = createContext<HeldPoint | null>(null);
+const HeldPointContext = createContext<ScatterHeldPoint | null>(null);
 
 /**
  * The active point's id in the Root's model, or null, which the readout parts render on: the walk's
@@ -113,7 +113,7 @@ export function ScatterChartTooltip({
   const frame = useScatterFrame(context);
   const open = active !== null && frame !== null;
   // The point the popup showed last, which its content and its anchor keep while it fades out.
-  const [shown, setShown] = useState<HeldPoint | null>(null);
+  const [shown, setShown] = useState<ScatterHeldPoint | null>(null);
   if (active !== null && (shown?.id !== active || shown.model !== model)) setShown({ model, id: active });
   const held = shown?.model === model ? shown.id : null;
   const placed = active ?? held;
@@ -234,9 +234,8 @@ export function ScatterChartTooltip({
                 return;
               store.leave();
             }}>
-            <HeldPointContext value={open || held === null ? null : { model, id: held }}>
-              {content}
-            </HeldPointContext>
+            {/* A held id is the shown point's, from the model it belongs to, so `shown` is the value. */}
+            <HeldPointContext value={open || held === null ? null : shown}>{content}</HeldPointContext>
           </TooltipPrimitive.Popup>
         </TooltipPrimitive.Positioner>
       </OverlayPortal>

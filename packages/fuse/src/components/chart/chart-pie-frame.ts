@@ -2,7 +2,7 @@
 
 /**
  * One pie's frame: the slices its loop draws, painted together. Each slice is a mark of its own on
- * the loop, so it can enter on its own stagger and leave as a ghost, but the rim floor (D24) takes
+ * the loop, so it can enter on its own stagger and leave as a ghost, but the rim floor takes
  * angle from the widest slice, so no one slice's writer can floor alone. While the loop writes a
  * batch, such as one frame's moving slices, each slice only records its angles, and once the batch
  * ends the frame floors every slice that stays, writes each path and each slice's pop, the unit
@@ -21,7 +21,7 @@ import { arcPath } from "./layout/arc-path";
 import { CHART_SPRINGS } from "./layout/motion";
 import { floorSlices } from "./layout/pie";
 import type { SliceAngles } from "./layout/pie";
-import type { Sweep, SweepBox } from "./layout/polar-angle";
+import type { Sweep } from "./layout/polar-angle";
 import { polarPoint } from "./layout/polar-angle";
 import { springEasing } from "./layout/spring";
 
@@ -122,7 +122,7 @@ function createPieFrame(motion: ChartMotion, look: PieLook): PieFrame {
   const mirrors = new Map<string, Set<Element>>();
   const tracks = new Set<Element>();
   const listeners = new Set<PieListener>();
-  // The floored, unpopped angles each slice painted last, which the Root's pick reads (D24).
+  // The floored, unpopped angles each slice painted last, which the Root's pick reads.
   const painted = new Map<string, SliceAngles | null>();
   sharePainted(motion, (key) => painted.get(key));
   let current = look;
@@ -265,20 +265,10 @@ export function pieFrameOf(motion: ChartMotion, look: PieLook): PieFrame {
   return made;
 }
 
-/**
- * The viewBox of a sweep's box, which every polar layer draws in.
- *
- * @param box - The sweep's box, in units of the outer radius.
- * @returns The viewBox attribute.
- */
-export function viewBoxOf(box: SweepBox): string {
-  return `${String(box.left)} ${String(box.top)} ${String(box.right - box.left)} ${String(box.bottom - box.top)}`;
-}
-
 const POP = springEasing(CHART_SPRINGS.pop);
 
-/** The pop's spring (D3) duration, which a slice's layer carries for the stylesheet's pop transition. */
+/** The pop's spring duration, which a slice's layer carries for the stylesheet's pop transition. */
 export const POP_DURATION = `${String(POP.duration)}ms`;
 
-/** The pop's spring (D3) as a `linear()` easing, sampled once. */
+/** The pop's spring as a `linear()` easing, sampled once. */
 export const POP_EASING = POP.easing;

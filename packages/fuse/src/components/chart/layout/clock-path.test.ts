@@ -614,7 +614,7 @@ describe("the label fit", () => {
 
 describe("curveRadiusAt", () => {
   // Two linear slots, their vertices at 90° (0.4) and 270° (0.8). Both end slots hold readings, so
-  // the line closes round the dial (D16): in unrolled space it runs straight from one vertex to the
+  // the line closes round the dial: in unrolled space it runs straight from one vertex to the
   // other, reads 0.6 halfway at 180°, and closes from 270° on to 450°, halfway at 12 o'clock, 0.6.
   const two = numbers([0.4, 0.8]);
   it.each([

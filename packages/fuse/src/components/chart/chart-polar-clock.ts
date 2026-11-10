@@ -2,8 +2,8 @@
 
 /**
  * A clock's model: the series adapter over the zoned time domain of one cycle. Each slot takes an
- * equal angle (D11) from the cycle's start at 12 o'clock (D12), each value its radius under the
- * Root's scale (D13), and each series its numbers at rest, which its marks tween from. The readout,
+ * equal angle from the cycle's start at 12 o'clock, each value its radius under the
+ * Root's scale, and each series its numbers at rest, which its marks tween from. The readout,
  * the option grammar, the description and the table are the cartesian series ones, and the pick is
  * by angle, then by the nearest series' tip. It reads no plot geometry.
  */
@@ -21,7 +21,7 @@ import type { CartesianModel } from "./layout/cartesian-model";
 import { clockRadius, instantAngle, slotAngles } from "./layout/clock";
 import type { ClockCycle, RadiusScale } from "./layout/clock";
 import { clockLabelSlots, clockTier, fitClockLabels, pageSlot } from "./layout/clock-labels";
-import { ownerSlot } from "./layout/clock-path";
+import { ownerSlot, slotAt } from "./layout/clock-path";
 import { isRoleList } from "./layout/color-key";
 import { labelWidth } from "./layout/label-width";
 import { nearestHeld } from "./layout/near-series";
@@ -234,7 +234,7 @@ export function clockModel(input: ClockInput): PolarModel {
       const gaps = series.map((entry) => {
         const own = ownerSlot(entry.slots.states, slot);
         if (entry.slots.states[own] !== "reading") return null;
-        return Math.abs((entry.rest[1 + own * 4 + 3] ?? 0) - distance);
+        return Math.abs(slotAt(entry.rest, own)[3] - distance);
       });
       return { slot, near: nearestHeld(gaps, pixels.near ?? null, pixels.nearFirm === true) };
     },

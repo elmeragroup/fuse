@@ -196,7 +196,7 @@ function formatPreset(
 /**
  * Whether two value formats name the same options, in any key order and with an option set to
  * undefined read as left out, so a format written either way prints as the same one and shares a
- * total with it (B4).
+ * total with it.
  *
  * @param a - One format.
  * @param b - The other.

@@ -4,12 +4,12 @@
  * The radar's series marks. Area, Line and Dots each draw one series as a mark of its own on the
  * Root's loop, whose numbers are the series' radius on every spoke: the entrance grows them from
  * the centre over `--chart-intro`, series s starting at 600 + s·150 ms, and a data update moves
- * each spoke's radius over 480 ms (R11). A change of spoke count has no pairing, so the old drawing
- * fades out over the new one in `CHART_CROSSFADE_MS` (S5). An estimated spoke dashes the Line's
+ * each spoke's radius over 480 ms. A change of spoke count has no pairing, so the old drawing
+ * fades out over the new one in `CHART_CROSSFADE_MS`. An estimated spoke dashes the Line's
  * two edges beside it and hatches the Area's two quadrilaterals, and a missing one removes them and
- * its dot (R5). Each mark's layer carries its series' place, which the stylesheet dims by: hover
- * dims the series other than the nearest and strengthens the nearest's fill (D19), and selection
- * and highlight dim the rest. ActiveDot and Glow keep modules of their own (Q1).
+ * its dot. Each mark's layer carries its series' place, which the stylesheet dims by: hover
+ * dims the series other than the nearest and strengthens the nearest's fill, and selection
+ * and highlight dim the rest. ActiveDot and Glow keep modules of their own.
  */
 import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, ReactElement, ReactNode } from "react";
@@ -17,7 +17,6 @@ import type { CSSProperties, ReactElement, ReactNode } from "react";
 import { crossfade } from "./chart-crossfade";
 import { useSvgIdPrefix, writeAttribute } from "./chart-dom";
 import type { MarkValues } from "./chart-motion";
-import { viewBoxOf } from "./chart-pie-frame";
 import { radarDrawingIn, usePolarContext } from "./chart-polar-context";
 import type { PolarContextValue } from "./chart-polar-context";
 import { PolarHatch } from "./chart-polar-hatch";
@@ -25,6 +24,7 @@ import { usePolarCommit, usePolarMark } from "./chart-polar-motion";
 import { useChartReadout } from "./chart-readout";
 import type { ChartLayerProps } from "./chart-types";
 import type { PolarPoint } from "./layout/polar-angle";
+import { viewBoxOf } from "./layout/polar-angle";
 import { dotsPath, loneVertices, radarAreas, radarEdges, zeroPolygon } from "./layout/radar";
 import { radiiOf, spokeStatesOf, verticesAt } from "./radar-chart-part";
 import type { SpokeStates } from "./radar-chart-part";
@@ -161,9 +161,10 @@ function useSeriesLayer(polar: PolarContextValue, layer: SeriesLayer): ReactElem
       index,
       radii.map(() => 0)
     );
-    // A change of spoke count pairs no radius with another, so the old drawing fades out over the new.
+    // A change of spoke count pairs no radius with another, so the old drawing fades out over the new,
+    // unless the change came while Activity hid the chart, since a show draws every mark at rest.
     if (before !== null && before !== spokes.count) {
-      if (node !== null && outgoing.current !== null && !motion.snaps()) {
+      if (node !== null && outgoing.current !== null && !motion.snaps() && !polar.kernel.hidden()) {
         crossfade(node, outgoing.current, () => undefined);
       }
       place(radii, { kind: "snap" });
@@ -212,14 +213,15 @@ function useSeriesLayer(polar: PolarContextValue, layer: SeriesLayer): ReactElem
   );
 }
 
-/** A role list's fill: a radial gradient centred on the series' box, its base at the centre (R9). */
+/** A role list's fill: a radial gradient centred on the series' box, its base at the centre. */
 function areaGradient(id: string, stops: readonly string[]): ReactNode {
   const ordered = stops.toReversed();
   return (
     <radialGradient id={id} cx="0.5" cy="0.5" r="0.5">
       {ordered.map((stop, index) => (
         <stop
-          key={stop}
+          // A role list may name a role twice, so a stop's place keys it.
+          key={index}
           offset={ordered.length < 2 ? 0 : index / (ordered.length - 1)}
           style={{ "--_stop": stop }}
         />
@@ -228,13 +230,14 @@ function areaGradient(id: string, stops: readonly string[]): ReactNode {
   );
 }
 
-/** A role list's stroke: a diagonal gradient across the series' box, top left to bottom right (R9). */
+/** A role list's stroke: a diagonal gradient across the series' box, top left to bottom right. */
 function lineGradient(id: string, stops: readonly string[]): ReactNode {
   return (
     <linearGradient id={id} x1="0" y1="0" x2="1" y2="1">
       {stops.map((stop, index) => (
         <stop
-          key={stop}
+          // A role list may name a role twice, so a stop's place keys it.
+          key={index}
           offset={stops.length < 2 ? 0 : index / (stops.length - 1)}
           style={{ "--_stop": stop }}
         />

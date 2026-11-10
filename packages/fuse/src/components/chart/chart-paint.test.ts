@@ -1,4 +1,4 @@
-// The shared series paint (X5). Unit under test: seriesPaintOf, which every mark and swatch reads.
+// The shared series paint. Unit under test: seriesPaintOf, which every mark and swatch reads.
 // Oracles: CONTRACT section 11's override form `var(--chart-color-<key>, var(--<role>))`, written
 // out by hand, section 8.9's chart-seq bins over a 0 to 70 extent, 7 equal steps of 10, and
 // ChartThresholdColor's documented rule: a value above the threshold paints `above`, a value at it

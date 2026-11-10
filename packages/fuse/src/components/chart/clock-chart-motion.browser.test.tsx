@@ -14,7 +14,7 @@ import { describe, expect, it } from "vitest";
 import { userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
-import { nextFrames, recordFrames, wait } from "../../../test/animation-frames";
+import { nextFrames, recordFrames, wait, recordSince } from "../../../test/animation-frames";
 import { angleOf, clockLayer, clockPath, dotPoints } from "../../../test/chart/clock";
 import { installFrameClock } from "../../../test/chart/frame-clock";
 import { polarFigure } from "../../../test/chart/pie";
@@ -65,26 +65,19 @@ function Dial({
 }
 
 /** Each frame's time since a start and each dot's angle and radius, until `until` ms past it. */
-async function record(
+function record(
   host: HTMLElement,
   start: () => number | null,
   until: number
 ): Promise<
   { readonly t: number; readonly dots: readonly { readonly angle: number; readonly radius: number }[] }[]
 > {
-  const frames: { t: number; dots: { angle: number; radius: number }[] }[] = [];
-  for (;;) {
-    // Kept as a direct frame wait: it needs the frame callback's timestamp, which nextFrames drops.
-    const now = await new Promise<number>((resolve) => requestAnimationFrame(resolve));
-    const from = start();
-    if (from === null) continue;
-    const dots = dotPoints(clockPath(clockLayer(host, "clock-chart-dots"), "step-0")).map(({ x, y }) => ({
+  return recordSince(start, until, () => ({
+    dots: dotPoints(clockPath(clockLayer(host, "clock-chart-dots"), "step-0")).map(({ x, y }) => ({
       angle: angleOf(x, y),
       radius: Math.hypot(x, y),
-    }));
-    frames.push({ t: now - from, dots });
-    if (now - from > until) return frames;
-  }
+    })),
+  }));
 }
 
 /** A slot's risen share at a time of the entrance, the Motion table's rise. */
@@ -479,8 +472,7 @@ describe("the clock's followers (SPEC's Motion table)", () => {
     const turns: { readonly t: number; readonly angle: number }[] = [];
     const start = performance.now();
     while (performance.now() - start < 400) {
-      // Kept as a direct frame wait: it needs the frame callback's timestamp, which nextFrames drops.
-      const now = await new Promise<number>((resolve) => requestAnimationFrame(resolve));
+      const now = await nextFrames(1);
       turns.push({ t: now - start, angle: Number.parseFloat(getComputedStyle(hand).rotate) });
     }
     // Slot 0's middle at 7.5° to slot 23's at 352.5° is 15° back, not 345° forward: no frame turns

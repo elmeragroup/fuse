@@ -16,7 +16,7 @@ import type { ClockDrawing, ClockSeries, PolarContextValue } from "./chart-polar
 import type { usePolarCommit } from "./chart-polar-motion";
 import { useChartReadout } from "./chart-readout";
 import type { ChartCurve, ChartDatum, ChartX } from "./chart-types";
-import { ownerSlot, revealPath } from "./layout/clock-path";
+import { ownerSlot, revealPath, slotAt } from "./layout/clock-path";
 import { keywordSlots, listedSlots } from "./layout/datum";
 import { ChartCompositionError } from "./layout/errors";
 
@@ -117,20 +117,16 @@ function pairedFrom(
 ): number[] {
   const at = new Map(previous.pairs.map((pair, slot) => [pair, slot]));
   const from: number[] = [previous.values[0] ?? 1];
-  // The slot before, whose end angle, base and tip an unpaired slot opens from.
-  let before: readonly [number, number, number] = [0, previous.values[3] ?? 0, previous.values[4] ?? 0];
+  // The slot before, whose end angle, base and tip an unpaired slot opens from: at first the first
+  // old slot's base and tip at angle 0.
+  const [, , firstBase, firstTip] = slotAt(previous.values, 0);
+  let before: readonly [number, number, number] = [0, firstBase, firstTip];
   pairs.forEach((pair) => {
     const old = at.get(pair);
     if (old !== undefined) {
-      const base = 1 + old * 4;
-      const numbers = [
-        previous.values[base] ?? 0,
-        previous.values[base + 1] ?? 0,
-        previous.values[base + 2] ?? 0,
-        previous.values[base + 3] ?? 0,
-      ];
+      const numbers = slotAt(previous.values, old);
       from.push(...numbers);
-      before = [numbers[1] ?? 0, numbers[2] ?? 0, numbers[3] ?? 0];
+      before = [numbers[1], numbers[2], numbers[3]];
       return;
     }
     const [end, base, tip] = before;

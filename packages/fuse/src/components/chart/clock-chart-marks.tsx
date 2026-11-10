@@ -8,7 +8,7 @@
  * number over 480 ms, and a switch between 24- and 25-hour days pairs the slots by their start
  * instants, so the slot angles tween and the dial turns rather than cut chords. A Line or an Area
  * painted by value paints through a radial gradient centred on the dial with a hard stop at each
- * threshold's radius (D23). Column, Dots, Marker, ValueLabel, ActiveDot and Glow live in their own
+ * threshold's radius. Column, Dots, Marker, ValueLabel, ActiveDot and Glow live in their own
  * modules, so a route that names one part ships only its own.
  */
 import { useLayoutEffect, useMemo, useRef, useState } from "react";
@@ -18,7 +18,6 @@ import { useSvgIdPrefix } from "./chart-dom";
 import { PATH_GLOW, valueGlow } from "./chart-glow-filter";
 import type { MarkValues } from "./chart-motion";
 import { stackedScaleError } from "./chart-paint";
-import { viewBoxOf } from "./chart-pie-frame";
 import { clockDrawingIn, usePolarContext } from "./chart-polar-context";
 import type { ClockDrawing, ClockSeries } from "./chart-polar-context";
 import { PolarHatch } from "./chart-polar-hatch";
@@ -37,6 +36,7 @@ import {
   assertClockBaseline,
 } from "./clock-chart-part";
 import { clockArea, clockLine, entranceFrame } from "./layout/clock-path";
+import { viewBoxOf } from "./layout/polar-angle";
 
 /**
  * Props for `ClockChart.Line`, a closed part.
@@ -157,7 +157,7 @@ function StepGradient({
   );
 }
 
-/** The paint a role list's line strokes: a diagonal gradient across its box (R9). */
+/** The paint a role list's line strokes: a diagonal gradient across its box. */
 function RoleGradient({
   id,
   stops,
@@ -169,7 +169,8 @@ function RoleGradient({
     <linearGradient id={id} x1="0" y1="0" x2="1" y2="1">
       {stops.map((stop, index) => (
         <stop
-          key={stop}
+          // A role list may name a role twice, so a stop's place keys it.
+          key={index}
           offset={stops.length < 2 ? 0 : index / (stops.length - 1)}
           style={{ "--_stop": stop }}
         />
@@ -342,11 +343,11 @@ const writers = new Map<
 
 /**
  * One series as a curve round the dial, through d3's curve in unrolled angle and radius, so a run of
- * equal values draws an arc. The loop closes across 12 o'clock when both end slots hold readings
- * (D16). A missing reading leaves a gap unless the series' config sets `missing: "connect"`, which
+ * equal values draws an arc. The loop closes across 12 o'clock when both end slots hold readings.
+ * A missing reading leaves a gap unless the series' config sets `missing: "connect"`, which
  * bridges it dashed, and the segments that touch an estimated or projected reading dash too. A
  * series painted by a threshold or a scale strokes through a radial gradient that turns hard at each
- * threshold's radius (D23).
+ * threshold's radius.
  *
  * @beta
  */

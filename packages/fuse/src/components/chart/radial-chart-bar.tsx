@@ -2,12 +2,12 @@
 
 /**
  * The rings. Each ring is a mark of its own on the Root's loop: its value sweeps in from 0 at
- * 160 + i·100 ms over `--chart-intro`, morphs to new data over 480 ms (Q5), and one that enters in
- * an update grows from 0. The ring's frame writes each ring's dash with the floor (D24). A ring
+ * 160 + i·100 ms over `--chart-intro`, morphs to new data over 480 ms, and one that enters in
+ * an update grows from 0. The ring's frame writes each ring's dash with the floor. A ring
  * draws one of three ways:
  *
  * - a solid stroke whose dash carries the value, round-capped inside the value's angle;
- * - a role list's colours along the sweep, as 6° segments a mask reveals up to the value (Q12);
+ * - a role list's colours along the sweep, as 6° segments a mask reveals up to the value;
  * - `variant="dotted"`: 40 dots per sweep, of which the value's whole share fills, a mask
  *   revealing them over the faint dots of the rest.
  *
@@ -20,7 +20,6 @@ import type { ReactElement } from "react";
 
 import { useSvgIdPrefix } from "./chart-dom";
 import type { MarkValues } from "./chart-motion";
-import { viewBoxOf } from "./chart-pie-frame";
 import { radialDrawingIn, usePolarContext } from "./chart-polar-context";
 import type { PolarContextValue, RadialRing } from "./chart-polar-context";
 import { PolarHatch } from "./chart-polar-hatch";
@@ -30,7 +29,7 @@ import type { RingFrame, RingPlace } from "./chart-ring-frame";
 import type { ChartLayerProps } from "./chart-types";
 import { ringTrack } from "./layout/arc-path";
 import { CHART_SPRINGS } from "./layout/motion";
-import { sweepOf } from "./layout/polar-angle";
+import { sweepOf, viewBoxOf } from "./layout/polar-angle";
 import type { Sweep } from "./layout/polar-angle";
 import { springEasing } from "./layout/spring";
 
@@ -47,7 +46,7 @@ export type RadialChartBarProps = ChartLayerProps & {
 /** The rings' hover spring (the Motion table's 400/25), sampled once. */
 const HOVER = springEasing(CHART_SPRINGS.pop);
 
-/** The degrees one gradient segment spans (Q12). */
+/** The degrees one gradient segment spans. */
 const SEGMENT = 6;
 
 /** What a ring's writer reads beside its numbers. */
@@ -134,7 +133,7 @@ function RadialRingMark({
   const cell = sweep.width / RING_DOTS;
   return (
     <g
-      data-ring=""
+      data-chart-ring=""
       data-over-max={ring.over ? "" : undefined}
       data-quality={ring.quality}
       style={{ "--chart-slot": index, "--chart-series": ring.series, "--_band": band, "--_paint": paint }}>

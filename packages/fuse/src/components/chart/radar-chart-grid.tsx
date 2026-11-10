@@ -3,7 +3,7 @@
 /**
  * The radar's Grid: rings at the radius domain's ticks and a spoke per row. When the domain reaches
  * below 0 the zero ring draws solid, as the bar's zero line does. A ring is a polygon through
- * the spokes or a circle. The first paint draws it at rest (D18), and only a chart nothing painted
+ * the spokes or a circle. The first paint draws it at rest, and only a chart nothing painted
  * before, a client mount or one that leaves its empty state, scales its rings and spokes out as the
  * entrance starts. Its hand turns to the active spoke the short way round, on the Root's angle
  * follower, so the active dots turn with it.
@@ -13,12 +13,11 @@ import type { ReactElement } from "react";
 
 import { writeAttribute, writeStyle } from "./chart-dom";
 import { useChartFollower } from "./chart-followers";
-import { viewBoxOf } from "./chart-pie-frame";
 import { radarDrawingIn, usePolarContext } from "./chart-polar-context";
 import type { RadarDrawing } from "./chart-polar-context";
 import type { ChartLayerProps } from "./chart-types";
 import { CHART_SPRINGS } from "./layout/motion";
-import { polarPoint } from "./layout/polar-angle";
+import { polarPoint, viewBoxOf } from "./layout/polar-angle";
 import { radarRadius, spokeAngle } from "./layout/radar";
 import { pathNumber } from "./layout/rounding";
 import { springEasing } from "./layout/spring";

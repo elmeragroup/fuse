@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * The series adapter, which Radar reads its Root through, and ClockChart from L7. It builds a
+ * The series adapter, which Radar and ClockChart read their Roots through. It builds a
  * `CartesianModel` over the family's own domain, a category per spoke here, and reuses the
  * cartesian series readout as it is: an index is a spoke, the legend lists the config keys, the
  * tooltip lists every series at the active spoke, and the option names every series or the focused
@@ -39,6 +39,11 @@ export type RadarInput = {
   readonly name: string | undefined;
   /** The data rules the Root's rows broke, which production warns once each. */
   readonly issues: readonly PolarIssue[];
+  /**
+   * The Root's whole config, which a part's dataKey must name. `config` holds the series it draws,
+   * the first `RADAR_SERIES_CAP` keys past the cap.
+   */
+  readonly known: ChartConfig;
 };
 
 /** The spoken extremes of each series, the radar description's sentences after its opening. */
@@ -121,7 +126,7 @@ export function radarModel(input: RadarInput): PolarModel {
     selectKey: (_index, focus) => model.series[focus]?.key ?? null,
     selectable: Object.keys(config),
     table: { kind: "series", context: { ...context, name: input.name, rows: input.rows }, keys },
-    readout: (kernel) => seriesReadout(context, kernel),
+    readout: (kernel) => seriesReadout(context, kernel, input.known),
     issues: input.issues,
     drawing: {
       kind: "radar",
@@ -163,18 +168,27 @@ export function radarModel(input: RadarInput): PolarModel {
  *
  * @param context - The family's series model and words.
  * @param kernel - The polar Root's kernel.
+ * @param known - The config a part's dataKey must name, the context's own by default.
  * @returns The readout.
  */
-export function seriesReadout(context: TextContext, kernel: PolarKernel): ChartReadout {
-  return seriesReadoutOf(context, {
-    id: kernel.id,
-    root: kernel.root,
-    store: kernel.store,
-    followers: kernel.followers,
-    select: kernel.select,
-    registerToggleGroup: kernel.registerToggleGroup,
-    highlight: kernel.highlight,
-    warnOnce: kernel.warnOnce,
-    usePick: kernel.usePick,
-  });
+export function seriesReadout(
+  context: TextContext,
+  kernel: PolarKernel,
+  known: ChartConfig = context.config
+): ChartReadout {
+  return seriesReadoutOf(
+    context,
+    {
+      id: kernel.id,
+      root: kernel.root,
+      store: kernel.store,
+      followers: kernel.followers,
+      select: kernel.select,
+      registerToggleGroup: kernel.registerToggleGroup,
+      highlight: kernel.highlight,
+      warnOnce: kernel.warnOnce,
+      usePick: kernel.usePick,
+    },
+    { known }
+  );
 }

@@ -80,6 +80,16 @@ export function sweepOf(start: number, end: number): Sweep {
 }
 
 /**
+ * An angle in degrees turned into `[0, 360)`, so −90 reads 270 and 450 reads 90.
+ *
+ * @param angle - Degrees, any number of turns either way.
+ * @returns The same direction within one turn.
+ */
+export function turnOf(angle: number): number {
+  return ((angle % 360) + 360) % 360;
+}
+
+/**
  * The angle of a pointer offset from the centre, normalised to `[0, 360)`. The exact centre reads 0,
  * because `atan2(0, −0)` is π and would read 180.
  *
@@ -105,7 +115,7 @@ export function pointerAngle(dx: number, dy: number): number {
  */
 export function angleInSweep(angle: number, sweep: Sweep): number | null {
   const raw = (angle - sweep.start) * sweep.direction;
-  const offset = ((raw % 360) + 360) % 360;
+  const offset = turnOf(raw);
   // A full turn holds every angle, and its own start at its end too.
   if (sweep.width >= 360) return offset;
   return offset <= sweep.width ? offset : null;
@@ -136,4 +146,28 @@ export function sweepBox(sweep: Sweep): SweepBox {
     right: tidy(Math.max(...points.map(({ x }) => x))),
     bottom: tidy(Math.max(...points.map(({ y }) => y))),
   };
+}
+
+/**
+ * The viewBox of a sweep's box, which every polar layer draws in.
+ *
+ * @param box - The sweep's box, in units of the outer radius.
+ * @returns The viewBox attribute.
+ */
+export function viewBoxOf(box: SweepBox): string {
+  return `${String(box.left)} ${String(box.top)} ${String(box.right - box.left)} ${String(box.bottom - box.top)}`;
+}
+
+/**
+ * A point's place in the cell, as percentages of the sweep's box.
+ *
+ * @param box - The sweep's box, in units of the outer radius.
+ * @param x - The point's x, in units of the outer radius.
+ * @param y - The point's y, down, in the same unit.
+ * @returns The left and top percentages, to 3 decimals.
+ */
+export function boxPercent(box: SweepBox, x: number, y: number): readonly [string, string] {
+  const left = ((x - box.left) / (box.right - box.left)) * 100;
+  const top = ((y - box.top) / (box.bottom - box.top)) * 100;
+  return [`${left.toFixed(3)}%`, `${top.toFixed(3)}%`];
 }

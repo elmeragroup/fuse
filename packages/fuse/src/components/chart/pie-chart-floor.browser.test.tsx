@@ -3,7 +3,7 @@
 // pixel of rim between the seams stroked over its two edges, so its outer arc spans at least the
 // seam plus one device pixel, while its share and its texts keep the true value. The pointer picks
 // the slice it sees: at a 100 px radius and DPR 1 the floored slice spans the 2 px seam and one
-// pixel, 3 / 100 rad ≈ 1.719°, so it starts near 358.28° and 359° lies inside it (Q2, B13).
+// pixel, 3 / 100 rad ≈ 1.719°, so it starts near 358.28° and 359° lies inside it.
 import { expect, it } from "vitest";
 import { userEvent } from "vitest/browser";
 

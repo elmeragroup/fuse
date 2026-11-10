@@ -2,9 +2,9 @@
  * The clock dial's paths. A curve runs through d3's curve in unrolled (θ, r) space, through a path
  * context that samples each segment into polar points, so a segment between two equal values is an
  * arc of a circle and the monotone and bump curves stay monotone along the dial. The loop closes
- * across 12 o'clock when both end slots hold readings (D16), and a missing or pending end leaves it
+ * across 12 o'clock when both end slots hold readings, and a missing or pending end leaves it
  * open. A wedge takes its slot's whole angle less a pad that keeps the gap one width from hole to
- * rim (D14). Every coordinate is in units of the outer radius and rounds through `pathNumber`.
+ * rim. Every coordinate is in units of the outer radius and rounds through `pathNumber`.
  */
 import { curveBasis, curveBumpX, curveLinear, curveMonotoneX, curveNatural, curveStep } from "d3-shape";
 import type { CurveFactory } from "d3-shape";
@@ -12,7 +12,7 @@ import type { CurveFactory } from "d3-shape";
 import type { ChartCurve } from "../chart-types";
 import { arcPath, arcWriter } from "./arc-path";
 import type { PolarPoint } from "./polar-angle";
-import { toDegrees, toRadians } from "./polar-angle";
+import { toDegrees, toRadians, turnOf } from "./polar-angle";
 import { CLOCK_INTRO } from "./polar-motion";
 import { pathNumber } from "./rounding";
 
@@ -245,8 +245,15 @@ function findRuns(slots: ClockSlots): Run[] {
   ];
 }
 
-/** A slot's numbers from the loop's list, after the leading progress. */
-function slotAt(values: readonly number[], slot: number): readonly [number, number, number, number] {
+/**
+ * A slot's numbers from the loop's list, after the leading progress: its start and end angle, its
+ * base radius and its tip, `CLOCK_STRIDE` numbers per slot.
+ *
+ * @param values - The loop's numbers, a series' rest or what it drew.
+ * @param slot - The slot.
+ * @returns Its start, end, base and tip, 0 for a number the list lacks.
+ */
+export function slotAt(values: readonly number[], slot: number): readonly [number, number, number, number] {
   const at = 1 + slot * CLOCK_STRIDE;
   return [values[at] ?? 0, values[at + 1] ?? 0, values[at + 2] ?? 0, values[at + 3] ?? 0];
 }
@@ -401,7 +408,7 @@ export function radiusInCurve(index: CurveIndex, angle: number): number | null {
   for (const run of index) {
     if (run.kind === "lone") {
       // A lone reading draws a dot in its slot's middle, which the active dot covers at rest.
-      const at = run.start + ((((angle - run.start) % 360) + 360) % 360);
+      const at = run.start + turnOf(angle - run.start);
       if (at <= run.end) return run.tip;
       continue;
     }
@@ -409,7 +416,7 @@ export function radiusInCurve(index: CurveIndex, angle: number): number | null {
     const first = line[0];
     const last = line.at(-1);
     if (first === undefined || last === undefined) continue;
-    const at = first.angle + ((((angle - first.angle) % 360) + 360) % 360);
+    const at = first.angle + turnOf(angle - first.angle);
     if (at > last.angle) continue;
     // The last sample at or before the angle, by halves.
     let low = 0;
@@ -462,7 +469,7 @@ function polyline(points: readonly ClockPoint[], closed: boolean): string {
  * The angle ranges a run dashes or hatches: each segment that touches a marked slot, and each
  * bridge, folded into the angles its curve samples and merged. A curve that steps draws each reading
  * across its own slot, so its marked range is that slot, from its start to its end, and its bridge
- * runs from one reading's end to the next one's start (section 8.7, Q3, B7). Any other curve draws
+ * runs from one reading's end to the next one's start (section 8.7). Any other curve draws
  * a reading as a vertex, so its range runs between the vertices beside it. A closed run's first and last readings
  * meet across midnight, so a range that reaches past one end of the sampled turn continues at the
  * other, and overlapping ranges, as two adjacent marked readings give, merge into one, so no piece is
@@ -641,7 +648,7 @@ export function clockLine(values: readonly number[], slots: ClockSlots, curve: C
 
 /**
  * Each slot's mark, taken from its pixel column round the rim when slots are narrower than a device
- * pixel: every slot in a column is marked when any one is. Slots take equal angles (D11), so slot i
+ * pixel: every slot in a column is marked when any one is. Slots take equal angles, so slot i
  * of n lies in column ⌊(i + ½) · columns / n⌋.
  *
  * @param marked - Each slot's own mark.
@@ -748,10 +755,10 @@ function wedgePadAngle(gap: WedgeGap, tip: number, start: number, end: number): 
 /**
  * A series' columns: one wedge per reading, from its base to its tip, over its slot's angle less
  * the pad, each in the path of its group, such as its paint step, so each wedge paints its own
- * value's side of a threshold (D23). Every wedge keeps the full gap where the arc at its value's tip
+ * value's side of a threshold. Every wedge keeps the full gap where the arc at its value's tip
  * can afford it: the outer edge of an outward column, the inner edge of one that hangs inward from
  * the zero ring. A wedge whose tip the gap would erase narrows its own pad until one device pixel of
- * arc is left there, so a non-zero reading never draws as nothing (D24).
+ * arc is left there, so a non-zero reading never draws as nothing.
  *
  * @param values - The loop's numbers: the progress, then each slot's angles, base and tip.
  * @param slots - Each slot's state.

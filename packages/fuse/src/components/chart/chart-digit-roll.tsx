@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * A number that rolls its digits (D8, S3). Each digit of the formatted text is a reel of 0 to 9,
+ * A number that rolls its digits. Each digit of the formatted text is a reel of 0 to 9,
  * which the stylesheet slides to the digit on the ticker spring, in tabular figures, and every
  * other character, a group or decimal separator, a sign or a unit, stays where it is. Text of
  * another shape, such as one more digit or another unit, swaps at once instead of rolling, because

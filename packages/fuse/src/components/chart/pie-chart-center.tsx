@@ -3,8 +3,8 @@
 /**
  * The text in a pie's or radial chart's hole (CONTRACT section 8.13). The Center lays its parts in
  * the square inscribed in the hole, and a CenterLabel is a text line among them. The numbers are
- * parts of their own, in `pie-chart-center-value`, so a route that names none ships no digit roll
- * (Q1). The Center is plot output, hidden from readers, who read the same numbers from the options.
+ * parts of their own, in `pie-chart-center-value`, so a route that names none ships no digit roll.
+ * The Center is plot output, hidden from readers, who read the same numbers from the options.
  * Every part that follows the active item reads it here, through `useActiveIndex`, so it renders
  * when the active item changes and never on a pointer move within one, and inside a closing tooltip
  * it keeps the item the popup held.

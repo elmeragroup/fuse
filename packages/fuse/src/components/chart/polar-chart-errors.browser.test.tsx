@@ -1,4 +1,4 @@
-// The polar data and composition rules in a development build (S10). Units under test: the polar
+// The polar data and composition rules in a development build. Units under test: the polar
 // Roots and a shared part inside them. Each case renders to a string and expects the thrown
 // error's name and rule, written by hand from CONTRACT section 8.1's table and S10's polar rows.
 // The production fallbacks run in polar-chart-errors.production.browser.test.

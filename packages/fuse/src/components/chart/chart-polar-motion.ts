@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * How a polar mark moves on its Root's loop (D5, D17, Q7), the one module that places polar marks.
+ * How a polar mark moves on its Root's loop, the one module that places polar marks.
  * The first draw plays the entrance: each item sweeps or grows from its start over `--chart-intro`,
  * 1 s, after its family's stagger, and waits at that start until the chart comes into view. A data
  * update moves every item that stays over `--chart-update`, 480 ms, grows an item that enters from
@@ -10,7 +10,7 @@
  * mark at rest at once, through the loop's snap. The cartesian binder, `useMotionMark`, reads the
  * cartesian layout, so a polar mark binds through `usePolarMark` and asks `usePolarCommit`.
  */
-import { useCallback, useId, useLayoutEffect, useMemo, useRef } from "react";
+import { useCallback, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { RefCallback } from "react";
 
 import { SAME_PLOT } from "./chart-motion";
@@ -91,7 +91,9 @@ export function usePolarMark<T extends Element, L>(
  * key is new. A later data update moves it from what it drew, and any other commit lets a running
  * tween finish. An update never replays the entrance. While the entrance still waits for the chart
  * to come into view, every commit places the entrance again under its numbers, so the chart plays
- * it with the latest data.
+ * it with the latest data. Once the entrance has started it is spent: a mark that draws again from
+ * nothing, as every mark does when React Activity shows the chart again, or that mounts later with
+ * no new data, snaps to rest, as the cartesian marks do, so nothing grows a second time.
  *
  * @param polar - The mark's Root.
  * @param anchor - The mark's node, which inherits the figure's pace. The marks place their entrance
@@ -110,6 +112,13 @@ export function usePolarCommit(
   via?: { readonly from: MarkValues; readonly to: MarkValues }
 ) => Placement {
   const last = useRef<PolarUpdate | null>(null);
+  const { update, entrance, kernel, model } = polar;
+  // The commit the mark first mounted in, and whether its Root was hidden then. A mark is new only
+  // in the data update it was born in, born while its Root showed, and drawn while it shows. React
+  // Activity runs the Root's cleanup when it hides the chart and the marks' layout effects before
+  // the Root's when it shows it again, so every mark draws a show while the Root still reads
+  // hidden. A Strict Mode rehearsal of a mark runs no Root effect, so it reads shown.
+  const [born] = useState(() => ({ update, hidden: kernel.hidden() }));
   // A mark that unmounts forgets what it drew, so a remount, as Strict Mode rehearses one, draws
   // its first commit again.
   useLayoutEffect(
@@ -118,18 +127,21 @@ export function usePolarCommit(
     },
     []
   );
-  const { update, entrance, kernel, model } = polar;
   // It changes with the commit's inputs alone, so a part that places only when they change may key
   // its effect on it.
   return useCallback(
     (index, from, via) => {
       const previous = last.current;
       last.current = update;
+      const phase = kernel.store.get().phase;
       // While Root's entrance waits, every commit places the entrance again under its numbers, as a
       // bar does, since the held loop would snap a move or a settle to rest.
-      const waiting = entrance && kernel.store.get().phase === "waiting";
+      const waiting = entrance && phase === "waiting";
+      if (previous === null && phase === "started") {
+        const fresh = update.kind === "data" && born.update === update && !born.hidden && !kernel.hidden();
+        return fresh ? { kind: "enter", from, delay: 0 } : { kind: "snap" };
+      }
       if (previous === null || waiting) {
-        if (update.kind === "data" && !waiting) return { kind: "enter", from, delay: 0 };
         if (!entrance) return { kind: "snap" };
         const pace = introPace(kernel.root() ?? anchor(), update);
         return {
@@ -144,7 +156,7 @@ export function usePolarCommit(
       // A clock that changes its slot count moves along the route that pairs its old slots with its new.
       return via === undefined ? { kind: "move" } : { kind: "move", via };
     },
-    [update, entrance, kernel, model, anchor]
+    [update, entrance, kernel, model, anchor, born]
   );
 }
 
@@ -177,7 +189,7 @@ export function introPace(figure: Element | null, update: PolarUpdate): IntroPac
 export type GhostWriter = (path: SVGPathElement, values: MarkValues) => void;
 
 /**
- * Collapse a leaving item into a ghost (D5): a path in `layer` that tweens from what the item drew
+ * Collapse a leaving item into a ghost: a path in `layer` that tweens from what the item drew
  * to its collapsed numbers on the update's clock, then leaves the DOM. A second update while it
  * collapses starts from where it shows, as every tween does.
  *

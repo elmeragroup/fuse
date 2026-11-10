@@ -2,7 +2,7 @@
 
 /**
  * The clock's AngleAxis: the cycle's hours, weekdays or months past the rim, each centred on its
- * ray 6 px out, thinned by stride to the dial's width. The first paint draws it at rest (D18).
+ * ray 6 px out, thinned by stride to the dial's width. The first paint draws it at rest.
  */
 import type { ReactElement } from "react";
 

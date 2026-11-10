@@ -1,6 +1,6 @@
 // The shared Intl caches. Unit under test: numberFormat, as every cache keys its entries the same
 // way. Oracle: the cache's contract, one formatter per locale and options, and the options are a
-// set of fields, so two literals that name the same options in another key order are one entry (B4),
+// set of fields, so two literals that name the same options in another key order are one entry,
 // and an option set to undefined is one left out, as Intl reads it.
 import { describe, expect, it } from "vitest";
 

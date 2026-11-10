@@ -84,7 +84,7 @@ describe("chart namespaces", () => {
     "give each family a %s of its own, named after the family",
     (key) => {
       // Each family's Tooltip rests on its own anchor and each Table lists its own rows, so no polar
-      // route ships Chart's (D22, the L1a decisions).
+      // route ships Chart's.
       const parts = NAMESPACES.map(([, namespace]) => namespace[key]);
       expect(new Set(parts).size).toBe(NAMESPACES.length);
       expect(

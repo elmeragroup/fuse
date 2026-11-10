@@ -65,7 +65,7 @@ describe("ring values along the spoke", () => {
     const rings = [0.5, 1].map((radius) => ({ radius, width: 8 }));
     const top = { inner: 0, angles: [], marks: (_x: number, y: number) => y < 0 };
     expect(fitRingLabels(rings, top)).toEqual(["none", "none"]);
-    expect(ringAnchor(rings, top)).toBe(180);
+    expect(ringAnchor(rings, top)).toEqual({ anchor: 180, shown: [120, 120] });
     expect(fitRingLabels(rings, { ...top, anchor: 180 })).toEqual([120, 120]);
   });
 });

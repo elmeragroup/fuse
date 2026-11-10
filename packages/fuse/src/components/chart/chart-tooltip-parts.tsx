@@ -23,7 +23,10 @@ import type { ChartDomProps, ChartFractionDigits, ValueFormat, XFormat } from ".
  * @beta
  */
 export type ChartTooltipLabelProps = ChartDomProps<"span"> & {
-  /** The slot label format. Root's `xFormat` is the default. It does nothing in polar charts. */
+  /**
+   * The slot label format. Root's `xFormat` is the default. A clock's slots take it, and the
+   * categories of pie, radial and radar charts print as they are.
+   */
   format?: XFormat;
 };
 
@@ -57,8 +60,6 @@ export type ChartTooltipShareProps = ChartDomProps<"span"> & {
   /** The percentage digits. */
   format?: ChartFractionDigits;
 };
-
-/** The cartesian anchor, which rests the popup on the marks under it. */
 
 /**
  * The active slot's label, or the category's label in pie, radial and radar charts.

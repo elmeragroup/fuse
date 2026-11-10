@@ -11,7 +11,6 @@ import { writeAttribute, writeStyle } from "./chart-dom";
 import { useChartFollower } from "./chart-followers";
 import type { ActiveSlot } from "./chart-followers";
 import type { ChartMotion, MarkValues } from "./chart-motion";
-import { viewBoxOf } from "./chart-pie-frame";
 import type { ClockSeries } from "./chart-polar-context";
 import { STRETCH_SPAN } from "./chart-polar-follow";
 import type { PolarFollow } from "./chart-polar-follow";
@@ -27,6 +26,7 @@ import {
   slotVertex,
 } from "./layout/clock-path";
 import type { CurveIndex } from "./layout/clock-path";
+import { turnOf, viewBoxOf } from "./layout/polar-angle";
 import { pathNumber } from "./layout/rounding";
 
 /**
@@ -94,7 +94,7 @@ function radiusAt(look: DotLook, raw: MarkValues, angle: number): number | null 
   if (index !== null) return radiusInCurve(index, angle);
   const count = slots.states.length;
   if (count === 0) return null;
-  const turned = ((angle % 360) + 360) % 360;
+  const turned = turnOf(angle);
   const own = ownerSlot(slots.states, Math.min(count - 1, Math.floor((turned / 360) * count)));
   return slots.states[own] === "reading" ? slotVertex(values, own).radius : null;
 }

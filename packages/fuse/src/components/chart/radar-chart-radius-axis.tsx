@@ -3,7 +3,7 @@
 /**
  * The radar's RadiusAxis: the ring values beside the first spoke, or the opposite one when the
  * series leave that more room, each shown only where it clears its neighbours, the series and the
- * spoke labels. The first paint draws it at rest (D18), and only a chart nothing painted before
+ * spoke labels. The first paint draws it at rest, and only a chart nothing painted before
  * fades its labels in as the entrance starts.
  */
 import type { ReactElement } from "react";
@@ -14,11 +14,11 @@ import type { RadarDrawing } from "./chart-polar-context";
 import type { ChartLayerProps, ValueFormat } from "./chart-types";
 import { formatValue } from "./format/value-format";
 import { labelBound } from "./layout/label-bound";
-import { polarPoint } from "./layout/polar-angle";
+import { boxPercent, polarPoint } from "./layout/polar-angle";
 import { radarRadius, spokeAngle } from "./layout/radar";
-import { fitRingLabels, ringAnchor } from "./layout/ring-labels";
+import { ringAnchor } from "./layout/ring-labels";
 import type { MarkCover } from "./layout/ring-labels";
-import { percent, spokeLabelFit } from "./radar-chart-dial";
+import { spokeLabelFit } from "./radar-chart-dial";
 
 /**
  * Props for `RadarChart.RadiusAxis`, a closed part.
@@ -91,8 +91,7 @@ export function RadarChartRadiusAxis({ format, className, style }: RadarChartRad
     })),
     marks: radarCover(radar),
   };
-  const anchor = ringAnchor(values, clearance);
-  const shown = fitRingLabels(values, { ...clearance, anchor });
+  const { anchor, shown } = ringAnchor(values, clearance);
   return (
     <div
       data-slot="radar-chart-radius-axis"
@@ -101,7 +100,7 @@ export function RadarChartRadiusAxis({ format, className, style }: RadarChartRad
       className={className}
       style={style}>
       {radar.ticks.map((tick, index) => {
-        const [left, top] = percent(box, 0, anchor === 180 ? radius(tick) : -radius(tick));
+        const [left, top] = boxPercent(box, 0, anchor === 180 ? radius(tick) : -radius(tick));
         const min = shown[index] ?? "none";
         return (
           <span

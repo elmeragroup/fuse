@@ -221,6 +221,10 @@ export function PolarSurface(): ReactElement | null {
     const tapped = lift.tapFocus() || gesture.current !== null;
     if (!tapped && (store.get().source === "keyboard" || store.get().pinned)) {
       store.set({ active: null, source: null, near: null, pinned: false });
+    } else if (store.get().dismissed !== null) {
+      // Escape's dismissal lasts while the reader stays, so a pointer that comes to the same slot
+      // after focus leaves opens it.
+      store.set({ dismissed: null });
     }
     handoff.reset({ index: current.index, focus: current.focus, order: "slot-first" });
   };

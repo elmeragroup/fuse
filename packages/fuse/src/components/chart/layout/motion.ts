@@ -28,7 +28,7 @@ export const CHART_CROSSFADE_MS = 150;
  * stiffens it, `FOLLOW_FASTEST` at most, and a keyboard step takes `FOLLOW_FASTEST`. `glide` moves the tooltip, whose duration is
  * `--chart-glide` in `chart.css`, and keeps its softer spring at every speed. `ticker` moves
  * Chart.SlotLabel's pill and its rolling parts and a pie's centre digits. `pop` moves the active
- * slice out along its bisector (D3) and scales the active ring. `grow` scales a ring's track or a
+ * slice out along its bisector and scales the active ring. `grow` scales a ring's track or a
  * radar's ring out as the entrance starts, and `extend` grows a radar's spokes. A polar Root's hand
  * and dots turn on the follow springs too, through its angle follower. Each glide starts from what the mark shows, so a step
  * mid-glide retargets it.

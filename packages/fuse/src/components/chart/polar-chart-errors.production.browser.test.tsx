@@ -1,4 +1,4 @@
-// The polar data rules in React's production build (S10). Units under test: PieChart.Root and
+// The polar data rules in React's production build. Units under test: PieChart.Root and
 // RadarChart.Root. Oracle: the fallback each rule's message names, written by hand. A negative
 // reading draws as 0 and keeps its sign in the Table, a fifth radar series is left out, and a
 // category the config lacks folds into the Other slice. Each warns once, a render later included.
@@ -8,7 +8,7 @@ import { page, userEvent } from "vitest/browser";
 import "../../../dist/styles.css";
 import { nextFrames } from "../../../test/animation-frames";
 import { label } from "../../../test/chart/marks";
-import { centreText, outerArc, sectors } from "../../../test/chart/pie";
+import { centreText, hoverAt, outerArc, sectors } from "../../../test/chart/pie";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
 import type { ChartConfig } from "./chart-types";
@@ -48,15 +48,10 @@ async function hoverAngle(angle: number): Promise<void> {
   const surface = page.getByRole("listbox").element();
   const box = surface.getBoundingClientRect();
   const radians = (angle * Math.PI) / 180;
-  surface.dispatchEvent(
-    new PointerEvent("pointermove", {
-      bubbles: true,
-      clientX: box.left + box.width / 2 + (box.width / 4) * Math.sin(radians),
-      clientY: box.top + box.height / 2 - (box.height / 4) * Math.cos(radians),
-      pointerType: "mouse",
-    })
+  await hoverAt(
+    box.left + box.width / 2 + (box.width / 4) * Math.sin(radians),
+    box.top + box.height / 2 - (box.height / 4) * Math.cos(radians)
   );
-  await nextFrames(1);
 }
 
 describe("the polar data rules in production", () => {
@@ -212,6 +207,70 @@ describe("the polar data rules in production", () => {
     expect(
       [...host.querySelectorAll('[data-slot="chart-legend-item"]')].map((item) => item.textContent)
     ).toEqual(["NO1", "NO2", "NO3", "NO4"]);
+  });
+
+  it("draws nothing for marks of the fifth radar series, throws nothing and warns once", async () => {
+    spy();
+    // The rule says the radar draws the first four config keys, so marks mapped over all five keys
+    // name one that draws nothing: its paths stay empty while the first four draw.
+    const config: ChartConfig = {
+      no1: { label: "NO1", color: "chart-1" },
+      no2: { label: "NO2", color: "chart-2" },
+      no3: { label: "NO3", color: "chart-3" },
+      no4: { label: "NO4", color: "chart-4" },
+      no5: { label: "NO5", color: "chart-5" },
+    };
+    const keys = Object.keys(config);
+    const rows = ["Vinter", "Vår", "Sommer"].map((season, index) => ({
+      season,
+      ...Object.fromEntries(keys.map((key, place) => [key, 20 + 10 * place + index])),
+    }));
+    const { host } = renderThemed(
+      <LocaleProvider locale="nb-NO">
+        <div style={{ width: 300 }}>
+          <RadarChart.Root
+            data={rows}
+            config={config}
+            nameKey="season"
+            data-intro="none"
+            aria-label="Pris per sesong">
+            {keys.map((key) => (
+              <RadarChart.Area key={`area-${key}`} dataKey={key} />
+            ))}
+            {keys.map((key) => (
+              <RadarChart.Line key={`line-${key}`} dataKey={key} />
+            ))}
+            {keys.map((key) => (
+              <RadarChart.ActiveDot key={`dot-${key}`} dataKey={key} />
+            ))}
+            <ul>
+              <RadarChart.LegendItem dataKey="no5" />
+            </ul>
+          </RadarChart.Root>
+        </div>
+      </LocaleProvider>
+    );
+    await nextFrames(2);
+    expect(warn).toHaveBeenCalledTimes(1);
+    // DOM audit: the series paths are aria-hidden plot output, read by their slots in key order.
+    const drawn = (slot: string) =>
+      [...host.querySelectorAll(`[data-slot="${slot}"][data-part="solid"]`)].map(
+        (path) => (path.getAttribute("d") ?? "") !== ""
+      );
+    expect(drawn("radar-chart-area-path")).toEqual([true, true, true, true, false]);
+    expect(drawn("radar-chart-line-path")).toEqual([true, true, true, true, false]);
+    expect(host.querySelectorAll('[data-slot="radar-chart-active-dot"]')).toHaveLength(5);
+    // The fifth key draws no series, so its LegendItem answers its label and swatch from config, as
+    // a pie's folded key does, at no series ordinal.
+    const item = page.getByRole("listitem").element();
+    expect(item.textContent).toBe("NO5");
+    expect(item.hasAttribute("data-series")).toBe(false);
+    // DOM audit: the swatch is aria-hidden decoration, read by its slot.
+    const swatch = item.querySelector<HTMLElement>('[data-slot="chart-swatch"]');
+    expect(swatch?.style.getPropertyValue("--chart-swatch-paint")).toBe(
+      "var(--chart-color-no5, var(--chart-5))"
+    );
+    expect(swatch?.hasAttribute("data-series")).toBe(false);
   });
 
   it("folds a category the config lacks into Other, counted as one category, and warns once", async () => {

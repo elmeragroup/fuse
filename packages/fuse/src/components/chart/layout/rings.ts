@@ -144,7 +144,7 @@ export type RingPixels = {
 /**
  * A ring's stroke for a filled angle. Round caps sit inside the value's angle, so the drawn extent
  * equals it. An arc shorter than its stroke width draws butt caps at its true length. A non-zero
- * value keeps one device pixel of arc along its centre line (D24), and 0 draws nothing.
+ * value keeps one device pixel of arc along its centre line, and 0 draws nothing.
  *
  * @param angle - The filled angle in degrees, as `ringAngle` gives it.
  * @param pixels - The ring's radius, stroke width and the device pixel ratio.

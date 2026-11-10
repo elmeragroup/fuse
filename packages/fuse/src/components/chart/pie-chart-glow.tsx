@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * A glow on one slice or ring (R10): a copy of the mark behind it, cast as `Chart.Glow` casts a
+ * A glow on one slice or ring: a copy of the mark behind it, cast as `Chart.Glow` casts a
  * bar's halo, the mark's own paint at half alpha blurred by 8 px. The pie's or the radial chart's
  * frame writes the copy in every frame the mark draws, so the glow sweeps in, tweens, pops or
  * scales, and floors with it.
@@ -9,13 +9,14 @@
 import { useLayoutEffect, useRef, useState } from "react";
 import type { ReactElement } from "react";
 
-import { pieFrameOf, POP_DURATION, POP_EASING, viewBoxOf } from "./chart-pie-frame";
+import { pieFrameOf, POP_DURATION, POP_EASING } from "./chart-pie-frame";
 import { pieDrawingOf, radialDrawingOf, usePolarContext } from "./chart-polar-context";
 import type { PieDrawing, PolarContextValue, RadialDrawing } from "./chart-polar-context";
 import { useChartReadout } from "./chart-readout";
 import { ringDash, ringFrameOf } from "./chart-ring-frame";
 import type { ChartLayerProps } from "./chart-types";
 import { arcPath, ringTrack } from "./layout/arc-path";
+import { viewBoxOf } from "./layout/polar-angle";
 
 /**
  * Props for `PieChart.Glow`, a closed part.
@@ -69,7 +70,7 @@ function SliceGlow({
     <path
       ref={halo}
       data-slot="pie-chart-glow"
-      data-sector=""
+      data-chart-sector=""
       d={first}
       style={{ "--chart-slot": index, "--_paint": slice?.paint ?? "currentColor" }}
     />
@@ -103,7 +104,7 @@ function RingGlow({
     <path
       ref={halo}
       data-slot="pie-chart-glow"
-      data-ring=""
+      data-chart-ring=""
       d={ringTrack(radius, radial.sweep)}
       pathLength={radial.sweep.width}
       strokeDasharray={first.dasharray}

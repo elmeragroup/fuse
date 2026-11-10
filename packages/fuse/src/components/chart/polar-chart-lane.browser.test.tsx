@@ -12,9 +12,9 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { commands, page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
-import { nextFrames, recordFrames } from "../../../test/animation-frames";
+import { framesUntil, nextFrames, recordFrameCount } from "../../../test/animation-frames";
 import { pointerAt, pointerTarget } from "../../../test/chart/marks";
-import { clientPoint, dialPoint, hoverAt, polarFigure } from "../../../test/chart/pie";
+import { clientPoint, dialPoint, hoverAt, moveAt, polarFigure } from "../../../test/chart/pie";
 import { radarLayer } from "../../../test/chart/radar";
 import { glidePointerTo } from "../../../test/pointer-press";
 import { renderThemed } from "../../../test/themed-browser-render";
@@ -499,22 +499,13 @@ describe("the side lane's fade on a leap", () => {
     const [cx, cy] = clientPoint(layer, 0, 0);
     const [rx] = clientPoint(layer, 1, 0);
     const radius = rx - cx;
-    const listbox = page.getByRole("listbox").element();
     const move = (angle: number) => {
       const radians = (angle * Math.PI) / 180;
-      listbox.dispatchEvent(
-        new PointerEvent("pointermove", {
-          bubbles: true,
-          clientX: cx + 0.8 * radius * Math.sin(radians),
-          clientY: cy - 0.8 * radius * Math.cos(radians),
-          pointerType: "mouse",
-        })
-      );
+      moveAt(cx + 0.8 * radius * Math.sin(radians), cy - 0.8 * radius * Math.cos(radians));
     };
     move(10);
     const omega = (200 / (0.8 * radius)) * (180 / Math.PI);
-    // Kept as a direct frame wait: it needs the frame callback's timestamp, which nextFrames drops.
-    const start = await new Promise<number>((resolve) => requestAnimationFrame(resolve));
+    const start = await nextFrames(1);
     const reads: { readonly opacity: number; readonly active: boolean; readonly side: string | null }[] = [];
     /** The popup's computed opacity, and whether an option is active, as the frame stands. */
     const read = () => {
@@ -527,8 +518,7 @@ describe("the side lane's fade on a leap", () => {
       });
     };
     for (;;) {
-      // Kept as a direct frame wait: it needs the frame callback's timestamp, which nextFrames drops.
-      const now = await new Promise<number>((resolve) => requestAnimationFrame(resolve));
+      const now = await nextFrames(1);
       const angle = 10 + (omega * (now - start)) / 1000;
       if (angle > 370) break;
       // Read as the frame starts, then again once the move's commit has landed, so a fade that
@@ -647,12 +637,9 @@ describe("the opening hold when the popup closes during it", () => {
     // DOM audit: the bars are aria-hidden plot output, read by their slot, for their screen CTM.
     const layer = host.querySelector<SVGSVGElement>('[data-slot="radial-chart-bar"]');
     if (layer === null) throw new Error("no bars");
-    const listbox = page.getByRole("listbox").element();
     const move = (point: DOMPoint) => {
       const [clientX, clientY] = clientPoint(layer, point.x, point.y);
-      listbox.dispatchEvent(
-        new PointerEvent("pointermove", { bubbles: true, clientX, clientY, pointerType: "mouse" })
-      );
+      moveAt(clientX, clientY);
     };
     // A browser sends a frame's pointer move before that frame's animation callbacks, so the move
     // into the hole lands in the frame after the ring's, before the hold's check runs: the frame is
@@ -667,16 +654,11 @@ describe("the opening hold when the popup closes during it", () => {
     move(dialPoint(30, 0.9));
     await next;
     move(dialPoint(30, 0.12));
-    let left = 15;
-    const opacities = await recordFrames(
-      () => {
-        // DOM audit: the tooltip is aria-hidden and portalled, read by its slot.
-        const node = document.querySelector<HTMLElement>('[data-slot="chart-tooltip"]');
-        return node === null ? 0 : Number(getComputedStyle(node).opacity);
-      },
-      () => (left -= 1) === 0,
-      Number.POSITIVE_INFINITY
-    );
+    const opacities = await recordFrameCount(() => {
+      // DOM audit: the tooltip is aria-hidden and portalled, read by its slot.
+      const node = document.querySelector<HTMLElement>('[data-slot="chart-tooltip"]');
+      return node === null ? 0 : Number(getComputedStyle(node).opacity);
+    }, 15);
     expect(opacities.filter((opacity) => opacity > 0.05)).toEqual([]);
   });
 
@@ -713,12 +695,9 @@ describe("the opening hold when the popup closes during it", () => {
     // DOM audit: the bars are aria-hidden plot output, read by their slot, for their screen CTM.
     const layer = host.querySelector<SVGSVGElement>('[data-slot="radial-chart-bar"]');
     if (layer === null) throw new Error("no bars");
-    const listbox = page.getByRole("listbox").element();
     const move = (point: DOMPoint) => {
       const [clientX, clientY] = clientPoint(layer, point.x, point.y);
-      listbox.dispatchEvent(
-        new PointerEvent("pointermove", { bubbles: true, clientX, clientY, pointerType: "mouse" })
-      );
+      moveAt(clientX, clientY);
     };
     // The popup opens once and closes, so it is mounted, as the portal keeps it from its first open.
     move(dialPoint(30, 0.9));
@@ -745,12 +724,7 @@ describe("the opening hold when the popup closes during it", () => {
         resolve();
       })
     );
-    let left = 15;
-    const opacities = await recordFrames(
-      () => Number(getComputedStyle(popup).opacity),
-      () => (left -= 1) === 0,
-      Number.POSITIVE_INFINITY
-    );
+    const opacities = await recordFrameCount(() => Number(getComputedStyle(popup).opacity), 15);
     expect(opacities.filter((opacity) => opacity > 0.05)).toEqual([]);
   });
 
@@ -784,12 +758,9 @@ describe("the opening hold when the popup closes during it", () => {
     // DOM audit: the bars are aria-hidden plot output, read by their slot, for their screen CTM.
     const layer = host.querySelector<SVGSVGElement>('[data-slot="radial-chart-bar"]');
     if (layer === null) throw new Error("no bars");
-    const listbox = page.getByRole("listbox").element();
     const move = (point: DOMPoint) => {
       const [clientX, clientY] = clientPoint(layer, point.x, point.y);
-      listbox.dispatchEvent(
-        new PointerEvent("pointermove", { bubbles: true, clientX, clientY, pointerType: "mouse" })
-      );
+      moveAt(clientX, clientY);
     };
     move(dialPoint(30, 0.9));
     await nextFrames(20);
@@ -829,12 +800,7 @@ describe("the opening hold when the popup closes during it", () => {
         resolve();
       })
     );
-    let left = 15;
-    const after = await recordFrames(
-      () => Number(getComputedStyle(popup).opacity),
-      () => (left -= 1) === 0,
-      Number.POSITIVE_INFINITY
-    );
+    const after = await recordFrameCount(() => Number(getComputedStyle(popup).opacity), 15);
     const reached = Math.max(...before);
     expect(reached).toBeLessThan(1);
     expect(after.filter((opacity) => opacity > reached + 0.001)).toEqual([]);
@@ -866,14 +832,7 @@ describe("the opening hold when the popup closes during it", () => {
     await held;
     void nextFrames(1).then(() => move(dialPoint(30, 0.12)));
     await done;
-    let left = 15;
-    opacities.push(
-      ...(await recordFrames(
-        () => Number(getComputedStyle(popup).opacity),
-        () => (left -= 1) === 0,
-        Number.POSITIVE_INFINITY
-      ))
-    );
+    opacities.push(...(await recordFrameCount(() => Number(getComputedStyle(popup).opacity), 15)));
     expect(opacities.filter((opacity) => opacity > 0.05)).toEqual([]);
   });
 });
@@ -966,13 +925,10 @@ describe("a close during the lane fade", () => {
     // DOM audit: the pie is aria-hidden plot output, read by its slot, for its screen CTM.
     const layer = host.querySelector<SVGSVGElement>('[data-slot="pie-chart-pie"]');
     if (layer === null) throw new Error("no pie");
-    const listbox = page.getByRole("listbox").element();
     const move = (angle: number) => {
       const point = dialPoint(angle, 0.6);
       const [clientX, clientY] = clientPoint(layer, point.x, point.y);
-      listbox.dispatchEvent(
-        new PointerEvent("pointermove", { bubbles: true, clientX, clientY, pointerType: "mouse" })
-      );
+      moveAt(clientX, clientY);
     };
     const escape = () =>
       document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
@@ -987,16 +943,11 @@ describe("a close during the lane fade", () => {
     const record = paintedFrames();
     move(45);
     // The release: the first frame the popup is open, holds no inline opacity and paints.
-    let left = 20;
-    await recordFrames(
-      () => undefined,
-      () =>
-        (popup.hasAttribute("data-open") &&
-          popup.style.opacity === "" &&
-          Number(getComputedStyle(popup).opacity) > 0.01) ||
-        (left -= 1) === 0,
-      Number.POSITIVE_INFINITY
-    );
+    const released = () =>
+      popup.hasAttribute("data-open") &&
+      popup.style.opacity === "" &&
+      Number(getComputedStyle(popup).opacity) > 0.01;
+    await framesUntil(released, 20);
     await nextFrames(1);
     for (const step of switches) {
       move(step.angle);

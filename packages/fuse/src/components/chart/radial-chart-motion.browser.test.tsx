@@ -3,8 +3,8 @@
 // stylesheet. Oracles, written by hand from the Motion table: ring i's value sweeps from 0 at
 // 160 + i·100 ms over 1000 ms; each track scales out on a 100/15 spring, i·80 ms apart, whose
 // damping ratio 15 / (2·√100) = 0.75 settles within 0.1 % before its envelope
-// e^(−7.5t) / √(1 − 0.75²) does, at ln 1512 / 7.5 ≈ 976 ms; an update morphs each ring over 480 ms
-// (Q5); and the hover scales on 400/25, whose envelope at ζ = 0.625, ω = 20 settles by
+// e^(−7.5t) / √(1 − 0.75²) does, at ln 1512 / 7.5 ≈ 976 ms; an update morphs each ring over
+// 480 ms; and the hover scales on 400/25, whose envelope at ζ = 0.625, ω = 20 settles by
 // ln 1281 / 12.5 ≈ 573 ms. The entrance runs on a hand-driven frame clock, read on the loop's own
 // time; the rest read each frame's own timestamp.
 import { hydrateRoot } from "react-dom/client";
@@ -13,7 +13,7 @@ import { describe, expect, it } from "vitest";
 import { userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
-import { nextFrames } from "../../../test/animation-frames";
+import { nextFrames, recordSince } from "../../../test/animation-frames";
 import { installFrameClock } from "../../../test/chart/frame-clock";
 import { polarFigure, rings } from "../../../test/chart/pie";
 import { renderThemed } from "../../../test/themed-browser-render";
@@ -35,20 +35,12 @@ function extent(path: SVGPathElement | undefined): number {
 }
 
 /** Every frame's time since a start and each ring's extent, until `until` ms past the start. */
-async function record(
+function record(
   host: HTMLElement,
   start: () => number | null,
   until: number
 ): Promise<{ readonly t: number; readonly extents: readonly number[] }[]> {
-  const frames: { readonly t: number; readonly extents: readonly number[] }[] = [];
-  for (;;) {
-    // Kept as a direct frame wait: it needs the frame callback's timestamp, which nextFrames drops.
-    const now = await new Promise<number>((resolve) => requestAnimationFrame(resolve));
-    const from = start();
-    if (from === null) continue;
-    frames.push({ t: now - from, extents: rings(host).map((path) => extent(path)) });
-    if (now - from > until) return frames;
-  }
+  return recordSince(start, until, () => ({ extents: rings(host).map((path) => extent(path)) }));
 }
 
 function Chart({ kwh, intro }: { readonly kwh: readonly number[]; readonly intro?: "none" }) {
@@ -186,8 +178,8 @@ describe("the rings' motion (SPEC's Motion table)", () => {
     await userEvent.tab();
     await userEvent.keyboard("{ArrowRight}");
     for (const animation of host.getAnimations({ subtree: true })) animation.finish();
-    // DOM audit: each ring's group carries data-ring, which the hover scale is written on.
-    const scales = [...host.querySelectorAll("[data-ring]:not([data-ring-track])")].map((ring) =>
+    // DOM audit: each ring's group carries data-chart-ring, which the hover scale is written on.
+    const scales = [...host.querySelectorAll("[data-chart-ring]:not([data-chart-ring-track])")].map((ring) =>
       Number(getComputedStyle(ring).scale === "none" ? 1 : getComputedStyle(ring).scale)
     );
     // Ring 1 is active; ring 0 lies outside it and ring 2 inside.
@@ -198,7 +190,7 @@ describe("the rings' motion (SPEC's Motion table)", () => {
     const { host } = renderThemed(<Chart kwh={[50, 75, 25]} intro="none" />);
     await userEvent.tab();
     // DOM audit: the hover scale is a CSS transition on the ring's group, read from its own animations.
-    const group = host.querySelector("[data-ring]:not([data-ring-track])");
+    const group = host.querySelector("[data-chart-ring]:not([data-chart-ring-track])");
     const scale = group
       ?.getAnimations()
       .find((animation) => animation instanceof CSSTransition && animation.transitionProperty === "scale");

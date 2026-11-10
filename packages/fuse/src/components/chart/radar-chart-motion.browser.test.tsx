@@ -9,13 +9,15 @@
 // the polygon with its series' tween; and a key step turns the hand the short way on the keyboard's
 // follow spring, FOLLOW_FASTEST 5300/126, at rest within 0.01° by about 155 ms. The entrance runs on a hand-driven frame clock, read on the loop's own time; the
 // rest read each frame's own timestamp.
+import { Activity } from "react";
+
 import { hydrateRoot } from "react-dom/client";
 import { renderToString } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
-import { nextFrames, recordFrames } from "../../../test/animation-frames";
+import { nextFrames, recordFrames, recordSince } from "../../../test/animation-frames";
 import { installFrameClock } from "../../../test/chart/frame-clock";
 import { polarFigure } from "../../../test/chart/pie";
 import { layerPath, pathPoints, radarLayers } from "../../../test/chart/radar";
@@ -38,20 +40,12 @@ function radii(host: HTMLElement): number[][] {
 }
 
 /** Every frame's time since a start and each series' radii, until `until` ms past the start. */
-async function record(
+function record(
   host: HTMLElement,
   start: () => number | null,
   until: number
 ): Promise<{ readonly t: number; readonly radii: readonly (readonly number[])[] }[]> {
-  const frames: { readonly t: number; readonly radii: readonly (readonly number[])[] }[] = [];
-  for (;;) {
-    // Kept as a direct frame wait: it needs the frame callback's timestamp, which nextFrames drops.
-    const now = await new Promise<number>((resolve) => requestAnimationFrame(resolve));
-    const from = start();
-    if (from === null) continue;
-    frames.push({ t: now - from, radii: radii(host) });
-    if (now - from > until) return frames;
-  }
+  return recordSince(start, until, () => ({ radii: radii(host) }));
 }
 
 /** Each animation's delay and duration on the elements of a slot. */
@@ -226,6 +220,25 @@ describe("the radar's updates (R11, S5)", () => {
       expect(Math.abs((drawn[spoke] ?? 0) - radius)).toBeLessThan(ROUNDED);
     });
   });
+  it("draws a change of spoke count made while React Activity hides the chart at once on show, with no crossfade", async () => {
+    const chart = (mode: "visible" | "hidden", a: readonly number[]) => (
+      <Activity mode={mode}>
+        <Chart a={a} intro="none" />
+      </Activity>
+    );
+    const { host, rerender } = renderThemed(chart("visible", [4, 2, 3, 1]));
+    await nextFrames(1);
+    rerender(chart("hidden", [4, 2, 3, 1]));
+    await nextFrames(2);
+    rerender(chart("hidden", [4, 2, 3, 1, 2]));
+    rerender(chart("visible", [4, 2, 3, 1, 2]));
+    expect(host.querySelectorAll("[data-outgoing]")).toHaveLength(0);
+    const drawn = radii(host)[0] ?? [];
+    expect(drawn).toHaveLength(5);
+    [1, 0.5, 0.75, 0.25, 0.5].forEach((radius, spoke) => {
+      expect(Math.abs((drawn[spoke] ?? 0) - radius)).toBeLessThan(ROUNDED);
+    });
+  });
 });
 
 describe("the radar's followers (SPEC's Motion table)", () => {
@@ -271,8 +284,7 @@ describe("the radar's followers (SPEC's Motion table)", () => {
     const turns: { readonly t: number; readonly angle: number }[] = [];
     const start = performance.now();
     while (performance.now() - start < 400) {
-      // Kept as a direct frame wait: it needs the frame callback's timestamp, which nextFrames drops.
-      const now = await new Promise<number>((resolve) => requestAnimationFrame(resolve));
+      const now = await nextFrames(1);
       turns.push({ t: now - start, angle: Number.parseFloat(getComputedStyle(hand).rotate) });
     }
     // Spoke 0 to spoke 3 is a quarter turn back, not three quarters forward: no frame turns forward

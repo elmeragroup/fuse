@@ -37,8 +37,11 @@ import type { SlotWindow } from "./layout/slot-window";
 
 /** One legend entry or tooltip row's subject: a series on a cartesian Root, a category on a polar one. */
 export type ReadoutItem = {
-  /** Its position among the Root's items, which `data-series` carries. */
-  readonly index: number;
+  /**
+   * Its position among the Root's items, which `data-series` carries, or undefined for a config key
+   * that draws no item, such as a pie's folded key or a radar's key past its series cap.
+   */
+  readonly index: number | undefined;
   /** Its name in both forms. */
   readonly label: FormattedText;
   /** Its config `icon`, or undefined. */
@@ -198,7 +201,7 @@ export type ChartReadout = {
   readonly legendKeys: readonly string[];
   /**
    * The LegendToggleGroup's default name: the series word, or the category word where the toggles
-   * list a pie's or a radial chart's categories (S9).
+   * list a pie's or a radial chart's categories.
    */
   readonly toggleGroupName: string;
   /** A key's item, or undefined for a key the Root lacks. */

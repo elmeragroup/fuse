@@ -39,7 +39,7 @@ export type PieItem = {
   readonly value: number | null;
   /**
    * What it draws: the sum of its rows' readings above 0, so a credit folded into Other draws as 0
-   * and never cancels a charge beside it, as a negative reading draws as 0 on its own (Q2).
+   * and never cancels a charge beside it, as a negative reading draws as 0 on its own.
    */
   readonly weight: number;
   /** The rows it stands for, by index into the rows. */
@@ -162,12 +162,13 @@ export type RimFloor = {
 };
 
 /**
- * Keep one device pixel of rim between every drawn slice's seams (D24). A slice narrower than that
+ * Keep one device pixel of rim between every drawn slice's seams. A slice narrower than that
  * widens to it, and the angle it takes comes from the widest slice, a tie going to the earlier
  * slice, then from the next widest when the widest reaches its own floor. The slices then lie end to
- * end from the sweep's start again, so they still fill the sweep. A sweep too narrow for every
- * slice's floor gives every drawn slice an equal share. The pick reads these angles, so a pointer
- * finds a slice where it shows.
+ * end from the first drawn slice's start, so they fill what they filled. Slices all at or above
+ * their floor come back unchanged, so a tween's frames paint where the tween put them. A sweep too
+ * narrow for every slice's floor gives every drawn slice an equal share. The pick reads these
+ * angles, so a pointer finds a slice where it shows.
  *
  * @param slices - Each item's slice, or null for one that draws no arc, in sweep order.
  * @param sweep - The sweep the slices fill.
@@ -180,7 +181,11 @@ export function floorSlices(
   floor: RimFloor
 ): readonly (SliceAngles | null)[] {
   const drawn = slices.flatMap((slice, index) => (slice === null ? [] : [index]));
-  if (drawn.length < 2 || !(floor.radius > 0) || !(floor.dpr > 0)) return slices;
+  // The floored slices run end to end from the first drawn slice's start.
+  const first = slices[drawn[0] ?? -1];
+  if (first === undefined || first === null || drawn.length < 2 || !(floor.radius > 0) || !(floor.dpr > 0)) {
+    return slices;
+  }
   // A slice's advance is the rim it shows before the next slice starts, and its overlap the part a
   // negative pad runs under the next, which the floor keeps as it is.
   const advances = slices.map(() => 0);
@@ -196,6 +201,9 @@ export function floorSlices(
   const total = drawn.reduce((sum, index) => sum + (advances[index] ?? 0), 0);
   const least = (index: number): number =>
     Math.max(0, slices[index]?.pad ?? 0) + toDegrees((floor.seam + 1 / floor.dpr) / floor.radius);
+  // Nothing under its floor paints where its tween put it, which on a leaving first slice or a
+  // reorder is not yet end to end from the sweep's start.
+  if (drawn.every((index) => (advances[index] ?? 0) >= least(index))) return slices;
   const needed = drawn.reduce((sum, index) => sum + least(index), 0);
   if (needed > total) {
     for (const index of drawn) advances[index] = total / drawn.length;
@@ -222,7 +230,7 @@ export function floorSlices(
       debt -= give;
     }
   }
-  let at = sweep.start;
+  let at = first.start;
   return slices.map((slice, index) => {
     if (slice === null) return null;
     const start = at;

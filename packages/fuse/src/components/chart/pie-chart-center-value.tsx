@@ -4,7 +4,7 @@
  * The numbers in a pie's or radial chart's hole (CONTRACT section 8.13): each prints the active
  * slice's or ring's number, or with nothing active the chart's own, the total, a gauge's share of
  * its maximum, or the maximum. A part with nothing to print renders an empty element, so the text
- * around it still lays out. The numbers roll their digits (S3).
+ * around it still lays out. The numbers roll their digits.
  */
 import type { ReactElement } from "react";
 

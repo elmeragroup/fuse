@@ -755,7 +755,7 @@
           "type": "ValueFormat | XFormat | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "How `{value}` in `label` prints.",
+          "description": "How `{value}` in `label` prints. How `{value}` in `label` prints the instant the spoke marks. By default a dial of slots shorter than a day prints it in \"time\", and a coarser dial prints its slot's label.",
           "required": false
         },
         {
@@ -836,7 +836,7 @@
           "type": "ValueFormat | XFormat | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "How `{value}` in `label` prints the range. How `{value}` in `label` prints the range's ends, the first slot's start and the last slot's end, joined by an en dash. \"time\" by default, and a range preset prints each end in its point form, as \"hour-range\" does in \"hour\".",
+          "description": "How `{value}` in `label` prints the range. How `{value}` in `label` prints the range's ends, the first slot's start and the last slot's end, joined by an en dash. A range preset prints each end in its point form, as \"hour-range\" does in \"hour\". By default a dial of slots shorter than a day prints them in \"time\", and a coarser dial prints the first and the last slot's labels, as the cartesian ReferenceArea prints them.",
           "required": false
         },
         {
@@ -1306,7 +1306,7 @@
           "type": "XFormat | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The slot label format. Root's `xFormat` is the default. It does nothing in polar charts.",
+          "description": "The slot label format. Root's `xFormat` is the default. A clock's slots take it, and the categories of pie, radial and radar charts print as they are.",
           "required": false
         },
         {

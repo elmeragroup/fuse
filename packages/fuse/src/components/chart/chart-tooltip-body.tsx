@@ -85,7 +85,7 @@ export function ChartTooltipBody({
   const [kept, setKept] = useState(false);
   if (open && !kept) setKept(true);
   // The point the popup showed last, its index and its near or focused series together, which its
-  // content keeps while it fades out.
+  // content keeps while it fades out, and lets go of once it has closed.
   const [shown, setShown] = useState<HeldPoint | null>(null);
   if (active !== null && (active !== shown?.index || point.near !== shown.near))
     setShown({ index: active, near: point.near });
@@ -181,6 +181,10 @@ export function ChartTooltipBody({
       onOpenChange={(next, details) => {
         if (next || chartTakesPress(details, rootOf())) return;
         store.dismiss();
+      }}
+      // Once the fade has run, the shut popup holds no point, so its parts read null again.
+      onOpenChangeComplete={(isOpen) => {
+        if (!isOpen) setShown(null);
       }}>
       <OverlayPortal portal={TooltipPrimitive.Portal} keepMounted={kept}>
         <TooltipPrimitive.Positioner

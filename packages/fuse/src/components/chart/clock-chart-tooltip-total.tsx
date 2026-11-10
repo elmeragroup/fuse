@@ -3,7 +3,7 @@
 /**
  * ClockChart's TooltipTotal: a tooltip row with one stack's net total at the active slot. It keeps
  * a module of its own, so a route with the Center ships no tooltip row, and one with the Tooltip
- * ships no Center (Q1).
+ * ships no Center.
  */
 import type { ReactElement } from "react";
 

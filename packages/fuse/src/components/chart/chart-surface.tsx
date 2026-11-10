@@ -211,6 +211,10 @@ export function ChartSurface({
     const tapped = lift.tapFocus() || gesture.current !== null;
     if (!tapped && (store.get().source === "keyboard" || store.get().pinned)) {
       store.set({ active: null, source: null, near: null, pinned: false });
+    } else if (store.get().dismissed !== null) {
+      // Escape's dismissal lasts while the reader stays, so a pointer that comes to the same slot
+      // after focus leaves opens it.
+      store.set({ dismissed: null });
     }
     // The next entry meets a new option that carries the description again.
     handoff.reset({ x: current.x, focus: current.focus, order: "slot-first" });

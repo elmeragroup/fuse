@@ -114,21 +114,33 @@ function roomAt(rings: readonly RingLabel[], clear: RingClearance, bucket: numbe
   });
 }
 
+/** The spoke the values run along and the width each shows from along it, as `fitRingLabels` gives it. */
+export type RingFit = {
+  readonly anchor: RingAnchor;
+  readonly shown: readonly (number | "none")[];
+};
+
 /**
  * The spoke whose values show the most, summed over every width: 12 o'clock unless 6 o'clock shows
- * strictly more, as where the marks crowd the top of the dial.
+ * strictly more, as where the marks crowd the top of the dial, with the values' fit along it.
  *
  * @param rings - Each tick's ring value, in tick order.
  * @param clear - The angle labels, the marks and the hole's edge.
- * @returns The spoke.
+ * @returns The spoke and the fit along it.
  */
-export function ringAnchor(rings: readonly RingLabel[], clear: RingClearance): RingAnchor {
-  const score = (anchor: RingAnchor): number =>
-    fitRingLabels(rings, { ...clear, anchor }).reduce<number>(
-      (sum, shown) => sum + (shown === "none" ? 0 : TICK_BUCKETS.filter((bucket) => bucket >= shown).length),
+export function ringAnchor(rings: readonly RingLabel[], clear: RingClearance): RingFit {
+  const fit = (anchor: RingAnchor): RingFit => ({
+    anchor,
+    shown: fitRingLabels(rings, { ...clear, anchor }),
+  });
+  const score = ({ shown }: RingFit): number =>
+    shown.reduce<number>(
+      (sum, from) => sum + (from === "none" ? 0 : TICK_BUCKETS.filter((bucket) => bucket >= from).length),
       0
     );
-  return score(180) > score(0) ? 180 : 0;
+  const top = fit(0);
+  const bottom = fit(180);
+  return score(bottom) > score(top) ? bottom : top;
 }
 
 /**

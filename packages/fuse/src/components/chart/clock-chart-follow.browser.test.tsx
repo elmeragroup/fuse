@@ -15,12 +15,11 @@
 import type { ReactElement } from "react";
 
 import { describe, expect, it } from "vitest";
-import { page } from "vitest/browser";
 
 import "../../../dist/styles.css";
-import { nextFrames, recordFrames } from "../../../test/animation-frames";
+import { nextFrames, recordFrameCount, recordFrames } from "../../../test/animation-frames";
 import { clockLayer } from "../../../test/chart/clock";
-import { clientPoint, dialPoint, hoverAt } from "../../../test/chart/pie";
+import { clientPoint, dialPoint, hoverAt, moveAt } from "../../../test/chart/pie";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
 import type { MotionHost } from "./chart-motion";
@@ -111,16 +110,6 @@ function setup(host: HTMLElement) {
   return { curve: sampled(line), centre, at, read };
 }
 
-/** Move the pointer over the plot without waiting a frame, so the next frame is the step's first. */
-function moveTo(x: number, y: number): void {
-  page
-    .getByRole("listbox")
-    .element()
-    .dispatchEvent(
-      new PointerEvent("pointermove", { bubbles: true, clientX: x, clientY: y, pointerType: "mouse" })
-    );
-}
-
 describe("the clock's active dot on the Root's follower", () => {
   it.each([1, 5, 47])(
     "keeps the dot on the Line and the Scrubber on the dot through a %s-slot pointer step",
@@ -155,7 +144,7 @@ describe("the clock's active dot on the Root's follower", () => {
     await recordFrames(read, () => false, 300);
     await hoverAt(...at(35));
     const first = await recordFrames(read, () => false, 80);
-    moveTo(...at(40));
+    moveAt(...at(40));
     const [next] = await recordFrames(read, () => false, 1);
     const travel = (a: Frame | undefined, b: Frame | undefined): number =>
       a?.dot == null || b?.dot == null ? 0 : Math.hypot(b.dot.x - a.dot.x, b.dot.y - a.dot.y);
@@ -172,9 +161,6 @@ describe("the clock's active dot on the Root's follower", () => {
 // one frame at any pace, so the dot may not slow the hand there: no frame turns backwards, no turn
 // after the first 12 frames drops under half the median turn, and the median lag behind the pointer
 // stays within 1.25 times the dial's lag without a dot.
-// Kept as a direct frame wait: it needs the frame callback's timestamp, which nextFrames drops.
-const nextFrame = () => new Promise<number>((resolve) => requestAnimationFrame(resolve));
-
 /**
  * Turn the pointer round the dial at 0.8 R at a speed in CSS px/s, one move per animation frame,
  * and read the Scrubber's unwrapped rotation each frame after the first 12.
@@ -187,22 +173,14 @@ async function ring(host: HTMLElement, speed: number, turns: number) {
   // DOM audit: the Scrubber's hand is aria-hidden plot output, read by its part.
   const hand = host.querySelector<SVGGElement>('[data-slot="clock-chart-scrubber"] [data-part="hand"]');
   if (hand === null) throw new Error("no hand");
-  const listbox = page.getByRole("listbox").element();
   const move = (angle: number) => {
     const radians = (angle * Math.PI) / 180;
-    listbox.dispatchEvent(
-      new PointerEvent("pointermove", {
-        bubbles: true,
-        clientX: cx + 0.8 * radius * Math.sin(radians),
-        clientY: cy - 0.8 * radius * Math.cos(radians),
-        pointerType: "mouse",
-      })
-    );
+    moveAt(cx + 0.8 * radius * Math.sin(radians), cy - 0.8 * radius * Math.cos(radians));
   };
   move(1);
   await nextFrames(30);
   const omega = (speed / (0.8 * radius)) * (180 / Math.PI);
-  const start = await nextFrame();
+  const start = await nextFrames(1);
   const rows: { pointer: number; hand: number }[] = [];
   let unwrapped: number | null = null;
   let stopped = start;
@@ -212,7 +190,7 @@ async function ring(host: HTMLElement, speed: number, turns: number) {
     return unwrapped;
   };
   for (;;) {
-    const now = await nextFrame();
+    const now = await nextFrames(1);
     const pointer = 1 + (omega * (now - start)) / 1000;
     if (pointer > turns * 360) break;
     move(pointer);
@@ -224,7 +202,7 @@ async function ring(host: HTMLElement, speed: number, turns: number) {
   // frame of that last move.
   const after: { readonly at: number; readonly hand: number }[] = [];
   for (let wait = 0; wait < 40; wait += 1) {
-    const now = await nextFrame();
+    const now = await nextFrames(1);
     after.push({ at: now - stopped, hand: read() });
   }
   const rest = after.at(-1)?.hand ?? 0;
@@ -543,28 +521,19 @@ describe("the follower under a pointer swinging through the centre", () => {
     // DOM audit: the Scrubber's hand is aria-hidden plot output, read by its part.
     const hand = host.querySelector<SVGGElement>('[data-slot="clock-chart-scrubber"] [data-part="hand"]');
     if (hand === null) throw new Error("no hand");
-    const listbox = page.getByRole("listbox").element();
     // The 97.5° to 277.5° diameter, from 0.9 R through the exact centre to 0.9 R and back.
     const along = (97.5 * Math.PI) / 180;
     const ux = Math.sin(along);
     const uy = -Math.cos(along);
-    const move = (offset: number) =>
-      listbox.dispatchEvent(
-        new PointerEvent("pointermove", {
-          bubbles: true,
-          clientX: cx + offset * ux,
-          clientY: cy + offset * uy,
-          pointerType: "mouse",
-        })
-      );
+    const move = (offset: number) => moveAt(cx + offset * ux, cy + offset * uy);
     const leg = 1.8 * radius;
     move(0.9 * radius);
     await nextFrames(20);
-    const start = await nextFrame();
+    const start = await nextFrames(1);
     let unwrapped: number | null = null;
     const hands: number[] = [];
     for (;;) {
-      const now = await nextFrame();
+      const now = await nextFrames(1);
       const travelled = (2000 * (now - start)) / 1000;
       if (travelled > 6 * leg) break;
       const into = travelled % (2 * leg);
@@ -573,12 +542,7 @@ describe("the follower under a pointer swinging through the centre", () => {
       unwrapped = unwrapped === null ? raw : unwrapped + ((((raw - unwrapped) % 360) + 540) % 360) - 180;
       hands.push(unwrapped);
     }
-    let left = 30;
-    const tail = await recordFrames(
-      () => Number.parseFloat(getComputedStyle(hand).rotate),
-      () => (left -= 1) === 0,
-      Number.POSITIVE_INFINITY
-    );
+    const tail = await recordFrameCount(() => Number.parseFloat(getComputedStyle(hand).rotate), 30);
     for (const raw of tail) {
       unwrapped = unwrapped === null ? raw : unwrapped + ((((raw - unwrapped) % 360) + 540) % 360) - 180;
       hands.push(unwrapped);

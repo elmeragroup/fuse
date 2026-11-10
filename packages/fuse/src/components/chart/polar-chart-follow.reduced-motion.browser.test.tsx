@@ -7,12 +7,11 @@
 import type { ReactElement } from "react";
 
 import { afterEach, expect, it } from "vitest";
-import { page } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import { installFrameClock } from "../../../test/chart/frame-clock";
 import type { FrameClock } from "../../../test/chart/frame-clock";
-import { clientPoint, dialPoint, hoverAt } from "../../../test/chart/pie";
+import { clientPoint, dialPoint, hoverAt, moveAt } from "../../../test/chart/pie";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
 import "./chart.css";
@@ -89,17 +88,7 @@ it.each(CASES)(
     await hoverAt(...at(0));
     clock = installFrameClock(performance.now());
     const target = Math.floor(count / 2) + 1;
-    page
-      .getByRole("listbox")
-      .element()
-      .dispatchEvent(
-        new PointerEvent("pointermove", {
-          bubbles: true,
-          clientX: at(target)[0],
-          clientY: at(target)[1],
-          pointerType: "mouse",
-        })
-      );
+    moveAt(at(target)[0], at(target)[1]);
     const turned = Number.parseFloat(getComputedStyle(hand).rotate);
     expect((((turned - angleOf(target)) % 360) + 360) % 360).toBeCloseTo(0, 6);
     const moving = host

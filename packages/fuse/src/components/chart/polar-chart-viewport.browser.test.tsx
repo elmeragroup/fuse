@@ -13,7 +13,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { page } from "vitest/browser";
 
 import "../../../dist/styles.css";
-import { nextFrames, pollFrames } from "../../../test/animation-frames";
+import { framesUntil, nextFrames, pollFrames } from "../../../test/animation-frames";
 import { hoverAt, polarFigure } from "../../../test/chart/pie";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
@@ -34,11 +34,58 @@ const GAP = 8;
 /** The most frames a popup takes to open on a hover: six times the 5 measured at most. */
 const OPEN_FRAMES = 30;
 
+/** The most frames a popup takes to close: its 150 ms fade is 9 frames at 60 a second. */
+const CLOSE_FRAMES = 60;
+
 function overlap(a: Box, b: Box): boolean {
   return (
     Math.min(a.right, b.right) - Math.max(a.left, b.left) > 0.5 &&
     Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top) > 0.5
   );
+}
+
+/** The popup's node, which stays mounted once it has opened. */
+function popupNode(): HTMLElement | null {
+  // DOM audit: the tooltip is aria-hidden and portalled, read by its slot.
+  return document.querySelector<HTMLElement>('[data-slot="chart-tooltip"]');
+}
+
+/** The popup's computed opacity, 0 while none is mounted. */
+function popupOpacity(): number {
+  const node = popupNode();
+  return node === null ? 0 : Number(getComputedStyle(node).opacity);
+}
+
+/** Whether the popup runs an animation or a transition, such as its exit fade. */
+function popupFading(): boolean {
+  return (popupNode()?.getAnimations({ subtree: true }) ?? []).some(
+    (animation) => animation.playState === "running"
+  );
+}
+
+/**
+ * Whether the popup has closed: unmounted, or no longer open with its exit fade run. A closed popup
+ * stays mounted once it has opened, its positioner hidden.
+ */
+function popupClosed(): boolean {
+  const node = popupNode();
+  return node === null || (!node.hasAttribute("data-open") && !popupFading());
+}
+
+/** React reads a pointer leaving the plot from pointerout toward an element outside it. */
+function leavePlot(): void {
+  page
+    .getByRole("listbox")
+    .element()
+    .dispatchEvent(
+      new PointerEvent("pointerout", {
+        bubbles: true,
+        pointerType: "mouse",
+        clientX: 0,
+        clientY: 0,
+        relatedTarget: document.body,
+      })
+    );
 }
 
 /** The shown popup's box, or null while none shows. */
@@ -176,10 +223,25 @@ function renderScene(layout: keyof typeof LAYOUTS = "bill", width = "min(728px, 
   };
   const before = host.querySelector<HTMLElement>("button");
   if (before === null) throw new Error("no button");
+  /**
+   * What a step that missed found: the figure's active and pinned state, the popup's inline and
+   * computed opacity, its positioner's hidden state and whether the document has focus.
+   */
+  const state = (): string => {
+    const node = popupNode();
+    const positioner = node?.parentElement;
+    return [
+      `data-active ${String(figure.getAttribute("data-active"))}`,
+      `data-pinned ${String(figure.hasAttribute("data-pinned"))}`,
+      `opacity ${node === null ? "unmounted" : `inline "${node.style.opacity}", computed ${String(popupOpacity())}`}`,
+      `positioner hidden ${String(positioner?.hidden ?? null)}, anchor-hidden ${String(positioner?.hasAttribute("data-anchor-hidden") ?? null)}`,
+      `document focus ${String(document.hasFocus())}`,
+    ].join("; ");
+  };
   /** The faults of the shown popup against the rule, or none where no lane need hold it. */
   const faults = (where: string): string[] => {
     const box = popupBox();
-    if (box === null) return [`${where}: no popup`];
+    if (box === null) return [`${where}: no popup (${state()})`];
     const obstacles = [dial(), title(), ...labels(), ...controls()];
     const top = Math.min(...obstacles.map((rect) => rect.top));
     const bottom = Math.max(...obstacles.map((rect) => rect.bottom));
@@ -196,7 +258,7 @@ function renderScene(layout: keyof typeof LAYOUTS = "bill", width = "min(728px, 
   };
   /** The scroll offset that puts the dial's top at a viewport y. */
   const scrollFor = (dialTop: number): number => window.scrollY + dial().top - dialTop;
-  return { dial, option, before, faults, scrollFor };
+  return { dial, option, before, faults, state, scrollFor };
 }
 
 describe("a lane popup inside the viewport", () => {
@@ -209,10 +271,16 @@ describe("a lane popup inside the viewport", () => {
     "rests the %s popup inside the viewport at %s × %s from every scroll, opened by focus and by hover",
     async (layout, width, height, section) => {
       await page.viewport(width, height);
-      const { dial, option, before, faults, scrollFor } = renderScene(layout, section);
+      const { dial, option, before, faults, state, scrollFor } = renderScene(layout, section);
       await nextFrames(2);
       const size = dial().height;
       const found: string[] = [];
+      // Every wait counts frames, not milliseconds, which a loaded runner that paints a few frames a
+      // second runs out of, and a wait that runs out records its step in `found` and goes on.
+      const close = async (where: string): Promise<void> => {
+        if (!(await framesUntil(popupClosed, CLOSE_FRAMES)))
+          found.push(`${where}: still shown after ${String(CLOSE_FRAMES)} frames (${state()})`);
+      };
       for (let at = height; at >= -size; at -= 40) {
         window.scrollTo({ top: scrollFor(at), behavior: "instant" });
         await nextFrames(3);
@@ -220,7 +288,8 @@ describe("a lane popup inside the viewport", () => {
         await nextFrames(14);
         found.push(...faults(`focus, dial at ${String(at)}`));
         before.focus({ preventScroll: true });
-        await expect.poll(popupBox).toBeNull();
+        // The real close, past the exit fade, so the hover opens a closed popup.
+        await close(`blur, dial at ${String(at)}`);
         // A hover on the dial's visible part: on the chord 0.3 R right of the centre, clear of the
         // pick's dead band at the centre, at the centre's height kept within 0.9 R of it and inside
         // the viewport.
@@ -232,29 +301,40 @@ describe("a lane popup inside the viewport", () => {
         if (high - low < 8) continue;
         await hoverAt(centre.x + 0.3 * radius, Math.min(high - 2, Math.max(low + 2, centre.y)));
         // The popup opens in a few frames, 2 to 5 measured: it waits for two frame checks and
-        // Base UI's placement. Its wait counts frames, as the focus case's does, not milliseconds,
-        // which a loaded runner that paints a few frames a second runs out of.
-        await pollFrames(() => popupBox() !== null, true, OPEN_FRAMES);
+        // Base UI's placement. A miss shows in `faults` with the state it found.
+        await framesUntil(() => popupBox() !== null, OPEN_FRAMES);
         await nextFrames(14);
         found.push(...faults(`hover, dial at ${String(at)}`));
-        // React reads a pointer leaving the plot from pointerout toward an element outside it.
-        page
-          .getByRole("listbox")
-          .element()
-          .dispatchEvent(
-            new PointerEvent("pointerout", {
-              bubbles: true,
-              pointerType: "mouse",
-              clientX: 0,
-              clientY: 0,
-              relatedTarget: document.body,
-            })
-          );
-        await expect.poll(popupBox, { timeout: 3000 }).toBeNull();
+        leavePlot();
+        await close(`leave, dial at ${String(at)}`);
       }
       expect(found).toEqual([]);
     },
     120_000
+  );
+
+  it.each(["a blur", "the pointer leaving"] as const)(
+    "reopens the popup on a hover over the same slice while it still fades out after %s",
+    async (close) => {
+      await page.viewport(1024, 600);
+      const { dial, option, before } = renderScene();
+      await nextFrames(2);
+      window.scrollTo({ top: 0, behavior: "instant" });
+      const shown = dial();
+      const radius = (shown.right - shown.left) / 2;
+      // 0.3 R right of the centre lies at 90°, inside Energi's 0° to 230.4°, the slice focus opens.
+      const at = [(shown.left + shown.right) / 2 + 0.3 * radius, (shown.top + shown.bottom) / 2] as const;
+      if (close === "a blur") option().focus({ preventScroll: true });
+      else await hoverAt(...at);
+      await pollFrames(() => popupOpacity() === 1, true, OPEN_FRAMES);
+      if (close === "a blur") before.focus({ preventScroll: true });
+      else leavePlot();
+      // Mid-fade: below half its opacity with its exit still running.
+      await pollFrames(() => popupOpacity() < 0.5 && popupFading(), true, OPEN_FRAMES);
+      await hoverAt(...at);
+      await pollFrames(() => popupOpacity() === 1 && !popupFading(), true, 2 * OPEN_FRAMES);
+      expect(popupBox()).not.toBeNull();
+    }
   );
 
   it("moves the popup into view when a scroll carries its lane out, focus kept", async () => {

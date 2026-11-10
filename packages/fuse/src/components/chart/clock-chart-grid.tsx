@@ -2,15 +2,15 @@
 
 /**
  * The clock's grid: rings at the value ticks, spokes at the label ticks and a solid zero ring when
- * the domain spans 0. The first paint draws it at rest (D18), and it never scales out.
+ * the domain spans 0. The first paint draws it at rest, and it never scales out.
  */
 import type { ReactElement } from "react";
 
-import { viewBoxOf } from "./chart-pie-frame";
 import { clockDrawingIn, usePolarContext } from "./chart-polar-context";
 import type { ChartLayerProps } from "./chart-types";
 import { spokePath } from "./clock-chart-dial";
 import { ringPath } from "./layout/clock-path";
+import { viewBoxOf } from "./layout/polar-angle";
 
 /**
  * Props for `ClockChart.Grid`, a closed part.

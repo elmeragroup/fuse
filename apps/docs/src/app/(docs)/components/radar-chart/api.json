@@ -608,7 +608,7 @@
           "type": "XFormat | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The slot label format. Root's `xFormat` is the default. It does nothing in polar charts.",
+          "description": "The slot label format. Root's `xFormat` is the default. A clock's slots take it, and the categories of pie, radial and radar charts print as they are.",
           "required": false
         },
         {

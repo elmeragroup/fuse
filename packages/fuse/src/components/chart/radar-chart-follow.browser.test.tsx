@@ -8,11 +8,10 @@
 import type { ReactElement } from "react";
 
 import { describe, expect, it } from "vitest";
-import { page } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import { nextFrames, recordFrames } from "../../../test/animation-frames";
-import { clientPoint, dialPoint, hoverAt } from "../../../test/chart/pie";
+import { clientPoint, dialPoint, hoverAt, moveAt } from "../../../test/chart/pie";
 import { radarLayer } from "../../../test/chart/radar";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
@@ -91,17 +90,7 @@ describe("the radar's active dot on the Root's follower", () => {
       };
       await hoverAt(...spokeAt(from));
       await nextFrames(20);
-      page
-        .getByRole("listbox")
-        .element()
-        .dispatchEvent(
-          new PointerEvent("pointermove", {
-            bubbles: true,
-            clientX: spokeAt(to)[0],
-            clientY: spokeAt(to)[1],
-            pointerType: "mouse",
-          })
-        );
+      moveAt(spokeAt(to)[0], spokeAt(to)[1]);
       const frames = await recordFrames(
         () => {
           if (!group.hasAttribute("data-value")) return null;
@@ -139,17 +128,7 @@ describe("the radar's active dot on the Root's follower", () => {
     };
     await hoverAt(...spokeAt(0));
     await nextFrames(20);
-    page
-      .getByRole("listbox")
-      .element()
-      .dispatchEvent(
-        new PointerEvent("pointermove", {
-          bubbles: true,
-          clientX: spokeAt(3)[0],
-          clientY: spokeAt(3)[1],
-          pointerType: "mouse",
-        })
-      );
+    moveAt(spokeAt(3)[0], spokeAt(3)[1]);
     const spoke1 = 360 / 7;
     const spoke3 = (3 * 360) / 7;
     const frames = await recordFrames(
@@ -200,24 +179,13 @@ describe("the radar's active dot on the Root's follower", () => {
     await nextFrames(30);
     const target = (3 * 360) / 7;
     const start = performance.now();
-    page
-      .getByRole("listbox")
-      .element()
-      .dispatchEvent(
-        new PointerEvent("pointermove", {
-          bubbles: true,
-          clientX: spokeAt(3)[0],
-          clientY: spokeAt(3)[1],
-          pointerType: "mouse",
-        })
-      );
+    moveAt(spokeAt(3)[0], spokeAt(3)[1]);
     const frames = await recordFrames(
       () => ({
         off: Math.abs(apart(Number.parseFloat(getComputedStyle(hand).rotate), target)),
         at: performance.now() - start,
       }),
-      () => performance.now() - start >= 1500,
-      Number.POSITIVE_INFINITY
+      () => performance.now() - start >= 1500
     );
     let landed: number | null = null;
     for (const { off, at } of frames) {
