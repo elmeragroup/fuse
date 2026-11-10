@@ -33,7 +33,7 @@ export type SectionId =
   | "lines"
   | "shape"
   | "typography"
-  | "variant"
+  | "identity"
   | "sidebar"
   | "charts"
   | "syntax";
@@ -46,7 +46,7 @@ export const STUDIO_SECTIONS = [
   { id: "lines", title: "Lines and focus" },
   { id: "shape", title: "Shape" },
   { id: "typography", title: "Typography" },
-  { id: "variant", title: "Variant layer" },
+  { id: "identity", title: "Identity layer" },
   { id: "sidebar", title: "Sidebar" },
   { id: "charts", title: "Charts" },
   { id: "syntax", title: "Syntax" },
@@ -112,19 +112,19 @@ export const TOKEN_TABLE = {
   border: color("lines"),
   input: color("lines"),
   ring: color("lines"),
-  "card-border": color("variant"),
-  "card-section-divider": color("variant"),
-  "card-shadow": color("variant"),
-  "button-outline": color("variant"),
-  "selection-border": color("variant"),
-  "selection-checked-border": color("variant"),
-  "selection-divider": color("variant"),
-  "selection-checked-divider": color("variant"),
-  "selection-disabled-background": color("variant"),
-  "selection-disabled-hatch": color("variant"),
-  "selection-disabled-foreground": color("variant"),
-  "toggle-pressed": color("variant"),
-  "toggle-pressed-foreground": color("variant"),
+  "card-border": color("identity"),
+  "card-section-divider": color("identity"),
+  "card-shadow": color("identity"),
+  "button-outline": color("identity"),
+  "selection-border": color("identity"),
+  "selection-checked-border": color("identity"),
+  "selection-divider": color("identity"),
+  "selection-checked-divider": color("identity"),
+  "selection-disabled-background": color("identity"),
+  "selection-disabled-hatch": color("identity"),
+  "selection-disabled-foreground": color("identity"),
+  "toggle-pressed": color("identity"),
+  "toggle-pressed-foreground": color("identity"),
   sidebar: color("sidebar"),
   "sidebar-foreground": color("sidebar"),
   "sidebar-accent": color("sidebar"),

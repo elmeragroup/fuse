@@ -19,7 +19,7 @@ import {
   outsideMonthBands,
   visibleMonthTitle,
 } from "../../../test/rac-calendar-testing";
-import { cssVarColor, fkasExternal, px, renderThemed } from "../../../test/themed-browser-render";
+import { cssVarColor, fkasBranded, px, renderThemed } from "../../../test/themed-browser-render";
 import { CaretLeft } from "../../icons/generated/caret-left";
 import { CaretRight } from "../../icons/generated/caret-right";
 import { ThemeScope } from "../../theme";
@@ -127,16 +127,16 @@ describe("Calendar", () => {
     );
   });
 
-  it("keeps the month title at 18px, snug and 500 in an external theme", async () => {
+  it("keeps the month title at 18px, snug and 500 in a branded theme", async () => {
     renderCalendar(
-      <ThemeScope theme={fkasExternal}>
+      <ThemeScope theme={fkasBranded}>
         <Calendar defaultValue={july14} />
       </ThemeScope>
     );
     const visibleTitle = visibleMonthTitle();
     await expect.element(visibleTitle).toBeVisible();
     const style = getComputedStyle(visibleTitle);
-    // lg 18px at snug 1.375 = 24.75px, not the external level 2 heading style.
+    // lg 18px at snug 1.375 = 24.75px, not the branded level 2 heading style.
     expect(px(style.fontSize)).toBe(18);
     expect(px(style.lineHeight)).toBe(24.75);
     expect(style.fontWeight).toBe("500");

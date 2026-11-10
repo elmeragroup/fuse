@@ -6,7 +6,7 @@ import { DARK_DEFAULTS } from "./dark-defaults";
 // The supplied palette's sidebar-primary pair is dropped in favour of the sidebar-brand
 // pointer; --sidebar-primary(-foreground) is deliberately dead with no replacement alias.
 // Contrast limits: contrast-matrix.test.ts.
-export const INTERNAL_DARK_PALETTE = {
+export const NEUTRAL_DARK_PALETTE = {
   ...DARK_DEFAULTS,
   background: "oklch(0.145 0 0)",
   foreground: "oklch(0.985 0 0)",

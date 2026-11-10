@@ -1,19 +1,19 @@
-import { defaultDensityForVariant, parseThemeSlug } from "@elmeragroup/fuse/theme";
+import { parseThemeSlug, themeSlug } from "@elmeragroup/fuse/theme";
 import type { Density, ThemeInput } from "@elmeragroup/fuse/theme";
 
-import { OPENING_THEME } from "../../../lib/theme";
+import { docsDensityFor, OPENING_THEME } from "../../../lib/theme";
 import { THEME_QUERY } from "../../../lib/theme-address";
 
 /**
- * The density the landing deploys, the library's default for its opening variant. It stays put
- * when a visitor picks the internal variant: hosts own density (AGENTS.md), and a density change
+ * The density the landing deploys, the docs site's density for its opening identity. It stays put
+ * when a visitor picks the neutral identity: hosts own density (AGENTS.md), and a density change
  * would reflow the page under the visitor's cursor.
  */
-export const LANDING_DENSITY: Density = defaultDensityForVariant(OPENING_THEME.variant);
+export const LANDING_DENSITY: Density = docsDensityFor(OPENING_THEME);
 
-/** True when both themes name the same variant, brand and segment. */
+/** True when both themes name the same identity, brand and segment. */
 export function sameTheme(left: ThemeInput, right: ThemeInput): boolean {
-  return left.variant === right.variant && left.brand === right.brand && left.segment === right.segment;
+  return themeSlug(left) === themeSlug(right);
 }
 
 /**

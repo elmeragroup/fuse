@@ -1,12 +1,12 @@
 import type { TokenContract, TokenLayer } from "./contract";
 
 /**
- * The Figma sheet roles every external dark palette must name. The remaining roles —
+ * The Figma sheet roles every branded dark palette must name. The remaining roles —
  * status, chart, syntax, muted, the modal pair and the panel derivatives — come from `DARK_DEFAULTS` or
  * are derived from these, so a sheet that omits one of these keys is a type error rather
  * than a silent fallback to the light composition.
  */
-const EXTERNAL_DARK_SHEET_KEYS = [
+const BRAND_DARK_SHEET_KEYS = [
   "background",
   "foreground",
   "card",
@@ -27,7 +27,7 @@ const EXTERNAL_DARK_SHEET_KEYS = [
 ] as const;
 
 /**
- * A dark palette for one external brand or segment: every Figma-named role is required,
+ * A dark palette for one branded brand or segment: every Figma-named role is required,
  * and a sheet may additionally name any other role it owns.
  */
-export type ExternalDarkSheet = Pick<TokenContract, (typeof EXTERNAL_DARK_SHEET_KEYS)[number]> & TokenLayer;
+export type BrandDarkSheet = Pick<TokenContract, (typeof BRAND_DARK_SHEET_KEYS)[number]> & TokenLayer;

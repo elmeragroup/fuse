@@ -105,8 +105,8 @@ export function themeName(theme: ThemeChoice): string {
 
 /**
  * The words a density choice reads as in file names. An override says so, because it differs
- * from what the page shows for the theme. Without one, a demo stage takes the deployment default
- * for its theme, and any other frame the page's own density.
+ * from what the page shows for the theme. Without one, a demo stage takes the density the docs
+ * site previews its theme's identity at, and any other frame the page's own density.
  *
  * @param density - The density choice.
  * @param frame - What the shot covers.
@@ -133,7 +133,7 @@ export function viewportName({ width, height }: Viewport): string {
  * The click steps as alt text and the table's lead line read them.
  *
  * @param options - The parsed run.
- * @returns Such as `, after clicking button "Internal", then combobox "Rows per page"`, or an
+ * @returns Such as `, after clicking button "Neutral", then combobox "Rows per page"`, or an
  * empty string for a run without clicks.
  */
 export function clickWords({ clicks }: ShotOptions): string {
@@ -180,9 +180,7 @@ function altText(options: ShotOptions, state: ShotState, at: Coordinate, frame: 
         : `, with ${subject} filled with "${options.fill}"`;
   const themeWords = at.theme._tag === "picked" ? `${at.theme.slug} theme` : "the page's default theme";
   const densityWords =
-    at.density._tag === "override"
-      ? `${at.density.density} density (override)`
-      : "the theme's default density";
+    at.density._tag === "override" ? `${at.density.density} density (override)` : "the theme's docs density";
   const windowWords = `${String(at.viewport.width)} × ${String(at.viewport.height)} window`;
   return `${capitalize(state)}: ${framing}${clickWords(options)}${filled}, ${themeWords}, ${densityWords}, ${schemeWords(options.colorScheme)}, ${engineWords(at.engine)}, ${windowWords}`;
 }

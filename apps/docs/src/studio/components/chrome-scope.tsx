@@ -9,7 +9,7 @@ import { DOCUMENT_THEME } from "../../lib/theme";
 import { useStudio } from "./studio-state";
 
 /**
- * One region of the editor chrome: the docs' own internal theme in the chrome's scheme. The
+ * One region of the editor chrome: the docs' own neutral theme in the chrome's scheme. The
  * chrome is never an ancestor of an artboard, because Fuse's dark rules are descendant
  * selectors and would darken a light artboard inside a dark chrome. So each chrome region is
  * its own scope, and the overlays it opens portal into it and wear its scheme.

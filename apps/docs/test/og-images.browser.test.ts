@@ -53,10 +53,12 @@ describe("Open Graph cards", () => {
 
   it("names the same landing image whatever ?theme= says", async () => {
     for (const query of [
-      "?theme=internal-fkas-company",
+      "?theme=neutral-fkas-company",
+      "?theme=branded-fkas-private",
+      "?theme=branded-fkab-private",
+      "?theme=BRANDED-FKAS-PRIVATE",
+      // A retired pre-identity slug.
       "?theme=external-fkas-private",
-      "?theme=external-fkab-private",
-      "?theme=EXTERNAL-FKAS-PRIVATE",
       "?theme=a&theme=b",
     ]) {
       expect(await cardImage(`/${query}`), query).toBe(`${BUILD_FALLBACK_ORIGIN}/og/landing`);

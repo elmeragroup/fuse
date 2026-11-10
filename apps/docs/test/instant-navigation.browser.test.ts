@@ -332,7 +332,7 @@ async function servedTheme(page: Page): Promise<ServedTheme | undefined> {
       : {
           label: chip.getAttribute("aria-label"),
           attributes: {
-            variant: root.getAttribute("data-theme-variant"),
+            identity: root.getAttribute("data-theme-identity"),
             brand: root.getAttribute("data-theme-brand"),
             segment: root.getAttribute("data-theme-segment"),
           },
@@ -367,8 +367,8 @@ async function keepQueryOnBootstrap(page: Page, search: string): Promise<void> {
 describe("instant landing", () => {
   it("serves / whole in the opening theme on an initial load, and hydrates it", async () => {
     const opening: ServedTheme = {
-      label: "Theme: Elmera · Private · External",
-      attributes: { variant: "external", brand: "elma", segment: "private" },
+      label: "Theme: Elmera · Private · Branded",
+      attributes: { identity: "branded", brand: "elma", segment: "private" },
     };
     const context = await browser().newContext({ viewport: DESKTOP_VIEWPORT, reducedMotion: "reduce" });
     const page = await context.newPage();
@@ -387,22 +387,22 @@ describe("instant landing", () => {
 
   it("serves /?theme= whole in the shared theme on an initial load, and hydrates it", async () => {
     const shared: ServedTheme = {
-      label: "Theme: Fjordkraft · Company · Internal",
-      attributes: { variant: "internal", brand: "fkas", segment: "company" },
+      label: "Theme: Fjordkraft · Company · Neutral",
+      attributes: { identity: "neutral", brand: "fkas", segment: "company" },
     };
     const context = await browser().newContext({ viewport: DESKTOP_VIEWPORT, reducedMotion: "reduce" });
     const page = await context.newPage();
     page.setDefaultTimeout(5000);
     await snapshotWhenParsed(page, 'header button[aria-label^="Theme"]');
-    await keepQueryOnBootstrap(page, "?theme=internal-fkas-company");
+    await keepQueryOnBootstrap(page, "?theme=neutral-fkas-company");
     await expectInstant(page, "load", async () => {
-      await page.goto(`${docsBaseUrl()}/?theme=internal-fkas-company`, { waitUntil: "domcontentloaded" });
+      await page.goto(`${docsBaseUrl()}/?theme=neutral-fkas-company`, { waitUntil: "domcontentloaded" });
       await page.getByRole("heading", { level: 1, name: /^One system/u }).waitFor();
       expect(await servedTheme(page)).toEqual(shared);
       await waitForLandingHydration(page);
       expect(await themeChip(page).getAttribute("aria-label")).toBe(shared.label);
       expect(await readThemeAttributes(page.locator("html"))).toEqual(shared.attributes);
-      expect(new URL(page.url()).search).toBe("?theme=internal-fkas-company");
+      expect(new URL(page.url()).search).toBe("?theme=neutral-fkas-company");
     });
     await context.close();
   });
@@ -455,16 +455,16 @@ describe("instant landing", () => {
     const context = await browser().newContext({ viewport: DESKTOP_VIEWPORT, reducedMotion: "reduce" });
     const page = await context.newPage();
     page.setDefaultTimeout(5000);
-    await page.goto(`${docsBaseUrl()}/?theme=internal-fkas-company`, { waitUntil: "domcontentloaded" });
+    await page.goto(`${docsBaseUrl()}/?theme=neutral-fkas-company`, { waitUntil: "domcontentloaded" });
     await waitForLandingHydration(page);
     await expectInstant(page, "client", async () => {
       await page.getByRole("banner").getByRole("link", { name: "Fuse", exact: true }).click();
       await page.waitForURL((url) => url.pathname === "/" && url.search === "");
       await expect
         .poll(async () => themeChip(page).getAttribute("aria-label"))
-        .toBe("Theme: Elmera · Private · External");
+        .toBe("Theme: Elmera · Private · Branded");
       expect(await readThemeAttributes(page.locator("html"))).toEqual({
-        variant: "external",
+        identity: "branded",
         brand: "elma",
         segment: "private",
       });

@@ -13,7 +13,7 @@ import { checkboxNamed, RowTitle, settled, shellFrom } from "../../../test/selec
 import {
   cssVarColor,
   effectiveOpacity,
-  fkasExternal,
+  fkasBranded,
   fkasPrivate,
   gradientStops,
   headingNamed,
@@ -210,14 +210,14 @@ describe("SelectionItem", () => {
       );
     }
 
-    it("keeps the card fill without stripes and greys the label text in external themes, at row and group level, in light and dark", async () => {
+    it("keeps the card fill without stripes and greys the label text in branded themes, at row and group level, in light and dark", async () => {
       renderThemed(
         <>
-          <ThemeScope theme={fkasExternal}>
+          <ThemeScope theme={fkasBranded}>
             <DisabledRows scheme="Light" />
           </ThemeScope>
           <div data-theme="dark">
-            <ThemeScope theme={fkasExternal}>
+            <ThemeScope theme={fkasBranded}>
               <DisabledRows scheme="Dark" />
             </ThemeScope>
           </div>
@@ -249,7 +249,7 @@ describe("SelectionItem", () => {
       );
     });
 
-    it("keeps the muted fill under black stripes at 2% and the foreground text in internal themes, at row and group level, in light and dark", async () => {
+    it("keeps the muted fill under black stripes at 2% and the foreground text in neutral themes, at row and group level, in light and dark", async () => {
       renderThemed(
         <>
           <DisabledRows scheme="Light" />
@@ -263,7 +263,7 @@ describe("SelectionItem", () => {
 
       for (const scheme of ["Light", "Dark"]) {
         await expectRows(scheme, "--muted", 0.02, "--foreground");
-        // A checked disabled row keeps the primary box of an internal row, dividers included.
+        // A checked disabled row keeps the primary box of a neutral row, dividers included.
         const spot = shellFrom(`${scheme} spot`);
         expect(getComputedStyle(spot).borderTopColor, scheme).toBe(cssVarColor(spot, "--primary"));
         expect(getComputedStyle(spot).borderBottomColor, scheme).toBe(cssVarColor(spot, "--primary"));
@@ -316,7 +316,7 @@ describe("SelectionItem", () => {
         const shell = shellFrom(name);
         await settled(shell);
         const style = getComputedStyle(shell);
-        // Oracle: the internal theme's own --muted for a disabled row and --card otherwise.
+        // Oracle: the neutral theme's own --muted for a disabled row and --card otherwise.
         expect(style.backgroundColor, name).toBe(cssVarColor(shell, disabled ? "--muted" : "--card"));
         if (disabled) {
           expect(style.backgroundImage, name).toMatch(/^repeating-linear-gradient\(45deg, /);
@@ -514,14 +514,14 @@ describe("SelectionItem", () => {
       return getComputedStyle(shell);
     }
 
-    it("divides external stacked rows in the border colour and draws no outer edge, in light and dark", async () => {
+    it("divides branded stacked rows in the border colour and draws no outer edge, in light and dark", async () => {
       renderThemed(
         <>
-          <ThemeScope theme={fkasExternal}>
+          <ThemeScope theme={fkasBranded}>
             <EdgeRows scheme="Light" />
           </ThemeScope>
           <div data-theme="dark">
-            <ThemeScope theme={fkasExternal}>
+            <ThemeScope theme={fkasBranded}>
               <EdgeRows scheme="Dark" />
             </ThemeScope>
           </div>
@@ -572,16 +572,16 @@ describe("SelectionItem", () => {
       );
     });
 
-    it("keeps the border-role edge and divider and the primary box around checked internal rows", async () => {
+    it("keeps the border-role edge and divider and the primary box around checked neutral rows", async () => {
       renderThemed(
         <ThemeScope theme={fkasPrivate}>
-          <EdgeRows scheme="Internal" />
+          <EdgeRows scheme="Neutral" />
         </ThemeScope>
       );
 
       const rows = [
-        ...stackRows("Internal"),
-        ...LONE_ROWS.map(({ row, control, checked }) => ({ name: `Internal ${row}`, control, checked })),
+        ...stackRows("Neutral"),
+        ...LONE_ROWS.map(({ row, control, checked }) => ({ name: `Neutral ${row}`, control, checked })),
       ];
       for (const { name, control, checked } of rows) {
         const style = await settledShell(name, control, checked);
@@ -595,8 +595,8 @@ describe("SelectionItem", () => {
         }
       }
       // A checked row in the middle of a stack is boxed on all four sides.
-      const middle = await settledShell("Internal middle 2", "radio", true);
-      const primary = cssVarColor(shellFrom("Internal middle 2"), "--primary");
+      const middle = await settledShell("Neutral middle 2", "radio", true);
+      const primary = cssVarColor(shellFrom("Neutral middle 2"), "--primary");
       expect([
         middle.borderTopColor,
         middle.borderRightColor,

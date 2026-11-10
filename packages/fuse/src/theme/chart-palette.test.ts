@@ -10,9 +10,9 @@ import * as Wcag from "@elmeragroup/color/wcag";
 import type { ResolvedColorScheme } from "./color-scheme-types";
 import { composeTheme } from "./compose-theme";
 import { CONTROL_SURFACES, tokenLiteral } from "./contrast";
+import { LEGAL_THEMES, themeSlug } from "./theme-input";
 import { tokenOklch } from "./token-color";
 import type { TokenContract, TokenName } from "./tokens/contract";
-import { LEGAL_THEMES, themeSlug } from "./tokens/themes";
 
 // Unit under test: the composed chart roles of every legal theme in both schemes. Oracle: the
 // fixed gates of the dataviz skill's palette validator and its color formula, which state ΔE as

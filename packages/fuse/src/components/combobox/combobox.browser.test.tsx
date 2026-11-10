@@ -675,8 +675,8 @@ describe("Combobox", () => {
   });
 
   it.each([
-    ["internal fkas private", { variant: "internal", brand: "fkas", segment: "private" }],
-    ["external tkas company", { variant: "external", brand: "tkas", segment: "company" }],
+    ["neutral fkas private", { identity: "neutral", brand: "fkas", segment: "private" }],
+    ["branded tkas company", { identity: "branded", brand: "tkas", segment: "company" }],
   ] as const)("fills the Chips box with the card role, like Combobox.Input, in %s", (_name, theme) => {
     renderCombobox(
       <ThemeScope theme={theme}>

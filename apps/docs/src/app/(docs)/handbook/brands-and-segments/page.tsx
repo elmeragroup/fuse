@@ -22,10 +22,10 @@ export const metadata = pageMetadata(HREF);
 
 /** The permutations the pin table forbids — listed as absent, never rendered as cells. */
 const ILLEGAL_SLUGS = [
-  "internal-fkab-private",
-  "external-fkab-private",
-  "internal-fkse-company",
-  "external-fkse-company",
+  "neutral-fkab-private",
+  "branded-fkab-private",
+  "neutral-fkse-company",
+  "branded-fkse-company",
 ] as const;
 
 export default function BrandsAndSegmentsPage(): ReactElement {
@@ -66,16 +66,16 @@ export default function BrandsAndSegmentsPage(): ReactElement {
       <h2 id="segments">Segments</h2>
       <p>
         <code>private</code> is the consumer-facing segment and <code>company</code> the business-facing one.
-        At v1 the two segments differ in exactly one place in the stylesheet — a single delta rule for
-        external <code>fkas</code> — so a segment is a small, honest override rather than a second palette.
+        At v1 the two segments differ in exactly one place in the stylesheet — a single delta rule for branded{" "}
+        <code>fkas</code> — so a segment is a small, honest override rather than a second palette.
       </p>
 
       <h2 id="pinned-brands">Pinned brands</h2>
       <p>
         Two brands exist for one segment only: <code>fkab</code> is pinned to <code>company</code> and{" "}
-        <code>fkse</code> is pinned to <code>private</code>. The five other brands span both. Two variants ×
-        that pin table gives <strong>{String(LEGAL_THEMES.length)} legal themes</strong> — twelve internal and
-        twelve external.
+        <code>fkse</code> is pinned to <code>private</code>. The five other brands span both. Two identities ×
+        that pin table gives <strong>{String(LEGAL_THEMES.length)} legal themes</strong> — twelve neutral and
+        twelve branded.
       </p>
 
       <h2 id="illegal-permutations">The four illegal permutations</h2>
@@ -109,7 +109,7 @@ export default function BrandsAndSegmentsPage(): ReactElement {
 
       <h2 id="the-twenty-four">The twenty-four slugs</h2>
       <p>
-        Each theme has a canonical slug, <code>variant-brand-segment</code>. The{" "}
+        Each theme has a canonical slug, <code>identity-brand-segment</code>. The{" "}
         <Link href="/handbook/theme-matrix">Theme matrix</Link> renders all of them side by side.
       </p>
       <ul className={mono()}>

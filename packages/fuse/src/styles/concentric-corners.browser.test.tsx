@@ -12,7 +12,7 @@ import {
   expectShellOnThemeElementWins,
   RADIUS,
 } from "../../test/inner-corner-specimens";
-import type { Variant } from "../../test/inner-corner-specimens";
+import type { CornerCase } from "../../test/inner-corner-specimens";
 import { withLocale } from "../../test/locale-matrix";
 import { panelControlledBy } from "../../test/panel-transition";
 import { fkasPrivate, tkasCompany } from "../../test/theme-fixtures";
@@ -49,18 +49,18 @@ type Family = (typeof FAMILY_NAMES)[number];
 /**
  * Row corners in px, worked out by hand. Each row rounds with its shell's corner less the inset
  * between them, floored at 0. The DropdownMenu popups and the Combobox popup round with
- * `rounded-md` (`--radius` less one 2px external step) and pad 4px, the Combobox through its
+ * `rounded-md` (`--radius` less one 2px branded step) and pad 4px, the Combobox through its
  * List whether or not a search group sits above it. An empty List drops its padding, so a block
  * in it rounds like the popup. The NavigationMenu popup rounds with `rounded-md` and its content
  * pads 4px, the small surface tier, at both densities, as the dropdowns do. A NavigationMenu
  * panel nested in another sits behind both contents' 4px, 8px in all. A NavigationMenu popup
  * mounted inside another's Content is a shell of its own and insets its rows 4px. The Select
  * popup rounds with `rounded-lg` (`--radius`) and pads nothing, and a Select group pads 4px.
- * `--radius` is 8px internal, and external 12px for fkas, 16px for tkas and 8px for guen, so
- * `rounded-md` is 8px internal, 10px for fkas, 14px for tkas and 6px for guen.
+ * `--radius` is 8px neutral, and branded 12px for fkas, 16px for tkas and 8px for guen, so
+ * `rounded-md` is 8px neutral, 10px for fkas, 14px for tkas and 6px for guen.
  */
 const EXPECTED = {
-  internal: {
+  neutral: {
     dropdown: 4,
     submenu: 4,
     combobox: 4,
@@ -108,21 +108,21 @@ const EXPECTED = {
     "navigation nested": 0,
     "navigation nested popup": 2,
   },
-} as const satisfies Record<Variant, Record<Family, number>>;
+} as const satisfies Record<CornerCase, Record<Family, number>>;
 
 /**
  * A free-standing vertical NavigationMenu row's outer `rounded-sm` corner in px: `--radius` less
- * two 2px external steps, so 8px internal, 8px for fkas, 12px for tkas and 4px for guen.
+ * two 2px branded steps, so 8px neutral, 8px for fkas, 12px for tkas and 4px for guen.
  */
-const OUTER_ROW = { internal: 8, fkas: 8, tkas: 12, guen: 4 } as const satisfies Record<Variant, number>;
+const OUTER_ROW = { neutral: 8, fkas: 8, tkas: 12, guen: 4 } as const satisfies Record<CornerCase, number>;
 
 /**
  * A row two 4px panels deep, in px: `rounded-md` less 8px. It is a row in an inline
  * NavigationMenu panel inside a DropdownMenu, behind the dropdown's 4px and the panel's 4px, or
  * a row in an inline panel inside a popup's Content, behind both contents' 4px.
  */
-const TWO_PANELS_DEEP_ROW = { internal: 0, fkas: 2, tkas: 6, guen: 0 } as const satisfies Record<
-  Variant,
+const TWO_PANELS_DEEP_ROW = { neutral: 0, fkas: 2, tkas: 6, guen: 0 } as const satisfies Record<
+  CornerCase,
   number
 >;
 
@@ -532,7 +532,7 @@ describe("concentric inner corners", () => {
         </DropdownMenu.Root>
       </ThemeScope>
     );
-    // The internal shell gives its own rows 8px less 4px. The tkas scope inside it drops that
+    // The neutral shell gives its own rows 8px less 4px. The tkas scope inside it drops that
     // value, so its row rounds with tkas's --radius, 16px.
     expect(cornerRadius(await vi.waitFor(() => roleNamed("menuitem", "Profile")))).toBe(4);
     expect(cornerRadius(roleNamed("menuitem", "Switch brand"))).toBe(16);

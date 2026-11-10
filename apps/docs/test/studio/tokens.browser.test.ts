@@ -50,9 +50,9 @@ const SCHEME_COLORS = STUDIO_TOKEN_NAMES.filter(
 /** A generated seed module's chunk: each seed holds radius-button with its declared CSS. */
 const SEED_CHUNK = /"radius-button":\{"?css"?:/u;
 
-/** The light selector the export writes for the studio's opening theme, external elma private. */
+/** The light selector the export writes for the studio's opening theme, branded elma private. */
 const OPENING_SELECTOR =
-  '[data-theme-variant="external"][data-theme-brand="elma"][data-theme-segment="private"]';
+  '[data-theme-identity="branded"][data-theme-brand="elma"][data-theme-segment="private"]';
 
 /** The Density page's light twin, which holds a primary Save button. */
 const DENSITY_TWIN = "Twin · Dense";
@@ -562,7 +562,7 @@ describe("studio token editing", () => {
       const field = row.getByRole("textbox", { name: "--radius in px", exact: true });
       const increase = row.getByRole("button", { name: "Increase", exact: true });
       await waitForSeed(field);
-      // external-elma-private.ts: radius 6px; the knob steps by 1px.
+      // branded-elma-private.ts: radius 6px; the knob steps by 1px.
       const before = await field.inputValue();
       expect(before).toBe("6");
       /** Runs two input steps, then expects two undos to walk back through them to `before`. */
@@ -632,7 +632,7 @@ describe("studio token editing", () => {
 
       release();
       await expect.poll(() => field.isDisabled()).toBe(false);
-      // external-palettes.ts: every external theme declares selection-title-weight: 500.
+      // brand-palettes.ts: every branded theme declares selection-title-weight: 500.
       expect(await field.inputValue()).toBe("500");
       expect(await slider.inputValue()).toBe("500");
       expect(errors).toEqual([]);
@@ -695,14 +695,14 @@ describe("studio token editing", () => {
   });
 
   it("detaches a translucent alias to a literal that keeps its alpha", async () => {
-    // Internal elma, whose dark border is oklch(1 0 0 / 10%) and button-outline var(--border).
-    const { context, page, errors } = await openStudio(hashOf('{"t":"internal-elma-private"}'));
+    // Neutral elma, whose dark border is oklch(1 0 0 / 10%) and button-outline var(--border).
+    const { context, page, errors } = await openStudio(hashOf('{"t":"neutral-elma-private"}'));
     try {
       await inspector(page)
         .getByRole("group", { name: "Edited scheme", exact: true })
         .getByRole("button", { name: "Dark", exact: true })
         .click();
-      await openTokenSection(page, "Variant layer");
+      await openTokenSection(page, "Identity layer");
       await tokenRow(page, "button-outline")
         .getByRole("button", {
           name: "Detach --button-outline from --border to a literal value",
@@ -740,9 +740,9 @@ describe("studio token editing", () => {
   });
 
   it("edits a live color formula and recolors the hover tone it measures", async () => {
-    // Internal elma, whose light secondary is a light grey and foreground near black, so the mix
+    // Neutral elma, whose light secondary is a light grey and foreground near black, so the mix
     // weight moves the tone.
-    const { context, page, errors } = await openStudio(hashOf('{"t":"internal-elma-private"}'));
+    const { context, page, errors } = await openStudio(hashOf('{"t":"neutral-elma-private"}'));
     try {
       await openTokenSection(page, "Actions");
       const swatch = colorTrigger(page, "secondary-hover").locator(".bg-\\(--swatch\\)");
@@ -790,7 +790,7 @@ describe("studio token editing", () => {
     const { context, page, errors } = await openStudio();
     try {
       await openTokenSection(page, "Actions");
-      // external-palettes.ts, elma: primary oklch(0.28898 0.051828 217.7), #00313C. A knob
+      // brand-palettes.ts, elma: primary oklch(0.28898 0.051828 217.7), #00313C. A knob
       // shows "…" until the base theme's computed CSS arrives, so the test polls each value.
       await expect.poll(() => shownValue(page, "primary")).toBe("#00313C");
       await expect.poll(() => shownValue(page, "destructive")).toBe("→ error");
@@ -815,14 +815,14 @@ describe("studio token editing", () => {
     const light: Record<string, string> = {};
     const dark: Record<string, string> = {};
     const names = SCHEME_COLORS.filter((name) => name !== "primary");
-    let hash = hashOf('{"t":"external-elma-private"}');
+    let hash = hashOf('{"t":"branded-elma-private"}');
     for (const name of [
       ...names.map((each) => ["d", each] as const),
       ...names.map((each) => ["l", each] as const),
     ]) {
       const [group, token] = name;
       (group === "l" ? light : dark)[token] = long;
-      const next = hashOf(JSON.stringify({ t: "external-elma-private", l: light, d: dark }));
+      const next = hashOf(JSON.stringify({ t: "branded-elma-private", l: light, d: dark }));
       if (next.length - 1 > MAX_SHARE_LENGTH - 40) {
         delete (group === "l" ? light : dark)[token];
         break;
@@ -855,7 +855,7 @@ describe("studio token editing", () => {
   it("offers a retry when the base theme's values fail to load, and keeps the edits", async () => {
     let failing = true;
     const { context, page, errors } = await openStudio(
-      hashOf('{"t":"external-elma-private","l":{"primary":"#ff0000"}}'),
+      hashOf('{"t":"branded-elma-private","l":{"primary":"#ff0000"}}'),
       async (opening) => {
         await opening.route("**/_next/static/chunks/**", async (route) => {
           const response = await route.fetch();

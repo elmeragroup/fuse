@@ -2,7 +2,7 @@
 // and framed on its docs page. Oracles: the counts the data module's cycles give, worked by hand in
 // its comments (480 points, 48 in NO4, 24 of them on a fixed price, none disconnected; 72 invoices,
 // 6 of them overdue), March's 31 days, the docs header's theme picker, and the fonts page's rule:
-// an internal theme draws Inter and an external one Roboto.
+// a neutral theme draws Inter and a branded one Roboto.
 import type { Page } from "playwright";
 import { describe, expect, it } from "vitest";
 
@@ -320,7 +320,7 @@ describe("the app shell block, standalone", () => {
       .getByRole("table", { name: "Invoices" })
       .getByRole("button", { name: /^INV-2602-/u });
     await expect.poll(() => openers.count()).toBe(6);
-    // The opener keeps the 24px target floor at the internal theme's dense metrics.
+    // The opener keeps the 24px target floor at the neutral theme's dense metrics.
     expect((await openers.first().boundingBox())?.height ?? 0).toBeGreaterThanOrEqual(24);
     const number = await openers.first().textContent();
     await openers.first().click();
@@ -402,8 +402,8 @@ describe("the app shell block, standalone", () => {
   });
 
   it.each([
-    { theme: "internal-fkas-private", face: "--font-inter" },
-    { theme: "external-tkas-company", face: "--font-roboto" },
+    { theme: "neutral-fkas-private", face: "--font-inter" },
+    { theme: "branded-tkas-company", face: "--font-roboto" },
   ])("draws the $theme theme's face, $face", async ({ theme, face }) => {
     const page = await browser().newPage({ viewport: DESKTOP_VIEWPORT });
     await openApp(page, `${BASE}?theme=${theme}`);
@@ -433,10 +433,10 @@ describe("the app shell block, standalone", () => {
         subtree: true,
         attributes: true,
         attributeOldValue: true,
-        attributeFilter: ["data-theme-brand", "data-theme-variant", "data-theme-segment", "data-density"],
+        attributeFilter: ["data-theme-brand", "data-theme-identity", "data-theme-segment", "data-density"],
       });
     });
-    await openApp(page, `${BASE}?theme=external-tkas-company`);
+    await openApp(page, `${BASE}?theme=branded-tkas-company`);
     await page.waitForTimeout(300);
     const root = page.locator("html");
     const log = await page.evaluate(() => sessionStorage.getItem("theme-writes") ?? "[]");
@@ -450,11 +450,11 @@ describe("the app shell block, standalone", () => {
         .map((write) => write.old),
       await root.getAttribute(name),
     ];
-    // The server stamps the default theme, Fjordkraft · Private · Internal at dense metrics. From the
+    // The server stamps the default theme, Fjordkraft · Private · Neutral at dense metrics. From the
     // head script's first write on, no write puts any of it back.
     expect(writes.filter((write) => write.name === "data-theme-brand").length).toBeGreaterThan(0);
     expect(new Set(await written("data-theme-brand"))).toEqual(new Set(["tkas"]));
-    expect(new Set(await written("data-theme-variant"))).toEqual(new Set(["external"]));
+    expect(new Set(await written("data-theme-identity"))).toEqual(new Set(["branded"]));
     expect(new Set(await written("data-theme-segment"))).toEqual(new Set(["company"]));
     expect(new Set(await written("data-density"))).toEqual(new Set(["comfortable"]));
     expect(warnings.filter((text) => /does not match document brand attributes/u.test(text))).toEqual([]);
@@ -467,7 +467,7 @@ describe("the app shell block, standalone", () => {
     expect(new URL(page.url()).search).toBe("");
     expect(await root.getAttribute("data-theme-brand")).toBe("tkas");
     expect(await root.getAttribute("data-theme-segment")).toBe("company");
-    expect(await root.getAttribute("data-theme-variant")).toBe("external");
+    expect(await root.getAttribute("data-theme-identity")).toBe("branded");
     expect(await root.getAttribute("data-density")).toBe("comfortable");
     await page.close();
   });
@@ -482,15 +482,15 @@ describe("the app shell block on its docs page", () => {
     const frame = page.frameLocator('iframe[title="App shell preview"]');
     const root = frame.locator("html");
     const title = frame.getByRole("heading", { level: 1 });
-    // The docs' default preview theme, Fjordkraft · Private · Internal.
+    // The docs' default preview theme, Fjordkraft · Private · Neutral.
     await expect.poll(() => root.getAttribute("data-theme-brand")).toBe("fkas");
     expect(await drawnFace(title)).toBe("--font-inter");
     await page.getByRole("button", { name: "Theme settings", exact: true }).click();
     await page.getByRole("menuitemradio", { name: "TrøndelagKraft", exact: true }).click();
     await expect.poll(() => root.getAttribute("data-theme-brand")).toBe("tkas");
-    await page.getByRole("menuitemradio", { name: "External", exact: true }).click();
-    await expect.poll(() => root.getAttribute("data-theme-variant")).toBe("external");
-    // The variant picks the density, as on the docs' demo stages.
+    await page.getByRole("menuitemradio", { name: "Branded", exact: true }).click();
+    await expect.poll(() => root.getAttribute("data-theme-identity")).toBe("branded");
+    // The docs' preview policy gives a branded theme comfortable density, as on its demo stages.
     await expect.poll(() => root.getAttribute("data-density")).toBe("comfortable");
     await expect.poll(() => drawnFace(title)).toBe("--font-roboto");
     await page.getByRole("menuitemradio", { name: "Dark", exact: true }).click();

@@ -15,7 +15,7 @@
     "lint:fix": "OXLINT_TSGOLINT_PATH=node_modules/.bin/tsrs-lint oxlint --fix .",
     "release": "node --import ./packages/fuse/scripts/ts-resolve.mjs scripts/release.ts",
     "release:version": "pnpm exec changeset version && pnpm install --lockfile-only",
-    "shots": "node tooling/pr-shots/src/main.ts",
+    "shots": "node --import ./packages/fuse/scripts/ts-resolve.mjs tooling/pr-shots/src/main.ts",
     "test": "turbo run test",
     "test:browser": "turbo run test:browser",
     "test:e2e": "turbo run test:e2e",

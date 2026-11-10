@@ -28,7 +28,7 @@ export function useSideShown(): boolean {
 
 /**
  * State for an overlay on one side of the hero window: it returns to `closed` whenever the side
- * hides. Every route to a variant change, the window's switch, the picker, ⌘J, a link, Back or
+ * hides. Every route to an identity change, the window's switch, the picker, ⌘J, a link, Back or
  * Forward, hides a side, so a modal never keeps its scroll lock or hides the shown side from
  * assistive technology. The reset happens in the render that hides the side, and Base UI closes
  * the controlled popup in the same commit. The rest of the side keeps its state.

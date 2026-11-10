@@ -10,12 +10,11 @@ const HREF = "/handbook/theming";
 
 export const metadata = pageMetadata(HREF);
 
-const DOCUMENT_THEME = `import { ThemeProvider, themeAttributes } from "@elmeragroup/fuse/theme";
-import { defaultDensityForVariant, densityAttributes } from "@elmeragroup/fuse/theme";
+const DOCUMENT_THEME = `import { documentAttributes, ThemeProvider } from "@elmeragroup/fuse/theme";
 
-const THEME = { variant: "external", brand: "fkas", segment: "private" } as const;
+const THEME = { identity: "branded", brand: "fkas", segment: "private" } as const;
 
-<html {...themeAttributes(THEME)} {...densityAttributes(defaultDensityForVariant(THEME.variant))}>
+<html {...documentAttributes({ theme: THEME, density: "comfortable" })}>
   <body>
     <ThemeProvider theme={THEME}>{children}</ThemeProvider>
   </body>
@@ -24,7 +23,7 @@ const THEME = { variant: "external", brand: "fkas", segment: "private" } as cons
 const SCOPE = `import { ThemeScope } from "@elmeragroup/fuse/theme";
 
 // Re-themes this subtree only. Overlays opened inside it portal into it.
-<ThemeScope theme={{ variant: "external", brand: "tkas", segment: "company" }}>
+<ThemeScope theme={{ identity: "branded", brand: "tkas", segment: "company" }}>
   <TrackSummary />
 </ThemeScope>;`;
 
@@ -45,21 +44,12 @@ const SIDEBAR_BRAND_OVERRIDE = `/* After the Fuse stylesheet, on the element tha
 
 const NEXT_PAGES = `// pages/_document.tsx
 import { Head, Html, Main, NextScript } from "next/document";
-import {
-  ColorSchemeScript,
-  defaultDensityForVariant,
-  densityAttributes,
-  themeAttributes,
-} from "@elmeragroup/fuse/theme";
-import { colorScheme, theme } from "../lib/theme";
+import { ColorSchemeScript, documentAttributes } from "@elmeragroup/fuse/theme";
+import { colorScheme, density, theme } from "../lib/theme";
 
 export default function Document() {
   return (
-    <Html
-      lang="nb"
-      {...themeAttributes(theme)}
-      {...densityAttributes(defaultDensityForVariant(theme.variant))}
-      suppressHydrationWarning>
+    <Html lang="nb" {...documentAttributes({ theme, density })} suppressHydrationWarning>
       <Head>
         <ColorSchemeScript
           storageKey={colorScheme.storageKey}
@@ -94,22 +84,12 @@ export default function App({ Component, pageProps }: AppProps) {
 }`;
 
 const TANSTACK_START = `import { ScriptOnce } from "@tanstack/react-router";
-import {
-  colorSchemeScriptSource,
-  defaultDensityForVariant,
-  densityAttributes,
-  ThemeProvider,
-  themeAttributes,
-} from "@elmeragroup/fuse/theme";
-import { colorScheme, theme } from "./theme";
+import { colorSchemeScriptSource, documentAttributes, ThemeProvider } from "@elmeragroup/fuse/theme";
+import { colorScheme, density, theme } from "./theme";
 
 export function RootDocument({ children }: { children: React.ReactNode }) {
   return (
-    <html
-      lang="nb"
-      {...themeAttributes(theme)}
-      {...densityAttributes(defaultDensityForVariant(theme.variant))}
-      suppressHydrationWarning>
+    <html lang="nb" {...documentAttributes({ theme, density })} suppressHydrationWarning>
       <head>
         <ScriptOnce>{colorSchemeScriptSource(colorScheme)}</ScriptOnce>
       </head>
@@ -140,22 +120,12 @@ const OWN_TOKENS = `/* app/globals.css */
 }`;
 
 const REACT_ROUTER = `import { Links, Meta, Scripts, ScrollRestoration } from "react-router";
-import {
-  ColorSchemeScript,
-  defaultDensityForVariant,
-  densityAttributes,
-  ThemeProvider,
-  themeAttributes,
-} from "@elmeragroup/fuse/theme";
-import { colorScheme, theme } from "./theme";
+import { ColorSchemeScript, documentAttributes, ThemeProvider } from "@elmeragroup/fuse/theme";
+import { colorScheme, density, theme } from "./theme";
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
-    <html
-      lang="nb"
-      {...themeAttributes(theme)}
-      {...densityAttributes(defaultDensityForVariant(theme.variant))}
-      suppressHydrationWarning>
+    <html lang="nb" {...documentAttributes({ theme, density })} suppressHydrationWarning>
       <head>
         <ColorSchemeScript
           storageKey={colorScheme.storageKey}
@@ -188,9 +158,10 @@ export default function ThemingPage(): ReactElement {
       <p>A theme is exactly three coordinates, and nothing else:</p>
       <ul>
         <li>
-          <strong>Variant</strong> — <code>internal</code> or <code>external</code>. Internal is the
-          grayscale, information-dense look for staff tooling; external is the brand-coloured, customer-facing
-          look.
+          <strong>Identity</strong> — <code>neutral</code> or <code>branded</code>. Neutral is the grayscale
+          system look, with the brand only in accents and logos; branded is the brand&apos;s full look and
+          feel: its colours, surfaces, type and corners. Identity says nothing about density, so a branded
+          customer dashboard can be dense and a neutral page comfortable.
         </li>
         <li>
           <strong>Brand</strong> — one of seven four-character codes. See{" "}
@@ -208,53 +179,62 @@ export default function ThemingPage(): ReactElement {
 
       <h2 id="how-it-resolves">How it resolves</h2>
       <p>
-        Themes are pure CSS. Three data attributes on one element — <code>data-theme-variant</code>,{" "}
+        Themes are pure CSS. Three data attributes on one element — <code>data-theme-identity</code>,{" "}
         <code>data-theme-brand</code>, <code>data-theme-segment</code> — and the stylesheet&apos;s layers
-        resolve the token values beneath them: shared defaults, then brand pointers, then the internal reset
-        or the external brand palette, then the one segment delta that genuinely differs.
+        resolve the token values beneath them: shared defaults, then brand pointers, then the neutral reset or
+        the branded brand palette, then the one segment delta that genuinely differs, and last the
+        identity&apos;s corner set, which no colour scheme restates.
       </p>
       <p>
         Because it is attributes plus cascade, brand is correct at first paint with JavaScript disabled, and
         re-theming a subtree costs one wrapper element rather than a second stylesheet.
       </p>
       <p>
-        Corner rounding is part of the theme. An external theme rounds cards from the brand&apos;s{" "}
-        <code>--radius</code> and spaces the <code>rounded-*</code> scale around it in 2px{" "}
-        <code>--radius-step</code> increments. Every standalone button rounds with{" "}
+        Corner rounding is part of the theme: each identity picks a corner set. A branded theme rounds cards
+        from the brand&apos;s <code>--radius</code> and spaces the <code>rounded-*</code> scale around it in
+        2px <code>--radius-step</code> increments. Every standalone button rounds with{" "}
         <code>--radius-button</code>, which is a pill for Fjordkraft, Fjordkraft Företag and Telinet. Field
         boxes, from Input and Select to InputGroup and the date fields, round with <code>--radius-field</code>
         , which is <code>var(--radius)</code> in every theme, so they match the cards and selection rows
         around them, and the parts inside a field round inside its corner. A button inside a button group
         keeps a compact corner instead, and a button group rounds both its ends that way, even when a field
         sits at one end. The standalone calendar keeps the reference&apos;s 4px corner, and the checkbox caps
-        its corner at 4px in every theme. The internal variant rounds every outer element but the checkbox
+        its corner at 4px in every theme. The neutral identity rounds every outer element but the checkbox
         with the one <code>--radius</code>. Its step is <code>0px</code> and its <code>--radius-button</code>{" "}
         and <code>--radius-field</code> are <code>var(--radius)</code>, so a host rule that reads either role
         gets the same corner. To change the radius, override <code>--radius</code> on the element that carries
         the theme attributes, which is <code>&lt;html&gt;</code> or a <code>ThemeScope</code>. The theme rules
         resolve <code>--radius-button</code> and <code>--radius-field</code> there, so buttons and fields move
-        with the cards. On a plain wrapper the override reaches cards and internal fields, but buttons and
-        external fields keep the corners the theme element resolved, so set <code>--radius-field</code> beside
-        it. To give external fields a corner of their own, override <code>--radius-field</code>. Internal
-        fields always round with <code>--radius</code>, so the override does not reach them. Nested internal
-        surfaces share the radius, and dialogs round like cards. Inner parts, such as menu rows, tabs and the
-        buttons inside a field, are the exception: see <a href="#inner-corners">Inner corners</a>.
+        with the cards. On a plain wrapper the override reaches cards and neutral fields, but buttons and
+        branded fields keep the corners the theme element resolved, so set <code>--radius-field</code> beside
+        it. To give branded fields a corner of their own, override <code>--radius-field</code>. Neutral fields
+        always round with <code>--radius</code>, so the override does not reach them. Nested neutral surfaces
+        share the radius, and dialogs round like cards. Inner parts, such as menu rows, tabs and the buttons
+        inside a field, are the exception: see <a href="#inner-corners">Inner corners</a>.
+      </p>
+      <p>
+        A branded button that rounds as a pill would set a dense label against its curve, so at dense density
+        a branded button&apos;s label edges keep at least 12px of inline padding, at the xs, sm, default and
+        lg sizes. The edge beside a leading or trailing icon keeps its own inset, square icon buttons and
+        buttons in a button group are unchanged, and neutral themes and comfortable density, whose label
+        padding is already 12px or more, keep their padding. A neutral <code>ThemeScope</code> inside a
+        branded page declares its own floor of 0px, so it does not inherit the branded one.
       </p>
       <p>
         The outline button&apos;s border is part of the theme too. It reads <code>--button-outline</code> at{" "}
-        <code>--button-outline-width</code>. External themes draw a 2px ring in the text colour, so{" "}
+        <code>--button-outline-width</code>. Branded themes draw a 2px ring in the text colour, so{" "}
         <code>--button-outline</code> is <code>var(--foreground)</code>, and the button casts no shadow. The
-        internal variant keeps a 1px <code>var(--border)</code> hairline with a small shadow, which only a 1px
+        neutral identity keeps a 1px <code>var(--border)</code> hairline with a small shadow, which only a 1px
         border casts.
       </p>
       <p>
         A <code>Card</code> and a <code>card</code> Accordion item draw their 1px edge in{" "}
-        <code>--card-border</code>. Internal themes draw it in <code>var(--border)</code>. External themes
-        draw no edge: <code>--card-border</code> is a zero-alpha colour. A <code>Card</code> casts a small
-        shadow in <code>--card-shadow</code>, black at 5% in internal themes and zero alpha in external ones,
-        so an external white card stands on the page tint by its fill alone. The border keeps its width and
-        the shadow its geometry, so the cards&apos; inner corners and layout stay as they are. Without an edge
-        or shadow, a card on a <code>card</code>-coloured surface, such as a nested <code>Card</code>, has no
+        <code>--card-border</code>. Neutral themes draw it in <code>var(--border)</code>. Branded themes draw
+        no edge: <code>--card-border</code> is a zero-alpha colour. A <code>Card</code> casts a small shadow
+        in <code>--card-shadow</code>, black at 5% in neutral themes and zero alpha in branded ones, so a
+        branded white card stands on the page tint by its fill alone. The border keeps its width and the
+        shadow its geometry, so the cards&apos; inner corners and layout stay as they are. Without an edge or
+        shadow, a card on a <code>card</code>-coloured surface, such as a nested <code>Card</code>, has no
         outline. A <code>CheckboxCard</code> is a control and the TextField <code>card</code> box is a field,
         so both keep their <code>var(--border)</code> edge and small shadow. To change the card edge or shadow
         colour, override <code>--card-border</code> or <code>--card-shadow</code> on the element that carries
@@ -264,21 +244,21 @@ export default function ThemingPage(): ReactElement {
       </p>
       <p>
         The 1px line between a card&apos;s stacked <code>Card.Section</code> parts is{" "}
-        <code>--card-section-divider</code>. Internal themes draw it in <code>var(--border)</code>, and
-        external themes in the page tint, <code>var(--background)</code>, so a card reads as split into
-        segments. Override it where you override <code>--card-border</code>.
+        <code>--card-section-divider</code>. Neutral themes draw it in <code>var(--border)</code>, and branded
+        themes in the page tint, <code>var(--background)</code>, so a card reads as split into segments.
+        Override it where you override <code>--card-border</code>.
       </p>
       <p>
         A <code>RadioItem</code> or <code>CheckboxItem</code> row draws its 1px edge in{" "}
         <code>--selection-border</code>, and a checked row draws it in <code>--selection-checked-border</code>
         . The line between the stacked rows of a vertical group is <code>--selection-divider</code>, and above
-        and below a checked row <code>--selection-checked-divider</code>. Internal themes draw the edge and
-        the divider in <code>var(--border)</code> and box the checked row in <code>var(--primary)</code>.
-        External themes draw no outer edge: <code>--selection-border</code> is a zero-alpha colour and{" "}
+        and below a checked row <code>--selection-checked-divider</code>. Neutral themes draw the edge and the
+        divider in <code>var(--border)</code> and box the checked row in <code>var(--primary)</code>. Branded
+        themes draw no outer edge: <code>--selection-border</code> is a zero-alpha colour and{" "}
         <code>--selection-checked-border</code> is <code>var(--selection-border)</code>, so the control alone
-        shows the selection, as the external radio card does. Stacked rows keep a grey separator: both
+        shows the selection, as the customer-facing radio card does. Stacked rows keep a grey separator: both
         dividers are <code>var(--border)</code>, checked or not. The border keeps its width, so rows join and
-        inset as they do in internal themes. Without an outer edge, a row on a <code>card</code>-coloured
+        inset as they do in neutral themes. Without an outer edge, a row on a <code>card</code>-coloured
         surface, such as inside a white <code>Card</code>, has no outline, and the checked row&apos;s{" "}
         <code>bg-muted</code> tint barely shows on the row&apos;s card fill. The edge and the dividers are
         theme roles of their own, so changing them leaves <code>--border</code>, and the tables and{" "}
@@ -291,24 +271,24 @@ export default function ThemingPage(): ReactElement {
       <p>
         A disabled <code>RadioItem</code> or <code>CheckboxItem</code> row, whether the row or its group is
         disabled, fills with <code>--selection-disabled-background</code> under a 45° hatch striped in{" "}
-        <code>--selection-disabled-hatch</code>. Internal themes fill it with <code>var(--muted)</code> and
-        stripe it in black at 2% alpha, which shows in light schemes. External themes keep the card fill of an
+        <code>--selection-disabled-hatch</code>. Neutral themes fill it with <code>var(--muted)</code> and
+        stripe it in black at 2% alpha, which shows in light schemes. Branded themes keep the card fill of an
         enabled row, <code>var(--card)</code>, and make the stripe a zero-alpha colour, so a disabled row is
         not a grey panel among white rows; instead its title and other label row text grey to{" "}
-        <code>--selection-disabled-foreground</code>, <code>var(--muted-foreground)</code>. Internal themes
-        set that role to <code>var(--foreground)</code>, so their titles keep their colour. A description
-        keeps its own muted text, a SubSection keeps its colours, and the control dims to 50% in every theme.
-        The role is not text-grade, so it has no contrast floor: WCAG exempts an inactive control. The
-        disabled fill replaces a checked row&apos;s <code>bg-muted</code> tint and a background class on the
-        row; the checked edge stays. Internal themes resolve the fill&apos;s <code>var(--muted)</code> on the
-        element that carries the theme attributes, so override <code>--selection-disabled-background</code>{" "}
-        itself to change the fill under a plain wrapper.
+        <code>--selection-disabled-foreground</code>, <code>var(--muted-foreground)</code>. Neutral themes set
+        that role to <code>var(--foreground)</code>, so their titles keep their colour. A description keeps
+        its own muted text, a SubSection keeps its colours, and the control dims to 50% in every theme. The
+        role is not text-grade, so it has no contrast floor: WCAG exempts an inactive control. The disabled
+        fill replaces a checked row&apos;s <code>bg-muted</code> tint and a background class on the row; the
+        checked edge stays. Neutral themes resolve the fill&apos;s <code>var(--muted)</code> on the element
+        that carries the theme attributes, so override <code>--selection-disabled-background</code> itself to
+        change the fill under a plain wrapper.
       </p>
       <p>
         A pressed <code>Toggle</code> or <code>ToggleGroup.Item</code> fills with{" "}
-        <code>--toggle-pressed</code> and sets its label in <code>--toggle-pressed-foreground</code>. Internal
+        <code>--toggle-pressed</code> and sets its label in <code>--toggle-pressed-foreground</code>. Neutral
         themes keep the quiet <code>var(--muted)</code> face with <code>var(--foreground)</code> text on their
-        neutral page. External themes fill it with <code>var(--primary)</code> and{" "}
+        neutral page. Branded themes fill it with <code>var(--primary)</code> and{" "}
         <code>var(--primary-foreground)</code>, because <code>muted</code> barely shows on a tinted brand page
         and is also the hover tint. Both pairs are aliases, so a dark scheme resolves them against its own
         roles. A pressed toggle keeps its face under the pointer. To change it, override the two roles on the
@@ -316,16 +296,16 @@ export default function ThemingPage(): ReactElement {
       </p>
       <p>
         The weight of a <code>RadioItem</code> or <code>CheckboxItem</code> row title is themed too. It, which
-        reads <code>--selection-title-weight</code>. External themes set it to <code>500</code>, the weight of
-        the group legend and a <code>CheckboxCard</code> title, and internal themes keep the regular{" "}
+        reads <code>--selection-title-weight</code>. Branded themes set it to <code>500</code>, the weight of
+        the group legend and a <code>CheckboxCard</code> title, and neutral themes keep the regular{" "}
         <code>400</code>. A <code>className</code> weight on the title replaces the theme&apos;s.
       </p>
       <p>
         A <code>Text</code>&apos;s line height is themed at three sizes. Without a <code>leading</code> prop,{" "}
         <code>size=&quot;sm&quot;</code>, the default size and <code>size=&quot;lg&quot;</code> read{" "}
         <code>--paragraph-leading-sm</code>, <code>--paragraph-leading-base</code> and{" "}
-        <code>--paragraph-leading-lg</code>. External themes set the paragraph styles 14/20, 16/22 and 18/24,
-        and internal themes keep the relaxed 1.625 ratio, 22.75, 26 and 29.25px. The other sizes stay relaxed
+        <code>--paragraph-leading-lg</code>. Branded themes set the paragraph styles 14/20, 16/22 and 18/24,
+        and neutral themes keep the relaxed 1.625 ratio, 22.75, 26 and 29.25px. The other sizes stay relaxed
         in every theme. A <code>leading</code> prop or a <code>className</code> leading replaces the role, and{" "}
         <code>Span</code> keeps its own snug default.
       </p>
@@ -333,8 +313,8 @@ export default function ThemingPage(): ReactElement {
         A <code>Heading</code>&apos;s default type is themed at levels 1 to 3. Without a <code>size</code>{" "}
         prop, an h1 reads <code>--heading-1-size</code> and <code>--heading-1-leading</code>, and without a{" "}
         <code>font</code> prop it reads <code>--heading-1-weight</code>, and h2 and h3 read their own roles.
-        External themes set h1 to the heading small style, 24/32, and h2 and h3 to heading xsmall, 20/32, all
-        at <code>700</code>. Internal themes keep h1 at 24/33, h2 at 18/24.75 and h3 at 16/22, all at{" "}
+        Branded themes set h1 to the heading small style, 24/32, and h2 and h3 to heading xsmall, 20/32, all
+        at <code>700</code>. Neutral themes keep h1 at 24/33, h2 at 18/24.75 and h3 at 16/22, all at{" "}
         <code>500</code>. h4 to h6 stay 16/22 at <code>500</code> in every theme. A <code>size</code> prop
         replaces a level&apos;s size and line height, a <code>font</code> prop its weight, and a{" "}
         <code>className</code> size or weight replaces the role.
@@ -346,9 +326,9 @@ export default function ThemingPage(): ReactElement {
       </p>
       <p>
         The modals, <code>Dialog</code>, <code>AlertDialog</code> and <code>Sheet</code>, fill with{" "}
-        <code>--dialog</code> and set their text in <code>--dialog-foreground</code>. Internal themes and
-        every dark theme alias the popover pair, so a modal looks like the anchored popups. External light
-        themes fill a modal with the page tint, <code>var(--background)</code>, in the page&apos;s{" "}
+        <code>--dialog</code> and set their text in <code>--dialog-foreground</code>. Neutral themes and every
+        dark theme alias the popover pair, so a modal looks like the anchored popups. Branded light themes
+        fill a modal with the page tint, <code>var(--background)</code>, in the page&apos;s{" "}
         <code>var(--foreground)</code>, so the white fields and selection rows inside it keep the separation
         they have on the page. Popover, Select, Combobox, DropdownMenu, NavigationMenu, Toolbar, the neutral
         Toast and the <code>Command</code> palette stay on <code>--popover</code>. The menus among them
@@ -373,9 +353,9 @@ export default function ThemingPage(): ReactElement {
         <code>--sidebar-brand-foreground</code> is the sidebar color instead of{" "}
         <code>--brand-foreground</code>. To restyle the sidebar brand, override both sidebar tokens on the
         element that carries the theme attributes, in a rule after the Fuse stylesheet. The rule applies in
-        both color schemes and both variants, so give the dark scheme its own pair in a second rule. That rule
-        needs two selectors, one for a theme element under a dark ancestor and one for an element that is dark
-        itself, such as a themed <code>&lt;html&gt;</code>.
+        both color schemes and both identities, so give the dark scheme its own pair in a second rule. That
+        rule needs two selectors, one for a theme element under a dark ancestor and one for an element that is
+        dark itself, such as a themed <code>&lt;html&gt;</code>.
       </p>
       <pre>
         <code>{SIDEBAR_BRAND_OVERRIDE}</code>
@@ -431,15 +411,17 @@ export default function ThemingPage(): ReactElement {
       <h2 id="document-theme">The document theme</h2>
       <p>
         A page sets its brand once, on <code>&lt;html&gt;</code>, and mounts one <code>ThemeProvider</code>{" "}
-        with the same theme. The provider is fully controlled: there is no <code>setTheme</code> for variant,
+        with the same theme. The provider is fully controlled: there is no <code>setTheme</code> for identity,
         brand or segment. A host changes brand by passing a new <code>theme</code> prop.
       </p>
       <pre>
         <code>{DOCUMENT_THEME}</code>
       </pre>
       <p>
-        Density is composed here too, and is not a theme axis — the root resolves one density for the whole
-        document, and both values are stamped explicitly.
+        Density is stamped here too, and is not a theme axis. <code>documentAttributes</code> takes the theme
+        and a required density, because no identity implies one: the document resolves one density for the
+        whole page. See <Link href="/handbook/density">Density</Link> for an app that needs a dense dashboard
+        and comfortable promo pages.
       </p>
 
       <h2 id="theme-scope">Scoped re-theming</h2>
@@ -558,8 +540,8 @@ export default function ThemingPage(): ReactElement {
       </p>
       <ol>
         <li>
-          Import themeAttributes, densityAttributes, defaultDensityForVariant and colorSchemeScriptSource in
-          vite.config.ts. Use the same document options as the React provider. Keep these calls out of the
+          Import documentAttributes and colorSchemeScriptSource in vite.config.ts, and pass the page&apos;s
+          density explicitly. Use the same document options as the React provider. Keep these calls out of the
           client graph.
         </li>
         <li>
@@ -606,15 +588,15 @@ export default function ThemingPage(): ReactElement {
       <h2 id="in-these-docs">In these docs</h2>
       <p>
         <code>data-theme="dark"</code> activates dark palettes on both the document and nested theme scopes.
-        Internal themes use neutral colors; external themes use their brand palettes. The{" "}
+        Neutral themes use neutral colors; branded themes use their brand palettes. The{" "}
         <Link href="/handbook/theme-matrix">theme matrix</Link> has light, dark, and system controls for
         comparing them. Colour scheme does not change theme slugs, density or brand primitives.
       </p>
       <p>
         This site is a worked example of the split. Its own document theme is fixed at{" "}
-        <code>internal-elma-private</code> and the chrome you are reading consumes that theme's light and dark
+        <code>neutral-elma-private</code> and the chrome you are reading consumes that theme's light and dark
         tokens. The header's theme settings menu writes docs-local preview state from its labelled radio
-        groups (Appearance, Variant, Brand, Segment). Variant, Brand and Segment feed demo stages and theme
+        groups (Appearance, Identity, Brand, Segment). Identity, Brand and Segment feed demo stages and theme
         scopes only, so every demo can be viewed in all twenty-four permutations while the page keeps its
         Elmera identity. Appearance changes the whole document through the library's colour-scheme API, offers
         light, dark and system, and remembers your choice; the matrix mirrors the same three-way control.

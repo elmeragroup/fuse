@@ -14,10 +14,10 @@ import {
   cssVarColor,
   effectiveOpacity,
   FIXED_CONTROL_TYPE,
-  fkasExternal,
+  fkasBranded,
   fkasPrivate,
   computedOklch,
-  guenExternal,
+  guenBranded,
   px,
   renderThemed,
   roleNamed,
@@ -412,7 +412,7 @@ describe("Button", () => {
 
     await userEvent.hover(button);
     expect(getComputedStyle(button).backgroundColor).toBe(cssVarColor(button, "--secondary-hover"));
-    // Internal secondary moves 5% toward foreground, so the hover is visibly a different fill.
+    // Neutral secondary moves 5% toward foreground, so the hover is visibly a different fill.
     expect(cssVarColor(button, "--secondary-hover")).not.toBe(cssVarColor(button, "--secondary"));
   });
 
@@ -427,7 +427,7 @@ describe("Button", () => {
     const button = roleNamed("button", "Custom");
     await userEvent.hover(button);
 
-    // The expected values mix the override 5% of the way toward the internal light
+    // The expected values mix the override 5% of the way toward the neutral light
     // foreground, oklch(0.15 0.0041 49.31). L 0.6 * 0.95 + 0.15 * 0.05 = 0.5775.
     // C 0.2 * 0.95 + 0.0041 * 0.05 = 0.190205. H 30 + (49.31 - 30) * 0.05 = 30.9655.
     // The theme's own hover would be a near-white gray.
@@ -648,7 +648,7 @@ describe("Button", () => {
     expect(trigger).toBeNull();
   });
 
-  it("draws the internal outline as a 1px border hairline with the xs shadow", () => {
+  it("draws the neutral outline as a 1px border hairline with the xs shadow", () => {
     renderThemed(<Button variant="outline">Hairline</Button>);
     const button = roleNamed("button", "Hairline");
     const style = getComputedStyle(button);
@@ -662,11 +662,11 @@ describe("Button", () => {
   });
 
   it.each(["light", "dark"] as const)(
-    "rings the external %s outline 2px in the text color and casts no shadow",
+    "rings the branded %s outline 2px in the text color and casts no shadow",
     (colorScheme) => {
       render(
         <div data-theme={colorScheme}>
-          <ThemeScope theme={fkasExternal}>
+          <ThemeScope theme={fkasBranded}>
             <Button variant="outline">Ring</Button>
           </ThemeScope>
         </div>
@@ -706,7 +706,7 @@ describe("Button", () => {
 
   // Oracle: the WCAG 2.5.8 24px square around the button's centre. The hit area extends the
   // padding box, so a border shrinks it unless the extent accounts for one: the transparent
-  // 1px border, the internal outline hairline and the external 2px outline ring. The xs line
+  // 1px border, the neutral outline hairline and the branded 2px outline ring. The xs line
   // is the shortest Button sits on, and a 14px host root shortens it further.
   it.each([16, 14])(
     "reaches the 24px target from a bordered icon-inline square under a %ipx root",
@@ -719,13 +719,8 @@ describe("Button", () => {
           <div style={{ display: "flex", gap: 32, padding: 32 }}>
             <Button size="icon-inline" variant="ghost" className="text-xs" aria-label="Ghost" />
             <Button size="icon-inline" variant="outline" className="text-xs" aria-label="Outline" />
-            <ThemeScope theme={fkasExternal}>
-              <Button
-                size="icon-inline"
-                variant="outline"
-                className="text-xs"
-                aria-label="External outline"
-              />
+            <ThemeScope theme={fkasBranded}>
+              <Button size="icon-inline" variant="outline" className="text-xs" aria-label="Branded outline" />
             </ThemeScope>
           </div>
         );
@@ -734,7 +729,7 @@ describe("Button", () => {
         for (const [name, border] of [
           ["Ghost", "1px"],
           ["Outline", "1px"],
-          ["External outline", "2px"],
+          ["Branded outline", "2px"],
         ] as const) {
           const button = roleNamed("button", name);
           expect(getComputedStyle(button).borderTopWidth, `${name} border`).toBe(border);
@@ -761,11 +756,11 @@ describe("Button", () => {
   );
 
   it.each(["card", "popover"] as const)(
-    "lifts a hovered external dark ghost button off a %s, which its muted hover tint must not repeat",
+    "lifts a hovered branded dark ghost button off a %s, which its muted hover tint must not repeat",
     async (surface) => {
       render(
         <div data-theme="dark">
-          <ThemeScope theme={fkasExternal}>
+          <ThemeScope theme={fkasBranded}>
             <div data-testid="surface" style={{ background: `var(--${surface})`, padding: 8 }}>
               <Button variant="ghost" className="transition-none">
                 Close
@@ -843,7 +838,7 @@ describe("Button", () => {
 describe("outline Button fill", () => {
   /**
    * The rendered pixel in a button's start padding, and the pixel of the surface 8px before its
-   * start edge, clear of the border and the internal hairline shadow, both read from one
+   * start edge, clear of the border and the neutral hairline shadow, both read from one
    * screenshot of the surface.
    */
   function insideAndBeside(
@@ -862,12 +857,12 @@ describe("outline Button fill", () => {
   }
 
   it.each([
-    ["fkas private external light", fkasExternal, "light"],
-    ["guen external light", guenExternal, "light"],
-    ["internal dark", fkasPrivate, "dark"],
+    ["fkas private branded light", fkasBranded, "light"],
+    ["guen branded light", guenBranded, "light"],
+    ["neutral dark", fkasPrivate, "dark"],
   ] as const)("shows the page and a Card beneath it, %s", async (_name, theme, scheme) => {
     // #423: a page-filled outline painted the page tint inside a Card wherever the page and the
-    // card differ, which is external light and dark. Oracle: the rendered surface beside the
+    // card differ, which is branded light and dark. Oracle: the rendered surface beside the
     // button, on the page and inside a Card.
     const scope = (
       <ThemeScope theme={theme}>

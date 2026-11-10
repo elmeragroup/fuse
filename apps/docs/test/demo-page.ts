@@ -118,7 +118,7 @@ export async function waitForDocsShellHydration(page: Page): Promise<void> {
 
 /** The theme axes a docs suite reads off a preview stage, the document root, or any scope. */
 export type ThemeAttributes = {
-  variant: string | null;
+  identity: string | null;
   brand: string | null;
   segment: string | null;
 };
@@ -129,7 +129,7 @@ export type ThemeAttributes = {
  */
 export async function readThemeAttributes(element: Locator): Promise<ThemeAttributes> {
   return element.evaluate((node) => ({
-    variant: node.getAttribute("data-theme-variant"),
+    identity: node.getAttribute("data-theme-identity"),
     brand: node.getAttribute("data-theme-brand"),
     segment: node.getAttribute("data-theme-segment"),
   }));

@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 import { beforeAll, describe, expect, it } from "vitest";
 
 import { consumerBuild } from "../../test/tailwind-consumer-build";
-import { RADIUS_RUNGS } from "../theme/tokens/radius-scale";
+import { RADIUS_RUNGS } from "../theme/corners/radius-scale";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const compiledCssPath = join(here, "../../dist/styles.css");

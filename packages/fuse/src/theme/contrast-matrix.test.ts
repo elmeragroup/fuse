@@ -9,14 +9,14 @@ import type { ResolvedColorScheme } from "./color-scheme-types";
 import { composeTheme } from "./compose-theme";
 import { buildContrastMatrix, CONTROL_SURFACES, TEXT_GRADE_PAIRS, tokenLiteral } from "./contrast";
 import { resolveThemeCatalog } from "./resolve-theme-catalog";
+import { LEGAL_THEMES, themeSlug } from "./theme-input";
+import type { ThemeInput } from "./theme-input";
 import { literalContrast, tokenOklch } from "./token-color";
 import type { TokenName } from "./tokens/contract";
-import { LEGAL_THEMES, themeSlug } from "./tokens/themes";
-import type { ThemeInput } from "./tokens/themes";
 
 /**
  * Dark-only panel pairs. `TEXT_GRADE_PAIRS` covers the roles every theme pairs with a surface;
- * these cover the popup, accent, sidebar and right-panel roles both variants render in dark.
+ * these cover the popup, accent, sidebar and right-panel roles both identities render in dark.
  */
 const DARK_PANEL_TEXT_PAIRS = [
   ["popover-foreground", "popover"],
@@ -36,8 +36,8 @@ const SIDEBAR_BRAND_PAIRS = [
 ] as const;
 
 /**
- * The filled-feature pair. The external Figma dark sheets choose their own feature colors and
- * do not meet the text floor; the internal dark palette is held to it.
+ * The filled-feature pair. The branded Figma dark sheets choose their own feature colors and
+ * do not meet the text floor; the neutral dark palette is held to it.
  */
 const FEATURE_TEXT_PAIRS = [
   ["feature-foreground", "feature"],
@@ -139,13 +139,13 @@ const CONTRAST_POLICIES: readonly ContrastPolicy[] = [
   },
   {
     schemes: ["dark"],
-    matches: (theme) => theme.variant === "internal",
+    matches: (theme) => theme.identity === "neutral",
     pairs: FEATURE_TEXT_PAIRS,
     floor: 4.5,
   },
   {
     // Muted copy, such as a field description, in a default Accordion item, which fills with
-    // `primary-soft`. Dark only: light measures 4.43:1 on the internal default, 3.84:1 on fkas
+    // `primary-soft`. Dark only: light measures 4.43:1 on the neutral default, 3.84:1 on fkas
     // and 4.17:1 on fkse, an accepted deviation the accessibility page lists until design picks
     // the light tones.
     schemes: ["dark"],
@@ -154,8 +154,8 @@ const CONTRAST_POLICIES: readonly ContrastPolicy[] = [
     floor: 4.5,
   },
   {
-    // A pressed Toggle's label on its fill: foreground on muted in internal themes, the primary
-    // pair in external ones. The fill itself has no floor against the page: internal muted is
+    // A pressed Toggle's label on its fill: foreground on muted in neutral themes, the primary
+    // pair in branded ones. The fill itself has no floor against the page: neutral muted is
     // the quiet 1.09:1 face on white by design.
     schemes: ["light", "dark"],
     matches: () => true,
@@ -191,12 +191,12 @@ const CONTRAST_POLICIES: readonly ContrastPolicy[] = [
     // is not a 1.4.11 control boundary. The floor is elma light's measured 1.1994:1 rounded down;
     // below it the line stops reading on a tinted brand page. Selection rows draw
     // `--selection-border` and their dividers instead, which have no floor: the control inside
-    // carries the row's state at 3:1, external themes make the row edge transparent, and the
+    // carries the row's state at 3:1, branded themes make the row edge transparent, and the
     // divider between stacked rows is decorative. Card and the `card` Accordion item draw
-    // `--card-border`, which has no floor either: a card is a container, and external themes
+    // `--card-border`, which has no floor either: a card is a container, and branded themes
     // make its edge, and Card's `--card-shadow`, transparent. The line between a Card's stacked
     // sections, `--card-section-divider`, has none: it separates segments of one container, and
-    // external themes draw it in the page tint.
+    // branded themes draw it in the page tint.
     schemes: ["light", "dark"],
     matches: () => true,
     pairs: [["border", "background"]],
@@ -269,30 +269,30 @@ describe("contrast matrix", () => {
     await expect(lightMatrix).toMatchFileSnapshot("./__snapshots__/contrast-matrix.json");
   });
 
-  it("snapshots the twelve internal dark permutations as one shared body", async () => {
-    const themes = LEGAL_THEMES.filter((theme) => theme.variant === "internal");
+  it("snapshots the twelve neutral dark permutations as one shared body", async () => {
+    const themes = LEGAL_THEMES.filter((theme) => theme.identity === "neutral");
     expect(themes).toHaveLength(12);
     const [firstTheme] = themes;
     if (firstTheme === undefined) {
-      throw new Error("No internal themes are legal");
+      throw new Error("No neutral themes are legal");
     }
     const body = darkMatrix[themeSlug(firstTheme)];
     for (const theme of themes) {
-      // Internal themes share one dark palette; a body drifting per brand is a contract break.
+      // Neutral themes share one dark palette; a body drifting per brand is a contract break.
       expect(darkMatrix[themeSlug(theme)], themeSlug(theme)).toEqual(body);
     }
     await expect({ themes: themes.map(themeSlug), body }).toMatchFileSnapshot(
-      "./__snapshots__/internal-dark-contrast-matrix.json"
+      "./__snapshots__/neutral-dark-contrast-matrix.json"
     );
   });
 
-  it("snapshots the 12 external dark themes", async () => {
-    const themes = LEGAL_THEMES.filter((theme) => theme.variant === "external");
-    const external = Object.fromEntries(
+  it("snapshots the 12 branded dark themes", async () => {
+    const themes = LEGAL_THEMES.filter((theme) => theme.identity === "branded");
+    const branded = Object.fromEntries(
       themes.map((theme) => [themeSlug(theme), darkMatrix[themeSlug(theme)]])
     );
-    expect(Object.keys(external)).toHaveLength(12);
-    await expect(external).toMatchFileSnapshot("./__snapshots__/external-dark-contrast-matrix.json");
+    expect(Object.keys(branded)).toHaveLength(12);
+    await expect(branded).toMatchFileSnapshot("./__snapshots__/branded-dark-contrast-matrix.json");
   });
 
   it("holds every contrast floor for every theme and color scheme", () => {

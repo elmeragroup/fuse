@@ -13,7 +13,7 @@ import type { ColorSchemeBootstrapManifest } from "./html";
 import { staticThemeBaseUrl } from "./server";
 
 type FirstPaintProbe = {
-  variant: string | null;
+  identity: string | null;
   brand: string | null;
   segment: string | null;
   density: string | null;
@@ -85,7 +85,7 @@ async function probeFirstPaint(page: Page): Promise<FirstPaintProbe> {
     const manifest = globalThis.__ELMERA_COLOR_SCHEME_BOOTSTRAP__;
     const styles = getComputedStyle(root);
     return {
-      variant: root.getAttribute("data-theme-variant"),
+      identity: root.getAttribute("data-theme-identity"),
       brand: root.getAttribute("data-theme-brand"),
       segment: root.getAttribute("data-theme-segment"),
       density: root.getAttribute("data-density"),
@@ -122,8 +122,8 @@ async function waitForTokenCanvas(page: Page): Promise<void> {
   });
 }
 
-function expectFixedDocumentBrand(probe: Pick<FirstPaintProbe, "variant" | "brand" | "segment">): void {
-  expect(probe.variant).toBe(DOCUMENT_BRAND.variant);
+function expectFixedDocumentBrand(probe: Pick<FirstPaintProbe, "identity" | "brand" | "segment">): void {
+  expect(probe.identity).toBe(DOCUMENT_BRAND.identity);
   expect(probe.brand).toBe(DOCUMENT_BRAND.brand);
   expect(probe.segment).toBe(DOCUMENT_BRAND.segment);
 }

@@ -4,7 +4,7 @@ import type { StudioDocument, StudioOverrides } from "../../src/studio/lib/edits
 import { exportCss } from "../../src/studio/lib/export-css";
 import { FONT_STACKS } from "../../src/studio/lib/font-stacks";
 
-const THEME = { variant: "external", brand: "elma", segment: "private" } as const;
+const THEME = { identity: "branded", brand: "elma", segment: "private" } as const;
 
 /**
  * The base theme's declarations the exporter restates, written out by hand in the forms the
@@ -48,9 +48,9 @@ describe("exportCss", () => {
     expect(exported({ shared: { radius: "1rem", "font-heading": "Georgia, serif" } })).toBe(`${HEADER}
 
 /* Both schemes: a dark palette keeps these from light. */
-[data-theme-variant="external"][data-theme-brand="elma"][data-theme-segment="private"],
-[data-theme="dark"] [data-theme-variant="external"][data-theme-brand="elma"][data-theme-segment="private"],
-[data-theme-variant="external"][data-theme-brand="elma"][data-theme-segment="private"][data-theme="dark"] {
+[data-theme-identity="branded"][data-theme-brand="elma"][data-theme-segment="private"],
+[data-theme="dark"] [data-theme-identity="branded"][data-theme-brand="elma"][data-theme-segment="private"],
+[data-theme-identity="branded"][data-theme-brand="elma"][data-theme-segment="private"][data-theme="dark"] {
   --radius: 1rem;
   --radius-button: var(--radius);
   --font-heading: Georgia, serif;
@@ -82,24 +82,24 @@ describe("exportCss", () => {
     ).toBe(`${HEADER}
 
 /* Light. */
-[data-theme-variant="external"][data-theme-brand="elma"][data-theme-segment="private"] {
+[data-theme-identity="branded"][data-theme-brand="elma"][data-theme-segment="private"] {
   --primary: #ff0000;
   --border: #222222;
 }
 
 /* Dark. The first selector matches under a dark ancestor, the second an element that is
    dark itself, such as a themed <html>. */
-[data-theme="dark"] [data-theme-variant="external"][data-theme-brand="elma"][data-theme-segment="private"],
-[data-theme-variant="external"][data-theme-brand="elma"][data-theme-segment="private"][data-theme="dark"] {
+[data-theme="dark"] [data-theme-identity="branded"][data-theme-brand="elma"][data-theme-segment="private"],
+[data-theme-identity="branded"][data-theme-brand="elma"][data-theme-segment="private"][data-theme="dark"] {
   --primary: oklch(0.8 0.1 30);
   --secondary: var(--primary);
   --border: #dddddd;
 }
 
 /* Both schemes: a dark palette keeps these from light. */
-[data-theme-variant="external"][data-theme-brand="elma"][data-theme-segment="private"],
-[data-theme="dark"] [data-theme-variant="external"][data-theme-brand="elma"][data-theme-segment="private"],
-[data-theme-variant="external"][data-theme-brand="elma"][data-theme-segment="private"][data-theme="dark"] {
+[data-theme-identity="branded"][data-theme-brand="elma"][data-theme-segment="private"],
+[data-theme="dark"] [data-theme-identity="branded"][data-theme-brand="elma"][data-theme-segment="private"],
+[data-theme-identity="branded"][data-theme-brand="elma"][data-theme-segment="private"][data-theme="dark"] {
   --radius: 1rem;
   --radius-button: var(--radius);
 }
@@ -110,15 +110,15 @@ describe("exportCss", () => {
     expect(exported({ light: { error: "#ff0000" } })).toBe(`${HEADER}
 
 /* Light. */
-[data-theme-variant="external"][data-theme-brand="elma"][data-theme-segment="private"] {
+[data-theme-identity="branded"][data-theme-brand="elma"][data-theme-segment="private"] {
   --error: #ff0000;
   --destructive: var(--error);
 }
 
 /* Dark. The first selector matches under a dark ancestor, the second an element that is
    dark itself, such as a themed <html>. */
-[data-theme="dark"] [data-theme-variant="external"][data-theme-brand="elma"][data-theme-segment="private"],
-[data-theme-variant="external"][data-theme-brand="elma"][data-theme-segment="private"][data-theme="dark"] {
+[data-theme="dark"] [data-theme-identity="branded"][data-theme-brand="elma"][data-theme-segment="private"],
+[data-theme-identity="branded"][data-theme-brand="elma"][data-theme-segment="private"][data-theme="dark"] {
   --error: oklch(0.7 0.2 25);
   --destructive: var(--error);
 }

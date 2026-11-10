@@ -125,7 +125,7 @@ export default function AccessibilityPage(): ReactElement {
           the ring in their soft surface&apos;s foreground, because the neutral grey falls under 3:1 on the
           dark status soft fills. A default <code>Accordion</code> item does the same, because the grey falls
           under 3:1 on its <code>--primary-soft</code> fill in some brands. The ring sits flush against the
-          control, so against a strong fill it can measure below 3:1 against that fill. The external secondary
+          control, so against a strong fill it can measure below 3:1 against that fill. The branded secondary
           button carries the brand color in every brand except Nordic Green Energy, and in light mode the ring
           measures 1.62–1.79:1 against it. Against the light Telinet and Nordic Green Energy primary buttons
           it measures under 2.7:1. A brand can tune its ring in its palette.
@@ -141,20 +141,20 @@ export default function AccessibilityPage(): ReactElement {
           both color schemes.
         </li>
         <li>
-          External themes draw no outer edge around a <code>RadioItem</code> or <code>CheckboxItem</code> row:{" "}
+          Branded themes draw no outer edge around a <code>RadioItem</code> or <code>CheckboxItem</code> row:{" "}
           <code>--selection-border</code> is transparent, checked or not, so it has no contrast floor. Stacked
           rows keep a decorative <code>--border</code> divider between them, which has no floor either. The
           row is not the control boundary. The <code>Checkbox</code> or <code>Radio</code> inside it carries
           the state with its own edge, held to 3:1 as above, and its checked fill. On a <code>card</code>
           -coloured surface, such as a white <code>Card</code> or a dark <code>Dialog</code> or{" "}
-          <code>Sheet</code>, the row has no outline. External light modals fill with the page tint, so rows
+          <code>Sheet</code>, the row has no outline. Branded light modals fill with the page tint, so rows
           inside them keep the separation they have on the page.
         </li>
         <li>
           A default <code>Accordion</code> item fills with <code>--primary-soft</code>. Its own text takes{" "}
           <code>--primary-soft-foreground</code>, but muted copy inside it, such as a field description,
-          measures under 4.5:1 in light mode: 4.43:1 on the internal themes, 3.84:1 on Fjordkraft and 4.17:1
-          on Telinet. Dark mode holds 4.5:1 in every theme.
+          measures under 4.5:1 in light mode: 4.43:1 on the neutral themes, 3.84:1 on Fjordkraft and 4.17:1 on
+          Telinet. Dark mode holds 4.5:1 in every theme.
         </li>
         <li>
           <code>feature-foreground</code> is reclassified as accent/decorative. Text on <code>feature</code>{" "}

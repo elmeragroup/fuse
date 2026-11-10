@@ -31,34 +31,35 @@ import type {
 } from "./kit-spec";
 import { baseBorderColor, compileUtilities } from "./utility-css";
 
-/**
- * A theme the previews pin: Fjordkraft private in one variant and color scheme. Density `Auto`
- * follows the variant, so an internal theme renders dense and an external one comfortable, as a
- * Fuse host renders them.
- */
-function previewTheme(variant: "Internal" | "External", scheme: "Light" | "Dark") {
+/** A theme the previews pin: Fjordkraft private in one identity, color scheme and density. */
+function previewTheme(
+  identity: "Neutral" | "Branded",
+  scheme: "Light" | "Dark",
+  density: "Dense" | "Comfortable"
+) {
   return {
-    key: `${variant.toLowerCase()}-fkas-private-${scheme.toLowerCase()}`,
-    name: `Fjordkraft ${variant.toLowerCase()} private, ${scheme.toLowerCase()}`,
+    key: `${identity.toLowerCase()}-fkas-private-${scheme.toLowerCase()}`,
+    name: `Fjordkraft ${identity.toLowerCase()} private, ${scheme.toLowerCase()}`,
     modes: {
       "Fuse tokens": scheme,
-      "Fuse variant": variant,
+      "Fuse identity": identity,
       "Fuse segment": "Private",
       "Fuse brand": "Fjordkraft",
-      "Fuse density": "Auto",
+      "Fuse density": density,
     },
   };
 }
 
 /**
  * The four themes each component page previews. A designer switches a preview's modes to see
- * the others.
+ * the others. No identity implies a density, so each preview pins one: neutral dense and branded
+ * comfortable, the pairing the docs and the previews drew before density became explicit.
  */
 const PREVIEW_THEMES = [
-  previewTheme("Internal", "Light"),
-  previewTheme("Internal", "Dark"),
-  previewTheme("External", "Light"),
-  previewTheme("External", "Dark"),
+  previewTheme("Neutral", "Light", "Dense"),
+  previewTheme("Neutral", "Dark", "Dense"),
+  previewTheme("Branded", "Light", "Comfortable"),
+  previewTheme("Branded", "Dark", "Comfortable"),
 ];
 
 /** The page that holds the icon library alone. */

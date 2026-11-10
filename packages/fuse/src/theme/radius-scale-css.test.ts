@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 import { parseCssBlocks } from "../../test/css-rules";
-import { RADIUS_RUNG_NAMES, RADIUS_RUNGS } from "./tokens/radius-scale";
+import { RADIUS_RUNG_NAMES, RADIUS_RUNGS } from "./corners/radius-scale";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const fuseCss = readFileSync(join(here, "../styles/fuse.css"), "utf8");

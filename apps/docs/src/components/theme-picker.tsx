@@ -13,13 +13,13 @@ import {
   BRANDS,
   COLOR_SCHEMES,
   THEME_SEGMENTS,
-  THEME_VARIANTS,
+  THEME_IDENTITIES,
   coerceTheme,
   useColorScheme,
 } from "@elmeragroup/fuse/theme";
 import type { ThemeInput, ThemeSegment } from "@elmeragroup/fuse/theme";
 
-import { COLOR_SCHEME_LABELS, DEFAULT_THEME, SEGMENT_LABELS, VARIANT_LABELS } from "../lib/theme";
+import { COLOR_SCHEME_LABELS, DEFAULT_THEME, SEGMENT_LABELS, IDENTITY_LABELS } from "../lib/theme";
 
 const themePicker = tv({
   slots: {
@@ -114,11 +114,11 @@ export function ThemePicker({ theme, onThemeChange }: ThemePickerProps): ReactEl
           <p className={styles.description()}>Only changes the examples on this page.</p>
         </div>
         <PickerRadioGroup
-          label="Variant"
-          value={theme.variant}
-          options={THEME_VARIANTS}
-          optionLabel={(variant) => VARIANT_LABELS[variant]}
-          onValueChange={(variant) => commitTheme({ ...theme, variant }, onThemeChange)}
+          label="Identity"
+          value={theme.identity}
+          options={THEME_IDENTITIES}
+          optionLabel={(identity) => IDENTITY_LABELS[identity]}
+          onValueChange={(identity) => commitTheme({ ...theme, identity }, onThemeChange)}
         />
         <DropdownMenu.Separator className={styles.separator()} />
         <PickerRadioGroup
@@ -165,7 +165,7 @@ export function ThemePicker({ theme, onThemeChange }: ThemePickerProps): ReactEl
  * @param onThemeChange - Receives the legal theme.
  */
 export function commitTheme(
-  next: { variant: ThemeInput["variant"]; brand: ThemeInput["brand"]; segment: ThemeSegment },
+  next: { identity: ThemeInput["identity"]; brand: ThemeInput["brand"]; segment: ThemeSegment },
   onThemeChange: (theme: ThemeInput) => void
 ): void {
   const coerced = coerceTheme(next);

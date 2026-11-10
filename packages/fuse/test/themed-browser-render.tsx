@@ -12,14 +12,14 @@ import * as Wcag from "@elmeragroup/color/wcag";
 import type { ResolvedColorScheme } from "../src/theme/color-scheme";
 import { remToPx } from "../src/theme/css-values";
 import type { Density } from "../src/theme/density";
+import type { ThemeInput } from "../src/theme/theme-input";
 import { ThemeScope } from "../src/theme/theme-scope";
 import { DENSITY_METRICS } from "../src/theme/tokens/density-metrics";
 import type { DensityMetricName } from "../src/theme/tokens/density-metrics";
-import type { ThemeInput } from "../src/theme/tokens/themes";
 import { render } from "./browser-render";
 import { fkasPrivate, stampTheme } from "./theme-fixtures";
 
-export { fkasExternal, fkasPrivate, guenExternal, stampTheme } from "./theme-fixtures";
+export { fkasBranded, fkasPrivate, guenBranded, stampTheme } from "./theme-fixtures";
 
 /** A density metric in the pixels a browser computes, with `rem` at the 16px root. */
 export function metricPx(name: DensityMetricName, density: Density): number {
@@ -173,7 +173,7 @@ export function stampDensity(density: Density): void {
 /** The document attributes a theme stamp owns. `data-density` is separate. */
 const DOCUMENT_THEME_ATTRIBUTES = [
   "data-theme",
-  "data-theme-variant",
+  "data-theme-identity",
   "data-theme-brand",
   "data-theme-segment",
 ] as const;
@@ -372,13 +372,13 @@ export function fieldBoxOf(input: HTMLElement): HTMLElement {
  *
  * `host` must be an element mounted UNDER the `ThemeScope`: the theme attributes selecting the
  * token values are on the scope element, so the `renderThemed` host div is outside them and reads
- * whatever `:root` happens to declare — which for `--primary` is the internal default, quietly
- * right for `internal-fkas` and wrong for every other theme. A suite asserting a role token also
+ * whatever `:root` happens to declare — which for `--primary` is the neutral default, quietly
+ * right for `neutral-fkas` and wrong for every other theme. A suite asserting a role token also
  * has to load the theme sheet (`import "../../../dist/themes.css"`); `dist/styles.css` declares no
  * role tokens at all. Both mistakes throw here rather than returning a plausible wrong colour.
  */
 export function cssVarColor(host: HTMLElement, token: string): string {
-  if (host.closest("[data-theme-variant]") === null) {
+  if (host.closest("[data-theme-identity]") === null) {
     throw new Error(
       `cssVarColor(${token}) needs an element under a ThemeScope; the renderThemed host div is outside it`
     );

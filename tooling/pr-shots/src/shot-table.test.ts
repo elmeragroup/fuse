@@ -63,7 +63,7 @@ describe("renderTable", () => {
         "",
         "| Shot | Before | After |",
         "| --- | --- | --- |",
-        `| default-theme · stage-density · light · chromium · 1280x900 | Not deployed on prod | ![After: meter "Usage" in its demo stage on /components/meter, the page's default theme, the theme's default density, light mode, Chromium, 1280 × 900 window](./after-default-theme-stage-density-light-chromium-1280x900-stage.png) |`,
+        `| default-theme · stage-density · light · chromium · 1280x900 | Not deployed on prod | ![After: meter "Usage" in its demo stage on /components/meter, the page's default theme, the theme's docs density, light mode, Chromium, 1280 × 900 window](./after-default-theme-stage-density-light-chromium-1280x900-stage.png) |`,
         "",
       ].join("\n")
     );
@@ -75,7 +75,7 @@ describe("renderTable", () => {
       "--route",
       "/",
       "--click",
-      "button:Internal",
+      "button:Neutral",
       "--click",
       "combobox:Rows | page",
       "--target",
@@ -89,7 +89,7 @@ describe("renderTable", () => {
       "local checkout"
     );
     expect(table.split("\n")[0]).toBe(
-      'Screenshots of combobox "Rows \\| page" on `/`, after clicking button "Internal", then combobox "Rows \\| page". Before: prod. After: local checkout.'
+      'Screenshots of combobox "Rows \\| page" on `/`, after clicking button "Neutral", then combobox "Rows \\| page". Before: prod. After: local checkout.'
     );
   });
 
@@ -188,7 +188,7 @@ describe("plannedAttachmentCount", () => {
         "--target",
         "button:Save",
         "--themes",
-        "internal-fkas-private,external-tkas-company,external-fkse-private",
+        "neutral-fkas-private,branded-tkas-company,branded-fkse-private",
         "--densities",
         "dense,comfortable",
         "--engines",

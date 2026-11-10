@@ -10,6 +10,7 @@ import {
 } from "../../test/color-scheme-contract";
 import { runColorSchemeBootstrap } from "../../test/memory-color-scheme-platform";
 import { fkasPrivate } from "../../test/theme-fixtures";
+import fuseCss from "../styles/fuse.css?raw";
 import {
   COLOR_SCHEME_BOOTSTRAP_SOURCE_DUPLICATE,
   COLOR_SCHEME_BOOTSTRAP_SOURCE_KEY,
@@ -17,10 +18,12 @@ import {
 } from "./color-scheme";
 import type { ColorSchemeBootstrapManifest } from "./color-scheme";
 import { diagnoseColorSchemeBootstrap } from "./color-scheme-diagnostics";
+import type { Density } from "./density";
+import { documentAttributes } from "./document-attributes";
 import { THEME_ATTRIBUTE_NAMES, themeAttributes } from "./theme-attributes";
+import { BRANDS, LEGAL_THEMES, parseThemeSlug, themeSlug } from "./theme-input";
+import type { ThemeInput } from "./theme-input";
 import { ThemeProvider, useTheme } from "./theme-provider";
-import { BRANDS, LEGAL_THEMES, parseThemeSlug, themeSlug } from "./tokens/themes";
-import type { ThemeInput } from "./tokens/themes";
 import { useColorScheme } from "./use-color-scheme";
 import { coerceTheme, isThemeDevelopment, validateTheme } from "./validate-theme";
 
@@ -38,24 +41,28 @@ describe("themeSlug / parseThemeSlug", () => {
   });
 
   it("returns null for malformed slugs and illegal pinned combinations", () => {
-    expect(parseThemeSlug("internal-fkab-private")).toBeNull();
-    expect(parseThemeSlug("external-fkse-company")).toBeNull();
-    expect(parseThemeSlug("internal-fkas-private-extra")).toBeNull();
-    expect(parseThemeSlug("INTERNAL-fkas-private")).toBeNull();
-    expect(parseThemeSlug("internal-zz-private")).toBeNull();
+    expect(parseThemeSlug("neutral-fkab-private")).toBeNull();
+    expect(parseThemeSlug("branded-fkse-company")).toBeNull();
+    expect(parseThemeSlug("neutral-fkas-private-extra")).toBeNull();
+    // Axis values are case-sensitive, and an unknown brand fails on its own.
+    expect(parseThemeSlug("NEUTRAL-fkas-private")).toBeNull();
+    expect(parseThemeSlug("neutral-zz-private")).toBeNull();
+    // The retired identity names no longer parse.
+    expect(parseThemeSlug("internal-fkas-private")).toBeNull();
+    expect(parseThemeSlug("external-fkas-private")).toBeNull();
     expect(parseThemeSlug("")).toBeNull();
-    expect(parseThemeSlug("external-fkas-private")).toEqual({
-      variant: "external",
+    expect(parseThemeSlug("branded-fkas-private")).toEqual({
+      identity: "branded",
       brand: "fkas",
       segment: "private",
     });
-    expect(parseThemeSlug("internal-elma-private")).toEqual({
-      variant: "internal",
+    expect(parseThemeSlug("neutral-elma-private")).toEqual({
+      identity: "neutral",
       brand: "elma",
       segment: "private",
     });
-    expect(parseThemeSlug("external-elma-company")).toEqual({
-      variant: "external",
+    expect(parseThemeSlug("branded-elma-company")).toEqual({
+      identity: "branded",
       brand: "elma",
       segment: "company",
     });
@@ -75,9 +82,9 @@ it("rejects non-objects and unknown or missing axes: coerceTheme returns null, v
   vi.stubEnv("NODE_ENV", "production");
   for (const [input, message] of [
     [null, /expected an object/],
-    ["external-fkas-private", /expected an object/],
-    [{ variant: "internal", brand: "fkas" }, /unknown or missing/],
-    [{ variant: "internal", brand: "zz", segment: "private" }, /unknown or missing/],
+    ["branded-fkas-private", /expected an object/],
+    [{ identity: "neutral", brand: "fkas" }, /unknown or missing/],
+    [{ identity: "neutral", brand: "zz", segment: "private" }, /unknown or missing/],
   ] as const) {
     expect(coerceTheme(input)).toBeNull();
     expect(() => validateTheme(input)).toThrow(message);
@@ -87,14 +94,14 @@ it("rejects non-objects and unknown or missing axes: coerceTheme returns null, v
 describe("coerceTheme", () => {
   it("silently pins illegal segments regardless of environment", () => {
     vi.stubEnv("NODE_ENV", "development");
-    expect(coerceTheme({ variant: "internal", brand: "fkab", segment: "private" })).toEqual({
-      variant: "internal",
+    expect(coerceTheme({ identity: "neutral", brand: "fkab", segment: "private" })).toEqual({
+      identity: "neutral",
       brand: "fkab",
       segment: "company",
     });
     vi.stubEnv("NODE_ENV", "production");
-    expect(coerceTheme({ variant: "external", brand: "fkse", segment: "company" })).toEqual({
-      variant: "external",
+    expect(coerceTheme({ identity: "branded", brand: "fkse", segment: "company" })).toEqual({
+      identity: "branded",
       brand: "fkse",
       segment: "private",
     });
@@ -104,23 +111,23 @@ describe("coerceTheme", () => {
 describe("validateTheme", () => {
   it("throws on pinned-segment mistakes outside production", () => {
     vi.stubEnv("NODE_ENV", "development");
-    expect(() => validateTheme({ variant: "internal", brand: "fkab", segment: "private" })).toThrow(/fkab/);
-    expect(() => validateTheme({ variant: "external", brand: "fkse", segment: "company" })).toThrow(/fkse/);
+    expect(() => validateTheme({ identity: "neutral", brand: "fkab", segment: "private" })).toThrow(/fkab/);
+    expect(() => validateTheme({ identity: "branded", brand: "fkse", segment: "company" })).toThrow(/fkse/);
   });
 
   it("coerces pinned-segment mistakes in production and warns once per invocation", () => {
     vi.stubEnv("NODE_ENV", "production");
     const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
 
-    expect(validateTheme({ variant: "internal", brand: "fkab", segment: "private" })).toEqual({
-      variant: "internal",
+    expect(validateTheme({ identity: "neutral", brand: "fkab", segment: "private" })).toEqual({
+      identity: "neutral",
       brand: "fkab",
       segment: "company",
     });
     expect(warn).toHaveBeenCalledTimes(1);
 
-    expect(validateTheme({ variant: "external", brand: "fkse", segment: "company" })).toEqual({
-      variant: "external",
+    expect(validateTheme({ identity: "branded", brand: "fkse", segment: "company" })).toEqual({
+      identity: "branded",
       brand: "fkse",
       segment: "private",
     });
@@ -130,18 +137,18 @@ describe("validateTheme", () => {
 
 describe("themeAttributes", () => {
   it("returns the three data attributes for a validated theme", () => {
-    expect(themeAttributes({ variant: "external", brand: "fkas", segment: "private" })).toEqual({
-      "data-theme-variant": "external",
+    expect(themeAttributes({ identity: "branded", brand: "fkas", segment: "private" })).toEqual({
+      "data-theme-identity": "branded",
       "data-theme-brand": "fkas",
       "data-theme-segment": "private",
     });
-    expect(themeAttributes({ variant: "internal", brand: "elma", segment: "private" })).toEqual({
-      "data-theme-variant": "internal",
+    expect(themeAttributes({ identity: "neutral", brand: "elma", segment: "private" })).toEqual({
+      "data-theme-identity": "neutral",
       "data-theme-brand": "elma",
       "data-theme-segment": "private",
     });
-    expect(themeAttributes({ variant: "external", brand: "elma", segment: "company" })).toEqual({
-      "data-theme-variant": "external",
+    expect(themeAttributes({ identity: "branded", brand: "elma", segment: "company" })).toEqual({
+      "data-theme-identity": "branded",
       "data-theme-brand": "elma",
       "data-theme-segment": "company",
     });
@@ -153,9 +160,70 @@ describe("themeAttributes", () => {
   });
 
   it("validates untyped input before returning attributes", () => {
-    const untyped = { variant: "internal", brand: "zz", segment: "private" };
+    const untyped = { identity: "neutral", brand: "zz", segment: "private" };
     // SAFETY: runtime validator is the contract under test; the public type is ThemeInput.
     expect(() => themeAttributes(untyped as ThemeInput)).toThrow(/unknown or missing/);
+  });
+
+  it("rejects the retired variant axis and its values", () => {
+    // validateTheme is the runtime boundary themeAttributes parses through.
+    expect(() => validateTheme({ variant: "external", brand: "fkas", segment: "private" })).toThrow(
+      /unknown or missing identity/
+    );
+    expect(() => validateTheme({ identity: "external", brand: "fkas", segment: "private" })).toThrow(
+      /unknown or missing identity/
+    );
+  });
+
+  it("is the set fuse.css drops a foreign inner corner on", () => {
+    // Why a test: fuse.css cannot import TypeScript. Its weightless reset must name exactly the
+    // attributes a theme stamps, or a scope stamped by one attribute keeps a foreign corner.
+    const reset = /:where\(([^)]*)\)\s*\{\s*--inner-corner: initial;/u.exec(fuseCss)?.[1];
+    expect(reset?.split(",").map((selector) => selector.trim())).toEqual(
+      THEME_ATTRIBUTE_NAMES.map((name) => `[${name}]`)
+    );
+  });
+});
+
+describe("documentAttributes", () => {
+  it("stamps the theme and the explicit density, in that order, whatever the identity", () => {
+    expect(
+      Object.entries(
+        documentAttributes({
+          theme: { identity: "branded", brand: "tkas", segment: "company" },
+          density: "dense",
+        })
+      )
+    ).toEqual([
+      ["data-theme-identity", "branded"],
+      ["data-theme-brand", "tkas"],
+      ["data-theme-segment", "company"],
+      ["data-density", "dense"],
+    ]);
+    expect(
+      documentAttributes({
+        theme: { identity: "neutral", brand: "fkas", segment: "private" },
+        density: "comfortable",
+      })
+    ).toEqual({
+      "data-theme-identity": "neutral",
+      "data-theme-brand": "fkas",
+      "data-theme-segment": "private",
+      "data-density": "comfortable",
+    });
+  });
+
+  it("rejects an unknown density or theme", () => {
+    const density: string = "auto";
+    // SAFETY: runtime validation is the contract under test; the public type forbids "auto".
+    expect(() => documentAttributes({ theme: fkasPrivate, density: density as Density })).toThrow(
+      /Invalid density/
+    );
+    const theme = { identity: "neutral", brand: "zz", segment: "private" };
+    // SAFETY: runtime validation is the contract under test; the public type forbids "zz".
+    expect(() => documentAttributes({ theme: theme as ThemeInput, density: "dense" })).toThrow(
+      /Invalid theme/
+    );
   });
 });
 
@@ -219,7 +287,7 @@ describe("color-scheme bootstrap diagnostics", () => {
 });
 
 describe("ThemeProvider server snapshot", () => {
-  const theme = { variant: "internal", brand: "fkas", segment: "private" } as const;
+  const theme = { identity: "neutral", brand: "fkas", segment: "private" } as const;
 
   function SnapshotProbe() {
     const resolvedTheme = useTheme();
@@ -235,15 +303,15 @@ describe("ThemeProvider server snapshot", () => {
     const html = renderToStaticMarkup(
       createElement(ThemeProvider, { theme, children: createElement(SnapshotProbe) })
     );
-    expect(html).toBe("<span>internal-fkas-private:system:pending</span>");
+    expect(html).toBe("<span>neutral-fkas-private:system:pending</span>");
   });
 
   it("coerce-and-warns an illegal nested theme in production and still renders children", () => {
     vi.stubEnv("NODE_ENV", "production");
     const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
-    const outer = { variant: "internal", brand: "fkas", segment: "private" } as const;
+    const outer = { identity: "neutral", brand: "fkas", segment: "private" } as const;
     // @ts-expect-error untyped CMS/env input is the runtime boundary
-    const illegalPinned: ThemeInput = { variant: "internal", brand: "fkab", segment: "private" };
+    const illegalPinned: ThemeInput = { identity: "neutral", brand: "fkab", segment: "private" };
 
     const html = renderToStaticMarkup(
       createElement(ThemeProvider, {

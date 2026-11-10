@@ -18,7 +18,7 @@ export default function ThemeMatrixPage(): ReactElement {
         That is the whole whitelabel argument in one screen.
       </p>
       <p>
-        There are twenty-four cells because there are twenty-four legal permutations: two variants × seven
+        There are twenty-four cells because there are twenty-four legal permutations: two identities × seven
         brands × two segments, minus the four the pin table forbids. <code>fkab</code> is pinned to{" "}
         <code>company</code> and <code>fkse</code> to <code>private</code>, so <code>*-fkab-private</code> and{" "}
         <code>*-fkse-company</code> are not expressible — they are absent here rather than drawn and crossed
@@ -32,8 +32,8 @@ export default function ThemeMatrixPage(): ReactElement {
       <ThemeMatrix />
 
       <p>
-        Dark palettes apply to all twenty-four themes. Internal themes share a neutral palette and retain
-        their brand accents. Fjordkraft company and Fjordkraft Företag use the Bedrift palette. Gudbrandsdal
+        Dark palettes apply to all twenty-four themes. Neutral themes share a neutral palette and retain their
+        brand accents. Fjordkraft company and Fjordkraft Företag use the Bedrift palette. Gudbrandsdal
         Energi&apos;s dark palette is provisional, derived from the GE design references.
       </p>
 

@@ -4,7 +4,7 @@ import { page, userEvent } from "vitest/browser";
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import { render } from "../../../test/browser-render";
-import { fkasExternal } from "../../../test/theme-fixtures";
+import { fkasBranded } from "../../../test/theme-fixtures";
 import { cssVarColor, renderThemed } from "../../../test/themed-browser-render";
 import { ThemeScope } from "../../theme/theme-scope";
 import { Button } from "../button/button";
@@ -15,7 +15,7 @@ import { ButtonGroup } from "./index";
 const radiusToken = { "--radius": "8px" };
 
 /**
- * A host's own field corner under the external step: fields round with a 4px `--radius-field`,
+ * A host's own field corner under the branded step: fields round with a 4px `--radius-field`,
  * inside the group's 10px `rounded-md`.
  */
 const hostFieldCorner = { "--radius-field": "4px" };
@@ -216,7 +216,7 @@ describe("ButtonGroup", () => {
       "rounds a leading field like the trailing button when the group is %s",
       (orientation, name, fieldCornerA, fieldCornerB, buttonCorner) => {
         render(
-          <ThemeScope theme={fkasExternal} style={style}>
+          <ThemeScope theme={fkasBranded} style={style}>
             <Input aria-label={`${name} alone`} />
             <ButtonGroup.Root orientation={orientation} aria-label={name}>
               <Input aria-label={`${name} query`} />

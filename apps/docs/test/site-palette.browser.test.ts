@@ -319,17 +319,17 @@ describe("site palette on the landing", () => {
     await dialog.getByRole("option", { name: "Landing theme" }).click();
     await expect
       .poll(() => dialog.locator('[role="option"][aria-current="true"]').allTextContents())
-      .toEqual(["Elmera · Private · External"]);
+      .toEqual(["Elmera · Private · Branded"]);
     // The page matches every word of the query, in any order.
-    await page.keyboard.type("internal telinet");
-    await expect.poll(() => highlighted(dialog)).toBe("Telinet · Private · Internal");
+    await page.keyboard.type("neutral telinet");
+    await expect.poll(() => highlighted(dialog)).toBe("Telinet · Private · Neutral");
     await page.keyboard.press("Enter");
     await expect.poll(() => dialog.count()).toBe(0);
     await page.waitForFunction(
       () =>
         document.documentElement.getAttribute("data-theme-brand") === "fkse" &&
         document.documentElement.getAttribute("data-theme-segment") === "private" &&
-        document.documentElement.getAttribute("data-theme-variant") === "internal"
+        document.documentElement.getAttribute("data-theme-identity") === "neutral"
     );
     await closeContext(context);
   });

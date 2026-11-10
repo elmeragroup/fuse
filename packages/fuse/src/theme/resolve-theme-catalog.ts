@@ -14,11 +14,14 @@ import type { Srgb } from "@elmeragroup/color/srgb";
 
 import type { ResolvedColorScheme } from "./color-scheme-types";
 import { composeTheme } from "./compose-theme";
+import { RADIUS_RUNG_NAMES, RADIUS_RUNGS } from "./corners/radius-scale";
+import type { RadiusRungName } from "./corners/radius-scale";
 import { cssFontWeight, cssLengthToPx, cssVarReference, remToPx } from "./css-values";
-import { defaultDensityForVariant, densityAttributes } from "./density";
-import type { Density, DensityAttributes } from "./density";
+import type { Density } from "./density";
 import { themeAttributes } from "./theme-attributes";
 import type { ThemeAttributes } from "./theme-attributes";
+import { LEGAL_THEMES, themeSlug } from "./theme-input";
+import type { ThemeInput, ThemeSlug } from "./theme-input";
 import { readTokenColor } from "./token-color";
 import {
   isColorTokenName,
@@ -39,10 +42,6 @@ import { DENSITY_ROLES, PART_DENSITY } from "./tokens/density-roles";
 import type { DensityPart, DensityRole } from "./tokens/density-roles";
 import { PRIMITIVE_DESCRIPTIONS, PRIMITIVE_NAMES, PRIMITIVE_PAINTS, PRIMITIVES } from "./tokens/primitives";
 import type { PrimitiveName } from "./tokens/primitives";
-import { RADIUS_RUNG_NAMES, RADIUS_RUNGS } from "./tokens/radius-scale";
-import type { RadiusRungName } from "./tokens/radius-scale";
-import { LEGAL_THEMES, themeSlug } from "./tokens/themes";
-import type { ThemeInput, ThemeSlug } from "./tokens/themes";
 
 /**
  * The design-tool value each token kind resolves to. Dimensions are px at the 16px root, and
@@ -160,17 +159,17 @@ export type ResolvedScheme = {
 
 /** One legal theme, with what describes it and its values in both color schemes. */
 export type ResolvedTheme = {
-  /** The theme's slug, such as `external-fkas-private`. */
+  /** The theme's slug, such as `branded-fkas-private`. */
   readonly slug: ThemeSlug;
 
-  /** The theme's variant, brand and segment. */
+  /** The theme's identity, brand and segment. */
   readonly input: ThemeInput;
 
-  /** The density the theme's variant deploys with. */
-  readonly defaultDensity: Density;
-
-  /** The document attributes that select the theme: `data-theme-*`, then `data-density`. */
-  readonly attributes: ThemeAttributes & DensityAttributes;
+  /**
+   * The `data-theme-*` attributes that select the theme. Density is a separate document axis,
+   * so they carry no `data-density`.
+   */
+  readonly attributes: ThemeAttributes;
 
   /** The theme's tokens and rungs per color scheme, light first. */
   readonly schemes: { readonly [S in ResolvedColorScheme]: ResolvedScheme };
@@ -265,7 +264,7 @@ export function resolveThemeCatalog(): ResolvedThemeCatalog {
 
 /** Where a value is declared, for the message a defect throws with. */
 type Site = {
-  /** The declaring scope, such as `primitive` or `token in external-fkas-private (dark)`. */
+  /** The declaring scope, such as `primitive` or `token in branded-fkas-private (dark)`. */
   readonly scope: string;
 
   /** The custom property without its leading dashes. */
@@ -494,14 +493,12 @@ function resolvePrimitives(): ResolvedThemeCatalog["primitives"] {
 
 function resolveTheme(input: ThemeInput, primitives: ResolvedThemeCatalog["primitives"]): ResolvedTheme {
   const slug = themeSlug(input);
-  const defaultDensity = defaultDensityForVariant(input.variant);
   const scheme = (colorScheme: ResolvedColorScheme): ResolvedScheme =>
     resolveScheme(composeTheme(input, colorScheme), `${slug} (${colorScheme})`, primitives);
   return {
     slug,
     input,
-    defaultDensity,
-    attributes: { ...themeAttributes(input), ...densityAttributes(defaultDensity) },
+    attributes: themeAttributes(input),
     schemes: { light: scheme("light"), dark: scheme("dark") },
   };
 }

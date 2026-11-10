@@ -38,6 +38,7 @@ describe("SideNav inventory", () => {
     ]);
     expect(NAV_GROUPS[1]?.items.map((item) => item.label)).toEqual([
       "Theming",
+      "Density",
       "Theme matrix",
       "Tokens",
       "Brands & segments",

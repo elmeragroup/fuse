@@ -1,7 +1,7 @@
 /**
  * The font stacks the font knobs offer, by key. They name families, as an app's CSS does, so a
  * stored or exported edit works in any app that loads the family. `inter` and `roboto` are the
- * stacks the docs set for internal and external themes. `body` points the heading font at the body
+ * stacks the docs set for neutral and branded themes. `body` points the heading font at the body
  * font, so the font-sans knob does not offer it.
  */
 export const FONT_STACKS = {

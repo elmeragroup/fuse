@@ -12,10 +12,10 @@ import { fetchText } from "./docs-server";
 
 /** The four permutations the pin table forbids; none may reach the DOM. */
 const ILLEGAL_SLUGS = [
-  "internal-fkab-private",
-  "external-fkab-private",
-  "internal-fkse-company",
-  "external-fkse-company",
+  "neutral-fkab-private",
+  "branded-fkab-private",
+  "neutral-fkse-company",
+  "branded-fkse-company",
 ] as const;
 
 /** The grid itself, without the prose around it. */
@@ -45,9 +45,9 @@ describe("theme matrix", () => {
     const html = await fetchText("/handbook/theme-matrix");
     // Every cell carries its own three brand attributes.
     expect([...html.matchAll(/data-theme-brand="elma"/g)].length).toBeGreaterThanOrEqual(4);
-    expect([...html.matchAll(/data-theme-variant="external"/g)]).toHaveLength(12);
+    expect([...html.matchAll(/data-theme-identity="branded"/g)]).toHaveLength(12);
     // The document root stays Elmera-internal, and dense.
-    expect(/<html\b[^>]*data-theme-variant="internal"/.test(html)).toBe(true);
+    expect(/<html\b[^>]*data-theme-identity="neutral"/.test(html)).toBe(true);
     expect(/<html\b[^>]*data-density="dense"/.test(html)).toBe(true);
   });
 
@@ -167,7 +167,7 @@ describe("fonts page", () => {
       "next/font/local",
       "@fontsource/inter/400.css",
       "@font-face",
-      "[data-theme-variant=&quot;external&quot;]:is([data-theme-brand=&quot;fkas&quot;]",
+      "[data-theme-identity=&quot;branded&quot;]:is([data-theme-brand=&quot;fkas&quot;]",
       "@fontsource/roboto/400.css",
       "--font-roboto",
       "font-family: var(--font-sans);",
@@ -175,9 +175,28 @@ describe("fonts page", () => {
       expect(html, recipe).toContain(recipe);
     }
     expect(html).not.toContain("!important;");
-    // Every recipe sets the internal fonts on internal scopes too, so a nested internal scope
+    // Every recipe sets the neutral fonts on neutral scopes too, so a nested neutral scope
     // resets them.
-    expect([...html.matchAll(/:root,\s*\[data-theme-variant=&quot;internal&quot;\] \{/g)]).toHaveLength(3);
+    expect([...html.matchAll(/:root,\s*\[data-theme-identity=&quot;neutral&quot;\] \{/g)]).toHaveLength(3);
+  });
+});
+
+describe("density page", () => {
+  it("shows the per-document rule, the route-group layouts, their pitfalls and a branded dashboard", async () => {
+    const html = await fetchText("/handbook/density");
+    for (const id of ["per-document", "route-groups", "pitfalls", "branded-dashboard"]) {
+      expect(html, id).toContain(`id="${id}"`);
+    }
+    // One root layout per density, each stamping its own document.
+    expect(html).toContain("app/(dashboard)/layout.tsx");
+    expect(html).toContain("app/(promo)/layout.tsx");
+    expect(html).toContain("density: &quot;dense&quot;");
+    expect(html).toContain("density: &quot;comfortable&quot;");
+    for (const pitfall of ["global-not-found", "global-error", "@modal"]) {
+      expect(html, pitfall).toContain(pitfall);
+    }
+    // The branded dashboard pairs the branded identity with dense density.
+    expect(html).toContain("identity: &quot;branded&quot;");
   });
 });
 
@@ -241,7 +260,7 @@ describe("quick start page", () => {
   it("shows the app page scaffold once — landmarks, skip link and lang", async () => {
     const html = await fetchText("/quick-start");
     expect(html).toContain('id="page-scaffold"');
-    expect(html).toContain("themeAttributes");
+    expect(html).toContain("documentAttributes");
     expect(html).toContain("ColorSchemeScript");
     expect(html).toContain("lang=");
     expect(html).toContain("Hopp til innholdet");

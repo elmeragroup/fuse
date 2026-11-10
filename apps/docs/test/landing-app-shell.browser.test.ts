@@ -93,18 +93,18 @@ async function openView(page: Page, label: string): Promise<void> {
 }
 
 describe("landing Dashboard window", () => {
-  // On the External side the document takes the external variant. The site's own chrome keeps
-  // Inter, the brand site's external ThemeScope draws Roboto, and the Dashboard stays mounted,
-  // inert, in its internal ThemeScope, which draws Inter. An inert subtree has no role a query
+  // On the Branded side the document takes the branded identity. The site's own chrome keeps
+  // Inter, the brand site's branded ThemeScope draws Roboto, and the Dashboard stays mounted,
+  // inert, in its neutral ThemeScope, which draws Inter. An inert subtree has no role a query
   // reaches, so the row is found by its customer attribute, and the brand site's button by the
   // scope's theme attribute.
-  it("keeps the site chrome and the internal Dashboard in Inter, and the external site in Roboto", async () => {
+  it("keeps the site chrome and the neutral Dashboard in Inter, and the branded site in Roboto", async () => {
     const page = await openLanding(DESKTOP_VIEWPORT);
-    await showSide(page, "External");
-    await expect.poll(() => page.locator("html").getAttribute("data-theme-variant")).toBe("external");
+    await showSide(page, "Branded");
+    await expect.poll(() => page.locator("html").getAttribute("data-theme-identity")).toBe("branded");
     expect({
       nav: await drawnFace(page.getByRole("navigation", { name: "Primary" }).getByRole("button").first()),
-      site: await drawnFace(page.locator('[data-theme-variant="external"]:not(html) button').first()),
+      site: await drawnFace(page.locator('[data-theme-identity="branded"]:not(html) button').first()),
       dashboard: await drawnFace(page.locator('[data-customer="Ola Nordmann"]').first()),
     }).toEqual({ nav: "--font-inter", site: "--font-roboto", dashboard: "--font-inter" });
     await page.context().close();
@@ -512,7 +512,7 @@ describe("landing Dashboard window", () => {
     await expectTargets(newOrder, "New order Sheet");
     // On a phone the Sheet fills the window's width. DOM audit: the window's theme scope, inside
     // its border, has no role.
-    const scope = app.locator("[data-theme-variant]");
+    const scope = app.locator("[data-theme-identity]");
     const [sheetBox, scopeBox] = await Promise.all([newOrder.boundingBox(), scope.boundingBox()]);
     expect(sheetBox?.width).toBeCloseTo(scopeBox?.width ?? 0, 0);
     await page.context().close();

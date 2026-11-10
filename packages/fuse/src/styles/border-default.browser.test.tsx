@@ -12,7 +12,7 @@ import "../../dist/themes.css";
 import { render } from "../../test/browser-render";
 import { withLocale } from "../../test/locale-matrix";
 import { bySlot, Frame as SidebarFrame, setupSidebarBrowser } from "../../test/sidebar-browser-fixtures";
-import { fkasPrivate, fkseExternal, guenExternal } from "../../test/theme-fixtures";
+import { fkasPrivate, fkseBranded, guenBranded } from "../../test/theme-fixtures";
 import type { QueryableRole } from "../../test/themed-browser-render";
 import { cssVarColor, fieldRootFrom, px, roleNamed, textNamed } from "../../test/themed-browser-render";
 import { Accordion } from "../components/accordion";
@@ -159,13 +159,13 @@ const HOST_WIDGETS: readonly HostWidget[] = [
 ];
 
 const SCOPES = {
-  "internal light": (node: ReactNode) => <ThemeScope theme={fkasPrivate}>{node}</ThemeScope>,
-  "internal dark": (node: ReactNode) => (
+  "neutral light": (node: ReactNode) => <ThemeScope theme={fkasPrivate}>{node}</ThemeScope>,
+  "neutral dark": (node: ReactNode) => (
     <div data-theme="dark">
       <ThemeScope theme={fkasPrivate}>{node}</ThemeScope>
     </div>
   ),
-  "external guen": (node: ReactNode) => <ThemeScope theme={guenExternal}>{node}</ThemeScope>,
+  "branded guen": (node: ReactNode) => <ThemeScope theme={guenBranded}>{node}</ThemeScope>,
 } as const;
 
 describe("the base-layer border default", () => {
@@ -177,7 +177,7 @@ describe("the base-layer border default", () => {
   });
 
   it("draws the Sidebar rail edge in the sidebar role where it differs from the border role", () => {
-    render(SCOPES["external guen"](withLocale("en-US", <SidebarFrame />)));
+    render(SCOPES["branded guen"](withLocale("en-US", <SidebarFrame />)));
     const container = bySlot("sidebar-container");
     const role = cssVarColor(container, "--sidebar-border");
     expect(role, "precondition: the sidebar role differs from the border role").not.toBe(
@@ -188,7 +188,7 @@ describe("the base-layer border default", () => {
 
   it("leaves host native widgets their own border colour and gives a host rule the border role", () => {
     render(
-      SCOPES["internal light"](
+      SCOPES["neutral light"](
         <>
           {HOST_WIDGETS.map((widget) => (
             <Fragment key={widget.name}>
@@ -212,12 +212,12 @@ describe("the base-layer border default", () => {
     expect(getComputedStyle(rule).borderTopColor).toBe(cssVarColor(rule, "--border"));
   });
 
-  it("reads the inner scope's border role in an external scope inside an internal dark one", async () => {
+  it("reads the inner scope's border role in a branded scope inside a neutral dark one", async () => {
     render(
       <div data-theme="dark">
         <ThemeScope theme={fkasPrivate}>
           <div role="group" aria-label="Outer" />
-          <ThemeScope theme={guenExternal}>
+          <ThemeScope theme={guenBranded}>
             <BareBorderParts />
           </ThemeScope>
         </ThemeScope>
@@ -315,7 +315,7 @@ function expectBorderKeepers(): void {
 }
 
 /**
- * A border colour class on a Card or a card Accordion item beats the card edge role. An external
+ * A border colour class on a Card or a card Accordion item beats the card edge role. A branded
  * `primary` can equal the text colour, but the error role is a status hue in every scope.
  */
 function expectClassOverride(): void {
@@ -327,9 +327,9 @@ function expectClassOverride(): void {
 
 describe("the card edge role", () => {
   it.each([
-    ["internal light", (node: ReactNode) => <ThemeScope theme={fkasPrivate}>{node}</ThemeScope>],
+    ["neutral light", (node: ReactNode) => <ThemeScope theme={fkasPrivate}>{node}</ThemeScope>],
     [
-      "internal dark",
+      "neutral dark",
       (node: ReactNode) => (
         <div data-theme="dark">
           <ThemeScope theme={fkasPrivate}>{node}</ThemeScope>
@@ -351,11 +351,11 @@ describe("the card edge role", () => {
   });
 
   it.each([
-    ["guen light", guenExternal, false],
-    ["fkse light", fkseExternal, false],
-    ["guen dark", guenExternal, true],
-    ["fkse dark", fkseExternal, true],
-  ] as const)("draws external cards with a transparent 1px edge, %s", (_, theme, dark) => {
+    ["guen light", guenBranded, false],
+    ["fkse light", fkseBranded, false],
+    ["guen dark", guenBranded, true],
+    ["fkse dark", fkseBranded, true],
+  ] as const)("draws branded cards with a transparent 1px edge, %s", (_, theme, dark) => {
     const scoped = (
       <ThemeScope theme={theme}>
         <CardEdgeParts />

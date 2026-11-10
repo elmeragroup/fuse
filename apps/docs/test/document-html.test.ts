@@ -38,7 +38,7 @@ describe("docs response HTML", () => {
   it("places the host color bootstrap before every paintable landing child at the site root", async () => {
     const html = await fetchHtml("/");
     expectBootstrapFirst(html);
-    // The landing deploys external, whose library default density is comfortable.
+    // The landing opens on a branded theme, which the docs site previews at comfortable density.
     expect(readDocumentDensity(html)).toBe("comfortable");
     expect(html).toContain("data-landing");
   });
@@ -74,7 +74,7 @@ describe("docs response HTML", () => {
       expect(readDocumentDensity(html)).toBe("dense");
       expect(bootstrapScripts(html)).toHaveLength(0);
       expect(html).not.toContain(BOOTSTRAP_MANIFEST_KEY);
-      expect(html).not.toContain('aria-label="Variant"');
+      expect(html).not.toContain('aria-label="Identity"');
       expect(html).not.toContain('aria-label="Brand"');
       expect(html).not.toContain('aria-label="Segment"');
       expect(html).not.toContain("ThemePicker");
@@ -86,7 +86,7 @@ describe("docs response HTML", () => {
 
   it("names the site root as the canonical page of every themed landing address", async () => {
     const canonicals: string[] = [];
-    for (const pathname of ["/", "/?theme=internal-fkas-company"] as const) {
+    for (const pathname of ["/", "/?theme=neutral-fkas-company"] as const) {
       const href = /<link rel="canonical" href="([^"]+)"\/>/u.exec(await fetchHtml(pathname))?.[1];
       expect(href, pathname).toBeDefined();
       canonicals.push(href ?? "");

@@ -19,7 +19,7 @@ import {
   CONTROL_SM,
   CONTROL_XS,
   cssVarColor,
-  fkasExternal,
+  fkasBranded,
   inputNamed,
   px,
   renderThemed,
@@ -80,7 +80,7 @@ describe("InputGroup", () => {
 
   it("paints Input's fill and chrome, enabled and disabled, where the card and page background differ", () => {
     renderThemed(
-      <ThemeScope theme={fkasExternal}>
+      <ThemeScope theme={fkasBranded}>
         <Input aria-label="Plain" />
         <InputGroup.Root>
           <InputGroup.Addon>
@@ -97,7 +97,7 @@ describe("InputGroup", () => {
     const plain = getComputedStyle(textboxNamed("Plain"));
     const group = rootNamed("Grouped");
     const grouped = getComputedStyle(group);
-    // The oracle is the theme's own --card, read where the group sits; the external theme
+    // The oracle is the theme's own --card, read where the group sits; the branded theme
     // tints --background, so an unfilled group would show a different colour.
     const card = cssVarColor(group, "--card");
     expect(card).not.toBe(cssVarColor(group, "--background"));
@@ -532,7 +532,7 @@ describe("InputGroup", () => {
 
     stampDensity("dense");
     rerender(
-      <ThemeScope theme={fkasExternal}>
+      <ThemeScope theme={fkasBranded}>
         <InputGroup.Root>
           <InputGroup.Input aria-label="Meter" />
         </InputGroup.Root>

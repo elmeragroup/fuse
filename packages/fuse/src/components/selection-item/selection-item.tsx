@@ -69,7 +69,7 @@ const firstLineClass = cn(
 // and the selectable band their `not-allowed` cursor. A disabled row fills with the disabled
 // background role, checked or not, and that fill also wins over a background class in
 // `className`. The 45° hatch alternates 8px transparent bands with 8px of the hatch role: a black
-// alpha in internal themes, transparent in external ones.
+// alpha in neutral themes, transparent in branded ones.
 const disabledShellClass = cn(
   "selection-row-disabled:cursor-not-allowed",
   "selection-row-disabled:bg-selection-disabled-background",
@@ -77,7 +77,7 @@ const disabledShellClass = cn(
 );
 
 // A disabled row's label row text takes `--selection-disabled-foreground`: the foreground in
-// internal themes, which keeps the title's colour, and the muted foreground in external ones.
+// neutral themes, which keeps the title's colour, and the muted foreground in branded ones.
 // It goes on the label row cluster, which also holds a plain-text row, rather than on the
 // title, and the variant's `> label > &` arm keeps a row nested in a SubSection from inheriting it.
 // The SubSection band is a sibling of the label, so its content keeps its colours, a
@@ -185,8 +185,8 @@ export function SelectionItemGroup({
  * drops a line height that comes before a font size, and the formatter sorts the classes inside a
  * string.
  *
- * Its weight comes from the theme's `--selection-title-weight`: 400 in internal themes and 500
- * in external ones, which matches the group legend and `CheckboxCard` titles. Without
+ * Its weight comes from the theme's `--selection-title-weight`: 400 in neutral themes and 500
+ * in branded ones, which matches the group legend and `CheckboxCard` titles. Without
  * `themes.css` it is 400 unless the host sets the role. A `className` weight, such as
  * `font-medium`, replaces it.
  */
@@ -242,10 +242,10 @@ type SelectionItemShellProps = Omit<ComponentProps<typeof FieldItem>, "className
   /**
    * Shows the disabled row: the `not-allowed` cursor and the theme's
    * `--selection-disabled-background` fill under a 45° hatch striped in
-   * `--selection-disabled-hatch`. Internal themes fill with `--muted` and black stripes at 2%
-   * alpha; external themes keep the card fill with no stripes. The label row's text takes
-   * `--selection-disabled-foreground`: the foreground in internal themes, the muted foreground in
-   * external ones. A description keeps its own muted text, a SubSection keeps its colours, and
+   * `--selection-disabled-hatch`. Neutral themes fill with `--muted` and black stripes at 2%
+   * alpha; branded themes keep the card fill with no stripes. The label row's text takes
+   * `--selection-disabled-foreground`: the foreground in neutral themes, the muted foreground in
+   * branded ones. A description keeps its own muted text, a SubSection keeps its colours, and
    * the control dims itself. A row whose group is disabled, or whose control in the control
    * slot carries `data-disabled`, matches `:disabled` or is `aria-disabled="true"`, shows the
    * same look without it. Does not disable the control — the control or group owns that.
@@ -324,16 +324,16 @@ export type SelectionItemRootProps = Omit<
  * Nothing clips, so a focus ring at a zero inset paints whole.
  *
  * The shell's 1px edge is the theme's `--selection-border`, not Item's outline `--border`:
- * `--border` in internal themes, a zero-alpha colour in external ones, which keeps the border's
+ * `--border` in neutral themes, a zero-alpha colour in branded ones, which keeps the border's
  * geometry but draws no line. A checked shell paints its edge in the theme's
- * `--selection-checked-border`: `--primary` in internal themes, the resting `--selection-border`
- * in external ones, whose radio card shows the selection through its control alone.
+ * `--selection-checked-border`: `--primary` in neutral themes, the resting `--selection-border`
+ * in branded ones, whose radio card shows the selection through its control alone.
  *
  * Vertical and default shells, in either group shape or outside any group, collapse borders with
  * `not-first:border-t-0`, so one line divides two rows. The bottom edge of a row with another
  * row after it is the theme's `--selection-divider`, and a checked row's edges shared with another
- * row are its `--selection-checked-divider`. Internal themes alias them to the row's own edges, so
- * a checked row stays boxed in `--primary`. External themes draw both in `--border`: stacked rows
+ * row are its `--selection-checked-divider`. Neutral themes alias them to the row's own edges, so
+ * a checked row stays boxed in `--primary`. Branded themes draw both in `--border`: stacked rows
  * keep a grey separator, checked or not, while the sides, the stack's outer top and bottom and a
  * lone row beside other Field parts stay transparent. A checked non-first shell repaints its top border by pulling itself up one
  * pixel (`has-[>label>[data-slot=selection-item-control]_[data-checked]]:not-first:-mt-px`) instead of a

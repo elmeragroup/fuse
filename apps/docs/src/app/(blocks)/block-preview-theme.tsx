@@ -5,7 +5,7 @@ import type { ReactElement, ReactNode } from "react";
 
 import { usePathname } from "next/navigation";
 
-import { defaultDensityForVariant, parseThemeSlug, ThemeProvider } from "@elmeragroup/fuse/theme";
+import { densityAttributes, parseThemeSlug, ThemeProvider } from "@elmeragroup/fuse/theme";
 import type { ThemeInput } from "@elmeragroup/fuse/theme";
 
 import {
@@ -14,7 +14,7 @@ import {
   parseBlockPreviewMessage,
 } from "../../lib/block-preview";
 import type { BlockPreviewMessage } from "../../lib/block-preview";
-import { DEFAULT_THEME, DOCUMENT_COLOR_SCHEME } from "../../lib/theme";
+import { DEFAULT_THEME, docsDensityFor, DOCUMENT_COLOR_SCHEME } from "../../lib/theme";
 
 type BlockPreviewThemeProps = {
   children: ReactNode;
@@ -69,7 +69,7 @@ function useSessionTheme(): ThemeInput | null {
  * The block's document theme. It opens on the docs' default preview theme. In the docs page's
  * iframe it takes every theme the page posts, and after every navigation it tells the page its path
  * and search, for the preview's address bar. In a tab of its own it keeps the theme "Open in new tab"
- * linked for the whole session. The density follows the variant, as the docs' demo stages do. This
+ * linked for the whole session. The density is the docs site's density for the identity, as on the docs' demo stages. This
  * file is the docs site's, not the block's: an app sets its theme once in its own root layout.
  */
 export function BlockPreviewTheme({ children }: BlockPreviewThemeProps): ReactElement {
@@ -98,10 +98,13 @@ export function BlockPreviewTheme({ children }: BlockPreviewThemeProps): ReactEl
     post({ _tag: "Location", path: `${pathname}${window.location.search}` });
   }, [pathname]);
 
-  // Before paint, so a theme change never shows a frame at the old variant's density.
+  // Before paint, so a theme change never shows a frame at the old identity's density.
+  const density = docsDensityFor(theme);
   useLayoutEffect(() => {
-    document.documentElement.dataset.density = defaultDensityForVariant(theme.variant);
-  }, [theme.variant]);
+    for (const [name, value] of Object.entries(densityAttributes(density))) {
+      document.documentElement.setAttribute(name, value);
+    }
+  }, [density]);
 
   return (
     <ThemeProvider

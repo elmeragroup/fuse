@@ -5,40 +5,40 @@ import { getOrThrow } from "@elmeragroup/color/result";
 
 import { resolveThemeCatalog } from "./catalog";
 import type { ResolvedScheme, ResolvedTheme } from "./catalog";
+import { RADIUS_RUNG_NAMES } from "./corners/radius-scale";
 import { TOKEN_NAMES } from "./tokens/contract";
 import { DENSITY_METRIC_NAMES } from "./tokens/density-metrics";
 import { PRIMITIVE_NAMES } from "./tokens/primitives";
-import { RADIUS_RUNG_NAMES } from "./tokens/radius-scale";
 
 // The unit under test is the resolved catalog. Every expected value below is written by hand
 // from the token sources and fuse.css, never read back through the resolver.
 
 /** Every legal theme slug in LEGAL_THEMES order: variant, then brand, then segment. */
 const SLUGS = [
-  "internal-fkas-private",
-  "internal-fkas-company",
-  "internal-tkas-private",
-  "internal-tkas-company",
-  "internal-guen-private",
-  "internal-guen-company",
-  "internal-fkab-company",
-  "internal-fkse-private",
-  "internal-elma-private",
-  "internal-elma-company",
-  "internal-ngfi-private",
-  "internal-ngfi-company",
-  "external-fkas-private",
-  "external-fkas-company",
-  "external-tkas-private",
-  "external-tkas-company",
-  "external-guen-private",
-  "external-guen-company",
-  "external-fkab-company",
-  "external-fkse-private",
-  "external-elma-private",
-  "external-elma-company",
-  "external-ngfi-private",
-  "external-ngfi-company",
+  "neutral-fkas-private",
+  "neutral-fkas-company",
+  "neutral-tkas-private",
+  "neutral-tkas-company",
+  "neutral-guen-private",
+  "neutral-guen-company",
+  "neutral-fkab-company",
+  "neutral-fkse-private",
+  "neutral-elma-private",
+  "neutral-elma-company",
+  "neutral-ngfi-private",
+  "neutral-ngfi-company",
+  "branded-fkas-private",
+  "branded-fkas-company",
+  "branded-tkas-private",
+  "branded-tkas-company",
+  "branded-guen-private",
+  "branded-guen-company",
+  "branded-fkab-company",
+  "branded-fkse-private",
+  "branded-elma-private",
+  "branded-elma-company",
+  "branded-ngfi-private",
+  "branded-ngfi-company",
 ] as const;
 
 // Counts the derived `secondary-hover` role, the `radius-step` rung spacing, the
@@ -93,23 +93,21 @@ describe("resolveThemeCatalog", () => {
     expect(catalog.density.map((metric) => metric.name)).toEqual(DENSITY_METRIC_NAMES);
   });
 
-  it("describes each theme with its axes, deployment density and document attributes", () => {
-    expect(theme("external-fkas-private")).toMatchObject({
-      input: { variant: "external", brand: "fkas", segment: "private" },
-      defaultDensity: "comfortable",
+  it("describes each theme with its axes and theme attributes, and no density", () => {
+    expect(theme("branded-fkas-private")).toMatchObject({
+      input: { identity: "branded", brand: "fkas", segment: "private" },
     });
-    expect(theme("internal-elma-company").defaultDensity).toBe("dense");
-    expect(Object.entries(theme("external-fkas-private").attributes)).toEqual([
-      ["data-theme-variant", "external"],
+    expect(theme("neutral-elma-company")).not.toHaveProperty("defaultDensity");
+    expect(Object.entries(theme("branded-fkas-private").attributes)).toEqual([
+      ["data-theme-identity", "branded"],
       ["data-theme-brand", "fkas"],
       ["data-theme-segment", "private"],
-      ["data-density", "comfortable"],
     ]);
   });
 
   it("computes each radius rung from the theme's radius and step", () => {
-    // external-fkas-private sets --radius: 0.75rem, 12px, and external themes step 2px.
-    expect(withoutDescription(light("external-fkas-private").rungs["radius-md"])).toEqual({
+    // branded-fkas-private sets --radius: 0.75rem, 12px, and branded themes step 2px.
+    expect(withoutDescription(light("branded-fkas-private").rungs["radius-md"])).toEqual({
       name: "radius-md",
       kind: "dimension",
       css: "calc(var(--radius) - var(--radius-step, 0px))",
@@ -117,26 +115,26 @@ describe("resolveThemeCatalog", () => {
       reference: undefined,
       value: 10,
     });
-    expect(theme("external-fkas-private").schemes.dark.rungs["radius-xl"].value).toBe(16);
-    // external-tkas-private sets 1rem, 16px, so radius-xs is 16 - 3 * 2.
-    expect(light("external-tkas-private").rungs["radius-xs"].value).toBe(10);
-    // Internal themes keep 0.5rem, 8px, and step 0px, so every rung is 8px.
-    expect(light("internal-elma-private").rungs["radius-xs"].value).toBe(8);
-    expect(light("internal-elma-private").rungs["radius-xl"].value).toBe(8);
+    expect(theme("branded-fkas-private").schemes.dark.rungs["radius-xl"].value).toBe(16);
+    // branded-tkas-private sets 1rem, 16px, so radius-xs is 16 - 3 * 2.
+    expect(light("branded-tkas-private").rungs["radius-xs"].value).toBe(10);
+    // Neutral themes keep 0.5rem, 8px, and step 0px, so every rung is 8px.
+    expect(light("neutral-elma-private").rungs["radius-xs"].value).toBe(8);
+    expect(light("neutral-elma-private").rungs["radius-xl"].value).toBe(8);
     // radius-xs counts its three steps in the CSS and steps them off 12px: 12 - 3 * 2.
-    expect(light("external-fkas-private").rungs["radius-xs"]).toMatchObject({
+    expect(light("branded-fkas-private").rungs["radius-xs"]).toMatchObject({
       css: "calc(var(--radius) - 3 * var(--radius-step, 0px))",
       value: 6,
     });
   });
 
   it("keeps a var() as one hop and resolves its value along the chain in the same scheme", () => {
-    const guenDark = theme("external-guen-private").schemes.dark;
+    const guenDark = theme("branded-guen-private").schemes.dark;
     expect(guenDark.tokens.destructive).toMatchObject({
       css: "var(--error)",
       reference: { space: "token", name: "error" },
     });
-    // External dark themes take --error from DARK_DEFAULTS, and a light-scheme hop would
+    // Branded dark themes take --error from DARK_DEFAULTS, and a light-scheme hop would
     // resolve to the light error instead. Each colour oracle below converts a hand-copied
     // literal with the colour package's own conversion.
     const darkError = getOrThrow(Oklch.parse("oklch(0.8383036 0.089085 26.7575)"));
@@ -156,34 +154,34 @@ describe("resolveThemeCatalog", () => {
     // Gudbrandsdal's accent already reads on the light sidebar, so its sidebar brand keeps
     // the alias.
     const guenAccent = getOrThrow(Oklch.parse("oklch(0.21 0.0399 265.73)"));
-    const sidebarBrand = light("external-guen-private").tokens["sidebar-brand"];
+    const sidebarBrand = light("branded-guen-private").tokens["sidebar-brand"];
     expect(sidebarBrand).toMatchObject({ css: "var(--brand)", reference: { space: "token", name: "brand" } });
     expect(sidebarBrand.value).toEqual(Oklch.toSrgb(guenAccent));
 
-    // The external outline aliases the text color, so the dark hop lands on the dark
+    // The branded outline aliases the text color, so the dark hop lands on the dark
     // foreground, #FFEEE6 in the fkas dark sheet.
-    const fkasDarkOutline = theme("external-fkas-private").schemes.dark.tokens["button-outline"];
+    const fkasDarkOutline = theme("branded-fkas-private").schemes.dark.tokens["button-outline"];
     expect(fkasDarkOutline).toMatchObject({
       css: "var(--foreground)",
       reference: { space: "token", name: "foreground" },
     });
     const fkasDarkForeground = getOrThrow(Oklch.parse("oklch(0.9604175 0.0214022 46.9889)"));
     expect(fkasDarkOutline.value).toEqual(Oklch.toSrgb(fkasDarkForeground));
-    // Internal themes keep the hairline in the border role, oklch(0.9219 0 0) in light.
-    const internalOutline = light("internal-fkas-private").tokens["button-outline"];
-    expect(internalOutline).toMatchObject({
+    // Neutral themes keep the hairline in the border role, oklch(0.9219 0 0) in light.
+    const neutralOutline = light("neutral-fkas-private").tokens["button-outline"];
+    expect(neutralOutline).toMatchObject({
       css: "var(--border)",
       reference: { space: "token", name: "border" },
     });
-    expect(internalOutline.value).toEqual(Oklch.toSrgb(getOrThrow(Oklch.parse("oklch(0.9219 0 0)"))));
+    expect(neutralOutline.value).toEqual(Oklch.toSrgb(getOrThrow(Oklch.parse("oklch(0.9219 0 0)"))));
   });
 
-  it("resolves external fkab-company to the tokens of external fkas-company in both schemes", () => {
-    // Unit under test: external-fkab-company. Oracle: external-fkas-company, which fkab
+  it("resolves branded fkab-company to the tokens of branded fkas-company in both schemes", () => {
+    // Unit under test: branded-fkab-company. Oracle: branded-fkas-company, which fkab
     // aliases by policy, so every token must resolve to the same colour, length or weight.
     // Only the brand pointer may name fkab, and it resolves to the fkas accent.
-    const fkab = theme("external-fkab-company");
-    const fkas = theme("external-fkas-company");
+    const fkab = theme("branded-fkab-company");
+    const fkas = theme("branded-fkas-company");
     for (const colorScheme of ["light", "dark"] as const) {
       for (const name of TOKEN_NAMES) {
         const actual = fkab.schemes[colorScheme].tokens[name];
@@ -203,24 +201,24 @@ describe("resolveThemeCatalog", () => {
 
   it("reads colours as unrounded sRGB", () => {
     // `#5c6773` in DEFAULTS is a hex literal, not oklch.
-    expect(light("internal-fkas-private").tokens["sh-identifier"]).toMatchObject({
+    expect(light("neutral-fkas-private").tokens["sh-identifier"]).toMatchObject({
       css: "#5c6773",
       reference: undefined,
       value: { r: 0x5c / 255, g: 0x67 / 255, b: 0x73 / 255, alpha: 1 },
     });
-    // INTERNAL_DARK_PALETTE writes the field border as white at 40% alpha, and the alpha survives.
-    expect(theme("internal-fkas-private").schemes.dark.tokens.input).toMatchObject({
+    // NEUTRAL_DARK_PALETTE writes the field border as white at 40% alpha, and the alpha survives.
+    expect(theme("neutral-fkas-private").schemes.dark.tokens.input).toMatchObject({
       css: "oklch(1 0 0 / 40%)",
       reference: undefined,
       value: { r: 1, g: 1, b: 1, alpha: 0.4 },
     });
   });
 
-  it("resolves the external selection row edge to a zero-alpha colour and its divider to the border, in both schemes", () => {
-    // EXTERNAL_VARIANT_LAYER writes the edge as `oklch(0 0 0 / 0)` and aliases the checked edge
+  it("resolves the branded selection row edge to a zero-alpha colour and its divider to the border, in both schemes", () => {
+    // BRANDED_IDENTITY_LAYER writes the edge as `oklch(0 0 0 / 0)` and aliases the checked edge
     // to it, so design tools get a transparent colour, not a `transparent` keyword they cannot read.
     for (const scheme of ["light", "dark"] as const) {
-      const tokens = theme("external-tkas-company").schemes[scheme].tokens;
+      const tokens = theme("branded-tkas-company").schemes[scheme].tokens;
       expect(tokens["selection-border"], scheme).toMatchObject({
         css: "oklch(0 0 0 / 0)",
         reference: undefined,
@@ -232,10 +230,10 @@ describe("resolveThemeCatalog", () => {
         value: { alpha: 0 },
       });
     }
-    // The divider between stacked external rows is the scheme's own opaque border: fkas
+    // The divider between stacked branded rows is the scheme's own opaque border: fkas
     // oklch(0.898 0.0026 48.72) in light and the shared dark border oklch(0.3956915 0.0031178
     // 164.9356) in dark.
-    const fkas = theme("external-fkas-private").schemes;
+    const fkas = theme("branded-fkas-private").schemes;
     for (const [scheme, border] of [
       ["light", "oklch(0.898 0.0026 48.72)"],
       ["dark", "oklch(0.3956915 0.0031178 164.9356)"],
@@ -257,41 +255,41 @@ describe("resolveThemeCatalog", () => {
     expect(fkas.light.tokens["selection-divider"].value).not.toEqual(
       fkas.dark.tokens["selection-divider"].value
     );
-    // Internal rows keep the border role, oklch(0.9219 0 0) in light.
-    expect(light("internal-fkas-private").tokens["selection-border"]).toMatchObject({
+    // Neutral rows keep the border role, oklch(0.9219 0 0) in light.
+    expect(light("neutral-fkas-private").tokens["selection-border"]).toMatchObject({
       css: "var(--border)",
       reference: { space: "token", name: "border" },
       value: Oklch.toSrgb(getOrThrow(Oklch.parse("oklch(0.9219 0 0)"))),
     });
   });
 
-  it("resolves the external card edge to a zero-alpha colour in both schemes and the internal one to the border", () => {
-    // EXTERNAL_VARIANT_LAYER writes the edge as `oklch(0 0 0 / 0)`, a light-only key that dark keeps.
+  it("resolves the branded card edge to a zero-alpha colour in both schemes and the neutral one to the border", () => {
+    // BRANDED_IDENTITY_LAYER writes the edge as `oklch(0 0 0 / 0)`, a light-only key that dark keeps.
     for (const scheme of ["light", "dark"] as const) {
-      expect(theme("external-fkse-private").schemes[scheme].tokens["card-border"], scheme).toMatchObject({
+      expect(theme("branded-fkse-private").schemes[scheme].tokens["card-border"], scheme).toMatchObject({
         css: "oklch(0 0 0 / 0)",
         reference: undefined,
         value: { alpha: 0 },
       });
     }
-    // Internal cards keep the border role, oklch(0.9219 0 0) in light.
-    expect(light("internal-fkas-private").tokens["card-border"]).toMatchObject({
+    // Neutral cards keep the border role, oklch(0.9219 0 0) in light.
+    expect(light("neutral-fkas-private").tokens["card-border"]).toMatchObject({
       css: "var(--border)",
       reference: { space: "token", name: "border" },
       value: Oklch.toSrgb(getOrThrow(Oklch.parse("oklch(0.9219 0 0)"))),
     });
   });
 
-  it("resolves the external card shadow to a zero-alpha colour in both schemes and the internal one to 5% black", () => {
-    // EXTERNAL_VARIANT_LAYER writes the shadow as `oklch(0 0 0 / 0)`, a light-only key that dark keeps.
+  it("resolves the branded card shadow to a zero-alpha colour in both schemes and the neutral one to 5% black", () => {
+    // BRANDED_IDENTITY_LAYER writes the shadow as `oklch(0 0 0 / 0)`, a light-only key that dark keeps.
     for (const scheme of ["light", "dark"] as const) {
-      expect(theme("external-fkse-private").schemes[scheme].tokens["card-shadow"], scheme).toMatchObject({
+      expect(theme("branded-fkse-private").schemes[scheme].tokens["card-shadow"], scheme).toMatchObject({
         css: "oklch(0 0 0 / 0)",
         reference: undefined,
         value: { alpha: 0 },
       });
-      // Internal cards keep Tailwind's `shadow-xs` colour, black at 5%, in both schemes.
-      expect(theme("internal-fkas-private").schemes[scheme].tokens["card-shadow"], scheme).toMatchObject({
+      // Neutral cards keep Tailwind's `shadow-xs` colour, black at 5%, in both schemes.
+      expect(theme("neutral-fkas-private").schemes[scheme].tokens["card-shadow"], scheme).toMatchObject({
         css: "oklch(0 0 0 / 0.05)",
         reference: undefined,
         value: { r: 0, g: 0, b: 0, alpha: 0.05 },
@@ -299,15 +297,15 @@ describe("resolveThemeCatalog", () => {
     }
   });
 
-  it("resolves the external disabled selection row to the card fill, zero-alpha stripes and muted text in both schemes", () => {
-    // EXTERNAL_VARIANT_LAYER aliases the fill to `--card` and writes the stripe as `oklch(0 0 0 / 0)`.
+  it("resolves the branded disabled selection row to the card fill, zero-alpha stripes and muted text in both schemes", () => {
+    // BRANDED_IDENTITY_LAYER aliases the fill to `--card` and writes the stripe as `oklch(0 0 0 / 0)`.
     // tkas's card is white in light and #242625, oklch(0.2661671 0.0034366 164.8011), in dark.
     const cards = {
       light: "oklch(1 0 0)",
       dark: "oklch(0.2661671 0.0034366 164.8011)",
     } as const;
     for (const scheme of ["light", "dark"] as const) {
-      const tokens = theme("external-tkas-private").schemes[scheme].tokens;
+      const tokens = theme("branded-tkas-private").schemes[scheme].tokens;
       expect(tokens["selection-disabled-background"], scheme).toMatchObject({
         css: "var(--card)",
         reference: { space: "token", name: "card" },
@@ -324,56 +322,54 @@ describe("resolveThemeCatalog", () => {
       });
     }
     // tkas's light muted foreground, the opaque tone #283 holds to 4.5:1.
-    expect(light("external-tkas-private").tokens["selection-disabled-foreground"].value).toEqual(
+    expect(light("branded-tkas-private").tokens["selection-disabled-foreground"].value).toEqual(
       Oklch.toSrgb(getOrThrow(Oklch.parse("oklch(0.5273 0.03558 190.82)")))
     );
-    // Internal disabled text names the foreground role in both schemes.
+    // Neutral disabled text names the foreground role in both schemes.
     for (const scheme of ["light", "dark"] as const) {
       expect(
-        theme("internal-fkas-private").schemes[scheme].tokens["selection-disabled-foreground"],
+        theme("neutral-fkas-private").schemes[scheme].tokens["selection-disabled-foreground"],
         scheme
       ).toMatchObject({ css: "var(--foreground)", reference: { space: "token", name: "foreground" } });
     }
-    // Internal rows keep the muted fill, oklch(0.97 0.0013 106.42) in light, and black stripes
+    // Neutral rows keep the muted fill, oklch(0.97 0.0013 106.42) in light, and black stripes
     // at 2% alpha in both schemes.
-    expect(light("internal-fkas-private").tokens["selection-disabled-background"]).toMatchObject({
+    expect(light("neutral-fkas-private").tokens["selection-disabled-background"]).toMatchObject({
       css: "var(--muted)",
       reference: { space: "token", name: "muted" },
       value: Oklch.toSrgb(getOrThrow(Oklch.parse("oklch(0.97 0.0013 106.42)"))),
     });
     for (const scheme of ["light", "dark"] as const) {
-      expect(theme("internal-fkas-private").schemes[scheme].tokens["selection-disabled-hatch"]).toMatchObject(
-        {
-          css: "oklch(0 0 0 / 0.02)",
-          value: { r: 0, g: 0, b: 0, alpha: 0.02 },
-        }
-      );
+      expect(theme("neutral-fkas-private").schemes[scheme].tokens["selection-disabled-hatch"]).toMatchObject({
+        css: "oklch(0 0 0 / 0.02)",
+        value: { r: 0, g: 0, b: 0, alpha: 0.02 },
+      });
     }
   });
 
-  it("resolves the pressed Toggle pair to the muted pair in internal themes and the primary pair in external ones, in both schemes", () => {
-    // LAYER_DEFAULTS aliases the pair to `--muted` and `--foreground`, and EXTERNAL_VARIANT_LAYER
+  it("resolves the pressed Toggle pair to the muted pair in neutral themes and the primary pair in branded ones, in both schemes", () => {
+    // LAYER_DEFAULTS aliases the pair to `--muted` and `--foreground`, and BRANDED_IDENTITY_LAYER
     // to `--primary` and `--primary-foreground`. The pair is light-only, so a dark scheme keeps the
     // alias and resolves it against its own dark role. Each colour is the literal its source table
-    // writes for that role: internal light from LAYER_DEFAULTS, internal dark from
-    // INTERNAL_DARK_PALETTE, external fkas from its light palette and its dark sheet (#FFEEE6 on
+    // writes for that role: neutral light from LAYER_DEFAULTS, neutral dark from
+    // NEUTRAL_DARK_PALETTE, branded fkas from its light palette and its dark sheet (#FFEEE6 on
     // black).
     for (const [slug, scheme, fill, text] of [
       [
-        "internal-fkas-private",
+        "neutral-fkas-private",
         "light",
         ["muted", "oklch(0.97 0.0013 106.42)"],
         ["foreground", "oklch(0.15 0.0041 49.31)"],
       ],
-      ["internal-fkas-private", "dark", ["muted", "oklch(0.269 0 0)"], ["foreground", "oklch(0.985 0 0)"]],
+      ["neutral-fkas-private", "dark", ["muted", "oklch(0.269 0 0)"], ["foreground", "oklch(0.985 0 0)"]],
       [
-        "external-fkas-private",
+        "branded-fkas-private",
         "light",
         ["primary", "oklch(0.3209 0.10325 38.8)"],
         ["primary-foreground", "oklch(1 0 0)"],
       ],
       [
-        "external-fkas-private",
+        "branded-fkas-private",
         "dark",
         ["primary", "oklch(0.9604175 0.0214022 46.9889)"],
         ["primary-foreground", "oklch(0 0 0)"],
@@ -395,32 +391,32 @@ describe("resolveThemeCatalog", () => {
 
   it("reads dimensions as px", () => {
     // 1.8125rem at the 16px root.
-    expect(light("external-fkas-private").tokens["radius-button"].value).toBe(29);
-    expect(light("external-fkas-private").tokens["button-outline-width"].value).toBe(2);
-    expect(light("internal-fkas-private").tokens["button-outline-width"].value).toBe(1);
+    expect(light("branded-fkas-private").tokens["radius-button"].value).toBe(29);
+    expect(light("branded-fkas-private").tokens["button-outline-width"].value).toBe(2);
+    expect(light("neutral-fkas-private").tokens["button-outline-width"].value).toBe(1);
   });
 
   it("reads the paragraph line heights as px, kept in both schemes", () => {
-    // External paragraph styles 14/20, 16/22 and 18/24; internal relaxed 1.625 × 14, 16 and 18.
+    // Branded paragraph styles 14/20, 16/22 and 18/24; neutral relaxed 1.625 × 14, 16 and 18.
     const expected = [
       ["paragraph-leading-sm", 20, 22.75],
       ["paragraph-leading-base", 22, 26],
       ["paragraph-leading-lg", 24, 29.25],
     ] as const;
-    for (const [name, external, internal] of expected) {
-      expect(light("external-fkas-private").tokens[name], name).toMatchObject({
+    for (const [name, branded, neutral] of expected) {
+      expect(light("branded-fkas-private").tokens[name], name).toMatchObject({
         kind: "dimension",
         codeSyntax: `var(--${name})`,
-        value: external,
+        value: branded,
       });
-      expect(theme("external-guen-company").schemes.dark.tokens[name].value, name).toBe(external);
-      expect(light("internal-fkas-private").tokens[name].value, name).toBe(internal);
-      expect(theme("internal-ngfi-company").schemes.dark.tokens[name].value, name).toBe(internal);
+      expect(theme("branded-guen-company").schemes.dark.tokens[name].value, name).toBe(branded);
+      expect(light("neutral-fkas-private").tokens[name].value, name).toBe(neutral);
+      expect(theme("neutral-ngfi-company").schemes.dark.tokens[name].value, name).toBe(neutral);
     }
   });
 
   it("reads the h1 to h3 scale as px and weights, kept in both schemes", () => {
-    // External h1 heading small 24/32 and h2 and h3 heading xsmall 20/32, all at 700; internal
+    // Branded h1 heading small 24/32 and h2 and h3 heading xsmall 20/32, all at 700; neutral
     // h1 24px, h2 18px and h3 16px at the snug 1.375 ratio, all at 500.
     const expected = [
       ["heading-1-size", "dimension", 24, 24],
@@ -433,21 +429,21 @@ describe("resolveThemeCatalog", () => {
       ["heading-3-leading", "dimension", 32, 22],
       ["heading-3-weight", "fontWeight", 700, 500],
     ] as const;
-    for (const [name, kind, external, internal] of expected) {
-      expect(light("external-fkas-private").tokens[name], name).toMatchObject({
+    for (const [name, kind, branded, neutral] of expected) {
+      expect(light("branded-fkas-private").tokens[name], name).toMatchObject({
         kind,
         codeSyntax: `var(--${name})`,
-        value: external,
+        value: branded,
       });
-      expect(theme("external-guen-company").schemes.dark.tokens[name].value, name).toBe(external);
-      expect(light("internal-fkas-private").tokens[name].value, name).toBe(internal);
-      expect(theme("internal-ngfi-company").schemes.dark.tokens[name].value, name).toBe(internal);
+      expect(theme("branded-guen-company").schemes.dark.tokens[name].value, name).toBe(branded);
+      expect(light("neutral-fkas-private").tokens[name].value, name).toBe(neutral);
+      expect(theme("neutral-ngfi-company").schemes.dark.tokens[name].value, name).toBe(neutral);
     }
   });
 
   it("reads font weights as numbers, kept in both schemes", () => {
-    // EXTERNAL_VARIANT_LAYER sets "500" and LAYER_DEFAULTS "400".
-    expect(withoutDescription(light("external-fkas-private").tokens["selection-title-weight"])).toEqual({
+    // BRANDED_IDENTITY_LAYER sets "500" and LAYER_DEFAULTS "400".
+    expect(withoutDescription(light("branded-fkas-private").tokens["selection-title-weight"])).toEqual({
       name: "selection-title-weight",
       kind: "fontWeight",
       css: "500",
@@ -455,21 +451,21 @@ describe("resolveThemeCatalog", () => {
       reference: undefined,
       value: 500,
     });
-    expect(theme("external-guen-company").schemes.dark.tokens["selection-title-weight"].value).toBe(500);
-    expect(light("internal-fkas-private").tokens["selection-title-weight"]).toMatchObject({
+    expect(theme("branded-guen-company").schemes.dark.tokens["selection-title-weight"].value).toBe(500);
+    expect(light("neutral-fkas-private").tokens["selection-title-weight"]).toMatchObject({
       kind: "fontWeight",
       css: "400",
       value: 400,
     });
-    expect(theme("internal-ngfi-company").schemes.dark.tokens["selection-title-weight"].value).toBe(400);
+    expect(theme("neutral-ngfi-company").schemes.dark.tokens["selection-title-weight"].value).toBe(400);
   });
 
   it("gives each token its var() and each rung its calc() as code syntax", () => {
-    expect(light("external-fkas-private").tokens.primary.codeSyntax).toBe("var(--primary)");
-    expect(light("external-fkas-private").rungs["radius-md"].codeSyntax).toBe(
+    expect(light("branded-fkas-private").tokens.primary.codeSyntax).toBe("var(--primary)");
+    expect(light("branded-fkas-private").rungs["radius-md"].codeSyntax).toBe(
       "calc(var(--radius) - var(--radius-step, 0px))"
     );
-    expect(light("external-fkas-private").rungs["radius-lg"].codeSyntax).toBe("var(--radius)");
+    expect(light("branded-fkas-private").rungs["radius-lg"].codeSyntax).toBe("var(--radius)");
   });
 
   it("gives each density metric its px per density", () => {
@@ -522,7 +518,7 @@ describe("resolveThemeCatalog", () => {
   });
 
   it("describes every entry for a designer and gives each color where Fuse paints it", () => {
-    const scheme = light("external-fkas-private");
+    const scheme = light("branded-fkas-private");
     const entries = [
       ...Object.values(scheme.tokens),
       ...Object.values(scheme.rungs),

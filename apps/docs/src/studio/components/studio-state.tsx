@@ -29,8 +29,8 @@ export type ArtboardSettings = {
   readonly scheme: ArtboardScheme;
   readonly density: Density;
   /**
-   * The theme the artboard renders: its own brand, variant and segment once the visitor picks
-   * them, else the base theme with the variant its spec pins. Always a legal theme.
+   * The theme the artboard renders: its own brand, identity and segment once the visitor picks
+   * them, else the base theme with the identity its spec pins. Always a legal theme.
    */
   readonly theme: ThemeInput;
 };
@@ -40,7 +40,7 @@ type ArtboardChoices = Partial<ArtboardSettings>;
 
 type StudioValue = {
   /**
-   * The base theme: what an artboard renders unless its spec pins a variant or the visitor gives
+   * The base theme: what an artboard renders unless its spec pins an identity or the visitor gives
    * it a theme of its own (see ArtboardSettings.theme). Export and the share link carry it.
    */
   theme: ThemeInput;
@@ -117,9 +117,9 @@ export function StudioProvider({ children }: { children: ReactNode }): ReactElem
   );
   const { theme, setTheme } = session;
 
-  // Every artboard's own brand, variant and segment are picked against the base theme the
+  // Every artboard's own brand, identity and segment are picked against the base theme the
   // visitor sees, so any change of it, by the picker, an undo or redo, a share link or a restore,
-  // returns every artboard to it, and a spec-pinned artboard to its spec's variant. Scheme and
+  // returns every artboard to it, and a spec-pinned artboard to its spec's identity. Scheme and
   // density stay. Resetting here rather than in the picker's commit catches every source, and an
   // undo does not bring back themes picked against a base theme it left.
   const [themedOver, setThemedOver] = useState(() => themeSlug(theme));
@@ -138,7 +138,7 @@ export function StudioProvider({ children }: { children: ReactNode }): ReactElem
       density: choices[artboard.id]?.density ?? artboard.density,
       theme:
         choices[artboard.id]?.theme ??
-        (artboard.variant === undefined ? theme : { ...theme, variant: artboard.variant }),
+        (artboard.identity === undefined ? theme : { ...theme, identity: artboard.identity }),
     });
     return { of, byId: new Map(artboards.map((artboard) => [artboard.id, of(artboard)])) };
   }, [artboards, choices, theme]);

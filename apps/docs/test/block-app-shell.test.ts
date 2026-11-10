@@ -255,9 +255,9 @@ describe("the preview's viewports", () => {
 
 describe("the preview's messages", () => {
   it("carries a theme as plain data and reads it back", () => {
-    const theme = { variant: "external", brand: "elma", segment: "private" } as const;
+    const theme = { identity: "branded", brand: "elma", segment: "private" } as const;
     const wire = encodeBlockPreviewMessage({ _tag: "Theme", theme });
-    expect(wire).toEqual({ source: "fuse-block-preview", _tag: "Theme", theme: "external-elma-private" });
+    expect(wire).toEqual({ source: "fuse-block-preview", _tag: "Theme", theme: "branded-elma-private" });
     expect(parseBlockPreviewMessage(structuredClone(wire))).toEqual({ _tag: "Theme", theme });
   });
 
@@ -265,7 +265,7 @@ describe("the preview's messages", () => {
     ["another sender's data", { source: "other", _tag: "Ready" }],
     [
       "a theme Fuse does not know",
-      { source: "fuse-block-preview", _tag: "Theme", theme: "external-acme-private" },
+      { source: "fuse-block-preview", _tag: "Theme", theme: "branded-acme-private" },
     ],
     ["a path to another host", { source: "fuse-block-preview", _tag: "Location", path: "//evil.example/x" }],
     ["a script URL", { source: "fuse-block-preview", _tag: "Location", path: "javascript:alert(1)" }],

@@ -300,6 +300,7 @@ type PostVariablesBody = {
         readonly initialModeId: string;
         readonly hiddenFromPublishing: false;
       }
+    | { readonly action: "UPDATE"; readonly id: string; readonly name: string }
     | { readonly action: "DELETE"; readonly id: string }
   )[];
   readonly variableModes: readonly (
@@ -356,6 +357,8 @@ function collectionRequest(change: CollectionChange): PostVariablesBody["variabl
         initialModeId: change.initialModeId,
         hiddenFromPublishing: false,
       };
+    case "RenameCollection":
+      return { action: "UPDATE", id: change.id, name: change.name };
     case "DeleteCollection":
       return { action: "DELETE", id: change.id };
   }
@@ -364,6 +367,7 @@ function collectionRequest(change: CollectionChange): PostVariablesBody["variabl
 function modeRequest(change: ModeChange): PostVariablesBody["variableModes"][number] {
   switch (change._tag) {
     case "NameInitialMode":
+    case "RenameMode":
       return {
         action: "UPDATE",
         id: change.id,

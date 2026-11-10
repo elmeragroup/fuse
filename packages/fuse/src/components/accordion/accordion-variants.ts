@@ -33,7 +33,7 @@ import { selfFocusRingClass } from "../../styles/utils";
  * one sits in the same spot. `infodropdown` packs the trigger at the start, so both slots pin
  * to the right edge there.
  *
- * The `card` item draws its 1px edge in `--card-border`, which external themes make transparent;
+ * The `card` item draws its 1px edge in `--card-border`, which branded themes make transparent;
  * add `border-border` where a borrowed item must keep a visible edge.
  */
 export const accordionVariants = tv({

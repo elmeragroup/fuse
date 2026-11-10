@@ -199,7 +199,7 @@ export function cellSelector(id: string, measured: string): string {
  * The elements whose text the font check reads: each cell's measured element and every element in
  * it, the box the page crops and compares. Text a renderer draws around that box takes no part, as
  * the month heading of the Calendar a day cell sits in, which takes the theme's heading font, Neo
- * Sans in Fjordkraft's external themes, and which the comparison never shows.
+ * Sans in Fjordkraft's branded themes, and which the comparison never shows.
  *
  * @param requests - The cells, by id and measured element.
  * @returns A selector list from the document root, empty for no cells.

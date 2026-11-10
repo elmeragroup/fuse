@@ -24,7 +24,7 @@ import {
   cssVarColor,
   // This suite's own fieldRootFrom finds a DateField's root; the shared one a base-ui Field's.
   fieldRootFrom as baseFieldRootFrom,
-  fkasExternal,
+  fkasBranded,
   px,
   renderThemed,
   roleNamed,
@@ -303,7 +303,7 @@ describe("DateField density metrics", () => {
 
     stampDensity("dense");
     rerender(
-      <ThemeScope theme={fkasExternal}>
+      <ThemeScope theme={fkasBranded}>
         <UiProviders locale="en-US" navigate={() => undefined}>
           <div data-density="comfortable">
             <DateField label="Meter" defaultValue={july14} />

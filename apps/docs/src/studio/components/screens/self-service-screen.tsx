@@ -161,7 +161,7 @@ function Account(): ReactElement {
 }
 
 /**
- * A customer's account overview, in the external look: this month's usage, the latest invoices,
+ * A customer's account overview, in the branded look: this month's usage, the latest invoices,
  * and a plan picker with its call to action.
  */
 export function SelfServiceScreen(): ReactElement {

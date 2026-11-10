@@ -145,7 +145,7 @@ const MATRIX = [
   "--target",
   "button:Save",
   "--themes",
-  "internal-fkas-private,external-tkas-company,external-fkse-private,internal-elma-private,external-elma-company",
+  "neutral-fkas-private,branded-tkas-company,branded-fkse-private,neutral-elma-private,branded-elma-company",
   "--densities",
   "dense,comfortable",
   "--engines",
@@ -215,7 +215,7 @@ describe("runShots", () => {
         "--target",
         "button:Save",
         "--themes",
-        "internal-fkas-private,external-tkas-company,external-fkse-private",
+        "neutral-fkas-private,branded-tkas-company,branded-fkse-private",
         "--densities",
         "dense,comfortable",
         "--engines",
@@ -250,7 +250,7 @@ describe("runShots", () => {
       const record = newRecord();
       // 25 themes × 1 density × 1 engine without diffs: 25 pairs of 2 images, 50 in all. The
       // parser checks slug syntax only, so made-up brand codes do here.
-      const themes = Array.from({ length: 25 }, (_, index) => `internal-b${"x".repeat(index + 1)}-private`);
+      const themes = Array.from({ length: 25 }, (_, index) => `neutral-b${"x".repeat(index + 1)}-private`);
       const options = shotOptions([
         "fifty",
         "--route",

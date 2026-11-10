@@ -7,6 +7,8 @@
 import { Effect, Result, Schema, SchemaGetter, SchemaIssue } from "effect";
 import type { Page } from "playwright";
 
+import { THEME_IDENTITIES, THEME_SEGMENTS } from "@elmeragroup/fuse/theme-catalog";
+
 /** An ARIA role as Playwright's `getByRole` accepts it. */
 type PlaywrightRole = Parameters<Page["getByRole"]>[0];
 
@@ -132,17 +134,20 @@ export const ClickStep = Schema.Struct({
 /** One `--click` step. */
 export type ClickStep = typeof ClickStep.Type;
 
-/** The variants a theme slug may name, with the label the docs theme picker shows. */
-const VARIANT_LABELS = { internal: "Internal", external: "External" } as const;
+/** A theme identity, one of Fuse's `THEME_IDENTITIES`. */
+export type Identity = (typeof THEME_IDENTITIES)[number];
 
-/** The segments a theme slug may name, with the label the docs theme picker shows. */
-const SEGMENT_LABELS = { private: "Private", company: "Company" } as const;
+/** A theme segment, one of Fuse's `THEME_SEGMENTS`. */
+export type Segment = (typeof THEME_SEGMENTS)[number];
 
-/** A theme variant. */
-export type Variant = keyof typeof VARIANT_LABELS;
+/** Each identity a theme slug may name, with the label the docs theme picker shows. */
+const IDENTITY_LABELS = { neutral: "Neutral", branded: "Branded" } as const satisfies Record<
+  Identity,
+  string
+>;
 
-/** A theme segment. */
-export type Segment = keyof typeof SEGMENT_LABELS;
+/** Each segment a theme slug may name, with the label the docs theme picker shows. */
+const SEGMENT_LABELS = { private: "Private", company: "Company" } as const satisfies Record<Segment, string>;
 
 /** The theme a shot renders the demo stage in. */
 export const ThemeChoice = Schema.Union([
@@ -150,14 +155,14 @@ export const ThemeChoice = Schema.Union([
   Schema.TaggedStruct("page-default", {}),
   /** Pick a theme through the header theme picker. */
   Schema.TaggedStruct("picked", {
-    /** The slug as given, such as `external-tkas-company`. */
+    /** The slug as given, such as `branded-tkas-company`. */
     slug: Schema.String,
-    /** The variant part of the slug. */
-    variant: Schema.Literals(["internal", "external"]),
+    /** The identity part of the slug. */
+    identity: Schema.Literals(THEME_IDENTITIES),
     /** The brand code part of the slug. */
     brand: Schema.String,
     /** The segment part of the slug. */
-    segment: Schema.Literals(["private", "company"]),
+    segment: Schema.Literals(THEME_SEGMENTS),
   }),
 ]);
 
@@ -174,7 +179,7 @@ const isDensity = Schema.is(Density);
 
 /** The density a shot renders the demo stage in. */
 export const DensityChoice = Schema.Union([
-  /** The deployment default the demo stage takes from the theme's variant. */
+  /** The density the docs demo stage takes for the theme's identity. */
   Schema.TaggedStruct("stage-default", {}),
   /** A `data-density` value stamped on the demo stage, overriding the docs default. */
   Schema.TaggedStruct("override", { density: Density }),
@@ -339,14 +344,11 @@ export const ClickStepFromText = fromText(ClickStep, (input) => {
   const match = /^(.*)@(\d+)$/su.exec(input);
   const text = match?.[1] ?? input;
   const nth = match?.[2] === undefined ? 0 : Number(match[2]);
-  return Result.map(
-    parseRoleAndName(text, { role: "tab", name: "Internal" }, "[@<n>]"),
-    ({ role, name }) => ({
-      role,
-      name,
-      nth,
-    })
-  );
+  return Result.map(parseRoleAndName(text, { role: "tab", name: "Neutral" }, "[@<n>]"), ({ role, name }) => ({
+    role,
+    name,
+    nth,
+  }));
 });
 
 /** A whole number of 0 or more. */
@@ -375,24 +377,24 @@ export const PullRequest = fromText(Schema.Number, (input) =>
   /^[1-9]\d*$/.test(input) ? Result.succeed(Number(input)) : Result.fail("a pull request number, such as 182")
 );
 
-/** A comma list of theme slugs, `<variant>-<brand>-<segment>`. */
+/** A comma list of theme slugs, `<identity>-<brand>-<segment>`. */
 export const Themes = fromText(Schema.NonEmptyArray(ThemeChoice), (input) =>
   parseList(input, (slug): Result.Result<ThemeChoice, string> => {
-    const [variant, brand, segment, ...rest] = slug.split("-");
+    const [identity, brand, segment, ...rest] = slug.split("-");
     if (
-      variant === undefined ||
+      identity === undefined ||
       brand === undefined ||
       segment === undefined ||
       rest.length > 0 ||
-      !isVariant(variant) ||
+      !isIdentity(identity) ||
       !/^[a-z]+$/.test(brand) ||
       !isSegment(segment)
     ) {
       return Result.fail(
-        `"${slug}" is not a theme slug; use <internal|external>-<brand>-<private|company>, such as external-tkas-company`
+        `"${slug}" is not a theme slug; use <neutral|branded>-<brand>-<private|company>, such as branded-tkas-company`
       );
     }
-    return Result.succeed({ _tag: "picked", slug, variant, brand, segment });
+    return Result.succeed({ _tag: "picked", slug, identity, brand, segment });
   })
 );
 
@@ -468,13 +470,13 @@ export function prodSource(): Source {
 }
 
 /**
- * The label the docs theme picker shows for a variant.
+ * The label the docs theme picker shows for an identity.
  *
- * @param variant - The variant.
- * @returns The radio item's accessible name.
+ * @param identity - The identity.
+ * @returns Its label, such as `Branded`.
  */
-export function variantLabel(variant: Variant): string {
-  return VARIANT_LABELS[variant];
+export function identityLabel(identity: Identity): string {
+  return IDENTITY_LABELS[identity];
 }
 
 /**
@@ -524,12 +526,12 @@ function isAriaRole(role: string): role is AriaRole {
   return ARIA_ROLES.some((known) => known === role);
 }
 
-function isVariant(value: string): value is Variant {
-  return Object.hasOwn(VARIANT_LABELS, value);
+function isIdentity(value: string): value is Identity {
+  return THEME_IDENTITIES.some((identity) => identity === value);
 }
 
 function isSegment(value: string): value is Segment {
-  return Object.hasOwn(SEGMENT_LABELS, value);
+  return THEME_SEGMENTS.some((segment) => segment === value);
 }
 
 /**

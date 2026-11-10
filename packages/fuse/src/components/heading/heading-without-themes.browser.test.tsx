@@ -42,7 +42,7 @@ describe("Heading level scale without themes.css", () => {
   });
 
   it("sets the scale from the host's own heading roles", () => {
-    // The external heading styles, mapped by a host that keeps its own tokens.
+    // The branded heading styles, mapped by a host that keeps its own tokens.
     render(
       <LevelHeadings
         prefix="Mapped"

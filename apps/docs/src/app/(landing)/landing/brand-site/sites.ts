@@ -9,7 +9,7 @@ import { NORDIC_GREEN_ENERGY_SITE } from "./sites/nordic-green-energy";
 import { TELINET_SITE } from "./sites/telinet";
 import { TRONDELAGKRAFT_SITE } from "./sites/trondelagkraft";
 
-/** Every brand's site, so the External side has one for whichever brand the landing picks. */
+/** Every brand's site, so the Branded side has one for whichever brand the landing picks. */
 export const SITES = {
   elma: ELMERA_GROUP_SITE,
   fkas: FJORDKRAFT_SITE,

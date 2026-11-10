@@ -251,11 +251,11 @@
   --color-brand-ngfi: var(--brand-ngfi);
   --color-brand-ngfi-foreground: var(--brand-ngfi-foreground);
 
-  /* Each rung sits whole --radius-step multiples from the theme's --radius. External themes
-     step 2px. The internal variant steps 0px, so every rung is the one radius. An arbitrary
+  /* Each rung sits whole --radius-step multiples from the theme's --radius. Branded themes
+     step 2px. The neutral identity steps 0px, so every rung is the one radius. An arbitrary
      value reads a rung through --theme(--radius-md), which inlines the formula so it resolves
      in the element's own theme scope. var(--radius-md) would read the value the document root
-     computed. The corners that leave this scale in external themes live in
+     computed. The corners that leave this scale in branded themes live in
      styles/corner-radius.ts, so they add no public rounded-* utility.
      The step falls back to 0px, the library's own root default, so a host that imports this
      file without themes.css and keeps its own --radius still gets every rung at that radius
@@ -312,7 +312,7 @@
    scope's own --radius. The reset sits with the utilities and weighs nothing, so a shell
    class on the same element wins whatever layer order the host declares. */
 @layer utilities {
-  :where([data-theme-variant], [data-theme-brand], [data-theme-segment]) {
+  :where([data-theme-identity], [data-theme-brand], [data-theme-segment]) {
     --inner-corner: initial;
   }
 }

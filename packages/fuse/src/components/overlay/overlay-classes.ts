@@ -120,7 +120,7 @@ const overlayPopupVariants = tv({
     /**
      * The modal fill and its paired text role, which Dialog (and AlertDialog through it) and
      * Sheet compose after their faces. The `dialog` role aliases the popover pair except in
-     * external light, where it is the page tint. `Command.Content` stays on the popover fill.
+     * branded light, where it is the page tint. `Command.Content` stays on the popover fill.
      */
     modalFill: "bg-dialog text-dialog-foreground",
     /** The popup edge: the `md` elevation rung plus the hairline ring. */

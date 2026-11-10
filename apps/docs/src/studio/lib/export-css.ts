@@ -10,7 +10,7 @@ import type { TokenName } from "./tokens";
 
 const DARK = `[data-theme="dark"]`;
 
-/** The theme's attribute selector, such as `[data-theme-variant="external"][…]`. */
+/** The theme's attribute selector, such as `[data-theme-identity="branded"][…]`. */
 function themeSelector(document: StudioDocument): string {
   return Object.entries(themeAttributes(document.theme))
     .map(([attribute, value]) => `[${attribute}="${value}"]`)

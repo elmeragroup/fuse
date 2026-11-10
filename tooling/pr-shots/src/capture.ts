@@ -10,7 +10,17 @@ import path from "node:path";
 import { chromium, firefox, webkit } from "playwright";
 import type { Browser, BrowserType, Locator, Page, PageScreenshotOptions } from "playwright";
 
-import { segmentLabel, variantLabel } from "./options.ts";
+import { THEME_AXES } from "@elmeragroup/fuse/theme-catalog";
+
+import {
+  identityAxisLabel,
+  identityOptionLabel,
+  readThemeSlug,
+  readThemeVocabulary,
+  THEME_READING,
+} from "./legacy-theme-vocabulary.ts";
+import type { ThemeVocabulary } from "./legacy-theme-vocabulary.ts";
+import { segmentLabel } from "./options.ts";
 import type {
   ClickStep,
   Engine,
@@ -552,19 +562,26 @@ async function pickTheme(page: Page, theme: ThemeChoice): Promise<PickResult> {
   };
 }
 
-/** The docs header's menu: variant, brand and segment radio items, checked on the first stage. */
+/** The docs header's menu: identity, brand and segment radio items, checked on the first stage. */
 async function pickInDocsMenu(
   page: Page,
   button: Locator,
   stage: Locator,
   theme: Picked
 ): Promise<PickResult> {
+  const vocabulary = await vocabularyOf(stage);
   await button.click();
   const menu = page.getByRole("menu", { name: "Theme settings", exact: true });
   await menu.waitFor();
   const checked = (item: Locator) => item.and(page.locator('[aria-checked="true"]'));
 
-  await choose(menu.getByRole("menuitemradio", { name: variantLabel(theme.variant), exact: true }), checked);
+  await choose(
+    menu.getByRole("menuitemradio", {
+      name: identityOptionLabel(theme.identity, vocabulary),
+      exact: true,
+    }),
+    checked
+  );
   const brands = menu.getByRole("group", { name: "Brand", exact: true }).getByRole("menuitemradio");
   if (!(await chooseBrand(brands, stage, theme.brand, checked))) {
     return { _tag: "failed", reason: `The theme picker has no brand with the code "${theme.brand}"` };
@@ -587,17 +604,18 @@ async function pickInDocsMenu(
     : { _tag: "failed", reason: `The demo stage shows ${applied} after picking ${theme.slug}` };
 }
 
-/** The landing's theme dialog: variant, brand and segment toggle buttons, checked on `<html>`. */
+/** The landing's theme dialog: identity, brand and segment toggle buttons, checked on `<html>`. */
 async function pickInLandingDialog(page: Page, chip: Locator, theme: Picked): Promise<PickResult> {
+  const root = page.locator("html");
+  const vocabulary = await vocabularyOf(root);
   await chip.click();
   const dialog = page.getByRole("dialog", { name: "Theme", exact: true });
   await dialog.waitFor();
-  const root = page.locator("html");
   const pressed = (item: Locator) => item.and(page.locator('[aria-pressed="true"]'));
   const axis = (name: string, label: string) =>
     dialog.getByRole("group", { name, exact: true }).getByRole("button", { name: label, exact: true });
 
-  await choose(axis("Variant", variantLabel(theme.variant)), pressed);
+  await choose(axis(identityAxisLabel(vocabulary), identityOptionLabel(theme.identity, vocabulary)), pressed);
   const brands = dialog.getByRole("group", { name: "Brand", exact: true }).getByRole("button");
   if (!(await chooseBrand(brands, root, theme.brand, pressed))) {
     return { _tag: "failed", reason: `The theme picker has no brand with the code "${theme.brand}"` };
@@ -635,6 +653,17 @@ async function dropPickerFocus(page: Page): Promise<void> {
   await page.getByRole("tooltip").waitFor({ state: "hidden", timeout: SETTLE_TIMEOUT_MS });
 }
 
+/** The attribute that names a theme's brand, read from Fuse's axis registry. */
+const BRAND_ATTRIBUTE = brandAttribute();
+
+function brandAttribute(): string {
+  const axis = THEME_AXES.find((candidate) => candidate.name === "brand");
+  if (axis === undefined) {
+    throw new Error("Fuse's THEME_AXES has no brand axis");
+  }
+  return axis.attribute;
+}
+
 /** Chooses each brand in turn until `themed` reports `code`. Returns whether it got there. */
 async function chooseBrand(
   brands: Locator,
@@ -642,10 +671,10 @@ async function chooseBrand(
   code: string,
   selected: (item: Locator) => Locator
 ): Promise<boolean> {
-  let found = (await themed.getAttribute("data-theme-brand")) === code;
+  let found = (await themed.getAttribute(BRAND_ATTRIBUTE)) === code;
   for (let index = 0, count = await brands.count(); !found && index < count; index += 1) {
     await choose(brands.nth(index), selected);
-    found = (await themed.getAttribute("data-theme-brand")) === code;
+    found = (await themed.getAttribute(BRAND_ATTRIBUTE)) === code;
   }
   return found;
 }
@@ -656,13 +685,17 @@ async function choose(item: Locator, selected: (item: Locator) => Locator): Prom
   await selected(item).waitFor();
 }
 
-/** The `<variant>-<brand>-<segment>` slug an element's theme attributes spell. */
+/**
+ * The `<identity>-<brand>-<segment>` slug an element's theme attributes spell, in the identity
+ * vocabulary even on a pre-identity page (`legacy-theme-vocabulary.ts`).
+ */
 async function themeOf(themed: Locator): Promise<string> {
-  return themed.evaluate((element) =>
-    ["data-theme-variant", "data-theme-brand", "data-theme-segment"]
-      .map((name) => element.getAttribute(name))
-      .join("-")
-  );
+  return themed.evaluate(readThemeSlug, THEME_READING);
+}
+
+/** The theme vocabulary an element is stamped in, read before its picker opens. */
+async function vocabularyOf(themed: Locator): Promise<ThemeVocabulary> {
+  return themed.evaluate(readThemeVocabulary, THEME_READING);
 }
 
 /**

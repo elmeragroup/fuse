@@ -4,8 +4,8 @@
  * `data-theme-*` attributes on the themed element, and `data-density` on the document root,
  * whose density the role metrics follow.
  *
- * The mode names are the ones `figma:sync` writes: `Light`/`Dark`, `Internal`/`External`,
- * `Private`/`Company`, the brand's display name, and `Auto`/`Dense`/`Comfortable`. A brand that
+ * The mode names are the ones `figma:sync` writes: `Light`/`Dark`, `Neutral`/`Branded`,
+ * `Private`/`Company`, the brand's display name, and `Dense`/`Comfortable`. A brand that
  * allows one segment is named `<display name> (<segment> only)` and shows that segment's theme
  * under either `Fuse segment` mode.
  */
@@ -15,18 +15,24 @@ import { Result } from "effect";
 import {
   BRAND_CODES,
   BRANDS,
-  defaultDensityForVariant,
+  THEME_IDENTITIES,
   THEME_SEGMENTS,
-  THEME_VARIANTS,
+  themeAxisAttributes,
 } from "@elmeragroup/fuse/theme-catalog";
-import type { BrandCode, Density, ThemeSegment, ThemeVariant } from "@elmeragroup/fuse/theme-catalog";
+import type {
+  BrandCode,
+  Density,
+  ThemeAxis,
+  ThemeIdentity,
+  ThemeSegment,
+} from "@elmeragroup/fuse/theme-catalog";
 
 import type { ModeRef } from "../components/kit-spec.ts";
 
 /** A theme, color scheme and density, as the page stamps them. */
 export type PreviewTheme = {
   readonly scheme: "light" | "dark";
-  readonly variant: ThemeVariant;
+  readonly identity: ThemeIdentity;
   readonly brand: BrandCode;
   readonly segment: ThemeSegment;
   readonly density: Density;
@@ -77,16 +83,14 @@ export function parsePreviewTheme(modes: readonly ModeRef[]): Result.Result<Prev
   };
   return Result.gen(function* () {
     const scheme = yield* read("Fuse tokens", (mode) => lowerCaseOf(SCHEMES, mode));
-    const variant = yield* read("Fuse variant", (mode) => lowerCaseOf(THEME_VARIANTS, mode));
+    const identity = yield* read("Fuse identity", (mode) => lowerCaseOf(THEME_IDENTITIES, mode));
     const segment = yield* read("Fuse segment", (mode) => lowerCaseOf(THEME_SEGMENTS, mode));
     const brand = yield* read("Fuse brand", brandOf);
-    const density = yield* read("Fuse density", (mode) =>
-      mode === "Auto" ? defaultDensityForVariant(variant) : lowerCaseOf(DENSITIES, mode)
-    );
+    const density = yield* read("Fuse density", (mode) => lowerCaseOf(DENSITIES, mode));
     const allowed = BRANDS[brand].segments;
     // A brand pinned to one segment shows that segment's theme under either segment mode.
     const shown = allowed.find((candidate) => candidate === segment) ?? allowed[0];
-    const theme: PreviewTheme = { scheme, variant, brand, segment: shown, density };
+    const theme: PreviewTheme = { scheme, identity, brand, segment: shown, density };
     return theme;
   });
 }
@@ -94,12 +98,12 @@ export function parsePreviewTheme(modes: readonly ModeRef[]): Result.Result<Prev
 /** The attributes the page puts on `<html>` and on `<body>` for a theme. */
 export type ThemeStamps = {
   readonly root: Readonly<Record<"data-theme" | "data-density", string>>;
-  readonly body: Readonly<Record<"data-theme-variant" | "data-theme-brand" | "data-theme-segment", string>>;
+  readonly body: Readonly<Record<ThemeAxis["attribute"], string>>;
 };
 
 /**
  * Where the page stamps a theme. `themes.css` matches the dark scheme as
- * `[data-theme="dark"] [data-theme-variant=…]`, so the scheme sits on the root and the theme on
+ * `[data-theme="dark"] [data-theme-identity=…]`, so the scheme sits on the root and the theme on
  * a descendant, and the density metrics match `:root[data-density=…]`.
  *
  * @param theme - The preview's theme.
@@ -108,10 +112,6 @@ export type ThemeStamps = {
 export function themeStamps(theme: PreviewTheme): ThemeStamps {
   return {
     root: { "data-theme": theme.scheme, "data-density": theme.density },
-    body: {
-      "data-theme-variant": theme.variant,
-      "data-theme-brand": theme.brand,
-      "data-theme-segment": theme.segment,
-    },
+    body: themeAxisAttributes(theme),
   };
 }

@@ -39,9 +39,9 @@ const EXPECTED_ENTRIES = {
       "LocaleProvider",
       "useLocale",
       "ForceColorScheme",
-      "defaultDensityForVariant",
       "DENSITIES",
       "densityAttributes",
+      "documentAttributes",
       "themeAttributes",
       "ThemeProvider",
       "useTheme",
@@ -51,8 +51,8 @@ const EXPECTED_ENTRIES = {
       "isBrandCode",
       "LEGAL_THEMES",
       "parseThemeSlug",
+      "THEME_IDENTITIES",
       "THEME_SEGMENTS",
-      "THEME_VARIANTS",
       "themeSlug",
       "useColorScheme",
       "coerceTheme",
@@ -454,14 +454,19 @@ describe("exports map", () => {
       readFileSync(join(packageRoot, "src/theme/catalog.ts"), "utf8")
     );
     expect(catalog).toEqual([
-      "defaultDensityForVariant",
+      "CORNER_STEPS",
+      "RADIUS_RUNG_NAMES",
+      "RADIUS_RUNGS",
       "resolveThemeCatalog",
       "DENSITY_ROLES",
       "PART_DENSITY",
       "BRAND_CODES",
       "BRANDS",
+      "THEME_AXES",
+      "THEME_IDENTITIES",
       "THEME_SEGMENTS",
-      "THEME_VARIANTS",
+      "themeAxisAttributes",
+      "themeAxisSelector",
     ]);
   });
 

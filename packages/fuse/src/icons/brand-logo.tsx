@@ -1,8 +1,8 @@
 import type { ComponentPropsWithoutRef, ReactElement } from "react";
 
 import { cn } from "../styles/cn";
-import { BRANDS } from "../theme/tokens/themes";
-import type { BrandCode } from "../theme/tokens/themes";
+import { BRANDS } from "../theme/theme-input";
+import type { BrandCode } from "../theme/theme-input";
 import type { LogoProps } from "./bespoke-svg";
 import { FjordkraftLogo } from "./bespoke/fjordkraft-logo";
 import { GudbrandsdalEnergiLogo } from "./bespoke/gudbrandsdal-energi-logo";

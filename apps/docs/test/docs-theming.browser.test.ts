@@ -27,7 +27,7 @@ async function expectRole(page: Page, selector: string, property: string, token:
 }
 
 it.each(["/docs", "/handbook/theming", "/handbook/theme-matrix", "/components/button"])(
-  "paints %s from internal Elmera tokens when data-theme changes manually",
+  "paints %s from neutral Elmera tokens when data-theme changes manually",
   async (path) => {
     const page = await browser().newPage({ colorScheme: "light" });
     await page.goto(`${docsBaseUrl()}${path}`, { waitUntil: "networkidle" });
@@ -39,7 +39,7 @@ it.each(["/docs", "/handbook/theming", "/handbook/theme-matrix", "/components/bu
           Promise.all(element.getAnimations().map((animation) => animation.finished.catch(() => undefined)))
         );
       expect(await readThemeAttributes(page.locator("html"))).toEqual({
-        variant: "internal",
+        identity: "neutral",
         brand: "elma",
         segment: "private",
       });
@@ -74,19 +74,19 @@ it.each(["/docs", "/handbook/theming", "/handbook/theme-matrix", "/components/bu
 it("switches both matrix variants and the docs chrome together", async () => {
   const page = await browser().newPage({ colorScheme: "light" });
   await page.goto(`${docsBaseUrl()}/handbook/theme-matrix`, { waitUntil: "load" });
-  const external = page.locator('[data-theme-matrix-cell][data-theme-variant="external"]').first();
-  const internal = page.locator('[data-theme-matrix-cell][data-theme-variant="internal"]').first();
+  const branded = page.locator('[data-theme-matrix-cell][data-theme-identity="branded"]').first();
+  const neutral = page.locator('[data-theme-matrix-cell][data-theme-identity="neutral"]').first();
   const paint = async (): Promise<string[]> => [
-    await external.evaluate((el) => getComputedStyle(el).backgroundColor),
-    await internal.evaluate((el) => getComputedStyle(el).backgroundColor),
+    await branded.evaluate((el) => getComputedStyle(el).backgroundColor),
+    await neutral.evaluate((el) => getComputedStyle(el).backgroundColor),
     await page.locator("body").evaluate((el) => getComputedStyle(el).backgroundColor),
   ];
   const light = await paint();
-  // Each cell's ThemeScope sets its own body font under the docs body's Inter: an external cell's
-  // button draws Roboto and an internal cell's draws Inter.
+  // Each cell's ThemeScope sets its own body font under the docs body's Inter: a branded cell's
+  // button draws Roboto and a neutral cell's draws Inter.
   expect([
-    await drawnFace(external.locator("button").first()),
-    await drawnFace(internal.locator("button").first()),
+    await drawnFace(branded.locator("button").first()),
+    await drawnFace(neutral.locator("button").first()),
   ]).toEqual(["--font-roboto", "--font-inter"]);
   await page.getByRole("button", { name: "Dark", exact: true }).click();
   await page.waitForFunction(() => document.documentElement.getAttribute("data-theme") === "dark");
@@ -97,8 +97,8 @@ it("switches both matrix variants and the docs chrome together", async () => {
   expect(await page.getByRole("button", { name: "Dark", exact: true }).getAttribute("aria-pressed")).toBe(
     "true"
   );
-  expect(await external.evaluate((el) => getComputedStyle(el).colorScheme)).toBe("dark");
-  expect(await internal.evaluate((el) => getComputedStyle(el).colorScheme)).toBe("dark");
+  expect(await branded.evaluate((el) => getComputedStyle(el).colorScheme)).toBe("dark");
+  expect(await neutral.evaluate((el) => getComputedStyle(el).colorScheme)).toBe("dark");
   await page.getByRole("button", { name: "Light", exact: true }).click();
   await page.waitForFunction(() => document.documentElement.getAttribute("data-theme") === "light");
   expect(await paint()).toEqual(light);

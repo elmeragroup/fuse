@@ -54,7 +54,7 @@ describe("the shots command line", () => {
         "--nth",
         "2",
         "--click",
-        "tab:Internal",
+        "tab:Neutral",
         "--click",
         "button:Save changes: now@1",
         "--fill",
@@ -64,7 +64,7 @@ describe("the shots command line", () => {
         "--pad",
         "0",
         "--themes",
-        "external-tkas-company, internal-fkse-private",
+        "branded-tkas-company, neutral-fkse-private",
         "--densities",
         "comfortable,dense",
         "--engines",
@@ -93,7 +93,7 @@ describe("the shots command line", () => {
         nth: 2,
         // In the order given, each with the match its @n picks.
         clicks: [
-          { role: "tab", name: "Internal", nth: 0 },
+          { role: "tab", name: "Neutral", nth: 0 },
           { role: "button", name: "Save changes: now", nth: 1 },
         ],
         fill: "123 123",
@@ -102,15 +102,15 @@ describe("the shots command line", () => {
         themes: [
           {
             _tag: "picked",
-            slug: "external-tkas-company",
-            variant: "external",
+            slug: "branded-tkas-company",
+            identity: "branded",
             brand: "tkas",
             segment: "company",
           },
           {
             _tag: "picked",
-            slug: "internal-fkse-private",
-            variant: "internal",
+            slug: "neutral-fkse-private",
+            identity: "neutral",
             brand: "fkse",
             segment: "private",
           },
@@ -244,16 +244,16 @@ describe("the shots command line", () => {
     ],
     [[...REQUIRED, "--nth=-1"], invalid("nth", "-1", "a whole number of 0 or more")],
     [
-      [...REQUIRED, "--click", "tabs:Internal"],
+      [...REQUIRED, "--click", "tabs:Neutral"],
       invalid(
         "click",
-        "tabs:Internal",
-        '"tabs" is not an ARIA role; use <role>:<accessible name>[@<n>], such as tab:Internal'
+        "tabs:Neutral",
+        '"tabs" is not an ARIA role; use <role>:<accessible name>[@<n>], such as tab:Neutral'
       ),
     ],
     [
       [...REQUIRED, "--click", "button:@1"],
-      invalid("click", "button:@1", "an accessible name after the role, such as button:Internal"),
+      invalid("click", "button:@1", "an accessible name after the role, such as button:Neutral"),
     ],
     [[...REQUIRED, "--click"], "Missing value for flag --click"],
     [[...REQUIRED, "--pad", "1.5"], invalid("pad", "1.5", "a whole number of 0 or more")],
@@ -283,15 +283,15 @@ describe("the shots command line", () => {
     [[...REQUIRED, "--viewports", "1280x800,abc"], '"abc" is not a window size'],
     [[...REQUIRED, "--viewports", ","], invalid("viewports", ",", "at least one entry")],
     [
-      [...REQUIRED, "--themes", "internal-fkas"],
+      [...REQUIRED, "--themes", "neutral-fkas"],
       invalid(
         "themes",
-        "internal-fkas",
-        '"internal-fkas" is not a theme slug; use <internal|external>-<brand>-<private|company>, such as external-tkas-company'
+        "neutral-fkas",
+        '"neutral-fkas" is not a theme slug; use <neutral|branded>-<brand>-<private|company>, such as branded-tkas-company'
       ),
     ],
     [[...REQUIRED, "--themes", "inner-fkas-private"], '"inner-fkas-private" is not a theme slug'],
-    [[...REQUIRED, "--themes", "internal-fkas-business"], '"internal-fkas-business" is not a theme slug'],
+    [[...REQUIRED, "--themes", "neutral-fkas-business"], '"neutral-fkas-business" is not a theme slug'],
     [[...REQUIRED, "--themes", ","], invalid("themes", ",", "at least one entry")],
     [
       [...REQUIRED, "--densities", "compact"],

@@ -5,9 +5,9 @@ import "../../dist/themes.css";
 import { render } from "../../test/browser-render";
 import { computedOklch, roleNamed } from "../../test/themed-browser-render";
 import { composeTheme } from "./compose-theme";
+import { LEGAL_THEMES, themeSlug } from "./theme-input";
 import { ThemeScope } from "./theme-scope";
 import { tokenOklch } from "./token-color";
-import { LEGAL_THEMES, themeSlug } from "./tokens/themes";
 
 /** The color a background declaration computes to where `host` sits in the cascade. */
 function computedBackground(host: HTMLElement, value: string): string {
@@ -42,7 +42,7 @@ describe("derived roles", () => {
         );
         expect(literal.l, `${context} lightness`).toBeCloseTo(mixed.l, 4);
         expect(literal.c, `${context} chroma`).toBeCloseTo(mixed.c, 4);
-        // Chromium serializes the mixed hue with float error, 2.46552 for internal light's 2.4655.
+        // Chromium serializes the mixed hue with float error, 2.46552 for neutral light's 2.4655.
         expect(literal.h, `${context} hue`).toBeCloseTo(mixed.h, 2);
       }
     }

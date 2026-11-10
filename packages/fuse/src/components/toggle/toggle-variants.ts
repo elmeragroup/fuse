@@ -10,8 +10,8 @@ import { selfFocusRingClass } from "../../styles/utils";
 // hover and press faces sit behind the `enabled-hover:` / `enabled-active:` gate from
 // fuse.css, so a disabled toggle keeps pointer events (a Tooltip on it still opens) and
 // never repaints or scales under the pointer. A pressed toggle fills with the theme's
-// `toggle-pressed` pair. Internal themes keep the quiet `muted` face on their neutral page.
-// External themes fill with `primary`, since `muted` barely clears their tinted brand pages
+// `toggle-pressed` pair. Neutral themes keep the quiet `muted` face on their neutral page.
+// Branded themes fill with `primary`, since `muted` barely clears their tinted brand pages
 // and would match the hover tint. `enabled-hover:` adds no specificity, so the pressed face
 // outranks the hover tint and a pressed toggle keeps its face under the pointer. Each size is
 // the control-size recipe's `min-square`, so a toggle is never narrower than it is tall.

@@ -1,13 +1,14 @@
-import { brandAllowsSegment, BRANDS, isBrandCode } from "./tokens/themes";
-import type { BrandCode, ThemeInput, ThemeSegment, ThemeVariant } from "./tokens/themes";
+import { brandAllowsSegment, BRANDS, parseThemeAxes } from "./theme-input";
+import type {
+  BrandCode,
+  ThemeAxes,
+  ThemeAxisName,
+  ThemeInput,
+  ThemeSegment,
+  UntypedAxisValue,
+} from "./theme-input";
 
-type ThemeAxisValue = string | number | boolean | symbol | bigint | null | undefined;
-
-type LooseThemeAxes = {
-  variant?: ThemeAxisValue;
-  brand?: ThemeAxisValue;
-  segment?: ThemeAxisValue;
-};
+type LooseThemeAxes = { readonly [N in ThemeAxisName]?: UntypedAxisValue };
 
 export function isThemeDevelopment(): boolean {
   return process.env.NODE_ENV !== "production";
@@ -21,43 +22,18 @@ function pinnedSegmentWarning(brand: BrandCode, segment: ThemeSegment): string {
   return `Invalid theme: ${brand} is pinned to ${segment}. Coercing segment to "${segment}".`;
 }
 
-function asThemeVariant(value: ThemeAxisValue): ThemeVariant | undefined {
-  if (value === "internal" || value === "external") {
-    return value;
-  }
-  return undefined;
-}
-
-function asBrandCode(value: ThemeAxisValue): BrandCode | undefined {
-  return isBrandCode(value) ? value : undefined;
-}
-
-function asThemeSegment(value: ThemeAxisValue): ThemeSegment | undefined {
-  if (value === "private" || value === "company") {
-    return value;
-  }
-  return undefined;
-}
-
-type ParsedThemeAxes =
-  | { ok: true; variant: ThemeVariant; brand: BrandCode; segment: ThemeSegment }
-  | { ok: false; reason: "not-object" | "unknown-axes" };
+type ParsedThemeAxes = ({ ok: true } & ThemeAxes) | { ok: false; reason: "not-object" | "unknown-axes" };
 
 // oxlint-disable-next-line anti-slop/no-unknown-parameters -- untyped CMS/env input is parsed here before pin/diagnostics
-function parseThemeAxes(input: unknown): ParsedThemeAxes {
+function parseThemeObject(input: unknown): ParsedThemeAxes {
   if (input === null || Array.isArray(input) || Object(input) !== input) {
     return { ok: false, reason: "not-object" };
   }
 
   // SAFETY: input is a non-null object; missing or non-literal axes are rejected below.
   const axes = input as LooseThemeAxes;
-  const variant = asThemeVariant(axes.variant);
-  const brand = asBrandCode(axes.brand);
-  const segment = asThemeSegment(axes.segment);
-  if (variant === undefined || brand === undefined || segment === undefined) {
-    return { ok: false, reason: "unknown-axes" };
-  }
-  return { ok: true, variant, brand, segment };
+  const parsed = parseThemeAxes((axis) => axes[axis.name]);
+  return parsed === null ? { ok: false, reason: "unknown-axes" } : { ok: true, ...parsed };
 }
 
 function resolvePinnedSegment(brand: BrandCode, segment: ThemeSegment): ThemeSegment {
@@ -67,14 +43,14 @@ function resolvePinnedSegment(brand: BrandCode, segment: ThemeSegment): ThemeSeg
 
 // oxlint-disable-next-line anti-slop/no-unknown-parameters -- env-free pin-table parse over unknown
 export function coerceTheme(input: unknown): ThemeInput | null {
-  const parsed = parseThemeAxes(input);
+  const parsed = parseThemeObject(input);
   if (!parsed.ok) {
     return null;
   }
   // SAFETY: resolvePinnedSegment returns a member of BRANDS[brand].segments, the pin
   // table ThemeInput encodes.
   return {
-    variant: parsed.variant,
+    identity: parsed.identity,
     brand: parsed.brand,
     segment: resolvePinnedSegment(parsed.brand, parsed.segment),
   } as ThemeInput;
@@ -82,12 +58,12 @@ export function coerceTheme(input: unknown): ThemeInput | null {
 
 // oxlint-disable-next-line anti-slop/no-unknown-parameters -- the theme prop is typed but validated at its runtime boundary anyway
 export function validateTheme(input: unknown): ThemeInput {
-  const parsed = parseThemeAxes(input);
+  const parsed = parseThemeObject(input);
   if (!parsed.ok) {
     if (parsed.reason === "not-object") {
-      throw new Error("Invalid theme: expected an object with variant, brand, and segment.");
+      throw new Error("Invalid theme: expected an object with identity, brand, and segment.");
     }
-    throw new Error("Invalid theme: unknown or missing variant, brand, or segment.");
+    throw new Error("Invalid theme: unknown or missing identity, brand, or segment.");
   }
 
   const segment = resolvePinnedSegment(parsed.brand, parsed.segment);
@@ -99,5 +75,5 @@ export function validateTheme(input: unknown): ThemeInput {
   }
 
   // SAFETY: segment came from resolvePinnedSegment over the BRANDS pin table.
-  return { variant: parsed.variant, brand: parsed.brand, segment } as ThemeInput;
+  return { identity: parsed.identity, brand: parsed.brand, segment } as ThemeInput;
 }

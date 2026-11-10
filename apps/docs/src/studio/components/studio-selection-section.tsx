@@ -107,7 +107,7 @@ function PartDetails({ part, artboard }: { part: PickedPart; artboard: ArtboardS
  * The inspector's first section while a part is picked: its slot and component, its density
  * role, its size and box, and the role tokens its component reads, each with its knob, so the
  * answer to "what do I turn to change this?" sits next to the part. The rows describe the part
- * in its artboard's scope, its scheme and a pinned variant included, with the declarations the
+ * in its artboard's scope, its scheme and a pinned identity included, with the declarations the
  * artboard wears; their edits apply to that scheme on every artboard, as the token panel's do. Picking a part scrolls the section into view.
  */
 export function SelectionSection(): ReactElement | null {
