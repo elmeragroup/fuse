@@ -52,6 +52,7 @@ export * from "./phone-number-field";
 export * from "./popover";
 export * from "./popover-info-button";
 export * from "./radio-group";
+export * from "./range-calendar";
 export * from "./scroll-area";
 export * from "./select";
 export * from "./select-field";

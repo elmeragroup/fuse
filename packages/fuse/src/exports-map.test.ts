@@ -226,6 +226,7 @@ const EXPECTED_ENTRIES = {
   // The Temporal Calendar is a permanent component in the barrel; the interim React Aria one stays
   // behind its own subpath below.
   calendar: { inRootBarrel: true, runtimeExports: ["Calendar"] },
+  "range-calendar": { inRootBarrel: true, runtimeExports: ["RangeCalendar"] },
   "react-aria/calendar": {
     inRootBarrel: false,
     runtimeExports: ["Calendar", "CalendarHeader", "CalendarGridHeader"],

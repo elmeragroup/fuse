@@ -35,6 +35,15 @@ export function formatDayNumber(locale: string, date: Temporal.PlainDate): strin
   return parts.find((part) => part.type === "day")?.value ?? String(date.day);
 }
 
+/** A day's full name: weekday, day, month and year, read at UTC midnight. */
+const DAY_NAME_OPTIONS: Intl.DateTimeFormatOptions = {
+  weekday: "long",
+  day: "numeric",
+  month: "long",
+  year: "numeric",
+  timeZone: "UTC",
+};
+
 /**
  * A day's full name, as React Aria names a day button before its prefixes and suffixes, such as
  * `Monday, October 12, 2026` in en-US.
@@ -44,13 +53,7 @@ export function formatDayNumber(locale: string, date: Temporal.PlainDate): strin
  * @returns The weekday, day, month and year.
  */
 export function formatDayName(locale: string, date: Temporal.PlainDate): string {
-  return dateTimeFormat(locale, {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-    timeZone: "UTC",
-  }).format(utcMidnight(date));
+  return dateTimeFormat(locale, DAY_NAME_OPTIONS).format(utcMidnight(date));
 }
 
 /**
@@ -131,4 +134,30 @@ export function formatWeekday(locale: string, date: Temporal.PlainDate): string 
  */
 export function formatWeekdayName(locale: string, date: Temporal.PlainDate): string {
   return dateTimeFormat(locale, { weekday: "long", timeZone: "UTC" }).format(utcMidnight(date));
+}
+
+/**
+ * A day's full name without its year, as a range writes its start when the end already writes
+ * that year: `Monday, October 5` in en-US. It is the full name's parts with the year and the
+ * literal that joins it to the rest left out, so the weekday keeps the case the full date gives it
+ * (fi-FI "maanantaina 5. lokakuuta", where a year-less pattern writes "maanantai"). `RangeCalendar`
+ * formats each end on its own and joins them with its own word ("to"), as React Aria does. React
+ * Aria splits `Intl.DateTimeFormat#formatRangeToParts` instead, whose shared parts differ between
+ * engines (a shared month dropped in some locales, Chromium's zero-padded sv-SE days), so this
+ * keeps the month on both ends and writes the same text in every engine. The en-US text matches
+ * React Aria's, which the parity harness pins (D-3-19).
+ *
+ * @param locale - The locale.
+ * @param date - The day.
+ * @returns The weekday, day and month, in the full name's own words.
+ */
+export function formatDayNameWithoutYear(locale: string, date: Temporal.PlainDate): string {
+  const parts = dateTimeFormat(locale, DAY_NAME_OPTIONS).formatToParts(utcMidnight(date));
+  const year = parts.findIndex((part) => part.type === "year");
+  // The literal before a trailing year, or after a leading one, goes with it.
+  const joiner = parts[year - 1]?.type === "literal" ? year - 1 : year + 1;
+  return parts
+    .filter((_, index) => year === -1 || (index !== year && index !== joiner))
+    .map((part) => part.value)
+    .join("");
 }

@@ -333,7 +333,7 @@ export type CalendarDayGridProps = useRender.ComponentProps<"table">;
  * `aria-labelledby` names the grid by that element and the `MonthHeading`.
  */
 export function CalendarDayGrid({ className, render, ...props }: CalendarDayGridProps): ReactElement {
-  const { settings, actions } = useCalendarRootContext("Calendar.DayGrid");
+  const { settings, actions, selection } = useCalendarRootContext("Calendar.DayGrid");
   const { month, headingId } = useCalendarMonthContext("Calendar.DayGrid");
   const own: ComponentProps<"table"> = {
     onBlur(event) {
@@ -350,6 +350,9 @@ export function CalendarDayGrid({ className, render, ...props }: CalendarDayGrid
   }
   if (settings.readOnly) {
     own["aria-readonly"] = true;
+  }
+  if (selection.multiselectable) {
+    own["aria-multiselectable"] = true;
   }
   return useRender({
     defaultTagName: "table",
@@ -546,16 +549,19 @@ export function CalendarDayGridRow({
   });
 }
 
-/** `Calendar.DayGridCell` takes a `td`'s props, Base UI's `render` and its day. */
-export type CalendarDayGridCellProps = useRender.ComponentProps<"td"> & {
+/** `Calendar.DayGridCell` takes a `td`'s props, Base UI's `render`, which receives the day's flags, and its day. */
+export type CalendarDayGridCellProps = useRender.ComponentProps<"td", CalendarDayFlagState> & {
   /** The day, as `Calendar.DayGridRow` passes it. */
   value: Temporal.PlainDate;
 };
 
 /**
  * One day's `gridcell`. It carries `aria-selected` when the selection owner's flags for the day hold
- * `selected`, and `aria-disabled` for a day the user cannot select. It works out the day's standing
- * and flags once and shares them with its `DayButton`.
+ * `selected`, and `aria-disabled` for a day the user cannot select. Each flag that holds is also a
+ * bare attribute, so a range's band can be painted across cells: `data-selected`,
+ * `data-selection-start`, `data-selection-end`, `data-in-range`, `data-highlighted` and
+ * `data-invalid`. A disabled day holds no flags. It works out the day's standing and flags once and
+ * shares them with its `DayButton`.
  */
 export function CalendarDayGridCell({
   value,
@@ -575,6 +581,8 @@ export function CalendarDayGridCell({
     (): CalendarDayContextValue => ({ date: value, iso, outsideMonth, disabled, unavailable, flags }),
     [value, iso, outsideMonth, disabled, unavailable, flags]
   );
+  // The flags also reach the cell, each as a bare `data-<flag>` through the button's mapping, so a
+  // range's band can be painted across cells.
   const own: ComponentProps<"td"> = { role: "gridcell", children };
   if (flags.selected) {
     own["aria-selected"] = true;
@@ -585,6 +593,8 @@ export function CalendarDayGridCell({
   const element = useRender({
     defaultTagName: "td",
     render,
+    state: flags,
+    stateAttributesMapping: DAY_FLAG_STATE_ATTRIBUTES,
     props: {
       "data-slot": "calendar-day-grid-cell",
       ...mergeProps<"td">({ ...own, className: cn(styles.dayGridCell(), className) }, props),
@@ -652,6 +662,7 @@ export function CalendarDayButton({
   );
   const current = useCalendarSelector(store, (state) => state.today?.toString() === iso);
   const { selected, invalid } = flags;
+  const prefix = selection.useDayNamePrefix(date, iso);
   // Only a day the user may select reaches the owner's `select`.
   const selectable = !disabled && !unavailable && !settings.readOnly;
   const ref = useRef<HTMLButtonElement>(null);
@@ -664,6 +675,9 @@ export function CalendarDayButton({
 
   const { locale, bounds } = settings;
   let name = formatDayName(locale, date);
+  if (prefix !== "" && !disabled) {
+    name = `${prefix}, ${name}`;
+  }
   if (current) {
     name = strings.format(selected ? "todayDateSelected" : "todayDate", { date: name });
   } else if (selected) {
@@ -738,6 +752,10 @@ export function CalendarDayButton({
   }
   if (invalid) {
     own["aria-invalid"] = true;
+  }
+  const { dayDescriptionId } = selection;
+  if (dayDescriptionId !== undefined && tabbable && selectable) {
+    own["aria-describedby"] = dayDescriptionId;
   }
   return useRender({
     defaultTagName: "button",

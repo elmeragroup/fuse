@@ -4,7 +4,6 @@
 // or src/index.ts. No public recipe. The part classes stay module-private.
 export { Calendar } from "./components/calendar";
 export type {
-  CalendarFirstDayOfWeek,
   CalendarRootProps,
   CalendarRootState,
   CalendarRootValueChangeEventDetails,
@@ -17,6 +16,7 @@ export type {
 } from "./components/calendar/calendar-change-details";
 export type { CalendarDayFlagState } from "./components/calendar/calendar-context";
 export type { CalendarPageBehavior } from "./components/calendar/calendar-dates";
+export type { CalendarFirstDayOfWeek } from "./components/calendar/calendar-input";
 export type {
   CalendarDayButtonProps,
   CalendarDayButtonState,

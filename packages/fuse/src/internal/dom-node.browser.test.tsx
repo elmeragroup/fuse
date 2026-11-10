@@ -37,6 +37,9 @@ describe("realm-independent DOM checks", () => {
     expect(button instanceof HTMLElement).toBe(false);
     expect(isNode(button)).toBe(true);
     expect(isHTMLElement(button)).toBe(true);
+    expect(button instanceof Element).toBe(false);
+    expect(isElement(button)).toBe(true);
+    expect(isElement(frameDoc.createElementNS("http://www.w3.org/2000/svg", "svg"))).toBe(true);
     expect(isFocusRoot(frameDoc)).toBe(true);
     expect(isFocusRoot(shadow)).toBe(true);
 
@@ -72,6 +75,9 @@ describe("realm-independent DOM checks", () => {
     const svg = frameDoc.createElementNS("http://www.w3.org/2000/svg", "svg");
     expect(isNode(window)).toBe(false);
     expect(isNode(null)).toBe(false);
+    expect(isElement(text)).toBe(false);
+    expect(isElement(frameDoc)).toBe(false);
+    expect(isElement(null)).toBe(false);
     expect(isHTMLElement(text)).toBe(false);
     expect(isHTMLElement(svg)).toBe(false);
     expect(isFocusRoot(frameDoc.createDocumentFragment())).toBe(false);

@@ -890,6 +890,16 @@
       "temporal-calendar-controlled.tsx"
     ]
   },
+  "temporal-range-calendar": {
+    "title": "Temporal Range Calendar",
+    "rsc": "client",
+    "demos": [
+      "temporal-range-calendar-basic.tsx",
+      "temporal-range-calendar-months.tsx",
+      "temporal-range-calendar-unavailable.tsx",
+      "temporal-range-calendar-controlled.tsx"
+    ]
+  },
   "text": {
     "title": "Text",
     "rsc": "client",

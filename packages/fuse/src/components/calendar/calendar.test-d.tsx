@@ -3,6 +3,7 @@ import { expectTypeOf, test } from "vitest";
 import { Calendar } from "@elmeragroup/fuse/calendar";
 import type {
   CalendarDayButtonState,
+  CalendarDayFlagState,
   CalendarPageBehavior,
   CalendarRootValueChangeEventDetails,
   CalendarValidationError,
@@ -78,6 +79,18 @@ test("DayButton's render callback receives the day's state", () => {
       render={(props, state) => {
         expectTypeOf(state).toEqualTypeOf<CalendarDayButtonState>();
         return <button {...props} />;
+      }}
+    />
+  );
+});
+
+test("DayGridCell's render callback receives the day's flags", () => {
+  const _cell = (
+    <Calendar.DayGridCell
+      value={Temporal.PlainDate.from("2026-10-14")}
+      render={(props, state) => {
+        expectTypeOf(state).toEqualTypeOf<CalendarDayFlagState>();
+        return <td {...props} />;
       }}
     />
   );

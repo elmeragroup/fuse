@@ -255,6 +255,10 @@
       "types": "./src/radio-group.ts",
       "import": "./src/radio-group.ts"
     },
+    "./range-calendar": {
+      "types": "./src/range-calendar.ts",
+      "import": "./src/range-calendar.ts"
+    },
     "./react-aria/calendar": {
       "types": "./src/react-aria/calendar.ts",
       "import": "./src/react-aria/calendar.ts"

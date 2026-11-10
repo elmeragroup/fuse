@@ -48,6 +48,7 @@ import { NavigationMenu } from "@elmeragroup/fuse/navigation-menu";
 import { Pagination } from "@elmeragroup/fuse/pagination";
 import { Popover } from "@elmeragroup/fuse/popover";
 import { RadioItem } from "@elmeragroup/fuse/radio-group";
+import { RangeCalendar } from "@elmeragroup/fuse/range-calendar";
 import { ScrollArea } from "@elmeragroup/fuse/scroll-area";
 import { Select } from "@elmeragroup/fuse/select";
 import { SelectField } from "@elmeragroup/fuse/select-field";
@@ -363,6 +364,24 @@ function namespaceElements(): ReactElement[] {
       "Ellipsis",
     ]),
     ...renderNamespace("Popover", Popover, ["Root", "Trigger", "Content", "Header", "Title", "Description"]),
+    ...renderNamespace("RangeCalendar", RangeCalendar, [
+      "Root",
+      "Header",
+      "DecrementMonth",
+      "IncrementMonth",
+      "VisibleRangeHeading",
+      "Months",
+      "Month",
+      "MonthHeading",
+      "DayGrid",
+      "DayGridHeader",
+      "DayGridHeaderRow",
+      "DayGridHeaderCell",
+      "DayGridBody",
+      "DayGridRow",
+      "DayGridCell",
+      "DayButton",
+    ]),
     ...renderNamespace("ScrollArea", ScrollArea, ["Root", "Bar"]),
     ...renderNamespace("Select", Select, [
       "Root",
@@ -585,6 +604,36 @@ function calendarTree(): ReactElement {
   );
 }
 
+/** The ISO range and bounds a server component hands RangeCalendar.Root. */
+const RANGE_CALENDAR_DATES = {
+  defaultValue: { start: "2026-10-12", end: "2026-10-16" },
+  minValue: "2026-10-01",
+  maxValue: "2026-12-31",
+};
+
+/**
+ * A server component renders the whole RangeCalendar with an ISO range: a plain object of strings
+ * crosses the boundary as it is, and `RangeCalendar.Months` renders its default months.
+ */
+function rangeCalendarTree(): ReactElement {
+  return createElement(
+    "section",
+    { "data-fixture": "range-calendar" },
+    createElement(
+      RangeCalendar.Root,
+      { "aria-label": "Stay", visibleMonths: 2, ...RANGE_CALENDAR_DATES },
+      createElement(
+        RangeCalendar.Header,
+        null,
+        createElement(RangeCalendar.DecrementMonth),
+        createElement(RangeCalendar.VisibleRangeHeading),
+        createElement(RangeCalendar.IncrementMonth)
+      ),
+      createElement(RangeCalendar.Months)
+    )
+  );
+}
+
 const SELECT_FIELD_PLACEHOLDER = "Choose a plan";
 
 /**
@@ -652,14 +701,17 @@ type FlightJson = string | number | boolean | null | readonly FlightJson[] | Fli
 
 type FlightObject = { readonly [key: string]: FlightJson };
 
+/** One JSON model row of a Flight payload: its hex id and its model. */
+type FlightRow = { readonly id: string; readonly model: FlightJson };
+
 /** The JSON model rows of a Flight payload (`<hex id>:[…]` or `<hex id>:{…}`). */
-function flightModelRows(payload: string): FlightJson[] {
+function flightRows(payload: string): FlightRow[] {
   return payload.split("\n").flatMap((line) => {
-    const body = /^[0-9a-f]+:(.*)$/u.exec(line)?.[1];
+    const [, id, body] = /^([0-9a-f]+):(.*)$/u.exec(line) ?? [];
     // SAFETY: Flight model rows are the I/O boundary. The body starts with `[` or `{`, and
     // JSON.parse yields only JSON values, so the result is a FlightJson array or object.
-    return body !== undefined && (body.startsWith("[") || body.startsWith("{"))
-      ? [JSON.parse(body) as FlightJson]
+    return id !== undefined && body !== undefined && (body.startsWith("[") || body.startsWith("{"))
+      ? [{ id, model: JSON.parse(body) as FlightJson }]
       : [];
   });
 }
@@ -674,6 +726,27 @@ function pathsTo(value: FlightJson, text: string, path: readonly string[] = []):
     return [];
   }
   return Object.entries(value).flatMap(([key, item]) => pathsTo(item, text, [...path, key]));
+}
+
+/**
+ * Every key path from a Flight payload's root to a string equal to `text`, across rows. Flight
+ * outlines a model into its own row once a row grows past its size budget and refers to it as
+ * `"$<hex id>"`, or `"$L<hex id>"` for an element it resolves lazily, so a path that starts in an
+ * outlined row continues from each reference to that row, as the client resolves it.
+ */
+function rowPathsTo(rows: readonly FlightRow[], text: string): string[][] {
+  const resolve = (targets: readonly string[], seen: ReadonlySet<string>): string[][] =>
+    rows.flatMap(({ id, model }) => {
+      const inner = targets.flatMap((target) => pathsTo(model, target));
+      if (inner.length === 0) {
+        return [];
+      }
+      const outer = seen.has(id) ? [] : resolve([`$${id}`, `$L${id}`], new Set([...seen, id]));
+      return outer.length === 0
+        ? inner
+        : outer.flatMap((prefix) => inner.map((path) => [...prefix, ...path]));
+    });
+  return resolve([text], new Set());
 }
 
 function isFlightArray(value: FlightJson): value is readonly FlightJson[] {
@@ -713,7 +786,8 @@ function Fixture(): ReactElement {
     labeledComboboxTrees(),
     attachmentTree(),
     carouselTree(),
-    calendarTree()
+    calendarTree(),
+    rangeCalendarTree()
   );
 }
 
@@ -751,16 +825,23 @@ if (payload.includes("/components/button/button.tsx")) {
 // satisfy: Flight revives each client reference as a new lazy wrapper. The rows must hand
 // SubSections over through the shell's `subSections` prop, so each band's only path runs
 // through that prop, never through the shell's `children`.
-const models = flightModelRows(payload);
+const rows = flightRows(payload);
+const models = rows.map(({ model }) => model);
 for (const band of [CHECKBOX_BAND, RADIO_BAND]) {
-  const paths = models.flatMap((model) => pathsTo(model, band));
+  const paths = rowPathsTo(rows, band);
   if (paths.length !== 1 || paths[0]?.includes("subSections") !== true) {
     throw new Error(`${band} is not passed through the shell's subSections prop: ${JSON.stringify(paths)}`);
   }
 }
 for (const text of ["Fixed price", "Locked for 12 months.", "Spot price"]) {
-  if (models.flatMap((model) => pathsTo(model, text)).some((path) => path.includes("subSections"))) {
-    throw new Error(`${text} left the row label`);
+  // Through outlined rows, as the client resolves them; a label with no path at all is missing,
+  // which the check would otherwise pass.
+  const paths = rowPathsTo(rows, text);
+  if (paths.length === 0) {
+    throw new Error(`${text} is missing from the server payload`);
+  }
+  if (paths.some((path) => path.includes("subSections"))) {
+    throw new Error(`${text} left the row label: ${JSON.stringify(paths)}`);
   }
 }
 
@@ -821,6 +902,26 @@ if (
 }
 if (!payload.includes("/components/calendar/calendar.tsx")) {
   throw new Error(`Calendar.Root is not a client reference in the payload:\n${payload.slice(0, 1500)}`);
+}
+
+// The range crosses as the same ISO strings, and the Root is a client reference.
+const rangeCalendarRoots = models
+  .flatMap(flightElements)
+  .filter(({ props }) => props["aria-label"] === "Stay" && props.visibleMonths === 2);
+const rangeCalendarProps = rangeCalendarRoots[0]?.props;
+const crossedRange = rangeCalendarProps?.defaultValue;
+if (
+  rangeCalendarRoots.length !== 1 ||
+  !isFlightObject(crossedRange) ||
+  crossedRange.start !== RANGE_CALENDAR_DATES.defaultValue.start ||
+  crossedRange.end !== RANGE_CALENDAR_DATES.defaultValue.end ||
+  rangeCalendarProps?.minValue !== RANGE_CALENDAR_DATES.minValue ||
+  rangeCalendarProps.maxValue !== RANGE_CALENDAR_DATES.maxValue
+) {
+  throw new Error(`RangeCalendar.Root's ISO range did not cross intact:\n${payload.slice(0, 1500)}`);
+}
+if (!payload.includes("/components/range-calendar/range-calendar.tsx")) {
+  throw new Error(`RangeCalendar.Root is not a client reference in the payload:\n${payload.slice(0, 1500)}`);
 }
 
 process.stdout.write("RSC_OK\n");
