@@ -6,7 +6,7 @@ import { Calendar } from "@elmeragroup/fuse/calendar";
 import { Switch } from "@elmeragroup/fuse/switch";
 
 export function TemporalCalendarControlled() {
-  const [value, setValue] = useState<Temporal.PlainDate | string>("2026-10-14");
+  const [value, setValue] = useState(() => Temporal.PlainDate.from("2026-10-14"));
   const [locked, setLocked] = useState(false);
   return (
     <div className="flex flex-col items-start gap-4">

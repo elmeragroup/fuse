@@ -17,6 +17,7 @@ import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
+import { expectRenderTypeError } from "../../../test/caught-error";
 import { emulateForcedColors, systemColor } from "../../../test/forced-colors";
 import { withLocale } from "../../../test/locale-matrix";
 import { cssVarColor, renderThemed, roleNamed } from "../../../test/themed-browser-render";
@@ -112,7 +113,14 @@ function daysWith(attribute: string): string[] {
 
 describe("RangeCalendar parity with the interim tier", () => {
   it("anchors on Enter, moves focus a day, follows focus, drops the anchor on Escape and completes", async () => {
-    mount(<Harness defaultValue={{ start: "2026-10-05", end: "2026-10-09" }} />);
+    mount(
+      <Harness
+        defaultValue={{
+          start: Temporal.PlainDate.from("2026-10-05"),
+          end: Temporal.PlainDate.from("2026-10-09"),
+        }}
+      />
+    );
     expect(selectedDays()).toEqual(["5", "6", "7", "8", "9"]);
     await focusDay("Monday, October 12, 2026");
 
@@ -134,7 +142,14 @@ describe("RangeCalendar parity with the interim tier", () => {
   });
 
   it("names the range ends with the whole selected range, and a one-day range with its date", async () => {
-    mount(<Harness defaultValue={{ start: "2026-10-05", end: "2026-10-09" }} />);
+    mount(
+      <Harness
+        defaultValue={{
+          start: Temporal.PlainDate.from("2026-10-05"),
+          end: Temporal.PlainDate.from("2026-10-09"),
+        }}
+      />
+    );
     for (const name of [
       "Selected Range: Monday, October 5 to Friday, October 9, 2026, Monday, October 5, 2026 selected",
       "Tuesday, October 6, 2026 selected",
@@ -156,7 +171,14 @@ describe("RangeCalendar parity with the interim tier", () => {
   });
 
   it("describes the tab-stop day by what selecting it does", async () => {
-    mount(<Harness defaultValue={{ start: "2026-10-05", end: "2026-10-09" }} />);
+    mount(
+      <Harness
+        defaultValue={{
+          start: Temporal.PlainDate.from("2026-10-05"),
+          end: Temporal.PlainDate.from("2026-10-09"),
+        }}
+      />
+    );
     await focusDay(
       "Selected Range: Monday, October 5 to Friday, October 9, 2026, Monday, October 5, 2026 selected"
     );
@@ -174,7 +196,14 @@ describe("RangeCalendar parity with the interim tier", () => {
 
 describe("RangeCalendar pointer selection", () => {
   it("anchors on a press, highlights to the hovered day, and completes earlier day first", async () => {
-    mount(<Harness defaultValue={{ start: "2026-10-05", end: "2026-10-09" }} />);
+    mount(
+      <Harness
+        defaultValue={{
+          start: Temporal.PlainDate.from("2026-10-05"),
+          end: Temporal.PlainDate.from("2026-10-09"),
+        }}
+      />
+    );
     await userEvent.click(roleNamed("button", "Thursday, October 22, 2026"));
     await expect.element(committed()).toHaveTextContent("unchanged");
 
@@ -199,7 +228,15 @@ describe("RangeCalendar pointer selection", () => {
   });
 
   it("highlights a range across the visible months' grids", async () => {
-    mount(<Harness defaultValue={{ start: "2026-10-01", end: "2026-10-02" }} visibleMonths={3} />);
+    mount(
+      <Harness
+        defaultValue={{
+          start: Temporal.PlainDate.from("2026-10-01"),
+          end: Temporal.PlainDate.from("2026-10-02"),
+        }}
+        visibleMonths={3}
+      />
+    );
     await userEvent.click(roleNamed("button", "Wednesday, October 28, 2026"));
     await userEvent.hover(roleNamed("button", "Tuesday, November 3, 2026"));
 
@@ -219,7 +256,14 @@ describe("RangeCalendar pointer selection", () => {
 
 describe("RangeCalendar committing an open range", () => {
   it("selects to the focused day when focus leaves the calendar", async () => {
-    mount(<Harness defaultValue={{ start: "2026-10-05", end: "2026-10-09" }} />);
+    mount(
+      <Harness
+        defaultValue={{
+          start: Temporal.PlainDate.from("2026-10-05"),
+          end: Temporal.PlainDate.from("2026-10-09"),
+        }}
+      />
+    );
     await focusDay("Monday, October 12, 2026");
     await userEvent.keyboard("{Enter}{ArrowRight}");
     await userEvent.keyboard("{Tab}");
@@ -231,7 +275,10 @@ describe("RangeCalendar committing an open range", () => {
     const reported: string[] = [];
     mount(
       <Harness
-        defaultValue={{ start: "2026-10-05", end: "2026-10-09" }}
+        defaultValue={{
+          start: Temporal.PlainDate.from("2026-10-05"),
+          end: Temporal.PlainDate.from("2026-10-09"),
+        }}
         cancel={(reason) => {
           reported.push(reason);
           return false;
@@ -247,7 +294,14 @@ describe("RangeCalendar committing an open range", () => {
   });
 
   it("keeps an open range while focus moves to a month button inside the calendar", async () => {
-    mount(<Harness defaultValue={{ start: "2026-10-05", end: "2026-10-09" }} />);
+    mount(
+      <Harness
+        defaultValue={{
+          start: Temporal.PlainDate.from("2026-10-05"),
+          end: Temporal.PlainDate.from("2026-10-09"),
+        }}
+      />
+    );
     await focusDay("Monday, October 12, 2026");
     await userEvent.keyboard("{Enter}");
     roleNamed("button", "Next").focus();
@@ -257,7 +311,14 @@ describe("RangeCalendar committing an open range", () => {
   });
 
   it("selects to the hovered day on a press outside the calendar", async () => {
-    mount(<Harness defaultValue={{ start: "2026-10-05", end: "2026-10-09" }} />);
+    mount(
+      <Harness
+        defaultValue={{
+          start: Temporal.PlainDate.from("2026-10-05"),
+          end: Temporal.PlainDate.from("2026-10-09"),
+        }}
+      />
+    );
     await userEvent.click(roleNamed("button", "Monday, October 12, 2026"));
     await userEvent.hover(roleNamed("button", "Thursday, October 15, 2026"));
     await userEvent.click(page.getByText("Outside text"));
@@ -266,7 +327,15 @@ describe("RangeCalendar committing an open range", () => {
   });
 
   it("drops the anchor and keeps the range with commitBehavior reset", async () => {
-    mount(<Harness defaultValue={{ start: "2026-10-05", end: "2026-10-09" }} commitBehavior="reset" />);
+    mount(
+      <Harness
+        defaultValue={{
+          start: Temporal.PlainDate.from("2026-10-05"),
+          end: Temporal.PlainDate.from("2026-10-09"),
+        }}
+        commitBehavior="reset"
+      />
+    );
     await userEvent.click(roleNamed("button", "Monday, October 12, 2026"));
     await userEvent.hover(roleNamed("button", "Thursday, October 15, 2026"));
     await userEvent.click(page.getByText("Outside text"));
@@ -283,7 +352,14 @@ describe("RangeCalendar committing an open range", () => {
     };
     document.addEventListener("keydown", onKeyDown);
     try {
-      mount(<Harness defaultValue={{ start: "2026-10-05", end: "2026-10-09" }} />);
+      mount(
+        <Harness
+          defaultValue={{
+            start: Temporal.PlainDate.from("2026-10-05"),
+            end: Temporal.PlainDate.from("2026-10-09"),
+          }}
+        />
+      );
       await focusDay("Monday, October 12, 2026");
       await userEvent.keyboard("{Enter}{Escape}");
       expect(escapes).not.toHaveBeenCalled();
@@ -300,7 +376,13 @@ describe("RangeCalendar unavailable days", () => {
 
   it("narrows an anchored range to the available days around the anchor and disables the rest", async () => {
     mount(
-      <Harness defaultValue={{ start: "2026-10-05", end: "2026-10-09" }} isDateUnavailable={saturdays} />
+      <Harness
+        defaultValue={{
+          start: Temporal.PlainDate.from("2026-10-05"),
+          end: Temporal.PlainDate.from("2026-10-09"),
+        }}
+        isDateUnavailable={saturdays}
+      />
     );
     await focusDay("Tuesday, October 13, 2026");
     await userEvent.keyboard("{Enter}");
@@ -321,7 +403,15 @@ describe("RangeCalendar unavailable days", () => {
     // Only days more than two days from the anchor are unavailable.
     const near = (date: Temporal.PlainDate, anchor: Temporal.PlainDate | null) =>
       anchor !== null && Math.abs(anchor.until(date).days) > 2;
-    mount(<Harness defaultValue={{ start: "2026-10-05", end: "2026-10-09" }} isDateUnavailable={near} />);
+    mount(
+      <Harness
+        defaultValue={{
+          start: Temporal.PlainDate.from("2026-10-05"),
+          end: Temporal.PlainDate.from("2026-10-09"),
+        }}
+        isDateUnavailable={near}
+      />
+    );
     await userEvent.click(roleNamed("button", "Tuesday, October 20, 2026"));
 
     // October 23 is the nearest unavailable day, so the range can reach October 22 at most.
@@ -334,7 +424,13 @@ describe("RangeCalendar unavailable days", () => {
 
   it("marks a range with an unavailable end invalid on its days and its Root", () => {
     mount(
-      <Harness defaultValue={{ start: "2026-10-12", end: "2026-10-17" }} isDateUnavailable={saturdays} />
+      <Harness
+        defaultValue={{
+          start: Temporal.PlainDate.from("2026-10-12"),
+          end: Temporal.PlainDate.from("2026-10-17"),
+        }}
+        isDateUnavailable={saturdays}
+      />
     );
     expect(roleNamed("group", "Stay")).toHaveAttribute("data-invalid");
     expect(daysWith("data-invalid")).toHaveLength(6);
@@ -348,7 +444,10 @@ describe("RangeCalendar cancelable change details", () => {
   it("keeps the value and the anchor when a completing day press is canceled", async () => {
     mount(
       <Harness
-        defaultValue={{ start: "2026-10-05", end: "2026-10-09" }}
+        defaultValue={{
+          start: Temporal.PlainDate.from("2026-10-05"),
+          end: Temporal.PlainDate.from("2026-10-09"),
+        }}
         cancel={(reason) => reason === "day-press"}
       />
     );
@@ -367,7 +466,10 @@ describe("RangeCalendar cancelable change details", () => {
   it("keeps the value and drops the anchor when a focus-out commit is canceled", async () => {
     mount(
       <Harness
-        defaultValue={{ start: "2026-10-05", end: "2026-10-09" }}
+        defaultValue={{
+          start: Temporal.PlainDate.from("2026-10-05"),
+          end: Temporal.PlainDate.from("2026-10-09"),
+        }}
         cancel={(reason) => reason === "focus-out"}
       />
     );
@@ -381,14 +483,21 @@ describe("RangeCalendar cancelable change details", () => {
 
   it("keeps the range a controlled parent holds until it accepts a new one", async () => {
     function Controlled(): ReactElement {
-      const [value, setValue] = useState({ start: "2026-10-05", end: "2026-10-09" });
+      const [value, setValue] = useState({
+        start: Temporal.PlainDate.from("2026-10-05"),
+        end: Temporal.PlainDate.from("2026-10-09"),
+      });
       return (
         <>
-          <Parts
-            value={value}
-            onValueChange={(next) => setValue({ start: next.start.toString(), end: next.end.toString() })}
-          />
-          <button type="button" onClick={() => setValue({ start: "2026-10-26", end: "2026-10-28" })}>
+          <Parts value={value} onValueChange={(next) => setValue(next)} />
+          <button
+            type="button"
+            onClick={() =>
+              setValue({
+                start: Temporal.PlainDate.from("2026-10-26"),
+                end: Temporal.PlainDate.from("2026-10-28"),
+              })
+            }>
             Late October
           </button>
         </>
@@ -405,7 +514,15 @@ describe("RangeCalendar cancelable change details", () => {
 
 describe("RangeCalendar read-only and disabled", () => {
   it("anchors nothing while read-only", async () => {
-    mount(<Harness defaultValue={{ start: "2026-10-05", end: "2026-10-09" }} readOnly />);
+    mount(
+      <Harness
+        defaultValue={{
+          start: Temporal.PlainDate.from("2026-10-05"),
+          end: Temporal.PlainDate.from("2026-10-09"),
+        }}
+        readOnly
+      />
+    );
     await userEvent.click(roleNamed("button", "Monday, October 12, 2026"));
     await userEvent.hover(roleNamed("button", "Thursday, October 15, 2026"));
     expect(selectedDays()).toEqual(["5", "6", "7", "8", "9"]);
@@ -420,7 +537,10 @@ describe("RangeCalendar renders", () => {
       return (
         <RangeCalendar.Root
           aria-label="Stay"
-          defaultValue={{ start: "2026-10-05", end: "2026-10-09" }}
+          defaultValue={{
+            start: Temporal.PlainDate.from("2026-10-05"),
+            end: Temporal.PlainDate.from("2026-10-09"),
+          }}
           visibleMonths={3}>
           <RangeCalendar.Months>
             {(month) => (
@@ -469,7 +589,12 @@ describe("RangeCalendar made read-only or disabled while a range is open", () =>
     ["disabled", "outside press"],
     ["disabled", "focus-out"],
   ] as const)("selects nothing once %s, on an %s", async (prop, settle) => {
-    const props = { defaultValue: { start: "2026-10-05", end: "2026-10-09" } };
+    const props = {
+      defaultValue: {
+        start: Temporal.PlainDate.from("2026-10-05"),
+        end: Temporal.PlainDate.from("2026-10-09"),
+      },
+    };
     const view = mount(<Harness {...props} />);
     await userEvent.click(roleNamed("button", "Monday, October 12, 2026"));
     await userEvent.hover(roleNamed("button", "Thursday, October 15, 2026"));
@@ -495,8 +620,19 @@ describe("RangeCalendar grid semantics", () => {
   it("marks every grid multiselectable, default and composed, where Calendar's grid is not", () => {
     mount(
       <>
-        <Parts defaultValue={{ start: "2026-10-05", end: "2026-10-09" }} visibleMonths={2} />
-        <RangeCalendar.Root aria-label="Composed" defaultValue={{ start: "2026-10-05", end: "2026-10-09" }}>
+        <Parts
+          defaultValue={{
+            start: Temporal.PlainDate.from("2026-10-05"),
+            end: Temporal.PlainDate.from("2026-10-09"),
+          }}
+          visibleMonths={2}
+        />
+        <RangeCalendar.Root
+          aria-label="Composed"
+          defaultValue={{
+            start: Temporal.PlainDate.from("2026-10-05"),
+            end: Temporal.PlainDate.from("2026-10-09"),
+          }}>
           <RangeCalendar.Months>
             {(month) => (
               <RangeCalendar.Month key={month.toString()} value={month}>
@@ -522,7 +658,15 @@ describe("RangeCalendar grid semantics", () => {
 
   it("writes aria-multiselectable in the server render", () => {
     const html = renderToString(
-      withLocale("en-US", <Parts defaultValue={{ start: "2026-10-05", end: "2026-10-09" }} />)
+      withLocale(
+        "en-US",
+        <Parts
+          defaultValue={{
+            start: Temporal.PlainDate.from("2026-10-05"),
+            end: Temporal.PlainDate.from("2026-10-09"),
+          }}
+        />
+      )
     );
     const host = document.createElement("div");
     host.innerHTML = html;
@@ -545,7 +689,10 @@ describe("RangeCalendar in a same-origin frame", () => {
       mount(
         createPortal(
           <Parts
-            defaultValue={{ start: "2026-10-05", end: "2026-10-09" }}
+            defaultValue={{
+              start: Temporal.PlainDate.from("2026-10-05"),
+              end: Temporal.PlainDate.from("2026-10-09"),
+            }}
             onValueChange={(next, details) => {
               reported.push(`${next.start.toString()}..${next.end.toString()} ${details.reason}`);
             }}
@@ -602,7 +749,14 @@ describe("RangeCalendar styles", () => {
   }
 
   it("fills the range's ends, bands its days and leaves the days outside it plain", async () => {
-    mount(<Harness defaultValue={{ start: "2026-10-05", end: "2026-10-09" }} />);
+    mount(
+      <Harness
+        defaultValue={{
+          start: Temporal.PlainDate.from("2026-10-05"),
+          end: Temporal.PlainDate.from("2026-10-09"),
+        }}
+      />
+    );
     await expect.element(page.getByRole("grid")).toBeVisible();
     const start = dayParts(/Monday, October 5, 2026 selected$/);
     const middle = dayParts("Wednesday, October 7, 2026 selected");
@@ -637,7 +791,14 @@ describe("RangeCalendar styles", () => {
   });
 
   it("paints a range being chosen the same way, from the anchor to the hovered day", async () => {
-    mount(<Harness defaultValue={{ start: "2026-10-05", end: "2026-10-09" }} />);
+    mount(
+      <Harness
+        defaultValue={{
+          start: Temporal.PlainDate.from("2026-10-05"),
+          end: Temporal.PlainDate.from("2026-10-09"),
+        }}
+      />
+    );
     await userEvent.click(roleNamed("button", "Tuesday, October 13, 2026"));
     await userEvent.hover(roleNamed("button", "Thursday, October 15, 2026"));
     const anchor = dayParts("Tuesday, October 13, 2026 selected");
@@ -674,7 +835,10 @@ describe("RangeCalendar in a shadow root", () => {
         mount(
           createPortal(
             <Parts
-              defaultValue={{ start: "2026-10-05", end: "2026-10-09" }}
+              defaultValue={{
+                start: Temporal.PlainDate.from("2026-10-05"),
+                end: Temporal.PlainDate.from("2026-10-09"),
+              }}
               commitBehavior={commitBehavior}
               onValueChange={(next, details) => {
                 reported.push(`${next.start.toString()}..${next.end.toString()} ${details.reason}`);
@@ -728,7 +892,13 @@ describe("RangeCalendar outside presses, regardless of the pressed element and t
     "settles a range when the pressed element stops the press's propagation (%s)",
     async (commitBehavior) => {
       mount(
-        <Harness defaultValue={{ start: "2026-10-05", end: "2026-10-09" }} commitBehavior={commitBehavior} />
+        <Harness
+          defaultValue={{
+            start: Temporal.PlainDate.from("2026-10-05"),
+            end: Temporal.PlainDate.from("2026-10-09"),
+          }}
+          commitBehavior={commitBehavior}
+        />
       );
       await userEvent.click(roleNamed("button", "Monday, October 12, 2026"));
       await userEvent.hover(roleNamed("button", "Thursday, October 15, 2026"));
@@ -748,7 +918,12 @@ describe("RangeCalendar outside presses, regardless of the pressed element and t
   );
 
   it("keeps taking day presses as its own after render swaps the Root's element mid-range", async () => {
-    const props = { defaultValue: { start: "2026-10-05", end: "2026-10-09" } };
+    const props = {
+      defaultValue: {
+        start: Temporal.PlainDate.from("2026-10-05"),
+        end: Temporal.PlainDate.from("2026-10-09"),
+      },
+    };
     const view = mount(<Harness {...props} render={<div />} />);
     await userEvent.click(roleNamed("button", "Monday, October 12, 2026"));
     expect(roleNamed("group", "Stay").tagName).toBe("DIV");
@@ -769,7 +944,12 @@ describe("RangeCalendar's Root element", () => {
   it("is one node in its parent, with the selection prompt inside it before the consumer's parts", () => {
     mount(
       <div data-testid="stack">
-        <Parts defaultValue={{ start: "2026-10-05", end: "2026-10-09" }} />
+        <Parts
+          defaultValue={{
+            start: Temporal.PlainDate.from("2026-10-05"),
+            end: Temporal.PlainDate.from("2026-10-09"),
+          }}
+        />
       </div>
     );
     const root = roleNamed("group", "Stay");
@@ -791,7 +971,10 @@ describe("RangeCalendar keyboard anchor on the last visible day", () => {
     const pages: string[] = [];
     mount(
       <Harness
-        defaultValue={{ start: "2026-10-05", end: "2026-10-09" }}
+        defaultValue={{
+          start: Temporal.PlainDate.from("2026-10-05"),
+          end: Temporal.PlainDate.from("2026-10-09"),
+        }}
         onVisibleRangeChange={(start, details) => pages.push(`${start.toString()} ${details.reason}`)}
       />
     );
@@ -808,7 +991,10 @@ describe("RangeCalendar keyboard anchor on the last visible day", () => {
     const pages: string[] = [];
     mount(
       <Harness
-        defaultValue={{ start: "2026-10-05", end: "2026-10-09" }}
+        defaultValue={{
+          start: Temporal.PlainDate.from("2026-10-05"),
+          end: Temporal.PlainDate.from("2026-10-09"),
+        }}
         onVisibleRangeChange={(start, details) => {
           pages.push(`${start.toString()} ${details.reason}`);
           details.cancel();
@@ -830,7 +1016,15 @@ describe("RangeCalendar keyboard anchor on the last visible day", () => {
 
 describe("RangeCalendar's opening view", () => {
   it("opens a range longer than the centred view on its first month", () => {
-    mount(<Parts defaultValue={{ start: "2026-10-12", end: "2026-12-03" }} visibleMonths={3} />);
+    mount(
+      <Parts
+        defaultValue={{
+          start: Temporal.PlainDate.from("2026-10-12"),
+          end: Temporal.PlainDate.from("2026-12-03"),
+        }}
+        visibleMonths={3}
+      />
+    );
     expect(
       page
         .getByRole("grid")
@@ -844,7 +1038,15 @@ describe("RangeCalendar visibleMonths", () => {
   it("warns once while the same value stays, however often the Root renders", async () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
     try {
-      mount(<Harness defaultValue={{ start: "2026-10-05", end: "2026-10-09" }} visibleMonths={0} />);
+      mount(
+        <Harness
+          defaultValue={{
+            start: Temporal.PlainDate.from("2026-10-05"),
+            end: Temporal.PlainDate.from("2026-10-09"),
+          }}
+          visibleMonths={0}
+        />
+      );
       await userEvent.click(roleNamed("button", "Monday, October 12, 2026"));
       await userEvent.click(roleNamed("button", "Monday, October 12, 2026 selected"));
       await expect.element(committed()).toHaveTextContent("2026-10-12..2026-10-12 day-press null");
@@ -860,7 +1062,14 @@ describe("RangeCalendar visibleMonths", () => {
 
 describe("RangeCalendar virtual presses", () => {
   it("leaves an open range to the day's own click when VoiceOver's zero-size press lands outside", async () => {
-    mount(<Harness defaultValue={{ start: "2026-10-05", end: "2026-10-09" }} />);
+    mount(
+      <Harness
+        defaultValue={{
+          start: Temporal.PlainDate.from("2026-10-05"),
+          end: Temporal.PlainDate.from("2026-10-09"),
+        }}
+      />
+    );
     await userEvent.click(roleNamed("button", "Monday, October 12, 2026"));
     const outside = page.getByText("Outside text").element();
     const virtual = { bubbles: true, composed: true, width: 0, height: 0 };
@@ -880,7 +1089,12 @@ describe("RangeCalendar renders on an anchor", () => {
     const renders: string[] = [];
     function Counted(): ReactElement {
       return (
-        <RangeCalendar.Root aria-label="Stay" defaultValue={{ start: "2026-10-05", end: "2026-10-09" }}>
+        <RangeCalendar.Root
+          aria-label="Stay"
+          defaultValue={{
+            start: Temporal.PlainDate.from("2026-10-05"),
+            end: Temporal.PlainDate.from("2026-10-09"),
+          }}>
           <RangeCalendar.Months>
             {(month) => (
               <RangeCalendar.Month key={month.toString()} value={month}>
@@ -935,7 +1149,14 @@ describe("RangeCalendar in forced colors", () => {
 
   it("fills the range's ends with the system's Highlight, not the theme's primary", async () => {
     await emulateForcedColors("active");
-    mount(<Harness defaultValue={{ start: "2026-10-05", end: "2026-10-09" }} />);
+    mount(
+      <Harness
+        defaultValue={{
+          start: Temporal.PlainDate.from("2026-10-05"),
+          end: Temporal.PlainDate.from("2026-10-09"),
+        }}
+      />
+    );
     await expect.element(page.getByRole("grid")).toBeVisible();
     for (const name of [/Monday, October 5, 2026 selected$/, /Friday, October 9, 2026 selected$/]) {
       const button = page.getByRole("button", { name }).element();
@@ -948,5 +1169,123 @@ describe("RangeCalendar in forced colors", () => {
       expect(getComputedStyle(button).backgroundColor).toBe(highlight);
       expect(getComputedStyle(button).color).toBe(systemColor(button, "HighlightText"));
     }
+  });
+});
+
+describe("date props past the types", () => {
+  it("throws a TypeError naming the Root, the prop and the string for ISO text", () => {
+    expectRenderTypeError(
+      'RangeCalendar.Root defaultValue.end: received the string "2026-10-09"',
+      <RangeCalendar.Root
+        aria-label="Stay"
+        defaultValue={{
+          start: Temporal.PlainDate.from("2026-10-05"),
+          // @ts-expect-error -- text reaches the prop past the types: from plain JavaScript, or as the ISO text a server component's Temporal object crosses as
+          end: "2026-10-09",
+        }}
+      />
+    );
+  });
+
+  it("throws for ISO text in a range end after the equal Temporal value, whatever rendered before", () => {
+    const start = Temporal.PlainDate.from("2026-10-05");
+    expectRenderTypeError(
+      'RangeCalendar.Root value.end: received the string "2026-10-09"',
+      <RangeCalendar.Root aria-label="Stay" value={{ start, end: Temporal.PlainDate.from("2026-10-09") }} />,
+      <RangeCalendar.Root
+        aria-label="Stay"
+        value={{
+          start,
+          // @ts-expect-error -- the equal ISO text, past the types, after a Temporal value
+          end: "2026-10-09",
+        }}
+      />
+    );
+  });
+
+  it("throws for ISO text in a default range end beside a controlled value", () => {
+    expectRenderTypeError(
+      'RangeCalendar.Root defaultValue.end: received the string "2026-10-09"',
+      <RangeCalendar.Root
+        aria-label="Stay"
+        value={null}
+        defaultValue={{
+          start: Temporal.PlainDate.from("2026-10-05"),
+          // @ts-expect-error -- text reaches the prop past the types
+          end: "2026-10-09",
+        }}
+      />
+    );
+  });
+
+  it("throws for ISO text in a default range end after the equal Temporal value, whatever rendered before", () => {
+    const start = Temporal.PlainDate.from("2026-10-05");
+    expectRenderTypeError(
+      'RangeCalendar.Root defaultValue.end: received the string "2026-10-09"',
+      <RangeCalendar.Root
+        aria-label="Stay"
+        defaultValue={{ start, end: Temporal.PlainDate.from("2026-10-09") }}
+      />,
+      <RangeCalendar.Root
+        aria-label="Stay"
+        defaultValue={{
+          start,
+          // @ts-expect-error -- the equal ISO text, past the types, after a Temporal value
+          end: "2026-10-09",
+        }}
+      />
+    );
+  });
+  it("throws a TypeError naming the end for a range value with a null end", () => {
+    expectRenderTypeError(
+      "RangeCalendar.Root value.end: received no day",
+      <RangeCalendar.Root
+        aria-label="Stay"
+        value={{
+          start: Temporal.PlainDate.from("2026-10-05"),
+          // @ts-expect-error -- plain JavaScript passes a range missing its end
+          end: null,
+        }}
+      />
+    );
+  });
+
+  it("throws for a range value missing its start after a whole range rendered", () => {
+    const end = Temporal.PlainDate.from("2026-10-09");
+    expectRenderTypeError(
+      "RangeCalendar.Root value.start: received no day",
+      <RangeCalendar.Root aria-label="Stay" value={{ start: Temporal.PlainDate.from("2026-10-05"), end }} />,
+      // @ts-expect-error -- plain JavaScript passes a range without its start
+      <RangeCalendar.Root aria-label="Stay" value={{ end }} />
+    );
+  });
+
+  it("throws for a default range missing its end", () => {
+    expectRenderTypeError(
+      "RangeCalendar.Root defaultValue.end: received no day",
+      // @ts-expect-error -- plain JavaScript passes a range without its end
+      <RangeCalendar.Root aria-label="Stay" defaultValue={{ start: Temporal.PlainDate.from("2026-10-05") }} />
+    );
+  });
+
+  it("throws for a default range with a null end after a whole default rendered, beside a controlled value", () => {
+    const start = Temporal.PlainDate.from("2026-10-05");
+    expectRenderTypeError(
+      "RangeCalendar.Root defaultValue.end: received no day",
+      <RangeCalendar.Root
+        aria-label="Stay"
+        value={null}
+        defaultValue={{ start, end: Temporal.PlainDate.from("2026-10-09") }}
+      />,
+      <RangeCalendar.Root
+        aria-label="Stay"
+        value={null}
+        defaultValue={{
+          start,
+          // @ts-expect-error -- plain JavaScript passes a range missing its end
+          end: null,
+        }}
+      />
+    );
   });
 });

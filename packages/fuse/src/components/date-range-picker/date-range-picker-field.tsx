@@ -1,10 +1,11 @@
 import type { FocusEvent, ReactElement, ReactNode } from "react";
 
 import { definedProps } from "../../internal/defined-props";
-import type { DateGranularity, TemporalInput } from "../../temporal/temporal-value";
+import type { DateGranularity, TemporalValue } from "../../temporal/temporal-value";
 import type { CalendarPageBehavior } from "../calendar/calendar-dates";
 import type { CalendarFirstDayOfWeek } from "../calendar/calendar-input";
 import type { DateInputValue } from "../date-field/date-input";
+import type { KindFromValue, KindProps, PropsMadeValue } from "../date-field/date-kind-props";
 import {
   DatePickerGroup,
   DatePickerPopup,
@@ -13,7 +14,7 @@ import {
 } from "../date-picker/picker-shell";
 import type { OverlayContainerProps } from "../overlay/overlay-props";
 import { DateRangePickerRoot } from "./date-range-picker";
-import type { DateRangePickerValue, DateRangePickerValueInput } from "./date-range-picker";
+import type { DateRangePickerValue } from "./date-range-picker";
 import {
   DateRangePickerCalendar,
   DateRangePickerDescription,
@@ -29,7 +30,8 @@ import {
  * values.
  *
  * @template T - The ends' kind: `Temporal.PlainDate` (the default), `PlainDateTime` or
- *   `ZonedDateTime`. With ISO text alone pass the type argument to narrow what `onChange` receives.
+ *   `ZonedDateTime`. Rendered, the field reads it from its `value` or `defaultValue`, and without
+ *   either from `granularity` and `timeZone`, so `onChange` receives the kind the picker emits.
  */
 export type DateRangePickerFieldProps<T extends DateInputValue = Temporal.PlainDate> = {
   /** Visible label. It names the group, both inputs' segments, the trigger and the popup. */
@@ -43,22 +45,25 @@ export type DateRangePickerFieldProps<T extends DateInputValue = Temporal.PlainD
    * (`null`, `false`, `""`) keeps the range's own messages.
    */
   errorMessage?: ReactNode;
-  /** The range, when the parent owns it. `null` empties both ends. */
-  value?: DateRangePickerValueInput<T> | null;
+  /**
+   * The range, when the parent owns it: each end a Temporal value of `T`'s kind, built in a client
+   * component. `null` empties both ends.
+   */
+  value?: DateRangePickerValue<T> | null;
   /** The first range, when the picker owns its value. */
-  defaultValue?: DateRangePickerValueInput<T> | null;
+  defaultValue?: DateRangePickerValue<T> | null;
   /**
    * Called with this runtime's range once both ends hold a value and one changes, and `null` as soon
    * as a whole range loses an end, as React Aria reports it.
    */
-  onChange?: (value: DateRangePickerValue<T> | null) => void;
-  /** The earliest valid value for either end, of any kind or its ISO text. */
-  minValue?: TemporalInput;
+  onChange?: NoInfer<(value: DateRangePickerValue<T> | null) => void>;
+  /** The earliest valid value for either end, a Temporal value of any kind. */
+  minValue?: TemporalValue;
   /** The latest valid value for either end. */
-  maxValue?: TemporalInput;
+  maxValue?: TemporalValue;
   /** Values the picker refuses for either end. */
-  isDateUnavailable?: (value: T) => boolean;
-  /** The smallest unit the inputs edit. */
+  isDateUnavailable?: NoInfer<(value: T) => boolean>;
+  /** The smallest unit the inputs edit. Without a value it names the kind, as DateField's does. */
   granularity?: DateGranularity;
   /** The hour cycle shown. Defaults to the locale's. */
   hourCycle?: 12 | 24;
@@ -121,11 +126,13 @@ export type DateRangePickerFieldProps<T extends DateInputValue = Temporal.PlainD
  * DateRangePicker's prop names: a label, the field box with the start and end segments and the
  * calendar trigger, the merged error, the description, and the range calendar popup with an
  * optional preset pane. Each end is a Field of its own under `startName` and `endName`. Values are
- * Temporal values or their ISO text; the composite itself holds no state.
+ * Temporal values, which a client component builds. The composite itself holds no state, so a
+ * server component can render it without a value.
  *
- * @template T - The ends' kind.
+ * @template P - The props, inferred: only their `granularity` and `timeZone` count.
+ * @template T - The ends' kind, inferred as `DateInput.Root`'s is.
  */
-export function DateRangePickerField<T extends DateInputValue = Temporal.PlainDate>({
+export function DateRangePickerField<P = object, T extends DateInputValue = PropsMadeValue<P>>({
   label,
   description,
   errorMessage,
@@ -143,9 +150,9 @@ export function DateRangePickerField<T extends DateInputValue = Temporal.PlainDa
   container,
   className,
   ...props
-}: DateRangePickerFieldProps<T>): ReactElement {
+}: DateRangePickerFieldProps<T> & KindProps<P, DateRangePickerFieldProps<DateInputValue>>): ReactElement {
   return (
-    <DateRangePickerRoot<T>
+    <DateRangePickerRoot<KindFromValue, T>
       {...definedProps({
         ...props,
         value,

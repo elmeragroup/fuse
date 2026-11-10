@@ -4,6 +4,7 @@
 
 import { useMemo } from "react";
 
+import { temporal } from "../../temporal/temporal";
 import type { ResolvedKind, TemporalValue, ValueKind } from "../../temporal/temporal-value";
 import { placeholderValue } from "../date-field/date-draft";
 
@@ -62,20 +63,13 @@ export function useDayUnavailable(
  * as the calendar does. A controlled input never shows its default value.
  *
  * @param resolved - The picker's resolved kind.
- * @returns ISO text of that kind, or `undefined` for a kind the props made, and for a PlainDate,
- *   the kind an empty input takes anyway.
+ * @returns A value of that kind, a new object each call, or `undefined` for a kind the props made,
+ *   and for a PlainDate, the kind an empty input takes anyway.
  */
-export function kindWitness(resolved: ResolvedKind): string | undefined {
-  if (!resolved.named) {
+export function kindWitness(resolved: ResolvedKind): TemporalValue | undefined {
+  if (!resolved.named || resolved.kind.kind === "PlainDate") {
     return undefined;
   }
-  const { kind } = resolved;
-  switch (kind.kind) {
-    case "PlainDate":
-      return undefined;
-    case "PlainDateTime":
-      return "2001-01-01T00:00";
-    case "ZonedDateTime":
-      return `2001-01-01T00:00[${kind.timeZone}]`;
-  }
+  // Any day serves: only the witness's kind and zone are read, and a controlled input never shows it.
+  return placeholderValue(temporal().PlainDate.from({ year: 2001, month: 1, day: 1 }), resolved.kind);
 }

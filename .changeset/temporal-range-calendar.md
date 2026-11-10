@@ -10,7 +10,9 @@ unchanged.
 ```tsx
 import { RangeCalendar } from "@elmeragroup/fuse/range-calendar";
 
-<RangeCalendar.Root aria-label="Stay" defaultValue={{ start: "2026-10-12", end: "2026-10-16" }}>
+<RangeCalendar.Root
+  aria-label="Stay"
+  defaultValue={{ start: Temporal.PlainDate.from("2026-10-12"), end: Temporal.PlainDate.from("2026-10-16") }}>
   <RangeCalendar.Header>
     <RangeCalendar.DecrementMonth />
     <RangeCalendar.VisibleRangeHeading />
@@ -20,8 +22,9 @@ import { RangeCalendar } from "@elmeragroup/fuse/range-calendar";
 </RangeCalendar.Root>;
 ```
 
-- The value is `{ start, end }`; each end takes a `Temporal.PlainDate` from any implementation or
-  its ISO text, and `onValueChange` hands back this runtime's `PlainDate`s, earlier day first.
+- The value is `{ start, end }`; each end takes a `Temporal.PlainDate` object from any
+  implementation, as `Calendar`'s date props do, and `onValueChange` hands back this runtime's
+  `PlainDate`s, earlier day first.
 - The first day pressed anchors the range, which then follows the hovered or focused day across
   every visible month until a second day completes it. Enter or Space anchors and moves focus on a
   day, Escape drops the anchor, and focus leaving the calendar or a press released outside it

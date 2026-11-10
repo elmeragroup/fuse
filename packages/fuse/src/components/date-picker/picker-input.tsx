@@ -8,6 +8,7 @@ import { definedProps } from "../../internal/defined-props";
 import { isNode } from "../../internal/dom-node";
 import { DateInputRoot } from "../date-field/date-input";
 import type { DateInputRootProps, DateInputValue } from "../date-field/date-input";
+import type { KindFromValue } from "../date-field/date-kind-props";
 import { datePickerVariants } from "./date-picker-variants";
 import { stateClassName } from "./picker-class-name";
 import { markInternalFocusout } from "./picker-focus-boundary";
@@ -87,7 +88,7 @@ export function PickerDateInput({
   );
 
   return (
-    <DateInputRoot<DateInputValue>
+    <DateInputRoot<KindFromValue, DateInputValue>
       {...definedProps(props)}
       ref={mergedRef}
       render={(inputProps, state) => (

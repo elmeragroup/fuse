@@ -11,7 +11,6 @@ export type {
   DateRangePickerValue,
   DateRangePickerValueChangeEventDetails,
   DateRangePickerValueChangeReason,
-  DateRangePickerValueInput,
 } from "./components/date-range-picker/date-range-picker";
 export type { DateRangePickerFieldProps } from "./components/date-range-picker/date-range-picker-field";
 export type {

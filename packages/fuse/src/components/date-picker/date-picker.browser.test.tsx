@@ -16,12 +16,14 @@ import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
+import { expectRenderTypeError } from "../../../test/caught-error";
 import { withLocale } from "../../../test/locale-matrix";
 import { waitForPopupSettled } from "../../../test/popup-settled";
 import { emulateReducedMotion } from "../../../test/reduced-motion";
 import { formNamed, renderThemed, roleNamed } from "../../../test/themed-browser-render";
 import { definedProps } from "../../internal/defined-props";
 import "../../temporal-polyfill";
+import type { DateInputValue } from "../date-field/date-input";
 import { Field } from "../field";
 import { Form } from "../form/form";
 import type { DatePickerRootProps } from "./date-picker";
@@ -63,7 +65,7 @@ function LoggedPicker({
   cancelValue = [],
   cancelOpen = [],
   ...props
-}: Omit<DatePickerRootProps, "onValueChange" | "onOpenChange" | "children"> & {
+}: Omit<DatePickerRootProps<DateInputValue>, "onValueChange" | "onOpenChange" | "children"> & {
   readonly cancelValue?: readonly string[];
   readonly cancelOpen?: readonly string[];
 }): ReactElement {
@@ -97,12 +99,17 @@ function LoggedPicker({
 function mountField<T extends Temporal.PlainDate | Temporal.PlainDateTime | Temporal.ZonedDateTime>(
   props: DatePickerFieldProps<T>
 ): void {
-  renderThemed(withLocale("en-US", <DatePickerField<T> {...props} />));
+  renderThemed(withLocale("en-US", <DatePickerField {...props} />));
 }
 
 describe("DatePicker opening and closing", () => {
   it("moves focus to the selected day on open and back to the trigger on Escape", async () => {
-    renderThemed(withLocale("en-US", <LoggedPicker aria-label="Start date" defaultValue="2026-10-05" />));
+    renderThemed(
+      withLocale(
+        "en-US",
+        <LoggedPicker aria-label="Start date" defaultValue={Temporal.PlainDate.from("2026-10-05")} />
+      )
+    );
     const trigger = roleNamed("button", "Calendar Start date");
     await userEvent.click(trigger);
 
@@ -120,7 +127,12 @@ describe("DatePicker opening and closing", () => {
   });
 
   it("opens with Alt+ArrowDown from a segment without stepping it", async () => {
-    renderThemed(withLocale("en-US", <LoggedPicker aria-label="Start date" defaultValue="2026-10-05" />));
+    renderThemed(
+      withLocale(
+        "en-US",
+        <LoggedPicker aria-label="Start date" defaultValue={Temporal.PlainDate.from("2026-10-05")} />
+      )
+    );
     await userEvent.click(roleNamed("spinbutton", "day, Start date"));
     await userEvent.keyboard("{Alt>}{ArrowDown}{/Alt}");
 
@@ -133,7 +145,12 @@ describe("DatePicker opening and closing", () => {
   });
 
   it("commits a pressed day and closes with the day's reason", async () => {
-    renderThemed(withLocale("en-US", <LoggedPicker aria-label="Start date" defaultValue="2026-10-05" />));
+    renderThemed(
+      withLocale(
+        "en-US",
+        <LoggedPicker aria-label="Start date" defaultValue={Temporal.PlainDate.from("2026-10-05")} />
+      )
+    );
     await userEvent.click(roleNamed("button", "Calendar Start date"));
     await waitForPopupSettled();
     await userEvent.click(roleNamed("button", "Monday, October 12, 2026"));
@@ -145,7 +162,12 @@ describe("DatePicker opening and closing", () => {
   });
 
   it("commits a day chosen with Enter and closes with the keyboard reason", async () => {
-    renderThemed(withLocale("en-US", <LoggedPicker aria-label="Start date" defaultValue="2026-10-05" />));
+    renderThemed(
+      withLocale(
+        "en-US",
+        <LoggedPicker aria-label="Start date" defaultValue={Temporal.PlainDate.from("2026-10-05")} />
+      )
+    );
     await userEvent.click(roleNamed("button", "Calendar Start date"));
     await userEvent.keyboard("{ArrowRight}{Enter}");
 
@@ -160,7 +182,11 @@ describe("DatePicker opening and closing", () => {
     renderThemed(
       withLocale(
         "en-US",
-        <LoggedPicker aria-label="Start date" defaultValue="2026-10-05" shouldCloseOnSelect={false} />
+        <LoggedPicker
+          aria-label="Start date"
+          defaultValue={Temporal.PlainDate.from("2026-10-05")}
+          shouldCloseOnSelect={false}
+        />
       )
     );
     await userEvent.click(roleNamed("button", "Calendar Start date"));
@@ -172,7 +198,11 @@ describe("DatePicker opening and closing", () => {
   });
 
   it("disables the trigger of a read-only picker", () => {
-    mountField({ label: "Start date", defaultValue: "2026-10-05", isReadOnly: true });
+    mountField({
+      label: "Start date",
+      defaultValue: Temporal.PlainDate.from("2026-10-05"),
+      isReadOnly: true,
+    });
     expect(roleNamed("button", "Calendar Start date")).toBeDisabled();
   });
 
@@ -180,7 +210,7 @@ describe("DatePicker opening and closing", () => {
     renderThemed(
       withLocale(
         "en-US",
-        <DatePicker.Root aria-label="Start date" defaultValue="2026-10-05">
+        <DatePicker.Root aria-label="Start date" defaultValue={Temporal.PlainDate.from("2026-10-05")}>
           <DatePicker.Group>
             <DatePicker.Input />
             <DatePicker.Trigger disabled />
@@ -198,7 +228,7 @@ describe("DatePicker opening and closing", () => {
         <>
           <DatePickerField
             label="Start date"
-            defaultValue="2026-10-05"
+            defaultValue={Temporal.PlainDate.from("2026-10-05")}
             isOpen={open}
             onOpenChange={setOpen}
           />
@@ -231,7 +261,11 @@ describe("DatePicker opening and closing", () => {
       withLocale(
         "en-US",
         <>
-          <DatePickerField label="Start date" defaultValue="2026-10-05" onBlur={() => (blurs += 1)} />
+          <DatePickerField
+            label="Start date"
+            defaultValue={Temporal.PlainDate.from("2026-10-05")}
+            onBlur={() => (blurs += 1)}
+          />
           <button type="button">After</button>
         </>
       )
@@ -255,7 +289,11 @@ describe("DatePicker cancelable details", () => {
     renderThemed(
       withLocale(
         "en-US",
-        <LoggedPicker aria-label="Start date" defaultValue="2026-10-05" cancelValue={["day-press"]} />
+        <LoggedPicker
+          aria-label="Start date"
+          defaultValue={Temporal.PlainDate.from("2026-10-05")}
+          cancelValue={["day-press"]}
+        />
       )
     );
     await userEvent.click(roleNamed("button", "Calendar Start date"));
@@ -271,7 +309,11 @@ describe("DatePicker cancelable details", () => {
     renderThemed(
       withLocale(
         "en-US",
-        <LoggedPicker aria-label="Start date" defaultValue="2026-10-05" cancelValue={["input-change"]} />
+        <LoggedPicker
+          aria-label="Start date"
+          defaultValue={Temporal.PlainDate.from("2026-10-05")}
+          cancelValue={["input-change"]}
+        />
       )
     );
     await userEvent.click(roleNamed("spinbutton", "day, Start date"));
@@ -285,7 +327,11 @@ describe("DatePicker cancelable details", () => {
     renderThemed(
       withLocale(
         "en-US",
-        <LoggedPicker aria-label="Start date" defaultValue="2026-10-05" cancelOpen={["trigger-press"]} />
+        <LoggedPicker
+          aria-label="Start date"
+          defaultValue={Temporal.PlainDate.from("2026-10-05")}
+          cancelOpen={["trigger-press"]}
+        />
       )
     );
     await userEvent.click(roleNamed("button", "Calendar Start date"));
@@ -298,7 +344,11 @@ describe("DatePicker cancelable details", () => {
     renderThemed(
       withLocale(
         "en-US",
-        <LoggedPicker aria-label="Start date" defaultValue="2026-10-05" cancelOpen={["day-press"]} />
+        <LoggedPicker
+          aria-label="Start date"
+          defaultValue={Temporal.PlainDate.from("2026-10-05")}
+          cancelOpen={["day-press"]}
+        />
       )
     );
     await userEvent.click(roleNamed("button", "Calendar Start date"));
@@ -321,7 +371,7 @@ describe("DatePicker with time", () => {
           aria-label="Starts"
           granularity="minute"
           hourCycle={24}
-          defaultValue="2026-10-05T14:30[Europe/Oslo]"
+          defaultValue={Temporal.ZonedDateTime.from("2026-10-05T14:30[Europe/Oslo]")}
         />
       )
     );
@@ -376,7 +426,7 @@ describe("DatePicker with time", () => {
 describe("DatePicker presets", () => {
   function Presets({ onClose }: { readonly onClose: (reason: string) => void }): ReactElement {
     const [preset, setPreset] = useState<string | null>(null);
-    const [value, setValue] = useState<Temporal.PlainDate | string | null>("2026-10-05");
+    const [value, setValue] = useState<Temporal.PlainDate | null>(Temporal.PlainDate.from("2026-10-05"));
     return (
       <DatePicker.Root
         aria-label="Start date"
@@ -395,7 +445,7 @@ describe("DatePicker presets", () => {
             value={preset}
             onValueChange={(next) => {
               setPreset(next);
-              setValue(next === "christmas" ? "2026-12-24" : "2026-10-31");
+              setValue(Temporal.PlainDate.from(next === "christmas" ? "2026-12-24" : "2026-10-31"));
             }}>
             <DatePicker.PresetItem value="christmas" closeOnDoubleClick>
               Christmas Eve
@@ -433,7 +483,10 @@ describe("DatePicker presets", () => {
     renderThemed(
       withLocale(
         "en-US",
-        <DatePicker.Root aria-label="Start date" defaultValue="2026-10-05" defaultOpen>
+        <DatePicker.Root
+          aria-label="Start date"
+          defaultValue={Temporal.PlainDate.from("2026-10-05")}
+          defaultOpen>
           <DatePicker.Popup>
             <DatePicker.Presets
               defaultValue="today"
@@ -491,7 +544,11 @@ describe("DatePickerField in forms", () => {
             submitted = values;
             setErrors({ start: "Fully booked" });
           }}>
-          <DatePickerField label="Start date" name="start" defaultValue="2026-10-05" />
+          <DatePickerField
+            label="Start date"
+            name="start"
+            defaultValue={Temporal.PlainDate.from("2026-10-05")}
+          />
           <button type="submit">Save</button>
         </Form>
       );
@@ -520,7 +577,11 @@ describe("DatePickerField in forms", () => {
       withLocale(
         "en-US",
         <form aria-label="Booking">
-          <DatePickerField label="Start date" name="start" defaultValue="2026-10-05" />
+          <DatePickerField
+            label="Start date"
+            name="start"
+            defaultValue={Temporal.PlainDate.from("2026-10-05")}
+          />
           <button type="reset">Reset</button>
         </form>
       )
@@ -537,7 +598,12 @@ describe("DatePickerField in forms", () => {
 
 describe("DatePicker multi-month", () => {
   it("forwards visibleMonths to the calendar", async () => {
-    mountField({ label: "Start date", defaultValue: "2026-10-05", visibleMonths: 2, defaultOpen: true });
+    mountField({
+      label: "Start date",
+      defaultValue: Temporal.PlainDate.from("2026-10-05"),
+      visibleMonths: 2,
+      defaultOpen: true,
+    });
     await expect.element(page.getByRole("grid", { name: "October 2026", exact: true })).toBeVisible();
     await expect.element(page.getByRole("grid", { name: "November 2026", exact: true })).toBeVisible();
   });
@@ -549,9 +615,9 @@ describe("DatePicker styles", () => {
       withLocale(
         "en-US",
         <>
-          <DatePickerField label="Plain" defaultValue="2026-10-05" />
-          <DatePickerField label="Invalid" defaultValue="2026-10-05" isInvalid />
-          <DatePickerField label="Disabled" defaultValue="2026-10-05" isDisabled />
+          <DatePickerField label="Plain" defaultValue={Temporal.PlainDate.from("2026-10-05")} />
+          <DatePickerField label="Invalid" defaultValue={Temporal.PlainDate.from("2026-10-05")} isInvalid />
+          <DatePickerField label="Disabled" defaultValue={Temporal.PlainDate.from("2026-10-05")} isDisabled />
         </>
       )
     );
@@ -638,7 +704,7 @@ describe("DatePicker held day and the close transaction", () => {
     function Controlled({ open }: { readonly open: boolean }): ReactElement {
       return withLocale(
         "en-US",
-        <DatePickerField<Temporal.ZonedDateTime>
+        <DatePickerField
           aria-label="Starts"
           granularity="minute"
           timeZone="Europe/Oslo"
@@ -659,7 +725,13 @@ describe("DatePicker held day and the close transaction", () => {
 
   it("checks the held day a parent's close commits against the minValue of that same render", async () => {
     const calls: string[] = [];
-    function Controlled({ open, min }: { readonly open: boolean; readonly min: string }): ReactElement {
+    function Controlled({
+      open,
+      min,
+    }: {
+      readonly open: boolean;
+      readonly min: Temporal.PlainDate;
+    }): ReactElement {
       return withLocale(
         "en-US",
         <DatePicker.Root
@@ -682,10 +754,10 @@ describe("DatePicker held day and the close transaction", () => {
         </DatePicker.Root>
       );
     }
-    const { rerender } = renderThemed(<Controlled open min="2026-10-01" />);
+    const { rerender } = renderThemed(<Controlled open min={Temporal.PlainDate.from("2026-10-01")} />);
     await waitForPopupSettled();
     await userEvent.click(roleNamed("button", "Monday, October 12, 2026"));
-    rerender(<Controlled open={false} min="2026-10-14" />);
+    rerender(<Controlled open={false} min={Temporal.PlainDate.from("2026-10-14")} />);
     await expect.poll(() => calls).toEqual(["2026-10-12T00:00:00+02:00[Europe/Oslo]:rangeUnderflow"]);
   });
 
@@ -694,7 +766,7 @@ describe("DatePicker held day and the close transaction", () => {
     function Controlled({ open, tag }: { readonly open: boolean; readonly tag: string }): ReactElement {
       return withLocale(
         "en-US",
-        <DatePickerField<Temporal.ZonedDateTime>
+        <DatePickerField
           aria-label="Starts"
           granularity="minute"
           timeZone="Europe/Oslo"
@@ -739,13 +811,13 @@ describe("DatePicker form reset", () => {
   it("keeps a cleared zoned picker's time segments and zone across a form reset", async () => {
     const values: string[] = [];
     function Zoned(): ReactElement {
-      const [value, setValue] = useState<Temporal.ZonedDateTime | string | null>(
-        "2026-10-12T14:30[Europe/Oslo]"
+      const [value, setValue] = useState<Temporal.ZonedDateTime | null>(
+        Temporal.ZonedDateTime.from("2026-10-12T14:30[Europe/Oslo]")
       );
       return withLocale(
         "en-US",
         <form aria-label="Booking">
-          <DatePickerField<Temporal.ZonedDateTime>
+          <DatePickerField
             label="Starts"
             granularity="minute"
             hourCycle={24}
@@ -781,13 +853,13 @@ describe("DatePicker form reset", () => {
     async (granularity, zone, expected, time) => {
       const values: string[] = [];
       function Zoned(): ReactElement {
-        const [value, setValue] = useState<Temporal.ZonedDateTime | string | null>(
-          `2026-10-12T14:30[${zone}]`
+        const [value, setValue] = useState<Temporal.ZonedDateTime | null>(
+          Temporal.ZonedDateTime.from(`2026-10-12T14:30[${zone}]`)
         );
         return withLocale(
           "en-US",
           <form aria-label="Booking">
-            <DatePickerField<Temporal.ZonedDateTime>
+            <DatePickerField
               label="Starts"
               granularity={granularity}
               hourCycle={24}
@@ -829,7 +901,7 @@ describe("DatePicker focus boundary", () => {
           <>
             <DatePickerField
               label="Start date"
-              defaultValue="2026-10-05"
+              defaultValue={Temporal.PlainDate.from("2026-10-05")}
               triggerPlacement={triggerPlacement}
               onBlur={() => (leaves += 1)}
             />
@@ -883,7 +955,11 @@ describe("DatePicker focus boundary", () => {
           withLocale(
             "en-US",
             createPortal(
-              <DatePickerField label="Start date" defaultValue="2026-10-05" onBlur={() => (leaves += 1)} />,
+              <DatePickerField
+                label="Start date"
+                defaultValue={Temporal.PlainDate.from("2026-10-05")}
+                onBlur={() => (leaves += 1)}
+              />,
               container
             )
           )
@@ -916,7 +992,7 @@ describe("DatePicker focus boundary", () => {
       withLocale(
         "en-US",
         <>
-          <DatePickerField label="Start date" defaultValue="2026-10-05" />
+          <DatePickerField label="Start date" defaultValue={Temporal.PlainDate.from("2026-10-05")} />
           <button type="button">After</button>
         </>
       )
@@ -958,7 +1034,11 @@ describe("DatePicker focus boundary", () => {
           "en-US",
           createPortal(
             <>
-              <DatePickerField label="Start date" defaultValue="2026-10-05" onBlur={() => (leaves += 1)} />
+              <DatePickerField
+                label="Start date"
+                defaultValue={Temporal.PlainDate.from("2026-10-05")}
+                onBlur={() => (leaves += 1)}
+              />
               <button type="button">After</button>
             </>,
             frameDocument.body
@@ -997,7 +1077,11 @@ describe("DatePicker focus boundary", () => {
       withLocale(
         "en-US",
         <>
-          <DatePickerField label="Start date" defaultValue="2026-10-05" onBlur={() => (leaves += 1)} />
+          <DatePickerField
+            label="Start date"
+            defaultValue={Temporal.PlainDate.from("2026-10-05")}
+            onBlur={() => (leaves += 1)}
+          />
           <button type="button">After</button>
         </>
       )
@@ -1019,11 +1103,16 @@ describe("DatePicker focus boundary", () => {
 
 describe("DatePicker composition", () => {
   it("resolves a state callback className and keeps its automatic name under an undefined override", async () => {
-    renderThemed(withLocale("en-US", <DatePickerField label="Start date" defaultValue="2026-10-05" />));
     renderThemed(
       withLocale(
         "en-US",
-        <DatePicker.Root aria-label="Delivery" defaultValue="2026-10-05">
+        <DatePickerField label="Start date" defaultValue={Temporal.PlainDate.from("2026-10-05")} />
+      )
+    );
+    renderThemed(
+      withLocale(
+        "en-US",
+        <DatePicker.Root aria-label="Delivery" defaultValue={Temporal.PlainDate.from("2026-10-05")}>
           <DatePicker.Group
             aria-labelledby={undefined}
             className={(state) => (state.open ? "is-open" : "is-closed")}>
@@ -1059,7 +1148,7 @@ describe("DatePicker disabled", () => {
         "en-US",
         // The parts without a Field: `DatePickerField`'s own Field reads the Fieldset itself.
         <Field.Set disabled>
-          <DatePicker.Root aria-label="Start date" defaultValue="2026-10-05">
+          <DatePicker.Root aria-label="Start date" defaultValue={Temporal.PlainDate.from("2026-10-05")}>
             <DatePicker.Group>
               <DatePicker.Input />
               <DatePicker.Trigger />
@@ -1080,7 +1169,7 @@ describe("DatePicker disabled", () => {
         "en-US",
         <Field.Root disabled>
           <Field.Label>Start date</Field.Label>
-          <DatePicker.Root defaultValue="2026-10-05" defaultOpen>
+          <DatePicker.Root defaultValue={Temporal.PlainDate.from("2026-10-05")} defaultOpen>
             <DatePicker.Group>
               <DatePicker.Input />
               <DatePicker.Trigger />
@@ -1110,7 +1199,7 @@ describe("DatePicker disabled", () => {
         <Field.Set disabled={disabled}>
           <DatePicker.Root
             aria-label="Start date"
-            defaultValue="2026-10-05"
+            defaultValue={Temporal.PlainDate.from("2026-10-05")}
             defaultOpen
             onValueChange={(value) => values.push(String(value))}>
             <DatePicker.Group>
@@ -1152,12 +1241,12 @@ describe("DatePicker kind of an empty picker", () => {
 
   /** A controlled minute picker whose zone and value the buttons below it change. */
   function Moving({ onValue }: { readonly onValue: (value: string) => void }): ReactElement {
-    const [value, setValue] = useState<Temporal.ZonedDateTime | string | null>(null);
+    const [value, setValue] = useState<Temporal.ZonedDateTime | null>(null);
     const [zone, setZone] = useState("Europe/Oslo");
     return withLocale(
       "en-US",
       <>
-        <DatePickerField<Temporal.ZonedDateTime>
+        <DatePickerField
           label="Starts"
           granularity="minute"
           hourCycle={24}
@@ -1217,7 +1306,7 @@ describe("DatePicker kind of an empty picker", () => {
       return withLocale(
         "en-US",
         <>
-          <DatePickerField<Temporal.PlainDateTime | Temporal.ZonedDateTime>
+          <DatePickerField
             label="Starts"
             granularity="minute"
             hourCycle={24}
@@ -1245,7 +1334,7 @@ describe("DatePicker kind of an empty picker", () => {
       return withLocale(
         "en-US",
         <>
-          <DatePickerField<Temporal.PlainDate | Temporal.PlainDateTime>
+          <DatePickerField
             label="Starts"
             granularity={granularity}
             onChange={(next) => values.push(String(next))}
@@ -1328,5 +1417,18 @@ describe("DatePicker context", () => {
     await expect.element(page.getByRole("status")).toHaveTextContent("Tick 1");
     expect(settled).toBeGreaterThan(0);
     expect(checks).toBe(settled);
+  });
+});
+
+describe("date props past the types", () => {
+  it("throws a TypeError naming the Root, the prop and the string for ISO text", () => {
+    expectRenderTypeError(
+      'DatePicker.Root minValue: received the string "2026-10-01"',
+      <DatePickerField
+        label="Start date"
+        // @ts-expect-error -- text reaches the prop past the types: from plain JavaScript, or as the ISO text a server component's Temporal object crosses as
+        minValue="2026-10-01"
+      />
+    );
   });
 });

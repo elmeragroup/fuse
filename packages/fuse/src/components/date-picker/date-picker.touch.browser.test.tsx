@@ -36,7 +36,7 @@ function Single(): ReactElement {
     <>
       <DatePickerField
         label="Start date"
-        defaultValue="2026-10-05"
+        defaultValue={Temporal.PlainDate.from("2026-10-05")}
         onChange={(next) => setValue(String(next))}
       />
       <output aria-label="Committed value">{value}</output>
@@ -51,7 +51,10 @@ function Range(): ReactElement {
     <>
       <DateRangePickerField
         label="Stay"
-        defaultValue={{ start: "2026-10-05", end: "2026-10-09" }}
+        defaultValue={{
+          start: Temporal.PlainDate.from("2026-10-05"),
+          end: Temporal.PlainDate.from("2026-10-09"),
+        }}
         onChange={(next) =>
           setValue(next === null ? "null" : `${next.start.toString()}..${next.end.toString()}`)
         }

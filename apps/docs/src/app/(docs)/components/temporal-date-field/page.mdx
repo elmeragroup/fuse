@@ -18,7 +18,15 @@ export const metadata = componentMetadata("temporal-date-field");
 
 <Prose>
 
-`DateField` from `@elmeragroup/fuse/date-field` is the Temporal replacement for the interim [React Aria DateField](/components/date-field), with its prop names: `label`, `description`, `errorMessage`, `isInvalid`, `isDisabled`, `isReadOnly`, `isRequired`, `value`, `defaultValue`, `onChange`, `minValue`, `maxValue`, `isDateUnavailable`, `granularity`, `hourCycle`, `hideTimeZone` and `size`. Its values are `Temporal.PlainDate`, `PlainDateTime` or `ZonedDateTime`: a prop takes one from any Temporal implementation or its ISO text, such as `"2026-10-05"`, which is also what a server component passes, and `onChange` hands back this runtime's value. Pass the kind as a type argument, `DateField<Temporal.PlainDate>`, when you pass ISO text alone, since text names its kind only at runtime.
+`DateField` from `@elmeragroup/fuse/date-field` is the Temporal replacement for the interim [React Aria DateField](/components/date-field), with its prop names: `label`, `description`, `errorMessage`, `isInvalid`, `isDisabled`, `isReadOnly`, `isRequired`, `value`, `defaultValue`, `onChange`, `minValue`, `maxValue`, `isDateUnavailable`, `granularity`, `hourCycle`, `hideTimeZone` and `size`. Its values are `Temporal.PlainDate`, `PlainDateTime` or `ZonedDateTime`: a date prop takes one as an object from any Temporal implementation, and `onChange` hands back this runtime's value. The kind `onChange` receives is typed from the value or default value, and without either from `granularity` and `timeZone`, as the field resolves it at runtime: no granularity or `"day"` gives a `PlainDate`, a time `granularity` a `PlainDateTime`, and a time `granularity` with `timeZone` a `ZonedDateTime`. No type argument is needed. Build a value in a client component: a Temporal object a server component passes reaches the client as ISO text, which the component refuses with a `TypeError`. [Temporal for dates](/quick-start#temporal) shows a server component handing its text to a client component that builds the value.
+
+A misspelt or undeclared prop does not compile, and that includes the keys of a spread object, unlike a component without a type parameter. Destructure what the field does not take, such as a form library's `ref`, before spreading the rest, and pass `disabled` on as `isDisabled`:
+
+```tsx
+const { ref, disabled, ...rest } = field;
+
+<DateField label="Starts" isDisabled={disabled} {...rest} />;
+```
 
 Fuse reads `globalThis.Temporal`. Import `@elmeragroup/fuse/temporal-polyfill` once in your app's entry, on the server and in the browser.
 
@@ -100,7 +108,7 @@ Inside `Form`, the field is a Field of the form: its ISO text reaches `onFormSub
 
 ## Server rendering
 
-`DateField` holds no state of its own, so a server component renders it with ISO-text props; `DateInput.Root` is a client component. Neither reads the clock while rendering: an arrow key on an empty segment reads today when the user presses it.
+`DateField` holds no state of its own, so a server component renders it without a date value; `DateInput.Root` is a client component. Neither reads the clock while rendering: an arrow key on an empty segment reads today when the user presses it.
 
 ## Accessibility
 

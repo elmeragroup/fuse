@@ -16,7 +16,7 @@ export const metadata = componentMetadata("temporal-range-calendar");
 
 <Prose>
 
-`RangeCalendar` from `@elmeragroup/fuse/range-calendar` is the Temporal replacement for the interim [React Aria RangeCalendar](/components/range-calendar). Its value is a range, `{ start, end }`: each end takes a `Temporal.PlainDate` from any Temporal implementation or its ISO text, such as `"2026-10-12"`, which is also what a server component passes across the boundary, and `onValueChange` hands back this runtime's `PlainDate`s, earlier day first.
+`RangeCalendar` from `@elmeragroup/fuse/range-calendar` is the Temporal replacement for the interim [React Aria RangeCalendar](/components/range-calendar). Its value is a range, `{ start, end }`: each end takes a `Temporal.PlainDate` object from any Temporal implementation, and `onValueChange` hands back this runtime's `PlainDate`s, earlier day first. Build a value in a client component: a Temporal object a server component passes reaches the client as ISO text, which the component refuses with a `TypeError`. [Temporal for dates](/quick-start#temporal) shows a server component handing its text to a client component that builds the value.
 
 Fuse reads `globalThis.Temporal`. Import `@elmeragroup/fuse/temporal-polyfill` once in your app's entry, on the server and in the browser, so engines without native Temporal get the polyfill.
 
@@ -54,7 +54,7 @@ A range left open completes at the focused or hovered day when focus leaves the 
 
 ## Bounds and unavailable dates
 
-`minValue` and `maxValue` take a `PlainDate`, `PlainDateTime` or `ZonedDateTime`, or its ISO text, as on Calendar. `isDateUnavailable` refuses days the user may still focus, such as booked nights here; it also receives the anchored day while a range is open, so the available days can depend on the first day picked. Once a range is anchored it can reach only the run of available days around the anchor, looked for up to `visibleMonths` months each way: the days past the nearest unavailable day on each side are disabled until the range completes. An unavailable day further from the anchor is not looked for, as in React Aria, so a longer range can span it; check such a range in `onValueChange`. Keep `isDateUnavailable` defined outside render, since every day re-renders when its identity changes.
+`minValue` and `maxValue` take a `PlainDate`, `PlainDateTime` or `ZonedDateTime`, as on Calendar. `isDateUnavailable` refuses days the user may still focus, such as booked nights here; it also receives the anchored day while a range is open, so the available days can depend on the first day picked. Once a range is anchored it can reach only the run of available days around the anchor, looked for up to `visibleMonths` months each way: the days past the nearest unavailable day on each side are disabled until the range completes. An unavailable day further from the anchor is not looked for, as in React Aria, so a longer range can span it; check such a range in `onValueChange`. Keep `isDateUnavailable` defined outside render, since every day re-renders when its identity changes.
 
 </Prose>
 

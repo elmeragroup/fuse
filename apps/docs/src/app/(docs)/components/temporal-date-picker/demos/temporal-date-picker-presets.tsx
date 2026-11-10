@@ -17,10 +17,10 @@ function isPreset(value: string): value is Preset {
 }
 
 export function TemporalDatePickerPresets() {
-  const [value, setValue] = useState<Temporal.PlainDate | string | null>("2026-10-05");
+  const [value, setValue] = useState<Temporal.PlainDate | null>(() => Temporal.PlainDate.from("2026-10-05"));
   const [preset, setPreset] = useState<Preset | null>(null);
   return (
-    <DatePickerField<Temporal.PlainDate>
+    <DatePickerField
       className="max-w-xs w-full"
       label="Start date"
       value={value}
@@ -34,7 +34,7 @@ export function TemporalDatePickerPresets() {
           onValueChange={(next) => {
             if (!isPreset(next)) return;
             setPreset(next);
-            setValue(PRESETS[next]);
+            setValue(Temporal.PlainDate.from(PRESETS[next]));
           }}>
           <DatePicker.PresetItem value="next-monday" closeOnDoubleClick>
             Next Monday

@@ -10,6 +10,7 @@ import { describe, expect, it } from "vitest";
 import { getOrThrow } from "@elmeragroup/color/result";
 
 import { loadTemporalPolyfillEntry } from "../test/temporal-polyfill-stage";
+import { parseTemporalProp, printedProp } from "./components/calendar/calendar-input";
 import { checkBounds } from "./temporal/bounds";
 import { TEMPORAL_INSTALL_MARKER } from "./temporal/install-marker";
 import { parseTemporal } from "./temporal/temporal-value";
@@ -33,9 +34,17 @@ describe("temporal-polyfill in an engine without Temporal", () => {
   });
 
   it("re-brands the engine's own Temporal values as the installed implementation's", () => {
-    const foreign = stage.native?.ZonedDateTime.from("2026-03-15T09:30+01:00[Europe/Oslo]");
+    const native = stage.native;
+    if (native === undefined) {
+      throw new Error("This engine ships no native Temporal to re-brand.");
+    }
+    const foreign = native.ZonedDateTime.from("2026-03-15T09:30+01:00[Europe/Oslo]");
     expect(foreign instanceof globalThis.Temporal.ZonedDateTime).toBe(false);
-    const parsed = getOrThrow(parseTemporal(foreign ?? "missing native Temporal"));
+    const parsed = parseTemporalProp(
+      printedProp(foreign, "DateInput.Root", "value") ?? "",
+      "DateInput.Root",
+      "value"
+    );
     expect(parsed instanceof globalThis.Temporal.ZonedDateTime).toBe(true);
     expect(parsed.toString()).toBe("2026-03-15T09:30:00+01:00[Europe/Oslo]");
   });

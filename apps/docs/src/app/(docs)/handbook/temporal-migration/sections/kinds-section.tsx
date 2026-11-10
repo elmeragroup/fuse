@@ -1,11 +1,16 @@
 import type { ReactElement } from "react";
 
-const ZONED = `// An empty zoned field has no value to take a zone from: name it.
-<DatePickerField<Temporal.ZonedDateTime>
+const ZONED = `// An empty zoned field has no value to take a zone from: name it. onChange receives
+// Temporal.ZonedDateTime | null.
+<DatePickerField
   label="Delivery window starts"
   granularity="minute"
   timeZone="Europe/Oslo"
 />;`;
+
+const SPREAD = `// The field takes isDisabled, not disabled, and no ref.
+const { ref, disabled, ...rest } = field;
+<DatePickerField label="Moving" isDisabled={disabled} {...rest} />;`;
 
 /** How a field picks its value kind and zone, and how bounds of other kinds compare. */
 export function KindsSection(): ReactElement {
@@ -45,6 +50,21 @@ export function KindsSection(): ReactElement {
       </p>
       <pre>
         <code>{ZONED}</code>
+      </pre>
+      <p>
+        The types follow the same order, so no call site passes a type argument. A <code>value</code> or{" "}
+        <code>defaultValue</code> names the kind <code>onChange</code> and <code>isDateUnavailable</code>{" "}
+        receive; without either, <code>granularity</code> and <code>timeZone</code> do, as in the last step. A
+        prop whose type is a union, such as a <code>granularity</code> held in a variable or an optional{" "}
+        <code>timeZone</code>, gives the union of the kinds it could make.
+      </p>
+      <p>
+        A misspelt or undeclared prop does not compile, and that includes the keys of a spread object, unlike
+        a component without a type parameter. Destructure what the field does not take, such as a form
+        library&apos;s <code>ref</code>, before spreading the rest:
+      </p>
+      <pre>
+        <code>{SPREAD}</code>
       </pre>
       <p>
         <code>minValue</code> and <code>maxValue</code> take any kind, independent of the value&apos;s, and

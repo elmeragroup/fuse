@@ -24,11 +24,14 @@ function useVisibleMonths(): number {
 export function TemporalRangePickerMonths() {
   const visibleMonths = useVisibleMonths();
   return (
-    <DateRangePickerField<Temporal.PlainDate>
+    <DateRangePickerField
       className="max-w-md"
       label="Campaign"
       visibleMonths={visibleMonths}
-      defaultValue={{ start: "2026-10-26", end: "2026-11-06" }}
+      defaultValue={{
+        start: Temporal.PlainDate.from("2026-10-26"),
+        end: Temporal.PlainDate.from("2026-11-06"),
+      }}
     />
   );
 }

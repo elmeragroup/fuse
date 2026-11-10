@@ -13,13 +13,7 @@ import type { CalendarValueChangeEventDetails, CalendarValueChangeReason } from 
 import { CalendarRootContext, createSelectionOwner, dayFlags, NO_DAY_FLAGS } from "./calendar-context";
 import type { CalendarRootContextValue, CalendarSharedState } from "./calendar-context";
 import { dayValidationError } from "./calendar-dates";
-import {
-  parseOptionalDay,
-  printedInput,
-  useCalendarBounds,
-  useCalendarSettings,
-  useVisibleMonthCount,
-} from "./calendar-input";
+import { useCalendarBounds, useCalendarSettings, useDayProp, useVisibleMonthCount } from "./calendar-input";
 import type { CalendarViewProps } from "./calendar-input";
 import { createCalendarStore, useCalendarSelector } from "./calendar-store";
 import { calendarVariants } from "./calendar-variants";
@@ -50,13 +44,13 @@ export type CalendarRootProps = Omit<
 > &
   CalendarViewProps & {
     /**
-     * The selected day, when the parent owns it: a `Temporal.PlainDate` from any implementation, or
-     * its ISO text (`"2026-10-12"`), the form a server component passes across the boundary. A
-     * date-time or zoned value selects its own wall-clock day. `null` selects nothing.
+     * The selected day, when the parent owns it: a `Temporal.PlainDate` from any implementation.
+     * A server component cannot pass one, since it reaches the client as text: build the value in
+     * a client component. `null` selects nothing.
      */
-    value?: Temporal.PlainDate | string | null;
+    value?: Temporal.PlainDate | null;
     /** The day selected first, when the calendar owns its value. Takes what `value` takes. */
-    defaultValue?: Temporal.PlainDate | string | null;
+    defaultValue?: Temporal.PlainDate | null;
     /**
      * Called when the user selects a day, by pressing it or with Enter or Space, with the day as
      * this runtime's `Temporal.PlainDate`. `details.reason` is `"day-press"` or `"keyboard"`.
@@ -86,8 +80,8 @@ type CalendarState = CalendarSharedState & {
  * no today. A calendar with neither `value` nor `defaultValue` opens on today's month, so it shows
  * its months from that effect on.
  *
- * @throws TypeError naming the prop when `value`, `defaultValue`, `minValue` or `maxValue` is text
- *   that is not an ISO date, a host defect.
+ * @throws TypeError naming the prop and the fix when `value`, `defaultValue`, `minValue` or
+ *   `maxValue` is a string rather than a Temporal object, a host defect.
  */
 export function CalendarRoot({
   value: valueProp,
@@ -109,9 +103,10 @@ export function CalendarRoot({
 }: CalendarRootProps): ReactElement {
   const { locale, timeZone } = useLocale();
   const controlled = valueProp !== undefined;
-  const valueKey = printedInput(valueProp);
-  // oxlint-disable-next-line react-hooks/exhaustive-deps -- keyed by the printed value
-  const value = useMemo(() => parseOptionalDay(valueProp, "Calendar.Root", "value") ?? null, [valueKey]);
+  const value = useDayProp(valueProp, "Calendar.Root", "value");
+  // The default seeds the selection once, below; reading it on every render refuses a string
+  // whether the calendar is controlled or the default changed after mount.
+  const defaultDay = useDayProp(defaultValue, "Calendar.Root", "defaultValue");
   const bounds = useCalendarBounds(minValue, maxValue, "Calendar.Root");
   const visibleMonths = useVisibleMonthCount(visibleMonthsProp, "Calendar.Root");
   const settings = useCalendarSettings({
@@ -128,9 +123,7 @@ export function CalendarRoot({
   });
 
   const [store] = useState(() => {
-    const initial = controlled
-      ? value
-      : (parseOptionalDay(defaultValue, "Calendar.Root", "defaultValue") ?? null);
+    const initial = controlled ? value : defaultDay;
     return createCalendarStore<CalendarState>({ ...initialSharedState(initial, settings), value: initial });
   });
 
@@ -158,6 +151,7 @@ export function CalendarRoot({
   // user may select.
   const selection = useMemo(
     () =>
+      // oxlint-disable-next-line react/refs -- `select` reads `latest` when a day is picked, not during render
       createSelectionOwner(store, {
         dayFlags(state, date) {
           if (state.value === null || !state.value.equals(date)) {

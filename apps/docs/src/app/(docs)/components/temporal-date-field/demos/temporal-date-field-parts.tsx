@@ -7,7 +7,7 @@ export function TemporalDateFieldParts() {
   return (
     <Field.Root name="reading" className="max-w-xs w-full">
       <Field.Label>Reading date</Field.Label>
-      <DateInput.Root<Temporal.PlainDate> size="sm" shouldForceLeadingZeros defaultValue="2026-10-05">
+      <DateInput.Root size="sm" shouldForceLeadingZeros defaultValue={Temporal.PlainDate.from("2026-10-05")}>
         {/* Each segment, as DateInput.Root would render it; a function child is where a host
             wraps or labels segments itself. */}
         {(segment) => <DateInput.Segment key={segment.index} segment={segment} />}

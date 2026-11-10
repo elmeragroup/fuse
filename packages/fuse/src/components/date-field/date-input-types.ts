@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 
 import type { useRender } from "@base-ui/react/use-render";
 
-import type { DateGranularity, TemporalInput, TemporalValue } from "../../temporal/temporal-value";
+import type { DateGranularity, TemporalValue } from "../../temporal/temporal-value";
 import type { EditableSegmentType } from "./date-draft";
 import type { DateInputValueChangeEventDetails } from "./date-input-change-details";
 
@@ -95,19 +95,22 @@ export type DateInputSegmentState = {
 /**
  * `DateInput.Root` takes a `div`'s props, Base UI's `render` and the input's own.
  *
- * @template T - The value's kind: `Temporal.PlainDate` (the default), `PlainDateTime` or `ZonedDateTime`.
+ * @template T - The value's kind: `Temporal.PlainDate` (the default), `PlainDateTime` or
+ *   `ZonedDateTime`. Rendered, the Root reads it from its `value` or `defaultValue`, and without
+ *   either from `granularity` and `timeZone`, as its runtime does.
  */
 export type DateInputRootProps<T extends DateInputValue = Temporal.PlainDate> = Omit<
   useRender.ComponentProps<"div", DateInputRootState>,
   "defaultValue" | "onChange" | "children"
 > & {
   /**
-   * The value, when the parent owns it: a Temporal value of `T`'s kind from any implementation,
-   * or its ISO text, the form a server component passes. `null` empties the input.
+   * The value, when the parent owns it: a Temporal value of `T`'s kind from any implementation.
+   * A server component cannot pass one, since it reaches the client as text: build the value in a
+   * client component. `null` empties the input.
    */
-  value?: T | string | null;
+  value?: T | null;
   /** The first value, when the input owns its value. Takes what `value` takes. */
-  defaultValue?: T | string | null;
+  defaultValue?: T | null;
   /**
    * Called when the segments form a new value, with this runtime's Temporal value, or `null` when
    * every segment was cleared. A value forms when every segment is filled and it holds exactly what
@@ -116,20 +119,22 @@ export type DateInputRootProps<T extends DateInputValue = Temporal.PlainDate> = 
    * `"input-paste"`. Canceling with `details.cancel()` keeps the value and shows it again in the
    * segments, discarding the edit.
    */
-  onValueChange?: (value: T | null, details: DateInputValueChangeEventDetails) => void;
+  onValueChange?: NoInfer<(value: T | null, details: DateInputValueChangeEventDetails) => void>;
   /**
-   * The earliest valid value: a PlainDate, PlainDateTime or ZonedDateTime from any implementation,
-   * or its ISO text, of any kind, compared as React Aria compares it. A value before it still
+   * The earliest valid value: a Temporal PlainDate, PlainDateTime or ZonedDateTime from any
+   * implementation, of any kind, compared as React Aria compares it. A value before it still
    * commits; the input reports it invalid with "Value must be … or later."
    */
-  minValue?: TemporalInput;
+  minValue?: TemporalValue;
   /** The latest valid value, taking what `minValue` takes. "Value must be … or earlier." */
-  maxValue?: TemporalInput;
+  maxValue?: TemporalValue;
   /** Values the input reports invalid ("Selected date unavailable."), such as fully booked days. */
-  isDateUnavailable?: (value: T) => boolean;
+  isDateUnavailable?: NoInfer<(value: T) => boolean>;
   /**
    * The smallest unit edited. A time granularity needs a value with a time. Defaults to `"day"`
-   * for a PlainDate and `"minute"` for a value with a time.
+   * for a PlainDate and `"minute"` for a value with a time. Without a value or default value it
+   * names the kind: `"day"` or none a PlainDate, a time unit a PlainDateTime, or a ZonedDateTime
+   * with `timeZone`.
    */
   granularity?: DateGranularity;
   /** The hour cycle shown: `12` with a day period, `24` without. Defaults to the locale's. */

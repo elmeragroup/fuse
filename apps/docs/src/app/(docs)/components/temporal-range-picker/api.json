@@ -51,7 +51,7 @@
         {
           "name": "defaultValue",
           "origin": "declared",
-          "type": "DateRangePickerValueInput<T> | null | undefined",
+          "type": "DateRangePickerValue<T> | null | undefined",
           "shortType": "Union",
           "defaultValue": null,
           "description": "The first range, when the picker owns its value.",
@@ -99,7 +99,7 @@
           "type": "DateGranularity | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The smallest unit the inputs edit.",
+          "description": "The smallest unit the inputs edit. Without a value it names the kind, as DateInput's does.",
           "required": false
         },
         {
@@ -132,7 +132,7 @@
         {
           "name": "isDateUnavailable",
           "origin": "declared",
-          "type": "((value: T) => boolean) | undefined",
+          "type": "NoInfer<(value: T) => boolean> | undefined",
           "shortType": "function",
           "defaultValue": null,
           "description": "Values the picker refuses for either end.",
@@ -141,7 +141,7 @@
         {
           "name": "maxValue",
           "origin": "declared",
-          "type": "TemporalInput | undefined",
+          "type": "TemporalValue | undefined",
           "shortType": null,
           "defaultValue": null,
           "description": "The latest valid value for either end.",
@@ -150,10 +150,10 @@
         {
           "name": "minValue",
           "origin": "declared",
-          "type": "TemporalInput | undefined",
+          "type": "TemporalValue | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The earliest valid value for either end, of any kind or its ISO text.",
+          "description": "The earliest valid value for either end, a Temporal value of any kind.",
           "required": false
         },
         {
@@ -177,7 +177,7 @@
         {
           "name": "onValueChange",
           "origin": "declared",
-          "type": "((value: DateRangePickerValue<T> | null, details: DateRangePickerValueChangeEventDetails) => void) | undefined",
+          "type": "NoInfer<(value: DateRangePickerValue<T> | null, details: DateRangePickerValueChangeEventDetails) => void> | undefined",
           "shortType": "function",
           "defaultValue": null,
           "description": "Called with this runtime's range once both ends hold a value and one of them changes, or `null` when a whole range loses an end, as React Aria reports it; the other end stays in its input. A range filled one end at a time reports nothing until both hold a value. `details.reason` is `\"day-press\"`, `\"keyboard\"`, `\"outside-press\"`, `\"focus-out\"` (a range completed in the calendar), `\"input-change\"`, `\"input-clear\"` or `\"input-paste\"`. Canceling with `details.cancel()` keeps the range: a canceled day keeps the popup open with the anchor, so another end can be picked, and a canceled edit shows the range again in the segments.",
@@ -269,10 +269,10 @@
         {
           "name": "value",
           "origin": "declared",
-          "type": "DateRangePickerValueInput<T> | null | undefined",
+          "type": "DateRangePickerValue<T> | null | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "The range, when the parent owns it. `null` empties both ends.",
+          "description": "The range, when the parent owns it: each end a Temporal value of `T`'s kind, built in a client component. `null` empties both ends.",
           "required": false
         },
         {
@@ -949,7 +949,7 @@
         {
           "name": "defaultValue",
           "origin": "declared",
-          "type": "DateRangePickerValueInput<T> | null | undefined",
+          "type": "DateRangePickerValue<T> | null | undefined",
           "shortType": "Union",
           "defaultValue": null,
           "description": "The first range, when the picker owns its value.",
@@ -997,7 +997,7 @@
           "type": "DateGranularity | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The smallest unit the inputs edit.",
+          "description": "The smallest unit the inputs edit. Without a value it names the kind, as DateField's does.",
           "required": false
         },
         {
@@ -1021,7 +1021,7 @@
         {
           "name": "isDateUnavailable",
           "origin": "declared",
-          "type": "((value: T) => boolean) | undefined",
+          "type": "NoInfer<(value: T) => boolean> | undefined",
           "shortType": "function",
           "defaultValue": null,
           "description": "Values the picker refuses for either end.",
@@ -1084,7 +1084,7 @@
         {
           "name": "maxValue",
           "origin": "declared",
-          "type": "TemporalInput | undefined",
+          "type": "TemporalValue | undefined",
           "shortType": null,
           "defaultValue": null,
           "description": "The latest valid value for either end.",
@@ -1093,10 +1093,10 @@
         {
           "name": "minValue",
           "origin": "declared",
-          "type": "TemporalInput | undefined",
+          "type": "TemporalValue | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The earliest valid value for either end, of any kind or its ISO text.",
+          "description": "The earliest valid value for either end, a Temporal value of any kind.",
           "required": false
         },
         {
@@ -1111,7 +1111,7 @@
         {
           "name": "onChange",
           "origin": "declared",
-          "type": "((value: DateRangePickerValue<T> | null) => void) | undefined",
+          "type": "NoInfer<(value: DateRangePickerValue<T> | null) => void> | undefined",
           "shortType": "function",
           "defaultValue": null,
           "description": "Called with this runtime's range once both ends hold a value and one changes, and `null` as soon as a whole range loses an end, as React Aria reports it.",
@@ -1192,10 +1192,10 @@
         {
           "name": "value",
           "origin": "declared",
-          "type": "DateRangePickerValueInput<T> | null | undefined",
+          "type": "DateRangePickerValue<T> | null | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "The range, when the parent owns it. `null` empties both ends.",
+          "description": "The range, when the parent owns it: each end a Temporal value of `T`'s kind, built in a client component. `null` empties both ends.",
           "required": false
         },
         {

@@ -18,15 +18,16 @@ import type { useRender } from "@base-ui/react/use-render";
 import { useStableCallback } from "../../hooks/use-stable-callback";
 import { isRenderableNode } from "../../internal/is-renderable-node";
 import { checkBounds } from "../../temporal/bounds";
-import type { DateGranularity, TemporalInput, TemporalValue } from "../../temporal/temporal-value";
+import type { DateGranularity, TemporalValue } from "../../temporal/temporal-value";
 import { createChangeEventDetails } from "../calendar/calendar-change-details";
 import { boundDay } from "../calendar/calendar-dates";
 import type { CalendarPageBehavior } from "../calendar/calendar-dates";
-import { useTemporalProp } from "../calendar/calendar-input";
+import { useRangeProp } from "../calendar/calendar-input";
 import type { CalendarFirstDayOfWeek } from "../calendar/calendar-input";
 import type { DateInputValue } from "../date-field/date-input";
 import type { DateInputValueChangeEventDetails } from "../date-field/date-input-change-details";
 import { valueError } from "../date-field/date-input-validation";
+import type { KindProps, PropsMadeValue } from "../date-field/date-kind-props";
 import { useValueKind } from "../date-field/use-value-kind";
 import { datePickerVariants } from "../date-picker/date-picker-variants";
 import type {
@@ -67,7 +68,8 @@ import {
 const styles = datePickerVariants({ range: true });
 
 /**
- * A range of a picker's kind: this runtime's Temporal values.
+ * A range of a picker's kind: what the Root takes, each end a Temporal value from any
+ * implementation, and what it reports, each end this runtime's.
  *
  * @template T - The ends' kind.
  */
@@ -76,18 +78,6 @@ export type DateRangePickerValue<T extends DateInputValue = Temporal.PlainDate> 
   readonly start: T;
   /** The last value. Typing can put it before `start`; the picker then reports the range invalid. */
   readonly end: T;
-};
-
-/**
- * A range as the Root takes it: each end a Temporal value of `T`'s kind or its ISO text.
- *
- * @template T - The ends' kind.
- */
-export type DateRangePickerValueInput<T extends DateInputValue = Temporal.PlainDate> = {
-  /** The first value. */
-  readonly start: T | string;
-  /** The last value. */
-  readonly end: T | string;
 };
 
 /**
@@ -129,7 +119,9 @@ export type DateRangePickerRootState = { readonly [K in keyof PickerState]: Pick
 /**
  * `DateRangePicker.Root` takes a `div`'s props, Base UI's `render` and the picker's own.
  *
- * @template T - The ends' kind: `Temporal.PlainDate` (the default), `PlainDateTime` or `ZonedDateTime`.
+ * @template T - The ends' kind: `Temporal.PlainDate` (the default), `PlainDateTime` or
+ *   `ZonedDateTime`. Rendered, the Root reads it from its `value` or `defaultValue`, and without
+ *   either from `granularity` and `timeZone`, as `DateInput.Root` does.
  */
 export type DateRangePickerRootProps<T extends DateInputValue = Temporal.PlainDate> = Omit<
   useRender.ComponentProps<"div", DateRangePickerRootState>,
@@ -137,10 +129,13 @@ export type DateRangePickerRootProps<T extends DateInputValue = Temporal.PlainDa
 > & {
   /** Extra classes, or a callback of the Root's state that returns them. */
   className?: DatePickerClassName<DateRangePickerRootState>;
-  /** The range, when the parent owns it. `null` empties both ends. */
-  value?: DateRangePickerValueInput<T> | null;
+  /**
+   * The range, when the parent owns it: each end a Temporal value of `T`'s kind, built in a client
+   * component. `null` empties both ends.
+   */
+  value?: DateRangePickerValue<T> | null;
   /** The first range, when the picker owns its value. */
-  defaultValue?: DateRangePickerValueInput<T> | null;
+  defaultValue?: DateRangePickerValue<T> | null;
   /**
    * Called with this runtime's range once both ends hold a value and one of them changes, or `null`
    * when a whole range loses an end, as React Aria reports it; the other end stays in its input. A
@@ -150,10 +145,9 @@ export type DateRangePickerRootProps<T extends DateInputValue = Temporal.PlainDa
    * `details.cancel()` keeps the range: a canceled day keeps the popup open with the anchor, so
    * another end can be picked, and a canceled edit shows the range again in the segments.
    */
-  onValueChange?: (
-    value: DateRangePickerValue<T> | null,
-    details: DateRangePickerValueChangeEventDetails
-  ) => void;
+  onValueChange?: NoInfer<
+    (value: DateRangePickerValue<T> | null, details: DateRangePickerValueChangeEventDetails) => void
+  >;
   /** Whether the popup is open, when the parent owns it. */
   open?: boolean;
   /** Whether the popup starts open. */
@@ -173,13 +167,13 @@ export type DateRangePickerRootProps<T extends DateInputValue = Temporal.PlainDa
    * @default true
    */
   shouldCloseOnSelect?: boolean;
-  /** The earliest valid value for either end, of any kind or its ISO text. */
-  minValue?: TemporalInput;
+  /** The earliest valid value for either end, a Temporal value of any kind. */
+  minValue?: TemporalValue;
   /** The latest valid value for either end. */
-  maxValue?: TemporalInput;
+  maxValue?: TemporalValue;
   /** Values the picker refuses for either end. */
-  isDateUnavailable?: (value: T) => boolean;
-  /** The smallest unit the inputs edit. */
+  isDateUnavailable?: NoInfer<(value: T) => boolean>;
+  /** The smallest unit the inputs edit. Without a value it names the kind, as DateInput's does. */
   granularity?: DateGranularity;
   /** The hour cycle shown. Defaults to the locale's. */
   hourCycle?: 12 | 24;
@@ -222,25 +216,6 @@ export type DateRangePickerRootProps<T extends DateInputValue = Temporal.PlainDa
 
 /** The Root its prop errors name. */
 const OWNER = "DateRangePicker.Root";
-
-/**
- * A range prop's ends, parsed once per printed value: one object while they hold, so a parent
- * passing new objects for the same range changes nothing.
- *
- * @param input - The prop.
- * @param prop - The prop, named in a parse error.
- * @returns The ends, or `null` without a range.
- * @throws TypeError naming the end when it is text that is not an ISO value, a host defect.
- */
-function useRangeProp(
-  input: DateRangePickerValueInput<DateInputValue> | null | undefined,
-  prop: "value" | "defaultValue"
-): Ends | null {
-  const start = useTemporalProp(input?.start, OWNER, `${prop}.start`);
-  const end = useTemporalProp(input?.end, OWNER, `${prop}.end`);
-  const present = input != null;
-  return useMemo(() => (present ? { start, end } : null), [present, start, end]);
-}
 
 /** Which of the Label, Description and Error a Root renders, and whether the Error has its own text. */
 type RangePartScan = {
@@ -300,15 +275,16 @@ function isReversed(ends: Ends): boolean {
  * wires them to both inputs and the group. An end before its start is invalid on the end ("Start
  * date must be before end date."), as React Aria reports it.
  *
- * Values are Temporal values or their ISO text, as DatePicker's. Picking a range in the calendar
- * keeps each end's time and zone.
+ * Values are Temporal values, as DatePicker's. Picking a range in the calendar keeps each end's
+ * time and zone.
  *
- * @template T - The ends' kind.
- * @throws TypeError naming the prop when a value or bound is text that is not an ISO value, or a
- *   time `granularity` meets a PlainDate value: host defects.
+ * @template P - The props, inferred: only their `granularity` and `timeZone` count.
+ * @template T - The ends' kind, inferred as `DateInput.Root`'s is.
+ * @throws TypeError naming the prop and the fix when a value or bound is a string rather than a
+ *   Temporal object, or a time `granularity` meets a PlainDate value: host defects.
  */
-export function DateRangePickerRoot<T extends DateInputValue = Temporal.PlainDate>(
-  props: DateRangePickerRootProps<T>
+export function DateRangePickerRoot<P = object, T extends DateInputValue = PropsMadeValue<P>>(
+  props: DateRangePickerRootProps<T> & KindProps<P, DateRangePickerRootProps<DateInputValue>>
 ): ReactElement {
   const {
     value: valueProp,
@@ -344,8 +320,8 @@ export function DateRangePickerRoot<T extends DateInputValue = Temporal.PlainDat
     ...elementProps
   } = props;
   const controlled = valueProp !== undefined;
-  const parsedValue = useRangeProp(valueProp, "value");
-  const parsedDefault = useRangeProp(defaultValue, "defaultValue");
+  const parsedValue = useRangeProp(valueProp, OWNER, "value");
+  const parsedDefault = useRangeProp(defaultValue, OWNER, "defaultValue");
   const [own, setOwn] = useState<Ends | null>(parsedDefault);
   const committed: Ends = (controlled ? parsedValue : own) ?? EMPTY_ENDS;
   const committedKey = rangeKey(committed);

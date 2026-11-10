@@ -11,7 +11,7 @@ import type { useRender } from "@base-ui/react/use-render";
 import { useStableCallback } from "../../hooks/use-stable-callback";
 import { definedProps } from "../../internal/defined-props";
 import { cn } from "../../styles/cn";
-import type { DateGranularity, TemporalInput, TemporalValue } from "../../temporal/temporal-value";
+import type { DateGranularity, TemporalValue } from "../../temporal/temporal-value";
 import { CalendarRoot } from "../calendar/calendar";
 import type { CalendarRootProps, CalendarRootValueChangeEventDetails } from "../calendar/calendar";
 import { createChangeEventDetails } from "../calendar/calendar-change-details";
@@ -22,6 +22,7 @@ import type { CalendarFirstDayOfWeek } from "../calendar/calendar-input";
 import type { DateInputValue } from "../date-field/date-input";
 import type { DateInputValueChangeEventDetails } from "../date-field/date-input-change-details";
 import { valueError } from "../date-field/date-input-validation";
+import type { KindProps, PropsMadeValue } from "../date-field/date-kind-props";
 import { useValueKind } from "../date-field/use-value-kind";
 import { datePickerVariants } from "./date-picker-variants";
 import type {
@@ -77,7 +78,8 @@ export type DatePickerRootState = { readonly [K in keyof PickerState]: PickerSta
 /**
  * `DatePicker.Root` takes a `div`'s props, Base UI's `render` and the picker's own.
  *
- * @template T - The value's kind: `Temporal.PlainDate` (the default), `PlainDateTime` or `ZonedDateTime`.
+ * @template T - The value's kind: `Temporal.PlainDate` (the default), `PlainDateTime` or
+ *   `ZonedDateTime`. Rendered, the Root reads it as `DateInput.Root` does.
  */
 export type DatePickerRootProps<T extends DateInputValue = Temporal.PlainDate> = Omit<
   useRender.ComponentProps<"div", DatePickerRootState>,
@@ -85,10 +87,13 @@ export type DatePickerRootProps<T extends DateInputValue = Temporal.PlainDate> =
 > & {
   /** Extra classes, or a callback of the Root's state that returns them. */
   className?: DatePickerClassName<DatePickerRootState>;
-  /** The value, when the parent owns it: a Temporal value of `T`'s kind or its ISO text. `null` empties it. */
-  value?: T | string | null;
+  /**
+   * The value, when the parent owns it: a Temporal value of `T`'s kind, built in a client
+   * component. `null` empties it.
+   */
+  value?: T | null;
   /** The first value, when the picker owns its value. */
-  defaultValue?: T | string | null;
+  defaultValue?: T | null;
   /**
    * Called with this runtime's value when a day is picked in the calendar or the input forms a new
    * value, `null` when the input is cleared. `details.reason` is `"day-press"`, `"keyboard"`,
@@ -96,7 +101,7 @@ export type DatePickerRootProps<T extends DateInputValue = Temporal.PlainDate> =
    * value: a canceled day keeps the popup open with focus on the day, and a canceled edit shows the
    * value again in the segments.
    */
-  onValueChange?: (value: T | null, details: DatePickerValueChangeEventDetails) => void;
+  onValueChange?: NoInfer<(value: T | null, details: DatePickerValueChangeEventDetails) => void>;
   /** Whether the popup is open, when the parent owns it. */
   open?: boolean;
   /** Whether the popup starts open. */
@@ -118,13 +123,16 @@ export type DatePickerRootProps<T extends DateInputValue = Temporal.PlainDate> =
    * @default true
    */
   shouldCloseOnSelect?: boolean;
-  /** The earliest valid value, of any kind or its ISO text. Earlier days are disabled in the calendar. */
-  minValue?: TemporalInput;
-  /** The latest valid value, of any kind or its ISO text. */
-  maxValue?: TemporalInput;
+  /** The earliest valid value, a Temporal value of any kind. Earlier days are disabled in the calendar. */
+  minValue?: TemporalValue;
+  /** The latest valid value, a Temporal value of any kind. */
+  maxValue?: TemporalValue;
   /** Values the picker refuses: the calendar's days stay focusable but unselectable, a typed one is invalid. */
-  isDateUnavailable?: (value: T) => boolean;
-  /** The smallest unit the input edits. A time granularity needs a value with a time. */
+  isDateUnavailable?: NoInfer<(value: T) => boolean>;
+  /**
+   * The smallest unit the input edits. A time granularity needs a value with a time. Without a
+   * value it names the kind, as DateInput's does.
+   */
   granularity?: DateGranularity;
   /** The hour cycle shown. Defaults to the locale's. */
   hourCycle?: 12 | 24;
@@ -208,12 +216,14 @@ const OWNER = "DatePicker.Root";
  * Picking a day keeps the value's time and zone. Typing in the input never opens the popup, and
  * opening it never commits a half-typed value.
  *
- * @template T - The value's kind.
- * @throws TypeError naming the prop when `value`, `defaultValue`, `minValue` or `maxValue` is text
- *   that is not an ISO value, or a time `granularity` meets a PlainDate value: host defects.
+ * @template P - The props, inferred: only their `granularity` and `timeZone` count.
+ * @template T - The value's kind, inferred as `DateInput.Root`'s is.
+ * @throws TypeError naming the prop and the fix when `value`, `defaultValue`, `minValue` or
+ *   `maxValue` is a string rather than a Temporal object, or a time `granularity` meets a
+ *   PlainDate value: host defects.
  */
-export function DatePickerRoot<T extends DateInputValue = Temporal.PlainDate>(
-  props: DatePickerRootProps<T>
+export function DatePickerRoot<P = object, T extends DateInputValue = PropsMadeValue<P>>(
+  props: DatePickerRootProps<T> & KindProps<P, DatePickerRootProps<DateInputValue>>
 ): ReactElement {
   const {
     value: valueProp,

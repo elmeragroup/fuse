@@ -17,7 +17,7 @@ export const metadata = componentMetadata("temporal-date-picker");
 
 <Prose>
 
-`DatePickerField` from `@elmeragroup/fuse/date-picker` is the Temporal replacement for the interim [React Aria DatePicker](/components/date-picker), with its prop names: `label`, `description`, `errorMessage`, `isInvalid`, `isDisabled`, `isReadOnly`, `isRequired`, `value`, `defaultValue`, `onChange`, `minValue`, `maxValue`, `isDateUnavailable`, `granularity`, `hourCycle`, `hideTimeZone`, `firstDayOfWeek`, `presetGroup`, `triggerPlacement`, `size`, `isOpen`, `defaultOpen`, `onOpenChange` and `onBlur`. Its values are `Temporal.PlainDate`, `PlainDateTime` or `ZonedDateTime`, or their ISO text, which a server component passes; `onChange` hands back this runtime's value. Pass the kind as a type argument, `DatePickerField<Temporal.PlainDate>`, when you pass ISO text alone.
+`DatePickerField` from `@elmeragroup/fuse/date-picker` is the Temporal replacement for the interim [React Aria DatePicker](/components/date-picker), with its prop names: `label`, `description`, `errorMessage`, `isInvalid`, `isDisabled`, `isReadOnly`, `isRequired`, `value`, `defaultValue`, `onChange`, `minValue`, `maxValue`, `isDateUnavailable`, `granularity`, `hourCycle`, `hideTimeZone`, `firstDayOfWeek`, `presetGroup`, `triggerPlacement`, `size`, `isOpen`, `defaultOpen`, `onOpenChange` and `onBlur`. Its values are `Temporal.PlainDate`, `PlainDateTime` or `ZonedDateTime` objects; `onChange` hands back this runtime's value, typed as [DateField's](/components/temporal-date-field) is, with no type argument. Build a value in a client component: a Temporal object a server component passes reaches the client as ISO text, which the component refuses with a `TypeError`. [Temporal for dates](/quick-start#temporal) shows a server component handing its text to a client component that builds the value.
 
 Fuse reads `globalThis.Temporal`. Import `@elmeragroup/fuse/temporal-polyfill` once in your app's entry, on the server and in the browser.
 
@@ -87,7 +87,7 @@ Inside `Form`, the picker is a Field of the form: its ISO text reaches `onFormSu
 
 ## Server rendering
 
-`DatePickerField` holds no state of its own, so a server component renders it with ISO-text props; its parts are client components. Nothing reads the clock while rendering: the calendar marks today from its first client effect.
+`DatePickerField` holds no state of its own, so a server component renders it without a date value; its parts are client components. Nothing reads the clock while rendering: the calendar marks today from its first client effect.
 
 ## Accessibility
 

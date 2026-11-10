@@ -17,6 +17,7 @@ import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
+import { expectRenderTypeError } from "../../../test/caught-error";
 import { withLocale } from "../../../test/locale-matrix";
 import { formNamed, renderThemed, roleNamed } from "../../../test/themed-browser-render";
 import type { SupportedLocale } from "../../intl/locale-context";
@@ -66,7 +67,7 @@ function Harness<T extends DateInputValue>({ locale = "en-US", ...props }: Harne
     locale,
     <>
       <button type="button">Before</button>
-      <DateField<T> {...props} onChange={(next) => setValue(next === null ? "null" : next.toString())} />
+      <DateField {...props} onChange={(next) => setValue(next === null ? "null" : next.toString())} />
       <button type="button">After</button>
       <output aria-label="Committed value">{value}</output>
     </>
@@ -75,7 +76,7 @@ function Harness<T extends DateInputValue>({ locale = "en-US", ...props }: Harne
 
 describe("DateField segments", () => {
   it("names each segment by its unit and the label, in en-US order", async () => {
-    renderThemed(<Harness label="Start date" defaultValue="2026-10-05" />);
+    renderThemed(<Harness label="Start date" defaultValue={Temporal.PlainDate.from("2026-10-05")} />);
 
     await expect
       .element(page.getByRole("spinbutton", { name: "month, Start date", exact: true }))
@@ -113,7 +114,7 @@ describe("DateField segments", () => {
   });
 
   it("clears a segment with Backspace, keeps the committed value, then moves to the previous segment", async () => {
-    renderThemed(<Harness label="Start date" defaultValue="2026-10-05" />);
+    renderThemed(<Harness label="Start date" defaultValue={Temporal.PlainDate.from("2026-10-05")} />);
     await userEvent.click(spin("day, Start date"));
 
     await userEvent.keyboard("{Backspace}");
@@ -167,7 +168,7 @@ describe("DateField keys", () => {
   });
 
   it("pages days by 7 and years to the next multiple of 5, and jumps to the ends with Home and End", async () => {
-    renderThemed(<Harness label="Start date" defaultValue="2026-10-28" />);
+    renderThemed(<Harness label="Start date" defaultValue={Temporal.PlainDate.from("2026-10-28")} />);
     await userEvent.click(spin("day, Start date"));
 
     await userEvent.keyboard("{PageUp}");
@@ -186,7 +187,7 @@ describe("DateField keys", () => {
   });
 
   it("moves between segments with the left and right arrows", async () => {
-    renderThemed(<Harness label="Start date" defaultValue="2026-10-05" />);
+    renderThemed(<Harness label="Start date" defaultValue={Temporal.PlainDate.from("2026-10-05")} />);
     await userEvent.click(spin("month, Start date"));
 
     await userEvent.keyboard("{ArrowRight}");
@@ -204,7 +205,7 @@ describe("DateField keys", () => {
   });
 
   it("restarts a segment when the next digit would pass its maximum, and moves on", async () => {
-    renderThemed(<Harness label="Start date" defaultValue="2026-10-05" />);
+    renderThemed(<Harness label="Start date" defaultValue={Temporal.PlainDate.from("2026-10-05")} />);
     await userEvent.click(spin("month, Start date"));
 
     // "1" may still become 10–12, so focus stays; "3" would make 13, so it restarts at 3 and moves.
@@ -222,7 +223,7 @@ describe("DateField keys", () => {
 
 describe("DateField modifier chords", () => {
   it("leaves the value alone for Ctrl, Meta and Alt with a step, edge or erase key", async () => {
-    renderThemed(<Harness label="Start date" defaultValue="2026-10-05" />);
+    renderThemed(<Harness label="Start date" defaultValue={Temporal.PlainDate.from("2026-10-05")} />);
     await userEvent.click(spin("day, Start date"));
     await userEvent.keyboard(
       "{Control>}{ArrowUp}{/Control}{Meta>}{ArrowDown}{/Meta}{Alt>}{ArrowUp}{/Alt}{Control>}{Home}{/Control}{Meta>}{End}{/Meta}{Control>}{PageUp}{/Control}"
@@ -239,7 +240,7 @@ describe("DateField modifier chords", () => {
   });
 
   it("leaves Alt with the left and right arrows to the browser, keeping focus on the segment", async () => {
-    renderThemed(<Harness label="Start date" defaultValue="2026-10-05" />);
+    renderThemed(<Harness label="Start date" defaultValue={Temporal.PlainDate.from("2026-10-05")} />);
     await userEvent.click(spin("day, Start date"));
     const prevented: boolean[] = [];
     const record = (event: KeyboardEvent): void => {
@@ -263,7 +264,7 @@ describe("DateField modifier chords", () => {
 
 describe("DateField blur", () => {
   it("keeps a typed February 30 until blur, then commits it constrained to the month's last day", async () => {
-    renderThemed(<Harness label="Start date" defaultValue="2026-01-30" />);
+    renderThemed(<Harness label="Start date" defaultValue={Temporal.PlainDate.from("2026-01-30")} />);
     await userEvent.click(spin("month, Start date"));
     await userEvent.keyboard("02");
 
@@ -298,12 +299,12 @@ describe("DateField blur", () => {
 describe("DateField time segments", () => {
   it("shows 24-hour hour and minute segments and no zone for a hidden-zone ZonedDateTime", () => {
     renderThemed(
-      <Harness<Temporal.ZonedDateTime>
+      <Harness
         label="Starts"
         granularity="minute"
         hourCycle={24}
         hideTimeZone
-        defaultValue="2026-10-12T14:30[Europe/Oslo]"
+        defaultValue={Temporal.ZonedDateTime.from("2026-10-12T14:30[Europe/Oslo]")}
       />
     );
 
@@ -316,11 +317,11 @@ describe("DateField time segments", () => {
 
   it("shows an AM/PM segment for a read-only date-time under the en-US hour cycle", () => {
     renderThemed(
-      <Harness<Temporal.PlainDateTime>
+      <Harness
         label="Delivered at"
         isReadOnly
         granularity="minute"
-        defaultValue="2026-10-12T14:30"
+        defaultValue={Temporal.PlainDateTime.from("2026-10-12T14:30")}
       />
     );
 
@@ -336,10 +337,10 @@ describe("DateField time segments", () => {
 
   it("sets the day period by its first letter and keeps the zone's name read-only", async () => {
     renderThemed(
-      <Harness<Temporal.ZonedDateTime>
+      <Harness
         label="Starts"
         granularity="minute"
-        defaultValue="2026-01-12T09:30[America/New_York]"
+        defaultValue={Temporal.ZonedDateTime.from("2026-01-12T09:30[America/New_York]")}
       />
     );
     expect(segmentTexts()).toEqual(["01", "12", "2026", "09", "30", "AM", "EST"]);
@@ -352,13 +353,7 @@ describe("DateField time segments", () => {
 
   it("makes an empty field zoned in its timeZone", async () => {
     renderThemed(
-      <Harness<Temporal.ZonedDateTime>
-        label="Starts"
-        granularity="minute"
-        hourCycle={24}
-        hideTimeZone
-        timeZone="Europe/Oslo"
-      />
+      <Harness label="Starts" granularity="minute" hourCycle={24} hideTimeZone timeZone="Europe/Oslo" />
     );
     await userEvent.click(spin("month, Starts"));
     await userEvent.keyboard("101220260930");
@@ -369,11 +364,11 @@ describe("DateField time segments", () => {
   it("keeps the kind and zone of a value it held after every segment is cleared", async () => {
     // No timeZone and no granularity: only the value it held names the zone.
     renderThemed(
-      <Harness<Temporal.ZonedDateTime>
+      <Harness
         label="Starts"
         hourCycle={24}
         hideTimeZone
-        defaultValue="2026-10-12T09:30[America/New_York]"
+        defaultValue={Temporal.ZonedDateTime.from("2026-10-12T09:30[America/New_York]")}
       />
     );
     await userEvent.click(spin("minute, Starts"));
@@ -420,7 +415,7 @@ describe("DateField granularity change mid-draft", () => {
         label="Starts"
         hourCycle={12}
         granularity="minute"
-        defaultValue="2026-10-05T09:30"
+        defaultValue={Temporal.PlainDateTime.from("2026-10-05T09:30")}
         switched={{ granularity: "day" }}
       />
     );
@@ -560,18 +555,14 @@ function LoadHarness({
   initial,
   loaded,
 }: {
-  readonly initial: string | null;
-  readonly loaded: string;
+  readonly initial: DateInputValue | null;
+  readonly loaded: DateInputValue;
 }): ReactElement {
   const [value, setValue] = useState(initial);
   return withLocale(
     "en-US",
     <>
-      <DateField<DateInputValue>
-        label="Starts"
-        value={value}
-        onChange={(next) => setValue(next === null ? null : next.toString())}
-      />
+      <DateField label="Starts" value={value} onChange={setValue} />
       <button type="button" onClick={() => setValue(loaded)}>
         Load
       </button>
@@ -587,7 +578,12 @@ describe("DateField kind-change warning", () => {
   it("does not warn when a loaded value replaces the kind an empty field's props made", async () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
     try {
-      renderThemed(<LoadHarness initial={null} loaded="2026-10-12T09:30:00+02:00[Europe/Oslo]" />);
+      renderThemed(
+        <LoadHarness
+          initial={null}
+          loaded={Temporal.ZonedDateTime.from("2026-10-12T09:30:00+02:00[Europe/Oslo]")}
+        />
+      );
       await userEvent.click(roleNamed("button", "Load"));
       await expect.poll(segmentTexts).toEqual(["10", "12", "2026", "09", "30", "AM", "GMT+2"]);
       expect(kindWarnings(warn)).toEqual([]);
@@ -599,7 +595,12 @@ describe("DateField kind-change warning", () => {
   it("warns when a value of another kind replaces a value the field held", async () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
     try {
-      renderThemed(<LoadHarness initial="2026-10-12" loaded="2026-10-12T09:30:00" />);
+      renderThemed(
+        <LoadHarness
+          initial={Temporal.PlainDate.from("2026-10-12")}
+          loaded={Temporal.PlainDateTime.from("2026-10-12T09:30:00")}
+        />
+      );
       await userEvent.click(roleNamed("button", "Load"));
       await expect.poll(segmentTexts).toEqual(["10", "12", "2026", "09", "30", "AM"]);
       expect(kindWarnings(warn)).toEqual([
@@ -619,7 +620,12 @@ describe("DateField validation", () => {
     ["2025", "2025-10-05", "Value must be 10/01/2026 or later."],
   ])("says why a typed year %s falls outside the bounds, after blur", async (year, value, copy) => {
     renderThemed(
-      <Harness label="Start date" minValue="2026-10-01" maxValue="2026-10-31" defaultValue="2026-10-05" />
+      <Harness
+        label="Start date"
+        minValue={Temporal.PlainDate.from("2026-10-01")}
+        maxValue={Temporal.PlainDate.from("2026-10-31")}
+        defaultValue={Temporal.PlainDate.from("2026-10-05")}
+      />
     );
     await userEvent.click(spin("year, Start date"));
     await userEvent.keyboard(year);
@@ -637,10 +643,10 @@ describe("DateField validation", () => {
   it("names a zoned minValue of a date field by the wall-clock day it is compared on", async () => {
     // 00:30 in Oslo on November 9 is 23:30 UTC on November 8; a date compares with its Oslo day.
     renderThemed(
-      <Harness<Temporal.PlainDate>
+      <Harness
         label="Start date"
-        minValue="2026-11-09T00:30+01:00[Europe/Oslo]"
-        defaultValue="2026-11-10"
+        minValue={Temporal.ZonedDateTime.from("2026-11-09T00:30+01:00[Europe/Oslo]")}
+        defaultValue={Temporal.PlainDate.from("2026-11-10")}
       />
     );
     await userEvent.click(spin("day, Start date"));
@@ -653,12 +659,12 @@ describe("DateField validation", () => {
 
   it("names a zoned maxValue of a date-time field by the wall clock it is compared on", async () => {
     renderThemed(
-      <Harness<Temporal.PlainDateTime>
+      <Harness
         label="Starts"
         granularity="minute"
         hourCycle={24}
-        maxValue="2026-10-31T23:30+01:00[Europe/Oslo]"
-        defaultValue="2026-10-31T23:00"
+        maxValue={Temporal.ZonedDateTime.from("2026-10-31T23:30+01:00[Europe/Oslo]")}
+        defaultValue={Temporal.PlainDateTime.from("2026-10-31T23:00")}
       />
     );
     await userEvent.click(spin("minute, Starts"));
@@ -676,8 +682,8 @@ describe("DateField validation", () => {
       <Harness
         label="Start date"
         errorMessage="Pick a weekday"
-        maxValue="2026-10-31"
-        defaultValue="2026-10-05"
+        maxValue={Temporal.PlainDate.from("2026-10-31")}
+        defaultValue={Temporal.PlainDate.from("2026-10-05")}
       />
     );
     expect(page.getByText("Pick a weekday").query()).toBeNull();
@@ -697,7 +703,7 @@ describe("DateField validation", () => {
         description="Weekdays only"
         errorMessage="Pick a weekday"
         isInvalid
-        defaultValue="2026-10-05"
+        defaultValue={Temporal.PlainDate.from("2026-10-05")}
       />
     );
     await expect
@@ -711,7 +717,7 @@ describe("DateField validation", () => {
     renderThemed(
       <Harness
         label="Start date"
-        defaultValue="2026-10-05"
+        defaultValue={Temporal.PlainDate.from("2026-10-05")}
         isDateUnavailable={(date) => date.dayOfWeek === 6}
       />
     );
@@ -742,14 +748,14 @@ describe("DateField validation", () => {
     "compares %s with a zoned minimum and a plain maximum as React Aria does",
     async (start, minute, value, copy) => {
       renderThemed(
-        <Harness<Temporal.ZonedDateTime>
+        <Harness
           label="Period"
           granularity="minute"
           hourCycle={24}
           hideTimeZone
-          minValue="2026-10-01T00:00[Europe/Oslo]"
-          maxValue="2026-10-31T23:30"
-          defaultValue={start}
+          minValue={Temporal.ZonedDateTime.from("2026-10-01T00:00[Europe/Oslo]")}
+          maxValue={Temporal.PlainDateTime.from("2026-10-31T23:30")}
+          defaultValue={Temporal.ZonedDateTime.from(start)}
         />
       );
       await userEvent.click(spin("minute, Period"));
@@ -801,7 +807,9 @@ function changeLog() {
 
 describe("DateInput onValueChange details", () => {
   it("keeps the value and shows it again when an input-change is canceled", async () => {
-    renderThemed(<CancelHarness cancel={["input-change"]} defaultValue="2026-10-05" />);
+    renderThemed(
+      <CancelHarness cancel={["input-change"]} defaultValue={Temporal.PlainDate.from("2026-10-05")} />
+    );
     await userEvent.click(spin("day, Start date"));
     await userEvent.keyboard("{ArrowUp}");
 
@@ -810,7 +818,7 @@ describe("DateInput onValueChange details", () => {
   });
 
   it("applies an input-change that is not canceled", async () => {
-    renderThemed(<CancelHarness cancel={[]} defaultValue="2026-10-05" />);
+    renderThemed(<CancelHarness cancel={[]} defaultValue={Temporal.PlainDate.from("2026-10-05")} />);
     await userEvent.click(spin("day, Start date"));
     await userEvent.keyboard("{ArrowUp}");
 
@@ -819,7 +827,9 @@ describe("DateInput onValueChange details", () => {
   });
 
   it("reports clearing every segment as input-clear, and canceling it keeps the value", async () => {
-    renderThemed(<CancelHarness cancel={["input-clear"]} defaultValue="2026-10-05" />);
+    renderThemed(
+      <CancelHarness cancel={["input-clear"]} defaultValue={Temporal.PlainDate.from("2026-10-05")} />
+    );
     await userEvent.click(spin("year, Start date"));
     // Each Backspace drops a digit, committing the shorter year, or on an empty segment moves back
     // one: four for the year, one to move, one for the day, one to move, two for the month.
@@ -834,7 +844,9 @@ describe("DateInput onValueChange details", () => {
   });
 
   it("commits pasted ISO text as input-paste, and canceling it keeps the value", async () => {
-    renderThemed(<CancelHarness cancel={["input-paste"]} defaultValue="2026-10-05" />);
+    renderThemed(
+      <CancelHarness cancel={["input-paste"]} defaultValue={Temporal.PlainDate.from("2026-10-05")} />
+    );
     const target = spin("day, Start date");
     target.focus();
     const data = new DataTransfer();
@@ -859,7 +871,7 @@ describe("DateField in forms", () => {
           onFormSubmit={(values) => {
             submitted = values;
           }}>
-          <DateField label="Start date" name="start" defaultValue="2026-10-05" />
+          <DateField label="Start date" name="start" defaultValue={Temporal.PlainDate.from("2026-10-05")} />
           <button type="submit">Save</button>
         </Form>
       )
@@ -896,7 +908,7 @@ describe("DateField in forms", () => {
       return withLocale(
         "en-US",
         <Form aria-label="Booking" errors={errors} onFormSubmit={() => setErrors({ start: "Fully booked" })}>
-          <DateField label="Start date" name="start" defaultValue="2026-10-05" />
+          <DateField label="Start date" name="start" defaultValue={Temporal.PlainDate.from("2026-10-05")} />
           <button type="submit">Save</button>
         </Form>
       );
@@ -951,7 +963,7 @@ describe("DateField in forms", () => {
       withLocale(
         "en-US",
         <form aria-label="Booking">
-          <DateField label="Start date" name="start" defaultValue="2026-10-05" />
+          <DateField label="Start date" name="start" defaultValue={Temporal.PlainDate.from("2026-10-05")} />
           <button type="reset">Reset</button>
         </form>
       )
@@ -971,10 +983,10 @@ describe("DateField styles", () => {
       withLocale(
         "en-US",
         <>
-          <DateField label="Plain" defaultValue="2026-10-05" />
-          <DateField label="Invalid" defaultValue="2026-10-05" isInvalid />
+          <DateField label="Plain" defaultValue={Temporal.PlainDate.from("2026-10-05")} />
+          <DateField label="Invalid" defaultValue={Temporal.PlainDate.from("2026-10-05")} isInvalid />
           <DateField label="Empty" />
-          <DateField label="Disabled" defaultValue="2026-10-05" isDisabled />
+          <DateField label="Disabled" defaultValue={Temporal.PlainDate.from("2026-10-05")} isDisabled />
         </>
       )
     );
@@ -996,7 +1008,11 @@ describe("DateField styles", () => {
     renderThemed(
       withLocale(
         "en-US",
-        <DateField<Temporal.PlainDateTime> label="Starts" hourCycle={24} defaultValue="2026-10-12T14:30" />
+        <DateField
+          label="Starts"
+          hourCycle={24}
+          defaultValue={Temporal.PlainDateTime.from("2026-10-12T14:30")}
+        />
       )
     );
     // DOM audit: a literal has no role, so its slot and `data-type` locate it.
@@ -1017,19 +1033,15 @@ describe("DateField styles", () => {
 
 /** A controlled DateField whose parent can replace the value. */
 function ControlledHarness(): ReactElement {
-  const [value, setValue] = useState<string>("2026-10-05");
+  const [value, setValue] = useState<Temporal.PlainDate | null>(Temporal.PlainDate.from("2026-10-05"));
   return withLocale(
     "en-US",
     <>
-      <DateField<Temporal.PlainDate>
-        label="Start date"
-        value={value}
-        onChange={(next) => setValue(String(next))}
-      />
-      <button type="button" onClick={() => setValue("2026-11-06")}>
+      <DateField label="Start date" value={value} onChange={setValue} />
+      <button type="button" onClick={() => setValue(Temporal.PlainDate.from("2026-11-06"))}>
         November
       </button>
-      <button type="button" onClick={() => setValue("2026-10-05")}>
+      <button type="button" onClick={() => setValue(Temporal.PlainDate.from("2026-10-05"))}>
         October
       </button>
     </>
@@ -1038,39 +1050,28 @@ function ControlledHarness(): ReactElement {
 
 /** A controlled date-time field whose parent echoes every value back, printing it. */
 function ControlledTypingHarness(): ReactElement {
-  const [value, setValue] = useState<string>("2026-10-05T09:30");
+  const [value, setValue] = useState<Temporal.PlainDateTime | null>(
+    Temporal.PlainDateTime.from("2026-10-05T09:30")
+  );
   return withLocale(
     "en-US",
     <>
-      <DateField<Temporal.PlainDateTime>
-        label="Starts"
-        granularity="minute"
-        hourCycle={24}
-        value={value}
-        onChange={(next) => setValue(String(next))}
-      />
-      <output aria-label="Committed value">{value}</output>
+      <DateField label="Starts" granularity="minute" hourCycle={24} value={value} onChange={setValue} />
+      <output aria-label="Committed value">{String(value)}</output>
     </>
   );
 }
 
 /** A controlled zoned field whose parent can move the value to another zone. */
 function ZoneMoveHarness(): ReactElement {
-  const [value, setValue] = useState("2026-10-12T09:30:00+02:00[Europe/Oslo]");
+  const [value, setValue] = useState<Temporal.ZonedDateTime | null>(
+    Temporal.ZonedDateTime.from("2026-10-12T09:30:00+02:00[Europe/Oslo]")
+  );
   return withLocale(
     "en-US",
     <>
-      <DateField<Temporal.ZonedDateTime>
-        label="Starts"
-        granularity="minute"
-        value={value}
-        onChange={(next) => setValue(String(next))}
-      />
-      <button
-        type="button"
-        onClick={() =>
-          setValue(Temporal.ZonedDateTime.from(value).withTimeZone("America/New_York").toString())
-        }>
+      <DateField label="Starts" granularity="minute" value={value} onChange={setValue} />
+      <button type="button" onClick={() => setValue(value?.withTimeZone("America/New_York") ?? null)}>
         New York
       </button>
     </>
@@ -1079,17 +1080,14 @@ function ZoneMoveHarness(): ReactElement {
 
 /** A controlled zoned day field in Oslo whose parent echoes every value back, printing it. */
 function ZonedDayEchoHarness(): ReactElement {
-  const [value, setValue] = useState("2026-10-05T00:00:00+02:00[Europe/Oslo]");
+  const [value, setValue] = useState<Temporal.ZonedDateTime | null>(
+    Temporal.ZonedDateTime.from("2026-10-05T00:00:00+02:00[Europe/Oslo]")
+  );
   return withLocale(
     "en-US",
     <>
-      <DateField<Temporal.ZonedDateTime>
-        label="Starts"
-        granularity="day"
-        value={value}
-        onChange={(next) => setValue(String(next))}
-      />
-      <output aria-label="Committed value">{value}</output>
+      <DateField label="Starts" granularity="day" value={value} onChange={setValue} />
+      <output aria-label="Committed value">{String(value)}</output>
     </>
   );
 }
@@ -1194,7 +1192,10 @@ describe("DateInput descriptions", () => {
         "en-US",
         <Field.Root name="start">
           <Field.Label>Start date</Field.Label>
-          <DateInput.Root aria-describedby="start-hint" defaultValue="2026-10-05" />
+          <DateInput.Root
+            aria-describedby="start-hint"
+            defaultValue={Temporal.PlainDate.from("2026-10-05")}
+          />
           <span id="start-hint">Local time</span>
           <Field.Description>Weekdays only</Field.Description>
         </Field.Root>
@@ -1217,7 +1218,7 @@ describe("DateInput wiring with undefined props", () => {
             aria-labelledby={undefined}
             aria-describedby={undefined}
             id={undefined}
-            defaultValue="2026-10-05">
+            defaultValue={Temporal.PlainDate.from("2026-10-05")}>
             {(segment) => (
               <DateInput.Segment
                 key={segment.index}
@@ -1244,7 +1245,7 @@ describe("DateInput form reset", () => {
       withLocale(
         "en-US",
         <Form aria-label="Booking" onFormSubmit={() => undefined}>
-          <DateField<Temporal.PlainDate> label="Start date" name="start" defaultValue="2026-10-05" />
+          <DateField label="Start date" name="start" defaultValue={Temporal.PlainDate.from("2026-10-05")} />
           <button type="submit">Save</button>
           <button type="reset">Reset</button>
         </Form>
@@ -1277,7 +1278,7 @@ describe("DateInput form reset", () => {
       withLocale(
         "en-US",
         <Form aria-label="Booking" onFormSubmit={() => undefined}>
-          <DateField<Temporal.PlainDate> label="Start date" name="start" isRequired />
+          <DateField label="Start date" name="start" isRequired />
           <button type="submit">Save</button>
           <button type="reset">Reset</button>
         </Form>
@@ -1316,9 +1317,9 @@ describe("DateField in a same-origin frame", () => {
           "en-US",
           createPortal(
             <>
-              <DateField<Temporal.PlainDate>
+              <DateField
                 label="Start date"
-                defaultValue="2026-10-05"
+                defaultValue={Temporal.PlainDate.from("2026-10-05")}
                 onChange={(next) => reported.push(String(next))}
               />
               <button type="button">After</button>
@@ -1377,10 +1378,10 @@ describe("DateField paste of its own value", () => {
           onFormSubmit={() => {
             submits += 1;
           }}>
-          <DateField<Temporal.PlainDate>
+          <DateField
             label="Start date"
             name="start"
-            defaultValue="2026-10-05"
+            defaultValue={Temporal.PlainDate.from("2026-10-05")}
             onChange={(next) => changes.push(String(next))}
           />
           <button type="submit">Save</button>
@@ -1401,5 +1402,31 @@ describe("DateField paste of its own value", () => {
     await expect.poll(() => submits).toBe(1);
     expect(roleNamed("group", "Start date")).not.toHaveAttribute("data-invalid");
     expect(changes).toEqual([]);
+  });
+});
+
+describe("date props past the types", () => {
+  it("throws a TypeError naming the Root, the prop and the string for ISO text", () => {
+    expectRenderTypeError(
+      'DateInput.Root defaultValue: received the string "2026-10-05T09:30"',
+      <DateField
+        label="Starts"
+        granularity="minute"
+        // @ts-expect-error -- text reaches the prop past the types: from plain JavaScript, or as the ISO text a server component's Temporal object crosses as
+        defaultValue="2026-10-05T09:30"
+      />
+    );
+  });
+
+  it("throws for ISO text in value after the equal Temporal value, whatever rendered before", () => {
+    expectRenderTypeError(
+      'DateInput.Root value: received the string "2026-10-05"',
+      <DateField label="Starts" value={Temporal.PlainDate.from("2026-10-05")} />,
+      <DateField
+        label="Starts"
+        // @ts-expect-error -- the equal ISO text, past the types, after a Temporal value
+        value="2026-10-05"
+      />
+    );
   });
 });

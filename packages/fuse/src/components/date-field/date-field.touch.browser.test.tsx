@@ -17,7 +17,12 @@ import { DateField } from "./date-field";
 
 describe("DateField taps", () => {
   it("focuses the segment a tap lands on", async () => {
-    renderThemed(withLocale("en-US", <DateField label="Start date" defaultValue="2026-10-05" />));
+    renderThemed(
+      withLocale(
+        "en-US",
+        <DateField label="Start date" defaultValue={Temporal.PlainDate.from("2026-10-05")} />
+      )
+    );
 
     await tapCenter(roleNamed("spinbutton", "day, Start date"));
     await expect
@@ -30,7 +35,12 @@ describe("DateField taps", () => {
   });
 
   it("focuses the last filled segment for a tap on the box after the segments", async () => {
-    renderThemed(withLocale("en-US", <DateField label="Start date" defaultValue="2026-10-05" />));
+    renderThemed(
+      withLocale(
+        "en-US",
+        <DateField label="Start date" defaultValue={Temporal.PlainDate.from("2026-10-05")} />
+      )
+    );
     const box = roleNamed("group", "Start date").getBoundingClientRect();
 
     await commands.tap(box.right - 4, box.top + box.height / 2);

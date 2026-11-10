@@ -15,7 +15,7 @@ import {
   sameKind,
   TemporalInputError,
 } from "./temporal-value";
-import type { ResolvedKind, ValueKind, ValueKindSources } from "./temporal-value";
+import type { DateGranularity, MadeValue, ResolvedKind, ValueKind, ValueKindSources } from "./temporal-value";
 
 /** The parsed value's kind and ISO text, or the failed input. */
 function parsed(input: string): string {
@@ -66,7 +66,7 @@ describe("parseTemporal", () => {
     // Monrovia kept -00:44:30 until 1972; the ISO text prints the offset rounded to -00:45.
     const monrovia = Temporal.ZonedDateTime.from("1960-06-01T00:00[Africa/Monrovia]");
     expect(monrovia.toString()).toBe("1960-06-01T00:00:00-00:45[Africa/Monrovia]");
-    const result = getOrThrow(parseTemporal(monrovia));
+    const result = getOrThrow(parseTemporal(String(monrovia)));
     expect(result.toString()).toBe("1960-06-01T00:00:00-00:45[Africa/Monrovia]");
     expect(result instanceof Temporal.ZonedDateTime && result.equals(monrovia)).toBe(true);
   });
@@ -90,11 +90,6 @@ describe("parseTemporal", () => {
     "2026-03-15[u-ca=gregory][u-ca=hebrew]",
   ])("refuses the non-ISO calendar in %j", (input) => {
     expect(parsed(input)).toBe(`error ${input}`);
-  });
-
-  it("refuses a Temporal value in a non-ISO calendar", () => {
-    const hebrew = Temporal.PlainDate.from("2026-03-15").withCalendar("hebrew");
-    expect(parseTemporal(hebrew)._tag).toBe("err");
   });
 
   it.each([
@@ -121,11 +116,6 @@ describe("parseTemporal", () => {
     const result = parseTemporal("2026-02-30");
     expect(result._tag === "err" && result.error).toBeInstanceOf(TemporalInputError);
     expect(result._tag === "err" && result.error.cause).toBeInstanceOf(RangeError);
-  });
-
-  it("re-reads a Temporal value through its ISO text", () => {
-    const original = Temporal.PlainDateTime.from("2026-03-15T09:30");
-    expect(getOrThrow(parseTemporal(original)).toString()).toBe("2026-03-15T09:30:00");
   });
 });
 
@@ -334,6 +324,51 @@ describe("resolveValueKind", () => {
       made({ kind: "PlainDateTime" }),
       made({ kind: "PlainDate" }),
     ]);
+  });
+});
+
+/** A Temporal type's kind name; a ZonedDateTime is tested first, since it holds a date and time too. */
+type KindName<V> = V extends Temporal.ZonedDateTime
+  ? "ZonedDateTime"
+  : V extends Temporal.PlainDateTime
+    ? "PlainDateTime"
+    : "PlainDate";
+
+/**
+ * One row of the kind table. The type checker holds `kind` to `MadeValue<G, Z>`, the type the
+ * components' value kind defaults to; the test below holds it to `resolveValueKind`.
+ */
+function row<const G extends DateGranularity | undefined, const Z extends string | undefined>(
+  granularity: G,
+  timeZone: Z,
+  kind: KindName<MadeValue<G, Z>>
+) {
+  return { granularity, timeZone, kind };
+}
+
+/**
+ * Unit under test: the props fallback twice over, `MadeValue` in the types and `madeKind` (through
+ * `resolveValueKind`) at runtime. Oracle: this hand-written table of granularity and time zone,
+ * so neither can drift from the other unseen.
+ */
+describe("the kind granularity and timeZone make without a value", () => {
+  it.each([
+    row(undefined, undefined, "PlainDate"),
+    row(undefined, "Europe/Oslo", "PlainDate"),
+    row("day", undefined, "PlainDate"),
+    row("day", "Europe/Oslo", "PlainDate"),
+    row("hour", undefined, "PlainDateTime"),
+    row("minute", undefined, "PlainDateTime"),
+    row("second", undefined, "PlainDateTime"),
+    row("hour", "Europe/Oslo", "ZonedDateTime"),
+    row("minute", "Asia/Tokyo", "ZonedDateTime"),
+    row("second", "America/New_York", "ZonedDateTime"),
+  ])("granularity $granularity with timeZone $timeZone makes a $kind", ({ granularity, timeZone, kind }) => {
+    const resolved = getOrThrow(resolveValueKind({ ...EMPTY, granularity, timeZone }));
+    expect(resolved).toEqual({
+      kind: kind === "ZonedDateTime" ? { kind, timeZone } : { kind },
+      named: false,
+    });
   });
 });
 
