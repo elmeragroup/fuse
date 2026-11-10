@@ -114,7 +114,7 @@ export function SelectField<Value = unknown>({
         })}
         required={isRequired}
         disabled={isDisabled}>
-        <SelectTrigger className={cn("w-full", triggerClassName)} {...definedProps(props)}>
+        <SelectTrigger className={cn("w-full", triggerClassName)} {...props}>
           <SelectValue placeholder={placeholder} />
         </SelectTrigger>
         <SelectContent>{children}</SelectContent>

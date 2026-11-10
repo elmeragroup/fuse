@@ -8,6 +8,7 @@ import type { SelectRoot as SelectRootType } from "@base-ui/react/select";
 import { CaretDown } from "../../icons/generated/caret-down";
 import { CaretUp } from "../../icons/generated/caret-up";
 import { Check } from "../../icons/generated/check";
+import { definedProps } from "../../internal/defined-props";
 import { mergeClassName } from "../../styles/merge-class-name";
 import { overlayPositionerClass } from "../overlay/overlay-classes";
 import { OverlayPortal } from "../overlay/overlay-portal";
@@ -43,7 +44,7 @@ export function SelectTrigger({
       data-slot="select-trigger"
       data-size={size}
       className={mergeClassName(className, slots.trigger())}
-      {...props}>
+      {...definedProps(props)}>
       {children}
       <SelectPrimitive.Icon render={<CaretDown className={slots.caret()} />} />
     </SelectPrimitive.Trigger>
