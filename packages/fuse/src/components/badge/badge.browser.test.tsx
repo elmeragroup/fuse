@@ -38,7 +38,7 @@ describe("Badge", () => {
         Due <Badge>soon</Badge>
       </Item.Description>
     );
-    // DOM audit: the parsed fragment is never mounted, and the parser's tree is the unit under
+    // The parsed fragment is never mounted, and the parser's tree is the unit under
     // test, so the paragraph and the badge are located by their slots.
     const paragraph = host.querySelector('[data-slot="item-description"]');
     expect(paragraph?.tagName).toBe("P");

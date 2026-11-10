@@ -292,7 +292,7 @@ describe("Sidebar menu skeleton geometry", () => {
       const button = roleNamed("button", "Overview");
       const skeleton = roleNamed("group", "Loading row");
       const buttonIcon = button.querySelector("svg");
-      // DOM audit: the skeleton's icon placeholder has no role, so it is found by its slot.
+      // The skeleton's icon placeholder has no role, so it is found by its slot.
       const skeletonIcon = bySlot("sidebar-menu-skeleton-icon", skeleton);
       if (buttonIcon === null) {
         throw new Error("expected the button's icon");

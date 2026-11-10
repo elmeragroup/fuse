@@ -39,7 +39,7 @@ export function resetThemeDocument() {
   root.removeAttribute("data-theme-brand");
   root.removeAttribute("data-theme-segment");
   root.style.removeProperty("color-scheme");
-  // DOM audit: the color-scheme bootstrap writes a role-less <meta> in the head.
+  // The color-scheme bootstrap writes a role-less <meta> in the head.
   for (const meta of document.querySelectorAll('meta[name="color-scheme"]')) {
     meta.remove();
   }

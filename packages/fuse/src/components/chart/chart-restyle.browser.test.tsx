@@ -232,12 +232,12 @@ function FourStacks({ top, width }: { readonly top: number; readonly width: numb
 }
 
 function bars(host: HTMLElement): number {
-  // DOM audit: bars are aria-hidden plot output, so their slot is the only locator.
+  // Bars are aria-hidden plot output, so their slot is the only locator.
   return host.querySelectorAll('[data-slot="chart-bar"]').length;
 }
 
 function yTicks(host: HTMLElement): number {
-  // DOM audit: tick labels are aria-hidden axis output.
+  // Tick labels are aria-hidden axis output.
   return host.querySelectorAll('[data-slot="chart-y-tick"]').length;
 }
 
@@ -271,7 +271,7 @@ describe("the style cost of hover", () => {
   it("restyles no bar when the pointer enters the plot and leaves it, past every fade", async () => {
     const { host } = renderThemed(<FourStacks top={9} width={800} />);
     await wait(1200);
-    // DOM audit: the plot's listbox is its one pointer target.
+    // The plot's listbox is its one pointer target.
     const plot = host.querySelector<HTMLElement>('[role="listbox"]');
     if (plot === null) throw new Error("no plot");
     // The first open mounts the tooltip's portal, which stays from then on.

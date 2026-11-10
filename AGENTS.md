@@ -54,33 +54,24 @@ two representations that must agree is not tautological: name the unit under tes
 and the oracle its output must reproduce (the CSS emitter's rules against the
 composed theme map, a recipe's slots against the upstream recipe it forwards).
 
-Use unit tests for recipes and pure logic, browser tests for interaction, and
-public type tests for API constraints. Use the shared role/label browser helpers.
-Put formatted text and hydration that Chromium and WebKit must write alike in
-`*.engines.browser.test.tsx`, or `.ts` when they mount nothing. The `browser-engines`
-project runs them in both engines. Files that drive the real clipboard end in
-`*.clipboard.browser.test.tsx` and run one at a time in `browser-clipboard`.
-Keyboard, focus and reduced-motion tests run in the plain `browser` project.
-`unit` runs in Europe/Oslo.
-Write a mechanical source contract as an AST rule in `tooling/oxlint-plugin-fuse`,
-with one rule test file of valid and invalid cases, and scope it in `.oxlintrc.json`.
-While editing, run `vitest related <files> --run --project unit` in the owning package
-(drop `--project` where none exist). Direct Vitest skips the Fuse build and dist tripwires.
-Lint through `pnpm lint`: type-aware rules run on tsrs, so a direct `oxlint` needs
-`OXLINT_TSGOLINT_PATH=node_modules/.bin/tsrs-lint`.
-Before review, run the touched turbo tasks with `--affected`, then `pnpm check`, the
-local gate. CI also runs the e2e and packed-artifact tier on every PR. A PR that leaves
-`apps/docs` unchanged skips its studio and landing e2e files, which every push to `main` runs.
-When a change touches docs-app behavior (landing, studio, search, theme picker), run
-`pnpm exec turbo run build:e2e --filter=docs`, which builds Fuse and generates docs first
-and writes the e2e build to `.cache/next-e2e`, then run the affected e2e files with
-`pnpm --filter docs test:e2e test/<file>`.
-When it touches package exports, build or packaging scripts, or dependencies, run
-`package:check` and `test:packed-consumer`, or `pnpm ci:checks`, before review.
-Read versions, commands, budgets and task dependencies from their owning configuration
-and scripts.
-After dependency resolution changes, clear Vitest's `tsconfig.tmp.tsbuildinfo`
-before trusting type tests, since incremental checks can retain old resolutions.
+A test that flakes is made deterministic or deleted in the same change, never rerun or retried.
+Each test lands in one project; reach for the cheapest that can go red:
+
+- `unit` (Node, Europe/Oslo): pure logic, property tests, recipe cross-checks.
+- `browser` (Chromium): one file per component for roles, names, keys, value, Field wiring and focus, through the shared role/label helpers.
+- `browser-engines` (`*.engines.browser.test.*`, Chromium and WebKit): only formatted text and hydration.
+- `browser-clipboard` (`*.clipboard.browser.test.tsx`): real-clipboard files, one at a time.
+- `*.test-d.tsx` (`test:types`): public type constraints.
+- Docs `test/routes.browser.test.ts`: every docs route renders error-free and axe-clean in Chromium.
+
+Write a mechanical source contract as a rule in `tooling/oxlint-plugin-fuse`, with a
+valid/invalid rule test. While editing, run `vitest related <files> --run --project unit`
+in the owning package. Lint through `pnpm lint`; a direct `oxlint` needs
+`OXLINT_TSGOLINT_PATH=node_modules/.bin/tsrs-lint`. Before review, run `pnpm check`;
+CI adds the docs e2e and packed tier. For docs-app behavior, run
+`pnpm exec turbo run build:e2e --filter=docs`, then `pnpm --filter docs test:e2e test/<file>`.
+For exports, packaging or dependencies, run `package:check` and `test:packed-consumer`,
+and clear Vitest's `tsconfig.tmp.tsbuildinfo` before trusting type tests.
 
 ## Task references
 

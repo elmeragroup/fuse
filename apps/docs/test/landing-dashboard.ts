@@ -31,9 +31,9 @@ export function brandSite(page: Page, site: string): Locator {
   return page.getByRole("region", { name: `${site} website`, exact: true });
 }
 
-/** The DOM audit for a side the switch hid: the side sits in an inert subtree. */
+/** Checks a side the switch hid: the side sits in an inert subtree. */
 async function isInert(side: Locator): Promise<boolean> {
-  // DOM audit: an inert side has no role a query could reach, so the check reads the attribute.
+  // An inert side has no role a query could reach, so the check reads the attribute.
   return side.evaluate((element) => element.closest("[inert]") !== null);
 }
 

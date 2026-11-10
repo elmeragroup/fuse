@@ -202,7 +202,7 @@ describe("landing theme picker", () => {
     await choose(page, FIRST_PICK);
     // The Sheet stays open: the region must stay out of its modal hiding.
     expect(await pickerDialog(page).isVisible()).toBe(true);
-    // DOM audit: a region under `aria-hidden` has no role a query could reach, so the check reads the attribute.
+    // A region under `aria-hidden` has no role a query could reach, so the check reads the attribute.
     const region = page.locator("[role='status']").filter({ hasText: /^Theme:/u });
     await expect.poll(async () => region.textContent()).toBe("Theme: Fjordkraft, private, branded, system");
     expect(

@@ -35,7 +35,7 @@ export function setupSidebarBrowser(): void {
   });
 }
 
-/** DOM audit: every part stamps its slot; no data-sidebar anywhere. */
+/** Every part stamps its slot; no data-sidebar anywhere. */
 export function bySlot(slot: string, root: ParentNode = document): HTMLElement {
   const node = root.querySelector(`[data-slot="${slot}"]`);
   if (!(node instanceof HTMLElement)) {

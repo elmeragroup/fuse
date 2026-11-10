@@ -21,7 +21,7 @@ function choice(menu: Locator, name: string): Locator {
 }
 
 async function expectPreview(page: Page, identity: string, brand: string, segment: string): Promise<void> {
-  // DOM audit: the preview stage and document own distinct theme attribute triples.
+  // The preview stage and document own distinct theme attribute triples.
   await expect
     .poll(() => readThemeAttributes(page.locator("[data-demo-stage]").first()))
     .toEqual({
@@ -190,7 +190,7 @@ describe("docs theme settings", () => {
     const resetBox = await reset.boundingBox();
     expect(resetBox?.y).toBeGreaterThanOrEqual(box.y);
     expect((resetBox?.y ?? 480) + (resetBox?.height ?? 0)).toBeLessThanOrEqual(480);
-    // DOM audit: replacing joined selects must also remove horizontal document overflow.
+    // Replacing joined selects must also remove horizontal document overflow.
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
     await page.close();
   });

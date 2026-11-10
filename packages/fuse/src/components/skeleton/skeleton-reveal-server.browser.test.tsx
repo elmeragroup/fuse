@@ -28,7 +28,7 @@ function serverDocument(tree: ReactElement): Document {
   return new DOMParser().parseFromString(`<body>${markup}</body>`, "text/html");
 }
 
-/** DOM audit: the reveal's parts have no role in unhydrated markup; locate them by data-slot. */
+/** The reveal's parts have no role in unhydrated markup; locate them by data-slot. */
 function part(document: Document, slot: string): Element | null {
   return document.querySelector(`[data-slot="${slot}"]`);
 }

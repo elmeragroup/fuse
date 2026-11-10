@@ -5,7 +5,7 @@ import "../../../dist/styles.css";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { Emoji } from "./emoji";
 
-/** DOM audit: each face emits `data-slot="emoji"` on the svg. */
+/** Each face emits `data-slot="emoji"` on the svg. */
 function slotSvg(): SVGElement {
   const element = document.querySelector('[data-slot="emoji"]');
   if (!(element instanceof SVGElement)) {

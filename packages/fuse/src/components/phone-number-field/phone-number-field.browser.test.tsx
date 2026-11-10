@@ -159,7 +159,7 @@ describe("PhoneNumberField country order", () => {
   /** The row the search input's aria-activedescendant points at, by its flag. */
   function highlightedFlagCode(locale: "sv-SE" | "nb-NO"): string | undefined {
     const id = countrySearch(SEARCH_COUNTRIES_COPY[locale]).getAttribute("aria-activedescendant");
-    // DOM audit: the option's flag image is decorative, so it has no role of its own.
+    // The option's flag image is decorative, so it has no role of its own.
     const flag = id ? document.getElementById(id)?.querySelector("img") : null;
     return flagCodeFromSrc(flag?.getAttribute("src") ?? "");
   }

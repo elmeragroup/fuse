@@ -48,7 +48,7 @@ describe("Code", () => {
     );
     expect(codeRegion("Labelled snippet").tabIndex).toBe(0);
     expect(page.getByRole("region").elements()).toHaveLength(1);
-    // DOM audit: an unnamed block has no role to query by; it is the <pre> around its text.
+    // An unnamed block has no role to query by; it is the <pre> around its text.
     const unnamed = page.getByText("const unnamed = true;").element().closest("pre");
     expect(unnamed?.hasAttribute("role")).toBe(false);
     expect(unnamed?.tabIndex).toBe(0);

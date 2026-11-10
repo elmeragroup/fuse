@@ -41,7 +41,7 @@ function committed() {
 
 /** Every segment's visible text, literals left out, in DOM order. */
 function segmentTexts(): string[] {
-  // DOM audit: segments are not one role (spinbutton, textbox, hidden literal), and their slot and
+  // Segments are not one role (spinbutton, textbox, hidden literal), and their slot and
   // `data-type` are the part's public contract.
   return [...document.querySelectorAll('[data-slot="date-input-segment"]:not([data-type="literal"])')].map(
     (element) => element.textContent

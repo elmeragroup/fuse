@@ -154,7 +154,7 @@ function verticalGap(upper: Element, lower: Element): number {
 
 /** The group primitive, whose top edge is where the first option starts. */
 function optionsIn(root: Element): Element {
-  // DOM audit: the options box is the group primitive's layout container, which has no
+  // The options box is the group primitive's layout container, which has no
   // role of its own once the fieldset owns the group name, so it is reached by its slot.
   const options = root.querySelector("[data-slot=checkbox-group], [data-slot=radio-group]");
   if (options === null) {

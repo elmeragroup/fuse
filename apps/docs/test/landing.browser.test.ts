@@ -10,7 +10,7 @@ describe("landing page", () => {
     const page = await openLanding(DESKTOP_VIEWPORT);
 
     await page.getByRole("button", { name: "Components", exact: true }).click();
-    // DOM audit: the menu panel has no role, so it is found by its slot. The density demo in
+    // The menu panel has no role, so it is found by its slot. The density demo in
     // the page has its own "Save reading" button, so the stage is looked up inside the panel.
     const panel = page.locator("[data-slot='navigation-menu-content']");
     const buttonStage = panel.getByRole("button", { name: "Save reading" });

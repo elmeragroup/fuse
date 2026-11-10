@@ -11,7 +11,7 @@ afterEach(() => {
 });
 
 function slotAround(element: HTMLElement, slot: string): HTMLElement {
-  // DOM audit: a key combination has no role, so this helper finds its outer `kbd` by the slot
+  // A key combination has no role, so this helper finds its outer `kbd` by the slot
   // that KbdGroup writes.
   const found = element.closest(`[data-slot="${slot}"]`);
   if (!(found instanceof HTMLElement)) {

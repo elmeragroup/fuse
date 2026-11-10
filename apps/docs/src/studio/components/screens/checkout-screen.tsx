@@ -63,7 +63,7 @@ type Order = { readonly customer: string; readonly email: string; readonly summa
  */
 function segmentsFilled(event: KeyboardEvent | FocusEvent): boolean {
   const target = event.target;
-  // DOM audit: React Aria marks an empty segment, and no prop or callback reports it.
+  // React Aria marks an empty segment, and no prop or callback reports it.
   const group = target instanceof Element ? target.closest('[role="group"]') : null;
   return (group?.querySelector('[role="spinbutton"][data-placeholder]') ?? null) === null;
 }

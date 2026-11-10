@@ -174,7 +174,7 @@ describe("the keyboard walk", () => {
     await enterChart();
     await userEvent.keyboard("{ArrowRight}{ArrowRight}{ArrowRight}");
     await expect.poll(tooltipText).toBe("Forbruk 2026Temperatur2Forbruk90\u00a0000");
-    // DOM audit: the active dot is aria-hidden plot output.
+    // The active dot is aria-hidden plot output.
     const ring = host.querySelector('[data-slot="chart-active-dot"][data-value] [data-slot="chart-dot"]');
     // now(2, 90\u00a0000) sits at (40, 70), an 8 px dot, so the ring's radius is 4 + 3.
     expect([ring?.getAttribute("cx"), ring?.getAttribute("cy"), ring?.getAttribute("r")]).toEqual([
@@ -184,7 +184,7 @@ describe("the keyboard walk", () => {
     ]);
     await userEvent.keyboard("{Escape}");
     await expect.poll(tooltipText).toBeNull();
-    // DOM audit: Root's active state is the attribute the CSS reads.
+    // Root's active state is the attribute the CSS reads.
     expect(host.querySelector('[data-slot="chart"]')?.hasAttribute("data-active")).toBe(false);
   });
 });
@@ -258,7 +258,7 @@ describe("the table", () => {
     await expect.element(table).toBeVisible();
     const next = page.getByRole("button", { name: "Gå til neste side" });
     await expect.element(next).toBeVisible();
-    // DOM audit: a role query over 500 rows walks the accessibility tree for seconds, and the body
+    // A role query over 500 rows walks the accessibility tree for seconds, and the body
     // rows are the table's own rows.
     const bodyRows = () => table.element().querySelectorAll("tbody > tr").length;
     expect(bodyRows()).toBe(500);

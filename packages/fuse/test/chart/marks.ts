@@ -14,7 +14,7 @@ import { userEvent } from "vitest/browser";
 export function bars(host: HTMLElement, series?: number): HTMLElement[] {
   const scope =
     series === undefined ? "" : `[data-slot="chart-bar-series"][data-series="${String(series)}"] `;
-  // DOM audit: bars are aria-hidden plot output, so their slots are the only locator.
+  // Bars are aria-hidden plot output, so their slots are the only locator.
   return [...host.querySelectorAll<HTMLElement>(`${scope}[data-slot="chart-bar"]`)];
 }
 
@@ -34,7 +34,7 @@ export function surfaceBox(host: HTMLElement): DOMRect {
  * @returns The popup, or null while none is open.
  */
 export function popup(): HTMLElement | null {
-  // DOM audit: the popup is aria-hidden and portals out of the host, so its slot is the locator.
+  // The popup is aria-hidden and portals out of the host, so its slot is the locator.
   return document.querySelector<HTMLElement>('[data-slot="chart-tooltip"][data-open]');
 }
 
@@ -44,7 +44,7 @@ export function popup(): HTMLElement | null {
  * @returns The label's text, or null while no popup is open.
  */
 export function label(): string | null {
-  // DOM audit: the popup is aria-hidden, so its label's slot is the only locator.
+  // The popup is aria-hidden, so its label's slot is the only locator.
   return popup()?.querySelector('[data-slot="chart-tooltip-label"]')?.textContent ?? null;
 }
 

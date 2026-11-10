@@ -50,7 +50,7 @@ describe("SkeletonReveal Fields", () => {
     await expect.poll(() => querySlot("skeleton-reveal-skeleton")).toBeNull();
     // A refetch: the content on its way out renders the same parts under the detached Field.
     rerender(view(true));
-    // DOM audit: the content pane has no role; on a refetch it is the one on its way out.
+    // The content pane has no role; on a refetch it is the one on its way out.
     const leaving = document.querySelector('[data-slot="skeleton-reveal-content"]');
     expect(leaving?.textContent).toContain("Used for invoices");
     expect(leaving?.textContent).toContain("Already registered");
@@ -72,14 +72,14 @@ describe("SkeletonReveal Fields", () => {
     const { rerender } = renderThemed(view(false, "email-a"));
     await nextFrames(2);
     rerender(view(true, "email-a"));
-    // DOM audit: the reveal's panes have no role; wait until the old content has left.
+    // The reveal's panes have no role; wait until the old content has left.
     await expect.poll(() => querySlot("skeleton-reveal-content")).toBeNull();
     rerender(view(false, "email-b"));
     await expect.poll(() => querySlot("skeleton-reveal-skeleton")).toBeNull();
     await nextFrames(2);
     const input = roleNamed("textbox", "Email");
     expect(input.id).toBe("email-b");
-    // DOM audit: the Field's label is located by its text; its `for` names the control.
+    // The Field's label is located by its text; its `for` names the control.
     const label = [...document.querySelectorAll("label")].find((element) => element.textContent === "Email");
     expect(label?.htmlFor).toBe("email-b");
   });
@@ -101,7 +101,7 @@ describe("SkeletonReveal Fields", () => {
     // A refetch, and its content back before the old content has left.
     rerender(view(true));
     rerender(view(false));
-    // DOM audit: the reveal's panes have no role; wait until only the live content is left.
+    // The reveal's panes have no role; wait until only the live content is left.
     await expect
       .poll(() => document.querySelectorAll('[data-slot="skeleton-reveal-content"]').length)
       .toBe(1);

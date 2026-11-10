@@ -198,7 +198,7 @@ describe("surfaces that keep their own fill in branded light", () => {
     );
     await userEvent.click(roleNamed("combobox", "Agreement"));
     await expect.element(page.getByRole("listbox")).toBeVisible();
-    // DOM audit: the listbox sits inside the popup, which paints the fill and has no role of its own.
+    // The listbox sits inside the popup, which paints the fill and has no role of its own.
     const popup = page.getByRole("listbox").element().closest('[data-slot="select-content"]');
     if (!(popup instanceof HTMLElement)) throw new Error("expected the Select popup");
     expect(getComputedStyle(popup).backgroundColor).toBe(scopeColor("--popover"));

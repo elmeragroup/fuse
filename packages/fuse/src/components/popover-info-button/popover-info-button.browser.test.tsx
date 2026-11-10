@@ -235,7 +235,7 @@ describe("PopoverInfoButton", () => {
     );
     const dialog = await openSettled();
     const trigger = roleNamed("button", "More information").getBoundingClientRect();
-    // DOM audit: Base UI's arrow has no role or name; it is the popup's last element child.
+    // Base UI's arrow has no role or name; it is the popup's last element child.
     const arrow = dialog.lastElementChild;
     if (arrow === null) {
       throw new Error("expected the arrow");

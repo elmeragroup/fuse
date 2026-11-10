@@ -75,7 +75,7 @@ export function renderInvoice(data: Invoice | null, options: InvoiceOptions = {}
 }
 
 /**
- * DOM audit: the reveal parts have no role; locate them by their data-slot.
+ * The reveal parts have no role; locate them by their data-slot.
  *
  * @param name - The part's data-slot.
  * @param within - Where to look; the document unless given.
@@ -89,7 +89,7 @@ export function slot(name: string, within: ParentNode = document): HTMLElement {
 }
 
 /**
- * DOM audit: the reveal parts have no role; the first part with a data-slot, if any.
+ * The reveal parts have no role; the first part with a data-slot, if any.
  *
  * @param name - The part's data-slot.
  * @returns The part, or null when there is none.

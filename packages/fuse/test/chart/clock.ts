@@ -5,7 +5,7 @@
 
 /** The layer of a slot at an index, such as the second series' `clock-chart-line`. */
 export function clockLayer(host: HTMLElement, slot: string, index = 0): SVGSVGElement {
-  // DOM audit: clock layers are aria-hidden plot output, so their slot is the only locator.
+  // Clock layers are aria-hidden plot output, so their slot is the only locator.
   const layer = [...host.querySelectorAll<SVGSVGElement>(`[data-slot="${slot}"]`)][index];
   if (layer === undefined) throw new Error(`no ${slot} at ${String(index)}`);
   return layer;
@@ -13,7 +13,7 @@ export function clockLayer(host: HTMLElement, slot: string, index = 0): SVGSVGEl
 
 /** The path data of a layer's path by its part or its group. */
 export function clockPath(layer: Element, name: string): string {
-  // DOM audit: a layer's paths are named by their part or their group, which the stylesheet reads.
+  // A layer's paths are named by their part or their group, which the stylesheet reads.
   const path = layer.querySelector(`path[data-part="${name}"], path[data-group="${name}"]`);
   if (path === null) throw new Error(`no ${name} path`);
   return path.getAttribute("d") ?? "";

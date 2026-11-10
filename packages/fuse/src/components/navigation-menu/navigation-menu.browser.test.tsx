@@ -112,7 +112,7 @@ describe("NavigationMenu", () => {
       await userEvent.click(trigger);
       const link = await openedLink("Wide");
       const popup = panelControlledBy(trigger);
-      // DOM audit: the content panel has no role, so the scroll container is found by its slot.
+      // The content panel has no role, so the scroll container is found by its slot.
       const content = link.closest("[data-slot='navigation-menu-content']");
       if (popup === null || !(content instanceof HTMLElement) || !popup.contains(content)) {
         throw new Error("expected the trigger to control the popup that holds the content panel");
@@ -234,7 +234,7 @@ describe("nested NavigationMenu", () => {
     await openedLink("Electricity");
 
     // The nested Root renders a <div>, so the page keeps one named navigation landmark.
-    // DOM audit: a nested Root has no role of its own, so it is found by its slot.
+    // A nested Root has no role of its own, so it is found by its slot.
     const nestedRoot = roleNamed("button", "Business").closest("[data-slot='navigation-menu']");
     expect(nestedRoot?.tagName).toBe("DIV");
     expect(page.getByRole("navigation", { name: "Site", exact: true }).all()).toHaveLength(1);
@@ -353,7 +353,7 @@ describe("nested NavigationMenu", () => {
     const spot = await openedLink("Spot price");
 
     const outerPopup = panelControlledBy(outerTrigger);
-    // DOM audit: the content panel and the viewport have no role, so they are found by their slots.
+    // The content panel and the viewport have no role, so they are found by their slots.
     const viewport = spot.closest("[data-slot='navigation-menu-viewport']");
     const outerContent = viewport?.parentElement?.closest("[data-slot='navigation-menu-content']");
     if (outerPopup === null || !(viewport instanceof HTMLElement) || !(outerContent instanceof HTMLElement)) {

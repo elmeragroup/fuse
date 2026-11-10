@@ -72,7 +72,7 @@ describe("SelectionItem", () => {
         }
         // The label's `::before` is the row's click target, and the band takes its own clicks
         // here, so these two show the cursor a pointer meets.
-        // DOM audit: the row label has no role; it wraps the title.
+        // The row label has no role; it wraps the title.
         const label = headingNamed(name).closest("label");
         if (!(label instanceof HTMLElement)) {
           throw new Error(`expected the label around ${name}`);

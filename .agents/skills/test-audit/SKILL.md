@@ -108,6 +108,11 @@ including dead production code whose only callers are tests.
 - names or fixtures that promise more than the input exercises, such as a
   "closes on Escape" test that only asserts the popup opened.
 
+**Flakes.** The test's result depends on timing, load, engine or order: a
+wall-clock budget, a frame count, a fixed delay, a pixel read at one viewport.
+Make it deterministic or delete it in the same change; a rerun or retry is no
+fix.
+
 ## Retention bar
 
 Keep a test that independently enforces a public behavior `AGENTS.md` names,

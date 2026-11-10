@@ -8,7 +8,7 @@ import { renderThemed } from "../../../test/themed-browser-render";
 import { ScrollArea } from "./index";
 
 afterEach(() => {
-  // DOM audit: injected test styles have no role; remove them by the marker attribute.
+  // Injected test styles have no role; remove them by the marker attribute.
   for (const styles of document.head.querySelectorAll("[data-scroll-area-test-styles]")) {
     styles.remove();
   }
@@ -36,7 +36,7 @@ function labeledText(name: string): HTMLElement {
 }
 
 function scrollRootFromText(name: string): HTMLElement {
-  // DOM audit: the overflow host has no role; locate it by the mandated data-slot.
+  // The overflow host has no role; locate it by the mandated data-slot.
   const root = labeledText(name).closest("[data-slot=scroll-area]");
   if (!(root instanceof HTMLElement)) {
     throw new Error(`Expected a scroll area around ${name}`);
@@ -45,7 +45,7 @@ function scrollRootFromText(name: string): HTMLElement {
 }
 
 function viewportFromText(name: string): HTMLElement {
-  // DOM audit: the viewport has no role; locate it by the mandated data-slot.
+  // The viewport has no role; locate it by the mandated data-slot.
   const viewport = labeledText(name).closest("[data-slot=scroll-area-viewport]");
   if (!(viewport instanceof HTMLElement)) {
     throw new Error(`Expected a viewport around ${name}`);
@@ -54,7 +54,7 @@ function viewportFromText(name: string): HTMLElement {
 }
 
 function barsIn(root: HTMLElement): HTMLElement[] {
-  // DOM audit: scrollbars have no role; locate them by the mandated data-slot.
+  // Scrollbars have no role; locate them by the mandated data-slot.
   return [...root.querySelectorAll("[data-slot=scroll-area-scrollbar]")].filter(
     (node): node is HTMLElement => node instanceof HTMLElement
   );

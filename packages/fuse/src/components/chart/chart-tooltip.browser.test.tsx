@@ -21,7 +21,7 @@ afterEach(async () => {
 /** Wait for two animation frames and the popup's open fade, so Base UI has placed it. */
 async function settle(): Promise<void> {
   await nextFrames(2);
-  // DOM audit: the popup portals to the theme scope container, outside the render host.
+  // The popup portals to the theme scope container, outside the render host.
   const open = document.querySelector('[data-slot="chart-tooltip"]');
   await Promise.all(open?.getAnimations({ subtree: true }).map((animation) => animation.finished) ?? []);
 }
@@ -187,7 +187,7 @@ describe("tooltip readings", () => {
       </div>
     );
     await settle();
-    // DOM audit: the popup portals out of the host, and its value slot holds the reading.
+    // The popup portals out of the host, and its value slot holds the reading.
     expect(document.querySelector('[data-slot="chart-tooltip-value"]')?.textContent).toBe("2 (projected)");
   });
 });

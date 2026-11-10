@@ -183,7 +183,7 @@ describe("hydration (D18)", () => {
     });
     try {
       await hydrated.promise;
-      // DOM audit: Root states its first paint on data-drawn, which the stylesheet reads.
+      // Root states its first paint on data-drawn, which the stylesheet reads.
       const figure = host.querySelector("[data-polar]");
       await expect.poll(() => figure?.hasAttribute("data-drawn")).toBe(true);
       expect(recover).not.toHaveBeenCalled();
@@ -275,7 +275,7 @@ describe("hydration (D18)", () => {
     host.innerHTML = html;
     document.body.append(host);
     // With no script run yet, the server's markup holds one wedge and one dot per hour, and the curve.
-    // DOM audit: the wedges are aria-hidden plot output, read by their layer's slot.
+    // The wedges are aria-hidden plot output, read by their layer's slot.
     const subpaths = (slot: string): number =>
       [...host.querySelectorAll(`[data-slot="${slot}"] path`)].reduce(
         (count, path) => count + ((path.getAttribute("d") ?? "").match(/M/gu) ?? []).length,

@@ -321,7 +321,7 @@ describe("DateRangePicker disabled", () => {
         </Field.Set>
       )
     );
-    // DOM audit: server HTML in a detached host has no accessibility tree to locate by role.
+    // Server HTML in a detached host has no accessibility tree to locate by role.
     expect(host.querySelector('[role="group"]')?.getAttribute("aria-disabled")).toBe("true");
     expect(host.querySelector('[data-slot="date-picker-trigger"]')?.hasAttribute("disabled")).toBe(true);
     expect(host.querySelector('[data-slot="date-range-picker"]')?.hasAttribute("data-disabled")).toBe(true);

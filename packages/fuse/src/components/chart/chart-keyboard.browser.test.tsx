@@ -93,7 +93,7 @@ describe("the effective window", () => {
     await userEvent.keyboard("{End}");
     expect(focused()).toEqual(["mandag 20. oktober: Forbruk 20 kilowattimer", "11", "11"]);
     // The window's highest value is 20, so the 1-2-5 rule nices the domain to [0, 20] in steps of 5.
-    // DOM audit: y ticks are aria-hidden text, so their slot is the only locator.
+    // Y ticks are aria-hidden text, so their slot is the only locator.
     expect([...host.querySelectorAll('[data-slot="chart-y-tick"]')].map((tick) => tick.textContent)).toEqual([
       "0 kWh",
       "5 kWh",
@@ -151,7 +151,7 @@ describe("the Escape rule and key safety", () => {
     document.addEventListener("keydown", recordKey);
     await enterChart(host);
     await userEvent.keyboard("{ArrowRight}");
-    // DOM audit: Root's data-active, data-pinned and data-selected are its public paint contract.
+    // Root's data-active, data-pinned and data-selected are its public paint contract.
     const root = host.querySelector('[data-slot="chart"]');
     expect(root?.hasAttribute("data-active")).toBe(true);
     keys.length = 0;
@@ -194,7 +194,7 @@ describe("the Escape rule and key safety", () => {
     const { host } = renderThemed(<S06Chart />);
     await enterChart(host);
     await userEvent.keyboard("{Enter}");
-    // DOM audit: Root's data-pinned attribute is its public paint contract.
+    // Root's data-pinned attribute is its public paint contract.
     expect(host.querySelector('[data-slot="chart"]')?.hasAttribute("data-pinned")).toBe(true);
     await userEvent.keyboard("{Enter}");
     expect(host.querySelector('[data-slot="chart"]')?.hasAttribute("data-pinned")).toBe(false);
@@ -209,12 +209,12 @@ describe("the Escape rule and key safety", () => {
     );
     await enterChart(host);
     await userEvent.keyboard("{ArrowDown}{ArrowDown}{Enter}");
-    // DOM audit: Root's data-active, data-pinned and data-selected are its public paint contract.
+    // Root's data-active, data-pinned and data-selected are its public paint contract.
     const root = host.querySelector('[data-slot="chart"]');
     expect(root?.hasAttribute("data-selected")).toBe(true);
     expect(host.querySelector('[role="status"]')?.textContent).toBe("Hytte valgt");
     expect(
-      // DOM audit: the toggle's data-series index ties it to the focused series.
+      // The toggle's data-series index ties it to the focused series.
       host.querySelector('[data-slot="chart-legend-toggle"][data-series="1"]')?.getAttribute("aria-pressed")
     ).toBe("true");
     await userEvent.keyboard("{ArrowUp}{ArrowUp}{Enter}");

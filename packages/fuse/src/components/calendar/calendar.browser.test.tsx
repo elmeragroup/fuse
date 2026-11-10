@@ -112,7 +112,7 @@ async function focusDay(name: string): Promise<void> {
 }
 
 function gridNames(): string[] {
-  // DOM audit: every grid's name in document order, which a role query cannot list in order.
+  // Every grid's name in document order, which a role query cannot list in order.
   return [...document.querySelectorAll("[role=grid]")].map((grid) => grid.getAttribute("aria-label") ?? "");
 }
 

@@ -78,7 +78,7 @@ describe("RangeCalendar", () => {
     );
     await expect.element(page.getByRole("application")).toBeVisible();
     expect(getComputedStyle(calendarGrid()).direction).toBe("rtl");
-    // DOM audit: RAC marks weekday headings as presentation; inspect their rendered column order.
+    // RAC marks weekday headings as presentation; inspect their rendered column order.
     const headers = [...calendarGrid().querySelectorAll("thead th")];
     expect(headers).toHaveLength(7);
     expect(headers[0]?.getBoundingClientRect().left).toBeGreaterThan(

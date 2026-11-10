@@ -38,7 +38,7 @@ function switchNamed(name: string, checked?: boolean): HTMLElement {
 }
 
 function switchThumb(root: HTMLElement, name: string): HTMLElement {
-  // DOM audit: the thumb is presentational with no role, so its data-slot is the only locator.
+  // The thumb is presentational with no role, so its data-slot is the only locator.
   const thumb = root.querySelector('[data-slot="switch-thumb"]');
   if (!(thumb instanceof HTMLElement)) {
     throw new Error(`Expected a thumb inside ${name}`);

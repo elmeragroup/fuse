@@ -441,7 +441,7 @@ describe("DataTable row press past Fuse widgets and text selection", () => {
     await userEvent.click(roleNamed("radio", "High"));
     expect(roleNamed("radio", "High").getAttribute("aria-checked")).toBe("true");
 
-    // DOM audit: the slider's track has no role; a pointer press on it is what moves the thumb.
+    // The slider's track has no role; a pointer press on it is what moves the thumb.
     const control = roleNamed("slider", "Share").closest("[data-slot=slider-control]");
     if (!(control instanceof HTMLElement)) {
       throw new Error("expected the slider control");

@@ -46,7 +46,7 @@ function DescriptionListRoot(props: DescriptionListRootProps): ReactElement {
 // surrounding text colour, such as a card's. An Item styles its inline layout from its own list's
 // `data-layout`, as its direct child, and a term or details from its Item's list, so a responsive
 // list nested in an inline one keeps its own layout. Plain `cn` constants rather than a `tv` recipe
-// keep tailwind-variants out of this entry's size budget.
+// keep tailwind-variants out of this entry's bundle.
 
 /**
  * The responsive list: one column on phones, then a term column capped at min(50%, 20rem) that

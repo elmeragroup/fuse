@@ -64,7 +64,7 @@ describe("Link composition", () => {
     const link = roleNamed("link", "Invoice 1042");
     expect(link.hasAttribute("data-router-link")).toBe(true);
     expect(link.getAttribute("href")).toBe("/invoices/1042");
-    // DOM audit: the slot, which the base-layer link reset keys on, moves onto the render element.
+    // The slot, which the base-layer link reset keys on, moves onto the render element.
     expect(link.dataset.slot).toBe("link");
     expect(getComputedStyle(link).color).toBe(cssVarColor(link, "--error"));
     expect(getComputedStyle(link).textDecorationLine).toBe("underline");
@@ -88,7 +88,7 @@ describe("Link composition", () => {
       </Link>
     );
     const link = roleNamed("link", "Invoice 1044");
-    // DOM audit: the slot, which the base-layer link reset keys on, moves onto the unwrapped element.
+    // The slot, which the base-layer link reset keys on, moves onto the unwrapped element.
     expect(link.dataset.slot).toBe("link");
     expect(getComputedStyle(link).color).toBe(cssVarColor(link, "--brand"));
     expect(getComputedStyle(link).textDecorationLine).toBe("underline");

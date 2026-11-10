@@ -40,7 +40,7 @@ function disabledLooks(
 ): readonly { fill: string; stripes: number[]; title: number; text: string }[] {
   return [`${prefix} checkbox row`, `${prefix} radio row`].map((name) => {
     const title = headingNamed(name);
-    // DOM audit: the row's fill is on its shell, which no role or label reaches.
+    // The row's fill is on its shell, which no role or label reaches.
     const shell = title.closest("[data-selection-item]");
     if (!(shell instanceof HTMLElement)) {
       throw new Error(`expected the shell around ${name}`);

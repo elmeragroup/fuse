@@ -14,7 +14,7 @@ import type { FileRejection } from "./split-files";
 
 /** The Root's hidden input. It has no role or name to query it by. */
 function fileInput(host: HTMLElement): HTMLInputElement {
-  // DOM audit: the picker input is `hidden`, so it is outside the accessibility tree.
+  // The picker input is `hidden`, so it is outside the accessibility tree.
   const input = host.querySelector('input[type="file"]');
   if (!(input instanceof HTMLInputElement)) {
     throw new Error("expected the Root's hidden file input");
@@ -350,7 +350,7 @@ describe("useFileUpload", () => {
 type Parts = { readonly root: HTMLElement; readonly zone: HTMLElement };
 
 function parts(host: HTMLElement): Parts {
-  // DOM audit: the Root and Dropzone are plain divs, and data-drop-target is their public state.
+  // The Root and Dropzone are plain divs, and data-drop-target is their public state.
   const root = host.querySelector('[data-slot="file-upload"]');
   const zone = host.querySelector('[data-slot="file-upload-dropzone"]');
   if (!isHTMLElement(root) || !isHTMLElement(zone)) {

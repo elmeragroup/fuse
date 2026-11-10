@@ -427,7 +427,7 @@ describe("Toast layer", () => {
       manager.add({ title: "Copied to clipboard", timeout: 0 });
       const root = await waitForToast("Copied to clipboard");
       await vi.waitFor(() => {
-        // DOM audit: paint order has no accessible role. The covering backdrop or popup
+        // Paint order has no accessible role. The covering backdrop or popup
         // panel has none either, so the failure message names it by its data-slot.
         const box = root.getBoundingClientRect();
         const topmost = document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2);

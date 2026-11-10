@@ -35,7 +35,7 @@ function statusIcon(name: string): Element | null {
   return page.getByRole("img", { name, exact: true }).query();
 }
 
-/** DOM audit: the five `data-slot` parts and the `meter-bar-fill` class matrix. */
+/** The five `data-slot` parts and the `meter-bar-fill` class matrix. */
 function slot(name: string, root?: HTMLElement): HTMLElement {
   const element = (root ?? document).querySelector(`[data-slot="${name}"]`);
   if (!(element instanceof HTMLElement)) {

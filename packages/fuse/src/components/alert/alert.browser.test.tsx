@@ -30,7 +30,7 @@ function alertNamed(name: string): HTMLElement {
 }
 
 function descriptionIn(root: HTMLElement): HTMLElement {
-  // DOM audit: Item.Media's top alignment keys on the item-description data-slot hook.
+  // Item.Media's top alignment keys on the item-description data-slot hook.
   const description = root.querySelector('[data-slot="item-description"]');
   if (!(description instanceof HTMLElement)) {
     throw new Error("expected item-description");

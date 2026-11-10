@@ -10,7 +10,7 @@ catalog:
   "@effect/vitest": 4.0.6
   "@elmeragroup/internal": 0.2.0-canary.19
   "@arethetypeswrong/core": 0.18.5
-  # The docs e2e axe audit of the chart demos, in all three engines. 4.14.0 is past the minimum
+  # The axe pass of the docs route smoke test. 4.14.0 is past the minimum
   # release age, so it needs no exclude entry.
   "@axe-core/playwright": 4.14.0
   "@base-ui/react": 1.9.0
