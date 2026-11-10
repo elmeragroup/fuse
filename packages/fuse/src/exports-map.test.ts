@@ -3,9 +3,10 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
-import { discoverEntries, TOOLING_ONLY_JS_ENTRIES } from "../scripts/entries";
+import { discoverEntries, sourceExportTarget, TOOLING_ONLY_JS_ENTRIES } from "../scripts/entries";
 import {
   buildPublishExportMap,
+  buildSideEffects,
   buildSourceExportMap,
   exportBindingsObject,
   exportBindingTarget,
@@ -61,6 +62,8 @@ const EXPECTED_ENTRIES = {
   icons: { inRootBarrel: false },
   illustrations: { inRootBarrel: false, runtimeExports: ["FkasMeter"] },
   flags: { inRootBarrel: false, runtimeExports: ["flagAssets"] },
+  // An installer: the host imports it bare for the Temporal it installs.
+  "temporal-polyfill": { inRootBarrel: false, runtimeExports: [] },
   accordion: { inRootBarrel: true, runtimeExports: ["Accordion", "accordionVariants"] },
   alert: { inRootBarrel: true, runtimeExports: ["Alert"] },
   "alert-dialog": { inRootBarrel: true, runtimeExports: ["AlertDialog"] },
@@ -291,19 +294,29 @@ describe("exports map", () => {
     expect(JSON.stringify(publishExports)).not.toContain("/dist/");
   });
 
-  it("keeps the committed package.json exports in sync with the generator", () => {
+  it("keeps the committed package.json exports and sideEffects in sync with the generator", () => {
     const parsed: unknown = JSON.parse(readFileSync(join(packageRoot, "package.json"), "utf8"));
     if (parsed === null || Array.isArray(parsed)) {
       throw new Error("package.json is not an object");
     }
-    // SAFETY: this test only reads the generated exports map and publishConfig.
+    // SAFETY: this test only reads the generated exports map, sideEffects and publishConfig.
     const pkg = parsed as {
       exports: ReturnType<typeof exportBindingsObject>;
+      sideEffects: readonly string[];
       publishConfig: { directory: string; linkDirectory: boolean };
     };
     expect(pkg.exports).toEqual(exportBindingsObject(sourceExports));
+    expect(pkg.sideEffects).toEqual(buildSideEffects(discovered, sourceExportTarget));
     expect(pkg.publishConfig.directory).toBe("dist");
     expect(pkg.publishConfig.linkDirectory).toBe(false);
+  });
+
+  it("lists the CSS and each installer entry, by its source file, in the workspace sideEffects", () => {
+    // The entries table above marks temporal-polyfill as the one entry that exports nothing.
+    expect(buildSideEffects(discovered, sourceExportTarget)).toEqual([
+      "**/*.css",
+      "./src/temporal-polyfill.ts",
+    ]);
   });
 
   it("lists the workspace-only tooling entries", () => {

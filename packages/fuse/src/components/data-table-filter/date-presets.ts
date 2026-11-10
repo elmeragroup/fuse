@@ -1,12 +1,11 @@
 // The date presets' catalog: each key names a whole calendar period around today, or a span that
 // ends today. Pure and without React, so a server imports it as it is and its ranges are
-// unit-tested on their own. It computes on ISO date strings through UTC dates. Each week starts on
-// the day a table gives for the four locales Fuse supports. Fuse's calendars read their week start
-// from `@internationalized/date`, but lint keeps that package inside the React Aria quarantine
-// (`elmera/no-rac-outside-quarantine`), and this entry never loads React Aria, so it carries its
-// own table.
+// unit-tested on their own. It computes on ISO date strings through UTC dates, without Temporal,
+// so the filter needs no polyfill. Each week starts on the day the Temporal core's week table
+// gives for the locale.
 
 import type { SupportedLocale } from "../../intl/locale-context";
+import { firstDayOfWeek } from "../../temporal/week-info";
 import type { IsoDate } from "./filter-model";
 
 /** A preset a date field can offer. Each is a whole calendar period, or a span ending today. */
@@ -31,20 +30,6 @@ export const DEFAULT_DATE_PRESETS = [
   "thisYear",
 ] as const satisfies readonly DatePresetKey[];
 
-/** A weekday as `getUTCDay` numbers it, with Sunday as 0. */
-type Weekday = 0 | 1 | 2 | 3 | 4 | 5 | 6;
-
-/**
- * The first day of the week in each locale Fuse supports, as CLDR gives it for the locale's
- * region. A locale added to `SupportedLocale` fails to compile here until it has a row.
- */
-const WEEK_STARTS = {
-  "en-US": 0,
-  "nb-NO": 1,
-  "sv-SE": 1,
-  "fi-FI": 1,
-} as const satisfies Record<SupportedLocale, Weekday>;
-
 /** A calendar date from a year, a zero-based month and a day, which `Date.UTC` normalizes. */
 function utcDate(year: number, month: number, day: number): IsoDate {
   return new Date(Date.UTC(year, month, day)).toISOString().slice(0, 10);
@@ -66,7 +51,8 @@ function addDays(date: IsoDate, days: number): IsoDate {
 function weekOf(date: IsoDate, locale: SupportedLocale): readonly [IsoDate, IsoDate] {
   const [year, month, day] = partsOf(date);
   const weekday = new Date(Date.UTC(year, month, day)).getUTCDay();
-  const first = addDays(date, -((weekday - WEEK_STARTS[locale] + 7) % 7));
+  // getUTCDay numbers Sunday 0 and firstDayOfWeek numbers it 7; the remainder makes them agree.
+  const first = addDays(date, -((weekday - firstDayOfWeek(locale) + 7) % 7));
   return [first, addDays(first, 6)];
 }
 

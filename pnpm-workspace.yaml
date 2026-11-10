@@ -91,6 +91,9 @@ catalog:
   tailwind-variants: 3.3.1
   tailwindcss: 4.3.3
   tailwindcss-react-aria-components: 2.2.0
+  # @elmeragroup/fuse/temporal-polyfill installs it. 1.0.8 (2026-11-04) is the newest release past
+  # the minimum release age, as are its pinned temporal-spec 1.0.1 and temporal-utils 1.0.4.
+  temporal-polyfill: 1.0.8
   tsdown: 0.23.2
   # tsrs runs every type-check, the Fuse type tests, Fuse's declaration emit and the type-aware
   # lint rules (through its tsrs-lint launcher). typescript 7.1 provides the JS API.

@@ -1,11 +1,16 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
-import { dirname, join, relative } from "node:path";
+import { dirname, join, posix, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseSync, Visitor } from "oxc-parser";
 import type { Expression, JSXElementName, JSXOpeningElement } from "oxc-parser";
 import { describe, expect, it } from "vitest";
 
-import { OPTIONAL_PEER_ENTRIES, walkImportedSourceFiles } from "../scripts/entries";
+import {
+  discoverEntries,
+  isInstallerEntry,
+  OPTIONAL_PEER_ENTRIES,
+  walkImportedSourceFiles,
+} from "../scripts/entries";
 import { FLOOR_MARKS, SCATTER_FLOOR_MARKS } from "../test/chart/floor-marks";
 import { classTokens, colorRolePaints, splitVariants, tokenAssignments } from "../test/class-tokens";
 import { motionWriters } from "../test/motion-writers";
@@ -273,6 +278,81 @@ function sourceRecord(relativePath: string): SourceRecord {
 
 function readSrc(relativePath: string): string {
   return sourceRecord(relativePath).source;
+}
+
+/**
+ * The module specifiers a file imports, re-exports from or dynamically imports, type-only ones
+ * included, as written. A dynamic import whose specifier is not a plain string literal throws,
+ * since the closure cannot follow it.
+ *
+ * @param relativePath - The file, relative to `src`.
+ */
+function moduleRequestsOf(relativePath: string): string[] {
+  const source = readSrc(relativePath);
+  const parsed = parseSync(relativePath, source);
+  expect(parsed.errors, relativePath).toEqual([]);
+  return [
+    ...parsed.module.staticImports.map((entry) => entry.moduleRequest.value),
+    ...parsed.module.staticExports.flatMap((entry) =>
+      entry.entries.flatMap((exported) =>
+        exported.moduleRequest === null ? [] : [exported.moduleRequest.value]
+      )
+    ),
+    ...parsed.module.dynamicImports.map(({ moduleRequest }) => {
+      const text = source.slice(moduleRequest.start, moduleRequest.end);
+      const literal = /^(["'`])([^"'`$\\]*)\1$/u.exec(text)?.[2];
+      if (literal === undefined) {
+        throw new Error(`cannot follow dynamic import ${text} in ${relativePath}`);
+      }
+      return literal;
+    }),
+  ];
+}
+
+const RESOLVED_EXTENSIONS = [".ts", ".tsx"] as const;
+
+/** The `src`-relative file a relative request resolves to, or none for a package or stylesheet. */
+function resolvedRequest(relativePath: string, request: string): string | undefined {
+  if (!request.startsWith(".") || request.endsWith(".css")) {
+    return undefined;
+  }
+  const base = posix.normalize(posix.join(posix.dirname(relativePath), request)).replace(/\/$/u, "");
+  if (base === ".." || base.startsWith("../")) {
+    return undefined;
+  }
+  const candidates = [
+    ...RESOLVED_EXTENSIONS.map((extension) => `${base}${extension}`),
+    ...RESOLVED_EXTENSIONS.map((extension) => `${base}/index${extension}`),
+  ];
+  const resolved = candidates.find((candidate) => SOURCE_TREE.has(join(SRC_ROOT, candidate)));
+  if (resolved === undefined) {
+    throw new Error(`cannot resolve ${request} from ${relativePath}`);
+  }
+  return resolved;
+}
+
+/**
+ * Every `src` file the entries reach through static imports, re-exports and dynamic imports, read
+ * from each file's parse rather than a line pattern, so a specifier on its own line is followed.
+ *
+ * @param entries - The entry files, relative to `src`.
+ */
+function parsedImportClosure(entries: readonly string[]): string[] {
+  const reached = new Set<string>();
+  const pending = [...entries];
+  for (let file = pending.pop(); file !== undefined; file = pending.pop()) {
+    if (reached.has(file)) {
+      continue;
+    }
+    reached.add(file);
+    for (const request of moduleRequestsOf(file)) {
+      const resolved = resolvedRequest(file, request);
+      if (resolved !== undefined && !reached.has(resolved)) {
+        pending.push(resolved);
+      }
+    }
+  }
+  return [...reached].toSorted();
 }
 
 function readCode(relativePath: string): string {
@@ -805,6 +885,50 @@ describe("optional peers and the root barrel", () => {
       expect(reached.filter((file) => readCode(file).includes(peer))).toEqual([]);
     }
   );
+});
+
+describe("the temporal-polyfill installer stays opt-in", () => {
+  // Why not a lint rule: the boundary is a module graph, not a specifier. The polyfill replaces
+  // `Intl.DateTimeFormat` when it installs, so only the installer entry may load it, and a file
+  // any other entry reaches indirectly would install it for every consumer of that entry. The
+  // size budget has room for the polyfill, so it would not catch this either.
+  const entryFiles = discoverEntries(PACKAGE_ROOT)
+    .jsEntries.filter((entry) => !isInstallerEntry(entry.subpath))
+    .map((entry) => entry.sourceFile.replace(/^src\//u, ""));
+  const reached = parsedImportClosure(entryFiles);
+
+  it("reaches neither the installer entry nor the polyfill package from any other entry", () => {
+    expect(entryFiles).toContain("index.ts");
+    // Reached only through an import whose specifier sits on its own line.
+    expect(reached).toContain("components/toolbar/toolbar.tsx");
+    expect(reached).not.toContain("temporal-polyfill.ts");
+    const offenders = reached.flatMap((file) =>
+      moduleRequestsOf(file)
+        .filter((request) => /(?:^|\/)temporal-polyfill(?:\/|$)/u.test(request))
+        .map((request) => `${file} imports ${request}`)
+    );
+    expect(offenders).toEqual([]);
+  });
+});
+
+describe("the Temporal core's declarations stay self-contained", () => {
+  // Why not a lint rule or the build: `@elmeragroup/color` is a dev dependency that Fuse's
+  // published files may not import, and the build's deps check only fails once a published entry
+  // exports the core's types (the date components do, a layer up). Theme modules that import it
+  // are reached by tooling-only entries alone. Tests may still unwrap results with its getOrThrow.
+  const coreModules = [...SOURCE_TREE.values()]
+    .map(({ relative: file }) => file)
+    .filter((file) => file.startsWith("temporal/") && /\.tsx?$/u.test(file) && !/\.test\./u.test(file));
+
+  it("imports nothing from @elmeragroup/color in a non-test module under src/temporal", () => {
+    expect(coreModules).toContain("temporal/temporal-value.ts");
+    const offenders = coreModules.flatMap((file) =>
+      moduleRequestsOf(file)
+        .filter((request) => /^@elmeragroup\/color(?:\/|$)/u.test(request))
+        .map((request) => `${file} imports ${request}`)
+    );
+    expect(offenders).toEqual([]);
+  });
 });
 
 describe("no .ref/ in package source", () => {

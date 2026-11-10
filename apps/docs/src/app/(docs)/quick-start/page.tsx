@@ -17,6 +17,10 @@ const STYLES_STANDALONE = `// app/layout.tsx — apps without Tailwind, once at 
 import "@elmeragroup/fuse/styles.css";
 import "@elmeragroup/fuse/themes.css";`;
 
+const TEMPORAL_POLYFILL = `// Once per runtime, before any Temporal date code runs: the server entry, and the client
+// module that holds your providers.
+import "@elmeragroup/fuse/temporal-polyfill";`;
+
 const SCAFFOLD = `import { ColorSchemeScript, LocaleProvider, ThemeProvider } from "@elmeragroup/fuse/theme";
 import { defaultDensityForVariant, densityAttributes, themeAttributes } from "@elmeragroup/fuse/theme";
 
@@ -94,6 +98,25 @@ export default function QuickStartPage(): ReactElement {
       <pre>
         <code>{STYLES_STANDALONE}</code>
       </pre>
+
+      <h2 id="temporal">Temporal for dates</h2>
+      <p>
+        Fuse&apos;s Temporal date code reads <code>Temporal</code> from <code>globalThis</code> when it runs,
+        and not every engine Fuse supports ships it yet. Fuse never installs it for you: import{" "}
+        <code>@elmeragroup/fuse/temporal-polyfill</code> once in each runtime that renders. In a Next.js App
+        Router app that is the root layout for the server, and the client module that holds your providers for
+        the browser. The root <code>@elmeragroup/fuse</code> entry never imports it.
+      </p>
+      <pre>
+        <code>{TEMPORAL_POLYFILL}</code>
+      </pre>
+      <p>
+        The entry installs <code>temporal-polyfill</code> only where no <code>Temporal</code> exists, and
+        leaves an engine&apos;s own one in place. Where it installs, it also replaces{" "}
+        <code>Intl.DateTimeFormat</code> with the polyfill&apos;s, which formats Temporal values. It adds
+        about 20 kB gzipped to the bundle that imports it. Without it, development builds warn once in every
+        engine, and an engine without Temporal throws a <code>TypeError</code> that names the entry.
+      </p>
 
       <h2 id="page-scaffold">The page scaffold</h2>
       <p>

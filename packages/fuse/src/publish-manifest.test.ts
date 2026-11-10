@@ -107,9 +107,10 @@ describe("publish manifest and packed tarball", () => {
     expect(stamped.publishConfig).toEqual({ access: "public" });
   });
 
-  it("carries the bug tracker, the CSS side effects and exactly the workspace dependencies", () => {
+  it("carries the bug tracker, the side effects and exactly the workspace dependencies", () => {
     expect(unstamped.bugs).toEqual({ url: "https://github.com/elmeragroup/fuse/issues" });
-    expect(unstamped.sideEffects).toEqual(["**/*.css"]);
+    // The CSS, and the temporal-polyfill installer entry by its published file, not its source.
+    expect(unstamped.sideEffects).toEqual(["**/*.css", "./temporal-polyfill.js"]);
 
     const published = Object.keys(unstamped.dependencies ?? {});
     const workspace = Object.keys(readManifestFields(join(packageRoot, "package.json")).dependencies ?? {});
@@ -133,19 +134,29 @@ describe("publish manifest and packed tarball", () => {
 });
 
 describe("source exports", () => {
-  it("regenerates exports and publishConfig without dropping any other manifest field", () => {
+  it("regenerates sideEffects, exports and publishConfig without dropping any other manifest field", () => {
     const root = scratchSourceRoot({
       name: "@elmeragroup/fuse",
       version: "0.0.0",
       bugs: { url: "https://github.com/elmeragroup/fuse/issues" },
       funding: "https://example.com/fund",
+      sideEffects: ["./src/stale.ts"],
       exports: { "./stale": "./src/stale.ts" },
       publishConfig: { access: "restricted", directory: "stale" },
     });
     writeSourceExports(root);
 
     const manifest = readManifestFields(join(root, "package.json"));
-    expect(Object.keys(manifest)).toEqual(["name", "version", "bugs", "funding", "exports", "publishConfig"]);
+    expect(Object.keys(manifest)).toEqual([
+      "name",
+      "version",
+      "bugs",
+      "funding",
+      "sideEffects",
+      "exports",
+      "publishConfig",
+    ]);
+    expect(manifest.sideEffects).toEqual(["**/*.css", "./src/temporal-polyfill.ts"]);
     expect(manifest.bugs).toEqual({ url: "https://github.com/elmeragroup/fuse/issues" });
     expect(manifest.funding).toBe("https://example.com/fund");
     expect(manifest.exports?.["./stale"]).toBeUndefined();
