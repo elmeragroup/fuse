@@ -298,7 +298,7 @@ function runAt(track: Track, place: RidePlace): Run | null {
  * @param along - The place along the slot axis, held to the run's ends.
  * @returns The offset across, in plot pixels.
  */
-export function acrossAt(run: Run, along: number): number {
+function acrossAt(run: Run, along: number): number {
   const { along: places, across } = run;
   const last = places.length - 1;
   if (along <= (places[0] ?? 0)) return across[0] ?? 0;

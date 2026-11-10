@@ -3599,8 +3599,7 @@
 
   /*
     Glow casts a line's or an area's own colour at full alpha. The 9.5 px drop-shadow draws the
-    glow spec's line halo, whose half-intensity width chart-media.browser.test.tsx holds in
-    Chromium.
+    glow spec's line halo.
   */
   [data-slot="chart-glow"]
     :is([data-slot="chart-line-series"], [data-slot="chart-area-series"]):not([data-paint]) {

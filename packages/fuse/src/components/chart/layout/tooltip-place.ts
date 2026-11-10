@@ -32,7 +32,7 @@ const BESIDE_OVERLAP = 0.5;
  * @param viewport - The viewport's size.
  * @returns True when the popup fits above, below or beside the column.
  */
-export function someSideHolds(column: PlaceBox, popup: PlaceSize, viewport: PlaceSize): boolean {
+function someSideHolds(column: PlaceBox, popup: PlaceSize, viewport: PlaceSize): boolean {
   return (
     column.top - popup.height >= TOOLTIP_EDGE ||
     column.bottom + popup.height <= viewport.height - TOOLTIP_EDGE ||

@@ -12,9 +12,6 @@ export const CHART_UPDATE_MS = 480;
 /** The control values of every data update and of the entrance. */
 export const CHART_UPDATE_CURVE: BezierCurve = [0, 0.7, 0.5, 1];
 
-/** The same curve as CSS writes it. `--chart-ease` in `chart.css`. */
-export const CHART_UPDATE_EASE = `cubic-bezier(${CHART_UPDATE_CURVE.join(", ")})`;
-
 /** The delay between two bars of the entrance wipe, in milliseconds. */
 export const CHART_STAGGER_MS = 16;
 

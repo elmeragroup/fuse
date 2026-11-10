@@ -47,10 +47,9 @@ The optional argument is the ground truth's `time/` folder, which holds the Oslo
 
 The two price days hold invented values in the shape of the elprisetjustnu.se API, because the real day-ahead prices may not be committed. `.scratch/charts-v1/tools/l05-oracles/write_price_days.py` in the charts v1 run wrote them from hourly values typed by hand plus a fixed offset per quarter. Only their slot starts come from the zone rules.
 
-| File                                            | What it holds                                                                                                                                                 |
-| ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `prices/fall-back-2025-10-26-quarter.json`      | The 100 Stockholm quarters of the fall-back day. The 02:45+02:00 quarter ends at 03:00+01:00, a 75-minute span, which is the mislabel the real source writes. |
-| `prices/negative-spike-2026-05-24-quarter.json` | 96 Stockholm quarters with 16 negative quarters around midday and one spike in the evening.                                                                   |
+| File                                       | What it holds                                                                                                                                                 |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `prices/fall-back-2025-10-26-quarter.json` | The 100 Stockholm quarters of the fall-back day. The 02:45+02:00 quarter ends at 03:00+01:00, a 75-minute span, which is the mislabel the real source writes. |
 
 The tests place each row by its `time_start` plus the interval and never read `time_end`.
 
@@ -58,21 +57,17 @@ The tests place each row by its `time_start` plus the interval and never read `t
 
 The Elhub files come from the Elhub Energy Data API, https://api.elhub.no, licensed under CC BY 4.0, https://creativecommons.org/licenses/by/4.0/. The charts v1 run froze the responses on 2026-10-17 and 2026-10-18, and the scripts in `.scratch/charts-v1/tools/l05-oracles/` trimmed them.
 
-| File                                               | Dataset                                                               | What it holds                                                                                              |
-| -------------------------------------------------- | --------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| `elhub/no1-household-hourly-2025-10_2026-09.json`  | `CONSUMPTION_PER_GROUP_MBA_HOUR`                                      | 8,760 hourly values for NO1 households from 2025-10-01T00:00 to 2026-10-01T00:00 Oslo.                     |
-| `elhub/no1-consumption-2025-10-26.json`            | `CONSUMPTION_PER_GROUP_MBA_HOUR`                                      | The 25 hours of the fall-back day for the NO1 household and cabin groups.                                  |
-| `elhub/no1-consumption-2026-03-29.json`            | `CONSUMPTION_PER_GROUP_MBA_HOUR`                                      | The 23 hours of the spring-forward day for the same groups.                                                |
-| `elhub/no1-consumption-2026-10-16.json`            | `CONSUMPTION_PER_GROUP_MBA_HOUR`                                      | The 24 hours of a normal day for the same groups.                                                          |
-| `elhub/no1-production-15min-2025-10-26.json`       | `PRODUCTION_PER_GROUP_MBA_15MIN`                                      | The 100 quarters of the fall-back day for NO1 hydro production.                                            |
-| `elhub/no1-groups-2026-10-16.json`                 | `CONSUMPTION_PER_GROUP_MBA_HOUR`                                      | The 24 hours of 16 October 2026 for all five NO1 consumption groups, in MWh to 3 decimals.                 |
-| `elhub/no1-household-daily-2025-10.json`           | `CONSUMPTION_PER_GROUP_MBA_HOUR`                                      | The 31 Oslo days of October 2025 for NO1 households, each with its total and its highest hour.             |
-| `elhub/no1-household-daily-2024-10.json`           | `CONSUMPTION_PER_GROUP_MBA_HOUR`                                      | The 31 Oslo days of October 2024, in the same shape.                                                       |
-| `elhub/no1-household-monthly-2024-11_2026-10.json` | `CONSUMPTION_PER_GROUP_MBA_HOUR`                                      | The 24 Oslo months from November 2024 to October 2026 for NO1 households. October 2026 runs to 16 October. |
-| `elhub/no1-household-daily-2025-09.json`           | `CONSUMPTION_PER_GROUP_MBA_HOUR`                                      | The 30 Oslo days of September 2025, in the shape of the other daily files.                                 |
-| `elhub/no1-household-hourly-2025-09_2025-10.json`  | `CONSUMPTION_PER_GROUP_MBA_HOUR`                                      | 1,465 hourly values for NO1 households from 2025-09-01T00:00 to 2025-11-01T00:00 Oslo.                     |
-| `elhub/no1-prosumer-2026-03-29.json`               | `PRODUCTION_PER_GROUP_MBA_15MIN` and `CONSUMPTION_PER_GROUP_MBA_HOUR` | A derived prosumer day: 92 quarters of solar energy and 23 hours of import and export.                     |
-| `elhub/no1-no5-groups-2026-10-16-day.json`         | `CONSUMPTION_PER_GROUP_MBA_HOUR`                                      | 16 October 2026 for every price area and consumption group: the day's kWh and its mean metering points.    |
+| File                                              | Dataset                          | What it holds                                                                                  |
+| ------------------------------------------------- | -------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `elhub/no1-household-hourly-2025-10_2026-09.json` | `CONSUMPTION_PER_GROUP_MBA_HOUR` | 8,760 hourly values for NO1 households from 2025-10-01T00:00 to 2026-10-01T00:00 Oslo.         |
+| `elhub/no1-consumption-2025-10-26.json`           | `CONSUMPTION_PER_GROUP_MBA_HOUR` | The 25 hours of the fall-back day for the NO1 household and cabin groups.                      |
+| `elhub/no1-consumption-2026-03-29.json`           | `CONSUMPTION_PER_GROUP_MBA_HOUR` | The 23 hours of the spring-forward day for the same groups.                                    |
+| `elhub/no1-consumption-2026-10-16.json`           | `CONSUMPTION_PER_GROUP_MBA_HOUR` | The 24 hours of a normal day for the same groups.                                              |
+| `elhub/no1-production-15min-2025-10-26.json`      | `PRODUCTION_PER_GROUP_MBA_15MIN` | The 100 quarters of the fall-back day for NO1 hydro production.                                |
+| `elhub/no1-groups-2026-10-16.json`                | `CONSUMPTION_PER_GROUP_MBA_HOUR` | The 24 hours of 16 October 2026 for all five NO1 consumption groups, in MWh to 3 decimals.     |
+| `elhub/no1-household-daily-2025-10.json`          | `CONSUMPTION_PER_GROUP_MBA_HOUR` | The 31 Oslo days of October 2025 for NO1 households, each with its total and its highest hour. |
+| `elhub/no1-household-daily-2024-10.json`          | `CONSUMPTION_PER_GROUP_MBA_HOUR` | The 31 Oslo days of October 2024, in the same shape.                                           |
+| `elhub/no1-household-daily-2025-09.json`          | `CONSUMPTION_PER_GROUP_MBA_HOUR` | The 30 Oslo days of September 2025, in the shape of the other daily files.                     |
 
 The day files keep the API's rows unchanged, with the fields `startTime`, `endTime`, `priceArea`, the group, `quantityKwh` and `meteringPointCount`. Elhub ends every row correctly, so the tests use them to cross-check the slot lists. The year file is computed. Each value is one hour's `quantityKwh` over its `meteringPointCount`, the mean per household meter, rounded to 4 decimals. It starts at `2025-09-30T22:00:00Z` and steps one hour per value, and it holds one 25-hour and one 23-hour day.
 

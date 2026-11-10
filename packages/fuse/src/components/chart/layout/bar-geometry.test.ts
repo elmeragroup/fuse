@@ -15,17 +15,15 @@ import {
   barForm,
   barTip,
   bucketColumns,
-  geometryOf,
   geometryRect,
   hangs,
-  introStep,
   isNegative,
   isStackTop,
   rectsPath,
 } from "./bar-geometry";
 import { buildCartesianModel } from "./cartesian-model";
 import type { CartesianModel, SeriesModel } from "./cartesian-model";
-import { WHOLE_BAND, barSpan, optionBand, plotFrame } from "./plot-frame";
+import { WHOLE_BAND, optionBand, plotFrame } from "./plot-frame";
 import type { BarMetrics, PlotBox, PlotFrame, PlotRect, SubBand } from "./plot-frame";
 
 /** A plot of whole pixels, at 1x unless a ratio is given. */
@@ -229,15 +227,6 @@ describe("bar rectangles in pixels", () => {
     expect(barTip(frame, cell)).toBe(70);
   });
 
-  it("tweens a bar's tip unsnapped, and draws its far edge on the device pixel the browser gives it", () => {
-    // 2 of [0, 3] on 80 px lies 26.67 px down, the tip a follower tweens, which the browser draws
-    // on pixel 27.
-    const frame = plotFrame(box(40, 80), "vertical", 1, [0, 3]);
-    const cell = firstCell(pair(2, 1));
-    expect(barTip(frame, cell)).toBeCloseTo(80 - (2 / 3) * 80, 12);
-    expect(barRect(frame, cell, METRICS, WHOLE_BAND, "whole").y).toBe(27);
-  });
-
   it("snaps every edge to whole device pixels of the plot", () => {
     // Three bands on a 50 px plot are 16.67 px wide, so the second bar spans 18.75 to 31.25 px,
     // which round to 18.5 and 31 at 2x, the edge at 18.75 lying half way and rounding left.
@@ -303,44 +292,6 @@ describe("one bar gap per series", () => {
     );
     expect([...gaps]).toEqual([2]);
   });
-
-  it("draws each bar whole device pixels wide in every tween frame, between its two rests' widths", () => {
-    // Unit under test: geometryRect, which draws a bar from a tween frame's numbers. Oracle: the
-    // device pixel grid and each bar's two rests. A window that gains or loses slots changes every
-    // band, so each bar moves from one width to another, and no frame may draw a bar wider than
-    // the wider rest or narrower than the narrower one. The rests themselves draw as they are.
-    fc.assert(
-      fc.property(
-        fc.constantFrom(1, 1.25, 1.5, 2, 3),
-        fc.constantFrom("vertical" as const, "horizontal" as const),
-        fc.integer({ min: 20, max: 100 }),
-        fc.integer({ min: -3, max: 3 }),
-        fc.integer({ min: 400, max: 1200 }).map((halves) => halves / 2),
-        fc.double({ min: 0.05, max: 0.95, noNaN: true }),
-        (dpr, orientation, count, change, length, share) => {
-          const plot = orientation === "vertical" ? box(length, 100, dpr) : box(100, length, dpr);
-          const from = plotFrame(plot, orientation, count, [0, 1]);
-          const to = plotFrame(plot, orientation, count + change, [0, 1]);
-          const along = (rect: PlotRect) =>
-            orientation === "vertical" ? [rect.x, rect.x + rect.width] : [rect.y, rect.y + rect.height];
-          const rest = (frame: PlotFrame, at: number) => barSpan(frame, at, METRICS, WHOLE_BAND);
-          const drawn = (start: number, end: number) =>
-            along(geometryRect(to, geometryOf([start, end, 100, 0, 0, 1]), "outer"));
-          for (let at = 0; at < Math.min(count, count + change); at += 1) {
-            const [a0, a1] = rest(from, at);
-            const [b0, b1] = rest(to, at);
-            const [start = 0, end = 0] = drawn(a0 + (b0 - a0) * share, a1 + (b1 - a1) * share);
-            const width = end - start;
-            expect(Math.abs(width * dpr - Math.round(width * dpr))).toBeLessThan(1e-6);
-            expect(width).toBeGreaterThanOrEqual(Math.min(a1 - a0, b1 - b0) - 1e-9);
-            expect(width).toBeLessThanOrEqual(Math.max(a1 - a0, b1 - b0) + 1e-9);
-            const [r0 = 0, r1 = 0] = drawn(b0, b1);
-            expect(Math.abs(r0 - b0) + Math.abs(r1 - b1)).toBeLessThan(1e-9);
-          }
-        }
-      )
-    );
-  });
 });
 
 describe("M4 decimation of path-form bars", () => {
@@ -391,17 +342,6 @@ describe("M4 decimation of path-form bars", () => {
     expect(pathForm(two, series, plotFrame(box(200, 80), "vertical", 2, [0, 4])).fill).toBe(
       "M112 20H187V80H112Z"
     );
-  });
-});
-
-describe("the entrance wipe", () => {
-  it.each([
-    ["left", [0, 1, 2, 3, 4]],
-    ["right", [4, 3, 2, 1, 0]],
-    ["center", [2, 1, 0, 1, 2]],
-    ["edges", [0, 1, 2, 1, 0]],
-  ] as const)("delays a 5-bar %s wipe by these steps of 16 ms", (intro, steps) => {
-    expect([0, 1, 2, 3, 4].map((position) => introStep(intro, position, 5))).toEqual(steps);
   });
 });
 

@@ -172,7 +172,7 @@ export type DataIssue = ModelIssue | RowSubjectIssue;
  * @param issue - The issue.
  * @returns The subject.
  */
-export function dataSubject(issue: DataIssue): string {
+function dataSubject(issue: DataIssue): string {
   if ("subject" in issue) return issue.subject;
   if ("key" in issue) return issue.key;
   return issue.rule === "mixed-sign-expand" ? issue.stack : "x";
