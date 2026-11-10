@@ -114,11 +114,10 @@ function zonedFrom(runtime: typeof Temporal, text: string): Temporal.ZonedDateTi
 }
 
 /**
- * A value of this runtime's Temporal, from ISO text, of the kind the text prints. A Temporal value
- * from any implementation is read through `String(value)`. A bracketed time zone makes a
- * ZonedDateTime, a time a PlainDateTime, a date alone a PlainDate. A ZonedDateTime keeps the
- * exact instant its offset names, so a value whose zone rules changed between implementations
- * still means the same moment. Every value is in the ISO 8601 calendar.
+ * A value of this runtime's Temporal, from ISO text, of the kind the text prints. A bracketed
+ * time zone makes a ZonedDateTime, a time a PlainDateTime, a date alone a PlainDate. A
+ * ZonedDateTime keeps the exact instant its offset names, so a value whose zone rules changed
+ * between implementations still means the same moment. Every value is in the ISO 8601 calendar.
  *
  * @param text - ISO text, or the text a Temporal value prints.
  * @returns The value, or `TemporalInputError` when no kind reads it. A string with a UTC offset
@@ -247,40 +246,6 @@ export type MadeValue<G, Z> = G extends "day" | undefined
   : Z extends string
     ? Temporal.ZonedDateTime
     : Temporal.PlainDateTime;
-
-/** A prop's type in a props object: `undefined` when the object has no such key. */
-type PropType<P, K extends string> = K extends keyof P ? P[K] : undefined;
-
-/**
- * The value type a date component's props make when no value or default value names one:
- * `MadeValue` of the `granularity` and `timeZone` they hold. A component's value type defaults
- * to it, so a call site never names the kind.
- *
- * @template P - The props, as `KindProps` infers them.
- */
-export type PropsMadeValue<P> = MadeValue<PropType<P, "granularity">, PropType<P, "timeZone">>;
-
-/**
- * A props object mapped onto itself. TypeScript infers `P` from props through a mapped type like
- * this one even when they hold an unannotated callback, which keeps it from inferring a type
- * parameter from the whole object, and the inference keeps a prop's own type: an optional
- * `timeZone` stays `string | undefined`, where inferring from the prop alone drops the
- * `undefined`. `granularity` and `timeZone` keep their types; the component's other declared props,
- * React's `key` and hyphenated attributes add nothing; any other key is `never`, so a misspelt or
- * undeclared prop is an error, as it is on a component that is not generic. The same rule makes
- * the old form that named the kind as a type argument fail: `<DateField<Temporal.PlainDate>>`
- * binds `P` to PlainDate, whose members the props then need, each as `never`.
- *
- * @template P - The props.
- * @template Declared - The component's props type, whose keys are the props it takes.
- */
-export type KindProps<P, Declared> = {
-  [K in keyof P]: K extends "granularity" | "timeZone"
-    ? P[K]
-    : K extends keyof Declared | "key" | `${string}-${string}`
-      ? unknown
-      : never;
-};
 
 /** What a component's value kind resolves from, each already parsed. */
 export type ValueKindSources = {

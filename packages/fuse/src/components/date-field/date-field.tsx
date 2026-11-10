@@ -1,15 +1,11 @@
 import type { ReactElement, ReactNode } from "react";
 
 import { definedProps } from "../../internal/defined-props";
-import type {
-  DateGranularity,
-  KindProps,
-  PropsMadeValue,
-  TemporalValue,
-} from "../../temporal/temporal-value";
+import type { DateGranularity, TemporalValue } from "../../temporal/temporal-value";
 import { FieldFrame } from "../field/field-frame";
 import { DateInputRoot } from "./date-input";
 import type { DateInputValue } from "./date-input";
+import type { KindFromValue, KindProps, PropsMadeValue } from "./date-kind-props";
 
 /**
  * DateField's props: the interim React Aria DateField's names, over Temporal values.
@@ -133,8 +129,7 @@ export function DateField<P = object, T extends DateInputValue = PropsMadeValue<
       errorMessage={errorMessage}
       // Without `isInvalid`, React Aria shows `errorMessage` only once its own validation fails.
       isErrorMessageAlwaysShown={isInvalid}>
-      {/* The field's own `T` is the kind already, so the Root infers nothing from its props. */}
-      <DateInputRoot<object, T>
+      <DateInputRoot<KindFromValue, T>
         {...definedProps({
           value,
           defaultValue,

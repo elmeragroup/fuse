@@ -1,15 +1,11 @@
 import type { FocusEvent, ReactElement, ReactNode } from "react";
 
 import { definedProps } from "../../internal/defined-props";
-import type {
-  DateGranularity,
-  KindProps,
-  PropsMadeValue,
-  TemporalValue,
-} from "../../temporal/temporal-value";
+import type { DateGranularity, TemporalValue } from "../../temporal/temporal-value";
 import type { CalendarPageBehavior } from "../calendar/calendar-dates";
 import type { CalendarFirstDayOfWeek } from "../calendar/calendar-input";
 import type { DateInputValue } from "../date-field/date-input";
+import type { KindFromValue, KindProps, PropsMadeValue } from "../date-field/date-kind-props";
 import { FieldFrame } from "../field/field-frame";
 import type { OverlayContainerProps } from "../overlay/overlay-props";
 import { DatePickerCalendar, DatePickerInput, DatePickerRoot } from "./date-picker";
@@ -149,8 +145,7 @@ export function DatePickerField<P = object, T extends DateInputValue = PropsMade
       errorMessage={errorMessage}
       // Without `isInvalid`, React Aria shows `errorMessage` only once its own validation fails.
       isErrorMessageAlwaysShown={isInvalid}>
-      {/* The field's own `T` is the kind already, so the Root infers nothing from its props. */}
-      <DatePickerRoot<object, T>
+      <DatePickerRoot<KindFromValue, T>
         {...definedProps({
           ...props,
           // The extra details argument is ignored by the interim `onChange(value)` signature.

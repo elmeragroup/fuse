@@ -16,7 +16,7 @@ import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
-import { CaughtError, caughtError } from "../../../test/caught-error";
+import { expectRenderTypeError } from "../../../test/caught-error";
 import { emulateForcedColors, systemColor } from "../../../test/forced-colors";
 import { withLocale } from "../../../test/locale-matrix";
 import { cssVarColor, renderThemed, roleNamed } from "../../../test/themed-browser-render";
@@ -1180,93 +1180,61 @@ describe("Calendar selected day in forced colors", () => {
 
 describe("date props past the types", () => {
   it("throws a TypeError naming the Root, the prop and the string for ISO text", () => {
-    const prefix = 'Calendar.Root value: received the string "2026-10-14"';
-    const error = vi.spyOn(console, "error").mockImplementation(() => undefined);
-    renderThemed(
-      withLocale(
-        "en-US",
-        <CaughtError>
-          <Calendar.Root
-            aria-label="Delivery"
-            // @ts-expect-error -- text reaches the prop past the types: from plain JavaScript, or as the ISO text a server component's Temporal object crosses as
-            value="2026-10-14"
-          />
-        </CaughtError>
-      )
+    expectRenderTypeError(
+      'Calendar.Root value: received the string "2026-10-14"',
+      <Calendar.Root
+        aria-label="Delivery"
+        // @ts-expect-error -- text reaches the prop past the types: from plain JavaScript, or as the ISO text a server component's Temporal object crosses as
+        value="2026-10-14"
+      />
     );
-    const { name, message } = caughtError();
-    expect(name).toBe("TypeError");
-    expect(message?.slice(0, prefix.length)).toBe(prefix);
-    error.mockRestore();
   });
 
-  /** Renders `before`, then `after` with the equal ISO text, and expects the TypeError `after` throws. */
-  function refusesAfter(before: ReactElement, after: ReactElement, prefix: string): void {
-    const error = vi.spyOn(console, "error").mockImplementation(() => undefined);
-    const { rerender } = renderThemed(withLocale("en-US", <CaughtError>{before}</CaughtError>));
-    expect(caughtError().name).toBeNull();
-    rerender(withLocale("en-US", <CaughtError>{after}</CaughtError>));
-    const { name, message } = caughtError();
-    expect(name).toBe("TypeError");
-    expect(message?.slice(0, prefix.length)).toBe(prefix);
-    error.mockRestore();
-  }
-
   it("throws for ISO text in value after the equal Temporal value, whatever rendered before", () => {
-    refusesAfter(
+    expectRenderTypeError(
+      'Calendar.Root value: received the string "2026-10-14"',
       <Calendar.Root aria-label="Delivery" value={Temporal.PlainDate.from("2026-10-14")} />,
       <Calendar.Root
         aria-label="Delivery"
         // @ts-expect-error -- the equal ISO text, past the types, after a Temporal value
         value="2026-10-14"
-      />,
-      'Calendar.Root value: received the string "2026-10-14"'
+      />
     );
   });
 
   it("throws for ISO text in a bound after the equal Temporal value, whatever rendered before", () => {
-    refusesAfter(
+    expectRenderTypeError(
+      'Calendar.Root minValue: received the string "2026-10-01"',
       <Calendar.Root aria-label="Delivery" minValue={Temporal.PlainDate.from("2026-10-01")} />,
       <Calendar.Root
         aria-label="Delivery"
         // @ts-expect-error -- the equal ISO text, past the types, after a Temporal value
         minValue="2026-10-01"
-      />,
-      'Calendar.Root minValue: received the string "2026-10-01"'
+      />
     );
   });
 
   it("throws for ISO text in defaultValue beside a controlled value", () => {
-    const prefix = 'Calendar.Root defaultValue: received the string "2026-10-14"';
-    const error = vi.spyOn(console, "error").mockImplementation(() => undefined);
-    renderThemed(
-      withLocale(
-        "en-US",
-        <CaughtError>
-          <Calendar.Root
-            aria-label="Delivery"
-            value={null}
-            // @ts-expect-error -- text reaches the prop past the types
-            defaultValue="2026-10-14"
-          />
-        </CaughtError>
-      )
+    expectRenderTypeError(
+      'Calendar.Root defaultValue: received the string "2026-10-14"',
+      <Calendar.Root
+        aria-label="Delivery"
+        value={null}
+        // @ts-expect-error -- text reaches the prop past the types
+        defaultValue="2026-10-14"
+      />
     );
-    const { name, message } = caughtError();
-    expect(name).toBe("TypeError");
-    expect(message?.slice(0, prefix.length)).toBe(prefix);
-    error.mockRestore();
   });
 
   it("throws for ISO text in defaultValue after the equal Temporal value, whatever rendered before", () => {
-    refusesAfter(
+    expectRenderTypeError(
+      'Calendar.Root defaultValue: received the string "2026-10-14"',
       <Calendar.Root aria-label="Delivery" defaultValue={Temporal.PlainDate.from("2026-10-14")} />,
       <Calendar.Root
         aria-label="Delivery"
         // @ts-expect-error -- the equal ISO text, past the types, after a Temporal value
         defaultValue="2026-10-14"
-      />,
-      'Calendar.Root defaultValue: received the string "2026-10-14"'
+      />
     );
   });
 });

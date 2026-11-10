@@ -17,7 +17,7 @@ import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
-import { CaughtError, caughtError } from "../../../test/caught-error";
+import { expectRenderTypeError } from "../../../test/caught-error";
 import { withLocale } from "../../../test/locale-matrix";
 import { formNamed, renderThemed, roleNamed } from "../../../test/themed-browser-render";
 import type { SupportedLocale } from "../../intl/locale-context";
@@ -1407,54 +1407,26 @@ describe("DateField paste of its own value", () => {
 
 describe("date props past the types", () => {
   it("throws a TypeError naming the Root, the prop and the string for ISO text", () => {
-    const prefix = 'DateInput.Root defaultValue: received the string "2026-10-05T09:30"';
-    const error = vi.spyOn(console, "error").mockImplementation(() => undefined);
-    renderThemed(
-      withLocale(
-        "en-US",
-        <CaughtError>
-          <DateField
-            label="Starts"
-            granularity="minute"
-            // @ts-expect-error -- text reaches the prop past the types: from plain JavaScript, or as the ISO text a server component's Temporal object crosses as
-            defaultValue="2026-10-05T09:30"
-          />
-        </CaughtError>
-      )
+    expectRenderTypeError(
+      'DateInput.Root defaultValue: received the string "2026-10-05T09:30"',
+      <DateField
+        label="Starts"
+        granularity="minute"
+        // @ts-expect-error -- text reaches the prop past the types: from plain JavaScript, or as the ISO text a server component's Temporal object crosses as
+        defaultValue="2026-10-05T09:30"
+      />
     );
-    const { name, message } = caughtError();
-    expect(name).toBe("TypeError");
-    expect(message?.slice(0, prefix.length)).toBe(prefix);
-    error.mockRestore();
   });
 
   it("throws for ISO text in value after the equal Temporal value, whatever rendered before", () => {
-    const error = vi.spyOn(console, "error").mockImplementation(() => undefined);
-    const { rerender } = renderThemed(
-      withLocale(
-        "en-US",
-        <CaughtError>
-          <DateField label="Starts" value={Temporal.PlainDate.from("2026-10-05")} />
-        </CaughtError>
-      )
+    expectRenderTypeError(
+      'DateInput.Root value: received the string "2026-10-05"',
+      <DateField label="Starts" value={Temporal.PlainDate.from("2026-10-05")} />,
+      <DateField
+        label="Starts"
+        // @ts-expect-error -- the equal ISO text, past the types, after a Temporal value
+        value="2026-10-05"
+      />
     );
-    expect(caughtError().name).toBeNull();
-    rerender(
-      withLocale(
-        "en-US",
-        <CaughtError>
-          <DateField
-            label="Starts"
-            // @ts-expect-error -- the equal ISO text, past the types, after a Temporal value
-            value="2026-10-05"
-          />
-        </CaughtError>
-      )
-    );
-    const prefix = 'DateInput.Root value: received the string "2026-10-05"';
-    const { name, message } = caughtError();
-    expect(name).toBe("TypeError");
-    expect(message?.slice(0, prefix.length)).toBe(prefix);
-    error.mockRestore();
   });
 });

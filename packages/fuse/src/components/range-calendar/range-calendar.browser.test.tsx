@@ -17,7 +17,7 @@ import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
-import { CaughtError, caughtError } from "../../../test/caught-error";
+import { expectRenderTypeError } from "../../../test/caught-error";
 import { emulateForcedColors, systemColor } from "../../../test/forced-colors";
 import { withLocale } from "../../../test/locale-matrix";
 import { cssVarColor, renderThemed, roleNamed } from "../../../test/themed-browser-render";
@@ -1174,113 +1174,118 @@ describe("RangeCalendar in forced colors", () => {
 
 describe("date props past the types", () => {
   it("throws a TypeError naming the Root, the prop and the string for ISO text", () => {
-    const prefix = 'RangeCalendar.Root defaultValue.end: received the string "2026-10-09"';
-    const error = vi.spyOn(console, "error").mockImplementation(() => undefined);
-    renderThemed(
-      withLocale(
-        "en-US",
-        <CaughtError>
-          <RangeCalendar.Root
-            aria-label="Stay"
-            defaultValue={{
-              start: Temporal.PlainDate.from("2026-10-05"),
-              // @ts-expect-error -- text reaches the prop past the types: from plain JavaScript, or as the ISO text a server component's Temporal object crosses as
-              end: "2026-10-09",
-            }}
-          />
-        </CaughtError>
-      )
+    expectRenderTypeError(
+      'RangeCalendar.Root defaultValue.end: received the string "2026-10-09"',
+      <RangeCalendar.Root
+        aria-label="Stay"
+        defaultValue={{
+          start: Temporal.PlainDate.from("2026-10-05"),
+          // @ts-expect-error -- text reaches the prop past the types: from plain JavaScript, or as the ISO text a server component's Temporal object crosses as
+          end: "2026-10-09",
+        }}
+      />
     );
-    const { name, message } = caughtError();
-    expect(name).toBe("TypeError");
-    expect(message?.slice(0, prefix.length)).toBe(prefix);
-    error.mockRestore();
   });
 
   it("throws for ISO text in a range end after the equal Temporal value, whatever rendered before", () => {
-    const error = vi.spyOn(console, "error").mockImplementation(() => undefined);
     const start = Temporal.PlainDate.from("2026-10-05");
-    const { rerender } = mount(
-      <CaughtError>
-        <RangeCalendar.Root aria-label="Stay" value={{ start, end: Temporal.PlainDate.from("2026-10-09") }} />
-      </CaughtError>
+    expectRenderTypeError(
+      'RangeCalendar.Root value.end: received the string "2026-10-09"',
+      <RangeCalendar.Root aria-label="Stay" value={{ start, end: Temporal.PlainDate.from("2026-10-09") }} />,
+      <RangeCalendar.Root
+        aria-label="Stay"
+        value={{
+          start,
+          // @ts-expect-error -- the equal ISO text, past the types, after a Temporal value
+          end: "2026-10-09",
+        }}
+      />
     );
-    expect(caughtError().name).toBeNull();
-    rerender(
-      withLocale(
-        "en-US",
-        <CaughtError>
-          <RangeCalendar.Root
-            aria-label="Stay"
-            value={{
-              start,
-              // @ts-expect-error -- the equal ISO text, past the types, after a Temporal value
-              end: "2026-10-09",
-            }}
-          />
-        </CaughtError>
-      )
-    );
-    const prefix = 'RangeCalendar.Root value.end: received the string "2026-10-09"';
-    const { name, message } = caughtError();
-    expect(name).toBe("TypeError");
-    expect(message?.slice(0, prefix.length)).toBe(prefix);
-    error.mockRestore();
   });
 
   it("throws for ISO text in a default range end beside a controlled value", () => {
-    const prefix = 'RangeCalendar.Root defaultValue.end: received the string "2026-10-09"';
-    const error = vi.spyOn(console, "error").mockImplementation(() => undefined);
-    mount(
-      <CaughtError>
-        <RangeCalendar.Root
-          aria-label="Stay"
-          value={null}
-          defaultValue={{
-            start: Temporal.PlainDate.from("2026-10-05"),
-            // @ts-expect-error -- text reaches the prop past the types
-            end: "2026-10-09",
-          }}
-        />
-      </CaughtError>
+    expectRenderTypeError(
+      'RangeCalendar.Root defaultValue.end: received the string "2026-10-09"',
+      <RangeCalendar.Root
+        aria-label="Stay"
+        value={null}
+        defaultValue={{
+          start: Temporal.PlainDate.from("2026-10-05"),
+          // @ts-expect-error -- text reaches the prop past the types
+          end: "2026-10-09",
+        }}
+      />
     );
-    const { name, message } = caughtError();
-    expect(name).toBe("TypeError");
-    expect(message?.slice(0, prefix.length)).toBe(prefix);
-    error.mockRestore();
   });
 
   it("throws for ISO text in a default range end after the equal Temporal value, whatever rendered before", () => {
-    const error = vi.spyOn(console, "error").mockImplementation(() => undefined);
     const start = Temporal.PlainDate.from("2026-10-05");
-    const { rerender } = mount(
-      <CaughtError>
-        <RangeCalendar.Root
-          aria-label="Stay"
-          defaultValue={{ start, end: Temporal.PlainDate.from("2026-10-09") }}
-        />
-      </CaughtError>
+    expectRenderTypeError(
+      'RangeCalendar.Root defaultValue.end: received the string "2026-10-09"',
+      <RangeCalendar.Root
+        aria-label="Stay"
+        defaultValue={{ start, end: Temporal.PlainDate.from("2026-10-09") }}
+      />,
+      <RangeCalendar.Root
+        aria-label="Stay"
+        defaultValue={{
+          start,
+          // @ts-expect-error -- the equal ISO text, past the types, after a Temporal value
+          end: "2026-10-09",
+        }}
+      />
     );
-    expect(caughtError().name).toBeNull();
-    rerender(
-      withLocale(
-        "en-US",
-        <CaughtError>
-          <RangeCalendar.Root
-            aria-label="Stay"
-            defaultValue={{
-              start,
-              // @ts-expect-error -- the equal ISO text, past the types, after a Temporal value
-              end: "2026-10-09",
-            }}
-          />
-        </CaughtError>
-      )
+  });
+  it("throws a TypeError naming the end for a range value with a null end", () => {
+    expectRenderTypeError(
+      "RangeCalendar.Root value.end: received no day",
+      <RangeCalendar.Root
+        aria-label="Stay"
+        value={{
+          start: Temporal.PlainDate.from("2026-10-05"),
+          // @ts-expect-error -- plain JavaScript passes a range missing its end
+          end: null,
+        }}
+      />
     );
-    const prefix = 'RangeCalendar.Root defaultValue.end: received the string "2026-10-09"';
-    const { name, message } = caughtError();
-    expect(name).toBe("TypeError");
-    expect(message?.slice(0, prefix.length)).toBe(prefix);
-    error.mockRestore();
+  });
+
+  it("throws for a range value missing its start after a whole range rendered", () => {
+    const end = Temporal.PlainDate.from("2026-10-09");
+    expectRenderTypeError(
+      "RangeCalendar.Root value.start: received no day",
+      <RangeCalendar.Root aria-label="Stay" value={{ start: Temporal.PlainDate.from("2026-10-05"), end }} />,
+      // @ts-expect-error -- plain JavaScript passes a range without its start
+      <RangeCalendar.Root aria-label="Stay" value={{ end }} />
+    );
+  });
+
+  it("throws for a default range missing its end", () => {
+    expectRenderTypeError(
+      "RangeCalendar.Root defaultValue.end: received no day",
+      // @ts-expect-error -- plain JavaScript passes a range without its end
+      <RangeCalendar.Root aria-label="Stay" defaultValue={{ start: Temporal.PlainDate.from("2026-10-05") }} />
+    );
+  });
+
+  it("throws for a default range with a null end after a whole default rendered, beside a controlled value", () => {
+    const start = Temporal.PlainDate.from("2026-10-05");
+    expectRenderTypeError(
+      "RangeCalendar.Root defaultValue.end: received no day",
+      <RangeCalendar.Root
+        aria-label="Stay"
+        value={null}
+        defaultValue={{ start, end: Temporal.PlainDate.from("2026-10-09") }}
+      />,
+      <RangeCalendar.Root
+        aria-label="Stay"
+        value={null}
+        defaultValue={{
+          start,
+          // @ts-expect-error -- plain JavaScript passes a range missing its end
+          end: null,
+        }}
+      />
+    );
   });
 });

@@ -13,13 +13,7 @@ import type { CalendarValueChangeEventDetails, CalendarValueChangeReason } from 
 import { CalendarRootContext, createSelectionOwner, dayFlags, NO_DAY_FLAGS } from "./calendar-context";
 import type { CalendarRootContextValue, CalendarSharedState } from "./calendar-context";
 import { dayValidationError } from "./calendar-dates";
-import {
-  parseOptionalDay,
-  printedProp,
-  useCalendarBounds,
-  useCalendarSettings,
-  useVisibleMonthCount,
-} from "./calendar-input";
+import { useCalendarBounds, useCalendarSettings, useDayProp, useVisibleMonthCount } from "./calendar-input";
 import type { CalendarViewProps } from "./calendar-input";
 import { createCalendarStore, useCalendarSelector } from "./calendar-store";
 import { calendarVariants } from "./calendar-variants";
@@ -109,12 +103,10 @@ export function CalendarRoot({
 }: CalendarRootProps): ReactElement {
   const { locale, timeZone } = useLocale();
   const controlled = valueProp !== undefined;
-  const valueKey = printedProp(valueProp, "Calendar.Root", "value");
-  // The default seeds the selection once, below; reading it through the guard on every render
-  // refuses a string whether the calendar is controlled or the default changed after mount.
-  printedProp(defaultValue, "Calendar.Root", "defaultValue");
-  // oxlint-disable-next-line react-hooks/exhaustive-deps -- keyed by the printed value
-  const value = useMemo(() => parseOptionalDay(valueProp, "Calendar.Root", "value") ?? null, [valueKey]);
+  const value = useDayProp(valueProp, "Calendar.Root", "value");
+  // The default seeds the selection once, below; reading it on every render refuses a string
+  // whether the calendar is controlled or the default changed after mount.
+  const defaultDay = useDayProp(defaultValue, "Calendar.Root", "defaultValue");
   const bounds = useCalendarBounds(minValue, maxValue, "Calendar.Root");
   const visibleMonths = useVisibleMonthCount(visibleMonthsProp, "Calendar.Root");
   const settings = useCalendarSettings({
@@ -131,9 +123,7 @@ export function CalendarRoot({
   });
 
   const [store] = useState(() => {
-    const initial = controlled
-      ? value
-      : (parseOptionalDay(defaultValue, "Calendar.Root", "defaultValue") ?? null);
+    const initial = controlled ? value : defaultDay;
     return createCalendarStore<CalendarState>({ ...initialSharedState(initial, settings), value: initial });
   });
 
@@ -161,6 +151,7 @@ export function CalendarRoot({
   // user may select.
   const selection = useMemo(
     () =>
+      // oxlint-disable-next-line react/refs -- `select` reads `latest` when a day is picked, not during render
       createSelectionOwner(store, {
         dayFlags(state, date) {
           if (state.value === null || !state.value.equals(date)) {

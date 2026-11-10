@@ -20,6 +20,14 @@ export const metadata = componentMetadata("temporal-date-field");
 
 `DateField` from `@elmeragroup/fuse/date-field` is the Temporal replacement for the interim [React Aria DateField](/components/date-field), with its prop names: `label`, `description`, `errorMessage`, `isInvalid`, `isDisabled`, `isReadOnly`, `isRequired`, `value`, `defaultValue`, `onChange`, `minValue`, `maxValue`, `isDateUnavailable`, `granularity`, `hourCycle`, `hideTimeZone` and `size`. Its values are `Temporal.PlainDate`, `PlainDateTime` or `ZonedDateTime`: a date prop takes one as an object from any Temporal implementation, and `onChange` hands back this runtime's value. The kind `onChange` receives is typed from the value or default value, and without either from `granularity` and `timeZone`, as the field resolves it at runtime: no granularity or `"day"` gives a `PlainDate`, a time `granularity` a `PlainDateTime`, and a time `granularity` with `timeZone` a `ZonedDateTime`. No type argument is needed. Build a value in a client component: a Temporal object a server component passes reaches the client as ISO text, which the component refuses with a `TypeError`. [Temporal for dates](/quick-start#temporal) shows a server component handing its text to a client component that builds the value.
 
+A misspelt or undeclared prop does not compile, and that includes the keys of a spread object, unlike a component without a type parameter. Destructure what the field does not take, such as a form library's `ref`, before spreading the rest, and pass `disabled` on as `isDisabled`:
+
+```tsx
+const { ref, disabled, ...rest } = field;
+
+<DateField label="Starts" isDisabled={disabled} {...rest} />;
+```
+
 Fuse reads `globalThis.Temporal`. Import `@elmeragroup/fuse/temporal-polyfill` once in your app's entry, on the server and in the browser.
 
 Type the digits, and each segment moves on when it is full: `10052026` in en-US, `05102026` in nb-NO. Arrow up and down step a segment and wrap, Page Up and Page Down step by a page (5 years, 2 months, 7 days, 2 hours, 15 minutes), Home and End go to its ends, and Backspace removes a digit. Those keys held with Ctrl, Cmd or Alt are left to the browser. The value commits once every segment is filled; a date the segments cannot form, such as February 30, commits on blur as the month's last day.

@@ -24,12 +24,7 @@ import { useLocale } from "../../intl/locale-context";
 import { cn } from "../../styles/cn";
 import type { Bounds } from "../../temporal/bounds";
 import { temporal } from "../../temporal/temporal";
-import type {
-  DateGranularity,
-  KindProps,
-  PropsMadeValue,
-  TemporalValue,
-} from "../../temporal/temporal-value";
+import type { DateGranularity, TemporalValue } from "../../temporal/temporal-value";
 import { today } from "../../temporal/today";
 import { createChangeEventDetails } from "../calendar/calendar-change-details";
 import { useTemporalProp } from "../calendar/calendar-input";
@@ -70,6 +65,7 @@ import type { DateInputRootProps, DateInputRootState, DateInputValue } from "./d
 import { entryError, errorMessage, valueError } from "./date-input-validation";
 import type { DateInputRules } from "./date-input-validation";
 import { dateInputVariants } from "./date-input-variants";
+import type { KindProps, PropsMadeValue } from "./date-kind-props";
 import { dateFieldStrings } from "./intl";
 import { useValueKind } from "./use-value-kind";
 

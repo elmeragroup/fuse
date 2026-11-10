@@ -16,7 +16,7 @@ import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
-import { CaughtError, caughtError } from "../../../test/caught-error";
+import { expectRenderTypeError } from "../../../test/caught-error";
 import { withLocale } from "../../../test/locale-matrix";
 import { waitForPopupSettled } from "../../../test/popup-settled";
 import { emulateReducedMotion } from "../../../test/reduced-motion";
@@ -1422,23 +1422,13 @@ describe("DatePicker context", () => {
 
 describe("date props past the types", () => {
   it("throws a TypeError naming the Root, the prop and the string for ISO text", () => {
-    const prefix = 'DatePicker.Root minValue: received the string "2026-10-01"';
-    const error = vi.spyOn(console, "error").mockImplementation(() => undefined);
-    renderThemed(
-      withLocale(
-        "en-US",
-        <CaughtError>
-          <DatePickerField
-            label="Start date"
-            // @ts-expect-error -- text reaches the prop past the types: from plain JavaScript, or as the ISO text a server component's Temporal object crosses as
-            minValue="2026-10-01"
-          />
-        </CaughtError>
-      )
+    expectRenderTypeError(
+      'DatePicker.Root minValue: received the string "2026-10-01"',
+      <DatePickerField
+        label="Start date"
+        // @ts-expect-error -- text reaches the prop past the types: from plain JavaScript, or as the ISO text a server component's Temporal object crosses as
+        minValue="2026-10-01"
+      />
     );
-    const { name, message } = caughtError();
-    expect(name).toBe("TypeError");
-    expect(message?.slice(0, prefix.length)).toBe(prefix);
-    error.mockRestore();
   });
 });

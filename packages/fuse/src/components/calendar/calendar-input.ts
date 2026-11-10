@@ -93,88 +93,46 @@ function textPropError(owner: string, prop: string, text: string): TypeError {
 }
 
 /**
- * The text a date prop prints. It refuses a string here, before any parse or memo, so a string
- * throws whatever rendered before it, the equal Temporal value included.
- */
-function printedText(input: TemporalValue, owner: string, prop: string): string {
-  const received: unknown = input;
-  // oxlint-disable-next-line anti-slop/no-runtime-typeof -- prop boundary: text reaches a date prop past its types from plain JavaScript or a server component, and only its runtime type tells it from a Temporal object
-  if (typeof received === "string") {
-    throw textPropError(owner, prop, received);
-  }
-  return String(input);
-}
-
-/**
- * A date prop's value as this runtime's Temporal value of the same kind, read through the text it
- * prints, so a value from another implementation is accepted.
- *
- * @param input - The prop.
- * @param owner - The Root, named in the error.
- * @param prop - The prop, named in the error.
- * @returns The value.
- * @throws TypeError naming the Root, the prop and the fix when the input is a string, or an
- *   object whose text no kind reads: host defects.
- */
-export function parseTemporalProp(input: TemporalValue, owner: string, prop: string): TemporalValue {
-  const parsed = parseTemporal(printedText(input, owner, prop));
-  if (parsed._tag === "err") {
-    throw new TypeError(`${owner} ${prop}: ${parsed.error.message}`);
-  }
-  return parsed.value;
-}
-
-/**
- * The day a calendar date prop names: a date-time or zoned value names its own wall-clock day.
- *
- * @param input - The prop.
- * @param owner - The Root, named in the error.
- * @param prop - The prop, named in the error.
- * @returns The day.
- * @throws TypeError as `parseTemporalProp` does.
- */
-export function parseCalendarDay(
-  input: TemporalValue,
-  owner: CalendarOwner,
-  prop: string
-): Temporal.PlainDate {
-  return boundDay(parseTemporalProp(input, owner, prop));
-}
-
-/**
- * The day an optional date prop names, or `undefined` without one.
- *
- * @param input - The prop.
- * @param owner - The Root, named in the error.
- * @param prop - The prop, named in the error.
- * @returns The day, or `undefined`.
- * @throws TypeError as `parseCalendarDay` does.
- */
-export function parseOptionalDay(
-  input: TemporalValue | null | undefined,
-  owner: CalendarOwner,
-  prop: string
-): Temporal.PlainDate | undefined {
-  return input == null ? undefined : parseCalendarDay(input, owner, prop);
-}
-
-/**
  * The text a date prop prints, the key its parse is memoized by, so a parent passing a new object
- * for the same day re-renders nothing below. Every memoized date prop reads its key here during
- * render, so a string throws even when the memo would keep the last parse.
+ * for the same value re-renders nothing below. It is the one guard against text: it refuses a
+ * string here, during render and before any memo, so a string throws whatever rendered before it,
+ * the equal Temporal value included, and whether or not the prop is controlled.
  *
  * @param input - The prop.
  * @param owner - The Root, named in the error.
  * @param prop - The prop, named in the error.
  * @returns Its text, or the prop itself when absent.
- * @throws TypeError as `parseTemporalProp` does for a string.
+ * @throws TypeError naming the Root, the prop and the fix when the input is a string, a host defect.
  */
 export function printedProp(
   input: TemporalValue | null | undefined,
   owner: string,
   prop: string
 ): string | null | undefined {
-  return input == null ? input : printedText(input, owner, prop);
+  const received: unknown = input;
+  // oxlint-disable-next-line anti-slop/no-runtime-typeof -- prop boundary: text reaches a date prop past its types from plain JavaScript or a server component, and only its runtime type tells it from a Temporal object
+  if (typeof received === "string") {
+    throw textPropError(owner, prop, received);
+  }
+  return input == null ? input : String(input);
+}
+
+/**
+ * The text a date prop printed, read as this runtime's Temporal value of the same kind, so a value
+ * from another implementation is accepted. `printedProp` has refused a string before this runs.
+ *
+ * @param text - The prop's text, from `printedProp`.
+ * @param owner - The Root, named in the error.
+ * @param prop - The prop, named in the error.
+ * @returns The value.
+ * @throws TypeError naming the Root, the prop and the text when no kind reads it: a host defect.
+ */
+export function parseTemporalProp(text: string, owner: string, prop: string): TemporalValue {
+  const parsed = parseTemporal(text);
+  if (parsed._tag === "err") {
+    throw new TypeError(`${owner} ${prop}: ${parsed.error.message}`);
+  }
+  return parsed.value;
 }
 
 /**
@@ -185,7 +143,7 @@ export function printedProp(
  * @param owner - The Root, named in the error.
  * @param prop - The prop, named in the error.
  * @returns The value, or `null` without one.
- * @throws TypeError as `parseTemporalProp` does.
+ * @throws TypeError as `printedProp` and `parseTemporalProp` do.
  */
 export function useTemporalProp(
   input: TemporalValue | null | undefined,
@@ -193,11 +151,53 @@ export function useTemporalProp(
   prop: string
 ): TemporalValue | null {
   const key = printedProp(input, owner, prop);
-  return useMemo(
-    () => (input == null ? null : parseTemporalProp(input, owner, prop)),
-    // oxlint-disable-next-line react-hooks/exhaustive-deps -- keyed by the printed value
-    [key, owner, prop]
-  );
+  return useMemo(() => (key == null ? null : parseTemporalProp(key, owner, prop)), [key, owner, prop]);
+}
+
+/**
+ * The day a calendar date prop names, parsed once per printed value: a date-time or zoned value
+ * names its own wall-clock day.
+ *
+ * @param input - The prop.
+ * @param owner - The Root, named in the error.
+ * @param prop - The prop, named in the error.
+ * @returns The day, or `null` without one.
+ * @throws TypeError as `useTemporalProp` does.
+ */
+export function useDayProp(
+  input: TemporalValue | null | undefined,
+  owner: CalendarOwner,
+  prop: string
+): Temporal.PlainDate | null {
+  const value = useTemporalProp(input, owner, prop);
+  return useMemo(() => (value === null ? null : boundDay(value)), [value]);
+}
+
+/** A range prop's ends as `useRangeProp` reads them. */
+export type RangePropEnds = {
+  readonly start: TemporalValue | null;
+  readonly end: TemporalValue | null;
+};
+
+/**
+ * A range prop's ends, parsed once per printed value: one object while they hold, so a parent
+ * passing new objects for the same range changes nothing.
+ *
+ * @param input - The prop.
+ * @param owner - The Root, named in the error.
+ * @param prop - The prop, named in the error with the end.
+ * @returns The ends, or `null` without a range.
+ * @throws TypeError as `useTemporalProp` does, naming the end.
+ */
+export function useRangeProp(
+  input: { readonly start: TemporalValue; readonly end: TemporalValue } | null | undefined,
+  owner: string,
+  prop: string
+): RangePropEnds | null {
+  const start = useTemporalProp(input?.start, owner, `${prop}.start`);
+  const end = useTemporalProp(input?.end, owner, `${prop}.end`);
+  const present = input != null;
+  return useMemo(() => (present ? { start, end } : null), [present, start, end]);
 }
 
 /**
@@ -207,19 +207,15 @@ export function useTemporalProp(
  * @param maxValue - The Root's `maxValue`.
  * @param owner - The Root, named in a parse error.
  * @returns The bounds.
- * @throws TypeError as `parseTemporalProp` does.
+ * @throws TypeError as `useTemporalProp` does.
  */
 export function useCalendarBounds(
   minValue: TemporalValue | undefined,
   maxValue: TemporalValue | undefined,
   owner: CalendarOwner
 ): DayBounds {
-  const minKey = printedProp(minValue, owner, "minValue");
-  const maxKey = printedProp(maxValue, owner, "maxValue");
-  // oxlint-disable-next-line react-hooks/exhaustive-deps -- keyed by the printed value
-  const min = useMemo(() => parseOptionalDay(minValue, owner, "minValue"), [minKey]);
-  // oxlint-disable-next-line react-hooks/exhaustive-deps -- keyed by the printed value
-  const max = useMemo(() => parseOptionalDay(maxValue, owner, "maxValue"), [maxKey]);
+  const min = useDayProp(minValue, owner, "minValue") ?? undefined;
+  const max = useDayProp(maxValue, owner, "maxValue") ?? undefined;
   return useMemo((): DayBounds => ({ min, max }), [min, max]);
 }
 

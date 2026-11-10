@@ -11,17 +11,17 @@ import { isElement } from "../../internal/dom-node";
 import { useLocale } from "../../intl/locale-context";
 import { cn } from "../../styles/cn";
 import { temporal } from "../../temporal/temporal";
+import type { TemporalValue } from "../../temporal/temporal-value";
 import { CalendarRootContext, createSelectionOwner } from "../calendar/calendar-context";
 import type { CalendarRootContextValue } from "../calendar/calendar-context";
-import { showsDay, startAlignedMonths } from "../calendar/calendar-dates";
+import { boundDay, showsDay, startAlignedMonths } from "../calendar/calendar-dates";
 import {
-  parseCalendarDay,
-  printedProp,
   useCalendarBounds,
   useCalendarSettings,
+  useRangeProp,
   useVisibleMonthCount,
 } from "../calendar/calendar-input";
-import type { CalendarViewProps } from "../calendar/calendar-input";
+import type { CalendarViewProps, RangePropEnds } from "../calendar/calendar-input";
 import { createCalendarStore, useCalendarSelector } from "../calendar/calendar-store";
 import { calendarVariants } from "../calendar/calendar-variants";
 import { initialSharedState, useCalendarNavigation } from "../calendar/use-calendar-navigation";
@@ -110,25 +110,36 @@ export type RangeCalendarRootProps = Omit<
     isDateUnavailable?: (date: Temporal.PlainDate, anchor: Temporal.PlainDate | null) => boolean;
   };
 
-/** The range a range prop names, earlier day first, or `null` without one. */
-function parseRange(input: RangeCalendarValue | null | undefined, prop: string): DayRange | null {
-  if (input == null) {
-    return null;
+/** A range prop's two ends, each present. */
+type PresentEnds = { readonly start: TemporalValue; readonly end: TemporalValue };
+
+/**
+ * A range prop's ends, the same object, once both are present. Only an absent range selects
+ * nothing: a range missing an end reaches the prop past its types, from plain JavaScript, so it
+ * throws on every render rather than clearing the selection.
+ *
+ * @param ends - The ends `useRangeProp` read.
+ * @param prop - The prop, named in the error with the end.
+ * @returns The ends, or `null` without a range.
+ * @throws TypeError naming the Root, the prop and the end when an end is `null` or missing.
+ */
+function presentEnds(ends: RangePropEnds | null, prop: string): PresentEnds | null {
+  if (ends === null || bothEnds(ends)) {
+    return ends;
   }
-  return orderedRange(
-    parseCalendarDay(input.start, "RangeCalendar.Root", `${prop}.start`),
-    parseCalendarDay(input.end, "RangeCalendar.Root", `${prop}.end`)
+  const missing = ends.start === null ? "start" : "end";
+  throw new TypeError(
+    `RangeCalendar.Root ${prop}.${missing}: received no day, but a range takes both ends as Temporal.PlainDates. Pass null for no range.`
   );
 }
 
-/** The text a range prop prints, the key its parse is memoized by. Refuses a string end. */
-function rangeKey(input: RangeCalendarValue | null | undefined, prop: string): string | null | undefined {
-  if (input == null) {
-    return input;
-  }
-  const start = printedProp(input.start, "RangeCalendar.Root", `${prop}.start`);
-  const end = printedProp(input.end, "RangeCalendar.Root", `${prop}.end`);
-  return `${String(start)}/${String(end)}`;
+function bothEnds(ends: RangePropEnds): ends is PresentEnds {
+  return ends.start !== null && ends.end !== null;
+}
+
+/** The range a range prop's ends name, earlier day first, or `null` without one. */
+function dayRange(ends: PresentEnds | null): DayRange | null {
+  return ends === null ? null : orderedRange(boundDay(ends.start), boundDay(ends.end));
 }
 
 function sameRange(a: DayRange | null, b: DayRange | null): boolean {
@@ -153,7 +164,7 @@ function sameRange(a: DayRange | null, b: DayRange | null): boolean {
  * consumer's first part is not its `:first-child`.
  *
  * @throws TypeError naming the prop and the fix when a range end, `minValue` or `maxValue` is a
- *   string rather than a Temporal object, a host defect.
+ *   string rather than a Temporal object, or a range lacks an end, a host defect.
  */
 export function RangeCalendarRoot({
   value: valueProp,
@@ -178,13 +189,15 @@ export function RangeCalendarRoot({
   const { locale, timeZone } = useLocale();
   const strings = useLocalizedStrings(rangeCalendarStrings);
   const controlled = valueProp !== undefined;
-  const valueKey = rangeKey(valueProp, "value");
-  // The default range seeds the selection once, below; reading it through the guard on every
-  // render refuses a string end whether the calendar is controlled or the default changed.
-  rangeKey(defaultValue, "defaultValue");
+  const valueEnds = presentEnds(useRangeProp(valueProp, "RangeCalendar.Root", "value"), "value");
+  const value = useMemo(() => dayRange(valueEnds), [valueEnds]);
+  // The default range seeds the selection once, below; reading it on every render refuses a
+  // string or missing end whether the calendar is controlled or the default changed.
+  const defaultEnds = presentEnds(
+    useRangeProp(defaultValue, "RangeCalendar.Root", "defaultValue"),
+    "defaultValue"
+  );
 
-  // oxlint-disable-next-line react-hooks/exhaustive-deps -- keyed by the printed value
-  const value = useMemo(() => parseRange(valueProp, "value"), [valueKey]);
   const bounds = useCalendarBounds(minValue, maxValue, "RangeCalendar.Root");
   const visibleMonths = useVisibleMonthCount(visibleMonthsProp, "RangeCalendar.Root");
   const rules = useMemo(
@@ -193,7 +206,7 @@ export function RangeCalendarRoot({
   );
 
   const [store] = useState(() => {
-    const initial = controlled ? value : parseRange(defaultValue, "defaultValue");
+    const initial = controlled ? value : dayRange(defaultEnds);
     const shared = initialSharedState(initial?.start ?? null, { bounds, visibleMonths });
     const { focused } = shared;
     let { visible } = shared;

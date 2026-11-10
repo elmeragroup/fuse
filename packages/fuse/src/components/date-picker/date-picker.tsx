@@ -11,12 +11,7 @@ import type { useRender } from "@base-ui/react/use-render";
 import { useStableCallback } from "../../hooks/use-stable-callback";
 import { definedProps } from "../../internal/defined-props";
 import { cn } from "../../styles/cn";
-import type {
-  DateGranularity,
-  KindProps,
-  PropsMadeValue,
-  TemporalValue,
-} from "../../temporal/temporal-value";
+import type { DateGranularity, TemporalValue } from "../../temporal/temporal-value";
 import { CalendarRoot } from "../calendar/calendar";
 import type { CalendarRootProps, CalendarRootValueChangeEventDetails } from "../calendar/calendar";
 import { createChangeEventDetails } from "../calendar/calendar-change-details";
@@ -27,6 +22,7 @@ import type { CalendarFirstDayOfWeek } from "../calendar/calendar-input";
 import type { DateInputValue } from "../date-field/date-input";
 import type { DateInputValueChangeEventDetails } from "../date-field/date-input-change-details";
 import { valueError } from "../date-field/date-input-validation";
+import type { KindProps, PropsMadeValue } from "../date-field/date-kind-props";
 import { useValueKind } from "../date-field/use-value-kind";
 import { datePickerVariants } from "./date-picker-variants";
 import type {

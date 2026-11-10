@@ -292,6 +292,25 @@ test("a misspelt or undeclared prop does not compile", () => {
   const _rootUndeclared = <DateInput.Root aria-label="Starts" isDisabled />;
 });
 
+test("a spread's undeclared key does not compile; destructured away, the spread keeps the kind", () => {
+  // The shape a form library hands a controlled field: the props it takes, plus `ref` and `disabled`.
+  const field = {
+    label: "Starts",
+    value: LOCAL,
+    ref: (_element: HTMLElement | null) => undefined,
+    disabled: false,
+  };
+  // @ts-expect-error a spread key is checked like a written one: field takes no `ref` or `disabled`
+  const _spreadUndeclared = <DateField {...field} />;
+  const { ref: _ref, disabled: _disabled, ...taken } = field;
+  const _spreadTaken = (
+    <DateField
+      {...taken}
+      onChange={(value) => expectTypeOf(value).toEqualTypeOf<Temporal.PlainDateTime | null>()}
+    />
+  );
+});
+
 test("an explicit Temporal type argument does not compile: the props name the kind", () => {
   // @ts-expect-error the kind is not a type argument
   const _fieldTyped = <DateField<Temporal.PlainDate> label="Starts" />;

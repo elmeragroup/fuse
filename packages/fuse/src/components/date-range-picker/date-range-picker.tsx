@@ -18,20 +18,16 @@ import type { useRender } from "@base-ui/react/use-render";
 import { useStableCallback } from "../../hooks/use-stable-callback";
 import { isRenderableNode } from "../../internal/is-renderable-node";
 import { checkBounds } from "../../temporal/bounds";
-import type {
-  DateGranularity,
-  KindProps,
-  PropsMadeValue,
-  TemporalValue,
-} from "../../temporal/temporal-value";
+import type { DateGranularity, TemporalValue } from "../../temporal/temporal-value";
 import { createChangeEventDetails } from "../calendar/calendar-change-details";
 import { boundDay } from "../calendar/calendar-dates";
 import type { CalendarPageBehavior } from "../calendar/calendar-dates";
-import { useTemporalProp } from "../calendar/calendar-input";
+import { useRangeProp } from "../calendar/calendar-input";
 import type { CalendarFirstDayOfWeek } from "../calendar/calendar-input";
 import type { DateInputValue } from "../date-field/date-input";
 import type { DateInputValueChangeEventDetails } from "../date-field/date-input-change-details";
 import { valueError } from "../date-field/date-input-validation";
+import type { KindProps, PropsMadeValue } from "../date-field/date-kind-props";
 import { useValueKind } from "../date-field/use-value-kind";
 import { datePickerVariants } from "../date-picker/date-picker-variants";
 import type {
@@ -221,25 +217,6 @@ export type DateRangePickerRootProps<T extends DateInputValue = Temporal.PlainDa
 /** The Root its prop errors name. */
 const OWNER = "DateRangePicker.Root";
 
-/**
- * A range prop's ends, parsed once per printed value: one object while they hold, so a parent
- * passing new objects for the same range changes nothing.
- *
- * @param input - The prop.
- * @param prop - The prop, named in a parse error.
- * @returns The ends, or `null` without a range.
- * @throws TypeError naming the end and the fix when it is a string, a host defect.
- */
-function useRangeProp(
-  input: DateRangePickerValue<DateInputValue> | null | undefined,
-  prop: "value" | "defaultValue"
-): Ends | null {
-  const start = useTemporalProp(input?.start, OWNER, `${prop}.start`);
-  const end = useTemporalProp(input?.end, OWNER, `${prop}.end`);
-  const present = input != null;
-  return useMemo(() => (present ? { start, end } : null), [present, start, end]);
-}
-
 /** Which of the Label, Description and Error a Root renders, and whether the Error has its own text. */
 type RangePartScan = {
   readonly label: boolean;
@@ -343,8 +320,8 @@ export function DateRangePickerRoot<P = object, T extends DateInputValue = Props
     ...elementProps
   } = props;
   const controlled = valueProp !== undefined;
-  const parsedValue = useRangeProp(valueProp, "value");
-  const parsedDefault = useRangeProp(defaultValue, "defaultValue");
+  const parsedValue = useRangeProp(valueProp, OWNER, "value");
+  const parsedDefault = useRangeProp(defaultValue, OWNER, "defaultValue");
   const [own, setOwn] = useState<Ends | null>(parsedDefault);
   const committed: Ends = (controlled ? parsedValue : own) ?? EMPTY_ENDS;
   const committedKey = rangeKey(committed);
