@@ -331,3 +331,50 @@ describe("Attachment.Media", () => {
     expect(px(getComputedStyle(roleNamed("img", ratio)).width)).toBeCloseTo(box.width, 0);
   });
 });
+
+describe("Attachment hidden", () => {
+  it("hides the root, the group and every part that sets a display, but leaves until-found to the browser", () => {
+    const { host } = renderThemed(
+      <>
+        <Attachment.Root hidden>
+          <Attachment.Content>
+            <Attachment.Title>hidden-root.pdf</Attachment.Title>
+          </Attachment.Content>
+        </Attachment.Root>
+        <Attachment.Group hidden aria-label="Hidden group" />
+        <Attachment.Root>
+          <Attachment.Media hidden />
+          <Attachment.Content hidden />
+          <Attachment.Content>
+            <Attachment.Title hidden>hidden-title.pdf</Attachment.Title>
+            <Attachment.Description hidden>Hidden description</Attachment.Description>
+            <Attachment.Title>found.pdf</Attachment.Title>
+          </Attachment.Content>
+          <Attachment.Actions hidden />
+        </Attachment.Root>
+      </>
+    );
+    // A hidden element has no accessible role or name, so each one is found by its slot.
+    const hiddenParts = [...host.querySelectorAll("[hidden]")];
+    expect(
+      hiddenParts
+        .map((element) => element.getAttribute("data-slot") ?? "")
+        .toSorted((left, right) => left.localeCompare(right))
+    ).toEqual([
+      "attachment",
+      "attachment-actions",
+      "attachment-content",
+      "attachment-description",
+      "attachment-group",
+      "attachment-media",
+      "attachment-title",
+    ]);
+    for (const element of hiddenParts) {
+      expect(getComputedStyle(element).display, element.getAttribute("data-slot") ?? "").toBe("none");
+    }
+    // React types `hidden` as a boolean, so the until-found value goes on as an attribute.
+    const found = textNamed("found.pdf");
+    found.setAttribute("hidden", "until-found");
+    expect(getComputedStyle(found).display).toBe("block");
+  });
+});

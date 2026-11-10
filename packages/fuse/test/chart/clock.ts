@@ -26,3 +26,17 @@ export function dotPoints(d: string): { readonly x: number; readonly y: number }
     y: Number(match[2]),
   }));
 }
+
+/** Each wedge's inner and outer radius, from the two arcs d3 draws for it. */
+export function wedgeRadii(d: string): (readonly [number, number])[] {
+  return d
+    .split("M")
+    .filter((part) => part !== "")
+    .map((wedge) => {
+      const radii = [...wedge.matchAll(/A(-?[\d.]+),/gu)].map((match) => Number(match[1]));
+      const outer = Math.max(...radii);
+      // A wedge from the centre draws one arc and a line to the centre.
+      const inner = radii.length > 1 ? Math.min(...radii) : 0;
+      return [inner, outer] as const;
+    });
+}

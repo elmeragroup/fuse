@@ -189,3 +189,57 @@ describe("Collapsible", () => {
     await assertFocusRingOnKeyboardAbsentOnMouse(previous, triggerNamed("Show details"));
   });
 });
+
+describe("Collapsible", () => {
+  it("keeps hiddenUntilFound content in the DOM and opens on beforematch", async () => {
+    const onOpenChange = vi.fn();
+    renderThemed(
+      <Collapsible.Root onOpenChange={onOpenChange}>
+        <Collapsible.Trigger>Show details</Collapsible.Trigger>
+        <Collapsible.Content hiddenUntilFound>Meter-reading reconciliation</Collapsible.Content>
+      </Collapsible.Root>
+    );
+
+    const content = page.getByText("Meter-reading reconciliation", { exact: true }).element();
+    const foundPanel = content instanceof HTMLElement ? content.closest("[hidden]") : null;
+    if (!(foundPanel instanceof HTMLElement)) {
+      throw new Error("expected a collapsible panel");
+    }
+    await vi.waitFor(() => {
+      expect(foundPanel.getAttribute("hidden")).toBe("until-found");
+    });
+
+    foundPanel.dispatchEvent(new Event("beforematch", { bubbles: true }));
+    await vi.waitFor(() => {
+      expect(onOpenChange).toHaveBeenCalledWith(true, expect.anything());
+      expect(triggerNamed("Show details").getAttribute("aria-expanded")).toBe("true");
+      expect(foundPanel.hasAttribute("hidden")).toBe(false);
+    });
+  });
+
+  it("composes Trigger onto a custom button via render and keeps aria wiring", async () => {
+    renderThemed(
+      <Collapsible.Root>
+        <Collapsible.Trigger render={<button type="button" className="custom-trigger" />}>
+          Show details
+        </Collapsible.Trigger>
+        <Collapsible.Content>Delivery window</Collapsible.Content>
+      </Collapsible.Root>
+    );
+
+    const trigger = triggerNamed("Show details");
+    expect(trigger.tagName).toBe("BUTTON");
+    expect(trigger.className.split(/\s+/)).toContain("custom-trigger");
+    expect(trigger.getAttribute("data-slot")).toBe("collapsible-trigger");
+    expect(trigger.getAttribute("aria-expanded")).toBe("false");
+
+    await userEvent.click(trigger);
+    await vi.waitFor(() => {
+      expect(trigger.getAttribute("aria-expanded")).toBe("true");
+      expect(page.getByText("Delivery window", { exact: true }).query()).not.toBeNull();
+    });
+    const controls = trigger.getAttribute("aria-controls");
+    expect(controls).toBeTruthy();
+    expect(panelControlledBy(trigger)).toBe(page.getByText("Delivery window", { exact: true }).element());
+  });
+});

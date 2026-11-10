@@ -294,6 +294,58 @@ describe("RangeCalendar committing an open range", () => {
   });
 });
 
+describe("RangeCalendar unavailable days", () => {
+  const saturdays = (date: Temporal.PlainDate) => date.dayOfWeek === 6;
+
+  it("narrows an anchored range to the available days around the anchor and disables the rest", async () => {
+    mount(
+      <Harness
+        defaultValue={{
+          start: Temporal.PlainDate.from("2026-10-05"),
+          end: Temporal.PlainDate.from("2026-10-09"),
+        }}
+        isDateUnavailable={saturdays}
+      />
+    );
+    await focusDay("Tuesday, October 13, 2026");
+    await userEvent.keyboard("{Enter}");
+    await expectFocusOnDay("Wednesday, October 14, 2026 selected");
+
+    expect(roleNamed("button", "Monday, October 19, 2026")).toBeDisabled();
+    expect(roleNamed("button", "Thursday, October 8, 2026")).toBeDisabled();
+    expect(roleNamed("button", "Sunday, October 11, 2026, First available date")).not.toBeDisabled();
+    await userEvent.keyboard("{End}");
+    await expectFocusOnDay("Friday, October 16, 2026 selected, Last available date");
+    await userEvent.keyboard("{Enter}");
+
+    await expect.element(committed()).toHaveTextContent("2026-10-13..2026-10-16 keyboard null");
+    expect(roleNamed("button", "Monday, October 19, 2026")).not.toBeDisabled();
+  });
+
+  it("asks isDateUnavailable with the anchor while a range is open", async () => {
+    // Only days more than two days from the anchor are unavailable.
+    const near = (date: Temporal.PlainDate, anchor: Temporal.PlainDate | null) =>
+      anchor !== null && Math.abs(anchor.until(date).days) > 2;
+    mount(
+      <Harness
+        defaultValue={{
+          start: Temporal.PlainDate.from("2026-10-05"),
+          end: Temporal.PlainDate.from("2026-10-09"),
+        }}
+        isDateUnavailable={near}
+      />
+    );
+    await userEvent.click(roleNamed("button", "Tuesday, October 20, 2026"));
+
+    // October 23 is the nearest unavailable day, so the range can reach October 22 at most.
+    expect(roleNamed("button", "Friday, October 23, 2026")).toBeDisabled();
+    expect(roleNamed("button", "Thursday, October 22, 2026, Last available date")).not.toBeDisabled();
+    await userEvent.click(roleNamed("button", "Thursday, October 22, 2026, Last available date"));
+    await expect.element(committed()).toHaveTextContent("2026-10-20..2026-10-22 day-press null");
+    expect(roleNamed("button", "Friday, October 23, 2026")).not.toHaveAttribute("data-unavailable");
+  });
+});
+
 describe("RangeCalendar cancelable change details", () => {
   it("keeps the value and drops the anchor when a focus-out commit is canceled", async () => {
     mount(
@@ -311,6 +363,36 @@ describe("RangeCalendar cancelable change details", () => {
     await expect.element(committed()).toHaveTextContent("2026-10-12..2026-10-13 focus-out null");
     expect(selectedDays()).toEqual(["5", "6", "7", "8", "9"]);
     expect(roleNamed("group", "Stay")).not.toHaveAttribute("data-selecting");
+  });
+
+  it("keeps the range a controlled parent holds until it accepts a new one", async () => {
+    function Controlled(): ReactElement {
+      const [value, setValue] = useState({
+        start: Temporal.PlainDate.from("2026-10-05"),
+        end: Temporal.PlainDate.from("2026-10-09"),
+      });
+      return (
+        <>
+          <Parts value={value} onValueChange={(next) => setValue(next)} />
+          <button
+            type="button"
+            onClick={() =>
+              setValue({
+                start: Temporal.PlainDate.from("2026-10-26"),
+                end: Temporal.PlainDate.from("2026-10-28"),
+              })
+            }>
+            Late October
+          </button>
+        </>
+      );
+    }
+    mount(<Controlled />);
+    await userEvent.click(roleNamed("button", "Late October"));
+    expect(selectedDays()).toEqual(["26", "27", "28"]);
+    await userEvent.click(roleNamed("button", "Monday, October 12, 2026"));
+    await userEvent.click(roleNamed("button", "Monday, October 12, 2026 selected"));
+    expect(selectedDays()).toEqual(["12"]);
   });
 });
 
@@ -363,6 +445,47 @@ describe("RangeCalendar made read-only or disabled while a range is open", () =>
     // Back to editable, the range is the one it had: nothing was completed in the meantime.
     view.rerender(withLocale("en-US", <Harness {...props} />));
     expect(selectedDays()).toEqual(["5", "6", "7", "8", "9"]);
+  });
+});
+
+describe("RangeCalendar grid semantics", () => {
+  it("marks every grid multiselectable, default and composed, where Calendar's grid is not", () => {
+    mount(
+      <>
+        <Parts
+          defaultValue={{
+            start: Temporal.PlainDate.from("2026-10-05"),
+            end: Temporal.PlainDate.from("2026-10-09"),
+          }}
+          visibleMonths={2}
+        />
+        <RangeCalendar.Root
+          aria-label="Composed"
+          defaultValue={{
+            start: Temporal.PlainDate.from("2026-10-05"),
+            end: Temporal.PlainDate.from("2026-10-09"),
+          }}>
+          <RangeCalendar.Months>
+            {(month) => (
+              <RangeCalendar.Month key={month.toString()} value={month}>
+                <RangeCalendar.DayGrid>
+                  <RangeCalendar.DayGridBody />
+                </RangeCalendar.DayGrid>
+              </RangeCalendar.Month>
+            )}
+          </RangeCalendar.Months>
+        </RangeCalendar.Root>
+      </>
+    );
+    const grids = page.getByRole("grid").elements();
+    expect(grids.map((grid) => grid.getAttribute("aria-label"))).toEqual([
+      "Stay, October 2026",
+      "Stay, November 2026",
+      "Composed, October 2026",
+    ]);
+    for (const grid of grids) {
+      expect(grid).toHaveAttribute("aria-multiselectable", "true");
+    }
   });
 });
 

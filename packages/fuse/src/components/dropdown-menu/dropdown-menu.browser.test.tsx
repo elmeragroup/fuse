@@ -8,6 +8,7 @@ import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import { assertFocusRingOnKeyboardAbsentOnMouse } from "../../../test/assert-focus-ring";
 import { renderThemed } from "../../../test/themed-browser-render";
+import { roleNamed } from "../../../test/themed-browser-render";
 import { DropdownMenu } from "./index";
 
 type ItemRole = "menuitem" | "menuitemcheckbox" | "menuitemradio";
@@ -221,5 +222,56 @@ describe("DropdownMenu", () => {
       throw new Error("expected buttons");
     }
     await assertFocusRingOnKeyboardAbsentOnMouse(previous, trigger);
+  });
+});
+
+describe("DropdownMenu", () => {
+  it("portals Content and SubContent into an explicit container element", async () => {
+    function ExplicitContainer() {
+      const [node, setNode] = useState<HTMLDivElement | null>(null);
+      return (
+        <>
+          <div ref={setNode} role="region" aria-label="Theme island" />
+          {node ? (
+            <DropdownMenu.Root defaultOpen>
+              <DropdownMenu.Content container={node}>
+                <DropdownMenu.Item>Profile</DropdownMenu.Item>
+              </DropdownMenu.Content>
+            </DropdownMenu.Root>
+          ) : null}
+        </>
+      );
+    }
+    const { unmount } = renderThemed(<ExplicitContainer />);
+    const menu = await openedMenu();
+    const island = page.getByRole("region", { name: "Theme island", exact: true }).element();
+    expect(island.contains(menu)).toBe(true);
+    expect([...document.body.children].includes(menu)).toBe(false);
+    unmount();
+
+    function ExplicitSubContainer() {
+      const [node, setNode] = useState<HTMLDivElement | null>(null);
+      return (
+        <>
+          <div ref={setNode} role="region" aria-label="Sub island" />
+          {node ? (
+            <DropdownMenu.Root defaultOpen>
+              <DropdownMenu.Content>
+                <DropdownMenu.Sub defaultOpen>
+                  <DropdownMenu.SubTrigger>More</DropdownMenu.SubTrigger>
+                  <DropdownMenu.SubContent container={node}>
+                    <DropdownMenu.Item>Team</DropdownMenu.Item>
+                  </DropdownMenu.SubContent>
+                </DropdownMenu.Sub>
+              </DropdownMenu.Content>
+            </DropdownMenu.Root>
+          ) : null}
+        </>
+      );
+    }
+    renderThemed(<ExplicitSubContainer />);
+    const team = await mountedItem("Team");
+    const subIsland = roleNamed("region", "Sub island");
+    expect(subIsland.contains(team)).toBe(true);
   });
 });

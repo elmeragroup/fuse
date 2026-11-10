@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { useState } from "react";
 
 import { describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
@@ -252,5 +253,28 @@ describe("PopoverInfoButton", () => {
       Math.abs(arrowCentre - triggerCentre),
       `arrow centre on the ${String(side)} side`
     ).toBeLessThanOrEqual(1);
+  });
+});
+
+describe("PopoverInfoButton", () => {
+  it("portals into an explicit container element", async () => {
+    function ExplicitContainer() {
+      const [node, setNode] = useState<HTMLDivElement | null>(null);
+      return (
+        <>
+          <div ref={setNode} role="region" aria-label="Theme island" />
+          {node ? <PopoverInfoButton container={node}>{EXPLAINER}</PopoverInfoButton> : null}
+        </>
+      );
+    }
+    renderInfo(
+      <div style={{ padding: 240 }}>
+        <ExplicitContainer />
+      </div>
+    );
+    const dialog = await openInfo();
+    const island = page.getByRole("region", { name: "Theme island", exact: true }).element();
+    expect(island.contains(dialog)).toBe(true);
+    expect([...document.body.children].includes(dialog)).toBe(false);
   });
 });

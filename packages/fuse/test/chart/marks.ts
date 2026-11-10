@@ -57,7 +57,7 @@ export function label(): string | null {
  * @param y - The client y.
  * @returns The element and the event options.
  */
-function pointerTarget(
+export function pointerTarget(
   x: number,
   y: number
 ): [Element, { readonly position: { readonly x: number; readonly y: number }; readonly force: true }] {
@@ -75,4 +75,16 @@ function pointerTarget(
  */
 export async function pointerAt(x: number, y: number): Promise<void> {
   await userEvent.hover(...pointerTarget(x, y));
+}
+
+/**
+ * Whether the tooltip popup shows: open, not fading out or closed. It portals out of the host, and
+ * once it has opened it stays mounted, hidden while closed.
+ *
+ * @returns Whether it shows.
+ */
+export function popupOpen(): boolean {
+  // DOM audit: the popup portals out of the host and carries its own slot.
+  const popup = document.querySelector('[data-slot="chart-tooltip"]');
+  return popup !== null && popup.hasAttribute("data-open") && !popup.hasAttribute("data-ending-style");
 }

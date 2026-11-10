@@ -1,11 +1,11 @@
 import { useState } from "react";
 import type { ReactElement, ReactNode } from "react";
 
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, onTestFinished, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
-import { pollFrames } from "../../../test/animation-frames";
+import { nextFrames, pollFrames } from "../../../test/animation-frames";
 import { carouselSlides } from "../../../test/carousel-fixtures";
 import {
   carouselIndicators,
@@ -18,6 +18,7 @@ import { withLocale } from "../../../test/locale-matrix";
 import "../../../test/pointer-press";
 import { renderThemed, roleNamed } from "../../../test/themed-browser-render";
 import type { CarouselIndexChangeReason } from "./carousel-context";
+import { useCarousel } from "./carousel-context";
 import { Carousel } from "./index";
 
 /** The fixture's slide width, so page N's slide starts N × WIDTH into the scroll range. */
@@ -234,5 +235,303 @@ describe("Carousel custom parts", () => {
       </CaughtError>
     );
     await pollFrames(() => caughtError().message, "Carousel.Next must be used within Carousel.Root.");
+  });
+});
+
+describe("Carousel structure", () => {
+  it("speaks the provider's locale", async () => {
+    renderThemed(
+      withLocale(
+        "nb-NO",
+        <Carousel.Root aria-label="Tilbud" style={{ width: WIDTH }}>
+          <Carousel.Viewport>{carouselSlides(3, 1)}</Carousel.Viewport>
+          <Carousel.Controls>
+            <Carousel.Previous />
+            <Carousel.Indicators />
+            <Carousel.Next />
+            <Carousel.Status />
+          </Carousel.Controls>
+        </Carousel.Root>
+      )
+    );
+    expect(roleNamed("region", "Tilbud").getAttribute("aria-roledescription")).toBe("karusell");
+    await expect.poll(() => page.getByText("1 av 3", { exact: true }).query()).not.toBeNull();
+    expect(roleNamed("group", "2 av 3").getAttribute("aria-roledescription")).toBe("lysbilde");
+    expect(roleNamed("button", "Forrige lysbilde")).toBeInstanceOf(HTMLButtonElement);
+    expect(roleNamed("button", "Neste lysbilde")).toBeInstanceOf(HTMLButtonElement);
+    expect(roleNamed("button", "Lysbilde 3 av 3")).toBeInstanceOf(HTMLButtonElement);
+    expect(roleNamed("group", "Velg lysbilde")).toBeInstanceOf(HTMLElement);
+  });
+
+  it("keeps a consumer's own slide name and role description", async () => {
+    renderThemed(
+      withLocale(
+        "en-US",
+        <Carousel.Root aria-label="Offers">
+          <Carousel.Viewport>
+            <Carousel.Slide aria-label="Summer price">Summer</Carousel.Slide>
+            <Carousel.Slide aria-roledescription="offer" aria-label={undefined}>
+              Winter
+            </Carousel.Slide>
+          </Carousel.Viewport>
+        </Carousel.Root>
+      )
+    );
+    expect(roleNamed("group", "Summer price").getAttribute("aria-roledescription")).toBe("slide");
+    // A forwarded `aria-label={undefined}` leaves the automatic name in place.
+    await expect.poll(() => page.getByRole("group", { name: "2 of 2" }).query()).not.toBeNull();
+    expect(roleNamed("group", "2 of 2").getAttribute("aria-roledescription")).toBe("offer");
+  });
+});
+
+describe("Carousel reconciliation", () => {
+  it("takes a controlled parent's new slides and index together, with no intermediate change", async () => {
+    // Fake timeouts let the final check fire every pending settle timer instead of waiting.
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    onTestFinished(() => {
+      vi.useRealTimers();
+    });
+    const changes: [number, CarouselIndexChangeReason][] = [];
+    function Shrinking(): ReactElement {
+      const [shown, setShown] = useState({ count: 4, index: 2 });
+      return withLocale(
+        "en-US",
+        <>
+          <button type="button" onClick={() => setShown({ count: 2, index: 0 })}>
+            Shrink
+          </button>
+          <Carousel.Root
+            aria-label="Offers"
+            style={{ width: WIDTH }}
+            index={shown.index}
+            onIndexChange={(index, { reason }) => {
+              changes.push([index, reason]);
+              setShown((current) => ({ ...current, index }));
+            }}>
+            <Carousel.Viewport>{carouselSlides(shown.count, 1)}</Carousel.Viewport>
+            <Carousel.Controls>
+              <Carousel.Indicators />
+            </Carousel.Controls>
+          </Carousel.Root>
+        </>
+      );
+    }
+    renderThemed(<Shrinking />);
+    const viewport = carouselViewport(roleNamed("region", "Offers"));
+    await settledOn(viewport, 2 * WIDTH);
+    expect(changes).toEqual([]);
+
+    // The parent supplies both the two slides and page 0 in one render: nothing changed the page
+    // but the parent, so the carousel reports nothing back.
+    await userEvent.click(roleNamed("button", "Shrink"));
+    await settledOn(viewport, 0);
+    vi.runOnlyPendingTimers();
+    await nextFrames(2);
+    expect(changes).toEqual([]);
+    expect(carouselIndicators()).toHaveLength(2);
+    expect(currentIndicator()).toBe(0);
+  });
+});
+
+describe("Carousel slides hidden by a host rule", () => {
+  it("leaves a slide without a layout box out of the pages, the numbers and navigation", async () => {
+    renderThemed(
+      withLocale(
+        "en-US",
+        <div aria-label="Ancestor" role="group">
+          {/* A responsive rule that drops one slide on a compact layout. */}
+          <style>{".compact .optional-slide { display: none; }"}</style>
+          <Carousel.Root aria-label="Offers" style={{ width: WIDTH }} defaultIndex={6}>
+            <Carousel.Viewport>
+              {[1, 2, 3, 4, 5, 6, 7, 8].map((offer) => (
+                <Carousel.Slide key={offer} className={offer === 3 ? "optional-slide" : undefined}>
+                  <div style={{ height: 80 }}>Offer {offer}</div>
+                </Carousel.Slide>
+              ))}
+            </Carousel.Viewport>
+            <Carousel.Controls>
+              <Carousel.Previous />
+              <Carousel.Indicators />
+            </Carousel.Controls>
+          </Carousel.Root>
+        </div>
+      )
+    );
+    const region = roleNamed("region", "Offers");
+    const viewport = carouselViewport(region);
+    await settledOn(viewport, 6 * WIDTH);
+    const shown = (count: number) => Array.from({ length: count }, (_, index) => `${index + 1} of ${count}`);
+    const inView = (count: number) =>
+      shown(count).filter((name) => !roleNamed("group", name).hasAttribute("inert"));
+
+    roleNamed("group", "Ancestor").classList.add("compact");
+    // Seven slides with a box: seven pages, numbered of seven, and Offer 3 has no number.
+    await pollFrames(() => carouselIndicators().length, 7);
+    expect(shown(7).map((name) => roleNamed("group", name).textContent)).toEqual([
+      "Offer 1",
+      "Offer 2",
+      "Offer 4",
+      "Offer 5",
+      "Offer 6",
+      "Offer 7",
+      "Offer 8",
+    ]);
+    expect(page.getByRole("group", { name: /of 8$/u }).elements()).toEqual([]);
+    // The one slide in view and the current indicator agree, whichever slide the browser kept.
+    await pollFrames(() => inView(7).length, 1);
+    const [current] = inView(7);
+    const number = Number.parseInt(current ?? "", 10);
+    await pollFrames(currentIndicator, number - 1);
+    await settledOn(viewport, (number - 1) * WIDTH);
+
+    // Previous moves the viewport one slide back, and the selection with it.
+    await userEvent.click(roleNamed("button", "Previous slide"));
+    await settledOn(viewport, (number - 2) * WIDTH);
+    expect(currentIndicator()).toBe(number - 2);
+    // The slide left behind turns inert once the scroll has ended, after it lands.
+    await pollFrames(() => inView(7), [`${number - 1} of 7`]);
+
+    // Shown again, the slide counts again.
+    roleNamed("group", "Ancestor").classList.remove("compact");
+    await pollFrames(() => carouselIndicators().length, 8);
+    expect(roleNamed("group", "3 of 8").textContent).toBe("Offer 3");
+  });
+});
+
+describe("Carousel emptied and filled again", () => {
+  it.each(["uncontrolled", "controlled"] as const)(
+    "%s: shows the selected page once its slides come back",
+    async (mode) => {
+      function Emptying(): ReactElement {
+        const [count, setCount] = useState(4);
+        const [index, setIndex] = useState(2);
+        const selection =
+          mode === "controlled"
+            ? { index, onIndexChange: (next: number) => setIndex(next) }
+            : { defaultIndex: 2 };
+        return withLocale(
+          "en-US",
+          <>
+            <button type="button" onClick={() => setCount((current) => (current === 0 ? 4 : 0))}>
+              Toggle slides
+            </button>
+            <Carousel.Root aria-label="Offers" style={{ width: WIDTH }} {...selection}>
+              <Carousel.Viewport>{carouselSlides(count, 1)}</Carousel.Viewport>
+              <Carousel.Controls>
+                <Carousel.Indicators />
+              </Carousel.Controls>
+            </Carousel.Root>
+          </>
+        );
+      }
+      renderThemed(<Emptying />);
+      const viewport = carouselViewport(roleNamed("region", "Offers"));
+      await settledOn(viewport, 2 * WIDTH);
+
+      await userEvent.click(roleNamed("button", "Toggle slides"));
+      await expect.poll(() => page.getByRole("group", { name: "1 of 4" }).query()).toBeNull();
+      await nextFrames(3);
+      await userEvent.click(roleNamed("button", "Toggle slides"));
+
+      // The indicator and the slide in view agree: page 3 is both selected and shown.
+      await settledOn(viewport, 2 * WIDTH);
+      expect(currentIndicator()).toBe(2);
+      await pollFrames(
+        () =>
+          ["1 of 4", "2 of 4", "3 of 4", "4 of 4"].map((name) =>
+            roleNamed("group", name).hasAttribute("inert")
+          ),
+        [true, true, false, true]
+      );
+    }
+  );
+});
+
+describe("Carousel controlled index", () => {
+  it("scrolls back to its index when the parent keeps it", async () => {
+    const onIndexChange = vi.fn<(index: number) => void>();
+    renderThemed(<Fixture count={4} root={{ index: 1, onIndexChange }} />);
+    const viewport = carouselViewport(roleNamed("region", "Offers"));
+    await settledOn(viewport, WIDTH);
+    viewport.scrollTo({ left: 3 * WIDTH, behavior: "instant" });
+    await pollFrames(() => onIndexChange.mock.calls.at(-1)?.[0], 3);
+    await settledOn(viewport, WIDTH);
+    expect(currentIndicator()).toBe(1);
+  });
+});
+
+describe("Carousel custom parts", () => {
+  it("lets a consumer map thumbnails as indicators and read the state through useCarousel", async () => {
+    function Count(): ReactElement {
+      const { state } = useCarousel();
+      return <p>{`Page ${state.index + 1} of ${state.pageCount}`}</p>;
+    }
+    renderThemed(
+      <Fixture count={3}>
+        <Carousel.Indicators>
+          {["Red", "Green", "Blue"].map((colour, index) => (
+            <Carousel.Indicator key={colour} index={index}>
+              {colour}
+            </Carousel.Indicator>
+          ))}
+        </Carousel.Indicators>
+        <Carousel.Status />
+        <Count />
+      </Fixture>
+    );
+    const viewport = carouselViewport(roleNamed("region", "Offers"));
+    await expect.poll(() => page.getByText("Page 1 of 3", { exact: true }).query()).not.toBeNull();
+    expect(roleNamed("button", "Red").getAttribute("aria-disabled")).toBe("true");
+    await userEvent.click(roleNamed("button", "Blue"));
+    await settledOn(viewport, 2 * WIDTH);
+    expect(page.getByText("Page 3 of 3", { exact: true }).query()).not.toBeNull();
+    expect(page.getByText("3 of 3", { exact: true }).query()).not.toBeNull();
+    expect(roleNamed("button", "Blue").getAttribute("aria-disabled")).toBe("true");
+  });
+
+  it("lets a consumer's onClick cancel each control's own action with preventBaseUIHandler", async () => {
+    const clicks: string[] = [];
+    const cancel = (name: string) => (event: { readonly preventBaseUIHandler: () => void }) => {
+      clicks.push(name);
+      event.preventBaseUIHandler();
+    };
+    renderThemed(
+      withLocale(
+        "en-US",
+        <>
+          <button type="button">Outside</button>
+          <Carousel.Root aria-label="Offers" style={{ width: WIDTH }} defaultIndex={1}>
+            <Carousel.Controls>
+              <Carousel.Autoplay delay={60_000} onClick={cancel("autoplay")} />
+              <Carousel.Previous onClick={cancel("previous")} />
+              <Carousel.Indicators>
+                {[0, 1, 2].map((index) => (
+                  <Carousel.Indicator
+                    key={index}
+                    index={index}
+                    aria-label={`Page ${index + 1}`}
+                    onClick={cancel(`page ${index + 1}`)}
+                  />
+                ))}
+              </Carousel.Indicators>
+              <Carousel.Next onClick={cancel("next")} />
+            </Carousel.Controls>
+            <Carousel.Viewport>{carouselSlides(3, 1)}</Carousel.Viewport>
+          </Carousel.Root>
+        </>
+      )
+    );
+    const viewport = carouselViewport(roleNamed("region", "Offers"));
+    await settledOn(viewport, WIDTH);
+    for (const name of ["Previous slide", "Page 3", "Next slide", "Stop automatic slide show"]) {
+      await userEvent.click(roleNamed("button", name));
+    }
+    await userEvent.hover(roleNamed("button", "Outside"));
+    await nextFrames(3);
+    expect(clicks).toEqual(["previous", "page 3", "next", "autoplay"]);
+    expect(Math.round(viewport.scrollLeft)).toBe(WIDTH);
+    expect(roleNamed("button", "Page 2").getAttribute("aria-disabled")).toBe("true");
+    // Neither the cancelled controls nor the cancelled rotation control stopped rotation.
+    expect(roleNamed("button", "Stop automatic slide show")).toBeInstanceOf(HTMLButtonElement);
   });
 });

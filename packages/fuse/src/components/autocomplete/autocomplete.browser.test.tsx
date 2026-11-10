@@ -378,6 +378,31 @@ describe("Autocomplete", () => {
     await expect.element(trigger).toBeVisible();
   });
 
+  it.each([
+    ["Autocomplete.Input disabled", <FruitAutocomplete key="input" showTrigger showClear disabled />],
+    [
+      "Autocomplete.Root disabled",
+      <Autocomplete.Root key="root" items={[...FRUITS]} defaultValue="Apple" disabled>
+        <Autocomplete.Input aria-label="Fruit" showTrigger showClear />
+      </Autocomplete.Root>,
+    ],
+    [
+      "Field.Root disabled",
+      <Field.Root key="field" disabled>
+        <Autocomplete.Root items={[...FRUITS]} defaultValue="Apple">
+          <Autocomplete.Input aria-label="Fruit" showTrigger showClear />
+        </Autocomplete.Root>
+      </Field.Root>,
+    ],
+  ])("disables the input and its buttons through %s", async (_source, node) => {
+    renderAutocomplete(node);
+    await expect.element(autocompleteNamed("Fruit")).toBeDisabled();
+    expect(page.getByRole("button").elements().length).toBeGreaterThan(0);
+    for (const button of page.getByRole("button").elements()) {
+      await expect.element(button).toBeDisabled();
+    }
+  });
+
   it("does not open from a press on the field box while Autocomplete.Input is disabled", async () => {
     // A box narrower than the viewport, so the whole field box is on screen to press.
     function OpenOnPress({ disabled }: { disabled: boolean }) {

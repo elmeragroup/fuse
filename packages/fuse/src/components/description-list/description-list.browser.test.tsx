@@ -328,3 +328,22 @@ describe("DescriptionList", () => {
     });
   });
 });
+
+describe("DescriptionList", () => {
+  it("lets a render override change the heading level without losing classes or data-slot", () => {
+    renderThemed(
+      <DescriptionList.Root>
+        <DescriptionList.Heading>Customer</DescriptionList.Heading>
+        <DescriptionList.Heading render={<h3 />}>Section</DescriptionList.Heading>
+      </DescriptionList.Root>
+    );
+    const defaultHeading = headingNamed("Customer", 2);
+    expect(defaultHeading.tagName).toBe("H2");
+    expect(defaultHeading.getAttribute("data-slot")).toBe("description-list-heading");
+    const override = headingNamed("Section", 3);
+    expect(override.tagName).toBe("H3");
+    expect(override.getAttribute("data-slot")).toBe("description-list-heading");
+    expect(getComputedStyle(defaultHeading).fontFamily).toBe(getComputedStyle(override).fontFamily);
+    expect(getComputedStyle(defaultHeading).fontSize).toBe(getComputedStyle(override).fontSize);
+  });
+});

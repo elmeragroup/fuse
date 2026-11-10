@@ -9,6 +9,7 @@ import "../../../dist/themes.css";
 import { nextFrames } from "../../../test/animation-frames";
 import { S06Chart } from "../../../test/chart/bar-charts";
 import { label, pointerAt, popup, surfaceBox } from "../../../test/chart/marks";
+import { bars as drawnBars } from "../../../test/chart/marks";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
 import { Chart } from "./chart-namespace";
@@ -189,5 +190,61 @@ describe("tooltip readings", () => {
     await settle();
     // The popup portals out of the host, and its value slot holds the reading.
     expect(document.querySelector('[data-slot="chart-tooltip-value"]')?.textContent).toBe("2 (projected)");
+  });
+});
+
+describe.each([
+  ["at 1280 px", 1280],
+  ["at 320 px", 320],
+])("a pointer sweep %s", (_, width) => {
+  afterEach(async () => {
+    await page.viewport(414, 896);
+  });
+
+  it.each([
+    ["above the bars", (box: DOMRect) => box.top + box.height * 0.04],
+    ["3 px under the plot top, where the tallest columns end", (box: DOMRect) => box.top + 3],
+    ["across the bars", (box: DOMRect) => box.top + box.height * 0.6],
+  ])("names the slot under the pointer %s at every step", async (__, depth) => {
+    // jc2: the popup sat on the pointer's path, so a sweep over it kept naming an older slot. The
+    // oracle is the slot under the pointer, by x alone, as CONTRACT section 9.5 picks it.
+    await page.viewport(width, 720);
+    const { host } = renderThemed(
+      <div style={{ padding: "24px", width: "100%", boxSizing: "border-box" }}>
+        <LocaleProvider locale="en-US">
+          <Chart.Root
+            data={["a", "b", "c", "d", "e", "f", "g", "h"].map((name, index) => ({
+              name,
+              v: 2 + (index % 3),
+            }))}
+            config={{ v: { label: "V", color: "chart-1" } }}
+            xKey="name"
+            aria-label="Sweep">
+            <Chart.Bar dataKey="v" />
+            <Chart.Tooltip />
+          </Chart.Root>
+        </LocaleProvider>
+      </div>
+    );
+    const box = surfaceBox(host);
+    const slots = ["a", "b", "c", "d", "e", "f", "g", "h"];
+    const seen: (string | null)[] = [];
+    const bars = drawnBars(host);
+    for (const [index] of slots.entries()) {
+      await pointerTo(box.left + (box.width * (index + 0.5)) / slots.length, depth(box));
+      seen.push(label());
+      // The popup sits on its column's edge and never covers the column it reads.
+      const own = bars[index]?.getBoundingClientRect() ?? new DOMRect();
+      const shown = popup()?.getBoundingClientRect() ?? new DOMRect();
+      const covers =
+        shown.left < own.right &&
+        own.left < shown.right &&
+        shown.top < own.bottom - 0.5 &&
+        own.top + 0.5 < shown.bottom;
+      expect(covers, `${slots[index] ?? ""} at ${JSON.stringify(shown)} over ${JSON.stringify(own)}`).toBe(
+        false
+      );
+    }
+    expect(seen).toEqual(slots);
   });
 });

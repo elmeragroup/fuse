@@ -395,3 +395,154 @@ describe("one part of a kind per series, after registration", () => {
     expect(caughtError()).toEqual({ name: null, message: null });
   });
 });
+
+describe("Panel and resolution errors on the first render", () => {
+  it("throws for one Panel that mixes a sentiment role with a categorical role", () => {
+    const rows = DAYS.map((row) => ({ ...row, balance: -1 }));
+    expect(
+      thrown(
+        daily(
+          <Chart.Panel series={["kwh", "balance"]}>
+            <Chart.Bar dataKey="kwh" />
+          </Chart.Panel>,
+          rows,
+          {
+            kwh: { label: "Forbruk", color: "chart-1" },
+            balance: { label: "Balanse", color: "chart-sentiment-positive" },
+          }
+        )
+      )
+    ).toEqual(composition("mixed-sentiment-categorical"));
+  });
+
+  it("renders a day series on Root's hour with its value on the day's first hour", () => {
+    // Oslo's 1 October 2025 starts at 22:00 UTC the day before.
+    const hour = (index: number) => new Date(Date.UTC(2025, 8, 30, 22 + index));
+    const hours = [{ start: hour(0), kwh: 1 }, { start: hour(1) }, { start: hour(2) }];
+    expect(
+      thrown(
+        <Chart.Root
+          data={hours}
+          config={{ kwh: { label: "Forbruk", color: "chart-1", interval: "day" } }}
+          xKey="start"
+          interval="hour"
+          timeZone={OSLO}
+          aria-label="Forbruk">
+          <Chart.Bar dataKey="kwh" />
+        </Chart.Root>
+      )
+    ).toBeNull();
+  });
+});
+
+describe("development hints", () => {
+  it("warns reference-outside-domain and names yInclude", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    renderToString(<LocaleProvider locale="nb-NO">{daily(<Chart.ReferenceLine y={40} />)}</LocaleProvider>);
+    expect(warn.mock.calls.map(([message]) => String(message))).toEqual([
+      expect.stringContaining("yInclude"),
+    ]);
+  });
+
+  it("warns absent-column for a TableColumn no row holds", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    renderToString(
+      <LocaleProvider locale="nb-NO">
+        {daily(
+          <Chart.Table>
+            <Chart.TableColumn dataKey="peak" header="Topptime" />
+          </Chart.Table>
+        )}
+      </LocaleProvider>
+    );
+    expect(warn.mock.calls.map(([message]) => String(message))).toEqual([expect.stringContaining('"peak"')]);
+  });
+
+  it("warns bar-variant-needs-html for blocks in the path form", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const rows = Array.from({ length: 120 }, (_, index) => ({ category: `c${String(index)}`, kwh: index }));
+    renderToString(
+      <LocaleProvider locale="nb-NO">
+        <Chart.Root
+          data={rows}
+          config={{ kwh: { ...CONFIG.kwh, barVariant: "blocks" } }}
+          xKey="category"
+          aria-label="Mange">
+          <Chart.Bar dataKey="kwh" />
+        </Chart.Root>
+      </LocaleProvider>
+    );
+    expect(warn.mock.calls.map(([message]) => String(message))).toEqual([
+      expect.stringContaining('barVariant: "blocks"'),
+    ]);
+  });
+
+  it.each([
+    ["reference-outside-domain", <Chart.ReferenceLine key="line" y={40} />, "yInclude"],
+    [
+      "absent-column",
+      <Chart.Table key="table">
+        <Chart.TableColumn dataKey="peak" header="Topptime" />
+      </Chart.Table>,
+      '"peak"',
+    ],
+  ] as const)("warns %s once over three renders of one Root (X25)", (_, child, named) => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const chart = (title: string) => (
+      <LocaleProvider locale="nb-NO">
+        <Chart.Root data={DAYS} config={CONFIG} xKey="day" interval="day" timeZone={OSLO} aria-label={title}>
+          <Chart.Bar dataKey="kwh" />
+          {child}
+        </Chart.Root>
+      </LocaleProvider>
+    );
+    const { rerender } = renderThemed(chart("Forbruk"));
+    rerender(chart("Forbruk per dag"));
+    rerender(chart("Forbruk i oktober"));
+    expect(warn.mock.calls.map(([message]) => String(message))).toEqual([expect.stringContaining(named)]);
+  });
+
+  it("warns each of two absent columns once over three renders of one Root (X43)", () => {
+    // The oracle: one warning per distinct problem, so the second column under the same rule warns
+    // too, and the repeat renders add nothing.
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const chart = (title: string) => (
+      <LocaleProvider locale="nb-NO">
+        <Chart.Root data={DAYS} config={CONFIG} xKey="day" interval="day" timeZone={OSLO} aria-label={title}>
+          <Chart.Bar dataKey="kwh" />
+          <Chart.Table>
+            <Chart.TableColumn dataKey="peak" header="Topptime" />
+            <Chart.TableColumn dataKey="trough" header="Bunntime" />
+          </Chart.Table>
+        </Chart.Root>
+      </LocaleProvider>
+    );
+    const { rerender } = renderThemed(chart("Forbruk"));
+    rerender(chart("Forbruk per dag"));
+    rerender(chart("Forbruk i oktober"));
+    expect(warn.mock.calls.map(([message]) => String(message))).toEqual([
+      expect.stringContaining('"peak"'),
+      expect.stringContaining('"trough"'),
+    ]);
+  });
+
+  it("warns bars-overlap once, naming BarGroup, after two loose Bars register", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const rows = DAYS.map((row) => ({ ...row, kost: 1 }));
+    renderThemed(
+      <LocaleProvider locale="nb-NO">
+        {daily(
+          <>
+            <Chart.Bar dataKey="kwh" />
+            <Chart.Bar dataKey="kost" />
+          </>,
+          rows,
+          { kwh: { label: "Forbruk", color: "chart-1" }, kost: { label: "Kostnad", color: "chart-2" } }
+        )}
+      </LocaleProvider>
+    );
+    expect(warn.mock.calls.map(([message]) => String(message))).toEqual([
+      expect.stringContaining("Chart.BarGroup"),
+    ]);
+  });
+});

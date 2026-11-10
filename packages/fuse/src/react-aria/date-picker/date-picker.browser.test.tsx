@@ -356,3 +356,51 @@ describe("DatePicker presets", () => {
     await expect.element(page.getByRole("dialog")).not.toBeInTheDocument();
   });
 });
+
+function buttonNamed(name: string): HTMLElement {
+  const element = page.getByRole("button", { name, exact: true }).element();
+  if (!(element instanceof HTMLElement)) {
+    throw new Error(`expected button ${name}`);
+  }
+  return element;
+}
+
+describe("DatePicker", () => {
+  it.each([
+    ["renders leading zeros on day and month by default", {}, "07", "04"],
+    ["drops the leading zeros when a caller turns them off", { shouldForceLeadingZeros: false }, "7", "4"],
+  ] as const)("%s", async (_title, props, month, day) => {
+    renderPicker(<DatePicker label="Invoice date" defaultValue={july4} {...props} />);
+    await expect.element(segmentLocator("month")).toBeVisible();
+
+    expect(segmentNamed("month").textContent).toBe(month);
+    expect(segmentNamed("day").textContent).toBe(day);
+  });
+});
+
+describe("DatePicker trigger placement", () => {
+  it("leads the field box with the trigger in DOM, tab and visual order", async () => {
+    renderPicker(
+      <>
+        <button type="button">Before</button>
+        <DatePicker label="Start-up date" defaultValue={july14} triggerPlacement="start" />
+      </>
+    );
+    const group = groupNamed("Start-up date");
+
+    expect(group.firstElementChild).toBe(trigger());
+    expect(trigger().getBoundingClientRect().right).toBeLessThanOrEqual(
+      segmentNamed("month").getBoundingClientRect().left
+    );
+
+    buttonNamed("Before").focus();
+    await userEvent.tab();
+    expect(document.activeElement).toBe(trigger());
+    await userEvent.tab();
+    expect(document.activeElement).toBe(segmentNamed("month"));
+
+    // RAC's label click focuses the group's first focusable part, now the trigger.
+    await userEvent.click(page.getByText("Start-up date", { exact: true }));
+    expect(document.activeElement).toBe(trigger());
+  });
+});

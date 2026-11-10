@@ -5,6 +5,7 @@ import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import { expectActivationCancelled, resetHashAroundEach } from "../../../test/aria-disabled-activation";
 import { settleTransitions } from "../../../test/assert-invalid-ring";
+import { assertNoAxeViolations } from "../../../test/axe";
 import { cssVarColor, renderThemed, roleNamed, textNamed } from "../../../test/themed-browser-render";
 import { Item } from "./index";
 
@@ -261,5 +262,62 @@ describe("aria-disabled Item rows", () => {
     settleTransitions(link);
     expect(getComputedStyle(link).backgroundColor).toBe(cssVarColor(link, "--muted"));
     expect(getComputedStyle(link).opacity).toBe("1");
+  });
+});
+
+describe("Item", () => {
+  afterEach(() => {
+    document.documentElement.removeAttribute("data-density");
+  });
+
+  it("keeps a grouped separator out of the list's children, and an ungrouped one a separator", async () => {
+    const { host } = renderThemed(
+      <>
+        <Item.Group aria-label="Addresses">
+          <Item.Root>
+            <Item.Title>Storgata 1</Item.Title>
+          </Item.Root>
+          <Item.Separator />
+          <Item.Root>
+            <Item.Title>Kirkeveien 22</Item.Title>
+          </Item.Root>
+        </Item.Group>
+        <Item.Separator aria-label="Between sections" />
+      </>
+    );
+    expect(page.getByRole("list").getByRole("separator").query()).toBeNull();
+    expect(roleNamed("separator", "Between sections").getAttribute("data-slot")).toBe("item-separator");
+    // Every child the list owns in the accessibility tree is a listitem; the separator stays
+    // painted but hidden from assistive technology.
+    const list = roleNamed("list", "Addresses");
+    const exposed = [...list.children].filter((child) => child.getAttribute("aria-hidden") !== "true");
+    expect(exposed.map((child) => child.getAttribute("role"))).toEqual(["listitem", "listitem"]);
+    expect(list.children).toHaveLength(3);
+    await assertNoAxeViolations(host);
+  });
+
+  it("keeps a grouped item listed when its render element overrides the root's hidden", () => {
+    renderThemed(
+      <Item.Group>
+        <Item.Root hidden render={<a href="#shown" hidden={false} />}>
+          <Item.Title>Shown</Item.Title>
+        </Item.Root>
+      </Item.Group>
+    );
+    const link = roleNamed("link", "Shown");
+    expect(link.parentElement?.getAttribute("role")).toBe("listitem");
+    expect(page.getByRole("list").getByRole("listitem").elements()).toHaveLength(1);
+  });
+
+  it("honors an explicit inert on a visible footer", async () => {
+    renderThemed(<FooterTree mode="visible" inert />);
+    const nestedButton = footerButton("Nested");
+
+    roleNamed("button", "Before").focus();
+    await userEvent.keyboard("{Tab}");
+    expect(document.activeElement).toBe(roleNamed("button", "After"));
+
+    nestedButton.focus();
+    expect(document.activeElement).not.toBe(nestedButton);
   });
 });

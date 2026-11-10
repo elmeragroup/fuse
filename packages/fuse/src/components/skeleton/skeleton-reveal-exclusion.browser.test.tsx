@@ -5,21 +5,30 @@
  * dialogs, focus and scroll lock, which a ghost must leave as they were.
  */
 import { describe, expect, it } from "vitest";
+import { page } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import { nextFrames } from "../../../test/animation-frames";
+import { withLocale } from "../../../test/locale-matrix";
 import {
   currentPane,
   querySlot,
   slot,
   failOnResizeObserverLoop,
 } from "../../../test/skeleton-reveal-fixtures";
+import { pageScrollState } from "../../../test/skeleton-reveal-fixtures";
 import { renderThemed, roleNamed } from "../../../test/themed-browser-render";
+import { AlertDialog } from "../alert-dialog";
 import { Button } from "../button/button";
+import { Command } from "../command";
+import { Dialog } from "../dialog";
 import { Field } from "../field";
 import { Form } from "../form/form";
 import { Input } from "../input/input";
+import { Popover } from "../popover";
+import { Sheet } from "../sheet";
+import { TextField } from "../text-field/text-field";
 import { SkeletonReveal } from "./skeleton-reveal";
 
 failOnResizeObserverLoop();
@@ -183,5 +192,192 @@ describe("SkeletonReveal Fields", () => {
     await nextFrames(2);
     const input = roleNamed("textbox", "Email");
     expect((input.getAttribute("aria-describedby") ?? "").split(" ")).toContain("email-help");
+  });
+});
+
+describe("SkeletonReveal forms", () => {
+  it("keeps ghost fields out of a Fuse Form's submitted values and its validation", () => {
+    type Account = { readonly email: string };
+    /** What the form submits: the email field's value, when a field of the form holds one. */
+    type Submitted = { readonly email?: string };
+    const submitted: Submitted[] = [];
+    const view = (data: Account | null, sample: Account) => (
+      <Form<Submitted> aria-label="Account" onFormSubmit={(values) => submitted.push(values)}>
+        <SkeletonReveal data={data} sample={sample} label="Henter" reveal="together">
+          {(account) => (
+            <TextField
+              label="Email"
+              name="email"
+              defaultValue={account.email}
+              isInvalid={account.email === ""}
+            />
+          )}
+        </SkeletonReveal>
+      </Form>
+    );
+    const { rerender } = renderThemed(view(null, { email: "sample@example.com" }));
+    const form = roleNamed("form", "Account");
+    if (!(form instanceof HTMLFormElement)) throw new Error("expected a form");
+    form.requestSubmit();
+    expect(submitted).toEqual([{}]);
+
+    // An invalid ghost field, from an empty sample, blocks nothing.
+    rerender(view(null, { email: "" }));
+    form.requestSubmit();
+    expect(submitted).toEqual([{}, {}]);
+
+    // Mid-reveal, only the live field submits.
+    rerender(view({ email: "kari@example.com" }, { email: "" }));
+    expect(querySlot("skeleton-reveal-skeleton")).not.toBeNull();
+    form.requestSubmit();
+    expect(submitted).toEqual([{}, {}, { email: "kari@example.com" }]);
+  });
+
+  it("keeps the form's displayed errors on ghost and leaving fields, and still leaves them out of the submit", async () => {
+    type Account = { readonly email: string };
+    type Submitted = { readonly email?: string };
+    const submitted: Submitted[] = [];
+    const view = (data: Account | null, loading = false) => (
+      <Form<Submitted>
+        aria-label="Account"
+        errors={{ email: "Already registered" }}
+        onFormSubmit={(values) => submitted.push(values)}>
+        <SkeletonReveal
+          data={data}
+          sample={{ email: "sample@example.com" }}
+          label="Henter"
+          reveal="together"
+          loading={loading}>
+          {(account) => <TextField label="Email" name="email" defaultValue={account.email} />}
+        </SkeletonReveal>
+      </Form>
+    );
+    const { rerender } = renderThemed(view(null));
+    expect(slot("skeleton-reveal-ghost").textContent).toContain("Already registered");
+    const form = roleNamed("form", "Account");
+    if (!(form instanceof HTMLFormElement)) throw new Error("expected a form");
+    form.requestSubmit();
+    expect(submitted).toEqual([{}]);
+
+    rerender(view({ email: "kari@example.com" }));
+    await expect.poll(() => querySlot("skeleton-reveal-skeleton")).toBeNull();
+    // A refetch: the field on its way out keeps the error it showed.
+    rerender(view({ email: "kari@example.com" }, true));
+    // The content pane has no role; on a refetch it is the one on its way out.
+    const leaving = [...document.querySelectorAll('[data-slot="skeleton-reveal-content"]')];
+    expect(leaving).toHaveLength(1);
+    expect(leaving[0]?.textContent).toContain("Already registered");
+    form.requestSubmit();
+    expect(submitted).toEqual([{}, {}]);
+  });
+});
+
+describe("SkeletonReveal overlays", () => {
+  it("opens no overlay from the ghost: no dialog, no focus moved, no scroll lock", async () => {
+    const before = renderThemed(
+      <button type="button" aria-label="Outside">
+        Outside
+      </button>
+    );
+    const outside = roleNamed("button", "Outside");
+    outside.focus();
+    const scroll = pageScrollState();
+    const dialog = (
+      <Dialog.Root defaultOpen>
+        <Dialog.Content>
+          <Dialog.Title>Confirm plan</Dialog.Title>
+        </Dialog.Content>
+      </Dialog.Root>
+    );
+    const view = (loading: boolean) =>
+      withLocale(
+        "en-US",
+        <SkeletonReveal loading={loading} label="Henter" reveal="together">
+          <div className="w-72">{dialog}</div>
+        </SkeletonReveal>
+      );
+    const { rerender } = renderThemed(view(true));
+    await nextFrames(3);
+    expect(page.getByRole("dialog").query()).toBeNull();
+    expect(document.activeElement).toBe(outside);
+    expect(pageScrollState()).toBe(scroll);
+
+    // The content opens its dialog for real.
+    rerender(view(false));
+    await expect.poll(() => page.getByRole("dialog").all().length).toBe(1);
+    // A refetch: the skeleton drawn from it, and the content on its way out, open no copy.
+    rerender(view(true));
+    await nextFrames(3);
+    expect(page.getByRole("dialog").all()).toHaveLength(0);
+    await expect.poll(pageScrollState).toBe(scroll);
+    before.unmount();
+  });
+
+  it("keeps every dialog-family root closed and every anchored overlay unportaled in the ghost", async () => {
+    const outside = renderThemed(
+      <button type="button" aria-label="Outside">
+        Outside
+      </button>
+    );
+    roleNamed("button", "Outside").focus();
+    const scroll = pageScrollState();
+    renderThemed(
+      withLocale(
+        "en-US",
+        <SkeletonReveal loading label="Henter" reveal="together">
+          <div className="flex w-72 flex-col gap-2">
+            <AlertDialog.Root defaultOpen>
+              <AlertDialog.Content title="Cancel the contract?" actionLabel="Cancel contract">
+                The contract ends on 1 June.
+              </AlertDialog.Content>
+            </AlertDialog.Root>
+            <Sheet.Root defaultOpen>
+              <Sheet.Content>
+                <Sheet.Title>Filters</Sheet.Title>
+              </Sheet.Content>
+            </Sheet.Root>
+            <Popover.Root defaultOpen>
+              <Popover.Trigger>Plan</Popover.Trigger>
+              <Popover.Content>
+                <Popover.Title>Fixed price</Popover.Title>
+              </Popover.Content>
+            </Popover.Root>
+          </div>
+        </SkeletonReveal>
+      )
+    );
+    await nextFrames(3);
+    expect(page.getByRole("alertdialog").query()).toBeNull();
+    expect(page.getByRole("dialog").query()).toBeNull();
+    expect(page.getByText("Fixed price").query()).toBeNull();
+    expect(document.activeElement).toBe(roleNamed("button", "Outside"));
+    expect(pageScrollState()).toBe(scroll);
+    outside.unmount();
+  });
+
+  it("opens no Command palette from the ghost: no dialog, no scroll lock", async () => {
+    const scroll = pageScrollState();
+    renderThemed(
+      withLocale(
+        "en-US",
+        <SkeletonReveal loading label="Henter" reveal="together">
+          <Command.Root items={["Open invoices", "Open contracts"]} defaultOpen>
+            <Command.Content>
+              <Command.Input />
+              <Command.List>
+                {(command: string) => (
+                  <Command.Item key={command} value={command}>
+                    {command}
+                  </Command.Item>
+                )}
+              </Command.List>
+            </Command.Content>
+          </Command.Root>
+        </SkeletonReveal>
+      )
+    );
+    await nextFrames(3);
+    expect(page.getByRole("dialog").query()).toBeNull();
+    expect(pageScrollState()).toBe(scroll);
   });
 });

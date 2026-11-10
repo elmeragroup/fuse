@@ -1,3 +1,4 @@
+import { use } from "react";
 import type { ReactElement } from "react";
 
 import { afterEach, beforeEach, expect } from "vitest";
@@ -167,4 +168,37 @@ export function failOnResizeObserverLoop(): void {
     // here would skip the render cleanup registered before it, leaving this test's tree mounted.
     expect.soft(loops, "ResizeObserver loop errors").toEqual([]);
   });
+}
+
+/**
+ * The page's scroll state, as a scroll lock would change it: html and body inline styles and
+ * overflow.
+ *
+ * @returns The state as one comparable string.
+ */
+export function pageScrollState(): string {
+  const { documentElement: html, body } = document;
+  return [
+    html.getAttribute("style"),
+    body.getAttribute("style"),
+    getComputedStyle(html).overflowY,
+    getComputedStyle(body).overflowY,
+  ].join("|");
+}
+
+/**
+ * A sibling that suspends on a promise the test resolves, as a lazy part of the page would.
+ *
+ * @returns The suspending component, and `release` to resolve its promise.
+ */
+export function createSuspender() {
+  let release: () => void = () => undefined;
+  const pending = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  function Suspender({ suspend }: { suspend: boolean }) {
+    if (suspend) use(pending);
+    return null;
+  }
+  return { Suspender, release: () => release() };
 }

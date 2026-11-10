@@ -84,3 +84,22 @@ describe("SkeletonReveal server markup", () => {
     expect([label("nb-NO"), label("en-US")]).toEqual(["Laster", "Loading"]);
   });
 });
+
+describe("SkeletonReveal server markup", () => {
+  it("keeps the ghost's controls out of their form from the first paint", () => {
+    const document = invoiceDocument(null);
+    const input = part(document, "skeleton-reveal-ghost")?.querySelector("input");
+    expect(input?.closest("fieldset")?.disabled).toBe(true);
+    expect(input?.matches(":disabled")).toBe(true);
+  });
+
+  it("renders data as enabled content, not busy, with no label or skeleton", () => {
+    const document = invoiceDocument({ number: "Invoice 4711" });
+    expect(part(document, "skeleton-reveal")?.getAttribute("aria-busy")).toBe("false");
+    const content = part(document, "skeleton-reveal-content");
+    expect(content?.textContent).toBe("Invoice 4711");
+    expect(content?.querySelector("input")?.matches(":disabled")).toBe(false);
+    expect(part(document, "skeleton-reveal-label")).toBeNull();
+    expect(part(document, "skeleton-reveal-skeleton")).toBeNull();
+  });
+});

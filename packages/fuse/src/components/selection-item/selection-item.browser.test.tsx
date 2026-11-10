@@ -1,5 +1,10 @@
+import { useState } from "react";
+import type { MouseEvent as ReactMouseEvent } from "react";
+
 import { Checkbox } from "@base-ui/react/checkbox";
+import type { BaseUIEvent } from "@base-ui/react/types";
 import { describe, expect, it } from "vitest";
+import { vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
@@ -332,5 +337,271 @@ describe("selection group names", () => {
         .elements()
         .map((element) => element.textContent)
     ).toEqual(["Check error", "Card check error", "Radio error", "Card radio error"]);
+  });
+});
+
+function subsectionHost(from: HTMLElement): HTMLElement {
+  const host = from.closest("[data-mode], [aria-hidden='true']");
+  if (!(host instanceof HTMLElement)) {
+    throw new Error("expected a subsection host");
+  }
+  return host;
+}
+
+function nestedSubsectionButton(label: string): HTMLElement {
+  const button = subsectionHost(textNamed(label)).querySelector("button");
+  if (!(button instanceof HTMLElement)) {
+    throw new Error(`expected a button inside the ${label} subsection`);
+  }
+  return button;
+}
+
+function SubSectionTree({ mode }: { mode: "hidden" | "visible" | "default" }) {
+  return (
+    <>
+      <button type="button">Before</button>
+      <Field.Root>
+        <SelectionItem.Shell dataSlot="checkbox-item" control={<span role="img" aria-label="Indicator" />}>
+          <RowTitle>Fixed price</RowTitle>
+          <SelectionItem.SubSection mode={mode}>
+            <button type="button">Hidden details</button>
+          </SelectionItem.SubSection>
+        </SelectionItem.Shell>
+      </Field.Root>
+      <button type="button">After</button>
+    </>
+  );
+}
+
+/**
+ * Click the shell at `x(width)` from the left of its padding box, where `width` is the
+ * padding box's width, and at viewport `y`. Playwright measures `position` from the
+ * padding box, inside the border.
+ */
+async function clickShellAt(shell: HTMLElement, x: (width: number) => number, y: number): Promise<void> {
+  const top = shell.getBoundingClientRect().top + shell.clientTop;
+  await userEvent.click(shell, { position: { x: x(shell.clientWidth), y: y - top } });
+}
+
+function PressCounter() {
+  const [presses, setPresses] = useState(0);
+  return (
+    <button type="button" onClick={() => setPresses((count) => count + 1)}>
+      {`Pressed ${presses} times`}
+    </button>
+  );
+}
+
+describe("SelectionItem", () => {
+  it("toggles from row text and isolates subsection clicks", async () => {
+    renderThemed(
+      <Field.Root>
+        <SelectionItem.Shell dataSlot="checkbox-item" control={<Checkbox.Root />}>
+          <SelectionItem.Content>
+            <RowTitle>Fixed price</RowTitle>
+          </SelectionItem.Content>
+          <SelectionItem.SubSection>
+            <button type="button">Details</button>
+          </SelectionItem.SubSection>
+        </SelectionItem.Shell>
+      </Field.Root>
+    );
+
+    const details = page.getByRole("button", { name: "Details", exact: true }).element();
+    expect(details.closest("label")).toBeNull();
+
+    await userEvent.click(headingNamed("Fixed price"));
+    expect(checkboxNamed("Fixed price", true).getAttribute("aria-checked")).toBe("true");
+
+    await userEvent.click(page.getByRole("button", { name: "Details", exact: true }));
+    expect(checkboxNamed("Fixed price", true).getAttribute("aria-checked")).toBe("true");
+  });
+
+  describe("isSubSectionSelectable", () => {
+    function SelectablePlan({ isSubSectionSelectable }: { isSubSectionSelectable?: boolean }) {
+      return (
+        <CheckboxItemGroup label="Plans">
+          <CheckboxItem value="fixed" isSubSectionSelectable={isSubSectionSelectable}>
+            <RowTitle>Fixed price</RowTitle>
+            <CheckboxItem.SubSection role="region" aria-label="Price details">
+              <p>Locked for twelve months.</p>
+              <a href="#price-terms">Price terms</a>
+            </CheckboxItem.SubSection>
+          </CheckboxItem>
+        </CheckboxItemGroup>
+      );
+    }
+
+    it("toggles from the SubSection's text, band and side padding, and leaves a link's click its own", async () => {
+      renderThemed(<SelectablePlan isSubSectionSelectable />);
+
+      const shell = shellFrom("Fixed price");
+      const checkbox = checkboxNamed("Fixed price");
+      await userEvent.click(textNamed("Locked for twelve months."));
+      expect(checkbox.getAttribute("aria-checked"), "SubSection text").toBe("true");
+
+      // The band's bottom inset, below the SubSection's content.
+      const bottom = shell.getBoundingClientRect().bottom - shell.clientTop;
+      await clickShellAt(shell, (width) => width / 2, bottom - 7);
+      expect(checkbox.getAttribute("aria-checked"), "band padding").toBe("false");
+
+      const details = roleNamed("region", "Price details").getBoundingClientRect();
+      await clickShellAt(shell, () => 4, details.top + details.height / 2);
+      expect(checkbox.getAttribute("aria-checked"), "side padding beside the SubSection").toBe("true");
+
+      await userEvent.click(roleNamed("link", "Price terms"));
+      expect(checkbox.getAttribute("aria-checked"), "link").toBe("true");
+      // The name stays the label row's: the SubSection's text does not join it.
+      expect(page.getByRole("checkbox", { name: "Fixed price", exact: true }).query()).toBe(checkbox);
+    });
+
+    it("sends one click through the row and its ancestors per SubSection click", async () => {
+      const rowClicks: string[] = [];
+      const ancestorClicks: string[] = [];
+      renderThemed(
+        // oxlint-disable-next-line jsx-a11y/no-static-element-interactions -- counts bubbling clicks only
+        <div onClick={() => ancestorClicks.push("click")}>
+          <Field.Root>
+            <SelectionItem.Shell
+              dataSlot="checkbox-item"
+              control={<Checkbox.Root />}
+              isSubSectionSelectable
+              onClick={() => rowClicks.push("click")}>
+              <RowTitle>Fixed price</RowTitle>
+              <SelectionItem.SubSection>Locked for twelve months.</SelectionItem.SubSection>
+            </SelectionItem.Shell>
+          </Field.Root>
+        </div>
+      );
+
+      await userEvent.click(textNamed("Locked for twelve months."));
+      expect(checkboxNamed("Fixed price").getAttribute("aria-checked")).toBe("true");
+      expect(rowClicks).toEqual(["click"]);
+      expect(ancestorClicks).toEqual(["click"]);
+    });
+
+    it("runs a consumer's click handler first and skips the toggle when it prevents it", async () => {
+      const clicks: boolean[] = [];
+      function onClick(event: BaseUIEvent<ReactMouseEvent<HTMLDivElement>>): void {
+        clicks.push(true);
+        if (clicks.length === 1) {
+          event.preventDefault();
+        }
+        if (clicks.length === 2) {
+          event.preventBaseUIHandler();
+        }
+      }
+      renderThemed(
+        <Field.Root>
+          <SelectionItem.Shell
+            dataSlot="checkbox-item"
+            control={<Checkbox.Root />}
+            isSubSectionSelectable
+            onClick={onClick}>
+            <RowTitle>Fixed price</RowTitle>
+            <SelectionItem.SubSection>Locked for twelve months.</SelectionItem.SubSection>
+          </SelectionItem.Shell>
+        </Field.Root>
+      );
+
+      await userEvent.click(textNamed("Locked for twelve months."));
+      expect(clicks).toEqual([true]);
+      expect(checkboxNamed("Fixed price").getAttribute("aria-checked"), "preventDefault").toBe("false");
+      await userEvent.click(textNamed("Locked for twelve months."));
+      expect(clicks).toEqual([true, true]);
+      expect(checkboxNamed("Fixed price").getAttribute("aria-checked"), "preventBaseUIHandler").toBe("false");
+      await userEvent.click(textNamed("Locked for twelve months."));
+      expect(checkboxNamed("Fixed price").getAttribute("aria-checked")).toBe("true");
+    });
+  });
+
+  it("renders passed and direct sub-sections outside the label, passed first, without key collisions", () => {
+    const error = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    try {
+      renderThemed(
+        <Field.Root>
+          <SelectionItem.Shell
+            dataSlot="checkbox-item"
+            control={<Checkbox.Root />}
+            subSections={
+              <SelectionItem.SubSection>
+                <button type="button">Passed details</button>
+              </SelectionItem.SubSection>
+            }>
+            <SelectionItem.SubSection>
+              <button type="button">Direct details</button>
+            </SelectionItem.SubSection>
+            <SelectionItem.Content>
+              <RowTitle>Fixed price</RowTitle>
+            </SelectionItem.Content>
+          </SelectionItem.Shell>
+        </Field.Root>
+      );
+
+      const passed = page.getByRole("button", { name: "Passed details", exact: true }).element();
+      const direct = page.getByRole("button", { name: "Direct details", exact: true }).element();
+      expect(passed.closest("label")).toBeNull();
+      expect(direct.closest("label")).toBeNull();
+      expect(passed.compareDocumentPosition(direct)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+      const keyWarnings = error.mock.calls.filter((args) =>
+        args.some((arg) => String(arg).includes("same key"))
+      );
+      expect(keyWarnings).toEqual([]);
+    } finally {
+      error.mockRestore();
+    }
+  });
+
+  it("keeps a passed SubSection's button clickable when a wrapper element surrounds it", async () => {
+    renderThemed(
+      <Field.Root>
+        <SelectionItem.Shell
+          dataSlot="checkbox-item"
+          control={<Checkbox.Root />}
+          subSections={
+            <div>
+              <SelectionItem.SubSection>
+                <PressCounter />
+              </SelectionItem.SubSection>
+            </div>
+          }>
+          <RowTitle>Fixed price</RowTitle>
+        </SelectionItem.Shell>
+      </Field.Root>
+    );
+
+    await userEvent.click(roleNamed("button", "Pressed 0 times"));
+    expect(roleNamed("button", "Pressed 1 times")).toBeTruthy();
+    expect(checkboxNamed("Fixed price").getAttribute("aria-checked")).toBe("false");
+  });
+
+  it("keeps a Fragment-wrapped SubSection inside the label", () => {
+    renderThemed(
+      <Field.Root>
+        <SelectionItem.Shell dataSlot="checkbox-item" control={<Checkbox.Root />}>
+          <RowTitle>Fixed price</RowTitle>
+          <>
+            <SelectionItem.SubSection>
+              <button type="button">Inside fragment</button>
+            </SelectionItem.SubSection>
+          </>
+        </SelectionItem.Shell>
+      </Field.Root>
+    );
+
+    const button = page.getByRole("button", { name: "Inside fragment", exact: true }).element();
+    expect(button.closest("label")).not.toBeNull();
+    button.closest("label")?.click();
+    const box = page.getByRole("checkbox", { checked: true }).element();
+    expect(box.getAttribute("aria-checked")).toBe("true");
+  });
+
+  it("passes mode through to Item.Footer: hidden renders the band inert, visible does not", () => {
+    // The focus choreography behind `inert` is Item.Footer's, covered in item.browser.test.tsx.
+    const { rerender } = renderThemed(<SubSectionTree mode="hidden" />);
+    expect(subsectionHost(nestedSubsectionButton("Hidden details")).inert).toBe(true);
+
+    rerender(<SubSectionTree mode="visible" />);
+    expect(subsectionHost(nestedSubsectionButton("Hidden details")).inert).toBe(false);
   });
 });

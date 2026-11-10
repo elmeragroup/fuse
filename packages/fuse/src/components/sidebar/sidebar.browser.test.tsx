@@ -81,6 +81,41 @@ describe("Sidebar toggle paths", () => {
     expect((await pressB({})).defaultPrevented).toBe(false);
   });
 
+  it("toggles from Ctrl+B on Windows and leaves Ctrl+B to the caret on Apple platforms", async () => {
+    renderThemed(<Frame />);
+    expect((await pressB({ ctrlKey: true })).defaultPrevented).toBe(false);
+    expect(sidebarRoot().getAttribute("data-state")).toBe("expanded");
+
+    stubPlatform("Win32");
+    expect((await pressB({ ctrlKey: true })).defaultPrevented).toBe(true);
+    expect(sidebarRoot().getAttribute("data-state")).toBe("collapsed");
+    expect((await pressB({ metaKey: true })).defaultPrevented).toBe(false);
+    expect(sidebarRoot().getAttribute("data-state")).toBe("collapsed");
+  });
+
+  it.each([
+    ["an event another handler already took", { metaKey: true }, "window", true],
+    ["a press mid-composition", { metaKey: true, isComposing: true }, "window", false],
+    ["a press typed into a textarea", { metaKey: true }, "Notes", false],
+    ["a press typed into a contenteditable", { metaKey: true }, "Editor", false],
+  ] as const)("ignores %s", async (_case, init, target, handled) => {
+    renderThemed(
+      <>
+        <Frame />
+        <textarea aria-label="Notes" />
+        <div role="textbox" aria-label="Editor" contentEditable suppressContentEditableWarning />
+      </>
+    );
+    const event = await pressB(
+      init,
+      target === "window" ? window : roleNamed("textbox", target),
+      handled ? (pressed) => pressed.preventDefault() : undefined
+    );
+    // Only the handler that took it marks it handled; the sidebar never does.
+    expect(event.defaultPrevented).toBe(handled);
+    expect(sidebarRoot().getAttribute("data-state")).toBe("expanded");
+  });
+
   it("toggles from the Trigger, named by the dictionary, and runs the caller's onClick first", async () => {
     const order: string[] = [];
     renderThemed(

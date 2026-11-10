@@ -15,6 +15,7 @@ import {
   finishAnimations,
 } from "../../../test/skeleton-reveal-fixtures";
 import type { Invoice } from "../../../test/skeleton-reveal-fixtures";
+import { heightAnimation } from "../../../test/skeleton-reveal-fixtures";
 import { renderThemed, roleNamed } from "../../../test/themed-browser-render";
 import { SkeletonReveal } from "./skeleton-reveal";
 
@@ -69,5 +70,36 @@ describe("SkeletonReveal smart hold", () => {
     finishAnimations();
     await expect.poll(() => revealed).toBe(1);
     await expect.poll(() => querySlot("skeleton-reveal-skeleton")).toBeNull();
+  });
+});
+
+describe("SkeletonReveal smart hold", () => {
+  it("holds a client skeleton back under smart, and lands content at once when it beats the hold", async () => {
+    let revealed = 0;
+    function Fast({ data }: { data: Invoice | null }) {
+      return (
+        <SkeletonReveal data={data} sample={SAMPLE} label="Henter" onReveal={() => (revealed += 1)}>
+          {(invoice) => <InvoiceCard invoice={invoice} />}
+        </SkeletonReveal>
+      );
+    }
+    const { rerender } = renderThemed(<Fast data={null} />);
+    const skeleton = slot("skeleton-reveal-skeleton");
+    // The space is reserved, but nothing shows yet.
+    expect(skeleton.getBoundingClientRect().height).toBeGreaterThan(0);
+    expect(getComputedStyle(skeleton).opacity).toBe("0");
+    // Paused, the hold cannot run out before the data lands, however slowly the runner renders.
+    for (const animation of skeleton.getAnimations()) animation.pause();
+    await nextFrames(2);
+    expect(getComputedStyle(skeleton).opacity).toBe("0");
+
+    rerender(<Fast data={LONG} />);
+    const root = slot("skeleton-reveal");
+    expect(heightAnimation(root)).toBeUndefined();
+    const content = slot("skeleton-reveal-content");
+    expect(content.getAnimations({ subtree: true })).toEqual([]);
+    expect(getComputedStyle(skeleton).opacity).toBe("0");
+    await expect.poll(() => querySlot("skeleton-reveal-skeleton")).toBeNull();
+    expect(revealed).toBe(1);
   });
 });

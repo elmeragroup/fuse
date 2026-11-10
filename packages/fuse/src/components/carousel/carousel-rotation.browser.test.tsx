@@ -71,6 +71,105 @@ describe("Carousel autoplay", () => {
     );
   }
 
+  it("rotates every delay, rewinds from the last page, and silences the live region meanwhile", async () => {
+    renderThemed(<AutoplayFixture />);
+    await userEvent.hover(roleNamed("button", "Outside"));
+    const viewport = carouselViewport(roleNamed("region", "Offers"));
+    expect(roleNamed("button", "Stop automatic slide show").hasAttribute("aria-pressed")).toBe(false);
+    expect(viewport.getAttribute("aria-live")).toBe("off");
+    await turn(1);
+    await turn(2);
+    await turn(0);
+  });
+
+  it("pauses while hovered and resumes when the pointer leaves", async () => {
+    renderThemed(<AutoplayFixture />);
+    const viewport = carouselViewport(roleNamed("region", "Offers"));
+    await userEvent.hover(viewport);
+    await expect.poll(() => viewport.getAttribute("aria-live")).toBe("polite");
+    await staysOnFirstPage();
+    expect(roleNamed("button", "Stop automatic slide show")).toBeInstanceOf(HTMLButtonElement);
+    await userEvent.hover(roleNamed("button", "Outside"));
+    await expect.poll(() => viewport.getAttribute("aria-live")).toBe("off");
+    await turn(1);
+  });
+
+  it("stops for good when keyboard focus lands on the rotation control or anywhere else in it", async () => {
+    renderThemed(<AutoplayFixture />);
+    const viewport = carouselViewport(roleNamed("region", "Offers"));
+    await userEvent.hover(roleNamed("button", "Outside"));
+    roleNamed("button", "Outside").focus();
+    await userEvent.keyboard("{Tab}");
+    expect(document.activeElement).toBe(roleNamed("button", "Start automatic slide show"));
+    // Moving on through the carousel and out of it does not resume it.
+    await userEvent.keyboard("{Tab}");
+    expect(document.activeElement).toBe(roleNamed("button", "Previous slide"));
+    await userEvent.keyboard("{Shift>}{Tab}{Tab}{/Shift}");
+    expect(document.activeElement).toBe(roleNamed("button", "Outside"));
+    await staysOnFirstPage();
+    expect(viewport.getAttribute("aria-live")).toBe("polite");
+  });
+
+  it("pauses while the document is hidden", async () => {
+    renderThemed(<AutoplayFixture />);
+    const viewport = carouselViewport(roleNamed("region", "Offers"));
+    // The test page cannot be hidden, so the document reports hidden through its own property.
+    const visibility = vi.spyOn(document, "visibilityState", "get").mockReturnValue("hidden");
+    document.dispatchEvent(new Event("visibilitychange"));
+    await userEvent.hover(roleNamed("button", "Outside"));
+    await expect.poll(() => viewport.getAttribute("aria-live")).toBe("polite");
+    await staysOnFirstPage();
+    visibility.mockRestore();
+    document.dispatchEvent(new Event("visibilitychange"));
+    // The render that reads the visible document schedules the next turn.
+    await expect.poll(() => viewport.getAttribute("aria-live")).toBe("off");
+    await turn(1);
+  });
+
+  it("stops for good when a control changes the page, until the user starts it", async () => {
+    renderThemed(<AutoplayFixture />);
+    const viewport = carouselViewport(roleNamed("region", "Offers"));
+    roleNamed("button", "Next slide").click();
+    await userEvent.hover(roleNamed("button", "Outside"));
+    await pollFrames(currentIndicator, 1);
+    expect(roleNamed("button", "Start automatic slide show")).toBeInstanceOf(HTMLButtonElement);
+    expect(viewport.getAttribute("aria-live")).toBe("polite");
+    vi.advanceTimersByTime(DELAY * 5);
+    await nextFrames(2);
+    expect(currentIndicator()).toBe(1);
+
+    await userEvent.click(roleNamed("button", "Start automatic slide show"));
+    await userEvent.hover(roleNamed("button", "Outside"));
+    await turn(2);
+  });
+
+  it("stays stopped when its delay changes", async () => {
+    function Configurable(): ReactElement {
+      const [delay, setDelay] = useState(DELAY);
+      return withLocale(
+        "en-US",
+        <>
+          <button type="button" onClick={() => setDelay(DELAY + 50)}>
+            Slower
+          </button>
+          <Carousel.Root aria-label="Offers" style={{ width: WIDTH }}>
+            <Carousel.Controls>
+              <Carousel.Autoplay delay={delay} />
+              <Carousel.Indicators />
+            </Carousel.Controls>
+            <Carousel.Viewport>{carouselSlides(3, 1)}</Carousel.Viewport>
+          </Carousel.Root>
+        </>
+      );
+    }
+    renderThemed(<Configurable />);
+    roleNamed("button", "Stop automatic slide show").click();
+    await userEvent.click(roleNamed("button", "Slower"));
+    await nextFrames(2);
+    expect(roleNamed("button", "Start automatic slide show")).toBeInstanceOf(HTMLButtonElement);
+    await staysOnFirstPage();
+  });
+
   it("keeps rotating after the user presses Play, through focus on the control, hover and Tab", async () => {
     renderThemed(<AutoplayFixture />);
     const viewport = carouselViewport(roleNamed("region", "Offers"));
@@ -93,6 +192,76 @@ describe("Carousel autoplay", () => {
     expect(document.activeElement).toBe(roleNamed("button", "Previous slide"));
     await turn(0);
     expect(viewport.getAttribute("aria-live")).toBe("off");
+  });
+});
+
+describe("Carousel autoplay that mounts late", () => {
+  function Late({ onShow }: { readonly onShow: (show: () => void) => void }): ReactElement {
+    const [shown, setShown] = useState(false);
+    onShow(() => setShown(true));
+    return withLocale(
+      "en-US",
+      <>
+        <button type="button">Outside</button>
+        <Carousel.Root aria-label="Offers" style={{ width: WIDTH }}>
+          <Carousel.Controls>
+            {shown ? <Carousel.Autoplay delay={DELAY} /> : null}
+            <Carousel.Previous />
+            <Carousel.Indicators />
+            <Carousel.Next />
+          </Carousel.Controls>
+          <Carousel.Viewport>{carouselSlides(4, 1)}</Carousel.Viewport>
+        </Carousel.Root>
+      </>
+    );
+  }
+
+  function renderLate(): () => void {
+    let show: () => void = () => undefined;
+    renderThemed(
+      <Late
+        onShow={(next) => {
+          show = next;
+        }}
+      />
+    );
+    return () => show();
+  }
+
+  it("starts paused when the pointer is already over the carousel", async () => {
+    const show = renderLate();
+    const viewport = carouselViewport(roleNamed("region", "Offers"));
+    await expect.poll(() => carouselIndicators().length).toBe(4);
+    await userEvent.hover(viewport);
+    show();
+    // Rotating, as nothing stopped it, but paused under the pointer.
+    await expect
+      .poll(() => page.getByRole("button", { name: "Stop automatic slide show" }).query())
+      .not.toBeNull();
+    expect(viewport.getAttribute("aria-live")).toBe("polite");
+    await staysOnFirstPage();
+    // The pointer leaving resumes it: the hover paused it and stopped nothing.
+    await userEvent.hover(roleNamed("button", "Outside"));
+    await turn(1);
+  });
+
+  it("starts stopped when keyboard focus is already inside the carousel", async () => {
+    const show = renderLate();
+    await expect.poll(() => carouselIndicators().length).toBe(4);
+    await userEvent.hover(roleNamed("button", "Outside"));
+    roleNamed("button", "Outside").focus();
+    await userEvent.keyboard("{Tab}");
+    expect(document.activeElement).toBe(roleNamed("button", "Previous slide"));
+    show();
+    // APG: keyboard focus inside stops rotation, and only the rotation control starts it.
+    await expect
+      .poll(() => page.getByRole("button", { name: "Start automatic slide show" }).query())
+      .not.toBeNull();
+    await staysOnFirstPage();
+    await userEvent.keyboard("{Shift>}{Tab}{/Shift}");
+    expect(document.activeElement).toBe(roleNamed("button", "Start automatic slide show"));
+    await userEvent.keyboard("{Enter}");
+    await turn(1);
   });
 });
 

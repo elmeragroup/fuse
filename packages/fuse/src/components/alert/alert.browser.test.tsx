@@ -322,3 +322,27 @@ describe("Alert", () => {
     expect(actionContrast(action, alertNamed("default"))).toBeGreaterThanOrEqual(AA_TEXT_CONTRAST);
   });
 });
+
+describe("Alert", () => {
+  it("finds Title as a level-3 heading and renders level 2 as h2", () => {
+    const { unmount } = renderThemed(
+      <Alert.Root>
+        <Alert.Title>Sync delayed</Alert.Title>
+      </Alert.Root>
+    );
+    const title = headingNamed("Sync delayed", 3);
+    expect(title.tagName).toBe("H3");
+    expect(title.getAttribute("data-slot")).toBe("item-title");
+    expect(title.getAttribute("variant")).toBeNull();
+    unmount();
+
+    renderThemed(
+      <Alert.Root>
+        <Alert.Title level={2}>Facility status</Alert.Title>
+      </Alert.Root>
+    );
+    const h2 = headingNamed("Facility status", 2);
+    expect(h2.tagName).toBe("H2");
+    expect(h2.getAttribute("data-slot")).toBe("item-title");
+  });
+});

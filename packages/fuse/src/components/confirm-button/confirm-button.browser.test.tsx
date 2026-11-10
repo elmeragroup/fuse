@@ -185,3 +185,54 @@ describe("ConfirmButton", () => {
     expect(resting.hasAttribute("data-armed")).toBe(false);
   });
 });
+
+function liveRegion(button: HTMLElement): HTMLElement {
+  const live = button.querySelector("[aria-live='polite']");
+  if (!(live instanceof HTMLElement)) {
+    throw new Error("Expected an aria-live polite announcement");
+  }
+  return live;
+}
+
+describe("ConfirmButton", () => {
+  // The announcement chain: armedAriaLabel, then a string armedChildren, then the resting aria-label.
+  it.each([
+    [
+      "armedAriaLabel over string armedChildren and the resting aria-label",
+      "Really delete",
+      "Confirm delete",
+      "Really delete",
+    ],
+    ["string armedChildren over the resting aria-label", undefined, "Confirm delete", "Confirm delete"],
+    [
+      "the resting aria-label when armedChildren is not a string",
+      undefined,
+      <span key="confirm">Confirm</span>,
+      "Delete row",
+    ],
+  ] as const)("announces %s", async (_case, armedAriaLabel, armedChildren, announced) => {
+    renderThemed(
+      <ConfirmButton
+        onConfirm={() => undefined}
+        armedAriaLabel={armedAriaLabel}
+        armedChildren={armedChildren}
+        aria-label="Delete row">
+        Delete
+      </ConfirmButton>
+    );
+
+    await userEvent.click(page.getByRole("button", { name: "Delete row", exact: true }));
+    const armed = buttonNamed(announced);
+    expect(armed.getAttribute("aria-label")).toBe(announced);
+    expect(armed.textContent).toContain("Confirm");
+    const live = liveRegion(armed);
+    expect(live.classList.contains("sr-only")).toBe(true);
+    expect(live.getAttribute("aria-live")).toBe("polite");
+    expect(live.textContent).toBe(announced);
+
+    await userEvent.keyboard("{Escape}");
+    const restored = buttonNamed("Delete row");
+    expect(restored.getAttribute("aria-label")).toBe("Delete row");
+    expect(restored.querySelector("[aria-live='polite']")).toBeNull();
+  });
+});

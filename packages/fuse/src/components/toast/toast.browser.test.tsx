@@ -1,3 +1,4 @@
+import { useLayoutEffect } from "react";
 import type { ReactNode } from "react";
 
 import { describe, expect, it, vi } from "vitest";
@@ -116,6 +117,46 @@ function LabelledClose({ close }: { close: ReactNode }) {
 }
 
 describe("Toast manager", () => {
+  it.each(["module", "hook"] as const)(
+    "keeps the fields a %s manager's update omits and clears the ones it passes as undefined",
+    async (face) => {
+      let manager = Toast.createToastManager();
+      function Viewport() {
+        const hook = Toast.useToastManager();
+        useLayoutEffect(() => {
+          if (face === "hook") manager = hook;
+        }, [hook]);
+        return <Toast.Viewport />;
+      }
+      renderThemed(
+        withLocale(
+          "en-US",
+          <Toast.Provider toastManager={manager} timeout={0}>
+            <Viewport />
+          </Toast.Provider>
+        )
+      );
+      const id = manager.add({ type: "error", title: "Failed", description: "Try again" });
+      // The title text appears twice; the copy that counts sits in the toast dialog.
+      const surface = () =>
+        page
+          .getByText("Failed", { exact: true })
+          .elements()
+          .map((node) => node.closest('[role="dialog"], [role="alertdialog"]'))
+          .find(Boolean);
+      await expect.poll(() => surface()?.getAttribute("data-status")).toBe("error");
+
+      manager.update(id, { description: "Retry now" });
+      await expect.poll(() => surface()?.textContent).toContain("Retry now");
+      expect(surface()?.getAttribute("data-status")).toBe("error");
+
+      manager.update(id, { type: undefined, description: undefined });
+      await expect.poll(() => surface()?.getAttribute("data-status")).toBe("neutral");
+      expect(surface()?.textContent).not.toContain("Retry now");
+      expect(surface()?.textContent).toContain("Failed");
+    }
+  );
+
   it("add returns an id, upserts by id, and close ends one or all", async () => {
     const { manager } = renderToast();
 
