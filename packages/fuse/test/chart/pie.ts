@@ -2,7 +2,7 @@
  * The DOM readers the pie browser suites share. Slices, the centre and the labels are aria-hidden
  * plot output, so their slots are the only locators.
  */
-import { page } from "vitest/browser";
+import { cdp, page, server } from "vitest/browser";
 
 import { nextFrames } from "../animation-frames";
 
@@ -68,6 +68,28 @@ export function pieSvg(host: HTMLElement): SVGSVGElement {
   const svg = host.querySelector<SVGSVGElement>('[data-slot="pie-chart-pie"]');
   if (svg === null) throw new Error("no pie");
   return svg;
+}
+
+/** The one CDP call {@link parkRealPointer} makes. */
+type MouseCdp = {
+  readonly send: (
+    method: "Input.dispatchMouseEvent",
+    params: { readonly type: "mouseMoved"; readonly x: number; readonly y: number }
+  ) => Promise<void>;
+};
+
+/**
+ * Park the browser's real mouse at the page's top-left corner. A suite that drives the plot with
+ * {@link moveAt} leaves the real mouse alone, so it stays wherever an earlier file in the same page
+ * left it, and a popup that opens under it and moves away takes a real `pointerleave`, which ends
+ * the hover. No popup reaches the corner: it keeps `TOOLTIP_EDGE` from the viewport's edges.
+ * Chromium only, where the CDP session serves `Input`.
+ */
+export async function parkRealPointer(): Promise<void> {
+  if (server.browser !== "chromium") return;
+  // SAFETY: Vitest types its CDP session as {}; Playwright's session implements send.
+  const session = cdp() as MouseCdp;
+  await session.send("Input.dispatchMouseEvent", { type: "mouseMoved", x: 0, y: 0 });
 }
 
 /** Dispatch a mouse pointer move onto the listbox at a client point, at once. */
