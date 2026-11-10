@@ -1,6 +1,7 @@
 import type { Browser, Locator, Page } from "playwright";
 import { afterAll, beforeAll, expect } from "vitest";
 
+import { componentHref } from "../src/lib/pages";
 import { docsBaseUrl } from "./docs-server";
 
 export { launchSuiteBrowser } from "./suite-browser";
@@ -13,8 +14,20 @@ export const DESKTOP_VIEWPORT = { width: 1280, height: 720 } as const;
  * around the demo titled `name`, once that demo has hydrated.
  */
 export async function openDemo(page: Page, slug: string, name: string): Promise<Locator> {
+  return openDemoAt(page, componentHref(slug), name);
+}
+
+/**
+ * Navigates `page` to any docs page, such as a handbook page, and returns the region around the
+ * demo titled `name`, once that demo has hydrated.
+ *
+ * @param page - The page to navigate.
+ * @param pathname - The docs path, such as `/handbook/temporal-migration`.
+ * @param name - The demo's title.
+ */
+export async function openDemoAt(page: Page, pathname: string, name: string): Promise<Locator> {
   page.setDefaultTimeout(5000);
-  await page.goto(`${docsBaseUrl()}/components/${slug}`, { waitUntil: "load" });
+  await page.goto(`${docsBaseUrl()}${pathname}`, { waitUntil: "load" });
   return sharedDemo(page, name);
 }
 

@@ -50,6 +50,7 @@
     "remark-gfm": "catalog:",
     "sugar-high": "catalog:",
     "tailwindcss": "catalog:",
+    "temporal-polyfill": "catalog:",
     "tsrs": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
