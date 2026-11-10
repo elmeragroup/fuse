@@ -1,7 +1,7 @@
 /**
  * Server module. Renders every public namespace part of the compound components whose
- * implementation is `"use client"`, plus Alert, SelectField, AutocompleteField, ComboboxField and
- * AspectRatio.
+ * implementation is `"use client"`, plus Alert, SelectField, AutocompleteField, ComboboxField,
+ * DateField and AspectRatio.
  *
  * The part lists are the public namespace shape. They are not read from the
  * implementation: a missing or renamed part fails here even if the source still parses.
@@ -38,6 +38,7 @@ import { Command } from "@elmeragroup/fuse/command";
 import { CommandVirtual } from "@elmeragroup/fuse/command-virtual";
 import { DataTable } from "@elmeragroup/fuse/data-table";
 import { DataTableFilter } from "@elmeragroup/fuse/data-table-filter";
+import { DateField, DateInput } from "@elmeragroup/fuse/date-field";
 import { Dialog } from "@elmeragroup/fuse/dialog";
 import { DropdownMenu } from "@elmeragroup/fuse/dropdown-menu";
 import { Field } from "@elmeragroup/fuse/field";
@@ -363,6 +364,7 @@ function namespaceElements(): ReactElement[] {
       "Next",
       "Ellipsis",
     ]),
+    ...renderNamespace("DateInput", DateInput, ["Root", "Segment"]),
     ...renderNamespace("Popover", Popover, ["Root", "Trigger", "Content", "Header", "Title", "Description"]),
     ...renderNamespace("RangeCalendar", RangeCalendar, [
       "Root",
@@ -634,6 +636,34 @@ function rangeCalendarTree(): ReactElement {
   );
 }
 
+/** The ISO value and bounds a server component hands DateField. */
+const DATE_FIELD_DATES = {
+  defaultValue: "2026-10-12T14:30[Europe/Oslo]",
+  minValue: "2026-10-01T00:00[Europe/Oslo]",
+  maxValue: "2026-10-31T23:30",
+};
+
+/**
+ * DateField owns no state, so a server form runs it and hands `DateInput.Root` the ISO text, as
+ * a hand-composed `Field.Root` would. Its default segments need no function child.
+ */
+function dateFieldTree(): ReactElement {
+  if (isClientReference(DateField)) {
+    throw new Error("DateField is a client reference; the server must run it");
+  }
+  return createElement(
+    "section",
+    { "data-fixture": "date-field" },
+    createElement(DateField, {
+      label: "Outage starts",
+      name: "outage",
+      granularity: "minute",
+      hourCycle: 24,
+      ...DATE_FIELD_DATES,
+    })
+  );
+}
+
 const SELECT_FIELD_PLACEHOLDER = "Choose a plan";
 
 /**
@@ -787,7 +817,8 @@ function Fixture(): ReactElement {
     attachmentTree(),
     carouselTree(),
     calendarTree(),
-    rangeCalendarTree()
+    rangeCalendarTree(),
+    dateFieldTree()
   );
 }
 
@@ -922,6 +953,27 @@ if (
 }
 if (!payload.includes("/components/range-calendar/range-calendar.tsx")) {
   throw new Error(`RangeCalendar.Root is not a client reference in the payload:\n${payload.slice(0, 1500)}`);
+}
+
+// DateField ran on the server: its label is in the payload, and DateInput.Root is a client
+// reference whose ISO value and bounds crossed as the same strings.
+if (!payload.includes("Outage starts")) {
+  throw new Error(`DateField's label is missing from the server payload:\n${payload.slice(0, 1500)}`);
+}
+const dateInputRoots = models
+  .flatMap(flightElements)
+  .filter(({ props }) => props.defaultValue === DATE_FIELD_DATES.defaultValue);
+const dateInputProps = dateInputRoots[0]?.props;
+if (
+  dateInputRoots.length !== 1 ||
+  dateInputProps?.minValue !== DATE_FIELD_DATES.minValue ||
+  dateInputProps.maxValue !== DATE_FIELD_DATES.maxValue ||
+  dateInputProps.granularity !== "minute"
+) {
+  throw new Error(`DateInput.Root's ISO value did not cross intact:\n${payload.slice(0, 1500)}`);
+}
+if (!payload.includes("/components/date-field/date-input.tsx")) {
+  throw new Error(`DateInput.Root is not a client reference in the payload:\n${payload.slice(0, 1500)}`);
 }
 
 process.stdout.write("RSC_OK\n");

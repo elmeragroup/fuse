@@ -1081,6 +1081,11 @@ describe("runtime listeners and layout motion", () => {
       // Native non-passive `wheel` on the chip strip: React's `onWheel` is passive, so it cannot
       // keep the page from scrolling while a vertical wheel scrolls the strip sideways.
       "components/data-table-filter/strip-wheel.ts",
+      // A segment's native `beforeinput` and `input`: React's `onBeforeInput` is a `keypress`
+      // polyfill that misses deletion, composition and Android's virtual keyboards, which every
+      // segment edit must intercept. The document `selectionchange` keeps a focused segment's
+      // selection collapsed, as React Aria's segment does, or Android composes into it.
+      "components/date-field/date-input-segment-dom.ts",
       // Document `dragover` and `drop`, ref-counted across Roots: a file dropped outside every
       // zone would otherwise open in the tab and replace the page.
       "components/file-upload/document-drop-guard.ts",

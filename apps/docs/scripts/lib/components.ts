@@ -120,6 +120,7 @@ const EXTRA_API_EXPORT_NAMES = new Map<string, readonly string[]>([
   ["chart", ["Chart", "useChartPoint", "formatChartValue", "formatChartSlot"]],
   ["temporal-calendar", ["Calendar"]],
   ["temporal-range-calendar", ["RangeCalendar"]],
+  ["temporal-date-field", ["DateField", "DateInput"]],
 ]);
 
 /**
@@ -151,6 +152,7 @@ export const SHARED_ENTRY_PAGES = new Map<string, { readonly entry: string; read
 const ENTRY_SLUG_OF_PAGE = new Map<string, string>([
   ["temporal-calendar", "calendar"],
   ["temporal-range-calendar", "range-calendar"],
+  ["temporal-date-field", "date-field"],
 ]);
 
 /**

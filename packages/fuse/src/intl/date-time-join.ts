@@ -85,6 +85,32 @@ export function formatDateTime(locale: string, options: Intl.DateTimeFormatOptio
 }
 
 /**
+ * `formatToParts` of an instant, joined as {@link formatDateTime} joins it: the date half's parts,
+ * a literal part holding Fuse's CLDR 48 separator, then the time half's parts, or Intl's own parts
+ * where Fuse takes Intl's output. A field laying out segments uses it, so its literals match the
+ * text the field's validation copy prints in every engine.
+ *
+ * @param locale - The BCP 47 locale.
+ * @param options - The date and time format options, including any `timeZone`.
+ * @param instant - The instant, in epoch milliseconds.
+ * @returns The parts.
+ * @throws {RangeError} When `options.timeZone` is not an IANA zone.
+ */
+export function formatDateTimeToParts(
+  locale: string,
+  options: Intl.DateTimeFormatOptions,
+  instant: number
+): Intl.DateTimeFormatPart[] {
+  const { whole, join } = planOf(locale, options);
+  if (join === undefined) return whole.formatToParts(instant);
+  return [
+    ...join.date.formatToParts(instant),
+    { type: "literal", value: join.separator },
+    ...join.time.formatToParts(instant),
+  ];
+}
+
+/**
  * How one locale and set of options format: Intl's whole output, or a date half and a time half
  * with the separator between them.
  */

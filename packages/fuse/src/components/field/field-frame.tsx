@@ -80,6 +80,13 @@ export type FieldFrameProps = {
   /** Error copy, rendered as `Field.Error`; falsy, the field shows its own validation error. */
   errorMessage?: ReactNode;
   /**
+   * Whether `errorMessage` shows whenever it is given (the default), or only while the field fails
+   * its own validation or holds a `Form` error, as React Aria's `errorMessage` does without
+   * `isInvalid`. Forwarded to `Field.Error`'s `match` when `errorMessage` is given.
+   * @default true
+   */
+  isErrorMessageAlwaysShown?: boolean;
+  /**
    * The content wrapper lays the description out beside the control, as TextField's card row
    * does, so the error goes under the wrapper instead of joining the row. The control keeps its
    * place in the tree either way, so toggling this does not remount it.
@@ -125,6 +132,7 @@ export function FieldFrame({
   isSuccess = false,
   description,
   errorMessage,
+  isErrorMessageAlwaysShown = true,
   isDescriptionBeside = false,
   variant,
   invalid,
@@ -160,7 +168,12 @@ export function FieldFrame({
   // follows the control.
   const leadingDescription = heading === "legend" ? descriptionNode : null;
   const trailingDescription = heading === "legend" ? null : descriptionNode;
-  const errorNode = <FieldError>{errorMessage}</FieldError>;
+  // FieldError with copy shows it always (`match`), and drops an undefined `match`. `false` is not
+  // "never": Base UI reads any `match` other than `true` or a validity key as its default, which
+  // shows the copy while the field is invalid or holds a Form error.
+  const errorNode = (
+    <FieldError match={isErrorMessageAlwaysShown ? undefined : false}>{errorMessage}</FieldError>
+  );
   // The error sits directly under the control, ahead of a trailing description, so a field in
   // error shows its message there (Figma). A description beside the control shares its row,
   // so the error goes under the whole content instead.

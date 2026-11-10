@@ -890,6 +890,18 @@
       "temporal-calendar-controlled.tsx"
     ]
   },
+  "temporal-date-field": {
+    "title": "Temporal Date Field",
+    "rsc": "server",
+    "demos": [
+      "temporal-date-field-basic.tsx",
+      "temporal-date-field-time.tsx",
+      "temporal-date-field-zoned.tsx",
+      "temporal-date-field-bounds.tsx",
+      "temporal-date-field-form.tsx",
+      "temporal-date-field-parts.tsx"
+    ]
+  },
   "temporal-range-calendar": {
     "title": "Temporal Range Calendar",
     "rsc": "client",

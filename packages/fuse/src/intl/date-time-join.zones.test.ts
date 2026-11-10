@@ -1,5 +1,6 @@
 /**
- * Unit under test: `formatDateTime`, alone and through the public `formatChartSlot`. Oracle:
+ * Unit under test: `formatDateTime`, alone and through the public `formatChartSlot`, and
+ * `formatDateTimeToParts`. Oracle:
  * labels written by hand from CLDR 48, the same ones the engine judges hold.
  *
  * Node 26's ICU prints CLDR 48's own date-time join, so in Node a helper that handed the join back
@@ -13,7 +14,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 import { formatChartSlot } from "../components/chart/chart-format";
 import { DATE_TIME_CASES, WEEKDAY_TIME_CASE } from "../components/chart/format/fixtures/time-literals";
-import { formatDateTime } from "./date-time-join";
+import { formatDateTime, formatDateTimeToParts } from "./date-time-join";
 
 const SENTINEL = " ENGINE JOIN ";
 
@@ -166,6 +167,43 @@ describe("formatDateTime under an engine with another join", () => {
     expect(formatDateTime("de-DE", { ...OSLO, dateStyle: "long", timeStyle: "short" }, AT)).toContain(
       SENTINEL
     );
+  });
+});
+
+describe("formatDateTimeToParts under an engine with another join", () => {
+  it("lays out the date half, CLDR 48's separator as one literal, then the time half", () => {
+    const parts = formatDateTimeToParts(
+      "en-US",
+      {
+        ...OSLO,
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        hourCycle: "h23",
+      },
+      AT
+    );
+    expect(parts.map(({ type, value }) => `${type}:${value}`)).toEqual([
+      "month:10",
+      "literal:/",
+      "day:18",
+      "literal:/",
+      "year:2026",
+      "literal:, ",
+      "hour:12",
+      "literal::",
+      "minute:30",
+    ]);
+  });
+
+  it("hands Intl's own parts back for a date alone", () => {
+    expect(
+      formatDateTimeToParts("nb-NO", { ...OSLO, year: "numeric", month: "2-digit", day: "2-digit" }, AT)
+        .map(({ value }) => value)
+        .join("")
+    ).toBe("18.10.2026");
   });
 });
 

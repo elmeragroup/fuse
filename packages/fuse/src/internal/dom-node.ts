@@ -140,3 +140,16 @@ export function windowOf(node: Node): Window & typeof globalThis {
 function isDocument(node: Node): node is Document {
   return node.nodeType === Node.DOCUMENT_NODE;
 }
+
+/**
+ * Whether an event is an `InputEvent`, checked against the window of the node it was dispatched
+ * on, so an event in a same-origin iframe that this window's React renders into still counts.
+ *
+ * @param event - The event.
+ * @param node - The node the listener is on, whose window made the event.
+ * @returns `true` for an input event.
+ */
+export function isInputEvent(event: Event, node: Node): event is InputEvent {
+  const view = node.ownerDocument?.defaultView;
+  return view !== null && view !== undefined && event instanceof view.InputEvent;
+}
