@@ -78,6 +78,11 @@ function browserProject(
     test: {
       name,
       setupFiles: ["./test/page-frame-setup.ts"],
+      // Hang guards, not budgets. Every expect.poll and expect.element waits on an event the
+      // browser delivers in its own time, such as an IntersectionObserver report or a frame, and
+      // Vitest's default second failed WebKit hydration on a saturated CI runner.
+      testTimeout: 30_000,
+      expect: { poll: { timeout: 10_000 } },
       include: options.include ?? BROWSER_TESTS,
       exclude: options.exclude,
       fileParallelism: options.fileParallelism,
