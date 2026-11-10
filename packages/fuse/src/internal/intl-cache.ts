@@ -31,12 +31,23 @@ export function cached<TFormat>(
   options: FormatOptions,
   create: () => TFormat
 ): TFormat {
-  const key = `${locale}\u0000${JSON.stringify(options)}`;
+  // The options as written find their entry first, so a hit never sorts them. The raw key holds
+  // an object and the shared one an array of entries, so the two never collide.
+  const raw = `${locale}\u0000${JSON.stringify(options)}`;
+  const known = cache.get(raw);
+  if (known !== undefined) return known;
+  // The options in key order, so the same options written in another order share one entry.
+  // An option set to undefined reads as one left out, as Intl reads it.
+  const sorted = Object.entries(options)
+    .filter(([, value]) => value !== undefined)
+    .toSorted(([a], [b]) => (a < b ? -1 : 1));
+  const key = `${locale}\u0000${JSON.stringify(sorted)}`;
   let format = cache.get(key);
   if (format === undefined) {
     format = create();
     cache.set(key, format);
   }
+  cache.set(raw, format);
   return format;
 }
 

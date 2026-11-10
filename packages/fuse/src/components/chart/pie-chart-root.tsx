@@ -1,9 +1,12 @@
 "use client";
 
+import { useMemo } from "react";
 import type { ReactElement, ReactNode } from "react";
 
-import { definedProps } from "../../internal/defined-props";
-import { ChartPendingRootContext } from "./chart-pending-root";
+import { useLocale } from "../../intl/locale-context";
+import { pieModel } from "./chart-polar-item";
+import { PolarRoot } from "./chart-polar-root";
+import { sameConfig, sameShallow, useSteady } from "./chart-steady";
 import type {
   ChartAccessibleName,
   ChartCategoryConfigCheck,
@@ -17,6 +20,9 @@ import type {
   ChartSeriesKey,
   ValueFormat,
 } from "./chart-types";
+import { seriesLabel } from "./format/series-label";
+import { OTHER_KEY } from "./layout/pie";
+import { sweepOf } from "./layout/polar-angle";
 
 /**
  * Props for `PieChart.Root`, the root of pie and donut charts and of gauge pies.
@@ -78,7 +84,8 @@ export type PieChartRootProps<
 
 /**
  * The root of pie and donut charts. Slices draw in data order from 12 o'clock, clockwise, and past
- * `maxSlices` the smallest rows fold into one Other slice.
+ * `maxSlices` the smallest rows fold into one Other slice. The entrance sweeps slice i in from
+ * 100 ms + i · `--chart-stagger` over `--chart-intro`, both read from the figure's style.
  *
  * @template TRow - The row type, inferred from `data`.
  * @template TConfig - The config, inferred with its literal keys.
@@ -93,33 +100,92 @@ export function PieChartRoot<
   TValueKey extends ChartSeriesKey<TRow>,
 >(props: PieChartRootProps<TRow, TConfig, TNameKey, TValueKey>): ReactElement {
   const {
-    data: _data,
-    config: _config,
-    nameKey: _nameKey,
-    valueKey: _valueKey,
-    qualityKey: _qualityKey,
-    valueFormat: _valueFormat,
-    innerRadius: _innerRadius,
-    padAngle: _padAngle,
-    startAngle: _startAngle,
-    endAngle: _endAngle,
-    max: _max,
-    maxSlices: _maxSlices,
-    otherLabel: _otherLabel,
-    defaultActiveKey: _defaultActiveKey,
-    selectedKey: _selectedKey,
-    defaultSelectedKey: _defaultSelectedKey,
-    onSelectedKeyChange: _onSelectedKeyChange,
-    description: _description,
+    data,
+    config,
+    nameKey,
+    valueKey,
+    qualityKey,
+    valueFormat,
+    innerRadius = 0,
+    padAngle = 0,
+    startAngle = 0,
+    endAngle = 360,
+    max,
+    maxSlices = 6,
+    otherLabel,
+    defaultActiveKey,
+    selectedKey,
+    defaultSelectedKey,
+    onSelectedKeyChange,
+    description,
     children,
     ...figure
   } = props;
-  // Until the polar layer gives this Root a readout of its own, the shared parts inside it render
-  // nothing, and every other child renders as written.
+  const { locale } = useLocale();
+  const steadyConfig = useSteady<ChartConfig>(config, sameConfig);
+  // An inline valueFormat object that names the same options is no change either.
+  const steadyFormat = useSteady(valueFormat, sameShallow);
+  const name = "aria-label" in figure ? figure["aria-label"] : undefined;
+  const model = useMemo(
+    () =>
+      pieModel({
+        rows: data,
+        config: steadyConfig,
+        nameKey,
+        valueKey,
+        qualityKey,
+        valueFormat: steadyFormat,
+        sweep: sweepOf(startAngle, endAngle),
+        locale,
+        name,
+        part: "PieChart.Root",
+        maxSlices,
+        innerRadius,
+        padAngle,
+        max,
+        otherLabel,
+      }),
+    [
+      data,
+      steadyConfig,
+      nameKey,
+      valueKey,
+      qualityKey,
+      steadyFormat,
+      startAngle,
+      endAngle,
+      locale,
+      name,
+      maxSlices,
+      innerRadius,
+      padAngle,
+      max,
+      otherLabel,
+    ]
+  );
+  // A default that names a folded category activates Other, the item that stands for its row. One
+  // with no row stands for nothing, so nothing starts active.
+  const own = defaultActiveKey === undefined ? -1 : model.keys.indexOf(defaultActiveKey);
+  const folds =
+    own === -1 &&
+    defaultActiveKey !== undefined &&
+    model.drawing.kind === "pie" &&
+    model.drawing.pie.folds(defaultActiveKey);
+  const folded = folds ? model.keys.indexOf(OTHER_KEY) : -1;
+  const defaultActive = own !== -1 ? own : folded;
   return (
-    <figure data-slot="pie-chart" {...definedProps(figure)}>
-      <ChartPendingRootContext value>{children}</ChartPendingRootContext>
-    </figure>
+    <PolarRoot
+      model={model}
+      figure={figure}
+      defaultActive={defaultActive === -1 ? null : defaultActive}
+      selectedKey={selectedKey}
+      defaultSelectedKey={defaultSelectedKey}
+      onSelectedKeyChange={onSelectedKeyChange}
+      labelOf={(key) => seriesLabel({ config: steadyConfig }, key).text}
+      description={description}
+      locale={locale}>
+      {children}
+    </PolarRoot>
   );
 }
 

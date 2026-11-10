@@ -1,0 +1,507 @@
+"use client";
+
+/**
+ * What a series model reads out: the readout the shared parts read, a
+ * reading as a tooltip row or a legend value prints it, the shares, the stack totals, a fallback
+ * keyword's slot, and the rows of the table. A cartesian Root's readout reads it, and so does any
+ * family that builds a `CartesianModel`. It reads no plot geometry.
+ */
+import type { SupportedLocale } from "../../intl/locale-context";
+import { readingPaint, seriesPaintOf, swatchPaint } from "./chart-paint";
+import type {
+  ChartReadout,
+  ChartTableCell,
+  ChartTableModel,
+  ChartTablePage,
+  ChartTableRow,
+  ReadoutItem,
+} from "./chart-readout-port";
+import { PAGE_ROWS } from "./chart-table-shell";
+import { ownSlotLabel, qualityWords, slotLabel, stackTotalAt } from "./chart-text";
+import type { TextContext } from "./chart-text";
+import type { ChartConfig, ChartFallback, ChartQuality, ChartRow, ValueFormat } from "./chart-types";
+import { CHART_STRINGS } from "./format/chart-strings";
+import type { FormattedText } from "./format/formatted-text";
+import { seriesLabel } from "./format/series-label";
+import { formatSlot, slotStart } from "./format/time-format";
+import type { Interval, TimePreset } from "./format/time-format";
+import { formatUnitLabel, formatUnitless, formatValue } from "./format/value-format";
+import type { CartesianModel } from "./layout/cartesian-model";
+import { ownWindowSlots, rowSpans } from "./layout/coarse-slots";
+import { isThresholdColor } from "./layout/color-key";
+import { keywordSlots, nowSlotOf } from "./layout/datum";
+import { assertKnownKey } from "./layout/errors";
+import type { Reading } from "./layout/readings";
+import { seriesOf } from "./layout/series-of";
+import { roundShares } from "./layout/shares";
+import { slotX } from "./layout/x-domain";
+
+/**
+ * One key's reading at one slot.
+ *
+ * @param context - The Root.
+ * @param key - A config key.
+ * @param slot - A slot index.
+ * @returns The reading, or undefined for an unknown key.
+ */
+export function readingAt(
+  context: Pick<TextContext, "model">,
+  key: string,
+  slot: number
+): Reading | undefined {
+  return seriesOf(context.model, key)?.readings[slot];
+}
+
+/**
+ * A reading as a tooltip row prints it: the value with its quality word in parentheses, or the
+ * missing or pending word.
+ *
+ * @param context - The Root.
+ * @param key - A config key.
+ * @param slot - A slot index.
+ * @param format - A format that replaces the series' own.
+ * @returns The visual text.
+ */
+function readingText(
+  context: TextContext,
+  key: string,
+  slot: number,
+  format: ValueFormat | undefined
+): string {
+  const strings = CHART_STRINGS[context.locale];
+  const reading = readingAt(context, key, slot);
+  if (reading === undefined || reading.kind === "pending") return strings.pending;
+  if (reading.kind === "missing") return strings.missing;
+  const value = formatValue(
+    context.locale,
+    reading.value,
+    format ?? context.config[key]?.format ?? {},
+    "full"
+  ).text;
+  // A coarse series' own slot leads, then the quality word and the projection word, each on its own.
+  const own = ownSlotLabel(context, key, slot);
+  const series = seriesOf(context.model, key);
+  const words = [
+    ...(own === null ? [] : [own.text]),
+    ...qualityWords(context.locale, reading.quality, series !== undefined && slot >= series.projectedFrom),
+  ];
+  return words.length === 0 ? value : `${value} (${words.join(", ")})`;
+}
+
+/**
+ * Each key's share of the sum of the absolute readings of every key at one slot, rounded together.
+ *
+ * @param context - The Root.
+ * @param slot - A slot index.
+ * @param digits - The fraction digits.
+ * @returns Each key's share in percent, or null for a zero denominator.
+ */
+function slotShares(context: TextContext, slot: number, digits: number): Map<string, number | null> {
+  const { series } = context.model;
+  const parts = series.map(({ readings }) => {
+    const reading = readings[slot];
+    return reading?.kind === "reading" ? reading.value : null;
+  });
+  const shares = roundShares(parts, digits);
+  return new Map(series.map(({ key }, index) => [key, shares[index] ?? null]));
+}
+
+/**
+ * Each key's share of the sum of every key's absolute total over the effective window.
+ *
+ * @param context - The Root.
+ * @param digits - The fraction digits.
+ * @returns Each key's share in percent, or null for a zero denominator.
+ */
+function windowShares(context: TextContext, digits: number): Map<string, number | null> {
+  const { series, window } = context.model;
+  const totals = series.map((entry) => {
+    if (window === null) return 0;
+    let total = 0;
+    // A coarse reading counts once, though every Root slot of its slot holds it.
+    for (const slot of ownWindowSlots(entry, window)) {
+      const reading = entry.readings[slot];
+      if (reading?.kind === "reading") total += reading.value;
+    }
+    return total;
+  });
+  const shares = roundShares(totals, digits);
+  return new Map(series.map(({ key }, index) => [key, shares[index] ?? null]));
+}
+
+/**
+ * One stack's net total at a slot, the sum of its present parts.
+ *
+ * @param context - The Root.
+ * @param stack - A stack id that holds two or more keys.
+ * @param slot - A slot index.
+ * @returns The total and whether a part is missing, or null when no part has a reading.
+ */
+export function stackTotal(
+  context: TextContext,
+  stack: string,
+  slot: number
+): { readonly total: number; readonly incomplete: boolean } | null {
+  return stackTotalAt(context.model, context.model.stacks.find(({ id }) => id === stack)?.keys ?? [], slot);
+}
+
+/**
+ * The slot a fallback keyword selects for one key over the effective window: its first or last
+ * reading, its lowest or highest, or the slot that holds `now` while the window shows it.
+ *
+ * @param context - The Root.
+ * @param key - A config key.
+ * @param fallback - The keyword.
+ * @returns The slot, or null when the keyword selects nothing.
+ */
+export function fallbackSlot(context: TextContext, key: string, fallback: ChartFallback): number | null {
+  const { model } = context;
+  const { window } = model;
+  if (window === null) return null;
+  const readings = seriesOf(model, key)?.readings ?? [];
+  const values = readings.map((reading) => (reading.kind === "reading" ? reading.value : null));
+  // A tie picks its first slot, as `keywordSlots` lists the tied slots in x order.
+  const [slot] = keywordSlots(fallback, { values, window, nowSlot: nowSlotOf(model.domain, context.now) });
+  return slot ?? null;
+}
+
+/** The calendar period one page holds at each interval, the coarsest whose largest instance fits. */
+const PAGE_PERIOD = {
+  second: "minute",
+  minute: "hour",
+  "quarter-hour": "day",
+  hour: "week",
+  day: "year",
+  week: "year",
+  month: "year",
+  year: "year",
+} as const satisfies { readonly [I in Interval]: Interval };
+
+/** The label each page period prints in the status, such as `uke 2`. */
+const PAGE_LABEL = {
+  minute: "time",
+  hour: "hour",
+  day: "date",
+  week: "week",
+  year: "year",
+} as const satisfies { readonly [I in (typeof PAGE_PERIOD)[Interval]]: TimePreset };
+
+/** The slots the table lists: every slot that holds a reading or a missing reading in some series. */
+function tableSlots(model: CartesianModel): number[] {
+  const { series, domain } = model;
+  const count = domain.kind === "time" ? domain.starts.length : domain.names.length;
+  const slots: number[] = [];
+  for (let slot = 0; slot < count; slot += 1) {
+    if (series.some(({ readings }) => readings[slot]?.kind !== "pending")) slots.push(slot);
+  }
+  return slots;
+}
+
+/** The table's pages: one for 500 rows or fewer, else one per calendar period or per 500 categories. */
+function tablePages(
+  model: CartesianModel,
+  locale: SupportedLocale,
+  slots: readonly number[]
+): ChartTablePage[] {
+  const { domain } = model;
+  const strings = CHART_STRINGS[locale];
+  if (slots.length <= PAGE_ROWS) return [{ key: 0, slots, label: "", spoken: "" }];
+  if (domain.kind === "category") {
+    const pages: ChartTablePage[] = [];
+    for (let from = 0; from < slots.length; from += PAGE_ROWS) {
+      const page = slots.slice(from, from + PAGE_ROWS);
+      const range = strings.rowRange(String(from + 1), String(from + page.length));
+      pages.push({ key: from, slots: page, label: range, spoken: range });
+    }
+    return pages;
+  }
+  const period = PAGE_PERIOD[domain.interval];
+  const pages = new Map<number, number[]>();
+  for (const slot of slots) {
+    const start = slotStart(domain.starts[slot] ?? 0, period, domain.timeZone);
+    const page = pages.get(start);
+    if (page === undefined) pages.set(start, [slot]);
+    else page.push(slot);
+  }
+  return [...pages].map(([key, list]) => {
+    const label = formatSlot(locale, domain.timeZone, key, period, PAGE_LABEL[period], "full");
+    return { key, slots: list, label: label.text, spoken: label.spoken };
+  });
+}
+
+/** The slots and pages of one model in one locale. */
+type TableIndex = { readonly slots: readonly number[]; readonly pages: readonly ChartTablePage[] };
+
+/**
+ * Each model's table index per locale. The slots and pages read the whole domain, so they wait for
+ * a new model or locale, and a new window of the same data reuses them.
+ */
+const tableIndexes = new WeakMap<CartesianModel, Map<SupportedLocale, TableIndex>>();
+
+/** The table index of a model in a locale, built on first read. */
+function tableIndexOf(model: CartesianModel, locale: SupportedLocale): TableIndex {
+  let byLocale = tableIndexes.get(model);
+  if (byLocale === undefined) {
+    byLocale = new Map();
+    tableIndexes.set(model, byLocale);
+  }
+  let index = byLocale.get(locale);
+  if (index === undefined) {
+    const slots = tableSlots(model);
+    index = { slots, pages: tablePages(model, locale, slots) };
+    byLocale.set(locale, index);
+  }
+  return index;
+}
+
+/** What the table reads: the series model's words, the chart's name and the Root's rows. */
+export type SeriesTableContext = TextContext & {
+  readonly name: string | undefined;
+  readonly rows: readonly ChartRow[];
+};
+
+/** The caption: the chart name and the period the rows span. */
+function captionText(context: SeriesTableContext, slots: readonly number[]): string {
+  const { domain } = context.model;
+  const first = slots[0] ?? 0;
+  const last = slots.at(-1) ?? first;
+  let period: string;
+  if (domain.kind === "category") {
+    period = CHART_STRINGS[context.locale].valueRange(domain.names[first] ?? "", domain.names[last] ?? "");
+  } else {
+    const options: Intl.DateTimeFormatOptions =
+      domain.interval === "year"
+        ? { year: "numeric" }
+        : domain.interval === "month"
+          ? { month: "long", year: "numeric" }
+          : { day: "numeric", month: "long", year: "numeric" };
+    const label = (slot: number) =>
+      formatSlot(context.locale, domain.timeZone, domain.starts[slot] ?? 0, domain.interval, options, "full")
+        .text;
+    const from = label(first);
+    const to = label(last);
+    period = from === to ? from : CHART_STRINGS[context.locale].valueRange(from, to);
+  }
+  return context.name === undefined ? period : `${context.name}, ${period}`;
+}
+
+/** The first column's header, which the interval picks. */
+function xHeaderText(context: TextContext): string {
+  const strings = CHART_STRINGS[context.locale];
+  const { domain } = context.model;
+  if (domain.kind === "category") return strings.xHeaderCategory;
+  switch (domain.interval) {
+    case "second":
+    case "minute":
+    case "quarter-hour":
+    case "hour":
+      return strings.xHeaderTime;
+    case "day":
+      return strings.xHeaderDay;
+    case "week":
+      return strings.xHeaderWeek;
+    case "month":
+      return strings.xHeaderMonth;
+    case "year":
+      return strings.xHeaderYear;
+  }
+}
+
+/** A series column's header, the label followed by the format's unit. */
+function seriesHeader(context: TextContext, key: string): FormattedText {
+  const label = seriesLabel(context, key);
+  const unit = formatUnitLabel(context.locale, context.config[key]?.format ?? {});
+  if (unit === null) return label;
+  return { text: `${label.text} (${unit.text})`, spoken: `${label.spoken} (${unit.spoken})` };
+}
+
+/**
+ * One series cell: the unitless value with its quality and projection words, the missing dash, or
+ * the pending word for screen readers alone. A cell that a coarse series' span above covers renders
+ * nothing.
+ */
+function seriesCell(context: TextContext, key: string, slot: number, rows: number): ChartTableCell {
+  if (rows === 0) return { kind: "covered", key };
+  const strings = CHART_STRINGS[context.locale];
+  const series = seriesOf(context.model, key);
+  const reading = series?.readings[slot];
+  if (series === undefined || reading === undefined || reading.kind === "pending") {
+    return { kind: "silent", key, spoken: strings.pending, rows };
+  }
+  if (reading.kind === "missing") {
+    return { kind: "value", key, text: { text: "–", spoken: strings.missing }, words: [], rows };
+  }
+  const value = formatUnitless(context.locale, reading.value, context.config[key]?.format ?? {});
+  const words = qualityWords(context.locale, reading.quality, slot >= series.projectedFrom);
+  return { kind: "value", key, text: value, words, rows };
+}
+
+/** One stack's total cell: the sum of the present parts, with the incomplete word for a missing part. */
+function totalCell(
+  context: TextContext,
+  stack: string,
+  keys: readonly string[],
+  slot: number
+): ChartTableCell {
+  const strings = CHART_STRINGS[context.locale];
+  const sum = stackTotalAt(context.model, keys, slot);
+  const key = `total-${stack}`;
+  if (sum === null)
+    return { kind: "value", key, text: { text: "–", spoken: strings.missing }, words: [], rows: 1 };
+  const value = formatUnitless(context.locale, sum.total, context.config[keys[0] ?? ""]?.format ?? {});
+  return { kind: "value", key, text: value, words: sum.incomplete ? [strings.incomplete] : [], rows: 1 };
+}
+
+/**
+ * A series model's table: every slot of the full data that holds a reading or a missing reading,
+ * paged past 500 rows by calendar period or by 500 categories, with one column per series and per
+ * multi-series stack total. It builds rows for the shown page alone.
+ *
+ * @param context - The series model's words, the chart's name and the Root's rows.
+ * @param keys - The React key each domain slot's row renders under, by slot index.
+ * @returns The table model.
+ */
+export function seriesTable(context: SeriesTableContext, keys: readonly string[]): ChartTableModel {
+  const { model, locale } = context;
+  const strings = CHART_STRINGS[locale];
+  return {
+    pages: () => tableIndexOf(model, locale).pages,
+    caption: () => captionText(context, tableIndexOf(model, locale).slots),
+    xHeader: () => xHeaderText(context),
+    heads: () => [
+      ...model.series.map(({ key }) => seriesHeader(context, key)),
+      ...model.stacks.map(({ id }): FormattedText => {
+        const text = model.stacks.length > 1 ? `${strings.total} ${id}` : strings.total;
+        return { text, spoken: text };
+      }),
+    ],
+    rows: (page) => {
+      // A coarse cell spans the rows of its slot, so each coarse value appears once.
+      const spans = new Map(
+        model.series.flatMap(({ key, coarse }) =>
+          coarse === undefined ? [] : [[key, rowSpans(page.slots, coarse)] as const]
+        )
+      );
+      return page.slots.map((slot, row): ChartTableRow => ({
+        key: keys[slot] ?? slot,
+        slot,
+        head: slotLabel(context, slot),
+        cells: [
+          ...model.series.map(({ key }) => seriesCell(context, key, slot, spans.get(key)?.[row] ?? 1)),
+          ...model.stacks.map(({ id, keys: parts }) => totalCell(context, id, parts, slot)),
+        ],
+      }));
+    },
+    cell: (slot, column) => {
+      const index = model.rowAt[slot];
+      return index === undefined ? undefined : context.rows[index]?.[column];
+    },
+    hasColumn: (column) => context.rows.some((entry) => Object.hasOwn(entry, column)),
+    timeZone: model.domain.kind === "time" ? model.domain.timeZone : "UTC",
+  };
+}
+
+/** What a series readout takes from its Root beside the series model: its identity, store and calls. */
+export type SeriesReadoutHost = Pick<
+  ChartReadout,
+  | "id"
+  | "root"
+  | "store"
+  | "followers"
+  | "select"
+  | "registerToggleGroup"
+  | "highlight"
+  | "warnOnce"
+  | "usePick"
+>;
+
+/**
+ * The readout over a series model, which every family that builds a `CartesianModel` shares: an
+ * index is a slot, the legend lists every config key, a threshold series listing both sides, and the
+ * tooltip rows list every series at the active slot.
+ *
+ * @param context - The family's series model and words.
+ * @param host - The Root's identity, store, calls and pick.
+ * @param options - The readout's options.
+ * @param options.look - The look a key's marks draw in, which its swatch wears. None by default.
+ * @param options.known - The config a part's dataKey must name, the context's own by default. A
+ *   radar past its series cap draws a capped config, and a part may still name a key it leaves out,
+ *   which answers its label, icon and paint from this config at no index, and reads unselectable.
+ * @returns The readout.
+ */
+export function seriesReadoutOf(
+  context: TextContext,
+  host: SeriesReadoutHost,
+  {
+    look = () => undefined,
+    known = context.config,
+  }: {
+    readonly look?: (key: string) => string | undefined;
+    readonly known?: ChartConfig;
+  } = {}
+): ChartReadout {
+  const { model, config } = context;
+  const legendKeys = Object.keys(config);
+  const seriesKeys = model.series.map(({ key }) => key);
+  const items = new Map<string, ReadoutItem>();
+  const item = (key: string): ReadoutItem | undefined => {
+    const kept = items.get(key);
+    if (kept !== undefined) return kept;
+    const entry = known[key];
+    if (entry === undefined) return undefined;
+    const drawn = Object.hasOwn(config, key);
+    const color = entry.color;
+    const made: ReadoutItem = {
+      index: drawn ? (seriesOf(model, key)?.seriesIndex ?? legendKeys.indexOf(key)) : undefined,
+      label: seriesLabel({ config: known }, key),
+      icon: entry.icon,
+      selectable: drawn,
+      sides: isThresholdColor(color) ? [color.above, color.below] : null,
+    };
+    items.set(key, made);
+    return made;
+  };
+  return {
+    ...host,
+    locale: context.locale,
+    window: model.window,
+    empty: model.empty,
+    legendKeys,
+    toggleGroupName: CHART_STRINGS[context.locale].seriesGroup,
+    item,
+    assertKey: (part, key) => {
+      assertKnownKey(part, known, key);
+    },
+    pointKey: (_active, near) => (near === null ? null : (model.series[near]?.key ?? null)),
+    itemsFollowActive: false,
+    tooltipKeys: () => seriesKeys,
+    activeLabel: (active, format) => slotLabel(context, active, format).text,
+    valueText: (key, at, format) => readingText(context, key, at, format),
+    share: (key, at, digits) => slotShares(context, at, digits).get(key) ?? null,
+    legendAt: (key, active, fallback) => active ?? fallbackSlot(context, key, fallback),
+    legendShare: (key, digits) => windowShares(context, digits).get(key) ?? null,
+    swatch: (key, at) => {
+      const paint = seriesPaintOf(key, known[key]?.color ?? "chart-1", seriesOf(model, key));
+      const step = at === null ? undefined : readingPaint(paint, readingAt(context, key, at));
+      return { paint: swatchPaint(paint, step), look: look(key) };
+    },
+    point: (active, near) => {
+      const values: Record<string, number | null> = {};
+      const quality: Record<string, ChartQuality> = {};
+      for (const series of model.series) {
+        const reading = series.readings[active];
+        values[series.key] = reading?.kind === "reading" ? reading.value : null;
+        if (reading?.kind === "reading") quality[series.key] = reading.quality;
+        else if (reading?.kind === "missing") quality[series.key] = "missing";
+      }
+      return {
+        index: active,
+        x: slotX(model.domain, active),
+        label: slotLabel(context, active),
+        key: near === null ? null : (model.series[near]?.key ?? null),
+        values,
+        quality,
+      };
+    },
+  };
+}

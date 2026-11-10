@@ -10,7 +10,15 @@ import type { ReactElement } from "react";
 import { readFileSync } from "node:fs";
 
 import { LocaleProvider } from "@elmeragroup/fuse";
-import { Chart, formatChartValue, Sparkline } from "@elmeragroup/fuse/chart";
+import {
+  Chart,
+  ClockChart,
+  formatChartValue,
+  PieChart,
+  RadarChart,
+  RadialChart,
+  Sparkline,
+} from "@elmeragroup/fuse/chart";
 import type { ChartConfig } from "@elmeragroup/fuse/chart";
 import { House } from "@elmeragroup/fuse/icons";
 
@@ -145,6 +153,104 @@ export function ComposedPage(): ReactElement {
           </Chart.Panel>
           <Chart.Table />
         </Chart.Root>
+      </main>
+    </LocaleProvider>
+  );
+}
+
+/** October's bill in kroner, 1 200 in all. */
+const BILL = [
+  { part: "strom", kr: 612 },
+  { part: "nettleie", kr: 348 },
+  { part: "avgifter", kr: 240 },
+];
+
+/** A day's mean spot price in three price areas, in øre per kilowatt-hour. */
+const AREAS = [
+  { area: "no1", ore: 92 },
+  { area: "no2", ore: 88 },
+  { area: "no4", ore: 31 },
+];
+
+/** Each season's mean spot price in NO1 and NO4, in øre per kilowatt-hour. */
+const SEASONS = [
+  { season: "Vinter", no1: 120, no4: 45 },
+  { season: "Vår", no1: 80, no4: 30 },
+  { season: "Sommer", no1: 40, no4: 20 },
+  { season: "Høst", no1: 95, no4: 38 },
+];
+
+/** A household's day in Oslo, 25 October 2025, one reading an hour from 1 to 4 kWh. */
+const CLOCK_DAY = Array.from({ length: 24 }, (_, hour) => ({
+  start: Date.parse("2025-10-24T22:00:00Z") + hour * 3_600_000,
+  kwh: 1 + (hour % 4),
+}));
+
+/**
+ * The polar Roots as a directive-free server page: a bill as a pie with its slices, labels, legend and table,
+ * three price areas as rings against 150 øre with their table, and two areas' seasons as a radar
+ * with its grid, axes, one area's fill and outline, and its legend, and a household's day as a clock
+ * with its grid, labels, columns, line and centre.
+ */
+export function PolarPage(): ReactElement {
+  return (
+    <LocaleProvider locale="nb-NO" timeZone="Europe/Oslo">
+      <main>
+        <PieChart.Root
+          data={BILL}
+          config={{
+            strom: { label: "Strøm", color: "chart-1" },
+            nettleie: { label: "Nettleie", color: "chart-2" },
+            avgifter: { label: "Avgifter", color: "chart-3" },
+          }}
+          nameKey="part"
+          valueKey="kr"
+          aria-label="Strømregning i oktober">
+          <PieChart.Pie />
+          <PieChart.Labels />
+          <PieChart.Legend />
+          <PieChart.Table />
+        </PieChart.Root>
+        <RadialChart.Root
+          data={AREAS}
+          config={{
+            no1: { label: "NO1", color: "chart-1" },
+            no2: { label: "NO2", color: "chart-2" },
+            no4: { label: "NO4", color: "chart-4" },
+          }}
+          nameKey="area"
+          valueKey="ore"
+          max={150}
+          aria-label="Spotpris per område">
+          <RadialChart.Track />
+          <RadialChart.Bar />
+          <RadialChart.Table />
+        </RadialChart.Root>
+        <RadarChart.Root
+          data={SEASONS}
+          config={{ no1: { label: "NO1", color: "chart-1" }, no4: { label: "NO4", color: "chart-4" } }}
+          nameKey="season"
+          aria-label="Spotpris per sesong">
+          <RadarChart.Grid />
+          <RadarChart.AngleAxis />
+          <RadarChart.RadiusAxis />
+          <RadarChart.Area dataKey="no1" />
+          <RadarChart.Line dataKey="no1" />
+          <RadarChart.Legend />
+        </RadarChart.Root>
+        <ClockChart.Root
+          data={CLOCK_DAY}
+          config={{ kwh: { label: "Forbruk", color: "chart-1" } }}
+          xKey="start"
+          cycle="day"
+          interval="hour"
+          aria-label="Forbruk per time">
+          <ClockChart.Grid />
+          <ClockChart.AngleAxis />
+          <ClockChart.Column dataKey="kwh" />
+          <ClockChart.Line dataKey="kwh" />
+          <ClockChart.Center />
+        </ClockChart.Root>
       </main>
     </LocaleProvider>
   );

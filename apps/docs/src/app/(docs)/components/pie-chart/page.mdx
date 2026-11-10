@@ -3,7 +3,13 @@ lede: >
   Preview. Pie and donut charts, and gauges through `max`.
 ---
 
+import { PieChartAppliances } from "./demos/pie-chart-appliances";
 import { PieChartBill } from "./demos/pie-chart-bill";
+import { PieChartCapacityStep } from "./demos/pie-chart-capacity-step";
+import { PieChartEmpty } from "./demos/pie-chart-empty";
+import { PieChartLoading } from "./demos/pie-chart-loading";
+import { PieChartSemicircle } from "./demos/pie-chart-semicircle";
+import { PieChartServer } from "./demos/pie-chart-server";
 
 import { componentMetadata } from "../../../../lib/component-page";
 
@@ -13,12 +19,58 @@ export const metadata = componentMetadata("pie-chart");
 
 <Prose>
 
-The chart entry is a preview. This chart renders in a later release of the preview entry, so the demo below stays empty until then. Names and props can change until Fuse's first stable release. Slices draw in data order, and past `maxSlices` the smallest rows fold into one Other slice.
+The chart entry is a preview. Names and props can change until Fuse's first stable release. Slices draw in data order from `startAngle`, clockwise. A consumer who wants the largest slice first sorts the rows. The slices sweep in once, the first time the chart comes into view, and a data update tweens them to their new angles. A slice that leaves collapses into its neighbour's seam, and one that folds into Other collapses into Other as Other grows. Every reading above 0 keeps at least one device pixel of rim, while the labels, the tooltip and the table keep the true value.
+
+The active slice moves out along its bisector by `--chart-slice-pop`, 8 px by default, and the other slices dim. A pointer anywhere in the chart's cell picks the slice under its angle, the hole and the space past the rim included, so the gaps between slices never flicker. On a touch screen, a drag that starts on the dial scrubs round it instead of scrolling the page, which scrolls from beside the dial. A tap pins the tooltip, and a second tap on the same slice releases it.
 
 </Prose>
 
+## Bills and shares
+
+The month switch tweens the slices to the new bill, and the centre rolls its digits to the new total. Hover a slice, or focus the chart and use the arrow keys, to read one slice. The centre then prints that slice's value, and the `CenterName` line under it names the slice. With nothing active, `CenterName` prints its children, here "Total". A `CenterLabel` line keeps its text whatever is active.
+
 <Demo slug="pie-chart" id="bill" title="Bill" file="pie-chart-bill.tsx">
   <PieChartBill />
+</Demo>
+
+Past `maxSlices`, 6 by default, the smallest rows fold into one Other slice, which comes last and reads as "Other" with the number of categories it holds. The table lists every row unfolded.
+
+<Demo slug="pie-chart" id="appliances" title="Consumption per appliance" file="pie-chart-appliances.tsx">
+  <PieChartAppliances />
+</Demo>
+
+## Gauges and semicircles
+
+`max` turns the pie into a gauge, whose slices fill their total's share of `max`. `PieChart.Track` draws the rest of the sweep. A total above `max` fills the whole sweep and sets `data-over-max`, while the texts keep the true value.
+
+<Demo slug="pie-chart" id="capacity-step" title="Capacity step" file="pie-chart-capacity-step.tsx">
+  <PieChartCapacityStep />
+</Demo>
+
+`startAngle` and `endAngle` count degrees from 12 o'clock, clockwise. The chart keeps the aspect of the sweep's bounding box, so a semicircle from −90 to 90 is twice as wide as it is tall.
+
+<Demo slug="pie-chart" id="semicircle" title="Semicircle" file="pie-chart-semicircle.tsx">
+  <PieChartSemicircle />
+</Demo>
+
+## Server components
+
+A chart whose props are all plain data needs no `"use client"` line. The server writes the slices, the labels and the table into the page's HTML. The slices stay hidden until the chart comes into view and sweep in, and with JavaScript off, or in print, the whole chart shows at once.
+
+<Demo slug="pie-chart" id="server-component" title="Server component" file="pie-chart-server.tsx">
+  <PieChartServer />
+</Demo>
+
+## Loading and empty states
+
+<Demo slug="pie-chart" id="loading" title="Loading" file="pie-chart-loading.tsx">
+  <PieChartLoading />
+</Demo>
+
+A chart with no reading above 0 shows `PieChart.Empty`, and it has no tab stop.
+
+<Demo slug="pie-chart" id="empty" title="No data" file="pie-chart-empty.tsx">
+  <PieChartEmpty />
 </Demo>
 
 <ApiReference slug="pie-chart" />

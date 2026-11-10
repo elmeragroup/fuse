@@ -458,6 +458,7 @@ describe("chart module directives", () => {
     "components/chart/pie-chart-namespace.ts",
     "components/chart/radial-chart-namespace.ts",
     "components/chart/radar-chart-namespace.ts",
+    "components/chart/clock-chart-namespace.ts",
     "components/chart/scatter-chart-namespace.ts",
     // Each namespace is an ES module namespace over its parts module, so the parts modules stay
     // directive-free too, and a server component still dots into client references.
@@ -468,6 +469,7 @@ describe("chart module directives", () => {
     "components/chart/pie-chart-parts.ts",
     "components/chart/radial-chart-parts.ts",
     "components/chart/radar-chart-parts.ts",
+    "components/chart/clock-chart-parts.ts",
     "components/chart/scatter-chart-parts.ts",
     "components/chart/sparkline.tsx",
     "components/chart/chart-types.ts",
@@ -509,6 +511,7 @@ describe("chart module directives", () => {
     ["pie-chart-namespace.ts", ["PieChart"]],
     ["radial-chart-namespace.ts", ["RadialChart"]],
     ["radar-chart-namespace.ts", ["RadarChart"]],
+    ["clock-chart-namespace.ts", ["ClockChart"]],
     ["scatter-chart-namespace.ts", ["ScatterChart"]],
   ] as const)("%s exports only its namespace objects", (file, names) => {
     expect(exportedNames(`${CHART_DIR}${file}`)).toEqual(names);
@@ -548,8 +551,13 @@ describe("chart plot marks", () => {
   // behind the plot and draws no reading. Sparkline is left out too: it draws in a stretched
   // viewBox outside any plot, with no pixel grid to hold its marks to.
   // ScatterChart's parts draw over two value axes with no slot grid, so their own floor oracle,
-  // scatter-chart-floor.browser.test.tsx, walks them against the device pixel grid alone.
+  // scatter-chart-floor.browser.test.tsx, walks them against the device pixel grid alone. The polar
+  // parts draw in a dial with no slot grid either: a slice keeps its rim floor, which
+  // pie-chart-floor.browser.test.tsx checks, and its leaders, track and glow draw no reading. A clock
+  // column keeps its radial floor, which clock-chart.browser.test.tsx checks at 1x and 2x.
   const isScatter = (relative: string): boolean => relative.startsWith("components/chart/scatter-chart-");
+  const isPolar = (relative: string): boolean =>
+    /^components\/chart\/(?:pie|radial|radar|clock)-chart-/u.test(relative);
   const parts = [...SOURCE_TREE.values()].filter(
     (record) =>
       record.relative.startsWith("components/chart/") &&
@@ -564,13 +572,16 @@ describe("chart plot marks", () => {
         .filter(({ internal }) => !internal)
         .map(({ slot, at }) => ({ file: record.relative, slot, at }))
     );
-  const marks = marksOf(parts.filter((record) => !isScatter(record.relative)));
+  const marks = marksOf(parts.filter((record) => !isScatter(record.relative) && !isPolar(record.relative)));
+  const polarMarks = marksOf(parts.filter((record) => isPolar(record.relative)));
   const scatterMarks = marksOf(parts.filter((record) => isScatter(record.relative)));
 
   it("names every SVG mark a chart part draws with a data-slot", () => {
     expect(marks.length).toBeGreaterThan(0);
     expect(
-      marks.filter(({ slot }) => slot === undefined).map(({ file, at }) => `${file}@${String(at)}`)
+      [...marks, ...polarMarks]
+        .filter(({ slot }) => slot === undefined)
+        .map(({ file, at }) => `${file}@${String(at)}`)
     ).toEqual([]);
   });
 
@@ -593,11 +604,17 @@ describe("chart plot marks", () => {
 describe("chart motion classification", () => {
   // Why not a lint rule: the rule is about which module may decide a placement, which no lint rule
   // expresses. Every mark that moves registers through useMotionMark, and asks the one commit
-  // classifier, useCommitMotion, or its follower form, how to reach a commit's geometry.
+  // classifier, useCommitMotion, or its follower form, how to reach a commit's geometry. A polar
+  // mark registers through usePolarMark and asks usePolarCommit, since useMotionMark reads the
+  // cartesian layout no polar route ships, and chart-polar-motion.ts also owns the exit ghosts.
   const chart = [...SOURCE_TREE.values()].filter(
     (record) => record.relative.startsWith("components/chart/") && !record.relative.includes(".test.")
   );
-  const owners = new Set(["components/chart/chart-motion.ts", "components/chart/chart-motion-mark.ts"]);
+  const owners = new Set([
+    "components/chart/chart-motion.ts",
+    "components/chart/chart-motion-mark.ts",
+    "components/chart/chart-polar-motion.ts",
+  ]);
 
   it("places marks on Root's loop only through useMotionMark", () => {
     expect(
@@ -616,8 +633,8 @@ describe("chart motion classification", () => {
         .filter((record) => !owners.has(record.relative))
         .map((record) => ({
           module: record.relative,
-          marks: count(record.code, /\buseMotionMark\b(?:<[^>]*>)?\(/gu),
-          asks: count(record.code, /\b(?:useCommitMotion|useFollowerPlacement)\(/gu),
+          marks: count(record.code, /\b(?:useMotionMark|usePolarMark)\b(?:<[^>]*>)?\(/gu),
+          asks: count(record.code, /\b(?:useCommitMotion|useFollowerPlacement|usePolarCommit)\(/gu),
         }))
         .filter(({ marks, asks }) => marks !== asks)
     ).toEqual([]);
@@ -918,6 +935,15 @@ describe("runtime listeners and layout motion", () => {
       // a consumer's own handler, which Root's spread props replace. The same owner listens on
       // the window for `beforeprint`, and for `scroll` and `resize` only while a plot waits.
       "components/chart/chart-entrance.ts",
+      // Document `scroll`, captured and passive, and window and visual viewport `resize` and
+      // `scroll`, only while a polar tooltip is open: they move the chart against the viewport
+      // without resizing anything a ResizeObserver sees, and the lane must measure again to stay
+      // inside it. A scroll in a container does not bubble, and React has no window listener.
+      "components/chart/chart-polar-anchor.ts",
+      // Document `pointermove`, in the capture phase, only while a pointer crosses the gap from a
+      // polar plot to its tooltip: no element of the chart lies under the gap, so no React handler
+      // sees the move, and the popup and the plot take over once it reaches either.
+      "components/chart/chart-polar-surface.tsx",
       // `document.fonts` `loadingdone`: a web font that loads after the pill measured its label
       // widths changes them, and React has no FontFaceSet handler.
       "components/chart/chart-slot-label.tsx",

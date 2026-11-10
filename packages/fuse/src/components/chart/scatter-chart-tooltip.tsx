@@ -1,26 +1,21 @@
 "use client";
 
-import { useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { createContext, use, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import type { ReactElement, ReactNode } from "react";
 
 import { mergeProps } from "@base-ui/react/merge-props";
 import { Tooltip as TooltipPrimitive } from "@base-ui/react/tooltip";
 import { useRender } from "@base-ui/react/use-render";
 
-import { cn } from "../../styles/cn";
-import { tooltipShellClass } from "../../styles/inner-corner/tooltip";
-import {
-  overlayPopupMotionClass,
-  overlayPopupSurfaceClass,
-  overlayPositionerClass,
-} from "../overlay/overlay-classes";
 import { OverlayPortal } from "../overlay/overlay-portal";
-import { tooltipPopup, watchOverflow } from "./chart-tooltip-popup";
+import { chartTakesPress, TOOLTIP_POSITIONER, tooltipPopupClass, watchOverflow } from "./chart-tooltip-popup";
 import type { ChartDomProps, ChartLayerProps, ValueFormat } from "./chart-types";
+import { seriesLabel } from "./format/series-label";
 import { formatValue } from "./format/value-format";
 import { dotCentre } from "./layout/scatter-frame";
 import { pointOf } from "./layout/scatter-model";
-import { ROOF_GAP, TOOLTIP_EDGE } from "./layout/tooltip-place";
+import type { ScatterModel } from "./layout/scatter-model";
+import { ROOF_GAP } from "./layout/tooltip-place";
 import {
   dotOf,
   scatterPaint,
@@ -33,7 +28,7 @@ import type { ScatterRootContextValue } from "./scatter-chart-context";
 import { SeriesSwatch } from "./scatter-chart-legend";
 import { useScatterStore } from "./scatter-chart-store";
 import { pickPoint, tapPoint } from "./scatter-chart-surface";
-import { axisNames, scatterSeriesLabel, yFormatOf } from "./scatter-chart-text";
+import { axisNames, yFormatOf } from "./scatter-chart-text";
 
 /**
  * Props for `ScatterChart.Tooltip`, a closed part.
@@ -77,9 +72,24 @@ function plotSurface(id: string): HTMLElement | null {
   return document.getElementById(`${id}-surface`);
 }
 
-/** The active point's id in the Root's model, or null, which the readout parts render on. */
+/** The point a closing tooltip keeps showing, with the model its id belongs to. */
+type ScatterHeldPoint = { readonly model: ScatterModel; readonly id: number };
+
+/**
+ * The point a closing tooltip keeps showing while it fades out, so its content never empties
+ * before the fade, or null while it is open or shut. Its parts read it through `useActive`.
+ */
+const HeldPointContext = createContext<ScatterHeldPoint | null>(null);
+
+/**
+ * The active point's id in the Root's model, or null, which the readout parts render on: the walk's
+ * active point, or inside a closing tooltip the point it held, while the model is the one it held it
+ * in.
+ */
 function useActive(context: ScatterRootContextValue): number | null {
-  return useWalk(context).active;
+  const active = useWalk(context).active;
+  const held = use(HeldPointContext);
+  return active ?? (held !== null && held.model === context.model ? held.id : null);
 }
 
 /**
@@ -102,20 +112,25 @@ export function ScatterChartTooltip({
   const active = useActive(context);
   const frame = useScatterFrame(context);
   const open = active !== null && frame !== null;
+  // The point the popup showed last, which its content and its anchor keep while it fades out.
+  const [shown, setShown] = useState<ScatterHeldPoint | null>(null);
+  if (active !== null && (shown?.id !== active || shown.model !== model)) setShown({ model, id: active });
+  const held = shown?.model === model ? shown.id : null;
+  const placed = active ?? held;
   // Once open, the portal stays mounted, so a chart that is its scope's last child never restyles.
   const [kept, setKept] = useState(false);
   if (open && !kept) setKept(true);
   // The active point's dot diameter, which follows a change of its Points part's size, so the
   // popup moves clear of a larger point while it stays open.
-  const activeKey = active === null ? null : pointOf(model, active).key;
+  const activeKey = placed === null ? null : pointOf(model, placed).key;
   const diameter = useSyncExternalStore(
     marks.subscribe,
     () => (activeKey === null ? 0 : dotOf(marks.of(activeKey))),
     () => 0
   );
   const anchor = useMemo(() => {
-    if (active === null || frame === null) return null;
-    const point = pointOf(model, active);
+    if (placed === null || frame === null) return null;
+    const point = pointOf(model, placed);
     const centre = dotCentre(frame, point.x, point.y, diameter);
     // The anchor spans the point and the gap above it, so the popup rests clear of the point.
     const reach = diameter / 2 + ROOF_GAP;
@@ -137,7 +152,7 @@ export function ScatterChartTooltip({
         return plotSurface(id) ?? undefined;
       },
     };
-  }, [active, frame, model, diameter, id]);
+  }, [placed, frame, model, diameter, id]);
   const content = children ?? <DefaultTooltip />;
   // Whether the pointer entered the popup by moving straight toward it from the active point, as
   // Chart's tooltip rules it. Only that entry holds the point while the pointer crosses the popup,
@@ -153,47 +168,18 @@ export function ScatterChartTooltip({
     <TooltipPrimitive.Root
       open={open}
       onOpenChange={(next, details) => {
-        if (next) return;
-        // A press on the chart picks or pins a point. Every other dismissal Base UI reports, such
-        // as a press outside the chart or Escape with focus elsewhere, takes the one dismissal.
-        const target = details.event.target;
-        if (
-          details.reason === "outside-press" &&
-          target instanceof Node &&
-          context.root()?.contains(target) === true
-        )
-          return;
+        if (next || chartTakesPress(details, context.root())) return;
         store.dismiss(model);
       }}>
       <OverlayPortal portal={TooltipPrimitive.Portal} keepMounted={kept}>
-        <TooltipPrimitive.Positioner
-          anchor={anchor}
-          side="top"
-          align="center"
-          collisionAvoidance={{ side: "flip", align: "shift", fallbackAxisSide: "end" }}
-          // Base UI's flip adds 1 px to the collision padding, and 1 px more on the side opposite
-          // the preferred top, so these paddings make every flip test read TOOLTIP_EDGE, 8 px.
-          collisionPadding={{
-            top: TOOLTIP_EDGE - 1,
-            right: TOOLTIP_EDGE - 1,
-            bottom: TOOLTIP_EDGE - 2,
-            left: TOOLTIP_EDGE - 1,
-          }}
-          data-slot="chart-tooltip-positioner"
-          className={overlayPositionerClass}>
+        <TooltipPrimitive.Positioner {...TOOLTIP_POSITIONER} anchor={anchor}>
           <TooltipPrimitive.Popup
             data-slot="chart-tooltip"
             data-variant={variant}
             data-input={touchInput ? "touch" : undefined}
             aria-hidden="true"
             ref={watchOverflow}
-            className={cn(
-              overlayPopupSurfaceClass,
-              tooltipShellClass,
-              overlayPopupMotionClass,
-              tooltipPopup({ variant }),
-              className
-            )}
+            className={tooltipPopupClass(variant, className)}
             style={style}
             onPointerDown={(event) => {
               if (event.pointerType === "mouse") return;
@@ -248,7 +234,8 @@ export function ScatterChartTooltip({
                 return;
               store.leave();
             }}>
-            {content}
+            {/* A held id is the shown point's, from the model it belongs to, so `shown` is the value. */}
+            <HeldPointContext value={open || held === null ? null : shown}>{content}</HeldPointContext>
           </TooltipPrimitive.Popup>
         </TooltipPrimitive.Positioner>
       </OverlayPortal>
@@ -304,7 +291,7 @@ export function ScatterChartTooltipLabel({
             (key === null ? null : (
               <>
                 <SeriesSwatch paint={scatterPaint(context.config, key)} />
-                {scatterSeriesLabel(context, key).text}
+                {seriesLabel(context, key).text}
               </>
             )),
         },

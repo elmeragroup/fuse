@@ -4,30 +4,41 @@
  * The tooltip's glide between slots. Base UI places the popup by writing `translate(x, y)` to the
  * positioner's inline style. A slot step arms the glider, and the next place Base UI writes plays
  * as one Web Animation of the positioner's transform from where the popup shows, over the chart's
- * `--chart-glide` on bklit's tooltip spring, stiffness 100 and damping 20, which never overshoots.
- * A popup resting over a vertical plot glides along `glidePath`, so it clears every mark on the
- * way, and moves at once when that path would leave the viewport, as it would from the fallback
- * that overlays the plot. Anything else that moves the popup, such as a scroll, a resize of the
- * window, a data update or a change of side, stops the glide, and the popup shows Base UI's place
- * at once. The positioner portals out of the chart, so the glider copies the chart's duration onto
- * it. The stylesheet sets `--_glide` from it only while the reader has no preference for reduced
- * motion, so under reduced motion every place shows at once.
+ * `--chart-glide` on the tooltip spring, stiffness 100 and damping 20, which never overshoots. A
+ * route that follows a path, such as the cartesian popup's way over the marks it rests on, turns
+ * where the route says, and moves the popup at once where the route finds no way, as it does when
+ * the way would leave the viewport. Anything else that moves the popup, such as a scroll, a resize
+ * of the window, a data update or a change of side, stops the glide, and the popup shows Base UI's
+ * place at once. The positioner portals out of the chart, so the glider copies the chart's duration
+ * onto it. The stylesheet sets `--_glide` from it only while the reader has no preference for
+ * reduced motion, so under reduced motion every place shows at once.
  */
 import { clientScale, writeStyle } from "./chart-dom";
 import { springTiming } from "./chart-spring";
 import { CHART_SPRINGS } from "./layout/motion";
-import { TOOLTIP_EDGE, glidePath } from "./layout/tooltip-place";
 import type { PlaceSize, PopupPlace } from "./layout/tooltip-place";
 
-/** The roof over a span of client pixels, as a client y, or null where no mark reaches into it. */
-export type ClientRoof = (left: number, right: number) => number | null;
+/**
+ * The turns of a glide from one popup place to the next, in client pixels, the start and the end
+ * included, or null when the popup should move at once.
+ */
+export type GlideTurns = (
+  from: PopupPlace,
+  to: PopupPlace,
+  size: PlaceSize,
+  side: string | null
+) => readonly PopupPlace[] | null;
 
 /**
- * How a step's glide travels. "roof" glides along `glidePath` over the roof the popup rests on, and
- * shows the next place at once when that path would leave the viewport. "straight" glides in a
- * line, as along the plot's top lane or a horizontal chart's rows.
+ * How a step's glide travels. "path" glides through the turns its family's route gives for the side
+ * the popup is on, and shows the next place at once when the route gives none, as over the
+ * cartesian roof, where a place on another side shows at once and a popup that changes size keeps
+ * the edge that faces the plot. "straight" glides in a line, as along the plot's top lane or a
+ * horizontal chart's rows.
  */
-export type GlideRoute = { readonly kind: "roof"; readonly roof: ClientRoof } | { readonly kind: "straight" };
+export type GlideRoute =
+  | { readonly kind: "path"; readonly turns: GlideTurns }
+  | { readonly kind: "straight" };
 
 /**
  * Glides the popup's positioner to the places Base UI writes after a slot step.
@@ -84,17 +95,24 @@ export function createTooltipGlider(positioner: HTMLElement, chart: HTMLElement 
     // Where the popup shows, at its new size with the edge that faces the plot kept where it was,
     // so new content that makes it larger grows it away from the marks.
     const shown = running === null ? placed : shownShift(positioner);
-    const from =
-      shown === null ? null : facingKept(shown, placedSize, size, positioner.getAttribute("data-side"));
+    const before = placedSize;
     placed = target;
     placedSize = size;
-    // A place Base UI writes after the glide ended, or on another side, shows at once.
-    if (armed === null || from === null || positioner.getAttribute("data-side") !== armed.side) {
+    // A place Base UI writes after the glide ended shows at once.
+    if (armed === null || shown === null) {
       stop();
       return;
     }
+    const side = positioner.getAttribute("data-side");
+    const route = armed.route();
+    // A place on another side shows at once.
+    if (side !== armed.side) {
+      stop();
+      return;
+    }
+    const from = facingKept(shown, before, size, side);
     const timing = glideTiming(positioner);
-    const keyframes = timing === null ? null : glideKeyframes(positioner, from, target, armed);
+    const keyframes = timing === null ? null : glideKeyframes(positioner, from, target, armed.side, route);
     if (timing === null || keyframes === null) {
       stop();
       return;
@@ -187,14 +205,18 @@ function milliseconds(value: string): number | null {
 
 /**
  * The keyframes from one translation to the next, evenly paced along the glide's path, or null when
- * the popup moves at once. Over the roof the path turns where `glidePath` turns it, measured in
- * client pixels from the positioner's box and taken back into the positioner's own pixels. Only a
- * popup on the top side rests on the roof, so on any other side the glide runs straight.
+ * the popup moves at once. A path turns where its route turns it, measured in client pixels from
+ * the positioner's box and taken back into the positioner's own pixels.
  */
-function glideKeyframes(positioner: HTMLElement, from: Shift, to: Shift, armed: Armed): Keyframe[] | null {
+function glideKeyframes(
+  positioner: HTMLElement,
+  from: Shift,
+  to: Shift,
+  side: string | null,
+  route: GlideRoute
+): Keyframe[] | null {
   const straight: Keyframe[] = [{ transform: translate(from) }, { transform: translate(to) }];
-  const route = armed.route();
-  if (route.kind === "straight" || armed.side !== "top") return straight;
+  if (route.kind === "straight") return straight;
   // The positioner's box at the target, which is where Base UI's translation puts it.
   const shownBox = positioner.getBoundingClientRect();
   const shown = animated(positioner) ? shownShift(positioner) : to;
@@ -211,7 +233,7 @@ function glideKeyframes(positioner: HTMLElement, from: Shift, to: Shift, armed: 
     bottom: end.bottom + (from.y - to.y) * scale,
   };
   const size = { width: shownBox.width, height: shownBox.height };
-  const turns = glidePath(start, end, size, route.roof, TOOLTIP_EDGE);
+  const turns = route.turns(start, end, size, side);
   if (turns === null) return null;
   const lengths = turns.map((turn, index) => {
     const before = turns[index - 1];

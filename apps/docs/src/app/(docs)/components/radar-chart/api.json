@@ -169,7 +169,7 @@
           "origin": "declared",
           "type": "\"circle\" | \"polygon\" | undefined",
           "shortType": "Union",
-          "defaultValue": null,
+          "defaultValue": "\"polygon\"",
           "description": "The ring shape. \"polygon\" by default.",
           "required": false
         }
@@ -178,7 +178,7 @@
     {
       "name": "RadarChart.AngleAxis",
       "rsc": "client",
-      "sourcePath": "packages/fuse/src/components/chart/radar-chart-grid.tsx",
+      "sourcePath": "packages/fuse/src/components/chart/radar-chart-angle-axis.tsx",
       "forwardedFrom": [],
       "forwardedCount": 0,
       "props": [
@@ -205,7 +205,7 @@
     {
       "name": "RadarChart.RadiusAxis",
       "rsc": "client",
-      "sourcePath": "packages/fuse/src/components/chart/radar-chart-grid.tsx",
+      "sourcePath": "packages/fuse/src/components/chart/radar-chart-radius-axis.tsx",
       "forwardedFrom": [],
       "forwardedCount": 0,
       "props": [
@@ -313,7 +313,7 @@
           "origin": "declared",
           "type": "\"dashed\" | \"default\" | \"quiet\" | undefined",
           "shortType": "Union",
-          "defaultValue": null,
+          "defaultValue": "\"default\"",
           "description": "The outline's look. \"default\" by default.",
           "required": false
         }
@@ -358,7 +358,7 @@
           "origin": "declared",
           "type": "\"default\" | \"ring\" | undefined",
           "shortType": "Union",
-          "defaultValue": null,
+          "defaultValue": "\"default\"",
           "description": "The dot's look. \"default\" by default.",
           "required": false
         }
@@ -367,7 +367,7 @@
     {
       "name": "RadarChart.ActiveDot",
       "rsc": "client",
-      "sourcePath": "packages/fuse/src/components/chart/radar-chart-marks.tsx",
+      "sourcePath": "packages/fuse/src/components/chart/radar-chart-active-dot.tsx",
       "forwardedFrom": [],
       "forwardedCount": 0,
       "props": [
@@ -403,7 +403,7 @@
     {
       "name": "RadarChart.Glow",
       "rsc": "client",
-      "sourcePath": "packages/fuse/src/components/chart/radar-chart-marks.tsx",
+      "sourcePath": "packages/fuse/src/components/chart/radar-chart-glow.tsx",
       "forwardedFrom": [],
       "forwardedCount": 0,
       "props": [
@@ -541,7 +541,7 @@
     {
       "name": "RadarChart.Tooltip",
       "rsc": "client",
-      "sourcePath": "packages/fuse/src/components/chart/chart-tooltip.tsx",
+      "sourcePath": "packages/fuse/src/components/chart/polar-chart-tooltip.tsx",
       "forwardedFrom": [],
       "forwardedCount": 0,
       "props": [
@@ -595,7 +595,7 @@
     {
       "name": "RadarChart.TooltipLabel",
       "rsc": "client",
-      "sourcePath": "packages/fuse/src/components/chart/chart-tooltip.tsx",
+      "sourcePath": "packages/fuse/src/components/chart/chart-tooltip-parts.tsx",
       "forwardedFrom": [
         "@base-ui/react",
         "@types/react"
@@ -608,7 +608,7 @@
           "type": "XFormat | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The slot label format. Root's `xFormat` is the default. It does nothing in polar charts.",
+          "description": "The slot label format. Root's `xFormat` is the default. A clock's slots take it, and the categories of pie, radial and radar charts print as they are.",
           "required": false
         },
         {
@@ -636,7 +636,7 @@
     {
       "name": "RadarChart.TooltipItems",
       "rsc": "client",
-      "sourcePath": "packages/fuse/src/components/chart/chart-tooltip.tsx",
+      "sourcePath": "packages/fuse/src/components/chart/chart-tooltip-parts.tsx",
       "forwardedFrom": [
         "@base-ui/react",
         "@types/react"
@@ -668,7 +668,7 @@
     {
       "name": "RadarChart.TooltipValue",
       "rsc": "client",
-      "sourcePath": "packages/fuse/src/components/chart/chart-tooltip.tsx",
+      "sourcePath": "packages/fuse/src/components/chart/chart-tooltip-parts.tsx",
       "forwardedFrom": [
         "@base-ui/react",
         "@types/react"
@@ -718,7 +718,7 @@
     {
       "name": "RadarChart.TooltipShare",
       "rsc": "client",
-      "sourcePath": "packages/fuse/src/components/chart/chart-tooltip.tsx",
+      "sourcePath": "packages/fuse/src/components/chart/chart-tooltip-parts.tsx",
       "forwardedFrom": [
         "@base-ui/react",
         "@types/react"
@@ -809,7 +809,7 @@
           "origin": "declared",
           "type": "\"bar\" | \"circle\" | \"circle-outline\" | \"line\" | \"square\" | \"square-outline\" | undefined",
           "shortType": "Union",
-          "defaultValue": null,
+          "defaultValue": "\"square\"",
           "description": "The swatch's shape. \"square\" by default.",
           "required": false
         }
@@ -923,8 +923,8 @@
           "origin": "declared",
           "type": "\"bottom\" | \"end\" | \"start\" | \"top\" | undefined",
           "shortType": "Union",
-          "defaultValue": null,
-          "description": "Where the legend sits around the plot. \"bottom\" by default.",
+          "defaultValue": "\"bottom\"",
+          "description": "Where the legend sits around the plot. \"bottom\" by default. In a polar chart narrower than 30rem, a \"start\" or \"end\" legend moves under the dial, so the dial keeps its size.",
           "required": false
         },
         {
@@ -1003,7 +1003,7 @@
           "origin": "declared",
           "type": "ChartFallback | undefined",
           "shortType": null,
-          "defaultValue": null,
+          "defaultValue": "\"last\"",
           "description": "The datum to print when nothing is active. \"last\" by default.",
           "required": false
         },
@@ -1127,7 +1127,7 @@
           "origin": "declared",
           "type": "\"bottom\" | \"end\" | \"start\" | \"top\" | undefined",
           "shortType": "Union",
-          "defaultValue": null,
+          "defaultValue": "\"bottom\"",
           "description": "Where the group sits around the plot. \"bottom\" by default.",
           "required": false
         },
@@ -1190,7 +1190,7 @@
     {
       "name": "RadarChart.Table",
       "rsc": "client",
-      "sourcePath": "packages/fuse/src/components/chart/chart-table.tsx",
+      "sourcePath": "packages/fuse/src/components/chart/polar-series-table.tsx",
       "forwardedFrom": [],
       "forwardedCount": 0,
       "props": [
@@ -1262,7 +1262,7 @@
     {
       "name": "RadarChart.TableColumn",
       "rsc": "client",
-      "sourcePath": "packages/fuse/src/components/chart/chart-table.tsx",
+      "sourcePath": "packages/fuse/src/components/chart/chart-table-column.tsx",
       "forwardedFrom": [],
       "forwardedCount": 0,
       "props": [

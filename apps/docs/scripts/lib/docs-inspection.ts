@@ -51,6 +51,12 @@ export const SERVER_DEMOS: ReadonlySet<string> = new Set([
   // The chart contract promises that a server component renders a chart from plain data, and this
   // demo shows that path on the bar-chart page.
   "apps/docs/src/app/(docs)/components/bar-chart/demos/bar-chart-server.tsx",
+  // A pie from plain data renders on the server too, its slices, labels and table written there (S13).
+  "apps/docs/src/app/(docs)/components/pie-chart/demos/pie-chart-server.tsx",
+  // A radar's grid, labels and series render on the server from plain data (S13).
+  "apps/docs/src/app/(docs)/components/radar-chart/demos/radar-chart-deviation.tsx",
+  // A dial of stacked columns renders on the server from plain data (S13).
+  "apps/docs/src/app/(docs)/components/clock-chart/demos/clock-chart-server.tsx",
   // Sparkline calls no hook, and these demos show it drawn on the server with no client JavaScript.
   "apps/docs/src/app/(docs)/components/sparkline/demos/sparkline-table.tsx",
   "apps/docs/src/app/(docs)/components/sparkline/demos/sparkline-variants.tsx",

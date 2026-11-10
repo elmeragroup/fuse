@@ -114,7 +114,9 @@ describe("sameAs links", () => {
     expect([...aliases.keys()]).toEqual(["area-chart", "bar-chart", "line-chart"]);
     expect(aliases.get("bar-chart")).toEqual({ slug: "chart", name: "BarChart", owner: "Chart" });
     const links = sameAsLinks(real.filter(({ slug }) => !aliases.has(slug)));
-    expect(links.get("pie-chart")?.get("PieChart.Tooltip")).toEqual({ slug: "chart", name: "Chart.Tooltip" });
+    // Each polar family's Tooltip is its own part, and the Legend is Chart's.
+    expect(links.get("pie-chart")?.get("PieChart.Tooltip")).toBeUndefined();
+    expect(links.get("pie-chart")?.get("PieChart.Legend")).toEqual({ slug: "chart", name: "Chart.Legend" });
     expect(links.get("radial-chart")?.get("RadialChart.Center")).toEqual({
       slug: "pie-chart",
       name: "PieChart.Center",
@@ -150,7 +152,7 @@ describe("the generated chart references", () => {
       "`BarChart` is [`Chart`](/components/chart.md) under another name."
     );
     expect(endpoint("bar-chart")).not.toContain("### BarChart.Root");
-    expect(endpoint("pie-chart")).toContain("`PieChart.Tooltip` is [`Chart.Tooltip`](/components/chart.md).");
+    expect(endpoint("pie-chart")).toContain("`PieChart.Legend` is [`Chart.Legend`](/components/chart.md).");
     expect(endpoint("radial-chart")).toContain(
       "`RadialChart.Center` is [`PieChart.Center`](/components/pie-chart.md)."
     );
@@ -186,7 +188,7 @@ describe("the generated chart references", () => {
       /<code>BarChart<\/code> is <a href="\/components\/chart#api-reference"><code>Chart<\/code><\/a> under another name\./u
     );
     const pie = await fetchText("/components/pie-chart");
-    expect(pie).toContain('href="/components/chart#api-chart-tooltip"><code>Chart.Tooltip</code></a>');
+    expect(pie).toContain('href="/components/chart#api-chart-legend"><code>Chart.Legend</code></a>');
     expect(pie).toMatch(/id="api-piechart-pie"/u);
     const chart = await fetchText("/components/chart");
     expect(chart).toMatch(

@@ -10,7 +10,7 @@
  */
 import { useLayoutEffect, useRef } from "react";
 
-import { useChartRoot } from "./chart-context";
+import { useChartReadout } from "./chart-readout";
 
 /** The active slot inside the effective window and the nearest series, or null when none shows. */
 export type ActiveSlot = { readonly slot: number; readonly near: number | null } | null;
@@ -96,7 +96,7 @@ export function createChartFollowers(): ChartFollowers {
  *   font that loads.
  */
 export function useChartFollower(part: string, paint: FollowerPaint): () => void {
-  const { followers } = useChartRoot(part);
+  const { followers } = useChartReadout(part);
   const follower = useRef<Follower>({ paint, stale: true });
   useLayoutEffect(() => {
     follower.current.paint = paint;

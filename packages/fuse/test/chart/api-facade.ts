@@ -49,30 +49,53 @@ import {
   ChartTooltipValue,
 } from "../../src/components/chart/chart-tooltip";
 import { ChartTooltipTotal } from "../../src/components/chart/chart-tooltip-total";
+import { ClockChartActiveDot } from "../../src/components/chart/clock-chart-active-dot";
+import { ClockChartAngleAxis } from "../../src/components/chart/clock-chart-angle-axis";
+import { ClockChartActiveValue, ClockChartCenter } from "../../src/components/chart/clock-chart-center";
+import { ClockChartColumn } from "../../src/components/chart/clock-chart-column";
+import { ClockChartDots, ClockChartMarker } from "../../src/components/chart/clock-chart-dots";
+import { ClockChartGlow } from "../../src/components/chart/clock-chart-glow";
+import { ClockChartGrid } from "../../src/components/chart/clock-chart-grid";
+import { ClockChartArea, ClockChartLine } from "../../src/components/chart/clock-chart-marks";
+import { ClockChartNow } from "../../src/components/chart/clock-chart-now";
+import { ClockChartRadiusAxis } from "../../src/components/chart/clock-chart-radius-axis";
+import { ClockChartReferenceArea } from "../../src/components/chart/clock-chart-reference-area";
+import { ClockChartReferenceLine } from "../../src/components/chart/clock-chart-reference-line";
+import { ClockChartRoot } from "../../src/components/chart/clock-chart-root";
+import { ClockChartScrubber } from "../../src/components/chart/clock-chart-scrubber";
+import { ClockChartSkeleton } from "../../src/components/chart/clock-chart-skeleton";
+import { ClockChartTooltip } from "../../src/components/chart/clock-chart-tooltip";
+import { ClockChartTooltipTotal } from "../../src/components/chart/clock-chart-tooltip-total";
+import { ClockChartValueLabel } from "../../src/components/chart/clock-chart-value-label";
 import {
   PieChartCenter,
   PieChartCenterLabel,
+  PieChartCenterName,
+} from "../../src/components/chart/pie-chart-center";
+import {
   PieChartCenterMax,
   PieChartCenterShare,
   PieChartCenterValue,
-  PieChartTrack,
-} from "../../src/components/chart/pie-chart-center";
+} from "../../src/components/chart/pie-chart-center-value";
 import { PieChartGlow } from "../../src/components/chart/pie-chart-glow";
-import { PieChartLabels, PieChartPie } from "../../src/components/chart/pie-chart-pie";
+import { PieChartLabels } from "../../src/components/chart/pie-chart-labels";
+import { PieChartPie } from "../../src/components/chart/pie-chart-pie";
 import { PieChartRoot } from "../../src/components/chart/pie-chart-root";
 import { PieChartSkeleton } from "../../src/components/chart/pie-chart-skeleton";
+import { PieChartTrack } from "../../src/components/chart/pie-chart-track";
+import { PieChartTable, RadialChartTable } from "../../src/components/chart/polar-chart-table";
 import {
-  RadarChartAngleAxis,
-  RadarChartGrid,
-  RadarChartRadiusAxis,
-} from "../../src/components/chart/radar-chart-grid";
-import {
-  RadarChartActiveDot,
-  RadarChartArea,
-  RadarChartDots,
-  RadarChartGlow,
-  RadarChartLine,
-} from "../../src/components/chart/radar-chart-marks";
+  PieChartTooltip,
+  RadarChartTooltip,
+  RadialChartTooltip,
+} from "../../src/components/chart/polar-chart-tooltip";
+import { ClockChartTable, RadarChartTable } from "../../src/components/chart/polar-series-table";
+import { RadarChartActiveDot } from "../../src/components/chart/radar-chart-active-dot";
+import { RadarChartAngleAxis } from "../../src/components/chart/radar-chart-angle-axis";
+import { RadarChartGlow } from "../../src/components/chart/radar-chart-glow";
+import { RadarChartGrid } from "../../src/components/chart/radar-chart-grid";
+import { RadarChartArea, RadarChartDots, RadarChartLine } from "../../src/components/chart/radar-chart-marks";
+import { RadarChartRadiusAxis } from "../../src/components/chart/radar-chart-radius-axis";
 import { RadarChartRoot } from "../../src/components/chart/radar-chart-root";
 import { RadarChartSkeleton } from "../../src/components/chart/radar-chart-skeleton";
 import { RadialChartBar } from "../../src/components/chart/radial-chart-bar";
@@ -161,11 +184,12 @@ export const PieChart = {
   CenterShare: PieChartCenterShare,
   CenterMax: PieChartCenterMax,
   CenterLabel: PieChartCenterLabel,
+  CenterName: PieChartCenterName,
   Glow: PieChartGlow,
   Skeleton: PieChartSkeleton,
   Headline: ChartHeadline,
   Takeaway: ChartTakeaway,
-  Tooltip: ChartTooltip,
+  Tooltip: PieChartTooltip,
   TooltipLabel: ChartTooltipLabel,
   TooltipItems: ChartTooltipItems,
   TooltipValue: ChartTooltipValue,
@@ -179,7 +203,7 @@ export const PieChart = {
   LegendShare: ChartLegendShare,
   LegendToggleGroup: ChartLegendToggleGroup,
   LegendToggle: ChartLegendToggle,
-  Table: ChartTable,
+  Table: PieChartTable,
   TableColumn: ChartTableColumn,
   Empty: ChartEmpty,
   Background: ChartBackground,
@@ -194,11 +218,12 @@ export const RadialChart = {
   CenterShare: PieChartCenterShare,
   CenterMax: PieChartCenterMax,
   CenterLabel: PieChartCenterLabel,
+  CenterName: PieChartCenterName,
   Glow: PieChartGlow,
   Skeleton: RadialChartSkeleton,
   Headline: ChartHeadline,
   Takeaway: ChartTakeaway,
-  Tooltip: ChartTooltip,
+  Tooltip: RadialChartTooltip,
   TooltipLabel: ChartTooltipLabel,
   TooltipItems: ChartTooltipItems,
   TooltipValue: ChartTooltipValue,
@@ -212,7 +237,7 @@ export const RadialChart = {
   LegendShare: ChartLegendShare,
   LegendToggleGroup: ChartLegendToggleGroup,
   LegendToggle: ChartLegendToggle,
-  Table: ChartTable,
+  Table: RadialChartTable,
   TableColumn: ChartTableColumn,
   Empty: ChartEmpty,
   Background: ChartBackground,
@@ -231,7 +256,7 @@ export const RadarChart = {
   Skeleton: RadarChartSkeleton,
   Headline: ChartHeadline,
   Takeaway: ChartTakeaway,
-  Tooltip: ChartTooltip,
+  Tooltip: RadarChartTooltip,
   TooltipLabel: ChartTooltipLabel,
   TooltipItems: ChartTooltipItems,
   TooltipValue: ChartTooltipValue,
@@ -245,7 +270,50 @@ export const RadarChart = {
   LegendShare: ChartLegendShare,
   LegendToggleGroup: ChartLegendToggleGroup,
   LegendToggle: ChartLegendToggle,
-  Table: ChartTable,
+  Table: RadarChartTable,
+  TableColumn: ChartTableColumn,
+  Empty: ChartEmpty,
+  Background: ChartBackground,
+} as const;
+
+export const ClockChart = {
+  Root: ClockChartRoot,
+  Line: ClockChartLine,
+  Area: ClockChartArea,
+  Column: ClockChartColumn,
+  Dots: ClockChartDots,
+  ActiveDot: ClockChartActiveDot,
+  Marker: ClockChartMarker,
+  ValueLabel: ClockChartValueLabel,
+  Glow: ClockChartGlow,
+  Grid: ClockChartGrid,
+  AngleAxis: ClockChartAngleAxis,
+  RadiusAxis: ClockChartRadiusAxis,
+  ReferenceLine: ClockChartReferenceLine,
+  ReferenceArea: ClockChartReferenceArea,
+  Scrubber: ClockChartScrubber,
+  Now: ClockChartNow,
+  Center: ClockChartCenter,
+  ActiveValue: ClockChartActiveValue,
+  TooltipTotal: ClockChartTooltipTotal,
+  Skeleton: ClockChartSkeleton,
+  Headline: ChartHeadline,
+  Takeaway: ChartTakeaway,
+  Tooltip: ClockChartTooltip,
+  TooltipLabel: ChartTooltipLabel,
+  TooltipItems: ChartTooltipItems,
+  TooltipValue: ChartTooltipValue,
+  TooltipShare: ChartTooltipShare,
+  Swatch: ChartSwatch,
+  SeriesLabel: ChartSeriesLabel,
+  SeriesIcon: ChartSeriesIcon,
+  Legend: ChartLegend,
+  LegendItem: ChartLegendItem,
+  LegendValue: ChartLegendValue,
+  LegendShare: ChartLegendShare,
+  LegendToggleGroup: ChartLegendToggleGroup,
+  LegendToggle: ChartLegendToggle,
+  Table: ClockChartTable,
   TableColumn: ChartTableColumn,
   Empty: ChartEmpty,
   Background: ChartBackground,

@@ -6,9 +6,8 @@
  * prop that mirrors one, Root state or a data attribute. It never becomes a boolean or mode prop on
  * a part below Root.
  *
- * The errors the parts' JSDoc names, such as `unknown-key`, throw as the cartesian parts render.
- * `PieChart`, `RadialChart` and `RadarChart` render nothing yet, so theirs start to throw once those
- * parts render in a later preview release. `ScatterChart` throws its own as its parts render.
+ * The errors the parts' JSDoc names, such as `unknown-key`, throw as the parts render, and
+ * `ScatterChart` throws its own as its parts render.
  *
  * Import `@elmeragroup/fuse/chart.css` once, beside Fuse's own stylesheet.
  *
@@ -21,6 +20,7 @@ export { Chart, AreaChart, BarChart, LineChart } from "./components/chart/chart-
 export { PieChart } from "./components/chart/pie-chart-namespace";
 export { RadialChart } from "./components/chart/radial-chart-namespace";
 export { RadarChart } from "./components/chart/radar-chart-namespace";
+export { ClockChart } from "./components/chart/clock-chart-namespace";
 export { ScatterChart } from "./components/chart/scatter-chart-namespace";
 export { Sparkline } from "./components/chart/sparkline";
 export { useChartPoint } from "./components/chart/use-chart-point";
@@ -56,6 +56,9 @@ export type {
   ChartQualityKey,
   ChartRadarCap,
   ChartRadarFieldCheck,
+  ChartClockCycle,
+  ChartClockFieldCheck,
+  ChartClockInterval,
   ChartRole,
   ChartRow,
   ChartRowOf,
@@ -139,30 +142,51 @@ export type {
 export type { ChartTooltipTotalProps } from "./components/chart/chart-tooltip-total";
 export type {
   PieChartCenterLabelProps,
-  PieChartCenterMaxProps,
+  PieChartCenterNameProps,
   PieChartCenterProps,
+} from "./components/chart/pie-chart-center";
+export type {
+  PieChartCenterMaxProps,
   PieChartCenterShareProps,
   PieChartCenterValueProps,
-  PieChartTrackProps,
-} from "./components/chart/pie-chart-center";
+} from "./components/chart/pie-chart-center-value";
 export type { PieChartGlowProps } from "./components/chart/pie-chart-glow";
-export type { PieChartLabelsProps, PieChartPieProps } from "./components/chart/pie-chart-pie";
+export type { PieChartTrackProps } from "./components/chart/pie-chart-track";
+export type { PieChartLabelsProps } from "./components/chart/pie-chart-labels";
+export type { PieChartPieProps } from "./components/chart/pie-chart-pie";
 export type { PieChartSkeletonProps } from "./components/chart/pie-chart-skeleton";
 export type { RadialChartBarProps } from "./components/chart/radial-chart-bar";
 export type { RadialChartSkeletonProps } from "./components/chart/radial-chart-skeleton";
+export type { RadarChartGridProps } from "./components/chart/radar-chart-grid";
+export type { RadarChartAngleAxisProps } from "./components/chart/radar-chart-angle-axis";
+export type { RadarChartRadiusAxisProps } from "./components/chart/radar-chart-radius-axis";
 export type {
-  RadarChartAngleAxisProps,
-  RadarChartGridProps,
-  RadarChartRadiusAxisProps,
-} from "./components/chart/radar-chart-grid";
-export type {
-  RadarChartActiveDotProps,
   RadarChartAreaProps,
   RadarChartDotsProps,
-  RadarChartGlowProps,
   RadarChartLineProps,
 } from "./components/chart/radar-chart-marks";
+export type { RadarChartActiveDotProps } from "./components/chart/radar-chart-active-dot";
+export type { RadarChartGlowProps } from "./components/chart/radar-chart-glow";
 export type { RadarChartSkeletonProps } from "./components/chart/radar-chart-skeleton";
+export type { ClockChartRootProps } from "./components/chart/clock-chart-root";
+export type { ClockChartActiveDotProps } from "./components/chart/clock-chart-active-dot";
+export type { ClockChartColumnProps } from "./components/chart/clock-chart-column";
+export type { ClockChartDotsProps, ClockChartMarkerProps } from "./components/chart/clock-chart-dots";
+export type { ClockChartGlowProps } from "./components/chart/clock-chart-glow";
+export type { ClockChartAreaProps, ClockChartLineProps } from "./components/chart/clock-chart-marks";
+export type { ClockChartValueLabelProps } from "./components/chart/clock-chart-value-label";
+export type { ClockChartGridProps } from "./components/chart/clock-chart-grid";
+export type { ClockChartAngleAxisProps } from "./components/chart/clock-chart-angle-axis";
+export type { ClockChartRadiusAxisProps } from "./components/chart/clock-chart-radius-axis";
+export type { ClockChartReferenceLineProps } from "./components/chart/clock-chart-reference-line";
+export type { ClockChartReferenceAreaProps } from "./components/chart/clock-chart-reference-area";
+export type { ClockChartScrubberProps } from "./components/chart/clock-chart-scrubber";
+export type { ClockChartNowProps } from "./components/chart/clock-chart-now";
+export type {
+  ClockChartActiveValueProps,
+  ClockChartCenterProps,
+} from "./components/chart/clock-chart-center";
+export type { ClockChartSkeletonProps } from "./components/chart/clock-chart-skeleton";
 export type {
   ScatterChartGridProps,
   ScatterChartReferenceLineProps,

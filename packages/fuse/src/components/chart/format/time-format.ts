@@ -69,7 +69,7 @@ export type ClockPreset = {
 }[TimePreset];
 
 /** Whether an interval is shorter than a day. */
-function isClockInterval(interval: Interval): interval is ClockInterval {
+export function isClockInterval(interval: Interval): interval is ClockInterval {
   return Object.hasOwn(SUB_DAY_MS, interval);
 }
 

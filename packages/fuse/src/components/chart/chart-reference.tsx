@@ -12,6 +12,7 @@ import { placementOf, useCommitMotion, useFirstDraw, useMotionMark } from "./cha
 import { useChartFrame } from "./chart-plot";
 import type { ChartFrame } from "./chart-plot";
 import { usePlotRead } from "./chart-plot-measure";
+import { referenceSentence } from "./chart-reference-text";
 import { sameShallow, useSteady } from "./chart-steady";
 import { slotLabel } from "./chart-text";
 import type { ChartLayerProps, ChartTone, ChartX, ValueFormat, XFormat } from "./chart-types";
@@ -130,22 +131,6 @@ export function childSlot(context: ChartRootContextValue, part: string, x: Chart
     );
   }
   return slotOf(domain, x);
-}
-
-/** Fill `{value}` in a label, or join the label and the value, or use the dictionary's pattern. */
-function sentence(
-  label: string | undefined,
-  value: FormattedText,
-  pattern: (value: string) => string
-): FormattedText {
-  if (label === undefined) return { text: pattern(value.text), spoken: pattern(value.spoken) };
-  if (label.includes("{value}")) {
-    return {
-      text: label.replaceAll("{value}", value.text),
-      spoken: label.replaceAll("{value}", value.spoken),
-    };
-  }
-  return { text: label, spoken: `${label}: ${value.spoken}` };
 }
 
 /** The value of a value-axis reference in the layout's first series' format. */
@@ -550,7 +535,7 @@ export function ChartReferenceLine({ style, ...props }: ChartReferenceLineProps)
     value = valueText(context, layout.keys, props.y, props.format);
     axis = "value";
   }
-  const text = sentence(label, value, strings.referenceLine);
+  const text = referenceSentence(label, value, strings.referenceLine);
   // A line outside the plot draws nothing and keeps its sentence.
   const outside = at < 0 || at > 100;
   const drawn = useChartFrame("Chart.ReferenceLine", layout);
@@ -596,6 +581,7 @@ export function ChartReferenceLine({ style, ...props }: ChartReferenceLineProps)
     <div
       ref={wrapper}
       data-slot="chart-reference-line"
+      data-orientation={context.orientation}
       data-axis={axis}
       data-outside={outside ? "" : undefined}
       data-variant={variant}
@@ -659,7 +645,7 @@ export function ChartReferenceArea({ style, ...props }: ChartReferenceAreaProps)
     );
     axis = "value";
   }
-  const text = sentence(label, value, strings.referenceArea);
+  const text = referenceSentence(label, value, strings.referenceArea);
   // The band clips to the plot, and a band wholly outside it draws nothing and keeps its sentence.
   const shownFrom = Math.min(Math.max(from, 0), 100);
   const shownTo = Math.min(Math.max(to, 0), 100);
@@ -697,6 +683,7 @@ export function ChartReferenceArea({ style, ...props }: ChartReferenceAreaProps)
     <div
       ref={wrapper}
       data-slot="chart-reference-area"
+      data-orientation={context.orientation}
       data-axis={axis}
       data-outside={outside ? "" : undefined}
       data-clipped={clipped ? "" : undefined}

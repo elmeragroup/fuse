@@ -9,6 +9,7 @@ import type { SupportedLocale } from "../../intl/locale-context";
 import type { ChartConfig, ValueFormat } from "./chart-types";
 import { CHART_STRINGS, countOf } from "./format/chart-strings";
 import type { FormattedText, LabelRole } from "./format/formatted-text";
+import { seriesLabel } from "./format/series-label";
 import { formatValue } from "./format/value-format";
 import { pointOf } from "./layout/scatter-model";
 import type { ScatterModel } from "./layout/scatter-model";
@@ -23,19 +24,6 @@ export type ScatterText = {
   readonly xLabel: string | undefined;
   readonly yLabel: string | undefined;
 };
-
-/**
- * A series' label from config, in both forms.
- *
- * @param text - The config.
- * @param key - A config key.
- * @returns The visual and spoken label, the key itself for a key config lacks.
- */
-export function scatterSeriesLabel(text: Pick<ScatterText, "config">, key: string): FormattedText {
-  const label = text.config[key]?.label ?? key;
-  // oxlint-disable-next-line anti-slop/no-runtime-typeof -- consumer-owned union: a config label is a string or a FormattedText
-  return typeof label === "string" ? { text: label, spoken: label } : label;
-}
 
 /**
  * An x value in Root's `xFormat`.
@@ -112,7 +100,7 @@ export function scatterOptionName(text: ScatterText, id: number): string {
   const point = pointOf(text.model, id);
   const x = xValueText(text, point.x, "full").spoken;
   const y = yValueText(text, point.key, point.y, "full").spoken;
-  const series = scatterSeriesLabel(text, point.key).spoken;
+  const series = seriesLabel(text, point.key).spoken;
   const names = axisNames(text);
   return `${series}, ${names.x}: ${x}, ${names.y}: ${y}`;
 }
@@ -146,7 +134,7 @@ export function scatterDescription(text: ScatterText): string {
         yValueText(text, series.key, high, "full")
       )}`;
       return strings.scatterSeries(
-        scatterSeriesLabel(text, series.key).spoken,
+        seriesLabel(text, series.key).spoken,
         countOf(text.locale, series.xs.length, strings.points),
         x,
         y

@@ -4,27 +4,21 @@
  * component reads each part as a client reference. Each export name is the part's key.
  */
 export { RadarChartRoot as Root } from "./radar-chart-root";
-export {
-  RadarChartGrid as Grid,
-  RadarChartAngleAxis as AngleAxis,
-  RadarChartRadiusAxis as RadiusAxis,
-} from "./radar-chart-grid";
-export {
-  RadarChartArea as Area,
-  RadarChartLine as Line,
-  RadarChartDots as Dots,
-  RadarChartActiveDot as ActiveDot,
-  RadarChartGlow as Glow,
-} from "./radar-chart-marks";
+export { RadarChartGrid as Grid } from "./radar-chart-grid";
+export { RadarChartAngleAxis as AngleAxis } from "./radar-chart-angle-axis";
+export { RadarChartRadiusAxis as RadiusAxis } from "./radar-chart-radius-axis";
+export { RadarChartArea as Area, RadarChartLine as Line, RadarChartDots as Dots } from "./radar-chart-marks";
+export { RadarChartActiveDot as ActiveDot } from "./radar-chart-active-dot";
+export { RadarChartGlow as Glow } from "./radar-chart-glow";
 export { RadarChartSkeleton as Skeleton } from "./radar-chart-skeleton";
 export { ChartHeadline as Headline, ChartTakeaway as Takeaway } from "./chart-headline";
+export { RadarChartTooltip as Tooltip } from "./polar-chart-tooltip";
 export {
-  ChartTooltip as Tooltip,
   ChartTooltipLabel as TooltipLabel,
   ChartTooltipItems as TooltipItems,
   ChartTooltipValue as TooltipValue,
   ChartTooltipShare as TooltipShare,
-} from "./chart-tooltip";
+} from "./chart-tooltip-parts";
 export {
   ChartSwatch as Swatch,
   ChartSeriesLabel as SeriesLabel,
@@ -38,6 +32,7 @@ export {
   ChartLegendToggleGroup as LegendToggleGroup,
   ChartLegendToggle as LegendToggle,
 } from "./chart-legend";
-export { ChartTable as Table, ChartTableColumn as TableColumn } from "./chart-table";
+export { RadarChartTable as Table } from "./polar-series-table";
+export { ChartTableColumn as TableColumn } from "./chart-table-column";
 export { ChartEmpty as Empty } from "./chart-empty";
 export { ChartBackground as Background } from "./chart-background";

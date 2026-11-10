@@ -462,6 +462,7 @@
     "@elmeragroup/color": "workspace:*",
     "@elmeragroup/internal": "catalog:",
     "@elmeragroup/typescript-config": "workspace:*",
+    "@fontsource/inter": "catalog:",
     "@guidepup/virtual-screen-reader": "catalog:",
     "@microsoft/api-extractor": "catalog:",
     "@tailwindcss/cli": "catalog:",

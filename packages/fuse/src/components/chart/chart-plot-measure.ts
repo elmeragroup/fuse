@@ -7,12 +7,13 @@
  * draw no marks, and the plot holds a quiet loader until the browser measures it. This module
  * reads no Root context, so every chart family measures its plot through it.
  */
-import { createContext, createElement, use, useLayoutEffect, useRef, useState } from "react";
+import { createElement, use, useLayoutEffect, useRef, useState } from "react";
 import type { ReactElement, RefObject } from "react";
 
 import { flushSync } from "react-dom";
 
 import { reassess } from "./chart-entrance";
+import { PlotReadsContext } from "./chart-scope-contexts";
 import { sameSnapping } from "./layout/plot-frame";
 import type { BarMetrics, PlotBox } from "./layout/plot-frame";
 import { sameItems } from "./layout/same-items";
@@ -176,9 +177,6 @@ export type PlotReads = {
   /** Adds a read, which runs in every probe phase from the next commit on, and returns its removal. */
   readonly add: (read: () => void) => () => void;
 };
-
-/** The reads of the nearest measured plot, Root's or a Panel's. */
-export const PlotReadsContext = createContext<PlotReads>({ add: () => () => undefined });
 
 /**
  * Read a computed style in the probe phase of the nearest plot: once on mount, then in every commit

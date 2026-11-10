@@ -53,7 +53,7 @@ import type { BarGeometry } from "./layout/bar-geometry";
 import { DETAIL_PARTS, boxPoints, detailParts, drawnBar } from "./layout/bar-shapes";
 import type { SeriesModel } from "./layout/cartesian-model";
 import { floorSpanOf } from "./layout/floor-settle";
-import { tickWidth, valueAt } from "./layout/plot-frame";
+import { floorAxisOf, tickWidth, valueAt } from "./layout/plot-frame";
 import type { BarMetrics, PlotFrame, PlotRect, StackPlace, SubBand } from "./layout/plot-frame";
 
 /**
@@ -126,7 +126,7 @@ function drawBar(node: SVGElement, look: BarWriterLook, values: MarkValues): voi
     seat.mark,
     seat.stack,
     [floorSpanOf(frame, plain, seat.series, [base, tip])],
-    frame,
+    floorAxisOf(frame),
     (kept) => paintBar(node, look, geometry, kept[0] === 1 ? "outer" : "inner", plain)
   );
 }
@@ -190,8 +190,11 @@ function drawOverlay(overlay: SVGPolygonElement, look: OverlayLook, values: Mark
   const place =
     seat === null
       ? "outer"
-      : (seat.floors.placeOver(seat.stack, floorSpanOf(frame, plain, seat.series, [base, tip]), frame) ??
-        look.rest.current);
+      : (seat.floors.placeOver(
+          seat.stack,
+          floorSpanOf(frame, plain, seat.series, [base, tip]),
+          floorAxisOf(frame)
+        ) ?? look.rest.current);
   writeBox(overlay, geometryRect(frame, geometry, place, plain));
   writeSide(overlay, negative, topWeight(geometry));
   writeStyle(overlay, "--_fill", (negative ? fills.negative : fills.positive) ?? null);

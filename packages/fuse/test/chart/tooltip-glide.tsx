@@ -9,14 +9,14 @@ import { Chart } from "../../src/components/chart/chart-namespace";
 import { LocaleProvider } from "../../src/intl/locale-context";
 import { label, pointerAt, popup, surfaceBox } from "./marks";
 
-/** bklit's months. */
+/** Six months. */
 export const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun"];
 
-/** bklit's revenue per month. */
-export const REVENUE = [12000, 15500, 11000, 18800, 16800, 21200];
+/** A household's use per month, in kWh. */
+export const HOUSEHOLD = [1200, 1550, 1100, 1880, 1680, 2120];
 
-/** bklit's profit per month. */
-const PROFIT = [4500, 5200, 3800, 7100, 5400, 8800];
+/** Its EV charging per month, in kWh. */
+const CHARGING = [450, 520, 380, 710, 540, 880];
 
 /** Thirty days of two series that cross, rise to the plot top and fall away. */
 export const DAYS = Array.from({ length: 30 }, (_, index) => ({
@@ -36,22 +36,22 @@ function stage(chart: ReactNode): ReactNode {
   );
 }
 
-/** bklit's revenue and profit as grouped bars. */
+/** The household's use and its EV charging as grouped bars. */
 export function barChart(): ReactNode {
   return stage(
     <Chart.Root
-      data={MONTHS.map((month, index) => ({ month, revenue: REVENUE[index], profit: PROFIT[index] }))}
+      data={MONTHS.map((month, index) => ({ month, household: HOUSEHOLD[index], charging: CHARGING[index] }))}
       config={{
-        revenue: { label: "Revenue", color: "chart-1" },
-        profit: { label: "Profit", color: "chart-2" },
+        household: { label: "Household", color: "chart-1" },
+        charging: { label: "EV charging", color: "chart-2" },
       }}
       xKey="month"
       data-intro="none"
-      aria-label="Revenue and profit">
+      aria-label="Household use and EV charging">
       <Chart.YAxis />
-      <Chart.BarGroup series={["revenue", "profit"]}>
-        <Chart.Bar dataKey="revenue" />
-        <Chart.Bar dataKey="profit" />
+      <Chart.BarGroup series={["household", "charging"]}>
+        <Chart.Bar dataKey="household" />
+        <Chart.Bar dataKey="charging" />
       </Chart.BarGroup>
       <Chart.Tooltip />
     </Chart.Root>

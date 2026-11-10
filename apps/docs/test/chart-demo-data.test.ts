@@ -41,6 +41,16 @@ import {
   HOURLY_AUTUMN_KWH,
   HOURLY_AUTUMN_START,
 } from "../src/app/(docs)/components/chart/demos/data/no1-household-hourly-2025-09-2025-10";
+import { NO1_HOUSEHOLD_2025_10_26 as CLOCK_FALL_BACK } from "../src/app/(docs)/components/clock-chart/demos/clock-chart-fall-back";
+import { NO1_HOUSEHOLD_MONTHLY as CLOCK_MONTHS } from "../src/app/(docs)/components/clock-chart/demos/clock-chart-heating-year";
+import { NO1_GROUPS_2026_10_16 as CLOCK_GROUPS } from "../src/app/(docs)/components/clock-chart/demos/clock-chart-server";
+import { PROSUMER_SOLAR_2026_03_29 as CLOCK_SOLAR } from "../src/app/(docs)/components/clock-chart/demos/clock-chart-solar";
+import { NO_GROUPS_2026_10_16 as RADAR_AREAS } from "../src/app/(docs)/components/radar-chart/demos/radar-chart-areas";
+import { NO_GROUPS_2026_10_16 as RADAR_DEVIATION } from "../src/app/(docs)/components/radar-chart/demos/radar-chart-deviation";
+import {
+  NO1_HOUSEHOLD_DAILY_2024_10 as WEEKDAYS_LAST_YEAR,
+  NO1_HOUSEHOLD_DAILY_2025_10 as WEEKDAYS_THIS_YEAR,
+} from "../src/app/(docs)/components/radar-chart/demos/radar-chart-weekdays";
 
 const FIXTURES = path.join(docsRoot, "../../packages/fuse/src/components/chart/format/fixtures");
 
@@ -72,15 +82,19 @@ describe("the chart demos' inline data", () => {
     ["the capacity step", CAPACITY_DAYS],
     ["the month against last year", COMPARED_DAYS],
     ["the month switch", SWITCH_OCTOBER],
+    ["the radar's weekdays", WEEKDAYS_THIS_YEAR],
   ] as const)("holds October 2025's days for %s", (_, constant) => {
     expect(JSON.parse(fixtureText("elhub/no1-household-daily-2025-10.json"))).toMatchObject({
       days: constant,
     });
   });
 
-  it("holds October 2024's days", () => {
+  it.each([
+    ["the month against last year", NO1_HOUSEHOLD_DAILY_2024_10],
+    ["the radar's weekdays", WEEKDAYS_LAST_YEAR],
+  ] as const)("holds October 2024's days for %s", (_, constant) => {
     expect(JSON.parse(fixtureText("elhub/no1-household-daily-2024-10.json"))).toMatchObject({
-      days: NO1_HOUSEHOLD_DAILY_2024_10,
+      days: constant,
     });
   });
 
@@ -127,6 +141,29 @@ describe("the chart demos' inline data", () => {
     expect(JSON.parse(fixtureText("prices/fall-back-2025-10-26-quarter.json"))).toMatchObject(
       PRICE_DAY_2025_10_26
     );
+  });
+
+  it("holds the clock's groups, months, solar quarters and fall-back hours as the fixtures do", () => {
+    expect(JSON.parse(fixtureText("elhub/no1-groups-2026-10-16.json"))).toMatchObject({ rows: CLOCK_GROUPS });
+    expect(JSON.parse(fixtureText("elhub/no1-household-monthly-2024-11_2026-10.json"))).toMatchObject({
+      months: CLOCK_MONTHS,
+    });
+    expect(JSON.parse(fixtureText("elhub/no1-prosumer-2026-03-29.json"))).toMatchObject({
+      quarters: CLOCK_SOLAR,
+    });
+    // The constant keeps the household rows alone, in the fixture's order.
+    expect(JSON.parse(fixtureText("elhub/no1-consumption-2025-10-26.json"))).toMatchObject({
+      rows: CLOCK_FALL_BACK.flatMap((row) => [row, { consumptionGroup: "cabin" }]),
+    });
+  });
+
+  it.each([
+    ["the price areas", RADAR_AREAS],
+    ["the deviation", RADAR_DEVIATION],
+  ] as const)("holds every area's and group's day for the radar's %s", (_, constant) => {
+    expect(JSON.parse(fixtureText("elhub/no1-no5-groups-2026-10-16-day.json"))).toMatchObject({
+      rows: constant,
+    });
   });
 
   it("holds the derived prosumer day", () => {

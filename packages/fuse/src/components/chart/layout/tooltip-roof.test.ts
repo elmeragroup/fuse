@@ -85,28 +85,28 @@ describe("roofOver", () => {
     expect(roofOver(roofProfile([filled(box(60, 10, 10, 90))], 0, 50), 0, 100)).toBeNull();
   });
 
-  // bklit's bars drawn by hand into a 600 × 200 plot over 0 to 25,000, so a value lands at
-  // y = 200 − 0.008 · value. Each 100 px band holds revenue from 15 to 48 px and profit from 52 to
-  // 85 px. Revenue 12000, 15500, 11000, 18800, 16800, 21200 tops out at 104, 76, 112, 49.6, 65.6
-  // and 30.4. Profit 4500, 5200, 3800, 7100, 5400, 8800 tops out at 164, 158.4, 169.6, 143.2,
+  // Two bar series drawn by hand into a 600 × 200 plot over 0 to 2,500 kWh, so a value lands at
+  // y = 200 − 0.08 · value. Each 100 px band holds the household's use from 15 to 48 px and EV charging from 52 to
+  // 85 px. Household 1200, 1550, 1100, 1880, 1680, 2120 tops out at 104, 76, 112, 49.6, 65.6
+  // and 30.4. Charging 450, 520, 380, 710, 540, 880 tops out at 164, 158.4, 169.6, 143.2,
   // 156.8 and 129.6.
-  const REVENUE_TOPS = [104, 76, 112, 49.6, 65.6, 30.4];
-  const PROFIT_TOPS = [164, 158.4, 169.6, 143.2, 156.8, 129.6];
+  const HOUSEHOLD_TOPS = [104, 76, 112, 49.6, 65.6, 30.4];
+  const CHARGING_TOPS = [164, 158.4, 169.6, 143.2, 156.8, 129.6];
   const BARS = roofProfile(
     [
-      ...REVENUE_TOPS.map((top, slot) => filled(box(100 * slot + 15, top, 33, 200 - top))),
-      ...PROFIT_TOPS.map((top, slot) => filled(box(100 * slot + 52, top, 33, 200 - top))),
+      ...HOUSEHOLD_TOPS.map((top, slot) => filled(box(100 * slot + 15, top, 33, 200 - top))),
+      ...CHARGING_TOPS.map((top, slot) => filled(box(100 * slot + 52, top, 33, 200 - top))),
     ],
     -48,
     608
   );
 
   it.each([
-    // Over Jan's 140 px popup from −20: Jan's bars and Feb's revenue from 115.
+    // Over Jan's 140 px popup from −20: Jan's bars and Feb's household use from 115.
     ["Jan", -20, 120, 76],
-    // Over Mar's from 180: Feb's profit to 185, Mar's bars and Apr's revenue from 315.
+    // Over Mar's from 180: Feb's charging to 185, Mar's bars and Apr's household use from 315.
     ["Mar", 180, 320, 49.6],
-    // Over Jun's, held at 468: May's profit from 452 and Jun's bars, but not May's revenue to 448.
+    // Over Jun's, held at 468: May's charging from 452 and Jun's bars, but not May's household use to 448.
     ["Jun", 468, 608, 30.4],
   ])("finds the highest bar under %s's popup", (_, start, end, roof) => {
     expect(roofOver(BARS, start, end)).toBeCloseTo(roof, 9);

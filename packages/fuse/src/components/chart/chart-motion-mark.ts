@@ -11,7 +11,6 @@
 import { use, useCallback, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { RefCallback } from "react";
 
-import { ChartLayoutContext } from "./chart-context";
 import type { ChartUpdate } from "./chart-context";
 import { refreshParts } from "./chart-dom";
 import type { FollowerCause } from "./chart-followers";
@@ -26,6 +25,7 @@ import type {
   ValueAxis,
 } from "./chart-motion";
 import type { ChartPlot } from "./chart-plot-measure";
+import { ChartLayoutContext } from "./chart-scope-contexts";
 import type { PlotFrame } from "./layout/plot-frame";
 import { sameItems } from "./layout/same-items";
 

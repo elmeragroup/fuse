@@ -4,25 +4,14 @@
  * reads the consumer's `--chart-color-<key>` first, so an override wins for a role, a role list, a
  * scale and both sides of a threshold alike.
  */
-import type { ChartColor, ChartConfig, ChartScale, ChartThresholdColor } from "./chart-types";
+import type { ChartColor, ChartConfig, ChartScale } from "./chart-types";
 import type { SeriesModel } from "./layout/cartesian-model";
 import { binEdges, colorBins } from "./layout/color-bins";
 import type { ColorBins } from "./layout/color-bins";
-import { seriesPaint } from "./layout/color-key";
+import { isRoleList, isThresholdColor, seriesPaint } from "./layout/color-key";
 import { ChartCompositionError } from "./layout/errors";
 import type { Reading } from "./layout/readings";
 import type { StackOffset } from "./layout/stack";
-
-/** Whether a colour is a decorative role list. */
-export function isRoleList(color: ChartColor): color is Extract<ChartColor, readonly unknown[]> {
-  return Array.isArray(color);
-}
-
-/** Whether a colour is a threshold, which splits the series at one value. */
-export function isThresholdColor(color: ChartColor): color is ChartThresholdColor {
-  // oxlint-disable-next-line anti-slop/no-runtime-typeof -- consumer-owned config: a colour arrives as a role string, a role list or a threshold object
-  return typeof color === "object" && !isRoleList(color);
-}
 
 /** The scale a colour names, or undefined for every other colour. */
 function scaleOf(color: ChartColor): ChartScale | undefined {
@@ -260,4 +249,23 @@ export function valuePaint(paint: SeriesPaint, value: number): string | undefine
  */
 export function readingPaint(paint: SeriesPaint, reading: Reading | undefined): string | undefined {
   return reading?.kind === "reading" ? valuePaint(paint, reading.value) : undefined;
+}
+
+/**
+ * The CSS paint of a swatch, the marks' own stops: a role paints itself, a role list its roles as a
+ * gradient, a scale its 7-step ramp and a threshold its two sides split in half, lower side first.
+ * A step the active value picks paints alone.
+ *
+ * @param paint - The series' paint.
+ * @param step - The step the active reading picks, or undefined.
+ * @returns The CSS paint.
+ */
+export function swatchPaint(paint: SeriesPaint, step: string | undefined): string {
+  if (step !== undefined) return step;
+  const { stops, ramp } = paint;
+  if (stops !== undefined) return `linear-gradient(to right, ${stops.join(", ")})`;
+  if (ramp === undefined) return paint.base;
+  if (!isThresholdColor(paint.color)) return `linear-gradient(to right, ${ramp.join(", ")})`;
+  const [below = paint.base, above = paint.base] = ramp;
+  return `linear-gradient(to right, ${below} 50%, ${above} 50%)`;
 }

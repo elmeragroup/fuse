@@ -3,6 +3,7 @@
 import { memo, use, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { ReactElement, ReactNode } from "react";
 
+import { useActiveIndex } from "./chart-active-point";
 import {
   attachJoin,
   barTip,
@@ -25,7 +26,8 @@ import { readingPaint, seriesPaintOf } from "./chart-paint";
 import type { SeriesPaint } from "./chart-paint";
 import { pathAnchor, routeRestIndex } from "./chart-paths";
 import { useChartFrame } from "./chart-plot";
-import { ChartDatumContext, readingAt, useActiveSlot } from "./chart-readout";
+import { ChartDatumContext } from "./chart-scope-contexts";
+import { readingAt } from "./chart-series-readout";
 import { glideShown, rideFrom, snapGlide, stepSpring } from "./chart-spring";
 import type { Ride } from "./chart-spring";
 import { useSteady } from "./chart-steady";
@@ -869,7 +871,7 @@ export function ChartMarker({
 export function ChartValueLabel({ format, className, style }: ChartValueLabelProps): ReactElement {
   const context = useChartRoot("Chart.ValueLabel");
   const datum = use(ChartDatumContext);
-  const active = useActiveSlot(context, datum?.slot === null);
+  const active = useActiveIndex({ store: context.store, window: context.model.window }, datum?.slot === null);
   const slot = datum?.slot ?? active;
   const reading = datum === null || slot === null ? undefined : readingAt(context, datum.key, slot);
   const text =

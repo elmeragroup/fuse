@@ -15,7 +15,7 @@ import { flightClientReferences, inlinedFlightPayload } from "./fixtures/rsc-fli
 
 const fixtures = join(dirname(fileURLToPath(import.meta.url)), "fixtures");
 
-function serverRender(scenario: "page" | "composed" | "function-format") {
+function serverRender(scenario: "page" | "composed" | "polar" | "function-format") {
   return spawnSync(
     process.execPath,
     [
@@ -153,6 +153,103 @@ describe("composed Panels under React Server Components", () => {
       // The table lists both series in one row per day.
       expect(slotCount(html, "chart-table-content")).toBe(1);
       expect(html.split("<tr").length - 1).toBe(31);
+    }
+  });
+});
+
+describe("the polar Roots under React Server Components", () => {
+  const server = serverRender("polar");
+
+  it("sends each polar Root and its parts as client references", () => {
+    expect(server.stderr).not.toMatch(/Error/u);
+    expect(server.status).toBe(0);
+    const references = flightClientReferences(server.stdout).map(
+      ({ module, name }) => `${module.replace(/^.*\/packages\/fuse\/src\//u, "")}#${name}`
+    );
+    // Each family's Table is its own part, and no polar page reaches the cartesian modules.
+    expect(references).toEqual([
+      "intl/locale-context.tsx#LocaleProvider",
+      "components/chart/pie-chart-root.tsx#PieChartRoot",
+      "components/chart/pie-chart-pie.tsx#PieChartPie",
+      "components/chart/pie-chart-labels.tsx#PieChartLabels",
+      "components/chart/chart-legend.tsx#ChartLegend",
+      "components/chart/polar-chart-table.tsx#PieChartTable",
+      "components/chart/radial-chart-root.tsx#RadialChartRoot",
+      "components/chart/pie-chart-track.tsx#PieChartTrack",
+      "components/chart/radial-chart-bar.tsx#RadialChartBar",
+      "components/chart/polar-chart-table.tsx#RadialChartTable",
+      "components/chart/radar-chart-root.tsx#RadarChartRoot",
+      "components/chart/radar-chart-grid.tsx#RadarChartGrid",
+      "components/chart/radar-chart-angle-axis.tsx#RadarChartAngleAxis",
+      "components/chart/radar-chart-radius-axis.tsx#RadarChartRadiusAxis",
+      "components/chart/radar-chart-marks.tsx#RadarChartArea",
+      "components/chart/radar-chart-marks.tsx#RadarChartLine",
+      "components/chart/clock-chart-root.tsx#ClockChartRoot",
+      "components/chart/clock-chart-grid.tsx#ClockChartGrid",
+      "components/chart/clock-chart-angle-axis.tsx#ClockChartAngleAxis",
+      "components/chart/clock-chart-column.tsx#ClockChartColumn",
+      "components/chart/clock-chart-marks.tsx#ClockChartLine",
+      "components/chart/clock-chart-center.tsx#ClockChartCenter",
+    ]);
+  });
+
+  it("writes each figure's frame, description and table on the server as a client-only render does", () => {
+    // SAFETY: rsc-chart-ssr.ts writes this one JSON object, and every field the test reads is
+    // compared against an expected value, so a shape that disagrees fails an assertion.
+    const ssr = JSON.parse(
+      execFileSync(
+        process.execPath,
+        [
+          "--import",
+          join(fixtures, "rsc-chart-register-ssr.mjs"),
+          join(fixtures, "rsc-chart-ssr.ts"),
+          "polar",
+        ],
+        { cwd: fixtures, encoding: "utf8", input: server.stdout }
+      )
+    ) as SsrResult;
+    expect(ssr.flight).toBe(ssr.clientOnly);
+    for (const html of [ssr.flight, ssr.clientOnly]) {
+      // Each Root sends its aspect-locked cell and plot, and the pie its three slices and labels.
+      expect(slotCount(html, "chart-polar-cell")).toBe(4);
+      expect(slotCount(html, "pie-chart-sector")).toBe(3);
+      expect(slotCount(html, "pie-chart-label")).toBe(3);
+      // The rings' chart sends three rings and three tracks.
+      expect(slotCount(html, "radial-chart-ring")).toBe(3);
+      expect(slotCount(html, "pie-chart-track")).toBe(3);
+      expect(slotCount(html, "chart-polar-plot")).toBe(4);
+      // The clock's 24 hours: a label each, and one wedge path per paint group, now and past.
+      expect(slotCount(html, "clock-chart-angle-label")).toBe(24);
+      expect(slotCount(html, "clock-chart-line-path")).toBe(3);
+      // The Column writes its 24 wedges on the server, so the first paint holds them with no script.
+      const wedges = [...html.matchAll(/data-slot="clock-chart-wedge"[^>]*\bd="([^"]*)"/gu)].reduce(
+        (count, [, d = ""]) => count + (d.match(/M/gu) ?? []).length,
+        0
+      );
+      expect(wedges).toBe(24);
+      // The radar's readings reach 120, which the 1-2-5 rule nices to 0 to 120 by 20: seven ring
+      // values, six rings past the centre, and a spoke and a label per season.
+      expect(slotCount(html, "radar-chart-grid-ring")).toBe(6);
+      expect(slotCount(html, "radar-chart-radius-label")).toBe(7);
+      expect(slotCount(html, "radar-chart-angle-label")).toBe(4);
+      expect(slotCount(html, "radar-chart-area-path")).toBe(2);
+      expect(slotCount(html, "radar-chart-line-path")).toBe(3);
+      expect(slotCount(html, "loader")).toBe(0);
+      // The bill's three parts and the radar's two areas.
+      expect(slotCount(html, "chart-legend-item")).toBe(5);
+      // The pie's and the rings' tables: a head row and three rows each.
+      expect(slotCount(html, "chart-table-content")).toBe(2);
+      expect(html.split("<tr").length - 1).toBe(8);
+      // The bill is 1 200 kr: 612 is 51 %, 348 is 29 % and 240 is 20 %.
+      expect(html).toContain(
+        "Kakediagram med 3\u00a0deler, totalt 1\u00a0200. Strøm: 612, 51\u00a0prosent. Nettleie: 348, 29\u00a0prosent. Avgifter: 240, 20\u00a0prosent."
+      );
+      expect(html).toContain(
+        "Ringdiagram med 3\u00a0ringer. NO1: 92 av 150. NO2: 88 av 150. NO4: 31 av 150."
+      );
+      expect(html).toContain(
+        "Radardiagram med 2\u00a0serier over 4\u00a0kategorier. NO1: lavest 40 Sommer, høyest 120 Vinter. NO4: lavest 20 Sommer, høyest 45 Vinter."
+      );
     }
   });
 });

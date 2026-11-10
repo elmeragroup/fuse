@@ -9,7 +9,7 @@ import { useChartRoot, usePlotLayout } from "./chart-context";
 import { clientScale, writeAttribute, writeStyle } from "./chart-dom";
 import { useChartFollower } from "./chart-followers";
 import { useChartFrame } from "./chart-plot";
-import { ChartCrosshairContext } from "./chart-readout";
+import { ChartCrosshairContext } from "./chart-scope-contexts";
 import { springTiming } from "./chart-spring";
 import { sameShallow, useSteady } from "./chart-steady";
 import type { ChartLayerProps, XFormat } from "./chart-types";
@@ -30,7 +30,7 @@ export type ChartSlotLabelProps = ChartLayerProps & {
   format?: XFormat;
 };
 
-/** Above this many labels the pill prints one label, written at once, as bklit's compact ticker. */
+/** Above this many labels the pill prints one label, written at once, as a compact ticker. */
 const ROLLING_LABELS = 60;
 
 /** A run of letters or digits, or a run of anything else, so `30. sep.` rolls `30` and `sep` apart. */

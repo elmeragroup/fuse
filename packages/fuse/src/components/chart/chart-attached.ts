@@ -11,11 +11,11 @@ import type { RefCallback, RefObject } from "react";
 
 import { barAnchor } from "./chart-bar-draw";
 import type { ChartRootContextValue, ChartUpdate } from "./chart-context";
+import { crossfade } from "./chart-crossfade";
 import type { FollowerCause } from "./chart-followers";
 import type { ChartMotion, JoinLead, MarkValues, Placement, ValueAxis } from "./chart-motion";
 import { useFollowerPlacement, useMotionMark } from "./chart-motion-mark";
 import type { MarkTuple, MotionWriter, WriterLook } from "./chart-motion-mark";
-import { crossfade } from "./chart-path-draw";
 import { joinPath } from "./chart-paths";
 import type { PathKind } from "./chart-paths";
 import type { ChartFrame } from "./chart-plot";

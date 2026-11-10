@@ -256,6 +256,22 @@
       "checkbox-card-group.tsx"
     ]
   },
+  "clock-chart": {
+    "title": "Clock Chart",
+    "rsc": "client",
+    "demos": [
+      "clock-chart-empty.tsx",
+      "clock-chart-fall-back.tsx",
+      "clock-chart-heating-year.tsx",
+      "clock-chart-last-week.tsx",
+      "clock-chart-load-profile.tsx",
+      "clock-chart-loading.tsx",
+      "clock-chart-server.tsx",
+      "clock-chart-solar.tsx",
+      "clock-chart-spot-price.tsx",
+      "clock-chart-week.tsx"
+    ]
+  },
   "code": {
     "title": "Code",
     "rsc": "server",
@@ -618,7 +634,15 @@
   "pie-chart": {
     "title": "Pie Chart",
     "rsc": "client",
-    "demos": ["pie-chart-bill.tsx"]
+    "demos": [
+      "pie-chart-appliances.tsx",
+      "pie-chart-bill.tsx",
+      "pie-chart-capacity-step.tsx",
+      "pie-chart-empty.tsx",
+      "pie-chart-loading.tsx",
+      "pie-chart-semicircle.tsx",
+      "pie-chart-server.tsx"
+    ]
   },
   "popover": {
     "title": "Popover",
@@ -644,12 +668,27 @@
   "radar-chart": {
     "title": "Radar Chart",
     "rsc": "client",
-    "demos": ["radar-chart-weekdays.tsx"]
+    "demos": [
+      "radar-chart-areas.tsx",
+      "radar-chart-deviation.tsx",
+      "radar-chart-empty.tsx",
+      "radar-chart-hours.tsx",
+      "radar-chart-loading.tsx",
+      "radar-chart-weekdays.tsx"
+    ]
   },
   "radial-chart": {
     "title": "Radial Chart",
     "rsc": "client",
-    "demos": ["radial-chart-budgets.tsx"]
+    "demos": [
+      "radial-chart-budgets.tsx",
+      "radial-chart-dotted.tsx",
+      "radial-chart-empty.tsx",
+      "radial-chart-gauge.tsx",
+      "radial-chart-loading.tsx",
+      "radial-chart-month-to-date.tsx",
+      "radial-chart-over-budget.tsx"
+    ]
   },
   "radio-group": {
     "title": "Radio Group",

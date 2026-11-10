@@ -456,7 +456,10 @@ export type ChartPoint = {
    * and radial charts. It is null under "all series" focus and on the Other slice.
    */
   readonly key: string | null;
-  /** Each config key's reading at the point. A key that is pending or missing there reports null. */
+  /**
+   * Each config key's reading at the point. A key that is pending or missing there reports null. A
+   * pie's folded category keeps its own reading, and Other, which names no config key, has none.
+   */
   readonly values: Readonly<Record<string, number | null>>;
   /**
    * Each config key's quality at the point, decided per series. A missing reading reports
@@ -543,12 +546,18 @@ export type ChartStyleVars = {
   "--chart-crosshair-width"?: string;
   /** The area fill opacity. `0.1` by default. */
   "--chart-area-opacity"?: number | string;
-  /** The opacity of marks outside the active column. `0.45` by default, and `1` turns dimming off. */
+  /** The opacity of marks outside the active item. `0.45` by default, and `1` turns dimming off. */
   "--chart-hover-dim"?: number | string;
   /** A ring's stroke as a fraction of its band, which also sets the gap to the next ring. `0.7` by default. */
   "--chart-ring-fill"?: number | string;
   /** The surface-coloured stroke between adjacent slices. `--chart-bar-seam` by default. */
   "--chart-slice-seam"?: string;
+  /**
+   * How far the active slice moves out along its bisector, on the pointer, a key and touch alike.
+   * `8px` by default, and `0` turns the pop off. The pie leaves this much room around its dial, and
+   * the pick reads the slices where they rest, so the pop never moves a target.
+   */
+  "--chart-slice-pop"?: string;
   /** The active-dot ping animation. Reduced motion sets it to `none`. */
   "--animate-chart-ping"?: string;
   /** The flowing-line dash animation. Reduced motion sets it to `none`. */
@@ -742,6 +751,57 @@ export type ChartScatterFieldCheck<TConfig> = string extends keyof TConfig
           : {
               readonly "ScatterChart colours are single roles, never a scale, a role list or a threshold": never;
             };
+    };
+
+/**
+ * The cycle a clock dial runs once round: a day from midnight, an ISO week from Monday 00:00, or a
+ * year from 1 January, in Root's zone.
+ *
+ * @beta
+ */
+export type ChartClockCycle = "day" | "week" | "year";
+
+/**
+ * The intervals that nest in a clock cycle: quarter-hours or hours round a day, hours or days round
+ * a week, and hours, days or months round a year. A week never nests in a year.
+ *
+ * @template TCycle - The dial's cycle.
+ * @beta
+ */
+export type ChartClockInterval<TCycle extends ChartClockCycle> = TCycle extends "day"
+  ? "quarter-hour" | "hour"
+  : TCycle extends "week"
+    ? "hour" | "day"
+    : "hour" | "day" | "month";
+
+/**
+ * Clock config takes the cartesian fields, with two limits: a series' `interval` must nest in the
+ * cycle, and its `barVariant` is "default" or "gradient", the looks a wedge draws. A widened config
+ * skips the check.
+ *
+ * @template TConfig - The config the Root infers.
+ * @template TCycle - The dial's cycle.
+ * @beta
+ */
+export type ChartClockFieldCheck<
+  TConfig,
+  TCycle extends ChartClockCycle = ChartClockCycle,
+> = string extends keyof TConfig
+  ? unknown
+  : {
+      readonly [K in keyof TConfig]: TConfig[K] extends { barVariant: infer B }
+        ? B extends "default" | "gradient"
+          ? TConfig[K] extends { interval: infer I }
+            ? I extends ChartClockInterval<TCycle>
+              ? unknown
+              : { readonly "ClockChart series intervals nest in the cycle": ChartClockInterval<TCycle> }
+            : unknown
+          : { readonly 'ClockChart barVariant is "default" or "gradient"': never }
+        : TConfig[K] extends { interval: infer I }
+          ? I extends ChartClockInterval<TCycle>
+            ? unknown
+            : { readonly "ClockChart series intervals nest in the cycle": ChartClockInterval<TCycle> }
+          : unknown;
     };
 
 /**

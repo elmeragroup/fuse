@@ -3,33 +3,27 @@
 import { use, useLayoutEffect, useRef, useState } from "react";
 import type { FocusEvent, KeyboardEvent, MouseEvent, PointerEvent, ReactElement } from "react";
 
-import { withinFocusRingClass } from "../../styles/utils";
-import { ChartSelectionContext, useChartRoot } from "./chart-context";
+import { useChartRoot } from "./chart-context";
 import type { ChartRootContextValue } from "./chart-context";
+import { listboxProps, StatusRegion, SurfaceName, useGestureEnd, useOptionHandoff } from "./chart-listbox";
+import { pointerSlot } from "./chart-pick";
 import { useRootFrame } from "./chart-plot";
+import { ChartSelectionContext } from "./chart-readout-port";
+import type { PointerSlot } from "./chart-readout-port";
 import { useChartStore } from "./chart-store";
 import { useTapLift } from "./chart-tap-lift";
 import { optionName } from "./chart-text";
 import type { OptionOrder } from "./chart-text";
-import { CHART_STRINGS } from "./format/chart-strings";
-import { bandScale, nearestIndex, pointScale } from "./layout/band-scale";
-import { invertValue, linearScale } from "./layout/linear-scale";
-import { nearestSeries } from "./layout/nearest-series";
-import { optionBand, slotRun } from "./layout/plot-frame";
-import type { PlotFrame } from "./layout/plot-frame";
+import { optionBand } from "./layout/plot-frame";
 import { keepSlot, stepSlot } from "./layout/slot-window";
 import type { SlotStep, SlotWindow } from "./layout/slot-window";
 import { slotX } from "./layout/x-domain";
 
 /**
- * The fallback pattern of CONTRACT section 9.1 changes only this module. There the listbox takes
- * `tabIndex={0}` and DOM focus, the single option loses its tab index, and the listbox sets
- * `aria-activedescendant` to the option's id. Names, positions, descriptions, keys and the status
- * region stay as they are, so a switch ships as a patch with no public change.
+ * The cartesian plot surface: the listbox of `chart-listbox.tsx` over a cartesian Root, whose
+ * options step through the window's slots and the series focus, and the plot's one pointer target,
+ * which picks a slot by arithmetic.
  */
-
-/** The slot under a pointer and the series nearest to it, or null when none draws there. */
-export type PointerSlot = { readonly slot: number; readonly near: number | null };
 
 /**
  * A touch or pen press in progress: whether a tooltip was pinned, the slot it landed on, and
@@ -37,15 +31,12 @@ export type PointerSlot = { readonly slot: number; readonly near: number | null 
  */
 type Gesture = { readonly pinned: boolean; readonly slot: number; readonly shown: boolean };
 
-/** One rendered option. Its x, not its index, survives a data update. */
+/** What one option names. Its x, not its index, survives a data update. */
 type OptionState = {
-  readonly id: string;
   readonly x: string | Date;
   /** The focused series by config order, or -1 for all series. */
   readonly focus: number;
   readonly order: OptionOrder;
-  /** True for the option that receives focus from outside, which carries the description. */
-  readonly entry: boolean;
 };
 
 /**
@@ -81,112 +72,24 @@ function seriesStepOf(orientation: "vertical" | "horizontal", key: string): 1 | 
   return key === "ArrowRight" ? 1 : key === "ArrowLeft" ? -1 : undefined;
 }
 
-/** The layout under the pointer: its config keys, its value domain and its plot's client span. */
-type PickedLayout = {
-  readonly keys: readonly string[];
-  readonly domain: readonly [number, number];
-  /** The plot's client span across the value axis, its top or left edge and its length. */
-  readonly start: number;
-  readonly length: number;
-};
-
-/**
- * The layout a pointer's value-axis position falls in: the Panel whose plot holds it, or the
- * nearest Panel when it lies in a gap or an axis row, and the default layout without Panels.
- */
-function layoutUnder(context: ChartRootContextValue, box: DOMRect, clientY: number): PickedLayout {
-  const { model, orientation, panels, domains } = context;
-  const whole: PickedLayout = {
-    keys: model.series.map(({ key }) => key),
-    domain: model.y.domain,
-    start: orientation === "vertical" ? box.top : box.left,
-    length: orientation === "vertical" ? box.height : box.width,
-  };
-  let best: PickedLayout | null = null;
-  let distance = Number.POSITIVE_INFINITY;
-  for (const { layout, plot } of panels) {
-    const rect = plot()?.getBoundingClientRect();
-    if (rect === undefined) continue;
-    const gap = clientY < rect.top ? rect.top - clientY : clientY > rect.bottom ? clientY - rect.bottom : 0;
-    if (gap >= distance) continue;
-    distance = gap;
-    const first = layout.keys[0];
-    best = {
-      keys: layout.keys,
-      domain: (first === undefined ? undefined : domains.get(first)) ?? [0, 1],
-      start: rect.top,
-      length: rect.height,
-    };
-  }
-  return best ?? whole;
-}
-
-/**
- * The slot and the nearest series under a client point, picked by arithmetic over the plot box.
- * The surface and the tooltip popup both read it, so a pointer over the popup picks as the plot
- * does. With Panels the pointer's y picks the Panel under it, and the nearest series comes from
- * that Panel's series alone, as CONTRACT section 9.5 says.
- *
- * @param context - The Root.
- * @param frame - Root's measured frame, whose slot bands a band slot is picked from, or null before
- *   Root measures, when the bands divide the whole plot.
- * @param box - The plot surface's client box.
- * @param clientX - The pointer's client x.
- * @param clientY - The pointer's client y.
- * @returns The slot and the nearest series.
- */
-export function pointerSlot(
-  context: ChartRootContextValue,
-  frame: PlotFrame | null,
-  box: DOMRect,
-  clientX: number,
-  clientY: number
-): PointerSlot {
-  const { model, orientation } = context;
-  const window = model.window ?? { first: 0, last: 0 };
-  const count = window.last - window.first + 1;
-  const along =
-    orientation === "vertical"
-      ? (clientX - box.left) / Math.max(1, box.width)
-      : (clientY - box.top) / Math.max(1, box.height);
-  // Band slots lie in the run the frame's slot bands take, which leaves its leftover at both ends.
-  const scale =
-    context.xScale === "point"
-      ? pointScale({ count, range: [0, 1] })
-      : bandScale({ count, range: frame === null ? [0, 1] : slotRun(frame) });
-  const slot = window.first + nearestIndex(scale, Math.min(Math.max(along, 0), 1));
-  const layout = layoutUnder(context, box, clientY);
-  const across =
-    orientation === "vertical"
-      ? 1 - (clientY - layout.start) / Math.max(1, layout.length)
-      : (clientX - layout.start) / Math.max(1, layout.length);
-  const value = invertValue(linearScale(layout.domain, [0, 1]), across);
-  const members = model.series.filter(({ key }) => layout.keys.includes(key));
-  const drawn = members.map(({ extents, readings }) => {
-    const extent = extents[slot];
-    if (!extent || readings[slot]?.kind !== "reading") return null;
-    return extent[0] < 0 && extent[1] <= 0 ? extent[0] : extent[1];
-  });
-  const near = members[nearestSeries(drawn, value)]?.seriesIndex;
-  return { slot, near: near ?? null };
-}
-
 /** Whether two slot x values name the same slot. */
 function sameX(a: string | Date, b: string | Date): boolean {
   return a instanceof Date && b instanceof Date ? a.getTime() === b.getTime() : a === b;
 }
 
 /** The slot an option names in the current model, which keeps its x across data updates. */
-function slotOfOption(context: ChartRootContextValue, window: SlotWindow, option: OptionState): number {
+function slotOfOption(
+  context: ChartRootContextValue,
+  window: SlotWindow,
+  option: Pick<OptionState, "x">
+): number {
   return keepSlot(context.model.domain, window, option.x);
 }
 
 /**
- * The plot's single tab stop. A `listbox` over the plot holds exactly one `option`, the active
- * one, and that option holds DOM focus. Each step renders the next option beside the current one,
- * focuses it in a layout effect and removes the old one in the next commit, so focus never passes
- * through `body`. The surface is also the plot's one pointer target. A pointer picks the slot by
- * arithmetic and never moves focus or changes the option.
+ * The plot's single tab stop, whose one option names the active slot. The surface is also the
+ * plot's one pointer target. A pointer picks the slot by arithmetic and never moves focus or
+ * changes the option.
  */
 export function ChartSurface({
   name,
@@ -199,21 +102,17 @@ export function ChartSurface({
   const selectedKey = use(ChartSelectionContext);
   const { model, store, id, orientation, locale } = context;
   const window = model.window;
-  const counter = useRef(0);
-  const nextId = (): string => {
-    counter.current += 1;
-    return `${id}-option-${String(counter.current)}`;
-  };
-  const entrySlot = store.initial.active ?? window?.first ?? 0;
-  const [options, setOptions] = useState<readonly OptionState[]>(() => [
-    { id: `${id}-option-0`, x: slotX(model.domain, entrySlot), focus: -1, order: "slot-first", entry: true },
-  ]);
-  const focusTarget = useRef<string | null>(null);
+  const listbox = useRef<HTMLDivElement>(null);
+  const handoff = useOptionHandoff<OptionState>(id, listbox, () => ({
+    x: slotX(model.domain, store.initial.active ?? window?.first ?? 0),
+    focus: -1,
+    order: "slot-first",
+  }));
+  const { options } = handoff;
   /** Whether the current press started while a tooltip was pinned, which a touch lift reads. */
   const gesture = useRef<Gesture | null>(null);
   /** The touch or pen lift that just acted, so the focus that follows a tap keeps its slot. */
   const lift = useTapLift();
-  const listbox = useRef<HTMLDivElement>(null);
   const drawn = useRootFrame("Chart.Root");
   const pinned = useChartStore(store, (snapshot) => snapshot.pinned);
   const emphasis = useChartStore(store, (snapshot) => snapshot.emphasis);
@@ -224,14 +123,12 @@ export function ChartSurface({
   if (seen.model !== model) {
     const keys = model.series.map(({ key }) => key);
     setSeen({ model, keys });
-    const latest = options.at(-1);
+    const latest = handoff.current;
     if (latest !== undefined && model.window !== null) {
       const x = slotX(model.domain, keepSlot(model.domain, model.window, latest.x));
       const focusKey = latest.focus === -1 ? undefined : seen.keys[latest.focus];
       const focus = focusKey === undefined ? -1 : keys.indexOf(focusKey);
-      if (!sameX(x, latest.x) || focus !== latest.focus) {
-        setOptions([...options.slice(0, -1), { ...latest, x, focus }]);
-      }
+      if (!sameX(x, latest.x) || focus !== latest.focus) handoff.revise({ x, focus, order: latest.order });
     }
   }
   useLayoutEffect(() => {
@@ -243,39 +140,16 @@ export function ChartSurface({
     if (snapshot.near !== near) store.set({ near });
   }, [options, store]);
 
-  useLayoutEffect(() => {
-    const target = focusTarget.current;
-    if (target === null) return;
-    focusTarget.current = null;
-    listbox.current
-      ?.querySelector<HTMLElement>(`[id="${CSS.escape(target)}"]`)
-      ?.focus({ preventScroll: true });
-  });
+  useGestureEnd(window !== null && !model.empty, lift, gesture, null);
 
-  // An empty model takes the surface's element away, mid-press too, so no later press inherits the
-  // gesture: the element's cleanup ends it.
-  const shown = window !== null && !model.empty;
-  useLayoutEffect(
-    () =>
-      shown
-        ? () => {
-            gesture.current = null;
-            lift.press();
-          }
-        : undefined,
-    [shown, lift]
-  );
-
-  if (window === null || model.empty) return null;
-  const current = options.at(-1) ?? options[0];
-  if (current === undefined) return null;
+  const current = handoff.current;
+  if (window === null || model.empty || current === undefined) return null;
   const count = window.last - window.first + 1;
   const keys = model.series.length;
 
-  const move = (patch: Partial<Pick<OptionState, "x" | "focus" | "order">>): void => {
-    const next: OptionState = { ...current, ...patch, id: nextId(), entry: false };
-    focusTarget.current = next.id;
-    setOptions((list) => [...list.slice(-1), next]);
+  const move = (patch: Partial<OptionState>): void => {
+    const next: OptionState = { x: current.x, focus: current.focus, order: current.order, ...patch };
+    handoff.step(next);
     store.set({
       active: slotOfOption(context, window, next),
       source: "keyboard",
@@ -305,7 +179,8 @@ export function ChartSurface({
     } else if (event.key === "Escape") {
       const snapshot = store.get();
       if (snapshot.active === null && !snapshot.pinned) return;
-      store.set({ active: null, source: null, near: null, pinned: false });
+      // The one dismissal, which a pointer that stays on the slot does not undo.
+      store.dismiss();
       event.stopPropagation();
     } else {
       return;
@@ -314,9 +189,9 @@ export function ChartSurface({
   };
 
   const onFocus = (event: FocusEvent<HTMLDivElement>): void => {
-    if (event.relatedTarget instanceof Node && event.currentTarget.contains(event.relatedTarget)) {
+    if (handoff.within(event)) {
       // The old option leaves in the commit after the new one took focus.
-      if (options.length > 1) setOptions((list) => list.slice(-1));
+      handoff.prune();
       return;
     }
     // A tap focuses the option after its lift, at the point Chromium's touch adjustment moved it
@@ -330,15 +205,19 @@ export function ChartSurface({
   };
 
   const onBlur = (event: FocusEvent<HTMLDivElement>): void => {
-    if (event.relatedTarget instanceof Node && event.currentTarget.contains(event.relatedTarget)) return;
+    if (handoff.within(event) || handoff.kept(event)) return;
     // A tap on the plot moves focus off an option that an earlier tap focused, and the slot it
     // pinned stays.
     const tapped = lift.tapFocus() || gesture.current !== null;
     if (!tapped && (store.get().source === "keyboard" || store.get().pinned)) {
       store.set({ active: null, source: null, near: null, pinned: false });
+    } else if (store.get().dismissed !== null) {
+      // Escape's dismissal lasts while the reader stays, so a pointer that comes to the same slot
+      // after focus leaves opens it.
+      store.set({ dismissed: null });
     }
     // The next entry meets a new option that carries the description again.
-    setOptions([{ ...current, id: nextId(), entry: true, order: "slot-first" }]);
+    handoff.reset({ x: current.x, focus: current.focus, order: "slot-first" });
   };
 
   /** The slot and the nearest series under a pointer, picked by arithmetic. */
@@ -386,21 +265,15 @@ export function ChartSurface({
     else store.set({ active: slot, source: "pointer", pinned: true });
   };
 
-  const strings = CHART_STRINGS[locale];
+  const naming = { id, name, labelledBy, locale };
 
   return (
     // oxlint-disable-next-line jsx-a11y/interactive-supports-focus -- the active option holds the one tab stop
     <div
       ref={listbox}
-      id={`${id}-surface`}
       role="listbox"
-      data-slot="chart-surface"
-      data-pinned={pinned ? "" : undefined}
-      aria-orientation={orientation === "vertical" ? "horizontal" : "vertical"}
-      {...(labelledBy === undefined
-        ? { "aria-label": strings.surfaceName(name ?? "") }
-        : { "aria-labelledby": `${labelledBy} ${id}-surface-name` })}
-      className={withinFocusRingClass}
+      {...listboxProps(naming, pinned, orientation === "vertical" ? "horizontal" : "vertical")}
+      data-orientation={orientation}
       onKeyDown={onKeyDown}
       onFocus={onFocus}
       onBlur={onBlur}
@@ -468,11 +341,7 @@ export function ChartSurface({
         }
         press(event, slotAt(event).slot);
       }}>
-      {labelledBy === undefined ? null : (
-        <span id={`${id}-surface-name`} hidden>
-          {strings.surfaceName("").replace(/^,\s*/u, "")}
-        </span>
-      )}
+      <SurfaceName {...naming} />
       {options.map((option) => {
         const slot = slotOfOption(context, window, option);
         const isCurrent = option === current;
@@ -505,19 +374,12 @@ export function ChartSurface({
   );
 }
 
-/**
- * Root's status region. It is mounted empty on the server and never unmounts. A repeated message
- * gets an alternating trailing U+00A0, so the region announces it again.
- */
+/** Root's status region, which announces what Root's store says. */
 export function ChartStatus(): ReactElement {
   const { store } = useChartRoot("Chart.Root");
   const text = useChartStore(store, (snapshot) => snapshot.announcement.text);
   const count = useChartStore(store, (snapshot) => snapshot.announcement.count);
-  return (
-    <div role="status" data-slot="chart-status">
-      {text === "" ? "" : `${text}${count % 2 === 0 ? " " : ""}`}
-    </div>
-  );
+  return <StatusRegion text={text} count={count} />;
 }
 
 Object.assign(ChartSurface, { displayName: "Chart.Root.Surface" });

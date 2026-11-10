@@ -1,9 +1,13 @@
 "use client";
 
+import { useMemo } from "react";
 import type { ReactElement, ReactNode } from "react";
 
-import { definedProps } from "../../internal/defined-props";
-import { ChartPendingRootContext } from "./chart-pending-root";
+import { useLocale } from "../../intl/locale-context";
+import type { PolarIssue } from "./chart-polar-context";
+import { PolarRoot } from "./chart-polar-root";
+import { radarModel, RADAR_SERIES_CAP } from "./chart-polar-series";
+import { sameConfig, useSteady } from "./chart-steady";
 import type {
   ChartAccessibleName,
   ChartCategoryKey,
@@ -16,6 +20,10 @@ import type {
   ChartSelectionProps,
   ChartSeriesConfigCheck,
 } from "./chart-types";
+import { seriesLabel } from "./format/series-label";
+import { buildCartesianModel } from "./layout/cartesian-model";
+import { ChartDataError, DATA_MESSAGES, dataMessage, isChartDevelopment, issueGroups } from "./layout/errors";
+import { sweepOf } from "./layout/polar-angle";
 
 /**
  * Props for `RadarChart.Root`, the root of radar charts, one spoke per row.
@@ -77,24 +85,72 @@ export function RadarChartRoot<
   TNameKey extends ChartCategoryKey<TRow>,
 >(props: RadarChartRootProps<TRow, TConfig, TNameKey>): ReactElement {
   const {
-    data: _data,
-    config: _config,
-    nameKey: _nameKey,
-    max: _max,
-    defaultActiveName: _defaultActiveName,
-    selectedKey: _selectedKey,
-    defaultSelectedKey: _defaultSelectedKey,
-    onSelectedKeyChange: _onSelectedKeyChange,
-    description: _description,
+    data,
+    config,
+    nameKey,
+    max,
+    defaultActiveName,
+    selectedKey,
+    defaultSelectedKey,
+    onSelectedKeyChange,
+    description,
     children,
     ...figure
   } = props;
-  // Until the polar layer gives this Root a readout of its own, the shared parts inside it render
-  // nothing, and every other child renders as written.
+  const { locale } = useLocale();
+  const steadyConfig = useSteady<ChartConfig>(config, sameConfig);
+  const name = "aria-label" in figure ? figure["aria-label"] : undefined;
+  const model = useMemo(() => {
+    const issues: PolarIssue[] = [];
+    const keys = Object.keys(steadyConfig);
+    let drawn = steadyConfig;
+    if (keys.length > RADAR_SERIES_CAP) {
+      const message = DATA_MESSAGES["radar-series-cap"];
+      if (isChartDevelopment()) throw new ChartDataError("RadarChart.Root", "radar-series-cap", message);
+      issues.push({ rule: "radar-series-cap", subject: "config", message: `RadarChart.Root ${message}` });
+      drawn = Object.fromEntries(Object.entries(steadyConfig).slice(0, RADAR_SERIES_CAP));
+    }
+    const spokes = buildCartesianModel({
+      rows: data,
+      series: Object.entries(drawn).map(([key, entry]) => [key, { qualityKey: entry.qualityKey }] as const),
+      xKey: nameKey,
+      stackOffset: "diverging",
+      baseline: "zero",
+      include: [],
+    });
+    const [first] = spokes.issues;
+    if (first !== undefined && isChartDevelopment()) {
+      throw new ChartDataError("RadarChart.Root", first.rule, dataMessage(first, spokes.rowAt));
+    }
+    for (const { rule, subject, first: issue, count } of issueGroups(spokes.issues)) {
+      issues.push({ rule, subject, message: `RadarChart.Root ${dataMessage(issue, spokes.rowAt, count)}` });
+    }
+    return radarModel({
+      model: spokes,
+      config: drawn,
+      known: steadyConfig,
+      rows: data,
+      locale,
+      sweep: sweepOf(0, 360),
+      max,
+      name,
+      issues,
+    });
+  }, [data, steadyConfig, nameKey, max, locale, name]);
+  const defaultActive = defaultActiveName === undefined ? -1 : model.keys.indexOf(String(defaultActiveName));
   return (
-    <figure data-slot="radar-chart" {...definedProps(figure)}>
-      <ChartPendingRootContext value>{children}</ChartPendingRootContext>
-    </figure>
+    <PolarRoot
+      model={model}
+      figure={figure}
+      defaultActive={defaultActive === -1 ? null : defaultActive}
+      selectedKey={selectedKey}
+      defaultSelectedKey={defaultSelectedKey}
+      onSelectedKeyChange={onSelectedKeyChange}
+      labelOf={(key) => seriesLabel({ config: steadyConfig }, key).text}
+      description={description}
+      locale={locale}>
+      {children}
+    </PolarRoot>
   );
 }
 

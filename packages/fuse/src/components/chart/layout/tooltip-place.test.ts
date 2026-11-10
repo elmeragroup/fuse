@@ -121,18 +121,18 @@ describe("tooltipSideOffset", () => {
 });
 
 describe("roofRest", () => {
-  // bklit's bars drawn by hand into a 600 × 200 plot over 0 to 25,000, so a value lands at
-  // y = 200 − 0.008 · value. Each 100 px band holds revenue from 15 to 48 px and profit from 52 to
-  // 85 px, and slot centres sit at 50, 150 … 550. Revenue 12000, 15500, 11000, 18800, 16800, 21200
-  // tops out at 104, 76, 112, 49.6, 65.6 and 30.4. Profit 4500, 5200, 3800, 7100, 5400, 8800
+  // Two bar series drawn by hand into a 600 × 200 plot over 0 to 2,500 kWh, so a value lands at
+  // y = 200 − 0.08 · value. Each 100 px band holds the household's use from 15 to 48 px and EV charging from 52 to
+  // 85 px, and slot centres sit at 50, 150 … 550. Household 1200, 1550, 1100, 1880, 1680, 2120
+  // tops out at 104, 76, 112, 49.6, 65.6 and 30.4. Charging 450, 520, 380, 710, 540, 880
   // tops out at 164, 158.4, 169.6, 143.2, 156.8 and 129.6. The Root's box runs from a 48 px axis
   // left of the plot to 8 px right of it.
-  const REVENUE_TOPS = [104, 76, 112, 49.6, 65.6, 30.4];
-  const PROFIT_TOPS = [164, 158.4, 169.6, 143.2, 156.8, 129.6];
+  const HOUSEHOLD_TOPS = [104, 76, 112, 49.6, 65.6, 30.4];
+  const CHARGING_TOPS = [164, 158.4, 169.6, 143.2, 156.8, 129.6];
   const BARS = roofProfile(
     [
-      ...REVENUE_TOPS.map((top, slot) => ({ pieces: box(100 * slot + 15, top, 33, 200 - top), reach: 0 })),
-      ...PROFIT_TOPS.map((top, slot) => ({ pieces: box(100 * slot + 52, top, 33, 200 - top), reach: 0 })),
+      ...HOUSEHOLD_TOPS.map((top, slot) => ({ pieces: box(100 * slot + 15, top, 33, 200 - top), reach: 0 })),
+      ...CHARGING_TOPS.map((top, slot) => ({ pieces: box(100 * slot + 52, top, 33, 200 - top), reach: 0 })),
     ],
     -48,
     608
@@ -154,9 +154,9 @@ describe("roofRest", () => {
   }
 
   it.each([
-    // Jan's 140 px popup from −20 meets Feb's revenue at 76, so its bottom rests at 68.
+    // Jan's 140 px popup from −20 meets Feb's household use at 76, so its bottom rests at 68.
     ["Jan", 0, { left: -20, bottom: 68 }],
-    // Mar's from 180 meets Apr's revenue at 49.6.
+    // Mar's from 180 meets Apr's household use at 49.6.
     ["Mar", 2, { left: 180, bottom: 41.6 }],
     // Jun's centres at 480 and would end at 620, so the Root's right edge holds it at 608 − 140.
     ["Jun", 5, { left: 468, bottom: 22.4 }],
@@ -180,9 +180,9 @@ describe("roofRest", () => {
   });
 
   it("rises over the whole span a jump sweeps, not only its end", () => {
-    // A 60 px popup. Over Jan, from 20 to 80, Jan's revenue at 104 sets its bottom at 96. Over May,
-    // from 420 to 480, May's revenue at 65.6 would set 57.6, but the jump sweeps 20 to 480, where
-    // Apr's revenue reaches 49.6, so it rests at 41.6.
+    // A 60 px popup. Over Jan, from 20 to 80, Jan's household use at 104 sets its bottom at 96. Over May,
+    // from 420 to 480, May's household use at 65.6 would set 57.6, but the jump sweeps 20 to 480, where
+    // Apr's household use reaches 49.6, so it rests at 41.6.
     const jan = rest(0, 60, null);
     expect(jan.bottom).toBe(96);
     const may = rest(4, 60, jan);
@@ -202,8 +202,8 @@ describe("roofRest", () => {
   });
 
   it("rests 8 px over the plot's floor where no mark reaches", () => {
-    // A 10 px popup centred on 100 spans 95 to 105, between Jan's profit, which ends at 85, and
-    // Feb's revenue, which starts at 115.
+    // A 10 px popup centred on 100 spans 95 to 105, between Jan's charging, which ends at 85, and
+    // Feb's household use, which starts at 115.
     const placed = roofRest({
       centre: 100,
       width: 10,
@@ -218,8 +218,8 @@ describe("roofRest", () => {
 
   it("holds the popup inside the viewport after the Root's box, and rests over the span it shows on", () => {
     // Jan's 140 px popup would rest from −20 inside the Root's box, but the viewport's edge sits at
-    // 10, so it shows from 10 to 150. That span reaches Feb's revenue from 115, at 76, and stops
-    // short of Feb's profit from 152, so it rests at 68.
+    // 10, so it shows from 10 to 150. That span reaches Feb's household use from 115, at 76, and stops
+    // short of Feb's charging from 152, so it rests at 68.
     const placed = roofRest({
       centre: 50,
       width: 140,
@@ -230,8 +230,8 @@ describe("roofRest", () => {
       from: null,
     });
     expect(placed).toEqual({ left: 10, bottom: 68 });
-    // At Jun, a viewport edge at 500 holds the popup from 360 to 500. That span meets Apr's profit to
-    // 385, at 143.2, and May's revenue, at 65.6, and stops short of Jun's revenue from 515, so it
+    // At Jun, a viewport edge at 500 holds the popup from 360 to 500. That span meets Apr's charging to
+    // 385, at 143.2, and May's household use, at 65.6, and stops short of Jun's household use from 515, so it
     // rests at 57.6.
     const jun = roofRest({
       centre: 550,

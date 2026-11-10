@@ -8,6 +8,7 @@ import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 
 import type { ChartCurve } from "../chart-types";
+import { normalizePath } from "./fixtures/d3-cases";
 import basis from "./fixtures/d3/d3-shape/curve-basis.json" with { type: "json" };
 import linear from "./fixtures/d3/d3-shape/curve-linear.json" with { type: "json" };
 import monotoneX from "./fixtures/d3/d3-shape/curve-monotoneX.json" with { type: "json" };
@@ -50,17 +51,6 @@ function topologyOf(
     sides: options.sides ?? states.map(() => null),
     cells: states.map(() => 1),
   };
-}
-
-/**
- * d3-shape's own assertPathEqual normalisation, from test/asserts.js of the frozen d3-shape 3.2.0
- * tests: every number to 3 digits, or to an integer within 1e-6 of one, on both sides.
- */
-function normalizePath(path: string): string {
-  return path.replace(/[-+]?(?:\d+\.\d+|\d+\.|\.\d+|\d+)(?:[eE][-]?\d+)?/gu, (text) => {
-    const value = Number(text);
-    return Math.abs(value - Math.round(value)) < 1e-6 ? String(Math.round(value)) : value.toFixed(3);
-  });
 }
 
 type CurveCase = {

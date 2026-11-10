@@ -1,0 +1,95 @@
+---
+lede: >
+  Preview. Clock charts, one cycle of a time series round a calendar dial.
+---
+
+import { ClockChartEmpty } from "./demos/clock-chart-empty";
+import { ClockChartFallBack } from "./demos/clock-chart-fall-back";
+import { ClockChartHeatingYear } from "./demos/clock-chart-heating-year";
+import { ClockChartLastWeek } from "./demos/clock-chart-last-week";
+import { ClockChartLoadProfile } from "./demos/clock-chart-load-profile";
+import { ClockChartLoading } from "./demos/clock-chart-loading";
+import { ClockChartServer } from "./demos/clock-chart-server";
+import { ClockChartSolar } from "./demos/clock-chart-solar";
+import { ClockChartSpotPrice } from "./demos/clock-chart-spot-price";
+import { ClockChartWeek } from "./demos/clock-chart-week";
+
+import { componentMetadata } from "../../../../lib/component-page";
+
+export const metadata = componentMetadata("clock-chart");
+
+<ComponentIntro slug="clock-chart" />
+
+<Prose>
+
+The chart entry is a preview. Names and props can change until Fuse's first stable release. A clock chart draws one cycle of a time series round a dial: a day from midnight, an ISO week from Monday 00:00, or a year from 1 January, in Root's zone, with the cycle's start at 12 o'clock. Every slot takes an equal angle, so a 25-hour day draws 25 equal slots. The radius is area-true by default, so a ring twice the value covers twice the area, and `radiusScale="linear"` keeps the radius true instead.
+
+Hover a slot, or focus the chart and use the arrow keys, to read it. The arrows step one slot and wrap round the dial, PageUp and PageDown jump one label unit, six hours round a day, a day round a week and a month round a year, and up and down move between series. Each slot rises from its base as a clockwise wedge opens, the first time the chart comes into view. On a touch screen, a drag that starts on the dial scrubs round it instead of scrolling the page, which scrolls from beside the dial. A tap pins the tooltip, and a second tap on the same slot releases it.
+
+The hour, weekday or month labels thin by one stride for the whole dial. A `RadiusAxis` value shows beside the 12 o'clock spoke, or the 6 o'clock one when the marks leave that more room, and only where it clears the marks and the labels, so a crowded dial shows fewer values. `Now`'s label sits on the hand just inside the rim, and shows only where it clears the hole, so on a narrow dial the hand and its dot mark Now alone.
+
+</Prose>
+
+## A day
+
+A live day draws up to `now`, and `Now` points at the current minute. The cycle that holds `now` is the default, and a live feed filters its rows on the cycle, since a row outside it throws in development. `data-fade="past"` dims the Column wedges before `now`.
+
+<Demo slug="clock-chart" id="load-profile" title="Load profile" file="clock-chart-load-profile.tsx">
+  <ClockChartLoadProfile />
+</Demo>
+
+A threshold colour paints each wedge in its own value's side, and a dashed `ReferenceLine` at the same value draws the ring the colours split at. `radiusScale="linear"` lets the radius read as a price, so a negative hour hangs inward from the zero ring. The day is a sunny summer Sunday in NO1, whose midday hours fall below zero.
+
+<Demo slug="clock-chart" id="spot-price" title="Spot price" file="clock-chart-spot-price.tsx">
+  <ClockChartSpotPrice />
+</Demo>
+
+<Demo slug="clock-chart" id="solar" title="Solar production" file="clock-chart-solar.tsx">
+  <ClockChartSolar />
+</Demo>
+
+On the 25-hour fall-back day the hours keep equal angles, and each label follows its slot, so 06 sits at 100.8°. The repeated 02 labels once.
+
+<Demo slug="clock-chart" id="fall-back" title="The 25-hour day" file="clock-chart-fall-back.tsx">
+  <ClockChartFallBack />
+</Demo>
+
+## Weeks and years
+
+<Demo slug="clock-chart" id="week" title="Weekdays against the weekend" file="clock-chart-week.tsx">
+  <ClockChartWeek />
+</Demo>
+
+<Demo slug="clock-chart" id="heating-year" title="Heating across a year" file="clock-chart-heating-year.tsx">
+  <ClockChartHeatingYear />
+</Demo>
+
+## Comparing cycles
+
+ClockChart has no shift prop. To compare today with the same day last week, put last week's reading in a second column on today's rows, and draw it as a dashed `Line`.
+
+<Demo slug="clock-chart" id="last-week" title="Today against last week" file="clock-chart-last-week.tsx">
+  <ClockChartLastWeek />
+</Demo>
+
+## On the server
+
+This demo is a server component. A stack of `Column`s settles its pixel floors so a sliver still shows, and `TooltipTotal` prints the stack's total.
+
+<Demo slug="clock-chart" id="server" title="Server component" file="clock-chart-server.tsx">
+  <ClockChartServer />
+</Demo>
+
+## Loading and empty states
+
+<Demo slug="clock-chart" id="loading" title="Loading" file="clock-chart-loading.tsx">
+  <ClockChartLoading />
+</Demo>
+
+A chart with no reading shows `ClockChart.Empty`, and it has no tab stop.
+
+<Demo slug="clock-chart" id="empty" title="No data" file="clock-chart-empty.tsx">
+  <ClockChartEmpty />
+</Demo>
+
+<ApiReference slug="clock-chart" />

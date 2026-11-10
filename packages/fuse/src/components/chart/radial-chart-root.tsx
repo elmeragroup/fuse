@@ -1,9 +1,12 @@
 "use client";
 
+import { useMemo } from "react";
 import type { ReactElement, ReactNode } from "react";
 
-import { definedProps } from "../../internal/defined-props";
-import { ChartPendingRootContext } from "./chart-pending-root";
+import { useLocale } from "../../intl/locale-context";
+import { radialModel } from "./chart-polar-item";
+import { PolarRoot } from "./chart-polar-root";
+import { sameConfig, sameShallow, useSteady } from "./chart-steady";
 import type {
   ChartAccessibleName,
   ChartCategoryConfigCheck,
@@ -17,6 +20,10 @@ import type {
   ChartSeriesKey,
   ValueFormat,
 } from "./chart-types";
+import { seriesLabel } from "./format/series-label";
+import { sweepOf } from "./layout/polar-angle";
+import type { RingMaxima } from "./layout/rings";
+import { numberOf } from "./layout/scalar";
 
 /**
  * Props for `RadialChart.Root`, the root of radial bar charts, one ring per row.
@@ -98,31 +105,80 @@ export function RadialChartRoot<
   TValueKey extends ChartSeriesKey<TRow>,
 >(props: RadialChartRootProps<TRow, TConfig, TNameKey, TValueKey>): ReactElement {
   const {
-    data: _data,
-    config: _config,
-    nameKey: _nameKey,
-    valueKey: _valueKey,
-    qualityKey: _qualityKey,
-    valueFormat: _valueFormat,
-    innerRadius: _innerRadius,
-    startAngle: _startAngle,
-    endAngle: _endAngle,
-    max: _max,
-    maxKey: _maxKey,
-    defaultActiveKey: _defaultActiveKey,
-    selectedKey: _selectedKey,
-    defaultSelectedKey: _defaultSelectedKey,
-    onSelectedKeyChange: _onSelectedKeyChange,
-    description: _description,
+    data,
+    config,
+    nameKey,
+    valueKey,
+    qualityKey,
+    valueFormat,
+    innerRadius = 0.3,
+    startAngle = 0,
+    endAngle = 360,
+    max,
+    maxKey,
+    defaultActiveKey,
+    selectedKey,
+    defaultSelectedKey,
+    onSelectedKeyChange,
+    description,
     children,
     ...figure
   } = props;
-  // Until the polar layer gives this Root a readout of its own, the shared parts inside it render
-  // nothing, and every other child renders as written.
+  const { locale } = useLocale();
+  const steadyConfig = useSteady<ChartConfig>(config, sameConfig);
+  // An inline valueFormat object that names the same options is no change either.
+  const steadyFormat = useSteady(valueFormat, sameShallow);
+  const name = "aria-label" in figure ? figure["aria-label"] : undefined;
+  const model = useMemo(() => {
+    const maxima: RingMaxima =
+      maxKey !== undefined
+        ? { kind: "rows", maxima: data.map((row) => numberOf(row[maxKey]) ?? null) }
+        : max !== undefined
+          ? { kind: "root", max }
+          : { kind: "largest" };
+    return radialModel({
+      rows: data,
+      config: steadyConfig,
+      nameKey,
+      valueKey,
+      qualityKey,
+      valueFormat: steadyFormat,
+      sweep: sweepOf(startAngle, endAngle),
+      locale,
+      name,
+      part: "RadialChart.Root",
+      maxima,
+      innerRadius,
+    });
+  }, [
+    data,
+    steadyConfig,
+    nameKey,
+    valueKey,
+    qualityKey,
+    steadyFormat,
+    startAngle,
+    endAngle,
+    locale,
+    name,
+    max,
+    maxKey,
+    innerRadius,
+  ]);
+  const defaultActive = defaultActiveKey === undefined ? -1 : model.keys.indexOf(defaultActiveKey);
   return (
-    <figure data-slot="radial-chart" {...definedProps(figure)}>
-      <ChartPendingRootContext value>{children}</ChartPendingRootContext>
-    </figure>
+    <PolarRoot
+      model={model}
+      figure={figure}
+      defaultActive={defaultActive === -1 ? null : defaultActive}
+      selectedKey={selectedKey}
+      defaultSelectedKey={defaultSelectedKey}
+      onSelectedKeyChange={onSelectedKeyChange}
+      labelOf={(key) => seriesLabel({ config: steadyConfig }, key).text}
+      description={description}
+      locale={locale}>
+      {children}
+    </PolarRoot>
   );
 }
 

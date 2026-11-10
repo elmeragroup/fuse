@@ -5,14 +5,13 @@
  * never with the pointer, so marks that read it render only on a data change. It imports no
  * cartesian module, so a scatter route ships none.
  */
-import { createContext, use, useMemo, useSyncExternalStore } from "react";
+import { use, useMemo, useSyncExternalStore } from "react";
 
 import type { SupportedLocale } from "../../intl/locale-context";
 import { useDrawGateOpen } from "./chart-draw-gate";
-import { isThresholdColor } from "./chart-paint";
-import type { ChartPlot } from "./chart-plot-measure";
-import type { ChartColor, ChartConfig, ValueFormat } from "./chart-types";
-import { seriesPaint } from "./layout/color-key";
+import { ScatterPlotContext, ScatterRootContext } from "./chart-scope-contexts";
+import type { ChartConfig, ValueFormat } from "./chart-types";
+import { seriesPaint, singleRole } from "./layout/color-key";
 import type { DomainGlide, ScatterDomains } from "./layout/domain-glide";
 import { ChartCompositionError } from "./layout/errors";
 import type { ScatterFrame } from "./layout/scatter-frame";
@@ -120,11 +119,6 @@ export type ScatterRootContextValue = {
   readonly snapped: ScatterDomains | null;
 };
 
-export const ScatterRootContext = createContext<ScatterRootContextValue | null>(null);
-
-/** Root's measured plot, or null before the browser measures it. */
-export const ScatterPlotContext = createContext<ChartPlot | null>(null);
-
 /**
  * Read the enclosing scatter Root.
  *
@@ -169,23 +163,6 @@ export function useScatterFrame(context: ScatterRootContextValue): ScatterFrame 
   return useMemo(() => (plot === null ? null : { box: plot.box, x, y }), [plot, x, y]);
 }
 
-/** Whether a colour is a role list. */
-function isRoleList(color: ChartColor): color is Extract<ChartColor, readonly unknown[]> {
-  return Array.isArray(color);
-}
-
-/**
- * A series' role from config. A widened config can carry a list, a scale or a threshold, which take
- * a step: a threshold its `below` side.
- */
-function roleOf(color: ChartColor | undefined): string {
-  if (color === undefined) return "chart-1";
-  if (isRoleList(color)) return color[0];
-  if (isThresholdColor(color)) return color.below.color;
-  if (color === "chart-seq" || color === "chart-diverging") return `${color}-4`;
-  return color;
-}
-
 /**
  * A series' paint, with the consumer's `--chart-color-<key>` first, which its marks, its swatches
  * and the active dot share.
@@ -195,7 +172,7 @@ function roleOf(color: ChartColor | undefined): string {
  * @returns A CSS colour.
  */
 export function scatterPaint(config: ChartConfig, key: string): string {
-  return seriesPaint(key, roleOf(config[key]?.color));
+  return seriesPaint(key, singleRole(config[key]?.color));
 }
 
 /**

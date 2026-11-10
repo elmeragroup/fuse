@@ -6,7 +6,7 @@ import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
-import { nextFrames } from "../../../test/animation-frames";
+import { nextFrames, recordFrames } from "../../../test/animation-frames";
 import { S06Chart } from "../../../test/chart/bar-charts";
 import {
   bars as drawnBars,
@@ -147,6 +147,28 @@ describe.each([
     expect(label()).toBe("05–06");
     expect(popup()).toBe(open);
     await expect.poll(() => visible(open)).toBe(true);
+  });
+});
+
+describe("the tooltip after Escape and a blur", () => {
+  it("opens on the slot Escape closed once focus has left the chart", async () => {
+    // From the button before the chart, Tab and five steps reach 05–06, and Escape closes it. The
+    // dismissal lasts only while the reader stays, so after Tab moves on to the button after the
+    // chart, a pointer that moves over 05–06 opens it.
+    const { host } = chart();
+    page.getByRole("button", { name: "før" }).element().focus();
+    await userEvent.tab();
+    await userEvent.keyboard("{ArrowRight}{ArrowRight}{ArrowRight}{ArrowRight}{ArrowRight}");
+    await expect.poll(label).toBe("05–06");
+    await userEvent.keyboard("{Escape}");
+    await expect.poll(popup).toBeNull();
+    await userEvent.tab();
+    expect(document.activeElement?.textContent).toBe("etter");
+    const plot = surfaceBox(host);
+    const slotWidth = plot.width / 24;
+    await pointerTo(plot.left + slotWidth * 5.4, plot.top + plot.height * 0.9);
+    await pointerTo(plot.left + slotWidth * 5.6, plot.top + plot.height * 0.85);
+    await expect.poll(label).toBe("05–06");
   });
 });
 
@@ -660,5 +682,50 @@ describe("the tooltip anchor", () => {
     expect(Math.abs((side === "top" ? shown.bottom : shown.top) - box.top), String(side)).toBeLessThanOrEqual(
       1
     );
+  });
+});
+
+describe("a closing tooltip's stack total", () => {
+  // DECISIONS.md M, R2.1–R2.3: a closing tooltip keeps its content until the popup has closed.
+  // Unit under test: Chart.TooltipTotal in the default Tooltip over a stack of heating 2 kWh and hot
+  // water 1 kWh. Oracle: the stack's total, 2 + 1 = 3, read on every frame the popup is on screen
+  // from Escape until its exit ends.
+  it("reads 3 on every frame of the exit after Escape", async () => {
+    const { host } = renderThemed(
+      <div style={{ padding: "160px 24px 24px", width: 600, boxSizing: "border-box" }}>
+        <LocaleProvider locale="en-US">
+          <Chart.Root
+            data={["k0", "k1", "k2", "k3"].map((name) => ({ name, heating: 2, water: 1 }))}
+            config={{
+              heating: { label: "Heating", color: "chart-1", stack: "use" },
+              water: { label: "Hot water", color: "chart-2", stack: "use" },
+            }}
+            xKey="name"
+            aria-label="Use">
+            <Chart.Bar dataKey="heating" />
+            <Chart.Bar dataKey="water" />
+            <Chart.Tooltip />
+          </Chart.Root>
+        </LocaleProvider>
+      </div>
+    );
+    const plot = surfaceBox(host);
+    await pointerTo(plot.left + plot.width * 0.375, plot.top + plot.height * 0.9);
+    expect(label()).toBe("k1");
+    const open = openPopup();
+    // DOM audit: the popup is aria-hidden, so the total row's slot is its only locator.
+    const total = () =>
+      open.querySelector('[data-slot="chart-tooltip-total"] > span:last-child')?.textContent;
+    expect(total()).toBe("3");
+    const shown = () => open.isConnected && visible(open);
+    const recorded = recordFrames(
+      () => ({ total: total(), shown: shown(), closing: shown() && !open.hasAttribute("data-open") }),
+      () => !shown()
+    );
+    await userEvent.keyboard("{Escape}");
+    const frames = await recorded;
+    expect(shown()).toBe(false);
+    expect(frames.some(({ closing }) => closing)).toBe(true);
+    expect(frames.filter((frame) => frame.shown && frame.total !== "3")).toEqual([]);
   });
 });

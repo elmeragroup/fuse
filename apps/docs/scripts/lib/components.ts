@@ -132,6 +132,7 @@ export const SHARED_ENTRY_PAGES = new Map<string, { readonly entry: string; read
   ["pie-chart", { entry: "chart", source: "pie-chart-root" }],
   ["radial-chart", { entry: "chart", source: "radial-chart-root" }],
   ["radar-chart", { entry: "chart", source: "radar-chart-root" }],
+  ["clock-chart", { entry: "chart", source: "clock-chart-root" }],
   ["scatter-chart", { entry: "chart", source: "scatter-chart-root" }],
   ["sparkline", { entry: "chart", source: "sparkline" }],
 ]);

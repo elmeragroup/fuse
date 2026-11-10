@@ -2,11 +2,15 @@
  * A label's width estimate, as CONTRACT section 8.11 uses it to thin x ticks. The server formats
  * every label, then sums the Roboto advance widths of its characters at the 12 px label size,
  * because Roboto is the sans font of every brand and chart text never follows density. No label is
- * measured in the browser, so the server and every engine pick the same ticks.
+ * measured in the browser, so the server and every engine pick the same ticks. A fit that must hold
+ * under whatever font the page renders reads `label-bound.ts` instead.
  */
 
-/** The characters the advance table covers, in the order of {@link ADVANCES}. */
-const CHARACTERS =
+/**
+ * The characters the advance table covers, in the order of {@link ADVANCES}, and the order of
+ * `label-bound.ts`'s table.
+ */
+export const CHARACTERS =
   " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~\u00a0\u2009\u2013\u2212\u00b7\u00e6\u00f8\u00e5\u00c6\u00d8\u00c5\u00e4\u00f6\u00c4\u00d6\u00e9\u00fc";
 
 /**

@@ -163,7 +163,112 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = derive([
   // each side in every frame through the batched floor registry, which bars, path-form
   // columns, emphasis boxes and the active overlay read, which measured 2860 bytes on this
   // entry (161040 to 163900). The ceiling keeps about 100 bytes of headroom.
-  { name: "chart", entryFile: "chart.js", measuredGzip: 97044, ceilingGzip: 164000 },
+  // Raised again from 164000 on 2026-11-05. The shared readout parts read their Root through the
+  // readout port, which each Root builds over its own model: the cartesian readout, its series
+  // readout and its pick, the tooltip and table bodies the family's Tooltip and Table parts hand
+  // their anchor and rows, and the leaves ScatterChart now shares, the popup's positioner, its
+  // dismissal filter and class, the series label, the role helpers and the Empty and Skeleton
+  // bodies, which measured 2096 bytes on this entry (163778 to 165874). The ceiling keeps about
+  // 100 bytes of headroom.
+  // Raised again from 165974 on 2026-11-05. The polar Roots draw through their own kernel: the
+  // Root and its aspect-locked cell, the listbox surface with the polar key maps, the item and
+  // series adapters, the polar Tooltip's anchor and orbit, the polar Tables, the polar motion
+  // binder and exit ghosts, and the polar words in their own dictionary, which measured 11441
+  // bytes on this entry (165874 to 177315). The ceiling keeps about 100 bytes of headroom.
+  // Raised again from 177415 on 2026-11-05. The pie draws: its slices on one frame per loop with
+  // the rim floor and the ghosts that collapse, the labels with their leaders and the client's
+  // second placing, the Track, the Center parts with the digit roll, the Glow's mirror and the
+  // slices' gradients, which measured 6947 bytes on this entry (177315 to 184262). The ceiling
+  // keeps about 100 bytes of headroom.
+  // Raised again from 184362 on 2026-11-05. The rings draw: their frame with the ring floor, the
+  // solid, dotted and segmented looks, the radial Track and Glow, the centre's numbers for both
+  // families, the hatch of an estimated slice or ring, and the gauge Track's corners, which
+  // measured 2638 bytes on this entry (184262 to 186900). The ceiling keeps about 100 bytes of
+  // headroom.
+  // Raised again from 187000 on 2026-11-05. The radar draws: its grid with the zero ring and the
+  // spoke hand, both axes' labels, the Area's, Line's and Dots' writers with the quality runs, the
+  // active dot's ride, the role-list gradients, Glow, and the entrance's span over rings, spokes
+  // and labels, which measured 3612 bytes on this entry (186900 to 190512). The ceiling keeps about
+  // 100 bytes of headroom.
+  // Raised again from 190612 on 2026-11-05. The clock draws: its model over the zoned time domain,
+  // its Root, its curves sampled in unrolled angle and radius, its wedges with constant gaps and
+  // floors, its labels fitted round the dial, its hands, references, centre and value parts, the
+  // threshold rings, and the shared seams it floors, glows and totals through, which measured
+  // 13205 bytes on this entry (190512 to 203717). The ceiling keeps about 100 bytes of headroom.
+  // Raised again from 203817 on 2026-11-05. The feel pass: the ring values' fit against the angle
+  // labels and the marks with its choice of spoke, the radar's spoke labels thinned by stride, the
+  // radar's and clock's active dots on the loop with the clock's curve registry, the pie labels
+  // that follow the slices' frame, the coarse clock slots, the glow and decimation measured from
+  // the drawn dial, and the entrance's pace read from the figure, which measured 2665 bytes on this
+  // entry (203717 to 206382). The ceiling keeps about 100 bytes of headroom.
+  // Raised again from 206482 on 2026-11-05. Now's label fits past the rim against the cycle's
+  // labels instead of sitting inside it, which measured 105 bytes on this entry (206382 to 206487).
+  // The ceiling keeps about 100 bytes of headroom.
+  // Raised again from 206587 on 2026-11-05, fix round 1: the clock parts split into modules over a
+  // shared leaf, the item reading rules, the painted-angle pick, the clock tooltip's
+  // stack totals, the reference area's time range and the half-hour label rule,
+  // which measured 815 bytes on this entry (206487 to 207302). The ceiling keeps about 100 bytes of
+  // headroom.
+  // Raised again from 207402 on 2026-11-05, fix round 2: the clock's grid, axes, references and
+  // hands, the radar's grid, axes, ActiveDot and Glow, and the pie centre's numbers each in a
+  // module of their own, the hatch folded into the sampled turn, the Area's quality mask, the datum
+  // slots resolved to their owner, duplicate categories, the dotted ring's floor, and every Root's
+  // own scope resetting each family's Root contexts from one light leaf, which measured 565 bytes
+  // on this entry (207302 to 207867). The ceiling keeps about 100 bytes of headroom.
+  // Raised again from 207976 on 2026-11-05, fix round 3: the tooltip's corridor from a part to its
+  // popup, the fold's drawing weights, Other's quality, formats compared in any key order, and each
+  // Root's depth on its figure, the tooltip's corridor, the step curves' slot ranges, routes that
+  // end on their vertex, the Column's and Area's baseline rule, references bounded to the dial,
+  // formats compared in any key order, and the orientation the cartesian parts carry, which
+  // measured 968 bytes on this entry (207867 to 208835). The ceiling keeps about 100 bytes of
+  // headroom.
+  // 2026-11-06: the step clip's one-sided edges and the one-pass clip and split, the
+  // 12 o'clock step on a split line, references checked against the domain, and undefined format
+  // options dropped before comparing, 208835 to 209108. The ceiling keeps about 100 bytes of
+  // headroom.
+  // 2026-11-06: the polar Root's angle follower and its paced turn, the tooltip's side
+  // lanes, the pick's dead band and near hold, the centre's fit guard and breakable value, the
+  // labels' ray placement and ink measure, the dots' curve reads and the hatch by pixel column,
+  // 209108 to 212860. The ceiling keeps about 100 bytes of headroom.
+  // 2026-11-06: the follower's leap and its marks' stretch, the side lane chosen by
+  // its widest content, and the opening popup held until placed,
+  // 212860 to 214091. The ceiling keeps about 100 bytes of headroom.
+  // 2026-11-07: the stepped dot's stretch, the bottom lane below the Root's legend and
+  // table toggle, lanes cut to their widest content, the stretch read across a frame's turn, and
+  // the popup's used width rounded up, 214091 to 214543. The ceiling keeps about 100 bytes of
+  // headroom.
+  // 2026-11-07: a half-turn step takes the short way from the angle shown, and the
+  // opening hold releases only once an item has stayed active for two frame checks, 214543 to
+  // 214660. The ceiling keeps about 100 bytes of headroom.
+  // 2026-11-07: the lane fade is kept and cancelled at a close and at every open's
+  // hold, 214660 to 214778. The ceiling keeps about 100 bytes of headroom.
+  // 2026-11-07: ring values and the angle labels they clear fitted by each label's bound, the
+  // widest any common sans draws it, 214778 to 215034. The ceiling keeps about 100 bytes of
+  // headroom.
+  // 2026-11-07: the polar review fixes: the clock references' sentences, an AngleAxis format's own fit, the
+  // Marker's pills hidden while it moves, no ActiveDot on a missing slot, pie labels refitted on their own
+  // size, the indexed curve read and the tables built in their Table parts, 215079 to 215264. The ceiling
+  // keeps about 100 bytes of headroom.
+  // 2026-11-08: the second polar review fixes: a Marker's pills flagged on its own labels, its paths
+  // repainted on a variant change and the entrance frame cached with the curve index, 215264 to 215361.
+  // The ceiling keeps about 100 bytes of headroom.
+  // 2026-11-09: the review round rb1 fixes: a top lane above the chart where the bottom one leaves the
+  // viewport, a two-reading seam that closes, a default that starts on Other only for a folded row, and the
+  // stack total read from the held index, 215361 to 215681. The ceiling keeps about 100 bytes of headroom.
+  // 2026-11-09: the review round rb2 fixes: every readout part reading its active point from one leaf that
+  // holds a closing tooltip's index and series together, and every lane cut to the viewport and the scene
+  // measured again on scroll and viewport resize, 215681 to 216006. The ceiling keeps about 100 bytes of
+  // headroom.
+  // 2026-11-09: the review round rb3 fixes: each lane's popup held inside its own span, the visible area read
+  // from the visual viewport, the centre parts reading the held point, and the scatter tooltip holding its
+  // last point while it closes, 216006 to 216354. The ceiling keeps about 100 bytes of headroom.
+  // 2026-11-09: the clock wedge gap's cut-off measured at the rim, and each short wedge's pad narrowed so
+  // its tip keeps one device pixel, 216354 to 216491. The ceiling keeps about 100 bytes of headroom.
+  // Raised again from 216591 on 2026-11-10, the round-1 and round-2 review fixes: the entrance spent once
+  // it starts and cleared when a hide cuts it short, the item readout answering every config key, the
+  // radar's full-config answers, the anchor's unionOf, the data-chart-* attribute names and the clock
+  // reference defaults, measured 216947. The ceiling keeps about 100 bytes of headroom.
+  { name: "chart", entryFile: "chart.js", measuredGzip: 97044, ceilingGzip: 217047 },
   // 2026-10-13: new entry, measured at 29180. Pure wrappers over Base UI's toolbar and its roving focus.
   { name: "toolbar", entryFile: "toolbar.js", measuredGzip: 29180, ceilingGzip: 43770 },
   // 2026-10-12: new entries. Command is Base UI's Autocomplete in the InputGroup, with the Dialog
@@ -363,18 +468,302 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // registry, which bars, path-form columns, emphasis boxes and the active overlay read,
     // which measured 2869 bytes on Chart (147298 to 150167) and on BarChart (147300 to
     // 150169). Each ceiling keeps about 100 bytes of headroom.
-    ceilingGzip: 150267,
+    // Raised again from 150267 on 2026-11-05, with BarChart's from 150269. The shared readout
+    // parts read Root through its readout port: the cartesian readout over the series readout and
+    // the pick, the tooltip body that the cartesian Tooltip hands its anchor, the table body that
+    // the cartesian Table hands its rows, and the popup leaves ScatterChart now shares, which
+    // measured 2420 bytes on Chart (150013 to 152433) and 2421 on BarChart (150015 to 152436).
+    // Each ceiling keeps about 100 bytes of headroom.
+    // Raised again from 152533 on 2026-11-05, with BarChart's from 152536. Chart's and
+    // ScatterChart's surfaces share one listbox leaf: the option handoff, the press's end with
+    // the surface's element, the listbox's naming and the status region, which measured 255 bytes
+    // on Chart (152433 to 152688) and on BarChart (152436 to 152691), while the whole entry, which
+    // ships both surfaces, fell by 86. Each ceiling keeps about 100 bytes of headroom.
+    // Raised again from 152788 on 2026-11-05, with BarChart's from 152791. Every Root takes the
+    // own scope from its own leaf, the shared data rules name the three polar rules' messages, the
+    // loop's entrance takes its own duration, each Tooltip's anchor gives its side and align
+    // offsets, and the glide's path route says whether it keeps its side or the popup's centre,
+    // which measured 332 bytes on Chart (152688 to 153020) and on BarChart (152691 to 153023).
+    // Each ceiling keeps about 100 bytes of headroom.
+    // Raised again from 153120 on 2026-11-05, with BarChart's from 153123. The stack floors read a
+    // floor axis a frame lends through `floorAxisOf`, the value floor's arithmetic sits in its own
+    // leaf, the value glow's filter reads a region with its unit, the stack total row moved into a
+    // leaf the clock shares, and the loop's entrance takes a linear curve, so a clock dial floors,
+    // glows and totals through the same code without the plot frame. That measured 201 bytes on
+    // Chart (153090 to 153291) and on BarChart (153093 to 153294). Each ceiling keeps about 100
+    // bytes of headroom.
+    // Raised again from 153391 on 2026-11-05, polar fix round 2, with BarChart's from 153394. Every
+    // Root's own scope resets each family's Root contexts, the cartesian ones now in a light leaf,
+    // so a part under a nested Root of another family reaches no outer Root, which measured
+    // 111 bytes on Chart (153291 to 153402) and on BarChart (153294 to 153405). Each ceiling
+    // keeps about 100 bytes of headroom.
+    // 2026-11-05: each Root's depth on its figure and the orientation the parts that
+    // read it carry, and formats compared in any key order, 153402 to 153643. The ceiling
+    // keeps about 100 bytes of headroom.
+    // 2026-11-06: the polar Root's angle follower and its paced turn, the tooltip's side
+    // lanes, the pick's dead band and near hold, the centre's fit guard and breakable value, the
+    // labels' ray placement and ink measure, the dots' curve reads and the hatch by pixel column,
+    // 153643 to 153776. The ceiling keeps about 100 bytes of headroom.
+    // 2026-11-09: the review round rb2 fixes: every readout part reading its active point from one leaf that
+    // holds a closing tooltip's index and series together, 153776 to 153949. The ceiling keeps about 100
+    // bytes of headroom.
+    // Raised again from 154049 on 2026-11-10, the round-1 and round-2 review fixes: the closed tooltip's
+    // point cleared and Escape's dismissal cleared on blur, the shared series readout taking its look and the
+    // radar's full config as named options, and answering a config key it draws no series for from that
+    // config at no index, measured 154078. The ceiling keeps about 100 bytes of headroom.
+    ceilingGzip: 154178,
   },
   {
     name: "chart/BarChart",
     entryFile: "chart.js",
     exportName: "BarChart",
     measuredGzip: 95989,
-    ceilingGzip: 150269,
+    // Raised from 153123 on 2026-11-05 with Chart's, for the same cause.
+    // Raised again from 153394 on 2026-11-05 with Chart's, for polar fix round 2's own-scope reset.
+    // 2026-11-05: each Root's depth on its figure and the orientation the parts that
+    // read it carry, and formats compared in any key order, 153405 to 153645. The ceiling
+    // keeps about 100 bytes of headroom.
+    // 2026-11-06: the polar Root's angle follower and its paced turn, the tooltip's side
+    // lanes, the pick's dead band and near hold, the centre's fit guard and breakable value, the
+    // labels' ray placement and ink measure, the dots' curve reads and the hatch by pixel column,
+    // 153645 to 153779. The ceiling keeps about 100 bytes of headroom.
+    // 2026-11-09: the review round rb2 fixes: every readout part reading its active point from one leaf that
+    // holds a closing tooltip's index and series together, 153779 to 153951. The ceiling keeps about 100
+    // bytes of headroom.
+    // Raised again from 154051 on 2026-11-10, the round-1 and round-2 review fixes: the closed tooltip's
+    // point cleared and Escape's dismissal cleared on blur, the shared series readout taking its look and the
+    // radar's full config as named options, and answering a config key it draws no series for from that
+    // config at no index, measured 154080. The ceiling keeps about 100 bytes of headroom.
+    ceilingGzip: 154180,
   },
-  { name: "chart/PieChart", entryFile: "chart.js", exportName: "PieChart", measuredGzip: 79885 },
-  { name: "chart/RadialChart", entryFile: "chart.js", exportName: "RadialChart", measuredGzip: 79858 },
-  { name: "chart/RadarChart", entryFile: "chart.js", exportName: "RadarChart", measuredGzip: 79820 },
+  // Set from its measurement on 2026-11-05, when the polar families landed: the whole namespace:
+  // slices on their frame with the rim floor and ghosts, labels and leaders that ride the frame,
+  // Track, Center parts, Glow and the polar readouts. The ceiling keeps about 100 bytes of
+  // headroom.
+  {
+    name: "chart/PieChart",
+    entryFile: "chart.js",
+    exportName: "PieChart",
+    measuredGzip: 105684,
+    // 2026-11-05: reading-rule errors and warnings on items and the pick over the
+    // frame's painted angles, 105684 to 106075. The ceiling keeps about 100 bytes of headroom.
+    // 2026-11-05: duplicate categories, the centre's numbers in their own
+    // module, and every Root's own scope resetting each family's Root contexts from one light
+    // leaf, 106075 to 106238. The ceiling keeps about 100 bytes of headroom.
+    // 2026-11-05: the tooltip's corridor from a part to its popup, the fold's
+    // drawing weights, Other's quality, formats compared in any key order, and
+    // each Root's depth on its figure, 106238 to 106799. The ceiling keeps about 100 bytes of
+    // headroom.
+    // 2026-11-06: the polar Root's angle follower and its paced turn, the tooltip's side
+    // lanes, the pick's dead band and near hold, the centre's fit guard and breakable value, the
+    // labels' ray placement and ink measure, the dots' curve reads and the hatch by pixel column,
+    // 106799 to 110278. The ceiling keeps about 100 bytes of headroom.
+    // 2026-11-06: the follower's leap and its marks' stretch, the side lane chosen by
+    // its widest content, and the opening popup held until placed,
+    // 110278 to 111355. The ceiling keeps about 100 bytes of headroom.
+    // 2026-11-07: the stepped dot's stretch, the bottom lane below the Root's legend
+    // and table toggle, lanes cut to their widest content, the stretch read across a frame's turn,
+    // and the popup's used width rounded up, 111355 to 111759. The ceiling keeps about 100 bytes of
+    // headroom.
+    // 2026-11-07: a half-turn step takes the short way from the angle shown, and the
+    // opening hold releases only once an item has stayed active for two frame checks, 111759 to
+    // 111887. The ceiling keeps about 100 bytes of headroom.
+    // 2026-11-07: the lane fade is kept and cancelled at a close and at every open's
+    // hold, 111887 to 112007. The ceiling keeps about 100 bytes of headroom.
+    // 2026-11-07: the item table built in its Table part, pie labels refitted on their own size, the steady
+    // valueFormat and a nested Root's held index reset, 112030 to 112121. The ceiling keeps about 100 bytes
+    // of headroom.
+    // 2026-11-09: the review round rb1 fixes: a top lane above the chart where the bottom one leaves the
+    // viewport, and a default that starts on Other only for a folded row, 112121 to 112433. The ceiling keeps
+    // about 100 bytes of headroom.
+    // 2026-11-09: the review round rb2 fixes: every readout part reading its active point from one leaf that
+    // holds a closing tooltip's index and series together, and every lane cut to the viewport and the scene
+    // measured again on scroll and viewport resize, 112433 to 112773. The ceiling keeps about 100 bytes of
+    // headroom.
+    // 2026-11-09: the review round rb3 fixes: each lane's popup held inside its own span, the visible area
+    // read from the visual viewport, and the centre parts reading the held point, 112773 to 112992. The
+    // ceiling keeps about 100 bytes of headroom.
+    // Raised again from 113092 on 2026-11-10, the round-1 and round-2 review fixes: the entrance spent once
+    // it starts and cleared when a hide cuts it short, the item readout answering every config key, the
+    // anchor's unionOf and the data-chart-* attribute names, measured 113315. The ceiling keeps about 100
+    // bytes of headroom.
+    ceilingGzip: 113415,
+  },
+  // Set from its measurement on 2026-11-05, when the polar families landed: the whole namespace:
+  // rings on their frame in three looks, Track, Glow, the Center parts and the polar readouts. The
+  // ceiling keeps about 100 bytes of headroom.
+  {
+    name: "chart/RadialChart",
+    entryFile: "chart.js",
+    exportName: "RadialChart",
+    measuredGzip: 102151,
+    // 2026-11-05: reading-rule errors and warnings on items and the painted-angle
+    // registry, 102151 to 102522. The ceiling keeps about 100 bytes of headroom.
+    // 2026-11-05: duplicate categories with each ring's maximum kept on its own row,
+    // the dotted ring's one-dot floor, the centre's numbers in their own module, and every Root's
+    // own scope resetting each family's Root contexts from one light leaf, 102522 to 102737. The
+    // ceiling keeps about 100 bytes of headroom.
+    // 2026-11-05: the tooltip's corridor from a part to its popup, the fold's
+    // drawing weights, Other's quality, formats compared in any key order, and
+    // each Root's depth on its figure, 102737 to 103205. The ceiling keeps about 100 bytes of
+    // headroom.
+    // 2026-11-06: the polar Root's angle follower and its paced turn, the tooltip's side
+    // lanes, the pick's dead band and near hold, the centre's fit guard and breakable value, the
+    // labels' ray placement and ink measure, the dots' curve reads and the hatch by pixel column,
+    // 103205 to 106563. The ceiling keeps about 100 bytes of headroom. CenterName on 2026-11-06:
+    // the centre's active name line, a new shared pie and radial part, 106563 to 106858. The
+    // ceiling keeps about 100 bytes of headroom.
+    // 2026-11-06: the follower's leap and its marks' stretch, the side lane chosen by
+    // its widest content, and the opening popup held until placed,
+    // 106858 to 107874. The ceiling keeps about 100 bytes of headroom.
+    // 2026-11-07: the stepped dot's stretch, the bottom lane below the Root's legend
+    // and table toggle, lanes cut to their widest content, the stretch read across a frame's turn,
+    // and the popup's used width rounded up, 107874 to 108280. The ceiling keeps about 100 bytes of
+    // headroom.
+    // 2026-11-07: a half-turn step takes the short way from the angle shown, and the
+    // opening hold releases only once an item has stayed active for two frame checks, 108280 to
+    // 108406. The ceiling keeps about 100 bytes of headroom.
+    // 2026-11-07: a popup that closes mid-entrance fades out from the opacity it
+    // reached, and every open starts a fresh hold, 108406 to 108519. The ceiling keeps about 100
+    // bytes of headroom.
+    // 2026-11-07: the item table built in its Table part, the steady valueFormat and a nested Root's held
+    // index reset, 108571 to 108661. The ceiling keeps about 100 bytes of headroom.
+    // 2026-11-09: the review round rb1 fixes: a top lane above the chart where the bottom one leaves the
+    // viewport, and the item model's fold membership, 108661 to 108925. The ceiling keeps about 100 bytes of
+    // headroom.
+    // 2026-11-09: the review round rb2 fixes: every readout part reading its active point from one leaf that
+    // holds a closing tooltip's index and series together, and every lane cut to the viewport and the scene
+    // measured again on scroll and viewport resize, 108925 to 109270. The ceiling keeps about 100 bytes of
+    // headroom.
+    // 2026-11-09: the review round rb3 fixes: each lane's popup held inside its own span, the visible area
+    // read from the visual viewport, and the centre parts reading the held point, 109270 to 109524. The
+    // ceiling keeps about 100 bytes of headroom.
+    // Raised again from 109624 on 2026-11-10, the round-1 and round-2 review fixes: the entrance spent once
+    // it starts and cleared when a hide cuts it short, the item readout answering every config key, the
+    // anchor's unionOf and the data-chart-* attribute names, measured 109813. The ceiling keeps about 100
+    // bytes of headroom.
+    ceilingGzip: 109913,
+  },
+  // Set from its measurement on 2026-11-05, when the polar families landed: the whole namespace:
+  // grid, spoke and ring labels fitted to the dial, Area, Line, Dots, an ActiveDot on the loop,
+  // Glow and the polar readouts. The ceiling keeps about 100 bytes of headroom.
+  {
+    name: "chart/RadarChart",
+    entryFile: "chart.js",
+    exportName: "RadarChart",
+    measuredGzip: 107377,
+    // 2026-11-05: Grid, both axes, ActiveDot and Glow in modules of their own,
+    // and every Root's own scope resetting each family's Root contexts from one light leaf,
+    // 107377 to 107489. The ceiling keeps about 100 bytes of headroom.
+    // 2026-11-05: the tooltip's corridor, formats compared in any key order, and
+    // each Root's depth on its figure, 107489 to 107893. The ceiling keeps about 100 bytes of
+    // headroom.
+    // 2026-11-06: the polar Root's angle follower and its paced turn, the tooltip's side
+    // lanes, the pick's dead band and near hold, the centre's fit guard and breakable value, the
+    // labels' ray placement and ink measure, the dots' curve reads and the hatch by pixel column,
+    // 107893 to 110766. The ceiling keeps about 100 bytes of headroom.
+    // 2026-11-06: the follower's leap and its marks' stretch, the side lane chosen by
+    // its widest content, and the opening popup held until placed,
+    // 110766 to 111862. The ceiling keeps about 100 bytes of headroom.
+    // 2026-11-07: the stepped dot's stretch, the bottom lane below the Root's legend
+    // and table toggle, lanes cut to their widest content, the stretch read across a frame's turn,
+    // and the popup's used width rounded up, 111862 to 112266. The ceiling keeps about 100 bytes of
+    // headroom.
+    // 2026-11-07: a half-turn step takes the short way from the angle shown, and the
+    // opening hold releases only once an item has stayed active for two frame checks, 112266 to
+    // 112381. The ceiling keeps about 100 bytes of headroom.
+    // 2026-11-07: a popup that closes mid-entrance fades out from the opacity it
+    // reached, and every open starts a fresh hold, 112381 to 112483. The ceiling keeps about 100
+    // bytes of headroom.
+    // 2026-11-07: ring values and the angle labels they clear fitted by each label's bound,
+    // the widest any common sans draws it, 112483 to 112688. The ceiling keeps about 100
+    // bytes of headroom.
+    // 2026-11-07: the series table built in its Table part, the shared series readout, and the description's
+    // unit through chartDescription's sentence, 112702 to 112908. The ceiling keeps about 100 bytes of
+    // headroom.
+    // 2026-11-09: the review round rb1 fixes: a top lane above the chart where the bottom one leaves the
+    // viewport, 112908 to 113149. The ceiling keeps about 100 bytes of headroom.
+    // 2026-11-09: the review round rb2 fixes: every readout part reading its active point from one leaf that
+    // holds a closing tooltip's index and series together, and every lane cut to the viewport and the scene
+    // measured again on scroll and viewport resize, 113149 to 113497. The ceiling keeps about 100 bytes of
+    // headroom.
+    // 2026-11-09: the review round rb3 fixes: each lane's popup held inside its own span, the visible area
+    // read from the visual viewport, 113497 to 113720. The ceiling keeps about 100 bytes of headroom.
+    // Raised again from 113820 on 2026-11-10, the round-1 and round-2 review fixes: the entrance spent once
+    // it starts and cleared when a hide cuts it short, the radar's full-config answers for a key past the
+    // cap, the anchor's unionOf and the data-chart-* attribute names, measured 113968. The ceiling keeps
+    // about 100 bytes of headroom.
+    ceilingGzip: 114068,
+  },
+  // Set from its measurement on 2026-11-05, when the polar families landed: the whole namespace:
+  // the zoned dial model, curves, wedges with floors and coarse slots, labels and ring values
+  // fitted to the dial, hands, Now, references, centre and value parts, and the polar readouts. The
+  // ceiling keeps about 100 bytes of headroom.
+  {
+    name: "chart/ClockChart",
+    entryFile: "chart.js",
+    exportName: "ClockChart",
+    measuredGzip: 122917,
+    // 2026-11-05: the parts split into modules over a shared leaf, the tooltip's
+    // stack totals, the reference area's time range and the coarse owner in the pick, 122917 to
+    // 123362. The ceiling keeps about 100 bytes of headroom.
+    // 2026-11-05: the grid, axes, references and hands in modules of their own,
+    // the hatch folded into the sampled turn, the Area's quality mask, the gradient's zero
+    // from the scale, the datum slots resolved to their owner, and every Root's own scope
+    // resetting each family's Root contexts and the clock Marker's from light leaves, 123362 to
+    // 123645. The ceiling keeps about 100 bytes of headroom.
+    // 2026-11-05: the tooltip's corridor, the step curves' slot ranges, routes that
+    // end on their vertex, the Column's and Area's baseline rule, references bounded to the dial,
+    // formats compared in any key order, and each Root's depth on its figure, 123645 to 124386. The
+    // ceiling keeps about 100 bytes of headroom.
+    // 2026-11-06: the step clip's one-sided edges and the one-pass clip and split,
+    // the 12 o'clock step on a split line, references checked against the domain, and undefined
+    // format options dropped before comparing, 124386 to 124639. The ceiling keeps about 100 bytes
+    // of headroom.
+    // 2026-11-06: the polar Root's angle follower and its paced turn, the tooltip's side
+    // lanes, the pick's dead band and near hold, the centre's fit guard and breakable value, the
+    // labels' ray placement and ink measure, the dots' curve reads and the hatch by pixel column,
+    // 124639 to 128234. The ceiling keeps about 100 bytes of headroom.
+    // 2026-11-06: the follower's leap and its marks' stretch, the side lane chosen by
+    // its widest content, and the opening popup held until placed,
+    // 128234 to 129321. The ceiling keeps about 100 bytes of headroom.
+    // 2026-11-07: the stepped dot's stretch, the bottom lane below the Root's legend
+    // and table toggle, lanes cut to their widest content, the stretch read across a frame's turn,
+    // and the popup's used width rounded up, 129321 to 129755. The ceiling keeps about 100 bytes of
+    // headroom.
+    // 2026-11-07: a half-turn step takes the short way from the angle shown, and the
+    // opening hold releases only once an item has stayed active for two frame checks, 129755 to
+    // 129871. The ceiling keeps about 100 bytes of headroom.
+    // 2026-11-07: a popup that closes mid-entrance fades out from the opacity it
+    // reached, and every open starts a fresh hold, 129871 to 129986. The ceiling keeps about 100
+    // bytes of headroom.
+    // 2026-11-07: ring values and the angle labels they clear fitted by each label's bound,
+    // the widest any common sans draws it, 129986 to 130263. The ceiling keeps about 100
+    // bytes of headroom.
+    // 2026-11-07: the references' spoken sentences, an AngleAxis format's own fit, the Marker's pills hidden
+    // while its dots move, no ActiveDot on a missing slot, a turn from the drawn numbers, the placement keyed
+    // on its inputs, the indexed curve read and the series table built in its Table part, 130289 to 130926.
+    // The ceiling keeps about 100 bytes of headroom.
+    // 2026-11-08: a Marker's pills flagged on its own labels, its paths repainted on a variant change
+    // and the entrance frame cached with the curve index, 130926 to 131025. The ceiling keeps about
+    // 100 bytes of headroom.
+    // 2026-11-09: the review round rb1 fixes: a top lane above the chart where the bottom one leaves the
+    // viewport, a two-reading seam that closes, and the stack total read from the held index, 131025 to
+    // 131348. The ceiling keeps about 100 bytes of headroom.
+    // 2026-11-09: the review round rb2 fixes: every readout part reading its active point from one leaf that
+    // holds a closing tooltip's index and series together, and every lane cut to the viewport and the scene
+    // measured again on scroll and viewport resize, 131348 to 131627. The ceiling keeps about 100 bytes of
+    // headroom.
+    // 2026-11-09: the review round rb3 fixes: each lane's popup held inside its own span, the visible area
+    // read from the visual viewport, 131627 to 131849. The ceiling keeps about 100 bytes of headroom.
+    // 2026-11-09: the wedge gap's cut-off measured at the rim, and each short wedge's pad narrowed so its
+    // tip keeps one device pixel, 131849 to 131981. The ceiling keeps about 100 bytes of headroom.
+    // Raised again from 132081 on 2026-11-10, the round-1 and round-2 review fixes: the entrance spent once
+    // it starts and cleared when a hide cuts it short, the clock reference defaults by interval, the
+    // anchor's unionOf and the data-chart-* attribute names, measured 132321. The ceiling keeps about 100
+    // bytes of headroom.
+    ceilingGzip: 132421,
+  },
   {
     name: "chart/Chart.Root",
     entryFile: "chart.js",
@@ -444,14 +833,399 @@ export const NAMED_IMPORT_BUDGETS: readonly NamedImportBudget[] = derive([
     // side in every frame through the batched floor registry, which bars, path-form columns,
     // emphasis boxes and the active overlay read, which measured 2876 bytes on this route
     // (75668 to 78544). The ceiling keeps about 100 bytes of headroom.
-    ceilingGzip: 78644,
+    // Raised from 78644 on 2026-11-05. Root builds the readout port the shared parts read: the
+    // cartesian readout, the series readout's reading text, shares and fallback slot, and the
+    // swatch's paint and look. The tooltip anchor and the table rows ride with their own parts,
+    // so this route ships neither. That measured 1291 bytes on this route (78635 to 79926). The
+    // ceiling keeps about 100 bytes of headroom.
+    // Raised from 80026 on 2026-11-05. Root's surface reads the listbox leaf it shares with
+    // ScatterChart's, the option handoff, the press's end with the surface's element, the
+    // listbox's naming and the status region, which measured 234 bytes on this route (79926 to
+    // 80160). The ceiling keeps about 100 bytes of headroom.
+    // Raised from 80260 on 2026-11-05. Root takes the own scope from its own leaf, the shared
+    // data rules name the three polar rules' messages, and the loop's entrance takes its own
+    // duration, which measured 271 bytes on this route (80160 to 80431). The ceiling keeps about
+    // 100 bytes of headroom.
+    // Raised from 80531 on 2026-11-05. The stack floors read a floor axis a frame lends through
+    // `floorAxisOf`, the value floor's arithmetic sits in its own leaf, the value glow's filter
+    // reads a region with its unit, and the loop's entrance takes a linear curve, so a clock dial
+    // floors and glows through the same code without the plot frame, which measured 145 bytes on
+    // this route (80448 to 80593). The ceiling keeps about 100 bytes of headroom.
+    // 2026-11-05: each Root's depth on its figure and the orientation the bar
+    // series, axes and crosshair carry since the last raise, 80593 to 80787. The ceiling keeps
+    // about 100 bytes of headroom.
+    // 2026-11-07: a chart's option keeps its place when the window loses focus, 80787 to
+    // 80889. The ceiling keeps about 100 bytes of headroom.
+    // Raised again from 80989 on 2026-11-10, the round-1 and round-2 review fixes: the closed tooltip's point
+    // cleared and Escape's dismissal cleared on blur, the shared series readout taking its look and the
+    // radar's full config as named options, and answering a config key it draws no series for from that
+    // config at no index, measured 81033. The ceiling keeps about 100 bytes of headroom.
+    ceilingGzip: 81133,
   },
+  // 2026-11-05: PieChart.Root draws through the polar kernel, no longer a pending stub, so its row
+  // starts again at 41609 with the derived ceiling, beside new rows for the RadialChart and
+  // RadarChart Roots at 40138 and 48586. None ships cartesian geometry.
   {
     name: "chart/PieChart.Root",
     entryFile: "chart.js",
     exportName: "PieChart",
     members: ["Root"],
-    measuredGzip: 404,
+    measuredGzip: 43915,
+    // Set from its measurement on 2026-11-05, when the polar families landed: the Root through the
+    // polar kernel, its listbox, readouts and entrance. The ceiling keeps about 100 bytes of
+    // headroom.
+    // 2026-11-05: the item reading rules, duplicate categories, and
+    // every Root's own scope resetting each family's Root contexts from one light leaf, 43915
+    // to 44160. The ceiling keeps about 100 bytes of headroom.
+    // 2026-11-05: the fold's drawing weights, Other's quality, formats compared in
+    // any key order, the corridor the surface reads, and the Root's depth, 44160 to 44570. The
+    // ceiling keeps about 100 bytes of headroom.
+    // 2026-11-06: the polar Root's angle follower and its paced turn, the tooltip's side
+    // lanes, the pick's dead band and near hold, the centre's fit guard and breakable value, the
+    // labels' ray placement and ink measure, the dots' curve reads and the hatch by pixel column,
+    // 44570 to 46221. The ceiling keeps about 100 bytes of headroom.
+    // 2026-11-06: the follower's leap and its marks' stretch, the side lane chosen by
+    // its widest content, and the opening popup held until placed,
+    // 46221 to 46440. The ceiling keeps about 100 bytes of headroom.
+    // 2026-11-07: a chart's option keeps its place when the window loses focus, 46440 to
+    // 46566. The ceiling keeps about 100 bytes of headroom.
+    // 2026-11-07: each polar Table builds its table on demand, so a Root without one builds none, 46566 to
+    // 45717. The ceiling keeps about 100 bytes of headroom.
+    // Raised again from 45817 on 2026-11-10, the round-1 and round-2 review fixes: the entrance spent once it
+    // starts and cleared when a hide cuts it short, the item readout answering every config key and the
+    // data-chart-* attribute names, measured 45912. The ceiling keeps about 100 bytes of headroom.
+    ceilingGzip: 46012,
+  },
+  // 2026-11-05: new row, the typical pie route, as the bar route is Chart's: Root, Pie, the Center
+  // parts, Legend and Tooltip, which the owner set beside the whole-namespace row, with the derived
+  // ceiling.
+  {
+    name: "chart/PieChart route",
+    entryFile: "chart.js",
+    exportName: "PieChart",
+    members: [
+      "Root",
+      "Pie",
+      "Center",
+      "CenterValue",
+      "CenterShare",
+      "CenterMax",
+      "CenterLabel",
+      "CenterName",
+      "Legend",
+      "Tooltip",
+    ],
+    measuredGzip: 87143,
+    // Set from its measurement on 2026-11-05, when the polar families landed: Root, Pie, the Center
+    // parts, Legend and Tooltip. The ceiling keeps about 100 bytes of headroom.
+    // 2026-11-05: B9 and Q2 as on the namespace row, 87143 to 87534. The ceiling
+    // keeps about 100 bytes of headroom.
+    // 2026-11-05: B4, Q1 and Q2 as on the namespace row, 87534 to 87694. The ceiling
+    // keeps about 100 bytes of headroom.
+    // 2026-11-05: the tooltip's corridor from a part to its popup, the fold's
+    // drawing weights, Other's quality, formats compared in any key order, and
+    // each Root's depth on its figure, 87694 to 88179. The ceiling keeps about 100 bytes of
+    // headroom.
+    // 2026-11-06: the polar Root's angle follower and its paced turn, the tooltip's side
+    // lanes, the pick's dead band and near hold, the centre's fit guard and breakable value, the
+    // labels' ray placement and ink measure, the dots' curve reads and the hatch by pixel column,
+    // 88179 to 91556. The ceiling keeps about 100 bytes of headroom.
+    // 2026-11-06: the follower's leap and its marks' stretch, the side lane chosen by
+    // its widest content, and the opening popup held until placed,
+    // 91556 to 92610. The ceiling keeps about 100 bytes of headroom.
+    // 2026-11-07: the stepped dot's stretch, the bottom lane below the Root's legend
+    // and table toggle, lanes cut to their widest content, the stretch read across a frame's turn,
+    // and the popup's used width rounded up, 92610 to 93001. The ceiling keeps about 100 bytes of
+    // headroom.
+    // 2026-11-07: a half-turn step takes the short way from the angle shown, and the
+    // opening hold releases only once an item has stayed active for two frame checks, 93001 to
+    // 93120. The ceiling keeps about 100 bytes of headroom.
+    // 2026-11-07: a popup that closes mid-entrance fades out from the opacity it
+    // reached, and every open starts a fresh hold, 93120 to 93232. The ceiling keeps about 100
+    // bytes of headroom.
+    // 2026-11-07: each polar Table builds its table on demand, so a route without one builds none, 93279 to
+    // 92536. The ceiling keeps about 100 bytes of headroom.
+    // 2026-11-09: the review round rb1 fixes: a top lane above the chart where the bottom one leaves the
+    // viewport, and a default that starts on Other only for a folded row, 92536 to 92841. The ceiling keeps
+    // about 100 bytes of headroom.
+    // 2026-11-09: the review round rb2 fixes: every readout part reading its active point from one leaf that
+    // holds a closing tooltip's index and series together, and every lane cut to the viewport and the scene
+    // measured again on scroll and viewport resize, 92841 to 93153. The ceiling keeps about 100 bytes of
+    // headroom.
+    // 2026-11-09: the review round rb3 fixes: each lane's popup held inside its own span, the visible area
+    // read from the visual viewport, and the centre parts reading the held point, 93153 to 93383. The ceiling
+    // keeps about 100 bytes of headroom.
+    // Raised again from 93483 on 2026-11-10, the round-1 and round-2 review fixes: the entrance spent once
+    // it starts and cleared when a hide cuts it short, the item readout answering every config key, the
+    // anchor's unionOf and the data-chart-* attribute names, measured 93688. The ceiling keeps about 100
+    // bytes of headroom.
+    ceilingGzip: 93788,
+  },
+  // 2026-11-05: new row, the typical radial route: Root, Bar, the Center parts, Legend and Tooltip,
+  // which the owner set beside the whole-namespace row, with the derived ceiling.
+  {
+    name: "chart/RadialChart route",
+    entryFile: "chart.js",
+    exportName: "RadialChart",
+    members: [
+      "Root",
+      "Bar",
+      "Center",
+      "CenterValue",
+      "CenterShare",
+      "CenterMax",
+      "CenterLabel",
+      "CenterName",
+      "Legend",
+      "Tooltip",
+    ],
+    measuredGzip: 83225,
+    // Set from its measurement on 2026-11-05, when the polar families landed: Root, Bar, the Center
+    // parts, Legend and Tooltip. The ceiling keeps about 100 bytes of headroom.
+    // 2026-11-05: B9 and Q2 as on the namespace row, 83225 to 83551. The ceiling
+    // keeps about 100 bytes of headroom.
+    // 2026-11-05: B4, B6, Q1 and Q2 as on the namespace row, 83551 to 83773. The
+    // ceiling keeps about 100 bytes of headroom.
+    // 2026-11-05: the tooltip's corridor from a part to its popup, the fold's
+    // drawing weights, Other's quality, formats compared in any key order, and
+    // each Root's depth on its figure, 83773 to 84173. The ceiling keeps about 100 bytes of
+    // headroom.
+    // 2026-11-06: the polar Root's angle follower and its paced turn, the tooltip's side
+    // lanes, the pick's dead band and near hold, the centre's fit guard and breakable value, the
+    // labels' ray placement and ink measure, the dots' curve reads and the hatch by pixel column,
+    // 84173 to 87511. The ceiling keeps about 100 bytes of headroom. CenterName on 2026-11-06: the
+    // centre's active name line, a new shared pie and radial part, 87511 to 87628. The ceiling
+    // keeps about 100 bytes of headroom.
+    // 2026-11-06: the follower's leap and its marks' stretch, the side lane chosen by
+    // its widest content, and the opening popup held until placed,
+    // 87628 to 88618. The ceiling keeps about 100 bytes of headroom.
+    // 2026-11-07: the stepped dot's stretch, the bottom lane below the Root's legend
+    // and table toggle, lanes cut to their widest content, the stretch read across a frame's turn,
+    // and the popup's used width rounded up, 88618 to 89012. The ceiling keeps about 100 bytes of
+    // headroom.
+    // 2026-11-07: a half-turn step takes the short way from the angle shown, and the
+    // opening hold releases only once an item has stayed active for two frame checks, 89012 to
+    // 89148. The ceiling keeps about 100 bytes of headroom.
+    // 2026-11-07: a popup that closes mid-entrance fades out from the opacity it
+    // reached, and every open starts a fresh hold, 89148 to 89259. The ceiling keeps about 100
+    // bytes of headroom.
+    // 2026-11-07: each polar Table builds its table on demand, so a route without one builds none, 89308 to
+    // 88506. The ceiling keeps about 100 bytes of headroom.
+    // 2026-11-09: the review round rb1 fixes: a top lane above the chart where the bottom one leaves the
+    // viewport, and the item model's fold membership, 88506 to 88750. The ceiling keeps about 100 bytes of
+    // headroom.
+    // 2026-11-09: the review round rb2 fixes: every readout part reading its active point from one leaf that
+    // holds a closing tooltip's index and series together, and every lane cut to the viewport and the scene
+    // measured again on scroll and viewport resize, 88750 to 89063. The ceiling keeps about 100 bytes of
+    // headroom.
+    // 2026-11-09: the review round rb3 fixes: each lane's popup held inside its own span, the visible area
+    // read from the visual viewport, and the centre parts reading the held point, 89063 to 89269. The ceiling
+    // keeps about 100 bytes of headroom.
+    // Raised again from 89369 on 2026-11-10, the round-1 and round-2 review fixes: the entrance spent once
+    // it starts and cleared when a hide cuts it short, the item readout answering every config key, the
+    // anchor's unionOf and the data-chart-* attribute names, measured 89539. The ceiling keeps about 100
+    // bytes of headroom.
+    ceilingGzip: 89639,
+  },
+  {
+    name: "chart/RadialChart.Root",
+    entryFile: "chart.js",
+    exportName: "RadialChart",
+    members: ["Root"],
+    measuredGzip: 42428,
+    // Set from its measurement on 2026-11-05, when the polar families landed: the Root through the
+    // polar kernel. The ceiling keeps about 100 bytes of headroom.
+    // 2026-11-05: B9's reading rules in the item model and Q2's registry, 42428 to
+    // 42766. The ceiling keeps about 100 bytes of headroom.
+    // 2026-11-05: duplicate categories with each ring's maximum kept on its own row,
+    // and every Root's own scope resetting each family's Root contexts from one light leaf, 42766
+    // to 43026. The ceiling keeps about 100 bytes of headroom.
+    // 2026-11-05: formats compared in any key order, the corridor the surface
+    // reads, and the Root's depth, 43026 to 43369. The ceiling keeps about 100 bytes of
+    // headroom.
+    // 2026-11-06: the polar Root's angle follower and its paced turn, the tooltip's side
+    // lanes, the pick's dead band and near hold, the centre's fit guard and breakable value, the
+    // labels' ray placement and ink measure, the dots' curve reads and the hatch by pixel column,
+    // 43369 to 44996. The ceiling keeps about 100 bytes of headroom.
+    // 2026-11-06: the follower's leap and its marks' stretch, the side lane chosen by
+    // its widest content, and the opening popup held until placed,
+    // 44996 to 45202. The ceiling keeps about 100 bytes of headroom.
+    // 2026-11-07: a chart's option keeps its place when the window loses focus, 45202 to
+    // 45321. The ceiling keeps about 100 bytes of headroom.
+    // 2026-11-07: each polar Table builds its table on demand, so a Root without one builds none, 45321 to
+    // 44472. The ceiling keeps about 100 bytes of headroom.
+    // Raised again from 44572 on 2026-11-10, the round-1 and round-2 review fixes: the entrance spent once it
+    // starts and cleared when a hide cuts it short, the item readout answering every config key and the
+    // data-chart-* attribute names, measured 44610. The ceiling keeps about 100 bytes of headroom.
+    ceilingGzip: 44710,
+  },
+  {
+    name: "chart/RadarChart.Root",
+    entryFile: "chart.js",
+    exportName: "RadarChart",
+    members: ["Root"],
+    measuredGzip: 50817,
+    // Set from its measurement on 2026-11-05, when the polar families landed: the Root through the
+    // polar kernel. The ceiling keeps about 100 bytes of headroom.
+    // 2026-11-05: every Root's own scope resetting each family's Root contexts from
+    // one light leaf, 50817 to 50972. The ceiling keeps about 100 bytes of headroom.
+    // 2026-11-05: the corridor the surface reads, formats compared in any key
+    // order, and the Root's depth, 50972 to 51297. The ceiling keeps about 100 bytes of
+    // headroom.
+    // 2026-11-06: the polar Root's angle follower and its paced turn, the tooltip's side
+    // lanes, the pick's dead band and near hold, the centre's fit guard and breakable value, the
+    // labels' ray placement and ink measure, the dots' curve reads and the hatch by pixel column,
+    // 51297 to 52971. The ceiling keeps about 100 bytes of headroom.
+    // 2026-11-06: the follower's leap and its marks' stretch, the side lane chosen by
+    // its widest content, and the opening popup held until placed,
+    // 52971 to 53184. The ceiling keeps about 100 bytes of headroom.
+    // 2026-11-07: a chart's option keeps its place when the window loses focus, 53184 to
+    // 53304. The ceiling keeps about 100 bytes of headroom.
+    // 2026-11-07: each polar Table builds its table on demand, so a Root without one builds none, 53304 to
+    // 52288. The ceiling keeps about 100 bytes of headroom.
+    // Raised again from 52388 on 2026-11-10, the round-1 and round-2 review fixes: the entrance spent once it
+    // starts and cleared when a hide cuts it short, the radar's full-config answers for a key past the cap
+    // and the data-chart-* attribute names, measured 52424. The ceiling keeps about 100 bytes of headroom.
+    ceilingGzip: 52524,
+  },
+  // 2026-11-05: new row, the typical radar route: Root, Grid, both axes, Area, Line, Legend and
+  // Tooltip, which the owner set beside the whole-namespace row, with the derived ceiling.
+  {
+    name: "chart/RadarChart route",
+    entryFile: "chart.js",
+    exportName: "RadarChart",
+    members: ["Root", "Grid", "AngleAxis", "RadiusAxis", "Area", "Line", "Legend", "Tooltip"],
+    measuredGzip: 94894,
+    // Set from its measurement on 2026-11-05, when the polar families landed: Root, Grid, both
+    // axes, Area, Line, Legend and Tooltip. The ceiling keeps about 100 bytes of headroom.
+    // 2026-11-05: lowered to the route's new measurement, 94894 to 94191. The split,
+    // which keeps ActiveDot and Glow off a route of Area and Line, saved more than the own scope's
+    // reset added.
+    // 2026-11-05: the tooltip's corridor, formats compared in any key order, and the
+    // Root's depth, 94191 to 94603. The ceiling keeps about 100 bytes of headroom.
+    // 2026-11-06: the polar Root's angle follower and its paced turn, the tooltip's side
+    // lanes, the pick's dead band and near hold, the centre's fit guard and breakable value, the
+    // labels' ray placement and ink measure, the dots' curve reads and the hatch by pixel column,
+    // 94603 to 97649. The ceiling keeps about 100 bytes of headroom.
+    // 2026-11-06: the follower's leap and its marks' stretch, the side lane chosen by
+    // its widest content, and the opening popup held until placed,
+    // 97649 to 98596. The ceiling keeps about 100 bytes of headroom.
+    // 2026-11-07: the stepped dot's stretch, the bottom lane below the Root's legend
+    // and table toggle, lanes cut to their widest content, the stretch read across a frame's turn,
+    // and the popup's used width rounded up, 98596 to 98993. The ceiling keeps about 100 bytes of
+    // headroom.
+    // 2026-11-07: a half-turn step takes the short way from the angle shown, and the
+    // opening hold releases only once an item has stayed active for two frame checks, 98993 to
+    // 99110. The ceiling keeps about 100 bytes of headroom.
+    // 2026-11-07: a popup that closes mid-entrance fades out from the opacity it
+    // reached, and every open starts a fresh hold, 99110 to 99227. The ceiling keeps about 100
+    // bytes of headroom.
+    // 2026-11-07: ring values and the angle labels they clear fitted by each label's bound,
+    // the widest any common sans draws it, 99227 to 99463. The ceiling keeps about 100 bytes
+    // of headroom.
+    // 2026-11-07: each polar Table builds its table on demand, so a route without one builds none, 99488 to
+    // 98454. The ceiling keeps about 100 bytes of headroom.
+    // 2026-11-09: the review round rb1 fixes: a top lane above the chart where the bottom one leaves the
+    // viewport, 98454 to 98705. The ceiling keeps about 100 bytes of headroom.
+    // 2026-11-09: the review round rb2 fixes: every readout part reading its active point from one leaf that
+    // holds a closing tooltip's index and series together, and every lane cut to the viewport and the scene
+    // measured again on scroll and viewport resize, 98705 to 99033. The ceiling keeps about 100 bytes of
+    // headroom.
+    // 2026-11-09: the review round rb3 fixes: each lane's popup held inside its own span, the visible area
+    // read from the visual viewport, 99033 to 99255. The ceiling keeps about 100 bytes of headroom.
+    // Raised again from 99355 on 2026-11-10, the round-1 and round-2 review fixes: the entrance spent once
+    // it starts and cleared when a hide cuts it short, the radar's full-config answers for a key past the
+    // cap, the anchor's unionOf and the data-chart-* attribute names, measured 99502. The ceiling keeps
+    // about 100 bytes of headroom.
+    ceilingGzip: 99602,
+  },
+  // 2026-11-05: new rows, ClockChart's Root alone and its typical route: Root, Line, Grid,
+  // AngleAxis, Center, Legend and Tooltip, which the owner set, each with the derived ceiling.
+  {
+    name: "chart/ClockChart.Root",
+    entryFile: "chart.js",
+    exportName: "ClockChart",
+    members: ["Root"],
+    measuredGzip: 54320,
+    // Set from its measurement on 2026-11-05, when the polar families landed: the Root over the
+    // zoned dial model. The ceiling keeps about 100 bytes of headroom.
+    // 2026-11-05: the coarse owner in the pick, and every Root's own
+    // scope resetting each family's Root contexts and the clock Marker's from light leaves,
+    // 54320 to 54512. The ceiling keeps about 100 bytes of headroom.
+    // 2026-11-05: the corridor the surface reads, the baseline the dial carries,
+    // formats compared in any key order, and the Root's depth, 54512 to 54868. The ceiling keeps
+    // about 100 bytes of headroom.
+    // 2026-11-06: the polar Root's angle follower and its paced turn, the tooltip's side
+    // lanes, the pick's dead band and near hold, the centre's fit guard and breakable value, the
+    // labels' ray placement and ink measure, the dots' curve reads and the hatch by pixel column,
+    // 54868 to 56540. The ceiling keeps about 100 bytes of headroom.
+    // 2026-11-06: the follower's leap and its marks' stretch, the side lane chosen by
+    // its widest content, and the opening popup held until placed,
+    // 56540 to 56746. The ceiling keeps about 100 bytes of headroom.
+    // 2026-11-07: a chart's option keeps its place when the window loses focus, 56746 to
+    // 56877. The ceiling keeps about 100 bytes of headroom.
+    // 2026-11-07: each polar Table builds its table on demand, so a Root without one builds none, 56877 to
+    // 55800. The ceiling keeps about 100 bytes of headroom.
+    // Raised again from 55900 on 2026-11-10, the round-1 and round-2 review fixes: the entrance spent once it
+    // starts and cleared when a hide cuts it short, and the data-chart-* attribute names, measured 55970. The
+    // ceiling keeps about 100 bytes of headroom.
+    ceilingGzip: 56070,
+  },
+  {
+    name: "chart/ClockChart route",
+    entryFile: "chart.js",
+    exportName: "ClockChart",
+    members: ["Root", "Line", "Grid", "AngleAxis", "Center", "Legend", "Tooltip"],
+    measuredGzip: 110462,
+    // Set from its measurement on 2026-11-05, when the polar families landed: Root, Line, Grid,
+    // AngleAxis, Center, Legend and Tooltip. The ceiling keeps about 100 bytes of headroom.
+    // 2026-11-05: lowered by the 5321 bytes the split saved, since Line, Grid,
+    // AngleAxis and Center no longer ship Column, Marker, ValueLabel, ActiveDot, the stack floors
+    // or M4, 110462 to 105141.
+    // 2026-11-05: lowered to the route's new measurement, 105141 to 102986. The
+    // second split, which keeps RadiusAxis, the references, Scrubber, Now, their label fitting
+    // and TooltipTotal off a route of Grid, AngleAxis and Center, saved more than the own scope's
+    // reset added.
+    // 2026-11-05: the tooltip's corridor, the step curves' slot ranges, routes that
+    // end on their vertex, the Column's and Area's baseline rule, references bounded to the dial,
+    // formats compared in any key order, and each Root's depth on its figure, 102986 to 103601. The
+    // ceiling keeps about 100 bytes of headroom.
+    // 2026-11-06: the step clip's one-sided edges and the one-pass clip and split,
+    // the 12 o'clock step on a split line, references checked against the domain, and undefined
+    // format options dropped before comparing, 103601 to 103832. The ceiling keeps about 100 bytes
+    // of headroom.
+    // 2026-11-06: the polar Root's angle follower and its paced turn, the tooltip's side
+    // lanes, the pick's dead band and near hold, the centre's fit guard and breakable value, the
+    // labels' ray placement and ink measure, the dots' curve reads and the hatch by pixel column,
+    // 103832 to 107939. The ceiling keeps about 100 bytes of headroom.
+    // 2026-11-06: the follower's leap and its marks' stretch, the side lane chosen by
+    // its widest content, and the opening popup held until placed,
+    // 107939 to 108836. The ceiling keeps about 100 bytes of headroom.
+    // 2026-11-07: the stepped dot's stretch, the bottom lane below the Root's legend
+    // and table toggle, lanes cut to their widest content, the stretch read across a frame's turn,
+    // and the popup's used width rounded up, 108836 to 109214. The ceiling keeps about 100 bytes of
+    // headroom.
+    // 2026-11-07: a half-turn step takes the short way from the angle shown, and the
+    // opening hold releases only once an item has stayed active for two frame checks, 109214 to
+    // 109340. The ceiling keeps about 100 bytes of headroom.
+    // 2026-11-07: a popup that closes mid-entrance fades out from the opacity it
+    // reached, and every open starts a fresh hold, 109340 to 109444. The ceiling keeps about 100
+    // bytes of headroom.
+    // 2026-11-07: each polar Table builds its table on demand, so a route without one builds none, 109495 to
+    // 108487. The ceiling keeps about 100 bytes of headroom.
+    // 2026-11-09: the review round rb1 fixes: a top lane above the chart where the bottom one leaves the
+    // viewport, a two-reading seam that closes, and the stack total read from the held index, 108487 to
+    // 108732. The ceiling keeps about 100 bytes of headroom.
+    // 2026-11-09: the review round rb2 fixes: every readout part reading its active point from one leaf that
+    // holds a closing tooltip's index and series together, and every lane cut to the viewport and the scene
+    // measured again on scroll and viewport resize, 108732 to 109041. The ceiling keeps about 100 bytes of
+    // headroom.
+    // 2026-11-09: the review round rb3 fixes: each lane's popup held inside its own span, the visible area
+    // read from the visual viewport, 109041 to 109280. The ceiling keeps about 100 bytes of headroom.
+    // Raised again from 109380 on 2026-11-10, the round-1 and round-2 review fixes: the entrance spent once
+    // it starts and cleared when a hide cuts it short, the anchor's unionOf and the data-chart-* attribute
+    // names, measured 109502. The ceiling keeps about 100 bytes of headroom.
+    ceilingGzip: 109602,
   },
   // 2026-11-04: new rows, measured at 84628 for the whole ScatterChart namespace and 41808 for its
   // Root alone, each with the derived ceiling.
@@ -523,7 +1297,48 @@ export const CSS_BUDGETS: readonly CssBudget[] = derive([
   // by a dot's radius and a segment reference's label at its last end, less the three entrance
   // wipes ScatterChart never runs. That is 720 bytes over the stylesheet with the threshold colours
   // (15120 to 15840) and over the derived 15134, so the ceiling keeps about 100 bytes of headroom.
-  { name: "chart.css", file: "chart.css", measuredGzip: 10089, ceilingGzip: 15940 },
+  // Raised from 15940 on 2026-11-05. The polar Roots' tokens, their frame's grid areas, the
+  // aspect-locked cell, the first paint that hides polar marks until the entrance starts with
+  // scripting on and shows them in print, and the pie, radial and radar skeleton shapes
+  // measured 784 bytes over the stylesheet (15840 to 16624). The ceiling keeps about 100 bytes of
+  // headroom.
+  // Raised again from 16724 on 2026-11-05. The pie's rules: the layers over the cell with the pop's
+  // room and the outside labels' gutter, the slices' seam, pop, dims and their state rules keyed on
+  // data-chart-sector, the labels and leaders, the centre's square with its reels, the Track and the
+  // Glow, which measured 1513 bytes over the stylesheet (16624 to 18137). The ceiling keeps about
+  // 100 bytes of headroom.
+  // Raised again from 18237 on 2026-11-05. The rings' strokes, dots, masks and faint dots, their
+  // hover scale and dims keyed on data-chart-ring, the tracks' scale-out keyframes, and
+  // --chart-ring-fill's registration, which measured 675 bytes over the stylesheet (18137 to
+  // 18812). The ceiling keeps about 100 bytes of headroom.
+  // Raised again from 18912 on 2026-11-05. The radar's rings, zero ring, spokes and hand, its
+  // Area, Line and Dots looks, the hover, selection and highlight dims keyed on data-radar-series,
+  // the Glow, both axes' labels, the grid's scale-outs and the labels' fade, and the forced-colour
+  // rules, which measured 1298 bytes over the stylesheet (18812 to 20110). The ceiling keeps about
+  // 100 bytes of headroom.
+  // Raised again from 20210 on 2026-11-05. The clock's grid, its line, area and column looks with
+  // their masks, the wedges' steps and past fade, its dots, hands, references, labels with their
+  // width buckets, centre, dims, glow and forced-colour rules, and the radar's and clock's stop
+  // colours, which measured 1744 bytes over the stylesheet (20110 to 21854). The ceiling keeps
+  // about 100 bytes of headroom.
+  // Raised again from 21954 on 2026-11-05. The feel pass: the ring values' chips and the Now
+  // label's chip, the radar's spoke labels in the dial's width buckets, the room above and below a
+  // dial for its 12 o'clock label, the spanning parts that give the side columns no width, the side
+  // legend that drops under a narrow dial, the centre values that scale and wrap in their hole, and
+  // the inside labels' on-colour shares, which measured 960 bytes over the stylesheet (21854 to
+  // 22814). The ceiling keeps about 100 bytes of headroom.
+  // Raised again from 22914 on 2026-11-05, fix round 2: the Area's estimated stretch in its own
+  // value paint through the quality mask, with the mask's ink, which measured 80 bytes over the
+  // stylesheet (22868 to 22948). The ceiling keeps about 100 bytes of headroom.
+  // Raised again from 23048 on 2026-11-05, fix round 3: each Root's state flags and their reset,
+  // the hover rules listed once per Root depth so a hover restyles only its parts, and the
+  // orientation rules keyed on the parts that carry it, which measured 1089 bytes over the
+  // stylesheet (22948 to 24037). The ceiling keeps about 100 bytes of headroom.
+  // 2026-11-06: the polar Root's angle follower and its paced turn, the tooltip's side
+  // lanes, the pick's dead band and near hold, the centre's fit guard and breakable value, the
+  // labels' ray placement and ink measure, the dots' curve reads and the hatch by pixel column,
+  // 24037 to 24859. The ceiling keeps about 100 bytes of headroom.
+  { name: "chart.css", file: "chart.css", measuredGzip: 10089, ceilingGzip: 24959 },
 ] satisfies readonly Measured<CssBudget>[]);
 
 export const FLAG_RAW_BUDGETS: readonly FlagRawBudget[] = [

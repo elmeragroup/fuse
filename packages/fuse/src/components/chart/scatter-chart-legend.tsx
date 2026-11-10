@@ -7,10 +7,10 @@ import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
 
 import type { ChartDomProps } from "./chart-types";
+import { seriesLabel } from "./format/series-label";
 import { assertKnownKey } from "./layout/errors";
 import { scatterPaint, useScatterRoot } from "./scatter-chart-context";
 import type { ScatterMark } from "./scatter-chart-context";
-import { scatterSeriesLabel } from "./scatter-chart-text";
 
 /**
  * Props for `ScatterChart.Legend`, a `ul` with Base UI's `render`.
@@ -126,7 +126,7 @@ export function ScatterChartLegendItem({
                 kind={mark?.kind}
                 look={mark?.variant}
               />
-              <span data-slot="chart-series-label">{scatterSeriesLabel(context, dataKey).text}</span>
+              <span data-slot="chart-series-label">{seriesLabel(context, dataKey).text}</span>
             </>
           ),
         },

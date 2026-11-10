@@ -241,7 +241,7 @@
           "origin": "declared",
           "type": "number | undefined",
           "shortType": null,
-          "defaultValue": null,
+          "defaultValue": "0",
           "description": "A fraction of the outer radius, from 0 to 0.5. The plot keeps its aspect, so pixels would mean nothing.",
           "required": false
         },
@@ -259,7 +259,7 @@
     {
       "name": "PieChart.Labels",
       "rsc": "client",
-      "sourcePath": "packages/fuse/src/components/chart/pie-chart-pie.tsx",
+      "sourcePath": "packages/fuse/src/components/chart/pie-chart-labels.tsx",
       "forwardedFrom": [],
       "forwardedCount": 0,
       "props": [
@@ -286,7 +286,7 @@
           "origin": "declared",
           "type": "\"inside\" | \"outside\" | undefined",
           "shortType": "Union",
-          "defaultValue": null,
+          "defaultValue": "\"inside\"",
           "description": "Where each label sits. An inside label on a role with no on-colour role draws outside instead.",
           "required": false
         },
@@ -304,7 +304,7 @@
     {
       "name": "PieChart.Track",
       "rsc": "client",
-      "sourcePath": "packages/fuse/src/components/chart/pie-chart-center.tsx",
+      "sourcePath": "packages/fuse/src/components/chart/pie-chart-track.tsx",
       "forwardedFrom": [],
       "forwardedCount": 0,
       "props": [
@@ -367,7 +367,7 @@
     {
       "name": "PieChart.CenterValue",
       "rsc": "client",
-      "sourcePath": "packages/fuse/src/components/chart/pie-chart-center.tsx",
+      "sourcePath": "packages/fuse/src/components/chart/pie-chart-center-value.tsx",
       "forwardedFrom": [],
       "forwardedCount": 0,
       "props": [
@@ -403,7 +403,7 @@
     {
       "name": "PieChart.CenterShare",
       "rsc": "client",
-      "sourcePath": "packages/fuse/src/components/chart/pie-chart-center.tsx",
+      "sourcePath": "packages/fuse/src/components/chart/pie-chart-center-value.tsx",
       "forwardedFrom": [],
       "forwardedCount": 0,
       "props": [
@@ -439,7 +439,7 @@
     {
       "name": "PieChart.CenterMax",
       "rsc": "client",
-      "sourcePath": "packages/fuse/src/components/chart/pie-chart-center.tsx",
+      "sourcePath": "packages/fuse/src/components/chart/pie-chart-center-value.tsx",
       "forwardedFrom": [],
       "forwardedCount": 0,
       "props": [
@@ -486,6 +486,42 @@
           "shortType": null,
           "defaultValue": null,
           "description": "The label text, such as \"av\" between the value and the maximum.",
+          "required": false
+        },
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Classes on the part's element.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "PieChart.CenterName",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/pie-chart-center.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The text with nothing active, such as \"Total\" under the total.",
           "required": false
         },
         {
@@ -558,7 +594,7 @@
           "origin": "declared",
           "type": "number | undefined",
           "shortType": null,
-          "defaultValue": null,
+          "defaultValue": "0",
           "description": "A fraction of the outer radius, as on Root. 0 by default.",
           "required": false
         },
@@ -658,7 +694,7 @@
     {
       "name": "PieChart.Tooltip",
       "rsc": "client",
-      "sourcePath": "packages/fuse/src/components/chart/chart-tooltip.tsx",
+      "sourcePath": "packages/fuse/src/components/chart/polar-chart-tooltip.tsx",
       "forwardedFrom": [],
       "forwardedCount": 0,
       "props": [
@@ -712,7 +748,7 @@
     {
       "name": "PieChart.TooltipLabel",
       "rsc": "client",
-      "sourcePath": "packages/fuse/src/components/chart/chart-tooltip.tsx",
+      "sourcePath": "packages/fuse/src/components/chart/chart-tooltip-parts.tsx",
       "forwardedFrom": [
         "@base-ui/react",
         "@types/react"
@@ -725,7 +761,7 @@
           "type": "XFormat | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The slot label format. Root's `xFormat` is the default. It does nothing in polar charts.",
+          "description": "The slot label format. Root's `xFormat` is the default. A clock's slots take it, and the categories of pie, radial and radar charts print as they are.",
           "required": false
         },
         {
@@ -753,7 +789,7 @@
     {
       "name": "PieChart.TooltipItems",
       "rsc": "client",
-      "sourcePath": "packages/fuse/src/components/chart/chart-tooltip.tsx",
+      "sourcePath": "packages/fuse/src/components/chart/chart-tooltip-parts.tsx",
       "forwardedFrom": [
         "@base-ui/react",
         "@types/react"
@@ -785,7 +821,7 @@
     {
       "name": "PieChart.TooltipValue",
       "rsc": "client",
-      "sourcePath": "packages/fuse/src/components/chart/chart-tooltip.tsx",
+      "sourcePath": "packages/fuse/src/components/chart/chart-tooltip-parts.tsx",
       "forwardedFrom": [
         "@base-ui/react",
         "@types/react"
@@ -835,7 +871,7 @@
     {
       "name": "PieChart.TooltipShare",
       "rsc": "client",
-      "sourcePath": "packages/fuse/src/components/chart/chart-tooltip.tsx",
+      "sourcePath": "packages/fuse/src/components/chart/chart-tooltip-parts.tsx",
       "forwardedFrom": [
         "@base-ui/react",
         "@types/react"
@@ -926,7 +962,7 @@
           "origin": "declared",
           "type": "\"bar\" | \"circle\" | \"circle-outline\" | \"line\" | \"square\" | \"square-outline\" | undefined",
           "shortType": "Union",
-          "defaultValue": null,
+          "defaultValue": "\"square\"",
           "description": "The swatch's shape. \"square\" by default.",
           "required": false
         }
@@ -1040,8 +1076,8 @@
           "origin": "declared",
           "type": "\"bottom\" | \"end\" | \"start\" | \"top\" | undefined",
           "shortType": "Union",
-          "defaultValue": null,
-          "description": "Where the legend sits around the plot. \"bottom\" by default.",
+          "defaultValue": "\"bottom\"",
+          "description": "Where the legend sits around the plot. \"bottom\" by default. In a polar chart narrower than 30rem, a \"start\" or \"end\" legend moves under the dial, so the dial keeps its size.",
           "required": false
         },
         {
@@ -1120,7 +1156,7 @@
           "origin": "declared",
           "type": "ChartFallback | undefined",
           "shortType": null,
-          "defaultValue": null,
+          "defaultValue": "\"last\"",
           "description": "The datum to print when nothing is active. \"last\" by default.",
           "required": false
         },
@@ -1244,7 +1280,7 @@
           "origin": "declared",
           "type": "\"bottom\" | \"end\" | \"start\" | \"top\" | undefined",
           "shortType": "Union",
-          "defaultValue": null,
+          "defaultValue": "\"bottom\"",
           "description": "Where the group sits around the plot. \"bottom\" by default.",
           "required": false
         },
@@ -1307,7 +1343,7 @@
     {
       "name": "PieChart.Table",
       "rsc": "client",
-      "sourcePath": "packages/fuse/src/components/chart/chart-table.tsx",
+      "sourcePath": "packages/fuse/src/components/chart/polar-chart-table.tsx",
       "forwardedFrom": [],
       "forwardedCount": 0,
       "props": [
@@ -1379,7 +1415,7 @@
     {
       "name": "PieChart.TableColumn",
       "rsc": "client",
-      "sourcePath": "packages/fuse/src/components/chart/chart-table.tsx",
+      "sourcePath": "packages/fuse/src/components/chart/chart-table-column.tsx",
       "forwardedFrom": [],
       "forwardedCount": 0,
       "props": [

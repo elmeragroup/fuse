@@ -3,7 +3,7 @@
 import type { ReactElement } from "react";
 
 import { useSeriesPart } from "./chart-context";
-import { PATH_GLOW, valueGlow } from "./chart-glow-filter";
+import { PATH_GLOW, plotGlowRegion, valueGlow } from "./chart-glow-filter";
 import type { MarkValues } from "./chart-motion";
 import { useFirstDraw } from "./chart-motion-mark";
 import { placeOf, topologyAt, writePath } from "./chart-path-draw";
@@ -109,6 +109,7 @@ export function ChartLine({
   return (
     <svg
       data-slot="chart-line-series"
+      data-orientation={context.orientation}
       data-variant={variant}
       data-series={seriesIndex}
       data-paint={glow?.paint}
@@ -128,7 +129,7 @@ export function ChartLine({
         <>
           <defs>
             <PathPaint id={`${prefix}-paint`} paint={paint} frame={frame} />
-            {glow?.filter(frame)}
+            {glow?.filter(plotGlowRegion(frame.box))}
           </defs>
           <g ref={markRef}>
             <clipPath id={`${prefix}-solid`} data-part="solid-clip" />

@@ -5,16 +5,9 @@ import type { ReactElement } from "react";
 import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
 
-import { useChartRoot } from "./chart-context";
-import { isThresholdColor, readingPaint, seriesPaintOf } from "./chart-paint";
-import type { SeriesPaint } from "./chart-paint";
-import { usePendingOr } from "./chart-pending-root";
-import { readingAt, useActivePoint, useLegendSide, useReadoutKey } from "./chart-readout";
-import { seriesLabel } from "./chart-text";
+import { useActiveItem, useChartReadout, useLegendSide, useReadoutKey } from "./chart-readout";
 import type { ChartDomProps } from "./chart-types";
-import { barForm, drawnBarVariant } from "./layout/bar-geometry";
 import { seriesPaint } from "./layout/color-key";
-import { seriesOf } from "./layout/series-of";
 
 /**
  * Props for `Chart.Swatch`, a `span` with Base UI's `render`.
@@ -49,21 +42,6 @@ export type ChartSeriesIconProps = ChartDomProps<"span"> & {
 };
 
 /**
- * The CSS paint of a swatch, the marks' own stops: a role paints itself, a role list its roles as a
- * gradient, a scale its 7-step ramp and a threshold its two sides split in half, lower side first.
- * A step the active value or a legend entry's side picks paints alone.
- */
-function swatchPaint(paint: SeriesPaint, step: string | undefined): string {
-  if (step !== undefined) return step;
-  const { stops, ramp } = paint;
-  if (stops !== undefined) return `linear-gradient(to right, ${stops.join(", ")})`;
-  if (ramp === undefined) return paint.base;
-  if (!isThresholdColor(paint.color)) return `linear-gradient(to right, ${ramp.join(", ")})`;
-  const [below = paint.base, above = paint.base] = ramp;
-  return `linear-gradient(to right, ${below} 50%, ${above} 50%)`;
-}
-
-/**
  * The series' paint. A role list shows the list as a gradient, a scale shows its ramp, and a
  * threshold shows its two sides split in half. Inside a tooltip row a scale or a threshold series
  * shows the step of the active value, and inside a threshold series' legend entry it shows the
@@ -71,11 +49,7 @@ function swatchPaint(paint: SeriesPaint, step: string | undefined): string {
  *
  * @beta
  */
-export function ChartSwatch(props: ChartSwatchProps): ReactElement {
-  return usePendingOr(props, ChartSwatchBody);
-}
-
-function ChartSwatchBody({
+export function ChartSwatch({
   dataKey,
   variant = "square",
   render,
@@ -83,39 +57,26 @@ function ChartSwatchBody({
   style,
   ...props
 }: ChartSwatchProps): ReactElement {
-  const context = useChartRoot("Chart.Swatch");
-  const point = useActivePoint(context);
-  const key =
-    useReadoutKey("Chart.Swatch", context, dataKey, point.key) ?? Object.keys(context.config)[0] ?? "";
-  const series = seriesOf(context.model, key);
-  const paint = seriesPaintOf(key, context.config[key]?.color ?? "chart-1", series);
+  const readout = useChartReadout("Chart.Swatch");
+  const point = useActiveItem(readout);
+  const key = useReadoutKey("Chart.Swatch", readout, dataKey, point.key) ?? readout.legendKeys[0] ?? "";
   const side = useLegendSide(key);
-  // A legend entry's side paints its role with the consumer override first, as the series' marks do.
-  const step =
-    side === null
-      ? point.slot === null
-        ? undefined
-        : readingPaint(paint, readingAt(context, key, point.slot))
-      : seriesPaint(key, side.color);
-  // The swatch wears the look the series' bars draw in, from config at render time, so the server
-  // HTML and the legend tell a hatched series apart before the chart hydrates.
-  const look = drawnBarVariant(
-    context.config[key]?.barVariant ?? "default",
-    barForm(context.model, context.orientation)
-  );
+  const { paint, look } = readout.swatch(key, point.index);
   return useRender({
     defaultTagName: "span",
     render,
     props: {
       "data-slot": "chart-swatch",
       "data-variant": variant,
-      "data-series": series?.seriesIndex,
-      "data-series-variant": look === "default" ? undefined : look,
+      "data-series": readout.item(key)?.index,
+      "data-series-variant": look,
       ...mergeProps<"span">(
         {
           "aria-hidden": true,
           className,
-          style: { "--chart-swatch-paint": swatchPaint(paint, step), ...style },
+          // A legend entry's side paints its role with the consumer override first, as the
+          // series' marks do.
+          style: { "--chart-swatch-paint": side === null ? paint : seriesPaint(key, side.color), ...style },
         },
         props
       ),
@@ -129,16 +90,17 @@ function ChartSwatchBody({
  *
  * @beta
  */
-export function ChartSeriesLabel(props: ChartSeriesLabelProps): ReactElement {
-  return usePendingOr(props, ChartSeriesLabelBody);
-}
-
-function ChartSeriesLabelBody({ dataKey, render, className, ...props }: ChartSeriesLabelProps): ReactElement {
-  const context = useChartRoot("Chart.SeriesLabel");
-  const point = useActivePoint(context);
-  const key = useReadoutKey("Chart.SeriesLabel", context, dataKey, point.key);
+export function ChartSeriesLabel({
+  dataKey,
+  render,
+  className,
+  ...props
+}: ChartSeriesLabelProps): ReactElement {
+  const readout = useChartReadout("Chart.SeriesLabel");
+  const point = useActiveItem(readout);
+  const key = useReadoutKey("Chart.SeriesLabel", readout, dataKey, point.key);
   const side = useLegendSide(key);
-  const text = key === null ? null : (side?.label ?? seriesLabel(context, key).text);
+  const text = key === null ? null : (side?.label ?? readout.item(key)?.label.text ?? key);
   return useRender({
     defaultTagName: "span",
     render,
@@ -155,21 +117,22 @@ function ChartSeriesLabelBody({ dataKey, render, className, ...props }: ChartSer
  *
  * @beta
  */
-export function ChartSeriesIcon(props: ChartSeriesIconProps): ReactElement {
-  return usePendingOr(props, ChartSeriesIconBody);
-}
-
-function ChartSeriesIconBody({ dataKey, render, className, ...props }: ChartSeriesIconProps): ReactElement {
-  const context = useChartRoot("Chart.SeriesIcon");
-  const point = useActivePoint(context);
-  const key = useReadoutKey("Chart.SeriesIcon", context, dataKey, point.key);
+export function ChartSeriesIcon({
+  dataKey,
+  render,
+  className,
+  ...props
+}: ChartSeriesIconProps): ReactElement {
+  const readout = useChartReadout("Chart.SeriesIcon");
+  const point = useActiveItem(readout);
+  const key = useReadoutKey("Chart.SeriesIcon", readout, dataKey, point.key);
   return useRender({
     defaultTagName: "span",
     render,
     props: {
       "data-slot": "chart-series-icon",
       ...mergeProps<"span">(
-        { "aria-hidden": true, className, children: key === null ? null : context.config[key]?.icon },
+        { "aria-hidden": true, className, children: key === null ? null : readout.item(key)?.icon },
         props
       ),
     },

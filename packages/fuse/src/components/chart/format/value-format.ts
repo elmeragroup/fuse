@@ -194,6 +194,26 @@ function formatPreset(
 }
 
 /**
+ * Whether two value formats name the same options, in any key order and with an option set to
+ * undefined read as left out, so a format written either way prints as the same one and shares a
+ * total with it.
+ *
+ * @param a - One format.
+ * @param b - The other.
+ * @returns Whether they match.
+ */
+export function sameFormat(a: ValueFormat, b: ValueFormat): boolean {
+  if (a === b) return true;
+  // An option set to undefined reads as one left out, as Intl and the formatters read it.
+  const left = Object.entries(a).filter(([, value]) => value !== undefined);
+  const right = new Map(Object.entries(b).filter(([, value]) => value !== undefined));
+  return (
+    left.length === right.size &&
+    left.every(([key, value]) => right.has(key) && Object.is(value, right.get(key)))
+  );
+}
+
+/**
  * Format a chart value for one locale.
  *
  * Values that round to zero, and −0, print `0`, because `signDisplay` defaults to `"negative"`.

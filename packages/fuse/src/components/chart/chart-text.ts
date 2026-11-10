@@ -11,6 +11,7 @@ import type { EmphasisEntry } from "./chart-store";
 import type { ChartSeriesConfig, XFormat } from "./chart-types";
 import { CHART_STRINGS, countOf } from "./format/chart-strings";
 import type { FormattedText } from "./format/formatted-text";
+import { seriesLabel } from "./format/series-label";
 import { formatSlot, LABEL_PRESETS, wallClock } from "./format/time-format";
 import type { Interval } from "./format/time-format";
 import { formatUnitLabel, formatUnitless, formatValue } from "./format/value-format";
@@ -166,20 +167,6 @@ function ownSlotDated(context: TextContext, key: string, slot: number): Formatte
   const coarse = seriesOf(context.model, key)?.coarse;
   if (coarse === undefined || domain.kind !== "time") return null;
   return datedLabel(context, domain.timeZone, coarse.start[slot] ?? 0, coarse.interval, undefined);
-}
-
-/**
- * A series' name. A plain string reads verbatim in both forms, and a `FormattedText` keeps its
- * spoken form for options, the description and the table.
- *
- * @param context - The config.
- * @param key - A config key.
- * @returns The visual and spoken name.
- */
-export function seriesLabel(context: TextContext, key: string): FormattedText {
-  const label = context.config[key]?.label ?? key;
-  // oxlint-disable-next-line anti-slop/no-runtime-typeof -- consumer-owned union: a config label is a string or a FormattedText
-  return typeof label === "string" ? { text: label, spoken: label } : label;
 }
 
 /**
@@ -361,6 +348,36 @@ function withUnit(context: TextContext, key: string, label: string): UnitLabel {
   };
 }
 
+/** A reading at a slot, as a series' lowest or highest. */
+export type SlotReading = { readonly slot: number; readonly value: number };
+
+/**
+ * One series' extremes as the description speaks them, its unit stated once after its label:
+ * `Forbruk i kilowattimer: lavest 0,33 kl. 03 til 04, høyest …`.
+ *
+ * @param context - The model, config and locale.
+ * @param key - The series.
+ * @param low - Its lowest reading.
+ * @param high - Its highest reading.
+ * @returns The sentence.
+ */
+export function extremesSentence(
+  context: TextContext,
+  key: string,
+  low: SlotReading,
+  high: SlotReading
+): string {
+  const extremes = withUnit(context, key, seriesLabel(context, key).spoken);
+  const at = (slot: number) => (ownSlotDated(context, key, slot) ?? slotLabel(context, slot)).spoken;
+  return CHART_STRINGS[context.locale].descriptionSeries(
+    extremes.label,
+    extremes.value(low.value),
+    at(low.slot),
+    extremes.value(high.value),
+    at(high.slot)
+  );
+}
+
 /**
  * The label a description span uses for a slot: the date for sub-day slots, with its year when the
  * domain spans more than one calendar year, else the slot label.
@@ -414,17 +431,7 @@ export function chartDescription(context: TextContext): string {
     if (coarse === undefined) for (let slot = window.first; slot <= window.last; slot += 1) visit(slot);
     else for (const slot of ownWindowSlots(entry, window)) visit(slot);
     if (low === undefined || high === undefined) continue;
-    const extremes = withUnit(context, key, seriesLabel(context, key).spoken);
-    const at = (slot: number) => (ownSlotDated(context, key, slot) ?? slotLabel(context, slot)).spoken;
-    sentences.push(
-      strings.descriptionSeries(
-        extremes.label,
-        extremes.value(low.value),
-        at(low.slot),
-        extremes.value(high.value),
-        at(high.slot)
-      )
-    );
+    sentences.push(extremesSentence(context, key, low, high));
   }
   // Each multi-series stack's lowest and highest total over the window, after the series.
   for (const { id, keys } of model.stacks) {

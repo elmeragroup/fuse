@@ -32,7 +32,7 @@ export type ValueDomain = {
   readonly ticks: readonly number[];
 };
 
-/** Every value axis aims for 5 ticks, after Recharts' default and the Figma price chart. */
+/** Every value axis aims for 5 ticks, as the Figma price chart does. */
 const TICK_COUNT = 5;
 
 /**

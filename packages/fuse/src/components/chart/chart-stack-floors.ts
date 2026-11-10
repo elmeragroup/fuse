@@ -18,8 +18,8 @@ import { useId, useLayoutEffect, useMemo } from "react";
 
 import type { ChartMotion } from "./chart-motion";
 import { settleFloors, zeroSide } from "./layout/floor-settle";
-import type { FloorSpan } from "./layout/floor-settle";
-import type { PlotFrame, StackPlace } from "./layout/plot-frame";
+import type { FloorAxis, FloorSpan } from "./layout/floor-settle";
+import type { StackPlace } from "./layout/plot-frame";
 import { sameItems } from "./layout/same-items";
 
 /** The stack floors of one motion loop's marks. */
@@ -31,7 +31,7 @@ export type StackFloors = {
    * @param mark - The mark's name, unique among the loop's mounted marks.
    * @param stack - The stack the mark draws in.
    * @param spans - The mark's spans in this frame, each named by its position in the list.
-   * @param frame - The layout's frame the mark draws in.
+   * @param frame - The floor axis the mark draws along: a frame's, from `floorAxisOf`, or a dial's.
    * @param paint - Paint the mark from the numbers it recorded, given for each span 1 where it
    *   keeps its floor and 0 where it does not.
    */
@@ -39,7 +39,7 @@ export type StackFloors = {
     mark: string,
     stack: string,
     spans: readonly FloorSpan[],
-    frame: PlotFrame,
+    frame: FloorAxis,
     paint: (kept: Uint8Array) => void
   ) => void;
   /**
@@ -50,10 +50,10 @@ export type StackFloors = {
    *
    * @param stack - The stack.
    * @param reader - The reader's own span, built as a mark's is.
-   * @param frame - The layout's frame the reader draws in.
+   * @param frame - The floor axis the reader draws along.
    * @returns The place, or undefined.
    */
-  readonly placeOver: (stack: string, reader: FloorSpan, frame: PlotFrame) => StackPlace | undefined;
+  readonly placeOver: (stack: string, reader: FloorSpan, frame: FloorAxis) => StackPlace | undefined;
   /**
    * Redraw something that reads a stack's floors whenever they change, even while its own numbers
    * rest.
@@ -156,7 +156,7 @@ export function useStackSeat(
 }
 
 /** What a mark recorded last: its stack, its spans and the frame it draws in. */
-type Recorded = { readonly stack: string; readonly spans: readonly FloorSpan[]; readonly frame: PlotFrame };
+type Recorded = { readonly stack: string; readonly spans: readonly FloorSpan[]; readonly frame: FloorAxis };
 
 /** A series' places by device pixel column on each side: -1 none, 0 a span without its floor, 1 with. */
 type Cover = { readonly from: number; readonly above: Int8Array; readonly below: Int8Array };

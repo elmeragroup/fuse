@@ -3,11 +3,12 @@
 import { RadialChart } from "@elmeragroup/fuse/chart";
 import type { ChartConfig } from "@elmeragroup/fuse/chart";
 
+// This month's consumption so far against each appliance group's budget, in kilowatt-hours.
 const rings = [
   { budget: "heating", kwh: 412, limit: 500 },
   { budget: "water", kwh: 168, limit: 200 },
-  { budget: "charging", kwh: 233, limit: 180 },
-] as const;
+  { budget: "charging", kwh: 133, limit: 180 },
+];
 
 const config = {
   heating: { label: "Heating", color: "chart-1" },
@@ -24,14 +25,14 @@ export function RadialChartBudgets() {
       valueKey="kwh"
       maxKey="limit"
       valueFormat={{ preset: "energy", unit: "kWh", maximumFractionDigits: 0 }}
-      innerRadius={0.3}
       aria-label="Usage against budget this month">
       <RadialChart.Track />
       <RadialChart.Bar />
       <RadialChart.Center>
         <RadialChart.CenterValue />
-        <RadialChart.CenterLabel>of</RadialChart.CenterLabel>
-        <RadialChart.CenterMax />
+        <RadialChart.CenterLabel>
+          of <RadialChart.CenterMax />
+        </RadialChart.CenterLabel>
       </RadialChart.Center>
       <RadialChart.Legend />
       <RadialChart.Tooltip />

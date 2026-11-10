@@ -11,7 +11,80 @@ const CONTRACT_ROLES = {
   "pie-chart": "layout",
   "radial-chart": "layout",
   "radar-chart": "layout",
+  "clock-chart": "layout",
   "chart-frame": "layout",
+  // The polar frame, its aspect-locked cell and the cell's server SVG, which SPEC's section 10
+  // amendment adds: the frame lays out its parts as the cartesian frame does, and the cell and
+  // its SVG are plot output at the polar size, which follows no density.
+  "chart-polar-frame": "layout",
+  "chart-polar-cell": "fixed",
+  "chart-polar-plot": "fixed",
+  // CONTRACT section 10's Pie, Labels, Track, Center and PieChart.Glow rows, and the leaving slice's
+  // ghost, which SPEC's D5 adds: plot output and its 12 px text, which follow no density.
+  "pie-chart-pie": "fixed",
+  "pie-chart-sector": "fixed",
+  "pie-chart-ghost": "fixed",
+  "pie-chart-labels": "fixed",
+  "pie-chart-label": "fixed",
+  "pie-chart-leader": "fixed",
+  "pie-chart-track": "fixed",
+  "pie-chart-center": "fixed",
+  "pie-chart-center-value": "fixed",
+  "pie-chart-center-share": "fixed",
+  "pie-chart-center-max": "fixed",
+  "pie-chart-center-label": "fixed",
+  "pie-chart-center-name": "fixed",
+  "pie-chart-glow": "fixed",
+  // CONTRACT section 10's RadialChart.Bar row.
+  "radial-chart-bar": "fixed",
+  "radial-chart-ring": "fixed",
+  // CONTRACT section 10's radar rows: its grid, axes, marks and glow, all fixed 12 px chart parts.
+  "radar-chart-grid": "fixed",
+  "radar-chart-grid-ring": "fixed",
+  "radar-chart-spoke": "fixed",
+  "radar-chart-angle-axis": "fixed",
+  "radar-chart-angle-label": "fixed",
+  "radar-chart-radius-axis": "fixed",
+  "radar-chart-radius-label": "fixed",
+  "radar-chart-area": "fixed",
+  "radar-chart-area-path": "fixed",
+  "radar-chart-line": "fixed",
+  "radar-chart-line-path": "fixed",
+  "radar-chart-dots": "fixed",
+  "radar-chart-dot": "fixed",
+  "radar-chart-active-dot": "fixed",
+  "radar-chart-glow": "fixed",
+  // CONTRACT section 10's clock rows, from CLOCKCHART.md: its grid, axes, marks, hands, references and centre.
+  "clock-chart-grid": "fixed",
+  "clock-chart-grid-ring": "fixed",
+  "clock-chart-spoke": "fixed",
+  "clock-chart-angle-axis": "fixed",
+  "clock-chart-angle-label": "fixed",
+  "clock-chart-radius-axis": "fixed",
+  "clock-chart-radius-label": "fixed",
+  "clock-chart-line": "fixed",
+  "clock-chart-line-path": "fixed",
+  "clock-chart-area": "fixed",
+  "clock-chart-area-path": "fixed",
+  "clock-chart-column": "fixed",
+  "clock-chart-wedge": "fixed",
+  "clock-chart-dots": "fixed",
+  "clock-chart-dot": "fixed",
+  "clock-chart-active-dot": "fixed",
+  "clock-chart-marker": "fixed",
+  "clock-chart-value-labels": "fixed",
+  "clock-chart-value-label": "fixed",
+  "clock-chart-glow": "fixed",
+  "clock-chart-scrubber": "fixed",
+  "clock-chart-now": "fixed",
+  "clock-chart-now-path": "fixed",
+  "clock-chart-scrubber-path": "fixed",
+  "clock-chart-reference-path": "fixed",
+  "clock-chart-reference-line": "fixed",
+  "clock-chart-reference-area": "fixed",
+  "clock-chart-center": "fixed",
+  "clock-chart-center-label": "fixed",
+  "clock-chart-active-value": "fixed",
   "chart-panel": "layout",
   "chart-plot": "fixed",
   "chart-surface": "fixed",
@@ -35,7 +108,7 @@ const CONTRACT_ROLES = {
   "chart-value-label": "fixed",
   "chart-crosshair": "fixed",
   "chart-crosshair-mark": "fixed",
-  // Chart.SlotLabel, which the bklit polish run added after section 10: plot output in the axis's
+  // Chart.SlotLabel, which the polish run added after section 10: plot output in the axis's
   // fixed 12 px type, so it follows no density, as the ValueLabel pill does.
   "chart-slot-label": "fixed",
   "chart-reference-line": "fixed",
@@ -107,7 +180,7 @@ describe("chart density roles", () => {
   it("declares every written chart slot with its section 10 role", () => {
     const declared = Object.fromEntries(
       Object.entries(PART_DENSITY).filter(([slot]) =>
-        /^(sparkline|chart|pie-chart|radial-chart|radar-chart)(-|$)/u.test(slot)
+        /^(sparkline|chart|pie-chart|radial-chart|radar-chart|clock-chart)(-|$)/u.test(slot)
       )
     );
     expect(declared).toEqual(CONTRACT_ROLES);

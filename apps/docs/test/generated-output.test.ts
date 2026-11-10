@@ -159,6 +159,7 @@ const CHART_PAGES = new Set([
   "pie-chart",
   "radial-chart",
   "radar-chart",
+  "clock-chart",
   "scatter-chart",
   "sparkline",
 ]);
@@ -183,6 +184,7 @@ describe("component outlines", () => {
       "area-chart",
       "bar-chart",
       "chart",
+      "clock-chart",
       "line-chart",
       "pie-chart",
       "radar-chart",

@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * The pointer-following glides on bklit's springs. A follower writes its mark's resting geometry at
+ * The pointer-following glides on `CHART_SPRINGS`. A follower writes its mark's resting geometry at
  * once, so every attribute and every reader sees the active slot, and `glideFrom` plays a Web
  * Animation of `translate` from where the mark shows back to none. A step mid-glide replaces the
  * running glide with one from the offset it shows now, which the easing the animation plays gives
@@ -10,6 +10,7 @@
  * move as one, and an active dot rides its line across the slot axis as it goes.
  */
 import type { ChartStore } from "./chart-store";
+import { FOLLOW_SPEEDS } from "./layout/motion";
 import { rideAt } from "./layout/ride";
 import type { RideKeyframe } from "./layout/ride";
 import { easingCurve, followSpring, linearEasing, springEasing } from "./layout/spring";
@@ -89,15 +90,28 @@ export function springTiming(spring: Spring): Timing {
 }
 
 /**
- * The spring a step moves the crosshair and the active dots on: `follow` for a keyboard step, and
- * one that quickens with the pointer's speed for a pointer step. Every follower reads the same
- * store in the same step, so all of them take the same spring.
+ * The spring a step moves the crosshair and the active dots on: `FOLLOW_FASTEST` for a keyboard
+ * step, which wants the least motion, so an arrow key held down never trails, and one that quickens
+ * with the pointer's speed for a pointer step. Every follower reads the same store in the same step,
+ * so all of them take the same spring.
  *
  * @param store - Root's store.
  * @returns The spring.
  */
 export function stepSpring(store: ChartStore): Spring {
-  return followSpring(store.get().source === "keyboard" ? null : (store.pointer()?.speed ?? null));
+  return followSpring(
+    store.get().source === "keyboard" ? FOLLOW_SPEEDS.fast : (store.pointer()?.speed ?? null)
+  );
+}
+
+/**
+ * The spring of a polar step that leaps across the dial, faster than the pointer's pace would carry
+ * it: `FOLLOW_FASTEST`, the keyboard step's, since the pointer is already where the step lands.
+ *
+ * @returns The spring.
+ */
+export function leapSpring(): Spring {
+  return followSpring(FOLLOW_SPEEDS.fast);
 }
 
 /**

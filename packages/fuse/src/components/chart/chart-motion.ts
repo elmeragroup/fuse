@@ -79,7 +79,21 @@ export type Placement =
     }
   | { readonly kind: "settle"; readonly scale: PlotScale }
   | { readonly kind: "join"; readonly leads: readonly JoinLead[] }
-  | { readonly kind: "enter"; readonly from: MarkValues; readonly delay: number };
+  | {
+      readonly kind: "enter";
+      readonly from: MarkValues;
+      readonly delay: number;
+      /**
+       * How long the entrance moves the mark, in milliseconds, the update's 480 ms by default. The
+       * polar entrance runs over `--chart-intro`, 1 s.
+       */
+      readonly duration?: number;
+      /**
+       * "linear" moves the numbers at a steady pace, as a progress the mark's writer eases itself,
+       * such as the clock entrance's. The update curve by default.
+       */
+      readonly curve?: "linear";
+    };
 
 /**
  * One mark a follower joins. A lead either reads the follower's numbers from that mark's, or lends
@@ -242,9 +256,10 @@ export type ChartMotion = {
   readonly eachLanding: (visit: LandingVisit) => void;
   /**
    * Tell a party when the loop writes a batch of marks: one frame's moving marks, a finish or a
-   * resize's remapping. A write outside a batch, such as a placement's, stands alone.
+   * resize's remapping. A write outside a batch, such as a placement's, stands alone. It returns
+   * the party's leave, for a party that ends before its loop does.
    */
-  readonly batches: (party: MotionBatch) => void;
+  readonly batches: (party: MotionBatch) => () => void;
   /**
    * Write a batch of marks outside the loop's own frames, as a reader that draws each mark where it
    * lands and back does, so the parties `batches` tells settle once for the batch.
@@ -263,6 +278,10 @@ type Tween = {
   /** When the clock started, or infinity for an entrance the hold keeps waiting. */
   readonly start: number;
   readonly delay: number;
+  /** How long the tween runs, the update's duration when undefined. */
+  readonly duration?: number;
+  /** "linear" for a steady pace, the update curve when undefined. */
+  readonly curve?: "linear";
 };
 
 /**
@@ -512,8 +531,11 @@ export function createChartMotion(
         // An entrance that waited starts in the first frame after `play`, so its first painted frame
         // draws its start, however long the plot waited or the tab stayed hidden.
         if (tween.start === Number.POSITIVE_INFINITY) mark.tween = tween = { ...tween, start: time };
-        const progress = Math.min(1, Math.max(0, (time - tween.start - tween.delay) / CHART_UPDATE_MS));
-        mark.eased = progress >= 1 ? 1 : ease(progress);
+        const progress = Math.min(
+          1,
+          Math.max(0, (time - tween.start - tween.delay) / (tween.duration ?? CHART_UPDATE_MS))
+        );
+        mark.eased = progress >= 1 ? 1 : tween.curve === "linear" ? progress : ease(progress);
         // The last frame writes the target itself, so the DOM ends on the numbers React rendered.
         if (progress >= 1) mark.drawn = tween.rest ?? tween.to;
         else {
@@ -672,7 +694,9 @@ export function createChartMotion(
         for (const mark of moving) {
           if (mark.tween === null) continue;
           // A frame's list is drawn into again, so the restart keeps a copy.
-          mark.tween = { ...mark.tween, from: [...mark.drawn], start, delay: 0 };
+          // A restart runs on the update's clock, so an entrance it interrupts takes 480 ms from here.
+          const { duration: _entrance, ...restarted } = mark.tween;
+          mark.tween = { ...restarted, from: [...mark.drawn], start, delay: 0 };
           mark.eased = 0;
         }
       }
@@ -723,12 +747,15 @@ export function createChartMotion(
       return;
     }
     if (placement.kind === "enter") {
-      const tween = {
+      const entering: Tween = {
         from: placement.from,
         to: target,
         start: held ? Number.POSITIVE_INFINITY : startTime(),
         delay: placement.delay,
       };
+      const timed =
+        placement.duration === undefined ? entering : { ...entering, duration: placement.duration };
+      const tween = placement.curve === undefined ? timed : { ...timed, curve: placement.curve };
       run(id, write, tween, axes, owner);
       return;
     }
@@ -830,6 +857,9 @@ export function createChartMotion(
     batch,
     batches(party) {
       parties.add(party);
+      return () => {
+        parties.delete(party);
+      };
     },
     eachLanding(visit) {
       for (const { tween, write, drawn, axes } of moving) {

@@ -3,6 +3,7 @@
 import { use, useMemo } from "react";
 import type { ReactElement, ReactNode } from "react";
 
+import { useActiveIndex } from "./chart-active-point";
 import { attachJoin, copyBefore, pointAxes, useAttachedMark } from "./chart-attached";
 import type { AttachedCopy, FollowerJoin } from "./chart-attached";
 import {
@@ -19,13 +20,8 @@ import { useChartFollower } from "./chart-followers";
 import type { JoinLead, MarkValues } from "./chart-motion";
 import { useFirstDraw } from "./chart-motion-mark";
 import { useChartFrame } from "./chart-plot";
-import {
-  ChartDatumContext,
-  ChartHeadlineContext,
-  fallbackSlot,
-  readingAt,
-  useActiveSlot,
-} from "./chart-readout";
+import { ChartDatumContext, ChartHeadlineContext } from "./chart-scope-contexts";
+import { fallbackSlot, readingAt } from "./chart-series-readout";
 import type { ChartFallback, ChartLayerProps, ValueFormat } from "./chart-types";
 import { formatValue } from "./format/value-format";
 import { barCellAt, barEndValue, barTip } from "./layout/bar-geometry";
@@ -85,7 +81,9 @@ export function ChartActiveValue({
   const layout = useChartLayout("Chart.ActiveValue");
   assertKnownKey("Chart.ActiveValue", context.config, dataKey);
   const exposed = use(ChartHeadlineContext);
-  const slot = useActiveSlot(context, true) ?? fallbackSlot(context, dataKey, fallback);
+  const slot =
+    useActiveIndex({ store: context.store, window: context.model.window }, true) ??
+    fallbackSlot(context, dataKey, fallback);
   const reading = slot === null ? undefined : readingAt(context, dataKey, slot);
   const label =
     reading?.kind === "reading"
@@ -251,6 +249,7 @@ function PlotValue({
       <span
         ref={markRef}
         data-slot="chart-active-value"
+        data-orientation={context.orientation}
         aria-hidden="true"
         className={className}
         style={{
@@ -326,6 +325,7 @@ export function ChartActiveValueLine({
       <div
         ref={markRef}
         data-slot="chart-active-value-line"
+        data-orientation={context.orientation}
         aria-hidden="true"
         className={className}
         style={style}>

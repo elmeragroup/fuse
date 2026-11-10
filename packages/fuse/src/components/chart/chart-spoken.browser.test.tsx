@@ -8,6 +8,7 @@ import { virtual } from "@guidepup/virtual-screen-reader";
 import { afterEach, describe, expect, it } from "vitest";
 
 import "../../../dist/styles.css";
+import { phrasesAfter, startReader as start } from "../../../test/chart/spoken";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
 import type { SupportedLocale } from "../../intl/locale-context";
@@ -88,22 +89,6 @@ const energy = { preset: "energy", unit: "kWh", maximumFractionDigits: 1 } as co
 afterEach(async () => {
   await virtual.stop();
 });
-
-/** Start vsr on the host with focus on the button before the chart. */
-async function start(host: HTMLElement): Promise<void> {
-  host.querySelector("button")?.focus();
-  await virtual.start({ container: host });
-}
-
-/** Press each key and return the last phrase after it. */
-async function phrasesAfter(keys: readonly (readonly [string, number])[]): Promise<string[]> {
-  const heard: string[] = [];
-  for (const [key, times] of keys) {
-    for (let press = 0; press < times; press += 1) await virtual.press(key);
-    heard.push((await virtual.spokenPhraseLog()).at(-1) ?? "");
-  }
-  return heard;
-}
 
 /** Read on with vsr's virtual cursor until the table ends, and return the row phrases. */
 async function tableRows(): Promise<string[]> {

@@ -1,8 +1,13 @@
 ---
 lede: >
-  Preview. Radar charts with at most 4 series over one spoke per row.
+  Preview. Radar charts, one spoke per row and up to 4 series as polygons over them.
 ---
 
+import { RadarChartAreas } from "./demos/radar-chart-areas";
+import { RadarChartDeviation } from "./demos/radar-chart-deviation";
+import { RadarChartEmpty } from "./demos/radar-chart-empty";
+import { RadarChartHours } from "./demos/radar-chart-hours";
+import { RadarChartLoading } from "./demos/radar-chart-loading";
 import { RadarChartWeekdays } from "./demos/radar-chart-weekdays";
 
 import { componentMetadata } from "../../../../lib/component-page";
@@ -13,12 +18,50 @@ export const metadata = componentMetadata("radar-chart");
 
 <Prose>
 
-The chart entry is a preview. This chart renders in a later release of the preview entry, so the demo below stays empty until then. Names and props can change until Fuse's first stable release.
+The chart entry is a preview. Names and props can change until Fuse's first stable release. The first row's spoke points to 12 o'clock and the rest follow clockwise. The radius is a value axis: the centre is 0, or the domain's minimum when a value is negative, and the rim is the largest value or `max`. A filled radar is an Area and a Line, and an outline radar is a Line alone.
+
+Hover a spoke, or focus the chart and use the arrow keys, to read it. Left and right move between spokes, and up and down move between series. The series other than the nearest dim, and the active dot rides the polygon's edges to the next spoke. Where a reading is missing, the Line leaves out the edges either side of it, and the dot fades out over that break and back in past it. The grid and the labels draw at once, and each series grows from the centre the first time the chart comes into view. On a touch screen, a drag that starts on the dial scrubs round it instead of scrolling the page, which scrolls from beside the dial. A tap pins the tooltip, and a second tap on the same spoke releases it.
 
 </Prose>
 
+## Profiles
+
+A cyclic profile, such as the days of a week, reads well round a radar, since the last spoke sits beside the first. `variant="dashed"` sets last year's line apart.
+
 <Demo slug="radar-chart" id="weekdays" title="Weekdays" file="radar-chart-weekdays.tsx">
   <RadarChartWeekdays />
+</Demo>
+
+The 24 clock hours draw on a circular grid, with September as a quiet reference line.
+
+<Demo slug="radar-chart" id="hours" title="Hours of the day" file="radar-chart-hours.tsx">
+  <RadarChartHours />
+</Demo>
+
+## Comparing series
+
+A radar compares at most 4 series. A fifth config key fails the type check, and at runtime it throws in development and draws the first four in production. This demo compares four price areas' use per metering point on 16 October 2026, by consumption group, as an index where 100 is the group's use per metering point over all five areas. NO1's industry uses a quarter of the national mean per meter.
+
+<Demo slug="radar-chart" id="areas" title="Price areas" file="radar-chart-areas.tsx">
+  <RadarChartAreas />
+</Demo>
+
+A negative value moves the centre to the domain's minimum, and the grid draws a solid zero ring. Each area fills between the zero ring and its value, so a fill always reads as distance from 0. This demo is a server component.
+
+<Demo slug="radar-chart" id="deviation" title="Deviation from the mean" file="radar-chart-deviation.tsx">
+  <RadarChartDeviation />
+</Demo>
+
+## Loading and empty states
+
+<Demo slug="radar-chart" id="loading" title="Loading" file="radar-chart-loading.tsx">
+  <RadarChartLoading />
+</Demo>
+
+A chart with no reading shows `RadarChart.Empty`, and it has no tab stop.
+
+<Demo slug="radar-chart" id="empty" title="No data" file="radar-chart-empty.tsx">
+  <RadarChartEmpty />
 </Demo>
 
 <ApiReference slug="radar-chart" />

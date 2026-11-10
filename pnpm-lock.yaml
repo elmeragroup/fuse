@@ -542,6 +542,9 @@ importers:
       '@elmeragroup/typescript-config':
         specifier: workspace:*
         version: link:../../tooling/typescript
+      '@fontsource/inter':
+        specifier: 'catalog:'
+        version: 5.3.0
       '@guidepup/virtual-screen-reader':
         specifier: 'catalog:'
         version: 0.33.0

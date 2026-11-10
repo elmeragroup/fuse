@@ -23,6 +23,7 @@ const PAIRS: ReadonlyArray<
   ["PieChart", entry.PieChart, facade.PieChart],
   ["RadialChart", entry.RadialChart, facade.RadialChart],
   ["RadarChart", entry.RadarChart, facade.RadarChart],
+  ["ClockChart", entry.ClockChart, facade.ClockChart],
   ["ScatterChart", entry.ScatterChart, facade.ScatterChart],
 ];
 

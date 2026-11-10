@@ -1,38 +1,22 @@
 "use client";
 
 /**
- * What the tooltip, legend and headline parts print, read from Root's model. The active point is
- * Root's store state, and a template row supplies its own key, so every readout part reads the
- * same slot and key the option names. It also holds the contexts that say where a part sits, which
- * Root resets for its own parts.
+ * How the shared readout parts read their Root: the hooks over the Root's readout port, which give
+ * every part the same active index and key the option names. The contexts that say where a part
+ * sits live in `chart-scope-contexts`, which every Root's own scope resets. A template row supplies
+ * its own key. The module reads
+ * no family's model, so a family's route ships only its own.
  */
-import { createContext, use } from "react";
+import { use } from "react";
 
-import { assertKnownKey } from "./chart-context";
-import type { ChartRootContextValue } from "./chart-context";
-import { useChartStore } from "./chart-store";
-import { ownSlotLabel, qualityWords, stackTotalAt } from "./chart-text";
-import type { ChartFallback, ChartFractionDigits, ChartThresholdSide, ValueFormat } from "./chart-types";
-import { CHART_STRINGS } from "./format/chart-strings";
+import type { SupportedLocale } from "../../intl/locale-context";
+import { useActivePoint } from "./chart-active-point";
+import { ChartReadoutContext } from "./chart-readout-port";
+import type { ChartReadout } from "./chart-readout-port";
+import { ChartLegendSideContext, ChartRowContext } from "./chart-scope-contexts";
+import type { ChartFractionDigits, ChartThresholdSide } from "./chart-types";
 import { formatValue } from "./format/value-format";
-import { ownWindowSlots } from "./layout/coarse-slots";
-import { keywordSlots, nowSlotOf } from "./layout/datum";
-import type { Reading } from "./layout/readings";
-import { seriesOf } from "./layout/series-of";
-import { roundShares } from "./layout/shares";
-
-/** The config key a template row renders for, such as one TooltipItems row. */
-export const ChartRowContext = createContext<string | null>(null);
-
-/** A threshold side's legend entry: the series it belongs to and the side it shows. */
-type LegendSide = { readonly key: string; readonly side: ChartThresholdSide };
-
-/**
- * The legend entry of a threshold side around a part, null outside the legend entries of a
- * threshold series. The series key travels with the side because a nested row, such as a
- * LegendToggle or a TooltipItems row, replaces `ChartRowContext` and leaves this context alone.
- */
-export const ChartLegendSideContext = createContext<LegendSide | null>(null);
+import { ChartCompositionError } from "./layout/errors";
 
 /**
  * The threshold side a Swatch or a SeriesLabel of one series shows: its legend entry's side, or
@@ -49,34 +33,30 @@ export function useLegendSide(key: string | null): ChartThresholdSide | null {
 }
 
 /**
- * Whether the readout parts below follow the active point. The tooltip does, and a static legend
- * does not, so a pointer move renders no legend swatch or label.
+ * Read the enclosing Root's readout.
+ *
+ * @param part - The calling part's display name, which the error names.
+ * @returns The Root's readout.
+ * @throws {ChartCompositionError} `part-outside-root` when no Root with a readout encloses the part.
  */
-export const ChartLiveContext = createContext(false);
-
-// Root resets every context in this file. The three below live here, so Root resets them without
-// importing the Crosshair, Headline or ActiveValue module.
-
-/** Whether a part sits inside a Crosshair, which a SlotLabel needs. */
-export const ChartCrosshairContext = createContext(false);
-
-/** Whether a part sits inside a Headline, where an ActiveValue is exposed text. */
-export const ChartHeadlineContext = createContext(false);
-
-/**
- * The datum a ValueLabel prints, which the enclosing ActiveValueLine or Marker provides: a key and
- * a slot, or the active slot when `slot` is null.
- */
-export const ChartDatumContext = createContext<{ readonly key: string; readonly slot: number | null } | null>(
-  null
-);
+export function useChartReadout(part: string): ChartReadout {
+  const readout = use(ChartReadoutContext);
+  if (readout === null) {
+    throw new ChartCompositionError(
+      part,
+      "part-outside-root",
+      "must be used within a chart's Root. Wrap the chart's parts in Chart.Root, BarChart.Root, AreaChart.Root, LineChart.Root, PieChart.Root, RadialChart.Root, RadarChart.Root or ClockChart.Root."
+    );
+  }
+  return readout;
+}
 
 /**
  * The key a readout part prints: its own `dataKey`, else its template row's, else the active
  * point's nearest or focused key. An explicit `dataKey` must name a config key.
  *
  * @param part - The part's display name, which the error names.
- * @param context - The Root.
+ * @param readout - The Root's readout.
  * @param own - The part's `dataKey`.
  * @param near - The active point's key, or null under "all series".
  * @returns The key, or null when none applies.
@@ -84,124 +64,53 @@ export const ChartDatumContext = createContext<{ readonly key: string; readonly 
  */
 export function useReadoutKey(
   part: string,
-  context: ChartRootContextValue,
+  readout: ChartReadout,
   own: string | undefined,
   near: string | null
 ): string | null {
   const row = use(ChartRowContext);
-  if (own !== undefined) assertKnownKey(part, context.config, own);
+  if (own !== undefined) readout.assertKey(part, own);
   return own ?? row ?? near;
 }
 
-/** The active slot and the nearest or focused series key, each null when there is none. */
-export type ActivePoint = { readonly slot: number | null; readonly key: string | null };
+/** The active index and the key a readout part prints there, each null when there is none. */
+export type ActiveItem = { readonly index: number | null; readonly key: string | null };
 
 /**
- * The active slot inside the effective window, or null, for a part that prints no series key. It
- * never renders when the pointer moves between series inside one slot. Outside a live scope it
- * reads null and never renders on a pointer move.
+ * The active index inside the readout's window and the nearest or focused key there, or null.
+ * Outside a live scope it reads null and never renders on a pointer move, and inside a closing
+ * tooltip it reads the point the popup held. A part that prints no key reads `useActiveIndex`.
  *
- * @param context - The Root.
+ * @param readout - The Root's readout.
  * @param live - Whether to follow the store, which forces it on for parts such as LegendValue.
- * @returns The slot index.
+ * @returns The active index and its key.
  */
-export function useActiveSlot(context: ChartRootContextValue, live?: boolean): number | null {
-  const scoped = use(ChartLiveContext);
-  const follow = live ?? scoped;
-  const active = useChartStore(context.store, (snapshot) => (follow ? snapshot.active : null));
-  const window = context.model.window;
-  return active !== null && window !== null && active >= window.first && active <= window.last
-    ? active
-    : null;
-}
-
-/**
- * The active slot inside the effective window and the nearest or focused series key, or null.
- * Outside a live scope it reads null and never renders on a pointer move. A part that prints no
- * key reads `useActiveSlot`.
- *
- * @param context - The Root.
- * @param live - Whether to follow the store, which forces it on for parts such as LegendValue.
- * @returns The slot index and the nearest or focused key.
- */
-export function useActivePoint(context: ChartRootContextValue, live?: boolean): ActivePoint {
-  const scoped = use(ChartLiveContext);
-  const follow = live ?? scoped;
-  const slot = useActiveSlot(context, follow);
-  const near = useChartStore(context.store, (snapshot) => (follow ? snapshot.near : null));
-  return { slot, key: near === null ? null : (context.model.series[near]?.key ?? null) };
-}
-
-/**
- * One key's reading at one slot.
- *
- * @param context - The Root.
- * @param key - A config key.
- * @param slot - A slot index.
- * @returns The reading, or undefined for an unknown key.
- */
-export function readingAt(context: ChartRootContextValue, key: string, slot: number): Reading | undefined {
-  return seriesOf(context.model, key)?.readings[slot];
-}
-
-/**
- * A reading as a tooltip row prints it: the value with its quality word in parentheses, or the
- * missing or pending word.
- *
- * @param context - The Root.
- * @param key - A config key.
- * @param slot - A slot index.
- * @param format - A format that replaces the series' own.
- * @returns The visual text.
- */
-export function readingText(
-  context: ChartRootContextValue,
-  key: string,
-  slot: number,
-  format: ValueFormat | undefined
-): string {
-  const strings = CHART_STRINGS[context.locale];
-  const reading = readingAt(context, key, slot);
-  if (reading === undefined || reading.kind === "pending") return strings.pending;
-  if (reading.kind === "missing") return strings.missing;
-  const value = formatValue(
-    context.locale,
-    reading.value,
-    format ?? context.config[key]?.format ?? {},
-    "full"
-  ).text;
-  // A coarse series' own slot leads, then the quality word and the projection word, each on its own.
-  const own = ownSlotLabel(context, key, slot);
-  const series = seriesOf(context.model, key);
-  const words = [
-    ...(own === null ? [] : [own.text]),
-    ...qualityWords(context.locale, reading.quality, series !== undefined && slot >= series.projectedFrom),
-  ];
-  return words.length === 0 ? value : `${value} (${words.join(", ")})`;
+export function useActiveItem(readout: ChartReadout, live?: boolean): ActiveItem {
+  const { index, near } = useActivePoint(readout, live);
+  return { index, key: readout.pointKey(index, near) };
 }
 
 /**
  * A share as a percentage at the format's digits, or the dictionary dash.
  *
- * @param context - The Root.
+ * @param locale - The Root's locale.
  * @param share - The share in percent, or null for a zero denominator.
  * @param format - The share's digits.
  * @returns The visual text.
  */
 export function shareText(
-  context: ChartRootContextValue,
+  locale: SupportedLocale,
   share: number | null,
   format: ChartFractionDigits | undefined
 ): string {
   if (share === null) return "–";
-  const digits = format?.maximumFractionDigits ?? format?.minimumFractionDigits ?? 0;
   return formatValue(
-    context.locale,
+    locale,
     share / 100,
     {
       style: "percent",
       minimumFractionDigits: format?.minimumFractionDigits ?? 0,
-      maximumFractionDigits: digits,
+      maximumFractionDigits: shareDigits(format),
     },
     "full"
   ).text;
@@ -215,89 +124,4 @@ export function shareText(
  */
 export function shareDigits(format: ChartFractionDigits | undefined): number {
   return format?.maximumFractionDigits ?? format?.minimumFractionDigits ?? 0;
-}
-
-/**
- * Each key's share of the sum of the absolute readings of every key at one slot, rounded together.
- *
- * @param context - The Root.
- * @param slot - A slot index.
- * @param digits - The fraction digits.
- * @returns Each key's share in percent, or null for a zero denominator.
- */
-export function slotShares(
-  context: ChartRootContextValue,
-  slot: number,
-  digits: number
-): Map<string, number | null> {
-  const { series } = context.model;
-  const parts = series.map(({ readings }) => {
-    const reading = readings[slot];
-    return reading?.kind === "reading" ? reading.value : null;
-  });
-  const shares = roundShares(parts, digits);
-  return new Map(series.map(({ key }, index) => [key, shares[index] ?? null]));
-}
-
-/**
- * Each key's share of the sum of every key's absolute total over the effective window.
- *
- * @param context - The Root.
- * @param digits - The fraction digits.
- * @returns Each key's share in percent, or null for a zero denominator.
- */
-export function windowShares(context: ChartRootContextValue, digits: number): Map<string, number | null> {
-  const { series, window } = context.model;
-  const totals = series.map((entry) => {
-    if (window === null) return 0;
-    let total = 0;
-    // A coarse reading counts once, though every Root slot of its slot holds it.
-    for (const slot of ownWindowSlots(entry, window)) {
-      const reading = entry.readings[slot];
-      if (reading?.kind === "reading") total += reading.value;
-    }
-    return total;
-  });
-  const shares = roundShares(totals, digits);
-  return new Map(series.map(({ key }, index) => [key, shares[index] ?? null]));
-}
-
-/**
- * One stack's net total at a slot, the sum of its present parts.
- *
- * @param context - The Root.
- * @param stack - A stack id that holds two or more keys.
- * @param slot - A slot index.
- * @returns The total and whether a part is missing, or null when no part has a reading.
- */
-export function stackTotal(
-  context: ChartRootContextValue,
-  stack: string,
-  slot: number
-): { readonly total: number; readonly incomplete: boolean } | null {
-  return stackTotalAt(context.model, context.model.stacks.find(({ id }) => id === stack)?.keys ?? [], slot);
-}
-
-/**
- * The slot a fallback keyword selects for one key over the effective window: its first or last
- * reading, its lowest or highest, or the slot that holds `now` while the window shows it.
- *
- * @param context - The Root.
- * @param key - A config key.
- * @param fallback - The keyword.
- * @returns The slot, or null when the keyword selects nothing.
- */
-export function fallbackSlot(
-  context: ChartRootContextValue,
-  key: string,
-  fallback: ChartFallback
-): number | null {
-  const { model } = context;
-  const { window } = model;
-  if (window === null) return null;
-  const readings = seriesOf(model, key)?.readings ?? [];
-  const values = readings.map((reading) => (reading.kind === "reading" ? reading.value : null));
-  // A tie picks its first slot, as `keywordSlots` lists the tied slots in x order.
-  const [slot] = keywordSlots(fallback, { values, window, nowSlot: nowSlotOf(model.domain, context.now) });
-  return slot ?? null;
 }
