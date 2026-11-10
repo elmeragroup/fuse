@@ -67,20 +67,14 @@ export async function shownSide(page: Page): Promise<"Neutral" | "Branded" | "mi
 
 /**
  * Picks `brand` in the landing's brand picker, the same action as any other brand control, and
- * waits for the document to wear it, within `timeout` when given.
+ * waits for the document to wear it.
  */
-export async function pickBrand(
-  page: Page,
-  brand: string,
-  { timeout }: { readonly timeout?: number } = {}
-): Promise<void> {
+export async function pickBrand(page: Page, brand: string): Promise<void> {
   await page
     .getByRole("button")
     .filter({ hasText: `data-theme-brand="${brand}"` })
     .click();
-  await expect
-    .poll(async () => page.locator("html").getAttribute("data-theme-brand"), { timeout })
-    .toBe(brand);
+  await expect.poll(async () => page.locator("html").getAttribute("data-theme-brand")).toBe(brand);
 }
 
 /** The row button for `customer`; its accessible name starts with the order's customer. */

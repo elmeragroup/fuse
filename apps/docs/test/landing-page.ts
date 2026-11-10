@@ -1,6 +1,7 @@
 import type { Locator, Page } from "playwright";
 import { expect } from "vitest";
 
+import { PAGE_WAIT_GUARD } from "./demo-page";
 import { docsBaseUrl } from "./docs-server";
 import { launchSuiteBrowser } from "./suite-browser";
 
@@ -66,7 +67,7 @@ export function launchLandingSuite({
     ) => {
       const context = await browser().newContext({ viewport, reducedMotion, colorScheme });
       const page = await context.newPage();
-      page.setDefaultTimeout(5000);
+      page.setDefaultTimeout(PAGE_WAIT_GUARD);
       if (!shaders) {
         await page.route("**/landing/marks/**", async (route) => route.abort());
       }

@@ -8,7 +8,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 
-import { DESKTOP_VIEWPORT } from "./demo-page";
+import { DESKTOP_VIEWPORT, PAGE_WAIT_GUARD } from "./demo-page";
 import { docsBaseUrl, docsBuildDir } from "./docs-server";
 import { launchSuiteBrowser } from "./suite-browser";
 
@@ -65,6 +65,7 @@ describe("every docs route", () => {
     // axe-core opens a page of its own in the same context, so the page has an explicit one.
     const context = await browser().newContext({ viewport: DESKTOP_VIEWPORT });
     const page = await context.newPage();
+    page.setDefaultTimeout(PAGE_WAIT_GUARD);
     const errors: string[] = [];
     page.on("console", (message) => {
       if (
@@ -80,9 +81,16 @@ describe("every docs route", () => {
       const response = await page.goto(`${docsBaseUrl()}${route}`, { waitUntil: "load" });
       expect(response?.status(), route).toBeLessThan(400);
       await page.waitForLoadState("networkidle");
+      // Frames stay out of the scan: the only framed content, the block previews under
+      // /blocks/<block>/preview, is in ROUTES and checked as a route of its own. Legacy mode runs
+      // one axe.run in the page, which honours iframes: false; the partial runner descends into
+      // every frame whatever the options say. The frame element itself is still checked here.
+      // `options` replaces the whole option object, so it comes before the tags and the rules.
       const results = await new AxeBuilder({ page })
+        .options({ iframes: false })
         .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"])
         .disableRules(DEFERRED_RULES)
+        .setLegacyMode()
         .analyze();
       expect(
         results.violations.map(

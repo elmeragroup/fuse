@@ -1,3 +1,4 @@
+import { availableParallelism } from "node:os";
 import { defineConfig } from "vitest/config";
 
 const shared = {
@@ -43,8 +44,14 @@ export default defineConfig({
           // only after the same check.
           fileParallelism: true,
           maxWorkers: 2,
-          // The route sweep's concurrent tests: five pages at once in its one browser.
-          maxConcurrency: 5,
+          // The route sweep's concurrent tests: up to five pages at once in its one browser, and
+          // never more than the machine has cores, so a 4-vCPU runner keeps four.
+          maxConcurrency: Math.min(5, availableParallelism()),
+          // A hang guard, not a budget: no docs e2e test asserts timing, and a flow that slows
+          // under a loaded runner must not fail for it.
+          testTimeout: 120_000,
+          // The same for every expect.poll: a hang guard, where the default second is a budget.
+          expect: { poll: { timeout: 60_000 } },
           sequence: { groupOrder: 1 },
         },
       },

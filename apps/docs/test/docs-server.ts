@@ -32,8 +32,14 @@ export type DocsServer = {
   close: () => Promise<void>;
 };
 
+/**
+ * How long `next start` may take to answer. A hang guard, not a budget: a starved runner only
+ * starts the server later, and a server that never answers still fails the run.
+ */
+const READY_GUARD_MS = 120_000;
+
 async function waitForServer(url: string, child: ChildProcess): Promise<void> {
-  const deadline = Date.now() + 30_000;
+  const deadline = Date.now() + READY_GUARD_MS;
   while (Date.now() < deadline) {
     if (child.exitCode !== null) {
       throw new Error(`docs production server exited before becoming ready (${String(child.exitCode)})`);

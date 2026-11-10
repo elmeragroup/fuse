@@ -9,6 +9,12 @@ export { launchSuiteBrowser } from "./suite-browser";
 export const DESKTOP_VIEWPORT = { width: 1280, height: 720 } as const;
 
 /**
+ * How long a page's actions and locators wait. A hang guard, not a budget: no docs e2e test
+ * asserts timing, and a step that slows on a loaded runner must not fail for it.
+ */
+export const PAGE_WAIT_GUARD = 60_000;
+
+/**
  * Navigates `page` to a component page and returns the region the docs shell renders
  * around the demo titled `name`, once that demo has hydrated.
  */
@@ -25,7 +31,7 @@ export async function openDemo(page: Page, slug: string, name: string): Promise<
  * @param name - The demo's title.
  */
 async function openDemoAt(page: Page, pathname: string, name: string): Promise<Locator> {
-  page.setDefaultTimeout(5000);
+  page.setDefaultTimeout(PAGE_WAIT_GUARD);
   await page.goto(`${docsBaseUrl()}${pathname}`, { waitUntil: "load" });
   return sharedDemo(page, name);
 }

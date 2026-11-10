@@ -2,7 +2,7 @@ import type { CDPSession, Page, Route } from "playwright";
 import { describe, expect, it } from "vitest";
 
 import { DEFAULT_THEME, DOCUMENT_COLOR_SCHEME } from "../src/lib/theme";
-import { launchSuiteBrowser } from "./demo-page";
+import { launchSuiteBrowser, PAGE_WAIT_GUARD } from "./demo-page";
 import { docsBaseUrl } from "./docs-server";
 import {
   COLOR_SCHEME_BOOTSTRAP_FAILURE_SENTINEL,
@@ -127,6 +127,7 @@ describe("docs first paint with hydration delayed", () => {
         { key: DOCUMENT_COLOR_SCHEME.storageKey, value: stored }
       );
       const page = await context.newPage();
+      page.setDefaultTimeout(PAGE_WAIT_GUARD);
       await page.route("**/*", abortNextScripts);
       await page.goto(`${docsBaseUrl()}/docs`, { waitUntil: "load" });
 
@@ -151,6 +152,7 @@ describe("docs JavaScript-disabled brand", () => {
   it("keeps brand attributes and the Elmera token surface without JavaScript", async () => {
     const context = await browser().newContext({ javaScriptEnabled: false });
     const page = await context.newPage();
+    page.setDefaultTimeout(PAGE_WAIT_GUARD);
     // CDP reads can otherwise race the external stylesheet and see an empty brand.
     await page.goto(`${docsBaseUrl()}/docs`, { waitUntil: "load" });
 
@@ -181,6 +183,7 @@ describe("docs enforcing nonce", () => {
 
   async function openWithCsp(scriptNonce: string | null, cspNonce: string): Promise<Page> {
     const page = await browser().newPage();
+    page.setDefaultTimeout(PAGE_WAIT_GUARD);
     await page.route("**/*", async (route) => {
       if (route.request().resourceType() !== "document") {
         await route.continue();
@@ -231,6 +234,7 @@ describe("docs enforcing nonce", () => {
 describe("docs picker vs document theme", () => {
   it("themes only preview scopes and leaves the document on neutral/elma/private", async () => {
     const page = await browser().newPage();
+    page.setDefaultTimeout(PAGE_WAIT_GUARD);
     const hydrationWarnings: string[] = [];
     page.on("console", (message) => {
       const text = message.text();

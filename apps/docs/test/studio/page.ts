@@ -1,13 +1,10 @@
 import type { Browser, BrowserContext, Locator, Page } from "playwright";
 
-import { readThemeAttributes } from "../demo-page";
+import { PAGE_WAIT_GUARD, readThemeAttributes } from "../demo-page";
 import { docsBaseUrl } from "../docs-server";
 import { collectPageErrors, settleFrames } from "../landing-page";
 
 const STUDIO_DESKTOP = { width: 1440, height: 900 } as const;
-
-/** How long a studio page waits for an element to become ready, and for the seed to load. */
-const READY_TIMEOUT = 5000;
 
 /** The Overview's artboards, by the names the canvas labels them with. */
 export const ARTBOARDS = [
@@ -75,7 +72,7 @@ async function openStudioIn(
   route: StudioRoute = OVERVIEW
 ): Promise<StudioPage> {
   const page = await context.newPage();
-  page.setDefaultTimeout(READY_TIMEOUT);
+  page.setDefaultTimeout(PAGE_WAIT_GUARD);
   const errors = collectPageErrors(page);
   page.on("console", (message) => {
     if (message.type() === "error") {

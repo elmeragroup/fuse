@@ -2,7 +2,7 @@ import { chromium, webkit } from "playwright";
 import type { Browser, Page } from "playwright";
 import { describe, expect, it } from "vitest";
 
-import { waitForDemoHydration } from "./demo-page";
+import { PAGE_WAIT_GUARD, waitForDemoHydration } from "./demo-page";
 import { docsBaseUrl } from "./docs-server";
 import { closeContext, launchSuiteBrowser } from "./suite-browser";
 
@@ -103,7 +103,7 @@ async function hydrateDemo(
     );
   }
   const page = await context.newPage();
-  page.setDefaultTimeout(10_000);
+  page.setDefaultTimeout(PAGE_WAIT_GUARD);
   await page.goto(new URL(pathname, docsBaseUrl()).href, { waitUntil: "domcontentloaded" });
   const demo = page.getByRole("region", { name: demoName, exact: true });
   const stage = demo.locator("[data-demo-stage]");
@@ -121,10 +121,9 @@ async function hydrateDemo(
             }
           }
           return element.querySelector("table") !== null;
-        }),
-      // The wait is on the server's stream, whose late boundary the demo delays by 400 ms, so it
-      // takes the page's own timeout rather than the default second, which slow WebKit can miss.
-      { timeout: 10_000 }
+        })
+      // The wait is on the server's stream, whose late boundary the demo delays by 400 ms; the
+      // project's poll timeout is a hang guard, so a slow engine only waits longer.
     )
     .toBe(true);
   await stage.evaluate((element) => {
