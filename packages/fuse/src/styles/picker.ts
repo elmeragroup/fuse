@@ -3,6 +3,34 @@ import { fieldEntryClass, fieldReads } from "./field-size";
 import { tv } from "./tv";
 
 /**
+ * The range picker's root: a size container its two rows lay out by. Both tiers' range pickers.
+ */
+export const pickerRangeRootClass = cn("@container/picker w-full");
+
+/**
+ * A calendar inside the picker's popover, which is already the card: it drops its own border,
+ * shadow and fill. Both tiers' single pickers.
+ */
+export const pickerPopupCalendarClass = cn("border-none bg-transparent shadow-none");
+
+/**
+ * RangeCalendar's root is bare and the popup pads nothing, so the grid would otherwise sit flush
+ * against the popover border. It pads with the small surface tier, as Calendar's own shell does in
+ * the single picker. Both tiers' range pickers.
+ */
+export const pickerRangeCalendarClass = cn("p-(--surface-pad-sm)");
+
+/**
+ * The pane holding presets beside the calendar: stacked on a phone, side by side from `sm`. The
+ * divider names the border role, the colour fuse.css's base-layer default gives every border, so the
+ * role stays beside the divider. The pane takes no padding or gap, so the divider runs edge to edge
+ * across the popover; the preset group and the calendar each carry their own inset. Both tiers.
+ */
+export const pickerPaneClass = cn(
+  "sm:flex-row sm:divide-x sm:divide-y-0 flex flex-col divide-y divide-border"
+);
+
+/**
  * Shared layout recipe for the two date pickers. The `range` axis selects one segment
  * row or two; both variants borrow their field box, popup, and grid surfaces from the
  * composed components. FieldGroup owns the read-only fill and writes the field size the
@@ -64,12 +92,11 @@ export const pickerVariants = tv({
         // One row that grows to fill the box.
         group: "min-w-[180px]",
         input: "flex min-w-[150px] flex-1",
-        // Calendar's root is a standalone card. Inside the popover, which is already the
-        // card, it keeps only its small-tier inset and drops the border, shadow and fill.
-        calendar: "border-none bg-transparent shadow-none",
+        // Calendar's root is a standalone card; inside the popover it keeps only its inset.
+        calendar: pickerPopupCalendarClass,
       },
       true: {
-        base: "@container/picker w-full",
+        base: pickerRangeRootClass,
         // One grid template in both states; 24rem changes only the column count. Below
         // it the dates stack in the first column beside the row-spanning trigger and the
         // box opts out of FieldGroup's md height so the two rows size to their content.
@@ -88,10 +115,7 @@ export const pickerVariants = tv({
           "hidden text-foreground group-disabled:text-muted-foreground @min-[24rem]/picker:col-start-2 @min-[24rem]/picker:inline forced-colors:text-[ButtonText] forced-colors:group-disabled:text-[GrayText]",
         trigger:
           "col-start-2 row-span-2 row-start-1 @min-[24rem]/picker:col-start-4 @min-[24rem]/picker:row-span-1",
-        // RangeCalendar's root is bare and the dialog pads nothing, so the grid would otherwise
-        // sit flush against the popover border. It pads with the small surface tier, as
-        // Calendar's own shell does in the single picker.
-        calendar: "p-(--surface-pad-sm)",
+        calendar: pickerRangeCalendarClass,
       },
     },
     /**
@@ -107,11 +131,7 @@ export const pickerVariants = tv({
      */
     hasPresets: {
       true: {
-        // The divider names the border role, the colour fuse.css's base-layer default gives
-        // every border, so the role stays in the recipe beside the divider. The pane takes no
-        // padding or gap, so the divider runs edge to edge across the popover; the preset
-        // group and the calendar each carry their own inset.
-        pane: "sm:flex-row sm:divide-x sm:divide-y-0 flex flex-col divide-y divide-border",
+        pane: pickerPaneClass,
       },
       false: {
         pane: "",

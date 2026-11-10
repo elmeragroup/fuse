@@ -902,6 +902,17 @@
       "temporal-date-field-parts.tsx"
     ]
   },
+  "temporal-date-picker": {
+    "title": "Temporal Date Picker",
+    "rsc": "client",
+    "demos": [
+      "temporal-date-picker-basic.tsx",
+      "temporal-date-picker-time.tsx",
+      "temporal-date-picker-presets.tsx",
+      "temporal-date-picker-form.tsx",
+      "temporal-date-picker-controlled.tsx"
+    ]
+  },
   "temporal-range-calendar": {
     "title": "Temporal Range Calendar",
     "rsc": "client",
@@ -910,6 +921,16 @@
       "temporal-range-calendar-months.tsx",
       "temporal-range-calendar-unavailable.tsx",
       "temporal-range-calendar-controlled.tsx"
+    ]
+  },
+  "temporal-range-picker": {
+    "title": "Temporal Range Picker",
+    "rsc": "client",
+    "demos": [
+      "temporal-range-picker-basic.tsx",
+      "temporal-range-picker-months.tsx",
+      "temporal-range-picker-presets.tsx",
+      "temporal-range-picker-form.tsx"
     ]
   },
   "text": {

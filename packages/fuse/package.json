@@ -149,6 +149,14 @@
       "types": "./src/date-field.ts",
       "import": "./src/date-field.ts"
     },
+    "./date-picker": {
+      "types": "./src/date-picker.ts",
+      "import": "./src/date-picker.ts"
+    },
+    "./date-range-picker": {
+      "types": "./src/date-range-picker.ts",
+      "import": "./src/date-range-picker.ts"
+    },
     "./demo-stage-density.css": "./dist/demo-stage-density.css",
     "./description-list": {
       "types": "./src/description-list.ts",

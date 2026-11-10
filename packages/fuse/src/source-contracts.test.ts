@@ -1086,6 +1086,12 @@ describe("runtime listeners and layout motion", () => {
       // segment edit must intercept. The document `selectionchange` keeps a focused segment's
       // selection collapsed, as React Aria's segment does, or Android composes into it.
       "components/date-field/date-input-segment-dom.ts",
+      // `focusin`, in the capture phase, once, on the root node holding a picker and every root
+      // node out to its document, while focus rests on a Base UI focus guard after leaving the
+      // picker's popup: the guard can unmount with the popup before it blurs, so no React handler
+      // of the picker's sees where focus lands, and the picker reports focus leaving only if it
+      // lands outside. Removed when focus lands, and when the Root unmounts.
+      "components/date-picker/picker-focus-boundary.ts",
       // Document `dragover` and `drop`, ref-counted across Roots: a file dropped outside every
       // zone would otherwise open in the tab and replace the page.
       "components/file-upload/document-drop-guard.ts",

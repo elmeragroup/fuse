@@ -100,6 +100,13 @@ export const JS_ENTRY_BUDGETS: readonly JsEntryBudget[] = derive([
   // mergeProps, the four-locale strings and the Temporal core's conversion, kind and bounds. The
   // interim react-aria/date-field it replaces measures 73125.
   { name: "date-field", entryFile: "date-field.js", measuredGzip: 45781 },
+  // 2026-11-09: new entry, measured at 94006 (review r1: the edit session and focus boundary). DateInput and Calendar whole (the picker binds both),
+  // Base UI's Popover with Fuse's overlay portal and Button, the shared picker shell, presets and
+  // strings, and the composite with FieldFrame. The interim react-aria/date-picker measures 110254.
+  { name: "date-picker", entryFile: "date-picker.js", measuredGzip: 94006 },
+  // 2026-11-09: new entry, measured at 94898 (review r1). The same as date-picker with RangeCalendar for
+  // Calendar and the range Root's two Fields. The interim react-aria/date-range-picker measures 111669.
+  { name: "date-range-picker", entryFile: "date-range-picker.js", measuredGzip: 94898 },
   // 2026-11-09: new entry, measured at 19482. temporal-polyfill's global install, including the
   // Intl.DateTimeFormat it installs beside Temporal, and the marker.
   { name: "temporal-polyfill", entryFile: "temporal-polyfill.js", measuredGzip: 19482 },

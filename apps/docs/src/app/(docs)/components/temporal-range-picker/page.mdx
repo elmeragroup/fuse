@@ -1,0 +1,83 @@
+---
+lede: >
+  Start and end fields with a range calendar popup, with Temporal values.
+---
+
+import { TemporalRangePickerBasic } from "./demos/temporal-range-picker-basic";
+import { TemporalRangePickerMonths } from "./demos/temporal-range-picker-months";
+import { TemporalRangePickerPresets } from "./demos/temporal-range-picker-presets";
+import { TemporalRangePickerForm } from "./demos/temporal-range-picker-form";
+
+import { componentMetadata } from "../../../../lib/component-page";
+
+export const metadata = componentMetadata("temporal-range-picker");
+
+<ComponentIntro slug="temporal-range-picker" />
+
+<Prose>
+
+`DateRangePickerField` from `@elmeragroup/fuse/date-range-picker` is the Temporal replacement for the interim [React Aria DateRangePicker](/components/date-range-picker), with its prop names, `startName` and `endName` included. Its value is `{ start, end }`, each end a `Temporal.PlainDate`, `PlainDateTime` or `ZonedDateTime` or its ISO text; `onChange` hands back this runtime's range once both ends hold a value, and `null` as soon as a whole range loses an end, as React Aria reports it; the other end stays in its input.
+
+Fuse reads `globalThis.Temporal`. Import `@elmeragroup/fuse/temporal-polyfill` once in your app's entry, on the server and in the browser.
+
+Type each end into its segments, or open the calendar: the first day pressed anchors the range and the second completes it and closes the popup. Escape drops a half-picked range first and closes the popup on the next press. An end typed before its start, or a start typed past its end, commits and shows as invalid on the end once focus leaves: "Start date must be before end date."
+
+</Prose>
+
+<Demo slug="temporal-range-picker" id="basic" title="Basic" file="temporal-range-picker-basic.tsx">
+  <TemporalRangePickerBasic />
+</Demo>
+
+<Prose>
+
+## Several months
+
+`visibleMonths` reaches the range calendar: the host picks the count from its own layout, two months where they fit and one on a phone, and the range highlight runs across them.
+
+</Prose>
+
+<Demo slug="temporal-range-picker" id="months" title="Several months" file="temporal-range-picker-months.tsx">
+  <TemporalRangePickerMonths />
+</Demo>
+
+<Prose>
+
+## Presets
+
+`presetGroup` takes `DateRangePicker.Presets`, a radio group of your keys: map the chosen key to a range and set the picker's value. With a preset pane, focus leaving the calendar drops a half-picked range instead of completing it, since leaving the grid then means reaching for a preset.
+
+</Prose>
+
+<Demo slug="temporal-range-picker" id="preset-pane" title="Presets" file="temporal-range-picker-presets.tsx">
+  <TemporalRangePickerPresets />
+</Demo>
+
+<Prose>
+
+## In a form
+
+Each end is a Field of its own: the start submits its ISO text under `startName` and the end under `endName`, a `Form` error under either name shows in the picker's one error and focuses that end's first segment, and a required empty end blocks the submit. The label, the description and the error belong to the whole picker and describe both ends.
+
+</Prose>
+
+<Demo slug="temporal-range-picker" id="form" title="In a form" file="temporal-range-picker-form.tsx">
+  <TemporalRangePickerForm />
+</Demo>
+
+<Prose>
+
+## Parts
+
+`DateRangePicker.Root` holds the range and the open state, with `onValueChange` and `onOpenChange` passing cancelable details as `DatePicker.Root`'s do; the range adds the calendar's `"outside-press"` and `"focus-out"` reasons. Compose `DateRangePicker.Label`, `DateRangePicker.Group` with `StartInput`, `Separator`, `EndInput` and `Trigger`, then `Error`, `Description`, `Popup` and `Calendar`.
+
+## Accessibility
+
+- **One group, two named ends.** The field box is a `group` named by the label; the segments are named by their unit, their end and the label: "month, Start Date, Stay".
+- **One error for both.** Each end's own message and the form's errors under both names merge into one error, which describes the group and both ends.
+- **The calendar.** The trigger and the `dialog` are named "Calendar Stay". The range calendar names the range's ends with the whole range.
+
+</Prose>
+
+<ApiReference slug="temporal-range-picker" />
+
+<ComponentTokens slug="temporal-range-picker" />

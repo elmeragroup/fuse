@@ -11,6 +11,7 @@ import type { VariantProps } from "tailwind-variants";
 import { useMergedRefs } from "../../hooks/use-merged-refs";
 import { definedProps } from "../../internal/defined-props";
 import { documentOrder } from "../../internal/dom-node";
+import { FieldSetDisabledContext } from "../../internal/field-set-disabled";
 import { cn } from "../../styles/cn";
 import { mergeClassName } from "../../styles/merge-class-name";
 import { Separator } from "../separator/separator";
@@ -57,6 +58,9 @@ export function FieldRoot({
 /**
  * Outside a `Field.Root`, the set is described by the `Field.Description` parts it holds, after
  * the consumer's own `aria-describedby`. Inside a root, they describe the root's control instead.
+ * A disabled set, or one inside a disabled set, as Base UI resolves it, also disables the parts
+ * that are not a Field themselves, such as a date picker's trigger and calendar
+ * (`internal/field-set-disabled.ts`).
  */
 export function FieldSet({
   className,
@@ -65,6 +69,7 @@ export function FieldSet({
   ...props
 }: ComponentProps<typeof FieldsetPrimitive.Root>): ReactElement {
   const owner = use(DescriptionOwnerContext);
+  const disabled = use(FieldSetDisabledContext) || props.disabled === true;
   // A joined string, so an unchanged order bails out of the state update instead of re-rendering.
   const [descriptionIds, setDescriptionIds] = useState("");
   const [{ fieldsetOwner, sync }] = useState(() => {
@@ -103,12 +108,14 @@ export function FieldSet({
   const describedBy = [consumerDescribedBy, descriptionIds].filter(Boolean).join(" ");
   return (
     <DescriptionOwnerContext.Provider value={ownsDescriptions ? fieldsetOwner : owner}>
-      <FieldsetPrimitive.Root
-        ref={mergedRef}
-        data-slot="field-set"
-        className={mergeClassName(className, fieldSetClassName)}
-        {...definedProps({ ...props, "aria-describedby": describedBy || undefined })}
-      />
+      <FieldSetDisabledContext value={disabled}>
+        <FieldsetPrimitive.Root
+          ref={mergedRef}
+          data-slot="field-set"
+          className={mergeClassName(className, fieldSetClassName)}
+          {...definedProps({ ...props, "aria-describedby": describedBy || undefined })}
+        />
+      </FieldSetDisabledContext>
     </DescriptionOwnerContext.Provider>
   );
 }

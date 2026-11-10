@@ -4,7 +4,13 @@ import { parseDate, parseDateTime, parseZonedDateTime, toCalendarDate } from "@i
 import type { DateValue } from "@internationalized/date";
 import { vi } from "vitest";
 
+import { Calendar as TemporalCalendar } from "../src/components/calendar";
+import { DateField as TemporalDateField } from "../src/components/date-field";
+import { DatePicker as TemporalDatePicker, DatePickerField } from "../src/components/date-picker";
+import { DateRangePickerField } from "../src/components/date-range-picker";
+import { RangeCalendar as TemporalRangeCalendar } from "../src/components/range-calendar";
 import { definedProps } from "../src/internal/defined-props";
+import { LocaleProvider } from "../src/intl/locale-context";
 import { Calendar } from "../src/react-aria/calendar/calendar";
 import { DateField } from "../src/react-aria/date-field/date-field";
 import {
@@ -15,6 +21,7 @@ import {
 import { DateRangePicker } from "../src/react-aria/date-range-picker/date-range-picker";
 import { RangeCalendar } from "../src/react-aria/range-calendar/range-calendar";
 import { UiProviders } from "../src/react-aria/ui-providers/ui-providers";
+import "../src/temporal-polyfill";
 
 /**
  * The implementation-neutral face of the date tier that `src/internal/date-tier-parity.browser.test.tsx`
@@ -272,5 +279,112 @@ function presetPane(presets: ParityPresets): ReactElement {
   );
 }
 
-/** Every implementation the parity suite runs. The replacement tier joins this list. */
-export const DATE_TIER_ADAPTERS: readonly DateTierAdapter[] = [reactAriaDateTier];
+/** The Temporal tier's `isDateUnavailable`, matching a value's calendar date against the ISO list. */
+function temporalUnavailability(
+  dates: readonly string[] | undefined
+): ((value: Temporal.PlainDate | Temporal.PlainDateTime | Temporal.ZonedDateTime) => boolean) | undefined {
+  return dates === undefined ? undefined : (value) => dates.includes(value.toString().slice(0, 10));
+}
+
+function temporalBoundProps(props: ParityBounds) {
+  return definedProps({
+    minValue: props.minValue,
+    maxValue: props.maxValue,
+    isDateUnavailable: temporalUnavailability(props.unavailableDates),
+  });
+}
+
+function temporalPresetPane(presets: ParityPresets): ReactElement {
+  return (
+    <TemporalDatePicker.Presets value={presets.value} onValueChange={(value) => presets.onChange(value)}>
+      {presets.items.map((item) => (
+        <TemporalDatePicker.PresetItem
+          key={item.value}
+          value={item.value}
+          {...definedProps({ disabled: item.isDisabled })}>
+          {item.label}
+        </TemporalDatePicker.PresetItem>
+      ))}
+    </TemporalDatePicker.Presets>
+  );
+}
+
+/**
+ * A Calendar's or RangeCalendar's standard face: month buttons around the heading, then the months.
+ * Both namespaces share these parts.
+ */
+function calendarFace(): ReactElement {
+  return (
+    <>
+      <TemporalCalendar.Header>
+        <TemporalCalendar.DecrementMonth />
+        <TemporalCalendar.VisibleRangeHeading />
+        <TemporalCalendar.IncrementMonth />
+      </TemporalCalendar.Header>
+      <TemporalCalendar.Months />
+    </>
+  );
+}
+
+/**
+ * The Temporal tier: `@elmeragroup/fuse/{date-picker,date-range-picker,date-field,calendar,range-calendar}`
+ * over TC39 Temporal. It takes the scenarios' ISO strings as they are, since every Temporal prop also
+ * takes ISO text, and prints its values through `toString()`. Its today comes from `Date.now()`, which
+ * `freezeDateTierClock` reaches.
+ */
+export const temporalDateTier: DateTierAdapter = {
+  name: "Temporal tier",
+  Providers: ({ children }) => <LocaleProvider locale="en-US">{children}</LocaleProvider>,
+  DatePicker: (props) => (
+    <DatePickerField
+      label={props.label}
+      {...definedProps({
+        defaultValue: props.defaultValue,
+        description: props.description,
+        errorMessage: props.errorMessage,
+        isInvalid: props.isInvalid,
+        triggerPlacement: props.triggerPlacement,
+        presetGroup: props.presets === undefined ? undefined : temporalPresetPane(props.presets),
+      })}
+      {...temporalBoundProps(props)}
+      {...timeProps(props)}
+      onChange={(value) => props.onChange(value === null ? null : value.toString())}
+    />
+  ),
+  DateRangePicker: (props) => (
+    <DateRangePickerField
+      label={props.label}
+      {...definedProps({ defaultValue: props.defaultValue })}
+      {...temporalBoundProps(props)}
+      {...timeProps(props)}
+      onChange={(value) => props.onChange(value === null ? null : printRange(value))}
+    />
+  ),
+  DateField: (props) => (
+    <TemporalDateField
+      label={props.label}
+      {...definedProps({ defaultValue: props.defaultValue, isReadOnly: props.isReadOnly })}
+      {...timeProps(props)}
+    />
+  ),
+  Calendar: (props) => (
+    <TemporalCalendar.Root
+      aria-label={props.label}
+      defaultValue={props.defaultValue}
+      {...temporalBoundProps(props)}
+      onValueChange={(value) => props.onChange(value.toString())}>
+      {calendarFace()}
+    </TemporalCalendar.Root>
+  ),
+  RangeCalendar: (props) => (
+    <TemporalRangeCalendar.Root
+      aria-label={props.label}
+      defaultValue={props.defaultValue}
+      onValueChange={(value) => props.onChange(printRange(value))}>
+      {calendarFace()}
+    </TemporalRangeCalendar.Root>
+  ),
+};
+
+/** Every implementation the parity suite runs: the interim oracle, then its replacement. */
+export const DATE_TIER_ADAPTERS: readonly DateTierAdapter[] = [reactAriaDateTier, temporalDateTier];

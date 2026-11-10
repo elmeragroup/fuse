@@ -121,6 +121,8 @@ const EXTRA_API_EXPORT_NAMES = new Map<string, readonly string[]>([
   ["temporal-calendar", ["Calendar"]],
   ["temporal-range-calendar", ["RangeCalendar"]],
   ["temporal-date-field", ["DateField", "DateInput"]],
+  ["temporal-date-picker", ["DatePicker", "DatePickerField"]],
+  ["temporal-range-picker", ["DateRangePicker", "DateRangePickerField"]],
 ]);
 
 /**
@@ -153,6 +155,8 @@ const ENTRY_SLUG_OF_PAGE = new Map<string, string>([
   ["temporal-calendar", "calendar"],
   ["temporal-range-calendar", "range-calendar"],
   ["temporal-date-field", "date-field"],
+  ["temporal-date-picker", "date-picker"],
+  ["temporal-range-picker", "date-range-picker"],
 ]);
 
 /**
