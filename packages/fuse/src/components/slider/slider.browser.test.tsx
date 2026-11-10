@@ -66,6 +66,15 @@ function describedByText(element: HTMLElement): string[] {
 }
 
 describe("Slider", () => {
+  it("exposes the thumb as a slider with its value and bounds", () => {
+    renderSlider(<Slider label="Volume" defaultValue={30} minValue={10} maxValue={90} />);
+    const input = sliderNamed("Volume");
+    expect(input.getAttribute("aria-valuenow")).toBe("30");
+    expect(input.getAttribute("min")).toBe("10");
+    expect(input.getAttribute("max")).toBe("90");
+    expect(input.getAttribute("aria-orientation")).toBe("horizontal");
+  });
+
   it("names the thumb through the Field label, and through aria-label without one", () => {
     renderSlider(
       <>
@@ -110,11 +119,53 @@ describe("Slider", () => {
     }
   });
 
+  it("round-trips a controlled value through onChange and onValueCommitted, and holds when the parent ignores it", async () => {
+    const commits: number[] = [];
+    function Controlled() {
+      const [value, setValue] = useState(40);
+      return (
+        <>
+          <Slider
+            label="Controlled"
+            value={value}
+            onChange={setValue}
+            onValueCommitted={(next) => commits.push(next)}
+          />
+          <Slider label="Pinned" value={10} onChange={vi.fn()} />
+          <p>Parent {value}</p>
+        </>
+      );
+    }
+    renderSlider(<Controlled />);
+    sliderNamed("Controlled").focus();
+    await userEvent.keyboard("{ArrowRight}{ArrowRight}");
+    expect(valueNow("Controlled")).toBe(42);
+    expect(page.getByText("Parent 42", { exact: true }).query()).toBeTruthy();
+    expect(commits).toEqual([41, 42]);
+
+    sliderNamed("Pinned").focus();
+    await userEvent.keyboard("{ArrowRight}");
+    expect(valueNow("Pinned")).toBe(10);
+  });
+
   it("keeps an uncontrolled range's thumbs and values when defaultValue changes after mount", () => {
     const { rerender } = renderSlider(<Slider label="Pris" defaultValue={[20, 80]} />);
     rerender(withLocale("en-US", <Slider label="Pris" defaultValue={50} />));
     expect(valueNow("Pris, minimum")).toBe(20);
     expect(valueNow("Pris, maximum")).toBe(80);
+  });
+
+  it("names range thumbs from aria-label, and lets thumbLabels override the dictionary", () => {
+    renderSlider(
+      <>
+        <Slider aria-label="Spacing" defaultValue={[2, 6]} />
+        <Slider label="Hours" defaultValue={[8, 16]} thumbLabels={["Opens", "Closes"]} />
+      </>
+    );
+    expect(valueNow("Spacing, minimum")).toBe(2);
+    expect(valueNow("Spacing, maximum")).toBe(6);
+    expect(valueNow("Opens")).toBe(8);
+    expect(valueNow("Closes")).toBe(16);
   });
 
   it("blocks input when disabled and shows the disabled state face", async () => {

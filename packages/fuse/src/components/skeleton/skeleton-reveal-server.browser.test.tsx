@@ -19,6 +19,8 @@ import { SkeletonReveal } from "./skeleton-reveal";
 
 failOnResizeObserverLoop();
 
+type Invoice = { readonly number: string };
+
 /**
  * Server-renders a tree inside the theme scope every suite shares, as a host's page would emit
  * it, and parses the HTML into a document without running or hydrating anything in it.
@@ -28,12 +30,43 @@ function serverDocument(tree: ReactElement): Document {
   return new DOMParser().parseFromString(`<body>${markup}</body>`, "text/html");
 }
 
+function invoiceDocument(data: Invoice | null): Document {
+  return serverDocument(
+    createElement(SkeletonReveal<Invoice>, {
+      data,
+      sample: { number: "Invoice 0000" },
+      label: "Henter faktura",
+      children: (invoice: Invoice) =>
+        createElement(
+          "label",
+          null,
+          invoice.number,
+          createElement("input", { name: "invoice", required: true })
+        ),
+    })
+  );
+}
+
 /** The reveal's parts have no role in unhydrated markup; locate them by data-slot. */
 function part(document: Document, slot: string): Element | null {
   return document.querySelector(`[data-slot="${slot}"]`);
 }
 
 describe("SkeletonReveal server markup", () => {
+  it("is busy and labelled, with an inert skeleton hidden from assistive tech and no bones yet", () => {
+    const document = invoiceDocument(null);
+    expect(part(document, "skeleton-reveal")?.getAttribute("aria-busy")).toBe("true");
+    expect(part(document, "skeleton-reveal-label")?.textContent).toBe("Henter faktura");
+    const skeleton = part(document, "skeleton-reveal-skeleton");
+    expect(skeleton?.getAttribute("aria-hidden")).toBe("true");
+    expect(skeleton?.hasAttribute("inert")).toBe(true);
+    // Not measured: the stylesheet's first-paint fallback applies until the client draws bones.
+    expect(skeleton?.hasAttribute("data-measured")).toBe(false);
+    expect(part(document, "skeleton-reveal-bones")?.children).toHaveLength(0);
+    expect(part(document, "skeleton-reveal-ghost")?.textContent).toBe("Invoice 0000");
+    expect(part(document, "skeleton-reveal-content")).toBeNull();
+  });
+
   it("defaults the label to the locale dictionary", () => {
     const label = (locale: "nb-NO" | "en-US"): string | null | undefined =>
       part(

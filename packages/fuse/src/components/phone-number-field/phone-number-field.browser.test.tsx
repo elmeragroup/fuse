@@ -8,8 +8,7 @@ import { PhoneNumberField } from "@elmeragroup/fuse/phone-number-field";
 
 import "../../../dist/styles.css";
 import { assertNoAxeViolations } from "../../../test/axe";
-import { withLocale } from "../../../test/locale-matrix";
-import type { SUPPORTED_LOCALES } from "../../../test/locale-matrix";
+import { SUPPORTED_LOCALES, withLocale } from "../../../test/locale-matrix";
 import {
   countryListbox,
   countrySearch,
@@ -40,8 +39,24 @@ const SEARCH_COUNTRIES_COPY = {
   "fi-FI": "Hae maita",
 } as const;
 
+const NO_COUNTRIES_COPY = {
+  "nb-NO": "Ingen land funnet.",
+  "sv-SE": "Inga länder hittades.",
+  "en-US": "No countries found.",
+  "fi-FI": "Maita ei löytynyt.",
+} as const;
+
 function renderField(node: ReactNode, locale: (typeof SUPPORTED_LOCALES)[number] = "en-US") {
   return renderThemed(withLocale(locale, node));
+}
+
+function hiddenNamed(name: string): HTMLInputElement {
+  // The E.164 submit control is type=hidden, so it has no role.
+  const match = document.body.querySelector(`input[type="hidden"][name="${name}"]`);
+  if (!(match instanceof HTMLInputElement)) {
+    throw new Error(`expected hidden input ${name}`);
+  }
+  return match;
 }
 
 function flagCodeFromSrc(src: string): string | undefined {
@@ -61,6 +76,14 @@ function optionFlagCodes(): string[] {
     const code = flagCodeFromSrc(img.getAttribute("src") ?? "");
     return code ? [code] : [];
   });
+}
+
+function inputGroupRoot(name: string): HTMLElement {
+  const group = textboxNamed(name).closest('[role="group"]');
+  if (!(group instanceof HTMLElement)) {
+    throw new Error(`expected an input-group root around ${name}`);
+  }
+  return group;
 }
 
 describe("PhoneNumberField", () => {
@@ -120,6 +143,30 @@ describe("PhoneNumberField", () => {
     await expect.element(page.getByRole("textbox", { name: "Mobile", exact: true })).toHaveFocus();
   });
 
+  it("submits E.164 from the hidden input and keeps the formatted display name", async () => {
+    const submitted: Array<{ phone: FormDataEntryValue | null; display: FormDataEntryValue | null }> = [];
+    renderField(
+      <form
+        onSubmit={(event) => {
+          event.preventDefault();
+          const data = new FormData(event.currentTarget);
+          submitted.push({
+            phone: data.get("phone"),
+            display: data.get("phone-display-value"),
+          });
+        }}>
+        <PhoneNumberField label="Mobile" name="phone" />
+        <button type="submit">Save</button>
+      </form>
+    );
+    await userEvent.fill(page.getByRole("textbox", { name: "Mobile", exact: true }), "41234567");
+    expect(textboxNamed("Mobile")).toHaveProperty("name", "phone-display-value");
+    expect(textboxNamed("Mobile")).toHaveProperty("value", "41234567");
+    await userEvent.click(page.getByRole("button", { name: "Save", exact: true }));
+    expect(hiddenNamed("phone").value).toBe("+4741234567");
+    expect(submitted).toEqual([{ phone: "+4741234567", display: "41234567" }]);
+  });
+
   it("blocks an empty required submit and allows it once filled", async () => {
     renderField(
       <form aria-label="Phone form">
@@ -141,6 +188,74 @@ describe("PhoneNumberField", () => {
     );
     await userEvent.fill(page.getByRole("textbox", { name: "Mobile", exact: true }), "41234567");
     expect([...new FormData(formNamed("Phone form")).keys()]).toEqual([]);
+  });
+
+  it("surfaces isInvalid as an alert, disables trigger and input, and keeps readOnly focusable", async () => {
+    renderField(
+      <>
+        <PhoneNumberField label="Broken" isInvalid errorMessage="Enter a mobile number." />
+        <PhoneNumberField label="Disabled" isDisabled />
+        <PhoneNumberField label="Locked" isReadOnly value="41234567" />
+      </>
+    );
+    const alert = page.getByRole("alert").element();
+    expect(alert.textContent).toBe("Enter a mobile number.");
+    expect(inputGroupRoot("Broken").getAttribute("aria-invalid")).toBe("true");
+
+    const disabledInput = textboxNamed("Disabled");
+    expect(disabledInput).toHaveProperty("disabled", true);
+    const disabledTrigger = page.getByRole("button", { name: "Select country" }).elements()[1];
+    expect(disabledTrigger).toHaveProperty("disabled", true);
+
+    const locked = textboxNamed("Locked");
+    expect(locked).toHaveProperty("readOnly", true);
+    locked.focus();
+    expect(document.activeElement).toBe(locked);
+    await userEvent.keyboard("9");
+    expect(locked).toHaveProperty("value", "41234567");
+  });
+
+  it("renders dictionary defaults in all four locales, describes the trigger's country in each, and lets override props win", async () => {
+    const described = {
+      "nb-NO": "Land: Norge +47",
+      "sv-SE": "Land: Norge +47",
+      "en-US": "Country: Norway +47",
+      "fi-FI": "Maa: Norja +47",
+    } as const;
+    for (const locale of SUPPORTED_LOCALES) {
+      const { unmount } = renderField(<PhoneNumberField label="Mobile" />, locale);
+      await expect
+        .element(roleNamed("button", SELECT_COUNTRY_COPY[locale]))
+        .toHaveAccessibleDescription(described[locale]);
+      await userEvent.click(page.getByRole("button", { name: SELECT_COUNTRY_COPY[locale], exact: true }));
+      await vi.waitFor(() => {
+        expect(page.getByRole("listbox").query()).not.toBeNull();
+      });
+      expect(countrySearch(SEARCH_COUNTRIES_COPY[locale])).toBeTruthy();
+      await userEvent.fill(countrySearch(SEARCH_COUNTRIES_COPY[locale]), "zzzz");
+      await vi.waitFor(() => {
+        expect(page.getByText(NO_COUNTRIES_COPY[locale], { exact: true }).query(), locale).not.toBeNull();
+      });
+      unmount();
+    }
+
+    renderField(
+      <PhoneNumberField
+        label="Mobile"
+        selectCountryLabel="Pick a country"
+        searchCountriesLabel="Filter countries"
+        noCountriesFoundText="Nothing here."
+      />,
+      "nb-NO"
+    );
+    expect(page.getByRole("button", { name: "Pick a country", exact: true }).query()).not.toBeNull();
+    expect(page.getByRole("button", { name: "Velg land", exact: true }).query()).toBeNull();
+    await openPicker("Pick a country");
+    expect(countrySearch("Filter countries")).toBeTruthy();
+    await userEvent.fill(countrySearch("Filter countries"), "zzzz");
+    await vi.waitFor(() => {
+      expect(page.getByText("Nothing here.", { exact: true }).query()).not.toBeNull();
+    });
   });
 });
 
@@ -214,5 +329,36 @@ describe("PhoneNumberField country order", () => {
     expect(roleNamed("button", SELECT_COUNTRY_COPY["nb-NO"]).textContent).toContain("+43");
     expect(change).not.toHaveBeenCalled();
     expect(countryChange).not.toHaveBeenCalled();
+  });
+
+  it("selects the sorted row the keyboard lands on", async () => {
+    const countryChange = vi.fn();
+    renderField(
+      <PhoneNumberField
+        label="Mobile"
+        metadata={threeCountries}
+        defaultCountryCode="AT"
+        onCountryChange={countryChange}
+      />,
+      "sv-SE"
+    );
+    await openPicker(SELECT_COUNTRY_COPY["sv-SE"]);
+    // From Österrike, the last row, ArrowUp lands on Åland.
+    await userEvent.keyboard("{ArrowUp}{Enter}");
+    await vi.waitFor(() => {
+      expect(page.getByRole("listbox").query()).toBeNull();
+    });
+    expect(countryChange).toHaveBeenCalledExactlyOnceWith({ code: "AX", dialCode: "+358" });
+  });
+});
+
+describe("PhoneNumberField countries", () => {
+  it("offers only the listed countries and falls back from a default outside them", async () => {
+    renderField(<PhoneNumberField label="Mobile" countries={["SE", "NO", "FI"]} defaultCountryCode="DK" />);
+    // Norway, the fallback before the first country, is listed.
+    expect(roleNamed("button", "Select country").textContent).toContain("+47");
+    await openPicker();
+    // Finland, Norway, Sweden: name order, not the list's.
+    expect(optionFlagCodes()).toEqual(["FI", "NO", "SE"]);
   });
 });

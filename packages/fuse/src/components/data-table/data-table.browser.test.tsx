@@ -32,7 +32,8 @@ import { RadioGroup, RadioIconButton } from "../radio-group/radio-group";
 import { Slider } from "../slider/slider";
 import { actionsColumn } from "./actions-column";
 import { createFuseTableHook } from "./create-fuse-table-hook";
-import type { RegisteredRowProps } from "./data-table-registered";
+import { NumberCell } from "./data-table-registered";
+import type { NumberCellProps, RegisteredRowProps } from "./data-table-registered";
 import { DataTable } from "./index";
 import { selectColumn } from "./select-column";
 
@@ -639,6 +640,51 @@ describe("DataTable registered cells", () => {
     renderInEnglish(<MistypedTable />);
 
     expect(page.getByRole("cell", { name: "Bergen", exact: true }).elements()).toHaveLength(2);
+  });
+});
+
+describe("DataTable app cell overrides", () => {
+  type Invoice = { readonly amount: number; readonly placed: Date };
+
+  const INVOICES: Invoice[] = [{ amount: 1234.5, placed: new Date(2026, 0, 15) }];
+
+  const overrides = createFuseTableHook({
+    features: tableFeatures({}),
+    cellComponents: {
+      NumberCell: (props: NumberCellProps) => <NumberCell maximumFractionDigits={0} {...props} />,
+      DateCell: () => <span>Date withheld</span>,
+    },
+  });
+
+  const invoiceColumns = overrides.createAppColumnHelper<Invoice>();
+
+  const columns = invoiceColumns.columns([
+    invoiceColumns.accessor("amount", { header: "Rounded", cell: ({ cell }) => <cell.NumberCell /> }),
+    invoiceColumns.accessor("amount", {
+      id: "precise",
+      header: "Precise",
+      cell: ({ cell }) => <cell.NumberCell maximumFractionDigits={2} />,
+    }),
+    invoiceColumns.accessor("placed", { header: "Placed", cell: ({ cell }) => <cell.DateCell /> }),
+  ]);
+
+  function InvoiceTable(): ReactElement {
+    const table = overrides.useAppTable({ columns, data: INVOICES });
+    return (
+      <table.AppTable>
+        <table.Content />
+      </table.AppTable>
+    );
+  }
+
+  it("renders the app's tweaked and replaced cells in place of Fuse's", () => {
+    renderInEnglish(<InvoiceTable />);
+
+    const cells = page
+      .getByRole("cell")
+      .elements()
+      .map((cell) => cell.textContent);
+    expect(cells).toEqual(["1,235", "1,234.5", "Date withheld"]);
   });
 });
 

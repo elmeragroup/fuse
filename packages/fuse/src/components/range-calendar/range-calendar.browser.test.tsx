@@ -99,6 +99,14 @@ function selectedDays(): string[] {
     .map((cell) => cell.textContent);
 }
 
+/** The ISO days whose cell carries a data attribute, in document order. */
+function daysWith(attribute: string): string[] {
+  // Data attributes are the styling contract, which no role query reads.
+  return [...document.querySelectorAll(`[data-slot=calendar-day-grid-cell][${attribute}]`)].map(
+    (cell) => cell.querySelector("button")?.getAttribute("aria-label") ?? ""
+  );
+}
+
 describe("RangeCalendar parity with the interim tier", () => {
   it("anchors on Enter, moves focus a day, follows focus, drops the anchor on Escape and completes", async () => {
     mount(
@@ -127,6 +135,62 @@ describe("RangeCalendar parity with the interim tier", () => {
     await userEvent.keyboard("{Enter}{ArrowRight}{Enter}");
     await expect.element(committed()).toHaveTextContent("2026-10-14..2026-10-16 keyboard null");
     expect(selectedDays()).toEqual(["14", "15", "16"]);
+  });
+
+  it("names the range ends with the whole selected range, and a one-day range with its date", async () => {
+    mount(
+      <Harness
+        defaultValue={{
+          start: Temporal.PlainDate.from("2026-10-05"),
+          end: Temporal.PlainDate.from("2026-10-09"),
+        }}
+      />
+    );
+    for (const name of [
+      "Selected Range: Monday, October 5 to Friday, October 9, 2026, Monday, October 5, 2026 selected",
+      "Tuesday, October 6, 2026 selected",
+      "Selected Range: Monday, October 5 to Friday, October 9, 2026, Friday, October 9, 2026 selected",
+    ]) {
+      await expect.element(page.getByRole("button", { name, exact: true })).toBeVisible();
+    }
+
+    await userEvent.click(roleNamed("button", "Tuesday, October 20, 2026"));
+    await userEvent.click(roleNamed("button", "Tuesday, October 20, 2026 selected"));
+    await expect
+      .element(
+        page.getByRole("button", {
+          name: "Selected Date: Tuesday, October 20, 2026, Tuesday, October 20, 2026 selected",
+          exact: true,
+        })
+      )
+      .toBeVisible();
+  });
+});
+
+describe("RangeCalendar pointer selection", () => {
+  it("anchors on a press, highlights to the hovered day, and completes earlier day first", async () => {
+    mount(
+      <Harness
+        defaultValue={{
+          start: Temporal.PlainDate.from("2026-10-05"),
+          end: Temporal.PlainDate.from("2026-10-09"),
+        }}
+      />
+    );
+    await userEvent.click(roleNamed("button", "Thursday, October 22, 2026"));
+    await expect.element(committed()).toHaveTextContent("unchanged");
+
+    await userEvent.hover(roleNamed("button", "Monday, October 19, 2026"));
+    expect(selectedDays()).toEqual(["19", "20", "21", "22"]);
+    expect(daysWith("data-highlighted")).toHaveLength(4);
+    expect(daysWith("data-selection-start")).toEqual(["Monday, October 19, 2026 selected"]);
+    expect(daysWith("data-selection-end")).toEqual(["Thursday, October 22, 2026 selected"]);
+
+    await userEvent.click(roleNamed("button", "Monday, October 19, 2026 selected"));
+    await expect.element(committed()).toHaveTextContent("2026-10-19..2026-10-22 day-press null");
+    expect(daysWith("data-highlighted")).toEqual([]);
+    expect(daysWith("data-in-range")).toHaveLength(4);
+    expect(roleNamed("group", "Stay")).not.toHaveAttribute("data-selecting");
   });
 });
 
@@ -200,6 +264,33 @@ describe("RangeCalendar committing an open range", () => {
     await userEvent.click(page.getByText("Outside text"));
     await expect.element(committed()).toHaveTextContent("2026-10-12..2026-10-15 outside-press null");
     expect(selectedDays()).toEqual(["12", "13", "14", "15"]);
+  });
+
+  it("stops Escape that drops an anchor from reaching the page, and lets it through otherwise", async () => {
+    const escapes = vi.fn<() => void>();
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        escapes();
+      }
+    };
+    document.addEventListener("keydown", onKeyDown);
+    try {
+      mount(
+        <Harness
+          defaultValue={{
+            start: Temporal.PlainDate.from("2026-10-05"),
+            end: Temporal.PlainDate.from("2026-10-09"),
+          }}
+        />
+      );
+      await focusDay("Monday, October 12, 2026");
+      await userEvent.keyboard("{Enter}{Escape}");
+      expect(escapes).not.toHaveBeenCalled();
+      await userEvent.keyboard("{Escape}");
+      expect(escapes).toHaveBeenCalledTimes(1);
+    } finally {
+      document.removeEventListener("keydown", onKeyDown);
+    }
   });
 });
 
@@ -307,6 +398,20 @@ describe("RangeCalendar outside presses, regardless of the pressed element and t
 });
 
 describe("date props past the types", () => {
+  it("throws a TypeError naming the Root, the prop and the string for ISO text", () => {
+    expectRenderTypeError(
+      'RangeCalendar.Root defaultValue.end: received the string "2026-10-09"',
+      <RangeCalendar.Root
+        aria-label="Stay"
+        defaultValue={{
+          start: Temporal.PlainDate.from("2026-10-05"),
+          // @ts-expect-error -- text reaches the prop past the types: from plain JavaScript, or as the ISO text a server component's Temporal object crosses as
+          end: "2026-10-09",
+        }}
+      />
+    );
+  });
+
   it("throws for ISO text in a range end after the equal Temporal value, whatever rendered before", () => {
     const start = Temporal.PlainDate.from("2026-10-05");
     expectRenderTypeError(

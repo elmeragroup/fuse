@@ -43,6 +43,8 @@ export default defineConfig({
           // only after the same check.
           fileParallelism: true,
           maxWorkers: 2,
+          // The route sweep's concurrent tests: five pages at once in its one browser.
+          maxConcurrency: 5,
           sequence: { groupOrder: 1 },
         },
       },

@@ -191,6 +191,20 @@ describe.each(["menu", "popover"] as const)("DataTableFilter values footer in th
     );
   });
 
+  it("closes the list on Done and returns focus where its overlay sends it", async () => {
+    renderFooter(STATUS_DRAFT);
+    await openStatus();
+    await userEvent.click(roleNamed("button", "Done"));
+    if (surface === "menu") {
+      await expect.poll(menuOpen).toBe(false);
+      await expect.poll(() => focusIs("button", "Filter")).toBe(true);
+    } else {
+      await expect.poll(() => popoverOpen("Status")).toBe(false);
+      await expect.poll(() => document.activeElement).toBe(chipValue("Status"));
+    }
+    expect(columnFilters()).toEqual(STATUS_DRAFT);
+  });
+
   it("keeps a disabled Done in the focus order, where a press closes nothing", async () => {
     renderFooter(STATUS_DRAFT, { doneDisabled: true });
     await openStatus();

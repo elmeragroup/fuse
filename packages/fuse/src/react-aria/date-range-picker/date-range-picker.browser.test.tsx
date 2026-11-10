@@ -86,11 +86,22 @@ function pickerDialog(): HTMLElement {
   return element;
 }
 
+function buttonNamed(name: string): HTMLElement {
+  const element = page.getByRole("button", { name, exact: true }).element();
+  if (!(element instanceof HTMLElement)) {
+    throw new Error(`expected button ${name}`);
+  }
+  return element;
+}
+
 async function openPicker(): Promise<HTMLElement> {
   await userEvent.click(trigger());
   await expect.element(page.getByRole("dialog")).toBeVisible();
   return pickerDialog();
 }
+
+/** One `name`/value pair a form submit carried, read back off its FormData. */
+type SubmittedEntry = [string, FormDataEntryValue | null];
 
 /** The shape RAC hands `onChange` — a RangeValue of the picker's own date type. */
 type CommittedRange = { start: DateValue; end: DateValue };
@@ -109,6 +120,7 @@ function committedRange(onChange: RangeChangeSpy): CommittedRange {
   return committed;
 }
 
+const july4 = new CalendarDate(2026, 7, 4);
 const july14 = new CalendarDate(2026, 7, 14);
 const july17 = new CalendarDate(2026, 7, 17);
 const july20 = new CalendarDate(2026, 7, 20);
@@ -218,6 +230,35 @@ describe("DateRangePicker", () => {
     await userEvent.click(trigger(), { force: true });
     expect(page.getByRole("dialog").query()).toBeNull();
   });
+
+  it("submits both endpoints as ISO strings under startName and endName", async () => {
+    const onSubmit = vi.fn<(entries: SubmittedEntry[]) => void>();
+    renderPicker(
+      <form
+        onSubmit={(event) => {
+          event.preventDefault();
+          const data = new FormData(event.currentTarget);
+          onSubmit([...data.keys()].map((key) => [key, data.get(key)]));
+        }}>
+        <DateRangePicker
+          label="Delivery window"
+          defaultValue={julyWeek}
+          startName="deliverFrom"
+          endName="deliverTo"
+        />
+        <button type="submit">Save</button>
+      </form>
+    );
+    await expect.element(segmentLocator("month, Start Date")).toBeVisible();
+
+    await userEvent.click(buttonNamed("Save"));
+    expect(onSubmit).toHaveBeenCalledTimes(1);
+    // Exactly two fields, both ISO — the hidden inputs RAC keeps for the two rows.
+    expect(onSubmit.mock.calls[0]?.[0]).toEqual([
+      ["deliverFrom", "2026-07-14"],
+      ["deliverTo", "2026-07-17"],
+    ]);
+  });
 });
 
 describe("DateRangePicker composition surface", () => {
@@ -315,6 +356,43 @@ describe("DateRangePicker presets", () => {
 
     expect(visibleMonth()).toMatch(/March\s+2025/i);
   });
+
+  it.each([
+    ["without presets", false],
+    ["with presets", true],
+  ] as const)(
+    "keeps the grid and focus where a cross-month calendar selection ended (%s)",
+    async (_case, withPresets) => {
+      const onChange = rangeChangeSpy();
+      renderPicker(
+        <DateRangePicker
+          label="Period"
+          placeholderValue={july4}
+          shouldCloseOnSelect={false}
+          onChange={onChange}
+          {...(withPresets && {
+            presetGroup: (
+              <DateRangePickerPresetGroup>
+                <DateRangePickerPresetItem value="today">Today</DateRangePickerPresetItem>
+              </DateRangePickerPresetGroup>
+            ),
+          })}
+        />
+      );
+      await openPicker();
+
+      await userEvent.click(dayNumbered(20));
+      await userEvent.click(navButtonNamed(/next/i));
+      expect(visibleMonth()).toMatch(/August\s+2026/i);
+      await userEvent.click(dayNumbered(5));
+
+      const committed = committedRange(onChange);
+      expect([committed.start.toString(), committed.end.toString()]).toEqual(["2026-07-20", "2026-08-05"]);
+      await expect.element(page.getByRole("dialog")).toBeVisible();
+      expect(visibleMonth()).toMatch(/August\s+2026/i);
+      expect(document.activeElement).toBe(dayNumbered(5));
+    }
+  );
 
   it("keeps a paged month when a preset commits an equal range, and resyncs when only the end changes", async () => {
     renderPicker(

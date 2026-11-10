@@ -38,9 +38,9 @@ function htmlPanel(name: string): HTMLElement {
   return element;
 }
 
-async function settledFace(name: string): Promise<{ fill: string; text: string }> {
+function settledFace(name: string) {
   const tab = htmlTab(name);
-  await Promise.all(tab.getAnimations().map((animation) => animation.finished));
+  for (const animation of tab.getAnimations()) animation.finish();
   const style = getComputedStyle(tab);
   return { fill: style.backgroundColor, text: style.color };
 }
@@ -106,8 +106,9 @@ describe("Tabs", () => {
     renderThemed(<AccountPassword />);
     await expect.element(page.getByRole("tabpanel", { name: "Account", exact: true })).toBeVisible();
     const account = htmlPanel("Account");
-    // Base UI keeps a closing panel mounted until the panel's own animations finish.
-    account.animate([{ opacity: 1 }, { opacity: 0.99 }], { duration: 1000 });
+    // Base UI keeps a closing panel mounted until the panel's own animations finish; paused, this
+    // one never does while the test looks.
+    account.animate([{ opacity: 1 }, { opacity: 0.99 }], { duration: 1000 }).pause();
 
     htmlTab("Password").click();
     await new Promise((resolve) => requestAnimationFrame(resolve));
@@ -202,14 +203,14 @@ describe("Tabs", () => {
       // Oracle sanity: the page tint differs from the card, so a trigger on the page fill fails.
       expect(cssVarColor(list, "--background")).not.toBe(active.fill);
       expect(getComputedStyle(list).backgroundColor).toBe(cssVarColor(list, "--muted"));
-      expect(await settledFace("Account")).toEqual(active);
-      expect((await settledFace("Billing")).fill).toBe("rgba(0, 0, 0, 0)");
+      expect(settledFace("Account")).toEqual(active);
+      expect(settledFace("Billing").fill).toBe("rgba(0, 0, 0, 0)");
 
       // The pointer stays on Billing after the click, so this also reads the hovered active face.
       await userEvent.click(page.getByRole("tab", { name: "Billing", exact: true }));
       expect(htmlTab("Billing").matches(":hover")).toBe(true);
-      expect(await settledFace("Billing")).toEqual(active);
-      expect((await settledFace("Account")).fill).toBe("rgba(0, 0, 0, 0)");
+      expect(settledFace("Billing")).toEqual(active);
+      expect(settledFace("Account").fill).toBe("rgba(0, 0, 0, 0)");
     }
   );
 });

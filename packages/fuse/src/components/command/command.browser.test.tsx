@@ -149,6 +149,45 @@ async function openCustomers(): Promise<HTMLInputElement> {
 }
 
 describe("Command", () => {
+  it("names its input and placeholder from the dictionary when no page names it", () => {
+    renderThemed(
+      withLocale(
+        "nb-NO",
+        <Command.Root items={["Kunder"]}>
+          <Command.Input />
+        </Command.Root>
+      )
+    );
+    expect(comboboxNamed("Søk etter kommandoer").placeholder).toBe("Skriv en kommando eller søk …");
+  });
+
+  it("keeps focus in the input when a row is clicked", async () => {
+    const onRun = vi.fn<(label: string) => void>();
+    renderPalette(<PagedPalette onRun={onRun} />);
+    const input = comboboxNamed("Commands");
+    input.focus();
+    await userEvent.click(roleNamed("option", "Register meter reading"));
+    expect(onRun.mock.calls).toEqual([["Register meter reading"]]);
+    expect(document.activeElement).toBe(input);
+  });
+
+  it("filters as the user types and shows the dictionary's empty message when nothing matches", async () => {
+    renderPalette(<PagedPalette />);
+    comboboxNamed("Commands").focus();
+    await userEvent.keyboard("meter");
+    await expect
+      .poll(() =>
+        page
+          .getByRole("option")
+          .elements()
+          .map((option) => option.textContent)
+      )
+      .toEqual(["Register meter reading"]);
+    await userEvent.keyboard("zzz");
+    await expect.element(page.getByText("No results.", { exact: true })).toBeVisible();
+    expect(page.getByRole("option").elements()).toEqual([]);
+  });
+
   it("labels the close hint with the locale's close word unless its children replace it", () => {
     renderThemed(
       withLocale(
@@ -302,6 +341,17 @@ describe("Command.Content", () => {
     await expect.poll(() => document.activeElement).toBe(roleNamed("button", "Open palette"));
   });
 
+  it("closes on Escape from a page above the first, and reopens on the first page", async () => {
+    renderPalette(<PagedDialogPalette />);
+    await openPalette("Commands");
+    await userEvent.keyboard("{Enter}");
+    await mountedInput("Customers");
+    await userEvent.keyboard("{Escape}");
+    await closedPalette();
+    await openPalette("Commands");
+    expect(page.getByRole("combobox").elements()).toEqual([comboboxNamed("Commands")]);
+  });
+
   it("opens a controlled palette from Command.Trigger and returns focus to it on close", async () => {
     const changes = vi.fn<(open: boolean) => void>();
     function ControlledPalette(): ReactElement {
@@ -330,9 +380,6 @@ describe("Command.Content", () => {
   });
 });
 
-/** Stretches the close animation to a second, so a reopening lands before it ends. */
-const SLOW_EXIT: CSSProperties = { animationDuration: "1000ms" };
-
 /**
  * A palette whose stack and first page's query the consumer controls, and sets back to the first
  * page and an empty query each time the palette opens.
@@ -351,18 +398,32 @@ function ResetOnOpenPalette(): ReactElement {
         }
       }}>
       <Command.Trigger>Open palette</Command.Trigger>
-      <Command.Content style={SLOW_EXIT}>
+      <Command.Content>
         <EntryPages onRun={() => undefined} held={{ value: query, onValueChange: setQuery }} />
       </Command.Content>
     </Command.Root>
   );
 }
 
-/** Opens the palette with `reopen` while its close animation runs. */
+/**
+ * Opens the palette with `reopen` while its close animation runs. The close is paused on the frame
+ * it starts, so the reopening lands mid-close however slowly the runner renders.
+ */
 async function interruptClose(reopen: () => Promise<void> | void): Promise<void> {
   const closing = roleNamed("dialog", "Command palette");
+  const started = new Promise<void>((resolve) => {
+    closing.addEventListener(
+      "animationstart",
+      () => {
+        for (const animation of closing.getAnimations({ subtree: true })) animation.pause();
+        resolve();
+      },
+      { once: true }
+    );
+  });
   await userEvent.keyboard("{Escape}");
-  await expect.poll(() => closing.hasAttribute("data-ending-style")).toBe(true);
+  await started;
+  expect(closing.hasAttribute("data-ending-style")).toBe(true);
   await reopen();
   await expect.poll(() => closing.hasAttribute("data-open")).toBe(true);
   // The same popup: the opening kept it from its close.
@@ -384,7 +445,7 @@ async function reopenMidClose(trigger: HTMLElement, input = "Search commands"): 
 
 describe("Command.Content reopened before its close ends", () => {
   it("highlights the first match again after the arrows moved it down an empty query", async () => {
-    renderPalette(<DialogPalette contentStyle={SLOW_EXIT} />);
+    renderPalette(<DialogPalette />);
     const trigger = roleNamed("button", "Open palette");
     await openPalette();
     await userEvent.keyboard("{ArrowDown}{ArrowDown}");
@@ -413,7 +474,7 @@ describe("Command.Content reopened before its close ends", () => {
           <input aria-label="Notes" />
           <Command.Root items={COMMANDS} open={open} onOpenChange={setOpen}>
             <Command.Trigger>Open palette</Command.Trigger>
-            <Command.Content style={SLOW_EXIT}>
+            <Command.Content>
               <Command.Input />
             </Command.Content>
           </Command.Root>

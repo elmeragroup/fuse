@@ -59,7 +59,9 @@ describe("every docs route", () => {
     expect(ROUTES.length).toBeGreaterThan(100);
   });
 
-  it.each(ROUTES)("renders %s without console errors and passes axe", async (route) => {
+  // Five routes at once, each in a context of its own in the one browser: the project's
+  // `maxConcurrency` bounds the pool, and no route shares state with another.
+  it.concurrent.for(ROUTES)("renders %s without console errors and passes axe", async (route, { expect }) => {
     // axe-core opens a page of its own in the same context, so the page has an explicit one.
     const context = await browser().newContext({ viewport: DESKTOP_VIEWPORT });
     const page = await context.newPage();

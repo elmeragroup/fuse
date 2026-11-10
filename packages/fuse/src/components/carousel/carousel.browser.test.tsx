@@ -1,10 +1,11 @@
+import { useState } from "react";
 import type { ReactElement, ReactNode } from "react";
 
 import { afterEach, describe, expect, it } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
-import { pollFrames, wait } from "../../../test/animation-frames";
+import { pollFrames } from "../../../test/animation-frames";
 import { carouselSlides } from "../../../test/carousel-fixtures";
 import {
   carouselIndicators,
@@ -16,6 +17,7 @@ import { CaughtError, caughtError } from "../../../test/caught-error";
 import { withLocale } from "../../../test/locale-matrix";
 import "../../../test/pointer-press";
 import { renderThemed, roleNamed } from "../../../test/themed-browser-render";
+import type { CarouselIndexChangeReason } from "./carousel-context";
 import { Carousel } from "./index";
 
 /** The fixture's slide width, so page N's slide starts N × WIDTH into the scroll range. */
@@ -49,6 +51,83 @@ afterEach(() => {
   document.documentElement.removeAttribute("data-density");
 });
 
+describe("Carousel roles and controls", () => {
+  it("is a named carousel region of slides named by their place", async () => {
+    renderThemed(<Fixture />);
+    expect(roleNamed("region", "Offers").getAttribute("aria-roledescription")).toBe("carousel");
+    await expect.poll(() => page.getByRole("group", { name: "1 of 4" }).query()).not.toBeNull();
+    for (const name of ["1 of 4", "2 of 4", "3 of 4", "4 of 4"]) {
+      expect(roleNamed("group", name).getAttribute("aria-roledescription")).toBe("slide");
+    }
+  });
+
+  it("disables Previous on the first page and Next on the last, keeping focus on Next", async () => {
+    renderThemed(<Fixture count={3} />);
+    const viewport = carouselViewport(roleNamed("region", "Offers"));
+    const previous = roleNamed("button", "Previous slide");
+    const next = roleNamed("button", "Next slide");
+    await pollFrames(() => carouselIndicators().length, 3);
+    expect(previous.getAttribute("aria-disabled")).toBe("true");
+
+    await userEvent.click(next);
+    await userEvent.click(next);
+    await settledOn(viewport, 2 * WIDTH);
+    expect(next.getAttribute("aria-disabled")).toBe("true");
+    expect(previous.getAttribute("aria-disabled")).not.toBe("true");
+    // Playwright will not click an aria-disabled button, so the click is the element's own.
+    next.click();
+    await settledOn(viewport, 2 * WIDTH);
+    expect(document.activeElement).toBe(next);
+  });
+
+  it("reports each change with its reason and scrolls to an index the parent sets", async () => {
+    const changes: [number, CarouselIndexChangeReason][] = [];
+    function Controlled(): ReactElement {
+      const [index, setIndex] = useState(0);
+      return (
+        <>
+          <button type="button" onClick={() => setIndex(3)}>
+            Jump to last
+          </button>
+          <Fixture
+            count={4}
+            root={{
+              index,
+              onIndexChange: (next, { reason }) => {
+                changes.push([next, reason]);
+                setIndex(next);
+              },
+            }}
+          />
+        </>
+      );
+    }
+    renderThemed(<Controlled />);
+    const viewport = carouselViewport(roleNamed("region", "Offers"));
+    await pollFrames(() => carouselIndicators().length, 4);
+
+    await userEvent.click(roleNamed("button", "Next slide"));
+    await settledOn(viewport, WIDTH);
+    await userEvent.click(roleNamed("button", "Slide 3 of 4"));
+    await settledOn(viewport, 2 * WIDTH);
+    expect(roleNamed("button", "Slide 3 of 4").getAttribute("aria-disabled")).toBe("true");
+    await userEvent.click(roleNamed("button", "Previous slide"));
+    await settledOn(viewport, WIDTH);
+    viewport.scrollTo({ left: 0, behavior: "instant" });
+    await pollFrames(currentIndicator, 0);
+    expect(changes).toEqual([
+      [1, "next"],
+      [2, "indicator"],
+      [1, "previous"],
+      [0, "scroll"],
+    ]);
+
+    await userEvent.click(roleNamed("button", "Jump to last"));
+    await settledOn(viewport, 3 * WIDTH);
+    expect(currentIndicator()).toBe(3);
+  });
+});
+
 describe("Carousel held keys", () => {
   it("returns a controlled carousel to its page once a held arrow key is released", async () => {
     renderThemed(
@@ -64,12 +143,11 @@ describe("Carousel held keys", () => {
     // Held: the first press scrolls, and its scroll ends while the key is still down, so its settle
     // waits for the release. The key then repeats, each repeat new input on the viewport.
     await userEvent.keyboard("{ArrowRight>}");
-    await pollFrames(() => viewport.scrollLeft > 0, true, 180);
-    await wait(500);
+    await settledOn(viewport, WIDTH);
     // Repeats until past the last page: three presses reach it, and the later ones scroll nothing.
     for (let repeat = 0; repeat < 5; repeat += 1) {
       await userEvent.keyboard("{ArrowRight>}");
-      await wait(400);
+      await settledOn(viewport, Math.min(repeat + 2, 3) * WIDTH);
     }
     // Still held, so nothing has settled the parent's page back.
     await settledOn(viewport, 3 * WIDTH);

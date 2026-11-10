@@ -42,6 +42,29 @@ describe("aria-disabled Sidebar rows", () => {
     await expectActivationCancelled(link, clicks);
   });
 
+  it("neither follows a MenuSubButton link nor runs its onClick", async () => {
+    const clicks: string[] = [];
+    renderThemed(
+      <Frame>
+        <Sidebar.MenuItem>
+          <Sidebar.MenuButton>Billing</Sidebar.MenuButton>
+          <Sidebar.MenuSub>
+            <Sidebar.MenuSubItem>
+              <Sidebar.MenuSubButton
+                href="#invoices"
+                aria-disabled="true"
+                onClick={() => clicks.push("invoices")}>
+                Invoices
+              </Sidebar.MenuSubButton>
+            </Sidebar.MenuSubItem>
+          </Sidebar.MenuSub>
+        </Sidebar.MenuItem>
+      </Frame>
+    );
+
+    await expectActivationCancelled(roleNamed("link", "Invoices"), clicks);
+  });
+
   // A middle-click fires `auxclick`, not `click`, and a link opens in a new tab as that event's
   // default action. The window listener runs after the row's own handler, records whether the
   // row cancelled it, then cancels it itself so an unguarded row opens no tab.

@@ -9,6 +9,7 @@ import {
   LABEL,
   cssVarColor,
   fieldRootFrom,
+  inputNamed,
   px,
   renderThemed,
   roleNamed,
@@ -48,6 +49,37 @@ describe("Field", () => {
     expect(alert.textContent).toBe("Required");
   });
 
+  it("describes the control with the validate result and the native constraint message on blur", async () => {
+    renderThemed(
+      <>
+        <Field.Root
+          validationMode="onBlur"
+          validate={(value) => (String(value).length < 3 ? "Use at least 3 characters." : null)}>
+          <Field.Label>Name</Field.Label>
+          <Field.Control render={<input />} />
+          <Field.Error />
+        </Field.Root>
+        <Field.Root validationMode="onBlur">
+          <Field.Label>Email</Field.Label>
+          <Field.Control type="email" render={<input />} />
+          <Field.Error />
+        </Field.Root>
+      </>
+    );
+    expect(page.getByRole("alert").query()).toBeNull();
+
+    await userEvent.type(textboxNamed("Name"), "Al");
+    await userEvent.type(textboxNamed("Email"), "ada");
+    await userEvent.keyboard("{Tab}");
+
+    await expect.element(textboxNamed("Name")).toHaveAccessibleDescription("Use at least 3 characters.");
+    expect(textboxNamed("Name").getAttribute("aria-invalid")).toBe("true");
+    // The oracle is the browser's own message for the failed `type="email"` constraint.
+    const nativeMessage = inputNamed("Email").validationMessage;
+    expect(nativeMessage).not.toBe("");
+    await expect.element(textboxNamed("Email")).toHaveAccessibleDescription(nativeMessage);
+  });
+
   it("shows given children instead of the field's own error", () => {
     renderThemed(
       <Form errors={{ email: "Already registered." }}>
@@ -80,6 +112,15 @@ describe("Field", () => {
     await expect
       .element(textboxNamed("Email"))
       .toHaveAccessibleDescription("Work address preferred. Required");
+  });
+
+  it("keeps the fieldset named by its legend when a wrapper forwards ARIA props and id as undefined", async () => {
+    renderThemed(
+      <Field.Set aria-labelledby={undefined}>
+        <Field.Legend id={undefined}>Contact</Field.Legend>
+      </Field.Set>
+    );
+    await expect.element(page.getByRole("group", { name: "Contact", exact: true })).toBeInTheDocument();
   });
 
   it("describes a fieldset with the descriptions it holds outside any root, in DOM order", async () => {

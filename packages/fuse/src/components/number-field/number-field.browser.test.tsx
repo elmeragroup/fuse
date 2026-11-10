@@ -222,6 +222,73 @@ describe("NumberField", () => {
     expect(page.getByRole("button", { name: "Add one", exact: true }).query()).toBeTruthy();
     expect(page.getByRole("button", { name: DECREASE_COPY["sv-SE"], exact: true }).query()).toBeTruthy();
   });
+  it("disables the input and steppers, and keeps a read-only input focusable", async () => {
+    renderField(
+      <>
+        <button type="button">Before</button>
+        <NumberField label="Disabled" isDisabled defaultValue={3} />
+        <NumberField label="Locked" isReadOnly defaultValue={7} />
+      </>
+    );
+    expect(textboxNamed("Disabled")).toHaveProperty("disabled", true);
+    expect(stepperIn("Disabled", "Increase").getAttribute("aria-disabled")).toBe("true");
+    expect(textboxNamed("Locked")).toHaveProperty("readOnly", true);
+    expect(stepperIn("Locked", "Increase").getAttribute("aria-disabled")).toBe("true");
+    expect(stepperIn("Locked", "Decrease").getAttribute("aria-disabled")).toBe("true");
+
+    page.getByRole("button", { name: "Before", exact: true }).element().focus();
+    await userEvent.keyboard("{Tab}");
+    expect(document.activeElement).toBe(textboxNamed("Locked"));
+    await userEvent.keyboard("{ArrowUp}");
+    await expect.element(textboxNamed("Locked")).toHaveValue("7");
+  });
+
+  it.each([
+    ["valid", {}, null, ""],
+    ["invalid", { isInvalid: true }, "true", ""],
+    [
+      "invalid with an error",
+      { isInvalid: true, errorMessage: "Enter a quantity." },
+      "true",
+      "Enter a quantity.",
+    ],
+  ] as const)(
+    "marks a %s field and describes its input by the error",
+    async (_label, props, invalid, description) => {
+      renderField(<NumberField label="Quantity" defaultValue={1} {...props} />);
+      expect(groupFrom("Quantity").getAttribute("aria-invalid")).toBe(invalid);
+      await expect.element(textboxNamed("Quantity")).toHaveAccessibleDescription(description);
+      expect(page.getByRole("alert").query()?.textContent ?? "").toBe(description);
+    }
+  );
+
+  // A wrapper forwarding its optional props as `undefined` must keep the Field label, skip
+  // autofocus and submit the same value as omitting them.
+  it("submits the numeric value through the hidden input with optional props forwarded as undefined", async () => {
+    const submitted: Array<FormDataEntryValue | null> = [];
+    renderField(
+      <form
+        onSubmit={(event) => {
+          event.preventDefault();
+          submitted.push(new FormData(event.currentTarget).get("qty"));
+        }}>
+        <NumberField
+          label="Quantity"
+          name="qty"
+          defaultValue={1234}
+          id={undefined}
+          aria-label={undefined}
+          autoFocus={undefined}
+          minValue={undefined}
+          formatOptions={undefined}
+        />
+        <button type="submit">Save</button>
+      </form>
+    );
+    expect(document.activeElement).not.toBe(textboxNamed("Quantity"));
+    await userEvent.click(page.getByRole("button", { name: "Save", exact: true }));
+    expect(submitted).toEqual(["1234"]);
+  });
 });
 
 describe("NumberField onValueCommitted", () => {

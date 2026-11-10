@@ -21,6 +21,8 @@ import { DENSITIES } from "../../theme/density";
 import { PopoverContent, PopoverRoot, PopoverTrigger } from "../popover/popover";
 import { Alert } from "./alert";
 
+const VARIANTS = ["default", "destructive", "warning", "success", "info"] as const;
+
 function alertNamed(name: string): HTMLElement {
   const element = page.getByRole("alert").element();
   if (!(element instanceof HTMLElement)) {
@@ -36,6 +38,15 @@ function descriptionIn(root: HTMLElement): HTMLElement {
     throw new Error("expected item-description");
   }
   return description;
+}
+
+function iconIn(root: HTMLElement): SVGSVGElement {
+  // Variant icons are asserted via the alert-icon data-slot hook.
+  const icon = root.querySelector('[data-slot="alert-icon"]');
+  if (!(icon instanceof SVGSVGElement)) {
+    throw new Error("expected alert-icon");
+  }
+  return icon;
 }
 
 /** WCAG AA for body-size text, the size the sm action label renders at. */
@@ -66,6 +77,39 @@ async function settled(element: HTMLElement): Promise<void> {
 }
 
 describe("Alert", () => {
+  it("finds Root by alert role for every variant and keeps its heading and body inside it", () => {
+    for (const variant of VARIANTS) {
+      const { unmount } = renderThemed(
+        <Alert.Root variant={variant}>
+          <Alert.Title>{variant} title</Alert.Title>
+          <Alert.Description>{variant} body</Alert.Description>
+        </Alert.Root>
+      );
+      const root = alertNamed(variant);
+      expect(root.contains(headingNamed(`${variant} title`, 3)), variant).toBe(true);
+      expect(root.contains(textNamed(`${variant} body`)), variant).toBe(true);
+      unmount();
+    }
+  });
+
+  it("takes a consumer's status role in place of alert and keeps its heading, icon and action", () => {
+    renderThemed(
+      <Alert.Root variant="info" role="status" onAction={() => undefined} actionLabel="Read more">
+        <Alert.Title>Invoice by email</Alert.Title>
+        <Alert.Description>The invoice goes to your email address.</Alert.Description>
+      </Alert.Root>
+    );
+    expect(page.getByRole("alert").query()).toBeNull();
+    const root = page.getByRole("status").element();
+    if (!(root instanceof HTMLElement)) {
+      throw new Error("expected status");
+    }
+    expect(root.contains(headingNamed("Invoice by email", 3))).toBe(true);
+    expect(root.contains(textNamed("The invoice goes to your email address."))).toBe(true);
+    expect(root.contains(roleNamed("button", "Read more"))).toBe(true);
+    expect(iconIn(root).getAttribute("aria-hidden")).toBe("true");
+  });
+
   it("shows every line of a long description instead of clamping it", () => {
     const sentence = "The supplier switch completes on the first day of next month.";
     renderThemed(

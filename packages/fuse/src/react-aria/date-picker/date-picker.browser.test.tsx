@@ -3,6 +3,7 @@ import type { ReactElement, ReactNode } from "react";
 
 import { CalendarDate } from "@internationalized/date";
 import { DatePickerContext } from "react-aria-components";
+import type { ValidationResult } from "react-aria-components";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
@@ -77,6 +78,7 @@ async function openPicker(): Promise<HTMLElement> {
 }
 
 const march10 = new CalendarDate(2026, 3, 10);
+const july4 = new CalendarDate(2026, 7, 4);
 const july14 = new CalendarDate(2026, 7, 14);
 
 /**
@@ -263,8 +265,55 @@ describe("DatePicker", () => {
 
     expect(calendarGrid().getAttribute("aria-label")).toMatch(/January\s+1990/i);
   });
+
+  it("renders a function errorMessage from the ValidationResult and associates it", async () => {
+    let seen: ValidationResult | undefined;
+    renderPicker(
+      <DatePicker
+        label="Invoice date"
+        defaultValue={new CalendarDate(2026, 1, 1)}
+        minValue={july4}
+        validationBehavior="aria"
+        errorMessage={(validation) => {
+          seen = validation;
+          return (
+            <span role="status" aria-label="Invoice date error details">
+              {validation.validationErrors.join(" ")}
+            </span>
+          );
+        }}
+      />
+    );
+    const error = page.getByRole("status", { name: "Invoice date error details" });
+    await expect.element(error).toBeVisible();
+    const errorNode = error.element();
+    if (!(errorNode instanceof HTMLElement)) {
+      throw new Error("expected the error node");
+    }
+
+    expect(seen?.isInvalid).toBe(true);
+    expect(seen?.validationErrors.length).toBeGreaterThan(0);
+    expect(errorNode.textContent).not.toBe("");
+    const group = groupNamed("Invoice date");
+    const root = group.parentElement;
+    if (!(root instanceof HTMLElement)) {
+      throw new Error("expected the DatePicker root");
+    }
+    expect(root).toHaveAttribute("data-invalid");
+    expect(describedTextsFor(group)).toContain(errorNode.textContent);
+  });
+
+  it("disables the trigger of a read-only field and keeps the popover closed", async () => {
+    renderPicker(<DatePicker label="Invoice date" isReadOnly value={july14} />);
+    expect(groupNamed("Invoice date").getAttribute("data-readonly")).toBe("true");
+    expect(trigger()).toBeDisabled();
+    await userEvent.click(trigger(), { force: true });
+    expect(page.getByRole("dialog").query()).toBeNull();
+  });
 });
 
+// The group's name precedence and dictionary copy are the shared preset group's, proved for
+// both public groups in `internal/picker-presets.browser.test.tsx`.
 describe("DatePicker presets", () => {
   it("exposes a radiogroup named by visible copy, closing on double-click only where the caller opted in", async () => {
     const onDoubleClick = vi.fn();

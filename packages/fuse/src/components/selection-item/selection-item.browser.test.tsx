@@ -1,6 +1,6 @@
 import { Checkbox } from "@base-ui/react/checkbox";
 import { describe, expect, it } from "vitest";
-import { userEvent } from "vitest/browser";
+import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 // Role tokens live in themes.css only; the fill test reads --card and --background.
@@ -16,11 +16,11 @@ import {
   textNamed,
 } from "../../../test/themed-browser-render";
 import { ThemeScope } from "../../theme";
-import { CheckboxItemGroup } from "../checkbox/checkbox";
+import { CheckboxGroup, CheckboxItemGroup } from "../checkbox/checkbox";
 import { CheckboxItem } from "../checkbox/checkbox-item";
 import { Field } from "../field";
 import { Item } from "../item";
-import { RadioItemGroup } from "../radio-group/radio-group";
+import { Radio, RadioGroup, RadioItemGroup } from "../radio-group/radio-group";
 import { RadioItem } from "../radio-group/radio-item";
 import { SelectionItem } from "./index";
 
@@ -211,6 +211,48 @@ describe("SelectionItem", () => {
     expect(getComputedStyle(branded).backgroundColor).toBe(cssVarColor(branded, "--card"));
     expect(getComputedStyle(branded).marginTop).toBe("0px");
   });
+
+  it.each([
+    { item: "CheckboxItem", role: "checkbox", slot: "checkbox-item" },
+    { item: "RadioItem", role: "radio", slot: "radio-item" },
+  ] as const)(
+    "puts root attributes on a $item's row and keeps its own data-slot and list role",
+    async ({ role, slot }) => {
+      const rowProps = {
+        "data-testid": "plan-fixed",
+        id: "plan-fixed-row",
+        "data-analytics": "plan",
+        // The item's own slot names the row; a consumer's does not replace it.
+        "data-slot": "consumer-slot",
+        // An undefined prop leaves the card list's wiring in place.
+        role: undefined,
+      };
+      renderThemed(
+        role === "checkbox" ? (
+          <CheckboxItemGroup label="Plans">
+            <CheckboxItem value="fixed" {...rowProps}>
+              <RowTitle>Fixed price</RowTitle>
+            </CheckboxItem>
+          </CheckboxItemGroup>
+        ) : (
+          <RadioItemGroup label="Plans">
+            <RadioItem value="fixed" {...rowProps}>
+              <RowTitle>Fixed price</RowTitle>
+            </RadioItem>
+          </RadioItemGroup>
+        )
+      );
+
+      const row = page.getByTestId("plan-fixed");
+      expect(row.element()).toBe(shellFrom("Fixed price"));
+      expect(row.element().id).toBe("plan-fixed-row");
+      expect(row.element().getAttribute("data-analytics")).toBe("plan");
+      expect(row.element().getAttribute("data-slot")).toBe(slot);
+      expect(row.element().getAttribute("role")).toBe("listitem");
+      await userEvent.click(row.getByRole(role));
+      expect(roleNamed(role, "Fixed price").getAttribute("aria-checked")).toBe("true");
+    }
+  );
 });
 
 function fontAndLeading(element: HTMLElement): [number, number] {
@@ -235,5 +277,60 @@ describe("selection row type", () => {
     for (const text of ["Item title", "Item description"]) {
       expect(fontAndLeading(textNamed(text))[0], text).toBe(14);
     }
+  });
+});
+
+describe("selection group names", () => {
+  function radioNamed(name: string): HTMLElement {
+    const element = page.getByRole("radio", { name, exact: true }).element();
+    if (!(element instanceof HTMLElement)) {
+      throw new Error(`expected radio named ${name}`);
+    }
+    return element;
+  }
+
+  it("gives every member control an accessible name in both the plain and card shapes", () => {
+    renderThemed(
+      <>
+        <CheckboxGroup label="Plain checks" description="Pick some" errorMessage="Check error">
+          <CheckboxItem value="a">Plain check</CheckboxItem>
+        </CheckboxGroup>
+        <CheckboxItemGroup label="Card checks" description="Pick some" errorMessage="Card check error">
+          <CheckboxItem value="a">
+            <RowTitle>Card check</RowTitle>
+          </CheckboxItem>
+        </CheckboxItemGroup>
+        <RadioGroup label="Plain radios" description="Pick one" errorMessage="Radio error">
+          <Radio value="a">Plain radio</Radio>
+        </RadioGroup>
+        <RadioItemGroup label="Card radios" description="Pick one" errorMessage="Card radio error">
+          <RadioItem value="a">
+            <RowTitle>Card radio</RowTitle>
+          </RadioItem>
+        </RadioItemGroup>
+      </>
+    );
+
+    // Every control is named, including inside cards: a nested Field.Root
+    // would leave these blank.
+    for (const name of ["Plain check", "Card check"]) {
+      expect(checkboxNamed(name)).toBeTruthy();
+    }
+    for (const name of ["Plain radio", "Card radio"]) {
+      expect(radioNamed(name)).toBeTruthy();
+    }
+    // The groups keep their legend name, and each frame renders exactly one alert.
+    for (const name of ["Plain checks", "Card checks"]) {
+      expect(page.getByRole("group", { name, exact: true }).elements().length).toBeGreaterThan(0);
+    }
+    for (const name of ["Plain radios", "Card radios"]) {
+      expect(page.getByRole("radiogroup", { name, exact: true }).element()).toBeTruthy();
+    }
+    expect(
+      page
+        .getByRole("alert")
+        .elements()
+        .map((element) => element.textContent)
+    ).toEqual(["Check error", "Card check error", "Radio error", "Card radio error"]);
   });
 });

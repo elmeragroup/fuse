@@ -59,6 +59,88 @@ describe("Checkbox", () => {
     expect(checkboxNamed("Alerts", true).getAttribute("aria-checked")).toBe("true");
   });
 
+  it("follows a controlled checked prop and reports each toggle", async () => {
+    const onCheckedChange = vi.fn<(checked: boolean) => void>();
+    function Controlled() {
+      const [checked, setChecked] = useState(true);
+      return (
+        <>
+          <Checkbox
+            aria-label="Alerts"
+            checked={checked}
+            onCheckedChange={(next) => {
+              onCheckedChange(next);
+              setChecked(next);
+            }}
+          />
+          <Checkbox aria-label="Pinned" checked />
+        </>
+      );
+    }
+    renderThemed(<Controlled />);
+
+    await userEvent.click(checkboxNamed("Alerts", true));
+    expect(onCheckedChange.mock.calls.map(([next]) => next)).toEqual([false]);
+    expect(checkboxNamed("Alerts").getAttribute("aria-checked")).toBe("false");
+    // With no state behind it, a controlled box shows its prop whatever is clicked.
+    await userEvent.click(checkboxNamed("Pinned"));
+    expect(checkboxNamed("Pinned").getAttribute("aria-checked")).toBe("true");
+  });
+
+  it("blocks toggling when disabled or readOnly", async () => {
+    const onCheckedChange = vi.fn();
+    renderThemed(
+      <>
+        <Checkbox aria-label="Disabled" disabled onCheckedChange={onCheckedChange} />
+        <Checkbox aria-label="Locked" readOnly onCheckedChange={onCheckedChange} />
+      </>
+    );
+
+    await expect.element(page.getByRole("checkbox", { name: "Disabled" })).toBeDisabled();
+    expect(checkboxNamed("Locked").getAttribute("aria-readonly")).toBe("true");
+    checkboxNamed("Disabled").click();
+    await userEvent.click(checkboxNamed("Locked"));
+    await userEvent.keyboard(" ");
+    expect(onCheckedChange).not.toHaveBeenCalled();
+    expect(checkboxNamed("Disabled").getAttribute("aria-checked")).toBe("false");
+    expect(checkboxNamed("Locked").getAttribute("aria-checked")).toBe("false");
+  });
+
+  it("submits what each box shows after native reset, controlled or not", async () => {
+    function Marketing() {
+      const [checked, setChecked] = useState(true);
+      return (
+        <Field.Root name="marketing">
+          <Checkbox checked={checked} onCheckedChange={setChecked} />
+          <Field.Label>Marketing</Field.Label>
+        </Field.Root>
+      );
+    }
+    renderThemed(
+      <form aria-label="Consents">
+        <Field.Root name="terms">
+          <Checkbox />
+          <Field.Label>Terms</Field.Label>
+        </Field.Root>
+        <Marketing />
+        <input name="note" aria-label="Note" defaultValue="" />
+      </form>
+    );
+    await userEvent.fill(page.getByRole("textbox", { name: "Note", exact: true }), "Call first");
+    await userEvent.click(checkboxNamed("Terms"));
+    await userEvent.click(checkboxNamed("Marketing"));
+
+    formNamed("Consents").reset();
+    // The native note empties; each box keeps what it shows and submits that.
+    await vi.waitFor(() => {
+      expect([...new FormData(formNamed("Consents")).entries()]).toEqual([
+        ["terms", "on"],
+        ["note", ""],
+      ]);
+    });
+    expect(checkboxNamed("Marketing").getAttribute("aria-checked")).toBe("false");
+  });
+
   it("submits what the box shows after a form action resets the form", async () => {
     const send = vi.fn<(data: FormData) => Promise<void>>(() => Promise.resolve());
     renderThemed(
@@ -117,6 +199,27 @@ describe("CheckboxGroup", () => {
     await userEvent.click(page.getByRole("checkbox", { name: "Mushroom", exact: true }));
     expect(checkboxNamed("Pepperoni", true).getAttribute("aria-checked")).toBe("true");
     expect(checkboxNamed("Mushroom", false).getAttribute("aria-checked")).toBe("false");
+  });
+
+  it("shows mixed on a parent over a partial selection, then checks and unchecks all", async () => {
+    renderThemed(
+      <CheckboxGroup label="Toppings" allValues={["a", "b", "c"]} defaultValue={["a", "b"]}>
+        <CheckboxItem parent>All toppings</CheckboxItem>
+        <CheckboxItem value="a">Pepperoni</CheckboxItem>
+        <CheckboxItem value="b">Mushroom</CheckboxItem>
+        <CheckboxItem value="c">Olive</CheckboxItem>
+      </CheckboxGroup>
+    );
+    const states = () =>
+      ["All toppings", "Pepperoni", "Mushroom", "Olive"].map((name) =>
+        checkboxNamed(name).getAttribute("aria-checked")
+      );
+
+    expect(states()).toEqual(["mixed", "true", "true", "false"]);
+    await userEvent.click(checkboxNamed("All toppings"));
+    expect(states()).toEqual(["true", "true", "true", "true"]);
+    await userEvent.click(checkboxNamed("All toppings"));
+    expect(states()).toEqual(["false", "false", "false", "false"]);
   });
 
   it("renders a ReactNode error as role=alert and stamps invalid on members", () => {

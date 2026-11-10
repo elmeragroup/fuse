@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, onTestFinished, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
@@ -10,6 +10,7 @@ import {
   FIELDS_WITH_RUSH_TOGGLE,
   columnFilters,
   renderOrders,
+  visibleOrders,
 } from "../../../test/data-table-filter-fixture";
 import { emulateReducedMotion } from "../../../test/reduced-motion";
 import { roleNamed } from "../../../test/themed-browser-render";
@@ -25,6 +26,45 @@ async function openMenu(): Promise<void> {
 }
 
 describe("DataTableFilter add menu", () => {
+  it("opens a dialog of field rows in config order, and ticks values live with the menu open", async () => {
+    renderOrders({ initial: [] });
+    await openMenu();
+    const trigger = roleNamed("button", "Filter");
+    expect(trigger.getAttribute("aria-haspopup")).toBe("dialog");
+    expect(trigger.getAttribute("aria-expanded")).toBe("true");
+    expect(
+      page
+        .getByRole("menuitem")
+        .elements()
+        .map((row) => row.textContent)
+    ).toEqual(["Status", "Tags", "Customer", "Amount", "Created"]);
+    expect(roleNamed("menuitem", "Status").getAttribute("aria-haspopup")).toBe("dialog");
+
+    await userEvent.click(roleNamed("menuitem", "Status"));
+    await userEvent.click(page.getByRole("menuitemcheckbox", { name: "Paid" }));
+    await expect.poll(visibleOrders).toBe("1 3");
+    expect(roleNamed("menuitemcheckbox", "Paid").getAttribute("aria-checked")).toBe("true");
+    expect(menuOpen()).toBe(true);
+  });
+
+  it("applies a date preset and closes the menu with focus on the Trigger", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-10-12T12:00:00Z"));
+    onTestFinished(() => {
+      vi.useRealTimers();
+    });
+    renderOrders({ initial: [] });
+    await openMenu();
+    await userEvent.click(roleNamed("menuitem", "Created"));
+    await userEvent.click(page.getByRole("button", { name: "Last 30 days" }));
+    await expect.poll(menuOpen).toBe(false);
+    await expect.poll(() => focusIs("button", "Filter")).toBe(true);
+    // The 30 days through 2026-10-12, written out.
+    expect(columnFilters()).toEqual([
+      { id: "created", value: { kind: "date", operator: "isBetween", values: ["2026-09-13", "2026-10-12"] } },
+    ]);
+  });
+
   it("keeps ArrowRight, Home and End in the search when a pointer open highlights nothing", async () => {
     renderOrders({ initial: [] });
     await openMenu();

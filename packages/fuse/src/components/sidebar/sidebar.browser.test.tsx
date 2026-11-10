@@ -9,6 +9,7 @@ import {
   ContextProbe,
   Frame,
   MOBILE,
+  OrdersLink,
   bySlot,
   captureCookieWrites,
   railNamed,
@@ -126,6 +127,42 @@ describe("Sidebar toggle paths", () => {
     await userEvent.click(rail);
     expect(clicks).toEqual(["rail", "rail"]);
     expect(sidebarRoot().getAttribute("data-state")).toBe("expanded");
+  });
+});
+
+describe("Sidebar focus while collapsed", () => {
+  it("moves focus out of the panel on collapse and reaches its controls again once it reopens", async () => {
+    // Without the width tween the Trigger is still when it is clicked.
+    await emulateReducedMotion("reduce");
+    let latest: SidebarContextValue | undefined;
+    renderThemed(
+      <Frame probe={<ContextProbe onValue={(value) => (latest = value)} />}>
+        <OrdersLink />
+      </Frame>
+    );
+    roleNamed("link", "Orders").focus();
+
+    latest?.setOpen(false);
+    await expect.poll(() => sidebarRoot().getAttribute("data-state")).toBe("collapsed");
+    expect(sidebarRoot().contains(document.activeElement)).toBe(false);
+    await userEvent.keyboard("{Tab}");
+    expect(document.activeElement).toBe(roleNamed("button", "Toggle sidebar"));
+
+    await userEvent.click(roleNamed("button", "Toggle sidebar"));
+    await expect.poll(() => sidebarRoot().getAttribute("data-state")).toBe("expanded");
+    await userEvent.keyboard("{Shift>}{Tab}{/Shift}");
+    expect(document.activeElement).toBe(roleNamed("link", "Orders"));
+  });
+
+  it("keeps icon-collapsed menu buttons in the Tab order", async () => {
+    renderThemed(
+      <Frame provider={{ defaultOpen: false }} root={{ collapsible: "icon" }}>
+        <OrdersLink />
+      </Frame>
+    );
+    roleNamed("button", "Toggle sidebar").focus();
+    await userEvent.keyboard("{Shift>}{Tab}{/Shift}");
+    expect(document.activeElement).toBe(roleNamed("link", "Orders"));
   });
 });
 

@@ -15,6 +15,7 @@ import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
+import { expectRenderTypeError } from "../../../test/caught-error";
 import { withLocale } from "../../../test/locale-matrix";
 import { waitForPopupSettled } from "../../../test/popup-settled";
 import { emulateReducedMotion } from "../../../test/reduced-motion";
@@ -124,6 +125,190 @@ describe("DatePicker opening and closing", () => {
     await expect
       .element(log())
       .toHaveTextContent("open:true:trigger-press | value:keyboard:2026-10-06 | open:false:keyboard");
+  });
+  it("returns focus to the opening segment only for a popup the picker opened itself", async () => {
+    function ParentOpened(): ReactElement {
+      const [open, setOpen] = useState(false);
+      return (
+        <>
+          <DatePickerField
+            label="Start date"
+            defaultValue={Temporal.PlainDate.from("2026-10-05")}
+            isOpen={open}
+            onOpenChange={setOpen}
+          />
+          <button type="button" onClick={() => setOpen(true)}>
+            Show calendar
+          </button>
+        </>
+      );
+    }
+    renderThemed(withLocale("en-US", <ParentOpened />));
+    const year = roleNamed("spinbutton", "year, Start date");
+    await userEvent.click(year);
+    await userEvent.keyboard("{Alt>}{ArrowDown}{/Alt}");
+    await expect.element(page.getByRole("dialog")).toBeVisible();
+    await userEvent.keyboard("{Escape}");
+    await expect.element(page.getByRole("dialog")).not.toBeInTheDocument();
+    expect(document.activeElement).toBe(year);
+
+    await userEvent.click(roleNamed("button", "Show calendar"));
+    await expect.element(page.getByRole("dialog")).toBeVisible();
+    await userEvent.keyboard("{Escape}");
+    await expect.element(page.getByRole("dialog")).not.toBeInTheDocument();
+    expect(document.activeElement).not.toBe(year);
+  });
+
+  it("disables the trigger of a read-only picker", () => {
+    renderThemed(
+      withLocale(
+        "en-US",
+        <DatePickerField label="Start date" defaultValue={Temporal.PlainDate.from("2026-10-05")} isReadOnly />
+      )
+    );
+    expect(roleNamed("button", "Calendar Start date")).toBeDisabled();
+  });
+});
+
+describe("DatePicker values", () => {
+  it("commits a date typed digit by digit into an empty picker", async () => {
+    renderThemed(withLocale("en-US", <LoggedPicker aria-label="Birth date" />));
+    expect(segmentTexts()).toEqual(["mm", "dd", "yyyy"]);
+    await userEvent.click(page.getByRole("spinbutton").first());
+    await userEvent.keyboard("03152008");
+
+    expect(segmentTexts()).toEqual(["3", "15", "2008"]);
+    // Each digit commits the date it completes; the last one is March 15, 2008.
+    await expect
+      .poll(() => log().element().textContent.split(" | ").at(-1))
+      .toBe("value:input-change:2008-03-15");
+    await expect.element(page.getByRole("spinbutton", { name: "year, Birth date" })).toHaveFocus();
+  });
+
+  it("keeps the value's time and zone when a day is picked", async () => {
+    renderThemed(
+      withLocale(
+        "en-US",
+        <LoggedPicker
+          aria-label="Starts"
+          granularity="minute"
+          hourCycle={24}
+          defaultValue={Temporal.ZonedDateTime.from("2026-10-05T14:30[Europe/Oslo]")}
+        />
+      )
+    );
+    await userEvent.click(roleNamed("button", "Calendar Starts"));
+    await waitForPopupSettled();
+    await userEvent.click(roleNamed("button", "Monday, October 26, 2026"));
+
+    // October 26 is after the clocks go back, so the offset changes and the wall time stays.
+    await expect
+      .element(log())
+      .toHaveTextContent(
+        "open:true:trigger-press | value:day-press:2026-10-26T14:30:00+01:00[Europe/Oslo] | open:false:day-press"
+      );
+  });
+
+  it("throws a TypeError naming the Root, the prop and the string for ISO text", () => {
+    expectRenderTypeError(
+      'DatePicker.Root minValue: received the string "2026-10-01"',
+      <DatePickerField
+        label="Start date"
+        // @ts-expect-error -- text reaches the prop past the types, as from plain JavaScript
+        minValue="2026-10-01"
+      />
+    );
+  });
+});
+
+describe("DatePicker presets", () => {
+  /** A preset's label, its hit area: the radio inside it is visually hidden. */
+  function presetLabel(name: string): HTMLLabelElement {
+    const label = roleNamed("radio", name).closest("label");
+    if (label === null) throw new Error(`expected the label of preset ${name}`);
+    return label;
+  }
+
+  it("syncs a controlled preset with the value and calendar, and closes on a double-click", async () => {
+    const closes: string[] = [];
+    function Presets(): ReactElement {
+      const [preset, setPreset] = useState<string | null>(null);
+      const [value, setValue] = useState<Temporal.PlainDate | null>(Temporal.PlainDate.from("2026-10-05"));
+      return (
+        <DatePicker.Root
+          aria-label="Start date"
+          value={value}
+          onValueChange={setValue}
+          defaultOpen
+          onOpenChange={(open, details) => {
+            if (!open) closes.push(details.reason);
+          }}>
+          <DatePicker.Group>
+            <DatePicker.Input />
+            <DatePicker.Trigger />
+          </DatePicker.Group>
+          <DatePicker.Popup>
+            <DatePicker.Presets
+              value={preset}
+              onValueChange={(next) => {
+                setPreset(next);
+                setValue(Temporal.PlainDate.from(next === "christmas" ? "2026-12-24" : "2026-10-31"));
+              }}>
+              <DatePicker.PresetItem value="christmas" closeOnDoubleClick>
+                Christmas Eve
+              </DatePicker.PresetItem>
+              <DatePicker.PresetItem value="halloween" disabled>
+                Halloween
+              </DatePicker.PresetItem>
+            </DatePicker.Presets>
+            <DatePicker.Calendar />
+          </DatePicker.Popup>
+        </DatePicker.Root>
+      );
+    }
+    renderThemed(withLocale("en-US", <Presets />));
+    await waitForPopupSettled();
+    expect(roleNamed("radio", "Halloween")).toBeDisabled();
+
+    await userEvent.click(presetLabel("Christmas Eve"));
+    await expect.element(page.getByRole("radio", { name: "Christmas Eve", exact: true })).toBeChecked();
+    await expect.element(page.getByRole("grid", { name: "December 2026", exact: true })).toBeVisible();
+    expect(segmentTexts()).toEqual(["12", "24", "2026"]);
+    expect(closes).toEqual([]);
+
+    await userEvent.dblClick(presetLabel("Christmas Eve"));
+    await expect.element(page.getByRole("dialog")).not.toBeInTheDocument();
+    expect(closes).toEqual(["preset-press"]);
+  });
+
+  it("reports a pressed preset with its reason and keeps the checked preset when canceled", async () => {
+    const reports: string[] = [];
+    renderThemed(
+      withLocale(
+        "en-US",
+        <DatePicker.Root
+          aria-label="Start date"
+          defaultValue={Temporal.PlainDate.from("2026-10-05")}
+          defaultOpen>
+          <DatePicker.Popup>
+            <DatePicker.Presets
+              defaultValue="today"
+              onValueChange={(value, details) => {
+                reports.push(`${value}:${details.reason}`);
+                if (value === "tomorrow") details.cancel();
+              }}>
+              <DatePicker.PresetItem value="today">Today</DatePicker.PresetItem>
+              <DatePicker.PresetItem value="tomorrow">Tomorrow</DatePicker.PresetItem>
+            </DatePicker.Presets>
+            <DatePicker.Calendar />
+          </DatePicker.Popup>
+        </DatePicker.Root>
+      )
+    );
+    await waitForPopupSettled();
+    await userEvent.click(presetLabel("Tomorrow"));
+    expect(reports).toEqual(["tomorrow:preset-press"]);
+    await expect.element(page.getByRole("radio", { name: "Today", exact: true })).toBeChecked();
   });
 });
 

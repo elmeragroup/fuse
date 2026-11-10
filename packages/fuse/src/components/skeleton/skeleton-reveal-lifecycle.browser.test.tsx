@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
-import { nextFrames, wait } from "../../../test/animation-frames";
+import { nextFrames } from "../../../test/animation-frames";
 import {
   LONG,
   heightAnimation,
@@ -10,6 +10,7 @@ import {
   scriptAnimations,
   slot,
   failOnResizeObserverLoop,
+  finishAnimations,
 } from "../../../test/skeleton-reveal-fixtures";
 
 failOnResizeObserverLoop();
@@ -20,10 +21,15 @@ describe("SkeletonReveal onReveal", () => {
     const { show } = renderInvoice(null, { onReveal: () => (revealed += 1) });
     await nextFrames(2);
     show(LONG);
-    await wait(50);
-    // Back to loading while the content is still fading in.
+    // Paused, the content is still fading in when the data goes back to loading.
+    const stale = scriptAnimations(slot("skeleton-reveal"));
+    expect(stale.length).toBeGreaterThan(0);
+    for (const animation of stale) animation.pause();
     show(LONG, true);
-    await wait(600);
+    await nextFrames(2);
+    // Every animation on the page runs to its end, the stale reveal's included.
+    finishAnimations();
+    await nextFrames(2);
     expect(revealed).toBe(0);
   });
 
@@ -35,9 +41,9 @@ describe("SkeletonReveal onReveal", () => {
     const running = scriptAnimations(slot("skeleton-reveal"));
     const rootEase = heightAnimation(slot("skeleton-reveal"));
     expect(running.length).toBeGreaterThan(0);
-    await wait(50);
     unmount();
-    await wait(600);
+    // Canceled, each animation rejects its `finished`, so no reveal can complete later.
+    await nextFrames(2);
     expect(revealed).toBe(0);
     expect([...running, rootEase].map((animation) => animation?.playState)).toEqual(
       [...running, rootEase].map(() => "idle")

@@ -9,14 +9,88 @@ import { describe, expect, it } from "vitest";
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import { nextFrames } from "../../../test/animation-frames";
-import { querySlot, slot, failOnResizeObserverLoop } from "../../../test/skeleton-reveal-fixtures";
+import {
+  currentPane,
+  querySlot,
+  slot,
+  failOnResizeObserverLoop,
+} from "../../../test/skeleton-reveal-fixtures";
 import { renderThemed, roleNamed } from "../../../test/themed-browser-render";
+import { Button } from "../button/button";
 import { Field } from "../field";
 import { Form } from "../form/form";
 import { Input } from "../input/input";
 import { SkeletonReveal } from "./skeleton-reveal";
 
 failOnResizeObserverLoop();
+
+describe("SkeletonReveal forms", () => {
+  it("keeps ghost and outgoing form controls out of their form's submission and validation", async () => {
+    type Account = { readonly email: string };
+    const view = (data: Account | null, loading = false) => (
+      <form aria-label="Account">
+        <SkeletonReveal data={data} sample={{ email: "" }} label="Henter" reveal="together" loading={loading}>
+          {(account) => <input name="email" aria-label="Email" defaultValue={account.email} required />}
+        </SkeletonReveal>
+      </form>
+    );
+    const { rerender } = renderThemed(view(null));
+    const form = roleNamed("form", "Account");
+    if (!(form instanceof HTMLFormElement)) throw new Error("expected a form");
+    // The sample's empty required input neither submits nor blocks the form.
+    expect(new FormData(form).getAll("email")).toEqual([]);
+    expect(form.checkValidity()).toBe(true);
+
+    rerender(view({ email: "kari@example.com" }));
+    // The ghost is still fading out beside the real input; only the real one submits.
+    expect(querySlot("skeleton-reveal-skeleton")).not.toBeNull();
+    expect(new FormData(form).getAll("email")).toEqual(["kari@example.com"]);
+    await expect.poll(() => querySlot("skeleton-reveal-skeleton")).toBeNull();
+
+    rerender(view({ email: "kari@example.com" }, true));
+    // A refetch: the outgoing content and the ghost drawn from it both stay out.
+    expect(new FormData(form).getAll("email")).toEqual([]);
+    expect(form.checkValidity()).toBe(true);
+  });
+});
+
+describe("SkeletonReveal outgoing content", () => {
+  it("lets nobody focus or click its controls while it leaves", async () => {
+    const view = (loading: boolean) => (
+      <SkeletonReveal loading={loading} label="Henter" reveal="smart">
+        <div className="flex w-72 flex-col gap-2">
+          <Input aria-label="Reference" defaultValue="4711" />
+          <Button>Pay</Button>
+        </div>
+      </SkeletonReveal>
+    );
+    const { rerender } = renderThemed(view(false));
+    await nextFrames(2);
+    // A refetch: under `smart` the content stays on screen through the skeleton's 150 ms hold.
+    rerender(view(true));
+    const leaving = currentPane("skeleton-reveal-skeleton", slot("skeleton-reveal")).nextElementSibling;
+    if (!(leaving instanceof HTMLElement)) throw new Error("expected the outgoing content pane");
+    expect(leaving.hasAttribute("data-exiting")).toBe(true);
+    // Hold the pane's exit so it cannot finish, and unmount the pane, while the checks run.
+    const exit = leaving.getAnimations();
+    expect(exit.length).toBeGreaterThan(0);
+    for (const animation of exit) animation.pause();
+    // The outgoing pane is inert, so its controls are out of the accessibility tree.
+    const input = leaving.querySelector("input");
+    const button = leaving.querySelector("button");
+    if (input === null || button === null) throw new Error("expected the outgoing input and button");
+    await nextFrames(2);
+    for (const control of [input, button]) {
+      control.focus();
+      expect(document.activeElement).not.toBe(control);
+      // A press at the control's centre lands on whatever is above it, never the control.
+      const box = control.getBoundingClientRect();
+      const hit = document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2);
+      expect(hit === control || control.contains(hit)).toBe(false);
+    }
+    expect(leaving.isConnected).toBe(true);
+  });
+});
 
 describe("SkeletonReveal Fields", () => {
   it("renders a wrapping Field's label, description and error in the ghost and the leaving pane, still out of the form", async () => {

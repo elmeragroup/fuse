@@ -8,11 +8,11 @@ import { useState } from "react";
 import type { ReactElement } from "react";
 
 import { createPortal } from "react-dom";
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, onTestFinished, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
-import { wait } from "../../../test/animation-frames";
+import { nextFrames, pollFrames } from "../../../test/animation-frames";
 import { carouselSlides } from "../../../test/carousel-fixtures";
 import { carouselIndicators, carouselViewport, currentIndicator } from "../../../test/carousel-queries";
 import { withLocale } from "../../../test/locale-matrix";
@@ -23,15 +23,44 @@ import { Carousel } from "./index";
 /** The fixture's slide width, so page N's slide starts N × WIDTH into the scroll range. */
 const WIDTH = 240;
 
+/** The autoplay delay every fixture sets, the time {@link turn} moves the page's clock on. */
+const DELAY = 200;
+
+// The page's timeouts are fake, so rotation turns a page only when a test moves the clock: a slow
+// runner can neither skip a page nor turn one early.
+beforeEach(() => {
+  vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+  onTestFinished(() => {
+    vi.useRealTimers();
+  });
+});
+
+/**
+ * Moves the page's clock past one autoplay delay, then waits for the page it turns to.
+ *
+ * @param expected - The indicator that should then be current.
+ */
+async function turn(expected: number): Promise<void> {
+  vi.advanceTimersByTime(DELAY);
+  await pollFrames(currentIndicator, expected);
+}
+
+/** Moves the page's clock past several delays and checks the first page is still current. */
+async function staysOnFirstPage(): Promise<void> {
+  vi.advanceTimersByTime(DELAY * 5);
+  await nextFrames(2);
+  expect(currentIndicator()).toBe(0);
+}
+
 describe("Carousel autoplay", () => {
-  function AutoplayFixture({ delay }: { readonly delay: number }): ReactElement {
+  function AutoplayFixture(): ReactElement {
     return withLocale(
       "en-US",
       <>
         <button type="button">Outside</button>
         <Carousel.Root aria-label="Offers" style={{ width: WIDTH }}>
           <Carousel.Controls>
-            <Carousel.Autoplay delay={delay} />
+            <Carousel.Autoplay delay={DELAY} />
             <Carousel.Previous />
             <Carousel.Indicators />
             <Carousel.Next />
@@ -43,7 +72,7 @@ describe("Carousel autoplay", () => {
   }
 
   it("keeps rotating after the user presses Play, through focus on the control, hover and Tab", async () => {
-    renderThemed(<AutoplayFixture delay={200} />);
+    renderThemed(<AutoplayFixture />);
     const viewport = carouselViewport(roleNamed("region", "Offers"));
     await userEvent.hover(roleNamed("button", "Outside"));
     roleNamed("button", "Outside").focus();
@@ -55,34 +84,25 @@ describe("Carousel autoplay", () => {
     // An explicit Play: focus stays on the control, and rotation runs.
     await userEvent.keyboard("{Enter}");
     expect(document.activeElement).toBe(roleNamed("button", "Stop automatic slide show"));
-    const started = currentIndicator();
-    await expect.poll(currentIndicator, { timeout: 3000 }).not.toBe(started);
+    await turn(1);
 
     // Neither the pointer over the slides nor keyboard focus moving inside pauses it now.
     await userEvent.hover(viewport);
-    const hovered = currentIndicator();
-    await expect.poll(currentIndicator, { timeout: 3000 }).not.toBe(hovered);
+    await turn(2);
     await userEvent.keyboard("{Tab}");
     expect(document.activeElement).toBe(roleNamed("button", "Previous slide"));
-    const tabbed = currentIndicator();
-    await expect.poll(currentIndicator, { timeout: 3000 }).not.toBe(tabbed);
+    await turn(0);
     expect(viewport.getAttribute("aria-live")).toBe("off");
   });
 });
 
 describe("Carousel autoplay that mounts with focus already moving in", () => {
   /** A carousel mounted with its Autoplay in one commit, with `focusable` autofocused in slide 1. */
-  function Autofocused({
-    focusable,
-    delay,
-  }: {
-    readonly focusable: ReactElement;
-    readonly delay: number;
-  }): ReactElement {
+  function Autofocused({ focusable }: { readonly focusable: ReactElement }): ReactElement {
     return (
       <Carousel.Root aria-label="Offers" style={{ width: WIDTH }}>
         <Carousel.Controls>
-          <Carousel.Autoplay delay={delay} />
+          <Carousel.Autoplay delay={DELAY} />
           <Carousel.Previous />
           <Carousel.Indicators />
           <Carousel.Next />
@@ -99,17 +119,9 @@ describe("Carousel autoplay that mounts with focus already moving in", () => {
 
   /**
    * A page that mounts the carousel when Open is pressed, as a dialog or a route change would. A
-   * keyboard press mounts it already
-   * stopped; a mouse press leaves it rotating, so that case takes a `delay` longer than the click
-   * command, which the test awaits before it reads where focus went.
+   * keyboard press mounts it already stopped; a mouse press leaves it rotating.
    */
-  function Opener({
-    focusable,
-    delay = 200,
-  }: {
-    readonly focusable: ReactElement;
-    readonly delay?: number;
-  }): ReactElement {
+  function Opener({ focusable }: { readonly focusable: ReactElement }): ReactElement {
     const [open, setOpen] = useState(false);
     return withLocale(
       "en-US",
@@ -117,7 +129,7 @@ describe("Carousel autoplay that mounts with focus already moving in", () => {
         <button type="button" onClick={() => setOpen(true)}>
           Open
         </button>
-        {open ? <Autofocused focusable={focusable} delay={delay} /> : null}
+        {open ? <Autofocused focusable={focusable} /> : null}
       </>
     );
   }
@@ -135,15 +147,13 @@ describe("Carousel autoplay that mounts with focus already moving in", () => {
     await expect
       .poll(() => page.getByRole("button", { name: "Start automatic slide show" }).query())
       .not.toBeNull();
-    await wait(850);
-    expect(currentIndicator()).toBe(0);
+    await staysOnFirstPage();
     expect(carouselViewport(roleNamed("region", "Offers")).getAttribute("aria-live")).toBe("polite");
   });
 
   it("rotates when an autofocused button takes focus after a mouse press", async () => {
     renderThemed(
       <Opener
-        delay={1500}
         focusable={
           <button type="button" autoFocus>
             Details
@@ -159,7 +169,7 @@ describe("Carousel autoplay that mounts with focus already moving in", () => {
     // The pointer rests on Open, above the carousel, so nothing pauses the rotation either.
     expect(roleNamed("region", "Offers").matches(":hover")).toBe(false);
     expect(page.getByRole("button", { name: "Stop automatic slide show" }).query()).not.toBeNull();
-    await expect.poll(currentIndicator, { timeout: 4000 }).toBe(1);
+    await turn(1);
   });
 });
 
@@ -172,7 +182,7 @@ describe("Carousel autoplay and keyboard focus in a portal", () => {
           <button type="button">Outside</button>
           <Carousel.Root aria-label="Offers" style={{ width: WIDTH }}>
             <Carousel.Controls>
-              <Carousel.Autoplay delay={200} />
+              <Carousel.Autoplay delay={DELAY} />
               <Carousel.Indicators />
             </Carousel.Controls>
             <Carousel.Viewport>
@@ -187,8 +197,7 @@ describe("Carousel autoplay and keyboard focus in a portal", () => {
     );
     const region = roleNamed("region", "Offers");
     // A popover's field: in the carousel's React tree, outside its element. It takes keyboard
-    // focus synchronously after mount, while the carousel rotates, before a browser command gives
-    // the 200ms delay time to turn the page.
+    // focus while the carousel rotates, before the clock moves.
     const note = roleNamed("textbox", "Note");
     expect(region.contains(note)).toBe(false);
     expect(page.getByRole("button", { name: "Stop automatic slide show" }).query()).not.toBeNull();
@@ -197,8 +206,7 @@ describe("Carousel autoplay and keyboard focus in a portal", () => {
     // Stopped, not paused: with the pointer off the carousel, the first page stays.
     await userEvent.hover(roleNamed("button", "Outside"));
     expect(page.getByRole("button", { name: "Start automatic slide show" }).query()).not.toBeNull();
-    await wait(850);
-    expect(currentIndicator()).toBe(0);
+    await staysOnFirstPage();
   });
 
   it("starts stopped when it mounts late with keyboard focus already in a slide's portal", async () => {
@@ -211,7 +219,7 @@ describe("Carousel autoplay and keyboard focus in a portal", () => {
           <button type="button">Outside</button>
           <Carousel.Root aria-label="Offers" style={{ width: WIDTH }}>
             <Carousel.Controls>
-              {shown ? <Carousel.Autoplay delay={200} /> : null}
+              {shown ? <Carousel.Autoplay delay={DELAY} /> : null}
               <Carousel.Indicators />
             </Carousel.Controls>
             <Carousel.Viewport>
@@ -243,8 +251,7 @@ describe("Carousel autoplay and keyboard focus in a portal", () => {
     await expect
       .poll(() => page.getByRole("button", { name: "Start automatic slide show" }).query())
       .not.toBeNull();
-    await wait(850);
-    expect(currentIndicator()).toBe(0);
+    await staysOnFirstPage();
     expect(document.activeElement).toBe(note);
   });
 
@@ -263,7 +270,7 @@ describe("Carousel autoplay and keyboard focus in a portal", () => {
             <button type="button">Outside</button>
             <Carousel.Root aria-label="Offers" style={{ width: WIDTH }}>
               <Carousel.Controls>
-                {shown ? <Carousel.Autoplay delay={200} /> : null}
+                {shown ? <Carousel.Autoplay delay={DELAY} /> : null}
                 <Carousel.Indicators />
               </Carousel.Controls>
               <Carousel.Viewport>
@@ -298,7 +305,7 @@ describe("Carousel autoplay and keyboard focus in a portal", () => {
       await expect
         .poll(() => page.getByRole("button", { name: "Stop automatic slide show" }).query())
         .not.toBeNull();
-      await expect.poll(currentIndicator, { timeout: 3000 }).toBe(1);
+      await turn(1);
     }
   );
 });

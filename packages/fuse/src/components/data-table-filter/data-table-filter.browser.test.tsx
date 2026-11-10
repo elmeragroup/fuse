@@ -1,7 +1,8 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, onTestFinished, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
+import { CaughtError, caughtError } from "../../../test/caught-error";
 import {
   active,
   columnFilters,
@@ -23,6 +24,128 @@ import { DataTableFilter } from "./index";
 afterEach(async () => {
   await emulateReducedMotion("no-preference");
   await page.viewport(414, 896);
+});
+
+describe("DataTableFilter bar", () => {
+  it("names the toolbar, Trigger and chip segments, and roves them from one Tab stop with wrapping", async () => {
+    renderOrders({ initial: [...STATUS_THREE, ...CUSTOMER_NORD] });
+    await userEvent.keyboard("{Tab}");
+    expect(active()).toBe(roleNamed("button", "Filter"));
+    expect(roleNamed("group", "Status filter").contains(roleNamed("button", "Paid, Pending +1"))).toBe(true);
+    const order = [
+      roleNamed("combobox", "Status operator"),
+      roleNamed("button", "Paid, Pending +1"),
+      roleNamed("button", "Remove Status filter"),
+      roleNamed("combobox", "Customer operator"),
+      roleNamed("button", "“nord”"),
+      roleNamed("button", "Remove Customer filter"),
+      roleNamed("button", "Clear filters"),
+    ];
+    for (const next of order) {
+      await userEvent.keyboard("{ArrowRight}");
+      expect(active()).toBe(next);
+    }
+    await userEvent.keyboard("{ArrowRight}");
+    expect(active()).toBe(roleNamed("button", "Filter"));
+    await userEvent.keyboard("{ArrowLeft}");
+    expect(active()).toBe(roleNamed("button", "Clear filters"));
+    await userEvent.keyboard("{Tab}");
+    expect(roleNamed("toolbar", "Filters").contains(active())).toBe(false);
+  });
+
+  it.each([
+    [
+      "Bar outside its Root",
+      <DataTableFilter.Bar key="bar" />,
+      "DataTableFilter.Bar must be used within DataTableFilter.Root. Wrap the filter's parts in DataTableFilter.Root.",
+    ],
+    [
+      "Value outside a chip",
+      <Orders key="value" initial={[]}>
+        <CaughtError>
+          <DataTableFilter.Value />
+        </CaughtError>
+      </Orders>,
+      "DataTableFilter.Value must be used within DataTableFilter.Chip, under DataTableFilter.Chips. Render it in the chip template.",
+    ],
+  ])("throws a DataTableFilterCompositionError for a %s", (_label, tree, message) => {
+    renderThemed(withLocale("en-US", <CaughtError>{tree}</CaughtError>));
+    expect(caughtError().name).toBe("DataTableFilterCompositionError");
+    expect(caughtError().message).toBe(message);
+  });
+});
+
+describe("DataTableFilter editors", () => {
+  it("commits text on Enter, closes and returns focus to the renamed Value", async () => {
+    renderOrders({ initial: CUSTOMER_NORD });
+    await userEvent.click(roleNamed("button", "“nord”"));
+    const input = roleNamed("textbox", "Customer");
+    await expect.poll(active).toBe(input);
+    await userEvent.fill(input, "fjell");
+    await userEvent.keyboard("{Enter}");
+    await expect.poll(() => page.getByRole("dialog").query()).toBeNull();
+    expect(visibleOrders()).toBe("2");
+    await expect.poll(active).toBe(roleNamed("button", "“fjell”"));
+  });
+
+  it("refuses a minimum above the maximum and keeps the last valid range", async () => {
+    renderOrders({
+      initial: [{ id: "amount", value: { kind: "number", operator: "isBetween", values: [100, 500] } }],
+    });
+    await userEvent.click(roleNamed("button", "100–500"));
+    await userEvent.fill(roleNamed("textbox", "Minimum"), "950");
+    // Tab blurs Minimum onto Maximum, which commits it and keeps the popover open.
+    await userEvent.keyboard("{Tab}");
+    await expect.element(page.getByText("The minimum is above the maximum.")).toBeInTheDocument();
+    expect(visibleOrders()).toBe("1 2 5");
+
+    await userEvent.fill(roleNamed("textbox", "Minimum"), "300");
+    await userEvent.keyboard("{Enter}");
+    await expect.poll(() => page.getByRole("dialog").query()).toBeNull();
+    expect(columnFilters()).toEqual([
+      { id: "amount", value: { kind: "number", operator: "isBetween", values: [300, 500] } },
+    ]);
+  });
+
+  it("commits a slider step from the keyboard", async () => {
+    renderOrders({
+      initial: [{ id: "amount", value: { kind: "number", operator: "isGreaterThan", values: [500] } }],
+    });
+    await userEvent.click(roleNamed("button", "500"));
+    roleNamed("slider", "Amount").focus();
+    await userEvent.keyboard("{ArrowRight}");
+    // Above 510: Havbris Sjømat at 950 and Bryggen Bokhandel at 780.
+    await expect.poll(visibleOrders).toBe("3 6");
+    expect(roleNamed("button", "510")).toBeTruthy();
+  });
+
+  it("applies a typed date on blur and a preset that closes the editor", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-10-12T12:00:00Z"));
+    onTestFinished(() => {
+      vi.useRealTimers();
+    });
+    renderOrders({
+      initial: [
+        {
+          id: "created",
+          value: { kind: "date", operator: "isBetween", values: ["2026-10-01", "2026-10-10"] },
+        },
+      ],
+    });
+    expect(visibleOrders()).toBe("1 2");
+    await userEvent.click(roleNamed("button", "Oct 1\u2009–\u200910, 2026"));
+    const to = page.getByLabelText("To", { exact: true });
+    await userEvent.fill(to, "2026-10-12");
+    // Tab steps through a native date input's own fields, so the test blurs it.
+    to.element().blur();
+    await expect.poll(visibleOrders).toBe("1 2 3");
+
+    await userEvent.click(roleNamed("button", "Today"));
+    await expect.poll(() => page.getByRole("dialog").query()).toBeNull();
+    // Today is 2026-10-12, the day order 3 was created.
+    expect(visibleOrders()).toBe("3");
+  });
 });
 
 describe("DataTableFilter removal and focus", () => {

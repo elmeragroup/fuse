@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
@@ -95,6 +95,20 @@ describe("Item", () => {
     expect(page.getByRole("list").getByRole("listitem").elements()).toHaveLength(names.length);
   });
 
+  it("lets a grouped render with an explicit listitem role stand as the listitem itself", () => {
+    renderThemed(
+      <Item.Group>
+        <Item.Root role="listitem" render={<a href="#profile" />}>
+          <Item.Title>Profile</Item.Title>
+        </Item.Root>
+      </Item.Group>
+    );
+    const element = textNamed("Profile").closest("a");
+    expect(element?.getAttribute("role")).toBe("listitem");
+    expect(element?.parentElement?.getAttribute("data-slot")).toBe("item-group");
+    expect(page.getByRole("list").getByRole("listitem").elements()).toHaveLength(1);
+  });
+
   it.each([
     {
       on: "root",
@@ -150,6 +164,24 @@ describe("Item", () => {
       await userEvent.keyboard("{Tab}");
       expect(document.activeElement, mode).toBe(roleNamed("button", "Nested"));
       fresh.unmount();
+    }
+  });
+
+  it("makes a link-rendered item a keyboard-activatable link", async () => {
+    renderThemed(
+      <Item.Root render={<a href="#order" />}>
+        <Item.Title>Order</Item.Title>
+      </Item.Root>
+    );
+    const initialHash = window.location.hash;
+    try {
+      roleNamed("link", "Order").focus();
+      await userEvent.keyboard("{Enter}");
+      await vi.waitFor(() => {
+        expect(window.location.hash).toBe("#order");
+      });
+    } finally {
+      history.replaceState(null, "", `${window.location.pathname}${window.location.search}${initialHash}`);
     }
   });
 });

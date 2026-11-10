@@ -5,6 +5,7 @@ import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import { nextFrames } from "../../../test/animation-frames";
+import { CaughtError, caughtError } from "../../../test/caught-error";
 import { formNamed, renderThemed, roleNamed } from "../../../test/themed-browser-render";
 import { isHTMLElement } from "../../internal/dom-node";
 import { Button } from "../button/button";
@@ -98,6 +99,22 @@ describe("FileUpload.Root and FileUpload.Trigger", () => {
     expect(onSubmit).not.toHaveBeenCalled();
   });
 
+  it("writes accept, multiple, capture and webkitdirectory on the hidden input, and no name", () => {
+    const { host } = renderThemed(
+      <FileUpload.Root accept="image/*,.pdf" multiple directory capture="environment">
+        <FileUpload.Trigger>Add files</FileUpload.Trigger>
+      </FileUpload.Root>
+    );
+    const input = fileInput(host);
+    expect(input.hidden).toBe(true);
+    expect(input.tabIndex).toBe(-1);
+    expect(input.accept).toBe("image/*,.pdf");
+    expect(input.multiple).toBe(true);
+    expect(input.getAttribute("capture")).toBe("environment");
+    expect(input.webkitdirectory).toBe(true);
+    expect(input.hasAttribute("name")).toBe(false);
+  });
+
   it("splits a pick into onSelect and onReject by accept", () => {
     const onSelect = vi.fn<(files: File[]) => void>();
     const onReject = vi.fn<(rejections: FileRejection[]) => void>();
@@ -148,6 +165,17 @@ describe("FileUpload.Root and FileUpload.Trigger", () => {
     const event = paste(document.body, [png("a.png")]);
     expect(event.defaultPrevented).toBe(false);
     expect(onSelect).not.toHaveBeenCalled();
+  });
+
+  it("disables a Trigger through its own disabled while Root stays enabled", async () => {
+    renderThemed(
+      <FileUpload.Root>
+        <FileUpload.Trigger disabled>Add files</FileUpload.Trigger>
+        <FileUpload.Trigger>Add more</FileUpload.Trigger>
+      </FileUpload.Root>
+    );
+    await expect.element(page.getByRole("button", { name: "Add files", exact: true })).toBeDisabled();
+    await expect.element(page.getByRole("button", { name: "Add more", exact: true })).toBeEnabled();
   });
 });
 
@@ -344,6 +372,15 @@ describe("useFileUpload", () => {
     await userEvent.click(roleNamed("button", "Add sample (off)"));
     expect(onSelect).not.toHaveBeenCalled();
   });
+
+  it("throws outside a Root, naming FileUpload.Root", () => {
+    renderThemed(
+      <CaughtError>
+        <AddSample />
+      </CaughtError>
+    );
+    expect(caughtError().message).toBe("useFileUpload must be used within FileUpload.Root.");
+  });
 });
 
 /** The Root and Dropzone elements. Neither has a role, and their state lives in data attributes. */
@@ -439,5 +476,19 @@ describe("FileUpload.Dropzone", () => {
     expect(rejected?.map((rejection) => rejection.reason)).toEqual(["type"]);
     expect(rejected?.[0] !== undefined && "file" in rejected[0] && rejected[0].file).toBe(c);
     await expect.poll(() => zone.hasAttribute("data-drop-target")).toBe(false);
+  });
+
+  it("ignores drags on a disabled Root, whose drop the document still keeps from opening the file", async () => {
+    const onSelect = vi.fn<(files: File[]) => void>();
+    const { host } = renderThemed(<Zone disabled onSelect={onSelect} />);
+    const { zone } = parts(host);
+    expect(zone.hasAttribute("data-disabled")).toBe(true);
+    const transfer = fileTransfer([png("a.png")]);
+
+    drag(zone, "dragenter", transfer);
+    const drop = drag(zone, "drop", transfer);
+    expect(drop.defaultPrevented).toBe(true);
+    await expect.poll(() => onSelect.mock.calls.length).toBe(0);
+    expect(zone.hasAttribute("data-drop-target")).toBe(false);
   });
 });

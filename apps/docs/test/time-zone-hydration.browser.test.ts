@@ -88,10 +88,15 @@ async function hydrateDemo(
   });
   if (serverHtml !== undefined) {
     // The negative control: the page's HTML as the server sent it, edited before the browser parses
-    // it, so the server text and the client's first render differ where the edit lands.
+    // it, so the server text and the client's first render differ where the edit lands. Only the
+    // document is edited; Next's RSC fetches of the same path go through untouched.
     await context.route(
       (url) => url.pathname === pathname,
       async (route) => {
+        if (route.request().resourceType() !== "document") {
+          await route.continue();
+          return;
+        }
         const response = await route.fetch();
         await route.fulfill({ response, body: serverHtml(await response.text()) });
       }

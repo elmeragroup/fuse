@@ -330,6 +330,70 @@ describe("Combobox", () => {
     expect(trigger.getAttribute("aria-labelledby")).toBe(labelId);
   });
 
+  it.each([
+    ["Combobox.Input", <FruitCombobox key="input" showClear disabled />],
+    [
+      "Field.Root",
+      <Field.Root key="field" disabled>
+        <FruitCombobox showClear />
+      </Field.Root>,
+    ],
+  ])(
+    "disables the input and its buttons from %s and skips them in the Tab order",
+    async (_source, combobox) => {
+      renderCombobox(
+        <>
+          <button type="button">Before</button>
+          {combobox}
+          <button type="button">After</button>
+        </>
+      );
+      await expect.element(page.getByRole("combobox", { name: "Fruit", exact: true })).toBeDisabled();
+      const owned = page
+        .getByRole("button")
+        .elements()
+        .filter((button) => !["Before", "After"].includes(button.textContent));
+      expect(owned.length).toBeGreaterThan(0);
+      for (const button of owned) expect(button).toHaveProperty("disabled", true);
+      buttonNamed("Before").focus();
+      await userEvent.tab();
+      await expect.element(page.getByRole("button", { name: "After", exact: true })).toHaveFocus();
+    }
+  );
+
+  it("appends chips through the popup in multiple mode and keeps the popup open", async () => {
+    const onValueChange = vi.fn<(value: string[]) => void>();
+    renderCombobox(
+      <Combobox.Root items={[...FRUITS]} multiple onValueChange={onValueChange}>
+        <Combobox.Chips aria-label="Selected fruit">
+          <Combobox.Value>
+            {(value: string[]) => value.map((item) => <Combobox.Chip key={item}>{item}</Combobox.Chip>)}
+          </Combobox.Value>
+          <Combobox.ChipsInput aria-label="Fruit" />
+        </Combobox.Chips>
+        <Combobox.Content>
+          <Combobox.List>
+            <Combobox.Collection>
+              {(item: string) => (
+                <Combobox.Item key={item} value={item}>
+                  {item}
+                </Combobox.Item>
+              )}
+            </Combobox.Collection>
+          </Combobox.List>
+        </Combobox.Content>
+      </Combobox.Root>
+    );
+
+    await openWithArrowDown();
+    await userEvent.keyboard("{Enter}");
+    await userEvent.click(optionNamed("Cherry"));
+    expect(onValueChange.mock.calls.map(([value]) => value)).toEqual([["Apple"], ["Apple", "Cherry"]]);
+    expect(listboxNamed()).toBeTruthy();
+    expect(buttonNamed("Remove Apple")).toBeTruthy();
+    expect(buttonNamed("Remove Cherry")).toBeTruthy();
+  });
+
   it("walks chips with Arrow keys and removes the focused chip with Delete", async () => {
     const onValueChange = vi.fn();
     renderCombobox(
@@ -429,5 +493,39 @@ describe("Combobox", () => {
     await vi.waitFor(() => {
       expect(page.getByText(EMPTY_COPY["nb-NO"], { exact: true }).query()).not.toBeNull();
     });
+  });
+
+  it("lets explicit copy win over the Empty, Clear, chip-remove and caret-trigger defaults", async () => {
+    renderCombobox(
+      <>
+        <Combobox.Root items={["Apple"]} defaultValue="Apple" defaultInputValue="Apple">
+          <Combobox.Input aria-label="Search" showClear showTrigger={false} clearLabel="Wipe it" />
+          <Combobox.Content>
+            <Combobox.Empty>Nothing here.</Combobox.Empty>
+            <Combobox.List>
+              <Combobox.Item value="Apple">Apple</Combobox.Item>
+            </Combobox.List>
+          </Combobox.Content>
+        </Combobox.Root>
+        <Combobox.Root items={["Apple"]} multiple defaultValue={["Apple"]}>
+          <Combobox.Chips>
+            <Combobox.Chip removeLabel="Drop Apple">Apple</Combobox.Chip>
+            <Combobox.ChipsInput aria-label="Basket" />
+          </Combobox.Chips>
+        </Combobox.Root>
+        <Combobox.Root items={["Apple"]}>
+          <Combobox.Input aria-label="Shown" triggerLabel="Show fruit" />
+        </Combobox.Root>
+      </>
+    );
+    for (const name of ["Wipe it", "Drop Apple", "Show fruit"]) {
+      expect(buttonNamed(name), name).toBeTruthy();
+    }
+    for (const fallback of [CLEAR_COPY["en-US"], TOGGLE_COPY["en-US"], REMOVE_APPLE_COPY["en-US"]]) {
+      expect(page.getByRole("button", { name: fallback, exact: true }).query(), fallback).toBeNull();
+    }
+    await userEvent.fill(comboboxNamed("Search"), "zzzz");
+    await expect.element(page.getByText("Nothing here.", { exact: true })).toBeInTheDocument();
+    expect(page.getByText(EMPTY_COPY["en-US"], { exact: true }).query()).toBeNull();
   });
 });

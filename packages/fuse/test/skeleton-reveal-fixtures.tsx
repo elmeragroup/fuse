@@ -99,6 +99,22 @@ export function querySlot(name: string): Element | null {
 }
 
 /**
+ * The pane on screen: the one of a slot that is not leaving, which the swap marks `data-exiting`.
+ *
+ * @param name - The pane's data-slot.
+ * @param within - The root to look in; the document unless given.
+ * @returns The current pane.
+ * @throws Error when every pane of that slot is leaving.
+ */
+export function currentPane(name: string, within: ParentNode = document): HTMLElement {
+  const pane = [...within.querySelectorAll<HTMLElement>(`:scope > [data-slot="${name}"]`)].find(
+    (element) => !element.hasAttribute("data-exiting")
+  );
+  if (pane === undefined) throw new Error(`expected a current ${name}`);
+  return pane;
+}
+
+/**
  * The root's own height animation, if one runs.
  *
  * @param root - The reveal's root.
@@ -119,6 +135,16 @@ export function heightAnimation(root: HTMLElement): Animation | undefined {
  */
 export function scriptAnimations(root: Element): Animation[] {
   return root.getAnimations({ subtree: true }).filter((animation) => !(animation instanceof CSSAnimation));
+}
+
+/**
+ * Runs every finite animation on the page to its end at once, so a test steps a reveal's hold and
+ * fades without the clock. The bones' pulse repeats forever and keeps running.
+ */
+export function finishAnimations(): void {
+  for (const animation of document.getAnimations()) {
+    if (animation.effect?.getComputedTiming().endTime !== Infinity) animation.finish();
+  }
 }
 
 /**

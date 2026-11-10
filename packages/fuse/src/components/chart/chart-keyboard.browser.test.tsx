@@ -40,6 +40,19 @@ async function enterChart(host: HTMLElement): Promise<void> {
 }
 
 describe("horizontal bars", () => {
+  it("is one Tab stop: Tab leaves the plot from any option, and Shift+Tab returns to the active one", async () => {
+    const { host } = renderThemed(<S06Chart orientation="horizontal" />);
+    const listbox = host.querySelector('[role="listbox"]');
+    await enterChart(host);
+    await userEvent.keyboard("{ArrowDown}{ArrowDown}");
+    const active = focused();
+    expect(listbox?.contains(document.activeElement)).toBe(true);
+    await userEvent.keyboard("{Tab}");
+    expect(listbox?.contains(document.activeElement)).toBe(false);
+    await userEvent.keyboard("{Shift>}{Tab}{/Shift}");
+    expect(focused()).toEqual(active);
+  });
+
   it("move between categories with Up and Down and between series with Left and Right", async () => {
     const { host } = renderThemed(<S06Chart orientation="horizontal" />);
     expect(host.querySelector('[role="listbox"]')?.getAttribute("aria-orientation")).toBe("vertical");

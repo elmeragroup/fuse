@@ -3,6 +3,7 @@ import { page } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
+import { nextFrames } from "../../../test/animation-frames";
 import {
   InvoiceCard,
   LONG,
@@ -11,6 +12,7 @@ import {
   renderInvoice,
   slot,
   failOnResizeObserverLoop,
+  finishAnimations,
 } from "../../../test/skeleton-reveal-fixtures";
 import type { Invoice } from "../../../test/skeleton-reveal-fixtures";
 import { renderThemed, roleNamed } from "../../../test/themed-browser-render";
@@ -57,10 +59,15 @@ describe("SkeletonReveal smart hold", () => {
     }
     const { rerender } = renderThemed(<Slow data={null} />);
     const skeleton = slot("skeleton-reveal-skeleton");
-    await expect.poll(() => getComputedStyle(skeleton).opacity, { timeout: 2000 }).toBe("1");
+    expect(getComputedStyle(skeleton).opacity).toBe("0");
+    // The hold and the fade are Web Animations; finished, the clock plays no part.
+    finishAnimations();
+    await expect.poll(() => getComputedStyle(skeleton).opacity).toBe("1");
     rerender(<Slow data={LONG} />);
     expect(revealed).toBe(0);
-    await expect.poll(() => revealed, { timeout: 2000 }).toBe(1);
+    await nextFrames(2);
+    finishAnimations();
+    await expect.poll(() => revealed).toBe(1);
     await expect.poll(() => querySlot("skeleton-reveal-skeleton")).toBeNull();
   });
 });

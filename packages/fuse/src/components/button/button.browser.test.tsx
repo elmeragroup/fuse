@@ -11,21 +11,90 @@ import { Tooltip } from "../tooltip";
 import { Button } from "./button";
 
 describe("Button", () => {
-  it("activates once on click, Enter, and Space", async () => {
+  // Each button meets a click, Enter and Space. Disabled and pending block all three; a visually
+  // disabled button looks off but stays fully activatable, as its JSDoc promises.
+  it.each([
+    ["an enabled", {}, 3],
+    ["a disabled", { disabled: true }, 0],
+    ["a pending", { isPending: true }, 0],
+    ["a visually disabled", { isVisuallyDisabled: true }, 3],
+  ] as const)("activates %s button on click, Enter and Space %i times", async (_label, props, expected) => {
     const onClick = vi.fn();
-    renderThemed(<Button onClick={onClick}>Save</Button>);
-
-    await userEvent.click(page.getByRole("button", { name: "Save" }));
-    expect(onClick).toHaveBeenCalledTimes(1);
-
+    renderThemed(
+      <Button {...props} onClick={onClick}>
+        Save
+      </Button>
+    );
     const button = roleNamed("button", "Save");
+    // The native click skips Playwright's actionability check, which reads aria-disabled as disabled.
+    button.click();
     button.focus();
     await userEvent.keyboard("{Enter}");
-    expect(onClick).toHaveBeenCalledTimes(2);
-
     button.focus();
     await userEvent.keyboard(" ");
-    expect(onClick).toHaveBeenCalledTimes(3);
+    expect(onClick).toHaveBeenCalledTimes(expected);
+  });
+
+  it("keeps focus where it was on mousedown over a visually disabled button", () => {
+    const onMouseDown = vi.fn();
+    renderThemed(
+      <>
+        <button type="button">Other</button>
+        <Button isVisuallyDisabled onMouseDown={onMouseDown}>
+          Looks off
+        </Button>
+      </>
+    );
+    const other = roleNamed("button", "Other");
+    other.focus();
+    roleNamed("button", "Looks off").dispatchEvent(
+      new MouseEvent("mousedown", { bubbles: true, cancelable: true })
+    );
+    expect(document.activeElement).toBe(other);
+    expect(onMouseDown).toHaveBeenCalledTimes(1);
+  });
+
+  // An element that is not natively disabled announces unavailability through aria-disabled. An
+  // explicit consumer value wins; a wrapper forwarding `aria-disabled={undefined}` must not erase it.
+  it.each([
+    [
+      "isVisuallyDisabled",
+      <Button key="1" isVisuallyDisabled>
+        Probe
+      </Button>,
+      "true",
+    ],
+    [
+      "isVisuallyDisabled with an explicit false",
+      <Button key="2" isVisuallyDisabled aria-disabled="false">
+        Probe
+      </Button>,
+      "false",
+    ],
+    [
+      "focusable disabled forwarded as undefined",
+      <Button key="3" disabled focusableWhenDisabled aria-disabled={undefined}>
+        Probe
+      </Button>,
+      "true",
+    ],
+    [
+      "focusable pending forwarded as undefined",
+      <Button key="4" isPending aria-disabled={undefined}>
+        Probe
+      </Button>,
+      "true",
+    ],
+    [
+      "non-native disabled forwarded as undefined",
+      <Button key="5" render={<a href="/docs" />} nativeButton={false} disabled aria-disabled={undefined}>
+        Probe
+      </Button>,
+      "true",
+    ],
+  ] as const)("resolves aria-disabled for a %s button", (_label, button, expected) => {
+    renderThemed(button);
+    expect(roleNamed("button", "Probe").getAttribute("aria-disabled")).toBe(expected);
   });
 
   describe("pending", () => {

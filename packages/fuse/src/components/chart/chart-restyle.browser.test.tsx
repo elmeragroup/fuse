@@ -15,7 +15,7 @@ import { describe, expect, it } from "vitest";
 import { cdp, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
-import { wait } from "../../../test/animation-frames";
+import { nextFrames } from "../../../test/animation-frames";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
 import { Chart } from "./chart-namespace";
@@ -241,15 +241,17 @@ function yTicks(host: HTMLElement): number {
   return host.querySelectorAll('[data-slot="chart-y-tick"]').length;
 }
 
+// Each wait counts frames, at 60 a second the time a tween takes: a starved runner that renders
+// slowly still runs every frame of it, where a wait in milliseconds would cut it short.
 describe("the style cost of moving bars", () => {
   it("restyles no bar in a data update that drops ticks, nor in its tween", async () => {
     const { host, rerender } = renderThemed(<FourStacks top={9} width={800} />);
-    await wait(1200);
+    await nextFrames(72);
     expect(bars(host)).toBe(200);
     const ticks = yTicks(host);
     const count = await largestRestyle(async () => {
       rerender(<FourStacks top={30} width={800} />);
-      await wait(800);
+      await nextFrames(48);
     });
     // The update mounted and dropped value ticks, which a :has() above the parts would answer.
     expect(yTicks(host)).not.toBe(ticks);
@@ -258,10 +260,10 @@ describe("the style cost of moving bars", () => {
 
   it("restyles no bar in a resize", async () => {
     const { host, rerender } = renderThemed(<FourStacks top={9} width={800} />);
-    await wait(1200);
+    await nextFrames(72);
     const count = await largestRestyle(async () => {
       rerender(<FourStacks top={9} width={640} />);
-      await wait(600);
+      await nextFrames(36);
     });
     expect(count).toBeLessThan(bars(host));
   });
@@ -270,20 +272,20 @@ describe("the style cost of moving bars", () => {
 describe("the style cost of hover", () => {
   it("restyles no bar when the pointer enters the plot and leaves it, past every fade", async () => {
     const { host } = renderThemed(<FourStacks top={9} width={800} />);
-    await wait(1200);
+    await nextFrames(72);
     // The plot's listbox is its one pointer target.
     const plot = host.querySelector<HTMLElement>('[role="listbox"]');
     if (plot === null) throw new Error("no plot");
     // The first open mounts the tooltip's portal, which stays from then on.
     await userEvent.hover(plot);
-    await wait(400);
+    await nextFrames(24);
     await userEvent.unhover(plot);
-    await wait(600);
+    await nextFrames(36);
     const count = await largestRestyle(async () => {
       await userEvent.hover(plot);
-      await wait(400);
+      await nextFrames(24);
       await userEvent.unhover(plot);
-      await wait(600);
+      await nextFrames(36);
     });
     expect(count).toBeLessThan(bars(host));
   });

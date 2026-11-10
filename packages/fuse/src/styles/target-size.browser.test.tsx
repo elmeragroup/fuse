@@ -1,4 +1,4 @@
-import { describe, it } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import "../../dist/styles.css";
 import "../../dist/themes.css";
@@ -8,6 +8,9 @@ import { renderThemed, roleNamed, stampDensity } from "../../test/themed-browser
 import { Button } from "../components/button/button";
 import { Combobox } from "../components/combobox";
 import { NumberField } from "../components/number-field/number-field";
+import { PhoneNumberField } from "../components/phone-number-field/phone-number-field";
+import { RadioGroup, RadioIconButton } from "../components/radio-group/radio-group";
+import { Toggle } from "../components/toggle/toggle";
 import { DENSITIES } from "../theme/density";
 
 /**
@@ -54,6 +57,43 @@ describe("the 24px target floor", () => {
       for (const density of DENSITIES) {
         stampDensity(density);
         expectTargets(targets, `${density} ${String(root)}px`);
+      }
+    });
+  });
+
+  // A rounded square's corners fall outside its shape, so these targets meet the floor by their
+  // box alone, the size `controlMetrics.xs` floors at 24px.
+  it("holds for the boxes of the xs controls at both densities and both host roots", () => {
+    renderThemed(
+      withLocale(
+        "en-US",
+        <>
+          <Button size="icon-xs" aria-label="Smallest button" />
+          <Toggle size="xs" aria-label="Smallest toggle" />
+          <RadioGroup label="Smallest">
+            <RadioIconButton value="xxs" size="icon-xxs" aria-label="Smallest radio">
+              <svg aria-hidden viewBox="0 0 1 1" />
+            </RadioIconButton>
+          </RadioGroup>
+          <PhoneNumberField label="Phone" />
+        </>
+      )
+    );
+    const targets = [
+      roleNamed("button", "Smallest button"),
+      roleNamed("button", "Smallest toggle"),
+      roleNamed("radio", "Smallest radio"),
+      roleNamed("button", "Select country"),
+    ];
+    atHostRoots([16, 14], (root) => {
+      for (const density of DENSITIES) {
+        stampDensity(density);
+        for (const target of targets) {
+          const { width, height } = target.getBoundingClientRect();
+          const label = `${density} ${String(root)}px ${target.getAttribute("aria-label") ?? ""}`;
+          expect(width, label).toBeGreaterThanOrEqual(24);
+          expect(height, label).toBeGreaterThanOrEqual(24);
+        }
       }
     });
   });
