@@ -880,6 +880,16 @@
       "tabs-disabled.tsx"
     ]
   },
+  "temporal-calendar": {
+    "title": "Temporal Calendar",
+    "rsc": "client",
+    "demos": [
+      "temporal-calendar-basic.tsx",
+      "temporal-calendar-months.tsx",
+      "temporal-calendar-bounds.tsx",
+      "temporal-calendar-controlled.tsx"
+    ]
+  },
   "text": {
     "title": "Text",
     "rsc": "client",

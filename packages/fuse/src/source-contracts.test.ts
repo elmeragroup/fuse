@@ -1042,6 +1042,9 @@ describe("runtime listeners and layout motion", () => {
   // say the list is complete. Each owner's browser test covers its own cleanup.
   it("installs event listeners only from the reviewed owners", () => {
     expect(filesContainingCode(".addEventListener(").toSorted()).toEqual([
+      // Document `visibilitychange`: a calendar left open in a hidden tab re-reads today when the
+      // tab shows again, since the midnight timer may have slept. React has no document listener.
+      "components/calendar/use-calendar-navigation.ts",
       // The viewport's passive `scroll` and `scrollend`: the engine reads the native
       // scroller's position once a frame. React's `onScroll` would re-render the Root on every
       // frame, and React has no `scrollend` handler.

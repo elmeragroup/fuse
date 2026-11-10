@@ -83,6 +83,7 @@ export const BARE_COMPONENT_ENTRIES = [
   "form",
   "navigation-menu",
   "link",
+  "calendar",
 ] as const;
 
 /** Allowlisted entries with no source until they ship. None today. */

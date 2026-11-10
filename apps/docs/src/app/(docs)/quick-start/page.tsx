@@ -117,6 +117,14 @@ export default function QuickStartPage(): ReactElement {
         about 20 kB gzipped to the bundle that imports it. Without it, development builds warn once in every
         engine, and an engine without Temporal throws a <code>TypeError</code> that names the entry.
       </p>
+      <p>
+        Fuse&apos;s type declarations, the root entry&apos;s included, name the global <code>Temporal</code>{" "}
+        types, which come from TypeScript&apos;s own lib rather than from the polyfill. Type-check with
+        TypeScript 6.0 or later and a <code>lib</code> that includes <code>esnext</code> (or{" "}
+        <code>esnext.temporal</code>). With an older compiler or lib, Fuse&apos;s declarations report{" "}
+        <code>Cannot find namespace &apos;Temporal&apos;</code>, or, under <code>skipLibCheck</code>, the date
+        props are typed <code>any</code>.
+      </p>
 
       <h2 id="page-scaffold">The page scaffold</h2>
       <p>

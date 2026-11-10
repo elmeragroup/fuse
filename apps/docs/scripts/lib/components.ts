@@ -118,6 +118,7 @@ const EXTRA_API_EXPORT_NAMES = new Map<string, readonly string[]>([
   ["file-upload", ["FileUpload", "useFileUpload"]],
   ["carousel", ["Carousel", "useCarousel"]],
   ["chart", ["Chart", "useChartPoint", "formatChartValue", "formatChartSlot"]],
+  ["temporal-calendar", ["Calendar"]],
 ]);
 
 /**
@@ -136,6 +137,15 @@ export const SHARED_ENTRY_PAGES = new Map<string, { readonly entry: string; read
   ["scatter-chart", { entry: "chart", source: "scatter-chart-root" }],
   ["sparkline", { entry: "chart", source: "sparkline" }],
 ]);
+
+/**
+ * Pages whose slug is not their entry's, because another page already holds the entry's slug.
+ * `calendar` is the interim React Aria Calendar's page until that tier is removed, so the Temporal
+ * Calendar of `@elmeragroup/fuse/calendar` documents itself as `temporal-calendar`. The entry's
+ * own conventions still apply: `src/calendar.ts`, `components/calendar/calendar.tsx` and the
+ * `Calendar` export.
+ */
+const ENTRY_SLUG_OF_PAGE = new Map<string, string>([["temporal-calendar", "calendar"]]);
 
 /**
  * The module the API extractor reads for the chart entry's pages. `@elmeragroup/internal` cannot
@@ -179,7 +189,7 @@ export function resolveComponentPaths(slug: string): ComponentPaths {
   const racFacade = path.join(fuseSrc, "react-aria", `${slug}.ts`);
   const isRac = existsSync(racFacade);
   const shared = SHARED_ENTRY_PAGES.get(slug);
-  const entrySlug = shared?.entry ?? slug;
+  const entrySlug = shared?.entry ?? ENTRY_SLUG_OF_PAGE.get(slug) ?? slug;
   const componentDir = isRac
     ? path.join(fuseSrc, "react-aria", slug)
     : path.join(fuseSrc, "components", entrySlug);
@@ -196,7 +206,7 @@ export function resolveComponentPaths(slug: string): ComponentPaths {
     pageFile: path.join(routeDir, "page.mdx"),
     title: displayName(slug),
     apis: [own, ...(EXTRA_API_ENTRIES.get(slug) ?? []).map((extra) => resolveExtraApi(slug, extra))],
-    sourceFile: path.join(componentDir, `${shared?.source ?? slug}.tsx`),
+    sourceFile: path.join(componentDir, `${shared?.source ?? entrySlug}.tsx`),
     componentDir,
     demosDir: path.join(routeDir, "demos"),
   };
