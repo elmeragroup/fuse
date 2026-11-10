@@ -29,6 +29,16 @@ export function useFakeTimeouts(): void {
 }
 
 /**
+ * Waits until the page has a fake timeout pending, checking once per animation frame. A component
+ * that arms its next timeout in an effect commits the render that shows the last one's work first,
+ * and the runner can render a frame between that commit and the effect, so a test that moves the
+ * clock as soon as the render shows can move it past no timeout at all.
+ */
+export async function pendingTimeout(): Promise<void> {
+  await pollFrames(() => vi.getTimerCount() > 0, true);
+}
+
+/**
  * Waits through at least `ms` milliseconds of animation frames, so every frame in between runs its
  * rendering steps.
  *

@@ -15,7 +15,7 @@ import { beforeEach, describe, expect, it, onTestFinished, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
-import { nextFrames, pollFrames, useFakeTimeouts } from "../../../test/animation-frames";
+import { nextFrames, pendingTimeout, pollFrames, useFakeTimeouts } from "../../../test/animation-frames";
 import { carouselSlides, serverRendered } from "../../../test/carousel-fixtures";
 import { carouselViewport, currentIndicator } from "../../../test/carousel-queries";
 import { withLocale } from "../../../test/locale-matrix";
@@ -101,6 +101,8 @@ describe("Carousel rotation across engines", () => {
     expect(server.recoverableErrors).toEqual([]);
     // The pointer leaving resumes it.
     await userEvent.hover(roleNamed("button", "Outside"));
+    // Resuming arms the next turn in an effect, which can run after a frame.
+    await pendingTimeout();
     vi.advanceTimersByTime(DELAY);
     await pollFrames(currentIndicator, 1);
   });

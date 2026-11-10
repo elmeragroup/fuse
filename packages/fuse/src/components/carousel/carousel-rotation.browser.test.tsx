@@ -12,7 +12,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
-import { nextFrames, pollFrames, useFakeTimeouts } from "../../../test/animation-frames";
+import { nextFrames, pendingTimeout, pollFrames, useFakeTimeouts } from "../../../test/animation-frames";
 import { carouselSlides } from "../../../test/carousel-fixtures";
 import { carouselIndicators, carouselViewport, currentIndicator } from "../../../test/carousel-queries";
 import { withLocale } from "../../../test/locale-matrix";
@@ -32,11 +32,14 @@ beforeEach(() => {
 });
 
 /**
- * Moves the page's clock past one autoplay delay, then waits for the page it turns to.
+ * Waits for rotation to arm its next turn, moves the page's clock past one autoplay delay, then
+ * waits for the page it turns to. Rotation arms each turn in an effect after the render that shows
+ * the page before it, so the clock moves only once that turn is pending.
  *
  * @param expected - The indicator that should then be current.
  */
 async function turn(expected: number): Promise<void> {
+  await pendingTimeout();
   vi.advanceTimersByTime(DELAY);
   await pollFrames(currentIndicator, expected);
 }

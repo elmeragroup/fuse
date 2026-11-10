@@ -406,24 +406,29 @@ function ResetOnOpenPalette(): ReactElement {
 }
 
 /**
- * Opens the palette with `reopen` while its close animation runs. The close is paused on the frame
- * it starts, so the reopening lands mid-close however slowly the runner renders.
+ * Opens the palette with `reopen` while its close animation runs. The close ends when the popup's
+ * animations finish, so they are paused at their first moment, in the microtask after the commit
+ * that marks the popup ending, before any frame can advance them. Paused at `animationstart`, a
+ * runner that stalls longer than the animation between its start and that event's dispatch would
+ * already have finished it, so the reopening would land after the close.
  */
 async function interruptClose(reopen: () => Promise<void> | void): Promise<void> {
   const closing = roleNamed("dialog", "Command palette");
-  const started = new Promise<void>((resolve) => {
-    closing.addEventListener(
-      "animationstart",
-      () => {
-        for (const animation of closing.getAnimations({ subtree: true })) animation.pause();
-        resolve();
-      },
-      { once: true }
-    );
+  const held = new Promise<Animation[]>((resolve) => {
+    const observer = new MutationObserver(() => {
+      if (!closing.hasAttribute("data-ending-style")) return;
+      observer.disconnect();
+      // Reading them computes the ending style, which creates the close's animations.
+      const animations = closing.getAnimations({ subtree: true });
+      for (const animation of animations) animation.pause();
+      resolve(animations);
+    });
+    observer.observe(closing, { attributes: true, attributeFilter: ["data-ending-style"] });
   });
   await userEvent.keyboard("{Escape}");
-  await started;
-  expect(closing.hasAttribute("data-ending-style")).toBe(true);
+  const animations = await held;
+  // The close waits on an animation the pause holds, so it cannot end before the reopening.
+  expect(animations.map((animation) => animation.playState)).toContain("paused");
   await reopen();
   await expect.poll(() => closing.hasAttribute("data-open")).toBe(true);
   // The same popup: the opening kept it from its close.
