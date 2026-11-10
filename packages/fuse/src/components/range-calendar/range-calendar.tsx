@@ -16,6 +16,7 @@ import type { CalendarRootContextValue } from "../calendar/calendar-context";
 import { showsDay, startAlignedMonths } from "../calendar/calendar-dates";
 import {
   parseCalendarDay,
+  printedProp,
   useCalendarBounds,
   useCalendarSettings,
   useVisibleMonthCount,
@@ -46,18 +47,6 @@ export type {
 const styles = calendarVariants();
 
 /**
- * A range as the Root takes it: each end a `Temporal.PlainDate` from any implementation or its
- * ISO text (`"2026-10-12"`), the form a server component passes across the boundary. An end that
- * is a date-time or zoned value selects its own wall-clock day.
- */
-export type RangeCalendarValueInput = {
-  /** The first day. */
-  readonly start: Temporal.PlainDate | string;
-  /** The last day. A range given in reverse shows earlier day first. */
-  readonly end: Temporal.PlainDate | string;
-};
-
-/**
  * What an open range does when focus leaves the calendar or the user presses outside its days:
  * `"select"` completes it at the focused or hovered day; `"reset"` drops it and keeps the previous
  * range.
@@ -82,10 +71,15 @@ export type RangeCalendarRootProps = Omit<
   "defaultValue" | "onChange"
 > &
   CalendarViewProps & {
-    /** The selected range, when the parent owns it. `null` selects nothing. */
-    value?: RangeCalendarValueInput | null;
+    /**
+     * The selected range, when the parent owns it: each end a `Temporal.PlainDate` from any
+     * implementation. A range given in reverse shows the earlier day first. A server component
+     * cannot pass one, since it reaches the client as text: build the value in a client
+     * component. `null` selects nothing.
+     */
+    value?: RangeCalendarValue | null;
     /** The range selected first, when the calendar owns its value. Takes what `value` takes. */
-    defaultValue?: RangeCalendarValueInput | null;
+    defaultValue?: RangeCalendarValue | null;
     /**
      * Called when the user completes a range, with this runtime's `Temporal.PlainDate`s, earlier
      * day first. The first day pressed only anchors the range and calls nothing. `details.reason`
@@ -117,7 +111,7 @@ export type RangeCalendarRootProps = Omit<
   };
 
 /** The range a range prop names, earlier day first, or `null` without one. */
-function parseRange(input: RangeCalendarValueInput | null | undefined, prop: string): DayRange | null {
+function parseRange(input: RangeCalendarValue | null | undefined, prop: string): DayRange | null {
   if (input == null) {
     return null;
   }
@@ -127,9 +121,14 @@ function parseRange(input: RangeCalendarValueInput | null | undefined, prop: str
   );
 }
 
-/** The text a range prop prints, the key its parse is memoized by. */
-function rangeKey(input: RangeCalendarValueInput | null | undefined): string | null | undefined {
-  return input == null ? input : `${String(input.start)}/${String(input.end)}`;
+/** The text a range prop prints, the key its parse is memoized by. Refuses a string end. */
+function rangeKey(input: RangeCalendarValue | null | undefined, prop: string): string | null | undefined {
+  if (input == null) {
+    return input;
+  }
+  const start = printedProp(input.start, "RangeCalendar.Root", `${prop}.start`);
+  const end = printedProp(input.end, "RangeCalendar.Root", `${prop}.end`);
+  return `${String(start)}/${String(end)}`;
 }
 
 function sameRange(a: DayRange | null, b: DayRange | null): boolean {
@@ -153,8 +152,8 @@ function sameRange(a: DayRange | null, b: DayRange | null): boolean {
  * The Root's first element child is a hidden prompt the days' `aria-describedby` points at, so the
  * consumer's first part is not its `:first-child`.
  *
- * @throws TypeError naming the prop when a range end, `minValue` or `maxValue` is text that is not
- *   an ISO date, a host defect.
+ * @throws TypeError naming the prop and the fix when a range end, `minValue` or `maxValue` is a
+ *   string rather than a Temporal object, a host defect.
  */
 export function RangeCalendarRoot({
   value: valueProp,
@@ -179,7 +178,10 @@ export function RangeCalendarRoot({
   const { locale, timeZone } = useLocale();
   const strings = useLocalizedStrings(rangeCalendarStrings);
   const controlled = valueProp !== undefined;
-  const valueKey = rangeKey(valueProp);
+  const valueKey = rangeKey(valueProp, "value");
+  // The default range seeds the selection once, below; reading it through the guard on every
+  // render refuses a string end whether the calendar is controlled or the default changed.
+  rangeKey(defaultValue, "defaultValue");
 
   // oxlint-disable-next-line react-hooks/exhaustive-deps -- keyed by the printed value
   const value = useMemo(() => parseRange(valueProp, "value"), [valueKey]);

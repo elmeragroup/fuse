@@ -15,7 +15,7 @@
         {
           "name": "defaultValue",
           "origin": "declared",
-          "type": "string | PlainDate | null | undefined",
+          "type": "PlainDate | null | undefined",
           "shortType": "Union",
           "defaultValue": null,
           "description": "The day selected first, when the calendar owns its value. Takes what `value` takes.",
@@ -51,7 +51,7 @@
         {
           "name": "maxValue",
           "origin": "declared",
-          "type": "TemporalInput | undefined",
+          "type": "TemporalValue | undefined",
           "shortType": null,
           "defaultValue": null,
           "description": "The last selectable day, taking what `minValue` takes. Days after it are disabled.",
@@ -60,10 +60,10 @@
         {
           "name": "minValue",
           "origin": "declared",
-          "type": "TemporalInput | undefined",
+          "type": "TemporalValue | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The first selectable day: a PlainDate, PlainDateTime or ZonedDateTime from any implementation, or its ISO text. A date-time bound counts from its own wall-clock day. Days before it are disabled, never focusable, and focus clamps to it.",
+          "description": "The first selectable day: a Temporal PlainDate, PlainDateTime or ZonedDateTime from any implementation. A date-time bound counts from its own wall-clock day. Days before it are disabled, never focusable, and focus clamps to it.",
           "required": false
         },
         {
@@ -116,10 +116,10 @@
         {
           "name": "value",
           "origin": "declared",
-          "type": "string | PlainDate | null | undefined",
+          "type": "PlainDate | null | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "The selected day, when the parent owns it: a `Temporal.PlainDate` from any implementation, or its ISO text (`\"2026-10-12\"`), the form a server component passes across the boundary. A date-time or zoned value selects its own wall-clock day. `null` selects nothing.",
+          "description": "The selected day, when the parent owns it: a `Temporal.PlainDate` from any implementation. A server component cannot pass one, since it reaches the client as text: build the value in a client component. `null` selects nothing.",
           "required": false
         },
         {

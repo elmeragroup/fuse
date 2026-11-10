@@ -10,19 +10,19 @@ function isWeekend(date: Temporal.PlainDate): boolean {
 export function TemporalDateFieldBounds() {
   return (
     <div className="max-w-xs flex w-full flex-col gap-4">
-      <DateField<Temporal.PlainDate>
+      <DateField
         label="Installation date"
         description="A weekday in July 2026."
-        minValue="2026-07-01"
-        maxValue="2026-07-31"
+        minValue={Temporal.PlainDate.from("2026-07-01")}
+        maxValue={Temporal.PlainDate.from("2026-07-31")}
         isDateUnavailable={isWeekend}
-        defaultValue="2026-08-03"
+        defaultValue={Temporal.PlainDate.from("2026-08-03")}
       />
-      <DateField<Temporal.PlainDate>
+      <DateField
         label="Start-up date"
-        maxValue="2026-07-31"
+        maxValue={Temporal.PlainDate.from("2026-07-31")}
         errorMessage="Pick a date in July."
-        defaultValue="2026-07-14"
+        defaultValue={Temporal.PlainDate.from("2026-07-14")}
       />
     </div>
   );

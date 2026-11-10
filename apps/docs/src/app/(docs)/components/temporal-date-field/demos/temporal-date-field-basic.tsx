@@ -8,7 +8,7 @@ export function TemporalDateFieldBasic() {
   const [value, setValue] = useState<Temporal.PlainDate | null>(null);
   return (
     <div className="max-w-xs flex w-full flex-col gap-2">
-      <DateField<Temporal.PlainDate>
+      <DateField
         label="Moving date"
         description="The day the keys change hands."
         value={value}

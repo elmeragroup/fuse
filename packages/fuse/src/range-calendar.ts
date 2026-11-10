@@ -11,5 +11,4 @@ export type {
   RangeCalendarRootValueChangeEventDetails,
   RangeCalendarValue,
   RangeCalendarValueChangeReason,
-  RangeCalendarValueInput,
 } from "./components/range-calendar/range-calendar";

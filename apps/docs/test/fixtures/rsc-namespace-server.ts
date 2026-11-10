@@ -602,17 +602,17 @@ function carouselTree(): ReactElement {
   );
 }
 
-/** The ISO dates a server component hands Calendar.Root, as a page reads them from its data. */
-const CALENDAR_DATES = {
-  defaultValue: "2026-10-14",
-  minValue: "2026-10-01",
-  maxValue: "2026-12-31T23:30:00",
-};
+/**
+ * The date props a composite, run on the server, must not hand its Root when it was given none. A
+ * server component passes no date value: React writes a Temporal object as the text its `toJSON`
+ * prints, with a warning in development, and every Root refuses text. A page that holds a date
+ * hands it to a client component, which builds the value.
+ */
+const DATE_PROPS = ["value", "defaultValue", "minValue", "maxValue"] as const;
 
 /**
- * A server component renders the whole Calendar with ISO text for every date prop, since a
- * Temporal object reaches the client only as the string its `toJSON` prints. `Calendar.Months`
- * renders its default months: a function child could not cross to the client.
+ * A server component renders the whole Calendar without a date value. `Calendar.Months` renders
+ * its default months: a function child could not cross to the client.
  */
 function calendarTree(): ReactElement {
   return createElement(
@@ -620,7 +620,7 @@ function calendarTree(): ReactElement {
     { "data-fixture": "calendar" },
     createElement(
       Calendar.Root,
-      { "aria-label": "Delivery", visibleMonths: 2, ...CALENDAR_DATES },
+      { "aria-label": "Delivery", visibleMonths: 2 },
       createElement(
         Calendar.Header,
         null,
@@ -633,24 +633,14 @@ function calendarTree(): ReactElement {
   );
 }
 
-/** The ISO range and bounds a server component hands RangeCalendar.Root. */
-const RANGE_CALENDAR_DATES = {
-  defaultValue: { start: "2026-10-12", end: "2026-10-16" },
-  minValue: "2026-10-01",
-  maxValue: "2026-12-31",
-};
-
-/**
- * A server component renders the whole RangeCalendar with an ISO range: a plain object of strings
- * crosses the boundary as it is, and `RangeCalendar.Months` renders its default months.
- */
+/** A server component renders the whole RangeCalendar without a range, with its default months. */
 function rangeCalendarTree(): ReactElement {
   return createElement(
     "section",
     { "data-fixture": "range-calendar" },
     createElement(
       RangeCalendar.Root,
-      { "aria-label": "Stay", visibleMonths: 2, ...RANGE_CALENDAR_DATES },
+      { "aria-label": "Stay", visibleMonths: 2 },
       createElement(
         RangeCalendar.Header,
         null,
@@ -663,16 +653,10 @@ function rangeCalendarTree(): ReactElement {
   );
 }
 
-/** The ISO value and bounds a server component hands DateField. */
-const DATE_FIELD_DATES = {
-  defaultValue: "2026-10-12T14:30[Europe/Oslo]",
-  minValue: "2026-10-01T00:00[Europe/Oslo]",
-  maxValue: "2026-10-31T23:30",
-};
-
 /**
- * DateField owns no state, so a server form runs it and hands `DateInput.Root` the ISO text, as
- * a hand-composed `Field.Root` would. Its default segments need no function child.
+ * DateField owns no state, so a server form runs it and hands `DateInput.Root` its props, as a
+ * hand-composed `Field.Root` would. Without a value, its granularity and zone name the kind. Its
+ * default segments need no function child.
  */
 function dateFieldTree(): ReactElement {
   if (isClientReference(DateField)) {
@@ -686,24 +670,14 @@ function dateFieldTree(): ReactElement {
       name: "outage",
       granularity: "minute",
       hourCycle: 24,
-      ...DATE_FIELD_DATES,
+      timeZone: "Europe/Oslo",
     })
   );
 }
 
-/** The ISO values and bounds a server component hands the pickers. */
-const DATE_PICKER_DATES = {
-  defaultValue: "2026-10-05",
-  minValue: "2026-10-01",
-};
-const DATE_RANGE_PICKER_DATES = {
-  defaultValue: { start: "2026-10-12T08:00", end: "2026-10-16T17:30" },
-  maxValue: "2026-12-31",
-};
-
 /**
  * DatePickerField and DateRangePickerField own no state, so a server form runs them and hands the
- * pickers' Roots ISO text, and a preset pane built of client parts, as nodes. Their calendars'
+ * pickers' Roots their props, and a preset pane built of client parts, as nodes. Their calendars'
  * default children need no function child.
  */
 function datePickerTrees(): ReactElement {
@@ -721,7 +695,7 @@ function datePickerTrees(): ReactElement {
     createElement(DatePickerField, {
       label: "Moving day",
       name: "moving",
-      ...DATE_PICKER_DATES,
+      firstDayOfWeek: "mon",
       presetGroup: createElement(
         DatePicker.Presets,
         { value: "first" },
@@ -734,7 +708,6 @@ function datePickerTrees(): ReactElement {
       endName: "to",
       granularity: "minute",
       hourCycle: 24,
-      ...DATE_RANGE_PICKER_DATES,
     })
   );
 }
@@ -994,92 +967,74 @@ if (!payload.includes("/components/carousel/carousel.tsx")) {
   throw new Error(`Carousel.Root is not a client reference in the payload:\n${payload.slice(0, 1500)}`);
 }
 
-// The Root crosses as a client reference whose date props are the ISO strings, unchanged.
+/** Whether a Root's Flight props carry no date prop. */
+function withoutDates(props: FlightObject): boolean {
+  return DATE_PROPS.every((prop) => !(prop in props));
+}
+
+// The Root crosses once, as a client reference.
 const calendarRoots = models
   .flatMap(flightElements)
   .filter(({ props }) => props["aria-label"] === "Delivery" && props.visibleMonths === 2);
-const calendarProps = calendarRoots[0]?.props;
-if (
-  calendarRoots.length !== 1 ||
-  calendarProps?.defaultValue !== CALENDAR_DATES.defaultValue ||
-  calendarProps.minValue !== CALENDAR_DATES.minValue ||
-  calendarProps.maxValue !== CALENDAR_DATES.maxValue
-) {
-  throw new Error(`Calendar.Root's ISO props did not cross intact:\n${payload.slice(0, 1500)}`);
+if (calendarRoots.length !== 1) {
+  throw new Error(`Calendar.Root did not cross once:\n${payload.slice(0, 1500)}`);
 }
 if (!payload.includes("/components/calendar/calendar.tsx")) {
   throw new Error(`Calendar.Root is not a client reference in the payload:\n${payload.slice(0, 1500)}`);
 }
 
-// The range crosses as the same ISO strings, and the Root is a client reference.
+// The RangeCalendar Root crosses once, as a client reference.
 const rangeCalendarRoots = models
   .flatMap(flightElements)
   .filter(({ props }) => props["aria-label"] === "Stay" && props.visibleMonths === 2);
-const rangeCalendarProps = rangeCalendarRoots[0]?.props;
-const crossedRange = rangeCalendarProps?.defaultValue;
-if (
-  rangeCalendarRoots.length !== 1 ||
-  !isFlightObject(crossedRange) ||
-  crossedRange.start !== RANGE_CALENDAR_DATES.defaultValue.start ||
-  crossedRange.end !== RANGE_CALENDAR_DATES.defaultValue.end ||
-  rangeCalendarProps?.minValue !== RANGE_CALENDAR_DATES.minValue ||
-  rangeCalendarProps.maxValue !== RANGE_CALENDAR_DATES.maxValue
-) {
-  throw new Error(`RangeCalendar.Root's ISO range did not cross intact:\n${payload.slice(0, 1500)}`);
+if (rangeCalendarRoots.length !== 1) {
+  throw new Error(`RangeCalendar.Root did not cross once:\n${payload.slice(0, 1500)}`);
 }
 if (!payload.includes("/components/range-calendar/range-calendar.tsx")) {
   throw new Error(`RangeCalendar.Root is not a client reference in the payload:\n${payload.slice(0, 1500)}`);
 }
 
 // DateField ran on the server: its label is in the payload, and DateInput.Root is a client
-// reference whose ISO value and bounds crossed as the same strings.
+// reference that received the granularity and zone, and no date props.
 if (!payload.includes("Outage starts")) {
   throw new Error(`DateField's label is missing from the server payload:\n${payload.slice(0, 1500)}`);
 }
 const dateInputRoots = models
   .flatMap(flightElements)
-  .filter(({ props }) => props.defaultValue === DATE_FIELD_DATES.defaultValue);
-const dateInputProps = dateInputRoots[0]?.props;
+  .filter(({ props }) => props.granularity === "minute" && props.timeZone === "Europe/Oslo");
 if (
   dateInputRoots.length !== 1 ||
-  dateInputProps?.minValue !== DATE_FIELD_DATES.minValue ||
-  dateInputProps.maxValue !== DATE_FIELD_DATES.maxValue ||
-  dateInputProps.granularity !== "minute"
+  dateInputRoots[0]?.props.hourCycle !== 24 ||
+  !withoutDates(dateInputRoots[0].props)
 ) {
-  throw new Error(`DateInput.Root's ISO value did not cross intact:\n${payload.slice(0, 1500)}`);
+  throw new Error(`DateInput.Root did not cross with DateField's props:\n${payload.slice(0, 1500)}`);
 }
 if (!payload.includes("/components/date-field/date-input.tsx")) {
   throw new Error(`DateInput.Root is not a client reference in the payload:\n${payload.slice(0, 1500)}`);
 }
 
 // The pickers' composites ran on the server: their labels are in the payload, and their Roots are
-// client references whose ISO values crossed as the same strings.
+// client references that received the composites' props, and no date props.
 for (const label of ["Moving day", "Maintenance window", "First weekday"]) {
   if (!payload.includes(label)) {
     throw new Error(`"${label}" is missing from the server payload:\n${payload.slice(0, 1500)}`);
   }
 }
-const datePickerRoots = models
-  .flatMap(flightElements)
-  .filter(({ props }) => props.defaultValue === DATE_PICKER_DATES.defaultValue);
-if (datePickerRoots.length !== 1 || datePickerRoots[0]?.props.minValue !== DATE_PICKER_DATES.minValue) {
-  throw new Error(`DatePicker.Root's ISO value did not cross intact:\n${payload.slice(0, 1500)}`);
+const datePickerRoots = models.flatMap(flightElements).filter(({ props }) => props.firstDayOfWeek === "mon");
+if (datePickerRoots.length !== 1 || !withoutDates(datePickerRoots[0]?.props ?? {})) {
+  throw new Error(`DatePicker.Root did not cross with DatePickerField's props:\n${payload.slice(0, 1500)}`);
 }
-const rangeRoots = models.flatMap(flightElements).filter(({ props }) => {
-  const value = props.defaultValue;
-  return (
-    isFlightObject(value) &&
-    value.start === DATE_RANGE_PICKER_DATES.defaultValue.start &&
-    value.end === DATE_RANGE_PICKER_DATES.defaultValue.end
-  );
-});
+const rangeRoots = models
+  .flatMap(flightElements)
+  .filter(({ props }) => props.startName === "from" && props.endName === "to");
 if (
   rangeRoots.length !== 1 ||
-  rangeRoots[0]?.props.maxValue !== DATE_RANGE_PICKER_DATES.maxValue ||
-  rangeRoots[0].props.startName !== "from" ||
-  rangeRoots[0].props.endName !== "to"
+  rangeRoots[0]?.props.granularity !== "minute" ||
+  !withoutDates(rangeRoots[0].props)
 ) {
-  throw new Error(`DateRangePicker.Root's ISO range did not cross intact:\n${payload.slice(0, 1500)}`);
+  throw new Error(
+    `DateRangePicker.Root did not cross with DateRangePickerField's props:\n${payload.slice(0, 1500)}`
+  );
 }
 for (const module of [
   "/components/date-picker/date-picker.tsx",

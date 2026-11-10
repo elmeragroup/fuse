@@ -15,7 +15,7 @@ import type { CalendarRootContextValue, CalendarSharedState } from "./calendar-c
 import { dayValidationError } from "./calendar-dates";
 import {
   parseOptionalDay,
-  printedInput,
+  printedProp,
   useCalendarBounds,
   useCalendarSettings,
   useVisibleMonthCount,
@@ -50,13 +50,13 @@ export type CalendarRootProps = Omit<
 > &
   CalendarViewProps & {
     /**
-     * The selected day, when the parent owns it: a `Temporal.PlainDate` from any implementation, or
-     * its ISO text (`"2026-10-12"`), the form a server component passes across the boundary. A
-     * date-time or zoned value selects its own wall-clock day. `null` selects nothing.
+     * The selected day, when the parent owns it: a `Temporal.PlainDate` from any implementation.
+     * A server component cannot pass one, since it reaches the client as text: build the value in
+     * a client component. `null` selects nothing.
      */
-    value?: Temporal.PlainDate | string | null;
+    value?: Temporal.PlainDate | null;
     /** The day selected first, when the calendar owns its value. Takes what `value` takes. */
-    defaultValue?: Temporal.PlainDate | string | null;
+    defaultValue?: Temporal.PlainDate | null;
     /**
      * Called when the user selects a day, by pressing it or with Enter or Space, with the day as
      * this runtime's `Temporal.PlainDate`. `details.reason` is `"day-press"` or `"keyboard"`.
@@ -86,8 +86,8 @@ type CalendarState = CalendarSharedState & {
  * no today. A calendar with neither `value` nor `defaultValue` opens on today's month, so it shows
  * its months from that effect on.
  *
- * @throws TypeError naming the prop when `value`, `defaultValue`, `minValue` or `maxValue` is text
- *   that is not an ISO date, a host defect.
+ * @throws TypeError naming the prop and the fix when `value`, `defaultValue`, `minValue` or
+ *   `maxValue` is a string rather than a Temporal object, a host defect.
  */
 export function CalendarRoot({
   value: valueProp,
@@ -109,7 +109,10 @@ export function CalendarRoot({
 }: CalendarRootProps): ReactElement {
   const { locale, timeZone } = useLocale();
   const controlled = valueProp !== undefined;
-  const valueKey = printedInput(valueProp);
+  const valueKey = printedProp(valueProp, "Calendar.Root", "value");
+  // The default seeds the selection once, below; reading it through the guard on every render
+  // refuses a string whether the calendar is controlled or the default changed after mount.
+  printedProp(defaultValue, "Calendar.Root", "defaultValue");
   // oxlint-disable-next-line react-hooks/exhaustive-deps -- keyed by the printed value
   const value = useMemo(() => parseOptionalDay(valueProp, "Calendar.Root", "value") ?? null, [valueKey]);
   const bounds = useCalendarBounds(minValue, maxValue, "Calendar.Root");

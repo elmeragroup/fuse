@@ -18,7 +18,7 @@ export function PickersWithOpenLog(): ReactElement {
     <>
       <DatePicker.Root
         aria-label="Start date"
-        defaultValue="2026-10-05"
+        defaultValue={Temporal.PlainDate.from("2026-10-05")}
         onOpenChange={(open, details) =>
           setSingle((lines) => [...lines, `${String(open)}:${details.reason}`])
         }>
@@ -35,7 +35,10 @@ export function PickersWithOpenLog(): ReactElement {
       </div>
       <DateRangePicker.Root
         aria-label="Stay"
-        defaultValue={{ start: "2026-10-05", end: "2026-10-09" }}
+        defaultValue={{
+          start: Temporal.PlainDate.from("2026-10-05"),
+          end: Temporal.PlainDate.from("2026-10-09"),
+        }}
         onOpenChange={(open, details) =>
           setRange((lines) => [...lines, `${String(open)}:${details.reason}`])
         }>

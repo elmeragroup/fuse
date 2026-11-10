@@ -1,9 +1,9 @@
 // The values Fuse's date components hold, and how they enter: a PlainDate, PlainDateTime or
-// ZonedDateTime from any Temporal implementation, or the ISO string one prints. Every input is
-// re-branded through `X.from(String(x))`, never `instanceof`: a value from another implementation
-// (a server's polyfill, a second copy of the polyfill, native Temporal beside a polyfill) fails
-// `instanceof` and may lack this runtime's internal slots, while its ISO string is the one form
-// every implementation reads. React Flight also serializes a Temporal prop to that string.
+// ZonedDateTime from any Temporal implementation. Every value is re-branded through
+// `X.from(String(x))`, never `instanceof`: a value from another implementation (a second copy of
+// the polyfill, native Temporal beside a polyfill) fails `instanceof` and may lack this runtime's
+// internal slots, while its ISO string is the one form every implementation reads. The same parser
+// reads ISO text the user pastes into a field.
 
 import { err, ok } from "./result";
 import type { Result } from "./result";
@@ -11,9 +11,6 @@ import { temporal } from "./temporal";
 
 /** A value the date components hold. */
 export type TemporalValue = Temporal.PlainDate | Temporal.PlainDateTime | Temporal.ZonedDateTime;
-
-/** A value as a host passes it: a Temporal value from any implementation, or its ISO string. */
-export type TemporalInput = TemporalValue | string;
 
 /** The smallest unit a date component edits: a day, or a time down to the hour, minute or second. */
 export type DateGranularity = "day" | "hour" | "minute" | "second";
@@ -117,21 +114,20 @@ function zonedFrom(runtime: typeof Temporal, text: string): Temporal.ZonedDateTi
 }
 
 /**
- * A value of this runtime's Temporal, from an ISO string or any implementation's value, of the
- * kind its ISO text prints: a bracketed time zone makes a ZonedDateTime, a time a PlainDateTime,
- * a date alone a PlainDate. A ZonedDateTime keeps the exact instant its offset names, so a value
- * whose zone rules changed between implementations still means the same moment. Every value is
- * in the ISO 8601 calendar.
+ * A value of this runtime's Temporal, from ISO text, of the kind the text prints. A Temporal value
+ * from any implementation is read through `String(value)`. A bracketed time zone makes a
+ * ZonedDateTime, a time a PlainDateTime, a date alone a PlainDate. A ZonedDateTime keeps the
+ * exact instant its offset names, so a value whose zone rules changed between implementations
+ * still means the same moment. Every value is in the ISO 8601 calendar.
  *
- * @param input - A Temporal value from any implementation, or its ISO string.
+ * @param text - ISO text, or the text a Temporal value prints.
  * @returns The value, or `TemporalInputError` when no kind reads it. A string with a UTC offset
  *   or `Z` but no bracketed zone, such as `Date#toISOString` output or `2026-03-15T09:30+01:00`,
  *   names an instant, not one of the kinds, and is refused rather than read without its offset.
  *   A `[u-ca=…]` annotation other than `iso8601` or `gregory` is refused in every engine, and a
  *   `gregory` value is returned in `iso8601`, whose dates are the same.
  */
-export function parseTemporal(input: TemporalInput): Result<TemporalValue, TemporalInputError> {
-  const text = String(input);
+export function parseTemporal(text: string): Result<TemporalValue, TemporalInputError> {
   const kind = isoKind(text);
   if (kind === undefined) {
     return err(new TemporalInputError(text));
@@ -177,15 +173,23 @@ export function hasTime(value: TemporalValue): value is Temporal.PlainDateTime |
   return "hour" in value;
 }
 
-/** The kind a value has, with its zone when it is a ZonedDateTime; none for an empty value. */
-function kindOf(value: TemporalValue | null | undefined): ValueKind | undefined {
-  if (value == null) {
-    return undefined;
-  }
+/**
+ * The kind a value has, with its zone when it is a ZonedDateTime, by its shape: a zone first,
+ * since a ZonedDateTime holds a time too.
+ *
+ * @param value - The value.
+ * @returns Its kind.
+ */
+export function valueKind(value: TemporalValue): ValueKind {
   if (isZoned(value)) {
     return { kind: "ZonedDateTime", timeZone: value.timeZoneId };
   }
   return hasTime(value) ? { kind: "PlainDateTime" } : { kind: "PlainDate" };
+}
+
+/** The kind a value has; none for an empty value. */
+function kindOf(value: TemporalValue | null | undefined): ValueKind | undefined {
+  return value == null ? undefined : valueKind(value);
 }
 
 /**
@@ -218,13 +222,65 @@ function conflicts(kind: ValueKind, granularity: DateGranularity): boolean {
   return kind.kind === "PlainDate" && granularity !== "day";
 }
 
-/** The kind the granularity and zone make when no value names one. */
+/**
+ * The kind the granularity and zone make when no value names one. `MadeValue` is the same rule in
+ * the types; temporal-value.test.ts holds both to one table.
+ */
 function madeKind(granularity: DateGranularity, timeZone: string | undefined): ValueKind {
   if (granularity === "day") {
     return { kind: "PlainDate" };
   }
   return timeZone === undefined ? { kind: "PlainDateTime" } : { kind: "ZonedDateTime", timeZone };
 }
+
+/**
+ * The value type `madeKind` makes from a granularity and zone: `"day"` or no granularity makes a
+ * PlainDate whatever the zone; a time unit makes a ZonedDateTime with a zone and a PlainDateTime
+ * without. A granularity or zone that is a union, such as an optional `timeZone`, makes the union
+ * of what each member makes.
+ *
+ * @template G - The `granularity` prop's type, `undefined` when it is not given.
+ * @template Z - The `timeZone` prop's type, `undefined` when it is not given.
+ */
+export type MadeValue<G, Z> = G extends "day" | undefined
+  ? Temporal.PlainDate
+  : Z extends string
+    ? Temporal.ZonedDateTime
+    : Temporal.PlainDateTime;
+
+/** A prop's type in a props object: `undefined` when the object has no such key. */
+type PropType<P, K extends string> = K extends keyof P ? P[K] : undefined;
+
+/**
+ * The value type a date component's props make when no value or default value names one:
+ * `MadeValue` of the `granularity` and `timeZone` they hold. A component's value type defaults
+ * to it, so a call site never names the kind.
+ *
+ * @template P - The props, as `KindProps` infers them.
+ */
+export type PropsMadeValue<P> = MadeValue<PropType<P, "granularity">, PropType<P, "timeZone">>;
+
+/**
+ * A props object mapped onto itself. TypeScript infers `P` from props through a mapped type like
+ * this one even when they hold an unannotated callback, which keeps it from inferring a type
+ * parameter from the whole object, and the inference keeps a prop's own type: an optional
+ * `timeZone` stays `string | undefined`, where inferring from the prop alone drops the
+ * `undefined`. `granularity` and `timeZone` keep their types; the component's other declared props,
+ * React's `key` and hyphenated attributes add nothing; any other key is `never`, so a misspelt or
+ * undeclared prop is an error, as it is on a component that is not generic. The same rule makes
+ * the old form that named the kind as a type argument fail: `<DateField<Temporal.PlainDate>>`
+ * binds `P` to PlainDate, whose members the props then need, each as `never`.
+ *
+ * @template P - The props.
+ * @template Declared - The component's props type, whose keys are the props it takes.
+ */
+export type KindProps<P, Declared> = {
+  [K in keyof P]: K extends "granularity" | "timeZone"
+    ? P[K]
+    : K extends keyof Declared | "key" | `${string}-${string}`
+      ? unknown
+      : never;
+};
 
 /** What a component's value kind resolves from, each already parsed. */
 export type ValueKindSources = {

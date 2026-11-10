@@ -51,7 +51,7 @@
         {
           "name": "defaultValue",
           "origin": "declared",
-          "type": "string | T | null | undefined",
+          "type": "T | null | undefined",
           "shortType": "Union",
           "defaultValue": null,
           "description": "The first value, when the picker owns its value.",
@@ -90,7 +90,7 @@
           "type": "DateGranularity | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The smallest unit the input edits. A time granularity needs a value with a time.",
+          "description": "The smallest unit the input edits. A time granularity needs a value with a time. Without a value it names the kind, as DateInput's does.",
           "required": false
         },
         {
@@ -123,7 +123,7 @@
         {
           "name": "isDateUnavailable",
           "origin": "declared",
-          "type": "((value: T) => boolean) | undefined",
+          "type": "NoInfer<(value: T) => boolean> | undefined",
           "shortType": "function",
           "defaultValue": null,
           "description": "Values the picker refuses: the calendar's days stay focusable but unselectable, a typed one is invalid.",
@@ -132,19 +132,19 @@
         {
           "name": "maxValue",
           "origin": "declared",
-          "type": "TemporalInput | undefined",
+          "type": "TemporalValue | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The latest valid value, of any kind or its ISO text.",
+          "description": "The latest valid value, a Temporal value of any kind.",
           "required": false
         },
         {
           "name": "minValue",
           "origin": "declared",
-          "type": "TemporalInput | undefined",
+          "type": "TemporalValue | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The earliest valid value, of any kind or its ISO text. Earlier days are disabled in the calendar.",
+          "description": "The earliest valid value, a Temporal value of any kind. Earlier days are disabled in the calendar.",
           "required": false
         },
         {
@@ -177,7 +177,7 @@
         {
           "name": "onValueChange",
           "origin": "declared",
-          "type": "((value: T | null, details: DatePickerValueChangeEventDetails) => void) | undefined",
+          "type": "NoInfer<(value: T | null, details: DatePickerValueChangeEventDetails) => void> | undefined",
           "shortType": "function",
           "defaultValue": null,
           "description": "Called with this runtime's value when a day is picked in the calendar or the input forms a new value, `null` when the input is cleared. `details.reason` is `\"day-press\"`, `\"keyboard\"`, `\"input-change\"`, `\"input-clear\"` or `\"input-paste\"`. Canceling with `details.cancel()` keeps the value: a canceled day keeps the popup open with focus on the day, and a canceled edit shows the value again in the segments.",
@@ -260,10 +260,10 @@
         {
           "name": "value",
           "origin": "declared",
-          "type": "string | T | null | undefined",
+          "type": "T | null | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "The value, when the parent owns it: a Temporal value of `T`'s kind or its ISO text. `null` empties it.",
+          "description": "The value, when the parent owns it: a Temporal value of `T`'s kind, built in a client component. `null` empties it.",
           "required": false
         },
         {
@@ -810,7 +810,7 @@
         {
           "name": "defaultValue",
           "origin": "declared",
-          "type": "string | T | null | undefined",
+          "type": "T | null | undefined",
           "shortType": "Union",
           "defaultValue": null,
           "description": "The first value, when the picker owns its value.",
@@ -849,7 +849,7 @@
           "type": "DateGranularity | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The smallest unit the input edits.",
+          "description": "The smallest unit the input edits. Without a value it names the kind, as DateField's does.",
           "required": false
         },
         {
@@ -873,7 +873,7 @@
         {
           "name": "isDateUnavailable",
           "origin": "declared",
-          "type": "((value: T) => boolean) | undefined",
+          "type": "NoInfer<(value: T) => boolean> | undefined",
           "shortType": "function",
           "defaultValue": null,
           "description": "Values the picker refuses: focusable but unselectable days, an invalid typed value.",
@@ -936,19 +936,19 @@
         {
           "name": "maxValue",
           "origin": "declared",
-          "type": "TemporalInput | undefined",
+          "type": "TemporalValue | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The latest valid value, of any kind or its ISO text.",
+          "description": "The latest valid value, a Temporal value of any kind.",
           "required": false
         },
         {
           "name": "minValue",
           "origin": "declared",
-          "type": "TemporalInput | undefined",
+          "type": "TemporalValue | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The earliest valid value, of any kind or its ISO text.",
+          "description": "The earliest valid value, a Temporal value of any kind.",
           "required": false
         },
         {
@@ -972,7 +972,7 @@
         {
           "name": "onChange",
           "origin": "declared",
-          "type": "((value: T | null) => void) | undefined",
+          "type": "NoInfer<(value: T | null) => void> | undefined",
           "shortType": "function",
           "defaultValue": null,
           "description": "Called with this runtime's value when a day is picked or the segments form one, `null` when cleared.",
@@ -1053,10 +1053,10 @@
         {
           "name": "value",
           "origin": "declared",
-          "type": "string | T | null | undefined",
+          "type": "T | null | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "The value, when the parent owns it: a Temporal value of `T`'s kind or its ISO text. `null` empties it.",
+          "description": "The value, when the parent owns it: a Temporal value of `T`'s kind, built in a client component. `null` empties it.",
           "required": false
         },
         {

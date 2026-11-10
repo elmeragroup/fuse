@@ -24,7 +24,12 @@ import { useLocale } from "../../intl/locale-context";
 import { cn } from "../../styles/cn";
 import type { Bounds } from "../../temporal/bounds";
 import { temporal } from "../../temporal/temporal";
-import type { DateGranularity, TemporalValue } from "../../temporal/temporal-value";
+import type {
+  DateGranularity,
+  KindProps,
+  PropsMadeValue,
+  TemporalValue,
+} from "../../temporal/temporal-value";
 import { today } from "../../temporal/today";
 import { createChangeEventDetails } from "../calendar/calendar-change-details";
 import { useTemporalProp } from "../calendar/calendar-input";
@@ -182,12 +187,15 @@ const ROOT_STATE_ATTRIBUTES = {
  * imports `@elmeragroup/fuse/temporal-polyfill` once. It never reads the clock while rendering:
  * today fills an empty segment only when the user steps it.
  *
- * @template T - The value's kind.
- * @throws TypeError naming the prop when `value`, `defaultValue`, `minValue` or `maxValue` is text
- *   that is not an ISO value, or when a time `granularity` meets a PlainDate value: host defects.
+ * @template P - The props, inferred: only their `granularity` and `timeZone` count.
+ * @template T - The value's kind, inferred: the kind `value` or `defaultValue` names, and without
+ *   either the kind `granularity` and `timeZone` make, as the runtime resolves it.
+ * @throws TypeError naming the prop and the fix when `value`, `defaultValue`, `minValue` or
+ *   `maxValue` is a string rather than a Temporal object, or when a time `granularity` meets a
+ *   PlainDate value: host defects.
  */
-export function DateInputRoot<T extends DateInputValue = Temporal.PlainDate>(
-  props: DateInputRootProps<T>
+export function DateInputRoot<P = object, T extends DateInputValue = PropsMadeValue<P>>(
+  props: DateInputRootProps<T> & KindProps<P, DateInputRootProps<DateInputValue>>
 ): ReactElement {
   const {
     value: valueProp,

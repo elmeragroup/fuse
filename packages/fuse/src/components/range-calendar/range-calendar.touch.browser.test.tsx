@@ -27,7 +27,10 @@ function Fixture(): ReactElement {
     <div style={{ height: 3000 }}>
       <RangeCalendar.Root
         aria-label="Stay"
-        defaultValue={{ start: "2026-10-05", end: "2026-10-09" }}
+        defaultValue={{
+          start: Temporal.PlainDate.from("2026-10-05"),
+          end: Temporal.PlainDate.from("2026-10-09"),
+        }}
         onValueChange={(next, details) => {
           setValue(`${next.start.toString()}..${next.end.toString()} ${details.reason}`);
         }}>

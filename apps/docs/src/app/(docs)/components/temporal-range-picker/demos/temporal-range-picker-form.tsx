@@ -26,12 +26,15 @@ export function TemporalRangePickerForm() {
         setErrors({});
         setStatus(`Booked ${String(values.checkIn)} to ${String(values.checkOut)}.`);
       }}>
-      <DateRangePickerField<Temporal.PlainDate>
+      <DateRangePickerField
         label="Stay"
         startName="checkIn"
         endName="checkOut"
         description="A Friday check-out comes back with an error on the end."
-        defaultValue={{ start: "2026-10-05", end: "2026-10-09" }}
+        defaultValue={{
+          start: Temporal.PlainDate.from("2026-10-05"),
+          end: Temporal.PlainDate.from("2026-10-09"),
+        }}
         isRequired
       />
       <Button type="submit" className="self-start">

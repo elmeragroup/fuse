@@ -13,12 +13,7 @@ import { useRender } from "@base-ui/react/use-render";
 
 import { definedProps } from "../../internal/defined-props";
 import type { Bounds } from "../../temporal/bounds";
-import type {
-  DateGranularity,
-  ResolvedKind,
-  TemporalInput,
-  TemporalValue,
-} from "../../temporal/temporal-value";
+import type { DateGranularity, ResolvedKind, TemporalValue } from "../../temporal/temporal-value";
 import type { CalendarRootProps } from "../calendar/calendar";
 import type { CalendarPageBehavior } from "../calendar/calendar-dates";
 import { useTemporalProp } from "../calendar/calendar-input";
@@ -142,12 +137,12 @@ export type PickerRootSharedProps = {
  * @param maxValue - The Root's `maxValue`.
  * @param isDateUnavailable - The Root's `isDateUnavailable`.
  * @returns The rules, one object while the bounds' printed values and the check hold.
- * @throws TypeError naming the prop when a bound is text that is not an ISO value, a host defect.
+ * @throws TypeError naming the prop and the fix when a bound is a string, a host defect.
  */
 export function usePickerRules(
   owner: PickerOwner,
-  minValue: TemporalInput | undefined,
-  maxValue: TemporalInput | undefined,
+  minValue: TemporalValue | undefined,
+  maxValue: TemporalValue | undefined,
   isDateUnavailable: ((value: TemporalValue) => boolean) | undefined
 ): DateInputRules {
   const min = useTemporalProp(minValue, owner, "minValue") ?? undefined;
@@ -214,7 +209,8 @@ export function usePickerRoot(options: PickerRootOptions): PickerRoot {
   const { min: minValue, max: maxValue } = rules.bounds;
   const { isDateUnavailable } = rules;
   const dayUnavailable = useDayUnavailable(isDateUnavailable, kind.kind);
-  const witness = kindWitness(kind);
+  // `useValueKind` keeps the resolved kind's identity while it holds, so the witness keeps its own.
+  const witness = useMemo(() => kindWitness(kind), [kind]);
   const disabled = usePickerDisabled(props.disabled);
 
   const { open } = session;

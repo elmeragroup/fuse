@@ -25,11 +25,11 @@ export function TemporalDatePickerForm() {
         setErrors({});
         setStatus(`Saved ${String(values.start)}.`);
       }}>
-      <DatePickerField<Temporal.PlainDate>
+      <DatePickerField
         label="Start date"
         name="start"
         description="Try December 24, 2026."
-        minValue="2026-10-01"
+        minValue={Temporal.PlainDate.from("2026-10-01")}
         isRequired
       />
       <Button type="submit" className="self-start">

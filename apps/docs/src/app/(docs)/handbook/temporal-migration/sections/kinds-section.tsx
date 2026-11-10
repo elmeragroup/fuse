@@ -1,7 +1,8 @@
 import type { ReactElement } from "react";
 
-const ZONED = `// An empty zoned field has no value to take a zone from: name it.
-<DatePickerField<Temporal.ZonedDateTime>
+const ZONED = `// An empty zoned field has no value to take a zone from: name it. onChange receives
+// Temporal.ZonedDateTime | null.
+<DatePickerField
   label="Delivery window starts"
   granularity="minute"
   timeZone="Europe/Oslo"
@@ -46,6 +47,13 @@ export function KindsSection(): ReactElement {
       <pre>
         <code>{ZONED}</code>
       </pre>
+      <p>
+        The types follow the same order, so no call site passes a type argument. A <code>value</code> or{" "}
+        <code>defaultValue</code> names the kind <code>onChange</code> and <code>isDateUnavailable</code>{" "}
+        receive; without either, <code>granularity</code> and <code>timeZone</code> do, as in the last step. A
+        prop whose type is a union, such as a <code>granularity</code> held in a variable or an optional{" "}
+        <code>timeZone</code>, gives the union of the kinds it could make.
+      </p>
       <p>
         <code>minValue</code> and <code>maxValue</code> take any kind, independent of the value&apos;s, and
         compare as React Aria compared them: a <code>PlainDate</code> value against each bound&apos;s

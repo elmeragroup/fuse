@@ -23,7 +23,7 @@ const PDI = String.fromCodePoint(0x2069);
 
 function mount<T extends DateInputValue>(locale: SupportedLocale, props: DateFieldProps<T>): HTMLElement {
   function Field(): ReactElement {
-    return withLocale(locale, <DateField<T> label="Dato" {...props} />);
+    return withLocale(locale, <DateField label="Dato" {...props} />);
   }
   renderThemed(<Field />);
   return roleNamed("group", "Dato");
@@ -43,7 +43,7 @@ describe("DateField text in every engine", () => {
     ["sv-SE", "2026-10-05", ["år", "månad", "dag"]],
     ["fi-FI", "05.10.2026", ["päivä", "kuukausi", "vuosi"]],
   ] as const)("writes a %s date as %s with its segment names", (locale, text, segmentNames) => {
-    const group = mount(locale, { defaultValue: "2026-10-05" });
+    const group = mount(locale, { defaultValue: Temporal.PlainDate.from("2026-10-05") });
     expect(group.textContent).toBe(text);
     expect(names(group)).toEqual(segmentNames);
   });
@@ -62,13 +62,15 @@ describe("DateField text in every engine", () => {
     ["sv-SE", `2026-10-05 ${LRI}14:30${PDI}`],
     ["fi-FI", `05.10.2026 klo ${LRI}14.30${PDI}`],
   ] as const)("writes a %s 24-hour date-time as %s", (locale, text) => {
-    expect(mount<Temporal.PlainDateTime>(locale, { defaultValue: "2026-10-05T14:30" }).textContent).toBe(
+    expect(mount(locale, { defaultValue: Temporal.PlainDateTime.from("2026-10-05T14:30") }).textContent).toBe(
       text
     );
   });
 
   it("writes an en-US date-time with its day period after the isolated time", () => {
-    const group = mount<Temporal.PlainDateTime>("en-US", { defaultValue: "2026-10-05T14:30" });
+    const group = mount("en-US", {
+      defaultValue: Temporal.PlainDateTime.from("2026-10-05T14:30"),
+    });
     expect(group.textContent.replace(/\s/gu, " ")).toBe(`10/05/2026, ${LRI}02:30${PDI} PM`);
     expect(names(group)).toEqual(["month", "day", "year", "hour", "minute", "AM/PM"]);
   });

@@ -16,9 +16,9 @@ import type { CalendarDate } from "@internationalized/date";
 // After: the Temporal tier
 import { DatePickerField } from "@elmeragroup/fuse/date-picker";
 
-<DatePickerField<Temporal.PlainDate> label="Moving date" value={value} onChange={setValue} />;`;
+<DatePickerField label="Moving date" value={value} onChange={setValue} />;`;
 
-const PRESETS = `<DatePickerField<Temporal.PlainDate>
+const PRESETS = `<DatePickerField
   label="Start date"
   value={value}
   onChange={setValue}
@@ -53,10 +53,10 @@ const COMPONENT_MAP: readonly Row[] = [
       No labeled composite. Compose {c("Calendar.Header")} (with {c("Calendar.DecrementMonth")},{" "}
       {c("Calendar.VisibleRangeHeading")}, {c("Calendar.IncrementMonth")}) and {c("Calendar.Months")}, which
       renders the standard month grids without children. The interim {c("errorMessage")} has no counterpart.
-      Values are days: it takes a {c("Temporal.PlainDate")} or its ISO text and reports{" "}
-      {c("Temporal.PlainDate")}s, where the interim calendar took and gave back date-times and zoned values
-      with their time. Holding a date-time, use a picker, or put the time back yourself with{" "}
-      {c("value.with({ year, month, day })")} from the picked day.
+      Values are days: it takes a {c("Temporal.PlainDate")} object and reports {c("Temporal.PlainDate")}s,
+      where the interim calendar took and gave back date-times and zoned values with their time. Holding a
+      date-time, use a picker, or put the time back yourself with {c("value.with({ year, month, day })")} from
+      the picked day.
     </>,
   ],
   [
@@ -141,7 +141,7 @@ const COMPOSITE_CHANGES: readonly Row[] = [
       {c("value")}, {c("defaultValue")}, {c("onChange")}
     </>,
     <>
-      In: a Temporal object of any implementation or its ISO text. Out: this runtime&apos;s Temporal object.
+      In: a Temporal object of any implementation, never ISO text. Out: this runtime&apos;s Temporal object.
       Range pickers still take and give {c("{ start, end }")}.
     </>,
   ],
@@ -149,7 +149,7 @@ const COMPOSITE_CHANGES: readonly Row[] = [
     <>
       {c("minValue")}, {c("maxValue")}
     </>,
-    <>Any kind or ISO text, independent of the value&apos;s kind.</>,
+    <>A Temporal object of any kind, independent of the value&apos;s kind.</>,
   ],
   [c("isDateUnavailable"), <>Receives this runtime&apos;s Temporal value.</>],
   [c("errorMessage"), <>A node; React Aria&apos;s {c("(validation) => node")} function form is gone.</>],
@@ -354,12 +354,11 @@ export function ComponentMapSection(): ReactElement {
         ))}
       </ul>
       <p>
-        The generic type argument moves to Temporal: <code>&lt;DatePicker&lt;CalendarDate&gt;&gt;</code>{" "}
-        becomes <code>&lt;DatePickerField&lt;Temporal.PlainDate&gt;&gt;</code>, <code>CalendarDateTime</code>{" "}
-        becomes <code>Temporal.PlainDateTime</code> and <code>ZonedDateTime</code> becomes{" "}
-        <code>Temporal.ZonedDateTime</code>. <code>Temporal.PlainDate</code> is the default. Pass it whenever
-        you pass ISO text alone: text names its kind only at runtime, so without it <code>onChange</code>{" "}
-        receives the union of the three. What changes:
+        The generic type argument goes away: drop <code>&lt;CalendarDate&gt;</code> from{" "}
+        <code>&lt;DatePicker&lt;CalendarDate&gt;&gt;</code>. The kind <code>onChange</code> receives is typed
+        from the <code>value</code> or <code>defaultValue</code>, and without either from{" "}
+        <code>granularity</code> and <code>timeZone</code>, as <a href="#kind-resolution">kind resolution</a>{" "}
+        resolves it at runtime. What changes:
       </p>
       <MappingTable columns={["Interim", "Temporal tier"]} rows={COMPOSITE_CHANGES} />
 

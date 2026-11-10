@@ -9,7 +9,10 @@ whose values are `Temporal.PlainDate`s. It is the Temporal replacement for the i
 ```tsx
 import { Calendar } from "@elmeragroup/fuse/calendar";
 
-<Calendar.Root aria-label="Delivery date" defaultValue="2026-10-14" visibleMonths={2}>
+<Calendar.Root
+  aria-label="Delivery date"
+  defaultValue={Temporal.PlainDate.from("2026-10-14")}
+  visibleMonths={2}>
   <Calendar.Header>
     <Calendar.DecrementMonth />
     <Calendar.VisibleRangeHeading />
@@ -19,8 +22,10 @@ import { Calendar } from "@elmeragroup/fuse/calendar";
 </Calendar.Root>;
 ```
 
-- Date props take a `Temporal.PlainDate` from any implementation or its ISO text, so a server
-  component passes them across the boundary as strings. `onValueChange` hands back this runtime's
+- Date props take a `Temporal.PlainDate` object from any implementation, never its ISO text.
+  A value is built in a client component: React passes a Temporal object from a server component
+  to a client one as its ISO text, and every date prop refuses a string with a `TypeError` that
+  names the component, the prop and the fix. `onValueChange` hands back this runtime's
   `PlainDate`. Import `@elmeragroup/fuse/temporal-polyfill` once where the engine lacks Temporal.
 - Fuse's declarations, the root entry's included, name the global `Temporal` types, which come
   from TypeScript's own lib: type-checking a consumer needs TypeScript 6.0 or later with a `lib`
@@ -37,7 +42,7 @@ import { Calendar } from "@elmeragroup/fuse/calendar";
   `getValidationError()` names a failure in `ValidityState`'s words, as the tier's other date
   components do: `"rangeUnderflow"`, `"rangeOverflow"` or `"unavailable"`.
 - Today is read in an effect and moves at midnight, so a server render marks no today and the
-  calendar prerenders.
+  calendar prerenders. A server component renders the parts without a date value.
 - `fuse/css`'s shared `data-selected:` variant now matches a present `data-selected` that is not
   `"false"`, as `data-checked:` and `data-active:` do, rather than only `data-selected="true"`.
   The calendar's days write the bare attribute. A Tailwind-source consumer's own `data-selected:`

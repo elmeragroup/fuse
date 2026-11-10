@@ -9,15 +9,12 @@ import type {
   RangeCalendarValueChangeReason,
 } from "@elmeragroup/fuse/range-calendar";
 
-test("Root takes ends as PlainDates or ISO text and reports PlainDates", () => {
-  const _iso = (
-    <RangeCalendar.Root aria-label="Stay" defaultValue={{ start: "2026-10-05", end: "2026-10-09" }} />
-  );
+test("Root takes ends as PlainDates and reports PlainDates", () => {
   const _empty = <RangeCalendar.Root aria-label="Stay" value={null} />;
   const _dates = (
     <RangeCalendar.Root
       aria-label="Stay"
-      value={{ start: Temporal.PlainDate.from("2026-10-05"), end: "2026-10-09" }}
+      value={{ start: Temporal.PlainDate.from("2026-10-05"), end: Temporal.PlainDate.from("2026-10-09") }}
       onValueChange={(value, details) => {
         expectTypeOf(value).toEqualTypeOf<RangeCalendarValue>();
         expectTypeOf(value.start).toEqualTypeOf<Temporal.PlainDate>();
@@ -25,13 +22,26 @@ test("Root takes ends as PlainDates or ISO text and reports PlainDates", () => {
       }}
     />
   );
+  const day = Temporal.PlainDate.from("2026-10-05");
   // @ts-expect-error a range has both ends
-  const _half = <RangeCalendar.Root aria-label="Stay" value={{ start: "2026-10-05" }} />;
+  const _half = <RangeCalendar.Root aria-label="Stay" value={{ start: day }} />;
   // @ts-expect-error a range calendar selects ranges, not one day
-  const _single = <RangeCalendar.Root aria-label="Stay" value="2026-10-05" />;
+  const _single = <RangeCalendar.Root aria-label="Stay" value={day} />;
   expectTypeOf<RangeCalendarValueChangeReason>().toEqualTypeOf<
     "day-press" | "keyboard" | "outside-press" | "focus-out"
   >();
+});
+
+test("no date prop takes ISO text", () => {
+  const day = Temporal.PlainDate.from("2026-10-09");
+  // @ts-expect-error a range's start is a Temporal object
+  const _start = <RangeCalendar.Root aria-label="Stay" value={{ start: "2026-10-05", end: day }} />;
+  // @ts-expect-error a range's end is a Temporal object
+  const _end = <RangeCalendar.Root aria-label="Stay" defaultValue={{ start: day, end: "2026-10-09" }} />;
+  // @ts-expect-error a bound is a Temporal object
+  const _min = <RangeCalendar.Root aria-label="Stay" minValue="2026-10-01" />;
+  // @ts-expect-error a bound is a Temporal object
+  const _max = <RangeCalendar.Root aria-label="Stay" maxValue="2026-12-31" />;
 });
 
 test("getValidationError names a failing range in ValidityState's words", () => {

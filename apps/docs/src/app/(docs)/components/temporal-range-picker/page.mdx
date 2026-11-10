@@ -16,7 +16,7 @@ export const metadata = componentMetadata("temporal-range-picker");
 
 <Prose>
 
-`DateRangePickerField` from `@elmeragroup/fuse/date-range-picker` is the Temporal replacement for the interim [React Aria DateRangePicker](/components/date-range-picker), with its prop names, `startName` and `endName` included. Its value is `{ start, end }`, each end a `Temporal.PlainDate`, `PlainDateTime` or `ZonedDateTime` or its ISO text; `onChange` hands back this runtime's range once both ends hold a value, and `null` as soon as a whole range loses an end, as React Aria reports it; the other end stays in its input.
+`DateRangePickerField` from `@elmeragroup/fuse/date-range-picker` is the Temporal replacement for the interim [React Aria DateRangePicker](/components/date-range-picker), with its prop names, `startName` and `endName` included. Its value is `{ start, end }`, each end a `Temporal.PlainDate`, `PlainDateTime` or `ZonedDateTime` object, typed as [DateField's](/components/temporal-date-field) value is; `onChange` hands back this runtime's range once both ends hold a value, and `null` as soon as a whole range loses an end, as React Aria reports it; the other end stays in its input. Build a value in a client component: a Temporal object a server component passes reaches the client as ISO text, which the component refuses with a `TypeError`. [Temporal for dates](/quick-start#temporal) shows a server component handing its text to a client component that builds the value.
 
 Fuse reads `globalThis.Temporal`. Import `@elmeragroup/fuse/temporal-polyfill` once in your app's entry, on the server and in the browser.
 

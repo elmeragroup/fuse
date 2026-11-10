@@ -25,7 +25,10 @@ function useMonthCount(): number {
 export function TemporalCalendarMonths() {
   const visibleMonths = useMonthCount();
   return (
-    <Calendar.Root aria-label="Check-in" defaultValue="2026-10-14" visibleMonths={visibleMonths}>
+    <Calendar.Root
+      aria-label="Check-in"
+      defaultValue={Temporal.PlainDate.from("2026-10-14")}
+      visibleMonths={visibleMonths}>
       <Calendar.Header>
         <Calendar.DecrementMonth />
         <Calendar.VisibleRangeHeading className="sr-only" />

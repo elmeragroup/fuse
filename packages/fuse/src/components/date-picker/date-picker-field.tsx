@@ -1,7 +1,12 @@
 import type { FocusEvent, ReactElement, ReactNode } from "react";
 
 import { definedProps } from "../../internal/defined-props";
-import type { DateGranularity, TemporalInput } from "../../temporal/temporal-value";
+import type {
+  DateGranularity,
+  KindProps,
+  PropsMadeValue,
+  TemporalValue,
+} from "../../temporal/temporal-value";
 import type { CalendarPageBehavior } from "../calendar/calendar-dates";
 import type { CalendarFirstDayOfWeek } from "../calendar/calendar-input";
 import type { DateInputValue } from "../date-field/date-input";
@@ -14,8 +19,8 @@ import { DatePickerGroup, DatePickerPopup, DatePickerTrigger, PickerPopupPane } 
  * DatePickerField's props: the interim React Aria DatePicker's names, over Temporal values.
  *
  * @template T - The value's kind: `Temporal.PlainDate` (the default), `PlainDateTime` or
- *   `ZonedDateTime`. A Temporal `value` or `defaultValue` names it; with ISO text alone pass the
- *   type argument (`<DatePickerField<Temporal.PlainDate>>`) to narrow what `onChange` receives.
+ *   `ZonedDateTime`. Rendered, the field reads it from its `value` or `defaultValue`, and without
+ *   either from `granularity` and `timeZone`, so `onChange` receives the kind the picker emits.
  */
 export type DatePickerFieldProps<T extends DateInputValue = Temporal.PlainDate> = {
   /** Visible label, rendered as `Field.Label`. It names the group, the segments, the trigger and the popup. */
@@ -27,19 +32,22 @@ export type DatePickerFieldProps<T extends DateInputValue = Temporal.PlainDate> 
    * Without `isInvalid` it shows only once the picker's own validation fails.
    */
   errorMessage?: ReactNode;
-  /** The value, when the parent owns it: a Temporal value of `T`'s kind or its ISO text. `null` empties it. */
-  value?: T | string | null;
+  /**
+   * The value, when the parent owns it: a Temporal value of `T`'s kind, built in a client
+   * component. `null` empties it.
+   */
+  value?: T | null;
   /** The first value, when the picker owns its value. */
-  defaultValue?: T | string | null;
+  defaultValue?: T | null;
   /** Called with this runtime's value when a day is picked or the segments form one, `null` when cleared. */
-  onChange?: (value: T | null) => void;
-  /** The earliest valid value, of any kind or its ISO text. */
-  minValue?: TemporalInput;
-  /** The latest valid value, of any kind or its ISO text. */
-  maxValue?: TemporalInput;
+  onChange?: NoInfer<(value: T | null) => void>;
+  /** The earliest valid value, a Temporal value of any kind. */
+  minValue?: TemporalValue;
+  /** The latest valid value, a Temporal value of any kind. */
+  maxValue?: TemporalValue;
   /** Values the picker refuses: focusable but unselectable days, an invalid typed value. */
-  isDateUnavailable?: (value: T) => boolean;
-  /** The smallest unit the input edits. */
+  isDateUnavailable?: NoInfer<(value: T) => boolean>;
+  /** The smallest unit the input edits. Without a value it names the kind, as DateField's does. */
   granularity?: DateGranularity;
   /** The hour cycle shown. Defaults to the locale's. */
   hourCycle?: 12 | 24;
@@ -103,11 +111,13 @@ export type DatePickerFieldProps<T extends DateInputValue = Temporal.PlainDate> 
  * Labeled date picker composite over Field and `DatePicker`'s parts, with the interim React Aria
  * DatePicker's prop names: a label, the field box with the segments and the calendar trigger, the
  * error, the description, and the calendar popup with an optional preset pane. Values are Temporal
- * values or their ISO text; the composite itself holds no state.
+ * values, which a client component builds. The composite itself holds no state, so a server
+ * component can render it without a value.
  *
- * @template T - The value's kind.
+ * @template P - The props, inferred: only their `granularity` and `timeZone` count.
+ * @template T - The value's kind, inferred as `DateInput.Root`'s is.
  */
-export function DatePickerField<T extends DateInputValue = Temporal.PlainDate>({
+export function DatePickerField<P = object, T extends DateInputValue = PropsMadeValue<P>>({
   label,
   description,
   errorMessage,
@@ -126,7 +136,7 @@ export function DatePickerField<T extends DateInputValue = Temporal.PlainDate>({
   container,
   className,
   ...props
-}: DatePickerFieldProps<T>): ReactElement {
+}: DatePickerFieldProps<T> & KindProps<P, DatePickerFieldProps<DateInputValue>>): ReactElement {
   const trigger = <DatePickerTrigger />;
   return (
     <FieldFrame
@@ -139,7 +149,8 @@ export function DatePickerField<T extends DateInputValue = Temporal.PlainDate>({
       errorMessage={errorMessage}
       // Without `isInvalid`, React Aria shows `errorMessage` only once its own validation fails.
       isErrorMessageAlwaysShown={isInvalid}>
-      <DatePickerRoot<T>
+      {/* The field's own `T` is the kind already, so the Root infers nothing from its props. */}
+      <DatePickerRoot<object, T>
         {...definedProps({
           ...props,
           // The extra details argument is ignored by the interim `onChange(value)` signature.

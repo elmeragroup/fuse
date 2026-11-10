@@ -87,7 +87,7 @@ export function PickerDateInput({
   );
 
   return (
-    <DateInputRoot<DateInputValue>
+    <DateInputRoot<object, DateInputValue>
       {...definedProps(props)}
       ref={mergedRef}
       render={(inputProps, state) => (

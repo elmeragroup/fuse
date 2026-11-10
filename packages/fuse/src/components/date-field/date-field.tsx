@@ -1,7 +1,12 @@
 import type { ReactElement, ReactNode } from "react";
 
 import { definedProps } from "../../internal/defined-props";
-import type { DateGranularity, TemporalInput } from "../../temporal/temporal-value";
+import type {
+  DateGranularity,
+  KindProps,
+  PropsMadeValue,
+  TemporalValue,
+} from "../../temporal/temporal-value";
 import { FieldFrame } from "../field/field-frame";
 import { DateInputRoot } from "./date-input";
 import type { DateInputValue } from "./date-input";
@@ -10,9 +15,8 @@ import type { DateInputValue } from "./date-input";
  * DateField's props: the interim React Aria DateField's names, over Temporal values.
  *
  * @template T - The value's kind: `Temporal.PlainDate` (the default), `PlainDateTime` or
- *   `ZonedDateTime`. A Temporal `value` or `defaultValue` names it; ISO text alone does not, since
- *   its kind shows only at runtime, so pass the type argument (`<DateField<Temporal.PlainDate>>`)
- *   to narrow what `onChange` receives.
+ *   `ZonedDateTime`. Rendered, DateField reads it from its `value` or `defaultValue`, and without
+ *   either from `granularity` and `timeZone`, so `onChange` receives the kind the field emits.
  */
 export type DateFieldProps<T extends DateInputValue = Temporal.PlainDate> = {
   /** Visible label, rendered as `Field.Label`. It names the segment group and every segment. */
@@ -26,22 +30,28 @@ export type DateFieldProps<T extends DateInputValue = Temporal.PlainDate> = {
    * 10/31/2026 or earlier.").
    */
   errorMessage?: ReactNode;
-  /** The value, when the parent owns it: a Temporal value of `T`'s kind or its ISO text. `null` empties it. */
-  value?: T | string | null;
+  /**
+   * The value, when the parent owns it: a Temporal value of `T`'s kind, built in a client
+   * component. `null` empties it.
+   */
+  value?: T | null;
   /** The first value, when the field owns its value. */
-  defaultValue?: T | string | null;
+  defaultValue?: T | null;
   /**
    * Called with this runtime's Temporal value once the segments form a new one, or with `null`
    * when every segment is cleared.
    */
-  onChange?: (value: T | null) => void;
-  /** The earliest valid value, of any kind or its ISO text. An earlier value still commits and shows as invalid. */
-  minValue?: TemporalInput;
-  /** The latest valid value, of any kind or its ISO text. */
-  maxValue?: TemporalInput;
+  onChange?: NoInfer<(value: T | null) => void>;
+  /** The earliest valid value, a Temporal value of any kind. An earlier value still commits and shows as invalid. */
+  minValue?: TemporalValue;
+  /** The latest valid value, a Temporal value of any kind. */
+  maxValue?: TemporalValue;
   /** Values the field reports as unavailable. */
-  isDateUnavailable?: (value: T) => boolean;
-  /** The smallest unit edited. Defaults to `"day"` for a date and `"minute"` for a value with a time. */
+  isDateUnavailable?: NoInfer<(value: T) => boolean>;
+  /**
+   * The smallest unit edited. Defaults to `"day"` for a date and `"minute"` for a value with a
+   * time. Without a value it names the kind, as DateInput's does.
+   */
   granularity?: DateGranularity;
   /** The hour cycle shown. Defaults to the locale's. */
   hourCycle?: 12 | 24;
@@ -82,11 +92,13 @@ export type DateFieldProps<T extends DateInputValue = Temporal.PlainDate> = {
 /**
  * Labeled date field composite over Field and `DateInput`: a label, the segments, the error and
  * the description, with the interim React Aria DateField's prop names. Values are Temporal values,
- * or their ISO text, which a server component can pass: the composite itself holds no state.
+ * which a client component builds. The composite itself holds no state, so a server component can
+ * render it without a value.
  *
- * @template T - The value's kind.
+ * @template P - The props, inferred: only their `granularity` and `timeZone` count.
+ * @template T - The value's kind, inferred as `DateInput.Root`'s is.
  */
-export function DateField<T extends DateInputValue = Temporal.PlainDate>({
+export function DateField<P = object, T extends DateInputValue = PropsMadeValue<P>>({
   label,
   description,
   errorMessage,
@@ -109,7 +121,7 @@ export function DateField<T extends DateInputValue = Temporal.PlainDate>({
   size = "default",
   className,
   ...props
-}: DateFieldProps<T>): ReactElement {
+}: DateFieldProps<T> & KindProps<P, DateFieldProps<DateInputValue>>): ReactElement {
   return (
     <FieldFrame
       className={className}
@@ -121,7 +133,8 @@ export function DateField<T extends DateInputValue = Temporal.PlainDate>({
       errorMessage={errorMessage}
       // Without `isInvalid`, React Aria shows `errorMessage` only once its own validation fails.
       isErrorMessageAlwaysShown={isInvalid}>
-      <DateInputRoot<T>
+      {/* The field's own `T` is the kind already, so the Root infers nothing from its props. */}
+      <DateInputRoot<object, T>
         {...definedProps({
           value,
           defaultValue,

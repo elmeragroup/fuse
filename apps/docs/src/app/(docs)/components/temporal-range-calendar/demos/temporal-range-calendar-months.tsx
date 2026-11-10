@@ -27,7 +27,10 @@ export function TemporalRangeCalendarMonths() {
   return (
     <RangeCalendar.Root
       aria-label="Billing period"
-      defaultValue={{ start: "2026-10-26", end: "2026-11-06" }}
+      defaultValue={{
+        start: Temporal.PlainDate.from("2026-10-26"),
+        end: Temporal.PlainDate.from("2026-11-06"),
+      }}
       visibleMonths={visibleMonths}>
       <RangeCalendar.Header>
         <RangeCalendar.DecrementMonth />

@@ -30,7 +30,7 @@
         {
           "name": "defaultValue",
           "origin": "declared",
-          "type": "string | T | null | undefined",
+          "type": "T | null | undefined",
           "shortType": "Union",
           "defaultValue": null,
           "description": "The first value, when the field owns its value.",
@@ -60,7 +60,7 @@
           "type": "DateGranularity | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The smallest unit edited. Defaults to `\"day\"` for a date and `\"minute\"` for a value with a time.",
+          "description": "The smallest unit edited. Defaults to `\"day\"` for a date and `\"minute\"` for a value with a time. Without a value it names the kind, as DateInput's does.",
           "required": false
         },
         {
@@ -84,7 +84,7 @@
         {
           "name": "isDateUnavailable",
           "origin": "declared",
-          "type": "((value: T) => boolean) | undefined",
+          "type": "NoInfer<(value: T) => boolean> | undefined",
           "shortType": "function",
           "defaultValue": null,
           "description": "Values the field reports as unavailable.",
@@ -138,19 +138,19 @@
         {
           "name": "maxValue",
           "origin": "declared",
-          "type": "TemporalInput | undefined",
+          "type": "TemporalValue | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The latest valid value, of any kind or its ISO text.",
+          "description": "The latest valid value, a Temporal value of any kind.",
           "required": false
         },
         {
           "name": "minValue",
           "origin": "declared",
-          "type": "TemporalInput | undefined",
+          "type": "TemporalValue | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The earliest valid value, of any kind or its ISO text. An earlier value still commits and shows as invalid.",
+          "description": "The earliest valid value, a Temporal value of any kind. An earlier value still commits and shows as invalid.",
           "required": false
         },
         {
@@ -165,7 +165,7 @@
         {
           "name": "onChange",
           "origin": "declared",
-          "type": "((value: T | null) => void) | undefined",
+          "type": "NoInfer<(value: T | null) => void> | undefined",
           "shortType": "function",
           "defaultValue": null,
           "description": "Called with this runtime's Temporal value once the segments form a new one, or with `null` when every segment is cleared.",
@@ -201,10 +201,10 @@
         {
           "name": "value",
           "origin": "declared",
-          "type": "string | T | null | undefined",
+          "type": "T | null | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "The value, when the parent owns it: a Temporal value of `T`'s kind or its ISO text. `null` empties it.",
+          "description": "The value, when the parent owns it: a Temporal value of `T`'s kind, built in a client component. `null` empties it.",
           "required": false
         }
       ]
@@ -231,7 +231,7 @@
         {
           "name": "defaultValue",
           "origin": "declared",
-          "type": "string | T | null | undefined",
+          "type": "T | null | undefined",
           "shortType": "Union",
           "defaultValue": null,
           "description": "The first value, when the input owns its value. Takes what `value` takes.",
@@ -261,7 +261,7 @@
           "type": "DateGranularity | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The smallest unit edited. A time granularity needs a value with a time. Defaults to `\"day\"` for a PlainDate and `\"minute\"` for a value with a time.",
+          "description": "The smallest unit edited. A time granularity needs a value with a time. Defaults to `\"day\"` for a PlainDate and `\"minute\"` for a value with a time. Without a value or default value it names the kind: `\"day\"` or none a PlainDate, a time unit a PlainDateTime, or a ZonedDateTime with `timeZone`.",
           "required": false
         },
         {
@@ -294,7 +294,7 @@
         {
           "name": "isDateUnavailable",
           "origin": "declared",
-          "type": "((value: T) => boolean) | undefined",
+          "type": "NoInfer<(value: T) => boolean> | undefined",
           "shortType": "function",
           "defaultValue": null,
           "description": "Values the input reports invalid (\"Selected date unavailable.\"), such as fully booked days.",
@@ -303,7 +303,7 @@
         {
           "name": "maxValue",
           "origin": "declared",
-          "type": "TemporalInput | undefined",
+          "type": "TemporalValue | undefined",
           "shortType": null,
           "defaultValue": null,
           "description": "The latest valid value, taking what `minValue` takes. \"Value must be … or earlier.\"",
@@ -312,10 +312,10 @@
         {
           "name": "minValue",
           "origin": "declared",
-          "type": "TemporalInput | undefined",
+          "type": "TemporalValue | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The earliest valid value: a PlainDate, PlainDateTime or ZonedDateTime from any implementation, or its ISO text, of any kind, compared as React Aria compares it. A value before it still commits; the input reports it invalid with \"Value must be … or later.\"",
+          "description": "The earliest valid value: a Temporal PlainDate, PlainDateTime or ZonedDateTime from any implementation, of any kind, compared as React Aria compares it. A value before it still commits; the input reports it invalid with \"Value must be … or later.\"",
           "required": false
         },
         {
@@ -330,7 +330,7 @@
         {
           "name": "onValueChange",
           "origin": "declared",
-          "type": "((value: T | null, details: DateInputValueChangeEventDetails) => void) | undefined",
+          "type": "NoInfer<(value: T | null, details: DateInputValueChangeEventDetails) => void> | undefined",
           "shortType": "function",
           "defaultValue": null,
           "description": "Called when the segments form a new value, with this runtime's Temporal value, or `null` when every segment was cleared. A value forms when every segment is filled and it holds exactly what was typed; a value that does not, such as February 30, waits for blur and then commits constrained. `details.reason` is `\"input-change\"` (typing, keys, blur), `\"input-clear\"` or `\"input-paste\"`. Canceling with `details.cancel()` keeps the value and shows it again in the segments, discarding the edit.",
@@ -395,10 +395,10 @@
         {
           "name": "value",
           "origin": "declared",
-          "type": "string | T | null | undefined",
+          "type": "T | null | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "The value, when the parent owns it: a Temporal value of `T`'s kind from any implementation, or its ISO text, the form a server component passes. `null` empties the input.",
+          "description": "The value, when the parent owns it: a Temporal value of `T`'s kind from any implementation. A server component cannot pass one, since it reaches the client as text: build the value in a client component. `null` empties the input.",
           "required": false
         }
       ]

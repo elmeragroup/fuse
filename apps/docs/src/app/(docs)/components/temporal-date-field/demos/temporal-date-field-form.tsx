@@ -25,12 +25,7 @@ export function TemporalDateFieldForm() {
         setErrors({});
         setStatus(`Saved ${String(values.start)}.`);
       }}>
-      <DateField<Temporal.PlainDate>
-        label="Start date"
-        name="start"
-        description="Try December 24, 2026."
-        isRequired
-      />
+      <DateField label="Start date" name="start" description="Try December 24, 2026." isRequired />
       <Button type="submit" className="self-start">
         Save
       </Button>

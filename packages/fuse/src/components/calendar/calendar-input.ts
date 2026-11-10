@@ -1,14 +1,14 @@
 // The input boundary every calendar Root shares, and DateInput.Root with it: the props both
-// calendar Roots take, date props parsed from a Temporal value of any implementation or its ISO
-// text, memoized by the text they print, the bounds resolved to days, React Aria's weekday names
-// resolved to ISO weekdays, and the props resolved into the parts' settings. Each Root names itself
-// in its diagnostics.
+// calendar Roots take, date props read from a Temporal value of any implementation, memoized by
+// the text they print, the bounds resolved to days, React Aria's weekday names resolved to ISO
+// weekdays, and the props resolved into the parts' settings. Each Root names itself in its
+// diagnostics.
 
 import { useEffect, useMemo } from "react";
 
 import type { SupportedLocale } from "../../intl/locale-context";
-import { parseTemporal } from "../../temporal/temporal-value";
-import type { TemporalInput, TemporalValue } from "../../temporal/temporal-value";
+import { parseTemporal, valueKind } from "../../temporal/temporal-value";
+import type { TemporalValue } from "../../temporal/temporal-value";
 import { firstDayOfWeek } from "../../temporal/week-info";
 import type { IsoWeekday } from "../../temporal/week-info";
 import { isThemeDevelopment } from "../../theme/validate-theme";
@@ -51,13 +51,13 @@ export type CalendarViewProps = {
    */
   pageBehavior?: CalendarPageBehavior;
   /**
-   * The first selectable day: a PlainDate, PlainDateTime or ZonedDateTime from any
-   * implementation, or its ISO text. A date-time bound counts from its own wall-clock day. Days
-   * before it are disabled, never focusable, and focus clamps to it.
+   * The first selectable day: a Temporal PlainDate, PlainDateTime or ZonedDateTime from any
+   * implementation. A date-time bound counts from its own wall-clock day. Days before it are
+   * disabled, never focusable, and focus clamps to it.
    */
-  minValue?: TemporalInput;
+  minValue?: TemporalValue;
   /** The last selectable day, taking what `minValue` takes. Days after it are disabled. */
-  maxValue?: TemporalInput;
+  maxValue?: TemporalValue;
   /** Whether nothing in the calendar responds: no day takes focus and the month buttons are disabled. */
   disabled?: boolean;
   /** Whether the user may move around the months but not change the value. */
@@ -77,16 +77,47 @@ export type CalendarViewProps = {
 export type CalendarOwner = "Calendar.Root" | "RangeCalendar.Root";
 
 /**
- * A date prop's value, of the kind its text or object names.
+ * The error for text that reached a date prop past its types: from plain JavaScript, or from a
+ * server component, whose Temporal props React serializes to their ISO text. It names the kind
+ * the text prints, when one does, so the fix can be copied.
+ */
+function textPropError(owner: string, prop: string, text: string): TypeError {
+  const parsed = parseTemporal(text);
+  const example =
+    parsed._tag === "ok"
+      ? `, such as Temporal.${valueKind(parsed.value).kind}.from("${text}")`
+      : ": a Temporal.PlainDate, PlainDateTime or ZonedDateTime";
+  return new TypeError(
+    `${owner} ${prop}: received the string "${text}", but date props take a Temporal object${example}. A Temporal value passed from a server component arrives as its ISO text, so build the value in a client component.`
+  );
+}
+
+/**
+ * The text a date prop prints. It refuses a string here, before any parse or memo, so a string
+ * throws whatever rendered before it, the equal Temporal value included.
+ */
+function printedText(input: TemporalValue, owner: string, prop: string): string {
+  const received: unknown = input;
+  // oxlint-disable-next-line anti-slop/no-runtime-typeof -- prop boundary: text reaches a date prop past its types from plain JavaScript or a server component, and only its runtime type tells it from a Temporal object
+  if (typeof received === "string") {
+    throw textPropError(owner, prop, received);
+  }
+  return String(input);
+}
+
+/**
+ * A date prop's value as this runtime's Temporal value of the same kind, read through the text it
+ * prints, so a value from another implementation is accepted.
  *
  * @param input - The prop.
  * @param owner - The Root, named in the error.
  * @param prop - The prop, named in the error.
  * @returns The value.
- * @throws TypeError naming the Root and prop when the input is text that is not an ISO value, a host defect.
+ * @throws TypeError naming the Root, the prop and the fix when the input is a string, or an
+ *   object whose text no kind reads: host defects.
  */
-export function parseTemporalProp(input: TemporalInput, owner: string, prop: string): TemporalValue {
-  const parsed = parseTemporal(input);
+export function parseTemporalProp(input: TemporalValue, owner: string, prop: string): TemporalValue {
+  const parsed = parseTemporal(printedText(input, owner, prop));
   if (parsed._tag === "err") {
     throw new TypeError(`${owner} ${prop}: ${parsed.error.message}`);
   }
@@ -100,10 +131,10 @@ export function parseTemporalProp(input: TemporalInput, owner: string, prop: str
  * @param owner - The Root, named in the error.
  * @param prop - The prop, named in the error.
  * @returns The day.
- * @throws TypeError naming the Root and prop when the input is text that is not an ISO date, a host defect.
+ * @throws TypeError as `parseTemporalProp` does.
  */
 export function parseCalendarDay(
-  input: TemporalInput,
+  input: TemporalValue,
   owner: CalendarOwner,
   prop: string
 ): Temporal.PlainDate {
@@ -120,7 +151,7 @@ export function parseCalendarDay(
  * @throws TypeError as `parseCalendarDay` does.
  */
 export function parseOptionalDay(
-  input: TemporalInput | null | undefined,
+  input: TemporalValue | null | undefined,
   owner: CalendarOwner,
   prop: string
 ): Temporal.PlainDate | undefined {
@@ -129,18 +160,26 @@ export function parseOptionalDay(
 
 /**
  * The text a date prop prints, the key its parse is memoized by, so a parent passing a new object
- * for the same day re-renders nothing below.
+ * for the same day re-renders nothing below. Every memoized date prop reads its key here during
+ * render, so a string throws even when the memo would keep the last parse.
  *
  * @param input - The prop.
+ * @param owner - The Root, named in the error.
+ * @param prop - The prop, named in the error.
  * @returns Its text, or the prop itself when absent.
+ * @throws TypeError as `parseTemporalProp` does for a string.
  */
-export function printedInput(input: TemporalInput | null | undefined): string | null | undefined {
-  return input == null ? input : String(input);
+export function printedProp(
+  input: TemporalValue | null | undefined,
+  owner: string,
+  prop: string
+): string | null | undefined {
+  return input == null ? input : printedText(input, owner, prop);
 }
 
 /**
  * A Temporal prop parsed once per printed value, so a parent passing a new object for the same
- * value re-renders nothing below. Text no kind reads throws, a host defect.
+ * value re-renders nothing below.
  *
  * @param input - The prop.
  * @param owner - The Root, named in the error.
@@ -149,11 +188,11 @@ export function printedInput(input: TemporalInput | null | undefined): string | 
  * @throws TypeError as `parseTemporalProp` does.
  */
 export function useTemporalProp(
-  input: TemporalInput | null | undefined,
+  input: TemporalValue | null | undefined,
   owner: string,
   prop: string
 ): TemporalValue | null {
-  const key = printedInput(input);
+  const key = printedProp(input, owner, prop);
   return useMemo(
     () => (input == null ? null : parseTemporalProp(input, owner, prop)),
     // oxlint-disable-next-line react-hooks/exhaustive-deps -- keyed by the printed value
@@ -168,15 +207,15 @@ export function useTemporalProp(
  * @param maxValue - The Root's `maxValue`.
  * @param owner - The Root, named in a parse error.
  * @returns The bounds.
- * @throws TypeError naming the Root and prop when a bound is text that is not an ISO date.
+ * @throws TypeError as `parseTemporalProp` does.
  */
 export function useCalendarBounds(
-  minValue: TemporalInput | undefined,
-  maxValue: TemporalInput | undefined,
+  minValue: TemporalValue | undefined,
+  maxValue: TemporalValue | undefined,
   owner: CalendarOwner
 ): DayBounds {
-  const minKey = printedInput(minValue);
-  const maxKey = printedInput(maxValue);
+  const minKey = printedProp(minValue, owner, "minValue");
+  const maxKey = printedProp(maxValue, owner, "maxValue");
   // oxlint-disable-next-line react-hooks/exhaustive-deps -- keyed by the printed value
   const min = useMemo(() => parseOptionalDay(minValue, owner, "minValue"), [minKey]);
   // oxlint-disable-next-line react-hooks/exhaustive-deps -- keyed by the printed value

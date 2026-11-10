@@ -10,22 +10,24 @@ Temporal values. It is the Temporal replacement for the interim
 ```tsx
 import { DateField } from "@elmeragroup/fuse/date-field";
 
-<DateField<Temporal.PlainDate> label="Moving date" name="moving" defaultValue="2026-10-05" />;
-<DateField<Temporal.ZonedDateTime>
-  label="Outage starts"
-  granularity="minute"
-  hourCycle={24}
-  timeZone="Europe/Oslo"
-/>;
+<DateField label="Moving date" name="moving" defaultValue={Temporal.PlainDate.from("2026-10-05")} />;
+<DateField label="Outage starts" granularity="minute" hourCycle={24} timeZone="Europe/Oslo" />;
 ```
 
 - `DateField` keeps the interim prop names (`label`, `description`, `errorMessage`, `isInvalid`,
   `isDisabled`, `isReadOnly`, `isRequired`, `value`, `defaultValue`, `onChange`, `minValue`,
   `maxValue`, `isDateUnavailable`, `granularity`, `hourCycle`, `hideTimeZone`, `size`,
   `shouldForceLeadingZeros`), and adds `timeZone`, the zone an empty field's `ZonedDateTime` takes.
-  Values are `Temporal.PlainDate`, `PlainDateTime` or `ZonedDateTime` from any implementation, or
-  their ISO text; `onChange` hands back this runtime's value of the field's kind, which an emptied
-  field keeps. It holds no state, so a server component renders it with ISO text.
+  Values are `Temporal.PlainDate`, `PlainDateTime` or `ZonedDateTime` objects from any
+  implementation, never their ISO text; `onChange` hands back this runtime's value of the field's
+  kind, which an emptied field keeps. A value is built in a client component, as for `Calendar`.
+  The field holds no state, so a server component renders it without a date value.
+- The kind is typed without a type argument: a `value` or `defaultValue` names what `onChange` and
+  `isDateUnavailable` receive, and without either `granularity` and `timeZone` do, as at runtime.
+  No granularity or `"day"` gives a `PlainDate`, a time `granularity` a `PlainDateTime`, and a time
+  `granularity` with `timeZone` a `ZonedDateTime`, so the second field above reports
+  `Temporal.ZonedDateTime | null`. A `granularity` or `timeZone` whose type is a union gives the
+  union of the kinds it could make.
 - Segments follow the locale's order and React Aria's editing rules: typed digits fill a segment
   and move on, the arrows step and wrap it (a zoned hour through the real hours of a DST night),
   Page Up and Page Down by a page, Home and End to its ends, Backspace removes a digit, and the day

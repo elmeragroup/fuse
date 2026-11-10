@@ -22,6 +22,7 @@ import { DateRangePicker } from "../src/react-aria/date-range-picker/date-range-
 import { RangeCalendar } from "../src/react-aria/range-calendar/range-calendar";
 import { UiProviders } from "../src/react-aria/ui-providers/ui-providers";
 import "../src/temporal-polyfill";
+import type { TemporalValue } from "../src/temporal/temporal-value";
 
 /**
  * The implementation-neutral face of the date tier that `src/internal/date-tier-parity.browser.test.tsx`
@@ -154,15 +155,29 @@ export type ParityRangeCalendarProps = {
   readonly onChange: (value: string) => void;
 };
 
+/** The kind a scenario's ISO string names by its form: a bracketed zone, a time, or a date alone. */
+type IsoForm = "zoned" | "date-time" | "date";
+
+function isoForm(iso: string): IsoForm {
+  if (iso.includes("[")) {
+    return "zoned";
+  }
+  return iso.includes("T") ? "date-time" : "date";
+}
+
 /**
- * One ISO string as the `@internationalized/date` kind its shape names: a bracketed zone makes a
- * ZonedDateTime, a time a CalendarDateTime, a bare date a CalendarDate.
+ * One ISO string as the `@internationalized/date` kind its shape names: a ZonedDateTime, a
+ * CalendarDateTime or a CalendarDate.
  */
 function toDateValue(iso: string): DateValue {
-  if (iso.includes("[")) {
-    return parseZonedDateTime(iso);
+  switch (isoForm(iso)) {
+    case "zoned":
+      return parseZonedDateTime(iso);
+    case "date-time":
+      return parseDateTime(iso);
+    case "date":
+      return parseDate(iso);
   }
-  return iso.includes("T") ? parseDateTime(iso) : parseDate(iso);
 }
 
 function optionalDateValue(iso: string | undefined): DateValue | undefined {
@@ -171,6 +186,29 @@ function optionalDateValue(iso: string | undefined): DateValue | undefined {
 
 function toRangeValue(range: ParityRange) {
   return { start: toDateValue(range.start), end: toDateValue(range.end) };
+}
+
+/**
+ * One ISO string as the Temporal kind its shape names, as `toDateValue` reads it for React Aria.
+ * It builds the value with Temporal's own constructors, not Fuse's parser, which is under test.
+ */
+function toTemporal(iso: string): TemporalValue {
+  switch (isoForm(iso)) {
+    case "zoned":
+      return Temporal.ZonedDateTime.from(iso);
+    case "date-time":
+      return Temporal.PlainDateTime.from(iso);
+    case "date":
+      return Temporal.PlainDate.from(iso);
+  }
+}
+
+function optionalTemporal(iso: string | undefined): TemporalValue | undefined {
+  return iso === undefined ? undefined : toTemporal(iso);
+}
+
+function toTemporalRange(range: ParityRange) {
+  return { start: toTemporal(range.start), end: toTemporal(range.end) };
 }
 
 /** A committed range as `start..end`, each end printed through its own `toString()`. */
@@ -282,14 +320,14 @@ function presetPane(presets: ParityPresets): ReactElement {
 /** The Temporal tier's `isDateUnavailable`, matching a value's calendar date against the ISO list. */
 function temporalUnavailability(
   dates: readonly string[] | undefined
-): ((value: Temporal.PlainDate | Temporal.PlainDateTime | Temporal.ZonedDateTime) => boolean) | undefined {
+): ((value: TemporalValue) => boolean) | undefined {
   return dates === undefined ? undefined : (value) => dates.includes(value.toString().slice(0, 10));
 }
 
 function temporalBoundProps(props: ParityBounds) {
   return definedProps({
-    minValue: props.minValue,
-    maxValue: props.maxValue,
+    minValue: optionalTemporal(props.minValue),
+    maxValue: optionalTemporal(props.maxValue),
     isDateUnavailable: temporalUnavailability(props.unavailableDates),
   });
 }
@@ -328,8 +366,8 @@ function calendarFace(): ReactElement {
 
 /**
  * The Temporal tier: `@elmeragroup/fuse/{date-picker,date-range-picker,date-field,calendar,range-calendar}`
- * over TC39 Temporal. It takes the scenarios' ISO strings as they are, since every Temporal prop also
- * takes ISO text, and prints its values through `toString()`. Its today comes from `Date.now()`, which
+ * over TC39 Temporal. Its date props take Temporal objects only, so it builds one from each
+ * scenario's ISO string with `toTemporal`, and prints its values through `toString()`. Its today comes from `Date.now()`, which
  * `freezeDateTierClock` reaches.
  */
 export const temporalDateTier: DateTierAdapter = {
@@ -339,7 +377,7 @@ export const temporalDateTier: DateTierAdapter = {
     <DatePickerField
       label={props.label}
       {...definedProps({
-        defaultValue: props.defaultValue,
+        defaultValue: optionalTemporal(props.defaultValue),
         description: props.description,
         errorMessage: props.errorMessage,
         isInvalid: props.isInvalid,
@@ -354,7 +392,9 @@ export const temporalDateTier: DateTierAdapter = {
   DateRangePicker: (props) => (
     <DateRangePickerField
       label={props.label}
-      {...definedProps({ defaultValue: props.defaultValue })}
+      {...definedProps({
+        defaultValue: props.defaultValue === undefined ? undefined : toTemporalRange(props.defaultValue),
+      })}
       {...temporalBoundProps(props)}
       {...timeProps(props)}
       onChange={(value) => props.onChange(value === null ? null : printRange(value))}
@@ -363,14 +403,14 @@ export const temporalDateTier: DateTierAdapter = {
   DateField: (props) => (
     <TemporalDateField
       label={props.label}
-      {...definedProps({ defaultValue: props.defaultValue, isReadOnly: props.isReadOnly })}
+      {...definedProps({ defaultValue: optionalTemporal(props.defaultValue), isReadOnly: props.isReadOnly })}
       {...timeProps(props)}
     />
   ),
   Calendar: (props) => (
     <TemporalCalendar.Root
       aria-label={props.label}
-      defaultValue={props.defaultValue}
+      defaultValue={Temporal.PlainDate.from(props.defaultValue)}
       {...temporalBoundProps(props)}
       onValueChange={(value) => props.onChange(value.toString())}>
       {calendarFace()}
@@ -379,7 +419,10 @@ export const temporalDateTier: DateTierAdapter = {
   RangeCalendar: (props) => (
     <TemporalRangeCalendar.Root
       aria-label={props.label}
-      defaultValue={props.defaultValue}
+      defaultValue={{
+        start: Temporal.PlainDate.from(props.defaultValue.start),
+        end: Temporal.PlainDate.from(props.defaultValue.end),
+      }}
       onValueChange={(value) => props.onChange(printRange(value))}>
       {calendarFace()}
     </TemporalRangeCalendar.Root>

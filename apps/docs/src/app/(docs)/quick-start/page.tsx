@@ -21,6 +21,23 @@ const TEMPORAL_POLYFILL = `// Once per runtime, before any Temporal date code ru
 // module that holds your providers.
 import "@elmeragroup/fuse/temporal-polyfill";`;
 
+const TEMPORAL_CLIENT_VALUE = `// app/delivery/page.tsx, a server component: the date arrives as ISO text.
+import { DeliveryDate } from "./delivery-date";
+
+export default async function Page() {
+  const order = await loadOrder();
+  return <DeliveryDate iso={order.deliveryDate} />;
+}
+
+// app/delivery/delivery-date.tsx
+"use client";
+
+import { DatePickerField } from "@elmeragroup/fuse/date-picker";
+
+export function DeliveryDate({ iso }: { readonly iso: string }) {
+  return <DatePickerField label="Delivery date" defaultValue={Temporal.PlainDate.from(iso)} />;
+}`;
+
 const SCAFFOLD = `import { ColorSchemeScript, LocaleProvider, ThemeProvider } from "@elmeragroup/fuse/theme";
 import { defaultDensityForVariant, densityAttributes, themeAttributes } from "@elmeragroup/fuse/theme";
 
@@ -124,6 +141,23 @@ export default function QuickStartPage(): ReactElement {
         <code>esnext.temporal</code>). With an older compiler or lib, Fuse&apos;s declarations report{" "}
         <code>Cannot find namespace &apos;Temporal&apos;</code>, or, under <code>skipLibCheck</code>, the date
         props are typed <code>any</code>.
+      </p>
+      <p>
+        The date components&apos; date props (<code>value</code>, <code>defaultValue</code>,{" "}
+        <code>minValue</code>, <code>maxValue</code> and a range&apos;s <code>start</code> and{" "}
+        <code>end</code>) take Temporal objects, never ISO text, so a value is built in a client component.
+        React passes a Temporal object from a server component to a client one as its ISO text, which the
+        components refuse with a <code>TypeError</code>. A server component that holds a date as text, from a
+        database or a URL, passes that text to its own small client component, which builds the value:
+      </p>
+      <pre>
+        <code>{TEMPORAL_CLIENT_VALUE}</code>
+      </pre>
+      <p>
+        A server component can still render <code>DateField</code>, <code>DatePickerField</code> and{" "}
+        <code>DateRangePickerField</code> without a date value. The kind of value a field emits follows its
+        value or default value, and without either its <code>granularity</code> and <code>timeZone</code>, so{" "}
+        <code>onChange</code> is typed without a type argument.
       </p>
 
       <h2 id="page-scaffold">The page scaffold</h2>

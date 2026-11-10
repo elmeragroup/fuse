@@ -29,11 +29,11 @@ export function ServerErrors() {
         setStatus(Object.keys(returned).length === 0 ? `Saved ${moving}.` : "");
       }}>
       {/* No isInvalid or errorMessage: the Form hands the error to the picker by its name. */}
-      <DatePickerField<Temporal.PlainDate>
+      <DatePickerField
         label="Moving date"
         name="moving"
         description="Try Saturday, October 10, 2026."
-        defaultValue="2026-10-10"
+        defaultValue={Temporal.PlainDate.from("2026-10-10")}
         isRequired
       />
       <Button type="submit" className="self-start">

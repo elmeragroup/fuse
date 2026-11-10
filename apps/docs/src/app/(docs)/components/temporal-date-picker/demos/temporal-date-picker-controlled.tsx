@@ -11,7 +11,7 @@ export function TemporalDatePickerControlled() {
   return (
     <Field.Root className="max-w-xs w-full">
       <Field.Label>Delivery</Field.Label>
-      <DatePicker.Root<Temporal.PlainDate>
+      <DatePicker.Root
         value={value}
         onValueChange={(next, details) => {
           // Canceling keeps the value; a refused day keeps the popup open on it.

@@ -16,7 +16,7 @@ export const metadata = componentMetadata("temporal-calendar");
 
 <Prose>
 
-`Calendar` from `@elmeragroup/fuse/calendar` is the Temporal replacement for the interim [React Aria Calendar](/components/calendar). Its values are `Temporal.PlainDate`s: a prop takes a `PlainDate` from any Temporal implementation or its ISO text, such as `"2026-10-14"`, which is also what a server component passes across the boundary, and `onValueChange` hands back this runtime's `PlainDate`.
+`Calendar` from `@elmeragroup/fuse/calendar` is the Temporal replacement for the interim [React Aria Calendar](/components/calendar). Its values are `Temporal.PlainDate`s: a date prop takes a `PlainDate` object from any Temporal implementation, such as `Temporal.PlainDate.from("2026-10-14")`, and `onValueChange` hands back this runtime's `PlainDate`. Build a value in a client component: a Temporal object a server component passes reaches the client as ISO text, which the component refuses with a `TypeError`. [Temporal for dates](/quick-start#temporal) shows a server component handing its text to a client component that builds the value.
 
 Fuse reads `globalThis.Temporal`. Import `@elmeragroup/fuse/temporal-polyfill` once in your app's entry, on the server and in the browser, so engines without native Temporal get the polyfill.
 
@@ -46,7 +46,7 @@ Compose the parts: `Calendar.Header` holds `Calendar.DecrementMonth`, `Calendar.
 
 ## Bounds and unavailable dates
 
-`minValue` and `maxValue` take a `PlainDate`, `PlainDateTime` or `ZonedDateTime`, or its ISO text; a bound with a time counts from its own wall-clock day. Days outside them are disabled and never take focus, the keyboard clamps to them, and the first and last days are named "First available date" and "Last available date". A month button whose page has no selectable day is disabled. `isDateUnavailable` refuses days the user may still focus and read, such as weekends here.
+`minValue` and `maxValue` take a `PlainDate`, `PlainDateTime` or `ZonedDateTime`; a bound with a time counts from its own wall-clock day. Days outside them are disabled and never take focus, the keyboard clamps to them, and the first and last days are named "First available date" and "Last available date". A month button whose page has no selectable day is disabled. `isDateUnavailable` refuses days the user may still focus and read, such as weekends here.
 
 </Prose>
 
@@ -78,7 +78,7 @@ Compose the parts: `Calendar.Header` holds `Calendar.DecrementMonth`, `Calendar.
 
 ## Server rendering
 
-The parts are client components that a server component can render with ISO-text props. A server render marks no today, so the server and the browser agree; today is marked from the first client effect and moves at midnight. A calendar with neither `value` nor `defaultValue` opens on today's month, so it shows its grid from that effect on.
+The parts are client components that a server component can render without a date value. A server render marks no today, so the server and the browser agree; today is marked from the first client effect and moves at midnight. A calendar with neither `value` nor `defaultValue` opens on today's month, so it shows its grid from that effect on.
 
 ## Accessibility
 

@@ -11,8 +11,7 @@ import type {
   CalendarVisibleRangeChangeEventDetails,
 } from "@elmeragroup/fuse/calendar";
 
-test("Root takes a PlainDate or its ISO text and reports a PlainDate", () => {
-  const _iso = <Calendar.Root aria-label="Delivery" defaultValue="2026-10-14" />;
+test("Root takes a PlainDate and reports a PlainDate", () => {
   const _empty = <Calendar.Root aria-label="Delivery" value={null} />;
   const _date = (
     <Calendar.Root
@@ -29,12 +28,23 @@ test("Root takes a PlainDate or its ISO text and reports a PlainDate", () => {
   expectTypeOf<CalendarValueChangeReason>().toEqualTypeOf<"day-press" | "keyboard">();
 });
 
-test("bounds take any Temporal date kind or its text, independent of the value", () => {
+test("no date prop takes ISO text", () => {
+  // @ts-expect-error a value is a Temporal object
+  const _value = <Calendar.Root aria-label="Delivery" value="2026-10-14" />;
+  // @ts-expect-error a default value is a Temporal object
+  const _default = <Calendar.Root aria-label="Delivery" defaultValue="2026-10-14" />;
+  // @ts-expect-error a bound is a Temporal object
+  const _min = <Calendar.Root aria-label="Delivery" minValue="2026-10-01" />;
+  // @ts-expect-error a bound is a Temporal object
+  const _max = <Calendar.Root aria-label="Delivery" maxValue="2026-12-31" />;
+});
+
+test("bounds take any Temporal date kind, independent of the value", () => {
   const _mixed = (
     <Calendar.Root
       aria-label="Delivery"
       minValue={Temporal.ZonedDateTime.from("2026-10-01T00:00+02:00[Europe/Oslo]")}
-      maxValue="2026-12-31T23:30:00"
+      maxValue={Temporal.PlainDateTime.from("2026-12-31T23:30:00")}
     />
   );
 });

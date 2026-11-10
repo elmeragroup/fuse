@@ -11,14 +11,16 @@ import { DatePickerField } from "@elmeragroup/fuse/date-picker";
 const legacyStart: CalendarDate = parseDate("2026-10-05");
 
 export function TemporalConversion() {
-  // ISO text is the bridge: both libraries print and parse the same string. The picker takes it
-  // as is, or as a Temporal.PlainDate, and hands back this runtime's Temporal.PlainDate.
-  const [value, setValue] = useState<Temporal.PlainDate | string | null>(legacyStart.toString());
+  // ISO text is the bridge: both libraries print and parse the same string. The picker takes the
+  // Temporal.PlainDate it parses to, and hands back this runtime's Temporal.PlainDate.
+  const [value, setValue] = useState<Temporal.PlainDate | null>(() =>
+    Temporal.PlainDate.from(legacyStart.toString())
+  );
   const iso = value === null ? null : value.toString();
 
   return (
     <div className="max-w-xs flex w-full flex-col gap-2">
-      <DatePickerField<Temporal.PlainDate> label="Moving date" value={value} onChange={setValue} />
+      <DatePickerField label="Moving date" value={value} onChange={setValue} />
       <output className="text-sm flex flex-col gap-1 text-muted-foreground">
         <span>ISO for the server: {iso ?? "none"}</span>
         <span>

@@ -13,8 +13,8 @@ unchanged.
 import { DatePicker, DatePickerField } from "@elmeragroup/fuse/date-picker";
 import { DateRangePickerField } from "@elmeragroup/fuse/date-range-picker";
 
-<DatePickerField<Temporal.PlainDate> label="Moving date" name="moving" defaultValue="2026-10-05" />;
-<DateRangePickerField<Temporal.ZonedDateTime>
+<DatePickerField label="Moving date" name="moving" defaultValue={Temporal.PlainDate.from("2026-10-05")} />;
+<DateRangePickerField
   label="Maintenance window"
   startName="from"
   endName="to"
@@ -30,9 +30,13 @@ import { DateRangePickerField } from "@elmeragroup/fuse/date-range-picker";
   `isDisabled`, `isReadOnly`, `isRequired`, `value`, `defaultValue`, `onChange`, `minValue`,
   `maxValue`, `isDateUnavailable`, `granularity`, `hourCycle`, `hideTimeZone`, `firstDayOfWeek`,
   `presetGroup`, `triggerPlacement`, `startName`, `endName`, `size`, `isOpen`, `defaultOpen`,
-  `onOpenChange`, `onBlur`, `aria-label`) and the type argument, and add `timeZone` and
-  `visibleMonths`. Values are Temporal values from any implementation or their ISO text; they hold
-  no state, so a server component renders them.
+  `onOpenChange`, `onBlur`, `aria-label`), and add `timeZone` and `visibleMonths`. Values are
+  Temporal objects from any implementation, never their ISO text, built in a client component, as
+  for `Calendar`. The composites hold no state, so a server component renders them without a date
+  value.
+- The value kind is typed as `DateField`'s, with no type argument: a `value` or `defaultValue`
+  names it, and without either `granularity` and `timeZone` do, so the range picker above reports
+  ranges of `Temporal.ZonedDateTime`.
 - The trigger and the popup `dialog` are named "Calendar" and the label, as React Aria names them.
   Opening moves focus to the selected day, or today, and closing returns it; Alt+ArrowDown in the
   field opens the popup. Picking a day keeps the value's time and zone, and until a value names its kind,

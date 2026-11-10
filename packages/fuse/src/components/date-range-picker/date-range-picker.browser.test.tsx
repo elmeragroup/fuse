@@ -14,16 +14,19 @@ import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
+import { CaughtError, caughtError } from "../../../test/caught-error";
 import { withLocale } from "../../../test/locale-matrix";
 import { waitForPopupSettled } from "../../../test/popup-settled";
 import { emulateReducedMotion } from "../../../test/reduced-motion";
 import { formNamed, renderThemed, roleNamed } from "../../../test/themed-browser-render";
 import { definedProps } from "../../internal/defined-props";
 import "../../temporal-polyfill";
+import type { DateInputValue } from "../date-field/date-input";
 import { DatePicker } from "../date-picker";
 import { Field } from "../field";
 import { Form } from "../form/form";
 import { Show } from "../show/show";
+import type { DateRangePickerValue } from "./date-range-picker";
 import type { DateRangePickerFieldProps } from "./date-range-picker-field";
 import { DateRangePicker, DateRangePickerField } from "./index";
 
@@ -45,7 +48,9 @@ function segmentTexts(): string[] {
 function LoggedRange({
   cancel = [],
   ...props
-}: Omit<DateRangePickerFieldProps, "onChange"> & { readonly cancel?: readonly string[] }): ReactElement {
+}: Omit<DateRangePickerFieldProps<DateInputValue>, "onChange"> & {
+  readonly cancel?: readonly string[];
+}): ReactElement {
   const [lines, setLines] = useState<string[]>([]);
   return (
     <>
@@ -83,7 +88,15 @@ function LoggedRange({
 describe("DateRangePicker wiring", () => {
   it("names the group and both inputs by the shared label and describes them by the description", () => {
     renderThemed(
-      withLocale("en-US", <LoggedRange defaultValue={{ start: "2026-10-05", end: "2026-10-09" }} />)
+      withLocale(
+        "en-US",
+        <LoggedRange
+          defaultValue={{
+            start: Temporal.PlainDate.from("2026-10-05"),
+            end: Temporal.PlainDate.from("2026-10-09"),
+          }}
+        />
+      )
     );
     const group = roleNamed("group", "Period");
     const start = roleNamed("spinbutton", "month, Start Date, Period");
@@ -113,7 +126,15 @@ describe("DateRangePicker wiring", () => {
 
   it("reports an end typed before its start on the end, merged into the picker's error", async () => {
     renderThemed(
-      withLocale("en-US", <LoggedRange defaultValue={{ start: "2026-10-05", end: "2026-10-09" }} />)
+      withLocale(
+        "en-US",
+        <LoggedRange
+          defaultValue={{
+            start: Temporal.PlainDate.from("2026-10-05"),
+            end: Temporal.PlainDate.from("2026-10-09"),
+          }}
+        />
+      )
     );
     await userEvent.click(roleNamed("spinbutton", "day, End Date, Period"));
     await userEvent.keyboard("01");
@@ -133,7 +154,15 @@ describe("DateRangePicker wiring", () => {
 
   it("reports a start typed past its end on the end, shown once focus leaves", async () => {
     renderThemed(
-      withLocale("en-US", <LoggedRange defaultValue={{ start: "2026-10-05", end: "2026-10-09" }} />)
+      withLocale(
+        "en-US",
+        <LoggedRange
+          defaultValue={{
+            start: Temporal.PlainDate.from("2026-10-05"),
+            end: Temporal.PlainDate.from("2026-10-09"),
+          }}
+        />
+      )
     );
     await userEvent.click(roleNamed("spinbutton", "day, Start Date, Period"));
     await userEvent.keyboard("20");
@@ -158,7 +187,10 @@ describe("DateRangePicker wiring", () => {
         <>
           <DateRangePickerField
             label="Stay"
-            defaultValue={{ start: "2026-10-05", end: "2026-10-09" }}
+            defaultValue={{
+              start: Temporal.PlainDate.from("2026-10-05"),
+              end: Temporal.PlainDate.from("2026-10-09"),
+            }}
             errorMessage={false}
           />
           <button type="button">After</button>
@@ -179,7 +211,13 @@ describe("DateRangePicker wiring", () => {
       withLocale(
         "en-US",
         <>
-          <DateRangePickerField label="Stay" defaultValue={{ start: "2026-10-05", end: "2026-10-09" }} />
+          <DateRangePickerField
+            label="Stay"
+            defaultValue={{
+              start: Temporal.PlainDate.from("2026-10-05"),
+              end: Temporal.PlainDate.from("2026-10-09"),
+            }}
+          />
           <button type="button">After</button>
         </>
       )
@@ -208,7 +246,13 @@ describe("DateRangePicker calendar", () => {
     renderThemed(
       withLocale(
         "en-US",
-        <LoggedRange defaultValue={{ start: "2026-10-05", end: "2026-10-09" }} cancel={["day-press"]} />
+        <LoggedRange
+          defaultValue={{
+            start: Temporal.PlainDate.from("2026-10-05"),
+            end: Temporal.PlainDate.from("2026-10-09"),
+          }}
+          cancel={["day-press"]}
+        />
       )
     );
     await userEvent.click(roleNamed("button", "Calendar Period"));
@@ -232,7 +276,10 @@ describe("DateRangePicker calendar", () => {
       withLocale(
         "en-US",
         <LoggedRange
-          defaultValue={{ start: "2026-10-05T08:00[Europe/Oslo]", end: "2026-10-09T17:30[Europe/Oslo]" }}
+          defaultValue={{
+            start: Temporal.ZonedDateTime.from("2026-10-05T08:00[Europe/Oslo]"),
+            end: Temporal.ZonedDateTime.from("2026-10-09T17:30[Europe/Oslo]"),
+          }}
         />
       )
     );
@@ -253,7 +300,13 @@ describe("DateRangePicker calendar", () => {
     renderThemed(
       withLocale(
         "en-US",
-        <LoggedRange visibleMonths={2} defaultValue={{ start: "2026-10-05", end: "2026-10-09" }} />
+        <LoggedRange
+          visibleMonths={2}
+          defaultValue={{
+            start: Temporal.PlainDate.from("2026-10-05"),
+            end: Temporal.PlainDate.from("2026-10-09"),
+          }}
+        />
       )
     );
     await userEvent.click(roleNamed("button", "Calendar Period"));
@@ -263,7 +316,10 @@ describe("DateRangePicker calendar", () => {
 
   it("drops a half-picked range, rather than completing it, when focus moves to a preset", async () => {
     function WithPresets(): ReactElement {
-      const [value, setValue] = useState({ start: "2026-10-05", end: "2026-10-09" });
+      const [value, setValue] = useState({
+        start: Temporal.PlainDate.from("2026-10-05"),
+        end: Temporal.PlainDate.from("2026-10-09"),
+      });
       const [lines, setLines] = useState<string[]>([]);
       return (
         <>
@@ -275,12 +331,15 @@ describe("DateRangePicker calendar", () => {
                 ...current,
                 next === null ? "null" : `${next.start.toString()}..${next.end.toString()}`,
               ]);
-              if (next !== null) setValue({ start: next.start.toString(), end: next.end.toString() });
+              if (next !== null) setValue(next);
             }}
             presetGroup={
               <DatePicker.Presets
                 onValueChange={() => {
-                  setValue({ start: "2026-12-24", end: "2026-12-26" });
+                  setValue({
+                    start: Temporal.PlainDate.from("2026-12-24"),
+                    end: Temporal.PlainDate.from("2026-12-26"),
+                  });
                 }}>
                 <DatePicker.PresetItem value="christmas">Christmas</DatePicker.PresetItem>
               </DatePicker.Presets>
@@ -325,7 +384,10 @@ describe("DateRangePickerField in forms", () => {
             label="Stay"
             startName="checkIn"
             endName="checkOut"
-            defaultValue={{ start: "2026-10-05", end: "2026-10-09" }}
+            defaultValue={{
+              start: Temporal.PlainDate.from("2026-10-05"),
+              end: Temporal.PlainDate.from("2026-10-09"),
+            }}
           />
           <button type="submit">Save</button>
         </Form>
@@ -381,7 +443,7 @@ describe("DateRangePicker held ranges", () => {
     renderThemed(
       withLocale(
         "en-US",
-        <DateRangePickerField<Temporal.PlainDateTime>
+        <DateRangePickerField
           label="Window"
           granularity="minute"
           shouldCloseOnSelect={false}
@@ -404,19 +466,13 @@ describe("DateRangePicker held ranges", () => {
   });
 
   it("drops a half-cleared range for good when the parent replaces the range and later restores it", async () => {
-    const A = { start: "2026-10-05", end: "2026-10-09" };
-    const B = { start: "2026-11-02", end: "2026-11-06" };
+    const A = { start: Temporal.PlainDate.from("2026-10-05"), end: Temporal.PlainDate.from("2026-10-09") };
+    const B = { start: Temporal.PlainDate.from("2026-11-02"), end: Temporal.PlainDate.from("2026-11-06") };
     function Controlled(): ReactElement {
-      const [value, setValue] = useState<{ start: string; end: string } | null>(A);
+      const [value, setValue] = useState<DateRangePickerValue | null>(A);
       return (
         <>
-          <DateRangePickerField
-            label="Period"
-            value={value}
-            onChange={(next) =>
-              setValue(next === null ? null : { start: next.start.toString(), end: next.end.toString() })
-            }
-          />
+          <DateRangePickerField label="Period" value={value} onChange={setValue} />
           <button type="button" onClick={() => setValue(B)}>
             Range B
           </button>
@@ -440,7 +496,13 @@ describe("DateRangePicker held ranges", () => {
 
   it("checks the held range a parent's close commits against the minValue of that same render", async () => {
     const calls: string[] = [];
-    function Controlled({ open, min }: { readonly open: boolean; readonly min: string }): ReactElement {
+    function Controlled({
+      open,
+      min,
+    }: {
+      readonly open: boolean;
+      readonly min: Temporal.PlainDate;
+    }): ReactElement {
       return withLocale(
         "en-US",
         <DateRangePicker.Root
@@ -465,11 +527,11 @@ describe("DateRangePicker held ranges", () => {
         </DateRangePicker.Root>
       );
     }
-    const { rerender } = renderThemed(<Controlled open min="2026-10-01" />);
+    const { rerender } = renderThemed(<Controlled open min={Temporal.PlainDate.from("2026-10-01")} />);
     await waitForPopupSettled();
     await userEvent.click(roleNamed("button", "Monday, October 12, 2026"));
     await userEvent.click(roleNamed("button", "Friday, October 16, 2026"));
-    rerender(<Controlled open={false} min="2026-10-14" />);
+    rerender(<Controlled open={false} min={Temporal.PlainDate.from("2026-10-14")} />);
     await expect.poll(() => calls).toEqual(["2026-10-12T00:00:00..2026-10-16T00:00:00:rangeUnderflow"]);
   });
 
@@ -478,7 +540,7 @@ describe("DateRangePicker held ranges", () => {
     function Controlled({ open, tag }: { readonly open: boolean; readonly tag: string }): ReactElement {
       return withLocale(
         "en-US",
-        <DateRangePickerField<Temporal.PlainDateTime>
+        <DateRangePickerField
           label="Window"
           granularity="minute"
           shouldCloseOnSelect={false}
@@ -529,14 +591,14 @@ describe("DateRangePicker form reset", () => {
   it("keeps a cleared zoned range's time segments and zone across a form reset", async () => {
     const values: string[] = [];
     function Zoned(): ReactElement {
-      const [value, setValue] = useState<{ start: string; end: string } | null>({
-        start: "2026-10-12T08:00[Europe/Oslo]",
-        end: "2026-10-16T17:30[Europe/Oslo]",
+      const [value, setValue] = useState<DateRangePickerValue<Temporal.ZonedDateTime> | null>({
+        start: Temporal.ZonedDateTime.from("2026-10-12T08:00[Europe/Oslo]"),
+        end: Temporal.ZonedDateTime.from("2026-10-16T17:30[Europe/Oslo]"),
       });
       return withLocale(
         "en-US",
         <form aria-label="Booking">
-          <DateRangePickerField<Temporal.ZonedDateTime>
+          <DateRangePickerField
             label="Window"
             granularity="minute"
             hourCycle={24}
@@ -546,7 +608,7 @@ describe("DateRangePicker form reset", () => {
               const printed =
                 next === null ? null : { start: next.start.toString(), end: next.end.toString() };
               values.push(printed === null ? "null" : `${printed.start}..${printed.end}`);
-              setValue(printed);
+              setValue(next);
             }}
           />
           <button type="button" onClick={() => setValue(null)}>
@@ -578,14 +640,14 @@ describe("DateRangePicker form reset", () => {
     async (granularity, zone, offset) => {
       const values: string[] = [];
       function Zoned(): ReactElement {
-        const [value, setValue] = useState<{ start: string; end: string } | null>({
-          start: `2026-10-12T08:00[${zone}]`,
-          end: `2026-10-16T17:30[${zone}]`,
+        const [value, setValue] = useState<DateRangePickerValue<Temporal.ZonedDateTime> | null>({
+          start: Temporal.ZonedDateTime.from(`2026-10-12T08:00[${zone}]`),
+          end: Temporal.ZonedDateTime.from(`2026-10-16T17:30[${zone}]`),
         });
         return withLocale(
           "en-US",
           <form aria-label="Booking">
-            <DateRangePickerField<Temporal.ZonedDateTime>
+            <DateRangePickerField
               label="Window"
               granularity={granularity}
               hourCycle={24}
@@ -595,7 +657,7 @@ describe("DateRangePicker form reset", () => {
                 const printed =
                   next === null ? null : { start: next.start.toString(), end: next.end.toString() };
                 values.push(printed === null ? "null" : `${printed.start}..${printed.end}`);
-                setValue(printed);
+                setValue(next);
               }}
             />
             <button type="button" onClick={() => setValue(null)}>
@@ -626,7 +688,12 @@ describe("DateRangePicker naming", () => {
   function GhostLabel(): ReactElement {
     return withLocale(
       "en-US",
-      <DateRangePicker.Root aria-label="Stay" defaultValue={{ start: "2026-10-05", end: "2026-10-09" }}>
+      <DateRangePicker.Root
+        aria-label="Stay"
+        defaultValue={{
+          start: Temporal.PlainDate.from("2026-10-05"),
+          end: Temporal.PlainDate.from("2026-10-09"),
+        }}>
         <Show when={false}>
           <DateRangePicker.Label>Ghost</DateRangePicker.Label>
         </Show>
@@ -643,7 +710,13 @@ describe("DateRangePicker naming", () => {
     renderThemed(
       withLocale(
         "en-US",
-        <DateRangePickerField aria-label="Period" defaultValue={{ start: "2026-10-05", end: "2026-10-09" }} />
+        <DateRangePickerField
+          aria-label="Period"
+          defaultValue={{
+            start: Temporal.PlainDate.from("2026-10-05"),
+            end: Temporal.PlainDate.from("2026-10-09"),
+          }}
+        />
       )
     );
     expect(roleNamed("group", "Period")).toBeDefined();
@@ -656,7 +729,12 @@ describe("DateRangePicker naming", () => {
     renderThemed(
       withLocale(
         "en-US",
-        <DateRangePicker.Root invalid defaultValue={{ start: "2026-10-05", end: "2026-10-09" }}>
+        <DateRangePicker.Root
+          invalid
+          defaultValue={{
+            start: Temporal.PlainDate.from("2026-10-05"),
+            end: Temporal.PlainDate.from("2026-10-09"),
+          }}>
           <DateRangePicker.Label id="my-label">Period</DateRangePicker.Label>
           <DateRangePicker.Group>
             <DateRangePicker.StartInput />
@@ -689,7 +767,10 @@ describe("DateRangePicker naming", () => {
           label="Period"
           isInvalid
           errorMessage="Rejected"
-          defaultValue={{ start: "2026-10-05", end: "2026-10-09" }}
+          defaultValue={{
+            start: Temporal.PlainDate.from("2026-10-05"),
+            end: Temporal.PlainDate.from("2026-10-09"),
+          }}
         />
       )
     );
@@ -707,7 +788,10 @@ describe("DateRangePicker naming", () => {
           description="Nights at the cabin"
           isInvalid
           errorMessage="Rejected"
-          defaultValue={{ start: "2026-10-05", end: "2026-10-09" }}
+          defaultValue={{
+            start: Temporal.PlainDate.from("2026-10-05"),
+            end: Temporal.PlainDate.from("2026-10-09"),
+          }}
         />
       )
     );
@@ -769,7 +853,13 @@ describe("DateRangePicker disabled", () => {
       withLocale(
         "en-US",
         <Field.Set disabled>
-          <DateRangePickerField label="Stay" defaultValue={{ start: "2026-10-05", end: "2026-10-09" }} />
+          <DateRangePickerField
+            label="Stay"
+            defaultValue={{
+              start: Temporal.PlainDate.from("2026-10-05"),
+              end: Temporal.PlainDate.from("2026-10-09"),
+            }}
+          />
         </Field.Set>
       )
     );
@@ -786,7 +876,10 @@ describe("DateRangePicker disabled", () => {
         <Field.Root disabled>
           <DateRangePicker.Root
             aria-label="Stay"
-            defaultValue={{ start: "2026-10-05", end: "2026-10-09" }}
+            defaultValue={{
+              start: Temporal.PlainDate.from("2026-10-05"),
+              end: Temporal.PlainDate.from("2026-10-09"),
+            }}
             defaultOpen>
             <DateRangePicker.Group>
               <DateRangePicker.StartInput />
@@ -818,7 +911,10 @@ describe("DateRangePicker disabled", () => {
         <Field.Set disabled={disabled}>
           <DateRangePicker.Root
             aria-label="Stay"
-            defaultValue={{ start: "2026-10-05", end: "2026-10-09" }}
+            defaultValue={{
+              start: Temporal.PlainDate.from("2026-10-05"),
+              end: Temporal.PlainDate.from("2026-10-09"),
+            }}
             defaultOpen
             onValueChange={(value) => values.push(String(value?.start))}>
             <DateRangePicker.Group>
@@ -860,7 +956,10 @@ describe("DateRangePicker focus boundary", () => {
         <>
           <DateRangePickerField
             label="Stay"
-            defaultValue={{ start: "2026-10-05", end: "2026-10-09" }}
+            defaultValue={{
+              start: Temporal.PlainDate.from("2026-10-05"),
+              end: Temporal.PlainDate.from("2026-10-09"),
+            }}
             onBlur={() => (leaves += 1)}
           />
           <button type="button">After</button>
@@ -903,7 +1002,10 @@ describe("DateRangePicker focus boundary", () => {
         <>
           <DateRangePickerField
             label="Stay"
-            defaultValue={{ start: "2026-10-05", end: "2026-10-09" }}
+            defaultValue={{
+              start: Temporal.PlainDate.from("2026-10-05"),
+              end: Temporal.PlainDate.from("2026-10-09"),
+            }}
             onBlur={() => (leaves += 1)}
           />
           <button type="button">After</button>
@@ -938,7 +1040,7 @@ describe("DateRangePicker kind of an empty picker", () => {
     return withLocale(
       "en-US",
       <>
-        <DateRangePickerField<Temporal.PlainDateTime | Temporal.ZonedDateTime>
+        <DateRangePickerField
           label="Window"
           granularity="minute"
           hourCycle={24}
@@ -1031,5 +1133,31 @@ describe("DateRangePicker context", () => {
     await expect.element(page.getByRole("status")).toHaveTextContent("Tick 1");
     expect(settled).toBeGreaterThan(0);
     expect(checks).toBe(settled);
+  });
+});
+
+describe("date props past the types", () => {
+  it("throws a TypeError naming the Root, the prop and the string for ISO text", () => {
+    const prefix = 'DateRangePicker.Root value.start: received the string "2026-10-05"';
+    const error = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    renderThemed(
+      withLocale(
+        "en-US",
+        <CaughtError>
+          <DateRangePickerField
+            label="Period"
+            value={{
+              // @ts-expect-error -- text reaches the prop past the types: from plain JavaScript, or as the ISO text a server component's Temporal object crosses as
+              start: "2026-10-05",
+              end: Temporal.PlainDate.from("2026-10-09"),
+            }}
+          />
+        </CaughtError>
+      )
+    );
+    const { name, message } = caughtError();
+    expect(name).toBe("TypeError");
+    expect(message?.slice(0, prefix.length)).toBe(prefix);
+    error.mockRestore();
   });
 });

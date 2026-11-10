@@ -14,9 +14,12 @@ export function TemporalRangeCalendarUnavailable() {
   return (
     <RangeCalendar.Root
       aria-label="Cabin stay"
-      defaultValue={{ start: "2026-10-13", end: "2026-10-15" }}
-      minValue="2026-10-05"
-      maxValue="2026-11-15"
+      defaultValue={{
+        start: Temporal.PlainDate.from("2026-10-13"),
+        end: Temporal.PlainDate.from("2026-10-15"),
+      }}
+      minValue={Temporal.PlainDate.from("2026-10-05")}
+      maxValue={Temporal.PlainDate.from("2026-11-15")}
       isDateUnavailable={isBooked}>
       <RangeCalendar.Header>
         <RangeCalendar.DecrementMonth />
