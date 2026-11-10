@@ -425,6 +425,17 @@ function Zone(props: {
 }
 
 describe("FileUpload.Dropzone", () => {
+  it("opens the picker from a click on its empty surface, never from an unrelated control inside it", async () => {
+    const { host } = renderThemed(<Zone />);
+    // The native picker cannot be observed; its one opener is the hidden input's click().
+    const click = stubPicker(host);
+
+    parts(host).zone.click();
+    expect(click).toHaveBeenCalledTimes(1);
+    await userEvent.click(roleNamed("button", "Clear list"));
+    expect(click).toHaveBeenCalledTimes(1);
+  });
+
   it("keeps the highlight while a drag moves onto a child, and clears it when the drag leaves the zone", async () => {
     const { host } = renderThemed(<Zone multiple />);
     const { root, zone } = parts(host);

@@ -155,6 +155,39 @@ describe("Slider", () => {
     expect(valueNow("Pris, maximum")).toBe(80);
   });
 
+  it("shows and announces a formatOptions value after a key step: 25%, not 0.25", async () => {
+    renderSlider(
+      <Slider
+        label="Opacity"
+        showValue
+        defaultValue={0.25}
+        minValue={0}
+        maxValue={1}
+        step={0.05}
+        formatOptions={{ style: "percent" }}
+      />
+    );
+    const output = page.getByText("25%", { exact: true }).element();
+    expect(output.tagName).toBe("OUTPUT");
+    expect(sliderNamed("Opacity").getAttribute("aria-valuetext")).toBe("25%");
+
+    sliderNamed("Opacity").focus();
+    await userEvent.keyboard("{ArrowRight}");
+    expect(output.textContent).toBe("30%");
+    expect(sliderNamed("Opacity").getAttribute("aria-valuetext")).toBe("30%");
+  });
+
+  it("names each range thumb and announces its value alone, in the provider locale", async () => {
+    // nb-NO, written by hand: the dictionary's thumb names and a decimal comma.
+    renderSlider(<Slider label="Pris" defaultValue={[0.5, 2.5]} maxValue={5} step={0.5} />, "nb-NO");
+    expect(sliderNamed("Pris, minimum").getAttribute("aria-valuetext")).toBe("0,5");
+    expect(sliderNamed("Pris, maksimum").getAttribute("aria-valuetext")).toBe("2,5");
+
+    sliderNamed("Pris, maksimum").focus();
+    await userEvent.keyboard("{ArrowLeft}");
+    expect(sliderNamed("Pris, maksimum").getAttribute("aria-valuetext")).toBe("2");
+  });
+
   it("names range thumbs from aria-label, and lets thumbLabels override the dictionary", () => {
     renderSlider(
       <>

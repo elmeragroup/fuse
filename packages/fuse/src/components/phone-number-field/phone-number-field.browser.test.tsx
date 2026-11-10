@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type { ReactNode } from "react";
 
 import type { MetadataJson } from "libphonenumber-js/core";
@@ -13,6 +14,8 @@ import {
   countryListbox,
   countrySearch,
   openPicker,
+  phoneInput,
+  phoneSubmission,
   selectCountry,
 } from "../../../test/phone-browser-queries";
 import {
@@ -360,5 +363,35 @@ describe("PhoneNumberField countries", () => {
     await openPicker();
     // Finland, Norway, Sweden: name order, not the list's.
     expect(optionFlagCodes()).toEqual(["FI", "NO", "SE"]);
+  });
+});
+
+describe("PhoneNumberField caret", () => {
+  it("keeps the caret where a mid-number edit leaves it while formatOnType reformats", async () => {
+    function Controlled() {
+      const [value, setValue] = useState("");
+      return (
+        <form aria-label="Phone form">
+          <PhoneNumberField label="Mobile" name="phone" value={value} onChange={setValue} formatOnType />
+        </form>
+      );
+    }
+    renderField(<Controlled />);
+    const input = phoneInput();
+    input.focus();
+    for (const key of "91234567") await userEvent.keyboard(key);
+    expect(input.value).toBe("91 23 45 67");
+
+    // Backspace after "91 2" removes the 2; formatting regroups the rest, and the caret stays
+    // after "91", not at the end where a rewritten value would leave it.
+    input.setSelectionRange(4, 4);
+    await userEvent.keyboard("{Backspace}");
+    await expect.element(input).toHaveValue("91 34 56 7");
+    expect([input.selectionStart, input.selectionEnd]).toEqual([2, 2]);
+    await userEvent.keyboard("5");
+    await expect.element(input).toHaveValue("91 53 45 67");
+    // The 5 went in after "91 ", so the caret sits after it: offset 4.
+    expect([input.selectionStart, input.selectionEnd]).toEqual([4, 4]);
+    expect(phoneSubmission().get("phone")).toBe("+4791534567");
   });
 });

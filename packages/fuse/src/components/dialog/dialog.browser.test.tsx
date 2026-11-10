@@ -73,6 +73,24 @@ describe("Dialog", () => {
     expect(dialog.getAttribute("aria-describedby")).toBe(description.id);
   });
 
+  it("focuses the popup itself when nothing inside is tabbable and no initialFocus is given", async () => {
+    renderThemed(
+      withLocale(
+        "en-US",
+        <Dialog.Root>
+          <Dialog.Trigger>Open notice</Dialog.Trigger>
+          <Dialog.Content showCloseButton={false}>
+            <Dialog.Title>Notice</Dialog.Title>
+          </Dialog.Content>
+        </Dialog.Root>
+      )
+    );
+    page.getByRole("button", { name: "Open notice", exact: true }).element().focus();
+    await userEvent.keyboard("{Enter}");
+    // Base UI moves focus into the popup after it mounts, which can land a frame later.
+    await expect.element(page.getByRole("dialog", { name: "Notice" })).toHaveFocus();
+  });
+
   it("turns a Title into a focus target only with isFocusable", async () => {
     function TitleDialog({ isFocusable }: { isFocusable?: boolean }) {
       const titleRef = useRef<HTMLHeadingElement>(null);
