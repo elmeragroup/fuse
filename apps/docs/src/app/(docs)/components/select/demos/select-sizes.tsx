@@ -11,7 +11,7 @@ const fruits = {
 function FruitSelect({ size }: { size?: "sm" | "default" }) {
   return (
     <Select.Root items={fruits}>
-      <Select.Trigger size={size}>
+      <Select.Trigger size={size} aria-label={size === "sm" ? "Small fruit" : "Fruit"}>
         <Select.Value placeholder={size === "sm" ? "Small" : "Default"} />
       </Select.Trigger>
       <Select.Content>

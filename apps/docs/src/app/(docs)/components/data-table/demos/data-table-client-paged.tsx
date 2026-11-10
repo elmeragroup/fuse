@@ -47,7 +47,7 @@ const COLUMNS = columns.columns([
   }),
   columns.accessor("due", {
     header: ({ header }) => <header.SortButton>Due</header.SortButton>,
-    cell: ({ cell }) => <cell.DateCell />,
+    cell: ({ cell }) => <cell.DateCell timeZone="Europe/Oslo" />,
   }),
 ]);
 

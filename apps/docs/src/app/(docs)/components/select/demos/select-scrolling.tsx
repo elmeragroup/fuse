@@ -33,7 +33,7 @@ const fruits = Object.fromEntries(fruitNames.map((fruit) => [fruit.toLowerCase()
 export function SelectScrolling() {
   return (
     <Select.Root items={fruits} defaultValue="mango">
-      <Select.Trigger>
+      <Select.Trigger aria-label="Fruit">
         <Select.Value placeholder="Pick a fruit" />
       </Select.Trigger>
       <Select.Content>
