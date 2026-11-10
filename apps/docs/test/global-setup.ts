@@ -17,9 +17,9 @@ declare module "vitest" {
  */
 export async function serveDocs(
   project: TestProject,
-  { testingApi }: { testingApi: boolean }
+  { e2eBuild }: { e2eBuild: boolean }
 ): Promise<() => Promise<void>> {
-  const server = await startDocsProductionServer({ testingApi });
+  const server = await startDocsProductionServer({ e2eBuild });
   project.provide("docsBaseUrl", server.url);
   return async () => {
     await server.close();
@@ -28,5 +28,5 @@ export async function serveDocs(
 
 /** The unit suite's server: the production build in `.next`, as the container ships it. */
 export default async function globalSetup(project: TestProject): Promise<() => Promise<void>> {
-  return serveDocs(project, { testingApi: false });
+  return serveDocs(project, { e2eBuild: false });
 }

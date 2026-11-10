@@ -29,15 +29,6 @@ import { Radio, RadioGroup, RadioItemGroup } from "../radio-group/radio-group";
 import { RadioItem } from "../radio-group/radio-item";
 import { SelectionItem } from "./index";
 
-function tokenBackgroundColor(host: HTMLElement, utility: string): string {
-  const probe = document.createElement("span");
-  probe.className = utility;
-  host.append(probe);
-  const color = getComputedStyle(probe).backgroundColor;
-  probe.remove();
-  return color;
-}
-
 describe("SelectionItem", () => {
   describe("isSubSectionSelectable", () => {
     function SelectablePlan({ isSubSectionSelectable }: { isSubSectionSelectable?: boolean }) {
@@ -145,292 +136,6 @@ describe("SelectionItem", () => {
       expect(getComputedStyle(headingNamed("Fixed price")).cursor).toBe("pointer");
       expect(getComputedStyle(textNamed("Follows the market.")).cursor).toBe("not-allowed");
     });
-  });
-
-  it("does not toggle a disabled control on row click and shows the not-allowed cursor", () => {
-    renderThemed(
-      <Field.Root>
-        <SelectionItem.Shell dataSlot="checkbox-item" isDisabled control={<Checkbox.Root disabled />}>
-          <RowTitle>Fixed price</RowTitle>
-        </SelectionItem.Shell>
-      </Field.Root>
-    );
-
-    const box = checkboxNamed("Fixed price");
-    expect(box.getAttribute("aria-checked")).toBe("false");
-    expect(getComputedStyle(shellFrom("Fixed price")).cursor).toBe("not-allowed");
-
-    headingNamed("Fixed price").click();
-    expect(checkboxNamed("Fixed price", false).getAttribute("aria-checked")).toBe("false");
-  });
-
-  it("does not paint checked shell state from a checked selection row nested in SubSection", async () => {
-    /** Three unchecked rows; the middle one's SubSection holds a checked selection row. */
-    const Rows = ({ prefix }: { prefix: string }) => (
-      <CheckboxItemGroup label={`${prefix}Plans`}>
-        <CheckboxItem value="basic">
-          <RowTitle>{`${prefix}Basic`}</RowTitle>
-        </CheckboxItem>
-        <CheckboxItem value="bundle">
-          <RowTitle>{`${prefix}Bundle`}</RowTitle>
-          <CheckboxItem.SubSection>
-            <CheckboxItemGroup label={`${prefix}Bundle extras`} defaultValue={["router"]}>
-              <CheckboxItem value="router">
-                <RowTitle>{`${prefix}Router`}</RowTitle>
-              </CheckboxItem>
-            </CheckboxItemGroup>
-          </CheckboxItem.SubSection>
-        </CheckboxItem>
-        <CheckboxItem value="support">
-          <RowTitle>{`${prefix}Support`}</RowTitle>
-        </CheckboxItem>
-      </CheckboxItemGroup>
-    );
-    renderThemed(
-      <>
-        <Rows prefix="" />
-        <ThemeScope theme={fkasBranded}>
-          <Rows prefix="Branded " />
-        </ThemeScope>
-      </>
-    );
-
-    const shell = shellFrom("Bundle");
-    await settled(shell);
-    expect(checkboxNamed("Bundle").getAttribute("aria-checked")).toBe("false");
-    expect(checkboxNamed("Router").getAttribute("aria-checked")).toBe("true");
-    // Oracle sanity: a checked repaint would change each colour asserted below.
-    expect(cssVarColor(shell, "--primary")).not.toBe(cssVarColor(shell, "--border"));
-    expect(tokenBackgroundColor(shell, "bg-muted")).not.toBe(cssVarColor(shell, "--card"));
-    const style = getComputedStyle(shell);
-    expect(style.backgroundColor).toBe(cssVarColor(shell, "--card"));
-    expect(style.borderBottomColor).toBe(cssVarColor(shell, "--border"));
-    expect(style.marginTop).toBe("0px");
-    expect(style.borderTopWidth).toBe("0px");
-
-    const branded = shellFrom("Branded Bundle");
-    await settled(branded);
-    expect(checkboxNamed("Branded Bundle").getAttribute("aria-checked")).toBe("false");
-    expect(checkboxNamed("Branded Router").getAttribute("aria-checked")).toBe("true");
-    expect(tokenBackgroundColor(branded, "bg-muted")).not.toBe(cssVarColor(branded, "--card"));
-    expect(getComputedStyle(branded).backgroundColor).toBe(cssVarColor(branded, "--card"));
-    expect(getComputedStyle(branded).marginTop).toBe("0px");
-  });
-
-  it.each([
-    { item: "CheckboxItem", role: "checkbox", slot: "checkbox-item" },
-    { item: "RadioItem", role: "radio", slot: "radio-item" },
-  ] as const)(
-    "puts root attributes on a $item's row and keeps its own data-slot and list role",
-    async ({ role, slot }) => {
-      const rowProps = {
-        "data-testid": "plan-fixed",
-        id: "plan-fixed-row",
-        "data-analytics": "plan",
-        // The item's own slot names the row; a consumer's does not replace it.
-        "data-slot": "consumer-slot",
-        // An undefined prop leaves the card list's wiring in place.
-        role: undefined,
-      };
-      renderThemed(
-        role === "checkbox" ? (
-          <CheckboxItemGroup label="Plans">
-            <CheckboxItem value="fixed" {...rowProps}>
-              <RowTitle>Fixed price</RowTitle>
-            </CheckboxItem>
-          </CheckboxItemGroup>
-        ) : (
-          <RadioItemGroup label="Plans">
-            <RadioItem value="fixed" {...rowProps}>
-              <RowTitle>Fixed price</RowTitle>
-            </RadioItem>
-          </RadioItemGroup>
-        )
-      );
-
-      const row = page.getByTestId("plan-fixed");
-      expect(row.element()).toBe(shellFrom("Fixed price"));
-      expect(row.element().id).toBe("plan-fixed-row");
-      expect(row.element().getAttribute("data-analytics")).toBe("plan");
-      expect(row.element().getAttribute("data-slot")).toBe(slot);
-      expect(row.element().getAttribute("role")).toBe("listitem");
-      await userEvent.click(row.getByRole(role));
-      expect(roleNamed(role, "Fixed price").getAttribute("aria-checked")).toBe("true");
-    }
-  );
-});
-
-function fontAndLeading(element: HTMLElement): [number, number] {
-  const style = getComputedStyle(element);
-  return [Number.parseFloat(style.fontSize), Number.parseFloat(style.lineHeight)];
-}
-
-describe("selection row type", () => {
-  // Alert's title and description follow density through the label text; alert.browser.test.tsx
-  // covers them.
-  it("leaves Item titles and descriptions at text-sm when comfortable", () => {
-    stampDensity("comfortable");
-    renderThemed(
-      <Item.Root>
-        <Item.Content>
-          <Item.Title>Item title</Item.Title>
-          <Item.Description>Item description</Item.Description>
-        </Item.Content>
-      </Item.Root>
-    );
-
-    for (const text of ["Item title", "Item description"]) {
-      expect(fontAndLeading(textNamed(text))[0], text).toBe(14);
-    }
-  });
-});
-
-describe("selection group names", () => {
-  function radioNamed(name: string): HTMLElement {
-    const element = page.getByRole("radio", { name, exact: true }).element();
-    if (!(element instanceof HTMLElement)) {
-      throw new Error(`expected radio named ${name}`);
-    }
-    return element;
-  }
-
-  it("gives every member control an accessible name in both the plain and card shapes", () => {
-    renderThemed(
-      <>
-        <CheckboxGroup label="Plain checks" description="Pick some" errorMessage="Check error">
-          <CheckboxItem value="a">Plain check</CheckboxItem>
-        </CheckboxGroup>
-        <CheckboxItemGroup label="Card checks" description="Pick some" errorMessage="Card check error">
-          <CheckboxItem value="a">
-            <RowTitle>Card check</RowTitle>
-          </CheckboxItem>
-        </CheckboxItemGroup>
-        <RadioGroup label="Plain radios" description="Pick one" errorMessage="Radio error">
-          <Radio value="a">Plain radio</Radio>
-        </RadioGroup>
-        <RadioItemGroup label="Card radios" description="Pick one" errorMessage="Card radio error">
-          <RadioItem value="a">
-            <RowTitle>Card radio</RowTitle>
-          </RadioItem>
-        </RadioItemGroup>
-      </>
-    );
-
-    // Every control is named, including inside cards: a nested Field.Root
-    // would leave these blank.
-    for (const name of ["Plain check", "Card check"]) {
-      expect(checkboxNamed(name)).toBeTruthy();
-    }
-    for (const name of ["Plain radio", "Card radio"]) {
-      expect(radioNamed(name)).toBeTruthy();
-    }
-    // The groups keep their legend name, and each frame renders exactly one alert.
-    for (const name of ["Plain checks", "Card checks"]) {
-      expect(page.getByRole("group", { name, exact: true }).elements().length).toBeGreaterThan(0);
-    }
-    for (const name of ["Plain radios", "Card radios"]) {
-      expect(page.getByRole("radiogroup", { name, exact: true }).element()).toBeTruthy();
-    }
-    expect(
-      page
-        .getByRole("alert")
-        .elements()
-        .map((element) => element.textContent)
-    ).toEqual(["Check error", "Card check error", "Radio error", "Card radio error"]);
-  });
-});
-
-function subsectionHost(from: HTMLElement): HTMLElement {
-  const host = from.closest("[data-mode], [aria-hidden='true']");
-  if (!(host instanceof HTMLElement)) {
-    throw new Error("expected a subsection host");
-  }
-  return host;
-}
-
-function nestedSubsectionButton(label: string): HTMLElement {
-  const button = subsectionHost(textNamed(label)).querySelector("button");
-  if (!(button instanceof HTMLElement)) {
-    throw new Error(`expected a button inside the ${label} subsection`);
-  }
-  return button;
-}
-
-function SubSectionTree({ mode }: { mode: "hidden" | "visible" | "default" }) {
-  return (
-    <>
-      <button type="button">Before</button>
-      <Field.Root>
-        <SelectionItem.Shell dataSlot="checkbox-item" control={<span role="img" aria-label="Indicator" />}>
-          <RowTitle>Fixed price</RowTitle>
-          <SelectionItem.SubSection mode={mode}>
-            <button type="button">Hidden details</button>
-          </SelectionItem.SubSection>
-        </SelectionItem.Shell>
-      </Field.Root>
-      <button type="button">After</button>
-    </>
-  );
-}
-
-/**
- * Click the shell at `x(width)` from the left of its padding box, where `width` is the
- * padding box's width, and at viewport `y`. Playwright measures `position` from the
- * padding box, inside the border.
- */
-async function clickShellAt(shell: HTMLElement, x: (width: number) => number, y: number): Promise<void> {
-  const top = shell.getBoundingClientRect().top + shell.clientTop;
-  await userEvent.click(shell, { position: { x: x(shell.clientWidth), y: y - top } });
-}
-
-function PressCounter() {
-  const [presses, setPresses] = useState(0);
-  return (
-    <button type="button" onClick={() => setPresses((count) => count + 1)}>
-      {`Pressed ${presses} times`}
-    </button>
-  );
-}
-
-describe("SelectionItem", () => {
-  it("toggles from row text and isolates subsection clicks", async () => {
-    renderThemed(
-      <Field.Root>
-        <SelectionItem.Shell dataSlot="checkbox-item" control={<Checkbox.Root />}>
-          <SelectionItem.Content>
-            <RowTitle>Fixed price</RowTitle>
-          </SelectionItem.Content>
-          <SelectionItem.SubSection>
-            <button type="button">Details</button>
-          </SelectionItem.SubSection>
-        </SelectionItem.Shell>
-      </Field.Root>
-    );
-
-    const details = page.getByRole("button", { name: "Details", exact: true }).element();
-    expect(details.closest("label")).toBeNull();
-
-    await userEvent.click(headingNamed("Fixed price"));
-    expect(checkboxNamed("Fixed price", true).getAttribute("aria-checked")).toBe("true");
-
-    await userEvent.click(page.getByRole("button", { name: "Details", exact: true }));
-    expect(checkboxNamed("Fixed price", true).getAttribute("aria-checked")).toBe("true");
-  });
-
-  describe("isSubSectionSelectable", () => {
-    function SelectablePlan({ isSubSectionSelectable }: { isSubSectionSelectable?: boolean }) {
-      return (
-        <CheckboxItemGroup label="Plans">
-          <CheckboxItem value="fixed" isSubSectionSelectable={isSubSectionSelectable}>
-            <RowTitle>Fixed price</RowTitle>
-            <CheckboxItem.SubSection role="region" aria-label="Price details">
-              <p>Locked for twelve months.</p>
-              <a href="#price-terms">Price terms</a>
-            </CheckboxItem.SubSection>
-          </CheckboxItem>
-        </CheckboxItemGroup>
-      );
-    }
 
     it("toggles from the SubSection's text, band and side padding, and leaves a link's click its own", async () => {
       renderThemed(<SelectablePlan isSubSectionSelectable />);
@@ -513,6 +218,142 @@ describe("SelectionItem", () => {
       await userEvent.click(textNamed("Locked for twelve months."));
       expect(checkboxNamed("Fixed price").getAttribute("aria-checked")).toBe("true");
     });
+  });
+
+  it("does not toggle a disabled control on row click and shows the not-allowed cursor", () => {
+    renderThemed(
+      <Field.Root>
+        <SelectionItem.Shell dataSlot="checkbox-item" isDisabled control={<Checkbox.Root disabled />}>
+          <RowTitle>Fixed price</RowTitle>
+        </SelectionItem.Shell>
+      </Field.Root>
+    );
+
+    const box = checkboxNamed("Fixed price");
+    expect(box.getAttribute("aria-checked")).toBe("false");
+    expect(getComputedStyle(shellFrom("Fixed price")).cursor).toBe("not-allowed");
+
+    headingNamed("Fixed price").click();
+    expect(checkboxNamed("Fixed price", false).getAttribute("aria-checked")).toBe("false");
+  });
+
+  it("does not paint checked shell state from a checked selection row nested in SubSection", async () => {
+    /** Three unchecked rows; the middle one's SubSection holds a checked selection row. */
+    const Rows = ({ prefix }: { prefix: string }) => (
+      <CheckboxItemGroup label={`${prefix}Plans`}>
+        <CheckboxItem value="basic">
+          <RowTitle>{`${prefix}Basic`}</RowTitle>
+        </CheckboxItem>
+        <CheckboxItem value="bundle">
+          <RowTitle>{`${prefix}Bundle`}</RowTitle>
+          <CheckboxItem.SubSection>
+            <CheckboxItemGroup label={`${prefix}Bundle extras`} defaultValue={["router"]}>
+              <CheckboxItem value="router">
+                <RowTitle>{`${prefix}Router`}</RowTitle>
+              </CheckboxItem>
+            </CheckboxItemGroup>
+          </CheckboxItem.SubSection>
+        </CheckboxItem>
+        <CheckboxItem value="support">
+          <RowTitle>{`${prefix}Support`}</RowTitle>
+        </CheckboxItem>
+      </CheckboxItemGroup>
+    );
+    renderThemed(
+      <>
+        <Rows prefix="" />
+        <ThemeScope theme={fkasBranded}>
+          <Rows prefix="Branded " />
+        </ThemeScope>
+      </>
+    );
+
+    const shell = shellFrom("Bundle");
+    await settled(shell);
+    expect(checkboxNamed("Bundle").getAttribute("aria-checked")).toBe("false");
+    expect(checkboxNamed("Router").getAttribute("aria-checked")).toBe("true");
+    // Oracle sanity: a checked repaint would change each colour asserted below.
+    expect(cssVarColor(shell, "--primary")).not.toBe(cssVarColor(shell, "--border"));
+    expect(cssVarColor(shell, "--muted")).not.toBe(cssVarColor(shell, "--card"));
+    const style = getComputedStyle(shell);
+    expect(style.backgroundColor).toBe(cssVarColor(shell, "--card"));
+    expect(style.borderBottomColor).toBe(cssVarColor(shell, "--border"));
+    expect(style.marginTop).toBe("0px");
+    expect(style.borderTopWidth).toBe("0px");
+
+    const branded = shellFrom("Branded Bundle");
+    await settled(branded);
+    expect(checkboxNamed("Branded Bundle").getAttribute("aria-checked")).toBe("false");
+    expect(checkboxNamed("Branded Router").getAttribute("aria-checked")).toBe("true");
+    expect(cssVarColor(branded, "--muted")).not.toBe(cssVarColor(branded, "--card"));
+    expect(getComputedStyle(branded).backgroundColor).toBe(cssVarColor(branded, "--card"));
+    expect(getComputedStyle(branded).marginTop).toBe("0px");
+  });
+
+  it.each([
+    { item: "CheckboxItem", role: "checkbox", slot: "checkbox-item" },
+    { item: "RadioItem", role: "radio", slot: "radio-item" },
+  ] as const)(
+    "puts root attributes on a $item's row and keeps its own data-slot and list role",
+    async ({ role, slot }) => {
+      const rowProps = {
+        "data-testid": "plan-fixed",
+        id: "plan-fixed-row",
+        "data-analytics": "plan",
+        // The item's own slot names the row; a consumer's does not replace it.
+        "data-slot": "consumer-slot",
+        // An undefined prop leaves the card list's wiring in place.
+        role: undefined,
+      };
+      renderThemed(
+        role === "checkbox" ? (
+          <CheckboxItemGroup label="Plans">
+            <CheckboxItem value="fixed" {...rowProps}>
+              <RowTitle>Fixed price</RowTitle>
+            </CheckboxItem>
+          </CheckboxItemGroup>
+        ) : (
+          <RadioItemGroup label="Plans">
+            <RadioItem value="fixed" {...rowProps}>
+              <RowTitle>Fixed price</RowTitle>
+            </RadioItem>
+          </RadioItemGroup>
+        )
+      );
+
+      const row = page.getByTestId("plan-fixed");
+      expect(row.element()).toBe(shellFrom("Fixed price"));
+      expect(row.element().id).toBe("plan-fixed-row");
+      expect(row.element().getAttribute("data-analytics")).toBe("plan");
+      expect(row.element().getAttribute("data-slot")).toBe(slot);
+      expect(row.element().getAttribute("role")).toBe("listitem");
+      await userEvent.click(row.getByRole(role));
+      expect(roleNamed(role, "Fixed price").getAttribute("aria-checked")).toBe("true");
+    }
+  );
+
+  it("toggles from row text and isolates subsection clicks", async () => {
+    renderThemed(
+      <Field.Root>
+        <SelectionItem.Shell dataSlot="checkbox-item" control={<Checkbox.Root />}>
+          <SelectionItem.Content>
+            <RowTitle>Fixed price</RowTitle>
+          </SelectionItem.Content>
+          <SelectionItem.SubSection>
+            <button type="button">Details</button>
+          </SelectionItem.SubSection>
+        </SelectionItem.Shell>
+      </Field.Root>
+    );
+
+    const details = page.getByRole("button", { name: "Details", exact: true }).element();
+    expect(details.closest("label")).toBeNull();
+
+    await userEvent.click(headingNamed("Fixed price"));
+    expect(checkboxNamed("Fixed price", true).getAttribute("aria-checked")).toBe("true");
+
+    await userEvent.click(page.getByRole("button", { name: "Details", exact: true }));
+    expect(checkboxNamed("Fixed price", true).getAttribute("aria-checked")).toBe("true");
   });
 
   it("renders passed and direct sub-sections outside the label, passed first, without key collisions", () => {
@@ -605,3 +446,122 @@ describe("SelectionItem", () => {
     expect(subsectionHost(nestedSubsectionButton("Hidden details")).inert).toBe(false);
   });
 });
+
+describe("selection row type", () => {
+  // Alert's title and description follow density through the label text; alert.browser.test.tsx
+  // covers them.
+  it("leaves Item titles and descriptions at text-sm when comfortable", () => {
+    stampDensity("comfortable");
+    renderThemed(
+      <Item.Root>
+        <Item.Content>
+          <Item.Title>Item title</Item.Title>
+          <Item.Description>Item description</Item.Description>
+        </Item.Content>
+      </Item.Root>
+    );
+
+    for (const text of ["Item title", "Item description"]) {
+      expect(Number.parseFloat(getComputedStyle(textNamed(text)).fontSize), text).toBe(14);
+    }
+  });
+});
+
+describe("selection group names", () => {
+  it("gives every member control an accessible name in both the plain and card shapes", () => {
+    renderThemed(
+      <>
+        <CheckboxGroup label="Plain checks" description="Pick some" errorMessage="Check error">
+          <CheckboxItem value="a">Plain check</CheckboxItem>
+        </CheckboxGroup>
+        <CheckboxItemGroup label="Card checks" description="Pick some" errorMessage="Card check error">
+          <CheckboxItem value="a">
+            <RowTitle>Card check</RowTitle>
+          </CheckboxItem>
+        </CheckboxItemGroup>
+        <RadioGroup label="Plain radios" description="Pick one" errorMessage="Radio error">
+          <Radio value="a">Plain radio</Radio>
+        </RadioGroup>
+        <RadioItemGroup label="Card radios" description="Pick one" errorMessage="Card radio error">
+          <RadioItem value="a">
+            <RowTitle>Card radio</RowTitle>
+          </RadioItem>
+        </RadioItemGroup>
+      </>
+    );
+
+    // Every control is named, including inside cards: a nested Field.Root
+    // would leave these blank.
+    for (const name of ["Plain check", "Card check"]) {
+      expect(checkboxNamed(name)).toBeTruthy();
+    }
+    for (const name of ["Plain radio", "Card radio"]) {
+      expect(roleNamed("radio", name)).toBeTruthy();
+    }
+    // The groups keep their legend name, and each frame renders exactly one alert.
+    for (const name of ["Plain checks", "Card checks"]) {
+      expect(page.getByRole("group", { name, exact: true }).elements().length).toBeGreaterThan(0);
+    }
+    for (const name of ["Plain radios", "Card radios"]) {
+      expect(page.getByRole("radiogroup", { name, exact: true }).element()).toBeTruthy();
+    }
+    expect(
+      page
+        .getByRole("alert")
+        .elements()
+        .map((element) => element.textContent)
+    ).toEqual(["Check error", "Card check error", "Radio error", "Card radio error"]);
+  });
+});
+
+function subsectionHost(from: HTMLElement): HTMLElement {
+  const host = from.closest("[data-mode], [aria-hidden='true']");
+  if (!(host instanceof HTMLElement)) {
+    throw new Error("expected a subsection host");
+  }
+  return host;
+}
+
+function nestedSubsectionButton(label: string): HTMLElement {
+  const button = subsectionHost(textNamed(label)).querySelector("button");
+  if (!(button instanceof HTMLElement)) {
+    throw new Error(`expected a button inside the ${label} subsection`);
+  }
+  return button;
+}
+
+function SubSectionTree({ mode }: { mode: "hidden" | "visible" | "default" }) {
+  return (
+    <>
+      <button type="button">Before</button>
+      <Field.Root>
+        <SelectionItem.Shell dataSlot="checkbox-item" control={<span role="img" aria-label="Indicator" />}>
+          <RowTitle>Fixed price</RowTitle>
+          <SelectionItem.SubSection mode={mode}>
+            <button type="button">Hidden details</button>
+          </SelectionItem.SubSection>
+        </SelectionItem.Shell>
+      </Field.Root>
+      <button type="button">After</button>
+    </>
+  );
+}
+
+/**
+ * Click the shell at `x(width)` from the left of its padding box, where `width` is the
+ * padding box's width, and at viewport `y`. Playwright measures `position` from the
+ * padding box, inside the border.
+ */
+async function clickShellAt(shell: HTMLElement, x: (width: number) => number, y: number): Promise<void> {
+  const top = shell.getBoundingClientRect().top + shell.clientTop;
+  await userEvent.click(shell, { position: { x: x(shell.clientWidth), y: y - top } });
+}
+
+function PressCounter() {
+  const [presses, setPresses] = useState(0);
+  return (
+    <button type="button" onClick={() => setPresses((count) => count + 1)}>
+      {`Pressed ${presses} times`}
+    </button>
+  );
+}

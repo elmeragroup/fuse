@@ -9,6 +9,7 @@
       "inputs": [
         "$TURBO_DEFAULT$",
         "$TURBO_ROOT$/apps/docs/test/html.ts",
+        "$TURBO_ROOT$/apps/docs/test/page-wait-guard.ts",
         "$TURBO_ROOT$/apps/docs/test/suite-browser.ts",
         "$TURBO_ROOT$/apps/docs/test/tcp-port.ts"
       ]
@@ -19,6 +20,7 @@
       "inputs": [
         "$TURBO_DEFAULT$",
         "$TURBO_ROOT$/apps/docs/test/html.ts",
+        "$TURBO_ROOT$/apps/docs/test/page-wait-guard.ts",
         "$TURBO_ROOT$/apps/docs/test/suite-browser.ts",
         "$TURBO_ROOT$/apps/docs/test/tcp-port.ts"
       ]

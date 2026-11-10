@@ -1,6 +1,7 @@
 import type { ESTree, Rule } from "@oxlint/plugins";
 
-import { baseUiBindings, baseUiReference, jsxSegments, noteBaseUiImport } from "../base-ui-import.ts";
+import { nameChain } from "../ast-names.ts";
+import { baseUiBindings, baseUiReference, noteBaseUiImport } from "../base-ui-import.ts";
 
 /** Base UI `Menu` members that are still preview APIs. */
 const PREVIEW_MEMBERS: ReadonlySet<string> = new Set([
@@ -11,20 +12,6 @@ const PREVIEW_MEMBERS: ReadonlySet<string> = new Set([
   "Empty",
   "useFilter",
 ]);
-
-/** A member chain's identifiers, outermost first, or `undefined` past a computed or call step. */
-function chain(node: ESTree.Node): string[] | undefined {
-  if (node.type === "Identifier") return [node.name];
-  if (node.type === "MemberExpression" && !node.computed && node.property.type === "Identifier") {
-    const object = chain(node.object);
-    return object === undefined ? undefined : [...object, node.property.name];
-  }
-  if (node.type === "TSQualifiedName") {
-    const left = chain(node.left);
-    return left === undefined ? undefined : [...left, node.right.name];
-  }
-  return undefined;
-}
 
 /**
  * Base UI's preview `Menu` filtering members (`Menu.FilterProvider`, `Menu.Input`, `Menu.List`,
@@ -58,13 +45,13 @@ export const noBaseUiPreviewMenu: Rule = {
         noteBaseUiImport(declaration, bindings, "values-and-types");
       },
       MemberExpression(node) {
-        note(node, chain(node));
+        note(node, nameChain(node));
       },
       JSXMemberExpression(node) {
-        note(node, jsxSegments(node));
+        note(node, nameChain(node));
       },
       TSQualifiedName(node) {
-        note(node, chain(node));
+        note(node, nameChain(node));
       },
     };
   },

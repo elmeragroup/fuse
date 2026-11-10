@@ -1,14 +1,10 @@
 import type { Locator, Page } from "playwright";
 import { describe, expect, it } from "vitest";
 
-import {
-  launchSuiteBrowser,
-  PAGE_WAIT_GUARD,
-  readThemeAttributes,
-  waitForDocsShellHydration,
-} from "./demo-page";
+import { readThemeAttributes, waitForDocsShellHydration } from "./demo-page";
 import { docsBaseUrl } from "./docs-server";
 import { drawnFace } from "./drawn-face";
+import { launchSuiteBrowser } from "./suite-browser";
 
 const browser = launchSuiteBrowser();
 
@@ -62,7 +58,6 @@ async function expectFocused(locator: Locator): Promise<void> {
 describe("docs theme settings", () => {
   it("labels each group and changes previews while the menu keeps the document theme", async () => {
     const page = await browser().newPage({ colorScheme: "light" });
-    page.setDefaultTimeout(PAGE_WAIT_GUARD);
     const menu = await openSettings(page);
     for (const name of ["Appearance", "Identity", "Brand", "Segment"]) {
       expect(await menu.getByRole("group", { name, exact: true }).count()).toBe(1);
@@ -97,7 +92,6 @@ describe("docs theme settings", () => {
 
   it("coerces pinned brands, disables the unavailable segment, and resets only the preview", async () => {
     const page = await browser().newPage({ colorScheme: "light" });
-    page.setDefaultTimeout(PAGE_WAIT_GUARD);
     const menu = await openSettings(page);
     await choice(menu, "Dark").click();
     await choice(menu, "Branded").click();
@@ -126,7 +120,6 @@ describe("docs theme settings", () => {
 
   it("supports keyboard selection, Escape focus return, and outside dismissal", async () => {
     const page = await browser().newPage({ colorScheme: "light" });
-    page.setDefaultTimeout(PAGE_WAIT_GUARD);
     await page.goto(`${docsBaseUrl()}/components/button`, { waitUntil: "domcontentloaded" });
     await waitForDocsShellHydration(page);
     const trigger = page.getByRole("button", { name: "Theme settings", exact: true });
@@ -158,7 +151,6 @@ describe("docs theme settings", () => {
 
   it("persists appearance and keeps System selected as the device scheme changes", async () => {
     const page = await browser().newPage({ colorScheme: "light" });
-    page.setDefaultTimeout(PAGE_WAIT_GUARD);
     let menu = await openSettings(page);
     expect(await choice(menu, "System").getAttribute("aria-checked")).toBe("true");
     const lightPaint = await menu.evaluate((element) => getComputedStyle(element).backgroundColor);
@@ -184,7 +176,6 @@ describe("docs theme settings", () => {
 
   it("fits a narrow, short viewport and scrolls to the reset action with the keyboard", async () => {
     const page = await browser().newPage({ viewport: { width: 320, height: 480 }, colorScheme: "dark" });
-    page.setDefaultTimeout(PAGE_WAIT_GUARD);
     const menu = await openSettings(page);
     const box = await menu.boundingBox();
     expect(box).not.toBeNull();

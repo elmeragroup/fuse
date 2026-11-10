@@ -32,7 +32,7 @@ function drawBones(layer: HTMLElement, bones: readonly Bone[]): void {
       span = existing;
     } else {
       span = layer.ownerDocument.createElement("span");
-      // Written as a `slot:` property with a string literal, which the written-slots scanner reads.
+      // Written as a `slot:` property with a string literal, which the `writtenSlots` scanner reads.
       Object.assign(span.dataset, { slot: "skeleton-reveal-bone" });
       // Each bone is a Skeleton: the pulse and the `muted` surface, its corner set inline.
       span.className = cn(skeletonClass, "absolute");

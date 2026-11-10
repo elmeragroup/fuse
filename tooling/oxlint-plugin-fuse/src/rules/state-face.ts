@@ -1,8 +1,9 @@
 import type { ESTree, Rule } from "@oxlint/plugins";
 
+import { propertyKeyName } from "../ast-names.ts";
 import { classesOf, parseClass } from "../class-token.ts";
 import { isTestFile } from "../source-file.ts";
-import { staticText, stringLiteral } from "../static-text.ts";
+import { staticText } from "../static-text.ts";
 
 /** A dim: the utilities the state face uses to show a control is disabled. */
 const DIM = /^(?:opacity-\d+|pointer-events-none)$/u;
@@ -33,23 +34,16 @@ function isUngatedPointerFace(token: string): boolean {
   return utility.length > 0 && (variants.includes("hover") || variants.includes("active"));
 }
 
-/** The name an identifier or a non-computed member read ends in, such as `isDisabled`. */
+/**
+ * The last name a condition reads: `isDisabled` for `this.isDisabled` or `field.state().disabled`,
+ * whatever the object before it is.
+ */
 function trailingName(node: ESTree.Node): string | undefined {
   if (node.type === "Identifier") return node.name;
   if (node.type === "MemberExpression" && !node.computed && node.property.type === "Identifier") {
     return node.property.name;
   }
   return undefined;
-}
-
-/** A property key's name, for `isDisabled: { … }` or `"disabled": { … }`. */
-function keyName(property: {
-  readonly key: ESTree.PropertyKey;
-  readonly computed: boolean;
-}): string | undefined {
-  const key = property.key;
-  if (key.type === "Identifier") return key.name;
-  return stringLiteral(key);
 }
 
 /**
@@ -61,7 +55,7 @@ function underDisabledState(node: ESTree.Node): boolean {
   let child: ESTree.Node = node;
   for (let parent = node.parent; parent !== null; child = parent, parent = parent.parent) {
     if (parent.type === "Property" && parent.value === child) {
-      const name = keyName(parent);
+      const name = propertyKeyName(parent);
       if (name === "isDisabled" || name === "disabled") return true;
     }
     if (parent.type === "LogicalExpression" && parent.operator === "&&" && parent.right === child) {

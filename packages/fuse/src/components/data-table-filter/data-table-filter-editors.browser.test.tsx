@@ -12,6 +12,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
+import { useFakeTimeouts } from "../../../test/animation-frames";
 import {
   captureActions,
   columnFilters,
@@ -37,10 +38,7 @@ describe("DataTableFilter draft ownership", () => {
   // The typing pause cannot fire unless a test advances the clock, so every write below comes from
   // the exit or the press under test. Animations run on frames, which stay real.
   beforeEach(() => {
-    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
-  });
-  afterEach(() => {
-    vi.useRealTimers();
+    useFakeTimeouts();
   });
 
   const { Capture, act } = captureActions();

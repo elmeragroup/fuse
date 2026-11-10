@@ -1,9 +1,9 @@
-import { describe, expect, it } from "vitest";
+import { describe, it } from "vitest";
 
 import "../../dist/styles.css";
 import "../../dist/themes.css";
 import { withLocale } from "../../test/locale-matrix";
-import { atHostRoots, expectTargets } from "../../test/target-size";
+import { atHostRoots, expectTargetBoxes, expectTargets } from "../../test/target-size";
 import { renderThemed, roleNamed, stampDensity } from "../../test/themed-browser-render";
 import { Button } from "../components/button/button";
 import { Combobox } from "../components/combobox";
@@ -88,12 +88,7 @@ describe("the 24px target floor", () => {
     atHostRoots([16, 14], (root) => {
       for (const density of DENSITIES) {
         stampDensity(density);
-        for (const target of targets) {
-          const { width, height } = target.getBoundingClientRect();
-          const label = `${density} ${String(root)}px ${target.getAttribute("aria-label") ?? ""}`;
-          expect(width, label).toBeGreaterThanOrEqual(24);
-          expect(height, label).toBeGreaterThanOrEqual(24);
-        }
+        expectTargetBoxes(targets, `${density} ${String(root)}px`);
       }
     });
   });

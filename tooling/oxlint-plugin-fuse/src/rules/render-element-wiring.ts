@@ -1,6 +1,6 @@
 import type { Rule } from "@oxlint/plugins";
 
-import { jsxName } from "../jsx-name.ts";
+import { nameChain } from "../ast-names.ts";
 import { isTestFile } from "../source-file.ts";
 
 /** Attributes that carry state or wiring a part owns. */
@@ -32,13 +32,14 @@ export const renderElementWiring: Rule = {
         const value = attribute.value;
         if (value?.type !== "JSXExpressionContainer" || value.expression.type !== "JSXElement") return;
         const owner = attribute.parent;
-        const part = owner.type === "JSXOpeningElement" ? jsxName(owner.name) : "the part";
+        if (owner.type !== "JSXOpeningElement") return;
+        const part = nameChain(owner.name).join(".");
         for (const item of value.expression.openingElement.attributes) {
           if (item.type === "JSXSpreadAttribute") {
             context.report({ node: item, messageId: "spread", data: { part } });
             continue;
           }
-          const name = jsxName(item.name);
+          const name = nameChain(item.name).join(".");
           if (STATE_OR_WIRING.test(name)) {
             context.report({ node: item, messageId: "attribute", data: { part, attribute: name } });
           }

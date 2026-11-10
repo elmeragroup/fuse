@@ -26,17 +26,6 @@ async function faceFamilies(page: Page, variable: FaceVariable): Promise<string>
 }
 
 /**
- * The first family of a computed `font-family`, without quotes, such as the family `next/font`
- * generated for a face.
- *
- * @param families - A computed family list.
- * @returns Its first family, or `""` for an empty list.
- */
-export function firstFamily(families: string): string {
-  return (families.split(",")[0] ?? "").trim().replaceAll(/^["']|["']$/gu, "");
-}
-
-/**
  * The face variable an element draws its text in: the one whose computed families start the
  * element's computed `font-family`, or the element's `font-family` itself when none does, so a
  * failing assertion shows what the element draws.

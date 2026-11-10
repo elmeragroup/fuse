@@ -3,13 +3,10 @@ import { readFileSync, statSync } from "node:fs";
 import { isAbsolute, join } from "node:path";
 import { parseSync } from "oxc-parser";
 
-import { ruleOptions } from "../rule-options.ts";
+import { propertyKeyName } from "../ast-names.ts";
+import { jsxAttributeSlot, propertySlot } from "../data-slot.ts";
+import { requiredOptions } from "../rule-options.ts";
 import { isTestFile } from "../source-file.ts";
-import { stringLiteral } from "../static-text.ts";
-
-/** The props and state keys a part's `data-slot` is written through. */
-const SLOT_JSX_ATTRIBUTES: ReadonlySet<string> = new Set(["data-slot", "dataSlot"]);
-const SLOT_OBJECT_KEYS: ReadonlySet<string> = new Set(["data-slot", "dataSlot", "slot"]);
 
 /** The name of the role table the roles module exports. */
 const TABLE = "PART_DENSITY";
@@ -49,8 +46,7 @@ function declaredSlots(file: string): ReadonlySet<string> | Error {
       if (init.type !== "ObjectExpression") continue;
       for (const property of init.properties) {
         if (property.type !== "Property") continue;
-        const key = property.key;
-        const name = key.type === "Identifier" ? key.name : stringLiteral(key);
+        const name = propertyKeyName(property);
         const slot = name === undefined ? undefined : /^[a-z0-9-]+/u.exec(name)?.[0];
         if (slot !== undefined) slots.add(slot);
       }
@@ -63,11 +59,6 @@ function declaredSlots(file: string): ReadonlySet<string> | Error {
 
 /** The roles module, relative to the linter's working directory or absolute. */
 type DeclaredDensityRoleOptions = { readonly roles: string };
-
-/** The string literal an attribute value or property value holds, bare or in braces. */
-function literalString(node: ESTree.Node | null): string | undefined {
-  return stringLiteral(node?.type === "JSXExpressionContainer" ? node.expression : node);
-}
 
 /**
  * Every `data-slot` a library module writes, as a `data-slot` or `dataSlot` JSX attribute or a
@@ -94,8 +85,7 @@ export const declaredDensityRole: Rule = {
   },
   create(context) {
     if (isTestFile(context.filename)) return {};
-    const roles = ruleOptions<DeclaredDensityRoleOptions>(context)?.roles;
-    if (roles === undefined) return {};
+    const { roles } = requiredOptions<DeclaredDensityRoleOptions>(context);
     const rolesFile = isAbsolute(roles) ? roles : join(context.cwd, roles);
     const check = (node: ESTree.Node, slot: string | undefined): void => {
       if (slot === undefined) return;
@@ -108,15 +98,10 @@ export const declaredDensityRole: Rule = {
     };
     return {
       JSXAttribute(attribute) {
-        if (attribute.name.type === "JSXIdentifier" && SLOT_JSX_ATTRIBUTES.has(attribute.name.name)) {
-          check(attribute, literalString(attribute.value));
-        }
+        check(attribute, jsxAttributeSlot(attribute));
       },
       Property(property) {
-        if (property.computed) return;
-        const key = property.key;
-        const name = key.type === "Identifier" ? key.name : stringLiteral(key);
-        if (name !== undefined && SLOT_OBJECT_KEYS.has(name)) check(property, literalString(property.value));
+        check(property, propertySlot(property));
       },
     };
   },

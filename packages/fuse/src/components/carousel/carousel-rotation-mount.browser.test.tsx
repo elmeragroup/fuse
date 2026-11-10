@@ -15,7 +15,7 @@ import { beforeEach, describe, expect, it, onTestFinished, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
-import { nextFrames, pollFrames } from "../../../test/animation-frames";
+import { nextFrames, pollFrames, useFakeTimeouts } from "../../../test/animation-frames";
 import { carouselSlides, serverRendered } from "../../../test/carousel-fixtures";
 import { carouselViewport, currentIndicator } from "../../../test/carousel-queries";
 import { withLocale } from "../../../test/locale-matrix";
@@ -29,10 +29,7 @@ const DELAY = 200;
 
 // The page's timeouts are fake, so rotation turns a page only when a test moves the clock.
 beforeEach(() => {
-  vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
-  onTestFinished(() => {
-    vi.useRealTimers();
-  });
+  useFakeTimeouts();
 });
 
 /** Moves the clock past several delays and lets the page render whatever they turned. */

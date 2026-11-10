@@ -1,7 +1,13 @@
 import { ruleTester } from "../rule-tester.ts";
 import { ownedClassTokens } from "./owned-class-tokens.ts";
 
-const options = [{ owner: "overlay-classes.ts", spellings: ["z-50", "bg-popover text-popover-foreground"] }];
+const options = [
+  {
+    owner: "overlay-classes.ts",
+    spellings: ["z-50", "bg-popover text-popover-foreground"],
+    superseded: [{ spelling: "-mx-1 my-1 h-px bg-border", replacement: "menuSeparatorClass" }],
+  },
+];
 
 ruleTester.run("owned-class-tokens", ownedClassTokens, {
   valid: [
@@ -18,5 +24,6 @@ ruleTester.run("owned-class-tokens", ownedClassTokens, {
       errors: [{ messageId: "copy" }],
     },
     { code: "const layer = `fixed z-50 ${inset}`;", options, errors: [{ messageId: "copy" }] },
+    { code: 'const rule = "-mx-1 my-1 h-px bg-border";', options, errors: [{ messageId: "superseded" }] },
   ],
 });

@@ -2,19 +2,19 @@
  * The DOM readers the pie browser suites share. Slices, the centre and the labels are aria-hidden
  * plot output, so their slots are the only locators.
  */
-import { cdp, page, server } from "vitest/browser";
+import { page } from "vitest/browser";
 
 import { nextFrames } from "../animation-frames";
 
 /** The pie's drawn slices, in sweep order. */
 export function sectors(host: HTMLElement): SVGPathElement[] {
-  // DOM audit: slices are aria-hidden plot output, so their slot is the only locator.
+  // Slices are aria-hidden plot output, so their slot is the only locator.
   return [...host.querySelectorAll<SVGPathElement>('[data-slot="pie-chart-sector"]')];
 }
 
 /** The figure a polar Root renders. */
 export function polarFigure(host: HTMLElement): HTMLElement {
-  // DOM audit: every polar Root marks its figure with data-polar.
+  // Every polar Root marks its figure with data-polar.
   const figure = host.querySelector<HTMLElement>("[data-polar]");
   if (figure === null) throw new Error("no polar figure");
   return figure;
@@ -35,7 +35,7 @@ export function activeSlice(host: HTMLElement): number | null {
  * @returns The shown text, empty for an empty part.
  */
 export function centreText(host: HTMLElement, part: string): string {
-  // DOM audit: the centre is aria-hidden plot output, read by its slot.
+  // The centre is aria-hidden plot output, read by its slot.
   const element = host.querySelector(`[data-slot="${part}"]`);
   if (element === null) throw new Error(`no ${part}`);
   const digits = element.querySelector('[data-part="digits"]');
@@ -64,36 +64,14 @@ export function clientPoint(svg: SVGSVGElement, x: number, y: number): readonly 
 
 /** The pie's SVG, the layer that holds its slices. */
 export function pieSvg(host: HTMLElement): SVGSVGElement {
-  // DOM audit: the pie layer is aria-hidden plot output.
+  // The pie layer is aria-hidden plot output.
   const svg = host.querySelector<SVGSVGElement>('[data-slot="pie-chart-pie"]');
   if (svg === null) throw new Error("no pie");
   return svg;
 }
 
-/** The one CDP call {@link parkRealPointer} makes. */
-type MouseCdp = {
-  readonly send: (
-    method: "Input.dispatchMouseEvent",
-    params: { readonly type: "mouseMoved"; readonly x: number; readonly y: number }
-  ) => Promise<void>;
-};
-
-/**
- * Park the browser's real mouse at the page's top-left corner. A suite that drives the plot with
- * {@link moveAt} leaves the real mouse alone, so it stays wherever an earlier file in the same page
- * left it, and a popup that opens under it and moves away takes a real `pointerleave`, which ends
- * the hover. No popup reaches the corner: it keeps `TOOLTIP_EDGE` from the viewport's edges.
- * Chromium only, where the CDP session serves `Input`.
- */
-export async function parkRealPointer(): Promise<void> {
-  if (server.browser !== "chromium") return;
-  // SAFETY: Vitest types its CDP session as {}; Playwright's session implements send.
-  const session = cdp() as MouseCdp;
-  await session.send("Input.dispatchMouseEvent", { type: "mouseMoved", x: 0, y: 0 });
-}
-
 /** Dispatch a mouse pointer move onto the listbox at a client point, at once. */
-export function moveAt(x: number, y: number): void {
+function moveAt(x: number, y: number): void {
   page
     .getByRole("listbox")
     .element()
@@ -108,34 +86,15 @@ export async function hoverAt(x: number, y: number): Promise<void> {
   await nextFrames(1);
 }
 
-/**
- * The outer arc's start and end angles of a slice path that d3's arc wrote with no pad and no
- * corner, in degrees from 12 o'clock, clockwise, or null for a path that draws nothing.
- *
- * @param d - The path data.
- * @returns The start and the end, the end unwrapped to lie after the start.
- */
-export function outerArc(d: string): readonly [number, number] | null {
-  const numbers = (d.match(/-?\d*\.?\d+(?:e-?\d+)?/gu) ?? []).map(Number);
-  // M x0,y0 A r,r,rotation,large,sweep,x1,y1: the arc's start, then its end.
-  const [x0, y0, , , , large, , x1, y1] = numbers;
-  if (x0 === undefined || y0 === undefined || x1 === undefined || y1 === undefined) return null;
-  const angle = (x: number, y: number) => ((((Math.atan2(x, -y) * 180) / Math.PI) % 360) + 360) % 360;
-  const start = angle(x0, y0);
-  let end = angle(x1, y1);
-  if (end < start || (end === start && large === 1)) end += 360;
-  return [start, end];
-}
-
 /** A radial chart's value rings, first outermost. */
 export function rings(host: HTMLElement): SVGPathElement[] {
-  // DOM audit: rings are aria-hidden plot output, so their slot is the only locator.
+  // Rings are aria-hidden plot output, so their slot is the only locator.
   return [...host.querySelectorAll<SVGPathElement>('[data-slot="radial-chart-ring"]:not([data-part])')];
 }
 
 /** The radial chart's SVG, the layer that holds its rings. */
 export function radialSvg(host: HTMLElement): SVGSVGElement {
-  // DOM audit: the ring layer is aria-hidden plot output.
+  // The ring layer is aria-hidden plot output.
   const svg = host.querySelector<SVGSVGElement>('[data-slot="radial-chart-bar"]');
   if (svg === null) throw new Error("no rings");
   return svg;

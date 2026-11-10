@@ -1,17 +1,7 @@
-import type { ThemeInput } from "../src/theme/theme-input";
-import { fkasBranded, fkasPrivate, guenBranded, tkasCompany } from "./theme-fixtures";
 import { px } from "./themed-browser-render";
 
 /** The four themes the inner-corner suites measure. */
 type CornerCase = "neutral" | "fkas" | "tkas" | "guen";
-
-/** Each case names the theme under test and a document theme with different radii. */
-export const CASES: readonly (readonly [CornerCase, ThemeInput, ThemeInput])[] = [
-  ["neutral", fkasPrivate, tkasCompany],
-  ["fkas", fkasBranded, fkasPrivate],
-  ["tkas", tkasCompany, fkasPrivate],
-  ["guen", guenBranded, tkasCompany],
-];
 
 /**
  * Each theme's `--radius` in px, the corner of an inner part outside any shell: 0.5rem

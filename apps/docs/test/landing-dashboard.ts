@@ -4,7 +4,6 @@
  * one suite asserts.
  */
 import type { Locator, Page } from "playwright";
-import { expect } from "vitest";
 
 /** A phone's viewport, where the sidebar and the detail open as Sheets. */
 export const PHONE_VIEWPORT = { width: 390, height: 844 } as const;
@@ -65,18 +64,6 @@ export async function shownSide(page: Page): Promise<"Neutral" | "Branded" | "mi
   return "mismatch";
 }
 
-/**
- * Picks `brand` in the landing's brand picker, the same action as any other brand control, and
- * waits for the document to wear it.
- */
-export async function pickBrand(page: Page, brand: string): Promise<void> {
-  await page
-    .getByRole("button")
-    .filter({ hasText: `data-theme-brand="${brand}"` })
-    .click();
-  await expect.poll(async () => page.locator("html").getAttribute("data-theme-brand")).toBe(brand);
-}
-
 /** The row button for `customer`; its accessible name starts with the order's customer. */
 export function row(scope: Locator, customer: string): Locator {
   return scope
@@ -92,15 +79,4 @@ export async function focusedCustomer(page: Page): Promise<string | null> {
 /** Order search's table, named like the queues' list. */
 export function searchTable(app: Locator): Locator {
   return app.getByRole("table", { name: "Orders" });
-}
-
-/**
- * Opens New order from the window's sidebar and waits for its Sheet and the form, whose code can
- * arrive after the Sheet has opened.
- */
-export async function openNewOrder(app: Locator): Promise<Locator> {
-  await app.getByRole("button", { name: /^New order/u }).click();
-  const sheet = app.page().getByRole("dialog", { name: "New order" });
-  await sheet.getByRole("form", { name: "New order" }).waitFor();
-  return sheet;
 }

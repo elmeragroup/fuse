@@ -1,15 +1,14 @@
 import { describe, expect, it } from "vitest";
 
-import { classTokens, splitVariants } from "../../../test/class-tokens";
 import { buttonVariants } from "../button/button-variants";
 import { dataTableFilterSlots } from "./data-table-filter-variants";
 
-/** The fill classes a class string applies at rest, with no variant before them. */
+/**
+ * The fill classes a class string applies at rest. A class with a variant, such as `hover:bg-…`,
+ * starts with the variant, so starting with `bg-` means no variant comes before it.
+ */
 function restFills(classes: string): string[] {
-  return classTokens(classes).filter((token) => {
-    const { variants, utility } = splitVariants(token);
-    return variants.length === 0 && utility.startsWith("bg-");
-  });
+  return classes.split(/\s+/u).filter((token) => token.startsWith("bg-"));
 }
 
 describe("dataTableFilterVariants", () => {

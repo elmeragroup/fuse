@@ -161,7 +161,7 @@ export function ComboboxClear({
   return (
     <ComboboxPrimitive.Clear
       data-slot="combobox-clear"
-      // oxlint-disable-next-line fuse/render-element-wiring -- an icon-size Button requires its own aria-label, and Clear has no label prop to carry it
+      // oxlint-disable-next-line fuse/render-element-wiring -- the render element repeats the part's own name: an icon-size Button requires an aria-label of its own, and Clear sets none it could override
       render={<InputGroupButton variant="ghost" size="icon-sm" aria-label={accessibleName} />}
       aria-label={accessibleName}
       className={mergeClassName(className)}
@@ -524,7 +524,7 @@ function ComboboxChipRemove({ label }: { label: string }): ReactElement {
         <Button
           variant="ghost"
           size="icon-inline"
-          // oxlint-disable-next-line fuse/render-element-wiring -- an icon-size Button requires its own aria-label, and ChipRemove has no label prop to carry it
+          // oxlint-disable-next-line fuse/render-element-wiring -- this is the part's own name, not wiring: an icon-size Button requires an aria-label of its own, and ChipRemove sets none it could override
           aria-label={label}
           // The remove button sits inside a chip in the field box, so it rounds inside the
           // chip's corner instead of with Button's `--radius-button`. The inline square is as tall as the

@@ -1,7 +1,7 @@
 /**
  * Runs the step entrypoints as the workflow runs them: as Node processes in a git checkout, with
- * the step's environment, against local stand-ins for GitHub's and Slack's HTTP APIs listening on
- * real sockets. Every resource is scoped: temporary directories, servers and processes end with
+ * the step's environment, against a local stand-in for Slack's HTTP API listening on a real
+ * socket. Every resource is scoped: temporary directories, servers and processes end with
  * the test that made them.
  */
 
@@ -305,86 +305,6 @@ function stalled(): HttpServerResponse.HttpServerResponse {
     contentType: "application/json",
   });
 }
-
-/** A request GitHub's stand-in received. */
-type GitHubRequest = {
-  readonly tag: string;
-  readonly authorization: string | undefined;
-  readonly userAgent: string | undefined;
-};
-
-/** A GitHub answer other than the release or 404. */
-export type GitHubFailure =
-  | { readonly _tag: "Status"; readonly status: number; readonly headers?: Readonly<Record<string, string>> }
-  | { readonly _tag: "Stall" };
-
-/**
- * GitHub's release-by-tag endpoint for elmeragroup/fuse: published releases answer with their
- * JSON and anything else with 404, as drafts and missing tags do. `failures` holds, per tag, the
- * answers its first requests get instead, in order. A request that comes before the wait such an
- * answer asked for is answered 429 again and counted in `early`, as GitHub would rate limit it.
- * A request without a User-Agent is answered 403, as GitHub's administrative rules answer it.
- *
- * @param published - The published releases, by tag.
- * @param failures - The answers to give instead, by tag.
- * @param base - The API's path on the server: empty as on github.com, `/api/v3` as on GHES.
- * @returns The API's URL and the requests it received.
- */
-export const fakeGitHub = (
-  published: ReadonlyMap<string, unknown>,
-  failures: ReadonlyMap<string, readonly GitHubFailure[]> = new Map(),
-  base: "" | `/${string}` = ""
-) =>
-  Effect.gen(function* () {
-    const requests: GitHubRequest[] = [];
-    const early: number[] = [];
-    const pending = new Map([...failures].map(([tag, answers]) => [tag, [...answers]]));
-    let notBefore = 0;
-    const route = HttpRouter.add("GET", `${base}/repos/elmeragroup/fuse/releases/tags/:tag`, (request) =>
-      Effect.gen(function* () {
-        const { tag = "" } = yield* HttpRouter.params;
-        const userAgent = request.headers["user-agent"];
-        requests.push({ tag, authorization: request.headers.authorization, userAgent });
-        if (userAgent === undefined || userAgent === "") {
-          return HttpServerResponse.jsonUnsafe(
-            {
-              message:
-                "Request forbidden by administrative rules. Please make sure your request has a User-Agent header",
-            },
-            { status: 403 }
-          );
-        }
-        const now = yield* Clock.currentTimeMillis;
-        if (now < notBefore) {
-          // A read before the wait GitHub asked for meets the rate limit again.
-          early.push(notBefore - now);
-          return HttpServerResponse.jsonUnsafe(
-            { message: "API rate limit exceeded" },
-            { status: 429, headers: { "retry-after": String(Math.ceil((notBefore - now) / 1000)) } }
-          );
-        }
-        const failure = pending.get(tag)?.shift();
-        if (failure !== undefined) {
-          if (failure._tag === "Stall") return stalled();
-          const headers = failure.headers ?? {};
-          const retryAfter = Number(headers["retry-after"] ?? "0");
-          const reset =
-            headers["x-ratelimit-remaining"] === "0" ? Number(headers["x-ratelimit-reset"] ?? "0") * 1000 : 0;
-          notBefore = Math.max(now + retryAfter * 1000, reset);
-          return HttpServerResponse.jsonUnsafe(
-            { message: "Server Error" },
-            { status: failure.status, headers }
-          );
-        }
-        const release = published.get(tag);
-        return release === undefined
-          ? HttpServerResponse.jsonUnsafe({ message: "Not Found" }, { status: 404 })
-          : HttpServerResponse.jsonUnsafe(release);
-      })
-    );
-    const url = `${yield* serve(route)}${base}`;
-    return { url, requests, early };
-  });
 
 /** A message Slack's stand-in holds. */
 export type HeldMessage = {

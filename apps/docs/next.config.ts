@@ -6,28 +6,28 @@ import { fileURLToPath } from "node:url";
 const workspaceRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), "../..");
 
 /**
- * The e2e suite's build, `docs#build:e2e`, sets this to expose Next's Instant Navigation testing
- * API, which `@next/playwright`'s `instant()` drives. Only that task declares it, so strict env
- * mode keeps it out of `docs#build`, the task the container image runs.
+ * The e2e suite's build, `docs#build:e2e`, sets this to build into its own directory without the
+ * standalone bundle. Only that task declares it, so strict env mode keeps it out of `docs#build`,
+ * the task the container image runs.
  */
-const testingApi = process.env.DOCS_TESTING_API === "1";
+const e2eBuild = process.env.DOCS_E2E_BUILD === "1";
 
 const nextConfig: NextConfig = {
   /**
    * `pnpm shots` serves this checkout with `next dev` beside `docs#test:e2e`, so Next, which has no
    * CLI flag or environment variable of its own for the output directory, reads one here. The
-   * testing build writes to `.cache/next-e2e`, so `.next` stays the build the container ships and
-   * the unit suite reads; `next start` with `DOCS_TESTING_API=1` serves the testing build.
+   * e2e build writes to `.cache/next-e2e`, so `.next` stays the build the container ships and
+   * the unit suite reads; `next start` with `DOCS_E2E_BUILD=1` serves the e2e build.
    */
   // oxlint-disable-next-line turbo/no-undeclared-env-vars -- only `pnpm shots` sets it, outside turbo; strict env mode keeps it out of turbo builds
-  distDir: process.env.DOCS_DIST_DIR ?? (testingApi ? ".cache/next-e2e" : ".next"),
+  distDir: process.env.DOCS_DIST_DIR ?? (e2eBuild ? ".cache/next-e2e" : ".next"),
   /**
    * The container image runs `node apps/docs/server.js` from `.next/standalone` (see
    * `Dockerfile`). Tracing from the workspace root keeps the linked workspace packages in
-   * that bundle instead of leaving them behind as pnpm symlinks. The testing build skips the
+   * that bundle instead of leaving them behind as pnpm symlinks. The e2e build skips the
    * bundle: `next start` serves it from its output directory, and nothing reads its standalone copy.
    */
-  output: testingApi ? undefined : "standalone",
+  output: e2eBuild ? undefined : "standalone",
   outputFileTracingRoot: workspaceRoot,
   /**
    * The OG image routes read Roboto and the Elmera mark with `fs` at request time
@@ -101,11 +101,6 @@ const nextConfig: NextConfig = {
     turbopackGc: true,
     /** `next dev` compiles a client `import()` only when the browser first asks for its chunk. */
     turbopackLazyDynamicImports: true,
-    /**
-     * Adds a cookie-guarded bootstrap script to every page and the navigation lock to the client
-     * bundle. It never ships: see `testingApi`.
-     */
-    exposeTestingApiInProductionBuild: testingApi,
   },
 };
 

@@ -6,25 +6,27 @@
 import { useState } from "react";
 import type { ReactElement } from "react";
 
-import { beforeEach, describe, expect, it, onTestFinished, vi } from "vitest";
-import { page, userEvent } from "vitest/browser";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
-import { nextFrames, pollFrames } from "../../../test/animation-frames";
-import { carouselViewport, currentIndicator, settledOn } from "../../../test/carousel-queries";
+import { nextFrames, pollFrames, useFakeTimeouts } from "../../../test/animation-frames";
+import { carouselSlides } from "../../../test/carousel-fixtures";
+import {
+  carouselIndicators,
+  carouselViewport,
+  currentIndicator,
+  settledOn,
+} from "../../../test/carousel-queries";
 import { withLocale } from "../../../test/locale-matrix";
 import { renderThemed, roleNamed } from "../../../test/themed-browser-render";
 import type { CarouselIndexChangeReason } from "./carousel-context";
-import type { CarouselOrientation } from "./carousel-engine";
 import { Carousel } from "./index";
 
 // The page's timeouts are fake: a check that nothing more is reported fires every pending settle
 // timer at once, so it reads the final state without waiting on the clock.
 beforeEach(() => {
-  vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
-  onTestFinished(() => {
-    vi.useRealTimers();
-  });
+  useFakeTimeouts();
 });
 
 /** Runs every timer the carousel left pending and lets the page render what they did. */
@@ -37,24 +39,17 @@ async function afterPendingTimers(): Promise<void> {
 const LENGTH = 200;
 
 function Fixture({
-  orientation = "horizontal",
   dir = "ltr",
   defaultIndex = 0,
 }: {
-  readonly orientation?: CarouselOrientation;
   readonly dir?: "ltr" | "rtl";
   readonly defaultIndex?: number;
 }): ReactElement {
-  const vertical = orientation === "vertical";
   return withLocale(
     "en-US",
     <div dir={dir}>
-      <Carousel.Root
-        aria-label="Offers"
-        orientation={orientation}
-        style={{ width: LENGTH }}
-        defaultIndex={defaultIndex}>
-        <Carousel.Viewport style={vertical ? { height: LENGTH } : undefined}>
+      <Carousel.Root aria-label="Offers" style={{ width: LENGTH }} defaultIndex={defaultIndex}>
+        <Carousel.Viewport>
           {[1, 2, 3, 4].map((slide) => (
             <Carousel.Slide key={slide}>
               <div style={{ height: LENGTH }}>Slide body {slide}</div>
@@ -99,7 +94,7 @@ describe("Carousel direction change away from the first page", () => {
     // Page 3 stays selected and in view, at its place in the new direction.
     await pollFrames(logical(to === "rtl"), 2 * LENGTH, 180);
     expect(currentIndicator()).toBe(2);
-    expect(page.getByRole("group", { name: "Choose slide to display" }).element().children).toHaveLength(4);
+    expect(carouselIndicators()).toHaveLength(4);
     await pollFrames(inert, [true, true, false, true]);
 
     await userEvent.click(roleNamed("button", "Previous slide"));
@@ -170,13 +165,7 @@ describe("Carousel presses in quick succession", () => {
           aria-label="Offers"
           style={{ width: LENGTH }}
           onIndexChange={(index, { reason }) => changes.push([index, reason])}>
-          <Carousel.Viewport>
-            {[1, 2, 3, 4, 5, 6].map((offer) => (
-              <Carousel.Slide key={offer}>
-                <div style={{ height: 80 }}>Offer {offer}</div>
-              </Carousel.Slide>
-            ))}
-          </Carousel.Viewport>
+          <Carousel.Viewport>{carouselSlides(6, 1)}</Carousel.Viewport>
           <Carousel.Controls>
             <Carousel.Indicators />
           </Carousel.Controls>

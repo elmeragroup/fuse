@@ -1,4 +1,4 @@
-import type { Rule } from "@oxlint/plugins";
+import type { ESTree, Rule } from "@oxlint/plugins";
 
 import { isTestFile } from "../source-file.ts";
 import { staticText } from "../static-text.ts";
@@ -22,14 +22,9 @@ export const noColorLiteral: Rule = {
   },
   create(context) {
     if (isTestFile(context.filename)) return {};
-    return {
-      Literal(node) {
-        const text = staticText(node);
-        if (text !== undefined && COLOR_LITERAL.test(text)) context.report({ node, messageId: "literal" });
-      },
-      TemplateElement(node) {
-        if (COLOR_LITERAL.test(staticText(node) ?? "")) context.report({ node, messageId: "literal" });
-      },
+    const check = (node: ESTree.Node): void => {
+      if (COLOR_LITERAL.test(staticText(node) ?? "")) context.report({ node, messageId: "literal" });
     };
+    return { Literal: check, TemplateElement: check };
   },
 };

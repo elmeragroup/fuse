@@ -33,6 +33,7 @@ ruleTester.run("state-face", stateFace, {
       code: 'const classes = isDisabled ? "pointer-events-none" : "cursor-pointer";',
       errors: [{ messageId: "dim" }],
     },
+    { code: 'const classes = cn(this.isDisabled && "opacity-50");', errors: [{ messageId: "dim" }] },
     { code: 'const face = "hover:bg-muted";', errors: [{ messageId: "pointer" }] },
     { code: 'const face = "active:scale-[0.96] data-open:hover:bg-muted";', errors: 2 },
     { code: 'const face = "*:[a]:hover:x";', errors: [{ messageId: "pointer" }] },

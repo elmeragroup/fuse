@@ -66,20 +66,3 @@ export function baseUiReference(
   }
   return undefined;
 }
-
-/**
- * A JSX element name's identifiers, outermost first, such as `["Base", "Dialog", "Root"]`.
- *
- * @param name - The element name.
- * @returns The segments, or `undefined` for a namespaced name such as `svg:path`.
- */
-export function jsxSegments(
-  name: ESTree.JSXElementName | ESTree.JSXMemberExpressionObject
-): string[] | undefined {
-  if (name.type === "JSXIdentifier") return [name.name];
-  if (name.type === "JSXMemberExpression") {
-    const object = jsxSegments(name.object);
-    return object === undefined ? undefined : [...object, name.property.name];
-  }
-  return undefined;
-}

@@ -1,6 +1,7 @@
 import type { ESTree, Rule } from "@oxlint/plugins";
 
-import { baseUiBindings, baseUiReference, jsxSegments, noteBaseUiImport } from "../base-ui-import.ts";
+import { nameChain } from "../ast-names.ts";
+import { baseUiBindings, baseUiReference, noteBaseUiImport } from "../base-ui-import.ts";
 
 /** The Base UI primitives whose Root locks the page's scroll from the root itself, open or not shown. */
 const SCROLL_LOCKING_ROOTS: ReadonlySet<string> = new Set(["AlertDialog", "Dialog", "Drawer"]);
@@ -62,8 +63,7 @@ export const overlayRootOverrideLast: Rule = {
       // Judged once the whole module is read, so a binding declared below its use still counts.
       "Program:exit"() {
         for (const element of roots) {
-          const segments = jsxSegments(element.name);
-          if (segments === undefined) continue;
+          const segments = nameChain(element.name);
           const part = baseUiReference(segments, primitives);
           if (part?.member !== "Root" || !SCROLL_LOCKING_ROOTS.has(part.exported)) continue;
           const last = element.attributes.at(-1);

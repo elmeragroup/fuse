@@ -3,11 +3,11 @@ import { describe, expect, it } from "vitest";
 
 import { INSTALL_COMMAND } from "../src/lib/docs-model";
 import { focusedName, groupLabels, highlighted, isHighlighted } from "./command-page";
-import { launchSuiteBrowser, PAGE_WAIT_GUARD, waitForDocsShellHydration } from "./demo-page";
+import { waitForDocsShellHydration } from "./demo-page";
 import { docsBaseUrl } from "./docs-server";
 import { waitForLandingHydration } from "./landing-page";
 import { isFocused } from "./studio/page";
-import { closeContext } from "./suite-browser";
+import { closeContext, launchSuiteBrowser } from "./suite-browser";
 
 const browser = launchSuiteBrowser();
 
@@ -30,7 +30,6 @@ function option(scope: Locator, group: string, name: string | RegExp): Locator {
  */
 async function openDocs(context: BrowserContext, pathname: string): Promise<Page> {
   const page = await context.newPage();
-  page.setDefaultTimeout(PAGE_WAIT_GUARD);
   await page.goto(`${docsBaseUrl()}${pathname}`, { waitUntil: "domcontentloaded" });
   await waitForDocsShellHydration(page);
   for (const scheme of ["dark", "light"] as const) {
@@ -226,7 +225,6 @@ describe("site palette on the docs", () => {
 describe("site palette on the landing", () => {
   async function openLanding(context: BrowserContext): Promise<Page> {
     const page = await context.newPage();
-    page.setDefaultTimeout(PAGE_WAIT_GUARD);
     // The brand marks feed the shaders, which this suite never looks at.
     await page.route("**/landing/marks/**", async (route) => route.abort());
     await page.goto(`${docsBaseUrl()}/`, { waitUntil: "load" });

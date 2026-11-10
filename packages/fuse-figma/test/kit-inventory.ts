@@ -397,9 +397,6 @@ export const KIT_PAGES: readonly InventoryPage[] = [
   },
 ];
 
-/** The page that holds the icon library alone, after the component pages. */
-export const ICONS_PAGE = { key: "page/icons", name: "Icons" } as const;
-
 /** The four Fjordkraft private themes each component page previews, in frame order. */
 const PREVIEW_THEMES = [
   { key: "neutral-fkas-private-light", name: "Fjordkraft neutral private, light" },

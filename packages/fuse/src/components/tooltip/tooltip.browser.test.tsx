@@ -1,10 +1,10 @@
 import { useState } from "react";
 
-import { describe, expect, it, onTestFinished, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
-import { nextFrames } from "../../../test/animation-frames";
+import { nextFrames, useFakeTimeouts } from "../../../test/animation-frames";
 import { assertFocusRingOnKeyboardAbsentOnMouse } from "../../../test/assert-focus-ring";
 import { renderThemed, roleNamed } from "../../../test/themed-browser-render";
 import { Tooltip } from "./index";
@@ -54,10 +54,7 @@ describe("Tooltip", () => {
 
   it("holds a hover open back for the provider delay", async () => {
     // Fake timeouts: the delay runs out only when the test moves the clock.
-    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
-    onTestFinished(() => {
-      vi.useRealTimers();
-    });
+    useFakeTimeouts();
     renderThemed(
       <Tooltip.Provider delay={600}>
         <Tooltip.Root>

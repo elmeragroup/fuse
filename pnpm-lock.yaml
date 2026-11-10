@@ -57,9 +57,6 @@ catalogs:
     '@next/mdx':
       specifier: 16.4.2
       version: 16.4.2
-    '@next/playwright':
-      specifier: 16.4.2
-      version: 16.4.2
     '@oxlint/plugins':
       specifier: 1.89.0
       version: 1.89.0
@@ -378,9 +375,6 @@ importers:
       '@mdx-js/loader':
         specifier: 'catalog:'
         version: 3.1.1(supports-color@8.1.1)
-      '@next/playwright':
-        specifier: 'catalog:'
-        version: 16.4.2
       '@tailwindcss/postcss':
         specifier: 'catalog:'
         version: 4.3.3
@@ -1414,14 +1408,6 @@ packages:
       '@mdx-js/loader':
         optional: true
       '@mdx-js/react':
-        optional: true
-
-  '@next/playwright@16.4.2':
-    resolution: {integrity: sha512-j8hwXGX8ZnEdPSnHbh09QB40Zi5rE/dB5zf/YTArc/izOamG4HVbWBHP17FY6HnLDd8xoj2xurdtycgzCiMwxw==}
-    peerDependencies:
-      '@playwright/test': '>=1.0.0'
-    peerDependenciesMeta:
-      '@playwright/test':
         optional: true
 
   '@next/swc-darwin-arm64@16.4.2':
@@ -5703,8 +5689,6 @@ snapshots:
       source-map: 0.7.6
     optionalDependencies:
       '@mdx-js/loader': 3.1.1(supports-color@8.1.1)
-
-  '@next/playwright@16.4.2': {}
 
   '@next/swc-darwin-arm64@16.4.2':
     optional: true

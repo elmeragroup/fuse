@@ -1,4 +1,4 @@
-import { expect } from "vitest";
+import { expect, onTestFinished, vi } from "vitest";
 
 /**
  * Waits for animation frames, so React renders what the last state change scheduled.
@@ -14,6 +14,18 @@ export async function nextFrames(count = 1): Promise<number> {
     });
   }
   return now;
+}
+
+/**
+ * Fakes the page's timeouts for the rest of the current test, so a delay runs out only when the
+ * test moves the clock, and restores the real ones when the test finishes. Animation frames stay
+ * real. Call it in a test or a `beforeEach`.
+ */
+export function useFakeTimeouts(): void {
+  vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+  onTestFinished(() => {
+    vi.useRealTimers();
+  });
 }
 
 /**

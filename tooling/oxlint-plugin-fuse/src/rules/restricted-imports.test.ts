@@ -4,7 +4,10 @@ import { restrictedImports } from "./restricted-imports.ts";
 const options = [
   {
     modules: [
-      { pattern: "(?:^|/)temporal-polyfill(?:/|$)", message: "only the installer entry loads the polyfill." },
+      {
+        pattern: "(?:^|/)temporal-polyfill(?:\\.[cm]?[jt]sx?)?(?:/|$)",
+        message: "only the installer entry loads the polyfill.",
+      },
       { pattern: "^@elmeragroup/color(?:/|$)", message: "the Temporal core stays self-contained." },
     ],
   },
@@ -19,6 +22,8 @@ ruleTester.run("restricted-imports", restrictedImports, {
   ],
   invalid: [
     { code: 'import "../../temporal-polyfill";', options, errors: [{ messageId: "restricted" }] },
+    { code: 'import "../temporal-polyfill.ts";', options, errors: [{ messageId: "restricted" }] },
+    { code: 'import "../temporal-polyfill.js";', options, errors: [{ messageId: "restricted" }] },
     { code: 'import { Temporal } from "temporal-polyfill";', options, errors: [{ messageId: "restricted" }] },
     { code: 'export * from "temporal-polyfill/global";', options, errors: [{ messageId: "restricted" }] },
     {

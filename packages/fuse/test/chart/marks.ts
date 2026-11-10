@@ -84,7 +84,7 @@ export async function pointerAt(x: number, y: number): Promise<void> {
  * @returns Whether it shows.
  */
 export function popupOpen(): boolean {
-  // DOM audit: the popup portals out of the host and carries its own slot.
+  // The popup portals out of the host and carries its own slot.
   const popup = document.querySelector('[data-slot="chart-tooltip"]');
   return popup !== null && popup.hasAttribute("data-open") && !popup.hasAttribute("data-ending-style");
 }

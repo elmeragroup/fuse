@@ -4,21 +4,14 @@ import { AxeBuilder } from "@axe-core/playwright";
 // and hydrates, and axe-core's WCAG 2.2 A and AA rules find no violation at the default zoom.
 // The route list is the build's own prerender manifest, so a new page joins the sweep the moment
 // it exists, and routes that serve no HTML page (API, Open Graph images, text endpoints) stay out.
-import { readFileSync } from "node:fs";
-import path from "node:path";
 import type { Page } from "playwright";
 import { describe, expect, it } from "vitest";
 
-import { DESKTOP_VIEWPORT, PAGE_WAIT_GUARD, waitForDocsShellHydration } from "./demo-page";
-import { docsBaseUrl, docsBuildDir } from "./docs-server";
-import { waitForLandingHydration } from "./landing-page";
+import { DESKTOP_VIEWPORT, waitForBlockPreviewHydration, waitForDocsShellHydration } from "./demo-page";
+import { docsBaseUrl, prerenderedRoutes } from "./docs-server";
+import { collectPageErrors, waitForLandingHydration } from "./landing-page";
+import { waitForStudioReady } from "./studio/page";
 import { launchSuiteBrowser } from "./suite-browser";
-
-/**
- * Routes that serve something other than a docs page: API, Open Graph images, text endpoints and
- * `/private`, an empty noindex page.
- */
-const NOT_A_PAGE = /^\/(?:_|api\/|og\/|demo-source\/|private$)|\.(?:png|txt|md|xml|ico|json|svg)$/u;
 
 /** Resources a demo requests on purpose to show its fallback, such as Avatar's broken image. */
 const EXPECTED_MISSING = ["/this-avatar-does-not-exist.png"];
@@ -36,21 +29,7 @@ const DEFERRED_RULES = [
   "scrollable-region-focusable",
 ];
 
-/** One prerendered route, as Next's manifest records it. */
-type PrerenderedRoute = { readonly initialRevalidateSeconds: number | false };
-
-/** The HTML routes the e2e build prerendered. */
-function pageRoutes(): string[] {
-  // SAFETY: Next writes the manifest; the test reads only its `routes` keys.
-  const manifest = JSON.parse(
-    readFileSync(path.join(docsBuildDir(true), "prerender-manifest.json"), "utf8")
-  ) as { readonly routes: Readonly<Record<string, PrerenderedRoute>> };
-  return Object.keys(manifest.routes)
-    .filter((route) => !NOT_A_PAGE.test(route))
-    .toSorted();
-}
-
-const ROUTES = pageRoutes();
+const ROUTES = prerenderedRoutes(true);
 
 /** The landing and the shared addresses that render it in one theme. */
 const LANDING = /^\/(?:themed\/.+)?$/u;
@@ -59,11 +38,14 @@ const LANDING = /^\/(?:themed\/.+)?$/u;
  * Waits until the parts that wire accessible names in effects have hydrated, so axe reads the
  * page a visitor uses rather than its server HTML. `load` and `networkidle` can both come first:
  * on a saturated CI runner axe once read Base UI switches, checkboxes and a meter before Field
- * and the labelable parts had linked their labels. The landing, the docs shell and every demo
- * frame each have their own signal.
+ * and the labelable parts had linked their labels. Next hydrates each route segment in a pass of
+ * its own after the layouts, so no one layout signal covers every page: the landing, the docs
+ * shell, every demo frame, the studio canvas and the block previews each have their own.
  */
 async function waitForHydration(page: Page, route: string): Promise<void> {
   if (LANDING.test(route)) await waitForLandingHydration(page);
+  if (route.startsWith("/studio")) await waitForStudioReady(page);
+  if (route.startsWith("/blocks/") && route.includes("/preview")) await waitForBlockPreviewHydration(page);
   if ((await page.getByRole("navigation", { name: "Main navigation" }).count()) > 0) {
     await waitForDocsShellHydration(page);
   }
@@ -89,18 +71,10 @@ describe("every docs route", () => {
     // axe-core opens a page of its own in the same context, so the page has an explicit one.
     const context = await browser().newContext({ viewport: DESKTOP_VIEWPORT });
     const page = await context.newPage();
-    page.setDefaultTimeout(PAGE_WAIT_GUARD);
-    const errors: string[] = [];
-    page.on("console", (message) => {
-      if (
-        message.type() !== "error" ||
-        EXPECTED_MISSING.some((url) => message.location().url.endsWith(url))
-      ) {
-        return;
-      }
-      errors.push(message.text());
+    const errors = collectPageErrors(page, {
+      console: true,
+      ignore: (message) => EXPECTED_MISSING.some((url) => message.location().url.endsWith(url)),
     });
-    page.on("pageerror", (error) => errors.push(error.message));
     try {
       const response = await page.goto(`${docsBaseUrl()}${route}`, { waitUntil: "load" });
       expect(response?.status(), route).toBeLessThan(400);

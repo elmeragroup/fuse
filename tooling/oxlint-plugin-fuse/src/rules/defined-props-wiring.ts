@@ -1,6 +1,7 @@
 import type { ESTree, Rule } from "@oxlint/plugins";
 
-import { baseUiBindings, baseUiReference, jsxSegments, noteBaseUiImport } from "../base-ui-import.ts";
+import { nameChain } from "../ast-names.ts";
+import { baseUiBindings, baseUiReference, noteBaseUiImport } from "../base-ui-import.ts";
 import { isTestFile } from "../source-file.ts";
 
 /**
@@ -23,6 +24,7 @@ const WIRING_PARTS = new Map(
     NumberField: ["Root", "Input", "Decrement", "Increment"],
     Radio: ["Root"],
     RadioGroup: ["self"],
+    Select: ["Trigger"],
     Slider: ["Root", "Thumb"],
     Switch: ["Root"],
   })
@@ -68,8 +70,7 @@ export const definedPropsWiring: Rule = {
         noteBaseUiImport(declaration, bindings);
       },
       JSXOpeningElement(element) {
-        const segments = jsxSegments(element.name);
-        if (segments === undefined) return;
+        const segments = nameChain(element.name);
         const reference = baseUiReference(segments, bindings);
         if (reference === undefined) return;
         const member = reference.member ?? "self";

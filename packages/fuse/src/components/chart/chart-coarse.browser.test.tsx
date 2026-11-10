@@ -1,25 +1,16 @@
 // Coarse series in Chromium, after ticket svg-3's checks. Unit under test: a series whose interval
-// is coarser than Root's, from its own slots to the drawn steps, bars, emphasis, time state and
-// motion. Oracles: pixels worked out by hand on quarter-hour grids, where an hour covers 4
-// quarters, and the eased progress of motion-frames.json.
+// is coarser than Root's, from its own slots to the drawn steps, bars, emphasis and time state.
+// Oracle: pixels worked out by hand on quarter-hour grids, where an hour covers 4 quarters.
 import type { ReactNode } from "react";
 
-import { afterEach, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import "../../../dist/styles.css";
-import type { FrameClock } from "../../../test/chart/frame-clock";
 import { bars as barsIn } from "../../../test/chart/marks";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
 import { Chart } from "./chart-namespace";
 import "./chart.css";
-
-let clock: FrameClock | null = null;
-
-afterEach(() => {
-  clock?.restore();
-  clock = null;
-});
 
 describe("coarse series on a quarter-hour grid", () => {
   /** Oslo's 1 October 2025 starts at 22:00 UTC the day before, under summer time. */

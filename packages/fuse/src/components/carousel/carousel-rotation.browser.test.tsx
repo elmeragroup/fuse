@@ -8,15 +8,14 @@ import { useState } from "react";
 import type { ReactElement } from "react";
 
 import { createPortal } from "react-dom";
-import { beforeEach, describe, expect, it, onTestFinished, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
-import { nextFrames, pollFrames } from "../../../test/animation-frames";
+import { nextFrames, pollFrames, useFakeTimeouts } from "../../../test/animation-frames";
 import { carouselSlides } from "../../../test/carousel-fixtures";
 import { carouselIndicators, carouselViewport, currentIndicator } from "../../../test/carousel-queries";
 import { withLocale } from "../../../test/locale-matrix";
-import "../../../test/pointer-press";
 import { renderThemed, roleNamed } from "../../../test/themed-browser-render";
 import { Carousel } from "./index";
 
@@ -29,10 +28,7 @@ const DELAY = 200;
 // The page's timeouts are fake, so rotation turns a page only when a test moves the clock: a slow
 // runner can neither skip a page nor turn one early.
 beforeEach(() => {
-  vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
-  onTestFinished(() => {
-    vi.useRealTimers();
-  });
+  useFakeTimeouts();
 });
 
 /**

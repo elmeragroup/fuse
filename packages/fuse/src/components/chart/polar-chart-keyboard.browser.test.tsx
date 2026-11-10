@@ -6,6 +6,7 @@ import { virtual } from "@guidepup/virtual-screen-reader";
 import { afterEach, describe, expect, it } from "vitest";
 
 import "../../../dist/styles.css";
+import { BILL, BILL_CONFIG, SPOKE_CONFIG, SPOKES } from "../../../test/chart/polar-fixtures";
 import { phrasesAfter, startReader as start } from "../../../test/chart/spoken";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
@@ -18,32 +19,6 @@ import { RadialChart } from "./radial-chart-namespace";
 afterEach(async () => {
   await virtual.stop();
 });
-
-/** A bill of 100 kr, so each part's value is its own share. */
-const BILL = [
-  { name: "strom", v: 50 },
-  { name: "nettleie", v: 30 },
-  { name: "avgifter", v: 15 },
-  { name: "mva", v: 5 },
-];
-
-const BILL_CONFIG = {
-  strom: { label: "Strøm", color: "chart-1" },
-  nettleie: { label: "Nettleie", color: "chart-2" },
-  avgifter: { label: "Avgifter", color: "chart-3" },
-  mva: { label: "Mva", color: "chart-4" },
-} as const;
-
-const SPOKES = [
-  { area: "NO1", v: 1, w: 3 },
-  { area: "NO2", v: 2, w: 2 },
-  { area: "NO3", v: 3, w: 1 },
-];
-
-const SPOKE_CONFIG = {
-  v: { label: "Forbruk", color: "chart-1" },
-  w: { label: "Pris", color: "chart-2" },
-} as const;
 
 describe("a screen reader's key sequence through each family", () => {
   /** Midnight in Oslo on 25 October 2025, a 24-hour day. */

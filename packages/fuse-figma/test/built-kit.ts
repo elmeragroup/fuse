@@ -6,13 +6,7 @@ import { Effect } from "effect";
 
 import { buildComponentSets } from "../src/components/build-kit.ts";
 import type { CoverageRow } from "../src/components/coverage.ts";
-import type {
-  BoxSpec,
-  ChildLayerSpec,
-  ComponentRootSpec,
-  KitSpec,
-  TextLayerSpec,
-} from "../src/components/kit-spec.ts";
+import type { ChildLayerSpec, ComponentRootSpec, KitSpec } from "../src/components/kit-spec.ts";
 import { deepFrozen } from "./frozen.ts";
 
 /** The parts of the built kit a per-set suite reads. */
@@ -57,27 +51,6 @@ export function variantRoot(spec: Pick<KitSpec, "componentSets">, key: string): 
     throw new Error(`the kit has no ${key}`);
   }
   return found.root;
-}
-
-/**
- * The property, outcome and detail of each coverage row of one class, in table order.
- *
- * @param coverage - The coverage rows.
- * @param className - The class whose rows to read.
- * @returns One `[property, outcome, detail]` triple per row.
- */
-export const notesOf = (coverage: readonly CoverageRow[], className: string) =>
-  coverage.filter((row) => row.className === className).map((row) => [row.property, row.outcome, row.detail]);
-
-/**
- * The first text layer a box holds directly.
- *
- * @param box - A root or frame, or undefined where the caller found none.
- * @returns The text layer, or undefined where the box holds none directly.
- */
-export function textOf(box: BoxSpec | undefined): TextLayerSpec | undefined {
-  const found = box?.children.find((child) => child.kind === "text");
-  return found?.kind === "text" ? found : undefined;
 }
 
 /**

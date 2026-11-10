@@ -193,6 +193,17 @@ describe("Calendar parity with the interim tier", () => {
     await expect.element(page.getByRole("button", { name: "Previous", exact: true })).toBeVisible();
     await expect.element(page.getByRole("button", { name: "Next", exact: true })).toBeVisible();
   });
+
+  it("prefixes today's day name with Today and leaves the other days plain", async () => {
+    mount(<Harness defaultValue={Temporal.PlainDate.from("2030-06-10")} />);
+
+    await expect
+      .element(page.getByRole("button", { name: "Today, Saturday, June 15, 2030", exact: true }))
+      .toBeVisible();
+    await expect
+      .element(page.getByRole("button", { name: "Sunday, June 16, 2030", exact: true }))
+      .toBeVisible();
+  });
 });
 
 describe("Calendar selection", () => {
@@ -308,6 +319,34 @@ describe("Calendar selection", () => {
     expect(roleNamed("button", "Previous")).toHaveAttribute("aria-disabled", "true");
     expect(roleNamed("button", "Next")).toHaveAttribute("aria-disabled", "true");
   });
+
+  it.each([
+    ["Alt+Arrow Left", { key: "ArrowLeft", altKey: true }],
+    ["Control+Arrow Left", { key: "ArrowLeft", ctrlKey: true }],
+    ["Meta+Arrow Left", { key: "ArrowLeft", metaKey: true }],
+    ["Control+Home", { key: "Home", ctrlKey: true }],
+    ["Shift+Arrow Right", { key: "ArrowRight", shiftKey: true }],
+    ["Control+Enter", { key: "Enter", ctrlKey: true }],
+    ["Meta+Space", { key: " ", metaKey: true }],
+  ] as const)("leaves %s to the browser: no move, no selection, no preventDefault", async (_keys, init) => {
+    const changes: string[] = [];
+    mount(
+      <Parts
+        defaultValue={Temporal.PlainDate.from("2026-10-14")}
+        onValueChange={(next) => changes.push(next.toString())}
+      />
+    );
+    await focusDay("Wednesday, October 14, 2026 selected");
+    await userEvent.keyboard("{ArrowRight}");
+    await expectFocusOnDay("Thursday, October 15, 2026");
+
+    const event = new KeyboardEvent("keydown", { ...init, bubbles: true, cancelable: true });
+    roleNamed("button", "Thursday, October 15, 2026").dispatchEvent(event);
+
+    expect(event.defaultPrevented).toBe(false);
+    await expectFocusOnDay("Thursday, October 15, 2026");
+    expect(changes).toEqual([]);
+  });
 });
 
 describe("Calendar cancelable change details", () => {
@@ -319,6 +358,45 @@ describe("Calendar cancelable change details", () => {
 
     await expect.element(visibleChanges()).toHaveTextContent("2026-11 keyboard");
     await expectFocusOnDay("Wednesday, October 14, 2026 selected");
+    expect(gridNames()).toEqual(["Delivery, October 2026"]);
+  });
+
+  it.each([
+    [
+      "a pointer press",
+      "day-press",
+      () => userEvent.click(roleNamed("button", "Thursday, October 15, 2026")),
+    ],
+    ["Enter", "keyboard", () => userEvent.keyboard("{Enter}")],
+    ["Space", "keyboard", () => userEvent.keyboard("{ }")],
+  ] as const)(
+    "keeps the value, and focus on the day, when %s is canceled",
+    async (_gesture, reason, press) => {
+      mount(<Harness defaultValue={Temporal.PlainDate.from("2026-10-14")} cancelValue />);
+      await focusDay("Wednesday, October 14, 2026 selected");
+      await userEvent.keyboard("{ArrowRight}");
+      await expectFocusOnDay("Thursday, October 15, 2026");
+
+      await press();
+
+      await expect.element(committed()).toHaveTextContent(`2026-10-15 ${reason} null`);
+      await expectFocusOnDay("Thursday, October 15, 2026");
+      expect(
+        roleNamed("button", "Thursday, October 15, 2026").closest("[role=gridcell]")
+      ).not.toHaveAttribute("aria-selected");
+      await expect
+        .element(page.getByRole("button", { name: "Wednesday, October 14, 2026 selected", exact: true }))
+        .toBeVisible();
+    }
+  );
+
+  it("keeps the months when a month button press is canceled", async () => {
+    mount(<Harness defaultValue={Temporal.PlainDate.from("2026-10-14")} cancelVisible />);
+
+    await userEvent.click(roleNamed("button", "Next"));
+
+    await expect.element(visibleChanges()).toHaveTextContent("2026-11 increment-press");
+    await expect.element(page.getByRole("heading", { name: "October 2026" })).toBeVisible();
     expect(gridNames()).toEqual(["Delivery, October 2026"]);
   });
 });
@@ -335,6 +413,91 @@ describe("Calendar across months", () => {
       "Wednesday, October 14, 2026 selected",
     ]);
   });
+
+  it("shows three months around the value and names each grid by its month", () => {
+    mount(<Harness defaultValue={Temporal.PlainDate.from("2026-10-14")} visibleMonths={3} />);
+
+    expect(gridNames()).toEqual([
+      "Delivery, September 2026",
+      "Delivery, October 2026",
+      "Delivery, November 2026",
+    ]);
+  });
+
+  it("moves focus into the next grid without paging", async () => {
+    mount(<Harness defaultValue={Temporal.PlainDate.from("2026-10-31")} visibleMonths={3} />);
+    await focusDay("Saturday, October 31, 2026 selected");
+
+    await userEvent.keyboard("{ArrowRight}");
+
+    await expectFocusOnDay("Sunday, November 1, 2026");
+    expect(document.activeElement?.closest("[role=grid]")).toHaveAttribute(
+      "aria-label",
+      "Delivery, November 2026"
+    );
+    await expect.element(visibleChanges()).toHaveTextContent("");
+  });
+
+  it.each([
+    ["visible", "2026-12 keyboard", ["December 2026", "January 2027", "February 2027"]],
+    ["single", "2026-10 keyboard", ["October 2026", "November 2026", "December 2026"]],
+  ] as const)("pages by %s when focus leaves the last month", async (pageBehavior, reported, shown) => {
+    mount(
+      <Harness
+        defaultValue={Temporal.PlainDate.from("2026-10-14")}
+        visibleMonths={3}
+        pageBehavior={pageBehavior}
+      />
+    );
+    await focusDay("Wednesday, October 14, 2026 selected");
+
+    await userEvent.keyboard("{PageDown}");
+    await expectFocusOnDay("Saturday, November 14, 2026");
+    await expect.element(visibleChanges()).toHaveTextContent("");
+    await userEvent.keyboard("{PageDown}");
+
+    await expectFocusOnDay("Monday, December 14, 2026");
+    await expect.element(visibleChanges()).toHaveTextContent(reported);
+    expect(gridNames()).toEqual(shown.map((month) => `Delivery, ${month}`));
+  });
+
+  it.each([
+    ["visible", "2026-12 increment-press", ["December 2026", "January 2027", "February 2027"]],
+    ["single", "2026-10 increment-press", ["October 2026", "November 2026", "December 2026"]],
+  ] as const)("pages the month buttons by %s", async (pageBehavior, reported, shown) => {
+    mount(
+      <Harness
+        defaultValue={Temporal.PlainDate.from("2026-10-14")}
+        visibleMonths={3}
+        pageBehavior={pageBehavior}
+      />
+    );
+
+    await userEvent.click(roleNamed("button", "Next"));
+
+    await expect.element(visibleChanges()).toHaveTextContent(reported);
+    expect(gridNames()).toEqual(shown.map((month) => `Delivery, ${month}`));
+  });
+
+  it("keeps the view inside the bounds and clamps focus to them on each page", async () => {
+    mount(
+      <Harness
+        defaultValue={Temporal.PlainDate.from("2026-10-14")}
+        visibleMonths={2}
+        minValue={Temporal.PlainDate.from("2026-08-10")}
+        maxValue={Temporal.PlainDate.from("2026-12-20")}
+      />
+    );
+    await focusDay("Wednesday, October 14, 2026 selected");
+
+    await userEvent.keyboard("{Shift>}{PageDown}{/Shift}");
+    await expectFocusOnDay("Sunday, December 20, 2026, Last available date");
+    expect(gridNames()).toEqual(["Delivery, November 2026", "Delivery, December 2026"]);
+
+    await userEvent.keyboard("{Shift>}{PageUp}{/Shift}");
+    await expectFocusOnDay("Monday, August 10, 2026, First available date");
+    expect(gridNames()).toEqual(["Delivery, August 2026", "Delivery, September 2026"]);
+  });
 });
 
 describe("Calendar today", () => {
@@ -343,6 +506,21 @@ describe("Calendar today", () => {
 
     await expect.element(page.getByRole("grid", { name: "Delivery, June 2030", exact: true })).toBeVisible();
     expect(roleNamed("button", "Today, Saturday, June 15, 2030")).toHaveAttribute("tabindex", "0");
+  });
+
+  it("moves the today marking when the page becomes visible on a new day", async () => {
+    mount(<Harness defaultValue={Temporal.PlainDate.from("2030-06-10")} />);
+    await expect
+      .element(page.getByRole("button", { name: "Today, Saturday, June 15, 2030", exact: true }))
+      .toBeVisible();
+
+    vi.setSystemTime(new Date("2030-06-16T00:30:00"));
+    document.dispatchEvent(new Event("visibilitychange"));
+
+    await expect
+      .element(page.getByRole("button", { name: "Today, Sunday, June 16, 2030", exact: true }))
+      .toBeVisible();
+    expect(roleNamed("button", "Saturday, June 15, 2030")).not.toHaveAttribute("data-current");
   });
 });
 
@@ -438,6 +616,43 @@ describe("Calendar focus when the bounds change", () => {
 
     await expect.element(heading).toHaveAttribute("aria-live", "polite");
   });
+
+  it("leaves focus outside the calendar where it is", async () => {
+    let setMinimum: SetMinimum | undefined;
+    mount(<BoundsHarness onReady={(set) => (setMinimum = set)} />);
+    await focusDay("Wednesday, October 14, 2026 selected");
+    roleNamed("button", "Outside").focus();
+
+    setMinimum?.(Temporal.PlainDate.from("2026-10-20"));
+
+    await expect
+      .element(
+        page.getByRole("button", { name: "Tuesday, October 20, 2026, First available date", exact: true })
+      )
+      .toHaveAttribute("tabindex", "0");
+    expect(roleNamed("button", "Outside")).toHaveFocus();
+  });
+
+  it("leaves focus outside the calendar where it is when the bounds change in the task that dropped it from a day", async () => {
+    let setMinimum: SetMinimum | undefined;
+    mount(<BoundsHarness onReady={(set) => (setMinimum = set)} />);
+    await focusDay("Wednesday, October 14, 2026 selected");
+    await userEvent.keyboard("{ArrowRight}");
+    await expectFocusOnDay("Thursday, October 15, 2026");
+
+    // Focus drops to nothing, a script focuses another control and tightens the bounds, all
+    // before the calendar's next frame can see where focus went.
+    roleNamed("button", "Thursday, October 15, 2026").blur();
+    roleNamed("button", "Outside").focus();
+    setMinimum?.(Temporal.PlainDate.from("2026-10-20"));
+
+    await expect
+      .element(
+        page.getByRole("button", { name: "Tuesday, October 20, 2026, First available date", exact: true })
+      )
+      .toHaveAttribute("tabindex", "0");
+    expect(roleNamed("button", "Outside")).toHaveFocus();
+  });
 });
 
 describe("Calendar visibleMonths", () => {
@@ -452,6 +667,26 @@ describe("Calendar visibleMonths", () => {
         .element(visibleChanges())
         .toHaveTextContent("2026-11 increment-press, 2026-12 increment-press");
       expect(warn).toHaveBeenCalledTimes(1);
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
+  it.each([
+    [0, ["Delivery, October 2026"]],
+    [-2, ["Delivery, October 2026"]],
+    [Number.NaN, ["Delivery, October 2026"]],
+    [1.5, ["Delivery, October 2026"]],
+    [2.9, ["Delivery, October 2026", "Delivery, November 2026"]],
+  ])("shows a whole number of months from 1 for %d, and warns", (requested, grids) => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    try {
+      mount(<Harness defaultValue={Temporal.PlainDate.from("2026-10-14")} visibleMonths={requested} />);
+
+      expect(gridNames()).toEqual(grids);
+      expect(warn).toHaveBeenCalledWith(
+        `Calendar.Root: visibleMonths ${String(requested)} is not a whole number from 1, so it shows ${String(grids.length)}.`
+      );
     } finally {
       warn.mockRestore();
     }
@@ -542,90 +777,6 @@ describe("date props past the types", () => {
   });
 });
 
-describe("Calendar parity with the interim tier", () => {
-  it("prefixes today's day name with Today and leaves the other days plain", async () => {
-    mount(<Harness defaultValue={Temporal.PlainDate.from("2030-06-10")} />);
-
-    await expect
-      .element(page.getByRole("button", { name: "Today, Saturday, June 15, 2030", exact: true }))
-      .toBeVisible();
-    await expect
-      .element(page.getByRole("button", { name: "Sunday, June 16, 2030", exact: true }))
-      .toBeVisible();
-  });
-});
-
-describe("Calendar selection", () => {
-  it.each([
-    ["Alt+Arrow Left", { key: "ArrowLeft", altKey: true }],
-    ["Control+Arrow Left", { key: "ArrowLeft", ctrlKey: true }],
-    ["Meta+Arrow Left", { key: "ArrowLeft", metaKey: true }],
-    ["Control+Home", { key: "Home", ctrlKey: true }],
-    ["Shift+Arrow Right", { key: "ArrowRight", shiftKey: true }],
-    ["Control+Enter", { key: "Enter", ctrlKey: true }],
-    ["Meta+Space", { key: " ", metaKey: true }],
-  ] as const)("leaves %s to the browser: no move, no selection, no preventDefault", async (_keys, init) => {
-    const changes: string[] = [];
-    mount(
-      <Parts
-        defaultValue={Temporal.PlainDate.from("2026-10-14")}
-        onValueChange={(next) => changes.push(next.toString())}
-      />
-    );
-    await focusDay("Wednesday, October 14, 2026 selected");
-    await userEvent.keyboard("{ArrowRight}");
-    await expectFocusOnDay("Thursday, October 15, 2026");
-
-    const event = new KeyboardEvent("keydown", { ...init, bubbles: true, cancelable: true });
-    roleNamed("button", "Thursday, October 15, 2026").dispatchEvent(event);
-
-    expect(event.defaultPrevented).toBe(false);
-    await expectFocusOnDay("Thursday, October 15, 2026");
-    expect(changes).toEqual([]);
-  });
-});
-
-describe("Calendar cancelable change details", () => {
-  it.each([
-    [
-      "a pointer press",
-      "day-press",
-      () => userEvent.click(roleNamed("button", "Thursday, October 15, 2026")),
-    ],
-    ["Enter", "keyboard", () => userEvent.keyboard("{Enter}")],
-    ["Space", "keyboard", () => userEvent.keyboard("{ }")],
-  ] as const)(
-    "keeps the value, and focus on the day, when %s is canceled",
-    async (_gesture, reason, press) => {
-      mount(<Harness defaultValue={Temporal.PlainDate.from("2026-10-14")} cancelValue />);
-      await focusDay("Wednesday, October 14, 2026 selected");
-      await userEvent.keyboard("{ArrowRight}");
-      await expectFocusOnDay("Thursday, October 15, 2026");
-
-      await press();
-
-      await expect.element(committed()).toHaveTextContent(`2026-10-15 ${reason} null`);
-      await expectFocusOnDay("Thursday, October 15, 2026");
-      expect(
-        roleNamed("button", "Thursday, October 15, 2026").closest("[role=gridcell]")
-      ).not.toHaveAttribute("aria-selected");
-      await expect
-        .element(page.getByRole("button", { name: "Wednesday, October 14, 2026 selected", exact: true }))
-        .toBeVisible();
-    }
-  );
-
-  it("keeps the months when a month button press is canceled", async () => {
-    mount(<Harness defaultValue={Temporal.PlainDate.from("2026-10-14")} cancelVisible />);
-
-    await userEvent.click(roleNamed("button", "Next"));
-
-    await expect.element(visibleChanges()).toHaveTextContent("2026-11 increment-press");
-    await expect.element(page.getByRole("heading", { name: "October 2026" })).toBeVisible();
-    expect(gridNames()).toEqual(["Delivery, October 2026"]);
-  });
-});
-
 describe("Calendar month buttons", () => {
   it("pages one month and reports each press", async () => {
     mount(<Harness defaultValue={Temporal.PlainDate.from("2026-10-14")} />);
@@ -706,167 +857,6 @@ describe("Calendar month buttons", () => {
     await userEvent.click(page.getByRole("heading", { level: 2 }));
 
     await expect.element(heading).toHaveAttribute("aria-live", "polite");
-  });
-});
-
-describe("Calendar across months", () => {
-  it("shows three months around the value and names each grid by its month", () => {
-    mount(<Harness defaultValue={Temporal.PlainDate.from("2026-10-14")} visibleMonths={3} />);
-
-    expect(gridNames()).toEqual([
-      "Delivery, September 2026",
-      "Delivery, October 2026",
-      "Delivery, November 2026",
-    ]);
-  });
-
-  it("moves focus into the next grid without paging", async () => {
-    mount(<Harness defaultValue={Temporal.PlainDate.from("2026-10-31")} visibleMonths={3} />);
-    await focusDay("Saturday, October 31, 2026 selected");
-
-    await userEvent.keyboard("{ArrowRight}");
-
-    await expectFocusOnDay("Sunday, November 1, 2026");
-    expect(document.activeElement?.closest("[role=grid]")).toHaveAttribute(
-      "aria-label",
-      "Delivery, November 2026"
-    );
-    await expect.element(visibleChanges()).toHaveTextContent("");
-  });
-
-  it.each([
-    ["visible", "2026-12 keyboard", ["December 2026", "January 2027", "February 2027"]],
-    ["single", "2026-10 keyboard", ["October 2026", "November 2026", "December 2026"]],
-  ] as const)("pages by %s when focus leaves the last month", async (pageBehavior, reported, shown) => {
-    mount(
-      <Harness
-        defaultValue={Temporal.PlainDate.from("2026-10-14")}
-        visibleMonths={3}
-        pageBehavior={pageBehavior}
-      />
-    );
-    await focusDay("Wednesday, October 14, 2026 selected");
-
-    await userEvent.keyboard("{PageDown}");
-    await expectFocusOnDay("Saturday, November 14, 2026");
-    await expect.element(visibleChanges()).toHaveTextContent("");
-    await userEvent.keyboard("{PageDown}");
-
-    await expectFocusOnDay("Monday, December 14, 2026");
-    await expect.element(visibleChanges()).toHaveTextContent(reported);
-    expect(gridNames()).toEqual(shown.map((month) => `Delivery, ${month}`));
-  });
-
-  it.each([
-    ["visible", "2026-12 increment-press", ["December 2026", "January 2027", "February 2027"]],
-    ["single", "2026-10 increment-press", ["October 2026", "November 2026", "December 2026"]],
-  ] as const)("pages the month buttons by %s", async (pageBehavior, reported, shown) => {
-    mount(
-      <Harness
-        defaultValue={Temporal.PlainDate.from("2026-10-14")}
-        visibleMonths={3}
-        pageBehavior={pageBehavior}
-      />
-    );
-
-    await userEvent.click(roleNamed("button", "Next"));
-
-    await expect.element(visibleChanges()).toHaveTextContent(reported);
-    expect(gridNames()).toEqual(shown.map((month) => `Delivery, ${month}`));
-  });
-
-  it("keeps the view inside the bounds and clamps focus to them on each page", async () => {
-    mount(
-      <Harness
-        defaultValue={Temporal.PlainDate.from("2026-10-14")}
-        visibleMonths={2}
-        minValue={Temporal.PlainDate.from("2026-08-10")}
-        maxValue={Temporal.PlainDate.from("2026-12-20")}
-      />
-    );
-    await focusDay("Wednesday, October 14, 2026 selected");
-
-    await userEvent.keyboard("{Shift>}{PageDown}{/Shift}");
-    await expectFocusOnDay("Sunday, December 20, 2026, Last available date");
-    expect(gridNames()).toEqual(["Delivery, November 2026", "Delivery, December 2026"]);
-
-    await userEvent.keyboard("{Shift>}{PageUp}{/Shift}");
-    await expectFocusOnDay("Monday, August 10, 2026, First available date");
-    expect(gridNames()).toEqual(["Delivery, August 2026", "Delivery, September 2026"]);
-  });
-});
-
-describe("Calendar today", () => {
-  it("moves the today marking when the page becomes visible on a new day", async () => {
-    mount(<Harness defaultValue={Temporal.PlainDate.from("2030-06-10")} />);
-    await expect
-      .element(page.getByRole("button", { name: "Today, Saturday, June 15, 2030", exact: true }))
-      .toBeVisible();
-
-    vi.setSystemTime(new Date("2030-06-16T00:30:00"));
-    document.dispatchEvent(new Event("visibilitychange"));
-
-    await expect
-      .element(page.getByRole("button", { name: "Today, Sunday, June 16, 2030", exact: true }))
-      .toBeVisible();
-    expect(roleNamed("button", "Saturday, June 15, 2030")).not.toHaveAttribute("data-current");
-  });
-});
-
-describe("Calendar focus when the bounds change", () => {
-  /** The harness's minimum setter, which a test calls without moving focus to a button. */
-  type SetMinimum = (min: Temporal.PlainDate) => void;
-
-  /** A calendar that hands its minimum's setter to `onReady` once mounted. */
-  function BoundsHarness({ onReady }: { onReady: (set: SetMinimum) => void }): ReactElement {
-    const [minValue, setMinValue] = useState<Temporal.PlainDate | undefined>(undefined);
-    useEffect(() => {
-      onReady(setMinValue);
-    }, [onReady]);
-    return (
-      <>
-        <button type="button">Outside</button>
-        <p>Blank space</p>
-        <Parts defaultValue={Temporal.PlainDate.from("2026-10-14")} {...definedProps({ minValue })} />
-      </>
-    );
-  }
-
-  it("leaves focus outside the calendar where it is", async () => {
-    let setMinimum: SetMinimum | undefined;
-    mount(<BoundsHarness onReady={(set) => (setMinimum = set)} />);
-    await focusDay("Wednesday, October 14, 2026 selected");
-    roleNamed("button", "Outside").focus();
-
-    setMinimum?.(Temporal.PlainDate.from("2026-10-20"));
-
-    await expect
-      .element(
-        page.getByRole("button", { name: "Tuesday, October 20, 2026, First available date", exact: true })
-      )
-      .toHaveAttribute("tabindex", "0");
-    expect(roleNamed("button", "Outside")).toHaveFocus();
-  });
-
-  it("leaves focus outside the calendar where it is when the bounds change in the task that dropped it from a day", async () => {
-    let setMinimum: SetMinimum | undefined;
-    mount(<BoundsHarness onReady={(set) => (setMinimum = set)} />);
-    await focusDay("Wednesday, October 14, 2026 selected");
-    await userEvent.keyboard("{ArrowRight}");
-    await expectFocusOnDay("Thursday, October 15, 2026");
-
-    // Focus drops to nothing, a script focuses another control and tightens the bounds, all
-    // before the calendar's next frame can see where focus went.
-    roleNamed("button", "Thursday, October 15, 2026").blur();
-    roleNamed("button", "Outside").focus();
-    setMinimum?.(Temporal.PlainDate.from("2026-10-20"));
-
-    await expect
-      .element(
-        page.getByRole("button", { name: "Tuesday, October 20, 2026, First available date", exact: true })
-      )
-      .toHaveAttribute("tabindex", "0");
-    expect(roleNamed("button", "Outside")).toHaveFocus();
   });
 });
 
@@ -966,28 +956,6 @@ describe("Calendar grid names", () => {
       }
     }
   );
-});
-
-describe("Calendar visibleMonths", () => {
-  it.each([
-    [0, ["Delivery, October 2026"]],
-    [-2, ["Delivery, October 2026"]],
-    [Number.NaN, ["Delivery, October 2026"]],
-    [1.5, ["Delivery, October 2026"]],
-    [2.9, ["Delivery, October 2026", "Delivery, November 2026"]],
-  ])("shows a whole number of months from 1 for %d, and warns", (requested, grids) => {
-    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
-    try {
-      mount(<Harness defaultValue={Temporal.PlainDate.from("2026-10-14")} visibleMonths={requested} />);
-
-      expect(gridNames()).toEqual(grids);
-      expect(warn).toHaveBeenCalledWith(
-        `Calendar.Root: visibleMonths ${String(requested)} is not a whole number from 1, so it shows ${String(grids.length)}.`
-      );
-    } finally {
-      warn.mockRestore();
-    }
-  });
 });
 
 describe("Calendar hydrating late", () => {

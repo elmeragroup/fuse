@@ -127,6 +127,20 @@ export function expectTargets(targets: readonly Element[], label: string): DOMRe
 }
 
 /**
+ * Assert each target's own box is at least 24px on each side, with the same layout-rounding
+ * tolerance as {@link expectTargets}, for targets that need not stay apart, such as unrelated
+ * controls rendered side by side.
+ *
+ * @param targets - The controls.
+ * @param label - The assertion label.
+ */
+export function expectTargetBoxes(targets: readonly Element[], label: string): void {
+  for (const target of targets) {
+    expectTargetSize(target.getBoundingClientRect(), `${label} ${target.getAttribute("aria-label") ?? ""}`);
+  }
+}
+
+/**
  * Run a check under each host root font size, restoring the document's own size afterwards.
  *
  * @param roots - The root font sizes in px.

@@ -1,6 +1,6 @@
 import type { ESTree, Rule } from "@oxlint/plugins";
 
-import { ruleOptions } from "../rule-options.ts";
+import { requiredOptions } from "../rule-options.ts";
 import { isTestFile } from "../source-file.ts";
 import { constantString } from "../static-text.ts";
 
@@ -12,9 +12,11 @@ type RestrictedImportsOptions = {
 /**
  * Library modules import none of the configured modules, type-only imports included, by any
  * static import, re-export (named, `*` or `* as`), `import x = require(…)` or dynamic import whose
- * specifier is a constant. Tests may import
- * anything they check. Unlike `no-restricted-imports`, each override configures its own list
- * without restating the package-wide one, and a list may match a module by a pattern.
+ * specifier is a constant. Over the built-in `no-restricted-imports` it adds three things: it
+ * catches a dynamic `import()`, so a lazy import cannot load the module either; it skips test
+ * files, which may import anything they check; and each config override sets its own list, matched
+ * by pattern. An override's options replace the package-wide list, so an override restates every
+ * entry it keeps.
  */
 export const restrictedImports: Rule = {
   meta: {
@@ -42,7 +44,7 @@ export const restrictedImports: Rule = {
   },
   create(context) {
     if (isTestFile(context.filename)) return {};
-    const restrictions = (ruleOptions<RestrictedImportsOptions>(context)?.modules ?? []).map(
+    const restrictions = requiredOptions<RestrictedImportsOptions>(context).modules.map(
       ({ pattern, message }) => ({ pattern: new RegExp(pattern, "u"), message })
     );
     const check = (source: ESTree.Node | null): void => {

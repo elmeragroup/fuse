@@ -576,9 +576,17 @@
               "text-xl font-medium",
               "bg-popover text-popover-foreground",
               "bg-dialog text-dialog-foreground",
-              "shadow-md ring-1 ring-foreground/10",
-              "pointer-events-none absolute right-2 flex items-center justify-center",
-              "-mx-1 my-1 h-px bg-border"
+              "shadow-md ring-1 ring-foreground/10"
+            ],
+            "superseded": [
+              {
+                "spelling": "pointer-events-none absolute right-2 flex items-center justify-center",
+                "replacement": "menuItemIndicatorClass from components/overlay/menu-row-classes.ts"
+              },
+              {
+                "spelling": "-mx-1 my-1 h-px bg-border",
+                "replacement": "menuSeparatorClass from components/overlay/menu-row-classes.ts"
+              }
             ]
           }
         ],
@@ -587,7 +595,7 @@
           {
             "modules": [
               {
-                "pattern": "(?:^|/)temporal-polyfill(?:/|$)",
+                "pattern": "(?:^|/)temporal-polyfill(?:\\.[cm]?[jt]sx?)?(?:/|$)",
                 "message": "the polyfill replaces Intl.DateTimeFormat when it installs, so only the opt-in temporal-polyfill entry loads it."
               }
             ]
@@ -604,7 +612,7 @@
           {
             "modules": [
               {
-                "pattern": "(?:^|/)temporal-polyfill(?:/|$)",
+                "pattern": "(?:^|/)temporal-polyfill(?:\\.[cm]?[jt]sx?)?(?:/|$)",
                 "message": "the polyfill replaces Intl.DateTimeFormat when it installs, so only the opt-in temporal-polyfill entry loads it."
               },
               {

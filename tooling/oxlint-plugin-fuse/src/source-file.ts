@@ -8,13 +8,3 @@
 export function isTestFile(filename: string): boolean {
   return /\.test(?:-d)?\.[cm]?[jt]sx?$/u.test(filename);
 }
-
-/**
- * A filename with forward slashes, so path checks read alike on every platform.
- *
- * @param filename - The filename the linter reports.
- * @returns The filename with every `\` replaced by `/`.
- */
-export function posixFilename(filename: string): string {
-  return filename.replaceAll("\\", "/");
-}

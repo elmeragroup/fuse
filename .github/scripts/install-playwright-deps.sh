@@ -61,8 +61,8 @@ if [[ "$cache_hit" == true ]]; then
 fi
 
 # A download leaves the archive as it is. The image ships it empty (runner-images cleanup.sh
-# runs apt-get clean), and after a failed first run it holds that run's finished .debs from
-# the same list, which the next run's download keeps instead of fetching again.
+# runs apt-get clean), and a cache hit that failed to install cleans it above, so afterwards it
+# holds only the .debs this download fetched.
 download
 install_from_archive
 if [[ "$cache_hit" == true ]]; then exit 0; fi

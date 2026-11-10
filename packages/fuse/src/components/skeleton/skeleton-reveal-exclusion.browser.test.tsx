@@ -61,6 +61,81 @@ describe("SkeletonReveal forms", () => {
     expect(new FormData(form).getAll("email")).toEqual([]);
     expect(form.checkValidity()).toBe(true);
   });
+
+  it("keeps ghost fields out of a Fuse Form's submitted values and its validation", () => {
+    type Account = { readonly email: string };
+    /** What the form submits: the email field's value, when a field of the form holds one. */
+    type Submitted = { readonly email?: string };
+    const submitted: Submitted[] = [];
+    const view = (data: Account | null, sample: Account) => (
+      <Form<Submitted> aria-label="Account" onFormSubmit={(values) => submitted.push(values)}>
+        <SkeletonReveal data={data} sample={sample} label="Henter" reveal="together">
+          {(account) => (
+            <TextField
+              label="Email"
+              name="email"
+              defaultValue={account.email}
+              isInvalid={account.email === ""}
+            />
+          )}
+        </SkeletonReveal>
+      </Form>
+    );
+    const { rerender } = renderThemed(view(null, { email: "sample@example.com" }));
+    const form = roleNamed("form", "Account");
+    if (!(form instanceof HTMLFormElement)) throw new Error("expected a form");
+    form.requestSubmit();
+    expect(submitted).toEqual([{}]);
+
+    // An invalid ghost field, from an empty sample, blocks nothing.
+    rerender(view(null, { email: "" }));
+    form.requestSubmit();
+    expect(submitted).toEqual([{}, {}]);
+
+    // Mid-reveal, only the live field submits.
+    rerender(view({ email: "kari@example.com" }, { email: "" }));
+    expect(querySlot("skeleton-reveal-skeleton")).not.toBeNull();
+    form.requestSubmit();
+    expect(submitted).toEqual([{}, {}, { email: "kari@example.com" }]);
+  });
+
+  it("keeps the form's displayed errors on ghost and leaving fields, and still leaves them out of the submit", async () => {
+    type Account = { readonly email: string };
+    type Submitted = { readonly email?: string };
+    const submitted: Submitted[] = [];
+    const view = (data: Account | null, loading = false) => (
+      <Form<Submitted>
+        aria-label="Account"
+        errors={{ email: "Already registered" }}
+        onFormSubmit={(values) => submitted.push(values)}>
+        <SkeletonReveal
+          data={data}
+          sample={{ email: "sample@example.com" }}
+          label="Henter"
+          reveal="together"
+          loading={loading}>
+          {(account) => <TextField label="Email" name="email" defaultValue={account.email} />}
+        </SkeletonReveal>
+      </Form>
+    );
+    const { rerender } = renderThemed(view(null));
+    expect(slot("skeleton-reveal-ghost").textContent).toContain("Already registered");
+    const form = roleNamed("form", "Account");
+    if (!(form instanceof HTMLFormElement)) throw new Error("expected a form");
+    form.requestSubmit();
+    expect(submitted).toEqual([{}]);
+
+    rerender(view({ email: "kari@example.com" }));
+    await expect.poll(() => querySlot("skeleton-reveal-skeleton")).toBeNull();
+    // A refetch: the field on its way out keeps the error it showed.
+    rerender(view({ email: "kari@example.com" }, true));
+    // The content pane has no role; on a refetch it is the one on its way out.
+    const leaving = [...document.querySelectorAll('[data-slot="skeleton-reveal-content"]')];
+    expect(leaving).toHaveLength(1);
+    expect(leaving[0]?.textContent).toContain("Already registered");
+    form.requestSubmit();
+    expect(submitted).toEqual([{}, {}]);
+  });
 });
 
 describe("SkeletonReveal outgoing content", () => {
@@ -192,83 +267,6 @@ describe("SkeletonReveal Fields", () => {
     await nextFrames(2);
     const input = roleNamed("textbox", "Email");
     expect((input.getAttribute("aria-describedby") ?? "").split(" ")).toContain("email-help");
-  });
-});
-
-describe("SkeletonReveal forms", () => {
-  it("keeps ghost fields out of a Fuse Form's submitted values and its validation", () => {
-    type Account = { readonly email: string };
-    /** What the form submits: the email field's value, when a field of the form holds one. */
-    type Submitted = { readonly email?: string };
-    const submitted: Submitted[] = [];
-    const view = (data: Account | null, sample: Account) => (
-      <Form<Submitted> aria-label="Account" onFormSubmit={(values) => submitted.push(values)}>
-        <SkeletonReveal data={data} sample={sample} label="Henter" reveal="together">
-          {(account) => (
-            <TextField
-              label="Email"
-              name="email"
-              defaultValue={account.email}
-              isInvalid={account.email === ""}
-            />
-          )}
-        </SkeletonReveal>
-      </Form>
-    );
-    const { rerender } = renderThemed(view(null, { email: "sample@example.com" }));
-    const form = roleNamed("form", "Account");
-    if (!(form instanceof HTMLFormElement)) throw new Error("expected a form");
-    form.requestSubmit();
-    expect(submitted).toEqual([{}]);
-
-    // An invalid ghost field, from an empty sample, blocks nothing.
-    rerender(view(null, { email: "" }));
-    form.requestSubmit();
-    expect(submitted).toEqual([{}, {}]);
-
-    // Mid-reveal, only the live field submits.
-    rerender(view({ email: "kari@example.com" }, { email: "" }));
-    expect(querySlot("skeleton-reveal-skeleton")).not.toBeNull();
-    form.requestSubmit();
-    expect(submitted).toEqual([{}, {}, { email: "kari@example.com" }]);
-  });
-
-  it("keeps the form's displayed errors on ghost and leaving fields, and still leaves them out of the submit", async () => {
-    type Account = { readonly email: string };
-    type Submitted = { readonly email?: string };
-    const submitted: Submitted[] = [];
-    const view = (data: Account | null, loading = false) => (
-      <Form<Submitted>
-        aria-label="Account"
-        errors={{ email: "Already registered" }}
-        onFormSubmit={(values) => submitted.push(values)}>
-        <SkeletonReveal
-          data={data}
-          sample={{ email: "sample@example.com" }}
-          label="Henter"
-          reveal="together"
-          loading={loading}>
-          {(account) => <TextField label="Email" name="email" defaultValue={account.email} />}
-        </SkeletonReveal>
-      </Form>
-    );
-    const { rerender } = renderThemed(view(null));
-    expect(slot("skeleton-reveal-ghost").textContent).toContain("Already registered");
-    const form = roleNamed("form", "Account");
-    if (!(form instanceof HTMLFormElement)) throw new Error("expected a form");
-    form.requestSubmit();
-    expect(submitted).toEqual([{}]);
-
-    rerender(view({ email: "kari@example.com" }));
-    await expect.poll(() => querySlot("skeleton-reveal-skeleton")).toBeNull();
-    // A refetch: the field on its way out keeps the error it showed.
-    rerender(view({ email: "kari@example.com" }, true));
-    // The content pane has no role; on a refetch it is the one on its way out.
-    const leaving = [...document.querySelectorAll('[data-slot="skeleton-reveal-content"]')];
-    expect(leaving).toHaveLength(1);
-    expect(leaving[0]?.textContent).toContain("Already registered");
-    form.requestSubmit();
-    expect(submitted).toEqual([{}, {}]);
   });
 });
 

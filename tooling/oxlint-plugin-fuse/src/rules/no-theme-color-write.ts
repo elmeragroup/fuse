@@ -1,24 +1,18 @@
 import type { ESTree, Rule } from "@oxlint/plugins";
 
+import { propertyKeyName } from "../ast-names.ts";
 import { isTestFile } from "../source-file.ts";
-import { stringLiteral } from "../static-text.ts";
+import { leadingText } from "../static-text.ts";
 
 /** Tailwind 4's theme colour namespace. */
 const THEME_COLOR = "--color-";
 
-/** The leading text of a style key: a literal key, or a template key's first chunk. */
+/** The leading text of a style key: a literal key, or a computed template key's first chunk. */
 function keyPrefix(property: {
   readonly key: ESTree.PropertyKey;
   readonly computed: boolean;
 }): string | undefined {
-  const key = property.key;
-  const literal = stringLiteral(key);
-  if (literal !== undefined) return literal;
-  if (property.computed && key.type === "TemplateLiteral") {
-    const [first] = key.quasis;
-    return first?.value.cooked ?? first?.value.raw;
-  }
-  return undefined;
+  return property.computed ? leadingText(property.key) : propertyKeyName(property);
 }
 
 /**
@@ -51,7 +45,7 @@ export const noThemeColorWrite: Rule = {
           callee.property.type === "Identifier" &&
           callee.property.name === "setProperty" &&
           name !== undefined &&
-          stringLiteral(name)?.startsWith(THEME_COLOR) === true
+          leadingText(name)?.startsWith(THEME_COLOR) === true
         ) {
           context.report({ node, messageId: "write" });
         }

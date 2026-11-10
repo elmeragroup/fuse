@@ -1,7 +1,6 @@
-import type { Locator, Page } from "playwright";
+import type { ConsoleMessage, Locator, Page } from "playwright";
 import { expect } from "vitest";
 
-import { PAGE_WAIT_GUARD } from "./demo-page";
 import { docsBaseUrl } from "./docs-server";
 import { launchSuiteBrowser } from "./suite-browser";
 
@@ -67,7 +66,6 @@ export function launchLandingSuite({
     ) => {
       const context = await browser().newContext({ viewport, reducedMotion, colorScheme });
       const page = await context.newPage();
-      page.setDefaultTimeout(PAGE_WAIT_GUARD);
       if (!shaders) {
         await page.route("**/landing/marks/**", async (route) => route.abort());
       }
@@ -111,14 +109,18 @@ export async function waitForLandingHydration(page: Page): Promise<void> {
 
 /**
  * Every unhandled error and rejection the page raises, collected from now on, and with `console`
- * every `console.error` call too, React's hydration reports among them.
+ * every `console.error` call too, React's hydration reports among them, except those `ignore`
+ * accepts.
  */
-export function collectPageErrors(page: Page, options: { readonly console?: boolean } = {}): string[] {
+export function collectPageErrors(
+  page: Page,
+  options: { readonly console?: boolean; readonly ignore?: (message: ConsoleMessage) => boolean } = {}
+): string[] {
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
   if (options.console === true) {
     page.on("console", (message) => {
-      if (message.type() === "error") errors.push(message.text());
+      if (message.type() === "error" && options.ignore?.(message) !== true) errors.push(message.text());
     });
   }
   return errors;

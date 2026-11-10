@@ -2,7 +2,6 @@ import { playwright } from "@vitest/browser-playwright";
 import { defineConfig } from "vitest/config";
 import type { TestProjectInlineConfiguration } from "vitest/config";
 
-import { mediaCommands } from "./test/media-commands.ts";
 import { pageSizeCommands } from "./test/page-size-commands.ts";
 import { pointerCommands } from "./test/pointer-commands.ts";
 
@@ -92,7 +91,7 @@ function browserProject(
         viewport: VIEWPORT,
         provider: playwright({ contextOptions: { viewport: VIEWPORT } }),
         instances: browsers.map((browser) => ({ browser })),
-        commands: { ...pointerCommands, ...mediaCommands, ...pageSizeCommands },
+        commands: { ...pointerCommands, ...pageSizeCommands },
       },
     },
   };

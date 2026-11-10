@@ -121,6 +121,15 @@ describe("DateField segments", () => {
     expect(segmentTexts()).toEqual(["10", "dd", "2026"]);
     await expect.element(committed()).toHaveTextContent(UNCHANGED);
   });
+
+  it("deletes the last year digit with Backspace and commits the shorter year", async () => {
+    renderThemed(<Harness label="Birth date" />);
+    await userEvent.click(page.getByRole("spinbutton").first());
+    await userEvent.keyboard("03152008{Backspace}");
+
+    await expect.element(committed()).toHaveTextContent("0200-03-15");
+    expect(segmentTexts()).toEqual(["03", "15", "200"]);
+  });
 });
 
 describe("DateField keys", () => {
@@ -154,6 +163,41 @@ describe("DateField keys", () => {
       .element(page.getByRole("spinbutton", { name: "day, Start date", exact: true }))
       .toHaveFocus();
   });
+
+  it("pages days by 7 and years to the next multiple of 5, and jumps to the ends with Home and End", async () => {
+    renderThemed(<Harness label="Start date" defaultValue={Temporal.PlainDate.from("2026-10-28")} />);
+    await userEvent.click(spin("day, Start date"));
+
+    await userEvent.keyboard("{PageUp}");
+    // React Aria lets a day run to 31 in any month; Oct 28 + 7 wraps past 31 to 4.
+    await expect.element(committed()).toHaveTextContent("2026-10-04");
+    await userEvent.keyboard("{End}");
+    await expect.element(committed()).toHaveTextContent("2026-10-31");
+    await userEvent.keyboard("{Home}");
+    await expect.element(committed()).toHaveTextContent("2026-10-01");
+
+    await userEvent.click(spin("year, Start date"));
+    await userEvent.keyboard("{PageUp}");
+    await expect.element(committed()).toHaveTextContent("2030-10-01");
+    await userEvent.keyboard("{PageDown}");
+    await expect.element(committed()).toHaveTextContent("2025-10-01");
+  });
+
+  it("restarts a segment when the next digit would pass its maximum, and moves on", async () => {
+    renderThemed(<Harness label="Start date" defaultValue={Temporal.PlainDate.from("2026-10-05")} />);
+    await userEvent.click(spin("month, Start date"));
+
+    // "1" may still become 10–12, so focus stays; "3" would make 13, so it restarts at 3 and moves.
+    await userEvent.keyboard("1");
+    await expect
+      .element(page.getByRole("spinbutton", { name: "month, Start date", exact: true }))
+      .toHaveFocus();
+    await userEvent.keyboard("3");
+    await expect.element(committed()).toHaveTextContent("2026-03-05");
+    await expect
+      .element(page.getByRole("spinbutton", { name: "day, Start date", exact: true }))
+      .toHaveFocus();
+  });
 });
 
 describe("DateField blur", () => {
@@ -174,6 +218,19 @@ describe("DateField blur", () => {
       )
       .toBeVisible();
     await expect.element(committed()).toHaveTextContent(UNCHANGED);
+  });
+
+  it("keeps a typed February 30 until blur, then commits it constrained to the month's last day", async () => {
+    renderThemed(<Harness label="Start date" defaultValue={Temporal.PlainDate.from("2026-01-30")} />);
+    await userEvent.click(spin("month, Start date"));
+    await userEvent.keyboard("02");
+
+    expect(segmentTexts()).toEqual(["02", "30", "2026"]);
+    await expect.element(committed()).toHaveTextContent(UNCHANGED);
+
+    await userEvent.click(roleNamed("button", "After"));
+    await expect.element(committed()).toHaveTextContent("2026-02-28");
+    expect(segmentTexts()).toEqual(["02", "28", "2026"]);
   });
 });
 
@@ -222,6 +279,23 @@ describe("DateField kind-change warning", () => {
       warn.mockRestore();
     }
   });
+
+  it("does not warn when a loaded value replaces the kind an empty field's props made", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    try {
+      renderThemed(
+        <LoadHarness
+          initial={null}
+          loaded={Temporal.ZonedDateTime.from("2026-10-12T09:30:00+02:00[Europe/Oslo]")}
+        />
+      );
+      await userEvent.click(roleNamed("button", "Load"));
+      await expect.poll(segmentTexts).toEqual(["10", "12", "2026", "09", "30", "AM", "GMT+2"]);
+      expect(kindWarnings(warn)).toEqual([]);
+    } finally {
+      warn.mockRestore();
+    }
+  });
 });
 
 describe("DateField validation", () => {
@@ -260,6 +334,103 @@ describe("DateField validation", () => {
     await expect.element(page.getByText("Weekdays only", { exact: true })).toBeVisible();
     await expect.element(page.getByText("Pick a weekday", { exact: true })).toBeVisible();
   });
+
+  it("names a zoned minValue of a date field by the wall-clock day it is compared on", async () => {
+    // 00:30 in Oslo on November 9 is 23:30 UTC on November 8; a date compares with its Oslo day.
+    renderThemed(
+      <Harness
+        label="Start date"
+        minValue={Temporal.ZonedDateTime.from("2026-11-09T00:30+01:00[Europe/Oslo]")}
+        defaultValue={Temporal.PlainDate.from("2026-11-10")}
+      />
+    );
+    await userEvent.click(spin("day, Start date"));
+    await userEvent.keyboard("08");
+    await userEvent.tab();
+
+    await expect.element(committed()).toHaveTextContent("2026-11-08");
+    await expect.element(page.getByText("Value must be 11/09/2026 or later.", { exact: true })).toBeVisible();
+  });
+
+  it("names a zoned maxValue of a date-time field by the wall clock it is compared on", async () => {
+    renderThemed(
+      <Harness
+        label="Starts"
+        granularity="minute"
+        hourCycle={24}
+        maxValue={Temporal.ZonedDateTime.from("2026-10-31T23:30+01:00[Europe/Oslo]")}
+        defaultValue={Temporal.PlainDateTime.from("2026-10-31T23:00")}
+      />
+    );
+    await userEvent.click(spin("minute, Starts"));
+    await userEvent.keyboard("45");
+    await userEvent.tab();
+
+    await expect.element(committed()).toHaveTextContent("2026-10-31T23:45:00");
+    await expect
+      .element(page.getByText("Value must be 10/31/2026, 23:30 or earlier.", { exact: true }))
+      .toBeVisible();
+  });
+
+  it("reports an unavailable date with React Aria's copy", async () => {
+    renderThemed(
+      <Harness
+        label="Start date"
+        defaultValue={Temporal.PlainDate.from("2026-10-05")}
+        isDateUnavailable={(date) => date.dayOfWeek === 6}
+      />
+    );
+    await userEvent.click(spin("day, Start date"));
+    await userEvent.keyboard("10");
+    await userEvent.tab();
+
+    await expect.element(committed()).toHaveTextContent("2026-10-10");
+    await expect.element(page.getByText("Selected date unavailable.", { exact: true })).toBeVisible();
+  });
+
+  it.each([
+    ["2026-10-31T23:00[Europe/Oslo]", "30", "2026-10-31T23:30:00+01:00[Europe/Oslo]", null],
+    [
+      "2026-10-31T23:00[Europe/Oslo]",
+      "31",
+      "2026-10-31T23:31:00+01:00[Europe/Oslo]",
+      "Value must be 10/31/2026, 23:30 or earlier.",
+    ],
+    ["2026-10-31T20:00[America/New_York]", "15", "2026-10-31T20:15:00-04:00[America/New_York]", null],
+    [
+      "2026-09-30T17:00[America/New_York]",
+      "30",
+      "2026-09-30T17:30:00-04:00[America/New_York]",
+      "Value must be 09/30/2026, 18:00 or later.",
+    ],
+  ])(
+    "compares %s with a zoned minimum and a plain maximum as React Aria does",
+    async (start, minute, value, copy) => {
+      renderThemed(
+        <Harness
+          label="Period"
+          granularity="minute"
+          hourCycle={24}
+          hideTimeZone
+          minValue={Temporal.ZonedDateTime.from("2026-10-01T00:00[Europe/Oslo]")}
+          maxValue={Temporal.PlainDateTime.from("2026-10-31T23:30")}
+          defaultValue={Temporal.ZonedDateTime.from(start)}
+        />
+      );
+      await userEvent.click(spin("minute, Period"));
+      await userEvent.keyboard(minute);
+      await userEvent.tab();
+
+      await expect.element(committed()).toHaveTextContent(value);
+      const group = page.getByRole("group", { name: "Period", exact: true });
+      if (copy === null) {
+        await expect.element(group).not.toHaveAttribute("data-invalid");
+      } else {
+        await expect.element(group).toHaveAttribute("data-invalid", "true");
+        await expect.element(page.getByText(copy, { exact: true })).toBeVisible();
+      }
+    }
+  );
 });
 
 /** A DateInput reporting each change's reason, canceling the reasons it is told to. */
@@ -325,6 +496,26 @@ describe("DateInput onValueChange details", () => {
 
     await expect.element(changeLog()).toHaveTextContent("input-paste:2027-01-02");
     expect(segmentTexts()).toEqual(["10", "5", "2026"]);
+  });
+
+  it("keeps the value and shows it again when an input-change is canceled", async () => {
+    renderThemed(
+      <CancelHarness cancel={["input-change"]} defaultValue={Temporal.PlainDate.from("2026-10-05")} />
+    );
+    await userEvent.click(spin("day, Start date"));
+    await userEvent.keyboard("{ArrowUp}");
+
+    await expect.element(changeLog()).toHaveTextContent("input-change:2026-10-06");
+    expect(segmentTexts()).toEqual(["10", "5", "2026"]);
+  });
+
+  it("applies an input-change that is not canceled", async () => {
+    renderThemed(<CancelHarness cancel={[]} defaultValue={Temporal.PlainDate.from("2026-10-05")} />);
+    await userEvent.click(spin("day, Start date"));
+    await userEvent.keyboard("{ArrowUp}");
+
+    await expect.element(changeLog()).toHaveTextContent("input-change:2026-10-06");
+    expect(segmentTexts()).toEqual(["10", "6", "2026"]);
   });
 });
 
@@ -471,6 +662,50 @@ describe("DateInput reconciliation", () => {
     await userEvent.keyboard("18");
     await expect.element(committed()).toHaveTextContent("2027-12-24T18:30:00");
     expect(segmentTexts()).toEqual(["12", "24", "2027", "18", "30"]);
+  });
+
+  it("does not warn of a kind change when the parent moves the value to another zone", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    try {
+      renderThemed(<ZoneMoveHarness />);
+      await userEvent.click(roleNamed("button", "New York"));
+      await expect.poll(segmentTexts).toEqual(["10", "12", "2026", "03", "30", "AM", "EDT"]);
+      expect(warn.mock.calls.filter(([message]) => /changed kind/u.test(String(message)))).toEqual([]);
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
+  it("keeps every typed year digit of an Oslo day field while a parent echoes each value", async () => {
+    // Each year digit commits a year Oslo writes in local mean time (+00:53:28), which ISO text
+    // rounds to +00:53: the echo must read back as the value the input committed (#540).
+    renderThemed(<ZonedDayEchoHarness />);
+    await userEvent.click(spin("year, Starts"));
+    await userEvent.keyboard("2026");
+    await expect.element(committed()).toHaveTextContent("2026-10-05T00:00:00+02:00[Europe/Oslo]");
+    expect(segmentTexts()).toEqual(["10", "05", "2026"]);
+  });
+
+  it("drops a draft for good when the parent replaces the value, so restoring it shows the value", async () => {
+    renderThemed(<ControlledHarness />);
+    await userEvent.click(spin("day, Start date"));
+    await userEvent.keyboard("{Backspace}");
+    expect(segmentTexts()).toEqual(["10", "dd", "2026"]);
+    // Tab past the year to the button: the incomplete message blur shows would move the button
+    // under a mouse press.
+    await userEvent.tab();
+    await userEvent.tab();
+    await expect.element(page.getByRole("button", { name: "November" })).toHaveFocus();
+    await expect
+      .element(page.getByRole("group", { name: "Start date", exact: true }))
+      .toHaveAttribute("data-invalid", "true");
+
+    await userEvent.keyboard("{Enter}");
+    await expect.poll(segmentTexts).toEqual(["11", "06", "2026"]);
+    await userEvent.tab();
+    await userEvent.keyboard("{Enter}");
+    await expect.poll(segmentTexts).toEqual(["10", "05", "2026"]);
+    expect(roleNamed("group", "Start date")).not.toHaveAttribute("data-invalid");
   });
 });
 
@@ -705,17 +940,6 @@ function RenderSwapHarness(): ReactElement {
   );
 }
 
-describe("DateField segments", () => {
-  it("deletes the last year digit with Backspace and commits the shorter year", async () => {
-    renderThemed(<Harness label="Birth date" />);
-    await userEvent.click(page.getByRole("spinbutton").first());
-    await userEvent.keyboard("03152008{Backspace}");
-
-    await expect.element(committed()).toHaveTextContent("0200-03-15");
-    expect(segmentTexts()).toEqual(["03", "15", "200"]);
-  });
-});
-
 describe("DateField locales", () => {
   it.each([
     ["nb-NO", ["dd", "mm", "åååå"], "15032008", ["15", "03", "2008"], "dag, Fødselsdato"],
@@ -734,43 +958,6 @@ describe("DateField locales", () => {
       expect(segmentTexts()).toEqual(texts);
     }
   );
-});
-
-describe("DateField keys", () => {
-  it("pages days by 7 and years to the next multiple of 5, and jumps to the ends with Home and End", async () => {
-    renderThemed(<Harness label="Start date" defaultValue={Temporal.PlainDate.from("2026-10-28")} />);
-    await userEvent.click(spin("day, Start date"));
-
-    await userEvent.keyboard("{PageUp}");
-    // React Aria lets a day run to 31 in any month; Oct 28 + 7 wraps past 31 to 4.
-    await expect.element(committed()).toHaveTextContent("2026-10-04");
-    await userEvent.keyboard("{End}");
-    await expect.element(committed()).toHaveTextContent("2026-10-31");
-    await userEvent.keyboard("{Home}");
-    await expect.element(committed()).toHaveTextContent("2026-10-01");
-
-    await userEvent.click(spin("year, Start date"));
-    await userEvent.keyboard("{PageUp}");
-    await expect.element(committed()).toHaveTextContent("2030-10-01");
-    await userEvent.keyboard("{PageDown}");
-    await expect.element(committed()).toHaveTextContent("2025-10-01");
-  });
-
-  it("restarts a segment when the next digit would pass its maximum, and moves on", async () => {
-    renderThemed(<Harness label="Start date" defaultValue={Temporal.PlainDate.from("2026-10-05")} />);
-    await userEvent.click(spin("month, Start date"));
-
-    // "1" may still become 10–12, so focus stays; "3" would make 13, so it restarts at 3 and moves.
-    await userEvent.keyboard("1");
-    await expect
-      .element(page.getByRole("spinbutton", { name: "month, Start date", exact: true }))
-      .toHaveFocus();
-    await userEvent.keyboard("3");
-    await expect.element(committed()).toHaveTextContent("2026-03-05");
-    await expect
-      .element(page.getByRole("spinbutton", { name: "day, Start date", exact: true }))
-      .toHaveFocus();
-  });
 });
 
 describe("DateField modifier chords", () => {
@@ -811,21 +998,6 @@ describe("DateField modifier chords", () => {
     await expect
       .element(page.getByRole("spinbutton", { name: "day, Start date", exact: true }))
       .toHaveFocus();
-  });
-});
-
-describe("DateField blur", () => {
-  it("keeps a typed February 30 until blur, then commits it constrained to the month's last day", async () => {
-    renderThemed(<Harness label="Start date" defaultValue={Temporal.PlainDate.from("2026-01-30")} />);
-    await userEvent.click(spin("month, Start date"));
-    await userEvent.keyboard("02");
-
-    expect(segmentTexts()).toEqual(["02", "30", "2026"]);
-    await expect.element(committed()).toHaveTextContent(UNCHANGED);
-
-    await userEvent.click(roleNamed("button", "After"));
-    await expect.element(committed()).toHaveTextContent("2026-02-28");
-    expect(segmentTexts()).toEqual(["02", "28", "2026"]);
   });
 });
 
@@ -1064,196 +1236,6 @@ describe("DateField kind across prop changes", () => {
     await userEvent.click(spin("month, Starts"));
     await userEvent.keyboard("110320261445");
     await expect.element(committed()).toHaveTextContent("2026-11-03T14:45:00+01:00[Europe/Oslo]");
-  });
-});
-
-describe("DateField kind-change warning", () => {
-  function kindWarnings(warn: { readonly mock: { readonly calls: unknown[][] } }): unknown[][] {
-    return warn.mock.calls.filter(([message]) => /changed kind/u.test(String(message)));
-  }
-
-  it("does not warn when a loaded value replaces the kind an empty field's props made", async () => {
-    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
-    try {
-      renderThemed(
-        <LoadHarness
-          initial={null}
-          loaded={Temporal.ZonedDateTime.from("2026-10-12T09:30:00+02:00[Europe/Oslo]")}
-        />
-      );
-      await userEvent.click(roleNamed("button", "Load"));
-      await expect.poll(segmentTexts).toEqual(["10", "12", "2026", "09", "30", "AM", "GMT+2"]);
-      expect(kindWarnings(warn)).toEqual([]);
-    } finally {
-      warn.mockRestore();
-    }
-  });
-});
-
-describe("DateField validation", () => {
-  it("names a zoned minValue of a date field by the wall-clock day it is compared on", async () => {
-    // 00:30 in Oslo on November 9 is 23:30 UTC on November 8; a date compares with its Oslo day.
-    renderThemed(
-      <Harness
-        label="Start date"
-        minValue={Temporal.ZonedDateTime.from("2026-11-09T00:30+01:00[Europe/Oslo]")}
-        defaultValue={Temporal.PlainDate.from("2026-11-10")}
-      />
-    );
-    await userEvent.click(spin("day, Start date"));
-    await userEvent.keyboard("08");
-    await userEvent.tab();
-
-    await expect.element(committed()).toHaveTextContent("2026-11-08");
-    await expect.element(page.getByText("Value must be 11/09/2026 or later.", { exact: true })).toBeVisible();
-  });
-
-  it("names a zoned maxValue of a date-time field by the wall clock it is compared on", async () => {
-    renderThemed(
-      <Harness
-        label="Starts"
-        granularity="minute"
-        hourCycle={24}
-        maxValue={Temporal.ZonedDateTime.from("2026-10-31T23:30+01:00[Europe/Oslo]")}
-        defaultValue={Temporal.PlainDateTime.from("2026-10-31T23:00")}
-      />
-    );
-    await userEvent.click(spin("minute, Starts"));
-    await userEvent.keyboard("45");
-    await userEvent.tab();
-
-    await expect.element(committed()).toHaveTextContent("2026-10-31T23:45:00");
-    await expect
-      .element(page.getByText("Value must be 10/31/2026, 23:30 or earlier.", { exact: true }))
-      .toBeVisible();
-  });
-
-  it("reports an unavailable date with React Aria's copy", async () => {
-    renderThemed(
-      <Harness
-        label="Start date"
-        defaultValue={Temporal.PlainDate.from("2026-10-05")}
-        isDateUnavailable={(date) => date.dayOfWeek === 6}
-      />
-    );
-    await userEvent.click(spin("day, Start date"));
-    await userEvent.keyboard("10");
-    await userEvent.tab();
-
-    await expect.element(committed()).toHaveTextContent("2026-10-10");
-    await expect.element(page.getByText("Selected date unavailable.", { exact: true })).toBeVisible();
-  });
-
-  it.each([
-    ["2026-10-31T23:00[Europe/Oslo]", "30", "2026-10-31T23:30:00+01:00[Europe/Oslo]", null],
-    [
-      "2026-10-31T23:00[Europe/Oslo]",
-      "31",
-      "2026-10-31T23:31:00+01:00[Europe/Oslo]",
-      "Value must be 10/31/2026, 23:30 or earlier.",
-    ],
-    ["2026-10-31T20:00[America/New_York]", "15", "2026-10-31T20:15:00-04:00[America/New_York]", null],
-    [
-      "2026-09-30T17:00[America/New_York]",
-      "30",
-      "2026-09-30T17:30:00-04:00[America/New_York]",
-      "Value must be 09/30/2026, 18:00 or later.",
-    ],
-  ])(
-    "compares %s with a zoned minimum and a plain maximum as React Aria does",
-    async (start, minute, value, copy) => {
-      renderThemed(
-        <Harness
-          label="Period"
-          granularity="minute"
-          hourCycle={24}
-          hideTimeZone
-          minValue={Temporal.ZonedDateTime.from("2026-10-01T00:00[Europe/Oslo]")}
-          maxValue={Temporal.PlainDateTime.from("2026-10-31T23:30")}
-          defaultValue={Temporal.ZonedDateTime.from(start)}
-        />
-      );
-      await userEvent.click(spin("minute, Period"));
-      await userEvent.keyboard(minute);
-      await userEvent.tab();
-
-      await expect.element(committed()).toHaveTextContent(value);
-      const group = page.getByRole("group", { name: "Period", exact: true });
-      if (copy === null) {
-        await expect.element(group).not.toHaveAttribute("data-invalid");
-      } else {
-        await expect.element(group).toHaveAttribute("data-invalid", "true");
-        await expect.element(page.getByText(copy, { exact: true })).toBeVisible();
-      }
-    }
-  );
-});
-
-describe("DateInput onValueChange details", () => {
-  it("keeps the value and shows it again when an input-change is canceled", async () => {
-    renderThemed(
-      <CancelHarness cancel={["input-change"]} defaultValue={Temporal.PlainDate.from("2026-10-05")} />
-    );
-    await userEvent.click(spin("day, Start date"));
-    await userEvent.keyboard("{ArrowUp}");
-
-    await expect.element(changeLog()).toHaveTextContent("input-change:2026-10-06");
-    expect(segmentTexts()).toEqual(["10", "5", "2026"]);
-  });
-
-  it("applies an input-change that is not canceled", async () => {
-    renderThemed(<CancelHarness cancel={[]} defaultValue={Temporal.PlainDate.from("2026-10-05")} />);
-    await userEvent.click(spin("day, Start date"));
-    await userEvent.keyboard("{ArrowUp}");
-
-    await expect.element(changeLog()).toHaveTextContent("input-change:2026-10-06");
-    expect(segmentTexts()).toEqual(["10", "6", "2026"]);
-  });
-});
-
-describe("DateInput reconciliation", () => {
-  it("does not warn of a kind change when the parent moves the value to another zone", async () => {
-    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
-    try {
-      renderThemed(<ZoneMoveHarness />);
-      await userEvent.click(roleNamed("button", "New York"));
-      await expect.poll(segmentTexts).toEqual(["10", "12", "2026", "03", "30", "AM", "EDT"]);
-      expect(warn.mock.calls.filter(([message]) => /changed kind/u.test(String(message)))).toEqual([]);
-    } finally {
-      warn.mockRestore();
-    }
-  });
-
-  it("keeps every typed year digit of an Oslo day field while a parent echoes each value", async () => {
-    // Each year digit commits a year Oslo writes in local mean time (+00:53:28), which ISO text
-    // rounds to +00:53: the echo must read back as the value the input committed (#540).
-    renderThemed(<ZonedDayEchoHarness />);
-    await userEvent.click(spin("year, Starts"));
-    await userEvent.keyboard("2026");
-    await expect.element(committed()).toHaveTextContent("2026-10-05T00:00:00+02:00[Europe/Oslo]");
-    expect(segmentTexts()).toEqual(["10", "05", "2026"]);
-  });
-
-  it("drops a draft for good when the parent replaces the value, so restoring it shows the value", async () => {
-    renderThemed(<ControlledHarness />);
-    await userEvent.click(spin("day, Start date"));
-    await userEvent.keyboard("{Backspace}");
-    expect(segmentTexts()).toEqual(["10", "dd", "2026"]);
-    // Tab past the year to the button: the incomplete message blur shows would move the button
-    // under a mouse press.
-    await userEvent.tab();
-    await userEvent.tab();
-    await expect.element(page.getByRole("button", { name: "November" })).toHaveFocus();
-    await expect
-      .element(page.getByRole("group", { name: "Start date", exact: true }))
-      .toHaveAttribute("data-invalid", "true");
-
-    await userEvent.keyboard("{Enter}");
-    await expect.poll(segmentTexts).toEqual(["11", "06", "2026"]);
-    await userEvent.tab();
-    await userEvent.keyboard("{Enter}");
-    await expect.poll(segmentTexts).toEqual(["10", "05", "2026"]);
-    expect(roleNamed("group", "Start date")).not.toHaveAttribute("data-invalid");
   });
 });
 

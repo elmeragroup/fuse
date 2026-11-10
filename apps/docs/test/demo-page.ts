@@ -1,47 +1,7 @@
 import type { Locator, Page } from "playwright";
 
-import { componentHref } from "../src/lib/pages";
-import { docsBaseUrl } from "./docs-server";
-
-export { launchSuiteBrowser } from "./suite-browser";
-
 /** The desktop viewport the layout-sensitive demo suites run at. */
 export const DESKTOP_VIEWPORT = { width: 1280, height: 720 } as const;
-
-/**
- * How long a page's actions and locators wait. A hang guard, not a budget: no docs e2e test
- * asserts timing, and a step that slows on a loaded runner must not fail for it.
- */
-export const PAGE_WAIT_GUARD = 60_000;
-
-/**
- * Navigates `page` to a component page and returns the region the docs shell renders
- * around the demo titled `name`, once that demo has hydrated.
- */
-export async function openDemo(page: Page, slug: string, name: string): Promise<Locator> {
-  return openDemoAt(page, componentHref(slug), name);
-}
-
-/**
- * Navigates `page` to any docs page, such as a handbook page, and returns the region around the
- * demo titled `name`, once that demo has hydrated.
- *
- * @param page - The page to navigate.
- * @param pathname - The docs path, such as `/handbook/temporal-migration`.
- * @param name - The demo's title.
- */
-async function openDemoAt(page: Page, pathname: string, name: string): Promise<Locator> {
-  page.setDefaultTimeout(PAGE_WAIT_GUARD);
-  await page.goto(`${docsBaseUrl()}${pathname}`, { waitUntil: "load" });
-  return sharedDemo(page, name);
-}
-
-/** The region around the demo titled `name` on an open component page, once it has hydrated. */
-async function sharedDemo(page: Page, name: string): Promise<Locator> {
-  const demo = page.getByRole("region", { name, exact: true });
-  await waitForDemoHydration(demo);
-  return demo;
-}
 
 /**
  * Waits until the demo frame `demo` has hydrated. Each demo hydrates behind its frame's own
@@ -52,6 +12,14 @@ async function sharedDemo(page: Page, name: string): Promise<Locator> {
  */
 export async function waitForDemoHydration(demo: Locator): Promise<void> {
   await demo.and(demo.page().locator("[data-demo-hydrated]")).waitFor({ state: "attached" });
+}
+
+/**
+ * Waits until a block preview page has hydrated: `PreviewHydrationMarker` stamps
+ * `data-preview-hydrated` on `<html>` from an effect once the page it follows is live.
+ */
+export async function waitForBlockPreviewHydration(page: Page): Promise<void> {
+  await page.locator("html[data-preview-hydrated]").waitFor({ state: "attached" });
 }
 
 /**

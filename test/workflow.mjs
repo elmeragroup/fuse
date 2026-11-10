@@ -31,11 +31,7 @@ export function readWorkflow(name) {
  * @returns {Record<string, unknown>[]}
  */
 export function turboTasks(args) {
-  // After `--`, Turbo forwards flags to the task instead of parsing them itself.
-  const graphArgs = [...args];
-  const separator = graphArgs.indexOf("--");
-  graphArgs.splice(separator === -1 ? graphArgs.length : separator, 0, "--dry=json");
-  const graphText = execFileSync(join(repoRoot, "node_modules/.bin/turbo"), graphArgs, {
+  const graphText = execFileSync(join(repoRoot, "node_modules/.bin/turbo"), [...args, "--dry=json"], {
     cwd: repoRoot,
     encoding: "utf8",
     maxBuffer: 32 * 1024 * 1024,
@@ -49,20 +45,11 @@ export function turboTasks(args) {
  * @param {Record<string, unknown>} workflow
  * @param {string} name
  */
-function jobSteps(workflow, name) {
-  const job = asRecord(asRecord(workflow.jobs, "workflow jobs")[name], name);
-  return asRecordArray(job.steps, `${name} steps`);
-}
-
-/**
- * @param {Record<string, unknown>} workflow
- * @param {string} name
- */
 export function requiredJobSteps(workflow, name) {
   const job = asRecord(asRecord(workflow.jobs, "workflow jobs")[name], name);
   expect(job.if, `${name} must run for every workflow event`).toBeUndefined();
   expect(job["continue-on-error"]).toBeUndefined();
-  return jobSteps(workflow, name);
+  return asRecordArray(job.steps, `${name} steps`);
 }
 
 /**

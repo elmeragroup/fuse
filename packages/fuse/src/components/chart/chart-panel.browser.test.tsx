@@ -1,8 +1,7 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
-import type { FrameClock } from "../../../test/chart/frame-clock";
 import { bars } from "../../../test/chart/marks";
 import { Composed } from "../../../test/chart/panel-fixtures";
 import { plotOf } from "../../../test/chart/panel-readers";
@@ -10,13 +9,6 @@ import { renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
 import { Chart } from "./chart-namespace";
 import "./chart.css";
-
-let clock: FrameClock | null = null;
-
-afterEach(() => {
-  clock?.restore();
-  clock = null;
-});
 
 describe("two Panels on one x grid", () => {
   it("lists 100 Table rows with each hour's consumption once, spanning its 4 rows", async () => {

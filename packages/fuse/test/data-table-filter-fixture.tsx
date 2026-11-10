@@ -56,60 +56,6 @@ function day(iso: string): Date {
   return new Date(`${iso}T12:00:00Z`);
 }
 
-const MATERIALS = [
-  "Oak",
-  "Pine",
-  "Birch",
-  "Ash",
-  "Walnut",
-  "Steel",
-  "Brass",
-  "Linen",
-  "Wool",
-  "Cotton",
-  "Glass",
-  "Stone",
-];
-const ITEMS = [
-  "shelf",
-  "chair",
-  "table",
-  "lamp",
-  "rug",
-  "mirror",
-  "stool",
-  "bench",
-  "desk",
-  "cabinet",
-  "vase",
-  "bowl",
-  "tray",
-  "basket",
-  "hook",
-  "rail",
-  "frame",
-  "clock",
-  "throw",
-  "cushion",
-  "blanket",
-  "planter",
-  "candle",
-  "holder",
-  "box",
-];
-const SIZES = [20, 30, 40, 50, 60, 80, 100, 120, 160, 200];
-
-/** 12 materials × 25 items × 10 sizes: 3,000 products in a stable order. */
-export const PRODUCTS: readonly { readonly value: string; readonly label: string }[] = MATERIALS.flatMap(
-  (material) =>
-    ITEMS.flatMap((item) =>
-      SIZES.map((size) => ({
-        value: `${material.toLowerCase()}-${item}-${String(size)}`,
-        label: `${material} ${item} ${String(size)} cm`,
-      }))
-    )
-);
-
 /** The six rows. */
 export const ORDERS: readonly Order[] = [
   {

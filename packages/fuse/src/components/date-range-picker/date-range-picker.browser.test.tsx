@@ -177,6 +177,66 @@ describe("DateRangePicker wiring", () => {
     );
     expect(roleNamed("spinbutton", "month, End Date, Period")).toHaveAttribute("aria-invalid", "true");
   });
+
+  it("keeps its own messages when errorMessage renders nothing", async () => {
+    renderThemed(
+      withLocale(
+        "en-US",
+        <>
+          <DateRangePickerField
+            label="Stay"
+            defaultValue={{
+              start: Temporal.PlainDate.from("2026-10-05"),
+              end: Temporal.PlainDate.from("2026-10-09"),
+            }}
+            errorMessage={false}
+          />
+          <button type="button">After</button>
+        </>
+      )
+    );
+    await userEvent.click(roleNamed("spinbutton", "day, End Date, Stay"));
+    await userEvent.keyboard("01");
+    await userEvent.click(roleNamed("button", "After"));
+
+    const alert = page.getByRole("alert");
+    await expect.element(alert).toHaveTextContent("Start date must be before end date.");
+    expect(page.getByRole("alert").elements()).toHaveLength(1);
+  });
+
+  it("clears an end-before-start error once the start moves back", async () => {
+    renderThemed(
+      withLocale(
+        "en-US",
+        <>
+          <DateRangePickerField
+            label="Stay"
+            defaultValue={{
+              start: Temporal.PlainDate.from("2026-10-05"),
+              end: Temporal.PlainDate.from("2026-10-09"),
+            }}
+          />
+          <button type="button">After</button>
+        </>
+      )
+    );
+    await userEvent.click(roleNamed("spinbutton", "day, End Date, Stay"));
+    await userEvent.keyboard("01");
+    await userEvent.click(roleNamed("button", "After"));
+    await expect
+      .element(page.getByText("Start date must be before end date.", { exact: true }))
+      .toBeVisible();
+
+    await userEvent.click(roleNamed("spinbutton", "day, Start Date, Stay"));
+    await userEvent.keyboard("01");
+    await userEvent.click(roleNamed("button", "After"));
+    await expect
+      .element(page.getByText("Start date must be before end date.", { exact: true }))
+      .not.toBeInTheDocument();
+    await expect
+      .element(page.getByRole("group", { name: "Stay", exact: true }))
+      .not.toHaveAttribute("data-invalid");
+  });
 });
 
 describe("DateRangePicker calendar", () => {
@@ -203,6 +263,104 @@ describe("DateRangePicker calendar", () => {
         "day-press:2026-10-20T08:00:00+02:00[Europe/Oslo]..2026-10-26T17:30:00+01:00[Europe/Oslo]:valid"
       );
     await expect.element(page.getByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("keeps the popup open with the anchor when a completed range is canceled", async () => {
+    renderThemed(
+      withLocale(
+        "en-US",
+        <LoggedRange
+          defaultValue={{
+            start: Temporal.PlainDate.from("2026-10-05"),
+            end: Temporal.PlainDate.from("2026-10-09"),
+          }}
+          cancel={["day-press"]}
+        />
+      )
+    );
+    await userEvent.click(roleNamed("button", "Calendar Period"));
+    await waitForPopupSettled();
+    await userEvent.click(roleNamed("button", "Tuesday, October 20, 2026"));
+    await userEvent.click(roleNamed("button", "Thursday, October 22, 2026"));
+
+    await expect.element(log()).toHaveTextContent("day-press:2026-10-20..2026-10-22:valid");
+    await expect.element(page.getByRole("dialog")).toBeVisible();
+    expect(segmentTexts()).toEqual(["10", "5", "2026", "10", "9", "2026"]);
+
+    // The anchor survived the canceled completion: another end completes a range from October 20.
+    await userEvent.click(roleNamed("button", "Sunday, October 25, 2026"));
+    await expect
+      .element(log())
+      .toHaveTextContent("day-press:2026-10-20..2026-10-22:valid | day-press:2026-10-20..2026-10-25:valid");
+  });
+
+  it("shows two months side by side with visibleMonths", async () => {
+    renderThemed(
+      withLocale(
+        "en-US",
+        <LoggedRange
+          visibleMonths={2}
+          defaultValue={{
+            start: Temporal.PlainDate.from("2026-10-05"),
+            end: Temporal.PlainDate.from("2026-10-09"),
+          }}
+        />
+      )
+    );
+    await userEvent.click(roleNamed("button", "Calendar Period"));
+    await expect.element(page.getByRole("grid", { name: "October 2026", exact: true })).toBeVisible();
+    await expect.element(page.getByRole("grid", { name: "November 2026", exact: true })).toBeVisible();
+  });
+
+  it("drops a half-picked range, rather than completing it, when focus moves to a preset", async () => {
+    function WithPresets(): ReactElement {
+      const [value, setValue] = useState({
+        start: Temporal.PlainDate.from("2026-10-05"),
+        end: Temporal.PlainDate.from("2026-10-09"),
+      });
+      const [lines, setLines] = useState<string[]>([]);
+      return (
+        <>
+          <DateRangePickerField
+            label="Period"
+            value={value}
+            onChange={(next) => {
+              setLines((current) => [
+                ...current,
+                next === null ? "null" : `${next.start.toString()}..${next.end.toString()}`,
+              ]);
+              if (next !== null) setValue(next);
+            }}
+            presetGroup={
+              <DatePicker.Presets
+                onValueChange={() => {
+                  setValue({
+                    start: Temporal.PlainDate.from("2026-12-24"),
+                    end: Temporal.PlainDate.from("2026-12-26"),
+                  });
+                }}>
+                <DatePicker.PresetItem value="christmas">Christmas</DatePicker.PresetItem>
+              </DatePicker.Presets>
+            }
+          />
+          <div role="log" aria-label="Changes">
+            {lines.join(" | ")}
+          </div>
+        </>
+      );
+    }
+    renderThemed(withLocale("en-US", <WithPresets />));
+    await userEvent.click(roleNamed("button", "Calendar Period"));
+    await waitForPopupSettled();
+    await userEvent.click(roleNamed("button", "Tuesday, October 20, 2026"));
+    const christmas = roleNamed("radio", "Christmas").closest("label");
+    if (christmas === null) throw new Error("expected the preset's label");
+    await userEvent.click(christmas);
+
+    // No range completed at October 20: the preset set the range, and the calendar followed it.
+    expect(log().element().textContent).toBe("");
+    await expect.element(page.getByRole("grid", { name: "December 2026", exact: true })).toBeVisible();
+    expect(segmentTexts()).toEqual(["12", "24", "2026", "12", "26", "2026"]);
   });
 });
 
@@ -429,6 +587,63 @@ describe("DateRangePicker naming", () => {
     expect(named.at(-1)).toBe("Stay");
     expect(host.textContent).not.toContain("Ghost");
   });
+
+  it("describes the group and both ends by an explicit error shown with isInvalid", () => {
+    renderThemed(
+      withLocale(
+        "en-US",
+        <DateRangePickerField
+          label="Period"
+          isInvalid
+          errorMessage="Rejected"
+          defaultValue={{
+            start: Temporal.PlainDate.from("2026-10-05"),
+            end: Temporal.PlainDate.from("2026-10-09"),
+          }}
+        />
+      )
+    );
+    expect(roleNamed("group", "Period")).toHaveAccessibleDescription("Rejected");
+    expect(roleNamed("spinbutton", "month, End Date, Period")).toHaveAccessibleDescription(/Rejected/u);
+  });
+
+  it("writes whole names and descriptions in server output", () => {
+    const host = document.createElement("div");
+    host.innerHTML = renderToString(
+      withLocale(
+        "en-US",
+        <DateRangePickerField
+          label="Period"
+          description="Nights at the cabin"
+          isInvalid
+          errorMessage="Rejected"
+          defaultValue={{
+            start: Temporal.PlainDate.from("2026-10-05"),
+            end: Temporal.PlainDate.from("2026-10-09"),
+          }}
+        />
+      )
+    );
+    const text = (ids: string | null): string =>
+      (ids ?? "")
+        .split(" ")
+        .filter((id) => id !== "")
+        .map((id) => {
+          const target = host.querySelector(`[id="${id}"]`);
+          if (target === null) throw new Error(`${id} names no element in the server output`);
+          return target.textContent;
+        })
+        .join(" ");
+    const group = host.querySelector('[role="group"]');
+    expect(text(group?.getAttribute("aria-labelledby") ?? null)).toBe("Period");
+    expect(text(group?.getAttribute("aria-describedby") ?? null)).toBe("Nights at the cabin Rejected");
+    // Server HTML in a detached host has no accessibility tree to locate by role.
+    const trigger = host.querySelector('[data-slot="date-picker-trigger"]');
+    expect(trigger?.getAttribute("aria-label")).toBe("Calendar");
+    expect(text(trigger?.getAttribute("aria-labelledby") ?? null)).toBe(" Period");
+    const month = host.querySelector('[role="spinbutton"]');
+    expect(text(month?.getAttribute("aria-describedby") ?? null)).toContain("Nights at the cabin Rejected");
+  });
 });
 
 describe("DateRangePicker disabled", () => {
@@ -586,6 +801,36 @@ describe("DateRangePicker focus boundary", () => {
     await expect.poll(() => document.activeElement).toBe(roleNamed("button", "After"));
     expect(leaves).toBe(1);
   });
+
+  it("reports one focus leave from an end to outside, and one from the popup to outside", async () => {
+    let leaves = 0;
+    renderThemed(
+      withLocale(
+        "en-US",
+        <>
+          <DateRangePickerField
+            label="Stay"
+            defaultValue={{
+              start: Temporal.PlainDate.from("2026-10-05"),
+              end: Temporal.PlainDate.from("2026-10-09"),
+            }}
+            onBlur={() => (leaves += 1)}
+          />
+          <button type="button">After</button>
+        </>
+      )
+    );
+    await userEvent.click(roleNamed("spinbutton", "day, End Date, Stay"));
+    await userEvent.click(roleNamed("button", "After"));
+    expect(leaves).toBe(1);
+
+    await userEvent.click(roleNamed("spinbutton", "day, End Date, Stay"));
+    await userEvent.click(roleNamed("button", "Calendar Stay"));
+    await expect.element(page.getByRole("dialog")).toBeVisible();
+    await userEvent.click(roleNamed("button", "After"));
+    await expect.element(page.getByRole("dialog")).not.toBeInTheDocument();
+    expect(leaves).toBe(2);
+  });
 });
 
 describe("date props past the types", () => {
@@ -601,168 +846,6 @@ describe("date props past the types", () => {
         }}
       />
     );
-  });
-});
-
-describe("DateRangePicker wiring", () => {
-  it("keeps its own messages when errorMessage renders nothing", async () => {
-    renderThemed(
-      withLocale(
-        "en-US",
-        <>
-          <DateRangePickerField
-            label="Stay"
-            defaultValue={{
-              start: Temporal.PlainDate.from("2026-10-05"),
-              end: Temporal.PlainDate.from("2026-10-09"),
-            }}
-            errorMessage={false}
-          />
-          <button type="button">After</button>
-        </>
-      )
-    );
-    await userEvent.click(roleNamed("spinbutton", "day, End Date, Stay"));
-    await userEvent.keyboard("01");
-    await userEvent.click(roleNamed("button", "After"));
-
-    const alert = page.getByRole("alert");
-    await expect.element(alert).toHaveTextContent("Start date must be before end date.");
-    expect(page.getByRole("alert").elements()).toHaveLength(1);
-  });
-
-  it("clears an end-before-start error once the start moves back", async () => {
-    renderThemed(
-      withLocale(
-        "en-US",
-        <>
-          <DateRangePickerField
-            label="Stay"
-            defaultValue={{
-              start: Temporal.PlainDate.from("2026-10-05"),
-              end: Temporal.PlainDate.from("2026-10-09"),
-            }}
-          />
-          <button type="button">After</button>
-        </>
-      )
-    );
-    await userEvent.click(roleNamed("spinbutton", "day, End Date, Stay"));
-    await userEvent.keyboard("01");
-    await userEvent.click(roleNamed("button", "After"));
-    await expect
-      .element(page.getByText("Start date must be before end date.", { exact: true }))
-      .toBeVisible();
-
-    await userEvent.click(roleNamed("spinbutton", "day, Start Date, Stay"));
-    await userEvent.keyboard("01");
-    await userEvent.click(roleNamed("button", "After"));
-    await expect
-      .element(page.getByText("Start date must be before end date.", { exact: true }))
-      .not.toBeInTheDocument();
-    await expect
-      .element(page.getByRole("group", { name: "Stay", exact: true }))
-      .not.toHaveAttribute("data-invalid");
-  });
-});
-
-describe("DateRangePicker calendar", () => {
-  it("keeps the popup open with the anchor when a completed range is canceled", async () => {
-    renderThemed(
-      withLocale(
-        "en-US",
-        <LoggedRange
-          defaultValue={{
-            start: Temporal.PlainDate.from("2026-10-05"),
-            end: Temporal.PlainDate.from("2026-10-09"),
-          }}
-          cancel={["day-press"]}
-        />
-      )
-    );
-    await userEvent.click(roleNamed("button", "Calendar Period"));
-    await waitForPopupSettled();
-    await userEvent.click(roleNamed("button", "Tuesday, October 20, 2026"));
-    await userEvent.click(roleNamed("button", "Thursday, October 22, 2026"));
-
-    await expect.element(log()).toHaveTextContent("day-press:2026-10-20..2026-10-22:valid");
-    await expect.element(page.getByRole("dialog")).toBeVisible();
-    expect(segmentTexts()).toEqual(["10", "5", "2026", "10", "9", "2026"]);
-
-    // The anchor survived the canceled completion: another end completes a range from October 20.
-    await userEvent.click(roleNamed("button", "Sunday, October 25, 2026"));
-    await expect
-      .element(log())
-      .toHaveTextContent("day-press:2026-10-20..2026-10-22:valid | day-press:2026-10-20..2026-10-25:valid");
-  });
-
-  it("shows two months side by side with visibleMonths", async () => {
-    renderThemed(
-      withLocale(
-        "en-US",
-        <LoggedRange
-          visibleMonths={2}
-          defaultValue={{
-            start: Temporal.PlainDate.from("2026-10-05"),
-            end: Temporal.PlainDate.from("2026-10-09"),
-          }}
-        />
-      )
-    );
-    await userEvent.click(roleNamed("button", "Calendar Period"));
-    await expect.element(page.getByRole("grid", { name: "October 2026", exact: true })).toBeVisible();
-    await expect.element(page.getByRole("grid", { name: "November 2026", exact: true })).toBeVisible();
-  });
-
-  it("drops a half-picked range, rather than completing it, when focus moves to a preset", async () => {
-    function WithPresets(): ReactElement {
-      const [value, setValue] = useState({
-        start: Temporal.PlainDate.from("2026-10-05"),
-        end: Temporal.PlainDate.from("2026-10-09"),
-      });
-      const [lines, setLines] = useState<string[]>([]);
-      return (
-        <>
-          <DateRangePickerField
-            label="Period"
-            value={value}
-            onChange={(next) => {
-              setLines((current) => [
-                ...current,
-                next === null ? "null" : `${next.start.toString()}..${next.end.toString()}`,
-              ]);
-              if (next !== null) setValue(next);
-            }}
-            presetGroup={
-              <DatePicker.Presets
-                onValueChange={() => {
-                  setValue({
-                    start: Temporal.PlainDate.from("2026-12-24"),
-                    end: Temporal.PlainDate.from("2026-12-26"),
-                  });
-                }}>
-                <DatePicker.PresetItem value="christmas">Christmas</DatePicker.PresetItem>
-              </DatePicker.Presets>
-            }
-          />
-          <div role="log" aria-label="Changes">
-            {lines.join(" | ")}
-          </div>
-        </>
-      );
-    }
-    renderThemed(withLocale("en-US", <WithPresets />));
-    await userEvent.click(roleNamed("button", "Calendar Period"));
-    await waitForPopupSettled();
-    await userEvent.click(roleNamed("button", "Tuesday, October 20, 2026"));
-    const christmas = roleNamed("radio", "Christmas").closest("label");
-    if (christmas === null) throw new Error("expected the preset's label");
-    await userEvent.click(christmas);
-
-    // No range completed at October 20: the preset set the range, and the calendar followed it.
-    expect(log().element().textContent).toBe("");
-    await expect.element(page.getByRole("grid", { name: "December 2026", exact: true })).toBeVisible();
-    expect(segmentTexts()).toEqual(["12", "24", "2026", "12", "26", "2026"]);
   });
 });
 
@@ -896,97 +979,6 @@ describe("DateRangePicker held ranges", () => {
     await userEvent.click(roleNamed("button", "Friday, October 16, 2026"));
     rerender(<Controlled open={false} tag="new" />);
     await expect.poll(() => calls).toEqual(["new:2026-10-12T00:00:00..2026-10-16T00:00:00"]);
-  });
-});
-
-describe("DateRangePicker naming", () => {
-  it("describes the group and both ends by an explicit error shown with isInvalid", () => {
-    renderThemed(
-      withLocale(
-        "en-US",
-        <DateRangePickerField
-          label="Period"
-          isInvalid
-          errorMessage="Rejected"
-          defaultValue={{
-            start: Temporal.PlainDate.from("2026-10-05"),
-            end: Temporal.PlainDate.from("2026-10-09"),
-          }}
-        />
-      )
-    );
-    expect(roleNamed("group", "Period")).toHaveAccessibleDescription("Rejected");
-    expect(roleNamed("spinbutton", "month, End Date, Period")).toHaveAccessibleDescription(/Rejected/u);
-  });
-
-  it("writes whole names and descriptions in server output", () => {
-    const host = document.createElement("div");
-    host.innerHTML = renderToString(
-      withLocale(
-        "en-US",
-        <DateRangePickerField
-          label="Period"
-          description="Nights at the cabin"
-          isInvalid
-          errorMessage="Rejected"
-          defaultValue={{
-            start: Temporal.PlainDate.from("2026-10-05"),
-            end: Temporal.PlainDate.from("2026-10-09"),
-          }}
-        />
-      )
-    );
-    const text = (ids: string | null): string =>
-      (ids ?? "")
-        .split(" ")
-        .filter((id) => id !== "")
-        .map((id) => {
-          const target = host.querySelector(`[id="${id}"]`);
-          if (target === null) throw new Error(`${id} names no element in the server output`);
-          return target.textContent;
-        })
-        .join(" ");
-    const group = host.querySelector('[role="group"]');
-    expect(text(group?.getAttribute("aria-labelledby") ?? null)).toBe("Period");
-    expect(text(group?.getAttribute("aria-describedby") ?? null)).toBe("Nights at the cabin Rejected");
-    // Server HTML in a detached host has no accessibility tree to locate by role.
-    const trigger = host.querySelector('[data-slot="date-picker-trigger"]');
-    expect(trigger?.getAttribute("aria-label")).toBe("Calendar");
-    expect(text(trigger?.getAttribute("aria-labelledby") ?? null)).toBe(" Period");
-    const month = host.querySelector('[role="spinbutton"]');
-    expect(text(month?.getAttribute("aria-describedby") ?? null)).toContain("Nights at the cabin Rejected");
-  });
-});
-
-describe("DateRangePicker focus boundary", () => {
-  it("reports one focus leave from an end to outside, and one from the popup to outside", async () => {
-    let leaves = 0;
-    renderThemed(
-      withLocale(
-        "en-US",
-        <>
-          <DateRangePickerField
-            label="Stay"
-            defaultValue={{
-              start: Temporal.PlainDate.from("2026-10-05"),
-              end: Temporal.PlainDate.from("2026-10-09"),
-            }}
-            onBlur={() => (leaves += 1)}
-          />
-          <button type="button">After</button>
-        </>
-      )
-    );
-    await userEvent.click(roleNamed("spinbutton", "day, End Date, Stay"));
-    await userEvent.click(roleNamed("button", "After"));
-    expect(leaves).toBe(1);
-
-    await userEvent.click(roleNamed("spinbutton", "day, End Date, Stay"));
-    await userEvent.click(roleNamed("button", "Calendar Stay"));
-    await expect.element(page.getByRole("dialog")).toBeVisible();
-    await userEvent.click(roleNamed("button", "After"));
-    await expect.element(page.getByRole("dialog")).not.toBeInTheDocument();
-    expect(leaves).toBe(2);
   });
 });
 

@@ -1,8 +1,8 @@
-import type { Browser, BrowserContext, Locator, Page } from "playwright";
+import type { BrowserContext, Locator, Page } from "playwright";
 
-import { PAGE_WAIT_GUARD, readThemeAttributes } from "../demo-page";
 import { docsBaseUrl } from "../docs-server";
 import { collectPageErrors, settleFrames } from "../landing-page";
+import type { SuiteBrowser } from "../suite-browser";
 
 const STUDIO_DESKTOP = { width: 1440, height: 900 } as const;
 
@@ -44,7 +44,7 @@ export type StudioPage = {
 
 /** A fresh context for the studio, desktop-sized, light and with reduced motion by default. */
 async function newStudioContext(
-  browser: Browser,
+  browser: SuiteBrowser,
   {
     viewport = STUDIO_DESKTOP,
     colorScheme = "light",
@@ -72,13 +72,7 @@ async function openStudioIn(
   route: StudioRoute = OVERVIEW
 ): Promise<StudioPage> {
   const page = await context.newPage();
-  page.setDefaultTimeout(PAGE_WAIT_GUARD);
-  const errors = collectPageErrors(page);
-  page.on("console", (message) => {
-    if (message.type() === "error") {
-      errors.push(message.text());
-    }
-  });
+  const errors = collectPageErrors(page, { console: true });
   await prepare?.(page);
   await page.goto(`${docsBaseUrl()}${route.path}${hash}`, { waitUntil: "load" });
   // The artboards show once the first fit has placed them, a client effect, so the page has hydrated.
@@ -86,9 +80,17 @@ async function openStudioIn(
   return { context, page, errors };
 }
 
+/**
+ * Waits until the studio canvas has hydrated: it sets `data-ready` once its first fit has placed
+ * the artboards, a client effect.
+ */
+export async function waitForStudioReady(page: Page): Promise<void> {
+  await page.locator('[data-studio-world][data-ready="true"]').waitFor({ state: "attached" });
+}
+
 /** Opens a studio page, the Overview by default, in a fresh context the caller owns. */
 export async function openStudio(
-  browser: Browser,
+  browser: SuiteBrowser,
   options: StudioContextOptions & {
     hash?: string;
     prepare?: (page: Page) => Promise<void>;
@@ -112,22 +114,6 @@ export function inspector(page: Page): Locator {
 
 export function layers(page: Page): Locator {
   return page.getByRole("complementary", { name: "Pages and layers", exact: true });
-}
-
-/** An artboard's row in the Layers list. */
-export function layer(page: Page, name: string): Locator {
-  return layers(page).getByRole("button", { name, exact: true });
-}
-
-/**
- * Picks `brand` in the Brand Select inside `within`, the bar or the inspector, and waits for its
- * trigger to show it.
- */
-export async function pickBrand(page: Page, within: Locator, brand: string): Promise<void> {
-  const trigger = within.getByRole("combobox", { name: "Brand", exact: true });
-  await trigger.click();
-  await page.getByRole("option", { name: brand, exact: true }).click();
-  await trigger.getByText(brand, { exact: true }).waitFor();
 }
 
 /** The `option` button of the toggle group named `group` inside `within`. */
@@ -167,21 +153,6 @@ export async function isFocused(locator: Locator): Promise<boolean> {
 /** Whether the focused element sits inside `locator`. */
 export async function holdsFocus(locator: Locator): Promise<boolean> {
   return locator.evaluate((element) => element.contains(document.activeElement));
-}
-
-/** The sidebar brand's source mark on `board`: an alias such as `→ brand`, or `Literal`. */
-export function sidebarBrandSource(board: Locator): Locator {
-  return board.locator('[data-brand-source="sidebar-brand"] [data-source]');
-}
-
-export async function background(locator: Locator): Promise<string> {
-  return locator.evaluate((element) => getComputedStyle(element).backgroundColor);
-}
-
-/** The theme an artboard's scope renders, as its theme attributes name it. */
-export async function themeOf(page: Page, name: string): Promise<string> {
-  const { identity, brand, segment } = await readThemeAttributes(artboard(page, name));
-  return [identity, brand, segment].join("-");
 }
 
 /** Waits `count` animation frames. */

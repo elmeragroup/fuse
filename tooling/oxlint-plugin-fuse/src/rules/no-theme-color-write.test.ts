@@ -13,5 +13,6 @@ ruleTester.run("no-theme-color-write", noThemeColorWrite, {
     { code: 'const style = { "--color-price": "var(--primary)" };', errors: [{ messageId: "write" }] },
     { code: "const style = { [`--color-${key}`]: value };", errors: [{ messageId: "write" }] },
     { code: 'node.style.setProperty("--color-primary", value);', errors: [{ messageId: "write" }] },
+    { code: "node.style.setProperty(`--color-${key}`, value);", errors: [{ messageId: "write" }] },
   ],
 });

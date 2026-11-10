@@ -5,8 +5,6 @@ declare module "vitest/browser" {
   interface BrowserCommands {
     pointerDown: () => Promise<void>;
     pointerUp: () => Promise<void>;
-    pointerGlide: (x: number, y: number, steps: number) => Promise<void>;
-    pointerWheel: (deltaX: number, deltaY: number) => Promise<void>;
   }
 }
 

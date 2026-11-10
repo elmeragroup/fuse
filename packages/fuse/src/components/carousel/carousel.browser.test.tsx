@@ -1,11 +1,11 @@
 import { useState } from "react";
 import type { ReactElement, ReactNode } from "react";
 
-import { afterEach, describe, expect, it, onTestFinished, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
-import { nextFrames, pollFrames } from "../../../test/animation-frames";
+import { nextFrames, pollFrames, useFakeTimeouts } from "../../../test/animation-frames";
 import { carouselSlides } from "../../../test/carousel-fixtures";
 import {
   carouselIndicators,
@@ -15,7 +15,6 @@ import {
 } from "../../../test/carousel-queries";
 import { CaughtError, caughtError } from "../../../test/caught-error";
 import { withLocale } from "../../../test/locale-matrix";
-import "../../../test/pointer-press";
 import { renderThemed, roleNamed } from "../../../test/themed-browser-render";
 import type { CarouselIndexChangeReason } from "./carousel-context";
 import { useCarousel } from "./carousel-context";
@@ -236,6 +235,80 @@ describe("Carousel custom parts", () => {
     );
     await pollFrames(() => caughtError().message, "Carousel.Next must be used within Carousel.Root.");
   });
+
+  it("lets a consumer map thumbnails as indicators and read the state through useCarousel", async () => {
+    function Count(): ReactElement {
+      const { state } = useCarousel();
+      return <p>{`Page ${state.index + 1} of ${state.pageCount}`}</p>;
+    }
+    renderThemed(
+      <Fixture count={3}>
+        <Carousel.Indicators>
+          {["Red", "Green", "Blue"].map((colour, index) => (
+            <Carousel.Indicator key={colour} index={index}>
+              {colour}
+            </Carousel.Indicator>
+          ))}
+        </Carousel.Indicators>
+        <Carousel.Status />
+        <Count />
+      </Fixture>
+    );
+    const viewport = carouselViewport(roleNamed("region", "Offers"));
+    await expect.poll(() => page.getByText("Page 1 of 3", { exact: true }).query()).not.toBeNull();
+    expect(roleNamed("button", "Red").getAttribute("aria-disabled")).toBe("true");
+    await userEvent.click(roleNamed("button", "Blue"));
+    await settledOn(viewport, 2 * WIDTH);
+    expect(page.getByText("Page 3 of 3", { exact: true }).query()).not.toBeNull();
+    expect(page.getByText("3 of 3", { exact: true }).query()).not.toBeNull();
+    expect(roleNamed("button", "Blue").getAttribute("aria-disabled")).toBe("true");
+  });
+
+  it("lets a consumer's onClick cancel each control's own action with preventBaseUIHandler", async () => {
+    const clicks: string[] = [];
+    const cancel = (name: string) => (event: { readonly preventBaseUIHandler: () => void }) => {
+      clicks.push(name);
+      event.preventBaseUIHandler();
+    };
+    renderThemed(
+      withLocale(
+        "en-US",
+        <>
+          <button type="button">Outside</button>
+          <Carousel.Root aria-label="Offers" style={{ width: WIDTH }} defaultIndex={1}>
+            <Carousel.Controls>
+              <Carousel.Autoplay delay={60_000} onClick={cancel("autoplay")} />
+              <Carousel.Previous onClick={cancel("previous")} />
+              <Carousel.Indicators>
+                {[0, 1, 2].map((index) => (
+                  <Carousel.Indicator
+                    key={index}
+                    index={index}
+                    aria-label={`Page ${index + 1}`}
+                    onClick={cancel(`page ${index + 1}`)}
+                  />
+                ))}
+              </Carousel.Indicators>
+              <Carousel.Next onClick={cancel("next")} />
+            </Carousel.Controls>
+            <Carousel.Viewport>{carouselSlides(3, 1)}</Carousel.Viewport>
+          </Carousel.Root>
+        </>
+      )
+    );
+    const viewport = carouselViewport(roleNamed("region", "Offers"));
+    await settledOn(viewport, WIDTH);
+    for (const name of ["Previous slide", "Page 3", "Next slide", "Stop automatic slide show"]) {
+      await userEvent.click(roleNamed("button", name));
+    }
+    await userEvent.hover(roleNamed("button", "Outside"));
+    await nextFrames(3);
+    expect(clicks).toEqual(["previous", "page 3", "next", "autoplay"]);
+    expect(Math.round(viewport.scrollLeft)).toBe(WIDTH);
+    expect(roleNamed("button", "Page 2").getAttribute("aria-disabled")).toBe("true");
+    // Neither the cancelled controls nor the cancelled rotation control stopped rotation.
+    expect(roleNamed("button", "Stop automatic slide show")).toBeInstanceOf(HTMLButtonElement);
+  });
 });
 
 describe("Carousel structure", () => {
@@ -287,10 +360,7 @@ describe("Carousel structure", () => {
 describe("Carousel reconciliation", () => {
   it("takes a controlled parent's new slides and index together, with no intermediate change", async () => {
     // Fake timeouts let the final check fire every pending settle timer instead of waiting.
-    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
-    onTestFinished(() => {
-      vi.useRealTimers();
-    });
+    useFakeTimeouts();
     const changes: [number, CarouselIndexChangeReason][] = [];
     function Shrinking(): ReactElement {
       const [shown, setShown] = useState({ count: 4, index: 2 });
@@ -457,81 +527,5 @@ describe("Carousel controlled index", () => {
     await pollFrames(() => onIndexChange.mock.calls.at(-1)?.[0], 3);
     await settledOn(viewport, WIDTH);
     expect(currentIndicator()).toBe(1);
-  });
-});
-
-describe("Carousel custom parts", () => {
-  it("lets a consumer map thumbnails as indicators and read the state through useCarousel", async () => {
-    function Count(): ReactElement {
-      const { state } = useCarousel();
-      return <p>{`Page ${state.index + 1} of ${state.pageCount}`}</p>;
-    }
-    renderThemed(
-      <Fixture count={3}>
-        <Carousel.Indicators>
-          {["Red", "Green", "Blue"].map((colour, index) => (
-            <Carousel.Indicator key={colour} index={index}>
-              {colour}
-            </Carousel.Indicator>
-          ))}
-        </Carousel.Indicators>
-        <Carousel.Status />
-        <Count />
-      </Fixture>
-    );
-    const viewport = carouselViewport(roleNamed("region", "Offers"));
-    await expect.poll(() => page.getByText("Page 1 of 3", { exact: true }).query()).not.toBeNull();
-    expect(roleNamed("button", "Red").getAttribute("aria-disabled")).toBe("true");
-    await userEvent.click(roleNamed("button", "Blue"));
-    await settledOn(viewport, 2 * WIDTH);
-    expect(page.getByText("Page 3 of 3", { exact: true }).query()).not.toBeNull();
-    expect(page.getByText("3 of 3", { exact: true }).query()).not.toBeNull();
-    expect(roleNamed("button", "Blue").getAttribute("aria-disabled")).toBe("true");
-  });
-
-  it("lets a consumer's onClick cancel each control's own action with preventBaseUIHandler", async () => {
-    const clicks: string[] = [];
-    const cancel = (name: string) => (event: { readonly preventBaseUIHandler: () => void }) => {
-      clicks.push(name);
-      event.preventBaseUIHandler();
-    };
-    renderThemed(
-      withLocale(
-        "en-US",
-        <>
-          <button type="button">Outside</button>
-          <Carousel.Root aria-label="Offers" style={{ width: WIDTH }} defaultIndex={1}>
-            <Carousel.Controls>
-              <Carousel.Autoplay delay={60_000} onClick={cancel("autoplay")} />
-              <Carousel.Previous onClick={cancel("previous")} />
-              <Carousel.Indicators>
-                {[0, 1, 2].map((index) => (
-                  <Carousel.Indicator
-                    key={index}
-                    index={index}
-                    aria-label={`Page ${index + 1}`}
-                    onClick={cancel(`page ${index + 1}`)}
-                  />
-                ))}
-              </Carousel.Indicators>
-              <Carousel.Next onClick={cancel("next")} />
-            </Carousel.Controls>
-            <Carousel.Viewport>{carouselSlides(3, 1)}</Carousel.Viewport>
-          </Carousel.Root>
-        </>
-      )
-    );
-    const viewport = carouselViewport(roleNamed("region", "Offers"));
-    await settledOn(viewport, WIDTH);
-    for (const name of ["Previous slide", "Page 3", "Next slide", "Stop automatic slide show"]) {
-      await userEvent.click(roleNamed("button", name));
-    }
-    await userEvent.hover(roleNamed("button", "Outside"));
-    await nextFrames(3);
-    expect(clicks).toEqual(["previous", "page 3", "next", "autoplay"]);
-    expect(Math.round(viewport.scrollLeft)).toBe(WIDTH);
-    expect(roleNamed("button", "Page 2").getAttribute("aria-disabled")).toBe("true");
-    // Neither the cancelled controls nor the cancelled rotation control stopped rotation.
-    expect(roleNamed("button", "Stop automatic slide show")).toBeInstanceOf(HTMLButtonElement);
   });
 });

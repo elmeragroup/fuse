@@ -36,9 +36,20 @@ export function staticText(node: ESTree.Node): string | undefined {
  * @returns The constant string, or `undefined`.
  */
 export function constantString(node: ESTree.Node): string | undefined {
-  if (node.type === "TemplateLiteral" && node.expressions.length === 0) {
-    const [only] = node.quasis;
-    return only === undefined ? undefined : (only.value.cooked ?? only.value.raw);
-  }
-  return stringLiteral(node);
+  if (node.type !== "TemplateLiteral") return stringLiteral(node);
+  const [only] = node.quasis;
+  return node.expressions.length === 0 && only !== undefined ? staticText(only) : undefined;
+}
+
+/**
+ * The text an expression starts with: a string literal's value, or a template literal's first
+ * chunk, such as `--color-` for `` `--color-${key}` ``.
+ *
+ * @param node - An expression or property key.
+ * @returns The leading text, or `undefined` for anything else.
+ */
+export function leadingText(node: ESTree.Node): string | undefined {
+  if (node.type !== "TemplateLiteral") return stringLiteral(node);
+  const [first] = node.quasis;
+  return first === undefined ? undefined : staticText(first);
 }

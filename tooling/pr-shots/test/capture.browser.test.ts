@@ -13,16 +13,13 @@ import { shotOptions } from "./parse-argv.ts";
 
 /**
  * The fixture pages: a demo stage holding a textbox, a 2000px page with no demo stage, a page
- * whose target needs a theme (also in the pre-identity vocabulary a "before" deployment shows), controls that open popups outside their own box, and a scrolled
- * strip whose edges fade on its scroll timeline.
+ * whose target needs a theme, and controls that open popups outside their own box.
  */
 const pages = new Map([
   ["/demo", await readFile(path.join(import.meta.dirname, "fixture/demo.html"))],
   ["/page", await readFile(path.join(import.meta.dirname, "fixture/page.html"))],
   ["/themed", await readFile(path.join(import.meta.dirname, "fixture/themed.html"))],
-  ["/themed-legacy", await readFile(path.join(import.meta.dirname, "fixture/themed-legacy.html"))],
   ["/popup", await readFile(path.join(import.meta.dirname, "fixture/popup.html"))],
-  ["/scroll-fade", await readFile(path.join(import.meta.dirname, "fixture/scroll-fade.html"))],
 ]);
 
 let server: Server;
