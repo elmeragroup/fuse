@@ -14,7 +14,7 @@ import { page } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import { framesUntil, nextFrames, pollFrames } from "../../../test/animation-frames";
-import { hoverAt, polarFigure } from "../../../test/chart/pie";
+import { hoverAt, parkRealPointer, polarFigure } from "../../../test/chart/pie";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
 import type { ChartConfig } from "./chart-types";
@@ -271,6 +271,8 @@ describe("a lane popup inside the viewport", () => {
     "rests the %s popup inside the viewport at %s × %s from every scroll, opened by focus and by hover",
     async (layout, width, height, section) => {
       await page.viewport(width, height);
+      // The scene moves the pointer through synthetic events, so the real one waits in the corner.
+      await parkRealPointer();
       const { dial, option, before, faults, state, scrollFor } = renderScene(layout, section);
       await nextFrames(2);
       const size = dial().height;
