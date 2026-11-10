@@ -1,5 +1,5 @@
 // Motion rule 1 of .scratch/charts-v1/reviews/motion-decision.md under the SVG brief, in
-// Chromium, Firefox and WebKit: the server sends the plot's loader and no marks, and a hydrated
+// Chromium and WebKit: the server sends the plot's loader and no marks, and a hydrated
 // chart in view draws its marks at the entrance's first frame once the browser measures the plot,
 // every bar at its base, then plays the entrance to rest, with no recoverable error. A Bar whose
 // Suspense boundary hydrates after the entrance played draws at rest at once. The first data

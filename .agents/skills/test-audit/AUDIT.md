@@ -67,7 +67,7 @@ a changeset. Read [scripts/RELEASE.md](../../../scripts/RELEASE.md) first.
    names.
 2. For a removed source grep or manifest assertion, run the lint rule, script
    or turbo task that owns the real contract, such as `package:check`,
-   `size-limit`, `test:packed-consumer`, `test:repo-policy` or `docs#generate`.
+   `test:packed-consumer`, `test:repo-policy` or `docs#generate`.
 3. Rebuild `apps/docs` and `apps/static-theme` before running their tests
    through Vitest directly. Both read the last build: the docs global setup
    runs `next start`, and the static-theme tests read and serve its `dist/`.

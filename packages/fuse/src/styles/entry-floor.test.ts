@@ -39,9 +39,8 @@ function floorsByCondition(css: string): Map<string, Map<string, string>> {
 }
 
 /**
- * Chromium cannot match the `@supports` arm of `entry-floor`, so the touch browser suite only
- * proves the coarse-pointer arm. Unit under test: the emitted CSS. Oracle: its
- * `(pointer: coarse)` rules, which `control-size.touch.browser.test.tsx` checks in a browser.
+ * Chromium cannot match the `@supports` arm of `entry-floor`. Unit under test: the emitted CSS.
+ * Oracle: its `(pointer: coarse)` rules.
  * Every selector that sets `--entry-text` there must set the same value under the iOS WebKit
  * `@supports`, and under no other condition.
  */

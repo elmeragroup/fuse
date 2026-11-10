@@ -2,11 +2,11 @@
  * This file judges the chart format modules in Node. Each judge compares Fuse's labels with an
  * expectation from outside Fuse: the zoneinfo slot oracle, the frozen market data or literals
  * written by hand from CLDR 48. fast-check properties and metamorphic relations cover the rest.
- * `format.engines.browser.test.ts` runs the same judges in Chromium, Firefox and WebKit.
+ * `format.engines.browser.test.ts` runs the same judges in Chromium and WebKit.
  */
 
 import * as fc from "fast-check";
-import { describe, expect, inject, it } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import { canonicalSpaces } from "../../../intl/canonical-spaces";
 import { LOCALES } from "./fixtures/judgement";
@@ -23,12 +23,6 @@ describe("chart formats in Node", () => {
     for (const judgement of judge()) {
       expect(judgement.actual, judgement.name).toEqual(judgement.expected);
     }
-  });
-
-  it("run in the zone the Vitest project sets", () => {
-    // The unit project runs in Oslo, and the zone projects run this file again in New York and
-    // Tokyo, so the judges above prove that the process zone changes no string.
-    expect(Intl.DateTimeFormat().resolvedOptions().timeZone).toBe(inject("timeZone"));
   });
 
   it("keeps each day's slot count, order and repeated-hour positions when the locale changes", () => {

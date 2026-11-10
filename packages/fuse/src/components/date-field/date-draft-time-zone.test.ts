@@ -7,7 +7,7 @@ import { describe, expect, it } from "vitest";
  * the day's first and last hour, so on Oslo's fall-back night (2026-10-25, 03:00 CEST → 02:00 CET)
  * the 02 hour comes twice, and on its spring-forward night (2026-03-29, 02:00 → 03:00) 02 never
  * comes. The expectations are those instants, written out. Every value names its zone, so they
- * hold in each process zone this file runs in.
+ * hold in any process zone.
  */
 import "../../temporal-polyfill";
 import { cycleSegment, draftOf, draftToValue } from "./date-draft";

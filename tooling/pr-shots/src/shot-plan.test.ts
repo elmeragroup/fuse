@@ -97,15 +97,15 @@ describe("planShots", () => {
         "--densities",
         "comfortable",
         "--engines",
-        "firefox",
+        "webkit",
       ]),
       "target"
     );
     expect(row?.before.file).toBe(
-      "before-branded-elma-company-comfortable-override-light-firefox-1280x900-target.png"
+      "before-branded-elma-company-comfortable-override-light-webkit-1280x900-target.png"
     );
     expect(row?.before.alt).toBe(
-      `Before: textbox "Mobile" on /components/phone-number-field, filled with "123123", branded-elma-company theme, comfortable density (override), light mode, Firefox, 1280 × 900 window`
+      `Before: textbox "Mobile" on /components/phone-number-field, filled with "123123", branded-elma-company theme, comfortable density (override), light mode, WebKit, 1280 × 900 window`
     );
   });
 

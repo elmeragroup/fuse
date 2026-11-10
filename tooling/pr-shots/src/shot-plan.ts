@@ -190,7 +190,7 @@ function schemeWords(scheme: ColorScheme): string {
 }
 
 function engineWords(engine: Engine): string {
-  return { chromium: "Chromium", webkit: "WebKit", firefox: "Firefox" }[engine];
+  return { chromium: "Chromium", webkit: "WebKit" }[engine];
 }
 
 function capitalize(word: string): string {

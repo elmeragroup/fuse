@@ -1,7 +1,6 @@
 // The polar data and composition rules in a development build. Units under test: the polar
 // Roots and a shared part inside them. Each case renders to a string and expects the thrown
 // error's name and rule, written by hand from CONTRACT section 8.1's table and S10's polar rows.
-// The production fallbacks run in polar-chart-errors.production.browser.test.
 import type { ReactElement } from "react";
 
 import { renderToString } from "react-dom/server";

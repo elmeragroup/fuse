@@ -107,7 +107,7 @@ const shotFlags = {
     Flag.withDefault([{ _tag: "stage-default" }] as const)
   ),
   engines: Flag.String("engines").pipe(
-    Flag.withDescription("Any of chromium, webkit, firefox. Default: chromium."),
+    Flag.withDescription("Either or both of chromium and webkit. Default: chromium."),
     Flag.withMetavar("list"),
     Flag.withSchema(Engines),
     Flag.withDefault(["chromium"] as const)

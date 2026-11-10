@@ -1,5 +1,5 @@
 // Delayed hydration of scatter marks, after Chart's motion rule 1 and the scatter entrance's, in
-// Chromium, Firefox and WebKit: a series whose Suspense boundary hydrates while another series'
+// Chromium and WebKit: a series whose Suspense boundary hydrates while another series'
 // entrance wipe runs matches the server HTML, which wrote no data-intro, with no recoverable error,
 // and then takes data-intro="none", so it draws at rest and never wipes in late.
 import { Suspense, use, useEffect } from "react";

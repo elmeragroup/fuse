@@ -87,12 +87,6 @@ export default function ReleasesPage(): ReactElement {
         </li>
         <li>
           <strong>
-            <code>size-limit</code>
-          </strong>{" "}
-          — every ceiling on the <Link href="/handbook/tokens">Tokens</Link> page holds.
-        </li>
-        <li>
-          <strong>
             <code>test:packed-consumer</code>
           </strong>{" "}
           — the tarball renders controls at the documented geometry in both the standalone-CSS and

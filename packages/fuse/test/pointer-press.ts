@@ -7,11 +7,6 @@ declare module "vitest/browser" {
     pointerUp: () => Promise<void>;
     pointerGlide: (x: number, y: number, steps: number) => Promise<void>;
     pointerWheel: (deltaX: number, deltaY: number) => Promise<void>;
-    tap: (x: number, y: number) => Promise<void>;
-    touchStart: (x: number, y: number) => Promise<void>;
-    touchMove: (x: number, y: number) => Promise<void>;
-    touchEnd: () => Promise<void>;
-    touchSwipe: (x: number, y: number, dx: number, dy: number, speed: number) => Promise<void>;
   }
 }
 

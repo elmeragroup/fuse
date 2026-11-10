@@ -61,22 +61,6 @@ export function turboTasks(args) {
 }
 
 /**
- * The entries of an include-only matrix, or one execution for a job without a matrix.
- * @param {Record<string, unknown>} workflow
- * @param {string} name
- * @returns {Record<string, unknown>[]}
- */
-export function jobMatrixEntries(workflow, name) {
-  const job = asRecord(asRecord(workflow.jobs, "workflow jobs")[name], name);
-  if (job.strategy === undefined) return [{}];
-  const matrix = asRecord(asRecord(job.strategy, `${name} strategy`).matrix, `${name} matrix`);
-  expect(Object.keys(matrix), `${name} matrix must be include-only`).toEqual(["include"]);
-  const entries = asRecordArray(matrix.include, `${name} matrix include`);
-  expect(entries.length, `${name} matrix must schedule at least one execution`).toBeGreaterThan(0);
-  return entries;
-}
-
-/**
  * Resolves references to literal matrix values, leaving unresolved references and other
  * GitHub expressions untouched.
  * @param {string} value

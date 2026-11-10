@@ -2,8 +2,7 @@
 // Oracles: DECISIONS D14. The pill centres on the active slot's option; the tick labels whose
 // boxes it overlaps fade out, with the pill's 0.375rem padding the ValueLabel pill also takes; a
 // part of the label that keeps its value keeps its stack still; above 60 labels it prints one
-// label; and the server renders none of it. The formatted text runs in every engine, in
-// chart-slot-label.engines.browser.test.tsx.
+// label; and the server renders none of it.
 import type { ReactNode } from "react";
 
 import { flushSync } from "react-dom";

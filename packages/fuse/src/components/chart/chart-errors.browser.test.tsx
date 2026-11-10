@@ -1,6 +1,6 @@
 // CONTRACT section 8.1's error tiers in a development build, for every rule layer 05 reaches. Each
 // case renders to a string and expects the thrown error's name and rule, both written by hand from
-// the section's table. The production fallbacks run in chart-errors.production.browser.test.
+// the section's table.
 import type { ReactElement } from "react";
 
 import { renderToString } from "react-dom/server";

@@ -1,7 +1,5 @@
 import { defineConfig } from "vitest/config";
 
-import { DocsShardSequencer } from "./test/shard-sequencer.ts";
-
 const shared = {
   testTimeout: 30_000,
   hookTimeout: 60_000,
@@ -16,8 +14,6 @@ const SITE_TESTS = ["test/studio/**/*.browser.test.ts", "test/landing*.browser.t
 
 export default defineConfig({
   test: {
-    // Gives each demo coverage group a CI shard of its own (test/shard-sequencer.ts).
-    sequence: { sequencer: DocsShardSequencer },
     projects: [
       {
         // The app's tsconfig leaves `jsx: "preserve"` for Next to compile; the unit

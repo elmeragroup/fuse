@@ -17,10 +17,8 @@ import type { ApiEntryPaths, ComponentPaths } from "./components.ts";
 import type { ProblemLog } from "./errors.ts";
 import { readComponentPage } from "./page-source.ts";
 import type { ComponentPageSource } from "./page-source.ts";
-import { repoRelative, sizeBudgetsFile, fuseRoot } from "./paths.ts";
+import { repoRelative, fuseRoot } from "./paths.ts";
 import { missingNavRoutes, missingStudioRoutes, staticRouteFile, studioRouteFile } from "./routes.ts";
-import { readBundleSizes } from "./sizes.ts";
-import type { BundleSizeReport } from "./sizes.ts";
 import { assertDocsFuseCssExports } from "./workspace-css.ts";
 
 /**
@@ -171,8 +169,8 @@ export function inspectComponentDemos(
   return demos;
 }
 
-/** Validates global read-only inputs and reads the canonical bundle-size report. */
-export function inspectGlobalDocs(problems: ProblemLog): BundleSizeReport {
+/** Validates global read-only inputs. */
+export function inspectGlobalDocs(problems: ProblemLog): void {
   assertDocsFuseCssExports(fuseRoot);
   for (const href of missingNavRoutes()) {
     problems.add(`nav entry ${href} has no route at ${repoRelative(staticRouteFile(href))}`);
@@ -180,5 +178,4 @@ export function inspectGlobalDocs(problems: ProblemLog): BundleSizeReport {
   for (const href of missingStudioRoutes()) {
     problems.add(`studio page ${href} has no route at ${repoRelative(studioRouteFile(href))}`);
   }
-  return readBundleSizes(sizeBudgetsFile, problems);
 }

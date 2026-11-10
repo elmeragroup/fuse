@@ -1,15 +1,14 @@
 /**
- * Unit under test: the calendar's day and month text in each unit project's process zone (Oslo,
- * New York, Tokyo). Oracle: printed calendars, written out by hand: the text names the day it was
+ * Unit under test: the calendar's day and month text in the unit project's process zone, Oslo. Oracle: printed calendars, written out by hand: the text names the day it was
  * given whatever the zone, since a day at UTC midnight a zone formatted locally would name the day
  * before in New York.
  */
-import { describe, expect, inject, it } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import "../../temporal-polyfill";
 import { formatDayName, formatDayNumber, formatMonth } from "./calendar-format";
 
-describe(`calendar text in ${inject("timeZone")}`, () => {
+describe("calendar text in the process zone", () => {
   it.each([
     ["2026-10-12", "Monday, October 12, 2026"],
     ["2026-01-01", "Thursday, January 1, 2026"],

@@ -1,4 +1,4 @@
-// The clock model on the DST days, in each zone project. Unit under test: clockModel over the
+// The clock model on the DST days, in the unit project's zone. Unit under test: clockModel over the
 // cartesian model a ClockChart.Root builds for one cycle. Oracles: the zoneinfo slot lists in
 // format/fixtures/slots.json for the 23-, 24- and 25-hour days in Europe/Oslo, their quarter-hours,
 // the ISO weeks around both 2025 changes and the months of 2025; calendar counts written by hand,

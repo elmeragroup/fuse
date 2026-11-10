@@ -137,7 +137,7 @@ const checkout = Effect.acquireRelease(
 /** Both sides on a server that is already running, so no local docs server is involved. */
 const REMOTE = ["--before", "http://127.0.0.1:9/", "--after", "http://127.0.0.1:9/"];
 
-/** Five themes, two densities and three engines: 30 pairs. */
+/** Five themes, two densities, two engines and two viewports: 40 pairs. */
 const MATRIX = [
   "matrix",
   "--route",
@@ -149,7 +149,9 @@ const MATRIX = [
   "--densities",
   "dense,comfortable",
   "--engines",
-  "chromium,webkit,firefox",
+  "chromium,webkit",
+  "--viewports",
+  "1280x800,390x844",
   ...REMOTE,
 ];
 
@@ -207,7 +209,7 @@ describe("runShots", () => {
     Effect.gen(function* () {
       const root = yield* checkout;
       const record = newRecord();
-      // 3 themes × 2 densities × 3 engines with diffs: 18 pairs of 3 images, 54 in all.
+      // 5 themes × 2 densities × 2 engines with diffs: 20 pairs of 3 images, 60 in all.
       const options = shotOptions([
         "matrix",
         "--route",
@@ -215,17 +217,17 @@ describe("runShots", () => {
         "--target",
         "button:Save",
         "--themes",
-        "neutral-fkas-private,branded-tkas-company,branded-fkse-private",
+        "neutral-fkas-private,branded-tkas-company,branded-fkse-private,neutral-elma-private,branded-elma-company",
         "--densities",
         "dense,comfortable",
         "--engines",
-        "chromium,webkit,firefox",
+        "chromium,webkit",
         "--pr",
         "182",
       ]);
       const failure = yield* Effect.flip(runShots(options, root).pipe(Effect.provide(stubs(record, "run"))));
       assert.strictEqual(failure._tag, "TooManyAttachments");
-      assert.include(failure.message, "54 images");
+      assert.include(failure.message, "60 images");
       assert.include(failure.message, "at most 50");
       assert.include(failure.message, "split the matrix across runs");
       assert.deepStrictEqual(record.captures, []);
@@ -236,11 +238,11 @@ describe("runShots", () => {
     Effect.gen(function* () {
       const root = yield* checkout;
       const record = newRecord();
-      // 30 pairs without diffs: 60 images.
+      // 40 pairs without diffs: 80 images.
       yield* runShots(shotOptions([...MATRIX, "--no-diff"]), root).pipe(Effect.provide(stubs(record, "run")));
       assert.strictEqual(record.captures.length, 2);
       const printed = (yield* TestConsole.logLines).map(String).join("\n");
-      assert.include(printed, "gh pr edit attaches at most 50 files; this run has 60.");
+      assert.include(printed, "gh pr edit attaches at most 50 files; this run has 80.");
     }).pipe(Effect.scoped)
   );
 

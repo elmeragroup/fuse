@@ -14,7 +14,6 @@
  *     outline, which the nav, the QuickNav and the site palette import;
  *   • the tokens each component's recipe reads, and the site-wide token reference;
  *   • the `/api/themes` catalog of the 24 legal permutations, plus Figma DTCG files;
- *   • the measured bundle sizes the Tokens page publishes;
  *   • the locales, density metrics and component index the landing page states;
  *   • the three dark-scheme colors the Open Graph card paints;
  *   • the theme studio's modules (`src/studio/registration.ts`);
@@ -79,7 +78,6 @@ import {
   fuseSrc,
 } from "./lib/paths.ts";
 import { renderSearchIndex } from "./lib/search.ts";
-import type { BundleSizeReport } from "./lib/sizes.ts";
 import { collectRecipeSources } from "./lib/sources.ts";
 import { renderFigmaThemeCatalog } from "./lib/theme-catalog-figma.ts";
 import { buildThemeCatalog, renderThemeCatalog } from "./lib/theme-catalog.ts";
@@ -411,20 +409,6 @@ function emitMarkdownEndpoints(components: readonly DocsComponent[]): void {
   }
 }
 
-/** The measured bundle sizes the Tokens page publishes. */
-function emitBundleSizes(report: BundleSizeReport): void {
-  writeFile(
-    path.join(generatedDir, "bundle-sizes.ts"),
-    `${BANNER}import type { BundleSize } from "../lib/docs-model";
-
-/** The date the library last recorded these measurements next to its budgets. */
-export const BUNDLE_SIZES_MEASURED_ON = ${JSON.stringify(report.measuredOn)};
-
-export const BUNDLE_SIZES: readonly BundleSize[] = ${JSON.stringify(report.entries, null, 2)};
-`
-  );
-}
-
 /** The theme tokens the Tokens page lists, read from the library's own `@theme` block. */
 function emitTokenReference(colors: ColorTokenMap, catalog: ResolvedThemeCatalog): void {
   writeFile(
@@ -517,11 +501,11 @@ function reportDiagnostics(diagnostics: readonly ApiArtifactDiagnostic[]): void 
 async function main(): Promise<void> {
   // Every input check runs before anything is written, so a failing run leaves the
   // committed api.json files and the generated site exactly as it found them. Global
-  // inputs (workspace CSS exports, nav destinations, bundle sizes), demo inventory and
+  // inputs (workspace CSS exports, nav destinations), demo inventory and
   // `"use client"` validation all belong to `docs-inspection`, the one owner of the docs
   // input checks.
   const problems = new ProblemLog();
-  const sizes = inspectGlobalDocs(problems);
+  inspectGlobalDocs(problems);
   const colors = readColorTokenMapFromFile(path.join(fuseSrc, "styles/fuse.css"));
   const inspections = componentInspections();
   const inspected = inspections.map((inspection) => ({
@@ -549,7 +533,6 @@ async function main(): Promise<void> {
   emitComponentOutlines(components);
   emitApiDrift(generated.artifacts.values());
   emitApiReferenceExtras(components);
-  emitBundleSizes(sizes);
   const catalog = resolveThemeCatalog();
   emitTokenReference(colors, catalog);
   emitThemeCatalog(buildThemeCatalog(catalog));

@@ -5,8 +5,7 @@
  * `sidebar-group:where([data-collapsible=icon] *)` for the collapsed icon rail, overrides the role
  * for the instances `[data-slot="slot"]` plus that suffix matches. The first matching override in
  * table order wins.
- * CONTEXT.md defines the roles. The docs density coverage test renders every demo at both densities
- * and checks each instance: a `control`, `row`, `surface` or `label` part reads a metric of its
+ * CONTEXT.md defines the roles: a `control`, `row`, `surface` or `label` part reads a metric of its
  * role through its height, padding, gap or type, even one that is the same at both densities, such
  * as `--surface-pad-sm`; a `layout` or `fixed` part reads none. The source contract requires every
  * written `data-slot` to be a key and every key to follow that grammar.

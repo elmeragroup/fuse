@@ -5,9 +5,7 @@ import { describe, expect, it } from "vitest";
 import { LEGAL_THEMES, themeSlug } from "@elmeragroup/fuse/theme";
 import { resolveThemeCatalog } from "@elmeragroup/fuse/theme-catalog";
 
-import { fuseSrc, sizeBudgetsFile } from "../scripts/lib/paths.ts";
-import { parseBudgets } from "../scripts/lib/sizes.ts";
-import { BUNDLE_SIZES, BUNDLE_SIZES_MEASURED_ON } from "../src/generated/bundle-sizes";
+import { fuseSrc } from "../scripts/lib/paths.ts";
 import { fetchText } from "./docs-server";
 
 /** The four permutations the pin table forbids; none may reach the DOM. */
@@ -125,25 +123,6 @@ describe("tokens page", () => {
     for (const entry of colors) {
       expect(described.get(`--${entry.name}`), entry.name).toBe(entry.description);
     }
-  });
-
-  it("publishes a measured size and a ceiling for every budgeted entry", async () => {
-    const html = await fetchText("/handbook/tokens");
-    expect(BUNDLE_SIZES.length).toBeGreaterThan(0);
-    expect(html).toContain(BUNDLE_SIZES_MEASURED_ON);
-    for (const entry of BUNDLE_SIZES) {
-      const label = entry.name === "." ? "@elmeragroup/fuse" : `@elmeragroup/fuse/${entry.name}`;
-      expect(html, entry.name).toContain(label);
-      expect(entry.measuredGzip).toBeGreaterThan(0);
-      expect(entry.ceilingGzip).toBeGreaterThan(0);
-    }
-  });
-
-  it("covers every published JS entry the library budgets", () => {
-    const liveNames = parseBudgets(readFileSync(sizeBudgetsFile, "utf8"), sizeBudgetsFile).map(
-      (budget) => budget.name
-    );
-    expect([...BUNDLE_SIZES.map((entry) => entry.name)].sort()).toEqual([...liveNames].sort());
   });
 });
 

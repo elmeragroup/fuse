@@ -16,7 +16,7 @@ const packageRoot = packageRootFromScript(import.meta.url);
  * consumer fixtures. Every gate also runs in the merge `ci:checks` graph, which
  * `test/release-workflow.test.mjs` keeps pinned.
  */
-export const PUBLISH_GATES = ["package:check", "size-limit", "test:packed-consumer"] as const;
+export const PUBLISH_GATES = ["package:check", "test:packed-consumer"] as const;
 
 /**
  * Builds the package with the release intent written into its publish manifest, packs it, and

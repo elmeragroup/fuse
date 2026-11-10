@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 
-// The polar Roots' spoken phrases and hydration, in Chromium, Firefox and WebKit. Units under test:
+// The polar Roots' spoken phrases and hydration, in Chromium and WebKit. Units under test:
 // PieChart.Root, RadialChart.Root and RadarChart.Root. Oracles, written by hand: CONTRACT section
 // 9.4's option grammar in Norwegian Bokmål, with S11's drafted words and layer 03's spoken percent
 // literal, in vsr's own phrase grammar, role, name, state, position and set size joined by ", ";

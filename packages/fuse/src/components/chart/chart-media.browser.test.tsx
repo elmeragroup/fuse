@@ -37,7 +37,7 @@ import type { ChartBarVariant } from "./chart-types";
 import "./chart.css";
 import { ScatterChart } from "./scatter-chart-namespace";
 
-const FORCED = server.browser === "chromium" || server.browser === "firefox";
+const FORCED = server.browser === "chromium";
 
 afterEach(async () => {
   if (server.browser !== "webkit") await emulateMedia("screen", "none");
@@ -74,7 +74,7 @@ describe("forced colours", () => {
 
   it.runIf(FORCED)("keeps each point series' colour, so two series stay apart", async () => {
     // 20 large dots per series along two rows, so each series paints a few thousand pixels. The
-    // emulated forced colours of Chromium and Firefox leave SVG strokes alone, so the paint checks
+    // emulated forced colours of Chromium leave SVG strokes alone, so the paint checks
     // hold either way, and the layer's own forced-color-adjust, which a line layer shares, is what
     // keeps the colours where forced colours repaint SVG.
     const rows = Array.from({ length: 40 }, (_, index) => ({

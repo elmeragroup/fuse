@@ -6,14 +6,9 @@
     // the root lint, instead of a build script racing them for the same files.
     "generate": {
       "dependsOn": ["^build"],
-      // The Tokens page publishes the library's own recorded measurements, so a budget
-      // recalibration must invalidate this task even though nothing in apps/docs moved. The
-      // studio's slot index reads slots through Fuse's private scanner, which counts the same.
-      "inputs": [
-        "$TURBO_DEFAULT$",
-        "../../packages/fuse/scripts/size-budgets.ts",
-        "../../packages/fuse/test/written-slots.ts"
-      ],
+      // The studio's slot index reads slots through Fuse's private scanner, so an edit to it
+      // must invalidate this task even though nothing in apps/docs moved.
+      "inputs": ["$TURBO_DEFAULT$", "../../packages/fuse/test/written-slots.ts"],
       // The committed per-component api.json, and each extra entry's <entry>.api.json beside it,
       // are outputs too. They are tracked, unlike everything else here, but this task is what
       // writes them — so a cache hit has to restore them, or the drift check would read a file

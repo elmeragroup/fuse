@@ -71,9 +71,8 @@ Package-scoped scripts worth knowing:
 | Script                                             | Does                                                                                  |
 | -------------------------------------------------- | ------------------------------------------------------------------------------------- |
 | `pnpm --filter @elmeragroup/fuse generate:exports` | Regenerates the root barrel and runtime export names from the entry facades           |
-| `pnpm --filter @elmeragroup/fuse pack`             | Produces the single tarball that `package:check` and `size-limit` consume             |
+| `pnpm --filter @elmeragroup/fuse pack`             | Produces the single tarball that `package:check` consumes                             |
 | `pnpm --filter @elmeragroup/fuse package:check`    | publint / attw / exports-map / emitted-directive checks against that tarball          |
-| `pnpm --filter @elmeragroup/fuse size-limit`       | Bundle budgets against that tarball                                                   |
 | `pnpm --filter docs generate`                      | Regenerates the docs API tables and each component page's committed API artifacts     |
 | `pnpm --filter @elmeragroup/fuse-figma figma:sync` | Writes the tokens into a Figma file; `figma:check` prints the plan and fails on drift |
 

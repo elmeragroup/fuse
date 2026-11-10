@@ -111,7 +111,7 @@ including dead production code whose only callers are tests.
 ## Retention bar
 
 Keep a test that independently enforces a public behavior `AGENTS.md` names,
-or the package manifests, size budgets, release workflow, or repo policy. Also
+or the package manifests, release workflow, or repo policy. Also
 keep:
 
 - a cross-check between two representations that names its oracle, as

@@ -68,7 +68,7 @@ describe("the shots command line", () => {
         "--densities",
         "comfortable,dense",
         "--engines",
-        "webkit,firefox,chromium",
+        "webkit,chromium",
         "--viewports",
         "1280x800, 390x844",
         "--scale",
@@ -119,7 +119,7 @@ describe("the shots command line", () => {
           { _tag: "override", density: "comfortable" },
           { _tag: "override", density: "dense" },
         ],
-        engines: ["webkit", "firefox", "chromium"],
+        engines: ["webkit", "chromium"],
         viewports: [
           { width: 1280, height: 800 },
           { width: 390, height: 844 },
@@ -299,7 +299,7 @@ describe("the shots command line", () => {
     ],
     [
       [...REQUIRED, "--engines", "chrome"],
-      invalid("engines", "chrome", '"chrome" must be chromium, webkit or firefox'),
+      invalid("engines", "chrome", '"chrome" must be chromium or webkit'),
     ],
     [[...REQUIRED, "--scale", "0"], invalid("scale", "0", "a number above 0 and at most 4")],
     [[...REQUIRED, "--scale", "two"], invalid("scale", "two", "a number above 0 and at most 4")],

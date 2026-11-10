@@ -27,8 +27,7 @@ const demoStage = tv({
   // with a short demo centred in it, so the frames on a page share a floor and the Code view has
   // room to show code.
   //
-  // Every rule that lays out the stage's roots keys off `data-stage-layout`, so a test can remove
-  // that one attribute to read a part's own layout without the stage's (`demo-containment.ts`).
+  // Every rule that lays out the stage's roots keys off `data-stage-layout`.
   base: "sm:px-8 text-base flow-root min-h-64 content-center bg-background px-0 py-11 text-foreground min-[360px]:px-3 [&[data-stage-layout]]:text-center [:where(&[data-stage-layout]>*)]:mx-auto [:where(&[data-stage-layout]>*)]:max-w-full [:where(&[data-stage-layout]>*)]:text-start [:where(&[data-stage-layout]>*:not([data-slot]))]:justify-center",
 });
 

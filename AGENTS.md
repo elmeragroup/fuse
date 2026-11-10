@@ -56,19 +56,12 @@ composed theme map, a recipe's slots against the upstream recipe it forwards).
 
 Use unit tests for recipes and pure logic, browser tests for interaction, and
 public type tests for API constraints. Use the shared role/label browser helpers.
-Put production-only behavior in `*.production.browser.test.tsx`, which runs in
-the `browser-production` project. Put tests whose output every engine must write
-alike, such as formatted text, in `*.engines.browser.test.tsx`, or `.ts` when they
-mount nothing. The `browser-engines` project runs them in Chromium, Firefox and WebKit.
-Put tests that need the user's reduced-motion preference in `*.reduced-motion.browser.test.tsx`.
-The `browser-reduced-motion` project runs them in all three engines with that preference set.
-Keyboard and focus tests run in the plain `browser` project, since each file gets its own page.
-Put tests that emulate touch or tap through Playwright's touchscreen in `*.touch.browser.test.tsx`.
-The `browser-touch` project runs them one file at a time in Chromium with touch on.
-Put tests of what WebKit decides on a phone, such as its scroll snapping at three device pixels,
-in `*.iphone.browser.test.tsx`. The `browser-iphone` project runs them in WebKit as an iPhone 15.
-Put unit tests whose result can depend on the process time zone in `*.zones.test.ts`. `unit`
-runs them in Europe/Oslo, and `unit-new-york` and `unit-tokyo` run them again in their zones.
+Put formatted text and hydration that Chromium and WebKit must write alike in
+`*.engines.browser.test.tsx`, or `.ts` when they mount nothing. The `browser-engines`
+project runs them in both engines. Files that drive the real clipboard end in
+`*.clipboard.browser.test.tsx` and run one at a time in `browser-clipboard`.
+Keyboard, focus and reduced-motion tests run in the plain `browser` project.
+`unit` runs in Europe/Oslo.
 Put necessary source contracts in the central suite with the reason lint or an
 existing gate cannot enforce them.
 While editing, run `vitest related <files> --run --project unit` in the owning package
@@ -82,8 +75,6 @@ When a change touches docs-app behavior (landing, studio, search, theme picker),
 `pnpm exec turbo run build:e2e --filter=docs`, which builds Fuse and generates docs first
 and writes the e2e build to `.cache/next-e2e`, then run the affected e2e files with
 `pnpm --filter docs test:e2e test/<file>`.
-When it changes a Fuse part's density role, a data-slot, or the density-metric or border
-classes a part reads, run the `test/demo-coverage-*.browser.test.ts` files the same way.
 When it touches package exports, build or packaging scripts, or dependencies, run
 `package:check` and `test:packed-consumer`, or `pnpm ci:checks`, before review.
 Read versions, commands, budgets and task dependencies from their owning configuration

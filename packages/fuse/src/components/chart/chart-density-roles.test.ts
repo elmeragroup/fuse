@@ -1,7 +1,6 @@
 // Unit under test: PART_DENSITY's chart entries. Oracle: the slot-to-role rows of CONTRACT
 // section 10 (.scratch/charts-v1/contract/CONTRACT.md), copied here as literals for every slot
-// this layer writes. A slot declared with the wrong role fails here even when it behaves as
-// declared, which the docs density coverage test cannot see.
+// this layer writes. A slot declared with the wrong role fails here.
 import { describe, expect, it } from "vitest";
 
 import { PART_DENSITY } from "../../theme/tokens/density-roles";

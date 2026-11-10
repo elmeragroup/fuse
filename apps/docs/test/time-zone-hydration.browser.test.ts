@@ -1,4 +1,4 @@
-import { chromium, firefox, webkit } from "playwright";
+import { chromium, webkit } from "playwright";
 import type { Browser, Page } from "playwright";
 import { describe, expect, it } from "vitest";
 
@@ -205,7 +205,6 @@ async function hydrateDemo(
 
 describe.each([
   ["Chromium", chromium],
-  ["Firefox", firefox],
   ["WebKit", webkit],
 ] as const)("A New York server and an Oslo browser in %s", (_, engine) => {
   const browser = launchSuiteBrowser(engine);

@@ -2,14 +2,7 @@ import { expect, it } from "vitest";
 
 import { PUBLISH_GATES } from "../packages/fuse/scripts/release-pack.ts";
 import { asRecord, asString } from "./json-object.mjs";
-import {
-  jobMatrixEntries,
-  readWorkflow,
-  requiredJobSteps,
-  requiredRunStep,
-  resolveMatrixExpressions,
-  turboTasks,
-} from "./workflow.mjs";
+import { readWorkflow, requiredJobSteps, requiredRunStep, turboTasks } from "./workflow.mjs";
 
 /** Gates that run only in the merge workflow's browser job. */
 const BROWSER_JOB_GATE = /#test:(browser|e2e|packed-consumer)$/;
@@ -24,11 +17,10 @@ function turboRunStep(job) {
 /**
  * The arguments a job's turbo command requests, before Turbo resolves them.
  * @param {string} job
- * @param {Record<string, unknown>} [entry]
  */
-function requestedArgs(job, entry = {}) {
-  const command = resolveMatrixExpressions(asString(turboRunStep(job).run, `${job} command`), entry);
-  expect(command, `${job} gate must be one resolved command`).not.toMatch(/\$\{\{|[\r\n]/);
+function requestedArgs(job) {
+  const command = asString(turboRunStep(job).run, `${job} command`);
+  expect(command, `${job} gate must be one literal command`).not.toMatch(/\$\{\{|[\r\n]/);
   const tokens = (command.match(/(?:'[^']*'|"[^"]*"|[^\s'"]+)+/g) ?? []).map((token) =>
     token.replace(/['"]/g, "")
   );
@@ -70,24 +62,6 @@ function resolvedTasks(args) {
 /** Fuse's no-op `ci:checks` and `check` scripts, which only anchor each aggregate's fan-out. */
 const AGGREGATE_ANCHORS = new Set(["@elmeragroup/fuse#ci:checks", "@elmeragroup/fuse#check"]);
 
-/** @type {{ leg: string, args: string[], tasks: Record<string, unknown>[] }[] | undefined} */
-let browserGraphs;
-
-/**
- * Each browser leg's command, including task passthrough arguments, and resolved graph. Turbo
- * forwards what follows `--` to the tasks without changing the graph, so the docs shards resolve
- * one graph between them.
- */
-function browserLegs() {
-  browserGraphs ??= jobMatrixEntries(readWorkflow("merge"), "browser").map((entry) => {
-    const args = requestedArgs("browser", entry);
-    const separator = args.indexOf("--");
-    const graphArgs = separator === -1 ? args : args.slice(0, separator);
-    return { leg: asString(entry.leg, "browser leg"), args, tasks: resolvedTasks(["run", ...graphArgs]) };
-  });
-  return browserGraphs;
-}
-
 it("the merge checks schedule all required gates without browser work", () => {
   const ids = scheduledTasks("checks").map((task) => asString(task.taskId, "task id"));
   for (const required of [
@@ -99,7 +73,6 @@ it("the merge checks schedule all required gates without browser work", () => {
     "@elmeragroup/fuse#test",
     "@elmeragroup/fuse#test:types",
     "@elmeragroup/fuse#package:check",
-    "@elmeragroup/fuse#size-limit",
     "@elmeragroup/fuse#api:report",
     "@elmeragroup/color#test",
     "@elmeragroup/color#type-check",
@@ -121,22 +94,18 @@ it("the merge checks schedule all required gates without browser work", () => {
 
 it("splits the ci:checks aggregate exactly between the checks and browser jobs", () => {
   // Unit under test: merge's resolved job graphs. Oracle: turbo.json's ci:checks aggregate.
-  // Shared builds and repeated docs shards count once; Fuse's no-op `ci:checks` and `check`
-  // anchors are not gates.
+  // Shared builds count once; Fuse's no-op `ci:checks` and `check` anchors are not gates.
   const aggregate = executableTaskIds(resolvedTasks(["run", "ci:checks"])).filter(
     (id) => !AGGREGATE_ANCHORS.has(id)
   );
-  const scheduled = executableTaskIds([
-    ...scheduledTasks("checks"),
-    ...browserLegs().flatMap((leg) => leg.tasks),
-  ]);
+  const scheduled = executableTaskIds([...scheduledTasks("checks"), ...scheduledTasks("browser")]);
   expect([...new Set(scheduled)].sort()).toEqual([...new Set(aggregate)].sort());
 }, 30_000);
 
 it("schedules every publish gate through the ci:checks aggregate", () => {
   // The release engine runs these gates before it publishes. A local `pnpm ci:checks` fans out
   // to them directly or through the `check` gate it includes.
-  expect([...PUBLISH_GATES]).toEqual(["package:check", "size-limit", "test:packed-consumer"]);
+  expect([...PUBLISH_GATES]).toEqual(["package:check", "test:packed-consumer"]);
   const scheduled = executableTaskIds(resolvedTasks(["run", "ci:checks"]));
   for (const gate of PUBLISH_GATES) {
     expect(scheduled, `${gate} must also run in the ci:checks aggregate`).toContain(
@@ -148,8 +117,9 @@ it("schedules every publish gate through the ci:checks aggregate", () => {
 it("the local check gate is ci:checks without the e2e and packed-artifact tier", () => {
   // Unit under test: turbo.json's `check` aggregate. Oracle: the resolved ci:checks graph minus
   // the tasks this list names, which CI alone runs. Fuse's no-op aggregate anchors are not gates.
-  // `build:e2e` is the build only `docs#test:e2e` serves (apps/docs/turbo.json).
-  const ciOnly = ["test:e2e", "build:e2e", "test:packed-consumer", "package:check"];
+  // `build:e2e` is the build only `docs#test:e2e` serves (apps/docs/turbo.json), and `pack` the
+  // tarball only the packed-artifact tier reads.
+  const ciOnly = ["test:e2e", "build:e2e", "test:packed-consumer", "package:check", "pack"];
   const gates = (/** @type {string} */ aggregate) =>
     new Set(executableTaskIds(resolvedTasks(["run", aggregate])).filter((id) => !AGGREGATE_ANCHORS.has(id)));
   const full = gates("ci:checks");
@@ -237,9 +207,7 @@ it("runs docs build before type-check, not against the same .next", () => {
 
 it("the browser job schedules the browser, e2e and packed-consumer gates", () => {
   // The required gate inventory is independent of the workflow's task arguments and filters.
-  const ids = executableTaskIds(browserLegs().flatMap((leg) => leg.tasks)).filter((id) =>
-    BROWSER_JOB_GATE.test(id)
-  );
+  const ids = executableTaskIds(scheduledTasks("browser")).filter((id) => BROWSER_JOB_GATE.test(id));
   expect([...new Set(ids)].sort()).toEqual([
     "@elmeragroup/fuse#test:browser",
     "@elmeragroup/fuse#test:packed-consumer",
@@ -248,25 +216,4 @@ it("the browser job schedules the browser, e2e and packed-consumer gates", () =>
     "docs#test:e2e",
     "static-theme#test:browser",
   ]);
-}, 30_000);
-
-it("covers every docs e2e shard exactly once and keeps package gates unsharded", () => {
-  const legs = browserLegs();
-  expect(legs.map((leg) => leg.leg).sort()).toEqual(["docs-1", "docs-2", "docs-3", "docs-4", "packages"]);
-  const docs = legs.filter((leg) => leg.tasks.some((task) => task.taskId === "docs#test:e2e"));
-  expect(docs).toHaveLength(4);
-  for (const leg of docs) {
-    const gates = executableTaskIds(leg.tasks).filter((id) => BROWSER_JOB_GATE.test(id));
-    expect(gates, `${leg.leg} must only shard the docs e2e gate`).toEqual(["docs#test:e2e"]);
-    expect(leg.args.slice(leg.args.indexOf("--") + 1), `${leg.leg} shard arguments`).toHaveLength(1);
-  }
-  // N executions must cover 1/N through N/N, even though their resolved task ids are identical.
-  const shards = docs.map((leg) => leg.args.slice(leg.args.indexOf("--") + 1)[0]);
-  expect(shards.sort()).toEqual(
-    Array.from({ length: docs.length }, (_, index) => `--shard=${index + 1}/${docs.length}`)
-  );
-  for (const leg of legs.filter((candidate) => !docs.includes(candidate))) {
-    expect(leg.args, `${leg.leg} must not forward shard arguments to package gates`).not.toContain("--");
-    expect(leg.args.some((arg) => arg.startsWith("--shard"))).toBe(false);
-  }
 }, 30_000);

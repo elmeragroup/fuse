@@ -44,9 +44,6 @@ export const componentRoutesDir = path.join(docsRouteGroup, "components");
 /** The generated site-root `llms.txt` index. */
 export const llmsTxtFile = path.join(docsRoot, "public/llms.txt");
 
-/** The budget module `size-limit` enforces, and the docs publish measurements from. */
-export const sizeBudgetsFile = path.join(fuseRoot, "scripts/size-budgets.ts");
-
 /** Repo host base for **View source** links. */
 export const REPO_BLOB_BASE = "https://github.com/elmeragroup/fuse/blob/main";
 

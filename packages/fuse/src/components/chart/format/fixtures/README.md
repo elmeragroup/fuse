@@ -4,9 +4,9 @@ The chart format tests compare Fuse's labels with these files. No file here come
 
 - `time-literals.ts` and `value-literals.ts` hold the labels written by hand. The format tests keep every hand-written label here, so every engine checks it.
 - `time-judges.ts` compares Fuse's time labels with `slots.json`, the fall-back day files and the time literals. The slot label and date-time cases run through the public `formatChartSlot`. The one de-DE date-time is judged against the engine's own Intl output, because Fuse keeps Intl's join outside en, nb, sv and fi.
-- `slot-starts.json` holds the expected slot starts that `../slot-starts.zones.test.ts` checks.
+- `slot-starts.json` holds the expected slot starts that `../slot-starts.test.ts` checks.
 - `value-judges.ts` compares Fuse's value labels with the value literals. The public value cases run through `formatChartValue`.
-- `judges.ts` lists every judge. `format.zones.test.ts` runs them in Node, once per zone project, and `format.engines.browser.test.ts` in Chromium, Firefox and WebKit.
+- `judges.ts` lists every judge. `format.test.ts` runs them in Node, and `format.engines.browser.test.ts` in Chromium and WebKit.
 
 oxfmt skips the JSON files, so their bytes stay as fetched or generated.
 
@@ -33,7 +33,7 @@ The ISO week words are drafts that await the owner's sign-off, as `meta.week_lab
 
 The file encodes one rule. A day, ISO week, month or year starts at the earliest instant of its first local date. When local midnight falls in a gap, that is the transition instant, and when midnight repeats, it is the first occurrence. A second, minute, quarter-hour or hour slot steps its fixed length from the start of its instant's local date, and a day whose length is no multiple of that length ends its last slot early, at the next day's start.
 
-The data comes from the IANA tz database 2025c, through the PyPI `tzdata` package 2025.3. Node 26.13 bundles tzdata 2026e, and `slot-starts.zones.test.ts` passes on every row under it, so the two releases agree at every sampled instant. Create a venv outside the repository once, then run the script from this folder with an empty `PYTHONTZPATH`, so `zoneinfo` reads the pinned package.
+The data comes from the IANA tz database 2025c, through the PyPI `tzdata` package 2025.3. Node 26.13 bundles tzdata 2026e, and `slot-starts.test.ts` passes on every row under it, so the two releases agree at every sampled instant. Create a venv outside the repository once, then run the script from this folder with an empty `PYTHONTZPATH`, so `zoneinfo` reads the pinned package.
 
 ```sh
 /usr/bin/python3 -m venv ~/.cache/fuse-slot-starts
