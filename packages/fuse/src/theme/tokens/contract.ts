@@ -402,9 +402,7 @@ export type TokenPaint = "surface" | "ink" | "line";
 
 /**
  * Where Fuse paints each color role. Exporters read it to offer a role only where it belongs,
- * such as the Figma sync's picker scopes. The source contract in `source-contracts.test.ts`
- * requires every color utility the library writes on a role to fall inside the role's paints.
- * A role no component paints takes the paints its name and the docs demos give it. A new color
+ * such as the Figma sync's picker scopes. A role no component paints takes the paints its name and the docs demos give it. A new color
  * token without an entry fails to compile.
  */
 export const TOKEN_PAINTS = {

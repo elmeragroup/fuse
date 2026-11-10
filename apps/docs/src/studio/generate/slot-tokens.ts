@@ -14,8 +14,8 @@ import type { TokenRef } from "../../lib/docs-model.ts";
 
 /**
  * Every literal `data-slot` a module writes, once each in first-seen order. Fuse's own
- * `writtenSlots` owns the slot syntax, the same scan its source contracts run, so the index and
- * the package's density contract cannot read different slots out of one source.
+ * `writtenSlots` owns the slot syntax, which the `fuse/declared-density-role` lint rule also
+ * reads, so the index and the density table cover the same slots.
  *
  * @param file - The module's path, which picks the parser's dialect and names a parse failure.
  * @param source - The module's source.

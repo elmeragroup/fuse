@@ -119,8 +119,7 @@ export default function plopfile(plop) {
         path: DENSITY_ROLES,
         pattern: DENSITY_MARKER,
         // Not a role: the type check rejects it until the implementer declares a role for each
-        // data-slot the component writes, and the source contract rejects the placeholder key
-        // until the component writes that slot.
+        // data-slot the component writes.
         template: `  "{{name}}": "TODO", // TODO({{name}}): declare the density role of every data-slot (CONTEXT.md, Density role)`,
       },
       // Template line breaks cannot know how long a component name is, so the emitted
@@ -149,7 +148,7 @@ export default function plopfile(plop) {
           "  3. pnpm --filter @elmeragroup/fuse build             # dist + publish manifest; does not rewrite source exports",
           "  4. Author the page and demos. Add the title, RSC status and demo files to apps/docs/test/fixtures/component-inventory.json.",
           "  5. pnpm --filter docs generate                    # writes the committed api.json next to the page",
-          "  6. Add source-contracts.test.ts entries and public type/API checks.",
+          "  6. Add public type/API checks; a server-visible part keeps its namespace index directive-free.",
           "  7. pnpm check",
           "  8. pnpm exec turbo run package:check test:packed-consumer  # new entry changes package exports (AGENTS.md#tests)",
         ].join("\n"),

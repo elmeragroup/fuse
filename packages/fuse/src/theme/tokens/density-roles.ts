@@ -7,8 +7,8 @@
  * table order wins.
  * CONTEXT.md defines the roles: a `control`, `row`, `surface` or `label` part reads a metric of its
  * role through its height, padding, gap or type, even one that is the same at both densities, such
- * as `--surface-pad-sm`; a `layout` or `fixed` part reads none. The source contract requires every
- * written `data-slot` to be a key and every key to follow that grammar.
+ * as `--surface-pad-sm`; a `layout` or `fixed` part reads none. The `fuse/declared-density-role`
+ * lint rule requires every literal `data-slot` a library module writes to be a key here.
  */
 
 /** The density roles, in the order CONTEXT.md defines them. */

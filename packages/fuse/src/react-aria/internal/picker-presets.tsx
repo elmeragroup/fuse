@@ -88,6 +88,7 @@ export function PickerPresetItem({
             // The radio's own indicator, if a caller's children render one, stays hidden,
             // because the preset is a button-shaped choice and not a bullet list.
             className:
+              // oxlint-disable-next-line fuse/state-face -- a preset is an option row inside a popup list, and dropping pointer events keeps the pointer from highlighting a disabled preset
               "justify-start text-left *:data-[slot=radio-indicator]:hidden data-selected:bg-accent data-disabled:pointer-events-none",
           }),
           // A preset is a row in the preset group, so it reads the group's inner corner

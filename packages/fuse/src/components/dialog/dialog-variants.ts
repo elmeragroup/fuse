@@ -60,6 +60,7 @@ export const dialogVariants = tv({
     footer: overlayFooterClass,
     title: overlayTitleClass,
     description:
+      // oxlint-disable-next-line fuse/state-face -- links in a dialog description have no disabled state
       "text-sm text-pretty text-muted-foreground *:[a]:underline *:[a]:underline-offset-3 *:[a]:hover:text-foreground",
   },
   variants: {

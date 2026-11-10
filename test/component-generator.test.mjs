@@ -92,7 +92,7 @@ describe("component generator", () => {
     const result = generate(directory, "status-light");
     expect(result.stderr + result.stdout).not.toContain("[FAILED]");
     expect(result.status, result.stdout + result.stderr).toBe(0);
-    // The new slot starts with a placeholder role the source contract rejects.
+    // The new slot starts with a placeholder role the type check rejects.
     expect(
       readFileSync(join(directory, "packages/fuse/src/theme/tokens/density-roles.ts"), "utf8")
     ).toContain('  "status-light": "TODO",');

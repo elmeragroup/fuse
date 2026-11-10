@@ -1,7 +1,7 @@
 /**
  * The chart motion tokens. The rAF tween of `chart-motion.ts` moves marks on them, and `chart.css`
  * mirrors the duration and the curve for the opacity fade of a mark that an update adds, so a
- * source contract keeps the two equal. The values follow `.scratch/charts-v1/reviews/motion-decision.md`.
+ * change here changes `--chart-update` and `--chart-ease` there too. The values follow `.scratch/charts-v1/reviews/motion-decision.md`.
  */
 import type { BezierCurve } from "./ease";
 import type { Spring } from "./spring";

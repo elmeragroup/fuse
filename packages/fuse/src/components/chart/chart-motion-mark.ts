@@ -36,9 +36,8 @@ export type MarkTuple<A extends readonly ValueAxis[]> = { readonly [K in keyof A
  * What a writer reads besides its node and the numbers the loop draws: the measured frame, the look,
  * its paint and its wiring. A target coordinate is a number, or a list of them, which this type
  * refuses at the look's top level, so a writer draws its geometry from the loop's numbers alone. A
- * number nested in an object passes, as the measured frame's box must; the module-scope writer the
- * central suite requires keeps every other input of the writer in its signature, where a reviewer
- * reads it.
+ * number nested in an object passes, as the measured frame's box must; a writer bound at module
+ * scope keeps every other input of the writer in its signature, where a reviewer reads it.
  */
 export type WriterLook<L> = {
   readonly [K in keyof L]: L[K] extends number | readonly unknown[] ? never : L[K];
@@ -85,7 +84,7 @@ export function useFirstDraw<V>(make: () => V, key?: string): V {
  *
  * @param motion - Root's loop.
  * @param write - Writes the loop's numbers onto the mark's node: a function bound at module scope,
- *   which the central suite checks, so it reads only its node, its look and the numbers.
+ *   so it reads only its node, its look and the numbers.
  * @param look - The writer's look, the latest one drawing, with no target coordinate in it.
  * @param axes - What each of the mark's numbers measures, in order, so a resize maps them into the
  *   new box: a pixel along x or y from the plot's edge, or a size the box leaves alone. The latest

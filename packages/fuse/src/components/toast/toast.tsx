@@ -626,6 +626,7 @@ export function ToastClose({ className, label, children, ...props }: ToastCloseP
       data-slot="toast-close"
       aria-label={accessibleName}
       className={closeClassName}
+      // oxlint-disable-next-line fuse/render-element-wiring -- an icon-size Button requires its own aria-label, which Close also carries for its own name
       render={<Button variant="ghost" size="icon-sm" aria-label={accessibleName} />}
       {...props}>
       <X aria-hidden="true" />

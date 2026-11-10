@@ -62,8 +62,8 @@ project runs them in both engines. Files that drive the real clipboard end in
 `*.clipboard.browser.test.tsx` and run one at a time in `browser-clipboard`.
 Keyboard, focus and reduced-motion tests run in the plain `browser` project.
 `unit` runs in Europe/Oslo.
-Put necessary source contracts in the central suite with the reason lint or an
-existing gate cannot enforce them.
+Write a mechanical source contract as an AST rule in `tooling/oxlint-plugin-fuse`,
+with one rule test file of valid and invalid cases, and scope it in `.oxlintrc.json`.
 While editing, run `vitest related <files> --run --project unit` in the owning package
 (drop `--project` where none exist). Direct Vitest skips the Fuse build and dist tripwires.
 Lint through `pnpm lint`: type-aware rules run on tsrs, so a direct `oxlint` needs

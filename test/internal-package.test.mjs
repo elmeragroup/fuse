@@ -51,7 +51,9 @@ describe("@elmeragroup/internal", () => {
     const specifiers = asRecordArray(
       plugins.filter((plugin) => !isString(plugin)),
       "jsPlugins"
-    ).map((plugin) => asString(plugin.specifier, "plugin specifier"));
+    )
+      .map((plugin) => asString(plugin.specifier, "plugin specifier"))
+      .filter((specifier) => specifier.startsWith("@elmeragroup/internal"));
     expect(specifiers).toEqual(["@elmeragroup/internal/oxlint", "@elmeragroup/internal/oxlint/anti-slop"]);
   });
 });

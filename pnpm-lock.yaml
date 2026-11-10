@@ -60,6 +60,9 @@ catalogs:
     '@next/playwright':
       specifier: 16.4.2
       version: 16.4.2
+    '@oxlint/plugins':
+      specifier: 1.89.0
+      version: 1.89.0
     '@paper-design/shaders-react':
       specifier: 0.0.81
       version: 0.0.81
@@ -706,6 +709,34 @@ importers:
       rolldown:
         specifier: 'catalog:'
         version: 1.2.15
+      tsrs:
+        specifier: 'catalog:'
+        version: 0.21.0-ts7.1.0-beta
+      typescript:
+        specifier: 'catalog:'
+        version: 7.1.0-beta
+      vitest:
+        specifier: 'catalog:'
+        version: 5.0.0(@types/node@26.6.6)(@vitest/browser-playwright@5.0.0)(@vitest/ui@5.0.0)(vite@8.3.0(@types/node@26.6.6)(jiti@2.7.0)(yaml@2.9.1))
+
+  tooling/oxlint-plugin-fuse:
+    dependencies:
+      '@oxlint/plugins':
+        specifier: 'catalog:'
+        version: 1.89.0
+      oxc-parser:
+        specifier: 'catalog:'
+        version: 0.148.0
+    devDependencies:
+      '@elmeragroup/typescript-config':
+        specifier: workspace:*
+        version: link:../typescript
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.6.6
+      oxlint:
+        specifier: 'catalog:'
+        version: 1.89.0
       tsrs:
         specifier: 'catalog:'
         version: 0.21.0-ts7.1.0-beta

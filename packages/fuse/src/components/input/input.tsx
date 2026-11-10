@@ -82,10 +82,7 @@ function insertDigitsOnly(event: InputEvent): void {
   );
 }
 
-/**
- * Attaches {@link insertDigitsOnly} while the numeric filter is on. `source-contracts.test.ts`
- * lists this module among the reviewed listener owners.
- */
+/** Attaches {@link insertDigitsOnly} while the numeric filter is on. */
 function listenForMixedInsertions(input: HTMLInputElement | null): (() => void) | undefined {
   if (!input) {
     return undefined;

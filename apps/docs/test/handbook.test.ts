@@ -77,7 +77,8 @@ function rowCells(html: string, hook: string): string[] {
 
 describe("tokens page", () => {
   // Unit under test: the tokens page's density tables. Oracle: the resolved catalog, which
-  // density-css.test.ts ties to fuse.css and the source contract ties to every data-slot.
+  // density-css.test.ts ties to fuse.css and the `fuse/declared-density-role` lint rule ties to
+  // every data-slot.
   it("renders every density metric with its px per density, and every part under its role", async () => {
     const html = await fetchText("/handbook/tokens");
     const catalog = resolveThemeCatalog();

@@ -62,7 +62,7 @@ export const sidebarGroupActionBoxClass = cn(
  * The default row reads the row metrics, as menu rows do: `--row-h` tall, padded inline with
  * `--row-px`. The `h-7` / `h-12` sizes are shell-local navigation-rail geometry, `fixed`
  * at both densities. Collapse motion animates colour and shadow only. The
- * shell width is the one sidebar layout transition `source-contracts.test.ts` allows.
+ * shell width is the one sidebar layout transition.
  * The row is a native `<button>` or a `render`ed link, so the state face composes the
  * `native` target, whose `aria-disabled` arm covers a link row, and hover and press sit
  * behind the `enabled-*` gate.
@@ -132,8 +132,7 @@ export const sidebarMenuSubButtonVariants = tv({
  * - `inner`: the surface. Floating's shadow and ring stay as `group-data-[variant=floating]:`
  *   selectors, so the panel's markup is the same for every variant.
  *
- * The gap's and container's width tweens are the sidebar's layout transitions that
- * `source-contracts.test.ts` allows.
+ * The gap's and container's width tweens are the sidebar's layout transitions.
  */
 export const sidebarPanelVariants = tv({
   slots: {

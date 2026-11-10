@@ -82,14 +82,12 @@ it("the merge checks schedule all required gates without browser work", () => {
     "static-theme#build",
     "static-theme#type-check",
     "static-theme#test",
+    "@elmeragroup/oxlint-plugin-fuse#test",
+    "@elmeragroup/oxlint-plugin-fuse#type-check",
   ]) {
     expect(ids).toContain(required);
   }
   expect(ids.filter((id) => BROWSER_JOB_GATE.test(id))).toEqual([]);
-  // The extractor and lint plugins ship in @elmeragroup/internal; no workspace package
-  // carries their gates any more, so nothing under tooling/* other than the tsconfig
-  // package may appear in the graph.
-  expect(ids.filter((id) => /^@elmeragroup\/(api-extractor|oxlint-plugin)/.test(id))).toEqual([]);
 }, 30_000);
 
 it("splits the ci:checks aggregate exactly between the checks and browser jobs", () => {
