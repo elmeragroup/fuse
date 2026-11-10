@@ -62,7 +62,7 @@ Each test lands in one project; reach for the cheapest that can go red:
 - `browser-engines` (`*.engines.browser.test.*`, Chromium and WebKit): only formatted text and hydration.
 - `browser-clipboard` (`*.clipboard.browser.test.tsx`): real-clipboard files, one at a time.
 - `*.test-d.tsx` (`test:types`): public type constraints.
-- Docs `test/routes.browser.test.ts`: every docs route renders error-free and axe-clean in Chromium.
+- Docs `browser` (against the e2e build): `test/routes.browser.test.ts` renders every route error-free and axe-clean in Chromium; one file each covers the landing, studio, theme picker and ⌘K flows.
 
 Write a mechanical source contract as a rule in `tooling/oxlint-plugin-fuse`, with a
 valid/invalid rule test. While editing, run `vitest related <files> --run --project unit`

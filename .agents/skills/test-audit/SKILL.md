@@ -116,8 +116,7 @@ fix.
 ## Retention bar
 
 Keep a test that independently enforces a public behavior `AGENTS.md` names,
-or the package manifests, release workflow, or repo policy. Also
-keep:
+or the package manifests, release workflow, or repo policy. Also keep:
 
 - a cross-check between two representations that names its oracle, as
   `AGENTS.md` allows (theme CSS against `composeTheme`, the popover clamp

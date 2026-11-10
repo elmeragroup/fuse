@@ -43,9 +43,9 @@ PYTHONTZPATH= ~/.cache/fuse-slot-starts/bin/python3 -I slot_starts.py <ground-tr
 
 The optional argument is the ground truth's `time/` folder, which holds the Oslo golden day the script checks itself against. Without it the script skips that check and says so. It refuses to run against any other tz database release, and it leaves the JSON unchanged when one of its self-checks fails. Never edit the JSON by hand. Regenerate it.
 
-## Price days
+## Price day
 
-The two price days hold invented values in the shape of the elprisetjustnu.se API, because the real day-ahead prices may not be committed. `.scratch/charts-v1/tools/l05-oracles/write_price_days.py` in the charts v1 run wrote them from hourly values typed by hand plus a fixed offset per quarter. Only their slot starts come from the zone rules.
+The price day holds invented values in the shape of the elprisetjustnu.se API, because the real day-ahead prices may not be committed. `.scratch/charts-v1/tools/l05-oracles/write_price_days.py` in the charts v1 run wrote it from hourly values typed by hand plus a fixed offset per quarter. Only its slot starts come from the zone rules.
 
 | File                                       | What it holds                                                                                                                                                 |
 | ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |

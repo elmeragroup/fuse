@@ -44,7 +44,7 @@ Root scripts fan out through turbo unless noted.
 | ------------------------- | --------------------------------------------------------------------------------------------------------------------- |
 | `pnpm build`              | Builds every package (`@elmeragroup/fuse` via tsdown, the Next apps, static-theme)                                    |
 | `pnpm dev`                | Runs the dev servers                                                                                                  |
-| `pnpm lint`               | `oxlint . --deny-warnings` over the tree, with the `elmera`, `anti-slop` and source-contract `fuse` plugins on tsrs   |
+| `pnpm lint`               | `oxlint . --deny-warnings` over the tree: the `elmera`, `anti-slop` and `fuse` plugins, type-aware rules on tsrs      |
 | `pnpm lint:fix`           | The same with `--fix`                                                                                                 |
 | `pnpm format`             | `oxfmt` write; `pnpm format:check` is the CI form                                                                     |
 | `pnpm test`               | Unit tests (vitest) in every package                                                                                  |
