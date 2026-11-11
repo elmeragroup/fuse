@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>pr-shots fixture: a page without React framing a Next page whose React never reports</title>
+    <style>
+      body {
+        margin: 0;
+      }
+      iframe {
+        width: 600px;
+        height: 400px;
+        border: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- As a block page frames its preview, whose client code here never loads. -->
+    <iframe title="Preview" src="/unhooked"></iframe>
+  </body>
+</html>

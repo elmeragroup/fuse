@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>pr-shots fixture: a server-rendered Activity that never hydrates</title>
+    <style>
+      body {
+        margin: 0;
+      }
+      #side {
+        width: 400px;
+        height: 200px;
+        background: #00f;
+      }
+    </style>
+    <script src="/react.js"></script>
+  </head>
+  <body>
+    <!-- The test puts the server's HTML for <Activity mode="visible"><Part /></Activity> here. -->
+    <div id="root"><!--server--></div>
+    <script>
+      // As Next's segments do: the server rendered the part inside a visible Activity, and the
+      // client hydrates the same tree, but the part's code never arrives, so the Activity stays
+      // dehydrated and its server HTML stays inert.
+      const { createElement: h, Activity, lazy } = React;
+      const Part = lazy(() => new Promise(() => undefined));
+      ReactDOMClient.hydrateRoot(document.getElementById("root"), h(Activity, { mode: "visible" }, h(Part)));
+    </script>
+  </body>
+</html>

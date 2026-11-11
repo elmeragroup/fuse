@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>pr-shots fixture: a click that mounts a lazily loaded part</title>
+    <style>
+      body {
+        margin: 0;
+        font: 16px/20px sans-serif;
+        background: #fff;
+      }
+      button {
+        position: absolute;
+        left: 40px;
+        width: 200px;
+        height: 30px;
+      }
+      /* The loaded part: a whole-pixel blue block, so the shot either shows it or the white page. */
+      #side {
+        position: absolute;
+        left: 40px;
+        top: 100px;
+        width: 400px;
+        height: 200px;
+        background: #00f;
+      }
+    </style>
+    <!-- React's production build, served by the test as plain scripts. -->
+    <script src="/react.js"></script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script>
+      // As the landing's Neutral side does: a click mounts a part whose code loads on demand,
+      // behind a Suspense boundary whose fallback shows nothing and marks nothing.
+      // - "Show" loads code the server answers at once.
+      // - "Stall" loads code that never arrives: its import never settles.
+      // - "Stall hidden" does so under `opacity: 0`, as the landing's inactive side is.
+      // - "Stall offscreen" does so in a hidden Activity, as Next keeps a route it has left,
+      //   which leaves React work it never finishes.
+      // `?part=stall` mounts the stalled part on load, without a click.
+      const { createElement: h, Activity, Fragment, Suspense, lazy, useState } = React;
+      const part = (chunk) =>
+        lazy(async () => {
+          await fetch(chunk);
+          return { default: () => h("div", { id: "side" }) };
+        });
+      const parts = {
+        show: part("/chunk/now"),
+        stall: lazy(() => new Promise(() => undefined)),
+      };
+      const button = (top, label, onClick) => h("button", { type: "button", style: { top }, onClick }, label);
+      function App() {
+        const [shown, setShown] = useState(new URLSearchParams(location.search).get("part"));
+        const Part = shown === "show" ? parts.show : shown === null ? null : parts.stall;
+        const boundary = Part === null ? null : h(Suspense, { fallback: null }, h(Part));
+        return h(
+          Fragment,
+          null,
+          button("40px", "Show", () => setShown("show")),
+          button("340px", "Stall", () => setShown("stall")),
+          button("380px", "Stall hidden", () => setShown("stall-hidden")),
+          button("420px", "Stall offscreen", () => setShown("stall-offscreen")),
+          shown === "stall-hidden"
+            ? h("div", { style: { opacity: 0 } }, boundary)
+            : shown === "stall-offscreen"
+              ? h(Activity, { mode: "hidden" }, boundary)
+              : boundary
+        );
+      }
+      ReactDOMClient.createRoot(document.getElementById("root")).render(h(App));
+    </script>
+  </body>
+</html>

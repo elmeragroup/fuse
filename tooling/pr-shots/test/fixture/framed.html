@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>pr-shots fixture: a page without React framing one whose part never loads</title>
+    <style>
+      body {
+        margin: 0;
+      }
+      iframe {
+        width: 600px;
+        height: 400px;
+        border: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- As a block page frames its preview: the shot shows the frame, so its React counts. -->
+    <iframe title="Preview" src="/lazy?part=stall"></iframe>
+  </body>
+</html>
