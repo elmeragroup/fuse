@@ -42,12 +42,21 @@
       "forwardedCount": 280,
       "props": [
         {
+          "name": "dividers",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "true",
+          "description": "Whether a responsive list draws a rule above every Item but the first. Pass `false` for a list whose rows need no rules, such as one inside a card that already separates it. Set once per list: it reaches only this list's own Items, so a list nested inside keeps its own rules. An inline list draws no rules either way, so `dividers` has no effect there. Defaults to `true`.",
+          "required": false
+        },
+        {
           "name": "layout",
           "origin": "declared",
           "type": "\"inline\" | \"responsive\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"responsive\"",
-          "description": "How each Item's terms and details sit. `responsive` stacks the details under the term on phones and sets them in two columns from `sm` up, with a rule between Items at every width. `inline` is for label/value rows in cards and summaries: each Item shares its own row between its term and details, whatever the other Items hold. The details sits beside its term, at the end of the row. When the two don't fit on one line, both wrap within the row: each keeps its longest word and they share the rest, so a short one leaves the other room. Only when the term's longest word and the details' longest word can't share the row does the details move under its term, still at the end, rather than break a word; a word wider than the whole row then breaks in the details. Inline rows take the label type, have no rules and space with the small surface gap, and the term is not muted. A colour class on a cell wins in both layouts. The inline cells' padding, sizing and alignment come from the list, so override them with a `[:where([data-layout=inline]>*)>&]:` class or a CSS rule. Override an inline Item's row, wrap and gap with a `[:where([data-layout=inline])>&]:` class. Defaults to `responsive`.",
+          "description": "How each Item's terms and details sit. `responsive` stacks the details under the term on phones and sets them in two columns from `sm` up, with a rule between Items at every width unless `dividers` is `false`. `inline` is for label/value rows in cards and summaries: each Item shares its own row between its term and details, whatever the other Items hold. The details sits beside its term, at the end of the row. When the two don't fit on one line, both wrap within the row: each keeps its longest word and they share the rest, so a short one leaves the other room. Only when the term's longest word and the details' longest word can't share the row does the details move under its term, still at the end, rather than break a word; a word wider than the whole row then breaks in the details. Inline rows take the label type, have no rules and space with the small surface gap, and the term is not muted. A colour class on a cell wins in both layouts. The inline cells' padding, sizing and alignment come from the list, so override them with a `[:where([data-layout=inline]>*)>&]:` class or a CSS rule. Override an inline Item's row, wrap and gap with a `[:where([data-layout=inline])>&]:` class. Defaults to `responsive`.",
           "required": false
         }
       ]

@@ -133,6 +133,19 @@ function expectNoOverflow(list: HTMLElement): void {
   }
 }
 
+/**
+ * Whether the Item holding the term `name` paints a rule above itself: a top border that is
+ * neither zero wide nor styled away.
+ */
+function hasRuleAbove(name: string): boolean {
+  const item = textNamed(name).closest('[data-slot="description-list-item"]');
+  if (!(item instanceof HTMLElement)) {
+    throw new Error(`expected an Item around ${name}`);
+  }
+  const style = getComputedStyle(item);
+  return px(style.borderTopWidth) > 0 && style.borderTopStyle !== "none" && style.borderTopStyle !== "hidden";
+}
+
 function renderBasicList() {
   renderThemed(
     <DescriptionList.Root>
@@ -219,6 +232,62 @@ describe("DescriptionList", () => {
         expect(boxOf(details).left, details).toBeCloseTo(boxOf(term).left, 0);
       }
     });
+
+    it("draws a rule above every Item but the first by default", () => {
+      renderBasicList();
+      expect(hasRuleAbove("Name"), "first Item").toBe(false);
+      expect(hasRuleAbove("Meter point"), "second Item").toBe(true);
+    });
+
+    it("draws no rules with dividers={false}", () => {
+      renderThemed(
+        <DescriptionList.Content dividers={false}>
+          {["Name", "Meter point", "Tariff"].map((term) => (
+            <DescriptionList.Item key={term}>
+              <DescriptionList.Term>{term}</DescriptionList.Term>
+              <DescriptionList.Details>Value</DescriptionList.Details>
+            </DescriptionList.Item>
+          ))}
+        </DescriptionList.Content>
+      );
+      for (const term of ["Name", "Meter point", "Tariff"]) {
+        expect(hasRuleAbove(term), term).toBe(false);
+      }
+    });
+
+    it.each([
+      [false, true],
+      [true, false],
+    ] as const)(
+      "keeps a nested list's own dividers (outer dividers=%s, nested dividers=%s)",
+      (outer, nested) => {
+        renderThemed(
+          <DescriptionList.Content dividers={outer}>
+            <DescriptionList.Item>
+              <DescriptionList.Term>Outer first</DescriptionList.Term>
+              <DescriptionList.Details>Value</DescriptionList.Details>
+            </DescriptionList.Item>
+            <DescriptionList.Item>
+              <DescriptionList.Term>Outer second</DescriptionList.Term>
+              <DescriptionList.Details>
+                <DescriptionList.Content dividers={nested}>
+                  <DescriptionList.Item>
+                    <DescriptionList.Term>Nested first</DescriptionList.Term>
+                    <DescriptionList.Details>Value</DescriptionList.Details>
+                  </DescriptionList.Item>
+                  <DescriptionList.Item>
+                    <DescriptionList.Term>Nested second</DescriptionList.Term>
+                    <DescriptionList.Details>Value</DescriptionList.Details>
+                  </DescriptionList.Item>
+                </DescriptionList.Content>
+              </DescriptionList.Details>
+            </DescriptionList.Item>
+          </DescriptionList.Content>
+        );
+        expect(hasRuleAbove("Outer second"), "outer second Item").toBe(outer);
+        expect(hasRuleAbove("Nested second"), "nested second Item").toBe(nested);
+      }
+    );
   });
 
   describe("inline layout", () => {
