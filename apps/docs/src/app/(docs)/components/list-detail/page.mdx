@@ -1,0 +1,65 @@
+---
+lede: >
+  A list beside the detail of its open item, which moves into a Sheet over the
+  list where the list has too little room for both.
+---
+
+import { ListDetailBasic } from "./demos/list-detail-basic";
+import { ListDetailNever } from "./demos/list-detail-never";
+
+import { componentMetadata } from "../../../../lib/component-page";
+
+export const metadata = componentMetadata("list-detail");
+
+<ComponentIntro slug="list-detail" />
+
+<Prose>
+
+Reach for ListDetail in a list-heavy view, such as an inbox, an order queue or an admin
+table, where opening an item shows its detail. From the `split` width the detail is a
+complementary pane beside the list; below it, the detail opens in a Sheet over the list.
+The breakpoint is a container query on `ListDetail.Root`, so it follows the room the root
+has: a Sidebar opening beside it narrows it as a smaller window does. The root takes its
+width from its parent.
+
+The app owns the selected item, and `open` says whether its Sheet is open. Set `open` when
+the user opens an item and follow `onOpenChange`. From the breakpoint the pane shows the
+selected item and the Sheet stays closed, so the root answers an `open` there with
+`onOpenChange(false)`. The pane shows at every width from the breakpoint, so render an empty
+state in `ListDetail.Detail` while nothing is selected, and give the Detail an `aria-label`
+to name the pane then. A `ListDetail.Title`
+names the pane and the Sheet's dialog alike. `ListDetail.Close` renders only in the Sheet,
+so a detail can keep its own header in both layouts.
+
+The server renders the split layout. The pane's own CSS hides it in a root narrower than the
+breakpoint, so the first paint matches the root's width before any script runs. The client
+then follows that same container query, at the root's layout width and the current root font
+size, and swaps the pane for the Sheet below the breakpoint. A change of layout, from the
+width, the font size or `split`, keeps the user where they were: losing the split with focus
+inside the pane opens the Sheet, which takes focus, and with focus elsewhere the list keeps
+it; gaining the split with focus inside the Sheet moves focus to the pane, after any menu or
+dialog open in the Sheet has closed. A Sheet that opened because the list narrowed returns
+focus, when it closes, to the list item that last held focus, since the pane it came from is
+gone. The detail's
+content remounts on a change of layout, so keep a draft it must not lose in state above it.
+
+</Prose>
+
+<Demo slug="list-detail" id="basic" title="Basic" file="list-detail-basic.tsx">
+  <ListDetailBasic />
+</Demo>
+
+<Prose>
+
+`split="never"` keeps the detail in a Sheet at every width, for a list that needs all of
+its width, such as a wide table.
+
+</Prose>
+
+<Demo slug="list-detail" id="never" title="Sheet at every width" file="list-detail-never.tsx">
+  <ListDetailNever />
+</Demo>
+
+<ApiReference slug="list-detail" />
+
+<ComponentTokens slug="list-detail" />

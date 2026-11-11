@@ -11,7 +11,6 @@ import { Toast } from "@elmeragroup/fuse/toast";
 import { Tooltip } from "@elmeragroup/fuse/tooltip";
 
 import { isTypingTarget } from "../../../../lib/typing-target";
-import { useMediaQuery } from "../../../../lib/use-media-query";
 import { useLandingTheme } from "../landing-theme";
 import { useSideOverlay, useSideShown } from "../window-side";
 import { CommandPalette } from "./command-palette";
@@ -21,7 +20,7 @@ import { DashboardMain } from "./dashboard-main";
 import { DEMO_NOW } from "./dashboard-orders";
 import type { OrderId } from "./dashboard-orders";
 import { DashboardSidebar } from "./dashboard-sidebar";
-import { initialState, isQueue, reduce, visibleOrders } from "./dashboard-state";
+import { initialState, reduce, visibleOrders } from "./dashboard-state";
 import { NewOrderSheet } from "./new-order-sheet";
 
 const dashboardApp = tv({
@@ -39,9 +38,6 @@ const styles = dashboardApp();
 
 /** How long a view "fetches" before its rows replace the skeleton. */
 const FETCH_MS = 420;
-
-/** The window's own breakpoint for a detail pane beside the list. */
-const SPLIT_QUERY = "(width >= 80rem)";
 
 /** Open overlays keep their keys too, as fields do, out of the window's shortcuts. */
 const OVERLAYS = "[role='dialog'], [role='menu'], [role='listbox']";
@@ -69,7 +65,7 @@ type ShellProps = {
 function DashboardShell({ scope, setOpen }: ShellProps): ReactElement {
   const [state, dispatch] = useReducer(reduce, undefined, initialState);
   const [loading, setLoading] = useState(false);
-  const [sheetOpen, setSheetOpen] = useSideOverlay(false);
+  const [detailOpen, setDetailOpen] = useSideOverlay(false);
   const [paletteOpen, setPaletteOpen] = useSideOverlay(false);
   const [newOrderOpen, setNewOrderOpen] = useSideOverlay(false);
   // Read after mount: the clock has no value a prerender could keep.
@@ -79,9 +75,6 @@ function DashboardShell({ scope, setOpen }: ShellProps): ReactElement {
   const palettePopup = useRef<HTMLDivElement>(null);
   const toasts = Toast.useToastManager();
   const { isMobile, setOpenMobile } = useSidebar();
-  // Only a queue sits beside its detail; Order search's table keeps the width at every size.
-  const wide = useMediaQuery(SPLIT_QUERY, true);
-  const splitView = wide && isQueue(state.view);
 
   useEffect(() => {
     mountedAt.current = Date.now();
@@ -178,8 +171,7 @@ function DashboardShell({ scope, setOpen }: ShellProps): ReactElement {
           fetchList();
         }
         setRevealing({ id });
-        // A reveal the current list cannot show lands in Order search, which keeps no split.
-        setSheetOpen(!(wide && isQueue(shown ? state.view : "order-search")));
+        setDetailOpen(true);
       },
       revealing,
       revealed,
@@ -188,7 +180,6 @@ function DashboardShell({ scope, setOpen }: ShellProps): ReactElement {
         setNewOrderOpen(true);
       },
       toggleSidebar,
-      splitView,
     }),
     [
       state,
@@ -199,10 +190,8 @@ function DashboardShell({ scope, setOpen }: ShellProps): ReactElement {
       revealed,
       notify,
       toggleSidebar,
-      wide,
-      splitView,
       openPalette,
-      setSheetOpen,
+      setDetailOpen,
       setNewOrderOpen,
     ]
   );
@@ -283,7 +272,7 @@ function DashboardShell({ scope, setOpen }: ShellProps): ReactElement {
   return (
     <DashboardContext value={api}>
       <DashboardSidebar />
-      <DashboardMain sheetOpen={sheetOpen && !splitView} onSheetOpenChange={setSheetOpen} />
+      <DashboardMain detailOpen={detailOpen} onDetailOpenChange={setDetailOpen} />
       <CommandPalette
         open={paletteOpen}
         onOpenChange={setPaletteOpen}

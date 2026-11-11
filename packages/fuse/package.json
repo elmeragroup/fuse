@@ -231,6 +231,10 @@
       "types": "./src/link.ts",
       "import": "./src/link.ts"
     },
+    "./list-detail": {
+      "types": "./src/list-detail.ts",
+      "import": "./src/list-detail.ts"
+    },
     "./loader": {
       "types": "./src/loader.ts",
       "import": "./src/loader.ts"

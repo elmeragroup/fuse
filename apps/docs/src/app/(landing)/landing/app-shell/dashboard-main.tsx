@@ -9,8 +9,8 @@ import { tv } from "tailwind-variants";
 import { Breadcrumb } from "@elmeragroup/fuse/breadcrumb";
 import { Button } from "@elmeragroup/fuse/button";
 import { DropdownMenu } from "@elmeragroup/fuse/dropdown-menu";
-import { MagnifyingGlass, SidebarSimple, SlidersHorizontal, X } from "@elmeragroup/fuse/icons";
-import { Sheet } from "@elmeragroup/fuse/sheet";
+import { MagnifyingGlass, SidebarSimple, SlidersHorizontal } from "@elmeragroup/fuse/icons";
+import { ListDetail } from "@elmeragroup/fuse/list-detail";
 import { Sidebar } from "@elmeragroup/fuse/sidebar";
 import { BRANDS } from "@elmeragroup/fuse/theme";
 import { Tooltip } from "@elmeragroup/fuse/tooltip";
@@ -41,9 +41,8 @@ const dashboardMain = tv({
     phoneSearch: "md:hidden",
     filters: "flex h-11 shrink-0 items-center gap-3 border-b border-border px-3",
     total: "text-xs ml-auto text-muted-foreground tabular-nums",
-    body: "flex min-h-0 flex-1",
-    listColumn: "@container relative flex min-w-0 flex-1 flex-col",
-    detail: "w-88 shrink-0 border-l border-border bg-right-panel text-right-panel-foreground",
+    body: "flex-1",
+    listColumn: "@container relative",
     detailEmpty: "text-sm flex h-full items-center justify-center p-6 text-center text-muted-foreground",
     tooltipKeys: "ml-2",
   },
@@ -174,59 +173,33 @@ function Filters(): ReactElement | null {
 }
 
 /**
- * The detail beside a queue's list, or a Sheet over it in Order search and where the window is too
- * narrow for both. Keyed by order, so a comment draft or a pending Elhub retry never carries into
- * another order.
+ * The open order's detail. ListDetail puts it beside a queue's list where the pane has room, and
+ * in a Sheet over the list below that and in Order search, whose table keeps the width at every
+ * size. Keyed by order, so a comment draft or a pending Elhub retry never carries into another
+ * order.
  */
-function Detail({
-  sheetOpen,
-  onSheetOpenChange,
-}: {
-  sheetOpen: boolean;
-  onSheetOpenChange: (open: boolean) => void;
-}): ReactElement {
-  const { state, splitView } = useDashboard();
+function Detail(): ReactElement {
+  const { state } = useDashboard();
   const order = state.orders.find((candidate) => candidate.id === state.selected);
-
-  if (splitView) {
-    return (
-      <aside aria-label="Order details" className={styles.detail()}>
-        {order === undefined ? (
-          <p className={styles.detailEmpty()}>Select an order to see its details.</p>
-        ) : (
-          <OrderDetail key={order.id} order={order} />
-        )}
-      </aside>
-    );
-  }
-
   return (
-    <Sheet.Root open={sheetOpen && order !== undefined} onOpenChange={onSheetOpenChange}>
-      <Sheet.Content showCloseButton={false} size="lg">
-        {order === undefined ? null : (
-          <OrderDetail
-            key={order.id}
-            order={order}
-            renderTitle={(title) => <Sheet.Title>{title}</Sheet.Title>}
-            barEnd={
-              <Sheet.Close render={<Button variant="ghost" size="icon-sm" aria-label="Close details" />}>
-                <X />
-              </Sheet.Close>
-            }
-          />
-        )}
-      </Sheet.Content>
-    </Sheet.Root>
+    <ListDetail.Detail aria-label="Order details" size="lg" showCloseButton={false}>
+      {order === undefined ? (
+        <p className={styles.detailEmpty()}>Select an order to see its details.</p>
+      ) : (
+        <OrderDetail key={order.id} order={order} />
+      )}
+    </ListDetail.Detail>
   );
 }
 
 export type DashboardMainProps = {
-  sheetOpen: boolean;
-  onSheetOpenChange: (open: boolean) => void;
+  /** Whether the open order's detail Sheet shows below the split. */
+  detailOpen: boolean;
+  onDetailOpenChange: (open: boolean) => void;
 };
 
 /** The pane beside the sidebar: header, tabs, the order list with its bulk toolbar, the detail. */
-export function DashboardMain({ sheetOpen, onSheetOpenChange }: DashboardMainProps): ReactElement {
+export function DashboardMain({ detailOpen, onDetailOpenChange }: DashboardMainProps): ReactElement {
   const { state, openPalette } = useDashboard();
   useEffect(() => {
     // A failed fetch is not an error yet: opening Order search imports the module again.
@@ -252,8 +225,13 @@ export function DashboardMain({ sheetOpen, onSheetOpenChange }: DashboardMainPro
         </div>
       </header>
       <Filters />
-      <div className={styles.body()}>
-        <div className={styles.listColumn()}>
+      <ListDetail.Root
+        open={detailOpen}
+        onOpenChange={onDetailOpenChange}
+        // Only a queue sits beside its detail; Order search's table keeps the width at every size.
+        split={state.view === "order-search" ? "never" : "4xl"}
+        className={styles.body()}>
+        <ListDetail.List className={styles.listColumn()}>
           {state.view === "order-search" ? (
             <Suspense fallback={null}>
               <OrderSearch />
@@ -262,9 +240,9 @@ export function DashboardMain({ sheetOpen, onSheetOpenChange }: DashboardMainPro
             <OrderList />
           )}
           <BulkToolbar />
-        </div>
-        <Detail sheetOpen={sheetOpen} onSheetOpenChange={onSheetOpenChange} />
-      </div>
+        </ListDetail.List>
+        <Detail />
+      </ListDetail.Root>
     </Sidebar.Inset>
   );
 }

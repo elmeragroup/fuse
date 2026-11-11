@@ -35,8 +35,8 @@ export type DashboardApi = {
   readonly notify: (notice: Notice) => void;
   /**
    * Reveals an order wherever it was picked, from a row or the palette: selects it, opens Order
-   * search behind a fetch when the current list does not show it, scrolls its row into view and,
-   * where the detail is a Sheet, opens it.
+   * search behind a fetch when the current list does not show it, scrolls its row into view and
+   * opens its detail, which shows in a Sheet wherever ListDetail has no room for the pane.
    */
   readonly openOrder: (id: OrderId) => void;
   /**
@@ -49,8 +49,6 @@ export type DashboardApi = {
   readonly openPalette: () => void;
   readonly openNewOrder: () => void;
   readonly toggleSidebar: () => void;
-  /** Whether the detail pane sits beside the list rather than in a Sheet. */
-  readonly splitView: boolean;
 };
 
 /** The window's API, provided by `DashboardApp`. */

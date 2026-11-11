@@ -18,7 +18,9 @@ import {
   Copy,
   DotsThree,
   WarningCircle,
+  X,
 } from "@elmeragroup/fuse/icons";
+import { ListDetail } from "@elmeragroup/fuse/list-detail";
 import { ScrollArea } from "@elmeragroup/fuse/scroll-area";
 import { Textarea } from "@elmeragroup/fuse/textarea";
 import { BRANDS } from "@elmeragroup/fuse/theme";
@@ -457,21 +459,17 @@ function MoreActions({ order, onCancel }: { order: Order; onCancel: () => void }
 
 export type OrderDetailProps = {
   order: Order;
-  /** A heading element for the order's customer; the Sheet passes its own title part. */
-  renderTitle?: (title: string) => ReactElement;
-  /** Trailing bar controls, such as the Sheet's close button. */
-  barEnd?: ReactNode;
 };
 
 /**
  * One order's detail: its status menu and actions, its properties, the Elhub owner check and
  * its activity log with a comment composer. Every action confirms through the window's toasts.
+ * Its customer names the detail, the pane beside the list or the Sheet over it.
  */
-export function OrderDetail({ order, renderTitle, barEnd }: OrderDetailProps): ReactElement {
+export function OrderDetail({ order }: OrderDetailProps): ReactElement {
   const { dispatch, now, notify } = useDashboard();
   const { theme } = useLandingTheme();
   const [confirming, setConfirming] = useSideOverlay(false);
-  const title = renderTitle?.(order.customer) ?? <h2 className={styles.title()}>{order.customer}</h2>;
   const product = order.campaign === undefined ? order.product : `${order.product} · ${order.campaign}`;
 
   return (
@@ -487,13 +485,15 @@ export function OrderDetail({ order, renderTitle, barEnd }: OrderDetailProps): R
               setConfirming(true);
             }}
           />
-          {barEnd}
+          <ListDetail.Close render={<Button variant="ghost" size="icon-sm" aria-label="Close details" />}>
+            <X />
+          </ListDetail.Close>
         </div>
       </div>
       <ScrollArea.Root className={styles.scroll()}>
         <div className={styles.body()}>
           <div className={styles.titleBlock()}>
-            {title}
+            <ListDetail.Title className={styles.title()}>{order.customer}</ListDetail.Title>
             <p className={styles.subtitle()}>{product}</p>
           </div>
           <div className={styles.actions()}>
