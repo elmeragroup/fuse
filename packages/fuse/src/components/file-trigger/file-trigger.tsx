@@ -24,7 +24,8 @@ export type FileTriggerProps = Omit<
   useRender.ComponentProps<"button">,
   "render" | "ref" | "disabled" | "onSelect" | "type"
 > &
-  Pick<LabelButtonProps, "variant"> & {
+  Pick<LabelButtonProps, "variant"> &
+  Pick<FileUploadRootProps, "capture"> & {
     /**
      * The `accept` attribute's syntax, such as `"image/*,.pdf"`. The picker receives it as-is, and
      * a picked file that fails it reaches `onReject` with `"type"`.
@@ -38,8 +39,6 @@ export type FileTriggerProps = Omit<
     multiple?: FileUploadRootProps["multiple"];
     /** The picker selects a folder, and `onSelect` receives its files. */
     directory?: FileUploadRootProps["directory"];
-    /** Ask a phone to capture new media with the front (`"user"`) or back (`"environment"`) camera. */
-    capture?: FileUploadRootProps["capture"];
     /** Disable the button and ignore picks. */
     disabled?: FileUploadRootProps["disabled"];
     /** Receives the files that passed `accept` and the count rule, in a fresh array for each pick. */
@@ -94,23 +93,17 @@ export function FileTrigger({
   children,
   ...props
 }: FileTriggerProps): ReactElement {
+  const Icon = capture ? Camera : directory ? Folder : Paperclip;
   return (
     <FileUploadRoot
       render={childrenOnly}
       {...definedProps({ accept, multiple, directory, capture, disabled, onSelect, onReject })}>
       <FileUploadTrigger
         render={<Button variant={variant} size={size} />}
+        data-slot="file-trigger"
         className={cn(withIcon && "gap-x-2", className)}
         {...props}>
-        {withIcon ? (
-          capture ? (
-            <Camera aria-hidden />
-          ) : directory ? (
-            <Folder aria-hidden />
-          ) : (
-            <Paperclip aria-hidden />
-          )
-        ) : null}
+        {withIcon ? <Icon aria-hidden /> : null}
         {children}
       </FileUploadTrigger>
     </FileUploadRoot>

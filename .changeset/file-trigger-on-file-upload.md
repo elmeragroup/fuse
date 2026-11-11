@@ -18,7 +18,8 @@ folder icon.
   `accept`, each of those is rejected with `"count"`.
 - It renders the button and a hidden file input and nothing around them, so it joins a
   `ButtonGroup`'s borders and corners as a `Button` does.
-- It takes a `button`'s props, such as `aria-describedby`, which land on the visible button.
+- It takes a `button`'s props, such as `aria-describedby`, which land on the visible button. The
+  button carries `data-slot="file-trigger"`.
 
 **Migration.** `@elmeragroup/fuse/react-aria/file-trigger` is removed. Import `FileTrigger` from
 `@elmeragroup/fuse/file-trigger`, and rename its props to FileUpload's:

@@ -9,8 +9,6 @@ import type { FileRejection } from "@elmeragroup/fuse/file-upload";
 
 test("the entry exports the component and its props, and no recipe", () => {
   expectTypeOf<typeof FileTriggerApi>().not.toHaveProperty("buttonVariants");
-  // @ts-expect-error the borrowed Button recipe is not a public export of this entry
-  type _NoRecipe = FileTriggerApi.buttonVariants;
 });
 
 test("onSelect receives File[] and onReject receives FileRejection[]", () => {
@@ -50,7 +48,7 @@ test("the element takes FileUpload's picker props and the Button look, and forwa
   );
   // @ts-expect-error capture is user | environment
   const _badCapture = <FileTrigger capture="front">Take photo</FileTrigger>;
-  // @ts-expect-error the square icon sizes need an aria-label and no visible label
+  // @ts-expect-error size takes only the label sizes (LabelButtonSize), not the square icon sizes
   const _iconSize = <FileTrigger size="icon">Attach files</FileTrigger>;
 });
 
