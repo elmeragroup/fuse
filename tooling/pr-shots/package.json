@@ -26,8 +26,5 @@
     "tsrs": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
-  },
-  "engines": {
-    "node": ">=26.13.0 <27"
   }
 }

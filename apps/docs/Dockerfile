@@ -8,7 +8,7 @@
 # Pages prerender during `next build`, so the runtime stage only carries Next's standalone
 # server, its static assets and the generated public files.
 
-# Keep in step with .node-version.
+# Keep in step with `devEngines.runtime.version` in package.json (test/node-runtime.test.mjs).
 ARG NODE_VERSION=26.13.0
 
 FROM node:${NODE_VERSION}-bookworm-slim AS base
@@ -27,7 +27,9 @@ RUN npm install --global "pnpm@$(node -p "require('./package.json').packageManag
 COPY pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store pnpm fetch --frozen-lockfile
 COPY . .
-RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store pnpm install --frozen-lockfile --offline
+# The base image's Node is the pin, so the install skips linking pnpm's own copy. `pnpm fetch` has
+# no such flag, so that archive only lands in the store cache mount.
+RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store pnpm install --frozen-lockfile --offline --no-runtime
 # The public origin the image serves, which absolute og:image URLs need (src/lib/site-origin.ts).
 # Pages prerender here, so the build bakes it in; the workflows read it from the Container Apps
 # environment before building. Declared after the install layers so a new origin keeps their cache.

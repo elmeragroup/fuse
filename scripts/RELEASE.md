@@ -159,15 +159,15 @@ did not land. To post an announced release again, delete its message in Slack, t
 passes to the called workflow by name, and only its announce step receives it. While the secret
 is unset, or a channel's variable is, `notify` skips the post with a notice and stays green.
 
-`notify` runs `pnpm install --frozen-lockfile --ignore-scripts --prod --filter
+`notify` runs `pnpm install --frozen-lockfile --no-runtime --ignore-scripts --prod --filter
 @elmeragroup/release-announcement`: the announcement's runtime dependencies (Effect, its Node
-platform package and the micromark parser) and nothing else, without install scripts. So the
-token shares a job with installed packages, which an earlier design avoided by building the
-message in a job without secrets and posting it from one that installed nothing. That split kept
+platform package and the micromark parser) and nothing else, without install scripts. So the token
+shares a job with installed packages, which an earlier design avoided by building the message in a
+job without secrets and posting it from one that installed nothing. That split kept
 release-controlled code away from the token, but it needed a shell history check and a third-party
-Slack action. A single Effect program has typed errors, bounded history pagination and a post
-that is sent exactly once, tested end to end against local stand-ins for Slack and GitHub. What
-the token can do, and what the install does and does not contain:
+Slack action. A single Effect program has typed errors, bounded history pagination and a post that
+is sent exactly once, tested end to end against local stand-ins for Slack and GitHub. What the token
+can do, and what the install does and does not contain:
 
 - `chat:write` lets the bot post to the channels it is invited to, and also to any user as a
   direct message by user ID; `channels:history` reads the public channels the bot is in. So code
@@ -247,7 +247,7 @@ entry, because the engine publishes under `pending` and then promotes with `npm 
 
 `npm dist-tag` authenticates over OIDC from npm 11.21.0
 ([npm/cli#10038](https://github.com/npm/cli/pull/10038)). The npm bundled with
-`.node-version` is older, so the [publish workflow](../.github/workflows/publish-release.yml)
+the pinned Node is older, so the [publish workflow](../.github/workflows/publish-release.yml)
 installs an exact npm before the engine runs. Raise that pin only to a release older than
 the `minimumReleaseAge` window in `pnpm-workspace.yaml`.
 

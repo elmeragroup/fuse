@@ -59,12 +59,12 @@ jobs:
 
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version-file: .node-version
+          node-version-file: package.json
           registry-url: https://registry.npmjs.org
           cache: pnpm
 
       - name: Install
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --frozen-lockfile --no-runtime
 
       # test:packed-consumer launches Playwright Chromium; this fresh runner has none installed. A
       # retry dispatch carries a record tag and restores recorded bytes, so only the publishing
@@ -74,7 +74,7 @@ jobs:
         run: pnpm --filter @elmeragroup/fuse exec playwright install --with-deps chromium
 
       # The engine runs the first `npm` on PATH, and both paths promote with `npm dist-tag add`,
-      # which authenticates over OIDC from npm 11.21.0. The npm bundled with .node-version is older.
+      # which authenticates over OIDC from npm 11.21.0. The npm bundled with the pinned Node is older.
       # The OIDC exchange stores its token in npm's `cli` config layer, which outranks the placeholder
       # `_authToken` that setup-node writes to `.npmrc`.
       - name: Install npm with OIDC dist-tag support
@@ -143,11 +143,11 @@ jobs:
 
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version-file: .node-version
+          node-version-file: package.json
           cache: pnpm
 
       - name: Install
-        run: pnpm install --frozen-lockfile --ignore-scripts --prod --filter @elmeragroup/release-announcement
+        run: pnpm install --frozen-lockfile --no-runtime --ignore-scripts --prod --filter @elmeragroup/release-announcement
 
       # Slack is the delivery receipt: each post carries the release's tag as message metadata,
       # and the announcement checks the channel for an earlier one before it posts once, without
