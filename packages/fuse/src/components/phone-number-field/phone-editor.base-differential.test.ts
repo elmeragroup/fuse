@@ -3,11 +3,24 @@ import maxMetadata from "libphonenumber-js/metadata.max.json";
 import { describe, expect, it } from "vitest";
 
 import * as BaseEditor from "../../../test/phone-base/phone-editor";
+import { phoneEditorFixtures } from "../../../test/phone-editor-fixtures";
+import type { TraceCode } from "../../../test/phone-number-oracle";
+import {
+  pasteText,
+  traceCatalog,
+  traceCode,
+  traceFormat,
+  traceUserAction,
+} from "../../../test/phone-trace-arbitraries";
+import type { TraceFormat, TraceUserAction } from "../../../test/phone-trace-arbitraries";
 import * as PhoneEditor from "./phone-editor";
 import type { PhoneEditorProps, PhoneEditorState } from "./phone-editor";
 import { defaultMetadata } from "./phone-engine";
 
 /**
+ * Unit under test: `PhoneEditor` without `countryCode`. Oracle: the #586 editor, frozen in
+ * `test/phone-base`.
+ *
  * Without `countryCode` the field behaves exactly as it did before controlled country. The oracle
  * is that editor itself, frozen in `test/phone-base` as #586 left it: every generated trace runs
  * through both, with the same props and parent answers, and after every step what the field shows
@@ -16,15 +29,8 @@ import { defaultMetadata } from "./phone-engine";
  * structural metadata key, a deliberate change from the base, which compared by identity.
  */
 describe("PhoneEditor without countryCode, against the base editor", () => {
-  type Code = "FI" | "NO" | "SE" | "SJ";
-  type Format = "e164" | "raw" | "international" | "national";
-  const DIAL = { FI: "358", NO: "47", SE: "46", SJ: "47" } as const satisfies Record<Code, string>;
-  const NATIONAL = {
-    FI: "401234567",
-    NO: "41234567",
-    SE: "701234567",
-    SJ: "79123456",
-  } as const satisfies Record<Code, string>;
+  type Code = TraceCode;
+  type Format = TraceFormat;
 
   type Props = {
     readonly value?: string;
@@ -38,13 +44,9 @@ describe("PhoneEditor without countryCode, against the base editor", () => {
     readonly autoDetectCountry: boolean;
     readonly metadata: "min" | "max";
   };
-  type UserAction =
-    | { readonly kind: "pick"; readonly country: Code }
-    | { readonly kind: "paste"; readonly country: Code }
-    | { readonly kind: "edit"; readonly digits: string };
   type Answer = "echo" | "reject" | "countryless" | "later";
   type Step =
-    | { readonly kind: "user"; readonly action: UserAction; readonly answer: Answer }
+    | { readonly kind: "user"; readonly action: TraceUserAction; readonly answer: Answer }
     | {
         readonly kind: "answer";
         readonly answer: Exclude<Answer, "later">;
@@ -75,14 +77,10 @@ describe("PhoneEditor without countryCode, against the base editor", () => {
     };
   }
 
-  function act(action: UserAction) {
-    const fill = (value: string) => ({
-      value,
-      selectionStart: value.length,
-      selectionEnd: value.length,
-      selectionDirection: "none" as const,
-      inputType: "insertText",
-    });
+  const liveFixtures = phoneEditorFixtures(PhoneEditor);
+  const baseFixtures = phoneEditorFixtures(BaseEditor);
+
+  function act(action: TraceUserAction) {
     switch (action.kind) {
       case "pick":
         return {
@@ -90,7 +88,7 @@ describe("PhoneEditor without countryCode, against the base editor", () => {
           base: (state: BaseEditor.PhoneEditorState) => BaseEditor.selectCountry(state, action.country),
         };
       case "paste": {
-        const text = `+${DIAL[action.country]}${NATIONAL[action.country]}`;
+        const text = pasteText(action.country, action.form);
         return {
           live: (state: PhoneEditorState) => PhoneEditor.paste(state, text),
           base: (state: BaseEditor.PhoneEditorState) => BaseEditor.paste(state, text),
@@ -98,8 +96,8 @@ describe("PhoneEditor without countryCode, against the base editor", () => {
       }
       case "edit":
         return {
-          live: (state: PhoneEditorState) => PhoneEditor.edit(state, fill(action.digits)),
-          base: (state: BaseEditor.PhoneEditorState) => BaseEditor.edit(state, fill(action.digits)),
+          live: (state: PhoneEditorState) => liveFixtures.fill(state, action.digits),
+          base: (state: BaseEditor.PhoneEditorState) => baseFixtures.fill(state, action.digits),
         };
       default:
         return unhandled(action);
@@ -144,7 +142,7 @@ describe("PhoneEditor without countryCode, against the base editor", () => {
           const { live: liveAct, base: baseAct } = act(step.action);
           live = liveAct(live);
           base = baseAct(base);
-          const said = PhoneEditor.proposalNotice(live)?.value ?? null;
+          const said = PhoneEditor.proposedValue(live);
           expect(said, `onChange hears the same, ${label}`).toBe(BaseEditor.proposedValue(base));
           compare(label);
           heard = said;
@@ -176,9 +174,9 @@ describe("PhoneEditor without countryCode, against the base editor", () => {
     }
   }
 
-  const code = fc.constantFrom<Code>("FI", "NO", "SE", "SJ");
-  const catalog = fc.subarray<Code>(["FI", "NO", "SE", "SJ"], { minLength: 1 });
-  const format = fc.constantFrom<Format>("e164", "raw", "international", "national");
+  const code = traceCode;
+  const catalog = traceCatalog;
+  const format = traceFormat;
   const number = fc.constantFrom(
     "",
     "+4741234567",
@@ -225,11 +223,7 @@ describe("PhoneEditor without countryCode, against the base editor", () => {
       ],
     }
   );
-  const userAction: fc.Arbitrary<UserAction> = fc.oneof(
-    code.map((country) => ({ kind: "pick" as const, country })),
-    code.map((country) => ({ kind: "paste" as const, country })),
-    fc.constantFrom("", ...Object.values(NATIONAL)).map((digits) => ({ kind: "edit" as const, digits }))
-  );
+  const userAction = traceUserAction;
   /**
    * Any subset of the props a render can change at once: the value (taking control), the
    * defaults, the catalog, the format, the flags, detection and the metadata. Several at once

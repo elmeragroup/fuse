@@ -29,8 +29,8 @@ export type CountryObservation = {
   readonly proposed: Readonly<PhoneNumberCountry> | null;
 };
 
-/** What `onCountryChange` has told the parent. Read-only; start it with {@link startCountryNotices}. */
-export type CountryNotices = {
+/** What `onCountryChange` has told the parent. */
+type CountryNotices = {
   /** The country the last commit showed. */
   readonly shown: PhoneCountryCode;
   /** The ongoing disagreement, `countryCode` and the current country, or null. */
@@ -39,29 +39,19 @@ export type CountryNotices = {
   readonly version: number;
 };
 
-/** What {@link publishedCountry} and {@link committedCountry} return. */
-export type CountryNotice = {
+/** The notices after one observation, and the country it announces. */
+type CountryStep = {
   /** The notices after the observation. */
   readonly notices: CountryNotices;
   /** The country to announce, or null. */
   readonly country: Readonly<PhoneNumberCountry> | null;
 };
 
-/**
- * The notices before a field's first commit, which has announced nothing.
- *
- * @param observation - The field's first state.
- * @returns Notices that hold the country it shows.
- */
-export function startCountryNotices(observation: CountryObservation): CountryNotices {
-  return { shown: observation.shown.code, disagreement: null, version: observation.version };
-}
-
 function step(
   notices: CountryNotices,
   { version, countryCode, shown, proposed }: CountryObservation,
   moment: "publish" | "commit"
-): CountryNotice {
+): CountryStep {
   // An observation older than one the notices took in, as the first commit's passive effect
   // after hydration proposed a typed number from its layout effect, tells the parent nothing
   // new and must not undo what the newer one announced.
@@ -78,26 +68,35 @@ function step(
 }
 
 /**
- * The country a transition announces as it proposes: the proposal's country, when it starts a
- * disagreement. Record the result before calling any consumer callback, so a parent that commits
- * synchronously inside one finds the proposal already taken in.
- *
- * @param notices - What the parent was told.
- * @param observation - The state the transition returned.
- * @returns The notices, and the country to announce, or null.
+ * What `onCountryChange` hears from one field, observation by observation. Each call takes the
+ * observation in before it returns, so a parent that commits synchronously inside the callback
+ * the caller then runs finds it already taken in.
  */
-export function publishedCountry(notices: CountryNotices, observation: CountryObservation): CountryNotice {
-  return step(notices, observation, "publish");
-}
+export type CountryAnnouncer = {
+  /**
+   * The country a transition announces as it proposes: the proposal's country, when it starts a
+   * disagreement.
+   */
+  readonly publish: (observation: CountryObservation) => Readonly<PhoneNumberCountry> | null;
+  /** The country a commit announces. A code the parent just set, which the field then shows, never announces. */
+  readonly commit: (observation: CountryObservation) => Readonly<PhoneNumberCountry> | null;
+};
 
 /**
- * The country a commit announces. A code the parent just set, which the field then shows, never
- * announces.
+ * The announcer for a field, before its first commit, which has announced nothing.
  *
- * @param notices - What the parent was told.
- * @param observation - The committed state.
- * @returns The notices, and the country to announce, or null.
+ * @param first - The field's first state.
+ * @returns An announcer that holds the country the first state shows.
  */
-export function committedCountry(notices: CountryNotices, observation: CountryObservation): CountryNotice {
-  return step(notices, observation, "commit");
+export function createCountryAnnouncer(first: CountryObservation): CountryAnnouncer {
+  let notices: CountryNotices = { shown: first.shown.code, disagreement: null, version: first.version };
+  const take = (observation: CountryObservation, moment: "publish" | "commit") => {
+    const next = step(notices, observation, moment);
+    notices = next.notices;
+    return next.country;
+  };
+  return {
+    publish: (observation) => take(observation, "publish"),
+    commit: (observation) => take(observation, "commit"),
+  };
 }

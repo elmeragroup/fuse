@@ -8,16 +8,8 @@ import { userEvent } from "vitest/browser";
 import { PhoneNumberField } from "@elmeragroup/fuse/phone-number-field";
 
 import { withLocale } from "../../../test/locale-matrix";
-import { phoneForm, phoneInput, phoneSubmission } from "../../../test/phone-browser-queries";
+import { pastePhoneText, phoneForm, phoneInput, phoneSubmission } from "../../../test/phone-browser-queries";
 import { renderThemed as render, roleNamed } from "../../../test/themed-browser-render";
-
-function paste(text: string) {
-  const clipboard = new DataTransfer();
-  clipboard.setData("text/plain", text);
-  phoneInput().dispatchEvent(
-    new ClipboardEvent("paste", { bubbles: true, cancelable: true, clipboardData: clipboard })
-  );
-}
 
 describe("PhoneNumberField identity and authoritative value", () => {
   it("keeps a controlled value parent-owned through a native reset until the parent accepts empty", async () => {
@@ -202,7 +194,7 @@ describe("PhoneNumberField native editing boundaries", () => {
     expect(change).not.toHaveBeenCalled();
     expect(countryChange).not.toHaveBeenCalled();
     rerender(field(false, true));
-    paste("+46701234567");
+    pastePhoneText("+46701234567");
     expect(phoneSubmission().has("phone")).toBe(false);
     expect(phoneSubmission().has("phone-display-value")).toBe(false);
     expect(phoneInput().value).toBe("41234567");

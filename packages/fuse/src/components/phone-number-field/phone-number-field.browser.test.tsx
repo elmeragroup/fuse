@@ -15,6 +15,7 @@ import {
   countryListbox,
   countrySearch,
   openPicker,
+  pastePhoneText,
   phoneInput,
   phoneSubmission,
   selectCountry,
@@ -641,7 +642,7 @@ describe("PhoneNumberField countryCode", () => {
     expect(change).toHaveBeenCalledExactlyOnceWith("");
   });
 
-  it.each([
+  it.each<{ action: string; act: () => Promise<void> | void; changes: string[]; shows: string }>([
     {
       action: "a pick",
       act: () => selectCountry("Sweden"),
@@ -650,14 +651,7 @@ describe("PhoneNumberField countryCode", () => {
     },
     {
       action: "a paste",
-      act: () => {
-        const clipboard = new DataTransfer();
-        clipboard.setData("text/plain", "+46701234567");
-        phoneInput().dispatchEvent(
-          new ClipboardEvent("paste", { bubbles: true, cancelable: true, clipboardData: clipboard })
-        );
-        return Promise.resolve();
-      },
+      act: () => pastePhoneText("+46701234567"),
       changes: ["701234567"],
       shows: "701234567",
     },
@@ -697,18 +691,11 @@ describe("PhoneNumberField countryCode", () => {
     }
   );
 
-  it.each([
+  it.each<{ action: string; act: () => Promise<void> | void; changes: string[] }>([
     { action: "a pick", act: () => selectCountry("Sweden"), changes: [""] },
     {
       action: "a paste",
-      act: () => {
-        const clipboard = new DataTransfer();
-        clipboard.setData("text/plain", "+46701234567");
-        phoneInput().dispatchEvent(
-          new ClipboardEvent("paste", { bubbles: true, cancelable: true, clipboardData: clipboard })
-        );
-        return Promise.resolve();
-      },
+      act: () => pastePhoneText("+46701234567"),
       changes: ["701234567"],
     },
   ])(

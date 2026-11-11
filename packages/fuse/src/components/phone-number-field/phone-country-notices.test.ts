@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { committedCountry, publishedCountry, startCountryNotices } from "./phone-country-notices";
-import type { CountryNotice, CountryNotices, CountryObservation } from "./phone-country-notices";
+import { createCountryAnnouncer } from "./phone-country-notices";
+import type { CountryObservation } from "./phone-country-notices";
 import type { PhoneCountryCode, PhoneNumberCountry } from "./phone-engine";
 
 const COUNTRY = {
@@ -25,18 +25,17 @@ function underNorway(
   };
 }
 
-/** Feeds observations to the notices as the hook does and records what `onCountryChange` hears. */
+/** Feeds observations to the announcer and records what `onCountryChange` hears. */
 function announcer(first: CountryObservation) {
-  let notices: CountryNotices = startCountryNotices(first);
+  const announce = createCountryAnnouncer(first);
   const heard: string[] = [];
-  const take = (notice: CountryNotice) => {
-    notices = notice.notices;
-    if (notice.country) heard.push(notice.country.code);
+  const take = (country: { readonly code: string } | null) => {
+    if (country) heard.push(country.code);
   };
   return {
     heard,
-    publish: (observation: CountryObservation) => take(publishedCountry(notices, observation)),
-    commit: (observation: CountryObservation) => take(committedCountry(notices, observation)),
+    publish: (observation: CountryObservation) => take(announce.publish(observation)),
+    commit: (observation: CountryObservation) => take(announce.commit(observation)),
   };
 }
 
@@ -63,5 +62,13 @@ describe("country notices", () => {
     notices.commit(underNorway(1, "NO", "SE"));
     notices.commit(underNorway(2, "SE"));
     expect(notices.heard).toEqual(["SE"]);
+  });
+
+  it("announces a disagreement again when it starts again after an end", () => {
+    const notices = announcer(underNorway(0, "NO"));
+    notices.commit(underNorway(1, "SE"));
+    notices.commit(underNorway(2, "NO"));
+    notices.commit(underNorway(3, "SE"));
+    expect(notices.heard).toEqual(["SE", "SE"]);
   });
 });

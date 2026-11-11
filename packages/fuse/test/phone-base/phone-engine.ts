@@ -1,5 +1,5 @@
-// A frozen copy of the phone editor and engine as #586 (the "skip onChange when the output didn't
-// change" layer, commit 81599a8c) left them, before controlled country. It is the differential
+// A frozen copy of the phone editor and engine as #586, the "skip onChange when the output didn't
+// change" layer, left them, before controlled country. It is the differential
 // oracle for a field without `countryCode`, which must behave exactly as this base does. Do not
 // edit it to follow the live editor: copy it again only to move the oracle to a newer base.
 import type { CountryCode, MetadataJson, PhoneNumber } from "libphonenumber-js/core";

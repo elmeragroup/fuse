@@ -10,3 +10,5 @@ through `onChange`. A controlled `value` that names its country with `+` or `00`
 detected country the parent does not accept returns the field to the parent's country, and an
 uncontrolled number reports a pick's number through `onChange` only once the field shows it.
 `onCountryChange` is never called for the code the parent just set, and only once per disagreement.
+A shallow copy of the same `metadata` document, such as `{ ...metadata }` written in a render, no
+longer counts as a replacement.

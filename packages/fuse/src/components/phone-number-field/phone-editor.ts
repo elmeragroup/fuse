@@ -8,16 +8,18 @@ import type {
   PhoneNumberCountry,
   PhoneNumberFormat,
 } from "./phone-engine";
+import { pendingProposal, proposalFate } from "./phone-proposal";
+import type { JudgedProps, PendingProposal } from "./phone-proposal";
 import {
   carry,
   catalogReplaced,
   configure,
   hasOwnPrefix,
   moveInto,
+  offeredCountry,
   readEntry as readEntryIn,
   readInternationalIn,
   readNamedIn,
-  readAsNumber,
   readValueIn,
   receiveValue,
   snapshot,
@@ -141,8 +143,6 @@ type EditorRecord = {
   readonly caret: EditCaret | null;
   /** The output the latest `countryCode` change proposed, until a transition replaces it. */
   readonly steered: ValueNotice | null;
-  /** The notice of the proposal the latest transition made, or null after any other transition. */
-  readonly proposalNotice: ValueNotice | null;
   /**
    * The value that holds the waiting proposal's number: the output the parent heard for it, or
    * the countryless form of its own the parent answered its number with. It outlives the
@@ -170,9 +170,9 @@ type ValueDetection = {
 };
 
 /**
- * An output for `onChange`: one a user proposal made, or one props made, as a `countryCode`
- * change that clears the number. A new object for each, so the one caller that delivers notices
- * sends each once, by its identity, whichever order the parent answers in.
+ * An output a props change proposed: the number a `countryCode` pick leaves, cleared or kept under
+ * `preserveOnCountryChange`, or the number of an uncontrolled proposal the props show only now. A
+ * new object for each, so the hook sends it once by its identity.
  */
 export type ValueNotice = {
   /** The proposed output value. */
@@ -218,28 +218,26 @@ function namingValue({ value, countryCode, configuration }: EditorRecord): strin
 }
 
 /**
- * The record with the parse a read of its controlled value carries, at no cost. A read of the
- * value as a whole parses the number with its `+` prefix, and that parse is the same in every
- * country, so its country is the one the prefix detects.
+ * The record with the parse a read of its controlled value carries, at no cost: the accepted
+ * number's, when it read the value as a whole. That parse of the number with its `+` prefix is
+ * the same in every country, so its country is the one the prefix detects.
  */
-function seeded(record: EditorRecord, read: Snapshot): EditorRecord {
-  const { value, configuration } = record;
+function seeded(record: EditorRecord): EditorRecord {
+  const { value, configuration, accepted } = record;
   if (value === undefined || !hasOwnPrefix(value)) {
     return record;
   }
-  return { ...record, detection: { value, metadata: configuration.metadata, reading: read.values.reading } };
+  return {
+    ...record,
+    detection: { value, metadata: configuration.metadata, reading: accepted.values.reading },
+  };
 }
 
-/** The parse of the record's current value under its metadata, when the record holds one. */
-function readingOf({ value, configuration, detection }: EditorRecord): InternationalReading | undefined {
+/** The detection the record holds for its current value under its metadata, or null. */
+function currentDetection({ value, configuration, detection }: EditorRecord): ValueDetection | null {
   return detection !== null && detection.value === value && detection.metadata === configuration.metadata
-    ? detection.reading
-    : undefined;
-}
-
-/** Whether the record holds the parse of its current value under its metadata. */
-function hasDetection({ value, configuration, detection }: EditorRecord): boolean {
-  return detection !== null && detection.value === value && detection.metadata === configuration.metadata;
+    ? detection
+    : null;
 }
 
 /**
@@ -251,7 +249,7 @@ function hasDetection({ value, configuration, detection }: EditorRecord): boolea
 function detected(record: EditorRecord): EditorRecord {
   const value = namingValue(record);
   const controlled = controlledCountry(record);
-  if (value === null || controlled === null || hasDetection(record)) return record;
+  if (value === null || controlled === null || currentDetection(record) !== null) return record;
   const { configuration, accepted } = record;
   // The accepted number's reading serves when it read the very text the value holds, as an
   // adopted raw echo of a paste did; the engine reuses a reading of that input only.
@@ -259,13 +257,29 @@ function detected(record: EditorRecord): EditorRecord {
   return { ...record, detection: { value, metadata: configuration.metadata, reading } };
 }
 
+/** A controlled value and the offered country its own prefix names. */
+type NamedValue = {
+  readonly value: string;
+  readonly country: PhoneNumberCountry;
+};
+
 /**
- * The controlled value read in `country`, the country it names, as {@link receiveValue} reads
- * it there, from the parse the record holds: its national number unless `international` keeps
- * the digits as written. No parse when the record holds the value's parse.
+ * The controlled value read in the country it names, as {@link receiveValue} reads it there,
+ * from the parse the record holds: its national number unless `international` keeps the digits
+ * as written. No parse when the record holds the value's parse.
  */
-function readNamed(record: EditorRecord, value: string, country: PhoneNumberCountry): Snapshot {
-  return readNamedIn(value, country, record.configuration, readingOf(record));
+function readNamed(record: EditorRecord, { value, country }: NamedValue): Snapshot {
+  return readNamedIn(value, country, record.configuration, currentDetection(record)?.reading);
+}
+
+/**
+ * The country the record's controlled value names, from the detection it holds only, so it
+ * parses nothing; null without one.
+ */
+function cachedValueCountry(record: EditorRecord): NamedValue | null {
+  const value = namingValue(record);
+  const country = offeredCountry(record.configuration, currentDetection(record)?.reading?.country);
+  return value !== null && country !== undefined ? { value, country } : null;
 }
 
 /**
@@ -276,14 +290,15 @@ function readNamed(record: EditorRecord, value: string, country: PhoneNumberCoun
  * digits were shown in. Without a controlled country the shown country follows the proposal
  * and picker as before, so a value names none.
  */
-function valueCountry(record: EditorRecord): PhoneNumberCountry | null {
-  if (namingValue(record) === null) return null;
-  const reading = readingOf(detected(record));
-  return record.configuration.countries.find((row) => row.code === reading?.country) ?? null;
+function valueCountry(record: EditorRecord): NamedValue | null {
+  return cachedValueCountry(detected(record));
 }
 
 /** The country a controlled `countryCode` resolves to in the record's catalog. */
-function controlledCountry({ countryCode, configuration }: EditorRecord): PhoneNumberCountry | null {
+function controlledCountry({
+  countryCode,
+  configuration,
+}: Pick<EditorRecord, "countryCode" | "configuration">): PhoneNumberCountry | null {
   return countryCode === undefined ? null : resolveSelectedCountry(configuration.countries, countryCode);
 }
 
@@ -302,7 +317,7 @@ function shownCountry(record: EditorRecord, held: Snapshot | null, number: Snaps
   const controlled = controlledCountry(record);
   const heldCountry =
     held && (controlled === null || held.country.code === controlled.code) ? held.country : null;
-  return valueCountry(record) ?? heldCountry ?? controlled ?? number.country;
+  return valueCountry(record)?.country ?? heldCountry ?? controlled ?? number.country;
 }
 
 /**
@@ -362,17 +377,14 @@ function caretOffset(text: string, after: number, side: CaretSide): number {
  * caret replaces the record's, so an earlier edit's caret can never show again.
  */
 function propose(stored: EditorRecord, proposal: Snapshot, caret: EditCaret | null): PhoneEditorState {
-  const proposed: EditorRecord = {
+  return succeed(stored, {
     ...stored,
     accepted: visibleSnapshot(stored),
     proposal,
     caret,
     steered: null,
-    proposalNotice: null,
     numberAnswer: proposal.values.outputValue,
-  };
-  const output = proposalOutput(proposed);
-  return succeed(stored, { ...proposed, proposalNotice: output === null ? null : { value: output } });
+  });
 }
 
 /**
@@ -394,19 +406,24 @@ function readEntry(stored: EditorRecord, entry: string): Snapshot {
   return readEntryIn(entry, visibleSnapshot(stored).country, stored.configuration);
 }
 
-/**
- * The props the record keeps as given, outside the configuration and value, with
- * `preserveOnCountryChange` defaulted.
- */
-function readDefaults(
-  props: PhoneEditorProps
-): Pick<EditorRecord, "defaultValue" | "defaultCountryCode" | "countryCode" | "preserveOnCountryChange"> {
+/** The props that shape later resets and picks only, never what the field shows now. */
+type Settings = Pick<EditorRecord, "defaultValue" | "defaultCountryCode" | "preserveOnCountryChange">;
+
+/** The settings the props give, with `preserveOnCountryChange` defaulted. */
+function readSettings(props: PhoneEditorProps): Settings {
   return {
     defaultValue: props.defaultValue,
     defaultCountryCode: props.defaultCountryCode,
-    countryCode: props.countryCode,
     preserveOnCountryChange: props.preserveOnCountryChange ?? false,
   };
+}
+
+function sameSettings(left: Settings, right: Settings): boolean {
+  return (
+    left.defaultValue === right.defaultValue &&
+    left.defaultCountryCode === right.defaultCountryCode &&
+    left.preserveOnCountryChange === right.preserveOnCountryChange
+  );
 }
 
 /**
@@ -415,7 +432,11 @@ function readDefaults(
  * controlled country in that country without detection, since only a controlled value names a
  * country over `countryCode`; else the default in the default country.
  */
-function readInitial(record: EditorRecord, input: string, fallback: PhoneNumberCountry): Snapshot {
+function readInitial(
+  record: Pick<EditorRecord, "configuration" | "value" | "countryCode">,
+  input: string,
+  fallback: PhoneNumberCountry
+): Snapshot {
   const { configuration, value } = record;
   const controlled = controlledCountry(record);
   if (value === undefined && controlled) return readValueIn(input, controlled, configuration);
@@ -431,40 +452,127 @@ function readInitial(record: EditorRecord, input: string, fallback: PhoneNumberC
  */
 export function create(props: PhoneEditorProps): PhoneEditorState {
   const configuration = configure(props);
-  const empty = snapshot(
-    { digits: "", country: resolveSelectedCountry(configuration.countries, undefined) },
-    configuration
-  );
-  const record: EditorRecord = {
-    ...readDefaults(props),
-    configuration,
-    value: props.value,
-    accepted: empty,
-    proposal: null,
-    caret: null,
-    steered: null,
-    proposalNotice: null,
-    numberAnswer: null,
-    detection: null,
-    version: 0,
-  };
+  const { value, countryCode } = props;
   const accepted = readInitial(
-    record,
-    props.value ?? props.defaultValue ?? "",
+    { configuration, value, countryCode },
+    value ?? props.defaultValue ?? "",
     resolveSelectedCountry(configuration.countries, props.defaultCountryCode)
   );
   // A controlled value read as a whole carries its own detection.
-  return wrap(seeded({ ...record, accepted }, accepted));
+  return wrap(
+    seeded({
+      ...readSettings(props),
+      configuration,
+      value,
+      countryCode,
+      accepted,
+      proposal: null,
+      caret: null,
+      steered: null,
+      numberAnswer: null,
+      detection: null,
+      version: 0,
+    })
+  );
 }
 
-/** Where the accepted number of a reconcile came from, which decides how its country moves. */
-type Source =
-  /** A proposal the new props show. */
-  | "proposal"
-  /** A new controlled value, read in the controlled country, else the shown one. */
-  | "value"
-  /** The number the field showed, carried into the new configuration. */
-  | "shown";
+/**
+ * The proposal the new props show, which becomes the accepted number, or null. Releasing
+ * `countryCode` judges it as if the parent had set the country shown before, so the field keeps
+ * showing it; releasing `value` accepts nothing, and drops a proposal the parent held its value
+ * against, as releasing `countryCode` keeps the shown country.
+ */
+function adoptedProposal(stored: EditorRecord, next: EditorRecord, before: Snapshot): Snapshot | null {
+  const { proposal } = stored;
+  if (proposal === null || (stored.value !== undefined && next.value === undefined)) return null;
+  const judge =
+    stored.countryCode !== undefined && next.countryCode === undefined
+      ? { ...next, countryCode: before.country.code }
+      : next;
+  return shows(judge, proposal) ? proposal : null;
+}
+
+/** The record as {@link proposalFate} judges it: its props and the countries they name. */
+function judged(record: EditorRecord): JudgedProps {
+  const { value, countryCode, configuration } = record;
+  const controlled = controlledCountry(record);
+  const named = cachedValueCountry(record)?.country ?? null;
+  return { value, countryCode, configuration, controlled, named };
+}
+
+/**
+ * The country new props pick, or null; the one place the props pick a country, which clears the
+ * number unless `preserveOnCountryChange` keeps it. A clearing pick is a move of the controlled
+ * country itself: a new code, or a catalog that resolves the same code to another country; a
+ * catalog, detection or metadata change that leaves it in place keeps the number, and a country
+ * answer to a pending proposal is no pick of its own. A value that names its country shows there
+ * instead, so no pick moves it. Call it only for props that neither show the proposal nor bring a
+ * new value.
+ */
+function pickedCountry(
+  stored: EditorRecord,
+  next: EditorRecord,
+  before: Snapshot,
+  pending: PendingProposal | null
+): PhoneNumberCountry | null {
+  const controlled = controlledCountry(next);
+  return controlled !== null &&
+    pending?.country !== "answered" &&
+    valueCountry(next) === null &&
+    controlledCountry(stored)?.code !== controlled.code &&
+    before.country.code !== controlled.code
+    ? controlled
+    : null;
+}
+
+/**
+ * The accepted number for new props that pick no country: the proposal they show, else a new
+ * controlled value, read in the controlled country, else the shown one, else the number shown
+ * before. Under a controlled country the props alone decide where that number goes: the country
+ * the value names, else the controlled one. When it moves there, or a replaced catalog reads it
+ * again, deciding that first reads the number once, there, rather than carrying it into the
+ * configuration and reading it again; no snapshot is built only to be replaced.
+ */
+function placeNumber(
+  stored: EditorRecord,
+  next: EditorRecord,
+  before: Snapshot,
+  adopted: Snapshot | null,
+  newValue: string | null
+): Snapshot {
+  const { configuration, value } = next;
+  const controlled = controlledCountry(next);
+  if (adopted) return carry(stored.configuration, configuration, adopted, value);
+  if (newValue !== null) {
+    const country = controlled ?? resolveSelectedCountry(configuration.countries, before.country.code);
+    return receiveValue(newValue, country, configuration, currentDetection(next)?.reading);
+  }
+  const named = controlled === null ? null : valueCountry(next);
+  const target = named?.country ?? controlled;
+  if (
+    target === null ||
+    (target.code === resolveSelectedCountry(configuration.countries, before.country.code).code &&
+      !catalogReplaced(stored.configuration, configuration, before.country))
+  ) {
+    return carry(stored.configuration, configuration, before, value);
+  }
+  if (named !== null) return readNamed(next, named);
+  if (value !== undefined) return realign(next, before, target);
+  return moveInto(stored.configuration, configuration, before, target);
+}
+
+/**
+ * The record with its accepted number in the country {@link shownCountry} requires of it: read
+ * in the country the value names, else read again as it stands, so it keeps its international
+ * identity beside that country.
+ */
+function alignToPrecedence(record: EditorRecord): EditorRecord {
+  const { accepted } = record;
+  const named = valueCountry(record);
+  const country = named?.country ?? controlledCountry(record) ?? accepted.country;
+  if (accepted.country.code === country.code) return record;
+  return { ...record, accepted: named ? readNamed(record, named) : realign(record, accepted, country) };
+}
 
 /**
  * The record for new props, from one rule: the accepted number comes from a proposal the new
@@ -472,163 +580,33 @@ type Source =
  * the one {@link shownCountry} derives. When that country moved for the shown number, by a new
  * `countryCode` or a catalog that resolves it elsewhere, the move is a pick of it, from the
  * number shown before, so the catalog's own move of the number never stands in for the pick.
- * When the value names a country the number is not in, the value is read in it. Notifications
- * come from the same transition: a pick's output, or an uncontrolled proposal that showed
- * only now.
+ * A waiting proposal's fate is {@link proposalFate}'s. Notifications come from the same
+ * transition: a pick's output, or an uncontrolled proposal that showed only now.
  */
 function settle(stored: EditorRecord, given: EditorRecord): EditorRecord {
   const before = visibleSnapshot(stored);
-  const { configuration, value } = given;
+  const { value } = given;
   // A new value that echoes no proposal is read as a whole, which carries its detection, so
   // only a value the field already holds, or one a proposal proposed, takes a detection parse.
   const echoes = stored.proposal !== null && stored.proposal.values.outputValue === value;
   const next = value === stored.value || echoes ? detected(given) : given;
-  // Releasing `countryCode` judges the transition as if the parent had set the country shown,
-  // so the field keeps showing it.
-  const judge =
-    stored.countryCode !== undefined && next.countryCode === undefined
-      ? { ...next, countryCode: before.country.code }
-      : next;
-  // Releasing `value` accepts nothing: the field keeps showing what it showed, and a proposal the
-  // parent held its value against is dropped, as releasing `countryCode` keeps the shown country.
-  const releasesValue = stored.value !== undefined && value === undefined;
-  const adopted = !releasesValue && stored.proposal && shows(judge, stored.proposal) ? stored.proposal : null;
-  const source: Source = adopted
-    ? "proposal"
-    : value !== undefined && value !== stored.value
-      ? "value"
-      : "shown";
-  // The parent's answer to the country alone of a proposal that waits for its value: a new
-  // `countryCode` set to the proposal's country, with the value and configuration as
-  // they were. That is acceptance, not a pick of its own: the proposal goes on waiting for the
-  // value, and the value is read in the accepted country, with nothing new for `onChange`.
-  const waiting = stored.proposal;
-  // Formatting, flag or catalog changes in the same render, as a parent that sets
-  // `formatOnType` beside the country, leave the answer an answer, while the new catalog still
-  // offers the proposal's country; the proposal is carried into the new configuration.
-  const acceptsCountry =
-    waiting !== null &&
-    adopted === null &&
-    value === stored.value &&
-    next.countryCode !== stored.countryCode &&
-    // The parent names the proposal's country itself; a code that only falls back to it is no
-    // answer.
-    next.countryCode === waiting.country.code &&
-    keepsProposalCountry(configuration, waiting);
-  // The one place the props pick a country, which clears the number unless
-  // `preserveOnCountryChange` keeps it. A clearing pick is a move of the controlled country itself:
-  // a new code, or a catalog that resolves the same code to another country; a catalog, detection
-  // or metadata change that leaves it in place keeps the number, and a country answer to a
-  // proposal is no pick of its own. A value that names its country shows there instead, so no
-  // pick moves it. The pick is decided before any snapshot is built, so the number is read once,
-  // in the country picked, never carried first into the catalog it then leaves.
-  const controlled = controlledCountry(next);
-  const picks =
-    source === "shown" &&
-    controlled !== null &&
-    !acceptsCountry &&
-    valueCountry(next) === null &&
-    controlledCountry(stored)?.code !== controlled.code &&
-    before.country.code !== controlled.code;
-  if (picks) {
-    return pick({ ...next, accepted: before, proposal: null, numberAnswer: null }, before, controlled);
-  }
-  // Under a controlled country the props alone decide where the number shown before them goes:
-  // the country the value names, else the controlled one. When it moves there, or a replaced
-  // catalog reads it again, deciding that first reads the number once, there, rather than
-  // carrying it into the configuration and reading it again; no snapshot is built only to be
-  // replaced.
-  const namedByValue = source === "shown" && controlled !== null ? valueCountry(next) : null;
-  const target = source === "shown" ? (namedByValue ?? controlled) : null;
-  const rereads =
-    target !== null &&
-    (target.code !== resolveSelectedCountry(configuration.countries, before.country.code).code ||
-      catalogReplaced(stored.configuration, configuration, before.country));
-  const accepted =
-    source === "proposal" && adopted
-      ? carry(stored.configuration, configuration, adopted, value)
-      : source === "value" && value !== undefined
-        ? receiveValue(
-            value,
-            controlledCountry(next) ?? resolveSelectedCountry(configuration.countries, before.country.code),
-            configuration,
-            readingOf(next)
-          )
-        : rereads
-          ? value === undefined
-            ? moveInto(stored.configuration, configuration, before, target)
-            : namedByValue === null
-              ? realign(next, before, target)
-              : readNamed(next, value, target)
-          : carry(stored.configuration, configuration, before, value);
-  // Whether the parent holds the waiting proposal's number already: its exact output, the output
-  // it heard before a formatting change carried the proposal, or its number answered before in a
-  // countryless form of the parent's own. Then a country answer completes the proposal rather
-  // than leaving it to wait.
-  const numberHeld = waiting !== null && holdsNumber(value, waiting, stored.numberAnswer);
-  // Likewise the parent's answer to the number alone, in a countryless form of its own, such as
-  // the national digits it stores: a new value without a `+` prefix that reads, in the proposal's
-  // country, as the proposal's number. A value with its prefix answers for itself: it names its
-  // country or is read in `countryCode`, and the proposal ends. The proposal goes on waiting for
-  // its country, while the value shows where the precedence puts it; a later `countryCode` set to that country then accepts it as above.
-  const answersNumber =
-    waiting !== null &&
-    adopted === null &&
-    source === "value" &&
-    value !== undefined &&
-    !hasOwnPrefix(value) &&
-    next.countryCode !== undefined &&
-    next.countryCode === stored.countryCode &&
-    keepsProposalCountry(configuration, waiting) &&
-    waiting.country.code !== controlledCountry(next)?.code;
-  // An exact echo of the proposal's output, or of the output the parent heard for it, is its
-  // number without a comparison or a parse. Any other form is read in the proposal's country,
-  // and that read, the proposal's number under the new configuration, is kept as the waiting
-  // proposal, so it is not read again.
-  const echoesNumber = answersNumber && holdsNumber(value, waiting, stored.numberAnswer);
-  const numberRead =
-    answersNumber && !echoesNumber ? readAsNumber(value, waiting.country, waiting, configuration) : null;
-  const acceptsNumber = answersNumber && (echoesNumber || numberRead !== null);
-  // A proposal waits on only while one half of it is unanswered. A country answer to a proposal
-  // whose number the parent holds completes it: it ends, and the field shows what the
-  // precedence gives, as the country the value names. Otherwise a proposal waits only for the
-  // parent's next props: props that do not show it drop it.
-  // Under a controlled country, a configuration change that answers nothing, a format, flag,
-  // detection, metadata or catalog change, keeps a waiting proposal waiting while the catalog
-  // still offers its country, carried into the configuration, by the rule an answer follows: it
-  // is no steer of its own. Without a controlled country it drops it, as fields always have.
-  const survivesConfiguration =
-    waiting !== null &&
-    adopted === null &&
-    value === stored.value &&
-    next.countryCode !== undefined &&
-    next.countryCode === stored.countryCode &&
-    configuration !== stored.configuration &&
-    keepsProposalCountry(configuration, waiting);
-  const keepsWaiting = (acceptsCountry && !numberHeld) || acceptsNumber || survivesConfiguration;
-  const fresh: EditorRecord = {
+  const adopted = adoptedProposal(stored, next, before);
+  const newValue = adopted === null && value !== undefined && value !== stored.value ? value : null;
+  const pending = adopted === null ? pendingProposal(stored, next) : null;
+  // The pick is decided before any snapshot is built, so the number is read once, in the country
+  // picked, never carried first into the catalog it then leaves.
+  const picked = adopted === null && newValue === null ? pickedCountry(stored, next, before, pending) : null;
+  if (picked !== null) return pick(next, before, picked);
+  const accepted = placeNumber(stored, next, before, adopted, newValue);
+  const waiting = pending && proposalFate(stored, judged(next), pending);
+  const placed: EditorRecord = {
     ...next,
     accepted,
-    proposal: keepsWaiting
-      ? (numberRead ?? carry(stored.configuration, configuration, waiting, value))
-      : null,
-    numberAnswer: !keepsWaiting ? null : acceptsNumber ? value : stored.numberAnswer,
+    proposal: waiting?.proposal ?? null,
+    numberAnswer: waiting?.numberAnswer ?? null,
   };
-  const record = source === "value" ? seeded(fresh, accepted) : fresh;
-  const country = shownCountry(record, null, accepted);
-  const named = valueCountry(record);
-  if (named && named.code === country.code) {
-    return accepted.country.code === country.code || value === undefined
-      ? record
-      : { ...record, accepted: readNamed(record, value, country) };
-  }
-  // Any other number outside the country the precedence requires is read in it as it stands,
-  // so it keeps its international identity beside that country.
-  const aligned: EditorRecord =
-    accepted.country.code === country.code
-      ? record
-      : { ...record, accepted: realign(record, accepted, country) };
-  if (source === "proposal" && adopted && value === undefined && !shows(stored, adopted)) {
+  const aligned = alignToPrecedence(newValue === null ? placed : seeded(placed));
+  if (adopted && value === undefined && !shows(stored, adopted)) {
     // An uncontrolled proposal shows only now, so `onChange` hears it only now.
     const output = aligned.accepted.values.outputValue;
     return output === before.values.outputValue ? aligned : { ...aligned, steered: { value: output } };
@@ -643,8 +621,26 @@ function settle(stored: EditorRecord, given: EditorRecord): EditorRecord {
  */
 function realign(record: EditorRecord, accepted: Snapshot, country: PhoneNumberCountry): Snapshot {
   const { value, configuration } = record;
-  if (value !== undefined) return readValueIn(value, country, configuration, readingOf(record));
+  if (value !== undefined)
+    return readValueIn(value, country, configuration, currentDetection(record)?.reading);
   return readInternationalIn(accepted, country, configuration);
+}
+
+/**
+ * `current` picked into `country`: its digits kept when `preserveOnCountryChange` says so, else
+ * cleared. A preserved national draft keeps its digits as typed.
+ */
+function pickedSnapshot(
+  { configuration, preserveOnCountryChange }: Pick<EditorRecord, "configuration" | "preserveOnCountryChange">,
+  current: Snapshot,
+  country: PhoneNumberCountry
+): Snapshot {
+  return snapshot(
+    preserveOnCountryChange
+      ? { digits: current.digits, country, parsedNational: current.parsedNational }
+      : { digits: "", country },
+    configuration
+  );
 }
 
 /**
@@ -657,22 +653,19 @@ function realign(record: EditorRecord, accepted: Snapshot, country: PhoneNumberC
  */
 function pick(record: EditorRecord, before: Snapshot, country: PhoneNumberCountry): EditorRecord {
   const { configuration, value, preserveOnCountryChange } = record;
-  const cleared = (): Snapshot => snapshot({ digits: "", country }, configuration);
   if (value === undefined) {
-    const picked = preserveOnCountryChange
-      ? snapshot({ digits: before.digits, country, parsedNational: before.parsedNational }, configuration)
-      : cleared();
-    const changed = picked.values.outputValue !== before.values.outputValue;
+    const picked = pickedSnapshot(record, before, country);
+    const output = picked.values.outputValue;
     return {
       ...record,
       accepted: picked,
       proposal: null,
       numberAnswer: null,
-      steered: changed ? { value: picked.values.outputValue } : null,
+      steered: output === before.values.outputValue ? record.steered : { value: output },
     };
   }
-  const read = readValueIn(value, country, configuration, readingOf(record));
-  const picked = preserveOnCountryChange ? read : cleared();
+  const read = readValueIn(value, country, configuration, currentDetection(record)?.reading);
+  const picked = preserveOnCountryChange ? read : snapshot({ digits: "", country }, configuration);
   const output = picked.values.outputValue;
   return {
     ...record,
@@ -681,50 +674,18 @@ function pick(record: EditorRecord, before: Snapshot, country: PhoneNumberCountr
     numberAnswer: picked === read ? null : output,
     // As a pick through the picker: nothing for `onChange` only when the output is the value the
     // parent holds. A parent that stores another form of the number hears it.
-    steered: output === value ? null : { value: output },
+    steered: output === value ? record.steered : { value: output },
   };
-}
-
-/**
- * Whether the record's proposal can never show: the parent holds its number already, and the
- * value names an offered country other than the proposal's, which wins whatever `countryCode`
- * the parent sets. It is answered in full, so it waits for nothing. Read from the value's cached
- * detection only, so equal props parse nothing; without one the proposal stays.
- */
-function blockedProposal(record: EditorRecord): boolean {
-  const { proposal, value, configuration, numberAnswer } = record;
-  if (proposal === null || !holdsNumber(value, proposal, numberAnswer)) return false;
-  if (namingValue(record) === null) return false;
-  const code = readingOf(record)?.country;
-  const named = configuration.countries.find((row) => row.code === code);
-  return named !== undefined && named.code !== proposal.country.code;
-}
-
-/**
- * Whether `value` holds a waiting proposal's number without a parse: it is the proposal's output,
- * or its `numberAnswer`, the output the parent heard before a formatting change carried the
- * proposal, or a countryless form the parent answered with.
- */
-function holdsNumber(value: string | undefined, proposal: Snapshot, numberAnswer: string | null): boolean {
-  return value !== undefined && (value === proposal.values.outputValue || value === numberAnswer);
-}
-
-/**
- * Whether a configuration still offers a waiting proposal's country: the one rule both halves of
- * an answer share. A parent's answer, its country or its number, keeps the proposal waiting
- * across formatting, flag, detection, metadata and catalog changes in the same render while the
- * catalog offers the proposal's country; the proposal is then carried into the configuration.
- */
-function keepsProposalCountry(configuration: Configuration, proposal: Snapshot): boolean {
-  return configuration.countries.some((row) => row.code === proposal.country.code);
 }
 
 /**
  * Fold new props into the state, as {@link settle} says. A proposal the parent echoes becomes
  * the accepted state, one it rejects stays out of view, and a new value, configuration or
- * catalog is read as described on {@link PhoneEditorProps}. The latest edit's caret lasts while
- * the field shows the display the edit proposed, whatever value the parent stored, and is
- * dropped for good by the first props that show another display.
+ * catalog is read as described on {@link PhoneEditorProps}. Props that keep the value, the
+ * configuration and `countryCode` show what they showed: a waiting proposal stays, unless it can
+ * never show. The latest edit's caret lasts while the field shows the display the edit proposed,
+ * whatever value the parent stored, and is dropped for good by the first props that show another
+ * display.
  *
  * @param state - The current state.
  * @param props - The field's props now.
@@ -734,48 +695,34 @@ function keepsProposalCountry(configuration: Configuration, proposal: Snapshot):
 export function reconcile(state: PhoneEditorState, props: PhoneEditorProps): PhoneEditorState {
   const stored = state[RECORD];
   const configuration = configure(props, stored.configuration);
-  if (
-    configuration === stored.configuration &&
-    stored.value === props.value &&
-    stored.defaultValue === props.defaultValue &&
-    stored.defaultCountryCode === props.defaultCountryCode &&
-    stored.countryCode === props.countryCode &&
-    stored.preserveOnCountryChange === (props.preserveOnCountryChange ?? false)
-  ) {
-    // Equal props only drop a caret the field no longer shows, and a proposal that can never
-    // show; any other waiting proposal stays.
-    if (blockedProposal(stored)) {
-      const dropped: EditorRecord = { ...stored, proposal: null };
-      return succeed(stored, { ...dropped, caret: shownCaret(dropped) });
-    }
-    const caret = shownCaret(stored);
-    return caret === stored.caret ? state : succeed(stored, { ...stored, caret });
-  }
-  if (
-    configuration === stored.configuration &&
-    stored.value === props.value &&
-    stored.countryCode === props.countryCode
-  ) {
-    // Only defaults and reset-only settings changed (`defaultValue`, `defaultCountryCode`,
-    // `preserveOnCountryChange`): they shape later resets and picks, never what the field shows
-    // now, so a waiting proposal stays, as on a field without country control. Only the value,
-    // the configuration and country control answer or drop a proposal.
-    const kept: EditorRecord = { ...stored, ...readDefaults(props) };
-    const settledKept = blockedProposal(kept) ? { ...kept, proposal: null } : kept;
-    return succeed(stored, { ...settledKept, caret: shownCaret(settledKept) });
-  }
-  const next: EditorRecord = {
-    ...stored,
-    ...readDefaults(props),
-    configuration,
-    value: props.value,
-    steered: null,
-    proposalNotice: null,
-    numberAnswer: null,
-  };
-  const settled = settle(stored, next);
-  const steered = settled.steered ?? stored.steered;
-  return succeed(stored, { ...settled, steered, caret: shownCaret(settled) });
+  const settings = readSettings(props);
+  const changesReading =
+    configuration !== stored.configuration ||
+    props.value !== stored.value ||
+    props.countryCode !== stored.countryCode;
+  const record = changesReading
+    ? settle(stored, {
+        ...stored,
+        ...settings,
+        configuration,
+        value: props.value,
+        countryCode: props.countryCode,
+      })
+    : kept(stored, settings);
+  const caret = shownCaret(record);
+  return record === stored && caret === stored.caret ? state : succeed(stored, { ...record, caret });
+}
+
+/**
+ * The record for props that change only settings, or nothing: `stored` itself unless a setting
+ * changed or the waiting proposal ended.
+ */
+function kept(stored: EditorRecord, settings: Settings): EditorRecord {
+  const pending = pendingProposal(stored, stored);
+  const ends =
+    stored.proposal !== null && (pending === null || proposalFate(stored, judged(stored), pending) === null);
+  if (!ends && sameSettings(stored, settings)) return stored;
+  return ends ? { ...stored, ...settings, proposal: null, numberAnswer: null } : { ...stored, ...settings };
 }
 
 /**
@@ -836,18 +783,9 @@ export function selectCountry(state: PhoneEditorState, code: CountryCode | undef
   const stored = state[RECORD];
   const current = visibleSnapshot(stored);
   if (!code || code === current.country.code) return state;
-  const country = stored.configuration.countries.find((row) => row.code === code);
+  const country = offeredCountry(stored.configuration, code);
   if (!country) return state;
-  return propose(
-    stored,
-    snapshot(
-      stored.preserveOnCountryChange
-        ? { digits: current.digits, country, parsedNational: current.parsedNational }
-        : { digits: "", country },
-      stored.configuration
-    ),
-    null
-  );
+  return propose(stored, pickedSnapshot(stored, current, country), null);
 }
 
 /**
@@ -878,7 +816,6 @@ export function reset(state: PhoneEditorState): PhoneEditorState {
     proposal: null,
     caret: null,
     steered: null,
-    proposalNotice: null,
     numberAnswer: null,
   });
 }
@@ -903,12 +840,13 @@ export function view(state: PhoneEditorState): PhoneEditorView {
 }
 
 /**
- * The notice of the latest proposal, for `onChange`: its output value, when it differs from the value the
- * parent holds: the `value` prop of a controlled field, compared as given, or the output an
- * uncontrolled field showed before the proposal. A transition's state may not show its
- * proposal, since a controlled field shows it only once the parent echoes it. An uncontrolled
- * number's proposal that moves the country against a controlled `countryCode` reports nothing
- * here: it shows, and reports through {@link steeredValue}, once the parent sets that country.
+ * The output a state from {@link edit}, {@link paste} or {@link selectCountry} sends `onChange`,
+ * never read on a {@link reconcile} state: its proposal's output value, when it differs from the
+ * value the parent holds, the `value` prop of a controlled field, compared as given, or the output
+ * an uncontrolled field showed before the proposal. A controlled field shows that proposal only
+ * once the parent echoes it. An uncontrolled number's proposal that moves the
+ * country against a controlled `countryCode` reports nothing here: it shows, and reports through
+ * {@link steeredValue}, once the parent sets that country.
  *
  * One rule covers every proposal, edit, paste, country pick and the hydration edit alike,
  * because it is a rule about the output: a call that repeats the parent's value tells it
@@ -917,23 +855,24 @@ export function view(state: PhoneEditorState): PhoneEditorView {
  * the number, such as national digits under `outputFormat="e164"`, holds a value that differs
  * from every proposal and so hears each one.
  *
- * @param state - The state a transition returned.
- * @returns The latest proposal's notice, or null when the latest transition made no proposal or
- * the proposal's output equals the value the parent holds.
+ * @param state - The state a proposing transition returned.
+ * @returns The proposal's output, or null when the state holds no proposal or its output is the
+ * value the parent holds.
  */
-export function proposalNotice(state: PhoneEditorState): ValueNotice | null {
-  return state[RECORD].proposalNotice;
+export function proposedValue(state: PhoneEditorState): string | null {
+  return proposalOutput(state[RECORD]);
 }
 
 /**
  * The output the latest `countryCode` change proposed, for `onChange`: the pick's output when
  * it differs from the value the parent holds, or the output of an uncontrolled number's
- * proposal that the change revealed. A new object for each change, so a caller sends it
- * once by its identity.
+ * proposal that the change revealed. Later props that propose nothing carry it forward; an
+ * edit, paste, picker pick or reset clears it. A new object for each change, so a caller sends
+ * it once by its identity.
  *
  * @param state - The current state.
- * @returns The proposed output, or null when the latest change proposed none or a transition
- * has since replaced it.
+ * @returns The latest steered output, or null when none was proposed since the last user
+ * transition or reset.
  */
 export function steeredValue(state: PhoneEditorState): ValueNotice | null {
   return state[RECORD].steered;

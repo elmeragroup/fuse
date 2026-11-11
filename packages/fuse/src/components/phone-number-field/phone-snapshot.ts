@@ -9,6 +9,7 @@ import {
   requirePickerCountries,
   resolvePhoneFieldValues,
   resolveSelectedCountry,
+  toE164Digits,
 } from "./phone-engine";
 import type {
   InternationalReading,
@@ -30,7 +31,7 @@ import type {
  */
 
 /** The props a configuration reads, as `PhoneNumberField` takes them. */
-export type ConfigurationProps = {
+type ConfigurationProps = {
   readonly metadata?: MetadataJson;
   readonly countries?: readonly PhoneCountryCode[];
   readonly autoDetectCountry?: boolean;
@@ -124,6 +125,20 @@ export function configure(props: ConfigurationProps, previous?: Configuration): 
   };
 }
 
+/**
+ * The picker row for `code` in a configuration's catalog.
+ *
+ * @param configuration - The configuration whose catalog to search.
+ * @param code - A country code, or undefined.
+ * @returns The offered row, or undefined when the catalog does not offer `code`.
+ */
+export function offeredCountry(
+  configuration: Pick<Configuration, "countries">,
+  code: string | undefined
+): PhoneNumberCountry | undefined {
+  return configuration.countries.find((row) => row.code === code);
+}
+
 function decodeFieldValue(value: string): string {
   try {
     return decodeURIComponent(value);
@@ -165,7 +180,7 @@ export function receiveValue(
   const read = readValueIn(input, country, configuration, known);
   const { reading } = read.values;
   if (!configuration.autoDetectCountry || reading === undefined) return read;
-  const detected = configuration.countries.find((row) => row.code === reading.country);
+  const detected = offeredCountry(configuration, reading.country);
   return detected ? readNamedIn(input, detected, configuration, reading) : read;
 }
 
@@ -202,7 +217,7 @@ export function catalogReplaced(
   to: Configuration,
   country: PhoneNumberCountry
 ): boolean {
-  return from.metadata !== to.metadata || !to.countries.some((row) => row.code === country.code);
+  return from.metadata !== to.metadata || offeredCountry(to, country.code) === undefined;
 }
 
 /** Whether two configurations read and show a number alike, whatever catalog they list. */
@@ -412,7 +427,7 @@ export function readAsNumber(
  * @param number - The snapshot.
  * @returns Its international entry, or empty.
  */
-export function entryForm({ digits, country, parsedNational, values }: Snapshot): string {
+function entryForm({ digits, country, parsedNational, values }: Snapshot): string {
   if (!digits) return "";
   if (digits.startsWith("+")) return digits;
   if (parsedNational) return country.dialCode + digits;
@@ -426,6 +441,6 @@ export function entryForm({ digits, country, parsedNational, values }: Snapshot)
  * @param number - The snapshot.
  * @returns Its international form, or empty.
  */
-export function internationalForm(number: Snapshot): string {
-  return entryForm(number).replace(/[^\d+]/g, "");
+function internationalForm(number: Snapshot): string {
+  return toE164Digits(entryForm(number));
 }

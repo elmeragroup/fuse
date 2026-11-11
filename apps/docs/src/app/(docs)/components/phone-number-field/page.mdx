@@ -45,10 +45,30 @@ The field picks the country from a `+` or `00` prefix as the user types or paste
   <PhoneNumberFieldCountries />
 </Demo>
 
+<Prose>
+
 Pass `countryCode` with `onCountryChange` to own the country. A new `countryCode` acts like a
 pick: it clears the digits unless `preserveOnCountryChange` keeps them. A pick in the field is a
 proposal the parent accepts by setting `countryCode`; a parent that keeps its code returns the field
 to it. A controlled `value` that starts with `+` or `00` names its own country and keeps it.
+
+A proposal the parent has not answered yet keeps waiting through:
+
+- a render with the same props;
+- a change to `defaultValue`, `defaultCountryCode` or `preserveOnCountryChange` alone;
+- with `countryCode` set, a change to `outputFormat`, `international`, `formatOnType`,
+  `autoDetectCountry`, `metadata` or `countries` that keeps `value` and `countryCode`, while
+  `countries` still offers the proposal's country;
+- an answer to one half of it, in either order, which keeps it waiting for the other:
+  `countryCode` set to its country itself, or a `value` that is its number in a countryless form
+  of the parent's own, such as national digits. A code that only falls back to the proposal's
+  country is no answer.
+
+A proposal answered in full ends, as does one whose number the parent holds while the value names
+another country. Any other change drops it. Each proposal reaches `onChange` once, whatever order
+the parent answers in.
+
+</Prose>
 
 <Demo
   slug="phone-number-field"

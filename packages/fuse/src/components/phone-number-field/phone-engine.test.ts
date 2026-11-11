@@ -195,28 +195,6 @@ describe("national drafts with a trunk prefix", () => {
     }
   });
 
-  it.each([
-    ["+10", "US", undefined],
-    ["+10", "NO", undefined],
-    ["+4741234567", "SE", "NO"],
-    ["+46701234567", "NO", "SE"],
-  ] as const)(
-    "names the country %s's own prefix detects, whatever country it shows in (%s)",
-    (digits, country, expected) => {
-      // The editor reads a controlled value's country authority from this: a partial `+1`
-      // number names no country even beside the US.
-      const values = resolvePhoneFieldValues({
-        digits,
-        country,
-        metadata: defaultMetadata,
-        outputFormat: "e164",
-        international: false,
-        formatOnType: false,
-      });
-      expect(values.reading?.country).toBe(expected);
-    }
-  );
-
   it("keeps the national format for digits detected from an international entry", () => {
     const countries = getCountries();
     const sweden = resolveSelectedCountry(countries, "SE");

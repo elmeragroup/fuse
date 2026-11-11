@@ -160,7 +160,13 @@ function hasInternationalDigits(digits: string): boolean {
   return digits.startsWith(INTERNATIONAL_PREFIX);
 }
 
-function toE164Digits(digits: string): string {
+/**
+ * The `+` and digits of a phone number as written, without its spacing, dashes and brackets.
+ *
+ * @param digits - The number as written.
+ * @returns Its `+` and digits alone.
+ */
+export function toE164Digits(digits: string): string {
   return digits.replace(E164_NOISE_REGEX, "");
 }
 
@@ -360,11 +366,10 @@ export type PhoneParse = {
   readonly parsed: Readonly<ParsedPhoneInput>;
 };
 
-/** The `+` and digits of an input, the part of it a parse depends on. */
-function readingKey(input: string): string {
-  return input.replace(/[^\d+]/g, "");
-}
-
+/**
+ * What a snapshot shows and submits, with the parses that made it for the next snapshot of the
+ * same input to reuse. The parses are threaded by hand; #616 tracks memoizing the parse instead.
+ */
 export type PhoneFieldValues = {
   displayValue: string;
   outputValue: string;
@@ -415,7 +420,8 @@ export function resolvePhoneFieldValues({
   // parse behind the calling code again, where a partial one takes no such rule.
   const input = parsedNational ? getInternationalPrefix(country, metadata) + digits : digits;
   const prefixed = hasInternationalDigits(input);
-  const key = readingKey(input);
+  // The `+` and digits are the part of the input a parse depends on.
+  const key = toE164Digits(input);
   const parsed =
     prefixed && reading?.metadata === metadata && reading.key === key
       ? reading.parsed
