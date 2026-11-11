@@ -49,12 +49,30 @@
           "required": false
         },
         {
+          "name": "files",
+          "origin": "declared",
+          "type": "readonly File[] | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The files a native form posts, which the parent owns. The Root never changes the list: add a pick from `onSelect`, and remove files from your own UI. A native form reset leaves the list, and the post, as they are. Without a `name`, they post only under an enclosing `Field.Root`'s `name`.",
+          "required": false
+        },
+        {
           "name": "multiple",
           "origin": "declared",
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
           "description": "Take more than one file. Without it, a pick, drop or paste of several files rejects them all with `\"count\"`.",
+          "required": false
+        },
+        {
+          "name": "name",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Post `files` under this name with a native form submit or `new FormData(form)`. It needs `files`. An enclosing `Field.Root`'s `name` takes its place, as it does for Base UI's controls.",
           "required": false
         },
         {

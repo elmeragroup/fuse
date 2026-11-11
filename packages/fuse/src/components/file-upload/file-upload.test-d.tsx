@@ -48,3 +48,13 @@ test("useFileUpload exposes state and actions, and keeps meta private", () => {
   expectTypeOf<Upload["actions"]["open"]>().toEqualTypeOf<() => void>();
   expectTypeOf<Upload>().not.toHaveProperty("meta");
 });
+
+test("Root posts a name only with the controlled files it posts", () => {
+  const files: readonly File[] = [];
+  const _posted = <FileUpload.Root name="attachments" files={files} onSelect={() => undefined} />;
+  // Inside a Field, the Field's name posts the files.
+  const _fieldPosted = <FileUpload.Root files={files} />;
+  expectTypeOf<NonNullable<FileUploadRootProps["files"]>>().toEqualTypeOf<readonly File[]>();
+  // @ts-expect-error a name without files would post nothing, so it is a type error
+  const _nameOnly = <FileUpload.Root name="attachments" />;
+});
