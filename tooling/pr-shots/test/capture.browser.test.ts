@@ -1,11 +1,15 @@
+import { Activity, createElement } from "react";
+
 import { afterAll, assert, beforeAll, describe, expect, it } from "@effect/vitest";
 import { Effect } from "effect";
 import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { createServer } from "node:http";
 import type { Server } from "node:http";
+import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { PNG } from "pngjs";
+import { renderToString } from "react-dom/server";
 
 import { Capture } from "../src/capture.ts";
 import { planShots } from "../src/shot-plan.ts";
@@ -13,23 +17,101 @@ import { shotOptions } from "./parse-argv.ts";
 
 /**
  * The fixture pages: a demo stage holding a textbox, a 2000px page with no demo stage, a page
- * whose target needs a theme, and controls that open popups outside their own box.
+ * whose target needs a theme, controls that open popups outside their own box, and React pages: one
+ * whose buttons mount a part whose code loads on demand, a page that frames it, a server-rendered
+ * Activity that never hydrates, a Next page whose React never reports, a page that frames it, a
+ * framed preview whose reload never arrives, and a renderer the reading does not know.
  */
 const pages = new Map([
   ["/demo", await readFile(path.join(import.meta.dirname, "fixture/demo.html"))],
   ["/page", await readFile(path.join(import.meta.dirname, "fixture/page.html"))],
   ["/themed", await readFile(path.join(import.meta.dirname, "fixture/themed.html"))],
   ["/popup", await readFile(path.join(import.meta.dirname, "fixture/popup.html"))],
+  ["/lazy", await readFile(path.join(import.meta.dirname, "fixture/lazy.html"))],
+  ["/unhooked", await readFile(path.join(import.meta.dirname, "fixture/unhooked.html"))],
+  ["/framed", await readFile(path.join(import.meta.dirname, "fixture/framed.html"))],
+  ["/framed-unhooked", await readFile(path.join(import.meta.dirname, "fixture/framed-unhooked.html"))],
+  ["/reloading", await readFile(path.join(import.meta.dirname, "fixture/reloading.html"))],
+  [
+    "/ssr-activity",
+    Buffer.from(
+      (await readFile(path.join(import.meta.dirname, "fixture/ssr-activity.html"), "utf8")).replace(
+        "<!--server-->",
+        renderToString(
+          createElement(Activity, { mode: "visible", children: createElement("div", { id: "side" }) })
+        )
+      )
+    ),
+  ],
+  ["/foreign-renderer", await readFile(path.join(import.meta.dirname, "fixture/foreign-renderer.html"))],
 ]);
 
+/**
+ * React's production build as one classic script that sets `React` and `ReactDOMClient`, so the
+ * lazy fixture runs the React a deployed page runs, without a bundler. Each CommonJS module is
+ * wrapped in a function and resolved through a small `require`.
+ */
+async function reactScript(): Promise<string> {
+  const fromHere = createRequire(import.meta.url);
+  const fromReactDom = createRequire(fromHere.resolve("react-dom/package.json"));
+  const file = (resolve: NodeJS.Require, name: string) =>
+    path.join(path.dirname(resolve.resolve(`${name}/package.json`)), "cjs");
+  const modules = {
+    react: path.join(file(fromHere, "react"), "react.production.js"),
+    scheduler: path.join(file(fromReactDom, "scheduler"), "scheduler.production.js"),
+    "react-dom": path.join(file(fromHere, "react-dom"), "react-dom.production.js"),
+    "react-dom/client": path.join(file(fromHere, "react-dom"), "react-dom-client.production.js"),
+  };
+  const sources = await Promise.all(
+    Object.entries(modules).map(
+      async ([name, source]) =>
+        `${JSON.stringify(name)}: function (module, exports, require) {\n${await readFile(source, "utf8")}\n}`
+    )
+  );
+  return `(() => {
+  const sources = {${sources.join(",\n")}};
+  const cache = {};
+  const require = (name) => {
+    if (!(name in cache)) {
+      const module = { exports: {} };
+      cache[name] = module;
+      sources[name](module, module.exports, require);
+    }
+    return cache[name].exports;
+  };
+  window.React = require("react");
+  window.ReactDOMClient = require("react-dom/client");
+})();`;
+}
+
+const react = await reactScript();
+
 let server: Server;
+/** How many times the reloading fixture's preview has been asked for. */
+let previewRequests = 0;
 let origin: URL;
 /** Holds one directory per shot, since shots of different tests can share a file name. */
 let outRoot: string;
 
 beforeAll(async () => {
   server = createServer((request, response) => {
-    const page = pages.get(request.url ?? "");
+    if (request.url === "/react.js") {
+      response.writeHead(200, { "content-type": "text/javascript; charset=utf-8" }).end(react);
+      return;
+    }
+    if (request.url === "/chunk/now") {
+      response.writeHead(200).end();
+      return;
+    }
+    // The reloading fixture's preview: answered once, then held, so its reload never commits.
+    if (request.url === "/preview") {
+      previewRequests += 1;
+      if (previewRequests === 1) {
+        response.writeHead(200, { "content-type": "text/html; charset=utf-8" }).end(pages.get("/lazy"));
+      }
+      return;
+    }
+    const page = pages.get(new URL(request.url ?? "/", "http://fixture").pathname);
     if (page !== undefined) {
       response.writeHead(200, { "content-type": "text/html; charset=utf-8" }).end(page);
       return;
@@ -46,6 +128,8 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
+  // The held preview reload keeps its connection open.
+  server.closeAllConnections();
   await new Promise((resolve) => server.close(resolve));
   await rm(outRoot, { recursive: true, force: true });
 });
@@ -65,6 +149,13 @@ function hasRed(png: Buffer) {
     }
   }
   return false;
+}
+
+/** The RGB of the pixel at device pixel (x, y) of a PNG. */
+function pixelAt(png: Buffer, x: number, y: number) {
+  const { data, width } = PNG.sync.read(png);
+  const index = (y * width + x) * 4;
+  return [data[index], data[index + 1], data[index + 2]];
 }
 
 /**
@@ -104,8 +195,8 @@ function failedShot(argv: readonly string[], frame: "stage" | "target" | "viewpo
 }
 
 describe.concurrent("Capture", () => {
-  // These two wait out the 15 s lookup timeout, so they start first and the other shots run
-  // beside them.
+  // These two wait out a 15 s timeout, the click step's and the settle's, so they start first and
+  // the other shots run beside them.
   it.live("names the click step whose control never opens what it claims to", () =>
     Effect.gen(function* () {
       const failure = yield* failedShot(
@@ -116,6 +207,28 @@ describe.concurrent("Capture", () => {
       assert.include(
         failure.message,
         '--click step 1 of 1: button "Stuck" did not open: no popup it holds open shows (/popup on fixture)'
+      );
+    }).pipe(Effect.provide(Capture.layer))
+  );
+
+  // Unit under test: the capture's wait on React. Oracle: each fixture's part, whose code never
+  // arrives, behind a boundary that marks nothing, as a deployed page's would. Each case waits out the 15 s settle timeout.
+  it.live.each([
+    { case: "a part a click step suspended", route: "/lazy", clicks: ["--click", "button:Stall"], where: "" },
+    {
+      case: "a part in a painted frame",
+      route: "/framed",
+      clicks: [],
+      where: " in the frame at {origin}/lazy?part=stall",
+    },
+    { case: "a server-rendered Activity's hydration", route: "/ssr-activity", clicks: [], where: "" },
+  ])("fails a shot while React never finishes $case", ({ route, clicks, where }) =>
+    Effect.gen(function* () {
+      const failure = yield* failedShot(["fixture", "--route", route, ...clicks], "viewport");
+      assert.strictEqual(failure._tag, "CaptureFailed");
+      assert.include(
+        failure.message,
+        `React still had a part loading${where.replace("{origin}", origin.origin)} after 15 s (${route} on fixture)`
       );
     }).pipe(Effect.provide(Capture.layer))
   );
@@ -361,6 +474,78 @@ describe.concurrent("Capture", () => {
       // stays where clicking Far scrolled the page.
       assert.isTrue(hasRed(png));
     }).pipe(Effect.provide(Capture.layer))
+  );
+
+  // The stalled parts above show the shot waits; these show what does not hold it. A part that has
+  // loaded ends the wait. A part that never loads under `opacity: 0`, or in a hidden Activity,
+  // which leaves React work pending for good, shows nothing, so it does not hold the shot.
+  it.live.each([
+    { case: "has loaded", clicks: ["button:Show"], side: [0, 0, 255] },
+    { case: "never loads under opacity: 0", clicks: ["button:Stall hidden"], side: [255, 255, 255] },
+    { case: "never loads in a hidden Activity", clicks: ["button:Stall offscreen"], side: [255, 255, 255] },
+  ])("shoots a part a click step mounts that $case", ({ clicks, side }) =>
+    Effect.gen(function* () {
+      const { png } = yield* shoot([
+        "fixture",
+        "--route",
+        "/lazy",
+        ...clicks.flatMap((click) => ["--click", click]),
+        "--viewports",
+        "640x480",
+        "--scale",
+        "1",
+      ]);
+      // The part is a blue block from (40, 100) to (440, 300); without it the page is white there.
+      assert.deepStrictEqual(pixelAt(png, 240, 200), side);
+    }).pipe(Effect.provide(Capture.layer))
+  );
+
+  it.live("fails a page whose React renderer the reading was not checked against, naming it", () =>
+    Effect.gen(function* () {
+      const failure = yield* failedShot(["fixture", "--route", "/foreign-renderer"], "viewport");
+      assert.strictEqual(failure._tag, "CaptureFailed");
+      assert.include(
+        failure.message,
+        "The page runs react-dom 20.0.0, which the run cannot read; it reads react-dom 19 (/foreign-renderer on fixture)"
+      );
+    }).pipe(Effect.provide(Capture.layer))
+  );
+
+  it.live(
+    "fails a shot while a framed preview's reload never arrives, rather than reading its old page",
+    () =>
+      Effect.gen(function* () {
+        const failure = yield* failedShot(
+          ["fixture", "--route", "/reloading", "--click", "button:Reload preview"],
+          "viewport"
+        );
+        assert.strictEqual(failure._tag, "CaptureFailed");
+        assert.include(
+          failure.message,
+          `The page in the frame at ${origin.origin}/preview was still loading ${origin.origin}/preview after 15 s (/reloading on fixture)`
+        );
+      }).pipe(Effect.provide(Capture.layer))
+  );
+
+  // Each case waits out the 15 s settle timeout for React to register.
+  it.live.each([
+    { case: "page", route: "/unhooked", where: "" },
+    {
+      case: "page in a painted frame",
+      route: "/framed-unhooked",
+      where: " in the frame at {origin}/unhooked",
+    },
+  ])(
+    "fails a Next $case whose React never reports its commits, rather than shooting it unchecked",
+    ({ route, where }) =>
+      Effect.gen(function* () {
+        const failure = yield* failedShot(["fixture", "--route", route], "viewport");
+        assert.strictEqual(failure._tag, "CaptureFailed");
+        assert.include(
+          failure.message,
+          `The page's React never reported its commits${where.replace("{origin}", origin.origin)}, so the run cannot tell when what it loads has rendered (${route} on fixture)`
+        );
+      }).pipe(Effect.provide(Capture.layer))
   );
 
   it.live("reports the status a source answers for a route", () =>

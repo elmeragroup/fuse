@@ -57,12 +57,43 @@ A source is one of three things.
 When the route answers 404 on the before source, the component is not deployed yet. The run says
 so, skips the before shots, and marks the before column in the table.
 
-Each shot prepares the page in one order: theme, click steps, density override, fill. Before each
-shot the run waits for network idle and `document.fonts.ready`. On a Next page it also waits for
-hydration, as the landing tests do, and after a theme picker closes it waits for the page's scroll
-lock to be released. It finishes running animations and takes the shot with reduced
+Each shot prepares the page in one order: theme, click steps, density override, fill. The run
+opens the route and waits for network idle, and on a Next page for hydration, as the landing tests
+do. After a theme picker closes it waits for the page's scroll lock to be released. After loading
+and again before each shot it waits for React to settle, as below, then for `document.fonts.ready`.
+It finishes running animations and takes the shot with reduced
 motion, animations stopped and the caret hidden. Stopping cancels a scroll-linked animation, such as
 a scroll fade, so the run first commits the styles it shows onto its element and the shot keeps them.
+
+Network idle covers only the load. A click step that starts loading code, such as the landing's
+Neutral side with its lazily loaded Dashboard, finds the page already idle, and loaded code is not
+yet rendered code. React knows, so the run asks it. Each page and frame opens with the global
+hook React DevTools uses, which every React build, production included, reports its commits to.
+React has settled once no painted boundary is incomplete: no Suspense boundary that shows its
+fallback or waits to hydrate, and no Activity that waits to hydrate. A boundary is painted when
+the element its content renders into is visible, opacity and `visibility` included, outside any
+subtree React hides, so the landing's inactive side, under `opacity: 0`, holds nothing. The run
+reads the page and every frame whose element is painted, such as a block page's preview. A frame
+that is navigating, such as a preview after its Reload button, still shows its old page, so the
+run first waits for the new page to load. The page needs no marker, so a deployment built before
+this check, such as prod as the before side, settles the same way.
+
+The check fails closed. A part still loading, or a frame still navigating, after 15 seconds fails
+the shot rather than shooting the fallback or the old page. The check reads React's internal fiber tree, so it accepts only `react-dom` 19, the
+renderer it was checked against, and any other renderer fails the shot, naming its version. A
+Next page, or a painted frame holding one, whose React never reports to the hook fails too, so a
+preview whose client code failed to load is not shot as its server HTML. `src/react-commits.ts` lists the
+internals the check reads.
+
+A click whose update React runs as a transition keeps the old screen while it loads, with no
+fallback, so the check cannot see it wait. Such a shot shows the screen before the click. The
+landing's flips and the docs' controls update at once, so their fallbacks show.
+
+A loading state an app draws itself is not waited for. React sees only its own boundaries, not a
+placeholder an app shows while its own timer or request runs, such as the landing's simulated
+"Loading orders" after Neutral and My orders, so the shot can show the placeholder. Add a
+`--click` on something that exists only once the content has loaded, or `--target` an element
+that renders only then: each waits up to 15 seconds for its element to show.
 
 ## Output
 
@@ -311,13 +342,22 @@ Each adapter is a service with a layer: `Capture` in `capture.ts` drives Playwri
 `docs-server.ts` runs `next dev`, and `Gh` in `gh.ts` calls the GitHub CLI. The pure modules need no
 services. `options.ts` holds the schemas that decode each flag, `shot-plan.ts` names the files,
 `pixel-diff.ts` compares a pair with pixelmatch, `shot-table.ts` writes the Markdown, and
-`pr-body.ts` edits the PR body. Their tests sit beside them.
+`pr-body.ts` edits the PR body. Their tests sit beside them. `page-readiness.ts` owns when a page is ready for its shot: it watches each frame's navigations
+from before the page's first and waits, per painted frame, for the navigation to land and React to
+settle. `capture.ts` calls it after loading and before each shot. `react-commits.ts` holds the
+functions it runs in each frame to read React's commits.
 
 `test/` holds the tests that need a browser or a process. `pnpm test` runs everything but
 `*.browser.test.ts`, so it needs no Playwright browser. `pnpm test:e2e` runs
 `capture.browser.test.ts`, which captures fixture pages in Chromium and checks each PNG's pixel
 size against the fixture's fixed geometry, including the clip of a control and the portaled popup
-it opened, and reads the edge pixels of a scrolled strip to check that its scroll fade survives.
+it opened, reads the edge pixels of a scrolled strip to check that its scroll fade survives, and
+shoots React pages on React's production build. A part whose code never arrives must fail the
+shot: one a click mounts, one in a painted frame, and a server-rendered Activity that never
+hydrates. A part that loads must end the wait, and one that never loads under `opacity: 0` or in a
+hidden Activity must not hold it. A Next page whose React never reports, on its own or in a
+frame, a framed preview whose reload never arrives, and a renderer other than `react-dom` 19, must
+fail.
 
 - `docs-server.test.ts` runs a fake `next dev` with a launcher and a worker. It checks that an
   interrupt stops both and restores `next-env.d.ts`, and covers a failed spawn, a server that never

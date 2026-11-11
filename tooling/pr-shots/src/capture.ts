@@ -31,6 +31,8 @@ import type {
   ThemeChoice,
   Viewport,
 } from "./options.ts";
+import { installReadiness, isNextPage, watchReadiness } from "./page-readiness.ts";
+import type { PageReadiness } from "./page-readiness.ts";
 import { firstCoordinate } from "./shot-plan.ts";
 import type { Coordinate, Shot } from "./shot-plan.ts";
 
@@ -217,8 +219,9 @@ function attempt<A>(run: () => Promise<A>, fail: (reason: string) => CaptureFail
 }
 
 /**
- * Opens the route in a fresh context of `viewport`'s size and waits until the page has loaded
- * and, on a Next page, hydrated. The context closes with the scope.
+ * Opens the route in a fresh context of `viewport`'s size, with React's commit hook installed and
+ * its readiness watched, and waits until the page has loaded, on a Next page hydrated, and React
+ * has settled. The context closes with the scope.
  */
 const openPage = Effect.fnUntraced(function* (
   browser: Browser,
@@ -240,7 +243,9 @@ const openPage = Effect.fnUntraced(function* (
     ),
     (context) => Effect.promise(() => context.close())
   );
+  yield* attempt(() => installReadiness(context), fail);
   const page = yield* attempt(() => context.newPage(), fail);
+  const readiness = watchReadiness(page, { timeoutMs: SETTLE_TIMEOUT_MS, pollMs: POLL_MS });
   const response = yield* attempt(
     () => page.goto(new URL(options.route, origin).href, { waitUntil: "networkidle" }),
     fail
@@ -251,7 +256,8 @@ const openPage = Effect.fnUntraced(function* (
   // The Next dev overlay's badge can sit over a stage near the bottom of the window.
   yield* attempt(() => page.addStyleTag({ content: "nextjs-portal { display: none !important; }" }), fail);
   yield* attempt(() => waitForHydration(page), fail);
-  return page;
+  yield* attempt(() => readiness.settled(), fail);
+  return { page, readiness };
 });
 
 /**
@@ -361,6 +367,8 @@ function stageOf(target: Locator): Locator {
 type Prepared = {
   /** The page, themed, stamped, filled and settled. */
   readonly page: Page;
+  /** What the page loads, which each settle waits for. */
+  readonly readiness: PageReadiness;
   /** What the shot covers, with `auto` resolved. */
   readonly frame: ResolvedFrame;
   /** The element a stage or target frame clips, or `null` for the window or the page. */
@@ -399,7 +407,7 @@ const preparePage = Effect.fnUntraced(function* (
     );
   }
 
-  const page = yield* openPage(browser, origin, options, at.viewport, fail);
+  const { page, readiness } = yield* openPage(browser, origin, options, at.viewport, fail);
   // Read before any picker opens: a modal's scroll lock writes these, and the shot waits for
   // them to come back.
   const unlocked = yield* attempt(() => documentStyles(page), fail);
@@ -470,8 +478,8 @@ const preparePage = Effect.fnUntraced(function* (
     }, fail);
   }
 
-  yield* attempt(() => settle(page), fail);
-  return { page, frame, element } satisfies Prepared;
+  yield* attempt(() => settle(page, readiness), fail);
+  return { page, readiness, frame, element } satisfies Prepared;
 });
 
 const takeShot = Effect.fn("Capture.takeShot")(function* (
@@ -486,7 +494,7 @@ const takeShot = Effect.fn("Capture.takeShot")(function* (
       file: shot.file,
     });
 
-  const { page, element } = yield* preparePage(
+  const { page, readiness, element } = yield* preparePage(
     browser,
     { origin, sourceLabel, options },
     shot,
@@ -509,7 +517,7 @@ const takeShot = Effect.fn("Capture.takeShot")(function* (
         await page.evaluate(() => {
           window.scrollTo(0, 0);
         });
-        await settle(page);
+        await settle(page, readiness);
       }, fail);
     }
     yield* shoot({ fullPage: shot.frame === "page" });
@@ -716,7 +724,7 @@ async function vocabularyOf(themed: Locator): Promise<ThemeVocabulary> {
  * fixture, has nothing to wait for.
  */
 async function waitForHydration(page: Page): Promise<void> {
-  if ((await page.locator("script[src*='/_next/']").count()) === 0) {
+  if (!(await isNextPage(page.mainFrame()))) {
     return;
   }
   await page.locator("next-route-announcer").waitFor({ state: "attached", timeout: SETTLE_TIMEOUT_MS });
@@ -771,12 +779,18 @@ async function waitForScrollUnlock(page: Page, unlocked: string): Promise<void> 
 }
 
 /**
- * Waits for the network, the web fonts, every finite animation to end and two frames of layout.
- * Reduced motion is on for every context and the screenshot stops what still runs; finishing
- * the animations first keeps the frame's box from being measured mid-transition.
+ * Waits for React to commit what the page is loading, the web fonts, every finite animation to end
+ * and two frames of layout. Reduced motion is on for every context and the screenshot stops what
+ * still runs; finishing the animations first keeps the frame's box from being measured
+ * mid-transition.
+ *
+ * Network idle is a load event: once the page has reached it, `waitForLoadState("networkidle")`
+ * returns at once, so it says nothing about code a click step starts loading. React's own commits
+ * do (`page-readiness.ts`).
  */
-async function settle(page: Page): Promise<void> {
+async function settle(page: Page, readiness: PageReadiness): Promise<void> {
   await page.waitForLoadState("networkidle");
+  await readiness.settled();
   await page.evaluate(async () => {
     await document.fonts.ready;
     for (const animation of document.getAnimations()) {

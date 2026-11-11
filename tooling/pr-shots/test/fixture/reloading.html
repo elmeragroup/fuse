@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>pr-shots fixture: a framed preview whose reload never arrives</title>
+    <style>
+      body {
+        margin: 0;
+      }
+      button {
+        display: block;
+        margin: 8px;
+      }
+      iframe {
+        width: 600px;
+        height: 400px;
+        border: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- As a block page's preview reloads: the server answers the preview once and holds every
+         later request, so the reload stays in flight while the frame shows its old document. -->
+    <button type="button" onclick="document.querySelector('iframe').contentWindow.location.reload()">
+      Reload preview
+    </button>
+    <iframe title="Preview" src="/preview"></iframe>
+  </body>
+</html>
