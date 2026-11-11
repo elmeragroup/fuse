@@ -18,7 +18,7 @@ import type { PhoneNumberCountry } from "../phone-engine";
 
 /** The editor's props, the field's two callbacks and the number input it restores the caret in. */
 export type UsePhoneNumberFieldStateOptions = PhoneEditorProps & {
-  /** Receives each proposal's output value. */
+  /** Receives a proposal's output value when it differs from the value the parent holds. */
   onChange?: (value: string) => void;
   /** Receives the country after a commit that changed it. */
   onCountryChange?: (country: PhoneNumberCountry) => void;
@@ -96,6 +96,8 @@ export function usePhoneNumberFieldState({
     input.setSelectionRange(selection.start, selection.end, selection.direction ?? undefined);
   }, [selection, displayValue, inputRef]);
 
+  // The state updates even when `proposedValue` holds the call back, so a proposal that keeps
+  // the output still re-formats the display and puts its caret back.
   const publish = (next: PhoneEditorState) => {
     if (next === state) return;
     setState(next);

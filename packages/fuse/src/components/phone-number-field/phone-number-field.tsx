@@ -53,8 +53,12 @@ export type PhoneNumberFieldProps = {
   defaultValue?: string;
   /**
    * Proposes a formatted output value. Controlled fields display it after parent acceptance.
-   * Also called once as hydration commits, with a number typed or autofilled before the client
-   * scripts attached; a controlled parent accepts or rejects it like any other proposal.
+   * Called only when the proposal differs from the value the parent holds: `value`, compared
+   * exactly, or the output an uncontrolled field already shows. So deleting a separator, which
+   * keeps the number, calls nothing, while a parent that stores another form of the number,
+   * such as national digits, hears every proposal. Also called once as hydration commits, with
+   * a number typed or autofilled before the client scripts attached, under the same rule; a
+   * controlled parent accepts or rejects it like any other proposal.
    */
   onChange?: (value: string) => void;
   /**
@@ -95,7 +99,8 @@ export type PhoneNumberFieldProps = {
    */
   international?: boolean;
   /**
-   * Keep digits when switching country. Default clears and emits `""`.
+   * Keep digits when switching country. Default clears them, and calls `onChange` with `""`
+   * unless the parent already holds `""`.
    * @default false
    */
   preserveOnCountryChange?: boolean;
