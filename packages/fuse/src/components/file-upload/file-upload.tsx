@@ -3,14 +3,17 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { ChangeEvent, ReactElement } from "react";
 
+import { useFieldRootContext } from "@base-ui/react/internals/field-root-context";
 import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
 
 import { useMergedRefs } from "../../hooks/use-merged-refs";
 import { deepActiveElement } from "../../internal/active-element";
 import { isFocusRoot } from "../../internal/dom-node";
+import { useFieldSetDisabled } from "../../internal/field-set-disabled";
 import { isTextEntry } from "../../internal/text-entry";
 import { cn } from "../../styles/cn";
+import { isThemeDevelopment } from "../../theme/validate-theme";
 import * as Accept from "./accept";
 import { registerDocumentDropGuard } from "./document-drop-guard";
 import { FileUploadContext } from "./file-upload-context";
@@ -34,7 +37,10 @@ export type FileUploadRootProps = Omit<useRender.ComponentProps<"div">, "onSelec
   directory?: boolean;
   /** Ask a phone to capture new media with the front (`"user"`) or back (`"environment"`) camera. */
   capture?: "user" | "environment";
-  /** Ignore every source, and disable each `FileUpload.Trigger`. */
+  /**
+   * Ignore every source, and disable each `FileUpload.Trigger`. An enclosing disabled
+   * `Field.Root` or `Field.Set` disables the Root as well.
+   */
   disabled?: boolean;
   /** Receives the files that passed `accept` and the count rule, in a fresh array for each call. */
   onSelect?: (files: File[]) => void;
@@ -80,13 +86,19 @@ function fileEntries(files: readonly File[]): SplitEntry[] {
  * inside it, `useFileUpload().actions.add` and a drop on `FileUpload.Dropzone` all end in the
  * same split, which calls `onSelect` with the files that pass and `onReject` with the rest.
  * The input has no `name`, so a native form post never carries the files.
+ *
+ * Inside a `Field.Root`, render one `FileUpload.Trigger`; the Field's label, description and
+ * error belong to it. The Field's `Field.Label` names that Trigger, its
+ * `Field.Description` and `Field.Error` describe it, an invalid Field marks the Trigger
+ * `aria-invalid`, which paints its invalid face, and a disabled Field or `Field.Set` disables
+ * the Root. Outside a Field none of that wiring is written.
  */
 export function FileUploadRoot({
   accept,
   multiple = false,
   directory = false,
   capture,
-  disabled = false,
+  disabled: disabledProp = false,
   onSelect,
   onReject,
   className,
@@ -95,6 +107,12 @@ export function FileUploadRoot({
   children,
   ...props
 }: FileUploadRootProps): ReactElement {
+  // A Field is read during render, so the server output and the first paint already show it.
+  // Outside a Field, Base UI's default context reports neither disabled nor invalid.
+  const field = useFieldRootContext();
+  const fieldSetDisabled = useFieldSetDisabled();
+  const disabled = disabledProp || field.disabled === true || fieldSetDisabled;
+  const invalid = field.state.valid === false;
   // The committed element, which a new `render` element replaces. Every DOM registration below
   // follows it, not the component's mount.
   const [element, setElement] = useState<HTMLDivElement | null>(null);
@@ -203,6 +221,21 @@ export function FileUploadRoot({
     };
   }, []);
 
+  // A Field has one control. Only counted, never changing an id, so a second Trigger is reported
+  // in development and left as rendered.
+  const fieldTriggers = useRef(0);
+  const registerFieldTrigger = useCallback(() => {
+    fieldTriggers.current += 1;
+    if (fieldTriggers.current > 1 && isThemeDevelopment()) {
+      console.error(
+        "FileUpload: render one FileUpload.Trigger inside a Field. The Field's label, description and error belong to one control."
+      );
+    }
+    return () => {
+      fieldTriggers.current -= 1;
+    };
+  }, []);
+
   useLayoutEffect(() => {
     if (element === null) {
       return;
@@ -261,9 +294,29 @@ export function FileUploadRoot({
     () => ({
       state,
       actions,
-      meta: { descriptionIds, registerDescription, dropTargets, setDropTarget, receive, rules },
+      meta: {
+        descriptionIds,
+        registerDescription,
+        registerFieldTrigger,
+        dropTargets,
+        setDropTarget,
+        receive,
+        rules,
+        invalid,
+      },
     }),
-    [state, actions, descriptionIds, registerDescription, dropTargets, setDropTarget, receive, rules]
+    [
+      state,
+      actions,
+      descriptionIds,
+      registerDescription,
+      registerFieldTrigger,
+      dropTargets,
+      setDropTarget,
+      receive,
+      rules,
+      invalid,
+    ]
   );
 
   const onChange = (event: ChangeEvent<HTMLInputElement>) => {

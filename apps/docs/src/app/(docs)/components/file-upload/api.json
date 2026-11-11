@@ -45,7 +45,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Ignore every source, and disable each `FileUpload.Trigger`.",
+          "description": "Ignore every source, and disable each `FileUpload.Trigger`. An enclosing disabled `Field.Root` or `Field.Set` disables the Root as well.",
           "required": false
         },
         {

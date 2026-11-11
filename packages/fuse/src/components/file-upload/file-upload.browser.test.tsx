@@ -4,11 +4,14 @@ import { describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
+import "../../../dist/themes.css";
 import { nextFrames } from "../../../test/animation-frames";
+import { expectInvalidRing, ringLayers, settleTransitions } from "../../../test/assert-invalid-ring";
 import { CaughtError, caughtError } from "../../../test/caught-error";
 import { formNamed, renderThemed, roleNamed } from "../../../test/themed-browser-render";
 import { isHTMLElement } from "../../internal/dom-node";
 import { Button } from "../button/button";
+import { Field } from "../field/index";
 import { useFileUpload } from "./file-upload-context";
 import { FileUpload } from "./index";
 import type { FileRejection } from "./split-files";
@@ -501,5 +504,201 @@ describe("FileUpload.Dropzone", () => {
     expect(drop.defaultPrevented).toBe(true);
     await expect.poll(() => onSelect.mock.calls.length).toBe(0);
     expect(zone.hasAttribute("data-drop-target")).toBe(false);
+  });
+});
+
+/** A FileUpload in a Field, with its own description and one of the Field's after its control. */
+function FieldUpload(props: { readonly invalid?: boolean }): ReactElement {
+  return (
+    <Field.Root invalid={props.invalid ?? false}>
+      <Field.Label>Attachments</Field.Label>
+      <p id="own-hint">PDF only.</p>
+      <FileUpload.Root>
+        <FileUpload.Dropzone>
+          <FileUpload.Trigger aria-describedby="own-hint">Browse files</FileUpload.Trigger>
+          <FileUpload.Description>Up to 3 files.</FileUpload.Description>
+        </FileUpload.Dropzone>
+      </FileUpload.Root>
+      <Field.Error match>Add at least one file.</Field.Error>
+      <Field.Description>Shared with your manager.</Field.Description>
+    </Field.Root>
+  );
+}
+
+describe("FileUpload in a Field", () => {
+  it("names the Trigger by its own text, then Field.Label, and opens the picker from a click on the label", async () => {
+    const { host } = renderThemed(<FieldUpload />);
+    const trigger = page.getByRole("button", { name: "Browse files Attachments", exact: true });
+    await expect.element(trigger).toBeInTheDocument();
+    const click = stubPicker(host);
+    await userEvent.click(page.getByText("Attachments", { exact: true }));
+    expect(click).toHaveBeenCalledTimes(1);
+  });
+
+  it("follows the Trigger's own id, and reports a second Trigger in the Field in development", async () => {
+    const error = vi.spyOn(console, "error").mockReturnValue(undefined);
+    const tree = (second: boolean) => (
+      <Field.Root>
+        <Field.Label>Attachments</Field.Label>
+        <FileUpload.Root>
+          <FileUpload.Trigger id="photo-trigger">Browse files</FileUpload.Trigger>
+          {second ? <FileUpload.Trigger>Take photo</FileUpload.Trigger> : null}
+        </FileUpload.Root>
+      </Field.Root>
+    );
+    const { rerender } = renderThemed(tree(false));
+    const trigger = page.getByRole("button", { name: "Browse files Attachments", exact: true });
+    await expect.element(trigger).toHaveAttribute("id", "photo-trigger");
+    const label = page.getByText("Attachments", { exact: true }).element();
+    expect(label instanceof HTMLLabelElement && label.control).toBe(trigger.element());
+    expect(error).not.toHaveBeenCalled();
+
+    rerender(tree(true));
+    await expect.poll(() => error.mock.calls.length).toBe(1);
+    expect(error.mock.calls[0]?.[0]).toBe(
+      "FileUpload: render one FileUpload.Trigger inside a Field. The Field's label, description and error belong to one control."
+    );
+  });
+
+  it("keeps the Trigger's own aria-invalid over the Field's state, inside a Field and outside one", async () => {
+    renderThemed(
+      <>
+        <FileUpload.Root>
+          <FileUpload.Trigger aria-invalid>Outside</FileUpload.Trigger>
+        </FileUpload.Root>
+        <Field.Root invalid>
+          <Field.Label>Attachments</Field.Label>
+          <FileUpload.Root>
+            <FileUpload.Trigger aria-invalid={false}>Inside</FileUpload.Trigger>
+          </FileUpload.Root>
+        </Field.Root>
+      </>
+    );
+    await expect
+      .element(page.getByRole("button", { name: "Outside", exact: true }))
+      .toHaveAttribute("aria-invalid", "true");
+    await expect
+      .element(page.getByRole("button", { name: "Inside Attachments", exact: true }))
+      .toHaveAttribute("aria-invalid", "false");
+  });
+
+  it("describes the Trigger by its own ids, then the Field's description and error, then FileUpload.Description", async () => {
+    renderThemed(<FieldUpload invalid />);
+    await expect
+      .element(page.getByRole("button", { name: "Browse files Attachments", exact: true }))
+      .toHaveAccessibleDescription(
+        "PDF only. Add at least one file. Shared with your manager. Up to 3 files."
+      );
+  });
+
+  it("marks the Trigger aria-invalid only while the Field is invalid", async () => {
+    const { rerender } = renderThemed(<FieldUpload />);
+    const trigger = page.getByRole("button", { name: "Browse files Attachments", exact: true });
+    await expect.element(trigger).not.toHaveAttribute("aria-invalid");
+
+    rerender(<FieldUpload invalid />);
+    await expect.element(trigger).toHaveAttribute("aria-invalid", "true");
+  });
+
+  it.each([
+    ["a Button Trigger in a Dropzone", "button", "dropzone"],
+    ["a plain Trigger in a Dropzone", "plain", "dropzone"],
+    ["a Button Trigger without a Dropzone", "button", "bare"],
+  ] as const)(
+    "paints one invalid face, on the Trigger, for %s in an invalid Field",
+    async (_name, look, layout) => {
+      const tree = (invalid: boolean) => {
+        const trigger = (
+          <FileUpload.Trigger render={look === "button" ? <Button variant="outline" size="sm" /> : undefined}>
+            Browse files
+          </FileUpload.Trigger>
+        );
+        return (
+          <Field.Root invalid={invalid}>
+            <Field.Label>Attachments</Field.Label>
+            <FileUpload.Root>
+              {layout === "dropzone" ? <FileUpload.Dropzone>{trigger}</FileUpload.Dropzone> : trigger}
+            </FileUpload.Root>
+          </Field.Root>
+        );
+      };
+      const { host, rerender } = renderThemed(tree(false));
+      const trigger = roleNamed("button", "Browse files Attachments");
+      const zone = host.querySelector('[data-slot="file-upload-dropzone"]');
+      // The oracle: the same parts rendered in a valid Field, so the Dropzone's resting face is
+      // whatever its recipe paints, never a colour written here.
+      const face = (element: Element | null) => {
+        if (!isHTMLElement(element)) {
+          return null;
+        }
+        settleTransitions(element);
+        return { border: getComputedStyle(element).borderTopColor, rings: ringLayers(element) };
+      };
+      const validZone = face(zone);
+
+      rerender(tree(true));
+      await expect
+        .element(page.getByRole("button", { name: "Browse files Attachments" }))
+        .toHaveAttribute("aria-invalid", "true");
+      expectInvalidRing("Trigger", trigger);
+      expect(face(zone), "Dropzone face").toEqual(validZone);
+    }
+  );
+
+  it.each([
+    [
+      "Field.Root disabled",
+      (children: ReactElement) => (
+        <Field.Root disabled>
+          <Field.Label>Attachments</Field.Label>
+          {children}
+        </Field.Root>
+      ),
+    ],
+    ["a disabled Field.Set", (children: ReactElement) => <Field.Set disabled>{children}</Field.Set>],
+  ])("disables the FileUpload inside %s", async (_name, wrap) => {
+    const onSelect = vi.fn<(files: File[]) => void>();
+    function State(): ReactElement {
+      return <output>{useFileUpload().state.disabled ? "disabled" : "enabled"}</output>;
+    }
+    const { host } = renderThemed(
+      wrap(
+        <FileUpload.Root onSelect={onSelect}>
+          <FileUpload.Dropzone>
+            <FileUpload.Trigger>Browse files</FileUpload.Trigger>
+            <button type="button">Inside</button>
+          </FileUpload.Dropzone>
+          <State />
+        </FileUpload.Root>
+      )
+    );
+    const click = stubPicker(host);
+    const trigger = page.getByRole("button", { name: /^Browse files/u });
+    await expect.element(trigger).toBeDisabled();
+    await userEvent.click(trigger, { force: true });
+    parts(host).zone.click();
+    expect(click).not.toHaveBeenCalled();
+    expect(parts(host).zone.hasAttribute("data-disabled")).toBe(true);
+    await expect.element(page.getByRole("status")).toHaveTextContent("disabled");
+
+    roleNamed("button", "Inside").focus();
+    expect(paste(document.body, [png("a.png")]).defaultPrevented).toBe(false);
+    expect(onSelect).not.toHaveBeenCalled();
+  });
+
+  it("leaves a Trigger outside any Field unlabelled by a Field, valid and without an id", () => {
+    renderThemed(
+      <>
+        <Field.Root invalid>
+          <Field.Label>Other field</Field.Label>
+          <input aria-label="Other input" />
+        </Field.Root>
+        <Zone />
+      </>
+    );
+    const trigger = roleNamed("button", "Add files");
+    expect(trigger.hasAttribute("id")).toBe(false);
+    expect(trigger.hasAttribute("aria-labelledby")).toBe(false);
+    expect(trigger.hasAttribute("aria-invalid")).toBe(false);
   });
 });

@@ -7,6 +7,7 @@ import { FileUploadCompact } from "./demos/file-upload-compact";
 import { FileUploadLimits } from "./demos/file-upload-limits";
 import { FileUploadPicker } from "./demos/file-upload-picker";
 import { FileUploadFolders } from "./demos/file-upload-folders";
+import { FileUploadField } from "./demos/file-upload-field";
 
 import { componentMetadata } from "../../../../lib/component-page";
 
@@ -56,6 +57,18 @@ Without a Dropzone, the Trigger and the Description are a plain picker. A paste 
 
 <Prose>
 
+## In a Field
+
+Inside a `Field.Root`, the FileUpload wires to the Field the way an input does. Inside a Field, render one `FileUpload.Trigger`; the Field's label, description and error belong to it. Give it an `id` through its own `id` prop, not its `render` element, which the label does not follow. `Field.Label` names the Trigger after its own text, so this Trigger reads "Choose file Meter photo", and a click on the label opens the picker. The Trigger is described by its own `aria-describedby` ids, then by `Field.Description` and `Field.Error` in the order the Field lists them, then by each `FileUpload.Description`. An invalid Field marks the Trigger `aria-invalid`, and the Trigger alone paints the error border and ring, so the Dropzone around it keeps its dashed border. A disabled `Field.Root` or `Field.Set` disables the FileUpload. This demo marks the Field invalid when `onReject` reports a rejection, and its `Field.Error` names each `reason`: a file that is not an image, a second photo on the single-file Root, or a folder.
+
+</Prose>
+
+<Demo slug="file-upload" id="field" title="In a Field" file="file-upload-field.tsx">
+  <FileUploadField />
+</Demo>
+
+<Prose>
+
 ## Folder uploads
 
 `directory` makes the picker choose folders, and a dropped folder expands into the files inside it, at any depth. Each file's `webkitRelativePath` holds its path inside the folder, such as `photos/2024/meter.jpg`, for a dropped folder as for a picked one.
@@ -80,6 +93,7 @@ A paste adds its files while focus is anywhere inside the Root, such as on the T
 
 - **Keep a Trigger.** The Dropzone's drop and click work by pointer only. The Trigger is the keyboard path to the picker.
 - **Describe the limits.** Put what the Root takes in `FileUpload.Description`, such as "Images or PDFs, up to 3 files of 5 MB each". It describes every Trigger in the Root.
+- **Label it with a Field.** A `Field.Label` adds the field's name to the Trigger's own text, and `Field.Error` describes the Trigger while the Field is invalid.
 - **Say what was rejected.** `onReject` reports each file and the reason. Show it in words, for example in an [Alert](/components/alert), which announces itself.
 
 </Prose>
