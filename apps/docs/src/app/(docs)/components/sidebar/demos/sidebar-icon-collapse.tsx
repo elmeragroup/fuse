@@ -13,9 +13,9 @@ const NAV = [
 
 export function SidebarIconCollapse() {
   return (
-    <div className="relative h-[24rem] w-full overflow-hidden rounded-lg border border-border contain-paint">
-      <Sidebar.Provider defaultOpen={false} className="min-h-full">
-        <Sidebar.Root collapsible="icon" className="h-full">
+    <div className="relative h-[24rem] w-full overflow-hidden rounded-lg border border-border">
+      <Sidebar.Provider bounds="container" defaultOpen={false}>
+        <Sidebar.Root collapsible="icon">
           <Sidebar.Content>
             <Sidebar.Group>
               <Sidebar.GroupLabel>Navigation</Sidebar.GroupLabel>

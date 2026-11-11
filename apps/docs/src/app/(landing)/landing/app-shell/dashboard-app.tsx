@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState } from "react";
-import type { Dispatch, ReactElement, RefObject, SetStateAction } from "react";
+import type { ReactElement, RefObject } from "react";
 
 import { tv } from "tailwind-variants";
 
@@ -25,11 +25,10 @@ import { NewOrderSheet } from "./new-order-sheet";
 
 const dashboardApp = tv({
   slots: {
-    // The scope is the app's containing block: `transform` makes the Sidebar's fixed rail,
-    // every Sheet, Dialog and the toast viewport position against the window, not the viewport.
+    // The scope is the app's containing block: `transform` makes every Sheet, Dialog and the
+    // toast viewport position against the window, not the viewport.
     // `overflow-clip`, not `overflow-hidden`: a hidden box still scrolls when focus or a popup
     // reaches past its edge, and fixed overlays inside it then scroll with it, short of its edges.
-    provider: "h-full min-h-0",
     scope: "relative h-full transform-gpu overflow-clip bg-background text-foreground",
   },
 });
@@ -55,14 +54,13 @@ function moveRowFocus(scope: HTMLElement, by: 1 | -1): void {
 
 type ShellProps = {
   scope: RefObject<HTMLDivElement | null>;
-  setOpen: Dispatch<SetStateAction<boolean>>;
 };
 
 /**
  * Everything inside the Sidebar provider: the state, the clock, the toasts, the overlays and
  * the keyboard map, provided to every part through `DashboardContext`.
  */
-function DashboardShell({ scope, setOpen }: ShellProps): ReactElement {
+function DashboardShell({ scope }: ShellProps): ReactElement {
   const [state, dispatch] = useReducer(reduce, undefined, initialState);
   const [loading, setLoading] = useState(false);
   const [detailOpen, setDetailOpen] = useSideOverlay(false);
@@ -74,7 +72,7 @@ function DashboardShell({ scope, setOpen }: ShellProps): ReactElement {
   const invoker = useRef<HTMLElement | null>(null);
   const palettePopup = useRef<HTMLDivElement>(null);
   const toasts = Toast.useToastManager();
-  const { isMobile, setOpenMobile } = useSidebar();
+  const { setOpenMobile, toggleSidebar } = useSidebar();
 
   useEffect(() => {
     mountedAt.current = Date.now();
@@ -89,14 +87,6 @@ function DashboardShell({ scope, setOpen }: ShellProps): ReactElement {
       setOpenMobile(false);
     }
   }, [shown, setOpenMobile]);
-
-  const toggleSidebar = useCallback(() => {
-    if (isMobile) {
-      setOpenMobile((open) => !open);
-      return;
-    }
-    setOpen((open) => !open);
-  }, [isMobile, setOpenMobile, setOpen]);
 
   const fetchList = useCallback(() => {
     setOpenMobile(false);
@@ -196,26 +186,6 @@ function DashboardShell({ scope, setOpen }: ShellProps): ReactElement {
     ]
   );
 
-  // Sidebar.Provider toggles on ⌘B from anywhere on the page and writes the host's
-  // `sidebar:state` cookie. The demo stops the key before it reaches the provider, and toggles
-  // its own in-memory rail only while focus is inside the window.
-  useEffect(() => {
-    const onKey = (event: globalThis.KeyboardEvent) => {
-      if (event.key.toLowerCase() !== "b" || !(event.metaKey || event.ctrlKey)) {
-        return;
-      }
-      event.stopPropagation();
-      if (scope.current?.contains(document.activeElement) === true) {
-        event.preventDefault();
-        toggleSidebar();
-      }
-    };
-    window.addEventListener("keydown", onKey, { capture: true });
-    return () => {
-      window.removeEventListener("keydown", onKey, { capture: true });
-    };
-  }, [scope, toggleSidebar]);
-
   // Single-key shortcuts are wired on the scope element, so they only ever fire while focus is
   // inside the window and the rest of the landing keeps its keys. ⌘K and Ctrl+K open the site's
   // palette from anywhere, so this window's palette opens from its buttons and `/`.
@@ -294,8 +264,6 @@ function DashboardShell({ scope, setOpen }: ShellProps): ReactElement {
  */
 export function DashboardApp(): ReactElement {
   const { theme } = useLandingTheme();
-  // The rail's open state lives here, in memory, never in the host's sidebar cookie.
-  const [open, setOpenState] = useState(true);
   const scope = useRef<HTMLDivElement>(null);
 
   return (
@@ -307,8 +275,10 @@ export function DashboardApp(): ReactElement {
       {...densityAttributes("dense")}>
       <Tooltip.Provider>
         <Toast.Provider>
-          <Sidebar.Provider open={open} onOpenChange={setOpenState} className={styles.provider()}>
-            <DashboardShell scope={scope} setOpen={setOpenState} />
+          {/* Bounded by the window: the rail fills it, its open state stays in memory and out of
+              the host's cookie, and ⌘B toggles it only from inside. */}
+          <Sidebar.Provider bounds="container">
+            <DashboardShell scope={scope} />
           </Sidebar.Provider>
           <Toast.Viewport aria-label="Dashboard notifications" />
         </Toast.Provider>

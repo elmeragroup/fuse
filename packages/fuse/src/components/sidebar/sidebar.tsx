@@ -1,6 +1,12 @@
 "use client";
 
-import type { ComponentProps, Dispatch, ReactElement, SetStateAction } from "react";
+import type {
+  ComponentProps,
+  Dispatch,
+  KeyboardEvent as ReactKeyboardEvent,
+  ReactElement,
+  SetStateAction,
+} from "react";
 import {
   createContext,
   use,
@@ -65,6 +71,7 @@ import {
   sidebarRailClass,
   sidebarSectionClass,
   sidebarSeparatorClass,
+  sidebarContainedWrapperClass,
   sidebarTriggerClass,
   sidebarWrapperClass,
 } from "./sidebar-class";
@@ -117,7 +124,10 @@ export type SidebarContextValue = {
   state: "expanded" | "collapsed";
   /** Desktop open state — controlled or internal. */
   open: boolean;
-  /** Writes the cookie on every call, controlled or not; accepts a boolean or an updater. */
+  /**
+   * Accepts a boolean or an updater. At `bounds="page"` it writes the cookie on every call,
+   * controlled or not; at `bounds="container"` it never does.
+   */
   setOpen: (open: boolean | ((open: boolean) => boolean)) => void;
   /** Mobile Sheet state; session-only, never cookie-persisted. */
   openMobile: boolean;
@@ -136,9 +146,18 @@ export type SidebarLabels = {
   description: string;
 };
 
+/**
+ * What a Sidebar lives in. `page` is the document's own app frame: the viewport bounds it, the
+ * cookie persists it and ⌘B toggles it from anywhere. `container` is a box inside a page, such as
+ * an embedded app pane or a demo: the box bounds it, the host owns persistence and ⌘B toggles it
+ * only from inside.
+ */
+export type SidebarBounds = "page" | "container";
+
 type SidebarInternalContextValue = {
   value: SidebarContextValue;
   labels: SidebarLabels;
+  bounds: SidebarBounds;
 };
 
 const SidebarContext = createContext<SidebarInternalContextValue | null>(null);
@@ -171,10 +190,21 @@ export type SidebarProviderProps = ComponentProps<"div"> & {
   /** Controlled open state. */
   open?: boolean;
   /**
-   * Controlled setter. When provided, internal state is bypassed but the cookie is still
-   * written on every change.
+   * Controlled setter. When provided, internal state is bypassed; at `bounds="page"` the cookie
+   * is still written on every change.
    */
   onOpenChange?: (open: boolean) => void;
+  /**
+   * What bounds the Sidebar. `page` fills at least the viewport's height, fixes the desktop rail
+   * to the viewport, writes the open state to the `sidebar:state` cookie and toggles on ⌘B or
+   * Ctrl+B from anywhere in the document. `container` fills its container's height, which the
+   * host must define, keeps the rail inside it, writes no cookie, so a host that wants the state
+   * kept passes `open` and `onOpenChange`, and toggles on the shortcut only from a keydown inside
+   * the Provider's React tree. An `Inset` taller than the container is clipped, so the host
+   * scrolls the inset's own content. The mobile Sheet still follows the viewport's width.
+   * @default "page"
+   */
+  bounds?: SidebarBounds;
   /**
    * Copy overrides for the Trigger/Rail label and the mobile Sheet's sr-only title and
    * description. Defaults to the locale dictionary (`sidebar.*`).
@@ -185,15 +215,20 @@ export type SidebarProviderProps = ComponentProps<"div"> & {
 /**
  * Owns the open state, persists it to the `sidebar:state` cookie and toggles it on the keyboard
  * shortcut: ⌘B on Apple platforms and Ctrl+B elsewhere. The shortcut stands aside for a keydown
- * another handler already prevented, one mid-composition and one typed into a text field.
+ * another handler already prevented, one mid-composition and one typed into a text field. With
+ * `bounds="container"` it lives in a bounded box instead of the page: it neither persists the
+ * state nor hears the shortcut from outside its own tree. A contained Sidebar inside a page one
+ * takes ⌘B from inside itself first, so the page Sidebar keeps it from everywhere else.
  */
 export function SidebarProvider({
   defaultOpen = true,
   open: openProp,
   onOpenChange: setOpenProp,
   labels: labelsProp,
+  bounds = "page",
   className,
   style,
+  onKeyDown,
   children,
   ...props
 }: SidebarProviderProps): ReactElement {
@@ -206,9 +241,9 @@ export function SidebarProvider({
 
   // Stable handlers read only committed props and responsive state. Suspended or
   // abandoned renders must not change how the visible controls behave.
-  const latest = useRef({ open, isMobile, setOpenProp });
+  const latest = useRef({ open, isMobile, setOpenProp, bounds });
   useLayoutEffect(() => {
-    latest.current = { open, isMobile, setOpenProp };
+    latest.current = { open, isMobile, setOpenProp, bounds };
   });
   const pendingOpen = useRef<boolean | undefined>(undefined);
 
@@ -231,7 +266,10 @@ export function SidebarProvider({
       setInternalOpen(openState);
     }
 
-    document.cookie = `${SIDEBAR_COOKIE_NAME}=${openState}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`;
+    // The cookie is the page's: a contained Sidebar's state belongs to its host.
+    if (latest.current.bounds === "page") {
+      document.cookie = `${SIDEBAR_COOKIE_NAME}=${openState}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`;
+    }
   }, []);
 
   const toggleSidebar = useCallback(() => {
@@ -243,6 +281,9 @@ export function SidebarProvider({
   }, [setOpen]);
 
   useEffect(() => {
+    if (bounds !== "page") {
+      return;
+    }
     const handleKeyDown = (event: KeyboardEvent) => {
       if (isSidebarShortcut(event)) {
         event.preventDefault();
@@ -255,7 +296,18 @@ export function SidebarProvider({
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [toggleSidebar]);
+  }, [bounds, toggleSidebar]);
+
+  // A contained Sidebar hears the shortcut on its wrapper, as React bubbles it: from its own
+  // descendants and from overlays it portals, such as its mobile Sheet, and never from the rest
+  // of the page. The caller's handler runs first and may prevent it.
+  const handleContainedKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
+    onKeyDown?.(event);
+    if (bounds === "container" && isSidebarShortcut(event.nativeEvent)) {
+      event.preventDefault();
+      toggleSidebar();
+    }
+  };
 
   const state = open ? "expanded" : "collapsed";
 
@@ -267,12 +319,25 @@ export function SidebarProvider({
     () => ({
       value: { state, open, setOpen, isMobile, openMobile, setOpenMobile, toggleSidebar },
       labels: { toggle: toggleLabel, title: titleLabel, description: descriptionLabel },
+      bounds,
     }),
-    [state, open, setOpen, isMobile, openMobile, toggleSidebar, toggleLabel, titleLabel, descriptionLabel]
+    [
+      state,
+      open,
+      setOpen,
+      isMobile,
+      openMobile,
+      toggleSidebar,
+      toggleLabel,
+      titleLabel,
+      descriptionLabel,
+      bounds,
+    ]
   );
 
   return (
     <SidebarContext.Provider value={contextValue}>
+      {/* oxlint-disable-next-line jsx-a11y/no-static-element-interactions -- the wrapper takes no focus; its keydown handler hears the shortcut bubbling from descendants */}
       <div
         data-slot="sidebar-wrapper"
         style={{
@@ -280,7 +345,8 @@ export function SidebarProvider({
           "--sidebar-width-icon": SIDEBAR_WIDTH_ICON,
           ...style,
         }}
-        className={cn(sidebarWrapperClass, className)}
+        className={cn(bounds === "page" ? sidebarWrapperClass : sidebarContainedWrapperClass, className)}
+        onKeyDown={handleContainedKeyDown}
         {...props}>
         {children}
       </div>
@@ -316,7 +382,8 @@ export type SidebarRootProps = ComponentProps<"div"> & {
 /**
  * The sidebar surface. Its element props (`id`, `aria-*`, `data-*`, handlers, `style`)
  * land on a different element per branch:
- * - desktop: the fixed `sidebar-container`;
+ * - desktop: the `sidebar-container`, fixed to the viewport or, under a
+ *   `bounds="container"` Provider, positioned in the Provider's box;
  * - mobile: the sheet dialog, with `style` merged over the mobile `--sidebar-width`, so a
  *   caller's `style` can override the width;
  * - `collapsible="none"`: the static root div.
@@ -331,9 +398,9 @@ export function SidebarRoot({
   dir,
   ...props
 }: SidebarRootProps): ReactElement {
-  const { value, labels } = useSidebarInternal();
+  const { value, labels, bounds } = useSidebarInternal();
   const { isMobile, state, openMobile, setOpenMobile } = value;
-  const panel = sidebarPanelVariants({ variant });
+  const panel = sidebarPanelVariants({ variant, bounds });
 
   if (collapsible === "none") {
     // Funnel deviation from the shadcn template: the inset wizard dialogs

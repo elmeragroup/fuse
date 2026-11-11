@@ -19,7 +19,7 @@ import {
 import { DESCRIPTION_COPY, TITLE_COPY, TOGGLE_COPY } from "../../../test/sidebar-contract";
 import { px, renderThemed, roleNamed, stampDensity } from "../../../test/themed-browser-render";
 import { Sidebar } from "./index";
-import type { SidebarContextValue } from "./sidebar";
+import type { SidebarContextValue, SidebarProviderProps } from "./sidebar";
 
 setupSidebarBrowser();
 
@@ -289,6 +289,111 @@ describe("Sidebar cookie persistence", () => {
     expect(onOpenChange).toHaveBeenCalledWith(false);
     expect(writes).toEqual(["sidebar:state=false; path=/; max-age=604800"]);
     expect(sidebarRoot().getAttribute("data-state"), "controlled open wins over the click").toBe("expanded");
+  });
+});
+
+describe("Sidebar in a bounded container", () => {
+  withoutShellMotion();
+
+  /** The host's box, written out by hand: 400px tall, 120px down and 300px in from the page. */
+  const BOX = { top: 120, left: 300, height: 400 } as const;
+
+  /** A page with a control before the box and a contained Sidebar filling the box. */
+  function Bounded({ provider }: { provider?: Partial<SidebarProviderProps> }) {
+    return (
+      <>
+        <button type="button">Outside</button>
+        <div
+          role="region"
+          aria-label="Pane"
+          style={{ position: "absolute", top: BOX.top, left: BOX.left, width: 600, height: BOX.height }}>
+          <Frame provider={{ bounds: "container", ...provider }} />
+        </div>
+      </>
+    );
+  }
+
+  function railBox(): DOMRect {
+    return bySlot("sidebar-container").getBoundingClientRect();
+  }
+
+  it("fills the box, not the viewport, and keeps the collapsed rail inside it", async () => {
+    renderThemed(<Bounded />);
+    const pane = roleNamed("region", "Pane").getBoundingClientRect();
+    expect(bySlot("sidebar-wrapper").getBoundingClientRect().height).toBe(BOX.height);
+    expect({ top: railBox().top, left: railBox().left, height: railBox().height }).toEqual({
+      top: pane.top,
+      left: pane.left,
+      height: BOX.height,
+    });
+
+    await userEvent.click(roleNamed("button", "Toggle sidebar"));
+    await expect.poll(() => railBox().right).toBe(pane.left);
+    // The offcanvas rail slid past the box's start edge; the box clips it, so the page beside
+    // the box is what a pointer there reaches.
+    const hit = document.elementFromPoint(pane.left - 50, pane.top + BOX.height / 2);
+    expect(bySlot("sidebar-wrapper").contains(hit)).toBe(false);
+  });
+
+  it("keeps the open state in memory and writes no cookie, controlled or not", async () => {
+    renderThemed(<Bounded />);
+    const uncontrolled = await captureCookieWrites(async () => {
+      await userEvent.click(roleNamed("button", "Toggle sidebar"));
+      expect(sidebarRoot().getAttribute("data-state")).toBe("collapsed");
+      await userEvent.click(roleNamed("button", "Toggle sidebar"));
+      expect(sidebarRoot().getAttribute("data-state")).toBe("expanded");
+    });
+    expect(uncontrolled).toEqual([]);
+  });
+
+  it("writes no cookie when controlled and reports the change through onOpenChange", async () => {
+    const onOpenChange = vi.fn();
+    renderThemed(<Bounded provider={{ open: true, onOpenChange }} />);
+    const writes = await captureCookieWrites(async () => {
+      await userEvent.click(roleNamed("button", "Toggle sidebar"));
+    });
+    expect(onOpenChange).toHaveBeenCalledExactlyOnceWith(false);
+    expect(writes).toEqual([]);
+  });
+
+  it("toggles on ⌘B only from inside its own tree", async () => {
+    renderThemed(<Bounded />);
+    roleNamed("button", "Outside").focus();
+    await userEvent.keyboard("{Meta>}b{/Meta}");
+    expect(sidebarRoot().getAttribute("data-state")).toBe("expanded");
+    expect((await pressB({ metaKey: true })).defaultPrevented).toBe(false);
+    expect(sidebarRoot().getAttribute("data-state")).toBe("expanded");
+
+    roleNamed("button", "After").focus();
+    await userEvent.keyboard("{Meta>}b{/Meta}");
+    expect(sidebarRoot().getAttribute("data-state")).toBe("collapsed");
+    const inside = await pressB({ metaKey: true }, roleNamed("button", "After"));
+    expect(inside.defaultPrevented).toBe(true);
+    expect(sidebarRoot().getAttribute("data-state")).toBe("expanded");
+  });
+
+  it("takes ⌘B inside itself and leaves it to the page Sidebar everywhere else", async () => {
+    renderThemed(
+      <Frame
+        probe={
+          <div style={{ height: 300 }}>
+            <Frame provider={{ bounds: "container", labels: { toggle: "Pane menu" } }} />
+          </div>
+        }
+      />
+    );
+    const pageRoot = () => railNamed("Toggle sidebar").closest("[data-state]");
+    const paneRoot = () => railNamed("Pane menu").closest("[data-state]");
+
+    roleNamed("button", "Pane menu").focus();
+    await userEvent.keyboard("{Meta>}b{/Meta}");
+    expect(paneRoot()?.getAttribute("data-state")).toBe("collapsed");
+    expect(pageRoot()?.getAttribute("data-state")).toBe("expanded");
+
+    roleNamed("button", "Toggle sidebar").focus();
+    await userEvent.keyboard("{Meta>}b{/Meta}");
+    expect(pageRoot()?.getAttribute("data-state")).toBe("collapsed");
+    expect(paneRoot()?.getAttribute("data-state")).toBe("collapsed");
   });
 });
 

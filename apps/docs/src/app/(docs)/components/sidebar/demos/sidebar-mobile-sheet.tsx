@@ -16,9 +16,9 @@ function ViewportNote() {
 
 export function SidebarMobileSheet() {
   return (
-    <div className="relative h-[20rem] w-full overflow-hidden rounded-lg border border-border contain-paint">
-      <Sidebar.Provider className="min-h-full">
-        <Sidebar.Root className="h-full">
+    <div className="relative h-[20rem] w-full overflow-hidden rounded-lg border border-border">
+      <Sidebar.Provider bounds="container">
+        <Sidebar.Root>
           <Sidebar.Content>
             <Sidebar.Group>
               <Sidebar.GroupLabel>Navigation</Sidebar.GroupLabel>

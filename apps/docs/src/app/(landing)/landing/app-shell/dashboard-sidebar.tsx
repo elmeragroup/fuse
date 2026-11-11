@@ -24,8 +24,6 @@ import { Kbd } from "./kbd";
 
 const dashboardSidebar = tv({
   slots: {
-    // The rail sits inside the window, not the viewport: the window is its containing block.
-    root: "h-full",
     workspaceMark:
       "flex size-8 shrink-0 items-center justify-center rounded-md bg-sidebar-brand text-sidebar-brand-foreground",
     // A step up from the 16px menu icon, so the mark carries the tile as an app icon does.
@@ -214,7 +212,7 @@ function SellerMenu(): ReactElement {
  */
 export function DashboardSidebar(): ReactElement {
   return (
-    <Sidebar.Root collapsible="icon" variant="inset" className={styles.root()}>
+    <Sidebar.Root collapsible="icon" variant="inset">
       <Sidebar.Header>
         <WorkspaceSwitcher />
         <QuickActions />

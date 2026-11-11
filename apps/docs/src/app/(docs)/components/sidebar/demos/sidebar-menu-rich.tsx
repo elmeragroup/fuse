@@ -6,9 +6,9 @@ import { Sidebar } from "@elmeragroup/fuse/sidebar";
 
 export function SidebarMenuRich() {
   return (
-    <div className="relative h-[30rem] w-full overflow-hidden rounded-lg border border-border contain-paint">
-      <Sidebar.Provider className="min-h-full">
-        <Sidebar.Root className="h-full">
+    <div className="relative h-[30rem] w-full overflow-hidden rounded-lg border border-border">
+      <Sidebar.Provider bounds="container">
+        <Sidebar.Root>
           <Sidebar.Content>
             <Sidebar.Group>
               <Sidebar.GroupLabel>Sales</Sidebar.GroupLabel>
