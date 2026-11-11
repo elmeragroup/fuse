@@ -31,8 +31,8 @@ What now follows density:
 
 - **Rows.**
   - Menu, Select, Combobox, NavigationMenu content and default Sidebar rows read the row metrics.
-  - `Table` and `DataTable` heads and cells, `VerticalTable` keys and values, `GridList` rows,
-    `DescriptionList` terms and details, `Sidebar.Input` and `Combobox.Empty` follow too.
+  - `Table` and `DataTable` heads and cells, `VerticalTable` keys and values, `DescriptionList`
+    terms and details, `Sidebar.Input` and `Combobox.Empty` follow too.
   - In a Frame, a table's first and last cells keep their 2px extra edge inset over `--row-px`.
 - **Item.**
   - `default` pads every side with `--surface-pad-md` and gaps its parts by `--surface-gap-md`.
@@ -97,7 +97,6 @@ Dense moves:
   - A head inside a Frame is 40px (was 36px).
   - A row with an `icon-sm` button, such as DataTable's row actions, is 44px (was 48px).
   - A framed body row is 32px including its rule (was 33px).
-- A one-line `GridList` row is 32px (was 28px).
 - `Combobox.Empty` pads 6px on the block axis (was 8px) and 8px inline (was 0).
 - `DescriptionList` terms and details pad 6px on the block axis (was 8px).
 - A one-line `VerticalTable` row is 33px (was 37px).

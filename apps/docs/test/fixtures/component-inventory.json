@@ -490,11 +490,6 @@
       "frame-key-value-table.tsx"
     ]
   },
-  "grid-list": {
-    "title": "Grid List",
-    "rsc": "client",
-    "demos": ["grid-list-selection.tsx", "grid-list-empty.tsx"]
-  },
   "heading": {
     "title": "Heading",
     "rsc": "client",

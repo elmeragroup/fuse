@@ -41,8 +41,8 @@ import { ariaInvalidFocusRingClass, dataInvalidFocusRingClass, withinInvalidFocu
  * A control composes every target its state can arrive through. Button, for example, is a
  * native button and a Base UI root at once, so it takes the `native` and `data` targets.
  *
- * The face covers whole controls only. Parts (calendar cells, date segments, the
- * search-field icon, labels that dim beside their control) keep their own muted text colour
+ * The face covers whole controls only. Parts (calendar cells, date segments, labels that dim
+ * beside their control) keep their own muted text colour
  * and are not state faces.
  */
 

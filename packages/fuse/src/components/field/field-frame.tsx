@@ -97,6 +97,16 @@ export type FieldFrameProps = {
    * the card, which pads with the surface metrics, so the density-role table keys it on this.
    */
   variant?: "card" | "inline";
+  /**
+   * The root's `data-slot`, for a composite that is a part of its own, such as SearchField's
+   * `search-field`. Omitted, the root keeps `Field.Root`'s `field`.
+   */
+  slot?: string;
+  /**
+   * Marks the root `data-empty` while the composite's value is empty, as SearchField does to hide
+   * its clear button.
+   */
+  isEmpty?: boolean;
   /** Forwarded to `Field.Root`. */
   invalid?: boolean;
   /** Forwarded to `Field.Root`. */
@@ -135,6 +145,8 @@ export function FieldFrame({
   isErrorMessageAlwaysShown = true,
   isDescriptionBeside = false,
   variant,
+  slot,
+  isEmpty = false,
   invalid,
   disabled,
   name,
@@ -236,7 +248,14 @@ export function FieldFrame({
 
   return (
     <FieldRoot
-      {...definedProps({ "data-variant": variant, name, invalid, disabled })}
+      {...definedProps({
+        "data-variant": variant,
+        "data-slot": slot,
+        "data-empty": isEmpty ? "" : undefined,
+        name,
+        invalid,
+        disabled,
+      })}
       className={cn(heading === "label" ? fieldFrameRootClass : null, className)}>
       {heading === "legend" ? <FieldSet>{framed}</FieldSet> : framed}
     </FieldRoot>

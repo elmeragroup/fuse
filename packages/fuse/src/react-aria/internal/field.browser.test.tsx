@@ -9,7 +9,6 @@ import { renderThemed, roleNamed } from "../../../test/themed-browser-render";
 import { DateField } from "../date-field/date-field";
 import { DatePicker } from "../date-picker/date-picker";
 import { DateRangePicker } from "../date-range-picker/date-range-picker";
-import { SearchField } from "../search-field/search-field";
 import { UiProviders } from "../ui-providers/ui-providers";
 
 const ERROR = "Enter a value.";
@@ -49,13 +48,6 @@ const PLACED: ReadonlyArray<{
       <DateRangePicker label="Due" description={DESCRIPTION} isInvalid={isInvalid} errorMessage={ERROR} />
     ),
     box: () => roleNamed("group", "Due"),
-  },
-  {
-    name: "SearchField",
-    field: (isInvalid) => (
-      <SearchField label="Due" description={DESCRIPTION} isInvalid={isInvalid} errorMessage={ERROR} />
-    ),
-    box: () => roleNamed("searchbox", "Due"),
   },
 ];
 

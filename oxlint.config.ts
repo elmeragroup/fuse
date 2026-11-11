@@ -490,17 +490,6 @@ export default defineConfig({
       },
     },
     {
-      files: ["packages/fuse/src/react-aria/grid-list/grid-list.tsx"],
-      rules: {
-        "shadcn/no-inline-styles": [
-          "error",
-          {
-            allow: ["pointerEvents"],
-          },
-        ],
-      },
-    },
-    {
       files: [
         "packages/fuse/src/icons/**",
         "packages/fuse/src/illustrations/**",

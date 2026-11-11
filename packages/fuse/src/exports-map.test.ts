@@ -157,6 +157,7 @@ const EXPECTED_ENTRIES = {
     ],
   },
   "scroll-area": { inRootBarrel: true, runtimeExports: ["ScrollArea"] },
+  "search-field": { inRootBarrel: true, runtimeExports: ["SearchField"] },
   select: { inRootBarrel: true, runtimeExports: ["Select"] },
   "selection-item": { inRootBarrel: true, runtimeExports: ["SelectionItem"] },
   separator: { inRootBarrel: true, runtimeExports: ["Separator"] },
@@ -250,9 +251,7 @@ const EXPECTED_ENTRIES = {
     runtimeExports: ["DateRangePicker", "DateRangePickerPresetGroup", "DateRangePickerPresetItem"],
   },
   "react-aria/focusable": { inRootBarrel: false, runtimeExports: ["Focusable", "useFocusable"] },
-  "react-aria/grid-list": { inRootBarrel: false, runtimeExports: ["GridList", "GridListItem"] },
   "react-aria/range-calendar": { inRootBarrel: false, runtimeExports: ["RangeCalendar"] },
-  "react-aria/search-field": { inRootBarrel: false, runtimeExports: ["SearchField"] },
   "react-aria/ui-providers": { inRootBarrel: false, runtimeExports: ["UiProviders"] },
 } satisfies Record<string, EntrySurface>;
 

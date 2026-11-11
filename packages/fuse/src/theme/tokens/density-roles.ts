@@ -453,7 +453,6 @@ export const PART_DENSITY = {
   "field-separator": "fixed",
   "field-separator-content": "fixed",
   "field-error": "label",
-  "field-input": "control",
 
   "file-trigger": "control",
   "file-upload": "surface",
@@ -575,6 +574,9 @@ export const PART_DENSITY = {
   "scroll-area-content": "fixed",
   "scroll-area-scrollbar": "fixed",
   "scroll-area-thumb": "fixed",
+
+  // Stacks its label, field box, error and description 4px apart, as a vertical `Field.Root` does.
+  "search-field": "layout",
 
   "select-trigger": "control",
   "select-value": "layout",
@@ -734,8 +736,6 @@ export const PART_DENSITY = {
   "date-picker-preset-item": "row",
   "date-range-picker-preset-group": "surface",
   "date-range-picker-preset-item": "row",
-  "grid-list": "layout",
-  "grid-list-item": "row",
   "data-table-filter-bar": "layout",
   "data-table-filter-bar-row": "surface",
   "data-table-filter-trigger": "control",

@@ -7,12 +7,11 @@ import { tv } from "tailwind-variants";
 import { Accordion } from "@elmeragroup/fuse/accordion";
 import { Button } from "@elmeragroup/fuse/button";
 import { Card } from "@elmeragroup/fuse/card";
+import { DescriptionList } from "@elmeragroup/fuse/description-list";
 import { Dialog } from "@elmeragroup/fuse/dialog";
 import { Field } from "@elmeragroup/fuse/field";
 import { Heading } from "@elmeragroup/fuse/heading";
 import { Gear, MagnifyingGlass, Plus } from "@elmeragroup/fuse/icons";
-import { GridList, GridListItem } from "@elmeragroup/fuse/react-aria/grid-list";
-import { UiProviders } from "@elmeragroup/fuse/react-aria/ui-providers";
 import { Select } from "@elmeragroup/fuse/select";
 import { Switch } from "@elmeragroup/fuse/switch";
 import { Table } from "@elmeragroup/fuse/table";
@@ -31,14 +30,17 @@ const styles = twinBoard();
 
 const LANGUAGES = { en: "English", nb: "Norsk", sv: "Svenska" } as const;
 
+const METERS = [
+  { city: "Oslo", number: "735999123" },
+  { city: "Bergen", number: "735999456" },
+  { city: "Trondheim", number: "735999789" },
+] as const;
+
 const ORDERS = [
   { id: "#1042", status: "Active", amount: "NOK 1 240" },
   { id: "#1043", status: "Pending", amount: "NOK 890" },
   { id: "#1044", status: "Paid", amount: "NOK 2 110" },
 ] as const;
-
-/** The navigator has no route; the list only selects. */
-const navigate = (): undefined => undefined;
 
 /**
  * The Density page's composition: a settings Card, a list of rows, a Table, a toolbar of Buttons
@@ -87,13 +89,16 @@ export function TwinBoard(): ReactElement {
         <Heading level={3} size="sm">
           Meters
         </Heading>
-        <UiProviders locale="en-US" navigate={navigate}>
-          <GridList aria-label="Meters" selectionMode="single" defaultSelectedKeys={["oslo"]}>
-            <GridListItem id="oslo">Oslo meter 735999123</GridListItem>
-            <GridListItem id="bergen">Bergen meter 735999456</GridListItem>
-            <GridListItem id="trondheim">Trondheim meter 735999789</GridListItem>
-          </GridList>
-        </UiProviders>
+        <DescriptionList.Root>
+          <DescriptionList.Content>
+            {METERS.map((meter) => (
+              <DescriptionList.Item key={meter.city}>
+                <DescriptionList.Term>{meter.city}</DescriptionList.Term>
+                <DescriptionList.Details>{meter.number}</DescriptionList.Details>
+              </DescriptionList.Item>
+            ))}
+          </DescriptionList.Content>
+        </DescriptionList.Root>
       </div>
       {/* Layout only: the anchor holds the table and its scroll container, both parts. */}
       <div data-twin-id="orders">

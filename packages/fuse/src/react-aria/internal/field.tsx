@@ -6,7 +6,6 @@ import type { ComponentProps, ReactElement } from "react";
 import {
   FieldError as AriaFieldError,
   Group as AriaGroup,
-  Input as AriaInput,
   Label as AriaLabel,
   Text as AriaText,
   composeRenderProps,
@@ -14,7 +13,7 @@ import {
 
 import { cn } from "../../styles/cn";
 import { fieldBoxChromeClass } from "../../styles/field-box";
-import { fieldEntryClass, fieldReads, fieldSize } from "../../styles/field-size";
+import { fieldReads, fieldSize } from "../../styles/field-size";
 import type { FieldSize } from "../../styles/field-size";
 import { labelTypeClass } from "../../styles/label-type";
 import { racDisabledStateFaceClass, racInvalidStateFaceClass } from "../../styles/state-face";
@@ -127,28 +126,6 @@ export function Label({ className, ...props }: LabelProps): ReactElement {
   );
 }
 
-export type InputProps = ComponentProps<typeof AriaInput>;
-
-export function Input({ className, ...props }: InputProps): ReactElement {
-  return (
-    <AriaInput
-      data-slot="field-input"
-      className={composeTailwindRenderProps(
-        className,
-        // The FieldGroup owns the surface (bg-card), so the inner control never
-        // paints a second one — that is what keeps the read-only `bg-muted` fill honest.
-        cn(
-          "min-w-0 flex-1 bg-transparent",
-          fieldEntryClass,
-          // oxlint-disable-next-line elmera/no-local-focus-ring -- within-adapter control outline
-          "text-foreground outline-none placeholder:text-muted-foreground disabled:text-muted-foreground"
-        )
-      )}
-      {...props}
-    />
-  );
-}
-
 export type DescriptionProps = ComponentProps<typeof AriaText>;
 
 export function Description({ className, ...props }: DescriptionProps): ReactElement {
@@ -182,6 +159,5 @@ export function FieldError({ className, ...props }: FieldErrorProps): ReactEleme
 
 FieldGroup.displayName = "ReactAriaInternal.FieldGroup";
 Label.displayName = "ReactAriaInternal.Label";
-Input.displayName = "ReactAriaInternal.Input";
 Description.displayName = "ReactAriaInternal.Description";
 FieldError.displayName = "ReactAriaInternal.FieldError";
