@@ -7,6 +7,8 @@ import type {
   DatePickerValidationError,
   DatePickerValueChangeReason,
 } from "@elmeragroup/fuse/date-picker";
+import { DateRangePicker } from "@elmeragroup/fuse/date-range-picker";
+import type { DateRangePickerValueChangeReason } from "@elmeragroup/fuse/date-range-picker";
 
 // Hand-written kinds, the table `madeKind` in temporal/temporal-value.ts follows at runtime: a
 // value or default value names the kind; without one, granularity "day" or none makes a PlainDate
@@ -207,6 +209,31 @@ test("DatePicker.Root passes cancelable details with its reasons", () => {
   const _input = <DatePicker.Input value={Temporal.PlainDate.from("2026-10-05")} />;
   // @ts-expect-error a preset item needs its key
   const _preset = <DatePicker.PresetItem>Today</DatePicker.PresetItem>;
+});
+
+test("a preset's dateValue is a Temporal value or a range, and reports a preset-press", () => {
+  expectTypeOf<"preset-press">().toExtend<DatePickerValueChangeReason>();
+  expectTypeOf<"preset-press">().toExtend<DateRangePickerValueChangeReason>();
+  const _date = (
+    <DatePicker.PresetItem value="today" dateValue={Temporal.PlainDate.from("2026-10-05")}>
+      Today
+    </DatePicker.PresetItem>
+  );
+  const _range = (
+    <DatePicker.PresetItem value="week" dateValue={{ start: LOCAL, end: LOCAL }}>
+      This week
+    </DatePicker.PresetItem>
+  );
+  // @ts-expect-error ISO text is no Temporal value
+  const _text = <DatePicker.PresetItem value="today" dateValue="2026-10-05" />;
+});
+
+test("the time inputs take the input's presentation props, never a value", () => {
+  const _time = <DatePicker.TimeInput aria-label="Starts at" />;
+  const _start = <DateRangePicker.StartTimeInput className="w-32" />;
+  const _end = <DateRangePicker.EndTimeInput />;
+  // @ts-expect-error the time input takes its value from the Root
+  const _owned = <DatePicker.TimeInput value={LOCAL} />;
 });
 
 test("DatePicker.Presets passes the key and cancelable details, as the picker's callbacks do", () => {

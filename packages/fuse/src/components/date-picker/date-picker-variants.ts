@@ -27,6 +27,11 @@ import { buttonVariants } from "../button/button-variants";
  * - `trigger` is the calendar button flush against the box's border: it reads the box's inner
  *   corner and the field's inner square.
  * - `popup` drops Popover's width and padding, since the calendar and the presets pad themselves.
+ * - `timeInput` is a time input under the calendar in the popup: a `DateInput.Root` box of its own,
+ *   inset as the calendar's shell pads, inside `timeField`, its own Field, which adds no box. A
+ *   Field composite of a picker with a time stacks the calendar over its time inputs in
+ *   `timeColumn`, and a range's two time inputs side by side in `timeInputs`; a date-only one's
+ *   popup holds the calendar alone.
  * - `calendar` is the calendar inside the popup, which is already the card; a range calendar pads
  *   itself with the small surface tier.
  * - `pane` holds the presets beside the calendar: stacked on a phone, side by side from `sm`.
@@ -55,6 +60,10 @@ export const datePickerVariants = tv({
     icon: "size-4",
     popup: "w-auto gap-0 p-0",
     calendar: pickerPopupCalendarClass,
+    timeField: "contents",
+    timeInput: "mx-(--surface-pad-sm) mb-(--surface-pad-sm) w-auto",
+    timeColumn: "flex flex-col",
+    timeInputs: "flex flex-wrap",
     pane: pickerPaneClass,
     presets: cn(pickerPresetsShellClass, "flex flex-col gap-2"),
     preset: cn(

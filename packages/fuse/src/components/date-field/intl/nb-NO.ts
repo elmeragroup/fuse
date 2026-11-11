@@ -15,6 +15,7 @@ export const nbNO = {
   timeZoneName: "tidssone",
   empty: "Tom",
   selectedDateDescription: (vars: Variables) => `Valgt dato: ${String(vars?.date)}`,
+  selectedTimeDescription: (vars: Variables) => `Valgt tid: ${String(vars?.time)}`,
   rangeUnderflow: (vars: Variables) => `Verdien må være ${String(vars?.minValue)} eller senere.`,
   rangeOverflow: (vars: Variables) => `Verdien må være ${String(vars?.maxValue)} eller tidligere.`,
   unavailableDate: "Valgt dato utilgjengelig.",

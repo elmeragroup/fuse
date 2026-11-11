@@ -555,6 +555,47 @@ describe("Calendar server rendering", () => {
   });
 });
 
+describe("Calendar server rendering without a value", () => {
+  /** The weekday labels of each placeholder month the server writes: hidden grids with no days. */
+  function placeholderWeekdays(host: HTMLElement): string[][] {
+    // The server HTML before any script, which a role query of the live page cannot read.
+    const grids = [...host.querySelectorAll('[data-slot="calendar-month"][aria-hidden="true"] table')];
+    return grids.map((grid) => [...grid.querySelectorAll("th")].map((cell) => cell.textContent));
+  }
+
+  // The month is today's, which only the client's first effect reads, so the server writes each
+  // visible month's frame with no days in it, then hydration fills in today's months.
+  it.each([
+    ["en-US", 1, ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]],
+    ["nb-NO", 2, ["man.", "tir.", "ons.", "tor.", "fre.", "lør.", "søn."]],
+  ] as const)(
+    "writes %s weekday headers for %i month(s) on the server and hydrates them without a mismatch",
+    async (locale, visibleMonths, weekdays) => {
+      const element = withLocale(locale, <Parts visibleMonths={visibleMonths} />);
+      const host = document.createElement("div");
+      host.innerHTML = renderToString(element);
+      document.body.append(host);
+      const recover = vi.fn();
+      let root: ReturnType<typeof hydrateRoot> | undefined;
+      try {
+        expect(placeholderWeekdays(host)).toEqual(Array.from({ length: visibleMonths }, () => weekdays));
+        // No day of an unknown month: the server writes no day button.
+        expect(host.querySelector("button[data-slot='calendar-day-button']")).toBeNull();
+
+        root = hydrateRoot(host, element, { onRecoverableError: recover });
+
+        // Today, the frozen June 15, 2030, marked once the first effect has read the clock.
+        await expect.poll(() => host.querySelector("button[data-current]")?.textContent).toBe("15");
+        expect(placeholderWeekdays(host)).toEqual([]);
+        expect(recover).not.toHaveBeenCalled();
+      } finally {
+        root?.unmount();
+        host.remove();
+      }
+    }
+  );
+});
+
 describe("Calendar focus when the bounds change", () => {
   /** The harness's minimum setter, which a test calls without moving focus to a button. */
   type SetMinimum = (min: Temporal.PlainDate) => void;

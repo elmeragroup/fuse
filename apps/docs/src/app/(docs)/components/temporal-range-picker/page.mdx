@@ -5,6 +5,7 @@ lede: >
 
 import { TemporalRangePickerBasic } from "./demos/temporal-range-picker-basic";
 import { TemporalRangePickerMonths } from "./demos/temporal-range-picker-months";
+import { TemporalRangePickerTime } from "./demos/temporal-range-picker-time";
 import { TemporalRangePickerPresets } from "./demos/temporal-range-picker-presets";
 import { TemporalRangePickerForm } from "./demos/temporal-range-picker-form";
 
@@ -20,7 +21,7 @@ export const metadata = componentMetadata("temporal-range-picker");
 
 Fuse reads `globalThis.Temporal`. Import `@elmeragroup/fuse/temporal-polyfill` once in your app's entry, on the server and in the browser.
 
-Type each end into its segments, or open the calendar: the first day pressed anchors the range and the second completes it and closes the popup. Escape drops a half-picked range first and closes the popup on the next press. An end typed before its start, or a start typed past its end, commits and shows as invalid on the end once focus leaves: "Start date must be before end date."
+Type each end into its segments, or open the calendar: the first day pressed anchors the range and the second completes it and closes the popup. Typing the start's last segment moves on to the end's first, and Backspace in the end's first empty segment goes back. Escape drops a half-picked range first and closes the popup on the next press. An end typed before its start, or a start typed past its end, commits and shows as invalid on the end once focus leaves: "Start date must be before end date."
 
 </Prose>
 
@@ -42,9 +43,21 @@ Type each end into its segments, or open the calendar: the first day pressed anc
 
 <Prose>
 
+## Dates and times
+
+With a time `granularity` the popup shows a start and an end time input under the calendar, with the field's `hourCycle` and `hideTimeZone`. Typing an end's time changes only that end's time. With `shouldCloseOnSelect={false}` and no range yet, a range picked in the calendar is held until both ends have a time typed there, then commits; closing the popup first commits it with midnight for an end without one. Composing the parts, put `DateRangePicker.StartTimeInput` and `DateRangePicker.EndTimeInput` in the popup after the calendar.
+
+</Prose>
+
+<Demo slug="temporal-range-picker" id="time" title="Dates and times" file="temporal-range-picker-time.tsx">
+  <TemporalRangePickerTime />
+</Demo>
+
+<Prose>
+
 ## Presets
 
-`presetGroup` takes `DateRangePicker.Presets`, a radio group of your keys: map the chosen key to a range and set the picker's value. With a preset pane, focus leaving the calendar drops a half-picked range instead of completing it, since leaving the grid then means reaching for a preset.
+`presetGroup` takes `DateRangePicker.Presets`, a radio group of your keys: map the chosen key to a range and set the picker's value, or give a preset its range as `dateValue`, `{ start, end }`, which every press sets through `onValueChange` with the reason `"preset-press"`, as `DatePicker`'s presets do. With a preset pane, focus leaving the calendar drops a half-picked range instead of completing it, since leaving the grid then means reaching for a preset.
 
 </Prose>
 
@@ -68,7 +81,7 @@ Each end is a Field of its own: the start submits its ISO text under `startName`
 
 ## Parts
 
-`DateRangePicker.Root` holds the range and the open state, with `onValueChange` and `onOpenChange` passing cancelable details as `DatePicker.Root`'s do; the range adds the calendar's `"outside-press"` and `"focus-out"` reasons. Compose `DateRangePicker.Label`, `DateRangePicker.Group` with `StartInput`, `Separator`, `EndInput` and `Trigger`, then `Error`, `Description`, `Popup` and `Calendar`.
+`DateRangePicker.Root` holds the range and the open state, with `onValueChange` and `onOpenChange` passing cancelable details as `DatePicker.Root`'s do; the range adds the calendar's `"outside-press"` and `"focus-out"` reasons. Compose `DateRangePicker.Label`, `DateRangePicker.Group` with `StartInput`, `Separator`, `EndInput` and `Trigger`, then `Error`, `Description`, `Popup`, `Calendar`, `StartTimeInput` and `EndTimeInput`.
 
 ## Accessibility
 

@@ -18,7 +18,7 @@ import "@elmeragroup/fuse/styles.css";
 import "@elmeragroup/fuse/themes.css";`;
 
 const TEMPORAL_POLYFILL = `// Once per runtime, before any Temporal date code runs: the server entry, and the client
-// module that holds your providers.
+// entry (instrumentation-client.ts in Next.js).
 import "@elmeragroup/fuse/temporal-polyfill";`;
 
 const TEMPORAL_CLIENT_VALUE = `// app/delivery/page.tsx, a server component: the date arrives as ISO text.
@@ -120,8 +120,10 @@ export default function QuickStartPage(): ReactElement {
         Fuse&apos;s Temporal date code reads <code>Temporal</code> from <code>globalThis</code> when it runs,
         and not every engine Fuse supports ships it yet. Fuse never installs it for you: import{" "}
         <code>@elmeragroup/fuse/temporal-polyfill</code> once in each runtime that renders. In a Next.js App
-        Router app that is the root layout for the server, and the client module that holds your providers for
-        the browser. The root <code>@elmeragroup/fuse</code> entry never imports it.
+        Router app that is the root layout for the server, and <code>instrumentation-client.ts</code> for the
+        browser, which runs before any of the app&apos;s client modules (see{" "}
+        <a href="/handbook/temporal-migration#install-temporal">Install Temporal</a>). The root{" "}
+        <code>@elmeragroup/fuse</code> entry never imports it.
       </p>
       <pre>
         <code>{TEMPORAL_POLYFILL}</code>

@@ -23,6 +23,7 @@ const PARITY: readonly ReactNode[] = [
   'Opening shows a dialog named "Calendar <label>" on the value\'s month with the selected day focused; pressing a day commits it and closes.',
   "Presets are radios inside their labels, with the checked and disabled states you set.",
   "A range picker whose whole range loses an end reports null, and the other end stays in its input.",
+  "Typing a range picker's start to its last segment moves on to the end's first segment, and Backspace in the end's first empty segment goes back to the start's last.",
   'Day buttons are named by the full date, "Monday, October 12, 2026", with "Today, " on today, ", First available date" and ", Last available date" on the bounds, and "Selected Range: …" on range ends.',
   "Arrows, Home/End (month start and end), PageUp/PageDown (a month, with Shift a year) and their clamping to the bounds; unavailable days take focus but never selection.",
   "A keyboard range anchors on Enter and moves focus a day; Escape drops the anchor first and closes the popover second, value unchanged.",
@@ -47,8 +48,8 @@ const DIFFERENCES: readonly Row[] = [
     <>Today marking and empty calendars</>,
     <>
       Today ({c("data-current")}, the &quot;Today, &quot; name prefix) is marked from the first client effect,
-      never on the server. A calendar with neither {c("value")} nor {c("defaultValue")} renders no months
-      until then.
+      never on the server. A calendar with neither {c("value")} nor {c("defaultValue")} renders each
+      month&apos;s frame with empty days until then, hidden from assistive technology.
     </>,
   ],
   [
@@ -91,10 +92,10 @@ const DIFFERENCES: readonly Row[] = [
     </>,
   ],
   [
-    <>Years, empty zones, paste</>,
+    <>Years and empty zones</>,
     <>
-      Years run 1–9999 and wrap, with no era segment. An empty zoned field shows the zone&apos;s name for
-      2001-01-01 (CET in Oslo). Paste takes ISO text only.
+      Years run 1–9999 and wrap, with no era segment. An empty zoned field names its zone as it is today once
+      it has mounted; the server writes the name for 2001-01-01 (CET in Oslo).
     </>,
   ],
   [
@@ -105,18 +106,22 @@ const DIFFERENCES: readonly Row[] = [
     </>,
   ],
   [
-    <>No time field in the popup</>,
+    <>Time in the popup</>,
     <>
-      A day picked into an empty time-kind picker with {c("shouldCloseOnSelect={false}")} is held and commits
-      at midnight when the popup closes, where React Aria waited for a time field in the popup. See{" "}
-      <a href="#pickers">pickers</a>.
+      The interim pickers had no time field in the popup; the composites now show one under the calendar for a
+      time {c("granularity")}, as React Spectrum&apos;s pickers do. Composing the parts, add{" "}
+      {c("DatePicker.TimeInput")}, or {c("DateRangePicker.StartTimeInput")} and{" "}
+      {c("DateRangePicker.EndTimeInput")}. See <a href="#pickers">pickers</a>.
     </>,
   ],
   [
-    <>Range picker typing</>,
+    <>Presets with a date</>,
     <>
-      Filling the start&apos;s last segment leaves focus there; React Aria moved on to the end&apos;s first
-      segment.
+      A preset may carry its date or range as {c("dateValue")}, which every press commits through the
+      picker&apos;s {c("onValueChange")} with the reason {c('"preset-press"')}, also a press on the checked
+      preset; the interim presets were only keys, as a preset without {c("dateValue")} still is. The checked
+      preset stays the pane&apos;s key, as in the interim radio group: an uncontrolled pane clears it when the
+      value changes any other way, and a controlled one is yours to clear.
     </>,
   ],
   [
@@ -257,9 +262,11 @@ export function BehaviourSection(): ReactElement {
           <strong>Held selections.</strong> With a time <code>granularity</code>,{" "}
           <code>shouldCloseOnSelect={"{false}"}</code> and no value yet, the popup holds the selection, shown
           selected, instead of committing it: in <code>DatePickerField</code> the picked day, in{" "}
-          <code>DateRangePickerField</code> the completed range. It commits at midnight in the field&apos;s
-          kind when the popup closes. With <code>shouldCloseOnSelect</code> (the default), or a value already
-          there, picks commit at once and keep the value&apos;s time and zone.
+          <code>DateRangePickerField</code> the completed range. A time typed in the popup&apos;s time input
+          (both ends&apos; for a range) commits it at that time, as React Aria waits for one; closing the
+          popup first commits it at midnight in the field&apos;s kind. A time typed before any day waits for
+          one. With <code>shouldCloseOnSelect</code> (the default), or a value already there, picks commit at
+          once and keep the value&apos;s time and zone.
         </li>
         <li>
           <strong>Closing is one step.</strong> The held selection commits first, through{" "}

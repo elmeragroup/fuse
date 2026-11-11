@@ -10,12 +10,14 @@ import { canonicalSpaces } from "../../intl/canonical-spaces";
 import { formatDateTime, formatDateTimeToParts } from "../../intl/date-time-join";
 import type { DateGranularity, TemporalValue } from "../../temporal/temporal-value";
 import type { DateDraft, EditableSegmentType, HourCycle } from "./date-draft";
+import { scopeShows } from "./date-input-scope";
+import type { DateInputUnits } from "./date-input-scope";
 import type { DateInputSegmentData } from "./date-input-types";
 
 /** U+2066, which React Aria writes before a time so it reads left to right in any direction. */
-const LEFT_TO_RIGHT_ISOLATE = String.fromCodePoint(0x2066);
+export const LEFT_TO_RIGHT_ISOLATE = String.fromCodePoint(0x2066);
 /** U+2069, which closes {@link LEFT_TO_RIGHT_ISOLATE} after the time's last segment. */
-const POP_DIRECTIONAL_ISOLATE = String.fromCodePoint(0x2069);
+export const POP_DIRECTIONAL_ISOLATE = String.fromCodePoint(0x2069);
 
 /** What a field's format depends on. */
 export type FieldFormat = {
@@ -30,10 +32,12 @@ export type FieldFormat = {
   readonly timeZone: string | undefined;
   /** Whether a zoned field with a time hides its zone name. */
   readonly hideTimeZone: boolean;
+  /** Whether the field shows its date and time, or its time alone from the hour. */
+  readonly scope: DateInputUnits;
 };
 
 /** One part of a field, in display order. */
-type FieldPart =
+export type FieldPart =
   | { readonly kind: "literal"; readonly text: string }
   | { readonly kind: "segment"; readonly type: EditableSegmentType }
   | { readonly kind: "timeZoneName" };
@@ -83,7 +87,7 @@ function fieldFormatOptions(
   };
   const last = FIELD_KEYS.indexOf(format.granularity);
   const options: Intl.DateTimeFormatOptions = { timeZone: format.timeZone ?? "UTC" };
-  for (const key of FIELD_KEYS.slice(0, last + 1)) {
+  for (const key of FIELD_KEYS.slice(0, last + 1).filter((unit) => scopeShows(format.scope, unit))) {
     Object.assign(options, { [key]: styles[key] });
   }
   if (format.granularity !== "day") {
@@ -134,7 +138,7 @@ const LAYOUT_INSTANT = utcInstant({ year: 2001, month: 1, day: 1, hour: 13 });
  * @param format - The field's format.
  * @returns The parts.
  */
-function fieldParts(format: FieldFormat): FieldPart[] {
+export function fieldParts(format: FieldFormat): FieldPart[] {
   const parts = formatDateTimeToParts(format.locale, fieldFormatOptions(format), LAYOUT_INSTANT);
   const result: FieldPart[] = [];
   for (const part of parts) {
@@ -285,15 +289,20 @@ function timeZoneNameText(locale: string, timeZone: string, instant: number): st
 
 /**
  * A value written in the field's format with a long month, for the "Selected Date" description.
- * Spaces are canonical, since the description is server-rendered and engines write different ones.
+ * The zone's name is the one the field's segments write (see `useFieldZoneName`), so a time held on
+ * the stand-in day is described in today's zone name, as it is shown. Spaces are canonical, since
+ * the description is server-rendered and engines write different ones.
  *
  * @param format - The field's format.
  * @param value - The value.
+ * @param zoneName - The zone's name the field writes, which replaces the value's own.
  * @returns The text, such as "October 05, 2026".
  */
-export function describeValue(format: FieldFormat, value: TemporalValue): string {
+export function describeValue(format: FieldFormat, value: TemporalValue, zoneName: string): string {
   return canonicalSpaces(
-    formatDateTime(format.locale, fieldFormatOptions(format, { month: "long" }), formatInstant(value))
+    formatDateTimeToParts(format.locale, fieldFormatOptions(format, { month: "long" }), formatInstant(value))
+      .map((part) => (part.type === "timeZoneName" ? zoneName : part.value))
+      .join("")
   );
 }
 
@@ -326,13 +335,13 @@ export function formatBound(format: FieldFormat, bound: TemporalValue): string {
  *
  * @param format - The field's format.
  * @param draft - What the segments show.
- * @param zoneInstant - The instant whose zone name a zoned field shows, epoch milliseconds.
+ * @param zoneName - The zone's name a field that writes one shows (see `zoneNameAt`).
  * @returns The segments.
  */
 export function fieldSegments(
   format: FieldFormat,
   draft: DateDraft,
-  zoneInstant: number
+  zoneName: string
 ): DateInputSegmentData[] {
   // The number styles the field's formatter resolved, which decide whether a segment pads.
   const resolved = dateTimeFormat(format.locale, fieldFormatOptions(format)).resolvedOptions();
@@ -344,7 +353,7 @@ export function fieldSegments(
         return {
           type: "timeZoneName",
           index,
-          text: timeZoneNameText(format.locale, format.timeZone ?? "UTC", zoneInstant),
+          text: zoneName,
           isPlaceholder: false,
           isEditable: false,
         };
@@ -364,5 +373,29 @@ export function fieldSegments(
   });
 }
 
-/** The instant a field with no value names its zone at: January 1, 2001, since it reads no clock. */
+/**
+ * Whether a field writes its zone's name: a zoned field with a time that does not hide it.
+ *
+ * @param format - The field's format.
+ * @returns Whether its segments hold the zone's name.
+ */
+export function writesZoneName(format: FieldFormat): boolean {
+  return fieldFormatOptions(format).timeZoneName !== undefined;
+}
+
+/**
+ * The zone's name a field writes at an instant, which changes with summer time.
+ *
+ * @param format - The field's format.
+ * @param instant - Epoch milliseconds.
+ * @returns The name, such as "GMT+2"; a plain field's is UTC's.
+ */
+export function zoneNameAt(format: FieldFormat, instant: number): string {
+  return timeZoneNameText(format.locale, format.timeZone ?? "UTC", instant);
+}
+
+/**
+ * The instant a field with no value names its zone at before it has read the clock: January 1,
+ * 2001, which the server and the hydrating render write alike. The input reads today once mounted.
+ */
 export const EMPTY_ZONE_INSTANT = utcInstant({ year: 2001, month: 1, day: 1 });

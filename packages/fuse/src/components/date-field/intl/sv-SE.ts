@@ -15,6 +15,7 @@ export const svSE = {
   timeZoneName: "tidszon",
   empty: "Tomt",
   selectedDateDescription: (vars: Variables) => `Valt datum: ${String(vars?.date)}`,
+  selectedTimeDescription: (vars: Variables) => `Vald tid: ${String(vars?.time)}`,
   rangeUnderflow: (vars: Variables) => `Värdet måste vara ${String(vars?.minValue)} eller senare.`,
   rangeOverflow: (vars: Variables) => `Värdet måste vara ${String(vars?.maxValue)} eller tidigare.`,
   unavailableDate: "Det valda datumet är inte tillgängligt.",

@@ -14,9 +14,8 @@
 // cycle or the segments shown drops the draft and the digits for good, so restoring an earlier value
 // never brings an abandoned draft back, and a draft never fills segments that are no longer shown.
 
-import { parseTemporal } from "../../temporal/temporal-value";
+import { hasTime, isZoned } from "../../temporal/temporal-value";
 import type { TemporalValue, ValueKind } from "../../temporal/temporal-value";
-import { boundDay } from "../calendar/calendar-dates";
 import {
   clearSegment,
   cycleSegment,
@@ -29,7 +28,11 @@ import {
   setSegment,
 } from "./date-draft";
 import type { DateDraft, EditableSegmentType, HourCycle } from "./date-draft";
+import type { FieldText } from "./date-field-text";
 import type { DateInputValueChangeReason } from "./date-input-change-details";
+import type { DateInputFocusDirection } from "./date-input-neighbours";
+import { pastedTime, pastedValue } from "./date-input-paste";
+import type { DateInputUnits } from "./date-input-scope";
 import type { DateInputEntry } from "./date-input-validation";
 
 /** The edit session's state. */
@@ -56,6 +59,15 @@ export type SessionSettings = {
   readonly editable: boolean;
   /** The segments shown. */
   readonly fields: readonly EditableSegmentType[];
+  /** Whether the input shows its date and time, or its time alone (`date-input-scope.ts`). */
+  readonly units: DateInputUnits;
+  /** Text in the field's own format read into its units, or `undefined`; see `readFieldText`. */
+  readonly readText: (text: string) => FieldText | undefined;
+  /**
+   * The instant the input names a value's zone at, as its segments write the name: the value's
+   * own, or today's for a time on the stand-in day (see `zoneNamingInstant`).
+   */
+  readonly zoneInstant: (value: TemporalValue) => number;
   readonly hourCycle: HourCycle;
   /** The value kind, for pasted text. */
   readonly kind: ValueKind;
@@ -79,7 +91,7 @@ export type SessionTransition = {
   /** The value to report through `onValueChange`, if the transition commits one. */
   readonly commit?: SessionCommit;
   /** Where focus moves among the segments afterwards. */
-  readonly focus?: "next" | "previous";
+  readonly focus?: DateInputFocusDirection;
 };
 
 /** A segment as an edit reads it. */
@@ -97,19 +109,46 @@ export type SessionSegment = {
  * @param committed - The committed value.
  * @param hourCycle - The hour cycle shown.
  * @param fields - The segments shown.
+ * @param units - Whether the input shows its date and time, or its time alone.
  * @returns The key.
  */
 export function basisOf(
   committed: TemporalValue | null,
   hourCycle: HourCycle,
-  fields: readonly EditableSegmentType[]
+  fields: readonly EditableSegmentType[],
+  units: DateInputUnits
 ): string {
-  return `${committed === null ? "" : committed.toString()}|${hourCycle}|${fields.join(",")}`;
+  return `${shownKey(committed, units)}|${hourCycle}|${fields.join(",")}`;
+}
+
+/**
+ * The committed value as the shown segments see it: its ISO text, or, for an input that shows the
+ * time alone, its wall-clock time and offset. A picker's time input commits over the picker's day,
+ * so the value it reports carries another day than the one the picker echoes back; to the time
+ * segments both are the same value, and the digits typed carry on.
+ */
+function shownKey(value: TemporalValue | null, units: DateInputUnits): string {
+  if (value === null) {
+    return "";
+  }
+  if (units === "date-time" || !hasTime(value)) {
+    return value.toString();
+  }
+  const time = value.toPlainTime().toString();
+  return isZoned(value) ? `${time}${value.offset}` : time;
+}
+
+/** Whether the shown segments see `value` as the committed value; see {@link shownKey}. */
+function showsCommitted(value: TemporalValue, settings: SessionSettings): boolean {
+  return (
+    settings.committed !== null &&
+    shownKey(value, settings.units) === shownKey(settings.committed, settings.units)
+  );
 }
 
 /** The key of the committed value and the segments a transition's settings show. */
 function settingsBasis(settings: SessionSettings): string {
-  return basisOf(settings.committed, settings.hourCycle, settings.fields);
+  return basisOf(settings.committed, settings.hourCycle, settings.fields, settings.units);
 }
 
 /**
@@ -206,13 +245,40 @@ function committedState(
   settings: SessionSettings
 ): SessionState {
   const own = settings.controlled ? state.own : value;
-  const basis = basisOf(value, settings.hourCycle, settings.fields);
+  const basis = basisOf(value, settings.hourCycle, settings.fields, settings.units);
   return { ...state, own, basis, draft: null, entered, edited: true };
 }
 
-/** What the segments show: the draft typed over the committed value, or the value itself. */
+/**
+ * What a gesture edits: the draft typed over the committed value and these segments, or the value
+ * itself, on the day its hidden units belong to (see {@link onShownDay}). Every transition reads
+ * the draft through here, paste and blur confirmation included.
+ */
 function current(state: SessionState, settings: SessionSettings): DateDraft {
-  return draftOver(state, settingsBasis(settings)) ?? draftOf(settings.committed, settings.hourCycle);
+  return onShownDay(
+    draftOver(state, settingsBasis(settings)) ?? draftOf(settings.committed, settings.hourCycle),
+    settings
+  );
+}
+
+/**
+ * The one owner of a time-only input's hidden date units: they are always the day its time is
+ * on, the committed value's day, else the placeholder's (the day the control around the input
+ * holds, else today). A time-only draft keeps its typed time while the value moves to another day
+ * (its basis is the time; see {@link shownKey}), and an empty one has no day of its own, so without
+ * this its hour would step through another day's instants, past the repeated hour of a night the
+ * clocks go back. A field that shows its date owns its date units, which this leaves alone.
+ *
+ * @param draft - A draft of the input.
+ * @param settings - The settings, which name the committed value and the placeholder.
+ * @returns The draft on its day.
+ */
+function onShownDay(draft: DateDraft, settings: SessionSettings): DateDraft {
+  if (settings.units === "date-time") {
+    return draft;
+  }
+  const day = settings.committed ?? settings.placeholder();
+  return { ...draft, year: day.year, month: day.month, day: day.day };
 }
 
 /**
@@ -239,7 +305,7 @@ function apply(
   if (isComplete(next, fields)) {
     const value = draftToValue(next, committed ?? settings.placeholder(), hourCycle);
     if (roundTrips(next, value, fields, hourCycle)) {
-      return committed?.toString() === value.toString()
+      return showsCommitted(value, settings)
         ? { state: settled(state, settings, entered) }
         : {
             state: committedState(state, value, entered, settings),
@@ -414,35 +480,22 @@ export function toEdge(
  * @returns The transition.
  */
 export function confirm(state: SessionState, settings: SessionSettings): SessionTransition {
-  const draft = draftOver(state, settingsBasis(settings));
+  const over = draftOver(state, settingsBasis(settings));
+  const draft = over === null ? null : onShownDay(over, settings);
   if (!settings.editable || draft === null || !isComplete(draft, settings.fields)) {
     return unchanged({ ...state, entered: "" });
   }
   const value = draftToValue(draft, settings.committed ?? settings.placeholder(), settings.hourCycle);
-  if (settings.committed?.toString() === value.toString()) {
+  if (showsCommitted(value, settings)) {
     return { state: settled(state, settings) };
   }
   return { state: committedState(state, value, "", settings), commit: { value, reason: "input-change" } };
 }
 
-/** A value in a kind: a date-time's date for a PlainDate input, a zone's wall clock, a wall clock in a zone. */
-function convertToKind(value: TemporalValue, kind: ValueKind): TemporalValue | undefined {
-  switch (kind.kind) {
-    case "PlainDate":
-      return boundDay(value);
-    case "PlainDateTime":
-      if ("timeZoneId" in value) return value.toPlainDateTime();
-      return "hour" in value ? value : undefined;
-    case "ZonedDateTime":
-      if ("timeZoneId" in value) return value.withTimeZone(kind.timeZone);
-      return "hour" in value
-        ? value.toZonedDateTime(kind.timeZone, { disambiguation: "compatible" })
-        : undefined;
-  }
-}
-
 /**
- * Pasted text: ISO text of a kind the input can hold commits, converted to the input's kind.
+ * Pasted text: ISO text of a kind the input can hold, converted to the input's kind, or else text
+ * in the field's own format, commits; a time-only input takes a wall-clock time
+ * (`date-input-paste.ts`).
  *
  * @param state - The state.
  * @param text - The clipboard's text.
@@ -453,16 +506,14 @@ export function paste(state: SessionState, text: string, settings: SessionSettin
   if (!settings.editable) {
     return unchanged(state);
   }
-  const parsed = parseTemporal(text.trim());
-  if (parsed._tag === "err") {
-    return unchanged(state);
-  }
-  const value = convertToKind(parsed.value, settings.kind);
+  const trimmed = text.trim();
+  const value =
+    settings.units === "date-time" ? pastedValue(trimmed, settings) : pastedTime(trimmed, settings);
   if (value === undefined) {
     return unchanged(state);
   }
   // The committed value pasted again: nothing changes, but the segments show it whole again.
-  if (value.toString() === settings.committed?.toString()) {
+  if (showsCommitted(value, settings)) {
     return { state: settled(state, settings) };
   }
   return { state: committedState(state, value, "", settings), commit: { value, reason: "input-paste" } };
@@ -474,12 +525,14 @@ export function paste(state: SessionState, text: string, settings: SessionSettin
  * @param own - The default value.
  * @param hourCycle - The hour cycle shown.
  * @param fields - The segments shown.
+ * @param units - Whether the input shows its date and time, or its time alone.
  * @returns The state.
  */
 export function resetSession(
   own: TemporalValue | null,
   hourCycle: HourCycle,
-  fields: readonly EditableSegmentType[]
+  fields: readonly EditableSegmentType[],
+  units: DateInputUnits
 ): SessionState {
-  return initialSession(own, basisOf(own, hourCycle, fields));
+  return initialSession(own, basisOf(own, hourCycle, fields, units));
 }

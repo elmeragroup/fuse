@@ -224,8 +224,9 @@ const RUNS = IMPLEMENTATIONS.flatMap(([implementation, temporal]) =>
 
 describe("Temporal migration recipes", () => {
   beforeAll(() => {
-    // Node's own `Temporal.Now` reads the system clock, not `Date`, so the clock fakes both.
-    vi.useFakeTimers({ toFake: ["Date", "Temporal"] });
+    // Only `Date`, as a consumer's test fakes the clock: the guide's clock recipes read
+    // `Date.now()`, which this reaches, where Node's native `Temporal.Now` keeps the real time.
+    vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(new Date(NOW));
   });
   afterAll(() => {

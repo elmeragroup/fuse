@@ -5,7 +5,12 @@ import { createContext, use } from "react";
 
 import type { TemporalValue } from "../../temporal/temporal-value";
 import type { DateInputValueChangeEventDetails } from "../date-field/date-input-change-details";
-import type { PickerCalendarSettings, PickerInputSettings } from "../date-picker/picker-root";
+import type {
+  PickerCalendarSettings,
+  PickerInputSettings,
+  PickerTimeSettings,
+} from "../date-picker/picker-root";
+import type { PickerTimeBinding } from "../date-picker/picker-time-input";
 import type {
   RangeCalendarRootValueChangeEventDetails,
   RangeCalendarValue,
@@ -47,6 +52,10 @@ export type DateRangePickerRootContextValue = {
   readonly endpointLabelledBy: string | undefined;
   readonly inputSettings: PickerInputSettings;
   readonly calendarSettings: PickerCalendarSettings;
+  /** What the time inputs forward, or `null` while the range has no time to show. */
+  readonly timeSettings: PickerTimeSettings | null;
+  /** What each end's popup time input shows, the day it forms a typed time on, and its change. */
+  readonly timeBindings: Readonly<Record<Endpoint, PickerTimeBinding>>;
   readonly invalidProp: boolean;
   readonly invalid: boolean;
   readonly reversed: boolean;

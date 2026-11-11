@@ -3,20 +3,14 @@ import type { ReactElement } from "react";
 const SERVER_ENTRY = `// instrumentation.ts (Next.js), or your server's entry module: before anything renders.
 import "@elmeragroup/fuse/temporal-polyfill";`;
 
-const CLIENT_ENTRY = `// app/providers.tsx: the client module that mounts your providers.
-"use client";
+const CLIENT_ENTRY = `// instrumentation-client.ts (Next.js 15.3 or later), beside app/: it runs before
+// hydration, so it comes before every client module of the app.
+import "@elmeragroup/fuse/temporal-polyfill";`;
 
+const OTHER_CLIENT_ENTRY = `// Another host: the first import of the client entry module, above the app's own.
 import "@elmeragroup/fuse/temporal-polyfill";
 
-import { LocaleProvider } from "@elmeragroup/fuse/theme";
-
-export function Providers({ children }: { children: React.ReactNode }) {
-  return (
-    <LocaleProvider locale="nb-NO" timeZone="Europe/Oslo">
-      {children}
-    </LocaleProvider>
-  );
-}`;
+import { App } from "./app";`;
 
 /** Installing Temporal: where the opt-in entry goes, what it patches, the warning and the exit. */
 export function InstallSection(): ReactElement {
@@ -25,14 +19,25 @@ export function InstallSection(): ReactElement {
       <h2 id="install-temporal">Install Temporal</h2>
       <p>
         Fuse never installs Temporal on its own: it reads <code>globalThis.Temporal</code>. Import the opt-in
-        entry once in every runtime that renders a date component, before any of them renders: the server
-        entry and the client module that mounts your providers.
+        entry once in every runtime that renders a date component, before any module that reads Temporal is
+        evaluated: the server entry and the client entry.
       </p>
       <pre>
         <code>{SERVER_ENTRY}</code>
       </pre>
+      <p>
+        In Next.js the client entry is <code>instrumentation-client.ts</code>, whose synchronous top-level
+        imports Next.js runs before hydration and before any of the app&apos;s client modules. A client module
+        such as <code>app/providers.tsx</code> is too late when another module evaluates first: a
+        form-validation schema that builds <code>Temporal.PlainDate.from(…)</code> at the top of its module,
+        imported by a page before the providers module, throws in Safari.
+      </p>
       <pre>
         <code>{CLIENT_ENTRY}</code>
+      </pre>
+      <p>Other hosts import it first in the module their bundler starts the client from.</p>
+      <pre>
+        <code>{OTHER_CLIENT_ENTRY}</code>
       </pre>
       <ul>
         <li>

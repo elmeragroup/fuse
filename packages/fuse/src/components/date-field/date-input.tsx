@@ -2,6 +2,7 @@
 
 import {
   Fragment,
+  use,
   useCallback,
   useId,
   useLayoutEffect,
@@ -30,18 +31,15 @@ import { createChangeEventDetails } from "../calendar/calendar-change-details";
 import { useTemporalProp } from "../calendar/calendar-input";
 import { createCalendarStore } from "../calendar/calendar-store";
 import { draftOf, editableSegments, placeholderValue } from "./date-draft";
-import {
-  EMPTY_ZONE_INSTANT,
-  dayPeriodNames,
-  describeValue,
-  fieldSegments,
-  formatInstant,
-  resolveHourCycle,
-} from "./date-field-format";
+import { dayPeriodNames, describeValue, fieldSegments, resolveHourCycle } from "./date-field-format";
 import type { FieldFormat } from "./date-field-format";
+import { readFieldText } from "./date-field-text";
 import { DateInputRootContext, SEGMENT_SELECTOR } from "./date-input-context";
 import type { DateInputActions, DateInputRootContextValue } from "./date-input-context";
 import { useDateInputField } from "./date-input-field";
+import { DateInputNeighbourContext } from "./date-input-neighbours";
+import type { DateInputFocusDirection, DateInputNeighbour } from "./date-input-neighbours";
+import { DateInputScopeContext, scopeShows, standInDay } from "./date-input-scope";
 import { DateInputSegment } from "./date-input-segment";
 import {
   basisOf,
@@ -61,10 +59,16 @@ import {
   typeKey,
 } from "./date-input-session";
 import type { SessionSettings, SessionState, SessionTransition } from "./date-input-session";
-import type { DateInputRootProps, DateInputRootState, DateInputValue } from "./date-input-types";
+import type {
+  DateInputRootProps,
+  DateInputRootState,
+  DateInputSegmentData,
+  DateInputValue,
+} from "./date-input-types";
 import { entryError, errorMessage, valueError } from "./date-input-validation";
 import type { DateInputRules } from "./date-input-validation";
 import { dateInputVariants } from "./date-input-variants";
+import { todayInstant, useFieldZoneName, zoneNamingInstant } from "./date-input-zone";
 import type { KindProps, PropsMadeValue } from "./date-kind-props";
 import { dateFieldStrings } from "./intl";
 import { useValueKind } from "./use-value-kind";
@@ -107,9 +111,14 @@ function useIsIOS(): boolean {
   return useSyncExternalStore(noSubscription, isIOS, () => false);
 }
 
+/** A Root element's focusable segments, in document order. */
+function focusableSegments(root: Element | null): HTMLElement[] {
+  return [...(root?.querySelectorAll<HTMLElement>(SEGMENT_SELECTOR) ?? [])];
+}
+
 /** Focus the last segment before `target`, then back over empty ones, as React Aria's field press. */
 function focusBefore(root: Element, target: EventTarget): void {
-  const list = [...root.querySelectorAll<HTMLElement>(SEGMENT_SELECTOR)];
+  const list = focusableSegments(root);
   const before =
     isNode(target) && target !== root
       ? list.filter(
@@ -127,13 +136,29 @@ function focusBefore(root: Element, target: EventTarget): void {
   list[index]?.focus();
 }
 
-/** Focus the segment `step` places from `from` among the Root's focusable segments. */
-function focusSibling(root: Element | null, from: Element, direction: "next" | "previous"): void {
-  const list = [...(root?.querySelectorAll<HTMLElement>(SEGMENT_SELECTOR) ?? [])];
+/**
+ * Focus the segment `direction` places from `from` among the Root's focusable segments; past the
+ * first or last, the nearest segment of the input beside this one, when a control owns both.
+ */
+function focusSibling(
+  root: HTMLElement | null,
+  from: Element,
+  direction: DateInputFocusDirection,
+  neighbour: DateInputNeighbour | undefined
+): void {
+  const list = focusableSegments(root);
   const index = list.findIndex((element) => element === from);
-  if (index >= 0) {
-    list[index + (direction === "next" ? 1 : -1)]?.focus();
+  if (index < 0) {
+    return;
   }
+  const sibling = list[index + (direction === "next" ? 1 : -1)];
+  if (sibling !== undefined) {
+    sibling.focus();
+    return;
+  }
+  const next = root === null ? null : (neighbour?.(root, direction) ?? null);
+  const segments = focusableSegments(next);
+  (direction === "next" ? segments[0] : segments.at(-1))?.focus();
 }
 
 /** The transition a key makes on a segment, or `undefined` for a key the segment leaves alone. */
@@ -226,6 +251,9 @@ export function DateInputRoot<P = object, T extends DateInputValue = PropsMadeVa
   const { locale, timeZone: localeTimeZone } = useLocale();
   const strings = useLocalizedStrings(dateFieldStrings);
   const ios = useIsIOS();
+  const neighbour = use(DateInputNeighbourContext);
+  const inputScope = use(DateInputScopeContext);
+  const scope = inputScope.units;
   const controlled = valueProp !== undefined;
 
   const parsedValue = useTemporalProp(valueProp, OWNER, "value");
@@ -242,11 +270,12 @@ export function DateInputRoot<P = object, T extends DateInputValue = PropsMadeVa
   const committed = controlled ? parsedValue : session.own;
 
   // A kind a value or default value named sticks, so emptying a zoned input and typing again emits
-  // a zoned value; one the granularity and zone made follows them (`useValueKind`).
+  // a zoned value; one the granularity and zone made follows them (`useValueKind`). That memory is
+  // for an input that owns its value: a time-only input takes the kind its control supplies.
   const { kind } = useValueKind(
     { value: committed, defaultValue: parsedDefault, granularity: granularityProp, timeZone: timeZoneProp },
     OWNER,
-    { warnOnKindChange: true }
+    inputScope.units === "time" ? { supplied: inputScope.kind } : { warnOnKindChange: true }
   );
 
   const granularity: DateGranularity = granularityProp ?? (kind.kind === "PlainDate" ? "day" : "minute");
@@ -259,13 +288,18 @@ export function DateInputRoot<P = object, T extends DateInputValue = PropsMadeVa
       forceLeadingZeros: shouldForceLeadingZeros,
       timeZone: zone,
       hideTimeZone,
+      scope,
     }),
-    [locale, granularity, hourCycle, shouldForceLeadingZeros, zone, hideTimeZone]
+    [locale, granularity, hourCycle, shouldForceLeadingZeros, zone, hideTimeZone, scope]
   );
-  const fields = useMemo(() => editableSegments(granularity, hourCycle), [granularity, hourCycle]);
+  const fields = useMemo(
+    () => editableSegments(granularity, hourCycle).filter((type) => scopeShows(scope, type)),
+    [granularity, hourCycle, scope]
+  );
+  const readText = useCallback((text: string) => readFieldText(format, text), [format]);
 
   // The key of the committed value and the segments shown, which a draft belongs to.
-  const basis = basisOf(committed, hourCycle, fields);
+  const basis = basisOf(committed, hourCycle, fields, scope);
   const valueDraft = useMemo(() => draftOf(committed, hourCycle), [committed, hourCycle]);
   const draft = draftOver(session, basis) ?? valueDraft;
 
@@ -322,10 +356,10 @@ export function DateInputRoot<P = object, T extends DateInputValue = PropsMadeVa
     }
   }, [store, basis, revalidate]);
 
-  const segments = useMemo(
-    () => fieldSegments(format, draft, committed === null ? EMPTY_ZONE_INSTANT : formatInstant(committed)),
-    [format, draft, committed]
-  );
+  // The zone's name for today while the input is empty or holds a time on the stand-in day.
+  const zoneName = useFieldZoneName(format, zoneNamingInstant(committed, inputScope));
+
+  const segments = useMemo(() => fieldSegments(format, draft, zoneName), [format, draft, zoneName]);
   const firstEditableIndex = segments.find((segment) => segment.type !== "literal")?.index ?? -1;
   const placeholderZone = zone ?? localeTimeZone;
 
@@ -336,18 +370,42 @@ export function DateInputRoot<P = object, T extends DateInputValue = PropsMadeVa
       controlled,
       editable: !disabled && !readOnly,
       fields,
+      units: scope,
+      readText,
+      // The instant a pasted value's zone name is checked at: the one the segments name it at.
+      zoneInstant: (value) => zoneNamingInstant(value, inputScope) ?? todayInstant(),
       hourCycle,
       kind,
       dayPeriods: dayPeriodNames(locale),
       locale,
-      placeholder: () => placeholderValue(today(placeholderZone ?? temporal().Now.timeZoneId()), kind),
+      // A time-only input's day is its control's, or the stand-in day; any other input's is today.
+      placeholder: () =>
+        placeholderValue(
+          inputScope.units === "time"
+            ? (inputScope.day ?? standInDay())
+            : today(placeholderZone ?? temporal().Now.timeZoneId()),
+          kind
+        ),
     }),
-    [committed, controlled, disabled, readOnly, fields, hourCycle, kind, locale, placeholderZone]
+    [
+      committed,
+      controlled,
+      disabled,
+      readOnly,
+      fields,
+      scope,
+      readText,
+      hourCycle,
+      kind,
+      locale,
+      placeholderZone,
+      inputScope,
+    ]
   );
   // What gestures read at event time: this render's settings and callback.
-  const eventProps = useRef({ settings, rules, onValueChange });
+  const eventProps = useRef({ settings, rules, onValueChange, neighbour });
   useLayoutEffect(() => {
-    eventProps.current = { settings, rules, onValueChange };
+    eventProps.current = { settings, rules, onValueChange, neighbour };
   });
 
   /** Applies a transition: reports its commit, keeps the edit unless the commit is canceled. */
@@ -369,7 +427,7 @@ export function DateInputRoot<P = object, T extends DateInputValue = PropsMadeVa
       }
       store.set(transition.state);
       if (transition.focus !== undefined && trigger !== undefined) {
-        focusSibling(rootRef.current, trigger, transition.focus);
+        focusSibling(rootRef.current, trigger, transition.focus, eventProps.current.neighbour);
       }
     },
     [store]
@@ -387,7 +445,12 @@ export function DateInputRoot<P = object, T extends DateInputValue = PropsMadeVa
         }
         if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
           event.preventDefault();
-          focusSibling(rootRef.current, currentTarget, event.key === "ArrowRight" ? "next" : "previous");
+          focusSibling(
+            rootRef.current,
+            currentTarget,
+            event.key === "ArrowRight" ? "next" : "previous",
+            eventProps.current.neighbour
+          );
           return;
         }
         if (event.key === "Backspace" || event.key === "Delete") {
@@ -421,6 +484,13 @@ export function DateInputRoot<P = object, T extends DateInputValue = PropsMadeVa
       segmentFocused() {
         store.set(segmentFocused(store.get()));
       },
+      segmentRemoved(element) {
+        const list = focusableSegments(rootRef.current);
+        const index = list.indexOf(element);
+        if (index >= 0) {
+          (list[index - 1] ?? list[index + 1])?.focus();
+        }
+      },
     }),
     [store, run]
   );
@@ -430,7 +500,7 @@ export function DateInputRoot<P = object, T extends DateInputValue = PropsMadeVa
     controlled
       ? null
       : () => {
-          store.set(resetSession(parsedDefault, hourCycle, fields));
+          store.set(resetSession(parsedDefault, hourCycle, fields, scope));
           field.reset();
         }
   );
@@ -438,7 +508,9 @@ export function DateInputRoot<P = object, T extends DateInputValue = PropsMadeVa
   const description =
     committed === null
       ? undefined
-      : strings.format("selectedDateDescription", { date: describeValue(format, committed) });
+      : scope === "time"
+        ? strings.format("selectedTimeDescription", { time: describeValue(format, committed, zoneName) })
+        : strings.format("selectedDateDescription", { date: describeValue(format, committed, zoneName) });
   const descriptionId = `${fallbackId}-description`;
   const describedBy =
     [description === undefined ? undefined : descriptionId, ariaDescribedBy, field.describedBy]
@@ -569,9 +641,9 @@ export function DateInputRoot<P = object, T extends DateInputValue = PropsMadeVa
           },
           children: segments.map((segment) =>
             children === undefined ? (
-              <DateInputSegment key={segment.index} segment={segment} />
+              <DateInputSegment key={segmentKey(segment)} segment={segment} />
             ) : (
-              <Fragment key={segment.index}>{children(segment)}</Fragment>
+              <Fragment key={segmentKey(segment)}>{children(segment)}</Fragment>
             )
           ),
         },
@@ -605,6 +677,15 @@ export function DateInputRoot<P = object, T extends DateInputValue = PropsMadeVa
       )}
     </DateInputRootContext>
   );
+}
+
+/**
+ * A segment's React key: a unit or the zone's name by its type, which appears once, so a unit keeps
+ * its element (and focus) when a granularity change adds or removes others around it, and a removed
+ * unit unmounts rather than turning into its neighbour; a literal by its place.
+ */
+function segmentKey(segment: DateInputSegmentData): string {
+  return segment.type === "literal" ? `literal-${String(segment.index)}` : segment.type;
 }
 
 function noChange(): undefined {

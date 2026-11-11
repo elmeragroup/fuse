@@ -5,22 +5,23 @@
 // forward, the shell context, and the Root element with its providers. Each Root keeps only what
 // differs: how it parses, holds and commits its value, and which values its kind resolves from.
 
-import { useId, useMemo, useRef, useState } from "react";
+import { useCallback, useId, useMemo, useRef, useState } from "react";
 import type { FocusEvent, ReactElement, ReactNode, RefObject } from "react";
 
 import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
 
+import { useStableCallback } from "../../hooks/use-stable-callback";
 import { definedProps } from "../../internal/defined-props";
 import type { Bounds } from "../../temporal/bounds";
-import type { DateGranularity, ResolvedKind, TemporalValue } from "../../temporal/temporal-value";
+import type { DateGranularity, ResolvedKind, TemporalValue, ValueKind } from "../../temporal/temporal-value";
 import type { CalendarRootProps } from "../calendar/calendar";
 import type { CalendarPageBehavior } from "../calendar/calendar-dates";
 import { useTemporalProp } from "../calendar/calendar-input";
 import type { CalendarFirstDayOfWeek } from "../calendar/calendar-input";
 import type { DateInputRootProps, DateInputValue } from "../date-field/date-input";
 import type { DateInputRules } from "../date-field/date-input-validation";
-import type { PickerOpenRequest } from "./picker-change-details";
+import type { DatePickerPresetValue, PickerOpenRequest, PickerPresetReader } from "./picker-change-details";
 import { stateClassName } from "./picker-class-name";
 import type { DatePickerClassName } from "./picker-class-name";
 import { usePickerFocusBoundary, usePickerOpener } from "./picker-focus-boundary";
@@ -30,7 +31,7 @@ import {
   PickerShellContext,
   usePickerDisabled,
 } from "./picker-shell";
-import type { PickerShellContextValue, PickerState } from "./picker-shell";
+import type { PickerShellContextValue, PickerState, PresetRegistration } from "./picker-shell";
 import { kindWitness, useDayUnavailable } from "./picker-value";
 import type { PickerOwner } from "./picker-value";
 import type { PickerSession } from "./use-picker-session";
@@ -95,6 +96,16 @@ export type PickerInputSettings = Pick<
   | "size"
 >;
 
+/**
+ * What a picker's time inputs hand their time-only `DateInput.Root` from the Root: the time
+ * options and state, never the bounds, the requirement or a name, which belong to the picker's own
+ * input, nor a zone or a default value: each time input's kind comes from its binding (`endKind`).
+ */
+export type PickerTimeSettings = Pick<
+  PickerInputSettings,
+  "granularity" | "hourCycle" | "hideTimeZone" | "disabled" | "readOnly" | "size"
+>;
+
 /** What every Calendar part of a picker hands its calendar Root from the Root. */
 export type PickerCalendarSettings = Pick<
   CalendarRootProps,
@@ -151,6 +162,32 @@ export function usePickerRules(
   return useMemo((): DateInputRules => ({ bounds, isDateUnavailable }), [bounds, isDateUnavailable]);
 }
 
+/**
+ * A Root's preset reader, whose identity contract both Roots share: it reads a preset's `dateValue`
+ * for the picker's kind while the preset renders, as the Root reads its own value props, and binds
+ * the Root's commit with the reason `"preset-press"`. It keeps one identity while the kind does, so
+ * a preset rebinds only when the kind changes; the commit it calls is always the Root's latest.
+ *
+ * @param read - Reads a `dateValue` as the Root's value for a kind; a module function.
+ * @param kind - The picker's kind.
+ * @param commit - Commits a read value; returns whether it applied.
+ * @returns The reader the shell context hands the presets.
+ */
+export function usePresetReader<V>(
+  read: (preset: DatePickerPresetValue, kind: ValueKind) => V,
+  kind: ValueKind,
+  commit: (value: V, event: Event, trigger: Element) => boolean
+): PickerPresetReader {
+  const commitPreset = useStableCallback(commit);
+  return useCallback(
+    (preset: DatePickerPresetValue) => {
+      const value = read(preset, kind);
+      return (event: Event, trigger: Element) => commitPreset(value, event, trigger);
+    },
+    [read, kind, commitPreset]
+  );
+}
+
 /** What `usePickerRoot` takes from a Root. */
 export type PickerRootOptions = {
   readonly props: PickerRootSharedProps;
@@ -169,7 +206,9 @@ export type PickerRootOptions = {
   /** Whether the picker is a range picker. */
   readonly range: boolean;
   /** The Root's preset registration. */
-  readonly registerPresets: () => () => void;
+  readonly registerPresets: PresetRegistration;
+  /** Reads a preset's `dateValue` for the Root's kind; new only when that kind changes. */
+  readonly readPreset: PickerPresetReader;
 };
 
 /** What `usePickerRoot` gives a Root. */
@@ -180,6 +219,8 @@ export type PickerRoot = {
   readonly requestOpen: PickerOpenRequest;
   /** What each Input part forwards to its `DateInput.Root`. */
   readonly inputSettings: PickerInputSettings;
+  /** What each time input forwards, or `null` while the picker's values have no time to show. */
+  readonly timeSettings: PickerTimeSettings | null;
   /** What each Calendar part forwards to its calendar Root. */
   readonly calendarSettings: PickerCalendarSettings;
   /** The context the shared parts read. */
@@ -203,6 +244,7 @@ export type PickerRoot = {
  */
 export function usePickerRoot(options: PickerRootOptions): PickerRoot {
   const { props, rules, kind, session, labelledBy, describedBy, invalid, range, registerPresets } = options;
+  const { readPreset } = options;
   const { granularity, hourCycle, hideTimeZone, timeZone, firstDayOfWeek, visibleMonths } = props;
   const { pageBehavior, readOnly, required, form, size, ariaLabel } = props;
   // The parsed bounds, which keep their identity while their printed values hold.
@@ -217,7 +259,7 @@ export function usePickerRoot(options: PickerRootOptions): PickerRoot {
   const triggerId = useId();
   const popupRef = useRef<HTMLDivElement>(null);
   const focus = usePickerFocusBoundary(popupRef, props.onFocusLeave);
-  const { registerInputBoundary, containsInput } = focus;
+  const { registerInputBoundary, containsInput, adjacentInput } = focus;
   const { withOpener, openerRef } = usePickerOpener(containsInput, open);
   const requestOpen = useMemo(() => withOpener(session.requestOpen), [withOpener, session.requestOpen]);
 
@@ -256,6 +298,22 @@ export function usePickerRoot(options: PickerRootOptions): PickerRoot {
       size,
     ]
   );
+  // A time input shows while the picker's values have a time and its granularity shows one.
+  const showsTime = kind.kind.kind !== "PlainDate" && granularity !== "day";
+  const timeSettings = useMemo(
+    (): PickerTimeSettings | null =>
+      showsTime
+        ? {
+            // No zone or kind witness: each time input's kind is its binding's (`endKind`).
+            ...definedProps({ granularity, hourCycle }),
+            hideTimeZone,
+            disabled,
+            readOnly,
+            size,
+          }
+        : null,
+    [showsTime, granularity, hourCycle, hideTimeZone, disabled, readOnly, size]
+  );
   const calendarSettings = useMemo(
     (): PickerCalendarSettings => ({
       ...definedProps({ minValue, maxValue, isDateUnavailable: dayUnavailable, firstDayOfWeek }),
@@ -280,9 +338,11 @@ export function usePickerRoot(options: PickerRootOptions): PickerRoot {
       size,
       popupRef,
       registerPresets,
+      readPreset,
       range,
       registerInputBoundary,
       containsInput,
+      adjacentInput,
       openerRef,
     }),
     [
@@ -297,9 +357,11 @@ export function usePickerRoot(options: PickerRootOptions): PickerRoot {
       invalid,
       size,
       registerPresets,
+      readPreset,
       range,
       registerInputBoundary,
       containsInput,
+      adjacentInput,
       openerRef,
     ]
   );
@@ -311,6 +373,7 @@ export function usePickerRoot(options: PickerRootOptions): PickerRoot {
     disabled,
     requestOpen,
     inputSettings,
+    timeSettings,
     calendarSettings,
     shell,
     state,

@@ -8,6 +8,7 @@ import { definedProps } from "../../internal/defined-props";
 import { isNode } from "../../internal/dom-node";
 import { DateInputRoot } from "../date-field/date-input";
 import type { DateInputRootProps, DateInputValue } from "../date-field/date-input";
+import { DateInputNeighbourContext } from "../date-field/date-input-neighbours";
 import type { KindFromValue } from "../date-field/date-kind-props";
 import { datePickerVariants } from "./date-picker-variants";
 import { stateClassName } from "./picker-class-name";
@@ -88,39 +89,42 @@ export function PickerDateInput({
   );
 
   return (
-    <DateInputRoot<KindFromValue, DateInputValue>
-      {...definedProps(props)}
-      ref={mergedRef}
-      render={(inputProps, state) => (
-        <div
-          {...inputProps}
-          role="presentation"
-          aria-labelledby={undefined}
-          aria-label={undefined}
-          aria-describedby={undefined}
-          aria-disabled={undefined}
-          data-slot="date-picker-input"
-          className={stateClassName(className, state, inputClass)}
-          onBlur={(event: FocusEvent<HTMLDivElement>) => {
-            const next = event.relatedTarget;
-            if (!delivering.current && isNode(next) && popupRef.current?.contains(next) === true) {
-              deferred.current = true;
-              return;
-            }
-            inputProps.onBlur?.(event);
-          }}
-          onFocus={(event: FocusEvent<HTMLDivElement>) => {
-            if (deferred.current) {
-              // Focus came back from the popup: the input never left.
-              deferred.current = false;
-              return;
-            }
-            inputProps.onFocus?.(event);
-          }}>
-          {inputProps.children}
-          <InvalidReport invalid={state.invalid} report={onInvalidChange} />
-        </div>
-      )}
-    />
+    // The picker's inputs are one run of segments for focus: a range's start moves on to its end.
+    <DateInputNeighbourContext value={shell.adjacentInput}>
+      <DateInputRoot<KindFromValue, DateInputValue>
+        {...definedProps(props)}
+        ref={mergedRef}
+        render={(inputProps, state) => (
+          <div
+            {...inputProps}
+            role="presentation"
+            aria-labelledby={undefined}
+            aria-label={undefined}
+            aria-describedby={undefined}
+            aria-disabled={undefined}
+            data-slot="date-picker-input"
+            className={stateClassName(className, state, inputClass)}
+            onBlur={(event: FocusEvent<HTMLDivElement>) => {
+              const next = event.relatedTarget;
+              if (!delivering.current && isNode(next) && popupRef.current?.contains(next) === true) {
+                deferred.current = true;
+                return;
+              }
+              inputProps.onBlur?.(event);
+            }}
+            onFocus={(event: FocusEvent<HTMLDivElement>) => {
+              if (deferred.current) {
+                // Focus came back from the popup: the input never left.
+                deferred.current = false;
+                return;
+              }
+              inputProps.onFocus?.(event);
+            }}>
+            {inputProps.children}
+            <InvalidReport invalid={state.invalid} report={onInvalidChange} />
+          </div>
+        )}
+      />
+    </DateInputNeighbourContext>
   );
 }

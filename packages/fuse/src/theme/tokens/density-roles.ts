@@ -100,6 +100,8 @@ export const PART_DENSITY = {
   "date-picker": "layout",
   "date-range-picker": "layout",
   "date-picker-input": "control",
+  // The popup's time input is a DateInput box of its own: the field height and inset.
+  "date-picker-time-input": "control",
   "date-picker-trigger": "control",
   "date-picker-popup": "layout",
   "date-picker-presets": "surface",
