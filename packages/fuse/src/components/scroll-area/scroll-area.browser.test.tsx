@@ -75,6 +75,10 @@ function TallList({ label, items }: { label: string; items: number }) {
   );
 }
 
+// Inline, so the line truncates whether or not the built stylesheet carries Tailwind's `truncate`.
+const TRUNCATED_LINE = { overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis" } as const;
+const LONG_LINE = "A single line of text far longer than the narrow scroll area that holds it";
+
 describe("ScrollArea", () => {
   it("keeps an always bar visible and reveals a hover bar only while its own area is hovered", async () => {
     render(
@@ -136,5 +140,39 @@ describe("ScrollArea", () => {
 
     await userEvent.wheel(viewport, { delta: { y: 160 } });
     expect(viewport.scrollTop).toBeGreaterThan(0);
+  });
+
+  it("holds a vertical area's content to the viewport so a truncated line ellipsizes at its edge", () => {
+    render(
+      <ScrollArea.Root style={{ width: 160, height: 96 }}>
+        <p style={TRUNCATED_LINE}>{LONG_LINE}</p>
+      </ScrollArea.Root>
+    );
+
+    const line = labeledText(LONG_LINE);
+    const viewport = viewportFromText(LONG_LINE);
+    // The line keeps more text than it shows: it is clipped, not widened to its length.
+    expect(line.scrollWidth).toBeGreaterThan(line.clientWidth);
+    expect(line.getBoundingClientRect().width).toBe(viewport.clientWidth);
+    // Nothing reaches past the viewport, so there is no horizontal scroll.
+    expect(viewport.scrollWidth).toBe(viewport.clientWidth);
+  });
+
+  it("lets a horizontal area's content grow to its widest line and scroll to its end", async () => {
+    render(
+      <ScrollArea.Root orientation="horizontal" type="always" style={{ width: 160, height: 96 }}>
+        <p style={TRUNCATED_LINE}>{LONG_LINE}</p>
+      </ScrollArea.Root>
+    );
+
+    await waitForOverflow(LONG_LINE, "data-has-overflow-x");
+    const line = labeledText(LONG_LINE);
+    const viewport = viewportFromText(LONG_LINE);
+    // The whole line shows; the viewport scrolls across it instead.
+    expect(line.scrollWidth).toBe(line.clientWidth);
+    expect(viewport.scrollWidth).toBeGreaterThan(viewport.clientWidth);
+
+    await userEvent.wheel(viewport, { delta: { x: 400 } });
+    await expect.poll(() => viewport.scrollLeft).toBe(viewport.scrollWidth - viewport.clientWidth);
   });
 });

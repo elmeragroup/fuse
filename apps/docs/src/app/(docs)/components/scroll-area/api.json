@@ -29,7 +29,7 @@
           "type": "\"horizontal\" | \"vertical\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"vertical\"",
-          "description": "Which single scrollbar `Root` renders. For two-axis scrolling, compose the base-ui primitives directly and mount two `ScrollArea.Bar`s.",
+          "description": "Which single scrollbar `Root` renders, and so which axis the content scrolls on. A vertical area holds its content to the viewport's width, so `truncate` text ellipsizes at the edge; a horizontal area lets its content grow to its widest line and scroll. For two-axis scrolling, compose the base-ui primitives directly and mount two `ScrollArea.Bar`s.",
           "required": false
         },
         {

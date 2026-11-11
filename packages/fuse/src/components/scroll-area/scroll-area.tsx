@@ -14,8 +14,10 @@ type ScrollAreaType = NonNullable<VariantProps<typeof scrollbarTypeVariants>["ty
 
 type ScrollAreaRootProps = ComponentProps<typeof ScrollAreaPrimitive.Root> & {
   /**
-   * Which single scrollbar `Root` renders. For two-axis scrolling, compose the base-ui
-   * primitives directly and mount two `ScrollArea.Bar`s.
+   * Which single scrollbar `Root` renders, and so which axis the content scrolls on. A vertical
+   * area holds its content to the viewport's width, so `truncate` text ellipsizes at the edge;
+   * a horizontal area lets its content grow to its widest line and scroll. For two-axis
+   * scrolling, compose the base-ui primitives directly and mount two `ScrollArea.Bar`s.
    */
   orientation?: "vertical" | "horizontal";
   /**
@@ -55,7 +57,15 @@ export function ScrollAreaRoot({
       <ScrollAreaPrimitive.Viewport
         data-slot="scroll-area-viewport"
         className={cn("min-h-0 flex-1 rounded-[inherit] transition-[color,box-shadow]", selfFocusRingClass)}>
-        <ScrollAreaPrimitive.Content data-slot="scroll-area-content">{children}</ScrollAreaPrimitive.Content>
+        <ScrollAreaPrimitive.Content
+          data-slot="scroll-area-content"
+          // Base UI's inline `min-width: fit-content` grows the content to its widest line so it can
+          // scroll sideways, which also keeps a `truncate` child from narrowing. Only a horizontal
+          // area scrolls sideways, so a vertical one drops that floor (the important modifier
+          // outranks the inline style) and its content fills the viewport.
+          className={cn(orientation === "vertical" && "min-w-0!")}>
+          {children}
+        </ScrollAreaPrimitive.Content>
       </ScrollAreaPrimitive.Viewport>
       <ScrollAreaBar orientation={orientation} type={type} />
       <ScrollAreaPrimitive.Corner />

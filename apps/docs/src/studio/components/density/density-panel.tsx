@@ -30,8 +30,6 @@ import { useDensityView } from "./density-view";
 
 const densityPanel = tv({
   slots: {
-    // Layout only: the knobs' fit-content width would otherwise widen the inspector's column.
-    panel: "contain-inline-size",
     part: "flex flex-col gap-2 px-2",
     metrics: "text-xs m-0 flex list-none flex-col gap-0.5 p-0 font-mono",
     metric: "flex min-w-0 items-baseline justify-between gap-2",
@@ -244,7 +242,7 @@ export function DensityPanel(): ReactElement {
   const { inspected } = useDensityView();
   const { overrides } = useStudioEdits();
   return (
-    <div className={styles.panel()}>
+    <div>
       <StudioPanelSection title="Density">
         <div className={styles.part()}>
           <InspectedPartDetails part={inspected} />

@@ -61,10 +61,8 @@ const orderSearch = tv({
     optionLabel: "min-w-0 flex-1 truncate",
     optionCount: "text-xs ml-auto pl-3 text-muted-foreground tabular-nums",
     total: "text-xs @md:block m-0 hidden shrink-0 whitespace-nowrap text-muted-foreground tabular-nums",
-    // ScrollArea's content is as wide as its widest child; containing the inline size keeps the
-    // table's own container as the one that scrolls sideways.
     scroll: "min-h-0 flex-1",
-    body: "px-3 pb-24 contain-inline-size",
+    body: "px-3 pb-24",
     // The current order's opener carries `aria-current`; its row takes the highlight.
     row: "has-[[aria-current=true]]:bg-accent has-[[aria-current=true]]:text-accent-foreground",
     // The keyboard path to what a row press does: Fuse's row press ignores presses on controls.
