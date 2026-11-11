@@ -62,7 +62,6 @@ import type { CommitValue, ParseValue } from "./token-knobs";
 
 const studioTokenPanel = tv({
   slots: {
-    panel: "contain-inline-size",
     controls: "flex flex-col gap-2 px-2",
     filters: "flex items-center gap-2",
     search: "min-w-0 flex-1",
@@ -426,9 +425,7 @@ export function StudioTokenPanel({ lead = NO_LEAD, afterLead }: StudioTokenPanel
   const lastLead = sections.findLast((section) => lead.includes(section.id))?.id;
 
   return (
-    // Layout only: the scroll area sizes its content to fit, so the rows' long names and paired
-    // controls would widen the panel; containment holds the editor to the panel's width.
-    <div ref={panel} className={styles.panel()}>
+    <div ref={panel}>
       <StudioPanelSection title="Tokens">
         {probe}
         <div className={styles.controls()}>

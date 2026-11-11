@@ -57,17 +57,14 @@ const demoTabs = tv({
     codeView: "relative isolate h-(--demo-height) bg-card",
     // The actions float in the code's top end corner and stay put while the code scrolls.
     actions: "absolute end-3 top-3 z-10",
+    // The vertical scroll area holds the code block to its width, so the block scrolls its long
+    // lines itself, under its own horizontal scrollbar.
     code: "h-full",
-    // The scroll area's content grows to the width of what it holds, so code as wide as its
-    // longest line would never overflow the code block, and the scroll area draws only a vertical
-    // bar. Containing the block's inline size keeps it to the scroll area's width, so the block
-    // scrolls its long lines itself, under its own horizontal scrollbar.
-    codeSource: "[contain:inline-size]",
     sheetHeader: "flex-row items-center justify-between gap-2",
   },
 });
 
-const { root, panel, footer, bleed, codeView, actions, code, codeSource, sheetHeader } = demoTabs();
+const { root, panel, footer, bleed, codeView, actions, code, sheetHeader } = demoTabs();
 
 /** The two views a demo frame switches between. */
 type DemoView = "demo" | "code";
@@ -184,16 +181,12 @@ export function DemoTabs({
                     </Sheet.Content>
                   </Sheet.Root>
                 </Toolbar.Root>
-                <ScrollArea.Root className={code()}>
-                  <div className={codeSource()}>{source}</div>
-                </ScrollArea.Root>
+                <ScrollArea.Root className={code()}>{source}</ScrollArea.Root>
               </>
             ) : (
               // Until the view first shows, it holds the plain source alone. The toolbar, the Sheet
               // and the scroll area, which measures itself as it mounts, wait for the reader.
-              <div className={code()}>
-                <div className={codeSource()}>{source}</div>
-              </div>
+              <div className={code()}>{source}</div>
             )}
           </div>
         </div>

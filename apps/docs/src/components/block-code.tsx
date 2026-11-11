@@ -37,9 +37,9 @@ const blockCode = tv({
     pane: "flex min-h-0 min-w-0 flex-col",
     bar: "flex h-11 shrink-0 items-center gap-2 border-b border-border px-4",
     path: "text-xs min-w-0 flex-1 truncate font-mono text-muted-foreground",
+    // The vertical scroll area holds the block to its width, so the block scrolls its long lines
+    // itself, under its own horizontal scrollbar.
     code: "min-h-0 flex-1",
-    // The block scrolls its long lines itself, under its own horizontal scrollbar.
-    source: "[contain:inline-size]",
   },
 });
 
@@ -49,9 +49,7 @@ function FileSource({ file, active }: { file: BlockFile; active: boolean }): Rea
   const html = useHighlightedSource(file.sourceHref, active);
   return (
     <ScrollArea.Root className={styles.code()}>
-      <div className={styles.source()}>
-        <DocsCodePre variant="embedded" code={html === null ? { text: file.sourceText } : { html }} />
-      </div>
+      <DocsCodePre variant="embedded" code={html === null ? { text: file.sourceText } : { html }} />
     </ScrollArea.Root>
   );
 }

@@ -26,9 +26,7 @@ const orderList = tv({
     // The sticky group headers stack above the rows, so the scrollbar stacks above them; else
     // each header covers the thumb and it draws in pieces.
     scroll: "h-full *:data-[slot=scroll-area-scrollbar]:z-30",
-    // ScrollArea's content is at least as wide as its children's widest line, so the list
-    // contains its inline size to let rows truncate at the pane's width.
-    list: "group/list m-0 list-none p-0 pb-24 contain-inline-size",
+    list: "group/list m-0 list-none p-0 pb-24",
     // Sticky, so the band stays opaque: the page background below a faint muted tint, which
     // keeps the header quieter than the rows in both schemes.
     groupHead:
@@ -57,7 +55,6 @@ const orderList = tv({
     // A ring keeps the avatar's edge on hovered and selected rows, which share its fill.
     avatar: "size-6 ring-1 ring-border",
     date: "text-xs w-8 shrink-0 text-right text-muted-foreground tabular-nums",
-    loading: "contain-inline-size",
     skeletonRow: "flex h-10 items-center gap-3 border-b border-border/60 pr-4 pl-10",
     skeletonIcon: "size-3.5 rounded-full",
     skeletonId: "h-3 w-12",
@@ -146,7 +143,7 @@ const SKELETON_ROWS = 9;
 /** Placeholder rows in the list's own geometry, shown while a view "fetches". */
 function LoadingRows(): ReactElement {
   return (
-    <div role="status" aria-label="Loading orders" className={styles.loading()}>
+    <div role="status" aria-label="Loading orders">
       {Array.from({ length: SKELETON_ROWS }, (_, index) => (
         <div key={index} className={styles.skeletonRow()}>
           <Skeleton className={styles.skeletonIcon()} />

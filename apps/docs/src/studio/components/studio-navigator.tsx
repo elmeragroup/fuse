@@ -16,9 +16,7 @@ import { useViewportCommands } from "./studio-viewport";
 
 const studioNavigator = tv({
   slots: {
-    // Layout only: the scroll area sizes its content to fit, so a long artboard name would widen
-    // the panel; containment holds the rows to its width, where the names truncate.
-    list: "m-0 flex list-none flex-col gap-0.5 p-0 contain-inline-size",
+    list: "m-0 flex list-none flex-col gap-0.5 p-0",
     // A full-width row, its name from the start edge, like Figma's layers list.
     row: "w-full justify-start",
     name: "truncate",

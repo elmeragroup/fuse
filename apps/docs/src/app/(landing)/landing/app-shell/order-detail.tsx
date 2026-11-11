@@ -54,8 +54,7 @@ const orderDetail = tv({
     barId: "text-xs font-mono text-muted-foreground tabular-nums",
     barEnd: "ml-auto flex items-center gap-1",
     scroll: "min-h-0 flex-1",
-    // Contained like the list, so long values wrap at the pane's width.
-    body: "flex flex-col gap-7 px-5 pt-5 pb-24 contain-inline-size",
+    body: "flex flex-col gap-7 px-5 pt-5 pb-24",
     titleBlock: "flex flex-col gap-1",
     title: "text-lg font-semibold m-0 text-balance text-foreground",
     subtitle: "text-sm m-0 text-muted-foreground",

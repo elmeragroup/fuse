@@ -24,9 +24,6 @@ import { TokenRow, useResolvedColors } from "./studio-token-panel";
 
 const studioSelectionSection = tv({
   slots: {
-    // Layout only: the scroll area sizes its content to fit, so the rows' long names and paired
-    // controls would widen the panel; containment holds the section to the panel's width.
-    root: "contain-inline-size",
     list: "px-2",
     heading: "px-2",
     tokens: "flex flex-col gap-3 px-2",
@@ -59,7 +56,7 @@ function PartDetails({ part, artboard }: { part: PickedPart; artboard: ArtboardS
 
   const read = partTokens(STUDIO_SLOT_TOKENS, part.slot);
   return (
-    <div ref={root} className={styles.root()} data-selection-section>
+    <div ref={root} data-selection-section>
       <StudioPanelSection title="Selection">
         <ReadoutList className={styles.list()}>
           <ReadoutRow term="Slot" code>
