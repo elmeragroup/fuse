@@ -14,6 +14,7 @@ import {
   settledOn,
 } from "../../../test/carousel-queries";
 import { CaughtError, caughtError } from "../../../test/caught-error";
+import { whileKeyHeld } from "../../../test/key-hold";
 import { withLocale } from "../../../test/locale-matrix";
 import { renderThemed, roleNamed } from "../../../test/themed-browser-render";
 import type { CarouselIndexChangeReason } from "./carousel-context";
@@ -140,18 +141,21 @@ describe("Carousel held keys", () => {
     );
     const viewport = carouselViewport(roleNamed("region", "Offers"));
     viewport.focus();
-    // Held: the first press scrolls, and its scroll ends while the key is still down, so its settle
-    // waits for the release. The key then repeats, each repeat new input on the viewport.
-    await userEvent.keyboard("{ArrowRight>}");
-    await settledOn(viewport, WIDTH);
-    // Repeats until past the last page: three presses reach it, and the later ones scroll nothing.
-    for (let repeat = 0; repeat < 5; repeat += 1) {
-      await userEvent.keyboard("{ArrowRight>}");
-      await settledOn(viewport, Math.min(repeat + 2, 3) * WIDTH);
-    }
-    // Still held, so nothing has settled the parent's page back.
-    await settledOn(viewport, 3 * WIDTH);
-    await userEvent.keyboard("{/ArrowRight}");
+    // Held for real, with no release between repeats: `userEvent.keyboard` releases a key it holds
+    // before pressing it again, and a runner slower than the engine's quiet spell between that
+    // release and the press would rightly see the carousel settle and go back to the parent's page.
+    await whileKeyHeld("ArrowRight", async (repeat) => {
+      // The first press scrolls, and its scroll ends while the key is still down, so its settle
+      // waits for the release.
+      await settledOn(viewport, WIDTH);
+      // Repeats until past the last page: three presses reach it, and the later ones scroll nothing.
+      for (let press = 2; press <= 6; press += 1) {
+        await repeat();
+        await settledOn(viewport, Math.min(press, 3) * WIDTH);
+      }
+      // Still held, so nothing has settled the parent's page back.
+      await settledOn(viewport, 3 * WIDTH);
+    });
     // The parent keeps page 1, so once the key is up the carousel goes back to it.
     await settledOn(viewport, 0);
   });
