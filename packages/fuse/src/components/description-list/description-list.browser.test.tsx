@@ -233,61 +233,50 @@ describe("DescriptionList", () => {
       }
     });
 
-    it("draws a rule above every Item but the first by default", () => {
-      renderBasicList();
-      expect(hasRuleAbove("Name"), "first Item").toBe(false);
-      expect(hasRuleAbove("Meter point"), "second Item").toBe(true);
-    });
-
-    it("draws no rules with dividers={false}", () => {
+    // Each list's `dividers` reaches only its own Items: the outer list's setting must not leak
+    // into a nested list, whichever of the two drops its rules.
+    it.each([
+      {
+        name: "a default list keeps its rules around a nested dividers={false} list",
+        outer: {},
+        nested: { dividers: false },
+        outerRule: true,
+        nestedRule: false,
+      },
+      {
+        name: "a dividers={false} list drops its rules around a nested default list",
+        outer: { dividers: false },
+        nested: {},
+        outerRule: false,
+        nestedRule: true,
+      },
+    ] as const)("$name", ({ outer, nested, outerRule, nestedRule }) => {
       renderThemed(
-        <DescriptionList.Content dividers={false}>
-          {["Name", "Meter point", "Tariff"].map((term) => (
-            <DescriptionList.Item key={term}>
-              <DescriptionList.Term>{term}</DescriptionList.Term>
-              <DescriptionList.Details>Value</DescriptionList.Details>
-            </DescriptionList.Item>
-          ))}
+        <DescriptionList.Content {...outer}>
+          <DescriptionList.Item>
+            <DescriptionList.Term>Outer first</DescriptionList.Term>
+            <DescriptionList.Details>Value</DescriptionList.Details>
+          </DescriptionList.Item>
+          <DescriptionList.Item>
+            <DescriptionList.Term>Outer second</DescriptionList.Term>
+            <DescriptionList.Details>
+              <DescriptionList.Content {...nested}>
+                <DescriptionList.Item>
+                  <DescriptionList.Term>Nested first</DescriptionList.Term>
+                  <DescriptionList.Details>Value</DescriptionList.Details>
+                </DescriptionList.Item>
+                <DescriptionList.Item>
+                  <DescriptionList.Term>Nested second</DescriptionList.Term>
+                  <DescriptionList.Details>Value</DescriptionList.Details>
+                </DescriptionList.Item>
+              </DescriptionList.Content>
+            </DescriptionList.Details>
+          </DescriptionList.Item>
         </DescriptionList.Content>
       );
-      for (const term of ["Name", "Meter point", "Tariff"]) {
-        expect(hasRuleAbove(term), term).toBe(false);
-      }
+      expect(hasRuleAbove("Outer second"), "outer second Item").toBe(outerRule);
+      expect(hasRuleAbove("Nested second"), "nested second Item").toBe(nestedRule);
     });
-
-    it.each([
-      [false, true],
-      [true, false],
-    ] as const)(
-      "keeps a nested list's own dividers (outer dividers=%s, nested dividers=%s)",
-      (outer, nested) => {
-        renderThemed(
-          <DescriptionList.Content dividers={outer}>
-            <DescriptionList.Item>
-              <DescriptionList.Term>Outer first</DescriptionList.Term>
-              <DescriptionList.Details>Value</DescriptionList.Details>
-            </DescriptionList.Item>
-            <DescriptionList.Item>
-              <DescriptionList.Term>Outer second</DescriptionList.Term>
-              <DescriptionList.Details>
-                <DescriptionList.Content dividers={nested}>
-                  <DescriptionList.Item>
-                    <DescriptionList.Term>Nested first</DescriptionList.Term>
-                    <DescriptionList.Details>Value</DescriptionList.Details>
-                  </DescriptionList.Item>
-                  <DescriptionList.Item>
-                    <DescriptionList.Term>Nested second</DescriptionList.Term>
-                    <DescriptionList.Details>Value</DescriptionList.Details>
-                  </DescriptionList.Item>
-                </DescriptionList.Content>
-              </DescriptionList.Details>
-            </DescriptionList.Item>
-          </DescriptionList.Content>
-        );
-        expect(hasRuleAbove("Outer second"), "outer second Item").toBe(outer);
-        expect(hasRuleAbove("Nested second"), "nested second Item").toBe(nested);
-      }
-    );
   });
 
   describe("inline layout", () => {

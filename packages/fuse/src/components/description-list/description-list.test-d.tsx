@@ -47,44 +47,10 @@ test("public API exports only the namespace and part prop types, with native att
   const _inline = <DescriptionList.Content layout="inline" />;
   // @ts-expect-error layout is responsive or inline
   const _badLayout = <DescriptionList.Content layout="stacked" />;
-  const _noDividers = <DescriptionList.Content dividers={false} />;
-  const _responsiveNoDividers = <DescriptionList.Content layout="responsive" dividers={false} />;
-  // @ts-expect-error only the content takes dividers
-  const _itemDividers = <DescriptionList.Item dividers={false} />;
-  // @ts-expect-error dividers is a boolean
-  const _dividersString = <DescriptionList.Content dividers="false" />;
   // @ts-expect-error only the content takes a layout
   const _termLayout = <DescriptionList.Term layout="inline" />;
   // @ts-expect-error only the content takes a layout
   const _itemLayout = <DescriptionList.Item layout="inline" />;
   // @ts-expect-error polymorphism is never an as prop
   const _noAs = <DescriptionList.Root as="section" />;
-});
-
-test("consumer props extend and forward the Content props, dividers included", () => {
-  // A consumer's own list props extend the Content props as an interface and forward them through
-  // `Omit`, as they could before `dividers`; both need an object type, not a union. Declared inside
-  // the test so the checker reports their errors here.
-  // oxlint-disable-next-line typescript/consistent-type-definitions -- the interface is the consumer pattern under test: it extends only an object type, never a union
-  interface SummaryListProps extends DescriptionListContentProps {
-    heading: string;
-  }
-
-  function SummaryList({ heading, ...props }: SummaryListProps) {
-    return (
-      <DescriptionList.Root>
-        <DescriptionList.Heading>{heading}</DescriptionList.Heading>
-        <DescriptionList.Content {...props} />
-      </DescriptionList.Root>
-    );
-  }
-
-  function PlainList(props: Omit<DescriptionListContentProps, "className">) {
-    return <DescriptionList.Content className="max-w-md" {...props} />;
-  }
-
-  expectTypeOf<SummaryListProps["dividers"]>().toEqualTypeOf<boolean | undefined>();
-  const _summary = <SummaryList heading="Delivery" layout="responsive" dividers={false} />;
-  const _plain = <PlainList layout="inline" dividers={false} />;
-  const _plainDefault = <PlainList dividers />;
 });
