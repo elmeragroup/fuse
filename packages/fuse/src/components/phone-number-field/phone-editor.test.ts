@@ -69,7 +69,7 @@ function keyAt(state: PhoneEditorState, caret: number, key: string): PhoneEditor
 
 /** A controlled parent that takes every proposal back as its `value`. */
 function echo(state: PhoneEditorState, props: PhoneEditorProps = {}): PhoneEditorState {
-  return PhoneEditor.reconcile(state, { ...props, value: PhoneEditor.view(state).outputValue });
+  return PhoneEditor.reconcile(state, { ...props, value: PhoneEditor.proposedValue(state) ?? "" });
 }
 
 /** Where the caret sits after an edit: the editor's selection, else where the browser left it. */
@@ -379,7 +379,7 @@ describe("PhoneEditor caret", () => {
 
   it("stores no caret when the display is what was typed, or the input reports no selection", () => {
     const typed = fill(PhoneEditor.create({}), "4");
-    expect(PhoneEditor.view(typed)).toMatchObject({ displayValue: "4", selection: null, proposalKey: null });
+    expect(PhoneEditor.view(typed)).toMatchObject({ displayValue: "4", selection: null });
     const unknown = PhoneEditor.edit(formatted(), {
       value: "91 3 45 67",
       selectionStart: null,
@@ -387,21 +387,80 @@ describe("PhoneEditor caret", () => {
       selectionDirection: null,
       inputType: null,
     });
-    expect(PhoneEditor.view(unknown)).toMatchObject({
-      displayValue: "91 34 56 7",
-      selection: null,
-      proposalKey: null,
-    });
+    expect(PhoneEditor.view(unknown)).toMatchObject({ displayValue: "91 34 56 7", selection: null });
   });
 
-  it("gives each proposal its own key, even one that proposes the display already shown", () => {
+  it("gives each edit its own selection, even one that proposes the display already shown", () => {
     const first = keyAt(formatted(), 3, "Backspace");
     const second = keyAt(first, 3, "Backspace");
     expect(PhoneEditor.view(first).displayValue).toBe("91 23 45 67");
     expect(PhoneEditor.view(second).displayValue).toBe("91 23 45 67");
-    expect(PhoneEditor.view(first).proposalKey).not.toBeNull();
-    expect(PhoneEditor.view(second).proposalKey).not.toBeNull();
-    expect(PhoneEditor.view(second).proposalKey).not.toBe(PhoneEditor.view(first).proposalKey);
+    expect(PhoneEditor.view(first).selection).toEqual({ start: 2, end: 2, direction: "none" });
+    expect(PhoneEditor.view(second).selection).toEqual({ start: 2, end: 2, direction: "none" });
+    expect(PhoneEditor.view(second).selection).not.toBe(PhoneEditor.view(first).selection);
+  });
+
+  describe("one caret per record", () => {
+    it("keeps the same caret while later props show the display it was placed in", () => {
+      const typed = keyAt(formatted(), 4, "Backspace");
+      const { selection } = PhoneEditor.view(typed);
+      expect(selection).toEqual({ start: 2, end: 2, direction: "none" });
+      // A configuration change that shows the same display keeps it, as the same object.
+      const kept = PhoneEditor.reconcile(typed, {
+        defaultValue: "+4791234567",
+        formatOnType: true,
+        autoDetectCountry: false,
+      });
+      expect(PhoneEditor.view(kept)).toMatchObject({ displayValue: "91 34 56 7" });
+      expect(PhoneEditor.view(kept).selection).toBe(selection);
+    });
+
+    it("drops the caret for good once props show another display, even when they show its display again", () => {
+      const typed = keyAt(formatted(), 4, "Backspace");
+      const unformatted = PhoneEditor.reconcile(typed, { defaultValue: "+4791234567", formatOnType: false });
+      expect(PhoneEditor.view(unformatted)).toMatchObject({ displayValue: "9134567", selection: null });
+      const reformatted = PhoneEditor.reconcile(unformatted, {
+        defaultValue: "+4791234567",
+        formatOnType: true,
+      });
+      expect(PhoneEditor.view(reformatted)).toMatchObject({ displayValue: "91 34 56 7", selection: null });
+    });
+
+    it("never brings a caret back when a controlled parent shows its display again", () => {
+      const props = { value: "+4791234567", formatOnType: true } as const;
+      // The last digit retyped as 8 in the middle of an unformatted run.
+      const proposed = PhoneEditor.edit(PhoneEditor.create(props), {
+        value: "912345 68",
+        selectionStart: 6,
+        selectionEnd: 6,
+        selectionDirection: "none",
+        inputType: "insertText",
+      });
+      const echoed = PhoneEditor.reconcile(proposed, { ...props, value: "+4791234568" });
+      expect(PhoneEditor.view(echoed)).toMatchObject({
+        displayValue: "91 23 45 68",
+        selection: { start: 8, end: 8, direction: "none" },
+      });
+      const replaced = PhoneEditor.reconcile(echoed, { ...props, value: "+4799999999" });
+      expect(PhoneEditor.view(replaced)).toMatchObject({ displayValue: "99 99 99 99", selection: null });
+      const restored = PhoneEditor.reconcile(replaced, { ...props, value: "+4791234568" });
+      expect(PhoneEditor.view(restored)).toMatchObject({ displayValue: "91 23 45 68", selection: null });
+    });
+
+    it("replaces the caret with each proposal, so a rejected edit never shows an earlier one", () => {
+      const props = { value: "+4791234567", formatOnType: true } as const;
+      const proposed = keyAt(PhoneEditor.create(props), 4, "Backspace");
+      const accepted = PhoneEditor.reconcile(proposed, { ...props, value: "+479134567" });
+      expect(PhoneEditor.view(accepted).selection).toEqual({ start: 2, end: 2, direction: "none" });
+      // The parent keeps its value: the display the accepted edit placed its caret in shows again.
+      const rejected = PhoneEditor.reconcile(keyAt(accepted, 2, "5"), { ...props, value: "+479134567" });
+      expect(PhoneEditor.view(rejected)).toMatchObject({ displayValue: "91 34 56 7", selection: null });
+      const pasted = PhoneEditor.reconcile(PhoneEditor.paste(accepted, "+4799999999"), {
+        ...props,
+        value: "+479134567",
+      });
+      expect(PhoneEditor.view(pasted)).toMatchObject({ displayValue: "91 34 56 7", selection: null });
+    });
   });
 
   describe("under a controlled value", () => {
@@ -411,23 +470,16 @@ describe("PhoneEditor caret", () => {
       return keyAt(PhoneEditor.create(props), 4, "Backspace");
     }
 
-    it("shows the proposal and its caret until the parent answers", () => {
-      expect(PhoneEditor.view(backspaced())).toMatchObject({
-        displayValue: "91 34 56 7",
-        outputValue: "+479134567",
-        selection: { start: 2, end: 2, direction: "none" },
-      });
-    });
-
-    it("keeps the caret of a proposal the parent echoes", () => {
+    it("proposes the edit's output, and shows it with its caret once the parent echoes it", () => {
       const proposed = backspaced();
+      expect(PhoneEditor.proposedValue(proposed)).toBe("+479134567");
+      expect(PhoneEditor.view(proposed)).toMatchObject({ displayValue: "91 23 45 67", selection: null });
       const echoed = PhoneEditor.reconcile(proposed, { ...props, value: "+479134567" });
       expect(PhoneEditor.view(echoed)).toMatchObject({
         displayValue: "91 34 56 7",
         outputValue: "+479134567",
         selection: { start: 2, end: 2, direction: "none" },
       });
-      expect(PhoneEditor.view(echoed).proposalKey).toBe(PhoneEditor.view(proposed).proposalKey);
     });
 
     it("drops the caret with a proposal the parent rejects", () => {
@@ -436,22 +488,17 @@ describe("PhoneEditor caret", () => {
         displayValue: "91 23 45 67",
         outputValue: "+4791234567",
         selection: null,
-        proposalKey: null,
       });
     });
 
     it("keeps the caret when the parent stores its own form of the proposed number", () => {
-      const proposed = backspaced();
-      const stored = PhoneEditor.reconcile(proposed, { ...props, value: "9134567" });
+      const stored = PhoneEditor.reconcile(backspaced(), { ...props, value: "9134567" });
       expect(PhoneEditor.view(stored)).toMatchObject({
         displayValue: "91 34 56 7",
         outputValue: "+479134567",
         selection: { start: 2, end: 2, direction: "none" },
       });
-      expect(PhoneEditor.view(stored).proposalKey).toBe(PhoneEditor.view(proposed).proposalKey);
-      const later = PhoneEditor.reconcile(stored, { ...props, value: "9134567" });
-      expect(later).toBe(stored);
-      expect(PhoneEditor.view(later).proposalKey).toBe(PhoneEditor.view(proposed).proposalKey);
+      expect(PhoneEditor.reconcile(stored, { ...props, value: "9134567" })).toBe(stored);
     });
 
     it("keeps the caret when the parent keeps its own form of a number the edit shows unchanged", () => {
@@ -465,7 +512,6 @@ describe("PhoneEditor caret", () => {
         outputValue: "+4791234567",
         selection: { start: 2, end: 2, direction: "none" },
       });
-      expect(PhoneEditor.view(kept).proposalKey).toBe(PhoneEditor.view(proposed).proposalKey);
     });
 
     it("drops the caret with a proposal the parent replaces", () => {
@@ -477,16 +523,6 @@ describe("PhoneEditor caret", () => {
       });
     });
 
-    it("shows the accepted proposal's key, not the rejected one's", () => {
-      const accepted = PhoneEditor.reconcile(backspaced(), { ...props, value: "+479134567" });
-      const acceptedKey = PhoneEditor.view(accepted).proposalKey;
-      const proposed = keyAt(accepted, 2, "5");
-      const rejected = PhoneEditor.reconcile(proposed, { ...props, value: "+479134567" });
-      expect(PhoneEditor.view(rejected).displayValue).toBe("91 34 56 7");
-      expect(PhoneEditor.view(rejected).proposalKey).toBe(acceptedKey);
-      expect(PhoneEditor.view(rejected).proposalKey).not.toBe(PhoneEditor.view(proposed).proposalKey);
-    });
-
     it("leaves the caret alone when a rejected proposal comes back through a delayed echo", () => {
       const rejected = PhoneEditor.reconcile(backspaced(), props);
       const echoed = PhoneEditor.reconcile(rejected, { ...props, value: "+479134567" });
@@ -494,13 +530,11 @@ describe("PhoneEditor caret", () => {
         displayValue: "91 34 56 7",
         outputValue: "+479134567",
         selection: null,
-        proposalKey: null,
       });
     });
 
     it("keeps the caret of an echo that a configuration change re-derives to the same display", () => {
-      const proposed = backspaced();
-      const echoed = PhoneEditor.reconcile(proposed, {
+      const echoed = PhoneEditor.reconcile(backspaced(), {
         ...props,
         value: "+479134567",
         autoDetectCountry: false,
@@ -509,16 +543,11 @@ describe("PhoneEditor caret", () => {
         displayValue: "91 34 56 7",
         selection: { start: 2, end: 2, direction: "none" },
       });
-      expect(PhoneEditor.view(echoed).proposalKey).toBe(PhoneEditor.view(proposed).proposalKey);
     });
 
     it("drops the caret of an echo that a configuration change shows differently", () => {
       const echoed = PhoneEditor.reconcile(backspaced(), { value: "+479134567", formatOnType: false });
-      expect(PhoneEditor.view(echoed)).toMatchObject({
-        displayValue: "9134567",
-        selection: null,
-        proposalKey: null,
-      });
+      expect(PhoneEditor.view(echoed)).toMatchObject({ displayValue: "9134567", selection: null });
     });
   });
 });
@@ -551,6 +580,21 @@ describe("PhoneEditor.selectCountry", () => {
 });
 
 describe("PhoneEditor.reconcile", () => {
+  // The hook stores whatever `reconcile` returns during render, so a new state for props
+  // that did not change costs every keystroke a second render pass.
+  it.each([
+    ["an edit", (state: PhoneEditorState) => keyAt(state, 4, "Backspace")],
+    ["a paste", (state: PhoneEditorState) => PhoneEditor.paste(state, "+46701234567")],
+    ["a country pick", (state: PhoneEditorState) => PhoneEditor.selectCountry(state, "SE")],
+  ] as const)(
+    "returns the state %s left when an uncontrolled field's props stay the same",
+    (_name, change) => {
+      const props = { defaultValue: "+4791234567", formatOnType: true } as const;
+      const changed = change(PhoneEditor.create(props));
+      expect(PhoneEditor.reconcile(changed, { ...props })).toBe(changed);
+    }
+  );
+
   it("returns the same state for equal props in new objects", () => {
     const props = { value: "+4741234567", countries: ["NO", "SE"] } as const;
     const state = PhoneEditor.create(props);
@@ -656,7 +700,7 @@ describe("PhoneEditor.reconcile", () => {
       ],
     ] as const)("%s", (_name, props, typed, output, display) => {
       const proposed = fill(PhoneEditor.create({ ...props, value: "" }), typed);
-      expect(PhoneEditor.view(proposed).outputValue).toBe(output);
+      expect(PhoneEditor.proposedValue(proposed)).toBe(output);
       expect(shown(echo(proposed, props))).toEqual({ display, output, country: "NO" });
     });
 
@@ -665,7 +709,7 @@ describe("PhoneEditor.reconcile", () => {
       const state = PhoneEditor.create({ ...props, value: "+4741234567" });
       expect(shown(state)).toEqual({ display: "+4741234567", output: "+4741234567", country: "NO" });
       const proposed = fill(state, "99887766");
-      expect(PhoneEditor.view(proposed).outputValue).toBe("+4799887766");
+      expect(PhoneEditor.proposedValue(proposed)).toBe("+4799887766");
       const rejected = PhoneEditor.reconcile(proposed, { ...props, value: "+4741234567" });
       expect(shown(rejected)).toEqual({ display: "+4741234567", output: "+4741234567", country: "NO" });
       const accepted = PhoneEditor.reconcile(rejected, { ...props, value: "+4799887766" });
@@ -681,7 +725,7 @@ describe("PhoneEditor.reconcile", () => {
       const accepted = echo(fill(PhoneEditor.create({ ...props, value: "" }), "41234567"), props);
       expect(shown(accepted)).toEqual({ display: "41234567", output: "+4741234567", country: "NO" });
       const pasted = PhoneEditor.paste(accepted, "+46701234567");
-      expect(PhoneEditor.view(pasted).outputValue).toBe("+46701234567");
+      expect(PhoneEditor.proposedValue(pasted)).toBe("+46701234567");
       const rejected = PhoneEditor.reconcile(pasted, { ...props, value: "+4741234567" });
       expect(shown(rejected)).toEqual({ display: "41234567", output: "+4741234567", country: "NO" });
     });

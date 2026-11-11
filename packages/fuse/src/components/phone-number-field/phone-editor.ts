@@ -21,8 +21,9 @@ import type {
 /**
  * The phone editor: every change to the typed number, its country and the caret, as pure
  * transitions over an opaque {@link PhoneEditorState}. An edit, paste or country pick becomes a
- * proposal, which stays visible while the parent leaves `value` undefined or echoes the
- * proposal's output. `reconcile` folds new props in; `view` reads what the field shows.
+ * proposal, which shows while the parent leaves `value` undefined or echoes the proposal's
+ * output. `reconcile` folds new props in; `view` reads what the field shows, and
+ * `proposedValue` the output a transition just proposed.
  */
 
 /** The props the editor reads, as `PhoneNumberField` takes them. */
@@ -89,13 +90,13 @@ export type PhoneEditorView = {
    * since the editor keeps reading the configuration through it.
    */
   readonly countries: ReadonlyArray<Readonly<PhoneNumberCountry>>;
-  /** Where the edit that proposed the shown display left the caret, or null to leave it alone. */
-  readonly selection: PhoneSelection | null;
   /**
-   * Identifies the edit `selection` belongs to, so a caller can apply it once: a new edit
-   * gets a new key even when it proposes the display already shown. Null with no selection.
+   * Where the latest edit left the caret, while the field shows the display it proposed, or
+   * null to leave the caret alone. The same object for as long as that edit's caret lasts,
+   * and a new one for each edit, even one that proposes the display already shown, so a
+   * caller applies it once by its identity.
    */
-  readonly proposalKey: object | null;
+  readonly selection: PhoneSelection | null;
 };
 
 /** Which side of the separators between two digits a caret takes. */
@@ -106,21 +107,18 @@ type CaretSide =
   | "beforeNext";
 
 /**
- * A selection kept as the number of digits (and `+`) after each end. Separators change, and a
- * display can gain or lose a prefix, such as the calling code an international display adds in
- * front of the first typed digit, but what follows the caret keeps its digits.
+ * The caret the latest edit left, placed in the display it proposed. One caret belongs to the
+ * record, not to a snapshot: it lasts while the field shows `display`, and the first answer
+ * that shows anything else drops it for good, so no later commit can show it again.
  */
-type Caret = {
-  readonly start: number;
-  readonly end: number;
-  readonly side: CaretSide;
-  readonly direction: PhoneSelectionDirection | null;
+type EditCaret = {
+  readonly display: string;
+  readonly selection: PhoneSelection;
 };
 
-/** A parsed number with the values it shows and submits, and the caret its edit left. */
+/** A parsed number with the values it shows and submits. */
 type Snapshot = ProcessedPhoneInput & {
   readonly values: PhoneFieldValues;
-  readonly caret: Caret | null;
 };
 
 /**
@@ -145,11 +143,7 @@ type EditorRecord = {
   readonly preserveOnCountryChange: boolean;
   readonly accepted: Snapshot;
   readonly proposal: Snapshot | null;
-  /**
-   * The proposal came from the latest transition, and no props have answered it yet. It shows
-   * until they do, so a caller can read what it proposes from `view`.
-   */
-  readonly unanswered: boolean;
+  readonly caret: EditCaret | null;
 };
 
 const RECORD = Symbol("PhoneEditorState");
@@ -235,7 +229,7 @@ function snapshot(next: ProcessedPhoneInput, configuration: Configuration): Snap
     parsedNational: next.parsedNational,
     country: next.country.code,
   });
-  return { ...next, values, caret: null };
+  return { ...next, values };
 }
 
 function receiveValue(input: string, country: PhoneNumberCountry, configuration: Configuration): Snapshot {
@@ -250,13 +244,18 @@ function receiveValue(input: string, country: PhoneNumberCountry, configuration:
 }
 
 /**
- * A proposal stays visible only while the parent has not rejected its output, and until props
- * answer it.
+ * A proposal shows while the parent leaves `value` undefined or holds the proposal's output.
+ * Under any other value it is out of view from the transition that makes it: the parent's
+ * answer arrives as new props, and an answer that repeats the old props rejects it.
  */
-function visibleSnapshot({ value, accepted, proposal, unanswered }: EditorRecord): Snapshot {
-  return proposal && (unanswered || value === undefined || proposal.values.outputValue === value)
-    ? proposal
-    : accepted;
+function visibleSnapshot({ value, accepted, proposal }: EditorRecord): Snapshot {
+  return proposal && (value === undefined || proposal.values.outputValue === value) ? proposal : accepted;
+}
+
+/** The caret the field shows, or null when it shows a display other than the caret's. */
+function shownCaret(record: EditorRecord): EditCaret | null {
+  const { caret } = record;
+  return caret && visibleSnapshot(record).values.displayValue === caret.display ? caret : null;
 }
 
 function significantOffsets(text: string): number[] {
@@ -286,9 +285,12 @@ function caretOffset(text: string, after: number, side: CaretSide): number {
   return previous === undefined ? 0 : previous + 1;
 }
 
-/** A proposal over the visible state, which becomes the accepted one behind it. */
-function propose(stored: EditorRecord, proposal: Snapshot): PhoneEditorState {
-  return wrap({ ...stored, accepted: visibleSnapshot(stored), proposal, unanswered: true });
+/**
+ * A proposal over the visible state, which becomes the accepted one behind it. The proposal's
+ * caret replaces the record's, so an earlier edit's caret can never show again.
+ */
+function propose(stored: EditorRecord, proposal: Snapshot, caret: EditCaret | null): PhoneEditorState {
+  return wrap({ ...stored, accepted: visibleSnapshot(stored), proposal, caret });
 }
 
 /** The snapshot for text entered over the visible state, read from its country. */
@@ -389,15 +391,16 @@ export function create(props: PhoneEditorProps): PhoneEditorState {
       configuration
     ),
     proposal: null,
-    unanswered: false,
+    caret: null,
   });
 }
 
 /**
  * Fold new props into the state. A proposal the parent echoes becomes the accepted state, one
  * it rejects stays out of view, and a new value, configuration or catalog is read as described
- * on {@link PhoneEditorProps}. The first answer to an edit keeps its caret when the field
- * shows the display the edit proposed, whatever value the parent stored.
+ * on {@link PhoneEditorProps}. The latest edit's caret lasts while the field shows the display
+ * the edit proposed, whatever value the parent stored, and is dropped for good by the first
+ * props that show another display.
  *
  * @param state - The current state.
  * @param props - The field's props now.
@@ -410,50 +413,24 @@ export function reconcile(state: PhoneEditorState, props: PhoneEditorProps): Pho
   const sameAnswer = configuration === stored.configuration && stored.value === props.value;
   if (
     sameAnswer &&
-    !stored.unanswered &&
+    stored.caret === shownCaret(stored) &&
     stored.defaultValue === props.defaultValue &&
     stored.defaultCountryCode === props.defaultCountryCode &&
     stored.preserveOnCountryChange === (props.preserveOnCountryChange ?? false)
   ) {
     return state;
   }
-  const next: EditorRecord = { ...stored, ...readDefaults(props), unanswered: false };
-  if (sameAnswer) {
-    return wrap(settleCaret(stored, next));
-  }
-  return wrap(
-    settleCaret(stored, {
-      ...next,
-      configuration,
-      value: props.value,
-      accepted: answer(next, props.value, configuration),
-      proposal: null,
-    })
-  );
-}
-
-/**
- * Where an edit's caret goes when props first answer its proposal, from `stored` to `record`.
- * When the field then shows the proposal's display, whatever value the parent stored or however
- * a new configuration re-derived it, the shown snapshot takes the proposal's caret, so the
- * commit that answers it puts the caret back. Otherwise the caret is dropped, and a proposal
- * kept out of view loses it too: a later, delayed echo shows its number again but leaves the
- * caret where the user has put it since.
- */
-function settleCaret(stored: EditorRecord, record: EditorRecord): EditorRecord {
-  const { proposal } = stored;
-  const shown = visibleSnapshot(record);
-  if (!stored.unanswered || !proposal?.caret || shown === proposal) {
-    return record;
-  }
-  return {
-    ...record,
-    accepted:
-      shown.values.displayValue === proposal.values.displayValue
-        ? { ...record.accepted, caret: proposal.caret }
-        : record.accepted,
-    proposal: record.proposal && { ...record.proposal, caret: null },
-  };
+  const next: EditorRecord = { ...stored, ...readDefaults(props) };
+  const answered: EditorRecord = sameAnswer
+    ? next
+    : {
+        ...next,
+        configuration,
+        value: props.value,
+        accepted: answer(next, props.value, configuration),
+        proposal: null,
+      };
+  return wrap({ ...answered, caret: shownCaret(answered) });
 }
 
 /**
@@ -473,16 +450,21 @@ export function edit(
     inputType !== null && FORWARD_DELETIONS.has(inputType) ? "beforeNext" : "afterPrevious";
   const stored = state[RECORD];
   const next = readEntry(stored, value);
-  const caret: Caret | null =
-    next.values.displayValue !== value && selectionStart !== null && selectionEnd !== null
+  const display = next.values.displayValue;
+  // The caret is kept as the digits after each end, which the new display keeps even where
+  // its separators or prefix change.
+  const caret: EditCaret | null =
+    display !== value && selectionStart !== null && selectionEnd !== null
       ? {
-          start: significantAfter(value, selectionStart),
-          end: significantAfter(value, selectionEnd),
-          side,
-          direction: selectionDirection,
+          display,
+          selection: {
+            start: caretOffset(display, significantAfter(value, selectionStart), side),
+            end: caretOffset(display, significantAfter(value, selectionEnd), side),
+            direction: selectionDirection,
+          },
         }
       : null;
-  return propose(stored, { ...next, caret });
+  return propose(stored, next, caret);
 }
 
 /**
@@ -494,7 +476,7 @@ export function edit(
  */
 export function paste(state: PhoneEditorState, text: string): PhoneEditorState {
   const stored = state[RECORD];
-  return propose(stored, readEntry(stored, text));
+  return propose(stored, readEntry(stored, text), null);
 }
 
 /**
@@ -518,7 +500,8 @@ export function selectCountry(state: PhoneEditorState, code: CountryCode | undef
         ? { digits: current.digits, country, parsedNational: current.parsedNational }
         : { digits: "", country },
       stored.configuration
-    )
+    ),
+    null
   );
 }
 
@@ -545,7 +528,7 @@ export function reset(state: PhoneEditorState): PhoneEditorState {
           )
         : snapshot({ digits: "", country: visibleSnapshot(stored).country }, configuration),
     proposal: null,
-    unanswered: false,
+    caret: null,
   });
 }
 
@@ -559,17 +542,22 @@ export function view(state: PhoneEditorState): PhoneEditorView {
   const stored = state[RECORD];
   const shown = visibleSnapshot(stored);
   const { displayValue, outputValue } = shown.values;
-  const { caret } = shown;
   return {
     displayValue,
     outputValue,
     country: shown.country,
     countries: stored.configuration.countries,
-    selection: caret && {
-      start: caretOffset(displayValue, caret.start, caret.side),
-      end: caretOffset(displayValue, caret.end, caret.side),
-      direction: caret.direction,
-    },
-    proposalKey: caret,
+    selection: shownCaret(stored)?.selection ?? null,
   };
+}
+
+/**
+ * The output value of the latest proposal, for `onChange`. A transition's state may not show
+ * its proposal, since a controlled field shows it only once the parent echoes it.
+ *
+ * @param state - The state a transition returned.
+ * @returns The latest proposal's output value, or null when the state holds no proposal.
+ */
+export function proposedValue(state: PhoneEditorState): string | null {
+  return state[RECORD].proposal?.values.outputValue ?? null;
 }

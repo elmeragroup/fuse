@@ -7,7 +7,13 @@ import type { CountryCode } from "libphonenumber-js/core";
 
 import { hasFocus } from "../../../internal/active-element";
 import * as PhoneEditor from "../phone-editor";
-import type { PhoneEdit, PhoneEditorProps, PhoneEditorState, PhoneEditorView } from "../phone-editor";
+import type {
+  PhoneEdit,
+  PhoneEditorProps,
+  PhoneEditorState,
+  PhoneEditorView,
+  PhoneSelection,
+} from "../phone-editor";
 import type { PhoneNumberCountry } from "../phone-engine";
 
 /** The editor's props, the field's two callbacks and the number input it restores the caret in. */
@@ -54,7 +60,7 @@ export function usePhoneNumberFieldState({
   // pass, including server rendering. The store catches up on commit.
   const state = PhoneEditor.reconcile(stored, props);
   if (state !== stored) setState(state);
-  const { displayValue, outputValue, country, countries, selection, proposalKey } = PhoneEditor.view(state);
+  const { displayValue, outputValue, country, countries, selection } = PhoneEditor.view(state);
 
   // Notify only committed country changes, including external value/catalog replacement and
   // a reset that restores a default in another country. A reset without a default keeps the
@@ -70,30 +76,31 @@ export function usePhoneNumberFieldState({
   // An edit whose display the editor rewrites, as formatOnType does, would leave the caret at
   // the end once React assigns the value. The commit after the edit puts back the caret the
   // edit's proposal carries, if the parent's first answer shows the proposed display, whatever
-  // value it stores. Any other answer drops the caret. This runs after every commit: deleting a
-  // separator proposes the display that was already shown, so no dependency changes.
-  const pendingCaretRef = useRef<object | null>(null);
+  // value it stores. Any other answer drops the caret. The editor keeps one caret per edit, as
+  // one `selection` object, while the field shows its display, and drops it for good
+  // otherwise; a new edit makes a new object even when it proposes the display already shown.
+  // Dependencies alone cannot make this run once per edit, since React runs layout effects
+  // again, unchanged, when a Suspense or Activity boundary reveals the field. So the effect
+  // remembers the object it handled, which can only be the latest, and no later commit puts
+  // the caret back.
+  const handledSelection = useRef<PhoneSelection | null>(null);
   useLayoutEffect(() => {
-    const pending = pendingCaretRef.current;
-    pendingCaretRef.current = null;
-    const input = inputRef.current;
-    if (!pending || pending !== proposalKey || !selection || !input || input.value !== displayValue) {
+    if (!selection || selection === handledSelection.current) {
       return;
     }
-    if (!hasFocus(input)) {
+    handledSelection.current = selection;
+    const input = inputRef.current;
+    if (!input || input.value !== displayValue || !hasFocus(input)) {
       return;
     }
     input.setSelectionRange(selection.start, selection.end, selection.direction ?? undefined);
-  });
+  }, [selection, displayValue, inputRef]);
 
   const publish = (next: PhoneEditorState) => {
     if (next === state) return;
-    const proposed = PhoneEditor.view(next);
-    // Recorded before the proposal is published, since a parent that accepts it
-    // synchronously commits the new display before `onChange` returns.
-    pendingCaretRef.current = proposed.proposalKey;
     setState(next);
-    onChange?.(proposed.outputValue);
+    const proposed = PhoneEditor.proposedValue(next);
+    if (proposed !== null) onChange?.(proposed);
   };
 
   return {
