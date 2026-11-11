@@ -43,6 +43,32 @@ find_app() {
     --query "[?name == '${APP}'].name" --output tsv --only-show-errors
 }
 
+# Every PR's preview shares one app, and Container Apps rejects a change while another one is
+# provisioning it (409 ContainerAppOperationInProgress). A run can start between our provisioning
+# check and any later change, so each change waits out that rejection, bounded to about four
+# minutes. A rejected change applied nothing, and each `az` change re-reads the app before writing
+# it, so repeating it is safe. Any other error fails at once.
+change_app() {
+  local attempt error status
+  for attempt in {1..24}; do
+    if error=$(az "$@" 2>&1); then
+      return 0
+    else
+      status=$?
+    fi
+    echo "$error" >&2
+    if [[ "$error" != *ContainerAppOperationInProgress* ]]; then
+      return "$status"
+    fi
+    if [[ "$attempt" -eq 24 ]]; then
+      echo "Gave up after another operation kept the app busy." >&2
+      return "$status"
+    fi
+    # Jitter keeps runs that waited on the same operation from colliding again.
+    sleep $((5 + RANDOM % 11))
+  done
+}
+
 retire_pr_revisions() {
   local keep="$1" revisions revision
   revisions=$(az containerapp revision list \
@@ -51,7 +77,7 @@ retire_pr_revisions() {
     --output tsv --only-show-errors)
   while IFS= read -r revision; do
     if [[ "$revision" == "${APP}--pr-${PR}-"* && "$revision" != "$keep" ]]; then
-      az containerapp revision deactivate \
+      change_app containerapp revision deactivate \
         --name "$APP" --resource-group "$RESOURCE_GROUP" --revision "$revision" \
         --output none --only-show-errors
     fi
@@ -68,7 +94,7 @@ if [[ "$mode" == teardown ]]; then
     --query "properties.configuration.ingress.traffic[?label == 'pr-${PR}'].label" \
     --output tsv --only-show-errors)
   if [[ -n "$label" ]]; then
-    az containerapp revision label remove \
+    change_app containerapp revision label remove \
       --name "$APP" --resource-group "$RESOURCE_GROUP" --label "pr-${PR}" \
       --output none --only-show-errors
   fi
@@ -144,20 +170,20 @@ if [[ "$mode" == preview ]]; then
   # Labels route independently of these weights. A permanent revision receives default
   # traffic, so replacing or closing a PR never removes the app's default traffic target.
   # Repeat this on redeploy to recover if the first run stopped before pinning traffic.
-  az containerapp ingress traffic set \
+  change_app containerapp ingress traffic set \
     --name "$APP" --resource-group "$RESOURCE_GROUP" \
     --revision-weight "${APP}--bootstrap=100" --output none --only-show-errors
 fi
 
 # Production's create already deployed this suffix. Updating it again would reuse a name.
 if [[ "$mode" == preview || "$created" == false ]]; then
-  az containerapp update --name "$APP" --resource-group "$RESOURCE_GROUP" \
+  change_app containerapp update --name "$APP" --resource-group "$RESOURCE_GROUP" \
     --image "$IMAGE" --revision-suffix "$SUFFIX" --output none --only-show-errors
 fi
 
 if [[ "$mode" == preview ]]; then
   revision="${APP}--${SUFFIX}"
-  az containerapp revision label add \
+  change_app containerapp revision label add \
     --name "$APP" --resource-group "$RESOURCE_GROUP" \
     --revision "$revision" --label "pr-${PR}" --yes --output none --only-show-errors
   retire_pr_revisions "$revision"
