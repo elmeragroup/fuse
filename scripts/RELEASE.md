@@ -247,7 +247,7 @@ entry, because the engine publishes under `pending` and then promotes with `npm 
 
 `npm dist-tag` authenticates over OIDC from npm 11.21.0
 ([npm/cli#10038](https://github.com/npm/cli/pull/10038)). The npm bundled with
-`.node-version` is older, so the [publish workflow](../.github/workflows/publish-release.yml)
+the pinned Node is older, so the [publish workflow](../.github/workflows/publish-release.yml)
 installs an exact npm before the engine runs. Raise that pin only to a release older than
 the `minimumReleaseAge` window in `pnpm-workspace.yaml`.
 

@@ -32,12 +32,14 @@
     "@shadcn/lint": "catalog:",
     "@types/node": "catalog:",
     "@types/picomatch": "catalog:",
+    "@types/semver": "catalog:",
     "effect": "catalog:",
     "eslint-plugin-turbo": "catalog:",
     "oxfmt": "catalog:",
     "oxlint": "catalog:",
     "picomatch": "catalog:",
     "plop": "catalog:",
+    "semver": "catalog:",
     "tsrs": "catalog:",
     "turbo": "catalog:",
     "typescript": "catalog:",
@@ -46,6 +48,13 @@
   },
   "engines": {
     "node": ">=26.13.0 <27"
+  },
+  "devEngines": {
+    "runtime": {
+      "name": "node",
+      "version": "26.13.0",
+      "onFail": "download"
+    }
   },
   "packageManager": "pnpm@11.20.0"
 }

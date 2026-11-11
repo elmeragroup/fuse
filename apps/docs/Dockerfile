@@ -8,7 +8,7 @@
 # Pages prerender during `next build`, so the runtime stage only carries Next's standalone
 # server, its static assets and the generated public files.
 
-# Keep in step with .node-version.
+# Keep in step with `devEngines.runtime.version` in package.json (test/node-runtime.test.mjs).
 ARG NODE_VERSION=26.13.0
 
 FROM node:${NODE_VERSION}-bookworm-slim AS base
