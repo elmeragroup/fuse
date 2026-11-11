@@ -16,6 +16,7 @@ import { X } from "../../icons/generated/x";
 import { definedProps } from "../../internal/defined-props";
 import { isTextValueNode } from "../../internal/is-text-node";
 import type { ListItemOf, ListItems } from "../../internal/list-items";
+import { pressesRegion } from "../../internal/own-click";
 import { useLocale } from "../../intl/locale-context";
 import { cn } from "../../styles/cn";
 import { chipRemoveShellClass } from "../../styles/inner-corner/listbox";
@@ -224,6 +225,11 @@ export type ComboboxInputProps = Omit<
   triggerLabel?: string;
 };
 
+/**
+ * The text field, an InputGroup around Base UI's Combobox input with the caret and clear buttons
+ * in its trailing addon. The InputGroup is Base UI's `Combobox.InputGroup`, which the popup
+ * anchors to, so `Combobox.Content` takes the field box's width.
+ */
 export function ComboboxInput({
   className,
   children,
@@ -237,7 +243,19 @@ export function ComboboxInput({
 }: ComboboxInputProps): ReactElement {
   const strings = useLocalizedStrings(comboboxStrings);
   return (
-    <InputGroupRoot size={size} className={cn("w-auto", className)}>
+    // Base UI's InputGroup anchors the popup to the whole field box, not the input inside it, so
+    // the popup spans the box to its trailing addon, as Autocomplete's does.
+    <ComboboxPrimitive.InputGroup
+      render={<InputGroupRoot size={size} className={cn("w-auto", className)} />}
+      // A press on the field box outside a control focuses the input and, under
+      // `openOnInputClick`, opens the popup. Base UI skips that only for a disabled Root or Field
+      // and for the controls it knows, so skip it for this Input too, for a nested element that
+      // owns its press, such as a label in a custom addon, and for one from a portal.
+      onMouseDown={(event) => {
+        if (disabled || !pressesRegion(event.target, event.currentTarget)) {
+          event.preventBaseUIHandler();
+        }
+      }}>
       <ComboboxPrimitive.Input
         disabled={disabled}
         render={<InputGroupPlainInput />}
@@ -261,7 +279,7 @@ export function ComboboxInput({
         {showClear ? <ComboboxClear disabled={disabled} label={clearLabel} /> : null}
       </InputGroupAddon>
       {children}
-    </InputGroupRoot>
+    </ComboboxPrimitive.InputGroup>
   );
 }
 
