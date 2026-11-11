@@ -478,7 +478,15 @@ export function createCarouselEngine(
     } else if (page > last) {
       // The slides shrank under the selected page, and the browser already clamped the scroll.
       page = last;
-      place(positions);
+      // While a session is open, the user's scroll owns the position: held input, or the inertia
+      // it left, which `place` would cut short. That is how a page past the end arises under a
+      // finger: a takeover in `onScroll` makes the waiting page the one observed from, though the
+      // finger may have scrolled back from it. Placing would jump away from where the scroll is
+      // and end the session; clamped alone, the page is only the baseline its end observes from,
+      // so the end still reports the page it ends on, and a controlled parent hears it.
+      if (session.kind === "idle") {
+        place(positions);
+      }
     }
   }
 
