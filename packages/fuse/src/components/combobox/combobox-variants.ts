@@ -29,11 +29,11 @@ import { overlayTimedPopupClass } from "../overlay/overlay-classes";
  *   while the group holds a clear button, and keeps no pressed fill while the popup is open.
  * - `caret` draws CaretDown as the shared trigger caret (`triggerCaretClass`), and turns it half a
  *   turn while the popup is open.
- * - `content` is the shared timed popup on the listbox shell. It is at least the anchor's width
- *   plus 28px, or the anchor's width against an external anchor. A search group the popup
- *   directly owns takes its own 4px inline margin and a width that fits inside it, which
- *   overrides the group's `w-full` (the phone field's), and the popup pads only above it. The
- *   popup pads nothing on the inline axis, so the List's own padding is the one inset its
+ * - `content` is the shared timed popup on the listbox shell. It is at least the anchor's width:
+ *   `Combobox.Input`'s whole field box, or an external anchor such as `Combobox.Chips`. A search
+ *   group the popup directly owns takes its own 4px inline margin and a width that fits inside
+ *   it, which overrides the group's `w-full` (the phone field's), and the popup pads only above
+ *   it. The popup pads nothing on the inline axis, so the List's own padding is the one inset its
  *   `--inner-corner` assumes.
  * - `list` is the listbox list shell, which pads the rows and publishes their corner, scrolling
  *   below 252px or the available height less 36px.
@@ -52,7 +52,7 @@ export const comboboxVariants = tv({
     content: [
       overlayTimedPopupClass,
       listboxPopupShellClass,
-      "group/combobox-content relative max-h-(--available-height) w-(--anchor-width) max-w-(--available-width) min-w-[calc(var(--anchor-width)+--spacing(7))] overflow-hidden has-[>[data-slot=input-group]]:pt-1.5 data-[external-anchor=true]:min-w-(--anchor-width) *:data-[slot=input-group]:mx-1 *:data-[slot=input-group]:h-(--control-h-sm) *:data-[slot=input-group]:w-[calc(100%---spacing(2))] *:data-[slot=input-group]:border-input/30 *:data-[slot=input-group]:bg-input/30 *:data-[slot=input-group]:shadow-none",
+      "group/combobox-content relative max-h-(--available-height) w-(--anchor-width) max-w-(--available-width) min-w-(--anchor-width) overflow-hidden has-[>[data-slot=input-group]]:pt-1.5 *:data-[slot=input-group]:mx-1 *:data-[slot=input-group]:h-(--control-h-sm) *:data-[slot=input-group]:w-[calc(100%---spacing(2))] *:data-[slot=input-group]:border-input/30 *:data-[slot=input-group]:bg-input/30 *:data-[slot=input-group]:shadow-none",
     ],
     list: [
       listboxListShellClass,
