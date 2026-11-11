@@ -2,8 +2,7 @@
  * Server-visible `RadioItem`. The row is hook-free, so this module has no directive:
  * a server component runs it and reads `RadioItem.Title` and the other parts, while
  * `RadioGroupItem` and `SelectionItem.Shell` stay client references it renders. The shell
- * partitions its SubSections, which it recognises whether a server or a client component
- * wrote them (see `partitionSubSections`).
+ * partitions its SubSections (see `partitionSubSections`).
  */
 import type { ReactElement, ReactNode } from "react";
 

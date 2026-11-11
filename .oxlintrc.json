@@ -663,7 +663,6 @@
         "packages/fuse/src/components/chart/layout/**/*.ts",
         "packages/fuse/src/components/checkbox/checkbox-item.tsx",
         "packages/fuse/src/components/radio-group/radio-item.tsx",
-        "packages/fuse/src/components/selection-item/partition-sub-sections.ts",
         "packages/fuse/src/components/selection-item/selection-item-sub-section.tsx"
       ],
       "rules": {

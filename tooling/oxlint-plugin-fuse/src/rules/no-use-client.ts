@@ -5,8 +5,8 @@ import type { Rule } from "@oxlint/plugins";
  * namespace indexes and the chart namespaces, parts modules and pure `format/` and `layout/`
  * folders, and to the server half of the selection rows: with the directive, `Dialog.Root`
  * becomes an opaque client reference a server component cannot dot into, a pure module stops
- * being callable from the server, and a server-written `SelectionItem.SubSection` reaches the
- * row as a lazy wrapper its partition cannot recognise, so the band renders inside the label.
+ * being callable from the server, and a server-written `SelectionItem.SubSection` lands inside
+ * the label (see `partitionSubSections`).
  */
 export const noUseClient: Rule = {
   meta: {

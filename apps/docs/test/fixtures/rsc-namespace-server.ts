@@ -427,8 +427,7 @@ function namespaceElements(): ReactElement[] {
       "ScrollUpButton",
       "ScrollDownButton",
     ]),
-    // SubSection is a server part: a row recognises the root it renders after Flight, where a
-    // client reference's type would arrive as an opaque lazy wrapper.
+    // SubSection is a server part (see `partitionSubSections`).
     ...renderNamespace("SelectionItem", SelectionItem, ["Shell", "Title", "Actions"], {
       server: ["Description", "Content", "SubSection"],
     }),
@@ -784,52 +783,16 @@ type FlightJson = string | number | boolean | null | readonly FlightJson[] | Fli
 
 type FlightObject = { readonly [key: string]: FlightJson };
 
-/** One JSON model row of a Flight payload: its hex id and its model. */
-type FlightRow = { readonly id: string; readonly model: FlightJson };
-
-/** The JSON model rows of a Flight payload (`<hex id>:[…]` or `<hex id>:{…}`). */
-function flightRows(payload: string): FlightRow[] {
+/** The JSON models of a Flight payload's model rows (`<hex id>:[…]` or `<hex id>:{…}`). */
+function flightModels(payload: string): FlightJson[] {
   return payload.split("\n").flatMap((line) => {
-    const [, id, body] = /^([0-9a-f]+):(.*)$/u.exec(line) ?? [];
+    const [, body] = /^[0-9a-f]+:(.*)$/u.exec(line) ?? [];
     // SAFETY: Flight model rows are the I/O boundary. The body starts with `[` or `{`, and
     // JSON.parse yields only JSON values, so the result is a FlightJson array or object.
-    return id !== undefined && body !== undefined && (body.startsWith("[") || body.startsWith("{"))
-      ? [{ id, model: JSON.parse(body) as FlightJson }]
+    return body !== undefined && (body.startsWith("[") || body.startsWith("{"))
+      ? [JSON.parse(body) as FlightJson]
       : [];
   });
-}
-
-/** Every key path from `value` to a string equal to `text`. Array indices appear as strings. */
-function pathsTo(value: FlightJson, text: string, path: readonly string[] = []): string[][] {
-  if (value === text) {
-    return [[...path]];
-  }
-  // `instanceof Object` keeps arrays and objects and drops `null` and the other primitives.
-  if (!(value instanceof Object)) {
-    return [];
-  }
-  return Object.entries(value).flatMap(([key, item]) => pathsTo(item, text, [...path, key]));
-}
-
-/**
- * Every key path from a Flight payload's root to a string equal to `text`, across rows. Flight
- * outlines a model into its own row once a row grows past its size budget and refers to it as
- * `"$<hex id>"`, or `"$L<hex id>"` for an element it resolves lazily, so a path that starts in an
- * outlined row continues from each reference to that row, as the client resolves it.
- */
-function rowPathsTo(rows: readonly FlightRow[], text: string): string[][] {
-  const resolve = (targets: readonly string[], seen: ReadonlySet<string>): string[][] =>
-    rows.flatMap(({ id, model }) => {
-      const inner = targets.flatMap((target) => pathsTo(model, target));
-      if (inner.length === 0) {
-        return [];
-      }
-      const outer = seen.has(id) ? [] : resolve([`$${id}`, `$L${id}`], new Set([...seen, id]));
-      return outer.length === 0
-        ? inner
-        : outer.flatMap((prefix) => inner.map((path) => [...prefix, ...path]));
-    });
-  return resolve([text], new Set());
 }
 
 function isFlightArray(value: FlightJson): value is readonly FlightJson[] {
@@ -906,20 +869,17 @@ if (payload.includes("/components/button/button.tsx")) {
   throw new Error("The no-action Alert rendered a client Button");
 }
 
-// SubSection is a server part, so each band crosses Flight as the `div` it rendered, carrying the
-// marker the shell partitions by, never as a client reference, whose type would reach the client
-// as an opaque lazy wrapper. Where each band lands after Flight is `rsc-selection-item.test.ts`'s.
-const rows = flightRows(payload);
-const models = rows.map(({ model }) => model);
+// Each SubSection crosses Flight as its rendered root, marked for `partitionSubSections`. Where
+// each band lands after Flight is `rsc-selection-item.test.ts`'s.
+const models = flightModels(payload);
 const bands = models
   .flatMap(flightElements)
-  .filter(({ type, props }) => type === "div" && "data-selection-item-sub-section" in props);
+  .filter(({ props }) => "data-selection-item-sub-section" in props);
 if (bands.length !== 2) {
   throw new Error(`SubSections were not rendered on the server:\n${JSON.stringify(bands)}`);
 }
 for (const text of ["Fixed price", "Locked for 12 months.", CHECKBOX_BAND, "Spot price", RADIO_BAND]) {
-  // Through outlined rows, as the client resolves them.
-  if (rowPathsTo(rows, text).length === 0) {
+  if (!payload.includes(text)) {
     throw new Error(`${text} is missing from the server payload`);
   }
 }

@@ -14,7 +14,11 @@
 import { Children, isValidElement } from "react";
 import type { ReactNode } from "react";
 
-import { SelectionItemSubSection, SUB_SECTION_MARKER } from "./selection-item-sub-section";
+import {
+  hasSubSectionContent,
+  SelectionItemSubSection,
+  SUB_SECTION_MARKER,
+} from "./selection-item-sub-section";
 
 /** A row's children split for `SelectionItem.Shell`: label content and outside bands. */
 type PartitionedRowChildren = {
@@ -34,9 +38,9 @@ function isSubSection(child: ReactNode): boolean {
     return false;
   }
   if (child.type === SelectionItemSubSection) {
-    return Children.toArray(child.props.children).length > 0;
+    return hasSubSectionContent(child.props.children);
   }
-  return child.type === "div" && Object.hasOwn(child.props, SUB_SECTION_MARKER);
+  return Object.hasOwn(child.props, SUB_SECTION_MARKER);
 }
 
 /**

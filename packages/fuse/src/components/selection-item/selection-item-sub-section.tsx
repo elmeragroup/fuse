@@ -1,20 +1,21 @@
-/**
- * `SelectionItem.SubSection` holds no state, so this module has no directive and a server
- * component runs it. That is what lets a row find its SubSections in a server tree: React
- * Flight revives a client reference as a lazy wrapper, so a `"use client"` SubSection would
- * reach the shell with an unrecognisable `type`, while a server-rendered one reaches it as its
- * root element, whose props cross Flight intact. See `partitionSubSections`.
- */
+/** Directive-free so a server component renders it; see `partitionSubSections` for why. */
 import { Children } from "react";
-import type { ComponentProps, ReactElement } from "react";
+import type { ComponentProps, ReactElement, ReactNode } from "react";
 
 import { ItemFooter } from "../item/item-markup";
 
-/**
- * The attribute a SubSection's root always carries. The shell recognises a SubSection a server
- * component already rendered by it, since such an element's type is the root `div`, not this part.
- */
+/** The attribute every rendered SubSection root carries; `partitionSubSections` looks for it. */
 export const SUB_SECTION_MARKER = "data-selection-item-sub-section";
+
+/**
+ * Whether a SubSection with these children renders. One without renders nothing and opens no band.
+ *
+ * @param children - The SubSection's children.
+ * @returns `true` when there is at least one child to render.
+ */
+export function hasSubSectionContent(children: ReactNode): boolean {
+  return Children.toArray(children).length > 0;
+}
 
 /**
  * Footer band rendered **outside** the row label. Direct `SelectionItem.SubSection` children
@@ -29,11 +30,11 @@ export function SelectionItemSubSection({
   mode = "default",
   ...props
 }: ComponentProps<typeof ItemFooter>): ReactElement | null {
-  if (Children.toArray(children).length === 0) {
+  if (!hasSubSectionContent(children)) {
     return null;
   }
   return (
-    <ItemFooter mode={mode} className={className} {...props} {...{ [SUB_SECTION_MARKER]: "" }}>
+    <ItemFooter mode={mode} className={className} {...props} data-selection-item-sub-section="">
       {children}
     </ItemFooter>
   );
