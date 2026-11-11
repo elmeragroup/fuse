@@ -32,9 +32,9 @@ function NavMenu() {
 export function SidebarInsetVariant() {
   return (
     <div className="flex w-full flex-col gap-6">
-      <div className="relative h-[20rem] w-full overflow-hidden rounded-lg border border-border contain-paint">
-        <Sidebar.Provider className="min-h-full">
-          <Sidebar.Root variant="inset" className="h-full">
+      <div className="relative h-[20rem] w-full overflow-hidden rounded-lg border border-border">
+        <Sidebar.Provider bounds="container">
+          <Sidebar.Root variant="inset">
             <Sidebar.Content>
               <Sidebar.Group>
                 <Sidebar.GroupLabel>Inset rail</Sidebar.GroupLabel>
@@ -59,8 +59,8 @@ export function SidebarInsetVariant() {
       </div>
 
       <div className="relative h-[16rem] w-full overflow-hidden rounded-lg border border-border">
-        <Sidebar.Provider className="min-h-full">
-          <Sidebar.Root variant="inset" collapsible="none" className="h-full">
+        <Sidebar.Provider bounds="container">
+          <Sidebar.Root variant="inset" collapsible="none">
             <Sidebar.Header>
               <span className="text-sm font-medium px-2">Step 2 of 4</span>
             </Sidebar.Header>

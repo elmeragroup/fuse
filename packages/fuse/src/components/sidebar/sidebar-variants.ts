@@ -120,15 +120,37 @@ export const sidebarMenuSubButtonVariants = tv({
 });
 
 /**
+ * `Sidebar.Provider`'s wrapper: the row that holds the panel and the inset, on the sidebar fill
+ * behind an `inset` panel, so the inset reads as a card on it. Package-private, re-exported by the
+ * workspace-only recipe catalog for the Figma component sync.
+ * - `page`: the full-height page row, at least the viewport's height.
+ * - `container`: it fills its container's height instead of the viewport's and is the rail's
+ *   containing block. It clips at its edges, so the collapsed offcanvas rail, which slides past the
+ *   start edge, stays inside the container as it stays off a page's screen. `overflow-clip`, not
+ *   `overflow-hidden`, so it never becomes a scroll container.
+ */
+export const sidebarWrapperVariants = tv({
+  base: "group/sidebar-wrapper flex w-full has-data-[variant=inset]:bg-sidebar",
+  variants: {
+    bounds: {
+      page: "min-h-svh",
+      container: "relative h-full min-h-0 overflow-clip",
+    },
+  },
+  defaultVariants: { bounds: "page" },
+});
+
+/**
  * The desktop panel's parts — package-private, re-exported by the workspace-only recipe catalog
  * for the Figma component sync.
  * - `root`: the `group peer` anchor that carries `data-state`, `data-collapsible`, `data-variant`
  *   and `data-side`. It shows from `md:`; below it the mobile Sheet stands in.
  * - `staticRoot`: the `collapsible="none"` panel, a full-height column at `--sidebar-width`.
  * - `gap`: the flow spacer that holds the rail's width beside the page and animates it.
- * - `container`: the fixed rail box. A flush `sidebar` draws its edge border; a `floating` or
- *   `inset` one pads its surface by 8px, so its icon rail is the icon width plus that padding
- *   and the 2px the ring takes.
+ * - `container`: the rail box, viewport-tall and `fixed` at `bounds="page"`, and container-tall
+ *   and `absolute` against the Provider's wrapper at `bounds="container"`. A flush `sidebar` draws
+ *   its edge border; a `floating` or `inset` one pads its surface by 8px, so its icon rail is the
+ *   icon width plus that padding and the 2px the ring takes.
  * - `inner`: the surface. Floating's shadow and ring stay as `group-data-[variant=floating]:`
  *   selectors, so the panel's markup is the same for every variant.
  *
@@ -144,7 +166,7 @@ export const sidebarPanelVariants = tv({
       "group-data-[side=right]:rotate-180",
     ],
     container:
-      "md:flex fixed inset-y-0 z-10 hidden h-svh w-(--sidebar-width) transition-[width] duration-200 ease-linear data-[side=left]:left-0 data-[side=left]:group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)] data-[side=right]:right-0 data-[side=right]:group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)]",
+      "md:flex inset-y-0 z-10 hidden w-(--sidebar-width) transition-[width] duration-200 ease-linear data-[side=left]:left-0 data-[side=left]:group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)] data-[side=right]:right-0 data-[side=right]:group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)]",
     inner: [
       sidebarSurfaceShellClass,
       "group-data-[variant=floating]:shadow-sm flex size-full flex-col bg-sidebar group-data-[collapsible=offcanvas]:invisible group-data-[variant=floating]:ring-1 group-data-[variant=floating]:ring-sidebar-border",
@@ -160,6 +182,10 @@ export const sidebarPanelVariants = tv({
       floating: {},
       inset: {},
     },
+    bounds: {
+      page: { container: "fixed h-svh" },
+      container: { container: "absolute h-full" },
+    },
   },
   compoundVariants: [
     {
@@ -170,5 +196,5 @@ export const sidebarPanelVariants = tv({
       },
     },
   ],
-  defaultVariants: { variant: "sidebar" },
+  defaultVariants: { variant: "sidebar", bounds: "page" },
 });

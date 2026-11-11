@@ -10,14 +10,6 @@ import { selfFocusRingClass } from "../../styles/utils";
 import { sidebarMenuBadgeOffsetClass, sidebarRowBoxClass } from "./sidebar-variants";
 
 /**
- * `Sidebar.Provider`'s wrapper: the full-height page row that holds the panel and the inset. It
- * takes the sidebar fill behind an `inset` panel, so the inset reads as a card on it.
- */
-export const sidebarWrapperClass = cn(
-  "group/sidebar-wrapper flex min-h-svh w-full has-data-[variant=inset]:bg-sidebar"
-);
-
-/**
  * `Sidebar.Trigger`: the `icon-sm` ghost Button, with its hit area grown by 4px on each side.
  */
 export const sidebarTriggerClass = cn("hit-area-1");

@@ -12,6 +12,15 @@
       "forwardedCount": 280,
       "props": [
         {
+          "name": "bounds",
+          "origin": "declared",
+          "type": "SidebarBounds | undefined",
+          "shortType": null,
+          "defaultValue": "\"page\"",
+          "description": "What bounds the Sidebar. `page` fills at least the viewport's height, fixes the desktop rail to the viewport, writes the open state to the `sidebar:state` cookie and toggles on ⌘B or Ctrl+B from anywhere in the document. `container` fills its container's height, which the host must define, keeps the rail inside it, writes no cookie, so a host that wants the state kept passes `open` and `onOpenChange`, and toggles on the shortcut only from a keydown inside the Provider's React tree. An `Inset` taller than the container is clipped, so the host scrolls the inset's own content. The mobile Sheet still follows the viewport's width.",
+          "required": false
+        },
+        {
           "name": "defaultOpen",
           "origin": "declared",
           "type": "boolean | undefined",
@@ -35,7 +44,7 @@
           "type": "((open: boolean) => void) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Controlled setter. When provided, internal state is bypassed but the cookie is still written on every change.",
+          "description": "Controlled setter. When provided, internal state is bypassed; at `bounds=\"page\"` the cookie is still written on every change.",
           "required": false
         },
         {

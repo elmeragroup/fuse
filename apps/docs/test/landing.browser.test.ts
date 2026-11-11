@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { DESKTOP_VIEWPORT } from "./demo-page";
-import { DASHBOARD_FIRST, dashboard, searchTable } from "./landing-dashboard";
+import { DASHBOARD_FIRST, dashboard, row, searchTable } from "./landing-dashboard";
 import { collectPageErrors, launchLandingSuite, TARGET_FLOOR_PX } from "./landing-page";
 
 const { openLanding } = launchLandingSuite();
@@ -128,6 +128,30 @@ describe("landing page", () => {
     expect(await page.evaluate(async () => navigator.clipboard.readText())).toBe(
       "pnpm add @elmeragroup/fuse"
     );
+    await page.context().close();
+  });
+
+  it("keeps the Dashboard's sidebar inside the window, out of the cookie and off the page's ⌘B", async () => {
+    const page = await openLanding(DESKTOP_VIEWPORT, { search: DASHBOARD_FIRST });
+    const app = dashboard(page);
+    // The rail and its state markers have no role, so they are found by their slots.
+    const rail = app.locator("[data-slot='sidebar-container']");
+    const state = () => app.locator("[data-slot='sidebar'][data-state]").getAttribute("data-state");
+    const appBox = await app.boundingBox();
+    const railBox = await rail.boundingBox();
+    expect(railBox?.y).toBe(appBox?.y);
+    expect(railBox?.height).toBe(appBox?.height);
+    expect(await state()).toBe("expanded");
+
+    await page.getByRole("button", { name: "Copy", exact: true }).focus();
+    await page.keyboard.press("ControlOrMeta+b");
+    expect(await state()).toBe("expanded");
+
+    await row(app, "Jonas Eide").focus();
+    await page.keyboard.press("ControlOrMeta+b");
+    await expect.poll(state).toBe("collapsed");
+    const cookies = await page.context().cookies();
+    expect(cookies.map((cookie) => cookie.name)).not.toContain("sidebar:state");
     await page.context().close();
   });
 });

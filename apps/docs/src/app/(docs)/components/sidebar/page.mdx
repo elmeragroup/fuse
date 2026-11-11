@@ -27,6 +27,12 @@ On mobile, the navigation sheet includes a visible close button above its conten
   <SidebarAppFrame />
 </Demo>
 
+<Prose>
+
+A Sidebar inside a box on the page, such as an embedded app pane or a demo, takes `bounds="container"` on `Sidebar.Provider`. It fills the box's height, so the box needs a defined height. The desktop rail stays inside the box. The Provider writes no cookie, so a host that wants the state kept passes `open` and `onOpenChange`. ⌘B, or Ctrl+B, toggles it only from inside the Sidebar, so a page Sidebar around it keeps the shortcut everywhere else. The mobile Sheet still switches on the viewport's width. The demos below use it.
+
+</Prose>
+
 <Demo slug="sidebar" id="icon-collapse" title="Icon collapse" file="sidebar-icon-collapse.tsx">
   <SidebarIconCollapse />
 </Demo>

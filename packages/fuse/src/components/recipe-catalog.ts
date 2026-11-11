@@ -87,12 +87,12 @@ export {
   sidebarMenuSubItemClass,
   sidebarSectionClass,
   sidebarSeparatorClass,
-  sidebarWrapperClass,
 } from "./sidebar/sidebar-class";
 export {
   sidebarMenuButtonVariants,
   sidebarMenuSubButtonVariants,
   sidebarPanelVariants,
+  sidebarWrapperVariants,
 } from "./sidebar/sidebar-variants";
 export { SIDEBAR_WIDTH, SIDEBAR_WIDTH_ICON } from "./sidebar/sidebar-width";
 export { skeletonClass } from "./skeleton/skeleton-class";

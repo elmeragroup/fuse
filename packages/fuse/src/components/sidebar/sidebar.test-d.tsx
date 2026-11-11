@@ -12,6 +12,7 @@ import type {
   SIDEBAR_WIDTH,
   SIDEBAR_WIDTH_ICON,
   SIDEBAR_WIDTH_MOBILE,
+  SidebarBounds,
   SidebarContextValue,
   SidebarLabels,
   SidebarMenuButtonProps,
@@ -49,6 +50,8 @@ test("the context surface and part props match the public API", () => {
   expectTypeOf<SidebarContextValue>().not.toHaveProperty("labels");
 
   expectTypeOf<SidebarProviderProps["labels"]>().toEqualTypeOf<Partial<SidebarLabels> | undefined>();
+  expectTypeOf<SidebarProviderProps["bounds"]>().toEqualTypeOf<"page" | "container" | undefined>();
+  expectTypeOf<SidebarBounds>().toEqualTypeOf<"page" | "container">();
   expectTypeOf<SidebarProviderProps["onOpenChange"]>().toEqualTypeOf<((open: boolean) => void) | undefined>();
   expectTypeOf<SidebarRootProps["side"]>().toEqualTypeOf<"left" | "right" | undefined>();
   expectTypeOf<SidebarRootProps["variant"]>().toEqualTypeOf<"sidebar" | "floating" | "inset" | undefined>();

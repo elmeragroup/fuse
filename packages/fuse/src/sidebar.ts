@@ -12,6 +12,7 @@ export {
 export { SIDEBAR_WIDTH, SIDEBAR_WIDTH_ICON, SIDEBAR_WIDTH_MOBILE } from "./components/sidebar/sidebar-width";
 export { Sidebar } from "./components/sidebar";
 export type {
+  SidebarBounds,
   SidebarContentProps,
   SidebarContextValue,
   SidebarFooterProps,
