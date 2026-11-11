@@ -7,9 +7,14 @@
  * is a forgotten export. The message callback collects each flag by the symbol name the extractor
  * gives it. The check parses the report's declarations and allows only the four namespaces' own
  * members, so a context, store or helper type that leaks into the public types fails here by name.
+ *
+ * The report reads `dist` as turbo's `build` left it and never builds on its own. A build here
+ * empties the shared `dist` (tsdown cleans it) while `check` runs `test` and `test:browser`
+ * against it, and the task cache knows from content hashes when `build` is fresh, which a script
+ * can only guess from mtimes. Run it through turbo, so `build` runs or restores first.
  */
 import { Extractor, ExtractorConfig, ExtractorLogLevel, ExtractorMessageId } from "@microsoft/api-extractor";
-import { readdirSync, readFileSync, statSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join, relative } from "node:path";
 import type { Node } from "typescript/ast";
 import {
@@ -22,7 +27,6 @@ import {
 } from "typescript/ast/is";
 import { API } from "typescript/sync";
 
-import { buildPackage } from "./build.ts";
 import { packageRootFromScript, toPosix } from "./paths.ts";
 
 /** The symbol a forgotten-export message names. */
@@ -108,30 +112,17 @@ export function leakedSymbols(forgotten: readonly string[], parts: readonly stri
   return [...new Set(forgotten.filter((name) => !allowed.has(name)))].sort();
 }
 
-function isFile(path: string): boolean {
-  try {
-    return statSync(path).isFile();
-  } catch {
-    return false;
-  }
-}
-
-/** The newest modification time under `directory`, in milliseconds. */
-function newestMtime(directory: string): number {
-  let newest = 0;
-  for (const entry of readdirSync(directory, { withFileTypes: true })) {
-    const path = join(directory, entry.name);
-    newest = Math.max(newest, entry.isDirectory() ? newestMtime(path) : statSync(path).mtimeMs);
-  }
-  return newest;
+/** The turbo command that builds `dist` and then runs the report, with `--local` when `local` is set. */
+function turboCommand(local: boolean): string {
+  return `pnpm exec turbo run api:report --filter=@elmeragroup/fuse${local ? " -- --local" : ""}`;
 }
 
 function main(packageRoot: string, local: boolean): void {
   const declarations = join(packageRoot, "dist/chart.d.ts");
-  // The turbo task depends on `build`, so a fresh dist is the normal case. A direct run on an
-  // older or missing dist builds it first, so the report never reads stale declarations.
-  if (!isFile(declarations) || statSync(declarations).mtimeMs < newestMtime(join(packageRoot, "src"))) {
-    buildPackage(packageRoot);
+  if (!existsSync(declarations)) {
+    throw new Error(
+      `dist/chart.d.ts is missing. Run \`${turboCommand(local)}\`, which builds the package first.`
+    );
   }
   const config = ExtractorConfig.loadFileAndPrepare(join(packageRoot, "api-extractor.json"));
   const forgotten: string[] = [];
@@ -161,7 +152,7 @@ function main(packageRoot: string, local: boolean): void {
     throw new Error(
       local
         ? "api-extractor reported errors."
-        : `${toPosix(relative(packageRoot, reportPath))} is stale or api-extractor reported errors. Run \`pnpm --filter @elmeragroup/fuse api:report --local\` and commit the report.`
+        : `${toPosix(relative(packageRoot, reportPath))} is stale or api-extractor reported errors. Run \`${turboCommand(true)}\` and commit the report.`
     );
   }
 }
