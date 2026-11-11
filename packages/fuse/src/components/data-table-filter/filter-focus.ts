@@ -2,8 +2,8 @@
  * The filter's DOM focus algorithms, which read and move focus by what the browser reports, in
  * shadow roots and same-origin frames too. The Root owns when they run.
  */
-import { deepActiveElement, hasFocus } from "../../internal/active-element";
-import { containsAcrossShadowRoots, isFocusRoot } from "../../internal/dom-node";
+import { activeElementFrom, hasFocus } from "../../internal/active-element";
+import { containsAcrossShadowRoots } from "../../internal/dom-node";
 
 const FOCUSABLE = "input:not([type=hidden]), button, [tabindex]:not([tabindex='-1'])";
 
@@ -39,11 +39,7 @@ export function focusMovedElsewhere(popup: HTMLElement | null, owned: Iterable<E
   if (popup === null) {
     return false;
   }
-  // Read from the popup's own root, since a document names only the host of a closed shadow root
-  // that holds focus. When focus is outside that root, the document's deep read finds it.
-  const root = popup.getRootNode();
-  const active =
-    (isFocusRoot(root) ? deepActiveElement(root) : null) ?? deepActiveElement(popup.ownerDocument);
+  const active = activeElementFrom(popup);
   if (active === null || active === active.ownerDocument.body) {
     return false;
   }

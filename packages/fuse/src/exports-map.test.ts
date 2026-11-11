@@ -137,6 +137,7 @@ const EXPECTED_ENTRIES = {
   input: { inRootBarrel: true, runtimeExports: ["Input"] },
   "input-group": { inRootBarrel: true, runtimeExports: ["InputGroup"] },
   item: { inRootBarrel: true, runtimeExports: ["Item", "itemVariants"] },
+  "list-detail": { inRootBarrel: true, runtimeExports: ["ListDetail"] },
   loader: { inRootBarrel: true, runtimeExports: ["Loader", "loaderVariants"] },
   meter: { inRootBarrel: true, runtimeExports: ["Meter", "METER_CONSTANTS"] },
   "number-field": { inRootBarrel: true, runtimeExports: ["NumberField"] },

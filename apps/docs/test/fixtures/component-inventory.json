@@ -577,6 +577,11 @@
       "link-truncate.tsx"
     ]
   },
+  "list-detail": {
+    "title": "List Detail",
+    "rsc": "client",
+    "demos": ["list-detail-basic.tsx", "list-detail-never.tsx"]
+  },
   "loader": {
     "title": "Loader",
     "rsc": "server",

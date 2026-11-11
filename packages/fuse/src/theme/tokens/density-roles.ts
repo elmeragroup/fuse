@@ -517,6 +517,11 @@ export const PART_DENSITY = {
 
   link: "fixed",
 
+  "list-detail": "layout",
+  "list-detail-list": "layout",
+  "list-detail-detail": "layout",
+  "list-detail-title": "fixed",
+
   loader: "fixed",
 
   meter: "fixed",

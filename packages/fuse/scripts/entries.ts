@@ -36,6 +36,7 @@ export const BARE_COMPONENT_ENTRIES = [
   "input",
   "input-group",
   "item",
+  "list-detail",
   "loader",
   "meter",
   "number-field",

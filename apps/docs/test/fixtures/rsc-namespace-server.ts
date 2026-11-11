@@ -48,6 +48,7 @@ import { Field } from "@elmeragroup/fuse/field";
 import { FileUpload } from "@elmeragroup/fuse/file-upload";
 import { InputGroup } from "@elmeragroup/fuse/input-group";
 import { Item } from "@elmeragroup/fuse/item";
+import { ListDetail } from "@elmeragroup/fuse/list-detail";
 import { NavigationMenu } from "@elmeragroup/fuse/navigation-menu";
 import { Pagination } from "@elmeragroup/fuse/pagination";
 import { Popover } from "@elmeragroup/fuse/popover";
@@ -356,6 +357,7 @@ function namespaceElements(): ReactElement[] {
     ...renderNamespace("Item", Item, ["Root", "Group", "Separator"], {
       server: ["Media", "Content", "Actions", "Title", "Description", "Header", "Footer"],
     }),
+    ...renderNamespace("ListDetail", ListDetail, ["Root", "List", "Detail", "Title", "Close"]),
     ...renderNamespace("NavigationMenu", NavigationMenu, [
       "Root",
       "List",
