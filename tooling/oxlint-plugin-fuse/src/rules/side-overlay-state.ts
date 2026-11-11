@@ -1,7 +1,7 @@
 import type { ESTree, Rule, Scope, SourceCode, Variable } from "@oxlint/plugins";
 
 import { nameChain, propertyKeyName } from "../ast-names.ts";
-import { stringLiteral } from "../static-text.ts";
+import { constantString } from "../static-text.ts";
 
 /** The attribute that controls whether a part's popup shows. */
 type StateAttribute = "open" | "isOpen" | "pageSizeOpen" | "value";
@@ -36,11 +36,10 @@ type OverlayPart = {
  *
  * `internal` parts keep their popup's state inside: `SelectField`, `PhoneNumberField` and
  * `DataTable.RowActions` take no open state, `Sidebar.Root` holds its phone Sheet's in the
- * provider, and `DataTableFilter` and `PopoverInfoButton` own theirs. `actionsColumn` builds
- * `DataTable.RowActions` cells, so any use of it counts. `Sidebar.Root` with `collapsible="none"`
- * renders a plain panel (`sidebar.tsx` returns a `div` for it), the only popup-free form a literal
- * proves. Base UI's `inline` on a Combobox or Autocomplete Root is not one: a `Content` inside it
- * still renders a popup, so an inline Root is checked like any other.
+ * provider, and `DataTableFilter` and `PopoverInfoButton` own theirs. `Sidebar.Root` with
+ * `collapsible="none"` renders a plain panel (`sidebar.tsx` returns a `div` for it), the only
+ * popup-free form a literal proves. Base UI's `inline` on a Combobox or Autocomplete Root is not
+ * one: a `Content` inside it still renders a popup, so an inline Root is checked like any other.
  *
  * The inventory was taken from every Fuse module that renders a Base UI or Fuse popup root. Parts
  * left out render none (ConfirmButton arms in place, Pagination is a list of links) or show only
@@ -78,7 +77,6 @@ const FUSE_OVERLAYS: ReadonlyMap<string, OverlayPart> = new Map(
     SelectField: { state: "internal" },
     "Sheet.Root": { state: "open" },
     "Sidebar.Root": { state: "internal", popupFree: { attribute: "collapsible", value: "none" } },
-    actionsColumn: { state: "internal" },
   })
 );
 
@@ -107,6 +105,12 @@ const HOOK_MODULE = "/window-side";
 const HOOK = "useSideOverlay";
 
 /**
+ * The factory that builds `DataTable.RowActions` cells, whose menu keeps its open state inside. It
+ * is a function, never a tag, so any use of it counts.
+ */
+const ROW_ACTIONS_FACTORY = "actionsColumn";
+
+/**
  * A prop name that forwards an overlay's open state: `open`, `isOpen`, `sheetOpen`. Every value of
  * that name passed to a local component must carry side state too, so a chain of props starts at
  * the hook. `defaultOpen` seeds an uncontrolled overlay, and `setOpen` or `onOpen` passes a setter
@@ -126,26 +130,43 @@ function resolve(scope: Scope, name: string): Variable | undefined {
   return undefined;
 }
 
+/**
+ * The value import a variable is bound by: its module source, and the export it names, or
+ * `namespace` for `import * as`. A default import, a type-only import and any other binding give
+ * `undefined`.
+ */
+type ImportOf = {
+  readonly source: string;
+  readonly imported: ESTree.ImportSpecifier["imported"] | "namespace";
+};
+
+/** The value import a variable is bound by, or `undefined` for any other binding. */
+function importOf(variable: Variable | undefined): ImportOf | undefined {
+  const definition = variable?.defs[0];
+  const declaration = definition?.parent;
+  if (definition?.type !== "ImportBinding" || declaration?.type !== "ImportDeclaration") return undefined;
+  if (declaration.importKind === "type") return undefined;
+  const source = declaration.source.value;
+  const specifier = definition.node;
+  if (specifier.type === "ImportNamespaceSpecifier") return { source, imported: "namespace" };
+  if (specifier.type !== "ImportSpecifier" || specifier.importKind === "type") return undefined;
+  return { source, imported: specifier.imported };
+}
+
 /** A Fuse import a name resolves to: the export path it names, and its entry family. */
 type FuseImport = { readonly path: readonly string[]; readonly reactAria: boolean };
 
 /**
- * The Fuse import a name resolves to in its scope: `["Sheet"]` for `import { Sheet as S }`, `[]`
- * for a namespace import, or `undefined` for any other binding, a shadowing local included.
+ * The Fuse import a variable is bound by: `["Sheet"]` for `import { Sheet as S }`, `[]` for a
+ * namespace import, or `undefined` for any other binding, a shadowing local included.
  */
-function fuseImport(scope: Scope, name: string): FuseImport | undefined {
-  const definition = resolve(scope, name)?.defs[0];
-  const declaration = definition?.parent;
-  if (definition?.type !== "ImportBinding" || declaration?.type !== "ImportDeclaration") return undefined;
-  const source = declaration.source.value;
-  if (declaration.importKind === "type") return undefined;
-  if (!isFuseSource(source)) return undefined;
-  const reactAria = source.startsWith("@elmeragroup/fuse/react-aria/");
-  const specifier = definition.node;
-  if (specifier.type === "ImportNamespaceSpecifier") return { path: [], reactAria };
-  if (specifier.type !== "ImportSpecifier" || specifier.importKind === "type") return undefined;
-  const imported = specifier.imported.type === "Literal" ? specifier.imported.value : specifier.imported.name;
-  return { path: [imported], reactAria };
+function fuseImport(variable: Variable | undefined): FuseImport | undefined {
+  const binding = importOf(variable);
+  if (binding === undefined || !isFuseSource(binding.source)) return undefined;
+  const reactAria = binding.source.startsWith("@elmeragroup/fuse/react-aria/");
+  const imported = binding.imported;
+  if (imported === "namespace") return { path: [], reactAria };
+  return { path: [imported.type === "Literal" ? imported.value : imported.name], reactAria };
 }
 
 /** Whether an export path names an overlay part or a namespace holding one. */
@@ -164,7 +185,7 @@ function reachesOverlay(path: readonly string[], reactAria: boolean): boolean {
 function rendered(segments: readonly string[], scope: Scope): OverlayPart | "local" | undefined {
   const [head, ...members] = segments;
   if (head === undefined || (members.length === 0 && /^[a-z]/u.test(head))) return undefined;
-  const imported = fuseImport(scope, head);
+  const imported = fuseImport(resolve(scope, head));
   if (imported !== undefined) {
     const table = imported.reactAria ? REACT_ARIA_OVERLAYS : FUSE_OVERLAYS;
     return table.get([...imported.path, ...members].join("."));
@@ -173,18 +194,18 @@ function rendered(segments: readonly string[], scope: Scope): OverlayPart | "loc
   return registered === undefined ? "local" : FUSE_OVERLAYS.get(registered);
 }
 
-/** Whether a variable is `useSideOverlay`, imported from the window-side module. */
+/**
+ * Whether a variable is `useSideOverlay`, imported by its identifier name from the window-side
+ * module.
+ */
 function isSideOverlayHook(variable: Variable | undefined): boolean {
-  const definition = variable?.defs[0];
-  if (definition?.type !== "ImportBinding") return false;
-  const specifier = definition.node;
-  const declaration = definition.parent;
+  const binding = importOf(variable);
   return (
-    specifier.type === "ImportSpecifier" &&
-    specifier.imported.type === "Identifier" &&
-    specifier.imported.name === HOOK &&
-    declaration?.type === "ImportDeclaration" &&
-    declaration.source.value.endsWith(HOOK_MODULE)
+    binding !== undefined &&
+    binding.imported !== "namespace" &&
+    binding.imported.type === "Identifier" &&
+    binding.imported.name === HOOK &&
+    binding.source.endsWith(HOOK_MODULE)
   );
 }
 
@@ -196,23 +217,54 @@ function isClosedLiteral(node: ESTree.Node | null | undefined, closed: false | n
 /** A prop a component destructures from its first parameter: its key and its default, if any. */
 type DestructuredProp = { readonly key: string; readonly fallback: ESTree.Node | undefined };
 
+/** The object a function destructures from its first parameter, and how the function is bound. */
+type ComponentProps = {
+  /** The first parameter's object pattern, past any default. */
+  readonly pattern: ESTree.ObjectPattern;
+  /** Whether the function is bound under a capitalized name, as a component is. */
+  readonly capitalized: boolean;
+  /** Whether the first parameter has a default of its own, as in `({ open } = {}) => …`. */
+  readonly defaulted: boolean;
+};
+
+/**
+ * The props a function destructures from its first parameter, as in `function Sheet({ open })` or
+ * `const Panel = ({ sheetOpen } = {}) => …`, or `undefined` for a node that is no function or
+ * whose first parameter destructures no object.
+ */
+function componentProps(fn: ESTree.Node | null | undefined): ComponentProps | undefined {
+  if (
+    fn?.type !== "FunctionDeclaration" &&
+    fn?.type !== "FunctionExpression" &&
+    fn?.type !== "ArrowFunctionExpression"
+  ) {
+    return undefined;
+  }
+  const [first] = fn.params;
+  const defaulted = first?.type === "AssignmentPattern";
+  const pattern = defaulted ? first.left : first;
+  if (pattern?.type !== "ObjectPattern") return undefined;
+  const binding = fn.type === "FunctionDeclaration" ? fn.id : fn.parent;
+  const name =
+    binding?.type === "Identifier"
+      ? binding.name
+      : binding?.type === "VariableDeclarator" && binding.id.type === "Identifier"
+        ? binding.id.name
+        : undefined;
+  return { pattern, capitalized: name !== undefined && /^[A-Z]/u.test(name), defaulted };
+}
+
 /**
  * The prop a parameter binding destructures from a component's first parameter, as in
  * `function Sheet({ open = false })` or `({ sheetOpen: shown = false }) => …`, or `undefined` for
- * any other binding.
+ * any other binding. A props object with a default of its own is not read.
  */
 function destructuredProp(identifier: ESTree.Node, fn: ESTree.Node): DestructuredProp | undefined {
-  const parent = fn.type === "FunctionDeclaration" ? undefined : fn.parent;
-  const name =
-    fn.type === "FunctionDeclaration"
-      ? fn.id?.name
-      : parent?.type === "VariableDeclarator" && parent.id.type === "Identifier"
-        ? parent.id.name
-        : undefined;
-  if (name === undefined || !/^[A-Z]/u.test(name) || !("params" in fn)) return undefined;
+  const props = componentProps(fn);
+  if (props === undefined || !props.capitalized || props.defaulted) return undefined;
   const assignment = identifier.parent?.type === "AssignmentPattern" ? identifier.parent : undefined;
   const property = (assignment ?? identifier).parent;
-  if (property?.type !== "Property" || property.parent !== fn.params[0]) return undefined;
+  if (property?.type !== "Property" || property.parent !== props.pattern) return undefined;
   const key = propertyKeyName(property);
   return key === undefined ? undefined : { key, fallback: assignment?.right };
 }
@@ -322,6 +374,12 @@ function isStatelessSpread(argument: ESTree.Node, sourceCode: SourceCode): boole
   });
 }
 
+/** A JSX attribute's name: `open`, or `xlink:href` for a namespaced one. */
+function attributeName(attribute: ESTree.JSXAttribute): string {
+  const name = attribute.name;
+  return name.type === "JSXNamespacedName" ? `${name.namespace.name}:${name.name.name}` : name.name;
+}
+
 /** An attribute's value as the rule reads it: its expression, or the attribute for a bare or literal one. */
 function attributeValue(attribute: ESTree.JSXAttribute): ESTree.Node {
   const value = attribute.value;
@@ -369,21 +427,11 @@ function forwardsState(variable: Variable | undefined): boolean {
   const node = definition?.node;
   const fn =
     node?.type === "VariableDeclarator" ? node.init : definition?.type === "FunctionName" ? node : undefined;
-  if (
-    fn?.type !== "FunctionDeclaration" &&
-    fn?.type !== "FunctionExpression" &&
-    fn?.type !== "ArrowFunctionExpression"
-  ) {
-    return false;
-  }
-  const [first] = fn.params;
-  const props = first?.type === "AssignmentPattern" ? first.left : first;
   return (
-    props?.type === "ObjectPattern" &&
-    props.properties.some((property) => {
+    componentProps(fn)?.pattern.properties.some((property) => {
       const key = property.type === "Property" ? propertyKeyName(property) : undefined;
       return key !== undefined && FORWARDED_STATE.test(key);
-    })
+    }) === true
   );
 }
 
@@ -450,35 +498,32 @@ export const sideOverlayState: Rule = {
   },
   create(context) {
     const sourceCode = context.sourceCode;
-    const report = (node: ESTree.Node, messageId: string, data: Record<string, string>): void => {
+    const report = (node: ESTree.Node, messageId: string, data: Record<string, string> = {}): void => {
       context.report({ node, messageId, data });
     };
     return {
       // A re-export hands Fuse's parts to modules that see them as local components.
       ExportNamedDeclaration(declaration) {
         if (declaration.source !== null && isFuseSource(declaration.source.value)) {
-          report(declaration, "reexport", {});
+          report(declaration, "reexport");
         }
       },
       ExportAllDeclaration(declaration) {
-        if (isFuseSource(declaration.source.value)) report(declaration, "reexport", {});
+        if (isFuseSource(declaration.source.value)) report(declaration, "reexport");
       },
       ImportExpression(expression) {
-        const source = stringLiteral(expression.source);
+        const source = constantString(expression.source);
         if (source === undefined || isFuseSource(source)) {
-          report(expression, "dynamicImport", {});
+          report(expression, "dynamicImport");
         }
       },
       // A registered part read off a local table, `table.ColumnToggle` outside a tag.
       MemberExpression(member) {
-        const name =
-          member.computed || member.property.type !== "Identifier"
-            ? stringLiteral(member.property)
-            : member.property.name;
+        const name = propertyKeyName({ key: member.property, computed: member.computed });
+        if (name === undefined || !REGISTERED.has(name)) return;
         // A read rooted at a Fuse import is the Identifier visitor's to judge.
         const root = nameChain(member.object)?.[0];
-        const imported = root === undefined ? undefined : fuseImport(sourceCode.getScope(member), root);
-        if (name !== undefined && REGISTERED.has(name) && imported === undefined) {
+        if (root === undefined || fuseImport(resolve(sourceCode.getScope(member), root)) === undefined) {
           report(member, "alias", { name });
         }
       },
@@ -492,14 +537,14 @@ export const sideOverlayState: Rule = {
       // Scope resolution sees an import below its use and a local that shadows one.
       Identifier(identifier) {
         if (!isValueReference(identifier)) return;
-        const scope = sourceCode.getScope(identifier);
+        const variable = resolve(sourceCode.getScope(identifier), identifier.name);
         // A forwarding component is trusted because its JSX callers are checked; any other use,
         // `createElement(Panel, props)` or `memo(Panel)`, passes props the rule cannot see.
-        if (forwardsState(resolve(scope, identifier.name))) {
+        if (forwardsState(variable)) {
           report(identifier, "alias", { name: identifier.name });
           return;
         }
-        const imported = fuseImport(scope, identifier.name);
+        const imported = fuseImport(variable);
         if (imported === undefined) return;
         const parent = identifier.parent;
         // `DataTable.Text` reads a part without a popup; `DataTable.ColumnToggle` would alias one.
@@ -508,7 +553,7 @@ export const sideOverlayState: Rule = {
             ? [parent.property.name]
             : [];
         const path = [...imported.path, ...member];
-        if (path.join(".") === "actionsColumn") {
+        if (path.join(".") === ROW_ACTIONS_FACTORY) {
           report(identifier, "factory", { name: identifier.name });
         } else if (reachesOverlay(path, imported.reactAria)) {
           report(identifier, "alias", { name: identifier.name });
@@ -533,37 +578,37 @@ export const sideOverlayState: Rule = {
               }
               continue;
             }
-            const name = nameChain(attribute.name).join(":");
+            const name = attributeName(attribute);
             if (FORWARDED_STATE.test(name)) judge(name, attributeValue(attribute), false);
           }
           return;
         }
-        const overlay = target;
         const attributes = element.attributes;
-        const lastIndex = (name: string): number =>
-          attributes.findLastIndex(
-            (attribute) => attribute.type === "JSXAttribute" && nameChain(attribute.name).join(":") === name
+        // The last attribute of a name, which wins over any before it, and its position.
+        const lastAttribute = (name: string) => {
+          const index = attributes.findLastIndex(
+            (attribute) => attribute.type === "JSXAttribute" && attributeName(attribute) === name
           );
-        const lastSpread = attributes.findLastIndex((attribute) => attribute.type === "JSXSpreadAttribute");
-        const popupFree = overlay.popupFree;
-        if (popupFree !== undefined) {
-          const index = lastIndex(popupFree.attribute);
           const attribute = attributes[index];
-          if (index > lastSpread && attribute?.type === "JSXAttribute") {
-            if (attribute.value?.type === "Literal" && attribute.value.value === popupFree.value) return;
-          }
+          return { index, attribute: attribute?.type === "JSXAttribute" ? attribute : undefined };
+        };
+        const lastSpread = attributes.findLastIndex((attribute) => attribute.type === "JSXSpreadAttribute");
+        const popupFree = target.popupFree;
+        if (popupFree !== undefined) {
+          const { index, attribute } = lastAttribute(popupFree.attribute);
+          const value = attribute?.value;
+          if (index > lastSpread && value?.type === "Literal" && value.value === popupFree.value) return;
         }
-        if (overlay.state === "internal") {
+        if (target.state === "internal") {
           report(element, "internal", { part });
           return;
         }
-        const name = overlay.state;
-        const index = lastIndex(name);
-        const attribute = attributes[index];
+        const name = target.state;
+        const { index, attribute } = lastAttribute(name);
         const spread = attributes[lastSpread];
         if (spread !== undefined && lastSpread > index) {
           report(spread, "spread", { part, attribute: name });
-        } else if (attribute?.type !== "JSXAttribute") {
+        } else if (attribute === undefined) {
           report(element, "uncontrolled", { part, attribute: name });
         } else {
           judge(name, attributeValue(attribute), CLOSED[name]);

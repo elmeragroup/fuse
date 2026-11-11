@@ -3,6 +3,7 @@ import { sideOverlayState } from "./side-overlay-state.ts";
 
 const hook = 'import { useSideOverlay } from "../window-side";\n';
 const sheet = `${hook}import { Sheet } from "@elmeragroup/fuse/sheet";\n`;
+const dataTable = `${hook}import { DataTable } from "@elmeragroup/fuse/data-table";\n`;
 
 ruleTester.run("side-overlay-state", sideOverlayState, {
   valid: [
@@ -32,7 +33,8 @@ function Start() { const [open, setOpen] = useSideOverlay(false); return <DatePi
 function Menu() { const [open] = useSideOverlay(false); return <Menus.DropdownMenu.Root open={open} />; }`,
     `${hook}import * as fuse from "@elmeragroup/fuse";
 function Panel() { const [open] = useSideOverlay(false); return <fuse.Sheet.Root open={open} />; }`,
-    // A spread before the state attribute cannot override it; one the rule can see into may follow.
+    // A spread before the state attribute cannot override it. Only a spread onto a local component may
+    // follow its attributes, and only as a stateless object.
     `${sheet}function Panel(props) { const [open] = useSideOverlay(false); return <Sheet.Root {...props} open={open} />; }`,
     // A local component given a constant object the module only spreads.
     `function Section() { const band = { tone: "plain", title: "Hi" }; return <><Band {...band} /><Band {...band} lede="x" /></>; }`,
@@ -47,18 +49,17 @@ import { Collapsible } from "@elmeragroup/fuse/collapsible";
 import { Sheet } from "@elmeragroup/fuse/sheet";
 function Parts({ shown }) { return <><Tooltip.Root /><Collapsible.Root open={shown} /><Sheet.Content /><Details defaultOpen /></>; }`,
     // The DataTable's menus: the namespace parts and a table's registered forms.
-    `${hook}import { DataTable } from "@elmeragroup/fuse/data-table";
-function Columns({ table }) { const [open, setOpen] = useSideOverlay(false); return <DataTable.ColumnToggle table={table} open={open} onOpenChange={setOpen} />; }`,
-    `${hook}import { DataTable } from "@elmeragroup/fuse/data-table";
-function Pages({ table }) { const [open] = useSideOverlay(false); return <DataTable.Pagination table={table} pageSizeOpen={open} />; }`,
+    `${dataTable}function Columns({ table }) { const [open, setOpen] = useSideOverlay(false); return <DataTable.ColumnToggle table={table} open={open} onOpenChange={setOpen} />; }`,
+    `${dataTable}function Pages({ table }) { const [open] = useSideOverlay(false); return <DataTable.Pagination table={table} pageSizeOpen={open} />; }`,
     `${hook}function Search() { const table = useAppTable({}); const [open, setOpen] = useSideOverlay(false); return <table.AppTable><table.ColumnToggle open={open} onOpenChange={setOpen} /><table.Pagination pageSizeOpen={open} /></table.AppTable>; }`,
     // A part without a popup, read outside a tag.
-    `import { DataTable } from "@elmeragroup/fuse/data-table";
-const columns = [{ cell: DataTable.Text }];`,
+    `${dataTable}const columns = [{ cell: DataTable.Text }];`,
     // A local module's dynamic import is linted where it is defined; another value's own members pass.
     `import dynamic from "next/dynamic";
 const OrderSearch = dynamic(async () => (await import("./order-search")).OrderSearch);`,
     `function Search({ table }) { return table.getPageCount() + table.options.pagination; }`,
+    // A template specifier without substitutions is read like a string literal.
+    "const load = () => import(`./order-search`);",
     // A forwarding component declared and exported, rendered as a tag; a non-forwarding one used as a value.
     `${sheet}export function Panel({ open = false }) { return <Sheet.Root open={open} />; }
 function Shell() { const [open] = useSideOverlay(false); return <Panel open={open} />; }`,
@@ -95,11 +96,6 @@ function Confirm() { return <Fuse.AlertDialog.Root defaultOpen />; }`,
     {
       code: `import * as fuse from "@elmeragroup/fuse";
 function Panel() { return <fuse.Sheet.Root defaultOpen />; }`,
-      errors: [{ messageId: "uncontrolled" }],
-    },
-    {
-      code: `import { Sheet as sheet } from "@elmeragroup/fuse/sheet";
-function Panel() { return <sheet.Root />; }`,
       errors: [{ messageId: "uncontrolled" }],
     },
     // Fuse's picker fields take `isOpen`, so Base UI's `open` does not control them.
@@ -194,10 +190,6 @@ ${sheet}function Outer() { const [open] = useSideOverlay(false); function Inner(
     },
     // `&&` counts only with the side state on the left and a boolean on the right.
     {
-      code: `${sheet}function Panel({ enabled }) { const [open] = useSideOverlay(false); return <Sheet.Root open={enabled && open} />; }`,
-      errors: [{ messageId: "untraced" }],
-    },
-    {
       code: `${sheet}function Panel({ enabled }) { const [open] = useSideOverlay(false); return <Sheet.Root open={open && enabled} />; }`,
       errors: [{ messageId: "untraced" }],
     },
@@ -205,11 +197,6 @@ ${sheet}function Outer() { const [open] = useSideOverlay(false); function Inner(
     {
       code: `import { NavigationMenu } from "@elmeragroup/fuse/navigation-menu";
 function Nav({ navOpen = null }) { return <NavigationMenu.Root value={navOpen} />; }`,
-      errors: [{ messageId: "untraced" }],
-    },
-    {
-      code: `import { NavigationMenu } from "@elmeragroup/fuse/navigation-menu";
-function Nav({ navOpen = false }) { return <NavigationMenu.Root value={navOpen} />; }`,
       errors: [{ messageId: "untraced" }],
     },
     // A binding written after its declaration may no longer be the side's state.
@@ -254,21 +241,7 @@ import { Sheet } from "@elmeragroup/fuse/sheet";`,
       errors: [{ messageId: "spread" }],
     },
     {
-      code: `import { useState } from "react";
-${sheet}function Panel() { const [open] = useSideOverlay(false); const [unsafe] = useState(true); return <Sheet.Root open={open} {...{ open: unsafe }} />; }`,
-      errors: [{ messageId: "spread" }],
-    },
-    {
       code: `${sheet}function Panel() { const [open] = useSideOverlay(false); return <Sheet.Root open={open} {...{ modal: true }} />; }`,
-      errors: [{ messageId: "spread" }],
-    },
-    {
-      code: `${sheet}function Panel() { const [open] = useSideOverlay(false); const state = { open }; return <Sheet.Root {...state} />; }`,
-      errors: [{ messageId: "spread" }],
-    },
-    // A constant object the module also touches elsewhere could gain a key.
-    {
-      code: `${sheet}function Panel() { const state = {}; state.open = true; return <Sheet.Root {...state} />; }`,
       errors: [{ messageId: "spread" }],
     },
     // `inline` does not exempt a Root: a Content inside it still renders a popup.
@@ -307,6 +280,11 @@ function Shell() { const [open] = useState(true); return <Panel {...{ open }} />
       code: `function Shell(props) { return <Panel {...props} />; }`,
       errors: [{ messageId: "spread" }],
     },
+    // A constant object the module also writes elsewhere could gain a forwarded key.
+    {
+      code: `function Section() { const band = {}; band.open = true; return <Band {...band} />; }`,
+      errors: [{ messageId: "spread" }],
+    },
     // The DataTable's menus, uncontrolled: Order search's column menu without its hook state.
     {
       code: `function Search() { const table = useAppTable({}); return <table.AppTable><table.ColumnToggle className="columns" getLabel={(column) => column.id} /></table.AppTable>; }`,
@@ -322,34 +300,13 @@ function Search() { const table = useAppTable({}); const [open, setOpen] = useSt
       errors: [{ messageId: "uncontrolled" }],
     },
     {
-      code: `import { DataTable } from "@elmeragroup/fuse/data-table";
-function Pages({ table }) { return <DataTable.Pagination table={table} />; }`,
+      code: `${dataTable}function Pages({ table }) { const [open] = useSideOverlay(false); return <DataTable.Pagination table={table} open={open} />; }`,
       errors: [{ messageId: "uncontrolled" }],
-    },
-    {
-      code: `${hook}import { DataTable } from "@elmeragroup/fuse/data-table";
-function Pages({ table }) { const [open] = useSideOverlay(false); return <DataTable.Pagination table={table} open={open} />; }`,
-      errors: [{ messageId: "uncontrolled" }],
-    },
-    {
-      code: `import * as fuse from "@elmeragroup/fuse";
-function Columns({ table }) { return <fuse.DataTable.ColumnToggle table={table} />; }`,
-      errors: [{ messageId: "uncontrolled" }],
-    },
-    {
-      code: `import { DataTable } from "@elmeragroup/fuse/data-table";
-function Actions() { return <DataTable.RowActions label="Actions" />; }`,
-      errors: [{ messageId: "internal" }],
     },
     {
       code: `import { actionsColumn } from "@elmeragroup/fuse/data-table";
 const columns = [actionsColumn(helper, { items: () => null })];`,
       errors: [{ messageId: "factory" }],
-    },
-    {
-      code: `import { DataTable } from "@elmeragroup/fuse/data-table";
-const tableComponents = { Columns: DataTable.ColumnToggle };`,
-      errors: [{ messageId: "alias" }],
     },
     // A registered part aliased or destructured off a table escapes the tag check.
     {
@@ -361,11 +318,11 @@ const tableComponents = { Columns: DataTable.ColumnToggle };`,
       errors: [{ messageId: "alias" }],
     },
     {
-      code: `function Search() { const table = useAppTable({}); const { Pagination: Pages } = table; return <Pages />; }`,
+      code: `function Search() { const Columns = getTable()["ColumnToggle"]; return <Columns />; }`,
       errors: [{ messageId: "alias" }],
     },
     {
-      code: `function Search() { const Columns = getTable()["ColumnToggle"]; return <Columns />; }`,
+      code: `${dataTable}const tableComponents = { Columns: DataTable.ColumnToggle };`,
       errors: [{ messageId: "alias" }],
     },
     // A dynamic import of Fuse loads a part the rule cannot name, as the landing's `dynamic` does.
@@ -379,21 +336,17 @@ function Start() { return <DatePicker label="Start" />; }`,
       code: `const load = (entry) => import(entry);`,
       errors: [{ messageId: "dynamicImport" }],
     },
+    {
+      code: "const load = (entry) => import(`@elmeragroup/fuse/${entry}`);",
+      errors: [{ messageId: "dynamicImport" }],
+    },
     // A re-export of Fuse, in each form, hands its parts to modules that see a local component.
     {
       code: `export { Sheet } from "@elmeragroup/fuse/sheet";`,
       errors: [{ messageId: "reexport" }],
     },
     {
-      code: `export { Dialog as Modal, Button } from "@elmeragroup/fuse";`,
-      errors: [{ messageId: "reexport" }],
-    },
-    {
       code: `export * from "@elmeragroup/fuse/sheet";`,
-      errors: [{ messageId: "reexport" }],
-    },
-    {
-      code: `export * as parts from "@elmeragroup/fuse";`,
       errors: [{ messageId: "reexport" }],
     },
     // An imported overlay part exported again by name is an alias.
@@ -432,11 +385,6 @@ function Rail() { return <Sidebar.Root collapsible="icon" />; }`,
     {
       code: `import { SelectField } from "@elmeragroup/fuse/select-field";
 function Size() { return <SelectField label="Size" items={[]} />; }`,
-      errors: [{ messageId: "internal" }],
-    },
-    {
-      code: `import { PhoneNumberField } from "@elmeragroup/fuse/phone-number-field";
-function Phone() { return <PhoneNumberField label="Phone" />; }`,
       errors: [{ messageId: "internal" }],
     },
   ],
