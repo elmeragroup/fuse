@@ -8,6 +8,7 @@ import { PhoneNumberFieldSizes } from "./demos/phone-number-field-sizes";
 import { PhoneNumberFieldInternational } from "./demos/phone-number-field-international";
 import { PhoneNumberFieldDetect } from "./demos/phone-number-field-detect";
 import { PhoneNumberFieldCountries } from "./demos/phone-number-field-countries";
+import { PhoneNumberFieldControlledCountry } from "./demos/phone-number-field-controlled-country";
 import { PhoneNumberFieldForm } from "./demos/phone-number-field-form";
 import { PhoneNumberFieldI18n } from "./demos/phone-number-field-i18n";
 import { PhoneNumberFieldStates } from "./demos/phone-number-field-states";
@@ -42,6 +43,19 @@ The field picks the country from a `+` or `00` prefix as the user types or paste
 
 <Demo slug="phone-number-field" id="countries" title="Countries" file="phone-number-field-countries.tsx">
   <PhoneNumberFieldCountries />
+</Demo>
+
+Pass `countryCode` with `onCountryChange` to own the country. A new `countryCode` acts like a
+pick: it clears the digits unless `preserveOnCountryChange` keeps them. A pick in the field is a
+proposal the parent accepts by setting `countryCode`; a parent that keeps its code returns the field
+to it. A controlled `value` that starts with `+` or `00` names its own country and keeps it.
+
+<Demo
+  slug="phone-number-field"
+  id="controlled-country"
+  title="Controlled country"
+  file="phone-number-field-controlled-country.tsx">
+  <PhoneNumberFieldControlledCountry />
 </Demo>
 
 <Demo slug="phone-number-field" id="form" title="Form submit" file="phone-number-field-form.tsx">

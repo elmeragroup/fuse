@@ -14,6 +14,11 @@ const swedishMetadata: MetadataJson = {
   country_calling_codes: { "46": ["SE"] },
 };
 
+/** The output the latest proposal sends `onChange`, or null. */
+function proposedValue(state: PhoneEditorState): string | null {
+  return PhoneEditor.proposalNotice(state)?.value ?? null;
+}
+
 /** What a test reads back: the display, the output and the country code. */
 function shown(state: PhoneEditorState) {
   const { displayValue, outputValue, country } = PhoneEditor.view(state);
@@ -72,7 +77,7 @@ function keyAt(state: PhoneEditorState, caret: number, key: string): PhoneEditor
  * parent's value calls nothing, so the parent keeps that value, which the state already shows.
  */
 function echo(state: PhoneEditorState, props: PhoneEditorProps = {}): PhoneEditorState {
-  const value = PhoneEditor.proposedValue(state) ?? PhoneEditor.view(state).outputValue;
+  const value = proposedValue(state) ?? PhoneEditor.view(state).outputValue;
   return PhoneEditor.reconcile(state, { ...props, value });
 }
 
@@ -476,7 +481,7 @@ describe("PhoneEditor caret", () => {
 
     it("proposes the edit's output, and shows it with its caret once the parent echoes it", () => {
       const proposed = backspaced();
-      expect(PhoneEditor.proposedValue(proposed)).toBe("+479134567");
+      expect(proposedValue(proposed)).toBe("+479134567");
       expect(PhoneEditor.view(proposed)).toMatchObject({ displayValue: "91 23 45 67", selection: null });
       const echoed = PhoneEditor.reconcile(proposed, { ...props, value: "+479134567" });
       expect(PhoneEditor.view(echoed)).toMatchObject({
@@ -704,7 +709,7 @@ describe("PhoneEditor.reconcile", () => {
       ],
     ] as const)("%s", (_name, props, typed, output, display) => {
       const proposed = fill(PhoneEditor.create({ ...props, value: "" }), typed);
-      expect(PhoneEditor.proposedValue(proposed)).toBe(output);
+      expect(proposedValue(proposed)).toBe(output);
       expect(shown(echo(proposed, props))).toEqual({ display, output, country: "NO" });
     });
 
@@ -713,7 +718,7 @@ describe("PhoneEditor.reconcile", () => {
       const state = PhoneEditor.create({ ...props, value: "+4741234567" });
       expect(shown(state)).toEqual({ display: "+4741234567", output: "+4741234567", country: "NO" });
       const proposed = fill(state, "99887766");
-      expect(PhoneEditor.proposedValue(proposed)).toBe("+4799887766");
+      expect(proposedValue(proposed)).toBe("+4799887766");
       const rejected = PhoneEditor.reconcile(proposed, { ...props, value: "+4741234567" });
       expect(shown(rejected)).toEqual({ display: "+4741234567", output: "+4741234567", country: "NO" });
       const accepted = PhoneEditor.reconcile(rejected, { ...props, value: "+4799887766" });
@@ -729,7 +734,7 @@ describe("PhoneEditor.reconcile", () => {
       const accepted = echo(fill(PhoneEditor.create({ ...props, value: "" }), "41234567"), props);
       expect(shown(accepted)).toEqual({ display: "41234567", output: "+4741234567", country: "NO" });
       const pasted = PhoneEditor.paste(accepted, "+46701234567");
-      expect(PhoneEditor.proposedValue(pasted)).toBe("+46701234567");
+      expect(proposedValue(pasted)).toBe("+46701234567");
       const rejected = PhoneEditor.reconcile(pasted, { ...props, value: "+4741234567" });
       expect(shown(rejected)).toEqual({ display: "41234567", output: "+4741234567", country: "NO" });
     });
@@ -929,15 +934,6 @@ describe("PhoneEditor.reset", () => {
   });
 });
 
-/**
- * `AsYouType#input` runs exactly once per libphonenumber parse: the engine builds one
- * `AsYouType` per parse, feeds it the number, and nothing else touches the parser. Patching
- * the shared prototype counts real parses without mocking the module.
- *
- * The budget is per path: a keystroke costs one parse, a paste that carries an international
- * prefix three (two in the detection pass, one for the output), a country change one, and
- * props that are equal in a new object none.
- */
 describe("PhoneEditor parse budget", () => {
   // SAFETY: `input` is `AsYouType`'s own prototype method, read through its descriptor so the
   // reference stays unbound and `.call` below restores the instance.

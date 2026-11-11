@@ -160,26 +160,6 @@ function hasInternationalDigits(digits: string): boolean {
   return digits.startsWith(INTERNATIONAL_PREFIX);
 }
 
-/**
- * The full international form of a snapshot, used to re-read it under another catalog. A
- * national draft reads under the metadata it was entered with, so its own trunk prefix and
- * local-dialling rules apply (Kazakhstan's 8, Anguilla's seven-digit numbers). A draft that
- * holds no number yet, such as a lone trunk 0, reads as empty, as it submits; digits that are
- * already a national number follow the calling code.
- */
-export function toInternationalInput(
-  { digits, country, parsedNational }: ProcessedPhoneInput,
-  metadata: MetadataJson
-): string {
-  if (!digits || hasInternationalDigits(digits)) {
-    return digits;
-  }
-  if (parsedNational) {
-    return country.dialCode + digits;
-  }
-  return parsePhoneInput(digits, country.code, metadata).phoneNumber?.number ?? "";
-}
-
 function toE164Digits(digits: string): string {
   return digits.replace(E164_NOISE_REGEX, "");
 }
@@ -269,7 +249,8 @@ export function cleanPhoneInput(input: string): string {
   return input.replace(PHONE_CHAR_REGEX, "").replace(LEADING_SEPARATORS_REGEX, "");
 }
 
-function hasInternationalPrefix(input: string): boolean {
+/** Whether cleaned input starts with a `+` or `00` international prefix, and so names a calling code. */
+export function hasInternationalPrefix(input: string): boolean {
   return hasInternationalDigits(input) || input.startsWith(ITU_INTERNATIONAL_PREFIX);
 }
 
@@ -337,9 +318,62 @@ export function processInputWithDetection({
   return { digits: normalized, country };
 }
 
+/**
+ * One libphonenumber parse of a number written with its own `+` prefix. libphonenumber reads
+ * an international number without its default country, so the parse is the same in every
+ * country: a snapshot of the same input in any country reuses it, and its country is the one
+ * the prefix detects. Read-only; it comes from {@link resolvePhoneFieldValues}.
+ */
+export type InternationalReading = {
+  /**
+   * The parsed input's `+` and digits alone. libphonenumber ignores the spacing, dashes and
+   * brackets between them, so inputs with the same key parse the same.
+   */
+  readonly key: string;
+  /** The catalog it was parsed with. */
+  readonly metadata: MetadataJson;
+  /** The country the prefix detects; none for a partial number such as `"+10"`. */
+  readonly country: CountryCode | undefined;
+  /** The national significant number, once the digits make a number. */
+  readonly nationalNumber: string | undefined;
+  /**
+   * The parse itself, which a snapshot of the same input reuses. Only the same input: one with the
+   * same canonical number written otherwise, as its national number behind the calling code,
+   * can parse differently, since libphonenumber strips a trunk prefix once per parse
+   * ("+4600701234567" keeps a 0 that "+460701234567" loses).
+   */
+  readonly parsed: Readonly<ParsedPhoneInput>;
+};
+
+/**
+ * A parse of one input in one default country under one catalog. The output format and the
+ * display flags only format what it found, so the same digits re-derived under another format
+ * reuse it: a national draft as much as a `+` number.
+ */
+export type PhoneParse = {
+  /** The parsed input's `+` and digits alone, as {@link InternationalReading.key}. */
+  readonly key: string;
+  /** The default country the input was parsed in. */
+  readonly country: CountryCode | undefined;
+  /** The catalog it was parsed with. */
+  readonly metadata: MetadataJson;
+  readonly parsed: Readonly<ParsedPhoneInput>;
+};
+
+/** The `+` and digits of an input, the part of it a parse depends on. */
+function readingKey(input: string): string {
+  return input.replace(/[^\d+]/g, "");
+}
+
 export type PhoneFieldValues = {
   displayValue: string;
   outputValue: string;
+  /** The parse, when its input was a number with its own `+` prefix, for reuse in any country. */
+  reading: InternationalReading | undefined;
+  /** The parse, for the same digits re-derived in the same country under another format. */
+  parse: PhoneParse | undefined;
+  /** The E.164 number the digits parse to, once they make one; the number's identity. */
+  number: string | undefined;
 };
 
 /** Options for {@link resolvePhoneFieldValues}. */
@@ -351,6 +385,10 @@ type ResolvePhoneFieldValuesOptions = {
   outputFormat: PhoneNumberFormat;
   international: boolean;
   formatOnType: boolean;
+  /** A parse of the same `+` input to reuse instead of parsing again. */
+  reading?: InternationalReading | undefined;
+  /** A parse of the same input in the same country, under any format, to reuse. */
+  parse?: PhoneParse | undefined;
 };
 
 export function resolvePhoneFieldValues({
@@ -361,9 +399,11 @@ export function resolvePhoneFieldValues({
   outputFormat,
   international,
   formatOnType,
+  reading,
+  parse,
 }: ResolvePhoneFieldValuesOptions): PhoneFieldValues {
   if (!digits) {
-    return { displayValue: "", outputValue: "" };
+    return { displayValue: "", outputValue: "", reading: undefined, parse: undefined, number: undefined };
   }
   // A national draft parses as a national entry, with the country as its default. The
   // as-you-type output then keeps a typed trunk prefix for the display ("070-1", where behind
@@ -373,17 +413,32 @@ export function resolvePhoneFieldValues({
   // selected, "2351234" submits as +12642351234, and a typed ten-digit number passes through
   // such a value at its seventh key. Detected digits are already a national number, so they
   // parse behind the calling code again, where a partial one takes no such rule.
-  const parsed = parsePhoneInput(
-    parsedNational ? getInternationalPrefix(country, metadata) + digits : digits,
-    country,
-    metadata
-  );
+  const input = parsedNational ? getInternationalPrefix(country, metadata) + digits : digits;
+  const prefixed = hasInternationalDigits(input);
+  const key = readingKey(input);
+  const parsed =
+    prefixed && reading?.metadata === metadata && reading.key === key
+      ? reading.parsed
+      : parse?.metadata === metadata && parse.key === key && parse.country === country
+        ? parse.parsed
+        : parsePhoneInput(input, country, metadata);
   return {
     displayValue: getDisplayValue(parsed, { digits, parsedNational }, country, {
       international,
       formatOnType,
     }),
     outputValue: formatOutputValue(parsed.phoneNumber, digits, outputFormat),
+    number: parsed.phoneNumber?.number,
+    parse: { key, country, metadata, parsed },
+    reading: prefixed
+      ? {
+          key,
+          metadata,
+          country: parsed.phoneNumber?.country,
+          nationalNumber: parsed.phoneNumber?.nationalNumber,
+          parsed,
+        }
+      : undefined,
   };
 }
 

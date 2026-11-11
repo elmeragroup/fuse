@@ -6,6 +6,8 @@ import type { RefObject } from "react";
 import type { CountryCode } from "libphonenumber-js/core";
 
 import { hasFocus } from "../../../internal/active-element";
+import { committedCountry, publishedCountry, startCountryNotices } from "../phone-country-notices";
+import type { CountryNotices } from "../phone-country-notices";
 import * as PhoneEditor from "../phone-editor";
 import type {
   PhoneEdit,
@@ -20,7 +22,11 @@ import type { PhoneNumberCountry } from "../phone-engine";
 export type UsePhoneNumberFieldStateOptions = PhoneEditorProps & {
   /** Receives a proposal's output value when it differs from the value the parent holds. */
   onChange?: (value: string) => void;
-  /** Receives the country after a commit that changed it. */
+  /**
+   * Receives the country after a commit that changed it. With a controlled `countryCode`,
+   * receives instead a proposed country, or the shown one, that differs from `countryCode`, once
+   * per disagreement. A proposal that moves the country calls it before `onChange`.
+   */
   onCountryChange?: (country: PhoneNumberCountry) => void;
   /** The number input, whose caret an edit's proposal puts back. */
   inputRef: RefObject<HTMLInputElement | null>;
@@ -62,16 +68,40 @@ export function usePhoneNumberFieldState({
   if (state !== stored) setState(state);
   const { displayValue, outputValue, country, countries, selection } = PhoneEditor.view(state);
 
-  // Notify only committed country changes, including external value/catalog replacement and
-  // a reset that restores a default in another country. A reset without a default keeps the
-  // visible country, so it stays silent.
-  const notifiedCountry = useRef(country.code);
+  // `onCountryChange` follows the country notices: committed country changes without a
+  // controlled country, and with one each disagreement once, proposed or shown.
+  const countryNotices = useRef<CountryNotices | null>(null);
+  countryNotices.current ??= startCountryNotices(PhoneEditor.observeCountry(state));
   useEffect(() => {
-    if (notifiedCountry.current !== country.code) {
-      notifiedCountry.current = country.code;
-      onCountryChange?.(country);
-    }
-  }, [country, onCountryChange]);
+    if (!countryNotices.current) return;
+    const committed = committedCountry(countryNotices.current, PhoneEditor.observeCountry(state));
+    countryNotices.current = committed.notices;
+    if (committed.country) onCountryChange?.(committed.country);
+  });
+
+  // `onChange` has one owner. The editor gives each value notice an identity: one per user
+  // proposal, which `publish` delivers, and one per props change that proposes another output,
+  // as a `countryCode` change that clears the digits, which the commit delivers. Each reaches
+  // `onChange` once, whichever path sees it first and whatever order the parent answers in.
+  // A parent can change its value inside `onCountryChange`, committing synchronously before the
+  // proposal's `onChange` runs; a notice of the value it then holds tells it nothing. The ref
+  // follows the committed `value`, which `flushSync` commits, layout effects included, before
+  // it returns.
+  const heldValue = useRef(props.value);
+  useLayoutEffect(() => {
+    heldValue.current = props.value;
+  });
+  const deliveredValues = useRef(new WeakSet<PhoneEditor.ValueNotice>());
+  const deliverValue = (notice: PhoneEditor.ValueNotice | null) => {
+    if (!notice || deliveredValues.current.has(notice)) return;
+    deliveredValues.current.add(notice);
+    if (heldValue.current !== undefined && notice.value === heldValue.current) return;
+    onChange?.(notice.value);
+  };
+  const steered = PhoneEditor.steeredValue(state);
+  useEffect(() => {
+    deliverValue(steered);
+  });
 
   // An edit whose display the editor rewrites, as formatOnType does, would leave the caret at
   // the end once React assigns the value. The commit after the edit puts back the caret the
@@ -96,13 +126,22 @@ export function usePhoneNumberFieldState({
     input.setSelectionRange(selection.start, selection.end, selection.direction ?? undefined);
   }, [selection, displayValue, inputRef]);
 
-  // The state updates even when `proposedValue` holds the call back, so a proposal that keeps
-  // the output still re-formats the display and puts its caret back.
+  // The state updates even when the proposal has no notice, so a proposal that keeps the output
+  // still re-formats the display and puts its caret back.
+  // The notices take the proposal in before any callback runs: a parent that commits
+  // synchronously inside one, through `flushSync`, would otherwise move them past it and the
+  // proposal's country would be lost as out of date. `onCountryChange` then runs before
+  // `onChange`, so a parent that takes the country at once reads the value in it, rather than
+  // in the old country, where a later change of `countryCode` would clear it.
   const publish = (next: PhoneEditorState) => {
     if (next === state) return;
     setState(next);
-    const proposed = PhoneEditor.proposedValue(next);
-    if (proposed !== null) onChange?.(proposed);
+    const published = countryNotices.current
+      ? publishedCountry(countryNotices.current, PhoneEditor.observeCountry(next))
+      : null;
+    if (published) countryNotices.current = published.notices;
+    if (published?.country) onCountryChange?.(published.country);
+    deliverValue(PhoneEditor.proposalNotice(next));
   };
 
   return {
