@@ -8,9 +8,9 @@ import { useRender } from "@base-ui/react/use-render";
 
 import { useMergedRefs } from "../../hooks/use-merged-refs";
 import { useStableCallback } from "../../hooks/use-stable-callback";
-import { deepActiveElement } from "../../internal/active-element";
+import { activeElementFrom } from "../../internal/active-element";
 import { definedProps } from "../../internal/defined-props";
-import { isHTMLElement } from "../../internal/dom-node";
+import { containsAcrossShadowRoots, isHTMLElement } from "../../internal/dom-node";
 import { cn } from "../../styles/cn";
 import { selfFocusRingClass } from "../../styles/utils";
 import { overlayTitleClass } from "../overlay/overlay-classes";
@@ -40,7 +40,7 @@ type RootContextValue = {
   readonly detail: RefObject<HTMLElement | null>;
   /** The pane's classes, which show it from the root's `split` width. */
   readonly pane: string;
-  /** Tracks whether focus is in the detail, its portalled popups included. */
+  /** Records where focus entered the detail, its portalled popups included. */
   readonly focusTracking: FocusTracking;
   /** Records the list's last focused element, and the list itself, as a Sheet's return target. */
   readonly listTracking: ListTracking;
@@ -52,8 +52,7 @@ type RootContextValue = {
 };
 
 type FocusTracking = {
-  readonly onFocusCapture: () => void;
-  readonly onBlurCapture: () => void;
+  readonly onFocusCapture: (event: FocusEvent) => void;
 };
 
 type ListTracking = {
@@ -134,8 +133,13 @@ export function ListDetailRoot({
 }: ListDetailRootProps): ReactElement {
   const probe = useRef<HTMLSpanElement>(null);
   const detail = useRef<HTMLElement | null>(null);
+  // The layout the client last read from the container query, unset until its first reading.
+  // Until then the pane's CSS hides it in a root too narrow for it; from then on the client alone
+  // removes it, after reading where focus is, as a pane the CSS hid first would make the browser
+  // drop the focus inside it.
+  const [read, setRead] = useState<ListDetailLayout | undefined>(undefined);
   // Split on the server and through hydration, as the pane's own CSS is; `never` has no pane.
-  const [layout, setLayout] = useState<ListDetailLayout>(split === "never" ? "overlay" : "split");
+  const layout = read ?? (split === "never" ? "overlay" : "split");
   // Whether the Sheet is one the root opened when it narrowed with focus in the pane. It changes
   // only as the Sheet opens, so a closing Sheet keeps its return target through its exit.
   const [opened, setOpened] = useState(false);
@@ -145,22 +149,25 @@ export function ListDetailRoot({
   const focusPane = useRef(false);
   const list = useRef<HTMLElement | null>(null);
   const listFocus = useRef<HTMLElement | null>(null);
-  // Whether the client has read the container query. Until then the pane's CSS hides it in a root
-  // too narrow for it; from then on the client alone removes it, after reading where focus is, as
-  // a pane the CSS hid first would make the browser drop the focus inside it.
-  const [settled, setSettled] = useState(false);
-  // Whether focus is in the detail. React focus events bubble along the React tree, so focus in
-  // the detail's portalled popups, such as its menus, counts, and so does focus in a shadow root
-  // below it, whose events reach React retargeted to their host.
-  const focusInDetail = useRef(false);
+  // The element focus last entered the detail on. React focus events bubble along the React tree,
+  // so focus in the detail's portalled popups, such as its menus, lands here, and so does focus in
+  // a shadow root below it, whose events reach React retargeted to their host.
+  const detailFocus = useRef<Element | null>(null);
   const [focusTracking] = useState<FocusTracking>(() => ({
-    onFocusCapture: () => {
-      focusInDetail.current = true;
-    },
-    onBlurCapture: () => {
-      focusInDetail.current = false;
+    onFocusCapture: (event) => {
+      detailFocus.current = event.target;
     },
   }));
+  // Whether focus is in the detail now. Read from where focus is rather than kept from blur
+  // events, since a focused element the detail removes fires no blur.
+  const focusInDetail = (): boolean => {
+    const entered = detailFocus.current;
+    if (entered === null || !entered.isConnected) {
+      return false;
+    }
+    const active = activeElementFrom(entered);
+    return active !== null && containsAcrossShadowRoots(entered, active);
+  };
   const [listTracking] = useState<ListTracking>(() => ({
     ref: (node) => {
       list.current = node;
@@ -172,17 +179,19 @@ export function ListDetailRoot({
     },
   }));
   // The list item that last held focus, or else the list, whose first tabbable item the Sheet then
-  // focuses. Focus the user moved out of the Sheet elsewhere stays where it went.
+  // focuses. Focus the user moved out of the Sheet elsewhere stays where it went: a function
+  // `finalFocus` skips Base UI's own check for that, as `focusMovedElsewhere` in
+  // `data-table-filter/filter-focus.ts` works around too; #612 tracks a shared helper.
   const returnToList = useStableCallback((): HTMLElement | boolean => {
-    const active = list.current === null ? null : deepActiveElement(list.current.ownerDocument);
-    if (active !== null && active !== active.ownerDocument.body && !focusInDetail.current) {
+    const active = list.current === null ? null : activeElementFrom(list.current);
+    if (active !== null && active !== active.ownerDocument.body && !focusInDetail()) {
       return false;
     }
     return listFocus.current?.isConnected === true ? listFocus.current : (list.current ?? true);
   });
   // The layout the container query last gave, unset until the client first reads it.
   const queried = useRef<ListDetailLayout | undefined>(undefined);
-  const styled = listDetailVariants({ split, settled });
+  const styled = listDetailVariants({ split, settled: read !== undefined });
 
   // Follows the container query through the probe, which has a box only while it matches. The
   // first reading settles what the server could not know; a later change carries the user across.
@@ -194,10 +203,7 @@ export function ListDetailRoot({
     const next: ListDetailLayout = getComputedStyle(element).display === "none" ? "overlay" : "split";
     const previous = queried.current;
     queried.current = next;
-    // A focused element removed with the detail fires no blur, so the document must still hold focus.
-    const active = deepActiveElement(element.ownerDocument);
-    const focused = focusInDetail.current && active !== null && active !== element.ownerDocument.body;
-    const crossed = previous !== undefined && previous !== next && focused;
+    const crossed = previous !== undefined && previous !== next && focusInDetail();
     if (crossed && next === "split") {
       focusPane.current = true;
     }
@@ -217,8 +223,7 @@ export function ListDetailRoot({
     if (next === "split" && open) {
       onOpenChange(false);
     }
-    setLayout(next);
-    setSettled(true);
+    setRead(next);
   });
 
   useLayoutEffect(() => {
@@ -332,19 +337,20 @@ export function ListDetailDetail({
   const { layout, open, onOpenChange, detail, pane, focusTracking, returnToList } = useRootContext("Detail");
   const [titleId, setTitleId] = useState<string | undefined>(undefined);
   const attach = useMergedRefs<HTMLElement>(ref, detail);
+  const elementProps = mergeProps<"aside">(focusTracking, definedProps(props));
   const content = <DetailContext value={{ layout, nameBy: setTitleId }}>{children}</DetailContext>;
 
   const aside = useRender({
     defaultTagName: "aside",
     enabled: layout === "split",
-    ref: attach ?? undefined,
+    ref: attach,
     props: {
       "data-slot": "list-detail-detail",
       "data-layout": layout,
       tabIndex: -1,
       ...definedProps({ "aria-labelledby": titleId }),
       className: cn(pane, className),
-      ...mergeProps<"aside">(focusTracking, definedProps(props)),
+      ...elementProps,
       children: content,
     },
     render,
@@ -357,7 +363,7 @@ export function ListDetailDetail({
     <SheetRoot open={open} onOpenChange={onOpenChange}>
       <SheetContent
         data-slot="list-detail-detail"
-        data-layout={layout}
+        data-layout="overlay"
         className={className}
         {...definedProps({
           finalFocus: returnToList,
@@ -365,7 +371,7 @@ export function ListDetailDetail({
           showCloseButton,
           closeLabel,
           render,
-          ...mergeProps<"aside">(focusTracking, definedProps(props)),
+          ...elementProps,
         })}
         ref={attach}>
         {content}

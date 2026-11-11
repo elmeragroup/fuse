@@ -20,7 +20,7 @@ import { useLandingTheme } from "../landing-theme";
 import { useSideOverlay } from "../window-side";
 import { BulkToolbar } from "./bulk-toolbar";
 import { useDashboard } from "./dashboard-context";
-import { visibleOrders } from "./dashboard-state";
+import { isQueue, visibleOrders } from "./dashboard-state";
 import type { Grouping, Scope } from "./dashboard-state";
 import { PRIMARY_VIEWS, VIEW_GROUPS, viewEntry } from "./dashboard-views";
 import { Kbd } from "./kbd";
@@ -228,8 +228,7 @@ export function DashboardMain({ detailOpen, onDetailOpenChange }: DashboardMainP
       <ListDetail.Root
         open={detailOpen}
         onOpenChange={onDetailOpenChange}
-        // Only a queue sits beside its detail; Order search's table keeps the width at every size.
-        split={state.view === "order-search" ? "never" : "4xl"}
+        split={isQueue(state.view) ? "4xl" : "never"}
         className={styles.body()}>
         <ListDetail.List className={styles.listColumn()}>
           {state.view === "order-search" ? (

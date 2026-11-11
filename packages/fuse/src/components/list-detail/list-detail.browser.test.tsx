@@ -15,6 +15,7 @@ import { page, userEvent } from "vitest/browser";
 import "../../../dist/styles.css";
 import { nextFrames } from "../../../test/animation-frames";
 import { withLocale } from "../../../test/locale-matrix";
+import { popupFocusRestored } from "../../../test/popup-focus";
 import { renderThemed, roleNamed } from "../../../test/themed-browser-render";
 import { AlertDialog } from "../alert-dialog";
 import { DropdownMenu } from "../dropdown-menu";
@@ -51,6 +52,7 @@ type HarnessProps = {
 function Harness({ width, initiallyOpen = false, split, titled = true, around, detailRef }: HarnessProps) {
   const [open, setOpen] = useState(initiallyOpen);
   const [view, setView] = useState<ListDetailSplit | undefined>(split);
+  const [resolved, setResolved] = useState(false);
   // Unset unless a case passes one, so the other cases exercise the default split.
   const splitProps: Pick<ListDetailRootProps, "split"> = {};
   if (view !== undefined) {
@@ -99,6 +101,15 @@ function Harness({ width, initiallyOpen = false, split, titled = true, around, d
               }}>
               Switch view
             </button>
+            {resolved ? null : (
+              <button
+                type="button"
+                onClick={() => {
+                  setResolved(true);
+                }}>
+                Resolve
+              </button>
+            )}
             <DropdownMenu.Root>
               <DropdownMenu.Trigger>More actions</DropdownMenu.Trigger>
               <DropdownMenu.Content>
@@ -149,15 +160,16 @@ function FixedRoot({ width }: { readonly width: number }) {
 }
 
 /**
- * Renders `node` into an open shadow root that adopts the page's styles, as a host app embedding
- * the list in a web component does.
+ * Renders `node` into a shadow root that adopts the page's styles, as a host app embedding the
+ * list in a web component does. A closed root is reachable only through the returned root.
  *
+ * @param mode - The shadow root's mode.
  * @returns The shadow root.
  */
-function renderInShadowRoot(node: ReactNode): ShadowRoot {
+function renderInShadowRoot(node: ReactNode, mode: ShadowRootMode = "open"): ShadowRoot {
   const host = document.createElement("div");
   document.body.append(host);
-  const shadow = host.attachShadow({ mode: "open" });
+  const shadow = host.attachShadow({ mode });
   const styles = new CSSStyleSheet();
   styles.replaceSync(
     [...document.styleSheets].flatMap((sheet) => [...sheet.cssRules].map((rule) => rule.cssText)).join("\n")
@@ -341,6 +353,20 @@ describe("ListDetail", () => {
       await expect.poll(() => document.activeElement).toBe(roleNamed("button", "Order 4012"));
     });
 
+    it("keeps the list when the root narrows after a focused detail control was removed", async () => {
+      renderThemed(withLocale("en-US", <Harness width={SPLIT_PX} />));
+      await userEvent.click(roleNamed("button", "Resolve"));
+      await expect.poll(() => page.getByRole("button", { name: "Resolve" }).elements()).toHaveLength(0);
+      const refresh = roleNamed("button", "Refresh");
+      await userEvent.click(refresh);
+
+      resize(SPLIT_PX - 1);
+
+      await expect.poll(() => complementary().elements()).toHaveLength(0);
+      expect(dialog().elements()).toHaveLength(0);
+      expect(document.activeElement).toBe(refresh);
+    });
+
     it("keeps the list when the root narrows while focus is in it", async () => {
       renderThemed(withLocale("en-US", <Harness width={SPLIT_PX} />));
       await userEvent.click(roleNamed("button", "Order 4012"));
@@ -402,7 +428,7 @@ describe("ListDetail", () => {
       await expect.element(pane).toBeVisible();
       await expect.poll(() => document.activeElement).toBe(pane.element());
       // Past the frames a late restoration would land in, focus stays on the pane.
-      await nextFrames(2);
+      await popupFocusRestored();
       expect(document.activeElement).toBe(pane.element());
     });
 
@@ -424,6 +450,27 @@ describe("ListDetail", () => {
 
       await expect.element(page.getByRole("dialog", { name: "Henrik Aasen" })).toBeVisible();
       expect(shadow.querySelector("aside")).toBeNull();
+    });
+
+    it("carries a focused pane into the dialog inside a closed shadow root", async () => {
+      const shadow = renderInShadowRoot(withLocale("en-US", <Harness width={SPLIT_PX} />), "closed");
+      const comment = shadow.querySelector("aside")?.querySelector("input");
+      if (!(comment instanceof HTMLInputElement)) {
+        throw new Error("expected the pane's comment field");
+      }
+      comment.focus();
+      expect(shadow.activeElement).toBe(comment);
+
+      const frameInShadow = shadow.querySelector("[data-testid=frame]");
+      if (!(frameInShadow instanceof HTMLElement)) {
+        throw new Error("expected the frame");
+      }
+      resize(SPLIT_PX - 1, frameInShadow);
+
+      const sheet = () => shadow.querySelector("[role=dialog]") ?? document.querySelector("[role=dialog]");
+      await expect.poll(sheet).not.toBeNull();
+      const focused = () => shadow.activeElement ?? document.activeElement;
+      await expect.poll(() => sheet()?.contains(focused()) === true).toBe(true);
     });
   });
 

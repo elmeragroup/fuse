@@ -27,3 +27,16 @@ export function hasFocus(node: Element): boolean {
   const root = node.getRootNode();
   return isFocusRoot(root) && deepActiveElement(root) === node;
 }
+
+/**
+ * The focused element as seen from `node`. Read from the node's own root first, since a read from
+ * the document cannot enter a closed shadow root and names only its host. When that root holds no
+ * focus, the document's deep read finds focus outside it.
+ *
+ * @param node - The element to read from.
+ * @returns The focused element, or null when nothing has focus.
+ */
+export function activeElementFrom(node: Element): Element | null {
+  const root = node.getRootNode();
+  return (isFocusRoot(root) ? deepActiveElement(root) : null) ?? deepActiveElement(node.ownerDocument);
+}

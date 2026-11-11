@@ -36,6 +36,7 @@ export const BARE_COMPONENT_ENTRIES = [
   "input",
   "input-group",
   "item",
+  "list-detail",
   "loader",
   "meter",
   "number-field",
@@ -66,7 +67,6 @@ export const BARE_COMPONENT_ENTRIES = [
   "toggle-group",
   "tooltip",
   // plop:component-entry
-  "list-detail",
   "carousel",
   "autocomplete-field",
   "combobox-field",
