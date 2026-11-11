@@ -6,6 +6,7 @@ import type { ReactElement, ReactNode, RefObject } from "react";
 import { tv } from "tailwind-variants";
 
 import { Button } from "@elmeragroup/fuse/button";
+import { Kbd, KbdGroup } from "@elmeragroup/fuse/kbd";
 import { Popover } from "@elmeragroup/fuse/popover";
 import { Sheet } from "@elmeragroup/fuse/sheet";
 import { BRANDS } from "@elmeragroup/fuse/theme";
@@ -15,7 +16,6 @@ import { Tooltip } from "@elmeragroup/fuse/tooltip";
 
 import { useModifierKey } from "../../../../lib/modifier-key";
 import { isTypingTarget } from "../../../../lib/typing-target";
-import { Kbd } from "../app-shell/kbd";
 import { BrandMark } from "../brand-mark";
 import { SchemeGlyph, SchemeIcon } from "./scheme-icon";
 import { useIsPhone, useThemePicker } from "./use-theme-picker";
@@ -379,7 +379,10 @@ export function ThemeChipPicker(): ReactElement {
       <Tooltip.Content>
         Theme
         <span className={styles.tooltipKeys()}>
-          <Kbd keys={[modifier, "J"]} />
+          <KbdGroup aria-hidden>
+            <Kbd>{modifier}</Kbd>
+            <Kbd>J</Kbd>
+          </KbdGroup>
         </span>
       </Tooltip.Content>
     </Tooltip.Root>

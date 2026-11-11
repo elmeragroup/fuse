@@ -10,6 +10,7 @@ import { Breadcrumb } from "@elmeragroup/fuse/breadcrumb";
 import { Button } from "@elmeragroup/fuse/button";
 import { DropdownMenu } from "@elmeragroup/fuse/dropdown-menu";
 import { MagnifyingGlass, SidebarSimple, SlidersHorizontal } from "@elmeragroup/fuse/icons";
+import { Kbd, KbdGroup } from "@elmeragroup/fuse/kbd";
 import { ListDetail } from "@elmeragroup/fuse/list-detail";
 import { Sidebar } from "@elmeragroup/fuse/sidebar";
 import { BRANDS } from "@elmeragroup/fuse/theme";
@@ -23,7 +24,6 @@ import { useDashboard } from "./dashboard-context";
 import { isQueue, visibleOrders } from "./dashboard-state";
 import type { Grouping, Scope } from "./dashboard-state";
 import { PRIMARY_VIEWS, VIEW_GROUPS, viewEntry } from "./dashboard-views";
-import { Kbd } from "./kbd";
 import { OrderDetail } from "./order-detail";
 import { OrderList } from "./order-list";
 
@@ -88,7 +88,10 @@ function SidebarToggle(): ReactElement {
       <Tooltip.Content>
         Toggle sidebar
         <span className={styles.tooltipKeys()}>
-          <Kbd keys={["⌘", "B"]} />
+          <KbdGroup aria-hidden>
+            <Kbd>⌘</Kbd>
+            <Kbd>B</Kbd>
+          </KbdGroup>
         </span>
       </Tooltip.Content>
     </Tooltip.Root>
