@@ -17,6 +17,7 @@ import "../../../dist/themes.css";
 import { expectRenderTypeError } from "../../../test/caught-error";
 import { withLocale } from "../../../test/locale-matrix";
 import { parentHandle } from "../../../test/parent-handle";
+import type { ParentHandle } from "../../../test/parent-handle";
 import { popupFocusRestored } from "../../../test/popup-focus";
 import { waitForPopupSettled } from "../../../test/popup-settled";
 import { emulateReducedMotion } from "../../../test/reduced-motion";
@@ -1546,15 +1547,15 @@ describe("DateRangePicker held ranges", () => {
   });
 
   describe("times held before days, across a change of the empty picker's zone or kind", () => {
-    /** An empty Oslo range picker whose parent switches its `timeZone` to `to`, logging its ranges. */
-    function Switching({ to }: { readonly to: string | undefined }): ReactElement {
+    /** An empty Oslo range picker whose `timeZone` the test sets through `parent`, logging its ranges. */
+    function Switching({ parent }: { readonly parent: ParentHandle<string | undefined> }): ReactElement {
       const [zone, setZone] = useState<string | undefined>("Europe/Oslo");
       const [values, setValues] = useState<string[]>([]);
+      useEffect(() => {
+        parent.bind(setZone);
+      }, [parent]);
       return (
         <>
-          <button type="button" onClick={() => setZone(to)}>
-            Switch
-          </button>
           <DateRangePickerField
             label="Period"
             granularity="minute"
@@ -1576,19 +1577,24 @@ describe("DateRangePicker held ranges", () => {
     }
 
     // Held times are wall times: 09:30 and 17:00 on November 11 and 12 in the zone and kind at the pick.
+    // The popup times name the zone they form in, today's (October 15's) name for it, and plain
+    // date-times name none.
     it.each([
       {
         change: "zone to New York",
         to: "America/New_York",
+        zone: "EDT",
         expected: "2026-11-11T09:30:00-05:00[America/New_York]..2026-11-12T17:00:00-05:00[America/New_York]",
       },
       {
         change: "kind to a plain date-time",
         to: undefined,
+        zone: null,
         expected: "2026-11-11T09:30:00..2026-11-12T17:00:00",
       },
-    ])("commits the held times on the range picked after its $change", async ({ to, expected }) => {
-      renderThemed(withLocale("en-US", <Switching to={to} />));
+    ])("commits the held times on the range picked after its $change", async ({ to, zone, expected }) => {
+      const parent = parentHandle<string | undefined>();
+      renderThemed(withLocale("en-US", <Switching parent={parent} />));
       await userEvent.click(roleNamed("button", "Calendar Period"));
       await waitForPopupSettled();
       await userEvent.click(roleNamed("spinbutton", "hour, Start time"));
@@ -1596,13 +1602,17 @@ describe("DateRangePicker held ranges", () => {
       await userEvent.click(roleNamed("spinbutton", "hour, End time"));
       await userEvent.keyboard("1700");
 
-      // `click()` switches without moving focus, so the popup stays open.
-      roleNamed("button", "Switch").click();
-      await expect
-        .element(page.getByRole("spinbutton", { name: "hour, Start time", exact: true }))
-        .toHaveTextContent("09");
+      // The parent switches with the popup open; a click on a control outside it would close it.
+      parent.set(to);
+      const zoneSegment = page.getByRole("textbox", { name: "time zone, End time", exact: true });
+      await (zone === null
+        ? expect.element(zoneSegment).not.toBeInTheDocument()
+        : expect.element(zoneSegment).toHaveTextContent(zone));
+      expect(roleNamed("spinbutton", "hour, Start time").textContent).toBe("09");
+      expect(roleNamed("spinbutton", "hour, End time").textContent).toBe("17");
       // The month button pages to November; the popup repositions after the switch, so the month
-      // button and the days are reached without a pointer.
+      // button and the days are reached without a pointer, once any focus restore has run.
+      await popupFocusRestored();
       roleNamed("button", "Next").click();
       await pickDay("Wednesday, November 11, 2026");
       await pickDay("Thursday, November 12, 2026");
