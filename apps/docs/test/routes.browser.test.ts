@@ -36,11 +36,14 @@ const LANDING = /^\/(?:themed\/.+)?$/u;
 
 /**
  * Waits until the parts that wire accessible names in effects have hydrated, so axe reads the
- * page a visitor uses rather than its server HTML. `load` and `networkidle` can both come first:
- * on a saturated CI runner axe once read Base UI switches, checkboxes and a meter before Field
- * and the labelable parts had linked their labels. Next hydrates each route segment in a pass of
- * its own after the layouts, so no one layout signal covers every page: the landing, the docs
- * shell, every demo frame, the studio canvas and the block previews each have their own.
+ * page a visitor uses rather than its server HTML. `load` can come first: on a saturated CI runner
+ * axe once read Base UI switches, checkboxes and a meter before Field and the labelable parts had
+ * linked their labels. Next hydrates each route segment in a pass of its own after the layouts,
+ * so no one layout signal covers every page: the landing, the docs shell, every demo frame, the
+ * studio canvas and the block previews each have their own. These signals are the only readiness
+ * wait. `networkidle` is not one: it also counts a block page's preview frame and Next's link
+ * prefetches, which axe never reads, and on a loaded runner it once held `/blocks/app-shell`, a
+ * route that settles in two seconds locally, past the 60-second guard.
  */
 async function waitForHydration(page: Page, route: string): Promise<void> {
   if (LANDING.test(route)) await waitForLandingHydration(page);
@@ -78,7 +81,6 @@ describe("every docs route", () => {
     try {
       const response = await page.goto(`${docsBaseUrl()}${route}`, { waitUntil: "load" });
       expect(response?.status(), route).toBeLessThan(400);
-      await page.waitForLoadState("networkidle");
       await waitForHydration(page, route);
       // Frames stay out of the scan: the only framed content, the block previews under
       // /blocks/<block>/preview, is in ROUTES and checked as a route of its own. Legacy mode runs
