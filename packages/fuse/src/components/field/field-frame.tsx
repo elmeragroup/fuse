@@ -98,11 +98,6 @@ export type FieldFrameProps = {
    */
   variant?: "card" | "inline";
   /**
-   * The root's `data-slot`, for a composite that is a part of its own, such as SearchField's
-   * `search-field`. Omitted, the root keeps `Field.Root`'s `field`.
-   */
-  slot?: string;
-  /**
    * Marks the root `data-empty` while the composite's value is empty, as SearchField does to hide
    * its clear button.
    */
@@ -145,7 +140,6 @@ export function FieldFrame({
   isErrorMessageAlwaysShown = true,
   isDescriptionBeside = false,
   variant,
-  slot,
   isEmpty = false,
   invalid,
   disabled,
@@ -250,7 +244,6 @@ export function FieldFrame({
     <FieldRoot
       {...definedProps({
         "data-variant": variant,
-        "data-slot": slot,
         "data-empty": isEmpty ? "" : undefined,
         name,
         invalid,

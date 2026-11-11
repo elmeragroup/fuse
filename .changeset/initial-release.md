@@ -9,5 +9,5 @@ Initial release of Fuse, the Elmera Group React component library.
 - Tailwind v4 integration and a standalone stylesheet for consumers without Tailwind.
 - Localized component labels in English, Norwegian Bokmål, Swedish, and Finnish.
 - Packaged flags, icons, logos, illustrations, and emoji assets.
-- Interim date, collection, and routing components under the `react-aria/*` entry points.
+- Interim date and routing components under the `react-aria/*` entry points.
 - Typed public entry points with documented props and React Server Component boundaries.

@@ -264,9 +264,12 @@ export function textboxNamed(name: string): HTMLElement {
   return roleNamed("textbox", name);
 }
 
-/** `textboxNamed`, narrowed to the native input so a suite can read `.value` off it. */
-export function inputNamed(name: string): HTMLInputElement {
-  const input = textboxNamed(name);
+/**
+ * The native input with this role and name, narrowed so a suite can read `.value` off it. The
+ * role defaults to `textbox`; a search input is a `searchbox`.
+ */
+export function inputNamed(name: string, role: "textbox" | "searchbox" = "textbox"): HTMLInputElement {
+  const input = roleNamed(role, name);
   if (!(input instanceof HTMLInputElement)) {
     throw new Error(`expected an <input> named ${name}`);
   }
@@ -299,8 +302,9 @@ export function textNamed(name: string): HTMLElement {
   return element;
 }
 
-export function fieldRootFrom(name: string): HTMLElement {
-  const root = textboxNamed(name).closest("[data-orientation]");
+/** The `Field.Root` around the input with this role and name; see {@link inputNamed}. */
+export function fieldRootFrom(name: string, role: "textbox" | "searchbox" = "textbox"): HTMLElement {
+  const root = roleNamed(role, name).closest("[data-orientation]");
   if (!(root instanceof HTMLElement)) {
     throw new Error(`expected field root around ${name}`);
   }

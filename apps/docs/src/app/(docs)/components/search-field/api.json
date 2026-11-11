@@ -134,7 +134,7 @@
           "type": "((value: string) => void) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Called with the value when Enter is pressed. Given, Enter no longer submits the surrounding form; omitted, Enter keeps its native behaviour and submits it.",
+          "description": "Called with the value on a plain Enter, not on a held key's repeats or an Enter with Alt, Control, Meta or Shift. Given, Enter in an editable field never submits the surrounding form; omitted, Enter keeps its native behaviour and submits it.",
           "required": false
         },
         {

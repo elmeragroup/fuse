@@ -9,7 +9,9 @@ import { withLocale } from "../../../test/locale-matrix";
 import { expectTargetBoxes } from "../../../test/target-size";
 import {
   fieldBoxOf,
+  fieldRootFrom,
   formNamed,
+  inputNamed,
   renderThemed,
   roleNamed,
   stampDensity,
@@ -26,26 +28,9 @@ function render(node: ReactNode) {
   return renderThemed(withLocale("en-US", node));
 }
 
-function searchboxNamed(name: string): HTMLInputElement {
-  const input = roleNamed("searchbox", name);
-  if (!(input instanceof HTMLInputElement)) {
-    throw new Error(`expected an <input> named ${name}`);
-  }
-  return input;
-}
-
-/** The field's root, the `Field.Root` every labeled composite renders around its control. */
-function rootOf(name: string): HTMLElement {
-  const root = searchboxNamed(name).closest("[data-orientation]");
-  if (!(root instanceof HTMLElement)) {
-    throw new Error(`expected the root around ${name}`);
-  }
-  return root;
-}
-
 /** The clear button, found inside its own field so several fields can share a page. */
 function clearIn(name: string): HTMLButtonElement {
-  const button = fieldBoxOf(searchboxNamed(name)).querySelector("button");
+  const button = fieldBoxOf(inputNamed(name, "searchbox")).querySelector("button");
   if (!(button instanceof HTMLButtonElement)) {
     throw new Error(`expected a clear button in ${name}`);
   }
@@ -64,24 +49,22 @@ function alertTexts(): string[] {
 }
 
 describe("SearchField", () => {
-  it("renders a search input named by its label under its own slot", () => {
+  it("renders a search input named by its label", () => {
     render(<SearchField label="Meter search" />);
-    const input = searchboxNamed("Meter search");
-    expect(input.type).toBe("search");
-    expect(rootOf("Meter search").getAttribute("data-slot")).toBe("search-field");
+    expect(inputNamed("Meter search", "searchbox").type).toBe("search");
   });
 
   it("keeps an uncontrolled value, reports it as a string, and marks the root and hides the clear button while empty", async () => {
     const onChange = vi.fn<(value: string) => void>();
     render(<SearchField label="Meter search" onChange={onChange} />);
-    const input = searchboxNamed("Meter search");
-    expect(rootOf("Meter search").hasAttribute("data-empty")).toBe(true);
+    const input = inputNamed("Meter search", "searchbox");
+    expect(fieldRootFrom("Meter search", "searchbox").hasAttribute("data-empty")).toBe(true);
     expect(isShown(clearIn("Meter search"))).toBe(false);
 
     await userEvent.type(input, "735");
     expect(input.value).toBe("735");
     expect(onChange.mock.calls.map(([value]) => value)).toEqual(["7", "73", "735"]);
-    expect(rootOf("Meter search").hasAttribute("data-empty")).toBe(false);
+    expect(fieldRootFrom("Meter search", "searchbox").hasAttribute("data-empty")).toBe(false);
     expect(isShown(clearIn("Meter search"))).toBe(true);
   });
 
@@ -96,7 +79,7 @@ describe("SearchField", () => {
       );
     }
     render(<Controlled />);
-    const input = searchboxNamed("Meter search");
+    const input = inputNamed("Meter search", "searchbox");
     expect(input.value).toBe("73");
     await userEvent.type(input, "5");
     expect(input.value).toBe("735");
@@ -105,8 +88,8 @@ describe("SearchField", () => {
 
   it("keeps a controlled value the parent does not accept", async () => {
     render(<SearchField label="Meter search" value="735" onChange={() => undefined} />);
-    await userEvent.type(searchboxNamed("Meter search"), "9");
-    expect(searchboxNamed("Meter search").value).toBe("735");
+    await userEvent.type(inputNamed("Meter search", "searchbox"), "9");
+    expect(inputNamed("Meter search", "searchbox").value).toBe("735");
   });
 
   it("calls onSubmit with the value on Enter instead of submitting the form", async () => {
@@ -117,7 +100,7 @@ describe("SearchField", () => {
         <SearchField label="Meter search" defaultValue="735" onSubmit={onSubmit} />
       </form>
     );
-    await userEvent.click(searchboxNamed("Meter search"));
+    await userEvent.click(inputNamed("Meter search", "searchbox"));
     await userEvent.keyboard("{Enter}");
     expect(onSubmit.mock.calls).toEqual([["735"]]);
     expect(onFormSubmit).not.toHaveBeenCalled();
@@ -130,7 +113,7 @@ describe("SearchField", () => {
         <SearchField label="Meter search" name="q" defaultValue="735" />
       </form>
     );
-    await userEvent.click(searchboxNamed("Meter search"));
+    await userEvent.click(inputNamed("Meter search", "searchbox"));
     await userEvent.keyboard("{Enter}");
     expect(onFormSubmit).toHaveBeenCalledTimes(1);
   });
@@ -153,10 +136,10 @@ describe("SearchField", () => {
     const trigger = roleNamed("button", "Open");
     await userEvent.click(trigger);
     await expect.element(page.getByRole("dialog")).toBeInTheDocument();
-    await userEvent.click(searchboxNamed("Meter search"));
+    await userEvent.click(inputNamed("Meter search", "searchbox"));
 
     await userEvent.keyboard("{Escape}");
-    expect(searchboxNamed("Meter search").value).toBe("");
+    expect(inputNamed("Meter search", "searchbox").value).toBe("");
     expect(onChange.mock.calls).toEqual([[""]]);
     expect(onClear).toHaveBeenCalledTimes(1);
     expect(trigger.getAttribute("aria-expanded")).toBe("true");
@@ -164,6 +147,50 @@ describe("SearchField", () => {
     await userEvent.keyboard("{Escape}");
     expect(onClear).toHaveBeenCalledTimes(1);
     await expect.poll(() => page.getByRole("dialog").query()).toBeNull();
+  });
+
+  // Oracle: React Aria's useSearchField handles Enter and Escape through useKeyboard, which skips
+  // a repeat (`allowRepeats` false), and createKeyboardShortcutHandler matches a shortcut only with
+  // its exact modifiers, so `Enter` and `Escape` match only without Alt, Control, Meta or Shift.
+  // The PR contract adds that with onSubmit set, no Enter submits the form natively.
+  it.each([
+    ["a held Enter's repeat", { key: "Enter", repeat: true }, true],
+    ["Meta+Enter", { key: "Enter", metaKey: true }, true],
+    ["Shift+Enter", { key: "Enter", shiftKey: true }, true],
+    ["a held Escape's repeat", { key: "Escape", repeat: true }, false],
+    ["Alt+Escape", { key: "Escape", altKey: true }, false],
+    ["Control+Escape", { key: "Escape", ctrlKey: true }, false],
+  ] as const)(
+    "neither submits nor clears on %s, and blocks the native form submit only for Enter",
+    (_name, init, blocksSubmit) => {
+      const onSubmit = vi.fn();
+      const onClear = vi.fn();
+      render(<SearchField label="Meter search" defaultValue="735" onSubmit={onSubmit} onClear={onClear} />);
+      const input = inputNamed("Meter search", "searchbox");
+
+      const event = new KeyboardEvent("keydown", { ...init, bubbles: true, cancelable: true });
+      input.dispatchEvent(event);
+      expect(event.defaultPrevented).toBe(blocksSubmit);
+      expect(onSubmit).not.toHaveBeenCalled();
+      expect(onClear).not.toHaveBeenCalled();
+      expect(input.value).toBe("735");
+    }
+  );
+
+  it("never lets a held or modified Enter submit the form natively while onSubmit is set", async () => {
+    const onSubmit = vi.fn();
+    const onFormSubmit = vi.fn((event: SubmitEvent) => event.preventDefault());
+    render(
+      <form aria-label="Meters" onSubmit={(event) => onFormSubmit(event.nativeEvent)}>
+        <SearchField label="Meter search" defaultValue="735" onSubmit={onSubmit} />
+      </form>
+    );
+    await userEvent.click(inputNamed("Meter search", "searchbox"));
+    await userEvent.keyboard("{Shift>}{Enter}{/Shift}");
+    // Held for three keydowns: the first submits through onSubmit, the repeats do nothing.
+    await userEvent.keyboard("{Enter>3}{/Enter}");
+    expect(onSubmit.mock.calls).toEqual([["735"]]);
+    expect(onFormSubmit).not.toHaveBeenCalled();
   });
 
   it("clears on Escape when a script set the input's value directly, and clears its Form error", async () => {
@@ -174,7 +201,7 @@ describe("SearchField", () => {
       </Form>
     );
     expect(alertTexts()).toEqual(["No meter matches."]);
-    const input = searchboxNamed("Meter search");
+    const input = inputNamed("Meter search", "searchbox");
     await userEvent.click(input);
     input.value = "735";
     await userEvent.keyboard("{Escape}");
@@ -200,7 +227,7 @@ describe("SearchField", () => {
         <button type="button">After</button>
       </>
     );
-    const input = searchboxNamed("Meter search");
+    const input = inputNamed("Meter search", "searchbox");
     await userEvent.click(input);
     await userEvent.click(roleNamed("button", "Clear search"));
 
@@ -209,7 +236,7 @@ describe("SearchField", () => {
     expect(onClear).toHaveBeenCalledTimes(1);
     expect(document.activeElement).toBe(input);
     expect(onBlur).not.toHaveBeenCalled();
-    expect(rootOf("Meter search").hasAttribute("data-empty")).toBe(true);
+    expect(fieldRootFrom("Meter search", "searchbox").hasAttribute("data-empty")).toBe(true);
     expect(isShown(clearIn("Meter search"))).toBe(false);
 
     await userEvent.type(input, "7");
@@ -219,7 +246,7 @@ describe("SearchField", () => {
 
   it("leaves Base UI's field state as an edit would after a clear", async () => {
     render(<SearchField label="Meter search" defaultValue="735" />);
-    const root = rootOf("Meter search");
+    const root = fieldRootFrom("Meter search", "searchbox");
     // Oracle: Base UI Field marks a root filled while its control holds text and dirty while
     // the value differs from the initial one.
     expect(root.hasAttribute("data-filled")).toBe(true);
@@ -237,9 +264,9 @@ describe("SearchField", () => {
       </form>
     );
     await userEvent.click(clearIn("Meter search"));
-    expect(searchboxNamed("Meter search").value).toBe("");
+    expect(inputNamed("Meter search", "searchbox").value).toBe("");
     formNamed("Meters").reset();
-    await expect.poll(() => searchboxNamed("Meter search").value).toBe("735");
+    await expect.poll(() => inputNamed("Meter search", "searchbox").value).toBe("735");
   });
 
   it("names the clear button from the locale dictionary, below an explicit clearLabel", () => {
@@ -262,7 +289,7 @@ describe("SearchField", () => {
     render(
       <SearchField label="Meter search" defaultValue="735" isReadOnly onSubmit={onSubmit} onClear={onClear} />
     );
-    const input = searchboxNamed("Meter search");
+    const input = inputNamed("Meter search", "searchbox");
     expect(input.readOnly).toBe(true);
     expect(clearIn("Meter search").disabled).toBe(true);
 
@@ -284,9 +311,9 @@ describe("SearchField", () => {
       </>
     );
     for (const name of ["Disabled", "In a set"]) {
-      expect(searchboxNamed(name).disabled, name).toBe(true);
+      expect(inputNamed(name, "searchbox").disabled, name).toBe(true);
       expect(clearIn(name).disabled, name).toBe(true);
-      expect(rootOf(name).hasAttribute("data-disabled"), name).toBe(true);
+      expect(fieldRootFrom(name, "searchbox").hasAttribute("data-disabled"), name).toBe(true);
     }
   });
 
@@ -297,11 +324,11 @@ describe("SearchField", () => {
         <SearchField label="Invalid" isInvalid isRequired errorMessage="Enter a query." />
       </>
     );
-    expect(searchboxNamed("Valid").getAttribute("aria-invalid")).toBeNull();
-    expect(searchboxNamed("Invalid").getAttribute("aria-invalid")).toBe("true");
-    expect(searchboxNamed("Invalid").required).toBe(true);
+    expect(inputNamed("Valid", "searchbox").getAttribute("aria-invalid")).toBeNull();
+    expect(inputNamed("Invalid", "searchbox").getAttribute("aria-invalid")).toBe("true");
+    expect(inputNamed("Invalid", "searchbox").required).toBe(true);
     expect(alertTexts()).toEqual(["Enter a query."]);
-    expect(rootOf("Invalid").contains(page.getByRole("alert").element())).toBe(true);
+    expect(fieldRootFrom("Invalid", "searchbox").contains(page.getByRole("alert").element())).toBe(true);
   });
 
   it("follows the field size and keeps the clear button a 24px target at both sizes and densities", () => {
@@ -313,8 +340,8 @@ describe("SearchField", () => {
     );
     for (const density of DENSITIES) {
       stampDensity(density);
-      const small = fieldBoxOf(searchboxNamed("Small")).getBoundingClientRect();
-      const regular = fieldBoxOf(searchboxNamed("Default")).getBoundingClientRect();
+      const small = fieldBoxOf(inputNamed("Small", "searchbox")).getBoundingClientRect();
+      const regular = fieldBoxOf(inputNamed("Default", "searchbox")).getBoundingClientRect();
       expect(small.height, density).toBeLessThan(regular.height);
       const smallClear = clearIn("Small").getBoundingClientRect();
       const regularClear = clearIn("Default").getBoundingClientRect();
@@ -344,13 +371,13 @@ describe("SearchField in a Form", () => {
       );
     }
     render(<Fixture />);
-    await userEvent.fill(searchboxNamed("Meter search"), "735");
+    await userEvent.fill(inputNamed("Meter search", "searchbox"), "735");
     await userEvent.click(roleNamed("button", "Find"));
 
     expect(submitted).toHaveBeenCalledWith({ q: "735" });
     await expect.element(page.getByText("No meter matches.", { exact: true })).toBeVisible();
-    await expect.element(searchboxNamed("Meter search")).toHaveFocus();
-    expect(searchboxNamed("Meter search").getAttribute("aria-invalid")).toBe("true");
+    await expect.element(inputNamed("Meter search", "searchbox")).toHaveFocus();
+    expect(inputNamed("Meter search", "searchbox").getAttribute("aria-invalid")).toBe("true");
   });
 
   it("clears the Form error under its name on an edit and on a clear", async () => {
@@ -364,9 +391,9 @@ describe("SearchField in a Form", () => {
     const { rerender } = render(<Fixture errors={{ q: "No meter matches." }} />);
     expect(alertTexts()).toEqual(["No meter matches."]);
 
-    await userEvent.type(searchboxNamed("Meter search"), "9");
+    await userEvent.type(inputNamed("Meter search", "searchbox"), "9");
     expect(alertTexts()).toEqual([]);
-    expect(searchboxNamed("Meter search").getAttribute("aria-invalid")).toBeNull();
+    expect(inputNamed("Meter search", "searchbox").getAttribute("aria-invalid")).toBeNull();
 
     // A second response is a new object, as a server action returns.
     rerender(withLocale("en-US", <Fixture errors={{ q: "No meter matches." }} />));

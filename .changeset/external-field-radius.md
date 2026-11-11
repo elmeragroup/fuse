@@ -5,7 +5,7 @@
 External field boxes now round with the brand radius, the corner of the cards and selection rows around them.
 
 A new theme role, `--radius-field`, rounds `Input`, `Textarea`, the `Select` trigger, `NumberField`, `InputGroup`,
-the `Combobox` chips box, `DateField`, `DatePicker`, `SearchField` and the other React Aria field groups. It aliases
+`SearchField`, the `Combobox` chips box, `DateField`, `DatePicker` and the other React Aria field groups. It aliases
 `var(--radius)` in every variant, so external fields round 2px more than before, when they took the brand radius
 minus 2px: 12px for Fjordkraft, Fjordkraft Företag and Telinet, 16px for TrøndelagKraft, 8px for Gudbrandsdal
 Energi and 6px for Elmera and Nordic Green Energy. Nothing inside a field rounds more than the field: the

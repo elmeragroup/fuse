@@ -11,15 +11,8 @@ import { page } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import { withLocale } from "../../../test/locale-matrix";
+import { inputNamed } from "../../../test/themed-browser-render";
 import { SearchField } from "./search-field";
-
-function searchbox(): HTMLInputElement {
-  const input = page.getByRole("searchbox", { name: "Meter search", exact: true }).element();
-  if (!(input instanceof HTMLInputElement)) {
-    throw new Error("expected the searchbox");
-  }
-  return input;
-}
 
 describe("SearchField hydration", () => {
   it.each([
@@ -61,10 +54,10 @@ describe("SearchField hydration", () => {
     let root: ReturnType<typeof hydrateRoot> | undefined;
     try {
       // What typing does before the client scripts attach their listeners.
-      searchbox().value = "735";
+      inputNamed("Meter search", "searchbox").value = "735";
       root = hydrateRoot(host, element, { onRecoverableError: recover });
       await expect.poll(() => hydrated.mock.calls.length).toBeGreaterThan(0);
-      expect(searchbox().value).toBe("735");
+      expect(inputNamed("Meter search", "searchbox").value).toBe("735");
       expect(change.mock.calls).toEqual([["735"]]);
       const form = host.querySelector("form");
       expect(form === null ? null : new FormData(form).get("q")).toBe("735");

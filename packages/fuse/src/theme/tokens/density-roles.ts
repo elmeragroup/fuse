@@ -575,9 +575,6 @@ export const PART_DENSITY = {
   "scroll-area-scrollbar": "fixed",
   "scroll-area-thumb": "fixed",
 
-  // Stacks its label, field box, error and description 4px apart, as a vertical `Field.Root` does.
-  "search-field": "layout",
-
   "select-trigger": "control",
   "select-value": "layout",
   "select-content": "layout",

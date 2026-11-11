@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import type { ChangeEvent, ComponentProps, KeyboardEvent, ReactElement, ReactNode, RefObject } from "react";
+import type { ChangeEvent, ComponentProps, KeyboardEvent, ReactElement, ReactNode } from "react";
 
 import { useFieldRootContext } from "@base-ui/react/internals/field-root-context";
 import { useFormContext } from "@base-ui/react/internals/form-context";
@@ -13,7 +13,7 @@ import { useMergedRefs } from "../../hooks/use-merged-refs";
 import { MagnifyingGlass } from "../../icons/generated/magnifying-glass";
 import { X } from "../../icons/generated/x";
 import { definedProps } from "../../internal/defined-props";
-import { cn } from "../../styles/cn";
+import { isComposing } from "../../internal/is-composing";
 import { FieldFrame } from "../field/field-frame";
 import {
   InputGroupAddon,
@@ -45,8 +45,9 @@ export type SearchFieldProps = {
   /** Called with the string value, not the native event, on every edit and on a clear. */
   onChange?: (value: string) => void;
   /**
-   * Called with the value when Enter is pressed. Given, Enter no longer submits the surrounding
-   * form; omitted, Enter keeps its native behaviour and submits it.
+   * Called with the value on a plain Enter, not on a held key's repeats or an Enter with Alt,
+   * Control, Meta or Shift. Given, Enter in an editable field never submits the surrounding form;
+   * omitted, Enter keeps its native behaviour and submits it.
    */
   onSubmit?: (value: string) => void;
   /** Called after the clear button or Escape empties the field. */
@@ -100,7 +101,7 @@ type SearchFieldClearProps = {
   /** The button's accessible name. */
   label: string;
   isReadOnly: boolean;
-  onClear: () => void;
+  onPress: () => void;
 };
 
 /**
@@ -108,7 +109,7 @@ type SearchFieldClearProps = {
  * `Field.Set` around the field also sets. It is out of the tab order, since Escape clears from the
  * input, and a press keeps focus on the input, which on touch keeps the keyboard up.
  */
-function SearchFieldClear({ label, isReadOnly, onClear }: SearchFieldClearProps): ReactElement {
+function SearchFieldClear({ label, isReadOnly, onPress }: SearchFieldClearProps): ReactElement {
   const field = useFieldRootContext();
   return (
     <InputGroupAddon align="inline-end">
@@ -118,28 +119,24 @@ function SearchFieldClear({ label, isReadOnly, onClear }: SearchFieldClearProps)
         tabIndex={-1}
         disabled={isReadOnly || field.disabled}
         // Hidden while the field is empty, keeping its space so the text does not shift.
-        className="group-data-empty/search-field:invisible"
+        className="group-data-empty/field:invisible"
         onMouseDown={(event) => {
           event.preventDefault();
         }}
-        onClick={onClear}>
+        onClick={onPress}>
         <X aria-hidden />
       </InputGroupButton>
     </InputGroupAddon>
   );
 }
 
-/** Whether the key event is part of an IME composition, which owns Enter and Escape. */
-function isComposing(event: KeyboardEvent<HTMLInputElement>): boolean {
-  return event.nativeEvent.isComposing;
-}
-
 /**
- * Whether the field is empty, by its value and by the input's live DOM value, which a script can
- * set directly, as React Aria's SearchField reads both before Escape.
+ * Whether the keydown is one React Aria's SearchField leaves alone: a held key's auto-repeat, or a
+ * key with a modifier. Its `useKeyboard` skips repeats, and its shortcut table matches `Enter` and
+ * `Escape` only without Alt, Control, Meta or Shift.
  */
-function isEmpty(value: string, input: RefObject<HTMLInputElement | null>): boolean {
-  return value === "" && (input.current === null || input.current.value === "");
+function isRepeatOrModified(event: KeyboardEvent): boolean {
+  return event.repeat || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey;
 }
 
 /**
@@ -148,9 +145,11 @@ function isEmpty(value: string, input: RefObject<HTMLInputElement | null>): bool
  * the clear button and the Enter and Escape keys.
  *
  * Escape empties a non-empty field and stops there, so a Dialog or Sheet around it stays open; on
- * an empty field it passes through. Enter calls `onSubmit` when given. Disabled and read-only
- * fields ignore both. The root carries `data-slot="search-field"` and `data-empty` while the value
- * is empty.
+ * an empty field it passes through. Given `onSubmit`, no Enter in an editable field submits the
+ * surrounding form, and only a plain Enter calls `onSubmit`: not a held key's repeats, and not an
+ * Enter with Alt, Control, Meta or Shift. Other repeats and modified keys, Escape among them, pass
+ * through untouched. A read-only field leaves both keys to the browser; a disabled input takes no
+ * keys. The root carries `data-empty` while the value is empty.
  */
 export function SearchField({
   label,
@@ -203,18 +202,18 @@ export function SearchField({
   useEarlyInputValue(inputRef, currentValue, isReadOnly || isDisabled ? null : commit);
 
   function clear(): void {
-    const input = inputRef.current;
-    if (input !== null && currentValue === "") {
-      // A script set the text directly: the value React holds is already empty, so no render
-      // writes it back, and Field.Control, which clears a Form error when its value changes, sees
-      // no change. Empty the input and clear the error under `name` as Field.Control does.
-      input.value = "";
-      if (name !== undefined) {
-        clearErrors(name);
-      }
-    }
     commit("");
     onClear?.();
+  }
+
+  // The value React holds is already empty, so no render writes the scripted text back, and
+  // Field.Control, which clears a Form error when its value changes, sees no change. Empty the
+  // input and clear the error under `name` as Field.Control does.
+  function clearScriptedText(input: HTMLInputElement): void {
+    input.value = "";
+    if (name !== undefined) {
+      clearErrors(name);
+    }
   }
 
   function handleChange(event: ChangeEvent<HTMLInputElement>): void {
@@ -223,18 +222,27 @@ export function SearchField({
 
   function handleKeyDown(event: KeyboardEvent<HTMLInputElement>): void {
     onKeyDown?.(event);
-    if (event.defaultPrevented || isReadOnly || isDisabled || isComposing(event)) {
+    if (event.defaultPrevented || isReadOnly || isComposing(event)) {
       return;
     }
     if (event.key === "Enter" && onSubmit) {
-      // Enter on an input submits its form; `onSubmit` takes that over.
+      // Enter on an input submits its form; `onSubmit` takes that over, repeats and modifiers too.
       event.preventDefault();
-      onSubmit(currentValue);
-    } else if (event.key === "Escape" && !isEmpty(currentValue, inputRef)) {
-      // Consume the Escape: Base UI's overlay dismiss ignores defaultPrevented, so the field must
-      // stop it reaching a Dialog or Sheet around it.
+      if (!isRepeatOrModified(event)) {
+        onSubmit(currentValue);
+      }
+      return;
+    }
+    if (isRepeatOrModified(event)) {
+      return;
+    }
+    if (event.key === "Escape" && (currentValue !== "" || event.currentTarget.value !== "")) {
       event.preventDefault();
+      // Base UI's overlay dismiss ignores defaultPrevented, so stop the Escape reaching an overlay.
       event.stopPropagation();
+      if (currentValue === "") {
+        clearScriptedText(event.currentTarget);
+      }
       clear();
     }
   }
@@ -246,9 +254,8 @@ export function SearchField({
 
   return (
     <FieldFrame
-      slot="search-field"
       isEmpty={currentValue === ""}
-      className={cn("group/search-field", className)}
+      className={className}
       invalid={isInvalid}
       disabled={isDisabled}
       label={label}
@@ -278,7 +285,7 @@ export function SearchField({
         <SearchFieldClear
           label={clearLabel ?? strings.format("clear")}
           isReadOnly={isReadOnly}
-          onClear={handleClearPress}
+          onPress={handleClearPress}
         />
       </InputGroupRoot>
     </FieldFrame>
