@@ -118,8 +118,8 @@ describe("UiProviders", () => {
     );
 
     const link = linkNamed("Invoice 1043");
-    // A callback joined as a string would put its source in the class attribute.
-    expect(link.className).not.toMatch(/=>|function/);
+    // A callback joined as a string would put its source in the class attribute, and the brand
+    // colour would never apply.
     expect(getComputedStyle(link).color).toBe(cssVarColor(link, "--brand"));
     expect(getComputedStyle(link).textDecorationLine).toBe("underline");
   });

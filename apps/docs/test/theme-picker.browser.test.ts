@@ -175,14 +175,15 @@ describe("docs theme settings", () => {
   });
 
   it("fits a narrow, short viewport and scrolls to the reset action with the keyboard", async () => {
-    const page = await browser().newPage({ viewport: { width: 320, height: 480 }, colorScheme: "dark" });
+    const viewport = { width: 320, height: 480 };
+    const page = await browser().newPage({ viewport, colorScheme: "dark" });
     const menu = await openSettings(page);
     const box = await menu.boundingBox();
     expect(box).not.toBeNull();
     if (box === null) throw new Error("expected a visible menu");
     expect(box.x).toBeGreaterThanOrEqual(0);
-    expect(box.x + box.width).toBeLessThanOrEqual(320);
-    expect(box.y + box.height).toBeLessThanOrEqual(480);
+    expect(box.x + box.width).toBeLessThanOrEqual(viewport.width);
+    expect(box.y + box.height).toBeLessThanOrEqual(viewport.height);
     expect(await menu.evaluate((element) => element.scrollHeight > element.clientHeight)).toBe(true);
     await page.keyboard.press("End");
     const reset = menu.getByRole("menuitem", { name: "Reset preview theme", exact: true });
@@ -190,7 +191,7 @@ describe("docs theme settings", () => {
     expect(await menu.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
     const resetBox = await reset.boundingBox();
     expect(resetBox?.y).toBeGreaterThanOrEqual(box.y);
-    expect((resetBox?.y ?? 480) + (resetBox?.height ?? 0)).toBeLessThanOrEqual(480);
+    expect((resetBox?.y ?? viewport.height) + (resetBox?.height ?? 0)).toBeLessThanOrEqual(viewport.height);
     // Replacing joined selects must also remove horizontal document overflow.
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
     await page.close();

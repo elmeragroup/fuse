@@ -173,11 +173,12 @@ describe("Popover", () => {
 
     // A transform moves the anchor without a layout change or a scroll.
     const before = dialog.getBoundingClientRect();
-    anchor.style.translate = "48px 24px";
+    const shift = { x: 48, y: 24 };
+    anchor.style.translate = `${shift.x}px ${shift.y}px`;
     await expectPlacedAgainstAnchor();
     const after = dialog.getBoundingClientRect();
-    expect(after.left - before.left).toBeCloseTo(48, 0);
-    expect(after.top - before.top).toBeCloseTo(24, 0);
+    expect(after.left - before.left).toBeCloseTo(shift.x, 0);
+    expect(after.top - before.top).toBeCloseTo(shift.y, 0);
   });
 
   it("round-trips controlled open state on trigger click and Escape", async () => {

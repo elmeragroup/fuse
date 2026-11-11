@@ -21,7 +21,7 @@ const tokenSwatchList = tv({
     itemCode: "text-xs overflow-hidden text-ellipsis whitespace-nowrap text-foreground",
     itemDescription: "text-xs text-muted-foreground",
     swatch: "size-[0.85rem] flex-none rounded-md border border-foreground/18",
-    // The empty-swatch hatch has no scale neighbour; `.oxlintrc.json` allows its
+    // The empty-swatch hatch has no scale neighbour; `oxlint.config.ts` allows its
     // off-scale gradient for this file instead of declaring a CSS utility.
     swatchEmpty:
       "size-[0.85rem] flex-none rounded-md border border-foreground/18 bg-[repeating-linear-gradient(45deg,transparent,transparent_3px,color-mix(in_oklab,var(--foreground)_14%,transparent)_3px,color-mix(in_oklab,var(--foreground)_14%,transparent)_6px)]",

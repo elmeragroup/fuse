@@ -478,3 +478,51 @@ describe("Toast layer", () => {
     });
   }
 });
+
+describe("early queue", () => {
+  /** Each toast's accessible name (its title), in DOM order. Every toast here is low priority. */
+  function toastTitles(): string[] {
+    return page
+      .getByRole("dialog")
+      .elements()
+      .map((root) => document.getElementById(root.getAttribute("aria-labelledby") ?? "")?.textContent ?? "");
+  }
+
+  async function expectTitles(expected: string[]): Promise<void> {
+    await vi.waitFor(() => {
+      expect(toastTitles()).toEqual(expected);
+    });
+  }
+
+  describe("Toast module manager before the provider connects", () => {
+    it("replays update and close in call order against ids minted while queued", async () => {
+      const manager = Toast.createToastManager();
+      const kept = manager.add({ title: "Saving" });
+      const dropped = manager.add({ title: "Dropped" });
+      manager.update(kept, { title: "Saved" });
+      manager.close(dropped);
+
+      renderToast(undefined, { manager });
+
+      await expectTitles(["Saved"]);
+    });
+
+    it("runs a call made during replay after the calls queued before it", async () => {
+      const manager = Toast.createToastManager();
+      const later = "later";
+      const first = manager.add({
+        title: "Closes the later toast",
+        onClose: () => {
+          manager.close(later);
+        },
+      });
+      manager.close(first);
+      manager.add({ id: later, title: "Closed by the first toast" });
+      manager.add({ title: "Still open" });
+
+      renderToast(undefined, { manager });
+
+      await expectTitles(["Still open"]);
+    });
+  });
+});

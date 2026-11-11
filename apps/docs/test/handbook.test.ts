@@ -207,9 +207,11 @@ describe("quick start page", () => {
 
 /**
  * The curated roster as `packages/fuse/src/icons/roster.ts` declares it. Read as text: the roster
- * is private, and apps may not import `packages/fuse/src` (the workspace boundary test).
+ * is private, and apps may not import `packages/fuse/src` (the `no-restricted-imports` boundary in
+ * `oxlint.config.ts`).
  */
 function curatedRoster(): string[] {
+  // oxlint-disable-next-line fuse/no-source-reading-tests -- independent oracle: the private icon roster is the list the handbook's icon demo must show, and apps may not import it
   const source = readFileSync(path.join(fuseSrc, "icons/roster.ts"), "utf8");
   const literal = /PHOSPHOR_ICON_NAMES = \[([^\]]*)\] as const/u.exec(source)?.[1];
   if (literal === undefined) {

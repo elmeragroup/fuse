@@ -171,13 +171,14 @@ describe("TextField", () => {
     expect(pendingSvgs).toHaveLength(2);
     const pendingShown = pendingSvgs.filter((svg) => getComputedStyle(svg).opacity === "1");
     expect(pendingShown).toHaveLength(1);
-    expect(pendingShown[0]?.classList.contains("animate-spin")).toBe(true);
+    // The pending icon spins; the success icon stands still.
+    expect(pendingShown.map((svg) => getComputedStyle(svg).animationName)).not.toEqual(["none"]);
 
     const doneSvgs = fieldSvgs("Done");
     expect(doneSvgs).toHaveLength(2);
     const doneShown = doneSvgs.filter((svg) => getComputedStyle(svg).opacity === "1");
     expect(doneShown).toHaveLength(1);
-    expect(doneShown[0]?.classList.contains("animate-spin")).toBe(false);
+    expect(doneShown.map((svg) => getComputedStyle(svg).animationName)).toEqual(["none"]);
   });
 
   it("moves focus from the label to the input and skips a disabled field", async () => {

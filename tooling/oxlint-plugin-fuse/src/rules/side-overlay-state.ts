@@ -1,6 +1,6 @@
 import type { ESTree, Rule, Scope, SourceCode, Variable } from "@oxlint/plugins";
 
-import { nameChain, propertyKeyName } from "../ast-names.ts";
+import { moduleExportName, nameChain, propertyKeyName } from "../ast-names.ts";
 import { constantString } from "../static-text.ts";
 
 /** The attribute that controls whether a part's popup shows. */
@@ -169,7 +169,7 @@ function fuseImport(variable: Variable | undefined): FuseImport | undefined {
   const reactAria = binding.source.startsWith("@elmeragroup/fuse/react-aria/");
   const imported = binding.imported;
   if (imported === "namespace") return { path: [], reactAria };
-  return { path: [imported.type === "Literal" ? imported.value : imported.name], reactAria };
+  return { path: [moduleExportName(imported)], reactAria };
 }
 
 /** Whether an export path names an overlay part or a namespace holding one. */

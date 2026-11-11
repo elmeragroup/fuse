@@ -26,6 +26,10 @@
         "packages/fuse/src/theme/**",
         // The theme generators parse and mix colors through the color package.
         "packages/color/src/**",
+        // scripts/tsconfig.json type-checks the lint config with the scripts.
+        "oxlint.config.ts",
+        // oxlint.config.ts imports the restricted-imports option types from the lint plugin.
+        "tooling/oxlint-plugin-fuse/src/**",
         "tooling/typescript/**",
         "package.json",
         "pnpm-workspace.yaml"

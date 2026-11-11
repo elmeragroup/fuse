@@ -1,3 +1,4 @@
+/* oxlint-disable fuse/one-browser-test-per-module -- a Tailwind-source host with preflight: its page injects Tailwind's preflight and theme sheets, which tabs.browser.test.tsx's preflight-free page must not see */
 import { compile } from "tailwindcss";
 import preflightCss from "tailwindcss/preflight.css?raw";
 import themeCss from "tailwindcss/theme.css?raw";
@@ -8,6 +9,7 @@ import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import { render } from "../../../test/browser-render";
 import { edgeInset } from "../../../test/inner-corner-specimens";
+import { expectTargetBoxes } from "../../../test/target-size";
 import { fkasPrivate } from "../../../test/theme-fixtures";
 import {
   roleNamed,
@@ -79,17 +81,19 @@ describe("Tabs in a preflight consumer", () => {
         const tab = roleNamed("tab", "One");
         const list = roleNamed("tablist", "Sections");
         expect(tab.matches(":focus-visible"), `${fontSize} ${density}`).toBe(true);
-        expect(tab.getBoundingClientRect().height, `${fontSize} ${density} target`).toBeGreaterThanOrEqual(
-          24
-        );
-        // The shared ring is 2px wide and flush, so it reaches 2px past the trigger.
+        expectTargetBoxes([tab], `${fontSize} ${density}`);
+        // The focus ring reaches its width plus its offset past the trigger; the list must leave
+        // that room.
+        const ringStyle = getComputedStyle(tab);
+        const ring = Number.parseFloat(ringStyle.outlineWidth) + Number.parseFloat(ringStyle.outlineOffset);
+        expect(ring, `${fontSize} ${density} ring`).toBeGreaterThan(0);
         const tabBox = tab.getBoundingClientRect();
         const listBox = list.getBoundingClientRect();
         for (const edge of ["start", "end"] as const) {
-          expect(edgeInset(tab, list, edge), `${fontSize} ${density} ${edge}`).toBeGreaterThanOrEqual(2);
+          expect(edgeInset(tab, list, edge), `${fontSize} ${density} ${edge}`).toBeGreaterThanOrEqual(ring);
         }
-        expect(tabBox.top - listBox.top, `${fontSize} ${density} top`).toBeGreaterThanOrEqual(2);
-        expect(listBox.bottom - tabBox.bottom, `${fontSize} ${density} bottom`).toBeGreaterThanOrEqual(2);
+        expect(tabBox.top - listBox.top, `${fontSize} ${density} top`).toBeGreaterThanOrEqual(ring);
+        expect(listBox.bottom - tabBox.bottom, `${fontSize} ${density} bottom`).toBeGreaterThanOrEqual(ring);
         unmount();
       }
     }

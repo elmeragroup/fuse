@@ -47,6 +47,11 @@ Change these instructions when durable working conventions change.
 
 ## Tests
 
+Every new or changed test passes the authoring gate in
+[the test-audit skill](.agents/skills/test-audit/SKILL.md#authoring-gate), and its
+answers go in the PR's Test value section. A fix gets a test only when one passes the
+gate; screenshots and recordings prove visual and motion changes.
+
 Absolutely no tautological tests. Assert behavior against independently defined
 expectations. Never compute expected results with the implementation under test
 or merely assert that mocks return their configured values. A cross-check between
@@ -64,12 +69,13 @@ Each test lands in one project; reach for the cheapest that can go red:
 - `*.test-d.tsx` (`test:types`): public type constraints.
 - Docs `browser` (against the e2e build): `test/routes.browser.test.ts` renders every route error-free and axe-clean in Chromium; one file each covers the landing, studio, theme picker and ⌘K flows.
 
-Write a mechanical source contract as a rule in `tooling/oxlint-plugin-fuse`, with a
-valid/invalid rule test. While editing, run `vitest related <files> --run --project unit`
-in the owning package. Lint through `pnpm lint`; a direct `oxlint` needs
-`OXLINT_TSGOLINT_PATH=node_modules/.bin/tsrs-lint`. Before review, run `pnpm check`;
-CI adds the docs e2e and packed tier. For docs-app behavior, run
-`pnpm exec turbo run build:e2e --filter=docs`, then `pnpm --filter docs test:e2e test/<file>`.
+Write a mechanical source contract, a test shape included, as a rule in
+`tooling/oxlint-plugin-fuse`, with a valid/invalid rule test. While editing, run
+`vitest related <files> --run --project unit` in the owning package. Lint through
+`pnpm lint`; a direct `oxlint` needs `OXLINT_TSGOLINT_PATH=node_modules/.bin/tsrs-lint`.
+Before review, run `pnpm check`; CI adds the docs e2e and packed tier. For docs-app
+behavior, run `pnpm exec turbo run build:e2e --filter=docs`, then
+`pnpm --filter docs test:e2e test/<file>`.
 For exports, packaging or dependencies, run `package:check` and `test:packed-consumer`,
 and clear Vitest's `tsconfig.tmp.tsbuildinfo` before trusting type tests.
 

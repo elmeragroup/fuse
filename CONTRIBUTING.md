@@ -70,7 +70,8 @@ owner who merges one records that review in a PR comment.
 Use a reviewer other than the code's author: another person, or an agent with a fresh
 context. When an agent wrote the change, the person who directed it can review it.
 The reviewer checks the complete proposed diff and relevant surrounding code against
-the agreed scope, this guide and [AGENTS.md](AGENTS.md).
+the agreed scope, this guide and [AGENTS.md](AGENTS.md), and each Test value answer
+against its test, as the [test-audit skill](.agents/skills/test-audit/SKILL.md) reviews.
 
 <a id="verification"></a>
 
@@ -80,12 +81,14 @@ Explain how you established the problem and checked the change. Record the focus
 test commands or manual checks you ran, the results and anything you could not
 check.
 
-- Behavior changes include tests, and verification follows
-  [AGENTS.md](AGENTS.md#tests), including `pnpm check` before the final review
-  pass.
-- Visual changes include before and after screenshots. For new UI, show the result.
-  Add a short recording when motion, timing or interaction is part of the change.
-  Upload screenshots and recordings to the PR and keep them out of the repository.
+- The [authoring gate](.agents/skills/test-audit/SKILL.md#authoring-gate) decides
+  whether a change gets a test, and the PR's Test value section holds its answers.
+  Verification follows [AGENTS.md](AGENTS.md#tests), including `pnpm check` before the
+  final review pass.
+- Visual changes include before and after screenshots. For new UI, show the
+  result. Add a short recording when motion, timing or interaction is part of the
+  change. Upload screenshots and recordings to the PR and keep them out of the
+  repository.
 
 ## Merging and closing
 

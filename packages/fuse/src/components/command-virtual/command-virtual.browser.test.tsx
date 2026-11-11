@@ -1,11 +1,12 @@
 import type { ReactElement, ReactNode } from "react";
 
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi, beforeEach } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/demo-stage-density.css";
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
+import { nextFrames } from "../../../test/animation-frames";
 import { CaughtError, caughtError } from "../../../test/caught-error";
 import { flightLazyElement } from "../../../test/flight-lazy-element";
 import { withLocale } from "../../../test/locale-matrix";
@@ -225,5 +226,68 @@ describe("CommandVirtual", () => {
       </CaughtError>
     );
     expect(caughtError()).toEqual({ name: "CommandCompositionError", message });
+  });
+});
+
+/**
+ * Render counts of virtual rows: a probe inside each row records its renders, and the expectation
+ * is which rows a scroll has to render.
+ */
+describe("CommandVirtual row renders", () => {
+  /** Renders per item since the last reset. */
+  const renders = new Map<string, number>();
+
+  function Probe({ item }: { readonly item: string }): ReactElement {
+    renders.set(item, (renders.get(item) ?? 0) + 1);
+    return <span>{item}</span>;
+  }
+
+  function Palette(): ReactElement {
+    return (
+      <Command.Root items={METER_POINTS} virtualized>
+        <Command.Input aria-label="Meter points" />
+        <Command.List render={<CommandVirtual.List />}>
+          {(item: string) => (
+            <Command.Item value={item}>
+              <Probe item={item} />
+            </Command.Item>
+          )}
+        </Command.List>
+      </Command.Root>
+    );
+  }
+
+  function shownItems(): string[] {
+    return page
+      .getByRole("option")
+      .elements()
+      .map((option) => option.textContent);
+  }
+
+  beforeEach(() => {
+    renders.clear();
+  });
+
+  it("renders only the rows a scroll brings into the window", async () => {
+    renderThemed(withLocale("en-US", <Palette />));
+    roleNamed("combobox", "Meter points").focus();
+    await expect.poll(() => shownItems().length).toBeGreaterThan(3);
+    await nextFrames(2);
+    const list = page.getByRole("listbox").element();
+    const rowHeight = page.getByRole("option").elements()[0]?.getBoundingClientRect().height ?? 0;
+    const before = shownItems();
+
+    renders.clear();
+    list.scrollTop += rowHeight * 3;
+    await expect.poll(() => shownItems().some((item) => !before.includes(item))).toBe(true);
+    await nextFrames(2);
+
+    const after = shownItems();
+    const kept = before.filter((item) => after.includes(item));
+    expect(kept.length).toBeGreaterThan(0);
+    // A row that stays in the window keeps its render; only the rows that entered render.
+    expect(kept.filter((item) => renders.has(item))).toEqual([]);
+    const entered = after.filter((item) => !before.includes(item));
+    expect([...renders.keys()].toSorted()).toEqual(entered.toSorted());
   });
 });

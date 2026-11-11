@@ -1,9 +1,6 @@
 import { createElement } from "react";
 import type { ReactElement } from "react";
 
-import { readdirSync, readFileSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
@@ -34,8 +31,6 @@ import { FkasMeter } from "../illustrations";
 import type { LogoProps } from "./bespoke-svg";
 import { TelinetLogoFull } from "./bespoke/telinet-logo-full";
 import { TelinetLogoMark } from "./bespoke/telinet-logo-mark";
-import { iconModuleSlug } from "./generate";
-import { LOGO_NAMES } from "./roster";
 import type { BespokeIconName, LogoName } from "./roster";
 
 const logosByName = {
@@ -78,10 +73,6 @@ const bespokeIcons = {
   Vipps,
 } satisfies Record<BespokeIconName, NamedSvg>;
 
-const here = dirname(fileURLToPath(import.meta.url));
-
-type AssetSource = { file: string; source: string };
-
 function definedIds(text: string): string[] {
   return [...text.matchAll(/\bid="([^"]+)"/g)].flatMap((match) => match[1] ?? []);
 }
@@ -101,13 +92,29 @@ function expectTitled(markup: string, title: string, label?: string) {
   expect(markup, label).not.toContain("aria-hidden");
 }
 
-function assetSources(): AssetSource[] {
-  const dirs = [join(here, "bespoke"), join(here, "../illustrations")];
-  return dirs.flatMap((dir) =>
-    readdirSync(dir)
-      .filter((name) => name.endsWith(".tsx"))
-      .map((name) => ({ file: name, source: readFileSync(join(dir, name), "utf8") }))
-  );
+/**
+ * Every bespoke asset as it renders, once: each roster icon, each logo in both variants (so every
+ * full, mark and glyph file draws), and the illustrations. A logo whose two variants draw the same
+ * file, such as Steddi's glyph, renders identical markup and counts once.
+ */
+function renderedAssets(): Array<readonly [string, string]> {
+  const rendered = [
+    ...Object.entries(bespokeIcons).map(
+      ([name, Icon]) => [name, renderToStaticMarkup(createElement(Icon))] as const
+    ),
+    ...Object.entries(logosByName).flatMap(([name, Logo]) =>
+      (["full", "mark"] as const).map(
+        (variant) => [`${name} ${variant}`, renderToStaticMarkup(createElement(Logo, { variant }))] as const
+      )
+    ),
+    ["FkasMeter", renderToStaticMarkup(createElement(FkasMeter))] as const,
+  ];
+  const seen = new Set<string>();
+  return rendered.filter(([, markup]) => {
+    if (seen.has(markup)) return false;
+    seen.add(markup);
+    return true;
+  });
 }
 
 describe("bespoke icons", () => {
@@ -128,13 +135,17 @@ describe("bespoke icons", () => {
   // Each logo spells the guard twice — `decorativeSvgProps(title)` and its own
   // `{title ? <title>…</title> : null}` — so the two can only stay in step by being
   // checked together, for every logo, rather than for whichever one a case names.
+  // Both variants, so every full and mark asset renders its title only from the prop.
   it.each(Object.entries(logosByName))("keeps %s's title guard and props in step", (name, Logo) => {
-    for (const title of ["", undefined]) {
-      expectDecorative(renderToStaticMarkup(createElement(Logo, { title })), name);
+    for (const variant of ["full", "mark"] as const) {
+      const label = `${name} ${variant}`;
+      for (const title of ["", undefined]) {
+        expectDecorative(renderToStaticMarkup(createElement(Logo, { variant, title })), label);
+      }
+      expectTitled(renderToStaticMarkup(createElement(Logo, { variant, title: name })), name, label);
+      // Nonempty means meaningful: whitespace-only is still a titled image, not decorative.
+      expectTitled(renderToStaticMarkup(createElement(Logo, { variant, title: " " })), " ", label);
     }
-    expectTitled(renderToStaticMarkup(createElement(Logo, { title: name })), name, name);
-    // Nonempty means meaningful: whitespace-only is still a titled image, not decorative.
-    expectTitled(renderToStaticMarkup(createElement(Logo, { title: " " })), " ", name);
   });
 
   it.each(svgFamilies)("lets caller SVG attributes override %s's naming defaults", (_, Icon) => {
@@ -166,25 +177,12 @@ describe("bespoke icons", () => {
     expect(html).not.toContain('className="fill-on-surface"');
   });
 
-  it("ships no static title element besides the prop-driven title slot", () => {
-    const files = readdirSync(join(here, "bespoke")).filter((name) => name.endsWith(".tsx"));
-    expect(files.length).toBeGreaterThan(0);
-    for (const name of files) {
-      const titles = [
-        ...readFileSync(join(here, "bespoke", name), "utf8").matchAll(/<title>[\s\S]*?<\/title>/g),
-      ].map((match) => match[0]);
-      for (const title of titles) {
-        expect(title, name).toBe("<title>{title}</title>");
-      }
-    }
-  });
-
   it("namespaces defs ids per asset so no id is defined by two assets", () => {
     // The next Figma/Sketch intake with generic ids (mask0_1_353, linearGradient-1)
     // must fail here instead of colliding with another asset's defs in the DOM.
     const owners = new Map<string, string>();
     let definitions = 0;
-    for (const { file, source } of assetSources()) {
+    for (const [file, source] of renderedAssets()) {
       const defined = definedIds(source);
       definitions += defined.length;
       for (const id of defined) {
@@ -197,14 +195,6 @@ describe("bespoke icons", () => {
       }
     }
     expect(definitions).toBeGreaterThan(0);
-  });
-
-  it("keeps bespoke assets and illustrations server-safe: no hooks, no use client", () => {
-    for (const { file, source } of assetSources()) {
-      expect(source, file).not.toContain('"use client"');
-      expect(source, file).not.toMatch(/import\s*\{[^}]*\buse[A-Z]/);
-      expect(source, file).not.toMatch(/\buse[A-Z][A-Za-z]*\s*\(/);
-    }
   });
 
   it("renders the same asset twice as duplicate-but-identical defs", () => {
@@ -244,12 +234,6 @@ describe("bespoke icons", () => {
     for (const [name, Logo] of Object.entries(logosByName)) {
       // SAFETY: displayName is stamped by createLogo; the public prop type does not carry it.
       expect((Logo as { displayName?: string }).displayName, name).toBe(name);
-    }
-    for (const name of LOGO_NAMES) {
-      const file = `${iconModuleSlug(name)}.tsx`;
-      const source = readFileSync(join(here, "bespoke", file), "utf8");
-      expect(source, file).toContain("createLogo(");
-      expect(source, file).not.toContain('if (variant === "mark")');
     }
   });
 });

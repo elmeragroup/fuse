@@ -70,6 +70,7 @@ function FruitSelect({
   disabled,
   size,
   alignItemWithTrigger,
+  sideOffset,
   extra,
 }: {
   onValueChange?: ComponentProps<typeof Select.Root>["onValueChange"];
@@ -77,6 +78,7 @@ function FruitSelect({
   disabled?: boolean;
   size?: "sm" | "default";
   alignItemWithTrigger?: boolean;
+  sideOffset?: number;
   extra?: boolean;
 }) {
   return (
@@ -88,7 +90,7 @@ function FruitSelect({
       <Select.Trigger size={size} aria-label="Fruit">
         <Select.Value placeholder="Pick a fruit" />
       </Select.Trigger>
-      <Select.Content alignItemWithTrigger={alignItemWithTrigger}>
+      <Select.Content alignItemWithTrigger={alignItemWithTrigger} sideOffset={sideOffset}>
         <Select.Item value="apple">Apple</Select.Item>
         <Select.Item value="banana">Banana</Select.Item>
         {extra ? (
@@ -256,14 +258,16 @@ describe("Select", () => {
     function OffsetScope({
       ancestor,
       alignItemWithTrigger,
+      sideOffset,
     }: {
       ancestor: CSSProperties;
       alignItemWithTrigger?: boolean;
+      sideOffset?: number;
     }) {
       return (
         <div style={{ ...ancestor, marginTop: 160, marginLeft: 120 }}>
           <ThemeScope theme={fkasPrivate}>
-            <FruitSelect alignItemWithTrigger={alignItemWithTrigger} />
+            <FruitSelect alignItemWithTrigger={alignItemWithTrigger} sideOffset={sideOffset} />
           </ThemeScope>
         </div>
       );
@@ -296,13 +300,20 @@ describe("Select", () => {
     });
 
     it("opens below its trigger inside a transformed scope with alignItemWithTrigger={false}", async () => {
-      render(<OffsetScope ancestor={{ transform: "translateZ(0)" }} alignItemWithTrigger={false} />);
+      // Not the component's default of 4, so a popup that ignored the prop would sit 4px off.
+      const sideOffset = 12;
+      render(
+        <OffsetScope
+          ancestor={{ transform: "translateZ(0)" }}
+          alignItemWithTrigger={false}
+          sideOffset={sideOffset}
+        />
+      );
       const { content, trigger } = await openedContentAndTrigger();
 
-      // Oracle: the default `side="bottom"` and `sideOffset={4}` place the popup's top 4px
-      // under the trigger, overlapping it horizontally.
-      expect(content.top - trigger.bottom).toBeGreaterThanOrEqual(0);
-      expect(content.top - trigger.bottom).toBeLessThanOrEqual(8);
+      // Oracle: the default `side="bottom"` and the `sideOffset` passed in place the popup's top
+      // that far under the trigger, overlapping it horizontally.
+      expect(content.top - trigger.bottom).toBeCloseTo(sideOffset, 0);
       expect(content.left).toBeLessThan(trigger.right);
       expect(content.right).toBeGreaterThan(trigger.left);
     });

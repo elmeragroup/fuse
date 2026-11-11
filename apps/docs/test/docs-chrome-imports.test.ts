@@ -4,9 +4,12 @@ import { describe, expect, it } from "vitest";
 
 import { docsRoot } from "../scripts/lib/paths.ts";
 
-const SOURCE_EXTENSIONS = new Set([".ts", ".tsx", ".mdx"]);
+// The TypeScript side of this contract is lint: the `fuse/restricted-imports` overrides for
+// apps/docs/src in `oxlint.config.ts` ban the library Sidebar outside the globs listed there.
+// Oxlint does not read MDX, so this file holds the MDX side: only the Sidebar page's MDX imports it.
+const SOURCE_EXTENSIONS = new Set([".mdx"]);
 
-/** Every authored source file under `apps/docs/src`, excluding the generated tree. */
+/** Every authored MDX page under `apps/docs/src`, excluding the generated tree. */
 function docsSourceFiles(dir: string): string[] {
   const files: string[] = [];
   for (const entry of readdirSync(dir)) {
@@ -25,48 +28,21 @@ function docsSourceFiles(dir: string): string[] {
   return files;
 }
 
+/** The Sidebar component page, the one MDX page that demonstrates the library Sidebar. */
 const SIDEBAR_ROUTE = "src/app/(docs)/components/sidebar/";
-/** The landing hero's Dashboard window, a product demo built on the library Sidebar. */
-const LANDING_APP_SHELL = "src/app/(landing)/landing/app-shell/";
-/** The blocks' own files: whole apps built on the library Sidebar, which their previews frame. */
-const BLOCK_DEMOS = /^src\/app\/\(docs\)\/blocks\/[^/]+\/demos\//u;
-
-/**
- * The Sidebar component page and its demos, the landing's Dashboard demo and the blocks are the
- * places the library Sidebar may be imported: they demonstrate the component, they are not docs
- * chrome.
- */
-function isSidebarPage(file: string): boolean {
-  const relative = path.relative(docsRoot, file).split(path.sep).join("/");
-  return (
-    relative.startsWith(SIDEBAR_ROUTE) || relative.startsWith(LANDING_APP_SHELL) || BLOCK_DEMOS.test(relative)
-  );
-}
-
-function isSidebarDemo(file: string): boolean {
-  return path.relative(docsRoot, file).split(path.sep).join("/").startsWith(`${SIDEBAR_ROUTE}demos/`);
-}
 
 const SIDEBAR_IMPORT = /from\s+["']@elmeragroup\/fuse\/sidebar["']/u;
 const SIDEBAR_FROM_BARREL = /import\s*\{[^}]*\bSidebar\b[^}]*\}\s*from\s+["']@elmeragroup\/fuse["']/u;
 
 describe("docs chrome never composes the library Sidebar", () => {
-  it("imports @elmeragroup/fuse/sidebar only from the Sidebar page's own demos", () => {
+  it("imports @elmeragroup/fuse/sidebar in no MDX page outside the Sidebar page", () => {
     const offenders = docsSourceFiles(path.join(docsRoot, "src"))
-      .filter((file) => !isSidebarPage(file))
+      .filter((file) => !path.relative(docsRoot, file).split(path.sep).join("/").startsWith(SIDEBAR_ROUTE))
       .filter((file) => {
         const source = readFileSync(file, "utf8");
         return SIDEBAR_IMPORT.test(source) || SIDEBAR_FROM_BARREL.test(source);
       })
       .map((file) => path.relative(docsRoot, file));
     expect(offenders).toEqual([]);
-  });
-
-  it("still sees the Sidebar demos, so the exclusion is not vacuous", () => {
-    const demos = docsSourceFiles(path.join(docsRoot, "src")).filter(isSidebarDemo);
-    expect(demos.length).toBeGreaterThanOrEqual(5);
-    for (const demo of demos) {
-      expect(SIDEBAR_IMPORT.test(readFileSync(demo, "utf8")), demo).toBe(true);
-    }
   });
 });

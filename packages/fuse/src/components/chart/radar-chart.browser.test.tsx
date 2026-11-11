@@ -109,6 +109,7 @@ describe("the pick (R6) and hover (D19)", () => {
         // A near series holds for 150 ms of event time after it changes, read from the events'
         // own timeStamp, which no fake clock reaches; the wait is a lower bound, so a slow runner
         // only widens the gap the hold needs.
+        // oxlint-disable-next-line fuse/no-fixed-delay -- the near-series hold runs on the events' timeStamp, which no fake clock reaches; 160 ms is a lower bound past the 150 ms hold
         await wait(160);
         await hoverAt(...clientPoint(radarLayer(host, "radar-chart-line"), point.x, point.y));
         expect(figure.style.getPropertyValue("--chart-active")).toBe(String(spoke));

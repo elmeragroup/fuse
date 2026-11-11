@@ -1,7 +1,10 @@
+import { StrictMode, useLayoutEffect } from "react";
+
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
+import { expectActivationCancelled, resetHashAroundEach } from "../../../test/aria-disabled-activation";
 import { assertFocusRingOnKeyboardAbsentOnMouse } from "../../../test/assert-focus-ring";
 import { withLocale } from "../../../test/locale-matrix";
 import { emulateReducedMotion } from "../../../test/reduced-motion";
@@ -18,7 +21,9 @@ import {
 } from "../../../test/sidebar-browser-fixtures";
 import { DESCRIPTION_COPY, TITLE_COPY, TOGGLE_COPY } from "../../../test/sidebar-contract";
 import { px, renderThemed, roleNamed, stampDensity } from "../../../test/themed-browser-render";
+import { Tooltip } from "../tooltip";
 import { Sidebar } from "./index";
+import { useSidebar } from "./sidebar";
 import type { SidebarContextValue, SidebarProviderProps } from "./sidebar";
 
 setupSidebarBrowser();
@@ -548,5 +553,216 @@ describe("Sidebar.MenuButton", () => {
       </Frame>
     );
     await assertFocusRingOnKeyboardAbsentOnMouse(roleNamed("button", "First"), roleNamed("button", "Second"));
+  });
+});
+
+// Rows announced `aria-disabled="true"`: they keep pointer events so a Tooltip opens, and cancel
+// their own activation.
+describe("aria-disabled rows", () => {
+  describe("aria-disabled Sidebar rows", () => {
+    // The rows keep pointer events so a Tooltip still opens, so the row itself cancels
+    // activation.
+    resetHashAroundEach();
+
+    it("neither follows a MenuButton link nor runs its onClick, and still opens its Tooltip", async () => {
+      const clicks: string[] = [];
+      renderThemed(
+        <Tooltip.Provider delay={0}>
+          <Frame provider={{ defaultOpen: false }} root={{ collapsible: "icon" }}>
+            <OrdersLink
+              href="#orders"
+              aria-disabled="true"
+              tooltip="Orders"
+              onClick={() => clicks.push("orders")}
+            />
+          </Frame>
+        </Tooltip.Provider>
+      );
+      const link = roleNamed("link", "Orders");
+
+      await userEvent.hover(link);
+      await vi.waitFor(() => {
+        expect(page.getByRole("tooltip", { name: "Orders", exact: true }).query()).not.toBeNull();
+      });
+
+      await expectActivationCancelled(link, clicks);
+    });
+
+    it("neither follows a MenuSubButton link nor runs its onClick", async () => {
+      const clicks: string[] = [];
+      renderThemed(
+        <Frame>
+          <Sidebar.MenuItem>
+            <Sidebar.MenuButton>Billing</Sidebar.MenuButton>
+            <Sidebar.MenuSub>
+              <Sidebar.MenuSubItem>
+                <Sidebar.MenuSubButton
+                  href="#invoices"
+                  aria-disabled="true"
+                  onClick={() => clicks.push("invoices")}>
+                  Invoices
+                </Sidebar.MenuSubButton>
+              </Sidebar.MenuSubItem>
+            </Sidebar.MenuSub>
+          </Sidebar.MenuItem>
+        </Frame>
+      );
+
+      await expectActivationCancelled(roleNamed("link", "Invoices"), clicks);
+    });
+
+    // A middle-click fires `auxclick`, not `click`, and a link opens in a new tab as that event's
+    // default action. The window listener runs after the row's own handler, records whether the
+    // row cancelled it, then cancels it itself so an unguarded row opens no tab.
+    for (const { name, ariaDisabled, prevented, auxClicks } of [
+      {
+        name: "cancels a middle-click on a link row, so it opens no new tab and skips onAuxClick",
+        ariaDisabled: "true",
+        prevented: [true],
+        auxClicks: [],
+      },
+      {
+        name: "lets a middle-click through and runs onAuxClick once aria-disabled is false",
+        ariaDisabled: "false",
+        prevented: [false],
+        auxClicks: ["orders"],
+      },
+    ] as const) {
+      it(name, async () => {
+        const consumerAuxClicks: string[] = [];
+        renderThemed(
+          <Frame>
+            <OrdersLink
+              href="#orders"
+              aria-disabled={ariaDisabled}
+              onAuxClick={() => consumerAuxClicks.push("orders")}
+            />
+          </Frame>
+        );
+        const defaultPrevented: boolean[] = [];
+        const probe = (event: MouseEvent): void => {
+          defaultPrevented.push(event.defaultPrevented);
+          event.preventDefault();
+        };
+        window.addEventListener("auxclick", probe);
+        try {
+          await userEvent.click(roleNamed("link", "Orders"), { button: "middle", force: true });
+        } finally {
+          window.removeEventListener("auxclick", probe);
+        }
+
+        expect(defaultPrevented).toEqual(prevented);
+        expect(consumerAuxClicks).toEqual(auxClicks);
+      });
+    }
+
+    it("does not run a MenuButton button's onClick", async () => {
+      const clicks: string[] = [];
+      renderThemed(
+        <Frame>
+          <Sidebar.MenuItem>
+            <Sidebar.MenuButton aria-disabled="true" onClick={() => clicks.push("archive")}>
+              Archive
+            </Sidebar.MenuButton>
+          </Sidebar.MenuItem>
+        </Frame>
+      );
+
+      await expectActivationCancelled(roleNamed("button", "Archive"), clicks);
+    });
+
+    it("activates the same rows once aria-disabled is false", async () => {
+      const clicks: string[] = [];
+      renderThemed(
+        <Frame>
+          <OrdersLink href="#orders" aria-disabled="false" onClick={() => clicks.push("orders")} />
+        </Frame>
+      );
+
+      await userEvent.click(roleNamed("link", "Orders"));
+      expect(location.hash).toBe("#orders");
+      expect(clicks).toEqual(["orders"]);
+    });
+  });
+});
+
+describe("state", () => {
+  function OpenStatus() {
+    const sidebar = useSidebar();
+    return <output aria-label="Open state">{String(sidebar.open)}</output>;
+  }
+
+  function QueueControls() {
+    const { setOpen } = useSidebar();
+    return (
+      <>
+        <button
+          type="button"
+          onClick={() => {
+            setOpen((open) => !open);
+            setOpen((open) => !open);
+          }}>
+          Invert twice
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setOpen(false);
+            setOpen((open) => !open);
+          }}>
+          Set then invert
+        </button>
+        <OpenStatus />
+      </>
+    );
+  }
+
+  describe("Sidebar committed state and update queue", () => {
+    it("composes controlled notifications once and starts the next event from a rejected prop", async () => {
+      const onChange = vi.fn<(open: boolean) => void>();
+      renderThemed(
+        withLocale(
+          "en-US",
+          <StrictMode>
+            <Sidebar.Provider open onOpenChange={onChange}>
+              <QueueControls />
+              <Sidebar.Trigger />
+            </Sidebar.Provider>
+          </StrictMode>
+        )
+      );
+      await userEvent.click(roleNamed("button", "Invert twice"));
+      expect(onChange.mock.calls.map(([open]) => open)).toEqual([false, true]);
+      expect(roleNamed("status", "Open state").textContent).toBe("true");
+      await userEvent.click(roleNamed("button", "Toggle sidebar"));
+      expect(onChange).toHaveBeenLastCalledWith(false);
+    });
+
+    it("keeps callbacks stable when the committed controlled setter changes", async () => {
+      const identities: Array<ReturnType<typeof useSidebar>> = [];
+      const first = vi.fn<(open: boolean) => void>();
+      const second = vi.fn<(open: boolean) => void>();
+      function Probe() {
+        const sidebar = useSidebar();
+        useLayoutEffect(() => {
+          identities.push(sidebar);
+        });
+        return <Sidebar.Trigger />;
+      }
+      const field = (onOpenChange: (open: boolean) => void) =>
+        withLocale(
+          "en-US",
+          <Sidebar.Provider open onOpenChange={onOpenChange}>
+            <Probe />
+          </Sidebar.Provider>
+        );
+      const { rerender } = renderThemed(field(first));
+      rerender(field(second));
+      await userEvent.click(roleNamed("button", "Toggle sidebar"));
+      expect(first).not.toHaveBeenCalled();
+      expect(second).toHaveBeenCalledExactlyOnceWith(false);
+      expect(new Set(identities.map((value) => value.setOpen)).size).toBe(1);
+      expect(new Set(identities.map((value) => value.toggleSidebar)).size).toBe(1);
+    });
   });
 });

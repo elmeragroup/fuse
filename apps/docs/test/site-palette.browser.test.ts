@@ -133,7 +133,10 @@ describe("site palette on the docs", () => {
     await option(dialog, "Demos", /^Hidden until found/u).click();
     await page.waitForURL(`${docsBaseUrl()}/components/accordion#hidden-until-found`);
     const demo = page.getByRole("region", { name: "Hidden until found", exact: true });
-    await expect.poll(() => demo.evaluate((node) => node.getBoundingClientRect().top)).toBeLessThan(400);
+    // The jump lands the anchor in the upper half of the viewport.
+    await expect
+      .poll(() => demo.evaluate((node) => node.getBoundingClientRect().top < window.innerHeight / 2))
+      .toBe(true);
     await closeContext(context);
   });
 
@@ -152,7 +155,9 @@ describe("site palette on the docs", () => {
     await page.keyboard.press("Enter");
     await page.waitForURL(`${docsBaseUrl()}/components/dialog#api-reference`);
     const heading = page.locator("#api-reference");
-    await expect.poll(() => heading.evaluate((node) => node.getBoundingClientRect().top)).toBeLessThan(400);
+    await expect
+      .poll(() => heading.evaluate((node) => node.getBoundingClientRect().top < window.innerHeight / 2))
+      .toBe(true);
     await closeContext(context);
   });
 

@@ -1,7 +1,7 @@
 /**
  * Unit under test: SkeletonReveal rendering in Node, as a server does. Oracle: data that is never
  * strictly equal to itself still renders once, as content. The markup contract is read off parsed
- * HTML in `skeleton-reveal-server.browser.test.tsx`.
+ * HTML in `skeleton-reveal.browser.test.tsx`.
  */
 import { createElement } from "react";
 

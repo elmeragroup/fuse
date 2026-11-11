@@ -6,6 +6,7 @@ import "../../../dist/themes.css";
 import { ringLayers, settleTransitions } from "../../../test/assert-invalid-ring";
 import { cornerRadius } from "../../../test/inner-corner-specimens";
 import { emulateReducedMotion } from "../../../test/reduced-motion";
+import { expectTargetBoxes } from "../../../test/target-size";
 import { tkasCompany } from "../../../test/theme-fixtures";
 import {
   cssVarColor,
@@ -193,7 +194,7 @@ describe("Frame", () => {
       const band = header.getBoundingClientRect();
       const box = trigger.getBoundingClientRect();
       expect(box, density).toEqual(band);
-      expect(box.height, `${density} target`).toBeGreaterThanOrEqual(24);
+      expectTargetBoxes([trigger], density);
     }
 
     await userEvent.click(roleNamed("button", "Before"));

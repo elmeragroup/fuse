@@ -19,6 +19,7 @@ import {
 const fixtureRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 function readFixtureFile(relativePath: string): string {
+  // oxlint-disable-next-line fuse/no-source-reading-tests -- host first-paint contract: the static host's sources render no color-scheme bootstrap through the client graph, beside the built HTML this also reads
   return readFileSync(path.join(fixtureRoot, relativePath), "utf8");
 }
 

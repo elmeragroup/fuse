@@ -17,6 +17,9 @@ import type { SelectFieldProps } from "./select-field";
 
 const PLANS = { basic: "Basic", pro: "Pro", team: "Team" } as const;
 
+/** The width of the host the field fills. */
+const HOST_WIDTH = 320;
+
 function planOptions(): ReactNode {
   return Object.entries(PLANS).map(([value, label]) => (
     <Select.Item key={value} value={value}>
@@ -93,14 +96,14 @@ describe("SelectField", () => {
 
   it("lays the error out ahead of the description and lets the trigger fill the field", () => {
     renderThemed(
-      <div style={{ width: "320px" }}>
+      <div style={{ width: `${HOST_WIDTH}px` }}>
         <Plan description="You can change plan later." errorMessage="Pick a plan." />
       </div>
     );
     const error = page.getByText("Pick a plan.", { exact: true }).element();
     const description = page.getByText("You can change plan later.", { exact: true }).element();
     expect(error.getBoundingClientRect().bottom).toBeLessThanOrEqual(description.getBoundingClientRect().top);
-    expect(trigger().getBoundingClientRect().width).toBe(320);
+    expect(trigger().getBoundingClientRect().width).toBe(HOST_WIDTH);
   });
 
   it("marks the trigger invalid for isInvalid as Field.Root invalid marks a hand-composed one", () => {
@@ -220,7 +223,7 @@ describe("SelectField", () => {
     renderThemed(<Plan ref={ref} data-testid="plan" triggerClassName="font-bold" />);
     expect(ref.current).toBe(trigger());
     expect(trigger()).toHaveAttribute("data-testid", "plan");
-    expect(trigger()).toHaveClass("font-bold", "w-full");
+    expect(trigger()).toHaveClass("font-bold");
   });
 
   it("keeps the trigger's label and popup wiring when a forwarded prop is undefined", () => {

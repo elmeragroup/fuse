@@ -4,6 +4,7 @@ import { page, userEvent } from "vitest/browser";
 import "../../../dist/styles.css";
 import { withLocale } from "../../../test/locale-matrix";
 import { renderThemed, roleNamed } from "../../../test/themed-browser-render";
+import { expectVisuallyHidden } from "../../../test/visually-hidden";
 import { Dialog } from "../dialog";
 import { ConfirmButton } from "./confirm-button";
 
@@ -226,7 +227,7 @@ describe("ConfirmButton", () => {
     expect(armed.getAttribute("aria-label")).toBe(announced);
     expect(armed.textContent).toContain("Confirm");
     const live = liveRegion(armed);
-    expect(live.classList.contains("sr-only")).toBe(true);
+    expectVisuallyHidden(live, "announcement");
     expect(live.getAttribute("aria-live")).toBe("polite");
     expect(live.textContent).toBe(announced);
 

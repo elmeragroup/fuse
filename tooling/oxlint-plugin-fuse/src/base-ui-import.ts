@@ -1,5 +1,7 @@
 import type { ESTree } from "@oxlint/plugins";
 
+import { moduleExportName } from "./ast-names.ts";
+
 /** The local names a module binds to Base UI's exports, from the package root or any subpath. */
 export type BaseUiBindings = {
   /** Each named value import's local name, mapped to the export it names (`D` → `Dialog`). */
@@ -35,9 +37,7 @@ export function noteBaseUiImport(
     if (specifier.type === "ImportNamespaceSpecifier") {
       bindings.namespaces.add(specifier.local.name);
     } else if (specifier.type === "ImportSpecifier" && !(values && specifier.importKind === "type")) {
-      const imported =
-        specifier.imported.type === "Literal" ? specifier.imported.value : specifier.imported.name;
-      bindings.named.set(specifier.local.name, imported);
+      bindings.named.set(specifier.local.name, moduleExportName(specifier.imported));
     }
   }
 }

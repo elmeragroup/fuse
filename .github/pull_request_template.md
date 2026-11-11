@@ -20,6 +20,11 @@ for a separate PR. See CONTRIBUTING.md#one-problem. -->
 <!-- How this fixes the problem. If it touches several packages or apps, say why the same fix
 needs each of them. -->
 
+## Test value
+
+<!-- The answers to the authoring gate in .agents/skills/test-audit/SKILL.md#authoring-gate:
+every question for each added or changed test, or the gate's reason for adding none. -->
+
 ## Verification
 
 <!-- The focused tests and manual checks you ran and what you saw. State what you could not

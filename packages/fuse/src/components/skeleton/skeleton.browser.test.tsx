@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
-import { cssVarColor, renderThemed } from "../../../test/themed-browser-render";
+import { cssVarColor, px, renderThemed } from "../../../test/themed-browser-render";
 import { Skeleton } from "./skeleton";
 
 function skeletonElement(): HTMLElement {
@@ -33,7 +33,10 @@ describe("Skeleton", () => {
       />
     );
     const skeleton = skeletonElement();
-    expect(skeleton.getBoundingClientRect().height).toBe(16);
+    // The consumer's h-4 is 1rem.
+    expect(skeleton.getBoundingClientRect().height).toBe(
+      px(getComputedStyle(document.documentElement).fontSize)
+    );
     expect(skeleton.getBoundingClientRect().width).toBeGreaterThan(0);
     expect(getComputedStyle(skeleton).maxWidth).toBe("96px");
     expect(getComputedStyle(skeleton).backgroundColor).toBe(cssVarColor(skeleton, "--primary"));

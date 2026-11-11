@@ -1,7 +1,7 @@
 import type { ESTree } from "@oxlint/plugins";
 import type { PropertyKey as ParsedPropertyKey } from "oxc-parser";
 
-import { stringLiteral } from "./static-text.ts";
+import { constantString } from "./static-text.ts";
 
 /** A node that may spell a name: an expression, a type name, or a JSX tag or attribute name. */
 type NameNode =
@@ -43,11 +43,12 @@ export function nameChain(node: NameNode): string[] | undefined {
 }
 
 /**
- * A property key's name: `isDisabled` for `isDisabled: …`, `data-slot` for `"data-slot": …` or
- * `["data-slot"]: …`. A computed identifier such as `[key]` names nothing.
+ * A property or member key's static name: `isDisabled` for `isDisabled: …` or `a.isDisabled`,
+ * `data-slot` for `"data-slot": …`, `["data-slot"]: …` or `` [`data-slot`]: … ``, and `0` for
+ * `0: …` or `a[0]`. A computed identifier such as `[key]` names nothing.
  *
- * @param property - A property from oxlint's AST or oxc-parser's.
- * @returns The key's name, or `undefined`.
+ * @param property - A property from oxlint's AST or oxc-parser's, or a member read's key.
+ * @returns The key's name, or `undefined` for one only a run could know.
  */
 export function propertyKeyName(property: {
   readonly key: ESTree.PropertyKey | ParsedPropertyKey;
@@ -55,5 +56,17 @@ export function propertyKeyName(property: {
 }): string | undefined {
   const key = property.key;
   if (key.type === "Identifier") return property.computed ? undefined : key.name;
-  return stringLiteral(key);
+  // oxlint-disable-next-line anti-slop/no-runtime-typeof -- ESTree tags every literal kind `Literal`; the value's type is the only tag a numeric key has
+  if (key.type === "Literal" && typeof key.value === "number") return String(key.value);
+  return constantString(key);
+}
+
+/**
+ * The name an import or export specifier spells: `a` for `{ a }`, `"a-b"` for `{ "a-b" as c }`.
+ *
+ * @param name - A specifier's imported, local or exported name.
+ * @returns The name as written.
+ */
+export function moduleExportName(name: ESTree.ModuleExportName): string {
+  return name.type === "Literal" ? name.value : name.name;
 }

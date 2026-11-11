@@ -1,3 +1,4 @@
+/* oxlint-disable fuse/no-source-reading-tests -- the plop generator's output files are the behavior under test; every read is of a scratch copy the generator wrote or the fixture it starts from */
 import { execFileSync, spawnSync } from "node:child_process";
 import {
   cpSync,

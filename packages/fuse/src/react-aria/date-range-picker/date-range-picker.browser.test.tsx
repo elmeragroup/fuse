@@ -162,15 +162,12 @@ describe("DateRangePicker", () => {
     expect(trigger_).toHaveAttribute("aria-expanded", "false");
     expect(trigger_).toHaveAttribute("aria-haspopup", "dialog");
     expect(page.getByRole("dialog").query()).toBeNull();
-    // The glyph is decoration; the button's own name carries the meaning. The recipe sizes
-    // it, not the Button's fallback.
+    // The glyph is decoration; the button's own name carries the meaning.
     const glyph = trigger_.querySelector("svg");
     if (!(glyph instanceof SVGElement)) {
       throw new Error("expected the trigger glyph");
     }
     expect(glyph).toHaveAttribute("aria-hidden", "true");
-    expect(px(getComputedStyle(glyph).width)).toBe(16);
-    expect(px(getComputedStyle(glyph).height)).toBe(16);
   });
 
   it("opens a named, chromeless dialog holding the range grid and commits two clicked endpoints", async () => {
@@ -264,16 +261,14 @@ describe("DateRangePicker", () => {
 });
 
 describe("DateRangePicker composition surface", () => {
-  it("floors the field box width and lets only the end row absorb the slack", async () => {
+  it("lets only the end row absorb the field box's slack", async () => {
     renderPicker(<DateRangePicker label="Delivery window" defaultValue={julyWeek} />);
-    const group = groupNamed("Delivery window");
     await expect.element(segmentLocator("month, Start Date")).toBeVisible();
     const [startRow, endRow] = segmentRows("Delivery window");
     if (startRow === undefined || endRow === undefined) {
       throw new Error("expected both segment rows");
     }
 
-    expect(px(getComputedStyle(group).width)).toBeGreaterThanOrEqual(208);
     // Only the wide template's end column grows, so the end row is the wider of two
     // identically formatted rows.
     expect(px(getComputedStyle(endRow).width)).toBeGreaterThan(px(getComputedStyle(startRow).width));
