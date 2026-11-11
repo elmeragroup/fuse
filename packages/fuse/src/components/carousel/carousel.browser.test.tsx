@@ -6,7 +6,7 @@ import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import { nextFrames, pollFrames, useFakeTimeouts } from "../../../test/animation-frames";
-import { carouselSlides } from "../../../test/carousel-fixtures";
+import { carouselSlides, unsteadyReadings } from "../../../test/carousel-fixtures";
 import {
   carouselIndicators,
   carouselViewport,
@@ -709,5 +709,105 @@ describe("paging", () => {
         [5, "indicator"],
       ]);
     });
+  });
+
+  describe("Carousel whose pages shrink under a finger that took over from a waiting press", () => {
+    /** A finger held on the viewport until it lifts. */
+    type HeldFinger = { readonly lift: () => void };
+
+    /** A finger held on the viewport, put down and lifted as the browser dispatches a touch's pointer. */
+    function touchDown(viewport: HTMLElement): HeldFinger {
+      const touch = (type: string) =>
+        new PointerEvent(type, { pointerId: 1, pointerType: "touch", bubbles: true, composed: true });
+      viewport.dispatchEvent(touch("pointerdown"));
+      return { lift: () => document.dispatchEvent(touch("pointerup")) };
+    }
+
+    /** Jump the viewport to `left`, and wait until its scroll event has reached the carousel. */
+    async function scrollInstantly(viewport: HTMLElement, left: number): Promise<void> {
+      const scrolled = new Promise<void>((resolve) => {
+        viewport.addEventListener("scroll", () => resolve(), { once: true });
+      });
+      viewport.scrollTo({ left, behavior: "instant" });
+      await scrolled;
+    }
+
+    it.each([
+      ["an uncontrolled Root", false],
+      ["a parent that accepts every change", true],
+    ] as const)(
+      "stays where the finger left it, and reports that page once released, under %s",
+      async (_, controlled) => {
+        const changes: [number, CarouselIndexChangeReason][] = [];
+        const unsteady = unsteadyReadings();
+        const { ancestor, slide: unsteadySlide } = unsteady;
+        function Shrinking(): ReactElement {
+          const [count, setCount] = useState(4);
+          const [index, setIndex] = useState(0);
+          return withLocale(
+            "en-US",
+            <>
+              <button type="button" onClick={() => setCount(2)}>
+                Remove two slides
+              </button>
+              <div ref={ancestor}>
+                <Carousel.Root
+                  aria-label="Offers"
+                  style={{ width: LENGTH }}
+                  index={controlled ? index : undefined}
+                  onIndexChange={(next, { reason }) => {
+                    changes.push([next, reason]);
+                    setIndex(next);
+                  }}>
+                  <Carousel.Viewport>
+                    {Array.from({ length: count }, (__, slide) => (
+                      <Carousel.Slide key={slide} ref={unsteadySlide}>
+                        <div style={{ height: LENGTH }}>Slide body {slide + 1}</div>
+                      </Carousel.Slide>
+                    ))}
+                  </Carousel.Viewport>
+                  <Carousel.Controls>
+                    <Carousel.Indicators />
+                  </Carousel.Controls>
+                </Carousel.Root>
+              </div>
+            </>
+          );
+        }
+        renderThemed(<Shrinking />);
+        const viewport = carouselViewport(roleNamed("region", "Offers"));
+        await pollFrames(() => carouselIndicators().length, 4);
+
+        // Page 4 is pressed while no reading holds still, so its scroll to 600px waits for one. A
+        // finger then scrolls to page 2 and back to page 1, which takes over from the press. Every
+        // unsteady reading retries on the next frame and the engine accepts one only after many in
+        // a row, so the steps wait on each scroll's own event, never on time: however loaded the
+        // runner, no reading is accepted before the slides go.
+        unsteady.start();
+        roleNamed("button", "Slide 4 of 4").click();
+        const finger = touchDown(viewport);
+        await scrollInstantly(viewport, LENGTH);
+        await scrollInstantly(viewport, 0);
+
+        // Still held, the last two slides go while the readings come to rest: two pages, at 0 and
+        // 200px, and the finger left the viewport on the first.
+        unsteady.stop();
+        roleNamed("button", "Remove two slides").click();
+        await pollFrames(() => carouselIndicators().length, 2);
+
+        // Released, the scroll's end reports page 1, where the finger left it, and nothing moved.
+        finger.lift();
+        await pollFrames(() => {
+          vi.runOnlyPendingTimers();
+          return currentIndicator();
+        }, 0);
+        await afterPendingTimers();
+        expect(Math.round(viewport.scrollLeft)).toBe(0);
+        expect(changes).toEqual([
+          [3, "indicator"],
+          [0, "scroll"],
+        ]);
+      }
+    );
   });
 });

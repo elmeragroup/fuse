@@ -56,3 +56,60 @@ export function serverRendered(tree: ReactElement): ServerRendered {
     recoverableErrors,
   };
 }
+
+/** An ancestor scale that moves at each slide read while started. */
+type UnsteadyReadings = {
+  /** Put on the carousel's ancestor, which starts at half scale. */
+  readonly ancestor: (element: HTMLElement | null) => void;
+  /** Put on each slide whose box reads should move the ancestor's scale. */
+  readonly slide: (element: HTMLElement | null) => void;
+  /** Move the scale at every slide read from now. */
+  readonly start: () => void;
+  /** Leave the scale where it got to, so readings hold still again. */
+  readonly stop: () => void;
+};
+
+/**
+ * Readings of a carousel's boxes that never hold still while started. WebKit samples a running
+ * transform afresh at each layout read, so a measurement taken during an ancestor's scale animation
+ * finds the viewport's box at one scale and the slides' at others. Chromium does not, so this
+ * stands in for it: once started, the ancestor's scale moves up a hundredth each time a slide's
+ * box is read, and rests where it got to once stopped.
+ *
+ * @returns The refs to attach and the switch that starts and stops the scale moving.
+ */
+export function unsteadyReadings(): UnsteadyReadings {
+  let host: HTMLElement | null = null;
+  let moving = false;
+  let read = 0;
+  return {
+    ancestor: (element) => {
+      host = element;
+      if (element !== null) {
+        element.style.transform = "scale(0.5)";
+        element.style.transformOrigin = "0 0";
+      }
+    },
+    slide: (element) => {
+      if (element === null) {
+        return;
+      }
+      const readRects = element.getClientRects.bind(element);
+      element.getClientRects = () => {
+        if (moving && host !== null) {
+          // From half to 0.69 and round again, so no two reads of the viewport around the slides'
+          // ever agree.
+          read += 1;
+          host.style.transform = `scale(${0.5 + (read % 20) / 100})`;
+        }
+        return readRects();
+      };
+    },
+    start: () => {
+      moving = true;
+    },
+    stop: () => {
+      moving = false;
+    },
+  };
+}
