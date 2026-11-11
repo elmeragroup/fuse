@@ -123,7 +123,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Forwards `invalid` to `Field.Root` and `aria-invalid` to the group.",
+          "description": "Forwards `invalid` to `Field.Root`, and `aria-invalid` to the field box for its invalid look.",
           "required": false
         },
         {

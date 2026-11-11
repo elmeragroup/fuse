@@ -29,7 +29,7 @@ export type NumberFieldProps = {
   isPending?: boolean;
   /** Shows a check in the label row and wins the crossfade over `isPending`. */
   isSuccess?: boolean;
-  /** Forwards `invalid` to `Field.Root` and `aria-invalid` to the group. */
+  /** Forwards `invalid` to `Field.Root`, and `aria-invalid` to the field box for its invalid look. */
   isInvalid?: boolean;
   /** Forwards `disabled` to `Field.Root` and `NumberField.Root`; the group uses `bg-muted`. */
   isDisabled?: boolean;
@@ -167,7 +167,14 @@ export function NumberField({
         disabled={isDisabled}
         readOnly={isReadOnly}
         required={isRequired}>
+        {/* The field box, with no group role. Base UI takes the steppers out of the tab order
+            (tabIndex -1, as React Aria's useNumberField does), so the spinbutton is the field's
+            one tab stop and already carries the field's name; a group named after the field
+            would announce that name twice, and an unnamed one adds nothing (WAI-ARIA APG
+            spinbutton pattern: the steppers are optional pointer affordances). `role` overrides
+            Base UI's default `role="group"`; the element keeps its state attributes and styling. */}
         <NumberFieldPrimitive.Group
+          role={undefined}
           aria-invalid={isInvalid || undefined}
           data-size={size}
           className={slots.group()}>

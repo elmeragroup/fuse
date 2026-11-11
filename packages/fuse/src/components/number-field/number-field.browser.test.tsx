@@ -74,6 +74,19 @@ describe("NumberField", () => {
     ).toBe(true);
   });
 
+  it("keeps the steppers out of the tab order and renders no group role around the one tab stop", async () => {
+    renderField(
+      <>
+        <NumberField label="Quantity" defaultValue={2} />
+        <button type="button">After</button>
+      </>
+    );
+    textboxNamed("Quantity").focus();
+    await userEvent.keyboard("{Tab}");
+    expect(document.activeElement).toBe(roleNamed("button", "After"));
+    expect(page.getByRole("group").query()).toBeNull();
+  });
+
   it("keeps the Field label when a wrapper forwards id and aria-label as undefined", () => {
     renderField(<NumberField label="Amount" id={undefined} aria-label={undefined} />);
     expect(textboxNamed("Amount").getAttribute("aria-roledescription")).toBe("Number field");
