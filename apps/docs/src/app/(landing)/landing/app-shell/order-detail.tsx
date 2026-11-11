@@ -20,6 +20,7 @@ import {
   WarningCircle,
   X,
 } from "@elmeragroup/fuse/icons";
+import { Kbd, KbdGroup } from "@elmeragroup/fuse/kbd";
 import { ListDetail } from "@elmeragroup/fuse/list-detail";
 import { ScrollArea } from "@elmeragroup/fuse/scroll-area";
 import { Textarea } from "@elmeragroup/fuse/textarea";
@@ -44,7 +45,6 @@ import {
 } from "./dashboard-orders";
 import type { ElhubCheck, Order } from "./dashboard-orders";
 import { retryApplies } from "./dashboard-state";
-import { Kbd } from "./kbd";
 import { OrderStatusIcon } from "./order-status-icon";
 
 const orderDetail = tv({
@@ -387,7 +387,10 @@ function Activity({ order }: { order: Order }): ReactElement {
           }}
         />
         <div className={styles.composerActions()}>
-          <Kbd keys={["⌘", "↵"]} />
+          <KbdGroup aria-hidden>
+            <Kbd>⌘</Kbd>
+            <Kbd>↵</Kbd>
+          </KbdGroup>
           <Button
             type="submit"
             size="sm"

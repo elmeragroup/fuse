@@ -8,6 +8,7 @@ import { tv } from "tailwind-variants";
 import { Avatar } from "@elmeragroup/fuse/avatar";
 import { DropdownMenu } from "@elmeragroup/fuse/dropdown-menu";
 import { CaretUpDown, MagnifyingGlass, Plus } from "@elmeragroup/fuse/icons";
+import { Kbd } from "@elmeragroup/fuse/kbd";
 import { Sidebar } from "@elmeragroup/fuse/sidebar";
 import { BRANDS } from "@elmeragroup/fuse/theme";
 
@@ -20,7 +21,6 @@ import { SIGNED_IN } from "./dashboard-orders";
 import { isQueue, openCount } from "./dashboard-state";
 import { PRIMARY_VIEWS, VIEW_GROUPS } from "./dashboard-views";
 import type { ViewEntry } from "./dashboard-views";
-import { Kbd } from "./kbd";
 
 const dashboardSidebar = tv({
   slots: {
@@ -95,12 +95,15 @@ function WorkspaceSwitcher(): ReactElement {
   );
 }
 
-/** A collapsed-rail tooltip: the entry's name and its shortcut. */
-function TooltipKeys({ label, keys }: { label: string; keys: readonly string[] }): ReactElement {
+/**
+ * A collapsed-rail tooltip: the entry's name and its shortcut. The cap is hidden from assistive
+ * technology because the row declares the shortcut in `aria-keyshortcuts`.
+ */
+function TooltipKeys({ label, shortcut }: { label: string; shortcut: string }): ReactElement {
   return (
     <span className={styles.tooltip()}>
       {label}
-      <Kbd keys={keys} />
+      <Kbd aria-hidden>{shortcut}</Kbd>
     </span>
   );
 }
@@ -112,25 +115,25 @@ function QuickActions(): ReactElement {
     <Sidebar.Menu>
       <Sidebar.MenuItem>
         <Sidebar.MenuButton
-          tooltip={{ children: <TooltipKeys label="Search" keys={["/"]} /> }}
+          tooltip={{ children: <TooltipKeys label="Search" shortcut="/" /> }}
           aria-keyshortcuts="/"
           onClick={openPalette}>
           <MagnifyingGlass />
           <span>Search</span>
           <span className={styles.hint()}>
-            <Kbd keys={["/"]} />
+            <Kbd aria-hidden>/</Kbd>
           </span>
         </Sidebar.MenuButton>
       </Sidebar.MenuItem>
       <Sidebar.MenuItem>
         <Sidebar.MenuButton
-          tooltip={{ children: <TooltipKeys label="New order" keys={["C"]} /> }}
+          tooltip={{ children: <TooltipKeys label="New order" shortcut="C" /> }}
           aria-keyshortcuts="C"
           onClick={openNewOrder}>
           <Plus />
           <span>New order</span>
           <span className={styles.hint()}>
-            <Kbd keys={["C"]} />
+            <Kbd aria-hidden>C</Kbd>
           </span>
         </Sidebar.MenuButton>
       </Sidebar.MenuItem>
