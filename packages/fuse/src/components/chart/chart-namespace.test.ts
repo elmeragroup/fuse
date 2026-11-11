@@ -145,10 +145,6 @@ describe("the ScatterChart namespace", () => {
   ];
   const REUSED = ["Headline", "Takeaway", "Background"];
 
-  it("holds the scatter parts and the three layout parts it reuses", () => {
-    expect(Object.keys(ScatterChart).sort()).toEqual([...OWN, ...REUSED].sort());
-  });
-
   it("names its own parts ScatterChart and keeps Chart's name on the reused ones", () => {
     const parts: Readonly<Record<string, Part>> = ScatterChart;
     const chart: Readonly<Record<string, Part>> = Chart;

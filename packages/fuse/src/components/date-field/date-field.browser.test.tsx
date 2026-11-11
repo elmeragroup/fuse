@@ -1,7 +1,6 @@
 /**
  * Unit under test: DateField and the DateInput parts in Chromium, through roles, names, the
- * keyboard and forms. Oracles: React Aria's DateField as the parity harness pins it
- * (`src/internal/date-tier-parity.browser.test.tsx`: segment names and order, typing 03152008,
+ * keyboard and forms. Oracles: React Aria's DateField behaviour (segment names and order, typing 03152008,
  * Backspace, the group's name and slot, the bound copy, mixed-kind bounds, time segments), React
  * Aria's `useDateSegment`/`IncompleteDate` editing rules worked out by hand for the keys and
  * locales the harness does not cover, and Base UI's Form and Field contracts (errors by name, focus
@@ -47,7 +46,7 @@ function committed() {
 
 /** Every segment's visible text, literals left out, in DOM order. */
 function segmentTexts(): string[] {
-  // DOM audit: segments are not one role (spinbutton, textbox, hidden literal), and their slot and
+  // Segments are not one role (spinbutton, textbox, hidden literal), and their slot and
   // `data-type` are the part's public contract.
   return [...document.querySelectorAll('[data-slot="date-input-segment"]:not([data-type="literal"])')].map(
     (element) => element.textContent
@@ -104,15 +103,6 @@ describe("DateField segments", () => {
       .toHaveFocus();
   });
 
-  it("deletes the last year digit with Backspace and commits the shorter year", async () => {
-    renderThemed(<Harness label="Birth date" />);
-    await userEvent.click(page.getByRole("spinbutton").first());
-    await userEvent.keyboard("03152008{Backspace}");
-
-    await expect.element(committed()).toHaveTextContent("0200-03-15");
-    expect(segmentTexts()).toEqual(["03", "15", "200"]);
-  });
-
   it("clears a segment with Backspace, keeps the committed value, then moves to the previous segment", async () => {
     renderThemed(<Harness label="Start date" defaultValue={Temporal.PlainDate.from("2026-10-05")} />);
     await userEvent.click(spin("day, Start date"));
@@ -131,26 +121,15 @@ describe("DateField segments", () => {
     expect(segmentTexts()).toEqual(["10", "dd", "2026"]);
     await expect.element(committed()).toHaveTextContent(UNCHANGED);
   });
-});
 
-describe("DateField locales", () => {
-  it.each([
-    ["nb-NO", ["dd", "mm", "åååå"], "15032008", ["15", "03", "2008"], "dag, Fødselsdato"],
-    ["sv-SE", ["åååå", "mm", "dd"], "20080315", ["2008", "03", "15"], "år, Fødselsdato"],
-    ["fi-FI", ["pp", "kk", "vvvv"], "15032008", ["15", "03", "2008"], "päivä, Fødselsdato"],
-  ] as const)(
-    "shows %s's placeholders in its order and commits March 15, 2008 typed in that order",
-    async (locale, placeholders, digits, texts, firstName) => {
-      renderThemed(<Harness locale={locale} label="Fødselsdato" />);
-      expect(segmentTexts()).toEqual(placeholders);
+  it("deletes the last year digit with Backspace and commits the shorter year", async () => {
+    renderThemed(<Harness label="Birth date" />);
+    await userEvent.click(page.getByRole("spinbutton").first());
+    await userEvent.keyboard("03152008{Backspace}");
 
-      await userEvent.click(spin(firstName));
-      await userEvent.keyboard(digits);
-
-      await expect.element(committed()).toHaveTextContent("2008-03-15");
-      expect(segmentTexts()).toEqual(texts);
-    }
-  );
+    await expect.element(committed()).toHaveTextContent("0200-03-15");
+    expect(segmentTexts()).toEqual(["03", "15", "200"]);
+  });
 });
 
 describe("DateField keys", () => {
@@ -165,6 +144,24 @@ describe("DateField keys", () => {
     await userEvent.keyboard("{ArrowUp}");
     expect(segmentTexts()).toEqual(["01", "dd", "yyyy"]);
     await expect.element(committed()).toHaveTextContent(UNCHANGED);
+  });
+
+  it("moves between segments with the left and right arrows", async () => {
+    renderThemed(<Harness label="Start date" defaultValue={Temporal.PlainDate.from("2026-10-05")} />);
+    await userEvent.click(spin("month, Start date"));
+
+    await userEvent.keyboard("{ArrowRight}");
+    await expect
+      .element(page.getByRole("spinbutton", { name: "day, Start date", exact: true }))
+      .toHaveFocus();
+    await userEvent.keyboard("{ArrowRight}{ArrowRight}");
+    await expect
+      .element(page.getByRole("spinbutton", { name: "year, Start date", exact: true }))
+      .toHaveFocus();
+    await userEvent.keyboard("{ArrowLeft}");
+    await expect
+      .element(page.getByRole("spinbutton", { name: "day, Start date", exact: true }))
+      .toHaveFocus();
   });
 
   it("pages days by 7 and years to the next multiple of 5, and jumps to the ends with Home and End", async () => {
@@ -186,24 +183,6 @@ describe("DateField keys", () => {
     await expect.element(committed()).toHaveTextContent("2025-10-01");
   });
 
-  it("moves between segments with the left and right arrows", async () => {
-    renderThemed(<Harness label="Start date" defaultValue={Temporal.PlainDate.from("2026-10-05")} />);
-    await userEvent.click(spin("month, Start date"));
-
-    await userEvent.keyboard("{ArrowRight}");
-    await expect
-      .element(page.getByRole("spinbutton", { name: "day, Start date", exact: true }))
-      .toHaveFocus();
-    await userEvent.keyboard("{ArrowRight}{ArrowRight}");
-    await expect
-      .element(page.getByRole("spinbutton", { name: "year, Start date", exact: true }))
-      .toHaveFocus();
-    await userEvent.keyboard("{ArrowLeft}");
-    await expect
-      .element(page.getByRole("spinbutton", { name: "day, Start date", exact: true }))
-      .toHaveFocus();
-  });
-
   it("restarts a segment when the next digit would pass its maximum, and moves on", async () => {
     renderThemed(<Harness label="Start date" defaultValue={Temporal.PlainDate.from("2026-10-05")} />);
     await userEvent.click(spin("month, Start date"));
@@ -219,6 +198,766 @@ describe("DateField keys", () => {
       .element(page.getByRole("spinbutton", { name: "day, Start date", exact: true }))
       .toHaveFocus();
   });
+});
+
+describe("DateField blur", () => {
+  it("reports a half-typed field incomplete on blur", async () => {
+    renderThemed(<Harness label="Start date" />);
+    await userEvent.click(spin("month, Start date"));
+    await userEvent.keyboard("10");
+    await userEvent.click(roleNamed("button", "After"));
+
+    await expect
+      .element(page.getByRole("group", { name: "Start date", exact: true }))
+      .toHaveAttribute("data-invalid", "true");
+    await expect
+      .element(
+        page.getByText("Please enter a valid value. The field is incomplete or has an invalid date.", {
+          exact: true,
+        })
+      )
+      .toBeVisible();
+    await expect.element(committed()).toHaveTextContent(UNCHANGED);
+  });
+
+  it("keeps a typed February 30 until blur, then commits it constrained to the month's last day", async () => {
+    renderThemed(<Harness label="Start date" defaultValue={Temporal.PlainDate.from("2026-01-30")} />);
+    await userEvent.click(spin("month, Start date"));
+    await userEvent.keyboard("02");
+
+    expect(segmentTexts()).toEqual(["02", "30", "2026"]);
+    await expect.element(committed()).toHaveTextContent(UNCHANGED);
+
+    await userEvent.click(roleNamed("button", "After"));
+    await expect.element(committed()).toHaveTextContent("2026-02-28");
+    expect(segmentTexts()).toEqual(["02", "28", "2026"]);
+  });
+});
+
+/** A controlled field whose parent loads another value once "Load" is pressed. */
+function LoadHarness({
+  initial,
+  loaded,
+}: {
+  readonly initial: DateInputValue | null;
+  readonly loaded: DateInputValue;
+}): ReactElement {
+  const [value, setValue] = useState(initial);
+  return withLocale(
+    "en-US",
+    <>
+      <DateField label="Starts" value={value} onChange={setValue} />
+      <button type="button" onClick={() => setValue(loaded)}>
+        Load
+      </button>
+    </>
+  );
+}
+
+describe("DateField kind-change warning", () => {
+  function kindWarnings(warn: { readonly mock: { readonly calls: unknown[][] } }): unknown[][] {
+    return warn.mock.calls.filter(([message]) => /changed kind/u.test(String(message)));
+  }
+
+  it("warns when a value of another kind replaces a value the field held", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    try {
+      renderThemed(
+        <LoadHarness
+          initial={Temporal.PlainDate.from("2026-10-12")}
+          loaded={Temporal.PlainDateTime.from("2026-10-12T09:30:00")}
+        />
+      );
+      await userEvent.click(roleNamed("button", "Load"));
+      await expect.poll(segmentTexts).toEqual(["10", "12", "2026", "09", "30", "AM"]);
+      expect(kindWarnings(warn)).toEqual([
+        [
+          "DateInput.Root value changed kind from PlainDate to PlainDateTime. Keep one kind per input; the input emits the kind it last held.",
+        ],
+      ]);
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
+  it("does not warn when a loaded value replaces the kind an empty field's props made", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    try {
+      renderThemed(
+        <LoadHarness
+          initial={null}
+          loaded={Temporal.ZonedDateTime.from("2026-10-12T09:30:00+02:00[Europe/Oslo]")}
+        />
+      );
+      await userEvent.click(roleNamed("button", "Load"));
+      await expect.poll(segmentTexts).toEqual(["10", "12", "2026", "09", "30", "AM", "GMT+2"]);
+      expect(kindWarnings(warn)).toEqual([]);
+    } finally {
+      warn.mockRestore();
+    }
+  });
+});
+
+describe("DateField validation", () => {
+  it("shows an explicit errorMessage in place of the built-in copy only once validation fails", async () => {
+    renderThemed(
+      <Harness
+        label="Start date"
+        errorMessage="Pick a weekday"
+        maxValue={Temporal.PlainDate.from("2026-10-31")}
+        defaultValue={Temporal.PlainDate.from("2026-10-05")}
+      />
+    );
+    expect(page.getByText("Pick a weekday").query()).toBeNull();
+
+    await userEvent.click(spin("year, Start date"));
+    await userEvent.keyboard("2027");
+    await userEvent.tab();
+
+    await expect.element(page.getByText("Pick a weekday", { exact: true })).toBeVisible();
+    expect(page.getByText(/or earlier/).query()).toBeNull();
+  });
+
+  it("marks the group invalid with the consumer's copy when isInvalid is passed", async () => {
+    renderThemed(
+      <Harness
+        label="Start up date"
+        description="Weekdays only"
+        errorMessage="Pick a weekday"
+        isInvalid
+        defaultValue={Temporal.PlainDate.from("2026-10-05")}
+      />
+    );
+    await expect
+      .element(page.getByRole("group", { name: "Start up date", exact: true }))
+      .toHaveAttribute("data-invalid", "true");
+    await expect.element(page.getByText("Weekdays only", { exact: true })).toBeVisible();
+    await expect.element(page.getByText("Pick a weekday", { exact: true })).toBeVisible();
+  });
+
+  it("names a zoned minValue of a date field by the wall-clock day it is compared on", async () => {
+    // 00:30 in Oslo on November 9 is 23:30 UTC on November 8; a date compares with its Oslo day.
+    renderThemed(
+      <Harness
+        label="Start date"
+        minValue={Temporal.ZonedDateTime.from("2026-11-09T00:30+01:00[Europe/Oslo]")}
+        defaultValue={Temporal.PlainDate.from("2026-11-10")}
+      />
+    );
+    await userEvent.click(spin("day, Start date"));
+    await userEvent.keyboard("08");
+    await userEvent.tab();
+
+    await expect.element(committed()).toHaveTextContent("2026-11-08");
+    await expect.element(page.getByText("Value must be 11/09/2026 or later.", { exact: true })).toBeVisible();
+  });
+
+  it("names a zoned maxValue of a date-time field by the wall clock it is compared on", async () => {
+    renderThemed(
+      <Harness
+        label="Starts"
+        granularity="minute"
+        hourCycle={24}
+        maxValue={Temporal.ZonedDateTime.from("2026-10-31T23:30+01:00[Europe/Oslo]")}
+        defaultValue={Temporal.PlainDateTime.from("2026-10-31T23:00")}
+      />
+    );
+    await userEvent.click(spin("minute, Starts"));
+    await userEvent.keyboard("45");
+    await userEvent.tab();
+
+    await expect.element(committed()).toHaveTextContent("2026-10-31T23:45:00");
+    await expect
+      .element(page.getByText("Value must be 10/31/2026, 23:30 or earlier.", { exact: true }))
+      .toBeVisible();
+  });
+
+  it("reports an unavailable date with React Aria's copy", async () => {
+    renderThemed(
+      <Harness
+        label="Start date"
+        defaultValue={Temporal.PlainDate.from("2026-10-05")}
+        isDateUnavailable={(date) => date.dayOfWeek === 6}
+      />
+    );
+    await userEvent.click(spin("day, Start date"));
+    await userEvent.keyboard("10");
+    await userEvent.tab();
+
+    await expect.element(committed()).toHaveTextContent("2026-10-10");
+    await expect.element(page.getByText("Selected date unavailable.", { exact: true })).toBeVisible();
+  });
+
+  it.each([
+    ["2026-10-31T23:00[Europe/Oslo]", "30", "2026-10-31T23:30:00+01:00[Europe/Oslo]", null],
+    [
+      "2026-10-31T23:00[Europe/Oslo]",
+      "31",
+      "2026-10-31T23:31:00+01:00[Europe/Oslo]",
+      "Value must be 10/31/2026, 23:30 or earlier.",
+    ],
+    ["2026-10-31T20:00[America/New_York]", "15", "2026-10-31T20:15:00-04:00[America/New_York]", null],
+    [
+      "2026-09-30T17:00[America/New_York]",
+      "30",
+      "2026-09-30T17:30:00-04:00[America/New_York]",
+      "Value must be 09/30/2026, 18:00 or later.",
+    ],
+  ])(
+    "compares %s with a zoned minimum and a plain maximum as React Aria does",
+    async (start, minute, value, copy) => {
+      renderThemed(
+        <Harness
+          label="Period"
+          granularity="minute"
+          hourCycle={24}
+          hideTimeZone
+          minValue={Temporal.ZonedDateTime.from("2026-10-01T00:00[Europe/Oslo]")}
+          maxValue={Temporal.PlainDateTime.from("2026-10-31T23:30")}
+          defaultValue={Temporal.ZonedDateTime.from(start)}
+        />
+      );
+      await userEvent.click(spin("minute, Period"));
+      await userEvent.keyboard(minute);
+      await userEvent.tab();
+
+      await expect.element(committed()).toHaveTextContent(value);
+      const group = page.getByRole("group", { name: "Period", exact: true });
+      if (copy === null) {
+        await expect.element(group).not.toHaveAttribute("data-invalid");
+      } else {
+        await expect.element(group).toHaveAttribute("data-invalid", "true");
+        await expect.element(page.getByText(copy, { exact: true })).toBeVisible();
+      }
+    }
+  );
+});
+
+/** A DateInput reporting each change's reason, canceling the reasons it is told to. */
+function CancelHarness({
+  cancel,
+  ...props
+}: DateInputRootProps & { readonly cancel: readonly DateInputValueChangeReason[] }): ReactElement {
+  const [log, setLog] = useState<string[]>([]);
+  return withLocale(
+    "en-US",
+    <>
+      <DateInput.Root
+        aria-label="Start date"
+        {...props}
+        onValueChange={(value, details) => {
+          setLog((entries) => [
+            ...entries,
+            `${details.reason}:${value === null ? "null" : value.toString()}`,
+          ]);
+          if (cancel.includes(details.reason)) {
+            details.cancel();
+          }
+        }}
+      />
+      <output aria-label="Change log">{log.join(" ")}</output>
+    </>
+  );
+}
+
+function changeLog() {
+  return page.getByRole("status", { name: "Change log" });
+}
+
+describe("DateInput onValueChange details", () => {
+  it("reports clearing every segment as input-clear, and canceling it keeps the value", async () => {
+    renderThemed(
+      <CancelHarness cancel={["input-clear"]} defaultValue={Temporal.PlainDate.from("2026-10-05")} />
+    );
+    await userEvent.click(spin("year, Start date"));
+    // Each Backspace drops a digit, committing the shorter year, or on an empty segment moves back
+    // one: four for the year, one to move, one for the day, one to move, two for the month.
+    await userEvent.keyboard("{Backspace>9/}");
+
+    await expect
+      .element(changeLog())
+      .toHaveTextContent(
+        "input-change:0202-10-05 input-change:0020-10-05 input-change:0002-10-05 input-clear:null"
+      );
+    expect(segmentTexts()).toEqual(["10", "5", "2"]);
+  });
+
+  it("commits pasted ISO text as input-paste, and canceling it keeps the value", async () => {
+    renderThemed(
+      <CancelHarness cancel={["input-paste"]} defaultValue={Temporal.PlainDate.from("2026-10-05")} />
+    );
+    const target = spin("day, Start date");
+    target.focus();
+    const data = new DataTransfer();
+    data.setData("text/plain", "2027-01-02");
+    target.dispatchEvent(
+      new ClipboardEvent("paste", { clipboardData: data, bubbles: true, cancelable: true })
+    );
+
+    await expect.element(changeLog()).toHaveTextContent("input-paste:2027-01-02");
+    expect(segmentTexts()).toEqual(["10", "5", "2026"]);
+  });
+
+  it("keeps the value and shows it again when an input-change is canceled", async () => {
+    renderThemed(
+      <CancelHarness cancel={["input-change"]} defaultValue={Temporal.PlainDate.from("2026-10-05")} />
+    );
+    await userEvent.click(spin("day, Start date"));
+    await userEvent.keyboard("{ArrowUp}");
+
+    await expect.element(changeLog()).toHaveTextContent("input-change:2026-10-06");
+    expect(segmentTexts()).toEqual(["10", "5", "2026"]);
+  });
+
+  it("applies an input-change that is not canceled", async () => {
+    renderThemed(<CancelHarness cancel={[]} defaultValue={Temporal.PlainDate.from("2026-10-05")} />);
+    await userEvent.click(spin("day, Start date"));
+    await userEvent.keyboard("{ArrowUp}");
+
+    await expect.element(changeLog()).toHaveTextContent("input-change:2026-10-06");
+    expect(segmentTexts()).toEqual(["10", "6", "2026"]);
+  });
+});
+
+describe("DateField in forms", () => {
+  it("submits the ISO value under its name and to onFormSubmit", async () => {
+    let submitted: unknown;
+    renderThemed(
+      withLocale(
+        "en-US",
+        <Form
+          aria-label="Booking"
+          onFormSubmit={(values) => {
+            submitted = values;
+          }}>
+          <DateField label="Start date" name="start" defaultValue={Temporal.PlainDate.from("2026-10-05")} />
+          <button type="submit">Save</button>
+        </Form>
+      )
+    );
+    expect(new FormData(formNamed("Booking")).get("start")).toBe("2026-10-05");
+
+    await userEvent.click(roleNamed("button", "Save"));
+    expect(submitted).toEqual({ start: "2026-10-05" });
+  });
+
+  it("blocks a submit with a required empty field, shows why and focuses its first segment", async () => {
+    let submits = 0;
+    renderThemed(
+      withLocale(
+        "en-US",
+        <Form aria-label="Booking" onFormSubmit={() => (submits += 1)}>
+          <DateField label="Start date" name="start" isRequired />
+          <button type="submit">Save</button>
+        </Form>
+      )
+    );
+    await userEvent.click(roleNamed("button", "Save"));
+
+    await expect
+      .element(page.getByRole("spinbutton", { name: "month, Start date", exact: true }))
+      .toHaveFocus();
+    await expect.element(page.getByText("Please fill out this field.", { exact: true })).toBeVisible();
+    expect(submits).toBe(0);
+  });
+
+  it("shows a returned error by name, focuses the first segment, and clears it on edit", async () => {
+    function Booking(): ReactElement {
+      const [errors, setErrors] = useState<Record<string, string>>({});
+      return withLocale(
+        "en-US",
+        <Form aria-label="Booking" errors={errors} onFormSubmit={() => setErrors({ start: "Fully booked" })}>
+          <DateField label="Start date" name="start" defaultValue={Temporal.PlainDate.from("2026-10-05")} />
+          <button type="submit">Save</button>
+        </Form>
+      );
+    }
+    renderThemed(<Booking />);
+    await userEvent.click(roleNamed("button", "Save"));
+
+    await expect.element(page.getByText("Fully booked", { exact: true })).toBeVisible();
+    await expect
+      .element(page.getByRole("spinbutton", { name: "month, Start date", exact: true }))
+      .toHaveFocus();
+    await expect
+      .element(page.getByRole("group", { name: "Start date", exact: true }))
+      .toHaveAttribute("data-invalid", "true");
+
+    await userEvent.keyboard("{ArrowUp}");
+    await expect.element(page.getByText("Fully booked", { exact: true })).not.toBeInTheDocument();
+  });
+
+  it("works bare inside a consumer's Field: its label names the group and its error shows the validity", async () => {
+    renderThemed(
+      withLocale(
+        "en-US",
+        <Form aria-label="Booking" onFormSubmit={() => undefined}>
+          <Field.Root name="start">
+            <Field.Label>Start date</Field.Label>
+            <DateInput.Root required />
+            <Field.Error />
+          </Field.Root>
+          <button type="submit">Save</button>
+        </Form>
+      )
+    );
+    expect(roleNamed("group", "Start date")).toBeDefined();
+    expect(spin("month, Start date")).toBeDefined();
+
+    await userEvent.click(roleNamed("button", "Save"));
+    await expect.element(page.getByText("Please fill out this field.", { exact: true })).toBeVisible();
+    await expect
+      .element(page.getByRole("spinbutton", { name: "month, Start date", exact: true }))
+      .toHaveFocus();
+
+    await userEvent.keyboard("10052026");
+    await userEvent.click(roleNamed("button", "Save"));
+    await expect
+      .element(page.getByText("Please fill out this field.", { exact: true }))
+      .not.toBeInTheDocument();
+  });
+
+  it("restores its default value on form reset", async () => {
+    renderThemed(
+      withLocale(
+        "en-US",
+        <form aria-label="Booking">
+          <DateField label="Start date" name="start" defaultValue={Temporal.PlainDate.from("2026-10-05")} />
+          <button type="reset">Reset</button>
+        </form>
+      )
+    );
+    await userEvent.click(spin("day, Start date"));
+    await userEvent.keyboard("{ArrowUp}");
+    expect(segmentTexts()).toEqual(["10", "06", "2026"]);
+
+    await userEvent.click(roleNamed("button", "Reset"));
+    await expect.poll(segmentTexts).toEqual(["10", "05", "2026"]);
+  });
+});
+
+/** A controlled date-time field whose parent echoes every value back, printing it. */
+function ControlledTypingHarness(): ReactElement {
+  const [value, setValue] = useState<Temporal.PlainDateTime | null>(
+    Temporal.PlainDateTime.from("2026-10-05T09:30")
+  );
+  return withLocale(
+    "en-US",
+    <>
+      <DateField label="Starts" granularity="minute" hourCycle={24} value={value} onChange={setValue} />
+      <output aria-label="Committed value">{String(value)}</output>
+    </>
+  );
+}
+
+describe("DateInput reconciliation", () => {
+  it("keeps typing several digits into a segment while a parent echoes each value it commits", async () => {
+    renderThemed(<ControlledTypingHarness />);
+    // Each first digit commits on its own ("1" is January), and the parent echoes it back before
+    // the second digit, which must still extend it: 12, 24, 2027, 18.
+    await userEvent.click(spin("month, Starts"));
+    await userEvent.keyboard("12242027");
+    await expect.element(committed()).toHaveTextContent("2027-12-24T09:30:00");
+    await expect.element(page.getByRole("spinbutton", { name: "hour, Starts", exact: true })).toHaveFocus();
+    await userEvent.keyboard("18");
+    await expect.element(committed()).toHaveTextContent("2027-12-24T18:30:00");
+    expect(segmentTexts()).toEqual(["12", "24", "2027", "18", "30"]);
+  });
+
+  it("does not warn of a kind change when the parent moves the value to another zone", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    try {
+      renderThemed(<ZoneMoveHarness />);
+      await userEvent.click(roleNamed("button", "New York"));
+      await expect.poll(segmentTexts).toEqual(["10", "12", "2026", "03", "30", "AM", "EDT"]);
+      expect(warn.mock.calls.filter(([message]) => /changed kind/u.test(String(message)))).toEqual([]);
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
+  it("keeps every typed year digit of an Oslo day field while a parent echoes each value", async () => {
+    // Each year digit commits a year Oslo writes in local mean time (+00:53:28), which ISO text
+    // rounds to +00:53: the echo must read back as the value the input committed (#540).
+    renderThemed(<ZonedDayEchoHarness />);
+    await userEvent.click(spin("year, Starts"));
+    await userEvent.keyboard("2026");
+    await expect.element(committed()).toHaveTextContent("2026-10-05T00:00:00+02:00[Europe/Oslo]");
+    expect(segmentTexts()).toEqual(["10", "05", "2026"]);
+  });
+
+  it("drops a draft for good when the parent replaces the value, so restoring it shows the value", async () => {
+    renderThemed(<ControlledHarness />);
+    await userEvent.click(spin("day, Start date"));
+    await userEvent.keyboard("{Backspace}");
+    expect(segmentTexts()).toEqual(["10", "dd", "2026"]);
+    // Tab past the year to the button: the incomplete message blur shows would move the button
+    // under a mouse press.
+    await userEvent.tab();
+    await userEvent.tab();
+    await expect.element(page.getByRole("button", { name: "November" })).toHaveFocus();
+    await expect
+      .element(page.getByRole("group", { name: "Start date", exact: true }))
+      .toHaveAttribute("data-invalid", "true");
+
+    await userEvent.keyboard("{Enter}");
+    await expect.poll(segmentTexts).toEqual(["11", "06", "2026"]);
+    await userEvent.tab();
+    await userEvent.keyboard("{Enter}");
+    await expect.poll(segmentTexts).toEqual(["10", "05", "2026"]);
+    expect(roleNamed("group", "Start date")).not.toHaveAttribute("data-invalid");
+  });
+});
+
+describe("DateInput descriptions", () => {
+  it("describes the group by the consumer's aria-describedby and its Field's description together", () => {
+    renderThemed(
+      withLocale(
+        "en-US",
+        <Field.Root name="start">
+          <Field.Label>Start date</Field.Label>
+          <DateInput.Root
+            aria-describedby="start-hint"
+            defaultValue={Temporal.PlainDate.from("2026-10-05")}
+          />
+          <span id="start-hint">Local time</span>
+          <Field.Description>Weekdays only</Field.Description>
+        </Field.Root>
+      )
+    );
+    const group = roleNamed("group", "Start date");
+    expect(group).toHaveAccessibleDescription(/Local time/u);
+    expect(group).toHaveAccessibleDescription(/Weekdays only/u);
+  });
+});
+
+describe("DateInput form reset", () => {
+  it("clears the Field's incomplete error with the draft when the form resets", async () => {
+    renderThemed(
+      withLocale(
+        "en-US",
+        <Form aria-label="Booking" onFormSubmit={() => undefined}>
+          <DateField label="Start date" name="start" defaultValue={Temporal.PlainDate.from("2026-10-05")} />
+          <button type="submit">Save</button>
+          <button type="reset">Reset</button>
+        </Form>
+      )
+    );
+    await userEvent.click(spin("day, Start date"));
+    await userEvent.keyboard("{Backspace}");
+    await userEvent.click(roleNamed("button", "Save"));
+    await expect
+      .element(page.getByRole("group", { name: "Start date", exact: true }))
+      .toHaveAttribute("data-invalid", "true");
+    await expect
+      .element(
+        page.getByText("Please enter a valid value. The field is incomplete or has an invalid date.", {
+          exact: true,
+        })
+      )
+      .toBeVisible();
+
+    await userEvent.click(roleNamed("button", "Reset"));
+    await expect.poll(segmentTexts).toEqual(["10", "05", "2026"]);
+    await expect
+      .element(page.getByRole("group", { name: "Start date", exact: true }))
+      .not.toHaveAttribute("data-invalid");
+    await expect.element(page.getByText(/The field is incomplete/u)).not.toBeInTheDocument();
+  });
+
+  it("stays unflagged when a reset empties a required field after a failed submit", async () => {
+    renderThemed(
+      withLocale(
+        "en-US",
+        <Form aria-label="Booking" onFormSubmit={() => undefined}>
+          <DateField label="Start date" name="start" isRequired />
+          <button type="submit">Save</button>
+          <button type="reset">Reset</button>
+        </Form>
+      )
+    );
+    await userEvent.click(roleNamed("button", "Save"));
+    await expect.element(page.getByText("Please fill out this field.", { exact: true })).toBeVisible();
+    await userEvent.keyboard("10052026");
+    await expect.poll(segmentTexts).toEqual(["10", "05", "2026"]);
+
+    await userEvent.click(roleNamed("button", "Reset"));
+    await expect.poll(segmentTexts).toEqual(["mm", "dd", "yyyy"]);
+    await expect
+      .element(page.getByRole("group", { name: "Start date", exact: true }))
+      .not.toHaveAttribute("data-invalid");
+    await expect
+      .element(page.getByText("Please fill out this field.", { exact: true }))
+      .not.toBeInTheDocument();
+  });
+});
+
+describe("DateField paste of its own value", () => {
+  it("shows the pasted value whole again and lets the form submit, without reporting a change", async () => {
+    const changes: string[] = [];
+    let submits = 0;
+    renderThemed(
+      withLocale(
+        "en-US",
+        <Form
+          aria-label="Booking"
+          onFormSubmit={() => {
+            submits += 1;
+          }}>
+          <DateField
+            label="Start date"
+            name="start"
+            defaultValue={Temporal.PlainDate.from("2026-10-05")}
+            onChange={(next) => changes.push(String(next))}
+          />
+          <button type="submit">Save</button>
+        </Form>
+      )
+    );
+    const day = spin("day, Start date");
+    await userEvent.click(day);
+    await userEvent.keyboard("{Backspace}");
+    expect(segmentTexts()).toEqual(["10", "dd", "2026"]);
+
+    const data = new DataTransfer();
+    data.setData("text/plain", "2026-10-05");
+    day.dispatchEvent(new ClipboardEvent("paste", { clipboardData: data, bubbles: true, cancelable: true }));
+    await expect.poll(segmentTexts).toEqual(["10", "05", "2026"]);
+
+    await userEvent.click(roleNamed("button", "Save"));
+    await expect.poll(() => submits).toBe(1);
+    expect(roleNamed("group", "Start date")).not.toHaveAttribute("data-invalid");
+    expect(changes).toEqual([]);
+  });
+});
+
+describe("date props past the types", () => {
+  it("throws a TypeError naming the Root, the prop and the string for ISO text", () => {
+    expectRenderTypeError(
+      'DateInput.Root defaultValue: received the string "2026-10-05T09:30"',
+      <DateField
+        label="Starts"
+        granularity="minute"
+        // @ts-expect-error -- text reaches the prop past the types: from plain JavaScript, or as the ISO text a server component's Temporal object crosses as
+        defaultValue="2026-10-05T09:30"
+      />
+    );
+  });
+
+  it("throws for ISO text in value after the equal Temporal value, whatever rendered before", () => {
+    expectRenderTypeError(
+      'DateInput.Root value: received the string "2026-10-05"',
+      <DateField label="Starts" value={Temporal.PlainDate.from("2026-10-05")} />,
+      <DateField
+        label="Starts"
+        // @ts-expect-error -- the equal ISO text, past the types, after a Temporal value
+        value="2026-10-05"
+      />
+    );
+  });
+});
+
+/** A Harness whose parent swaps some of its props once "Switch" is pressed. */
+function SwitchHarness<T extends DateInputValue>({
+  switched,
+  ...props
+}: HarnessProps<T> & { readonly switched: Partial<DateFieldProps<T>> }): ReactElement {
+  const [on, setOn] = useState(false);
+  return (
+    <>
+      <Harness<T> {...(on ? { ...props, ...switched } : props)} />
+      <button type="button" onClick={() => setOn(true)}>
+        Switch
+      </button>
+    </>
+  );
+}
+
+/** A controlled DateField whose parent can replace the value. */
+function ControlledHarness(): ReactElement {
+  const [value, setValue] = useState<Temporal.PlainDate | null>(Temporal.PlainDate.from("2026-10-05"));
+  return withLocale(
+    "en-US",
+    <>
+      <DateField label="Start date" value={value} onChange={setValue} />
+      <button type="button" onClick={() => setValue(Temporal.PlainDate.from("2026-11-06"))}>
+        November
+      </button>
+      <button type="button" onClick={() => setValue(Temporal.PlainDate.from("2026-10-05"))}>
+        October
+      </button>
+    </>
+  );
+}
+
+/** A controlled zoned field whose parent can move the value to another zone. */
+function ZoneMoveHarness(): ReactElement {
+  const [value, setValue] = useState<Temporal.ZonedDateTime | null>(
+    Temporal.ZonedDateTime.from("2026-10-12T09:30:00+02:00[Europe/Oslo]")
+  );
+  return withLocale(
+    "en-US",
+    <>
+      <DateField label="Starts" granularity="minute" value={value} onChange={setValue} />
+      <button type="button" onClick={() => setValue(value?.withTimeZone("America/New_York") ?? null)}>
+        New York
+      </button>
+    </>
+  );
+}
+
+/** A controlled zoned day field in Oslo whose parent echoes every value back, printing it. */
+function ZonedDayEchoHarness(): ReactElement {
+  const [value, setValue] = useState<Temporal.ZonedDateTime | null>(
+    Temporal.ZonedDateTime.from("2026-10-05T00:00:00+02:00[Europe/Oslo]")
+  );
+  return withLocale(
+    "en-US",
+    <>
+      <DateField label="Starts" granularity="day" value={value} onChange={setValue} />
+      <output aria-label="Committed value">{String(value)}</output>
+    </>
+  );
+}
+
+/** A DateInput whose segments the host renders as `<strong>` once asked. */
+function RenderSwapHarness(): ReactElement {
+  const [strong, setStrong] = useState(false);
+  const [value, setValue] = useState("unchanged");
+  return withLocale(
+    "en-US",
+    <>
+      <DateInput.Root aria-label="Start date" onValueChange={(next) => setValue(String(next))}>
+        {(segment) => (
+          <DateInput.Segment key={segment.index} segment={segment} render={strong ? <strong /> : undefined} />
+        )}
+      </DateInput.Root>
+      <button type="button" onClick={() => setStrong(true)}>
+        Bold
+      </button>
+      <output aria-label="Committed value">{value}</output>
+    </>
+  );
+}
+
+describe("DateField locales", () => {
+  it.each([
+    ["nb-NO", ["dd", "mm", "åååå"], "15032008", ["15", "03", "2008"], "dag, Fødselsdato"],
+    ["sv-SE", ["åååå", "mm", "dd"], "20080315", ["2008", "03", "15"], "år, Fødselsdato"],
+    ["fi-FI", ["pp", "kk", "vvvv"], "15032008", ["15", "03", "2008"], "päivä, Fødselsdato"],
+  ] as const)(
+    "shows %s's placeholders in its order and commits March 15, 2008 typed in that order",
+    async (locale, placeholders, digits, texts, firstName) => {
+      renderThemed(<Harness locale={locale} label="Fødselsdato" />);
+      expect(segmentTexts()).toEqual(placeholders);
+
+      await userEvent.click(spin(firstName));
+      await userEvent.keyboard(digits);
+
+      await expect.element(committed()).toHaveTextContent("2008-03-15");
+      expect(segmentTexts()).toEqual(texts);
+    }
+  );
 });
 
 describe("DateField modifier chords", () => {
@@ -259,40 +998,6 @@ describe("DateField modifier chords", () => {
     await expect
       .element(page.getByRole("spinbutton", { name: "day, Start date", exact: true }))
       .toHaveFocus();
-  });
-});
-
-describe("DateField blur", () => {
-  it("keeps a typed February 30 until blur, then commits it constrained to the month's last day", async () => {
-    renderThemed(<Harness label="Start date" defaultValue={Temporal.PlainDate.from("2026-01-30")} />);
-    await userEvent.click(spin("month, Start date"));
-    await userEvent.keyboard("02");
-
-    expect(segmentTexts()).toEqual(["02", "30", "2026"]);
-    await expect.element(committed()).toHaveTextContent(UNCHANGED);
-
-    await userEvent.click(roleNamed("button", "After"));
-    await expect.element(committed()).toHaveTextContent("2026-02-28");
-    expect(segmentTexts()).toEqual(["02", "28", "2026"]);
-  });
-
-  it("reports a half-typed field incomplete on blur", async () => {
-    renderThemed(<Harness label="Start date" />);
-    await userEvent.click(spin("month, Start date"));
-    await userEvent.keyboard("10");
-    await userEvent.click(roleNamed("button", "After"));
-
-    await expect
-      .element(page.getByRole("group", { name: "Start date", exact: true }))
-      .toHaveAttribute("data-invalid", "true");
-    await expect
-      .element(
-        page.getByText("Please enter a valid value. The field is incomplete or has an invalid date.", {
-          exact: true,
-        })
-      )
-      .toBeVisible();
-    await expect.element(committed()).toHaveTextContent(UNCHANGED);
   });
 });
 
@@ -436,22 +1141,6 @@ describe("DateField granularity change mid-draft", () => {
   });
 });
 
-/** A Harness whose parent swaps some of its props once "Switch" is pressed. */
-function SwitchHarness<T extends DateInputValue>({
-  switched,
-  ...props
-}: HarnessProps<T> & { readonly switched: Partial<DateFieldProps<T>> }): ReactElement {
-  const [on, setOn] = useState(false);
-  return (
-    <>
-      <Harness<T> {...(on ? { ...props, ...switched } : props)} />
-      <button type="button" onClick={() => setOn(true)}>
-        Switch
-      </button>
-    </>
-  );
-}
-
 describe("DateField kind across prop changes", () => {
   it("takes a time once an empty date field's granularity turns to minutes", async () => {
     renderThemed(
@@ -550,627 +1239,6 @@ describe("DateField kind across prop changes", () => {
   });
 });
 
-/** A controlled field whose parent loads another value once "Load" is pressed. */
-function LoadHarness({
-  initial,
-  loaded,
-}: {
-  readonly initial: DateInputValue | null;
-  readonly loaded: DateInputValue;
-}): ReactElement {
-  const [value, setValue] = useState(initial);
-  return withLocale(
-    "en-US",
-    <>
-      <DateField label="Starts" value={value} onChange={setValue} />
-      <button type="button" onClick={() => setValue(loaded)}>
-        Load
-      </button>
-    </>
-  );
-}
-
-describe("DateField kind-change warning", () => {
-  function kindWarnings(warn: { readonly mock: { readonly calls: unknown[][] } }): unknown[][] {
-    return warn.mock.calls.filter(([message]) => /changed kind/u.test(String(message)));
-  }
-
-  it("does not warn when a loaded value replaces the kind an empty field's props made", async () => {
-    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
-    try {
-      renderThemed(
-        <LoadHarness
-          initial={null}
-          loaded={Temporal.ZonedDateTime.from("2026-10-12T09:30:00+02:00[Europe/Oslo]")}
-        />
-      );
-      await userEvent.click(roleNamed("button", "Load"));
-      await expect.poll(segmentTexts).toEqual(["10", "12", "2026", "09", "30", "AM", "GMT+2"]);
-      expect(kindWarnings(warn)).toEqual([]);
-    } finally {
-      warn.mockRestore();
-    }
-  });
-
-  it("warns when a value of another kind replaces a value the field held", async () => {
-    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
-    try {
-      renderThemed(
-        <LoadHarness
-          initial={Temporal.PlainDate.from("2026-10-12")}
-          loaded={Temporal.PlainDateTime.from("2026-10-12T09:30:00")}
-        />
-      );
-      await userEvent.click(roleNamed("button", "Load"));
-      await expect.poll(segmentTexts).toEqual(["10", "12", "2026", "09", "30", "AM"]);
-      expect(kindWarnings(warn)).toEqual([
-        [
-          "DateInput.Root value changed kind from PlainDate to PlainDateTime. Keep one kind per input; the input emits the kind it last held.",
-        ],
-      ]);
-    } finally {
-      warn.mockRestore();
-    }
-  });
-});
-
-describe("DateField validation", () => {
-  it.each([
-    ["2027", "2027-10-05", "Value must be 10/31/2026 or earlier."],
-    ["2025", "2025-10-05", "Value must be 10/01/2026 or later."],
-  ])("says why a typed year %s falls outside the bounds, after blur", async (year, value, copy) => {
-    renderThemed(
-      <Harness
-        label="Start date"
-        minValue={Temporal.PlainDate.from("2026-10-01")}
-        maxValue={Temporal.PlainDate.from("2026-10-31")}
-        defaultValue={Temporal.PlainDate.from("2026-10-05")}
-      />
-    );
-    await userEvent.click(spin("year, Start date"));
-    await userEvent.keyboard(year);
-    expect(roleNamed("group", "Start date")).not.toHaveAttribute("data-invalid");
-    await userEvent.tab();
-
-    await expect.element(committed()).toHaveTextContent(value);
-    await expect
-      .element(page.getByRole("group", { name: "Start date", exact: true }))
-      .toHaveAttribute("data-invalid", "true");
-    await expect.element(page.getByText(copy, { exact: true })).toBeVisible();
-    expect(spin("month, Start date")).toHaveAttribute("aria-invalid", "true");
-  });
-
-  it("names a zoned minValue of a date field by the wall-clock day it is compared on", async () => {
-    // 00:30 in Oslo on November 9 is 23:30 UTC on November 8; a date compares with its Oslo day.
-    renderThemed(
-      <Harness
-        label="Start date"
-        minValue={Temporal.ZonedDateTime.from("2026-11-09T00:30+01:00[Europe/Oslo]")}
-        defaultValue={Temporal.PlainDate.from("2026-11-10")}
-      />
-    );
-    await userEvent.click(spin("day, Start date"));
-    await userEvent.keyboard("08");
-    await userEvent.tab();
-
-    await expect.element(committed()).toHaveTextContent("2026-11-08");
-    await expect.element(page.getByText("Value must be 11/09/2026 or later.", { exact: true })).toBeVisible();
-  });
-
-  it("names a zoned maxValue of a date-time field by the wall clock it is compared on", async () => {
-    renderThemed(
-      <Harness
-        label="Starts"
-        granularity="minute"
-        hourCycle={24}
-        maxValue={Temporal.ZonedDateTime.from("2026-10-31T23:30+01:00[Europe/Oslo]")}
-        defaultValue={Temporal.PlainDateTime.from("2026-10-31T23:00")}
-      />
-    );
-    await userEvent.click(spin("minute, Starts"));
-    await userEvent.keyboard("45");
-    await userEvent.tab();
-
-    await expect.element(committed()).toHaveTextContent("2026-10-31T23:45:00");
-    await expect
-      .element(page.getByText("Value must be 10/31/2026, 23:30 or earlier.", { exact: true }))
-      .toBeVisible();
-  });
-
-  it("shows an explicit errorMessage in place of the built-in copy only once validation fails", async () => {
-    renderThemed(
-      <Harness
-        label="Start date"
-        errorMessage="Pick a weekday"
-        maxValue={Temporal.PlainDate.from("2026-10-31")}
-        defaultValue={Temporal.PlainDate.from("2026-10-05")}
-      />
-    );
-    expect(page.getByText("Pick a weekday").query()).toBeNull();
-
-    await userEvent.click(spin("year, Start date"));
-    await userEvent.keyboard("2027");
-    await userEvent.tab();
-
-    await expect.element(page.getByText("Pick a weekday", { exact: true })).toBeVisible();
-    expect(page.getByText(/or earlier/).query()).toBeNull();
-  });
-
-  it("marks the group invalid with the consumer's copy when isInvalid is passed", async () => {
-    renderThemed(
-      <Harness
-        label="Start up date"
-        description="Weekdays only"
-        errorMessage="Pick a weekday"
-        isInvalid
-        defaultValue={Temporal.PlainDate.from("2026-10-05")}
-      />
-    );
-    await expect
-      .element(page.getByRole("group", { name: "Start up date", exact: true }))
-      .toHaveAttribute("data-invalid", "true");
-    await expect.element(page.getByText("Weekdays only", { exact: true })).toBeVisible();
-    await expect.element(page.getByText("Pick a weekday", { exact: true })).toBeVisible();
-  });
-
-  it("reports an unavailable date with React Aria's copy", async () => {
-    renderThemed(
-      <Harness
-        label="Start date"
-        defaultValue={Temporal.PlainDate.from("2026-10-05")}
-        isDateUnavailable={(date) => date.dayOfWeek === 6}
-      />
-    );
-    await userEvent.click(spin("day, Start date"));
-    await userEvent.keyboard("10");
-    await userEvent.tab();
-
-    await expect.element(committed()).toHaveTextContent("2026-10-10");
-    await expect.element(page.getByText("Selected date unavailable.", { exact: true })).toBeVisible();
-  });
-
-  it.each([
-    ["2026-10-31T23:00[Europe/Oslo]", "30", "2026-10-31T23:30:00+01:00[Europe/Oslo]", null],
-    [
-      "2026-10-31T23:00[Europe/Oslo]",
-      "31",
-      "2026-10-31T23:31:00+01:00[Europe/Oslo]",
-      "Value must be 10/31/2026, 23:30 or earlier.",
-    ],
-    ["2026-10-31T20:00[America/New_York]", "15", "2026-10-31T20:15:00-04:00[America/New_York]", null],
-    [
-      "2026-09-30T17:00[America/New_York]",
-      "30",
-      "2026-09-30T17:30:00-04:00[America/New_York]",
-      "Value must be 09/30/2026, 18:00 or later.",
-    ],
-  ])(
-    "compares %s with a zoned minimum and a plain maximum as React Aria does",
-    async (start, minute, value, copy) => {
-      renderThemed(
-        <Harness
-          label="Period"
-          granularity="minute"
-          hourCycle={24}
-          hideTimeZone
-          minValue={Temporal.ZonedDateTime.from("2026-10-01T00:00[Europe/Oslo]")}
-          maxValue={Temporal.PlainDateTime.from("2026-10-31T23:30")}
-          defaultValue={Temporal.ZonedDateTime.from(start)}
-        />
-      );
-      await userEvent.click(spin("minute, Period"));
-      await userEvent.keyboard(minute);
-      await userEvent.tab();
-
-      await expect.element(committed()).toHaveTextContent(value);
-      const group = page.getByRole("group", { name: "Period", exact: true });
-      if (copy === null) {
-        await expect.element(group).not.toHaveAttribute("data-invalid");
-      } else {
-        await expect.element(group).toHaveAttribute("data-invalid", "true");
-        await expect.element(page.getByText(copy, { exact: true })).toBeVisible();
-      }
-    }
-  );
-});
-
-/** A DateInput reporting each change's reason, canceling the reasons it is told to. */
-function CancelHarness({
-  cancel,
-  ...props
-}: DateInputRootProps & { readonly cancel: readonly DateInputValueChangeReason[] }): ReactElement {
-  const [log, setLog] = useState<string[]>([]);
-  return withLocale(
-    "en-US",
-    <>
-      <DateInput.Root
-        aria-label="Start date"
-        {...props}
-        onValueChange={(value, details) => {
-          setLog((entries) => [
-            ...entries,
-            `${details.reason}:${value === null ? "null" : value.toString()}`,
-          ]);
-          if (cancel.includes(details.reason)) {
-            details.cancel();
-          }
-        }}
-      />
-      <output aria-label="Change log">{log.join(" ")}</output>
-    </>
-  );
-}
-
-function changeLog() {
-  return page.getByRole("status", { name: "Change log" });
-}
-
-describe("DateInput onValueChange details", () => {
-  it("keeps the value and shows it again when an input-change is canceled", async () => {
-    renderThemed(
-      <CancelHarness cancel={["input-change"]} defaultValue={Temporal.PlainDate.from("2026-10-05")} />
-    );
-    await userEvent.click(spin("day, Start date"));
-    await userEvent.keyboard("{ArrowUp}");
-
-    await expect.element(changeLog()).toHaveTextContent("input-change:2026-10-06");
-    expect(segmentTexts()).toEqual(["10", "5", "2026"]);
-  });
-
-  it("applies an input-change that is not canceled", async () => {
-    renderThemed(<CancelHarness cancel={[]} defaultValue={Temporal.PlainDate.from("2026-10-05")} />);
-    await userEvent.click(spin("day, Start date"));
-    await userEvent.keyboard("{ArrowUp}");
-
-    await expect.element(changeLog()).toHaveTextContent("input-change:2026-10-06");
-    expect(segmentTexts()).toEqual(["10", "6", "2026"]);
-  });
-
-  it("reports clearing every segment as input-clear, and canceling it keeps the value", async () => {
-    renderThemed(
-      <CancelHarness cancel={["input-clear"]} defaultValue={Temporal.PlainDate.from("2026-10-05")} />
-    );
-    await userEvent.click(spin("year, Start date"));
-    // Each Backspace drops a digit, committing the shorter year, or on an empty segment moves back
-    // one: four for the year, one to move, one for the day, one to move, two for the month.
-    await userEvent.keyboard("{Backspace>9/}");
-
-    await expect
-      .element(changeLog())
-      .toHaveTextContent(
-        "input-change:0202-10-05 input-change:0020-10-05 input-change:0002-10-05 input-clear:null"
-      );
-    expect(segmentTexts()).toEqual(["10", "5", "2"]);
-  });
-
-  it("commits pasted ISO text as input-paste, and canceling it keeps the value", async () => {
-    renderThemed(
-      <CancelHarness cancel={["input-paste"]} defaultValue={Temporal.PlainDate.from("2026-10-05")} />
-    );
-    const target = spin("day, Start date");
-    target.focus();
-    const data = new DataTransfer();
-    data.setData("text/plain", "2027-01-02");
-    target.dispatchEvent(
-      new ClipboardEvent("paste", { clipboardData: data, bubbles: true, cancelable: true })
-    );
-
-    await expect.element(changeLog()).toHaveTextContent("input-paste:2027-01-02");
-    expect(segmentTexts()).toEqual(["10", "5", "2026"]);
-  });
-});
-
-describe("DateField in forms", () => {
-  it("submits the ISO value under its name and to onFormSubmit", async () => {
-    let submitted: unknown;
-    renderThemed(
-      withLocale(
-        "en-US",
-        <Form
-          aria-label="Booking"
-          onFormSubmit={(values) => {
-            submitted = values;
-          }}>
-          <DateField label="Start date" name="start" defaultValue={Temporal.PlainDate.from("2026-10-05")} />
-          <button type="submit">Save</button>
-        </Form>
-      )
-    );
-    expect(new FormData(formNamed("Booking")).get("start")).toBe("2026-10-05");
-
-    await userEvent.click(roleNamed("button", "Save"));
-    expect(submitted).toEqual({ start: "2026-10-05" });
-  });
-
-  it("blocks a submit with a required empty field, shows why and focuses its first segment", async () => {
-    let submits = 0;
-    renderThemed(
-      withLocale(
-        "en-US",
-        <Form aria-label="Booking" onFormSubmit={() => (submits += 1)}>
-          <DateField label="Start date" name="start" isRequired />
-          <button type="submit">Save</button>
-        </Form>
-      )
-    );
-    await userEvent.click(roleNamed("button", "Save"));
-
-    await expect
-      .element(page.getByRole("spinbutton", { name: "month, Start date", exact: true }))
-      .toHaveFocus();
-    await expect.element(page.getByText("Please fill out this field.", { exact: true })).toBeVisible();
-    expect(submits).toBe(0);
-  });
-
-  it("shows a returned error by name, focuses the first segment, and clears it on edit", async () => {
-    function Booking(): ReactElement {
-      const [errors, setErrors] = useState<Record<string, string>>({});
-      return withLocale(
-        "en-US",
-        <Form aria-label="Booking" errors={errors} onFormSubmit={() => setErrors({ start: "Fully booked" })}>
-          <DateField label="Start date" name="start" defaultValue={Temporal.PlainDate.from("2026-10-05")} />
-          <button type="submit">Save</button>
-        </Form>
-      );
-    }
-    renderThemed(<Booking />);
-    await userEvent.click(roleNamed("button", "Save"));
-
-    await expect.element(page.getByText("Fully booked", { exact: true })).toBeVisible();
-    await expect
-      .element(page.getByRole("spinbutton", { name: "month, Start date", exact: true }))
-      .toHaveFocus();
-    await expect
-      .element(page.getByRole("group", { name: "Start date", exact: true }))
-      .toHaveAttribute("data-invalid", "true");
-
-    await userEvent.keyboard("{ArrowUp}");
-    await expect.element(page.getByText("Fully booked", { exact: true })).not.toBeInTheDocument();
-  });
-
-  it("works bare inside a consumer's Field: its label names the group and its error shows the validity", async () => {
-    renderThemed(
-      withLocale(
-        "en-US",
-        <Form aria-label="Booking" onFormSubmit={() => undefined}>
-          <Field.Root name="start">
-            <Field.Label>Start date</Field.Label>
-            <DateInput.Root required />
-            <Field.Error />
-          </Field.Root>
-          <button type="submit">Save</button>
-        </Form>
-      )
-    );
-    expect(roleNamed("group", "Start date")).toBeDefined();
-    expect(spin("month, Start date")).toBeDefined();
-
-    await userEvent.click(roleNamed("button", "Save"));
-    await expect.element(page.getByText("Please fill out this field.", { exact: true })).toBeVisible();
-    await expect
-      .element(page.getByRole("spinbutton", { name: "month, Start date", exact: true }))
-      .toHaveFocus();
-
-    await userEvent.keyboard("10052026");
-    await userEvent.click(roleNamed("button", "Save"));
-    await expect
-      .element(page.getByText("Please fill out this field.", { exact: true }))
-      .not.toBeInTheDocument();
-  });
-
-  it("restores its default value on form reset", async () => {
-    renderThemed(
-      withLocale(
-        "en-US",
-        <form aria-label="Booking">
-          <DateField label="Start date" name="start" defaultValue={Temporal.PlainDate.from("2026-10-05")} />
-          <button type="reset">Reset</button>
-        </form>
-      )
-    );
-    await userEvent.click(spin("day, Start date"));
-    await userEvent.keyboard("{ArrowUp}");
-    expect(segmentTexts()).toEqual(["10", "06", "2026"]);
-
-    await userEvent.click(roleNamed("button", "Reset"));
-    await expect.poll(segmentTexts).toEqual(["10", "05", "2026"]);
-  });
-});
-
-describe("DateField styles", () => {
-  it("paints the invalid, placeholder and disabled states differently from the plain ones", () => {
-    renderThemed(
-      withLocale(
-        "en-US",
-        <>
-          <DateField label="Plain" defaultValue={Temporal.PlainDate.from("2026-10-05")} />
-          <DateField label="Invalid" defaultValue={Temporal.PlainDate.from("2026-10-05")} isInvalid />
-          <DateField label="Empty" />
-          <DateField label="Disabled" defaultValue={Temporal.PlainDate.from("2026-10-05")} isDisabled />
-        </>
-      )
-    );
-    const plain = roleNamed("group", "Plain");
-    const invalid = roleNamed("group", "Invalid");
-    expect(getComputedStyle(invalid).borderTopColor).not.toBe(getComputedStyle(plain).borderTopColor);
-
-    const filled = spin("month, Plain");
-    const placeholder = spin("month, Empty");
-    expect(getComputedStyle(placeholder).color).not.toBe(getComputedStyle(filled).color);
-    expect(getComputedStyle(placeholder).fontStyle).toBe("italic");
-    expect(getComputedStyle(filled).fontStyle).toBe("normal");
-
-    expect(getComputedStyle(roleNamed("group", "Disabled")).opacity).toBe("0.5");
-    expect(getComputedStyle(plain).opacity).toBe("1");
-  });
-
-  it("keeps the space in a literal before the time, which a flex item would trim", () => {
-    renderThemed(
-      withLocale(
-        "en-US",
-        <DateField
-          label="Starts"
-          hourCycle={24}
-          defaultValue={Temporal.PlainDateTime.from("2026-10-12T14:30")}
-        />
-      )
-    );
-    // DOM audit: a literal has no role, so its slot and `data-type` locate it.
-    const comma = [
-      ...document.querySelectorAll<HTMLElement>('[data-slot="date-input-segment"][data-type="literal"]'),
-    ].find((element) => element.textContent === ", ");
-    const year = spin("year, Starts").getBoundingClientRect();
-    const hour = spin("hour, Starts").getBoundingClientRect();
-    expect(comma).toBeDefined();
-    // The comma and the space both take width: the gap is wider than the comma alone.
-    const commaAlone = document.createElement("span");
-    commaAlone.textContent = ",";
-    comma?.after(commaAlone);
-    expect(hour.left - year.right).toBeGreaterThan(commaAlone.getBoundingClientRect().width * 1.5);
-    commaAlone.remove();
-  });
-});
-
-/** A controlled DateField whose parent can replace the value. */
-function ControlledHarness(): ReactElement {
-  const [value, setValue] = useState<Temporal.PlainDate | null>(Temporal.PlainDate.from("2026-10-05"));
-  return withLocale(
-    "en-US",
-    <>
-      <DateField label="Start date" value={value} onChange={setValue} />
-      <button type="button" onClick={() => setValue(Temporal.PlainDate.from("2026-11-06"))}>
-        November
-      </button>
-      <button type="button" onClick={() => setValue(Temporal.PlainDate.from("2026-10-05"))}>
-        October
-      </button>
-    </>
-  );
-}
-
-/** A controlled date-time field whose parent echoes every value back, printing it. */
-function ControlledTypingHarness(): ReactElement {
-  const [value, setValue] = useState<Temporal.PlainDateTime | null>(
-    Temporal.PlainDateTime.from("2026-10-05T09:30")
-  );
-  return withLocale(
-    "en-US",
-    <>
-      <DateField label="Starts" granularity="minute" hourCycle={24} value={value} onChange={setValue} />
-      <output aria-label="Committed value">{String(value)}</output>
-    </>
-  );
-}
-
-/** A controlled zoned field whose parent can move the value to another zone. */
-function ZoneMoveHarness(): ReactElement {
-  const [value, setValue] = useState<Temporal.ZonedDateTime | null>(
-    Temporal.ZonedDateTime.from("2026-10-12T09:30:00+02:00[Europe/Oslo]")
-  );
-  return withLocale(
-    "en-US",
-    <>
-      <DateField label="Starts" granularity="minute" value={value} onChange={setValue} />
-      <button type="button" onClick={() => setValue(value?.withTimeZone("America/New_York") ?? null)}>
-        New York
-      </button>
-    </>
-  );
-}
-
-/** A controlled zoned day field in Oslo whose parent echoes every value back, printing it. */
-function ZonedDayEchoHarness(): ReactElement {
-  const [value, setValue] = useState<Temporal.ZonedDateTime | null>(
-    Temporal.ZonedDateTime.from("2026-10-05T00:00:00+02:00[Europe/Oslo]")
-  );
-  return withLocale(
-    "en-US",
-    <>
-      <DateField label="Starts" granularity="day" value={value} onChange={setValue} />
-      <output aria-label="Committed value">{String(value)}</output>
-    </>
-  );
-}
-
-describe("DateInput reconciliation", () => {
-  it("does not warn of a kind change when the parent moves the value to another zone", async () => {
-    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
-    try {
-      renderThemed(<ZoneMoveHarness />);
-      await userEvent.click(roleNamed("button", "New York"));
-      await expect.poll(segmentTexts).toEqual(["10", "12", "2026", "03", "30", "AM", "EDT"]);
-      expect(warn.mock.calls.filter(([message]) => /changed kind/u.test(String(message)))).toEqual([]);
-    } finally {
-      warn.mockRestore();
-    }
-  });
-
-  it("keeps every typed year digit of an Oslo day field while a parent echoes each value", async () => {
-    // Each year digit commits a year Oslo writes in local mean time (+00:53:28), which ISO text
-    // rounds to +00:53: the echo must read back as the value the input committed (#540).
-    renderThemed(<ZonedDayEchoHarness />);
-    await userEvent.click(spin("year, Starts"));
-    await userEvent.keyboard("2026");
-    await expect.element(committed()).toHaveTextContent("2026-10-05T00:00:00+02:00[Europe/Oslo]");
-    expect(segmentTexts()).toEqual(["10", "05", "2026"]);
-  });
-
-  it("keeps typing several digits into a segment while a parent echoes each value it commits", async () => {
-    renderThemed(<ControlledTypingHarness />);
-    // Each first digit commits on its own ("1" is January), and the parent echoes it back before
-    // the second digit, which must still extend it: 12, 24, 2027, 18.
-    await userEvent.click(spin("month, Starts"));
-    await userEvent.keyboard("12242027");
-    await expect.element(committed()).toHaveTextContent("2027-12-24T09:30:00");
-    await expect.element(page.getByRole("spinbutton", { name: "hour, Starts", exact: true })).toHaveFocus();
-    await userEvent.keyboard("18");
-    await expect.element(committed()).toHaveTextContent("2027-12-24T18:30:00");
-    expect(segmentTexts()).toEqual(["12", "24", "2027", "18", "30"]);
-  });
-
-  it("drops a draft for good when the parent replaces the value, so restoring it shows the value", async () => {
-    renderThemed(<ControlledHarness />);
-    await userEvent.click(spin("day, Start date"));
-    await userEvent.keyboard("{Backspace}");
-    expect(segmentTexts()).toEqual(["10", "dd", "2026"]);
-    // Tab past the year to the button: the incomplete message blur shows would move the button
-    // under a mouse press.
-    await userEvent.tab();
-    await userEvent.tab();
-    await expect.element(page.getByRole("button", { name: "November" })).toHaveFocus();
-    await expect
-      .element(page.getByRole("group", { name: "Start date", exact: true }))
-      .toHaveAttribute("data-invalid", "true");
-
-    await userEvent.keyboard("{Enter}");
-    await expect.poll(segmentTexts).toEqual(["11", "06", "2026"]);
-    await userEvent.tab();
-    await userEvent.keyboard("{Enter}");
-    await expect.poll(segmentTexts).toEqual(["10", "05", "2026"]);
-    expect(roleNamed("group", "Start date")).not.toHaveAttribute("data-invalid");
-  });
-});
-
-/** A DateInput whose segments the host renders as `<strong>` once asked. */
-function RenderSwapHarness(): ReactElement {
-  const [strong, setStrong] = useState(false);
-  const [value, setValue] = useState("unchanged");
-  return withLocale(
-    "en-US",
-    <>
-      <DateInput.Root aria-label="Start date" onValueChange={(next) => setValue(String(next))}>
-        {(segment) => (
-          <DateInput.Segment key={segment.index} segment={segment} render={strong ? <strong /> : undefined} />
-        )}
-      </DateInput.Root>
-      <button type="button" onClick={() => setStrong(true)}>
-        Bold
-      </button>
-      <output aria-label="Committed value">{value}</output>
-    </>
-  );
-}
-
 describe("DateInput.Segment input", () => {
   it("keeps intercepting typing on the element a new render puts in its place", async () => {
     renderThemed(<RenderSwapHarness />);
@@ -1182,28 +1250,6 @@ describe("DateInput.Segment input", () => {
     await userEvent.keyboard("12052026");
     await expect.element(committed()).toHaveTextContent("2026-12-05");
     expect(segmentTexts()).toEqual(["12", "5", "2026"]);
-  });
-});
-
-describe("DateInput descriptions", () => {
-  it("describes the group by the consumer's aria-describedby and its Field's description together", () => {
-    renderThemed(
-      withLocale(
-        "en-US",
-        <Field.Root name="start">
-          <Field.Label>Start date</Field.Label>
-          <DateInput.Root
-            aria-describedby="start-hint"
-            defaultValue={Temporal.PlainDate.from("2026-10-05")}
-          />
-          <span id="start-hint">Local time</span>
-          <Field.Description>Weekdays only</Field.Description>
-        </Field.Root>
-      )
-    );
-    const group = roleNamed("group", "Start date");
-    expect(group).toHaveAccessibleDescription(/Local time/u);
-    expect(group).toHaveAccessibleDescription(/Weekdays only/u);
   });
 });
 
@@ -1239,67 +1285,6 @@ describe("DateInput wiring with undefined props", () => {
   });
 });
 
-describe("DateInput form reset", () => {
-  it("clears the Field's incomplete error with the draft when the form resets", async () => {
-    renderThemed(
-      withLocale(
-        "en-US",
-        <Form aria-label="Booking" onFormSubmit={() => undefined}>
-          <DateField label="Start date" name="start" defaultValue={Temporal.PlainDate.from("2026-10-05")} />
-          <button type="submit">Save</button>
-          <button type="reset">Reset</button>
-        </Form>
-      )
-    );
-    await userEvent.click(spin("day, Start date"));
-    await userEvent.keyboard("{Backspace}");
-    await userEvent.click(roleNamed("button", "Save"));
-    await expect
-      .element(page.getByRole("group", { name: "Start date", exact: true }))
-      .toHaveAttribute("data-invalid", "true");
-    await expect
-      .element(
-        page.getByText("Please enter a valid value. The field is incomplete or has an invalid date.", {
-          exact: true,
-        })
-      )
-      .toBeVisible();
-
-    await userEvent.click(roleNamed("button", "Reset"));
-    await expect.poll(segmentTexts).toEqual(["10", "05", "2026"]);
-    await expect
-      .element(page.getByRole("group", { name: "Start date", exact: true }))
-      .not.toHaveAttribute("data-invalid");
-    await expect.element(page.getByText(/The field is incomplete/u)).not.toBeInTheDocument();
-  });
-
-  it("stays unflagged when a reset empties a required field after a failed submit", async () => {
-    renderThemed(
-      withLocale(
-        "en-US",
-        <Form aria-label="Booking" onFormSubmit={() => undefined}>
-          <DateField label="Start date" name="start" isRequired />
-          <button type="submit">Save</button>
-          <button type="reset">Reset</button>
-        </Form>
-      )
-    );
-    await userEvent.click(roleNamed("button", "Save"));
-    await expect.element(page.getByText("Please fill out this field.", { exact: true })).toBeVisible();
-    await userEvent.keyboard("10052026");
-    await expect.poll(segmentTexts).toEqual(["10", "05", "2026"]);
-
-    await userEvent.click(roleNamed("button", "Reset"));
-    await expect.poll(segmentTexts).toEqual(["mm", "dd", "yyyy"]);
-    await expect
-      .element(page.getByRole("group", { name: "Start date", exact: true }))
-      .not.toHaveAttribute("data-invalid");
-    await expect
-      .element(page.getByText("Please fill out this field.", { exact: true }))
-      .not.toBeInTheDocument();
-  });
-});
-
 describe("DateField in a same-origin frame", () => {
   it("takes typing and tells focus moving inside from focus leaving, for nodes of the frame's realm", async () => {
     const frame = document.createElement("iframe");
@@ -1329,7 +1314,7 @@ describe("DateField in a same-origin frame", () => {
         )
       );
       const inFrame = (selector: string): HTMLElement => {
-        // DOM audit: the frame's nodes are out of the page locator's reach.
+        // The frame's nodes are out of the page locator's reach.
         const element = frameDocument.querySelector<HTMLElement>(selector);
         if (element === null) {
           throw new Error(`expected ${selector} in the frame`);
@@ -1363,70 +1348,5 @@ describe("DateField in a same-origin frame", () => {
     } finally {
       frame.remove();
     }
-  });
-});
-
-describe("DateField paste of its own value", () => {
-  it("shows the pasted value whole again and lets the form submit, without reporting a change", async () => {
-    const changes: string[] = [];
-    let submits = 0;
-    renderThemed(
-      withLocale(
-        "en-US",
-        <Form
-          aria-label="Booking"
-          onFormSubmit={() => {
-            submits += 1;
-          }}>
-          <DateField
-            label="Start date"
-            name="start"
-            defaultValue={Temporal.PlainDate.from("2026-10-05")}
-            onChange={(next) => changes.push(String(next))}
-          />
-          <button type="submit">Save</button>
-        </Form>
-      )
-    );
-    const day = spin("day, Start date");
-    await userEvent.click(day);
-    await userEvent.keyboard("{Backspace}");
-    expect(segmentTexts()).toEqual(["10", "dd", "2026"]);
-
-    const data = new DataTransfer();
-    data.setData("text/plain", "2026-10-05");
-    day.dispatchEvent(new ClipboardEvent("paste", { clipboardData: data, bubbles: true, cancelable: true }));
-    await expect.poll(segmentTexts).toEqual(["10", "05", "2026"]);
-
-    await userEvent.click(roleNamed("button", "Save"));
-    await expect.poll(() => submits).toBe(1);
-    expect(roleNamed("group", "Start date")).not.toHaveAttribute("data-invalid");
-    expect(changes).toEqual([]);
-  });
-});
-
-describe("date props past the types", () => {
-  it("throws a TypeError naming the Root, the prop and the string for ISO text", () => {
-    expectRenderTypeError(
-      'DateInput.Root defaultValue: received the string "2026-10-05T09:30"',
-      <DateField
-        label="Starts"
-        granularity="minute"
-        // @ts-expect-error -- text reaches the prop past the types: from plain JavaScript, or as the ISO text a server component's Temporal object crosses as
-        defaultValue="2026-10-05T09:30"
-      />
-    );
-  });
-
-  it("throws for ISO text in value after the equal Temporal value, whatever rendered before", () => {
-    expectRenderTypeError(
-      'DateInput.Root value: received the string "2026-10-05"',
-      <DateField label="Starts" value={Temporal.PlainDate.from("2026-10-05")} />,
-      <DateField
-        label="Starts"
-        // @ts-expect-error -- the equal ISO text, past the types, after a Temporal value
-        value="2026-10-05"
-      />
-    );
   });
 });

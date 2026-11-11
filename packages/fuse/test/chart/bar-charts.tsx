@@ -11,7 +11,7 @@ import type { SupportedLocale } from "../../src/intl/locale-context";
 import { S06_HOURS } from "./elhub-rows";
 
 /** S06's two series, household and cabin per metering point. */
-export const S06_CONFIG = {
+const S06_CONFIG = {
   household: { label: "Husholdning", color: "chart-1", format: { preset: "energy", unit: "kWh" } },
   cabin: { label: "Hytte", color: "chart-2", format: { preset: "energy", unit: "kWh" } },
 } as const satisfies ChartConfig;

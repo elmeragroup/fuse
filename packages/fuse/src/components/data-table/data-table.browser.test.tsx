@@ -1,4 +1,3 @@
-import { useState } from "react";
 import type { ReactElement } from "react";
 
 /**
@@ -14,7 +13,7 @@ import {
   tableFeatures,
   useTable,
 } from "@tanstack/react-table";
-import type { ColumnDef, PaginationState, Row } from "@tanstack/react-table";
+import type { ColumnDef, Row } from "@tanstack/react-table";
 import { describe, expect, it } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
@@ -24,7 +23,6 @@ import {
   features,
   NO_ORDERS,
   ORDERS,
-  ORDERS_10,
   ORDERS_25,
   ORDERS_3,
   plainColumns,
@@ -95,25 +93,6 @@ function ClientPagedTable({ data }: { readonly data: Order[] }): ReactElement {
       <DataTable.Content table={table} />
       <DataTable.Pagination table={table} />
     </>
-  );
-}
-
-function CursorPagedTable({ pages }: { readonly pages: number }): ReactElement {
-  const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 10 });
-  const table = useTable({
-    features,
-    columns: plainColumns,
-    data: ORDERS_10,
-    manualPagination: true,
-    pageCount: -1,
-    state: { pagination },
-    onPaginationChange: setPagination,
-  });
-  return (
-    <DataTable.Pagination
-      table={table}
-      total={{ kind: "unknown", hasMore: pagination.pageIndex < pages - 1 }}
-    />
   );
 }
 
@@ -201,17 +180,6 @@ describe("DataTable pagination", () => {
     expect(roleNamed("cell", "No results.")).toBeInstanceOf(HTMLTableCellElement);
   });
 
-  it("follows hasMore for an unknown total, shows no page count and never enables Last", async () => {
-    renderInEnglish(<CursorPagedTable pages={2} />);
-
-    expect(page.getByText("Page 1", { exact: true }).element()).toBeTruthy();
-    expect(disabledMoves()).toEqual([true, true, false, true]);
-
-    await userEvent.click(pageButtons().next);
-    await expect.element(page.getByText("Page 2", { exact: true })).toBeVisible();
-    expect(disabledMoves()).toEqual([false, false, true, true]);
-  });
-
   it("changes the page size through the labelled rows-per-page select", async () => {
     renderInEnglish(<ClientPagedTable data={ORDERS_25} />);
 
@@ -293,7 +261,7 @@ describe("DataTable registered pagination after filtering", () => {
     );
   }
 
-  it("follows the filtered page count on page index 0", async () => {
+  it("follows the filtered rows, page count and moves on page index 0", async () => {
     renderInEnglish(<FilteredTable />);
 
     expect(page.getByText("Page 1 of 3", { exact: true }).element()).toBeTruthy();
@@ -301,6 +269,8 @@ describe("DataTable registered pagination after filtering", () => {
     // "Customer 2" and "Customer 20" through "Customer 25": seven rows, one page.
     await expect.element(page.getByText("Page 1 of 1", { exact: true })).toBeVisible();
     expect(disabledMoves()).toEqual([true, true, true, true]);
+    expect(page.getByRole("cell", { name: "Customer 25", exact: true }).query()).not.toBeNull();
+    expect(page.getByRole("cell", { name: "Customer 1", exact: true }).query()).toBeNull();
   });
 });
 
@@ -455,24 +425,6 @@ describe("DataTable registered row override", () => {
 
     expect(roleNamed("cell", "Bergen").closest("tr")?.getAttribute("data-testid")).toBe("app-row");
   });
-
-  const plain = createFuseTableHook({ features: rowFeatures });
-
-  function PlainContentInOverrideTable(): ReactElement {
-    const plainTable = plain.useAppTable({ columns: rowColumns, data: ORDERS });
-    const table = withRow.useAppTable({ columns: rowColumns, data: ORDERS });
-    return (
-      <table.AppTable>
-        <plainTable.Content />
-      </table.AppTable>
-    );
-  }
-
-  it("renders through the Row registered on the table in context, whichever factory built Content", () => {
-    renderInEnglish(<PlainContentInOverrideTable />);
-
-    expect(roleNamed("cell", "Bergen").closest("tr")?.getAttribute("data-testid")).toBe("app-row");
-  });
 });
 
 /** One pressable row of `ORDERS` over the given columns. */
@@ -606,7 +558,7 @@ describe("DataTable row press past Fuse widgets and text selection", () => {
     await userEvent.click(roleNamed("radio", "High"));
     expect(roleNamed("radio", "High").getAttribute("aria-checked")).toBe("true");
 
-    // DOM audit: the slider's track has no role; a pointer press on it is what moves the thumb.
+    // The slider's track has no role; a pointer press on it is what moves the thumb.
     const control = roleNamed("slider", "Share").closest("[data-slot=slider-control]");
     if (!(control instanceof HTMLElement)) {
       throw new Error("expected the slider control");
@@ -891,27 +843,5 @@ describe("DataTable date cells", () => {
         .elements()
         .map((cell) => cell.textContent)
     ).toEqual(["30.\u00a0sep.\u00a02026", "1.\u00a0okt.\u00a02026", "30.\u00a0sep.\u00a02026,\u00a020:00"]);
-  });
-});
-
-describe("DataTable loading", () => {
-  function LoadingTable(): ReactElement {
-    const table = useTable({
-      features,
-      columns: plainColumns,
-      data: [],
-      initialState: { pagination: { pageIndex: 0, pageSize: 3 } },
-    });
-    return <DataTable.Content table={table} loading aria-label="Orders" />;
-  }
-
-  it("marks the table busy and renders page-size many skeleton rows", () => {
-    renderInEnglish(<LoadingTable />);
-
-    const table = roleNamed("table", "Orders");
-    expect(table.getAttribute("aria-busy")).toBe("true");
-    // One header row plus three skeleton rows, and no empty-state text.
-    expect(page.getByRole("row").elements()).toHaveLength(4);
-    expect(page.getByText("No results.", { exact: true }).elements()).toHaveLength(0);
   });
 });

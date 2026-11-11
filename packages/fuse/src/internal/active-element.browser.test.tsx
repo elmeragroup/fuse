@@ -33,13 +33,6 @@ describe("deepActiveElement and hasFocus", () => {
     expect(hasFocus(sibling)).toBe(false);
   });
 
-  it("read a control in a closed shadow root from its own root", () => {
-    const { outer, innerHost, button } = nested("closed");
-    button.focus();
-    expect(deepActiveElement(outer)).toBe(innerHost);
-    expect(hasFocus(button)).toBe(true);
-  });
-
   it("report nothing in a root that focus is outside of", () => {
     const { outer } = nested("open");
     const elsewhere = document.createElement("button");

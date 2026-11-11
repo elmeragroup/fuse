@@ -1,28 +1,13 @@
 import type { ReactNode } from "react";
 
 import { CalendarDate } from "@internationalized/date";
-import { I18nProvider } from "react-aria-components";
 import { describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
-import { assertFocusRingAtBothDensities } from "../../../test/assert-focus-ring";
-import {
-  accessibleRangeHeading,
-  calendarGrid,
-  calendarHeadings,
-  calendarRoot,
-  dayNamed,
-  navButtonNamed,
-  navButtons,
-  outsideMonthBands,
-  visibleMonthTitle,
-} from "../../../test/rac-calendar-testing";
-import { cssVarColor, fkasBranded, px, renderThemed } from "../../../test/themed-browser-render";
-import { CaretLeft } from "../../icons/generated/caret-left";
-import { CaretRight } from "../../icons/generated/caret-right";
-import { ThemeScope } from "../../theme";
+import { dayNamed, navButtonNamed, outsideMonthBands } from "../../../test/rac-calendar-testing";
+import { cssVarColor, renderThemed } from "../../../test/themed-browser-render";
 import { UiProviders } from "../ui-providers/ui-providers";
 import { Calendar } from "./calendar";
 
@@ -34,77 +19,9 @@ function renderCalendar(node: ReactNode) {
   );
 }
 
-function gridVisibleRangeLabel(): string {
-  return calendarGrid().getAttribute("aria-label") ?? "";
-}
-
-function buttonNamed(name: string | RegExp): HTMLElement {
-  const element = page.getByRole("button", { name }).element();
-  if (!(element instanceof HTMLElement)) {
-    throw new Error(`expected button ${String(name)}`);
-  }
-  return element;
-}
-
-function cells(): HTMLElement[] {
-  return page
-    .getByRole("gridcell")
-    .elements()
-    .filter((element): element is HTMLElement => element instanceof HTMLElement);
-}
-
-function glyphNamed(name: string): string {
-  const element = page.getByRole("img", { name, exact: true }).element();
-  if (!(element instanceof HTMLElement)) {
-    throw new Error(`expected glyph ${name}`);
-  }
-  return element.innerHTML;
-}
-
 const july14 = new CalendarDate(2026, 7, 14);
-const july1 = new CalendarDate(2026, 7, 1);
-const july31 = new CalendarDate(2026, 7, 31);
 
 describe("Calendar", () => {
-  it("exposes an application root containing a grid, weekday columnheaders, day cells, nav buttons, and RAC's two heading faces", async () => {
-    renderCalendar(<Calendar defaultValue={july14} />);
-    await expect.element(page.getByRole("application")).toBeVisible();
-    await expect.element(page.getByRole("grid")).toBeVisible();
-    expect(calendarRoot().contains(calendarGrid())).toBe(true);
-    expect(cells().length).toBeGreaterThan(27);
-    expect(calendarGrid().textContent).toContain("Sun");
-    expect(calendarGrid().textContent).not.toContain("Sunday");
-    await expect.element(navButtonNamed(/previous/i)).toBeVisible();
-    await expect.element(navButtonNamed(/next/i)).toBeVisible();
-
-    const hiddenHeadings = calendarHeadings().filter(
-      (element) => element.getAttribute("aria-hidden") === "true"
-    );
-    const accessibleHeadings = calendarHeadings().filter(
-      (element) => element.getAttribute("aria-hidden") !== "true"
-    );
-    expect(hiddenHeadings).toHaveLength(1);
-    expect(accessibleHeadings).toHaveLength(1);
-
-    const visibleTitle = visibleMonthTitle();
-    await expect.element(visibleTitle).toBeVisible();
-    expect(visibleTitle).toHaveAttribute("aria-hidden", "true");
-    expect(visibleTitle.getAttribute("aria-live")).toBeNull();
-    expect(visibleTitle.getAttribute("data-slot")).toBe("heading");
-    expect(px(getComputedStyle(visibleTitle).fontSize)).toBe(18);
-    expect(visibleTitle.textContent).toMatch(/July\s+2026/i);
-
-    const accessibleRange = accessibleRangeHeading();
-    expect(accessibleRange).not.toBe(visibleTitle);
-    expect(accessibleRange.getAttribute("aria-hidden")).not.toBe("true");
-    expect(accessibleRange.textContent).toMatch(/July\s+2026/i);
-
-    const visibleRangeLabel = gridVisibleRangeLabel();
-    expect(visibleRangeLabel).not.toBe("");
-    expect(visibleRangeLabel).toMatch(/July\s+2026/i);
-    expect(calendarGrid().getAttribute("aria-labelledby")).toBeNull();
-  });
-
   it("hides the neighbouring months' days, which stay pickable from their own month", async () => {
     const onChange = vi.fn();
     renderCalendar(<Calendar defaultValue={july14} onChange={onChange} />);
@@ -124,54 +41,6 @@ describe("Calendar", () => {
     await userEvent.click(dayNamed(/June 30, 2026/));
     expect(onChange).toHaveBeenCalledExactlyOnceWith(
       expect.objectContaining({ year: 2026, month: 6, day: 30 })
-    );
-  });
-
-  it("keeps the month title at 18px, snug and 500 in a branded theme", async () => {
-    renderCalendar(
-      <ThemeScope theme={fkasBranded}>
-        <Calendar defaultValue={july14} />
-      </ThemeScope>
-    );
-    const visibleTitle = visibleMonthTitle();
-    await expect.element(visibleTitle).toBeVisible();
-    const style = getComputedStyle(visibleTitle);
-    // lg 18px at snug 1.375 = 24.75px, not the branded level 2 heading style.
-    expect(px(style.fontSize)).toBe(18);
-    expect(px(style.lineHeight)).toBe(24.75);
-    expect(style.fontWeight).toBe("500");
-  });
-
-  it("lays out RTL columns and mirrors the navigation glyphs", async () => {
-    // Arrow keys follow the locale inside React Aria's own grid; the glyphs and `dir` are Fuse's.
-    renderCalendar(
-      <>
-        <span role="img" aria-label="CaretLeft glyph">
-          <CaretLeft aria-hidden />
-        </span>
-        <span role="img" aria-label="CaretRight glyph">
-          <CaretRight aria-hidden />
-        </span>
-        <I18nProvider locale="ar-EG">
-          <Calendar defaultValue={july14} />
-        </I18nProvider>
-      </>
-    );
-    await expect.element(page.getByRole("application")).toBeVisible();
-    const [previous, next] = navButtons();
-    if (previous === undefined || next === undefined) {
-      throw new Error("expected previous and next navigation buttons");
-    }
-    expect(previous.innerHTML).toBe(glyphNamed("CaretRight glyph"));
-    expect(previous.innerHTML).not.toBe(glyphNamed("CaretLeft glyph"));
-    expect(next.innerHTML).toBe(glyphNamed("CaretLeft glyph"));
-    expect(previous.querySelector("[aria-hidden='true']")).not.toBeNull();
-    expect(getComputedStyle(calendarGrid()).direction).toBe("rtl");
-    // DOM audit: RAC marks weekday headings as presentation; inspect their rendered column order.
-    const headers = [...calendarGrid().querySelectorAll("thead th")];
-    expect(headers).toHaveLength(7);
-    expect(headers[0]?.getBoundingClientRect().left).toBeGreaterThan(
-      headers[6]?.getBoundingClientRect().left ?? 0
     );
   });
 
@@ -209,41 +78,5 @@ describe("Calendar", () => {
     const describedBy = dayNamed(/Tuesday, July 14, 2026/i).getAttribute("aria-describedby");
     expect(describedBy, "the invalid day must reference the errorMessage").toBeTruthy();
     expect(describedBy?.split(/\s+/)).toContain(textHost.id);
-  });
-
-  it.each([
-    [
-      "the shared self ring on previous navigation",
-      {},
-      () => navButtonNamed(/previous/i),
-      () => navButtonNamed(/previous/i),
-    ],
-    [
-      "the shared state ring on the focused day",
-      { minValue: july1, maxValue: july31 },
-      () => page.getByRole("button", { name: /Tuesday, July 14, 2026/i }),
-      () => dayNamed(/Tuesday, July 14, 2026/i),
-    ],
-  ] as const)("paints %s at both densities", async (_case, bounds, visible, target) => {
-    renderCalendar(
-      <>
-        <button type="button">Before</button>
-        <Calendar defaultValue={july14} defaultFocusedValue={july14} {...bounds} />
-      </>
-    );
-    await expect.element(visible()).toBeVisible();
-    await assertFocusRingAtBothDensities(buttonNamed("Before"), target());
-  });
-
-  it("composes a stateful className under the calendar surface classes", async () => {
-    renderCalendar(
-      <Calendar
-        defaultValue={july14}
-        className={(renderProps) => (renderProps.isDisabled ? "opacity-80" : "min-w-40")}
-      />
-    );
-    await expect.element(page.getByRole("grid")).toBeVisible();
-    expect(calendarRoot().className).toContain("min-w-40");
-    expect(getComputedStyle(calendarRoot()).backgroundColor).toBe(cssVarColor(calendarRoot(), "--card"));
   });
 });

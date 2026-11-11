@@ -41,7 +41,7 @@ export type PlannedPage = {
 };
 
 /** The kit's pages: the ones the spec lists, in spec order, and the ones it dropped. */
-export type KitPages = {
+type KitPages = {
   readonly listed: readonly PlannedPage[];
   /** Kit pages the spec no longer lists, such as the one page the kit used to sit on. */
   readonly retired: readonly PageNode[];

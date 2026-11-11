@@ -1,7 +1,7 @@
 /**
  * The markup check: what a kit definition says its markup holds, its parts, icons, labels, styles
  * and images, against the markup its renderer gives. `checkMarkup` checks every preview cell of a
- * static set, as `src/compare/kit-markup.test.ts` runs it, and `checkMountedMarkup` the markup the
+ * static set, and `checkMountedMarkup` the markup the
  * compare page mounted for a client cell, as `client-markup.ts` runs it. The suite's header states
  * the rules and their oracle.
  *

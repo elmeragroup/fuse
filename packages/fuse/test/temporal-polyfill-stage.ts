@@ -7,7 +7,7 @@
 import { hostTemporal, TEMPORAL_INSTALL_MARKER } from "../src/temporal/install-marker";
 
 /** The globals around the entry's evaluation. */
-export type EntryStage = {
+type EntryStage = {
   /** The engine's own Temporal, captured before the stage changed anything. */
   readonly native: typeof Temporal | undefined;
   /** The engine's own `Intl.DateTimeFormat`, captured before the stage changed anything. */
@@ -24,7 +24,7 @@ export type EntryStage = {
  * Where the entry runs: in the engine as it is, without its Temporal, with `globalThis.Temporal`
  * set to `undefined` rather than removed, or after a host's own implementation.
  */
-export type EntryHost = "native" | "without-temporal" | "undefined-temporal" | "host-polyfill";
+type EntryHost = "native" | "without-temporal" | "undefined-temporal" | "host-polyfill";
 
 /**
  * Sets the stage, then evaluates the entry.

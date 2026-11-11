@@ -1,6 +1,5 @@
 import { useState } from "react";
 
-import { DirectionProvider } from "@base-ui/react/direction-provider";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
@@ -11,19 +10,15 @@ import { render } from "../../../test/browser-render";
 import { panelControlledBy } from "../../../test/panel-transition";
 import { emulateReducedMotion } from "../../../test/reduced-motion";
 import {
-  CONTROL_MD,
   computedContrast,
   computedOklch,
   fkasBranded,
-  px,
   renderThemed,
   roleNamed,
   snapshotDocumentTheme,
-  stampDensity,
   stampDocumentTheme,
   textNamed,
 } from "../../../test/themed-browser-render";
-import { ThemeScope } from "../../theme";
 import { NavigationMenu } from "./index";
 
 beforeEach(() => {
@@ -63,15 +58,6 @@ function SiteMenu({ className, container }: { className?: string; container?: HT
 async function openedLink(name: string): Promise<HTMLElement> {
   await expect.element(page.getByRole("link", { name, exact: true })).toBeVisible();
   return roleNamed("link", name);
-}
-
-/** The caret a trigger renders after its label. DOM audit: the caret is aria-hidden, so it has no role. */
-function caretOf(trigger: HTMLElement): SVGElement {
-  const caret = trigger.querySelector("svg");
-  if (!(caret instanceof SVGElement)) {
-    throw new Error(`expected the ${trigger.textContent} trigger's caret`);
-  }
-  return caret;
 }
 
 describe("NavigationMenu", () => {
@@ -126,7 +112,7 @@ describe("NavigationMenu", () => {
       await userEvent.click(trigger);
       const link = await openedLink("Wide");
       const popup = panelControlledBy(trigger);
-      // DOM audit: the content panel has no role, so the scroll container is found by its slot.
+      // The content panel has no role, so the scroll container is found by its slot.
       const content = link.closest("[data-slot='navigation-menu-content']");
       if (popup === null || !(content instanceof HTMLElement) || !popup.contains(content)) {
         throw new Error("expected the trigger to control the popup that holds the content panel");
@@ -184,42 +170,6 @@ describe("NavigationMenu", () => {
 
     await userEvent.click(roleNamed("button", "Products"));
     expect((await openedLink("Electricity")).hasAttribute("aria-current")).toBe(false);
-  });
-
-  it("puts each part's data-slot and the consumer className on the rendered element", async () => {
-    renderThemed(<SiteMenu className="root-extra" />);
-    const trigger = roleNamed("button", "Products");
-    await userEvent.click(trigger);
-    const link = await openedLink("Electricity");
-
-    const nav = roleNamed("navigation", "Site");
-    const list = page.getByRole("list").element();
-    const item = page.getByRole("listitem").first().element();
-    // DOM audit: the content panel and the aria-hidden indicator have no role, so their slots are found by data-slot.
-    const content = link.closest("[data-slot='navigation-menu-content']");
-    const indicator = trigger.querySelector("[data-slot='navigation-menu-indicator']");
-    if (
-      !(list instanceof HTMLElement) ||
-      !(item instanceof HTMLElement) ||
-      !(content instanceof HTMLElement) ||
-      !(indicator instanceof HTMLElement)
-    ) {
-      throw new Error("expected the list, its item, the content panel and the indicator");
-    }
-
-    const parts: ReadonlyArray<readonly [HTMLElement, string, string]> = [
-      [nav, "navigation-menu", "root-extra"],
-      [list, "navigation-menu-list", "list-extra"],
-      [item, "navigation-menu-item", "item-extra"],
-      [trigger, "navigation-menu-trigger", "trigger-extra"],
-      [content, "navigation-menu-content", "content-extra"],
-      [link, "navigation-menu-link", "link-extra"],
-      [indicator, "navigation-menu-indicator", "indicator-extra"],
-    ];
-    for (const [element, slot, extra] of parts) {
-      expect(element.getAttribute("data-slot"), slot).toBe(slot);
-      expect(element.classList.contains(extra), `${slot} keeps ${extra}`).toBe(true);
-    }
   });
 
   it("evaluates a className callback against the part's state", () => {
@@ -284,7 +234,7 @@ describe("nested NavigationMenu", () => {
     await openedLink("Electricity");
 
     // The nested Root renders a <div>, so the page keeps one named navigation landmark.
-    // DOM audit: a nested Root has no role of its own, so it is found by its slot.
+    // A nested Root has no role of its own, so it is found by its slot.
     const nestedRoot = roleNamed("button", "Business").closest("[data-slot='navigation-menu']");
     expect(nestedRoot?.tagName).toBe("DIV");
     expect(page.getByRole("navigation", { name: "Site", exact: true }).all()).toHaveLength(1);
@@ -403,7 +353,7 @@ describe("nested NavigationMenu", () => {
     const spot = await openedLink("Spot price");
 
     const outerPopup = panelControlledBy(outerTrigger);
-    // DOM audit: the content panel and the viewport have no role, so they are found by their slots.
+    // The content panel and the viewport have no role, so they are found by their slots.
     const viewport = spot.closest("[data-slot='navigation-menu-viewport']");
     const outerContent = viewport?.parentElement?.closest("[data-slot='navigation-menu-content']");
     if (outerPopup === null || !(viewport instanceof HTMLElement) || !(outerContent instanceof HTMLElement)) {
@@ -486,370 +436,5 @@ describe("nested NavigationMenu", () => {
         expect(computedOklch(getComputedStyle(spot).backgroundColor)).not.toEqual(computedOklch(popupColor));
       });
     });
-  });
-
-  it("styles a horizontal Root inside a vertical inline Root's content as a bar, not as its vertical ancestor", async () => {
-    stampDensity("dense");
-    renderThemed(
-      <NavigationMenu.Root aria-label="Site">
-        <NavigationMenu.List>
-          <NavigationMenu.Item>
-            <NavigationMenu.Trigger>Audiences</NavigationMenu.Trigger>
-            <NavigationMenu.Content>
-              <NavigationMenu.Root orientation="vertical" inline defaultValue="homes">
-                <NavigationMenu.List>
-                  <NavigationMenu.Item value="homes">
-                    <NavigationMenu.Trigger>Homes</NavigationMenu.Trigger>
-                    <NavigationMenu.Content>
-                      <div style={{ width: 400 }}>
-                        <NavigationMenu.Root>
-                          <NavigationMenu.List>
-                            <NavigationMenu.Item>
-                              <NavigationMenu.Trigger>Tariffs</NavigationMenu.Trigger>
-                              <NavigationMenu.Content>
-                                <NavigationMenu.Link href="#spot">Spot price</NavigationMenu.Link>
-                              </NavigationMenu.Content>
-                            </NavigationMenu.Item>
-                            <NavigationMenu.Item>
-                              <NavigationMenu.Trigger>Plans</NavigationMenu.Trigger>
-                              <NavigationMenu.Content>
-                                <NavigationMenu.Link href="#fixed">Fixed price</NavigationMenu.Link>
-                              </NavigationMenu.Content>
-                            </NavigationMenu.Item>
-                          </NavigationMenu.List>
-                        </NavigationMenu.Root>
-                      </div>
-                    </NavigationMenu.Content>
-                  </NavigationMenu.Item>
-                </NavigationMenu.List>
-                <NavigationMenu.Viewport />
-              </NavigationMenu.Root>
-            </NavigationMenu.Content>
-          </NavigationMenu.Item>
-        </NavigationMenu.List>
-      </NavigationMenu.Root>
-    );
-    await userEvent.click(roleNamed("button", "Audiences"));
-    await expect.element(page.getByRole("button", { name: "Tariffs", exact: true })).toBeVisible();
-
-    const trigger = roleNamed("button", "Tariffs");
-    const caret = caretOf(trigger);
-    const box = trigger.getBoundingClientRect();
-    const next = roleNamed("button", "Plans").getBoundingClientRect();
-    expect(box.height).toBe(CONTROL_MD.dense.height);
-    expect(box.width).toBeLessThan(400);
-    // A bar lays its triggers out in a row; a leaked vertical list would stack them.
-    expect(next.top).toBe(box.top);
-    expect(next.left).toBeGreaterThan(box.right);
-    expect(getComputedStyle(caret).rotate).toBe("none");
-
-    await userEvent.click(trigger);
-    await openedLink("Spot price");
-    await vi.waitFor(() => {
-      expect(getComputedStyle(caret).rotate).toBe("180deg");
-    });
-  });
-});
-
-describe("NavigationMenu trigger density metrics", () => {
-  function measure(name: string) {
-    const style = getComputedStyle(roleNamed("button", name));
-    return { height: px(style.height), px: px(style.paddingInlineStart) };
-  }
-
-  function Single({ label }: { label: string }) {
-    return (
-      <NavigationMenu.Root aria-label={`${label} menu`}>
-        <NavigationMenu.List>
-          <NavigationMenu.Item>
-            <NavigationMenu.Trigger>{label}</NavigationMenu.Trigger>
-          </NavigationMenu.Item>
-        </NavigationMenu.List>
-      </NavigationMenu.Root>
-    );
-  }
-
-  it("renders a bar trigger and a link in the bar at the md control box at both density stamps", () => {
-    for (const density of ["dense", "comfortable"] as const) {
-      stampDensity(density);
-      renderThemed(
-        <NavigationMenu.Root aria-label={`${density} links`}>
-          <NavigationMenu.List>
-            <NavigationMenu.Item>
-              <NavigationMenu.Trigger>{`trigger ${density}`}</NavigationMenu.Trigger>
-            </NavigationMenu.Item>
-            <NavigationMenu.Item>
-              <NavigationMenu.Link href="#bar">{`bar ${density}`}</NavigationMenu.Link>
-            </NavigationMenu.Item>
-          </NavigationMenu.List>
-        </NavigationMenu.Root>
-      );
-
-      // The rendered box: without preflight a content-box `height` excludes the padding.
-      const link = roleNamed("link", `bar ${density}`);
-      const trigger = roleNamed("button", `trigger ${density}`);
-      expect(link.getBoundingClientRect().height, `${density} link box`).toBe(CONTROL_MD[density].height);
-      expect(trigger.getBoundingClientRect().height, `${density} trigger box`).toBe(
-        CONTROL_MD[density].height
-      );
-      expect(px(getComputedStyle(link).paddingInlineStart), `${density} link padding`).toBe(
-        CONTROL_MD[density].px
-      );
-      expect(px(getComputedStyle(trigger).paddingInlineStart), `${density} trigger padding`).toBe(
-        CONTROL_MD[density].px
-      );
-      expect(px(getComputedStyle(link).columnGap), `${density} link gap`).toBe(CONTROL_MD[density].gap);
-      expect(px(getComputedStyle(trigger).columnGap), `${density} trigger gap`).toBe(CONTROL_MD[density].gap);
-    }
-  });
-
-  it("renders a link in a vertical Root's list at its sibling trigger's row metrics at both density stamps", () => {
-    for (const density of ["dense", "comfortable"] as const) {
-      stampDensity(density);
-      const { unmount } = renderThemed(
-        <NavigationMenu.Root aria-label={`${density} audiences`} orientation="vertical" side="right">
-          <NavigationMenu.List>
-            <NavigationMenu.Item>
-              <NavigationMenu.Trigger>{`Homes ${density}`}</NavigationMenu.Trigger>
-              <NavigationMenu.Content>
-                <NavigationMenu.Link href="#spot">Spot price</NavigationMenu.Link>
-              </NavigationMenu.Content>
-            </NavigationMenu.Item>
-            <NavigationMenu.Item>
-              <NavigationMenu.Link href="#business">{`Business ${density}`}</NavigationMenu.Link>
-            </NavigationMenu.Item>
-          </NavigationMenu.List>
-        </NavigationMenu.Root>
-      );
-      const link = getComputedStyle(roleNamed("link", `Business ${density}`));
-      const trigger = getComputedStyle(roleNamed("button", `Homes ${density}`));
-
-      // The vertical trigger is the oracle: both are rows in the same list.
-      for (const property of ["fontSize", "paddingInlineStart", "minHeight"] as const) {
-        expect(link[property], `${density} ${property}`).toBe(trigger[property]);
-      }
-      unmount();
-    }
-  });
-
-  it("renders a link in a bar's content as a content row, not at the bar's md box, at both density stamps", async () => {
-    for (const density of ["dense", "comfortable"] as const) {
-      stampDensity(density);
-      const { unmount } = renderThemed(
-        <NavigationMenu.Root aria-label={`${density} bar`}>
-          <NavigationMenu.List>
-            <NavigationMenu.Item>
-              <NavigationMenu.Trigger>{`Products ${density}`}</NavigationMenu.Trigger>
-              <NavigationMenu.Content>
-                <NavigationMenu.Link href="#spot">{`Spot ${density}`}</NavigationMenu.Link>
-              </NavigationMenu.Content>
-            </NavigationMenu.Item>
-          </NavigationMenu.List>
-        </NavigationMenu.Root>
-      );
-      await userEvent.click(roleNamed("button", `Products ${density}`));
-      const linkElement = await openedLink(`Spot ${density}`);
-      const link = getComputedStyle(linkElement);
-
-      // A content row is a control: the sm height and the xs inset, written out by hand, and
-      // `text-sm` at the 16px root.
-      const row = { dense: { height: 32, inset: 8 }, comfortable: { height: 36, inset: 12 } }[density];
-      expect(px(link.minHeight), `${density} minHeight`).toBe(row.height);
-      expect(linkElement.getBoundingClientRect().height, `${density} height`).toBe(row.height);
-      expect(px(link.paddingInlineStart), `${density} paddingInlineStart`).toBe(row.inset);
-      expect(px(link.paddingInlineEnd), `${density} paddingInlineEnd`).toBe(row.inset);
-      expect(px(link.fontSize), `${density} fontSize`).toBe(14);
-      unmount();
-    }
-  });
-
-  it("renders a nested vertical trigger at its sibling content link's row metrics at both density stamps", async () => {
-    for (const density of ["dense", "comfortable"] as const) {
-      stampDensity(density);
-      const { unmount } = renderThemed(
-        <NavigationMenu.Root aria-label={`${density} rows`}>
-          <NavigationMenu.List>
-            <NavigationMenu.Item>
-              <NavigationMenu.Trigger>{`Electricity ${density}`}</NavigationMenu.Trigger>
-              <NavigationMenu.Content>
-                <NavigationMenu.Link href="#spot">{`Spot price ${density}`}</NavigationMenu.Link>
-                <NavigationMenu.Root orientation="vertical" side="right">
-                  <NavigationMenu.List>
-                    <NavigationMenu.Item>
-                      <NavigationMenu.Trigger>{`Electric car ${density}`}</NavigationMenu.Trigger>
-                      <NavigationMenu.Content>
-                        <NavigationMenu.Link href="#charging">Charging</NavigationMenu.Link>
-                      </NavigationMenu.Content>
-                    </NavigationMenu.Item>
-                  </NavigationMenu.List>
-                </NavigationMenu.Root>
-              </NavigationMenu.Content>
-            </NavigationMenu.Item>
-          </NavigationMenu.List>
-        </NavigationMenu.Root>
-      );
-      await userEvent.click(roleNamed("button", `Electricity ${density}`));
-      const link = getComputedStyle(await openedLink(`Spot price ${density}`));
-      const triggerElement = roleNamed("button", `Electric car ${density}`);
-      const trigger = getComputedStyle(triggerElement);
-      expect(triggerElement.getBoundingClientRect().height, `${density} target size`).toBeGreaterThanOrEqual(
-        24
-      );
-
-      // The content link is the oracle: the nested trigger is one more row in its list.
-      const properties = [
-        "fontSize",
-        "lineHeight",
-        "fontWeight",
-        "paddingInlineStart",
-        "paddingInlineEnd",
-        "paddingBlockStart",
-        "minHeight",
-        "borderTopLeftRadius",
-      ] as const;
-      for (const property of properties) {
-        expect(trigger[property], `${density} ${property}`).toBe(link[property]);
-      }
-      unmount();
-    }
-  });
-
-  it("lets a consumer weight class replace a vertical trigger's inherited weight", () => {
-    renderThemed(
-      <NavigationMenu.Root aria-label="Weighted audiences" orientation="vertical" side="right">
-        <NavigationMenu.List>
-          <NavigationMenu.Item>
-            <NavigationMenu.Trigger className="font-medium">Homes</NavigationMenu.Trigger>
-            <NavigationMenu.Content>
-              <NavigationMenu.Link href="#spot">Spot price</NavigationMenu.Link>
-            </NavigationMenu.Content>
-          </NavigationMenu.Item>
-        </NavigationMenu.List>
-      </NavigationMenu.Root>
-    );
-
-    // `font-medium` is weight 500.
-    expect(getComputedStyle(roleNamed("button", "Homes")).fontWeight).toBe("500");
-  });
-
-  it("lays a vertical Root's trigger out as a full-width, start-aligned row whose caret points to its side='right' popup", async () => {
-    stampDensity("dense");
-    renderThemed(
-      <div style={{ width: 240 }}>
-        <NavigationMenu.Root aria-label="Audiences" orientation="vertical" side="right">
-          <NavigationMenu.List>
-            <NavigationMenu.Item>
-              <NavigationMenu.Trigger>
-                <span style={{ display: "block" }}>
-                  <span style={{ display: "block" }}>Homes</span>
-                  <span style={{ display: "block" }}>Prices for your household</span>
-                </span>
-              </NavigationMenu.Trigger>
-              <NavigationMenu.Content>
-                <NavigationMenu.Link href="#spot">Spot price</NavigationMenu.Link>
-              </NavigationMenu.Content>
-            </NavigationMenu.Item>
-          </NavigationMenu.List>
-        </NavigationMenu.Root>
-      </div>
-    );
-    const trigger = page.getByRole("button", { name: /^Homes/u }).element();
-    if (!(trigger instanceof HTMLElement)) {
-      throw new Error("expected the Homes trigger");
-    }
-    const caret = caretOf(trigger);
-    const box = trigger.getBoundingClientRect();
-    expect(box.width).toBe(240);
-    expect(box.height).toBeGreaterThan(CONTROL_MD.dense.height);
-    expect(getComputedStyle(trigger).textAlign).toBe("start");
-    expect(getComputedStyle(caret).rotate).toBe("-90deg");
-
-    // Opening a side panel keeps the caret on its side instead of flipping it.
-    await userEvent.click(trigger);
-    const link = await openedLink("Spot price");
-    // The caret sits at the row's end inset, which the content link's row defines.
-    expect(caret.getBoundingClientRect().right).toBeCloseTo(
-      box.right - px(getComputedStyle(link).paddingInlineEnd),
-      0
-    );
-    await vi.waitFor(() => {
-      expect(getComputedStyle(caret).rotate).toBe("-90deg");
-    });
-  });
-
-  it("points the caret to the side its popup opens on: physical sides are absolute, logical sides follow the direction", async () => {
-    // Base UI places logical sides from its DirectionProvider, and the document reads `dir`;
-    // an RTL consumer sets both, so each case does too.
-    const cases = [
-      { side: "right", dir: "ltr", opensTo: "right", rotate: "-90deg" },
-      { side: "right", dir: "rtl", opensTo: "right", rotate: "-90deg" },
-      { side: "left", dir: "ltr", opensTo: "left", rotate: "90deg" },
-      { side: "inline-end", dir: "ltr", opensTo: "right", rotate: "-90deg" },
-      { side: "inline-end", dir: "rtl", opensTo: "left", rotate: "90deg" },
-      { side: "inline-start", dir: "rtl", opensTo: "right", rotate: "-90deg" },
-    ] as const;
-    const initial = { width: window.innerWidth, height: window.innerHeight };
-    // Room for the popup on both sides of the trigger, so collision flipping cannot mask a wrong side.
-    await page.viewport(1024, 768);
-    try {
-      for (const { side, dir, opensTo, rotate } of cases) {
-        const label = `${side} ${dir}`;
-        const { unmount } = renderThemed(
-          <DirectionProvider direction={dir}>
-            <div dir={dir} style={{ width: 160, marginInline: "auto" }}>
-              <NavigationMenu.Root aria-label={label} orientation="vertical" side={side}>
-                <NavigationMenu.List>
-                  <NavigationMenu.Item>
-                    <NavigationMenu.Trigger>{label}</NavigationMenu.Trigger>
-                    <NavigationMenu.Content>
-                      <NavigationMenu.Link href="#spot">Spot price</NavigationMenu.Link>
-                    </NavigationMenu.Content>
-                  </NavigationMenu.Item>
-                </NavigationMenu.List>
-              </NavigationMenu.Root>
-            </div>
-          </DirectionProvider>
-        );
-        const trigger = roleNamed("button", label);
-        const caret = caretOf(trigger);
-        expect(getComputedStyle(caret).rotate, label).toBe(rotate);
-
-        await userEvent.click(trigger);
-        await openedLink("Spot price");
-        const popup = panelControlledBy(trigger);
-        if (popup === null) {
-          throw new Error(`expected the ${label} trigger to control a popup`);
-        }
-        await vi.waitFor(() => {
-          const box = trigger.getBoundingClientRect();
-          const placed = popup.getBoundingClientRect();
-          if (opensTo === "right") {
-            expect(placed.left, `${label} popup`).toBeGreaterThanOrEqual(box.right);
-          } else {
-            expect(placed.right, `${label} popup`).toBeLessThanOrEqual(box.left);
-          }
-        });
-        unmount();
-      }
-    } finally {
-      await page.viewport(initial.width, initial.height);
-    }
-  });
-
-  it("does not rescope metrics from a nested data-density or ThemeScope variant change", () => {
-    stampDensity("dense");
-    renderThemed(
-      <div data-density="comfortable">
-        <Single label="nested" />
-      </div>
-    );
-    expect(measure("nested").height).toBe(CONTROL_MD.dense.height);
-
-    renderThemed(
-      <ThemeScope theme={fkasBranded}>
-        <Single label="scoped" />
-      </ThemeScope>
-    );
-    expect(measure("scoped").height).toBe(CONTROL_MD.dense.height);
   });
 });

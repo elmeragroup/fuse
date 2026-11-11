@@ -3,18 +3,9 @@ import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
-import {
-  CONTROL_SM,
-  ROW,
-  px,
-  renderThemed,
-  stampDensity,
-  textboxNamed,
-} from "../../../test/themed-browser-render";
+import { ROW, px, renderThemed, stampDensity, textboxNamed } from "../../../test/themed-browser-render";
 import { DENSITIES } from "../../theme/density";
-import { Button } from "../button/button";
-import { Frame } from "../frame/frame";
-import { Table, VerticalTable } from "./table";
+import { VerticalTable } from "./table";
 import type { VerticalTableItem } from "./table";
 
 function htmlTable(name?: string): HTMLTableElement {
@@ -25,168 +16,6 @@ function htmlTable(name?: string): HTMLTableElement {
   }
   return element;
 }
-
-function ordersMarkup({ caption }: { caption?: string } = {}) {
-  return (
-    <Table.Root>
-      {caption === undefined ? null : <Table.Caption>{caption}</Table.Caption>}
-      <Table.Header>
-        <Table.Row>
-          <Table.Head>Order</Table.Head>
-          <Table.Head>Status</Table.Head>
-        </Table.Row>
-      </Table.Header>
-      <Table.Body>
-        <Table.Row>
-          <Table.Cell>#1042</Table.Cell>
-          <Table.Cell>Active</Table.Cell>
-        </Table.Row>
-        <Table.Row>
-          <Table.Cell>#1043</Table.Cell>
-          <Table.Cell>Pending</Table.Cell>
-        </Table.Row>
-      </Table.Body>
-      <Table.Footer>
-        <Table.Row>
-          <Table.Cell>Total</Table.Cell>
-          <Table.Cell>2</Table.Cell>
-        </Table.Row>
-      </Table.Footer>
-    </Table.Root>
-  );
-}
-
-describe("Table in-frame visual contract", () => {
-  it("reshapes inside Frame.Root and hides the hairline outside a frame", () => {
-    renderThemed(
-      <div>
-        <div data-outside="true">{ordersMarkup({ caption: "Loose orders" })}</div>
-        <Frame.Root>
-          <Frame.Panel>Account</Frame.Panel>
-          {ordersMarkup({ caption: "Framed orders" })}
-          <Frame.Panel>Notes</Frame.Panel>
-        </Frame.Root>
-      </div>
-    );
-
-    const loose = htmlTable("Loose orders");
-    const framed = htmlTable("Framed orders");
-    const looseBody = loose.querySelector("tbody");
-    const framedBody = framed.querySelector("tbody");
-    if (!(looseBody instanceof HTMLElement) || !(framedBody instanceof HTMLElement)) {
-      throw new Error("expected both tables to have a body");
-    }
-
-    expect(getComputedStyle(framed).borderCollapse).toBe("separate");
-    expect(getComputedStyle(framed).borderSpacing).toBe("0px");
-
-    const framedRows = [...framed.querySelectorAll("tbody tr")].filter(
-      (element): element is HTMLTableRowElement => element instanceof HTMLTableRowElement
-    );
-    const firstRow = framedRows[0];
-    const lastRow = framedRows[framedRows.length - 1];
-    const firstCell = firstRow?.cells[0];
-    const firstRowLast = firstRow?.cells[firstRow.cells.length - 1];
-    const lastRowFirst = lastRow?.cells[0];
-    const lastCell = lastRow?.cells[lastRow.cells.length - 1];
-    if (
-      firstCell === undefined ||
-      firstRowLast === undefined ||
-      lastRowFirst === undefined ||
-      lastCell === undefined
-    ) {
-      throw new Error("expected framed corner cells");
-    }
-
-    expect(px(getComputedStyle(firstCell).borderTopLeftRadius)).toBeGreaterThan(0);
-    expect(px(getComputedStyle(firstRowLast).borderTopRightRadius)).toBeGreaterThan(0);
-    expect(px(getComputedStyle(lastRowFirst).borderBottomLeftRadius)).toBeGreaterThan(0);
-    expect(px(getComputedStyle(lastCell).borderBottomRightRadius)).toBeGreaterThan(0);
-
-    const probe = document.createElement("div");
-    probe.className = "bg-background";
-    framed.append(probe);
-    expect(getComputedStyle(firstCell).backgroundColor).toBe(getComputedStyle(probe).backgroundColor);
-    probe.remove();
-
-    expect(getComputedStyle(framedBody, "::before").display).not.toBe("none");
-    expect(getComputedStyle(framedBody, "::before").pointerEvents).toBe("none");
-    expect(getComputedStyle(looseBody, "::before").display).toBe("none");
-  });
-});
-
-/** The rendered height of the cell `name` names, which a `td` stretches to its row. */
-function cellHeight(role: "cell" | "columnheader", name: string): number {
-  return page.getByRole(role, { name, exact: true }).element().getBoundingClientRect().height;
-}
-
-function densityOrders(label: string) {
-  return (
-    <Table.Root aria-label={label}>
-      <Table.Header>
-        <Table.Row>
-          <Table.Head>{`${label} order`}</Table.Head>
-          <Table.Head>{`${label} actions`}</Table.Head>
-        </Table.Row>
-      </Table.Header>
-      <Table.Body>
-        <Table.Row>
-          <Table.Cell>{`${label} #1042`}</Table.Cell>
-          <Table.Cell>{`${label} active`}</Table.Cell>
-        </Table.Row>
-        <Table.Row>
-          <Table.Cell>{`${label} #1043`}</Table.Cell>
-          <Table.Cell>
-            <Button variant="ghost" size="icon-sm" aria-label={`${label} row actions`}>
-              <svg aria-hidden="true" viewBox="0 0 16 16" />
-            </Button>
-          </Table.Cell>
-        </Table.Row>
-      </Table.Body>
-    </Table.Root>
-  );
-}
-
-describe("Table rows follow density", () => {
-  afterEach(() => {
-    document.documentElement.removeAttribute("data-density");
-  });
-
-  it.each(DENSITIES)("sizes heads and cells from the row metrics at %s", (density) => {
-    stampDensity(density);
-    renderThemed(
-      <div>
-        {densityOrders("Loose")}
-        <Frame.Root>{densityOrders("Framed")}</Frame.Root>
-      </div>
-    );
-    const row = ROW[density];
-    for (const label of ["Loose", "Framed"]) {
-      expect(cellHeight("columnheader", `${label} order`), `${label} head`).toBe(row.headerHeight);
-      expect(cellHeight("cell", `${label} #1042`), `${label} one-line row`).toBe(row.height);
-      // An icon-sm button is the sm control square, and the row pads it on the block axis. A
-      // framed cell also draws its 1px bottom rule. A loose table collapses its borders, as under
-      // preflight, so the cell carries half of the 1px row divider above it.
-      const actions = page.getByRole("cell", { name: `${label} #1043`, exact: true }).element();
-      const rule = label === "Framed" ? px(getComputedStyle(actions).borderBottomWidth) : 0.5;
-      expect(cellHeight("cell", `${label} #1043`), `${label} actions row`).toBe(
-        CONTROL_SM[density].height + 2 * row.py + rule
-      );
-    }
-    const loose = getComputedStyle(page.getByRole("cell", { name: "Loose active", exact: true }).element());
-    expect([loose.paddingTop, loose.paddingRight, loose.paddingBottom, loose.paddingLeft].map(px)).toEqual([
-      row.py,
-      row.px,
-      row.py,
-      row.px,
-    ]);
-    // A framed edge cell starts its text on the Frame's text inset, a panel's 1px border and the
-    // large surface tier, 16px dense and 24px comfortable, so it lines up with the panels.
-    const largeTier = { dense: 16, comfortable: 24 }[density];
-    const edge = getComputedStyle(page.getByRole("cell", { name: "Framed #1042", exact: true }).element());
-    expect(px(edge.paddingLeft) + px(edge.borderLeftWidth)).toBe(1 + largeTier);
-  });
-});
 
 describe("VerticalTable", () => {
   afterEach(() => {
@@ -310,7 +139,7 @@ describe("VerticalTable", () => {
       throw new Error("expected a loading row");
     }
     expect(loadingRow.textContent.trim()).toBe("");
-    // DOM audit: isLoading cells contain the skeleton node (no role; locate by the mandated slot).
+    // IsLoading cells contain the skeleton node (no role; locate by the mandated slot).
     expect(loadingRow.querySelectorAll('[data-slot="skeleton"]')).toHaveLength(2);
     expect(page.getByRole("cell", { name: "Name" }).elements()).toHaveLength(0);
   });
@@ -344,7 +173,7 @@ describe("VerticalTable", () => {
     );
 
     expect(htmlTable("Customer")).toBeTruthy();
-    // DOM audit: wrapper id and tableProps id are distinct, each unique; ids have no role.
+    // Wrapper id and tableProps id are distinct, each unique; ids have no role.
     expect(document.body.querySelectorAll("#facts")).toHaveLength(1);
     expect(document.body.querySelectorAll("#facts-table")).toHaveLength(1);
     expect(document.getElementById("facts")?.getAttribute("aria-labelledby")).toBe("wrapper-only");

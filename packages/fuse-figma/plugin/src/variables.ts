@@ -12,7 +12,7 @@ import { DuplicateCollections, FileNotSynced } from "./errors.ts";
 import { FigmaPlugin, FileVariables, Kit } from "./services.ts";
 
 /** A mode of a local collection. */
-export type ResolvedMode = {
+type ResolvedMode = {
   readonly collection: VariableCollection;
   readonly modeId: string;
 };

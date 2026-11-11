@@ -113,6 +113,7 @@ function TableHeader({ className, ...props }: TableHeaderProps): ReactElement {
     <thead
       data-slot="table-header"
       className={cn(
+        // oxlint-disable-next-line fuse/state-face -- table rows are not controls and have no disabled state
         "[&_tr]:border-b framed-table:*:[tr]:border-none framed-table:*:[tr]:hover:bg-transparent",
         className
       )}
@@ -127,6 +128,7 @@ function TableBody({ className, ...props }: TableBodyProps): ReactElement {
       data-slot="table-body"
       className={cn(
         frameTableBodyShellClass,
+        // oxlint-disable-next-line fuse/state-face -- table rows are not controls and have no disabled state
         "before:shadow-[0_1px_--theme(--color-black/6%)] relative before:pointer-events-none before:absolute before:inset-px not-framed-table:before:hidden framed-table:shadow-[shadow:0_var(--frame-shadow-y,1px)_var(--frame-shadow-blur,2px)_0_black]/5 [&_tr:last-child]:border-0 framed-table:*:[tr]:border-0 framed-table:*:[tr]:*:[td]:border-b framed-table:*:[tr]:*:[td]:bg-background framed-table:*:[tr]:*:[td]:bg-clip-padding framed-table:*:[tr]:*:[td]:first:border-s framed-table:*:[tr]:first:*:[td]:border-t framed-table:*:[tr]:*:[td]:last:border-e framed-table:*:[tr]:hover:*:[td]:bg-transparent framed-table:*:[tr]:data-[state=selected]:*:[td]:bg-muted/72",
         className
       )}
@@ -140,6 +142,7 @@ function TableFooter({ className, ...props }: TableFooterProps): ReactElement {
     <tfoot
       data-slot="table-footer"
       className={cn(
+        // oxlint-disable-next-line fuse/state-face -- table rows are not controls and have no disabled state
         "font-medium border-t bg-muted/72 framed-table:border-none framed-table:bg-transparent framed-table:*:[tr]:hover:bg-transparent [&>tr]:last:border-b-0",
         className
       )}
@@ -153,6 +156,7 @@ function TableRow({ className, ...props }: TableRowProps): ReactElement {
     <tr
       data-slot="table-row"
       className={cn(
+        // oxlint-disable-next-line fuse/state-face -- table rows are not controls and have no disabled state
         "border-b transition-colors hover:bg-muted/72 data-[state=selected]:bg-muted/72 framed-table:hover:bg-transparent framed-table:data-[state=selected]:bg-transparent",
         className
       )}
@@ -263,6 +267,7 @@ function VerticalTableRow({
     <TableRow
       data-font-weight={fontWeight}
       className={cn(
+        // oxlint-disable-next-line fuse/state-face -- table rows are not controls and have no disabled state
         "group/vertical-table-row-item *:border-border hover:bg-transparent [&>:not(:last-child)]:border-e",
         "in-data-[variant=non-bordered-compact]:border-none",
         { hidden: isHidden },

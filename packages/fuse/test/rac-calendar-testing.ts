@@ -1,4 +1,4 @@
-import { page, userEvent } from "vitest/browser";
+import { page } from "vitest/browser";
 import type { Locator } from "vitest/browser";
 
 /**
@@ -47,44 +47,13 @@ export function calendarGrid(): HTMLElement {
 }
 
 /**
- * Both heading faces inside the root. RAC renders two: the visible month/year title it
- * marks `aria-hidden` (because the grid's own label already names the month), and a
- * visually-hidden accessible heading carrying the visible range.
- */
-export function calendarHeadings(): HTMLElement[] {
-  const root = calendarRoot();
-  return page
-    .getByRole("heading", { includeHidden: true })
-    .elements()
-    .filter((element): element is HTMLElement => element instanceof HTMLElement && root.contains(element));
-}
-
-/** The visible month title — the `aria-hidden` face of the pair above. */
-export function visibleMonthTitle(): HTMLElement {
-  const match = calendarHeadings().find((element) => element.getAttribute("aria-hidden") === "true");
-  if (match === undefined) {
-    throw new Error("expected the calendar's visible month title");
-  }
-  return match;
-}
-
-/** The accessible visible-range heading — the face that is not `aria-hidden`. */
-export function accessibleRangeHeading(): HTMLElement {
-  const match = calendarHeadings().find((element) => element.getAttribute("aria-hidden") !== "true");
-  if (match === undefined) {
-    throw new Error("expected the accessible calendar range heading");
-  }
-  return match;
-}
-
-/**
  * The visible month-navigation buttons, in DOM order.
  *
  * RAC renders a second, screen-reader-only pair with the same accessible names, so the
  * visible ones are picked structurally: inside the calendar root, outside the day grid,
  * and wrapping a glyph element rather than bare text.
  */
-export function navButtons(): HTMLElement[] {
+function navButtons(): HTMLElement[] {
   const root = calendarRoot();
   const grid = calendarGrid();
   return page
@@ -172,86 +141,10 @@ export function cellNumbered(day: number): HTMLElement {
   return cell;
 }
 
-/**
- * Park the virtual pointer off the day grid before a keyboard anchor.
- *
- * The pointer keeps the screen position the last click left it at, and every test mounts a
- * fresh host underneath it, so a day cell can sit under a stationary cursor. Chromium
- * re-delivers a boundary event to whatever is under that cursor when the DOM below it
- * changes, `useCalendarCell`'s `onPointerEnter` answers one with `state.highlightDate(date)`,
- * and `useRangeCalendarState.highlightDate` calls `setFocusedDate` whenever a range is
- * anchored — so a hovered cell steals the focus the arrow keys count from. Hovering a
- * non-cell element leaves no cell under the pointer for that to happen to.
- */
-export async function parkPointerOffGrid(): Promise<void> {
-  await userEvent.hover(visibleMonthTitle());
-}
-
 /** The distinct, non-empty texts an element's `aria-describedby` points at. */
 export function describedTextsFor(element: HTMLElement): string[] {
   const ids = (element.getAttribute("aria-describedby") ?? "").split(/\s+/).filter(Boolean);
   return [
     ...new Set(ids.map((id) => document.getElementById(id)?.textContent ?? "").filter((text) => text !== "")),
   ];
-}
-
-/** Viewport-pixel edges of a box, as `getBoundingClientRect` reports them. */
-export type BoxEdges = {
-  readonly top: number;
-  readonly right: number;
-  readonly bottom: number;
-  readonly left: number;
-};
-
-/**
- * An element's padding box: its border box less its own borders. For the picker dialog
- * that is the area a full-bleed divider has to reach, edge to edge.
- */
-export function paddingBox(element: HTMLElement): BoxEdges {
-  // Computed border widths rather than `clientTop`/`clientHeight`, which round to whole
-  // pixels while the bounding rect keeps the fractional layout.
-  const rect = element.getBoundingClientRect();
-  const style = getComputedStyle(element);
-  const border = (side: string) => Number.parseFloat(style.getPropertyValue(`border-${side}-width`));
-  return {
-    top: rect.top + border("top"),
-    right: rect.right - border("right"),
-    bottom: rect.bottom - border("bottom"),
-    left: rect.left + border("left"),
-  };
-}
-
-/**
- * Viewports either side of Tailwind's `sm` breakpoint (40rem), where the picker's preset
- * pane flips from stacked to a row. The stacked one is Vitest's default browser viewport,
- * so a suite that widens the page restores it with `STACKED_VIEWPORT`.
- */
-export const ROW_VIEWPORT = { width: 1024, height: 896 } as const;
-export const STACKED_VIEWPORT = { width: 414, height: 896 } as const;
-
-/**
- * Tolerance for comparing layout pixels. Chromium on Linux reports fractional layout
- * (7.999996px for an 8px padding), so geometry assertions allow this much drift.
- */
-export const SUBPIXEL = 0.01;
-
-/** How far `inner` sits inside `outer` on each side; negative where it pokes out. */
-export function insetsWithin(outer: BoxEdges, inner: BoxEdges): BoxEdges {
-  return {
-    top: inner.top - outer.top,
-    right: outer.right - inner.right,
-    bottom: outer.bottom - inner.bottom,
-    left: inner.left - outer.left,
-  };
-}
-
-/** The smallest box around every element given, in viewport pixels. */
-export function unionBox(elements: readonly HTMLElement[]): BoxEdges {
-  const rects = elements.map((element) => element.getBoundingClientRect());
-  return {
-    top: Math.min(...rects.map((rect) => rect.top)),
-    right: Math.max(...rects.map((rect) => rect.right)),
-    bottom: Math.max(...rects.map((rect) => rect.bottom)),
-    left: Math.min(...rects.map((rect) => rect.left)),
-  };
 }

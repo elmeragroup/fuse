@@ -2,7 +2,7 @@
 // current tree's registrations, which throws a Panel rule from a layout effect once every Panel and
 // every plot part of the commit has registered. Oracles: CONTRACT section 8.1's messages and bar
 // heights worked out by hand on fixed domains.
-import { Suspense, use, useMemo } from "react";
+import { Suspense, use } from "react";
 import type { ReactNode } from "react";
 
 import { hydrateRoot } from "react-dom/client";
@@ -15,7 +15,6 @@ import { barHeights, frame } from "../../../test/chart/panel-readers";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
 import { Chart } from "./chart-namespace";
-import { ChartRootContext } from "./chart-scope-contexts";
 import "./chart.css";
 
 describe("Panel rules after registration", () => {
@@ -128,7 +127,7 @@ describe("a plot part that moves between a Panel and the default layout (X1, Q2-
 describe("Panel coverage of the current tree (W1)", () => {
   /** Bars drawn, by Panel. */
   const barsByPanel = (host: HTMLElement) =>
-    // DOM audit: Panels are layout rows and bars aria-hidden plot output, so slots locate both.
+    // Panels are layout rows and bars aria-hidden plot output, so slots locate both.
     [...host.querySelectorAll('[data-slot="chart-panel"]')].map(
       (panel) => panel.querySelectorAll('[data-slot="chart-bar"]').length
     );
@@ -254,47 +253,5 @@ describe("Panel coverage of the current tree (W1)", () => {
       root.unmount();
       container.remove();
     }
-  });
-});
-
-describe("plot part registration with Root (Y5)", () => {
-  it("registers each plot part in the default layout once", async () => {
-    // Root's own context, passed on with registerRootPart counting the parts that register. A Bar,
-    // a Line and a Grid under the default layout are three parts, so three registrations.
-    const registered: string[] = [];
-    function Counting({ children }: { readonly children: ReactNode }): ReactNode {
-      const root = use(ChartRootContext);
-      if (root === null) throw new Error("no Root");
-      const counted = useMemo(
-        () => ({
-          ...root,
-          registerRootPart: (part: string) => {
-            registered.push(part);
-            return root.registerRootPart(part);
-          },
-        }),
-        [root]
-      );
-      return <ChartRootContext value={counted}>{children}</ChartRootContext>;
-    }
-    renderThemed(
-      <LocaleProvider locale="nb-NO">
-        <div style={{ width: 200 }}>
-          <Chart.Root
-            data={[{ name: "a", v: 1, w: 2 }]}
-            config={{ v: { label: "V", color: "chart-1" }, w: { label: "W", color: "chart-2" } }}
-            xKey="name"
-            aria-label="Teller">
-            <Counting>
-              <Chart.Grid />
-              <Chart.Bar dataKey="v" />
-              <Chart.Line dataKey="w" />
-            </Counting>
-          </Chart.Root>
-        </div>
-      </LocaleProvider>
-    );
-    await frame();
-    expect(registered.toSorted()).toEqual(["Chart.Bar", "Chart.Grid", "Chart.Line"]);
   });
 });

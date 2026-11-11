@@ -1,9 +1,7 @@
 import { randomUUID } from "node:crypto";
-import { readFileSync } from "node:fs";
-import path from "node:path";
 import { describe, expect, it } from "vitest";
 
-import { docsBaseUrl, docsBuildDir } from "./docs-server";
+import { docsBaseUrl, prerenderManifest } from "./docs-server";
 import { readDocumentBrand } from "./html";
 
 /*
@@ -21,23 +19,8 @@ import { readDocumentBrand } from "./html";
  * suite's server serves.
  */
 
-/** The fields of a prerender manifest route these tests read. */
-type PrerenderedRoute = {
-  routeType: string;
-  renderingMode: string;
-  response: string;
-  initialRevalidateSeconds: number | false;
-};
-
 /** The build's record of each path it prerendered, keyed by path. */
-const prerendered: Partial<Record<string, PrerenderedRoute>> =
-  // SAFETY: `next build` writes this manifest, and every test compares each field it reads
-  // against an expected value, so a shape that disagrees with the type fails the test.
-  (
-    JSON.parse(readFileSync(path.join(docsBuildDir(), "prerender-manifest.json"), "utf8")) as {
-      routes: Partial<Record<string, PrerenderedRoute>>;
-    }
-  ).routes;
+const prerendered = prerenderManifest();
 
 /**
  * The build's record of a page it prerendered whole and never revalidates. With Cache Components
@@ -110,13 +93,6 @@ async function get(pathname: string): Promise<{ response: Response; text: string
 }
 
 describe("rendering contract", () => {
-  // The browser project serves `docs#build:e2e`, whose pages carry Next's Instant Navigation
-  // bootstrap. These contracts hold for the shipped build, so the server must not be that one.
-  it("serves the production build, without Next's testing API", async () => {
-    const { text } = await get("/components/button");
-    expect(text).not.toContain("__next_instant_test");
-  });
-
   it.each(STATIC_PAGES)("serves %s whole from its prerender", async (pathname) => {
     const { response } = await get(pathname);
     expect(response.status).toBe(200);

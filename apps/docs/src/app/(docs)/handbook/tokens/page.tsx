@@ -2,7 +2,6 @@ import type { ReactElement } from "react";
 
 import Link from "next/link";
 
-import { BundleSizes } from "../../../../components/bundle-sizes";
 import { DocsPage, pageMetadata } from "../../../../components/docs-page";
 import { DocsTable } from "../../../../components/docs-table";
 import { TokenSwatchList } from "../../../../components/token-swatch-list";
@@ -59,8 +58,7 @@ export default function TokensPage(): ReactElement {
         <strong>label</strong> the words that describe a control, or the text of a notice beside the controls.
         A <strong>layout</strong> part is sized by its children and a <strong>fixed</strong> part is identical
         at both densities. A row keeps its text size, so it grows only in height and padding, and a gap
-        between one part&apos;s own pieces stays fixed. The docs density coverage test checks every rendered
-        part against its role.
+        between one part&apos;s own pieces stays fixed.
       </p>
       <p>
         Button pads its labels with its own <code>--control-px-button-*</code> and{" "}
@@ -73,16 +71,6 @@ export default function TokensPage(): ReactElement {
       <DensityMetricsTable />
       <h3 id="density-parts">Parts by role</h3>
       <DensityPartsTable />
-
-      <h2 id="bundle-sizes">Measured bundle sizes</h2>
-      <p>
-        Budgets are regression ratchets, not aspirations: every published entry has a CI-enforced ceiling, and
-        ceilings only move down unless a reviewed change says why. The numbers below are the measurements the
-        gate records, paired with the ceiling it enforces — both read from the library&apos;s budget module at
-        docs build, so this table cannot quietly disagree with the gate. Breaching a ceiling fails the build
-        and blocks the <Link href="/releases">release</Link>.
-      </p>
-      <BundleSizes />
     </DocsPage>
   );
 }

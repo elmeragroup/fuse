@@ -27,7 +27,7 @@ export const OWN_CLICK_SELECTOR = [
  * non-native elements (Base UI's checkbox and radio spans, a slider thumb, a date segment) that
  * such a region can hold. The slider's track has no role, so its control is named by slot.
  */
-export const INTERACTIVE_DESCENDANT = [
+const INTERACTIVE_DESCENDANT = [
   OWN_CLICK_SELECTOR,
   "[role=checkbox]",
   "[role=radio]",

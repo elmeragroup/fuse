@@ -1,6 +1,6 @@
 /**
  * Unit under test: the calendar's formatted text in every engine. Oracles, written out by hand per
- * locale, which Chromium, Firefox and WebKit must each reproduce: for days and months, the strings
+ * locale, which Chromium and WebKit must each reproduce: for days and months, the strings
  * React Aria's interim tier writes through the same `Intl` options; for a range of months, CLDR's
  * month names joined by the locale's interval fallback separator, with a shared year written once.
  * The ranges are deliberately not `formatRange` output, which Firefox shortens differently in

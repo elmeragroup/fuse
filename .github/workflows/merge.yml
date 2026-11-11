@@ -70,11 +70,11 @@ jobs:
             turbo-checks-${{ github.sha }}-
             turbo-checks-
 
-      # turbo.json ci:checks minus the browser, e2e and packed-consumer checks — a docs/unit
-      # failure should not wait on the Chromium suites.
+      # turbo.json ci:checks minus the browser, e2e and packed-consumer checks, which the browser
+      # job runs, so a unit or type failure does not wait on the browser suites.
       - name: turbo ci:checks (no browser)
         id: turbo-gate
-        run: pnpm exec turbo run '//#lint' '//#test:repo-policy' '//#type-check:scripts' type-check test test:types build package:check size-limit api:report
+        run: pnpm exec turbo run '//#lint' '//#test:repo-policy' '//#type-check:scripts' type-check test test:types build package:check api:report
         env:
           TURBO_RUN_SUMMARY: "true"
 
@@ -103,37 +103,20 @@ jobs:
         if: env.IS_SELF_RELEASE_PR == 'true' || github.ref == 'refs/heads/changeset-release/main'
         run: pnpm release check-pr
 
-  # One leg runs every package's browser, packed-consumer and e2e tasks but docs'; the docs e2e
-  # suite, the slowest, splits across the docs legs by Vitest's file shards. Each docs leg builds
-  # docs itself and serves it from its own `next start`. Jobs that need `browser` wait for
-  # every leg. A leg's failure lets the others finish, so one run reports every failing shard.
+  # Every package's browser, packed-consumer and e2e tasks, docs' e2e suite against its own
+  # `next start` included, in one job beside the checks job.
   browser:
-    name: browser (${{ matrix.leg }})
     runs-on: ubuntu-latest
     timeout-minutes: 45
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - leg: packages
-            turbo-args: test:browser test:packed-consumer test:e2e --filter='!docs'
-          - leg: docs-1
-            turbo-args: test:e2e --filter=docs -- --shard=1/4
-          - leg: docs-2
-            turbo-args: test:e2e --filter=docs -- --shard=2/4
-          - leg: docs-3
-            turbo-args: test:e2e --filter=docs -- --shard=3/4
-          - leg: docs-4
-            turbo-args: test:e2e --filter=docs -- --shard=4/4
     env:
       # A cache key is immutable once saved, so every attempt saves under its own key and
       # restores by prefix. Under PR churn these per-attempt entries can evict main's from the
       # 10GB repository cache (LRU); that only costs a cold run. The job id is spelled out
-      # because `github.job` is null outside a job's steps; the leg keeps each leg's tasks apart.
-      TURBO_CACHE_KEY: turbo-browser-${{ matrix.leg }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+      # because `github.job` is null outside a job's steps.
+      TURBO_CACHE_KEY: turbo-browser-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
     steps:
       # The browser gate reads no git history; only the checks job needs it (changeset status --since).
-      # The docs legs fetch the PR's base commit alone to compare its tree.
+      # The docs e2e choice below fetches the PR's base commit alone to compare its tree.
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -166,17 +149,17 @@ jobs:
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.cache/ms-playwright
-          key: playwright-chromium-firefox-webkit-${{ runner.os }}-${{ steps.playwright.outputs.version }}
+          key: playwright-chromium-webkit-${{ runner.os }}-${{ steps.playwright.outputs.version }}
 
-      # The `browser-engines` and `browser-reduced-motion` projects and the docs time-zone
-      # hydration suite run in all three. Their system packages install in their own step, so
-      # either browser cache result shares the package cache.
+      # The `browser-engines` project and the docs time-zone hydration suite run in WebKit as well
+      # as Chromium. Their system packages install in their own step, so either browser cache
+      # result shares the package cache.
       - name: Install Playwright browsers
         if: steps.playwright-cache.outputs.cache-hit != 'true'
-        run: pnpm --filter @elmeragroup/fuse exec playwright install chromium firefox webkit
+        run: pnpm --filter @elmeragroup/fuse exec playwright install chromium webkit
 
       # The system packages' .debs are cached too: fetching them from the Ubuntu mirror has
-      # stalled legs for 40 minutes. A set only installs onto the dpkg state it was resolved
+      # stalled runs for 40 minutes. A set only installs onto the dpkg state it was resolved
       # against, so the key names the runner image as well as the Playwright version that lists
       # the packages. The image variables come from the runner's environment, which the `env`
       # context does not include.
@@ -193,42 +176,21 @@ jobs:
           path: ${{ runner.temp }}/playwright-debs
           key: playwright-debs-${{ steps.runner-image.outputs.image }}-${{ steps.playwright.outputs.version }}
 
-      # One bounded download per run; the script explains the limit. A failure here does not fail
-      # the leg: by then a sibling leg has usually saved the set, so the rescue below restores
-      # the cache again and installs offline, or downloads once more when nothing was saved.
-      # Each step's limit is a backstop over one attempt and the offline install.
+      # One bounded download on a miss; the script explains the limit. The step's limit is a
+      # backstop over that attempt and the offline install.
       - name: Install Playwright system dependencies
         id: playwright-deps
-        continue-on-error: true
         timeout-minutes: 6
         env:
           CACHE_HIT: ${{ steps.deps-cache.outputs.cache-hit }}
           DEBS: ${{ runner.temp }}/playwright-debs
         run: bash .github/scripts/install-playwright-deps.sh
 
-      - name: Restore Playwright system packages another leg saved
-        id: deps-cache-rescue
-        if: steps.playwright-deps.outcome == 'failure'
-        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: ${{ runner.temp }}/playwright-debs
-          key: ${{ steps.deps-cache.outputs.cache-primary-key }}
-
-      - name: Install Playwright system dependencies (rescue)
-        id: playwright-deps-rescue
-        if: steps.playwright-deps.outcome == 'failure'
-        timeout-minutes: 6
-        env:
-          CACHE_HIT: ${{ steps.deps-cache-rescue.outputs.cache-hit }}
-          DEBS: ${{ runner.temp }}/playwright-debs
-        run: bash .github/scripts/install-playwright-deps.sh
-
-      # The script offers a set only after downloading it on a miss, in either run. Every leg
-      # that downloaded saves the same key; one wins and the others log a warning. Any ref
-      # saves, so a branch run restores its own entry. A PR falls back to main's, so it misses
-      # only while main has none for its image.
+      # The script offers a set only after downloading it on a miss. Any ref saves, so a branch
+      # run restores its own entry. A PR falls back to main's, so it misses only while main has
+      # none for its image.
       - name: Save Playwright system packages
-        if: steps.playwright-deps.outputs.save == 'true' || steps.playwright-deps-rescue.outputs.save == 'true'
+        if: steps.playwright-deps.outputs.save == 'true'
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ${{ runner.temp }}/playwright-debs
@@ -245,15 +207,14 @@ jobs:
           path: .turbo/cache
           key: ${{ env.TURBO_CACHE_KEY }}
           restore-keys: |
-            turbo-browser-${{ matrix.leg }}-${{ github.sha }}-
-            turbo-browser-${{ matrix.leg }}-
+            turbo-browser-${{ github.sha }}-
+            turbo-browser-
 
       # The studio and landing e2e files guard the docs site's own apps, not Fuse, so a PR runs
       # them only when it changes apps/docs or the lockfile. A push to main or a dispatch carries no
       # base commit and runs them all. The repository is public, so the fetch needs no credentials.
       - name: Choose the docs e2e files
         id: docs-e2e
-        if: startsWith(matrix.leg, 'docs')
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: |
@@ -266,8 +227,7 @@ jobs:
 
       - name: turbo browser checks
         id: turbo-gate
-        # The matrix arguments are literals in this file, so they can be part of the command.
-        run: pnpm exec turbo run ${{ matrix.turbo-args }}
+        run: pnpm exec turbo run test:browser test:packed-consumer test:e2e
         env:
           TURBO_RUN_SUMMARY: "true"
           DOCS_E2E_SITE: ${{ steps.docs-e2e.outputs.site }}

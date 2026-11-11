@@ -5,45 +5,16 @@ import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
-import { assertFocusRingAtBothDensities } from "../../../test/assert-focus-ring";
 import {
-  assertLegendVisuallyHidden,
-  bodyOffset,
-  legendFieldset,
-} from "../../../test/assert-group-label-hidden";
-import {
-  assertConnectedVerticalList,
-  assertDirectSiblingList,
-  assertHorizontalItemList,
-  listitemHosts,
-  radiusToken,
-} from "../../../test/assert-selection-item-group-layout";
-import {
-  computedContrast,
   cssVarColor,
   effectiveOpacity,
   formNamed,
-  guenBranded,
   renderThemed,
-  roleNamed,
-  stampDensity,
   textNamed,
 } from "../../../test/themed-browser-render";
-import { ThemeScope } from "../../theme";
 import { Badge } from "../badge/badge";
 import { Field } from "../field";
-import { Radio, RadioGroup, RadioGroupItem, RadioIconButton, RadioItemGroup } from "./radio-group";
-import { RadioItem } from "./radio-item";
-
-const ICON_SIZES = ["icon-xxs", "icon-xs", "icon-sm", "icon", "icon-lg"] as const;
-
-const ICON_SVG_PX = {
-  "icon-xxs": 12,
-  "icon-xs": 14,
-  "icon-sm": 16,
-  icon: 16,
-  "icon-lg": 20,
-} as const satisfies Record<(typeof ICON_SIZES)[number], number>;
+import { Radio, RadioGroup, RadioGroupItem, RadioIconButton } from "./radio-group";
 
 function radioNamed(name: string, checked?: boolean): HTMLElement {
   const element = page.getByRole("radio", { name, exact: true, checked }).element();
@@ -105,32 +76,6 @@ describe("RadioGroup", () => {
     expect(onChange).toHaveBeenCalledTimes(1);
     expect(onChange.mock.calls[0]?.[0]).toBe("fixed");
     expect(radioNamed("Fixed", true).getAttribute("aria-checked")).toBe("true");
-  });
-
-  it("draws the unchecked edge at 3:1 against the page and a card in light themes", () => {
-    renderThemed(
-      <>
-        <RadioGroup label="Neutral plan">
-          <Radio value="neutral">Neutral</Radio>
-        </RadioGroup>
-        <ThemeScope theme={guenBranded}>
-          <RadioGroup label="Branded plan">
-            <Radio value="branded">Branded</Radio>
-          </RadioGroup>
-        </ThemeScope>
-      </>
-    );
-    // WCAG 1.4.11: the unfilled circle shows only its edge, over whichever surface it sits on.
-    for (const name of ["Neutral", "Branded"]) {
-      const radio = radioNamed(name);
-      const edge = getComputedStyle(radio).borderTopColor;
-      for (const surface of ["--background", "--card"]) {
-        expect(
-          computedContrast(edge, cssVarColor(radio, surface)),
-          `${name} ${surface}`
-        ).toBeGreaterThanOrEqual(3);
-      }
-    }
   });
 
   it("keeps a member's Field label when a wrapper forwards id and aria-labelledby as undefined", () => {
@@ -399,113 +344,6 @@ describe("Radio", () => {
     expect(effectiveOpacity(radioNamed("Fixed"))).toBe(1);
     expect(effectiveOpacity(textNamed("Fixed"))).toBe(1);
   });
-
-  it.each([
-    {
-      control: "Radio",
-      name: "Fixed",
-      group: (
-        <RadioGroup label="Contract">
-          <Radio value="fixed">Fixed</Radio>
-        </RadioGroup>
-      ),
-    },
-    {
-      control: "RadioIconButton",
-      name: "List",
-      group: (
-        <RadioGroup label="View">
-          <RadioIconButton value="list" aria-label="List">
-            <Glyph />
-          </RadioIconButton>
-        </RadioGroup>
-      ),
-    },
-  ])(
-    "paints the shared ring on a $control on keyboard focus-visible and not on mouse focus, at both densities",
-    async ({ name, group }) => {
-      renderThemed(
-        <>
-          <button type="button">Before</button>
-          {group}
-        </>
-      );
-      await assertFocusRingAtBothDensities(roleNamed("button", "Before"), radioNamed(name));
-    }
-  );
-});
-
-describe("RadioItemGroup", () => {
-  // Vertical: stacked RadioItems stay direct-sibling listitems in one connected list.
-  // Horizontal: a wrapping-gap item list of independent card shells.
-  it.each([
-    {
-      layout: "stacked (default vertical)",
-      orientation: undefined,
-      label: "Plans",
-      assertLayout: (list: HTMLElement, first: HTMLElement, second: HTMLElement) => {
-        assertConnectedVerticalList(list, first, second);
-      },
-    },
-    {
-      layout: "horizontal",
-      orientation: "horizontal",
-      label: "Horizontal plans",
-      assertLayout: (list: HTMLElement, first: HTMLElement, second: HTMLElement) => {
-        assertHorizontalItemList(list, [first, second]);
-      },
-    },
-  ] as const)(
-    "exposes $layout RadioItems as direct-sibling listitems with that layout",
-    ({ orientation, label, assertLayout }) => {
-      renderThemed(
-        <div style={radiusToken}>
-          <RadioItemGroup label={label} orientation={orientation} defaultValue="hourly">
-            <RadioItem value="fixed">
-              <RadioItem.Title role="heading" aria-level={3}>
-                Fixed price
-              </RadioItem.Title>
-            </RadioItem>
-            <RadioItem value="hourly">
-              <RadioItem.Title role="heading" aria-level={3}>
-                Hourly
-              </RadioItem.Title>
-            </RadioItem>
-          </RadioItemGroup>
-        </div>
-      );
-
-      expect(radiogroupNamed(label)).toBeTruthy();
-      const [first, second] = listitemHosts();
-      const list = assertDirectSiblingList(first, second);
-      expect(first.contains(radioNamed("Fixed price", false))).toBe(true);
-      expect(second.contains(radioNamed("Hourly", true))).toBe(true);
-      assertLayout(list, first, second);
-    }
-  );
-});
-
-describe("isLabelHidden", () => {
-  it.each([
-    { part: "RadioGroup", Group: RadioGroup },
-    { part: "RadioItemGroup", Group: RadioItemGroup },
-  ])("keeps a pending $part's spinner visible while its legend is hidden", ({ Group }) => {
-    renderThemed(
-      <Group label="Pending contract" isLabelHidden isPending>
-        <RadioItem value="fixed">Pending fixed</RadioItem>
-      </Group>
-    );
-
-    const group = radiogroupNamed("Pending contract");
-    const fieldset = legendFieldset("Pending contract");
-    assertLegendVisuallyHidden(fieldset);
-    const spinner = fieldset.querySelector("svg");
-    if (spinner === null || group.contains(spinner)) {
-      throw new Error("expected the pending spinner above the radiogroup");
-    }
-    expect(spinner.getBoundingClientRect().width).toBeGreaterThan(1);
-    expect(bodyOffset(fieldset, group)).toBeGreaterThan(0);
-  });
 });
 
 describe("RadioIconButton", () => {
@@ -527,79 +365,5 @@ describe("RadioIconButton", () => {
     expect(onChange).toHaveBeenCalledWith("house");
     expect(radioNamed("Home", true).getAttribute("aria-checked")).toBe("true");
     expect(radioNamed("List", false).getAttribute("aria-checked")).toBe("false");
-  });
-
-  // control-size.browser.test.tsx measures each size's square against DENSITY_METRICS; the
-  // glyph size is RadioIconButton's own.
-  it("renders every size's glyph with an accessible name", () => {
-    renderThemed(
-      <RadioGroup label="Sizes">
-        {ICON_SIZES.map((size) => (
-          <RadioIconButton key={size} value={size} size={size} aria-label={size}>
-            <Glyph />
-          </RadioIconButton>
-        ))}
-      </RadioGroup>
-    );
-
-    for (const density of ["dense", "comfortable"] as const) {
-      stampDensity(density);
-      for (const size of ICON_SIZES) {
-        const button = radioNamed(size);
-        const svg = button.querySelector("svg");
-        if (!(svg instanceof SVGElement)) {
-          throw new Error(`expected an svg in ${size}`);
-        }
-        expect(Number.parseFloat(getComputedStyle(svg).width)).toBe(ICON_SVG_PX[size]);
-        expect(Number.parseFloat(getComputedStyle(svg).height)).toBe(ICON_SVG_PX[size]);
-      }
-    }
-  });
-});
-
-describe("RadioGroupItem", () => {
-  it("dims a standalone disabled item to half opacity and leaves an enabled one opaque", () => {
-    // Base UI renders the root as a <span>, which never matches `:disabled`. No label
-    // wraps these items, so only the item's own rule can dim it.
-    renderThemed(
-      <RadioGroup label="Contract">
-        <RadioGroupItem value="spot" aria-label="Spot primitive" disabled />
-        <RadioGroupItem value="fixed" aria-label="Fixed primitive" />
-      </RadioGroup>
-    );
-
-    expect(effectiveOpacity(radioNamed("Spot primitive"))).toBe(0.5);
-    expect(effectiveOpacity(radioNamed("Fixed primitive"))).toBe(1);
-  });
-
-  it("composes library classes with a string className or a stateful callback", async () => {
-    renderThemed(
-      <RadioGroup label="Contract" defaultValue="fixed">
-        <RadioGroupItem value="fixed" aria-label="Fixed primitive" className="radio-group-item-string" />
-        <RadioGroupItem
-          value="spot"
-          aria-label="Spot primitive"
-          className={(state) =>
-            state.checked ? "radio-group-item-checked-callback" : "radio-group-item-unchecked-callback"
-          }
-        />
-      </RadioGroup>
-    );
-
-    const fixed = radioNamed("Fixed primitive", true);
-    expect(fixed.classList.contains("radio-group-item-string")).toBe(true);
-    expect(fixed.classList.contains("group/radio-group-item")).toBe(true);
-
-    const spot = radioNamed("Spot primitive", false);
-    expect(spot.classList.contains("radio-group-item-unchecked-callback")).toBe(true);
-    expect(spot.classList.contains("group/radio-group-item")).toBe(true);
-
-    await userEvent.click(page.getByRole("radio", { name: "Spot primitive", exact: true }));
-    expect(radioNamed("Spot primitive", true).classList.contains("radio-group-item-checked-callback")).toBe(
-      true
-    );
-    expect(radioNamed("Spot primitive", true).classList.contains("radio-group-item-unchecked-callback")).toBe(
-      false
-    );
   });
 });

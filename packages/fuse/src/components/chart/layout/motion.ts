@@ -1,7 +1,7 @@
 /**
  * The chart motion tokens. The rAF tween of `chart-motion.ts` moves marks on them, and `chart.css`
  * mirrors the duration and the curve for the opacity fade of a mark that an update adds, so a
- * source contract keeps the two equal. The values follow `.scratch/charts-v1/reviews/motion-decision.md`.
+ * change here changes `--chart-update` and `--chart-ease` there too. The values follow `.scratch/charts-v1/reviews/motion-decision.md`.
  */
 import type { BezierCurve } from "./ease";
 import type { Spring } from "./spring";
@@ -11,9 +11,6 @@ export const CHART_UPDATE_MS = 480;
 
 /** The control values of every data update and of the entrance. */
 export const CHART_UPDATE_CURVE: BezierCurve = [0, 0.7, 0.5, 1];
-
-/** The same curve as CSS writes it. `--chart-ease` in `chart.css`. */
-export const CHART_UPDATE_EASE = `cubic-bezier(${CHART_UPDATE_CURVE.join(", ")})`;
 
 /** The delay between two bars of the entrance wipe, in milliseconds. */
 export const CHART_STAGGER_MS = 16;

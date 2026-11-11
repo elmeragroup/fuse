@@ -51,12 +51,12 @@ function Plot({
 }
 
 function active(host: HTMLElement): boolean {
-  // DOM audit: Root states the active slot, which the crosshair reads, on data-active.
+  // Root states the active slot, which the crosshair reads, on data-active.
   return host.querySelector('[data-slot="chart"]')?.hasAttribute("data-active") ?? false;
 }
 
 function activeValue(host: HTMLElement): string | null {
-  // DOM audit: the plot's ActiveValue is aria-hidden output.
+  // The plot's ActiveValue is aria-hidden output.
   return host.querySelector('[data-slot="chart-active-value"]')?.textContent ?? null;
 }
 
@@ -81,7 +81,7 @@ describe("the one dismissal", () => {
     await userEvent.hover(...over(host, second));
     await expect.poll(popupOpen).toBe(true);
     await userEvent.click(...over(host, second));
-    // DOM audit: the listbox states the pin on its own data attribute.
+    // The listbox states the pin on its own data attribute.
     expect(host.querySelector('[data-slot="chart-surface"]')?.hasAttribute("data-pinned")).toBe(true);
     await userEvent.click(...over(host, second));
     await expect.poll(popupOpen).toBe(false);
@@ -162,7 +162,7 @@ describe("the one active identity", () => {
     const label = document.activeElement?.getAttribute("aria-label") ?? "";
     expect(label.startsWith(",")).toBe(false);
     expect(label).toContain("X");
-    // DOM audit: Root writes the focused series on data-near, which all series leave off.
+    // Root writes the focused series on data-near, which all series leave off.
     expect(host.querySelector('[data-slot="chart"]')?.hasAttribute("data-near")).toBe(false);
   });
 });
@@ -202,7 +202,7 @@ describe("a consumer ref on Root", () => {
         </LocaleProvider>
       </div>
     );
-    // DOM audit: Root's figure carries the active state the crosshair reads.
+    // Root's figure carries the active state the crosshair reads.
     const root = host.querySelector('[data-slot="chart"]');
     expect(figure).toBe(root);
     const [, second] = bars(host);

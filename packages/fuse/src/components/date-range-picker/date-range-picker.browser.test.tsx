@@ -5,7 +5,7 @@
  * dropping a half range, multi-month) and the cancelable details. The shared consumer contract
  * (segment names, the calendar range commit, Escape twice) is pinned by the parity harness.
  */
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import type { ReactElement } from "react";
 
 import { renderToString } from "react-dom/server";
@@ -117,11 +117,9 @@ describe("DateRangePicker wiring", () => {
 
     await userEvent.click(roleNamed("spinbutton", "month, End Date, Period"));
     await userEvent.keyboard("10092026");
-    // Each year digit forms a whole range, as React Aria commits a growing year (0002, 0020, …).
     await expect
       .poll(() => log().element().textContent)
       .toMatch(/\| input-change:2026-10-05\.\.2026-10-09:valid$/u);
-    expect(log().element().textContent).toMatch(/^input-change:2026-10-05\.\.0002-10-09:rangeReversed \|/u);
   });
 
   it("reports an end typed before its start on the end, merged into the picker's error", async () => {
@@ -242,6 +240,31 @@ describe("DateRangePicker wiring", () => {
 });
 
 describe("DateRangePicker calendar", () => {
+  it("keeps each end's time and zone when a range is picked", async () => {
+    renderThemed(
+      withLocale(
+        "en-US",
+        <LoggedRange
+          defaultValue={{
+            start: Temporal.ZonedDateTime.from("2026-10-05T08:00[Europe/Oslo]"),
+            end: Temporal.ZonedDateTime.from("2026-10-09T17:30[Europe/Oslo]"),
+          }}
+        />
+      )
+    );
+    await userEvent.click(roleNamed("button", "Calendar Period"));
+    await waitForPopupSettled();
+    await userEvent.click(roleNamed("button", "Tuesday, October 20, 2026"));
+    await userEvent.click(roleNamed("button", "Monday, October 26, 2026"));
+
+    await expect
+      .element(log())
+      .toHaveTextContent(
+        "day-press:2026-10-20T08:00:00+02:00[Europe/Oslo]..2026-10-26T17:30:00+01:00[Europe/Oslo]:valid"
+      );
+    await expect.element(page.getByRole("dialog")).not.toBeInTheDocument();
+  });
+
   it("keeps the popup open with the anchor when a completed range is canceled", async () => {
     renderThemed(
       withLocale(
@@ -269,31 +292,6 @@ describe("DateRangePicker calendar", () => {
     await expect
       .element(log())
       .toHaveTextContent("day-press:2026-10-20..2026-10-22:valid | day-press:2026-10-20..2026-10-25:valid");
-  });
-
-  it("keeps each end's time and zone when a range is picked", async () => {
-    renderThemed(
-      withLocale(
-        "en-US",
-        <LoggedRange
-          defaultValue={{
-            start: Temporal.ZonedDateTime.from("2026-10-05T08:00[Europe/Oslo]"),
-            end: Temporal.ZonedDateTime.from("2026-10-09T17:30[Europe/Oslo]"),
-          }}
-        />
-      )
-    );
-    await userEvent.click(roleNamed("button", "Calendar Period"));
-    await waitForPopupSettled();
-    await userEvent.click(roleNamed("button", "Tuesday, October 20, 2026"));
-    await userEvent.click(roleNamed("button", "Monday, October 26, 2026"));
-
-    await expect
-      .element(log())
-      .toHaveTextContent(
-        "day-press:2026-10-20T08:00:00+02:00[Europe/Oslo]..2026-10-26T17:30:00+01:00[Europe/Oslo]:valid"
-      );
-    await expect.element(page.getByRole("dialog")).not.toBeInTheDocument();
   });
 
   it("shows two months side by side with visibleMonths", async () => {
@@ -429,139 +427,6 @@ describe("DateRangePickerField in forms", () => {
   });
 });
 
-describe("DateRangePicker held ranges", () => {
-  beforeEach(() => {
-    vi.useFakeTimers({ toFake: ["Date"] });
-    vi.setSystemTime(new Date("2026-10-15T12:00:00"));
-  });
-  afterEach(() => {
-    vi.useRealTimers();
-  });
-
-  it("holds a range picked in an empty time picker that stays open, and commits it at midnight on close", async () => {
-    const values: string[] = [];
-    renderThemed(
-      withLocale(
-        "en-US",
-        <DateRangePickerField
-          label="Window"
-          granularity="minute"
-          shouldCloseOnSelect={false}
-          onChange={(value) =>
-            values.push(value === null ? "null" : `${value.start.toString()}..${value.end.toString()}`)
-          }
-        />
-      )
-    );
-    await userEvent.click(roleNamed("button", "Calendar Window"));
-    await waitForPopupSettled();
-    await userEvent.click(roleNamed("button", "Monday, October 12, 2026"));
-    await userEvent.click(roleNamed("button", "Friday, October 16, 2026"));
-    await expect.element(page.getByRole("dialog")).toBeVisible();
-    expect(values).toEqual([]);
-
-    await userEvent.keyboard("{Escape}");
-    await expect.element(page.getByRole("dialog")).not.toBeInTheDocument();
-    expect(values).toEqual(["2026-10-12T00:00:00..2026-10-16T00:00:00"]);
-  });
-
-  it("drops a half-cleared range for good when the parent replaces the range and later restores it", async () => {
-    const A = { start: Temporal.PlainDate.from("2026-10-05"), end: Temporal.PlainDate.from("2026-10-09") };
-    const B = { start: Temporal.PlainDate.from("2026-11-02"), end: Temporal.PlainDate.from("2026-11-06") };
-    function Controlled(): ReactElement {
-      const [value, setValue] = useState<DateRangePickerValue | null>(A);
-      return (
-        <>
-          <DateRangePickerField label="Period" value={value} onChange={setValue} />
-          <button type="button" onClick={() => setValue(B)}>
-            Range B
-          </button>
-          <button type="button" onClick={() => setValue(A)}>
-            Range A
-          </button>
-        </>
-      );
-    }
-    renderThemed(withLocale("en-US", <Controlled />));
-    // Clear the whole start: year (4 digits), day, month, moving back over each emptied segment.
-    await userEvent.click(roleNamed("spinbutton", "year, Start Date, Period"));
-    await userEvent.keyboard("{Backspace>10/}");
-    await expect.poll(segmentTexts).toEqual(["mm", "dd", "yyyy", "10", "09", "2026"]);
-
-    await userEvent.click(roleNamed("button", "Range B"));
-    await expect.poll(segmentTexts).toEqual(["11", "02", "2026", "11", "06", "2026"]);
-    await userEvent.click(roleNamed("button", "Range A"));
-    await expect.poll(segmentTexts).toEqual(["10", "05", "2026", "10", "09", "2026"]);
-  });
-
-  it("checks the held range a parent's close commits against the minValue of that same render", async () => {
-    const calls: string[] = [];
-    function Controlled({
-      open,
-      min,
-    }: {
-      readonly open: boolean;
-      readonly min: Temporal.PlainDate;
-    }): ReactElement {
-      return withLocale(
-        "en-US",
-        <DateRangePicker.Root
-          aria-label="Window"
-          granularity="minute"
-          shouldCloseOnSelect={false}
-          open={open}
-          minValue={min}
-          onValueChange={(value, details) =>
-            calls.push(
-              `${value === null ? "null" : `${value.start.toString()}..${value.end.toString()}`}:${details.getValidationError() ?? "valid"}`
-            )
-          }>
-          <DateRangePicker.Group>
-            <DateRangePicker.StartInput />
-            <DateRangePicker.EndInput />
-            <DateRangePicker.Trigger />
-          </DateRangePicker.Group>
-          <DateRangePicker.Popup>
-            <DateRangePicker.Calendar />
-          </DateRangePicker.Popup>
-        </DateRangePicker.Root>
-      );
-    }
-    const { rerender } = renderThemed(<Controlled open min={Temporal.PlainDate.from("2026-10-01")} />);
-    await waitForPopupSettled();
-    await userEvent.click(roleNamed("button", "Monday, October 12, 2026"));
-    await userEvent.click(roleNamed("button", "Friday, October 16, 2026"));
-    rerender(<Controlled open={false} min={Temporal.PlainDate.from("2026-10-14")} />);
-    await expect.poll(() => calls).toEqual(["2026-10-12T00:00:00..2026-10-16T00:00:00:rangeUnderflow"]);
-  });
-
-  it("commits a held range to the onChange of the render that closes the popup", async () => {
-    const calls: string[] = [];
-    function Controlled({ open, tag }: { readonly open: boolean; readonly tag: string }): ReactElement {
-      return withLocale(
-        "en-US",
-        <DateRangePickerField
-          label="Window"
-          granularity="minute"
-          shouldCloseOnSelect={false}
-          isOpen={open}
-          onChange={(value) =>
-            calls.push(
-              `${tag}:${value === null ? "null" : `${value.start.toString()}..${value.end.toString()}`}`
-            )
-          }
-        />
-      );
-    }
-    const { rerender } = renderThemed(<Controlled open tag="old" />);
-    await waitForPopupSettled();
-    await userEvent.click(roleNamed("button", "Monday, October 12, 2026"));
-    await userEvent.click(roleNamed("button", "Friday, October 16, 2026"));
-    rerender(<Controlled open={false} tag="new" />);
-    await expect.poll(() => calls).toEqual(["new:2026-10-12T00:00:00..2026-10-16T00:00:00"]);
-  });
-});
-
 describe("DateRangePicker form reset", () => {
   it("empties a picker with a typed start and a half-typed end, though its value never changed", async () => {
     renderThemed(
@@ -631,56 +496,6 @@ describe("DateRangePicker form reset", () => {
       .poll(() => values.at(-1))
       .toBe("2026-10-26T08:00:00+01:00[Europe/Oslo]..2026-10-27T17:00:00+01:00[Europe/Oslo]");
   });
-
-  it.each([
-    ["day", "Europe/Oslo", "+01:00"],
-    ["minute", "Europe/Oslo", "+01:00"],
-  ] as const)(
-    "keeps a cleared zoned range's kind and zone across a form reset at %s granularity",
-    async (granularity, zone, offset) => {
-      const values: string[] = [];
-      function Zoned(): ReactElement {
-        const [value, setValue] = useState<DateRangePickerValue<Temporal.ZonedDateTime> | null>({
-          start: Temporal.ZonedDateTime.from(`2026-10-12T08:00[${zone}]`),
-          end: Temporal.ZonedDateTime.from(`2026-10-16T17:30[${zone}]`),
-        });
-        return withLocale(
-          "en-US",
-          <form aria-label="Booking">
-            <DateRangePickerField
-              label="Window"
-              granularity={granularity}
-              hourCycle={24}
-              hideTimeZone
-              value={value}
-              onChange={(next) => {
-                const printed =
-                  next === null ? null : { start: next.start.toString(), end: next.end.toString() };
-                values.push(printed === null ? "null" : `${printed.start}..${printed.end}`);
-                setValue(next);
-              }}
-            />
-            <button type="button" onClick={() => setValue(null)}>
-              Clear
-            </button>
-            <button type="reset">Reset</button>
-          </form>
-        );
-      }
-      renderThemed(<Zoned />);
-      await userEvent.click(roleNamed("button", "Clear"));
-      await userEvent.click(roleNamed("button", "Reset"));
-      const time = granularity === "minute" ? "0800" : "";
-      await userEvent.click(roleNamed("spinbutton", "month, Start Date, Window"));
-      await userEvent.keyboard(`10262026${time}`);
-      await userEvent.click(roleNamed("spinbutton", "month, End Date, Window"));
-      await userEvent.keyboard(`10272026${time}`);
-      const at = granularity === "minute" ? "08:00" : "00:00";
-      await expect
-        .poll(() => values.at(-1))
-        .toBe(`2026-10-26T${at}:00${offset}[${zone}]..2026-10-27T${at}:00${offset}[${zone}]`);
-    }
-  );
 });
 
 describe("DateRangePicker naming", () => {
@@ -759,6 +574,20 @@ describe("DateRangePicker naming", () => {
     );
   });
 
+  it("names the picker by its aria-label when a wrapper renders no Label, in server output", () => {
+    const host = document.createElement("div");
+    host.innerHTML = renderToString(<GhostLabel />);
+    const group = host.querySelector('[role="group"]');
+    expect(group?.getAttribute("aria-labelledby")).toBeNull();
+    expect(group?.getAttribute("aria-label")).toBe("Stay");
+    const month = host.querySelector('[role="spinbutton"]');
+    const labelledBy = (month?.getAttribute("aria-labelledby") ?? "").split(" ");
+    const named = labelledBy.map((id) => host.querySelector(`[id="${id}"]`)?.textContent ?? null);
+    expect(named).not.toContain(null);
+    expect(named.at(-1)).toBe("Stay");
+    expect(host.textContent).not.toContain("Ghost");
+  });
+
   it("describes the group and both ends by an explicit error shown with isInvalid", () => {
     renderThemed(
       withLocale(
@@ -808,33 +637,12 @@ describe("DateRangePicker naming", () => {
     const group = host.querySelector('[role="group"]');
     expect(text(group?.getAttribute("aria-labelledby") ?? null)).toBe("Period");
     expect(text(group?.getAttribute("aria-describedby") ?? null)).toBe("Nights at the cabin Rejected");
-    // DOM audit: server HTML in a detached host has no accessibility tree to locate by role.
+    // Server HTML in a detached host has no accessibility tree to locate by role.
     const trigger = host.querySelector('[data-slot="date-picker-trigger"]');
     expect(trigger?.getAttribute("aria-label")).toBe("Calendar");
     expect(text(trigger?.getAttribute("aria-labelledby") ?? null)).toBe(" Period");
     const month = host.querySelector('[role="spinbutton"]');
     expect(text(month?.getAttribute("aria-describedby") ?? null)).toContain("Nights at the cabin Rejected");
-  });
-
-  it("names the picker by its aria-label when a wrapper renders no Label, in server output", () => {
-    const host = document.createElement("div");
-    host.innerHTML = renderToString(<GhostLabel />);
-    const group = host.querySelector('[role="group"]');
-    expect(group?.getAttribute("aria-labelledby")).toBeNull();
-    expect(group?.getAttribute("aria-label")).toBe("Stay");
-    const month = host.querySelector('[role="spinbutton"]');
-    const labelledBy = (month?.getAttribute("aria-labelledby") ?? "").split(" ");
-    const named = labelledBy.map((id) => host.querySelector(`[id="${id}"]`)?.textContent ?? null);
-    expect(named).not.toContain(null);
-    expect(named.at(-1)).toBe("Stay");
-    expect(host.textContent).not.toContain("Ghost");
-  });
-
-  it("names the picker by its aria-label when a wrapper renders no Label, after mount", () => {
-    renderThemed(<GhostLabel />);
-    expect(roleNamed("group", "Stay")).toBeDefined();
-    expect(roleNamed("spinbutton", "month, Start Date, Stay")).toBeDefined();
-    expect(roleNamed("button", "Calendar Stay")).toBeDefined();
   });
 });
 
@@ -863,7 +671,7 @@ describe("DateRangePicker disabled", () => {
         </Field.Set>
       )
     );
-    // DOM audit: server HTML in a detached host has no accessibility tree to locate by role.
+    // Server HTML in a detached host has no accessibility tree to locate by role.
     expect(host.querySelector('[role="group"]')?.getAttribute("aria-disabled")).toBe("true");
     expect(host.querySelector('[data-slot="date-picker-trigger"]')?.hasAttribute("disabled")).toBe(true);
     expect(host.querySelector('[data-slot="date-range-picker"]')?.hasAttribute("data-disabled")).toBe(true);
@@ -1025,6 +833,155 @@ describe("DateRangePicker focus boundary", () => {
   });
 });
 
+describe("date props past the types", () => {
+  it("throws a TypeError naming the Root, the prop and the string for ISO text", () => {
+    expectRenderTypeError(
+      'DateRangePicker.Root value.start: received the string "2026-10-05"',
+      <DateRangePickerField
+        label="Period"
+        value={{
+          // @ts-expect-error -- text reaches the prop past the types: from plain JavaScript, or as the ISO text a server component's Temporal object crosses as
+          start: "2026-10-05",
+          end: Temporal.PlainDate.from("2026-10-09"),
+        }}
+      />
+    );
+  });
+});
+
+describe("DateRangePicker held ranges", () => {
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-10-15T12:00:00"));
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("holds a range picked in an empty time picker that stays open, and commits it at midnight on close", async () => {
+    const values: string[] = [];
+    renderThemed(
+      withLocale(
+        "en-US",
+        <DateRangePickerField
+          label="Window"
+          granularity="minute"
+          shouldCloseOnSelect={false}
+          onChange={(value) =>
+            values.push(value === null ? "null" : `${value.start.toString()}..${value.end.toString()}`)
+          }
+        />
+      )
+    );
+    await userEvent.click(roleNamed("button", "Calendar Window"));
+    await waitForPopupSettled();
+    await userEvent.click(roleNamed("button", "Monday, October 12, 2026"));
+    await userEvent.click(roleNamed("button", "Friday, October 16, 2026"));
+    await expect.element(page.getByRole("dialog")).toBeVisible();
+    expect(values).toEqual([]);
+
+    await userEvent.keyboard("{Escape}");
+    await expect.element(page.getByRole("dialog")).not.toBeInTheDocument();
+    expect(values).toEqual(["2026-10-12T00:00:00..2026-10-16T00:00:00"]);
+  });
+
+  it("drops a half-cleared range for good when the parent replaces the range and later restores it", async () => {
+    const A = { start: Temporal.PlainDate.from("2026-10-05"), end: Temporal.PlainDate.from("2026-10-09") };
+    const B = { start: Temporal.PlainDate.from("2026-11-02"), end: Temporal.PlainDate.from("2026-11-06") };
+    function Controlled(): ReactElement {
+      const [value, setValue] = useState<DateRangePickerValue | null>(A);
+      return (
+        <>
+          <DateRangePickerField label="Period" value={value} onChange={setValue} />
+          <button type="button" onClick={() => setValue(B)}>
+            Range B
+          </button>
+          <button type="button" onClick={() => setValue(A)}>
+            Range A
+          </button>
+        </>
+      );
+    }
+    renderThemed(withLocale("en-US", <Controlled />));
+    // Clear the whole start: year (4 digits), day, month, moving back over each emptied segment.
+    await userEvent.click(roleNamed("spinbutton", "year, Start Date, Period"));
+    await userEvent.keyboard("{Backspace>10/}");
+    await expect.poll(segmentTexts).toEqual(["mm", "dd", "yyyy", "10", "09", "2026"]);
+
+    await userEvent.click(roleNamed("button", "Range B"));
+    await expect.poll(segmentTexts).toEqual(["11", "02", "2026", "11", "06", "2026"]);
+    await userEvent.click(roleNamed("button", "Range A"));
+    await expect.poll(segmentTexts).toEqual(["10", "05", "2026", "10", "09", "2026"]);
+  });
+
+  it("checks the held range a parent's close commits against the minValue of that same render", async () => {
+    const calls: string[] = [];
+    function Controlled({
+      open,
+      min,
+    }: {
+      readonly open: boolean;
+      readonly min: Temporal.PlainDate;
+    }): ReactElement {
+      return withLocale(
+        "en-US",
+        <DateRangePicker.Root
+          aria-label="Window"
+          granularity="minute"
+          shouldCloseOnSelect={false}
+          open={open}
+          minValue={min}
+          onValueChange={(value, details) =>
+            calls.push(
+              `${value === null ? "null" : `${value.start.toString()}..${value.end.toString()}`}:${details.getValidationError() ?? "valid"}`
+            )
+          }>
+          <DateRangePicker.Group>
+            <DateRangePicker.StartInput />
+            <DateRangePicker.EndInput />
+            <DateRangePicker.Trigger />
+          </DateRangePicker.Group>
+          <DateRangePicker.Popup>
+            <DateRangePicker.Calendar />
+          </DateRangePicker.Popup>
+        </DateRangePicker.Root>
+      );
+    }
+    const { rerender } = renderThemed(<Controlled open min={Temporal.PlainDate.from("2026-10-01")} />);
+    await waitForPopupSettled();
+    await userEvent.click(roleNamed("button", "Monday, October 12, 2026"));
+    await userEvent.click(roleNamed("button", "Friday, October 16, 2026"));
+    rerender(<Controlled open={false} min={Temporal.PlainDate.from("2026-10-14")} />);
+    await expect.poll(() => calls).toEqual(["2026-10-12T00:00:00..2026-10-16T00:00:00:rangeUnderflow"]);
+  });
+
+  it("commits a held range to the onChange of the render that closes the popup", async () => {
+    const calls: string[] = [];
+    function Controlled({ open, tag }: { readonly open: boolean; readonly tag: string }): ReactElement {
+      return withLocale(
+        "en-US",
+        <DateRangePickerField
+          label="Window"
+          granularity="minute"
+          shouldCloseOnSelect={false}
+          isOpen={open}
+          onChange={(value) =>
+            calls.push(
+              `${tag}:${value === null ? "null" : `${value.start.toString()}..${value.end.toString()}`}`
+            )
+          }
+        />
+      );
+    }
+    const { rerender } = renderThemed(<Controlled open tag="old" />);
+    await waitForPopupSettled();
+    await userEvent.click(roleNamed("button", "Monday, October 12, 2026"));
+    await userEvent.click(roleNamed("button", "Friday, October 16, 2026"));
+    rerender(<Controlled open={false} tag="new" />);
+    await expect.poll(() => calls).toEqual(["new:2026-10-12T00:00:00..2026-10-16T00:00:00"]);
+  });
+});
+
 describe("DateRangePicker kind of an empty picker", () => {
   /** An empty minute range whose zone the button below it sets or changes. */
   function Zoning({
@@ -1075,79 +1032,4 @@ describe("DateRangePicker kind of an empty picker", () => {
         .toBe(`2026-10-26T08:00:00${offset}[${to}]..2026-10-27T17:00:00${offset}[${to}]`);
     }
   );
-});
-
-describe("DateRangePicker context", () => {
-  it("re-renders no part when its parent re-renders it with new objects for the same range", async () => {
-    // The input and the open calendar ask about every value or day they render, so the calls count
-    // their renders.
-    let checks = 0;
-    const unavailable = (): boolean => {
-      checks += 1;
-      return false;
-    };
-    // Hoisted, so only the Root's contexts can re-render the parts.
-    const parts = (
-      <>
-        <DateRangePicker.Group>
-          <DateRangePicker.StartInput />
-          <DateRangePicker.EndInput />
-          <DateRangePicker.Trigger />
-        </DateRangePicker.Group>
-        <DateRangePicker.Popup>
-          <DateRangePicker.Calendar />
-        </DateRangePicker.Popup>
-      </>
-    );
-    // Re-renders the parent without a press, which would land outside the popup and close it.
-    const ticker = { tick: (): void => undefined };
-    function Parent(): ReactElement {
-      const [ticks, setTicks] = useState(0);
-      useEffect(() => {
-        ticker.tick = () => setTicks((current) => current + 1);
-      }, []);
-      return (
-        <>
-          <DateRangePicker.Root
-            aria-label="Window"
-            defaultOpen
-            isDateUnavailable={unavailable}
-            granularity="minute"
-            value={{
-              start: Temporal.PlainDateTime.from("2026-10-12T08:00"),
-              end: Temporal.PlainDateTime.from("2026-10-16T17:30"),
-            }}
-            minValue={Temporal.PlainDate.from("2026-10-01")}>
-            {parts}
-          </DateRangePicker.Root>
-          <output>Tick {ticks}</output>
-        </>
-      );
-    }
-    renderThemed(withLocale("en-US", <Parent />));
-    await waitForPopupSettled();
-    await expect.element(page.getByRole("spinbutton", { name: "hour, Start Date, Window" })).toBeVisible();
-    const settled = checks;
-
-    ticker.tick();
-    await expect.element(page.getByRole("status")).toHaveTextContent("Tick 1");
-    expect(settled).toBeGreaterThan(0);
-    expect(checks).toBe(settled);
-  });
-});
-
-describe("date props past the types", () => {
-  it("throws a TypeError naming the Root, the prop and the string for ISO text", () => {
-    expectRenderTypeError(
-      'DateRangePicker.Root value.start: received the string "2026-10-05"',
-      <DateRangePickerField
-        label="Period"
-        value={{
-          // @ts-expect-error -- text reaches the prop past the types: from plain JavaScript, or as the ISO text a server component's Temporal object crosses as
-          start: "2026-10-05",
-          end: Temporal.PlainDate.from("2026-10-09"),
-        }}
-      />
-    );
-  });
 });

@@ -6,15 +6,7 @@ import { Effect } from "effect";
 
 import { buildComponentSets } from "../src/components/build-kit.ts";
 import type { CoverageRow } from "../src/components/coverage.ts";
-import { layerAt } from "../src/components/kit-spec.ts";
-import type {
-  BoxSpec,
-  ChildLayerSpec,
-  ComponentRootSpec,
-  FrameLayerSpec,
-  KitSpec,
-  TextLayerSpec,
-} from "../src/components/kit-spec.ts";
+import type { ChildLayerSpec, ComponentRootSpec, KitSpec } from "../src/components/kit-spec.ts";
 import { deepFrozen } from "./frozen.ts";
 
 /** The parts of the built kit a per-set suite reads. */
@@ -36,8 +28,7 @@ async function buildSets(): Promise<BuiltSets> {
 /**
  * Build the kit's component sets and their coverage on the first call, deep frozen, without the
  * icon library or the previews. The suites a Vitest worker runs share one module registry
- * (`vitest.config.ts`), so each worker builds the sets once. The whole-kit invariants in
- * `build-kit.test.ts` build the full kit instead.
+ * (`vitest.config.ts`), so each worker builds the sets once.
  *
  * @returns The component sets, as the kit spec holds them, and their coverage rows.
  */
@@ -60,83 +51,6 @@ export function variantRoot(spec: Pick<KitSpec, "componentSets">, key: string): 
     throw new Error(`the kit has no ${key}`);
   }
   return found.root;
-}
-
-/**
- * A component set of the built kit.
- *
- * @param spec - The built component sets.
- * @param key - The set's key, such as `sidebar-menu-button`.
- * @returns The set, or undefined where the kit has no such set.
- */
-export function setOf(spec: Pick<KitSpec, "componentSets">, key: string) {
-  return spec.componentSets.find((candidate) => candidate.key === key);
-}
-
-/**
- * The property, outcome and detail of each coverage row of one class, in table order.
- *
- * @param coverage - The coverage rows.
- * @param className - The class whose rows to read.
- * @returns One `[property, outcome, detail]` triple per row.
- */
-export const notesOf = (coverage: readonly CoverageRow[], className: string) =>
-  coverage.filter((row) => row.className === className).map((row) => [row.property, row.outcome, row.detail]);
-
-/**
- * The part, property, outcome and detail of each coverage row of one class, in table order.
- *
- * @param coverage - The coverage rows.
- * @param className - The class whose rows to read.
- * @returns One `[part, property, outcome, detail]` row per coverage row.
- */
-export const partNotesOf = (coverage: readonly CoverageRow[], className: string) =>
-  coverage
-    .filter((row) => row.className === className)
-    .map((row) => [row.part, row.property, row.outcome, row.detail]);
-
-/**
- * The part, outcome and detail of each coverage row of one class, in table order.
- *
- * @param coverage - The coverage rows.
- * @param className - The class whose rows to read.
- * @returns One `[part, outcome, detail]` triple per row.
- */
-export const partOutcomesOf = (coverage: readonly CoverageRow[], className: string) =>
-  coverage.filter((row) => row.className === className).map((row) => [row.part, row.outcome, row.detail]);
-
-/**
- * The first text layer a box holds directly.
- *
- * @param box - A root or frame, or undefined where the caller found none.
- * @returns The text layer, or undefined where the box holds none directly.
- */
-export function textOf(box: BoxSpec | undefined): TextLayerSpec | undefined {
-  const found = box?.children.find((child) => child.kind === "text");
-  return found?.kind === "text" ? found : undefined;
-}
-
-/**
- * The text layer a box leads with, as a field's value or placeholder leads its box.
- *
- * @param box - A variant's root.
- * @returns The first child where it is a text layer, or undefined.
- */
-export function leadingTextOf(box: ComponentRootSpec): TextLayerSpec | undefined {
-  const [first] = box.children;
-  return first?.kind === "text" ? first : undefined;
-}
-
-/**
- * The frame layer at a key path below a box, as `layerAt` finds it.
- *
- * @param box - A variant's root.
- * @param path - The keys from the box down.
- * @returns The frame, or undefined where the box holds no frame at the path.
- */
-export function frameLayerAt(box: BoxSpec, path: readonly string[]): FrameLayerSpec | undefined {
-  const layer = layerAt(box, path);
-  return layer !== undefined && "kind" in layer && layer.kind === "frame" ? layer : undefined;
 }
 
 /**
@@ -195,15 +109,6 @@ export const FILL = { kind: "fill" } as const;
 export const fixedSize = <Width, Height>(width: Width, height: Height) =>
   ({ horizontal: fixed(width), vertical: fixed(height) }) as const;
 
-/**
- * The layout of a label that hugs its characters on both axes, with its lines set from the top
- * left as a new Figma text sets them, and no truncation.
- */
-export const HUGGING_LABEL = {
-  sizing: { horizontal: HUG, vertical: HUG },
-  align: { horizontal: "LEFT", vertical: "TOP" },
-} as const;
-
 /** No limit on either axis. */
 export const UNLIMITED = {
   minWidth: undefined,
@@ -228,31 +133,4 @@ export const CENTERED_BOX = {
   counterAlign: "CENTER",
   shadows: [],
   opacity: 1,
-} as const;
-
-/** The 2px `ring` the focus ring in `styles/utils.ts` draws around a focused control. */
-export const FOCUS_RING = {
-  color: paint("ring"),
-  offsetX: 0,
-  offsetY: 0,
-  radius: literal(0),
-  spread: literal(2),
-} as const;
-
-/** The 3px `ring-error/20` halo the state face draws around an invalid control. */
-export const ERROR_RING = {
-  color: paint("error/20"),
-  offsetX: 0,
-  offsetY: 0,
-  radius: literal(0),
-  spread: literal(3),
-} as const;
-
-/** Tailwind's shadow-xs, 0 1px 2px at 5% black. */
-export const SHADOW_XS = {
-  color: { kind: "literal", color: { r: 0, g: 0, b: 0, a: 0.05 } },
-  offsetX: 0,
-  offsetY: 1,
-  radius: literal(2),
-  spread: literal(0),
 } as const;

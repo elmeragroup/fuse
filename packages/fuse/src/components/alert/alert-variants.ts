@@ -47,6 +47,7 @@ export const alertVariants = tv({
         // (contrast-matrix.test.ts), for the title and the body alike.
         base: "border-error bg-error/5 text-error",
         icon: "text-error",
+        // oxlint-disable-next-line fuse/state-face -- the alert action has no disabled state; this only overrides its Button's fill
         button: "bg-error text-error-foreground hover:bg-error/90",
       },
       warning: {
@@ -54,12 +55,14 @@ export const alertVariants = tv({
         // the neutral grey falls under 3:1 in dark.
         base: "border-warning bg-warning-soft text-warning-soft-foreground [--ring:var(--warning-soft-foreground)]",
         icon: "text-warning",
+        // oxlint-disable-next-line fuse/state-face -- the alert action has no disabled state; this only overrides its Button's fill
         button: "bg-warning text-warning-foreground hover:bg-warning/90",
       },
       success: {
         // `foreground` on the 5% `success` tint is gated beside the destructive pair.
         base: "border-success bg-success/5 text-foreground",
         icon: "text-success",
+        // oxlint-disable-next-line fuse/state-face -- the alert action has no disabled state; this only overrides its Button's fill
         button: "bg-success text-success-foreground hover:bg-success/90",
       },
       info: {
@@ -67,6 +70,7 @@ export const alertVariants = tv({
         // falls under 3:1 on the info-soft fill in dark.
         base: "border-info bg-info-soft text-info-soft-foreground [--ring:var(--info-soft-foreground)]",
         icon: "text-info",
+        // oxlint-disable-next-line fuse/state-face -- the alert action has no disabled state; this only overrides its Button's fill
         button: "bg-info text-info-foreground hover:bg-info/90",
       },
     },

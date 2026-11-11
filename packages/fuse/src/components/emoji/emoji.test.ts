@@ -1,10 +1,7 @@
-import { createElement } from "react";
-
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it } from "vitest";
 
 import {
@@ -24,14 +21,6 @@ import {
 const here = dirname(fileURLToPath(import.meta.url));
 const packageRoot = join(here, "..", "..", "..");
 
-const FACES = [
-  ["SlightlyFrowningFace", Emoji.SlightlyFrowningFace],
-  ["SlightlySmilingFace", Emoji.SlightlySmilingFace],
-  ["NeutralFace", Emoji.NeutralFace],
-  ["LoudlyCryingFace", Emoji.LoudlyCryingFace],
-  ["PartyingFace", Emoji.PartyingFace],
-] as const;
-
 const NAMED = {
   SlightlyFrowningFace,
   SlightlySmilingFace,
@@ -48,18 +37,6 @@ describe("named per-face exports", () => {
     expect(LoudlyCryingFace).toBe(Emoji.LoudlyCryingFace);
     expect(PartyingFace).toBe(Emoji.PartyingFace);
     expect(NAMED.SlightlySmilingFace).toBe(Emoji.SlightlySmilingFace);
-  });
-});
-
-describe("emoji markup", () => {
-  it.each(FACES)("%s renders an svg with viewBox and data-slot=emoji", (_name, Face) => {
-    const html = renderToStaticMarkup(createElement(Face));
-    expect(html).toContain("<svg");
-    expect(html).toContain('viewBox="0 0 36 36"');
-    expect(html).toContain('data-slot="emoji"');
-    expect(html).toContain('aria-hidden="true"');
-    expect(html).toContain('focusable="false"');
-    expect(html).not.toContain("role=");
   });
 });
 

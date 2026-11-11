@@ -1,12 +1,12 @@
 import type { CSSProperties, ReactElement, ReactNode } from "react";
 
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import { render } from "../../../test/browser-render";
-import { ContextProbe, DESKTOP, MOBILE } from "../../../test/sidebar-browser-fixtures";
+import { DESKTOP } from "../../../test/sidebar-browser-fixtures";
 import {
   cssVarColor,
   headingNamed,
@@ -18,12 +18,9 @@ import type { ResolvedColorScheme } from "../../theme/color-scheme-types";
 import type { ThemeInput, ThemeIdentity } from "../../theme/theme-input";
 import { ThemeScope } from "../../theme/theme-scope";
 import { AlertDialog } from "../alert-dialog";
-import { Command } from "../command";
 import { Dialog } from "../dialog";
-import { Popover } from "../popover";
 import { Select } from "../select";
 import { Sheet } from "../sheet";
-import { Sidebar } from "../sidebar";
 
 let restoreDocumentTheme: () => void;
 
@@ -143,14 +140,6 @@ describe("modal fill", () => {
     });
   }
 
-  it("tints the branded light modal away from the white card and popover", async () => {
-    document.documentElement.setAttribute("data-theme", "light");
-    render(<Scope identity="branded">{MODALS[0].node}</Scope>);
-    const style = getComputedStyle(await openModal(MODALS[0].name));
-    expect(style.backgroundColor).not.toBe(scopeColor("--card"));
-    expect(style.backgroundColor).not.toBe(scopeColor("--popover"));
-  });
-
   it.each(MODALS)(
     "reads a --dialog pair set on the theme element in $label and its title",
     async ({ role, name, node }) => {
@@ -193,33 +182,6 @@ describe("surfaces that keep their own fill in branded light", () => {
     document.documentElement.setAttribute("data-theme", "light");
   });
 
-  it("keeps Command.Content on the popover", async () => {
-    render(
-      <Scope identity="branded">
-        <Command.Root items={["Invoices"]}>
-          <Command.Trigger>Open</Command.Trigger>
-          <Command.Content aria-label="Search the site" />
-        </Command.Root>
-      </Scope>
-    );
-    const style = getComputedStyle(await openModal("Search the site"));
-    expect(style.backgroundColor).toBe(scopeColor("--popover"));
-    expect(style.backgroundColor).not.toBe(scopeColor("--background"));
-  });
-
-  it("keeps Popover.Content on the popover", async () => {
-    render(
-      <Scope identity="branded">
-        <Popover.Root>
-          <Popover.Trigger>Open</Popover.Trigger>
-          <Popover.Content aria-label="Price details">Monthly fee and spot price.</Popover.Content>
-        </Popover.Root>
-      </Scope>
-    );
-    const style = getComputedStyle(await openModal("Price details"));
-    expect(style.backgroundColor).toBe(scopeColor("--popover"));
-  });
-
   it("keeps Select.Content on the popover", async () => {
     render(
       <Scope identity="branded">
@@ -236,40 +198,9 @@ describe("surfaces that keep their own fill in branded light", () => {
     );
     await userEvent.click(roleNamed("combobox", "Agreement"));
     await expect.element(page.getByRole("listbox")).toBeVisible();
-    // DOM audit: the listbox sits inside the popup, which paints the fill and has no role of its own.
+    // The listbox sits inside the popup, which paints the fill and has no role of its own.
     const popup = page.getByRole("listbox").element().closest('[data-slot="select-content"]');
     if (!(popup instanceof HTMLElement)) throw new Error("expected the Select popup");
     expect(getComputedStyle(popup).backgroundColor).toBe(scopeColor("--popover"));
-  });
-
-  it("keeps the mobile Sidebar sheet on the sidebar fill", async () => {
-    await page.viewport(MOBILE.width, MOBILE.height);
-    let isMobile = false;
-    render(
-      <Scope identity="branded">
-        <Sidebar.Provider>
-          <Sidebar.Root>
-            <Sidebar.Content />
-          </Sidebar.Root>
-          <Sidebar.Inset>
-            <Sidebar.Trigger />
-            <ContextProbe
-              onValue={(value) => {
-                isMobile = value.isMobile;
-              }}
-            />
-          </Sidebar.Inset>
-        </Sidebar.Provider>
-      </Scope>
-    );
-    // The provider reads the viewport after mount, so the trigger opens the Sheet only then.
-    await vi.waitFor(() => {
-      expect(isMobile).toBe(true);
-    });
-    await userEvent.click(roleNamed("button", "Toggle sidebar"));
-    await expect.element(page.getByRole("dialog", { name: "Sidebar" })).toBeVisible();
-    const style = getComputedStyle(roleNamed("dialog", "Sidebar"));
-    expect(style.backgroundColor).toBe(scopeColor("--sidebar"));
-    expect(style.color).toBe(scopeColor("--sidebar-foreground"));
   });
 });

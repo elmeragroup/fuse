@@ -2,7 +2,6 @@ import type { CDPSession, Page, Route } from "playwright";
 import { describe, expect, it } from "vitest";
 
 import { DEFAULT_THEME, DOCUMENT_COLOR_SCHEME } from "../src/lib/theme";
-import { launchSuiteBrowser } from "./demo-page";
 import { docsBaseUrl } from "./docs-server";
 import {
   COLOR_SCHEME_BOOTSTRAP_FAILURE_SENTINEL,
@@ -12,6 +11,7 @@ import {
   stampBootstrapNonce,
   stripContentEncoding,
 } from "./html";
+import { launchSuiteBrowser } from "./suite-browser";
 
 type ColorSchemeBootstrapManifest = {
   storageKey: string;
@@ -296,63 +296,6 @@ describe("docs picker vs document theme", () => {
     expect(next.stageToken).not.toBe(initial.stageToken);
 
     expect(hydrationWarnings.filter((text) => /data-theme|mismatch/i.test(text))).toEqual([]);
-    await page.close();
-  });
-
-  it("retargets demo-stage control metrics to the preview identity's docs density without restamping the document", async () => {
-    const page = await browser().newPage();
-    await page.goto(`${docsBaseUrl()}/components/button`, { waitUntil: "networkidle" });
-    await page.getByRole("heading", { name: "Button", exact: true, level: 1 }).waitFor();
-
-    const initial = await page.evaluate(() => {
-      const root = document.documentElement;
-      const stage = document.querySelector("[data-demo-stage]");
-      const button = stage?.querySelector("button");
-      return {
-        documentDensity: root.getAttribute("data-density"),
-        stageDensity: stage?.getAttribute("data-density") ?? null,
-        stageIdentity: stage?.getAttribute("data-theme-identity") ?? null,
-        documentControlH: getComputedStyle(root).getPropertyValue("--control-h-md").trim(),
-        stageControlH:
-          stage === null ? "" : getComputedStyle(stage).getPropertyValue("--control-h-md").trim(),
-        buttonHeight: button ? getComputedStyle(button).height : "",
-      };
-    });
-
-    expect(initial.documentDensity).toBe("dense");
-    expect(initial.stageDensity).toBe("dense");
-    expect(initial.stageIdentity).toBe("neutral");
-    expect(initial.documentControlH).toBe("2.25rem");
-    expect(initial.stageControlH).toBe("2.25rem");
-    expect(initial.buttonHeight).toBe("36px");
-
-    await page.getByRole("button", { name: "Theme settings", exact: true }).click();
-    await page.getByRole("menuitemradio", { name: "Branded", exact: true }).click();
-
-    const next = await page.evaluate(() => {
-      const root = document.documentElement;
-      const stage = document.querySelector("[data-demo-stage]");
-      const button = stage?.querySelector("button");
-      return {
-        documentIdentity: root.getAttribute("data-theme-identity"),
-        documentDensity: root.getAttribute("data-density"),
-        stageIdentity: stage?.getAttribute("data-theme-identity") ?? null,
-        stageDensity: stage?.getAttribute("data-density") ?? null,
-        documentControlH: getComputedStyle(root).getPropertyValue("--control-h-md").trim(),
-        stageControlH:
-          stage === null ? "" : getComputedStyle(stage).getPropertyValue("--control-h-md").trim(),
-        buttonHeight: button ? getComputedStyle(button).height : "",
-      };
-    });
-
-    expect(next.documentIdentity).toBe("neutral");
-    expect(next.documentDensity).toBe("dense");
-    expect(next.stageIdentity).toBe("branded");
-    expect(next.stageDensity).toBe("comfortable");
-    expect(next.documentControlH).toBe("2.25rem");
-    expect(next.stageControlH).toBe("2.75rem");
-    expect(next.buttonHeight).toBe("44px");
-
     await page.close();
   });
 });

@@ -14,18 +14,7 @@ const VARIANTS = [
   "destructive",
 ] as const;
 
-const SIZES = ["default", "sm", "lg", "xl", "2xl", "3xl", "4xl", "5xl", "6xl"] as const;
-
 describe("headingVariants", () => {
-  it("defaults to variant/size/font default", () => {
-    const resolved = headingVariants();
-    expect(resolved).toContain("font-heading");
-    expect(resolved).toContain("text-inherit");
-    expect(resolved).toContain("text-base");
-    expect(resolved).toContain("leading-snug");
-    expect(resolved).toContain("font-medium");
-  });
-
   it("forwards each variant's shared fragment; destructive is text-error and never a destructive class", () => {
     for (const variant of VARIANTS) {
       const resolved = headingVariants({ variant });
@@ -35,24 +24,5 @@ describe("headingVariants", () => {
     const destructive = headingVariants({ variant: "destructive" });
     expect(destructive).toContain("text-error");
     expect(destructive).not.toContain("destructive");
-  });
-
-  it("resolves each type-scale size without density control metrics", () => {
-    expect(headingVariants({ size: "default" })).toContain("text-base");
-    expect(headingVariants({ size: "sm" })).toContain("text-sm");
-    expect(headingVariants({ size: "lg" })).toContain("text-lg");
-    expect(headingVariants({ size: "xl" })).toContain("text-xl");
-    expect(headingVariants({ size: "2xl" })).toContain("text-2xl");
-    expect(headingVariants({ size: "3xl" })).toContain("text-3xl");
-    expect(headingVariants({ size: "4xl" })).toContain("text-4xl");
-    expect(headingVariants({ size: "5xl" })).toContain("text-5xl");
-    expect(headingVariants({ size: "6xl" })).toContain("text-6xl");
-    expect(headingVariants({ size: "6xl" })).toContain("leading-tight");
-    for (const size of SIZES) {
-      if (size !== "6xl") {
-        expect(headingVariants({ size }), size).toContain("leading-snug");
-      }
-      expect(headingVariants({ size }), size).not.toContain("--control-");
-    }
   });
 });

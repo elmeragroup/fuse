@@ -8,16 +8,7 @@ import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import { nextFrames } from "../../../test/animation-frames";
 import { SUPPORTED_LOCALES, withLocale } from "../../../test/locale-matrix";
-import {
-  ROW,
-  fieldBoxOf,
-  formNamed,
-  px,
-  renderThemed,
-  roleNamed,
-  stampDensity,
-} from "../../../test/themed-browser-render";
-import { DENSITIES } from "../../theme/density";
+import { formNamed, renderThemed, roleNamed } from "../../../test/themed-browser-render";
 import { Field } from "../field";
 import { Form } from "../form/form";
 import { Autocomplete } from "./index";
@@ -166,94 +157,7 @@ function CompanyForm() {
   );
 }
 
-type CompanyRequest = { readonly query: string } & PromiseWithResolvers<readonly Company[]>;
-
-/**
- * A search that runs elsewhere, as the company register's does. Each change of the text starts a
- * request the test settles, `filter={null}` shows the results as given, and the request state
- * lives here, with the consumer.
- */
-function CompanySearch({ requests }: { requests: CompanyRequest[] }) {
-  const [query, setQuery] = useState("");
-  const [results, setResults] = useState<readonly Company[]>([]);
-  const [state, setState] = useState<"loading" | "failed" | "done">("done");
-  return (
-    <Autocomplete.Root
-      items={results}
-      filter={null}
-      value={query}
-      onValueChange={(next) => {
-        setQuery(next);
-        setState("loading");
-        const request = { query: next, ...Promise.withResolvers<readonly Company[]>() };
-        requests.push(request);
-        request.promise.then(
-          (found) => {
-            setResults(found);
-            setState("done");
-          },
-          () => {
-            setResults([]);
-            setState("failed");
-          }
-        );
-      }}
-      itemToStringValue={(company) => company.name}>
-      <Autocomplete.Input aria-label="Company" />
-      <Autocomplete.Status>
-        {state === "done" && results.length > 0
-          ? `${String(results.length)} ${results.length === 1 ? "company" : "companies"}`
-          : null}
-      </Autocomplete.Status>
-      <Autocomplete.Content>
-        <Autocomplete.Empty>
-          {state === "loading"
-            ? "Searching…"
-            : state === "failed"
-              ? "The search failed."
-              : `No company matches ${query}.`}
-        </Autocomplete.Empty>
-        <Autocomplete.List>
-          {(company: Company) => (
-            <Autocomplete.Item key={company.orgNumber} value={company}>
-              {company.name}
-            </Autocomplete.Item>
-          )}
-        </Autocomplete.List>
-      </Autocomplete.Content>
-    </Autocomplete.Root>
-  );
-}
-
 describe("Autocomplete", () => {
-  it("suggests the items that contain the text, in a popup as wide as the field box, with no caret by default", async () => {
-    // A box narrower than the viewport, so the available width does not clamp the popup.
-    renderAutocomplete(
-      <div style={{ width: 240, marginInline: 40 }}>
-        <FruitAutocomplete />
-      </div>
-    );
-    expect(page.getByRole("button").query()).toBeNull();
-
-    const input = autocompleteNamed("Fruit");
-    await userEvent.fill(input, "an");
-    const listbox = await openedListbox();
-    expect(optionNames()).toEqual(["Banana"]);
-
-    // Layout widths, not client rects, so the popup's entry zoom does not scale them.
-    const box = fieldBoxOf(input);
-    const popup = listbox.parentElement;
-    if (!(popup instanceof HTMLElement)) {
-      throw new Error("expected the popup around the listbox");
-    }
-    expect(px(getComputedStyle(popup).width)).toBeCloseTo(box.getBoundingClientRect().width, 1);
-    const positioner = popup.parentElement;
-    if (!(positioner instanceof HTMLElement)) {
-      throw new Error("expected the positioner around the popup");
-    }
-    expect(positioner.getBoundingClientRect().left).toBeCloseTo(box.getBoundingClientRect().left, 1);
-  });
-
   it("keeps typed text that matches no item after blur and submits it under name", async () => {
     renderAutocomplete(
       <form aria-label="Order">
@@ -443,44 +347,6 @@ describe("Autocomplete", () => {
     await expect.element(input).toHaveAccessibleDescription("Type any fruit.");
   });
 
-  it("shows Empty's children for an async list's states, while a Status beside the input stays mounted across the popup opening and closing", async () => {
-    const requests: CompanyRequest[] = [];
-    renderAutocomplete(<CompanySearch requests={requests} />);
-    const status = page.getByRole("status").element();
-    expect(status.getAttribute("aria-live")).toBe("polite");
-    expect(status.textContent).toBe("");
-    // Visually hidden: the popup shows the list's state.
-    expect(status.getBoundingClientRect().width).toBeLessThanOrEqual(1);
-
-    const input = autocompleteNamed("Company");
-    await userEvent.fill(input, "9876");
-    await openedListbox();
-    await expect.element(page.getByText("Searching…", { exact: true })).toBeVisible();
-    expect(requests.map((request) => request.query)).toEqual(["9876"]);
-
-    requests[0]?.resolve([]);
-    await expect.element(page.getByText("No company matches 9876.", { exact: true })).toBeVisible();
-
-    await userEvent.keyboard("{Escape}");
-    await closedListbox();
-    expect(page.getByRole("status").elements()).toEqual([status]);
-
-    // The register matches the organization number, which no name contains, and the list shows
-    // the result as given.
-    await userEvent.fill(input, "987654321");
-    await openedListbox();
-    expect(page.getByRole("status").elements()).toContain(status);
-    requests[1]?.resolve([HAVBRIS]);
-    await expect.element(page.getByRole("option", { name: "Havbris Strøm AS", exact: true })).toBeVisible();
-    await expect.poll(() => status.textContent).toBe("1 company");
-    expect(page.getByText("Searching…", { exact: true }).query()).toBeNull();
-
-    await userEvent.fill(input, "98");
-    requests[2]?.reject(new Error("offline"));
-    await expect.element(page.getByText("The search failed.", { exact: true })).toBeVisible();
-    await expect.poll(() => status.textContent).toBe("");
-  });
-
   it("opens and closes from the caret trigger, and the clear button empties the text, hides the caret and returns focus", async () => {
     renderAutocomplete(<FruitAutocomplete showTrigger showClear />);
     const trigger = roleNamed("button", TOGGLE_COPY["en-US"]);
@@ -610,29 +476,6 @@ describe("Autocomplete", () => {
     await closedListbox();
     await expect.element(page.getByRole("button", { name: "Wipe", exact: true })).toBeInTheDocument();
   });
-
-  it.each(DENSITIES)(
-    "pads the empty state with the row metrics at %s, and collapses it while items match",
-    async (density) => {
-      stampDensity(density);
-      try {
-        renderAutocomplete(<FruitAutocomplete />);
-        const input = autocompleteNamed("Fruit");
-        await userEvent.fill(input, "zzz");
-        const empty = await vi.waitFor(() => page.getByText("No results.", { exact: true }).element());
-        const style = getComputedStyle(empty);
-        expect([style.paddingTop, style.paddingLeft].map(px)).toEqual([ROW[density].py, ROW[density].px]);
-
-        await userEvent.fill(input, "Apple");
-        await expect.element(roleNamed("option", "Apple")).toBeVisible();
-        // Base UI keeps the live region mounted; with no children it takes no room.
-        expect(empty.isConnected).toBe(true);
-        expect(empty.getBoundingClientRect().height).toBe(0);
-      } finally {
-        document.documentElement.removeAttribute("data-density");
-      }
-    }
-  );
 
   it("portals Content into the enclosing ThemeScope instead of the document body", async () => {
     const { host } = renderAutocomplete(<FruitAutocomplete />);

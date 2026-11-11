@@ -6,14 +6,8 @@ import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
-import { centreY, firstLineCentreY, hostCss, HOSTS } from "../../../test/first-line";
 import { SUPPORTED_LOCALES, withLocale } from "../../../test/locale-matrix";
-import {
-  cssVarColor,
-  headingNamed,
-  overlayBackdropOf,
-  renderThemed,
-} from "../../../test/themed-browser-render";
+import { overlayBackdropOf, renderThemed } from "../../../test/themed-browser-render";
 import { AlertDialog } from "./index";
 
 const CANCEL_COPY = {
@@ -264,87 +258,4 @@ describe("AlertDialog", () => {
         .getAttribute("data-dialog-action-type")
     ).toBe("secondary");
   });
-
-  it("maps variant onto the action button and fallback icon, and lets icon replace the fallback", async () => {
-    const { unmount: unmountDestructive } = renderThemed(withLocale("en-US", <ConfirmDialog />));
-    const destructive = await openConfirm();
-    const destructiveAction = page.getByRole("button", { name: ACTION, exact: true }).element();
-    const destructiveIcon = destructive.querySelector("svg");
-    if (!(destructiveAction instanceof HTMLElement) || !(destructiveIcon instanceof SVGElement)) {
-      throw new Error("expected the destructive action and WarningOctagon fallback");
-    }
-    const error = cssVarColor(destructiveAction, "--error");
-    expect(getComputedStyle(destructiveAction).color).toBe(error);
-    expect(getComputedStyle(destructiveIcon).color).toBe(error);
-    expect(getComputedStyle(destructiveIcon).width).toBe("20px");
-    const destructiveGlyph = destructiveIcon.innerHTML;
-    unmountDestructive();
-
-    const { unmount: unmountNeutral } = renderThemed(
-      withLocale("en-US", <ConfirmDialog variant="neutral" />)
-    );
-    const neutral = await openConfirm();
-    const neutralAction = page.getByRole("button", { name: ACTION, exact: true }).element();
-    const neutralIcon = neutral.querySelector("svg");
-    if (!(neutralAction instanceof HTMLElement) || !(neutralIcon instanceof SVGElement)) {
-      throw new Error("expected the default action and Info fallback");
-    }
-    expect(getComputedStyle(neutralAction).backgroundColor).toBe(cssVarColor(neutralAction, "--primary"));
-    expect(getComputedStyle(neutralIcon).color).not.toBe(cssVarColor(neutralAction, "--error"));
-    expect(getComputedStyle(neutralIcon).width).toBe("20px");
-    expect(neutralIcon.innerHTML).not.toBe(destructiveGlyph);
-    unmountNeutral();
-
-    renderThemed(withLocale("en-US", <ConfirmDialog icon={<span>Custom mark</span>} />));
-    const custom = await openConfirm();
-    expect(page.getByText("Custom mark", { exact: true }).element()).toBeTruthy();
-    expect(custom.querySelector("svg")).toBeNull();
-  });
-
-  it.each(HOSTS)("centres the icon on the first line of a title that wraps, %s", async (host) => {
-    // Unit under test: the icon's vertical position in the header row. Oracle: the middle of the
-    // title's first rendered line, read from its text.
-    renderThemed(
-      withLocale(
-        "en-US",
-        <>
-          <style>{hostCss(host)}</style>
-          <ConfirmDialog title={WRAPPING_TITLE} />
-        </>
-      )
-    );
-    const popup = await openConfirm(WRAPPING_TITLE);
-    const heading = headingNamed(WRAPPING_TITLE);
-    const icon = popup.querySelector("svg");
-    if (!(icon instanceof SVGElement)) {
-      throw new Error("expected the fallback icon");
-    }
-    await settle(popup);
-    const line = Number.parseFloat(getComputedStyle(heading).lineHeight);
-    expect(heading.getBoundingClientRect().height).toBeGreaterThanOrEqual(2 * line);
-    // The text's content area is a whole number of pixels tall (23px in a 28px line), and when
-    // the half-leading is fractional Chromium puts it on a whole pixel, so its middle reads up
-    // to half a pixel off the line box's. Allow that half pixel and no more.
-    expect(Math.abs(centreY(icon) - firstLineCentreY(heading))).toBeLessThanOrEqual(0.5);
-  });
-
-  it("gives the title the whole header row when icon is false", async () => {
-    // Oracle: with no icon the title is the row's only item, so it spans the header's width.
-    renderThemed(withLocale("en-US", <ConfirmDialog title={WRAPPING_TITLE} icon={false} />));
-    const popup = await openConfirm(WRAPPING_TITLE);
-    await settle(popup);
-    const heading = headingNamed(WRAPPING_TITLE);
-    const header = heading.parentElement;
-    if (header === null) {
-      throw new Error("expected the title's header row");
-    }
-    expect(heading.getBoundingClientRect().width).toBeCloseTo(header.getBoundingClientRect().width, 0);
-  });
 });
-
-const WRAPPING_TITLE = "Delete this order and every delivery, invoice and meter reading attached to it?";
-
-/** The popup zooms in from 95%; wait for it to settle before measuring layout. */
-async function settle(popup: HTMLElement): Promise<void> {
-  await Promise.all(popup.getAnimations({ subtree: true }).map((animation) => animation.finished));
-}

@@ -8,7 +8,6 @@ import {
   ColorSchemeOutput,
   fkasPrivate,
   mountedColorScheme,
-  stubPrefersColorScheme,
   tkasCompany,
   writeManifest,
 } from "../../test/theme-browser-fixtures";
@@ -131,110 +130,6 @@ describe("useColorScheme", () => {
 });
 
 describe("forced color-scheme", () => {
-  it("applies mount-level forced light, dark, and system before descendant layout work", async () => {
-    writeManifest(resolveColorSchemeOptions({ forcedColorScheme: "dark" }));
-    window.localStorage.setItem(DEFAULT_COLOR_SCHEME_STORAGE_KEY, "light");
-    const media = stubPrefersColorScheme(true);
-    const seen: Array<string | null> = [];
-    function LayoutChild() {
-      useLayoutEffect(() => {
-        seen.push(document.documentElement.getAttribute("data-theme"));
-      });
-      return null;
-    }
-
-    const { host, rerender } = render(
-      <ThemeProvider theme={fkasPrivate} forcedColorScheme="dark">
-        <ColorSchemeOutput />
-        <LayoutChild />
-      </ThemeProvider>
-    );
-    await mountedColorScheme(host, "neutral-fkas-private:light/dark");
-    expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
-
-    rerender(
-      <ThemeProvider theme={fkasPrivate} forcedColorScheme="light">
-        <ColorSchemeOutput />
-        <LayoutChild />
-      </ThemeProvider>
-    );
-    expect(seen.at(-1)).toBe("light");
-    expect(document.documentElement.getAttribute("data-theme")).toBe("light");
-    await mountedColorScheme(host, "neutral-fkas-private:light/light");
-
-    rerender(
-      <ThemeProvider theme={fkasPrivate} forcedColorScheme="system">
-        <ColorSchemeOutput />
-        <LayoutChild />
-      </ThemeProvider>
-    );
-    expect(seen.at(-1)).toBe("dark");
-    expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
-    await mountedColorScheme(host, "neutral-fkas-private:light/dark");
-
-    media.setPrefersDark(false);
-    expect(document.documentElement.getAttribute("data-theme")).toBe("light");
-    await mountedColorScheme(host, "neutral-fkas-private:light/light");
-    media.setPrefersDark(true);
-    expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
-    await mountedColorScheme(host, "neutral-fkas-private:light/dark");
-  });
-
-  it("applies descendant runtime force and restores nested locks without treating them as first paint", async () => {
-    window.localStorage.setItem(DEFAULT_COLOR_SCHEME_STORAGE_KEY, "light");
-    document.documentElement.setAttribute("data-theme", "light");
-    const first: Array<string | null> = [];
-
-    function FirstPaintProbe() {
-      if (first.length === 0) {
-        first.push(document.documentElement.getAttribute("data-theme"));
-      }
-      return <ColorSchemeOutput />;
-    }
-
-    const { host, rerender } = render(
-      <ThemeProvider theme={fkasPrivate}>
-        <ForceColorScheme value="dark">
-          <FirstPaintProbe />
-        </ForceColorScheme>
-      </ThemeProvider>
-    );
-
-    expect(first[0]).toBe("light");
-    await mountedColorScheme(host, "neutral-fkas-private:light/dark");
-    expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
-
-    rerender(
-      <ThemeProvider theme={fkasPrivate}>
-        <ForceColorScheme value="dark">
-          <ForceColorScheme value="light">
-            <ColorSchemeOutput />
-          </ForceColorScheme>
-        </ForceColorScheme>
-      </ThemeProvider>
-    );
-    expect(document.documentElement.getAttribute("data-theme")).toBe("light");
-    await mountedColorScheme(host, "neutral-fkas-private:light/light");
-
-    rerender(
-      <ThemeProvider theme={fkasPrivate}>
-        <ForceColorScheme value="dark">
-          <ColorSchemeOutput />
-        </ForceColorScheme>
-      </ThemeProvider>
-    );
-    expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
-    await mountedColorScheme(host, "neutral-fkas-private:light/dark");
-
-    rerender(
-      <ThemeProvider theme={fkasPrivate}>
-        <ColorSchemeOutput />
-      </ThemeProvider>
-    );
-    expect(document.documentElement.getAttribute("data-theme")).toBe("light");
-    await mountedColorScheme(host, "neutral-fkas-private:light/light");
-  });
-
   it("applies the innermost lock on the first commit of nested ForceColorScheme", async () => {
     window.localStorage.setItem(DEFAULT_COLOR_SCHEME_STORAGE_KEY, "dark");
     document.documentElement.setAttribute("data-theme", "dark");

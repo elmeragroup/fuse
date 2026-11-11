@@ -1,14 +1,44 @@
 import { beforeAll } from "vitest";
-import { commands } from "vitest/browser";
+import { cdp, commands, server } from "vitest/browser";
 
 import { nextFrames } from "./animation-frames";
-import { sizePageToFrame } from "./page-metrics";
 
 declare module "vitest/browser" {
   // oxlint-disable-next-line typescript/consistent-type-definitions -- Vitest registers custom commands by interface declaration merging; a type alias cannot augment.
   interface BrowserCommands {
     sizePage: (width: number, height: number) => Promise<void>;
   }
+}
+
+/** The CDP call that sizes the page in Chromium. */
+type MetricsCdp = {
+  readonly send: (
+    method: "Emulation.setDeviceMetricsOverride",
+    params: {
+      readonly width: number;
+      readonly height: number;
+      readonly deviceScaleFactor: number;
+      readonly mobile: boolean;
+    }
+  ) => Promise<void>;
+};
+
+/**
+ * Size the page to the test frame through Vitest's CDP session, at a pixel ratio of 1, Playwright's
+ * context default, for when a Playwright resize cannot reach the page. Outside Chromium it does
+ * nothing.
+ */
+async function sizePageToFrame(frame: Element): Promise<void> {
+  // Vitest hands out a session in every engine, and outside Chromium its calls reject.
+  if (server.browser !== "chromium") return;
+  // SAFETY: Vitest types its CDP session as {}; Playwright's session implements send.
+  const session = cdp() as MetricsCdp;
+  await session.send("Emulation.setDeviceMetricsOverride", {
+    width: frame.clientWidth,
+    height: frame.clientHeight,
+    deviceScaleFactor: 1,
+    mobile: false,
+  });
 }
 
 /**
@@ -55,7 +85,7 @@ beforeAll(async () => {
   const [width, height] = [frame.clientWidth, frame.clientHeight];
   await commands.sizePage(width, height);
   if (await settles(PLAYWRIGHT_FRAMES)) return;
-  await sizePageToFrame();
+  await sizePageToFrame(frame);
   if (await settles(LAST_FRAMES)) return;
   throw new Error(`The test page does not show its whole frame: ${uncovered() ?? "it does now"}.`);
 });

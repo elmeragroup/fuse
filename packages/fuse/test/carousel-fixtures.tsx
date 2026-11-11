@@ -25,7 +25,7 @@ export function carouselSlides(count: number, perView: 1 | 3): ReactElement[] {
 }
 
 /** A tree the server rendered into the document, which the client has not hydrated yet. */
-export type ServerRendered = {
+type ServerRendered = {
   /** Hydrate the server's HTML, as the client bundle does once it loads. */
   readonly hydrate: () => void;
   /** Every error React reported through `onRecoverableError`, such as a hydration mismatch. */

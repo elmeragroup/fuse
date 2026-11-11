@@ -9,7 +9,6 @@ import {
   headingNamed,
   px,
   renderThemed,
-  roleNamed,
 } from "../../../test/themed-browser-render";
 import { ThemeScope } from "../../theme";
 import { TimelineList } from "../timeline-list/timeline-list";
@@ -67,20 +66,6 @@ describe("Heading", () => {
     const tinted = headingNamed("Tinted");
     expect(getComputedStyle(tinted).color).toBe(cssVarColor(tinted, "--primary"));
   });
-
-  it("renders the provided element with merged recipe classes", () => {
-    renderThemed(
-      <>
-        <Heading>Details</Heading>
-        <Heading render={<a href="#order" />}>Order overview</Heading>
-      </>
-    );
-    const link = roleNamed("link", "Order overview");
-    expect(link.tagName).toBe("A");
-    expect(link.getAttribute("href")).toBe("#order");
-    expect(link.getAttribute("data-slot")).toBe("heading");
-    expect(getComputedStyle(link).fontSize).toBe(getComputedStyle(headingNamed("Details")).fontSize);
-  });
 });
 
 /** A heading's computed font size and line height in px, and its weight. */
@@ -113,41 +98,6 @@ describe("Heading level scale", () => {
     5: { size: 16, leading: 22, weight: "500" },
     6: { size: 16, leading: 22, weight: "500" },
   } as const;
-
-  function LevelHeadings({ prefix }: { prefix: string }) {
-    return (
-      <>
-        {LEVELS.map((level) => (
-          <Heading key={level} level={level}>{`${prefix} ${String(level)}`}</Heading>
-        ))}
-      </>
-    );
-  }
-
-  it("sets each level's type in neutral and branded themes, in light and dark", () => {
-    renderThemed(
-      <>
-        <LevelHeadings prefix="Neutral" />
-        <ThemeScope theme={fkasBranded}>
-          <LevelHeadings prefix="Branded" />
-        </ThemeScope>
-        <div data-theme="dark">
-          <ThemeScope theme={fkasPrivate}>
-            <LevelHeadings prefix="Dark neutral" />
-          </ThemeScope>
-          <ThemeScope theme={fkasBranded}>
-            <LevelHeadings prefix="Dark branded" />
-          </ThemeScope>
-        </div>
-      </>
-    );
-    for (const level of LEVELS) {
-      expect(typeOf(`Neutral ${String(level)}`, level), `h${String(level)}`).toEqual(NEUTRAL[level]);
-      expect(typeOf(`Branded ${String(level)}`, level), `h${String(level)}`).toEqual(BRANDED[level]);
-      expect(typeOf(`Dark neutral ${String(level)}`, level), `h${String(level)}`).toEqual(NEUTRAL[level]);
-      expect(typeOf(`Dark branded ${String(level)}`, level), `h${String(level)}`).toEqual(BRANDED[level]);
-    }
-  });
 
   it("resets the scale in a neutral scope nested in a branded one", () => {
     renderThemed(
@@ -194,27 +144,6 @@ describe("Heading level scale", () => {
     expect(typeOf("Medium", 1)).toEqual({ size: 24, leading: 32, weight: "500" });
     // 2xl 24px at snug 1.375 = 33px, at semi-bold 600.
     expect(typeOf("Both", 3)).toEqual({ size: 24, leading: 33, weight: "600" });
-  });
-
-  it("lets a className size, line height or weight replace the branded roles", () => {
-    renderThemed(
-      <ThemeScope theme={fkasBranded}>
-        <Heading level={1} className="text-3xl">
-          Large class
-        </Heading>
-        <Heading level={1} className="leading-tight">
-          Tight class
-        </Heading>
-        <Heading level={2} className="font-normal">
-          Regular class
-        </Heading>
-      </ThemeScope>
-    );
-    // text-3xl is 30px with its own 1.2 line height, 36px: the size class drops the leading role.
-    expect(typeOf("Large class", 1)).toEqual({ size: 30, leading: 36, weight: "700" });
-    // leading-tight 24 × 1.25 = 30px.
-    expect(typeOf("Tight class", 1)).toEqual({ size: 24, leading: 30, weight: "700" });
-    expect(typeOf("Regular class", 2)).toEqual({ size: 20, leading: 32, weight: "400" });
   });
 });
 

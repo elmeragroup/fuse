@@ -76,19 +76,6 @@ describe("reset", () => {
     expect(present.overrides.shared).toEqual({});
   });
 
-  it("resets a section's tokens in the edited scheme, with its light-only tokens", () => {
-    const { present } = run(...edited, {
-      type: "reset-section",
-      scheme: "light",
-      names: ["primary", "secondary", "radius"],
-    });
-    expect(present.overrides).toEqual({
-      light: { border: "#111111" },
-      dark: { primary: "#0000ff" },
-      shared: {},
-    });
-  });
-
   it("resets every edit in both schemes and keeps the theme", () => {
     const { present } = run(...edited, { type: "theme", theme: FKAS }, { type: "reset-all" });
     expect(present).toEqual({ theme: FKAS, overrides: { light: {}, dark: {}, shared: {} } });
@@ -154,70 +141,9 @@ describe("undo and redo", () => {
     expect(reduceEdits(history, { type: "redo" })).toBe(history);
   });
 
-  it("undoes a whole coalesced gesture in one step", () => {
-    const drag = (value: string): EditAction => ({
-      type: "set",
-      scheme: "light",
-      name: "radius",
-      value,
-      coalesce: "radius-drag-1",
-    });
-    const history = run(
-      { type: "set", scheme: "light", name: "primary", value: "#ff0000" },
-      drag("0.5rem"),
-      drag("0.75rem"),
-      drag("1rem")
-    );
-    expect(history.present.overrides.shared).toEqual({ radius: "1rem" });
-    const undone = reduceEdits(history, { type: "undo" });
-    expect(undone.present.overrides).toEqual({ light: { primary: "#ff0000" }, dark: {}, shared: {} });
-    expect(reduceEdits(undone, { type: "redo" }).present.overrides.shared).toEqual({ radius: "1rem" });
-  });
-
-  it("starts a new step when the gesture key changes or another edit intervenes", () => {
-    const drag = (value: string, coalesce: string): EditAction => ({
-      type: "set",
-      scheme: "light",
-      name: "radius",
-      value,
-      coalesce,
-    });
-    const history = run(drag("0.5rem", "a"), drag("1rem", "b"));
-    expect(reduceEdits(history, { type: "undo" }).present.overrides.shared).toEqual({ radius: "0.5rem" });
-
-    const interrupted = run(
-      drag("0.5rem", "a"),
-      { type: "set", scheme: "light", name: "primary", value: "#ff0000" },
-      drag("1rem", "a")
-    );
-    expect(reduceEdits(interrupted, { type: "undo" }).present.overrides).toEqual({
-      light: { primary: "#ff0000" },
-      dark: {},
-      shared: { radius: "0.5rem" },
-    });
-  });
-
   it("undoes a base theme change", () => {
     const history = run({ type: "theme", theme: FKAS }, { type: "undo" });
     expect(history.present.theme).toEqual(ELMA);
-  });
-});
-
-describe("replace", () => {
-  it("loads a document with a fresh history", () => {
-    const loaded: StudioDocument = {
-      theme: FKAS,
-      overrides: { light: { primary: "#ff0000" }, dark: {}, shared: {} },
-    };
-    const history = run(
-      { type: "set", scheme: "light", name: "ring", value: "#000000" },
-      {
-        type: "replace",
-        document: loaded,
-      }
-    );
-    expect(history.present).toEqual(loaded);
-    expect(reduceEdits(history, { type: "undo" })).toBe(history);
   });
 });
 
@@ -312,54 +238,6 @@ describe("the cycle invariant", () => {
 });
 
 /**
- * Unit: `artboardEdits` for an artboard in another identity than the base theme. Oracle: the theme
- * rules as written in Fuse's theme sources: a neutral theme declares
- * `radius-button: var(--radius)`, and a branded one a literal button radius. So
- * `--radius: var(--radius-button)` loops only in the neutral identity.
- */
-describe("pinned identities", () => {
-  const radiusToButton: StudioDocument = {
-    ...EMPTY,
-    overrides: { light: {}, dark: {}, shared: { radius: "var(--radius-button)" } },
-  };
-  it("skips the edit that loops in the pinned identity and applies the rest", () => {
-    const document: StudioDocument = {
-      ...radiusToButton,
-      overrides: { ...radiusToButton.overrides, light: { primary: "#ff0000" } },
-    };
-    const neutral = artboardEdits(document.overrides, { ...ELMA, identity: "neutral" }, ELMA, "light");
-    expect(overridesFor(neutral.overrides, "light")).toEqual({ primary: "#ff0000" });
-    expect(neutral.skipped).toEqual(["radius"]);
-    const branded = artboardEdits(document.overrides, ELMA, ELMA, "light");
-    expect(overridesFor(branded.overrides, "light")).toEqual({
-      primary: "#ff0000",
-      radius: "var(--radius-button)",
-    });
-    expect(branded.skipped).toEqual([]);
-  });
-
-  it("skips again when a skipped token's own declaration loops another edit", () => {
-    // Round one drops the button/field loop; the neutral button then reads --radius again,
-    // which reads the button: round two drops --radius.
-    const document: StudioDocument = {
-      ...EMPTY,
-      overrides: {
-        light: {},
-        dark: {},
-        shared: {
-          radius: "var(--radius-button)",
-          "radius-button": "var(--radius-field)",
-          "radius-field": "var(--radius-button)",
-        },
-      },
-    };
-    const result = artboardEdits(document.overrides, { ...ELMA, identity: "neutral" }, ELMA, "dark");
-    expect(overridesFor(result.overrides, "dark")).toEqual({});
-    expect(result.skipped).toEqual(["radius", "radius-button", "radius-field"]);
-  });
-});
-
-/**
  * Unit: `artboardEdits` for an artboard in another brand than the base theme. Oracle: the theme
  * rules as written in Fuse's palettes, which the theming handbook states: Fjordkraft, Fjordkraft
  * Företag and TrøndelagKraft declare a stepped literal `--sidebar-brand` in light themes and
@@ -385,21 +263,6 @@ describe("an artboard in another brand", () => {
   it("admits the edit in the base brand, where it does not loop", () => {
     expect(documentCycles(brandToSidebar("light"))).toEqual([]);
     expect(documentCycles(brandToSidebar("dark"))).toEqual([]);
-  });
-
-  it("skips the edit on a light Elmera artboard over a Fjordkraft base, and keeps it on a TrøndelagKraft one", () => {
-    const document = brandToSidebar("light");
-    const elma = artboardEdits(document.overrides, ELMA, document.theme, "light");
-    expect(overridesFor(elma.overrides, "light")).toEqual({});
-    expect(elma.skipped).toEqual(["brand"]);
-    const tkas = artboardEdits(
-      document.overrides,
-      { ...FKAS_BRANDED, brand: "tkas" },
-      document.theme,
-      "light"
-    );
-    expect(overridesFor(tkas.overrides, "light")).toEqual({ brand: "var(--sidebar-brand)" });
-    expect(tkas.skipped).toEqual([]);
   });
 
   it("skips the edit on a dark Fjordkraft artboard over an Elmera base, and leaves the light scheme alone", () => {

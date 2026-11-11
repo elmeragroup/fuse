@@ -37,8 +37,6 @@ function ordersOf(count: number): Order[] {
 // must not build its rows during render.
 /** Three generated orders. */
 export const ORDERS_3 = ordersOf(3);
-/** Ten generated orders, one default page. */
-export const ORDERS_10 = ordersOf(10);
 /** Twenty-five generated orders, three pages of ten. */
 export const ORDERS_25 = ordersOf(25);
 /** No orders, for the empty state. */

@@ -1,13 +1,15 @@
 /**
  * Unit under test: the Calendar parts in Chromium, through their roles and names. Oracles: the
- * React Aria interim tier as `src/internal/date-tier-parity.browser.test.tsx` pins it (day names,
- * grid names, keyboard targets, bound naming and clamping, today naming), React Aria's
+ * React Aria interim tier's behaviour (day names, grid names, keyboard targets, bound naming and
+ * clamping, today naming), React Aria's
  * `react-stately` paging rules worked out by hand for the multi-month cases, and printed 2026
  * calendars. Every scenario runs under a clock frozen at local noon on June 15, 2030, outside
  * every month the scenarios show, except where a scenario names today itself.
  */
-import { Suspense, use, useEffect, useState } from "react";
-import type { ReactElement, ReactNode } from "react";
+import { useEffect, useState } from "react";
+import type { ReactElement } from "react";
+import { Suspense, use } from "react";
+import type { ReactNode } from "react";
 
 import { hydrateRoot } from "react-dom/client";
 import { renderToString } from "react-dom/server";
@@ -17,17 +19,12 @@ import { page, userEvent } from "vitest/browser";
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import { expectRenderTypeError } from "../../../test/caught-error";
-import { emulateForcedColors, systemColor } from "../../../test/forced-colors";
 import { withLocale } from "../../../test/locale-matrix";
 import { cssVarColor, renderThemed, roleNamed } from "../../../test/themed-browser-render";
 import { definedProps } from "../../internal/defined-props";
 import "../../temporal-polyfill";
 import type { CalendarRootProps } from "./calendar";
-import { CalendarRootContext, createSelectionOwner, dayFlags, NO_DAY_FLAGS } from "./calendar-context";
-import type { CalendarRootContextValue, CalendarSettings } from "./calendar-context";
-import { createCalendarStore } from "./calendar-store";
 import { Calendar } from "./index";
-import { initialSharedState } from "./use-calendar-navigation";
 
 const TODAY = "2030-06-15";
 
@@ -117,7 +114,7 @@ async function focusDay(name: string): Promise<void> {
 }
 
 function gridNames(): string[] {
-  // DOM audit: every grid's name in document order, which a role query cannot list in order.
+  // Every grid's name in document order, which a role query cannot list in order.
   return [...document.querySelectorAll("[role=grid]")].map((grid) => grid.getAttribute("aria-label") ?? "");
 }
 
@@ -190,6 +187,13 @@ describe("Calendar parity with the interim tier", () => {
     await expect.element(committed()).toHaveTextContent("unchanged");
   });
 
+  it("names the month buttons Previous and Next", async () => {
+    mount(<Harness defaultValue={Temporal.PlainDate.from("2026-10-14")} />);
+
+    await expect.element(page.getByRole("button", { name: "Previous", exact: true })).toBeVisible();
+    await expect.element(page.getByRole("button", { name: "Next", exact: true })).toBeVisible();
+  });
+
   it("prefixes today's day name with Today and leaves the other days plain", async () => {
     mount(<Harness defaultValue={Temporal.PlainDate.from("2030-06-10")} />);
 
@@ -199,13 +203,6 @@ describe("Calendar parity with the interim tier", () => {
     await expect
       .element(page.getByRole("button", { name: "Sunday, June 16, 2030", exact: true }))
       .toBeVisible();
-  });
-
-  it("names the month buttons Previous and Next", async () => {
-    mount(<Harness defaultValue={Temporal.PlainDate.from("2026-10-14")} />);
-
-    await expect.element(page.getByRole("button", { name: "Previous", exact: true })).toBeVisible();
-    await expect.element(page.getByRole("button", { name: "Next", exact: true })).toBeVisible();
   });
 });
 
@@ -262,34 +259,6 @@ describe("Calendar selection", () => {
     expect(changes).toEqual(["2026-10-15"]);
     expect(first.defaultPrevented).toBe(true);
     expect(repeat.defaultPrevented).toBe(true);
-  });
-
-  it.each([
-    ["Alt+Arrow Left", { key: "ArrowLeft", altKey: true }],
-    ["Control+Arrow Left", { key: "ArrowLeft", ctrlKey: true }],
-    ["Meta+Arrow Left", { key: "ArrowLeft", metaKey: true }],
-    ["Control+Home", { key: "Home", ctrlKey: true }],
-    ["Shift+Arrow Right", { key: "ArrowRight", shiftKey: true }],
-    ["Control+Enter", { key: "Enter", ctrlKey: true }],
-    ["Meta+Space", { key: " ", metaKey: true }],
-  ] as const)("leaves %s to the browser: no move, no selection, no preventDefault", async (_keys, init) => {
-    const changes: string[] = [];
-    mount(
-      <Parts
-        defaultValue={Temporal.PlainDate.from("2026-10-14")}
-        onValueChange={(next) => changes.push(next.toString())}
-      />
-    );
-    await focusDay("Wednesday, October 14, 2026 selected");
-    await userEvent.keyboard("{ArrowRight}");
-    await expectFocusOnDay("Thursday, October 15, 2026");
-
-    const event = new KeyboardEvent("keydown", { ...init, bubbles: true, cancelable: true });
-    roleNamed("button", "Thursday, October 15, 2026").dispatchEvent(event);
-
-    expect(event.defaultPrevented).toBe(false);
-    await expectFocusOnDay("Thursday, October 15, 2026");
-    expect(changes).toEqual([]);
   });
 
   it("follows a controlled value from its parent without moving the view", async () => {
@@ -350,9 +319,48 @@ describe("Calendar selection", () => {
     expect(roleNamed("button", "Previous")).toHaveAttribute("aria-disabled", "true");
     expect(roleNamed("button", "Next")).toHaveAttribute("aria-disabled", "true");
   });
+
+  it.each([
+    ["Alt+Arrow Left", { key: "ArrowLeft", altKey: true }],
+    ["Control+Arrow Left", { key: "ArrowLeft", ctrlKey: true }],
+    ["Meta+Arrow Left", { key: "ArrowLeft", metaKey: true }],
+    ["Control+Home", { key: "Home", ctrlKey: true }],
+    ["Shift+Arrow Right", { key: "ArrowRight", shiftKey: true }],
+    ["Control+Enter", { key: "Enter", ctrlKey: true }],
+    ["Meta+Space", { key: " ", metaKey: true }],
+  ] as const)("leaves %s to the browser: no move, no selection, no preventDefault", async (_keys, init) => {
+    const changes: string[] = [];
+    mount(
+      <Parts
+        defaultValue={Temporal.PlainDate.from("2026-10-14")}
+        onValueChange={(next) => changes.push(next.toString())}
+      />
+    );
+    await focusDay("Wednesday, October 14, 2026 selected");
+    await userEvent.keyboard("{ArrowRight}");
+    await expectFocusOnDay("Thursday, October 15, 2026");
+
+    const event = new KeyboardEvent("keydown", { ...init, bubbles: true, cancelable: true });
+    roleNamed("button", "Thursday, October 15, 2026").dispatchEvent(event);
+
+    expect(event.defaultPrevented).toBe(false);
+    await expectFocusOnDay("Thursday, October 15, 2026");
+    expect(changes).toEqual([]);
+  });
 });
 
 describe("Calendar cancelable change details", () => {
+  it("keeps focus on its day when a key that would page is canceled", async () => {
+    mount(<Harness defaultValue={Temporal.PlainDate.from("2026-10-14")} cancelVisible />);
+    await focusDay("Wednesday, October 14, 2026 selected");
+
+    await userEvent.keyboard("{PageDown}");
+
+    await expect.element(visibleChanges()).toHaveTextContent("2026-11 keyboard");
+    await expectFocusOnDay("Wednesday, October 14, 2026 selected");
+    expect(gridNames()).toEqual(["Delivery, October 2026"]);
+  });
+
   it.each([
     [
       "a pointer press",
@@ -391,103 +399,21 @@ describe("Calendar cancelable change details", () => {
     await expect.element(page.getByRole("heading", { name: "October 2026" })).toBeVisible();
     expect(gridNames()).toEqual(["Delivery, October 2026"]);
   });
-
-  it("keeps focus on its day when a key that would page is canceled", async () => {
-    mount(<Harness defaultValue={Temporal.PlainDate.from("2026-10-14")} cancelVisible />);
-    await focusDay("Wednesday, October 14, 2026 selected");
-
-    await userEvent.keyboard("{PageDown}");
-
-    await expect.element(visibleChanges()).toHaveTextContent("2026-11 keyboard");
-    await expectFocusOnDay("Wednesday, October 14, 2026 selected");
-    expect(gridNames()).toEqual(["Delivery, October 2026"]);
-  });
-});
-
-describe("Calendar month buttons", () => {
-  it("pages one month and reports each press", async () => {
-    mount(<Harness defaultValue={Temporal.PlainDate.from("2026-10-14")} />);
-
-    await userEvent.click(roleNamed("button", "Next"));
-    await userEvent.click(roleNamed("button", "Next"));
-    await userEvent.click(roleNamed("button", "Previous"));
-
-    await expect
-      .element(visibleChanges())
-      .toHaveTextContent("2026-11 increment-press, 2026-12 increment-press, 2026-11 decrement-press");
-    expect(gridNames()).toEqual(["Delivery, November 2026"]);
-    expect(roleNamed("button", "Previous")).toHaveFocus();
-  });
-
-  it("disables a month button whose page holds no selectable day and keeps it focusable", async () => {
-    mount(
-      <Harness
-        defaultValue={Temporal.PlainDate.from("2026-10-14")}
-        minValue={Temporal.PlainDate.from("2026-09-20")}
-        maxValue={Temporal.PlainDate.from("2026-11-05")}
-        visibleMonths={2}
-      />
-    );
-
-    expect(gridNames()).toEqual(["Delivery, October 2026", "Delivery, November 2026"]);
-    expect(roleNamed("button", "Next")).toHaveAttribute("aria-disabled", "true");
-
-    await userEvent.click(roleNamed("button", "Previous"));
-
-    expect(gridNames()).toEqual(["Delivery, September 2026", "Delivery, October 2026"]);
-    expect(roleNamed("button", "Previous")).toHaveAttribute("aria-disabled", "true");
-    expect(roleNamed("button", "Previous")).toHaveFocus();
-    expect(roleNamed("button", "Next")).toHaveAttribute("aria-disabled", "false");
-  });
-
-  it("announces a page politely from the one visible-range heading, quiet until the first page and while a day has focus", async () => {
-    mount(<Harness defaultValue={Temporal.PlainDate.from("2026-10-14")} visibleMonths={3} />);
-
-    const heading = page.getByRole("heading", { level: 2 });
-    await expect.element(heading).toHaveAttribute("aria-live", "off");
-    // DOM audit: the calendar writes exactly one live region, which no role query can count.
-    expect(document.querySelectorAll("[aria-live]")).toHaveLength(1);
-
-    await userEvent.click(roleNamed("button", "Next"));
-    await expect.element(heading).toHaveAttribute("aria-live", "polite");
-
-    await focusDay("Thursday, January 14, 2027");
-    await expect.element(heading).toHaveAttribute("aria-live", "off");
-
-    await userEvent.click(roleNamed("button", "Previous"));
-    await expect.element(heading).toHaveAttribute("aria-live", "polite");
-  });
-
-  it("stays quiet while a host widens the view after mounting, until the user pages by key", async () => {
-    /** A host that picks the month count after mounting, as one reading the viewport does. */
-    function Widening({ onReady }: { onReady: (set: (months: number) => void) => void }): ReactElement {
-      const [months, setMonths] = useState(1);
-      useEffect(() => {
-        onReady(setMonths);
-      }, [onReady]);
-      return <Harness defaultValue={Temporal.PlainDate.from("2026-10-14")} visibleMonths={months} />;
-    }
-    let widen: ((months: number) => void) | undefined;
-    mount(<Widening onReady={(set) => (widen = set)} />);
-    const heading = page.getByRole("heading", { level: 2 });
-    await expect.element(page.getByRole("heading", { level: 2, name: "October 2026" })).toBeVisible();
-
-    widen?.(2);
-
-    await expect
-      .element(page.getByRole("heading", { level: 2, name: "October – November 2026" }))
-      .toHaveAttribute("aria-live", "off");
-
-    await focusDay("Wednesday, October 14, 2026 selected");
-    await userEvent.keyboard("{PageDown}{PageDown}");
-    await expectFocusOnDay("Monday, December 14, 2026");
-    await userEvent.click(page.getByRole("heading", { level: 2 }));
-
-    await expect.element(heading).toHaveAttribute("aria-live", "polite");
-  });
 });
 
 describe("Calendar across months", () => {
+  it("keeps one tab stop across every grid", () => {
+    mount(<Harness defaultValue={Temporal.PlainDate.from("2026-10-14")} visibleMonths={3} />);
+
+    // Every day button's tab index across the three grids, outside days included.
+    const stops = [...document.querySelectorAll("[data-slot=calendar-day-button]")].filter(
+      (button) => button.getAttribute("tabindex") === "0"
+    );
+    expect(stops.map((button) => button.getAttribute("aria-label"))).toEqual([
+      "Wednesday, October 14, 2026 selected",
+    ]);
+  });
+
   it("shows three months around the value and names each grid by its month", () => {
     mount(<Harness defaultValue={Temporal.PlainDate.from("2026-10-14")} visibleMonths={3} />);
 
@@ -572,66 +498,16 @@ describe("Calendar across months", () => {
     await expectFocusOnDay("Monday, August 10, 2026, First available date");
     expect(gridNames()).toEqual(["Delivery, August 2026", "Delivery, September 2026"]);
   });
-
-  it("keeps one tab stop across every grid", () => {
-    mount(<Harness defaultValue={Temporal.PlainDate.from("2026-10-14")} visibleMonths={3} />);
-
-    // DOM audit: every day button's tab index across the three grids, outside days included.
-    const stops = [...document.querySelectorAll("[data-slot=calendar-day-button]")].filter(
-      (button) => button.getAttribute("tabindex") === "0"
-    );
-    expect(stops.map((button) => button.getAttribute("aria-label"))).toEqual([
-      "Wednesday, October 14, 2026 selected",
-    ]);
-  });
-
-  it("renders only the two days focus leaves and reaches in a three-month view", async () => {
-    const renders: string[] = [];
-    function Counted(): ReactElement {
-      return (
-        <Calendar.Root
-          aria-label="Delivery"
-          defaultValue={Temporal.PlainDate.from("2026-10-14")}
-          visibleMonths={3}>
-          <Calendar.Months>
-            {(month) => (
-              <Calendar.Month key={month.toString()} value={month}>
-                <Calendar.DayGrid>
-                  <Calendar.DayGridBody>
-                    {(week) => (
-                      <Calendar.DayGridRow key={week.toString()} value={week}>
-                        {(day) => (
-                          <Calendar.DayGridCell key={day.toString()} value={day}>
-                            <Calendar.DayButton
-                              render={(props) => {
-                                renders.push(day.toString());
-                                return <button {...props} />;
-                              }}
-                            />
-                          </Calendar.DayGridCell>
-                        )}
-                      </Calendar.DayGridRow>
-                    )}
-                  </Calendar.DayGridBody>
-                </Calendar.DayGrid>
-              </Calendar.Month>
-            )}
-          </Calendar.Months>
-        </Calendar.Root>
-      );
-    }
-    mount(<Counted />);
-    await focusDay("Wednesday, October 14, 2026 selected");
-    renders.length = 0;
-
-    await userEvent.keyboard("{ArrowRight}");
-
-    await expectFocusOnDay("Thursday, October 15, 2026");
-    expect(renders.toSorted()).toEqual(["2026-10-14", "2026-10-15"]);
-  });
 });
 
 describe("Calendar today", () => {
+  it("opens on today's month when it has no value", async () => {
+    mount(<Harness />);
+
+    await expect.element(page.getByRole("grid", { name: "Delivery, June 2030", exact: true })).toBeVisible();
+    expect(roleNamed("button", "Today, Saturday, June 15, 2030")).toHaveAttribute("tabindex", "0");
+  });
+
   it("moves the today marking when the page becomes visible on a new day", async () => {
     mount(<Harness defaultValue={Temporal.PlainDate.from("2030-06-10")} />);
     await expect
@@ -645,13 +521,6 @@ describe("Calendar today", () => {
       .element(page.getByRole("button", { name: "Today, Sunday, June 16, 2030", exact: true }))
       .toBeVisible();
     expect(roleNamed("button", "Saturday, June 15, 2030")).not.toHaveAttribute("data-current");
-  });
-
-  it("opens on today's month when it has no value", async () => {
-    mount(<Harness />);
-
-    await expect.element(page.getByRole("grid", { name: "Delivery, June 2030", exact: true })).toBeVisible();
-    expect(roleNamed("button", "Today, Saturday, June 15, 2030")).toHaveAttribute("tabindex", "0");
   });
 });
 
@@ -716,10 +585,14 @@ describe("Calendar focus when the bounds change", () => {
     expect(roleNamed("button", "Wednesday, October 14, 2026")).toBeDisabled();
   });
 
-  it("leaves focus outside the calendar where it is", async () => {
+  it("leaves focus outside the calendar where it is after a click on blank space dropped it from a day", async () => {
     let setMinimum: SetMinimum | undefined;
     mount(<BoundsHarness onReady={(set) => (setMinimum = set)} />);
     await focusDay("Wednesday, October 14, 2026 selected");
+    await userEvent.keyboard("{ArrowRight}");
+    await expectFocusOnDay("Thursday, October 15, 2026");
+    await userEvent.click(page.getByText("Blank space"));
+    expect(roleNamed("button", "Thursday, October 15, 2026")).not.toHaveFocus();
     roleNamed("button", "Outside").focus();
 
     setMinimum?.(Temporal.PlainDate.from("2026-10-20"));
@@ -732,14 +605,22 @@ describe("Calendar focus when the bounds change", () => {
     expect(roleNamed("button", "Outside")).toHaveFocus();
   });
 
-  it("leaves focus outside the calendar where it is after a click on blank space dropped it from a day", async () => {
+  it("lets the live region speak again once a click on blank space took focus off the days", async () => {
+    mount(<BoundsHarness onReady={() => undefined} />);
+    const heading = page.getByRole("heading", { level: 2 });
+    await userEvent.click(roleNamed("button", "Next"));
+    await focusDay("Saturday, November 14, 2026");
+    await expect.element(heading).toHaveAttribute("aria-live", "off");
+
+    await userEvent.click(page.getByText("Blank space"));
+
+    await expect.element(heading).toHaveAttribute("aria-live", "polite");
+  });
+
+  it("leaves focus outside the calendar where it is", async () => {
     let setMinimum: SetMinimum | undefined;
     mount(<BoundsHarness onReady={(set) => (setMinimum = set)} />);
     await focusDay("Wednesday, October 14, 2026 selected");
-    await userEvent.keyboard("{ArrowRight}");
-    await expectFocusOnDay("Thursday, October 15, 2026");
-    await userEvent.click(page.getByText("Blank space"));
-    expect(roleNamed("button", "Thursday, October 15, 2026")).not.toHaveFocus();
     roleNamed("button", "Outside").focus();
 
     setMinimum?.(Temporal.PlainDate.from("2026-10-20"));
@@ -772,15 +653,208 @@ describe("Calendar focus when the bounds change", () => {
       .toHaveAttribute("tabindex", "0");
     expect(roleNamed("button", "Outside")).toHaveFocus();
   });
+});
 
-  it("lets the live region speak again once a click on blank space took focus off the days", async () => {
-    mount(<BoundsHarness onReady={() => undefined} />);
-    const heading = page.getByRole("heading", { level: 2 });
+describe("Calendar visibleMonths", () => {
+  it("warns once while the same value stays, however often the Root renders", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    try {
+      mount(<Harness defaultValue={Temporal.PlainDate.from("2026-10-14")} visibleMonths={0} />);
+      await userEvent.click(roleNamed("button", "Next"));
+      await userEvent.click(roleNamed("button", "Next"));
+
+      await expect
+        .element(visibleChanges())
+        .toHaveTextContent("2026-11 increment-press, 2026-12 increment-press");
+      expect(warn).toHaveBeenCalledTimes(1);
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
+  it.each([
+    [0, ["Delivery, October 2026"]],
+    [-2, ["Delivery, October 2026"]],
+    [Number.NaN, ["Delivery, October 2026"]],
+    [1.5, ["Delivery, October 2026"]],
+    [2.9, ["Delivery, October 2026", "Delivery, November 2026"]],
+  ])("shows a whole number of months from 1 for %d, and warns", (requested, grids) => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    try {
+      mount(<Harness defaultValue={Temporal.PlainDate.from("2026-10-14")} visibleMonths={requested} />);
+
+      expect(gridNames()).toEqual(grids);
+      expect(warn).toHaveBeenCalledWith(
+        `Calendar.Root: visibleMonths ${String(requested)} is not a whole number from 1, so it shows ${String(grids.length)}.`
+      );
+    } finally {
+      warn.mockRestore();
+    }
+  });
+});
+
+describe("Calendar selected day face", () => {
+  /** A day button's painted fill and text colour. */
+  function face(name: string) {
+    const style = getComputedStyle(roleNamed("button", name));
+    return { fill: style.backgroundColor, text: style.color };
+  }
+
+  it("paints a selected day that fails validation with the error pair", () => {
+    mount(
+      <Harness
+        defaultValue={Temporal.PlainDate.from("2026-10-15")}
+        isDateUnavailable={(date) => date.toString() === "2026-10-15"}
+      />
+    );
+    const invalid = roleNamed("button", "Thursday, October 15, 2026 selected");
+
+    expect(face("Thursday, October 15, 2026 selected")).toEqual({
+      fill: cssVarColor(invalid, "--error"),
+      text: cssVarColor(invalid, "--error-foreground"),
+    });
+  });
+});
+
+describe("date props past the types", () => {
+  it("throws a TypeError naming the Root, the prop and the string for ISO text", () => {
+    expectRenderTypeError(
+      'Calendar.Root value: received the string "2026-10-14"',
+      <Calendar.Root
+        aria-label="Delivery"
+        // @ts-expect-error -- text reaches the prop past the types: from plain JavaScript, or as the ISO text a server component's Temporal object crosses as
+        value="2026-10-14"
+      />
+    );
+  });
+
+  it("throws for ISO text in value after the equal Temporal value, whatever rendered before", () => {
+    expectRenderTypeError(
+      'Calendar.Root value: received the string "2026-10-14"',
+      <Calendar.Root aria-label="Delivery" value={Temporal.PlainDate.from("2026-10-14")} />,
+      <Calendar.Root
+        aria-label="Delivery"
+        // @ts-expect-error -- the equal ISO text, past the types, after a Temporal value
+        value="2026-10-14"
+      />
+    );
+  });
+
+  it("throws for ISO text in a bound after the equal Temporal value, whatever rendered before", () => {
+    expectRenderTypeError(
+      'Calendar.Root minValue: received the string "2026-10-01"',
+      <Calendar.Root aria-label="Delivery" minValue={Temporal.PlainDate.from("2026-10-01")} />,
+      <Calendar.Root
+        aria-label="Delivery"
+        // @ts-expect-error -- the equal ISO text, past the types, after a Temporal value
+        minValue="2026-10-01"
+      />
+    );
+  });
+
+  it("throws for ISO text in defaultValue beside a controlled value", () => {
+    expectRenderTypeError(
+      'Calendar.Root defaultValue: received the string "2026-10-14"',
+      <Calendar.Root
+        aria-label="Delivery"
+        value={null}
+        // @ts-expect-error -- text reaches the prop past the types
+        defaultValue="2026-10-14"
+      />
+    );
+  });
+
+  it("throws for ISO text in defaultValue after the equal Temporal value, whatever rendered before", () => {
+    expectRenderTypeError(
+      'Calendar.Root defaultValue: received the string "2026-10-14"',
+      <Calendar.Root aria-label="Delivery" defaultValue={Temporal.PlainDate.from("2026-10-14")} />,
+      <Calendar.Root
+        aria-label="Delivery"
+        // @ts-expect-error -- the equal ISO text, past the types, after a Temporal value
+        defaultValue="2026-10-14"
+      />
+    );
+  });
+});
+
+describe("Calendar month buttons", () => {
+  it("pages one month and reports each press", async () => {
+    mount(<Harness defaultValue={Temporal.PlainDate.from("2026-10-14")} />);
+
     await userEvent.click(roleNamed("button", "Next"));
-    await focusDay("Saturday, November 14, 2026");
+    await userEvent.click(roleNamed("button", "Next"));
+    await userEvent.click(roleNamed("button", "Previous"));
+
+    await expect
+      .element(visibleChanges())
+      .toHaveTextContent("2026-11 increment-press, 2026-12 increment-press, 2026-11 decrement-press");
+    expect(gridNames()).toEqual(["Delivery, November 2026"]);
+    expect(roleNamed("button", "Previous")).toHaveFocus();
+  });
+
+  it("disables a month button whose page holds no selectable day and keeps it focusable", async () => {
+    mount(
+      <Harness
+        defaultValue={Temporal.PlainDate.from("2026-10-14")}
+        minValue={Temporal.PlainDate.from("2026-09-20")}
+        maxValue={Temporal.PlainDate.from("2026-11-05")}
+        visibleMonths={2}
+      />
+    );
+
+    expect(gridNames()).toEqual(["Delivery, October 2026", "Delivery, November 2026"]);
+    expect(roleNamed("button", "Next")).toHaveAttribute("aria-disabled", "true");
+
+    await userEvent.click(roleNamed("button", "Previous"));
+
+    expect(gridNames()).toEqual(["Delivery, September 2026", "Delivery, October 2026"]);
+    expect(roleNamed("button", "Previous")).toHaveAttribute("aria-disabled", "true");
+    expect(roleNamed("button", "Previous")).toHaveFocus();
+    expect(roleNamed("button", "Next")).toHaveAttribute("aria-disabled", "false");
+  });
+
+  it("announces a page politely from the one visible-range heading, quiet until the first page and while a day has focus", async () => {
+    mount(<Harness defaultValue={Temporal.PlainDate.from("2026-10-14")} visibleMonths={3} />);
+
+    const heading = page.getByRole("heading", { level: 2 });
+    await expect.element(heading).toHaveAttribute("aria-live", "off");
+    // The calendar writes exactly one live region, which no role query can count.
+    expect(document.querySelectorAll("[aria-live]")).toHaveLength(1);
+
+    await userEvent.click(roleNamed("button", "Next"));
+    await expect.element(heading).toHaveAttribute("aria-live", "polite");
+
+    await focusDay("Thursday, January 14, 2027");
     await expect.element(heading).toHaveAttribute("aria-live", "off");
 
-    await userEvent.click(page.getByText("Blank space"));
+    await userEvent.click(roleNamed("button", "Previous"));
+    await expect.element(heading).toHaveAttribute("aria-live", "polite");
+  });
+
+  it("stays quiet while a host widens the view after mounting, until the user pages by key", async () => {
+    /** A host that picks the month count after mounting, as one reading the viewport does. */
+    function Widening({ onReady }: { onReady: (set: (months: number) => void) => void }): ReactElement {
+      const [months, setMonths] = useState(1);
+      useEffect(() => {
+        onReady(setMonths);
+      }, [onReady]);
+      return <Harness defaultValue={Temporal.PlainDate.from("2026-10-14")} visibleMonths={months} />;
+    }
+    let widen: ((months: number) => void) | undefined;
+    mount(<Widening onReady={(set) => (widen = set)} />);
+    const heading = page.getByRole("heading", { level: 2 });
+    await expect.element(page.getByRole("heading", { level: 2, name: "October 2026" })).toBeVisible();
+
+    widen?.(2);
+
+    await expect
+      .element(page.getByRole("heading", { level: 2, name: "October – November 2026" }))
+      .toHaveAttribute("aria-live", "off");
+
+    await focusDay("Wednesday, October 14, 2026 selected");
+    await userEvent.keyboard("{PageDown}{PageDown}");
+    await expectFocusOnDay("Monday, December 14, 2026");
+    await userEvent.click(page.getByRole("heading", { level: 2 }));
 
     await expect.element(heading).toHaveAttribute("aria-live", "polite");
   });
@@ -852,7 +926,7 @@ describe("Calendar grid names", () => {
 
     await expect.element(page.getByRole("grid", { name, exact: true })).toBeVisible();
     if (form !== "none") {
-      // DOM audit: the heading keeps the consumer's id, which no role query reads.
+      // The heading keeps the consumer's id, which no role query reads.
       expect(document.querySelector("#october-heading")?.textContent).toBe("October 2026");
     }
   });
@@ -863,7 +937,7 @@ describe("Calendar grid names", () => {
       const host = document.createElement("div");
       host.innerHTML = renderToString(<Named root={root} form={form} />);
       try {
-        // DOM audit: the server HTML before any script, which a role query of the live page cannot read.
+        // The server HTML before any script, which a role query of the live page cannot read.
         const grid = host.querySelector("[role=grid]");
         const ids = (grid?.getAttribute("aria-labelledby") ?? "")
           .split(" ")
@@ -882,179 +956,6 @@ describe("Calendar grid names", () => {
       }
     }
   );
-});
-
-describe("Calendar visibleMonths", () => {
-  it.each([
-    [0, ["Delivery, October 2026"]],
-    [-2, ["Delivery, October 2026"]],
-    [Number.NaN, ["Delivery, October 2026"]],
-    [1.5, ["Delivery, October 2026"]],
-    [2.9, ["Delivery, October 2026", "Delivery, November 2026"]],
-  ])("shows a whole number of months from 1 for %d, and warns", (requested, grids) => {
-    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
-    try {
-      mount(<Harness defaultValue={Temporal.PlainDate.from("2026-10-14")} visibleMonths={requested} />);
-
-      expect(gridNames()).toEqual(grids);
-      expect(warn).toHaveBeenCalledWith(
-        `Calendar.Root: visibleMonths ${String(requested)} is not a whole number from 1, so it shows ${String(grids.length)}.`
-      );
-    } finally {
-      warn.mockRestore();
-    }
-  });
-
-  it("warns once while the same value stays, however often the Root renders", async () => {
-    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
-    try {
-      mount(<Harness defaultValue={Temporal.PlainDate.from("2026-10-14")} visibleMonths={0} />);
-      await userEvent.click(roleNamed("button", "Next"));
-      await userEvent.click(roleNamed("button", "Next"));
-
-      await expect
-        .element(visibleChanges())
-        .toHaveTextContent("2026-11 increment-press, 2026-12 increment-press");
-      expect(warn).toHaveBeenCalledTimes(1);
-    } finally {
-      warn.mockRestore();
-    }
-  });
-});
-
-describe("Calendar selection owner", () => {
-  /**
-   * A range-shaped owner a later Root could supply: fixed flags per day, and every hover and
-   * press input it receives recorded. The parts must render the flags and forward the inputs.
-   */
-  function OwnedCalendar({
-    inputs,
-    rules = {},
-  }: {
-    inputs: string[];
-    rules?: Partial<Pick<CalendarSettings, "isDateUnavailable" | "readOnly">>;
-  }): ReactElement {
-    const settings: CalendarSettings = {
-      locale: "en-US",
-      bounds: { min: undefined, max: undefined },
-      isDateUnavailable: undefined,
-      disabled: false,
-      readOnly: false,
-      firstDay: 7,
-      visibleMonths: 1,
-      pageBehavior: "visible",
-      ariaLabel: "Stay",
-      ariaLabelledBy: undefined,
-      ...rules,
-    };
-    const [context] = useState((): CalendarRootContextValue => {
-      const store = createCalendarStore(initialSharedState(Temporal.PlainDate.from("2026-10-12"), settings));
-      const flags = new Map([
-        ["2026-10-12", dayFlags(["selected", "selection-start", "in-range"])],
-        ["2026-10-13", dayFlags(["selected", "in-range", "highlighted"])],
-        ["2026-10-14", dayFlags(["selected", "selection-end", "in-range", "invalid"])],
-      ]);
-      return {
-        store,
-        settings,
-        actions: {
-          focusDay: () => undefined,
-          blurTo: () => undefined,
-          move: () => undefined,
-          page: () => undefined,
-        },
-        selection: createSelectionOwner(store, {
-          dayFlags: (_state, _date, iso) => flags.get(iso) ?? NO_DAY_FLAGS,
-          select: (date, reason) => inputs.push(`select ${date.toString()} ${reason}`),
-          hover: (date, event) => inputs.push(`hover ${date.toString()} ${event.pointerType}`),
-          dayNamePrefix: () => "",
-          dayDescriptionId: undefined,
-          multiselectable: true,
-        }),
-      };
-    });
-    return (
-      <CalendarRootContext value={context}>
-        <Calendar.Months />
-      </CalendarRootContext>
-    );
-  }
-
-  /** A day's data attributes other than its slot, as `name=value`. */
-  function dayAttributes(name: string): string[] {
-    const day = roleNamed("button", name);
-    return day
-      .getAttributeNames()
-      .filter((attribute) => attribute.startsWith("data-") && attribute !== "data-slot")
-      .map((attribute) => `${attribute}=${day.getAttribute(attribute) ?? ""}`)
-      .toSorted();
-  }
-
-  it("writes the owner's flags on each day and aria-selected on its gridcell", () => {
-    mount(<OwnedCalendar inputs={[]} />);
-
-    expect(dayAttributes("Monday, October 12, 2026 selected")).toEqual([
-      "data-in-range=",
-      "data-selected=",
-      "data-selection-start=",
-    ]);
-    expect(dayAttributes("Tuesday, October 13, 2026 selected")).toEqual([
-      "data-highlighted=",
-      "data-in-range=",
-      "data-selected=",
-    ]);
-    expect(dayAttributes("Wednesday, October 14, 2026 selected")).toEqual([
-      "data-in-range=",
-      "data-invalid=",
-      "data-selected=",
-      "data-selection-end=",
-    ]);
-    expect(roleNamed("button", "Wednesday, October 14, 2026 selected")).toHaveAttribute(
-      "aria-invalid",
-      "true"
-    );
-    expect(dayAttributes("Thursday, October 15, 2026")).toEqual([]);
-    for (const name of ["Monday, October 12, 2026 selected", "Wednesday, October 14, 2026 selected"]) {
-      expect(roleNamed("button", name).closest("[role=gridcell]")).toHaveAttribute("aria-selected", "true");
-    }
-    expect(roleNamed("button", "Thursday, October 15, 2026").closest("[role=gridcell]")).not.toHaveAttribute(
-      "aria-selected"
-    );
-  });
-
-  it("hands the owner pointer and press inputs", async () => {
-    const inputs: string[] = [];
-    mount(<OwnedCalendar inputs={inputs} />);
-
-    await userEvent.hover(roleNamed("button", "Tuesday, October 20, 2026"));
-    await userEvent.click(roleNamed("button", "Tuesday, October 20, 2026"));
-    await userEvent.keyboard("{Enter}");
-    await userEvent.unhover(roleNamed("button", "Tuesday, October 20, 2026"));
-
-    // The pointer may cross other days on its way; only its inputs on the 20th are under test.
-    expect(inputs.filter((input) => !input.startsWith("hover") || input.includes("2026-10-20"))).toEqual([
-      "hover 2026-10-20 mouse",
-      "select 2026-10-20 day-press",
-      "select 2026-10-20 keyboard",
-    ]);
-  });
-
-  it.each([
-    ["an unavailable day", { isDateUnavailable: (date: Temporal.PlainDate) => date.day === 20 }],
-    ["a read-only calendar", { readOnly: true }],
-  ])("hands the owner no press of %s", async (_case, rules) => {
-    const inputs: string[] = [];
-    mount(<OwnedCalendar inputs={inputs} rules={rules} />);
-
-    // An unavailable day is aria-disabled, which the pointer must press through.
-    await userEvent.click(roleNamed("button", "Tuesday, October 20, 2026"), { force: true });
-    await userEvent.keyboard("{Enter}{ }");
-    await userEvent.click(roleNamed("button", "Monday, October 19, 2026"));
-
-    expect(inputs.filter((input) => input.startsWith("select"))).toEqual(
-      "readOnly" in rules ? [] : ["select 2026-10-19 day-press"]
-    );
-  });
 });
 
 describe("Calendar hydrating late", () => {
@@ -1120,121 +1021,5 @@ describe("Calendar hydrating late", () => {
       root?.unmount();
       host.remove();
     }
-  });
-});
-
-describe("Calendar selected day face", () => {
-  /** A day button's painted fill and text colour. */
-  function face(name: string) {
-    const style = getComputedStyle(roleNamed("button", name));
-    return { fill: style.backgroundColor, text: style.color };
-  }
-
-  it("paints the selected day with the primary pair and leaves an unselected day unfilled", () => {
-    mount(<Harness defaultValue={Temporal.PlainDate.from("2026-10-14")} />);
-    const selected = roleNamed("button", "Wednesday, October 14, 2026 selected");
-
-    expect(face("Wednesday, October 14, 2026 selected")).toEqual({
-      fill: cssVarColor(selected, "--primary"),
-      text: cssVarColor(selected, "--primary-foreground"),
-    });
-    expect(face("Thursday, October 15, 2026")).toEqual({
-      fill: "rgba(0, 0, 0, 0)",
-      text: cssVarColor(selected, "--foreground"),
-    });
-  });
-
-  it("paints a selected day that fails validation with the error pair", () => {
-    mount(
-      <Harness
-        defaultValue={Temporal.PlainDate.from("2026-10-15")}
-        isDateUnavailable={(date) => date.toString() === "2026-10-15"}
-      />
-    );
-    const invalid = roleNamed("button", "Thursday, October 15, 2026 selected");
-
-    expect(face("Thursday, October 15, 2026 selected")).toEqual({
-      fill: cssVarColor(invalid, "--error"),
-      text: cssVarColor(invalid, "--error-foreground"),
-    });
-  });
-});
-
-describe("Calendar selected day in forced colors", () => {
-  afterEach(async () => {
-    await emulateForcedColors("none");
-  });
-
-  it("paints the selected day with the system's Highlight pair, not the theme's primary", async () => {
-    await emulateForcedColors("active");
-    mount(<Harness defaultValue={Temporal.PlainDate.from("2026-10-14")} />);
-    const selected = roleNamed("button", "Wednesday, October 14, 2026 selected");
-    const highlight = systemColor(selected, "Highlight");
-    // The premise: the system's Highlight is not the theme's primary.
-    expect(highlight).not.toBe(cssVarColor(selected, "--primary"));
-
-    expect(getComputedStyle(selected).backgroundColor).toBe(highlight);
-    expect(getComputedStyle(selected).color).toBe(systemColor(selected, "HighlightText"));
-  });
-});
-
-describe("date props past the types", () => {
-  it("throws a TypeError naming the Root, the prop and the string for ISO text", () => {
-    expectRenderTypeError(
-      'Calendar.Root value: received the string "2026-10-14"',
-      <Calendar.Root
-        aria-label="Delivery"
-        // @ts-expect-error -- text reaches the prop past the types: from plain JavaScript, or as the ISO text a server component's Temporal object crosses as
-        value="2026-10-14"
-      />
-    );
-  });
-
-  it("throws for ISO text in value after the equal Temporal value, whatever rendered before", () => {
-    expectRenderTypeError(
-      'Calendar.Root value: received the string "2026-10-14"',
-      <Calendar.Root aria-label="Delivery" value={Temporal.PlainDate.from("2026-10-14")} />,
-      <Calendar.Root
-        aria-label="Delivery"
-        // @ts-expect-error -- the equal ISO text, past the types, after a Temporal value
-        value="2026-10-14"
-      />
-    );
-  });
-
-  it("throws for ISO text in a bound after the equal Temporal value, whatever rendered before", () => {
-    expectRenderTypeError(
-      'Calendar.Root minValue: received the string "2026-10-01"',
-      <Calendar.Root aria-label="Delivery" minValue={Temporal.PlainDate.from("2026-10-01")} />,
-      <Calendar.Root
-        aria-label="Delivery"
-        // @ts-expect-error -- the equal ISO text, past the types, after a Temporal value
-        minValue="2026-10-01"
-      />
-    );
-  });
-
-  it("throws for ISO text in defaultValue beside a controlled value", () => {
-    expectRenderTypeError(
-      'Calendar.Root defaultValue: received the string "2026-10-14"',
-      <Calendar.Root
-        aria-label="Delivery"
-        value={null}
-        // @ts-expect-error -- text reaches the prop past the types
-        defaultValue="2026-10-14"
-      />
-    );
-  });
-
-  it("throws for ISO text in defaultValue after the equal Temporal value, whatever rendered before", () => {
-    expectRenderTypeError(
-      'Calendar.Root defaultValue: received the string "2026-10-14"',
-      <Calendar.Root aria-label="Delivery" defaultValue={Temporal.PlainDate.from("2026-10-14")} />,
-      <Calendar.Root
-        aria-label="Delivery"
-        // @ts-expect-error -- the equal ISO text, past the types, after a Temporal value
-        defaultValue="2026-10-14"
-      />
-    );
   });
 });

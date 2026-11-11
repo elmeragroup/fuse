@@ -3,8 +3,7 @@
 // goes after anchoring, what a commit on blur or an outside press selects, the view of the range a
 // calendar shows, and each day's flags in it. Pure: it takes Temporal values and returns them, so
 // the rules are unit-tested without React. The rules reproduce React Aria's `useRangeCalendarState` (react-stately) and the
-// keyboard step of `useCalendarCell` (react-aria), which the parity harness in
-// `src/internal/date-tier-parity.browser.test.tsx` pins.
+// keyboard step of `useCalendarCell` (react-aria).
 
 import { checkBounds } from "../../temporal/bounds";
 import { temporal } from "../../temporal/temporal";

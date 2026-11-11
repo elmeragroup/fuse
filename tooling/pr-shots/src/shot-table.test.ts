@@ -192,11 +192,11 @@ describe("plannedAttachmentCount", () => {
         "--densities",
         "dense,comfortable",
         "--engines",
-        "chromium,webkit,firefox",
+        "chromium,webkit",
       ])
     );
-    expect(plannedAttachmentCount(coordinates, "on")).toBe(54);
-    expect(plannedAttachmentCount(coordinates, "off")).toBe(36);
+    expect(plannedAttachmentCount(coordinates, "on")).toBe(36);
+    expect(plannedAttachmentCount(coordinates, "off")).toBe(24);
   });
 });
 

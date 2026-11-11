@@ -283,7 +283,7 @@ function UnownedDescription({
 }
 
 export function FieldItem(props: ComponentProps<typeof FieldPrimitive.Item>): ReactElement {
-  return <FieldPrimitive.Item data-slot="field-item" {...props} />;
+  return <FieldPrimitive.Item data-slot="field-item" {...definedProps(props)} />;
 }
 
 export function FieldSeparator({

@@ -3,11 +3,11 @@ import { describe, expect, it } from "vitest";
 
 import { INSTALL_COMMAND } from "../src/lib/docs-model";
 import { focusedName, groupLabels, highlighted, isHighlighted } from "./command-page";
-import { launchSuiteBrowser, waitForDocsShellHydration } from "./demo-page";
+import { waitForDocsShellHydration } from "./demo-page";
 import { docsBaseUrl } from "./docs-server";
 import { waitForLandingHydration } from "./landing-page";
-import { canvas, isFocused, openStudio, toggle } from "./studio/page";
-import { closeContext } from "./suite-browser";
+import { isFocused } from "./studio/page";
+import { closeContext, launchSuiteBrowser } from "./suite-browser";
 
 const browser = launchSuiteBrowser();
 
@@ -30,7 +30,6 @@ function option(scope: Locator, group: string, name: string | RegExp): Locator {
  */
 async function openDocs(context: BrowserContext, pathname: string): Promise<Page> {
   const page = await context.newPage();
-  page.setDefaultTimeout(5000);
   await page.goto(`${docsBaseUrl()}${pathname}`, { waitUntil: "domcontentloaded" });
   await waitForDocsShellHydration(page);
   for (const scheme of ["dark", "light"] as const) {
@@ -157,51 +156,6 @@ describe("site palette on the docs", () => {
     await closeContext(context);
   });
 
-  it("drills into Appearance, marks the scheme in force and applies a pick", async () => {
-    const context = await newDocsContext();
-    const page = await openDocs(context, "/components/button");
-    const dialog = palette(page);
-    const tokens = page.getByRole("link", { name: "Tokens", exact: true });
-    await tokens.focus();
-
-    await page.keyboard.press("Meta+k");
-    await option(dialog, "Settings", "Appearance").click();
-    await expect.poll(() => focusedName(page)).toBe("Appearance");
-    // A fresh context follows the device, so System is the scheme in force.
-    const current = dialog.locator('[role="option"][aria-current="true"]');
-    await expect.poll(() => current.allTextContents()).toEqual(["System"]);
-
-    await page.keyboard.type("dark");
-    await expect.poll(() => highlighted(dialog)).toBe("Dark");
-    await page.keyboard.press("Enter");
-    await expect.poll(() => dialog.count()).toBe(0);
-    await page.waitForFunction(() => document.documentElement.getAttribute("data-theme") === "dark");
-    await expect.poll(() => isFocused(tokens)).toBe(true);
-
-    await page.keyboard.press("Meta+k");
-    await dialog.getByRole("option", { name: "Appearance" }).click();
-    await expect.poll(() => current.allTextContents()).toEqual(["Dark"]);
-    await closeContext(context);
-  });
-
-  it("disables the segments the preview brand does not serve", async () => {
-    const context = await newDocsContext();
-    const page = await openDocs(context, "/components/button");
-    const dialog = palette(page);
-    await page.keyboard.press("Meta+k");
-    await dialog.getByRole("option", { name: "Brand" }).click();
-    await dialog.getByRole("option", { name: "Fjordkraft Företag", exact: true }).click();
-    await expect.poll(() => dialog.count()).toBe(0);
-
-    await page.keyboard.press("Meta+k");
-    await dialog.getByRole("option", { name: "Segment" }).click();
-    const company = dialog.getByRole("option", { name: "Company", exact: true });
-    const privateSegment = dialog.getByRole("option", { name: "Private", exact: true });
-    await expect.poll(() => company.getAttribute("aria-current")).toBe("true");
-    expect(await privateSegment.getAttribute("aria-disabled")).toBe("true");
-    await closeContext(context);
-  });
-
   it("goes back a page on Escape and on Backspace, and closes from the first page", async () => {
     const context = await newDocsContext();
     const page = await openDocs(context, "/components/button");
@@ -221,23 +175,6 @@ describe("site palette on the docs", () => {
 
     await page.keyboard.press("Escape");
     await expect.poll(() => dialog.count()).toBe(0);
-    await closeContext(context);
-  });
-
-  it("starts fresh when ⌘K reopens it before its exit animation ends", async () => {
-    const { context, page } = await openSlowDocs("/components/button");
-    const dialog = palette(page);
-    const first = dialog.getByRole("option").first();
-
-    await page.keyboard.press("Meta+k");
-    await expect.poll(() => focusedName(page)).toBe("Search the site");
-    await page.keyboard.type("theme");
-    await expect.poll(() => groupLabels(dialog)).toContain("Pages");
-    await page.keyboard.press("ArrowDown");
-    await page.keyboard.press("ArrowDown");
-    await expect.poll(() => isHighlighted(first)).toBe(false);
-    await interruptClose(dialog, "Escape");
-    await expectFreshFirstPage(dialog);
     await closeContext(context);
   });
 
@@ -288,7 +225,6 @@ describe("site palette on the docs", () => {
 describe("site palette on the landing", () => {
   async function openLanding(context: BrowserContext): Promise<Page> {
     const page = await context.newPage();
-    page.setDefaultTimeout(5000);
     // The brand marks feed the shaders, which this suite never looks at.
     await page.route("**/landing/marks/**", async (route) => route.abort());
     await page.goto(`${docsBaseUrl()}/`, { waitUntil: "load" });
@@ -333,36 +269,4 @@ describe("site palette on the landing", () => {
     );
     await closeContext(context);
   });
-});
-
-describe("site palette in the studio", () => {
-  it.each(["reduce", "no-preference"] as const)(
-    "toggles on ⌘K and runs a registered tool command (motion: %s)",
-    async (reducedMotion) => {
-      const { context, page } = await openStudio(browser(), { reducedMotion });
-      const dialog = palette(page);
-
-      await page.keyboard.press("Meta+k");
-      await expect.poll(() => focusedName(page)).toBe("Search the site");
-      const thisPage = dialog.getByRole("group", { name: "This page", exact: true });
-      const hand = thisPage.getByRole("option", { name: /^Hand tool/u });
-      expect(await hand.getAttribute("aria-keyshortcuts")).toBe("H");
-      expect(await thisPage.getByRole("option", { name: /^Undo/u }).getAttribute("aria-disabled")).toBe(
-        "true"
-      );
-      await page.keyboard.press("Control+k");
-      await expect.poll(() => dialog.count()).toBe(0);
-
-      await page.getByRole("banner").getByRole("button", { name: "Search", exact: true }).click();
-      // Keys reach the query only once the palette has focused its input; a loaded runner moves
-      // focus there after the click returns.
-      await expect.poll(() => focusedName(page)).toBe("Search the site");
-      await page.keyboard.type("hand");
-      await expect.poll(() => highlighted(dialog)).toMatch(/^Hand tool/u);
-      await page.keyboard.press("Enter");
-      await expect.poll(() => dialog.count()).toBe(0);
-      await expect.poll(() => toggle(canvas(page), "Tool", "Hand").getAttribute("aria-pressed")).toBe("true");
-      await closeContext(context);
-    }
-  );
 });

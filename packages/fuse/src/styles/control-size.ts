@@ -22,9 +22,7 @@ import { tv } from "./tv";
  *
  * The recipe paints size only. The state face (`state-face.ts`) is a separate fragment,
  * and each control recipe composes both.
- *
- * `control-size.browser.test.tsx` measures every consumer at both densities against
- * `DENSITY_METRICS`.
+
  */
 
 /** A control size. Each has one metric per sized family in `DENSITY_METRICS`. */

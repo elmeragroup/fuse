@@ -42,6 +42,7 @@ export const sliderVariants = tv({
       "shadow-xs box-border block size-[16px] shrink-0 rounded-full border-2 border-primary bg-background transition-[box-shadow] after:absolute after:top-1/2 after:left-1/2 after:size-[24px] after:-translate-1/2 after:content-['']",
       withinFocusRingClass,
       dataStateFaceClass,
+      // oxlint-disable-next-line fuse/state-face -- the thumb cancels the dim, since a translucent thumb would show the track through its centre
       "aria-disabled:border-muted-foreground aria-disabled:opacity-100 data-disabled:border-muted-foreground data-disabled:opacity-100",
       dataWithinInvalidFocusRingClass
     ),

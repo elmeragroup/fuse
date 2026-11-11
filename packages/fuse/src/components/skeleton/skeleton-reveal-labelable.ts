@@ -48,8 +48,7 @@ let reportedMissing = false;
  *
  * It never throws. If a Base UI release renders its provider differently, it returns null and the
  * pane shares the Field's scope, as before panes had scopes of their own; development logs one
- * error naming the release it assumes. `skeleton-reveal-labelable.browser.test.tsx` fails in CI as
- * soon as the installed Base UI stops matching.
+ * error naming the release it assumes.
  *
  * @returns Base UI's labelable context and a scope of the pane's own, or null when the installed
  *   Base UI no longer renders its provider as assumed.

@@ -21,8 +21,8 @@
  *      loop in `inspectGlobalDocs` (`scripts/lib/docs-inspection.ts`) and `studioRouteGroup` in
  *      `scripts/lib/paths.ts`.
  * 4. Delete `"Studio"` from `SearchGroup` in `src/lib/docs-model.ts`.
- * 5. In `turbo.json`, delete the `written-slots.ts` input of `generate`, which only the studio's
- *    slot index reads.
+ * 5. In `turbo.json`, delete the `oxlint-plugin-fuse` input of `generate`, which only the
+ *    studio's slot index reads.
  * 6. Delete `test/studio-boundary.test.ts` and `"src/studio/"` from `CHECKED_SOURCES` in
  *    `test/docs-tailwind.test.ts`.
  * 7. Clean these inventory tests, which fail until their seam is gone:

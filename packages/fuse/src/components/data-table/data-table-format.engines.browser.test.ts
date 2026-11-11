@@ -1,5 +1,5 @@
 /**
- * This file runs the DataTable date judges in Chromium, Firefox and WebKit. The engines write
+ * This file runs the DataTable date judges in Chromium and WebKit. The engines write
  * different spaces for the same date, such as U+202F, U+0020 or U+00A0 before the en-US day period,
  * and the cells must map them to one space for a server in Node and a browser in any engine to
  * render the same text.

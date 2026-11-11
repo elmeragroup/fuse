@@ -78,8 +78,7 @@ function subscribe(root: Node, subscriber: Subscriber): () => void {
  * that moment, so a control that moves between forms or changes its `form` attribute is
  * followed without a resubscribe, and a reset on any other form is ignored. The listener
  * is registered in capture phase, so a form that stops propagation during dispatch cannot
- * hide its own reset. `source-contracts.test.ts` lists this hook among the reviewed
- * listener owners.
+ * hide its own reset.
  */
 export function useFormReset(element: RefObject<ResetControl | null>, onReset: (() => void) | null): void {
   const onResetRef = useRef(onReset);

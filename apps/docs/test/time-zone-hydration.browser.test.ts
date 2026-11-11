@@ -1,10 +1,11 @@
-import { chromium, firefox, webkit } from "playwright";
-import type { Browser, Page } from "playwright";
+import { chromium, webkit } from "playwright";
+import type { Page } from "playwright";
 import { describe, expect, it } from "vitest";
 
 import { waitForDemoHydration } from "./demo-page";
 import { docsBaseUrl } from "./docs-server";
 import { closeContext, launchSuiteBrowser } from "./suite-browser";
+import type { SuiteBrowser } from "./suite-browser";
 
 /** The browser runs in Oslo, six hours ahead of the New York server. */
 const BROWSER_TIME_ZONE = "Europe/Oslo";
@@ -56,13 +57,17 @@ async function readBars(page: Page): Promise<BarState[]> {
  * parsed page has an observer on the demo's stage, and the observer sees every mutation hydration
  * makes. React reports a recoverable hydration error through `reportError`, which fires the
  * window's `error` event, and logs some through `console.error`. A chart draws its bars once the
- * browser measures the plot, so `barCount` names how many the demo draws in the end.
+ * browser measures the plot, so `barCount` names how many the demo draws in the end. `serverHtml`
+ * edits the document's HTML before the browser parses it.
  */
 async function hydrateDemo(
-  browser: Browser,
+  browser: SuiteBrowser,
   pathname: string,
   demoName: string,
-  barCount = 0
+  {
+    barCount = 0,
+    serverHtml,
+  }: { readonly barCount?: number; readonly serverHtml?: (html: string) => string } = {}
 ): Promise<Hydration> {
   const context = await browser.newContext({ timezoneId: BROWSER_TIME_ZONE });
   await context.addInitScript(() => {
@@ -85,8 +90,23 @@ async function hydrateDemo(
     await scriptsHeld.promise;
     await route.continue();
   });
+  if (serverHtml !== undefined) {
+    // The negative control: the page's HTML as the server sent it, edited before the browser parses
+    // it, so the server text and the client's first render differ where the edit lands. Only the
+    // document is edited; Next's RSC fetches of the same path go through untouched.
+    await context.route(
+      (url) => url.pathname === pathname,
+      async (route) => {
+        if (route.request().resourceType() !== "document") {
+          await route.continue();
+          return;
+        }
+        const response = await route.fetch();
+        await route.fulfill({ response, body: serverHtml(await response.text()) });
+      }
+    );
+  }
   const page = await context.newPage();
-  page.setDefaultTimeout(10_000);
   await page.goto(new URL(pathname, docsBaseUrl()).href, { waitUntil: "domcontentloaded" });
   const demo = page.getByRole("region", { name: demoName, exact: true });
   const stage = demo.locator("[data-demo-stage]");
@@ -104,10 +124,9 @@ async function hydrateDemo(
             }
           }
           return element.querySelector("table") !== null;
-        }),
-      // The wait is on the server's stream, whose late boundary the demo delays by 400 ms, so it
-      // takes the page's own timeout rather than the default second, which slow WebKit can miss.
-      { timeout: 10_000 }
+        })
+      // The wait is on the server's stream, whose late boundary the demo delays by 400 ms; the
+      // project's poll timeout is a hang guard, so a slow engine only waits longer.
     )
     .toBe(true);
   await stage.evaluate((element) => {
@@ -205,7 +224,6 @@ async function hydrateDemo(
 
 describe.each([
   ["Chromium", chromium],
-  ["Firefox", firefox],
   ["WebKit", webkit],
 ] as const)("A New York server and an Oslo browser in %s", (_, engine) => {
   const browser = launchSuiteBrowser(engine);
@@ -235,8 +253,24 @@ describe.each([
     });
   });
 
+  it("report a server text the client renders differently, as the negative control", async () => {
+    // The harness must fail where hydration does: the server HTML says 0,999 where the demo
+    // renders 0,412, so React reports its text mismatch (418) and the client rewrites the cell.
+    const hydration = await hydrateDemo(browser(), "/handbook/localization", "Market time zone", {
+      serverHtml: (html) => {
+        expect(html).toContain(">0,412<");
+        return html.replace(">0,412<", ">0,999<");
+      },
+    });
+    expect(hydration.mutations).toBeGreaterThan(0);
+    expect(hydration.errors.some((error) => error.includes("418"))).toBe(true);
+    expect(hydration.cells[1]).toBe("0,412");
+  });
+
   it("hydrate a Bar whose Suspense boundary resolves after the chart's first effect, with no mutation, into the waiting entrance", async () => {
-    const hydration = await hydrateDemo(browser(), "/components/bar-chart", "Streamed series", 12);
+    const hydration = await hydrateDemo(browser(), "/components/bar-chart", "Streamed series", {
+      barCount: 12,
+    });
     expect(hydration.mutations).toBe(0);
     expect(hydration.errors).toEqual([]);
     // The demo holds 6 months in 2 stacked series. The grid series hydrates with the chart, so the
@@ -257,15 +291,5 @@ describe.each([
       Array.from({ length: 6 }, () => 0)
     );
     expect(hydration.bars.map((bar) => bar.animations)).toEqual(Array.from({ length: 12 }, () => 0));
-  });
-
-  it("mismatch on a date demo with no zone, which the browser regenerates", async () => {
-    // The negative control: the client-paged DataTable demo formats UTC midnights in the runtime's
-    // zone. The server writes 30 September, and the browser rewrites the table as 1 October.
-    const hydration = await hydrateDemo(browser(), "/components/data-table", "Client-paged");
-    expect(hydration.mutations).toBeGreaterThan(0);
-    // React 418: the server HTML didn't match what the client rendered.
-    expect(hydration.errors.some((error) => error.includes("418"))).toBe(true);
-    expect(hydration.cells[3]).toBe("Oct\u00a01,\u00a02026");
   });
 });

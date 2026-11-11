@@ -44,10 +44,9 @@ export const TEXT_GRADE_PAIRS = [
   ["warning-soft-foreground", "warning-soft"],
 ] as const satisfies readonly (readonly [TokenName, TokenName])[];
 
-export type TextGradePairId =
-  `${(typeof TEXT_GRADE_PAIRS)[number][0]}/${(typeof TEXT_GRADE_PAIRS)[number][1]}`;
+type TextGradePairId = `${(typeof TEXT_GRADE_PAIRS)[number][0]}/${(typeof TEXT_GRADE_PAIRS)[number][1]}`;
 
-export type ContrastMatrix = {
+type ContrastMatrix = {
   [Slug in ThemeSlug]: {
     [Pair in TextGradePairId]: number;
   };
@@ -81,7 +80,7 @@ export function tokenLiteral(tokens: TokenContract, name: TokenName): string {
   return value;
 }
 
-export function pairId(
+function pairId(
   foreground: (typeof TEXT_GRADE_PAIRS)[number][0],
   background: (typeof TEXT_GRADE_PAIRS)[number][1]
 ): TextGradePairId {

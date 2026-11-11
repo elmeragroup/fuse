@@ -34,7 +34,7 @@ type RadiusRung = {
  * so a host that imports `fuse.css` without `themes.css` and keeps its own `--radius` gets
  * every rung at that radius instead of an invalid `border-radius`.
  */
-export const RADIUS_STEP_CSS = "var(--radius-step, 0px)";
+const RADIUS_STEP_CSS = "var(--radius-step, 0px)";
 
 /**
  * The CSS a rung `steps` lengths from `--radius` declares, written the way `fuse.css` writes

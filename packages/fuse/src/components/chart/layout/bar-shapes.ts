@@ -89,7 +89,7 @@ function farAtStart({ orientation, negative }: BarPlacement): boolean {
  * @param plotLength - The plot's length along the value axis, where the blocks track ends.
  * @returns The rectangles, in CSS pixels from the plot's top left.
  */
-export function barParts(
+function barParts(
   variant: ChartBarVariant,
   rect: PlotRect,
   placement: BarPlacement,

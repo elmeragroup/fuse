@@ -146,10 +146,10 @@ export default function IconsPage(): ReactElement {
 
       <h2 id="flags">Flags</h2>
       <p>
-        Flags are packaged SVG files, not emoji: every operating system gets the same artwork. They live
-        outside the JavaScript budget and are never inlined, guarded instead by file hashes and an aggregate
-        raw-byte ceiling. Four territories have phone-number entries but no pinned SVG and are excluded from
-        flag-bearing country state rather than being given a misleading substitute.
+        Flags are packaged SVG files, not emoji: every operating system gets the same artwork. They ship
+        outside the JavaScript bundles and are never inlined; the package check guards their file hashes. Four
+        territories have phone-number entries but no pinned SVG and are excluded from flag-bearing country
+        state rather than being given a misleading substitute.
       </p>
     </DocsPage>
   );

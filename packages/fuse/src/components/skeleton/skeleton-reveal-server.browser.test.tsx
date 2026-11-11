@@ -47,7 +47,7 @@ function invoiceDocument(data: Invoice | null): Document {
   );
 }
 
-/** DOM audit: the reveal's parts have no role in unhydrated markup; locate them by data-slot. */
+/** The reveal's parts have no role in unhydrated markup; locate them by data-slot. */
 function part(document: Document, slot: string): Element | null {
   return document.querySelector(`[data-slot="${slot}"]`);
 }
@@ -67,13 +67,6 @@ describe("SkeletonReveal server markup", () => {
     expect(part(document, "skeleton-reveal-content")).toBeNull();
   });
 
-  it("keeps the ghost's controls out of their form from the first paint", () => {
-    const document = invoiceDocument(null);
-    const input = part(document, "skeleton-reveal-ghost")?.querySelector("input");
-    expect(input?.closest("fieldset")?.disabled).toBe(true);
-    expect(input?.matches(":disabled")).toBe(true);
-  });
-
   it("defaults the label to the locale dictionary", () => {
     const label = (locale: "nb-NO" | "en-US"): string | null | undefined =>
       part(
@@ -89,6 +82,15 @@ describe("SkeletonReveal server markup", () => {
         "skeleton-reveal-label"
       )?.textContent;
     expect([label("nb-NO"), label("en-US")]).toEqual(["Laster", "Loading"]);
+  });
+});
+
+describe("SkeletonReveal server markup", () => {
+  it("keeps the ghost's controls out of their form from the first paint", () => {
+    const document = invoiceDocument(null);
+    const input = part(document, "skeleton-reveal-ghost")?.querySelector("input");
+    expect(input?.closest("fieldset")?.disabled).toBe(true);
+    expect(input?.matches(":disabled")).toBe(true);
   });
 
   it("renders data as enabled content, not busy, with no label or skeleton", () => {

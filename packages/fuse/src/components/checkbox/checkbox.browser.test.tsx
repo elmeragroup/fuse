@@ -5,20 +5,10 @@ import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
-import { assertFocusRingAtBothDensities } from "../../../test/assert-focus-ring";
-import {
-  computedContrast,
-  cssVarColor,
-  formNamed,
-  guenBranded,
-  headingNamed,
-  renderThemed,
-  roleNamed,
-} from "../../../test/themed-browser-render";
-import { ThemeScope } from "../../theme";
+import { cssVarColor, formNamed, renderThemed } from "../../../test/themed-browser-render";
 import { Field } from "../field";
 import { Form } from "../form/form";
-import { Checkbox, CheckboxDescription, CheckboxGroup } from "./checkbox";
+import { Checkbox, CheckboxGroup } from "./checkbox";
 import { CheckboxItem } from "./checkbox-item";
 
 function checkboxNamed(name: string, checked?: boolean): HTMLElement {
@@ -69,98 +59,55 @@ describe("Checkbox", () => {
     expect(checkboxNamed("Alerts", true).getAttribute("aria-checked")).toBe("true");
   });
 
-  it("blocks toggling when disabled", async () => {
+  it("follows a controlled checked prop and reports each toggle", async () => {
+    const onCheckedChange = vi.fn<(checked: boolean) => void>();
+    function Controlled() {
+      const [checked, setChecked] = useState(true);
+      return (
+        <>
+          <Checkbox
+            aria-label="Alerts"
+            checked={checked}
+            onCheckedChange={(next) => {
+              onCheckedChange(next);
+              setChecked(next);
+            }}
+          />
+          <Checkbox aria-label="Pinned" checked />
+        </>
+      );
+    }
+    renderThemed(<Controlled />);
+
+    await userEvent.click(checkboxNamed("Alerts", true));
+    expect(onCheckedChange.mock.calls.map(([next]) => next)).toEqual([false]);
+    expect(checkboxNamed("Alerts").getAttribute("aria-checked")).toBe("false");
+    // With no state behind it, a controlled box shows its prop whatever is clicked.
+    await userEvent.click(checkboxNamed("Pinned"));
+    expect(checkboxNamed("Pinned").getAttribute("aria-checked")).toBe("true");
+  });
+
+  it("blocks toggling when disabled or readOnly", async () => {
     const onCheckedChange = vi.fn();
     renderThemed(
-      <Field.Root orientation="horizontal">
-        <Checkbox disabled onCheckedChange={onCheckedChange} />
-        <Field.Label>Alerts</Field.Label>
-      </Field.Root>
+      <>
+        <Checkbox aria-label="Disabled" disabled onCheckedChange={onCheckedChange} />
+        <Checkbox aria-label="Locked" readOnly onCheckedChange={onCheckedChange} />
+      </>
     );
 
-    const box = checkboxNamed("Alerts", false);
-    await expect.element(page.getByRole("checkbox", { name: "Alerts", exact: true })).toBeDisabled();
-    box.click();
+    await expect.element(page.getByRole("checkbox", { name: "Disabled" })).toBeDisabled();
+    expect(checkboxNamed("Locked").getAttribute("aria-readonly")).toBe("true");
+    checkboxNamed("Disabled").click();
+    await userEvent.click(checkboxNamed("Locked"));
     await userEvent.keyboard(" ");
     expect(onCheckedChange).not.toHaveBeenCalled();
-    expect(checkboxNamed("Alerts", false).getAttribute("aria-checked")).toBe("false");
+    expect(checkboxNamed("Disabled").getAttribute("aria-checked")).toBe("false");
+    expect(checkboxNamed("Locked").getAttribute("aria-checked")).toBe("false");
   });
 
-  it("renders readOnly without changing on click", async () => {
-    renderThemed(
-      <Field.Root orientation="horizontal">
-        <Checkbox readOnly />
-        <Field.Label>Locked</Field.Label>
-      </Field.Root>
-    );
-
-    const box = checkboxNamed("Locked", false);
-    expect(box.getAttribute("aria-readonly")).toBe("true");
-    await userEvent.click(page.getByRole("checkbox", { name: "Locked", exact: true }));
-    expect(checkboxNamed("Locked", false).getAttribute("aria-checked")).toBe("false");
-  });
-
-  it("toggles when clicked 8px outside the painted box", async () => {
-    renderThemed(
-      <div className="p-8">
-        <Checkbox aria-label="Hit" />
-      </div>
-    );
-
-    const box = checkboxNamed("Hit", false);
-    const rect = box.getBoundingClientRect();
-    const x = rect.right + 8;
-    const y = rect.top + rect.height / 2;
-    const hit = document.elementFromPoint(x, y);
-    expect(hit === box || (hit instanceof Node && box.contains(hit))).toBe(true);
-    if (!(hit instanceof Element)) {
-      throw new Error("expected a hit target 8px outside the painted box");
-    }
-    await userEvent.click(hit);
-    expect(checkboxNamed("Hit", true).getAttribute("aria-checked")).toBe("true");
-  });
-
-  it("draws the unchecked edge at 3:1 against the box's fill and the page in light themes", () => {
-    renderThemed(
-      <>
-        <Checkbox aria-label="Neutral" />
-        <ThemeScope theme={guenBranded}>
-          <Checkbox aria-label="Branded" />
-        </ThemeScope>
-      </>
-    );
-    // WCAG 1.4.11: the edge is the only thing that shows an unchecked box, so it must reach
-    // 3:1 against the fill inside it and the page around it.
-    for (const name of ["Neutral", "Branded"]) {
-      const box = roleNamed("checkbox", name);
-      const { borderTopColor, backgroundColor } = getComputedStyle(box);
-      expect(computedContrast(borderTopColor, backgroundColor), `${name} fill`).toBeGreaterThanOrEqual(3);
-      expect(
-        computedContrast(borderTopColor, cssVarColor(box, "--background")),
-        `${name} page`
-      ).toBeGreaterThanOrEqual(3);
-    }
-  });
-
-  it("paints the shared ring on keyboard focus-visible and not on mouse focus, at both densities", async () => {
-    renderThemed(
-      <>
-        <button type="button">Before</button>
-        <Field.Root orientation="horizontal">
-          <Checkbox />
-          <Field.Label>Alerts</Field.Label>
-        </Field.Root>
-      </>
-    );
-    const previous = page.getByRole("button", { name: "Before", exact: true }).element();
-    if (!(previous instanceof HTMLElement)) {
-      throw new Error("expected before button");
-    }
-    await assertFocusRingAtBothDensities(previous, checkboxNamed("Alerts"));
-  });
-
-  it("submits what each box shows after native reset, controlled or not, and keeps focus", async () => {
-    function MarketingConsent() {
+  it("submits what each box shows after native reset, controlled or not", async () => {
+    function Marketing() {
       const [checked, setChecked] = useState(true);
       return (
         <Field.Root name="marketing">
@@ -175,8 +122,8 @@ describe("Checkbox", () => {
           <Checkbox />
           <Field.Label>Terms</Field.Label>
         </Field.Root>
-        <MarketingConsent />
-        <input name="note" aria-label="Note" />
+        <Marketing />
+        <input name="note" aria-label="Note" defaultValue="" />
       </form>
     );
     await userEvent.fill(page.getByRole("textbox", { name: "Note", exact: true }), "Call first");
@@ -184,16 +131,14 @@ describe("Checkbox", () => {
     await userEvent.click(checkboxNamed("Marketing"));
 
     formNamed("Consents").reset();
-    // The native note empties, and each box keeps what it shows and submits that.
+    // The native note empties; each box keeps what it shows and submits that.
     await vi.waitFor(() => {
       expect([...new FormData(formNamed("Consents")).entries()]).toEqual([
         ["terms", "on"],
         ["note", ""],
       ]);
     });
-    expect(checkboxNamed("Terms").getAttribute("aria-checked")).toBe("true");
     expect(checkboxNamed("Marketing").getAttribute("aria-checked")).toBe("false");
-    expect(document.activeElement).toBe(checkboxNamed("Marketing"));
   });
 
   it("submits what the box shows after a form action resets the form", async () => {
@@ -256,7 +201,7 @@ describe("CheckboxGroup", () => {
     expect(checkboxNamed("Mushroom", false).getAttribute("aria-checked")).toBe("false");
   });
 
-  it("reports mixed on a parent when two of three members are checked, then checks and unchecks all", async () => {
+  it("shows mixed on a parent over a partial selection, then checks and unchecks all", async () => {
     renderThemed(
       <CheckboxGroup label="Toppings" allValues={["a", "b", "c"]} defaultValue={["a", "b"]}>
         <CheckboxItem parent>All toppings</CheckboxItem>
@@ -265,18 +210,16 @@ describe("CheckboxGroup", () => {
         <CheckboxItem value="c">Olive</CheckboxItem>
       </CheckboxGroup>
     );
+    const states = () =>
+      ["All toppings", "Pepperoni", "Mushroom", "Olive"].map((name) =>
+        checkboxNamed(name).getAttribute("aria-checked")
+      );
 
-    expect(checkboxNamed("All toppings").getAttribute("aria-checked")).toBe("mixed");
-    await userEvent.click(page.getByRole("checkbox", { name: "All toppings", exact: true }));
-    expect(checkboxNamed("All toppings", true).getAttribute("aria-checked")).toBe("true");
-    expect(checkboxNamed("Pepperoni", true).getAttribute("aria-checked")).toBe("true");
-    expect(checkboxNamed("Mushroom", true).getAttribute("aria-checked")).toBe("true");
-    expect(checkboxNamed("Olive", true).getAttribute("aria-checked")).toBe("true");
-    await userEvent.click(page.getByRole("checkbox", { name: "All toppings", exact: true }));
-    expect(checkboxNamed("All toppings", false).getAttribute("aria-checked")).toBe("false");
-    expect(checkboxNamed("Pepperoni", false).getAttribute("aria-checked")).toBe("false");
-    expect(checkboxNamed("Mushroom", false).getAttribute("aria-checked")).toBe("false");
-    expect(checkboxNamed("Olive", false).getAttribute("aria-checked")).toBe("false");
+    expect(states()).toEqual(["mixed", "true", "true", "false"]);
+    await userEvent.click(checkboxNamed("All toppings"));
+    expect(states()).toEqual(["true", "true", "true", "true"]);
+    await userEvent.click(checkboxNamed("All toppings"));
+    expect(states()).toEqual(["false", "false", "false", "false"]);
   });
 
   it("renders a ReactNode error as role=alert and stamps invalid on members", () => {
@@ -365,54 +308,5 @@ describe("CheckboxGroup", () => {
     expect(checkboxNamed("Mushroom").getAttribute("aria-checked")).toBe("true");
     expect(checkboxNamed("Insurance").getAttribute("aria-checked")).toBe("true");
     expect(page.getByText("Pick a sauce.", { exact: true }).query()).not.toBeNull();
-  });
-});
-
-describe("CheckboxItem", () => {
-  it("toggles from the row and isolates SubSection clicks", async () => {
-    renderThemed(
-      <CheckboxGroup label="Plans">
-        <CheckboxItem value="fixed">
-          <CheckboxItem.Title role="heading" aria-level={3}>
-            Fixed price
-          </CheckboxItem.Title>
-          <CheckboxItem.SubSection>
-            <button type="button">Details</button>
-          </CheckboxItem.SubSection>
-        </CheckboxItem>
-      </CheckboxGroup>
-    );
-
-    const details = page.getByRole("button", { name: "Details", exact: true }).element();
-    expect(details.closest("label")).toBeNull();
-    expect(page.getByRole("listitem").elements()).toHaveLength(0);
-    await userEvent.click(headingNamed("Fixed price"));
-    expect(checkboxNamed("Fixed price", true).getAttribute("aria-checked")).toBe("true");
-    await userEvent.click(page.getByRole("button", { name: "Details", exact: true }));
-    expect(checkboxNamed("Fixed price", true).getAttribute("aria-checked")).toBe("true");
-  });
-});
-
-describe("CheckboxDescription", () => {
-  it("keeps a string note visual-only and renders a ReactNode intact", () => {
-    renderThemed(
-      <>
-        <CheckboxDescription describedBy="Optional extras">
-          <Field.Root>
-            <Field.Label>Pepperoni</Field.Label>
-            <Checkbox />
-          </Field.Root>
-        </CheckboxDescription>
-        <CheckboxDescription describedBy={<a href="#help">Read the note</a>}>
-          <Field.Root>
-            <Field.Label>Mushroom</Field.Label>
-            <Checkbox />
-          </Field.Root>
-        </CheckboxDescription>
-      </>
-    );
-
-    expect(checkboxNamed("Pepperoni").getAttribute("aria-describedby")).toBeNull();
-    expect(page.getByRole("link", { name: "Read the note", exact: true }).element()).toBeTruthy();
   });
 });

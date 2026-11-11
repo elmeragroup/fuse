@@ -1,6 +1,33 @@
 import { chromium } from "playwright";
-import type { Browser, BrowserContext, BrowserType } from "playwright";
+import type { Browser, BrowserContext, BrowserContextOptions, BrowserType, Page } from "playwright";
 import { afterAll, beforeAll } from "vitest";
+
+import { PAGE_WAIT_GUARD } from "./page-wait-guard";
+
+/**
+ * The suite browser's openers. Every context they open waits up to {@link PAGE_WAIT_GUARD}, so
+ * each page in it, axe's extra page included, has the hang guard instead of Playwright's 30 s.
+ */
+export type SuiteBrowser = {
+  newContext: (options?: BrowserContextOptions) => Promise<BrowserContext>;
+  newPage: (options?: BrowserContextOptions) => Promise<Page>;
+};
+
+function guarded(browser: Browser): SuiteBrowser {
+  return {
+    newContext: async (options) => {
+      const context = await browser.newContext(options);
+      context.setDefaultTimeout(PAGE_WAIT_GUARD);
+      return context;
+    },
+    newPage: async (options) => {
+      // `Browser.newPage` owns its context, so closing the page closes the context too.
+      const page = await browser.newPage(options);
+      page.context().setDefaultTimeout(PAGE_WAIT_GUARD);
+      return page;
+    },
+  };
+}
 
 /**
  * One headless browser per suite file, Chromium unless `engine` names another, shared by the docs
@@ -8,7 +35,7 @@ import { afterAll, beforeAll } from "vitest";
  * state, so the static-theme suites can borrow the lifecycle without loading the docs app. Call it
  * inside a `describe` block to launch one engine per block.
  */
-export function launchSuiteBrowser(engine: BrowserType = chromium): () => Browser {
+export function launchSuiteBrowser(engine: BrowserType = chromium): () => SuiteBrowser {
   let launched: Browser | null = null;
 
   beforeAll(async () => {
@@ -26,7 +53,7 @@ export function launchSuiteBrowser(engine: BrowserType = chromium): () => Browse
     if (launched === null) {
       throw new Error("The suite browser is only available between beforeAll and afterAll.");
     }
-    return launched;
+    return guarded(launched);
   };
 }
 

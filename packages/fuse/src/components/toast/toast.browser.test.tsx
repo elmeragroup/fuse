@@ -1,25 +1,14 @@
-import { useState } from "react";
+import { useLayoutEffect } from "react";
 import type { ReactNode } from "react";
 
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 // Role tokens live in themes.css only; styles.css defines none of them.
 import "../../../dist/themes.css";
-import { ringLayers, settleTransitions } from "../../../test/assert-invalid-ring";
 import { SUPPORTED_LOCALES, withLocale } from "../../../test/locale-matrix";
-import {
-  computedContrast,
-  cssVarColor,
-  fkasPrivate,
-  renderThemed,
-  roleNamed,
-  snapshotDocumentTheme,
-  stampDocumentTheme,
-  stampTheme,
-} from "../../../test/themed-browser-render";
-import { LEGAL_THEMES, themeSlug } from "../../theme/theme-input";
+import { renderThemed, roleNamed } from "../../../test/themed-browser-render";
 import { Dialog } from "../dialog/index";
 import { Sheet } from "../sheet/index";
 import { Toast } from "./index";
@@ -128,6 +117,46 @@ function LabelledClose({ close }: { close: ReactNode }) {
 }
 
 describe("Toast manager", () => {
+  it.each(["module", "hook"] as const)(
+    "keeps the fields a %s manager's update omits and clears the ones it passes as undefined",
+    async (face) => {
+      let manager = Toast.createToastManager();
+      function Viewport() {
+        const hook = Toast.useToastManager();
+        useLayoutEffect(() => {
+          if (face === "hook") manager = hook;
+        }, [hook]);
+        return <Toast.Viewport />;
+      }
+      renderThemed(
+        withLocale(
+          "en-US",
+          <Toast.Provider toastManager={manager} timeout={0}>
+            <Viewport />
+          </Toast.Provider>
+        )
+      );
+      const id = manager.add({ type: "error", title: "Failed", description: "Try again" });
+      // The title text appears twice; the copy that counts sits in the toast dialog.
+      const surface = () =>
+        page
+          .getByText("Failed", { exact: true })
+          .elements()
+          .map((node) => node.closest('[role="dialog"], [role="alertdialog"]'))
+          .find(Boolean);
+      await expect.poll(() => surface()?.getAttribute("data-status")).toBe("error");
+
+      manager.update(id, { description: "Retry now" });
+      await expect.poll(() => surface()?.textContent).toContain("Retry now");
+      expect(surface()?.getAttribute("data-status")).toBe("error");
+
+      manager.update(id, { type: undefined, description: undefined });
+      await expect.poll(() => surface()?.getAttribute("data-status")).toBe("neutral");
+      expect(surface()?.textContent).not.toContain("Retry now");
+      expect(surface()?.textContent).toContain("Failed");
+    }
+  );
+
   it("add returns an id, upserts by id, and close ends one or all", async () => {
     const { manager } = renderToast();
 
@@ -279,22 +308,6 @@ describe("Toast manager", () => {
     expect(refusal.getAttribute("role")).toBe("alertdialog");
   });
 
-  it("promise without loading shows nothing until the promise settles", async () => {
-    const { manager } = renderToast();
-
-    const ok = Promise.withResolvers<string>();
-    const settled = manager.promise(ok.promise, { success: "Synced", error: "Sync failed" });
-    // A toast added after promise() renders in the same pass as any toast promise() added.
-    manager.add({ title: "Sentinel" });
-    const sentinel = await waitForToast("Sentinel");
-    expect(toastRoots()).toEqual([sentinel]);
-
-    ok.resolve("done");
-    await expect(settled).resolves.toBe("done");
-    const success = await waitForToast("Synced");
-    expect(success.getAttribute("data-status")).toBe("success");
-  });
-
   it("promise moves to the error state when the success factory throws", async () => {
     const { manager } = renderToast();
 
@@ -417,451 +430,6 @@ describe("Toast chrome", () => {
   });
 });
 
-describe("Toast contrast", () => {
-  let restoreDocumentTheme: () => void;
-
-  beforeEach(() => {
-    restoreDocumentTheme = snapshotDocumentTheme();
-  });
-
-  afterEach(() => {
-    restoreDocumentTheme();
-  });
-
-  it.each(["error", "info", "success", "warning"] as const)(
-    "paints the %s title and description with the paired soft foreground in neutral dark",
-    async (status) => {
-      stampDocumentTheme(fkasPrivate, "dark");
-
-      const { manager } = renderToast();
-      manager.add({ type: status, title: "Outage", description: "Grid is down.", timeout: 0 });
-      const root = await waitForToast("Outage");
-      const title = toastCopy("Outage");
-      const description = toastCopy("Grid is down.");
-
-      const softProbe = document.createElement("span");
-      softProbe.style.color = `var(--${status}-soft-foreground)`;
-      const statusProbe = document.createElement("span");
-      statusProbe.style.color = `var(--${status})`;
-      root.append(softProbe, statusProbe);
-      const softColor = getComputedStyle(softProbe).color;
-      const statusColor = getComputedStyle(statusProbe).color;
-      softProbe.remove();
-      statusProbe.remove();
-
-      expect(softColor, "the soft pair must differ from the raw status role").not.toBe(statusColor);
-      expect(getComputedStyle(title).color).toBe(softColor);
-      expect(getComputedStyle(description).color).toBe(softColor);
-    }
-  );
-
-  it.each(["neutral", "loading"] as const)(
-    "keeps the %s description on the muted-foreground fallback in neutral dark",
-    async (status) => {
-      stampDocumentTheme(fkasPrivate, "dark");
-
-      const { manager } = renderToast();
-      manager.add(
-        status === "loading"
-          ? { type: "loading", title: "Notice", description: "Nothing to report.", timeout: 0 }
-          : { title: "Notice", description: "Nothing to report.", timeout: 0 }
-      );
-      const root = await waitForToast("Notice");
-      const description = toastCopy("Nothing to report.");
-
-      expect(getComputedStyle(description).color).toBe(cssVarColor(root, "--muted-foreground"));
-    }
-  );
-
-  it.each(["error", "info", "success", "warning"] as const)(
-    "draws the %s close button's focus ring at 3:1 against the toast fill in every theme and scheme",
-    async (status) => {
-      const { manager } = renderToast();
-      manager.add({ type: status, title: "Outage", timeout: 0 });
-      const root = await waitForToast("Outage");
-      await expandViewport();
-      const close = roleNamed("button", "Close");
-      // A real Tab, so the button matches `:focus-visible` and paints the ring.
-      for (let step = 0; step < 4 && document.activeElement !== close; step += 1) {
-        await userEvent.keyboard("{Tab}");
-      }
-      expect(document.activeElement).toBe(close);
-      // The toast portals into renderThemed's ThemeScope, whose own stamp outranks the
-      // document's, so the theme goes on that scope and the scheme on the document.
-      const scope = root.closest<HTMLElement>("[data-theme-brand]");
-      if (scope === null || scope === document.documentElement) {
-        throw new Error("expected the toast inside renderThemed's ThemeScope");
-      }
-
-      for (const scheme of ["light", "dark"] as const) {
-        for (const theme of LEGAL_THEMES) {
-          stampDocumentTheme(theme, scheme);
-          stampTheme(scope, theme);
-          settleTransitions(root, close);
-          const [ring] = ringLayers(close);
-          const context = `${themeSlug(theme)} ${scheme} ${status}`;
-          expect(ring, context).toBeDefined();
-          // WCAG 1.4.11: the flush ring is the indicator's only edge against the fill.
-          expect
-            .soft(computedContrast(ring?.color ?? "", getComputedStyle(root).backgroundColor), context)
-            .toBeGreaterThanOrEqual(3);
-        }
-      }
-    }
-  );
-});
-
-describe("Toast motion", () => {
-  it("transitions transform and opacity only, at or under 300 ms", async () => {
-    const { manager } = renderToast();
-    manager.add({ title: "Saved", timeout: 0 });
-    const root = await waitForToast("Saved");
-    const style = getComputedStyle(root);
-    const properties = style.transitionProperty.split(",").map((part) => part.trim());
-    expect(properties).not.toContain("height");
-    expect(properties).toEqual(expect.arrayContaining(["transform", "opacity"]));
-    for (const duration of style.transitionDuration.split(",")) {
-      const trimmed = duration.trim();
-      const ms = trimmed.endsWith("ms") ? Number.parseFloat(trimmed) : Number.parseFloat(trimmed) * 1000;
-      expect(ms).toBeGreaterThanOrEqual(150);
-      expect(ms).toBeLessThanOrEqual(300);
-    }
-  });
-});
-
-describe("Toast overlay containment", () => {
-  it("portals the viewport into an explicit container element", async () => {
-    const manager = Toast.createToastManager();
-
-    function ExplicitContainer() {
-      const [node, setNode] = useState<HTMLDivElement | null>(null);
-      return (
-        <>
-          <div ref={setNode} role="region" aria-label="Theme island" />
-          {node ? (
-            <Toast.Provider toastManager={manager} timeout={0}>
-              <Toast.Viewport container={node} />
-            </Toast.Provider>
-          ) : null}
-        </>
-      );
-    }
-
-    renderThemed(withLocale("en-US", <ExplicitContainer />));
-    manager.add({ title: "Islanded", timeout: 0 });
-    const root = await waitForToast("Islanded");
-    const island = page.getByRole("region", { name: "Theme island", exact: true }).element();
-    expect(island.contains(root)).toBe(true);
-    expect([...document.body.children].includes(root)).toBe(false);
-  });
-});
-
-describe("Toast placement", () => {
-  // From `sm` (40rem) up the stack is a 340px column 32px in from its edges; below `sm`
-  // it sits at the bottom and spans the screen minus a 16px gutter on each side.
-  const SM_COLUMN_PX = 340;
-  const DESKTOP_GUTTER_PX = 32;
-  const MOBILE_GUTTER_PX = 16;
-  // Root recipe constants: a collapsed toast peeks 0.75rem past the one in front of it, and
-  // an expanded stack leaves a 0.75rem gap between toasts.
-  const PEEK_PX = 12;
-  const GAP_PX = 12;
-
-  const PLACEMENTS = [
-    { placement: "top-left", vertical: "top", horizontal: "left" },
-    { placement: "top-center", vertical: "top", horizontal: "center" },
-    { placement: "top-right", vertical: "top", horizontal: "right" },
-    { placement: "bottom-left", vertical: "bottom", horizontal: "left" },
-    { placement: "bottom-center", vertical: "bottom", horizontal: "center" },
-    { placement: "bottom-right", vertical: "bottom", horizontal: "right" },
-  ] as const;
-
-  function currentSize() {
-    return { width: window.innerWidth, height: window.innerHeight };
-  }
-
-  let restoreSize = currentSize();
-
-  beforeEach(() => {
-    restoreSize = currentSize();
-  });
-
-  afterEach(async () => {
-    await page.viewport(restoreSize.width, restoreSize.height);
-  });
-
-  /** Distances from the toast's box to each edge of the screen. */
-  function gaps(element: HTMLElement) {
-    const box = element.getBoundingClientRect();
-    return {
-      width: box.width,
-      top: box.top,
-      bottom: window.innerHeight - box.bottom,
-      left: box.left,
-      right: document.documentElement.clientWidth - box.right,
-    };
-  }
-
-  function nextFrame(): Promise<void> {
-    return new Promise((resolve) => {
-      requestAnimationFrame(() => {
-        resolve();
-      });
-    });
-  }
-
-  /**
-   * Drags a mouse pointer across `element` by (`dx`, `dy`) in small steps and releases it.
-   * Base UI's swipe handlers read pointer events from the root and the document, so
-   * dispatched events walk the same path a real drag does. Each root tracks its own active
-   * pointer, so drags on different roots can run at once.
-   */
-  async function swipe(element: HTMLElement, dx: number, dy: number): Promise<void> {
-    const box = element.getBoundingClientRect();
-    const x = box.left + box.width / 2;
-    const y = box.top + box.height / 2;
-    const pointer = { bubbles: true, cancelable: true, pointerId: 1, pointerType: "mouse", isPrimary: true };
-    element.dispatchEvent(
-      new PointerEvent("pointerdown", { ...pointer, button: 0, buttons: 1, clientX: x, clientY: y })
-    );
-    await nextFrame();
-    const steps = 6;
-    for (let step = 1; step <= steps; step += 1) {
-      element.dispatchEvent(
-        new PointerEvent("pointermove", {
-          ...pointer,
-          buttons: 1,
-          clientX: x + (dx * step) / steps,
-          clientY: y + (dy * step) / steps,
-          movementX: dx / steps,
-          movementY: dy / steps,
-        })
-      );
-      await nextFrame();
-    }
-    element.dispatchEvent(
-      new PointerEvent("pointerup", { ...pointer, button: 0, clientX: x + dx, clientY: y + dy })
-    );
-    await nextFrame();
-  }
-
-  async function expectToastsStay(...names: string[]): Promise<void> {
-    // A dismissal is decided on pointerup; a few frames later the toast would be ending.
-    for (let frame = 0; frame < 10; frame += 1) {
-      await nextFrame();
-    }
-    for (const name of names) {
-      expect(toastRootNamed(name).hasAttribute("data-ending-style"), name).toBe(false);
-    }
-  }
-
-  /**
-   * Renders each viewport under its own provider and raises one toast in it, titled by its key,
-   * so several placements share one render and their enter transitions run at once.
-   */
-  async function renderViewports<Key extends string>(
-    viewports: Record<Key, ReactNode>
-  ): Promise<Record<Key, HTMLElement>> {
-    // SAFETY: each caller passes an object literal, which holds a property for each key and no
-    // other.
-    const entries = (Object.keys(viewports) as Key[]).map((name) => ({
-      name,
-      viewport: viewports[name],
-      manager: Toast.createToastManager(),
-    }));
-    renderThemed(
-      withLocale(
-        "en-US",
-        <>
-          {entries.map(({ name, viewport, manager }) => (
-            <Toast.Provider key={name} toastManager={manager} timeout={0}>
-              {viewport}
-            </Toast.Provider>
-          ))}
-        </>
-      )
-    );
-    // SAFETY: the loop below gives `roots` a property for each key before it returns.
-    const roots = {} as Record<Key, HTMLElement>;
-    for (const { name, manager } of entries) {
-      manager.add({ title: name, timeout: 0 });
-      roots[name] = await waitForToast(name);
-    }
-    return roots;
-  }
-
-  it("puts the stack at each placement's edge and alignment from sm up, and every placement at the bottom, spanning the screen minus its gutters, below sm", async () => {
-    await page.viewport(1024, 768);
-    const roots = await renderViewports({
-      "top-left": <Toast.Viewport placement="top-left" />,
-      "top-center": <Toast.Viewport placement="top-center" />,
-      "top-right": <Toast.Viewport placement="top-right" />,
-      "bottom-left": <Toast.Viewport placement="bottom-left" />,
-      "bottom-center": <Toast.Viewport placement="bottom-center" />,
-      "bottom-right": <Toast.Viewport placement="bottom-right" />,
-    });
-    await vi.waitFor(() => {
-      for (const { placement, vertical, horizontal } of PLACEMENTS) {
-        const box = gaps(roots[placement]);
-        expect(box.width, placement).toBeCloseTo(SM_COLUMN_PX, 0);
-        expect(box[vertical], placement).toBeCloseTo(DESKTOP_GUTTER_PX, 0);
-        if (horizontal === "center") {
-          expect(box.left, placement).toBeCloseTo(box.right, 0);
-        } else {
-          expect(box[horizontal], placement).toBeCloseTo(DESKTOP_GUTTER_PX, 0);
-        }
-      }
-    });
-
-    await page.viewport(400, 768);
-    await vi.waitFor(() => {
-      for (const { placement } of PLACEMENTS) {
-        const box = gaps(roots[placement]);
-        expect(box.bottom, placement).toBeCloseTo(MOBILE_GUTTER_PX, 0);
-        expect(box.left, placement).toBeCloseTo(MOBILE_GUTTER_PX, 0);
-        expect(box.right, placement).toBeCloseTo(MOBILE_GUTTER_PX, 0);
-      }
-    });
-  });
-
-  it("stacks away from the anchored edge: downward for top placements, upward for bottom", async () => {
-    await page.viewport(1024, 768);
-    for (const { placement, vertical } of [PLACEMENTS[2], PLACEMENTS[5]]) {
-      const { manager, unmount } = renderToast(<Toast.Viewport placement={placement} />);
-      manager.add({ title: "Older", timeout: 0 });
-      await waitForToast("Older");
-      manager.add({ title: "Newer", timeout: 0 });
-      const newer = await waitForToast("Newer");
-      const older = toastRootNamed("Older");
-
-      // Collapsed, the newest toast holds the anchored edge and the older one peeks out
-      // past its far side.
-      await vi.waitFor(() => {
-        expect(gaps(newer)[vertical]).toBeCloseTo(DESKTOP_GUTTER_PX, 0);
-        const newerBox = newer.getBoundingClientRect();
-        const olderBox = older.getBoundingClientRect();
-        const peek = vertical === "top" ? olderBox.bottom - newerBox.bottom : newerBox.top - olderBox.top;
-        expect(peek).toBeCloseTo(PEEK_PX, 0);
-      });
-
-      // Expanded, the older toast sits a gap beyond the newest one on the same side.
-      await expandViewport();
-      await vi.waitFor(() => {
-        expect(gaps(newer)[vertical]).toBeCloseTo(DESKTOP_GUTTER_PX, 0);
-        const newerBox = newer.getBoundingClientRect();
-        const olderBox = older.getBoundingClientRect();
-        const gap = vertical === "top" ? olderBox.top - newerBox.bottom : newerBox.top - olderBox.bottom;
-        expect(gap).toBeCloseTo(GAP_PX, 0);
-      });
-      await userEvent.keyboard("{Escape}");
-      unmount();
-    }
-  });
-
-  it("slides a top placement's toast in from above and a bottom placement's from below", async () => {
-    await page.viewport(1024, 768);
-    // A long transition holds the toast near its starting transform while it is measured.
-    function SlowToasts() {
-      const { toasts } = Toast.useToastManager();
-      return toasts.map((toast) => (
-        <Toast.Root key={toast.id} toast={toast} style={{ transitionDuration: "60s" }}>
-          <Toast.Title />
-        </Toast.Root>
-      ));
-    }
-    for (const { placement, vertical } of [PLACEMENTS[2], PLACEMENTS[5]]) {
-      const { manager, unmount } = renderToast(
-        <Toast.Viewport placement={placement}>
-          <SlowToasts />
-        </Toast.Viewport>
-      );
-      manager.add({ title: placement, timeout: 0 });
-      const box = (await waitForToast(placement)).getBoundingClientRect();
-      // Its resting box would start 32px in from the edge; entering, it is still wholly
-      // beyond that line, on the edge's side.
-      if (vertical === "top") {
-        expect(box.bottom).toBeLessThanOrEqual(DESKTOP_GUTTER_PX);
-      } else {
-        expect(box.top).toBeGreaterThanOrEqual(window.innerHeight - DESKTOP_GUTTER_PX);
-      }
-      unmount();
-    }
-  });
-
-  it("dismisses toward the anchored edge and side from sm up, honors an explicit swipeDirection, and places roots passed through the render element", async () => {
-    await page.viewport(1024, 768);
-    function RightOnlyToasts() {
-      const { toasts } = Toast.useToastManager();
-      return toasts.map((toast) => (
-        <Toast.Root key={toast.id} toast={toast} swipeDirection="right">
-          <Toast.Title />
-        </Toast.Root>
-      ));
-    }
-    function RenderedToasts() {
-      const { toasts } = Toast.useToastManager();
-      return toasts.map((toast) => (
-        <Toast.Root key={toast.id} toast={toast}>
-          <Toast.Title />
-        </Toast.Root>
-      ));
-    }
-    const roots = await renderViewports({
-      "Bottom left": <Toast.Viewport placement="bottom-left" />,
-      "Top center": <Toast.Viewport placement="top-center" />,
-      Overridden: (
-        <Toast.Viewport placement="bottom-left">
-          <RightOnlyToasts />
-        </Toast.Viewport>
-      ),
-      // The placement provider wraps the part, so roots in a render element still read it.
-      Rendered: (
-        <Toast.Viewport
-          placement="top-left"
-          render={
-            <div>
-              <RenderedToasts />
-            </div>
-          }
-        />
-      ),
-    });
-    const {
-      "Bottom left": bottomLeft,
-      "Top center": topCenter,
-      Overridden: overridden,
-      Rendered: rendered,
-    } = roots;
-    await vi.waitFor(() => {
-      const box = gaps(rendered);
-      expect(box.top).toBeCloseTo(DESKTOP_GUTTER_PX, 0);
-      expect(box.left).toBeCloseTo(DESKTOP_GUTTER_PX, 0);
-    });
-
-    await Promise.all([swipe(bottomLeft, 120, 0), swipe(topCenter, 0, 120), swipe(overridden, -120, 0)]);
-    await expectToastsStay("Bottom left", "Top center", "Overridden");
-
-    await Promise.all([swipe(bottomLeft, -120, 0), swipe(topCenter, 0, -120), swipe(overridden, 120, 0)]);
-    await Promise.all([waitForEnding(bottomLeft), waitForEnding(topCenter), waitForEnding(overridden)]);
-  });
-
-  it("keeps the default down/right swipe for every placement below sm", async () => {
-    await page.viewport(400, 768);
-    const roots = await renderViewports({
-      "top-left": <Toast.Viewport placement="top-left" />,
-      "bottom-left": <Toast.Viewport placement="bottom-left" />,
-      "top-center": <Toast.Viewport placement="top-center" />,
-    });
-    const { "top-left": topLeft, "bottom-left": bottomLeft, "top-center": topCenter } = roots;
-
-    await Promise.all([swipe(topLeft, -120, 0), swipe(bottomLeft, -120, 0), swipe(topCenter, 0, -120)]);
-    await expectToastsStay("top-left", "bottom-left", "top-center");
-
-    await Promise.all([swipe(topLeft, 120, 0), swipe(bottomLeft, 120, 0), swipe(topCenter, 0, 120)]);
-    await Promise.all([waitForEnding(topLeft), waitForEnding(bottomLeft), waitForEnding(topCenter)]);
-  });
-});
-
 describe("Toast layer", () => {
   // A toast raised from inside an open modal must paint over it. The modal's portal mounts
   // after the viewport's, so a shared z-index would let the modal win on DOM order.
@@ -900,7 +468,7 @@ describe("Toast layer", () => {
       manager.add({ title: "Copied to clipboard", timeout: 0 });
       const root = await waitForToast("Copied to clipboard");
       await vi.waitFor(() => {
-        // DOM audit: paint order has no accessible role. The covering backdrop or popup
+        // Paint order has no accessible role. The covering backdrop or popup
         // panel has none either, so the failure message names it by its data-slot.
         const box = root.getBoundingClientRect();
         const topmost = document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2);

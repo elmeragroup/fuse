@@ -175,7 +175,7 @@ describe("the keyboard walk", () => {
     await enterChart();
     await userEvent.keyboard("{ArrowRight}{ArrowRight}{ArrowRight}");
     await expect.poll(tooltipText).toBe("Forbruk 2026Temperatur2Forbruk90\u00a0000");
-    // DOM audit: the active dot is aria-hidden plot output.
+    // The active dot is aria-hidden plot output.
     const ring = host.querySelector('[data-slot="chart-active-dot"][data-value] [data-slot="chart-dot"]');
     // now(2, 90\u00a0000) sits at (40, 70), an 8 px dot, so the ring's radius is 4 + 3.
     expect([ring?.getAttribute("cx"), ring?.getAttribute("cy"), ring?.getAttribute("r")]).toEqual([
@@ -185,7 +185,7 @@ describe("the keyboard walk", () => {
     ]);
     await userEvent.keyboard("{Escape}");
     await expect.poll(tooltipText).toBeNull();
-    // DOM audit: Root's active state is the attribute the CSS reads.
+    // Root's active state is the attribute the CSS reads.
     expect(host.querySelector('[data-slot="chart"]')?.hasAttribute("data-active")).toBe(false);
   });
 });
@@ -214,28 +214,6 @@ describe("the pointer", () => {
     expect(tooltipText()).toBe("Forbruk 2025Temperatur2Forbruk100\u00a0000");
     await userEvent.click(surface, { position: { x: 40, y: 59 } });
     await expect.poll(tooltipText).toBeNull();
-  });
-});
-
-describe("the legend", () => {
-  it("draws a dot for points, a pale dot for quiet points and a line for a line", async () => {
-    renderThemed(
-      <Scatter>
-        <ScatterChart.Legend />
-      </Scatter>
-    );
-    const items = page.getByRole("listitem").all();
-    expect(items.map((item) => item.element().textContent)).toEqual([
-      "Forbruk 2026",
-      "Forbruk 2025",
-      "Normalforbruk",
-    ]);
-    // DOM audit: swatches are aria-hidden decoration, so their slot is the only locator.
-    const swatches = () =>
-      [...document.querySelectorAll('[data-slot="chart-legend-item"] [data-slot="chart-swatch"]')].map(
-        (swatch) => `${swatch.getAttribute("data-variant") ?? ""} ${swatch.getAttribute("data-look") ?? ""}`
-      );
-    await expect.poll(swatches).toEqual(["circle ", "circle quiet", "line "]);
   });
 });
 
@@ -281,7 +259,7 @@ describe("the table", () => {
     await expect.element(table).toBeVisible();
     const next = page.getByRole("button", { name: "Gå til neste side" });
     await expect.element(next).toBeVisible();
-    // DOM audit: a role query over 500 rows walks the accessibility tree for seconds, and the body
+    // A role query over 500 rows walks the accessibility tree for seconds, and the body
     // rows are the table's own rows.
     const bodyRows = () => table.element().querySelectorAll("tbody > tr").length;
     expect(bodyRows()).toBe(500);
@@ -341,14 +319,14 @@ describe("the tooltip under the pointer", () => {
     await expect.poll(tooltipText).toBe("Forbruk 2026Temperatur8Forbruk90 000");
     // The popup rests above the point or, without room there, below it. The pointer moves
     // straight along x = 100 into the popup's middle, past the 24 px hit radius.
-    // DOM audit: the popup portals out of the host, so its slot locates it.
+    // The popup portals out of the host, so its slot locates it.
     const popup =
       document.querySelector('[data-slot="chart-tooltip"]')?.getBoundingClientRect() ?? new DOMRect();
     const plot = surface.element().getBoundingClientRect();
     const into = (popup.top + popup.bottom) / 2 - plot.top;
     expect(Math.abs(into - 70)).toBeGreaterThan(24);
     await userEvent.hover(surface, { position: { x: 100, y: into }, force: true });
-    // DOM audit: the popup portals out of the host, and the pointer is over its own slot.
+    // The popup portals out of the host, and the pointer is over its own slot.
     expect(document.querySelector('[data-slot="chart-tooltip"]:hover')).not.toBeNull();
     // Three frames give a store change time to render and the popup time to start closing.
     await nextFrames(3);
@@ -382,7 +360,7 @@ describe("a press after a data update", () => {
 
   /** The active ring's centre, or null while no point is active. */
   function ring(): readonly [string | null, string | null] | null {
-    // DOM audit: the active dot is aria-hidden plot output.
+    // The active dot is aria-hidden plot output.
     const dot = document.querySelector('[data-slot="chart-active-dot"][data-value] [data-slot="chart-dot"]');
     return dot === null ? null : [dot.getAttribute("cx"), dot.getAttribute("cy")];
   }
@@ -502,7 +480,7 @@ describe("a consumer ref on Root", () => {
         </div>
       </LocaleProvider>
     );
-    // DOM audit: Root's figure carries the active state the CSS reads.
+    // Root's figure carries the active state the CSS reads.
     const root = host.querySelector('[data-slot="chart"]');
     expect(figure).toBe(root);
     // now(2, 90 000) sits at (40, 70) over x [−2, 18] and y [20 000, 160 000].

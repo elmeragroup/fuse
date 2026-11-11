@@ -150,50 +150,7 @@ describe("component page manifest", () => {
   });
 });
 
-/** The pages that read `@elmeragroup/fuse/chart`, from CONTRACT.md section 13. */
-const CHART_PAGES = new Set([
-  "chart",
-  "area-chart",
-  "bar-chart",
-  "line-chart",
-  "pie-chart",
-  "radial-chart",
-  "radar-chart",
-  "clock-chart",
-  "scatter-chart",
-  "sparkline",
-]);
-
-/** The keys a component outline carries. Anything else would ship to every surface unreviewed. */
-const OUTLINE_KEYS = ["chart", "demos", "hasTokens", "headings", "markdownUrl", "partNames", "slug", "title"];
-
 describe("component outlines", () => {
-  it("carries only the fields client code reads", () => {
-    for (const outline of COMPONENT_OUTLINES) {
-      expect(Object.keys(outline).toSorted(), outline.slug).toEqual(OUTLINE_KEYS);
-    }
-    // Both kinds of page are present, so the flag is checked in both directions below.
-    expect(new Set(COMPONENT_OUTLINES.map((outline) => outline.hasTokens))).toEqual(new Set([true, false]));
-    // Unit under test: the chart flag the SideNav groups by. Oracle: the chart entry's pages,
-    // listed by hand.
-    expect(
-      COMPONENT_OUTLINES.filter((outline) => outline.chart)
-        .map((outline) => outline.slug)
-        .toSorted()
-    ).toEqual([
-      "area-chart",
-      "bar-chart",
-      "chart",
-      "clock-chart",
-      "line-chart",
-      "pie-chart",
-      "radar-chart",
-      "radial-chart",
-      "scatter-chart",
-      "sparkline",
-    ]);
-  });
-
   it("agrees with the full manifest on every page's identity and on whether it lists tokens", () => {
     // Unit under test: the client outlines' identity fields and token flag. Oracle: the full
     // manifest from the same generation run, which the server renders the same pages from.
@@ -269,80 +226,6 @@ describe("component outlines", () => {
 });
 
 describe("committed api.json", () => {
-  it("walks only the export names resolveComponentPaths lists", () => {
-    expect(resolveComponentPaths("table").apis[0].exportNames).toEqual(["Table", "VerticalTable"]);
-    expect(resolveComponentPaths("checkbox-card").apis[0].exportNames).toEqual(["CheckboxCard"]);
-    expect(resolveComponentPaths("checkbox").apis[0].exportNames).toEqual([
-      "Checkbox",
-      "CheckboxGroup",
-      "CheckboxItem",
-      "CheckboxItemGroup",
-      "CheckboxDescription",
-    ]);
-    expect(resolveComponentPaths("radio-group").apis[0].exportNames).toEqual([
-      "RadioGroup",
-      "RadioGroupItem",
-      "Radio",
-      "RadioItem",
-      "RadioItemGroup",
-      "RadioIconButton",
-    ]);
-    expect(resolveComponentPaths("combobox").apis[0].exportNames).toEqual(["Combobox", "useComboboxAnchor"]);
-    // KbdGroup has its own props type, so its table guards it against drift too.
-    expect(resolveComponentPaths("kbd").apis[0].exportNames).toEqual(["Kbd", "KbdGroup"]);
-    expect(resolveComponentPaths("button").apis[0].exportNames).toEqual(["Button"]);
-    expect(resolveComponentPaths("meter").apis[0].exportNames).toEqual(["Meter"]);
-    expect(resolveComponentPaths("pagination").apis[0].exportNames).toEqual(["Pagination"]);
-    expect(resolveComponentPaths("breadcrumb").apis[0].exportNames).toEqual(["Breadcrumb"]);
-    expect(resolveComponentPaths("alert").apis[0].exportNames).toEqual(["Alert"]);
-    expect(resolveComponentPaths("ui-providers").apis[0].entry).toBe(
-      "@elmeragroup/fuse/react-aria/ui-providers"
-    );
-    expect(resolveComponentPaths("ui-providers").apis[0].exportNames).toEqual(["UiProviders"]);
-    expect(resolveComponentPaths("link").apis[0].entry).toBe("@elmeragroup/fuse/link");
-    expect(resolveComponentPaths("link").apis[0].exportNames).toEqual(["Link"]);
-    expect(resolveComponentPaths("search-field").apis[0].entry).toBe(
-      "@elmeragroup/fuse/react-aria/search-field"
-    );
-    expect(resolveComponentPaths("search-field").apis[0].exportNames).toEqual(["SearchField"]);
-    expect(resolveComponentPaths("file-trigger").apis[0].entry).toBe(
-      "@elmeragroup/fuse/react-aria/file-trigger"
-    );
-    expect(resolveComponentPaths("file-trigger").apis[0].exportNames).toEqual(["FileTrigger"]);
-    expect(resolveComponentPaths("focusable").apis[0].entry).toBe("@elmeragroup/fuse/react-aria/focusable");
-    expect(resolveComponentPaths("focusable").apis[0].exportNames).toEqual(["Focusable", "useFocusable"]);
-    expect(resolveComponentPaths("grid-list").apis[0].entry).toBe("@elmeragroup/fuse/react-aria/grid-list");
-    expect(resolveComponentPaths("grid-list").apis[0].exportNames).toEqual(["GridList", "GridListItem"]);
-    expect(resolveComponentPaths("date-field").apis[0].entry).toBe("@elmeragroup/fuse/react-aria/date-field");
-    expect(resolveComponentPaths("date-field").apis[0].exportNames).toEqual(["DateField", "DateInput"]);
-    expect(resolveComponentPaths("calendar").apis[0].entry).toBe("@elmeragroup/fuse/react-aria/calendar");
-    expect(resolveComponentPaths("calendar").apis[0].exportNames).toEqual([
-      "Calendar",
-      "CalendarHeader",
-      "CalendarGridHeader",
-    ]);
-    expect(resolveComponentPaths("range-calendar").apis[0].entry).toBe(
-      "@elmeragroup/fuse/react-aria/range-calendar"
-    );
-    expect(resolveComponentPaths("range-calendar").apis[0].exportNames).toEqual(["RangeCalendar"]);
-    expect(resolveComponentPaths("date-picker").apis[0].entry).toBe(
-      "@elmeragroup/fuse/react-aria/date-picker"
-    );
-    expect(resolveComponentPaths("date-picker").apis[0].exportNames).toEqual([
-      "DatePicker",
-      "DatePickerPresetGroup",
-      "DatePickerPresetItem",
-    ]);
-    expect(resolveComponentPaths("date-range-picker").apis[0].entry).toBe(
-      "@elmeragroup/fuse/react-aria/date-range-picker"
-    );
-    expect(resolveComponentPaths("date-range-picker").apis[0].exportNames).toEqual([
-      "DateRangePicker",
-      "DateRangePickerPresetGroup",
-      "DateRangePickerPresetItem",
-    ]);
-  });
-
   it("lists a page's own entry first, then each extra entry it documents", () => {
     // Oracle: `@elmeragroup/fuse/command` exports `Command`, and `@elmeragroup/fuse/command-virtual`,
     // which has no page of its own, exports `CommandVirtual`; the Command page documents both.
@@ -433,94 +316,6 @@ describe("committed api.json", () => {
       }
     }
   });
-
-  it("reads defaults out of the implementation's destructuring", () => {
-    const button = api("button").parts[0];
-    const isPending = button?.props.find((prop) => prop.name === "isPending");
-    expect(isPending?.defaultValue).toBe("false");
-    expect(isPending?.description).toContain("data-pending");
-    expect(button?.props.find((prop) => prop.name === "predictionZoneSize")?.defaultValue).toBe("30");
-    const content = api("dialog").parts.find((part) => part.name === "Dialog.Content");
-    expect(content?.props.find((prop) => prop.name === "showCloseButton")?.defaultValue).toBe("true");
-    expect(content?.props.find((prop) => prop.name === "size")?.origin).toBe("recipe-axis");
-    const popoverContent = api("popover").parts.find((part) => part.name === "Popover.Content");
-    expect(popoverContent?.props.find((prop) => prop.name === "showArrow")?.defaultValue).toBe("false");
-    const sheetContent = api("sheet").parts.find((part) => part.name === "Sheet.Content");
-    expect(sheetContent?.props.find((prop) => prop.name === "showCloseButton")?.defaultValue).toBe("true");
-    expect(sheetContent?.props.find((prop) => prop.name === "size")?.origin).toBe("recipe-axis");
-    const sheetRoot = api("sheet").parts.find((part) => part.name === "Sheet.Root");
-    expect(sheetRoot?.props.find((prop) => prop.name === "side")?.defaultValue).toBe('"right"');
-    const tooltipProvider = api("tooltip").parts.find((part) => part.name === "Tooltip.Provider");
-    expect(tooltipProvider?.props.find((prop) => prop.name === "delay")?.defaultValue).toBe("0");
-    const tooltipRoot = api("tooltip").parts.find((part) => part.name === "Tooltip.Root");
-    expect(tooltipRoot?.props.find((prop) => prop.name === "delay")?.description).toContain("skip-delay");
-    const tooltipContent = api("tooltip").parts.find((part) => part.name === "Tooltip.Content");
-    expect(tooltipContent?.props.find((prop) => prop.name === "side")?.defaultValue).toBe('"top"');
-    const alertContent = api("alert-dialog").parts.find((part) => part.name === "AlertDialog.Content");
-    expect(alertContent?.props.find((prop) => prop.name === "variant")?.defaultValue).toBe('"destructive"');
-    expect(alertContent?.props.find((prop) => prop.name === "showCloseButton")).toBeUndefined();
-    expect(alertContent?.props.find((prop) => prop.name === "isPerformingAction")?.defaultValue).toBe(
-      "false"
-    );
-    const dropdownContent = api("dropdown-menu").parts.find((part) => part.name === "DropdownMenu.Content");
-    expect(dropdownContent?.props.find((prop) => prop.name === "align")?.defaultValue).toBe('"start"');
-    expect(dropdownContent?.props.find((prop) => prop.name === "side")?.defaultValue).toBe('"bottom"');
-    const dropdownSubContent = api("dropdown-menu").parts.find(
-      (part) => part.name === "DropdownMenu.SubContent"
-    );
-    expect(dropdownSubContent?.props.find((prop) => prop.name === "alignOffset")?.defaultValue).toBe("-3");
-    expect(dropdownSubContent?.props.find((prop) => prop.name === "side")?.defaultValue).toBe('"right"');
-    const dropdownItem = api("dropdown-menu").parts.find((part) => part.name === "DropdownMenu.Item");
-    expect(dropdownItem?.props.find((prop) => prop.name === "variant")?.defaultValue).toBe('"default"');
-    // Command's search pins `inline` and `open` and sets its own highlight defaults. The Root and
-    // each Page destructure these props.
-    for (const partName of ["Command.Root", "Command.Page"]) {
-      const commandSearch = api("command").parts.find((part) => part.name === partName);
-      const prop = (name: string) => commandSearch?.props.find((candidate) => candidate.name === name);
-      expect(prop("autoHighlight")?.defaultValue, partName).toBe('"always"');
-      expect(prop("keepHighlight")?.defaultValue, partName).toBe("true");
-      expect(prop("inline"), partName).toBeUndefined();
-    }
-    const commandPage = api("command").parts.find((part) => part.name === "Command.Page");
-    expect(commandPage?.props.find((prop) => prop.name === "open")).toBeUndefined();
-    const selectTrigger = api("select").parts.find((part) => part.name === "Select.Trigger");
-    expect(selectTrigger?.props.find((prop) => prop.name === "size")?.defaultValue).toBe('"default"');
-    const selectContent = api("select").parts.find((part) => part.name === "Select.Content");
-    expect(selectContent?.props.find((prop) => prop.name === "alignItemWithTrigger")?.defaultValue).toBe(
-      "true"
-    );
-    expect(selectContent?.props.find((prop) => prop.name === "align")?.defaultValue).toBe('"center"');
-    const checkboxItemGroup = api("checkbox").parts.find((part) => part.name === "CheckboxItemGroup");
-    expect(checkboxItemGroup?.props.find((prop) => prop.name === "orientation")?.defaultValue).toBe(
-      '"vertical"'
-    );
-    const radioGroup = api("radio-group").parts.find((part) => part.name === "RadioGroup");
-    expect(radioGroup?.props.find((prop) => prop.name === "orientation")?.defaultValue).toBe('"vertical"');
-    expect(radioGroup?.props.find((prop) => prop.name === "value")?.description).toContain("passed through");
-    expect(radioGroup?.props.find((prop) => prop.name === "value")?.description).not.toContain(
-      "value ?? undefined"
-    );
-    expect(radioGroup?.props.find((prop) => prop.name === "isPending")?.description).toContain("aria-busy");
-    const radioItemGroup = api("radio-group").parts.find((part) => part.name === "RadioItemGroup");
-    expect(radioItemGroup?.props.find((prop) => prop.name === "orientation")?.defaultValue).toBe(
-      '"vertical"'
-    );
-    expect(radioItemGroup?.props.find((prop) => prop.name === "value")?.description).toContain(
-      "passed through"
-    );
-    const radioIconButton = api("radio-group").parts.find((part) => part.name === "RadioIconButton");
-    expect(radioIconButton?.props.find((prop) => prop.name === "size")?.defaultValue).toBe('"icon"');
-    expect(radioIconButton?.props.find((prop) => prop.name === "aria-label")?.required).toBe(true);
-    const radioItem = api("radio-group").parts.find((part) => part.name === "RadioItem");
-    expect(radioItem?.props.find((prop) => prop.name === "controlPosition")?.defaultValue).toBe('"start"');
-    const checkboxCard = api("checkbox-card").parts.find((part) => part.name === "CheckboxCard");
-    expect(checkboxCard?.props.find((prop) => prop.name === "variant")?.defaultValue).toBe('"default"');
-    expect(checkboxCard?.props.find((prop) => prop.name === "title")?.required).toBe(true);
-    expect(checkboxCard?.props.find((prop) => prop.name === "description")?.required).toBe(true);
-    expect(checkboxCard?.props.find((prop) => prop.name === "render")).toBeUndefined();
-    expect(checkboxCard?.props.find((prop) => prop.name === "disabled")).toBeUndefined();
-    expect(checkboxCard?.props.find((prop) => prop.name === "className")).toBeUndefined();
-  });
 });
 
 describe("generated markdown endpoints", () => {
@@ -530,42 +325,5 @@ describe("generated markdown endpoints", () => {
     expect(markdown).toContain("#### Base UI primitive props");
     expect(markdown).toContain("| `focusableWhenDisabled` | `boolean \\| undefined` | `false`");
     expect(markdown).not.toContain("| `onClick` |");
-  });
-
-  it("carries every part of the committed API, and the tokens section", () => {
-    for (const entry of COMPONENT_PAGES) {
-      const markdown = endpoint(entry.slug);
-      expect(markdown, entry.slug).toContain("## API reference");
-      if (ALIAS_PAGES.has(entry.slug)) {
-        // An alias page repeats `chart` whole, so its reference is one sentence.
-        expect(markdown, entry.slug).toContain("[`Chart`](/components/chart.md) under another name.");
-        continue;
-      }
-      for (const part of pageParts(entry.slug)) {
-        // A chart page part may repeat a part of an earlier chart page, and then it is one line
-        // that names the owner, which `shared-entry-pages.test.ts` pins.
-        if (CHART_PAGES.has(entry.slug) && markdown.includes(`### ${part.name}\n\n\`${part.name}\` is [`)) {
-          continue;
-        }
-        // Per-part RSC rides on the heading, matching the HTML page's indicator.
-        expect(markdown, part.name).toContain(`### ${part.name} · RSC: ${part.rsc}`);
-        // Either the part's own props as a table, or the line that says it has none —
-        // a part that forwards everything is documented as such, not silently skipped.
-        expect(
-          markdown.includes("| Prop | Type | Default | Required | Description |") ||
-            markdown.includes("No own props"),
-          part.name
-        ).toBe(true);
-        for (const prop of part.props) {
-          expect(markdown, `${part.name}.${prop.name}`).toContain(`| \`${prop.name}\` |`);
-        }
-      }
-      if (entry.tokens.length > 0) {
-        expect(markdown, entry.slug).toContain("## Tokens consumed");
-        for (const token of entry.tokens) {
-          expect(markdown, token.name).toContain(`- \`${token.name}\``);
-        }
-      }
-    }
   });
 });

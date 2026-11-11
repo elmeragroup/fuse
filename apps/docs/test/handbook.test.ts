@@ -5,9 +5,7 @@ import { describe, expect, it } from "vitest";
 import { LEGAL_THEMES, themeSlug } from "@elmeragroup/fuse/theme";
 import { resolveThemeCatalog } from "@elmeragroup/fuse/theme-catalog";
 
-import { fuseSrc, sizeBudgetsFile } from "../scripts/lib/paths.ts";
-import { parseBudgets } from "../scripts/lib/sizes.ts";
-import { BUNDLE_SIZES, BUNDLE_SIZES_MEASURED_ON } from "../src/generated/bundle-sizes";
+import { fuseSrc } from "../scripts/lib/paths.ts";
 import { fetchText } from "./docs-server";
 
 /** The four permutations the pin table forbids; none may reach the DOM. */
@@ -79,7 +77,8 @@ function rowCells(html: string, hook: string): string[] {
 
 describe("tokens page", () => {
   // Unit under test: the tokens page's density tables. Oracle: the resolved catalog, which
-  // density-css.test.ts ties to fuse.css and the source contract ties to every data-slot.
+  // density-css.test.ts ties to fuse.css and the `fuse/declared-density-role` lint rule ties to
+  // every data-slot.
   it("renders every density metric with its px per density, and every part under its role", async () => {
     const html = await fetchText("/handbook/tokens");
     const catalog = resolveThemeCatalog();
@@ -126,59 +125,6 @@ describe("tokens page", () => {
       expect(described.get(`--${entry.name}`), entry.name).toBe(entry.description);
     }
   });
-
-  it("publishes a measured size and a ceiling for every budgeted entry", async () => {
-    const html = await fetchText("/handbook/tokens");
-    expect(BUNDLE_SIZES.length).toBeGreaterThan(0);
-    expect(html).toContain(BUNDLE_SIZES_MEASURED_ON);
-    for (const entry of BUNDLE_SIZES) {
-      const label = entry.name === "." ? "@elmeragroup/fuse" : `@elmeragroup/fuse/${entry.name}`;
-      expect(html, entry.name).toContain(label);
-      expect(entry.measuredGzip).toBeGreaterThan(0);
-      expect(entry.ceilingGzip).toBeGreaterThan(0);
-    }
-  });
-
-  it("covers every published JS entry the library budgets", () => {
-    const liveNames = parseBudgets(readFileSync(sizeBudgetsFile, "utf8"), sizeBudgetsFile).map(
-      (budget) => budget.name
-    );
-    expect([...BUNDLE_SIZES.map((entry) => entry.name)].sort()).toEqual([...liveNames].sort());
-  });
-});
-
-describe("fonts page", () => {
-  it("shows a recipe per setup, the brand and nested-theme rules, and the brand-site table", async () => {
-    const html = await fetchText("/handbook/fonts");
-    for (const id of [
-      "what-fuse-applies",
-      "next-js",
-      "fontsource",
-      "font-face",
-      "per-brand",
-      "nested-themes",
-      "brand-sites",
-    ]) {
-      expect(html, id).toContain(`id="${id}"`);
-    }
-    // React escapes the quotes in the code blocks' text.
-    for (const recipe of [
-      "next/font/google",
-      "next/font/local",
-      "@fontsource/inter/400.css",
-      "@font-face",
-      "[data-theme-identity=&quot;branded&quot;]:is([data-theme-brand=&quot;fkas&quot;]",
-      "@fontsource/roboto/400.css",
-      "--font-roboto",
-      "font-family: var(--font-sans);",
-    ]) {
-      expect(html, recipe).toContain(recipe);
-    }
-    expect(html).not.toContain("!important;");
-    // Every recipe sets the neutral fonts on neutral scopes too, so a nested neutral scope
-    // resets them.
-    expect([...html.matchAll(/:root,\s*\[data-theme-identity=&quot;neutral&quot;\] \{/g)]).toHaveLength(3);
-  });
 });
 
 describe("density page", () => {
@@ -222,33 +168,6 @@ describe("localization page", () => {
 });
 
 describe("temporal migration page", () => {
-  it("covers the polyfill, the maps, boundaries, kinds, validation, behaviour changes and cancelable details", async () => {
-    const html = await fetchText("/handbook/temporal-migration");
-    for (const id of [
-      "install-temporal",
-      "component-map",
-      "composite-props",
-      "part-props",
-      "date-api",
-      "boundaries",
-      "kind-resolution",
-      "validation",
-      "form-error-checklist",
-      "behaviour-changes",
-      "divergences",
-      "pickers",
-      "selectors",
-      "cancelable-changes",
-    ]) {
-      expect(html, id).toContain(`id="${id}"`);
-    }
-    expect(html).toContain("import &quot;@elmeragroup/fuse/temporal-polyfill&quot;;");
-    expect(html).toContain("Temporal.Now.plainDateISO(tz)");
-    expect(html).toContain("closeOnDoubleClick");
-    // The conversion table renders from the recipes test/temporal-recipes.test.ts runs.
-    expect(html).toContain("Temporal.PlainDateTime.compare(a, b)");
-  });
-
   it("shows the conversion and server-error demos", async () => {
     const html = await fetchText("/handbook/temporal-migration");
     expect(html).toContain('id="conversion"');

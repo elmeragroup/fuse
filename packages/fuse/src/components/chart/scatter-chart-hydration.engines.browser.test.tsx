@@ -1,5 +1,5 @@
 // Delayed hydration of scatter marks, after Chart's motion rule 1 and the scatter entrance's, in
-// Chromium, Firefox and WebKit: a series whose Suspense boundary hydrates while another series'
+// Chromium and WebKit: a series whose Suspense boundary hydrates while another series'
 // entrance wipe runs matches the server HTML, which wrote no data-intro, with no recoverable error,
 // and then takes data-intro="none", so it draws at rest and never wipes in late.
 import { Suspense, use, useEffect } from "react";
@@ -99,12 +99,12 @@ describe("delayed hydration", () => {
     );
     try {
       await hydrated.promise;
-      // DOM audit: the point layers are aria-hidden plot output, and only their slot names them.
+      // The point layers are aria-hidden plot output, and only their slot names them.
       const layers = () => [...host.querySelectorAll('[data-slot="chart-points"]')];
       // The server wrote both layers without data-intro.
       expect(layers().map((layer) => layer.getAttribute("data-intro"))).toEqual([null, null]);
       // The now series' wipe plays before the normal series' boundary resolves.
-      // DOM audit: Root's figure carries the entrance state.
+      // Root's figure carries the entrance state.
       await expect
         .poll(() => host.querySelector('[data-slot="chart"]')?.getAttribute("data-entrance"))
         .toBe("played");

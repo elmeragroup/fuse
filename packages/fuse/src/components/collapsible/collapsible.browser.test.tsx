@@ -5,7 +5,7 @@ import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import { assertFocusRingOnKeyboardAbsentOnMouse } from "../../../test/assert-focus-ring";
-import { expectPanelHeightTransition, panelControlledBy } from "../../../test/panel-transition";
+import { panelControlledBy } from "../../../test/panel-transition";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { Collapsible } from "./index";
 
@@ -172,23 +172,25 @@ describe("Collapsible", () => {
     expect(page.getByText("Delivery window", { exact: true }).query()).toBeNull();
   });
 
-  it.each([
-    ["a keepMounted Content's height open and closed", true, "hidden"],
-    ["a default unmounted Content and unmounts it after the close", false, "unmounted"],
-  ] as const)("animates %s", async (_case, keepMounted, closedState) => {
+  it("gives the trigger the shared keyboard focus ring", async () => {
     renderThemed(
-      <Collapsible.Root>
-        <Collapsible.Trigger>Show details</Collapsible.Trigger>
-        <Collapsible.Content keepMounted={keepMounted}>
-          {/* A fixed content height keeps the settled value independent of font metrics. */}
-          <p style={{ height: 80 }}>Delivery window</p>
-        </Collapsible.Content>
-      </Collapsible.Root>
+      <>
+        <button type="button">Before</button>
+        <Collapsible.Root>
+          <Collapsible.Trigger>Show details</Collapsible.Trigger>
+          <Collapsible.Content>Delivery window</Collapsible.Content>
+        </Collapsible.Root>
+      </>
     );
-
-    await expectPanelHeightTransition(triggerNamed("Show details"), closedState);
+    const previous = page.getByRole("button", { name: "Before", exact: true }).element();
+    if (!(previous instanceof HTMLElement)) {
+      throw new Error("expected before button");
+    }
+    await assertFocusRingOnKeyboardAbsentOnMouse(previous, triggerNamed("Show details"));
   });
+});
 
+describe("Collapsible", () => {
   it("keeps hiddenUntilFound content in the DOM and opens on beforematch", async () => {
     const onOpenChange = vi.fn();
     renderThemed(
@@ -239,22 +241,5 @@ describe("Collapsible", () => {
     const controls = trigger.getAttribute("aria-controls");
     expect(controls).toBeTruthy();
     expect(panelControlledBy(trigger)).toBe(page.getByText("Delivery window", { exact: true }).element());
-  });
-
-  it("gives the trigger the shared keyboard focus ring", async () => {
-    renderThemed(
-      <>
-        <button type="button">Before</button>
-        <Collapsible.Root>
-          <Collapsible.Trigger>Show details</Collapsible.Trigger>
-          <Collapsible.Content>Delivery window</Collapsible.Content>
-        </Collapsible.Root>
-      </>
-    );
-    const previous = page.getByRole("button", { name: "Before", exact: true }).element();
-    if (!(previous instanceof HTMLElement)) {
-      throw new Error("expected before button");
-    }
-    await assertFocusRingOnKeyboardAbsentOnMouse(previous, triggerNamed("Show details"));
   });
 });

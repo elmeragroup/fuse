@@ -72,7 +72,7 @@ import { exposeCollection, exposeVariable, seedVariables } from "./fake/variable
 export { drawsShadowSpread, paintsAbove } from "./fake/paints.ts";
 
 /** What a test sets up the fake file with. */
-export type FakeFigmaOptions = {
+type FakeFigmaOptions = {
   /** The collections the token sync writes, such as `fuseVariableSet()` builds them. */
   readonly collections: readonly CollectionSpec[];
   /** Fonts this machine cannot load. A font without a style marks every style of its family. */

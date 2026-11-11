@@ -37,7 +37,7 @@ export function findProperty<Property extends { readonly type: ComponentProperty
 }
 
 /** A property a set should define, and how the plan adds it or brings its definition in line. */
-export type SetProperty = {
+type SetProperty = {
   readonly name: string;
   readonly type: ComponentPropertyType;
   /** The change line for adding the property. */

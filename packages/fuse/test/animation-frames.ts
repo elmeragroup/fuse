@@ -1,4 +1,4 @@
-import { expect } from "vitest";
+import { expect, onTestFinished, vi } from "vitest";
 
 /**
  * Waits for animation frames, so React renders what the last state change scheduled.
@@ -14,6 +14,28 @@ export async function nextFrames(count = 1): Promise<number> {
     });
   }
   return now;
+}
+
+/**
+ * Fakes the page's timeouts for the rest of the current test, so a delay runs out only when the
+ * test moves the clock, and restores the real ones when the test finishes. Animation frames stay
+ * real. Call it in a test or a `beforeEach`.
+ */
+export function useFakeTimeouts(): void {
+  vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+  onTestFinished(() => {
+    vi.useRealTimers();
+  });
+}
+
+/**
+ * Waits until the page has a fake timeout pending, checking once per animation frame. A component
+ * that arms its next timeout in an effect commits the render that shows the last one's work first,
+ * and the runner can render a frame between that commit and the effect, so a test that moves the
+ * clock as soon as the render shows can move it past no timeout at all.
+ */
+export async function pendingTimeout(): Promise<void> {
+  await pollFrames(() => vi.getTimerCount() > 0, true);
 }
 
 /**
@@ -40,7 +62,7 @@ const POLL_FRAMES = 60;
  * @param frames - The most frames to wait.
  * @returns Whether it held.
  */
-export async function framesUntil(read: () => boolean, frames: number): Promise<boolean> {
+async function framesUntil(read: () => boolean, frames: number): Promise<boolean> {
   for (let frame = 0; frame < frames; frame += 1) {
     if (read()) return true;
     await nextFrames(1);
@@ -97,42 +119,4 @@ export function recordFrames<T>(read: () => T, done: () => boolean, ms = 3000): 
     };
     requestAnimationFrame(tick);
   });
-}
-
-/**
- * Records `read()` on each of the next `count` animation frames, however long they take, as
- * `recordFrames` does for a time.
- *
- * @param read - What to record each frame.
- * @param count - How many frames to record.
- * @returns Every frame's reading, in order.
- */
-export function recordFrameCount<T>(read: () => T, count: number): Promise<T[]> {
-  let left = count;
-  return recordFrames(read, () => (left -= 1) <= 0, Number.POSITIVE_INFINITY);
-}
-
-/**
- * Records `read()` on every animation frame once `start()` reads a time, each reading with `t`, its
- * frame's timestamp less that start, until a frame lies more than `until` ms past the start, which
- * it records too. Frames before `start()` reads a time record nothing.
- *
- * @param start - The start time, or null until the frame that should read it.
- * @param until - How long after the start to stop, in milliseconds.
- * @param read - What to record each frame.
- * @returns Every frame's reading from the start on, in order.
- */
-export async function recordSince<T extends object>(
-  start: () => number | null,
-  until: number,
-  read: () => T
-): Promise<(T & { readonly t: number })[]> {
-  const frames: (T & { readonly t: number })[] = [];
-  for (;;) {
-    const now = await nextFrames(1);
-    const from = start();
-    if (from === null) continue;
-    frames.push({ ...read(), t: now - from });
-    if (now - from > until) return frames;
-  }
 }

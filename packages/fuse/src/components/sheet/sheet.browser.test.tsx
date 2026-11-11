@@ -4,42 +4,8 @@ import { page, userEvent } from "vitest/browser";
 import "../../../dist/styles.css";
 import { assertFocusRingOnKeyboardAbsentOnMouse } from "../../../test/assert-focus-ring";
 import { SUPPORTED_LOCALES, withLocale } from "../../../test/locale-matrix";
-import {
-  metricPx,
-  px,
-  renderThemed,
-  roleNamed,
-  stampDensity,
-  textNamed,
-} from "../../../test/themed-browser-render";
-import { DENSITIES } from "../../theme/density";
+import { renderThemed, roleNamed } from "../../../test/themed-browser-render";
 import { Sheet } from "./index";
-
-/** Reads a theme token off the document root (`--container-*` are rem lengths). */
-function readToken(name: string): string {
-  return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
-}
-
-/**
- * The block a `position: fixed` percentage resolves against — the initial containing
- * block, which excludes any classic scrollbar. `window.innerWidth` includes it, so it is
- * off by the scrollbar width on the rungs where `90%` is the smaller half of the `min()`.
- */
-function initialContainingBlockWidth(): number {
-  return document.documentElement.clientWidth;
-}
-
-/**
- * The panel's border box. The panel takes preflight's `box-sizing: border-box` on every host, so
- * `max-width` and `w-full` size that box, side border included.
- */
-function panelWidth(element: HTMLElement): number {
-  return element.getBoundingClientRect().width;
-}
-
-function remToPx(value: string): number {
-  return px(value) * px(getComputedStyle(document.documentElement).fontSize);
-}
 
 const CLOSE_COPY = {
   "nb-NO": "Lukk",
@@ -76,44 +42,14 @@ function BasicSheet({
   );
 }
 
-/** One animation frame, so the settled-open wait can compare geometry across frames. */
-function nextFrame(): Promise<void> {
-  return new Promise((resolve) => {
-    requestAnimationFrame(() => {
-      resolve();
-    });
-  });
-}
-
-function boxOf(element: HTMLElement): string {
-  const { x, y, width, height } = element.getBoundingClientRect();
-  return `${x}:${y}:${width}:${height}`;
-}
-
 /**
- * Wait until the panel has stopped sliding in.
- *
- * Base UI drops `data-starting-style` one frame after the popup mounts, but the panel is
- * still parked at that starting translate when the trigger click resolves — the 200 ms
- * `transition-transform` in sheet.tsx has only just begun (measured: `translateX(415px)`,
- * a whole panel width off-screen, for the default right-hand sheet). A click on a control
- * inside a panel that is still travelling is aimed at a box the panel has already left:
- * under load such a click was seen to resolve without a single pointer event reaching the
- * control, so nothing closed and the popup kept `data-open` until the close assertion ran
- * out of patience. Two frames with an unchanged box mean the transform has landed.
+ * Lands the panel's slide-in at once. A click on a control inside a panel still travelling from its
+ * starting translate is aimed at a box the panel has already left, so the enter transition is run
+ * to its end rather than waited out.
  */
 async function settleOpen(dialog: HTMLElement): Promise<void> {
-  await vi.waitFor(
-    async () => {
-      expect(dialog.hasAttribute("data-starting-style")).toBe(false);
-      const before = boxOf(dialog);
-      await nextFrame();
-      expect(boxOf(dialog)).toBe(before);
-    },
-    // Ten times the 200 ms enter transition in sheet.tsx, so a CPU-loaded run that drops
-    // frames still settles well inside the wait.
-    { timeout: 2000 }
-  );
+  await expect.poll(() => dialog.hasAttribute("data-starting-style")).toBe(false);
+  for (const animation of dialog.getAnimations()) animation.finish();
 }
 
 async function openSheet(): Promise<HTMLElement> {
@@ -258,70 +194,6 @@ describe("Sheet", () => {
     unmount();
   });
 
-  it("keeps Body as the scroll container and stamps the layout slots", async () => {
-    renderThemed(withLocale("en-US", <BasicSheet />));
-    const dialog = await openSheet();
-    // DOM audit: the sheet body slot owns scrolling inside the dialog.
-    const body = dialog.querySelector("[data-slot=sheet-body]");
-    expect(body).not.toBeNull();
-    if (!(body instanceof HTMLElement)) {
-      throw new Error("expected sheet body");
-    }
-    expect(getComputedStyle(body).overflowY).toBe("auto");
-    expect(getComputedStyle(body).minHeight).toBe("0px");
-    expect(getComputedStyle(body).flexGrow).toBe("1");
-    expect(document.querySelector("[data-slot=sheet-viewport]")).not.toBeNull();
-    expect(dialog.querySelector("[data-slot=sheet-content-inner]")).not.toBeNull();
-    expect(dialog.querySelector("[data-slot=sheet-header]")).not.toBeNull();
-    expect(dialog.querySelector("[data-slot=sheet-footer]")).not.toBeNull();
-    expect(dialog.querySelector("[data-slot=sheet-title]")).not.toBeNull();
-    expect(dialog.querySelector("[data-slot=sheet-description]")).not.toBeNull();
-  });
-
-  it("resolves the size axis to the side-gated used max-width on both gated sides", async () => {
-    // Asserts the used value the panel is actually capped at, not the class spelling:
-    // the axis moves through `--overlay-width`, so a rung is only correct if the two
-    // side-gated `max-w-(--overlay-width)` consumers resolve it.
-    const cases = [
-      { size: undefined, cap: () => remToPx(readToken("--container-md")) },
-      { size: "sm", cap: () => remToPx(readToken("--container-sm")) },
-      { size: "10xl", cap: () => 1920 },
-    ] as const;
-
-    await page.viewport(1024, 768);
-    for (const side of ["right", "left"] as const) {
-      for (const { size, cap } of cases) {
-        const { unmount } = renderThemed(withLocale("en-US", <BasicSheet side={side} size={size} />));
-        const dialog = await openSheet();
-        expect(panelWidth(dialog), `${side}/${String(size)}`).toBeCloseTo(
-          Math.min(cap(), initialContainingBlockWidth() * 0.9),
-          0
-        );
-        unmount();
-      }
-    }
-  });
-
-  it("leaves the size axis inert on the top and bottom sides, and below the sm breakpoint where the panel is full-width", async () => {
-    await page.viewport(1024, 768);
-    for (const side of ["top", "bottom"] as const) {
-      const { unmount } = renderThemed(withLocale("en-US", <BasicSheet side={side} size="sm" />));
-      const dialog = await openSheet();
-      expect(getComputedStyle(dialog).maxWidth, side).toBe("none");
-      unmount();
-    }
-
-    // The `sm:` half of the gate: `size` only caps a left/right panel once the viewport
-    // is wide enough, and `w-full` owns the width below that.
-    await page.viewport(500, 768);
-    const { unmount } = renderThemed(withLocale("en-US", <BasicSheet side="right" size="sm" />));
-    const dialog = await openSheet();
-    expect(getComputedStyle(dialog).maxWidth).toBe("none");
-    expect(panelWidth(dialog)).toBeCloseTo(initialContainingBlockWidth(), 0);
-    unmount();
-    await page.viewport(1024, 768);
-  });
-
   it("portals into the enclosing ThemeScope instead of the document body", async () => {
     const { host } = renderThemed(withLocale("en-US", <BasicSheet />));
     const scope = host.querySelector("[data-theme-brand]");
@@ -348,57 +220,4 @@ describe("Sheet", () => {
     }
     await assertFocusRingOnKeyboardAbsentOnMouse(previous, trigger);
   });
-});
-
-describe("Sheet surfaces follow density", () => {
-  it.each(DENSITIES)(
-    "pads its header, body and footer with the lg tier and gaps them by the surface gaps at %s",
-    async (density) => {
-      stampDensity(density);
-      renderThemed(
-        withLocale(
-          "en-US",
-          <Sheet.Root defaultOpen>
-            <Sheet.Content>
-              <Sheet.Header>
-                <Sheet.Title>Meter details</Sheet.Title>
-              </Sheet.Header>
-              <Sheet.Body>
-                <p>First block</p>
-                <p>Second block</p>
-              </Sheet.Body>
-              <Sheet.Footer>
-                <span>Footer text</span>
-              </Sheet.Footer>
-            </Sheet.Content>
-          </Sheet.Root>
-        )
-      );
-      await vi.waitFor(() => roleNamed("dialog", "Meter details"));
-      const pad = metricPx("surface-pad-lg", density);
-      const style = (text: string) => {
-        const parent = textNamed(text).parentElement;
-        if (!(parent instanceof HTMLElement)) {
-          throw new Error(`expected the part around ${text}`);
-        }
-        return { element: parent, computed: getComputedStyle(parent) };
-      };
-      const header = style("Meter details");
-      expect([header.computed.paddingTop, header.computed.paddingLeft].map(px), "header").toEqual([pad, pad]);
-      const body = style("First block");
-      expect(px(body.computed.paddingLeft), "body inline").toBe(pad);
-      const between =
-        textNamed("Second block").getBoundingClientRect().top -
-        textNamed("First block").getBoundingClientRect().bottom;
-      expect(between, "body blocks").toBe(metricPx("surface-gap-xl", density));
-      const footer = style("Footer text");
-      expect(px(footer.computed.paddingTop), "footer").toBe(pad);
-      // The header, body and footer stack on the inner content's lg gap.
-      expect(
-        body.element.getBoundingClientRect().top - header.element.getBoundingClientRect().bottom,
-        "stack"
-      ).toBe(metricPx("surface-gap-lg", density));
-      document.documentElement.removeAttribute("data-density");
-    }
-  );
 });

@@ -114,32 +114,6 @@ export async function assertFocusRingAtBothDensities(
 }
 
 /**
- * `focusRing({ target: "within" })` variant: keyboard focus on `control` paints
- * the ring on `ringHost` (the group Root) and never a second ring on the control
- * itself; blurring clears it. Like the `self` keyboard helper, the mouse arm is
- * asserted by the caller on a non-editable receiver — Chromium always matches
- * `:focus-visible` on a clicked text field, so mouse-absence is probed by
- * clicking an addon button instead (see the InputGroup suite).
- */
-export async function assertWithinKeyboardFocusRingAtBothDensities(
-  previous: HTMLElement,
-  control: HTMLElement,
-  ringHost: HTMLElement
-): Promise<void> {
-  await withBothDensities(async () => {
-    previous.focus();
-    await userEvent.keyboard("{Tab}");
-    settleTransitions(ringHost, control);
-    expect(control.matches(":focus-visible"), "Tab must land with :focus-visible").toBe(true);
-    expect(hasFocusRing(ringHost), "focus-visible must paint the shared ring on the group").toBe(true);
-    expect(hasFocusRing(control), "the control must not paint a second ring").toBe(false);
-    control.blur();
-    settleTransitions(ringHost);
-    expect(hasFocusRing(ringHost), "blur must clear the group ring").toBe(false);
-  });
-}
-
-/**
  * `focusRing({ target: "state", isFocusVisible })` variant: keyboard focus on
  * `control` paints the ring on `ringHost` and never a second ring on the
  * control; leaving the field clears it; mouse focus on the control does not
@@ -169,45 +143,4 @@ export async function assertStateFocusRingAtBothDensities(
     settleTransitions(ringHost);
     expect(hasFocusRing(ringHost), "mouse focus on the control must not paint the group ring").toBe(false);
   });
-}
-
-/**
- * The ancestors that would clip the shared focus ring around `control`. The ring is 2px wide
- * and flush, so it paints 2px past the control's border box; an ancestor clips it
- * when it hides overflow, clips its paint, or sets a clip path, and the ring's box leaves that
- * ancestor's padding box.
- *
- * @returns One `tag.class` label per clipping ancestor, empty when the whole ring paints.
- */
-export function focusRingClippers(control: HTMLElement): string[] {
-  const rect = control.getBoundingClientRect();
-  const ring = { left: rect.left - 2, top: rect.top - 2, right: rect.right + 2, bottom: rect.bottom + 2 };
-  const clippers: string[] = [];
-  for (let ancestor = control.parentElement; ancestor; ancestor = ancestor.parentElement) {
-    const ancestorStyle = getComputedStyle(ancestor);
-    const clips =
-      ancestorStyle.overflowX !== "visible" ||
-      ancestorStyle.overflowY !== "visible" ||
-      ancestorStyle.clipPath !== "none" ||
-      /paint|strict|content/.test(ancestorStyle.contain);
-    if (!clips || ancestor === document.documentElement || ancestor === document.body) {
-      continue;
-    }
-    const box = ancestor.getBoundingClientRect();
-    const inner = {
-      left: box.left + ancestor.clientLeft,
-      top: box.top + ancestor.clientTop,
-      right: box.left + ancestor.clientLeft + ancestor.clientWidth,
-      bottom: box.top + ancestor.clientTop + ancestor.clientHeight,
-    };
-    if (
-      ring.left < inner.left ||
-      ring.top < inner.top ||
-      ring.right > inner.right ||
-      ring.bottom > inner.bottom
-    ) {
-      clippers.push(`${ancestor.tagName}.${ancestor.className}`);
-    }
-  }
-  return clippers;
 }

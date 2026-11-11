@@ -20,6 +20,7 @@ export const breadcrumbVariants = tv({
   slots: {
     list: "text-sm sm:gap-2.5 flex flex-wrap items-center gap-1.5 wrap-break-word text-muted-foreground",
     item: "inline-flex items-center gap-1.5",
+    // oxlint-disable-next-line fuse/state-face -- breadcrumb links have no disabled state
     link: cn("transition-colors hover:text-foreground", selfFocusRingClass),
     page: "font-normal text-foreground",
     separator: "[&>svg]:size-3.5",

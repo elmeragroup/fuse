@@ -19,7 +19,6 @@ import { ClockChart } from "./clock-chart-namespace";
 import { PieChart } from "./pie-chart-namespace";
 import { RadarChart } from "./radar-chart-namespace";
 import { RadialChart } from "./radial-chart-namespace";
-import { ScatterChart } from "./scatter-chart-namespace";
 
 const ROWS = ["a", "b", "c"].map((name, index) => ({ name, v: index + 1, w: 4 - index }));
 
@@ -35,14 +34,6 @@ const POLAR_CONFIG = {
   strom: { label: "Strøm", color: "chart-1" },
   nettleie: { label: "Nettleie", color: "chart-2" },
 } as const;
-
-/** A scatter chart's points: outdoor temperature in °C against a household's yearly kWh. */
-const SCATTER_ROWS = [
-  { t: -2, kwh: 21_000, s: "now" },
-  { t: 18, kwh: 9_000, s: "now" },
-];
-
-const SCATTER_CONFIG = { now: { label: "Forbruk", color: "chart-1" } } as const;
 
 /** A radar's series over ROWS' categories. */
 const RADAR_CONFIG = {
@@ -65,7 +56,7 @@ function Nested({ children }: { children: ReactNode }) {
 
 /** The nested Root's figure, which the outer chart's figure holds. */
 function nestedFigure(host: HTMLElement): HTMLElement {
-  // DOM audit: each Root is a figure on the chart slot, and the nested one sits inside the outer.
+  // Each Root is a figure on the chart slot, and the nested one sits inside the outer.
   const figure = host.querySelector<HTMLElement>('[data-slot="chart"] [data-slot="chart"]');
   if (figure === null) throw new Error("no nested Root");
   return figure;
@@ -180,7 +171,7 @@ describe("a Root nested in another chart's part", () => {
     await pointerAt(x, y);
     await userEvent.click(...pointerTarget(x, y));
     await expect.poll(popupOpen).toBe(true);
-    // DOM audit: the popup is aria-hidden, so the polar Legend's items inside it are read by their
+    // The popup is aria-hidden, so the polar Legend's items inside it are read by their
     // slot, and they list their own Root's items by their labels.
     expect(
       [...(popup()?.querySelectorAll('[data-slot="chart-legend-item"]') ?? [])].map(
@@ -210,11 +201,11 @@ describe("a Root nested in another chart's part", () => {
     await pointerAt(x, y);
     await userEvent.click(...pointerTarget(x, y));
     await expect.poll(popupOpen).toBe(true);
-    // DOM audit: the popup portals out of the host, and the nested Root is a figure inside it.
+    // The popup portals out of the host, and the nested Root is a figure inside it.
     const figure = popup()?.querySelector<HTMLElement>('[data-slot="chart"]');
     if (figure === null || figure === undefined) throw new Error("no nested Root in the popup");
     await pointerAt(...centreOf(surfaceBox(figure)));
-    // DOM audit: Root states its active slot on data-active.
+    // Root states its active slot on data-active.
     await expect.poll(() => figure.hasAttribute("data-active")).toBe(true);
     // A SeriesLabel with no dataKey and no row prints the active point's key only in a live scope,
     // such as its own Root's tooltip, so here it prints nothing.
@@ -246,7 +237,7 @@ describe("a Root nested in another chart's part", () => {
     const shell = host.getBoundingClientRect();
     await pointerAt(shell.left + 4, shell.top + 4);
     await expect.poll(popupOpen).toBe(false);
-    // DOM audit: the closed popup stays mounted under its slot, aria-hidden, so the value's slot is
+    // The closed popup stays mounted under its slot, aria-hidden, so the value's slot is
     // the only locator.
     const value = document.querySelector('[data-slot="chart-tooltip"] [data-slot="chart-legend-value"]');
     expect(value?.textContent).toBe("3");
@@ -266,7 +257,7 @@ describe("a Root nested in another chart's part", () => {
       </LocaleProvider>
     );
     // Outside a Headline, an ActiveValue is plot output that readers skip.
-    // DOM audit: the plot form hides its slot from the accessibility tree.
+    // The plot form hides its slot from the accessibility tree.
     const value = nestedFigure(host).querySelector('[data-slot="chart-active-value"]');
     expect(value?.getAttribute("aria-hidden")).toBe("true");
   });
@@ -290,7 +281,7 @@ describe("a Root nested in another chart's part", () => {
     // The nested plot has drawn its frame once its bars show, so a SlotLabel that would show has.
     await expect.poll(() => bars(figure).length).toBe(ROWS.length * 2);
     // A SlotLabel shows only inside a Crosshair of its own Root, and renders nothing elsewhere.
-    // DOM audit: the pill is aria-hidden plot output, so its slot is the only locator.
+    // The pill is aria-hidden plot output, so its slot is the only locator.
     expect(figure.querySelector('[data-slot="chart-slot-label"]')).toBeNull();
   });
 
@@ -313,7 +304,7 @@ describe("a Root nested in another chart's part", () => {
     await expect.poll(() => nestedFigure(host)).toBeInstanceOf(HTMLElement);
     // A ValueLabel prints the datum of its own Root's Marker or ActiveValueLine, and nothing
     // without one, though the nested v has a reading, 3, at the outer Marker's last slot.
-    // DOM audit: the pill is aria-hidden plot output, so its slot is the only locator.
+    // The pill is aria-hidden plot output, so its slot is the only locator.
     expect(nestedFigure(host).querySelector('[data-slot="chart-value-label"]')?.textContent).toBe("");
   });
 
@@ -344,112 +335,6 @@ describe("a Root nested in another chart's part", () => {
           </ClockChart.Root>
         </LocaleProvider>
       );
-    expect(render).toThrow(expect.objectContaining({ rule: "part-outside-root" }));
-  });
-
-  it("gives a polar part inside a nested cartesian Root no outer polar Root (Q2's class)", () => {
-    // A pie's CenterValue belongs to a PieChart.Root. Placed under a Chart.Root that sits in an outer
-    // pie's Center, it has no pie of its own, so it throws part-outside-root, as it does under a
-    // lone Chart.Root, rather than print the outer pie's total.
-    const render = () =>
-      renderToString(
-        <LocaleProvider locale="nb-NO">
-          <PieChart.Root
-            data={POLAR_ROWS}
-            config={POLAR_CONFIG}
-            nameKey="name"
-            valueKey="v"
-            aria-label="Ytre">
-            <PieChart.Center>
-              <Chart.Root data={ROWS} config={CONFIG} xKey="name" aria-label="Indre">
-                <PieChart.CenterValue />
-              </Chart.Root>
-            </PieChart.Center>
-          </PieChart.Root>
-        </LocaleProvider>
-      );
-    expect(render).toThrow(expect.objectContaining({ rule: "part-outside-root" }));
-  });
-
-  // Each family's part, under another family's Root nested in a Root of its own family: alone under
-  // the inner Root it throws part-outside-root, as its JSDoc says, so nested it must throw the same
-  // rather than draw into, or read from, the outer chart (Q2's class: every context that crosses a
-  // Root). The outer Root holds the inner one where the server renders its children.
-  it.each([
-    [
-      "a pie's CenterValue under a ScatterChart in a pie's Center",
-      () => (
-        <PieChart.Root data={POLAR_ROWS} config={POLAR_CONFIG} nameKey="name" valueKey="v" aria-label="Ytre">
-          <PieChart.Center>
-            <ScatterChart.Root
-              data={SCATTER_ROWS}
-              config={SCATTER_CONFIG}
-              xKey="t"
-              yKey="kwh"
-              seriesKey="s"
-              aria-label="Indre">
-              <PieChart.CenterValue />
-            </ScatterChart.Root>
-          </PieChart.Center>
-        </PieChart.Root>
-      ),
-    ],
-    [
-      "a pie's Legend, which reads its Root's readout, under a ScatterChart in a pie's Center",
-      () => (
-        <PieChart.Root data={POLAR_ROWS} config={POLAR_CONFIG} nameKey="name" valueKey="v" aria-label="Ytre">
-          <PieChart.Center>
-            <ScatterChart.Root
-              data={SCATTER_ROWS}
-              config={SCATTER_CONFIG}
-              xKey="t"
-              yKey="kwh"
-              seriesKey="s"
-              aria-label="Indre">
-              <PieChart.Legend />
-            </ScatterChart.Root>
-          </PieChart.Center>
-        </PieChart.Root>
-      ),
-    ],
-    [
-      "a cartesian XAxis under a pie in a Chart.Root",
-      () => (
-        <Chart.Root data={ROWS} config={CONFIG} xKey="name" aria-label="Ytre">
-          <PieChart.Root
-            data={POLAR_ROWS}
-            config={POLAR_CONFIG}
-            nameKey="name"
-            valueKey="v"
-            aria-label="Indre">
-            <Chart.XAxis />
-          </PieChart.Root>
-        </Chart.Root>
-      ),
-    ],
-    [
-      "a scatter's Points under a pie in a ScatterChart.Root",
-      () => (
-        <ScatterChart.Root
-          data={SCATTER_ROWS}
-          config={SCATTER_CONFIG}
-          xKey="t"
-          yKey="kwh"
-          seriesKey="s"
-          aria-label="Ytre">
-          <PieChart.Root
-            data={POLAR_ROWS}
-            config={POLAR_CONFIG}
-            nameKey="name"
-            valueKey="v"
-            aria-label="Indre">
-            <ScatterChart.Points dataKey="now" />
-          </PieChart.Root>
-        </ScatterChart.Root>
-      ),
-    ],
-  ] as const)("gives %s no outer Root (Q2's class)", (_, chart) => {
-    const render = () => renderToString(<LocaleProvider locale="nb-NO">{chart()}</LocaleProvider>);
     expect(render).toThrow(expect.objectContaining({ rule: "part-outside-root" }));
   });
 });

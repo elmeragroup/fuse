@@ -12,7 +12,7 @@ const fruits = {
 export function SelectBasic() {
   return (
     <Select.Root items={fruits}>
-      <Select.Trigger>
+      <Select.Trigger aria-label="Fruit">
         <Select.Value placeholder="Pick a fruit" />
       </Select.Trigger>
       <Select.Content>

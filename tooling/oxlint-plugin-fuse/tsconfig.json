@@ -1,0 +1,11 @@
+{
+  "extends": "@elmeragroup/typescript-config/base.json",
+  "compilerOptions": {
+    // oxlint loads the rules by Node's type stripping, which cannot run enums or parameter properties.
+    "erasableSyntaxOnly": true,
+    "exactOptionalPropertyTypes": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitOverride": true
+  },
+  "include": ["src", "vitest.config.ts"]
+}

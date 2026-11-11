@@ -53,7 +53,7 @@ describe("legend toggles", () => {
     expect(status?.textContent).toBe("Husholdning valgt ");
     await userEvent.click(page.getByRole("button", { name: "Husholdning" }));
     expect(status?.textContent).toBe("Ingen serie valgt");
-    // DOM audit: Root's data-selected attribute is its public paint contract.
+    // Root's data-selected attribute is its public paint contract.
     expect(host.querySelector('[data-slot="chart"]')?.hasAttribute("data-selected")).toBe(false);
   });
 
@@ -95,7 +95,7 @@ describe("a LegendValue that falls back to now", () => {
         </Chart.Root>
       </LocaleProvider>
     );
-    // DOM audit: the value is plain text inside the legend item, with no role of its own.
+    // The value is plain text inside the legend item, with no role of its own.
     return host.querySelector('[data-slot="chart-legend-value"]')?.textContent ?? "";
   }
 

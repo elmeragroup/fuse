@@ -86,7 +86,7 @@ export function viewportSize(): PlaceSize {
  * fill and blurs it. It sits on the utilities layer with the overlay fill it replaces, so the
  * class merge drops the opaque fill.
  */
-export const tooltipPopup = tv({
+const tooltipPopup = tv({
   // DESIGN-NOTES "Tooltips" gives the chart popup an 8 px radius and 8 px of block padding. The
   // popup is never taller than the room Base UI measures on its side, and scrolls past it.
   base: "max-h-[calc(100dvh-16px)] overflow-y-auto overscroll-contain rounded-lg py-2 [--shell-inner:max(0px,--theme(--radius-lg)-var(--surface-pad-md))] data-[input=touch]:not-data-scrolls:pointer-events-none",

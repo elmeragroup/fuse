@@ -8,14 +8,14 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 
-import { writtenSlots } from "../../../../../packages/fuse/test/written-slots.ts";
+import { writtenSlots } from "../../../../../tooling/oxlint-plugin-fuse/src/data-slot.ts";
 import { collectRecipeSources } from "../../../scripts/lib/sources.ts";
 import type { TokenRef } from "../../lib/docs-model.ts";
 
 /**
- * Every literal `data-slot` a module writes, once each in first-seen order. Fuse's own
- * `writtenSlots` owns the slot syntax, the same scan its source contracts run, so the index and
- * the package's density contract cannot read different slots out of one source.
+ * Every literal `data-slot` a module writes, once each in first-seen order. `writtenSlots` lives
+ * in the lint plugin's `data-slot.ts`, beside the grammar the `fuse/declared-density-role` rule
+ * reads, so the index and the density table cover the same slots.
  *
  * @param file - The module's path, which picks the parser's dialect and names a parse failure.
  * @param source - The module's source.

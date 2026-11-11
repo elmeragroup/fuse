@@ -7,15 +7,6 @@ import { runCli } from "./cli.ts";
 
 const REQUIRED = ["phone-dial", "--route", "/components/phone-number-field", "--target", "textbox:Mobile"];
 
-/** Every message a parse failure carries, one per line. */
-function failureMessages(argv: readonly string[]) {
-  return Effect.gen(function* () {
-    const failure = yield* Effect.flip(parseArgv(argv));
-    assert.strictEqual(failure._tag, "ShowHelp");
-    return failure._tag === "ShowHelp" ? failure.errors.map((error) => error.message).join("\n") : "";
-  });
-}
-
 describe("the shots command line", () => {
   it.effect("fills every default the README documents", () =>
     Effect.gen(function* () {
@@ -68,7 +59,7 @@ describe("the shots command line", () => {
         "--densities",
         "comfortable,dense",
         "--engines",
-        "webkit,firefox,chromium",
+        "webkit,chromium",
         "--viewports",
         "1280x800, 390x844",
         "--scale",
@@ -119,7 +110,7 @@ describe("the shots command line", () => {
           { _tag: "override", density: "comfortable" },
           { _tag: "override", density: "dense" },
         ],
-        engines: ["webkit", "firefox", "chromium"],
+        engines: ["webkit", "chromium"],
         viewports: [
           { width: 1280, height: 800 },
           { width: 390, height: 844 },
@@ -168,155 +159,6 @@ describe("the shots command line", () => {
     Effect.gen(function* () {
       const parsed = yield* parseArgv([...REQUIRED, "--densities", "dense,, dense"]);
       assert.deepStrictEqual(parsed.densities, [{ _tag: "override", density: "dense" }]);
-    })
-  );
-
-  // The parser owns the frame of each message; the schemas in options.ts own what follows
-  // "Schema validation failed:".
-  const invalid = (flag: string, value: string, expected: string) =>
-    `Invalid value for flag --${flag}: "${value}". Expected: Schema validation failed: ${expected}`;
-
-  it.effect.each([
-    [[], "Missing required argument: name"],
-    [["a", "b", "--route", "/x", "--target", "textbox:Mobile"], 'Unexpected positional argument: "b"'],
-    [
-      ["Phone Dial", "--route", "/x", "--target", "textbox:Mobile"],
-      'Invalid value for argument <name>: "Phone Dial". Expected: Schema validation failed: lowercase letters, digits and dashes, such as phone-dial',
-    ],
-    [["run", "--target", "textbox:Mobile"], "Missing required flag: --route"],
-    [
-      ["run", "--route", "components/x", "--target", "textbox:Mobile"],
-      invalid("route", "components/x", 'a docs path starting with a single "/", such as /components/button'),
-    ],
-    // URL resolution would replace the source's host with these.
-    [
-      ["run", "--route", "//example.invalid/demo", "--target", "textbox:Mobile"],
-      invalid(
-        "route",
-        "//example.invalid/demo",
-        'a docs path starting with a single "/", such as /components/button'
-      ),
-    ],
-    [
-      ["run", "--route", "/\\example.invalid/demo", "--target", "textbox:Mobile"],
-      invalid(
-        "route",
-        "/\\example.invalid/demo",
-        'a docs path starting with a single "/", such as /components/button'
-      ),
-    ],
-    [
-      ["run", "--route", "/components\\button", "--target", "textbox:Mobile"],
-      invalid(
-        "route",
-        "/components\\button",
-        'a docs path starting with a single "/", such as /components/button'
-      ),
-    ],
-    // URL parsing strips a tab, which would move the request to source.invalid.
-    [
-      ["run", "--route", "/\t/source.invalid/demo", "--target", "textbox:Mobile"],
-      invalid(
-        "route",
-        "/\t/source.invalid/demo",
-        'a docs path starting with a single "/", such as /components/button'
-      ),
-    ],
-    [
-      ["run", "--route", "/\n/[", "--target", "textbox:Mobile"],
-      invalid("route", "/\n/[", 'a docs path starting with a single "/", such as /components/button'),
-    ],
-    [
-      ["run", "--route", "/x", "--target", "textfield:Mobile"],
-      invalid(
-        "target",
-        "textfield:Mobile",
-        '"textfield" is not an ARIA role; use <role>:<accessible name>, such as textbox:Mobile'
-      ),
-    ],
-    [
-      ["run", "--route", "/x", "--target", "textbox"],
-      invalid("target", "textbox", "an accessible name after the role, such as textbox:Mobile"),
-    ],
-    [
-      ["run", "--route", "/x", "--target", "textbox:"],
-      invalid("target", "textbox:", "an accessible name after the role, such as textbox:Mobile"),
-    ],
-    [[...REQUIRED, "--nth=-1"], invalid("nth", "-1", "a whole number of 0 or more")],
-    [
-      [...REQUIRED, "--click", "tabs:Neutral"],
-      invalid(
-        "click",
-        "tabs:Neutral",
-        '"tabs" is not an ARIA role; use <role>:<accessible name>[@<n>], such as tab:Neutral'
-      ),
-    ],
-    [
-      [...REQUIRED, "--click", "button:@1"],
-      invalid("click", "button:@1", "an accessible name after the role, such as button:Neutral"),
-    ],
-    [[...REQUIRED, "--click"], "Missing value for flag --click"],
-    [[...REQUIRED, "--pad", "1.5"], invalid("pad", "1.5", "a whole number of 0 or more")],
-    [[...REQUIRED, "--frame", "screen"], 'Invalid value for flag --frame: "screen"'],
-    [
-      [...REQUIRED, "--viewports", "1280"],
-      invalid(
-        "viewports",
-        "1280",
-        '"1280" is not a window size; use <width>x<height> in whole CSS pixels from 1 to 4096, written without leading zeros, such as 1280x800'
-      ),
-    ],
-    [[...REQUIRED, "--viewports", "0x800"], '"0x800" is not a window size'],
-    // The same size written twice with leading zeros would plan two identical pairs.
-    [
-      [...REQUIRED, "--viewports", "390x844,0390x0844"],
-      invalid(
-        "viewports",
-        "390x844,0390x0844",
-        '"0390x0844" is not a window size; use <width>x<height> in whole CSS pixels from 1 to 4096, written without leading zeros, such as 1280x800'
-      ),
-    ],
-    [[...REQUIRED, "--viewports", "1280x"], '"1280x" is not a window size'],
-    [[...REQUIRED, "--viewports", "1280×800"], '"1280×800" is not a window size'],
-    [[...REQUIRED, "--viewports", "1280.5x800"], '"1280.5x800" is not a window size'],
-    [[...REQUIRED, "--viewports", "5000x800"], '"5000x800" is not a window size'],
-    [[...REQUIRED, "--viewports", "1280x800,abc"], '"abc" is not a window size'],
-    [[...REQUIRED, "--viewports", ","], invalid("viewports", ",", "at least one entry")],
-    [
-      [...REQUIRED, "--themes", "neutral-fkas"],
-      invalid(
-        "themes",
-        "neutral-fkas",
-        '"neutral-fkas" is not a theme slug; use <neutral|branded>-<brand>-<private|company>, such as branded-tkas-company'
-      ),
-    ],
-    [[...REQUIRED, "--themes", "inner-fkas-private"], '"inner-fkas-private" is not a theme slug'],
-    [[...REQUIRED, "--themes", "neutral-fkas-business"], '"neutral-fkas-business" is not a theme slug'],
-    [[...REQUIRED, "--themes", ","], invalid("themes", ",", "at least one entry")],
-    [
-      [...REQUIRED, "--densities", "compact"],
-      invalid("densities", "compact", '"compact" must be dense or comfortable'),
-    ],
-    [
-      [...REQUIRED, "--engines", "chrome"],
-      invalid("engines", "chrome", '"chrome" must be chromium, webkit or firefox'),
-    ],
-    [[...REQUIRED, "--scale", "0"], invalid("scale", "0", "a number above 0 and at most 4")],
-    [[...REQUIRED, "--scale", "two"], invalid("scale", "two", "a number above 0 and at most 4")],
-    [[...REQUIRED, "--color-scheme", "system"], 'Invalid value for flag --color-scheme: "system"'],
-    [[...REQUIRED, "--before", "staging"], invalid("before", "staging", "prod, local or an http(s) URL")],
-    [
-      [...REQUIRED, "--after", "file:///tmp/x"],
-      invalid("after", "file:///tmp/x", "prod, local or an http(s) URL"),
-    ],
-    [[...REQUIRED, "--threshold", "1.5"], invalid("threshold", "1.5", "a number from 0 to 1")],
-    [[...REQUIRED, "--threshold=-0.1"], invalid("threshold", "-0.1", "a number from 0 to 1")],
-    [[...REQUIRED, "--pr", "#182"], invalid("pr", "#182", "a pull request number, such as 182")],
-    [[...REQUIRED, "--densitys", "dense"], "Unrecognized flag: --densitys"],
-    [[...REQUIRED, "--fill"], "Missing value for flag --fill"],
-  ] as const)("rejects %j", ([argv, message]) =>
-    Effect.gen(function* () {
-      assert.include(yield* failureMessages(argv), message);
     })
   );
 

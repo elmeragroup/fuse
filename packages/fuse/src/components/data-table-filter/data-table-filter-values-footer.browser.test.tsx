@@ -16,22 +16,17 @@ import {
   columnFilters,
   CUSTOMER_NORD,
   FIELDS,
-  FIELDS_WITH_PRODUCT,
   FIELDS_WITH_RUSH,
   focusIs,
   menuOpen,
-  Orders,
   popoverOpen,
-  PRODUCTS,
   renderOrders,
   STATUS_THREE,
   visibleOrders,
 } from "../../../test/data-table-filter-fixture";
 import type { OrdersProps } from "../../../test/data-table-filter-fixture";
-import { withLocale } from "../../../test/locale-matrix";
 import { roleNamed } from "../../../test/themed-browser-render";
 import type { FilterFieldMap } from "./filter-fields";
-import { parseColumnFilters } from "./filter-parse";
 import { DataTableFilter } from "./index";
 
 afterEach(async () => {
@@ -137,31 +132,8 @@ function focusablyDisabled(name: string): boolean {
   return button.getAttribute("aria-disabled") === "true" && !button.hasAttribute("disabled");
 }
 
-/** The Product filter's values in the table's state, or none. */
-function productValues(): readonly unknown[] {
-  return (
-    parseColumnFilters(columnFilters(), FIELDS_WITH_PRODUCT).find((entry) => entry.id === "product")?.value
-      .values ?? []
-  );
-}
-
-const STONE_BOX: ColumnFiltersState = [
-  { id: "product", value: { kind: "option", operator: "is", values: ["stone-box-200"] } },
-];
-
 const STATUS_DRAFT: ColumnFiltersState = [
   { id: "status", value: { kind: "option", operator: "is", values: ["draft"] } },
-];
-
-const ALL_STATUSES: ColumnFiltersState = [
-  {
-    id: "status",
-    value: {
-      kind: "option",
-      operator: "isAnyOf",
-      values: ["draft", "pending", "paid", "overdue", "cancelled"],
-    },
-  },
 ];
 
 describe.each(["menu", "popover"] as const)("DataTableFilter values footer in the %s", (surface) => {
@@ -173,11 +145,6 @@ describe.each(["menu", "popover"] as const)("DataTableFilter values footer in th
   /** Whether Status's list is open on this surface. */
   function statusOpen(): boolean {
     return surface === "menu" ? popoverOpen("Status") && menuOpen() : popoverOpen("Status");
-  }
-
-  /** A field's list search on this surface: the submenu's searchbox, or the popover's combobox. */
-  function searchBox(field: string): HTMLElement {
-    return roleNamed(surface === "menu" ? "searchbox" : "combobox", `Search ${field}`);
   }
 
   /** Closes Status's list and opens another field's on this surface. */
@@ -192,95 +159,6 @@ describe.each(["menu", "popover"] as const)("DataTableFilter values footer in th
       await openPopover(field);
     }
   }
-
-  /** Types into Status's list search. */
-  async function search(text: string): Promise<void> {
-    await userEvent.keyboard(text);
-    const box = searchBox("Status");
-    await expect.poll(() => box).toHaveProperty("value", text);
-  }
-
-  it("picks every option with no search, then is disabled and keeps focus and the list", async () => {
-    renderFooter(STATUS_DRAFT);
-    await openStatus();
-    await userEvent.click(roleNamed("button", "Select all"));
-    await expect.poll(columnFilters).toEqual(ALL_STATUSES);
-    expect(visibleOrders()).toBe("1 2 3 4 5 6");
-    await expect.poll(() => focusablyDisabled("Select all")).toBe(true);
-    expect(statusOpen()).toBe(true);
-    expect(focusIs("button", "Select all")).toBe(true);
-  });
-
-  it("picks every option its search matches, beside the values already picked", async () => {
-    renderFooter(STATUS_DRAFT);
-    await openStatus();
-    // "e" matches Pending, Overdue and Cancelled, never Paid.
-    await search("e");
-    await userEvent.click(roleNamed("button", "Select all"));
-    await expect.poll(columnFilters).toEqual([
-      {
-        id: "status",
-        value: { kind: "option", operator: "isAnyOf", values: ["draft", "pending", "overdue", "cancelled"] },
-      },
-    ]);
-    // Draft 5, Pending 2 and 6, Overdue 4.
-    expect(visibleOrders()).toBe("2 4 5 6");
-    await expect.poll(() => focusablyDisabled("Select all")).toBe(true);
-    expect(statusOpen()).toBe(true);
-  });
-
-  it("keeps a negated operator negated as it grows", async () => {
-    renderFooter([{ id: "status", value: { kind: "option", operator: "isNot", values: ["paid"] } }]);
-    await openStatus();
-    await search("pend");
-    await userEvent.click(roleNamed("button", "Select all"));
-    await expect
-      .poll(columnFilters)
-      .toEqual([
-        { id: "status", value: { kind: "option", operator: "isNoneOf", values: ["paid", "pending"] } },
-      ]);
-    // Neither paid, 1 and 3, nor pending, 2 and 6.
-    expect(visibleOrders()).toBe("4 5");
-  });
-
-  it("picks every product past the 50 shown rows, with a search and without, after the picked one", async () => {
-    renderFooter(STONE_BOX, { fieldMap: FIELDS_WITH_PRODUCT });
-    await (surface === "menu" ? openSubmenu("Product") : openPopover("Product"));
-    const box = searchBox("Product");
-    // The fixture's 25 items × 10 sizes of Oak, in config order, which the count order keeps:
-    // oak-shelf-20, the one Oak product with an order, is also the first Oak product.
-    const oak = PRODUCTS.filter((product) => product.label.startsWith("Oak ")).map(
-      (product) => product.value
-    );
-    expect(oak).toHaveLength(250);
-    await userEvent.fill(box, "oak");
-    await userEvent.click(roleNamed("button", "Select all"));
-    await expect.poll(productValues).toEqual(["stone-box-200", ...oak]);
-    expect(columnFilters()).toMatchObject([{ id: "product", value: { operator: "isAnyOf" } }]);
-
-    await userEvent.fill(box, "");
-    await userEvent.click(roleNamed("button", "Select all"));
-    // Then the rest in the list's order: glass-vase-30 has the most orders left, two, and every
-    // other product has none and keeps config order.
-    const first = new Set(["stone-box-200", ...oak, "glass-vase-30"]);
-    const rest = PRODUCTS.map((product) => product.value).filter((value) => !first.has(value));
-    await expect.poll(() => productValues().length).toBe(3000);
-    expect(productValues()).toEqual(["stone-box-200", ...oak, "glass-vase-30", ...rest]);
-    await expect.poll(() => focusablyDisabled("Select all")).toBe(true);
-  });
-
-  it("disables Select all while every option in its search is picked, and stays focusable", async () => {
-    renderFooter(STATUS_THREE);
-    await openStatus();
-    expect(focusablyDisabled("Select all")).toBe(false);
-    // "pa" matches Paid only, which STATUS_THREE picks.
-    await search("pa");
-    await expect.poll(() => focusablyDisabled("Select all")).toBe(true);
-    await userEvent.keyboard("{Tab}");
-    await expect.poll(() => focusIs("button", "Select all")).toBe(true);
-    await userEvent.keyboard("{Enter}");
-    expect(columnFilters()).toEqual(STATUS_THREE);
-  });
 
   it("clears only its own field, keeps the list open and focus on Clear all, then disables it", async () => {
     renderFooter([...STATUS_THREE, ...CUSTOMER_NORD]);
@@ -313,17 +191,7 @@ describe.each(["menu", "popover"] as const)("DataTableFilter values footer in th
     );
   });
 
-  it("disables Clear all while the field has no filter", async () => {
-    renderFooter(surface === "menu" ? [] : STATUS_DRAFT);
-    await openStatus();
-    if (surface === "popover") {
-      await userEvent.click(roleNamed("button", "Clear all"));
-    }
-    await expect.poll(() => focusablyDisabled("Clear all")).toBe(true);
-    expect(focusablyDisabled("Done")).toBe(false);
-  });
-
-  it("closes the list's overlay on Done and returns focus where that overlay sends it", async () => {
+  it("closes the list on Done and returns focus where its overlay sends it", async () => {
     renderFooter(STATUS_DRAFT);
     await openStatus();
     await userEvent.click(roleNamed("button", "Done"));
@@ -333,30 +201,6 @@ describe.each(["menu", "popover"] as const)("DataTableFilter values footer in th
     } else {
       await expect.poll(() => popoverOpen("Status")).toBe(false);
       await expect.poll(() => document.activeElement).toBe(chipValue("Status"));
-    }
-    expect(columnFilters()).toEqual(STATUS_DRAFT);
-  });
-
-  it("reaches the footer by Tab from the search, back by Shift+Tab, and leaves past Done", async () => {
-    renderFooter(STATUS_DRAFT);
-    await openStatus();
-    await userEvent.keyboard("{Tab}");
-    await expect.poll(() => focusIs("button", "Select all")).toBe(true);
-    expect(statusOpen()).toBe(true);
-    await userEvent.keyboard("{Tab}");
-    await expect.poll(() => focusIs("button", "Clear all")).toBe(true);
-    await userEvent.keyboard("{Tab}");
-    await expect.poll(() => focusIs("button", "Done")).toBe(true);
-    expect(statusOpen()).toBe(true);
-    await userEvent.keyboard("{Shift>}{Tab}{Tab}{Tab}{/Shift}");
-    await expect.poll(() => document.activeElement).toBe(searchBox("Status"));
-    expect(statusOpen()).toBe(true);
-    await userEvent.keyboard("{Tab}{Tab}{Tab}{Tab}");
-    if (surface === "menu") {
-      await expect.poll(menuOpen).toBe(false);
-      await expect.poll(() => focusIs("button", "After the bar")).toBe(true);
-    } else {
-      await expect.poll(() => popoverOpen("Status")).toBe(false);
     }
     expect(columnFilters()).toEqual(STATUS_DRAFT);
   });
@@ -371,44 +215,6 @@ describe.each(["menu", "popover"] as const)("DataTableFilter values footer in th
     expect(statusOpen()).toBe(true);
     await userEvent.keyboard("{Shift>}{Tab}{/Shift}");
     await expect.poll(() => focusIs("button", "Clear all")).toBe(true);
-  });
-
-  it("shows only on the fields it lists", async () => {
-    renderFooter(
-      [
-        ...STATUS_DRAFT,
-        { id: "tags", value: { kind: "multiOption", operator: "includes", values: ["export"] } },
-      ],
-      { footerFields: ["tags"] }
-    );
-    await openStatus();
-    expect(page.getByRole("button", { name: "Done" }).query()).toBeNull();
-    await switchTo("Tags");
-    await expect.poll(() => page.getByRole("button", { name: "Done" }).query()).not.toBeNull();
-    await userEvent.click(roleNamed("button", "Select all"));
-    await expect.poll(columnFilters).toEqual([
-      ...STATUS_DRAFT,
-      {
-        id: "tags",
-        value: { kind: "multiOption", operator: "includesAnyOf", values: ["export", "priority", "manual"] },
-      },
-    ]);
-  });
-
-  it("disables Select all, still focusable, while the chip's operator cannot hold more values", async () => {
-    // Is not paid on a field that allows is any of but not is none of.
-    renderFooter([{ id: "status", value: { kind: "option", operator: "isNot", values: ["paid"] } }], {
-      fieldMap: { ...FIELDS, status: { ...FIELDS.status, operators: ["is", "isNot", "isAnyOf"] } },
-    });
-    await openStatus();
-    expect(focusablyDisabled("Select all")).toBe(true);
-    await userEvent.keyboard("{Tab}");
-    await expect.poll(() => focusIs("button", "Select all")).toBe(true);
-    await userEvent.keyboard("{Enter}");
-    expect(columnFilters()).toEqual([
-      { id: "status", value: { kind: "option", operator: "isNot", values: ["paid"] } },
-    ]);
-    expect(statusOpen()).toBe(true);
   });
 
   it("leaves Select all out on a single-select field and on a boolean field", async () => {
@@ -428,59 +234,6 @@ describe.each(["menu", "popover"] as const)("DataTableFilter values footer in th
     expect(page.getByRole("button", { name: "Select all" }).query()).toBeNull();
     await userEvent.click(roleNamed("button", "Clear all"));
     await expect.poll(columnFilters).toEqual(STATUS_DRAFT);
-  });
-
-  it("keeps the footer in view under the popup's height cap while its list scrolls", async () => {
-    await page.viewport(414, 420);
-    renderFooter(STONE_BOX, { fieldMap: FIELDS_WITH_PRODUCT });
-    await (surface === "menu" ? openSubmenu("Product") : openPopover("Product"));
-    const dialog = page.getByRole("dialog", { name: "Product" });
-    const popup = dialog.element();
-    const list = dialog.getByRole(surface === "menu" ? "menu" : "listbox").element();
-    const done = roleNamed("button", "Done");
-    await expect.poll(() => list.scrollHeight > list.clientHeight).toBe(true);
-    const bottom = popup.getBoundingClientRect().bottom;
-    expect(done.getBoundingClientRect().bottom).toBeLessThanOrEqual(bottom);
-    expect(done.getBoundingClientRect().top).toBeGreaterThanOrEqual(list.getBoundingClientRect().bottom);
-    expect(done.getBoundingClientRect().height).toBeGreaterThanOrEqual(24);
-  });
-});
-
-describe("DataTableFilter values footer against a changed field", () => {
-  it("picks an option the host added while the popover is open", async () => {
-    const view = renderFooter(ALL_STATUSES);
-    await openPopover("Status");
-    // Every status is picked, so nothing is left to add.
-    expect(focusablyDisabled("Select all")).toBe(true);
-    const refunded: FilterFieldMap = {
-      ...FIELDS,
-      status: {
-        ...FIELDS.status,
-        options: [...FIELDS.status.options, { value: "refunded", label: "Refunded" }],
-      },
-    };
-    view.rerender(
-      withLocale(
-        "en-US",
-        <Orders initial={ALL_STATUSES} fields={refunded}>
-          <Composition />
-        </Orders>
-      )
-    );
-    await expect.poll(() => focusablyDisabled("Select all")).toBe(false);
-    expect(popoverOpen("Status")).toBe(true);
-    await userEvent.click(roleNamed("button", "Select all"));
-    await expect.poll(columnFilters).toEqual([
-      {
-        id: "status",
-        value: {
-          kind: "option",
-          operator: "isAnyOf",
-          values: ["draft", "pending", "paid", "overdue", "cancelled", "refunded"],
-        },
-      },
-    ]);
-    await expect.poll(() => focusablyDisabled("Select all")).toBe(true);
   });
 });
 

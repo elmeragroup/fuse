@@ -41,7 +41,7 @@ export type PlannedIcon = {
 };
 
 /** The library frame and its icons by key, as later operations find them. */
-export type PlannedIcons = {
+type PlannedIcons = {
   readonly frame: Target<FrameNode>;
   readonly icons: ReadonlyMap<string, PlannedIcon>;
 };

@@ -4,18 +4,16 @@ import { describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
+import { nextFrames, useFakeTimeouts } from "../../../test/animation-frames";
 import { assertFocusRingOnKeyboardAbsentOnMouse } from "../../../test/assert-focus-ring";
 import { renderThemed, roleNamed } from "../../../test/themed-browser-render";
 import { Tooltip } from "./index";
 
-async function hoverOpen(name: string, tooltipName = name, timeout?: number): Promise<HTMLElement> {
+async function hoverOpen(name: string, tooltipName = name): Promise<HTMLElement> {
   await userEvent.hover(roleNamed("button", name));
-  await vi.waitFor(
-    () => {
-      expect(page.getByRole("tooltip", { name: tooltipName, exact: true }).query()).not.toBeNull();
-    },
-    { timeout }
-  );
+  await vi.waitFor(() => {
+    expect(page.getByRole("tooltip", { name: tooltipName, exact: true }).query()).not.toBeNull();
+  });
   return roleNamed("tooltip", tooltipName);
 }
 
@@ -31,11 +29,12 @@ async function mountedTooltip(name?: string): Promise<HTMLElement> {
 }
 
 describe("Tooltip", () => {
-  it("opens on hover after the provider delay and hides on unhover", async () => {
+  // The provider's delay is zero, so the opening waits on no clock.
+  it("opens on hover and hides on unhover", async () => {
     renderThemed(
       <>
         <p>Outside</p>
-        <Tooltip.Provider>
+        <Tooltip.Provider delay={0}>
           <Tooltip.Root>
             <Tooltip.Trigger>Hint</Tooltip.Trigger>
             <Tooltip.Content>Add to library</Tooltip.Content>
@@ -53,6 +52,25 @@ describe("Tooltip", () => {
     });
   });
 
+  it("holds a hover open back for the provider delay", async () => {
+    // Fake timeouts: the delay runs out only when the test moves the clock.
+    useFakeTimeouts();
+    renderThemed(
+      <Tooltip.Provider delay={600}>
+        <Tooltip.Root>
+          <Tooltip.Trigger>Hint</Tooltip.Trigger>
+          <Tooltip.Content>Add to library</Tooltip.Content>
+        </Tooltip.Root>
+      </Tooltip.Provider>
+    );
+    await userEvent.hover(roleNamed("button", "Hint"));
+    vi.advanceTimersByTime(599);
+    await nextFrames(2);
+    expect(page.getByRole("tooltip").query()).toBeNull();
+    vi.advanceTimersByTime(1);
+    await expect.element(page.getByRole("tooltip", { name: "Add to library" })).toBeInTheDocument();
+  });
+
   it("hands the open delay to a grouped neighbor but not to a Root with its own delay", async () => {
     renderThemed(
       <>
@@ -67,7 +85,7 @@ describe("Tooltip", () => {
             <Tooltip.Trigger>Second</Tooltip.Trigger>
             <Tooltip.Content>Second tip</Tooltip.Content>
           </Tooltip.Root>
-          <Tooltip.Root delay={400}>
+          <Tooltip.Root delay={60_000}>
             <Tooltip.Trigger>Scoped</Tooltip.Trigger>
             <Tooltip.Content>Scoped tip</Tooltip.Content>
           </Tooltip.Root>
@@ -86,49 +104,9 @@ describe("Tooltip", () => {
     await vi.waitFor(() => {
       expect(page.getByRole("tooltip", { name: "Second tip", exact: true }).query()).toBeNull();
     });
+    // A hand-off opens a neighbour on the next render; a Root with its own delay waits it out.
+    await nextFrames(2);
     expect(page.getByRole("tooltip", { name: "Scoped tip", exact: true }).query()).toBeNull();
-    await vi.waitFor(
-      () => {
-        expect(page.getByRole("tooltip", { name: "Scoped tip", exact: true }).query()).not.toBeNull();
-      },
-      { timeout: 1000 }
-    );
-  });
-
-  it("defaults the popup to data-side=top and forwards side/align overrides", async () => {
-    const { rerender } = renderThemed(
-      <div style={{ padding: 240 }}>
-        <Tooltip.Provider>
-          <Tooltip.Root defaultOpen>
-            <Tooltip.Trigger>Hint</Tooltip.Trigger>
-            <Tooltip.Content>Add to library</Tooltip.Content>
-          </Tooltip.Root>
-        </Tooltip.Provider>
-      </div>
-    );
-
-    const tooltip = await mountedTooltip("Add to library");
-    expect(tooltip.getAttribute("data-side")).toBe("top");
-    const arrow = tooltip.querySelector("[data-side]");
-    expect(arrow).not.toBeNull();
-    expect(arrow?.getAttribute("data-side")).toBe("top");
-
-    rerender(
-      <div style={{ padding: 240 }}>
-        <Tooltip.Provider>
-          <Tooltip.Root defaultOpen>
-            <Tooltip.Trigger>Hint</Tooltip.Trigger>
-            <Tooltip.Content side="left" align="start">
-              Add to library
-            </Tooltip.Content>
-          </Tooltip.Root>
-        </Tooltip.Provider>
-      </div>
-    );
-
-    const placed = roleNamed("tooltip", "Add to library");
-    await expect.poll(() => placed.getAttribute("data-side")).toBe("left");
-    expect(placed.getAttribute("data-align")).toBe("start");
   });
 
   it("portals into an explicit container element", async () => {
@@ -172,5 +150,43 @@ describe("Tooltip", () => {
       throw new Error("expected before button");
     }
     await assertFocusRingOnKeyboardAbsentOnMouse(previous, trigger);
+  });
+});
+
+describe("Tooltip", () => {
+  it("defaults the popup to data-side=top and forwards side/align overrides", async () => {
+    const { rerender } = renderThemed(
+      <div style={{ padding: 240 }}>
+        <Tooltip.Provider>
+          <Tooltip.Root defaultOpen>
+            <Tooltip.Trigger>Hint</Tooltip.Trigger>
+            <Tooltip.Content>Add to library</Tooltip.Content>
+          </Tooltip.Root>
+        </Tooltip.Provider>
+      </div>
+    );
+
+    const tooltip = await mountedTooltip("Add to library");
+    expect(tooltip.getAttribute("data-side")).toBe("top");
+    const arrow = tooltip.querySelector("[data-side]");
+    expect(arrow).not.toBeNull();
+    expect(arrow?.getAttribute("data-side")).toBe("top");
+
+    rerender(
+      <div style={{ padding: 240 }}>
+        <Tooltip.Provider>
+          <Tooltip.Root defaultOpen>
+            <Tooltip.Trigger>Hint</Tooltip.Trigger>
+            <Tooltip.Content side="left" align="start">
+              Add to library
+            </Tooltip.Content>
+          </Tooltip.Root>
+        </Tooltip.Provider>
+      </div>
+    );
+
+    const placed = roleNamed("tooltip", "Add to library");
+    await expect.poll(() => placed.getAttribute("data-side")).toBe("left");
+    expect(placed.getAttribute("data-align")).toBe("start");
   });
 });

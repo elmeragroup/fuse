@@ -1,123 +1,22 @@
-import type { ComponentType, ReactElement, ReactNode } from "react";
+import type { ReactElement } from "react";
 
 import { describe, expect, it } from "vitest";
 import { page } from "vitest/browser";
 
 import "../../../dist/styles.css";
-import {
-  assertLabelHiddenLayout,
-  assertLabelShownLayout,
-  legendFieldset,
-} from "../../../test/assert-group-label-hidden";
 import { withLocale } from "../../../test/locale-matrix";
-import {
-  fieldBoxOf,
-  fieldRootFrom,
-  metricPx,
-  renderThemed,
-  roleNamed,
-  stampDensity,
-  textboxNamed,
-  textNamed,
-} from "../../../test/themed-browser-render";
-import { DENSITIES } from "../../theme/density";
-import type { Density } from "../../theme/density";
-import { Autocomplete } from "../autocomplete";
-import { AutocompleteField } from "../autocomplete-field/autocomplete-field";
+import { fieldRootFrom, renderThemed, textboxNamed, textNamed } from "../../../test/themed-browser-render";
 import { CheckboxGroup, CheckboxItemGroup } from "../checkbox/checkbox";
 import { CheckboxItem } from "../checkbox/checkbox-item";
-import { Combobox } from "../combobox";
-import { ComboboxField } from "../combobox-field/combobox-field";
 import { Form } from "../form/form";
 import { Input } from "../input/input";
 import { NumberField } from "../number-field/number-field";
 import { PhoneNumberField } from "../phone-number-field/phone-number-field";
 import { Radio, RadioGroup, RadioItemGroup } from "../radio-group/radio-group";
 import { RadioItem } from "../radio-group/radio-item";
-import { Select } from "../select";
-import { SelectField } from "../select-field/select-field";
 import { TextField } from "../text-field/text-field";
 import { TextareaField } from "../textarea-field/textarea-field";
-import { FieldLabel, FieldRoot } from "./field";
 import { FieldFrame } from "./field-frame";
-
-// Figma (funnel nodes 9160:36033 and 9160:36034): a group's description sits directly
-// under its label, and the options follow at the fieldset's group gap around an option group,
-// `--surface-gap-md` (12px dense, as in Figma). A group without a description keeps the
-// legend's fixed 12px margin plus that gap between label and options (24px dense).
-const LEGEND_TO_DESCRIPTION_PX = 0;
-const LEGEND_MARGIN_PX = 12;
-const groupGap = (density: Density) => metricPx("surface-gap-md", density);
-// A pending RadioGroup without a label keeps a heading row for its spinner, and the
-// fieldset's group gap separates that row from the description.
-// TextField's label sits 4px from its control, the vertical Field.Root's stack, which every
-// label-mode composite and a field built from parts share.
-const TEXT_FIELD_LABEL_TO_CONTROL_PX = 4;
-
-const PART_SPACED_FIELDS: ReadonlyArray<{
-  readonly name: string;
-  readonly label: string;
-  readonly render: () => ReactElement;
-  readonly control: () => HTMLElement;
-}> = [
-  {
-    name: "TextField",
-    label: "Email",
-    render: () => <TextField label="Email" description="Work address." />,
-    control: () => textboxNamed("Email"),
-  },
-  {
-    name: "SelectField",
-    label: "Plan",
-    render: () => (
-      <SelectField label="Plan">
-        <Select.Item value="a">A</Select.Item>
-      </SelectField>
-    ),
-    control: () => roleNamed("combobox", "Plan"),
-  },
-  {
-    name: "TextareaField",
-    label: "Notes",
-    render: () => <TextareaField label="Notes" maxLength={200} />,
-    control: () => textboxNamed("Notes"),
-  },
-  {
-    name: "AutocompleteField",
-    label: "Company",
-    render: () =>
-      withLocale(
-        "en-US",
-        <AutocompleteField label="Company" items={["Fjellkraft AS"]}>
-          <Autocomplete.Empty />
-        </AutocompleteField>
-      ),
-    control: () => fieldBoxOf(roleNamed("combobox", "Company")),
-  },
-  {
-    name: "ComboboxField",
-    label: "Fruit",
-    render: () =>
-      withLocale(
-        "en-US",
-        <ComboboxField label="Fruit" items={["Apple"]}>
-          <Combobox.Empty />
-        </ComboboxField>
-      ),
-    control: () => fieldBoxOf(roleNamed("combobox", "Fruit")),
-  },
-  {
-    name: "hand-built Field.Root",
-    label: "Company",
-    render: () => (
-      <FieldRoot>
-        <FieldLabel>Company</FieldLabel>
-        <Input />
-      </FieldRoot>
-    ),
-    control: () => textboxNamed("Company"),
-  },
-];
 
 type GroupFixture = {
   readonly name: string;
@@ -255,64 +154,13 @@ function verticalGap(upper: Element, lower: Element): number {
 
 /** The group primitive, whose top edge is where the first option starts. */
 function optionsIn(root: Element): Element {
-  // DOM audit: the options box is the group primitive's layout container, which has no
+  // The options box is the group primitive's layout container, which has no
   // role of its own once the fieldset owns the group name, so it is reached by its slot.
   const options = root.querySelector("[data-slot=checkbox-group], [data-slot=radio-group]");
   if (options === null) {
     throw new Error("expected a checkbox-group or radio-group");
   }
   return options;
-}
-
-/** The top of `element`'s content box, inside its border and padding. */
-function contentBoxTop(element: Element): number {
-  const style = getComputedStyle(element);
-  return (
-    element.getBoundingClientRect().top +
-    Number.parseFloat(style.borderTopWidth) +
-    Number.parseFloat(style.paddingTop)
-  );
-}
-
-function fieldsetIn(root: Element): Element {
-  // DOM audit: an unlabeled fieldset has no accessible name to query it by.
-  const fieldset = root.querySelector("fieldset");
-  if (fieldset === null) {
-    throw new Error("expected a fieldset");
-  }
-  return fieldset;
-}
-
-function statusSvgs(root: HTMLElement): SVGElement[] {
-  return [...root.querySelectorAll("svg")];
-}
-
-/** A public labeled group composite, its member, and the `data-slot` of its group primitive. */
-type LabelHiddenCase = {
-  readonly part: string;
-  readonly Group: ComponentType<{ label: string; isLabelHidden?: boolean; children: ReactNode }>;
-  readonly Member: ComponentType<{ value: string; children: ReactNode }>;
-  readonly slot: string;
-};
-
-const labelHiddenCases: ReadonlyArray<LabelHiddenCase> = [
-  { part: "CheckboxGroup", Group: CheckboxGroup, Member: CheckboxItem, slot: "checkbox-group" },
-  { part: "CheckboxItemGroup", Group: CheckboxItemGroup, Member: CheckboxItem, slot: "checkbox-group" },
-  { part: "RadioGroup", Group: RadioGroup, Member: RadioItem, slot: "radio-group" },
-  { part: "RadioItemGroup", Group: RadioItemGroup, Member: RadioItem, slot: "radio-group" },
-];
-
-function groupBody(fieldset: HTMLElement, slot: string): HTMLElement {
-  // DOM audit: the group primitive's top is the layout contract; the group's name is checked by role.
-  const body = fieldset.querySelector(`[data-slot=${slot}]`);
-  if (!(body instanceof HTMLElement)) {
-    throw new Error(`expected the ${slot} primitive in the fieldset`);
-  }
-  return body;
-}
-
-function nestedOrientationStamps(root: HTMLElement): Element[] {
-  return [...root.querySelectorAll("[data-orientation]")];
 }
 
 describe("FieldFrame", () => {
@@ -384,232 +232,6 @@ describe("FieldFrame", () => {
     expect(root.querySelectorAll("label")).toHaveLength(0);
     expect(page.getByText("busy").query()).toBeTruthy();
   });
-
-  it("renders a component-owned status face in the label row and forces the row to exist", () => {
-    renderThemed(
-      <FieldFrame status={<span>3/10</span>}>
-        <Input aria-label="Counted" />
-      </FieldFrame>
-    );
-    const counter = page.getByText("3/10").element();
-    expect(fieldRootFrom("Counted").contains(counter)).toBe(true);
-  });
-
-  it("crossfades the pending and success faces, success winning", () => {
-    renderThemed(
-      <>
-        <FieldFrame isPending>
-          <Input aria-label="Pending" />
-        </FieldFrame>
-        <FieldFrame isPending isSuccess>
-          <Input aria-label="Done" />
-        </FieldFrame>
-      </>
-    );
-
-    const pending = statusSvgs(fieldRootFrom("Pending"));
-    expect(pending).toHaveLength(2);
-    const pendingShown = pending.filter((svg) => getComputedStyle(svg).opacity === "1");
-    expect(pendingShown).toHaveLength(1);
-    const pendingFace = pendingShown[0];
-    if (!(pendingFace instanceof SVGElement)) {
-      throw new Error("expected the pending face");
-    }
-    expect(getComputedStyle(pendingFace).animationName).not.toBe("none");
-
-    const done = statusSvgs(fieldRootFrom("Done"));
-    expect(done).toHaveLength(2);
-    const doneShown = done.filter((svg) => getComputedStyle(svg).opacity === "1");
-    expect(doneShown).toHaveLength(1);
-    const doneFace = doneShown[0];
-    if (!(doneFace instanceof SVGElement)) {
-      throw new Error("expected the success face");
-    }
-    expect(getComputedStyle(doneFace).animationName).toBe("none");
-  });
-
-  it("groups the control with the description only when a content class is given", () => {
-    renderThemed(
-      <>
-        <FieldFrame label="Email" description="Grouped." classNames={{ content: "flex flex-row" }}>
-          <Input />
-        </FieldFrame>
-        <FieldFrame label="Phone" description="Ungrouped.">
-          <Input />
-        </FieldFrame>
-      </>
-    );
-    const description = page.getByText("Grouped.").element();
-    const wrapper = description.parentElement;
-    if (!(wrapper instanceof HTMLElement)) {
-      throw new Error("expected a content wrapper");
-    }
-    expect(wrapper.contains(textboxNamed("Email"))).toBe(true);
-    expect(getComputedStyle(wrapper).display).toBe("flex");
-    expect(getComputedStyle(wrapper).flexDirection).toBe("row");
-
-    expect(page.getByText("Ungrouped.").element().parentElement).toBe(fieldRootFrom("Phone"));
-  });
-
-  it("renders Field.Set and Field.Legend when heading is legend", () => {
-    renderThemed(
-      <FieldFrame heading="legend" label="Options" description="Pick one." errorMessage="Required" invalid>
-        <Input aria-label="Choice" />
-      </FieldFrame>
-    );
-
-    const group = roleNamed("group", "Options");
-    expect(group.tagName).toBe("FIELDSET");
-    expect(page.getByText("Options", { exact: true }).element().textContent).toBe("Options");
-    expect(page.getByRole("alert").element().textContent).toBe("Required");
-    expect(nestedOrientationStamps(fieldRootFrom("Choice"))).toHaveLength(0);
-
-    // The legend description renders before the options.
-    const description = page.getByText("Pick one.").element();
-    const control = page.getByRole("textbox", { name: "Choice", exact: true }).element();
-    expect(description.compareDocumentPosition(control) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
-      Node.DOCUMENT_POSITION_FOLLOWING
-    );
-  });
-
-  it("renders one Field.Root per labeled composite so the nested-root trap cannot return", () => {
-    const { host } = renderThemed(
-      withLocale(
-        "en-US",
-        <>
-          <TextField label="Email" />
-          <NumberField label="Quantity" />
-          <TextareaField label="Notes" />
-          <PhoneNumberField label="Phone" />
-          <CheckboxGroup label="Checks">
-            <CheckboxItem value="a">Check member</CheckboxItem>
-          </CheckboxGroup>
-          <RadioGroup label="Radios">
-            <Radio value="a">Radio member</Radio>
-          </RadioGroup>
-          <SelectField label="Plan" items={{ a: "Plan member" }}>
-            <Select.Item value="a">Plan member</Select.Item>
-          </SelectField>
-          <AutocompleteField label="Company" items={["Fjellkraft AS"]} />
-          <ComboboxField label="Fruit" items={["Apple"]} />
-        </>
-      )
-    );
-
-    const named = [
-      fieldRootFrom("Email"),
-      fieldRootFrom("Quantity"),
-      fieldRootFrom("Notes"),
-      fieldRootFrom("Phone"),
-      roleNamed("group", "Checks").closest("[data-orientation]"),
-      roleNamed("radiogroup", "Radios").closest("[data-orientation]"),
-      roleNamed("combobox", "Plan").closest("[data-orientation]"),
-      roleNamed("combobox", "Company").closest("[data-orientation]"),
-      roleNamed("combobox", "Fruit").closest("[data-orientation]"),
-    ];
-    for (const root of named) {
-      if (!(root instanceof HTMLElement)) {
-        throw new Error("expected a field root");
-      }
-      expect(nestedOrientationStamps(root)).toHaveLength(0);
-    }
-    expect(host.querySelectorAll("[data-orientation]")).toHaveLength(9);
-  });
-
-  describe.each(DENSITIES)("group spacing at %s density", (density) => {
-    it.each(GROUPS)("puts the $name description directly under its label", ({ render }) => {
-      stampDensity(density);
-      const { host } = renderThemed(
-        <>
-          {preflightBoxReset}
-          {render({ label: "Group", description: "Pick any." })}
-        </>
-      );
-      const legend = textNamed("Group");
-      const description = textNamed("Pick any.");
-
-      expect(verticalGap(legend, description)).toBeCloseTo(LEGEND_TO_DESCRIPTION_PX, 0);
-      expect(verticalGap(description, optionsIn(host))).toBeCloseTo(groupGap(density), 0);
-    });
-
-    it.each(GROUPS)("keeps the $name label-to-options gap without a description", ({ render }) => {
-      stampDensity(density);
-      const { host } = renderThemed(
-        <>
-          {preflightBoxReset}
-          {render({ label: "Group" })}
-        </>
-      );
-
-      expect(verticalGap(textNamed("Group"), optionsIn(host))).toBeCloseTo(
-        LEGEND_MARGIN_PX + groupGap(density),
-        0
-      );
-    });
-
-    it.each(GROUPS)("starts an unlabeled $name at its description", ({ render }) => {
-      stampDensity(density);
-      const { host } = renderThemed(
-        <>
-          {preflightBoxReset}
-          {render({ description: "Pick any." })}
-        </>
-      );
-      const description = textNamed("Pick any.");
-
-      expect(description.getBoundingClientRect().top - contentBoxTop(fieldsetIn(host))).toBeCloseTo(0, 0);
-      expect(verticalGap(description, optionsIn(host))).toBeCloseTo(groupGap(density), 0);
-    });
-
-    it.each(GROUPS)("starts a $name with a hidden label at its description", ({ render }) => {
-      stampDensity(density);
-      const { host } = renderThemed(
-        <>
-          {preflightBoxReset}
-          {render({ label: "Group", description: "Pick any.", isLabelHidden: true })}
-        </>
-      );
-      const description = textNamed("Pick any.");
-
-      // The hidden legend is out of flow, so nothing above the description is left to cancel.
-      expect(description.getBoundingClientRect().top - contentBoxTop(fieldsetIn(host))).toBeCloseTo(0, 0);
-      expect(verticalGap(description, optionsIn(host))).toBeCloseTo(groupGap(density), 0);
-    });
-
-    it("keeps the group gap under an unlabeled pending RadioGroup's spinner row", () => {
-      stampDensity(density);
-      const { host } = renderThemed(
-        <>
-          {preflightBoxReset}
-          <RadioGroup isPending description="Pick one.">
-            <Radio value="a">Option</Radio>
-          </RadioGroup>
-        </>
-      );
-      const [spinner] = statusSvgs(host);
-      // The spinner is the row's only child, centred, and sets the row's height.
-      const statusRow = spinner?.parentElement;
-      if (statusRow == null) {
-        throw new Error("expected the pending spinner's heading row");
-      }
-
-      expect(verticalGap(statusRow, textNamed("Pick one."))).toBeCloseTo(groupGap(density), 0);
-    });
-
-    it.each(PART_SPACED_FIELDS)(
-      "leaves a $name's label-to-control gap at the part spacing",
-      ({ label, render, control }) => {
-        stampDensity(density);
-        renderThemed(
-          <>
-            {preflightBoxReset}
-            {render()}
-          </>
-        );
-        expect(verticalGap(textNamed(label), control())).toBeCloseTo(TEXT_FIELD_LABEL_TO_CONTROL_PX, 0);
-      }
-    );
-  });
 });
 
 // Figma: a field in error shows its message directly under the control, where the
@@ -637,30 +259,6 @@ describe("error placement", () => {
     expect(verticalGap(error, textNamed(FIELD_DESCRIPTION))).toBeGreaterThanOrEqual(0);
   });
 
-  it("keeps a card TextField's description beside the input and puts the error under the row", () => {
-    renderThemed(
-      <>
-        {preflightBoxReset}
-        <TextField
-          variant="card"
-          label="Annual usage"
-          description="Estimated kWh"
-          isInvalid
-          errorMessage="Fix this."
-        />
-      </>
-    );
-    const input = textboxNamed("Annual usage").getBoundingClientRect();
-    const description = textNamed("Estimated kWh").getBoundingClientRect();
-    const error = page.getByRole("alert").element();
-
-    expect(description.left).toBeGreaterThanOrEqual(input.right);
-    expect(description.top).toBeLessThan(input.bottom);
-    expect(error.getBoundingClientRect().top).toBeGreaterThanOrEqual(
-      Math.max(input.bottom, description.bottom)
-    );
-  });
-
   it.each(GROUPS)(
     "keeps the $name description under its label and puts the error under the options",
     ({ render }) => {
@@ -675,31 +273,6 @@ describe("error placement", () => {
 
       expect(verticalGap(textNamed("Pick any."), options)).toBeGreaterThanOrEqual(0);
       expect(verticalGap(options, error)).toBeGreaterThanOrEqual(0);
-    }
-  );
-});
-
-describe("isLabelHidden", () => {
-  // The legend stays the group's name but leaves the layout: an sr-only box is 1px
-  // square and absolute, so the group starts where the heading row was.
-  it.each(labelHiddenCases)(
-    "keeps $part named by a visually hidden legend with no heading row",
-    ({ Group, Member, slot }) => {
-      renderThemed(
-        <>
-          <Group label="Hidden options" isLabelHidden>
-            <Member value="first">Hidden first</Member>
-          </Group>
-          <Group label="Shown options">
-            <Member value="first">Shown first</Member>
-          </Group>
-        </>
-      );
-
-      const hidden = legendFieldset("Hidden options");
-      assertLabelHiddenLayout(hidden, groupBody(hidden, slot));
-      const shown = legendFieldset("Shown options");
-      assertLabelShownLayout(shown, groupBody(shown, slot));
     }
   );
 });

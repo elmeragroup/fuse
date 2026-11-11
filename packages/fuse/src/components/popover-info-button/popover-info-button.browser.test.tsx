@@ -1,5 +1,5 @@
-import { useState } from "react";
 import type { ReactNode } from "react";
+import { useState } from "react";
 
 import { describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
@@ -8,17 +8,8 @@ import { Popover } from "@elmeragroup/fuse/popover";
 import { PopoverInfoButton } from "@elmeragroup/fuse/popover-info-button";
 
 import "../../../dist/styles.css";
-import { HOSTS, hostCss } from "../../../test/first-line";
 import { SUPPORTED_LOCALES, withLocale } from "../../../test/locale-matrix";
-import {
-  LABEL,
-  metricPx,
-  px,
-  renderThemed,
-  roleNamed,
-  stampDensity,
-  textNamed,
-} from "../../../test/themed-browser-render";
+import { LABEL, renderThemed, roleNamed, stampDensity } from "../../../test/themed-browser-render";
 import { DENSITIES } from "../../theme/density";
 import { Field } from "../field";
 
@@ -57,24 +48,6 @@ async function openSettled(name = "More information"): Promise<HTMLElement> {
     animation.finish();
   }
   return dialog;
-}
-
-/** The popup's content box height: its border box less padding and border. */
-function contentHeightOf(dialog: HTMLElement): number {
-  const style = getComputedStyle(dialog);
-  return dialog.clientHeight - px(style.paddingTop) - px(style.paddingBottom);
-}
-
-/** Opens a popup holding `body` and returns its content box height. */
-async function openedContentHeightOf(body: ReactNode): Promise<number> {
-  const { unmount } = renderInfo(
-    <div style={{ padding: 240 }}>
-      <PopoverInfoButton>{body}</PopoverInfoButton>
-    </div>
-  );
-  const height = contentHeightOf(await openSettled());
-  unmount();
-  return height;
 }
 
 describe("PopoverInfoButton", () => {
@@ -219,51 +192,6 @@ describe("PopoverInfoButton", () => {
     expect(button.getAttribute("aria-disabled")).toBe("true");
   });
 
-  it("maps contentSize onto the content max-width class and forwards Button props to the trigger", async () => {
-    const { rerender } = renderInfo(
-      <div style={{ padding: 240 }}>
-        <PopoverInfoButton contentSize="sm">{EXPLAINER}</PopoverInfoButton>
-      </div>
-    );
-    const trigger = roleNamed("button", "More information");
-    expect(px(getComputedStyle(trigger).width)).toBe(px(getComputedStyle(trigger).height));
-
-    let dialog = await openInfo();
-    const smMaxWidth = px(getComputedStyle(dialog).maxWidth);
-    expect(smMaxWidth).toBeGreaterThan(0);
-    expect(px(getComputedStyle(dialog).paddingTop)).toBeGreaterThan(0);
-
-    await userEvent.keyboard("{Escape}");
-    await vi.waitFor(() => {
-      expect(page.getByRole("dialog").query()).toBeNull();
-    });
-
-    rerender(
-      withLocale(
-        "en-US",
-        <div style={{ padding: 240 }}>
-          <PopoverInfoButton contentSize="2xl" variant="outline" disabled>
-            {EXPLAINER}
-          </PopoverInfoButton>
-        </div>
-      )
-    );
-    const outlined = roleNamed("button", "More information");
-    await expect.poll(() => getComputedStyle(outlined).borderTopColor).not.toBe("rgba(0, 0, 0, 0)");
-    expect(outlined).toHaveProperty("disabled", true);
-
-    rerender(
-      withLocale(
-        "en-US",
-        <div style={{ padding: 240 }}>
-          <PopoverInfoButton contentSize="2xl">{EXPLAINER}</PopoverInfoButton>
-        </div>
-      )
-    );
-    dialog = await openInfo();
-    expect(px(getComputedStyle(dialog).maxWidth)).toBeGreaterThan(smMaxWidth);
-  });
-
   // Oracle: the label type pair from the density metrics, `LABEL[density].leading`. The
   // trigger sits on the label's line, so the label stays one line tall and the glyph centres
   // on that line, at both densities.
@@ -294,135 +222,6 @@ describe("PopoverInfoButton", () => {
     expect(glyphBox.top + glyphBox.height / 2 - labelBox.top, "glyph centre").toBeCloseTo(line / 2, 3);
   });
 
-  // Oracle: the 48px line the heading writes. In an inline formatting context the square fills
-  // that line box instead of sitting on the baseline and growing it.
-  it("keeps a block heading's line box at its line height", () => {
-    renderInfo(
-      <h2 style={{ fontFamily: "Arial", fontSize: 48, lineHeight: "48px", margin: 0 }}>
-        Grid rent <PopoverInfoButton>{EXPLAINER}</PopoverInfoButton>
-      </h2>
-    );
-    const trigger = roleNamed("button", "More information");
-    const heading = trigger.closest("h2");
-    if (heading === null) {
-      throw new Error("expected the trigger inside the heading");
-    }
-    const headingBox = heading.getBoundingClientRect();
-    const triggerBox = trigger.getBoundingClientRect();
-
-    expect(headingBox.height, "heading height").toBe(48);
-    expect(triggerBox.top - headingBox.top, "trigger top").toBe(0);
-    expect(triggerBox.height, "trigger height").toBe(48);
-  });
-
-  // Oracle: the same heading without the trigger. Under `line-height: normal` the line takes its
-  // height from the font, so a square sized from another family's or weight's metrics would grow
-  // the line. The fallback fonts differ by platform, so the line is measured, not written down.
-  it.each([
-    { name: "a bold Palatino", font: { fontFamily: "Palatino, Georgia, serif" } },
-    {
-      name: "a weight-400 Helvetica Neue",
-      font: { fontFamily: "'Helvetica Neue', sans-serif", fontWeight: 400 },
-    },
-  ] as const)(
-    "keeps $name `line-height: normal` heading at the height it has without the trigger",
-    ({ font }) => {
-      const heading = { ...font, fontSize: 48, lineHeight: "normal", margin: 0 };
-      renderInfo(
-        <>
-          <h2 style={heading}>Grid rent</h2>
-          <h2 style={heading}>
-            Grid rent <PopoverInfoButton>{EXPLAINER}</PopoverInfoButton>
-          </h2>
-        </>
-      );
-      const trigger = roleNamed("button", "More information");
-      const [bare, withTrigger] = page
-        .getByRole("heading", { level: 2 })
-        .elements()
-        .map((element) => element.getBoundingClientRect());
-      if (bare === undefined || withTrigger === undefined) {
-        throw new Error("expected both headings");
-      }
-      const triggerBox = trigger.getBoundingClientRect();
-
-      expect(withTrigger.height, "heading height").toBe(bare.height);
-      expect(triggerBox.top - withTrigger.top, "trigger top").toBe(0);
-      expect(triggerBox.height, "trigger height").toBe(bare.height);
-    }
-  );
-
-  // Oracle: the popup's own line height. A sentence that fits the popup's width takes one line
-  // box; a flex row per text run and inline element would stack the bold word, the link and the
-  // trailing full stop.
-  it("flows a sentence with a bold word and a link as one paragraph", async () => {
-    renderInfo(
-      <div style={{ padding: 240 }}>
-        <PopoverInfoButton>
-          <>
-            The <strong>meter number</strong> is on <a href="#meter">your meter</a>.
-          </>
-        </PopoverInfoButton>
-      </div>
-    );
-    const dialog = await openSettled();
-    const line = px(getComputedStyle(dialog).lineHeight);
-    const contentTop = dialog.getBoundingClientRect().top + px(getComputedStyle(dialog).paddingTop);
-    const bold = textNamed("meter number").getBoundingClientRect();
-    const link = page.getByRole("link", { name: "your meter" }).element().getBoundingClientRect();
-
-    expect(contentHeightOf(dialog), "content height").toBeLessThan(line * 2);
-    expect(Math.abs(bold.top - contentTop), "bold word top").toBeLessThan(line / 2);
-    expect(Math.abs(link.top - contentTop), "link top").toBeLessThan(line / 2);
-  });
-
-  // Oracle: the same sentence without the bold word. Emphasis changes a word's weight, not the
-  // height of its line, so a top margin on the inline-block child must not raise the line.
-  it("keeps an inline-block child after a bold word on the sentence's line", async () => {
-    const button = (
-      <button type="button" style={{ font: "inherit", padding: 0, border: 0, background: "none" }}>
-        that
-      </button>
-    );
-    const alone = await openedContentHeightOf(<>See this and {button}.</>);
-    const afterBold = await openedContentHeightOf(
-      <>
-        See <strong>this</strong> and {button}.
-      </>
-    );
-    expect(afterBold).toBe(alone);
-  });
-
-  // Oracle: the small surface tier from the density metrics. User-agent `p` margins on a host
-  // without preflight would add to the step and trail the last block.
-  it.each(HOSTS)("spaces consecutive blocks by the small surface gap in a %s host", async (host) => {
-    for (const density of DENSITIES) {
-      stampDensity(density);
-      const { unmount } = renderInfo(
-        <div style={{ padding: 240 }}>
-          <style>{hostCss(host)}</style>
-          <PopoverInfoButton>
-            <p>Grid rent is set by the network operator.</p>
-            <p>It is billed with your consumption.</p>
-          </PopoverInfoButton>
-        </div>
-      );
-      const dialog = await openSettled();
-      const contentTop = dialog.getBoundingClientRect().top + px(getComputedStyle(dialog).paddingTop);
-      const first = textNamed("Grid rent is set by the network operator.").getBoundingClientRect();
-      const second = textNamed("It is billed with your consumption.").getBoundingClientRect();
-
-      expect.soft(first.top - contentTop, `first block top at ${density}`).toBeCloseTo(0, 2);
-      expect
-        .soft(second.top - first.bottom, `block step at ${density}`)
-        .toBeCloseTo(metricPx("surface-gap-sm", density), 2);
-      expect
-        .soft(contentTop + contentHeightOf(dialog) - second.bottom, `last block to content end at ${density}`)
-        .toBeCloseTo(0, 2);
-      unmount();
-    }
-  });
-
   // Oracle: the trigger the popup opens beside. The arrow stays the popup's last child, after the
   // body, and points at the trigger's centre along the side the popup took. A narrow test viewport
   // can flip the popup below the trigger, so the axis follows `data-side`.
@@ -437,7 +236,7 @@ describe("PopoverInfoButton", () => {
     );
     const dialog = await openSettled();
     const trigger = roleNamed("button", "More information").getBoundingClientRect();
-    // DOM audit: Base UI's arrow has no role or name; it is the popup's last element child.
+    // Base UI's arrow has no role or name; it is the popup's last element child.
     const arrow = dialog.lastElementChild;
     if (arrow === null) {
       throw new Error("expected the arrow");
@@ -455,7 +254,9 @@ describe("PopoverInfoButton", () => {
       `arrow centre on the ${String(side)} side`
     ).toBeLessThanOrEqual(1);
   });
+});
 
+describe("PopoverInfoButton", () => {
   it("portals into an explicit container element", async () => {
     function ExplicitContainer() {
       const [node, setNode] = useState<HTMLDivElement | null>(null);

@@ -30,13 +30,16 @@ export const cellVariants = tv({
       false: "",
     },
     isSelected: {
+      // oxlint-disable-next-line fuse/state-face -- a day cell shows its disabled state as muted text, not through the control state face
       false: "text-foreground hover:bg-muted aria-pressed:bg-accent",
       true: "bg-primary text-primary-foreground invalid:bg-error forced-colors:bg-[Highlight] forced-colors:text-[HighlightText] forced-colors:invalid:bg-[Mark]",
     },
     isDisabled: {
+      // oxlint-disable-next-line fuse/state-face -- a day cell shows its disabled state as muted text, not through the control state face
       true: "text-muted-foreground hover:bg-transparent forced-colors:text-[GrayText]",
     },
     isUnavailable: {
+      // oxlint-disable-next-line fuse/state-face -- a day cell shows its disabled state as muted text, not through the control state face
       true: "text-muted-foreground hover:bg-transparent forced-colors:text-[GrayText]",
     },
   },

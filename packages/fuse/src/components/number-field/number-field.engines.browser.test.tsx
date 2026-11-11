@@ -1,4 +1,4 @@
-// Formatted NumberField text, which Chromium, Firefox and WebKit must write alike.
+// Formatted NumberField text, which Chromium and WebKit must write alike.
 import { describe, expect, it } from "vitest";
 
 import "../../../dist/styles.css";

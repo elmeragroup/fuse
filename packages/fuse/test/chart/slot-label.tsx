@@ -11,7 +11,7 @@ import { flushSync } from "react-dom";
 import { Chart } from "../../src/components/chart/chart-namespace";
 import type { ChartStyle, XFormat } from "../../src/components/chart/chart-types";
 import { LocaleProvider } from "../../src/intl/locale-context";
-import { hoverSlot as pointAtSlot } from "./tooltip-glide";
+import { pointerAt, surfaceBox } from "./marks";
 
 /** The chart's market. */
 export const ZONE = "Europe/Oslo";
@@ -202,33 +202,6 @@ export function shownText(host: HTMLElement): string {
   );
 }
 
-/**
- * The box of an item's text itself, which a wider box around it cannot hide.
- *
- * @param item - A shown item.
- * @returns The text's client box.
- */
-export function textBox(item: HTMLElement): DOMRect {
-  const range = document.createRange();
-  range.selectNodeContents(item);
-  return range.getBoundingClientRect();
-}
-
-/**
- * The client box of the label the pill shows.
- *
- * @param host - The rendered page's host.
- * @returns The union of the shown texts' boxes.
- */
-export function shownBox(host: HTMLElement): DOMRect {
-  const boxes = shown(host).map(textBox);
-  const left = Math.min(...boxes.map((box) => box.left));
-  const right = Math.max(...boxes.map((box) => box.right));
-  const top = Math.min(...boxes.map((box) => box.top));
-  const bottom = Math.max(...boxes.map((box) => box.bottom));
-  return new DOMRect(left, top, right - left, bottom - top);
-}
-
 /** Play every glide and fade to its end. */
 export function settle(): void {
   for (const animation of document.getAnimations()) animation.finish();
@@ -242,6 +215,7 @@ export function settle(): void {
  * @param count - The slots in the plot.
  */
 export async function hoverSlot(host: HTMLElement, index: number, count: number): Promise<void> {
-  await pointAtSlot(host, index, count, "band", 0.5);
+  const box = surfaceBox(host);
+  await pointerAt(box.left + (box.width * (index + 0.5)) / count, box.top + box.height / 2);
   settle();
 }

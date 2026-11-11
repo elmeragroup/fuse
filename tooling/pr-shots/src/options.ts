@@ -189,7 +189,7 @@ export const DensityChoice = Schema.Union([
 export type DensityChoice = typeof DensityChoice.Type;
 
 /** A Playwright browser engine. */
-export const Engine = Schema.Literals(["chromium", "webkit", "firefox"]);
+export const Engine = Schema.Literals(["chromium", "webkit"]);
 
 /** A Playwright browser engine. */
 export type Engine = typeof Engine.Type;
@@ -410,9 +410,9 @@ export const Densities = fromText(Schema.NonEmptyArray(DensityChoice), (input) =
 /** A comma list of browser engines. */
 export const Engines = fromText(Schema.NonEmptyArray(Engine), (input) =>
   parseList(input, (item): Result.Result<Engine, string> =>
-    item === "chromium" || item === "webkit" || item === "firefox"
+    item === "chromium" || item === "webkit"
       ? Result.succeed(item)
-      : Result.fail(`"${item}" must be chromium, webkit or firefox`)
+      : Result.fail(`"${item}" must be chromium or webkit`)
   )
 );
 

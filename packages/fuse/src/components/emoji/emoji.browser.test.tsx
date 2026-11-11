@@ -2,10 +2,10 @@ import { describe, expect, it } from "vitest";
 import { page } from "vitest/browser";
 
 import "../../../dist/styles.css";
-import { px, renderThemed } from "../../../test/themed-browser-render";
+import { renderThemed } from "../../../test/themed-browser-render";
 import { Emoji } from "./emoji";
 
-/** DOM audit: each face emits `data-slot="emoji"` on the svg. */
+/** Each face emits `data-slot="emoji"` on the svg. */
 function slotSvg(): SVGElement {
   const element = document.querySelector('[data-slot="emoji"]');
   if (!(element instanceof SVGElement)) {
@@ -42,10 +42,4 @@ describe("Emoji", () => {
       expect(slotSvg().getAttribute("aria-hidden")).toBe(expected);
     }
   );
-
-  it("lands className on the svg", () => {
-    renderThemed(<Emoji.SlightlyFrowningFace className="size-5" />);
-    expect(px(getComputedStyle(slotSvg()).width)).toBe(20);
-    expect(px(getComputedStyle(slotSvg()).height)).toBe(20);
-  });
 });

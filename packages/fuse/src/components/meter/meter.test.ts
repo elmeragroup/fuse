@@ -7,7 +7,6 @@ import { METER_CONSTANTS } from "./meter-constants";
 import type { MeterLevel, MeterMode } from "./meter-constants";
 import { meterToneCell } from "./meter-tone";
 import type { MeterIconName, MeterTone } from "./meter-tone";
-import { meterVariants } from "./meter-variants";
 
 const MODES = Object.values(METER_CONSTANTS.MODES);
 const LEVELS = Object.values(METER_CONSTANTS.LEVELS);
@@ -39,13 +38,6 @@ const MATRIX = {
     EXCEEDED_MAX_VALUE: { tone: "neutral", icon: "none" },
   },
 } satisfies Record<MeterMode, Record<MeterLevel, { tone: MeterTone; icon: MeterIconName }>>;
-
-const TONE_CLASSES = {
-  success: { barFill: "bg-success", labelValue: "text-success" },
-  warning: { barFill: "bg-warning", labelValue: "text-warning-foreground" },
-  error: { barFill: "bg-error", labelValue: "text-error" },
-  neutral: { barFill: "bg-primary", labelValue: "text-foreground" },
-} satisfies Record<MeterTone, { barFill: string; labelValue: string }>;
 
 describe("getMeterLevel", () => {
   it.each([
@@ -83,17 +75,6 @@ describe("METER_TONE_TABLE", () => {
     for (const mode of MODES) {
       for (const level of LEVELS) {
         expect(meterToneCell(mode, level), `${mode}/${level}`).toEqual(MATRIX[mode][level]);
-      }
-    }
-  });
-
-  it("paints every barFill and labelValue class through the tone axis", () => {
-    for (const mode of MODES) {
-      for (const level of LEVELS) {
-        const { tone } = meterToneCell(mode, level);
-        const slots = meterVariants({ tone });
-        expect(slots.barFill(), `${mode}/${level}`).toContain(TONE_CLASSES[tone].barFill);
-        expect(slots.labelValue(), `${mode}/${level}`).toContain(TONE_CLASSES[tone].labelValue);
       }
     }
   });

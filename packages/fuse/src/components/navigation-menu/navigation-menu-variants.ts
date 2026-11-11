@@ -119,10 +119,12 @@ export const navigationMenuVariants = tv({
       },
     },
     box: {
+      // oxlint-disable-next-line fuse/state-face -- navigation links have no disabled state
       bar: { link: [barBoxClass, "hover:bg-muted"] },
       row: {
         link: [
           contentRowClass,
+          // oxlint-disable-next-line fuse/state-face -- navigation links have no disabled state
           "hover:bg-accent hover:text-accent-foreground hover:**:text-accent-foreground",
         ],
       },

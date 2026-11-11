@@ -63,14 +63,14 @@ import { currentRun } from "./services.ts";
 import type { PlanServices } from "./services.ts";
 
 /** The inner set and variant an instance layer shows, as the plan leaves them. */
-export type InnerVariant = {
+type InnerVariant = {
   readonly set: PlannedSet;
   readonly spec: VariantSpec;
   readonly node: Target<ComponentNode>;
 };
 
 /** What an instance layer links to: the outer set's properties and the kit's icons. */
-export type InstanceLinks = {
+type InstanceLinks = {
   readonly properties: ReadonlyMap<string, string>;
   readonly icons: ReadonlyMap<string, PlannedIcon>;
 };

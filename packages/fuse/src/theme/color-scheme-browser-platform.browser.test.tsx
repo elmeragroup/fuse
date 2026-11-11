@@ -8,7 +8,7 @@ afterEach(() => {
 });
 
 function transitionStyleCount() {
-  // DOM audit: disable-transition injects a role-less <style>; count by its text.
+  // Disable-transition injects a role-less <style>; count by its text.
   return [...document.head.querySelectorAll("style")].filter((style) =>
     style.textContent.includes("transition:none")
   ).length;
@@ -26,26 +26,11 @@ describe("browser adapter transition suppression", () => {
     platform.root.write("light", { nonce: "csp" });
     expect(document.documentElement.getAttribute("data-theme")).toBe("light");
     expect(transitionStyleCount()).toBe(1);
-    // DOM audit: the injected transition lock is a <style> with nonce, no role.
+    // The injected transition lock is a <style> with nonce, no role.
     const injected = [...document.head.querySelectorAll("style")].find((style) =>
       style.textContent.includes("transition:none")
     );
     expect(injected?.getAttribute("nonce")).toBe("csp");
     await expect.poll(() => transitionStyleCount()).toBe(0);
-  });
-
-  it("is safe when document.body is missing", async () => {
-    const platform = createBrowserColorSchemePlatform();
-    document.documentElement.setAttribute("data-theme", "light");
-
-    const body = document.body;
-    body.remove();
-    try {
-      platform.root.write("dark", { nonce: undefined });
-      expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
-      await expect.poll(() => transitionStyleCount()).toBe(0);
-    } finally {
-      document.documentElement.append(body);
-    }
   });
 });

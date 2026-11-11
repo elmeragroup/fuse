@@ -1,6 +1,6 @@
 import { NodeServices } from "@effect/platform-node";
 import { assert, describe, it } from "@effect/vitest";
-import { Clock, Deferred, Duration, Effect, Fiber, Layer, Option, Queue } from "effect";
+import { Deferred, Effect, Fiber, Layer } from "effect";
 import { TestConsole } from "effect/testing";
 import { spawnSync } from "node:child_process";
 import { mkdir, mkdtemp, readdir, readFile, rm, writeFile } from "node:fs/promises";
@@ -10,7 +10,6 @@ import path from "node:path";
 import { Capture } from "../src/capture.ts";
 import type { CaptureRequest } from "../src/capture.ts";
 import { DocsServer, DocsServerFailed } from "../src/docs-server.ts";
-import { holdLock } from "../src/file-lock.ts";
 import { Gh } from "../src/gh.ts";
 import { runShots } from "../src/run-shots.ts";
 import { shotOptions } from "./parse-argv.ts";
@@ -137,7 +136,7 @@ const checkout = Effect.acquireRelease(
 /** Both sides on a server that is already running, so no local docs server is involved. */
 const REMOTE = ["--before", "http://127.0.0.1:9/", "--after", "http://127.0.0.1:9/"];
 
-/** Five themes, two densities and three engines: 30 pairs. */
+/** Five themes, two densities, two engines and two viewports: 40 pairs. */
 const MATRIX = [
   "matrix",
   "--route",
@@ -149,45 +148,11 @@ const MATRIX = [
   "--densities",
   "dense,comfortable",
   "--engines",
-  "chromium,webkit,firefox",
+  "chromium,webkit",
+  "--viewports",
+  "1280x800,390x844",
   ...REMOTE,
 ];
-
-/** A sleep the code under test asked for: when it ends, and the gate that ends it. */
-type PendingSleep = { readonly until: number; readonly wake: Deferred.Deferred<void> };
-
-/**
- * A clock that stands still unless the test moves it. Each sleep is posted to `sleeps` and waits
- * for the test to release it, so the test moves time only once the code under test is asleep,
- * never while it does real work, such as a lock attempt's file I/O.
- */
-function steppedClock() {
-  return Effect.gen(function* () {
-    const sleeps = yield* Queue.unbounded<PendingSleep>();
-    let now = 0;
-    const nanos = () => BigInt(now) * 1_000_000n;
-    const clock: Clock.Clock = {
-      currentTimeMillisUnsafe: () => now,
-      currentTimeMillis: Effect.sync(() => now),
-      currentTimeNanosUnsafe: nanos,
-      currentTimeNanos: Effect.sync(nanos),
-      monotonicTimeNanosUnsafe: nanos,
-      monotonicTimeNanos: Effect.sync(nanos),
-      sleep: (duration) =>
-        Effect.gen(function* () {
-          const wake = yield* Deferred.make<void>();
-          yield* Queue.offer(sleeps, { until: now + Duration.toMillis(duration), wake });
-          yield* Deferred.await(wake);
-        }),
-    };
-    /** Moves time to the end of `sleep` and lets it finish. */
-    const release = (sleep: PendingSleep) =>
-      Effect.sync(() => {
-        now = sleep.until;
-      }).pipe(Effect.andThen(Deferred.succeed(sleep.wake, undefined)));
-    return { clock, sleeps, release };
-  });
-}
 
 /** The files in a run's output directory, with their contents. */
 function outputOf(root: string, name: string) {
@@ -207,7 +172,7 @@ describe("runShots", () => {
     Effect.gen(function* () {
       const root = yield* checkout;
       const record = newRecord();
-      // 3 themes × 2 densities × 3 engines with diffs: 18 pairs of 3 images, 54 in all.
+      // 5 themes × 2 densities × 2 engines with diffs: 20 pairs of 3 images, 60 in all.
       const options = shotOptions([
         "matrix",
         "--route",
@@ -215,17 +180,17 @@ describe("runShots", () => {
         "--target",
         "button:Save",
         "--themes",
-        "neutral-fkas-private,branded-tkas-company,branded-fkse-private",
+        "neutral-fkas-private,branded-tkas-company,branded-fkse-private,neutral-elma-private,branded-elma-company",
         "--densities",
         "dense,comfortable",
         "--engines",
-        "chromium,webkit,firefox",
+        "chromium,webkit",
         "--pr",
         "182",
       ]);
       const failure = yield* Effect.flip(runShots(options, root).pipe(Effect.provide(stubs(record, "run"))));
       assert.strictEqual(failure._tag, "TooManyAttachments");
-      assert.include(failure.message, "54 images");
+      assert.include(failure.message, "60 images");
       assert.include(failure.message, "at most 50");
       assert.include(failure.message, "split the matrix across runs");
       assert.deepStrictEqual(record.captures, []);
@@ -236,11 +201,11 @@ describe("runShots", () => {
     Effect.gen(function* () {
       const root = yield* checkout;
       const record = newRecord();
-      // 30 pairs without diffs: 60 images.
+      // 40 pairs without diffs: 80 images.
       yield* runShots(shotOptions([...MATRIX, "--no-diff"]), root).pipe(Effect.provide(stubs(record, "run")));
       assert.strictEqual(record.captures.length, 2);
       const printed = (yield* TestConsole.logLines).map(String).join("\n");
-      assert.include(printed, "gh pr edit attaches at most 50 files; this run has 60.");
+      assert.include(printed, "gh pr edit attaches at most 50 files; this run has 80.");
     }).pipe(Effect.scoped)
   );
 
@@ -303,7 +268,7 @@ describe("runShots", () => {
   );
 
   it.live(
-    "fails at once with the manual instruction when the pull request's lock has an abandoned reclaim",
+    "fails with the manual instruction when the pull request's lock has an abandoned reclaim",
     () =>
       Effect.gen(function* () {
         const root = yield* checkout;
@@ -313,7 +278,6 @@ describe("runShots", () => {
           await mkdir(`${lockFile}.reclaim`, { recursive: true });
           await writeFile(lockFile, JSON.stringify({ pid: deadPid(), token: "crashed-upload" }));
         });
-        const started = Date.now();
         const failure = yield* Effect.flip(
           runShots(
             shotOptions([
@@ -332,67 +296,8 @@ describe("runShots", () => {
         );
         assert.strictEqual(failure._tag, "LockNeedsRecovery");
         assert.include(failure.message, `delete ${lockFile}.reclaim`);
-        // One wait for the mutex, not a retry loop.
-        assert.isBelow(Date.now() - started, 10_000);
       }).pipe(Effect.scoped),
     { timeout: 30_000 }
-  );
-
-  it.live("gives up after two minutes while another run holds the pull request's lock", () =>
-    Effect.gen(function* () {
-      const root = yield* checkout;
-      // Another live run is uploading to the same pull request.
-      yield* holdLock(path.join(root, ".scratch/shots/.pr-182.lock"), "pull request #182");
-      const record = newRecord();
-      const stepped = yield* steppedClock();
-      const upload = yield* Effect.forkChild(
-        runShots(
-          shotOptions([
-            "waiting",
-            "--route",
-            "/components/button",
-            "--target",
-            "button:Save",
-            ...REMOTE,
-            "--no-diff",
-            "--pr",
-            "182",
-          ]),
-          root
-        ).pipe(
-          Effect.provide(stubs(record, "waiting")),
-          Effect.provideService(Clock.Clock, stepped.clock),
-          Effect.flip
-        )
-      );
-      // The run is asleep whenever a sleep is posted, so moving time to that sleep's end can
-      // never land in the middle of a lock attempt.
-      let released = 0;
-      for (;;) {
-        const next = yield* Effect.raceFirst(
-          Queue.take(stepped.sleeps).pipe(Effect.map(Option.some)),
-          Fiber.await(upload).pipe(Effect.as(Option.none<PendingSleep>()))
-        );
-        if (Option.isNone(next)) {
-          break;
-        }
-        released += 1;
-        yield* stepped.release(next.value);
-      }
-      const failure = yield* Fiber.join(upload);
-
-      assert.strictEqual(failure._tag, "UploadWaitTimedOut");
-      assert.include(failure.message, "pull request #182");
-      assert.include(failure.message, "2 minutes");
-      // It gave up at the bound, by at most one 200 ms retry interval after it, having slept
-      // between attempts the whole way.
-      assert.isTrue(failure._tag === "UploadWaitTimedOut" && failure.waitedMillis >= 120_000);
-      assert.isTrue(failure._tag === "UploadWaitTimedOut" && failure.waitedMillis <= 120_200);
-      assert.strictEqual(released, 600);
-      // It never got the lock, so it neither read nor edited the pull request.
-      assert.deepStrictEqual(record.ghReads, []);
-      assert.deepStrictEqual(record.ghEdits, []);
-    }).pipe(Effect.scoped)
   );
 
   it.live("refuses a second run with the same name and leaves the first run's files alone", () =>

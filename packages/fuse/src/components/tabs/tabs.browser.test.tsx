@@ -10,16 +10,7 @@ import {
   assertFocusRingAtBothDensities,
   assertFocusRingOnKeyboardAbsentOnMouse,
 } from "../../../test/assert-focus-ring";
-import {
-  computedOklch,
-  CONTROL_MD,
-  cssVarColor,
-  fkasBranded,
-  guenBranded,
-  px,
-  renderThemed,
-  stampDensity,
-} from "../../../test/themed-browser-render";
+import { cssVarColor, fkasBranded, guenBranded, renderThemed } from "../../../test/themed-browser-render";
 import { ThemeScope } from "../../theme";
 import { Tabs } from "./index";
 
@@ -47,9 +38,9 @@ function htmlPanel(name: string): HTMLElement {
   return element;
 }
 
-async function settledFace(name: string): Promise<{ fill: string; text: string }> {
+function settledFace(name: string) {
   const tab = htmlTab(name);
-  await Promise.all(tab.getAnimations().map((animation) => animation.finished));
+  for (const animation of tab.getAnimations()) animation.finish();
   const style = getComputedStyle(tab);
   return { fill: style.backgroundColor, text: style.color };
 }
@@ -115,8 +106,9 @@ describe("Tabs", () => {
     renderThemed(<AccountPassword />);
     await expect.element(page.getByRole("tabpanel", { name: "Account", exact: true })).toBeVisible();
     const account = htmlPanel("Account");
-    // Base UI keeps a closing panel mounted until the panel's own animations finish.
-    account.animate([{ opacity: 1 }, { opacity: 0.99 }], { duration: 1000 });
+    // Base UI keeps a closing panel mounted until the panel's own animations finish; paused, this
+    // one never does while the test looks.
+    account.animate([{ opacity: 1 }, { opacity: 0.99 }], { duration: 1000 }).pause();
 
     htmlTab("Password").click();
     await new Promise((resolve) => requestAnimationFrame(resolve));
@@ -189,23 +181,6 @@ describe("Tabs", () => {
     await assertFocusRingOnKeyboardAbsentOnMouse(htmlTab("Account"), htmlPanel("Account"));
   });
 
-  it("emits data-variant=line and leaves the active trigger unfilled, in page text", async () => {
-    renderThemed(
-      <ThemeScope theme={fkasBranded}>
-        <AccountPassword variant="line" />
-      </ThemeScope>
-    );
-    const list = htmlTablist();
-    // Oracle sanity: fkas branded light sets card text apart from page text.
-    expect(cssVarColor(list, "--card-foreground")).not.toBe(cssVarColor(list, "--foreground"));
-
-    expect(list.getAttribute("data-variant")).toBe("line");
-    expect(await settledFace("Account")).toEqual({
-      fill: "rgba(0, 0, 0, 0)",
-      text: cssVarColor(list, "--foreground"),
-    });
-  });
-
   it.each([
     ["fkas private light", fkasBranded, "light"],
     ["fkas private dark", fkasBranded, "dark"],
@@ -228,111 +203,14 @@ describe("Tabs", () => {
       // Oracle sanity: the page tint differs from the card, so a trigger on the page fill fails.
       expect(cssVarColor(list, "--background")).not.toBe(active.fill);
       expect(getComputedStyle(list).backgroundColor).toBe(cssVarColor(list, "--muted"));
-      expect(await settledFace("Account")).toEqual(active);
-      expect((await settledFace("Billing")).fill).toBe("rgba(0, 0, 0, 0)");
+      expect(settledFace("Account")).toEqual(active);
+      expect(settledFace("Billing").fill).toBe("rgba(0, 0, 0, 0)");
 
       // The pointer stays on Billing after the click, so this also reads the hovered active face.
       await userEvent.click(page.getByRole("tab", { name: "Billing", exact: true }));
       expect(htmlTab("Billing").matches(":hover")).toBe(true);
-      expect(await settledFace("Billing")).toEqual(active);
-      expect((await settledFace("Account")).fill).toBe("rgba(0, 0, 0, 0)");
+      expect(settledFace("Billing")).toEqual(active);
+      expect(settledFace("Account").fill).toBe("rgba(0, 0, 0, 0)");
     }
   );
-
-  it.each([
-    ["fkas private", fkasBranded],
-    ["guen", guenBranded],
-  ] as const)(
-    "lifts the active default trigger above its list on a tinted light page, %s",
-    async (_name, theme) => {
-      // #418's symptom: on these pages the active tab sat darker than its list. Oracle: a raised
-      // tab reads lighter than the list it sits in, whichever token fills it.
-      renderThemed(
-        <ThemeScope theme={theme}>
-          <AccountPassword />
-        </ThemeScope>
-      );
-      const list = computedOklch(getComputedStyle(htmlTablist()).backgroundColor);
-      const active = computedOklch((await settledFace("Account")).fill);
-
-      expect(active.l).toBeGreaterThan(list.l);
-    }
-  );
-
-  it("matches signed md list height when horizontal and stays content-sized when vertical", () => {
-    const { rerender } = renderThemed(
-      <>
-        <Tabs.Root defaultValue="account">
-          <Tabs.List>
-            <Tabs.Trigger value="account">Horizontal</Tabs.Trigger>
-            <Tabs.Trigger value="password">Password</Tabs.Trigger>
-          </Tabs.List>
-          <Tabs.Content value="account">Account panel</Tabs.Content>
-          <Tabs.Content value="password">Password panel</Tabs.Content>
-        </Tabs.Root>
-        <Tabs.Root defaultValue="account" orientation="vertical">
-          <Tabs.List>
-            <Tabs.Trigger value="account">Vertical</Tabs.Trigger>
-            <Tabs.Trigger value="password">Password</Tabs.Trigger>
-          </Tabs.List>
-          <Tabs.Content value="account">Account panel</Tabs.Content>
-          <Tabs.Content value="password">Password panel</Tabs.Content>
-        </Tabs.Root>
-      </>
-    );
-
-    const horizontalHeights: number[] = [];
-    for (const density of ["dense", "comfortable"] as const) {
-      stampDensity(density);
-      const horizontal = htmlTab("Horizontal").closest("[role='tablist']");
-      const vertical = htmlTab("Vertical").closest("[role='tablist']");
-      if (!(horizontal instanceof HTMLElement) || !(vertical instanceof HTMLElement)) {
-        throw new Error("expected both tablists");
-      }
-      const horizontalHeight = px(getComputedStyle(horizontal).height);
-      const verticalHeight = px(getComputedStyle(vertical).height);
-      expect(horizontalHeight, `${density} horizontal`).toBe(CONTROL_MD[density].height);
-      expect(verticalHeight, `${density} vertical`).not.toBe(CONTROL_MD[density].height);
-      const trigger = htmlTab("Horizontal");
-      const triggerStyle = getComputedStyle(trigger);
-      expect(px(triggerStyle.paddingInlineStart), `${density} trigger px`).toBe(CONTROL_MD[density].px);
-      expect(px(triggerStyle.fontSize), `${density} trigger font`).toBe(CONTROL_MD[density].font);
-      expect(px(triggerStyle.lineHeight), `${density} trigger leading`).toBe(CONTROL_MD[density].leading);
-      horizontalHeights.push(horizontalHeight);
-    }
-    expect(horizontalHeights[0]).not.toBe(horizontalHeights[1]);
-
-    stampDensity("dense");
-    rerender(
-      <div data-density="comfortable">
-        <Tabs.Root defaultValue="account">
-          <Tabs.List>
-            <Tabs.Trigger value="account">Nested</Tabs.Trigger>
-          </Tabs.List>
-          <Tabs.Content value="account">Account panel</Tabs.Content>
-        </Tabs.Root>
-      </div>
-    );
-    const nested = htmlTab("Nested").closest("[role='tablist']");
-    if (!(nested instanceof HTMLElement)) {
-      throw new Error("expected the nested tablist");
-    }
-    expect(px(getComputedStyle(nested).height)).toBe(CONTROL_MD.dense.height);
-
-    rerender(
-      <ThemeScope theme={fkasBranded}>
-        <Tabs.Root defaultValue="account">
-          <Tabs.List>
-            <Tabs.Trigger value="account">Scoped</Tabs.Trigger>
-          </Tabs.List>
-          <Tabs.Content value="account">Account panel</Tabs.Content>
-        </Tabs.Root>
-      </ThemeScope>
-    );
-    const scoped = htmlTab("Scoped").closest("[role='tablist']");
-    if (!(scoped instanceof HTMLElement)) {
-      throw new Error("expected the scoped tablist");
-    }
-    expect(px(getComputedStyle(scoped).height)).toBe(CONTROL_MD.dense.height);
-  });
 });

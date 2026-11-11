@@ -9,15 +9,11 @@ import { Effect, Result } from "effect";
 import type { FileSystem, Layer } from "effect";
 
 import type { KitBuildError } from "../../src/components/build-errors.ts";
-import { walkLayers } from "../../src/components/kit-spec.ts";
 import type { KitSpec } from "../../src/components/kit-spec.ts";
 import type { AliasCycle, CollectionSpec, InvalidVariableSet, VariableSet } from "../../src/variable-set.ts";
 import { deepFrozen } from "../../test/frozen.ts";
-import { ICONS_PAGE, KIT_PAGES, previewsOn } from "../../test/kit-inventory.ts";
-import type { InventoryPage } from "../../test/kit-inventory.ts";
 import { createFakeFigma } from "./fake-figma.ts";
 import type { FakeFigma } from "./fake-figma.ts";
-import { childNamed } from "./fake-fixtures.ts";
 import { keyOf } from "./identity.ts";
 import { reconcileKit } from "./reconcile.ts";
 import type { ReconcileReport } from "./reconcile.ts";
@@ -40,7 +36,7 @@ type TokenSync = {
 };
 
 /** The kit and the synced variables it binds. */
-export type KitFixture = {
+type KitFixture = {
   readonly kit: KitSpec;
   readonly collections: readonly CollectionSpec[];
 };
@@ -78,45 +74,13 @@ export function kitFixture(): Promise<KitFixture> {
 }
 
 /**
- * The kit cut down to some of its pages, for a suite whose contract sits on them: those pages, every
- * page that holds a set their instances show, and the icon library's page, with the sets and
- * previews on them. A run of the cut kit plans and applies those pages as the whole kit would.
- *
- * @param kit - The whole kit.
- * @param pageKeys - The pages the suite reads.
- * @returns The cut kit.
- */
-export function kitOn(kit: KitSpec, pageKeys: readonly string[]): KitSpec {
-  const pageOfSet = new Map(kit.componentSets.map((set) => [set.key, set.page]));
-  const pages = new Set([...pageKeys, kit.icons.page]);
-  for (let grown = true; grown;) {
-    grown = false;
-    for (const set of kit.componentSets.filter((candidate) => pages.has(candidate.page))) {
-      for (const layer of set.variants.flatMap((variant) => walkLayers(variant.root))) {
-        const page = layer.kind === "instance" ? pageOfSet.get(layer.componentSet) : undefined;
-        if (page !== undefined && !pages.has(page)) {
-          pages.add(page);
-          grown = true;
-        }
-      }
-    }
-  }
-  return {
-    ...kit,
-    pages: kit.pages.filter((page) => pages.has(page.key)),
-    componentSets: kit.componentSets.filter((set) => pages.has(set.page)),
-    previews: kit.previews.filter((preview) => pages.has(preview.page)),
-  };
-}
-
-/**
  * A synced file without the kit pages.
  *
  * @param collections - The synced collections.
  * @param unavailableFonts - Fonts the machine cannot load.
  * @returns The file.
  */
-export function syncedFile(
+function syncedFile(
   collections: readonly CollectionSpec[],
   unavailableFonts: readonly FontName[] = []
 ): FakeFigma {
@@ -124,7 +88,7 @@ export function syncedFile(
 }
 
 /** A synced file the plugin applied the kit to, and the report of that Apply. */
-export type AppliedKit = {
+type AppliedKit = {
   /**
    * The file, opened again for the next run. The fixtures hand each call a fork of it, which
    * changes apart from every other.
@@ -159,32 +123,13 @@ let applied: Promise<AppliedKit> | undefined;
 /**
  * Apply the kit to a synced file on the first call, and hand each call a fork of that file, so a
  * Vitest worker applies the kit once for every suite it runs. A fork holds what a freshly applied
- * file holds, which `reconcile.fake.test.ts` cross-checks.
+ * file holds.
  *
  * @returns The forked file and the Apply's report.
  */
-export function appliedKit(): Promise<AppliedKit> {
+function appliedKit(): Promise<AppliedKit> {
   applied ??= kitFixture().then(({ kit, collections }) => applyTo(syncedFile(collections), kit));
   return forkOf(applied);
-}
-
-/** The applied files of the cut kits, by their page keys. */
-const appliedCuts = new Map<string, Promise<AppliedKit>>();
-
-/**
- * Apply the kit cut down to some pages (`kitOn`) to a synced file on the first call for those
- * pages, and hand each call a fork of that file, as `appliedKit()` does for the whole kit.
- *
- * @param pageKeys - The pages the suite reads.
- * @returns The forked file and the Apply's report.
- */
-export function appliedKitOn(pageKeys: readonly string[]): Promise<AppliedKit> {
-  const key = pageKeys.join(" ");
-  const base =
-    appliedCuts.get(key) ??
-    kitFixture().then(({ kit, collections }) => applyTo(syncedFile(collections), kitOn(kit, pageKeys)));
-  appliedCuts.set(key, base);
-  return forkOf(base);
 }
 
 /**
@@ -244,16 +189,6 @@ export async function componentSet(file: FakeFigma, name: string): Promise<Compo
 }
 
 /**
- * The icon library on the Icons page.
- *
- * @param file - The file.
- * @returns The library's frame.
- */
-export async function iconLibrary(file: FakeFigma): Promise<FrameNode> {
-  return childNamed(await kitPage(file, ICONS_PAGE.key), "FRAME", "Icons");
-}
-
-/**
  * Names as the plugin's change lines list them: `a`, `a and b`, `a, b and c`.
  *
  * @param names - The names.
@@ -263,24 +198,3 @@ export function listed(names: readonly string[]): string {
   const last = names.at(-1) ?? "";
   return names.length < 2 ? last : `${names.slice(0, -1).join(", ")} and ${last}`;
 }
-
-/**
- * The names of a page's previews, in frame order.
- *
- * @param page - The page.
- * @returns The names.
- */
-export function previewNames(page: InventoryPage): readonly string[] {
-  return previewsOn(page).map(({ name }) => name);
-}
-
-/** The pages a run creates on a file without them, the component pages first. */
-export const CREATE_PAGES = [...KIT_PAGES, ICONS_PAGE].map(
-  (page) => `Document: create the page ${page.name}`
-);
-
-/** Each page's previews a run creates, then its sets placed in a row with the previews below them. */
-export const CREATE_AND_PLACE_PREVIEWS = KIT_PAGES.flatMap((page) => [
-  ...previewNames(page).map((name) => `${page.name}: create the preview ${name}`),
-  `${page.name}: place ${listed(page.sets.map((set) => set.name))} in a row and stack 4 previews below them`,
-]);

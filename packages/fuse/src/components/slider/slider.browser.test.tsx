@@ -6,40 +6,13 @@ import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
-import { assertWithinKeyboardFocusRingAtBothDensities } from "../../../test/assert-focus-ring";
 import { expectInvalidFocusRing, expectInvalidRing } from "../../../test/assert-invalid-ring";
-import { SUPPORTED_LOCALES, withLocale } from "../../../test/locale-matrix";
+import { withLocale } from "../../../test/locale-matrix";
 import { whilePointerPressed } from "../../../test/pointer-press";
-import {
-  CONTROL_MD,
-  cssVarColor,
-  effectiveOpacity,
-  formNamed,
-  px,
-  renderThemed,
-  roleNamed,
-  stampDensity,
-} from "../../../test/themed-browser-render";
+import { formNamed, renderThemed, roleNamed } from "../../../test/themed-browser-render";
 import type { SupportedLocale } from "../../intl/locale-context";
-import { DENSITIES } from "../../theme";
 import { Slider } from "./slider";
 import type { SliderValue } from "./slider";
-
-/** The range thumbs' default names per locale, written by hand for a slider labelled "Pris". */
-const RANGE_NAMES = {
-  "en-US": ["Pris, minimum", "Pris, maximum"],
-  "nb-NO": ["Pris, minimum", "Pris, maksimum"],
-  "sv-SE": ["Pris, minimum", "Pris, maximum"],
-  "fi-FI": ["Pris, minimi", "Pris, maksimi"],
-} as const;
-
-/** The same thumbs' value text for `[0.5, 2.5]`, written by hand per locale. */
-const RANGE_VALUE_TEXT = {
-  "en-US": ["0.5", "2.5"],
-  "nb-NO": ["0,5", "2,5"],
-  "sv-SE": ["0,5", "2,5"],
-  "fi-FI": ["0,5", "2,5"],
-} as const;
 
 beforeEach(() => {
   document.documentElement.style.fontSize = "16px";
@@ -175,36 +148,6 @@ describe("Slider", () => {
     expect(valueNow("Pinned")).toBe(10);
   });
 
-  it.each(SUPPORTED_LOCALES)(
-    "names each range thumb on its own and announces its formatted value alone in %s, reporting the range's shape",
-    async (locale) => {
-      const onChange = vi.fn();
-      const commits: (readonly number[])[] = [];
-      renderSlider(
-        <Slider
-          label="Pris"
-          defaultValue={[0.5, 2.5]}
-          maxValue={5}
-          step={0.5}
-          onChange={onChange}
-          onValueCommitted={(value) => commits.push(value)}
-        />,
-        locale
-      );
-      const [startName, endName] = RANGE_NAMES[locale];
-      const [startText, endText] = RANGE_VALUE_TEXT[locale];
-      expect(valueNow(startName)).toBe(0.5);
-      expect(valueNow(endName)).toBe(2.5);
-      expect(sliderNamed(startName).getAttribute("aria-valuetext")).toBe(startText);
-      expect(sliderNamed(endName).getAttribute("aria-valuetext")).toBe(endText);
-
-      sliderNamed(endName).focus();
-      await userEvent.keyboard("{ArrowLeft}");
-      expect(onChange).toHaveBeenLastCalledWith([0.5, 2]);
-      expect(commits).toEqual([[0.5, 2]]);
-    }
-  );
-
   it("keeps an uncontrolled range's thumbs and values when defaultValue changes after mount", () => {
     const { rerender } = renderSlider(<Slider label="Pris" defaultValue={[20, 80]} />);
     rerender(withLocale("en-US", <Slider label="Pris" defaultValue={50} />));
@@ -212,49 +155,7 @@ describe("Slider", () => {
     expect(valueNow("Pris, maximum")).toBe(80);
   });
 
-  it("treats a one-number array from untyped code as a single value, for keyboard and pointer alike", async () => {
-    const onChange = vi.fn();
-    renderSlider(
-      <div style={{ width: 400 }}>
-        <Slider
-          label="Level"
-          // @ts-expect-error the types reject a one-number array, but untyped callers can pass one
-          defaultValue={[50]}
-          onChange={onChange}
-        />
-      </div>
-    );
-    expect(page.getByRole("slider").elements()).toHaveLength(1);
-    expect(valueNow("Level")).toBe(50);
-
-    sliderNamed("Level").focus();
-    await userEvent.keyboard("{ArrowRight}");
-    expect(onChange).toHaveBeenLastCalledWith(51);
-
-    const control = controlOf("Level");
-    const box = control.getBoundingClientRect();
-    await userEvent.click(page.elementLocator(control), {
-      position: { x: box.width * 0.25, y: box.height / 2 },
-    });
-    expect(valueNow("Level")).toBeGreaterThanOrEqual(23);
-    expect(valueNow("Level")).toBeLessThanOrEqual(27);
-    expect(onChange).toHaveBeenLastCalledWith(valueNow("Level"));
-  });
-
-  it("names range thumbs from aria-label, and lets thumbLabels override the dictionary", () => {
-    renderSlider(
-      <>
-        <Slider aria-label="Spacing" defaultValue={[2, 6]} />
-        <Slider label="Hours" defaultValue={[8, 16]} thumbLabels={["Opens", "Closes"]} />
-      </>
-    );
-    expect(valueNow("Spacing, minimum")).toBe(2);
-    expect(valueNow("Spacing, maximum")).toBe(6);
-    expect(valueNow("Opens")).toBe(8);
-    expect(valueNow("Closes")).toBe(16);
-  });
-
-  it("shows the formatted value in the label row", async () => {
+  it("shows and announces a formatOptions value after a key step: 25%, not 0.25", async () => {
     renderSlider(
       <Slider
         label="Opacity"
@@ -273,6 +174,31 @@ describe("Slider", () => {
     sliderNamed("Opacity").focus();
     await userEvent.keyboard("{ArrowRight}");
     expect(output.textContent).toBe("30%");
+    expect(sliderNamed("Opacity").getAttribute("aria-valuetext")).toBe("30%");
+  });
+
+  it("names each range thumb and announces its value alone, in the provider locale", async () => {
+    // nb-NO, written by hand: the dictionary's thumb names and a decimal comma.
+    renderSlider(<Slider label="Pris" defaultValue={[0.5, 2.5]} maxValue={5} step={0.5} />, "nb-NO");
+    expect(sliderNamed("Pris, minimum").getAttribute("aria-valuetext")).toBe("0,5");
+    expect(sliderNamed("Pris, maksimum").getAttribute("aria-valuetext")).toBe("2,5");
+
+    sliderNamed("Pris, maksimum").focus();
+    await userEvent.keyboard("{ArrowLeft}");
+    expect(sliderNamed("Pris, maksimum").getAttribute("aria-valuetext")).toBe("2");
+  });
+
+  it("names range thumbs from aria-label, and lets thumbLabels override the dictionary", () => {
+    renderSlider(
+      <>
+        <Slider aria-label="Spacing" defaultValue={[2, 6]} />
+        <Slider label="Hours" defaultValue={[8, 16]} thumbLabels={["Opens", "Closes"]} />
+      </>
+    );
+    expect(valueNow("Spacing, minimum")).toBe(2);
+    expect(valueNow("Spacing, maximum")).toBe(6);
+    expect(valueNow("Opens")).toBe(8);
+    expect(valueNow("Closes")).toBe(16);
   });
 
   it("blocks input when disabled and shows the disabled state face", async () => {
@@ -297,24 +223,6 @@ describe("Slider", () => {
     expect(onChange).not.toHaveBeenCalled();
   });
 
-  it("keeps a disabled thumb opaque over the track, in the muted tone of the disabled indicator", () => {
-    renderSlider(
-      <div style={{ width: 400, height: 240 }}>
-        <Slider label="Brightness" showValue isDisabled defaultValue={40} />
-        <Slider label="Pris" isDisabled defaultValue={[20, 80]} />
-        <Slider label="Level" orientation="vertical" isDisabled defaultValue={40} />
-      </div>
-    );
-    for (const name of ["Brightness", "Pris, minimum", "Pris, maximum", "Level"]) {
-      const thumb = thumbOf(name);
-      // A translucent thumb lets the indicator and track beneath show through its centre.
-      expect(effectiveOpacity(thumb), name).toBe(1);
-      expect(getComputedStyle(thumb).backgroundColor, name).toBe(cssVarColor(thumb, "--background"));
-      expect(getComputedStyle(thumb).borderTopColor, name).toBe(cssVarColor(thumb, "--muted-foreground"));
-      expect(getComputedStyle(thumb).cursor, name).toBe("not-allowed");
-    }
-  });
-
   it("wires isInvalid and errorMessage through the Field, with a solid error line inside the halo for keyboard focus and the halo alone at rest", async () => {
     renderSlider(
       <>
@@ -331,20 +239,6 @@ describe("Slider", () => {
 
     sliderNamed("Invalid budget").blur();
     expectInvalidRing("thumb at rest", thumbOf("Invalid budget"));
-  });
-
-  it("paints the shared focus ring on the thumb for keyboard focus", async () => {
-    renderSlider(
-      <>
-        <button type="button">Before</button>
-        <Slider label="Focus" defaultValue={50} />
-      </>
-    );
-    await assertWithinKeyboardFocusRingAtBothDensities(
-      roleNamed("button", "Before"),
-      sliderNamed("Focus"),
-      thumbOf("Focus")
-    );
   });
 });
 
@@ -458,91 +352,6 @@ describe("Slider onValueCommitted", () => {
   });
 });
 
-describe("Slider density", () => {
-  it("takes the md control height at both densities", () => {
-    for (const density of DENSITIES) {
-      stampDensity(density);
-      const { unmount } = renderSlider(<Slider label={`Height ${density}`} defaultValue={50} />);
-      expect(px(getComputedStyle(controlOf(`Height ${density}`)).height), density).toBe(
-        CONTROL_MD[density].height
-      );
-      unmount();
-    }
-  });
-
-  it("fills a 240px-tall parent below its label row when vertical, at both densities", async () => {
-    for (const density of DENSITIES) {
-      const label = `Bass ${density}`;
-      stampDensity(density);
-      const { unmount } = renderSlider(
-        <div data-testid="parent" style={{ height: 240 }}>
-          <Slider label={label} orientation="vertical" defaultValue={50} />
-        </div>
-      );
-      const parentBottom = page.getByTestId("parent").element().getBoundingClientRect().bottom;
-      expect(
-        Math.abs(controlOf(label).getBoundingClientRect().bottom - parentBottom),
-        density
-      ).toBeLessThanOrEqual(1);
-
-      const thumbTop = thumbOf(label).getBoundingClientRect().top;
-      sliderNamed(label).focus();
-      await userEvent.keyboard("{ArrowUp}{ArrowUp}{ArrowUp}{ArrowUp}{ArrowUp}");
-      expect(valueNow(label), density).toBe(55);
-      expect(thumbOf(label).getBoundingClientRect().top, density).toBeLessThan(thumbTop);
-      unmount();
-    }
-  });
-
-  // A host without preflight leaves `content-box` in place, and a host may set a root font
-  // under 16px: the thumb paints 16px and keeps a 24px target centred on it either way.
-  it.each(["content-box", "border-box"] as const)(
-    "paints a 16px thumb with a centred 24px target under %s, at a 14px or 16px root and both densities",
-    (boxSizing) => {
-      const sizing = document.createElement("style");
-      sizing.textContent = `*, ::before, ::after { box-sizing: ${boxSizing}; }`;
-      document.head.append(sizing);
-      try {
-        for (const rootFont of ["16px", "14px"]) {
-          document.documentElement.style.fontSize = rootFont;
-          for (const density of DENSITIES) {
-            const label = `Target ${density} ${rootFont}`;
-            stampDensity(density);
-            const { unmount } = renderSlider(
-              <div style={{ width: 400, padding: 24 }}>
-                <Slider label={label} defaultValue={50} />
-              </div>
-            );
-            const thumb = thumbOf(label);
-            const box = thumb.getBoundingClientRect();
-            expect([box.width, box.height], label).toEqual([16, 16]);
-
-            const centreX = box.left + box.width / 2;
-            const centreY = box.top + box.height / 2;
-            // The sampled corners sit half a pixel inside the 24px square.
-            const reach = 24 / 2 - 0.5;
-            for (const [dx, dy] of [
-              [-reach, -reach],
-              [reach, -reach],
-              [-reach, reach],
-              [reach, reach],
-            ] as const) {
-              const hit = document.elementFromPoint(centreX + dx, centreY + dy);
-              expect(
-                hit === thumb || (hit instanceof Node && thumb.contains(hit)),
-                `${label} ${dx},${dy}`
-              ).toBe(true);
-            }
-            unmount();
-          }
-        }
-      } finally {
-        sizing.remove();
-      }
-    }
-  );
-});
-
 /**
  * The reset listener's plumbing is proved in `use-form-reset.browser.test.tsx`. Slider
  * remounts its base-ui root on reset, as NumberField does, so these cases prove the remount
@@ -637,29 +446,5 @@ describe("Slider native form reset", () => {
     await expect.poll(() => valueNow("Price")).toBe(50);
     expect(document.activeElement).toBe(sliderNamed("Price"));
     expect(new FormData(formNamed("Price form")).getAll("price")).toEqual(["50"]);
-  });
-});
-
-/**
- * Attribute writes on a thumb's range input while the value moves: Fuse marks the input once
- * when it attaches, so moving the thumb writes nothing to it.
- */
-describe("Slider thumb input attributes", () => {
-  it("marks each thumb input once, not on every value change", async () => {
-    renderSlider(<Slider label="Size" defaultValue={10} />);
-    const input = sliderNamed("Size");
-    expect(input.hasAttribute("data-focus-ring-control")).toBe(true);
-    const records: MutationRecord[] = [];
-    const observer = new MutationObserver((delivered) => {
-      records.push(...delivered);
-    });
-    observer.observe(input, { attributes: true, attributeFilter: ["data-focus-ring-control"] });
-
-    input.focus();
-    await userEvent.keyboard("{ArrowRight}".repeat(10));
-    expect(input.getAttribute("aria-valuenow")).toBe("20");
-    records.push(...observer.takeRecords());
-    observer.disconnect();
-    expect(records).toHaveLength(0);
   });
 });

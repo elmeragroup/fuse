@@ -5,7 +5,7 @@
  * harness pins it). In nb-NO, sv-SE and fi-FI React Aria's own text comes from
  * `formatRangeToParts`, which differs between engines (a shared month dropped, sv-SE days
  * zero-padded in Chromium), so there the oracle is React Aria's sentence with each end's date as
- * that locale's CLDR long date without the year the end repeats (D-3-19); Chromium, Firefox and
+ * that locale's CLDR long date without the year the end repeats (D-3-19); Chromium and
  * WebKit must each reproduce it.
  */
 import { LocalizedStringFormatter } from "@internationalized/string";

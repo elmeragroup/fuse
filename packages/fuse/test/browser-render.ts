@@ -4,7 +4,7 @@ import { flushSync } from "react-dom";
 import { createRoot } from "react-dom/client";
 import { afterEach } from "vitest";
 
-export type BrowserRenderResult = {
+type BrowserRenderResult = {
   host: HTMLDivElement;
   rerender: (node: ReactNode) => void;
   unmount: () => void;

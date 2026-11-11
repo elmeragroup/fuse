@@ -45,7 +45,7 @@ const LONGEST = 5000;
  * @param t - Seconds since release.
  * @returns The share of the way the spring has come.
  */
-export function springPosition({ stiffness, damping }: Spring, t: number): number {
+function springPosition({ stiffness, damping }: Spring, t: number): number {
   const natural = Math.sqrt(stiffness);
   const ratio = damping / (2 * natural);
   if (ratio < 1) {

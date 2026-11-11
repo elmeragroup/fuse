@@ -15,14 +15,6 @@ function buttonNamed(name: string): HTMLElement {
   return element;
 }
 
-function liveRegion(button: HTMLElement): HTMLElement {
-  const live = button.querySelector("[aria-live='polite']");
-  if (!(live instanceof HTMLElement)) {
-    throw new Error("Expected an aria-live polite announcement");
-  }
-  return live;
-}
-
 describe("ConfirmButton", () => {
   it.each([
     ["the pointer", () => userEvent.click(page.getByRole("button", { name: /^(Delete|Confirm delete)$/ }))],
@@ -128,73 +120,6 @@ describe("ConfirmButton", () => {
     await expect.poll(() => page.getByRole("dialog").query()).toBeNull();
   });
 
-  it("disarms on blur when tabbing away, and stays resting on refocus", async () => {
-    const onConfirm = vi.fn();
-    const onBlur = vi.fn();
-    renderThemed(
-      <>
-        <ConfirmButton onConfirm={onConfirm} onBlur={onBlur} armedChildren="Confirm delete">
-          Delete
-        </ConfirmButton>
-        <button type="button">Next</button>
-      </>
-    );
-
-    await userEvent.click(page.getByRole("button", { name: "Delete", exact: true }));
-    expect(buttonNamed("Confirm delete").getAttribute("data-armed")).toBe("true");
-
-    await userEvent.tab();
-    expect(onConfirm).not.toHaveBeenCalled();
-    expect(onBlur).toHaveBeenCalled();
-    expect(document.activeElement).toBe(buttonNamed("Next"));
-
-    const resting = buttonNamed("Delete");
-    expect(resting.hasAttribute("data-armed")).toBe(false);
-    resting.focus();
-    expect(buttonNamed("Delete").hasAttribute("data-armed")).toBe(false);
-  });
-
-  // The announcement chain: armedAriaLabel, then a string armedChildren, then the resting aria-label.
-  it.each([
-    [
-      "armedAriaLabel over string armedChildren and the resting aria-label",
-      "Really delete",
-      "Confirm delete",
-      "Really delete",
-    ],
-    ["string armedChildren over the resting aria-label", undefined, "Confirm delete", "Confirm delete"],
-    [
-      "the resting aria-label when armedChildren is not a string",
-      undefined,
-      <span key="confirm">Confirm</span>,
-      "Delete row",
-    ],
-  ] as const)("announces %s", async (_case, armedAriaLabel, armedChildren, announced) => {
-    renderThemed(
-      <ConfirmButton
-        onConfirm={() => undefined}
-        armedAriaLabel={armedAriaLabel}
-        armedChildren={armedChildren}
-        aria-label="Delete row">
-        Delete
-      </ConfirmButton>
-    );
-
-    await userEvent.click(page.getByRole("button", { name: "Delete row", exact: true }));
-    const armed = buttonNamed(announced);
-    expect(armed.getAttribute("aria-label")).toBe(announced);
-    expect(armed.textContent).toContain("Confirm");
-    const live = liveRegion(armed);
-    expect(live.classList.contains("sr-only")).toBe(true);
-    expect(live.getAttribute("aria-live")).toBe("polite");
-    expect(live.textContent).toBe(announced);
-
-    await userEvent.keyboard("{Escape}");
-    const restored = buttonNamed("Delete row");
-    expect(restored.getAttribute("aria-label")).toBe("Delete row");
-    expect(restored.querySelector("[aria-live='polite']")).toBeNull();
-  });
-
   it.each([
     ["disabled", { disabled: true }, null, true],
     // Pending keeps the button focusable, so it is blocked through aria-disabled instead.
@@ -258,5 +183,56 @@ describe("ConfirmButton", () => {
     expect(resting.hasAttribute("disabled")).toBe(false);
     expect(resting.getAttribute("aria-disabled")).toBe("true");
     expect(resting.hasAttribute("data-armed")).toBe(false);
+  });
+});
+
+function liveRegion(button: HTMLElement): HTMLElement {
+  const live = button.querySelector("[aria-live='polite']");
+  if (!(live instanceof HTMLElement)) {
+    throw new Error("Expected an aria-live polite announcement");
+  }
+  return live;
+}
+
+describe("ConfirmButton", () => {
+  // The announcement chain: armedAriaLabel, then a string armedChildren, then the resting aria-label.
+  it.each([
+    [
+      "armedAriaLabel over string armedChildren and the resting aria-label",
+      "Really delete",
+      "Confirm delete",
+      "Really delete",
+    ],
+    ["string armedChildren over the resting aria-label", undefined, "Confirm delete", "Confirm delete"],
+    [
+      "the resting aria-label when armedChildren is not a string",
+      undefined,
+      <span key="confirm">Confirm</span>,
+      "Delete row",
+    ],
+  ] as const)("announces %s", async (_case, armedAriaLabel, armedChildren, announced) => {
+    renderThemed(
+      <ConfirmButton
+        onConfirm={() => undefined}
+        armedAriaLabel={armedAriaLabel}
+        armedChildren={armedChildren}
+        aria-label="Delete row">
+        Delete
+      </ConfirmButton>
+    );
+
+    await userEvent.click(page.getByRole("button", { name: "Delete row", exact: true }));
+    const armed = buttonNamed(announced);
+    expect(armed.getAttribute("aria-label")).toBe(announced);
+    expect(armed.textContent).toContain("Confirm");
+    const live = liveRegion(armed);
+    expect(live.classList.contains("sr-only")).toBe(true);
+    expect(live.getAttribute("aria-live")).toBe("polite");
+    expect(live.textContent).toBe(announced);
+
+    await userEvent.keyboard("{Escape}");
+    const restored = buttonNamed("Delete row");
+    expect(restored.getAttribute("aria-label")).toBe("Delete row");
+    expect(restored.querySelector("[aria-live='polite']")).toBeNull();
   });
 });

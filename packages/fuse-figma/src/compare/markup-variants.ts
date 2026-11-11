@@ -1,5 +1,5 @@
 /**
- * The variants `src/compare/kit-markup.test.ts` checks each kit definition's state table against, as
+ * The variants the markup check reads each kit definition's state table against, as
  * Tailwind and fuse.css compile them: the attribute variants an element carries, the group variants
  * an element above it carries, the peer variants a sibling before it carries, the parent-context and
  * tag variants, and the variants static markup cannot show. A definition whose state table names a

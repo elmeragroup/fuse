@@ -5,7 +5,7 @@
 
 /** Every layer of one slot, such as each series' `radar-chart-line`, in render order. */
 export function radarLayers(host: HTMLElement, slot: string): SVGSVGElement[] {
-  // DOM audit: radar layers are aria-hidden plot output, so their slot is the only locator.
+  // Radar layers are aria-hidden plot output, so their slot is the only locator.
   return [...host.querySelectorAll<SVGSVGElement>(`[data-slot="${slot}"]`)];
 }
 
@@ -18,7 +18,7 @@ export function radarLayer(host: HTMLElement, slot: string, index = 0): SVGSVGEl
 
 /** One path of a series layer by its part, such as a Line's "solid" run or its "marked" one. */
 export function layerPath(layer: Element | undefined, part: string): SVGPathElement {
-  // DOM audit: a layer's paths are named by their part, which the stylesheet styles them by.
+  // A layer's paths are named by their part, which the stylesheet styles them by.
   const path = layer?.querySelector<SVGPathElement>(`[data-part="${part}"]`);
   if (path === null || path === undefined) throw new Error(`no ${part} path`);
   return path;

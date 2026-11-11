@@ -23,9 +23,9 @@ Done when every in-scope test file has a recorded baseline result.
 Split the suite into [lanes](SKILL.md#terms). For `theme/`, the lanes could be
 composition, CSS emission, the color-scheme runtime and script, density,
 contrast, and the provider. Include the subsystem's cases in shared suites
-(`source-contracts.test.ts`, the docs demo browser tests, the packed-consumer
-checks) and its support files in `packages/fuse/test/`. A shared suite's cases
-go to the lane of the owner they test.
+(the docs browser tests, the packed-consumer checks, the lint rules in
+`tooling/oxlint-plugin-fuse`) and its support files in `packages/fuse/test/`.
+A shared suite's cases go to the lane of the owner they test.
 
 Done when every test file and shared-suite case the subsystem owns belongs to
 exactly one lane.

@@ -44,14 +44,14 @@ Root scripts fan out through turbo unless noted.
 | ------------------------- | --------------------------------------------------------------------------------------------------------------------- |
 | `pnpm build`              | Builds every package (`@elmeragroup/fuse` via tsdown, the Next apps, static-theme)                                    |
 | `pnpm dev`                | Runs the dev servers                                                                                                  |
-| `pnpm lint`               | `oxlint . --deny-warnings` over the tree, including the two local plugins and the type-aware rules on tsrs            |
+| `pnpm lint`               | `oxlint . --deny-warnings` over the tree: the `elmera`, `anti-slop` and `fuse` plugins, type-aware rules on tsrs      |
 | `pnpm lint:fix`           | The same with `--fix`                                                                                                 |
 | `pnpm format`             | `oxfmt` write; `pnpm format:check` is the CI form                                                                     |
 | `pnpm test`               | Unit tests (vitest) in every package                                                                                  |
-| `pnpm test:browser`       | Fast browser-mode suites in the local gate (Fuse components, static-theme)                                            |
+| `pnpm test:browser`       | Browser-mode suites in the local gate (Fuse's `browser`, `browser-engines` and `browser-clipboard`, static-theme)     |
 | `pnpm test:e2e`           | End-to-end suites against a built docs app (`next start`) and the `pnpm shots` tool                                   |
 | `pnpm test:types`         | Type-level tests (`*.test-d.tsx`)                                                                                     |
-| `pnpm test:repo-policy`   | Root-only vitest project in [`test/`](test) — merge-workflow shape, lint script, README claims                        |
+| `pnpm test:repo-policy`   | Root-only vitest project in [`test/`](test): the merge task graph and the component generator                         |
 | `pnpm type-check`         | `tsrs --noEmit` per package                                                                                           |
 | `pnpm gen`                | plop scaffolder — new component (source, entry facade, tests, demos)                                                  |
 | `pnpm changeset`          | Adds a changeset; see [Contribution flow](#contribution-flow)                                                         |
@@ -71,9 +71,8 @@ Package-scoped scripts worth knowing:
 | Script                                             | Does                                                                                  |
 | -------------------------------------------------- | ------------------------------------------------------------------------------------- |
 | `pnpm --filter @elmeragroup/fuse generate:exports` | Regenerates the root barrel and runtime export names from the entry facades           |
-| `pnpm --filter @elmeragroup/fuse pack`             | Produces the single tarball that `package:check` and `size-limit` consume             |
+| `pnpm --filter @elmeragroup/fuse pack`             | Produces the single tarball that `package:check` consumes                             |
 | `pnpm --filter @elmeragroup/fuse package:check`    | publint / attw / exports-map / emitted-directive checks against that tarball          |
-| `pnpm --filter @elmeragroup/fuse size-limit`       | Bundle budgets against that tarball                                                   |
 | `pnpm --filter docs generate`                      | Regenerates the docs API tables and each component page's committed API artifacts     |
 | `pnpm --filter @elmeragroup/fuse-figma figma:sync` | Writes the tokens into a Figma file; `figma:check` prints the plan and fails on drift |
 

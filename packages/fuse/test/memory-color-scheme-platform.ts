@@ -34,13 +34,13 @@ export type MemoryPlatformInit = {
 type MemoryStorageArea = "local" | "session" | "none";
 
 /** One recorded `data-theme` write. */
-export type MemoryRootWrite = { value: string; transition: ColorSchemeTransition };
+type MemoryRootWrite = { value: string; transition: ColorSchemeTransition };
 
 /** One recorded storage write; `accepted` is false when the area refused it. */
-export type MemoryStorageWrite = { key: string; value: string; accepted: boolean };
+type MemoryStorageWrite = { key: string; value: string; accepted: boolean };
 
 /** The window-shaped face: the bootstrap's vm sandbox, and a host for the browser adapter. */
-export type MemoryColorSchemeHost = ColorSchemeHost & {
+type MemoryColorSchemeHost = ColorSchemeHost & {
   /** A self-reference, because the bootstrap reads `window.matchMedia`. */
   readonly window: MemoryColorSchemeHost;
   /** The session area, so a session event can carry a distinct `storageArea`. */

@@ -1,5 +1,5 @@
-// CONTRACT section 9.4's key maps, the Escape rule and the modifier rule, in Chromium, Firefox and
-// WebKit. Every expected option name, position and set size is written by hand from the committed
+// CONTRACT section 9.4's key maps, the Escape rule and the modifier rule, in Chromium.
+// Every expected option name, position and set size is written by hand from the committed
 // Elhub rows and the hand-written month-switch fixture, never read from Fuse.
 import { virtual } from "@guidepup/virtual-screen-reader";
 import { afterEach, describe, expect, it } from "vitest";
@@ -40,6 +40,19 @@ async function enterChart(host: HTMLElement): Promise<void> {
 }
 
 describe("horizontal bars", () => {
+  it("is one Tab stop: Tab leaves the plot from any option, and Shift+Tab returns to the active one", async () => {
+    const { host } = renderThemed(<S06Chart orientation="horizontal" />);
+    const listbox = host.querySelector('[role="listbox"]');
+    await enterChart(host);
+    await userEvent.keyboard("{ArrowDown}{ArrowDown}");
+    const active = focused();
+    expect(listbox?.contains(document.activeElement)).toBe(true);
+    await userEvent.keyboard("{Tab}");
+    expect(listbox?.contains(document.activeElement)).toBe(false);
+    await userEvent.keyboard("{Shift>}{Tab}{/Shift}");
+    expect(focused()).toEqual(active);
+  });
+
   it("move between categories with Up and Down and between series with Left and Right", async () => {
     const { host } = renderThemed(<S06Chart orientation="horizontal" />);
     expect(host.querySelector('[role="listbox"]')?.getAttribute("aria-orientation")).toBe("vertical");
@@ -93,7 +106,7 @@ describe("the effective window", () => {
     await userEvent.keyboard("{End}");
     expect(focused()).toEqual(["mandag 20. oktober: Forbruk 20 kilowattimer", "11", "11"]);
     // The window's highest value is 20, so the 1-2-5 rule nices the domain to [0, 20] in steps of 5.
-    // DOM audit: y ticks are aria-hidden text, so their slot is the only locator.
+    // Y ticks are aria-hidden text, so their slot is the only locator.
     expect([...host.querySelectorAll('[data-slot="chart-y-tick"]')].map((tick) => tick.textContent)).toEqual([
       "0 kWh",
       "5 kWh",
@@ -151,7 +164,7 @@ describe("the Escape rule and key safety", () => {
     document.addEventListener("keydown", recordKey);
     await enterChart(host);
     await userEvent.keyboard("{ArrowRight}");
-    // DOM audit: Root's data-active, data-pinned and data-selected are its public paint contract.
+    // Root's data-active, data-pinned and data-selected are its public paint contract.
     const root = host.querySelector('[data-slot="chart"]');
     expect(root?.hasAttribute("data-active")).toBe(true);
     keys.length = 0;
@@ -194,7 +207,7 @@ describe("the Escape rule and key safety", () => {
     const { host } = renderThemed(<S06Chart />);
     await enterChart(host);
     await userEvent.keyboard("{Enter}");
-    // DOM audit: Root's data-pinned attribute is its public paint contract.
+    // Root's data-pinned attribute is its public paint contract.
     expect(host.querySelector('[data-slot="chart"]')?.hasAttribute("data-pinned")).toBe(true);
     await userEvent.keyboard("{Enter}");
     expect(host.querySelector('[data-slot="chart"]')?.hasAttribute("data-pinned")).toBe(false);
@@ -209,12 +222,12 @@ describe("the Escape rule and key safety", () => {
     );
     await enterChart(host);
     await userEvent.keyboard("{ArrowDown}{ArrowDown}{Enter}");
-    // DOM audit: Root's data-active, data-pinned and data-selected are its public paint contract.
+    // Root's data-active, data-pinned and data-selected are its public paint contract.
     const root = host.querySelector('[data-slot="chart"]');
     expect(root?.hasAttribute("data-selected")).toBe(true);
     expect(host.querySelector('[role="status"]')?.textContent).toBe("Hytte valgt");
     expect(
-      // DOM audit: the toggle's data-series index ties it to the focused series.
+      // The toggle's data-series index ties it to the focused series.
       host.querySelector('[data-slot="chart-legend-toggle"][data-series="1"]')?.getAttribute("aria-pressed")
     ).toBe("true");
     await userEvent.keyboard("{ArrowUp}{ArrowUp}{Enter}");

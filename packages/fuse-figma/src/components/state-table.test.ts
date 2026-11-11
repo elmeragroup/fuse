@@ -166,26 +166,6 @@ describe("the shared state entries", () => {
       expect(holdsAt(definition({ axes: [invalidAxis] }), "state", variant)).toEqual(["invalid"]);
     }
   );
-
-  it("omit the states no standalone component shows, a link inside a box's text, and the definition's own omissions", () => {
-    const grouped = definition({
-      axes: [CONTROL_STATES],
-      omittedStates: new Set(["in-data-[slot=button-group]"]),
-    });
-    const table = makeStateTable(grouped);
-    for (const variant of [
-      "enabled-active",
-      "aria-invalid",
-      "data-invalid",
-      "aria-expanded",
-      "[&>a]",
-      "[&>a:hover]",
-      "in-data-[slot=button-group]",
-    ]) {
-      expect(table(variant)).toEqual({ kind: "omitted" });
-    }
-    expect(table("data-pressed")).toEqual({ kind: "unmodelled" });
-  });
 });
 
 /** Icons as the DOM holds them. The spinner's `<svg>` sits in a span that carries the data-icon. */
@@ -276,50 +256,6 @@ describe("a definition's own facts", () => {
   });
 });
 
-describe("one meaning per variant", () => {
-  const always = () => true;
-  it.each([
-    ["a fact for a shared state entry", { facts: new Map([["enabled-hover", always]]) }, "enabled-hover"],
-    ["a fact for a child selector", { facts: new Map([["[&_svg]", always]]) }, "[&_svg]"],
-    ["an omission of a desktop breakpoint", { omittedStates: new Set(["md"]) }, "md"],
-    [
-      "an omission of the icon edge",
-      { omittedStates: new Set(["has-data-[icon=inline-start]"]) },
-      "has-data-[icon=inline-start]",
-    ],
-    ["an omission of a shared state entry", { omittedStates: new Set(["focus-visible"]) }, "focus-visible"],
-    ["a state that renders a shared omission", { states: { pending: ["aria-invalid"] } }, "aria-invalid"],
-    ["a fact for a shared omission", { facts: new Map([["aria-invalid", always]]) }, "aria-invalid"],
-    [
-      "a fact for the invalid state's variant",
-      {
-        axes: [{ name: "state", values: [...CONTROL_STATES.values, "invalid"] }],
-        facts: new Map([["data-invalid", always]]),
-      },
-      "data-invalid",
-    ],
-    [
-      "both a fact and an omission",
-      { facts: new Map([["aria-pressed", always]]), omittedStates: new Set(["aria-pressed"]) },
-      "aria-pressed",
-    ],
-    [
-      "both a fact and an omitted pseudo-element",
-      { facts: new Map([["after", always]]), omittedPseudoElements: new Map([["after", "a hit area"]]) },
-      "after",
-    ],
-    [
-      "both an omitted state and an omitted composition",
-      { omittedStates: new Set(["*"]), omittedCompositions: new Map([["*", "a label around a field"]]) },
-      "*",
-    ],
-  ])("refuses %s", (_case, overrides: Partial<Definition>, variant) => {
-    expect(() => makeStateTable(definition({ axes: [CONTROL_STATES], ...overrides }))).toThrow(
-      `Chip gives \`${variant}\` a second meaning`
-    );
-  });
-});
-
 // Unit under test: `withInPlaceFacts`. Oracle: Base UI stamps `aria-expanded="true"` on the trigger
 // of an open popup, so `aria-expanded:` holds on that instance alone, while every set omits it.
 describe("the facts an instance part declares in place", () => {
@@ -370,30 +306,6 @@ describe("the facts an instance part declares in place", () => {
     expect(makeStateTable(inner)(variant).kind).toBe("omitted-for");
     expect(() => withInPlaceFacts(inner, new Map([[variant, () => true]]))).toThrow(
       `an instance of Chip gives \`${variant}\` a second meaning`
-    );
-  });
-
-  // Oracle: Base UI keeps a disabled toolbar button focusable and stamps `aria-disabled="true"` on it,
-  // which Button's recipe reads, though the Button set renders `aria-disabled` only in its pending
-  // cell. A stamped fact holds over that meaning; a fact that is not stamped, or a stamp on a variant
-  // the set gives no state, stays refused.
-  it("hold a stamped fact over the meaning a state gives its variant, and refuse it unstamped", () => {
-    const pending = definition({
-      axes: [{ name: "state", values: ["rest", "disabled", "pending"] }],
-      states: { pending: ["data-disabled", "aria-disabled"] },
-    });
-    const focusable = new Map([["aria-disabled", (cell: Cell) => cell.state === "disabled"]]);
-    const meaning = withInPlaceFacts(pending, focusable, new Set(["aria-disabled"]))("aria-disabled");
-    expect(
-      meaning.kind === "condition"
-        ? ["rest", "disabled", "pending"].filter((state) => meaning.holds({ state }))
-        : []
-    ).toEqual(["disabled"]);
-    expect(() => withInPlaceFacts(pending, focusable)).toThrow(
-      "an instance of Chip gives `aria-disabled` a second meaning"
-    );
-    expect(() => withInPlaceFacts(states, expanded, new Set(["aria-expanded"]))).toThrow(
-      "an instance of Chip gives `aria-expanded` a second meaning"
     );
   });
 

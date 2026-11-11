@@ -30,7 +30,7 @@ export class CaughtError extends Component<{ children: ReactNode }, CaughtErrorS
 
 /** The name and message of the error a `CaughtError` caught, or `null`s while none is caught. */
 export function caughtError() {
-  // DOM audit: the caught message is the fixture's own span, which no role or name identifies.
+  // The caught message is the fixture's own span, which no role or name identifies.
   const caught = document.querySelector("[data-error-name]");
   return { name: caught?.getAttribute("data-error-name") ?? null, message: caught?.textContent ?? null };
 }

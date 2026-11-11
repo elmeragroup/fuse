@@ -108,30 +108,32 @@ including dead production code whose only callers are tests.
 - names or fixtures that promise more than the input exercises, such as a
   "closes on Escape" test that only asserts the popup opened.
 
+**Flakes.** The test's result depends on timing, load, engine or order: a
+wall-clock budget, a frame count, a fixed delay, a pixel read at one viewport.
+Make it deterministic or delete it in the same change; a rerun or retry is no
+fix.
+
 ## Retention bar
 
 Keep a test that independently enforces a public behavior `AGENTS.md` names,
-or the package manifests, size budgets, release workflow, or repo policy. Also
-keep:
+or the package manifests, release workflow, or repo policy. Also keep:
 
 - a cross-check between two representations that names its oracle, as
   `AGENTS.md` allows (theme CSS against `composeTheme`, the popover clamp
   against `CONTAINER_PADDING`);
 - a hand pin of a shared recipe or constant, once, in its owner's test;
 - a reviewed inventory that forces a decision on each new item, such as a
-  component's server or client status in `source-contracts.test.ts` or a page
-  in `apps/docs/test/fixtures/`;
+  page in `apps/docs/test/fixtures/`;
 - a tracked file snapshot of a public artifact under `__snapshots__/`, or a
   drift gate that compares committed generated files with a fresh generation.
   Every change to either shows in the PR diff;
 - a guard that keeps a retired public API from returning;
 - call ordering when order is observable behavior;
 - a regression with a credible failure mode;
-- source inspection in the central suite
-  (`packages/fuse/src/source-contracts.test.ts`), when it is the cheapest
-  independent guard and the test states why lint or an existing gate cannot
-  enforce it. It goes red on a contract change (a directive, an import
-  boundary, a public key) and survives an identifier-only refactor;
+- a module-graph or CSS check that no AST lint rule in
+  `tooling/oxlint-plugin-fuse` can state, when the test says why. A mechanical
+  source contract (a directive, an import boundary, a required spread) is a
+  lint rule instead;
 - a retained test that fails on the baseline. Handle it as
   [CAMPAIGN.md §7](CAMPAIGN.md#7-product-defects) says.
 

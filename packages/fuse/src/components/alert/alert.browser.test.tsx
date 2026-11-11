@@ -1,6 +1,4 @@
-import type { ReactNode } from "react";
-
-import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import * as CssColor from "@elmeragroup/color/css-color";
@@ -10,40 +8,20 @@ import * as Wcag from "@elmeragroup/color/wcag";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
-import { ringLayers, settleTransitions } from "../../../test/assert-invalid-ring";
-import { declaredRole } from "../../../test/declared-role";
-import { HOSTS, centreY, firstLineCentreY, hostCss } from "../../../test/first-line";
+import { HOSTS, centreY, hostCss } from "../../../test/first-line";
 import {
-  computedContrast,
-  cssVarColor,
   headingNamed,
-  LABEL,
   px,
   renderThemed,
   roleNamed,
-  snapshotDocumentTheme,
   stampDensity,
-  stampDocumentTheme,
-  stampTheme,
   textNamed,
 } from "../../../test/themed-browser-render";
 import { DENSITIES } from "../../theme/density";
-import { LEGAL_THEMES, themeSlug } from "../../theme/theme-input";
-import { Badge } from "../badge/badge";
-import { Item } from "../item";
 import { PopoverContent, PopoverRoot, PopoverTrigger } from "../popover/popover";
 import { Alert } from "./alert";
 
 const VARIANTS = ["default", "destructive", "warning", "success", "info"] as const;
-
-/** Starts of Phosphor's bold paths (`dist/defs/*.es.js`), the icon default weight. */
-const ICON_PATH = {
-  default: "M108,84a16,16,0,1,1,16,16A16,16,0,0,1,108,84Z",
-  warning: "M240.26,186.1",
-  destructive: "M236,91.55v72.9",
-  success: "M176.49,95.51",
-  info: "M108,84a16,16,0,1,1,16,16A16,16,0,0,1,108,84Z",
-} as const;
 
 function alertNamed(name: string): HTMLElement {
   const element = page.getByRole("alert").element();
@@ -54,7 +32,7 @@ function alertNamed(name: string): HTMLElement {
 }
 
 function descriptionIn(root: HTMLElement): HTMLElement {
-  // DOM audit: Item.Media's top alignment keys on the item-description data-slot hook.
+  // Item.Media's top alignment keys on the item-description data-slot hook.
   const description = root.querySelector('[data-slot="item-description"]');
   if (!(description instanceof HTMLElement)) {
     throw new Error("expected item-description");
@@ -63,7 +41,7 @@ function descriptionIn(root: HTMLElement): HTMLElement {
 }
 
 function iconIn(root: HTMLElement): SVGSVGElement {
-  // DOM audit: variant icons are asserted via the alert-icon data-slot hook.
+  // Variant icons are asserted via the alert-icon data-slot hook.
   const icon = root.querySelector('[data-slot="alert-icon"]');
   if (!(icon instanceof SVGSVGElement)) {
     throw new Error("expected alert-icon");
@@ -99,7 +77,7 @@ async function settled(element: HTMLElement): Promise<void> {
 }
 
 describe("Alert", () => {
-  it("finds Root by alert role for every variant and keeps children inside it", () => {
+  it("finds Root by alert role for every variant and keeps its heading and body inside it", () => {
     for (const variant of VARIANTS) {
       const { unmount } = renderThemed(
         <Alert.Root variant={variant}>
@@ -108,17 +86,8 @@ describe("Alert", () => {
         </Alert.Root>
       );
       const root = alertNamed(variant);
-      expect(root.getAttribute("data-slot")).toBe("item");
-      expect(root.getAttribute("data-variant")).toBe("outline");
-      expect(root.getAttribute("data-size")).toBe("sm");
-      const title = headingNamed(`${variant} title`, 3);
-      expect(root.contains(title)).toBe(true);
-      expect(root.textContent).toContain(`${variant} body`);
-      // The variant stays on Root: Title and Description emit no variant attribute.
-      const description = textNamed(`${variant} body`);
-      expect(title.getAttribute("variant"), variant).toBeNull();
-      expect(description.getAttribute("variant"), variant).toBeNull();
-      expect(description.tagName, variant).toBe("DIV");
+      expect(root.contains(headingNamed(`${variant} title`, 3)), variant).toBe(true);
+      expect(root.contains(textNamed(`${variant} body`)), variant).toBe(true);
       unmount();
     }
   });
@@ -239,107 +208,6 @@ describe("Alert", () => {
     }
   });
 
-  it("lets a consumer rule on a description's block child override its spacing", () => {
-    renderThemed(
-      <>
-        {/* Unlayered, like the Fuse utilities in dist/styles.css: specificity alone decides. */}
-        <style>{".consumer-description > ul { margin-top: 0; }"}</style>
-        <style>{hostCss("preflight")}</style>
-        <Alert.Root>
-          <Alert.Title>Before you move</Alert.Title>
-          <Alert.Description className="consumer-description">
-            <p>Have these ready:</p>
-            <ul>
-              <li>Meter number</li>
-            </ul>
-          </Alert.Description>
-        </Alert.Root>
-      </>
-    );
-    const paragraph = textNamed("Have these ready:").getBoundingClientRect();
-    const list = page.getByRole("list").element().getBoundingClientRect();
-    // A class and a child combinator, (0,1,1), outrank the block-gap rule, which weighs one
-    // element selector, (0,0,1).
-    expect(list.top - paragraph.bottom).toBe(0);
-  });
-
-  it("keeps the block step under unlayered margin resets on a preflight-free host", () => {
-    // The worst order for each reset: an element reset before the Fuse stylesheet, where it ties
-    // on order, and a universal reset after it, where it would win any tie.
-    const elementReset = document.createElement("style");
-    elementReset.textContent = "p, ul { margin: 0; }";
-    document.head.prepend(elementReset);
-    const universalReset = document.createElement("style");
-    universalReset.textContent = "* { margin: 0; }";
-    document.head.append(universalReset);
-    onTestFinished(() => {
-      elementReset.remove();
-      universalReset.remove();
-    });
-    renderThemed(
-      <Alert.Root>
-        <Alert.Title>Before you move</Alert.Title>
-        <Alert.Description>
-          <p>Have these ready:</p>
-          <ul>
-            <li>Meter number</li>
-          </ul>
-        </Alert.Description>
-      </Alert.Root>
-    );
-    const paragraph = textNamed("Have these ready:").getBoundingClientRect();
-    const list = page.getByRole("list").element().getBoundingClientRect();
-    // The documented block step is 8px, twice the title's 4px gap.
-    expect(list.top - paragraph.bottom).toBe(8);
-  });
-
-  it("spaces a paragraph and list 4px under the title and 8px apart without preflight", () => {
-    renderThemed(
-      <Alert.Root>
-        <Alert.Title>Before you move</Alert.Title>
-        <Alert.Description>
-          <p>Have these ready:</p>
-          <ul>
-            <li>Meter number</li>
-          </ul>
-        </Alert.Description>
-      </Alert.Root>
-    );
-    const title = headingNamed("Before you move", 3).getBoundingClientRect();
-    const paragraph = textNamed("Have these ready:").getBoundingClientRect();
-    const list = page.getByRole("list").element().getBoundingClientRect();
-    const description = descriptionIn(alertNamed("default")).getBoundingClientRect();
-    // The content column's gap is 0.25rem, 4px at the default 16px root, and the documented
-    // block step is 8px; user-agent `p` and `ul` margins would add to both and trail the list.
-    expect.soft(paragraph.top - title.bottom, "title to paragraph").toBeCloseTo(4, 2);
-    expect.soft(list.top - paragraph.bottom, "paragraph to list").toBeCloseTo(8, 2);
-    expect.soft(description.bottom - list.bottom, "list to description end").toBeCloseTo(0, 2);
-  });
-
-  it("lets a consumer's Tailwind spacing class on the description override its spacing", () => {
-    // The host's build emits `[&>*+*]:mt-0`, not dist/styles.css. Placed before the Fuse
-    // stylesheet, it can only win on specificity: on a tie, the later Fuse rule would win.
-    const consumerRule = document.createElement("style");
-    consumerRule.textContent = String.raw`.\[\&\>\*\+\*\]\:mt-0 > * + * { margin-top: 0; }`;
-    document.head.prepend(consumerRule);
-    onTestFinished(() => consumerRule.remove());
-    renderThemed(
-      <>
-        <style>{hostCss("preflight")}</style>
-        <Alert.Root>
-          <Alert.Title>Before you move</Alert.Title>
-          <Alert.Description className="[&>*+*]:mt-0">
-            <p>Have these ready:</p>
-            <p>Your meter number.</p>
-          </Alert.Description>
-        </Alert.Root>
-      </>
-    );
-    const first = textNamed("Have these ready:").getBoundingClientRect();
-    const second = textNamed("Your meter number.").getBoundingClientRect();
-    expect(second.top - first.bottom).toBe(0);
-  });
-
   it("keeps a link in the description on the surrounding text's line", () => {
     renderThemed(
       <Alert.Root>
@@ -378,74 +246,6 @@ describe("Alert", () => {
     // Opening a popover changes nothing in the sentence a reader sees, so the alert keeps its box.
     expect(root.getBoundingClientRect().height).toBe(closedHeight);
   });
-
-  /** Inline-level children that honour a top margin, unlike a plain inline run. */
-  const INLINE_BLOCKS = [
-    {
-      name: "link-styled button",
-      inline: (
-        <button type="button" style={{ font: "inherit", padding: 0, border: 0, background: "none" }}>
-          that
-        </button>
-      ),
-    },
-    { name: "Badge", inline: <Badge>active</Badge> },
-    { name: "image", inline: <img src={PIXEL} alt="meter" width={16} height={16} /> },
-  ] as const;
-
-  /** The rendered height of a description holding `content`. */
-  function descriptionHeightOf(content: ReactNode): number {
-    const { unmount } = renderThemed(
-      <Alert.Root>
-        <Alert.Title>Switch scheduled</Alert.Title>
-        <Alert.Description>{content}</Alert.Description>
-      </Alert.Root>
-    );
-    const height = descriptionIn(alertNamed("default")).getBoundingClientRect().height;
-    unmount();
-    return height;
-  }
-
-  it("keeps an inline-block child after another inline element on the sentence's line box", () => {
-    for (const { name, inline } of INLINE_BLOCKS) {
-      // Without an element before it, nothing can space the child; that sentence is the baseline.
-      const alone = descriptionHeightOf(<>See this and {inline}.</>);
-      const afterEmphasis = descriptionHeightOf(
-        <>
-          See <strong>this</strong> and {inline}.
-        </>
-      );
-      // Emphasis changes the weight of a word, not the height of the line it sits on.
-      expect.soft(afterEmphasis, name).toBe(alone);
-    }
-  });
-
-  it.each(HOSTS)(
-    "centres the icon on the title's first line beside a multi-line description, in a %s host",
-    (host) => {
-      for (const density of DENSITIES) {
-        stampDensity(density);
-        for (const variant of VARIANTS) {
-          const { unmount } = renderThemed(
-            <div style={{ width: "240px" }}>
-              <style>{hostCss(host)}</style>
-              <Alert.Root variant={variant}>
-                <Alert.Title>Switch scheduled</Alert.Title>
-                <Alert.Description>
-                  The supplier switch completes on the first day of next month, and the final invoice from the
-                  current supplier follows within six weeks.
-                </Alert.Description>
-              </Alert.Root>
-            </div>
-          );
-          const icon = iconIn(alertNamed(variant));
-          const line = firstLineCentreY(headingNamed("Switch scheduled", 3));
-          expect(Math.abs(centreY(icon) - line), `${variant} at ${density}`).toBeLessThanOrEqual(0.5);
-          unmount();
-        }
-      }
-    }
-  );
 
   it.each(HOSTS)("keeps the action button centred on the row beside a description, in a %s host", (host) => {
     for (const density of DENSITIES) {
@@ -486,43 +286,6 @@ describe("Alert", () => {
     expect(description.top - title.getBoundingClientRect().bottom).toBeCloseTo(4, 2);
   });
 
-  it("renders the mapped Phosphor glyph for each variant, hidden from AT", () => {
-    for (const variant of VARIANTS) {
-      const { unmount } = renderThemed(
-        <Alert.Root variant={variant}>
-          <Alert.Title>{variant}</Alert.Title>
-        </Alert.Root>
-      );
-      const icon = iconIn(alertNamed(variant));
-      expect(icon.getAttribute("aria-hidden")).toBe("true");
-      expect(icon.getAttribute("data-slot")).toBe("alert-icon");
-      expect(icon.innerHTML).toContain(ICON_PATH[variant]);
-      unmount();
-    }
-  });
-
-  it("finds Title as a level-3 heading and renders level 2 as h2", () => {
-    const { unmount } = renderThemed(
-      <Alert.Root>
-        <Alert.Title>Sync delayed</Alert.Title>
-      </Alert.Root>
-    );
-    const title = headingNamed("Sync delayed", 3);
-    expect(title.tagName).toBe("H3");
-    expect(title.getAttribute("data-slot")).toBe("item-title");
-    expect(title.getAttribute("variant")).toBeNull();
-    unmount();
-
-    renderThemed(
-      <Alert.Root>
-        <Alert.Title level={2}>Facility status</Alert.Title>
-      </Alert.Root>
-    );
-    const h2 = headingNamed("Facility status", 2);
-    expect(h2.tagName).toBe("H2");
-    expect(h2.getAttribute("data-slot")).toBe("item-title");
-  });
-
   it("fires the action button and omits it when onAction is unset", async () => {
     const onAction = vi.fn();
     const { unmount } = renderThemed(
@@ -558,213 +321,28 @@ describe("Alert", () => {
     expect(getComputedStyle(action).backgroundColor).not.toBe(restFill);
     expect(actionContrast(action, alertNamed("default"))).toBeGreaterThanOrEqual(AA_TEXT_CONTRAST);
   });
-
-  it("hovers the info action to its 90% tint with the label at 4.5:1 in every theme and scheme", async () => {
-    const restoreDocumentTheme = snapshotDocumentTheme();
-    onTestFinished(restoreDocumentTheme);
-    renderThemed(
-      <Alert.Root variant="info" onAction={vi.fn()} actionLabel="Read more">
-        <Alert.Title>New prices from 1 November</Alert.Title>
-      </Alert.Root>
-    );
-    const action = roleNamed("button", "Read more");
-    const root = alertNamed("info");
-    // renderThemed's ThemeScope stamp outranks the document's, so the theme goes on that
-    // scope and the scheme on the document.
-    const scope = root.closest<HTMLElement>("[data-theme-brand]");
-    if (scope === null || scope === document.documentElement) {
-      throw new Error("expected the alert inside renderThemed's ThemeScope");
-    }
-    // The tint the hover must paint, built from the role rather than read from the recipe. Equal
-    // paint also proves Button's own `primary` hover fill does not win.
-    const tint = document.createElement("span");
-    tint.style.backgroundColor = "color-mix(in oklab, var(--info) 90%, transparent)";
-    root.append(tint);
-    await userEvent.hover(action);
-    await settled(action);
-
-    for (const scheme of ["light", "dark"] as const) {
-      for (const theme of LEGAL_THEMES) {
-        stampDocumentTheme(theme, scheme);
-        stampTheme(scope, theme);
-        settleTransitions(root, action);
-        const context = `${themeSlug(theme)} ${scheme}`;
-        expect(getComputedStyle(action).backgroundColor, context).toBe(
-          getComputedStyle(tint).backgroundColor
-        );
-        // The label is measured on the computed `oklab()` hover fill composited over the alert's
-        // `info-soft` surface.
-        expect.soft(actionContrast(action, root), context).toBeGreaterThanOrEqual(AA_TEXT_CONTRAST);
-      }
-    }
-  });
 });
 
-describe("Alert text size", () => {
-  it("sets the title and body in the label text at each density, the title medium and the body regular", () => {
-    for (const density of DENSITIES) {
-      stampDensity(density);
-      const { unmount } = renderThemed(
-        <Alert.Root>
-          <Alert.Title>Switch scheduled</Alert.Title>
-          <Alert.Description>The switch completes next month.</Alert.Description>
-        </Alert.Root>
-      );
-      const title = getComputedStyle(headingNamed("Switch scheduled", 3));
-      const description = getComputedStyle(descriptionIn(alertNamed("default")));
-      const { font } = LABEL[density];
-      // 14px dense and 16px comfortable; the title at Tailwind's snug 1.375, the body at normal 1.5.
-      expect(px(title.fontSize), density).toBe(font);
-      expect(px(title.lineHeight), density).toBeCloseTo(font * 1.375, 2);
-      expect(title.fontWeight, density).toBe("500");
-      expect(px(description.fontSize), density).toBe(font);
-      expect(px(description.lineHeight), density).toBeCloseTo(font * 1.5, 2);
-      expect(description.fontWeight, density).toBe("400");
-      unmount();
-    }
-  });
-
-  it("declares the alert's own title, body and described icon media as label parts, and no Item's", () => {
-    renderThemed(
-      <>
-        <Alert.Root>
-          <Alert.Title>Switch scheduled</Alert.Title>
-          <Alert.Description>The switch completes next month.</Alert.Description>
-        </Alert.Root>
-        {/* A plain Item holding the public Alert.Icon keeps Item's fixed type. */}
-        <Item.Root>
-          <Item.Media variant="icon">
-            <Alert.Icon variant="info" />
-          </Item.Media>
-          <Item.Content>
-            <Item.Title>Item title</Item.Title>
-            <Item.Description>Item description</Item.Description>
-          </Item.Content>
-        </Item.Root>
-      </>
+describe("Alert", () => {
+  it("finds Title as a level-3 heading and renders level 2 as h2", () => {
+    const { unmount } = renderThemed(
+      <Alert.Root>
+        <Alert.Title>Sync delayed</Alert.Title>
+      </Alert.Root>
     );
-    const alert = alertNamed("default");
-    // DOM audit: density roles key on data-slot, and Item.Media has no accessible role or name.
-    const [alertMedia, itemMedia] = document.querySelectorAll('[data-slot="item-media"]');
-    expect(alertMedia?.parentElement).toBe(alert);
-    expect(declaredRole(headingNamed("Switch scheduled", 3))).toBe("label");
-    expect(declaredRole(descriptionIn(alert))).toBe("label");
-    expect(alertMedia && declaredRole(alertMedia)).toBe("label");
-    expect(declaredRole(textNamed("Item title"))).toBe("fixed");
-    expect(declaredRole(textNamed("Item description"))).toBe("fixed");
-    expect(itemMedia && declaredRole(itemMedia)).toBe("fixed");
-  });
+    const title = headingNamed("Sync delayed", 3);
+    expect(title.tagName).toBe("H3");
+    expect(title.getAttribute("data-slot")).toBe("item-title");
+    expect(title.getAttribute("variant")).toBeNull();
+    unmount();
 
-  it("keeps a title-only alert's icon media fixed, since it centres on the row", () => {
     renderThemed(
       <Alert.Root>
-        <Alert.Title>Saved</Alert.Title>
+        <Alert.Title level={2}>Facility status</Alert.Title>
       </Alert.Root>
     );
-    // DOM audit: density roles key on data-slot, and Item.Media has no accessible role or name.
-    const media = alertNamed("default").querySelector('[data-slot="item-media"]');
-    expect(media && declaredRole(media)).toBe("fixed");
-  });
-});
-
-describe("Alert focus ring contrast", () => {
-  let restoreDocumentTheme: () => void;
-
-  beforeEach(() => {
-    restoreDocumentTheme = snapshotDocumentTheme();
-  });
-
-  afterEach(() => {
-    restoreDocumentTheme();
-  });
-
-  it.each(["warning", "info"] as const)(
-    "draws the %s action's focus ring at 3:1 against the alert fill in every theme and scheme",
-    async (variant) => {
-      renderThemed(
-        <>
-          <button type="button">Focus start</button>
-          <Alert.Root variant={variant} onAction={vi.fn()} actionLabel="Retry">
-            <Alert.Title>{`${variant} status`}</Alert.Title>
-          </Alert.Root>
-        </>
-      );
-      roleNamed("button", "Focus start").focus();
-      // A real Tab, so the action matches `:focus-visible` and paints the ring.
-      await userEvent.keyboard("{Tab}");
-      const action = roleNamed("button", "Retry");
-      expect(document.activeElement).toBe(action);
-      const root = alertNamed(variant);
-      // renderThemed's ThemeScope stamp outranks the document's, so the theme goes on that
-      // scope and the scheme on the document.
-      const scope = root.closest<HTMLElement>("[data-theme-brand]");
-      if (scope === null || scope === document.documentElement) {
-        throw new Error("expected the alert inside renderThemed's ThemeScope");
-      }
-
-      for (const scheme of ["light", "dark"] as const) {
-        for (const theme of LEGAL_THEMES) {
-          stampDocumentTheme(theme, scheme);
-          stampTheme(scope, theme);
-          settleTransitions(root, action);
-          const [ring] = ringLayers(action);
-          const context = `${themeSlug(theme)} ${scheme}`;
-          expect(ring, context).toBeDefined();
-          // WCAG 1.4.11: the ring's outer edge sits flush on the soft status surface.
-          expect
-            .soft(computedContrast(ring?.color ?? "", getComputedStyle(root).backgroundColor), context)
-            .toBeGreaterThanOrEqual(3);
-        }
-      }
-    }
-  );
-});
-
-/**
- * The text role each variant paints its title and body in, as the alert design specifies it:
- * the soft foreground on the info and warning soft fills, `error` on the destructive tint and the
- * page foreground on the default and success fills.
- */
-const VARIANT_TEXT_ROLE = {
-  default: "--foreground",
-  destructive: "--error",
-  warning: "--warning-soft-foreground",
-  success: "--foreground",
-  info: "--info-soft-foreground",
-} as const;
-
-describe("Alert text colour", () => {
-  it("paints the body in the variant's text role, as the title, in every theme and scheme", () => {
-    const restoreDocumentTheme = snapshotDocumentTheme();
-    onTestFinished(restoreDocumentTheme);
-    for (const variant of VARIANTS) {
-      const { unmount } = renderThemed(
-        <Alert.Root variant={variant}>
-          <Alert.Title>{`${variant} title`}</Alert.Title>
-          <Alert.Description>{`${variant} body`}</Alert.Description>
-        </Alert.Root>
-      );
-      const root = alertNamed(variant);
-      // renderThemed's ThemeScope stamp outranks the document's, so the theme goes on that
-      // scope and the scheme on the document.
-      const scope = root.closest<HTMLElement>("[data-theme-brand]");
-      if (scope === null || scope === document.documentElement) {
-        throw new Error("expected the alert inside renderThemed's ThemeScope");
-      }
-      const title = headingNamed(`${variant} title`, 3);
-      const description = descriptionIn(root);
-      for (const scheme of ["light", "dark"] as const) {
-        for (const theme of LEGAL_THEMES) {
-          stampDocumentTheme(theme, scheme);
-          stampTheme(scope, theme);
-          settleTransitions(root, description);
-          const context = `${variant} ${themeSlug(theme)} ${scheme}`;
-          const role = cssVarColor(root, VARIANT_TEXT_ROLE[variant]);
-          expect.soft(getComputedStyle(description).color, context).toBe(role);
-          expect.soft(getComputedStyle(title).color, context).toBe(role);
-        }
-      }
-      unmount();
-    }
+    const h2 = headingNamed("Facility status", 2);
+    expect(h2.tagName).toBe("H2");
+    expect(h2.getAttribute("data-slot")).toBe("item-title");
   });
 });

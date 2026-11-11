@@ -1,7 +1,7 @@
 import { inflateSync } from "node:zlib";
 
 /** A decoded 8-bit RGB or RGBA PNG. */
-export type DecodedPng = {
+type DecodedPng = {
   width: number;
   height: number;
   /** The channels of one pixel, alpha last when the image has one. */

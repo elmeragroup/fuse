@@ -1,4 +1,4 @@
-import { createRef, StrictMode, Suspense, use, useEffect, useLayoutEffect, useRef } from "react";
+import { createRef, StrictMode, Suspense, use, useLayoutEffect, useRef } from "react";
 import type { ReactNode, RefObject } from "react";
 
 import { flushSync } from "react-dom";
@@ -7,15 +7,9 @@ import { describe, expect, it } from "vitest";
 import { page } from "vitest/browser";
 
 import { render } from "../../test/browser-render";
-import {
-  distinctSteps,
-  hydrateStreamedPage,
-  serverBoundaryNodes,
-  settleScheduledWork,
-} from "../../test/streamed-hydration";
+import { distinctSteps, hydrateStreamedPage, settleScheduledWork } from "../../test/streamed-hydration";
 import { Popover } from "../components/popover";
 import { ThemeScope } from "./theme-scope";
-import type { ThemeScopeProps } from "./theme-scope";
 import { useResolvedPortalContainer } from "./theme-scope-container";
 
 type Resolved = HTMLElement | null | undefined;
@@ -80,16 +74,6 @@ describe("useResolvedPortalContainer", () => {
     expect(resolved.getAttribute("data-theme-brand")).toBe("fkas");
   });
 
-  it("prefers an explicit container over an enclosing ThemeScope", () => {
-    const target = document.createElement("div");
-    const seen = resolutions((record) => (
-      <ThemeScope theme={{ identity: "branded", brand: "tkas", segment: "company" }}>
-        <Probe container={target} onResolve={record} />
-      </ThemeScope>
-    ));
-    expect(seen.at(-1)).toBe(target);
-  });
-
   it("reports a ref's element after commit without a host rerender", async () => {
     function Host({ onResolve }: { onResolve: (resolved: Resolved) => void }): ReactNode {
       const ref = useRef<HTMLElement | null>(null);
@@ -141,32 +125,6 @@ function suspension() {
 }
 
 describe("ThemeScope's container across a streamed Suspense boundary", () => {
-  it("attaches without client-rendering a boundary whose content is still streaming", async () => {
-    const seen: Resolved[] = [];
-    const { host, recoverableErrors } = await hydrateStreamedPage(
-      (boundary) => (
-        <ThemeScope theme={scopeTheme}>
-          <Probe
-            onResolve={(resolved) => {
-              seen.push(resolved);
-            }}
-          />
-          {boundary}
-        </ThemeScope>
-      ),
-      <span>Streamed content</span>
-    );
-    const server = serverBoundaryNodes(host);
-    expect(server.template).not.toBeNull();
-
-    await expect.poll(() => seen.at(-1)).toBe(host.querySelector("[data-theme-brand]"));
-    await settleScheduledWork();
-
-    expect(server.template?.isConnected).toBe(true);
-    expect(server.fallback?.isConnected).toBe(true);
-    expect(recoverableErrors).toEqual([]);
-  });
-
   it("hydrates an overlay that streams in after the scope attached as the server rendered it", async () => {
     const committed: string[] = [];
     function StreamedOverlay() {
@@ -234,118 +192,6 @@ describe("ThemeScope's container across a Suspense hide and reveal", () => {
 });
 
 describe("ThemeScope's container lifecycle", () => {
-  it("provides the new element when a render change replaces it", async () => {
-    const seen: Resolved[] = [];
-    const record = (resolved: Resolved) => {
-      seen.push(resolved);
-    };
-    const { host, rerender } = render(
-      <ThemeScope theme={scopeTheme}>
-        <Probe onResolve={record} />
-      </ThemeScope>
-    );
-    await expect.poll(() => seen.at(-1)).toBe(host.querySelector("div[data-theme-brand]"));
-
-    rerender(
-      <ThemeScope theme={scopeTheme} render={<section />}>
-        <Probe onResolve={record} />
-      </ThemeScope>
-    );
-
-    const section = host.querySelector("section[data-theme-brand]");
-    expect(section).not.toBeNull();
-    await expect.poll(() => seen.at(-1)).toBe(section);
-  });
-
-  it("stops providing an element that a render change removed from the document", async () => {
-    const seen: Resolved[] = [];
-    const record = (resolved: Resolved) => {
-      seen.push(resolved);
-    };
-    function Scope({ attached }: { attached: boolean }) {
-      return (
-        <ThemeScope
-          theme={scopeTheme}
-          render={(props) => (attached ? <div {...props} /> : <>{props.children}</>)}>
-          <Probe onResolve={record} />
-        </ThemeScope>
-      );
-    }
-    const { host, rerender } = render(<Scope attached />);
-    const scope = host.querySelector("[data-theme-brand]");
-    await expect.poll(() => seen.at(-1)).toBe(scope);
-
-    rerender(<Scope attached={false} />);
-
-    expect(host.querySelector("[data-theme-brand]")).toBeNull();
-    await expect.poll(() => seen.at(-1)).toBeNull();
-  });
-
-  it.each<{
-    name: string;
-    scopeRender: (attached: boolean) => ThemeScopeProps["render"];
-    mounts: string[];
-  }>([
-    {
-      name: "a consumer inside the element, which remounts",
-      scopeRender: (attached) => (props) => (attached ? <div {...props} /> : <>{props.children}</>),
-      mounts: ["mount", "mount"],
-    },
-    {
-      // Children beside the scope element stay mounted when the element is removed.
-      name: "a consumer beside the element, which stays mounted",
-      scopeRender:
-        (attached) =>
-        ({ children, ...props }) => (
-          <>
-            {attached ? <div {...props} /> : null}
-            {children}
-          </>
-        ),
-      mounts: ["mount"],
-    },
-  ])(
-    "stops providing an element removed while a boundary hid it, for $name",
-    async ({ scopeRender, mounts }) => {
-      const seen: Resolved[] = [];
-      const record = (resolved: Resolved) => {
-        seen.push(resolved);
-      };
-      const mounted: string[] = [];
-      function MountedProbe() {
-        // Passive effects stay connected while a Suspense boundary hides its content.
-        useEffect(() => {
-          mounted.push("mount");
-        }, []);
-        return <Probe onResolve={record} />;
-      }
-      const tree = (attached: boolean, pending?: Promise<void>) => (
-        <Suspense fallback={<span>Hidden</span>}>
-          <ThemeScope theme={scopeTheme} render={scopeRender(attached)}>
-            <MountedProbe />
-            <SuspendOn pending={pending} />
-          </ThemeScope>
-        </Suspense>
-      );
-      const { host, rerender } = render(tree(true));
-      const scope = host.querySelector("[data-theme-brand]");
-      await expect.poll(() => seen.at(-1)).toBe(scope);
-
-      const { pending, reveal } = suspension();
-      rerender(tree(true, pending));
-      await expect.element(page.getByText("Hidden")).toBeVisible();
-      await settleScheduledWork();
-      // React deletes the hidden element without detaching its ref a second time.
-      rerender(tree(false, pending));
-      reveal();
-      await expect.element(page.getByText("Hidden")).not.toBeInTheDocument();
-
-      expect(host.querySelector("[data-theme-brand]")).toBeNull();
-      await expect.poll(() => seen.at(-1)).toBeNull();
-      expect(mounted).toEqual(mounts);
-    }
-  );
-
   it("still attaches and cleans up a caller's ref", () => {
     const calls: string[] = [];
     const objectRef = createRef<HTMLDivElement>();

@@ -8,7 +8,7 @@ import { cssVarColor, renderThemed } from "../../../test/themed-browser-render";
 import { Skeleton } from "./skeleton";
 
 function skeletonElement(): HTMLElement {
-  // DOM audit: skeleton has no role; locate by the mandated data-slot.
+  // Skeleton has no role; locate by the mandated data-slot.
   const element = document.querySelector('[data-slot="skeleton"]');
   if (!(element instanceof HTMLElement)) {
     throw new Error('expected an element with data-slot="skeleton"');

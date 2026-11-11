@@ -1,6 +1,6 @@
 /**
  * `pnpm gen component <name>` creates an unimplemented component, tests, demo,
- * docs page and facade, and registers its public entry and initial size budget.
+ * docs page and facade, and registers its public entry and density role.
  * Run generate:exports after implementation to update tracked package exports.
  */
 import { execFileSync } from "node:child_process";
@@ -20,9 +20,6 @@ const FUSE = "packages/fuse";
 /** One route directory per component page — the page, its demos and its `api.json`. */
 const DOCS_ROUTE = "apps/docs/src/app/(docs)/components/{{name}}";
 const TEMPLATES = "plop-templates/component";
-const BUDGETS = `${FUSE}/scripts/size-budgets.ts`;
-const BUDGET_MARKER = "// plop:js-entry-budget";
-
 const ENTRIES = `${FUSE}/scripts/entries.ts`;
 const ENTRY_MARKER = "// plop:component-entry";
 /** The density role table: a new component's slot starts with a placeholder role. */
@@ -74,7 +71,6 @@ function preflight(answers, _config, plop) {
   }
   for (const [file, marker] of [
     [ENTRIES, ENTRY_MARKER],
-    [BUDGETS, BUDGET_MARKER],
     [DENSITY_ROLES, DENSITY_MARKER],
   ]) {
     const source = readFileSync(join(root, file), "utf8");
@@ -120,19 +116,10 @@ export default function plopfile(plop) {
       },
       {
         type: "append",
-        path: BUDGETS,
-        pattern: BUDGET_MARKER,
-        // A brand-new packed entry has no measurement yet; 0 fails size-limit until the
-        // implementer records measuredGzip.
-        template: `  { name: "{{name}}", entryFile: "{{name}}.js", measuredGzip: 0 }, // TODO({{name}}): record measuredGzip`,
-      },
-      {
-        type: "append",
         path: DENSITY_ROLES,
         pattern: DENSITY_MARKER,
         // Not a role: the type check rejects it until the implementer declares a role for each
-        // data-slot the component writes, and the source contract rejects the placeholder key
-        // until the component writes that slot.
+        // data-slot the component writes.
         template: `  "{{name}}": "TODO", // TODO({{name}}): declare the density role of every data-slot (CONTEXT.md, Density role)`,
       },
       // Template line breaks cannot know how long a component name is, so the emitted
@@ -147,7 +134,6 @@ export default function plopfile(plop) {
             `${FUSE}/src/components/${answers.name}`,
             // Only the demos directory: `page.mdx` is not oxfmt's to format.
             `${DOCS_ROUTE.replace("{{name}}", answers.name)}/demos`,
-            BUDGETS,
             ENTRIES,
           ],
           { cwd: plop.getDestBasePath(), stdio: "pipe" }
@@ -162,10 +148,9 @@ export default function plopfile(plop) {
           "  3. pnpm --filter @elmeragroup/fuse build             # dist + publish manifest; does not rewrite source exports",
           "  4. Author the page and demos. Add the title, RSC status and demo files to apps/docs/test/fixtures/component-inventory.json.",
           "  5. pnpm --filter docs generate                    # writes the committed api.json next to the page",
-          "  6. Record measuredGzip in packages/fuse/scripts/size-budgets.ts.",
-          "  7. Add source-contracts.test.ts entries and public type/API checks.",
-          "  8. pnpm check",
-          "  9. pnpm exec turbo run package:check test:packed-consumer  # new entry changes package exports (AGENTS.md#tests)",
+          "  6. Add public type/API checks; a server-visible part keeps its namespace index directive-free.",
+          "  7. pnpm check",
+          "  8. pnpm exec turbo run package:check test:packed-consumer  # new entry changes package exports (AGENTS.md#tests)",
         ].join("\n"),
     ],
   });

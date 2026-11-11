@@ -17,7 +17,7 @@ import { CLOCK_INTRO } from "./polar-motion";
 import { pathNumber } from "./rounding";
 
 /** The numbers one slot draws from: its start and end angle in degrees, its base radius and its tip. */
-export const CLOCK_STRIDE = 4;
+const CLOCK_STRIDE = 4;
 
 /**
  * How a slot draws: a reading, a missing reading, nothing yet, or nothing of its own, as a Root slot
@@ -185,7 +185,7 @@ class Sampler {
  * @param curve - The curve.
  * @returns The sampled points.
  */
-export function sampleCurve(points: readonly ClockPoint[], curve: ChartCurve): ClockPoint[] {
+function sampleCurve(points: readonly ClockPoint[], curve: ChartCurve): ClockPoint[] {
   if (points.length === 0) return [];
   const sampler = new Sampler();
   const draw = factoryOf(curve)(sampler);
@@ -397,8 +397,8 @@ export function curveIndex(values: readonly number[], slots: ClockSlots, curve: 
 }
 
 /**
- * The radius an indexed curve reaches at an angle, or null where it draws nothing there, as
- * `curveRadiusAt` reads it.
+ * The radius an indexed curve reaches at an angle, or null where it draws nothing there, read
+ * between its samples as the drawn polyline joins them.
  *
  * @param index - The curve, from `curveIndex`.
  * @param angle - The angle in degrees from 12 o'clock, in any turn.
@@ -429,28 +429,6 @@ export function radiusInCurve(index: CurveIndex, angle: number): number | null {
     return reaching(line, high, at);
   }
   return null;
-}
-
-/**
- * The radius a series' drawn curve reaches at an angle, or null where it draws nothing there: in a
- * gap or past an open run's end. The curve is the one the Line and Area draw from the same numbers,
- * read between its samples as the drawn polyline joins them, so a point at this radius lies on the
- * drawn path. A closed run reads the angle in its own turn, and a lone reading's slot reads its tip,
- * where its dot sits.
- *
- * @param values - The loop's numbers: the progress, then each slot's angles, base and tip.
- * @param slots - Each slot's state and mark, and the missing rule.
- * @param curve - The curve.
- * @param angle - The angle in degrees from 12 o'clock, in any turn.
- * @returns The radius, or null.
- */
-export function curveRadiusAt(
-  values: readonly number[],
-  slots: ClockSlots,
-  curve: ChartCurve,
-  angle: number
-): number | null {
-  return radiusInCurve(curveIndex(values, slots, curve), angle);
 }
 
 /** Sampled points as path data in the dial's x and y, open or closed. */
@@ -655,7 +633,7 @@ export function clockLine(values: readonly number[], slots: ClockSlots, curve: C
  * @param columns - The device pixels round the rim.
  * @returns The marks to hatch by, the slots' own when each slot spans a pixel or more.
  */
-export function pixelMarks(marked: readonly boolean[], columns: number): readonly boolean[] {
+function pixelMarks(marked: readonly boolean[], columns: number): readonly boolean[] {
   const count = marked.length;
   if (columns <= 0 || count <= columns) return marked;
   const columnOf = (slot: number): number => Math.floor(((slot + 0.5) * columns) / count);

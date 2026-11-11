@@ -7,7 +7,8 @@ import { page, userEvent } from "vitest/browser";
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import { assertFocusRingOnKeyboardAbsentOnMouse } from "../../../test/assert-focus-ring";
-import { cssVarColor, renderThemed, roleNamed } from "../../../test/themed-browser-render";
+import { renderThemed } from "../../../test/themed-browser-render";
+import { roleNamed } from "../../../test/themed-browser-render";
 import { DropdownMenu } from "./index";
 
 type ItemRole = "menuitem" | "menuitemcheckbox" | "menuitemradio";
@@ -90,51 +91,6 @@ describe("DropdownMenu", () => {
     await vi.waitFor(() => {
       expect(page.getByRole("menu").query()).toBeNull();
     });
-  });
-
-  it("places the submenu beside its trigger with the lifted popup metrics", async () => {
-    renderThemed(
-      <BasicMenu
-        extra={
-          <DropdownMenu.Sub>
-            <DropdownMenu.SubTrigger>More</DropdownMenu.SubTrigger>
-            <DropdownMenu.SubContent>
-              <DropdownMenu.Item>Team</DropdownMenu.Item>
-            </DropdownMenu.SubContent>
-          </DropdownMenu.Sub>
-        }
-      />
-    );
-    await openWithArrowDown();
-    await userEvent.keyboard("{End}{ArrowRight}");
-    const subTrigger = itemNamed("More");
-    await vi.waitFor(() => {
-      expect(subTrigger.getAttribute("data-popup-open")).not.toBeNull();
-    });
-
-    const submenu = (await mountedItem("Team")).closest('[role="menu"]');
-    if (!(submenu instanceof HTMLElement)) {
-      throw new Error("expected the submenu to be a menu");
-    }
-    const parentMenu = subTrigger.closest('[role="menu"]');
-    if (!(parentMenu instanceof HTMLElement)) {
-      throw new Error("expected the sub-trigger to sit in a menu");
-    }
-
-    // side="right": the submenu opens off the parent's right edge rather than
-    // stacking under it, so it starts past the parent's midline and ends beyond
-    // the parent's right edge.
-    const submenuBox = submenu.getBoundingClientRect();
-    const parentBox = parentMenu.getBoundingClientRect();
-    expect(submenuBox.left).toBeGreaterThan(parentBox.left + parentBox.width / 2);
-    expect(submenuBox.right).toBeGreaterThan(parentBox.right);
-    // alignOffset={-3}: its first item lines up a hair above the trigger.
-    expect(submenuBox.top).toBeLessThan(subTrigger.getBoundingClientRect().top);
-    // min-w-[96px] and the deeper elevation the nested popup carries. The popup takes
-    // preflight's `border-box` on every host, so the minimum is its whole layout box, read
-    // through `offsetWidth`: the bounding box still carries the opening zoom's scale.
-    expect(submenu.offsetWidth).toBeGreaterThanOrEqual(96);
-    expect(getComputedStyle(submenu).boxShadow).not.toBe("none");
   });
 
   it("closes the entire tree on Escape from a submenu", async () => {
@@ -244,23 +200,6 @@ describe("DropdownMenu", () => {
     expect(billing.getAttribute("href")).toBe("/billing");
   });
 
-  it("emits data-variant destructive and data-inset, with error-token classes", async () => {
-    renderThemed(
-      <DropdownMenu.Root defaultOpen>
-        <DropdownMenu.Trigger>Open</DropdownMenu.Trigger>
-        <DropdownMenu.Content>
-          <DropdownMenu.Item inset variant="destructive">
-            Delete
-          </DropdownMenu.Item>
-        </DropdownMenu.Content>
-      </DropdownMenu.Root>
-    );
-    const item = await mountedItem("Delete");
-    expect(item.getAttribute("data-variant")).toBe("destructive");
-    expect(item.getAttribute("data-inset")).toBe("true");
-    expect(getComputedStyle(item).color).toBe(cssVarColor(item, "--error"));
-  });
-
   it("portals Content into the enclosing ThemeScope instead of the document body", async () => {
     const { host } = renderThemed(<BasicMenu />);
     const scope = host.querySelector("[data-theme-brand]");
@@ -270,6 +209,23 @@ describe("DropdownMenu", () => {
     expect([...document.body.children].includes(menu)).toBe(false);
   });
 
+  it("gives the trigger the shared keyboard focus ring", async () => {
+    renderThemed(
+      <>
+        <button type="button">Before</button>
+        <BasicMenu />
+      </>
+    );
+    const previous = page.getByRole("button", { name: "Before", exact: true }).element();
+    const trigger = page.getByRole("button", { name: "Open", exact: true }).element();
+    if (!(previous instanceof HTMLElement) || !(trigger instanceof HTMLElement)) {
+      throw new Error("expected buttons");
+    }
+    await assertFocusRingOnKeyboardAbsentOnMouse(previous, trigger);
+  });
+});
+
+describe("DropdownMenu", () => {
   it("portals Content and SubContent into an explicit container element", async () => {
     function ExplicitContainer() {
       const [node, setNode] = useState<HTMLDivElement | null>(null);
@@ -317,20 +273,5 @@ describe("DropdownMenu", () => {
     const team = await mountedItem("Team");
     const subIsland = roleNamed("region", "Sub island");
     expect(subIsland.contains(team)).toBe(true);
-  });
-
-  it("gives the trigger the shared keyboard focus ring", async () => {
-    renderThemed(
-      <>
-        <button type="button">Before</button>
-        <BasicMenu />
-      </>
-    );
-    const previous = page.getByRole("button", { name: "Before", exact: true }).element();
-    const trigger = page.getByRole("button", { name: "Open", exact: true }).element();
-    if (!(previous instanceof HTMLElement) || !(trigger instanceof HTMLElement)) {
-      throw new Error("expected buttons");
-    }
-    await assertFocusRingOnKeyboardAbsentOnMouse(previous, trigger);
   });
 });

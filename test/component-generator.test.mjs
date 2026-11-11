@@ -92,10 +92,7 @@ describe("component generator", () => {
     const result = generate(directory, "status-light");
     expect(result.stderr + result.stdout).not.toContain("[FAILED]");
     expect(result.status, result.stdout + result.stderr).toBe(0);
-    expect(readFileSync(join(directory, "packages/fuse/scripts/size-budgets.ts"), "utf8")).toContain(
-      'name: "status-light", entryFile: "status-light.js", measuredGzip: 0'
-    );
-    // The new slot starts with a placeholder role the source contract rejects.
+    // The new slot starts with a placeholder role the type check rejects.
     expect(
       readFileSync(join(directory, "packages/fuse/src/theme/tokens/density-roles.ts"), "utf8")
     ).toContain('  "status-light": "TODO",');
@@ -134,8 +131,8 @@ describe("component generator", () => {
     // An existing docs page blocks its name, and a missing marker blocks every valid name. Name
     // checks run before the marker check, so each name below fails for its own reason.
     mkdirSync(join(directory, "apps/docs/src/app/(docs)/components/status-light"), { recursive: true });
-    const budget = join(directory, "packages/fuse/scripts/size-budgets.ts");
-    writeFileSync(budget, readFileSync(budget, "utf8").replace("// plop:js-entry-budget", ""));
+    const roles = join(directory, "packages/fuse/src/theme/tokens/density-roles.ts");
+    writeFileSync(roles, readFileSync(roles, "utf8").replace("// plop:density-part", ""));
     // No entry is deferred today, so the fixture defers a scratch name to reach that refusal.
     const entries = join(directory, "packages/fuse/scripts/entries.ts");
     const declared = "export const DEFERRED_ENTRIES: readonly string[] = [];";
@@ -170,7 +167,7 @@ describe("component generator", () => {
       "deferred",
       "kebab-case",
       "already has source or documentation",
-      "Expected one // plop:js-entry-budget",
+      "Expected one // plop:density-part",
     ]) {
       expect(output).toContain(reason);
     }

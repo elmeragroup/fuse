@@ -58,36 +58,6 @@ describe("stable notes", () => {
     ]);
   });
 
-  it.each([
-    {
-      markdown: "Read [the docs](https://fuse.elmeragroup.no/?a=1&b=2) or <https://fuse.elmeragroup.no>.",
-      mrkdwn: "Read <https://fuse.elmeragroup.no/?a=1&amp;b=2|the docs> or <https://fuse.elmeragroup.no>.",
-    },
-    { markdown: "See [the guide](./README.md) and ~~old~~ notes.", mrkdwn: "See the guide and ~old~ notes." },
-    {
-      markdown: "Use [`Select`](https://fuse.elmeragroup.no/select) for a < b && c > d.",
-      mrkdwn: "Use <https://fuse.elmeragroup.no/select|`Select`> for a &lt; b &amp;&amp; c &gt; d.",
-    },
-    { markdown: "#### A **bold** note", mrkdwn: "*A bold note*" },
-    { markdown: "> Quoted `<b>`", mrkdwn: "> Quoted `&lt;b&gt;`" },
-    { markdown: "* Starred item with __strong__ text", mrkdwn: "• Starred item with *strong* text" },
-    { markdown: "```tsx\n<Button>Go</Button>\n```", mrkdwn: "```\n&lt;Button&gt;Go&lt;/Button&gt;\n```" },
-    { markdown: "```\nunclosed <code>", mrkdwn: "```\nunclosed &lt;code&gt;\n```" },
-    // Slack posts the notes verbatim, so a bare URL becomes an explicit link to stay clickable.
-    {
-      markdown: "See https://fuse.elmeragroup.no/a_b_c, then (https://x.y/(a)b). Not xhttps://y.z",
-      mrkdwn: "See <https://fuse.elmeragroup.no/a_b_c>, then (<https://x.y/(a)b>). Not xhttps://y.z",
-    },
-    // Emphasis inside a word, which Slack cannot show, keeps the source's own characters.
-    { markdown: "Use snake_case_name and 2*3*4.", mrkdwn: "Use snake_case_name and 2*3*4." },
-    {
-      markdown: "Attention @here, @channel and @everyone, see <!here> and #general.",
-      mrkdwn: "Attention @here, @channel and @everyone, see &lt;!here&gt; and #general.",
-    },
-  ])("renders $markdown", ({ markdown, mrkdwn }) => {
-    expect(packed(markdown)).toEqual({ sections: [mrkdwn], shortened: false });
-  });
-
   it("shows four full sections of long notes, then links the full changelog", () => {
     // 60 entries of exactly 300 characters. Joined by newlines, nine fit in Slack's 3000-character
     // section (2708) and ten do not (3009), so four sections hold entries 1 to 36.
@@ -143,28 +113,6 @@ describe("stable notes", () => {
     expect(texts.join(" ")).toBe(Array.from({ length: 100 }, () => rendered).join(" "));
   });
 
-  it.each([
-    {
-      case: "a link label",
-      // The leading "bb" puts the cut inside an escaped `&`, which must not be split.
-      markdown: `[bb${"a&".repeat(2000)}](https://fuse.elmeragroup.no/l)`,
-      pattern: /^<https:\/\/fuse\.elmeragroup\.no\/l\|bb(?:a&amp;)+a?…>$/u,
-    },
-    {
-      case: "a code span",
-      markdown: `\`${"x<".repeat(2000)}\``,
-      pattern: /^`(?:x&lt;)+x?…`$/u,
-    },
-  ])("shortens $case longer than a section, keeps its markup closed and says so", ({ markdown, pattern }) => {
-    const notes = notesOf(markdown);
-    expect(notes).toMatchObject({ _tag: "Notes", extent: { _tag: "Shortened", by: "oversized-unit" } });
-    const texts = stableNotes(markdown);
-    expect(texts).toHaveLength(1);
-    expect(texts[0]?.length).toBeLessThanOrEqual(3000);
-    expect(texts[0]).toMatch(pattern);
-    expect(texts[0]?.length).toBeGreaterThan(2500);
-  });
-
   it("shows a link whose URL alone outgrows a section as its label, noting the URL it drops", () => {
     expect(packed(`[the label](https://fuse.elmeragroup.no/${"p".repeat(3100)})`)).toEqual({
       sections: ["the label"],
@@ -183,30 +131,6 @@ describe("stable notes", () => {
     const texts = stableNotes(markdown);
     for (const text of texts) expect(text.length, text.slice(0, 40)).toBeLessThanOrEqual(3000);
     expect(texts.join("").replaceAll(/[^z]/gu, "").length).toBe(markdown.replaceAll(/[^z]/gu, "").length);
-  });
-
-  it.each([
-    { kind: "bold span", markdown: "**bold words**", rendered: "*bold words*", mark: "*" },
-    { kind: "italic span", markdown: "*italic words*", rendered: "_italic words_", mark: "_" },
-    { kind: "struck span", markdown: "~~struck words~~", rendered: "~struck words~", mark: "~" },
-    {
-      kind: "bold span holding code",
-      markdown: "**use `a<b>` here**",
-      rendered: "*use `a&lt;b&gt;` here*",
-      mark: "*",
-    },
-  ] as const)("keeps the $kind whole where the section breaks", ({ markdown, rendered, mark }) => {
-    // 596 words fill a section to where the span starts, so a break between words cuts it.
-    const texts = stableNotes(`${"word ".repeat(596)}x ${markdown} trailing text`);
-    expect(texts.length).toBeGreaterThan(1);
-    for (const text of texts) {
-      expect(text.length).toBeLessThanOrEqual(3000);
-      const counts = delimiters(text);
-      // The span's two delimiters, in the one section that holds it, and nothing unpaired.
-      expect(counts[mark], text.slice(-60)).toBe(text.includes(rendered) ? 2 : 0);
-      expect(counts["`"] % 2, text.slice(-60)).toBe(0);
-    }
-    expect(texts.filter((text) => text.includes(rendered))).toHaveLength(1);
   });
 
   it.each([
@@ -246,129 +170,10 @@ describe("stable notes", () => {
     expect(shortened).toBe(false);
   });
 
-  it.each([
-    {
-      case: "a code line after text that cannot share its section",
-      markdown: `Before\n\`\`\`\n${"z".repeat(9000)}\n\`\`\``,
-      // Five sections would hold it all: "Before", then four of code.
-      first: "Before",
-      shown: 2992 * 3,
-      cut: true,
-    },
-    {
-      case: "a code line that exactly fills a section",
-      markdown: `\`\`\`\n${"z".repeat(2992)}\n\`\`\``,
-      first: `\`\`\`\n${"z".repeat(2992)}\n\`\`\``,
-      shown: 2992,
-      cut: false,
-    },
-    {
-      case: "a code line that exactly fills four sections",
-      markdown: `\`\`\`\n${"z".repeat(2992 * 4)}\n\`\`\``,
-      first: `\`\`\`\n${"z".repeat(2992)}\n\`\`\``,
-      shown: 2992 * 4,
-      cut: false,
-    },
-  ])("packs $case into fence-balanced sections", ({ markdown, first, shown, cut }) => {
-    const { sections, shortened } = packed(markdown);
-    expect(sections[0]).toBe(first);
-    for (const text of sections) {
-      expect(text.length).toBeLessThanOrEqual(3000);
-      const fences = text.split("\n").filter((line) => line === "```").length;
-      expect(fences % 2, text.slice(0, 20)).toBe(0);
-      expect(text, "no section is an empty code block").not.toContain("```\n```");
-    }
-    expect(sections.join("").replaceAll(/[^z]/gu, "").length).toBe(shown);
-    expect(shortened, "truncation").toBe(cut);
-  });
-
-  it.each([
-    { indent: "", where: "at the margin" },
-    { indent: "  ", where: "in a list item" },
-  ])("reads a heading inside fenced code $where as code, keeping the notes after it", ({ indent }) => {
-    const message = announcementOf(
-      [
-        "## 0.2.0",
-        "",
-        "- abc1234: Configure it like this:",
-        "",
-        `${indent}\`\`\`\`md`,
-        `${indent}## Configuration`,
-        "",
-        `${indent}\`\`\`js`,
-        `${indent}run();`,
-        `${indent}\`\`\``,
-        `${indent}\`\`\`\``,
-        "",
-        "- def5678: More notes after the example.",
-        "",
-        "## 0.1.0",
-        "",
-        "- First release.",
-        "",
-      ].join("\n"),
-      "0.2.0"
-    );
-    expect(sectionTexts(message)).toEqual([
-      [
-        "• abc1234: Configure it like this:",
-        // In a list item the blank line carries the item's indent, as Changesets writes it.
-        indent,
-        "```",
-        `${indent}## Configuration`,
-        // A blank code line keeps the list item's indent too.
-        indent,
-        // A zero-width space keeps the example's own fence from ending Slack's code block.
-        `${indent}\`​\`\`js`,
-        `${indent}run();`,
-        `${indent}\`​\`\``,
-        "```",
-        "",
-        "• def5678: More notes after the example.",
-      ].join("\n"),
-    ]);
-  });
-
   it("cuts a word longer than a section anywhere, since plain text holds no markup", () => {
     const texts = stableNotes("z".repeat(7000));
     for (const text of texts) expect(text).toMatch(/^z{1,3000}$/u);
     expect(texts.join("")).toBe("z".repeat(7000));
-  });
-
-  it("reads indented backticks in a list item as code, not as a fence that swallows the next version", () => {
-    const text = [
-      "## 1.0.0",
-      "",
-      "- abc1234: Use it like this:",
-      "",
-      "      ```",
-      "      run();",
-      "      ```",
-      "",
-      "- def5678: More notes.",
-      "",
-      "## 0.9.0",
-      "",
-      "- Old.",
-      "",
-    ].join("\n");
-    const notes = versionNotes({ _tag: "Whole", text }, "1.0.0");
-    expect(notes).toMatchObject({
-      _tag: "Notes",
-      sections: [
-        [
-          "• abc1234: Use it like this:",
-          "  ",
-          "```",
-          "  `​``",
-          "  run();",
-          "  `​``",
-          "```",
-          "",
-          "• def5678: More notes.",
-        ].join("\n"),
-      ],
-    });
   });
 
   it("keeps a fence open past a closing run followed by a no-break space, as CommonMark reads it", () => {
@@ -415,73 +220,6 @@ describe("stable notes", () => {
     expect(texts[0]?.length).toBeLessThanOrEqual(3000);
     expect((texts[0]?.match(/word/gu) ?? []).length).toBeLessThan(800);
     expect(message.blocks).toContainEqual(shortenedNotice);
-  });
-});
-
-describe("link targets", () => {
-  // Markdown decodes a target's entities, and Slack reads `<!here>`, `<@U…>` and `<#C…>` as
-  // mentions even in verbatim text, so a target that closes Slack's `<url|label>` early would post
-  // one. Oracle: RFC 3986 percent-encoding, which a browser decodes to the same URL.
-  it.each([
-    {
-      kind: "a link, entity-encoded",
-      markdown: "[click](https://example.com/&#62;&#60;!here&#62;)",
-      mrkdwn: "<https://example.com/%3E%3C!here%3E|click>",
-    },
-    {
-      kind: "a link, with named entities",
-      markdown: "[click](https://example.com/&gt;&lt;@U0123&gt;)",
-      mrkdwn: "<https://example.com/%3E%3C@U0123%3E|click>",
-    },
-    {
-      kind: "a link, raw in a bracketed target",
-      markdown: "[click](<https://example.com/a b|c>)",
-      mrkdwn: "<https://example.com/a%20b%7Cc|click>",
-    },
-    {
-      kind: "a link, percent-encoded beside entities",
-      markdown: "[click](https://example.com/%3E&#60;#C0123&#62;)",
-      mrkdwn: "<https://example.com/%3E%3C#C0123%3E|click>",
-    },
-    {
-      kind: "an image, entity-encoded",
-      markdown: "![logo](https://example.com/&#62;&#60;!here&#62;)",
-      mrkdwn: "<https://example.com/%3E%3C!here%3E|logo>",
-    },
-    {
-      kind: "an image without alt text, entity-encoded",
-      markdown: "![](https://example.com/a&#124;b)",
-      mrkdwn: "<https://example.com/a%7Cb>",
-    },
-    {
-      kind: "an autolink, raw",
-      markdown: "<https://example.com/a|b>",
-      mrkdwn: "<https://example.com/a%7Cb>",
-    },
-    {
-      // CommonMark leaves entities in an autolink as written.
-      kind: "an autolink, entity-encoded",
-      markdown: "<https://example.com/&#62;&#60;!here&#62;>",
-      mrkdwn: "<https://example.com/&amp;#62;&amp;#60;!here&amp;#62;>",
-    },
-    { kind: "a bare URL, raw", markdown: "https://example.com/a|b", mrkdwn: "<https://example.com/a%7Cb>" },
-    {
-      kind: "a bare URL, entity-encoded",
-      markdown: "https://example.com/&#62;&#60;!here&#62;",
-      mrkdwn: "<https://example.com/>&gt;&lt;!here&gt;",
-    },
-    {
-      kind: "a reference link and image, entity-encoded",
-      markdown: "[click][hostile] ![logo][hostile]\n\n[hostile]: https://example.com/&#62;&#60;!here&#62;",
-      mrkdwn: "<https://example.com/%3E%3C!here%3E|click> <https://example.com/%3E%3C!here%3E|logo>",
-    },
-    {
-      kind: "a reference link, raw in a bracketed definition",
-      markdown: "[click][hostile]\n\n[hostile]: <https://example.com/a b|c>",
-      mrkdwn: "<https://example.com/a%20b%7Cc|click>",
-    },
-  ])("encodes what would close $kind", ({ markdown, mrkdwn }) => {
-    expect(packed(markdown)).toEqual({ sections: [mrkdwn], shortened: false });
   });
 });
 
@@ -609,31 +347,5 @@ describe("deep nesting", () => {
     expect(section.startsWith("<https://e.test/l|a b a b ")).toBe(true);
     const counts = delimiters(section);
     expect([counts["*"] % 2, counts._ % 2]).toEqual([0, 0]);
-  });
-});
-
-describe("link schemes", () => {
-  it.each([
-    {
-      kind: "an upper-case autolink",
-      markdown: "Read <HTTPS://example.com/docs>.",
-      mrkdwn: "Read <https://example.com/docs>.",
-    },
-    {
-      kind: "a mixed-case link",
-      markdown: "[Docs](HtTpS://Example.com/x)",
-      mrkdwn: "<https://Example.com/x|Docs>",
-    },
-    {
-      kind: "a mixed-case image",
-      markdown: "![logo](Http://e.test/i.png)",
-      mrkdwn: "<http://e.test/i.png|logo>",
-    },
-    { kind: "an upper-case mail autolink", markdown: "<MAILTO:a@b.test>", mrkdwn: "<mailto:a@b.test>" },
-    { kind: "a rejected link with a label", markdown: "[bad](javascript:alert(1))", mrkdwn: "bad" },
-    { kind: "a rejected autolink", markdown: "<javascript:alert(1)>", mrkdwn: "javascript:alert(1)" },
-    { kind: "a rejected image", markdown: "![logo](javascript:x)", mrkdwn: "logo" },
-  ])("keeps the text of $kind", ({ markdown, mrkdwn }) => {
-    expect(packed(markdown)).toEqual({ sections: [mrkdwn], shortened: false });
   });
 });

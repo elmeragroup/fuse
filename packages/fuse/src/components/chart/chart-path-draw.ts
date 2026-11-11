@@ -4,8 +4,7 @@
  * What a Line and an Area share between the vertices of `layout/series-path.ts` and Root's loop:
  * where the numbers land, the topology a writer draws them in, the clip spans that dash or hatch a
  * part of the path, the route a data update tweens, and the crossfade that replaces a path whose
- * slots changed in another way. Each part's writer stays in its own module, as the central suite
- * asks, and calls these.
+ * slots changed in another way. Each part's writer stays in its own module and calls these.
  */
 import { crossfade } from "./chart-crossfade";
 import { writeAttribute } from "./chart-dom";

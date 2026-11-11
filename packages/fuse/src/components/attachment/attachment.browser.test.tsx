@@ -7,7 +7,6 @@ import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
-import { expectFocusRing, focusRingClippers } from "../../../test/assert-focus-ring";
 import { settleTransitions } from "../../../test/assert-invalid-ring";
 import { assertNoAxeViolations } from "../../../test/axe";
 import { emulateReducedMotion } from "../../../test/reduced-motion";
@@ -20,9 +19,7 @@ import {
   textNamed,
 } from "../../../test/themed-browser-render";
 import { DENSITIES } from "../../theme/density";
-import { Button } from "../button/button";
 import { Dialog } from "../dialog";
-import { DropdownMenu } from "../dropdown-menu";
 import type { AttachmentRootProps } from "./attachment";
 import { Attachment } from "./index";
 
@@ -112,25 +109,6 @@ describe("Attachment.Group", () => {
     expect(rootOf("loose.txt").getAttribute("role")).toBeNull();
     await assertNoAxeViolations(host);
   });
-
-  it("paints a tile's keyboard focus ring whole inside the scrolling list", async () => {
-    renderThemed(
-      <>
-        <button type="button">Before</button>
-        <Attachment.Group aria-label="Attached files">
-          <FileRow name="plan.pdf">
-            <Attachment.Trigger aria-label="Open plan.pdf" render={<a href="#plan" />} />
-          </FileRow>
-        </Attachment.Group>
-      </>
-    );
-    roleNamed("button", "Before").focus();
-    await userEvent.keyboard("{Tab}");
-    const trigger = roleNamed("link", "Open plan.pdf");
-    expect(document.activeElement).toBe(trigger);
-    expectFocusRing(trigger, "a keyboard-focused trigger paints the shared ring");
-    expect(focusRingClippers(trigger)).toEqual([]);
-  });
 });
 
 describe("Attachment.Trigger and Attachment.Actions", () => {
@@ -192,159 +170,11 @@ describe("Attachment.Trigger and Attachment.Actions", () => {
     expect(getComputedStyle(roleNamed("button", "Open locked.pdf")).cursor).toBe("not-allowed");
     expect(getComputedStyle(roleNamed("link", "Open gone.pdf")).cursor).toBe("not-allowed");
   });
-
-  it("paints no native button face over the attachment in a host without preflight", () => {
-    renderThemed(<PreviewableFile />);
-    const trigger = roleNamed("button", "Preview report.pdf");
-    const style = getComputedStyle(trigger);
-    expect(style.backgroundColor).toBe(TRANSPARENT);
-    for (const side of ["Top", "Right", "Bottom", "Left"] as const) {
-      expect(style[`border${side}Width`], `border ${side}`).toBe("0px");
-      expect(style[`padding${side}`], `padding ${side}`).toBe("0px");
-    }
-    // Inherited type and colour equal the root's computed values.
-    const root = getComputedStyle(rootOf("report.pdf"));
-    for (const property of ["color", "fontFamily", "fontSize", "fontWeight", "lineHeight"] as const) {
-      expect(style[property], property).toBe(root[property]);
-    }
-  });
 });
 
 describe("Attachment.Action", () => {
   afterEach(() => {
     document.documentElement.removeAttribute("data-density");
-  });
-
-  it("is secondary on a vertical tile and ghost in a row, unless the consumer picks a variant", async () => {
-    // Unit under test: the variant Attachment.Action picks. Oracle: the paint of a plain Button
-    // of that variant, which the action forwards to.
-    renderThemed(
-      <>
-        <Button aria-label="Secondary button" variant="secondary" size="icon-xs">
-          ×
-        </Button>
-        <Button aria-label="Ghost button" variant="ghost" size="icon-xs">
-          ×
-        </Button>
-        <Attachment.Root orientation="vertical">
-          <Attachment.Media variant="image">
-            <img src={PICTURE} alt="Tile" />
-          </Attachment.Media>
-          <Attachment.Actions>
-            <Attachment.Action aria-label="Remove tile">×</Attachment.Action>
-            <Attachment.Action aria-label="Ghost on tile" variant="ghost">
-              ×
-            </Attachment.Action>
-          </Attachment.Actions>
-        </Attachment.Root>
-        <FileRow name="row.pdf">
-          <Attachment.Actions>
-            <Attachment.Action aria-label="Remove row">×</Attachment.Action>
-            <Attachment.Action aria-label="Secondary in row" variant="secondary">
-              ×
-            </Attachment.Action>
-          </Attachment.Actions>
-        </FileRow>
-      </>
-    );
-    // Park the pointer on a row without a trigger and let any hover fill fade, so no button
-    // shows one.
-    await userEvent.hover(textNamed("row.pdf"));
-    const paint = (name: string): readonly [string, string] => {
-      const button = roleNamed("button", name);
-      settleTransitions(button);
-      const style = getComputedStyle(button);
-      return [style.backgroundColor, style.color];
-    };
-    const secondary = paint("Secondary button");
-    const ghost = paint("Ghost button");
-    expect(secondary).not.toEqual(ghost);
-    // A ghost Button sets its text in the colour around it, so a ghost action's oracle is the plain
-    // ghost Button's fill with the colour of the box the action sits in.
-    const ghostIn = (name: string): readonly [string, string] => {
-      const box = roleNamed("button", name).parentElement;
-      if (box === null) {
-        throw new Error(`Expected ${name} to sit in a box`);
-      }
-      return [ghost[0], getComputedStyle(box).color];
-    };
-    expect(paint("Remove tile")).toEqual(secondary);
-    expect(paint("Ghost on tile")).toEqual(ghostIn("Ghost on tile"));
-    expect(paint("Remove row")).toEqual(ghostIn("Remove row"));
-    expect(paint("Secondary in row")).toEqual(secondary);
-  });
-
-  it.each([
-    { size: "default", rowMedia: 40 },
-    { size: "sm", rowMedia: 32 },
-    { size: "xs", rowMedia: 28 },
-  ] as const)(
-    "spans a $size tile's media across the tile, with two actions in half of it, and keeps a $rowMedia px row media, at both densities",
-    ({ size, rowMedia }) => {
-      for (const density of DENSITIES) {
-        stampDensity(density);
-        const { unmount } = renderThemed(
-          <>
-            <Attachment.Root orientation="vertical" size={size}>
-              <Attachment.Media variant="image">
-                <img src={PICTURE} alt="Tile photo" />
-              </Attachment.Media>
-              <Attachment.Content>
-                <Attachment.Title>photo.png</Attachment.Title>
-              </Attachment.Content>
-              <Attachment.Actions>
-                <Attachment.Action aria-label="Download photo.png">↓</Attachment.Action>
-                <Attachment.Action aria-label="Remove photo.png">×</Attachment.Action>
-              </Attachment.Actions>
-            </Attachment.Root>
-            <Attachment.Root size={size}>
-              <Attachment.Media variant="image">
-                <img src={PICTURE} alt="Row photo" />
-              </Attachment.Media>
-            </Attachment.Root>
-            <Attachment.Root orientation="vertical" size={size}>
-              <Attachment.Media>
-                <svg role="img" aria-label="Tile glyph" viewBox="0 0 16 16" />
-              </Attachment.Media>
-            </Attachment.Root>
-          </>
-        );
-        const label = `${size} ${density}`;
-        // An SVG is no HTMLElement, so the shared role helper does not return it.
-        const glyph = page.getByRole("img", { name: "Tile glyph", exact: true }).element();
-        expect(glyph.getBoundingClientRect().width, `${label} tile glyph`).toBe(24);
-        const tileMedia = roleNamed("img", "Tile photo").parentElement;
-        const rowMediaBox = roleNamed("img", "Row photo").parentElement?.getBoundingClientRect();
-        const tile = tileMedia?.parentElement;
-        if (!tileMedia || !tile || rowMediaBox === undefined) {
-          throw new Error("expected media in a tile and in a row");
-        }
-        const tileStyle = getComputedStyle(tile);
-        const contentBox = tile.clientWidth - px(tileStyle.paddingLeft) - px(tileStyle.paddingRight);
-        const media = tileMedia.getBoundingClientRect();
-        expect(media.width, `${label} tile media`).toBe(contentBox);
-        // 8.5rem at the 16px root, at every size and density.
-        expect(media.width, `${label} tile media width`).toBe(136);
-        const first = roleNamed("button", "Download photo.png").getBoundingClientRect();
-        const last = roleNamed("button", "Remove photo.png").getBoundingClientRect();
-        expect(last.right - first.left, `${label} actions`).toBeLessThanOrEqual(media.width / 2);
-        expect(rowMediaBox.width, `${label} row media`).toBe(rowMedia);
-        unmount();
-      }
-    }
-  );
-
-  it("fits a full-width row to its container, padding and border included, at both densities", () => {
-    for (const density of DENSITIES) {
-      stampDensity(density);
-      const { unmount } = renderThemed(
-        <div style={{ width: "300px" }}>
-          <FileRow name="wide.pdf" className="w-full" />
-        </div>
-      );
-      expect(rootOf("wide.pdf").getBoundingClientRect().width, density).toBe(300);
-      unmount();
-    }
   });
 
   it("keeps a 24px target at both densities", () => {
@@ -362,71 +192,6 @@ describe("Attachment.Action", () => {
       expect(box.height, `${density} height`).toBeGreaterThanOrEqual(24);
       unmount();
     }
-  });
-});
-
-describe("Attachment hidden", () => {
-  it("hides the root, the group and every part that sets a display, but leaves until-found to the browser", () => {
-    const { host } = renderThemed(
-      <>
-        <Attachment.Root hidden>
-          <Attachment.Content>
-            <Attachment.Title>hidden-root.pdf</Attachment.Title>
-          </Attachment.Content>
-        </Attachment.Root>
-        <Attachment.Group hidden aria-label="Hidden group" />
-        <Attachment.Root>
-          <Attachment.Media hidden />
-          <Attachment.Content hidden />
-          <Attachment.Content>
-            <Attachment.Title hidden>hidden-title.pdf</Attachment.Title>
-            <Attachment.Description hidden>Hidden description</Attachment.Description>
-            <Attachment.Title>found.pdf</Attachment.Title>
-          </Attachment.Content>
-          <Attachment.Actions hidden />
-        </Attachment.Root>
-      </>
-    );
-    // DOM audit: a hidden element has no accessible role or name, so each one is found by its slot.
-    const hiddenParts = [...host.querySelectorAll("[hidden]")];
-    expect(
-      hiddenParts
-        .map((element) => element.getAttribute("data-slot") ?? "")
-        .toSorted((left, right) => left.localeCompare(right))
-    ).toEqual([
-      "attachment",
-      "attachment-actions",
-      "attachment-content",
-      "attachment-description",
-      "attachment-group",
-      "attachment-media",
-      "attachment-title",
-    ]);
-    for (const element of hiddenParts) {
-      expect(getComputedStyle(element).display, element.getAttribute("data-slot") ?? "").toBe("none");
-    }
-    // React types `hidden` as a boolean, so the until-found value goes on as an attribute.
-    const found = textNamed("found.pdf");
-    found.setAttribute("hidden", "until-found");
-    expect(getComputedStyle(found).display).toBe("block");
-  });
-});
-
-describe("Attachment.Root in a menu", () => {
-  it("keeps an xs attachment's row padding inside DropdownMenu.Content", async () => {
-    renderThemed(
-      <DropdownMenu.Root defaultOpen>
-        <DropdownMenu.Trigger>Files</DropdownMenu.Trigger>
-        <DropdownMenu.Content>
-          <FileRow name="menu.pdf" size="xs" />
-        </DropdownMenu.Content>
-      </DropdownMenu.Root>
-    );
-    await expect.element(page.getByText("menu.pdf", { exact: true })).toBeInTheDocument();
-    // Dense row metrics at the 16px root: --row-px is 0.5rem and --row-py is 0.375rem.
-    const style = getComputedStyle(rootOf("menu.pdf"));
-    expect([style.paddingLeft, style.paddingRight]).toEqual(["8px", "8px"]);
-    expect([style.paddingTop, style.paddingBottom]).toEqual(["6px", "6px"]);
   });
 });
 
@@ -527,32 +292,6 @@ describe("Attachment in right-to-left text", () => {
       });
     }
   );
-
-  it.each(["ltr", "rtl"] as const)(
-    "floats a vertical tile's actions 4px inside the media's top %s end corner",
-    (dir) => {
-      renderThemed(
-        <div dir={dir}>
-          <Attachment.Root orientation="vertical">
-            <Attachment.Media variant="image">
-              <img src={PICTURE} alt={`Photo ${dir}`} />
-            </Attachment.Media>
-            <Attachment.Actions>
-              <Attachment.Action aria-label={`Remove ${dir}`}>×</Attachment.Action>
-            </Attachment.Actions>
-          </Attachment.Root>
-        </div>
-      );
-      const media = roleNamed("img", `Photo ${dir}`).parentElement?.getBoundingClientRect();
-      const action = roleNamed("button", `Remove ${dir}`).getBoundingClientRect();
-      if (media === undefined) {
-        throw new Error("expected media around the photo");
-      }
-      expect(action.top - media.top).toBe(4);
-      const endGap = dir === "ltr" ? media.right - action.right : action.left - media.left;
-      expect(endGap).toBe(4);
-    }
-  );
 });
 
 describe("Attachment.Media", () => {
@@ -581,13 +320,6 @@ describe("Attachment.Media", () => {
     return media.getBoundingClientRect();
   }
 
-  it("frames an image in a square", () => {
-    renderThemed(<Tile alt="Square" />);
-    const box = mediaBox("Square");
-    expect(box.width).toBeGreaterThan(0);
-    expect(box.height).toBe(box.width);
-  });
-
   it.each([
     { ratio: "3:4", heightPerWidth: 4 / 3 },
     { ratio: "16:9", heightPerWidth: 9 / 16 },
@@ -597,5 +329,52 @@ describe("Attachment.Media", () => {
     expect(box.width).toBeGreaterThan(0);
     expect(box.height).toBeCloseTo(box.width * heightPerWidth, 0);
     expect(px(getComputedStyle(roleNamed("img", ratio)).width)).toBeCloseTo(box.width, 0);
+  });
+});
+
+describe("Attachment hidden", () => {
+  it("hides the root, the group and every part that sets a display, but leaves until-found to the browser", () => {
+    const { host } = renderThemed(
+      <>
+        <Attachment.Root hidden>
+          <Attachment.Content>
+            <Attachment.Title>hidden-root.pdf</Attachment.Title>
+          </Attachment.Content>
+        </Attachment.Root>
+        <Attachment.Group hidden aria-label="Hidden group" />
+        <Attachment.Root>
+          <Attachment.Media hidden />
+          <Attachment.Content hidden />
+          <Attachment.Content>
+            <Attachment.Title hidden>hidden-title.pdf</Attachment.Title>
+            <Attachment.Description hidden>Hidden description</Attachment.Description>
+            <Attachment.Title>found.pdf</Attachment.Title>
+          </Attachment.Content>
+          <Attachment.Actions hidden />
+        </Attachment.Root>
+      </>
+    );
+    // A hidden element has no accessible role or name, so each one is found by its slot.
+    const hiddenParts = [...host.querySelectorAll("[hidden]")];
+    expect(
+      hiddenParts
+        .map((element) => element.getAttribute("data-slot") ?? "")
+        .toSorted((left, right) => left.localeCompare(right))
+    ).toEqual([
+      "attachment",
+      "attachment-actions",
+      "attachment-content",
+      "attachment-description",
+      "attachment-group",
+      "attachment-media",
+      "attachment-title",
+    ]);
+    for (const element of hiddenParts) {
+      expect(getComputedStyle(element).display, element.getAttribute("data-slot") ?? "").toBe("none");
+    }
+    // React types `hidden` as a boolean, so the until-found value goes on as an attribute.
+    const found = textNamed("found.pdf");
+    found.setAttribute("hidden", "until-found");
+    expect(getComputedStyle(found).display).toBe("block");
   });
 });

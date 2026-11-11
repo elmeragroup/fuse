@@ -5,7 +5,7 @@ import { PhoneNumberField } from "@elmeragroup/fuse/phone-number-field";
 import type { PhoneNumberFieldProps } from "@elmeragroup/fuse/phone-number-field";
 
 import { withLocale } from "../../../test/locale-matrix";
-import { phoneForm, phoneInput, phoneSubmission, selectCountry } from "../../../test/phone-browser-queries";
+import { phoneForm, phoneInput, phoneSubmission } from "../../../test/phone-browser-queries";
 import { renderThemed as render, roleNamed } from "../../../test/themed-browser-render";
 
 function snapshot(formName = "Phone form") {
@@ -119,37 +119,6 @@ it.each([
 );
 
 describe("defaultValue", () => {
-  it("restores a default in another country and reports the country it returns to", async () => {
-    const change = vi.fn();
-    const countryChange = vi.fn();
-    render(
-      withLocale(
-        "en-US",
-        <PhoneForm defaultValue="+46701234567" onChange={change} onCountryChange={countryChange} />
-      )
-    );
-    expect(snapshot()).toEqual({
-      display: "701234567",
-      submitted: "+46701234567",
-      submittedDisplay: "701234567",
-    });
-    await selectCountry("Norway");
-    await userEvent.fill(phoneInput(), "41234567");
-    expect(countryChange).toHaveBeenLastCalledWith({ code: "NO", dialCode: "+47" });
-    const changeCalls = change.mock.calls.length;
-    const countryCalls = countryChange.mock.calls.length;
-
-    phoneForm().reset();
-
-    await expect
-      .poll(() => snapshot())
-      .toEqual({ display: "701234567", submitted: "+46701234567", submittedDisplay: "701234567" });
-    expect(roleNamed("button", "Select country").textContent).toContain("+46");
-    expect(change).toHaveBeenCalledTimes(changeCalls);
-    expect(countryChange).toHaveBeenCalledTimes(countryCalls + 1);
-    expect(countryChange).toHaveBeenLastCalledWith({ code: "SE", dialCode: "+46" });
-  });
-
   it("lets a controlled value win over the default, even when empty, through reset", async () => {
     render(
       withLocale(

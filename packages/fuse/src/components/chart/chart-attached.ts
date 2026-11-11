@@ -269,7 +269,7 @@ export function copyBefore(live: Element, update: ChartUpdate): Element {
  *
  * @param input - The mark's join, node, outgoing element and writer, and what it showed last.
  */
-export function placeAttached<L>(input: {
+function placeAttached<L>(input: {
   readonly motion: ChartMotion;
   /** What moved the mark: a commit, or a pointer or key step. */
   readonly cause: FollowerCause;

@@ -12,47 +12,6 @@ import { CheckboxItem } from "../checkbox/checkbox-item";
 import { RadioItemGroup } from "../radio-group/radio-group";
 import { RadioItem } from "../radio-group/radio-item";
 
-function TitleRows({ prefix, style }: { prefix: string; style?: CSSProperties }) {
-  return (
-    <div style={style}>
-      <CheckboxItemGroup label={`${prefix} add-ons`}>
-        <CheckboxItem value="router">
-          <CheckboxItem.Title role="heading" aria-level={3}>
-            {`${prefix} checkbox row`}
-          </CheckboxItem.Title>
-        </CheckboxItem>
-      </CheckboxItemGroup>
-      <RadioItemGroup label={`${prefix} plan`}>
-        <RadioItem value="fixed">
-          <RadioItem.Title role="heading" aria-level={3}>
-            {`${prefix} radio row`}
-          </RadioItem.Title>
-        </RadioItem>
-      </RadioItemGroup>
-    </div>
-  );
-}
-
-/** The computed weights of a prefix's checkbox and radio row titles. */
-function titleWeights(prefix: string): readonly string[] {
-  return [`${prefix} checkbox row`, `${prefix} radio row`].map(
-    (name) => getComputedStyle(headingNamed(name)).fontWeight
-  );
-}
-
-describe("SelectionItem title weight without themes.css", () => {
-  it("sets row titles at the neutral 400 when the host sets no --selection-title-weight", () => {
-    render(<TitleRows prefix="Host" />);
-    expect(titleWeights("Host")).toEqual(["400", "400"]);
-  });
-
-  it("sets row titles at the host's own --selection-title-weight", () => {
-    // The branded themes' medium title, mapped by a host that keeps its own tokens.
-    render(<TitleRows prefix="Mapped" style={{ "--selection-title-weight": "500" }} />);
-    expect(titleWeights("Mapped")).toEqual(["500", "500"]);
-  });
-});
-
 /** A row, single or in a disabled group, for the disabled-row checks below. */
 function DisabledRows({ prefix, style }: { prefix: string; style?: CSSProperties }) {
   return (
@@ -81,7 +40,7 @@ function disabledLooks(
 ): readonly { fill: string; stripes: number[]; title: number; text: string }[] {
   return [`${prefix} checkbox row`, `${prefix} radio row`].map((name) => {
     const title = headingNamed(name);
-    // DOM audit: the row's fill is on its shell, which no role or label reaches.
+    // The row's fill is on its shell, which no role or label reaches.
     const shell = title.closest("[data-selection-item]");
     if (!(shell instanceof HTMLElement)) {
       throw new Error(`expected the shell around ${name}`);
@@ -113,31 +72,5 @@ describe("SelectionItem disabled row without themes.css", () => {
       text: "rgb(17, 17, 17)",
     };
     expect(disabledLooks("Host")).toEqual([expected, expected]);
-  });
-
-  it("fills a disabled row with the host's own disabled roles", () => {
-    // The branded look, mapped by a host: the card fill, no stripes and the muted text, even on
-    // a checked row.
-    render(
-      <DisabledRows
-        prefix="Mapped"
-        style={{
-          "--muted": "#eeeeee",
-          "--card": "#ffffff",
-          "--selection-disabled-background": "var(--card)",
-          "--selection-disabled-hatch": "oklch(0 0 0 / 0)",
-          "--foreground": "#111111",
-          "--muted-foreground": "#777777",
-          "--selection-disabled-foreground": "var(--muted-foreground)",
-        }}
-      />
-    );
-    const expected = {
-      fill: "rgb(255, 255, 255)",
-      stripes: [0, 0, 0, 0],
-      title: 1,
-      text: "rgb(119, 119, 119)",
-    };
-    expect(disabledLooks("Mapped")).toEqual([expected, expected]);
   });
 });

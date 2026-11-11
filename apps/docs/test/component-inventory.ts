@@ -2,7 +2,7 @@ import type { RscStatus } from "../src/lib/docs-model";
 import inventoryJson from "./fixtures/component-inventory.json";
 
 /** One reviewed component page. */
-export type InventoryEntry = {
+type InventoryEntry = {
   /** The name the SideNav and the page heading show. */
   readonly title: string;
   /** The page's RSC status, reviewed by hand rather than read from source. */

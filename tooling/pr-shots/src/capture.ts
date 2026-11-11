@@ -7,7 +7,7 @@
 
 import { Context, Effect, Layer, Schema } from "effect";
 import path from "node:path";
-import { chromium, firefox, webkit } from "playwright";
+import { chromium, webkit } from "playwright";
 import type { Browser, BrowserType, Locator, Page, PageScreenshotOptions } from "playwright";
 
 import { THEME_AXES } from "@elmeragroup/fuse/theme-catalog";
@@ -205,7 +205,7 @@ function launch(engine: Engine, file: string) {
 }
 
 function browserType(engine: Engine): BrowserType {
-  return { chromium, webkit, firefox }[engine];
+  return { chromium, webkit }[engine];
 }
 
 /** Runs one Playwright call, turning its rejection into the caller's failure. */

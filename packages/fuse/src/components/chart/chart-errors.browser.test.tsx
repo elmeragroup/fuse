@@ -1,6 +1,6 @@
 // CONTRACT section 8.1's error tiers in a development build, for every rule layer 05 reaches. Each
 // case renders to a string and expects the thrown error's name and rule, both written by hand from
-// the section's table. The production fallbacks run in chart-errors.production.browser.test.
+// the section's table.
 import type { ReactElement } from "react";
 
 import { renderToString } from "react-dom/server";
@@ -227,290 +227,6 @@ describe("composition errors", () => {
   });
 });
 
-describe("Panel and resolution errors on the first render", () => {
-  const TWO = {
-    kwh: { label: "Forbruk", color: "chart-1" },
-    kost: { label: "Kostnad", color: "chart-2" },
-  } as const satisfies ChartConfig;
-  const twoRows = DAYS.map((row) => ({ ...row, kost: 1 }));
-  const STACKED = {
-    kwh: { label: "Forbruk", color: "chart-1", stack: "sum" },
-    kost: { label: "Kostnad", color: "chart-2", stack: "sum" },
-  } as const satisfies ChartConfig;
-  it.each([
-    [
-      "a Panel inside a Panel",
-      daily(
-        <Chart.Panel series={["kwh"]}>
-          <Chart.Panel series={["kwh"]} />
-        </Chart.Panel>
-      ),
-      composition("nested-panel"),
-    ],
-    [
-      "a Panel under horizontal bars",
-      <Chart.Root
-        key="root"
-        data={[{ name: "a", v: 1 }]}
-        config={{ v: { label: "V", color: "chart-1" } }}
-        xKey="name"
-        orientation="horizontal"
-        aria-label="Liggende">
-        <Chart.Panel series={["v"]} />
-      </Chart.Root>,
-      composition("horizontal-panels"),
-    ],
-    [
-      "a Panel series that names no config key",
-      daily(<Chart.Panel series={["pris"]} />),
-      composition("unknown-key"),
-    ],
-    [
-      "a Bar its Panel does not list",
-      daily(
-        <>
-          <Chart.Panel series={["kwh"]}>
-            <Chart.Bar dataKey="kost" />
-          </Chart.Panel>
-          <Chart.Panel series={["kost"]} />
-        </>,
-        twoRows,
-        TWO
-      ),
-      composition("series-not-in-panel"),
-    ],
-    [
-      "a Line its Panel does not list",
-      daily(
-        <Chart.Panel series={["kwh"]}>
-          <Chart.Line dataKey="kost" />
-        </Chart.Panel>,
-        twoRows,
-        TWO
-      ),
-      composition("series-not-in-panel"),
-    ],
-    [
-      "a Bar in a Panel whose baseline is none",
-      daily(
-        <Chart.Panel series={["kwh"]} yBaseline="none">
-          <Chart.Bar dataKey="kwh" />
-        </Chart.Panel>
-      ),
-      composition("baseline-required"),
-    ],
-    [
-      // Section 8.8: an hour does not hold whole days.
-      "a series interval finer than Root's",
-      daily(<Chart.Bar dataKey="kwh" />, DAYS, {
-        kwh: { label: "Forbruk", color: "chart-1", interval: "hour" },
-      }),
-      composition("interval-not-nested"),
-    ],
-    [
-      // Section 8.8: an ISO week crosses month boundaries, so it nests in no month.
-      "a week series on Root's month",
-      <Chart.Root
-        key="root"
-        data={DAYS}
-        config={{ kwh: { label: "Forbruk", color: "chart-1", interval: "month" } }}
-        xKey="day"
-        interval="week"
-        timeZone={OSLO}
-        aria-label="Forbruk">
-        <Chart.Bar dataKey="kwh" />
-      </Chart.Root>,
-      composition("interval-not-nested"),
-    ],
-    [
-      "a series interval on a category axis",
-      <Chart.Root
-        key="root"
-        data={[{ name: "a", v: 1 }]}
-        config={{ v: { label: "V", color: "chart-1", interval: "day" } }}
-        xKey="name"
-        aria-label="Kategori">
-        <Chart.Bar dataKey="v" />
-      </Chart.Root>,
-      composition("interval-not-nested"),
-    ],
-    [
-      "a stack split over two Panels",
-      daily(
-        <>
-          <Chart.Panel series={["kwh"]} />
-          <Chart.Panel series={["kost"]} />
-        </>,
-        twoRows,
-        STACKED
-      ),
-      composition("stack-across-panels"),
-    ],
-    [
-      "a scale-coloured Line in a stack",
-      daily(<Chart.Line dataKey="kwh" />, twoRows, {
-        ...STACKED,
-        kwh: { ...STACKED.kwh, color: "chart-seq" },
-      }),
-      composition("scale-colour-on-stack"),
-    ],
-    [
-      "a scale-coloured Area in a stack",
-      daily(<Chart.Area dataKey="kost" />, twoRows, {
-        ...STACKED,
-        kost: { ...STACKED.kost, color: "chart-diverging" },
-      }),
-      composition("scale-colour-on-stack"),
-    ],
-    [
-      "a threshold-coloured Line in a stack",
-      daily(<Chart.Line dataKey="kwh" />, twoRows, {
-        ...STACKED,
-        kwh: { ...STACKED.kwh, color: SPLIT },
-      }),
-      composition("scale-colour-on-stack"),
-    ],
-    [
-      "a threshold-coloured Area under the expand offset",
-      <Chart.Root
-        key="root"
-        data={DAYS}
-        config={{ kwh: { label: "Forbruk", color: SPLIT } }}
-        xKey="day"
-        interval="day"
-        timeZone={OSLO}
-        stackOffset="expand"
-        aria-label="Forbruk">
-        <Chart.Area dataKey="kwh" />
-      </Chart.Root>,
-      composition("scale-colour-on-stack"),
-    ],
-    [
-      "a scale-coloured Area under the expand offset",
-      <Chart.Root
-        key="root"
-        data={DAYS}
-        config={{ kwh: { label: "Forbruk", color: "chart-seq" } }}
-        xKey="day"
-        interval="day"
-        timeZone={OSLO}
-        stackOffset="expand"
-        aria-label="Forbruk">
-        <Chart.Area dataKey="kwh" />
-      </Chart.Root>,
-      composition("scale-colour-on-stack"),
-    ],
-  ])("throws for %s", (_, element, expected) => {
-    expect(thrown(element)).toEqual(expected);
-  });
-
-  it("renders a whole stack in one Panel, and scale-coloured stacked Bars", () => {
-    expect(
-      thrown(
-        daily(
-          <Chart.Panel series={["kwh", "kost"]}>
-            <Chart.Line dataKey="kwh" />
-            <Chart.Line dataKey="kost" />
-          </Chart.Panel>,
-          twoRows,
-          STACKED
-        )
-      )
-    ).toBeNull();
-    expect(
-      thrown(
-        daily(
-          <Chart.BarGroup series={["kwh", "kost"]}>
-            <Chart.Bar dataKey="kwh" />
-            <Chart.Bar dataKey="kost" />
-          </Chart.BarGroup>,
-          twoRows,
-          { ...STACKED, kwh: { ...STACKED.kwh, color: "chart-seq" } }
-        )
-      )
-    ).toBeNull();
-    expect(
-      thrown(daily(<Chart.Line dataKey="kwh" />, DAYS, { kwh: { label: "Forbruk", color: "chart-seq" } }))
-    ).toBeNull();
-    // A threshold takes stacked Bars and a lone Line, as a scale does.
-    expect(
-      thrown(
-        daily(
-          <Chart.BarGroup series={["kwh", "kost"]}>
-            <Chart.Bar dataKey="kwh" />
-            <Chart.Bar dataKey="kost" />
-          </Chart.BarGroup>,
-          twoRows,
-          { ...STACKED, kwh: { ...STACKED.kwh, color: SPLIT } }
-        )
-      )
-    ).toBeNull();
-    expect(
-      thrown(daily(<Chart.Line dataKey="kwh" />, DAYS, { kwh: { label: "Forbruk", color: SPLIT } }))
-    ).toBeNull();
-  });
-
-  it("renders a sentiment Panel beside a categorical Panel, each one colour family (Q1-2, B1-2)", () => {
-    const rows = DAYS.map((row) => ({ ...row, balance: -1 }));
-    expect(
-      thrown(
-        daily(
-          <>
-            <Chart.Panel series={["kwh"]}>
-              <Chart.Bar dataKey="kwh" />
-            </Chart.Panel>
-            <Chart.Panel series={["balance"]}>
-              <Chart.Bar dataKey="balance" />
-            </Chart.Panel>
-          </>,
-          rows,
-          {
-            kwh: { label: "Forbruk", color: "chart-1" },
-            balance: { label: "Balanse", color: "chart-sentiment-positive" },
-          }
-        )
-      )
-    ).toBeNull();
-  });
-
-  it("throws for one Panel that mixes a sentiment role with a categorical role", () => {
-    const rows = DAYS.map((row) => ({ ...row, balance: -1 }));
-    expect(
-      thrown(
-        daily(
-          <Chart.Panel series={["kwh", "balance"]}>
-            <Chart.Bar dataKey="kwh" />
-          </Chart.Panel>,
-          rows,
-          {
-            kwh: { label: "Forbruk", color: "chart-1" },
-            balance: { label: "Balanse", color: "chart-sentiment-positive" },
-          }
-        )
-      )
-    ).toEqual(composition("mixed-sentiment-categorical"));
-  });
-
-  it("renders a day series on Root's hour with its value on the day's first hour", () => {
-    // Oslo's 1 October 2025 starts at 22:00 UTC the day before.
-    const hour = (index: number) => new Date(Date.UTC(2025, 8, 30, 22 + index));
-    const hours = [{ start: hour(0), kwh: 1 }, { start: hour(1) }, { start: hour(2) }];
-    expect(
-      thrown(
-        <Chart.Root
-          data={hours}
-          config={{ kwh: { label: "Forbruk", color: "chart-1", interval: "day" } }}
-          xKey="start"
-          interval="hour"
-          timeZone={OSLO}
-          aria-label="Forbruk">
-          <Chart.Bar dataKey="kwh" />
-        </Chart.Root>
-      )
-    ).toBeNull();
-  });
-});
-
 describe("data errors in development", () => {
   const at = (date: number, hour = -2) => new Date(Date.UTC(2025, 9, date, hour));
   it.each([
@@ -611,6 +327,111 @@ describe("data errors in development", () => {
         )
       )
     ).toEqual(data("table-column-format"));
+  });
+});
+
+describe("one part of a kind per series, after registration", () => {
+  /** Each part on the same key, under an error boundary. */
+  function drawn(children: ReactElement): ReactElement {
+    return (
+      <LocaleProvider locale="nb-NO">
+        <CaughtError>{daily(children)}</CaughtError>
+      </LocaleProvider>
+    );
+  }
+
+  // Each message is the rule's own, written by hand.
+  it.each([
+    [
+      "two Lines",
+      <>
+        <Chart.Line dataKey="kwh" />
+        <Chart.Line dataKey="kwh" />
+      </>,
+      'Chart.Line draws "kwh", which another Chart.Line in this Chart.Root draws too',
+    ],
+    [
+      "two Areas",
+      <>
+        <Chart.Area dataKey="kwh" />
+        <Chart.Area dataKey="kwh" />
+      </>,
+      'Chart.Area draws "kwh", which another Chart.Area in this Chart.Root draws too',
+    ],
+    [
+      "two Bars",
+      <>
+        <Chart.Bar dataKey="kwh" />
+        <Chart.Bar dataKey="kwh" />
+      </>,
+      'Chart.Bar draws "kwh", which another Chart.Bar in this Chart.Root draws too',
+    ],
+  ])("throws series-drawn-twice for %s on one key once they mount", (_, children, message) => {
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+    renderThemed(drawn(children));
+    expect(caughtError().name).toBe("ChartCompositionError");
+    expect(caughtError().message).toContain(message);
+  });
+
+  it("renders a Bar, an Area and a Line on one key, and a Line that replaces another", () => {
+    const { rerender } = renderThemed(
+      drawn(
+        <>
+          <Chart.Bar dataKey="kwh" />
+          <Chart.Area dataKey="kwh" />
+          <Chart.Line key="first" dataKey="kwh" />
+        </>
+      )
+    );
+    rerender(
+      drawn(
+        <>
+          <Chart.Bar dataKey="kwh" />
+          <Chart.Area dataKey="kwh" />
+          <Chart.Line key="second" dataKey="kwh" />
+        </>
+      )
+    );
+    expect(caughtError()).toEqual({ name: null, message: null });
+  });
+});
+
+describe("Panel and resolution errors on the first render", () => {
+  it("throws for one Panel that mixes a sentiment role with a categorical role", () => {
+    const rows = DAYS.map((row) => ({ ...row, balance: -1 }));
+    expect(
+      thrown(
+        daily(
+          <Chart.Panel series={["kwh", "balance"]}>
+            <Chart.Bar dataKey="kwh" />
+          </Chart.Panel>,
+          rows,
+          {
+            kwh: { label: "Forbruk", color: "chart-1" },
+            balance: { label: "Balanse", color: "chart-sentiment-positive" },
+          }
+        )
+      )
+    ).toEqual(composition("mixed-sentiment-categorical"));
+  });
+
+  it("renders a day series on Root's hour with its value on the day's first hour", () => {
+    // Oslo's 1 October 2025 starts at 22:00 UTC the day before.
+    const hour = (index: number) => new Date(Date.UTC(2025, 8, 30, 22 + index));
+    const hours = [{ start: hour(0), kwh: 1 }, { start: hour(1) }, { start: hour(2) }];
+    expect(
+      thrown(
+        <Chart.Root
+          data={hours}
+          config={{ kwh: { label: "Forbruk", color: "chart-1", interval: "day" } }}
+          xKey="start"
+          interval="hour"
+          timeZone={OSLO}
+          aria-label="Forbruk">
+          <Chart.Bar dataKey="kwh" />
+        </Chart.Root>
+      )
+    ).toBeNull();
   });
 });
 
@@ -723,71 +544,5 @@ describe("development hints", () => {
     expect(warn.mock.calls.map(([message]) => String(message))).toEqual([
       expect.stringContaining("Chart.BarGroup"),
     ]);
-  });
-});
-
-describe("one part of a kind per series, after registration", () => {
-  /** Each part on the same key, under an error boundary. */
-  function drawn(children: ReactElement): ReactElement {
-    return (
-      <LocaleProvider locale="nb-NO">
-        <CaughtError>{daily(children)}</CaughtError>
-      </LocaleProvider>
-    );
-  }
-
-  // Each message is the rule's own, written by hand.
-  it.each([
-    [
-      "two Lines",
-      <>
-        <Chart.Line dataKey="kwh" />
-        <Chart.Line dataKey="kwh" />
-      </>,
-      'Chart.Line draws "kwh", which another Chart.Line in this Chart.Root draws too',
-    ],
-    [
-      "two Areas",
-      <>
-        <Chart.Area dataKey="kwh" />
-        <Chart.Area dataKey="kwh" />
-      </>,
-      'Chart.Area draws "kwh", which another Chart.Area in this Chart.Root draws too',
-    ],
-    [
-      "two Bars",
-      <>
-        <Chart.Bar dataKey="kwh" />
-        <Chart.Bar dataKey="kwh" />
-      </>,
-      'Chart.Bar draws "kwh", which another Chart.Bar in this Chart.Root draws too',
-    ],
-  ])("throws series-drawn-twice for %s on one key once they mount", (_, children, message) => {
-    vi.spyOn(console, "error").mockImplementation(() => undefined);
-    renderThemed(drawn(children));
-    expect(caughtError().name).toBe("ChartCompositionError");
-    expect(caughtError().message).toContain(message);
-  });
-
-  it("renders a Bar, an Area and a Line on one key, and a Line that replaces another", () => {
-    const { rerender } = renderThemed(
-      drawn(
-        <>
-          <Chart.Bar dataKey="kwh" />
-          <Chart.Area dataKey="kwh" />
-          <Chart.Line key="first" dataKey="kwh" />
-        </>
-      )
-    );
-    rerender(
-      drawn(
-        <>
-          <Chart.Bar dataKey="kwh" />
-          <Chart.Area dataKey="kwh" />
-          <Chart.Line key="second" dataKey="kwh" />
-        </>
-      )
-    );
-    expect(caughtError()).toEqual({ name: null, message: null });
   });
 });

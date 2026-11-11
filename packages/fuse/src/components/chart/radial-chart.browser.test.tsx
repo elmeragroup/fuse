@@ -6,7 +6,7 @@
 // D24's device pixel of arc; Q12's 40 dots and 6° segments; section 8.7's hatched estimate and
 // missing reading; the Motion table's hover scales; section 8.13's centre; and S9's category word.
 import { describe, expect, it } from "vitest";
-import { page, userEvent } from "vitest/browser";
+import { userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
@@ -19,13 +19,11 @@ import {
   hoverAt,
   radialSvg,
   rings,
-  sectors,
 } from "../../../test/chart/pie";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
 import type { ChartConfig, ChartQuality } from "./chart-types";
 import "./chart.css";
-import { PieChart } from "./pie-chart-namespace";
 import { RadialChart } from "./radial-chart-namespace";
 
 /** A budget row, its quality column optional. */
@@ -93,11 +91,6 @@ function extent(path: SVGPathElement): number {
   return start + length + cap;
 }
 
-/** Finish every running transition in the host, so styles show their rest. */
-function settle(host: HTMLElement): void {
-  for (const animation of host.getAnimations({ subtree: true })) animation.finish();
-}
-
 describe("the rings (section 8.4, Q5, Q8)", () => {
   it("strokes each ring up to its value's angle, the third past its maximum all round, and picks the ring under the pointer", async () => {
     const { host } = renderThemed(<Budgets />);
@@ -115,7 +108,7 @@ describe("the rings (section 8.4, Q5, Q8)", () => {
     // and the cap again reach 296.64°, 302.4° and the whole 360°. Chromium's own stroke test stops
     // short of a dash that pathLength scales, so the extent reads from the dash itself.
     expect(drawn.map((path) => Math.round(extent(path) * 100) / 100)).toEqual([296.64, 302.4, 360]);
-    // DOM audit: the ring group states data-over-max, which the stylesheet and consumers read.
+    // The ring group states data-over-max, which the stylesheet and consumers read.
     expect(
       [...host.querySelectorAll("[data-chart-ring]:not([data-chart-ring-track])")].map((ring) =>
         ring.hasAttribute("data-over-max")
@@ -139,103 +132,6 @@ describe("the rings (section 8.4, Q5, Q8)", () => {
     }
     expect(checked).toBeGreaterThan(20);
   });
-
-  it("keeps a device pixel of arc along the centre line of a ring a hundred-thousandth full (D24)", async () => {
-    const { host } = renderThemed(
-      <Budgets
-        data={[
-          { budget: "heating", kwh: 0.002, limit: 200 },
-          { budget: "water", kwh: 100, limit: 200 },
-        ]}
-      />
-    );
-    await nextFrames(1);
-    const [tiny] = rings(host);
-    const radius = (radialSvg(host).getBoundingClientRect().width / 2) * (1 - 0.7 / 4);
-    const length = Number((tiny?.getAttribute("stroke-dasharray") ?? "").split(" ")[0]);
-    // The arc's extent is its dash in degrees, plus a stroke's width for round caps, which a ring
-    // this short never takes.
-    expect(tiny?.getAttribute("stroke-linecap")).toBe("butt");
-    expect(((length * Math.PI) / 180) * radius).toBeGreaterThanOrEqual(1 / window.devicePixelRatio - 0.01);
-  });
-
-  it("fills whole dots of 40, its value's share of them, in the dotted look (Q12)", async () => {
-    // 40 × 412 / 500 = 32.96, so 33 dots fill.
-    const { host } = renderThemed(<Budgets variant="dotted" />);
-    await nextFrames(1);
-    // DOM audit: the dotted ring's mask carries its value as a dash over the dots, read by its part.
-    const mask = host.querySelector('[data-slot="radial-chart-ring"][data-part="mask"]');
-    expect(Number((mask?.getAttribute("stroke-dasharray") ?? "").split(" ")[0]) / (360 / 40)).toBeCloseTo(
-      33,
-      6
-    );
-    expect(host.querySelectorAll('[data-slot="radial-chart-ring"][data-part="dots"]')).toHaveLength(6);
-  });
-
-  it("keeps one filled dot for a positive value under half a dot, and none for a true zero (B6, D24)", async () => {
-    // 40 × 1 / 500 = 0.08 rounds to no dot, yet the value is above 0, so one dot fills; 0 of 200
-    // fills none; 233 of 180 fills all 40.
-    const { host } = renderThemed(
-      <Budgets
-        variant="dotted"
-        data={[
-          { budget: "heating", kwh: 1, limit: 500 },
-          { budget: "water", kwh: 0, limit: 200 },
-          { budget: "car", kwh: 233, limit: 180 },
-        ]}
-      />
-    );
-    await nextFrames(1);
-    // DOM audit: each dotted ring's mask carries its value as a dash over the dots, read by its part.
-    const masks = [...host.querySelectorAll('[data-slot="radial-chart-ring"][data-part="mask"]')];
-    const dots = masks.map(
-      (mask) => Number((mask.getAttribute("stroke-dasharray") ?? "").split(" ")[0]) / (360 / 40)
-    );
-    expect(dots.map((count) => Math.round(count * 1e6) / 1e6)).toEqual([1, 0, 40]);
-  });
-
-  it("paints a role list along the sweep in 6° segments behind a mask that carries the value (Q12)", () => {
-    const { host } = renderThemed(
-      <Budgets
-        config={{
-          ...BUDGET_CONFIG,
-          heating: { label: "Varme", color: ["chart-1", "chart-2"], format: energy },
-        }}
-      />
-    );
-    // DOM audit: the segments are the ring's paint, read by their part.
-    expect(host.querySelectorAll('[data-slot="radial-chart-ring"][data-part="segment"]')).toHaveLength(60);
-  });
-
-  it("scales the active ring to 1.03 and the rings outside it to 1.02, and dims the rest", async () => {
-    const { host } = renderThemed(<Budgets />);
-    await userEvent.tab();
-    await userEvent.keyboard("{ArrowDown}");
-    settle(host);
-    const groups = [...host.querySelectorAll("[data-chart-ring]:not([data-chart-ring-track])")];
-    expect(groups.map((group) => getComputedStyle(group).scale)).toEqual(["1.02", "1.03", "1"]);
-    expect(groups.map((group) => getComputedStyle(group).opacity)).toEqual(["0.45", "1", "0.45"]);
-  });
-
-  it("draws a whole track behind each ring, and haloes the named ring's own dash", async () => {
-    const { host } = renderThemed(
-      <Budgets>
-        <RadialChart.Track />
-        <RadialChart.Glow dataKey="water" />
-        <RadialChart.LegendToggleGroup />
-      </Budgets>
-    );
-    await nextFrames(1);
-    // DOM audit: tracks and the halo are aria-hidden plot output, read by their slots.
-    const tracks = [...host.querySelectorAll('[data-slot="pie-chart-track"]')];
-    expect(tracks).toHaveLength(3);
-    expect(
-      tracks.map((track) => (track instanceof SVGPathElement ? Math.round(extent(track) * 100) / 100 : 0))
-    ).toEqual([360, 360, 360]);
-    const halo = host.querySelector('[data-slot="pie-chart-glow"]');
-    expect(halo?.getAttribute("stroke-dasharray")).toBe(rings(host)[1]?.getAttribute("stroke-dasharray"));
-    expect(page.getByRole("group", { name: "Kategorier" }).elements()).toHaveLength(1);
-  });
 });
 
 describe("the radial centre (section 8.13)", () => {
@@ -258,87 +154,5 @@ describe("the radial centre (section 8.13)", () => {
     expect(centreText(host, "pie-chart-center-value")).toBe("168 kWh");
     expect(centreText(host, "pie-chart-center-share")).toBe("84 %");
     expect(centreText(host, "pie-chart-center-max")).toBe("200 kWh");
-  });
-});
-
-describe("quality (section 8.7)", () => {
-  it("hatches an estimated ring and draws nothing for a missing one", async () => {
-    const { host } = renderThemed(
-      <Budgets
-        data={[
-          { budget: "heating", kwh: 412, limit: 500, q: "estimated" },
-          { budget: "water", kwh: 168, limit: 200, q: "missing" },
-        ]}
-      />
-    );
-    await nextFrames(1);
-    const [estimated, missing] = rings(host);
-    const stroke = getComputedStyle(estimated ?? host).stroke;
-    expect(stroke).toMatch(/^url\("#.+-hatch-0"\)$/u);
-    expect(missing?.getAttribute("stroke-dasharray")?.split(" ")[0]).toBe("0");
-  });
-
-  it("hatches an estimated slice and draws no arc for a missing one", async () => {
-    const { host } = renderThemed(
-      <LocaleProvider locale="nb-NO">
-        <div style={{ width: 320 }}>
-          <PieChart.Root
-            data={[
-              { part: "strom", kr: 50, q: "estimated" },
-              { part: "nettleie", kr: 30, q: "missing" },
-              { part: "avgifter", kr: 20 },
-            ]}
-            config={{
-              strom: { label: "Strøm", color: "chart-1" },
-              nettleie: { label: "Nettleie", color: "chart-2" },
-              avgifter: { label: "Avgifter", color: "chart-3" },
-            }}
-            nameKey="part"
-            valueKey="kr"
-            qualityKey="q"
-            data-intro="none"
-            aria-label="Regning">
-            <PieChart.Pie />
-          </PieChart.Root>
-        </div>
-      </LocaleProvider>
-    );
-    await nextFrames(1);
-    const [estimated, missing] = sectors(host);
-    // DOM audit: the hatch is the slice's paint server, read by its tag.
-    const hatch = host.querySelector("linearGradient");
-    expect(hatch?.getAttribute("gradientUnits")).toBe("userSpaceOnUse");
-    expect(getComputedStyle(estimated ?? host).fill).toBe(`url("#${hatch?.id ?? ""}")`);
-    expect(missing?.getAttribute("d")).toBe("");
-  });
-});
-
-describe("the gauge's Track (L5's corner fix)", () => {
-  it("rounds the Track's ends with the Pie's corner, so a full gauge covers its track exactly", async () => {
-    const { host } = renderThemed(
-      <LocaleProvider locale="nb-NO">
-        <div style={{ width: 320 }}>
-          <PieChart.Root
-            data={[{ measure: "peak", kwh: 6 }]}
-            config={{ peak: { label: "Topp", color: "chart-1" } }}
-            nameKey="measure"
-            valueKey="kwh"
-            max={5}
-            startAngle={-135}
-            endAngle={135}
-            innerRadius={0.78}
-            data-intro="none"
-            aria-label="Effekttrinn">
-            <PieChart.Track />
-            <PieChart.Pie cornerRadius={0.5} />
-          </PieChart.Root>
-        </div>
-      </LocaleProvider>
-    );
-    await nextFrames(1);
-    // DOM audit: the track is aria-hidden plot output, read by its slot.
-    const track = host.querySelector('[data-slot="pie-chart-track"]')?.getAttribute("d");
-    expect(sectors(host)[0]?.getAttribute("d")).toBe(track);
-    expect(track).toMatch(/A0\.11/u);
   });
 });

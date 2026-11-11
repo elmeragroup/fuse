@@ -26,7 +26,10 @@ const COLUMNS = columns.columns([
     header: "kWh",
     cell: ({ cell }) => <cell.NumberCell maximumFractionDigits={1} />,
   }),
-  columns.accessor("readAt", { header: "Read at", cell: ({ cell }) => <cell.DateTimeCell /> }),
+  columns.accessor("readAt", {
+    header: "Read at",
+    cell: ({ cell }) => <cell.DateTimeCell timeZone="Europe/Oslo" />,
+  }),
 ]);
 
 const TOTAL_READINGS = 32;

@@ -18,7 +18,7 @@ import { requireFont } from "./fonts.ts";
 import { change } from "./plan.ts";
 
 /** One character's font and the id of the variable its family binds, if any. */
-export type HeldCharacter = {
+type HeldCharacter = {
   readonly font: FontName;
   readonly family: string | undefined;
 };

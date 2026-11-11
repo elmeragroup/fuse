@@ -5,7 +5,7 @@
  * suites also share a typed child lookup.
  */
 
-import { Context, Effect } from "effect";
+import { Effect } from "effect";
 
 import type { GlyphFontSpec } from "../../src/components/kit-spec.ts";
 import type {
@@ -20,7 +20,6 @@ import { createFakeFigma } from "./fake-figma.ts";
 import type { FakeFigma } from "./fake-figma.ts";
 import type { Run } from "./fields.ts";
 import type { PlanRecorder } from "./plan.ts";
-import { FigmaPlugin, FileVariables, GlyphFont } from "./services.ts";
 import { loadKitVariables } from "./variables.ts";
 import type { KitVariables } from "./variables.ts";
 
@@ -28,7 +27,7 @@ import type { KitVariables } from "./variables.ts";
 export const GLYPH_FONT: GlyphFontSpec = { family: "Inter", glyphs: ["⇧", "⌘"] };
 
 /** A variable a fixture file holds, with its value in the collection's one mode. */
-export type FixtureVariable = {
+type FixtureVariable = {
   readonly collection: string;
   readonly name: string;
   readonly type: VariableType;
@@ -67,18 +66,6 @@ export const PORTRAIT_HEAD: ImageFixture = {
 export const PNG_SIGNATURE: ImageFixture = {
   bytes: "iVBORw0KGgo=",
   sha1: "4caece539b039b16e16206ea2478f8c5ffb2ca05",
-};
-
-/** The start of a JPEG file: its SOI and JFIF APP0 markers. */
-export const JPEG_HEAD: ImageFixture = {
-  bytes: "/9j/4AAQSkZJRgABAQAAAQABAAA=",
-  sha1: "152630b75949650726d58c1645884d7976c361ed",
-};
-
-/** {@link RED_PIXEL} with its IHDR width set to 4097, one past the 4096px Figma's reference allows. */
-export const PNG_4097_WIDE: ImageFixture = {
-  bytes: "iVBORw0KGgoAAAANSUhEUgAAEAEAAAABCAYAAAAfFcSJAAAADUlEQVR4AWP4z8DwHwAFAAH/e+m+7wAAAABJRU5ErkJggg==",
-  sha1: "548243127dc3e5e2493b4b6069c3ff52a72d79f0",
 };
 
 /** A FLOAT variable. */
@@ -156,30 +143,6 @@ const fixtureVariables = Effect.fnUntraced(function* (
 });
 
 /**
- * Provide the services a structural planner reads on a fixture file: the file, its variables, with
- * every collection as one the kit names, and the kit's glyph font. The planner's `Plan` stays for
- * the caller to provide, such as through `runPlan`.
- *
- * @param file - The file.
- * @returns A function that provides the services to an effect.
- */
-export function onFixture(
-  file: FakeFigma
-): <A, E, R>(
-  effect: Effect.Effect<A, E, R>
-) => Effect.Effect<A, E | DuplicateCollections, Exclude<R, FigmaPlugin | FileVariables | GlyphFont>> {
-  return (effect) =>
-    Effect.gen(function* () {
-      const variables = yield* fixtureVariables(file);
-      const context = Context.make(FigmaPlugin, file.figma).pipe(
-        Context.add(FileVariables, variables),
-        Context.add(GlyphFont, GLYPH_FONT)
-      );
-      return yield* Effect.provideContext(effect, context);
-    });
-}
-
-/**
  * A child of a given type and name, which a test expects the parent to hold.
  *
  * @param parent - The node whose children to search.
@@ -198,29 +161,6 @@ export function childNamed<Type extends SceneNode["type"]>(
   );
   if (child === undefined) {
     throw new Error(`no ${type} named ${name}`);
-  }
-  return child;
-}
-
-/**
- * The one child of a given type, for a test that reads the child's name, which a designer may have
- * changed.
- *
- * @param parent - The node whose children to search.
- * @param type - The child's node type.
- * @returns The child, narrowed to its type.
- * @throws When the parent holds no such child, or more than one.
- */
-export function onlyChildOfType<Type extends SceneNode["type"]>(
-  parent: ChildrenMixin,
-  type: Type
-): Extract<SceneNode, { readonly type: Type }> {
-  const children = parent.children.filter(
-    (node): node is Extract<SceneNode, { readonly type: Type }> => node.type === type
-  );
-  const [child] = children;
-  if (child === undefined || children.length > 1) {
-    throw new Error(`${String(children.length)} children of type ${type}, not one`);
   }
   return child;
 }

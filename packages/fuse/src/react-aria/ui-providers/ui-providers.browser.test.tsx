@@ -100,7 +100,7 @@ describe("UiProviders", () => {
     );
 
     const link = linkNamed("Invoice 1042");
-    // DOM audit: the slot, which the base-layer link reset keys on, moves onto the RAC anchor.
+    // The slot, which the base-layer link reset keys on, moves onto the RAC anchor.
     expect(link.dataset.slot).toBe("link");
     expect(getComputedStyle(link).textDecorationLine).toBe("underline");
     await userEvent.click(page.getByRole("link", { name: "Invoice 1042" }));

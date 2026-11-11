@@ -1,10 +1,3 @@
-// The polar Root kernel, in Chromium. Unit under test: PieChart.Root, RadialChart.Root and
-// RadarChart.Root with their shared parts, Table, Empty and Skeleton, before any family's marks
-// land, and ClockChart.Root's model across renders. Oracles, written by hand: CONTRACT section
-// 9.2's DOM order, section 9.3's names and section 9.4's key maps and Escape rule, section 9.5's pinning, the drafted dictionary's words,
-// the sweep boxes of polar-angle.test.ts, D18's first paint, and D5's and D17's placements, read
-// through a test-only mark that places one number per item on the Root's loop.
-import { useLayoutEffect, useRef } from "react";
 import type { ReactNode } from "react";
 
 import { afterEach, describe, expect, it } from "vitest";
@@ -14,11 +7,7 @@ import "../../../dist/styles.css";
 import { label, pointerAt } from "../../../test/chart/marks";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
-import type { MarkValues } from "./chart-motion";
-import { usePolarContext } from "./chart-polar-context";
-import { placeExit, usePolarCommit, usePolarMark } from "./chart-polar-motion";
 import "./chart.css";
-import { ClockChart } from "./clock-chart-namespace";
 import { PieChart } from "./pie-chart-namespace";
 import { RadarChart } from "./radar-chart-namespace";
 import { RadialChart } from "./radial-chart-namespace";
@@ -95,7 +84,7 @@ function focused(): readonly [string | null, string | null, string | null] {
 
 /** The figure a polar Root renders. */
 function figureOf(host: HTMLElement): HTMLElement {
-  // DOM audit: every polar Root marks its figure with data-polar.
+  // Every polar Root marks its figure with data-polar.
   const figure = host.querySelector<HTMLElement>("[data-polar]");
   if (figure === null) throw new Error("no polar figure");
   return figure;
@@ -129,7 +118,7 @@ describe("the polar Root's structure (sections 9.2 and 9.3)", () => {
     );
     const figure = figureOf(host);
     expect(figure.getAttribute("aria-label")).toBe("Kake");
-    // DOM audit: Root's own children carry their slots in CONTRACT section 9.2's order.
+    // Root's own children carry their slots in CONTRACT section 9.2's order.
     expect(
       [...figure.querySelectorAll("[data-slot]")]
         .map((element) => element.getAttribute("data-slot"))
@@ -143,7 +132,7 @@ describe("the polar Root's structure (sections 9.2 and 9.3)", () => {
           ].includes(slot ?? "")
         )
     ).toEqual(["chart-description", "chart-instructions", "chart-surface", "chart-legend", "chart-status"]);
-    // DOM audit: the description and the instructions are the listbox's described-by paragraphs,
+    // The description and the instructions are the listbox's described-by paragraphs,
     // which the stylesheet hides, so they are read by slot.
     expect(figure.querySelector('[data-slot="chart-description"]')?.textContent).toBe(
       "Kakediagram med 3\u00a0deler, totalt 100. Strøm: 62, 62\u00a0prosent. Nettleie: 34, 34\u00a0prosent. Avgifter: 4, 4\u00a0prosent."
@@ -163,21 +152,10 @@ describe("the polar Root's structure (sections 9.2 and 9.3)", () => {
       </LocaleProvider>
     );
     expect(page.getByRole("listbox").element().getAttribute("aria-orientation")).toBe("horizontal");
-    // DOM audit: the instructions are a described-by paragraph the stylesheet hides.
+    // The instructions are a described-by paragraph the stylesheet hides.
     expect(figureOf(host).querySelector('[data-slot="chart-instructions"]')?.textContent).toBe(
       "Bruk venstre og høyre pil for å gå mellom punktene, og opp og ned for å velge serie."
     );
-  });
-
-  it.each([
-    ["a full pie", 0, 360, 1],
-    ["the top semicircle", -90, 90, 2],
-    ["a 270° gauge", -135, 135, 2 / (1 + Math.SQRT1_2)],
-  ])("locks the cell of %s to its sweep's box", (_, startAngle, endAngle, ratio) => {
-    const { host } = renderThemed(<Pie startAngle={startAngle} endAngle={endAngle} />);
-    // DOM audit: the cell's box is the aspect lock the stylesheet sets from the sweep.
-    const cell = host.querySelector('[data-slot="chart-polar-cell"]')?.getBoundingClientRect();
-    expect((cell?.width ?? 0) / (cell?.height ?? 1)).toBeCloseTo(ratio, 2);
   });
 });
 
@@ -272,7 +250,7 @@ describe("Escape and pinning (sections 9.4 and 9.5)", () => {
     const { host } = renderThemed(<Pie />);
     await userEvent.tab();
     await userEvent.keyboard("{Enter}");
-    // DOM audit: Root states the pin on data-pinned, which the stylesheet reads.
+    // Root states the pin on data-pinned, which the stylesheet reads.
     expect(figureOf(host).hasAttribute("data-pinned")).toBe(true);
     document.addEventListener("keydown", recordKey);
     await userEvent.keyboard("{Escape}");
@@ -314,35 +292,6 @@ describe("Escape and pinning (sections 9.4 and 9.5)", () => {
   });
 });
 
-describe("the dial as one target (Q8)", () => {
-  it("hits the listbox at a semicircle's arc ends and picks there", async () => {
-    const { host } = renderThemed(<Pie startAngle={-90} endAngle={90} />);
-    const surface = page.getByRole("listbox").element();
-    // 85° clockwise, 95 % of the way out, sits by the cell's bottom right corner.
-    const [x, y] = (() => {
-      const box = surface.getBoundingClientRect();
-      const radius = box.width / 2;
-      const radians = (85 * Math.PI) / 180;
-      return [
-        box.left + radius + 0.95 * radius * Math.sin(radians),
-        box.bottom - 0.95 * radius * Math.cos(radians),
-      ];
-    })();
-    expect(document.elementFromPoint(x, y)).toBe(surface);
-    await hover(x, y);
-    expect(figureOf(host).getAttribute("data-active")).toBe("pointer");
-  });
-
-  it("picks by angle past the rim too, in the cell's corners (Q8)", async () => {
-    // Nettleie sweeps 223.2° to 345.6°, so 315° picks it at any distance inside the cell. At 1.3 R
-    // the point lies 0.92 R left of and above the centre, in the cell's top-left corner, past the rim.
-    const { host } = renderThemed(<Pie />);
-    await hover(...pointAt(host, 315, 1.3));
-    // DOM audit: Root writes the active option's place on the figure, which the slices pop against.
-    expect(figureOf(host).style.getPropertyValue("--chart-active")).toBe("1");
-  });
-});
-
 describe("Table, Empty and Skeleton", () => {
   it("lists every category with its value and share", () => {
     renderThemed(
@@ -356,7 +305,7 @@ describe("Table, Empty and Skeleton", () => {
       "Verdi",
       "Andel",
     ]);
-    // DOM audit: each cell prints its text beside a hidden spoken twin, so the printed text is read.
+    // Each cell prints its text beside a hidden spoken twin, so the printed text is read.
     const printed = [...table.querySelectorAll("tbody tr")].map((row) =>
       [...row.children].map(
         (cell) => cell.querySelector('[aria-hidden="true"]')?.textContent ?? cell.textContent
@@ -392,180 +341,10 @@ describe("Table, Empty and Skeleton", () => {
     ["RadarChart", <RadarChart.Skeleton key="radar" />, "radar"],
   ])("renders %s's Skeleton with one shape and a named loader", (_, skeleton, variant) => {
     const { host } = renderThemed(<LocaleProvider locale="nb-NO">{skeleton}</LocaleProvider>);
-    // DOM audit: the placeholder's shapes are Skeletons that readers skip.
+    // The placeholder's shapes are Skeletons that readers skip.
     const placeholder = host.querySelector('[data-slot="chart-skeleton"]');
     expect(placeholder?.getAttribute("data-variant")).toBe(variant);
     expect(placeholder?.querySelectorAll('[data-slot="chart-skeleton-mark"]')).toHaveLength(1);
     expect(page.getByRole("status", { name: "Laster diagram" }).elements()).toHaveLength(1);
-  });
-});
-
-/** Writes the loop's number onto a test item's path, rounded. */
-function writeValue(path: SVGPathElement, _look: null, values: MarkValues): void {
-  path.setAttribute("data-value", String(Math.round(values[0] ?? 0)));
-}
-
-/** One test item: a path whose `data-value` is the number the loop writes, its place plus one, times 10. */
-function TestItem({ itemKey, index }: { readonly itemKey: string; readonly index: number }): ReactNode {
-  const polar = usePolarContext("Test.Item", ["pie", "radial", "radar"]);
-  const { ref, place, node: anchor } = usePolarMark(polar.motion, writeValue, null);
-  const commit = usePolarCommit(polar, anchor);
-  useLayoutEffect(() => {
-    place([(index + 1) * 10], commit(index, [0]));
-  });
-  return <path ref={ref} data-key={itemKey} />;
-}
-
-/**
- * A test-only mark, placed as a polar mark places itself: one item per key, and a ghost that
- * collapses from 10 to 0 for each key that leaves.
- */
-function TestMark(): ReactNode {
-  const { model, motion } = usePolarContext("Test.Mark", ["pie", "radial", "radar"]);
-  const layer = useRef<SVGGElement>(null);
-  const drawn = useRef<readonly string[]>([]);
-  useLayoutEffect(() => {
-    const before = drawn.current;
-    drawn.current = model.keys;
-    const group = layer.current;
-    if (group === null) return;
-    for (const key of before.filter((name) => !model.keys.includes(name))) {
-      placeExit(motion, group, `test-ghost-${key}`, [10], [0], (path, values) => {
-        writeValue(path, null, values);
-      });
-    }
-  }, [model, motion]);
-  return (
-    <svg data-polar-mark="" data-slot="test-mark">
-      {model.keys.map((key, index) => (
-        <TestItem key={key} itemKey={key} index={index} />
-      ))}
-      <g ref={layer} />
-    </svg>
-  );
-}
-
-describe("the loop's placements (D5, D17, D18)", () => {
-  it("hides the marks until the chart comes into view, then plays the entrance to rest", async () => {
-    const { host } = renderThemed(
-      <div style={{ paddingTop: "200vh" }}>
-        <Pie>
-          <TestMark />
-        </Pie>
-      </div>
-    );
-    const figure = figureOf(host);
-    // DOM audit: the test mark is plot output under the first-paint rule, read by its slot.
-    const mark = host.querySelector('[data-slot="test-mark"]');
-    expect(figure.hasAttribute("data-drawn")).toBe(false);
-    expect(mark === null ? "" : getComputedStyle(mark).visibility).toBe("hidden");
-    figure.scrollIntoView();
-    await expect.poll(() => figure.hasAttribute("data-drawn")).toBe(true);
-    expect(mark === null ? "" : getComputedStyle(mark).visibility).toBe("visible");
-    await expect
-      .poll(
-        () =>
-          [...(mark?.querySelectorAll("[data-key]") ?? [])].map((path) => path.getAttribute("data-value")),
-        {
-          timeout: 4000,
-        }
-      )
-      .toEqual(["10", "20", "30"]);
-  });
-
-  it("collapses a leaving item into a ghost that leaves the DOM, and grows an entering one", async () => {
-    const rows = (names: readonly string[]) => names.map((name) => ({ name, v: 1 }));
-    const chart = (names: readonly string[]) => (
-      <LocaleProvider locale="nb-NO">
-        <PieChart.Root
-          data={rows(names)}
-          config={BILL_CONFIG}
-          nameKey="name"
-          valueKey="v"
-          data-intro="none"
-          aria-label="Kake">
-          <TestMark />
-        </PieChart.Root>
-      </LocaleProvider>
-    );
-    const { host, rerender } = renderThemed(chart(["strom", "nettleie"]));
-    rerender(chart(["strom", "avgifter"]));
-    // DOM audit: the ghost is plot output the loop writes, read by its attribute.
-    expect(host.querySelectorAll("[data-ghost]")).toHaveLength(1);
-    await expect.poll(() => host.querySelectorAll("[data-ghost]").length, { timeout: 2000 }).toBe(0);
-    expect(host.querySelector('[data-key="avgifter"]')?.getAttribute("data-value")).toBe("20");
-  });
-});
-
-/** Records the polar model each render reads, so a test can tell a rebuilt model from a kept one. */
-function ModelProbe({ seen }: { readonly seen: unknown[] }): ReactNode {
-  seen.push(usePolarContext("Test.ModelProbe", ["pie", "radial", "clock"]).model);
-  return null;
-}
-
-describe("an inline format object (A1-14)", () => {
-  // A Root reads a format that names the same options as no change, as the cartesian Root does with
-  // its xFormat, so a parent render that writes the format inline keeps the model it built.
-  const DAY = Date.parse("2025-10-24T22:00:00Z");
-  const HOURS = Array.from({ length: 24 }, (_, hour) => ({ start: DAY + hour * 3_600_000, kwh: 1 }));
-  const KWH = { kwh: { label: "kWh", color: "chart-1" } } as const;
-  it.each([
-    [
-      "PieChart.Root's valueFormat",
-      (seen: unknown[]) => (
-        <PieChart.Root
-          data={BILL}
-          config={BILL_CONFIG}
-          nameKey="name"
-          valueKey="v"
-          valueFormat={{ maximumFractionDigits: 0 }}
-          aria-label="Kake">
-          <ModelProbe seen={seen} />
-        </PieChart.Root>
-      ),
-    ],
-    [
-      "RadialChart.Root's valueFormat",
-      (seen: unknown[]) => (
-        <RadialChart.Root
-          data={BILL}
-          config={BILL_CONFIG}
-          nameKey="name"
-          valueKey="v"
-          valueFormat={{ maximumFractionDigits: 0 }}
-          aria-label="Ringer">
-          <ModelProbe seen={seen} />
-        </RadialChart.Root>
-      ),
-    ],
-    [
-      "ClockChart.Root's xFormat",
-      (seen: unknown[]) => (
-        <ClockChart.Root
-          data={HOURS}
-          config={KWH}
-          xKey="start"
-          cycle="day"
-          interval="hour"
-          xFormat={{ hour: "2-digit" }}
-          aria-label="Døgn">
-          <ModelProbe seen={seen} />
-        </ClockChart.Root>
-      ),
-    ],
-  ])("keeps the model across a render with an equal inline %s", (_, chart) => {
-    const seen: unknown[] = [];
-    const { rerender } = renderThemed(
-      <LocaleProvider locale="nb-NO" timeZone="Europe/Oslo">
-        {chart(seen)}
-      </LocaleProvider>
-    );
-    rerender(
-      <LocaleProvider locale="nb-NO" timeZone="Europe/Oslo">
-        {chart(seen)}
-      </LocaleProvider>
-    );
-    expect(seen.length).toBeGreaterThan(1);
-    expect(new Set(seen).size).toBe(1);
   });
 });

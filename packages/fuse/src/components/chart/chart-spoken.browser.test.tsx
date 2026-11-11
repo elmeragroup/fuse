@@ -1,7 +1,7 @@
 // The ticket's screen reader judge, in Chromium: hand-written spoken arrays in Norwegian Bokmål for
 // section 8.7's S07 days, section 9.4's S14 emphasis, the table, S09's change column and the status
-// messages. The other locales' words are format unit tests. Section 9.1's key sequence for S06 and
-// the fall-back day lives in chart-pattern.browser.test.tsx. Every date comes from layer 03's literal fixtures, every
+// messages. The other locales' words are format unit tests. The cartesian key maps are in
+// chart-keyboard.browser.test.tsx. Every date comes from layer 03's literal fixtures, every
 // word from CONTRACT section 12's drafted dictionary, every value from the committed Elhub days,
 // and the phrase grammar is vsr's own: role, name, state, position and set size, joined by ", ".
 import { virtual } from "@guidepup/virtual-screen-reader";

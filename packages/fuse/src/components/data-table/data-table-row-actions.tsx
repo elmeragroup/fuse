@@ -32,6 +32,7 @@ export function DataTableRowActions({ label, children, ...props }: DataTableRowA
     <DropdownMenuRoot>
       <DropdownMenuTrigger
         data-slot="data-table-row-actions"
+        // oxlint-disable-next-line fuse/render-element-wiring -- this is the part's own name, not wiring: an icon-size Button requires an aria-label of its own, and the menu trigger sets none it could override
         render={<Button variant="ghost" size="icon-sm" aria-label={label} />}
         {...props}>
         <DotsThree aria-hidden="true" />

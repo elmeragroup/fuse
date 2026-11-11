@@ -10,7 +10,7 @@ catalog:
   "@effect/vitest": 4.0.6
   "@elmeragroup/internal": 0.2.0-canary.19
   "@arethetypeswrong/core": 0.18.5
-  # The docs e2e axe audit of the chart demos, in all three engines. 4.14.0 is past the minimum
+  # The axe pass of the docs route smoke test. 4.14.0 is past the minimum
   # release age, so it needs no exclude entry.
   "@axe-core/playwright": 4.14.0
   "@base-ui/react": 1.9.0
@@ -27,7 +27,6 @@ catalog:
   "@microsoft/api-extractor": 7.59.4
   "@mdx-js/loader": 3.1.1
   "@next/mdx": 16.4.2
-  "@next/playwright": 16.4.2
   "@shadcn/lint": 0.1.1
   # satori, which next/og bundles, pins this exact build; the OG card measures text with it.
   "@shuding/opentype.js": 1.4.0-beta.0
@@ -67,6 +66,8 @@ catalog:
   mdast-util-gfm-strikethrough: 2.0.0
   micromark-extension-gfm-strikethrough: 2.1.0
   next: 16.4.2
+  # Types and rule helpers for the repo-local oxlint plugin. Pinned to the oxlint release.
+  "@oxlint/plugins": 1.89.0
   oxc-parser: 0.148.0
   oxc-transform: 0.148.0
   oxfmt: 0.74.0
@@ -123,8 +124,7 @@ minimumReleaseAgeExclude:
   - "@elmeragroup/internal@0.2.0-canary.19"
   # tsrs 0.21 (TypeScript 7.1 beta) is the version this internal canary depends on. The frozen
   # install checks every lockfile entry, including the optional platform binaries. Drop these
-  # entries, and their temporary allowance in test/internal-package.test.mjs, once the versions
-  # age past the guard on 2026-11-06T20:26Z.
+  # entries once the versions age past the guard on 2026-11-06T20:26Z.
   - tsrs@0.21.0-ts7.1.0-beta
   - "@tsrs/darwin-arm64@0.21.0-ts7.1.0-beta"
   - "@tsrs/darwin-x64@0.21.0-ts7.1.0-beta"

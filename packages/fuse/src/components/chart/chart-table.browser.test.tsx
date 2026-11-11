@@ -39,12 +39,12 @@ function yearChart(locale: "nb-NO" | "en-US" = "nb-NO") {
 }
 
 function bodyRows(host: HTMLElement): number {
-  // DOM audit: the table is visually hidden while collapsed, so its rows are read by structure.
+  // The table is visually hidden while collapsed, so its rows are read by structure.
   return host.querySelectorAll('[data-slot="chart-table-content"] tbody tr').length;
 }
 
 function status(host: HTMLElement): string {
-  // DOM audit: the visible page status is the pagination's only text.
+  // The visible page status is the pagination's only text.
   return host.querySelector('[data-slot="chart-table-pagination"] > span')?.textContent ?? "";
 }
 
@@ -60,7 +60,7 @@ describe("the table's disclosure", () => {
 
   it("keeps the collapsed table's controls out of the Tab order and moves focus to the table when shown", async () => {
     const { host } = renderThemed(yearChart());
-    // DOM audit: the pagination buttons are named by DataTable's dictionary.
+    // The pagination buttons are named by DataTable's dictionary.
     const controls = [...host.querySelectorAll('[data-slot="chart-table-pagination"] button')];
     expect(controls.length).toBe(4);
     for (const control of controls) expect(control.getAttribute("tabindex")).toBe("-1");
@@ -90,7 +90,7 @@ describe("the hourly year's pages", () => {
     await userEvent.click(next);
     expect(status(host)).toBe("Side 4 av 53 · uke 43");
     expect(bodyRows(host)).toBe(169);
-    // DOM audit: Root's status region announces the page change.
+    // Root's status region announces the page change.
     expect(host.querySelector('[role="status"]')?.textContent.trim()).toBe("Side 4 av 53 · uke 43");
     await userEvent.click(page.getByRole("button", { name: "Gå til siste side" }));
     expect(status(host)).toBe("Side 53 av 53 · uke 40");
@@ -103,7 +103,7 @@ describe("the hourly year's pages", () => {
     const { host } = renderThemed(yearChart("en-US"));
     await userEvent.click(page.getByRole("button", { name: "Show as table" }));
     await userEvent.click(page.getByRole("button", { name: "Go to next page" }));
-    // DOM audit: Root's status region announces the page change.
+    // Root's status region announces the page change.
     expect(host.querySelector('[role="status"]')?.textContent.trim()).toBe("Page 2 of 53 · week\u00a041");
   });
 
@@ -115,7 +115,7 @@ describe("the hourly year's pages", () => {
     expect(table.getAttribute("tabindex")).toBe("-1");
     await userEvent.click(page.getByRole("button", { name: "Vis som tabell" }));
     expect(table.getAttribute("tabindex")).toBe("0");
-    // DOM audit: Fuse Table's scroll container holds the table.
+    // Fuse Table's scroll container holds the table.
     expect(host.querySelector('[data-slot="table-container"]')?.contains(table)).toBe(true);
     await userEvent.keyboard("{Shift>}{Tab}{/Shift}");
     await userEvent.keyboard("{Tab}");
@@ -124,7 +124,7 @@ describe("the hourly year's pages", () => {
 
   it("prints the unit once in the header and none in the cells", () => {
     const { host } = renderThemed(yearChart());
-    // DOM audit: the table's header cells, read by structure.
+    // The table's header cells, read by structure.
     const headers = [...host.querySelectorAll('[data-slot="chart-table-content"] thead th')].map(
       (cell) => cell.querySelector('[aria-hidden="true"]')?.textContent ?? cell.textContent
     );
@@ -161,12 +161,12 @@ describe("the empty state", () => {
         </Chart.Root>
       </LocaleProvider>
     );
-    // DOM audit: marks are aria-hidden plot output.
+    // Marks are aria-hidden plot output.
     expect(host.querySelectorAll('[data-slot="chart-bar"], [data-slot="chart-bar-missing"]')).toHaveLength(0);
     expect(host.querySelector('[role="listbox"]')).toBeNull();
     expect(host.querySelector('[data-slot="chart-table"]')).toBeNull();
     expect(page.getByText("Ingen data for perioden", { exact: true }).element()).toBeTruthy();
-    // DOM audit: the description is visually hidden text.
+    // The description is visually hidden text.
     expect(host.querySelector('[data-slot="chart-description"]')?.textContent).toBe(
       "Ingen data for perioden."
     );
@@ -180,7 +180,7 @@ describe("the skeleton", () => {
         <Chart.Skeleton />
       </LocaleProvider>
     );
-    // DOM audit: skeleton marks are aria-hidden shapes.
+    // Skeleton marks are aria-hidden shapes.
     expect(host.querySelectorAll('[data-slot="chart-skeleton-mark"]')).toHaveLength(12);
     expect(page.getByRole("status", { name: "Laster diagram" }).element()).toBeTruthy();
   });

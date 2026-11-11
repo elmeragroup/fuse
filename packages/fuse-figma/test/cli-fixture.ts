@@ -81,7 +81,7 @@ export function hex(value: ReturnType<InMemoryFigma["resolve"]>): string {
 }
 
 /** The brand modes by brand code, as designers read them in the Appearance panel. */
-export const BRAND_MODES = new Map([
+const BRAND_MODES = new Map([
   ["fkas", "Fjordkraft"],
   ["tkas", "TrøndelagKraft"],
   ["guen", "Gudbrandsdal Energi"],

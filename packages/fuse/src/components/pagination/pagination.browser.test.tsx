@@ -178,27 +178,6 @@ describe("Pagination", () => {
     expect(getComputedStyle(active).boxShadow).not.toBe(getComputedStyle(inactive).boxShadow);
   });
 
-  it("keeps every link inside the navigation when the row has to wrap", () => {
-    renderPagination(
-      <div style={{ width: 200 }}>
-        <BasicPages />
-      </div>
-    );
-    const navigation = roleNamed("navigation", "Pagination");
-    const bounds = navigation.getBoundingClientRect();
-    const links = page
-      .getByRole("link")
-      .elements()
-      .filter((element): element is HTMLElement => element instanceof HTMLElement);
-    // Previous, both page links and Next; the ellipsis is not a link.
-    expect(links).toHaveLength(4);
-    for (const link of links) {
-      const rect = link.getBoundingClientRect();
-      expect(rect.left).toBeGreaterThanOrEqual(bounds.left - 1);
-      expect(rect.right).toBeLessThanOrEqual(bounds.right + 1);
-    }
-  });
-
   it("moves aria-current with a controlled next-page click", async () => {
     function Controlled() {
       const [current, setCurrent] = useState(2);

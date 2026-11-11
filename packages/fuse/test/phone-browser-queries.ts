@@ -68,7 +68,7 @@ export async function selectCountry(
  * single-country field shows as plain context. Its text holds the dial code either way.
  */
 export function countryAddon(name = "Mobile"): HTMLElement {
-  // DOM audit: the addon is an unnamed group inside the input group around the number input.
+  // The addon is an unnamed group inside the input group around the number input.
   const addon = phoneInput(name).closest('[role="group"]')?.querySelector("[data-slot=input-group-addon]");
   if (!(addon instanceof HTMLElement)) {
     throw new Error(`expected the country addon of ${name}`);

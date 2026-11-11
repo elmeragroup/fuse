@@ -36,7 +36,9 @@ export const itemStyles = tv({
       false: "",
     },
     isSelected: {
+      // oxlint-disable-next-line fuse/state-face -- a list row shows its disabled state as muted text, not through the control state face
       false: "hover:bg-muted",
+      // oxlint-disable-next-line fuse/state-face -- a list row shows its disabled state as muted text, not through the control state face
       true: "z-20 border bg-muted hover:bg-muted/80",
     },
     isDisabled: {

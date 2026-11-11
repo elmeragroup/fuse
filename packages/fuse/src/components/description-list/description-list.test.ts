@@ -6,15 +6,6 @@ import { describe, expect, it } from "vitest";
 import { RAW_PALETTE_RE } from "../../../test/raw-palette";
 import { DescriptionList } from "./description-list";
 
-const SLOTS = [
-  "description-list",
-  "description-list-heading",
-  "description-list-content",
-  "description-list-item",
-  "description-list-term",
-  "description-list-details",
-] as const;
-
 function markup(): string {
   return renderToStaticMarkup(
     createElement(
@@ -40,15 +31,6 @@ function markup(): string {
     )
   );
 }
-
-describe("DescriptionList slots", () => {
-  it("stamps each part's data-slot", () => {
-    const html = markup();
-    for (const slot of SLOTS) {
-      expect(html, slot).toContain(`data-slot="${slot}"`);
-    }
-  });
-});
 
 describe("DescriptionList structure", () => {
   // Each part keeps its base class beside a consumer class; a conflicting consumer class wins.

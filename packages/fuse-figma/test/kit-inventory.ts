@@ -8,7 +8,7 @@
  */
 
 /** A component set as the kit places it on its page. */
-export type InventorySet = {
+type InventorySet = {
   /** The set's key, such as `icon-button`. */
   readonly key: string;
   /** The set's name, such as `Icon button`. */
@@ -396,30 +396,6 @@ export const KIT_PAGES: readonly InventoryPage[] = [
     ],
   },
 ];
-
-/**
- * The sets the kit builds after the Field page's sets, since Radio group shows Field's legend,
- * description and error and Radio row comes before it, though their page comes before Field's. The
- * plugin creates and moves sets in build order and lays out pages in page order.
- */
-const BUILT_AFTER_FIELD: ReadonlySet<string> = new Set(["radio-row", "radio-group"]);
-
-/**
- * Every set with its page, in the order the kit builds them: each page's sets in page order, with the
- * sets built after Field's last set, Field title, placed right after it.
- *
- * @returns The sets and their pages.
- */
-export function setsInBuildOrder(): readonly { readonly page: InventoryPage; readonly set: InventorySet }[] {
-  const all = KIT_PAGES.flatMap((page) => page.sets.map((set) => ({ page, set })));
-  const later = all.filter(({ set }) => BUILT_AFTER_FIELD.has(set.key));
-  return all
-    .filter(({ set }) => !BUILT_AFTER_FIELD.has(set.key))
-    .flatMap((entry) => (entry.set.key === "field-title" ? [entry, ...later] : [entry]));
-}
-
-/** The page that holds the icon library alone, after the component pages. */
-export const ICONS_PAGE = { key: "page/icons", name: "Icons" } as const;
 
 /** The four Fjordkraft private themes each component page previews, in frame order. */
 const PREVIEW_THEMES = [
