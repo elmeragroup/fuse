@@ -457,6 +457,7 @@
       "file-upload-compact.tsx",
       "file-upload-limits.tsx",
       "file-upload-picker.tsx",
+      "file-upload-field.tsx",
       "file-upload-folders.tsx"
     ]
   },

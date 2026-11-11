@@ -13,6 +13,7 @@ import { useRender } from "@base-ui/react/use-render";
 
 import { useStableCallback } from "../../hooks/use-stable-callback";
 import { definedProps } from "../../internal/defined-props";
+import { useFieldDisabled } from "../../internal/field-set-disabled";
 import type { Bounds } from "../../temporal/bounds";
 import type { DateGranularity, ResolvedKind, TemporalValue, ValueKind } from "../../temporal/temporal-value";
 import type { CalendarRootProps } from "../calendar/calendar";
@@ -25,12 +26,7 @@ import type { DatePickerPresetValue, PickerOpenRequest, PickerPresetReader } fro
 import { stateClassName } from "./picker-class-name";
 import type { DatePickerClassName } from "./picker-class-name";
 import { usePickerFocusBoundary, usePickerOpener } from "./picker-focus-boundary";
-import {
-  PICKER_STATE_ATTRIBUTES,
-  PickerPopoverRoot,
-  PickerShellContext,
-  usePickerDisabled,
-} from "./picker-shell";
+import { PICKER_STATE_ATTRIBUTES, PickerPopoverRoot, PickerShellContext } from "./picker-shell";
 import type { PickerShellContextValue, PickerState, PresetRegistration } from "./picker-shell";
 import { kindWitness, useDayUnavailable } from "./picker-value";
 import type { PickerOwner } from "./picker-value";
@@ -253,7 +249,7 @@ export function usePickerRoot(options: PickerRootOptions): PickerRoot {
   const dayUnavailable = useDayUnavailable(isDateUnavailable, kind.kind);
   // `useValueKind` keeps the resolved kind's identity while it holds, so the witness keeps its own.
   const witness = useMemo(() => kindWitness(kind), [kind]);
-  const disabled = usePickerDisabled(props.disabled);
+  const disabled = useFieldDisabled(props.disabled);
 
   const { open } = session;
   const triggerId = useId();

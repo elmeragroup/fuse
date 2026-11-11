@@ -9,7 +9,7 @@ import type { FileRules } from "./split-files";
 export type FileUploadState = {
   /** A file drag that could drop here is over a `FileUpload.Dropzone`. */
   readonly dragging: boolean;
-  /** The Root is disabled, so every source is ignored. */
+  /** The Root is disabled, by itself or by an enclosing `Field.Root` or `Field.Set`, so every source is ignored. */
   readonly disabled: boolean;
 };
 
@@ -27,6 +27,11 @@ export type FileUploadMeta = {
   readonly descriptionIds: readonly string[];
   /** Track a mounted Description's id. The returned function stops tracking it. */
   readonly registerDescription: (id: string) => () => void;
+  /**
+   * Count a Trigger mounted inside a Field. A Field has one control, so development logs an error
+   * when a second one mounts. The returned function stops counting it.
+   */
+  readonly registerFieldTrigger: () => () => void;
   /** The Dropzones, by id, that show a drop target now. `state.dragging` is whether any does. */
   readonly dropTargets: ReadonlySet<string>;
   /** Mark the Dropzone `zone` as showing a drop target, or as no longer showing one. */
