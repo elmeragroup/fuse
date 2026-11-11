@@ -136,7 +136,7 @@ describe("landing page", () => {
     const app = dashboard(page);
     // The rail and its state markers have no role, so they are found by their slots.
     const rail = app.locator("[data-slot='sidebar-container']");
-    const state = async () => app.locator("[data-slot='sidebar'][data-state]").getAttribute("data-state");
+    const state = () => app.locator("[data-slot='sidebar'][data-state]").getAttribute("data-state");
     const appBox = await app.boundingBox();
     const railBox = await rail.boundingBox();
     expect(railBox?.y).toBe(appBox?.y);

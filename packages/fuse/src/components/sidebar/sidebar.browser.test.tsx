@@ -321,7 +321,8 @@ describe("Sidebar in a bounded container", () => {
     renderThemed(<Bounded />);
     const pane = roleNamed("region", "Pane").getBoundingClientRect();
     expect(bySlot("sidebar-wrapper").getBoundingClientRect().height).toBe(BOX.height);
-    expect({ top: railBox().top, left: railBox().left, height: railBox().height }).toEqual({
+    const rail = railBox();
+    expect({ top: rail.top, left: rail.left, height: rail.height }).toEqual({
       top: pane.top,
       left: pane.left,
       height: BOX.height,
@@ -335,7 +336,7 @@ describe("Sidebar in a bounded container", () => {
     expect(bySlot("sidebar-wrapper").contains(hit)).toBe(false);
   });
 
-  it("keeps the open state in memory and writes no cookie, controlled or not", async () => {
+  it("keeps an uncontrolled Provider's open state in memory and writes no cookie", async () => {
     renderThemed(<Bounded />);
     const uncontrolled = await captureCookieWrites(async () => {
       await userEvent.click(roleNamed("button", "Toggle sidebar"));
@@ -370,6 +371,29 @@ describe("Sidebar in a bounded container", () => {
     const inside = await pressB({ metaKey: true }, roleNamed("button", "After"));
     expect(inside.defaultPrevented).toBe(true);
     expect(sidebarRoot().getAttribute("data-state")).toBe("expanded");
+  });
+
+  it("reports a handled ⌘B as handled to a React ancestor's onKeyDown", async () => {
+    const seen: { defaultPrevented: boolean; isDefaultPrevented: boolean }[] = [];
+    renderThemed(
+      <div
+        role="group"
+        aria-label="Host"
+        onKeyDown={(event) => {
+          if (event.key === "b") {
+            seen.push({
+              defaultPrevented: event.defaultPrevented,
+              isDefaultPrevented: event.isDefaultPrevented(),
+            });
+          }
+        }}>
+        <Bounded />
+      </div>
+    );
+    roleNamed("button", "After").focus();
+    await userEvent.keyboard("{Meta>}b{/Meta}");
+    expect(sidebarRoot().getAttribute("data-state")).toBe("collapsed");
+    expect(seen).toEqual([{ defaultPrevented: true, isDefaultPrevented: true }]);
   });
 
   it("takes ⌘B inside itself and leaves it to the page Sidebar everywhere else", async () => {

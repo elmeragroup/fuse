@@ -9,27 +9,6 @@ import { sidebarRowShellClass, sidebarSectionShellClass } from "../../styles/inn
 import { selfFocusRingClass } from "../../styles/utils";
 import { sidebarMenuBadgeOffsetClass, sidebarRowBoxClass } from "./sidebar-variants";
 
-/** The row that holds the panel and the inset, on the sidebar fill behind an `inset` panel. */
-const sidebarWrapperBaseClass = cn("group/sidebar-wrapper flex w-full has-data-[variant=inset]:bg-sidebar");
-
-/**
- * `Sidebar.Provider`'s wrapper at `bounds="page"`: the full-height page row that holds the panel
- * and the inset. It takes the sidebar fill behind an `inset` panel, so the inset reads as a card
- * on it.
- */
-export const sidebarWrapperClass = cn(sidebarWrapperBaseClass, "min-h-svh");
-
-/**
- * `Sidebar.Provider`'s wrapper at `bounds="container"`: it fills its container's height instead of
- * the viewport's and is the rail's containing block. It clips at its edges, so the collapsed
- * offcanvas rail, which slides past the start edge, stays inside the container as it stays off a
- * page's screen. `overflow-clip`, not `overflow-hidden`, so it never becomes a scroll container.
- */
-export const sidebarContainedWrapperClass = cn(
-  sidebarWrapperBaseClass,
-  "relative h-full min-h-0 overflow-clip"
-);
-
 /**
  * `Sidebar.Trigger`: the `icon-sm` ghost Button, with its hit area grown by 4px on each side.
  */

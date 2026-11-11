@@ -28,7 +28,7 @@ import {
   sidebarContentClass,
   sidebarPanelVariants,
   sidebarSeparatorClass,
-  sidebarWrapperClass,
+  sidebarWrapperVariants,
 } from "@elmeragroup/fuse/recipe-catalog";
 
 import type {
@@ -97,7 +97,7 @@ const WIDTHS: readonly OuterDeclaration[] = [
  */
 const WRAPPER: AncestorDefinition = {
   slot: "sidebar-wrapper",
-  classes: cn(sidebarWrapperClass, SIDEBAR_PROVIDER_CLASS),
+  classes: sidebarWrapperVariants({ className: SIDEBAR_PROVIDER_CLASS }),
   undrawn: "the Provider's wrapper lays out the panel beside the inset, which the set does not draw",
   backdrop: true,
 };

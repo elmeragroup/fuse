@@ -120,6 +120,27 @@ export const sidebarMenuSubButtonVariants = tv({
 });
 
 /**
+ * `Sidebar.Provider`'s wrapper: the row that holds the panel and the inset, on the sidebar fill
+ * behind an `inset` panel, so the inset reads as a card on it. Package-private, re-exported by the
+ * workspace-only recipe catalog for the Figma component sync.
+ * - `page`: the full-height page row, at least the viewport's height.
+ * - `container`: it fills its container's height instead of the viewport's and is the rail's
+ *   containing block. It clips at its edges, so the collapsed offcanvas rail, which slides past the
+ *   start edge, stays inside the container as it stays off a page's screen. `overflow-clip`, not
+ *   `overflow-hidden`, so it never becomes a scroll container.
+ */
+export const sidebarWrapperVariants = tv({
+  base: "group/sidebar-wrapper flex w-full has-data-[variant=inset]:bg-sidebar",
+  variants: {
+    bounds: {
+      page: "min-h-svh",
+      container: "relative h-full min-h-0 overflow-clip",
+    },
+  },
+  defaultVariants: { bounds: "page" },
+});
+
+/**
  * The desktop panel's parts — package-private, re-exported by the workspace-only recipe catalog
  * for the Figma component sync.
  * - `root`: the `group peer` anchor that carries `data-state`, `data-collapsible`, `data-variant`

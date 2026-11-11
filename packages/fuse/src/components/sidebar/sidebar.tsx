@@ -24,6 +24,7 @@ import type { VariantProps } from "tailwind-variants";
 
 import { useIsMobile } from "../../hooks/use-is-mobile";
 import { useLocalizedStrings } from "../../hooks/use-localized-strings";
+import { useStableCallback } from "../../hooks/use-stable-callback";
 import { SidebarSimple } from "../../icons/generated/sidebar-simple";
 import { ariaDisabledGuard } from "../../internal/aria-disabled-guard";
 import { definedProps } from "../../internal/defined-props";
@@ -71,9 +72,7 @@ import {
   sidebarRailClass,
   sidebarSectionClass,
   sidebarSeparatorClass,
-  sidebarContainedWrapperClass,
   sidebarTriggerClass,
-  sidebarWrapperClass,
 } from "./sidebar-class";
 import {
   sidebarGroupActionBoxClass,
@@ -81,6 +80,7 @@ import {
   sidebarMenuActionBoxClass,
   sidebarMenuSubButtonVariants,
   sidebarPanelVariants,
+  sidebarWrapperVariants,
 } from "./sidebar-variants";
 import { SIDEBAR_WIDTH, SIDEBAR_WIDTH_ICON, SIDEBAR_WIDTH_MOBILE } from "./sidebar-width";
 
@@ -146,12 +146,7 @@ export type SidebarLabels = {
   description: string;
 };
 
-/**
- * What a Sidebar lives in. `page` is the document's own app frame: the viewport bounds it, the
- * cookie persists it and ⌘B toggles it from anywhere. `container` is a box inside a page, such as
- * an embedded app pane or a demo: the box bounds it, the host owns persistence and ⌘B toggles it
- * only from inside.
- */
+/** What bounds a Sidebar; see `Sidebar.Provider`'s `bounds` prop. */
 export type SidebarBounds = "page" | "container";
 
 type SidebarInternalContextValue = {
@@ -215,10 +210,9 @@ export type SidebarProviderProps = ComponentProps<"div"> & {
 /**
  * Owns the open state, persists it to the `sidebar:state` cookie and toggles it on the keyboard
  * shortcut: ⌘B on Apple platforms and Ctrl+B elsewhere. The shortcut stands aside for a keydown
- * another handler already prevented, one mid-composition and one typed into a text field. With
- * `bounds="container"` it lives in a bounded box instead of the page: it neither persists the
- * state nor hears the shortcut from outside its own tree. A contained Sidebar inside a page one
- * takes ⌘B from inside itself first, so the page Sidebar keeps it from everywhere else.
+ * another handler already prevented, one mid-composition and one typed into a text field. A
+ * contained Sidebar inside a page one takes ⌘B from inside itself first; the page Sidebar keeps it
+ * everywhere else.
  */
 export function SidebarProvider({
   defaultOpen = true,
@@ -228,7 +222,6 @@ export function SidebarProvider({
   bounds = "page",
   className,
   style,
-  onKeyDown,
   children,
   ...props
 }: SidebarProviderProps): ReactElement {
@@ -280,34 +273,34 @@ export function SidebarProvider({
     setOpen((current) => !current);
   }, [setOpen]);
 
+  // Reads the native event and cancels `cancelable`: a React caller passes its synthetic event,
+  // since only that one updates what React ancestors see as `defaultPrevented`.
+  const handleShortcut = useStableCallback(
+    (event: KeyboardEvent, cancelable: Pick<KeyboardEvent, "preventDefault"> = event) => {
+      if (isSidebarShortcut(event)) {
+        cancelable.preventDefault();
+        toggleSidebar();
+      }
+    }
+  );
+
   useEffect(() => {
     if (bounds !== "page") {
       return;
     }
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (isSidebarShortcut(event)) {
-        event.preventDefault();
-        toggleSidebar();
-      }
-    };
 
-    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keydown", handleShortcut);
 
     return () => {
-      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keydown", handleShortcut);
     };
-  }, [bounds, toggleSidebar]);
+  }, [bounds, handleShortcut]);
 
   // A contained Sidebar hears the shortcut on its wrapper, as React bubbles it: from its own
   // descendants and from overlays it portals, such as its mobile Sheet, and never from the rest
-  // of the page. The caller's handler runs first and may prevent it.
-  const handleContainedKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
-    onKeyDown?.(event);
-    if (bounds === "container" && isSidebarShortcut(event.nativeEvent)) {
-      event.preventDefault();
-      toggleSidebar();
-    }
-  };
+  // of the page.
+  const handleContainedKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) =>
+    handleShortcut(event.nativeEvent, event);
 
   const state = open ? "expanded" : "collapsed";
 
@@ -337,7 +330,6 @@ export function SidebarProvider({
 
   return (
     <SidebarContext.Provider value={contextValue}>
-      {/* oxlint-disable-next-line jsx-a11y/no-static-element-interactions -- the wrapper takes no focus; its keydown handler hears the shortcut bubbling from descendants */}
       <div
         data-slot="sidebar-wrapper"
         style={{
@@ -345,9 +337,9 @@ export function SidebarProvider({
           "--sidebar-width-icon": SIDEBAR_WIDTH_ICON,
           ...style,
         }}
-        className={cn(bounds === "page" ? sidebarWrapperClass : sidebarContainedWrapperClass, className)}
-        onKeyDown={handleContainedKeyDown}
-        {...props}>
+        className={cn(sidebarWrapperVariants({ bounds }), className)}
+        // The caller's handler runs first and may prevent the shortcut.
+        {...mergeProps<"div">({ onKeyDown: bounds === "page" ? undefined : handleContainedKeyDown }, props)}>
         {children}
       </div>
     </SidebarContext.Provider>
