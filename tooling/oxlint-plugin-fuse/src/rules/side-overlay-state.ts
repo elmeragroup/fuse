@@ -30,9 +30,11 @@ type OverlayPart = {
 /**
  * Every Fuse part that renders a popup, by the path it is exported under (`Sheet.Root`,
  * `SelectField`), and how it is controlled. A modal popup (Dialog, AlertDialog, Sheet, Menu,
- * Select, a React Aria picker's popover) keeps the page's scroll locked and the shown side hidden
- * from assistive technology; a non-modal one (Popover, Combobox, Autocomplete, a date picker's
- * popup, a nav panel) stays on screen over the side that replaced it.
+ * Select, a React Aria picker's popover, a ListDetail below its breakpoint) keeps the page's scroll
+ * locked and the shown side hidden from assistive technology; a non-modal one (Popover, Combobox,
+ * Autocomplete, a date picker's popup, a nav panel) stays on screen over the side that replaced it.
+ * A ListDetail shows its detail as a Sheet over the list below its breakpoint and as a pane beside
+ * it above; `ListDetail.Detail` needs no row, because its Sheet reads the Root's `open`.
  *
  * `internal` parts keep their popup's state inside: `SelectField`, `PhoneNumberField` and
  * `DataTable.RowActions` take no open state, `Sidebar.Root` holds its phone Sheet's in the
@@ -69,6 +71,7 @@ const FUSE_OVERLAYS: ReadonlyMap<string, OverlayPart> = new Map(
     DateRangePickerField: { state: "isOpen" },
     "Dialog.Root": { state: "open" },
     "DropdownMenu.Root": { state: "open" },
+    "ListDetail.Root": { state: "open" },
     "NavigationMenu.Root": { state: "value" },
     PhoneNumberField: { state: "internal" },
     "Popover.Root": { state: "open" },

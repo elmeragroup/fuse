@@ -4,6 +4,7 @@ import { sideOverlayState } from "./side-overlay-state.ts";
 const hook = 'import { useSideOverlay } from "../window-side";\n';
 const sheet = `${hook}import { Sheet } from "@elmeragroup/fuse/sheet";\n`;
 const dataTable = `${hook}import { DataTable } from "@elmeragroup/fuse/data-table";\n`;
+const listDetail = `${hook}import { ListDetail } from "@elmeragroup/fuse/list-detail";\n`;
 
 ruleTester.run("side-overlay-state", sideOverlayState, {
   valid: [
@@ -23,6 +24,9 @@ function Panel() { const [open] = useSideOverlay(false); return <Sheet.Root open
     `${sheet}function Panel({ open = false }) { return <Sheet.Root open={open} />; }`,
     `${sheet}const Panel = ({ sheetOpen: shown = false }) => <Sheet.Root open={shown} />;`,
     `${sheet}function Shell() { const [open, setOpen] = useSideOverlay(false); return <Panel sheetOpen={open} onSheetOpenChange={setOpen} />; }`,
+    // A ListDetail's Sheet, held by the hook or forwarded with a closed default.
+    `${listDetail}function Orders() { const [open, setOpen] = useSideOverlay(false); return <ListDetail.Root open={open} onOpenChange={setOpen} />; }`,
+    `${listDetail}function Main({ detailOpen = false, onDetailOpenChange }) { return <ListDetail.Root open={detailOpen} onOpenChange={onDetailOpenChange} />; }`,
     // React Aria's picker and Fuse's picker fields take `isOpen`.
     `${hook}import { DatePicker } from "@elmeragroup/fuse/react-aria/date-picker";
 function Start() { const [open, setOpen] = useSideOverlay(false); return <DatePicker isOpen={open} onOpenChange={setOpen} />; }`,
@@ -175,6 +179,10 @@ function Panel() { const [open] = useSideOverlay(CLOSED); return <Sheet.Root ope
     },
     {
       code: `${sheet}function Panel({ open = true }) { return <Sheet.Root open={open} />; }`,
+      errors: [{ messageId: "openDefault" }],
+    },
+    {
+      code: `${listDetail}function Main({ detailOpen, onDetailOpenChange }) { return <ListDetail.Root open={detailOpen} onOpenChange={onDetailOpenChange} />; }`,
       errors: [{ messageId: "openDefault" }],
     },
     // A callback's parameter is data, not a component's forwarded prop.
