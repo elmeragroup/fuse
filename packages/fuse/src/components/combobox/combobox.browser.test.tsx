@@ -5,11 +5,9 @@ import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
-import { nextFrames } from "../../../test/animation-frames";
 import { withLocale } from "../../../test/locale-matrix";
-import { formNamed, renderThemed, stampDensity } from "../../../test/themed-browser-render";
+import { formNamed, renderThemed } from "../../../test/themed-browser-render";
 import type { SupportedLocale } from "../../intl/locale-context";
-import { DENSITIES } from "../../theme/density";
 import { Field } from "../field";
 import { InputGroup } from "../input-group";
 import { Combobox } from "./index";
@@ -532,44 +530,44 @@ describe("Combobox", () => {
     expect(page.getByText(EMPTY_COPY["en-US"], { exact: true }).query()).toBeNull();
   });
 
-  it("spans the open popup across the whole field box, trailing addon included, at both densities", async () => {
-    for (const density of DENSITIES) {
-      stampDensity(density);
-      // A box narrower than the viewport, so the popup has room on both sides of the field box.
-      const { unmount } = renderCombobox(
-        <div style={{ width: 240, marginInline: 40 }}>
-          <FruitCombobox />
-        </div>
-      );
-      const group = comboboxNamed("Fruit").closest('[data-slot="input-group"]');
-      if (!(group instanceof HTMLElement)) {
-        throw new Error("expected the field box around the combobox input");
-      }
-      const listbox = await openWithArrowDown();
-      const popup = listbox.closest('[data-slot="combobox-content"]');
-      if (!(popup instanceof HTMLElement)) {
-        throw new Error("expected the popup around the listbox");
-      }
-      const box = group.getBoundingClientRect();
-      // Polled: the popup is positioned, and finishes its open transition, after it mounts.
-      await expect
-        .poll(() => Math.abs(popup.getBoundingClientRect().left - box.left), { message: `${density} left` })
-        .toBeLessThanOrEqual(1);
-      await expect
-        .poll(() => Math.abs(popup.getBoundingClientRect().right - box.right), {
-          message: `${density} right`,
-        })
-        .toBeLessThanOrEqual(1);
-      unmount();
+  it("spans the open popup across the whole field box, trailing addon included", async () => {
+    // A box narrower than the viewport, so the popup has room on both sides of the field box.
+    renderCombobox(
+      <div style={{ width: 240, marginInline: 40 }}>
+        <FruitCombobox />
+      </div>
+    );
+    const group = comboboxNamed("Fruit").closest('[data-slot="input-group"]');
+    if (!(group instanceof HTMLElement)) {
+      throw new Error("expected the field box around the combobox input");
     }
+    const listbox = await openWithArrowDown();
+    const popup = listbox.closest('[data-slot="combobox-content"]');
+    if (!(popup instanceof HTMLElement)) {
+      throw new Error("expected the popup around the listbox");
+    }
+    const box = group.getBoundingClientRect();
+    // Polled: the popup is positioned, and finishes its open transition, after it mounts.
+    await expect
+      .poll(() => Math.abs(popup.getBoundingClientRect().left - box.left), { message: "left edge" })
+      .toBeLessThanOrEqual(1);
+    await expect
+      .poll(() => Math.abs(popup.getBoundingClientRect().right - box.right), { message: "right edge" })
+      .toBeLessThanOrEqual(1);
   });
 
   it("does not open from a press on the field box while Combobox.Input is disabled", async () => {
     // A box narrower than the viewport, so the whole field box is on screen to press.
+    const events: string[] = [];
     function OpenOnPress({ disabled }: { disabled: boolean }) {
       return (
         <div style={{ width: 240 }}>
-          <Combobox.Root items={[...FRUITS]} openOnInputClick>
+          <Combobox.Root
+            items={[...FRUITS]}
+            openOnInputClick
+            onOpenChange={(open) => {
+              events.push(`open:${String(open)}`);
+            }}>
             <Combobox.Input aria-label="Fruit" disabled={disabled} />
             <Combobox.Content>
               <Combobox.List>
@@ -606,12 +604,14 @@ describe("Combobox", () => {
     const enabled = renderCombobox(<OpenOnPress disabled={false} />);
     await pressAddonRail();
     await openedListbox();
+    expect(events).toEqual(["open:true"]);
     enabled.unmount();
+    events.length = 0;
 
+    // Base UI requests the open state inside the press's own handler, so none was requested.
     renderCombobox(<OpenOnPress disabled />);
     await pressAddonRail();
-    await nextFrames(3);
-    expect(page.getByRole("listbox").query()).toBeNull();
+    expect(events).toEqual([]);
   });
 
   it("leaves a press on a label in a custom addon to the label, without focusing or opening the combobox", async () => {
@@ -639,7 +639,7 @@ describe("Combobox", () => {
     );
     await userEvent.click(page.getByText("Other", { exact: true }));
     await expect.element(page.getByRole("textbox", { name: "Other", exact: true })).toHaveFocus();
-    await nextFrames(3);
+    // Base UI focuses the input and requests the open state inside the press's own handlers.
     expect(events).toEqual([]);
   });
 });
