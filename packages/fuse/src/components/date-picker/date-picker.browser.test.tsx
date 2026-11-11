@@ -432,15 +432,15 @@ describe("DatePicker.TimeInput", () => {
   });
 
   describe("a time held before a day, across a change of the empty picker's zone or kind", () => {
-    /** An empty Oslo picker whose parent switches its `timeZone` to `to`, logging its values. */
-    function Switching({ to }: { readonly to: string | undefined }): ReactElement {
+    /** An empty Oslo picker whose `timeZone` the test sets through `parent`, logging its values. */
+    function Switching({ parent }: { readonly parent: ParentHandle<string | undefined> }): ReactElement {
       const [zone, setZone] = useState<string | undefined>("Europe/Oslo");
       const [values, setValues] = useState<string[]>([]);
+      useEffect(() => {
+        parent.bind(setZone);
+      }, [parent]);
       return (
         <>
-          <button type="button" onClick={() => setZone(to)}>
-            Switch
-          </button>
           <DatePickerField
             label="Starts"
             granularity="minute"
@@ -455,26 +455,35 @@ describe("DatePicker.TimeInput", () => {
     }
 
     // The held time is a wall time: 09:30 on November 11 in the picker's zone and kind at the pick.
+    // The popup time names the zone it forms in, today's (October 15's) name for it, and a plain
+    // date-time names none.
     it.each([
       {
         change: "zone to New York",
         to: "America/New_York",
+        zone: "EDT",
         expected: "2026-11-11T09:30:00-05:00[America/New_York]",
       },
-      { change: "kind to a plain date-time", to: undefined, expected: "2026-11-11T09:30:00" },
-    ])("commits the held 09:30 on the day picked after its $change", async ({ to, expected }) => {
-      renderThemed(withLocale("en-US", <Switching to={to} />));
+      { change: "kind to a plain date-time", to: undefined, zone: null, expected: "2026-11-11T09:30:00" },
+    ])("commits the held 09:30 on the day picked after its $change", async ({ to, zone, expected }) => {
+      const parent = parentHandle<string | undefined>();
+      renderThemed(withLocale("en-US", <Switching parent={parent} />));
       await userEvent.click(roleNamed("button", "Calendar Starts"));
       await waitForPopupSettled();
       await userEvent.click(timeSegment("hour"));
       await userEvent.keyboard("0930");
 
-      // `click()` switches without moving focus, so the popup stays open.
-      roleNamed("button", "Switch").click();
-      await expect.element(timeSegment("hour")).toHaveTextContent("09");
+      // The parent switches with the popup open; a click on a control outside it would close it.
+      parent.set(to);
+      const zoneSegment = page.getByRole("textbox", { name: "time zone, Time", exact: true });
+      await (zone === null
+        ? expect.element(zoneSegment).not.toBeInTheDocument()
+        : expect.element(zoneSegment).toHaveTextContent(zone));
+      expect(roleNamed("spinbutton", "hour, Time").textContent).toBe("09");
       expect(roleNamed("spinbutton", "minute, Time").textContent).toBe("30");
       // The month button pages to November; the popup repositions after the switch, so the month
-      // button and the days are reached without a pointer.
+      // button and the days are reached without a pointer, once any focus restore has run.
+      await popupFocusRestored();
       roleNamed("button", "Next").click();
       await pickDay("Wednesday, November 11, 2026");
 
