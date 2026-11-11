@@ -136,3 +136,10 @@ minimumReleaseAgeExclude:
   - "@tsrs/linux-x64-gnu@0.21.0-ts7.1.0-beta"
   - "@tsrs/linux-x64-musl@0.21.0-ts7.1.0-beta"
   - "@tsrs/win32-x64@0.21.0-ts7.1.0-beta"
+
+patchedDependencies:
+  # Backports mui/base-ui#6165 (unreleased after 1.9.0): useDismiss no longer replays an outside
+  # press whose propagation another document capture listener stopped (such as React Aria's popover
+  # dismissal) on the next click, which dismissed a Sheet or other Base UI popup. Drop it with the
+  # first release that ships the fix (#608).
+  "@base-ui/react@1.9.0": patches/@base-ui__react@1.9.0.patch
