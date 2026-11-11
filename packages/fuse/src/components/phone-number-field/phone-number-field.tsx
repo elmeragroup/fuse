@@ -466,165 +466,167 @@ export function PhoneNumberField({
   );
 
   return (
-    <>
-      <FieldFrame
-        className={className}
-        name={name}
-        invalid={isInvalid}
-        disabled={isDisabled}
-        label={label}
-        description={description}
-        errorMessage={errorMessage}>
-        <PhoneFieldGroup
-          ref={inputGroupRef}
-          size={size}
-          aria-invalid={isInvalid || undefined}
-          {...definedProps({ "aria-label": ariaLabel, "aria-labelledby": ariaLabelledby })}>
-          {phone.countries.length === 1 ? (
-            <InputGroupAddon className="text-foreground" align="inline-start">
-              {/* One country leaves nothing to pick, so its flag and dial code are context: no
-                  trigger, popup or tab stop, and a click focuses the number input, as on any
-                  addon. The name after the code tells assistive technology which country the
-                  code belongs to, read as "+47 Norway", the order the trigger's name takes. */}
-              {/* The addon keeps its block padding and inline inset for a non-button child, so
-                  only a trailing gap here puts the flag where the trigger's sits. The server's
-                  Intl data can name a country differently from the browser's (Hong Kong), so the
-                  name may keep the server's text through hydration. */}
-              <div className="flex shrink-0 items-center pr-1">
-                {countryFace}
-                <span className="sr-only" suppressHydrationWarning>
-                  {getCountryName(phone.country.code)}
-                </span>
-              </div>
-            </InputGroupAddon>
-          ) : (
-            <CountryPickerScope>
-              <ComboboxPrimitive.Root
-                items={pickerCountries}
-                value={phone.country}
-                onValueChange={(next) => {
-                  if (!isEditable) return;
-                  phone.selectCountry(next?.code);
-                  requestAnimationFrame(() => numberInputRef.current?.focus());
-                }}
-                itemToStringLabel={countryToStringLabel}
-                itemToStringValue={countryCodeOf}
-                isItemEqualToValue={isSameCountry}
-                onOpenChange={(open) => {
-                  // Only latch open. Base UI still filters with itemToStringLabel through
-                  // the exit transition; flipping this back to false here would switch
-                  // labels from names to ISO codes and flash the empty state.
-                  if (open) {
-                    // Base UI calls this before it commits `open`, and finds the selected row's
-                    // index only while the popup is closed. The sorted rows commit first, in their
-                    // own render, so the popup opens highlighting the selected country rather than
-                    // whichever took its old index. On the first open the labels switch to names
-                    // only after that render: switching them in it too loses the highlight.
-                    if (rowOrderLocale !== locale) {
-                      flushSync(() => setRowOrderLocale(locale));
-                    }
-                    countryPickerOpenRef.current = true;
+    <FieldFrame
+      className={className}
+      name={name}
+      invalid={isInvalid}
+      disabled={isDisabled}
+      label={label}
+      description={description}
+      errorMessage={errorMessage}>
+      <PhoneFieldGroup
+        ref={inputGroupRef}
+        size={size}
+        aria-invalid={isInvalid || undefined}
+        {...definedProps({ "aria-label": ariaLabel, "aria-labelledby": ariaLabelledby })}>
+        {phone.countries.length === 1 ? (
+          <InputGroupAddon className="text-foreground" align="inline-start">
+            {/* One country leaves nothing to pick, so its flag and dial code are context: no
+                trigger, popup or tab stop, and a click focuses the number input, as on any
+                addon. The name after the code tells assistive technology which country the
+                code belongs to, read as "+47 Norway", the order the trigger's name takes. */}
+            {/* The addon keeps its block padding and inline inset for a non-button child, so
+                only a trailing gap here puts the flag where the trigger's sits. The server's
+                Intl data can name a country differently from the browser's (Hong Kong), so the
+                name may keep the server's text through hydration. */}
+            <div className="flex shrink-0 items-center pr-1">
+              {countryFace}
+              <span className="sr-only" suppressHydrationWarning>
+                {getCountryName(phone.country.code)}
+              </span>
+            </div>
+          </InputGroupAddon>
+        ) : (
+          <CountryPickerScope>
+            <ComboboxPrimitive.Root
+              items={pickerCountries}
+              value={phone.country}
+              onValueChange={(next) => {
+                if (!isEditable) return;
+                phone.selectCountry(next?.code);
+                requestAnimationFrame(() => numberInputRef.current?.focus());
+              }}
+              itemToStringLabel={countryToStringLabel}
+              itemToStringValue={countryCodeOf}
+              isItemEqualToValue={isSameCountry}
+              onOpenChange={(open) => {
+                // Only latch open. Base UI still filters with itemToStringLabel through
+                // the exit transition; flipping this back to false here would switch
+                // labels from names to ISO codes and flash the empty state.
+                if (open) {
+                  // Base UI calls this before it commits `open`, and finds the selected row's
+                  // index only while the popup is closed. The sorted rows commit first, in their
+                  // own render, so the popup opens highlighting the selected country rather than
+                  // whichever took its old index. On the first open the labels switch to names
+                  // only after that render: switching them in it too loses the highlight.
+                  if (rowOrderLocale !== locale) {
+                    flushSync(() => setRowOrderLocale(locale));
                   }
-                }}
-                disabled={isDisabled}
-                readOnly={isReadOnly}
-                autoComplete={autoComplete}
-                // Detach the country Combobox from the host form so base-ui's own hidden
-                // country input never reaches FormData beside `${name}` and
-                // `${name}-display-value`. The id names no rendered form on purpose
-                form="fuse-phone-country-unbound"
-                locale={locale}>
-                <InputGroupAddon className="text-foreground" align="inline-start">
-                  <CountryTrigger
-                    label={strings.format("selectedCountry", {
-                      country: getCountryName(phone.country.code),
-                      dialCode: phone.country.dialCode,
-                    })}
-                    description={resolvedSelectCountryLabel}
-                    isEditable={isEditable}>
-                    {countryFace}
-                  </CountryTrigger>
-                </InputGroupAddon>
-                <ComboboxContent
-                  anchor={inputGroupRef}
-                  container={container}
-                  aria-label={resolvedSelectCountryLabel}>
-                  <InputGroupRoot>
-                    <InputGroupAddon align="inline-start">
-                      <MagnifyingGlass className="size-4 text-muted-foreground" />
-                    </InputGroupAddon>
-                    {/* A plain input: as a Field control it would register its id with the
-                        picker's labelable scope, which the trigger takes its id from. */}
-                    <ComboboxPrimitive.Input
-                      render={<InputGroupPlainInput />}
-                      aria-label={resolvedSearchCountriesLabel}
-                      // The picker's own labelable scope keeps the field's label off this input;
-                      // the empty list is a safeguard that keeps dictionary `searchCountries`
-                      // the name.
-                      aria-labelledby=""
-                      autoComplete="one-time-code"
-                      // An empty name keeps the search box out of autofill heuristics and
-                      // out of any FormData: a nameless control is never submitted
-                      name=""
-                      aria-autocomplete="none"
-                      aria-haspopup="false"
-                    />
-                  </InputGroupRoot>
-                  <ComboboxEmpty>{resolvedNoCountriesFoundText}</ComboboxEmpty>
-                  <ComboboxList>
-                    {(country: PhoneNumberCountry) => (
-                      <ComboboxItem key={country.code} value={country}>
-                        <Flag country={country.code} />
-                        <span className="text-sm leading-tight tabular-nums">{country.dialCode}</span>
-                        <span className="text-sm leading-tight max-w-32 truncate text-ellipsis">
-                          {getCountryName(country.code)}
-                        </span>
-                      </ComboboxItem>
-                    )}
-                  </ComboboxList>
-                </ComboboxContent>
-              </ComboboxPrimitive.Root>
-            </CountryPickerScope>
-          )}
-          <SubmittedValueControl getSubmittedValue={getSubmittedValue}>
-            <InputGroupInput
-              ref={numberInputRef}
+                  countryPickerOpenRef.current = true;
+                }
+              }}
+              disabled={isDisabled}
               readOnly={isReadOnly}
-              name={name ? `${name}-display-value` : undefined}
-              value={phone.displayValue}
-              onChange={(event) => {
-                if (!isEditable) return;
-                const { value, selectionStart, selectionEnd, selectionDirection } = event.currentTarget;
-                const { nativeEvent } = event;
-                phone.edit({
-                  value,
-                  selectionStart,
-                  selectionEnd,
-                  selectionDirection,
-                  inputType: nativeEvent instanceof InputEvent ? nativeEvent.inputType : null,
-                });
-              }}
-              onPaste={(event) => {
-                if (!isEditable) return;
-                event.preventDefault();
-                phone.paste(event.clipboardData.getData("text"));
-              }}
-              onBlur={onBlur}
-              placeholder={placeholder}
-              autoFocus={autoFocus}
-              inputMode={inputMode}
-              enterKeyHint={enterKeyHint}
               autoComplete={autoComplete}
-              required={isRequired}
-              className="shrink tabular-nums"
-              {...ariaProps}
-            />
-          </SubmittedValueControl>
-          {endContent}
-        </PhoneFieldGroup>
-      </FieldFrame>
+              // Detach the country Combobox from the host form so base-ui's own hidden
+              // country input never reaches FormData beside `${name}` and
+              // `${name}-display-value`. The id names no rendered form on purpose
+              form="fuse-phone-country-unbound"
+              locale={locale}>
+              <InputGroupAddon className="text-foreground" align="inline-start">
+                <CountryTrigger
+                  label={strings.format("selectedCountry", {
+                    country: getCountryName(phone.country.code),
+                    dialCode: phone.country.dialCode,
+                  })}
+                  description={resolvedSelectCountryLabel}
+                  isEditable={isEditable}>
+                  {countryFace}
+                </CountryTrigger>
+              </InputGroupAddon>
+              <ComboboxContent
+                anchor={inputGroupRef}
+                container={container}
+                aria-label={resolvedSelectCountryLabel}>
+                <InputGroupRoot>
+                  <InputGroupAddon align="inline-start">
+                    <MagnifyingGlass className="size-4 text-muted-foreground" />
+                  </InputGroupAddon>
+                  {/* A plain input: as a Field control it would register its id with the
+                      picker's labelable scope, which the trigger takes its id from. */}
+                  <ComboboxPrimitive.Input
+                    render={<InputGroupPlainInput />}
+                    aria-label={resolvedSearchCountriesLabel}
+                    // The picker's own labelable scope keeps the field's label off this input;
+                    // the empty list is a safeguard that keeps dictionary `searchCountries`
+                    // the name.
+                    aria-labelledby=""
+                    autoComplete="one-time-code"
+                    // An empty name keeps the search box out of autofill heuristics and
+                    // out of any FormData: a nameless control is never submitted
+                    name=""
+                    aria-autocomplete="none"
+                    aria-haspopup="false"
+                  />
+                </InputGroupRoot>
+                <ComboboxEmpty>{resolvedNoCountriesFoundText}</ComboboxEmpty>
+                <ComboboxList>
+                  {(country: PhoneNumberCountry) => (
+                    <ComboboxItem key={country.code} value={country}>
+                      <Flag country={country.code} />
+                      <span className="text-sm leading-tight tabular-nums">{country.dialCode}</span>
+                      <span className="text-sm leading-tight max-w-32 truncate text-ellipsis">
+                        {getCountryName(country.code)}
+                      </span>
+                    </ComboboxItem>
+                  )}
+                </ComboboxList>
+              </ComboboxContent>
+            </ComboboxPrimitive.Root>
+          </CountryPickerScope>
+        )}
+        <SubmittedValueControl getSubmittedValue={getSubmittedValue}>
+          <InputGroupInput
+            ref={numberInputRef}
+            readOnly={isReadOnly}
+            name={name ? `${name}-display-value` : undefined}
+            value={phone.displayValue}
+            onChange={(event) => {
+              if (!isEditable) return;
+              const { value, selectionStart, selectionEnd, selectionDirection } = event.currentTarget;
+              const { nativeEvent } = event;
+              phone.edit({
+                value,
+                selectionStart,
+                selectionEnd,
+                selectionDirection,
+                inputType: nativeEvent instanceof InputEvent ? nativeEvent.inputType : null,
+              });
+            }}
+            onPaste={(event) => {
+              if (!isEditable) return;
+              event.preventDefault();
+              phone.paste(event.clipboardData.getData("text"));
+            }}
+            onBlur={onBlur}
+            placeholder={placeholder}
+            autoFocus={autoFocus}
+            inputMode={inputMode}
+            enterKeyHint={enterKeyHint}
+            autoComplete={autoComplete}
+            required={isRequired}
+            className="shrink tabular-nums"
+            {...ariaProps}
+          />
+        </SubmittedValueControl>
+        {endContent}
+      </PhoneFieldGroup>
+      {/* The submit control, in `outputFormat`, lives inside the frame, so the field is one root
+      element as TextField is, and a consumer's `last:`, `space-y-*` or `divide-y` container
+      treats both the same. A hidden input renders no box, so it adds no gap before the error,
+      and Field ignores it: only `Field.Control` registers as the field's control. */}
       <input type="hidden" name={name} value={phone.outputValue} disabled={isDisabled} />
-    </>
+    </FieldFrame>
   );
 }
 
