@@ -15,6 +15,7 @@ test("SelectFieldProps is the composite is* face, Select.Root's value props and 
   expectTypeOf<SelectFieldProps["isDisabled"]>().toEqualTypeOf<boolean | undefined>();
   expectTypeOf<SelectFieldProps["isInvalid"]>().toEqualTypeOf<boolean | undefined>();
   expectTypeOf<SelectFieldProps["isRequired"]>().toEqualTypeOf<boolean | undefined>();
+  expectTypeOf<SelectFieldProps["isReadOnly"]>().toEqualTypeOf<boolean | undefined>();
   expectTypeOf<SelectFieldProps["name"]>().toEqualTypeOf<string | undefined>();
   expectTypeOf<SelectFieldProps<number>["value"]>().toEqualTypeOf<number | null | undefined>();
   expectTypeOf<SelectFieldProps>().not.toHaveProperty("disabled");

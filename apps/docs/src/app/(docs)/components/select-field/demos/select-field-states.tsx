@@ -24,6 +24,10 @@ export function SelectFieldStates() {
         <Select.Item value="oslo">Oslo</Select.Item>
         <Select.Item value="bergen">Bergen</Select.Item>
       </SelectField>
+      <SelectField label="Contract region" items={regions} defaultValue="bergen" isReadOnly>
+        <Select.Item value="oslo">Oslo</Select.Item>
+        <Select.Item value="bergen">Bergen</Select.Item>
+      </SelectField>
     </div>
   );
 }

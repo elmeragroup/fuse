@@ -28,6 +28,11 @@ export type SelectFieldProps<Value = unknown> = {
   /** Forwards `disabled` to `Field.Root` and `Select.Root`. */
   isDisabled?: boolean;
   /**
+   * Forwards `readOnly` to `Select.Root`; the trigger uses `bg-muted`. The trigger stays
+   * focusable and its popup still opens to show the options, but no choice changes the value.
+   */
+  isReadOnly?: boolean;
+  /**
    * Native `name` the selection submits under, forwarded to `Field.Root`. A `Form` error under it
    * shows below the trigger until the selection changes.
    */
@@ -77,6 +82,7 @@ export function SelectField<Value = unknown>({
   isInvalid = false,
   isRequired = false,
   isDisabled = false,
+  isReadOnly = false,
   name,
   form,
   placeholder,
@@ -113,7 +119,8 @@ export function SelectField<Value = unknown>({
           isItemEqualToValue,
         })}
         required={isRequired}
-        disabled={isDisabled}>
+        disabled={isDisabled}
+        readOnly={isReadOnly}>
         <SelectTrigger className={cn("w-full", triggerClassName)} {...props}>
           <SelectValue placeholder={placeholder} />
         </SelectTrigger>
