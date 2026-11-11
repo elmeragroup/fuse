@@ -194,12 +194,12 @@ function Detail(): ReactElement {
 
 export type DashboardMainProps = {
   /** Whether the open order's detail Sheet shows below the split. */
-  detailOpen: boolean;
+  detailOpen?: boolean;
   onDetailOpenChange: (open: boolean) => void;
 };
 
 /** The pane beside the sidebar: header, tabs, the order list with its bulk toolbar, the detail. */
-export function DashboardMain({ detailOpen, onDetailOpenChange }: DashboardMainProps): ReactElement {
+export function DashboardMain({ detailOpen = false, onDetailOpenChange }: DashboardMainProps): ReactElement {
   const { state, openPalette } = useDashboard();
   useEffect(() => {
     // A failed fetch is not an error yet: opening Order search imports the module again.

@@ -676,6 +676,15 @@
       }
     },
     {
+      "files": [
+        "apps/docs/src/app/(landing)/landing/app-shell/**/*.{ts,tsx}",
+        "apps/docs/src/app/(landing)/landing/brand-site/**/*.{ts,tsx}"
+      ],
+      "rules": {
+        "fuse/side-overlay-state": "error"
+      }
+    },
+    {
       "files": ["packages/fuse/src/components/chart/**/*.{ts,tsx}"],
       "rules": {
         "fuse/no-color-literal": "error",

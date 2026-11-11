@@ -20,7 +20,7 @@ import { Sheet } from "@elmeragroup/fuse/sheet";
 import { TextField } from "@elmeragroup/fuse/text-field";
 import { TextareaField } from "@elmeragroup/fuse/textarea-field";
 
-import { useSideOverlay } from "../window-side";
+import { useSideOverlay, useSideShown } from "../window-side";
 import { useDashboard } from "./dashboard-context";
 import { CAMPAIGNS, osloDate, PRODUCTS, productPrice, STARTUP_TYPES } from "./dashboard-orders";
 import type { Campaign, Product, StartupType } from "./dashboard-orders";
@@ -100,6 +100,10 @@ export function NewOrderForm({ onSaved }: NewOrderFormProps): ReactElement {
   const [fields, setFields] = useState<DraftFields>(EMPTY_FIELDS);
   const [errors, setErrors] = useState<ReadonlyMap<DraftField, string>>(new Map());
   const [campaignOpen, setCampaignOpen] = useSideOverlay(false);
+  const [startDateOpen, setStartDateOpen] = useSideOverlay(false);
+  // PhoneNumberField's country picker keeps its open state inside, so the field remounts when the
+  // side hides, which unmounts an open picker in that commit. The number lives in `fields`.
+  const sideShown = useSideShown();
   // The fields as last stored, ahead of the render that shows them. React Aria can commit a
   // constrained date in the same blur that rechecks it, after this render's `fields` were read.
   const latestFields = useRef(fields);
@@ -167,7 +171,9 @@ export function NewOrderForm({ onSaved }: NewOrderFormProps): ReactElement {
             errorMessage={error("ssn")}
           />
           <div className={styles.pair()}>
+            {/* oxlint-disable-next-line fuse/side-overlay-state -- keyed by the side's visibility, so hiding the side remounts the field and unmounts an open country picker. */}
             <PhoneNumberField
+              key={sideShown ? "shown" : "hidden"}
               label="Phone"
               value={fields.phone}
               onChange={(value) => {
@@ -293,6 +299,8 @@ export function NewOrderForm({ onSaved }: NewOrderFormProps): ReactElement {
             <UiProviders locale="nb-NO" navigate={() => undefined}>
               <DatePicker<CalendarDate>
                 label="Start date"
+                isOpen={startDateOpen}
+                onOpenChange={setStartDateOpen}
                 value={startDate}
                 onChange={(value) => {
                   // A change means every segment is in, or every one is empty, so the value is
