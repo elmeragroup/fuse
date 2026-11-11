@@ -3,7 +3,7 @@
  * Every part is a client module; this file has no directive, so a server component can read
  * each part instead of dotting into a client reference.
  */
-import { DatePickerCalendar, DatePickerInput, DatePickerRoot } from "./date-picker";
+import { DatePickerCalendar, DatePickerInput, DatePickerRoot, DatePickerTimeInput } from "./date-picker";
 import {
   DatePickerGroup,
   DatePickerPopup,
@@ -19,6 +19,7 @@ export const DatePicker = {
   Trigger: DatePickerTrigger,
   Popup: DatePickerPopup,
   Calendar: DatePickerCalendar,
+  TimeInput: DatePickerTimeInput,
   Presets: DatePickerPresets,
   PresetItem: DatePickerPresetItem,
 };

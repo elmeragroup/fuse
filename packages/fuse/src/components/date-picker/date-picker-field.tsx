@@ -8,7 +8,7 @@ import type { DateInputValue } from "../date-field/date-input";
 import type { KindFromValue, KindProps, PropsMadeValue } from "../date-field/date-kind-props";
 import { FieldFrame } from "../field/field-frame";
 import type { OverlayContainerProps } from "../overlay/overlay-props";
-import { DatePickerCalendar, DatePickerInput, DatePickerRoot } from "./date-picker";
+import { DatePickerFieldCalendar, DatePickerInput, DatePickerRoot } from "./date-picker";
 import { DatePickerGroup, DatePickerPopup, DatePickerTrigger, PickerPopupPane } from "./picker-shell";
 
 /**
@@ -67,7 +67,12 @@ export type DatePickerFieldProps<T extends DateInputValue = Temporal.PlainDate> 
    * @default "end"
    */
   triggerPlacement?: "start" | "end";
-  /** Whether picking a day closes the popup. @default true */
+  /**
+   * Whether picking a day closes the popup. With a time `granularity`, the popup shows a time input
+   * under the calendar (`DatePicker.TimeInput`); a day picked in an empty picker that stays open
+   * commits at the time typed there, or at midnight when the popup closes first.
+   * @default true
+   */
   shouldCloseOnSelect?: boolean;
   /** Pads days, months and hours with a leading zero, as the interim picker did. @default true */
   shouldForceLeadingZeros?: boolean;
@@ -165,7 +170,7 @@ export function DatePickerField<P = object, T extends DateInputValue = PropsMade
         </DatePickerGroup>
         <DatePickerPopup {...definedProps({ container })}>
           <PickerPopupPane presets={presetGroup}>
-            <DatePickerCalendar />
+            <DatePickerFieldCalendar shouldForceLeadingZeros={shouldForceLeadingZeros} />
           </PickerPopupPane>
         </DatePickerPopup>
       </DatePickerRoot>

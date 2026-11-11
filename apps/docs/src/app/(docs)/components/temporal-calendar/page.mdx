@@ -78,7 +78,7 @@ Compose the parts: `Calendar.Header` holds `Calendar.DecrementMonth`, `Calendar.
 
 ## Server rendering
 
-The parts are client components that a server component can render without a date value. A server render marks no today, so the server and the browser agree; today is marked from the first client effect and moves at midnight. A calendar with neither `value` nor `defaultValue` opens on today's month, so it shows its grid from that effect on.
+The parts are client components that a server component can render without a date value. A server render marks no today, so the server and the browser agree; today is marked from the first client effect and moves at midnight. A calendar with neither `value` nor `defaultValue` opens on today's month, which only that effect knows: the server and the hydrating render write each visible month's frame instead, the weekday row over six weeks of empty days, hidden from assistive technology, and the effect fills in today's months. Six weeks are the most a month spans, so the calendar never grows when today's months arrive: it keeps its height for a six-week month and shrinks by a row or two for a shorter one. The server and the hydrating render match, so it hydrates without a mismatch.
 
 ## Accessibility
 

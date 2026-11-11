@@ -54,7 +54,7 @@ The value's kind decides the segments: a `PlainDate` edits the date, a `PlainDat
 
 ## Time zones
 
-A `ZonedDateTime` field shows its zone's name after the time, unless `hideTimeZone`. A field that starts empty has no value to read its zone from, so pass `timeZone` with a time `granularity`: the field then emits `ZonedDateTime`s in that zone. Emptying a field keeps its kind and zone. Stepping the hour moves through real hours, so on a night the clocks go back the repeated hour comes twice, and on a night they go forward the missing hour never comes.
+A `ZonedDateTime` field shows its zone's name after the time, unless `hideTimeZone`. A field that starts empty has no value to read its zone from, so pass `timeZone` with a time `granularity`: the field then emits `ZonedDateTime`s in that zone, and names the zone as it is today, read once the field has mounted. Emptying a field keeps its kind and zone. Stepping the hour moves through real hours, so on a night the clocks go back the repeated hour comes twice, and on a night they go forward the missing hour never comes.
 
 </Prose>
 
@@ -96,7 +96,7 @@ Inside `Form`, the field is a Field of the form: its ISO text reaches `onFormSub
 
 `DateInput.Root` is the segment row on its own, with Base UI's names: `value`, `onValueChange`, `disabled`, `readOnly`, `required`, `invalid` and `render`. Put it in a `Field.Root` beside your own label, description and error; the first segment is the Field's control. Its children render each segment: return a `DateInput.Segment`, or leave them out for the default segments, which a server component relies on. A segment is a literal, the zone's name or a unit: its `isEditable` narrows its `type` to a unit such as `"month"` when true, and `type` tells `"literal"` from `"timeZoneName"` when false.
 
-`onValueChange` receives the details of the change: its `reason` (`"input-change"` for typing, keys and blur, `"input-clear"` when every segment is cleared, `"input-paste"` for pasted ISO text), the DOM `event`, the `trigger` segment, `getValidationError()` and `cancel()`. `getValidationError()` names a failure in Calendar's words: `"rangeUnderflow"`, `"rangeOverflow"` or `"unavailable"`, or `null`. Canceling keeps the value and shows it again in the segments.
+`onValueChange` receives the details of the change: its `reason` (`"input-change"` for typing, keys and blur, `"input-clear"` when every segment is cleared, `"input-paste"` for pasted ISO text, or text in the field's own format such as `10/05/2026` in en-US and `05.10.2026` in nb-NO), the DOM `event`, the `trigger` segment, `getValidationError()` and `cancel()`. `getValidationError()` names a failure in Calendar's words: `"rangeUnderflow"`, `"rangeOverflow"` or `"unavailable"`, or `null`. Canceling keeps the value and shows it again in the segments.
 
 </Prose>
 

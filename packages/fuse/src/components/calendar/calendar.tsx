@@ -77,8 +77,10 @@ type CalendarState = CalendarSharedState & {
  * native Temporal imports `@elmeragroup/fuse/temporal-polyfill` once.
  *
  * Today is marked from the first client effect on and moves at midnight; a server render marks
- * no today. A calendar with neither `value` nor `defaultValue` opens on today's month, so it shows
- * its months from that effect on.
+ * no today. A calendar with neither `value` nor `defaultValue` opens on today's month, which only
+ * that effect reads: the server and the hydrating render write each visible month's frame with six
+ * weeks of empty days in its place (`Calendar.Months`), so it hydrates without a mismatch, and the
+ * grid never grows when today's months arrive, only shrinks for a month of fewer weeks.
  *
  * @throws TypeError naming the prop and the fix when `value`, `defaultValue`, `minValue` or
  *   `maxValue` is a string rather than a Temporal object, a host defect.

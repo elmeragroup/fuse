@@ -831,6 +831,19 @@ describe("DateField paste of its own value", () => {
   });
 });
 
+describe("DateField paste of a date-only ISO text", () => {
+  it("reads 0010-05-01 as the date it names", async () => {
+    renderThemed(<Harness label="Starts" />);
+    const data = new DataTransfer();
+    data.setData("text/plain", "0010-05-01");
+    spin("month, Starts").dispatchEvent(
+      new ClipboardEvent("paste", { clipboardData: data, bubbles: true, cancelable: true })
+    );
+
+    await expect.element(committed()).toHaveTextContent("0010-05-01");
+  });
+});
+
 describe("date props past the types", () => {
   it("throws a TypeError naming the Root, the prop and the string for ISO text", () => {
     expectRenderTypeError(
@@ -1139,6 +1152,34 @@ describe("DateField granularity change mid-draft", () => {
     await userEvent.click(roleNamed("button", "After"));
     await expect.element(committed()).toHaveTextContent(UNCHANGED);
   });
+});
+
+describe("DateField granularity change under focus", () => {
+  // React Aria's `useDateSegment`: a focused segment that a granularity change removes hands focus
+  // to the segment before it. `click()` switches without moving focus, as a parent's own state
+  // change would.
+  it.each([
+    ["hour", "hour, Starts"],
+    ["day", "year, Starts"],
+  ] as const)(
+    "moves focus from a removed minute to the segment before it at %s granularity",
+    async (granularity, target) => {
+      renderThemed(
+        <SwitchHarness<Temporal.PlainDateTime>
+          label="Starts"
+          hourCycle={12}
+          granularity="minute"
+          defaultValue={Temporal.PlainDateTime.from("2026-10-05T09:30")}
+          switched={{ granularity }}
+        />
+      );
+      await userEvent.click(spin("minute, Starts"));
+
+      roleNamed("button", "Switch").click();
+
+      await expect.element(page.getByRole("spinbutton", { name: target, exact: true })).toHaveFocus();
+    }
+  );
 });
 
 describe("DateField kind across prop changes", () => {

@@ -2,20 +2,22 @@
  * DateRangePicker and DateRangePickerField in the browser: the two Fields under `startName` and
  * `endName` with the label, description and merged error wired to both, a half-filled range held,
  * an end before its start, `Form` errors by name, the range calendar in the popup (cancel, presets
- * dropping a half range, multi-month) and the cancelable details. The shared consumer contract
- * (segment names, the calendar range commit, Escape twice) is pinned by the parity harness.
+ * dropping a half range, multi-month) and the cancelable details, typing across the two ends, and
+ * the popup's time inputs.
  */
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { ReactElement } from "react";
 
 import { renderToString } from "react-dom/server";
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, onTestFinished, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import { expectRenderTypeError } from "../../../test/caught-error";
 import { withLocale } from "../../../test/locale-matrix";
+import { parentHandle } from "../../../test/parent-handle";
+import { popupFocusRestored } from "../../../test/popup-focus";
 import { waitForPopupSettled } from "../../../test/popup-settled";
 import { emulateReducedMotion } from "../../../test/reduced-motion";
 import { formNamed, renderThemed, roleNamed } from "../../../test/themed-browser-render";
@@ -35,6 +37,19 @@ afterAll(() => emulateReducedMotion("no-preference"));
 
 function log() {
   return page.getByRole("log", { name: "Changes" });
+}
+
+/**
+ * Choose a calendar day by keyboard once it renders: focus it and press Enter. Its name starts with
+ * the day's: a range calendar adds the range to a day's name while one is being picked.
+ */
+async function pickDay(day: string): Promise<void> {
+  const button = page.getByRole("button", { name: new RegExp(`^${day}`, "u") });
+  await expect.element(button).toBeInTheDocument();
+  const element = button.element();
+  if (!(element instanceof HTMLElement)) throw new Error(`expected the day ${day}`);
+  element.focus();
+  await userEvent.keyboard("{Enter}");
 }
 
 function segmentTexts(): string[] {
@@ -424,6 +439,388 @@ describe("DateRangePickerField in forms", () => {
       .toHaveFocus();
     await expect.element(page.getByText("Please fill out this field.", { exact: true })).toBeVisible();
     expect(submits).toBe(0);
+  });
+});
+
+describe("DateRangePicker typing across ends", () => {
+  it("moves on from the start's last typed segment to the end's first, and back on Backspace", async () => {
+    renderThemed(withLocale("en-US", <DateRangePickerField label="Period" />));
+    await userEvent.click(roleNamed("spinbutton", "month, Start Date, Period"));
+    await userEvent.keyboard("10052026");
+
+    await expect
+      .element(page.getByRole("spinbutton", { name: "month, End Date, Period", exact: true }))
+      .toHaveFocus();
+    expect(segmentTexts()).toEqual(["10", "05", "2026", "mm", "dd", "yyyy"]);
+
+    // An empty segment hands focus back, across the separator as within one input.
+    await userEvent.keyboard("{Backspace}");
+    await expect
+      .element(page.getByRole("spinbutton", { name: "year, Start Date, Period", exact: true }))
+      .toHaveFocus();
+  });
+});
+
+describe("DateRangePicker end day picked over a time, on October 25, 2026 in Oslo, whose 02:00–03:00 comes twice", () => {
+  // React Aria moves a picked day under the time it held with `ZonedDateTime.set`: a wall clock that
+  // changes resolves as typed (the earlier, summer-time instant of a repeated hour), and one that
+  // does not keeps the value as it is. Days inside the range shown carry the range in their names.
+  async function pickOver(end: string): Promise<string[]> {
+    const values: string[] = [];
+    renderThemed(
+      withLocale(
+        "en-US",
+        <DateRangePickerField
+          label="Period"
+          granularity="minute"
+          hourCycle={24}
+          defaultValue={{
+            start: Temporal.ZonedDateTime.from("2026-10-20T08:00[Europe/Oslo]"),
+            end: Temporal.ZonedDateTime.from(end),
+          }}
+          onChange={(value) =>
+            values.push(value === null ? "null" : `${value.start.toString()}..${value.end.toString()}`)
+          }
+        />
+      )
+    );
+    await userEvent.click(roleNamed("button", "Calendar Period"));
+    await waitForPopupSettled();
+    await userEvent.click(page.getByRole("button", { name: /Tuesday, October 20, 2026/u }));
+    await userEvent.click(page.getByRole("button", { name: /Sunday, October 25, 2026/u }));
+    return values;
+  }
+
+  it("moves a winter-time 02:30 to the repeated hour's earlier instant", async () => {
+    const values = await pickOver("2026-11-01T02:30+01:00[Europe/Oslo]");
+
+    await expect
+      .poll(() => values)
+      .toEqual(["2026-10-20T08:00:00+02:00[Europe/Oslo]..2026-10-25T02:30:00+02:00[Europe/Oslo]"]);
+  });
+
+  it("keeps the repeated hour's later instant when its own day is picked again", async () => {
+    const values = await pickOver("2026-10-25T02:30+01:00[Europe/Oslo]");
+
+    await expect
+      .poll(() => values)
+      .toEqual(["2026-10-20T08:00:00+02:00[Europe/Oslo]..2026-10-25T02:30:00+01:00[Europe/Oslo]"]);
+  });
+});
+
+describe("DateRangePicker end in another zone than its start", () => {
+  // A day picked for an end keeps that end's own zone and kind: an Oslo start does not move a New
+  // York end into Oslo. Only a time held with no day takes the picker's zone when its day comes.
+  it("forms a time typed after the parent clears a mixed-zone range in the picker's zone, every digit kept", async () => {
+    const values: string[] = [];
+    const parent = parentHandle<DateRangePickerValue<Temporal.ZonedDateTime> | null>();
+    function Clearing(): ReactElement {
+      const [value, setValue] = useState<DateRangePickerValue<Temporal.ZonedDateTime> | null>({
+        start: Temporal.ZonedDateTime.from("2026-10-20T08:00[Europe/Oslo]"),
+        end: Temporal.ZonedDateTime.from("2026-10-22T17:30[America/New_York]"),
+      });
+      useEffect(() => {
+        parent.bind(setValue);
+      }, []);
+      return (
+        <>
+          <DateRangePickerField
+            label="Period"
+            granularity="minute"
+            hourCycle={24}
+            value={value}
+            onChange={(next) => {
+              values.push(next === null ? "null" : `${next.start.toString()}..${next.end.toString()}`);
+              setValue(next);
+            }}
+          />
+        </>
+      );
+    }
+    // An empty picker's calendar shows today's month, November here.
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-11-15T12:00:00Z"));
+    onTestFinished(() => {
+      vi.useRealTimers();
+    });
+    renderThemed(withLocale("en-US", <Clearing />));
+    await userEvent.click(roleNamed("button", "Calendar Period"));
+    await waitForPopupSettled();
+    parent.set(null);
+    await expect
+      .element(page.getByRole("spinbutton", { name: "hour, End time", exact: true }))
+      .toHaveTextContent("––");
+    // The popup repositions after the clear, so its parts are reached without a pointer.
+    await popupFocusRestored();
+    roleNamed("spinbutton", "hour, End time").focus();
+    await userEvent.keyboard("1730");
+    roleNamed("button", "Previous").click();
+    await pickDay("Monday, October 12, 2026");
+    await pickDay("Friday, October 16, 2026");
+
+    await expect
+      .poll(() => values)
+      .toEqual(["2026-10-12T00:00:00+02:00[Europe/Oslo]..2026-10-16T17:30:00+02:00[Europe/Oslo]"]);
+  });
+
+  it("keeps a New York end's zone and wall clock when a range is picked over an Oslo start", async () => {
+    const values: string[] = [];
+    renderThemed(
+      withLocale(
+        "en-US",
+        <DateRangePickerField
+          label="Period"
+          granularity="minute"
+          hourCycle={24}
+          defaultValue={{
+            start: Temporal.ZonedDateTime.from("2026-10-20T08:00[Europe/Oslo]"),
+            end: Temporal.ZonedDateTime.from("2026-10-22T17:30[America/New_York]"),
+          }}
+          onChange={(value) =>
+            values.push(value === null ? "null" : `${value.start.toString()}..${value.end.toString()}`)
+          }
+        />
+      )
+    );
+    await userEvent.click(roleNamed("button", "Calendar Period"));
+    await waitForPopupSettled();
+    await userEvent.click(page.getByRole("button", { name: /Tuesday, October 20, 2026/u }));
+    await userEvent.click(page.getByRole("button", { name: /Monday, October 26, 2026/u }));
+
+    await expect
+      .poll(() => values)
+      .toEqual(["2026-10-20T08:00:00+02:00[Europe/Oslo]..2026-10-26T17:30:00-04:00[America/New_York]"]);
+  });
+});
+
+describe("DateRangePicker presets with a dateValue", () => {
+  it("sets a preset's range as a preset-press, replacing a half-typed range", async () => {
+    const lines: string[] = [];
+    renderThemed(
+      withLocale(
+        "en-US",
+        <DateRangePicker.Root
+          aria-label="Period"
+          defaultOpen
+          onValueChange={(value, details) =>
+            lines.push(
+              `${details.reason}:${value === null ? "null" : `${value.start.toString()}..${value.end.toString()}`}`
+            )
+          }>
+          <DateRangePicker.Group>
+            <DateRangePicker.StartInput />
+            <DateRangePicker.EndInput />
+          </DateRangePicker.Group>
+          <DateRangePicker.Popup>
+            <DateRangePicker.Presets>
+              <DateRangePicker.PresetItem
+                value="autumn-break"
+                dateValue={{
+                  start: Temporal.PlainDate.from("2026-10-05"),
+                  end: Temporal.PlainDate.from("2026-10-09"),
+                }}>
+                Autumn break
+              </DateRangePicker.PresetItem>
+            </DateRangePicker.Presets>
+            <DateRangePicker.Calendar />
+          </DateRangePicker.Popup>
+        </DateRangePicker.Root>
+      )
+    );
+    await waitForPopupSettled();
+    // Half a range: the start alone reports nothing.
+    roleNamed("spinbutton", "month, Start Date, Period").focus();
+    await userEvent.keyboard("11022026");
+    expect(lines).toEqual([]);
+
+    const preset = roleNamed("radio", "Autumn break").closest("label");
+    if (preset === null) throw new Error("expected the preset's label");
+    await userEvent.click(preset);
+
+    await expect.poll(() => lines).toEqual(["preset-press:2026-10-05..2026-10-09"]);
+    expect(segmentTexts()).toEqual(["10", "5", "2026", "10", "9", "2026"]);
+  });
+});
+
+describe("DateRangePicker dateValue presets and the pane's checked key", () => {
+  const WEEK = { start: "2026-10-05", end: "2026-10-11" };
+  const DATED = {
+    "This week": WEEK,
+    "Week 41": WEEK,
+    October: { start: "2026-10-01", end: "2026-10-31" },
+  } as const;
+
+  /**
+   * An open range picker on October 1–3 with three `dateValue` presets, logging the picker's and
+   * the pane's changes. `paneKey` fixes a controlled pane's key, which its parent never changes.
+   */
+  function Rules({
+    paneKey,
+    keyed = false,
+    cancel,
+  }: {
+    readonly paneKey?: string;
+    /** A controlled pane whose parent sets the key its `onValueChange` reports. */
+    readonly keyed?: boolean;
+    readonly cancel?: "picker" | "pane";
+  }): ReactElement {
+    const [key, setKey] = useState<string | null>(null);
+    const [lines, setLines] = useState<string[]>([]);
+    const log = (line: string) => setLines((current) => [...current, line]);
+    return (
+      <>
+        <DateRangePicker.Root
+          aria-label="Period"
+          defaultValue={{
+            start: Temporal.PlainDate.from("2026-10-01"),
+            end: Temporal.PlainDate.from("2026-10-03"),
+          }}
+          defaultOpen
+          shouldCloseOnSelect={false}
+          onValueChange={(value, details) => {
+            log(
+              `value:${details.reason}:${value === null ? "null" : `${value.start.toString()}..${value.end.toString()}`}`
+            );
+            if (cancel === "picker") details.cancel();
+          }}>
+          <DateRangePicker.Group>
+            <DateRangePicker.StartInput />
+            <DateRangePicker.EndInput />
+          </DateRangePicker.Group>
+          <DateRangePicker.Popup>
+            <DateRangePicker.Presets
+              {...definedProps({ value: keyed ? key : paneKey })}
+              onValueChange={(next, details) => {
+                log(`pane:${next}`);
+                if (cancel === "pane") details.cancel();
+                else if (keyed) setKey(next);
+              }}>
+              {Object.entries(DATED).map(([name, range]) => (
+                <DateRangePicker.PresetItem
+                  key={name}
+                  value={name}
+                  dateValue={{
+                    start: Temporal.PlainDate.from(range.start),
+                    end: Temporal.PlainDate.from(range.end),
+                  }}>
+                  {name}
+                </DateRangePicker.PresetItem>
+              ))}
+            </DateRangePicker.Presets>
+            <DateRangePicker.Calendar />
+          </DateRangePicker.Popup>
+        </DateRangePicker.Root>
+        <div role="log" aria-label="Changes">
+          {lines.join(" | ")}
+        </div>
+      </>
+    );
+  }
+
+  function presetLabel(name: string): HTMLLabelElement {
+    const label = roleNamed("radio", name).closest("label");
+    if (label === null) throw new Error(`expected the label of preset ${name}`);
+    return label;
+  }
+
+  /** The checked presets, by radio and by label, which must agree. */
+  function checkedPresets(): string[] {
+    return Object.keys(DATED).flatMap((name) => {
+      const radio = roleNamed("radio", name).matches(":checked");
+      const label = presetLabel(name).hasAttribute("data-checked");
+      return radio || label ? [`${name}${radio === label ? "" : ":disagree"}`] : [];
+    });
+  }
+
+  async function pickRange(start: string, end: string): Promise<void> {
+    await userEvent.click(roleNamed("button", start));
+    await userEvent.click(roleNamed("button", end));
+  }
+
+  it("re-applies a checked preset pressed again, and keeps a controlled key as the parent set it", async () => {
+    renderThemed(withLocale("en-US", <Rules paneKey="This week" />));
+    await waitForPopupSettled();
+    expect(checkedPresets()).toEqual(["This week"]);
+
+    await userEvent.click(presetLabel("This week"));
+    await pickRange("Monday, October 12, 2026", "Wednesday, October 14, 2026");
+    expect(checkedPresets()).toEqual(["This week"]);
+    await userEvent.click(presetLabel("This week"));
+
+    await expect
+      .element(log())
+      .toHaveTextContent(
+        "value:preset-press:2026-10-05..2026-10-11 | value:day-press:2026-10-12..2026-10-14 | value:preset-press:2026-10-05..2026-10-11"
+      );
+  });
+
+  it("re-applies a checked preset by a pointer press after Space re-applied it", async () => {
+    renderThemed(withLocale("en-US", <Rules paneKey="This week" />));
+    await waitForPopupSettled();
+    roleNamed("radio", "This week").focus();
+    await userEvent.keyboard(" ");
+    await pickRange("Monday, October 12, 2026", "Wednesday, October 14, 2026");
+    await userEvent.click(presetLabel("This week"));
+
+    await expect
+      .element(log())
+      .toHaveTextContent(
+        "value:preset-press:2026-10-05..2026-10-11 | value:day-press:2026-10-12..2026-10-14 | value:preset-press:2026-10-05..2026-10-11"
+      );
+  });
+
+  it("unchecks its own key when a range is picked or an end is typed, and a press applies it again", async () => {
+    renderThemed(withLocale("en-US", <Rules />));
+    await waitForPopupSettled();
+    await userEvent.click(presetLabel("This week"));
+    await expect.poll(checkedPresets).toEqual(["This week"]);
+
+    await pickRange("Monday, October 12, 2026", "Wednesday, October 14, 2026");
+    await expect.poll(checkedPresets).toEqual([]);
+
+    await userEvent.click(presetLabel("This week"));
+    await expect.poll(checkedPresets).toEqual(["This week"]);
+    // Focus moves from the popup to the input without a press, which keeps the popup open.
+    roleNamed("spinbutton", "day, Start Date, Period").focus();
+    await userEvent.keyboard("6");
+    await expect.poll(checkedPresets).toEqual([]);
+    expect(log().element().textContent).toBe(
+      "value:preset-press:2026-10-05..2026-10-11 | pane:This week | value:day-press:2026-10-12..2026-10-14 | value:preset-press:2026-10-05..2026-10-11 | pane:This week | value:input-change:2026-10-06..2026-10-11"
+    );
+  });
+
+  it("refuses the whole press when the picker cancels its range: the pane is never asked", async () => {
+    renderThemed(withLocale("en-US", <Rules keyed cancel="picker" />));
+    await waitForPopupSettled();
+    await userEvent.click(presetLabel("October"));
+
+    await expect.element(log()).toHaveTextContent("value:preset-press:2026-10-01..2026-10-31");
+    expect(log().element().textContent).toBe("value:preset-press:2026-10-01..2026-10-31");
+    expect(checkedPresets()).toEqual([]);
+    expect(segmentTexts()).toEqual(["10", "1", "2026", "10", "3", "2026"]);
+  });
+
+  it("commits the range but keeps the checked key when the pane cancels it", async () => {
+    renderThemed(withLocale("en-US", <Rules keyed cancel="pane" />));
+    await waitForPopupSettled();
+    await userEvent.click(presetLabel("October"));
+
+    await expect.element(log()).toHaveTextContent("value:preset-press:2026-10-01..2026-10-31 | pane:October");
+    expect(checkedPresets()).toEqual([]);
+    expect(segmentTexts()).toEqual(["10", "1", "2026", "10", "31", "2026"]);
+  });
+
+  it("checks only the pressed one of two presets on one range", async () => {
+    renderThemed(withLocale("en-US", <Rules />));
+    await waitForPopupSettled();
+    await userEvent.click(presetLabel("This week"));
+    await expect.poll(checkedPresets).toEqual(["This week"]);
+    await userEvent.click(presetLabel("Week 41"));
+
+    await expect.poll(checkedPresets).toEqual(["Week 41"]);
+    expect(log().element().textContent).toBe(
+      "value:preset-press:2026-10-05..2026-10-11 | pane:This week | value:preset-press:2026-10-05..2026-10-11 | pane:Week 41"
+    );
   });
 });
 
@@ -885,6 +1282,407 @@ describe("DateRangePicker held ranges", () => {
     expect(values).toEqual(["2026-10-12T00:00:00..2026-10-16T00:00:00"]);
   });
 
+  it("commits a range held in an empty time picker once both ends have a time typed in the popup", async () => {
+    const values: string[] = [];
+    // The statistics period's options: zoned minutes on a 24-hour clock, with no zone name.
+    renderThemed(
+      withLocale(
+        "en-US",
+        <DateRangePickerField
+          label="Period"
+          granularity="minute"
+          hourCycle={24}
+          hideTimeZone
+          timeZone="Europe/Oslo"
+          shouldCloseOnSelect={false}
+          onChange={(value) =>
+            values.push(value === null ? "null" : `${value.start.toString()}..${value.end.toString()}`)
+          }
+        />
+      )
+    );
+    await userEvent.click(roleNamed("button", "Calendar Period"));
+    await waitForPopupSettled();
+    await userEvent.click(roleNamed("button", "Monday, October 12, 2026"));
+    await userEvent.click(roleNamed("button", "Friday, October 16, 2026"));
+    await userEvent.click(roleNamed("spinbutton", "hour, Start time"));
+    await userEvent.keyboard("0800");
+    expect(values).toEqual([]);
+
+    await userEvent.click(roleNamed("spinbutton", "hour, End time"));
+    await userEvent.keyboard("1730");
+
+    // Whole once the end's minute holds a digit, then the end's minute goes on to 30.
+    await expect
+      .poll(() => values)
+      .toEqual([
+        "2026-10-12T08:00:00+02:00[Europe/Oslo]..2026-10-16T17:03:00+02:00[Europe/Oslo]",
+        "2026-10-12T08:00:00+02:00[Europe/Oslo]..2026-10-16T17:30:00+02:00[Europe/Oslo]",
+      ]);
+    await expect.element(page.getByRole("dialog")).toBeVisible();
+  });
+
+  it("keeps every time digit typed for a picked end whose offset differs from today's", async () => {
+    const values: string[] = [];
+    // Today, October 15, is summer time in Oslo; October 26 is after the clocks go back.
+    renderThemed(
+      withLocale(
+        "en-US",
+        <DateRangePickerField
+          label="Period"
+          granularity="minute"
+          hourCycle={24}
+          hideTimeZone
+          timeZone="Europe/Oslo"
+          shouldCloseOnSelect={false}
+          onChange={(value) =>
+            values.push(value === null ? "null" : `${value.start.toString()}..${value.end.toString()}`)
+          }
+        />
+      )
+    );
+    await userEvent.click(roleNamed("button", "Calendar Period"));
+    await waitForPopupSettled();
+    await userEvent.click(roleNamed("button", "Monday, October 12, 2026"));
+    await userEvent.click(roleNamed("button", "Monday, October 26, 2026"));
+    await userEvent.click(roleNamed("spinbutton", "hour, Start time"));
+    await userEvent.keyboard("0800");
+    await userEvent.click(roleNamed("spinbutton", "hour, End time"));
+    await userEvent.keyboard("1730");
+
+    await expect
+      .poll(() => values)
+      .toEqual([
+        "2026-10-12T08:00:00+02:00[Europe/Oslo]..2026-10-26T17:03:00+01:00[Europe/Oslo]",
+        "2026-10-12T08:00:00+02:00[Europe/Oslo]..2026-10-26T17:30:00+01:00[Europe/Oslo]",
+      ]);
+  });
+
+  it("steps a held end's popup hour through its own day's repeated DST hour", async () => {
+    const values: string[] = [];
+    // October 25, 2026 sets Oslo's clocks back at 03:00: after 02:30 summer time comes 02:30 winter time.
+    renderThemed(
+      withLocale(
+        "en-US",
+        <DateRangePickerField
+          label="Period"
+          granularity="minute"
+          hourCycle={24}
+          hideTimeZone
+          timeZone="Europe/Oslo"
+          shouldCloseOnSelect={false}
+          onChange={(value) =>
+            values.push(value === null ? "null" : `${value.start.toString()}..${value.end.toString()}`)
+          }
+        />
+      )
+    );
+    await userEvent.click(roleNamed("button", "Calendar Period"));
+    await waitForPopupSettled();
+    await userEvent.click(roleNamed("spinbutton", "hour, Start time"));
+    await userEvent.keyboard("0230");
+    await userEvent.click(roleNamed("button", "Sunday, October 25, 2026"));
+    await userEvent.click(roleNamed("button", "Monday, October 26, 2026"));
+    await userEvent.click(roleNamed("spinbutton", "hour, Start time"));
+    await userEvent.keyboard("{ArrowUp}");
+    await userEvent.click(roleNamed("spinbutton", "hour, End time"));
+    await userEvent.keyboard("1000");
+
+    await expect
+      .poll(() => values.at(-1))
+      .toBe("2026-10-25T02:30:00+01:00[Europe/Oslo]..2026-10-26T10:00:00+01:00[Europe/Oslo]");
+  });
+
+  it("steps a half-cleared start time on the day picked since, through its repeated DST hour", async () => {
+    const values: string[] = [];
+    // October 25, 2026 sets Oslo's clocks back at 03:00: after 02:30 summer time comes 02:30 winter time.
+    renderThemed(
+      withLocale(
+        "en-US",
+        <DateRangePickerField
+          label="Period"
+          granularity="second"
+          hourCycle={24}
+          hideTimeZone
+          shouldCloseOnSelect={false}
+          defaultValue={{
+            start: Temporal.ZonedDateTime.from("2026-10-24T02:30:00+02:00[Europe/Oslo]"),
+            end: Temporal.ZonedDateTime.from("2026-10-26T10:00:00+01:00[Europe/Oslo]"),
+          }}
+          onChange={(value) =>
+            values.push(value === null ? "null" : `${value.start.toString()}..${value.end.toString()}`)
+          }
+        />
+      )
+    );
+    await userEvent.click(roleNamed("button", "Calendar Period"));
+    await waitForPopupSettled();
+    await userEvent.click(roleNamed("spinbutton", "second, Start time"));
+    await userEvent.keyboard("{Backspace}");
+    // Inside the range shown, so their names carry the range too.
+    await userEvent.click(page.getByRole("button", { name: /^Sunday, October 25, 2026/u }));
+    await userEvent.click(page.getByRole("button", { name: /Monday, October 26, 2026/u }));
+    await userEvent.click(roleNamed("spinbutton", "hour, Start time"));
+    await userEvent.keyboard("{ArrowUp}");
+    await userEvent.click(roleNamed("spinbutton", "second, Start time"));
+    await userEvent.keyboard("00");
+
+    await expect
+      .poll(() => values.at(-1))
+      .toBe("2026-10-25T02:30:00+01:00[Europe/Oslo]..2026-10-26T10:00:00+01:00[Europe/Oslo]");
+  });
+
+  it("steps a start time typed for a held range through its day's repeated DST hour", async () => {
+    const values: string[] = [];
+    // October 25, 2026 sets Oslo's clocks back at 03:00: after 02:30 summer time comes 02:30 winter time.
+    renderThemed(
+      withLocale(
+        "en-US",
+        <DateRangePickerField
+          label="Period"
+          granularity="second"
+          hourCycle={24}
+          hideTimeZone
+          timeZone="Europe/Oslo"
+          shouldCloseOnSelect={false}
+          onChange={(value) =>
+            values.push(value === null ? "null" : `${value.start.toString()}..${value.end.toString()}`)
+          }
+        />
+      )
+    );
+    await userEvent.click(roleNamed("button", "Calendar Period"));
+    await waitForPopupSettled();
+    await userEvent.click(roleNamed("button", "Sunday, October 25, 2026"));
+    await userEvent.click(roleNamed("button", "Monday, October 26, 2026"));
+    await userEvent.click(roleNamed("spinbutton", "hour, Start time"));
+    await userEvent.keyboard("0230");
+    await userEvent.click(roleNamed("spinbutton", "hour, Start time"));
+    await userEvent.keyboard("{ArrowUp}");
+    await userEvent.click(roleNamed("spinbutton", "second, Start time"));
+    await userEvent.keyboard("00");
+    await userEvent.click(roleNamed("spinbutton", "hour, End time"));
+    await userEvent.keyboard("100000");
+
+    await expect
+      .poll(() => values.at(-1))
+      .toBe("2026-10-25T02:30:00+01:00[Europe/Oslo]..2026-10-26T10:00:00+01:00[Europe/Oslo]");
+  });
+
+  it("keeps a held end's time stepped to the repeated hour's later instant when its day is picked again", async () => {
+    const values: string[] = [];
+    // October 25, 2026 sets Oslo's clocks back at 03:00: after 02:30 summer time comes 02:30 winter
+    // time. React Aria moves a picked day under its time with `ZonedDateTime.set`, which keeps a value
+    // whose wall clock the day leaves unchanged.
+    renderThemed(
+      withLocale(
+        "en-US",
+        <DateRangePickerField
+          label="Period"
+          granularity="minute"
+          hourCycle={24}
+          hideTimeZone
+          timeZone="Europe/Oslo"
+          shouldCloseOnSelect={false}
+          onChange={(value) =>
+            values.push(value === null ? "null" : `${value.start.toString()}..${value.end.toString()}`)
+          }
+        />
+      )
+    );
+    await userEvent.click(roleNamed("button", "Calendar Period"));
+    await waitForPopupSettled();
+    await userEvent.click(roleNamed("button", "Tuesday, October 20, 2026"));
+    await userEvent.click(roleNamed("button", "Sunday, October 25, 2026"));
+    await userEvent.click(roleNamed("spinbutton", "hour, End time"));
+    await userEvent.keyboard("0230");
+    await userEvent.click(roleNamed("spinbutton", "hour, End time"));
+    await userEvent.keyboard("{ArrowUp}");
+    // Inside the range shown, so their names carry the range too.
+    await userEvent.click(page.getByRole("button", { name: /Tuesday, October 20, 2026/u }));
+    await userEvent.click(page.getByRole("button", { name: /Sunday, October 25, 2026/u }));
+    await userEvent.click(roleNamed("spinbutton", "hour, Start time"));
+    await userEvent.keyboard("0800");
+
+    await expect
+      .poll(() => values.at(-1))
+      .toBe("2026-10-20T08:00:00+02:00[Europe/Oslo]..2026-10-25T02:30:00+01:00[Europe/Oslo]");
+  });
+
+  it("pastes the wall time of ISO text dated in March's gap onto a held start on October 25", async () => {
+    const values: string[] = [];
+    renderThemed(
+      withLocale(
+        "en-US",
+        <DateRangePickerField
+          label="Period"
+          granularity="minute"
+          hourCycle={24}
+          hideTimeZone
+          timeZone="Europe/Oslo"
+          shouldCloseOnSelect={false}
+          onChange={(value) =>
+            values.push(value === null ? "null" : `${value.start.toString()}..${value.end.toString()}`)
+          }
+        />
+      )
+    );
+    await userEvent.click(roleNamed("button", "Calendar Period"));
+    await waitForPopupSettled();
+    await userEvent.click(roleNamed("button", "Sunday, October 25, 2026"));
+    await userEvent.click(roleNamed("button", "Monday, October 26, 2026"));
+    const data = new DataTransfer();
+    data.setData("text/plain", "2026-03-29T02:30");
+    roleNamed("spinbutton", "hour, Start time").dispatchEvent(
+      new ClipboardEvent("paste", { clipboardData: data, bubbles: true, cancelable: true })
+    );
+    await userEvent.click(roleNamed("spinbutton", "hour, End time"));
+    await userEvent.keyboard("1000");
+
+    // Typed 02:30 on October 25 is the earlier, summer-time 02:30.
+    await expect
+      .poll(() => values.at(-1))
+      .toBe("2026-10-25T02:30:00+02:00[Europe/Oslo]..2026-10-26T10:00:00+01:00[Europe/Oslo]");
+  });
+
+  describe("times held before days, across a change of the empty picker's zone or kind", () => {
+    /** An empty Oslo range picker whose parent switches its `timeZone` to `to`, logging its ranges. */
+    function Switching({ to }: { readonly to: string | undefined }): ReactElement {
+      const [zone, setZone] = useState<string | undefined>("Europe/Oslo");
+      const [values, setValues] = useState<string[]>([]);
+      return (
+        <>
+          <button type="button" onClick={() => setZone(to)}>
+            Switch
+          </button>
+          <DateRangePickerField
+            label="Period"
+            granularity="minute"
+            hourCycle={24}
+            shouldCloseOnSelect={false}
+            {...definedProps({ timeZone: zone })}
+            onChange={(value) =>
+              setValues((current) => [
+                ...current,
+                value === null ? "null" : `${value.start.toString()}..${value.end.toString()}`,
+              ])
+            }
+          />
+          <div role="log" aria-label="Changes">
+            {values.join(" | ")}
+          </div>
+        </>
+      );
+    }
+
+    // Held times are wall times: 09:30 and 17:00 on November 11 and 12 in the zone and kind at the pick.
+    it.each([
+      {
+        change: "zone to New York",
+        to: "America/New_York",
+        expected: "2026-11-11T09:30:00-05:00[America/New_York]..2026-11-12T17:00:00-05:00[America/New_York]",
+      },
+      {
+        change: "kind to a plain date-time",
+        to: undefined,
+        expected: "2026-11-11T09:30:00..2026-11-12T17:00:00",
+      },
+    ])("commits the held times on the range picked after its $change", async ({ to, expected }) => {
+      renderThemed(withLocale("en-US", <Switching to={to} />));
+      await userEvent.click(roleNamed("button", "Calendar Period"));
+      await waitForPopupSettled();
+      await userEvent.click(roleNamed("spinbutton", "hour, Start time"));
+      await userEvent.keyboard("0930");
+      await userEvent.click(roleNamed("spinbutton", "hour, End time"));
+      await userEvent.keyboard("1700");
+
+      // `click()` switches without moving focus, so the popup stays open.
+      roleNamed("button", "Switch").click();
+      await expect
+        .element(page.getByRole("spinbutton", { name: "hour, Start time", exact: true }))
+        .toHaveTextContent("09");
+      // The month button pages to November; the popup repositions after the switch, so the month
+      // button and the days are reached without a pointer.
+      roleNamed("button", "Next").click();
+      await pickDay("Wednesday, November 11, 2026");
+      await pickDay("Thursday, November 12, 2026");
+
+      await expect.element(log()).toHaveTextContent(expected);
+      expect(log().element().textContent).toBe(expected);
+    });
+  });
+
+  it("keeps one time per end: a start typed in its input replaces the time typed in the popup before", async () => {
+    const values: string[] = [];
+    renderThemed(
+      withLocale(
+        "en-US",
+        <DateRangePickerField
+          label="Window"
+          granularity="minute"
+          hourCycle={24}
+          shouldCloseOnSelect={false}
+          onChange={(value) =>
+            values.push(value === null ? "null" : `${value.start.toString()}..${value.end.toString()}`)
+          }
+        />
+      )
+    );
+    const hour = (name: string) => page.getByRole("spinbutton", { name: `hour, ${name}`, exact: true });
+    await userEvent.click(roleNamed("button", "Calendar Window"));
+    await waitForPopupSettled();
+    await userEvent.click(hour("Start time"));
+    await userEvent.keyboard("0800");
+    await userEvent.keyboard("{Escape}");
+    await expect.element(page.getByRole("dialog")).not.toBeInTheDocument();
+
+    // The start's own input, typed whole at 09:00 on October 12.
+    await userEvent.click(roleNamed("spinbutton", "month, Start Date, Window"));
+    await userEvent.keyboard("101220260900");
+    await userEvent.click(roleNamed("button", "Calendar Window"));
+    await waitForPopupSettled();
+    await expect.element(hour("Start time")).toHaveTextContent("09");
+
+    // A range picked now keeps the start's one time.
+    await userEvent.click(roleNamed("button", "Wednesday, October 14, 2026"));
+    await userEvent.click(roleNamed("button", "Friday, October 16, 2026"));
+    await userEvent.click(hour("End time"));
+    await userEvent.keyboard("1700");
+    await expect.poll(() => values.at(-1)).toBe("2026-10-14T09:00:00..2026-10-16T17:00:00");
+  });
+
+  it("drops a half-typed popup time on a native form reset, showing the end's time again", async () => {
+    renderThemed(
+      withLocale(
+        "en-US",
+        <form aria-label="Booking">
+          <DateRangePickerField
+            label="Window"
+            hourCycle={24}
+            defaultValue={{
+              start: Temporal.PlainDateTime.from("2026-10-12T08:00"),
+              end: Temporal.PlainDateTime.from("2026-10-16T17:30"),
+            }}
+          />
+        </form>
+      )
+    );
+    await userEvent.click(roleNamed("button", "Calendar Window"));
+    await waitForPopupSettled();
+    await userEvent.click(roleNamed("spinbutton", "hour, Start time"));
+    await userEvent.keyboard("{Backspace}{Backspace}");
+    await expect
+      .element(page.getByRole("spinbutton", { name: "hour, Start time", exact: true }))
+      .toHaveTextContent("––");
+
+    // `reset()` moves no focus, so the popup stays open over the reset.
+    formNamed("Booking").reset();
+
+    await expect
+      .element(page.getByRole("spinbutton", { name: "hour, Start time", exact: true }))
+      .toHaveTextContent("08");
+  });
+
   it("drops a half-cleared range for good when the parent replaces the range and later restores it", async () => {
     const A = { start: Temporal.PlainDate.from("2026-10-05"), end: Temporal.PlainDate.from("2026-10-09") };
     const B = { start: Temporal.PlainDate.from("2026-11-02"), end: Temporal.PlainDate.from("2026-11-06") };
@@ -1032,4 +1830,41 @@ describe("DateRangePicker kind of an empty picker", () => {
         .toBe(`2026-10-26T08:00:00${offset}[${to}]..2026-10-27T17:00:00${offset}[${to}]`);
     }
   );
+});
+
+describe("preset dateValue of another kind", () => {
+  it("throws while rendering for a range whose end is of another kind than the picker's", () => {
+    expectRenderTypeError(
+      "DatePicker.PresetItem dateValue.end: received a Temporal.ZonedDateTime inside DateRangePicker.Root, whose values are Temporal.PlainDate",
+      <DateRangePicker.Root aria-label="Period" defaultOpen>
+        <DateRangePicker.Popup>
+          <DateRangePicker.Presets>
+            <DateRangePicker.PresetItem
+              value="mixed"
+              dateValue={{
+                start: Temporal.PlainDate.from("2026-10-05"),
+                end: Temporal.ZonedDateTime.from("2026-10-09T00:00[Europe/Oslo]"),
+              }}>
+              Mixed
+            </DateRangePicker.PresetItem>
+          </DateRangePicker.Presets>
+        </DateRangePicker.Popup>
+      </DateRangePicker.Root>
+    );
+  });
+
+  it("throws while rendering for one value inside DateRangePicker.Root", () => {
+    expectRenderTypeError(
+      "DatePicker.PresetItem dateValue: received one Temporal value inside DateRangePicker.Root",
+      <DateRangePicker.Root aria-label="Period" defaultOpen>
+        <DateRangePicker.Popup>
+          <DateRangePicker.Presets>
+            <DateRangePicker.PresetItem value="one" dateValue={Temporal.PlainDate.from("2026-10-05")}>
+              One
+            </DateRangePicker.PresetItem>
+          </DateRangePicker.Presets>
+        </DateRangePicker.Popup>
+      </DateRangePicker.Root>
+    );
+  });
 });

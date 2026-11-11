@@ -20,6 +20,7 @@ export const enUS = {
   timeZoneName: "time zone",
   empty: "Empty",
   selectedDateDescription: (vars: Variables) => `Selected Date: ${String(vars?.date)}`,
+  selectedTimeDescription: (vars: Variables) => `Selected Time: ${String(vars?.time)}`,
   rangeUnderflow: (vars: Variables) => `Value must be ${String(vars?.minValue)} or later.`,
   rangeOverflow: (vars: Variables) => `Value must be ${String(vars?.maxValue)} or earlier.`,
   unavailableDate: "Selected date unavailable.",

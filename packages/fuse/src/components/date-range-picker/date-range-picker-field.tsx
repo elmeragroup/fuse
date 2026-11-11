@@ -16,9 +16,9 @@ import type { OverlayContainerProps } from "../overlay/overlay-props";
 import { DateRangePickerRoot } from "./date-range-picker";
 import type { DateRangePickerValue } from "./date-range-picker";
 import {
-  DateRangePickerCalendar,
   DateRangePickerDescription,
   DateRangePickerEndInput,
+  DateRangePickerFieldCalendar,
   DateRangePickerError,
   DateRangePickerLabel,
   DateRangePickerSeparator,
@@ -83,7 +83,12 @@ export type DateRangePickerFieldProps<T extends DateInputValue = Temporal.PlainD
    * alone.
    */
   presetGroup?: ReactNode;
-  /** Whether completing a range in the calendar closes the popup. @default true */
+  /**
+   * Whether completing a range in the calendar closes the popup. With a time `granularity`, the
+   * popup shows a start and an end time input under the calendar; a range picked in an empty
+   * picker that stays open commits once both have a time, or at midnight when the popup closes.
+   * @default true
+   */
   shouldCloseOnSelect?: boolean;
   /** Pads days, months and hours with a leading zero in both inputs. @default true */
   shouldForceLeadingZeros?: boolean;
@@ -179,7 +184,7 @@ export function DateRangePickerField<P = object, T extends DateInputValue = Prop
       {description ? <DateRangePickerDescription>{description}</DateRangePickerDescription> : null}
       <DatePickerPopup {...definedProps({ container })}>
         <PickerPopupPane presets={presetGroup}>
-          <DateRangePickerCalendar />
+          <DateRangePickerFieldCalendar shouldForceLeadingZeros={shouldForceLeadingZeros} />
         </PickerPopupPane>
       </DatePickerPopup>
     </DateRangePickerRoot>

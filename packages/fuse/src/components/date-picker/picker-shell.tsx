@@ -4,7 +4,7 @@
 // trigger, the popup and the preset pane. A picker Root (DatePicker's here, DateRangePicker's in
 // its own module) provides `PickerShellContext`; these parts read only it.
 
-import { createContext, use, useCallback, useId, useLayoutEffect, useMemo, useState } from "react";
+import { createContext, use, useCallback, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { ChangeEvent, KeyboardEvent, MouseEvent, ReactElement, ReactNode, RefObject } from "react";
 
 import { useFieldRootContext } from "@base-ui/react/internals/field-root-context";
@@ -31,11 +31,18 @@ import {
   CalendarMonths,
   CalendarVisibleRangeHeading,
 } from "../calendar/calendar-parts";
+import type { DateInputNeighbour } from "../date-field/date-input-neighbours";
 import { PopoverContent, PopoverRoot, PopoverTrigger } from "../popover/popover";
 import type { PopoverContentProps } from "../popover/popover";
 import { datePickerVariants } from "./date-picker-variants";
 import { datePickerStrings } from "./intl";
-import type { DatePickerPresetsValueChangeEventDetails, PickerOpenRequest } from "./picker-change-details";
+import type {
+  DatePickerPresetValue,
+  DatePickerPresetsValueChangeEventDetails,
+  PickerOpenRequest,
+  PickerPresetCommit,
+  PickerPresetReader,
+} from "./picker-change-details";
 import { stateClassName } from "./picker-class-name";
 import type { DatePickerClassName } from "./picker-class-name";
 import type { PickerInputBoundary } from "./picker-focus-boundary";
@@ -66,8 +73,13 @@ export type PickerShellContextValue = {
   readonly size: "default" | "sm";
   /** The popup element, which focus may move into without leaving the picker. */
   readonly popupRef: RefObject<HTMLDivElement | null>;
-  /** A preset pane announces itself, so a range calendar can drop rather than commit a half range. */
-  readonly registerPresets: () => () => void;
+  /**
+   * A preset pane announces itself, so a range calendar can drop rather than commit a half range,
+   * with what to call when the picker's value is committed by anything but a preset press.
+   */
+  readonly registerPresets: PresetRegistration;
+  /** Read a preset's `dateValue` for this picker and bind its commit, reason `"preset-press"`. */
+  readonly readPreset: PickerPresetReader;
   /** Whether the picker is a range picker: its parts take the `range` layout. */
   readonly range: boolean;
   /**
@@ -77,9 +89,17 @@ export type PickerShellContextValue = {
   readonly registerInputBoundary: (boundary: PickerInputBoundary) => () => void;
   /** Whether a node is inside one of this picker's inputs. */
   readonly containsInput: (node: Node) => boolean;
+  /** The input beside one of this picker's inputs, which focus crosses to: a range's other end. */
+  readonly adjacentInput: DateInputNeighbour;
   /** The segment focus was on when the popup opened, which takes focus back when it closes. */
   readonly openerRef: RefObject<HTMLElement | null>;
 };
+
+/**
+ * A preset pane announcing itself to its picker Root, with what to call when the picker's value is
+ * committed by anything but a preset press; returns the pane's unregistration.
+ */
+export type PresetRegistration = (onValueCommitted: () => void) => () => void;
 
 export const PickerShellContext = createContext<PickerShellContextValue | undefined>(undefined);
 
@@ -98,27 +118,40 @@ export function usePickerShellContext(part: string): PickerShellContextValue {
   return value;
 }
 
+/** What a picker Root keeps of its preset panes. */
+export type PresetRegistry = {
+  /** Whether a preset pane is rendered. */
+  readonly hasPresets: boolean;
+  /** The callback a pane announces itself with; see `PickerShellContextValue.registerPresets`. */
+  readonly registerPresets: PresetRegistration;
+  /** Tell every pane the picker's value was committed by something other than a preset press. */
+  readonly valueCommitted: () => void;
+};
+
 /**
- * Whether a preset pane is rendered, and the callback a pane announces itself with.
+ * A picker Root's preset panes: whether one renders, and the panes to tell when the value is
+ * committed by a day, an edit, a time or a form reset, so an uncontrolled pane clears its key.
+ * The Root calls `valueCommitted` from its commit path, never by comparing values.
  *
- * @returns `[hasPresets, registerPresets]`.
+ * @returns The registry.
  */
-export function usePresetRegistry(): readonly [boolean, () => () => void] {
+export function usePresetRegistry(): PresetRegistry {
   const [count, setCount] = useState(0);
-  const register = useCallback(() => {
+  const listeners = useRef(new Set<() => void>());
+  const registerPresets = useCallback((onValueCommitted: () => void) => {
+    listeners.current.add(onValueCommitted);
     setCount((current) => current + 1);
-    return () => setCount((current) => current - 1);
+    return () => {
+      listeners.current.delete(onValueCommitted);
+      setCount((current) => current - 1);
+    };
   }, []);
-  return [count > 0, register] as const;
-}
-
-/** The registration of a Root that never reads whether presets render: it records nothing. */
-export function ignorePresets(): () => undefined {
-  return releaseNothing;
-}
-
-function releaseNothing(): undefined {
-  return undefined;
+  const valueCommitted = useCallback(() => {
+    for (const listener of listeners.current) {
+      listener();
+    }
+  }, []);
+  return { hasPresets: count > 0, registerPresets, valueCommitted };
 }
 
 /**
@@ -357,13 +390,19 @@ export function DatePickerPopup({
   );
 }
 
-/** The preset pane's value and the item that changed it. */
+/** What a preset reads from its pane. */
 type PresetsContextValue = {
+  /** The checked preset's key: the parent's, or the pane's own; `null` for none. */
   readonly value: string | null;
   readonly disabled: boolean;
   readonly name: string;
-  /** Report a pressed preset; returns whether it applied. */
-  readonly select: (value: string, event: Event, trigger: Element) => boolean;
+  /** A preset was pressed or chosen by key, or activated again while checked. See `DatePickerPresets`. */
+  readonly activate: (
+    key: string,
+    commitPreset: PickerPresetCommit | undefined,
+    event: Event,
+    trigger: Element
+  ) => void;
 };
 
 const PresetsContext = createContext<PresetsContextValue | undefined>(undefined);
@@ -375,10 +414,12 @@ export type DatePickerPresetsProps = Omit<useRender.ComponentProps<"div">, "defa
   /** The preset checked first, when the pane owns its value. */
   defaultValue?: string | null;
   /**
-   * Called with the pressed preset's value. A preset is the caller's key: map it to a date or a
-   * range and set the picker's value; the pane never computes one. `details.reason` is
-   * `"preset-press"`, and `details.trigger` the preset's radio. Canceling with `details.cancel()`
-   * keeps the checked preset as it was.
+   * Called with the key of a preset pressed or chosen by key while it was not checked. A preset
+   * without a `dateValue` is the caller's key to map to a date or a range and set the picker's
+   * value. For a preset with one, the picker's `onValueChange` runs first: canceling there refuses
+   * the whole press, and this is never called. This runs once the picker's value is committed;
+   * canceling it keeps the checked preset as it was, and does not undo that value.
+   * `details.reason` is `"preset-press"`, and `details.trigger` the preset's radio.
    */
   onValueChange?: (value: string, details: DatePickerPresetsValueChangeEventDetails) => void;
   /** The pane's accessible name. An explicit `aria-label` wins over it; both win over "Date presets". */
@@ -410,20 +451,33 @@ export function DatePickerPresets({
   const [own, setOwn] = useState<string | null>(defaultValue);
   const value = valueProp === undefined ? own : valueProp;
   const name = useId();
+  // The pane's own key follows its presses alone: a value the picker commits any other way (a day,
+  // typing, a time, a form reset) clears it, as the Root tells it from its commit path. A key the
+  // parent controls is the parent's to clear.
   const { registerPresets } = shell;
-  useLayoutEffect(() => registerPresets(), [registerPresets]);
-  const select = useStableCallback((next: string, event: Event, trigger: Element): boolean => {
-    const details = createChangeEventDetails("preset-press", event, trigger, {});
-    onValueChange?.(next, details);
-    if (details.isCanceled) {
-      return false;
+  useLayoutEffect(() => registerPresets(() => setOwn(null)), [registerPresets]);
+  const activate = useStableCallback(
+    (next: string, commitPreset: PickerPresetCommit | undefined, event: Event, trigger: Element): void => {
+      // Each callback refuses what it owns. The picker's value first: its cancel refuses the whole
+      // press, and the pane is never asked. Then a new key, the pane's: its cancel keeps the checked
+      // preset, though the value is already committed. A checked preset activated again commits its
+      // `dateValue` again and reports no new key.
+      if (commitPreset !== undefined && !commitPreset(event, trigger)) {
+        return;
+      }
+      if (next === value) {
+        return;
+      }
+      const details = createChangeEventDetails("preset-press", event, trigger, {});
+      onValueChange?.(next, details);
+      if (!details.isCanceled) {
+        setOwn(next);
+      }
     }
-    setOwn(next);
-    return true;
-  });
+  );
   const context = useMemo(
-    (): PresetsContextValue => ({ value, disabled, name, select }),
-    [value, disabled, name, select]
+    (): PresetsContextValue => ({ value, disabled, name, activate }),
+    [value, disabled, name, activate]
   );
   const element = useRender({
     defaultTagName: "div",
@@ -461,6 +515,23 @@ export type DatePickerPresetItemProps = Omit<
   className?: DatePickerClassName<DatePickerPresetItemState>;
   /** The preset's key, which the pane reports. */
   value: string;
+  /**
+   * What pressing the preset sets the picker to: a Temporal value of the picker's kind in
+   * `DatePicker.Root`, a `{ start, end }` range of them in `DateRangePicker.Root`. Every
+   * activation commits it through the picker's `onValueChange` with the reason `"preset-press"`: a
+   * press, Space or Enter, also on the preset already checked, so it applies again after a day
+   * picked or typed since. Each callback refuses what it owns: the picker's `onValueChange` runs
+   * first, and canceling it refuses the whole press (the value and the checked preset stay, and
+   * the pane's `onValueChange` is not called); for a preset not yet checked, the pane's runs next,
+   * and canceling it keeps the checked preset but not the value, already committed. Which preset is
+   * checked is the pane's key alone, never a match of dates: a pane that owns its key clears it
+   * when the picker's value is committed any other way (a day, typing, a time, a form reset), and
+   * a key the parent controls is the parent's to clear. Without it the preset is
+   * only a key, which the pane's `onValueChange` maps to a value. Build it in a client component.
+   * A value of another kind than the picker's, a range in `DatePicker.Root` or one value in
+   * `DateRangePicker.Root` throws a `TypeError` while the preset renders.
+   */
+  dateValue?: DatePickerPresetValue;
   /** Whether it does not respond. */
   disabled?: boolean;
   /**
@@ -479,6 +550,7 @@ export type DatePickerPresetItemProps = Omit<
  */
 export function DatePickerPresetItem({
   value,
+  dateValue,
   disabled: disabledProp = false,
   closeOnDoubleClick = false,
   className,
@@ -492,6 +564,13 @@ export function DatePickerPresetItem({
     throw new Error("DatePicker.PresetItem must be rendered inside DatePicker.Presets.");
   }
   const disabled = disabledProp || presets.disabled;
+  // Read while rendering, as the Root reads its own value props, so a value the picker does not
+  // take throws at mount rather than on a press.
+  const { readPreset } = shell;
+  const commitPreset = useMemo(
+    () => (dateValue === undefined ? undefined : readPreset(dateValue)),
+    [dateValue, readPreset]
+  );
   const checked = presets.value === value;
   const state = useMemo((): DatePickerPresetItemState => ({ checked, disabled }), [checked, disabled]);
   return useRender({
@@ -518,10 +597,32 @@ export function DatePickerPresetItem({
                 checked={checked}
                 disabled={disabled}
                 onChange={(event: ChangeEvent<HTMLInputElement>) => {
-                  // A canceled press leaves the pane's value as it was, and React puts the
-                  // controlled radios back to it.
+                  // A press, Space or an arrow key checking this preset. A canceled press leaves
+                  // the pane's value as it was, and React puts the controlled radios back to it.
                   if (event.currentTarget.checked) {
-                    presets.select(value, event.nativeEvent, event.currentTarget);
+                    presets.activate(value, commitPreset, event.nativeEvent, event.currentTarget);
+                  }
+                }}
+                onClick={(event: MouseEvent<HTMLInputElement>) => {
+                  // A press on the checked preset changes no radio, so no `change` comes: it
+                  // applies the preset again, after another gesture moved the value.
+                  if (checked) {
+                    presets.activate(value, commitPreset, event.nativeEvent, event.currentTarget);
+                  }
+                }}
+                onKeyDown={(event: KeyboardEvent<HTMLInputElement>) => {
+                  // Enter activates a preset as a press does, as Base UI's Radio takes it, and
+                  // never submits a form around the picker; Space on the checked preset applies it
+                  // again, where an unchecked one checks natively and reports through `change`.
+                  // Preventing the key's default keeps the engine from following it with a click,
+                  // so the key is one activation.
+                  const enter = event.key === "Enter";
+                  if (!enter && !(event.key === " " && checked)) {
+                    return;
+                  }
+                  event.preventDefault();
+                  if (!disabled) {
+                    presets.activate(value, commitPreset, event.nativeEvent, event.currentTarget);
                   }
                 }}
               />

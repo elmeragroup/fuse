@@ -25,6 +25,7 @@ import { CaretRight } from "../../icons/generated/caret-right";
 import { definedProps } from "../../internal/defined-props";
 import { cn } from "../../styles/cn";
 import { monthWeeks } from "../../temporal/month-grid";
+import { referenceDay } from "../../temporal/reference-day";
 import { Button } from "../button/button";
 import type { IconButtonProps, IconButtonSize } from "../button/button";
 import {
@@ -225,12 +226,55 @@ function DefaultMonth({ month, single }: { month: Temporal.PlainYearMonth; singl
   );
 }
 
+/** The most weeks a month spans, which a placeholder grid reserves. */
+const PLACEHOLDER_WEEKS = 6;
+
+/**
+ * A month the calendar cannot name yet: one with neither a value nor a default value shows today's
+ * months, and only the client's first effect reads the clock, never a render, so the server and the
+ * hydrating render write this instead. It is the default month's frame, the weekday row over six
+ * weeks of empty days, hidden from assistive technology. Six weeks are the most a month spans, so
+ * the popup or page never grows when today's months replace it, and shrinks by a row or two for a
+ * month of four or five weeks; hydration matches either way. Its weekday row is the real
+ * `DayGridHeader` over the reference day's month: any month names the same weekdays.
+ */
+function PlaceholderMonth({ single }: { readonly single: boolean }): ReactElement {
+  const month = useMemo(() => referenceDay().toPlainYearMonth(), []);
+  return (
+    <CalendarMonth value={month} aria-hidden>
+      {/* A one-month view's heading is visually hidden; a multi-month one keeps its line. */}
+      {single ? null : (
+        <div data-slot="calendar-month-heading" className={styles.monthHeading()}>
+          {"\u00a0"}
+        </div>
+      )}
+      <table data-slot="calendar-day-grid" role="presentation" className={styles.dayGrid()}>
+        <CalendarDayGridHeader />
+        <tbody data-slot="calendar-day-grid-body" className={styles.dayGridBody()}>
+          {Array.from({ length: PLACEHOLDER_WEEKS }, (_, row) => (
+            <tr key={row} data-slot="calendar-day-grid-row" className={styles.dayGridRow()}>
+              {Array.from({ length: 7 }, (_, column) => (
+                <td key={column} data-slot="calendar-day-grid-cell" className={styles.dayGridCell()}>
+                  {/* An empty day keeps the day's size, invisible as a neighbouring month's day. */}
+                  <span data-slot="calendar-day-button" data-outside-month="" className={styles.day()} />
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </CalendarMonth>
+  );
+}
+
 /**
  * The visible months in a row that wraps, so a narrow host stacks them. A calendar with neither
- * a value nor a default value renders none until its first effect has read today.
+ * a value nor a default value writes placeholder months on the server and in the hydrating render,
+ * the default month's frame with six weeks of empty days, until its first effect has read today
+ * and shows today's months; `children` renders the months from then on.
  */
 export function CalendarMonths({ className, render, children, ...props }: CalendarMonthsProps): ReactElement {
-  const { store } = useCalendarRootContext("Calendar.Months");
+  const { store, settings } = useCalendarRootContext("Calendar.Months");
   const visible = useCalendarStateField(store, "visible");
   const months = useMemo(
     () =>
@@ -252,7 +296,12 @@ export function CalendarMonths({ className, render, children, ...props }: Calend
       ...mergeProps<"div">(
         {
           className: cn(styles.months(), className),
-          children: months.map((month, index) => renderMonth(month, index)),
+          children:
+            visible === null
+              ? Array.from({ length: settings.visibleMonths }, (_, index) => (
+                  <PlaceholderMonth key={index} single={settings.visibleMonths === 1} />
+                ))
+              : months.map((month, index) => renderMonth(month, index)),
         },
         props
       ),

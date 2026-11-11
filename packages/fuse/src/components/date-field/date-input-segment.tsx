@@ -1,11 +1,12 @@
 "use client";
 
-import { useId, useMemo } from "react";
+import { useId, useLayoutEffect, useMemo, useRef } from "react";
 import type { ComponentProps, FocusEvent, KeyboardEvent, PointerEvent, ReactElement } from "react";
 
 import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
 
+import { hasFocus } from "../../internal/active-element";
 import { definedProps } from "../../internal/defined-props";
 import { isHTMLElement } from "../../internal/dom-node";
 import { cn } from "../../styles/cn";
@@ -65,6 +66,24 @@ export function DateInputSegment({
     },
   });
 
+  // The element this segment renders, read when it unmounts: a focused segment that leaves hands
+  // focus on before React removes it, so focus never drops to the body. Only an unmount does: the
+  // cleanup runs once, reading the Root's actions as they are then.
+  const elementRef = useRef<HTMLElement>(null);
+  const actionsRef = useRef(actions);
+  useLayoutEffect(() => {
+    actionsRef.current = actions;
+  });
+  useLayoutEffect(
+    () => () => {
+      const element = elementRef.current;
+      if (element !== null && hasFocus(element)) {
+        actionsRef.current.segmentRemoved(element);
+      }
+    },
+    []
+  );
+
   const state = useMemo(
     (): DateInputSegmentState => ({
       type: segment.type,
@@ -94,7 +113,12 @@ export function DateInputSegment({
   return useRender({
     defaultTagName: "span",
     render,
-    ref: segment.type === "literal" ? ref : ref === undefined ? inputRef : [inputRef, ref],
+    ref:
+      segment.type === "literal"
+        ? ref
+        : ref === undefined
+          ? [inputRef, elementRef]
+          : [inputRef, elementRef, ref],
     state,
     stateAttributesMapping: SEGMENT_STATE_ATTRIBUTES,
     props: {

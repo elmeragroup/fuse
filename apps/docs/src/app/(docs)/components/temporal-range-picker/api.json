@@ -180,7 +180,7 @@
           "type": "NoInfer<(value: DateRangePickerValue<T> | null, details: DateRangePickerValueChangeEventDetails) => void> | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Called with this runtime's range once both ends hold a value and one of them changes, or `null` when a whole range loses an end, as React Aria reports it; the other end stays in its input. A range filled one end at a time reports nothing until both hold a value. `details.reason` is `\"day-press\"`, `\"keyboard\"`, `\"outside-press\"`, `\"focus-out\"` (a range completed in the calendar), `\"input-change\"`, `\"input-clear\"` or `\"input-paste\"`. Canceling with `details.cancel()` keeps the range: a canceled day keeps the popup open with the anchor, so another end can be picked, and a canceled edit shows the range again in the segments.",
+          "description": "Called with this runtime's range once both ends hold a value and one of them changes, or `null` when a whole range loses an end, as React Aria reports it; the other end stays in its input. A range filled one end at a time reports nothing until both hold a value. `details.reason` is `\"day-press\"`, `\"keyboard\"`, `\"outside-press\"`, `\"focus-out\"` (a range completed in the calendar), `\"input-change\"`, `\"input-clear\"`, `\"input-paste\"` or `\"preset-press\"` (a `PresetItem` with a `dateValue` range). Canceling with `details.cancel()` keeps the range: a canceled day keeps the popup open with the anchor, so another end can be picked, a canceled edit shows the range again in the segments, and a canceled preset stays unchecked.",
           "required": false
         },
         {
@@ -236,7 +236,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Whether completing a range in the calendar closes the popup. With a time `granularity` and no range yet, a completed range is held while the popup stays open and commits at midnight when it closes, as `DatePicker.Root`'s day: the commit runs first, and canceling it keeps the popup open. A half-filled range the inputs hold belongs to the range it was typed over: a new range from the parent drops it for good. A native form reset drops both, the half-typed segments and the shown errors.",
+          "description": "Whether completing a range in the calendar closes the popup. With a time `granularity` and no range yet, a completed range is held while the popup stays open, as `DatePicker.Root`'s day: it commits once both `StartTimeInput` and `EndTimeInput` hold a time, and otherwise at midnight (an end with a typed time at that time) when the popup closes; that commit runs first, and canceling it keeps the popup open. A half-filled range the inputs hold belongs to the range it was typed over: a new range from the parent drops it for good. A native form reset drops both, the half-typed segments and the shown errors.",
           "required": false
         },
         {
@@ -768,6 +768,64 @@
       ]
     },
     {
+      "name": "DateRangePicker.StartTimeInput",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/date-range-picker/date-range-picker-parts.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 277,
+      "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "((segment: DateInputSegmentData) => ReactNode) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Renders each segment. Without it each renders as a `DateInput.Segment`, which a server component can rely on, since a function cannot cross to the client.",
+          "required": false
+        },
+        {
+          "name": "shouldForceLeadingZeros",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Pads days, months and hours to two digits whatever the locale writes.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "DateRangePicker.EndTimeInput",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/date-range-picker/date-range-picker-parts.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 277,
+      "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "((segment: DateInputSegmentData) => ReactNode) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Renders each segment. Without it each renders as a `DateInput.Segment`, which a server component can rely on, since a function cannot cross to the client.",
+          "required": false
+        },
+        {
+          "name": "shouldForceLeadingZeros",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Pads days, months and hours to two digits whatever the locale writes.",
+          "required": false
+        }
+      ]
+    },
+    {
       "name": "DateRangePicker.Presets",
       "rsc": "client",
       "sourcePath": "packages/fuse/src/components/date-picker/picker-shell.tsx",
@@ -810,7 +868,7 @@
           "type": "((value: string, details: DatePickerPresetsValueChangeEventDetails) => void) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Called with the pressed preset's value. A preset is the caller's key: map it to a date or a range and set the picker's value; the pane never computes one. `details.reason` is `\"preset-press\"`, and `details.trigger` the preset's radio. Canceling with `details.cancel()` keeps the checked preset as it was.",
+          "description": "Called with the key of a preset pressed or chosen by key while it was not checked. A preset without a `dateValue` is the caller's key to map to a date or a range and set the picker's value. For a preset with one, the picker's `onValueChange` runs first: canceling there refuses the whole press, and this is never called. This runs once the picker's value is committed; canceling it keeps the checked preset as it was, and does not undo that value. `details.reason` is `\"preset-press\"`, and `details.trigger` the preset's radio.",
           "required": false
         },
         {
@@ -870,6 +928,15 @@
           "shortType": null,
           "defaultValue": "false",
           "description": "Closes the popup on double-click (`reason: \"preset-press\"`), after the item's own `onDoubleClick`. A pointer shortcut: a click or Space selects without closing. The interim tier's `isCloseDialogOnDoubleClick`.",
+          "required": false
+        },
+        {
+          "name": "dateValue",
+          "origin": "declared",
+          "type": "DatePickerPresetValue | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "What pressing the preset sets the picker to: a Temporal value of the picker's kind in `DatePicker.Root`, a `{ start, end }` range of them in `DateRangePicker.Root`. Every activation commits it through the picker's `onValueChange` with the reason `\"preset-press\"`: a press, Space or Enter, also on the preset already checked, so it applies again after a day picked or typed since. Each callback refuses what it owns: the picker's `onValueChange` runs first, and canceling it refuses the whole press (the value and the checked preset stay, and the pane's `onValueChange` is not called); for a preset not yet checked, the pane's runs next, and canceling it keeps the checked preset but not the value, already committed. Which preset is checked is the pane's key alone, never a match of dates: a pane that owns its key clears it when the picker's value is committed any other way (a day, typing, a time, a form reset), and a key the parent controls is the parent's to clear. Without it the preset is only a key, which the pane's `onValueChange` maps to a value. Build it in a client component. A value of another kind than the picker's, a range in `DatePicker.Root` or one value in `DateRangePicker.Root` throws a `TypeError` while the preset renders.",
           "required": false
         },
         {
@@ -1150,7 +1217,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Whether completing a range in the calendar closes the popup.",
+          "description": "Whether completing a range in the calendar closes the popup. With a time `granularity`, the popup shows a start and an end time input under the calendar; a range picked in an empty picker that stays open commits once both have a time, or at midnight when the popup closes.",
           "required": false
         },
         {

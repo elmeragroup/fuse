@@ -8,6 +8,7 @@ import { describe, expect, it } from "vitest";
  */
 import "../../temporal-polyfill";
 import type { TemporalValue } from "../../temporal/temporal-value";
+import type { EditableSegmentType } from "./date-draft";
 import {
   basisOf,
   canceled,
@@ -29,6 +30,9 @@ function settings(committed: TemporalValue | null, controlled = false): SessionS
     controlled,
     editable: true,
     fields: ["year", "month", "day"],
+    units: "date-time",
+    readText: () => undefined,
+    zoneInstant: () => 0,
     hourCycle: "h12",
     kind: { kind: "PlainDate" },
     dayPeriods: ["AM", "PM"],
@@ -38,7 +42,7 @@ function settings(committed: TemporalValue | null, controlled = false): SessionS
 }
 
 function session(own: TemporalValue | null): SessionState {
-  return initialSession(own, basisOf(own, "h12", DATE_FIELDS));
+  return initialSession(own, basisOf(own, "h12", DATE_FIELDS, "date-time"));
 }
 
 const OCT_5 = Temporal.PlainDate.from("2026-10-05");
@@ -80,8 +84,10 @@ describe("erase", () => {
   it("clears a two-digit day in one press and keeps the committed value", () => {
     const outcome = erase(session(OCT_5), { type: "day", text: "05", isPlaceholder: false }, settings(OCT_5));
     expect(outcome.commit).toBeUndefined();
-    expect(draftOver(outcome.state, basisOf(OCT_5, "h12", DATE_FIELDS))?.day).toBeNull();
-    expect(entryOf(outcome.state, OCT_5, basisOf(OCT_5, "h12", DATE_FIELDS))).toEqual({ kind: "partial" });
+    expect(draftOver(outcome.state, basisOf(OCT_5, "h12", DATE_FIELDS, "date-time"))?.day).toBeNull();
+    expect(entryOf(outcome.state, OCT_5, basisOf(OCT_5, "h12", DATE_FIELDS, "date-time"))).toEqual({
+      kind: "partial",
+    });
   });
 
   it("moves back from an empty segment", () => {
@@ -108,10 +114,10 @@ describe("drafts and committed values", () => {
       settings(OCT_5, true)
     );
     const november = Temporal.PlainDate.from("2026-11-06");
-    const replaced = rebase(cleared.state, basisOf(november, "h12", DATE_FIELDS));
-    const restored = rebase(replaced, basisOf(OCT_5, "h12", DATE_FIELDS));
-    expect(draftOver(restored, basisOf(OCT_5, "h12", DATE_FIELDS))).toBeNull();
-    expect(entryOf(restored, OCT_5, basisOf(OCT_5, "h12", DATE_FIELDS))).toEqual({
+    const replaced = rebase(cleared.state, basisOf(november, "h12", DATE_FIELDS, "date-time"));
+    const restored = rebase(replaced, basisOf(OCT_5, "h12", DATE_FIELDS, "date-time"));
+    expect(draftOver(restored, basisOf(OCT_5, "h12", DATE_FIELDS, "date-time"))).toBeNull();
+    expect(entryOf(restored, OCT_5, basisOf(OCT_5, "h12", DATE_FIELDS, "date-time"))).toEqual({
       kind: "value",
       value: OCT_5,
     });
@@ -135,12 +141,12 @@ describe("drafts and committed values", () => {
     // The day cleared, then a "1" typed into it: a whole draft that commits October 1. Canceling
     // that commit restores the state before it, whose partial draft must give way to the value.
     const cleared = erase(session(OCT_5), { type: "day", text: "05", isPlaceholder: false }, settings(OCT_5));
-    expect(draftOver(cleared.state, basisOf(OCT_5, "h12", DATE_FIELDS))?.day).toBeNull();
+    expect(draftOver(cleared.state, basisOf(OCT_5, "h12", DATE_FIELDS, "date-time"))?.day).toBeNull();
     const typed = typeKey(cleared.state, "day", "1", settings(OCT_5));
     expect(typed.commit?.value?.toString()).toBe("2026-10-01");
 
     const restored = canceled(cleared.state);
-    expect(draftOver(restored, basisOf(OCT_5, "h12", DATE_FIELDS))).toBeNull();
+    expect(draftOver(restored, basisOf(OCT_5, "h12", DATE_FIELDS, "date-time"))).toBeNull();
     expect(restored.entered).toBe("");
     expect(restored.edited).toBe(true);
   });
@@ -153,7 +159,7 @@ describe("drafts and committed values", () => {
     expect(typed.commit).toBeUndefined();
     expect(typed.state.draft).toBeNull();
     expect(typed.state.entered).toBe("1");
-    expect(entryOf(typed.state, october1, basisOf(october1, "h12", DATE_FIELDS))).toEqual({
+    expect(entryOf(typed.state, october1, basisOf(october1, "h12", DATE_FIELDS, "date-time"))).toEqual({
       kind: "value",
       value: october1,
     });
@@ -163,7 +169,9 @@ describe("drafts and committed values", () => {
   });
 
   it("reads an empty input with no draft as empty", () => {
-    expect(entryOf(session(null), null, basisOf(null, "h12", DATE_FIELDS))).toEqual({ kind: "empty" });
+    expect(entryOf(session(null), null, basisOf(null, "h12", DATE_FIELDS, "date-time"))).toEqual({
+      kind: "empty",
+    });
   });
 
   it("drops a draft typed under other fields, so the input reads as what its value is", () => {
@@ -190,9 +198,11 @@ describe("drafts and committed values", () => {
       expect(typed.commit).toBeUndefined();
       state = typed.state;
     }
-    expect(entryOf(state, null, basisOf(null, "h12", MINUTE_FIELDS))).toEqual({ kind: "partial" });
+    expect(entryOf(state, null, basisOf(null, "h12", MINUTE_FIELDS, "date-time"))).toEqual({
+      kind: "partial",
+    });
 
-    const dayBasis = basisOf(null, "h12", DATE_FIELDS);
+    const dayBasis = basisOf(null, "h12", DATE_FIELDS, "date-time");
     expect(draftOver(state, dayBasis)).toBeNull();
     expect(entryOf(state, null, dayBasis)).toEqual({ kind: "empty" });
     const rebased = rebase(state, dayBasis);
@@ -210,7 +220,7 @@ describe("drafts and committed values", () => {
       kind: { kind: "PlainDateTime" },
       placeholder: () => Temporal.PlainDateTime.from("2030-06-15T00:00"),
     };
-    const minuteBasis = basisOf(morning, "h12", MINUTE_FIELDS);
+    const minuteBasis = basisOf(morning, "h12", MINUTE_FIELDS, "date-time");
     const emptied = erase(
       initialSession(morning, minuteBasis),
       { type: "hour", text: "09", isPlaceholder: false },
@@ -220,8 +230,8 @@ describe("drafts and committed values", () => {
     expect(entryOf(emptied.state, morning, minuteBasis)).toEqual({ kind: "partial" });
 
     const daySettings: SessionSettings = { ...minuteSettings, fields: DATE_FIELDS };
-    const rebased = rebase(emptied.state, basisOf(morning, "h12", DATE_FIELDS));
-    expect(entryOf(rebased, morning, basisOf(morning, "h12", DATE_FIELDS))).toEqual({
+    const rebased = rebase(emptied.state, basisOf(morning, "h12", DATE_FIELDS, "date-time"));
+    expect(entryOf(rebased, morning, basisOf(morning, "h12", DATE_FIELDS, "date-time"))).toEqual({
       kind: "value",
       value: morning,
     });
@@ -231,6 +241,49 @@ describe("drafts and committed values", () => {
   it("commits pasted ISO text converted to the input's kind", () => {
     const outcome = paste(session(OCT_5), " 2027-01-02T10:00 ", settings(OCT_5));
     expect(outcome.commit).toEqual({ value: Temporal.PlainDate.from("2027-01-02"), reason: "input-paste" });
-    expect(paste(session(OCT_5), "01/02/2027", settings(OCT_5)).commit).toBeUndefined();
+  });
+
+  it("commits text its format reads only when every unit is inside its limits and the value holds it", () => {
+    // The format's reading is given, as `readFieldText` would read "02.01.2027" day first, so the
+    // session's own rules are under test: limits, completeness and the round trip.
+    const reads = (entries: readonly (readonly [EditableSegmentType, number])[]): SessionSettings => ({
+      ...settings(OCT_5),
+      readText: () => ({
+        entries: entries.map(([type, value]) => ({ type, value })),
+        namesZoneAt: () => true,
+      }),
+    });
+    expect(
+      paste(
+        session(OCT_5),
+        "text",
+        reads([
+          ["day", 2],
+          ["month", 1],
+          ["year", 2027],
+        ])
+      ).commit
+    ).toEqual({
+      value: Temporal.PlainDate.from("2027-01-02"),
+      reason: "input-paste",
+    });
+    for (const entries of [
+      [
+        ["day", 30],
+        ["month", 2],
+        ["year", 2027],
+      ],
+      [
+        ["day", 2],
+        ["month", 13],
+        ["year", 2027],
+      ],
+      [
+        ["day", 2],
+        ["month", 1],
+      ],
+    ] as const) {
+      expect(paste(session(OCT_5), "text", reads(entries)).commit).toBeUndefined();
+    }
   });
 });

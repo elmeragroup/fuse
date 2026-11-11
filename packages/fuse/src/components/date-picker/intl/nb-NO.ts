@@ -4,5 +4,8 @@ export const nbNO = {
   presets: "Datoforvalg",
   startDate: "Startdato",
   endDate: "Sluttdato",
+  time: "Tid",
+  startTime: "Starttid",
+  endTime: "Sluttid",
   rangeReversed: "Startdatoen må være før sluttdatoen.",
 };

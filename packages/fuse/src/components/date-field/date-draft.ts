@@ -329,15 +329,34 @@ function cycleHour(
   };
 }
 
+/**
+ * A wall clock's instants in a zone: the earlier and the later one, which differ for a wall time
+ * the zone repeats (the night the clocks go back) and are the one instant of any other. In a
+ * skipped wall time both resolve outside it, the earlier before the gap and the later after it.
+ *
+ * @param wallClock - The wall clock.
+ * @param zone - The zone.
+ * @returns The earlier and the later instant.
+ */
+export function wallClockInstants(
+  wallClock: Temporal.PlainDateTime,
+  zone: string
+): readonly [Temporal.ZonedDateTime, Temporal.ZonedDateTime] {
+  return [
+    wallClock.toZonedDateTime(zone, { disambiguation: "earlier" }),
+    wallClock.toZonedDateTime(zone, { disambiguation: "later" }),
+  ];
+}
+
 /** The instant of `wallClock` in `zone` that stays on its own day, earliest or latest. */
 function instantOnDay(
   wallClock: Temporal.PlainDateTime,
   zone: string,
   pick: "first" | "last"
 ): Temporal.ZonedDateTime | undefined {
-  const candidates = (["earlier", "later"] as const)
-    .map((disambiguation) => wallClock.toZonedDateTime(zone, { disambiguation }))
-    .filter((candidate) => candidate.day === wallClock.day);
+  const candidates = wallClockInstants(wallClock, zone).filter(
+    (candidate) => candidate.day === wallClock.day
+  );
   return pick === "first" ? candidates[0] : candidates.at(-1);
 }
 
@@ -426,9 +445,9 @@ export function draftToValue(draft: DateDraft, base: TemporalValue, hourCycle: H
     return compatible;
   }
   return (
-    (["earlier", "later"] as const)
-      .map((disambiguation) => wallClock.toZonedDateTime(base.timeZoneId, { disambiguation }))
-      .find((candidate) => candidate.offsetNanoseconds === draft.offsetNanoseconds) ?? compatible
+    wallClockInstants(wallClock, base.timeZoneId).find(
+      (candidate) => candidate.offsetNanoseconds === draft.offsetNanoseconds
+    ) ?? compatible
   );
 }
 

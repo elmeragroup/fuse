@@ -4,6 +4,7 @@
 
 import type { PopoverRoot } from "@base-ui/react/popover";
 
+import type { TemporalValue } from "../../temporal/temporal-value";
 import type {
   CalendarChangeEventDetails,
   CalendarValidationError,
@@ -50,6 +51,37 @@ export type DatePickerOpenChangeEventDetails = DatePickerChangeEventDetails<Date
  * `"preset-press"`; canceling keeps the checked preset as it was.
  */
 export type DatePickerPresetsValueChangeEventDetails = DatePickerChangeEventDetails<"preset-press">;
+
+/**
+ * What a preset sets the picker to, through its `dateValue`: a Temporal value of the picker's kind
+ * in `DatePicker.Root`, a `{ start, end }` range of them in `DateRangePicker.Root`.
+ */
+export type DatePickerPresetValue = TemporalValue | DatePickerPresetRange;
+
+/** A preset's range for `DateRangePicker.Root`: each end a Temporal value of the picker's kind. */
+export type DatePickerPresetRange = {
+  /** The first value. */
+  readonly start: TemporalValue;
+  /** The last value. */
+  readonly end: TemporalValue;
+};
+
+/**
+ * Commit a pressed preset's value through the picker Root's cancelable `onValueChange`, with the
+ * reason `"preset-press"`.
+ *
+ * @returns Whether the value applied: `false` when `onValueChange` canceled it.
+ */
+export type PickerPresetCommit = (event: Event, trigger: Element) => boolean;
+
+/**
+ * Read a preset's `dateValue` as the picker Root reads it, while the preset renders, and bind the
+ * commit of what it read. A new reader comes with every new kind, so a preset re-reads then.
+ *
+ * @throws TypeError for a value the Root does not take: text, the other picker's shape, or another
+ *   kind than the picker's. A host defect.
+ */
+export type PickerPresetReader = (value: DatePickerPresetValue) => PickerPresetCommit;
 
 /**
  * Why a picker value fails its rules, as `getValidationError()` reports it: Calendar's words,

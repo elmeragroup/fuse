@@ -1,48 +1,28 @@
 "use client";
 
-import { useState } from "react";
-
 import { DatePicker, DatePickerField } from "@elmeragroup/fuse/date-picker";
 
-const PRESETS = {
-  "next-monday": "2026-10-12",
-  "first-of-month": "2026-11-01",
-  "new-year": "2027-01-01",
-} as const;
-
-type Preset = keyof typeof PRESETS;
-
-function isPreset(value: string): value is Preset {
-  return Object.hasOwn(PRESETS, value);
-}
-
 export function TemporalDatePickerPresets() {
-  const [value, setValue] = useState<Temporal.PlainDate | null>(() => Temporal.PlainDate.from("2026-10-05"));
-  const [preset, setPreset] = useState<Preset | null>(null);
   return (
     <DatePickerField
       className="max-w-xs w-full"
       label="Start date"
-      value={value}
-      onChange={(next) => {
-        setValue(next);
-        setPreset(null);
-      }}
+      defaultValue={Temporal.PlainDate.from("2026-10-05")}
       presetGroup={
-        <DatePicker.Presets
-          value={preset}
-          onValueChange={(next) => {
-            if (!isPreset(next)) return;
-            setPreset(next);
-            setValue(Temporal.PlainDate.from(PRESETS[next]));
-          }}>
-          <DatePicker.PresetItem value="next-monday" closeOnDoubleClick>
+        <DatePicker.Presets>
+          <DatePicker.PresetItem
+            value="next-monday"
+            dateValue={Temporal.PlainDate.from("2026-10-12")}
+            closeOnDoubleClick>
             Next Monday
           </DatePicker.PresetItem>
-          <DatePicker.PresetItem value="first-of-month" closeOnDoubleClick>
+          <DatePicker.PresetItem
+            value="first-of-month"
+            dateValue={Temporal.PlainDate.from("2026-11-01")}
+            closeOnDoubleClick>
             First of next month
           </DatePicker.PresetItem>
-          <DatePicker.PresetItem value="new-year" disabled>
+          <DatePicker.PresetItem value="new-year" dateValue={Temporal.PlainDate.from("2027-01-01")} disabled>
             New Year (closed)
           </DatePicker.PresetItem>
         </DatePicker.Presets>

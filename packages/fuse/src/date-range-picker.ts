@@ -20,4 +20,5 @@ export type {
   DateRangePickerInputProps,
   DateRangePickerLabelProps,
   DateRangePickerSeparatorProps,
+  DateRangePickerTimeInputProps,
 } from "./components/date-range-picker/date-range-picker-parts";

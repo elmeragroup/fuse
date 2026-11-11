@@ -16,10 +16,12 @@ import {
   DateRangePickerCalendar,
   DateRangePickerDescription,
   DateRangePickerEndInput,
+  DateRangePickerEndTimeInput,
   DateRangePickerError,
   DateRangePickerLabel,
   DateRangePickerSeparator,
   DateRangePickerStartInput,
+  DateRangePickerStartTimeInput,
 } from "./date-range-picker-parts";
 
 export const DateRangePicker = {
@@ -34,6 +36,8 @@ export const DateRangePicker = {
   Description: DateRangePickerDescription,
   Popup: DatePickerPopup,
   Calendar: DateRangePickerCalendar,
+  StartTimeInput: DateRangePickerStartTimeInput,
+  EndTimeInput: DateRangePickerEndTimeInput,
   Presets: DatePickerPresets,
   PresetItem: DatePickerPresetItem,
 };

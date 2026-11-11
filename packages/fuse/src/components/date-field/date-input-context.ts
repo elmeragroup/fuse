@@ -19,6 +19,11 @@ export type DateInputActions = {
   readonly type: (type: EditableSegmentType, key: string, event: Event, target: HTMLElement) => void;
   /** A segment took focus. */
   readonly segmentFocused: () => void;
+  /**
+   * A focused segment is leaving the DOM, as a granularity change removes it: focus moves to the
+   * segment before it, or after it when it was the first, as React Aria's `useDateSegment` does.
+   */
+  readonly segmentRemoved: (element: HTMLElement) => void;
 };
 
 /** What a Segment reads from its Root. */

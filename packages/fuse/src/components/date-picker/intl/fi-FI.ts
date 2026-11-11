@@ -4,5 +4,8 @@ export const fiFI = {
   presets: "Päivämäärän pikavalinnat",
   startDate: "Alkamispäivä",
   endDate: "Päättymispäivä",
+  time: "Aika",
+  startTime: "Alkamisaika",
+  endTime: "Päättymisaika",
   rangeReversed: "Aloituspäivän on oltava ennen lopetuspäivää.",
 };

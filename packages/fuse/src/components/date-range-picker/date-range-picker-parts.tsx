@@ -25,6 +25,7 @@ import { stateClassName } from "../date-picker/picker-class-name";
 import { PickerDateInput } from "../date-picker/picker-input";
 import type { PickerInputPartProps, PickerOwnedCalendarProp } from "../date-picker/picker-root";
 import { DefaultCalendarChildren, NO_STATE } from "../date-picker/picker-shell";
+import { PickerTimeInput } from "../date-picker/picker-time-input";
 import { fieldVariants } from "../field/field-variants";
 import { RangeCalendarRoot } from "../range-calendar/range-calendar";
 import type { RangeCalendarRootProps } from "../range-calendar/range-calendar";
@@ -256,6 +257,44 @@ export function DateRangePickerEndInput(props: DateRangePickerInputProps): React
   return <DateRangePickerEndpoint endpoint="end" {...props} />;
 }
 
+/** An end's time input: `DateInput.Root`'s presentation props. */
+export type DateRangePickerTimeInputProps = PickerInputPartProps;
+
+function DateRangePickerTimeInput({
+  endpoint,
+  ...props
+}: DateRangePickerTimeInputProps & { readonly endpoint: Endpoint }): ReactElement | null {
+  const root = useRangeRootContext(
+    endpoint === "start" ? "DateRangePicker.StartTimeInput" : "DateRangePicker.EndTimeInput"
+  );
+  return (
+    <PickerTimeInput
+      {...props}
+      binding={root.timeBindings[endpoint]}
+      settings={root.timeSettings}
+      label={endpoint === "start" ? "startTime" : "endTime"}
+      resetKey={root.generation}
+    />
+  );
+}
+
+/**
+ * The start's time, edited in the popup under the calendar, as `DatePicker.TimeInput` edits the
+ * single picker's: a time-only `DateInput.Root` named "Start time", rendered only while the range has
+ * a time to show. A time typed for an end of a whole range changes that end's time. In an empty
+ * picker it waits for the end's day, and a range picked in the calendar (with
+ * `shouldCloseOnSelect={false}`) commits once both ends have a time, or when the popup closes, each
+ * end without a typed time at midnight. It is a Field of its own and submits nothing.
+ */
+export function DateRangePickerStartTimeInput(props: DateRangePickerTimeInputProps): ReactElement | null {
+  return <DateRangePickerTimeInput endpoint="start" {...props} />;
+}
+
+/** The end's time in the popup, named "End time", as `StartTimeInput` is the start's. */
+export function DateRangePickerEndTimeInput(props: DateRangePickerTimeInputProps): ReactElement | null {
+  return <DateRangePickerTimeInput endpoint="end" {...props} />;
+}
+
 /** `DateRangePicker.Separator` takes a `span`'s props plus Base UI's `render`. */
 export type DateRangePickerSeparatorProps = useRender.ComponentProps<"span">;
 
@@ -319,5 +358,30 @@ export function DateRangePickerCalendar({
       className={cn(styles.calendar(), className)}>
       {children ?? <DefaultCalendarChildren />}
     </RangeCalendarRoot>
+  );
+}
+
+/**
+ * DateRangePickerField's popup column: the calendar, and both ends' time inputs side by side under
+ * it while the range has a time. A date-only range's popup holds the calendar alone, with no column
+ * around it. Private to the composite: a composition places the time input parts itself.
+ */
+export function DateRangePickerFieldCalendar({
+  shouldForceLeadingZeros,
+}: {
+  readonly shouldForceLeadingZeros: boolean;
+}): ReactElement {
+  const root = useRangeRootContext("DateRangePickerField");
+  if (root.timeSettings === null) {
+    return <DateRangePickerCalendar />;
+  }
+  return (
+    <div className={styles.timeColumn()}>
+      <DateRangePickerCalendar />
+      <div className={styles.timeInputs()}>
+        <DateRangePickerStartTimeInput shouldForceLeadingZeros={shouldForceLeadingZeros} />
+        <DateRangePickerEndTimeInput shouldForceLeadingZeros={shouldForceLeadingZeros} />
+      </div>
+    </div>
   );
 }

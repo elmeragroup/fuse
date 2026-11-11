@@ -97,10 +97,17 @@ export const DATE_RECIPES: readonly DateRecipe[] = [
   {
     id: "today",
     from: "today(tz)",
-    temporal: standalone("Temporal.Now.plainDateISO(tz)"),
-    note: "Read it in an effect or an event handler, never while rendering, as Fuse's calendars do.",
+    temporal: standalone(
+      "Temporal.Instant.fromEpochMilliseconds(Date.now()).toZonedDateTimeISO(tz).toPlainDate()"
+    ),
+    note: "Read it in an effect or an event handler, never while rendering, as Fuse's calendars do. It reads `Date.now()`, as Fuse does, so a test that fakes `Date` fakes today too; native `Temporal.Now.plainDateISO(tz)` gives the same date but ignores a faked `Date`.",
   },
-  { id: "now", from: "now(tz)", temporal: standalone("Temporal.Now.zonedDateTimeISO(tz)") },
+  {
+    id: "now",
+    from: "now(tz)",
+    temporal: standalone("Temporal.Instant.fromEpochMilliseconds(Date.now()).toZonedDateTimeISO(tz)"),
+    note: "As `today`: `Date.now()` follows a faked clock, where native `Temporal.Now.zonedDateTimeISO(tz)` does not.",
+  },
   {
     id: "local-time-zone",
     from: "getLocalTimeZone()",
@@ -160,11 +167,14 @@ export const DATE_RECIPES: readonly DateRecipe[] = [
     id: "is-today",
     from: "isToday(date, tz)",
     temporal: perKind({
-      PlainDate: "date.equals(Temporal.Now.plainDateISO(tz))",
-      PlainDateTime: "date.toPlainDate().equals(Temporal.Now.plainDateISO(tz))",
-      ZonedDateTime: "date.toPlainDate().equals(Temporal.Now.plainDateISO(tz))",
+      PlainDate:
+        "date.equals(Temporal.Instant.fromEpochMilliseconds(Date.now()).toZonedDateTimeISO(tz).toPlainDate())",
+      PlainDateTime:
+        "date.toPlainDate().equals(Temporal.Instant.fromEpochMilliseconds(Date.now()).toZonedDateTimeISO(tz).toPlainDate())",
+      ZonedDateTime:
+        "date.toPlainDate().equals(Temporal.Instant.fromEpochMilliseconds(Date.now()).toZonedDateTimeISO(tz).toPlainDate())",
     }),
-    note: "Compares the value's own wall-clock date with today in `tz`, as React Aria does. To ask about `tz`'s day for a zoned value, convert it first with `withTimeZone(tz)`.",
+    note: "Compares the value's own wall-clock date with today in `tz`, read as the `today` recipe reads it, as React Aria does. To ask about `tz`'s day for a zoned value, convert it first with `withTimeZone(tz)`.",
   },
   {
     id: "start-of-month",

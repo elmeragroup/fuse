@@ -908,6 +908,7 @@
     "demos": [
       "temporal-date-picker-basic.tsx",
       "temporal-date-picker-time.tsx",
+      "temporal-date-picker-time-input.tsx",
       "temporal-date-picker-presets.tsx",
       "temporal-date-picker-form.tsx",
       "temporal-date-picker-controlled.tsx"
@@ -929,6 +930,7 @@
     "demos": [
       "temporal-range-picker-basic.tsx",
       "temporal-range-picker-months.tsx",
+      "temporal-range-picker-time.tsx",
       "temporal-range-picker-presets.tsx",
       "temporal-range-picker-form.tsx"
     ]

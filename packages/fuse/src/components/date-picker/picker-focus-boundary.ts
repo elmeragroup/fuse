@@ -8,7 +8,8 @@
 import { useCallback, useEffect, useLayoutEffect, useRef } from "react";
 import type { FocusEvent, RefObject } from "react";
 
-import { isElement, isHTMLElement, isNode, rootNodeChain } from "../../internal/dom-node";
+import { documentOrder, isElement, isHTMLElement, isNode, rootNodeChain } from "../../internal/dom-node";
+import type { DateInputNeighbour } from "../date-field/date-input-neighbours";
 import type { PickerOpenRequest } from "./picker-change-details";
 
 /** One input's focus boundary inside a picker. */
@@ -118,6 +119,8 @@ export type PickerFocusBoundary = {
   readonly registerInputBoundary: (boundary: PickerInputBoundary) => () => void;
   /** Whether a node is inside one of the registered inputs. */
   readonly containsInput: (node: Node) => boolean;
+  /** The registered input beside an input's element in document order, which focus crosses to. */
+  readonly adjacentInput: DateInputNeighbour;
   /** The Root element's focus handler. */
   readonly onFocus: (event: FocusEvent<HTMLElement>) => void;
   /** The Root element's blur handler. */
@@ -145,6 +148,16 @@ export function usePickerFocusBoundary(
     (node: Node) => [...boundaries.current].some((boundary) => boundary.element()?.contains(node) === true),
     []
   );
+  const adjacentInput = useCallback<DateInputNeighbour>((element, direction) => {
+    const elements = [...boundaries.current]
+      .flatMap((boundary) => {
+        const input = boundary.element();
+        return input === null ? [] : [input];
+      })
+      .sort(documentOrder);
+    const index = elements.indexOf(element);
+    return index < 0 ? null : (elements[index + (direction === "next" ? 1 : -1)] ?? null);
+  }, []);
   const registerInputBoundary = useCallback((boundary: PickerInputBoundary) => {
     boundaries.current.add(boundary);
     return () => {
@@ -208,6 +221,7 @@ export function usePickerFocusBoundary(
   return {
     registerInputBoundary,
     containsInput,
+    adjacentInput,
     onFocus(event) {
       settleTransit.current?.();
       if (isElement(event.target)) {

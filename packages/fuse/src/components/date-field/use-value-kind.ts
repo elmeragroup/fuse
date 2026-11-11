@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 import { resolveValueKind, sameKind } from "../../temporal/temporal-value";
-import type { ResolvedKind, ValueKindSources } from "../../temporal/temporal-value";
+import type { ResolvedKind, ValueKind, ValueKindSources } from "../../temporal/temporal-value";
 import { isThemeDevelopment } from "../../theme/validate-theme";
 
 /** What `useValueKind` reads each render: everything `resolveValueKind` does but the kind before. */
@@ -17,6 +17,11 @@ export type ValueKindOptions = {
    * off. Defaults to `false`.
    */
   readonly warnOnKindChange?: boolean;
+  /**
+   * The kind the control around the input supplies, as a picker does for its popup time input,
+   * which owns no value: it replaces the resolution, and nothing is remembered.
+   */
+  readonly supplied?: ValueKind;
 };
 
 /**
@@ -27,16 +32,19 @@ export type ValueKindOptions = {
  *
  * @param props - The parsed value, default value, granularity and zone.
  * @param owner - The Root, named in the conflict error and the warning.
- * @param options - Whether to warn of a kind change; see {@link ValueKindOptions}.
+ * @param options - Whether to warn of a kind change, and a supplied kind; see {@link ValueKindOptions}.
  * @returns The kind, and whether a value or default value named it.
  * @throws TypeError when a time granularity meets a PlainDate value or default value, a host defect.
  */
 export function useValueKind(
   props: ValueKindProps,
   owner: string,
-  { warnOnKindChange = false }: ValueKindOptions = {}
+  { warnOnKindChange = false, supplied }: ValueKindOptions = {}
 ): ResolvedKind {
   const [previous, setPrevious] = useState<ResolvedKind | undefined>(undefined);
+  if (supplied !== undefined) {
+    return { kind: supplied, named: true };
+  }
   const resolved = resolveValueKind({ ...props, previous });
   if (resolved._tag === "err") {
     throw new TypeError(`${owner} granularity: ${resolved.error.message}`);

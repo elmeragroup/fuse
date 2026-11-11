@@ -4,5 +4,8 @@ export const svSE = {
   presets: "Datumalternativ",
   startDate: "Startdatum",
   endDate: "Slutdatum",
+  time: "Tid",
+  startTime: "Starttid",
+  endTime: "Sluttid",
   rangeReversed: "Startdatumet måste vara före slutdatumet.",
 };

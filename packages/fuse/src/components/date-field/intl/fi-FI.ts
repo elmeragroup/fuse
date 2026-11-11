@@ -15,6 +15,7 @@ export const fiFI = {
   timeZoneName: "aikavyöhyke",
   empty: "Tyhjä",
   selectedDateDescription: (vars: Variables) => `Valittu päivämäärä: ${String(vars?.date)}`,
+  selectedTimeDescription: (vars: Variables) => `Valittu aika: ${String(vars?.time)}`,
   rangeUnderflow: (vars: Variables) => `Arvon on oltava ${String(vars?.minValue)} tai sitä myöhäisempi.`,
   rangeOverflow: (vars: Variables) => `Arvon on oltava ${String(vars?.maxValue)} tai sitä aikaisempi.`,
   unavailableDate: "Valittu päivämäärä ei ole käytettävissä.",

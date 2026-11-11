@@ -8,6 +8,7 @@ export type {
   DatePickerInputProps,
   DatePickerRootProps,
   DatePickerRootState,
+  DatePickerTimeInputProps,
   DatePickerValueChangeEventDetails,
   DatePickerValueChangeReason,
 } from "./components/date-picker/date-picker";
@@ -17,6 +18,8 @@ export type {
   DatePickerChangeEventDetails,
   DatePickerOpenChangeEventDetails,
   DatePickerOpenChangeReason,
+  DatePickerPresetRange,
+  DatePickerPresetValue,
   DatePickerPresetsValueChangeEventDetails,
   DatePickerValidationError,
 } from "./components/date-picker/picker-change-details";

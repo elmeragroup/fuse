@@ -15,7 +15,6 @@ import type { DateGranularity, TemporalValue } from "../../temporal/temporal-val
 import { CalendarRoot } from "../calendar/calendar";
 import type { CalendarRootProps, CalendarRootValueChangeEventDetails } from "../calendar/calendar";
 import { createChangeEventDetails } from "../calendar/calendar-change-details";
-import { boundDay } from "../calendar/calendar-dates";
 import type { CalendarPageBehavior } from "../calendar/calendar-dates";
 import { useTemporalProp } from "../calendar/calendar-input";
 import type { CalendarFirstDayOfWeek } from "../calendar/calendar-input";
@@ -31,31 +30,54 @@ import type {
   DatePickerValidationError,
 } from "./picker-change-details";
 import type { DatePickerClassName } from "./picker-class-name";
+import {
+  EMPTY_END,
+  clearEndTime,
+  editEndTime,
+  endAwaitsTime,
+  endDay,
+  endOfValue,
+  endValue,
+  pickEndDay,
+  pickedEndValue,
+} from "./picker-draft";
+import type { EndpointDraft } from "./picker-draft";
 import { PickerDateInput } from "./picker-input";
-import { useCalendarViewKey, usePickerRoot, usePickerRootElement, usePickerRules } from "./picker-root";
+import {
+  useCalendarViewKey,
+  usePickerRoot,
+  usePickerRootElement,
+  usePickerRules,
+  usePresetReader,
+} from "./picker-root";
 import type {
   PickerCalendarSettings,
   PickerInputPartProps,
   PickerInputSettings,
   PickerOwnedCalendarProp,
+  PickerTimeSettings,
 } from "./picker-root";
-import { DefaultCalendarChildren, ignorePresets } from "./picker-shell";
+import { DefaultCalendarChildren, usePresetRegistry } from "./picker-shell";
 import type { PickerState } from "./picker-shell";
-import { dayInKind } from "./picker-value";
+import { PickerTimeInput } from "./picker-time-input";
+import { usePickerTimeBinding } from "./picker-time-input";
+import type { PickerTimeBinding } from "./picker-time-input";
+import { presetDate } from "./picker-value";
 import { usePickerSession } from "./use-picker-session";
 
 const styles = datePickerVariants();
 
 /**
  * The gestures that change a picker's value: a day pressed or chosen with Enter or Space in the
- * calendar, or the input's typing, clearing and pasting.
+ * calendar, the input's typing, clearing and pasting, or a preset with a `dateValue` pressed.
  */
 export type DatePickerValueChangeReason =
   | "day-press"
   | "keyboard"
   | "input-change"
   | "input-clear"
-  | "input-paste";
+  | "input-paste"
+  | "preset-press";
 
 /** What `DatePicker.Root`'s `onValueChange` receives beside the new value. */
 export type DatePickerValueChangeEventDetails = DatePickerChangeEventDetails<DatePickerValueChangeReason> & {
@@ -97,9 +119,10 @@ export type DatePickerRootProps<T extends DateInputValue = Temporal.PlainDate> =
   /**
    * Called with this runtime's value when a day is picked in the calendar or the input forms a new
    * value, `null` when the input is cleared. `details.reason` is `"day-press"`, `"keyboard"`,
-   * `"input-change"`, `"input-clear"` or `"input-paste"`. Canceling with `details.cancel()` keeps the
-   * value: a canceled day keeps the popup open with focus on the day, and a canceled edit shows the
-   * value again in the segments.
+   * `"input-change"`, `"input-clear"`, `"input-paste"` or `"preset-press"` (a `PresetItem` with a
+   * `dateValue`). Canceling with `details.cancel()` keeps the value: a canceled day keeps the popup
+   * open with focus on the day, a canceled edit shows the value again in the segments, and a
+   * canceled preset stays unchecked.
    */
   onValueChange?: NoInfer<(value: T | null, details: DatePickerValueChangeEventDetails) => void>;
   /** Whether the popup is open, when the parent owns it. */
@@ -115,8 +138,9 @@ export type DatePickerRootProps<T extends DateInputValue = Temporal.PlainDate> =
   onOpenChange?: (open: boolean, details: DatePickerOpenChangeEventDetails) => void;
   /**
    * Whether picking a day closes the popup. With a time `granularity` and no value yet, a picked
-   * day is held while the popup stays open and commits at midnight when it closes, however it
-   * closes (a parent setting `open` to `false` included). That commit runs first and reports the
+   * day is held while the popup stays open: a time typed in `DatePicker.TimeInput` commits it at that
+   * time, and otherwise it commits at midnight when the popup closes, however it closes (a parent
+   * setting `open` to `false` included). A time typed before any day waits for one. That commit runs first and reports the
    * pick's reason; canceling it keeps the popup open with the day still held. A native form reset
    * drops a held day and any half-typed segments, and the shown error, also when the value is
    * unchanged.
@@ -176,11 +200,15 @@ export type DatePickerRootProps<T extends DateInputValue = Temporal.PlainDate> =
 /** What the Input and Calendar parts read from their Root. */
 type DatePickerRootContextValue = {
   readonly value: TemporalValue | null;
+  /** The day the picker holds: a day picked in an empty picker, else the value's (`endDay`). */
   readonly calendarDay: Temporal.PlainDate | null;
   readonly calendarKey: string;
   readonly inputKey: number;
   readonly inputSettings: PickerInputSettings;
   readonly calendarSettings: PickerCalendarSettings;
+  readonly timeSettings: PickerTimeSettings | null;
+  /** What the popup time input shows, the day it forms a typed time on, and its change. */
+  readonly timeBinding: PickerTimeBinding;
   readonly invalid: boolean;
   readonly name: string | undefined;
   readonly ariaLabel: string | undefined;
@@ -205,7 +233,8 @@ const OWNER = "DatePicker.Root";
 /**
  * A date picker: a segmented input and a calendar in a popup, over one value. It holds the value
  * and the open state; its parts are `Group` (the field box), `Input` (a bound `DateInput.Root`),
- * `Trigger`, `Popup`, `Calendar` and the preset pane (`Presets`, `PresetItem`).
+ * `Trigger`, `Popup`, `Calendar`, `TimeInput` (the value's time in the popup) and the preset pane
+ * (`Presets`, `PresetItem`).
  *
  * Inside a Base UI Field (`Field.Root`, or the `DatePickerField` composite) the input is the
  * Field's control: `Field.Label` names the group, the segments, the trigger ("Calendar Start date")
@@ -286,6 +315,9 @@ export function DatePickerRoot<P = object, T extends DateInputValue = PropsMadeV
     latest.current = published;
   });
 
+  // The preset panes, told when the value is committed by anything but a preset press.
+  const presetPanes = usePresetRegistry();
+
   /** Report a new value and apply it unless canceled; returns whether it applied. */
   function commit(
     next: TemporalValue | null,
@@ -306,18 +338,27 @@ export function DatePickerRoot<P = object, T extends DateInputValue = PropsMadeV
       setOwn(next);
     }
     latest.current = { ...state, value: next };
+    if (reason !== "preset-press") {
+      presetPanes.valueCommitted();
+    }
     return true;
   }
 
-  // The edit session owns the day held in an empty time picker that stays open, the open
-  // transitions and the form reset (`use-picker-session.ts`).
-  const session = usePickerSession<Temporal.PlainDate, "day-press" | "keyboard">({
+  // What the picker holds before it commits (`picker-draft.ts`): its value, or, in an empty time
+  // picker, a day picked while the popup stays open or a time typed before any day. The edit session
+  // owns the held draft, the open transitions and the form reset (`use-picker-session.ts`).
+  const valueDraft = useMemo(() => endOfValue(value), [value]);
+  const session = usePickerSession<EndpointDraft, "day-press" | "keyboard">({
     open: openProp,
     defaultOpen,
     onOpenChange,
     basis: iso,
-    finalize(day, origin) {
-      const next = dayInKind(day, kind, null);
+    finalize(held, origin) {
+      // A held day at the time typed in the popup, in the picker's kind and zone now, or midnight.
+      const next = endValue(held, kind);
+      if (next === null) {
+        return true;
+      }
       if (!commit(next, origin.reason, origin.event, origin.trigger)) {
         return false;
       }
@@ -329,6 +370,7 @@ export function DatePickerRoot<P = object, T extends DateInputValue = PropsMadeV
       if (!latest.current.controlled) {
         setOwn(latest.current.parsedDefault);
       }
+      presetPanes.valueCommitted();
       // A reset to the same value revalidates nothing, so the Field's shown validity starts over
       // here; the input remounts by the session's generation and drops its draft.
       field.setValidityData((data) => ({ ...data, state: DEFAULT_VALIDITY_STATE, error: "", errors: [] }));
@@ -337,7 +379,10 @@ export function DatePickerRoot<P = object, T extends DateInputValue = PropsMadeV
     },
   });
   const { held, generation, hold } = session;
-  const heldDay = held?.value ?? null;
+  const draft = held?.value ?? valueDraft;
+  const readPreset = usePresetReader(presetDate, kind, (preset: TemporalValue, event, trigger) =>
+    commit(preset, "preset-press", event, trigger)
+  );
 
   const root = usePickerRoot({
     props: {
@@ -363,8 +408,18 @@ export function DatePickerRoot<P = object, T extends DateInputValue = PropsMadeV
     describedBy: labelable.getDescriptionProps({})["aria-describedby"],
     invalid: invalidProp || inputInvalid,
     range: false,
-    registerPresets: ignorePresets,
+    registerPresets: presetPanes.registerPresets,
+    readPreset,
   });
+
+  /**
+   * What a gesture edits: the value as it is now, or, while the picker is empty, what it holds. A
+   * held draft belongs to the empty value, so a value committed earlier in the same gesture wins.
+   */
+  function currentDraft(): EndpointDraft {
+    const { value: now } = latest.current;
+    return now === null ? (held?.value ?? EMPTY_END) : endOfValue(now);
+  }
 
   const inputChange = useStableCallback(
     (next: TemporalValue | null, details: DateInputValueChangeEventDetails) => {
@@ -376,33 +431,70 @@ export function DatePickerRoot<P = object, T extends DateInputValue = PropsMadeV
   const selectDay = useStableCallback(
     (day: Temporal.PlainDate, details: CalendarRootValueChangeEventDetails) => {
       const state = latest.current;
-      if (kind.kind !== "PlainDate" && state.value === null && !state.shouldCloseOnSelect) {
-        // React Aria holds the day until a time is chosen; here, until the popup closes.
-        hold(day, { reason: details.reason, event: details.event, trigger: details.trigger });
+      // The value's time, or the time typed in the popup of an empty picker, or midnight.
+      const next = pickEndDay(currentDraft(), day, kind);
+      if (kind.kind !== "PlainDate" && endAwaitsTime(next) && !state.shouldCloseOnSelect) {
+        // React Aria holds the day until a time is chosen: in the popup's time input, or by the
+        // popup closing, which commits it at midnight.
+        hold(next, { reason: details.reason, event: details.event, trigger: details.trigger });
         return;
       }
-      const next = dayInKind(day, kind, state.value);
-      if (!commit(next, details.reason, details.event, details.trigger)) {
+      // A picked day always has a value: midnight until a time comes.
+      const value = pickedEndValue(next, kind);
+      if (!commit(value, details.reason, details.event, details.trigger)) {
         details.cancel();
         return;
       }
-      markPicked(next.toString());
+      markPicked(value.toString());
       if (state.shouldCloseOnSelect) {
         root.requestOpen(false, details.reason, details.event, details.trigger);
       }
     }
   );
 
-  const { inputSettings, calendarSettings } = root;
+  const timeChange = useStableCallback(
+    (time: TemporalValue | null, details: DateInputValueChangeEventDetails) => {
+      const current = currentDraft();
+      if (time === null) {
+        // A cleared time leaves a value's own time; an empty picker forgets the time it held.
+        const cleared = clearEndTime(current);
+        if (cleared === undefined) {
+          details.cancel();
+        } else if (held !== null) {
+          hold(cleared, held.finalizeOnClose);
+        }
+        return;
+      }
+      const next = editEndTime(current, time, kind);
+      const value = endValue(next, kind);
+      if (value === null) {
+        // No day yet: the wall time waits for one, as React Aria's held time, and takes the
+        // picker's kind and zone as they are when the day comes.
+        hold(next, null);
+        return;
+      }
+      if (!commit(value, details.reason, details.event, details.trigger)) {
+        details.cancel();
+        return;
+      }
+      // The popup made this value: the calendar under it stays mounted on its month.
+      markPicked(value.toString());
+    }
+  );
+
+  const { inputSettings, calendarSettings, timeSettings } = root;
+  const timeBinding = usePickerTimeBinding(draft, kind, timeChange);
   const context = useMemo(
     (): DatePickerRootContextValue => ({
       value,
       // Worked out here, so a time value's day, a new object each time, keeps the context.
-      calendarDay: heldDay ?? (value === null ? null : boundDay(value)),
+      calendarDay: endDay(draft),
       calendarKey: `${generation}:${viewKey}`,
       inputKey: generation,
       inputSettings,
       calendarSettings,
+      timeSettings,
+      timeBinding,
       invalid: invalidProp,
       name,
       ariaLabel,
@@ -412,11 +504,13 @@ export function DatePickerRoot<P = object, T extends DateInputValue = PropsMadeV
     }),
     [
       value,
-      heldDay,
+      draft,
       generation,
       viewKey,
       inputSettings,
       calendarSettings,
+      timeSettings,
+      timeBinding,
       invalidProp,
       name,
       ariaLabel,
@@ -494,5 +588,57 @@ export function DatePickerCalendar({ className, children, ...props }: DatePicker
       className={cn(styles.calendar(), className)}>
       {children ?? <DefaultCalendarChildren />}
     </CalendarRoot>
+  );
+}
+
+/**
+ * DatePickerField's popup column: the calendar, and the time input under it while the picker's
+ * values have a time. A date-only picker's popup holds the calendar alone, with no column around it.
+ * Private to the composite: a composition places `DatePicker.TimeInput` itself.
+ */
+export function DatePickerFieldCalendar({
+  shouldForceLeadingZeros,
+}: {
+  readonly shouldForceLeadingZeros: boolean;
+}): ReactElement {
+  const root = useDatePickerRootContext("DatePickerField");
+  if (root.timeSettings === null) {
+    return <DatePickerCalendar />;
+  }
+  return (
+    <div className={styles.timeColumn()}>
+      <DatePickerCalendar />
+      <DatePickerTimeInput shouldForceLeadingZeros={shouldForceLeadingZeros} />
+    </div>
+  );
+}
+
+/**
+ * `DatePicker.TimeInput` takes `DateInput.Root`'s presentation props; the value, the time options
+ * and the state come from `DatePicker.Root`.
+ */
+export type DatePickerTimeInputProps = PickerInputPartProps;
+
+/**
+ * The time of the picker's value, edited in the popup under the calendar, as React Spectrum's
+ * picker edits it: a `DateInput.Root` showing only the hour onwards, named "Time". It renders
+ * nothing while the picker's values have no time (a PlainDate, or `granularity="day"`). A time
+ * typed in a picker with a value changes that value's time; in an empty picker it waits for a day,
+ * and a day picked then (with `shouldCloseOnSelect={false}`, or before it) commits at that time
+ * rather than at midnight. A time waiting for a day is a wall-clock time: it takes the picker's
+ * zone and kind as they are when the day comes, so a `timeZone` changed meanwhile applies. Typing
+ * reports through the Root's `onValueChange` with the input's reasons. It is a Field of its own: it
+ * submits nothing, and a half-typed time marks only itself.
+ */
+export function DatePickerTimeInput(props: DatePickerTimeInputProps): ReactElement | null {
+  const root = useDatePickerRootContext("DatePicker.TimeInput");
+  return (
+    <PickerTimeInput
+      {...props}
+      binding={root.timeBinding}
+      settings={root.timeSettings}
+      label="time"
+      resetKey={root.inputKey}
+    />
   );
 }
