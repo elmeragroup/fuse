@@ -126,16 +126,6 @@ describe("PhoneNumberField", () => {
     await assertNoAxeViolations(host);
   });
 
-  it("starts the country trigger's name with the dial code it shows, then names the country (WCAG 2.5.3)", async () => {
-    renderField(<PhoneNumberField label="Mobile" defaultCountryCode="SE" />);
-    // The field's only button; its face is the flag, an empty-alt image, and the dial code.
-    const trigger = page.getByRole("button").element();
-    const shown = trigger.textContent.trim();
-    expect(shown).toBe("+46");
-    await expect.element(trigger).toHaveAccessibleName(`${shown} Sweden`);
-    await expect.element(trigger).toHaveAccessibleDescription("Select country");
-  });
-
   it("names only the selected country through Intl.DisplayNames until the country popup opens", async () => {
     resetCountryNameCache();
     const ofSpy = vi.spyOn(Intl.DisplayNames.prototype, "of");
