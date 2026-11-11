@@ -154,15 +154,17 @@ export function RadioGroup({
         data-slot="radio-group"
         // The layout axis, as Card writes it: a vertical stack of selection shells is connected.
         data-direction={orientation}
-        id={id}
-        value={value}
-        defaultValue={defaultValue}
-        onValueChange={onChange ? (next) => onChange(String(next)) : undefined}
-        disabled={isDisabled}
-        readOnly={isReadOnly}
-        required={isRequired}
-        name={name}
-        aria-busy={isPending ? true : undefined}
+        {...definedProps({
+          id,
+          value,
+          defaultValue,
+          disabled: isDisabled,
+          readOnly: isReadOnly,
+          required: isRequired,
+          name,
+          "aria-busy": isPending === true ? true : undefined,
+        })}
+        onValueChange={(next) => onChange?.(String(next))}
         className={cn(selectionGroupOrientationVariants({ orientation }).group(), className)}>
         <SelectionGroupLayout orientation={orientation}>{children}</SelectionGroupLayout>
       </RadioGroupPrimitive>
@@ -257,9 +259,8 @@ export function RadioIconButton({
       inputRef={syncedInputRef}
       data-slot="radio-icon-button"
       value={value}
-      disabled={isDisabled}
       className={cn(radioIconButtonVariants({ size }), className)}
-      {...definedProps(props)}>
+      {...definedProps({ disabled: isDisabled, ...props })}>
       {children}
     </RadioPrimitive.Root>
   );

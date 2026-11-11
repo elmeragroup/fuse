@@ -236,10 +236,7 @@ export function FieldFrame({
 
   return (
     <FieldRoot
-      {...definedProps({ "data-variant": variant })}
-      name={name}
-      invalid={invalid}
-      disabled={disabled}
+      {...definedProps({ "data-variant": variant, name, invalid, disabled })}
       className={cn(heading === "label" ? fieldFrameRootClass : null, className)}>
       {heading === "legend" ? <FieldSet>{framed}</FieldSet> : framed}
     </FieldRoot>

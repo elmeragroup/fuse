@@ -52,6 +52,13 @@ function isDefinedProps(expression: ESTree.Expression): boolean {
  * `aria-labelledby={undefined}` erased Field's label (#62). The module that renders the part
  * filters; the wrappers above it spread raw. A part counts from Base UI's root entry or a subpath,
  * under any alias or through a namespace import.
+ *
+ * Only spreads are checked. A plain `attr={maybeUndefined}` on a wiring part is the same hazard
+ * wherever Base UI leaves that prop in its merged element props, but whether an expression can be
+ * `undefined` is a type question, and a JS plugin gets no type checker (`parserServices` is empty).
+ * By syntax alone, a destructured prop without a default flags required props and hook results
+ * such as `locale`, and misses a prop renamed through a local. So AGENTS.md's "spread optional
+ * props" holds for attributes by review, as RadioGroup and CheckboxGroup spread theirs (#508).
  */
 export const definedPropsWiring: Rule = {
   meta: {
