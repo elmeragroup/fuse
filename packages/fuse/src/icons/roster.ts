@@ -156,6 +156,7 @@ export type BespokeIconName = (typeof BESPOKE_ICON_NAMES)[number];
 
 export const LOGO_NAMES = [
   "ElmeraGroupLogo",
+  "FjordkraftForetagLogo",
   "FjordkraftLogo",
   "GudbrandsdalEnergiLogo",
   "NordicGreenEnergyLogo",

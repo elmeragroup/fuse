@@ -313,12 +313,6 @@
   }
 }
 
-/* Fjordkraft Företag's monochrome logo as a mask, filled with the text colour by `bg-current`.
-   Fuse has no logo for the brand; `brand-wordmark.tsx` draws every other brand from Fuse. */
-@utility landing-logo-fkab {
-  mask-image: url("/landing/logos/fkab.svg");
-}
-
 /* Monochrome brand marks for the picker tiles, the artwork the closing shader also traces. */
 @utility landing-mark-elma {
   mask-image: url("/landing/marks/elma.svg");

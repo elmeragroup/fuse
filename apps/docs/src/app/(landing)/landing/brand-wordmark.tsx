@@ -4,6 +4,7 @@ import { tv } from "tailwind-variants";
 
 import {
   ElmeraGroupLogo,
+  FjordkraftForetagLogo,
   FjordkraftLogo,
   GudbrandsdalEnergiLogo,
   NordicGreenEnergyLogo,
@@ -14,19 +15,16 @@ import type { LogoProps } from "@elmeragroup/fuse/icons";
 import { BRANDS } from "@elmeragroup/fuse/theme";
 import type { BrandCode } from "@elmeragroup/fuse/theme";
 
-/**
- * Each brand's full Fuse logo. Fuse has no Fjordkraft Företag logo, so that brand stays a mask of
- * monochrome artwork in `public/landing/logos/`, filled by `bg-current`.
- */
+/** Each brand's full Fuse logo. */
 const FUSE_WORDMARKS = {
   elma: ElmeraGroupLogo,
   fkas: FjordkraftLogo,
-  fkab: null,
+  fkab: FjordkraftForetagLogo,
   tkas: TrondelagkraftLogo,
   guen: GudbrandsdalEnergiLogo,
   fkse: TelinetLogo,
   ngfi: NordicGreenEnergyLogo,
-} satisfies Record<BrandCode, ((props: LogoProps) => ReactElement) | null>;
+} satisfies Record<BrandCode, (props: LogoProps) => ReactElement>;
 
 /**
  * A brand's full logo in one ink, the surrounding text colour, in every brand and scheme.
@@ -37,24 +35,21 @@ const FUSE_WORDMARKS = {
 const brandWordmark = tv({
   // Every tile is wide enough for the widest lockup at its height; the width cap is only a guard,
   // so a tile that ever gets narrower scales the artwork down instead of overflowing its slot.
-  base: "inline-block max-w-full shrink-0",
+  //
+  // Fuse logos keep their brand-coloured marks. A fill from CSS beats both a presentation attribute
+  // and a `url(#gradient)` paint, so every shape here takes the text colour. These are the shape
+  // elements the Fuse logo artwork draws with.
+  base: "inline-block max-w-full shrink-0 *:block *:size-full [&_path]:fill-current [&_polygon]:fill-current [&_rect]:fill-current",
   variants: {
     brand: {
       elma: "aspect-470/62",
       fkas: "aspect-307/68",
-      fkab: "landing-logo-fkab aspect-416/54",
+      fkab: "aspect-416/54",
       tkas: "aspect-534/88",
       guen: "aspect-193/52",
       fkse: "aspect-655/93",
       ngfi: "aspect-461/202",
     } satisfies Record<BrandCode, string>,
-    art: {
-      // Fuse logos keep their brand-coloured marks. A fill from CSS beats both a presentation
-      // attribute and a `url(#gradient)` paint, so every shape here takes the text colour. These
-      // are the shape elements the Fuse logo artwork draws with.
-      svg: "*:block *:size-full [&_path]:fill-current [&_polygon]:fill-current [&_rect]:fill-current",
-      mask: "bg-current mask-contain mask-center mask-no-repeat",
-    },
     // `tile` captions a brand tile; `strip` is the hero's row, a step larger from `sm`; `site`
     // takes its height from a demo site's logo slot.
     size: { tile: "", strip: "", site: "" },
@@ -86,11 +81,8 @@ export type BrandWordmarkProps = {
 export function BrandWordmark({ brand, size }: BrandWordmarkProps): ReactElement {
   const Logo = FUSE_WORDMARKS[brand];
   return (
-    <span
-      role="img"
-      aria-label={BRANDS[brand].displayName}
-      className={brandWordmark({ brand, size, art: Logo === null ? "mask" : "svg" })}>
-      {Logo === null ? null : <Logo />}
+    <span role="img" aria-label={BRANDS[brand].displayName} className={brandWordmark({ brand, size })}>
+      <Logo />
     </span>
   );
 }

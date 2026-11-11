@@ -13,6 +13,7 @@ import {
   Contract,
   DeviateLogo,
   ElmeraGroupLogo,
+  FjordkraftForetagLogo,
   FjordkraftLogo,
   FunnelLogo,
   GudbrandsdalEnergiLogo,
@@ -35,6 +36,7 @@ import type { BespokeIconName, LogoName } from "./roster";
 
 const logosByName = {
   ElmeraGroupLogo,
+  FjordkraftForetagLogo,
   FjordkraftLogo,
   GudbrandsdalEnergiLogo,
   NordicGreenEnergyLogo,
