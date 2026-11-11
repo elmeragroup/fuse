@@ -7,7 +7,6 @@ export function PhoneNumberFieldDetect() {
     <PhoneNumberField
       label="Paste a number"
       description="Paste a +prefixed number to switch country. Try +46 70 123 45 67."
-      autoDetectCountry
     />
   );
 }
