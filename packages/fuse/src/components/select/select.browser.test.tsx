@@ -5,9 +5,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
+import "../../../dist/themes.css";
 import { assertFocusRingOnKeyboardAbsentOnMouse } from "../../../test/assert-focus-ring";
 import { render } from "../../../test/browser-render";
-import { fkasPrivate, renderThemed } from "../../../test/themed-browser-render";
+import { cssVarColor, fkasPrivate, renderThemed } from "../../../test/themed-browser-render";
 import { ThemeScope } from "../../theme/theme-scope";
 import { Select } from "./index";
 
@@ -385,5 +386,47 @@ describe("Select", () => {
       throw new Error("expected before");
     }
     await assertFocusRingOnKeyboardAbsentOnMouse(previous, trigger);
+  });
+
+  it("fills a read-only trigger with the muted read-only fill and leaves a disabled one its card fill", () => {
+    function FillProbe({
+      name,
+      readOnly,
+      disabled,
+    }: {
+      name: string;
+      readOnly?: boolean;
+      disabled?: boolean;
+    }) {
+      return (
+        <Select.Root readOnly={readOnly} disabled={disabled}>
+          <Select.Trigger aria-label={name}>
+            <Select.Value placeholder={name} />
+          </Select.Trigger>
+          <Select.Content>
+            <Select.Item value="a">A</Select.Item>
+          </Select.Content>
+        </Select.Root>
+      );
+    }
+    renderThemed(
+      <>
+        <FillProbe name="Editable" />
+        <FillProbe name="Read-only" readOnly />
+        <FillProbe name="Disabled read-only" readOnly disabled />
+        {/* A disabled fieldset disables the trigger natively, with no data-disabled. */}
+        <fieldset disabled>
+          <FillProbe name="Fieldset-disabled read-only" readOnly />
+        </fieldset>
+      </>
+    );
+    const fill = (name: string) => getComputedStyle(comboboxNamed(name)).backgroundColor;
+    expect(fill("Editable")).toBe(cssVarColor(comboboxNamed("Editable"), "--card"));
+    expect(fill("Read-only")).toBe(cssVarColor(comboboxNamed("Read-only"), "--muted"));
+    expect(fill("Disabled read-only")).toBe(cssVarColor(comboboxNamed("Disabled read-only"), "--card"));
+    const inherited = comboboxNamed("Fieldset-disabled read-only");
+    expect(inherited.matches(":disabled")).toBe(true);
+    expect(inherited).not.toHaveAttribute("data-disabled");
+    expect(fill("Fieldset-disabled read-only")).toBe(cssVarColor(inherited, "--card"));
   });
 });

@@ -1,6 +1,6 @@
 import { cn } from "../../styles/cn";
 import { controlLabel } from "../../styles/control-size";
-import { fieldBoxChromeClass } from "../../styles/field-box";
+import { dataReadOnlyFillClass, fieldBoxChromeClass } from "../../styles/field-box";
 import { selectGroupShellClass, selectPopupShellClass } from "../../styles/inner-corner/select";
 import { dataStateFaceClass, nativeStateFaceClass } from "../../styles/state-face";
 import { triggerCaretClass } from "../../styles/trigger-caret";
@@ -22,7 +22,9 @@ import { overlayTimedPopupClass } from "../overlay/overlay-classes";
  *
  * - `trigger` paints the field box chrome with the shared focus ring. The trigger is a native
  *   `<button>` that Base UI also marks `data-disabled` and `data-invalid`, so it takes the native
- *   and the data state faces. Its `size` axis takes the md control size's label at `"default"` and
+ *   and the data state faces. While the Select is read-only, Base UI marks the trigger
+ *   `data-readonly`, and it takes the muted read-only fill the other field boxes take, unless it
+ *   is also disabled. Its `size` axis takes the md control size's label at `"default"` and
  *   the sm one at `"sm"`. The trigger has never mapped icon children onto the icon edge, so its
  *   label omits that part. Its row hugs the value and the caret and spaces them to its ends on one
  *   line, mutes the text while `data-placeholder` marks the placeholder, lays out the value, and
@@ -33,7 +35,13 @@ import { overlayTimedPopupClass } from "../overlay/overlay-classes";
  */
 export const selectTriggerVariants = tv({
   slots: {
-    trigger: cn(selfFocusRingClass, fieldBoxChromeClass, nativeStateFaceClass, dataStateFaceClass),
+    trigger: cn(
+      selfFocusRingClass,
+      fieldBoxChromeClass,
+      dataReadOnlyFillClass,
+      nativeStateFaceClass,
+      dataStateFaceClass
+    ),
     value: "flex flex-1 text-left",
     caret: [triggerCaretClass, "group-data-[popup-open]/select-trigger:rotate-180"],
   },

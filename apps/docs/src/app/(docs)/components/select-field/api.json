@@ -94,6 +94,15 @@
           "required": false
         },
         {
+          "name": "isReadOnly",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Forwards `readOnly` to `Select.Root`; the trigger uses `bg-muted`. The trigger stays focusable and its popup still opens to show the options, but no choice changes the value.",
+          "required": false
+        },
+        {
           "name": "isRequired",
           "origin": "declared",
           "type": "boolean | undefined",

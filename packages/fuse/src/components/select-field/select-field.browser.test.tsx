@@ -43,11 +43,13 @@ function Plan(props: Partial<SelectFieldProps<string>>) {
 function HandComposedPlan({
   required,
   disabled,
+  readOnly,
   invalid,
   defaultValue,
 }: {
   required?: boolean;
   disabled?: boolean;
+  readOnly?: boolean;
   invalid?: boolean;
   defaultValue?: string;
 }) {
@@ -59,6 +61,7 @@ function HandComposedPlan({
         items={PLANS}
         required={required}
         disabled={disabled}
+        readOnly={readOnly}
         defaultValue={defaultValue}>
         <Select.Trigger className="w-full">
           <Select.Value placeholder="Choose a plan" />
@@ -205,6 +208,37 @@ describe("SelectField", () => {
     expect(trigger("Hand plan")).toHaveAttribute("data-disabled");
     expect(trigger().getAttribute("aria-disabled")).toBe(trigger("Hand plan").getAttribute("aria-disabled"));
     const data = new FormData(formNamed("Order"));
+    expect(data.getAll("plan")).toEqual(data.getAll("handPlan"));
+  });
+
+  it("keeps a read-only selection as a read-only Select.Root does, focusable, labelled and submitted", async () => {
+    const onValueChange = vi.fn();
+    renderThemed(
+      <form aria-label="Order">
+        <Plan isReadOnly defaultValue="pro" onValueChange={onValueChange} />
+        <HandComposedPlan readOnly defaultValue="pro" />
+      </form>
+    );
+    expect(trigger().getAttribute("aria-readonly")).toBe("true");
+    expect(trigger().getAttribute("aria-readonly")).toBe(trigger("Hand plan").getAttribute("aria-readonly"));
+    expect(trigger().getAttribute("aria-labelledby")).toBe(textNamed("Plan").id);
+    expect(trigger()).not.toHaveAttribute("data-disabled");
+
+    // The popup opens to show the options, but a click on another one keeps the value.
+    await userEvent.click(trigger());
+    await userEvent.click(page.getByRole("option", { name: "Team", exact: true }));
+    expect(trigger().textContent).toMatch(/^Pro/);
+
+    // Typeahead on the closed, focused trigger commits nothing either.
+    await userEvent.keyboard("{Escape}");
+    await expect.poll(() => page.getByRole("listbox").query()).toBeNull();
+    await expect.element(page.getByRole("combobox", { name: "Plan", exact: true })).toHaveFocus();
+    await userEvent.keyboard("b");
+    expect(trigger().textContent).toMatch(/^Pro/);
+
+    expect(onValueChange).not.toHaveBeenCalled();
+    const data = new FormData(formNamed("Order"));
+    expect(data.getAll("plan")).toEqual(["pro"]);
     expect(data.getAll("plan")).toEqual(data.getAll("handPlan"));
   });
 

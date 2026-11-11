@@ -28,7 +28,13 @@ export const metadata = componentMetadata("select-field");
   <SelectFieldSizes />
 </Demo>
 
-<Demo slug="select-field" id="states" title="Invalid and disabled" file="select-field-states.tsx">
+<Prose>
+
+`isReadOnly` keeps the selection: the trigger stays focusable and takes the muted read-only fill the other fields take, and its popup still opens to show the options, but choosing one changes nothing. The value still submits under `name`.
+
+</Prose>
+
+<Demo slug="select-field" id="states" title="Invalid, disabled and read-only" file="select-field-states.tsx">
   <SelectFieldStates />
 </Demo>
 
@@ -44,7 +50,7 @@ Inside a `Form`, the field shows the error `Form` holds under its `name` when it
 
 <Prose>
 
-`SelectField` takes one selection and has no read-only look yet. For multiple selection, a read-only select or a layout of your own, such as a label row with an info button or a label beside the trigger, compose `Field.Root` and the `Select` parts.
+`SelectField` takes one selection. For multiple selection or a layout of your own, such as a label row with an info button or a label beside the trigger, compose `Field.Root` and the `Select` parts.
 
 </Prose>
 

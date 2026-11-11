@@ -13,6 +13,7 @@ import { selfFocusRingClass, withinFocusRingClass } from "./utils";
  * `fieldGroupVariants`, Select's trigger, NumberField's group and InputGroup's root paint it
  * without being `fieldBox` variants. Focus leaves the `--input` border alone on every one of
  * them: the shared focus ring marks focus, and only the invalid face recolours the border.
+ * Each read-only box swaps the fill for `bg-muted`.
  */
 export const fieldBoxChromeClass = cn(
   "shadow-xs box-border",
@@ -27,6 +28,16 @@ export const fieldBoxChromeClass = cn(
  * disabled box its disabled fill.
  */
 export const readOnlyFillClass = cn("[&[readonly]:not(:disabled)]:bg-muted");
+
+/**
+ * The read-only fill for a Base UI state root that is not a text control, such as Select's
+ * trigger button. A `<button>` takes no `readonly` attribute, so Base UI marks the read-only
+ * state as `data-readonly` (beside `aria-readonly`), and the fill keys off that. Like
+ * {@link readOnlyFillClass} it leaves a disabled box its disabled face, whether Base UI marks it
+ * `data-disabled` or a disabled `<fieldset>` disables it natively, which matches `:disabled`
+ * without `data-disabled`.
+ */
+export const dataReadOnlyFillClass = cn("[&[data-readonly]:not([data-disabled]):not(:disabled)]:bg-muted");
 
 /**
  * Cancels {@link readOnlyFillClass} on a control that sits inside a box that paints the fill
