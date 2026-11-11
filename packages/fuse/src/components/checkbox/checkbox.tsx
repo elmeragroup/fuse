@@ -141,12 +141,14 @@ export function CheckboxGroup({
         data-slot="checkbox-group"
         // The layout axis, as Card writes it: a vertical stack of selection shells is connected.
         data-direction={orientation}
-        id={id}
-        value={value}
-        defaultValue={defaultValue}
-        onValueChange={onChange}
-        allValues={allValues}
-        disabled={isDisabled}
+        {...definedProps({
+          id,
+          value,
+          defaultValue,
+          onValueChange: onChange,
+          allValues,
+          disabled: isDisabled,
+        })}
         className={cn(selectionGroupOrientationVariants({ orientation }).group(), className)}>
         <SelectionGroupLayout orientation={orientation}>{children}</SelectionGroupLayout>
       </CheckboxGroupPrimitive>
