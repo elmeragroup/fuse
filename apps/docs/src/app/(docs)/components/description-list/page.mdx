@@ -8,6 +8,7 @@ import { DescriptionListInline } from "./demos/description-list-inline";
 import { DescriptionListInlineRows } from "./demos/description-list-inline-rows";
 import { DescriptionListLongValues } from "./demos/description-list-long-values";
 import { DescriptionListMultiDetails } from "./demos/description-list-multi-details";
+import { DescriptionListNoDividers } from "./demos/description-list-no-dividers";
 import { DescriptionListResponsive } from "./demos/description-list-responsive";
 
 import { componentMetadata } from "../../../../lib/component-page";
@@ -16,7 +17,7 @@ export const metadata = componentMetadata("description-list");
 
 <ComponentIntro slug="description-list" />
 
-Wrap each term and its details in an `Item`, the `<div>` HTML allows around one name-value group. Every list is made of Items: HTML doesn't allow a list to mix Items with bare terms and details, the inline layout styles terms and details only inside an Item, and both layouts draw rules between Items only. An Item takes attributes such as a `data-testid`, so a test can find a row by it.
+Wrap each term and its details in an `Item`, the `<div>` HTML allows around one name-value group. Every list is made of Items: HTML doesn't allow a list to mix Items with bare terms and details, the inline layout styles terms and details only inside an Item, and rules fall between Items only. The responsive layout draws them; the inline layout never does. An Item takes attributes such as a `data-testid`, so a test can find a row by it.
 
 <Demo slug="description-list" id="basic" title="Basic" file="description-list-basic.tsx">
   <DescriptionListBasic />
@@ -34,6 +35,16 @@ An Item can hold several terms of one details, or several details of one term. I
 
 <Demo slug="description-list" id="responsive" title="Responsive" file="description-list-responsive.tsx">
   <DescriptionListResponsive />
+</Demo>
+
+A responsive list draws a rule above every Item but the first. Pass `dividers={false}` to `Content` to drop them once for the whole list, such as inside a card that already separates it. It reaches only that list's own Items: a list nested inside keeps its own rules, and a list nested in one with rules can drop its own. An inline list draws no rules either way, so `dividers` has no effect there.
+
+<Demo
+  slug="description-list"
+  id="no-dividers"
+  title="Without dividers"
+  file="description-list-no-dividers.tsx">
+  <DescriptionListNoDividers />
 </Demo>
 
 `layout="inline"` is for label/value rows in receipts, order summaries and price boxes. Inline rows take the label type, so they follow density like field labels, are spaced by the small surface gap and have no rules. The term is not muted; add `text-muted-foreground` to a term to mute it, or `font-medium` to a details to emphasise it. To group rows, use one inline list per group: consecutive inline lists are spaced by the large surface gap. A colour class on a term or details wins in both layouts. The inline cells' padding, sizing and alignment come from the list, so override them with a `[:where([data-layout=inline]>*)>&]:` class or a CSS rule. Override an inline Item's row, wrap and gap with a `[:where([data-layout=inline])>&]:` class.

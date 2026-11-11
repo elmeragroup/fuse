@@ -8,20 +8,27 @@ export type DescriptionListRootProps = ComponentProps<"div">;
 export type DescriptionListContentProps = ComponentProps<"dl"> & {
   /**
    * How each Item's terms and details sit. `responsive` stacks the details under the term on
-   * phones and sets them in two columns from `sm` up, with a rule between Items at every width.
-   * `inline` is for label/value rows in cards and summaries: each Item shares its own row between
-   * its term and details, whatever the other Items hold. The details sits beside its term, at the
-   * end of the row. When the two don't fit on one line, both wrap within the row: each keeps its
-   * longest word and they share the rest, so a short one leaves the other room. Only when the term's
-   * longest word and the details' longest word can't share the row does the details move under its
-   * term, still at the end, rather than break a word; a word wider than the whole row then breaks in
-   * the details. Inline rows take the label type, have no rules and space with the small surface
-   * gap, and the term is not muted. A colour class on a cell wins in both layouts. The inline cells'
-   * padding, sizing and alignment come from the list, so override them with a
-   * `[:where([data-layout=inline]>*)>&]:` class or a CSS rule. Override an inline Item's row, wrap
-   * and gap with a `[:where([data-layout=inline])>&]:` class. Defaults to `responsive`.
+   * phones and sets them in two columns from `sm` up, with a rule between Items at every width
+   * unless `dividers` is `false`. `inline` is for label/value rows in cards and summaries: each Item
+   * shares its own row between its term and details, whatever the other Items hold. The details
+   * sits beside its term, at the end of the row. When the two don't fit on one line, both wrap
+   * within the row: each keeps its longest word and they share the rest, so a short one leaves the
+   * other room. Only when the term's longest word and the details' longest word can't share the row
+   * does the details move under its term, still at the end, rather than break a word; a word wider
+   * than the whole row then breaks in the details. Inline rows take the label type, have no rules
+   * and space with the small surface gap, and the term is not muted. A colour class on a cell wins
+   * in both layouts. The inline cells' padding, sizing and alignment come from the list, so override
+   * them with a `[:where([data-layout=inline]>*)>&]:` class or a CSS rule. Override an inline Item's
+   * row, wrap and gap with a `[:where([data-layout=inline])>&]:` class. Defaults to `responsive`.
    */
   layout?: "responsive" | "inline";
+  /**
+   * Whether a responsive list draws a rule above every Item but the first. Pass `false` for a list
+   * whose rows need no rules, such as one inside a card that already separates it. Set once per
+   * list: it reaches only this list's own Items, so a list nested inside keeps its own rules. An
+   * inline list draws no rules either way, so `dividers` has no effect there. Defaults to `true`.
+   */
+  dividers?: boolean;
 };
 export type DescriptionListItemProps = ComponentProps<"div">;
 export type DescriptionListTermProps = ComponentProps<"dt">;
@@ -72,12 +79,17 @@ const inlineContentClass = cn(
 function DescriptionListContent({
   className,
   layout = "responsive",
+  dividers = true,
   ...props
 }: DescriptionListContentProps): ReactElement {
   return (
     <dl
       data-slot="description-list-content"
       data-layout={layout}
+      // Rules are the responsive default, so only their absence is written: the Items read
+      // `data-dividers=false` and nothing reads a `true`. `false` is true of an inline list too,
+      // which never draws rules, so the attribute is written whatever the layout.
+      {...(dividers ? null : { "data-dividers": "false" })}
       className={cn(layout === "inline" ? inlineContentClass : responsiveContentClass, className)}
       {...props}
     />
@@ -85,21 +97,23 @@ function DescriptionListContent({
 }
 
 // A responsive Item spans the list's columns as a subgrid, so its term and details sit in the
-// list's shared columns, and draws the rule above itself unless it is the first. Only Items draw
-// rules, so the terms or details of one group are never split by one. An inline Item is a wrapping
-// flex row. Its term and details start at their longest word and grow alike up to their full width,
-// so a short one gives the rest to the other, and a term and its details wrap apart only when their
-// two longest words can't share the row: then the details moves under its term instead of breaking
-// a word, and breaks one only when it is wider than the row. The last term never breaks a word, so a
-// single word wider than the whole row would overflow it. An Item's earlier terms and later details
-// take lines of their own, capped at the row, so an earlier term does break a word that wide; its
-// last term pairs with its first details, as in the responsive layout.
+// list's shared columns, and draws the rule above itself unless it is the first or its own list, as
+// its direct child, writes `data-dividers=false`; a list nested in a divider-less one keeps its
+// rules, and the reverse. Only Items draw rules, so the terms or details of one group are never
+// split by one. An inline Item is a wrapping flex row. Its term and details start at their longest
+// word and grow alike up to their full width, so a short one gives the rest to the other, and a
+// term and its details wrap apart only when their two longest words can't share the row: then the
+// details moves under its term instead of breaking a word, and breaks one only when it is wider
+// than the row. The last term never breaks a word, so a single word wider than the whole row would
+// overflow it. An Item's earlier terms and later details take lines of their own, capped at the
+// row, so an earlier term does break a word that wide; its last term pairs with its first details,
+// as in the responsive layout.
 function DescriptionListItem({ className, ...props }: DescriptionListItemProps): ReactElement {
   return (
     <div
       data-slot="description-list-item"
       className={cn(
-        "col-span-full grid grid-cols-subgrid border-t first-of-type:border-none",
+        "col-span-full grid grid-cols-subgrid border-t first-of-type:border-none [:where([data-dividers=false])>&]:border-none",
         "[:where([data-layout=inline])>&]:flex [:where([data-layout=inline])>&]:flex-wrap [:where([data-layout=inline])>&]:gap-x-(--surface-gap-md) [:where([data-layout=inline])>&]:border-none",
         className
       )}

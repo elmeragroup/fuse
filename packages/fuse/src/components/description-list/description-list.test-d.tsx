@@ -16,7 +16,7 @@ import { DescriptionList } from "@elmeragroup/fuse/description-list";
 test("public API exports only the namespace and part prop types, with native attributes, Heading render, and no as prop", () => {
   expectTypeOf<DescriptionListRootProps>().toEqualTypeOf<ComponentProps<"div">>();
   expectTypeOf<DescriptionListContentProps>().toEqualTypeOf<
-    ComponentProps<"dl"> & { layout?: "responsive" | "inline" }
+    ComponentProps<"dl"> & { layout?: "responsive" | "inline"; dividers?: boolean }
   >();
   expectTypeOf<DescriptionListItemProps>().toEqualTypeOf<ComponentProps<"div">>();
   expectTypeOf<DescriptionListTermProps>().toEqualTypeOf<ComponentProps<"dt">>();

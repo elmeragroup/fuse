@@ -133,6 +133,19 @@ function expectNoOverflow(list: HTMLElement): void {
   }
 }
 
+/**
+ * Whether the Item holding the term `name` paints a rule above itself: a top border that is
+ * neither zero wide nor styled away.
+ */
+function hasRuleAbove(name: string): boolean {
+  const item = textNamed(name).closest('[data-slot="description-list-item"]');
+  if (!(item instanceof HTMLElement)) {
+    throw new Error(`expected an Item around ${name}`);
+  }
+  const style = getComputedStyle(item);
+  return px(style.borderTopWidth) > 0 && style.borderTopStyle !== "none" && style.borderTopStyle !== "hidden";
+}
+
 function renderBasicList() {
   renderThemed(
     <DescriptionList.Root>
@@ -218,6 +231,51 @@ describe("DescriptionList", () => {
         expect(boxOf(details).top, details).toBeGreaterThanOrEqual(boxOf(term).bottom - 1);
         expect(boxOf(details).left, details).toBeCloseTo(boxOf(term).left, 0);
       }
+    });
+
+    // Each list's `dividers` reaches only its own Items: the outer list's setting must not leak
+    // into a nested list, whichever of the two drops its rules.
+    it.each([
+      {
+        name: "a default list keeps its rules around a nested dividers={false} list",
+        outer: {},
+        nested: { dividers: false },
+        outerRule: true,
+        nestedRule: false,
+      },
+      {
+        name: "a dividers={false} list drops its rules around a nested default list",
+        outer: { dividers: false },
+        nested: {},
+        outerRule: false,
+        nestedRule: true,
+      },
+    ] as const)("$name", ({ outer, nested, outerRule, nestedRule }) => {
+      renderThemed(
+        <DescriptionList.Content {...outer}>
+          <DescriptionList.Item>
+            <DescriptionList.Term>Outer first</DescriptionList.Term>
+            <DescriptionList.Details>Value</DescriptionList.Details>
+          </DescriptionList.Item>
+          <DescriptionList.Item>
+            <DescriptionList.Term>Outer second</DescriptionList.Term>
+            <DescriptionList.Details>
+              <DescriptionList.Content {...nested}>
+                <DescriptionList.Item>
+                  <DescriptionList.Term>Nested first</DescriptionList.Term>
+                  <DescriptionList.Details>Value</DescriptionList.Details>
+                </DescriptionList.Item>
+                <DescriptionList.Item>
+                  <DescriptionList.Term>Nested second</DescriptionList.Term>
+                  <DescriptionList.Details>Value</DescriptionList.Details>
+                </DescriptionList.Item>
+              </DescriptionList.Content>
+            </DescriptionList.Details>
+          </DescriptionList.Item>
+        </DescriptionList.Content>
+      );
+      expect(hasRuleAbove("Outer second"), "outer second Item").toBe(outerRule);
+      expect(hasRuleAbove("Nested second"), "nested second Item").toBe(nestedRule);
     });
   });
 
