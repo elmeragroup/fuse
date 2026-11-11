@@ -330,7 +330,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Explicit override for the built-in `selectCountry` dictionary key.",
+          "description": "Explicit override for the built-in `selectCountry` dictionary key: the country popup's name and the country trigger's description. The trigger's name is its visible dial code and the selected country, such as \"+47 Norway\".",
           "required": false
         },
         {

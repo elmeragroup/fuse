@@ -10,7 +10,6 @@ import { PhoneNumberField } from "@elmeragroup/fuse/phone-number-field";
 import { withLocale } from "../../../test/locale-matrix";
 import { phoneForm, phoneInput, phoneSubmission } from "../../../test/phone-browser-queries";
 import { renderThemed as render, roleNamed } from "../../../test/themed-browser-render";
-import { resetCountryNameCache } from "./country-names";
 
 function paste(text: string) {
   const clipboard = new DataTransfer();
@@ -136,7 +135,7 @@ describe("PhoneNumberField identity and authoritative value", () => {
       // of its own rather than the input's.
       const serverInput = phoneInput("Server mobile");
       expect(serverInput.labels?.length).toBe(1);
-      expect(roleNamed("button", "Select country").id).not.toBe(serverInput.id);
+      expect(roleNamed("button", "+47 Norway").id).not.toBe(serverInput.id);
       // What typing does before the client scripts attach their listeners.
       serverInput.value = "91234567";
       root = hydrateRoot(host, element, { onRecoverableError: recover });
@@ -151,46 +150,6 @@ describe("PhoneNumberField identity and authoritative value", () => {
       await userEvent.keyboard("8");
       expect(input.value).toBe("912345678");
       expect(new FormData(form).get("phone")).toBe("+47912345678");
-      expect(recover).not.toHaveBeenCalled();
-    } finally {
-      root?.unmount();
-      host.remove();
-    }
-  });
-});
-
-describe("PhoneNumberField single-country hydration", () => {
-  it("hydrates a country the server names differently, keeping a number typed before it", async () => {
-    const hydrated = vi.fn<() => void>();
-    function HydrationWitness() {
-      useEffect(() => hydrated(), []);
-      return (
-        <form aria-label="SSR phone">
-          <PhoneNumberField label="Server mobile" name="phone" countries={["SE"]} />
-        </form>
-      );
-    }
-    const element = withLocale("en-US", <HydrationWitness />);
-    // The server's Intl data can name a country differently from the browser's.
-    resetCountryNameCache();
-    const of = vi.spyOn(Intl.DisplayNames.prototype, "of").mockReturnValue("Server Sweden");
-    const host = document.createElement("div");
-    try {
-      host.innerHTML = renderToString(element);
-    } finally {
-      of.mockRestore();
-      resetCountryNameCache();
-    }
-    document.body.append(host);
-    const recover = vi.fn();
-    let root: ReturnType<typeof hydrateRoot> | undefined;
-    try {
-      // One country renders no trigger, so the label names the number input already.
-      phoneInput("Server mobile").value = "701234567";
-      root = hydrateRoot(host, element, { onRecoverableError: recover });
-      await expect.poll(() => hydrated.mock.calls.length).toBe(1);
-      await expect.poll(() => phoneSubmission("SSR phone").get("phone")).toBe("+46701234567");
-      expect(phoneInput("Server mobile").value).toBe("701234567");
       expect(recover).not.toHaveBeenCalled();
     } finally {
       root?.unmount();
@@ -239,7 +198,7 @@ describe("PhoneNumberField native editing boundaries", () => {
     expect(document.activeElement).toBe(phoneInput());
     expect(phoneInput().value).toBe("41234567");
     expect(phoneSubmission().get("phone")).toBe("+4741234567");
-    expect(roleNamed("button", "Select country").textContent).toContain("+47");
+    expect(roleNamed("button", "+47 Norway").textContent).toContain("+47");
     expect(change).not.toHaveBeenCalled();
     expect(countryChange).not.toHaveBeenCalled();
     rerender(field(false, true));

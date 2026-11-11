@@ -83,7 +83,7 @@ describe("the 24px target floor", () => {
       roleNamed("button", "Smallest button"),
       roleNamed("button", "Smallest toggle"),
       roleNamed("radio", "Smallest radio"),
-      roleNamed("button", "Select country"),
+      roleNamed("button", "+47 Norway"),
     ];
     atHostRoots([16, 14], (root) => {
       for (const density of DENSITIES) {

@@ -5,5 +5,5 @@ export const enUS = {
   selectCountry: "Select country",
   searchCountries: "Search countries",
   noCountries: "No countries found.",
-  selectedCountry: (vars: Variables) => `Country: ${String(vars?.country)} ${String(vars?.dialCode)}`,
+  selectedCountry: (vars: Variables) => `${String(vars?.dialCode)} ${String(vars?.country)}`,
 };

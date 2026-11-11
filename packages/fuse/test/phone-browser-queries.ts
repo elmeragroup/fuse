@@ -33,8 +33,11 @@ export function countryListbox(): HTMLElement {
   return element;
 }
 
-/** Opens the country picker from the keyboard and resolves once its listbox is in the DOM. */
-export async function openPicker(trigger = "Select country"): Promise<HTMLElement> {
+/**
+ * Opens the country picker from the keyboard and resolves once its listbox is in the DOM.
+ * The trigger is named by its dial code and country; the default is an en-US field on Norway.
+ */
+export async function openPicker(trigger = "+47 Norway"): Promise<HTMLElement> {
   roleNamed("button", trigger).focus();
   await userEvent.keyboard("{Enter}");
   await vi.waitFor(() => {
