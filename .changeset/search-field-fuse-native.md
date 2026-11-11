@@ -14,7 +14,9 @@ carries `data-slot="search-field"` and `data-empty` while the value is empty.
 and, only then, stops the form's submit. Escape empties a field that holds text and stops there, so
 a `Dialog` or `Sheet` around it stays open. The magnifying glass and the clear button sit in the field
 box's addons, as the `Combobox` clear button does, so in comfortable density the glass sits 12px in
-from the edge (was 8px) and the clear button 8px (was 4px). Dense density keeps both.
+from the edge (was 8px) and the clear button 8px (was 4px). Dense density keeps both. In both
+densities the query starts closer to the glass, at `InputGroup`'s addon spacing, and the clear
+button's icon takes the addon's muted colour, as the `Combobox` clear button's does.
 
 Breaking: `@elmeragroup/fuse/react-aria/search-field` is removed. Import `SearchField` from
 `@elmeragroup/fuse/search-field`. `errorMessage` takes a node, not React Aria's
