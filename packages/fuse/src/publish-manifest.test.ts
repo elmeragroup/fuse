@@ -130,7 +130,7 @@ describe("publish manifest and packed tarball", () => {
     const files = listing.stdout.split("\n");
     expect(files).toContain("package/themes.css");
     expect(files).not.toContain("package/demo-stage-density.css");
-  }, 30_000);
+  });
 });
 
 describe("source exports", () => {

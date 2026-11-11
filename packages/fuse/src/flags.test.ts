@@ -38,7 +38,6 @@ describe("flag assets", () => {
     expect(flagAssets.FI).toContain("FI.svg");
   });
 
-  // Timeout: discoverEntries walks the published import graph; slow under full-gate parallel load.
   it("keeps /flags off the root barrel and uses local URL hrefs", () => {
     const discovered = discoverEntries(packageRoot);
     const flags = discovered.jsEntries.find((entry) => entry.subpath === "flags");
@@ -52,7 +51,7 @@ describe("flag assets", () => {
     for (const [code, href] of Object.entries(flagAssets)) {
       expect(new URL(href).protocol, code).toBe("file:");
     }
-  }, 30_000);
+  });
 
   it("has a libphonenumber gap of exactly AC, BQ, EH, and TA", () => {
     const assets = new Set(Object.keys(flagAssets));
@@ -60,7 +59,6 @@ describe("flag assets", () => {
     expect(missing.toSorted((left, right) => left.localeCompare(right))).toEqual(["AC", "BQ", "EH", "TA"]);
   });
 
-  // Timeout: copying + SHA-256 hashing the full flag set twice is slow under full-gate parallel load.
   it("fails the PROVENANCE SHA-256 gate when a packed SVG is mutated", () => {
     const hashes = parseProvenanceHashes(readFileSync(join(flagsDir, "PROVENANCE.md"), "utf8"));
     expect(flagHashFailure(flagsDir, files, hashes)).toBeUndefined();
@@ -77,7 +75,7 @@ describe("flag assets", () => {
     } finally {
       rmSync(scratch, { recursive: true, force: true });
     }
-  }, 30_000);
+  });
 
   it("treats a missing flags directory as never-vendored and fails an empty one", () => {
     const missing = join(tmpdir(), `fuse-flags-missing-${Date.now()}`);
