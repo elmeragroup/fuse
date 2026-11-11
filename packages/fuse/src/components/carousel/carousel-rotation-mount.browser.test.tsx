@@ -150,8 +150,8 @@ describe("Carousel rotation across engines", () => {
   });
 
   it("stops when keyboard focus lands in a field a slide portals into a same-origin frame", async () => {
-    // Loaded before the carousel renders into it: Firefox replaces a new frame's first
-    // `about:blank` document once that loads, which would leave the portal in a dead document.
+    // Loaded before the carousel renders into it, so the portal targets the frame's final
+    // document rather than the initial `about:blank` one.
     const frame = document.createElement("iframe");
     const loaded = new Promise((resolve) => frame.addEventListener("load", resolve, { once: true }));
     frame.srcdoc = "<!doctype html><body></body>";
@@ -168,9 +168,9 @@ describe("Carousel rotation across engines", () => {
       throw new Error("expected the portalled field in the frame");
     }
     expect(rotationControl("Stop")).not.toBeNull();
-    // Firefox now and then turns down the first focus into a frame's freshly rendered field, so
-    // the field is focused until its document reports it. It sits outside every slide, so a page
-    // the carousel turns meanwhile cannot take it out of reach.
+    // A frame's freshly rendered field can turn down its first focus, so focus is retried until
+    // the frame's document reports it. It sits outside every slide, so a page the carousel turns
+    // meanwhile cannot take it out of reach.
     await expect
       .poll(() => {
         field.focus();

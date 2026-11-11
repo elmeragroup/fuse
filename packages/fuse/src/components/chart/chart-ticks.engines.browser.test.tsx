@@ -1,4 +1,4 @@
-// The x-tick judge of CONTRACT section 8.11, in Chromium, Firefox and WebKit: the 90-case matrix
+// The x-tick judge of CONTRACT section 8.11, in Chromium and WebKit: the 90-case matrix
 // of the pass-2 cross-browser check, the DST days and a width sweep. The rendered label boxes are
 // the oracle. They never overlap, stay inside the root, and never fall in count as the width grows.
 import { describe, expect, it } from "vitest";
