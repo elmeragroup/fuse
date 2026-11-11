@@ -358,25 +358,20 @@ export function FileUploadRoot({
     ]
   );
 
-  // The posted list follows `files`. Keyed on the name and the Root element too, because the
-  // posting input mounts with a name, and a new `render` element remounts it empty.
-  useLayoutEffect(() => {
-    if (postingRef.current !== null && files !== undefined) {
-      writeFiles(postingRef.current, files);
-    }
-  }, [files, name, element]);
+  // A callback ref, so the write follows the posting input's every mount and remount (a name
+  // appearing mounts it, a new `render` element remounts it empty) as well as every `files` change.
+  const writePosted = useCallback(
+    (input: HTMLInputElement | null) => {
+      if (input !== null && files !== undefined) {
+        writeFiles(input, files);
+      }
+    },
+    [files]
+  );
+  const postingInputRef = useMergedRefs(postingRef, writePosted);
 
   // A native reset empties the posting input after its `reset` event; the hook runs this after.
-  useFormReset(
-    postingRef,
-    name === undefined || files === undefined
-      ? null
-      : () => {
-          if (postingRef.current !== null) {
-            writeFiles(postingRef.current, files);
-          }
-        }
-  );
+  useFormReset(postingRef, name === undefined ? null : () => writePosted(postingRef.current));
 
   const onChange = (event: ChangeEvent<HTMLInputElement>) => {
     const input = event.currentTarget;
@@ -422,7 +417,7 @@ export function FileUploadRoot({
                 // `hidden` keeps it out of the accessibility tree and the tab order. A disabled
                 // Root posts nothing, as a disabled native control does.
                 <input
-                  ref={postingRef}
+                  ref={postingInputRef}
                   type="file"
                   hidden
                   tabIndex={-1}
