@@ -1,8 +1,8 @@
-// The chart surfaces' option through a window switch, in Chromium, Firefox and WebKit. Units under
+// The chart surfaces' option through a window switch. Units under
 // test: the polar, cartesian and scatter surfaces' blur handling, through RadarChart.Root,
 // Chart.Root and ScatterChart.Root. Oracle: a reader who switches to another window and back
 // returns to the element they left, so the option keeps its node, its place and the keys. The
-// switch is the events Firefox fires for it, which `switchWindowAndBack` plays in every engine.
+// switch is the events a browser fires for it, which `switchWindowAndBack` plays.
 import { describe, expect, it } from "vitest";
 import { userEvent } from "vitest/browser";
 

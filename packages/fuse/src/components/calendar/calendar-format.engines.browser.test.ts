@@ -3,8 +3,8 @@
  * locale, which Chromium and WebKit must each reproduce: for days and months, the strings
  * React Aria's interim tier writes through the same `Intl` options; for a range of months, CLDR's
  * month names joined by the locale's interval fallback separator, with a shared year written once.
- * The ranges are deliberately not `formatRange` output, which Firefox shortens differently in
- * fi-FI ("loka–joulukuu 2026").
+ * The ranges are deliberately not `formatRange` output, whose shortening differs by engine (see
+ * `calendar-format.ts`).
  */
 import { describe, expect, it } from "vitest";
 

@@ -64,7 +64,7 @@ describe("read", () => {
     expect(filesOf(entries)[1]).toBe(b);
   });
 
-  it("skips an item whose entry and file are both null, as Firefox's phantom paste item is", () => {
+  it("skips a file item with neither an entry nor a file", () => {
     const phantom: ReadableItem = { kind: "file", getAsFile: () => null, webkitGetAsEntry: () => null };
     expect(readLabels([phantom, fileItem(png("a.png"))])).toEqual([["file", "a.png"]]);
   });

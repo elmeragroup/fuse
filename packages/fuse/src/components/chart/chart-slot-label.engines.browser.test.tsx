@@ -1,4 +1,4 @@
-// Chart.SlotLabel's text in Chromium, Firefox and WebKit. Oracle: DECISIONS D14 and D34. The pill
+// Chart.SlotLabel's text in Chromium and WebKit. Oracle: DECISIONS D14 and D34. The pill
 // prints the active slot as Intl formats it in Oslo, written out here with Intl itself: in the
 // interval's tick preset when nothing names a format, in Chart.XAxis's `format` when the pill
 // names none, and in its own `format` over the axis's.

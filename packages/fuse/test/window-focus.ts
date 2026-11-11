@@ -1,9 +1,8 @@
 /**
  * Play a window switch on the focused element: the events a browser fires when the page's window
- * loses focus and gets it back. Firefox fires `blur`, then `focusout`, with no related target, and
- * keeps the element as the document's active element; on the window's return it fires `focus`,
- * then `focusin`. Chromium and WebKit keep focus emulated in a headless page and fire nothing, so
- * the events are dispatched here, alike in every engine.
+ * loses focus and gets it back. It fires `blur`, then `focusout`, with no related target, and keeps
+ * the element as the document's active element; on the window's return it fires `focus`, then
+ * `focusin`. A headless page emulates focus and fires none of them, so they are dispatched here.
  *
  * @param element - The focused element.
  */
