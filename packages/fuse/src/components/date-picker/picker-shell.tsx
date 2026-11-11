@@ -7,7 +7,6 @@
 import { createContext, use, useCallback, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { ChangeEvent, KeyboardEvent, MouseEvent, ReactElement, ReactNode, RefObject } from "react";
 
-import { useFieldRootContext } from "@base-ui/react/internals/field-root-context";
 import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
 
@@ -17,7 +16,6 @@ import { useStableCallback } from "../../hooks/use-stable-callback";
 import { CalendarBlank } from "../../icons/generated/calendar-blank";
 import { definedProps } from "../../internal/defined-props";
 import { isElement } from "../../internal/dom-node";
-import { useFieldSetDisabled } from "../../internal/field-set-disabled";
 import { isRenderableNode } from "../../internal/is-renderable-node";
 import { cn } from "../../styles/cn";
 import { mergeClassName } from "../../styles/merge-class-name";
@@ -152,21 +150,6 @@ export function usePresetRegistry(): PresetRegistry {
     }
   }, []);
   return { hasPresets: count > 0, registerPresets, valueCommitted };
-}
-
-/**
- * The one owner of a picker's disabled state, which the Root distributes to every part: the group,
- * the trigger, the inputs, the calendar and the presets. It is the Root's own `disabled`, an
- * enclosing `Field.Root`'s, or an enclosing `Field.Set`'s, read during render, so server output and
- * the first paint show it.
- *
- * @param own - The Root's `disabled` prop.
- * @returns Whether the picker is disabled.
- */
-export function usePickerDisabled(own: boolean): boolean {
-  const fieldDisabled = useFieldRootContext().disabled === true;
-  const fieldSetDisabled = useFieldSetDisabled();
-  return own || fieldDisabled || fieldSetDisabled;
 }
 
 /**

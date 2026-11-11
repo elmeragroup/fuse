@@ -3,6 +3,7 @@
 import { useLayoutEffect } from "react";
 import type { ReactElement } from "react";
 
+import { useFieldRootContext } from "@base-ui/react/internals/field-root-context";
 import { useLabelableContext, useLabelableId } from "@base-ui/react/internals/labelable-provider";
 import { NOOP } from "@base-ui/react/internals/noop";
 import { mergeProps } from "@base-ui/react/merge-props";
@@ -52,14 +53,16 @@ export function FileUploadTrigger({
   ...props
 }: FileUploadTriggerProps): ReactElement {
   const { state, actions, meta } = useFileUploadContext("FileUpload.Trigger");
+  const field = useFieldRootContext();
   const labelable = useLabelableContext();
-  // Base UI's default context, outside any Field, registers nothing, and the Trigger then writes
-  // no id or label of its own.
-  const inField = labelable.registerControlId !== NOOP;
-  // As on Base UI's Select.Trigger: the Field's control id, or the Trigger's own `id`, which the
-  // labelable registers so the label follows it.
+  // Base UI's convention for "no Field here": its default Field context has a NOOP
+  // `setValidityData`. The labelable context is no witness, because SkeletonReveal provides its
+  // own outside any Field. Outside a Field the Trigger writes no id, label or invalid state.
+  const inField = field.setValidityData !== NOOP;
+  // As on Base UI's Select.Trigger: the Field's control id until the labelable registers the
+  // Trigger's own `id` after mount, so server markup keeps the label paired with the Trigger.
   const controlId = useLabelableId({ id: ownId, enabled: inField });
-  const id = inField ? (ownId ?? controlId) : ownId;
+  const id = inField ? controlId : ownId;
   const { registerFieldTrigger } = meta;
   useLayoutEffect(() => (inField ? registerFieldTrigger() : undefined), [inField, registerFieldTrigger]);
   const isDisabled = state.disabled || disabled === true;
@@ -84,13 +87,8 @@ export function FileUploadTrigger({
       ...mergeProps<"button">(
         {
           type: "button",
-          // The Trigger is the Field's control, so it paints the one invalid face, from its own
-          // `aria-invalid`: the aria target of `state-face.ts`, which `render={<Button />}` also
-          // composes. The Dropzone paints none. The within target, where a group paints for the
-          // control inside it (InputGroup, NumberField), fits a group whose box is the control and
-          // whose control is chromeless, so its cancel class only drops a ring. A Dropzone is a
-          // pointer-only drop region around a Trigger that keeps its own border, which no class can
-          // reset to each Button variant's colour, so the Dropzone painting too drew two faces.
+          // The Field's control paints the one invalid face, from its own `aria-invalid`. A
+          // within-target face on the Dropzone cannot reset a Button Trigger's own border.
           className: cn(selfFocusRingClass, ariaStateFaceClass, className),
           onClick: () => {
             if (!isDisabled) {
@@ -104,7 +102,7 @@ export function FileUploadTrigger({
           disabled: isDisabled,
           "aria-labelledby": labelledBy,
           "aria-describedby": describedBy,
-          "aria-invalid": ownInvalid ?? (meta.invalid && !isDisabled ? true : undefined),
+          "aria-invalid": ownInvalid ?? (field.state.valid === false && !isDisabled ? true : undefined),
         })
       ),
     },

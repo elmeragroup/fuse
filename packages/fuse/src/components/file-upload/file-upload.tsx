@@ -3,14 +3,13 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { ChangeEvent, ReactElement } from "react";
 
-import { useFieldRootContext } from "@base-ui/react/internals/field-root-context";
 import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
 
 import { useMergedRefs } from "../../hooks/use-merged-refs";
 import { deepActiveElement } from "../../internal/active-element";
 import { isFocusRoot } from "../../internal/dom-node";
-import { useFieldSetDisabled } from "../../internal/field-set-disabled";
+import { useFieldDisabled } from "../../internal/field-set-disabled";
 import { isTextEntry } from "../../internal/text-entry";
 import { cn } from "../../styles/cn";
 import { isThemeDevelopment } from "../../theme/validate-theme";
@@ -87,11 +86,8 @@ function fileEntries(files: readonly File[]): SplitEntry[] {
  * same split, which calls `onSelect` with the files that pass and `onReject` with the rest.
  * The input has no `name`, so a native form post never carries the files.
  *
- * Inside a `Field.Root`, render one `FileUpload.Trigger`; the Field's label, description and
- * error belong to it. The Field's `Field.Label` names that Trigger, its
- * `Field.Description` and `Field.Error` describe it, an invalid Field marks the Trigger
- * `aria-invalid`, which paints its invalid face, and a disabled Field or `Field.Set` disables
- * the Root. Outside a Field none of that wiring is written.
+ * A disabled `Field.Root` or `Field.Set` disables the Root. `FileUpload.Trigger` documents the
+ * rest of the Field wiring.
  */
 export function FileUploadRoot({
   accept,
@@ -107,12 +103,7 @@ export function FileUploadRoot({
   children,
   ...props
 }: FileUploadRootProps): ReactElement {
-  // A Field is read during render, so the server output and the first paint already show it.
-  // Outside a Field, Base UI's default context reports neither disabled nor invalid.
-  const field = useFieldRootContext();
-  const fieldSetDisabled = useFieldSetDisabled();
-  const disabled = disabledProp || field.disabled === true || fieldSetDisabled;
-  const invalid = field.state.valid === false;
+  const disabled = useFieldDisabled(disabledProp);
   // The committed element, which a new `render` element replaces. Every DOM registration below
   // follows it, not the component's mount.
   const [element, setElement] = useState<HTMLDivElement | null>(null);
@@ -302,7 +293,6 @@ export function FileUploadRoot({
         setDropTarget,
         receive,
         rules,
-        invalid,
       },
     }),
     [
@@ -315,7 +305,6 @@ export function FileUploadRoot({
       setDropTarget,
       receive,
       rules,
-      invalid,
     ]
   );
 

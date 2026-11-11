@@ -44,8 +44,6 @@ export type FileUploadMeta = {
   readonly receive: (entries: readonly ReadEntry[]) => void;
   /** The Root's parsed `accept` and `multiple`, which a drag's verdict judges by. */
   readonly rules: FileRules;
-  /** The enclosing Field is invalid: the Trigger writes `aria-invalid`. */
-  readonly invalid: boolean;
 };
 
 /** The Root's context: what it shows, what it does, and the wiring the parts read. */

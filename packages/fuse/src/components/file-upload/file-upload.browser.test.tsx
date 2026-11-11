@@ -12,6 +12,7 @@ import { formNamed, renderThemed, roleNamed } from "../../../test/themed-browser
 import { isHTMLElement } from "../../internal/dom-node";
 import { Button } from "../button/button";
 import { Field } from "../field/index";
+import { SkeletonReveal } from "../skeleton/skeleton-reveal";
 import { useFileUpload } from "./file-upload-context";
 import { FileUpload } from "./index";
 import type { FileRejection } from "./split-files";
@@ -591,15 +592,6 @@ describe("FileUpload in a Field", () => {
       );
   });
 
-  it("marks the Trigger aria-invalid only while the Field is invalid", async () => {
-    const { rerender } = renderThemed(<FieldUpload />);
-    const trigger = page.getByRole("button", { name: "Browse files Attachments", exact: true });
-    await expect.element(trigger).not.toHaveAttribute("aria-invalid");
-
-    rerender(<FieldUpload invalid />);
-    await expect.element(trigger).toHaveAttribute("aria-invalid", "true");
-  });
-
   it.each([
     ["a Button Trigger in a Dropzone", "button", "dropzone"],
     ["a plain Trigger in a Dropzone", "plain", "dropzone"],
@@ -623,6 +615,8 @@ describe("FileUpload in a Field", () => {
         );
       };
       const { host, rerender } = renderThemed(tree(false));
+      const triggerLocator = page.getByRole("button", { name: "Browse files Attachments", exact: true });
+      await expect.element(triggerLocator).not.toHaveAttribute("aria-invalid");
       const trigger = roleNamed("button", "Browse files Attachments");
       const zone = host.querySelector('[data-slot="file-upload-dropzone"]');
       // The oracle: the same parts rendered in a valid Field, so the Dropzone's resting face is
@@ -637,9 +631,7 @@ describe("FileUpload in a Field", () => {
       const validZone = face(zone);
 
       rerender(tree(true));
-      await expect
-        .element(page.getByRole("button", { name: "Browse files Attachments" }))
-        .toHaveAttribute("aria-invalid", "true");
+      await expect.element(triggerLocator).toHaveAttribute("aria-invalid", "true");
       expectInvalidRing("Trigger", trigger);
       expect(face(zone), "Dropzone face").toEqual(validZone);
     }
@@ -700,5 +692,27 @@ describe("FileUpload in a Field", () => {
     expect(trigger.hasAttribute("id")).toBe(false);
     expect(trigger.hasAttribute("aria-labelledby")).toBe(false);
     expect(trigger.hasAttribute("aria-invalid")).toBe(false);
+  });
+
+  it("writes no id and reports no second Trigger for two Triggers in a SkeletonReveal outside any Field", async () => {
+    const error = vi.spyOn(console, "error").mockReturnValue(undefined);
+    try {
+      renderThemed(
+        <SkeletonReveal loading={false}>
+          <FileUpload.Root>
+            <FileUpload.Trigger>Browse files</FileUpload.Trigger>
+            <FileUpload.Trigger>Take photo</FileUpload.Trigger>
+          </FileUpload.Root>
+        </SkeletonReveal>
+      );
+      for (const name of ["Browse files", "Take photo"]) {
+        const trigger = page.getByRole("button", { name, exact: true });
+        await expect.element(trigger).toBeInTheDocument();
+        expect(trigger.element().hasAttribute("id"), name).toBe(false);
+      }
+      expect(error).not.toHaveBeenCalled();
+    } finally {
+      error.mockRestore();
+    }
   });
 });

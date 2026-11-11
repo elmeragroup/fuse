@@ -2,7 +2,9 @@
 // under test: FileUpload.Root and FileUpload.Trigger inside a Field.Root. Oracles: HTML's label
 // association (`label.control`), which names the Field's Trigger in the server markup as it names
 // Base UI's own Select.Trigger, and again once hydrated; and React's hydration contract, no
-// recoverable error.
+// recoverable error and no console error, through which React 19 reports attribute mismatches.
+import type { ReactElement } from "react";
+
 import { hydrateRoot } from "react-dom/client";
 import { renderToString } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
@@ -12,14 +14,16 @@ import "../../../dist/styles.css";
 import { Field } from "../field/index";
 import { FileUpload } from "./index";
 
-const tree = (
-  <Field.Root>
-    <Field.Label>Attachments</Field.Label>
-    <FileUpload.Root>
-      <FileUpload.Trigger>Browse files</FileUpload.Trigger>
-    </FileUpload.Root>
-  </Field.Root>
-);
+function tree(triggerId: string | undefined): ReactElement {
+  return (
+    <Field.Root>
+      <Field.Label>Attachments</Field.Label>
+      <FileUpload.Root>
+        <FileUpload.Trigger id={triggerId}>Browse files</FileUpload.Trigger>
+      </FileUpload.Root>
+    </Field.Root>
+  );
+}
 
 /** The label's control. Before hydration the Trigger has no name to query it by. */
 function labelledControl(host: HTMLElement): HTMLElement | null {
@@ -31,23 +35,36 @@ function labelledControl(host: HTMLElement): HTMLElement | null {
 }
 
 describe("FileUpload in a Field, hydrated", () => {
-  it("pairs the label with the Trigger in the server markup and once hydrated", async () => {
-    const host = document.createElement("div");
-    host.innerHTML = renderToString(tree);
-    document.body.append(host);
-    const recover = vi.fn();
-    let root: ReturnType<typeof hydrateRoot> | undefined;
-    try {
-      expect(labelledControl(host)?.textContent).toBe("Browse files");
+  it.each([
+    { triggerId: undefined, hydratedId: null },
+    { triggerId: "attachments-trigger", hydratedId: "attachments-trigger" },
+  ])(
+    "pairs the label with the Trigger (id $triggerId) in the server markup and once hydrated",
+    async ({ triggerId, hydratedId }) => {
+      const element = tree(triggerId);
+      const host = document.createElement("div");
+      host.innerHTML = renderToString(element);
+      document.body.append(host);
+      const recover = vi.fn();
+      const consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);
+      let root: ReturnType<typeof hydrateRoot> | undefined;
+      try {
+        expect(labelledControl(host)?.textContent).toBe("Browse files");
 
-      root = hydrateRoot(host, tree, { onRecoverableError: recover });
-      const trigger = page.getByRole("button", { name: "Browse files Attachments", exact: true });
-      await expect.element(trigger).toBeInTheDocument();
-      expect(labelledControl(host)).toBe(trigger.element());
-      expect(recover).not.toHaveBeenCalled();
-    } finally {
-      root?.unmount();
-      host.remove();
+        root = hydrateRoot(host, element, { onRecoverableError: recover });
+        const trigger = page.getByRole("button", { name: "Browse files Attachments", exact: true });
+        await expect.element(trigger).toBeInTheDocument();
+        if (hydratedId !== null) {
+          await expect.element(trigger).toHaveAttribute("id", hydratedId);
+        }
+        expect(labelledControl(host)).toBe(trigger.element());
+        expect(recover).not.toHaveBeenCalled();
+        expect(consoleError).not.toHaveBeenCalled();
+      } finally {
+        root?.unmount();
+        host.remove();
+        consoleError.mockRestore();
+      }
     }
-  });
+  );
 });
