@@ -65,8 +65,12 @@
       "dependsOn": ["pack"]
     },
     // The chart entry's API report reads the built declarations, and a stale committed report fails.
+    // It never builds on its own: a build cleans the dist that `test` and `test:browser` read.
+    // `--local` rewrites the report, so the report is the task's output: a cache hit restores the
+    // report that run wrote instead of replaying logs over older contents.
     "api:report": {
-      "dependsOn": ["build"]
+      "dependsOn": ["build"],
+      "outputs": ["etc/chart.api.md"]
     },
     "dev": {
       "dependsOn": ["^build"],
