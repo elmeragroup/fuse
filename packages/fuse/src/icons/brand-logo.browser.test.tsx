@@ -56,6 +56,24 @@ describe("BrandLogo", () => {
     }
   });
 
+  it("draws the Fjordkraft Företag lockup for fkab, all in the text colour", () => {
+    render(<BrandLogo brand="fkab" style={{ color: "rgb(1, 2, 3)" }} />);
+    const svg = roleNamed("img", "Fjordkraft Företag").querySelector("svg");
+    if (!(svg instanceof SVGSVGElement)) {
+      throw new Error("expected an svg for fkab");
+    }
+    // Oracle: the brand's monochrome lockup, whose ink spans 416.189 × 54.441 units, as drawn
+    // by the landing's former `public/landing/logos/fkab.svg`. Fjordkraft's own lockup is about
+    // 4.7 wide to 1 tall, so this tells the two apart.
+    const ink = svg.getBBox();
+    expect(ink.width / ink.height).toBeCloseTo(416.189 / 54.441, 1);
+    const inkPaths = [...svg.querySelectorAll("path")];
+    expect(inkPaths.length).toBeGreaterThan(0);
+    for (const path of inkPaths) {
+      expect(getComputedStyle(path).fill).toBe("rgb(1, 2, 3)");
+    }
+  });
+
   it("throws an explicit error for an unknown brand code", () => {
     // React 19 createRoot + flushSync reports render errors as unhandled instead of
     // rethrowing to the caller, so assert the throw on the component function.

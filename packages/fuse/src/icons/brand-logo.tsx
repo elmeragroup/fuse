@@ -4,6 +4,7 @@ import { cn } from "../styles/cn";
 import { BRANDS } from "../theme/theme-input";
 import type { BrandCode } from "../theme/theme-input";
 import type { LogoProps } from "./bespoke-svg";
+import { FjordkraftForetagLogo } from "./bespoke/fjordkraft-foretag-logo";
 import { FjordkraftLogo } from "./bespoke/fjordkraft-logo";
 import { GudbrandsdalEnergiLogo } from "./bespoke/gudbrandsdal-energi-logo";
 import { NordicGreenEnergyLogo } from "./bespoke/nordic-green-energy-logo";
@@ -22,7 +23,7 @@ export type BrandLogoProps = Omit<ComponentPropsWithoutRef<"span">, "children"> 
 
 const BRAND_MARKS = {
   fkas: FjordkraftLogo,
-  fkab: FjordkraftLogo,
+  fkab: FjordkraftForetagLogo,
   tkas: TrondelagkraftLogo,
   guen: GudbrandsdalEnergiLogo,
   fkse: TelinetLogo,

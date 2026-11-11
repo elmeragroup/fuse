@@ -112,16 +112,16 @@ export default function IconsPage(): ReactElement {
         Each brand logo accepts <code>variant=&quot;full&quot;</code> (default) or{" "}
         <code>variant=&quot;mark&quot;</code>. <code>BrandLogo</code> takes a brand code and resolves the
         right one for you — useful when the brand is a runtime value rather than a literal. The full logos of
-        the energy brands (Elmera Group, Fjordkraft, TrøndelagKraft, Gudbrandsdal Energi, Telinet and Nordic
-        Green Energy) paint their lettering in <code>currentColor</code>, so the name takes the text colour
-        around it; <code>TrumfLogo</code> keeps its white lettering on a <code>currentColor</code> badge. A
-        mark paints as it does in its full logo, alone or beside the name: Fjordkraft&apos;s face and
-        TrøndelagKraft&apos;s lamp ring and base take <code>currentColor</code> too. Marks drawn in brand
-        colours keep them: TrøndelagKraft&apos;s yellow light, Gudbrandsdal Energi&apos;s orange gradient,
-        Telinet&apos;s cyan dots and Nordic Green Energy&apos;s five leaves. Telinet letters the word
-        &quot;Telinet&quot; in its dots&apos; cyan too, as in its own logo, and only &quot;Energi&quot; takes
-        the text colour. On a brand-coloured tile, set the text colour with the background, for example{" "}
-        <code>bg-brand text-brand-foreground</code>.
+        the energy brands (Elmera Group, Fjordkraft, Fjordkraft Företag, TrøndelagKraft, Gudbrandsdal Energi,
+        Telinet and Nordic Green Energy) paint their lettering in <code>currentColor</code>, so the name takes
+        the text colour around it; <code>TrumfLogo</code> keeps its white lettering on a{" "}
+        <code>currentColor</code> badge. A mark paints as it does in its full logo, alone or beside the name:
+        Fjordkraft&apos;s face, which Fjordkraft Företag shares, and TrøndelagKraft&apos;s lamp ring and base
+        take <code>currentColor</code> too. Marks drawn in brand colours keep them: TrøndelagKraft&apos;s
+        yellow light, Gudbrandsdal Energi&apos;s orange gradient, Telinet&apos;s cyan dots and Nordic Green
+        Energy&apos;s five leaves. Telinet letters the word &quot;Telinet&quot; in its dots&apos; cyan too, as
+        in its own logo, and only &quot;Energi&quot; takes the text colour. On a brand-coloured tile, set the
+        text colour with the background, for example <code>bg-brand text-brand-foreground</code>.
       </p>
       <pre>
         <code>{BRAND_LOGO}</code>

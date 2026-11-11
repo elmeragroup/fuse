@@ -151,6 +151,7 @@ export { StromSmart } from "./icons/bespoke/strom-smart";
 export { Vipps } from "./icons/bespoke/vipps";
 export type { BespokeSvgProps, LogoProps } from "./icons/bespoke-svg";
 export { ElmeraGroupLogo } from "./icons/bespoke/elmera-group-logo";
+export { FjordkraftForetagLogo } from "./icons/bespoke/fjordkraft-foretag-logo";
 export { FjordkraftLogo } from "./icons/bespoke/fjordkraft-logo";
 export { GudbrandsdalEnergiLogo } from "./icons/bespoke/gudbrandsdal-energi-logo";
 export { NordicGreenEnergyLogo } from "./icons/bespoke/nordic-green-energy-logo";
