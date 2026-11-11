@@ -49,30 +49,32 @@ export function ActionBarPagination() {
 
   return (
     <table.AppTable>
-      <div className="relative flex flex-col gap-4">
-        <table.Content aria-label="Invoices" />
+      <div className="flex flex-col gap-4">
+        {/* The bar's positioned ancestor ends above the pagination, however tall it wraps. */}
+        <div className="relative">
+          <table.Content aria-label="Invoices" />
+          <ActionBar.Root count={count} aria-label="Invoice actions">
+            <ActionBar.Count />
+            <Tooltip.Root>
+              <Tooltip.Trigger
+                render={
+                  <ActionBar.Clear
+                    onClick={() => {
+                      table.resetRowSelection();
+                    }}
+                  />
+                }
+              />
+              <Tooltip.Content>Clear selection</Tooltip.Content>
+            </Tooltip.Root>
+            <ActionBar.Separator />
+            <ActionBar.Button>
+              <PaperPlaneTilt data-icon="inline-start" />
+              <ActionBar.ButtonLabel>Send reminders</ActionBar.ButtonLabel>
+            </ActionBar.Button>
+          </ActionBar.Root>
+        </div>
         <table.Pagination pageSizes={[5, 10, 25]} />
-        {/* The pagination row is about 40px tall: the bar floats 16px above it. */}
-        <ActionBar.Root count={count} offset={72} aria-label="Invoice actions">
-          <ActionBar.Count />
-          <Tooltip.Root>
-            <Tooltip.Trigger
-              render={
-                <ActionBar.Clear
-                  onClick={() => {
-                    table.resetRowSelection();
-                  }}
-                />
-              }
-            />
-            <Tooltip.Content>Clear selection</Tooltip.Content>
-          </Tooltip.Root>
-          <ActionBar.Separator />
-          <ActionBar.Button>
-            <PaperPlaneTilt data-icon="inline-start" />
-            <ActionBar.ButtonLabel>Send reminders</ActionBar.ButtonLabel>
-          </ActionBar.Button>
-        </ActionBar.Root>
       </div>
     </table.AppTable>
   );

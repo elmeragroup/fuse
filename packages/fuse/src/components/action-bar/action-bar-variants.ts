@@ -1,5 +1,6 @@
 import { cn } from "../../styles/cn";
 import { tv } from "../../styles/tv";
+import { actionBarLayer } from "../overlay/overlay-classes";
 import { toolbarVariants } from "../toolbar/toolbar-variants";
 
 const toolbar = toolbarVariants();
@@ -13,8 +14,8 @@ const toolbar = toolbarVariants();
  *   its bottom edge (Root's `offset`) and 16px in from each side, and
  *   centres the bar in it. It lets the pointer through to the content beside the bar, and it is
  *   the `action-bar` query container that `buttonLabel` reads, since the bar itself shrinks to its
- *   items. Its layer sits above the content's sticky headers and scrollbars and below the overlay
- *   layer (`z-50`), so a menu or dialog the bar opens covers it.
+ *   items. Its layer is `actionBarLayer`, above the content's sticky headers and scrollbars and
+ *   below the overlay layer, so a menu or dialog the bar opens covers it.
  * - `root` is Toolbar's bar, raised with `shadow-lg`. It rises 6px and fades in on
  *   `data-starting-style` and falls back on `data-ending-style`, in one 150ms ease-out
  *   transition of opacity and translate. Under reduced motion it only fades: the translate and
@@ -27,8 +28,10 @@ const toolbar = toolbarVariants();
  */
 export const actionBarVariants = tv({
   slots: {
-    positioner:
-      "@container/action-bar pointer-events-none absolute inset-x-0 bottom-(--action-bar-offset) z-40 flex justify-center px-4",
+    positioner: cn(
+      "@container/action-bar pointer-events-none absolute inset-x-0 bottom-(--action-bar-offset) flex justify-center px-4",
+      actionBarLayer
+    ),
     root: cn(
       toolbar.root(),
       "shadow-lg ease-out pointer-events-auto max-w-full opacity-100 transition-opacity duration-150",

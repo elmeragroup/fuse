@@ -41,8 +41,11 @@ button's accessible name.
   <ActionBarBasic />
 </Demo>
 
-Set `offset` to float the bar higher, clear of a pagination row or other footer, in px from the
-container's bottom. For a tooltip on Clear, pass `ActionBar.Clear` to `Tooltip.Trigger`'s `render`.
+To keep the bar clear of a pagination row or other footer, put the bar in a positioned ancestor that
+ends above the footer, as this demo wraps only the table, so the bar stays above the footer however
+tall it wraps. `offset` is the bar's distance from that ancestor's bottom in px, 16 by default, for a
+small adjustment such as clearing a faded edge. For a tooltip on Clear, pass `ActionBar.Clear` to
+`Tooltip.Trigger`'s `render`.
 
 <Demo slug="action-bar" id="pagination" title="Above pagination" file="action-bar-pagination.tsx">
   <ActionBarPagination />

@@ -49,7 +49,7 @@
           "type": "number | undefined",
           "shortType": null,
           "defaultValue": "16",
-          "description": "The bar's distance from the bottom of its positioned ancestor, in px, such as the height of a pagination row it must float above.",
+          "description": "The bar's distance from the bottom of its positioned ancestor, in px. To float the bar above a pagination row or other footer, place it in a positioned ancestor that ends above the footer, and keep `offset` for a small adjustment, such as clearing a faded edge.",
           "required": false
         },
         {

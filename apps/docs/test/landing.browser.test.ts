@@ -48,15 +48,13 @@ describe("landing page", () => {
     await checkbox.click();
     const bar = app.getByRole("toolbar", { name: "Bulk actions" });
     await bar.waitFor();
-    expect(await bar.textContent()).toContain("1 selected");
+    expect(await bar.textContent()).toContain("1\u00a0selected");
     // The bar sits wholly above the pagination row, so it covers none of its controls.
     const barBox = await bar.boundingBox();
     const pageControls = await app.getByRole("button", { name: "Go to next page" }).boundingBox();
-    expect(barBox).not.toBeNull();
-    expect(pageControls).not.toBeNull();
-    if (barBox !== null && pageControls !== null) {
-      expect(barBox.y + barBox.height).toBeLessThan(pageControls.y);
-    }
+    if (barBox === null || pageControls === null)
+      throw new Error("expected the bar and the pagination on screen");
+    expect(barBox.y + barBox.height).toBeLessThan(pageControls.y);
 
     await bar.getByRole("button", { name: "Clear selection" }).click();
     await expect.poll(async () => bar.count()).toBe(0);

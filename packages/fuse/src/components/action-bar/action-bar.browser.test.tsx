@@ -1,7 +1,8 @@
 import { useState } from "react";
 import type { ReactElement } from "react";
 
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { createPortal } from "react-dom";
+import { afterEach, describe, expect, it, onTestFinished, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
@@ -11,6 +12,7 @@ import { expectTargets } from "../../../test/target-size";
 import { renderThemed, roleNamed, stampDensity } from "../../../test/themed-browser-render";
 import { Trash } from "../../icons/generated/trash";
 import { Tray } from "../../icons/generated/tray";
+import { deepActiveElement } from "../../internal/active-element";
 import type { SupportedLocale } from "../../intl/locale-context";
 import { DENSITIES } from "../../theme";
 import { ActionBar } from "./index";
@@ -107,12 +109,12 @@ describe("ActionBar", () => {
 
     await check("Order 1");
     await expect.element(page.getByRole("toolbar", { name: "Bulk actions" })).toBeVisible();
-    expect(status().textContent).toBe("1 selected");
-    expect(roleNamed("toolbar", "Bulk actions").textContent).toContain("1 selected");
+    expect(status().textContent).toBe("1\u00a0selected");
+    expect(roleNamed("toolbar", "Bulk actions").textContent).toContain("1\u00a0selected");
 
     await check("Order 2");
-    expect(status().textContent).toBe("2 selected");
-    expect(roleNamed("toolbar", "Bulk actions").textContent).toContain("2 selected");
+    expect(status().textContent).toBe("2\u00a0selected");
+    expect(roleNamed("toolbar", "Bulk actions").textContent).toContain("2\u00a0selected");
 
     await check("Order 1");
     const toolbar = roleNamed("toolbar", "Bulk actions");
@@ -121,7 +123,7 @@ describe("ActionBar", () => {
     await check("Order 2");
     expect(status().textContent).toBe("");
     // The leaving bar keeps its last count on screen and is inert: its buttons take no focus.
-    expect(toolbar.textContent).toContain("1 selected");
+    expect(toolbar.textContent).toContain("1\u00a0selected");
     roleNamed("button", "Archive").focus();
     expect(document.activeElement).not.toBe(roleNamed("button", "Archive"));
     // It unmounts once its exit transition ends.
@@ -182,6 +184,22 @@ describe("ActionBar", () => {
     expect(document.activeElement).toBe(roleNamed("checkbox", "Order 3"));
   });
 
+  it("returns focus to where it came from inside a shadow root", async () => {
+    const host = document.createElement("div");
+    document.body.append(host);
+    onTestFinished(() => {
+      host.remove();
+    });
+    const shadow = host.attachShadow({ mode: "open" });
+    renderEnglish(createPortal(<Selection />, shadow));
+    await check("Order 3");
+    await userEvent.tab();
+    expect(deepActiveElement(shadow)).toBe(roleNamed("button", "Clear selection"));
+    await userEvent.keyboard("{Enter}");
+    expect(roleNamed("checkbox", "Order 3")).toHaveProperty("checked", false);
+    expect(deepActiveElement(shadow)).toBe(roleNamed("checkbox", "Order 3"));
+  });
+
   it("drops focus to the body when the element focus came from is gone", async () => {
     renderEnglish(<Selection />);
     await check("Order 3");
@@ -207,10 +225,12 @@ describe("ActionBar", () => {
   });
 
   it.each<[SupportedLocale, string, string, string, string]>([
-    ["en-US", "Bulk actions", "Clear selection", "1 selected", "1,200 selected"],
-    ["nb-NO", "Massehandlinger", "Fjern valg", "1 valgt", "1 200 valgt"],
-    ["sv-SE", "Massåtgärder", "Rensa markering", "1 markerad", "1 200 markerade"],
-    ["fi-FI", "Joukkotoiminnot", "Tyhjennä valinta", "1 valittu", "1 200 valittua"],
+    // Fuse writes every space in a count as a no-break space, so the number never wraps from its
+    // word and the server and each engine write the same string.
+    ["en-US", "Bulk actions", "Clear selection", "1\u00a0selected", "1,200\u00a0selected"],
+    ["nb-NO", "Massehandlinger", "Fjern valg", "1\u00a0valgt", "1\u00a0200\u00a0valgt"],
+    ["sv-SE", "Massåtgärder", "Rensa markering", "1\u00a0markerad", "1\u00a0200\u00a0markerade"],
+    ["fi-FI", "Joukkotoiminnot", "Tyhjennä valinta", "1\u00a0valittu", "1\u00a0200\u00a0valittua"],
   ])("speaks %s: the bar, Clear and a singular and plural count", async (locale, bar, clear, one, many) => {
     const { rerender } = renderThemed(
       withLocale(
@@ -241,8 +261,12 @@ describe("ActionBar", () => {
     await check("Order 1");
     const toolbar = roleNamed("toolbar", "Bulk actions");
     const container = page.getByTestId("container").element().getBoundingClientRect();
-    // Measure once the entrance has settled, since its translate moves the box.
-    await Promise.all(toolbar.getAnimations().map((animation) => animation.finished));
+    // Measure once the entrance has settled: its translate moves the box until Base UI drops
+    // `data-starting-style` and the transition back to rest ends.
+    await vi.waitFor(() => {
+      expect(toolbar.hasAttribute("data-starting-style")).toBe(false);
+      expect(unmoved(getComputedStyle(toolbar).translate)).toBe(true);
+    });
     const bar = toolbar.getBoundingClientRect();
     expect(container.bottom - bar.bottom).toBeCloseTo(72, 1);
     expect(bar.left - container.left).toBeCloseTo(container.right - bar.right, 1);

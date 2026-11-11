@@ -29,6 +29,12 @@ export const overlayLayer = "z-50";
 export const toastLayer = "z-60";
 
 /**
+ * The floating action bar's layer, one step below {@link overlayLayer}. The bar sits above its
+ * content's sticky headers and scrollbars, and a menu or dialog it opens covers it.
+ */
+export const actionBarLayer = "z-40";
+
+/**
  * The 13-value overlay width axis, default `md`. `sm`–`7xl` read the
  * Tailwind container variables; no `--container-8xl+` variables exist, so the top three
  * pixel caps stay literal and documented.

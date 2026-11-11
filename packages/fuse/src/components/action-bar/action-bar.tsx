@@ -10,6 +10,8 @@ import { Toolbar as ToolbarPrimitive } from "@base-ui/react/toolbar";
 import { useLocalizedStrings } from "../../hooks/use-localized-strings";
 import { useMergedRefs } from "../../hooks/use-merged-refs";
 import { X } from "../../icons/generated/x";
+import { deepActiveElement } from "../../internal/active-element";
+import { containsAcrossShadowRoots, isFocusRoot, isHTMLElement, isNode } from "../../internal/dom-node";
 import { cn } from "../../styles/cn";
 import { mergeClassName } from "../../styles/merge-class-name";
 import { Button } from "../button/button";
@@ -29,8 +31,9 @@ export type ActionBarRootProps = Omit<ComponentProps<typeof ToolbarPrimitive.Roo
    */
   count: number;
   /**
-   * The bar's distance from the bottom of its positioned ancestor, in px, such as the height of a
-   * pagination row it must float above.
+   * The bar's distance from the bottom of its positioned ancestor, in px. To float the bar above a
+   * pagination row or other footer, place it in a positioned ancestor that ends above the footer,
+   * and keep `offset` for a small adjustment, such as clearing a faded edge.
    *
    * @default 16
    */
@@ -53,7 +56,7 @@ export type ActionBarButtonLabelProps = ComponentProps<"span">;
 export type ActionBarSeparatorProps = ComponentProps<typeof ToolbarPrimitive.Separator>;
 
 function isInside(container: HTMLElement | null, node: EventTarget | null): boolean {
-  return container !== null && node instanceof Node && container.contains(node);
+  return container !== null && isNode(node) && containsAcrossShadowRoots(container, node);
 }
 
 /**
@@ -85,7 +88,6 @@ export function ActionBarRoot({
   const toolbarRef = useRef<HTMLDivElement | null>(null);
   const mergedRef = useMergedRefs(toolbarRef, ref);
   const returnFocusRef = useRef<HTMLElement | null>(null);
-  // The count the parts show: while the bar leaves, the last one above zero, not "0 selected".
   const [shownCount, setShownCount] = useState(count);
   if (open && count !== shownCount) {
     setShownCount(count);
@@ -107,21 +109,26 @@ export function ActionBarRoot({
       return;
     }
     const toolbar = toolbarRef.current;
-    if (!isInside(toolbar, document.activeElement)) {
+    const root = toolbar?.getRootNode();
+    if (root === undefined || !isFocusRoot(root)) {
+      return;
+    }
+    const active = deepActiveElement(root);
+    if (!isInside(toolbar, active)) {
       return;
     }
     const target = returnFocusRef.current;
     returnFocusRef.current = null;
-    if (target !== null && target.isConnected && !isInside(toolbar, target)) {
+    if (target?.isConnected === true) {
       target.focus();
-    } else if (document.activeElement instanceof HTMLElement) {
-      document.activeElement.blur();
+    } else if (isHTMLElement(active)) {
+      active.blur();
     }
   }, [open]);
 
   // Focus entering from outside records where it came from, for the return when the bar leaves.
   const handleFocus: ActionBarRootProps["onFocus"] = (event) => {
-    if (event.relatedTarget instanceof HTMLElement && !isInside(toolbarRef.current, event.relatedTarget)) {
+    if (isHTMLElement(event.relatedTarget) && !isInside(toolbarRef.current, event.relatedTarget)) {
       returnFocusRef.current = event.relatedTarget;
     }
     onFocus?.(event);
@@ -189,8 +196,6 @@ export function ActionBarClear({
     <ToolbarPrimitive.Button
       data-slot="action-bar-clear"
       aria-label={label}
-      // The render element's props win in Base UI's merge, and Button's icon sizes require
-      // aria-label, so the icon face repeats the part's resolved accessible name.
       // oxlint-disable-next-line fuse/render-element-wiring -- the render element repeats the part's own name: an icon-size Button requires an aria-label of its own, and Toolbar.Button sets none it could override
       render={<Button variant="ghost" size="icon-xs" aria-label={label} />}
       {...props}>

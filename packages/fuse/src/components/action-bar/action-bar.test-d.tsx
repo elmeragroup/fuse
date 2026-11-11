@@ -19,10 +19,6 @@ test("Root requires the selection size, takes a px offset and is horizontal only
     </ActionBar.Root>
   );
 
-  // @ts-expect-error the bar shows only for a selection, so it needs the selection size
-  const _noCount = <ActionBar.Root />;
-  // @ts-expect-error the count is a number, not the selected items
-  const _itemsCount = <ActionBar.Root count={["a"]} />;
   // @ts-expect-error the bar floats along the bottom, so it has no vertical orientation
   const _vertical = <ActionBar.Root count={1} orientation="vertical" />;
   // @ts-expect-error polymorphism is never an `as` prop

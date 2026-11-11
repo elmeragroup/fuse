@@ -1,5 +1,6 @@
 "use client";
 
+import { countOf } from "../../intl/count-of";
 /**
  * A clock's model: the series adapter over the zoned time domain of one cycle. Each slot takes an
  * equal angle from the cycle's start at 12 o'clock, each value its radius under the
@@ -14,7 +15,6 @@ import { seriesReadout } from "./chart-polar-series";
 import { chartDescription, optionName } from "./chart-text";
 import type { TextContext } from "./chart-text";
 import type { ChartConfig, ChartRow, XFormat } from "./chart-types";
-import { countOf } from "./format/chart-strings";
 import { POLAR_STRINGS } from "./format/polar-strings";
 import { formatSlot, wallTimes } from "./format/time-format";
 import type { CartesianModel } from "./layout/cartesian-model";

@@ -161,7 +161,9 @@ export function BulkToolbar(): ReactElement {
           <ActionBar.ButtonLabel>Change seller</ActionBar.ButtonLabel>
         </ActionBar.Button>
       </ActionBar.Root>
-      <ChangeSellerDialog open={changing} onOpenChange={setChanging} selection={selection} />
+      {selection.length > 0 || changing ? (
+        <ChangeSellerDialog open={changing} onOpenChange={setChanging} selection={selection} />
+      ) : null}
     </>
   );
 }

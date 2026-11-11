@@ -3,10 +3,10 @@
  * number options or a named preset, so a server component can pass it to a client chart.
  */
 import { numberFormat } from "../../../internal/intl-cache";
+import { inflect } from "../../../intl/count-of";
 import type { SupportedLocale } from "../../../intl/locale-context";
 import { makeFormattedText } from "./formatted-text";
 import type { FormattedText, LabelRole } from "./formatted-text";
-import { inflect } from "./inflection";
 import { CHART_WORDS } from "./words";
 import type { ChartWords } from "./words";
 
