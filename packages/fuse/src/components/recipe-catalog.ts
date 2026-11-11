@@ -23,6 +23,7 @@
  */
 
 export { accordionVariants } from "./accordion/accordion-variants";
+export { actionBarVariants } from "./action-bar/action-bar-variants";
 export { alertDialogVariants } from "./alert-dialog/alert-dialog-variants";
 export { alertVariants } from "./alert/alert-variants";
 export {

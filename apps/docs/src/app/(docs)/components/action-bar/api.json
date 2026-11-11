@@ -1,0 +1,312 @@
+{
+  "$generated": "Generated from packages/fuse types and JSDoc by pnpm --filter docs generate. Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "slug": "action-bar",
+  "parts": [
+    {
+      "name": "ActionBar.Root",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/action-bar/action-bar.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 276,
+      "props": [
+        {
+          "name": "className",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | ((state: ToolbarRootState) => string | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
+          "required": false
+        },
+        {
+          "name": "count",
+          "origin": "declared",
+          "type": "number",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "How many items the selection holds. The bar shows while it is above zero, rising into place, and falls away when it returns to zero.",
+          "required": true
+        },
+        {
+          "name": "loopFocus",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "true",
+          "description": "If `true`, using keyboard navigation will wrap focus to the other end of the toolbar once the end is reached.",
+          "required": false
+        },
+        {
+          "name": "offset",
+          "origin": "declared",
+          "type": "number | undefined",
+          "shortType": null,
+          "defaultValue": "16",
+          "description": "The bar's distance from the bottom of its positioned ancestor, in px, such as the height of a pagination row it must float above.",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, ToolbarRootState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "CSSProperties | ((state: ToolbarRootState) => CSSProperties | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "ActionBar.Count",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/action-bar/action-bar.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": []
+    },
+    {
+      "name": "ActionBar.Clear",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/action-bar/action-bar.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 284,
+      "props": [
+        {
+          "name": "className",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | ((state: ToolbarButtonState) => string | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
+          "required": false
+        },
+        {
+          "name": "disabled",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "When `true` the item is disabled.",
+          "required": false
+        },
+        {
+          "name": "focusableWhenDisabled",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "true",
+          "description": "When `true` the item remains focusable when disabled.",
+          "required": false
+        },
+        {
+          "name": "nativeButton",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "true",
+          "description": "Whether the component renders a native `<button>` element when replacing it via the `render` prop. Set to `false` if the rendered element is not a button (for example, `<div>`).",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, ToolbarButtonState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "CSSProperties | ((state: ToolbarButtonState) => CSSProperties | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "ActionBar.Button",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/action-bar/action-bar.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 284,
+      "props": [
+        {
+          "name": "className",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | ((state: ToolbarButtonState) => string | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
+          "required": false
+        },
+        {
+          "name": "disabled",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "When `true` the item is disabled.",
+          "required": false
+        },
+        {
+          "name": "focusableWhenDisabled",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "true",
+          "description": "When `true` the item remains focusable when disabled.",
+          "required": false
+        },
+        {
+          "name": "nativeButton",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "true",
+          "description": "Whether the component renders a native `<button>` element when replacing it via the `render` prop. Set to `false` if the rendered element is not a button (for example, `<div>`).",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, ToolbarButtonState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "CSSProperties | ((state: ToolbarButtonState) => CSSProperties | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "ActionBar.ButtonLabel",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/action-bar/action-bar.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": []
+    },
+    {
+      "name": "ActionBar.Separator",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/action-bar/action-bar.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 275,
+      "props": [
+        {
+          "name": "className",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "string | ((state: SeparatorState) => string | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "CSS class applied to the element, or a function that returns a class based on the component's state.",
+          "required": false
+        },
+        {
+          "name": "orientation",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "Orientation | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The orientation of the separator. Defaults to the opposite of the toolbar's orientation, so a horizontal toolbar renders vertical separators.",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, SeparatorState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "CSSProperties | ((state: SeparatorState) => CSSProperties | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
+          "required": false
+        }
+      ]
+    }
+  ]
+}

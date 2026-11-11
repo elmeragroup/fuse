@@ -260,22 +260,6 @@
   }
 }
 
-/* A floating bar that rises into place when it mounts, and simply appears under reduced motion. */
-@utility landing-rise {
-  transition:
-    opacity 180ms var(--ease-snap),
-    translate 180ms var(--ease-snap);
-
-  @starting-style {
-    opacity: 0;
-    translate: 0 6px;
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    transition: none;
-  }
-}
-
 /* One side of the hero window. The Neutral/Branded switch moves the sides with `data-shown`:
    the outgoing side fades and drifts toward its end of the switch while the incoming one settles.
    The exit fades and blurs in 120ms, all but gone in its first 60ms, and the entrance waits 100ms,

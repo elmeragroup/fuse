@@ -27,6 +27,17 @@ export const PART_DENSITY = {
   "accordion-indicator": "fixed",
   "accordion-content": "layout",
 
+  // The bar is Toolbar's bar, with its fixed 4px padding and gap; Clear and the buttons render
+  // Button and read its control metrics. The count and the hidden live region are `text-xs`.
+  "action-bar-positioner": "layout",
+  "action-bar": "layout",
+  "action-bar-status": "fixed",
+  "action-bar-count": "fixed",
+  "action-bar-clear": "control",
+  "action-bar-button": "control",
+  "action-bar-button-label": "layout",
+  "action-bar-separator": "fixed",
+
   "alert-icon": "fixed",
   "alert-dialog-trigger": "control",
 
