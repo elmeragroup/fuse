@@ -139,13 +139,12 @@ describe("emitted-directive walker", () => {
     );
   });
 
-  // Timeout: discoverEntries walks the published import graph; slow under full-gate parallel load.
   it("scopes the walker to discoverEntries().sourceFiles, not all of src", () => {
     const discovered = discoverEntries(packageRoot);
     // Test-only fixture: reachable from no entry (Dialog made the hook itself reachable).
     expect(discovered.sourceFiles).not.toContain("src/hooks/intl-fixture/index.ts");
     expect(discovered.sourceFiles).toContain("src/theme.ts");
-  }, 30_000);
+  });
 });
 
 describe("bare-entry RAC declaration quarantine", () => {
@@ -242,7 +241,7 @@ describe("bare-entry RAC declaration quarantine", () => {
         )
       ).toEqual([]);
     });
-  }, 30_000);
+  });
 
   it("treats architecture quarantine packages and @react-aria/* / @react-stately/* as forbidden", () => {
     expect(isForbiddenRacSpecifier("react-aria-components")).toBe(true);

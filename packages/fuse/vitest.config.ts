@@ -26,6 +26,15 @@ const ENGINES_TESTS = "**/*.engines.browser.test.{ts,tsx}";
  */
 const VIEWPORT = { width: 414, height: 896 } as const;
 
+/**
+ * Every project's test timeout: a hang guard, not a budget. No Fuse test asserts how long it
+ * takes, and a test's wall time scales with how starved its machine is. The chart layout
+ * property tests are pure arithmetic that take about a second alone and over 5 s, Vitest's
+ * default, under a `pnpm check` that shares the machine; a browser wait lasts as long as the
+ * browser takes to deliver its event. A real hang still fails here.
+ */
+const HANG_GUARD = 30_000;
+
 function browserProject(
   name: string,
   options: {
@@ -80,7 +89,7 @@ function browserProject(
       // Hang guards, not budgets. Every expect.poll and expect.element waits on an event the
       // browser delivers in its own time, such as an IntersectionObserver report or a frame, and
       // Vitest's default second failed WebKit hydration on a saturated CI runner.
-      testTimeout: 30_000,
+      testTimeout: HANG_GUARD,
       expect: { poll: { timeout: 10_000 } },
       include: options.include ?? BROWSER_TESTS,
       exclude: options.exclude,
@@ -121,6 +130,7 @@ export default defineConfig({
           // Outside the browser, Vitest blanks CSS ids that `test.css` leaves out. The
           // consumer-build helper reads stylesheet text through `?raw`.
           css: { include: [/\.css\?raw$/] },
+          testTimeout: HANG_GUARD,
         },
       },
       browserProject("browser", { exclude: [CLIPBOARD_TESTS, ENGINES_TESTS] }),

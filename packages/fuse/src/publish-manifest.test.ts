@@ -130,7 +130,7 @@ describe("publish manifest and packed tarball", () => {
     const files = listing.stdout.split("\n");
     expect(files).toContain("package/themes.css");
     expect(files).not.toContain("package/demo-stage-density.css");
-  }, 30_000);
+  });
 });
 
 describe("source exports", () => {
@@ -162,7 +162,7 @@ describe("source exports", () => {
     expect(manifest.exports?.["./stale"]).toBeUndefined();
     expect(manifest.exports?.["."]).toEqual({ types: "./src/index.ts", import: "./src/index.ts" });
     expect(manifest.publishConfig).toEqual({ directory: "dist", access: "public", linkDirectory: false });
-  }, 20_000);
+  });
 
   it("refuses to rewrite a manifest whose root is not a JSON object", () => {
     const root = scratchSourceRoot({ name: "@elmeragroup/fuse", version: "0.0.0" });
@@ -170,5 +170,5 @@ describe("source exports", () => {
 
     expect(() => writeSourceExports(root)).toThrow(/must be a JSON object/);
     expect(readFileSync(join(root, "package.json"), "utf8")).toBe("42\n");
-  }, 20_000);
+  });
 });

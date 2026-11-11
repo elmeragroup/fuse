@@ -25,8 +25,7 @@ const FIXTURE_SVG = '<svg xmlns="http://www.w3.org/2000/svg"/>';
 
 /**
  * Building the 249-file git fixture and spawning git against it is slow under full-gate
- * parallel load, so the file-level suite raises the test default and `beforeAll` the hook
- * default (suite timeouts do not reach hooks).
+ * parallel load, so `beforeAll` raises Vitest's hook default to the project's test hang guard.
  */
 const FIXTURE_TIMEOUT = 30_000;
 
@@ -103,7 +102,7 @@ function makeFixture(): FlagSourceFixture {
  * One fixture for the whole file: the checkout is only ever inspected or reset, and every
  * suite's destination writes are cleaned up by the file-level `afterEach`.
  */
-describe("flag source", { timeout: FIXTURE_TIMEOUT }, () => {
+describe("flag source", () => {
   let fixture!: FlagSourceFixture;
 
   beforeAll(() => {
