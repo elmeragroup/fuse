@@ -3,8 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 
 import { Attachment } from "@elmeragroup/fuse/attachment";
+import { FileTrigger } from "@elmeragroup/fuse/file-trigger";
 import { Files, SpinnerGap, X } from "@elmeragroup/fuse/icons";
-import { FileTrigger } from "@elmeragroup/fuse/react-aria/file-trigger";
 
 type PickedFile = {
   readonly id: string;
@@ -73,8 +73,8 @@ export function AttachmentUpload() {
     };
   }, []);
 
-  function add(list: FileList | null): void {
-    const picked = [...(list ?? [])].map((file): PickedFile => {
+  function add(selected: readonly File[]): void {
+    const picked = selected.map((file): PickedFile => {
       const previewUrl = file.type.startsWith("image/") ? URL.createObjectURL(file) : undefined;
       if (previewUrl !== undefined) previews.current.add(previewUrl);
       return { id: crypto.randomUUID(), name: file.name, size: formatSize(file.size), previewUrl };
@@ -92,10 +92,7 @@ export function AttachmentUpload() {
 
   return (
     <div className="max-w-md flex w-full flex-col items-start gap-3">
-      <FileTrigger
-        acceptedFileTypes={["image/png", "image/jpeg", "image/webp", ".pdf"]}
-        allowsMultiple
-        onSelect={add}>
+      <FileTrigger accept="image/png,image/jpeg,image/webp,.pdf" multiple onSelect={add}>
         Attach files
       </FileTrigger>
       {files.length > 0 ? (

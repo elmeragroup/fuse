@@ -182,6 +182,10 @@
       "types": "./src/field.ts",
       "import": "./src/field.ts"
     },
+    "./file-trigger": {
+      "types": "./src/file-trigger.ts",
+      "import": "./src/file-trigger.ts"
+    },
     "./file-upload": {
       "types": "./src/file-upload.ts",
       "import": "./src/file-upload.ts"
@@ -286,10 +290,6 @@
     "./react-aria/date-range-picker": {
       "types": "./src/react-aria/date-range-picker.ts",
       "import": "./src/react-aria/date-range-picker.ts"
-    },
-    "./react-aria/file-trigger": {
-      "types": "./src/react-aria/file-trigger.ts",
-      "import": "./src/react-aria/file-trigger.ts"
     },
     "./react-aria/focusable": {
       "types": "./src/react-aria/focusable.ts",

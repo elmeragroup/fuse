@@ -88,6 +88,7 @@ export const BARE_COMPONENT_ENTRIES = [
   "date-field",
   "date-picker",
   "date-range-picker",
+  "file-trigger",
 ] as const;
 
 /** Allowlisted entries with no source until they ship. None today. */
@@ -99,13 +100,12 @@ export const DEFERRED_ENTRIES: readonly string[] = [];
  */
 export const PREVIEW_ENTRIES = ["chart"] as const;
 
-/** Appendix A — 10 quarantined react-aria interim entries. */
+/** Appendix A — 9 quarantined react-aria interim entries. */
 export const RAC_ENTRIES = [
   "calendar",
   "date-field",
   "date-picker",
   "date-range-picker",
-  "file-trigger",
   "focusable",
   "grid-list",
   "range-calendar",

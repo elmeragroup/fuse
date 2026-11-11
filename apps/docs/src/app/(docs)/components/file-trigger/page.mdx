@@ -14,13 +14,31 @@ export const metadata = componentMetadata("file-trigger");
 
 <Prose>
 
-For an area that also takes dropped and pasted files, use [FileUpload](/components/file-upload).
+`FileTrigger` runs a pick through the same check as [FileUpload](/components/file-upload). `onSelect` receives the files that pass, in a new array for each pick, and `onReject` receives the rest, each with its `reason`. A file that fails `accept` is rejected with `"type"`. Without `multiple`, when more than one file passes `accept`, each of those is rejected with `"count"`.
+
+`FileTrigger` renders the button and a hidden file input and nothing around them, so it joins a [ButtonGroup](/components/button-group) as a Button does. For an area that also takes dropped and pasted files, use [FileUpload](/components/file-upload).
+
+</Prose>
+
+<Prose>
+
+## Accepted files
+
+The basic trigger takes PNG, JPEG and PDF files, and lists the files it rejects.
 
 </Prose>
 
 <Demo slug="file-trigger" id="basic" title="Basic" file="file-trigger-basic.tsx">
   <FileTriggerBasic />
 </Demo>
+
+<Prose>
+
+## Camera and folders
+
+`capture` asks a phone to take a new photo, and `directory` picks a folder's files. The leading icon follows the mode; `withIcon={false}` drops it.
+
+</Prose>
 
 <Demo slug="file-trigger" id="modes" title="Modes" file="file-trigger-modes.tsx">
   <FileTriggerModes />
