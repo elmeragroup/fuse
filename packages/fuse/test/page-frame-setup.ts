@@ -1,4 +1,4 @@
-import { beforeAll } from "vitest";
+import { beforeAll, beforeEach } from "vitest";
 import { cdp, commands, server } from "vitest/browser";
 
 import { nextFrames } from "./animation-frames";
@@ -7,6 +7,7 @@ declare module "vitest/browser" {
   // oxlint-disable-next-line typescript/consistent-type-definitions -- Vitest registers custom commands by interface declaration merging; a type alias cannot augment.
   interface BrowserCommands {
     sizePage: (width: number, height: number) => Promise<void>;
+    parkPointer: () => Promise<void>;
   }
 }
 
@@ -88,4 +89,14 @@ beforeAll(async () => {
   await sizePageToFrame(frame);
   if (await settles(LAST_FRAMES)) return;
   throw new Error(`The test page does not show its whole frame: ${uncovered() ?? "it does now"}.`);
+});
+
+// Before each test, the pointer rests off the page. Playwright keeps the mouse where the last
+// test, in this file or one the page ran before it, left it. A popup that opens under a pointer at
+// rest gets its hover events late, on Chromium's next hover update, and a filterable menu's search
+// takes focus back on mouseenter (Base UI's `FilterDropdownInput`). A keyboard test that tabs out
+// of the search would then lose focus to it, depending on where an earlier test clicked. A test
+// that needs the pointer moves it itself, through `userEvent`.
+beforeEach(async () => {
+  await commands.parkPointer();
 });
