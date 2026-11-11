@@ -1,13 +1,12 @@
 /**
  * Server-visible `CheckboxItem`. The row is hook-free, so this module has no directive:
  * a server component runs it and reads `CheckboxItem.Title` and the other parts, while
- * `Checkbox` and `SelectionItem.Shell` stay client references it renders. It partitions
- * its own SubSections (see `partitionSubSections`) and passes them to the shell.
+ * `Checkbox` and `SelectionItem.Shell` stay client references it renders. The shell
+ * partitions its SubSections (see `partitionSubSections`).
  */
 import type { ReactElement, ReactNode } from "react";
 
 import { SelectionItem } from "../selection-item";
-import { partitionSubSections } from "../selection-item/partition-sub-sections";
 import { SelectionItemShell } from "../selection-item/selection-item";
 import type { SelectionItemRootProps } from "../selection-item/selection-item";
 import { Checkbox } from "./checkbox";
@@ -76,7 +75,7 @@ export type CheckboxItemProps = CheckboxItemBaseProps &
  * Labeled selection row over `SelectionItem.Shell`. Server-compatible: it renders the
  * client `SelectionItem.Shell`, which wires Field.Item and the label. The namespace
  * aliases `Title`, `Description`, `Content`, `Actions` and `SubSection` are the exact
- * `SelectionItem.*` objects, so `child.type` partitioning works with either spelling.
+ * `SelectionItem.*` objects, so the shell's partition recognises either spelling.
  * Other attributes, such as `id`, `data-testid` or a `data-*` hook, land on the row's
  * `Field.Item` root, the element that carries the row's `data-slot`.
  */
@@ -91,7 +90,6 @@ export function CheckboxItem({
   children,
   ...props
 }: CheckboxItemProps): ReactElement {
-  const { row, subSections } = partitionSubSections(children);
   return (
     <SelectionItemShell
       dataSlot="checkbox-item"
@@ -106,9 +104,8 @@ export function CheckboxItem({
           <Checkbox value={value} disabled={isDisabled} readOnly={isReadOnly} />
         )
       }
-      subSections={subSections}
       {...props}>
-      {row}
+      {children}
     </SelectionItemShell>
   );
 }

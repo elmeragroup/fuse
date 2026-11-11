@@ -1,7 +1,8 @@
 /**
  * Loads the Fuse source the way a React Server Components bundler does.
  *
- * `"use client"` modules become client-module proxies (`createClientModuleProxy`).
+ * Every `"use client"` TypeScript module, wherever it lives, becomes a client-module proxy
+ * (`createClientModuleProxy`).
  * Every other TypeScript module is transpiled and evaluated, so a directive-free
  * namespace object stays a real object whose properties are client references.
  *
@@ -161,7 +162,7 @@ function load(layer: Layer): NonNullable<RegisterHooksOptions["load"]> {
       return nextLoad(url, context);
     }
     const source = readFileSync(file, "utf8");
-    if (layer === "server" && file.includes("/packages/fuse/src/")) {
+    if (layer === "server") {
       const parsed = parse(file, source);
       if (isUseClient(parsed)) {
         return { format: "module", source: clientStub(url, runtimeExportNames(parsed)), shortCircuit: true };

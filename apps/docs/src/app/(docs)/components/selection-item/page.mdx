@@ -15,6 +15,7 @@ import { SelectionItemCheckboxAdjacent } from "./demos/selection-item-checkbox-a
 import { SelectionItemHorizontal } from "./demos/selection-item-horizontal";
 import { SelectionItemDisabledRows } from "./demos/selection-item-disabled-rows";
 import { SelectionItemDisabledGroup } from "./demos/selection-item-disabled-group";
+import { SelectionItemServer } from "./demos/selection-item-server";
 
 import { componentMetadata } from "../../../../lib/component-page";
 
@@ -32,7 +33,7 @@ export const metadata = componentMetadata("selection-item");
 
 <Prose>
 
-A click on a `SubSection` stays outside the click target, so a field or button in it never toggles the row. When the sub-section only describes the option, pass `isSubSectionSelectable` to `CheckboxItem`, `RadioItem` or `SelectionItem.Shell`: a click on its text, its band or the padding beside it then toggles the control, and links, buttons and fields in it keep their own clicks. The control's name stays the label row. Leave it off when the sub-section reveals fields under the control.
+A click on a `SubSection` stays outside the click target, so a field or button in it never toggles the row. In a client component, a Fragment or wrapper around a `SubSection` hides it from the row, so pass such a band through the shell's `subSections`. When the sub-section only describes the option, pass `isSubSectionSelectable` to `CheckboxItem`, `RadioItem` or `SelectionItem.Shell`: a click on its text, its band or the padding beside it then toggles the control, and links, buttons and fields in it keep their own clicks. The control's name stays the label row. Leave it off when the sub-section reveals fields under the control.
 
 </Prose>
 
@@ -42,6 +43,16 @@ A click on a `SubSection` stays outside the click target, so a field or button i
   title="Selectable sub-section"
   file="selection-item-selectable-subsection.tsx">
   <SelectionItemSelectableSubsection />
+</Demo>
+
+<Prose>
+
+A server component can write the rows too. `SelectionItem.SubSection` renders on the server, and a row finds it among its direct children whether the server or the client wrote them. That holds for a `SelectionItem.Shell` in the server component and for a `CheckboxItem` or `RadioItem` that a client component renders around the children the server component passes it.
+
+</Prose>
+
+<Demo slug="selection-item" id="server-component" title="Server component" file="selection-item-server.tsx">
+  <SelectionItemServer />
 </Demo>
 
 <Demo slug="selection-item" id="control-end" title="Control at the end" file="selection-item-control-end.tsx">

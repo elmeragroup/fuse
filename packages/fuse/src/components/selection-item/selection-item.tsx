@@ -262,11 +262,10 @@ type SelectionItemShellProps = Omit<ComponentProps<typeof FieldItem>, "className
    */
   className?: string;
   /**
-   * Sub-sections the caller already partitioned out of its row children, rendered outside
-   * the label with any direct `SelectionItem.SubSection` children. `CheckboxItem` and
-   * `RadioItem` pass them here because they partition where the element was created: a
-   * server-authored SubSection reaches the client as a lazy reference, which the
-   * `child.type` filter below cannot recognise.
+   * Band content passed apart from the row children, rendered outside the label before any
+   * direct `SelectionItem.SubSection` children. A SubSection inside a wrapper the partition
+   * cannot see through goes here. Direct SubSection children need no help: the shell
+   * recognises them whether a server or a client component wrote them.
    */
   subSections?: ReactNode;
   /**
@@ -281,11 +280,10 @@ type SelectionItemShellProps = Omit<ComponentProps<typeof FieldItem>, "className
   isSubSectionSelectable?: boolean;
   /**
    * Direct children are partitioned: `SelectionItem.SubSection` nodes render outside
-   * the label so interactive content does not toggle the control. Everything else
-   * renders in the label row. Wrapping a SubSection in a Fragment, another component,
-   * or an HOC hides it from `child.type === SelectionItem.SubSection` and it stays
-   * inside the label. Server-authored trees should pass SubSections through
-   * `subSections`; see that prop.
+   * the label so interactive content does not toggle the control, in a server component's
+   * tree as in a client one. Everything else renders in the label row. In a client
+   * component, wrapping a SubSection in a Fragment, another component, or an HOC hides it
+   * from the partition and it stays inside the label; pass such a band through `subSections`.
    */
   children?: ReactNode;
 };

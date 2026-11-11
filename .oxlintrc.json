@@ -660,7 +660,10 @@
         "packages/fuse/src/components/chart/*-namespace.ts",
         "packages/fuse/src/components/chart/*-parts.ts",
         "packages/fuse/src/components/chart/format/**/*.ts",
-        "packages/fuse/src/components/chart/layout/**/*.ts"
+        "packages/fuse/src/components/chart/layout/**/*.ts",
+        "packages/fuse/src/components/checkbox/checkbox-item.tsx",
+        "packages/fuse/src/components/radio-group/radio-item.tsx",
+        "packages/fuse/src/components/selection-item/selection-item-sub-section.tsx"
       ],
       "rules": {
         "fuse/no-use-client": "error"

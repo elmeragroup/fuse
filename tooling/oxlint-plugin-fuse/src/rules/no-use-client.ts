@@ -3,8 +3,10 @@ import type { Rule } from "@oxlint/plugins";
 /**
  * A server-visible module carries no `"use client"` directive. The config scopes this rule to the
  * namespace indexes and the chart namespaces, parts modules and pure `format/` and `layout/`
- * folders: with the directive, `Dialog.Root` becomes an opaque client reference a server
- * component cannot dot into, and a pure module stops being callable from the server.
+ * folders, and to the server half of the selection rows: with the directive, `Dialog.Root`
+ * becomes an opaque client reference a server component cannot dot into, a pure module stops
+ * being callable from the server, and a server-written `SelectionItem.SubSection` lands inside
+ * the label (see `partitionSubSections`).
  */
 export const noUseClient: Rule = {
   meta: {
