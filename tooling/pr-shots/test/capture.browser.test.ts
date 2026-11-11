@@ -140,22 +140,20 @@ function pngSize(png: Buffer) {
   return { width: png.readUInt32BE(16), height: png.readUInt32BE(20) };
 }
 
-/** Whether any pixel of a PNG is pure red, the color of every popup in the popup fixture. */
-function hasRed(png: Buffer) {
+/** Pure red, the color of every popup in the popup fixture. */
+const RED = [255, 0, 0] as const;
+/** Pure blue, the color of the lazy fixture's loaded part. */
+const BLUE = [0, 0, 255] as const;
+
+/** Whether any pixel of a PNG is exactly `rgb`. */
+function hasPixel(png: Buffer, [red, green, blue]: readonly [number, number, number]) {
   const { data } = PNG.sync.read(png);
   for (let index = 0; index < data.length; index += 4) {
-    if (data[index] === 255 && data[index + 1] === 0 && data[index + 2] === 0) {
+    if (data[index] === red && data[index + 1] === green && data[index + 2] === blue) {
       return true;
     }
   }
   return false;
-}
-
-/** The RGB of the pixel at device pixel (x, y) of a PNG. */
-function pixelAt(png: Buffer, x: number, y: number) {
-  const { data, width } = PNG.sync.read(png);
-  const index = (y * width + x) * 4;
-  return [data[index], data[index + 1], data[index + 2]];
 }
 
 /**
@@ -472,7 +470,7 @@ describe.concurrent("Capture", () => {
       assert.strictEqual(frame, "viewport");
       // The list opens at y 1640, below the first 480px window, so it shows only if the shot
       // stays where clicking Far scrolled the page.
-      assert.isTrue(hasRed(png));
+      assert.isTrue(hasPixel(png, RED));
     }).pipe(Effect.provide(Capture.layer))
   );
 
@@ -480,10 +478,10 @@ describe.concurrent("Capture", () => {
   // loaded ends the wait. A part that never loads under `opacity: 0`, or in a hidden Activity,
   // which leaves React work pending for good, shows nothing, so it does not hold the shot.
   it.live.each([
-    { case: "has loaded", clicks: ["button:Show"], side: [0, 0, 255] },
-    { case: "never loads under opacity: 0", clicks: ["button:Stall hidden"], side: [255, 255, 255] },
-    { case: "never loads in a hidden Activity", clicks: ["button:Stall offscreen"], side: [255, 255, 255] },
-  ])("shoots a part a click step mounts that $case", ({ clicks, side }) =>
+    { case: "has loaded", clicks: ["button:Show"], shown: true },
+    { case: "never loads under opacity: 0", clicks: ["button:Stall hidden"], shown: false },
+    { case: "never loads in a hidden Activity", clicks: ["button:Stall offscreen"], shown: false },
+  ])("shoots a part a click step mounts that $case", ({ clicks, shown }) =>
     Effect.gen(function* () {
       const { png } = yield* shoot([
         "fixture",
@@ -495,8 +493,8 @@ describe.concurrent("Capture", () => {
         "--scale",
         "1",
       ]);
-      // The part is a blue block from (40, 100) to (440, 300); without it the page is white there.
-      assert.deepStrictEqual(pixelAt(png, 240, 200), side);
+      // The part is the only blue on the page.
+      assert.strictEqual(hasPixel(png, BLUE), shown);
     }).pipe(Effect.provide(Capture.layer))
   );
 
