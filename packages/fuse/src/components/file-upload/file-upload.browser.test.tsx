@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type { ReactElement } from "react";
 
 import { describe, expect, it, vi } from "vitest";
@@ -17,10 +18,11 @@ import { useFileUpload } from "./file-upload-context";
 import { FileUpload } from "./index";
 import type { FileRejection } from "./split-files";
 
-/** The Root's hidden input. It has no role or name to query it by. */
+/** The Root's hidden picker input. It has no role or name to query it by. */
 function fileInput(host: HTMLElement): HTMLInputElement {
-  // The picker input is `hidden`, so it is outside the accessibility tree.
-  const input = host.querySelector('input[type="file"]');
+  // The picker input is `hidden`, so it is outside the accessibility tree. It never has a
+  // `name`; the separate input a form posts does.
+  const input = host.querySelector('input[type="file"]:not([name])');
   if (!(input instanceof HTMLInputElement)) {
     throw new Error("expected the Root's hidden file input");
   }
@@ -714,5 +716,243 @@ describe("FileUpload in a Field", () => {
     } finally {
       error.mockRestore();
     }
+  });
+});
+
+/** What `data` carries under `name`, each file as `[name, size]`. */
+function entries(data: FormData, name: string): ReadonlyArray<readonly [string, number] | string> {
+  return data
+    .getAll(name)
+    .map((entry) => (entry instanceof File ? ([entry.name, entry.size] as const) : entry));
+}
+
+/** What `new FormData(form)` carries under `name`, each file as `[name, size]`. */
+function posted(form: string, name: string): ReadonlyArray<readonly [string, number] | string> {
+  return entries(new FormData(formNamed(form)), name);
+}
+
+/** A form whose FileUpload adds each pick to the files it posts, with a Remove button per file. */
+function PostedUpload(props: {
+  readonly initial?: readonly File[];
+  readonly onSelect?: (files: File[]) => void;
+}) {
+  const [files, setFiles] = useState<readonly File[]>(props.initial ?? []);
+  return (
+    <form aria-label="Upload form">
+      <FileUpload.Root
+        name="attachments"
+        files={files}
+        accept="image/*,.pdf"
+        multiple
+        onSelect={(picked) => {
+          props.onSelect?.(picked);
+          setFiles((current) => [...current, ...picked]);
+        }}>
+        <FileUpload.Trigger>Add files</FileUpload.Trigger>
+      </FileUpload.Root>
+      {files.map((file) => (
+        <button
+          key={file.name}
+          type="button"
+          onClick={() => setFiles((current) => current.filter((kept) => kept !== file))}>
+          Remove {file.name}
+        </button>
+      ))}
+    </form>
+  );
+}
+
+describe("posting with a native form", () => {
+  it("posts the controlled files under name, and a second pick adds to the post rather than wiping it", async () => {
+    const { host } = renderThemed(<PostedUpload />);
+    const input = fileInput(host);
+    pick(input, [png("a.png")]);
+    await expect.poll(() => posted("Upload form", "attachments")).toEqual([["a.png", 3]]);
+
+    pick(input, [pdf("b.pdf")]);
+    await expect
+      .poll(() => posted("Upload form", "attachments"))
+      .toEqual([
+        ["a.png", 3],
+        ["b.pdf", 3],
+      ]);
+  });
+
+  it("follows the parent's files, so removing a file removes it from the post", async () => {
+    renderThemed(<PostedUpload initial={[png("a.png"), pdf("b.pdf")]} />);
+    await expect
+      .poll(() => posted("Upload form", "attachments"))
+      .toEqual([
+        ["a.png", 3],
+        ["b.pdf", 3],
+      ]);
+
+    await userEvent.click(roleNamed("button", "Remove a.png"));
+    await expect.poll(() => posted("Upload form", "attachments")).toEqual([["b.pdf", 3]]);
+  });
+
+  it("keeps the posted files when a pick is rejected and the parent's files stay as they are", async () => {
+    const onSelect = vi.fn<(files: File[]) => void>();
+    const { host } = renderThemed(<PostedUpload initial={[png("a.png")]} onSelect={onSelect} />);
+    await expect.poll(() => posted("Upload form", "attachments")).toEqual([["a.png", 3]]);
+
+    pick(fileInput(host), [txt("notes.txt")]);
+    expect(onSelect).not.toHaveBeenCalled();
+    expect(posted("Upload form", "attachments")).toEqual([["a.png", 3]]);
+  });
+
+  it("posts the controlled files again after a native form reset, without calling onSelect", async () => {
+    const onSelect = vi.fn<(files: File[]) => void>();
+    renderThemed(<PostedUpload initial={[png("a.png")]} onSelect={onSelect} />);
+    await expect.poll(() => posted("Upload form", "attachments")).toEqual([["a.png", 3]]);
+
+    formNamed("Upload form").reset();
+    await vi.waitFor(() => {
+      expect(posted("Upload form", "attachments")).toEqual([["a.png", 3]]);
+    });
+    expect(onSelect).not.toHaveBeenCalled();
+  });
+
+  it("sends the controlled files to a form action, and posts them again after the action resets the form", async () => {
+    const send = vi.fn<(data: FormData) => Promise<void>>(() => Promise.resolve());
+    function Order(): ReactElement {
+      const [files] = useState<readonly File[]>([png("a.png")]);
+      return (
+        <form aria-label="Upload form" action={send}>
+          <FileUpload.Root name="attachments" files={files}>
+            <FileUpload.Trigger>Add files</FileUpload.Trigger>
+          </FileUpload.Root>
+          <input name="note" aria-label="Note" />
+          <button type="submit">Send</button>
+        </form>
+      );
+    }
+    renderThemed(<Order />);
+    const note = page.getByRole("textbox", { name: "Note", exact: true });
+    await userEvent.fill(note, "Receipts");
+    await userEvent.click(roleNamed("button", "Send"));
+    await expect.poll(() => send.mock.calls.length).toBe(1);
+    const sent = send.mock.calls[0]?.[0];
+    expect(sent === undefined ? undefined : entries(sent, "attachments")).toEqual([["a.png", 3]]);
+
+    // React resets the form after the action: the native note empties, the files stay posted.
+    await expect.element(note).toHaveValue("");
+    await vi.waitFor(() => {
+      expect(posted("Upload form", "attachments")).toEqual([["a.png", 3]]);
+    });
+  });
+
+  it("posts the files once name and files first appear on a mounted Root", async () => {
+    const trigger = <FileUpload.Trigger>Add files</FileUpload.Trigger>;
+    // The same element type in the same place, so React updates the mounted Root.
+    const tree = (posting: boolean) => (
+      <form aria-label="Upload form">
+        {posting ? (
+          <FileUpload.Root name="attachments" files={[png("a.png")]}>
+            {trigger}
+          </FileUpload.Root>
+        ) : (
+          <FileUpload.Root>{trigger}</FileUpload.Root>
+        )}
+      </form>
+    );
+    const { rerender } = renderThemed(tree(false));
+    await expect.element(page.getByRole("button", { name: "Add files", exact: true })).toBeInTheDocument();
+    expect(posted("Upload form", "attachments")).toEqual([]);
+
+    rerender(tree(true));
+    await expect.poll(() => posted("Upload form", "attachments")).toEqual([["a.png", 3]]);
+  });
+
+  it("keeps posting the files after a new render element replaces the Root's DOM node", async () => {
+    const files = [png("a.png")];
+    const tree = (render: ReactElement) => (
+      <form aria-label="Upload form">
+        <FileUpload.Root render={render} name="attachments" files={files}>
+          <FileUpload.Trigger>Add files</FileUpload.Trigger>
+        </FileUpload.Root>
+      </form>
+    );
+    const { rerender } = renderThemed(tree(<div />));
+    await expect.poll(() => posted("Upload form", "attachments")).toEqual([["a.png", 3]]);
+
+    rerender(tree(<section />));
+    await expect.poll(() => formNamed("Upload form").querySelector("section")).not.toBeNull();
+    expect(posted("Upload form", "attachments")).toEqual([["a.png", 3]]);
+  });
+
+  it("posts under the enclosing Field's name over its own, as Base UI controls do", async () => {
+    renderThemed(
+      <form aria-label="Upload form">
+        <Field.Root name="evidence">
+          <Field.Label>Evidence</Field.Label>
+          <FileUpload.Root name="attachments" files={[png("a.png")]}>
+            <FileUpload.Trigger>Add files</FileUpload.Trigger>
+          </FileUpload.Root>
+        </Field.Root>
+      </form>
+    );
+    await expect.poll(() => posted("Upload form", "evidence")).toEqual([["a.png", 3]]);
+    expect(posted("Upload form", "attachments")).toEqual([]);
+  });
+
+  it("runs onSelect for a real pick of the file it posts, after a rejected pick in between", async () => {
+    const onSelect = vi.fn<(files: File[]) => void>();
+    function Meter(): ReactElement {
+      const [files, setFiles] = useState<readonly File[]>([]);
+      const [error, setError] = useState<string | null>(null);
+      return (
+        <form aria-label="Upload form">
+          <FileUpload.Root
+            name="meter"
+            files={files}
+            accept="image/*"
+            onSelect={(picked) => {
+              onSelect(picked);
+              setFiles(picked);
+              setError(null);
+            }}
+            onReject={() => setError("Choose an image.")}>
+            <FileUpload.Trigger>Choose photo</FileUpload.Trigger>
+          </FileUpload.Root>
+          <p>{error ?? "No problems"}</p>
+        </form>
+      );
+    }
+    const { host } = renderThemed(<Meter />);
+    // A path, not a File, so Playwright selects through Chromium's file chooser path
+    // (`DOM.setFileInputFiles`), which fires no `change` when the input already holds that file.
+    const picker = page.elementLocator(fileInput(host));
+    await userEvent.upload(picker, "test/fixtures/file-upload/meter.png");
+    await expect.poll(() => posted("Upload form", "meter")).toEqual([["meter.png", 5]]);
+    await userEvent.upload(picker, "test/fixtures/file-upload/notes.txt");
+    await expect.element(page.getByText("Choose an image.", { exact: true })).toBeInTheDocument();
+
+    await userEvent.upload(picker, "test/fixtures/file-upload/meter.png");
+    await expect.element(page.getByText("No problems", { exact: true })).toBeInTheDocument();
+    expect(onSelect.mock.calls.map(([files]) => files.map((file) => file.name))).toEqual([
+      ["meter.png"],
+      ["meter.png"],
+    ]);
+    expect(posted("Upload form", "meter")).toEqual([["meter.png", 5]]);
+  });
+
+  it("posts nothing without files, even under a Field's name, and nothing while disabled", async () => {
+    renderThemed(
+      <form aria-label="Upload form">
+        <Field.Root name="evidence">
+          <Field.Label>Evidence</Field.Label>
+          <FileUpload.Root>
+            <FileUpload.Trigger>Add files</FileUpload.Trigger>
+          </FileUpload.Root>
+        </Field.Root>
+        <FileUpload.Root name="attachments" files={[png("a.png")]} disabled>
+          <FileUpload.Trigger>Add more</FileUpload.Trigger>
+        </FileUpload.Root>
+      </form>
+    );
+    await expect.element(page.getByRole("button", { name: "Add more", exact: true })).toBeDisabled();
+    expect(posted("Upload form", "evidence")).toEqual([]);
+    expect(posted("Upload form", "attachments")).toEqual([]);
   });
 });

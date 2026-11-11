@@ -3,9 +3,11 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { ChangeEvent, ReactElement } from "react";
 
+import { useFieldRootContext } from "@base-ui/react/internals/field-root-context";
 import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
 
+import { useFormReset } from "../../hooks/use-form-reset";
 import { useMergedRefs } from "../../hooks/use-merged-refs";
 import { deepActiveElement } from "../../internal/active-element";
 import { isFocusRoot } from "../../internal/dom-node";
@@ -23,32 +25,52 @@ import type { ReadEntry } from "./read-files";
 import { split } from "./split-files";
 import type { FileRejection, FileRules, SplitEntry } from "./split-files";
 
-/** `FileUpload.Root` takes a `div`'s props, Base UI's `render`, and the picker and callback props. */
-export type FileUploadRootProps = Omit<useRender.ComponentProps<"div">, "onSelect"> & {
-  /**
-   * The `accept` attribute's syntax, such as `"image/*,.pdf"`. The picker receives it as-is, and
-   * every source enforces it: a file that fails it reaches `onReject` with `"type"`.
-   */
-  accept?: string;
-  /** Take more than one file. Without it, a pick, drop or paste of several files rejects them all with `"count"`. */
-  multiple?: boolean;
-  /** The picker selects folders, and dropped folders expand into their files. */
-  directory?: boolean;
-  /** Ask a phone to capture new media with the front (`"user"`) or back (`"environment"`) camera. */
-  capture?: "user" | "environment";
-  /**
-   * Ignore every source, and disable each `FileUpload.Trigger`. An enclosing disabled
-   * `Field.Root` or `Field.Set` disables the Root as well.
-   */
-  disabled?: boolean;
-  /** Receives the files that passed `accept` and the count rule, in a fresh array for each call. */
-  onSelect?: (files: File[]) => void;
-  /**
-   * Receives the files and folders that did not pass, with the reason for each. For one pick,
-   * drop or paste it runs right after `onSelect`, in the same task.
-   */
-  onReject?: (rejections: FileRejection[]) => void;
-};
+/**
+ * `name` needs `files`, because the Root posts only the list it is given. `files` alone posts
+ * under an enclosing `Field.Root`'s `name`.
+ */
+type FileUploadPostingRule = { files: readonly File[] } | { name?: undefined };
+
+/** `FileUpload.Root` takes a `div`'s props, Base UI's `render`, and the picker, posting and callback props. */
+export type FileUploadRootProps = Omit<useRender.ComponentProps<"div">, "onSelect"> &
+  FileUploadPostingRule & {
+    /**
+     * Post `files` under this name with a native form submit or `new FormData(form)`. It needs
+     * `files`. An enclosing `Field.Root`'s `name` takes its place, as it does for Base UI's
+     * controls.
+     */
+    name?: string;
+    /**
+     * The files a native form posts, which the parent owns. The Root never changes the list: add
+     * a pick from `onSelect`, and remove files from your own UI. A native form reset leaves the
+     * list, and the post, as they are. Without a `name`, they post only under an enclosing
+     * `Field.Root`'s `name`.
+     */
+    files?: readonly File[];
+    /**
+     * The `accept` attribute's syntax, such as `"image/*,.pdf"`. The picker receives it as-is, and
+     * every source enforces it: a file that fails it reaches `onReject` with `"type"`.
+     */
+    accept?: string;
+    /** Take more than one file. Without it, a pick, drop or paste of several files rejects them all with `"count"`. */
+    multiple?: boolean;
+    /** The picker selects folders, and dropped folders expand into their files. */
+    directory?: boolean;
+    /** Ask a phone to capture new media with the front (`"user"`) or back (`"environment"`) camera. */
+    capture?: "user" | "environment";
+    /**
+     * Ignore every source, and disable each `FileUpload.Trigger`. An enclosing disabled
+     * `Field.Root` or `Field.Set` disables the Root as well.
+     */
+    disabled?: boolean;
+    /** Receives the files that passed `accept` and the count rule, in a fresh array for each call. */
+    onSelect?: (files: File[]) => void;
+    /**
+     * Receives the files and folders that did not pass, with the reason for each. For one pick,
+     * drop or paste it runs right after `onSelect`, in the same task.
+     */
+    onReject?: (rejections: FileRejection[]) => void;
+  };
 
 const styles = fileUploadVariants();
 
@@ -80,16 +102,38 @@ function fileEntries(files: readonly File[]): SplitEntry[] {
 }
 
 /**
+ * Makes `input.files` hold exactly `files`. A `FileList` has no constructor, so a `DataTransfer`
+ * builds one. Assigning it fires no `change`, so the Root never hears its own write.
+ */
+function writeFiles(input: HTMLInputElement, files: readonly File[]): void {
+  const transfer = new DataTransfer();
+  for (const file of files) {
+    transfer.items.add(file);
+  }
+  input.files = transfer.files;
+}
+
+/**
  * The provider every FileUpload part reads. It renders a `div` with the hidden file input the
  * picker opens, and writes `data-disabled` and `data-dragging`. A pick, a paste while focus is
  * inside it, `useFileUpload().actions.add` and a drop on `FileUpload.Dropzone` all end in the
  * same split, which calls `onSelect` with the files that pass and `onReject` with the rest.
- * The input has no `name`, so a native form post never carries the files.
+ *
+ * To post with a native form, pass `name` and the controlled `files`, and add each `onSelect`
+ * to `files`. The Root writes `files` into a second hidden file input, apart from the picker's,
+ * so a submit or `new FormData(form)` carries exactly that list under `name`; an empty list posts
+ * as a native file input with no selection does. The picker's input stays empty between picks,
+ * so every pick reaches `onSelect` or `onReject`, and only what the parent adds is posted.
+ * Chromium and WebKit empty a file input on a form reset, so the Root writes the list back after
+ * a native reset, including the one React runs after a form action. A disabled Root posts
+ * nothing. Without `files` there is no posting input, and nothing is posted.
  *
  * A disabled `Field.Root` or `Field.Set` disables the Root. `FileUpload.Trigger` documents the
  * rest of the Field wiring.
  */
 export function FileUploadRoot({
+  name: nameProp,
+  files,
   accept,
   multiple = false,
   directory = false,
@@ -104,11 +148,17 @@ export function FileUploadRoot({
   ...props
 }: FileUploadRootProps): ReactElement {
   const disabled = useFieldDisabled(disabledProp);
+  // The Field's name wins, as Base UI's controls take it. Only a controlled list is posted.
+  const fieldName = useFieldRootContext().name;
+  const name = files === undefined ? undefined : (fieldName ?? nameProp);
   // The committed element, which a new `render` element replaces. Every DOM registration below
   // follows it, not the component's mount.
   const [element, setElement] = useState<HTMLDivElement | null>(null);
   const mergedRef = useMergedRefs<HTMLDivElement>(ref, setElement);
   const inputRef = useRef<HTMLInputElement>(null);
+  // The input a native form posts, apart from the picker: a browser fires no `change` for a pick
+  // of the files its input already holds, so the picker stays empty between picks.
+  const postingRef = useRef<HTMLInputElement>(null);
   const [dropTargets, setDropTargets] = useState<ReadonlySet<string>>(NO_DROP_TARGETS);
   // Disabling ends every drag at once. Adjusted while rendering, so no frame shows a stale target.
   if (disabled && dropTargets.size > 0) {
@@ -308,6 +358,21 @@ export function FileUploadRoot({
     ]
   );
 
+  // A callback ref, so the write follows the posting input's every mount and remount (a name
+  // appearing mounts it, a new `render` element remounts it empty) as well as every `files` change.
+  const writePosted = useCallback(
+    (input: HTMLInputElement | null) => {
+      if (input !== null && files !== undefined) {
+        writeFiles(input, files);
+      }
+    },
+    [files]
+  );
+  const postingInputRef = useMergedRefs(postingRef, writePosted);
+
+  // A native reset empties the posting input after its `reset` event; the hook runs this after.
+  useFormReset(postingRef, name === undefined ? null : () => writePosted(postingRef.current));
+
   const onChange = (event: ChangeEvent<HTMLInputElement>) => {
     const input = event.currentTarget;
     const files = [...(input.files ?? [])];
@@ -348,6 +413,19 @@ export function FileUploadRoot({
                 // handler sees a second click.
                 onClick={(event) => event.stopPropagation()}
               />
+              {name === undefined ? null : (
+                // `hidden` keeps it out of the accessibility tree and the tab order. A disabled
+                // Root posts nothing, as a disabled native control does.
+                <input
+                  ref={postingInputRef}
+                  type="file"
+                  hidden
+                  tabIndex={-1}
+                  multiple
+                  name={name}
+                  disabled={disabled}
+                />
+              )}
             </>
           ),
         },

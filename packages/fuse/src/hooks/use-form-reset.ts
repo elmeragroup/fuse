@@ -57,7 +57,8 @@ function subscribe(root: Node, subscriber: Subscriber): () => void {
 }
 
 /**
- * Package-private native form-reset subscription for uncontrolled field composites.
+ * Package-private native form-reset subscription for uncontrolled field composites, and for a
+ * control whose DOM a reset empties under a controlled value, such as FileUpload's posted files.
  * Observable only through those composites, never a public export. `onReset` is a
  * required `(() => void) | null`: each caller states the ownership decision explicitly,
  * so omitting the argument is a type error rather than a silent opt-out. The latest

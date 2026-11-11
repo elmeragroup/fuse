@@ -8,6 +8,7 @@ import { FileUploadLimits } from "./demos/file-upload-limits";
 import { FileUploadPicker } from "./demos/file-upload-picker";
 import { FileUploadFolders } from "./demos/file-upload-folders";
 import { FileUploadField } from "./demos/file-upload-field";
+import { FileUploadForm } from "./demos/file-upload-form";
 
 import { componentMetadata } from "../../../../lib/component-page";
 
@@ -65,6 +66,18 @@ Inside a `Field.Root`, the FileUpload wires to the Field the way an input does. 
 
 <Demo slug="file-upload" id="field" title="In a Field" file="file-upload-field.tsx">
   <FileUploadField />
+</Demo>
+
+<Prose>
+
+## Posting with a form
+
+To post files with a native form, give the Root a `name` and the controlled `files` it posts, and add each pick from `onSelect` to `files`. The Root writes `files` into a hidden input of its own, apart from the picker, so a submit or `new FormData(form)` carries exactly that list under `name`. The picker stays empty between picks, so picking a file that is already posted still reaches `onSelect`. A pick that is rejected, or that the parent does not add, never changes what is posted, and removing a file from `files` removes it from the post. An empty list posts as a native file input with no selection does, with one empty entry. Inside a `Field.Root` with a `name`, that name posts the files, as it does for other controls. A native form reset, including the one React runs after a form action, leaves `files` and the post as they are. A disabled Root posts nothing. Without `files`, the Root posts nothing, and `name` without `files` is a type error.
+
+</Prose>
+
+<Demo slug="file-upload" id="form" title="Posting with a form" file="file-upload-form.tsx">
+  <FileUploadForm />
 </Demo>
 
 <Prose>
