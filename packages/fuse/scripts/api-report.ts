@@ -112,7 +112,7 @@ export function leakedSymbols(forgotten: readonly string[], parts: readonly stri
   return [...new Set(forgotten.filter((name) => !allowed.has(name)))].sort();
 }
 
-/** The turbo command that builds `dist` and then runs the report, with the script's arguments. */
+/** The turbo command that builds `dist` and then runs the report, with `--local` when `local` is set. */
 function turboCommand(local: boolean): string {
   return `pnpm exec turbo run api:report --filter=@elmeragroup/fuse${local ? " -- --local" : ""}`;
 }
