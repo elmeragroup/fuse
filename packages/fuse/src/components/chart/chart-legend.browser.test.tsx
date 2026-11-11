@@ -6,7 +6,7 @@ import { page, userEvent } from "vitest/browser";
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import { S06Chart } from "../../../test/chart/bar-charts";
-import { TARGET_SIZE } from "../../../test/target-size";
+import { expectTargetBoxes } from "../../../test/target-size";
 import { renderThemed, stampDensity } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
 import { DENSITIES } from "../../theme";
@@ -30,11 +30,10 @@ describe("legend toggles", () => {
   it.each(DENSITIES)("hold the 24 px target floor at %s density", (density) => {
     stampDensity(density);
     legend();
-    for (const name of ["Husholdning", "Hytte"]) {
-      const box = page.getByRole("button", { name }).element().getBoundingClientRect();
-      expect(box.height).toBeGreaterThanOrEqual(TARGET_SIZE);
-      expect(box.width).toBeGreaterThanOrEqual(TARGET_SIZE);
-    }
+    expectTargetBoxes(
+      ["Husholdning", "Hytte"].map((name) => page.getByRole("button", { name }).element()),
+      density
+    );
   });
 
   it("names each toggle by its visible label and sits in a group named Serier", () => {

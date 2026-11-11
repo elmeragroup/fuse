@@ -43,7 +43,7 @@ ruleTester.run("one-browser-test-per-module", oneBrowserTestPerModule, {
     { code, filename: join(folder, "select-keyboard.test.ts") },
   ],
   invalid: [
-    // Item 9: two split files for one module, with no canonical file, are both reported.
+    // Two split files for one module, with no canonical file, are both reported.
     {
       code,
       filename: join(folder, "button-focus.browser.test.tsx"),

@@ -21,6 +21,27 @@ export function anyViolates<T>(
 }
 
 /**
+ * The violation a value makes, for a report that names it: the first alternative's, in order.
+ * A value violates when any alternative does, as `anyViolates` decides.
+ *
+ * @template T - One alternative.
+ * @template R - What a violating alternative reports, such as a hook's name or a setting.
+ * @param alternatives - Every value the expression may hold.
+ * @param violation - What one alternative violates with, or `undefined` when it does not.
+ * @returns The first violation, or `undefined` when no alternative violates.
+ */
+export function firstViolation<T, R>(
+  alternatives: ReadonlyArray<T>,
+  violation: (alternative: T) => R | undefined
+): R | undefined {
+  for (const alternative of alternatives) {
+    const found = violation(alternative);
+    if (found !== undefined) return found;
+  }
+  return undefined;
+}
+
+/**
  * Whether a value earns an exemption: it has alternatives, none is `unknown`, and every one
  * qualifies.
  *
@@ -36,4 +57,17 @@ export function allQualify(
     alternatives.length > 0 &&
     alternatives.every((alternative) => alternative.kind !== "unknown" && qualifies(alternative))
   );
+}
+
+/**
+ * The reading every alternative agrees on, such as the API a callee names in each: an exemption
+ * or a `guaranteed` event needs all of them to be the same, and one that names nothing agrees with
+ * nothing.
+ *
+ * @param readings - One reading per alternative, `undefined` for one that has none.
+ * @returns The shared reading, or `undefined` when they differ or one is missing.
+ */
+export function allAgree(readings: ReadonlyArray<string | undefined>): string | undefined {
+  const [first, ...rest] = readings;
+  return first !== undefined && rest.every((reading) => reading === first) ? first : undefined;
 }

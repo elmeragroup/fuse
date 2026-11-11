@@ -2,6 +2,8 @@ import type { Rule } from "@oxlint/plugins";
 import { readdirSync } from "node:fs";
 import { basename, dirname } from "node:path";
 
+import { isTestFile } from "../source-file.ts";
+
 /** A browser test's name: its stem, and the lane between the stem and `.browser.test`. */
 const BROWSER_TEST = /^(?<stem>.+?)(?:\.(?<lane>engines|clipboard))?\.browser\.test\.[cm]?[jt]sx?$/u;
 
@@ -10,12 +12,6 @@ const CODE_MODULE = /^(?<stem>.+)\.[cm]?[jt]sx?$/u;
 
 /** A stylesheet's name, which a browser test can be named after but which owns no prefix. */
 const STYLESHEET = /^(?<stem>.+)\.css$/u;
-
-/** A test file of any project, which is never a production module. */
-const TEST_FILE = /\.test(?:-d)?\.[cm]?[jt]sx?$/u;
-
-/** One browser test file beside the linted one, read off its name. */
-type BrowserFile = { readonly file: string; readonly stem: string; readonly lane: string };
 
 /**
  * Each production module keeps its browser cases in one file per lane, named after it:
@@ -49,7 +45,7 @@ export const oneBrowserTestPerModule: Rule = {
     if (stem === undefined) return {};
     const lane = match?.groups?.lane ?? "browser";
     const siblings = readdirSync(dirname(context.filename));
-    const production = siblings.filter((sibling) => !TEST_FILE.test(sibling));
+    const production = siblings.filter((sibling) => !isTestFile(sibling));
     const codeStems = new Set(production.flatMap((sibling) => CODE_MODULE.exec(sibling)?.groups?.stem ?? []));
     const sheetStems = new Set(production.flatMap((sibling) => STYLESHEET.exec(sibling)?.groups?.stem ?? []));
     const ownerOf = (name: string): string | undefined => {
@@ -60,13 +56,13 @@ export const oneBrowserTestPerModule: Rule = {
     };
     const owner = ownerOf(stem);
     if (owner === undefined || owner === stem) return {};
-    const group = siblings.flatMap((sibling): BrowserFile[] => {
+    const group = siblings.filter((sibling) => {
       const other = BROWSER_TEST.exec(sibling);
       const otherStem = other?.groups?.stem;
-      if (otherStem === undefined || (other?.groups?.lane ?? "browser") !== lane) return [];
-      return ownerOf(otherStem) === owner ? [{ file: sibling, stem: otherStem, lane }] : [];
+      if (otherStem === undefined || (other?.groups?.lane ?? "browser") !== lane) return false;
+      return ownerOf(otherStem) === owner;
     });
-    if (!group.some((entry) => entry.file === file)) group.push({ file, stem, lane });
+    if (!group.includes(file)) group.push(file);
     if (group.length < 2) return {};
     return {
       Program(node) {

@@ -1,6 +1,6 @@
 import type { Rule } from "@oxlint/plugins";
 
-import { anyViolates } from "../quantify.ts";
+import { firstViolation } from "../quantify.ts";
 import { evaluate, targetOf } from "../resolve.ts";
 import type { Alt } from "../resolve.ts";
 
@@ -15,8 +15,8 @@ const HOOK = /^use(?:[A-Z]|$)/u;
  * not a call and stays allowed.
  *
  * Scope: follows what `resolve.ts` follows, for the callee, any alternative of which may be the
- * hook. Beyond that: a hook handed in as an
- * argument and called through a parameter is not recognised.
+ * hook. Beyond that: a hook handed in as an argument and called through a parameter is not
+ * recognised.
  */
 export const noHookCalls: Rule = {
   meta: {
@@ -34,11 +34,9 @@ export const noHookCalls: Rule = {
           const last = targetOf(callee)?.path.at(-1);
           return last !== undefined && HOOK.test(last) ? last : undefined;
         };
-        const callees = evaluate(context, node.callee);
-        if (!anyViolates(callees, (callee) => hookName(callee) !== undefined)) return;
-        // The message names the first hook among the alternatives.
-        const name = callees.map(hookName).find((last) => last !== undefined) ?? "";
-        context.report({ node, messageId: "hook", data: { name } });
+        // Any alternative that is a hook is a hook call; the message names the first.
+        const name = firstViolation(evaluate(context, node.callee), hookName);
+        if (name !== undefined) context.report({ node, messageId: "hook", data: { name } });
       },
     };
   },

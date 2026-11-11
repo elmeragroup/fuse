@@ -7,7 +7,7 @@ import "../../../dist/styles.css";
 import { nextFrames, useFakeTimeouts } from "../../../test/animation-frames";
 import { assertFocusRingOnKeyboardAbsentOnMouse } from "../../../test/assert-focus-ring";
 import { withLocale } from "../../../test/locale-matrix";
-import { renderThemed, roleNamed, renderThemed as render } from "../../../test/themed-browser-render";
+import { renderThemed, roleNamed } from "../../../test/themed-browser-render";
 import { Tooltip } from "./index";
 
 async function hoverOpen(name: string, tooltipName = name): Promise<HTMLElement> {
@@ -217,7 +217,7 @@ describe("identity", () => {
             </Tooltip.Root>
           </>
         );
-      const { rerender } = render(field("account-help", true));
+      const { rerender } = renderThemed(field("account-help", true));
       await expect.poll(() => describedText("Help")).toBe("Caller guidance Account guidance");
       await expect
         .element(page.getByRole("button", { name: "Help" }))
@@ -247,7 +247,7 @@ describe("identity", () => {
             <Tooltip.Content render={<div id={id} />}>Rendered guidance</Tooltip.Content>
           </Tooltip.Root>
         );
-      const { rerender } = render(field("rendered-help"));
+      const { rerender } = renderThemed(field("rendered-help"));
       await expect
         .element(page.getByRole("button", { name: "Rendered help" }))
         .toHaveAccessibleDescription("Rendered guidance");
@@ -260,7 +260,7 @@ describe("identity", () => {
     });
 
     it("keeps generated and custom tooltip identities separate across multiple instances", async () => {
-      render(
+      renderThemed(
         withLocale(
           "en-US",
           <>

@@ -1,8 +1,8 @@
+// WCAG 1.4.13 for the chart tooltip, rows T043 and T044, in Chromium. The sequence and its outcomes
+// come from CONTRACT section 9.12, and every expected label is written by hand from the committed
+// Elhub rows.
 import type { ReactElement } from "react";
 
-// WCAG 1.4.13 for the chart tooltip, rows T043 and T044, in Chromium. The
-// sequence and its outcomes come from CONTRACT section 9.12, and every expected label is written
-// by hand from the committed Elhub rows.
 import { afterEach, describe, expect, it } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
@@ -10,8 +10,7 @@ import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import { nextFrames, recordFrames } from "../../../test/animation-frames";
 import { S06Chart } from "../../../test/chart/bar-charts";
-import { label, pointerAt, popup, surfaceBox } from "../../../test/chart/marks";
-import { bars as drawnBars } from "../../../test/chart/marks";
+import { bars as drawnBars, label, pointerAt, popup, surfaceBox } from "../../../test/chart/marks";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
 import { Chart } from "./chart-namespace";
@@ -258,12 +257,13 @@ describe.each([
 // default rows, Swatch, SeriesLabel, SeriesIcon, TooltipValue, TooltipShare, and where the family
 // has them ActiveValue and TooltipTotal, and the centre parts, Center, CenterValue, CenterName,
 // CenterShare, CenterLabel and CenterMax, in custom tooltips over Chart, ClockChart, RadarChart,
-// RadialChart and PieChart, and ScatterChart's own TooltipLabel and TooltipValue. Oracle: DECISIONS.md R2.1–R2.3, a closing tooltip keeps its place, width, lane and
-// content until the popup has closed, so the popup's text, each swatch's series and each icon read
-// on every frame from Escape until the popup has gone are the ones it showed open. Where the family
-// has series, a non-default one has focus, and ActiveValue's fallback reading differs from the
-// active one, so a reader that drops the held point shows on the first frame.
-describe("closing tooltip", () => {
+// RadialChart and PieChart, and ScatterChart's own TooltipLabel and TooltipValue. Oracle:
+// DECISIONS.md R2.1–R2.3, a closing tooltip keeps its place, width, lane and content until the
+// popup has closed, so the popup's text, each swatch's series and each icon read on every frame
+// from Escape until the popup has gone are the ones it showed open. Where the family has series, a
+// non-default one has focus, and ActiveValue's fallback reading differs from the active one, so a
+// reader that drops the held point shows on the first frame.
+describe("a shut tooltip lets go of its point", () => {
   /** Two series in one stack, each with an icon, so every series part has something to show. */
   const SERIES = {
     heating: { label: "Oppvarming", color: "chart-1", stack: "use", icon: <svg data-icon="heating" /> },
@@ -329,36 +329,34 @@ describe("closing tooltip", () => {
     );
   }
 
-  describe("a shut tooltip lets go of its point", () => {
-    /** Prints whether the enclosing chart has a point, as a custom tooltip child reads it. */
-    function PointProbe(): ReactElement {
-      const point = useChartPoint();
-      return <span data-point-probe="">{point === null ? "none" : "point"}</span>;
-    }
+  /** Prints whether the enclosing chart has a point, as a custom tooltip child reads it. */
+  function PointProbe(): ReactElement {
+    const point = useChartPoint();
+    return <span data-point-probe="">{point === null ? "none" : "point"}</span>;
+  }
 
-    it("so useChartPoint() in a custom child reads null once the popup has closed", async () => {
-      renderThemed(
-        <Locale>
-          <Chart.Root
-            data={["k0", "k1", "k2"].map((name, index) => ({ name, heating: index + 1, water: index }))}
-            config={SERIES}
-            xKey="name"
-            aria-label="Forbruk">
-            <Chart.Bar dataKey="heating" />
-            <Chart.Tooltip>
-              <PointProbe />
-            </Chart.Tooltip>
-          </Chart.Root>
-        </Locale>
-      );
-      // The popup is aria-hidden and stays mounted once open, so the probe is read by its attribute.
-      const probe = () => document.querySelector("[data-point-probe]")?.textContent;
-      const { changed } = await closeAndRead("{ArrowRight}", () => {
-        expect(probe()).toBe("point");
-      });
-      // The fade keeps the point it showed; the shut popup holds none.
-      expect(changed).toEqual([]);
-      await expect.poll(probe).toBe("none");
+  it("so useChartPoint() in a custom child reads null once the popup has closed", async () => {
+    renderThemed(
+      <Locale>
+        <Chart.Root
+          data={["k0", "k1", "k2"].map((name, index) => ({ name, heating: index + 1, water: index }))}
+          config={SERIES}
+          xKey="name"
+          aria-label="Forbruk">
+          <Chart.Bar dataKey="heating" />
+          <Chart.Tooltip>
+            <PointProbe />
+          </Chart.Tooltip>
+        </Chart.Root>
+      </Locale>
+    );
+    // The popup is aria-hidden and stays mounted once open, so the probe is read by its attribute.
+    const probe = () => document.querySelector("[data-point-probe]")?.textContent;
+    const { changed } = await closeAndRead("{ArrowRight}", () => {
+      expect(probe()).toBe("point");
     });
+    // The fade keeps the point it showed; the shut popup holds none.
+    expect(changed).toEqual([]);
+    await expect.poll(probe).toBe("none");
   });
 });

@@ -1,15 +1,16 @@
-import type { ESTree, Rule } from "@oxlint/plugins";
+import type { ESTree, Rule, Visitor } from "@oxlint/plugins";
 import { dirname, resolve } from "node:path";
 
-import { anyViolates } from "../quantify.ts";
-import { evaluate, propertyName } from "../resolve.ts";
+import { moduleExportName, propertyKeyName } from "../ast-names.ts";
+import { firstViolation } from "../quantify.ts";
+import { evaluate, memberName } from "../resolve.ts";
 import type { Alt } from "../resolve.ts";
 import { requiredOptions } from "../rule-options.ts";
 import { isTestFile } from "../source-file.ts";
 import { constantString } from "../static-text.ts";
 
 /** One configured module: a pattern its normalised specifier is matched against, why, and which exports. */
-type RestrictedModule = {
+export type RestrictedModule = {
   readonly pattern: string;
   readonly message: string;
   /** The exports restricted; every import of the module when absent. */
@@ -17,7 +18,7 @@ type RestrictedModule = {
 };
 
 /** The rule's options: the modules, and whether test files are checked too. */
-type RestrictedImportsOptions = {
+export type RestrictedImportsOptions = {
   readonly modules: ReadonlyArray<RestrictedModule>;
   readonly tests?: "skip" | "check";
 };
@@ -82,6 +83,8 @@ export const restrictedImports: Rule = {
       message,
       names: names === undefined ? undefined : new Set(names),
     }));
+    /** Every export some restriction names: a member or destructured key outside it cannot report. */
+    const restrictedNames = new Set(restrictions.flatMap((restriction) => [...(restriction.names ?? [])]));
 
     /** A specifier as matched: a relative one resolved from the importing file, a bare one as written. */
     const normalised = (specifier: string): string =>
@@ -134,29 +137,42 @@ export const restrictedImports: Rule = {
       return undefined;
     };
 
-    /** Report a value any alternative of which is a restricted export. */
-    const checkValue = (node: ESTree.Node, value: ESTree.Node): void => {
-      const values = evaluate(context, value);
-      if (!anyViolates(values, (alternative) => restrictedExport(alternative) !== undefined)) return;
-      // The report names the first restricted alternative.
-      const hit = values.map(restrictedExport).find((found) => found !== undefined);
+    /** Report a member any alternative of which is a restricted export, naming the first. */
+    const checkMember = (node: ESTree.MemberExpression): void => {
+      const key = memberName(node);
+      if (key === undefined || !restrictedNames.has(key)) return;
+      const hit = firstViolation(evaluate(context, node), restrictedExport);
       if (hit !== undefined) report(node, hit.specifier, hit.restriction);
+    };
+
+    /** Report each key destructured from a namespace any alternative of which restricts it, naming the first. */
+    const checkDestructured = (node: ESTree.VariableDeclarator): void => {
+      if (node.id.type !== "ObjectPattern" || node.init === null) return;
+      const keyed = node.id.properties.flatMap((property) => {
+        const key = property.type === "Property" ? propertyKeyName(property) : undefined;
+        return key !== undefined && restrictedNames.has(key) ? [{ property, key }] : [];
+      });
+      if (keyed.length === 0) return;
+      const values = evaluate(context, node.init);
+      for (const { property, key } of keyed) {
+        // A key destructured from a namespace is that export.
+        const hit = firstViolation(values, (alternative) =>
+          alternative.kind === "import" && alternative.imported === "*"
+            ? restrictedExport({ ...alternative, imported: key })
+            : undefined
+        );
+        if (hit !== undefined) report(property, hit.specifier, hit.restriction);
+      }
     };
 
     const exportedNames = (specifiers: ReadonlyArray<ESTree.Node>): string[] =>
       specifiers.flatMap((specifier) => {
-        if (specifier.type === "ImportSpecifier") {
-          const name = specifier.imported;
-          return [name.type === "Identifier" ? name.name : name.value];
-        }
-        if (specifier.type === "ExportSpecifier") {
-          const name = specifier.local;
-          return [name.type === "Identifier" ? name.name : name.value];
-        }
+        if (specifier.type === "ImportSpecifier") return [moduleExportName(specifier.imported)];
+        if (specifier.type === "ExportSpecifier") return [moduleExportName(specifier.local)];
         return [];
       });
 
-    return {
+    const modules: Visitor = {
       ImportDeclaration: (node) => check(node.source, exportedNames(node.specifiers)),
       ExportNamedDeclaration: (node) => check(node.source, exportedNames(node.specifiers)),
       ExportAllDeclaration: (node) => check(node.source, "all"),
@@ -166,24 +182,8 @@ export const restrictedImports: Rule = {
           check(node.moduleReference.expression, "namespace");
         }
       },
-      MemberExpression: (node) => checkValue(node, node),
-      VariableDeclarator: (node) => {
-        if (node.id.type !== "ObjectPattern" || node.init === null) return;
-        const values = evaluate(context, node.init);
-        for (const property of node.id.properties) {
-          const key = property.type === "Property" ? propertyName(property) : undefined;
-          if (key === undefined) continue;
-          // A key destructured from a namespace is that export.
-          const exportOf = (alternative: Alt) =>
-            alternative.kind === "import" && alternative.imported === "*"
-              ? restrictedExport({ ...alternative, imported: key })
-              : undefined;
-          if (!anyViolates(values, (alternative) => exportOf(alternative) !== undefined)) continue;
-          // The report names the first restricted alternative.
-          const hit = values.map(exportOf).find((found) => found !== undefined);
-          if (hit !== undefined) report(property, hit.specifier, hit.restriction);
-        }
-      },
     };
+    if (restrictedNames.size === 0) return modules;
+    return { ...modules, MemberExpression: checkMember, VariableDeclarator: checkDestructured };
   },
 };

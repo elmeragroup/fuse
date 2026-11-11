@@ -3,7 +3,7 @@ import { noHookCalls } from "./no-hook-calls.ts";
 
 ruleTester.run("no-hook-calls", noHookCalls, {
   valid: [
-    // T16: a namespace import used only for createElement, and a hook's type, are no hook calls.
+    // A namespace import used only for createElement, and a hook's type, are no hook calls.
     'import * as React from "react";\nexport const Mark = () => React.createElement("svg", { "aria-hidden": true });',
     'import type { useState } from "react";\ntype Setter = ReturnType<typeof useState>[1];\nexport const draw = (set: Setter) => set;',
     // A name that only starts with "use" is no hook.
@@ -19,7 +19,7 @@ ruleTester.run("no-hook-calls", noHookCalls, {
       code: 'import { useState } from "react";\nexport function Mark() {\n  const [value] = useState(0);\n  return value;\n}',
       errors: [{ messageId: "hook", data: { name: "useState" } }],
     },
-    // T16: a hook called off a namespace import.
+    // A hook called off a namespace import.
     {
       code: 'import * as React from "react";\nexport function Mark() {\n  return React.useId();\n}',
       errors: [{ messageId: "hook", data: { name: "useId" } }],

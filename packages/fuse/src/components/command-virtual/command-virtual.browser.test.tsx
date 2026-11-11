@@ -86,7 +86,6 @@ async function highlightThirdRowAndWheelAway(): Promise<void> {
   await userEvent.keyboard("{ArrowDown}{ArrowDown}");
   await expect.poll(() => highlightedOption()?.textContent).toBe("Meter point 0003");
   await userEvent.wheel(listbox(), { delta: { y: 4000 } });
-  // oxlint-disable-next-line fuse/no-geometry-assertions -- precondition: the 4000px wheel carried the list far past the highlighted third row before the case under test runs
   await expect.poll(() => listbox().scrollTop).toBeGreaterThan(2000);
 }
 
@@ -230,12 +229,11 @@ describe("CommandVirtual", () => {
   });
 });
 
-describe("render counts", () => {
-  /**
-   * Browser project. Render counts of virtual rows: a probe inside each row records its renders, and
-   * the expectation is which rows a scroll has to render.
-   */
-
+/**
+ * Render counts of virtual rows: a probe inside each row records its renders, and the expectation
+ * is which rows a scroll has to render.
+ */
+describe("CommandVirtual row renders", () => {
   /** Renders per item since the last reset. */
   const renders = new Map<string, number>();
 
@@ -266,32 +264,30 @@ describe("render counts", () => {
       .map((option) => option.textContent);
   }
 
-  describe("CommandVirtual row renders", () => {
-    beforeEach(() => {
-      renders.clear();
-    });
+  beforeEach(() => {
+    renders.clear();
+  });
 
-    it("renders only the rows a scroll brings into the window", async () => {
-      renderThemed(withLocale("en-US", <Palette />));
-      roleNamed("combobox", "Meter points").focus();
-      await expect.poll(() => shownItems().length).toBeGreaterThan(3);
-      await nextFrames(2);
-      const list = page.getByRole("listbox").element();
-      const rowHeight = page.getByRole("option").elements()[0]?.getBoundingClientRect().height ?? 0;
-      const before = shownItems();
+  it("renders only the rows a scroll brings into the window", async () => {
+    renderThemed(withLocale("en-US", <Palette />));
+    roleNamed("combobox", "Meter points").focus();
+    await expect.poll(() => shownItems().length).toBeGreaterThan(3);
+    await nextFrames(2);
+    const list = page.getByRole("listbox").element();
+    const rowHeight = page.getByRole("option").elements()[0]?.getBoundingClientRect().height ?? 0;
+    const before = shownItems();
 
-      renders.clear();
-      list.scrollTop += rowHeight * 3;
-      await expect.poll(() => shownItems().some((item) => !before.includes(item))).toBe(true);
-      await nextFrames(2);
+    renders.clear();
+    list.scrollTop += rowHeight * 3;
+    await expect.poll(() => shownItems().some((item) => !before.includes(item))).toBe(true);
+    await nextFrames(2);
 
-      const after = shownItems();
-      const kept = before.filter((item) => after.includes(item));
-      expect(kept.length).toBeGreaterThan(0);
-      // A row that stays in the window keeps its render; only the rows that entered render.
-      expect(kept.filter((item) => renders.has(item))).toEqual([]);
-      const entered = after.filter((item) => !before.includes(item));
-      expect([...renders.keys()].toSorted()).toEqual(entered.toSorted());
-    });
+    const after = shownItems();
+    const kept = before.filter((item) => after.includes(item));
+    expect(kept.length).toBeGreaterThan(0);
+    // A row that stays in the window keeps its render; only the rows that entered render.
+    expect(kept.filter((item) => renders.has(item))).toEqual([]);
+    const entered = after.filter((item) => !before.includes(item));
+    expect([...renders.keys()].toSorted()).toEqual(entered.toSorted());
   });
 });

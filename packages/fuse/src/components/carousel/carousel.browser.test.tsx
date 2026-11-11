@@ -551,7 +551,7 @@ describe("paging", () => {
   /** The slide length on the scroll axis. */
   const LENGTH = 200;
 
-  function Fixture({
+  function PagingFixture({
     dir = "ltr",
     defaultIndex = 0,
   }: {
@@ -591,7 +591,7 @@ describe("paging", () => {
             <button type="button" onClick={() => setDir(to)}>
               Switch direction
             </button>
-            <Fixture dir={dir} defaultIndex={2} />
+            <PagingFixture dir={dir} defaultIndex={2} />
           </>
         );
       }

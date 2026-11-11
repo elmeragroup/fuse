@@ -1,7 +1,7 @@
 import { expect } from "vitest";
 
 /** WCAG 2.5.8's minimum target, a 24px square around the target's centre. */
-export const TARGET_SIZE = 24;
+const TARGET_SIZE = 24;
 
 /**
  * The geometric checks' tolerance: layout rounds lengths to 1/64px, so two targets whose squares

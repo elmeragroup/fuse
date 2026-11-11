@@ -93,10 +93,11 @@ export function slot(name: string, within: ParentNode = document): HTMLElement {
  * The reveal parts have no role; the first part with a data-slot, if any.
  *
  * @param name - The part's data-slot.
+ * @param within - The tree to search: the page's document by default, or a parsed one.
  * @returns The part, or null when there is none.
  */
-export function querySlot(name: string): Element | null {
-  return document.querySelector(`[data-slot="${name}"]`);
+export function querySlot(name: string, within: ParentNode = document): Element | null {
+  return within.querySelector(`[data-slot="${name}"]`);
 }
 
 /**

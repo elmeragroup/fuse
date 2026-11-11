@@ -1,5 +1,10 @@
 import { defineConfig } from "oxlint";
 
+import type {
+  RestrictedImportsOptions,
+  RestrictedModule,
+} from "./tooling/oxlint-plugin-fuse/src/rules/restricted-imports.ts";
+
 /*
  * The repo's lint config. Each import restriction is defined once below and composed into the
  * overrides that need it: an override's options replace the inherited ones, so an override that
@@ -25,12 +30,6 @@ type RestrictedPath = {
   readonly importNames?: string[];
   readonly allowTypeImports?: boolean;
 };
-
-/**
- * One `fuse/restricted-imports` module entry: a pattern the specifier is matched against (a
- * relative specifier as the path it resolves to), and, to restrict only some exports, their names.
- */
-type RestrictedModule = { readonly pattern: string; readonly message: string; readonly names?: string[] };
 
 const LOCALIZED_STRING_DICTIONARY: RestrictedPath = {
   name: "@internationalized/string",
@@ -77,13 +76,7 @@ const TAILWIND_VARIANTS_TV: RestrictedPath = {
 };
 
 /** `styles/tv.ts` wraps `createTV`, so only the upstream `tv` stays restricted there. */
-const TAILWIND_VARIANTS_TV_ONLY: RestrictedPath = {
-  name: "tailwind-variants",
-  importNames: ["tv"],
-  allowTypeImports: true,
-  message:
-    "Import tv from styles/tv. It shares cn's tailwind-merge extension, so a consumer's rounded-* class replaces rounded-inner in a recipe; the upstream tv keeps both.",
-};
+const TAILWIND_VARIANTS_TV_ONLY: RestrictedPath = { ...TAILWIND_VARIANTS_TV, importNames: ["tv"] };
 
 /** Every library module's import restrictions. */
 const LIBRARY_IMPORTS: ReadonlyArray<RestrictedPath> = [
@@ -114,19 +107,13 @@ const APP_DEEP_IMPORT: RestrictedModule = {
     "apps consume @elmeragroup/fuse through its package exports, the way a consumer does; a deep import of packages/fuse/src skips the build and its exports map.",
 };
 
+const DOCS_CHROME_SIDEBAR_MESSAGE =
+  "docs chrome never composes the library Sidebar; only the Sidebar page's demos, the landing's app-shell demo and the blocks' demos demonstrate it.";
+
 /** Docs chrome never composes the library Sidebar. */
 const DOCS_CHROME_SIDEBAR: ReadonlyArray<RestrictedModule> = [
-  {
-    pattern: "^@elmeragroup/fuse/sidebar$",
-    message:
-      "docs chrome never composes the library Sidebar; only the Sidebar page's demos, the landing's app-shell demo and the blocks' demos demonstrate it.",
-  },
-  {
-    pattern: "^@elmeragroup/fuse$",
-    names: ["Sidebar"],
-    message:
-      "docs chrome never composes the library Sidebar; only the Sidebar page's demos, the landing's app-shell demo and the blocks' demos demonstrate it.",
-  },
+  { pattern: "^@elmeragroup/fuse/sidebar$", message: DOCS_CHROME_SIDEBAR_MESSAGE },
+  { pattern: "^@elmeragroup/fuse$", names: ["Sidebar"], message: DOCS_CHROME_SIDEBAR_MESSAGE },
 ];
 
 const TEMPORAL_POLYFILL: RestrictedModule = {
@@ -165,10 +152,8 @@ function without(paths: ReadonlyArray<RestrictedPath>, owned: RestrictedPath): R
 }
 
 /** The `no-restricted-imports` setting for a set of paths. */
-function restrictImports(options: {
-  readonly paths: ReadonlyArray<RestrictedPath>;
-}): ["error", { paths: RestrictedPath[] }] {
-  return ["error", { paths: [...options.paths] }];
+function restrictImports(paths: ReadonlyArray<RestrictedPath>): ["error", { paths: RestrictedPath[] }] {
+  return ["error", { paths: [...paths] }];
 }
 
 /**
@@ -176,10 +161,10 @@ function restrictImports(options: {
  * which may import what they check; app overrides check them too.
  */
 function restrictModules(
-  modules: ReadonlyArray<RestrictedModule>,
-  tests: "skip" | "check" = "skip"
-): ["error", { modules: RestrictedModule[]; tests: "skip" | "check" }] {
-  return ["error", { modules: [...modules], tests }];
+  modules: RestrictedImportsOptions["modules"],
+  tests: NonNullable<RestrictedImportsOptions["tests"]> = "skip"
+): ["error", RestrictedImportsOptions] {
+  return ["error", { modules, tests }];
 }
 
 export default defineConfig({
@@ -402,7 +387,46 @@ export default defineConfig({
         "elmera/no-rac-outside-quarantine": "error",
         "elmera/no-hardcoded-density-metrics": "warn",
         "elmera/no-raw-class-map": "error",
-        "no-restricted-imports": restrictImports({ paths: LIBRARY_IMPORTS }),
+        "no-restricted-imports": restrictImports(LIBRARY_IMPORTS),
+        "shadcn/no-raw-colors": "error",
+        "shadcn/no-inline-styles": "error",
+        "shadcn/no-unknown-classes": "error",
+        "fuse/defined-props-wiring": "error",
+        "fuse/declared-density-role": [
+          "error",
+          {
+            roles: "packages/fuse/src/theme/tokens/density-roles.ts",
+          },
+        ],
+        "fuse/no-base-ui-preview-menu": "error",
+        "fuse/overlay-root-override-last": "error",
+        "fuse/owned-class-tokens": [
+          "error",
+          {
+            owner: "components/overlay/overlay-classes.ts",
+            spellings: [
+              "z-50",
+              "z-60",
+              "origin-(--transform-origin)",
+              "text-xl font-medium",
+              "bg-popover text-popover-foreground",
+              "bg-dialog text-dialog-foreground",
+              "shadow-md ring-1 ring-foreground/10",
+            ],
+            superseded: [
+              {
+                spelling: "pointer-events-none absolute right-2 flex items-center justify-center",
+                replacement: "menuItemIndicatorClass from components/overlay/menu-row-classes.ts",
+              },
+              {
+                spelling: "-mx-1 my-1 h-px bg-border",
+                replacement: "menuSeparatorClass from components/overlay/menu-row-classes.ts",
+              },
+            ],
+          },
+        ],
+        "fuse/restricted-imports": restrictModules([TEMPORAL_POLYFILL]),
+        "fuse/state-face": "error",
       },
     },
     {
@@ -410,65 +434,6 @@ export default defineConfig({
       rules: {
         "elmera/no-primitive-colors": "error",
         "elmera/no-raw-class-map": "error",
-      },
-    },
-    {
-      files: ["apps/docs/src/**/*.{ts,tsx}", "apps/static-theme/src/**/*.{ts,tsx}"],
-      rules: {
-        "shadcn/no-raw-colors": "error",
-        "shadcn/no-inline-styles": "error",
-        "shadcn/no-unknown-classes": [
-          "error",
-          {
-            allow: ["not-prose"],
-          },
-        ],
-      },
-    },
-    {
-      files: ["apps/docs/src/og/**/*.{ts,tsx}", "apps/docs/src/app/og/**/*.{ts,tsx}"],
-      rules: {
-        "shadcn/no-inline-styles": "off",
-      },
-    },
-    {
-      files: ["packages/fuse/src/**/*.{ts,tsx}"],
-      rules: {
-        "shadcn/no-raw-colors": "error",
-        "shadcn/no-inline-styles": "error",
-        "shadcn/no-unknown-classes": "error",
-      },
-    },
-    {
-      files: ["packages/fuse/src/react-aria/grid-list/grid-list.tsx"],
-      rules: {
-        "shadcn/no-inline-styles": [
-          "error",
-          {
-            allow: ["pointerEvents"],
-          },
-        ],
-      },
-    },
-    {
-      files: [
-        "packages/fuse/src/icons/**",
-        "packages/fuse/src/illustrations/**",
-        "packages/fuse/src/components/emoji/**",
-      ],
-      rules: {
-        "shadcn/no-raw-colors": "off",
-        "shadcn/no-inline-styles": [
-          "error",
-          {
-            allow: ["maskType"],
-          },
-        ],
-      },
-    },
-    {
-      files: ["apps/docs/src/**/*.{ts,tsx}"],
-      rules: {
         "shadcn/no-restyle": [
           "error",
           {
@@ -501,6 +466,52 @@ export default defineConfig({
           "error",
           {
             allow: ["layout", "rounded-[inherit]"],
+          },
+        ],
+      },
+    },
+    {
+      files: ["apps/docs/src/**/*.{ts,tsx}", "apps/static-theme/src/**/*.{ts,tsx}"],
+      rules: {
+        "shadcn/no-raw-colors": "error",
+        "shadcn/no-inline-styles": "error",
+        "shadcn/no-unknown-classes": [
+          "error",
+          {
+            allow: ["not-prose"],
+          },
+        ],
+      },
+    },
+    {
+      files: ["apps/docs/src/og/**/*.{ts,tsx}", "apps/docs/src/app/og/**/*.{ts,tsx}"],
+      rules: {
+        "shadcn/no-inline-styles": "off",
+      },
+    },
+    {
+      files: ["packages/fuse/src/react-aria/grid-list/grid-list.tsx"],
+      rules: {
+        "shadcn/no-inline-styles": [
+          "error",
+          {
+            allow: ["pointerEvents"],
+          },
+        ],
+      },
+    },
+    {
+      files: [
+        "packages/fuse/src/icons/**",
+        "packages/fuse/src/illustrations/**",
+        "packages/fuse/src/components/emoji/**",
+      ],
+      rules: {
+        "shadcn/no-raw-colors": "off",
+        "shadcn/no-inline-styles": [
+          "error",
+          {
+            allow: ["maskType"],
           },
         ],
       },
@@ -560,17 +571,16 @@ export default defineConfig({
     {
       files: ["packages/fuse/src/styles/tv.ts"],
       rules: {
-        "no-restricted-imports": restrictImports({
-          paths: [...without(LIBRARY_IMPORTS, TAILWIND_VARIANTS_TV), TAILWIND_VARIANTS_TV_ONLY],
-        }),
+        "no-restricted-imports": restrictImports([
+          ...without(LIBRARY_IMPORTS, TAILWIND_VARIANTS_TV),
+          TAILWIND_VARIANTS_TV_ONLY,
+        ]),
       },
     },
     {
       files: ["packages/fuse/src/intl/create-string-dictionary.ts"],
       rules: {
-        "no-restricted-imports": restrictImports({
-          paths: without(LIBRARY_IMPORTS, LOCALIZED_STRING_DICTIONARY),
-        }),
+        "no-restricted-imports": restrictImports(without(LIBRARY_IMPORTS, LOCALIZED_STRING_DICTIONARY)),
       },
     },
     {
@@ -581,13 +591,13 @@ export default defineConfig({
         "packages/fuse/src/components/data-table-filter/*.test*.{ts,tsx}",
       ],
       rules: {
-        "no-restricted-imports": restrictImports({ paths: without(LIBRARY_IMPORTS, TANSTACK_TABLE) }),
+        "no-restricted-imports": restrictImports(without(LIBRARY_IMPORTS, TANSTACK_TABLE)),
       },
     },
     {
       files: ["packages/fuse/src/components/command-virtual/command-virtual.tsx"],
       rules: {
-        "no-restricted-imports": restrictImports({ paths: without(LIBRARY_IMPORTS, TANSTACK_VIRTUAL) }),
+        "no-restricted-imports": restrictImports(without(LIBRARY_IMPORTS, TANSTACK_VIRTUAL)),
       },
     },
     {
@@ -598,47 +608,6 @@ export default defineConfig({
         "typescript/no-unsafe-call": "off",
         "typescript/no-unsafe-return": "off",
         "typescript/no-unsafe-argument": "off",
-      },
-    },
-    {
-      files: ["packages/fuse/src/**/*.{ts,tsx}"],
-      rules: {
-        "fuse/defined-props-wiring": "error",
-        "fuse/declared-density-role": [
-          "error",
-          {
-            roles: "packages/fuse/src/theme/tokens/density-roles.ts",
-          },
-        ],
-        "fuse/no-base-ui-preview-menu": "error",
-        "fuse/overlay-root-override-last": "error",
-        "fuse/owned-class-tokens": [
-          "error",
-          {
-            owner: "components/overlay/overlay-classes.ts",
-            spellings: [
-              "z-50",
-              "z-60",
-              "origin-(--transform-origin)",
-              "text-xl font-medium",
-              "bg-popover text-popover-foreground",
-              "bg-dialog text-dialog-foreground",
-              "shadow-md ring-1 ring-foreground/10",
-            ],
-            superseded: [
-              {
-                spelling: "pointer-events-none absolute right-2 flex items-center justify-center",
-                replacement: "menuItemIndicatorClass from components/overlay/menu-row-classes.ts",
-              },
-              {
-                spelling: "-mx-1 my-1 h-px bg-border",
-                replacement: "menuSeparatorClass from components/overlay/menu-row-classes.ts",
-              },
-            ],
-          },
-        ],
-        "fuse/restricted-imports": restrictModules([TEMPORAL_POLYFILL]),
-        "fuse/state-face": "error",
       },
     },
     {
@@ -782,7 +751,7 @@ export default defineConfig({
       },
     },
     {
-      files: ["**/vitest.config.*", "**/vitest.workspace.*", "**/vite.config.*", "**/playwright.config.*"],
+      files: ["**/vitest.*", "**/vite.config.*", "**/playwright.config.*"],
       rules: {
         "fuse/no-test-retry": "error",
       },

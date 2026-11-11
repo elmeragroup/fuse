@@ -1,11 +1,11 @@
 import type { ESTree, Rule } from "@oxlint/plugins";
 
-import { descendants, parentOf, unwrap } from "../ast-walk.ts";
+import { descendants, unwrap } from "../ast-walk.ts";
 import { anyViolates } from "../quantify.ts";
-import { calleeTargets, enter, evaluate, memberName, product } from "../resolve.ts";
+import { calleeTargets, enter, evaluate, isApi, memberName, product } from "../resolve.ts";
 import type { ActivePath, Alt } from "../resolve.ts";
-import { stringLiteral } from "../static-text.ts";
-import { callSitesOf, reachOf, sharedName } from "../test-context.ts";
+import { staticText, stringLiteral } from "../static-text.ts";
+import { callSitesOf, reachOf } from "../test-context.ts";
 
 /** The calls that read a file's text, by their resolved last name. */
 const READS = new Set(["readFileSync", "readFile", "readFileString"]);
@@ -125,7 +125,7 @@ export const noSourceReadingTests: Rule = {
           // The template's literal chunks stay in place between its computed parts.
           return merge(
             expression.quasis.flatMap((quasi, index) => {
-              const text = quasi.value.cooked ?? quasi.value.raw;
+              const text = staticText(quasi);
               const part = expression.expressions[index];
               return part === undefined ? [text] : [text, part];
             }),
@@ -184,7 +184,7 @@ export const noSourceReadingTests: Rule = {
       if (value.kind === "loop") return [{ kind: "walk", node: value.iterable }];
       if (value.kind !== "parameter") return [];
       const fn = value.fn;
-      const holder = parentOf(fn);
+      const holder = fn.parent;
       if (holder?.type === "CallExpression" && holder.arguments.some((argument) => argument === fn)) {
         const callee = unwrap(holder.callee);
         return callee.type === "MemberExpression" ? [{ kind: "walk", node: callee.object }] : [];
@@ -245,17 +245,14 @@ export const noSourceReadingTests: Rule = {
      */
     const parsedAsJson = (read: ESTree.Node): boolean => {
       let value: ESTree.Node = read;
-      let consumer = parentOf(value);
+      let consumer = value.parent;
       while (consumer !== null && consumer.type !== "CallExpression" && unwrap(consumer) === unwrap(value)) {
         value = consumer;
-        consumer = parentOf(consumer);
+        consumer = consumer.parent;
       }
       if (consumer?.type !== "CallExpression" || !consumer.arguments.some((argument) => argument === value))
         return false;
-      return (
-        sharedName(calleeTargets(context, consumer.callee).map((target) => target?.path.join("."))) ===
-        "JSON.parse"
-      );
+      return isApi(context, consumer.callee, "JSON.parse");
     };
 
     return {

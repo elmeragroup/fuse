@@ -56,7 +56,7 @@ ruleTester.run("restricted-imports: named exports", restrictedImports, {
       filename: BUILD,
       errors: [{ messageId: "restricted" }],
     },
-    // Finding 1: a relative path that resolves to the writer's module is the writer's module.
+    // A relative path that resolves to the writer's module is the writer's module.
     {
       code: 'import { writeSourceExports } from "../scripts/generate-exports.ts";',
       options: writer,
@@ -69,7 +69,7 @@ ruleTester.run("restricted-imports: named exports", restrictedImports, {
       filename: BUILD,
       errors: [{ messageId: "restricted" }],
     },
-    // Finding 1: a key destructured from a dynamic import.
+    // A key destructured from a dynamic import.
     {
       code: 'const { writeSourceExports } = await import("./generate-exports.ts");',
       options: writer,

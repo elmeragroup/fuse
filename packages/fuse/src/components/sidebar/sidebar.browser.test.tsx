@@ -20,13 +20,7 @@ import {
   sidebarRoot,
 } from "../../../test/sidebar-browser-fixtures";
 import { DESCRIPTION_COPY, TITLE_COPY, TOGGLE_COPY } from "../../../test/sidebar-contract";
-import {
-  px,
-  renderThemed,
-  roleNamed,
-  stampDensity,
-  renderThemed as render,
-} from "../../../test/themed-browser-render";
+import { px, renderThemed, roleNamed, stampDensity } from "../../../test/themed-browser-render";
 import { Tooltip } from "../tooltip";
 import { Sidebar } from "./index";
 import { useSidebar } from "./sidebar";
@@ -726,7 +720,7 @@ describe("state", () => {
   describe("Sidebar committed state and update queue", () => {
     it("composes controlled notifications once and starts the next event from a rejected prop", async () => {
       const onChange = vi.fn<(open: boolean) => void>();
-      render(
+      renderThemed(
         withLocale(
           "en-US",
           <StrictMode>
@@ -762,7 +756,7 @@ describe("state", () => {
             <Probe />
           </Sidebar.Provider>
         );
-      const { rerender } = render(field(first));
+      const { rerender } = renderThemed(field(first));
       rerender(field(second));
       await userEvent.click(roleNamed("button", "Toggle sidebar"));
       expect(first).not.toHaveBeenCalled();

@@ -9,7 +9,7 @@ import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import { render } from "../../../test/browser-render";
 import { edgeInset } from "../../../test/inner-corner-specimens";
-import { TARGET_SIZE } from "../../../test/target-size";
+import { expectTargetBoxes } from "../../../test/target-size";
 import { fkasPrivate } from "../../../test/theme-fixtures";
 import {
   roleNamed,
@@ -81,19 +81,19 @@ describe("Tabs in a preflight consumer", () => {
         const tab = roleNamed("tab", "One");
         const list = roleNamed("tablist", "Sections");
         expect(tab.matches(":focus-visible"), `${fontSize} ${density}`).toBe(true);
-        expect(tab.getBoundingClientRect().height, `${fontSize} ${density} target`).toBeGreaterThanOrEqual(
-          TARGET_SIZE
-        );
-        // The shared ring is 2px wide and flush, so it reaches 2px past the trigger.
+        expectTargetBoxes([tab], `${fontSize} ${density}`);
+        // The focus ring reaches its width plus its offset past the trigger; the list must leave
+        // that room.
+        const ringStyle = getComputedStyle(tab);
+        const ring = Number.parseFloat(ringStyle.outlineWidth) + Number.parseFloat(ringStyle.outlineOffset);
+        expect(ring, `${fontSize} ${density} ring`).toBeGreaterThan(0);
         const tabBox = tab.getBoundingClientRect();
         const listBox = list.getBoundingClientRect();
         for (const edge of ["start", "end"] as const) {
-          expect(edgeInset(tab, list, edge), `${fontSize} ${density} ${edge}`).toBeGreaterThanOrEqual(2);
+          expect(edgeInset(tab, list, edge), `${fontSize} ${density} ${edge}`).toBeGreaterThanOrEqual(ring);
         }
-        // oxlint-disable-next-line fuse/no-geometry-assertions -- the shared 2px focus ring must fit inside the tab list, which clips it otherwise in a preflight host
-        expect(tabBox.top - listBox.top, `${fontSize} ${density} top`).toBeGreaterThanOrEqual(2);
-        // oxlint-disable-next-line fuse/no-geometry-assertions -- the shared 2px focus ring must fit inside the tab list, which clips it otherwise in a preflight host
-        expect(listBox.bottom - tabBox.bottom, `${fontSize} ${density} bottom`).toBeGreaterThanOrEqual(2);
+        expect(tabBox.top - listBox.top, `${fontSize} ${density} top`).toBeGreaterThanOrEqual(ring);
+        expect(listBox.bottom - tabBox.bottom, `${fontSize} ${density} bottom`).toBeGreaterThanOrEqual(ring);
         unmount();
       }
     }

@@ -81,12 +81,11 @@ Explain how you established the problem and checked the change. Record the focus
 test commands or manual checks you ran, the results and anything you could not
 check.
 
-- Behavior changes include a test that passes the
-  [authoring gate](.agents/skills/test-audit/SKILL.md#authoring-gate). The PR's Test
-  value section answers every gate question for each added or changed test, or says why
-  no test was added. Verification follows
-  [AGENTS.md](AGENTS.md#tests), including `pnpm check` before the final review pass.
-- Visual changes include before and after screenshots, not tests. For new UI, show the
+- The [authoring gate](.agents/skills/test-audit/SKILL.md#authoring-gate) decides
+  whether a change gets a test, and the PR's Test value section holds its answers.
+  Verification follows [AGENTS.md](AGENTS.md#tests), including `pnpm check` before the
+  final review pass.
+- Visual changes include before and after screenshots. For new UI, show the
   result. Add a short recording when motion, timing or interaction is part of the
   change. Upload screenshots and recordings to the PR and keep them out of the
   repository.

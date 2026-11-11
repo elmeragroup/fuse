@@ -1,7 +1,9 @@
 import type { Context, ESTree, Variable } from "@oxlint/plugins";
 
-import { descendants, functionNameOf, isFunction, parentOf, unwrap, within } from "./ast-walk.ts";
+import { descendants, functionNameOf, isFunction, unwrap, within } from "./ast-walk.ts";
+import { allAgree } from "./quantify.ts";
 import {
+  calleeApis,
   calleeTargets,
   enter,
   evaluate,
@@ -32,7 +34,7 @@ const TEST_ROOTS = new Set(["it", "test", "bench"]);
 const HOOK_APIS = ["beforeAll", "beforeEach"] as const;
 
 /** A setup hook API. */
-export type HookApi = (typeof HOOK_APIS)[number];
+type HookApi = (typeof HOOK_APIS)[number];
 
 /** The chain steps between `expect(…)` and its matcher that change how, not what, it asserts. */
 const MODIFIERS = new Set(["not", "resolves", "rejects"]);
@@ -58,7 +60,7 @@ const BRANCHES = new Set([
 export type Certainty = "guaranteed" | "possible";
 
 /** One `expect(actual).matcher(...expected)` call, read off its syntax. */
-export type Assertion = {
+type Assertion = {
   /**
    * The values under assertion: the entry call's first argument, or every value an `expect.poll`
    * callback returns.
@@ -71,10 +73,10 @@ export type Assertion = {
 };
 
 /** One call that hands a function to a test API or a setup hook, and how surely that API runs it. */
-export type Registration = { readonly call: ESTree.CallExpression; readonly certainty: Certainty };
+type Registration = { readonly call: ESTree.CallExpression; readonly certainty: Certainty };
 
 /** A setup hook registered in a suite. */
-export type Hook = {
+type Hook = {
   readonly fn: ESTree.Node;
   readonly api: HookApi;
   readonly call: ESTree.CallExpression;
@@ -85,7 +87,7 @@ export type Hook = {
  * One way a body runs: the setup hooks that run before it, in order, or none when it may run
  * outside the runner (a `possible` registration's other alternatives may call it directly).
  */
-export type Execution = { readonly before: ReadonlyArray<Hook> };
+type Execution = { readonly before: ReadonlyArray<Hook> };
 
 /**
  * The first name every alternative of a callee reaches, through calls and members: `it` for
@@ -103,22 +105,9 @@ export function runnerRoots(context: Context, callee: ESTree.Node): Array<string
   return calleeTargets(context, chain).map((target) => target?.path.at(0));
 }
 
-/**
- * The API a callee names in every alternative, or `undefined` when its alternatives differ.
- *
- * @param names - One name per alternative.
- * @returns The shared name.
- */
-export function sharedName(names: ReadonlyArray<string | undefined>): string | undefined {
-  const [first, ...rest] = names;
-  return first !== undefined && rest.every((name) => name === first) ? first : undefined;
-}
-
 /** Every API a call may name in full, such as `vi.useFakeTimers` or `beforeEach`, one per alternative. */
 function apisOf(context: Context, call: ESTree.Node): Array<string | undefined> {
-  return call.type === "CallExpression"
-    ? calleeTargets(context, call.callee).map((target) => target?.path.join("."))
-    : [];
+  return call.type === "CallExpression" ? calleeApis(context, call.callee) : [];
 }
 
 /**
@@ -153,11 +142,15 @@ export function assertionOf(context: Context, call: ESTree.CallExpression): Asse
   return { actuals: [...new Set(actuals)], matcher, expected: call.arguments };
 }
 
-/** The functions one file registers: tests and hooks by every registration, page callbacks by call. */
+/**
+ * The functions one file registers: tests and hooks by every registration, page callbacks by call;
+ * and the JSX elements that render each local component, by the component's binding.
+ */
 type Registry = {
   readonly tests: ReadonlyMap<ESTree.Node, ReadonlyArray<Registration>>;
   readonly hooks: ReadonlyArray<Hook>;
   readonly page: ReadonlyMap<ESTree.Node, ReadonlyArray<ESTree.CallExpression>>;
+  readonly renders: ReadonlyMap<Variable, ReadonlyArray<ESTree.JSXOpeningElement>>;
 };
 
 /** Each file's registry, built once per program. */
@@ -181,7 +174,13 @@ function registryOf(context: Context): Registry {
   const tests = new Map<ESTree.Node, Registration[]>();
   const hooks: Hook[] = [];
   const page = new Map<ESTree.Node, ESTree.CallExpression[]>();
+  const renders = new Map<Variable, ESTree.JSXOpeningElement[]>();
   for (const node of descendants(context, program, "into-functions")) {
+    if (node.type === "JSXOpeningElement") {
+      const component = variableOf(context, node.name);
+      if (component !== undefined) addTo(renders, component, node);
+      continue;
+    }
     if (node.type !== "CallExpression") continue;
     const roots = runnerRoots(context, node.callee);
     const isTest = roots.some((root) => root !== undefined && TEST_ROOTS.has(root));
@@ -189,8 +188,8 @@ function registryOf(context: Context): Registry {
     const hookApis = HOOK_APIS.filter((api) => apis.includes(api));
     const isEvaluate = EVALUATES.has(memberName(node.callee) ?? "");
     if (!isTest && hookApis.length === 0 && !isEvaluate) continue;
-    const testCertainty: Certainty = sharedName(roots) !== undefined && isTest ? "guaranteed" : "possible";
-    const hookCertainty: Certainty = sharedName(apis) === undefined ? "possible" : "guaranteed";
+    const testCertainty: Certainty = allAgree(roots) !== undefined && isTest ? "guaranteed" : "possible";
+    const hookCertainty: Certainty = allAgree(apis) === undefined ? "possible" : "guaranteed";
     for (const argument of node.arguments) {
       for (const alternative of evaluate(context, argument)) {
         if (alternative.kind !== "function") continue;
@@ -201,7 +200,7 @@ function registryOf(context: Context): Registry {
       }
     }
   }
-  const registry: Registry = { tests, hooks, page };
+  const registry: Registry = { tests, hooks, page, renders };
   REGISTRIES.set(program, registry);
   return registry;
 }
@@ -217,7 +216,7 @@ function registryOf(context: Context): Registry {
  */
 export function positionIn(node: ESTree.Node, body: ESTree.Node): Certainty | undefined {
   let certainty: Certainty = "guaranteed";
-  for (let parent = parentOf(node); parent !== null; parent = parent.parent) {
+  for (let parent = node.parent; parent !== null; parent = parent.parent) {
     if (parent === body) return certainty;
     if (isFunction(parent)) return undefined;
     if (BRANCHES.has(parent.type)) certainty = "possible";
@@ -227,7 +226,7 @@ export function positionIn(node: ESTree.Node, body: ESTree.Node): Certainty | un
 
 /** The suite a call is written in: the nearest function around it, or the module. */
 function suiteOf(call: ESTree.Node): ESTree.Node {
-  for (let parent = parentOf(call); parent !== null; parent = parent.parent) {
+  for (let parent = call.parent; parent !== null; parent = parent.parent) {
     if (isFunction(parent) || parent.type === "Program") return parent;
   }
   return call;
@@ -360,10 +359,7 @@ export function evidenceSets(context: Context, node: ESTree.Node): ESTree.Node[]
       ]);
     }
   }
-  for (let parent = node.parent; parent !== null; parent = parent.parent) {
-    if (isFunction(parent) || parent.type === "Program") return [[parent]];
-  }
-  return [[node]];
+  return [[suiteOf(node)]];
 }
 
 /**
@@ -393,19 +389,26 @@ export function reachOf(context: Context, roots: ReadonlyArray<ESTree.Node>): ES
   return regions;
 }
 
-/** The call sites of a variable's function, following `const alias = fn` aliases. */
-function sitesOfVariable(context: Context, variable: Variable, path: ActivePath): ESTree.CallExpression[] {
+/** A variable and every `const alias = variable` that names its value again, transitively. */
+function aliasesOf(context: Context, variable: Variable, path: ActivePath): Variable[] {
   const inner = enter(path, variable);
   if (inner === undefined) return [];
-  return variable.references.flatMap((reference) => {
-    const site = parentOf(reference.identifier);
-    if (site?.type === "CallExpression" && site.callee === reference.identifier) return [site];
-    if (site?.type === "VariableDeclarator" && site.init === reference.identifier) {
+  return [
+    variable,
+    ...variable.references.flatMap((reference) => {
+      const site = reference.identifier.parent;
+      if (site.type !== "VariableDeclarator" || site.init !== reference.identifier) return [];
       const alias = variableOf(context, site.id);
-      return alias === undefined ? [] : sitesOfVariable(context, alias, inner);
-    }
-    return [];
-  });
+      return alias === undefined ? [] : aliasesOf(context, alias, inner);
+    }),
+  ];
+}
+
+/** The bindings that name a local function: its own name and every alias of it. */
+function namesOf(context: Context, fn: ESTree.Node): Variable[] {
+  const name = functionNameOf(fn);
+  const variable = name === undefined ? undefined : variableOf(context, name);
+  return variable === undefined ? [] : aliasesOf(context, variable, new Set());
 }
 
 /**
@@ -417,7 +420,23 @@ function sitesOfVariable(context: Context, variable: Variable, path: ActivePath)
  * @returns The call expressions, or none for an anonymous callback.
  */
 export function callSitesOf(context: Context, fn: ESTree.Node): ESTree.CallExpression[] {
-  const name = functionNameOf(fn);
-  const variable = name === undefined ? undefined : variableOf(context, name);
-  return variable === undefined ? [] : sitesOfVariable(context, variable, new Set());
+  return namesOf(context, fn).flatMap((variable) =>
+    variable.references.flatMap((reference) => {
+      const site = reference.identifier.parent;
+      return site.type === "CallExpression" && site.callee === reference.identifier ? [site] : [];
+    })
+  );
+}
+
+/**
+ * Where a local component is rendered: every JSX element whose tag is its name or an alias of it,
+ * which runs the component as a call site runs a helper.
+ *
+ * @param context - The rule context.
+ * @param fn - A function node.
+ * @returns The opening elements, or none for a function no element renders.
+ */
+export function renderSitesOf(context: Context, fn: ESTree.Node): ReadonlyArray<ESTree.JSXOpeningElement> {
+  const { renders } = registryOf(context);
+  return namesOf(context, fn).flatMap((variable) => renders.get(variable) ?? []);
 }

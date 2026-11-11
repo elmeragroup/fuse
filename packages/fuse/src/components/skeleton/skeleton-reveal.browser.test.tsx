@@ -485,7 +485,7 @@ describe("lifecycle", () => {
  * the browser tests'.
  */
 describe("server HTML", () => {
-  type Invoice = { readonly number: string };
+  type ServerInvoice = { readonly number: string };
 
   /**
    * Server-renders a tree inside the theme scope every suite shares, as a host's page would emit
@@ -496,13 +496,13 @@ describe("server HTML", () => {
     return new DOMParser().parseFromString(`<body>${markup}</body>`, "text/html");
   }
 
-  function invoiceDocument(data: Invoice | null): Document {
+  function invoiceDocument(data: ServerInvoice | null): Document {
     return serverDocument(
-      createElement(SkeletonReveal<Invoice>, {
+      createElement(SkeletonReveal<ServerInvoice>, {
         data,
         sample: { number: "Invoice 0000" },
         label: "Henter faktura",
-        children: (invoice: Invoice) =>
+        children: (invoice: ServerInvoice) =>
           createElement(
             "label",
             null,
@@ -513,60 +513,51 @@ describe("server HTML", () => {
     );
   }
 
-  /** The reveal's parts have no role in unhydrated markup; locate them by data-slot. */
-  function part(document: Document, slot: string): Element | null {
-    return document.querySelector(`[data-slot="${slot}"]`);
-  }
-
-  describe("SkeletonReveal server markup", () => {
-    it("is busy and labelled, with an inert skeleton hidden from assistive tech and no bones yet", () => {
-      const document = invoiceDocument(null);
-      expect(part(document, "skeleton-reveal")?.getAttribute("aria-busy")).toBe("true");
-      expect(part(document, "skeleton-reveal-label")?.textContent).toBe("Henter faktura");
-      const skeleton = part(document, "skeleton-reveal-skeleton");
-      expect(skeleton?.getAttribute("aria-hidden")).toBe("true");
-      expect(skeleton?.hasAttribute("inert")).toBe(true);
-      // Not measured: the stylesheet's first-paint fallback applies until the client draws bones.
-      expect(skeleton?.hasAttribute("data-measured")).toBe(false);
-      expect(part(document, "skeleton-reveal-bones")?.children).toHaveLength(0);
-      expect(part(document, "skeleton-reveal-ghost")?.textContent).toBe("Invoice 0000");
-      expect(part(document, "skeleton-reveal-content")).toBeNull();
-    });
-
-    it("defaults the label to the locale dictionary", () => {
-      const label = (locale: "nb-NO" | "en-US"): string | null | undefined =>
-        part(
-          serverDocument(
-            createElement(LocaleProvider, {
-              locale,
-              children: createElement(SkeletonReveal, {
-                loading: true,
-                children: createElement("p", null, "Sum"),
-              }),
-            })
-          ),
-          "skeleton-reveal-label"
-        )?.textContent;
-      expect([label("nb-NO"), label("en-US")]).toEqual(["Laster", "Loading"]);
-    });
+  it("is busy and labelled, with an inert skeleton hidden from assistive tech and no bones yet", () => {
+    const document = invoiceDocument(null);
+    expect(querySlot("skeleton-reveal", document)?.getAttribute("aria-busy")).toBe("true");
+    expect(querySlot("skeleton-reveal-label", document)?.textContent).toBe("Henter faktura");
+    const skeleton = querySlot("skeleton-reveal-skeleton", document);
+    expect(skeleton?.getAttribute("aria-hidden")).toBe("true");
+    expect(skeleton?.hasAttribute("inert")).toBe(true);
+    // Not measured: the stylesheet's first-paint fallback applies until the client draws bones.
+    expect(skeleton?.hasAttribute("data-measured")).toBe(false);
+    expect(querySlot("skeleton-reveal-bones", document)?.children).toHaveLength(0);
+    expect(querySlot("skeleton-reveal-ghost", document)?.textContent).toBe("Invoice 0000");
+    expect(querySlot("skeleton-reveal-content", document)).toBeNull();
   });
 
-  describe("SkeletonReveal server markup", () => {
-    it("keeps the ghost's controls out of their form from the first paint", () => {
-      const document = invoiceDocument(null);
-      const input = part(document, "skeleton-reveal-ghost")?.querySelector("input");
-      expect(input?.closest("fieldset")?.disabled).toBe(true);
-      expect(input?.matches(":disabled")).toBe(true);
-    });
+  it("defaults the label to the locale dictionary", () => {
+    const label = (locale: "nb-NO" | "en-US"): string | null | undefined =>
+      querySlot(
+        "skeleton-reveal-label",
+        serverDocument(
+          createElement(LocaleProvider, {
+            locale,
+            children: createElement(SkeletonReveal, {
+              loading: true,
+              children: createElement("p", null, "Sum"),
+            }),
+          })
+        )
+      )?.textContent;
+    expect([label("nb-NO"), label("en-US")]).toEqual(["Laster", "Loading"]);
+  });
 
-    it("renders data as enabled content, not busy, with no label or skeleton", () => {
-      const document = invoiceDocument({ number: "Invoice 4711" });
-      expect(part(document, "skeleton-reveal")?.getAttribute("aria-busy")).toBe("false");
-      const content = part(document, "skeleton-reveal-content");
-      expect(content?.textContent).toBe("Invoice 4711");
-      expect(content?.querySelector("input")?.matches(":disabled")).toBe(false);
-      expect(part(document, "skeleton-reveal-label")).toBeNull();
-      expect(part(document, "skeleton-reveal-skeleton")).toBeNull();
-    });
+  it("keeps the ghost's controls out of their form from the first paint", () => {
+    const document = invoiceDocument(null);
+    const input = querySlot("skeleton-reveal-ghost", document)?.querySelector("input");
+    expect(input?.closest("fieldset")?.disabled).toBe(true);
+    expect(input?.matches(":disabled")).toBe(true);
+  });
+
+  it("renders data as enabled content, not busy, with no label or skeleton", () => {
+    const document = invoiceDocument({ number: "Invoice 4711" });
+    expect(querySlot("skeleton-reveal", document)?.getAttribute("aria-busy")).toBe("false");
+    const content = querySlot("skeleton-reveal-content", document);
+    expect(content?.textContent).toBe("Invoice 4711");
+    expect(content?.querySelector("input")?.matches(":disabled")).toBe(false);
+    expect(querySlot("skeleton-reveal-label", document)).toBeNull();
+    expect(querySlot("skeleton-reveal-skeleton", document)).toBeNull();
   });
 });

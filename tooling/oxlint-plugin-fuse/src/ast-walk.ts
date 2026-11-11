@@ -29,22 +29,12 @@ export function unwrap(node: ESTree.Node): ESTree.Node {
  * @param node - Any AST node.
  * @returns Whether it is an arrow, a function expression or a function declaration.
  */
-export function isFunction(node: ESTree.Node): boolean {
+export function isFunction(node: ESTree.Node): node is ESTree.Function | ESTree.ArrowFunctionExpression {
   return (
     node.type === "ArrowFunctionExpression" ||
     node.type === "FunctionExpression" ||
     node.type === "FunctionDeclaration"
   );
-}
-
-/**
- * A node's parent, typed as the parser can leave it: `null` at the module.
- *
- * @param node - Any AST node.
- * @returns Its parent, or `null`.
- */
-export function parentOf(node: ESTree.Node): ESTree.Node | null {
-  return node.parent;
 }
 
 /**
@@ -69,24 +59,22 @@ export function within(node: ESTree.Node, root: ESTree.Node): boolean {
  */
 export function functionNameOf(fn: ESTree.Node): ESTree.Node | undefined {
   if (fn.type === "FunctionDeclaration") return fn.id ?? undefined;
-  const holder = parentOf(fn);
+  const holder = fn.parent;
   return holder?.type === "VariableDeclarator" ? holder.id : undefined;
 }
 
 /** Whether a value is an AST node, judged by the parser's own visitor keys. */
-// oxlint-disable-next-line anti-slop/no-unknown-parameters -- this guard is the parse step: a node's child slots come back from Object.entries untyped
+// oxlint-disable-next-line anti-slop/no-unknown-parameters -- this guard is the parse step: a node's child slots come back from their property descriptors untyped
 function isNode(value: unknown, keys: Readonly<Record<string, readonly string[]>>): value is ESTree.Node {
   return value instanceof Object && "type" in value && Object.hasOwn(keys, String(value.type));
 }
 
-/** A node's child nodes, in source order. */
+/** A node's child nodes, in visitor-key order. */
 function childrenOf(context: Context, node: ESTree.Node): ESTree.Node[] {
   const keys = context.sourceCode.visitorKeys;
-  const walked = new Set(keys[node.type] ?? []);
-  const entries: Array<[string, unknown]> = Object.entries(node);
   const children: ESTree.Node[] = [];
-  for (const [key, value] of entries) {
-    if (!walked.has(key)) continue;
+  for (const key of keys[node.type] ?? []) {
+    const value: unknown = Object.getOwnPropertyDescriptor(node, key)?.value;
     const values: unknown[] = Array.isArray(value) ? value : [value];
     for (const item of values) if (isNode(item, keys)) children.push(item);
   }

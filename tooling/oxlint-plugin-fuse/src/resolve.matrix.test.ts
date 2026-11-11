@@ -51,6 +51,16 @@ type Entry = {
   readonly alternatives:
     | { readonly other: string; readonly messageId: string }
     | { readonly excluded: string };
+  /**
+   * The product dimension, on the entries it runs on: a value that violates, one that does not,
+   * the violation, and the operators a value's type cannot pass through, with their reasons.
+   */
+  readonly product?: {
+    readonly violating: string;
+    readonly benign: string;
+    readonly messageId: string;
+    readonly excluded: Readonly<Partial<Record<Operator, string>>>;
+  };
 };
 
 const PAGE_ONLY =
@@ -59,6 +69,23 @@ const OTHER_MODULE =
   "step 7 names an import's module and export; the imported value itself lives in another file";
 const NOT_GLOBAL = "step 8 names globals, and this entry point's value is no global";
 const MATCHER_KEY = "a matcher is a key read off the expect chain, so only step 4's static keys apply";
+const NOT_A_STRING = "the value is no string, so a string operation yields another value entirely";
+
+/** The product exclusions of a value that is no string: every operator that makes or reads a string. */
+const STRING_OPERATORS_EXCLUDED = {
+  template: NOT_A_STRING,
+  "+": NOT_A_STRING,
+  join: NOT_A_STRING,
+  "string method": NOT_A_STRING,
+} as const;
+
+/** Where every matrix case is linted, unless its entry names a test file of its own. */
+const MATRIX_FILE = "/repo/packages/fuse/src/matrix.test.tsx";
+
+/** A case's code: the setup statements, if any, then the code around the hole. */
+function caseCode(setup: string, body: string): string {
+  return setup === "" ? body : `${setup}\n${body}`;
+}
 
 /** A test body that fakes the timers before it schedules one. */
 const FAKED_BODY = "() => {\n  vi.useFakeTimers();\n  setTimeout(fire, 100);\n}";
@@ -70,6 +97,12 @@ const ENTRIES: ReadonlyArray<Entry> = [
     around: (hole) => `${hole}(fire, 100);`,
     verdict: { messageId: "delay" },
     alternatives: { other: "noop", messageId: "delay" },
+    product: {
+      violating: "setTimeout",
+      benign: "noop",
+      messageId: "delay",
+      excluded: STRING_OPERATORS_EXCLUDED,
+    },
     cells: {
       "0 direct": { writings: [["", "setTimeout"]] },
       "1 wrapper": { writings: [["", "(setTimeout as typeof setTimeout)"]] },
@@ -127,6 +160,7 @@ const ENTRIES: ReadonlyArray<Entry> = [
     around: (hole) => `readFileSync(${hole}, "utf8");`,
     verdict: { messageId: "source" },
     alternatives: { other: '"a.json"', messageId: "source" },
+    product: { violating: '"src/button.tsx"', benign: '"a.json"', messageId: "source", excluded: {} },
     cells: {
       "0 direct": { writings: [["", '"src/button.tsx"']] },
       "1 wrapper": { writings: [["", '("src/button.tsx" as string)']] },
@@ -151,6 +185,12 @@ const ENTRIES: ReadonlyArray<Entry> = [
     around: (hole) => `it("opens", ${hole}, () => {});`,
     verdict: { messageId: "rerun" },
     alternatives: { other: "{ timeout: 1 }", messageId: "rerun" },
+    product: {
+      violating: "{ retry: 2 }",
+      benign: "{ timeout: 1 }",
+      messageId: "rerun",
+      excluded: STRING_OPERATORS_EXCLUDED,
+    },
     cells: {
       "0 direct": { writings: [["", "{ retry: 2 }"]] },
       "1 wrapper": { writings: [["", "({ retry: 2 } as Options)"]] },
@@ -174,6 +214,17 @@ const ENTRIES: ReadonlyArray<Entry> = [
     around: (hole) => `await sleep(${hole});`,
     verdict: { valid: true },
     alternatives: { other: "100", messageId: "delay" },
+    product: {
+      violating: "100",
+      benign: "0",
+      messageId: "delay",
+      excluded: {
+        template: "a template makes a string, and a string delay is no number the rule reads",
+        join: "join makes a string, and a string delay is no number the rule reads",
+        "string method": NOT_A_STRING,
+        "+": '`+ ""` makes a string; numeric `+` is the step-10 cell of the measurement entry',
+      },
+    },
     cells: {
       "0 direct": { writings: [["", "0"]] },
       "1 wrapper": { writings: [["", "(0 as number)"]] },
@@ -197,6 +248,7 @@ const ENTRIES: ReadonlyArray<Entry> = [
     around: (hole) => `render(<Button className="marker-x" />);\nexpect(button).toHaveClass(${hole});`,
     verdict: { valid: true },
     alternatives: { other: '"other"', messageId: "pinned" },
+    product: { violating: '"h-9"', benign: '"marker-x"', messageId: "pinned", excluded: {} },
     cells: {
       "0 direct": { writings: [["", '"marker-x"']] },
       "1 wrapper": { writings: [["", '("marker-x" as string)']] },
@@ -225,6 +277,17 @@ const ENTRIES: ReadonlyArray<Entry> = [
     around: (hole) => `expect(${hole}).toBe(320);`,
     verdict: { messageId: "pixel" },
     alternatives: { other: "3", messageId: "pixel" },
+    product: {
+      violating: "panel.offsetWidth",
+      benign: "3",
+      messageId: "pixel",
+      excluded: {
+        template: NOT_A_STRING,
+        join: NOT_A_STRING,
+        "string method": NOT_A_STRING,
+        "+": '`+ ""` turns the length into a string; arithmetic on lengths is the measurement\'s own rule',
+      },
+    },
     cells: {
       "0 direct": { writings: [["", "panel.offsetWidth"]] },
       "1 wrapper": { writings: [["", "(panel.offsetWidth as number)"]] },
@@ -286,6 +349,12 @@ const ENTRIES: ReadonlyArray<Entry> = [
     around: (hole) => `log(${hole}.getTime() - start);`,
     verdict: { messageId: "budget" },
     alternatives: { other: "new Date(0)", messageId: "budget" },
+    product: {
+      violating: "new Date()",
+      benign: "new Date(0)",
+      messageId: "budget",
+      excluded: STRING_OPERATORS_EXCLUDED,
+    },
     cells: {
       "0 direct": { writings: [["", "new Date()"]] },
       "1 wrapper": { writings: [["", "(new Date() as Date)"]] },
@@ -417,8 +486,8 @@ for (const entry of ENTRIES) {
       : cell.writings.map(([setup, expression], index) => {
           const testCase = {
             name: `${entry.name} × step ${step}${cell.writings.length > 1 ? ` (${index + 1})` : ""}`,
-            code: `${setup}${setup === "" ? "" : "\n"}${entry.around(expression)}`,
-            filename: entry.filename ?? "/repo/packages/fuse/src/matrix.test.tsx",
+            code: caseCode(setup, entry.around(expression)),
+            filename: entry.filename ?? MATRIX_FILE,
           };
           return testCase;
         })
@@ -435,8 +504,11 @@ for (const entry of ENTRIES) {
             [alternatives.other, value],
           ].map(([first, second], order) => ({
             name: `${entry.name} × alternatives (${order === 0 ? "value first" : "value second"})`,
-            code: `${setup}${setup === "" ? "" : "\n"}function pick() {\n  if (flag) return ${first};\n  return ${second};\n}\n${entry.around("pick()")}`,
-            filename: entry.filename ?? "/repo/packages/fuse/src/matrix.test.tsx",
+            code: caseCode(
+              setup,
+              `function pick() {\n  if (flag) return ${first};\n  return ${second};\n}\n${entry.around("pick()")}`
+            ),
+            filename: entry.filename ?? MATRIX_FILE,
             errors: [{ messageId: alternatives.messageId }],
           }))
         );
@@ -451,8 +523,8 @@ for (const entry of ENTRIES) {
             : [
                 {
                   name: `${entry.name} × step 9 condition`,
-                  code: `${setup}${setup === "" ? "" : "\n"}${entry.around(`(flag ? ${value} : ${value})`)}`,
-                  filename: entry.filename ?? "/repo/packages/fuse/src/matrix.test.tsx",
+                  code: caseCode(setup, entry.around(`(flag ? ${value} : ${value})`)),
+                  filename: entry.filename ?? MATRIX_FILE,
                 },
               ]
         );
@@ -507,126 +579,22 @@ const OPERATORS = {
   wrapper: (first, second) => ["", `((flag ? ${first} : ${second}) as never)`],
 } satisfies Readonly<Record<Operator, (first: string, second: string, benign: string) => Writing>>;
 
-/** An entry of the product dimension: a value that violates, one that does not, and where they go. */
-type ProductEntry = {
-  readonly rule: Rule;
-  readonly name: string;
-  readonly filename?: string;
-  readonly around: (hole: string) => string;
-  readonly violating: string;
-  readonly benign: string;
-  readonly messageId: string;
-  readonly excluded: Readonly<Partial<Record<Operator, string>>>;
-};
-
-const NOT_A_STRING = "the value is no string, so a string operation yields another value entirely";
-
-const PRODUCT_ENTRIES: ReadonlyArray<ProductEntry> = [
-  {
-    rule: noFixedDelay,
-    name: "callee (setTimeout)",
-    around: (hole) => `${hole}(fire, 100);`,
-    violating: "setTimeout",
-    benign: "noop",
-    messageId: "delay",
-    excluded: {
-      template: NOT_A_STRING,
-      "+": NOT_A_STRING,
-      join: NOT_A_STRING,
-      "string method": NOT_A_STRING,
-    },
-  },
-  {
-    rule: noSourceReadingTests,
-    name: "path (code module)",
-    around: (hole) => `readFileSync(${hole}, "utf8");`,
-    violating: '"src/button.tsx"',
-    benign: '"a.json"',
-    messageId: "source",
-    excluded: {},
-  },
-  {
-    rule: noTestRetry,
-    name: "options (retry)",
-    filename: "/repo/packages/fuse/src/button.test.ts",
-    around: (hole) => `it("opens", ${hole}, () => {});`,
-    violating: "{ retry: 2 }",
-    benign: "{ timeout: 1 }",
-    messageId: "rerun",
-    excluded: {
-      template: NOT_A_STRING,
-      "+": NOT_A_STRING,
-      join: NOT_A_STRING,
-      "string method": NOT_A_STRING,
-    },
-  },
-  {
-    rule: noFixedDelay,
-    name: "delay (zero)",
-    around: (hole) => `await sleep(${hole});`,
-    violating: "100",
-    benign: "0",
-    messageId: "delay",
-    excluded: {
-      template: "a template makes a string, and a string delay is no number the rule reads",
-      join: "join makes a string, and a string delay is no number the rule reads",
-      "string method": NOT_A_STRING,
-      "+": '`+ ""` makes a string; numeric `+` is the step-10 cell of the measurement entry',
-    },
-  },
-  {
-    rule: noClassAssertions,
-    name: "expected class (supplied marker)",
-    around: (hole) => `render(<Button className="marker-x" />);\nexpect(button).toHaveClass(${hole});`,
-    violating: '"h-9"',
-    benign: '"marker-x"',
-    messageId: "pinned",
-    excluded: {},
-  },
-  {
-    rule: noGeometryAssertions,
-    name: "measurement (offsetWidth)",
-    around: (hole) => `expect(${hole}).toBe(320);`,
-    violating: "panel.offsetWidth",
-    benign: "3",
-    messageId: "pixel",
-    excluded: {
-      template: NOT_A_STRING,
-      join: NOT_A_STRING,
-      "string method": NOT_A_STRING,
-      "+": '`+ ""` turns the length into a string; arithmetic on lengths is the measurement\'s own rule',
-    },
-  },
-  {
-    rule: noWallClock,
-    name: "clock receiver (new Date)",
-    around: (hole) => `log(${hole}.getTime() - start);`,
-    violating: "new Date()",
-    benign: "new Date(0)",
-    messageId: "budget",
-    excluded: {
-      template: NOT_A_STRING,
-      "+": NOT_A_STRING,
-      join: NOT_A_STRING,
-      "string method": NOT_A_STRING,
-    },
-  },
-];
-
-for (const entry of PRODUCT_ENTRIES) {
+for (const entry of ENTRIES) {
+  const product = entry.product;
+  if (product === undefined) continue;
   const invalid = Object.entries(OPERATORS).flatMap(([operator, write]) =>
-    operator in entry.excluded
+    operator in product.excluded
       ? []
       : [
-          [entry.violating, entry.benign],
-          [entry.benign, entry.violating],
+          [product.violating, product.benign],
+          [product.benign, product.violating],
         ].map(([first, second], order) => {
-          const [setup, expression] = write(first ?? "", second ?? "", entry.benign);
+          const [setup, expression] = write(first ?? "", second ?? "", product.benign);
           return {
             name: `${entry.name} × product ${operator} (${order === 0 ? "violating first" : "violating second"})`,
-            code: `${setup}${setup === "" ? "" : "\n"}${entry.around(expression)}`,
-            filename: entry.filename ?? "/repo/packages/fuse/src/matrix.test.tsx",
-            errors: [{ messageId: entry.messageId }],
+            code: caseCode(setup, entry.around(expression)),
+            filename: entry.filename ?? MATRIX_FILE,
+            errors: [{ messageId: product.messageId }],
           };
         })
   );
@@ -710,7 +678,7 @@ for (const { rule, capture, messageId } of CAPTURES) {
     (["guaranteed", "possible"] as const).map((certainty) => ({
       name: `${cell.name} × ${certainty}`,
       code: cell[certainty].code(capture),
-      filename: "/repo/packages/fuse/src/matrix.test.tsx",
+      filename: MATRIX_FILE,
       covered: cell[certainty].covered,
     }))
   );

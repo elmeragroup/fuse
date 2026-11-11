@@ -22,10 +22,8 @@ needs each of them. -->
 
 ## Test value
 
-<!-- For each added or changed test, answer every question of the authoring gate in
-.agents/skills/test-audit/SKILL.md#authoring-gate. If you added no test, say why: no behavior
-changed, the keeper already goes red, or screenshots and recordings prove the visual or motion
-change. -->
+<!-- The answers to the authoring gate in .agents/skills/test-audit/SKILL.md#authoring-gate:
+every question for each added or changed test, or the gate's reason for adding none. -->
 
 ## Verification
 

@@ -1,8 +1,8 @@
 import type { ESTree, Rule } from "@oxlint/plugins";
 
-import { clockTracker, realmOf } from "../fake-clock.ts";
+import { isSimulated } from "../fake-clock.ts";
 import type { ClockApi } from "../fake-clock.ts";
-import { anyViolates } from "../quantify.ts";
+import { allQualify, anyViolates } from "../quantify.ts";
 import { calleeNames, evaluate } from "../resolve.ts";
 import type { Alt } from "../resolve.ts";
 import { assertionOf } from "../test-context.ts";
@@ -24,7 +24,8 @@ const CLOCK_READS = new Map<string, ClockApi>([
  * `performance.now()`, `process.hrtime()` and `new Date()`, and `date.getTime()` reads the time its
  * date captured at construction. A budget measured on the machine running the test flakes under
  * load and proves nothing a user sees. Reading the clock for a unique name or to seed a fake clock
- * stays allowed.
+ * stays allowed, and so does offsetting a capture by a number in every alternative
+ * (`Date.now() - HOUR`), which builds a timestamp rather than measuring one.
  *
  * Scope: follows what `resolve.ts` follows, for the capture and every callee, and judges coverage
  * as `fake-clock.ts` does. Beyond that: a clock change inside a nested function, or at module or
@@ -42,10 +43,8 @@ export const noWallClock: Rule = {
     schema: [],
   },
   create(context) {
-    const clocks = clockTracker(context);
     /** A clock capture: where the time is taken (which decides its coverage) and the API it reads. */
     type Capture = { readonly at: ESTree.Node; readonly api: ClockApi };
-    const candidates: Array<{ readonly node: ESTree.Node; readonly values: ReadonlyArray<Alt> }> = [];
 
     /** Where an alternative that is `new Date()` with no argument captures the time: its construction. */
     const constructedNow = (alternative: Alt): ESTree.Node | undefined =>
@@ -80,30 +79,26 @@ export const noWallClock: Rule = {
 
     /** Whether one alternative captures the time where no simulated clock covers it. */
     const onWallClock = (alternative: Alt): boolean =>
-      capturesOf(alternative).some(({ at, api }) => !clocks.covers(at, api, realmOf(context, at)));
+      capturesOf(alternative).some(({ at, api }) => !isSimulated(context, at, api));
+
+    /** Whether a value is a number in every alternative: an offset, not a second capture. */
+    const isOffset = (values: ReadonlyArray<Alt>): boolean =>
+      allQualify(values, (alternative) => alternative.kind === "number");
 
     return {
       BinaryExpression(node) {
         if (node.operator !== "-") return;
-        // Each operand is its own value, judged on its own.
-        candidates.push(
-          { node, values: evaluate(context, node.left) },
-          { node, values: evaluate(context, node.right) }
-        );
+        const left = evaluate(context, node.left);
+        const right = evaluate(context, node.right);
+        // A capture offset by a number (`Date.now() - HOUR`) seeds a timestamp; it measures nothing.
+        if (isOffset(left) || isOffset(right)) return;
+        if (anyViolates([...left, ...right], onWallClock)) context.report({ node, messageId: "budget" });
       },
       CallExpression(node) {
-        clocks.visit(node);
-        for (const actual of assertionOf(context, node)?.actuals ?? []) {
-          candidates.push({ node, values: evaluate(context, actual) });
-        }
-      },
-      "Program:exit"() {
-        const reported = new Set<ESTree.Node>();
-        for (const { node, values } of candidates) {
-          if (reported.has(node) || !anyViolates(values, onWallClock)) continue;
-          reported.add(node);
-          context.report({ node, messageId: "budget" });
-        }
+        const actuals = (assertionOf(context, node)?.actuals ?? []).flatMap((actual) =>
+          evaluate(context, actual)
+        );
+        if (anyViolates(actuals, onWallClock)) context.report({ node, messageId: "budget" });
       },
     };
   },

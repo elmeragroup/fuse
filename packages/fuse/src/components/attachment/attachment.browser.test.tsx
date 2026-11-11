@@ -10,7 +10,7 @@ import "../../../dist/themes.css";
 import { settleTransitions } from "../../../test/assert-invalid-ring";
 import { assertNoAxeViolations } from "../../../test/axe";
 import { emulateReducedMotion } from "../../../test/reduced-motion";
-import { TARGET_SIZE } from "../../../test/target-size";
+import { expectTargetBoxes } from "../../../test/target-size";
 import {
   cssVarColor,
   px,
@@ -188,9 +188,7 @@ describe("Attachment.Action", () => {
           </Attachment.Actions>
         </FileRow>
       );
-      const box = roleNamed("button", "Remove small.pdf").getBoundingClientRect();
-      expect(box.width, `${density} width`).toBeGreaterThanOrEqual(TARGET_SIZE);
-      expect(box.height, `${density} height`).toBeGreaterThanOrEqual(TARGET_SIZE);
+      expectTargetBoxes([roleNamed("button", "Remove small.pdf")], density);
       unmount();
     }
   });

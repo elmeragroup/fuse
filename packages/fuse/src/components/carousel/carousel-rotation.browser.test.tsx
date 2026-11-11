@@ -487,7 +487,7 @@ describe("Carousel autoplay and keyboard focus in a portal", () => {
  * element in it receives keyboard focus) and each engine's own `:hover` and `:focus-visible`,
  * which the tests read as preconditions.
  */
-describe("rotation from an unusual starting state", () => {
+describe("Carousel rotation across engines", () => {
   /** Moves the clock past several delays and lets the page render whatever they turned. */
   async function pastSeveralDelays(): Promise<void> {
     vi.advanceTimersByTime(DELAY * 5);
@@ -541,107 +541,105 @@ describe("rotation from an unusual starting state", () => {
     expect(currentIndicator()).toBe(on);
   }
 
-  describe("Carousel rotation across engines", () => {
-    it("starts paused when the pointer was over the carousel before hydration", async () => {
-      const server = serverRendered(<Hero />);
-      const region = roleNamed("region", "Offers");
-      await userEvent.hover(carouselViewport(region));
-      // The precondition: the engine knows the pointer is over the server's HTML.
-      expect(region.matches(":hover")).toBe(true);
-      server.hydrate();
-      // Rotating, since nothing stopped it, but paused under the pointer.
-      await expect.poll(() => rotationControl("Stop")).not.toBeNull();
-      await expect.poll(() => carouselViewport(region).getAttribute("aria-live")).toBe("polite");
-      await pastSeveralDelays();
-      expect(currentIndicator()).toBe(0);
-      expect(server.recoverableErrors).toEqual([]);
-      // The pointer leaving resumes it.
-      await userEvent.hover(roleNamed("button", "Outside"));
-      // Resuming arms the next turn in an effect, which can run after a frame.
-      await pendingTimeout();
-      vi.advanceTimersByTime(DELAY);
-      await pollFrames(currentIndicator, 1);
-    });
+  it("starts paused when the pointer was over the carousel before hydration", async () => {
+    const server = serverRendered(<Hero />);
+    const region = roleNamed("region", "Offers");
+    await userEvent.hover(carouselViewport(region));
+    // The precondition: the engine knows the pointer is over the server's HTML.
+    expect(region.matches(":hover")).toBe(true);
+    server.hydrate();
+    // Rotating, since nothing stopped it, but paused under the pointer.
+    await expect.poll(() => rotationControl("Stop")).not.toBeNull();
+    await expect.poll(() => carouselViewport(region).getAttribute("aria-live")).toBe("polite");
+    await pastSeveralDelays();
+    expect(currentIndicator()).toBe(0);
+    expect(server.recoverableErrors).toEqual([]);
+    // The pointer leaving resumes it.
+    await userEvent.hover(roleNamed("button", "Outside"));
+    // Resuming arms the next turn in an effect, which can run after a frame.
+    await pendingTimeout();
+    vi.advanceTimersByTime(DELAY);
+    await pollFrames(currentIndicator, 1);
+  });
 
-    it("stops when keyboard focus lands inside a shadow root after mount", async () => {
-      defineCodeField();
-      renderThemed(<Hero extra={createElement(CODE_FIELD)} />);
-      const region = roleNamed("region", "Offers");
-      const host = region.querySelector(CODE_FIELD);
-      const field = host?.shadowRoot?.querySelector("input");
-      if (!(host instanceof HTMLElement) || !(field instanceof HTMLInputElement)) {
-        throw new Error("expected the code field's shadow input");
-      }
-      // Synchronously after mount, so no rotation can have moved the field's slide out of view:
-      // the carousel rotates, and a lazy form control autofocuses its own field, as it would once
-      // its script loads.
-      expect(rotationControl("Stop")).not.toBeNull();
-      field.focus();
-      // The preconditions: the inner field has keyboard focus, and the host its focus event
-      // names does not match `:focus-visible` itself.
-      expect(host.shadowRoot?.activeElement).toBe(field);
-      expect(field.matches(":focus-visible")).toBe(true);
-      expect(host.matches(":focus-visible")).toBe(false);
-      await expectStoppedWithPointerOutside();
-      expect(host.shadowRoot?.activeElement).toBe(field);
-    });
+  it("stops when keyboard focus lands inside a shadow root after mount", async () => {
+    defineCodeField();
+    renderThemed(<Hero extra={createElement(CODE_FIELD)} />);
+    const region = roleNamed("region", "Offers");
+    const host = region.querySelector(CODE_FIELD);
+    const field = host?.shadowRoot?.querySelector("input");
+    if (!(host instanceof HTMLElement) || !(field instanceof HTMLInputElement)) {
+      throw new Error("expected the code field's shadow input");
+    }
+    // Synchronously after mount, so no rotation can have moved the field's slide out of view:
+    // the carousel rotates, and a lazy form control autofocuses its own field, as it would once
+    // its script loads.
+    expect(rotationControl("Stop")).not.toBeNull();
+    field.focus();
+    // The preconditions: the inner field has keyboard focus, and the host its focus event
+    // names does not match `:focus-visible` itself.
+    expect(host.shadowRoot?.activeElement).toBe(field);
+    expect(field.matches(":focus-visible")).toBe(true);
+    expect(host.matches(":focus-visible")).toBe(false);
+    await expectStoppedWithPointerOutside();
+    expect(host.shadowRoot?.activeElement).toBe(field);
+  });
 
-    it("starts stopped when Autoplay mounts while keyboard focus is inside a shadow root", async () => {
-      defineCodeField();
-      const view = renderThemed(<Hero extra={createElement(CODE_FIELD)} autoplay={false} />);
-      const region = roleNamed("region", "Offers");
-      const host = region.querySelector(CODE_FIELD);
-      const field = host?.shadowRoot?.querySelector("input");
-      if (!(host instanceof HTMLElement) || !(field instanceof HTMLInputElement)) {
-        throw new Error("expected the code field's shadow input");
-      }
-      field.focus();
-      // The precondition: keyboard focus is inside the carousel, below a shadow root, which a plain
-      // `contains` from the carousel does not reach.
-      expect(field.matches(":focus-visible")).toBe(true);
-      expect(region.contains(field)).toBe(false);
-      view.rerender(<Hero extra={createElement(CODE_FIELD)} />);
-      await expectStoppedWithPointerOutside();
-      expect(host.shadowRoot?.activeElement).toBe(field);
-    });
+  it("starts stopped when Autoplay mounts while keyboard focus is inside a shadow root", async () => {
+    defineCodeField();
+    const view = renderThemed(<Hero extra={createElement(CODE_FIELD)} autoplay={false} />);
+    const region = roleNamed("region", "Offers");
+    const host = region.querySelector(CODE_FIELD);
+    const field = host?.shadowRoot?.querySelector("input");
+    if (!(host instanceof HTMLElement) || !(field instanceof HTMLInputElement)) {
+      throw new Error("expected the code field's shadow input");
+    }
+    field.focus();
+    // The precondition: keyboard focus is inside the carousel, below a shadow root, which a plain
+    // `contains` from the carousel does not reach.
+    expect(field.matches(":focus-visible")).toBe(true);
+    expect(region.contains(field)).toBe(false);
+    view.rerender(<Hero extra={createElement(CODE_FIELD)} />);
+    await expectStoppedWithPointerOutside();
+    expect(host.shadowRoot?.activeElement).toBe(field);
+  });
 
-    it("stops when keyboard focus lands in a field a slide portals into a same-origin frame", async () => {
-      // Loaded before the carousel renders into it, so the portal targets the frame's final
-      // document rather than the initial `about:blank` one.
-      const frame = document.createElement("iframe");
-      const loaded = new Promise((resolve) => frame.addEventListener("load", resolve, { once: true }));
-      frame.srcdoc = "<!doctype html><body></body>";
-      document.body.append(frame);
-      onTestFinished(() => frame.remove());
-      await loaded;
-      const frameDocument = frame.contentDocument;
-      if (frameDocument === null) {
-        throw new Error("expected a same-origin frame document");
-      }
-      renderThemed(<Hero extra={createPortal(<input aria-label="Frame code" />, frameDocument.body)} />);
-      const field = frameDocument.querySelector("input");
-      if (field === null) {
-        throw new Error("expected the portalled field in the frame");
-      }
-      expect(rotationControl("Stop")).not.toBeNull();
-      // A frame's freshly rendered field can turn down its first focus, so focus is retried until
-      // the frame's document reports it. It sits outside every slide, so a page the carousel turns
-      // meanwhile cannot take it out of reach.
-      await expect
-        .poll(() => {
-          field.focus();
-          return frameDocument.activeElement;
-        })
-        .toBe(field);
-      // The preconditions: the field has keyboard focus in its own document, while the outer
-      // document names the frame, which does not match `:focus-visible` itself.
-      expect(field.matches(":focus-visible")).toBe(true);
-      expect(document.activeElement).toBe(frame);
-      expect(frame.matches(":focus-visible")).toBe(false);
-      expect(rotationControl("Start")).not.toBeNull();
-      await expectStoppedWithPointerOutside();
-      expect(frameDocument.activeElement).toBe(field);
-    });
+  it("stops when keyboard focus lands in a field a slide portals into a same-origin frame", async () => {
+    // Loaded before the carousel renders into it, so the portal targets the frame's final
+    // document rather than the initial `about:blank` one.
+    const frame = document.createElement("iframe");
+    const loaded = new Promise((resolve) => frame.addEventListener("load", resolve, { once: true }));
+    frame.srcdoc = "<!doctype html><body></body>";
+    document.body.append(frame);
+    onTestFinished(() => frame.remove());
+    await loaded;
+    const frameDocument = frame.contentDocument;
+    if (frameDocument === null) {
+      throw new Error("expected a same-origin frame document");
+    }
+    renderThemed(<Hero extra={createPortal(<input aria-label="Frame code" />, frameDocument.body)} />);
+    const field = frameDocument.querySelector("input");
+    if (field === null) {
+      throw new Error("expected the portalled field in the frame");
+    }
+    expect(rotationControl("Stop")).not.toBeNull();
+    // A frame's freshly rendered field can turn down its first focus, so focus is retried until
+    // the frame's document reports it. It sits outside every slide, so a page the carousel turns
+    // meanwhile cannot take it out of reach.
+    await expect
+      .poll(() => {
+        field.focus();
+        return frameDocument.activeElement;
+      })
+      .toBe(field);
+    // The preconditions: the field has keyboard focus in its own document, while the outer
+    // document names the frame, which does not match `:focus-visible` itself.
+    expect(field.matches(":focus-visible")).toBe(true);
+    expect(document.activeElement).toBe(frame);
+    expect(frame.matches(":focus-visible")).toBe(false);
+    expect(rotationControl("Start")).not.toBeNull();
+    await expectStoppedWithPointerOutside();
+    expect(frameDocument.activeElement).toBe(field);
   });
 
   /** A custom form control whose field lives in an open shadow root. */

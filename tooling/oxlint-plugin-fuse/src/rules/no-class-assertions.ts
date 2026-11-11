@@ -1,17 +1,10 @@
 import type { ESTree, Rule } from "@oxlint/plugins";
 
-import { nameChain } from "../ast-names.ts";
+import { nameChain, propertyKeyName } from "../ast-names.ts";
 import { descendants, unwrap } from "../ast-walk.ts";
-import { allQualify, anyViolates } from "../quantify.ts";
-import {
-  calleeNames,
-  enter,
-  evaluate,
-  memberName,
-  propertyName,
-  returnedValues,
-  stringValues,
-} from "../resolve.ts";
+import { classesOf } from "../class-token.ts";
+import { allQualify, firstViolation } from "../quantify.ts";
+import { calleeNames, enter, evaluate, memberName, returnedValues, stringValues } from "../resolve.ts";
 import type { ActivePath, Alt } from "../resolve.ts";
 import { assertionOf, evidenceSets, reachOf } from "../test-context.ts";
 
@@ -24,29 +17,21 @@ const CLASS_PROP = /^(?:class|className|[a-z][A-Za-z]*ClassName)$/u;
 /** One expected class value: its alternatives, and its spelling for the report. */
 type Expected = { readonly alternatives: ReadonlyArray<Alt>; readonly spelling: string };
 
-/** A class assertion waiting for the classes its evidence supplies. */
-type Pending = { readonly node: ESTree.Node; readonly expected: ReadonlyArray<Expected> };
-
-/** The class tokens a string holds. */
-function tokensOf(text: string): string[] {
-  return text.split(/\s+/u).filter(Boolean);
-}
-
 /**
  * No class pins: an assertion on an element's classes (`toHaveClass`, `toHaveAttribute("class")`,
  * `className`, `classList` or `getAttribute("class")`, read directly or through a binding, in any
  * value an `expect.poll` callback returns, under any alias of `expect`) names only classes its own
  * test supplies: through a `className` prop (or a part's, such as `triggerClassName`), a props
- * object or `classList.add`, in the test, the setup hooks that run before it, or the fixtures and
- * helpers they reach. A test registered more than once must supply the class in every run, each
- * with its own suite's hooks. An assertion in a helper outside any test counts only what its own
- * function reaches. That proves a consumer's class reaches the right part. A component's own
- * classes are its implementation, so assert the computed style, role or state they produce
- * instead. An expected value is exempt only when every alternative qualifies: a string whose
- * classes are supplied, a pattern that matches a supplied class, or a call the evaluator does not
- * follow, such as an imported recipe's output, which is a cross-check. A call that only reshapes
- * literals (`"h-9".trim()`) still pins them. A value reads classes, and an attribute name is
- * `"class"`, when any alternative is.
+ * object, `classList.add`, a `className` assignment or `setAttribute("class", …)`, in the test, the
+ * setup hooks that run before it, or the fixtures and helpers they reach. A test registered more
+ * than once must supply the class in every run, each with its own suite's hooks. An assertion in a
+ * helper outside any test counts only what its own function reaches. That proves a consumer's class
+ * reaches the right part. A component's own classes are its implementation, so assert the computed
+ * style, role or state they produce instead. An expected value is exempt only when every
+ * alternative qualifies: a string whose classes are supplied, a pattern that matches a supplied
+ * class, or a call the evaluator does not follow, such as an imported recipe's output, which is a
+ * cross-check. A call that only reshapes literals (`"h-9".trim()`) still pins them. A value reads
+ * classes, and an attribute name is `"class"`, when any alternative is.
  *
  * Scope: follows what `resolve.ts` follows, for supplied classes, expected classes and class
  * reads alike, and finds a test, its runs and its setup hooks as `test-context.ts` does. Beyond
@@ -65,7 +50,6 @@ export const noClassAssertions: Rule = {
     schema: [],
   },
   create(context) {
-    const pending: Pending[] = [];
     const suppliedByRoots = new Map<string, ReadonlySet<string>>();
 
     /** Every string a supplied value may be, a class callback's returns included. */
@@ -89,7 +73,7 @@ export const noClassAssertions: Rule = {
       if (cached !== undefined) return cached;
       const supplied = new Set<string>();
       const add = (value: ESTree.Node): void => {
-        for (const text of suppliedStrings(value)) for (const token of tokensOf(text)) supplied.add(token);
+        for (const text of suppliedStrings(value)) for (const token of classesOf(text)) supplied.add(token);
       };
       for (const region of reachOf(context, roots)) {
         for (const node of descendants(context, region, "into-functions")) {
@@ -100,16 +84,24 @@ export const noClassAssertions: Rule = {
             } else if (value !== null) {
               add(value);
             }
-          } else if (node.type === "Property" && CLASS_PROP.test(propertyName(node) ?? "")) {
+          } else if (node.type === "Property" && CLASS_PROP.test(propertyKeyName(node) ?? "")) {
             add(node.value);
+          } else if (node.type === "AssignmentExpression" && memberName(node.left) === "className") {
+            add(node.right);
           } else if (node.type === "CallExpression") {
             const callee = unwrap(node.callee);
-            if (
-              callee.type === "MemberExpression" &&
-              CLASS_WRITES.has(memberName(callee) ?? "") &&
-              anyViolates(evaluate(context, callee.object), isClassList)
-            ) {
+            const method = memberName(callee);
+            const [name, value] = node.arguments;
+            if (callee.type !== "MemberExpression") continue;
+            if (CLASS_WRITES.has(method ?? "") && evaluate(context, callee.object).some(isClassList)) {
               for (const argument of node.arguments) add(argument);
+            } else if (
+              method === "setAttribute" &&
+              name !== undefined &&
+              value !== undefined &&
+              namesClass(name)
+            ) {
+              add(value);
             }
           }
         }
@@ -141,7 +133,7 @@ export const noClassAssertions: Rule = {
         return alternative.node.elements.some(
           (element) =>
             element?.type === "SpreadElement" &&
-            anyViolates(evaluate(context, element.argument), (spread) => readsClasses(spread, inner))
+            evaluate(context, element.argument).some((spread) => readsClasses(spread, inner))
         );
       }
       if (alternative.kind !== "opaque" || alternative.node.type !== "CallExpression") return false;
@@ -151,11 +143,10 @@ export const noClassAssertions: Rule = {
       const [argument] = call.arguments;
       if (calleeNames(context, call.callee).includes("Array.from")) {
         return (
-          argument !== undefined &&
-          anyViolates(evaluate(context, argument), (from) => readsClasses(from, inner))
+          argument !== undefined && evaluate(context, argument).some((from) => readsClasses(from, inner))
         );
       }
-      return anyViolates(evaluate(context, call.callee), (callee) => {
+      return evaluate(context, call.callee).some((callee) => {
         if (callee.kind !== "member") return false;
         if (callee.key === "getAttribute") return argument !== undefined && namesClass(argument);
         return readsClasses(callee.object, inner);
@@ -164,7 +155,7 @@ export const noClassAssertions: Rule = {
 
     /** Whether any alternative of an attribute name is `"class"`. */
     const namesClass = (node: ESTree.Node): boolean =>
-      anyViolates(evaluate(context, node), (name) => name.kind === "string" && name.value === "class");
+      evaluate(context, node).some((name) => name.kind === "string" && name.value === "class");
 
     /**
      * The classes one actual alternative asks about when it is a membership test:
@@ -174,8 +165,7 @@ export const noClassAssertions: Rule = {
     const membershipOf = (alternative: Alt): ReadonlyArray<ESTree.Node> => {
       if (alternative.kind !== "opaque" || alternative.node.type !== "CallExpression") return [];
       const call = alternative.node;
-      const asks = anyViolates(
-        evaluate(context, call.callee),
+      const asks = evaluate(context, call.callee).some(
         (callee) =>
           callee.kind === "member" &&
           ((callee.key === "contains" && isClassList(callee.object)) ||
@@ -203,7 +193,7 @@ export const noClassAssertions: Rule = {
     ): string | undefined => {
       switch (alternative.kind) {
         case "string": {
-          const tokens = tokensOf(alternative.value);
+          const tokens = classesOf(alternative.value);
           if (tokens.length === 0) return '""';
           return tokens.find((token) => !supplied.has(token));
         }
@@ -231,55 +221,55 @@ export const noClassAssertions: Rule = {
       }
     };
 
-    /** The class an expected value pins: undefined only when every alternative qualifies. */
-    const pinnedIn = (expected: Expected, supplied: ReadonlySet<string>): string | undefined => {
-      const pins = (alternative: Alt): string | undefined =>
-        pinnedBy(alternative, supplied, expected.spelling);
-      if (allQualify(expected.alternatives, (alternative) => pins(alternative) === undefined))
-        return undefined;
-      // The report names the first alternative's pin; an unknown alternative pins its spelling.
-      return expected.alternatives.map(pins).find((pin) => pin !== undefined) ?? expected.spelling;
+    /**
+     * The class an expected value pins: the first alternative's pin, `undefined` only when every
+     * alternative qualifies. An `unknown` alternative pins its spelling.
+     */
+    const pinnedIn = (expected: Expected, supplied: ReadonlySet<string>): string | undefined =>
+      firstViolation(expected.alternatives, (alternative) =>
+        pinnedBy(alternative, supplied, expected.spelling)
+      );
+
+    /**
+     * The expected classes a call asserts, or `undefined` for a call that asserts no classes:
+     * `toHaveClass`'s classes, `toHaveAttribute("class", value)`'s value, a membership test's
+     * classes, or the expectation compared with a read of the classes.
+     */
+    const expectedClassesOf = (node: ESTree.CallExpression): ReadonlyArray<Expected> | undefined => {
+      const assertion = assertionOf(context, node);
+      if (assertion === undefined || assertion.actuals.length === 0) return undefined;
+      const { matcher, expected } = assertion;
+      const [first, second] = expected;
+      if (matcher === "toHaveClass") {
+        // A trailing options object (`{ exact: true }`) configures the matcher; it names no class.
+        return expected
+          .filter(
+            (argument) => !allQualify(evaluate(context, argument), (option) => option.kind === "object")
+          )
+          .map(expectedOf);
+      }
+      if (matcher === "toHaveAttribute" && first !== undefined && namesClass(first)) {
+        return second === undefined ? [] : [expectedOf(second)];
+      }
+      const classes = assertion.actuals.flatMap((actual) => {
+        const actuals = evaluate(context, actual);
+        const asked = actuals.flatMap(membershipOf);
+        if (asked.length > 0) return asked.map(expectedOf);
+        return first !== undefined && actuals.some((value) => readsClasses(value)) ? [expectedOf(first)] : [];
+      });
+      return classes.length > 0 ? classes : undefined;
     };
 
     return {
       CallExpression(node) {
-        const assertion = assertionOf(context, node);
-        if (assertion === undefined || assertion.actuals.length === 0) return;
-        const { matcher, expected } = assertion;
-        const [first, second] = expected;
-        if (matcher === "toHaveClass") {
-          // A trailing options object (`{ exact: true }`) configures the matcher; it names no class.
-          const classes = expected.filter(
-            (argument) => !allQualify(evaluate(context, argument), (option) => option.kind === "object")
-          );
-          pending.push({ node, expected: classes.map(expectedOf) });
+        const expected = expectedClassesOf(node);
+        if (expected === undefined) return;
+        // The exemption must hold in every run of the assertion's test, each with its own hooks.
+        for (const roots of evidenceSets(context, node)) {
+          const pinned = firstViolation(expected, (entry) => pinnedIn(entry, suppliedBy(roots)));
+          if (pinned === undefined) continue;
+          context.report({ node, messageId: "pinned", data: { token: pinned } });
           return;
-        }
-        if (matcher === "toHaveAttribute" && first !== undefined && namesClass(first)) {
-          pending.push({ node, expected: second === undefined ? [] : [expectedOf(second)] });
-          return;
-        }
-        for (const actual of assertion.actuals) {
-          const actuals = evaluate(context, actual);
-          const asked = actuals.flatMap(membershipOf);
-          if (asked.length > 0) pending.push({ node, expected: asked.map(expectedOf) });
-          else if (first !== undefined && anyViolates(actuals, (value) => readsClasses(value))) {
-            pending.push({ node, expected: [expectedOf(first)] });
-          }
-        }
-      },
-      "Program:exit"() {
-        for (const { node, expected } of pending) {
-          // The exemption must hold in every run of the assertion's test, each with its own hooks.
-          for (const roots of evidenceSets(context, node)) {
-            const supplied = suppliedBy(roots);
-            const pinned = expected
-              .map((entry) => pinnedIn(entry, supplied))
-              .find((pin) => pin !== undefined);
-            if (pinned === undefined) continue;
-            context.report({ node, messageId: "pinned", data: { token: pinned } });
-            break;
-          }
         }
       },
     };

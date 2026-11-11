@@ -38,6 +38,11 @@ its place.
 
 ## Authoring gate
 
+A behavior change or fix gets a test only when one passes this gate. It needs
+no test when no behavior changed, when the keeper already goes red on the
+regression, or when screenshots and recordings prove a visual or motion change;
+the PR's Test value section names which.
+
 Answer each question before adding the test, and put the answers in the PR's
 Test value section.
 
@@ -63,11 +68,10 @@ the layers the bug crosses need no replay of it.
 
 ## Junk patterns
 
-`pnpm lint` rejects the mechanical shapes on test files: pixel pins, class
-pins, source reads, fixed delays, wall-clock budgets, reruns and a module's
-second browser file (the `fuse/no-*` test rules and
-`fuse/one-browser-test-per-module`). A disable comment names the contract the
-test guards, and the gate still applies to it.
+`pnpm lint` rejects the mechanical shapes through the rules in the test-file
+overrides of `oxlint.config.ts` (the `**/*.test.*` override and the ones beside
+it). A disable comment names the contract the test guards, and the gate still
+applies to it.
 
 **Tautologies.** The expectation comes from the thing under test. Beyond the
 cases the Tests section of `AGENTS.md` forbids, hunt for:

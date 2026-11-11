@@ -12,27 +12,31 @@ ruleTester.run("no-test-retry", noTestRetry, {
     { code: 'headers({ "retry-after": "30" });', filename: TEST },
     { code: 'const opts = { timeout: 5_000 };\nit("opens", { ...opts }, () => {});', filename: TEST },
     { code: "export default defineConfig({ test: { testTimeout: 30_000 } });", filename: CONFIG },
+    // A rerun count of zero, or `false`, reruns nothing.
+    { code: 'it("opens", { retry: 0 }, () => {});', filename: TEST },
+    { code: 'describe("menu", { retry: 0 }, () => {});', filename: TEST },
+    { code: "export default defineConfig({ test: { retry: 0 } });", filename: CONFIG },
   ],
   invalid: [
-    // Finding 2: a spread of alternatives, one of which reruns.
+    // A spread of alternatives, one of which reruns.
     {
       code: 'const opts = { ...(flag ? { retry: 2 } : {}) };\nit("x", opts, () => {});',
       filename: "/repo/packages/fuse/src/button.test.ts",
       errors: [{ messageId: "rerun" }],
     },
-    // T6: a runner stored in an object property.
+    // A runner stored in an object property.
     {
       code: 'const api = { spec: it };\napi.spec("x", { retry: 2 }, () => {});',
       filename: TEST,
       errors: [{ messageId: "rerun" }],
     },
-    // T7: options reached through an expanded array spread.
+    // Options reached through an expanded array spread.
     {
       code: 'it("x", [...[{ retry: 2 }]][0], () => {});',
       filename: TEST,
       errors: [{ messageId: "rerun" }],
     },
-    // N9: a runner off a namespace import.
+    // A runner off a namespace import.
     {
       code: 'import * as vt from "vitest";\nvt.it("x", { retry: 2 }, () => {});',
       filename: TEST,
@@ -51,7 +55,7 @@ ruleTester.run("no-test-retry", noTestRetry, {
       errors: [{ messageId: "rerun" }],
     },
     { code: "vi.setConfig({ retry: 3 });", filename: TEST, errors: [{ messageId: "rerun" }] },
-    // T1: options held in a binding or spread from another object still reach the test.
+    // Options held in a binding or spread from another object still reach the test.
     {
       code: 'const opts = { retry: 2 };\nit("opens", opts, () => {});',
       filename: TEST,
@@ -62,7 +66,7 @@ ruleTester.run("no-test-retry", noTestRetry, {
       filename: TEST,
       errors: [{ messageId: "rerun" }],
     },
-    // Item 4: an aliased runner import is still a test.
+    // An aliased runner import is still a test.
     {
       code: 'import { it as spec } from "vitest";\nspec("x", { retry: 2 }, () => {});',
       filename: TEST,

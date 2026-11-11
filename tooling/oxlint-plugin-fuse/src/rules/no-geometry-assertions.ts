@@ -1,9 +1,9 @@
 import type { ESTree, Rule } from "@oxlint/plugins";
 
 import { allQualify, anyViolates } from "../quantify.ts";
-import { calleeTargets, enter, entryFor, evaluate, targetOf } from "../resolve.ts";
+import { enter, entryFor, evaluate, isApi, targetOf } from "../resolve.ts";
 import type { ActivePath, Alt } from "../resolve.ts";
-import { assertionOf, sharedName } from "../test-context.ts";
+import { assertionOf } from "../test-context.ts";
 
 /** The methods that measure an element's layout box. */
 const BOX_METHODS = new Set(["getBoundingClientRect", "getClientRects", "boundingBox"]);
@@ -11,7 +11,10 @@ const BOX_METHODS = new Set(["getBoundingClientRect", "getClientRects", "boundin
 /** A measured box's lengths. */
 const BOX_LENGTHS = new Set(["x", "y", "top", "left", "right", "bottom", "width", "height"]);
 
-/** The element properties that hold a layout length. */
+/**
+ * The element properties that hold a layout length. A scroll offset (`scrollTop`, `scrollLeft`) is
+ * a position the test drives, not a length the layout computes, so it is none.
+ */
 const LAYOUT_LENGTHS = new Set([
   "offsetWidth",
   "offsetHeight",
@@ -23,8 +26,6 @@ const LAYOUT_LENGTHS = new Set([
   "clientLeft",
   "scrollWidth",
   "scrollHeight",
-  "scrollTop",
-  "scrollLeft",
 ]);
 
 /** The computed-style properties whose used value is a layout length. */
@@ -76,26 +77,20 @@ const PIXEL_STRING = /^(-?\d*\.?\d+)px$/u;
 /** What a value is, as far as layout goes: a measured box, a computed style, or a length. */
 type Measure = "box" | "style" | "length";
 
-/** A pending comparison of a value against an expectation. */
-type Comparison = {
-  readonly node: ESTree.Node;
-  readonly actual: ReadonlyArray<Alt>;
-  readonly expected: ReadonlyArray<Alt>;
-};
-
 /**
- * No pixel pins: a layout measurement (`getBoundingClientRect`, `offset*`, `client*`, `scroll*`
- * or a computed width, height or inset, read directly, through bindings, through a helper's or an
- * `expect.poll` callback's return, or through arithmetic that keeps it a length) is not asserted
- * against a pixel number or a pixel string such as `"36px"`. A pixel the test writes holds at one
- * viewport, font and engine, and moves under a refactor that keeps the layout right. Relations
- * stay allowed: one measurement against another (below, inside, unchanged after an action),
- * against zero, a bound on an absolute distance (`Math.abs(a - b)` below a tolerance or past a hit
- * radius), or against a named constant, which states the relation to the fixture or the contract
- * it holds (`ROW_WIDTH`, `TARGET_SIZE`): a value `resolve.ts` marks `named`. A ratio or a sign of
- * lengths is no length. A measurement read inside a `page.evaluate` or `locator.evaluate`
- * callback counts as the value it returns. A value is a measurement, and an expectation a pixel
- * pin, when any alternative is; a bound exempts a distance only when every alternative is one.
+ * No pixel pins: a layout measurement (`getBoundingClientRect`, `offset*`, `client*`,
+ * `scrollWidth`, `scrollHeight` or a computed width, height or inset, read directly, through
+ * bindings, through a helper's or an `expect.poll` callback's return, or through arithmetic that
+ * keeps it a length) is not asserted against a pixel number or a pixel string such as `"36px"`. A
+ * pixel the test writes holds at one viewport, font and engine, and moves under a refactor that
+ * keeps the layout right. Relations stay allowed: one measurement against another (below, inside,
+ * unchanged after an action), against zero, a bound on an absolute distance (`Math.abs(a - b)`
+ * below a tolerance or past a hit radius), or against a named constant, which states the relation
+ * to the fixture or the contract it holds (`ROW_WIDTH`, `TARGET_SIZE`): a value `resolve.ts` marks
+ * `named`. A ratio or a sign of lengths is no length. A measurement read inside a `page.evaluate`
+ * or `locator.evaluate` callback counts as the value it returns. A value is a measurement, and an
+ * expectation a pixel pin, when any alternative is; a bound exempts a distance only when every
+ * alternative is one.
  *
  * Scope: follows what `resolve.ts` follows, so a measurement through a binding, a local function's
  * return, a page `evaluate` callback or a returned object's property counts. Beyond that: a value
@@ -113,11 +108,9 @@ export const noGeometryAssertions: Rule = {
     schema: [],
   },
   create(context) {
-    const comparisons: Comparison[] = [];
-
     /** Whether any alternative of an expression is a length. */
     const isLength = (node: ESTree.Node, path: ActivePath): boolean =>
-      anyViolates(evaluate(context, node), (alternative) => measureOf(alternative, path) === "length");
+      evaluate(context, node).some((alternative) => measureOf(alternative, path) === "length");
 
     /**
      * What one alternative is, layout-wise: a measured box, a computed style, a length, or none.
@@ -140,11 +133,10 @@ export const noGeometryAssertions: Rule = {
       switch (expression.type) {
         case "CallExpression": {
           const callees = evaluate(context, expression.callee);
-          if (anyViolates(callees, (callee) => callee.kind === "member" && BOX_METHODS.has(callee.key)))
-            return "box";
+          if (callees.some((callee) => callee.kind === "member" && BOX_METHODS.has(callee.key))) return "box";
           const names = callees.map((callee) => targetOf(callee)?.path.at(-1));
-          if (anyViolates(names, (name) => name === "getComputedStyle")) return "style";
-          const keeps = anyViolates(names, (name) => name !== undefined && LENGTH_KEEPERS.has(name));
+          if (names.some((name) => name === "getComputedStyle")) return "style";
+          const keeps = names.some((name) => name !== undefined && LENGTH_KEEPERS.has(name));
           return keeps && expression.arguments.some((argument) => isLength(argument, inner))
             ? "length"
             : undefined;
@@ -196,7 +188,6 @@ export const noGeometryAssertions: Rule = {
             return (
               entry !== undefined &&
               entry !== "unknown" &&
-              entry._tag === "property" &&
               anyViolates(evaluate(context, entry.value), pinsPixels)
             );
           });
@@ -209,33 +200,21 @@ export const noGeometryAssertions: Rule = {
     const isDistance = (alternative: Alt): boolean =>
       alternative.kind === "opaque" &&
       alternative.node.type === "CallExpression" &&
-      sharedName(calleeTargets(context, alternative.node.callee).map((target) => target?.path.join("."))) ===
-        "Math.abs";
+      isApi(context, alternative.node.callee, "Math.abs");
 
     return {
       CallExpression(node) {
         const assertion = assertionOf(context, node);
         const [expected] = assertion?.expected ?? [];
         if (assertion === undefined || expected === undefined || !COMPARISONS.has(assertion.matcher)) return;
-        for (const actual of assertion.actuals) {
+        if (!anyViolates(evaluate(context, expected), pinsPixels)) return;
+        const measured = assertion.actuals.some((actual) => {
           const values = evaluate(context, actual);
           // A tolerance or radius bounds a distance only when every alternative is one.
-          if (BOUNDS.has(assertion.matcher) && allQualify(values, isDistance)) continue;
-          comparisons.push({ node, actual: values, expected: evaluate(context, expected) });
-        }
-      },
-      "Program:exit"() {
-        const reported = new Set<ESTree.Node>();
-        for (const { node, actual, expected } of comparisons) {
-          if (reported.has(node)) continue;
-          const measured = anyViolates(
-            actual,
-            (alternative) => measureOf(alternative, new Set()) !== undefined
-          );
-          if (!measured || !anyViolates(expected, pinsPixels)) continue;
-          reported.add(node);
-          context.report({ node, messageId: "pixel" });
-        }
+          if (BOUNDS.has(assertion.matcher) && allQualify(values, isDistance)) return false;
+          return anyViolates(values, (alternative) => measureOf(alternative, new Set()) !== undefined);
+        });
+        if (measured) context.report({ node, messageId: "pixel" });
       },
     };
   },
