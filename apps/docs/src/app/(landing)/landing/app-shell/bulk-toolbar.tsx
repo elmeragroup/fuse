@@ -24,16 +24,17 @@ function outcome(eligible: number, selected: number, verb: string, skipReason: s
 }
 
 function ChangeSellerDialog({
-  open,
+  open = false,
   onOpenChange,
   selection,
 }: {
-  open: boolean;
+  open?: boolean;
   onOpenChange: (open: boolean) => void;
   selection: readonly Order[];
 }): ReactElement {
   const { dispatch, now, notify } = useDashboard();
   const [seller, setSeller] = useState<Seller | null>(null);
+  const [sellersOpen, setSellersOpen] = useSideOverlay(false);
 
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
@@ -65,6 +66,8 @@ function ChangeSellerDialog({
           }}>
           <Combobox.Root
             items={[...SELLER_LIST]}
+            open={sellersOpen}
+            onOpenChange={setSellersOpen}
             value={seller}
             onValueChange={setSeller}
             itemToStringLabel={(item: Seller) => item.name}>

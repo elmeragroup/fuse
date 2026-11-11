@@ -13,6 +13,7 @@ import { ownedClassTokens } from "./rules/owned-class-tokens.ts";
 import { renderElementWiring } from "./rules/render-element-wiring.ts";
 import { requireDisableReason } from "./rules/require-disable-reason.ts";
 import { restrictedImports } from "./rules/restricted-imports.ts";
+import { sideOverlayState } from "./rules/side-overlay-state.ts";
 import { stateFace } from "./rules/state-face.ts";
 
 /**
@@ -35,6 +36,7 @@ const plugin: Plugin = {
     "render-element-wiring": renderElementWiring,
     "require-disable-reason": requireDisableReason,
     "restricted-imports": restrictedImports,
+    "side-overlay-state": sideOverlayState,
     "state-face": stateFace,
   },
 };

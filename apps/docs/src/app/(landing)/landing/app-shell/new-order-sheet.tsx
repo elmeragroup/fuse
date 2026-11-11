@@ -26,7 +26,7 @@ const NewOrderForm = dynamic(async () => (await import("./new-order-form")).NewO
 });
 
 export type NewOrderSheetProps = {
-  open: boolean;
+  open?: boolean;
   onOpenChange: (open: boolean) => void;
 };
 
@@ -35,7 +35,7 @@ export type NewOrderSheetProps = {
  * the customer and their contact details, the facility, then the agreement. It saves as a draft
  * in Drafts, and Elhub fills in the price area and grid owner once the order is sent.
  */
-export function NewOrderSheet({ open, onOpenChange }: NewOrderSheetProps): ReactElement {
+export function NewOrderSheet({ open = false, onOpenChange }: NewOrderSheetProps): ReactElement {
   const { state } = useDashboard();
   useEffect(() => {
     // A failed fetch is not an error yet: opening the Sheet imports the module again.

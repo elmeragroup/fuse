@@ -145,7 +145,7 @@ function filterGroups(groups: readonly CommandGroup[], query: string): readonly 
 }
 
 export type CommandPaletteProps = {
-  open: boolean;
+  open?: boolean;
   onOpenChange: (open: boolean) => void;
   /** Where focus returns on close: the control that opened the palette. */
   finalFocus: RefObject<HTMLElement | null>;
@@ -158,7 +158,12 @@ export type CommandPaletteProps = {
  * it; ⌘K and Ctrl+K belong to the site's own palette. It is Fuse's `Command` in a dialog, with the
  * query held here so the Dashboard's matcher can list the newest orders on an empty query.
  */
-export function CommandPalette({ open, onOpenChange, finalFocus, popup }: CommandPaletteProps): ReactElement {
+export function CommandPalette({
+  open = false,
+  onOpenChange,
+  finalFocus,
+  popup,
+}: CommandPaletteProps): ReactElement {
   const groups = useCommandGroups();
   const [query, setQuery] = useState("");
   const shown = useMemo(() => filterGroups(groups, query), [groups, query]);
