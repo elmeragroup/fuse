@@ -118,6 +118,11 @@ export default defineConfig({
           // TZ is read per process, so the files run in forks, never in threads that would share
           // the runner's zone.
           pool: "forks",
+          // A hang guard, not a budget, as in the browser projects. The property tests are pure
+          // arithmetic whose wall time scales with how starved the CPU is: the pie's raster pick
+          // passes alone and failed Vitest's default 5s during a `pnpm check` with seven agents
+          // sharing the machine (#517).
+          testTimeout: 30_000,
           // Outside the browser, Vitest blanks CSS ids that `test.css` leaves out. The
           // consumer-build helper reads stylesheet text through `?raw`.
           css: { include: [/\.css\?raw$/] },
