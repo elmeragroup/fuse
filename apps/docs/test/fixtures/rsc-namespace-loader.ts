@@ -1,7 +1,8 @@
 /**
  * Loads the Fuse source the way a React Server Components bundler does.
  *
- * `"use client"` modules become client-module proxies (`createClientModuleProxy`).
+ * `"use client"` modules, Fuse's and a fixture's own consumer components, become client-module
+ * proxies (`createClientModuleProxy`).
  * Every other TypeScript module is transpiled and evaluated, so a directive-free
  * namespace object stays a real object whose properties are client references.
  *
@@ -21,6 +22,8 @@ const FLIGHT_SERVER_URL = pathToFileURL(
   fileURLToPath(new URL("./rsc-flight-server.ts", import.meta.url))
 ).href;
 const EXTENSIONS = [".ts", ".tsx", ".js", ".mjs"];
+/** The directories whose `"use client"` modules the server layer sends as client references. */
+const CLIENT_BOUNDARY_ROOTS = ["/packages/fuse/src/", fileURLToPath(new URL("./", import.meta.url))];
 
 /** Which RSC layer a process plays: the server, or the SSR renderer of client modules. */
 type Layer = "server" | "ssr";
@@ -161,7 +164,7 @@ function load(layer: Layer): NonNullable<RegisterHooksOptions["load"]> {
       return nextLoad(url, context);
     }
     const source = readFileSync(file, "utf8");
-    if (layer === "server" && file.includes("/packages/fuse/src/")) {
+    if (layer === "server" && CLIENT_BOUNDARY_ROOTS.some((root) => file.includes(root))) {
       const parsed = parse(file, source);
       if (isUseClient(parsed)) {
         return { format: "module", source: clientStub(url, runtimeExportNames(parsed)), shortCircuit: true };

@@ -58,6 +58,9 @@ export const SERVER_DEMOS: ReadonlySet<string> = new Set([
   // Sparkline calls no hook, and these demos show it drawn on the server with no client JavaScript.
   "apps/docs/src/app/(docs)/components/sparkline/demos/sparkline-table.tsx",
   "apps/docs/src/app/(docs)/components/sparkline/demos/sparkline-variants.tsx",
+  // A server component writes selection rows and their SubSections, which must still render
+  // outside each row's label once they cross Flight (#508).
+  "apps/docs/src/app/(docs)/components/selection-item/demos/selection-item-server.tsx",
 ]);
 
 /**

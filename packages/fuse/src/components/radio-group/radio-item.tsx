@@ -1,13 +1,13 @@
 /**
  * Server-visible `RadioItem`. The row is hook-free, so this module has no directive:
  * a server component runs it and reads `RadioItem.Title` and the other parts, while
- * `RadioGroupItem` and `SelectionItem.Shell` stay client references it renders. It partitions
- * its own SubSections (see `partitionSubSections`) and passes them to the shell.
+ * `RadioGroupItem` and `SelectionItem.Shell` stay client references it renders. The shell
+ * partitions its SubSections, which it recognises whether a server or a client component
+ * wrote them (see `partitionSubSections`).
  */
 import type { ReactElement, ReactNode } from "react";
 
 import { SelectionItem } from "../selection-item";
-import { partitionSubSections } from "../selection-item/partition-sub-sections";
 import { SelectionItemShell } from "../selection-item/selection-item";
 import type { SelectionItemRootProps } from "../selection-item/selection-item";
 import { RadioGroupItem } from "./radio-group";
@@ -56,7 +56,7 @@ export type RadioItemProps = SelectionItemRootProps & {
  * Labeled selection row over `SelectionItem.Shell`. Server-compatible: it renders the
  * client `SelectionItem.Shell`, which wires Field.Item and the label. The namespace
  * aliases `Title`, `Description`, `Content`, `Actions` and `SubSection` are the exact
- * `SelectionItem.*` objects, so `child.type` partitioning works with either spelling.
+ * `SelectionItem.*` objects, so the shell's partition recognises either spelling.
  * Other attributes, such as `id`, `data-testid` or a `data-*` hook, land on the row's
  * `Field.Item` root, the element that carries the row's `data-slot`.
  */
@@ -69,7 +69,6 @@ export function RadioItem({
   children,
   ...props
 }: RadioItemProps): ReactElement {
-  const { row, subSections } = partitionSubSections(children);
   return (
     <SelectionItemShell
       dataSlot="radio-item"
@@ -78,9 +77,8 @@ export function RadioItem({
       className={className}
       isSubSectionSelectable={isSubSectionSelectable}
       control={<RadioGroupItem value={value} disabled={isDisabled} />}
-      subSections={subSections}
       {...props}>
-      {row}
+      {children}
     </SelectionItemShell>
   );
 }

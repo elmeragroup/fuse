@@ -6,35 +6,11 @@
  * Flight path must reproduce, and prints both HTML strings as JSON.
  */
 import { createElement } from "react";
-import type { ReactNode } from "react";
 
 import { readFileSync } from "node:fs";
-import { createRequire } from "node:module";
-import { Readable } from "node:stream";
-import { prerenderToNodeStream } from "react-dom/static";
 
 import { ChartPage, ComposedPage, PolarPage } from "./rsc-chart-page.tsx";
-import { flightClientReferences } from "./rsc-flight-payload.ts";
-
-type FlightClient = {
-  createFromNodeStream: (
-    stream: Readable,
-    manifest: { moduleMap: null; serverModuleMap: null; moduleLoading: null }
-  ) => PromiseLike<ReactNode>;
-};
-
-const require = createRequire(import.meta.url);
-// SAFETY: Next ships this Flight client as untyped compiled CJS. The fixture only calls createFromNodeStream.
-const client = require("next/dist/compiled/react-server-dom-webpack/client.node.js") as FlightClient;
-
-async function html(node: ReactNode): Promise<string> {
-  const { prelude } = await prerenderToNodeStream(node);
-  const parts: Buffer[] = [];
-  for await (const chunk of prelude) {
-    parts.push(Buffer.from(chunk));
-  }
-  return Buffer.concat(parts).toString("utf8");
-}
+import { decodeFlight, prerenderHtml } from "./rsc-flight-ssr.ts";
 
 /** The pages a scenario other than the default `page` names. */
 const PAGES = new Map([
@@ -42,28 +18,11 @@ const PAGES = new Map([
   ["polar", PolarPage],
 ]);
 
-const payload = readFileSync(0, "utf8");
-/** The client modules the payload references, loaded as real code, keyed by reference id. */
-const modules = new Map<string, object>();
-for (const id of new Set(flightClientReferences(payload).map((reference) => reference.module))) {
-  const loaded: unknown = await import(id);
-  // oxlint-disable-next-line anti-slop/no-runtime-typeof -- a module namespace object has a null prototype, so `instanceof Object` rejects it
-  if (typeof loaded !== "object" || loaded === null) {
-    throw new Error(`${id} did not load as a module`);
-  }
-  modules.set(id, loaded);
-}
-Object.assign(globalThis, { __next_require__: (id: string): object | undefined => modules.get(id) });
-
-const tree = await client.createFromNodeStream(Readable.from([payload]), {
-  moduleMap: null,
-  serverModuleMap: null,
-  moduleLoading: null,
-});
+const { clientModules, tree } = await decodeFlight(readFileSync(0, "utf8"));
 process.stdout.write(
   JSON.stringify({
-    clientModules: [...modules.keys()],
-    flight: await html(tree),
-    clientOnly: await html(createElement(PAGES.get(process.argv[2] ?? "") ?? ChartPage)),
+    clientModules,
+    flight: await prerenderHtml(tree),
+    clientOnly: await prerenderHtml(createElement(PAGES.get(process.argv[2] ?? "") ?? ChartPage)),
   })
 );

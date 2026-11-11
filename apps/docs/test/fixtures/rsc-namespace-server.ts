@@ -427,8 +427,10 @@ function namespaceElements(): ReactElement[] {
       "ScrollUpButton",
       "ScrollDownButton",
     ]),
-    ...renderNamespace("SelectionItem", SelectionItem, ["Shell", "Title", "Actions", "SubSection"], {
-      server: ["Description", "Content"],
+    // SubSection is a server part: a row recognises the root it renders after Flight, where a
+    // client reference's type would arrive as an opaque lazy wrapper.
+    ...renderNamespace("SelectionItem", SelectionItem, ["Shell", "Title", "Actions"], {
+      server: ["Description", "Content", "SubSection"],
     }),
     ...renderNamespace("Sheet", Sheet, [
       "Root",
@@ -904,27 +906,21 @@ if (payload.includes("/components/button/button.tsx")) {
   throw new Error("The no-action Alert rendered a client Button");
 }
 
-// The shell partitions on the client by `child.type`, which a server-authored element cannot
-// satisfy: Flight revives each client reference as a new lazy wrapper. The rows must hand
-// SubSections over through the shell's `subSections` prop, so each band's only path runs
-// through that prop, never through the shell's `children`.
+// SubSection is a server part, so each band crosses Flight as the `div` it rendered, carrying the
+// marker the shell partitions by, never as a client reference, whose type would reach the client
+// as an opaque lazy wrapper. Where each band lands after Flight is `rsc-selection-item.test.ts`'s.
 const rows = flightRows(payload);
 const models = rows.map(({ model }) => model);
-for (const band of [CHECKBOX_BAND, RADIO_BAND]) {
-  const paths = rowPathsTo(rows, band);
-  if (paths.length !== 1 || paths[0]?.includes("subSections") !== true) {
-    throw new Error(`${band} is not passed through the shell's subSections prop: ${JSON.stringify(paths)}`);
-  }
+const bands = models
+  .flatMap(flightElements)
+  .filter(({ type, props }) => type === "div" && "data-selection-item-sub-section" in props);
+if (bands.length !== 2) {
+  throw new Error(`SubSections were not rendered on the server:\n${JSON.stringify(bands)}`);
 }
-for (const text of ["Fixed price", "Locked for 12 months.", "Spot price"]) {
-  // Through outlined rows, as the client resolves them; a label with no path at all is missing,
-  // which the check would otherwise pass.
-  const paths = rowPathsTo(rows, text);
-  if (paths.length === 0) {
+for (const text of ["Fixed price", "Locked for 12 months.", CHECKBOX_BAND, "Spot price", RADIO_BAND]) {
+  // Through outlined rows, as the client resolves them.
+  if (rowPathsTo(rows, text).length === 0) {
     throw new Error(`${text} is missing from the server payload`);
-  }
-  if (paths.some((path) => path.includes("subSections"))) {
-    throw new Error(`${text} left the row label: ${JSON.stringify(paths)}`);
   }
 }
 

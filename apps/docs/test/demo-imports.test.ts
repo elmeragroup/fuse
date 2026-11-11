@@ -52,6 +52,8 @@ const CARVE_OUTS = new Map<string, readonly string[]>([
   // The router-link demo shows `render` composing the docs app's own router link.
   ["navigation-menu/demos/navigation-menu-router-link.tsx", ["next/link"]],
   ["scroll-area/demos/scroll-area-composed.tsx", ["@base-ui/react/scroll-area"]],
+  // The server demo needs a consumer's own "use client" rows to pass its SubSections through.
+  ["selection-item/demos/selection-item-server.tsx", ["./client/plan-rows"]],
   // UiProviders routes React Aria's links, so its demo renders one.
   ["ui-providers/demos/ui-providers-basic.tsx", ["react-aria-components"]],
 ]);

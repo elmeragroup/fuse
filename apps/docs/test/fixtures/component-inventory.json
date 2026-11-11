@@ -770,6 +770,7 @@
       "selection-item-basic.tsx",
       "selection-item-subsection.tsx",
       "selection-item-selectable-subsection.tsx",
+      "selection-item-server.tsx",
       "selection-item-control-end.tsx",
       "selection-item-stacked.tsx",
       "selection-item-disabled.tsx",
