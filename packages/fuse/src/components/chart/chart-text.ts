@@ -1,5 +1,6 @@
 "use client";
 
+import { countOf } from "../../intl/count-of";
 /**
  * The spoken text of a cartesian chart, as CONTRACT section 9.3 and section 9.4 define it. The
  * option names the active slot and the readings at it, and the description states the facts of the
@@ -9,7 +10,7 @@
 import type { SupportedLocale } from "../../intl/locale-context";
 import type { EmphasisEntry } from "./chart-store";
 import type { ChartSeriesConfig, XFormat } from "./chart-types";
-import { CHART_STRINGS, countOf } from "./format/chart-strings";
+import { CHART_STRINGS } from "./format/chart-strings";
 import type { FormattedText } from "./format/formatted-text";
 import { seriesLabel } from "./format/series-label";
 import { formatSlot, LABEL_PRESETS, wallClock } from "./format/time-format";

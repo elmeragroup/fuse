@@ -3,10 +3,11 @@
 import { useMemo, useState } from "react";
 import type { ReactElement } from "react";
 
+import { countOf } from "../../intl/count-of";
 import { Table } from "../table/table";
 import { ChartTableShell, PAGE_ROWS, Twin, useTableDisclosure } from "./chart-table-shell";
 import type { ChartLayerProps } from "./chart-types";
-import { CHART_STRINGS, countOf } from "./format/chart-strings";
+import { CHART_STRINGS } from "./format/chart-strings";
 import type { FormattedText } from "./format/formatted-text";
 import { seriesLabel } from "./format/series-label";
 import { pointOf } from "./layout/scatter-model";

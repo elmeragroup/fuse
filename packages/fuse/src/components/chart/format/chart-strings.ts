@@ -1,13 +1,10 @@
-import { numberFormat } from "../../../internal/intl-cache";
 /**
  * The chart dictionary of CONTRACT section 12, in four locales. Every string is a draft until the
  * owner or the content owner signs it off. An explicit prop replaces its string
  * verbatim. The module calls no hook, so a server component reads it too.
  */
-import { canonicalSpaces } from "../../../intl/canonical-spaces";
+import type { Inflected } from "../../../intl/count-of";
 import type { SupportedLocale } from "../../../intl/locale-context";
-import { inflect } from "./inflection";
-import type { Inflected } from "./inflection";
 import type { Interval } from "./time-format";
 
 /** One locale's chart strings. */
@@ -390,17 +387,3 @@ export const CHART_STRINGS = {
   "fi-FI": FI_FI,
   "en-US": EN_US,
 } as const satisfies { readonly [L in SupportedLocale]: ChartStrings };
-
-/**
- * A count in words, such as `25 timer`, `1 day` or `52 punkter`, joined by a no-break space so the
- * number never wraps away from its word.
- *
- * @param locale - The active supported locale.
- * @param count - The number of things.
- * @param word - The word's forms, such as a slot interval's or the points' word.
- * @returns The count and its word in the locale's plural form.
- */
-export function countOf(locale: SupportedLocale, count: number, word: Inflected): string {
-  const number = canonicalSpaces(numberFormat(locale, {}).format(count));
-  return `${number}\u00a0${inflect(locale, count, word)}`;
-}

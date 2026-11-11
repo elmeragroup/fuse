@@ -1,5 +1,6 @@
 "use client";
 
+import { countOf } from "../../intl/count-of";
 /**
  * The words a scatter chart prints and speaks: a series' label, a point's x and y in their formats,
  * the option's name and the generated description. The module calls no hook, so the server reads
@@ -7,7 +8,7 @@
  */
 import type { SupportedLocale } from "../../intl/locale-context";
 import type { ChartConfig, ValueFormat } from "./chart-types";
-import { CHART_STRINGS, countOf } from "./format/chart-strings";
+import { CHART_STRINGS } from "./format/chart-strings";
 import type { FormattedText, LabelRole } from "./format/formatted-text";
 import { seriesLabel } from "./format/series-label";
 import { formatValue } from "./format/value-format";

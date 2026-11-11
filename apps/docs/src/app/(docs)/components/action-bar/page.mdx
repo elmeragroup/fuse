@@ -1,0 +1,56 @@
+---
+lede: >
+  A toolbar of actions on a selection, such as the checked rows of a DataTable, that floats at the
+  bottom of its container while anything is selected. Use it for bulk actions on lists and tables.
+---
+
+import { ActionBarBasic } from "./demos/action-bar-basic";
+import { ActionBarPagination } from "./demos/action-bar-pagination";
+
+import { componentMetadata } from "../../../../lib/component-page";
+
+export const metadata = componentMetadata("action-bar");
+
+<ComponentIntro slug="action-bar" />
+
+<Prose>
+
+`ActionBar.Root` takes the selection's size as `count`. While it is above zero the bar rises into
+place at the bottom of its nearest positioned ancestor, centred and 16px in from its edges; when it
+returns to zero the bar falls away and unmounts. With reduced motion it only fades. Give the
+container `position: relative` and keep the bar its last child, so it paints over the rows.
+
+The bar is a [Toolbar](/components/toolbar): one Tab stop, with the arrow keys moving between its
+items. It is named "Bulk actions" in the reader's locale unless you give it an `aria-label`. A
+visually hidden live region beside it announces the count politely, "3 selected", each time it
+changes, the first selection included.
+
+`ActionBar.Count` shows that count. `ActionBar.Clear` is the X button named "Clear selection". It
+clears nothing itself: empty the selection in its `onClick`. When the selection empties while focus
+is in the bar, as after Clear, focus returns to the element it came from, such as a row checkbox. If
+that element is gone, as after deleting the selected rows, focus falls to the page.
+
+`ActionBar.Button` is an extra-small ghost Button in the bar's arrow-key order. Lead it with an icon
+marked `data-icon="inline-start"` and put its words in `ActionBar.ButtonLabel`. While the
+container is narrower than 28rem, the bar shows the icons alone, and the words stay as each
+button's accessible name.
+
+</Prose>
+
+<Demo slug="action-bar" id="basic" title="Basic" file="action-bar-basic.tsx">
+  <ActionBarBasic />
+</Demo>
+
+To keep the bar clear of a pagination row or other footer, put the bar in a positioned ancestor that
+ends above the footer, as this demo wraps only the table, so the bar stays above the footer however
+tall it wraps. `offset` is the bar's distance from that ancestor's bottom in px, 16 by default, for a
+small adjustment such as clearing a faded edge. For a tooltip on Clear, pass `ActionBar.Clear` to
+`Tooltip.Trigger`'s `render`.
+
+<Demo slug="action-bar" id="pagination" title="Above pagination" file="action-bar-pagination.tsx">
+  <ActionBarPagination />
+</Demo>
+
+<ApiReference slug="action-bar" />
+
+<ComponentTokens slug="action-bar" />

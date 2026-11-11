@@ -3,36 +3,17 @@
 import { useState } from "react";
 import type { ReactElement } from "react";
 
-import { tv } from "tailwind-variants";
-
+import { ActionBar } from "@elmeragroup/fuse/action-bar";
 import { Button } from "@elmeragroup/fuse/button";
 import { Combobox } from "@elmeragroup/fuse/combobox";
 import { Dialog } from "@elmeragroup/fuse/dialog";
-import { DeviceMobile, Receipt, Users, X } from "@elmeragroup/fuse/icons";
+import { DeviceMobile, Receipt, Users } from "@elmeragroup/fuse/icons";
 import { Tooltip } from "@elmeragroup/fuse/tooltip";
 
 import { useSideOverlay } from "../window-side";
 import { useDashboard } from "./dashboard-context";
 import { canSendContractSms, canSendReceipt, SELLER_LIST } from "./dashboard-orders";
 import type { Order, OrderStatus, Seller } from "./dashboard-orders";
-
-const bulkToolbar = tv({
-  slots: {
-    // Floats over the list, clear of the window's faded bottom edge.
-    bar: "landing-rise shadow-lg absolute inset-x-0 z-30 mx-auto flex w-max max-w-[calc(100%-2rem)] items-center gap-1 rounded-xl border border-border bg-popover p-1.5 text-popover-foreground",
-    count: "text-xs font-medium px-2 whitespace-nowrap tabular-nums",
-    // A narrow list keeps the icons; each button names itself either way.
-    label: "@md:inline hidden",
-    divider: "mx-1 h-5 w-px bg-border",
-    form: "flex flex-col gap-4",
-  },
-  variants: {
-    // Order search keeps its pagination along the bottom, so the bar floats above it.
-    above: { list: { bar: "bottom-6" }, pagination: { bar: "bottom-18" } },
-  },
-});
-
-const styles = bulkToolbar();
 
 /** The toast copy the bulk plan settles on: how many of the selection the action reached. */
 function outcome(eligible: number, selected: number, verb: string, skipReason: string): string {
@@ -62,7 +43,7 @@ function ChangeSellerDialog({
           <Dialog.Description>{`The ${String(selection.length)} selected orders move to the seller you pick.`}</Dialog.Description>
         </Dialog.Header>
         <form
-          className={styles.form()}
+          className="flex flex-col gap-4"
           onSubmit={(event) => {
             event.preventDefault();
             if (seller === null) {
@@ -118,14 +99,10 @@ function ChangeSellerDialog({
  * for the whole selection. The sales tool plans these as SALGSL-4115; each reports how many of the
  * selection it reached.
  */
-export function BulkToolbar(): ReactElement | null {
+export function BulkToolbar(): ReactElement {
   const { state, dispatch, now, notify } = useDashboard();
   const [changing, setChanging] = useSideOverlay(false);
   const selection = state.orders.filter((order) => state.checked.includes(order.id));
-
-  if (selection.length === 0 && !changing) {
-    return null;
-  }
 
   const send = (
     eligibleFor: (status: OrderStatus) => boolean,
@@ -144,63 +121,49 @@ export function BulkToolbar(): ReactElement | null {
 
   return (
     <>
-      {selection.length === 0 ? null : (
-        <div
-          role="toolbar"
-          aria-label="Bulk actions"
-          className={bulkToolbar({ above: state.view === "order-search" ? "pagination" : "list" }).bar()}>
-          <span className={styles.count()}>{`${String(selection.length)} selected`}</span>
-          <Tooltip.Root>
-            <Tooltip.Trigger
-              render={
-                <Button
-                  variant="ghost"
-                  size="icon-xs"
-                  aria-label="Clear selection"
-                  aria-keyshortcuts="Escape"
-                  onClick={() => {
-                    dispatch({ _tag: "ClearChecks" });
-                  }}
-                />
-              }>
-              <X />
-            </Tooltip.Trigger>
-            <Tooltip.Content>Clear selection</Tooltip.Content>
-          </Tooltip.Root>
-          <span aria-hidden className={styles.divider()} />
-          <Button
-            variant="ghost"
-            size="xs"
-            aria-label="Send SMS"
-            onClick={() => {
-              send(canSendContractSms, "Send SMS", "sent", "not awaiting customer approval");
-            }}>
-            <DeviceMobile data-icon="inline-start" />
-            <span className={styles.label()}>Send SMS</span>
-          </Button>
-          <Button
-            variant="ghost"
-            size="xs"
-            aria-label="Send receipt"
-            onClick={() => {
-              send(canSendReceipt, "Send receipt", "sent", "no receipt before an order is done or cancelled");
-            }}>
-            <Receipt data-icon="inline-start" />
-            <span className={styles.label()}>Send receipt</span>
-          </Button>
-          <Button
-            variant="ghost"
-            size="xs"
-            aria-label="Change seller"
-            onClick={() => {
-              setChanging(true);
-            }}>
-            <Users data-icon="inline-start" />
-            <span className={styles.label()}>Change seller</span>
-          </Button>
-        </div>
-      )}
-      <ChangeSellerDialog open={changing} onOpenChange={setChanging} selection={selection} />
+      {/* Order search keeps its pagination along the bottom, so the bar floats above it; the
+          queues' list keeps it clear of the window's faded bottom edge. */}
+      <ActionBar.Root count={selection.length} offset={state.view === "order-search" ? 72 : 24}>
+        <ActionBar.Count />
+        <Tooltip.Root>
+          <Tooltip.Trigger
+            render={
+              <ActionBar.Clear
+                aria-keyshortcuts="Escape"
+                onClick={() => {
+                  dispatch({ _tag: "ClearChecks" });
+                }}
+              />
+            }
+          />
+          <Tooltip.Content>Clear selection</Tooltip.Content>
+        </Tooltip.Root>
+        <ActionBar.Separator />
+        <ActionBar.Button
+          onClick={() => {
+            send(canSendContractSms, "Send SMS", "sent", "not awaiting customer approval");
+          }}>
+          <DeviceMobile data-icon="inline-start" />
+          <ActionBar.ButtonLabel>Send SMS</ActionBar.ButtonLabel>
+        </ActionBar.Button>
+        <ActionBar.Button
+          onClick={() => {
+            send(canSendReceipt, "Send receipt", "sent", "no receipt before an order is done or cancelled");
+          }}>
+          <Receipt data-icon="inline-start" />
+          <ActionBar.ButtonLabel>Send receipt</ActionBar.ButtonLabel>
+        </ActionBar.Button>
+        <ActionBar.Button
+          onClick={() => {
+            setChanging(true);
+          }}>
+          <Users data-icon="inline-start" />
+          <ActionBar.ButtonLabel>Change seller</ActionBar.ButtonLabel>
+        </ActionBar.Button>
+      </ActionBar.Root>
+      {selection.length > 0 || changing ? (
+        <ChangeSellerDialog open={changing} onOpenChange={setChanging} selection={selection} />
+      ) : null}
     </>
   );
 }

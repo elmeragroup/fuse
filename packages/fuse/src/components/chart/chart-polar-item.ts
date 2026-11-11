@@ -9,11 +9,12 @@
  */
 import type { ReactNode } from "react";
 
+import { countOf } from "../../intl/count-of";
 import type { SupportedLocale } from "../../intl/locale-context";
 import type { CentreModel, PolarIssue, PolarKernel, PolarModel } from "./chart-polar-context";
 import type { ChartReadout, ReadoutItem } from "./chart-readout-port";
 import type { ChartConfig, ChartQuality, ChartRow, ValueFormat } from "./chart-types";
-import { CHART_STRINGS, countOf } from "./format/chart-strings";
+import { CHART_STRINGS } from "./format/chart-strings";
 import type { FormattedText } from "./format/formatted-text";
 import { POLAR_STRINGS } from "./format/polar-strings";
 import { seriesLabel } from "./format/series-label";

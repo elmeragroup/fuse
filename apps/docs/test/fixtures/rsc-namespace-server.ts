@@ -18,6 +18,7 @@ import { createElement } from "react";
 import type { ComponentType, ReactElement } from "react";
 
 import { Accordion } from "@elmeragroup/fuse/accordion";
+import { ActionBar } from "@elmeragroup/fuse/action-bar";
 import { Alert } from "@elmeragroup/fuse/alert";
 import { AlertDialog } from "@elmeragroup/fuse/alert-dialog";
 import { AspectRatio } from "@elmeragroup/fuse/aspect-ratio";
@@ -138,6 +139,14 @@ function renderNamespace<Client extends string, Server extends string = never, H
 function namespaceElements(): ReactElement[] {
   return [
     ...renderNamespace("Accordion", Accordion, ["Root", "Item", "Header", "Trigger", "Content"]),
+    ...renderNamespace("ActionBar", ActionBar, [
+      "Root",
+      "Count",
+      "Clear",
+      "Button",
+      "ButtonLabel",
+      "Separator",
+    ]),
     ...renderNamespace("AlertDialog", AlertDialog, ["Root", "Trigger", "Content"]),
     ...renderNamespace("Attachment", Attachment, ["Root", "Group", "Action", "Trigger"], {
       server: ["Media", "AspectRatio", "Content", "Title", "Description", "Actions"],

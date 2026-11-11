@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { DESKTOP_VIEWPORT } from "./demo-page";
+import { DASHBOARD_FIRST, dashboard, searchTable } from "./landing-dashboard";
 import { collectPageErrors, launchLandingSuite, TARGET_FLOOR_PX } from "./landing-page";
 
 const { openLanding } = launchLandingSuite();
@@ -31,6 +32,34 @@ describe("landing page", () => {
 
     await entry("Badge").hover();
     await expect.poll(async () => panel.getByText("Overdue", { exact: true }).isVisible()).toBe(true);
+    await page.context().close();
+  });
+
+  it("floats the bulk action bar clear of Order search's pagination and returns focus when it clears", async () => {
+    const page = await openLanding(DESKTOP_VIEWPORT, { search: DASHBOARD_FIRST });
+    const app = dashboard(page);
+    await app.scrollIntoViewIfNeeded();
+    await app.getByRole("button", { name: "Order search", exact: true }).click();
+    const table = searchTable(app);
+    await expect.poll(async () => table.getAttribute("aria-busy")).toBeNull();
+
+    // Row 0 is the header, whose checkbox selects the whole page.
+    const checkbox = table.getByRole("row").nth(1).getByRole("checkbox");
+    await checkbox.click();
+    const bar = app.getByRole("toolbar", { name: "Bulk actions" });
+    await bar.waitFor();
+    expect(await bar.textContent()).toContain("1\u00a0selected");
+    // The bar sits wholly above the pagination row, so it covers none of its controls.
+    const barBox = await bar.boundingBox();
+    const pageControls = await app.getByRole("button", { name: "Go to next page" }).boundingBox();
+    if (barBox === null || pageControls === null)
+      throw new Error("expected the bar and the pagination on screen");
+    expect(barBox.y + barBox.height).toBeLessThan(pageControls.y);
+
+    await bar.getByRole("button", { name: "Clear selection" }).click();
+    await expect.poll(async () => bar.count()).toBe(0);
+    expect(await checkbox.isChecked()).toBe(false);
+    expect(await checkbox.evaluate((element) => element === document.activeElement)).toBe(true);
     await page.context().close();
   });
 

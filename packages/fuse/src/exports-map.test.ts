@@ -188,6 +188,7 @@ const EXPECTED_ENTRIES = {
   toggle: { inRootBarrel: true, runtimeExports: ["Toggle", "toggleVariants"] },
   "toggle-group": { inRootBarrel: true, runtimeExports: ["ToggleGroup"] },
   tooltip: { inRootBarrel: true, runtimeExports: ["Tooltip"] },
+  "action-bar": { inRootBarrel: true, runtimeExports: ["ActionBar"] },
   carousel: { inRootBarrel: true, runtimeExports: ["Carousel", "useCarousel"] },
   "autocomplete-field": { inRootBarrel: true, runtimeExports: ["AutocompleteField"] },
   "combobox-field": { inRootBarrel: true, runtimeExports: ["ComboboxField"] },
@@ -349,6 +350,7 @@ describe("exports map", () => {
     );
     expect(catalog).toEqual([
       "accordionVariants",
+      "actionBarVariants",
       "alertDialogVariants",
       "alertVariants",
       "avatarFallbackClass",

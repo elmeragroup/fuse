@@ -39,6 +39,10 @@
       "types": "./src/accordion.ts",
       "import": "./src/accordion.ts"
     },
+    "./action-bar": {
+      "types": "./src/action-bar.ts",
+      "import": "./src/action-bar.ts"
+    },
     "./alert": {
       "types": "./src/alert.ts",
       "import": "./src/alert.ts"

@@ -1,5 +1,6 @@
 "use client";
 
+import { countOf } from "../../intl/count-of";
 /**
  * The series adapter, which Radar and ClockChart read their Roots through. It builds a
  * `CartesianModel` over the family's own domain, a category per spoke here, and reuses the
@@ -14,7 +15,7 @@ import { seriesReadoutOf } from "./chart-series-readout";
 import { extremesSentence, optionName, slotLabel } from "./chart-text";
 import type { SlotReading, TextContext } from "./chart-text";
 import type { ChartConfig, ChartRow } from "./chart-types";
-import { CHART_STRINGS, countOf } from "./format/chart-strings";
+import { CHART_STRINGS } from "./format/chart-strings";
 import { POLAR_STRINGS } from "./format/polar-strings";
 import type { CartesianModel } from "./layout/cartesian-model";
 import { isRoleList, seriesPaint, singleRole } from "./layout/color-key";

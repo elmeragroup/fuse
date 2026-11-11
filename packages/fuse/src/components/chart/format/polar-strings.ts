@@ -1,10 +1,10 @@
+import type { Inflected } from "../../../intl/count-of";
 /**
  * The polar families' own words in the four locales, drafts until the content owner signs them off
  * with the rest of the chart dictionary. They live apart from `CHART_STRINGS`, so a cartesian
  * route ships none of them.
  */
 import type { SupportedLocale } from "../../../intl/locale-context";
-import type { Inflected } from "./inflection";
 
 /** The words a polar Root and its Table read. */
 export type PolarStrings = {

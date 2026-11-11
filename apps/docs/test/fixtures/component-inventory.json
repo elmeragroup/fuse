@@ -11,6 +11,11 @@
       "accordion-hidden-until-found.tsx"
     ]
   },
+  "action-bar": {
+    "title": "Action Bar",
+    "rsc": "client",
+    "demos": ["action-bar-basic.tsx", "action-bar-pagination.tsx"]
+  },
   "alert": {
     "title": "Alert",
     "rsc": "server",
