@@ -5,7 +5,7 @@ import type { ArtworkImage } from "./og-assets";
 import { OG_FONT_FAMILY } from "./og-assets";
 import { OG_SUBTITLE_LETTER_SPACING, ogSubtitleSize } from "./og-fit";
 
-// Satori draws only inline styles, so the OG modules style elements inline; `.oxlintrc.json`
+// Satori draws only inline styles, so the OG modules style elements inline; `oxlint.config.ts`
 // turns `shadcn/no-inline-styles` off for `src/og/` and `src/app/og/` alone.
 
 /** Every OG image is a 1200 × 630 PNG, the size Open Graph and X large cards crop to. */

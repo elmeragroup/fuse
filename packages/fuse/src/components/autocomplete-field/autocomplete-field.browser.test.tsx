@@ -20,6 +20,9 @@ import type { AutocompleteFieldProps } from "./autocomplete-field";
 
 const FRUITS = ["Apple", "Banana", "Cherry"];
 
+/** The width of the host the field fills. */
+const HOST_WIDTH = 320;
+
 function Fruit(props: AutocompleteFieldProps<string[]>) {
   return (
     <AutocompleteField label="Fruit" name="fruit" items={FRUITS} {...props}>
@@ -66,12 +69,12 @@ describe("AutocompleteField", () => {
     renderThemed(
       withLocale(
         "en-US",
-        <div style={{ width: "320px" }}>
+        <div style={{ width: `${HOST_WIDTH}px` }}>
           <Fruit />
         </div>
       )
     );
-    expect(fieldBoxOf(input()).getBoundingClientRect().width).toBe(320);
+    expect(fieldBoxOf(input()).getBoundingClientRect().width).toBe(HOST_WIDTH);
   });
 
   it("shows a Form error under its name, marks the input invalid, and clears it when the user edits the text", async () => {

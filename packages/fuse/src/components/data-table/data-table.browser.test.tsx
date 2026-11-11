@@ -695,19 +695,13 @@ describe("DataTable row actions", () => {
     );
   }
 
-  it("names every trigger after its row, and the actions header without visible text, with no sort or hide control", async () => {
+  it("names every trigger after its row, and the actions header, with no sort or hide control", async () => {
     renderInEnglish(<ActionsTable />);
 
     const triggers = ["Bergen", "Alta", "Oslo"].map((name) => roleNamed("button", `Actions for ${name}`));
     expect(new Set(triggers).size).toBe(3);
 
     const header = columnHeader("Actions");
-    const name = header.firstElementChild;
-    if (name === null) {
-      throw new Error("expected the header's hidden name");
-    }
-    expect(name.getBoundingClientRect().width).toBeLessThanOrEqual(1);
-    expect(name.getBoundingClientRect().height).toBeLessThanOrEqual(1);
     expect(header.hasAttribute("aria-sort")).toBe(false);
     expect(header.querySelector("button")).toBeNull();
 
@@ -843,5 +837,95 @@ describe("DataTable date cells", () => {
         .elements()
         .map((cell) => cell.textContent)
     ).toEqual(["30.\u00a0sep.\u00a02026", "1.\u00a0okt.\u00a02026", "30.\u00a0sep.\u00a02026,\u00a020:00"]);
+  });
+});
+
+describe("controlled popups", () => {
+  /**
+   * Browser project. A controlled column toggle and rows-per-page list: the owner's `open` decides
+   * whether each popup shows, and a trigger press only reports the request.
+   */
+
+  describe("DataTable controlled popups", () => {
+    type OpenChange = { readonly open: boolean; readonly reason: string };
+
+    function ControlledToggleTable({
+      open,
+      onChange,
+    }: {
+      readonly open: boolean;
+      readonly onChange: (change: OpenChange) => void;
+    }): ReactElement {
+      const table = useFuseTable({ columns: registeredColumns, data: ORDERS_3 });
+      return (
+        <table.AppTable>
+          <table.ColumnToggle
+            open={open}
+            onOpenChange={(next, details) => {
+              onChange({ open: next, reason: details.reason });
+            }}
+          />
+          <table.Content />
+        </table.AppTable>
+      );
+    }
+
+    function ControlledPageSizeTable({
+      open,
+      onChange,
+    }: {
+      readonly open: boolean;
+      readonly onChange: (change: OpenChange) => void;
+    }): ReactElement {
+      const table = useTable({
+        features,
+        columns: plainColumns,
+        data: ORDERS_25,
+        initialState: { pagination: { pageIndex: 0, pageSize: 10 } },
+      });
+      return (
+        <DataTable.Pagination
+          table={table}
+          pageSizeOpen={open}
+          onPageSizeOpenChange={(next, details) => {
+            onChange({ open: next, reason: details.reason });
+          }}
+        />
+      );
+    }
+
+    // Oracle: a controlled popup shows exactly when its owner's `open` is true, and a press on
+    // the trigger only asks the owner, through the change callback with Base UI's reason.
+    it("opens and closes table.ColumnToggle's menu from open, and reports a trigger press", async () => {
+      const changes: OpenChange[] = [];
+      const record = (change: OpenChange) => {
+        changes.push(change);
+      };
+      const { rerender } = renderInEnglish(<ControlledToggleTable open onChange={record} />);
+      await expect.element(page.getByRole("menu")).toBeInTheDocument();
+
+      rerender(<ControlledToggleTable open={false} onChange={record} />);
+      await expect.element(page.getByRole("menu")).not.toBeInTheDocument();
+
+      await userEvent.click(roleNamed("button", "Columns"));
+      expect(changes).toEqual([{ open: true, reason: "trigger-press" }]);
+      expect(page.getByRole("menu").query()).toBeNull();
+    });
+
+    it("opens and closes the rows-per-page list from pageSizeOpen, and reports a trigger press", async () => {
+      const changes: OpenChange[] = [];
+      const record = (change: OpenChange) => {
+        changes.push(change);
+      };
+      const { rerender } = renderInEnglish(<ControlledPageSizeTable open onChange={record} />);
+      await expect.element(page.getByRole("listbox")).toBeInTheDocument();
+
+      rerender(<ControlledPageSizeTable open={false} onChange={record} />);
+      await expect.element(page.getByRole("listbox")).not.toBeInTheDocument();
+
+      await userEvent.click(roleNamed("combobox", "Rows per page"));
+      expect(changes).toEqual([{ open: true, reason: "trigger-press" }]);
+      expect(page.getByRole("listbox").query()).toBeNull();
+    });
   });
 });

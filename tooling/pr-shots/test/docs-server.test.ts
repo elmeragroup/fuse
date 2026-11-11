@@ -175,9 +175,8 @@ describe("DocsServer", () => {
         );
         // No waiting: the scope closed only once the whole group was gone.
         assert.deepStrictEqual(pids.map(({ pid }) => pid).filter(isAlive), []);
-        // The worker rewrote next-env.d.ts every 20 ms while it lived, so the original is
-        // there only if the restore ran after it died.
-        yield* Effect.sleep(Duration.millis(100));
+        // The worker rewrote next-env.d.ts every 20 ms while it lived, and every pid is gone, so
+        // the original is there only if the restore ran after it died.
         assert.strictEqual(yield* readText(path.join(cwd, "next-env.d.ts")), ORIGINAL);
         const lock = yield* Effect.promise(() =>
           readFile(path.join(cwd, "cache/pr-shots.lock")).then(

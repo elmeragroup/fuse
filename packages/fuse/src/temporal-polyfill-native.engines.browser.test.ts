@@ -1,3 +1,4 @@
+/* oxlint-disable fuse/one-browser-test-per-module -- a page whose engine keeps its own Temporal: the entry loads once per frame, so the native case cannot share temporal-polyfill.engines.browser.test.ts's page, which removes Temporal first */
 /**
  * Unit under test: the `@elmeragroup/fuse/temporal-polyfill` entry in an engine with Temporal.
  * Oracle: the entry's contract: an engine's own Temporal and `Intl.DateTimeFormat` stay in place,

@@ -1,3 +1,4 @@
+/* oxlint-disable fuse/one-browser-test-per-module -- a host without themes.css: the paragraph roles fall back when no theme declares them, and text.browser.test.tsx loads themes.css for its whole page */
 import type { CSSProperties } from "react";
 
 import { describe, expect, it } from "vitest";

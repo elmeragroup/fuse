@@ -9,6 +9,7 @@ import {
   cssVarColor,
   effectiveOpacity,
   formNamed,
+  px,
   renderThemed,
   textNamed,
 } from "../../../test/themed-browser-render";
@@ -324,8 +325,9 @@ describe("Radio", () => {
     );
 
     const badge = textNamed("New");
-    const text = badge.parentElement?.firstChild;
-    if (!(text instanceof Text)) {
+    const row = badge.parentElement;
+    const text = row?.firstChild;
+    if (row === null || !(text instanceof Text)) {
       throw new Error("expected the label text before the badge");
     }
     const range = document.createRange();
@@ -333,9 +335,9 @@ describe("Radio", () => {
     const textBox = range.getBoundingClientRect();
     const badgeBox = badge.getBoundingClientRect();
 
-    // The label row puts gap-2 (8px) between the text and the badge and centers both. One
-    // inline run would collapse the gap to a space and align the badge to the baseline.
-    expect(badgeBox.left - textBox.right).toBeCloseTo(8, 0);
+    // The label row puts its gap between the text and the badge and centers both. One inline
+    // run would collapse the gap to a space and align the badge to the baseline.
+    expect(badgeBox.left - textBox.right).toBeCloseTo(px(getComputedStyle(row).columnGap), 0);
     const offCenter = badgeBox.top + badgeBox.height / 2 - (textBox.top + textBox.height / 2);
     expect(Math.abs(offCenter)).toBeLessThanOrEqual(1);
     // The control dims itself and the label dims only its content, so neither compounds.

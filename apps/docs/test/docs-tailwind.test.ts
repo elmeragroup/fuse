@@ -133,6 +133,7 @@ describe("docs Tailwind migration contract", () => {
       ...srcTsFiles()
         .filter(inScope)
         .flatMap((file) =>
+          // oxlint-disable-next-line fuse/no-source-reading-tests -- docs theming contract: retired -docs-* utilities stay out of route and shared code, which elmera/no-primitive-colors does not cover
           RETIRED_DOCS_UTILITY.test(readFileSync(join(docsRoot, file), "utf8")) ? [file] : []
         ),
       ...mdxFiles.flatMap((file) => {
@@ -149,6 +150,7 @@ describe("docs Tailwind migration contract", () => {
 
   it("does not export class-name constants or tv recipes", () => {
     const exported = srcTsFiles().flatMap((relative) => {
+      // oxlint-disable-next-line fuse/no-source-reading-tests -- docs styling contract: class strings stay private to their component, so no module exports a ClassName constant or a tv recipe
       const source = readFileSync(join(docsRoot, relative), "utf8");
       const hits: string[] = [];
       if (EXPORTED_CLASS_NAME.test(source)) {
@@ -166,6 +168,7 @@ describe("docs Tailwind migration contract", () => {
   it("inlines complete utility literals in private tv recipes", () => {
     const sources = srcTsFiles()
       .filter(isCheckedSource)
+      // oxlint-disable-next-line fuse/no-source-reading-tests -- Tailwind source contract: recipe slots spell whole utilities, which Tailwind's scanner must find as literals
       .map((file) => ({ file, source: readFileSync(join(docsRoot, file), "utf8") }));
     expect(recipeSlotFailures(sources)).toEqual([]);
   });
@@ -237,6 +240,7 @@ describe("docs component CSS variables", () => {
 
     // The docs' `next/font` loaders define the custom property each one's `variable` option names
     // on its class. Only the loader config counts, not code a page shows as an example.
+    // oxlint-disable-next-line fuse/no-source-reading-tests -- CSS-variable contract: next/font loaders define the variables their config names, which the reference check below must count
     const siteFonts = readFileSync(join(docsRoot, "src/components/site-fonts.ts"), "utf8");
     for (const match of siteFonts.matchAll(/\bvariable:\s*"(--[A-Za-z0-9_-]+)"/g)) {
       defined.add(match[1] ?? "");
@@ -245,6 +249,7 @@ describe("docs component CSS variables", () => {
     const failures = srcTsFiles()
       .filter(isCheckedSource)
       .flatMap((relative) => {
+        // oxlint-disable-next-line fuse/no-source-reading-tests -- CSS-variable contract: every custom property docs code references is defined by globals.css, fuse.css, themes.css or the code itself
         const source = readFileSync(join(docsRoot, relative), "utf8");
         for (const match of source.matchAll(/\[(--[A-Za-z0-9_-]+):/g)) {
           defined.add(match[1] ?? "");
@@ -253,8 +258,5 @@ describe("docs component CSS variables", () => {
       });
 
     expect(failures, failures.join("\n")).toEqual([]);
-    expect(
-      srcTsFiles().some((relative) => readFileSync(join(docsRoot, relative), "utf8").includes("--docs-ink"))
-    ).toBe(false);
   });
 });

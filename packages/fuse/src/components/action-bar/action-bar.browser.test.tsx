@@ -257,7 +257,8 @@ describe("ActionBar", () => {
   });
 
   it("floats centred at offset px above the bottom of its positioned container", async () => {
-    renderEnglish(<Selection offset={72} />);
+    const OFFSET = 72;
+    renderEnglish(<Selection offset={OFFSET} />);
     await check("Order 1");
     const toolbar = roleNamed("toolbar", "Bulk actions");
     const container = page.getByTestId("container").element().getBoundingClientRect();
@@ -268,18 +269,26 @@ describe("ActionBar", () => {
       expect(unmoved(getComputedStyle(toolbar).translate)).toBe(true);
     });
     const bar = toolbar.getBoundingClientRect();
-    expect(container.bottom - bar.bottom).toBeCloseTo(72, 1);
+    expect(container.bottom - bar.bottom).toBeCloseTo(OFFSET, 1);
     expect(bar.left - container.left).toBeCloseTo(container.right - bar.right, 1);
   });
 
   it("keeps the button words as names but shows icons alone in a container narrower than 28rem", async () => {
+    // The word is wider than the icon beside it while shown, and narrower once visually hidden.
+    const widths = () => {
+      const archive = roleNamed("button", "Archive");
+      return {
+        word: archive.querySelector("[data-slot=action-bar-button-label]")?.getBoundingClientRect().width,
+        icon: archive.querySelector("svg")?.getBoundingClientRect().width,
+      };
+    };
     const { rerender } = renderEnglish(<Selection width={640} />);
     await check("Order 1");
-    const wide = roleNamed("button", "Archive").querySelector("span");
-    expect(wide?.getBoundingClientRect().width).toBeGreaterThan(20);
+    const wide = widths();
+    expect(wide.word).toBeGreaterThan(wide.icon ?? Infinity);
     rerender(withLocale("en-US", <Selection width={400} />));
-    const narrow = roleNamed("button", "Archive").querySelector("span");
-    expect(narrow?.getBoundingClientRect().width).toBeLessThanOrEqual(1);
+    const narrow = widths();
+    expect(narrow.word).toBeLessThan(narrow.icon ?? 0);
   });
 
   it("keeps every control at least a 24px target at both densities", async () => {

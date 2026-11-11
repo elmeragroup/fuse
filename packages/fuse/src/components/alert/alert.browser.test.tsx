@@ -280,10 +280,13 @@ describe("Alert", () => {
       throw new Error("expected the title inside the alert content");
     }
     const description = descriptionIn(alertNamed("default")).getBoundingClientRect();
-    // The content column's gap is 0.25rem, 4px at the default 16px root; an `h3` keeps its
+    // Only the content column's gap separates the title from the description; an `h3` keeps its
     // user-agent block margins in a preflight-free host unless the title resets them.
     expect(title.getBoundingClientRect().top - content.getBoundingClientRect().top).toBeCloseTo(0, 2);
-    expect(description.top - title.getBoundingClientRect().bottom).toBeCloseTo(4, 2);
+    expect(description.top - title.getBoundingClientRect().bottom).toBeCloseTo(
+      px(getComputedStyle(content).rowGap),
+      2
+    );
   });
 
   it("fires the action button and omits it when onAction is unset", async () => {

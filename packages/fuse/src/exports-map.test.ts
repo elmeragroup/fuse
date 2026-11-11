@@ -347,6 +347,7 @@ describe("exports map", () => {
     expect(discovered.jsEntries.map((entry) => entry.subpath)).not.toContain("recipe-catalog");
     const catalog = parseFacadeValueExports(
       "src/components/recipe-catalog.ts",
+      // oxlint-disable-next-line fuse/no-source-reading-tests -- reviewed inventory: each new value export of the private recipe catalog needs a decision here
       readFileSync(join(packageRoot, "src/components/recipe-catalog.ts"), "utf8")
     );
     expect(catalog).toEqual([
@@ -454,6 +455,7 @@ describe("exports map", () => {
     expect(discovered.jsEntries.map((entry) => entry.subpath)).not.toContain("theme-catalog");
     const catalog = parseFacadeValueExports(
       "src/theme/catalog.ts",
+      // oxlint-disable-next-line fuse/no-source-reading-tests -- reviewed inventory: each new value export of the private theme catalog needs a decision here
       readFileSync(join(packageRoot, "src/theme/catalog.ts"), "utf8")
     );
     expect(catalog).toEqual([
@@ -474,6 +476,7 @@ describe("exports map", () => {
   });
 
   it("keeps the committed root barrel in sync with the generator", () => {
+    // oxlint-disable-next-line fuse/no-source-reading-tests -- drift gate: the committed root barrel must equal a fresh generation
     const committed = readFileSync(join(packageRoot, "src/index.ts"), "utf8");
     expect(committed).toEqual(renderRootBarrel(discovered));
   });

@@ -226,7 +226,6 @@ describe("ConfirmButton", () => {
     expect(armed.getAttribute("aria-label")).toBe(announced);
     expect(armed.textContent).toContain("Confirm");
     const live = liveRegion(armed);
-    expect(live.classList.contains("sr-only")).toBe(true);
     expect(live.getAttribute("aria-live")).toBe("polite");
     expect(live.textContent).toBe(announced);
 

@@ -4,6 +4,7 @@ import { page, userEvent } from "vitest/browser";
 import "../../../dist/styles.css";
 import { assertFocusRingOnKeyboardAbsentOnMouse } from "../../../test/assert-focus-ring";
 import { SUPPORTED_LOCALES, withLocale } from "../../../test/locale-matrix";
+import { TARGET_SIZE } from "../../../test/target-size";
 import { renderThemed, roleNamed } from "../../../test/themed-browser-render";
 import { Sheet } from "./index";
 
@@ -164,8 +165,8 @@ describe("Sheet", () => {
     expect(corner.getAttribute("data-slot")).toBe("sheet-close");
     expect(corner.querySelector("svg")).not.toBeNull();
     expect(corner.getAttribute("aria-label")).toBe("Close");
-    expect(corner.getBoundingClientRect().width).toBeGreaterThanOrEqual(24);
-    expect(corner.getBoundingClientRect().height).toBeGreaterThanOrEqual(24);
+    expect(corner.getBoundingClientRect().width).toBeGreaterThanOrEqual(TARGET_SIZE);
+    expect(corner.getBoundingClientRect().height).toBeGreaterThanOrEqual(TARGET_SIZE);
     await userEvent.click(corner);
     await expect.element(page.getByRole("dialog")).not.toBeInTheDocument();
 

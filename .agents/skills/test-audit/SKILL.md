@@ -8,9 +8,10 @@ description: "Test value gate and audit. Use when writing or changing a test, re
 One value bar serves four branches:
 
 - To write or change a test, pass the [authoring gate](#authoring-gate).
-- To review tests in a diff, answer the authoring gate's questions for every
-  added or changed test from the diff and its owner. Report each question the
-  diff cannot answer and each matched junk pattern as a finding.
+- To review tests in a diff, check the PR's Test value answers against every
+  added or changed test, from the diff and its owner. Report as a finding each
+  test the section leaves unanswered, each answer the diff contradicts, each
+  gate question the diff cannot answer, and each matched junk pattern.
 - To audit existing tests, read [AUDIT.md](AUDIT.md) before discovery.
 - To prune one subsystem's whole test suite in one PR, read
   [AUDIT.md](AUDIT.md), then [CAMPAIGN.md](CAMPAIGN.md).
@@ -37,8 +38,8 @@ its place.
 
 ## Authoring gate
 
-Answer each question before adding the test, and include the answers in your
-report of the change.
+Answer each question before adding the test, and put the answers in the PR's
+Test value section.
 
 1. What observable behavior, invariant, or independent contract does it
    protect, and what is its oracle?
@@ -61,6 +62,12 @@ proves only its mock. One regression at the owner boundary covers the bug, and
 the layers the bug crosses need no replay of it.
 
 ## Junk patterns
+
+`pnpm lint` rejects the mechanical shapes on test files: pixel pins, class
+pins, source reads, fixed delays, wall-clock budgets, reruns and a module's
+second browser file (the `fuse/no-*` test rules and
+`fuse/one-browser-test-per-module`). A disable comment names the contract the
+test guards, and the gate still applies to it.
 
 **Tautologies.** The expectation comes from the thing under test. Beyond the
 cases the Tests section of `AGENTS.md` forbids, hunt for:

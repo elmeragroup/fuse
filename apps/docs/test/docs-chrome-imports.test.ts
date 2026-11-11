@@ -4,9 +4,12 @@ import { describe, expect, it } from "vitest";
 
 import { docsRoot } from "../scripts/lib/paths.ts";
 
-const SOURCE_EXTENSIONS = new Set([".ts", ".tsx", ".mdx"]);
+// The TypeScript side of this contract is lint: `no-restricted-imports` in `oxlint.config.ts` bans
+// the library Sidebar across apps/docs/src outside the Sidebar page, the landing's app shell and
+// the blocks' demos. Oxlint does not read MDX, so the pages' MDX is checked here.
+const SOURCE_EXTENSIONS = new Set([".mdx"]);
 
-/** Every authored source file under `apps/docs/src`, excluding the generated tree. */
+/** Every authored MDX page under `apps/docs/src`, excluding the generated tree. */
 function docsSourceFiles(dir: string): string[] {
   const files: string[] = [];
   for (const entry of readdirSync(dir)) {
@@ -43,15 +46,11 @@ function isSidebarPage(file: string): boolean {
   );
 }
 
-function isSidebarDemo(file: string): boolean {
-  return path.relative(docsRoot, file).split(path.sep).join("/").startsWith(`${SIDEBAR_ROUTE}demos/`);
-}
-
 const SIDEBAR_IMPORT = /from\s+["']@elmeragroup\/fuse\/sidebar["']/u;
 const SIDEBAR_FROM_BARREL = /import\s*\{[^}]*\bSidebar\b[^}]*\}\s*from\s+["']@elmeragroup\/fuse["']/u;
 
 describe("docs chrome never composes the library Sidebar", () => {
-  it("imports @elmeragroup/fuse/sidebar only from the Sidebar page's own demos", () => {
+  it("imports @elmeragroup/fuse/sidebar in no MDX page outside the Sidebar page", () => {
     const offenders = docsSourceFiles(path.join(docsRoot, "src"))
       .filter((file) => !isSidebarPage(file))
       .filter((file) => {
@@ -60,13 +59,5 @@ describe("docs chrome never composes the library Sidebar", () => {
       })
       .map((file) => path.relative(docsRoot, file));
     expect(offenders).toEqual([]);
-  });
-
-  it("still sees the Sidebar demos, so the exclusion is not vacuous", () => {
-    const demos = docsSourceFiles(path.join(docsRoot, "src")).filter(isSidebarDemo);
-    expect(demos.length).toBeGreaterThanOrEqual(5);
-    for (const demo of demos) {
-      expect(SIDEBAR_IMPORT.test(readFileSync(demo, "utf8")), demo).toBe(true);
-    }
   });
 });

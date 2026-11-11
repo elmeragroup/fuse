@@ -1,0 +1,178 @@
+import { ruleTester } from "../rule-tester.ts";
+import { noSourceReadingTests } from "./no-source-reading-tests.ts";
+
+ruleTester.run("no-source-reading-tests", noSourceReadingTests, {
+  valid: [
+    // Finding 16: JSON.parse past await consumes the read.
+    'const data = JSON.parse(await readFile(join(root, "src/data.ts"), "utf8"));',
+    // Finding 16: JSON.parse past an assertion consumes the read.
+    'const data = JSON.parse(readFileSync(join(root, "src/data.ts")) as string);',
+    // A computed template keeps its literal suffix, which names the file: a log beside a code entry.
+    'function logOf(entry) {\n  return readFileSync(join(dir, `${entry}.jsonl`), "utf8");\n}\nlogOf("token-process.ts");',
+    // T9: an unknown spread nested in a known one leaves every later index unknown.
+    'readFileSync([...[...unknownList], "source.ts"][0]);',
+    // T10: a static template is classified as the whole string, its parts in order.
+    'readFileSync(`${"manifest.ts"}.json`);',
+    // Hang: a binding that refers to itself resolves to nothing and cannot loop the walk.
+    "var files = files;\nfor (const file of files) readFileSync(file);",
+    // N5/T12: a bracketed static key narrows like a dotted one.
+    'function paths() {\n  return { logs: readdirSync(logDir), modules: globSync("*.ts") };\n}\nfor (const log of paths()["logs"]) readFileSync(log);',
+    // T11: a reassigned walk binding resolves to nothing, not to its old initializer.
+    'let files = globSync("*.ts");\nfiles = globSync("*.log");\nfor (const file of files) readFileSync(file);',
+    // T7: array spreads are expanded before indexing.
+    'readFileSync([...["src/button.tsx", "b.json"], "c.json"][1]);',
+    // N5: an alias or destructured key of the log property is judged by that property alone.
+    'function paths() {\n  return { logs: readdirSync(logDir), modules: globSync("*.ts") };\n}\nconst logs = paths().logs;\nfor (const log of logs) readFileSync(log);',
+    'function paths() {\n  return { logs: readdirSync(logDir), modules: globSync("*.ts") };\n}\nconst { logs } = paths();\nfor (const log of logs) readFileSync(log);',
+    'const manifest = JSON.parse(readFileSync(join(packageRoot, "package.json"), "utf8"));',
+    'const css = readFileSync(new URL("chart.css", import.meta.url), "utf8");',
+    'const md = readFileSync(join(outDir, `${slug}.md`), "utf8");',
+    'import fuseCss from "../styles/fuse.css?raw";',
+    'const sheet = await import("../styles/fuse.css?raw");',
+    'const types = readFileSync(join(dist, "index.d.ts"), "utf8");',
+    // A computed path that no code walk supplies reads data the test wrote.
+    'const log = readFileSync(logFile, "utf8");',
+    'const records = await readFile(path.join(cwd, "fake-server.log"), "utf8");',
+    'const EXTENSIONS = [".ts"];\nconst api = JSON.parse(readFileSync(apiFile, "utf8"));\nreaddirSync(dir);',
+    'expect(manifest.sideEffects).toEqual(["**/*.css"]);\nfor (const f of readdirSync(dir)) readFileSync(f);',
+    // A path looked up from data, beside a code walk, names that data's file.
+    'const EXTENSIONS = [".ts"];\nreaddirSync(dir);\nconst page = readFileSync(paths(slug).pageFile, "utf8");',
+    'import { compiledCssPath } from "./paths";\nconst EXTENSIONS = [".ts"];\nreaddirSync(dir);\nreadFileSync(compiledCssPath, "utf8");',
+    'const EXTENSIONS = [".ts"];\nreaddirSync(dir);\nreadFileSync(createRequire(import.meta.url).resolve("@elmeragroup/fuse/themes.css"), "utf8");',
+    // Q2: the property read decides the evidence, not the whole object returned.
+    'function paths() {\n  return { logs: readdirSync(logDir), modules: globSync("*.ts") };\n}\nfor (const log of paths().logs) readFileSync(log);',
+    // Item 6: JSON.parse under its real name only.
+    'const pkg = JSON.parse(readFileSync(join(root, "src/manifest.ts"), "utf8"));',
+    // Q2: an unrelated listing of code files does not make a helper's log read a source read.
+    'it("lists the modules", () => {\n  expect(readdirSync(src).filter((name) => name.endsWith(".ts"))).toContain("button.ts");\n});\nfunction readLog(file) {\n  return readFileSync(file, "utf8");\n}\nconst logPath = join(tmp, "server.log");\nit("logs", () => {\n  expect(readLog(logPath)).toContain("ready");\n});',
+  ],
+  invalid: [
+    // A list a helper fills by push is no empty list: the walk is the helper's code.
+    {
+      code: 'const EXTENSIONS = [".ts"];\nfunction sourceFiles(dir) {\n  const files = [];\n  for (const entry of readdirSync(dir)) if (EXTENSIONS.some((e) => entry.endsWith(e))) files.push(entry);\n  return files;\n}\nfor (const file of sourceFiles(src)) readFileSync(file);',
+      errors: [{ messageId: "source" }],
+    },
+    // Finding 15: trim reshapes a literal code path.
+    {
+      code: 'readFileSync("src/button.ts".trim());',
+      errors: [{ messageId: "source" }],
+    },
+    // Finding 15: concat assembles a code path.
+    {
+      code: 'readFileSync("src/button".concat(".ts"));',
+      errors: [{ messageId: "source" }],
+    },
+    // A computed template's literal suffix names a code module.
+    {
+      code: 'for (const name of names) readFileSync(join(dir, `${slug(name)}.ts`), "utf8");',
+      errors: [{ messageId: "source" }],
+    },
+    // T9: the known prefix before an unknown tail still indexes.
+    { code: 'readFileSync([...["src/a.ts"], ...unknownList][0]);', errors: [{ messageId: "source" }] },
+    // T10: the assembled string ends in a code extension.
+    { code: 'readFileSync(`${"manifest.json"}.ts`);', errors: [{ messageId: "source" }] },
+    // G1: a path that may be a code module, in either return order.
+    {
+      code: 'function pick() {\n  if (flag) return "src/button.tsx";\n  return "a.json";\n}\nreadFileSync(pick());',
+      errors: [{ messageId: "source" }],
+    },
+    // N5/T12: the bracketed code-walk property.
+    {
+      code: 'function paths() {\n  return { logs: readdirSync(logDir), modules: globSync("*.ts") };\n}\nfor (const file of paths()["modules"]) readFileSync(file);',
+      errors: [{ messageId: "source" }],
+    },
+    // N13/T8: a string-literal key in a destructuring pattern.
+    {
+      code: 'import * as fs from "node:fs";\nconst { "readFileSync": read } = fs;\nread("src/button.tsx", "utf8");',
+      errors: [{ messageId: "source" }],
+    },
+    // T7: the expanded index lands on the code path.
+    {
+      code: 'readFileSync([...["a.json", "src/button.tsx"], "b.json"][1]);',
+      errors: [{ messageId: "source" }],
+    },
+    // T13: a path a local function returns.
+    {
+      code: 'function source() {\n  return "button.tsx";\n}\nreadFileSync(source());',
+      errors: [{ messageId: "source" }],
+    },
+    {
+      code: 'const path = () => "./button.tsx";\nreadFileSync(path(), "utf8");',
+      errors: [{ messageId: "source" }],
+    },
+    // N5: the destructured code-walk property still reads source.
+    {
+      code: 'function paths() {\n  return { logs: readdirSync(logDir), modules: globSync("*.ts") };\n}\nconst { modules } = paths();\nfor (const file of modules) readFileSync(file);',
+      errors: [{ messageId: "source" }],
+    },
+    // N13: a reader destructured from a namespace import.
+    {
+      code: 'import * as fs from "node:fs";\nconst { readFileSync: read } = fs;\nread("src/button.tsx", "utf8");',
+      errors: [{ messageId: "source" }],
+    },
+    {
+      code: 'expect(readFileSync(join(packageRoot, "src/index.ts"), "utf8")).not.toContain("./flags");',
+      errors: [{ messageId: "source" }],
+    },
+    {
+      code: 'const ROSTER = path.join(fuseSrc, "icons/roster.ts");\nconst source = readFileSync(ROSTER, "utf8");',
+      errors: [{ messageId: "source" }],
+    },
+    { code: 'import source from "./button.tsx?raw";', errors: [{ messageId: "source" }] },
+    // T10: the dynamic form of a raw import.
+    {
+      code: 'const { default: source } = await import("./button.tsx?raw");',
+      errors: [{ messageId: "source" }],
+    },
+    {
+      code: 'const text = await fs.promises.readFile(new URL("./dialog.tsx", import.meta.url), "utf8");',
+      errors: [{ messageId: "source" }],
+    },
+    // T9: a renamed import of the reader.
+    {
+      code: 'import { readFileSync as read } from "node:fs";\nexpect(read("src/button.tsx", "utf8")).toContain("forwardRef");',
+      errors: [{ messageId: "source" }],
+    },
+    {
+      code: 'import * as fs from "node:fs";\nconst read = fs.readFileSync;\nread(join(root, "src/button.tsx"), "utf8");',
+      errors: [{ messageId: "source" }],
+    },
+    // A directory walk filtered to code files reads each one's text.
+    {
+      code: 'const files = readdirSync(src).filter((file) => file.endsWith(".tsx"));\nfor (const file of files) expect(readFileSync(file, "utf8")).not.toMatch(/use client/);',
+      errors: [{ messageId: "source" }],
+    },
+    {
+      code: 'const modules = globSync("src/**").filter((file) => /\\.tsx?$/.test(file));\nconst sources = modules.map((file) => readFileSync(file, "utf8"));',
+      errors: [{ messageId: "source" }],
+    },
+    {
+      code: 'const EXTENSIONS = [".ts", ".tsx"];\nfunction walk(dir) {\n  return readdirSync(dir).filter((entry) => EXTENSIONS.some((e) => entry.endsWith(e)));\n}\nfor (const file of walk(src)) readFileSync(file, "utf8");',
+      errors: [{ messageId: "source" }],
+    },
+    // Q2: the property read is the code walk.
+    {
+      code: 'function paths() {\n  return { logs: readdirSync(logDir), modules: globSync("*.ts") };\n}\nfor (const file of paths().modules) readFileSync(file);',
+      errors: [{ messageId: "source" }],
+    },
+    // Item 5: a literal source path through a reader helper.
+    {
+      code: 'function readSource(file) {\n  return readFileSync(file, "utf8");\n}\nreadSource("./button.tsx");',
+      errors: [{ messageId: "source" }],
+    },
+    {
+      code: 'const readSource = (file) => readFileSync(join(root, file), "utf8");\nconst BUTTON = "src/button.tsx";\nexpect(readSource(BUTTON)).toContain("ref");',
+      errors: [{ messageId: "source" }],
+    },
+    // Item 6: another library's parse is no JSON exemption.
+    {
+      code: 'import { parse } from "@babel/parser";\nparse(readFileSync("src/button.tsx", "utf8"));',
+      errors: [{ messageId: "source" }],
+    },
+    // A helper's parameter, supplied by a code walk at its call site.
+    {
+      code: 'function specifiersOf(file) {\n  return readFileSync(file, "utf8").match(/from "(.+)"/);\n}\nfor (const demo of readdirSync(dir).filter((name) => name.endsWith(".tsx"))) specifiersOf(demo);',
+      errors: [{ messageId: "source" }],
+    },
+  ],
+});

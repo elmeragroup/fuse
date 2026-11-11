@@ -1,3 +1,4 @@
+/* oxlint-disable fuse/one-browser-test-per-module -- a Tailwind-source host with preflight: its page injects Tailwind's preflight and theme sheets, which tabs.browser.test.tsx's preflight-free page must not see */
 import { compile } from "tailwindcss";
 import preflightCss from "tailwindcss/preflight.css?raw";
 import themeCss from "tailwindcss/theme.css?raw";
@@ -8,6 +9,7 @@ import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import { render } from "../../../test/browser-render";
 import { edgeInset } from "../../../test/inner-corner-specimens";
+import { TARGET_SIZE } from "../../../test/target-size";
 import { fkasPrivate } from "../../../test/theme-fixtures";
 import {
   roleNamed,
@@ -80,7 +82,7 @@ describe("Tabs in a preflight consumer", () => {
         const list = roleNamed("tablist", "Sections");
         expect(tab.matches(":focus-visible"), `${fontSize} ${density}`).toBe(true);
         expect(tab.getBoundingClientRect().height, `${fontSize} ${density} target`).toBeGreaterThanOrEqual(
-          24
+          TARGET_SIZE
         );
         // The shared ring is 2px wide and flush, so it reaches 2px past the trigger.
         const tabBox = tab.getBoundingClientRect();
@@ -88,7 +90,9 @@ describe("Tabs in a preflight consumer", () => {
         for (const edge of ["start", "end"] as const) {
           expect(edgeInset(tab, list, edge), `${fontSize} ${density} ${edge}`).toBeGreaterThanOrEqual(2);
         }
+        // oxlint-disable-next-line fuse/no-geometry-assertions -- the shared 2px focus ring must fit inside the tab list, which clips it otherwise in a preflight host
         expect(tabBox.top - listBox.top, `${fontSize} ${density} top`).toBeGreaterThanOrEqual(2);
+        // oxlint-disable-next-line fuse/no-geometry-assertions -- the shared 2px focus ring must fit inside the tab list, which clips it otherwise in a preflight host
         expect(listBox.bottom - tabBox.bottom, `${fontSize} ${density} bottom`).toBeGreaterThanOrEqual(2);
         unmount();
       }

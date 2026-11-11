@@ -196,14 +196,18 @@ describe("Switch", () => {
           <Field.Label>Small</Field.Label>
           <Switch size="sm" />
         </Field.Root>
+        <Switch aria-label="Standalone default" />
+        <Switch size="sm" aria-label="Standalone small" />
       </div>
     );
 
+    // Oracle: the same switch outside any Field, which nothing stretches.
     const fallback = measureSwitch("Default");
-    expect(fallback.width, "default width").toBe(32);
-    expect(fallback.height, "default height").toBeCloseTo(18.4, 1);
+    const standalone = measureSwitch("Standalone default");
+    expect([fallback.width, fallback.height], "default").toEqual([standalone.width, standalone.height]);
     const small = measureSwitch("Small");
-    expect([small.width, small.height], "sm").toEqual([24, 14]);
+    const standaloneSmall = measureSwitch("Standalone small");
+    expect([small.width, small.height], "sm").toEqual([standaloneSmall.width, standaloneSmall.height]);
   });
 
   it.each([

@@ -46,12 +46,12 @@ describe("flag assets", () => {
     expect(flags?.inRootBarrel).toBe(false);
     expect(flags?.runtimeExports).toEqual(["flagAssets"]);
     expect(root?.runtimeExports).not.toContain("flagAssets");
-    // Source-grep: barrel absence has no consumer-behavior probe beyond discoverEntries.
-    expect(readFileSync(join(packageRoot, "src/index.ts"), "utf8")).not.toContain("./flags");
-    expect(readFileSync(join(packageRoot, "src/flags/manifest.ts"), "utf8")).toContain(
-      'new URL("./NO.svg?no-inline", import.meta.url).href'
-    );
-    expect(readFileSync(join(packageRoot, "src/flags/manifest.ts"), "utf8")).not.toMatch(/https?:\/\//);
+    // Each href resolves beside the module, never to a remote host, and keeps the query that stops
+    // a bundler inlining the SVG.
+    expect(flagAssets.NO).toMatch(/^file:.*\/NO\.svg\?no-inline$/u);
+    for (const [code, href] of Object.entries(flagAssets)) {
+      expect(new URL(href).protocol, code).toBe("file:");
+    }
   }, 30_000);
 
   it("has a libphonenumber gap of exactly AC, BQ, EH, and TA", () => {

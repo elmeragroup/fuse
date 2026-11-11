@@ -1,4 +1,4 @@
-import { readdirSync, readFileSync, statSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
@@ -113,37 +113,9 @@ describe("theme catalog payload", () => {
   });
 });
 
-const SOURCE_EXTENSIONS = new Set([".ts", ".tsx", ".js", ".mjs"]);
-const DEEP_FUSE_SRC_IMPORT = /(?:from|import)\s+["'][^"']*packages\/fuse\/src/;
-
-function walkSourceFiles(directory: string): string[] {
-  const files: string[] = [];
-  for (const entry of readdirSync(directory)) {
-    // Inspect authored source only; build output can contain entire bundled dependencies.
-    if (["node_modules", "generated", ".next", "dist", ".turbo"].includes(entry)) {
-      continue;
-    }
-    const absolute = join(directory, entry);
-    if (statSync(absolute).isDirectory()) {
-      files.push(...walkSourceFiles(absolute));
-      continue;
-    }
-    if (SOURCE_EXTENSIONS.has(entry.slice(entry.lastIndexOf(".")))) {
-      files.push(absolute);
-    }
-  }
-  return files;
-}
-
 describe("workspace package boundary", () => {
-  it("does not deep-import packages/fuse/src from apps", () => {
-    const offenders = walkSourceFiles(appsRoot)
-      .filter((file) => DEEP_FUSE_SRC_IMPORT.test(readFileSync(file, "utf8")))
-      .map((file) => file.slice(appsRoot.length));
-    expect(offenders).toEqual([]);
-  });
-
   it("does not list transpilePackages in the docs host", () => {
+    // oxlint-disable-next-line fuse/no-source-reading-tests -- consumer-compatibility contract: the docs host runs Fuse's built output as a consumer does; transpilePackages would compile the source instead
     expect(readFileSync(join(appsRoot, "docs/next.config.ts"), "utf8")).not.toContain("transpilePackages");
   });
 });

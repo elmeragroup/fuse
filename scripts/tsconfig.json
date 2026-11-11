@@ -12,5 +12,7 @@
     "erasableSyntaxOnly": true,
     "lib": ["ESNext"]
   },
-  "include": ["**/*.ts"]
+  // The lint config is a Node-run TypeScript module too; checking it here keeps its shapes in step
+  // with oxlint's `defineConfig` types.
+  "include": ["**/*.ts", "../oxlint.config.ts"]
 }

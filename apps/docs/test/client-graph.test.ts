@@ -76,9 +76,11 @@ function reachableFrom(entry: string): Set<string> {
 }
 
 /** Every client component in the docs source, the landing and the studio included. */
+// oxlint-disable-next-line fuse/no-source-reading-tests -- module-graph contract: the client graph's roots are the modules that declare "use client"; reachability spans files, which no per-file lint rule can state
 const CLIENT_MODULES = sourceFiles(srcRoot).filter((file) => isClientModule(readFileSync(file, "utf8")));
 
 function importsHighlighter(file: string): boolean {
+  // oxlint-disable-next-line fuse/no-source-reading-tests -- module-graph contract: no module a client component reaches imports the highlighter, a transitive check no per-file lint rule can state
   return [...readFileSync(file, "utf8").matchAll(BARE_IMPORT)].some(
     (match) => match[1] === HIGHLIGHTER || (match[1]?.startsWith(`${HIGHLIGHTER}/`) ?? false)
   );

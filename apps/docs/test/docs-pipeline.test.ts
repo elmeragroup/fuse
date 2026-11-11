@@ -313,6 +313,7 @@ describe("Collapsible settle override (collapsible/page.mdx)", () => {
   // appends. So read all three strings from source rather than restating any of them here: a
   // change to either library file fails this test instead of quietly rotting the prose.
   const readOne = (file: string, pattern: RegExp): string => {
+    // oxlint-disable-next-line fuse/no-source-reading-tests -- docs drift contract: the page's settle utilities must cancel what the library applies, read from the two library files that apply it
     const match = pattern.exec(readFileSync(join(repoRoot, file), "utf8"));
     if (match?.[1] === undefined) {
       throw new Error(`No match for ${String(pattern)} in ${file}`);

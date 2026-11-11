@@ -54,6 +54,7 @@ describe("Phosphor adapters", () => {
   });
 
   it("keeps generated modules and the facade in lock-step with the roster", () => {
+    // oxlint-disable-next-line fuse/no-source-reading-tests -- drift gate: the committed generated facade must equal a fresh generation from the roster
     expect(readFileSync(join(packageRoot, "src/icons.ts"), "utf8")).toBe(
       generatedFacadeSource(PHOSPHOR_ICON_NAMES)
     );
@@ -65,30 +66,8 @@ describe("Phosphor adapters", () => {
 
     for (const name of PHOSPHOR_ICON_NAMES) {
       const path = join(generatedDir, `${iconModuleSlug(name)}.ts`);
+      // oxlint-disable-next-line fuse/no-source-reading-tests -- drift gate: each committed generated adapter must equal a fresh generation
       expect(readFileSync(path, "utf8"), name).toBe(generatedAdapterSource(name));
-    }
-  });
-
-  it("imports only per-icon SSR modules and stays server-safe", () => {
-    const facade = readFileSync(join(packageRoot, "src/icons.ts"), "utf8");
-    expect(facade).not.toContain("use client");
-    expect(facade).not.toContain("dist/csr");
-    expect(facade).not.toMatch(/from ["']@phosphor-icons\/react["']/);
-    expect(facade).not.toMatch(/from ["']@phosphor-icons\/react\/ssr["']/);
-
-    const helper = readFileSync(join(packageRoot, "src/icons/create-elmera-icon.ts"), "utf8");
-    expect(helper).not.toContain("use client");
-    expect(helper).not.toContain("dist/csr");
-    expect(helper).not.toMatch(/from ["']@phosphor-icons\/react["']/);
-    expect(helper).toContain(`from "@phosphor-icons/react/dist/ssr/Check"`);
-
-    for (const name of PHOSPHOR_ICON_NAMES) {
-      const text = readFileSync(join(generatedDir, `${iconModuleSlug(name)}.ts`), "utf8");
-      expect(text, name).toContain(`from "@phosphor-icons/react/dist/ssr/${name}"`);
-      expect(text, name).not.toContain("use client");
-      expect(text, name).not.toContain("dist/csr");
-      expect(text, name).not.toMatch(/from ["']@phosphor-icons\/react["']/);
-      expect(text, name).not.toMatch(/from ["']lucide-react["']/);
     }
   });
 

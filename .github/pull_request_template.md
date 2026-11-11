@@ -20,6 +20,13 @@ for a separate PR. See CONTRIBUTING.md#one-problem. -->
 <!-- How this fixes the problem. If it touches several packages or apps, say why the same fix
 needs each of them. -->
 
+## Test value
+
+<!-- For each added or changed test, answer every question of the authoring gate in
+.agents/skills/test-audit/SKILL.md#authoring-gate. If you added no test, say why: no behavior
+changed, the keeper already goes red, or screenshots and recordings prove the visual or motion
+change. -->
+
 ## Verification
 
 <!-- The focused tests and manual checks you ran and what you saw. State what you could not

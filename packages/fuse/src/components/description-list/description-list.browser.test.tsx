@@ -179,7 +179,7 @@ describe("DescriptionList", () => {
     ]);
   });
 
-  it("passes Root attributes through and adds no classes of its own", () => {
+  it("passes Root attributes through", () => {
     renderThemed(
       <DescriptionList.Root id="customer" data-track="profile">
         <DescriptionList.Heading>Customer</DescriptionList.Heading>
@@ -191,7 +191,6 @@ describe("DescriptionList", () => {
     }
     expect(root.tagName).toBe("DIV");
     expect(root.getAttribute("data-track")).toBe("profile");
-    expect(root.className).toBe("");
   });
 
   it("lets a test id on an Item find its row", async () => {

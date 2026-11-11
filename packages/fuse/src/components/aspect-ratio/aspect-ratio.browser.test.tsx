@@ -25,6 +25,7 @@ describe("AspectRatio", () => {
     );
     const frame = roleNamed("group", "Video");
     expect(getComputedStyle(frame).aspectRatio).toBe("16 / 9");
-    expect(frame.getBoundingClientRect().height).toBe(135);
+    const box = frame.getBoundingClientRect();
+    expect(box.height).toBeCloseTo((box.width * 9) / 16, 5);
   });
 });

@@ -130,7 +130,6 @@ describe("ToggleGroup", () => {
     expect(item.getAttribute("data-slot")).toBe("toggle-group-item");
     expect(item.getAttribute("data-size")).toBe("default");
     expect(item.getAttribute("data-variant")).toBe("default");
-    expect(px(getComputedStyle(item).height)).toBe(36);
     expect(getComputedStyle(item).backgroundColor).toBe("rgba(0, 0, 0, 0)");
   });
 

@@ -128,7 +128,6 @@ describe("VerticalTable", () => {
     if (!(hidden instanceof HTMLElement)) {
       throw new Error("expected the hidden row");
     }
-    expect(hidden.classList.contains("hidden")).toBe(true);
     expect(getComputedStyle(hidden).display).toBe("none");
 
     const loadingRow = page

@@ -86,6 +86,7 @@ function demoFiles(): string[] {
 }
 
 function specifiersOf(file: string): string[] {
+  // oxlint-disable-next-line fuse/no-source-reading-tests -- consumer contract: a demo imports only what a consumer can, against the reviewed carve-out inventory above
   return [...readFileSync(file, "utf8").matchAll(IMPORT_SPECIFIER)].map((match) => match[1] ?? "");
 }
 

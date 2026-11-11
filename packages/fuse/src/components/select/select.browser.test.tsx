@@ -301,8 +301,9 @@ describe("Select", () => {
 
       // Oracle: the default `side="bottom"` and `sideOffset={4}` place the popup's top 4px
       // under the trigger, overlapping it horizontally.
+      const sideOffset = 4;
       expect(content.top - trigger.bottom).toBeGreaterThanOrEqual(0);
-      expect(content.top - trigger.bottom).toBeLessThanOrEqual(8);
+      expect(content.top - trigger.bottom).toBeLessThanOrEqual(sideOffset * 2);
       expect(content.left).toBeLessThan(trigger.right);
       expect(content.right).toBeGreaterThan(trigger.left);
     });

@@ -162,7 +162,9 @@ describe("holdLock", () => {
       const second = yield* Effect.forkChild(
         attempt(file).pipe(Effect.ensuring(Deferred.succeed(secondDone, undefined)))
       );
-      // Long enough for an unguarded reclaim to finish, well inside the mutex wait.
+      // Long enough for an unguarded reclaim to finish, well inside the mutex wait. A slow machine
+      // can only let a regression slip through here, never fail a correct lock.
+      // oxlint-disable-next-line fuse/no-fixed-delay -- negative control for the reclaim mutex: a second run must wait for it rather than remove the stale lock; no hook signals that B is parked on the mutex
       yield* Effect.sleep(Duration.millis(200));
       yield* Deferred.succeed(release, undefined);
 

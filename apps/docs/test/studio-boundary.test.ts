@@ -94,6 +94,7 @@ function literalSpecifier(source: Expression): string | undefined {
  * substitutions. An MDX page contributes every quoted relative path instead.
  */
 function specifiersOf(file: string): string[] {
+  // oxlint-disable-next-line fuse/no-source-reading-tests -- removability contract: shared code reaches the studio only through its registration; the header says why no lint rule can state it
   const source = readFileSync(file, "utf8");
   if (path.extname(file) === ".mdx") {
     return mdxSpecifiers(source);
