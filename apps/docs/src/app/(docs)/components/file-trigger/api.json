@@ -5,56 +5,91 @@
     {
       "name": "FileTrigger",
       "rsc": "client",
-      "sourcePath": "packages/fuse/src/react-aria/file-trigger/file-trigger.tsx",
+      "sourcePath": "packages/fuse/src/components/file-trigger/file-trigger.tsx",
       "forwardedFrom": [
-        "@react-types/shared",
-        "react-aria-components"
+        "@types/react"
       ],
-      "forwardedCount": 74,
+      "forwardedCount": 286,
       "props": [
         {
-          "name": "className",
+          "name": "accept",
           "origin": "declared",
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Merged onto the visible Button.",
+          "description": "The `accept` attribute's syntax, such as `\"image/*,.pdf\"`. The picker receives it as-is, and a picked file that fails it reaches `onReject` with `\"type\"`.",
           "required": false
         },
         {
-          "name": "isDisabled",
+          "name": "capture",
+          "origin": "declared",
+          "type": "\"environment\" | \"user\" | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Ask a phone to capture new media with the front (`\"user\"`) or back (`\"environment\"`) camera.",
+          "required": false
+        },
+        {
+          "name": "directory",
           "origin": "declared",
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Disables the visible Button (and picker activation).",
+          "description": "The picker selects a folder, and `onSelect` receives its files.",
+          "required": false
+        },
+        {
+          "name": "disabled",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Disable the button and ignore picks.",
+          "required": false
+        },
+        {
+          "name": "multiple",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Take more than one file. Without it, a pick in which more than one file passes `accept` rejects each of those with `\"count\"`. `accept` is checked first, so a file that fails it is rejected with `\"type\"` and never counts.",
+          "required": false
+        },
+        {
+          "name": "onReject",
+          "origin": "declared",
+          "type": "((rejections: FileRejection[]) => void) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Receives the files that did not pass, each with its `reason`. For one pick it runs right after `onSelect`, in the same task.",
           "required": false
         },
         {
           "name": "onSelect",
           "origin": "declared",
-          "type": "((files: FileList | null) => void) | undefined",
+          "type": "((files: File[]) => void) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Called with the picked files. The list is the input's own `files`, which Chromium and WebKit empty when the picker opens again, so copy it before storing it: `[...files]`.",
+          "description": "Receives the files that passed `accept` and the count rule, in a fresh array for each pick.",
           "required": false
         },
         {
           "name": "ref",
           "origin": "declared",
-          "type": "Ref<HTMLInputElement> | undefined",
+          "type": "Ref<HTMLButtonElement> | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "The hidden file input.",
+          "description": "The visible button.",
           "required": false
         },
         {
           "name": "size",
-          "origin": "recipe-axis",
-          "type": "\"default\" | \"icon\" | \"icon-inline\" | \"icon-lg\" | \"icon-sm\" | \"icon-xs\" | \"lg\" | \"sm\" | \"xs\" | undefined",
-          "shortType": "Union",
+          "origin": "declared",
+          "type": "LabelButtonSize | undefined",
+          "shortType": null,
           "defaultValue": "\"sm\"",
-          "description": "",
+          "description": "The Button's label size: `xs`, `sm` (the default), `default` or `lg`.",
           "required": false
         },
         {
@@ -62,7 +97,7 @@
           "origin": "recipe-axis",
           "type": "\"default\" | \"destructive\" | \"ghost\" | \"link\" | \"outline\" | \"secondary\" | \"success\" | undefined",
           "shortType": "Union",
-          "defaultValue": null,
+          "defaultValue": "\"default\"",
           "description": "",
           "required": false
         },
@@ -72,7 +107,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "true",
-          "description": "Leading icon on/off. Defaults to on, and adds `gap-x-2` between the icon and the label when on.",
+          "description": "Leading icon on/off. Defaults to on: a camera with `capture`, a folder with `directory`, a paperclip otherwise. It is decorative, so the children name the button.",
           "required": false
         }
       ]

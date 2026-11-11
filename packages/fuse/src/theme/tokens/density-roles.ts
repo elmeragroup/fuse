@@ -444,6 +444,7 @@ export const PART_DENSITY = {
   "field-error": "label",
   "field-input": "control",
 
+  "file-trigger": "control",
   "file-upload": "surface",
   "file-upload-dropzone": "surface",
   "file-upload-trigger": "control",

@@ -233,6 +233,7 @@ const EXPECTED_ENTRIES = {
   // Each picker's parts and its labeled composite share one entry, as `date-field` does.
   "date-picker": { inRootBarrel: true, runtimeExports: ["DatePicker", "DatePickerField"] },
   "date-range-picker": { inRootBarrel: true, runtimeExports: ["DateRangePicker", "DateRangePickerField"] },
+  "file-trigger": { inRootBarrel: true, runtimeExports: ["FileTrigger"] },
   "react-aria/calendar": {
     inRootBarrel: false,
     runtimeExports: ["Calendar", "CalendarHeader", "CalendarGridHeader"],
@@ -246,7 +247,6 @@ const EXPECTED_ENTRIES = {
     inRootBarrel: false,
     runtimeExports: ["DateRangePicker", "DateRangePickerPresetGroup", "DateRangePickerPresetItem"],
   },
-  "react-aria/file-trigger": { inRootBarrel: false, runtimeExports: ["FileTrigger"] },
   "react-aria/focusable": { inRootBarrel: false, runtimeExports: ["Focusable", "useFocusable"] },
   "react-aria/grid-list": { inRootBarrel: false, runtimeExports: ["GridList", "GridListItem"] },
   "react-aria/range-calendar": { inRootBarrel: false, runtimeExports: ["RangeCalendar"] },
