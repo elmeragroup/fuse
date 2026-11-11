@@ -32,7 +32,7 @@ describe("Export snapshots from an applied file", () => {
   beforeAll(async () => {
     ({ kit } = await kitFixture());
     file = await appliedFile();
-  }, 60_000);
+  });
 
   it("exports every instance of the four previews, with the snapshot's fields", async () => {
     let progress: readonly [number, number] | undefined;
