@@ -11,11 +11,13 @@ import type { SupportedLocale } from "../../intl/locale-context";
 import type { EmphasisEntry } from "./chart-store";
 import type { ChartSeriesConfig, XFormat } from "./chart-types";
 import { CHART_STRINGS } from "./format/chart-strings";
+import { sentence, unitLabel } from "./format/description-words";
+import type { UnitLabel } from "./format/description-words";
 import type { FormattedText } from "./format/formatted-text";
 import { seriesLabel } from "./format/series-label";
 import { formatSlot, LABEL_PRESETS, wallClock } from "./format/time-format";
 import type { Interval } from "./format/time-format";
-import { formatUnitLabel, formatUnitless, formatValue } from "./format/value-format";
+import { formatValue } from "./format/value-format";
 import { CHART_WORDS } from "./format/words";
 import type { CartesianModel } from "./layout/cartesian-model";
 import { ownWindowSlots } from "./layout/coarse-slots";
@@ -320,33 +322,14 @@ export function optionName(
   return `${x}: ${body}`;
 }
 
-/** The first letter in upper case, as a sentence starts. */
-function sentence(text: string, locale: SupportedLocale): string {
-  const [first = "", ...rest] = text;
-  return `${first.toLocaleUpperCase(locale)}${rest.join("")}`;
-}
-
-/** A description label with its unit, and the spoken form of each value after it. */
-type UnitLabel = {
-  /** The label, with the spoken unit when the format has one. */
-  readonly label: string;
-  /** A value's spoken text, unitless when the label carries the unit. */
-  readonly value: (value: number) => string;
-};
-
-/**
- * A description label with the format's spoken unit, and the unitless spoken value that follows
- * it, as CONTRACT section 9.3 writes `Forbruk i kilowattimer: lavest 0,33`. A format with no unit
- * keeps the label and speaks each value whole.
- */
+/** A description label with a series' unit, and the spoken form of each value after it. */
 function withUnit(context: TextContext, key: string, label: string): UnitLabel {
-  const format = context.config[key]?.format ?? {};
-  const unit = formatUnitLabel(context.locale, format);
-  if (unit === null) return { label, value: (value) => valueLabel(context, key, value).spoken };
-  return {
-    label: CHART_STRINGS[context.locale].descriptionLabel(label, unit.spoken),
-    value: (value) => formatUnitless(context.locale, value, format).spoken,
-  };
+  return unitLabel(
+    context.locale,
+    context.config[key]?.format ?? {},
+    label,
+    (value) => valueLabel(context, key, value).spoken
+  );
 }
 
 /** A reading at a slot, as a series' lowest or highest. */

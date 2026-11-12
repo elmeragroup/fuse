@@ -131,3 +131,75 @@ export function clientScale(element: HTMLElement): ClientScale {
     y: element.offsetHeight === 0 ? 1 : box.height / element.offsetHeight,
   };
 }
+
+/** One keyed child of a tick list: a grid line or an axis label. */
+export type TickNode = HTMLElement | SVGElement;
+
+/** The children a frame keeps under one parent, one per key. */
+export type TickList = {
+  /**
+   * Keep one child per key: make the missing ones, let the ones no key names leave, and return
+   * every child still mounted by its key, the leaving ones included, so a frame places each of
+   * them until it is gone. A key that comes back while its child leaves takes the child back.
+   */
+  readonly sync: (keys: readonly number[]) => ReadonlyMap<number, TickNode>;
+  /** Drop every child at once, so the next `sync` makes each one again, as a new label format needs. */
+  readonly clear: () => void;
+};
+
+/**
+ * Let a child leave: mark it `data-leaving`, which its stylesheet may fade it out on, and call
+ * `gone` once every animation it then runs has ended, finished or cancelled, as reduced motion
+ * cancels it, or at once when it runs none.
+ */
+function leave(child: TickNode, gone: () => void): void {
+  child.setAttribute("data-leaving", "");
+  const fades = child.getAnimations();
+  if (fades.length === 0) {
+    gone();
+    return;
+  }
+  void Promise.allSettled(fades.map((fade) => fade.finished)).then(gone);
+}
+
+/**
+ * Create the keyed children of one parent, which a frame writes only where its keys change.
+ *
+ * @param parent - The element that holds the children.
+ * @param make - Makes the child of a key.
+ * @returns The list.
+ */
+export function createTickList(parent: Element, make: (key: number) => TickNode): TickList {
+  const mounted = new Map<number, TickNode>();
+  // Each leaving child's exit, which taking the child back ends, so a later exit's end is its own.
+  const exits = new Map<number, object>();
+  return {
+    sync(keys) {
+      const wanted = new Set(keys);
+      for (const [key, child] of mounted) {
+        if (wanted.has(key) || exits.has(key)) continue;
+        const exit = {};
+        exits.set(key, exit);
+        leave(child, () => {
+          if (exits.get(key) !== exit) return;
+          exits.delete(key);
+          mounted.delete(key);
+          child.remove();
+        });
+      }
+      for (const key of keys) {
+        if (exits.delete(key)) mounted.get(key)?.removeAttribute("data-leaving");
+        if (mounted.has(key)) continue;
+        const child = make(key);
+        parent.append(child);
+        mounted.set(key, child);
+      }
+      return mounted;
+    },
+    clear() {
+      for (const child of mounted.values()) child.remove();
+      mounted.clear();
+      exits.clear();
+    },
+  };
+}

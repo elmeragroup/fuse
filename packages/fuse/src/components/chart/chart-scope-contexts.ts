@@ -4,7 +4,7 @@
  * The contexts every Root's own scope resets. The first say where a shared readout part sits: its
  * template row, its legend side, a live readout, a Crosshair, a Headline, or a datum. The rest are
  * what a Root provides for its own parts: the cartesian Root's model, layout, plots and plot reads,
- * and the scatter Root's model and plot. They live in a light leaf, so each Root's scope resets them
+ * the scatter Root's model and plot, and the live line Root's readings and plot. They live in a light leaf, so each Root's scope resets them
  * without importing the readout hooks or another family's Root, and a part under a nested Root of
  * another family reaches no outer Root's context and throws `part-outside-root`, as it does alone.
  */
@@ -13,6 +13,7 @@ import { createContext } from "react";
 import type { ChartLayoutContextValue, ChartRootContextValue } from "./chart-context";
 import type { ChartPlot, PlotReads } from "./chart-plot-measure";
 import type { ChartThresholdSide } from "./chart-types";
+import type { LiveLineRootContextValue } from "./live-line-chart-context";
 import type { ScatterRootContextValue } from "./scatter-chart-context";
 
 /** The config key a template row renders for, such as one TooltipItems row. */
@@ -87,3 +88,9 @@ export const ScatterRootContext = createContext<ScatterRootContextValue | null>(
 
 /** The scatter Root's measured plot, or null before the browser measures it. */
 export const ScatterPlotContext = createContext<ChartPlot | null>(null);
+
+/** The enclosing live line Root, or null outside one. */
+export const LiveLineRootContext = createContext<LiveLineRootContextValue | null>(null);
+
+/** The live line Root's measured plot, or null before the browser measures it. */
+export const LiveLinePlotContext = createContext<ChartPlot | null>(null);

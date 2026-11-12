@@ -592,6 +592,11 @@
     "rsc": "client",
     "demos": ["list-detail-basic.tsx", "list-detail-never.tsx"]
   },
+  "live-line-chart": {
+    "title": "Live Line Chart",
+    "rsc": "client",
+    "demos": ["live-line-chart-basic.tsx", "live-line-chart-polish.tsx"]
+  },
   "loader": {
     "title": "Loader",
     "rsc": "server",

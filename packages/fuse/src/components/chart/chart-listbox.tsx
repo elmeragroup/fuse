@@ -135,6 +135,31 @@ export function useGestureEnd<G>(shown: boolean, lift: TapLift, gesture: RefObje
   );
 }
 
+/** A step through a surface's data: one either way along the axis, or to either end. */
+export type ListboxStep = "next" | "previous" | "first" | "last";
+
+/**
+ * The step a key makes. Arrow directions are physical, so the axis runs left to right under RTL
+ * too.
+ *
+ * @param key - The `KeyboardEvent.key`.
+ * @returns The step, or undefined for a key that steps nowhere.
+ */
+export function stepOf(key: string): ListboxStep | undefined {
+  switch (key) {
+    case "ArrowRight":
+      return "next";
+    case "ArrowLeft":
+      return "previous";
+    case "Home":
+      return "first";
+    case "End":
+      return "last";
+    default:
+      return undefined;
+  }
+}
+
 /** What names a surface: its Root's id prefix, `aria-label` or `aria-labelledby`, and locale. */
 export type SurfaceNaming = {
   readonly id: string;

@@ -124,6 +124,23 @@ import { RadialChartSkeleton } from "../../src/components/chart/radial-chart-ske
 // same name, so the objects below replace the entry's namespaces.
 export * from "../../src/chart";
 
+import {
+  LiveLineChartGrid,
+  LiveLineChartXAxis,
+  LiveLineChartYAxis,
+} from "../../src/components/chart/live-line-chart-guides";
+import {
+  LiveLineChartArea,
+  LiveLineChartBadge,
+  LiveLineChartLine,
+  LiveLineChartLiveDot,
+} from "../../src/components/chart/live-line-chart-marks";
+import {
+  LiveLineChartCrosshair,
+  LiveLineChartTooltip,
+} from "../../src/components/chart/live-line-chart-readout";
+import { LiveLineChartRoot } from "../../src/components/chart/live-line-chart-root";
+import { LiveLineChartTable } from "../../src/components/chart/live-line-chart-table";
 import { ScatterChartEmpty, ScatterChartSkeleton } from "../../src/components/chart/scatter-chart-empty";
 import {
   ScatterChartGrid,
@@ -374,6 +391,23 @@ export const ScatterChart = {
   Table: ScatterChartTable,
   Empty: ScatterChartEmpty,
   Skeleton: ScatterChartSkeleton,
+  Headline: ChartHeadline,
+  Takeaway: ChartTakeaway,
+  Background: ChartBackground,
+} as const;
+
+export const LiveLineChart = {
+  Root: LiveLineChartRoot,
+  Grid: LiveLineChartGrid,
+  XAxis: LiveLineChartXAxis,
+  YAxis: LiveLineChartYAxis,
+  Area: LiveLineChartArea,
+  Line: LiveLineChartLine,
+  LiveDot: LiveLineChartLiveDot,
+  Badge: LiveLineChartBadge,
+  Crosshair: LiveLineChartCrosshair,
+  Tooltip: LiveLineChartTooltip,
+  Table: LiveLineChartTable,
   Headline: ChartHeadline,
   Takeaway: ChartTakeaway,
   Background: ChartBackground,

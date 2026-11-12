@@ -62,8 +62,21 @@ export function frameX(frame: ScatterFrame, value: number): number {
  * @returns The coordinate.
  */
 export function frameY(frame: ScatterFrame, value: number): number {
-  const [low, high] = frame.y;
-  return high === low ? frame.box.height / 2 : (1 - (value - low) / (high - low)) * frame.box.height;
+  return heightY(frame.y, frame.box.height, value);
+}
+
+/**
+ * Where a value lands under a value domain, in CSS pixels from the top of a plot of a height,
+ * unsnapped. A flat domain puts every value mid-plot.
+ *
+ * @param domain - The value domain, lower bound first.
+ * @param height - The plot's height in CSS pixels.
+ * @param value - The value.
+ * @returns The coordinate.
+ */
+export function heightY(domain: readonly [number, number], height: number, value: number): number {
+  const [low, high] = domain;
+  return high === low ? height / 2 : (1 - (value - low) / (high - low)) * height;
 }
 
 /**
@@ -147,8 +160,13 @@ export function pointsPath(
   return path;
 }
 
-/** The d3 curve of a scatter curve, along x. */
-function factoryOf(curve: ScatterCurve): CurveFactory {
+/**
+ * The d3 curve of a scatter curve, along x, which a scatter Line and a live line draw through.
+ *
+ * @param curve - The curve.
+ * @returns The d3-shape curve factory.
+ */
+export function curveAlongX(curve: ScatterCurve): CurveFactory {
   switch (curve) {
     case "linear":
       return curveLinear;
@@ -193,7 +211,7 @@ export function linePath(
   const generator = line<number>()
     .x((index) => snapped(snapX, box.left, frameX(frame, xs[index] ?? 0)))
     .y((index) => snapped(snapY, box.top, frameY(frame, ys[index] ?? 0)))
-    .curve(factoryOf(curve))
+    .curve(curveAlongX(curve))
     .digits(3);
   return generator(Array.from({ length: xs.length }, (_, index) => index)) ?? "";
 }

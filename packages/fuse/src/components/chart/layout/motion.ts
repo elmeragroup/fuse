@@ -3,6 +3,7 @@
  * mirrors the duration and the curve for the opacity fade of a mark that an update adds, so a
  * change here changes `--chart-update` and `--chart-ease` there too. The values follow `.scratch/charts-v1/reviews/motion-decision.md`.
  */
+import { cubicBezier } from "./ease";
 import type { BezierCurve } from "./ease";
 import type { Spring } from "./spring";
 
@@ -11,6 +12,69 @@ export const CHART_UPDATE_MS = 480;
 
 /** The control values of every data update and of the entrance. */
 export const CHART_UPDATE_CURVE: BezierCurve = [0, 0.7, 0.5, 1];
+
+const updateEase = cubicBezier(CHART_UPDATE_CURVE);
+
+/** A glide's value at a time: `from` before its start, `to` exactly from its end on. */
+function tween(ease: (progress: number) => number, from: number, to: number, progress: number): number {
+  const share = ease(Math.max(0, Math.min(1, progress)));
+  return share >= 1 ? to : from + (to - from) * share;
+}
+
+/**
+ * A value on a data update's glide: from one value to another over `CHART_UPDATE_MS`, on
+ * `CHART_UPDATE_CURVE`, sampled at a time. Before the start it shows `from`, and from the end on
+ * it shows `to` exactly.
+ *
+ * @param from - The value the glide leaves.
+ * @param to - The value the glide reaches.
+ * @param startedAt - When the glide started, on the sampling clock, in milliseconds.
+ * @param now - When to sample it, on the same clock.
+ * @returns The value the glide shows at `now`.
+ */
+export function updateTween(from: number, to: number, startedAt: number, now: number): number {
+  return tween(updateEase, from, to, (now - startedAt) / CHART_UPDATE_MS);
+}
+
+/**
+ * The control values of a live line chart's glides: its tip, its held readings and its domain.
+ * `CHART_UPDATE_CURVE` starts at infinite speed, which suits a one-off update but makes a glide
+ * that restarts on every reading lurch each time. This ease-out quad covers about 7 % of a move in
+ * its first frame and 37 % by 100 ms, so a glide that restarts every second flows instead.
+ */
+export const LIVE_UPDATE_CURVE: BezierCurve = [0.5, 1, 0.89, 1];
+
+/**
+ * How long a live line chart's domain takes to ease inward, in milliseconds, about as long as the
+ * `glide` spring settles. A domain that contracts slower than the values it holds stays around
+ * them, and the slower pace reads as the plot settling after a spike leaves rather than a jump.
+ * A domain widens over `CHART_UPDATE_MS`, as fast as the values that push it out.
+ */
+export const LIVE_CONTRACT_MS = 900;
+
+const liveEase = cubicBezier(LIVE_UPDATE_CURVE);
+
+/**
+ * A value on a live line chart's glide: from one value to another over a duration, on
+ * `LIVE_UPDATE_CURVE`, sampled at a time. Before the start it shows `from`, and from the end on it
+ * shows `to` exactly.
+ *
+ * @param from - The value the glide leaves.
+ * @param to - The value the glide reaches.
+ * @param startedAt - When the glide started, on the sampling clock, in milliseconds.
+ * @param now - When to sample it, on the same clock.
+ * @param duration - How long the glide takes, in milliseconds.
+ * @returns The value the glide shows at `now`.
+ */
+export function liveTween(
+  from: number,
+  to: number,
+  startedAt: number,
+  now: number,
+  duration: number
+): number {
+  return tween(liveEase, from, to, (now - startedAt) / duration);
+}
 
 /** The delay between two bars of the entrance wipe, in milliseconds. */
 export const CHART_STAGGER_MS = 16;

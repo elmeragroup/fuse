@@ -307,9 +307,14 @@ function learnDay(zone: ZoneOffsets, instant: number): number {
 /**
  * The zone's UTC offset at an instant, in milliseconds, from the span that holds it, or from the
  * day Fuse reads first. Each span holds what Intl reads for the zone, so no cache here depends on
- * the process's zone.
+ * the process's zone, and a read inside a known span asks Intl nothing, as a frame loop needs.
+ *
+ * @param instant - The instant, epoch milliseconds.
+ * @param timeZone - The IANA zone.
+ * @returns The offset in milliseconds, such as 3 600 000 for CET.
+ * @throws A `RangeError` when `timeZone` is not an IANA zone.
  */
-function offsetAt(instant: number, timeZone: string): number {
+export function offsetAt(instant: number, timeZone: string): number {
   const zone = zoneOf(timeZone);
   const { last, spans } = zone;
   if (last !== undefined && last.from <= instant && instant < last.to) return last.offset;
@@ -710,12 +715,39 @@ export function formatSlot(
   format: TimePreset | Intl.DateTimeFormatOptions,
   role: LabelRole
 ): FormattedText {
-  const start = slotStart(at, interval, timeZone);
+  return formatInstant(locale, timeZone, slotStart(at, interval, timeZone), interval, format, role);
+}
+
+/**
+ * Format an instant as it is, with no flooring to its slot's start, as a live reading's time
+ * prints: a preset reads the instant as the start of a slot of `interval`, and Intl options print
+ * every field they name, fractional seconds included. Intl options write one form, so their spoken
+ * text repeats the visual text, and options with date and time fields join their halves through
+ * `formatDateTime`.
+ *
+ * @param locale - The active supported locale.
+ * @param timeZone - The IANA zone of the data's market.
+ * @param at - The instant, in epoch milliseconds.
+ * @param interval - The slot a preset reads the instant as the start of.
+ * @param format - A preset, or Intl date options whose own zone `timeZone` replaces.
+ * @param role - `tick` for the short axis form, `full` for tooltips, aria text and tables.
+ * @returns The visual and spoken labels, with canonical spaces.
+ * @throws A `RangeError` when `timeZone` is not an IANA zone, a range preset gets a day or longer
+ * interval.
+ */
+export function formatInstant(
+  locale: SupportedLocale,
+  timeZone: string,
+  at: number,
+  interval: Interval,
+  format: TimePreset | Intl.DateTimeFormatOptions,
+  role: LabelRole
+): FormattedText {
   // oxlint-disable-next-line anti-slop/no-runtime-typeof -- consumer-owned union: a public XFormat is a preset string or Intl options of any prototype or realm
   if (typeof format === "string") {
-    return formatTime(locale, timeZone, { start, interval }, format, role);
+    return formatTime(locale, timeZone, { start: at, interval }, format, role);
   }
-  const text = formatDateTime(locale, { ...format, timeZone }, start);
+  const text = formatDateTime(locale, { ...format, timeZone }, at);
   return makeFormattedText(text, text);
 }
 

@@ -1432,6 +1432,135 @@ declare namespace LineChart {
     }
 }
 
+declare namespace LiveLineChart {
+    export {
+        LiveLineChartArea as Area,
+        ChartBackground as Background,
+        LiveLineChartBadge as Badge,
+        LiveLineChartCrosshair as Crosshair,
+        LiveLineChartGrid as Grid,
+        ChartHeadline as Headline,
+        LiveLineChartLine as Line,
+        LiveLineChartLiveDot as LiveDot,
+        LiveLineChartRoot as Root,
+        LiveLineChartTable as Table,
+        ChartTakeaway as Takeaway,
+        LiveLineChartTooltip as Tooltip,
+        LiveLineChartXAxis as XAxis,
+        LiveLineChartYAxis as YAxis
+    }
+}
+
+// @beta
+function LiveLineChartArea(input: LiveLineChartAreaProps): ReactElement;
+
+// @beta
+export type LiveLineChartAreaProps = ChartLayerProps & {
+    curve?: LiveLineChartCurve;
+    variant?: "gradient" | "solid";
+};
+
+// @beta
+function LiveLineChartBadge(input: LiveLineChartBadgeProps): ReactElement;
+
+// @beta
+export type LiveLineChartBadgeProps = ChartLayerProps;
+
+// @beta
+function LiveLineChartCrosshair(input: LiveLineChartCrosshairProps): ReactElement;
+
+// @beta
+export type LiveLineChartCrosshairProps = ChartLayerProps;
+
+// @beta
+export type LiveLineChartCurve = "monotone" | "linear" | "step" | "step-before" | "step-after" | "bump" | "basis";
+
+// @beta
+function LiveLineChartGrid(input: LiveLineChartGridProps): ReactElement;
+
+// @beta
+export type LiveLineChartGridProps = ChartLayerProps & {
+    variant?: "solid" | "dashed";
+};
+
+// @beta
+function LiveLineChartLine(input: LiveLineChartLineProps): ReactElement;
+
+// @beta
+export type LiveLineChartLineProps = ChartLayerProps & {
+    curve?: LiveLineChartCurve;
+};
+
+// @beta
+function LiveLineChartLiveDot(input: LiveLineChartLiveDotProps): ReactElement;
+
+// @beta
+export type LiveLineChartLiveDotProps = ChartLayerProps & {
+    variant?: "ping" | "default";
+};
+
+// @beta
+export type LiveLineChartPoint = {
+    readonly time: ChartInstant;
+    readonly value: number;
+};
+
+// @beta
+function LiveLineChartRoot(input: LiveLineChartRootProps): ReactElement;
+
+// @beta
+export type LiveLineChartRootProps = ChartAccessibleName & ChartFigureProps & {
+    data: readonly LiveLineChartPoint[];
+    value?: number;
+    windowMs?: number;
+    valueFormat?: ValueFormat;
+    timeFormat?: LiveLineChartTimeFormat;
+    label?: string;
+    color?: ChartCategoricalRole | "chart-other";
+    timeZone?: string;
+    paused?: boolean;
+    description?: string;
+    children?: ReactNode;
+};
+
+// @beta
+function LiveLineChartTable(input: LiveLineChartTableProps): ReactElement;
+
+// @beta
+export type LiveLineChartTableProps = ChartLayerProps & {
+    caption?: string;
+    showLabel?: string;
+    hideLabel?: string;
+};
+
+// @beta
+export type LiveLineChartTimeFormat = Exclude<XFormat, "hour-range" | "time-range">;
+
+// @beta
+function LiveLineChartTooltip(input: LiveLineChartTooltipProps): ReactElement;
+
+// @beta
+export type LiveLineChartTooltipProps = ChartLayerProps & {
+    variant?: "default" | "frosted";
+};
+
+// @beta
+function LiveLineChartXAxis(input: LiveLineChartXAxisProps): ReactElement;
+
+// @beta
+export type LiveLineChartXAxisProps = ChartLayerProps & {
+    format?: LiveLineChartTimeFormat;
+};
+
+// @beta
+function LiveLineChartYAxis(input: LiveLineChartYAxisProps): ReactElement;
+
+// @beta
+export type LiveLineChartYAxisProps = ChartLayerProps & {
+    format?: ValueFormat;
+    side?: "start" | "end";
+};
+
 declare namespace PieChart {
     export {
         ChartBackground as Background,

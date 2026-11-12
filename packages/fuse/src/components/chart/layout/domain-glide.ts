@@ -5,8 +5,7 @@
  * its clock and its frame scheduler from its host and touches no browser API itself.
  */
 import type { MotionHost } from "../chart-motion";
-import { cubicBezier } from "./ease";
-import { CHART_UPDATE_CURVE, CHART_UPDATE_MS } from "./motion";
+import { CHART_UPDATE_MS, updateTween } from "./motion";
 
 /** The x and y domains a frame draws under. */
 export type ScatterDomains = {
@@ -28,10 +27,14 @@ export type DomainGlide = {
   readonly stop: () => void;
 };
 
-const ease = cubicBezier(CHART_UPDATE_CURVE);
-
-function between(from: readonly [number, number], to: readonly [number, number], eased: number) {
-  return [from[0] + (to[0] - from[0]) * eased, from[1] + (to[1] - from[1]) * eased] as const;
+/** A domain pair on its update glide at a time. */
+function between(
+  from: readonly [number, number],
+  to: readonly [number, number],
+  start: number,
+  now: number
+): readonly [number, number] {
+  return [updateTween(from[0], to[0], start, now), updateTween(from[1], to[1], start, now)];
 }
 
 function same(a: ScatterDomains, b: ScatterDomains): boolean {
@@ -75,14 +78,14 @@ export function createDomainGlide(initial: ScatterDomains, host: MotionHost): Do
       const from = current;
       const start = host.now();
       const step = (): void => {
-        const progress = Math.min(1, (host.now() - start) / CHART_UPDATE_MS);
-        const eased = ease(progress);
+        const now = host.now();
+        const done = now - start >= CHART_UPDATE_MS;
         show(
-          progress === 1
+          done
             ? target
-            : { x: between(from.x, target.x, eased), y: between(from.y, target.y, eased) }
+            : { x: between(from.x, target.x, start, now), y: between(from.y, target.y, start, now) }
         );
-        frame = progress === 1 ? null : host.requestFrame(step);
+        frame = done ? null : host.requestFrame(step);
       };
       frame = host.requestFrame(step);
     },

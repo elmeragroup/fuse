@@ -390,7 +390,11 @@
   [data-slot="chart-points"],
   [data-slot="chart-active-dot"],
   [data-slot="chart-grid"],
-  [data-slot="chart-crosshair"] {
+  [data-slot="chart-crosshair"],
+  [data-slot="live-line-chart-line"],
+  [data-slot="live-line-chart-area"],
+  [data-slot="live-line-chart-live-dot"],
+  [data-slot="live-line-chart-crosshair"] {
     grid-area: plot;
     position: relative;
     width: 100%;
@@ -490,16 +494,23 @@
   }
 
   /*
-    A scatter chart's single option covers the active point, a 24 px target centred on it, where a
-    touch reader's double tap lands. Once the plot is measured, the option writes the point's place.
+    A scatter chart's single option covers the active point, and a live line chart's its active
+    reading, a 24 px target centred on it, where a touch reader's double tap lands. Once the plot is
+    measured, the option writes the point's place. A live option moves every frame, so it rests in
+    the plot's middle and writes its offset from there as a translation, which lays nothing out.
   */
-  [data-slot="chart-scatter-option"] {
+  :is([data-slot="chart-scatter-option"], [data-slot="live-line-chart-option"]) {
     position: absolute;
     left: calc(var(--chart-option-x, 50%) - 12px);
     top: calc(var(--chart-option-y, 50%) - 12px);
     width: 24px;
     height: 24px;
     outline: none;
+  }
+
+  [data-slot="live-line-chart-option"] {
+    left: calc(50% - 12px);
+    top: calc(50% - 12px);
   }
 
   /*
@@ -1269,24 +1280,31 @@
     WebKit draw the text of a reel moved by a fraction of a pixel up to two device pixels off the
     plain text beside it, a different distance for each digit.
   */
-  :is([data-slot="pie-chart-center"], [data-slot="gauge-chart-center"]) [data-part="digits"] {
+  :is([data-slot="pie-chart-center"], [data-slot="gauge-chart-center"], [data-slot="live-line-chart-badge"])
+    [data-part="digits"] {
     display: inline-flex;
     font-variant-numeric: tabular-nums;
     white-space: pre;
     line-height: round(1lh, 1px);
   }
 
-  :is([data-slot="pie-chart-center"], [data-slot="gauge-chart-center"]) [data-part="digit"] {
+  :is([data-slot="pie-chart-center"], [data-slot="gauge-chart-center"], [data-slot="live-line-chart-badge"])
+    [data-part="digit"] {
     display: inline-block;
     height: 1lh;
     overflow: hidden;
   }
 
+  :is([data-slot="pie-chart-center"], [data-slot="gauge-chart-center"], [data-slot="live-line-chart-badge"])
+    [data-part="reel"] {
+    display: flex;
+    flex-direction: column;
+    translate: 0 calc(var(--_digit) * -10%);
+  }
+
   /* Until the marks sweep in, the centre's digits wait at 0, and they count up with the sweep. */
   :is([data-slot="pie-chart-center"], [data-slot="gauge-chart-center"]) [data-part="reel"] {
     --_reel-waiting: var(--_if-root-waiting) 0 0;
-    display: flex;
-    flex-direction: column;
     translate: var(--_reel-waiting, 0 calc(var(--_digit) * -10%));
   }
 
@@ -4256,6 +4274,150 @@
   }
 
   /*
+    A live line chart. Its layers lie in the plot cell with the mark layers, and its clock writes
+    their geometry every frame, so no rule here moves a mark. The line and the area fade in over
+    2rem from the left edge, where readings leave the window, and the mask clips them there.
+  */
+  /*
+    The mask paints the border box only, and the clock widens the domain to a value at once, so a
+    line can run along the plot's top or bottom edge. Half a stroke of padding above and below, with
+    the margin taking it back, lets that line keep its whole stroke while the content box, the SVG
+    viewport the clock draws in, stays the plot.
+  */
+  :is([data-slot="live-line-chart-line"], [data-slot="live-line-chart-area"]) {
+    box-sizing: content-box;
+    margin-block: calc(var(--chart-stroke) / -2);
+    padding-block: calc(var(--chart-stroke) / 2);
+    mask-image: linear-gradient(to right, transparent, black 2rem);
+  }
+
+  [data-slot="live-line-chart-line-path"] {
+    fill: none;
+    stroke: var(--chart-series-paint);
+    stroke-width: var(--chart-stroke);
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    print-color-adjust: exact;
+  }
+
+  /* The gradient fades from three times the area opacity at the top of the plot to nothing. */
+  [data-slot="live-line-chart-area-path"] {
+    stroke: none;
+    print-color-adjust: exact;
+  }
+
+  [data-slot="live-line-chart-area"] stop {
+    stop-color: var(--chart-series-paint);
+    stop-opacity: 0;
+  }
+
+  [data-slot="live-line-chart-area"] stop[data-part="from"] {
+    stop-opacity: calc(3 * var(--chart-area-opacity));
+  }
+
+  [data-slot="live-line-chart-area"][data-variant="solid"] [data-slot="live-line-chart-area-path"] {
+    fill: var(--chart-series-paint);
+    fill-opacity: var(--chart-area-opacity);
+  }
+
+  :is([data-slot="live-line-chart-live-dot"], [data-slot="live-line-chart-crosshair"]) > g[data-hidden],
+  [data-slot="live-line-chart-crosshair"] [data-slot="chart-dot"][data-hidden] {
+    visibility: hidden;
+  }
+
+  [data-slot="live-line-chart-crosshair-rule"] {
+    stroke: var(--muted-foreground);
+    stroke-width: var(--chart-crosshair-width);
+  }
+
+  /* The crosshair rings its reading and leaves the line showing through. */
+  [data-slot="live-line-chart-crosshair"] [data-slot="chart-dot"] {
+    fill: var(--background);
+    stroke: var(--chart-series-paint);
+  }
+
+  /*
+    Time ticks centre on their instants and fade at the edges as the clock writes. They move every
+    frame, so each rests at the axis's start and moves by a translation across the axis, its size
+    container, which lays nothing out. The live axes and grid mark themselves data-live, and these
+    rules reach only their own children, so a chart nested in one of the live chart's parts, such
+    as its Headline, keeps its own layout.
+  */
+  [data-slot="chart-x-axis"][data-live] > [data-slot="chart-x-tick"] {
+    left: 0;
+    translate: calc(var(--chart-at) * 100cqw - 50%) 0;
+    transition: none;
+  }
+
+  /*
+    Value ticks rest at the axis's top and move by the translation the clock writes, which centres
+    each on its height, and the clock writes their edge fade.
+  */
+  [data-slot="chart-y-axis"][data-live] > [data-part="ticks"] > [data-slot="chart-y-tick"] {
+    top: 0;
+  }
+
+  /*
+    The badge sits beside the plot's right edge, centred on the live dot's height, in the line's
+    paint with its on-colour text.
+  */
+  [data-slot="live-line-chart-badge"] {
+    grid-area: end;
+    position: relative;
+    padding-inline-start: 0.5rem;
+    font-variant-numeric: tabular-nums;
+    pointer-events: none;
+  }
+
+  [data-slot="live-line-chart-badge"] [data-part="pill"] {
+    display: inline-block;
+    padding: 0.125rem 0.375rem;
+    border-radius: 9999px;
+    background: var(--chart-series-paint);
+    color: var(--_badge-ink);
+    font-weight: 600;
+    white-space: nowrap;
+    print-color-adjust: exact;
+  }
+
+  /* The pill rests at the column's top and moves by the translation the clock writes. */
+  [data-slot="live-line-chart-badge"] > [data-part="pill"] {
+    position: absolute;
+    inset-inline-start: 0.5rem;
+    top: 0;
+  }
+
+  /*
+    The tooltip rides the crosshair along the top of the plot and stays inside the plot at either
+    edge, by the translation and the origin the clock writes on it. It takes no pointer, so the
+    pointer keeps scrubbing the plot under it.
+  */
+  [data-slot="live-line-chart-tooltip"] {
+    grid-area: plot;
+    position: relative;
+    z-index: 2;
+    container-type: inline-size;
+    pointer-events: none;
+  }
+
+  [data-slot="live-line-chart-tooltip"] > [data-slot="chart-tooltip"] {
+    position: absolute;
+    top: 0.25rem;
+    left: 0;
+    width: max-content;
+    pointer-events: none;
+  }
+
+  /*
+    A paused chart is not live, so its live dot sends out no ring. The dot's own layer carries the
+    pause, so a running chart nested in a paused one keeps its ring.
+  */
+  [data-slot="live-line-chart-live-dot"][data-paused] [data-slot="chart-dot"][data-part="ping"] {
+    animation: none;
+    opacity: 0;
+  }
+
+  /*
     Motion. The loop of chart-motion.ts moves every mark, so no geometry transitions here. A bar that a data update adds fades in through
     opacity only, on the tokens of layout/motion.ts, and the fade ends on whatever opacity the
     cascade gives the bar, such as a past slot's dim. It runs on a screen only: a print draws every
@@ -4315,9 +4477,16 @@
         translate var(--_spring-duration) var(--_spring-easing);
     }
 
+    /* A number's digits roll on their spring, except while data-snap swaps them. */
+    :is([data-slot="pie-chart-center"], [data-slot="gauge-chart-center"], [data-slot="live-line-chart-badge"])
+      [data-part="digits"]:not([data-snap])
+      [data-part="reel"] {
+      transition: translate var(--_spring-duration) var(--_spring-easing);
+    }
+
     /*
-      While the entrance plays, the digits count up over it, and afterwards roll on their spring,
-      except while data-snap swaps them on a hover step that came fast.
+      While the entrance plays, a pie or gauge centre's digits count up over it, and afterwards roll
+      on their spring, except while data-snap swaps them on a hover step that came fast.
     */
     :is([data-slot="pie-chart-center"], [data-slot="gauge-chart-center"])
       [data-part="digits"]:not([data-snap])
@@ -4395,8 +4564,32 @@
 
     [data-slot="chart-bar-marks"] > [data-intro="fade"],
     :is([data-slot="chart-line-series"], [data-slot="chart-area-series"])[data-intro="fade"],
-    [data-slot="chart-dot"][data-intro="fade"] {
+    [data-slot="chart-dot"][data-intro="fade"],
+    :is(
+      [data-slot="live-line-chart-line"],
+      [data-slot="live-line-chart-area"],
+      [data-slot="live-line-chart-live-dot"]
+    )[data-intro="fade"] {
       animation: chart-fade-in var(--chart-update) var(--chart-ease);
+    }
+
+    /*
+      A live chart's own value ticks and grid lines fade in as they enter and out as they leave, over
+      the time ticks' 150 ms, on top of the edge fade the clock writes. The tick list removes a
+      leaving one once its fade ends.
+    */
+    :is(
+      [data-slot="chart-y-axis"][data-live] > [data-part="ticks"] > [data-slot="chart-y-tick"],
+      [data-slot="chart-grid"][data-live] > [data-slot="chart-grid-line"]
+    ) {
+      animation: chart-fade-in 150ms var(--chart-ease);
+    }
+
+    :is(
+      [data-slot="chart-y-axis"][data-live] > [data-part="ticks"] > [data-slot="chart-y-tick"],
+      [data-slot="chart-grid"][data-live] > [data-slot="chart-grid-line"]
+    )[data-leaving] {
+      animation: chart-fade-out 150ms var(--chart-ease) forwards;
     }
 
     /*
@@ -4485,6 +4678,12 @@
 
   @keyframes chart-fade-in {
     from {
+      opacity: 0;
+    }
+  }
+
+  @keyframes chart-fade-out {
+    to {
       opacity: 0;
     }
   }

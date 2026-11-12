@@ -3,6 +3,7 @@ import type { ReactElement } from "react";
 import { describe, expect, it } from "vitest";
 
 import { AreaChart, BarChart, Chart, LineChart } from "./chart-namespace";
+import { LiveLineChart } from "./live-line-chart-namespace";
 import { PieChart } from "./pie-chart-namespace";
 import { RadarChart } from "./radar-chart-namespace";
 import { RadialChart } from "./radial-chart-namespace";
@@ -154,5 +155,36 @@ describe("the ScatterChart namespace", () => {
     });
     expect(names).toEqual(OWN.map((key) => `ScatterChart.${key}`));
     for (const key of REUSED) expect(parts[key], key).toBe(chart[key]);
+  });
+});
+
+describe("the LiveLineChart namespace", () => {
+  // Unit under test: live-line-chart-parts.ts through its namespace. Oracle: the v1 part list,
+  // written out here, and the rule that a part reused from Chart keeps Chart's dotted name.
+  const OWN = [
+    "Root",
+    "Grid",
+    "XAxis",
+    "YAxis",
+    "Area",
+    "Line",
+    "LiveDot",
+    "Badge",
+    "Crosshair",
+    "Tooltip",
+    "Table",
+  ];
+  const REUSED = ["Headline", "Takeaway", "Background"];
+
+  it("names its own parts LiveLineChart and keeps Chart's name on the reused ones", () => {
+    const parts: Readonly<Record<string, Part>> = LiveLineChart;
+    const chart: Readonly<Record<string, Part>> = Chart;
+    const names = OWN.map((key) => {
+      const part = parts[key];
+      return part === undefined ? undefined : displayNameOf(part);
+    });
+    expect(names).toEqual(OWN.map((key) => `LiveLineChart.${key}`));
+    for (const key of REUSED) expect(parts[key], key).toBe(chart[key]);
+    expect(Object.keys(parts).sort()).toEqual([...OWN, ...REUSED].sort());
   });
 });

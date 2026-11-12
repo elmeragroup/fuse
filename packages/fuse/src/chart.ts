@@ -7,7 +7,7 @@
  * a part below Root.
  *
  * The errors the parts' JSDoc names, such as `unknown-key`, throw as the parts render, and
- * `ScatterChart` throws its own as its parts render.
+ * `ScatterChart` and `LiveLineChart` throw their own as their parts render.
  *
  * Import `@elmeragroup/fuse/chart.css` once, beside Fuse's own stylesheet.
  *
@@ -23,6 +23,7 @@ export { RadarChart } from "./components/chart/radar-chart-namespace";
 export { ClockChart } from "./components/chart/clock-chart-namespace";
 export { ScatterChart } from "./components/chart/scatter-chart-namespace";
 export { GaugeChart } from "./components/chart/gauge-chart-namespace";
+export { LiveLineChart } from "./components/chart/live-line-chart-namespace";
 export { Sparkline } from "./components/chart/sparkline";
 export { SparklineHover } from "./components/chart/sparkline-hover";
 export { useChartPoint } from "./components/chart/use-chart-point";
@@ -234,5 +235,24 @@ export type {
   GaugeChartCenterValueProps,
 } from "./components/chart/gauge-chart-center";
 export type { GaugeChartEmptyProps, GaugeChartSkeletonProps } from "./components/chart/gauge-chart-skeleton";
+export type { LiveLineChartPoint, LiveLineChartRootProps } from "./components/chart/live-line-chart-root";
+export type {
+  LiveLineChartGridProps,
+  LiveLineChartXAxisProps,
+  LiveLineChartYAxisProps,
+} from "./components/chart/live-line-chart-guides";
+export type {
+  LiveLineChartAreaProps,
+  LiveLineChartBadgeProps,
+  LiveLineChartLineProps,
+  LiveLineChartLiveDotProps,
+} from "./components/chart/live-line-chart-marks";
+export type {
+  LiveLineChartCrosshairProps,
+  LiveLineChartTooltipProps,
+} from "./components/chart/live-line-chart-readout";
+export type { LiveLineChartTableProps } from "./components/chart/live-line-chart-table";
+export type { LiveLineChartTimeFormat } from "./components/chart/live-line-chart-text";
+export type { LiveLineChartCurve } from "./components/chart/layout/live-window";
 export type { SparklineProps } from "./components/chart/sparkline";
 export type { SparklineHoverProps } from "./components/chart/sparkline-hover";

@@ -87,6 +87,7 @@ const EXPECTED_ENTRIES = {
       "ClockChart",
       "ScatterChart",
       "GaugeChart",
+      "LiveLineChart",
       "Sparkline",
       "SparklineHover",
       "useChartPoint",

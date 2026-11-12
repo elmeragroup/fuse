@@ -90,6 +90,12 @@ export type ChartStrings = {
   readonly yValue: string;
   /** The series column's header in a scatter table. */
   readonly seriesHeader: string;
+  /** The keyboard instructions of a live line chart. */
+  readonly instructionsLive: string;
+  /** The value's name in a live line chart's readout when Root has no `label`. */
+  readonly liveValue: string;
+  /** A live line chart's latest reading, such as `Siste verdi 1,78 kroner kl. 12:00:05.` */
+  readonly liveLatest: (value: string, at: string) => string;
 };
 
 const NB_NO: ChartStrings = {
@@ -162,6 +168,9 @@ const NB_NO: ChartStrings = {
   xValue: "x-verdi",
   yValue: "y-verdi",
   seriesHeader: "Serie",
+  instructionsLive: "Bruk venstre og høyre pil for å gå mellom målingene, og End for å gå til den siste.",
+  liveValue: "Verdi",
+  liveLatest: (value, at) => `Siste verdi ${value} ${at}.`,
 };
 
 const SV_SE: ChartStrings = {
@@ -234,6 +243,10 @@ const SV_SE: ChartStrings = {
   xValue: "x-värde",
   yValue: "y-värde",
   seriesHeader: "Serie",
+  instructionsLive:
+    "Använd vänster- och högerpil för att gå mellan mätningarna, och End för att gå till den senaste.",
+  liveValue: "Värde",
+  liveLatest: (value, at) => `Senaste värde ${value} ${at}.`,
 };
 
 const FI_FI: ChartStrings = {
@@ -306,6 +319,10 @@ const FI_FI: ChartStrings = {
   xValue: "x-arvo",
   yValue: "y-arvo",
   seriesHeader: "Sarja",
+  instructionsLive:
+    "Siirry mittausten välillä vasemmalla ja oikealla nuolella ja viimeisimpään End-näppäimellä.",
+  liveValue: "Arvo",
+  liveLatest: (value, at) => `Viimeisin arvo ${value} ${at}.`,
 };
 
 const EN_US: ChartStrings = {
@@ -378,6 +395,9 @@ const EN_US: ChartStrings = {
   xValue: "x value",
   yValue: "y value",
   seriesHeader: "Series",
+  instructionsLive: "Use the left and right arrows to move between readings, and End to go to the latest.",
+  liveValue: "Value",
+  liveLatest: (value, at) => `Latest value ${value} ${at}.`,
 };
 
 /** The chart strings of every supported locale. */

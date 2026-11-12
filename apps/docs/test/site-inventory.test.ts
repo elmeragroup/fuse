@@ -15,6 +15,7 @@ const CHARTS = [
   "Clock Chart",
   "Gauge Chart",
   "Line Chart",
+  "Live Line Chart",
   "Pie Chart",
   "Radar Chart",
   "Radial Chart",

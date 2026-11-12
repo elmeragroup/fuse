@@ -24,6 +24,8 @@ import {
   ChartPlotContext,
   ChartRootContext,
   ChartRootPlotContext,
+  LiveLinePlotContext,
+  LiveLineRootContext,
   NO_PLOT_READS,
   PlotReadsContext,
   ScatterPlotContext,
@@ -88,11 +90,15 @@ function RootContexts({ children }: { readonly children: ReactNode }): ReactElem
                 <PlotReadsContext value={NO_PLOT_READS}>
                   <ScatterRootContext value={null}>
                     <ScatterPlotContext value={null}>
-                      <PolarContext value={null}>
-                        <GaugeContext value={null}>
-                          <ClockMarkerContext value={null}>{children}</ClockMarkerContext>
-                        </GaugeContext>
-                      </PolarContext>
+                      <LiveLineRootContext value={null}>
+                        <LiveLinePlotContext value={null}>
+                          <PolarContext value={null}>
+                            <GaugeContext value={null}>
+                              <ClockMarkerContext value={null}>{children}</ClockMarkerContext>
+                            </GaugeContext>
+                          </PolarContext>
+                        </LiveLinePlotContext>
+                      </LiveLineRootContext>
                     </ScatterPlotContext>
                   </ScatterRootContext>
                 </PlotReadsContext>
