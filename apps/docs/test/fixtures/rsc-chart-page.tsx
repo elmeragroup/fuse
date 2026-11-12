@@ -16,6 +16,7 @@ import {
   ClockChart,
   formatChartValue,
   GaugeChart,
+  LiveLineChart,
   PieChart,
   RadarChart,
   RadialChart,
@@ -269,6 +270,43 @@ export function PolarPage(): ReactElement {
             <GaugeChart.CenterValue />
           </GaugeChart.Center>
         </GaugeChart.Root>
+      </main>
+    </LocaleProvider>
+  );
+}
+
+/** Three readings of a live spot price, 14:00:00 to 14:00:20 in Oslo on 16 October 2026, in øre. */
+const LIVE_READINGS = [
+  { time: Date.UTC(2026, 9, 16, 12, 0, 0), value: 80 },
+  { time: Date.UTC(2026, 9, 16, 12, 0, 10), value: 120 },
+  { time: Date.UTC(2026, 9, 16, 12, 0, 20), value: 100 },
+];
+
+/**
+ * A live line chart as a directive-free server page: the readings a server page fetched, with
+ * every part, which the browser scrolls once it hydrates.
+ */
+export function LivePage(): ReactElement {
+  return (
+    <LocaleProvider locale="nb-NO" timeZone="Europe/Oslo">
+      <main>
+        <LiveLineChart.Root
+          data={LIVE_READINGS}
+          windowMs={30_000}
+          label="Spotpris"
+          valueFormat={{ maximumFractionDigits: 0 }}
+          aria-label="Spotpris nå">
+          <LiveLineChart.Grid />
+          <LiveLineChart.YAxis />
+          <LiveLineChart.XAxis />
+          <LiveLineChart.Area />
+          <LiveLineChart.Line />
+          <LiveLineChart.LiveDot />
+          <LiveLineChart.Badge />
+          <LiveLineChart.Crosshair />
+          <LiveLineChart.Tooltip />
+          <LiveLineChart.Table />
+        </LiveLineChart.Root>
       </main>
     </LocaleProvider>
   );

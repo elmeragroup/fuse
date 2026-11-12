@@ -30,6 +30,7 @@ describe("pages that share the chart entry", () => {
     ["radial-chart", "radial-chart-root.tsx", ["RadialChart"]],
     ["radar-chart", "radar-chart-root.tsx", ["RadarChart"]],
     ["scatter-chart", "scatter-chart-root.tsx", ["ScatterChart"]],
+    ["live-line-chart", "live-line-chart-root.tsx", ["LiveLineChart"]],
     ["sparkline", "sparkline.tsx", ["Sparkline", "SparklineHover"]],
   ])("resolve %s to @elmeragroup/fuse/chart and %s", (slug, source, exportNames) => {
     const paths = resolveComponentPaths(slug);
@@ -140,6 +141,7 @@ describe("the generated chart references", () => {
       "radial-chart",
       "radar-chart",
       "scatter-chart",
+      "live-line-chart",
       "sparkline",
     ]) {
       expect(endpoint(slug), slug).toContain(line);

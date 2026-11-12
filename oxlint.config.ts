@@ -723,6 +723,7 @@ export default defineConfig({
       files: [
         "apps/docs/src/app/(docs)/components/bar-chart/demos/*.tsx",
         "apps/docs/src/app/(docs)/components/chart/demos/*.tsx",
+        "apps/docs/src/app/(docs)/components/live-line-chart/demos/*.tsx",
       ],
       rules: {
         "fuse/chart-demo-table": "error",

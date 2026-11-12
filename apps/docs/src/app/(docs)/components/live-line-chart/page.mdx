@@ -1,0 +1,60 @@
+---
+lede: >
+  Preview. A line over a time window that scrolls with the clock, for a live feed.
+---
+
+import { LiveLineChartBasic } from "./demos/live-line-chart-basic";
+import { LiveLineChartPolish } from "./demos/live-line-chart-polish";
+
+import { componentMetadata } from "../../../../lib/component-page";
+
+export const metadata = componentMetadata("live-line-chart");
+
+<ComponentIntro slug="live-line-chart" />
+
+<Prose>
+
+The chart entry is a preview. Its names and props can change until Fuse's first stable release. Import `@elmeragroup/fuse/chart.css` once, beside Fuse's own stylesheet. `LiveLineChart` draws one value over a window of fixed length, `windowMs`, whose right edge is always now, such as a meter's power draw reported once a second. Your app owns the feed: pass the readings as `data`, each a `time` and a `value`, and append to it as readings arrive. The chart only draws. Its x axis is continuous time, so it is a family of its own, as [`ScatterChart`](/components/scatter-chart) is for a numeric x. For a day's hours or a month's days, use [`LineChart`](/components/line-chart).
+
+</Prose>
+
+<Demo slug="live-line-chart" id="basic" title="Basic" file="live-line-chart-basic.tsx">
+  <LiveLineChartBasic />
+</Demo>
+
+## How it moves
+
+<Prose>
+
+The window moves every frame at the pace of time, never a reading at a time, so the line slides smoothly however often readings arrive. A new reading grows out of the last one, and the value axis eases to fit the window, both on the chart's update curve, so nothing jumps. The time axis ticks land on round times in the market's zone, and they fade in at the right edge and out at the left. The loop stops while the chart is out of view or its tab is hidden, and the window catches up on its return. `paused` holds the window where it is while the readings keep arriving.
+
+Under reduced motion the chart moves nothing: each new reading redraws the window once, ending at the clock, the live dot's ring stops and the badge's digits change at once.
+
+</Prose>
+
+## Fill, badge and live dot
+
+<Prose>
+
+`LiveLineChart.Area` fills under the line with a gradient that fades to nothing, or a flat fill under `variant="solid"`. `LiveLineChart.LiveDot` marks the line's leading edge and sends a ring out from it, which `variant="default"` turns off. `LiveLineChart.Badge` prints the latest value beside the plot's right edge, following the live dot, and its digits roll to each new value. It takes the column an end-side `YAxis` would, so keep the axis at the start. Root's `value` sets the latest value apart from the latest reading, for a value that ticks faster than readings arrive.
+
+</Prose>
+
+<Demo slug="live-line-chart" id="polish" title="Fill, badge and window" file="live-line-chart-polish.tsx">
+  <LiveLineChartPolish />
+</Demo>
+
+## Keyboard
+
+<Prose>
+
+The plot is one tab stop, and its one option names the active reading: its time, then the value after Root's `label`. Entering the plot starts at the latest reading. A reading that scrolls out at the left edge hands the option to the oldest one the window still shows. The description states the window's span, its lowest and highest readings and the latest value, and the table lists the window's readings newest first.
+
+| Where | Keys                                                                                                                                                  |
+| ----- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Chart | ArrowLeft and ArrowRight move to the previous and next reading in the window. Home and End go to the oldest and the latest. Escape hides the tooltip. |
+| Table | The table's button and the page buttons are native buttons. Past 500 readings the table pages by row range.                                           |
+
+</Prose>
+
+<ApiReference slug="live-line-chart" />

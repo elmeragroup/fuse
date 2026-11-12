@@ -15,7 +15,7 @@ import { flightClientReferences, inlinedFlightPayload } from "./fixtures/rsc-fli
 
 const fixtures = join(dirname(fileURLToPath(import.meta.url)), "fixtures");
 
-function serverRender(scenario: "page" | "composed" | "polar" | "function-format") {
+function serverRender(scenario: "page" | "composed" | "polar" | "live" | "function-format") {
   return spawnSync(
     process.execPath,
     [
@@ -262,6 +262,63 @@ describe("the polar Roots under React Server Components", () => {
       expect(html).toContain(
         "Radardiagram med 2\u00a0serier over 4\u00a0kategorier. NO1: lavest 40 Sommer, høyest 120 Vinter. NO4: lavest 20 Sommer, høyest 45 Vinter."
       );
+    }
+  });
+});
+
+describe("the live line chart under React Server Components", () => {
+  const server = serverRender("live");
+
+  it("sends the live Root and every part as client references", () => {
+    expect(server.stderr).not.toMatch(/Error/u);
+    expect(server.status).toBe(0);
+    const references = flightClientReferences(server.stdout).map(
+      ({ module, name }) => `${module.replace(/^.*\/packages\/fuse\/src\//u, "")}#${name}`
+    );
+    expect(references).toEqual([
+      "intl/locale-context.tsx#LocaleProvider",
+      "components/chart/live-line-chart-root.tsx#LiveLineChartRoot",
+      "components/chart/live-line-chart-guides.tsx#LiveLineChartGrid",
+      "components/chart/live-line-chart-guides.tsx#LiveLineChartYAxis",
+      "components/chart/live-line-chart-guides.tsx#LiveLineChartXAxis",
+      "components/chart/live-line-chart-marks.tsx#LiveLineChartArea",
+      "components/chart/live-line-chart-marks.tsx#LiveLineChartLine",
+      "components/chart/live-line-chart-marks.tsx#LiveLineChartLiveDot",
+      "components/chart/live-line-chart-marks.tsx#LiveLineChartBadge",
+      "components/chart/live-line-chart-readout.tsx#LiveLineChartCrosshair",
+      "components/chart/live-line-chart-readout.tsx#LiveLineChartTooltip",
+      "components/chart/live-line-chart-table.tsx#LiveLineChartTable",
+    ]);
+  });
+
+  it("renders the same HTML through Flight as a client-only render, with the words and no mark", () => {
+    // SAFETY: rsc-chart-ssr.ts writes this one JSON object, and every field the test reads is
+    // compared against an expected value, so a shape that disagrees fails an assertion.
+    const ssr = JSON.parse(
+      execFileSync(
+        process.execPath,
+        [
+          "--import",
+          join(fixtures, "rsc-chart-register-ssr.mjs"),
+          join(fixtures, "rsc-chart-ssr.ts"),
+          "live",
+        ],
+        { cwd: fixtures, encoding: "utf8", input: server.stdout }
+      )
+    ) as SsrResult;
+    expect(ssr.flight).toBe(ssr.clientOnly);
+    for (const html of [ssr.flight, ssr.clientOnly]) {
+      // The plot holds its loader, and no line, area or dot draws before the browser measures it.
+      expect(slotCount(html, "loader")).toBe(1);
+      expect(slotCount(html, "live-line-chart-line-path")).toBe(0);
+      expect(slotCount(html, "live-line-chart-area-path")).toBe(0);
+      expect(slotCount(html, "chart-dot")).toBe(0);
+      // The description reads the readings alone, never the clock, so the server writes it.
+      expect(html).toContain(
+        "Fra kl.\u00a014:00:00 til kl.\u00a014:00:20, 3\u00a0punkter. Spotpris: lavest 80 kl.\u00a014:00:00, høyest 120 kl.\u00a014:00:10. Siste verdi 100 kl.\u00a014:00:20."
+      );
+      // The table lists the three readings under its header row.
+      expect(html.split("<tr").length - 1).toBe(4);
     }
   });
 });

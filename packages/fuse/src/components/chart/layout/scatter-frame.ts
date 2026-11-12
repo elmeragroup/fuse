@@ -147,8 +147,13 @@ export function pointsPath(
   return path;
 }
 
-/** The d3 curve of a scatter curve, along x. */
-function factoryOf(curve: ScatterCurve): CurveFactory {
+/**
+ * The d3 curve of a scatter curve, along x, which a scatter Line and a live line draw through.
+ *
+ * @param curve - The curve.
+ * @returns The d3-shape curve factory.
+ */
+export function curveAlongX(curve: ScatterCurve): CurveFactory {
   switch (curve) {
     case "linear":
       return curveLinear;
@@ -193,7 +198,7 @@ export function linePath(
   const generator = line<number>()
     .x((index) => snapped(snapX, box.left, frameX(frame, xs[index] ?? 0)))
     .y((index) => snapped(snapY, box.top, frameY(frame, ys[index] ?? 0)))
-    .curve(factoryOf(curve))
+    .curve(curveAlongX(curve))
     .digits(3);
   return generator(Array.from({ length: xs.length }, (_, index) => index)) ?? "";
 }

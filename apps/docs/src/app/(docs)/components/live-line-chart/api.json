@@ -1,0 +1,630 @@
+{
+  "$generated": "Generated from packages/fuse types and JSDoc by pnpm --filter docs generate. Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "slug": "live-line-chart",
+  "parts": [
+    {
+      "name": "LiveLineChart.Root",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/live-line-chart-root.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 273,
+      "props": [
+        {
+          "name": "aria-label",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The chart's name. Pass this or `aria-labelledby`, never both.",
+          "required": false
+        },
+        {
+          "name": "aria-labelledby",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The id of the element that names the chart. Pass this or `aria-label`, never both.",
+          "required": false
+        },
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The chart's parts. Root never inspects them.",
+          "required": false
+        },
+        {
+          "name": "color",
+          "origin": "declared",
+          "type": "\"chart-1\" | \"chart-2\" | \"chart-3\" | \"chart-4\" | \"chart-5\" | \"chart-6\" | \"chart-7\" | \"chart-8\" | \"chart-other\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"chart-1\"",
+          "description": "The line's paint. \"chart-1\" by default. The badge prints in its on-colour role.",
+          "required": false
+        },
+        {
+          "name": "data",
+          "origin": "declared",
+          "type": "readonly LiveLineChartPoint[]",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The readings, oldest first, as the consumer's feed keeps them. A reading out of order sorts by time, and one instant holds one reading: of readings that share a time, the last wins, as a feed that corrects its latest reading sends it again. Keep at least the window's worth, and drop older readings as the feed grows: the chart draws only the window, and the table and the description cover the window back from the latest reading. Every cell is serialisable, so a server component passes it.",
+          "required": true
+        },
+        {
+          "name": "description",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Replaces the generated description verbatim.",
+          "required": false
+        },
+        {
+          "name": "label",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The value's name, such as \"Spotpris\", which the tooltip, the options and the table print.",
+          "required": false
+        },
+        {
+          "name": "paused",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Holds the window where it is, so a reader can study it, while the readings keep arriving. Once it runs again the window catches up with the clock and the readings it held back.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        },
+        {
+          "name": "timeFormat",
+          "origin": "declared",
+          "type": "LiveLineChartTimeFormat | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"time-seconds\"",
+          "description": "How a reading's time prints in the tooltip, the options, the table and the description. `\"time-seconds\"` by default, such as `13:42:04`. The axis picks its own from its tick step.",
+          "required": false
+        },
+        {
+          "name": "timeZone",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The IANA zone of the market the readings describe, such as \"Europe/Oslo\", which every time prints in. LocaleProvider's `timeZone` by default.",
+          "required": false
+        },
+        {
+          "name": "value",
+          "origin": "declared",
+          "type": "number | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The latest value, which the line runs on at to the window's right edge, the live dot marks and the badge prints. The latest reading's value by default. Pass it when the value ticks faster than readings arrive. It keeps the readings' bound, a finite number within ±1e15.",
+          "required": false
+        },
+        {
+          "name": "valueFormat",
+          "origin": "declared",
+          "type": "ValueFormat | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "How values print on the axis, the badge, in the tooltip, the options, the table and the description.",
+          "required": false
+        },
+        {
+          "name": "windowMs",
+          "origin": "declared",
+          "type": "number | undefined",
+          "shortType": null,
+          "defaultValue": "DEFAULT_WINDOW_MS",
+          "description": "The window's length in milliseconds, which scrolls with the clock so its right edge is always now. `30_000` by default.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "LiveLineChart.Grid",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/live-line-chart-guides.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Classes on the part's element.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        },
+        {
+          "name": "variant",
+          "origin": "declared",
+          "type": "\"dashed\" | \"solid\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"solid\"",
+          "description": "The line style. \"solid\" by default.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "LiveLineChart.XAxis",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/live-line-chart-guides.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Classes on the part's element.",
+          "required": false
+        },
+        {
+          "name": "format",
+          "origin": "declared",
+          "type": "LiveLineChartTimeFormat | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "The tick label format. By default ticks under a minute apart print `\"time-seconds\"`, such as `13:42:05`, and wider ones `\"time\"`, such as `13:42`.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "LiveLineChart.YAxis",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/live-line-chart-guides.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Classes on the part's element.",
+          "required": false
+        },
+        {
+          "name": "format",
+          "origin": "declared",
+          "type": "ValueFormat | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The tick label format. Root's `valueFormat` by default.",
+          "required": false
+        },
+        {
+          "name": "side",
+          "origin": "declared",
+          "type": "\"end\" | \"start\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"start\"",
+          "description": "\"start\" draws the axis at the left edge and \"end\" at the right. \"start\" by default.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "LiveLineChart.Area",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/live-line-chart-marks.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Classes on the part's element.",
+          "required": false
+        },
+        {
+          "name": "curve",
+          "origin": "declared",
+          "type": "LiveLineChartCurve | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"monotone\"",
+          "description": "The curve through the readings, the same as the Line's. \"monotone\" by default.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        },
+        {
+          "name": "variant",
+          "origin": "declared",
+          "type": "\"gradient\" | \"solid\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"gradient\"",
+          "description": "The fill. \"gradient\" by default, which fades from the line's paint to nothing at the plot's bottom edge, and \"solid\" fills at `--chart-area-opacity`.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "LiveLineChart.Line",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/live-line-chart-marks.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Classes on the part's element.",
+          "required": false
+        },
+        {
+          "name": "curve",
+          "origin": "declared",
+          "type": "LiveLineChartCurve | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"monotone\"",
+          "description": "The curve through the readings. \"monotone\" by default, which never overshoots a reading. Every curve it takes stays between the readings around each segment, so the line stays in the plot.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "LiveLineChart.LiveDot",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/live-line-chart-marks.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Classes on the part's element.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        },
+        {
+          "name": "variant",
+          "origin": "declared",
+          "type": "\"default\" | \"ping\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"ping\"",
+          "description": "The dot's look. \"ping\" by default, which sends a ring out from the dot once a cycle, and reduced motion stops the ring. \"default\" draws the dot alone.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "LiveLineChart.Badge",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/live-line-chart-marks.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Classes on the part's element.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "LiveLineChart.Crosshair",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/live-line-chart-readout.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Classes on the part's element.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "LiveLineChart.Tooltip",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/live-line-chart-readout.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Classes on the part's element.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        },
+        {
+          "name": "variant",
+          "origin": "declared",
+          "type": "\"default\" | \"frosted\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"default\"",
+          "description": "The popup's surface. \"default\" by default, and \"frosted\" lets the plot show through.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "LiveLineChart.Table",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/live-line-chart-table.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "caption",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Replaces the generated caption, the chart's name and its reading count.",
+          "required": false
+        },
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Classes on the part's element.",
+          "required": false
+        },
+        {
+          "name": "hideLabel",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Replaces the dictionary's \"Skjul tabell\".",
+          "required": false
+        },
+        {
+          "name": "showLabel",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Replaces the dictionary's \"Vis som tabell\".",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "LiveLineChart.Headline",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/chart-headline.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 277,
+      "props": [
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, {}> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "LiveLineChart.Takeaway",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/chart-headline.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 276,
+      "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "string | number | readonly (string | number)[]",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "The takeaway sentence. Interpolated strings and numbers pass, and elements fail the type.",
+          "required": true
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, {}> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "LiveLineChart.Background",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/chart-background.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Classes on the part's element.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        },
+        {
+          "name": "variant",
+          "origin": "declared",
+          "type": "ChartBackgroundPattern | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"dots\"",
+          "description": "The pattern drawn behind the marks. \"dots\" by default.",
+          "required": false
+        }
+      ]
+    }
+  ]
+}
