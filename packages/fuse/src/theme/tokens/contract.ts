@@ -3,12 +3,11 @@ import type { ThemeIdentity } from "../theme-input";
 export const TOKEN_NAMES = [
   "background",
   "foreground",
-  // The container roles: card, popover, dialog and panel. Every Fuse container that paints one as
-  // its fill states that fill as `--surface` beside the fill class, through `--theme()` so a
-  // ThemeScope around it holds: `bg-panel [--surface:--theme(--color-panel)]`. `--surface` is the
-  // colour of the fill an element sits on; chart cut-outs read it, falling back to `background`.
-  // Beside it the container states `--surface-muted-foreground`, the muted text paired with that
-  // fill, which the text on a chart's chips reads; `fuse/surface-muted-foreground` requires it.
+  // The container roles: card, popover, dialog and panel. `--surface` is the colour of the fill an
+  // element sits on; chart cut-outs read it, falling back to `background`. Beside it the container
+  // states `--surface-muted-foreground`, the muted text paired with that fill, which the text on a
+  // chart's chips reads. The `fuse/container-surface` lint rule holds every container that paints
+  // one of these roles to `--surface`, and `fuse/surface-muted-foreground` requires the companion.
   "card",
   "card-foreground",
   "card-soft",

@@ -186,7 +186,7 @@ export function SelectScrollUpButton({
       data-slot="select-scroll-up-button"
       className={mergeClassName(
         className,
-        "top-0 z-10 flex w-full cursor-default items-center justify-center bg-popover py-1 [&_svg:not([class*='size-'])]:size-4"
+        "top-0 z-10 flex w-full cursor-default items-center justify-center bg-popover [--surface-muted-foreground:inherit] [--surface:inherit] py-1 [&_svg:not([class*='size-'])]:size-4"
       )}
       {...props}>
       <CaretUp />
@@ -203,7 +203,7 @@ export function SelectScrollDownButton({
       data-slot="select-scroll-down-button"
       className={mergeClassName(
         className,
-        "bottom-0 z-10 flex w-full cursor-default items-center justify-center bg-popover py-1 [&_svg:not([class*='size-'])]:size-4"
+        "bottom-0 z-10 flex w-full cursor-default items-center justify-center bg-popover [--surface-muted-foreground:inherit] [--surface:inherit] py-1 [&_svg:not([class*='size-'])]:size-4"
       )}
       {...props}>
       <CaretDown />
