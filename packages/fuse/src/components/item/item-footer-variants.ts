@@ -7,7 +7,8 @@ import { tv } from "../../styles/tv";
 // `minmax(0,1fr)` interpolates without measuring, so the footer stays a server part, and a
 // mode change mid-tween reverses from the current value. `@starting-style` covers only the fade
 // and the slide, so a footer that renders visible does not grow on first paint. The central
-// reduced-motion rule keeps only the fade.
+// reduced-motion rule keeps only the fade and cannot zero the slide's offset, so the offset sits
+// under `motion-safe:` and a reduced-motion footer fades in place.
 const itemFooterMotionClass = cn(
   "ease-out transition-[grid-template-rows,padding-top,opacity,translate] duration-150"
 );
@@ -39,7 +40,7 @@ export const itemFooterVariants = tv({
         root: cn(
           "translate-y-0 grid-rows-[minmax(0,1fr)] pt-3 opacity-100",
           itemFooterMotionClass,
-          "starting:-translate-y-1.5 starting:opacity-0"
+          "starting:opacity-0 motion-safe:starting:-translate-y-1.5"
         ),
         content: itemFooterClipClass,
       },
@@ -47,7 +48,7 @@ export const itemFooterVariants = tv({
       // the page and any scroll container.
       hidden: {
         root: cn(
-          "pointer-events-none -translate-y-1.5 grid-rows-[minmax(0,0fr)] pt-0 opacity-0",
+          "pointer-events-none grid-rows-[minmax(0,0fr)] pt-0 opacity-0 motion-safe:-translate-y-1.5",
           itemFooterMotionClass
         ),
         content: itemFooterClipClass,

@@ -88,8 +88,8 @@ export const navigationMenuVariants = tv({
       navigationContentShellClass,
       "ease-out box-border h-full max-h-(--available-height) w-auto max-w-(--available-width) overflow-auto transition-[opacity,translate] duration-300",
       "data-ending-style:opacity-0 data-starting-style:opacity-0",
-      "data-starting-style:data-[activation-direction=left]:-translate-x-1/2 data-starting-style:data-[activation-direction=right]:translate-x-1/2",
-      "data-ending-style:data-[activation-direction=left]:translate-x-1/2 data-ending-style:data-[activation-direction=right]:-translate-x-1/2",
+      "motion-safe:data-starting-style:data-[activation-direction=left]:-translate-x-1/2 motion-safe:data-starting-style:data-[activation-direction=right]:translate-x-1/2",
+      "motion-safe:data-ending-style:data-[activation-direction=left]:translate-x-1/2 motion-safe:data-ending-style:data-[activation-direction=right]:-translate-x-1/2",
     ],
     link: [
       selfFocusRingClass,

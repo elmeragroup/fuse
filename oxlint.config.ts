@@ -398,6 +398,7 @@ export default defineConfig({
             roles: "packages/fuse/src/theme/tokens/density-roles.ts",
           },
         ],
+        "fuse/motion-safe-transform": "error",
         "fuse/no-base-ui-preview-menu": "error",
         "fuse/overlay-root-override-last": "error",
         "fuse/owned-class-tokens": [
