@@ -88,6 +88,12 @@ export function InputGroupRoot({ className, size = "default", ...props }: InputG
 /**
  * An addon rail inside the field box. It publishes `--inner-corner` for its buttons, its kbd and
  * any part that rounds with `rounded-inner`: the field corner less its inset.
+ *
+ * The addon has no role of its own: `InputGroup.Root` is the group. An addon holds decoration,
+ * a text prefix or a few buttons that each carry their own name and act on the Root's control,
+ * and an unnamed group nested in the Root's would add a container level for some screen readers
+ * without announcing anything. When an addon does group several controls that need a shared
+ * name, pass `role="group"` and `aria-label` to it.
  */
 export function InputGroupAddon({
   className,
@@ -96,8 +102,8 @@ export function InputGroupAddon({
   ...props
 }: InputGroupAddonProps): ReactElement {
   return (
+    // oxlint-disable-next-line jsx-a11y/no-static-element-interactions -- the click only widens the pointer hit area of the Root's own control, which keyboard users reach directly; a role here would expose a container that does nothing (#568)
     <div
-      role="group"
       data-slot="input-group-addon"
       data-align={align}
       className={cn(inputGroupAddonVariants({ align }), className)}

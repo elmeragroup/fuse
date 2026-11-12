@@ -591,7 +591,7 @@ describe("Combobox", () => {
      */
     async function pressAddonRail(): Promise<void> {
       const rail = buttonNamed(TOGGLE_COPY["en-US"]).parentElement;
-      if (!(rail instanceof HTMLElement) || rail.getAttribute("role") !== "group") {
+      if (!(rail instanceof HTMLElement) || rail.getAttribute("data-slot") !== "input-group-addon") {
         throw new Error("expected the addon rail around the caret");
       }
       const box = rail.getBoundingClientRect();

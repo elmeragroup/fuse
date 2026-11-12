@@ -9,6 +9,7 @@ import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import { countryAddon, phoneInput } from "../../../test/phone-browser-queries";
 import {
+  fieldBoxOf,
   inputNamed,
   renderThemed,
   roleNamed,
@@ -19,20 +20,8 @@ import { LocaleProvider } from "../../intl/locale-context";
 import { PhoneNumberField } from "../phone-number-field/phone-number-field";
 import { InputGroup } from "./index";
 
-function groupAround(start: HTMLElement): HTMLElement {
-  const group = start.closest('[role="group"]');
-  if (!(group instanceof HTMLElement)) {
-    throw new Error("expected a group ancestor");
-  }
-  return group;
-}
-
-function rootNamed(name: string): HTMLElement {
-  return groupAround(textboxNamed(name));
-}
-
 describe("InputGroup", () => {
-  it("renders the group chrome around a named control", () => {
+  it("renders the group chrome around a named control, with the root as its only group", () => {
     renderThemed(
       <InputGroup.Root>
         <InputGroup.Addon>
@@ -41,11 +30,13 @@ describe("InputGroup", () => {
         <InputGroup.Input aria-label="Account" />
       </InputGroup.Root>
     );
-    const root = rootNamed("Account");
-    const addon = groupAround(textNamed("NO"));
+    const root = fieldBoxOf(textboxNamed("Account"));
+    const addon = textNamed("NO").parentElement;
     const control = textboxNamed("Account");
+    // One group per input group (#568): the addon is a rail inside the root, not a group of its own.
+    expect(page.getByRole("group").elements()).toEqual([root]);
     expect(root.getAttribute("data-slot")).toBe("input-group");
-    expect(addon.getAttribute("data-slot")).toBe("input-group-addon");
+    expect(addon?.getAttribute("data-slot")).toBe("input-group-addon");
     expect(control.getAttribute("data-slot")).toBe("input-group-control");
     expect(control.hasAttribute("data-focus-ring-control")).toBe(true);
     expect(textNamed("NO").getAttribute("data-slot")).toBe("input-group-text");
@@ -198,7 +189,7 @@ describe("InputGroup", () => {
         </InputGroup.Addon>
       </InputGroup.Root>
     );
-    expect(getComputedStyle(rootNamed("Editable meter")).opacity).toBe("1");
+    expect(getComputedStyle(fieldBoxOf(textboxNamed("Editable meter"))).opacity).toBe("1");
     await userEvent.fill(page.getByRole("textbox", { name: "Editable meter" }), "12345");
     await expect.element(page.getByRole("textbox", { name: "Editable meter" })).toHaveValue("12345");
     expect(roleNamed("button", "Copy meter").matches(":disabled")).toBe(true);
