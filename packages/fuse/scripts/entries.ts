@@ -46,6 +46,7 @@ export const BARE_COMPONENT_ENTRIES = [
   "popover-info-button",
   "radio-group",
   "scroll-area",
+  "search-field",
   "select",
   "selection-item",
   "separator",
@@ -102,16 +103,14 @@ export const DEFERRED_ENTRIES: readonly string[] = [];
  */
 export const PREVIEW_ENTRIES = ["chart"] as const;
 
-/** Appendix A — 9 quarantined react-aria interim entries. */
+/** Appendix A — 7 quarantined react-aria interim entries. */
 export const RAC_ENTRIES = [
   "calendar",
   "date-field",
   "date-picker",
   "date-range-picker",
   "focusable",
-  "grid-list",
   "range-calendar",
-  "search-field",
   "ui-providers",
 ] as const;
 

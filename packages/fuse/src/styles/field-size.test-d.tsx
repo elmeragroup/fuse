@@ -9,7 +9,7 @@ import type { PhoneNumberFieldProps } from "@elmeragroup/fuse/phone-number-field
 import type { DateFieldProps, DateInputProps } from "@elmeragroup/fuse/react-aria/date-field";
 import type { DatePickerProps } from "@elmeragroup/fuse/react-aria/date-picker";
 import type { DateRangePickerProps } from "@elmeragroup/fuse/react-aria/date-range-picker";
-import type { SearchFieldProps } from "@elmeragroup/fuse/react-aria/search-field";
+import type { SearchFieldProps } from "@elmeragroup/fuse/search-field";
 import type { SelectFieldProps } from "@elmeragroup/fuse/select-field";
 import type { TextFieldProps } from "@elmeragroup/fuse/text-field";
 import type { TextareaProps } from "@elmeragroup/fuse/textarea";

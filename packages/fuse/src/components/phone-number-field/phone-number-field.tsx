@@ -14,6 +14,7 @@ import type { CountryCode, MetadataJson } from "libphonenumber-js/core";
 import { flushSync } from "react-dom";
 
 import type { FlagAssetCode } from "../../flags";
+import { useEarlyInputValue } from "../../hooks/use-early-input-value";
 import { useFormReset } from "../../hooks/use-form-reset";
 import { useLocalizedStrings } from "../../hooks/use-localized-strings";
 import { MagnifyingGlass } from "../../icons/generated/magnifying-glass";
@@ -431,26 +432,22 @@ export function PhoneNumberField({
   // Every native edit path honors both flags together.
   const isEditable = !isDisabled && !isReadOnly;
 
-  // A number typed (or autofilled) before hydration survives hydration in the DOM, but the
-  // hook starts from its own initial value, and the first re-render, which Base UI's Field
-  // registration triggers in this same commit, would write that value over it. Read it once,
-  // before then, and propose it as an edit: a controlled parent can accept it like any other.
-  // On a client mount, or a hydration without an early edit, the two values are equal.
-  const hydrationCheckedRef = useRef(false);
-  useLayoutEffect(() => {
-    if (hydrationCheckedRef.current) return;
-    hydrationCheckedRef.current = true;
-    const input = numberInputRef.current;
-    if (input && isEditable && input.value !== phone.displayValue) {
-      phone.edit({
-        value: input.value,
-        selectionStart: null,
-        selectionEnd: null,
-        selectionDirection: null,
-        inputType: null,
-      });
-    }
-  });
+  // A number typed (or autofilled) before hydration is proposed as an edit.
+  useEarlyInputValue(
+    numberInputRef,
+    phone.displayValue,
+    isEditable
+      ? (value) => {
+          phone.edit({
+            value,
+            selectionStart: null,
+            selectionEnd: null,
+            selectionDirection: null,
+            inputType: null,
+          });
+        }
+      : null
+  );
 
   // The flag and dial code: the picker trigger's face, or the plain context of one country.
   const countryFace = (

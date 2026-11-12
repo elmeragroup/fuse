@@ -27,7 +27,6 @@ import { Input } from "../../components/input/input";
 import { TextField } from "../../components/text-field/text-field";
 import { DatePicker } from "../date-picker/date-picker";
 import { DateRangePicker } from "../date-range-picker/date-range-picker";
-import { SearchField } from "../search-field/search-field";
 import { UiProviders } from "../ui-providers/ui-providers";
 import { DateField, DateInput } from "./date-field";
 
@@ -225,10 +224,8 @@ describe("DateField field-box chrome", () => {
         <DateField label="Meter" isInvalid description="Meter date" />
         <DatePicker label="Start" isInvalid description="Start date" />
         <DateRangePicker label="Period" isInvalid description="Billing period" />
-        <SearchField label="Find" isInvalid description="Search term" />
         <DateField label="Due" />
         <DatePicker label="Issued" />
-        <SearchField label="Filter" />
       </>
     );
     // Unit: each React Aria field's label colour. Oracle: an invalid TextField's label, which
@@ -242,7 +239,6 @@ describe("DateField field-box chrome", () => {
       ["Meter", "Meter date"],
       ["Start", "Start date"],
       ["Period", "Billing period"],
-      ["Find", "Search term"],
     ] as const) {
       expect(getComputedStyle(textNamed(label)).color, `${label} label`).toBe(invalidLabel);
       // The help text keeps its own muted colour under the invalid root.
@@ -252,7 +248,7 @@ describe("DateField field-box chrome", () => {
     }
     // A valid field of each recipe keeps the valid TextField's colour, so the rule is gated on
     // `data-invalid` rather than painting every label.
-    for (const label of ["Due", "Issued", "Filter"]) {
+    for (const label of ["Due", "Issued"]) {
       expect(getComputedStyle(textNamed(label)).color, `${label} label`).toBe(validLabel);
     }
   });

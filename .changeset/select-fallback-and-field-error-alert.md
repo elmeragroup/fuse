@@ -9,7 +9,7 @@ inside, the containing block for `position: fixed` content, such as a transforme
 there.
 
 The react-aria fields' error message has `role="alert"`, like Fuse `Field`'s error. `DateField`,
-`DatePicker`, `DateRangePicker` and `SearchField` now announce an error when it appears, and
+`DatePicker` and `DateRangePicker` now announce an error when it appears, and
 `aria-describedby` still ties it to the field.
 
 The calendars of `DatePicker` and `DateRangePicker` stay inside a `ThemeScope` or `container`

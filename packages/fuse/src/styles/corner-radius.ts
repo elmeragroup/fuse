@@ -79,9 +79,8 @@ export const compactCornerClass = cn(
 );
 
 /**
- * The corner of the Checkbox and the GridList selection box, `rounded-md` capped at 4px in
- * every identity. At a large `--radius` the cap stops the box from rounding into a circle that
- * reads as a Radio.
+ * The corner of the Checkbox, `rounded-md` capped at 4px in every identity. At a large
+ * `--radius` the cap stops the box from rounding into a circle that reads as a Radio.
  */
 export const checkboxCornerClass = cn("rounded-[min(--theme(--radius-md),4px)]");
 

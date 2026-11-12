@@ -4,8 +4,8 @@
 
 Every text-entry field takes `size`, `"default"` or `"sm"`, as `Select.Trigger` does: `Input`,
 `Textarea`, `TextField`, `TextareaField`, `SelectField`, `NumberField`, `PhoneNumberField`,
-`InputGroup.Root`, `Combobox.Input`, `Combobox.Chips`, `Autocomplete.Input`, and from
-`react-aria/*` `SearchField`, `DateField`, `DateInput`, `DatePicker` and `DateRangePicker`.
+`InputGroup.Root`, `Combobox.Input`, `Combobox.Chips`, `Autocomplete.Input`, `SearchField`, and
+from `react-aria/*` `DateField`, `DateInput`, `DatePicker` and `DateRangePicker`.
 `"default"` is the md control size and renders as before. `"sm"` is the sm control size: the box
 is as tall as an sm `Button` or `Select.Trigger`, with the sm inset and a fixed 14px text, so a
 search field beside a row of sm controls lines up with them. Before, every field box was pinned to

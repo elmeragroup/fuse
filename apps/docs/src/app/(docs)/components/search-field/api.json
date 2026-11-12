@@ -5,23 +5,37 @@
     {
       "name": "SearchField",
       "rsc": "client",
-      "sourcePath": "packages/fuse/src/react-aria/search-field/search-field.tsx",
+      "sourcePath": "packages/fuse/src/components/search-field/search-field.tsx",
       "forwardedFrom": [
-        "@react-types/shared",
-        "@types/react",
-        "react-aria",
-        "react-aria-components",
-        "react-stately"
+        "@types/react"
       ],
-      "forwardedCount": 124,
+      "forwardedCount": 297,
       "props": [
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Extra classes, merged onto the root.",
+          "required": false
+        },
         {
           "name": "clearLabel",
           "origin": "declared",
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Accessible name for the clear button. Defaults to the `searchField.clear` row of the locale dictionary; an explicit string wins.",
+          "description": "Accessible name of the clear button. Defaults to the `searchField.clear` row of the locale dictionary; an explicit string wins.",
+          "required": false
+        },
+        {
+          "name": "defaultValue",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Uncontrolled initial value, restored by a native form reset.",
           "required": false
         },
         {
@@ -30,16 +44,52 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Supporting copy, rendered as the private RAC `Description`.",
+          "description": "Supporting copy, rendered as `Field.Description`.",
           "required": false
         },
         {
           "name": "errorMessage",
           "origin": "declared",
-          "type": "((validation: ValidationResult) => ReactNode) | ReactNode",
-          "shortType": "function",
+          "type": "ReactNode",
+          "shortType": null,
           "defaultValue": null,
-          "description": "Error copy, rendered as `FieldError` when the field is invalid. Accepts a node or a validation render function. Without it or `isInvalid`, the field shows a `Form` error under its `name`, which clears when the value changes.",
+          "description": "Error copy, rendered as `Field.Error` while the field is invalid: through `isInvalid`, its own constraint validation or an error `Form` holds under its `name`. Without it, the field shows that `Form` error or the native constraint message itself.",
+          "required": false
+        },
+        {
+          "name": "isDisabled",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Forwards `disabled` to `Field.Root` and the inner input, and disables the clear button.",
+          "required": false
+        },
+        {
+          "name": "isInvalid",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Forwards `invalid` to `Field.Root`.",
+          "required": false
+        },
+        {
+          "name": "isReadOnly",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Forwards `readOnly` to the inner input, which then takes the muted read-only fill. It also disables the clear button, Enter and Escape.",
+          "required": false
+        },
+        {
+          "name": "isRequired",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Forwards `required` to the inner input.",
           "required": false
         },
         {
@@ -48,7 +98,43 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Visible label, rendered as the private RAC `Label`.",
+          "description": "Visible label, rendered as `Field.Label`. It names the searchbox.",
+          "required": false
+        },
+        {
+          "name": "name",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Native `name` forwarded to the inner input. Inside a `Form`, its errors are keyed by it.",
+          "required": false
+        },
+        {
+          "name": "onChange",
+          "origin": "declared",
+          "type": "((value: string) => void) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Called with the string value, not the native event, on every edit and on a clear.",
+          "required": false
+        },
+        {
+          "name": "onClear",
+          "origin": "declared",
+          "type": "(() => void) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Called after the clear button or Escape empties the field.",
+          "required": false
+        },
+        {
+          "name": "onSubmit",
+          "origin": "declared",
+          "type": "((value: string) => void) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Called with the value on a plain Enter, not on a held key's repeats or an Enter with Alt, Control, Meta or Shift. Given, Enter in an editable field never submits the surrounding form; omitted, Enter keeps its native behaviour and submits it.",
           "required": false
         },
         {
@@ -57,7 +143,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Placeholder forwarded to the inner `Input`.",
+          "description": "Native `placeholder` forwarded to the inner input.",
           "required": false
         },
         {
@@ -67,6 +153,15 @@
           "shortType": "Union",
           "defaultValue": "\"default\"",
           "description": "Control size of the field box. Emitted as `data-size`. `\"default\"` maps to the `md` control size; `\"sm\"` maps to the `sm` control size. The clear button follows it.",
+          "required": false
+        },
+        {
+          "name": "value",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Controlled value.",
           "required": false
         }
       ]

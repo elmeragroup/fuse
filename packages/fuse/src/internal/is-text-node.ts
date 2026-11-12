@@ -4,8 +4,8 @@ import type { ReactNode } from "react";
  * Narrows a consumer-supplied `ReactNode` to the plain string case.
  *
  * Several components take a `ReactNode` that renders intact but gets extra treatment
- * when it is text — Checkbox's `describedBy` note, ConfirmButton's announcement chain,
- * GridList's string children. This is the one place that asks the question of a
+ * when it is text — Checkbox's `describedBy` note, ConfirmButton's announcement chain.
+ * This is the one place that asks the question of a
  * `ReactNode`, replacing the local spellings as each component migrates.
  *
  * It does **not** own every "is this a string" check in the package. Toast's manager
@@ -15,14 +15,8 @@ import type { ReactNode } from "react";
  * which no shared guard narrows. Those two were the `Object.prototype.toString`
  * spellings that evaded the lint rule, and they are honest `typeof` checks now — not
  * callers of this helper.
- *
- * The parameter admits a render function beside the `ReactNode` because the interim RAC
- * tier's children are `ChildrenOrFunction<…>` — a node **or** a function over render
- * props — and GridList asks this question of exactly that union. The
- * function arm is only ever a `false` answer; widening the input keeps one guard for
- * both tiers instead of a second spelling behind the quarantine boundary.
  */
-export function isTextNode(node: ReactNode | ((renderProps: never) => ReactNode)): node is string {
+export function isTextNode(node: ReactNode): node is string {
   // oxlint-disable-next-line anti-slop/no-runtime-typeof -- consumer-owned ReactNode I/O: the string arm is a documented public contract, not an internal type guess
   return typeof node === "string";
 }

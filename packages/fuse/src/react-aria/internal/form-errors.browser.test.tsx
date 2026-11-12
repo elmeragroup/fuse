@@ -15,7 +15,6 @@ import { TextField } from "../../components/text-field/text-field";
 import { DateField } from "../date-field/date-field";
 import { DatePicker } from "../date-picker/date-picker";
 import { DateRangePicker } from "../date-range-picker/date-range-picker";
-import { SearchField } from "../search-field/search-field";
 import { UiProviders } from "../ui-providers/ui-providers";
 
 const june2 = new CalendarDate(2026, 6, 2);
@@ -36,7 +35,6 @@ function Booking({ errors, children }: { errors?: FormProps["errors"]; children?
       <DatePicker name="startDate" label="Start date" defaultValue={june2} />
       <DateField name="dueDate" label="Due date" />
       <DateRangePicker startName="from" endName="to" label="Stay" />
-      <SearchField name="query" label="Search" />
       {children}
     </Form>
   );
@@ -47,7 +45,6 @@ const ALL_ERRORS = {
   startDate: "Pick a later date.",
   dueDate: "Pick a due date.",
   to: "The stay is fully booked.",
-  query: "Search for something else.",
 };
 
 /** The RAC root around a date field's segment group, which RAC names after the field label. */
@@ -70,7 +67,6 @@ function errorTexts(element: HTMLElement): string[] {
 /** Each field's described error, or `null`, and whether it is marked invalid. */
 function fieldStates() {
   const email = roleNamed("textbox", "Email");
-  const search = roleNamed("searchbox", "Search");
   const date = (name: string) => ({
     invalid: dateRoot(name).hasAttribute("data-invalid"),
     texts: errorTexts(roleNamed("group", name)),
@@ -80,7 +76,6 @@ function fieldStates() {
     startDate: date("Start date"),
     dueDate: date("Due date"),
     stay: date("Stay"),
-    query: { invalid: search.getAttribute("aria-invalid") === "true", texts: errorTexts(search) },
   };
 }
 
@@ -104,7 +99,6 @@ describe("Form errors on the interim React Aria fields", () => {
       startDate: { invalid: true, texts: ["Pick a later date."] },
       dueDate: { invalid: true, texts: ["Pick a due date."] },
       stay: { invalid: true, texts: ["The stay is fully booked."] },
-      query: { invalid: true, texts: ["Search for something else."] },
     });
   });
 
@@ -131,9 +125,6 @@ describe("Form errors on the interim React Aria fields", () => {
     await expect.poll(() => fieldStates().email).toEqual({ invalid: false, texts: [] });
     expect(fieldStates().startDate).toEqual({ invalid: false, texts: [] });
 
-    await userEvent.type(roleNamed("searchbox", "Search"), "x");
-    await expect.poll(() => fieldStates().query).toEqual({ invalid: false, texts: [] });
-
     // The range test below clears the Stay endpoints the same way.
     await typeDate("month, Due date", "07142026");
     await expect.poll(() => fieldStates().dueDate).toEqual({ invalid: false, texts: [] });
@@ -148,7 +139,6 @@ describe("Form errors on the interim React Aria fields", () => {
       startDate: { invalid: true, texts: ["Pick a later date."] },
       dueDate: { invalid: true, texts: ["Pick a due date."] },
       stay: { invalid: true, texts: ["The stay is fully booked."] },
-      query: { invalid: true, texts: ["Search for something else."] },
     });
   });
 
@@ -159,17 +149,13 @@ describe("Form errors on the interim React Aria fields", () => {
         errors={{
           startDate: "Pick a later date.",
           dueDate: "Pick a due date.",
-          query: "Search for something else.",
         }}>
         <DatePicker name="startDate" label="Start date" errorMessage="Choose a weekday." />
-        <SearchField name="query" label="Search" isInvalid={false} />
         <DateField name="dueDate" label="Due date" isInvalid errorMessage="Due dates are closed." />
       </Form>
     );
     expect(errorTexts(roleNamed("group", "Start date"))).toEqual(["Choose a weekday."]);
     expect(dateRoot("Start date")).toHaveAttribute("data-invalid");
-    expect(roleNamed("searchbox", "Search").getAttribute("aria-invalid")).toBeNull();
-    expect(errorTexts(roleNamed("searchbox", "Search"))).toEqual([]);
     expect(errorTexts(roleNamed("group", "Due date"))).toEqual(["Due dates are closed."]);
     expect(dateRoot("Due date")).toHaveAttribute("data-invalid");
   });
@@ -212,14 +198,14 @@ describe("Form errors on the interim React Aria fields", () => {
   it("keeps an outer React Aria context's errors for names the Fuse Form leaves out", () => {
     render(
       <FormValidationContext.Provider value={{ startDate: "Taken by another booking." }}>
-        <Form aria-label="Booking" errors={{ query: "Search for something else." }}>
+        <Form aria-label="Booking" errors={{ dueDate: "Pick a due date." }}>
           <DatePicker name="startDate" label="Start date" />
-          <SearchField name="query" label="Search" />
+          <DateField name="dueDate" label="Due date" />
         </Form>
       </FormValidationContext.Provider>
     );
     expect(errorTexts(roleNamed("group", "Start date"))).toEqual(["Taken by another booking."]);
-    expect(errorTexts(roleNamed("searchbox", "Search"))).toEqual(["Search for something else."]);
+    expect(errorTexts(roleNamed("group", "Due date"))).toEqual(["Pick a due date."]);
   });
 
   it("keeps a picker's edit clearing an error both an outer React Aria context and the Fuse Form hold", async () => {

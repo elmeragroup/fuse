@@ -416,7 +416,7 @@ export const TOKEN_PAINTS = {
   "popover-foreground": ["ink"],
   dialog: ["surface"],
   "dialog-foreground": ["ink"],
-  // GridList draws a disabled checkbox edge in it through its `--checkbox-color` route.
+  // A ring PieChart strokes its track in it.
   muted: ["surface", "line"],
   "muted-foreground": ["surface", "ink", "line"],
   accent: ["surface"],
@@ -569,7 +569,7 @@ export const TOKEN_DESCRIPTIONS = {
     "The fill of Dialog, AlertDialog and Sheet. Branded light themes fill it with the page tint, and neutral and dark themes use popover.",
   "dialog-foreground": "Text and icons in Dialog, AlertDialog and Sheet, text-grade on dialog.",
   muted:
-    "A quiet fill for hover tints, the Tabs list track, Skeleton and Kbd, and the edge of a disabled GridList checkbox. Text on it takes foreground or muted-foreground.",
+    "A quiet fill for hover tints, the Tabs list track, Skeleton and Kbd, and the track of a ring PieChart. Text on it takes foreground or muted-foreground.",
   "muted-foreground":
     "Secondary text, such as descriptions, placeholders and captions, text-grade on background, muted, card, card-soft and dialog. It also draws the edge of an unchecked Checkbox, Radio and Switch.",
   accent: "The fill of a highlighted row in menus, Select, Combobox and Command, one step off popover.",

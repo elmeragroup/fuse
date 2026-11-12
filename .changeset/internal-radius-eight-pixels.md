@@ -9,9 +9,3 @@ lists and `Frame` panels round at a concentric 4px instead of 2px. The `Checkbox
 external `Checkbox` keeps its 4px corner. A `--radius` override above 4px no longer rounds the
 `Checkbox` with it. To keep the 6px corners, set `--radius: 0.375rem` on the element that carries
 the theme attributes.
-
-The `GridList` selection box now caps at 4px in every theme too, as the `Checkbox` does. It was
-6px internally. In external themes it took `rounded-xs`, so it now drops from 6px for Fjordkraft,
-Fjordkraft Företag and Telinet and from 10px for TrøndelagKraft. It rises from 2px for
-Gudbrandsdal Energi and from 0px for Elmera and Nordic Green Energy. The rest of the external
-corners do not move.

@@ -303,17 +303,9 @@
       "types": "./src/react-aria/focusable.ts",
       "import": "./src/react-aria/focusable.ts"
     },
-    "./react-aria/grid-list": {
-      "types": "./src/react-aria/grid-list.ts",
-      "import": "./src/react-aria/grid-list.ts"
-    },
     "./react-aria/range-calendar": {
       "types": "./src/react-aria/range-calendar.ts",
       "import": "./src/react-aria/range-calendar.ts"
-    },
-    "./react-aria/search-field": {
-      "types": "./src/react-aria/search-field.ts",
-      "import": "./src/react-aria/search-field.ts"
     },
     "./react-aria/ui-providers": {
       "types": "./src/react-aria/ui-providers.ts",
@@ -326,6 +318,10 @@
     "./scroll-area": {
       "types": "./src/scroll-area.ts",
       "import": "./src/scroll-area.ts"
+    },
+    "./search-field": {
+      "types": "./src/search-field.ts",
+      "import": "./src/search-field.ts"
     },
     "./select": {
       "types": "./src/select.ts",

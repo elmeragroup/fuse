@@ -453,7 +453,6 @@ export const PART_DENSITY = {
   "field-separator": "fixed",
   "field-separator-content": "fixed",
   "field-error": "label",
-  "field-input": "control",
 
   "file-trigger": "control",
   "file-upload": "surface",
@@ -734,8 +733,6 @@ export const PART_DENSITY = {
   "date-picker-preset-item": "row",
   "date-range-picker-preset-group": "surface",
   "date-range-picker-preset-item": "row",
-  "grid-list": "layout",
-  "grid-list-item": "row",
   "data-table-filter-bar": "layout",
   "data-table-filter-bar-row": "surface",
   "data-table-filter-trigger": "control",
