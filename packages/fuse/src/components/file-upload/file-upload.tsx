@@ -52,7 +52,11 @@ export type FileUploadRootProps = Omit<useRender.ComponentProps<"div">, "onSelec
      * every source enforces it: a file that fails it reaches `onReject` with `"type"`.
      */
     accept?: string;
-    /** Take more than one file. Without it, a pick, drop or paste of several files rejects them all with `"count"`. */
+    /**
+     * Take more than one file. Without it, a pick, drop or paste in which more than one file
+     * passes `accept` rejects each of those with `"count"`. `accept` is checked first, so a file
+     * that fails it is rejected with `"type"` and never counts.
+     */
     multiple?: boolean;
     /** The picker selects folders, and dropped folders expand into their files. */
     directory?: boolean;
