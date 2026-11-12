@@ -7,37 +7,24 @@
 //
 // The interim React Aria Calendar takes no children, so no chart can rest in it. Its case reads
 // the `--surface` it states and holds it to the same oracle, its own computed fill.
-import type { ReactElement, ReactNode } from "react";
+import type { ReactElement } from "react";
 
 import { describe, expect, it } from "vitest";
 import { page } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
-import { RowTitle } from "../../../test/selection-row";
+import { SURFACE_HOSTS } from "../../../test/surface-hosts";
 import {
   THEMED,
   renderIn,
   restoreDocumentThemeAroundEach,
-  shown,
   srgb,
   surfaceAt,
 } from "../../../test/surface-paint";
 import { computedContrast, stampDensity } from "../../../test/themed-browser-render";
 import { Calendar as AriaCalendar } from "../../react-aria/calendar/calendar";
 import { DENSITIES } from "../../theme/density";
-import { Accordion } from "../accordion";
-import { Alert } from "../alert/alert";
-import { Calendar } from "../calendar";
-import { Card } from "../card/card";
-import { CheckboxCard } from "../checkbox-card/checkbox-card";
-import { CheckboxGroup } from "../checkbox/checkbox";
-import { CheckboxItem } from "../checkbox/checkbox-item";
-import { Dialog } from "../dialog";
-import { Frame } from "../frame/frame";
-import { Item } from "../item";
-import { Popover } from "../popover";
-import { Table, VerticalTable } from "../table/table";
 import { Chart } from "./chart-namespace";
 import "./chart.css";
 import { ClockChart } from "./clock-chart-namespace";
@@ -83,315 +70,6 @@ function Charts(): ReactElement {
   );
 }
 
-type Host = {
-  readonly label: string;
-  /** The host around a chart. */
-  readonly node: (chart: ReactNode) => ReactNode;
-  /** The element that paints the host's fill. */
-  readonly element: () => Promise<HTMLElement>;
-  /** Whether light themes promise this host white. */
-  readonly whiteInLight: boolean;
-  /** For a translucent host, the opaque element around it, whose fill the cut-outs paint. */
-  readonly beneath?: () => Promise<HTMLElement>;
-};
-
-/** A selection row holding the chart in its SubSection. */
-function OptionRow({
-  chart,
-  checked,
-  isDisabled = false,
-}: {
-  chart: ReactNode;
-  checked: boolean;
-  isDisabled?: boolean;
-}): ReactElement {
-  return (
-    <CheckboxGroup label="Usage options" defaultValue={checked ? ["usage"] : []}>
-      <CheckboxItem value="usage" role="region" aria-label="Usage option" isDisabled={isDisabled}>
-        <RowTitle>Usage</RowTitle>
-        <CheckboxItem.SubSection>{chart}</CheckboxItem.SubSection>
-      </CheckboxItem>
-    </CheckboxGroup>
-  );
-}
-
-const HOSTS: readonly Host[] = [
-  {
-    label: "a muted CheckboxCard",
-    node: (chart) => (
-      <CheckboxGroup label="Usage options">
-        <CheckboxCard
-          value="usage"
-          title="Usage plan"
-          description="Includes usage"
-          variant="muted"
-          rightContent={
-            <div role="region" aria-label="Usage chart">
-              {chart}
-            </div>
-          }
-        />
-      </CheckboxGroup>
-    ),
-    element: async () => {
-      const chart = await shown("region", "Usage chart");
-      // DOM audit: CheckboxCard takes no role or name for its card, so its slot is the only locator.
-      const card = chart.closest('[data-slot="card"]');
-      if (!(card instanceof HTMLElement)) throw new Error("expected Card host");
-      return card;
-    },
-    whiteInLight: false,
-  },
-  {
-    label: "Card",
-    node: (chart) => (
-      <Card.Root role="region" aria-label="Usage card">
-        <Card.Content>{chart}</Card.Content>
-      </Card.Root>
-    ),
-    element: () => shown("region", "Usage card"),
-    whiteInLight: true,
-  },
-  {
-    label: "Frame.Panel",
-    node: (chart) => (
-      <Frame.Root>
-        <Frame.Panel role="region" aria-label="Usage panel">
-          {chart}
-        </Frame.Panel>
-      </Frame.Root>
-    ),
-    element: () => shown("region", "Usage panel"),
-    whiteInLight: true,
-  },
-  {
-    // A framed Table's cells paint `panel`, so a Card around the Frame is not their surface.
-    label: "a framed Table cell in a Card",
-    node: (chart) => (
-      <Card.Root>
-        <Card.Content>
-          <Frame.Root>
-            <Table.Root>
-              <Table.Body>
-                <Table.Row>
-                  <Table.Cell aria-label="Usage cell">{chart}</Table.Cell>
-                </Table.Row>
-              </Table.Body>
-            </Table.Root>
-          </Frame.Root>
-        </Card.Content>
-      </Card.Root>
-    ),
-    element: () => shown("cell", "Usage cell"),
-    whiteInLight: true,
-  },
-  {
-    label: "the default Alert",
-    node: (chart) => (
-      <Alert.Root aria-label="Usage alert">
-        <Alert.Title>Usage is up</Alert.Title>
-        {chart}
-      </Alert.Root>
-    ),
-    element: () => shown("alert", "Usage alert"),
-    whiteInLight: true,
-  },
-  {
-    label: "the warning Alert",
-    node: (chart) => (
-      <Alert.Root variant="warning" aria-label="Usage warning">
-        <Alert.Title>Usage is high</Alert.Title>
-        {chart}
-      </Alert.Root>
-    ),
-    element: () => shown("alert", "Usage warning"),
-    whiteInLight: false,
-  },
-  {
-    label: "the info Alert",
-    node: (chart) => (
-      <Alert.Root variant="info" aria-label="Usage note">
-        <Alert.Title>Usage is logged</Alert.Title>
-        {chart}
-      </Alert.Root>
-    ),
-    element: () => shown("alert", "Usage note"),
-    whiteInLight: false,
-  },
-  {
-    // A Card in a warning Alert paints its own fill, so it states its own surface and muted text.
-    label: "a Card in the warning Alert",
-    node: (chart) => (
-      <Alert.Root variant="warning" aria-label="Usage warning">
-        <Alert.Title>Usage is high</Alert.Title>
-        <Card.Root role="region" aria-label="Usage card">
-          <Card.Content>{chart}</Card.Content>
-        </Card.Root>
-      </Alert.Root>
-    ),
-    element: () => shown("region", "Usage card"),
-    whiteInLight: true,
-  },
-  {
-    // The destructive tint is translucent, so the page around the Alert stays the surface.
-    label: "the destructive Alert on the page",
-    node: (chart) => (
-      <div role="region" aria-label="Alert page" className="bg-background">
-        <Alert.Root variant="destructive" aria-label="Usage error">
-          <Alert.Title>Usage failed</Alert.Title>
-          {chart}
-        </Alert.Root>
-      </div>
-    ),
-    element: () => shown("alert", "Usage error"),
-    whiteInLight: false,
-    beneath: () => shown("region", "Alert page"),
-  },
-  {
-    label: "the bordered VerticalTable box",
-    node: (chart) => (
-      <VerticalTable.Root>
-        <VerticalTable.Body role="region" aria-label="Usage table">
-          <VerticalTable.Row>
-            <VerticalTable.Key>Usage</VerticalTable.Key>
-            <VerticalTable.Value>{chart}</VerticalTable.Value>
-          </VerticalTable.Row>
-        </VerticalTable.Body>
-      </VerticalTable.Root>
-    ),
-    element: () => shown("region", "Usage table"),
-    whiteInLight: true,
-  },
-  {
-    label: "the outline Item",
-    node: (chart) => (
-      <Item.Root variant="outline" role="region" aria-label="Usage row">
-        <Item.Content>{chart}</Item.Content>
-      </Item.Root>
-    ),
-    element: () => shown("region", "Usage row"),
-    whiteInLight: true,
-  },
-  {
-    label: "an unchecked CheckboxItem",
-    node: (chart) => <OptionRow chart={chart} checked={false} />,
-    element: () => shown("region", "Usage option"),
-    whiteInLight: true,
-  },
-  {
-    label: "a checked CheckboxItem",
-    node: (chart) => <OptionRow chart={chart} checked />,
-    element: () => shown("region", "Usage option"),
-    whiteInLight: false,
-  },
-  {
-    // The disabled fill's hatch is a background image over the fill, so the cut-outs take the fill.
-    label: "a disabled checked CheckboxItem",
-    node: (chart) => <OptionRow chart={chart} checked isDisabled />,
-    element: () => shown("region", "Usage option"),
-    whiteInLight: false,
-  },
-  {
-    // The compact VerticalTable paints no box of its own, so the Card around it stays the surface.
-    label: "a Card around a compact VerticalTable",
-    node: (chart) => (
-      <Card.Root role="region" aria-label="Usage facts">
-        <Card.Content>
-          <VerticalTable.Root variant="non-bordered-compact">
-            <VerticalTable.Body>
-              <VerticalTable.Row>
-                <VerticalTable.Key>Usage</VerticalTable.Key>
-                <VerticalTable.Value>{chart}</VerticalTable.Value>
-              </VerticalTable.Row>
-            </VerticalTable.Body>
-          </VerticalTable.Root>
-        </Card.Content>
-      </Card.Root>
-    ),
-    element: () => shown("region", "Usage facts"),
-    whiteInLight: true,
-  },
-  {
-    // A compact VerticalTable in a soft Alert inherits the Alert's surface and its muted text.
-    label: "a compact VerticalTable in the info Alert",
-    node: (chart) => (
-      <Alert.Root variant="info" aria-label="Usage note">
-        <Alert.Title>Usage is logged</Alert.Title>
-        <VerticalTable.Root variant="non-bordered-compact">
-          <VerticalTable.Body>
-            <VerticalTable.Row>
-              <VerticalTable.Key>Usage</VerticalTable.Key>
-              <VerticalTable.Value>{chart}</VerticalTable.Value>
-            </VerticalTable.Row>
-          </VerticalTable.Body>
-        </VerticalTable.Root>
-      </Alert.Root>
-    ),
-    element: () => shown("alert", "Usage note"),
-    whiteInLight: false,
-  },
-  {
-    label: "the card Accordion",
-    node: (chart) => (
-      <Accordion.Root variant="card" defaultValue={["usage"]}>
-        <Accordion.Item value="usage">
-          <Accordion.Header>
-            <Accordion.Trigger>Usage history</Accordion.Trigger>
-          </Accordion.Header>
-          <Accordion.Content>{chart}</Accordion.Content>
-        </Accordion.Item>
-      </Accordion.Root>
-    ),
-    element: () => shown("region", "Usage history"),
-    whiteInLight: false,
-  },
-  {
-    label: "Calendar",
-    node: (chart) => <Calendar.Root aria-label="Usage calendar">{chart}</Calendar.Root>,
-    element: () => shown("group", "Usage calendar"),
-    whiteInLight: false,
-  },
-  {
-    label: "Dialog",
-    node: (chart) => (
-      <Dialog.Root defaultOpen>
-        <Dialog.Content>
-          <Dialog.Title>Usage details</Dialog.Title>
-          {chart}
-        </Dialog.Content>
-      </Dialog.Root>
-    ),
-    element: () => shown("dialog", "Usage details"),
-    whiteInLight: false,
-  },
-  {
-    label: "Popover",
-    node: (chart) => (
-      <Popover.Root defaultOpen>
-        <Popover.Trigger>Usage</Popover.Trigger>
-        <Popover.Content>
-          <Popover.Title>Usage preview</Popover.Title>
-          {chart}
-        </Popover.Content>
-      </Popover.Root>
-    ),
-    element: () => shown("dialog", "Usage preview"),
-    whiteInLight: false,
-  },
-  {
-    // A host app paints its page `bg-background`, as the docs body does; no Fuse host states a
-    // surface here, so the cut-outs fall back to the page colour.
-    label: "the page",
-    node: (chart) => (
-      <div role="region" aria-label="Usage page" className="bg-background">
-        {chart}
-      </div>
-    ),
-    element: () => shown("region", "Usage page"),
-    whiteInLight: false,
-  },
-];
-
 /** The stroke of the first default dot's ring and of the first pie seam in the host, once drawn. */
 async function cutOutStrokes(host: HTMLElement): Promise<{ ring: string; seam: string }> {
   // DOM audit: dots and slices are aria-hidden plot output, so their slots are the only locators.
@@ -405,7 +83,7 @@ async function cutOutStrokes(host: HTMLElement): Promise<{ ring: string; seam: s
 
 describe("chart cut-outs", () => {
   for (const { theme, scheme, name } of THEMED) {
-    it.each(HOSTS)(
+    it.each(SURFACE_HOSTS)(
       `paint the fill of $label in ${name}`,
       async ({ node, element, whiteInLight, beneath }) => {
         renderIn(theme, scheme, node(<Charts />));
@@ -508,7 +186,7 @@ describe("chart chips", () => {
   for (const density of DENSITIES) {
     for (const tone of TONES) {
       for (const { theme, scheme, name } of THEMED) {
-        it.each(HOSTS)(
+        it.each(SURFACE_HOSTS)(
           `hold their text to 4.5:1 on $label with a ${tone} Now in ${name} at ${density} density`,
           async ({ node, element }) => {
             stampDensity(density);

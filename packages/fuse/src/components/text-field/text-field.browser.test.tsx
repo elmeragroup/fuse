@@ -1,12 +1,20 @@
 import { createRef, useState } from "react";
 
 import { describe, expect, it, vi } from "vitest";
-import { page, userEvent } from "vitest/browser";
+import { commands, page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
-// Role tokens live in themes.css only; the card variant's fill cases read them.
+// Role tokens live in themes.css only; the card variant's fill cases and the inline field's host
+// cases read them.
 import "../../../dist/themes.css";
-import { MUTED, describePartPaint } from "../../../test/surface-paint";
+import { renderInHost, surfaceHostsNamed } from "../../../test/surface-hosts";
+import {
+  MUTED,
+  THEMED,
+  describePartPaint,
+  restoreDocumentThemeAroundEach,
+  srgb,
+} from "../../../test/surface-paint";
 import type { PartCase } from "../../../test/surface-paint";
 import {
   fieldRootFrom,
@@ -219,3 +227,37 @@ describePartPaint(
     takesClassName: false,
   }))
 );
+
+// Unit under test: the inline TextField's hover and focus fill, which reads as part of its host.
+// Oracle: the computed `background-color` of the host the field rests on. The chart surface suite
+// covers every host's `--surface`; this one holds the field to the hosts a form rests in. Each
+// state is read alone, since the hover and focus fills are separate classes.
+describe("the inline TextField", () => {
+  const HOSTS = surfaceHostsNamed(["Card", "Frame.Panel", "Dialog", "the page"]);
+  restoreDocumentThemeAroundEach();
+
+  for (const { theme, scheme, name } of THEMED) {
+    it.each(HOSTS)(`fills with $label on hover and focus in ${name}`, async (host) => {
+      const element = await renderInHost(
+        host,
+        theme,
+        scheme,
+        <TextField variant="inline" label="Meter reading" />
+      );
+      const fill = srgb(getComputedStyle(element).backgroundColor);
+      const input = textboxNamed("Meter reading");
+      // The field root names the `inline-field` group whose hover and focus-within reveal the fill.
+      const group = fieldRootFrom("Meter reading");
+
+      await userEvent.hover(input);
+      expect(input.matches(":focus"), "focused while hovered").toBe(false);
+      expect(srgb(getComputedStyle(input).backgroundColor), "hovered").toEqual(fill);
+
+      input.focus();
+      await commands.parkPointer();
+      expect(group.matches(":hover"), "hovered while focused").toBe(false);
+      expect(input.matches(":focus"), "focused").toBe(true);
+      expect(srgb(getComputedStyle(input).backgroundColor), "focused").toEqual(fill);
+    });
+  }
+});

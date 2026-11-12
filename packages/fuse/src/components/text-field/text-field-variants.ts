@@ -60,7 +60,7 @@ export const textFieldVariants = tv({
         // disabled fill, so it never passes for plain text; the fill's `[readonly]` selector
         // outranks the hover and focus-within reveals.
         fieldGroup:
-          "border-transparent bg-transparent group-focus-within/inline-field:bg-background group-hover/inline-field:not-disabled-state:border-input group-hover/inline-field:not-disabled-state:bg-background group-data-[invalid]/inline-field:border-error group-data-[invalid]/inline-field:bg-background focus-visible:border-ring",
+          "border-transparent bg-transparent group-focus-within/inline-field:bg-[var(--surface,var(--background))] group-hover/inline-field:not-disabled-state:border-input group-hover/inline-field:not-disabled-state:bg-[var(--surface,var(--background))] group-data-[invalid]/inline-field:border-error group-data-[invalid]/inline-field:bg-[var(--surface,var(--background))] focus-visible:border-ring",
       },
     },
     hidden: {
