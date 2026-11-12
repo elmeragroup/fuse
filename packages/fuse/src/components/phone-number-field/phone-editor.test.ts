@@ -1,35 +1,20 @@
-import { AsYouType } from "libphonenumber-js/core";
 import type { MetadataJson } from "libphonenumber-js/core";
-import { afterEach, beforeEach, describe, expect, expectTypeOf, it } from "vitest";
+import { describe, expect, expectTypeOf, it } from "vitest";
 
+import { parseCounter, phoneEditorFixtures } from "../../../test/phone-editor-fixtures";
 import { EMPTY_PICKER_ERROR_MESSAGE } from "../../../test/phone-picker-contract";
 import * as PhoneEditor from "./phone-editor";
 import type { PhoneEditorProps, PhoneEditorState } from "./phone-editor";
 import { defaultMetadata } from "./phone-engine";
 import type { PhoneNumberCountry } from "./phone-engine";
 
+const { fill, shown, proposedValue, echo } = phoneEditorFixtures(PhoneEditor);
+
 const swedishMetadata: MetadataJson = {
   ...defaultMetadata,
   countries: { SE: defaultMetadata.countries.SE },
   country_calling_codes: { "46": ["SE"] },
 };
-
-/** What a test reads back: the display, the output and the country code. */
-function shown(state: PhoneEditorState) {
-  const { displayValue, outputValue, country } = PhoneEditor.view(state);
-  return { display: displayValue, output: outputValue, country: country.code };
-}
-
-/** Replaces the whole input, as a fill or autofill does, with the caret at its end. */
-function fill(state: PhoneEditorState, value: string): PhoneEditorState {
-  return PhoneEditor.edit(state, {
-    value,
-    selectionStart: value.length,
-    selectionEnd: value.length,
-    selectionDirection: "none",
-    inputType: "insertText",
-  });
-}
 
 /**
  * The value and caret a browser hands the change handler after one key at `caret`: a
@@ -65,15 +50,6 @@ function keyAt(state: PhoneEditorState, caret: number, key: string): PhoneEditor
     selectionDirection: "none",
     inputType: "insertText",
   });
-}
-
-/**
- * A controlled parent that takes every proposal back as its `value`. A proposal that repeats the
- * parent's value calls nothing, so the parent keeps that value, which the state already shows.
- */
-function echo(state: PhoneEditorState, props: PhoneEditorProps = {}): PhoneEditorState {
-  const value = PhoneEditor.proposedValue(state) ?? PhoneEditor.view(state).outputValue;
-  return PhoneEditor.reconcile(state, { ...props, value });
 }
 
 /** Where the caret sits after an edit: the editor's selection, else where the browser left it. */
@@ -476,7 +452,7 @@ describe("PhoneEditor caret", () => {
 
     it("proposes the edit's output, and shows it with its caret once the parent echoes it", () => {
       const proposed = backspaced();
-      expect(PhoneEditor.proposedValue(proposed)).toBe("+479134567");
+      expect(proposedValue(proposed)).toBe("+479134567");
       expect(PhoneEditor.view(proposed)).toMatchObject({ displayValue: "91 23 45 67", selection: null });
       const echoed = PhoneEditor.reconcile(proposed, { ...props, value: "+479134567" });
       expect(PhoneEditor.view(echoed)).toMatchObject({
@@ -704,7 +680,7 @@ describe("PhoneEditor.reconcile", () => {
       ],
     ] as const)("%s", (_name, props, typed, output, display) => {
       const proposed = fill(PhoneEditor.create({ ...props, value: "" }), typed);
-      expect(PhoneEditor.proposedValue(proposed)).toBe(output);
+      expect(proposedValue(proposed)).toBe(output);
       expect(shown(echo(proposed, props))).toEqual({ display, output, country: "NO" });
     });
 
@@ -713,7 +689,7 @@ describe("PhoneEditor.reconcile", () => {
       const state = PhoneEditor.create({ ...props, value: "+4741234567" });
       expect(shown(state)).toEqual({ display: "+4741234567", output: "+4741234567", country: "NO" });
       const proposed = fill(state, "99887766");
-      expect(PhoneEditor.proposedValue(proposed)).toBe("+4799887766");
+      expect(proposedValue(proposed)).toBe("+4799887766");
       const rejected = PhoneEditor.reconcile(proposed, { ...props, value: "+4741234567" });
       expect(shown(rejected)).toEqual({ display: "+4741234567", output: "+4741234567", country: "NO" });
       const accepted = PhoneEditor.reconcile(rejected, { ...props, value: "+4799887766" });
@@ -729,7 +705,7 @@ describe("PhoneEditor.reconcile", () => {
       const accepted = echo(fill(PhoneEditor.create({ ...props, value: "" }), "41234567"), props);
       expect(shown(accepted)).toEqual({ display: "41234567", output: "+4741234567", country: "NO" });
       const pasted = PhoneEditor.paste(accepted, "+46701234567");
-      expect(PhoneEditor.proposedValue(pasted)).toBe("+46701234567");
+      expect(proposedValue(pasted)).toBe("+46701234567");
       const rejected = PhoneEditor.reconcile(pasted, { ...props, value: "+4741234567" });
       expect(shown(rejected)).toEqual({ display: "41234567", output: "+4741234567", country: "NO" });
     });
@@ -737,7 +713,7 @@ describe("PhoneEditor.reconcile", () => {
     it("shows the digits again when the parent clears then restores the emitted value", () => {
       let state = PhoneEditor.create({ value: "" });
       for (const key of "41234567") {
-        state = echo(keyAt(state, PhoneEditor.view(state).displayValue.length, key));
+        state = echo(keyAt(state, PhoneEditor.view(state).displayValue.length, key), {});
       }
       expect(shown(state)).toEqual({ display: "41234567", output: "+4741234567", country: "NO" });
       state = PhoneEditor.reconcile(state, { value: "" });
@@ -929,35 +905,8 @@ describe("PhoneEditor.reset", () => {
   });
 });
 
-/**
- * `AsYouType#input` runs exactly once per libphonenumber parse: the engine builds one
- * `AsYouType` per parse, feeds it the number, and nothing else touches the parser. Patching
- * the shared prototype counts real parses without mocking the module.
- *
- * The budget is per path: a keystroke costs one parse, a paste that carries an international
- * prefix three (two in the detection pass, one for the output), a country change one, and
- * props that are equal in a new object none.
- */
 describe("PhoneEditor parse budget", () => {
-  // SAFETY: `input` is `AsYouType`'s own prototype method, read through its descriptor so the
-  // reference stays unbound and `.call` below restores the instance.
-  const realInput = Object.getOwnPropertyDescriptor(AsYouType.prototype, "input")?.value as (
-    this: AsYouType,
-    text: string
-  ) => string;
-  let parses = 0;
-
-  beforeEach(() => {
-    parses = 0;
-    AsYouType.prototype.input = function countingInput(this: AsYouType, text: string) {
-      parses += 1;
-      return realInput.call(this, text);
-    };
-  });
-
-  afterEach(() => {
-    AsYouType.prototype.input = realInput;
-  });
+  const parses = parseCounter();
 
   it.each([
     ["default e164", {}],
@@ -966,32 +915,32 @@ describe("PhoneEditor parse budget", () => {
     ["formatOnType", { formatOnType: true }],
   ] as const)("parses once per keystroke in %s, while the controlled value echoes back", (_name, props) => {
     let state = PhoneEditor.create({ ...props, value: "" });
-    expect(parses, "mount must not parse an empty value").toBe(0);
+    expect(parses.count, "mount must not parse an empty value").toBe(0);
     for (const [index, key] of "41234567".split("").entries()) {
       state = echo(keyAt(state, PhoneEditor.view(state).displayValue.length, key), props);
-      expect(parses, `after ${index + 1} keystroke(s)`).toBe(index + 1);
+      expect(parses.count, `after ${index + 1} keystroke(s)`).toBe(index + 1);
     }
   });
 
   it("costs three parses for a paste that carries an international prefix", () => {
-    const state = echo(PhoneEditor.paste(PhoneEditor.create({ value: "" }), "+46701234567"));
+    const state = echo(PhoneEditor.paste(PhoneEditor.create({ value: "" }), "+46701234567"), {});
     expect(PhoneEditor.view(state).displayValue).toBe("701234567");
-    expect(parses).toBe(3);
+    expect(parses.count).toBe(3);
   });
 
   it("costs one parse for a country change", () => {
     const props = { preserveOnCountryChange: true } as const;
     const typed = echo(fill(PhoneEditor.create({ ...props, value: "" }), "41234567"), props);
-    parses = 0;
+    parses.reset();
     echo(PhoneEditor.selectCountry(typed, "SE"), props);
-    expect(parses).toBe(1);
+    expect(parses.count).toBe(1);
   });
 
   it("costs nothing for equal props in a new object", () => {
     const props = { value: "+4741234567", countries: ["NO", "SE"], formatOnType: true } as const;
     const state = PhoneEditor.create(props);
-    parses = 0;
+    parses.reset();
     expect(PhoneEditor.reconcile(state, { ...props, countries: ["NO", "SE"] })).toBe(state);
-    expect(parses).toBe(0);
+    expect(parses.count).toBe(0);
   });
 });

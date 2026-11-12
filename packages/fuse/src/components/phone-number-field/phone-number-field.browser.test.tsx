@@ -15,6 +15,7 @@ import {
   countryListbox,
   countrySearch,
   openPicker,
+  pastePhoneText,
   phoneInput,
   phoneSubmission,
   selectCountry,
@@ -575,6 +576,226 @@ describe("PhoneNumberField onChange", () => {
     await expect.element(input).toHaveValue("41 23 45 67");
     expect([input.selectionStart, input.selectionEnd]).toEqual([2, 2]);
     expect(change).toHaveBeenCalledExactlyOnceWith("+4741234567");
+  });
+});
+
+describe("PhoneNumberField countryCode", () => {
+  it("returns to the parent's country when it rejects a pick, proposes the pick once, and reports no number it never showed", async () => {
+    const countryChange = vi.fn<(country: { code: string; dialCode: string }) => void>();
+    const change = vi.fn<(value: string) => void>();
+    function Rejecting() {
+      // The parent hears the pick and keeps Norway.
+      const [renders, setRenders] = useState(0);
+      return (
+        <PhoneNumberField
+          label="Mobile"
+          countryCode="NO"
+          onChange={change}
+          onCountryChange={(country) => {
+            countryChange(country);
+            setRenders(renders + 1);
+          }}
+        />
+      );
+    }
+    renderField(<Rejecting />);
+    const input = phoneInput();
+    input.focus();
+    for (const key of "41234567") await userEvent.keyboard(key);
+    change.mockClear();
+
+    await selectCountry("Sweden");
+    await expect.element(page.getByRole("button", { name: "+47 Norway", exact: true })).toBeInTheDocument();
+    await expect.element(input).toHaveValue("41234567");
+    expect(countryChange).toHaveBeenCalledExactlyOnceWith({ code: "SE", dialCode: "+46" });
+    expect(change).not.toHaveBeenCalled();
+  });
+
+  it("shows a pick the parent echoes, reports its cleared number once, and calls nothing for the code it set", async () => {
+    const countryChange = vi.fn<(country: { code: string; dialCode: string }) => void>();
+    const change = vi.fn<(value: string) => void>();
+    function Echoing() {
+      const [countryCode, setCountryCode] = useState<"NO" | "SE">("NO");
+      return (
+        <PhoneNumberField
+          label="Mobile"
+          countryCode={countryCode}
+          onChange={change}
+          onCountryChange={(country) => {
+            countryChange(country);
+            if (country.code === "NO" || country.code === "SE") setCountryCode(country.code);
+          }}
+        />
+      );
+    }
+    renderField(<Echoing />);
+    const input = phoneInput();
+    input.focus();
+    for (const key of "41234567") await userEvent.keyboard(key);
+    change.mockClear();
+
+    await selectCountry("Sweden");
+    await expect.element(page.getByRole("button", { name: "+46 Sweden", exact: true })).toBeInTheDocument();
+    await expect.element(input).toHaveValue("");
+    expect(countryChange).toHaveBeenCalledExactlyOnceWith({ code: "SE", dialCode: "+46" });
+    // The cleared number is reported once the field shows it.
+    expect(change).toHaveBeenCalledExactlyOnceWith("");
+  });
+
+  it.each<{ action: string; act: () => Promise<void> | void; changes: string[]; shows: string }>([
+    {
+      action: "a pick",
+      act: () => selectCountry("Sweden"),
+      changes: [""],
+      shows: "",
+    },
+    {
+      action: "a paste",
+      act: () => pastePhoneText("+46701234567"),
+      changes: ["701234567"],
+      shows: "701234567",
+    },
+  ])(
+    "tells a parent that commits synchronously the country of $action, then its number once",
+    async ({ act, changes, shows }) => {
+      const heard: string[] = [];
+      const change = vi.fn<(value: string) => void>();
+      function Synchronous() {
+        const [value, setValue] = useState("41234567");
+        const [countryCode, setCountryCode] = useState<"NO" | "SE">("NO");
+        return (
+          <PhoneNumberField
+            label="Mobile"
+            outputFormat="raw"
+            value={value}
+            countryCode={countryCode}
+            onChange={(next) => {
+              heard.push(`value ${next}`);
+              change(next);
+              flushSync(() => setValue(next));
+            }}
+            onCountryChange={(country) => {
+              heard.push(`country ${country.code}`);
+              if (country.code === "SE") flushSync(() => setCountryCode("SE"));
+            }}
+          />
+        );
+      }
+      renderField(<Synchronous />);
+      await expect.element(phoneInput()).toHaveValue("41234567");
+      await act();
+      await expect.element(page.getByRole("button", { name: "+46 Sweden", exact: true })).toBeInTheDocument();
+      await expect.element(phoneInput()).toHaveValue(shows);
+      expect(change.mock.calls.map(([value]) => value)).toEqual(changes);
+      expect(heard[0]).toBe("country SE");
+    }
+  );
+
+  it.each<{ action: string; act: () => Promise<void> | void; changes: string[] }>([
+    { action: "a pick", act: () => selectCountry("Sweden"), changes: [""] },
+    {
+      action: "a paste",
+      act: () => pastePhoneText("+46701234567"),
+      changes: ["701234567"],
+    },
+  ])(
+    "tells a parent that takes the country of $action with a formatting change its number once",
+    async ({ act, changes }) => {
+      const change = vi.fn<(value: string) => void>();
+      function Formatting() {
+        const [value, setValue] = useState("41234567");
+        const [countryCode, setCountryCode] = useState<"NO" | "SE">("NO");
+        const [formatOnType, setFormatOnType] = useState(false);
+        return (
+          <PhoneNumberField
+            label="Mobile"
+            outputFormat="raw"
+            value={value}
+            countryCode={countryCode}
+            formatOnType={formatOnType}
+            onChange={(next) => {
+              change(next);
+              flushSync(() => setValue(next));
+            }}
+            onCountryChange={(country) => {
+              // The parent takes the country and turns on formatting in the same handler.
+              if (country.code === "SE") {
+                flushSync(() => {
+                  setCountryCode("SE");
+                  setFormatOnType(true);
+                });
+              }
+            }}
+          />
+        );
+      }
+      renderField(<Formatting />);
+      await expect.element(phoneInput()).toHaveValue("41234567");
+      await act();
+      await expect.element(page.getByRole("button", { name: "+46 Sweden", exact: true })).toBeInTheDocument();
+      expect(change.mock.calls.map(([value]) => value)).toEqual(changes);
+    }
+  );
+
+  it("tells a parent nothing of a value it already set inside onCountryChange", async () => {
+    const change = vi.fn<(value: string) => void>();
+    function Ahead() {
+      const [value, setValue] = useState("41234567");
+      const [countryCode, setCountryCode] = useState<"NO" | "SE">("NO");
+      return (
+        <PhoneNumberField
+          label="Mobile"
+          outputFormat="raw"
+          value={value}
+          countryCode={countryCode}
+          onChange={(next) => {
+            change(next);
+            flushSync(() => setValue(next));
+          }}
+          onCountryChange={(country) => {
+            // The parent clears the number itself as it takes the country.
+            if (country.code === "SE") {
+              flushSync(() => {
+                setCountryCode("SE");
+                setValue("");
+              });
+            }
+          }}
+        />
+      );
+    }
+    renderField(<Ahead />);
+    await selectCountry("Sweden");
+    await expect.element(page.getByRole("button", { name: "+46 Sweden", exact: true })).toBeInTheDocument();
+    await expect.element(phoneInput()).toHaveValue("");
+    expect(change).not.toHaveBeenCalled();
+  });
+
+  it("lets a parent steer the country of an empty field without calling it back", async () => {
+    const countryChange = vi.fn<(country: { code: string; dialCode: string }) => void>();
+    const change = vi.fn<(value: string) => void>();
+    function Steering() {
+      const [countryCode, setCountryCode] = useState<"NO" | "SE">("NO");
+      return (
+        <>
+          <button type="button" onClick={() => setCountryCode("SE")}>
+            Use Sweden
+          </button>
+          <PhoneNumberField
+            label="Mobile"
+            countryCode={countryCode}
+            onChange={change}
+            onCountryChange={countryChange}
+          />
+        </>
+      );
+    }
+    renderField(<Steering />);
+    await expect.element(page.getByRole("button", { name: "+47 Norway", exact: true })).toBeInTheDocument();
+    await userEvent.click(roleNamed("button", "Use Sweden"));
+    await expect.element(page.getByRole("button", { name: "+46 Sweden", exact: true })).toBeInTheDocument();
+    expect(countryChange).not.toHaveBeenCalled();
+    expect(change).not.toHaveBeenCalled();
   });
 });
 

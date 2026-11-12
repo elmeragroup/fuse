@@ -67,6 +67,18 @@ export async function selectCountry(
 }
 
 /**
+ * Pastes `text` into the number input as a synthetic `paste` event, which the field reads from
+ * its clipboard data; the real clipboard stays untouched.
+ */
+export function pastePhoneText(text: string, name = "Mobile"): void {
+  const clipboard = new DataTransfer();
+  clipboard.setData("text/plain", text);
+  phoneInput(name).dispatchEvent(
+    new ClipboardEvent("paste", { bubbles: true, cancelable: true, clipboardData: clipboard })
+  );
+}
+
+/**
  * The field's country addon: the rail of the picker trigger, or the flag and dial code a
  * single-country field shows as plain context. Its text holds the dial code either way.
  */

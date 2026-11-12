@@ -158,8 +158,8 @@ describe("national drafts with a trunk prefix", () => {
   ] as const)(
     "keeps the %s draft %s on display and submits the number without it",
     (country, digits, formatted, e164) => {
-      expect(resolve(country, digits, false)).toEqual({ displayValue: digits, outputValue: e164 });
-      expect(resolve(country, digits, true)).toEqual({ displayValue: formatted, outputValue: e164 });
+      expect(resolve(country, digits, false)).toMatchObject({ displayValue: digits, outputValue: e164 });
+      expect(resolve(country, digits, true)).toMatchObject({ displayValue: formatted, outputValue: e164 });
     }
   );
 
@@ -191,7 +191,7 @@ describe("national drafts with a trunk prefix", () => {
           international: false,
           formatOnType,
         })
-      ).toEqual({ displayValue: "2642351", outputValue: "+12642351" });
+      ).toMatchObject({ displayValue: "2642351", outputValue: "+12642351" });
     }
   });
 

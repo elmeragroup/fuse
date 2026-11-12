@@ -64,14 +64,36 @@ export type PhoneNumberFieldProps = {
   /**
    * Initial country. Must be a libphonenumber country with a packaged flag asset. A code the
    * picker does not offer (outside `countries`, excluded, or untyped) falls back to `NO` when
-   * offered, else the first offered country in catalog order.
+   * offered, else the first offered country in catalog order. Ignored while `countryCode` is
+   * set.
    * @default "NO"
    */
   defaultCountryCode?: Extract<CountryCode, FlagAssetCode>;
   /**
+   * Authoritative controlled country, paired with `onCountryChange`, in place of
+   * `defaultCountryCode`; omit it for an uncontrolled country.
+   * The field shows the country a controlled `value` names with its own `+` or `00` prefix while
+   * `autoDetectCountry` is on, else a proposal's country the parent holds, else `countryCode`; a
+   * value without a prefix, or an uncontrolled `defaultValue`, is read in `countryCode`.
+   * A new `countryCode`, or a `countries` or `metadata` change that resolves it to another
+   * country, acts like a pick: it clears the digits unless `preserveOnCountryChange` keeps them,
+   * and proposes the result through `onChange`; a change that leaves the country in place keeps
+   * the number.
+   * A pick, or a country detected while typing or pasting, is a proposal the field shows once the
+   * parent sets `countryCode` to it; a parent that keeps its code returns the field to it.
+   * An uncontrolled number reports a pick's number only once the field shows it, so a rejected
+   * pick reports nothing.
+   * `onCountryChange` hears each country that disagrees with `countryCode` once, and never the
+   * code the parent just set.
+   * A code the picker does not offer resolves as `defaultCountryCode` does.
+   * Removing `countryCode` keeps the country and number the field shows.
+   */
+  countryCode?: Extract<CountryCode, FlagAssetCode>;
+  /**
    * Custom/trimmed metadata. Replacement reconciles the picker while preserving existing
-   * international identity. To limit the picker, pass `countries` instead: trimmed metadata can
-   * no longer parse the numbers it leaves out. It does not make the bundle smaller: the field
+   * international identity. A shallow copy, such as `{ ...metadata }` written in a render, is the
+   * same metadata and replaces nothing. To limit the picker, pass `countries` instead: trimmed
+   * metadata can no longer parse the numbers it leaves out. It does not make the bundle smaller: the field
    * imports its full default metadata either way.
    */
   metadata?: MetadataJson;
@@ -116,7 +138,12 @@ export type PhoneNumberFieldProps = {
    * @default false
    */
   formatOnType?: boolean;
-  /** Called when the selected picker country changes. */
+  /**
+   * Called when the selected picker country changes. With `countryCode` set, called instead once
+   * as each disagreement starts: the country of a proposal waiting for the parent, else the one
+   * shown, differing from `countryCode`. A proposal that moves the country calls it before
+   * `onChange`, so a parent that takes both at once reads the number in the new country.
+   */
   onCountryChange?: (country: { code: Extract<CountryCode, FlagAssetCode>; dialCode: string }) => void;
   /** Visible label, rendered as `Field.Label`. */
   label?: string;
