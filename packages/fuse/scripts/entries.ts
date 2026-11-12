@@ -1,5 +1,7 @@
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, join } from "node:path";
+import { parseSync, Visitor } from "oxc-parser";
+import type { Expression, StringLiteral } from "oxc-parser";
 
 import { BESPOKE_ICON_NAMES, LOGO_NAMES, PHOSPHOR_ICON_NAMES } from "../src/icons/roster.ts";
 import { requireFlagsDirectory } from "./flag-assets.ts";
@@ -222,7 +224,6 @@ function isDeferredEntry(subpath: string, deferred: readonly string[] = DEFERRED
 }
 const IMPLEMENTATION_DIRECTORIES = new Set(["components", "hooks", "icons", "styles", "theme", "react-aria"]);
 
-const RELATIVE_IMPORT = /(?:import|export)(?:\s+type)?\s+(?:[^'"\n;]*?\sfrom\s+)?["'](\.[^"']+)["']/g;
 const SOURCE_EXTENSIONS = [".ts", ".tsx", ".js", ".jsx"] as const;
 
 export type JsExportEntry = {
@@ -427,12 +428,68 @@ function uniqueBarrelRuntimeExports(jsEntries: readonly JsExportEntry[]): string
 }
 
 /**
- * Walk the source graph from `entryFiles` through relative imports and re-exports.
+ * The specifier an `import()` argument names, decoded: a string literal or a template literal
+ * without substitutions. Any other argument is computed and names no file.
+ */
+function literalSpecifier(argument: Expression): string | undefined {
+  if (argument.type === "Literal") {
+    // oxlint-disable-next-line anti-slop/no-runtime-typeof -- ESTree tags every literal kind `Literal`; the value's type is the only tag a string literal has
+    return typeof argument.value === "string" ? argument.value : undefined;
+  }
+  if (argument.type === "TemplateLiteral" && argument.expressions.length === 0) {
+    return argument.quasis[0]?.value.cooked ?? undefined;
+  }
+  return undefined;
+}
+
+/**
+ * Every module specifier a source file loads, read from its syntax tree: static imports
+ * (side-effect and type-only ones included), re-exports (empty `export {} from` included, since
+ * it still runs the module), `import x = require()`, and `import()` of a literal.
+ *
+ * @param relativePath - The package-relative file, whose extension picks the parser's dialect.
+ * @param text - The file's source.
+ * @returns The specifiers, duplicates kept.
+ * @throws When the file does not parse, since its imports would then go unseen.
+ */
+function loadedSpecifiers(relativePath: string, text: string): string[] {
+  const { errors, program } = parseSync(relativePath, text);
+  const [firstError] = errors;
+  if (firstError !== undefined) {
+    throw new Error(`Cannot parse ${relativePath}: ${firstError.message}`);
+  }
+  const specifiers: string[] = [];
+  const addSource = ({ source }: { readonly source: StringLiteral | null }) => {
+    if (source !== null) {
+      specifiers.push(source.value);
+    }
+  };
+  new Visitor({
+    ImportDeclaration: addSource,
+    ExportNamedDeclaration: addSource,
+    ExportAllDeclaration: addSource,
+    TSExternalModuleReference: ({ expression }) => {
+      specifiers.push(expression.value);
+    },
+    ImportExpression: ({ source }) => {
+      const specifier = literalSpecifier(source);
+      if (specifier !== undefined) {
+        specifiers.push(specifier);
+      }
+    },
+  }).visit(program);
+  return specifiers;
+}
+
+/**
+ * Walk the source graph from `entryFiles` through relative imports, re-exports and literal
+ * dynamic imports, read from a parse of each file rather than its text.
  *
  * @param packageRoot - The package directory every path is relative to.
  * @param entryFiles - Package-relative source files to start from, such as `src/index.ts`.
  * @returns The sorted package-relative closure, entries included, minus tests and demos.
- * @throws When an entry is missing or a relative specifier resolves to no source file.
+ * @throws When an entry is missing, a file does not parse, or a relative specifier resolves to no
+ * source file.
  */
 export function walkImportedSourceFiles(packageRoot: string, entryFiles: readonly string[]): string[] {
   const pending = [...entryFiles];
@@ -448,12 +505,9 @@ export function walkImportedSourceFiles(packageRoot: string, entryFiles: readonl
     if (!fileExists(absolute)) {
       throw new Error(`Missing source file ${relativePath}`);
     }
-    const text = readFileSync(absolute, "utf8");
     const directory = dirname(relativePath);
-    RELATIVE_IMPORT.lastIndex = 0;
-    for (const match of text.matchAll(RELATIVE_IMPORT)) {
-      const specifier = match[1];
-      if (specifier === undefined || specifier.endsWith(".css")) {
+    for (const specifier of loadedSpecifiers(relativePath, readFileSync(absolute, "utf8"))) {
+      if (!specifier.startsWith(".") || specifier.endsWith(".css")) {
         continue;
       }
       const resolvedWithoutExt = toPosix(join(directory, specifier));
