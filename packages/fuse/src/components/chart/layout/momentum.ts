@@ -7,20 +7,25 @@
  * never leaves its span, the values the mark already moved between. `chart-motion.ts` schedules it.
  */
 import { CHART_UPDATE_MS } from "./motion";
+import { criticalStep } from "./spring";
 
 /** The lowest and the highest value a number moved between. */
 export type Span = readonly [low: number, high: number];
 
 /**
- * A momentum tween's spring: each number leaves `from` at its velocity, in its units per
- * millisecond, on a critically damped spring of its own angular frequency, per millisecond, and
- * never leaves its span, the range every tween it took over moved within.
+ * One number's momentum spring, beside the tween's start and target it leaves from and rests on:
+ * its velocity at the start, in its units per millisecond, its critically damped angular frequency,
+ * per millisecond, and its span, the range every tween it took over moved within, which it never
+ * leaves.
  */
-export type MomentumSpring = {
-  readonly velocity: readonly number[];
-  readonly omega: readonly number[];
-  readonly span: readonly Span[];
+export type NumberSpring = {
+  readonly velocity: number;
+  readonly omega: number;
+  readonly span: Span;
 };
+
+/** A momentum tween's spring: one per number the mark moves, in the order of its start and target. */
+export type MomentumSpring = readonly NumberSpring[];
 
 /** Where a tween's numbers are at one time, and how fast each moves, in its units per millisecond. */
 export type MomentumPoint = { readonly values: number[]; readonly velocity: number[] };
@@ -28,8 +33,8 @@ export type MomentumPoint = { readonly values: number[]; readonly velocity: numb
 /** A momentum move's spring and how long it takes to settle, in milliseconds. */
 export type MomentumMove = { readonly spring: MomentumSpring; readonly duration: number };
 
-/** One number's momentum spring: its angular frequency, per millisecond, and the velocity it leaves with. */
-type NumberSpring = { readonly omega: number; readonly velocity: number };
+/** What a number's spring is chosen as: its angular frequency and the velocity it leaves with. */
+type Course = { readonly omega: number; readonly velocity: number };
 
 /**
  * A momentum spring's angular frequency times its duration, which leaves `(1 + x)·e^(−x)`, the share
@@ -66,7 +71,7 @@ function excursion(distance: number, speed: number, omega: number): number {
  * leaves its span, the values the mark already moved between, which wins over the frame, and a
  * number at the edge of its span stops there.
  */
-function numberSpring(from: number, to: number, speed: number, span: Span): NumberSpring {
+function numberSpring(from: number, to: number, speed: number, span: Span): Course {
   const ahead = to - from;
   if (speed === 0) return { omega: BASE_OMEGA, velocity: 0 };
   if (Math.sign(speed) === Math.sign(ahead)) {
@@ -124,18 +129,15 @@ export function momentumSpring(move: {
   readonly velocity: readonly number[];
   readonly spans: readonly Span[];
 }): MomentumMove {
-  const springs = move.to.map((to, index) => {
+  const spring = move.to.map((to, index): NumberSpring => {
+    const from = move.from[index] ?? to;
     const span = move.spans[index] ?? [to, to];
-    return { span, ...numberSpring(move.from[index] ?? to, to, move.velocity[index] ?? 0, span) };
+    return { span, ...numberSpring(from, to, move.velocity[index] ?? 0, span) };
   });
-  const softest = Math.min(...springs.map((spring) => spring.omega));
+  const softest = Math.min(...spring.map((number) => number.omega));
   return {
     duration: Math.min(MOMENTUM_LONGEST, Math.max(CHART_UPDATE_MS, MOMENTUM_SETTLE / softest)),
-    spring: {
-      velocity: springs.map((spring) => spring.velocity),
-      omega: springs.map((spring) => spring.omega),
-      span: springs.map((spring) => spring.span),
-    },
+    spring,
   };
 }
 
@@ -143,8 +145,8 @@ export function momentumSpring(move: {
  * Where a spring's numbers are a time into it, and how fast each moves.
  *
  * @param spring - The spring.
- * @param from - Its start.
- * @param to - Its targets.
+ * @param from - The numbers it leaves from, its tween's start.
+ * @param to - The numbers it rests on, its tween's target.
  * @param t - Milliseconds into it.
  * @returns The numbers and their velocities, in their units per millisecond.
  */
@@ -156,13 +158,11 @@ export function springAt(
 ): MomentumPoint {
   const values: number[] = [];
   const velocity: number[] = [];
-  to.forEach((target, index) => {
-    const omega = spring.omega[index] ?? BASE_OMEGA;
-    const decay = Math.exp(-omega * t);
-    const c1 = (from[index] ?? target) - target;
-    const c2 = (spring.velocity[index] ?? 0) + omega * c1;
-    values.push(target + (c1 + c2 * t) * decay);
-    velocity.push((c2 - omega * (c1 + c2 * t)) * decay);
+  spring.forEach((number, index) => {
+    const target = to[index] ?? 0;
+    const step = criticalStep((from[index] ?? target) - target, number.velocity, number.omega, t);
+    values.push(target + step.offset);
+    velocity.push(step.velocity);
   });
   return { values, velocity };
 }
@@ -175,5 +175,5 @@ export function springAt(
  * @returns The share of the way.
  */
 export function springProgress(progress: number): number {
-  return 1 - (1 + MOMENTUM_SETTLE * progress) * Math.exp(-MOMENTUM_SETTLE * progress);
+  return 1 + criticalStep(-1, 0, MOMENTUM_SETTLE, progress).offset;
 }

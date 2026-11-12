@@ -21,20 +21,29 @@ export type GaugeReading =
       readonly kind: "value";
       /** The true value, which the centre and the meter's text print. */
       readonly value: number;
-      /** Its share of the domain at rest, from 0 at `min` to 1 at `max`, clamped, which the loop moves. */
-      readonly share: number;
-      /** Its offset at rest, in degrees from the sweep's start, clamped to the sweep. */
-      readonly offset: number;
       readonly place: GaugePlace;
     };
 
-/** What a gauge's Root's props describe. */
-export type GaugeModel = {
+/**
+ * What a gauge's domain and angles describe, which a new reading leaves as it is, so the parts that
+ * lay out from it key their layout on it alone.
+ */
+export type GaugeGeometry = {
   readonly domain: GaugeDomain;
   readonly sweep: Sweep;
   /** The sweep's box in units of the outer radius, whose aspect the cell keeps. */
   readonly box: SweepBox;
+};
+
+/** What a gauge's Root's props describe. */
+export type GaugeModel = {
+  readonly geometry: GaugeGeometry;
   readonly reading: GaugeReading;
+  /**
+   * The reading's share of the domain at rest, from 0 at `min` to 1 at `max`, clamped, and 0 while
+   * the chart has no reading: the one number the loop moves and every painter draws from.
+   */
+  readonly rest: number;
   /** Root's value format, which the centre, the meter's text and the ruler's labels read. */
   readonly format: ValueFormat;
   readonly locale: SupportedLocale;

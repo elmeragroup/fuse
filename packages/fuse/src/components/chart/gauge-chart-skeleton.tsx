@@ -11,8 +11,8 @@ import { ChartEmptyBody } from "./chart-empty-body";
 import { useGaugeContext } from "./chart-gauge-context";
 import { ChartSkeletonBody } from "./chart-skeleton-body";
 import type { ChartDomProps } from "./chart-types";
-import { GAUGE_RADII } from "./layout/gauge";
-import { parseSweep, sweepBox } from "./layout/polar-angle";
+import { GAUGE_RADII, GAUGE_SWEEP } from "./layout/gauge";
+import { boxPercent, parseSweep, sweepBox } from "./layout/polar-angle";
 
 /**
  * Props for `GaugeChart.Skeleton`, a `div` without `render` or children.
@@ -43,17 +43,22 @@ export type GaugeChartEmptyProps = ChartDomProps<"div">;
  * @beta
  */
 export function GaugeChartSkeleton({
-  startAngle = -135,
-  endAngle = 135,
+  startAngle,
+  endAngle,
   label,
   style,
   ...props
 }: GaugeChartSkeletonProps): ReactElement {
-  const sweep = parseSweep("GaugeChart.Skeleton", startAngle, endAngle);
+  const sweep = parseSweep(
+    "GaugeChart.Skeleton",
+    startAngle ?? GAUGE_SWEEP.startAngle,
+    endAngle ?? GAUGE_SWEEP.endAngle
+  );
   const box = sweepBox(sweep);
   const width = box.right - box.left;
   const height = box.bottom - box.top;
   const percent = (value: number): string => `${(value * 100).toFixed(3)}%`;
+  const [left, top] = boxPercent(box, -1, -1);
   return (
     <ChartSkeletonBody
       variant="gauge"
@@ -62,8 +67,8 @@ export function GaugeChartSkeleton({
       style={{
         "--chart-skeleton-hole": GAUGE_RADII.notchInner,
         "--_aspect": `${String(width)} / ${String(height)}`,
-        "--_left": percent((-1 - box.left) / width),
-        "--_top": percent((-1 - box.top) / height),
+        "--_left": left,
+        "--_top": top,
         "--_width": percent(2 / width),
         "--_height": percent(2 / height),
         "--_from": `${String(sweep.direction === 1 ? sweep.start : sweep.end)}deg`,

@@ -224,7 +224,7 @@
           "type": "ChartGaugeRole | undefined",
           "shortType": null,
           "defaultValue": "\"chart-1\"",
-          "description": "The fill's colour role. \"chart-1\" by default.",
+          "description": "The colour role of the fill, or of the glow that casts it. \"chart-1\" by default.",
           "required": false
         },
         {
@@ -260,7 +260,7 @@
           "type": "ChartGaugeRole | undefined",
           "shortType": null,
           "defaultValue": "\"chart-1\"",
-          "description": "The glow's colour role, the Fill's own. \"chart-1\" by default.",
+          "description": "The colour role of the fill, or of the glow that casts it. \"chart-1\" by default.",
           "required": false
         },
         {
@@ -630,7 +630,7 @@
           "origin": "declared",
           "type": "number | undefined",
           "shortType": null,
-          "defaultValue": "135",
+          "defaultValue": null,
           "description": "The sweep's end, as on Root. 135 by default.",
           "required": false
         },
@@ -648,7 +648,7 @@
           "origin": "declared",
           "type": "number | undefined",
           "shortType": null,
-          "defaultValue": "-135",
+          "defaultValue": null,
           "description": "The sweep's start, as on Root. −135 by default. A non-finite angle throws `invalid-sweep`.",
           "required": false
         },

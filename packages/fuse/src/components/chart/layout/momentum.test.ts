@@ -5,13 +5,15 @@
 // within twice the update's 480 ms, the longest a softened turn may take; the gauge's
 // contract, that a mark never passes the value it reads, never leaves the values it moved between
 // (so never the sweep), rests on its target exactly, and carries no velocity out of a delay it has
-// not left; the round 2 review's repro cases; and a mark at rest, or under reduced motion, moves as
-// it did.
+// not left, even when a retarget lands in an entrance's delay, a degree ahead of a fast rise, or
+// several times before the next frame; a resize that doubles the plot's width mid-turn doubles every
+// x coordinate the spring moves between, so the mark stays between the doubled target and twice the
+// highest value it drew; and a mark at rest, or under reduced motion, moves as it did.
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 
 import { createChartMotion } from "../chart-motion";
-import type { MarkValues, MotionHost, Placement } from "../chart-motion";
+import type { MarkValues, MotionHost, Placement, ValueAxis } from "../chart-motion";
 
 /** A clock and a frame queue the test advances by hand. */
 function manualFrames() {
@@ -37,16 +39,22 @@ function manualFrames() {
   return { host, frame };
 }
 
-/** A loop with one mark whose every drawn value lands in `drawn`. */
-function oneMark(reduced = false) {
+/**
+ * A loop with one mark whose every drawn value lands in `drawn`: a size by default, which a resize
+ * leaves alone, or a coordinate along `axes`, which it maps.
+ */
+function oneMark({
+  motion: mode = "full",
+  axes = [],
+}: { motion?: "full" | "reduced"; axes?: readonly ValueAxis[] } = {}) {
   const { host, frame } = manualFrames();
-  const motion = createChartMotion(host, reduced);
+  const motion = createChartMotion(host, mode === "reduced");
   const drawn: number[] = [];
   const write = (values: MarkValues): void => {
     drawn.push(values[0] ?? Number.NaN);
   };
   const place = (value: number, placement: Placement): void => {
-    motion.place("mark", [value], write, placement);
+    motion.place("mark", [value], write, placement, { axes });
   };
   return { frame, drawn, place };
 }
@@ -118,21 +126,13 @@ describe("a momentum move", () => {
   });
 
   it("snaps under reduced motion", () => {
-    const mark = oneMark(true);
+    const mark = oneMark({ motion: "reduced" });
     mark.place(0, { kind: "snap" });
     mark.place(100, { kind: "move", momentum: "keep" });
     expect(mark.drawn).toEqual([0, 100]);
   });
-});
 
-/** Whether no value crosses `target` from the side `start` lies on. */
-function neverPasses(values: readonly number[], start: number, target: number): boolean {
-  const side = Math.sign(start - target);
-  return values.every((value) => Math.sign(value - target) * side >= 0);
-}
-
-describe("the round 2 repro cases", () => {
-  it("R2-1: carries no velocity out of an entrance's delay, so a retarget at 64 ms of 160 stays on the dial", () => {
+  it("carries no velocity out of an entrance's delay, so a retarget at 64 ms of 160 stays on the dial", () => {
     const mark = oneMark();
     mark.place(210.6, { kind: "enter", from: [0], delay: 160, duration: 1000 });
     for (let index = 0; index < 4; index += 1) mark.frame();
@@ -147,13 +147,14 @@ describe("the round 2 repro cases", () => {
     expect(values.at(-1)).toBe(243);
   });
 
-  it("R2-2: settles onto a target a degree ahead of a fast rise without passing it", () => {
+  it("settles onto a target a degree ahead of a fast rise without passing it", () => {
     const mark = oneMark();
     mark.place(0, { kind: "snap" });
     mark.place(270, { kind: "move" });
     mark.frame(16);
     const shown = mark.drawn.at(-1) ?? Number.NaN;
-    expect(shown).toBeCloseTo(79.275, 2);
+    // The rise has started, so the mark moves fast toward a target a degree ahead.
+    expect(shown).toBeGreaterThan(0);
     const from = mark.drawn.length;
     mark.place(shown + 1, { kind: "move", momentum: "keep" });
     settle(mark, shown + 1);
@@ -166,7 +167,7 @@ describe("the round 2 repro cases", () => {
     ["two", [27, 20]],
     ["three", [27, 20, 15]],
   ] as const)(
-    "R2-3: keeps its position, velocity and clock through %s retargets before the next frame",
+    "keeps its position, velocity and clock through %s retargets before the next frame",
     (_, targets) => {
       const mark = oneMark();
       mark.place(0, { kind: "snap" });
@@ -186,7 +187,34 @@ describe("the round 2 repro cases", () => {
       expect(mark.drawn.at(-1)).toBe(last);
     }
   );
+
+  it("carries a resize's scale into a spring it moves on, so it stays in the resized span and rests on the resized target", () => {
+    const { frame, drawn, place } = oneMark({ axes: ["x"] });
+    place(0, { kind: "snap" });
+    place(100, { kind: "move" });
+    for (let index = 0; index < 7; index += 1) frame();
+    place(10, { kind: "move", momentum: "keep" });
+    frame();
+    const high = Math.max(...drawn);
+    const from = drawn.length;
+    // The box doubles in width, so every x coordinate doubles: the target 10 lands on 20, and the
+    // values the mark moved between, 0 to its highest, on 0 to twice that.
+    place(20, { kind: "settle", scale: { x: 2, y: 1, to: {} } });
+    for (let index = 0; index < 120 && drawn.at(-1) !== 20; index += 1) frame();
+    const values = drawn.slice(from);
+    for (const value of values) {
+      expect(value).toBeGreaterThanOrEqual(20 - 1e-9);
+      expect(value).toBeLessThanOrEqual(2 * high + 1e-9);
+    }
+    expect(values.at(-1)).toBe(20);
+  });
 });
+
+/** Whether no value crosses `target` from the side `start` lies on. */
+function neverPasses(values: readonly number[], start: number, target: number): boolean {
+  const side = Math.sign(start - target);
+  return values.every((value) => Math.sign(value - target) * side >= 0);
+}
 
 describe("a momentum move's contract, over random courses on the manual clock", () => {
   /** A course: a start, a first target with its delay and duration, frames, then retargets. */

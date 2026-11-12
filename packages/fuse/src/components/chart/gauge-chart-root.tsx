@@ -14,32 +14,25 @@ import type { ReactElement, ReactNode } from "react";
 import { Meter as MeterPrimitive } from "@base-ui/react/meter";
 
 import { useMergedRefs } from "../../hooks/use-merged-refs";
-import { useReducedMotion } from "../../hooks/use-reduced-motion";
 import { definedProps } from "../../internal/defined-props";
 import { useLocale } from "../../intl/locale-context";
-import type { SupportedLocale } from "../../intl/locale-context";
-import { writeAttribute } from "./chart-dom";
-import { useClientMount } from "./chart-draw-gate";
-import { useEntrance } from "./chart-entrance";
 import { GaugeContext } from "./chart-gauge-context";
-import type { GaugeContextValue, GaugeModel, GaugeReading } from "./chart-gauge-context";
+import type { GaugeContextValue, GaugeGeometry, GaugeModel, GaugeReading } from "./chart-gauge-context";
 import { createGaugeFrame } from "./chart-gauge-frame";
 import type { GaugeFrame } from "./chart-gauge-frame";
-import { BROWSER_FRAMES, createChartMotion, SAME_PLOT } from "./chart-motion";
+import { SAME_PLOT } from "./chart-motion";
 import type { MarkValues } from "./chart-motion";
 import { ChartOwnScope, useChartDepth } from "./chart-own-scope";
-import type { PolarUpdate } from "./chart-polar-context";
-import { introPace, usePolarCommit, usePolarMark } from "./chart-polar-motion";
+import { usePolarLifecycle } from "./chart-polar-lifecycle";
+import { usePolarCommit, usePolarMark } from "./chart-polar-motion";
 import { sameShallow, useSteady } from "./chart-steady";
-import { createChartStore } from "./chart-store";
 import type { ChartAccessibleName, ChartFigureProps, ValueFormat } from "./chart-types";
 import { formatValue } from "./format/value-format";
 import { ChartCompositionError, ChartDataError, DATA_MESSAGES, isChartDevelopment } from "./layout/errors";
-import { gaugeOffset, gaugePlace, gaugeShare } from "./layout/gauge";
-import { CHART_SPRINGS } from "./layout/motion";
+import { GAUGE_RADII, GAUGE_SWEEP, gaugePlace, gaugeShare } from "./layout/gauge";
 import { parseSweep, sweepBox } from "./layout/polar-angle";
-import { entranceSpan } from "./layout/polar-motion";
-import { springEasing } from "./layout/spring";
+import { GAUGE_INTRO_START_MS, introDelay, TRACK_GROW, TRACK_GROW_DURATION } from "./layout/polar-motion";
+import type { IntroPace } from "./layout/polar-motion";
 
 /**
  * Props for `GaugeChart.Root`, the root of a gauge: one reading on a dial from `min` to `max`.
@@ -80,39 +73,23 @@ export type GaugeChartRootProps = ChartAccessibleName &
     children?: ReactNode;
   };
 
-/** The family the polar commit paces a gauge's entrance by. */
-const GAUGE_INTRO = { family: "gauge" } as const;
-
-/** The mark's writer: every painter on the frame draws the offset the loop shows. */
+/** The mark's writer: every painter on the frame draws the share the loop shows. */
 function drawReading(_cell: HTMLDivElement, frame: GaugeFrame, values: MarkValues): void {
   frame.draw(values);
 }
 
-/** What a gauge's model reads from its Root's props. */
-type GaugeInput = {
-  readonly value: number | null;
-  readonly min: number;
-  readonly max: number;
-  readonly format: ValueFormat;
-  readonly startAngle: number;
-  readonly endAngle: number;
-  readonly locale: SupportedLocale;
-};
-
-/** The model, and whether its value broke the finite-number rule, which production draws as null. */
-type ModelResult = { readonly model: GaugeModel; readonly nonFinite: boolean };
-
 /**
- * A gauge's model from its Root's props.
+ * A gauge's geometry from its Root's domain and angles.
  *
- * @param input - The props the model reads.
- * @returns The model.
+ * @param min - The value at the sweep's start.
+ * @param max - The value at its end.
+ * @param startAngle - Where the sweep starts.
+ * @param endAngle - Where it ends.
+ * @returns The geometry.
  * @throws {ChartCompositionError} `invalid-gauge-domain` for a `max` at or below `min`, and
  *   `invalid-sweep` for an angle that is not a finite number.
- * @throws {ChartDataError} `non-finite-value` in development for a value that is not finite.
  */
-function gaugeModel(input: GaugeInput): ModelResult {
-  const { min, max, value } = input;
+function gaugeGeometry(min: number, max: number, startAngle: number, endAngle: number): GaugeGeometry {
   if (!Number.isFinite(min) || !Number.isFinite(max) || !(max > min)) {
     throw new ChartCompositionError(
       "GaugeChart.Root",
@@ -120,36 +97,40 @@ function gaugeModel(input: GaugeInput): ModelResult {
       `received min ${String(min)} and max ${String(max)}. Pass finite numbers with max above min.`
     );
   }
+  const sweep = parseSweep("GaugeChart.Root", startAngle, endAngle);
+  return { domain: { min, max }, sweep, box: sweepBox(sweep) };
+}
+
+/** A reading, and whether its value broke the finite-number rule, which production draws as null. */
+type ReadingResult = { readonly reading: GaugeReading; readonly nonFinite: boolean };
+
+/**
+ * A gauge's reading from its Root's value.
+ *
+ * @param geometry - The gauge's geometry, whose domain places the value.
+ * @param value - The value, or null.
+ * @returns The reading.
+ * @throws {ChartDataError} `non-finite-value` in development for a value that is not finite.
+ */
+function gaugeReading(geometry: GaugeGeometry, value: number | null): ReadingResult {
   const nonFinite = value !== null && !Number.isFinite(value);
   if (nonFinite && isChartDevelopment()) {
     throw new ChartDataError("GaugeChart.Root", "non-finite-value", DATA_MESSAGES["non-finite-value"]);
   }
-  const domain = { min, max };
-  const sweep = parseSweep("GaugeChart.Root", input.startAngle, input.endAngle);
-  const reading: GaugeReading =
-    value === null || nonFinite
-      ? { kind: "empty" }
-      : {
-          kind: "value",
-          value,
-          share: gaugeShare(domain, value),
-          offset: gaugeOffset(domain, sweep, value),
-          place: gaugePlace(domain, value),
-        };
-  return {
-    model: { domain, sweep, box: sweepBox(sweep), reading, format: input.format, locale: input.locale },
-    nonFinite,
-  };
+  if (value === null || nonFinite) return { reading: { kind: "empty" }, nonFinite };
+  return { reading: { kind: "value", value, place: gaugePlace(geometry.domain, value) }, nonFinite };
 }
 
-/** The scale-out the track, the zones and the ruler take as the entrance starts, sampled once. */
-const GROW = springEasing(CHART_SPRINGS.grow);
+/** How long a gauge's entrance runs: its one sweep, from its start. */
+function gaugeSpan(pace: IntroPace): number {
+  return pace.intro + introDelay("gauge", 0, pace);
+}
 
-/** The scale-out's duration. */
-const GROW_DURATION = `${String(GROW.duration)}ms`;
+/** The scale the layers inside a missing Track close in by: out by the notches' depth. */
+const GAUGE_CLOSED = 1 / GAUGE_RADII.notchInner;
 
-/** The entrance's span reads no spring of the radar's grid, which a gauge has none of. */
-const NO_SPRINGS = { grow: 0, extend: 0 };
+/** When the centre's digits start counting: as the sweep starts. */
+const REEL_DELAY = `${String(GAUGE_INTRO_START_MS)}ms`;
 
 /**
  * The root of a gauge. It reads one value against `min` and `max` and names the dial as a meter
@@ -166,8 +147,8 @@ export function GaugeChartRoot(props: GaugeChartRootProps): ReactElement {
     min = 0,
     max,
     valueFormat,
-    startAngle = -135,
-    endAngle = 135,
+    startAngle = GAUGE_SWEEP.startAngle,
+    endAngle = GAUGE_SWEEP.endAngle,
     children,
     ref,
     "aria-label": ariaLabel,
@@ -178,111 +159,54 @@ export function GaugeChartRoot(props: GaugeChartRootProps): ReactElement {
   const { locale } = useLocale();
   // An inline valueFormat object that names the same options is no change.
   const format = useSteady<ValueFormat>(valueFormat ?? {}, sameShallow);
-  const { model, nonFinite } = useMemo(
-    () => gaugeModel({ value, min, max, format, startAngle, endAngle, locale }),
-    [value, min, max, format, startAngle, endAngle, locale]
+  // A new reading keeps the geometry, so no part lays out again for it.
+  const geometry = useMemo(
+    () => gaugeGeometry(min, max, startAngle, endAngle),
+    [min, max, startAngle, endAngle]
+  );
+  const { reading, nonFinite } = useMemo(() => gaugeReading(geometry, value), [geometry, value]);
+  const model = useMemo(
+    (): GaugeModel => ({
+      geometry,
+      reading,
+      rest: reading.kind === "value" ? gaugeShare(geometry.domain, reading.value) : 0,
+      format,
+      locale,
+    }),
+    [geometry, reading, format, locale]
   );
   useEffect(() => {
     if (nonFinite) console.warn(`GaugeChart.Root ${DATA_MESSAGES["non-finite-value"]}`);
   }, [nonFinite]);
 
-  const reduced = useReducedMotion();
-  const entrance = figureProps["data-intro"] !== "none" && !reduced;
-  const [store] = useState(() => createChartStore(null));
-  const [motion] = useState(() => {
-    const loop = createChartMotion(BROWSER_FRAMES, reduced);
-    // The entrance holds the loop from the first commit, so it never plays unseen.
-    if (entrance) loop.wait();
-    return loop;
+  const {
+    motion,
+    figureRef,
+    cellRef,
+    commit: source,
+  } = usePolarLifecycle({
+    family: "gauge",
+    data: model,
+    intro: figureProps["data-intro"] !== "none",
+    ref,
+    defaultActive: null,
+    span: gaugeSpan,
   });
   const [frame] = useState(createGaugeFrame);
-  const rootRef = useRef<HTMLElement>(null);
-  const figureRef = useMergedRefs(rootRef, ref);
-  const cellRef = useRef<HTMLDivElement>(null);
-  const clientMount = useClientMount();
-  const [served] = useState(() => !clientMount);
-  // The entrance reads its pace once, keyed on the Root's first commit.
-  const [pacing] = useState<PolarUpdate>(() => ({ kind: "initial" }));
-
-  useLayoutEffect(() => {
-    motion.setReduced(reduced);
-  }, [motion, reduced]);
-
-  // The figure carries `data-drawn` once the entrance starts, which shows the marks, and
-  // `data-entering` for its span, which counts the centre's digits up with the sweep. A dial the
-  // browser mounted with no server HTML also carries `data-grow`, which scales its track out.
-  useLayoutEffect(() => {
-    const marked = rootRef.current;
-    if (marked === null) return undefined;
-    let timer: number | null = null;
-    let started = store.get().phase === "started";
-    const show = (): void => {
-      writeAttribute(marked, "data-drawn", store.get().phase === "started" ? "" : null);
-      if (started || store.get().phase !== "started") return;
-      started = true;
-      if (!entrance) return;
-      writeAttribute(marked, "data-entering", "");
-      writeAttribute(marked, "data-grow", served ? null : "");
-      const items = { family: "gauge", items: 1, rings: 0, spokes: 0 } as const;
-      timer = window.setTimeout(
-        () => {
-          timer = null;
-          writeAttribute(marked, "data-entering", null);
-          writeAttribute(marked, "data-grow", null);
-        },
-        entranceSpan(items, NO_SPRINGS, introPace(marked, pacing))
-      );
-    };
-    show();
-    const stop = store.subscribe(show);
-    return () => {
-      stop();
-      if (timer === null) return;
-      window.clearTimeout(timer);
-      writeAttribute(marked, "data-entering", null);
-      writeAttribute(marked, "data-grow", null);
-    };
-  }, [store, entrance, served, pacing]);
-
-  useEntrance(store, motion, rootRef, cellRef, entrance);
-
-  // Which commit produced the model, the first render or new data, as a polar Root tracks it, so
-  // the mark reaches each commit as every polar mark does.
-  const [seen, setSeen] = useState(model);
-  const [update, setUpdate] = useState<PolarUpdate>(() => ({ kind: "initial" }));
-  if (seen !== model) {
-    setSeen(model);
-    setUpdate({ kind: "data" });
-  }
-  // Whether the Root's effects are torn down, as React Activity leaves them while it hides the
-  // chart, which the polar commit reads to tell a show from the mark's first mount.
-  const hiddenRef = useRef(false);
-  const kernel = useMemo(
-    () => ({
-      store,
-      hidden: () => hiddenRef.current,
-      root: () => rootRef.current,
-    }),
-    [store]
-  );
-  const commitSource = useMemo(
-    () => ({ update, entrance, model: GAUGE_INTRO, kernel }),
-    [update, entrance, kernel]
-  );
 
   // The one mark, on the polar families' own lifecycle: the first commit sweeps in from `min`, or
   // snaps without an entrance, every commit while the entrance waits places it again under the
   // latest reading, new data sweeps on from what the dial shows and keeps its momentum, so a value
   // that lands mid-sweep bends the sweep, and a show after React Activity hid the chart snaps.
   const mark = usePolarMark(motion, drawReading, frame);
-  const commit = usePolarCommit(commitSource, mark.node);
+  const commit = usePolarCommit(source, mark.node);
   // The mark moves the reading's share of the domain, which every painter turns into an angle on
   // the sweep it draws now. New data whose share is the one the mark heads for already, as a new
   // startAngle or endAngle is, is geometry: the painters snap to the new sweep at the share the loop
   // shows, and a running sweep carries on, its momentum with it.
   const placedShare = useRef<number | null>(null);
   useLayoutEffect(() => {
-    const share = model.reading.kind === "value" ? model.reading.share : 0;
+    const share = model.rest;
     const previous = placedShare.current;
     placedShare.current = share;
     const placement = commit(0, [0]);
@@ -295,19 +219,12 @@ export function GaugeChartRoot(props: GaugeChartRootProps): ReactElement {
           : { ...placement, momentum: "keep" }
     );
   });
-  // Declared after the mark's placement, so a show places while the Root still reads hidden.
-  useLayoutEffect(() => {
-    hiddenRef.current = false;
-    return () => {
-      hiddenRef.current = true;
-    };
-  }, []);
 
   // CSS pixels per unit of the track's radius: the cell's width over the sweep box's, scaled by the
   // room the rim layers take, which `chart.css` computes into `--_gauge-track`. A Zone or an
   // outside Ruler that comes or goes changes it with no resize, so every commit reads it again.
   const measureRef = useRef<() => void>(() => undefined);
-  const latest = useRef(model);
+  const latest = useRef(geometry);
   useLayoutEffect(() => {
     const cell = cellRef.current;
     if (cell === null) return undefined;
@@ -329,24 +246,26 @@ export function GaugeChartRoot(props: GaugeChartRootProps): ReactElement {
       sizes.disconnect();
       measureRef.current = () => undefined;
     };
-  }, [frame]);
+  }, [frame, cellRef]);
   useLayoutEffect(() => {
-    latest.current = model;
+    latest.current = geometry;
     measureRef.current();
   });
 
   const cellRefs = useMergedRefs(cellRef, mark.ref);
   const context = useMemo((): GaugeContextValue => ({ model, frame }), [model, frame]);
   const depth = useChartDepth();
-  const { reading, box } = model;
+  const { box, domain } = geometry;
   const width = box.right - box.left;
   const height = box.bottom - box.top;
+  // While a reading shows, the meter carries the name, so a reader hears it once with the value.
+  // With none, the figure carries it, so an empty gauge among others still says which it is.
   const name = definedProps({ "aria-label": ariaLabel, "aria-labelledby": ariaLabelledBy });
-  const frameStyle = {
-    "--chart-polar-aspect": `${String(width)} / ${String(height)}`,
-    "--_grow-duration": GROW_DURATION,
-    "--_grow-easing": GROW.easing,
-  };
+  const empty = reading.kind === "empty";
+  const figureName = definedProps({
+    "aria-label": empty ? ariaLabel : undefined,
+    "aria-labelledby": empty ? ariaLabelledBy : undefined,
+  });
   return (
     <ChartOwnScope>
       <GaugeContext value={context}>
@@ -355,11 +274,20 @@ export function GaugeChartRoot(props: GaugeChartRootProps): ReactElement {
           data-slot="gauge-chart"
           data-polar=""
           data-chart-depth={depth}
-          data-empty={reading.kind === "empty" ? "" : undefined}
+          data-empty={empty ? "" : undefined}
           data-over-max={reading.kind === "value" && reading.place === "over" ? "" : undefined}
           data-under-min={reading.kind === "value" && reading.place === "under" ? "" : undefined}
+          {...figureName}
           {...figureProps}>
-          <div data-slot="chart-polar-frame" style={frameStyle}>
+          <div
+            data-slot="chart-polar-frame"
+            style={{
+              "--chart-polar-aspect": `${String(width)} / ${String(height)}`,
+              "--_grow-duration": TRACK_GROW_DURATION,
+              "--_grow-easing": TRACK_GROW.easing,
+              "--_gauge-closed": GAUGE_CLOSED,
+              "--_reel-delay": REEL_DELAY,
+            }}>
             {/*
               One cell for the Root's life, which the entrance and the measurement observe, so a
               reading that arrives after the chart was empty finds them on it. The meter sits in it.
@@ -369,8 +297,8 @@ export function GaugeChartRoot(props: GaugeChartRootProps): ReactElement {
                 <MeterPrimitive.Root
                   data-slot="gauge-chart-meter"
                   value={reading.value}
-                  min={model.domain.min}
-                  max={model.domain.max}
+                  min={domain.min}
+                  max={domain.max}
                   getAriaValueText={() => formatValue(locale, reading.value, format, "full").spoken}
                   {...name}
                 />

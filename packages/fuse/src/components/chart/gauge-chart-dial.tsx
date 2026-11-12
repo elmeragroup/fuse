@@ -7,38 +7,25 @@
  * the notches out again for the measured dial, so every gap is the same whole number of device
  * pixels, and lights them as the reading's offset passes each one.
  */
-import { useLayoutEffect, useRef, useState } from "react";
-import type { ReactElement, ReactNode } from "react";
+import { useMemo, useRef } from "react";
+import type { ReactElement } from "react";
 
 import { writeAttribute } from "./chart-dom";
 import { useGaugeContext } from "./chart-gauge-context";
-import type { GaugeContextValue } from "./chart-gauge-context";
-import type { GaugePainter } from "./chart-gauge-frame";
+import type { GaugeGeometry } from "./chart-gauge-context";
 import type { ChartLayerProps } from "./chart-types";
+import { useGaugePainter } from "./gauge-chart-painter";
+import type { GaugeDrawing } from "./gauge-chart-painter";
 import { arcPath } from "./layout/arc-path";
-import {
-  GAUGE_NOTCHES,
-  GAUGE_RADII,
-  gaugeAngle,
-  litNotches,
-  NOMINAL_PIXELS,
-  notchCentre,
-  notchLayout,
-} from "./layout/gauge";
+import { bandPath, GAUGE_RADII, NOMINAL_PIXELS, notchCentre, notchLayout, rimBand } from "./layout/gauge";
 import type { DialPixels, NotchLayout } from "./layout/gauge";
-import { toDegrees, viewBoxOf } from "./layout/polar-angle";
+import { viewBoxOf } from "./layout/polar-angle";
 import type { Sweep } from "./layout/polar-angle";
+import { DIAL_MARKS, litMarks } from "./layout/rings";
 import { pathNumber } from "./layout/rounding";
 
-/** A band along the sweep: its inner and outer radius and the corner its ends round by. */
-export type GaugeBand = { readonly inner: number; readonly outer: number; readonly corner: number };
-
-/** The solid band, from its inner radius to the rim, its ends rounded by a quarter of its width. */
-const SOLID: GaugeBand = {
-  inner: GAUGE_RADII.solidInner,
-  outer: 1,
-  corner: (1 - GAUGE_RADII.solidInner) / 4,
-};
+/** The solid band, from its inner radius to the rim. */
+const SOLID = rimBand(GAUGE_RADII.solidInner);
 
 /** The path every notch draws, centred on 12 o'clock, which each notch turns to its place. */
 function notchPath(layout: NotchLayout): string {
@@ -56,89 +43,67 @@ function notchTurn(sweep: Sweep, layout: NotchLayout, index: number): string {
   return `rotate(${pathNumber(sweep.start + notchCentre(layout, index) * sweep.direction)})`;
 }
 
-/**
- * The path of a band from the sweep's start to an offset: a sector of the annulus whose ends are
- * radial lines on the two angles, their corners rounded inside them, so the band ends on the
- * reading's angle at every radius, as the needle, the notches and the sector do. A round cap would
- * end there on the band's centre line only, and short of it at its edges. Any offset above 0 keeps
- * one device pixel of arc at the rim.
- *
- * @param offset - The offset in degrees from the sweep's start.
- * @param band - The band's radii and corner.
- * @param sweep - The sweep.
- * @param pixels - The measured dial, or null where nothing measures, as on the server.
- * @returns The path data, empty at an offset of 0.
- */
-export function bandPath(offset: number, band: GaugeBand, sweep: Sweep, pixels: DialPixels | null): string {
-  if (!(offset > 0)) return "";
-  const rim = band.outer * (pixels?.scale ?? 0) * (pixels?.dpr ?? 0);
-  const least = rim > 0 ? toDegrees(1 / rim) : 0;
-  return arcPath({
-    innerRadius: band.inner,
-    outerRadius: band.outer,
-    startAngle: sweep.start,
-    endAngle: gaugeAngle(sweep, Math.min(sweep.width, Math.max(offset, least))),
-    cornerRadius: band.corner,
+/** A dial layer's notches and band, as its group holds them. */
+type DialNodes = { readonly notches: readonly Element[]; readonly band: Element | null };
+
+/** The notches and the band in a dial layer's group. */
+function dialNodes(group: SVGGElement): DialNodes {
+  return {
+    notches: [...group.querySelectorAll(":scope > [data-part='notches'] > path")],
+    band: group.querySelector(":scope > [data-part='solid']"),
+  };
+}
+
+/** Lay the notches out for a measured dial, every gap the same whole number of device pixels. */
+function layNotches(notches: readonly Element[], sweep: Sweep, pixels: DialPixels): void {
+  const layout = notchLayout(sweep, notches.length, pixels);
+  const path = notchPath(layout);
+  notches.forEach((notch, index) => {
+    writeAttribute(notch, "d", path);
+    writeAttribute(notch, "transform", notchTurn(sweep, layout, index));
   });
 }
 
-/** What a dial layer draws its notches and band as: all of them, or as far as the reading reaches. */
-type DialReach = "track" | "reading";
+/** The track's drawing: every notch, and the band over the whole sweep, laid out for the dial. */
+function trackDrawing(group: SVGGElement, { sweep }: GaugeGeometry): GaugeDrawing {
+  const { notches, band } = dialNodes(group);
+  return {
+    layout: (pixels) => {
+      layNotches(notches, sweep, pixels);
+      if (band !== null) writeAttribute(band, "d", bandPath(sweep.width, SOLID, sweep, pixels));
+    },
+  };
+}
 
-/**
- * Register a dial layer's notches and band with the Root's frame, which lays them out for the
- * measured dial and, for a layer that follows the reading, lights the notches and stretches the
- * band to the offset the loop shows.
- */
-function useDialPainter(
-  gauge: GaugeContextValue,
-  group: { readonly current: SVGGElement | null },
-  reach: DialReach
-): void {
-  const { frame, model } = gauge;
-  const { sweep } = model;
-  useLayoutEffect(() => {
-    const node = group.current;
-    if (node === null) return undefined;
-    const notches = [...node.querySelectorAll(":scope > [data-part='notches'] > path")];
-    const band = node.querySelector(":scope > [data-part='solid']");
-    let pixels: DialPixels | null = null;
-    const painter: GaugePainter = {
-      layout: (measured) => {
-        pixels = measured;
-        const layout = notchLayout(sweep, notches.length, measured);
-        const path = notchPath(layout);
-        notches.forEach((notch, index) => {
-          writeAttribute(notch, "d", path);
-          writeAttribute(notch, "transform", notchTurn(sweep, layout, index));
-        });
-        if (reach === "track" && band !== null)
-          writeAttribute(band, "d", bandPath(sweep.width, SOLID, sweep, measured));
-      },
-      paint: (share) => {
-        const offset = share * sweep.width;
-        if (reach === "track") return;
-        const lit = litNotches(offset, sweep.width, notches.length);
-        notches.forEach((notch, index) => {
-          writeAttribute(notch, "data-lit", index < lit ? "" : null);
-        });
-        if (band !== null) writeAttribute(band, "d", bandPath(offset, SOLID, sweep, pixels));
-      },
-    };
-    return frame.register(painter);
-  }, [frame, sweep, group, reach]);
+/** A reading layer's drawing: the notches the offset passes lit, and the band up to it. */
+function readingDrawing(group: SVGGElement, { sweep }: GaugeGeometry): GaugeDrawing {
+  const { notches, band } = dialNodes(group);
+  let measured: DialPixels | null = null;
+  return {
+    layout: (pixels) => {
+      measured = pixels;
+      layNotches(notches, sweep, pixels);
+    },
+    paint: (offset) => {
+      const lit = litMarks(offset, sweep.width, notches.length);
+      notches.forEach((notch, index) => {
+        writeAttribute(notch, "data-lit", index < lit ? "" : null);
+      });
+      if (band !== null) writeAttribute(band, "d", bandPath(offset, SOLID, sweep, measured));
+    },
+  };
 }
 
 /** Props of one dial layer. */
 type DialLayerProps = ChartLayerProps & {
+  /** The part's display name, which a misplaced part's error names. */
+  readonly part: "GaugeChart.Track" | "GaugeChart.Fill" | "GaugeChart.Glow";
   /** The layer's slot. */
   readonly slot: "gauge-chart-track" | "gauge-chart-fill" | "gauge-chart-glow";
   /** Whether the layer draws the whole track or follows the reading. */
-  readonly reach: DialReach;
+  readonly reach: "track" | "reading";
   /** The layer's own attributes, such as the Track's variant. */
   readonly attributes?: Readonly<Record<`data-${string}`, string>>;
-  /** Extra layer content in the dial group, before the notches. */
-  readonly children?: ReactNode;
 };
 
 /**
@@ -146,40 +111,32 @@ type DialLayerProps = ChartLayerProps & {
  * variant. The server and the first render draw the nominal dial at the reading's rest, so the page
  * shows the reading with JavaScript off, and the frame takes over once Root measures.
  *
- * @param props - The layer's slot, its reach, its attributes and its class and style.
+ * @param props - The layer's part, slot, reach, attributes, class and style.
  * @returns The layer.
  */
 export function GaugeDialLayer({
+  part,
   slot,
   reach,
   attributes,
   className,
   style,
-  children,
 }: DialLayerProps): ReactElement {
-  const gauge = useGaugeContext(
-    slot === "gauge-chart-track"
-      ? "GaugeChart.Track"
-      : slot === "gauge-chart-fill"
-        ? "GaugeChart.Fill"
-        : "GaugeChart.Glow"
-  );
-  const { model } = gauge;
-  const { sweep, box } = model;
+  const gauge = useGaugeContext(part);
+  const { geometry } = gauge.model;
+  const { sweep, box } = geometry;
   const group = useRef<SVGGElement>(null);
-  useDialPainter(gauge, group, reach);
-  // React writes the nominal dial at the reading's rest once, and the frame writes the measured dial
-  // at the offset the loop shows from then on, so a commit never puts a sweep back to its rest.
-  const [first] = useState(() => {
-    const layout = notchLayout(sweep, GAUGE_NOTCHES, NOMINAL_PIXELS);
-    const rest = model.reading.kind === "value" ? model.reading.offset : 0;
+  const rest = useGaugePainter(gauge, group, geometry, reach === "track" ? trackDrawing : readingDrawing);
+  // The markup keys on the geometry and the first rest alone, so a new reading writes nothing here.
+  const first = useMemo(() => {
+    const layout = notchLayout(sweep, DIAL_MARKS, NOMINAL_PIXELS);
     return {
       path: notchPath(layout),
-      turns: Array.from({ length: GAUGE_NOTCHES }, (_, index) => notchTurn(sweep, layout, index)),
-      lit: reach === "track" ? 0 : litNotches(rest, sweep.width, GAUGE_NOTCHES),
+      turns: Array.from({ length: DIAL_MARKS }, (_, index) => notchTurn(sweep, layout, index)),
+      lit: reach === "track" ? 0 : litMarks(rest, sweep.width, DIAL_MARKS),
       band: bandPath(reach === "track" ? sweep.width : rest, SOLID, sweep, null),
     };
-  });
+  }, [sweep, rest, reach]);
   return (
     <svg
       data-slot={slot}
@@ -192,7 +149,6 @@ export function GaugeDialLayer({
       style={style}
       {...attributes}>
       <g ref={group} data-part="gauge-dial">
-        {children}
         <g data-part="notches">
           {first.turns.map((turn, index) => (
             <path

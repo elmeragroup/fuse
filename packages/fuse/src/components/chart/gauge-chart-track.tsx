@@ -7,21 +7,8 @@
  */
 import type { ReactElement } from "react";
 
-import type {
-  ChartCategoricalRole,
-  ChartLayerProps,
-  ChartSentimentRole,
-  ChartSequentialRole,
-} from "./chart-types";
+import type { ChartGaugeRole, ChartLayerProps } from "./chart-types";
 import { GaugeDialLayer } from "./gauge-chart-dial";
-
-/**
- * The colour roles a gauge's fill and its zones take: a categorical role, a step of the sequential
- * ramp, or a sentiment role for a reading that is good or bad.
- *
- * @beta
- */
-export type ChartGaugeRole = ChartCategoricalRole | ChartSequentialRole | ChartSentimentRole;
 
 /**
  * Props for `GaugeChart.Track`, a closed part.
@@ -43,19 +30,17 @@ export type GaugeChartTrackProps = ChartLayerProps & {
  * @beta
  */
 export type GaugeChartFillProps = ChartLayerProps & {
-  /** The fill's colour role. "chart-1" by default. */
+  /** The colour role of the fill, or of the glow that casts it. "chart-1" by default. */
   color?: ChartGaugeRole;
 };
 
 /**
- * Props for `GaugeChart.Glow`, a closed part.
+ * Props for `GaugeChart.Glow`, a closed part: the Fill's own, its colour role the one the fill
+ * takes.
  *
  * @beta
  */
-export type GaugeChartGlowProps = ChartLayerProps & {
-  /** The glow's colour role, the Fill's own. "chart-1" by default. */
-  color?: ChartGaugeRole;
-};
+export type GaugeChartGlowProps = GaugeChartFillProps;
 
 /**
  * The unfilled sweep, in the muted role: 40 notches, every notch and every gap alike, each gap a
@@ -75,6 +60,7 @@ export function GaugeChartTrack({
 }: GaugeChartTrackProps): ReactElement {
   return (
     <GaugeDialLayer
+      part="GaugeChart.Track"
       slot="gauge-chart-track"
       reach="track"
       attributes={{ "data-variant": variant }}
@@ -94,6 +80,7 @@ export function GaugeChartTrack({
 export function GaugeChartFill({ color = "chart-1", className, style }: GaugeChartFillProps): ReactElement {
   return (
     <GaugeDialLayer
+      part="GaugeChart.Fill"
       slot="gauge-chart-fill"
       reach="reading"
       className={className}
@@ -111,6 +98,7 @@ export function GaugeChartFill({ color = "chart-1", className, style }: GaugeCha
 export function GaugeChartGlow({ color = "chart-1", className, style }: GaugeChartGlowProps): ReactElement {
   return (
     <GaugeDialLayer
+      part="GaugeChart.Glow"
       slot="gauge-chart-glow"
       reach="reading"
       className={className}

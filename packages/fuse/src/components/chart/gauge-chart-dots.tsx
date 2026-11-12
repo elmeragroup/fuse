@@ -4,15 +4,17 @@
  * A gauge's dots: concentric rings of dots inside the track, each lit once the reading reaches it,
  * from the offset the Root's loop shows, so the dots light in order as the fill sweeps by.
  */
-import { useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef } from "react";
 import type { ReactElement } from "react";
 
-import { writeAttribute } from "./chart-dom";
 import { useGaugeContext } from "./chart-gauge-context";
-import type { ChartLayerProps } from "./chart-types";
-import type { ChartGaugeRole } from "./gauge-chart-track";
+import type { ChartGaugeRole, ChartLayerProps } from "./chart-types";
+import { lightReached, useGaugePainter } from "./gauge-chart-painter";
+import type { GaugeDrawing } from "./gauge-chart-painter";
 import { dotRings, GAUGE_RADII, gaugeAngle, reached } from "./layout/gauge";
+import type { DotRing } from "./layout/gauge";
 import { polarPoint, viewBoxOf } from "./layout/polar-angle";
+import type { Sweep } from "./layout/polar-angle";
 import { pathNumber } from "./layout/rounding";
 
 /**
@@ -29,6 +31,23 @@ export type GaugeChartDotsProps = ChartLayerProps & {
   variant?: "even" | "fade";
 };
 
+/** What the dots lay out from: the sweep and its rings. */
+type DotsLayout = { readonly sweep: Sweep; readonly rings: readonly DotRing[] };
+
+/** The dots' drawing: every dot the offset reaches lit. */
+function dotsDrawing(layer: SVGGElement, { rings }: DotsLayout): GaugeDrawing {
+  const offsets = rings.flatMap((ring) => ring.offsets);
+  const marks = [...layer.querySelectorAll("circle")].map((node, index) => ({
+    node,
+    offset: offsets[index] ?? Number.POSITIVE_INFINITY,
+  }));
+  return {
+    paint: (offset) => {
+      lightReached(marks, "data-lit", offset);
+    },
+  };
+}
+
 /**
  * Concentric rings of dots inside the track, each as far from the next as the rings are apart.
  * A dot lights once the reading reaches it, every ring along the same sweep, and the rest stay
@@ -44,31 +63,12 @@ export function GaugeChartDots({
   className,
   style,
 }: GaugeChartDotsProps): ReactElement {
-  const { model, frame } = useGaugeContext("GaugeChart.Dots");
-  const { sweep, box } = model;
-  const drawn = useMemo(() => dotRings(sweep, rings), [sweep, rings]);
-  const offsets = useMemo(() => drawn.flatMap((ring) => ring.offsets), [drawn]);
+  const gauge = useGaugeContext("GaugeChart.Dots");
+  const { sweep, box } = gauge.model.geometry;
+  const layout = useMemo((): DotsLayout => ({ sweep, rings: dotRings(sweep, rings) }), [sweep, rings]);
+  const drawn = layout.rings;
   const layer = useRef<SVGGElement>(null);
-  useLayoutEffect(() => {
-    const node = layer.current;
-    if (node === null) return undefined;
-    const dots = [...node.querySelectorAll("circle")];
-    return frame.register({
-      paint: (share) => {
-        const offset = share * sweep.width;
-        dots.forEach((dot, index) => {
-          writeAttribute(
-            dot,
-            "data-lit",
-            reached(offsets[index] ?? Number.POSITIVE_INFINITY, offset) ? "" : null
-          );
-        });
-      },
-    });
-  }, [frame, offsets, sweep]);
-  // React writes the lit dots at the reading's rest once, and the frame writes them from then on.
-  const rest = model.reading.kind === "value" ? model.reading.offset : 0;
-  const [firstRest] = useState(rest);
+  const firstRest = useGaugePainter(gauge, layer, layout, dotsDrawing);
   return (
     <svg
       data-slot="gauge-chart-dots"

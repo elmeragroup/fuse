@@ -11,13 +11,21 @@ import type { ComponentProps, CSSProperties, HTMLAttributes, JSX, ReactElement }
 import type { useRender } from "@base-ui/react/use-render";
 import { expectTypeOf, test } from "vitest";
 
-import type { Chart, PieChart, RadarChart, RadialChart, ScatterChart } from "@elmeragroup/fuse/chart";
+import type {
+  Chart,
+  GaugeChart,
+  PieChart,
+  RadarChart,
+  RadialChart,
+  ScatterChart,
+} from "@elmeragroup/fuse/chart";
 import type {
   ChartDomProps,
   ChartFigureProps,
   ChartLayerProps,
   ChartRootProps,
   ChartTooltipLabelProps,
+  GaugeChartRootProps,
   PieChartRootProps,
   RadarChartRootProps,
   RadialChartRootProps,
@@ -73,13 +81,14 @@ type FunctionKeys<P, Own extends PropertyKey> = {
 /** The props of a part. */
 type PropsOf<C> = C extends (props: infer P) => ReactElement ? P : never;
 
-/** The five namespaces, keyed by their public names. */
+/** The six namespaces, keyed by their public names. */
 type Namespaces = {
   Chart: typeof Chart;
   PieChart: typeof PieChart;
   RadialChart: typeof RadialChart;
   RadarChart: typeof RadarChart;
   ScatterChart: typeof ScatterChart;
+  GaugeChart: typeof GaugeChart;
 };
 
 /** The shared closed parts, written here and checked against every namespace's keys. */
@@ -145,6 +154,19 @@ type ClosedNames = {
     | "Tooltip"
     | "Table"
     | "Background";
+  GaugeChart:
+    | "Zone"
+    | "Track"
+    | "Fill"
+    | "Glow"
+    | "Ruler"
+    | "Needle"
+    | "Sector"
+    | "ProgressRing"
+    | "Dots"
+    | "Center"
+    | "CenterValue"
+    | "CenterLabel";
 };
 
 /** The element whose props each DOM part takes, by member name, written here. */
@@ -185,6 +207,7 @@ type DomNames = {
     | "TooltipLabel"
     | "TooltipValue"
     | "Skeleton";
+  GaugeChart: "Headline" | "Takeaway" | "Empty" | "Skeleton";
 };
 
 /** Every member name the lists place, Root included. */
@@ -243,6 +266,7 @@ type Roots = [
   RadialChartRootProps,
   RadarChartRootProps,
   ScatterChartRootProps,
+  GaugeChartRootProps,
 ];
 type RootOwn<P> = OwnKeys<P, ComponentProps<"figure">>;
 
@@ -252,6 +276,7 @@ test("every namespace's member names are exactly the reviewed lists", () => {
   expectTypeOf<keyof typeof RadialChart>().toEqualTypeOf<Listed<"RadialChart">>();
   expectTypeOf<keyof typeof RadarChart>().toEqualTypeOf<Listed<"RadarChart">>();
   expectTypeOf<keyof typeof ScatterChart>().toEqualTypeOf<Listed<"ScatterChart">>();
+  expectTypeOf<keyof typeof GaugeChart>().toEqualTypeOf<Listed<"GaugeChart">>();
 });
 
 test("Fuse's base types add no prop to the React and Base UI baselines", () => {
@@ -286,17 +311,32 @@ test("the only functions on Roots are the gesture callbacks", () => {
   expectTypeOf<FunctionKeys<Roots[2], RootOwn<Roots[2]>>>().toEqualTypeOf<"onSelectedKeyChange">();
   expectTypeOf<FunctionKeys<Roots[3], RootOwn<Roots[3]>>>().toEqualTypeOf<"onSelectedKeyChange">();
   expectTypeOf<FunctionKeys<Roots[4], RootOwn<Roots[4]>>>().toEqualTypeOf<never>();
+  expectTypeOf<FunctionKeys<Roots[5], RootOwn<Roots[5]>>>().toEqualTypeOf<never>();
 });
 
 test("no DOM part own prop shares a name with an HTML attribute, and content and color are gone", () => {
   expectTypeOf<DomReport<"collisions">>().toEqualTypeOf<Clean<DomNames>>();
-  type RootCollisions = { [K in 0 | 1 | 2 | 3 | 4]: Collisions<Roots[K], ComponentProps<"figure">> };
-  expectTypeOf<RootCollisions>().toEqualTypeOf<{ 0: never; 1: never; 2: never; 3: never; 4: never }>();
+  type RootCollisions = { [K in 0 | 1 | 2 | 3 | 4 | 5]: Collisions<Roots[K], ComponentProps<"figure">> };
+  expectTypeOf<RootCollisions>().toEqualTypeOf<{
+    0: never;
+    1: never;
+    2: never;
+    3: never;
+    4: never;
+    5: never;
+  }>();
   expectTypeOf<DomReport<"contentOrColor">>().toEqualTypeOf<Clean<DomNames>>();
   type RootHtmlLeaks = {
-    [K in 0 | 1 | 2 | 3 | 4]: Extract<AllKeys<Roots[K]>, "hidden" | "content" | "color">;
+    [K in 0 | 1 | 2 | 3 | 4 | 5]: Extract<AllKeys<Roots[K]>, "hidden" | "content" | "color">;
   };
-  expectTypeOf<RootHtmlLeaks>().toEqualTypeOf<{ 0: never; 1: never; 2: never; 3: never; 4: never }>();
+  expectTypeOf<RootHtmlLeaks>().toEqualTypeOf<{
+    0: never;
+    1: never;
+    2: never;
+    3: never;
+    4: never;
+    5: never;
+  }>();
 });
 
 test("each detector turns red on a planted violation", () => {

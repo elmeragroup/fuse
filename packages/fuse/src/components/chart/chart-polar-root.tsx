@@ -13,36 +13,28 @@
  * figure. With JavaScript off, and in print, the stylesheet shows the full chart.
  */
 import { use, useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
-import type { ReactElement, ReactNode, Ref } from "react";
+import type { ReactElement, ReactNode, Ref, RefObject } from "react";
 
-import { useMergedRefs } from "../../hooks/use-merged-refs";
-import { useReducedMotion } from "../../hooks/use-reduced-motion";
 import { definedProps } from "../../internal/defined-props";
 import type { SupportedLocale } from "../../intl/locale-context";
 import { writeAttribute, writeStyle } from "./chart-dom";
-import { openDrawingSoon, useClientMount } from "./chart-draw-gate";
-import { useEntrance } from "./chart-entrance";
+import { openDrawingSoon } from "./chart-draw-gate";
 import { createChartFollowers } from "./chart-followers";
 import type { ActiveSlot } from "./chart-followers";
 import { StatusRegion } from "./chart-listbox";
-import { BROWSER_FRAMES, createChartMotion } from "./chart-motion";
+import { BROWSER_FRAMES } from "./chart-motion";
 import type { ChartMotion } from "./chart-motion";
 import { ChartOwnScope, useChartDepth } from "./chart-own-scope";
 import { PolarContext } from "./chart-polar-context";
-import type {
-  PolarContextValue,
-  PolarKernel,
-  PolarModel,
-  PolarPickAt,
-  PolarUpdate,
-} from "./chart-polar-context";
+import type { PolarContextValue, PolarKernel, PolarModel, PolarPickAt } from "./chart-polar-context";
 import { createPolarFollow } from "./chart-polar-follow";
-import { introPace } from "./chart-polar-motion";
+import { usePolarLifecycle } from "./chart-polar-lifecycle";
+import type { PolarCommitSource } from "./chart-polar-motion";
 import { paintedOf } from "./chart-polar-painted";
 import { PolarSurface } from "./chart-polar-surface";
 import { ChartReadoutContext, ChartSelectionContext } from "./chart-readout-port";
 import { leapSpring, stepSpring } from "./chart-spring";
-import { createChartStore, useChartStore } from "./chart-store";
+import { useChartStore } from "./chart-store";
 import type { ChartSnapshot, ChartStore } from "./chart-store";
 import type { ChartChangeEventDetails, ChartFigureProps, ChartSelectionChangeReason } from "./chart-types";
 import { CHART_STRINGS } from "./format/chart-strings";
@@ -51,7 +43,7 @@ import { issueKey } from "./layout/errors";
 import type { ChartDataRule, ChartHintRule } from "./layout/errors";
 import { CHART_SPRINGS } from "./layout/motion";
 import { sweepBox } from "./layout/polar-angle";
-import { entranceSpan } from "./layout/polar-motion";
+import { entranceSpan, TRACK_GROW } from "./layout/polar-motion";
 import type { EntranceItems } from "./layout/polar-motion";
 import { springEasing } from "./layout/spring";
 
@@ -89,7 +81,7 @@ export type PolarRootProps = {
 
 /** The spring settle times a radar's grid entrance takes, sampled once. */
 const ENTRANCE_SPRINGS = {
-  grow: springEasing(CHART_SPRINGS.grow).duration,
+  grow: TRACK_GROW.duration,
   extend: springEasing(CHART_SPRINGS.extend).duration,
 };
 
@@ -122,7 +114,6 @@ function markActive(figure: HTMLElement, snapshot: ChartSnapshot, active: Active
   writeAttribute(figure, "data-active", active === null ? null : (snapshot.source ?? ""));
   writeAttribute(figure, "data-pinned", snapshot.pinned && active !== null ? "" : null);
   writeAttribute(figure, "data-near", active !== null && snapshot.near !== null ? snapshot.near : null);
-  writeAttribute(figure, "data-drawn", snapshot.phase === "started" ? "" : null);
   // The active option's place, which a pie's slices pop and dim against with no React commit.
   writeStyle(figure, "--chart-active", active === null ? null : String(active.slot));
   // The near series' place, which a radar's series dim against and its nearest fill strengthens by.
@@ -141,13 +132,13 @@ function markActive(figure: HTMLElement, snapshot: ChartSnapshot, active: Active
  * @returns The figure.
  */
 export function PolarRoot(props: PolarRootProps): ReactElement {
-  const { model, kernel, motion, entrance, update, figureRef, cellRef, selected, strings, figureProps } =
+  const { model, kernel, motion, commit, figureRef, cellRef, selected, strings, figureProps } =
     usePolarRoot(props);
   const box = useMemo(() => sweepBox(model.sweep), [model.sweep]);
   const labelledBy = props.figure["aria-labelledby"];
   const context = useMemo(
-    (): PolarContextValue => ({ model, kernel, motion, box, update, entrance, labelledBy }),
-    [model, kernel, motion, box, update, entrance, labelledBy]
+    (): PolarContextValue => ({ model, kernel, motion, box, commit, labelledBy }),
+    [model, kernel, motion, box, commit, labelledBy]
   );
   const width = box.right - box.left;
   const height = box.bottom - box.top;
@@ -228,10 +219,9 @@ type PolarRootState = {
   readonly model: PolarModel;
   readonly kernel: PolarKernel;
   readonly motion: ChartMotion;
-  readonly entrance: boolean;
-  readonly update: PolarUpdate;
+  readonly commit: PolarCommitSource;
   readonly figureRef: Ref<HTMLElement>;
-  readonly cellRef: { current: HTMLDivElement | null };
+  readonly cellRef: RefObject<HTMLDivElement | null>;
   readonly selected: string | null;
   readonly strings: (typeof CHART_STRINGS)[SupportedLocale];
   readonly figureProps: Omit<ChartFigureProps, "ref">;
@@ -250,20 +240,30 @@ function usePolarRoot(props: PolarRootProps): PolarRootState {
   const figureProps = definedProps(figure);
   const name = props.figure["aria-label"];
   const id = useId();
-  const [store] = useState(() => createChartStore(props.defaultActive));
   const [followers] = useState(createChartFollowers);
-  const reduced = useReducedMotion();
-  const entrance = figureProps["data-intro"] !== "none" && !reduced;
-  const [motion] = useState(() => {
-    const loop = createChartMotion(BROWSER_FRAMES, reduced, () => {
-      followers.refresh();
-    });
-    // The marks place their entrance in their own layout effects, which run before the Root's
-    // entrance effect holds the loop, so a Root that may have an entrance holds it from the start.
-    // Otherwise a chart that mounts out of view plays its entrance unseen.
-    if (entrance) loop.wait();
-    return loop;
+  const refresh = useCallback(() => {
+    followers.refresh();
+  }, [followers]);
+  const lifecycle = usePolarLifecycle({
+    family: model.family,
+    data: model,
+    intro: figureProps["data-intro"] !== "none",
+    ref,
+    defaultActive: props.defaultActive,
+    span: (pace) => entranceSpan(entranceItems(model), ENTRANCE_SPRINGS, pace),
+    refresh,
   });
+  const {
+    store,
+    motion,
+    rootRef,
+    figureRef,
+    cellRef,
+    clientMount,
+    hidden,
+    root: getRoot,
+    commit,
+  } = lifecycle;
   const [follow] = useState(() =>
     createPolarFollow({
       frames: BROWSER_FRAMES,
@@ -273,30 +273,14 @@ function usePolarRoot(props: PolarRootProps): PolarRootState {
       maxTurn: (radius) => maxTurn(radius, store),
     })
   );
-  const rootRef = useRef<HTMLElement>(null);
-  const figureRef = useMergedRefs(rootRef, ref);
-  const cellRef = useRef<HTMLDivElement>(null);
   const strings = CHART_STRINGS[locale];
 
   // A browser mount draws in the render right after its first commit, and a hydrating Root in a
   // microtask after its hydration commit, so its marks render once before the browser paints.
-  const clientMount = useClientMount();
   useLayoutEffect(() => {
     if (clientMount) store.drawing.openNow();
     else openDrawingSoon(store.drawing);
   }, [store, clientMount]);
-  useLayoutEffect(() => {
-    motion.setReduced(reduced);
-    followers.refresh();
-  }, [motion, reduced, followers]);
-
-  // Which commit produced the model: the first render, or new data, which moves the marks.
-  const [seen, setSeen] = useState(model);
-  const [update, setUpdate] = useState<PolarUpdate>(() => ({ kind: "initial" }));
-  if (seen !== model) {
-    setSeen(model);
-    setUpdate({ kind: "data" });
-  }
 
   // The active option keeps its place across new data while it still exists, and leaves otherwise.
   const countRef = useRef(model.count);
@@ -317,7 +301,7 @@ function usePolarRoot(props: PolarRootProps): PolarRootState {
     return () => {
       sizes.disconnect();
     };
-  }, [follow]);
+  }, [follow, cellRef]);
 
   useLayoutEffect(() => {
     countRef.current = model.count;
@@ -330,7 +314,7 @@ function usePolarRoot(props: PolarRootProps): PolarRootState {
     if (rootRef.current) markActive(rootRef.current, store.get(), active);
     follow.retarget(rayAngle(model, active), "commit");
     followers.paint(active, "commit");
-  }, [model, store, followers, follow]);
+  }, [model, store, followers, follow, rootRef]);
   useLayoutEffect(
     () =>
       store.subscribe(() => {
@@ -343,69 +327,17 @@ function usePolarRoot(props: PolarRootProps): PolarRootState {
         follow.retarget(rayAngle(latestModel.current, active), "step");
         followers.paint(active, "step");
       }),
-    [store, followers, follow]
+    [store, followers, follow, rootRef]
   );
 
-  useEntrance(store, motion, rootRef, cellRef, entrance);
-  // While the entrance plays, the figure carries `data-entering`, so the centre's digits count up
-  // over the entrance's span instead of rolling on their own spring. A grid or track the first
-  // paint already showed never scales out again: only a chart the browser mounted with no server
-  // HTML, or one that leaves its empty state, carries `data-grow` beside it, which the scale-outs
-  // read.
-  const items = useRef<EntranceItems>(entranceItems(model));
-  const [served] = useState(() => !clientMount);
-  const wasEmpty = useRef(model.empty);
-  const marking = useRef<(grow: boolean) => void>(() => undefined);
-  useLayoutEffect(() => {
-    items.current = entranceItems(model);
-  });
-  // The entrance reads its pace once, keyed on the Root's first model.
-  const [pacing] = useState<PolarUpdate>(() => ({ kind: "initial" }));
-  useLayoutEffect(() => {
-    if (!entrance) return undefined;
-    const marked = rootRef.current;
-    let timer: number | null = null;
-    const mark = (grow: boolean): void => {
-      const figure = rootRef.current;
-      if (figure === null) return;
-      if (timer !== null) window.clearTimeout(timer);
-      writeAttribute(figure, "data-entering", "");
-      writeAttribute(figure, "data-grow", grow ? "" : null);
-      // The figure's own pace, so a consumer's --chart-intro or --chart-stagger holds the state as long.
-      const span = entranceSpan(items.current, ENTRANCE_SPRINGS, introPace(figure, pacing));
-      timer = window.setTimeout(() => {
-        timer = null;
-        writeAttribute(figure, "data-entering", null);
-        writeAttribute(figure, "data-grow", null);
-      }, span);
-    };
-    marking.current = mark;
-    // Only the entrance's own start marks it. An entrance already spent when the effect runs, as
-    // when React Activity shows the chart again or the entrance is turned back on, marks nothing.
-    let started = store.get().phase === "started";
-    const watch = (): void => {
-      if (started || store.get().phase !== "started") return;
-      started = true;
-      mark(!served);
-    };
-    const stop = store.subscribe(watch);
-    return () => {
-      stop();
-      marking.current = () => undefined;
-      if (timer === null) return;
-      window.clearTimeout(timer);
-      // An entrance cut short, as React Activity hides it, never marks again, so its state leaves now.
-      if (marked === null) return;
-      writeAttribute(marked, "data-entering", null);
-      writeAttribute(marked, "data-grow", null);
-    };
-  }, [store, entrance, served, pacing]);
   // A chart that leaves its empty state grows its grid and tracks, as nothing painted them before.
+  const wasEmpty = useRef(model.empty);
+  const { grow } = lifecycle;
   useLayoutEffect(() => {
     const before = wasEmpty.current;
     wasEmpty.current = model.empty;
-    if (before && !model.empty && store.get().phase === "started") marking.current(true);
-  }, [model.empty, store]);
+    if (before && !model.empty && store.get().phase === "started") grow();
+  }, [model.empty, store, grow]);
 
   const warned = useRef(new Set<string>());
   const warnOnce = useCallback(
@@ -459,26 +391,20 @@ function usePolarRoot(props: PolarRootProps): PolarRootState {
     };
   }, []);
   const hasToggles = useCallback((): boolean => toggleGroups.current > 0, []);
-  const getRoot = useCallback((): HTMLElement | null => rootRef.current, []);
-  const hiddenRef = useRef(false);
-  useLayoutEffect(() => {
-    hiddenRef.current = false;
-    return () => {
-      hiddenRef.current = true;
-    };
-  }, []);
-  const hidden = useCallback((): boolean => hiddenRef.current, []);
   const keysRef = useRef(model.selectable);
   useLayoutEffect(() => {
     keysRef.current = model.selectable;
   });
-  const highlight = useCallback((key: string | null): void => {
-    const root = rootRef.current;
-    if (root === null) return;
-    const index = key === null ? -1 : keysRef.current.indexOf(key);
-    writeAttribute(root, "data-highlight", index === -1 ? null : "");
-    writeStyle(root, "--chart-highlight", index === -1 ? null : String(index));
-  }, []);
+  const highlight = useCallback(
+    (key: string | null): void => {
+      const root = rootRef.current;
+      if (root === null) return;
+      const index = key === null ? -1 : keysRef.current.indexOf(key);
+      writeAttribute(root, "data-highlight", index === -1 ? null : "");
+      writeStyle(root, "--chart-highlight", index === -1 ? null : String(index));
+    },
+    [rootRef]
+  );
   const modelRef = useRef(model);
   useLayoutEffect(() => {
     modelRef.current = model;
@@ -522,8 +448,7 @@ function usePolarRoot(props: PolarRootProps): PolarRootState {
     model,
     kernel,
     motion,
-    entrance,
-    update,
+    commit,
     figureRef,
     cellRef,
     selected,

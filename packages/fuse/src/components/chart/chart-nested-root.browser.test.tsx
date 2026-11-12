@@ -16,6 +16,7 @@ import { LocaleProvider } from "../../intl/locale-context";
 import { Chart } from "./chart-namespace";
 import "./chart.css";
 import { ClockChart } from "./clock-chart-namespace";
+import { GaugeChart } from "./gauge-chart-namespace";
 import { PieChart } from "./pie-chart-namespace";
 import { RadarChart } from "./radar-chart-namespace";
 import { RadialChart } from "./radial-chart-namespace";
@@ -333,6 +334,30 @@ describe("a Root nested in another chart's part", () => {
               </ClockChart.Root>
             </ClockChart.Marker>
           </ClockChart.Root>
+        </LocaleProvider>
+      );
+    expect(render).toThrow(expect.objectContaining({ rule: "part-outside-root" }));
+  });
+
+  it("gives a gauge part under another family's Root no outer gauge", () => {
+    // A pie inside a gauge's centre holds a gauge CenterLabel. In a chart of its own that label
+    // throws part-outside-root, as its JSDoc says, and nested it must do the same rather than read
+    // the outer gauge.
+    const render = () =>
+      renderToString(
+        <LocaleProvider locale="nb-NO">
+          <GaugeChart.Root value={3} max={5} aria-label="Ytre">
+            <GaugeChart.Center>
+              <PieChart.Root
+                data={POLAR_ROWS}
+                config={POLAR_CONFIG}
+                nameKey="name"
+                valueKey="v"
+                aria-label="Indre">
+                <GaugeChart.CenterLabel>kWh</GaugeChart.CenterLabel>
+              </PieChart.Root>
+            </GaugeChart.Center>
+          </GaugeChart.Root>
         </LocaleProvider>
       );
     expect(render).toThrow(expect.objectContaining({ rule: "part-outside-root" }));

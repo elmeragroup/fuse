@@ -4,12 +4,15 @@
  * A gauge's needle: a pointer that floats inside the track, clear of the centre's text, and turns
  * to the offset the Root's loop shows in every frame, so it rides the same sweep as the fill.
  */
-import { useLayoutEffect, useRef, useState } from "react";
+import { useRef } from "react";
 import type { ReactElement } from "react";
 
 import { writeAttribute } from "./chart-dom";
 import { useGaugeContext } from "./chart-gauge-context";
+import type { GaugeGeometry } from "./chart-gauge-context";
 import type { ChartLayerProps } from "./chart-types";
+import { useGaugePainter } from "./gauge-chart-painter";
+import type { GaugeDrawing } from "./gauge-chart-painter";
 import { GAUGE_RADII, gaugeAngle } from "./layout/gauge";
 import { viewBoxOf } from "./layout/polar-angle";
 import type { Sweep } from "./layout/polar-angle";
@@ -30,6 +33,15 @@ function needleTurn(sweep: Sweep, offset: number): string {
   return `rotate(${pathNumber(gaugeAngle(sweep, offset))})`;
 }
 
+/** The needle's drawing: its hand turned to the offset. */
+function needleDrawing(hand: SVGGElement, { sweep }: GaugeGeometry): GaugeDrawing {
+  return {
+    paint: (offset) => {
+      writeAttribute(hand, "transform", needleTurn(sweep, offset));
+    },
+  };
+}
+
 /** The needle's points at 12 o'clock, its base nearer the centre. */
 const BASE = -GAUGE_RADII.needleBase;
 const TIP = -GAUGE_RADII.needleTip;
@@ -47,23 +59,11 @@ export function GaugeChartNeedle({
   className,
   style,
 }: GaugeChartNeedleProps): ReactElement {
-  const { model, frame } = useGaugeContext("GaugeChart.Needle");
-  const { sweep, box } = model;
+  const gauge = useGaugeContext("GaugeChart.Needle");
+  const { geometry } = gauge.model;
+  const { sweep, box } = geometry;
   const hand = useRef<SVGGElement>(null);
-  useLayoutEffect(() => {
-    const node = hand.current;
-    if (node === null) return undefined;
-    return frame.register({
-      paint: (share) => {
-        const offset = share * sweep.width;
-        writeAttribute(node, "transform", needleTurn(sweep, offset));
-      },
-    });
-  }, [frame, sweep]);
-  // React writes the turn at the reading's rest once, and the frame writes it from then on.
-  const [first] = useState(() =>
-    needleTurn(sweep, model.reading.kind === "value" ? model.reading.offset : 0)
-  );
+  const rest = useGaugePainter(gauge, hand, geometry, needleDrawing);
   return (
     <svg
       data-slot="gauge-chart-needle"
@@ -76,7 +76,7 @@ export function GaugeChartNeedle({
       className={className}
       style={style}>
       <g data-part="gauge-dial">
-        <g ref={hand} data-part="hand" transform={first}>
+        <g ref={hand} data-part="hand" transform={needleTurn(sweep, rest)}>
           {variant === "line" ? (
             <line x1="0" y1={pathNumber(BASE)} x2="0" y2={pathNumber(TIP)} />
           ) : (

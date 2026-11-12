@@ -8,11 +8,16 @@
  */
 import { tickIncrement } from "d3-array";
 
-import { toDegrees } from "./polar-angle";
+import { arcPath } from "./arc-path";
+import { isFullTurn, toDegrees, toRadians } from "./polar-angle";
 import type { Sweep } from "./polar-angle";
+import { leastArc } from "./rings";
 
-/** How many notches a notched track holds over its sweep, whatever the sweep's width. */
-export const GAUGE_NOTCHES = 40;
+/**
+ * A gauge's sweep when Root and Skeleton name no angles: from −135° to 135°, 270° open at the
+ * bottom.
+ */
+export const GAUGE_SWEEP = { startAngle: -135, endAngle: 135 } as const;
 
 /**
  * The radii a gauge's layers draw at, as shares of their layer's radius. The track's layers, the
@@ -48,13 +53,6 @@ export const GAUGE_RADII = {
   dotStep: 0.07,
   dotRadius: 0.018,
 } as const;
-
-/**
- * The room the rim layers take, as shares of the outer radius, from the rim inward: an outside
- * ruler's ticks and their gap, a Zone band and its gap, and a ProgressRing and its gap. `chart.css`
- * reads the same numbers into `--_gauge-zone`, `--_gauge-ring` and `--_gauge-track`.
- */
-export const GAUGE_RIM = { ruler: 0.11, zone: 0.08, ring: 0.06 } as const;
 
 /** The gap between two notches in CSS pixels, before it rounds to whole device pixels. */
 export const NOTCH_GAP_PX = 2;
@@ -126,20 +124,6 @@ export function gaugeAngle(sweep: Sweep, offset: number): number {
   return sweep.start + offset * sweep.direction;
 }
 
-/**
- * How many notches an offset lights: its share of the sweep in whole notches, rounded to the
- * nearest, and at least one for any offset above 0, so a value just above `min` still reads.
- *
- * @param offset - The offset in degrees, as the sweep shows it this frame.
- * @param width - The sweep's width in degrees.
- * @param count - The notches on the sweep.
- * @returns The lit count, 0 to `count`.
- */
-export function litNotches(offset: number, width: number, count: number): number {
-  if (!(offset > 0) || !(width > 0)) return 0;
-  return Math.min(count, Math.max(1, Math.round((count * offset) / width)));
-}
-
 /** How a gauge's notches lie along the sweep, every notch alike. */
 export type NotchLayout = {
   /** One notch's angular width in degrees. */
@@ -183,16 +167,6 @@ export function notchLayout(sweep: Sweep, count: number, pixels: DialPixels): No
   const width = room / count;
   const step = gaps > 0 ? (sweep.width - (isFullTurn(sweep) ? 0 : width)) / gaps : 0;
   return { width, step, corner: pixels.scale > 0 ? NOTCH_CORNER_PX / pixels.scale : 0 };
-}
-
-/**
- * Whether a sweep closes on itself, so marks evenly spaced along it repeat its start at its end.
- *
- * @param sweep - The sweep.
- * @returns Whether it runs a whole turn.
- */
-export function isFullTurn(sweep: Sweep): boolean {
-  return sweep.width >= 360;
 }
 
 /**
@@ -315,7 +289,7 @@ export const MAX_DOT_RINGS = 6;
  */
 export function dotRings(sweep: Sweep, rings: number): readonly DotRing[] {
   const count = Math.min(MAX_DOT_RINGS, Math.max(1, Math.round(rings)));
-  const arc = (sweep.width * Math.PI) / 180;
+  const arc = toRadians(sweep.width);
   return Array.from({ length: count }, (_, ring): DotRing => {
     const radius = GAUGE_RADII.dotsOuter - ring * GAUGE_RADII.dotStep;
     const gaps = Math.max(1, Math.round((radius * arc) / GAUGE_RADII.dotStep));
@@ -338,4 +312,45 @@ export function dotRings(sweep: Sweep, rings: number): readonly DotRing[] {
  */
 export function reached(mark: number, offset: number): boolean {
   return offset > 0 && mark <= offset + 1e-9;
+}
+
+/** A band along the sweep: its inner and outer radius and the corner its ends round by. */
+export type GaugeBand = { readonly inner: number; readonly outer: number; readonly corner: number };
+
+/**
+ * A band from an inner radius to the rim, its ends rounded by a quarter of its width.
+ *
+ * @param inner - The inner radius, a share of the layer's.
+ * @returns The band.
+ */
+export function rimBand(inner: number): GaugeBand {
+  return { inner, outer: 1, corner: (1 - inner) / 4 };
+}
+
+/**
+ * The path of a band from the sweep's start to an offset, clamped to the sweep, and at least one
+ * device pixel of arc at the band's rim for any offset above 0, so a value just above `min` still
+ * draws: a sector of the annulus whose ends are radial lines on the two angles, their corners
+ * rounded inside them, so the band ends on the reading's angle at every radius, as the needle, the
+ * notches and the sector do. A round cap would end there on the band's centre line only, and short
+ * of it at its edges.
+ *
+ * @param offset - The offset in degrees from the sweep's start.
+ * @param band - The band's radii and corner.
+ * @param sweep - The sweep.
+ * @param pixels - The measured dial, or null where nothing measures, as on the server, which keeps
+ *   no pixel floor.
+ * @returns The path data, empty at an offset of 0.
+ */
+export function bandPath(offset: number, band: GaugeBand, sweep: Sweep, pixels: DialPixels | null): string {
+  if (!(offset > 0)) return "";
+  const least = pixels === null ? 0 : leastArc(band.outer * pixels.scale, pixels.dpr);
+  const reach = Math.min(sweep.width, Math.max(offset, least));
+  return arcPath({
+    innerRadius: band.inner,
+    outerRadius: band.outer,
+    startAngle: sweep.start,
+    endAngle: gaugeAngle(sweep, reach),
+    cornerRadius: band.corner,
+  });
 }

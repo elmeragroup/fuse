@@ -246,10 +246,10 @@ describe("hydration (D18)", () => {
     expect(html).toContain('role="meter"');
     expect(html).toContain('aria-valuetext="3,9\u00a0kilowattimer"');
     expect(html).toContain('transform="rotate(75.6)"');
-    expect(html.split('data-slot="gauge-chart-notch" data-lit=""').length - 1).toBe(31);
     expect(html).not.toContain("data-drawn");
     const host = document.createElement("div");
     host.innerHTML = html;
+    expect(host.querySelectorAll('[data-slot="gauge-chart-notch"][data-lit]')).toHaveLength(31);
     document.body.append(host);
     const recover = vi.fn();
     const hydrated = Promise.withResolvers<void>();

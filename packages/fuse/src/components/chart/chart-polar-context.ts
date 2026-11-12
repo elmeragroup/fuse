@@ -12,6 +12,7 @@ import type { ChartFollowers } from "./chart-followers";
 import type { ChartMotion } from "./chart-motion";
 import type { PolarFollow } from "./chart-polar-follow";
 import type { ItemSource } from "./chart-polar-item";
+import type { PolarCommitSource } from "./chart-polar-motion";
 import type { PaintedAngles } from "./chart-polar-painted";
 import type { ChartReadout, PointerSlot } from "./chart-readout-port";
 import type { SeriesTableContext } from "./chart-series-readout";
@@ -381,9 +382,8 @@ export type PolarContextValue = {
   readonly motion: ChartMotion;
   /** The sweep's box in units of the outer radius, which the cell's aspect ratio follows. */
   readonly box: SweepBox;
-  readonly update: PolarUpdate;
-  /** Whether the Root plays an entrance: `data-intro` is not "none" and the reader allows motion. */
-  readonly entrance: boolean;
+  /** What the marks read to reach each commit, the commit and whether the Root plays an entrance among it. */
+  readonly commit: PolarCommitSource;
   /** Root's `aria-labelledby`, which the listbox's name joins. */
   readonly labelledBy: string | undefined;
 };

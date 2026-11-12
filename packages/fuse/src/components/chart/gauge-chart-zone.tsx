@@ -8,8 +8,7 @@
 import type { ReactElement } from "react";
 
 import { useGaugeContext } from "./chart-gauge-context";
-import type { ChartLayerProps } from "./chart-types";
-import type { ChartGaugeRole } from "./gauge-chart-track";
+import type { ChartGaugeRole, ChartLayerProps } from "./chart-types";
 import { arcPath } from "./layout/arc-path";
 import { GAUGE_RADII, gaugeAngle, rangeOffsets } from "./layout/gauge";
 import { viewBoxOf } from "./layout/polar-angle";
@@ -40,8 +39,7 @@ const ZONE_CORNER = 0.012;
  * @beta
  */
 export function GaugeChartZone({ from, to, color, className, style }: GaugeChartZoneProps): ReactElement {
-  const { model } = useGaugeContext("GaugeChart.Zone");
-  const { domain, sweep, box } = model;
+  const { domain, sweep, box } = useGaugeContext("GaugeChart.Zone").model.geometry;
   const range = rangeOffsets(domain, sweep, from, to);
   const start = range === null ? null : gaugeAngle(sweep, range.start);
   const end = range === null ? null : gaugeAngle(sweep, range.end);

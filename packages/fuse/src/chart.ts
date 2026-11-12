@@ -45,6 +45,7 @@ export type {
   ChartFallback,
   ChartFigureProps,
   ChartFractionDigits,
+  ChartGaugeRole,
   ChartInstant,
   ChartIntro,
   ChartKeyOf,
@@ -218,7 +219,6 @@ export type { ScatterCurve } from "./components/chart/layout/scatter-frame";
 export type { GaugeChartRootProps } from "./components/chart/gauge-chart-root";
 export type { GaugeChartZoneProps } from "./components/chart/gauge-chart-zone";
 export type {
-  ChartGaugeRole,
   GaugeChartFillProps,
   GaugeChartGlowProps,
   GaugeChartTrackProps,

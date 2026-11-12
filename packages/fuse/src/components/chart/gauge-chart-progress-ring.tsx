@@ -6,16 +6,16 @@
  * the Root's frame stretches to the offset the loop shows in every frame, ending on the same
  * radial line as the fill and the needle.
  */
-import { useLayoutEffect, useRef, useState } from "react";
+import { useRef } from "react";
 import type { ReactElement } from "react";
 
 import { writeAttribute } from "./chart-dom";
 import { useGaugeContext } from "./chart-gauge-context";
-import type { ChartLayerProps } from "./chart-types";
-import { bandPath } from "./gauge-chart-dial";
-import type { GaugeBand } from "./gauge-chart-dial";
-import type { ChartGaugeRole } from "./gauge-chart-track";
-import { GAUGE_RADII } from "./layout/gauge";
+import type { GaugeGeometry } from "./chart-gauge-context";
+import type { ChartGaugeRole, ChartLayerProps } from "./chart-types";
+import { useGaugePainter } from "./gauge-chart-painter";
+import type { GaugeDrawing } from "./gauge-chart-painter";
+import { bandPath, GAUGE_RADII, rimBand } from "./layout/gauge";
 import type { DialPixels } from "./layout/gauge";
 import { viewBoxOf } from "./layout/polar-angle";
 
@@ -29,12 +29,24 @@ export type GaugeChartProgressRingProps = ChartLayerProps & {
   color?: ChartGaugeRole;
 };
 
-/** The ring's band at the rim of its layer, its ends rounded by a quarter of its width, as the fill's. */
-const RING: GaugeBand = {
-  inner: GAUGE_RADII.ringInner,
-  outer: 1,
-  corner: (1 - GAUGE_RADII.ringInner) / 4,
-};
+/** The ring's band at the rim of its layer, its ends rounded as the solid fill's. */
+const RING = rimBand(GAUGE_RADII.ringInner);
+
+/** The ring's drawing: the whole band laid out for the dial, and the value's band to the offset. */
+function ringDrawing(group: SVGGElement, { sweep }: GaugeGeometry): GaugeDrawing {
+  const whole = group.querySelector(":scope > [data-part='rest']");
+  const value = group.querySelector(":scope > [data-part='value']");
+  let measured: DialPixels | null = null;
+  return {
+    layout: (pixels) => {
+      measured = pixels;
+      if (whole !== null) writeAttribute(whole, "d", bandPath(sweep.width, RING, sweep, pixels));
+    },
+    paint: (offset) => {
+      if (value !== null) writeAttribute(value, "d", bandPath(offset, RING, sweep, measured));
+    },
+  };
+}
 
 /**
  * A thin ring at the rim: the reading's share of the sweep in full colour over the whole sweep
@@ -49,31 +61,11 @@ export function GaugeChartProgressRing({
   className,
   style,
 }: GaugeChartProgressRingProps): ReactElement {
-  const { model, frame } = useGaugeContext("GaugeChart.ProgressRing");
-  const { sweep, box } = model;
-  const value = useRef<SVGPathElement>(null);
-  const rest = useRef<SVGPathElement>(null);
-  useLayoutEffect(() => {
-    const node = value.current;
-    const whole = rest.current;
-    if (node === null || whole === null) return undefined;
-    let pixels: DialPixels | null = null;
-    return frame.register({
-      layout: (measured) => {
-        pixels = measured;
-        writeAttribute(whole, "d", bandPath(sweep.width, RING, sweep, measured));
-      },
-      paint: (share) => {
-        const offset = share * sweep.width;
-        writeAttribute(node, "d", bandPath(offset, RING, sweep, pixels));
-      },
-    });
-  }, [frame, sweep]);
-  // React writes both bands at the reading's rest once, and the frame writes them from then on.
-  const [first] = useState(() => ({
-    value: bandPath(model.reading.kind === "value" ? model.reading.offset : 0, RING, sweep, null),
-    whole: bandPath(sweep.width, RING, sweep, null),
-  }));
+  const gauge = useGaugeContext("GaugeChart.ProgressRing");
+  const { geometry } = gauge.model;
+  const { sweep, box } = geometry;
+  const group = useRef<SVGGElement>(null);
+  const rest = useGaugePainter(gauge, group, geometry, ringDrawing);
   return (
     <svg
       data-slot="gauge-chart-progress-ring"
@@ -83,9 +75,9 @@ export function GaugeChartProgressRing({
       viewBox={viewBoxOf(box)}
       className={className}
       style={{ "--_paint": `var(--${color})`, ...style }}>
-      <g data-part="gauge-dial">
-        <path ref={rest} data-part="rest" d={first.whole} />
-        <path ref={value} data-part="value" data-polar-mark="" d={first.value} />
+      <g ref={group} data-part="gauge-dial">
+        <path data-part="rest" d={bandPath(sweep.width, RING, sweep, null)} />
+        <path data-part="value" data-polar-mark="" d={bandPath(rest, RING, sweep, null)} />
       </g>
     </svg>
   );

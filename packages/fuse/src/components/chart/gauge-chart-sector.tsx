@@ -6,14 +6,17 @@
  * edge, which SVG has no gradient for. The Root's frame writes the wedge's start and span onto it in
  * every frame, and the stylesheet draws it from them.
  */
-import { useLayoutEffect, useRef, useState } from "react";
+import { useRef } from "react";
 import type { ReactElement } from "react";
 
 import { writeStyle } from "./chart-dom";
 import { useGaugeContext } from "./chart-gauge-context";
-import type { ChartLayerProps } from "./chart-types";
-import type { ChartGaugeRole } from "./gauge-chart-track";
+import type { GaugeGeometry } from "./chart-gauge-context";
+import type { ChartGaugeRole, ChartLayerProps } from "./chart-types";
+import { useGaugePainter } from "./gauge-chart-painter";
+import type { GaugeDrawing } from "./gauge-chart-painter";
 import { GAUGE_RADII } from "./layout/gauge";
+import { boxPercent } from "./layout/polar-angle";
 import type { Sweep } from "./layout/polar-angle";
 import { pathNumber } from "./layout/rounding";
 
@@ -42,6 +45,17 @@ function wedge(sweep: Sweep, offset: number): SectorWedge {
   return { from: `${pathNumber(from)}deg`, span: `${pathNumber(offset)}deg` };
 }
 
+/** The sector's drawing: the wedge to the offset, as custom properties the stylesheet reads. */
+function sectorDrawing(layer: HTMLDivElement, { sweep }: GaugeGeometry): GaugeDrawing {
+  return {
+    paint: (offset) => {
+      const { from, span } = wedge(sweep, offset);
+      writeStyle(layer, "--_sector-from", from);
+      writeStyle(layer, "--_sector-span", span);
+    },
+  };
+}
+
 /**
  * The wedge from the sweep's start to the reading, from outside the centre's text out to just
  * inside the notches, in a tint of its colour role. "conic" brightens along the sweep toward the reading, "radial" toward the rim, and
@@ -55,25 +69,14 @@ export function GaugeChartSector({
   className,
   style,
 }: GaugeChartSectorProps): ReactElement {
-  const { model, frame } = useGaugeContext("GaugeChart.Sector");
-  const { sweep, box } = model;
+  const gauge = useGaugeContext("GaugeChart.Sector");
+  const { geometry } = gauge.model;
+  const { sweep, box } = geometry;
   const node = useRef<HTMLDivElement>(null);
-  useLayoutEffect(() => {
-    const layer = node.current;
-    if (layer === null) return undefined;
-    return frame.register({
-      paint: (share) => {
-        const offset = share * sweep.width;
-        const { from, span } = wedge(sweep, offset);
-        writeStyle(layer, "--_sector-from", from);
-        writeStyle(layer, "--_sector-span", span);
-      },
-    });
-  }, [frame, sweep]);
-  // React writes the wedge at the reading's rest once, and the frame writes it from then on.
-  const [first] = useState(() => wedge(sweep, model.reading.kind === "value" ? model.reading.offset : 0));
+  const first = wedge(sweep, useGaugePainter(gauge, node, geometry, sectorDrawing));
   const width = box.right - box.left;
   const height = box.bottom - box.top;
+  const [cx, cy] = boxPercent(box, 0, 0);
   return (
     <div
       ref={node}
@@ -87,8 +90,8 @@ export function GaugeChartSector({
       style={{
         "--_paint": `var(--${color})`,
         // The dial's centre and the sector's radius, as shares of the box.
-        "--_cx": `${pathNumber((-box.left / width) * 100)}%`,
-        "--_cy": `${pathNumber((-box.top / height) * 100)}%`,
+        "--_cx": cx,
+        "--_cy": cy,
         "--_rx": GAUGE_RADII.sector / width,
         "--_ry": GAUGE_RADII.sector / height,
         // The hole the wedge leaves round the centre, as a share of its reach.

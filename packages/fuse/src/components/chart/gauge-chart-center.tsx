@@ -52,9 +52,8 @@ export type GaugeChartCenterLabelProps = ChartLayerProps & {
  * @beta
  */
 export function GaugeChartCenter({ children, className, style }: GaugeChartCenterProps): ReactElement {
-  const { model } = useGaugeContext("GaugeChart.Center");
+  const { box } = useGaugeContext("GaugeChart.Center").model.geometry;
   const fitted = useCentreFit();
-  const { box } = model;
   return (
     <div
       data-slot="gauge-chart-center"

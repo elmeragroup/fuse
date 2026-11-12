@@ -152,9 +152,38 @@ export type RingPixels = {
  */
 export function ringStroke(angle: number, pixels: RingPixels): RingStroke {
   if (!(angle > 0) || !(pixels.radius > 0)) return { start: 0, length: 0, cap: "none" };
-  const least = pixels.dpr > 0 ? toDegrees(1 / pixels.dpr / pixels.radius) : 0;
-  const drawn = Math.max(angle, least);
+  const drawn = Math.max(angle, leastArc(pixels.radius, pixels.dpr));
   const cap = toDegrees(pixels.width / 2 / pixels.radius);
   if (drawn <= 2 * cap) return { start: 0, length: drawn, cap: "butt" };
   return { start: cap, length: drawn - 2 * cap, cap: "round" };
+}
+
+/**
+ * The angle one device pixel of arc spans at a radius, the least a value above 0 draws, so a ring's
+ * stroke and a gauge's band never vanish for a value just above their start.
+ *
+ * @param radius - The radius in CSS pixels.
+ * @param dpr - Device pixels per CSS pixel.
+ * @returns The angle in degrees, or 0 where nothing measured the radius or the ratio.
+ */
+export function leastArc(radius: number, dpr: number): number {
+  return radius > 0 && dpr > 0 ? toDegrees(1 / dpr / radius) : 0;
+}
+
+/** How many whole marks a dotted ring and a notched gauge track hold over their sweep. */
+export const DIAL_MARKS = 40;
+
+/**
+ * How many of a dial's evenly spaced marks an offset lights, a dotted ring's dots or a gauge's
+ * notches: its share of the sweep in whole marks, rounded to the nearest, and at least one for any
+ * offset above 0, so a value just above the start still reads.
+ *
+ * @param offset - The offset in degrees, as the sweep shows it this frame.
+ * @param width - The sweep's width in degrees.
+ * @param count - The marks on the sweep.
+ * @returns The lit count, 0 to `count`.
+ */
+export function litMarks(offset: number, width: number, count: number): number {
+  if (!(offset > 0) || !(width > 0)) return 0;
+  return Math.min(count, Math.max(1, Math.round((count * offset) / width)));
 }

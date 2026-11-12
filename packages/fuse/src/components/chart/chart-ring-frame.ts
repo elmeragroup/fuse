@@ -14,10 +14,7 @@
 import { writeAttribute } from "./chart-dom";
 import type { ChartMotion, MarkValues } from "./chart-motion";
 import type { Sweep } from "./layout/polar-angle";
-import { ringStroke } from "./layout/rings";
-
-/** How many dots a dotted ring holds over its sweep. */
-export const RING_DOTS = 40;
+import { DIAL_MARKS, litMarks, ringStroke } from "./layout/rings";
 
 /** A dash long enough to cover any sweep, in the sweep's degrees. */
 const GAP = 1e4;
@@ -55,10 +52,9 @@ export function ringDash(
   measure: RingMeasure | null
 ): RingDash {
   if (place.mode === "dots") {
-    const cell = sweep.width / RING_DOTS;
+    const cell = sweep.width / DIAL_MARKS;
     // A value above 0 keeps one whole dot, as a dashed ring keeps a device pixel.
-    const share = Math.round((RING_DOTS * Math.min(angle, sweep.width)) / sweep.width);
-    const dots = angle > 0 ? Math.max(1, share) : 0;
+    const dots = litMarks(angle, sweep.width, DIAL_MARKS);
     return { dasharray: `${short(dots * cell)} ${String(GAP)}`, dashoffset: "0", linecap: "butt" };
   }
   const fill = measure?.fill ?? 0.7;

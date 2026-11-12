@@ -53,11 +53,37 @@ function springPosition({ stiffness, damping }: Spring, t: number): number {
     const decay = Math.exp(-ratio * natural * t);
     return 1 - decay * (Math.cos(damped * t) + ((ratio * natural) / damped) * Math.sin(damped * t));
   }
-  if (ratio === 1) return 1 - Math.exp(-natural * t) * (1 + natural * t);
+  if (ratio === 1) return 1 + criticalStep(-1, 0, natural, t).offset;
   const root = natural * Math.sqrt(ratio * ratio - 1);
   const fast = -ratio * natural - root;
   const slow = -ratio * natural + root;
   return 1 - (fast * Math.exp(slow * t) - slow * Math.exp(fast * t)) / (fast - slow);
+}
+
+/** Where a critically damped spring is a time after it leaves, and how fast it moves. */
+export type CriticalState = {
+  /** The offset from the target. */
+  readonly offset: number;
+  /** The velocity, in the offset's units per unit of time. */
+  readonly velocity: number;
+};
+
+/**
+ * A critically damped spring of mass 1 in closed form, `x(t) = (x₀ + (v₀ + ω·x₀)·t)·e^(−ωt)`: it
+ * leaves `x0` from its target at `v0` and settles onto the target without a bounce. Every
+ * critically damped motion in the charts steps through it, whatever its unit of time: `omega`, `v0`
+ * and `t` need only share one.
+ *
+ * @param x0 - The offset from the target at release.
+ * @param v0 - The velocity at release.
+ * @param omega - The natural angular frequency, per unit of time.
+ * @param t - The time since release.
+ * @returns The offset and velocity at `t`.
+ */
+export function criticalStep(x0: number, v0: number, omega: number, t: number): CriticalState {
+  const b = v0 + omega * x0;
+  const decay = Math.exp(-omega * t);
+  return { offset: (x0 + b * t) * decay, velocity: (b - omega * (x0 + b * t)) * decay };
 }
 
 const round = (value: number, digits: number): number => Number(value.toFixed(digits));

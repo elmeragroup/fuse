@@ -9,19 +9,17 @@ import type { ReactElement, ReactNode } from "react";
 
 import type { ValueRun } from "./format/value-format";
 
-/** Space-like characters a formatter writes: a space, a no-break space or a narrow one. */
-const SPACES = /[   ]/gu;
-
 /** A unit's text as a centre prints it, and whether a space parts it from the number. */
 type UnitText = { readonly text: string; readonly apart: boolean };
 
 /**
  * A unit's text, breakable at its first space only, and whether the formatter set it apart from the
- * number. The first space parts the unit from what qualifies it, such as `øre/kWh` from `inkl. mva`,
- * so a narrow centre wraps there and keeps each phrase whole.
+ * number. The run's spaces are canonical, every one U+00A0. The first space parts the unit from what
+ * qualifies it, such as `øre/kWh` from `inkl. mva`, so a narrow centre wraps there and keeps each
+ * phrase whole.
  */
 function unitOf(text: string, apart: RegExp): UnitText {
-  const kept = text.replace(SPACES, "\u00a0").replace(/^\u00a0+|\u00a0+$/gu, "");
+  const kept = text.replace(/^\u00a0+|\u00a0+$/gu, "");
   return { text: kept.replace("\u00a0", " "), apart: apart.test(text) };
 }
 
@@ -38,8 +36,8 @@ export function ChartValueRun({
   readonly run: ValueRun;
   readonly number: ReactNode;
 }): ReactElement {
-  const before = unitOf(run.before, /[   ]$/u);
-  const after = unitOf(run.after, /^[   ]/u);
+  const before = unitOf(run.before, /\u00a0$/u);
+  const after = unitOf(run.after, /^\u00a0/u);
   return (
     <>
       {before.text === "" ? null : <span data-part="unit">{before.text}</span>}

@@ -109,7 +109,7 @@ function PieSector({
     [frame, slice.key, pad, index]
   );
   const { ref, place, node: anchor } = usePolarMark(polar.motion, writeSector, sectorLook);
-  const commit = usePolarCommit(polar, anchor);
+  const commit = usePolarCommit(polar.commit, anchor);
   const [start, end] = target;
   useLayoutEffect(() => {
     place([start, end], commit(index, [start, start]));
@@ -139,7 +139,8 @@ function PieSector({
  */
 export function PieChartPie({ cornerRadius = 0, className, style }: PieChartPieProps): ReactElement {
   const polar = usePolarContext("PieChart.Pie", ["pie"]);
-  const { model, motion, box, update, kernel } = polar;
+  const { model, motion, box, kernel } = polar;
+  const { update } = polar.commit;
   const pie = pieDrawingIn(model, "PieChart.Pie");
   const look = useMemo(() => lookOf(pie, cornerRadius), [pie, cornerRadius]);
   const [frame] = useState(() => pieFrameOf(motion, look));

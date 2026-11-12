@@ -213,7 +213,7 @@ export function ClockChartColumn({
     [series, clock, seat, emphasised, drawn]
   );
   const { ref, place, node: anchor, drawn: drawnFrame } = usePolarMark(polar.motion, drawColumns, look);
-  const commit = usePolarCommit(polar, anchor);
+  const commit = usePolarCommit(polar.commit, anchor);
   useClockPlacement(clock, series, look, { commit, place, drawn: drawnFrame });
   const svg = useRef<SVGSVGElement>(null);
   const group = useRef<SVGGElement | null>(null);

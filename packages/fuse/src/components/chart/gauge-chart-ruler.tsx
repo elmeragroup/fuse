@@ -5,16 +5,18 @@
  * passed brightened, from the offset the Root's loop shows, so the ticks brighten as the fill
  * sweeps past them.
  */
-import { useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef } from "react";
 import type { ReactElement } from "react";
 
-import { writeAttribute } from "./chart-dom";
 import { useGaugeContext } from "./chart-gauge-context";
 import type { ChartLayerProps, ValueFormat } from "./chart-types";
 import { formatUnitless } from "./format/value-format";
+import { lightReached, useGaugePainter } from "./gauge-chart-painter";
+import type { GaugeDrawing } from "./gauge-chart-painter";
 import { GAUGE_RADII, gaugeAngle, reached, rulerSpacing, rulerTicks } from "./layout/gauge";
 import type { RulerTick } from "./layout/gauge";
 import { polarPoint, viewBoxOf } from "./layout/polar-angle";
+import type { Sweep } from "./layout/polar-angle";
 import { pathNumber } from "./layout/rounding";
 
 /**
@@ -43,9 +45,20 @@ export type GaugeChartRulerProps = ChartLayerProps & {
 /** Where an inside ruler's labels sit, inside its major ticks and a gap. */
 const INSIDE_LABEL = GAUGE_RADII.rulerInside - GAUGE_RADII.majorTick - 0.03;
 
-/** Whether a tick lies behind the reading's offset, which a reading at `min` passes none of. */
-function passed(tick: RulerTick, offset: number): boolean {
-  return reached(tick.offset, offset);
+/** What the ruler lays out from: the sweep and its ticks. */
+type RulerLayout = { readonly sweep: Sweep; readonly marks: readonly RulerTick[] };
+
+/** The ruler's drawing: every tick and label the offset has passed brightened. */
+function rulerDrawing(layer: HTMLDivElement, { marks }: RulerLayout): GaugeDrawing {
+  const reachable = [...layer.querySelectorAll("[data-tick]")].map((node) => ({
+    node,
+    offset: marks[Number(node.getAttribute("data-tick"))]?.offset ?? Number.POSITIVE_INFINITY,
+  }));
+  return {
+    paint: (offset) => {
+      lightReached(reachable, "data-passed", offset);
+    },
+  };
 }
 
 /**
@@ -65,33 +78,21 @@ export function GaugeChartRuler({
   className,
   style,
 }: GaugeChartRulerProps): ReactElement {
-  const { model, frame } = useGaugeContext("GaugeChart.Ruler");
-  const { domain, sweep, box, locale } = model;
+  const gauge = useGaugeContext("GaugeChart.Ruler");
+  const { model } = gauge;
+  const { domain, sweep, box } = model.geometry;
   const spacing = useMemo(() => {
     const fallback = rulerSpacing(domain);
     return { ticks: ticks ?? fallback.ticks, majorEvery: majorEvery ?? fallback.majorEvery };
   }, [domain, ticks, majorEvery]);
-  const marks = useMemo(() => rulerTicks(domain, sweep, spacing), [domain, sweep, spacing]);
+  const layout = useMemo(
+    (): RulerLayout => ({ sweep, marks: rulerTicks(domain, sweep, spacing) }),
+    [domain, sweep, spacing]
+  );
+  const { marks } = layout;
   const labelFormat = format ?? model.format;
   const layer = useRef<HTMLDivElement>(null);
-  useLayoutEffect(() => {
-    const node = layer.current;
-    if (node === null) return undefined;
-    const nodes = [...node.querySelectorAll("[data-tick]")];
-    return frame.register({
-      paint: (share) => {
-        const offset = share * sweep.width;
-        for (const tick of nodes) {
-          const index = Number(tick.getAttribute("data-tick"));
-          const mark = marks[index];
-          writeAttribute(tick, "data-passed", mark !== undefined && passed(mark, offset) ? "" : null);
-        }
-      },
-    });
-  }, [frame, marks, sweep]);
-  // React writes the passed ticks at the reading's rest once, and the frame writes them from then on.
-  const rest = model.reading.kind === "value" ? model.reading.offset : 0;
-  const [firstRest] = useState(rest);
+  const firstRest = useGaugePainter(gauge, layer, layout, rulerDrawing);
   const outside = variant === "outside";
   // The ticks stand in from the rim outside, and hang in from inside the track inside.
   const top = outside ? 1 : GAUGE_RADII.rulerInside;
@@ -125,7 +126,7 @@ export function GaugeChartRuler({
                 data-slot="gauge-chart-tick"
                 data-tick={index}
                 data-major={mark.major ? "" : undefined}
-                data-passed={passed(mark, firstRest) ? "" : undefined}
+                data-passed={reached(mark.offset, firstRest) ? "" : undefined}
                 x1={pathNumber(from.x)}
                 y1={pathNumber(from.y)}
                 x2={pathNumber(to.x)}
@@ -146,14 +147,14 @@ export function GaugeChartRuler({
             key={index}
             data-slot="gauge-chart-ruler-label"
             data-tick={index}
-            data-passed={passed(mark, firstRest) ? "" : undefined}
+            data-passed={reached(mark.offset, firstRest) ? "" : undefined}
             style={{
               "--_x": pathNumber(at.x),
               "--_y": pathNumber(at.y),
               "--_dx": pathNumber(away.x),
               "--_dy": pathNumber(away.y),
             }}>
-            {formatUnitless(locale, mark.value, labelFormat).text}
+            {formatUnitless(model.locale, mark.value, labelFormat).text}
           </span>
         );
       })}

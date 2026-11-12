@@ -13,7 +13,7 @@
 import { Activity } from "react";
 import type { ReactNode } from "react";
 
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cdp, page } from "vitest/browser";
 
 import "../../../dist/styles.css";
@@ -31,6 +31,7 @@ import {
 } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
 import type { SupportedLocale } from "../../intl/locale-context";
+import type { ValueFormat } from "./chart-types";
 import "./chart.css";
 import { GaugeChart } from "./gauge-chart-namespace";
 
@@ -66,12 +67,21 @@ async function emulateMedia(media: "print" | "screen"): Promise<void> {
   await session.send("Emulation.setEmulatedMedia", { media });
 }
 
+/** Fake the loop's own seam, the browser's frames and clock, so a case steps it by hand. */
+function fakeFrames(): void {
+  vi.useFakeTimers({ toFake: ["requestAnimationFrame", "cancelAnimationFrame", "performance"] });
+}
+
 function Gauge({
   value,
   locale = "nb-NO",
   intro,
   width = 320,
   endAngle = 135,
+  max = 5,
+  format = energy,
+  label = "Forbruk denne timen",
+  labelledBy,
   children = (
     <>
       <GaugeChart.Track />
@@ -89,18 +99,24 @@ function Gauge({
   readonly intro?: "none";
   readonly width?: number;
   readonly endAngle?: number;
+  readonly max?: number;
+  readonly format?: ValueFormat;
+  readonly label?: string;
+  /** A headline's id, which names the gauge in place of `label`. */
+  readonly labelledBy?: string;
   readonly children?: ReactNode;
 }) {
+  const name = labelledBy === undefined ? { "aria-label": label } : { "aria-labelledby": labelledBy };
   return (
     <LocaleProvider locale={locale}>
       <div style={{ width }}>
         <GaugeChart.Root
           value={value}
-          max={5}
-          valueFormat={energy}
+          max={max}
+          valueFormat={format}
           data-intro={intro}
           endAngle={endAngle}
-          aria-label="Forbruk denne timen">
+          {...name}>
           {children}
         </GaugeChart.Root>
       </div>
@@ -138,6 +154,17 @@ function ticksFor(offset: number): number {
   return Math.floor(offset / PER_KWH / 0.2 + 1e-6) + 1;
 }
 
+/** The point at an angle and a radius, in a dial layer's own units. */
+function dialPoint(degrees: number, radius: number): DOMPoint {
+  const a = (degrees * Math.PI) / 180;
+  return new DOMPoint(radius * Math.sin(a), -radius * Math.cos(a));
+}
+
+/** The progress ring's value band. */
+function ringValue(host: HTMLElement): SVGPathElement | null {
+  return host.querySelector<SVGPathElement>('[data-slot="gauge-chart-progress-ring"] [data-part="value"]');
+}
+
 describe("the meter", () => {
   it.each([
     ["nb-NO", "3,9\u00a0kilowattimer"],
@@ -151,6 +178,8 @@ describe("the meter", () => {
       await expect.element(meter).toHaveAttribute("aria-valuemax", "5");
       await expect.element(meter).toHaveAttribute("aria-valuenow", "3.9");
       await expect.element(meter).toHaveAttribute("aria-valuetext", text);
+      // The meter alone carries the name while it shows, so a reader hears it once.
+      expect(host.querySelector("figure")?.hasAttribute("aria-label")).toBe(false);
       // The drawing is presentational and nothing in the chart takes focus.
       expect(host.querySelectorAll("a, button, input, [tabindex]")).toHaveLength(0);
       for (const svg of host.querySelectorAll("svg")) {
@@ -161,12 +190,10 @@ describe("the meter", () => {
 
   it("takes its name from a headline through aria-labelledby", async () => {
     renderThemed(
-      <LocaleProvider locale="nb-NO">
-        <GaugeChart.Root value={2} max={5} valueFormat={energy} data-intro="none" aria-labelledby="peak">
-          <GaugeChart.Headline id="peak">Effekttrinn</GaugeChart.Headline>
-          <GaugeChart.Track />
-        </GaugeChart.Root>
-      </LocaleProvider>
+      <Gauge value={2} intro="none" labelledBy="peak">
+        <GaugeChart.Headline id="peak">Effekttrinn</GaugeChart.Headline>
+        <GaugeChart.Track />
+      </Gauge>
     );
     await expect.element(page.getByRole("meter", { name: "Effekttrinn" })).toBeInTheDocument();
   });
@@ -193,7 +220,7 @@ describe("the meter", () => {
     expect([needle(host), litCount(host), passedTicks(host)]).toEqual([-135, 0, 0]);
   });
 
-  it("drops the meter and shows Empty while the value is null", async () => {
+  it("drops the meter, names the figure and shows Empty while the value is null", async () => {
     const { host } = renderThemed(
       <Gauge value={null} intro="none">
         <GaugeChart.Track />
@@ -201,6 +228,8 @@ describe("the meter", () => {
       </Gauge>
     );
     expect(host.querySelector('[role="meter"]')).toBeNull();
+    // An empty gauge among others still says which reading is missing.
+    await expect.element(page.getByRole("figure", { name: "Forbruk denne timen" })).toBeInTheDocument();
     await expect.element(page.getByText("Ingen data for perioden")).toBeVisible();
   });
 });
@@ -266,10 +295,7 @@ function gapAt(host: HTMLElement, notches: readonly SVGPathElement[], step: numb
   const [first] = notches;
   if (first === undefined) throw new Error("no notch");
   const radius = 0.92;
-  const inside = (degrees: number): boolean => {
-    const a = (degrees * Math.PI) / 180;
-    return first.isPointInFill(new DOMPoint(radius * Math.sin(a), -radius * Math.cos(a)));
-  };
+  const inside = (degrees: number): boolean => first.isPointInFill(dialPoint(degrees, radius));
   let low = 0;
   let high = step;
   for (let round = 0; round < 40; round += 1) {
@@ -328,18 +354,14 @@ describe("the outside-in layout", () => {
     const { host } = renderThemed(
       <Gauge value={3} intro="none">
         <GaugeChart.Zone from={4} to={9} color="chart-sentiment-negative" />
-        <GaugeChart.Zone from={6} to={9} color="chart-seq-5" />
+        <GaugeChart.Zone from={6} to={9} color="chart-2" />
       </Gauge>
     );
     const bands = [...host.querySelectorAll<SVGPathElement>('[data-slot="gauge-chart-zone-band"]')];
     expect(bands).toHaveLength(1);
     const [band] = bands;
-    const at = (degrees: number) => {
-      const a = (degrees * Math.PI) / 180;
-      return new DOMPoint(0.98 * Math.sin(a), -0.98 * Math.cos(a));
-    };
     // 4 kWh sits at 81°, and the band runs from just past it to 135°, the sweep's end.
-    expect([78, 84, 130, 140].map((degrees) => band?.isPointInFill(at(degrees)))).toEqual([
+    expect([78, 84, 130, 140].map((degrees) => band?.isPointInFill(dialPoint(degrees, 0.98)))).toEqual([
       false,
       true,
       true,
@@ -358,12 +380,6 @@ type Frame = {
   readonly ring: boolean | null;
   readonly sector: number;
 };
-
-/** The point at an angle and a radius, in a dial layer's own units. */
-function dialPoint(degrees: number, radius: number): DOMPoint {
-  const a = (degrees * Math.PI) / 180;
-  return new DOMPoint(radius * Math.sin(a), -radius * Math.cos(a));
-}
 
 /**
  * Whether a band ends on an angle: the browser's fill test finds it half a degree before the angle
@@ -400,18 +416,7 @@ function readFrame(host: HTMLElement): Frame {
     lit: litCount(host),
     ticks: passedTicks(host),
     dots: host.querySelectorAll('[data-slot="gauge-chart-dot"][data-lit]').length,
-    ring:
-      angle + 135 > 1
-        ? RING_RADII.every((radius) =>
-            endsOn(
-              host.querySelector<SVGPathElement>(
-                '[data-slot="gauge-chart-progress-ring"] [data-part="value"]'
-              ),
-              angle,
-              radius
-            )
-          )
-        : null,
+    ring: angle + 135 > 1 ? RING_RADII.every((radius) => endsOn(ringValue(host), angle, radius)) : null,
     sector: Number.parseFloat(sector?.style.getPropertyValue("--_sector-span") ?? ""),
   };
 }
@@ -475,12 +480,16 @@ describe("motion", () => {
     expectOneValue(frames, offsets);
   });
 
-  it("bends the sweep when a value lands mid-sweep, from where the dial shows, and never passes it", () => {
-    // The page's frames and clock are fake for this case, so the loop's own seam, the browser's
+  describe("on a faked 16 ms clock", () => {
+    // The page's frames and clock are fake here, so the loop's own seam, the browser's
     // requestAnimationFrame and performance.now, runs frame by frame at 16 ms, however slow the
     // runner: 7 frames into the 480 ms update the needle is mid-sweep on every machine.
-    vi.useFakeTimers({ toFake: ["requestAnimationFrame", "cancelAnimationFrame", "performance"] });
-    try {
+    beforeEach(fakeFrames);
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it("bends the sweep when a value lands mid-sweep, from where the dial shows, and never passes it", () => {
       const { host, rerender } = renderThemed(
         <Gauge value={1} intro="none">
           {ALL_MARKS}
@@ -518,9 +527,7 @@ describe("motion", () => {
       expect(frames.at(-1)?.angle).toBe(angleOf(0.5));
       for (const frame of frames) expect(frame.angle).toBeGreaterThanOrEqual(angleOf(0.5));
       expectOneValue([...rising, ...frames], offsets);
-    } finally {
-      vi.useRealTimers();
-    }
+    });
   });
 
   it("draws the reading at rest at once under reduced motion", async () => {
@@ -538,18 +545,16 @@ describe("motion", () => {
 describe("the centre", () => {
   it("prints a price's number large and its unit small, breaking the unit only before its VAT basis", async () => {
     const { host } = renderThemed(
-      <LocaleProvider locale="nb-NO">
-        <GaugeChart.Root
-          value={142.3}
-          max={300}
-          valueFormat={{ preset: "unit-price", currency: "NOK", minor: true, vat: "included" }}
-          data-intro="none"
-          aria-label="Spotpris">
-          <GaugeChart.Center>
-            <GaugeChart.CenterValue />
-          </GaugeChart.Center>
-        </GaugeChart.Root>
-      </LocaleProvider>
+      <Gauge
+        value={142.3}
+        max={300}
+        format={{ preset: "unit-price", currency: "NOK", minor: true, vat: "included" }}
+        intro="none"
+        label="Spotpris">
+        <GaugeChart.Center>
+          <GaugeChart.CenterValue />
+        </GaugeChart.Center>
+      </Gauge>
     );
     await nextFrames(1);
     const value = host.querySelector('[data-slot="gauge-chart-center-value"]');
@@ -577,26 +582,24 @@ describe("a sweep that changes", () => {
    * sector end on the needle's angle.
    */
   function marksOn(host: HTMLElement, end: number) {
-    const angle = needle(host);
-    const sector = host.querySelector<HTMLElement>('[data-slot="gauge-chart-sector"]');
-    const sectorEnd = -135 + Number.parseFloat(sector?.style.getPropertyValue("--_sector-span") ?? "NaN");
+    const { angle, sector, ring } = readFrame(host);
+    const sectorEnd = -135 + sector;
     const fill = host.querySelector<SVGPathElement>('[data-slot="gauge-chart-fill"] [data-part="solid"]');
-    const ring = host.querySelector<SVGPathElement>(
-      '[data-slot="gauge-chart-progress-ring"] [data-part="value"]'
-    );
-    // A share past a degree of the sweep, so the band's one-pixel floor is not what draws.
-    const drawn = angle + 135 > 1;
     return {
       angle,
       share: (angle + 135) / (end + 135),
       inside: angle >= -135 - 1e-6 && angle <= end + 1e-6 && sectorEnd <= end + 1e-3,
+      // Past a degree of the sweep the ring reads, where the band's one-pixel floor no longer draws.
       agree:
         Math.abs(sectorEnd - angle) < 1e-3 &&
-        (!drawn ||
-          ([0.93, 0.95, 0.97].every((radius) => endsOn(fill, angle, radius)) &&
-            RING_RADII.every((radius) => endsOn(ring, angle, radius)))),
+        (ring === null || (ring && [0.93, 0.95, 0.97].every((radius) => endsOn(fill, angle, radius)))),
     };
   }
+
+  beforeEach(fakeFrames);
+  afterEach(() => {
+    vi.useRealTimers();
+  });
 
   /** Run `count` frames of 16 ms on the faked clock, reading the marks on each. */
   function framesOn(host: HTMLElement, end: number, count: number) {
@@ -612,68 +615,58 @@ describe("a sweep that changes", () => {
   ])(
     "snaps every mark inside the new sweep, at the same share and agreeing in every frame: %s",
     (_, value, end, expected) => {
-      vi.useFakeTimers({ toFake: ["requestAnimationFrame", "cancelAnimationFrame", "performance"] });
-      try {
-        const { host, rerender } = renderThemed(
-          <Gauge value={value} intro="none">
-            {SWEEP_MARKS}
-          </Gauge>
-        );
-        rerender(
-          <Gauge value={value} intro="none" endAngle={end}>
-            {SWEEP_MARKS}
-          </Gauge>
-        );
-        for (const frame of [marksOn(host, end), ...framesOn(host, end, 40)]) {
-          expect(frame.angle).toBeCloseTo(expected, 6);
-          expect(frame.inside).toBe(true);
-          expect(frame.agree).toBe(true);
-        }
-      } finally {
-        vi.useRealTimers();
+      const { host, rerender } = renderThemed(
+        <Gauge value={value} intro="none">
+          {SWEEP_MARKS}
+        </Gauge>
+      );
+      rerender(
+        <Gauge value={value} intro="none" endAngle={end}>
+          {SWEEP_MARKS}
+        </Gauge>
+      );
+      for (const frame of [marksOn(host, end), ...framesOn(host, end, 40)]) {
+        expect(frame.angle).toBeCloseTo(expected, 6);
+        expect(frame.inside).toBe(true);
+        expect(frame.agree).toBe(true);
       }
     }
   );
 
   it("keeps the share continuous when the sweep changes mid-sweep, and carries on to rest", () => {
-    vi.useFakeTimers({ toFake: ["requestAnimationFrame", "cancelAnimationFrame", "performance"] });
-    try {
-      const { host, rerender } = renderThemed(
-        <Gauge value={1} intro="none">
-          {SWEEP_MARKS}
-        </Gauge>
-      );
-      rerender(
-        <Gauge value={4.5} intro="none">
-          {SWEEP_MARKS}
-        </Gauge>
-      );
-      const rising = framesOn(host, 135, 5);
-      const share = rising.at(-1)?.share ?? Number.NaN;
-      // Mid-sweep: past 1 kWh's 0.2 of the domain, short of 4.5 kWh's 0.9.
-      expect(share).toBeGreaterThan(0.2);
-      expect(share).toBeLessThan(0.9);
-      rerender(
-        <Gauge value={4.5} intro="none" endAngle={45}>
-          {SWEEP_MARKS}
-        </Gauge>
-      );
-      // The commit draws the same share on the new sweep: the needle moves, the reading does not.
-      const atChange = marksOn(host, 45);
-      expect(atChange.share).toBeCloseTo(share, 4);
-      expect(atChange.agree).toBe(true);
-      const after = framesOn(host, 45, 61);
-      // The sweep carries on up at its own pace, never back, and rests on 0.9 of the new sweep.
-      expect(after[0]?.share).toBeGreaterThan(share);
-      for (const [index, frame] of after.entries()) {
-        expect(frame.inside).toBe(true);
-        expect(frame.agree).toBe(true);
-        expect(frame.share).toBeGreaterThanOrEqual((after[index - 1] ?? atChange).share - 1e-9);
-      }
-      expect(after.at(-1)?.angle).toBeCloseTo(-135 + 0.9 * 180, 6);
-    } finally {
-      vi.useRealTimers();
+    const { host, rerender } = renderThemed(
+      <Gauge value={1} intro="none">
+        {SWEEP_MARKS}
+      </Gauge>
+    );
+    rerender(
+      <Gauge value={4.5} intro="none">
+        {SWEEP_MARKS}
+      </Gauge>
+    );
+    const rising = framesOn(host, 135, 5);
+    const share = rising.at(-1)?.share ?? Number.NaN;
+    // Mid-sweep: past 1 kWh's 0.2 of the domain, short of 4.5 kWh's 0.9.
+    expect(share).toBeGreaterThan(0.2);
+    expect(share).toBeLessThan(0.9);
+    rerender(
+      <Gauge value={4.5} intro="none" endAngle={45}>
+        {SWEEP_MARKS}
+      </Gauge>
+    );
+    // The commit draws the same share on the new sweep: the needle moves, the reading does not.
+    const atChange = marksOn(host, 45);
+    expect(atChange.share).toBeCloseTo(share, 4);
+    expect(atChange.agree).toBe(true);
+    const after = framesOn(host, 45, 61);
+    // The sweep carries on up at its own pace, never back, and rests on 0.9 of the new sweep.
+    expect(after[0]?.share).toBeGreaterThan(share);
+    for (const [index, frame] of after.entries()) {
+      expect(frame.inside).toBe(true);
+      expect(frame.agree).toBe(true);
+      expect(frame.share).toBeGreaterThanOrEqual((after[index - 1] ?? atChange).share - 1e-9);
     }
+    expect(after.at(-1)?.angle).toBeCloseTo(-135 + 0.9 * 180, 6);
   });
 });
 
@@ -694,10 +687,7 @@ describe("one value, one angle", () => {
     // Across the band from 0.9 to the rim, inside the quarter of its width its corners round in:
     // the end is a radial line on the angle, not a round cap that ends there on one radius only.
     for (const radius of [0.93, 0.95, 0.97]) expect(endsOn(fill, angle, radius)).toBe(true);
-    const ring = host.querySelector<SVGPathElement>(
-      '[data-slot="gauge-chart-progress-ring"] [data-part="value"]'
-    );
-    for (const radius of RING_RADII) expect(endsOn(ring, angle, radius)).toBe(true);
+    for (const radius of RING_RADII) expect(endsOn(ringValue(host), angle, radius)).toBe(true);
   });
 });
 
@@ -709,10 +699,7 @@ describe("the layers without a track", () => {
       </Gauge>
     );
     await nextFrames(1);
-    const ring = host.querySelector<SVGPathElement>(
-      '[data-slot="gauge-chart-progress-ring"] [data-part="value"]'
-    );
-    for (const radius of RING_RADII) expect(endsOn(ring, angleOf(3.9), radius)).toBe(true);
+    for (const radius of RING_RADII) expect(endsOn(ringValue(host), angleOf(3.9), radius)).toBe(true);
   });
 });
 

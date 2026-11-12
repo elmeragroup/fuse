@@ -365,7 +365,7 @@ export type ChartFractionDigits = {
 };
 
 // @beta
-export type ChartGaugeRole = ChartCategoricalRole | ChartSequentialRole | ChartSentimentRole;
+export type ChartGaugeRole = ChartCategoricalRole | ChartSentimentRole;
 
 // @beta
 function ChartGlow(input: ChartGlowProps): ReactElement;
@@ -1298,9 +1298,7 @@ export type GaugeChartFillProps = ChartLayerProps & {
 function GaugeChartGlow(input: GaugeChartGlowProps): ReactElement;
 
 // @beta
-export type GaugeChartGlowProps = ChartLayerProps & {
-    color?: ChartGaugeRole;
-};
+export type GaugeChartGlowProps = GaugeChartFillProps;
 
 // @beta
 function GaugeChartNeedle(input: GaugeChartNeedleProps): ReactElement;

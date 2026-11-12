@@ -14,18 +14,8 @@ import { ringDash, ringFrameOf } from "./chart-ring-frame";
 import type { RingPlace } from "./chart-ring-frame";
 import type { ChartLayerProps } from "./chart-types";
 import { arcPath, ringTrack } from "./layout/arc-path";
-import { CHART_SPRINGS } from "./layout/motion";
 import { viewBoxOf } from "./layout/polar-angle";
-import { springEasing } from "./layout/spring";
-
-/** A ring track's scale-out on the Motion table's 100/15 spring, sampled once. */
-const GROW = springEasing(CHART_SPRINGS.grow);
-
-/** The scale-out's duration, which the Track's layer carries for the stylesheet. */
-const TRACK_DURATION = `${String(GROW.duration)}ms`;
-
-/** The scale-out's easing. */
-const TRACK_EASING = GROW.easing;
+import { TRACK_GROW, TRACK_GROW_DURATION } from "./layout/polar-motion";
 
 /**
  * Props for `PieChart.Track`, a closed part.
@@ -129,8 +119,8 @@ export function PieChartTrack({ className, style }: PieChartTrackProps): ReactEl
       style={{
         "--_spring-duration": POP_DURATION,
         "--_spring-easing": POP_EASING,
-        "--_grow-duration": TRACK_DURATION,
-        "--_grow-easing": TRACK_EASING,
+        "--_grow-duration": TRACK_GROW_DURATION,
+        "--_grow-easing": TRACK_GROW.easing,
         ...style,
       }}>
       {pie === null ? null : <PieTrack pie={pie} polar={polar} />}

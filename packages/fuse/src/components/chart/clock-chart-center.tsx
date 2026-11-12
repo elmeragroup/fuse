@@ -19,7 +19,7 @@ import { fallbackSlot, readingAt } from "./chart-series-readout";
 import { slotLabel } from "./chart-text";
 import type { ChartFallback, ChartLayerProps, ValueFormat } from "./chart-types";
 import { ChartValueRun } from "./chart-value-run";
-import { formatValue, formatValueRun } from "./format/value-format";
+import { formatValueRun } from "./format/value-format";
 import { assertKnownKey } from "./layout/errors";
 
 /**
@@ -78,8 +78,6 @@ export function ClockChartActiveValue({
   const reading = slot === null ? undefined : readingAt(clock.text, dataKey, slot);
   const shownFormat = format ?? clock.text.config[dataKey]?.format ?? {};
   const label =
-    reading?.kind === "reading" ? formatValue(clock.text.locale, reading.value, shownFormat, "full") : null;
-  const run =
     reading?.kind === "reading"
       ? formatValueRun(clock.text.locale, reading.value, shownFormat, "full")
       : null;
@@ -90,10 +88,7 @@ export function ClockChartActiveValue({
       className={className}
       style={style}>
       {label === null ? null : !exposed ? (
-        <ChartValueRun
-          run={run ?? { before: "", number: label.text, after: "" }}
-          number={run?.number ?? label.text}
-        />
+        <ChartValueRun run={label} number={label.number} />
       ) : label.text === label.spoken ? (
         label.text
       ) : (

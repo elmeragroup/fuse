@@ -223,7 +223,7 @@ function SeriesLayer({
     [series, clock, curve]
   );
   const { ref, place, node: anchor, drawn: drawnFrame } = usePolarMark(polar.motion, writeLook(draw), look);
-  const commit = usePolarCommit(polar, anchor);
+  const commit = usePolarCommit(polar.commit, anchor);
   useClockPlacement(clock, series, look, { commit, place, drawn: drawnFrame });
   const prefix = useSvgIdPrefix("clock-chart-series");
   const glow = series === undefined ? null : valueGlow(paintOf(clock, series), prefix, halo);

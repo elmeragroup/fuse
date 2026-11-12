@@ -127,6 +127,16 @@ export function pointerAngle(dx: number, dy: number): number {
 }
 
 /**
+ * Whether a sweep closes on itself, so marks evenly spaced along it repeat its start at its end.
+ *
+ * @param sweep - The sweep.
+ * @returns Whether it runs a whole turn.
+ */
+export function isFullTurn(sweep: Sweep): boolean {
+  return sweep.width >= 360;
+}
+
+/**
  * How far an angle lies into a sweep, measured from the sweep's start in the sweep's own direction,
  * so a −135 to 135 gauge and a counter-clockwise sweep need no special case.
  *
@@ -138,7 +148,7 @@ export function angleInSweep(angle: number, sweep: Sweep): number | null {
   const raw = (angle - sweep.start) * sweep.direction;
   const offset = turnOf(raw);
   // A full turn holds every angle, and its own start at its end too.
-  if (sweep.width >= 360) return offset;
+  if (isFullTurn(sweep)) return offset;
   return offset <= sweep.width ? offset : null;
 }
 

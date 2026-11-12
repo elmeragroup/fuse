@@ -15,7 +15,8 @@ import type { RefCallback } from "react";
 
 import { SAME_PLOT } from "./chart-motion";
 import type { ChartMotion, MarkValues, Placement } from "./chart-motion";
-import type { PolarContextValue, PolarKernel, PolarUpdate } from "./chart-polar-context";
+import type { PolarUpdate } from "./chart-polar-context";
+import type { ChartStore } from "./chart-store";
 import { cssTime, DEFAULT_PACE, introDelay, introTiming } from "./layout/polar-motion";
 import type { IntroPace, PolarIntro } from "./layout/polar-motion";
 import { sameItems } from "./layout/same-items";
@@ -85,13 +86,19 @@ export function usePolarMark<T extends Element, L>(
 }
 
 /**
- * What a polar mark's commits read from its Root: the commit, whether the Root plays an entrance,
- * the family whose entrance paces it, and the Root's store, hidden flag and figure. A polar Root's
- * context holds them all, and a gauge's Root, which has no listbox, hands them on its own.
+ * What a polar mark's commits read from its Root's lifecycle: the commit, whether the Root plays an
+ * entrance, the family whose entrance paces it, and the Root's store, hidden flag and figure.
  */
-export type PolarCommitSource = Pick<PolarContextValue, "update" | "entrance"> & {
-  readonly model: { readonly family: PolarIntro };
-  readonly kernel: Pick<PolarKernel, "store" | "hidden" | "root">;
+export type PolarCommitSource = {
+  readonly update: PolarUpdate;
+  /** Whether the Root plays an entrance: `data-intro` is not "none" and the reader allows motion. */
+  readonly entrance: boolean;
+  readonly family: PolarIntro;
+  readonly store: ChartStore;
+  /** Whether React Activity hides the Root, as its effects are torn down. */
+  readonly hidden: () => boolean;
+  /** The Root's figure, or null before it mounts. */
+  readonly root: () => HTMLElement | null;
 };
 
 /**
@@ -105,7 +112,7 @@ export type PolarCommitSource = Pick<PolarContextValue, "update" | "entrance"> &
  * nothing, as every mark does when React Activity shows the chart again, or that mounts later with
  * no new data, snaps to rest, as the cartesian marks do, so nothing grows a second time.
  *
- * @param polar - The mark's Root.
+ * @param polar - The mark's Root's lifecycle.
  * @param anchor - The mark's node, which inherits the figure's pace. The marks place their entrance
  *   before the Root's figure ref attaches, so the entrance reads its pace through the mark.
  * @returns A function the mark's layout effect calls once per draw, with the mark's place in its
@@ -122,13 +129,13 @@ export function usePolarCommit(
   via?: { readonly from: MarkValues; readonly to: MarkValues }
 ) => Placement {
   const last = useRef<PolarUpdate | null>(null);
-  const { update, entrance, kernel, model } = polar;
+  const { update, entrance, store, hidden, root, family } = polar;
   // The commit the mark first mounted in, and whether its Root was hidden then. A mark is new only
   // in the data update it was born in, born while its Root showed, and drawn while it shows. React
   // Activity runs the Root's cleanup when it hides the chart and the marks' layout effects before
   // the Root's when it shows it again, so every mark draws a show while the Root still reads
   // hidden. A Strict Mode rehearsal of a mark runs no Root effect, so it reads shown.
-  const [born] = useState(() => ({ update, hidden: kernel.hidden() }));
+  const [born] = useState(() => ({ update, hidden: hidden() }));
   // A mark that unmounts forgets what it drew, so a remount, as Strict Mode rehearses one, draws
   // its first commit again.
   useLayoutEffect(
@@ -143,22 +150,22 @@ export function usePolarCommit(
     (index, from, via) => {
       const previous = last.current;
       last.current = update;
-      const phase = kernel.store.get().phase;
+      const phase = store.get().phase;
       // While Root's entrance waits, every commit places the entrance again under its numbers, as a
       // bar does, since the held loop would snap a move or a settle to rest.
       const waiting = entrance && phase === "waiting";
       if (previous === null && phase === "started") {
-        const fresh = update.kind === "data" && born.update === update && !born.hidden && !kernel.hidden();
+        const fresh = update.kind === "data" && born.update === update && !born.hidden && !hidden();
         return fresh ? { kind: "enter", from, delay: 0 } : { kind: "snap" };
       }
       if (previous === null || waiting) {
         if (!entrance) return { kind: "snap" };
-        const pace = introPace(kernel.root() ?? anchor(), update);
+        const pace = introPace(root() ?? anchor(), update);
         return {
           kind: "enter",
           from,
-          delay: introDelay(model.family, index, pace),
-          ...introTiming(model.family, pace),
+          delay: introDelay(family, index, pace),
+          ...introTiming(family, pace),
         };
       }
       // The dial scales with its cell, so a commit with no new data leaves the numbers in place.
@@ -166,7 +173,7 @@ export function usePolarCommit(
       // A clock that changes its slot count moves along the route that pairs its old slots with its new.
       return via === undefined ? { kind: "move" } : { kind: "move", via };
     },
-    [update, entrance, kernel, model, anchor, born]
+    [update, entrance, store, hidden, root, family, anchor, born]
   );
 }
 

@@ -8,7 +8,7 @@
  */
 import { cubicBezier } from "./layout/ease";
 import { momentumSpring, spanAround, springAt, springProgress } from "./layout/momentum";
-import type { MomentumSpring, MomentumPoint } from "./layout/momentum";
+import type { MomentumMove, MomentumPoint, MomentumSpring, NumberSpring } from "./layout/momentum";
 import { CHART_UPDATE_CURVE, CHART_UPDATE_MS } from "./layout/motion";
 import { sameItems } from "./layout/same-items";
 
@@ -338,17 +338,20 @@ type Joined = {
 const ease = cubicBezier(CHART_UPDATE_CURVE);
 
 /** What a momentum move carries from the tween it replaces: where, when, and on which spring. */
-type Carried = {
-  readonly from: MarkValues;
-  readonly at: number;
-  /** How long the spring takes to settle, in milliseconds. */
-  readonly duration: number;
-  readonly spring: MomentumSpring;
-};
+type Carried = MomentumMove & { readonly from: MarkValues; readonly at: number };
 
 /** How long a tween runs, in milliseconds. */
 function durationOf(tween: Tween): number {
   return tween.duration ?? CHART_UPDATE_MS;
+}
+
+/**
+ * A tween's eased share of the way at a progress through its duration: its spring's, its steady
+ * pace, or the update curve.
+ */
+function easedOf(tween: Tween, progress: number): number {
+  if (tween.spring !== undefined) return springProgress(progress);
+  return tween.curve === "linear" ? progress : ease(progress);
 }
 
 /**
@@ -359,10 +362,7 @@ function tweenAt(tween: Tween, elapsed: number): MomentumPoint {
   const duration = durationOf(tween);
   const t = Math.min(duration, Math.max(0, elapsed));
   if (tween.spring !== undefined) return springAt(tween.spring, tween.from, tween.to, t);
-  const easedAt = (at: number): number => {
-    const progress = Math.min(1, Math.max(0, at / duration));
-    return tween.curve === "linear" ? progress : ease(progress);
-  };
+  const easedAt = (at: number): number => easedOf(tween, Math.min(1, Math.max(0, at / duration)));
   // The curve's slope by a central difference a millisecond either side, one-sided at its ends.
   const before = Math.max(0, t - 1);
   const after = Math.min(duration, t + 1);
@@ -391,12 +391,43 @@ function restOf(mark: Mark): MarkValues {
  * with more numbers than axes repeats its declaration, as a path declares one vertex's axes for all.
  */
 function rescaled(values: MarkValues, axes: readonly ValueAxis[], scale: PlotScale): MarkValues {
+  return values.map((value, index) => mapped(value, axisAt(axes, index), scale));
+}
+
+/** What a mark's number at `index` measures, by its declared axes, repeated along its numbers. */
+function axisAt(axes: readonly ValueAxis[], index: number): ValueAxis {
+  return axes.length === 0 ? "size" : (axes[index % axes.length] ?? "size");
+}
+
+/** Map one number that measures `axis` into a resized box. */
+function mapped(value: number, axis: ValueAxis, scale: PlotScale): number {
   const { slot } = scale;
-  return values.map((value, index) => {
-    const axis = axes.length === 0 ? "size" : (axes[index % axes.length] ?? "size");
-    if (axis === "size") return value;
-    return slot?.axis === axis ? slot.to + (value - slot.from) * slot.ratio : value * scale[axis];
+  if (axis === "size") return value;
+  return slot?.axis === axis ? slot.to + (value - slot.from) * slot.ratio : value * scale[axis];
+}
+
+/**
+ * Map a running tween into a resized box: its start, target and rest, and a momentum spring's
+ * velocity and span, which measure in the same units and so take the same map, its velocity by the
+ * map's slope. The spring's frequency is per millisecond and stays, so the mapped spring draws in
+ * every frame what the old one drew, mapped.
+ */
+function rescaledTween(tween: Tween, axes: readonly ValueAxis[], scale: PlotScale): Tween {
+  const moved = { ...tween, from: rescaled(tween.from, axes, scale), to: rescaled(tween.to, axes, scale) };
+  const rested = tween.rest === undefined ? moved : { ...moved, rest: rescaled(tween.rest, axes, scale) };
+  if (tween.spring === undefined) return rested;
+  const spring = tween.spring.map((number, index): NumberSpring => {
+    const axis = axisAt(axes, index);
+    const slope = mapped(1, axis, scale) - mapped(0, axis, scale);
+    const low = mapped(number.span[0], axis, scale);
+    const high = mapped(number.span[1], axis, scale);
+    return {
+      ...number,
+      velocity: number.velocity * slope,
+      span: [Math.min(low, high), Math.max(low, high)],
+    };
   });
+  return { ...rested, spring };
 }
 
 /** Whether two numbers agree to within float error, as a mapped target and a fresh one do. */
@@ -588,15 +619,7 @@ export function createChartMotion(
         if (tween.start === Number.POSITIVE_INFINITY) mark.tween = tween = { ...tween, start: time };
         const elapsed = time - tween.start - tween.delay;
         const progress = Math.min(1, Math.max(0, elapsed / durationOf(tween)));
-        mark.eased =
-          progress >= 1
-            ? 1
-            : tween.spring !== undefined
-              ? // The spring's share of the way from rest, which a resize's retarget reads.
-                springProgress(progress)
-              : tween.curve === "linear"
-                ? progress
-                : ease(progress);
+        mark.eased = progress >= 1 ? 1 : easedOf(tween, progress);
         mark.drawnAt = time;
         // The last frame writes the target itself, so the DOM ends on the numbers React rendered.
         if (progress >= 1) mark.drawn = tween.rest ?? tween.to;
@@ -671,7 +694,12 @@ export function createChartMotion(
     if (velocity.every((speed) => speed === 0)) return null;
     const from = [...mark.drawn];
     const spans = target.map((to, index) =>
-      spanAround(tween.from[index] ?? to, tween.to[index] ?? to, from[index] ?? to, tween.spring?.span[index])
+      spanAround(
+        tween.from[index] ?? to,
+        tween.to[index] ?? to,
+        from[index] ?? to,
+        tween.spring?.[index]?.span
+      )
     );
     return { from, at, ...momentumSpring({ from, to: target, velocity, spans }) };
   };
@@ -758,12 +786,7 @@ export function createChartMotion(
             if (running.tween === null || running.owner !== owner) continue;
             const { axes: kinds, tween } = running;
             const { scale } = placement;
-            const from = rescaled(tween.from, kinds, scale);
-            const to = rescaled(tween.to, kinds, scale);
-            running.tween =
-              tween.rest === undefined
-                ? { ...tween, from, to }
-                : { ...tween, from, to, rest: rescaled(tween.rest, kinds, scale) };
+            running.tween = rescaledTween(tween, kinds, scale);
             running.drawn = rescaled(running.drawn, kinds, scale);
             running.write(running.drawn);
           }

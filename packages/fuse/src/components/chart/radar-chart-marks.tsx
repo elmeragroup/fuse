@@ -147,7 +147,7 @@ function useSeriesLayer(polar: PolarContextValue, layer: SeriesLayer): ReactElem
   const spokes = useMemo(() => spokeStatesOf(radar, series), [radar, series]);
   const look = useMemo((): SeriesLook => ({ spokes, paths: layer.paths }), [spokes, layer.paths]);
   const { ref, place, node: anchor } = usePolarMark(polar.motion, writeSeries, look);
-  const commit = usePolarCommit(polar, anchor);
+  const commit = usePolarCommit(polar.commit, anchor);
   const live = useRef<SVGGElement>(null);
   const outgoing = useRef<SVGGElement>(null);
   const drawnCount = useRef<number | null>(null);

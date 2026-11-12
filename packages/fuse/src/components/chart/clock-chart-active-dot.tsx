@@ -170,7 +170,7 @@ export function ClockChartActiveDot({
     [series, dataKey, motion, follow, active, drawn, index]
   );
   const { ref, place, node: anchor, drawn: drawnFrame } = usePolarMark(motion, drawActiveDot, look);
-  const commit = usePolarCommit(polar, anchor);
+  const commit = usePolarCommit(polar.commit, anchor);
   useClockPlacement(clock, series, look, { commit, place, drawn: drawnFrame });
   useChartFollower("ClockChart.ActiveDot", (current: ActiveSlot) => {
     const group = dot.current;
