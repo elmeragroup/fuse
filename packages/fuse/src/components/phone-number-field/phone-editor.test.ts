@@ -67,9 +67,13 @@ function keyAt(state: PhoneEditorState, caret: number, key: string): PhoneEditor
   });
 }
 
-/** A controlled parent that takes every proposal back as its `value`. */
+/**
+ * A controlled parent that takes every proposal back as its `value`. A proposal that repeats the
+ * parent's value calls nothing, so the parent keeps that value, which the state already shows.
+ */
 function echo(state: PhoneEditorState, props: PhoneEditorProps = {}): PhoneEditorState {
-  return PhoneEditor.reconcile(state, { ...props, value: PhoneEditor.proposedValue(state) ?? "" });
+  const value = PhoneEditor.proposedValue(state) ?? PhoneEditor.view(state).outputValue;
+  return PhoneEditor.reconcile(state, { ...props, value });
 }
 
 /** Where the caret sits after an edit: the editor's selection, else where the browser left it. */

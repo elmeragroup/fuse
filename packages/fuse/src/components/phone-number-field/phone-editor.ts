@@ -552,12 +552,27 @@ export function view(state: PhoneEditorState): PhoneEditorView {
 }
 
 /**
- * The output value of the latest proposal, for `onChange`. A transition's state may not show
- * its proposal, since a controlled field shows it only once the parent echoes it.
+ * The output value of the latest proposal, for `onChange`, when it differs from the value the
+ * parent holds: the `value` prop of a controlled field, compared as given, or the output an
+ * uncontrolled field showed before the proposal. A transition's state may not show its
+ * proposal, since a controlled field shows it only once the parent echoes it.
+ *
+ * One rule covers every proposal, edit, paste, country pick and the hydration edit alike,
+ * because it is a rule about the output: a call that repeats the parent's value tells it
+ * nothing. Deleting a separator re-formats the display and proposes the same number, so it
+ * calls nothing, and its caret still shows from the state. A parent that stores another form of
+ * the number, such as national digits under `outputFormat="e164"`, holds a value that differs
+ * from every proposal and so hears each one.
  *
  * @param state - The state a transition returned.
- * @returns The latest proposal's output value, or null when the state holds no proposal.
+ * @returns The latest proposal's output value, or null when the state holds no proposal or the
+ * proposal's output equals the value the parent holds.
  */
 export function proposedValue(state: PhoneEditorState): string | null {
-  return state[RECORD].proposal?.values.outputValue ?? null;
+  const { proposal, value, accepted } = state[RECORD];
+  if (!proposal) return null;
+  // `propose` made the accepted snapshot the one shown before the proposal, so without a
+  // `value` it holds the output already shown.
+  const held = value ?? accepted.values.outputValue;
+  return proposal.values.outputValue === held ? null : proposal.values.outputValue;
 }

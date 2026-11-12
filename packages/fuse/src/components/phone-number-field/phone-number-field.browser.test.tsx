@@ -492,6 +492,92 @@ describe("PhoneNumberField caret", () => {
   );
 });
 
+describe("PhoneNumberField onChange", () => {
+  /** Puts the caret after "41 " in "41 23 45 67" and deletes the separator before it. */
+  async function deleteFirstSeparator(input: HTMLInputElement) {
+    input.setSelectionRange(3, 3);
+    await userEvent.keyboard("{Backspace}");
+  }
+
+  it("calls nothing when deleting a separator keeps a controlled number, and keeps the caret", async () => {
+    const change = vi.fn<(value: string) => void>();
+    function Controlled() {
+      const [value, setValue] = useState("");
+      return (
+        <PhoneNumberField
+          label="Mobile"
+          value={value}
+          onChange={(next) => {
+            change(next);
+            setValue(next);
+          }}
+          formatOnType
+        />
+      );
+    }
+    renderField(<Controlled />);
+    const input = phoneInput();
+    input.focus();
+    for (const key of "41234567") await userEvent.keyboard(key);
+    await expect.element(input).toHaveValue("41 23 45 67");
+    expect(change).toHaveBeenLastCalledWith("+4741234567");
+    change.mockClear();
+
+    await deleteFirstSeparator(input);
+    await expect.element(input).toHaveValue("41 23 45 67");
+    expect([input.selectionStart, input.selectionEnd]).toEqual([2, 2]);
+    expect(change).not.toHaveBeenCalled();
+  });
+
+  it("calls nothing when deleting a separator keeps an uncontrolled number, and keeps the caret", async () => {
+    const change = vi.fn<(value: string) => void>();
+    renderField(
+      <form aria-label="Phone form">
+        <PhoneNumberField label="Mobile" name="phone" onChange={change} formatOnType />
+      </form>
+    );
+    const input = phoneInput();
+    input.focus();
+    for (const key of "41234567") await userEvent.keyboard(key);
+    await expect.element(input).toHaveValue("41 23 45 67");
+    change.mockClear();
+
+    await deleteFirstSeparator(input);
+    await expect.element(input).toHaveValue("41 23 45 67");
+    expect([input.selectionStart, input.selectionEnd]).toEqual([2, 2]);
+    expect(phoneSubmission().get("phone")).toBe("+4741234567");
+    expect(change).not.toHaveBeenCalled();
+  });
+
+  it("still calls a parent that stores national digits when an edit keeps the number", async () => {
+    const change = vi.fn<(value: string) => void>();
+    function NationalDigits() {
+      // The parent keeps the national digits, not the E.164 value the field proposes.
+      const [value, setValue] = useState("41234567");
+      return (
+        <PhoneNumberField
+          label="Mobile"
+          value={value}
+          onChange={(next) => {
+            change(next);
+            setValue(next.replace(/^\+47/, ""));
+          }}
+          formatOnType
+        />
+      );
+    }
+    renderField(<NationalDigits />);
+    const input = phoneInput();
+    await expect.element(input).toHaveValue("41 23 45 67");
+    input.focus();
+
+    await deleteFirstSeparator(input);
+    await expect.element(input).toHaveValue("41 23 45 67");
+    expect([input.selectionStart, input.selectionEnd]).toEqual([2, 2]);
+    expect(change).toHaveBeenCalledExactlyOnceWith("+4741234567");
+  });
+});
+
 // Never settles: its resolver is dropped unused.
 const pending = new Promise<never>((resolve) => void resolve);
 
