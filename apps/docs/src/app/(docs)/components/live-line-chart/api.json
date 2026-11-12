@@ -80,7 +80,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": "false",
-          "description": "Holds the window where it is, so a reader can study it, while the readings keep arriving. Once it runs again the window catches up with the clock and the readings it held back.",
+          "description": "Holds the window where it is, so a reader can study it, while the readings keep arriving. The live dot's ping stops while it holds. Once it runs again the window draws the clock's window at once, with the readings it held back.",
           "required": false
         },
         {

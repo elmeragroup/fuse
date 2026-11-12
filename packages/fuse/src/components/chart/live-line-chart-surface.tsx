@@ -11,7 +11,17 @@ import type { FocusEvent, KeyboardEvent, PointerEvent, ReactElement } from "reac
 import { writeAttribute, writeStyle } from "./chart-dom";
 import { listboxProps, stepOf, SurfaceName, useOptionHandoff } from "./chart-listbox";
 import type { LiveClock, LiveFrame } from "./layout/live-clock";
-import { indexAt, liveValueAt, liveX, liveY, nearestIndex, stepIndex, walkRange } from "./layout/live-window";
+import {
+  indexAt,
+  lineValueAt,
+  livePixel,
+  liveValueAt,
+  liveX,
+  liveY,
+  nearestIndex,
+  stepIndex,
+  walkRange,
+} from "./layout/live-window";
 import type { LiveGeometry, LivePoint, LiveStep } from "./layout/live-window";
 import {
   useLiveActive,
@@ -89,8 +99,11 @@ export function useActiveFollowsFrame(clock: LiveClock, store: LiveStore): void 
   );
 }
 
-/** A reading's place in a frame, at the value it draws. */
-export type LivePlace = { readonly point: LivePoint; readonly x: number; readonly y: number };
+/**
+ * Where the readout stands in a frame, in plot pixels: the crosshair's x, and the ring's height on
+ * the line there, or null where no line is drawn.
+ */
+export type LiveReadout = { readonly x: number; readonly y: number | null };
 
 /**
  * A reading's place in a frame, at the value the line draws it at, by the line's own rule.
@@ -100,13 +113,40 @@ export type LivePlace = { readonly point: LivePoint; readonly x: number; readonl
  * @param time - The reading's instant.
  * @returns The place, or null when the window no longer shows the reading.
  */
-export function placeOf(frame: LiveFrame, geometry: LiveGeometry, time: number): LivePlace | null {
+function placeOf(
+  frame: LiveFrame,
+  geometry: LiveGeometry,
+  time: number
+): { readonly x: number; readonly y: number } | null {
   const { points } = frame.feed;
   const index = indexAt(points, time);
   const point = points[index];
   if (point === undefined || index < frame.span.first || index >= frame.span.end) return null;
   const value = liveValueAt(points, index, frame.now, frame.tip, frame.held);
-  return { point, x: liveX(geometry, point.time), y: liveY(geometry, value) };
+  return { x: liveX(geometry, point.time), y: liveY(geometry, value) };
+}
+
+/**
+ * Where the readout stands in a frame. A pointer puts the crosshair at its own x, with the ring on
+ * the line there, so a resting pointer holds the crosshair still as the line scrolls under it,
+ * while the words name the reading nearest it. Left of where the line starts, or right of where it
+ * ends, the crosshair has no ring. A key puts both on the active reading.
+ *
+ * @param frame - The frame.
+ * @param geometry - The frame in the plot's pixels.
+ * @param store - Root's store.
+ * @returns The readout's place, or null while no reading is active or the window no longer shows it.
+ */
+export function readoutOf(frame: LiveFrame, geometry: LiveGeometry, store: LiveStore): LiveReadout | null {
+  const active = store.active();
+  if (active === null) return null;
+  const share = store.pointer();
+  if (active.source === "pointer" && share !== null) {
+    const { start, end } = frame.window;
+    const value = lineValueAt(frame.vertices, start + share * (end - start));
+    return { x: share * geometry.width, y: value === null ? null : liveY(geometry, value) };
+  }
+  return placeOf(frame, geometry, active.time);
 }
 
 /**
@@ -132,6 +172,18 @@ export function LiveSurface({
   const currentOption = useRef<HTMLDivElement>(null);
   const handoff = useOptionHandoff(id, listbox, () => ({}));
   const active = useLiveActive(context);
+  // A plot that resizes under a resting pointer, as when a column beside it grows, keeps the
+  // crosshair under the pointer: its share is read again from its client x over the new box, once
+  // per measure and never per frame, and the reading nearest it picked again, as `follow` does.
+  useLayoutEffect(() => {
+    const node = listbox.current;
+    if (plot === null || node === null || store.pointer() === null) return;
+    store.reproject(node.getBoundingClientRect());
+    const share = store.pointer();
+    if (share !== null && store.active()?.source !== "keyboard" && !store.dismissed()) {
+      pickAt(clock.get(), store, share);
+    }
+  }, [plot, store, clock]);
   useLiveFrame(context, plot, (frame, geometry) => {
     const option = currentOption.current;
     if (option === null) return;
@@ -141,10 +193,14 @@ export function LiveSurface({
     const { first, end } = walkRange(framed, frame.span);
     writeAttribute(option, "aria-posinset", named - first + 1);
     writeAttribute(option, "aria-setsize", end - first);
-    // The option sits over its reading, a 24 px target where a touch reader's double tap lands.
+    // The option sits over its reading, a 24 px target where a touch reader's double tap lands. It
+    // moves from the plot's middle by a translation, so a frame lays nothing out.
     const place = placeOf(frame, geometry, framed[named]?.time ?? Number.NaN);
-    writeStyle(option, "--chart-option-x", place === null ? null : `${String(place.x)}px`);
-    writeStyle(option, "--chart-option-y", place === null ? null : `${String(place.y)}px`);
+    const offset =
+      place === null
+        ? null
+        : `${livePixel(place.x - geometry.width / 2)}px ${livePixel(place.y - geometry.height / 2)}px`;
+    writeStyle(option, "translate", offset);
   });
   const current = handoff.current;
   const latest = points.at(-1);
@@ -195,12 +251,11 @@ export function LiveSurface({
     handoff.reset({});
   };
 
-  /** Record where the pointer rests across the plot, and pick the reading nearest it. */
+  /** Record where the pointer rests over the plot, and pick the reading nearest it. */
   const track = (event: PointerEvent<HTMLDivElement>): void => {
-    const box = event.currentTarget.getBoundingClientRect();
-    const share = box.width <= 0 ? 1 : Math.max(0, Math.min(1, (event.clientX - box.left) / box.width));
-    store.point(share);
-    pickAt(clock.get(), store, share);
+    store.point({ clientX: event.clientX, box: event.currentTarget.getBoundingClientRect() });
+    const share = store.pointer();
+    if (share !== null) pickAt(clock.get(), store, share);
   };
 
   const release = (): void => {

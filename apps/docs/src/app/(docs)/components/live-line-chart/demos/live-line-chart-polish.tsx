@@ -80,7 +80,7 @@ export function LiveLineChartPolish() {
         paused={paused}
         label="Charging power"
         color="chart-2"
-        valueFormat={{ preset: "power", unit: "kW", maximumFractionDigits: 1 }}
+        valueFormat={{ preset: "power", unit: "kW", minimumFractionDigits: 1, maximumFractionDigits: 1 }}
         timeZone="Europe/Oslo"
         aria-label="EV charging power, live">
         <LiveLineChart.Grid variant="dashed" />

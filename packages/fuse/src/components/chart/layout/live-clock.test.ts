@@ -2,12 +2,11 @@
 // host. Oracles: window ends read off the fake wall clock, domains worked out by hand from the
 // readings with the 12 % margin (extent [0, 100] fits [−12, 112], [0, 200] fits [−24, 224],
 // [0, 201] fits [−24.12, 225.12] and [0, 1000] fits [−120, 1120]),
-// and the glide's midpoint on the CSS curve `cubic-bezier(0, 0.7, 0.5, 1)` that `--chart-ease`
-// names, evaluated by `cubicBezier`, over the 480 ms that `--chart-update` names.
+// and the live curve `cubic-bezier(0.5, 1, 0.89, 1)` worked by hand at its parameter t = 1/2, over
+// the 480 ms that `--chart-update` names and the 900 ms a contraction takes.
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 
-import { cubicBezier } from "./ease";
 import { createLiveClock } from "./live-clock";
 import type { LiveFrame } from "./live-clock";
 import type { LiveClockHost, LiveFeed, LiveMode } from "./live-clock";
@@ -25,8 +24,17 @@ function outside(frame: LiveFrame): number[] {
   return drawn.filter((value) => value < frame.domain[0] || value > frame.domain[1]);
 }
 
-/** Where the update curve, `cubic-bezier(0, 0.7, 0.5, 1)`, has eased half-way through its duration. */
-const HALF_EASED = cubicBezier([0, 0.7, 0.5, 1])(0.5);
+/**
+ * The live curve, `cubic-bezier(0.5, 1, 0.89, 1)`, at its parameter t = 1/2: x = 3 · (1/4) · (1/2) ·
+ * 0.5 + 3 · (1/2) · (1/4) · 0.89 + 1/8 = 0.64625 of the duration, where y = 1 − (1/2)³ = 0.875 of
+ * the way.
+ */
+const EASED_AT = 0.64625;
+const EASED = 0.875;
+
+/** That point of a 480 ms glide, 310.2 ms in, and the rest of the glide. */
+const GLIDE_POINT_MS = EASED_AT * 480;
+const GLIDE_REST_MS = 480 - GLIDE_POINT_MS;
 
 const NOON = Date.UTC(2026, 9, 16, 12);
 const SECOND = 1_000;
@@ -97,32 +105,95 @@ describe("createLiveClock", () => {
     expect(clock.get().tip).toBe(100);
   });
 
-  it("ends the window at the wall clock on every frame, never before the latest reading", () => {
+  it("ends the window at the wall clock on every frame", () => {
     const { advance, clock } = runningClock(FEED);
     expect(clock.get().window).toEqual({ start: NOON - 20 * SECOND + 16, end: NOON + 10 * SECOND + 16 });
     advance(250);
     expect(clock.get().now).toBe(NOON + 10 * SECOND + 266);
-    // A reading stamped ahead of the wall clock pulls the window's end up to it.
-    clock.feed({ ...FEED, points: [...FEED.points, { time: NOON + 20 * SECOND, value: 50 }], tip: 50 });
-    advance(16);
-    expect(clock.get().now).toBe(NOON + 20 * SECOND);
   });
 
-  it("glides the domain and the tip from what they show to the new fit on the update curve", () => {
+  it("leads the wall clock by as much as readings run ahead of it, so the window keeps scrolling", () => {
+    // A reading stamped 2 s ahead of the wall clock arrives at NOON + 10.016 s. The window ends 2 s
+    // ahead of the wall clock from then on, and moves on with it every frame between readings.
+    const { advance, clock } = runningClock(FEED);
+    const ahead = NOON + 12 * SECOND + 16;
+    clock.feed({ ...FEED, points: [...FEED.points, { time: ahead, value: 50 }], tip: 50 });
+    advance(16);
+    expect(clock.get().now).toBe(ahead + 16);
+    advance(16);
+    expect(clock.get().now).toBe(ahead + 32);
+    advance(500);
+    expect(clock.get().now).toBe(ahead + 532);
+  });
+
+  it("lets a shrinking lead decay by half every 10 s", () => {
+    // The lead of 2 s from above, then 2 s on, at T, a reading stamped at the wall clock, whose lead
+    // is 0. The shown lead falls from 2 s toward it: 10 s after T the window ends 1 s ahead of the
+    // wall clock, and 20 s after T half a second ahead.
+    const { advance, clock } = runningClock(FEED);
+    const ahead = NOON + 12 * SECOND + 16;
+    const points = [...FEED.points, { time: ahead, value: 50 }];
+    clock.feed({ ...FEED, points, tip: 50 });
+    advance(16);
+    advance(2 * SECOND);
+    const at = NOON + 12 * SECOND + 32;
+    clock.feed({ ...FEED, points: [...points, { time: at, value: 60 }], tip: 60 });
+    advance(10 * SECOND);
+    expect(clock.get().now).toBeCloseTo(at + 10 * SECOND + SECOND, 6);
+    advance(10 * SECOND);
+    expect(clock.get().now).toBeCloseTo(at + 20 * SECOND + SECOND / 2, 6);
+  });
+
+  it("never moves the window's end back while a large lead decays", () => {
+    // A reading 30 s ahead sets a lead of 30 s. At T, 16 ms on, the feed drops it for one at the
+    // wall clock, so the lead decays from 30 s by half every 10 s, faster than the wall clock moves
+    // at first: 100 ms on, T + 100 + 30 000 × 2^(−0.01) ≈ T + 29 892.5 lies behind T + 30 000. The
+    // end holds at T + 30 000 until the decay slows: 10 s on it would be T + 25 000, still held,
+    // and 30 s on it is T + 30 000 + 3 750, moving again.
+    const { advance, clock } = runningClock(FEED);
+    clock.feed({ ...FEED, points: [...FEED.points, { time: NOON + 40 * SECOND + 16, value: 50 }], tip: 50 });
+    advance(16);
+    const at = NOON + 10 * SECOND + 32;
+    expect(clock.get().now).toBe(at + 30 * SECOND);
+    clock.feed({ ...FEED, points: [...FEED.points, { time: at, value: 60 }], tip: 60 });
+    let before = clock.get().now;
+    for (let step = 1; step <= 300; step += 1) {
+      advance(100);
+      const { now } = clock.get();
+      expect(now).toBeGreaterThanOrEqual(before);
+      before = now;
+      if (step === 1 || step === 100) expect(now).toBe(at + 30 * SECOND);
+    }
+    expect(clock.get().now).toBeCloseTo(at + 30 * SECOND + 3_750, 6);
+  });
+
+  it("glides the domain and the tip from what they show to the new fit on the live curve", () => {
     const { advance, clock } = runningClock(FEED);
     clock.feed(RISEN);
     // The frame after the feed starts the glide where the domain showed.
     advance(16);
     expect(clock.get().domain).toEqual([-12, 112]);
     expect(clock.get().tip).toBe(100);
-    advance(240);
+    advance(GLIDE_POINT_MS);
     const [low, high] = clock.get().domain;
-    expect(low).toBeCloseTo(-12 - 12 * HALF_EASED, 9);
-    expect(high).toBeCloseTo(112 + 112 * HALF_EASED, 9);
-    expect(clock.get().tip).toBeCloseTo(100 + 100 * HALF_EASED, 9);
-    advance(240);
+    expect(low).toBeCloseTo(-12 - 12 * EASED, 5);
+    expect(high).toBeCloseTo(112 + 112 * EASED, 5);
+    expect(clock.get().tip).toBeCloseTo(100 + 100 * EASED, 5);
+    advance(GLIDE_REST_MS);
     expect(clock.get().domain).toEqual([-24, 224]);
     expect(clock.get().tip).toBe(200);
+  });
+
+  it("starts a glide gently: about 7 % of the way in its first frame and 37 % by 100 ms", () => {
+    // The live curve evaluated by bisection on its x, independently of the clock: 16.7 ms of 480 is
+    // x = 0.0348, where y = 0.0683, and 100 ms is x = 0.2083, where y = 0.3723.
+    const { advance, clock } = runningClock(FEED);
+    clock.feed(RISEN);
+    advance(16);
+    advance(16.7);
+    expect(clock.get().tip).toBeCloseTo(100 + 100 * 0.0683, 1);
+    advance(100 - 16.7);
+    expect(clock.get().tip).toBeCloseTo(100 + 100 * 0.3723, 1);
   });
 
   it("retargets a glide mid-way from where it got to, without a jump", () => {
@@ -157,17 +228,34 @@ describe("createLiveClock", () => {
     expect(clock.get().tip).toBe(200);
   });
 
-  it("holds its frame while paused and glides to what it missed once it runs again", () => {
+  it("holds its frame while paused and draws what it missed at rest once it runs again", () => {
+    // After a 2 s pause nothing on screen shows where a glide would start, so the first frame
+    // draws the tip and the domain on their targets.
     const { advance, clock } = runningClock(FEED);
     const held = clock.get();
     clock.setMode("paused");
-    clock.feed(RISEN);
     advance(2 * SECOND);
+    clock.feed(RISEN);
     expect(clock.get()).toBe(held);
     clock.setMode("live");
     advance(16);
     expect(clock.get().now).toBe(NOON + 10 * SECOND + 2 * SECOND + 32);
-    expect(clock.get().tip).toBe(100);
+    expect(clock.get().tip).toBe(200);
+    expect(clock.get().domain).toEqual([-24, 224]);
+    expect(clock.get().held.size).toBe(0);
+  });
+
+  it("draws a new window length at rest in its first frame", () => {
+    // From 30 s to 5 min the window shows readings it did not before, so the domain and the tip
+    // take their targets at once, though the frame before was drawn only 16 ms earlier.
+    const { advance, clock } = runningClock(FEED);
+    advance(SECOND);
+    clock.feed({ ...RISEN, duration: 300 * SECOND });
+    advance(16);
+    expect(clock.get().window.start).toBe(NOON + 11 * SECOND + 32 - 300 * SECOND);
+    expect(clock.get().tip).toBe(200);
+    expect(clock.get().domain).toEqual([-24, 224]);
+    expect(clock.get().held.size).toBe(0);
   });
 
   it("runs no frame while out of view or with no subscriber", () => {
@@ -257,10 +345,10 @@ describe("createLiveClock", () => {
     const { advance, clock } = runningClock(FEED);
     clock.feed({ ...RISEN, tip: 201 });
     advance(16);
-    advance(240);
-    expect(clock.get().held.get(NOON + 11 * SECOND)).toBeCloseTo(100 + 100 * HALF_EASED, 9);
-    expect(clock.get().tip).toBeCloseTo(100 + 101 * HALF_EASED, 9);
-    advance(240);
+    advance(GLIDE_POINT_MS);
+    expect(clock.get().held.get(NOON + 11 * SECOND)).toBeCloseTo(100 + 100 * EASED, 5);
+    expect(clock.get().tip).toBeCloseTo(100 + 101 * EASED, 5);
+    advance(GLIDE_REST_MS);
     expect(clock.get().held.size).toBe(0);
     expect(clock.get().tip).toBe(201);
     const [low, high] = clock.get().domain;
@@ -289,8 +377,9 @@ describe("createLiveClock", () => {
     });
     advance(16);
     expect(clock.get().domain).toEqual([-1, 100]);
-    // The spike leaves. The domain eases back from what it showed: unmoved in a frame at +0 ms, and
-    // half-way through the 480 ms on the curve, its top at 100 + (1 − 100) × HALF_EASED, the half-way ease.
+    // The spike leaves. The domain eases back in from what it showed over 900 ms: unmoved in a frame
+    // at +0 ms, short of its target at 480 ms, its top at 100 + (1 − 100) × 0.875 = 13.375 at
+    // 0.64625 × 900 ms, and at rest at 900 ms.
     clock.feed({
       points: [
         { time: NOON, value: 0 },
@@ -302,11 +391,14 @@ describe("createLiveClock", () => {
     advance(0);
     expect(clock.get().domain).toEqual([-1, 100]);
     advance(240);
-    const [low, high] = clock.get().domain;
-    expect(low).toBe(-1);
-    expect(high).toBeCloseTo(100 - 99 * HALF_EASED, 9);
-    expect(high).toBeGreaterThan(1);
-    expect(high).toBeLessThan(100);
+    advance(240);
+    expect(clock.get().domain[0]).toBe(-1);
+    expect(clock.get().domain[1]).toBeGreaterThan(1);
+    advance(EASED_AT * 900 - 480);
+    expect(clock.get().domain[0]).toBe(-1);
+    expect(clock.get().domain[1]).toBeCloseTo(13.375, 5);
+    advance(900 - EASED_AT * 900);
+    expect(clock.get().domain).toEqual([-1, 1]);
   });
 
   it("holds a reading in the domain as its glide ends while the domain still eases", () => {
@@ -355,9 +447,9 @@ describe("createLiveClock", () => {
     });
     advance(0);
     expect(clock.get().held.get(at)).toBe(before);
-    advance(240);
-    expect(clock.get().held.get(at)).toBeCloseTo(before - before * HALF_EASED, 9);
-    advance(240);
+    advance(GLIDE_POINT_MS);
+    expect(clock.get().held.get(at)).toBeCloseTo(before - before * EASED, 5);
+    advance(GLIDE_REST_MS);
     expect(clock.get().held.has(at)).toBe(false);
   });
 

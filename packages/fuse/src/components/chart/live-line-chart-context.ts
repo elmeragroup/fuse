@@ -18,6 +18,17 @@ import type { LiveClock, LiveFeed, LiveFrame } from "./layout/live-clock";
 import type { LiveGeometry } from "./layout/live-window";
 import type { LiveText } from "./live-line-chart-text";
 
+/** The plot's client box along x, as `getBoundingClientRect` reads it. */
+export type LivePlotBox = { readonly left: number; readonly width: number };
+
+/** Where a pointer rests: its client x, and the plot's client box it fell on. */
+export type LivePointerAt = { readonly clientX: number; readonly box: LivePlotBox };
+
+/** A pointer's share across a plot box, 0 to 1, or 1 for a box with no width. */
+function shareOf(clientX: number, box: LivePlotBox): number {
+  return box.width <= 0 ? 1 : Math.max(0, Math.min(1, (clientX - box.left) / box.width));
+}
+
 /** The reading the readout shows, by its instant, and what made it active. */
 export type LiveActive = { readonly time: number; readonly source: "pointer" | "keyboard" };
 
@@ -30,8 +41,17 @@ export type LiveStore = {
   readonly activate: (active: LiveActive | null) => void;
   /** Where the pointer rests across the plot, 0 to 1, or null while it is away. */
   readonly pointer: () => number | null;
-  /** Record where the pointer rests, or null when it leaves. Either ends a dismissal. */
-  readonly point: (share: number | null) => void;
+  /**
+   * Record where the pointer rests, by its client x over the plot's client box, or null when it
+   * leaves, and tell every subscriber, so the crosshair follows a pointer that stays nearest one
+   * reading. Either ends a dismissal.
+   */
+  readonly point: (at: LivePointerAt | null) => void;
+  /**
+   * Place a resting pointer again over the plot's new client box, as after the plot resizes under
+   * it, and tell every subscriber when its share changes. It ends no dismissal.
+   */
+  readonly reproject: (box: LivePlotBox) => void;
   /**
    * Whether Escape dismissed the readout, which a pointer resting on the plot does not undo: only a
    * pointer that moves or leaves, or a key step, ends it.
@@ -48,14 +68,18 @@ export type LiveStore = {
  */
 export function createLiveStore(): LiveStore {
   let active: LiveActive | null = null;
-  let pointer: number | null = null;
+  // The pointer's share across the plot and its client x, which a new plot box reprojects.
+  let pointer: { readonly share: number; readonly clientX: number } | null = null;
   let dismissed = false;
   const listeners = new Set<() => void>();
+  const tell = (): void => {
+    for (const listener of listeners) listener();
+  };
   const activate = (next: LiveActive | null): void => {
     if (next !== null) dismissed = false;
     if (next?.time === active?.time && next?.source === active?.source) return;
     active = next;
-    for (const listener of listeners) listener();
+    tell();
   };
   return {
     active: () => active,
@@ -66,10 +90,20 @@ export function createLiveStore(): LiveStore {
       };
     },
     activate,
-    pointer: () => pointer,
-    point(share) {
-      pointer = share;
+    pointer: () => pointer?.share ?? null,
+    point(at) {
       dismissed = false;
+      const next = at === null ? null : { share: shareOf(at.clientX, at.box), clientX: at.clientX };
+      if (next?.share === pointer?.share && next?.clientX === pointer?.clientX) return;
+      pointer = next;
+      tell();
+    },
+    reproject(box) {
+      if (pointer === null) return;
+      const share = shareOf(pointer.clientX, box);
+      if (share === pointer.share) return;
+      pointer = { share, clientX: pointer.clientX };
+      tell();
     },
     dismissed: () => dismissed,
     dismiss() {
@@ -91,6 +125,8 @@ export type LiveLineRootContextValue = {
   readonly drawing: DrawGate;
   /** Whether the reader asks for reduced motion, under which no part glides. */
   readonly reduced: boolean;
+  /** Whether Root is `paused`, under which the live dot sends out no ping. */
+  readonly paused: boolean;
   /** Say a message through Root's status region, such as the table's page. */
   readonly announce: (text: string) => void;
 };
@@ -132,19 +168,23 @@ function geometryOf(frame: LiveFrame, plot: ChartPlot): LiveGeometry {
  * Draw every frame of the clock into the plot: in every commit of the part once the plot is
  * measured, then on each frame the clock shows, in the order the parts mounted. The drawing writes
  * the DOM directly, so a frame renders nothing in React. A frame carries the readings it was
- * composed from, so a part reads its span from the frame, never from a newer render.
+ * composed from, so a part reads its span from the frame, never from a newer render. A readout
+ * part that draws from the store as well passes `"readout"`, and draws the shown frame again on
+ * each change of the store, so the pointer moves it at once even while no frame runs.
  *
  * @param context - The Root.
  * @param plot - The measured plot, or null, which draws nothing.
  * @param draw - Writes one frame. The latest one the part rendered runs.
+ * @param follows - `"readout"` to draw on each change of the store too.
  */
 export function useLiveFrame(
   context: LiveLineRootContextValue,
   plot: ChartPlot | null,
-  draw: (frame: LiveFrame, geometry: LiveGeometry) => void
+  draw: (frame: LiveFrame, geometry: LiveGeometry) => void,
+  follows: "frames" | "readout" = "frames"
 ): void {
   const latest = useRef(draw);
-  const { clock } = context;
+  const { clock, store } = context;
   useLayoutEffect(() => {
     latest.current = draw;
     if (plot === null) return;
@@ -153,11 +193,17 @@ export function useLiveFrame(
   });
   useLayoutEffect(() => {
     if (plot === null) return undefined;
-    return clock.subscribe(() => {
+    const redraw = (): void => {
       const frame = clock.get();
       latest.current(frame, geometryOf(frame, plot));
-    });
-  }, [clock, plot]);
+    };
+    const frames = clock.subscribe(redraw);
+    const changes = follows === "readout" ? store.subscribe(redraw) : null;
+    return () => {
+      frames();
+      changes?.();
+    };
+  }, [clock, store, plot, follows]);
 }
 
 /**

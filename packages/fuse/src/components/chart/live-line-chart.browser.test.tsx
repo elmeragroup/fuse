@@ -1,6 +1,7 @@
 // LiveLineChart in Chromium. Unit under test: the whole path from Root's readings to the drawn
 // line, the live dot, the badge, the axes, the keyboard walk, the pointer pick, the crosshair, the
-// tooltip, the table, pausing and reduced motion. The server HTML is apps/docs' RSC fixture's.
+// tooltip, the table, pausing, the value ticks' fades, the sizers and reduced motion. The server
+// HTML is apps/docs' RSC fixture's.
 // Oracles: pixels worked out by hand on a 300 by 124 px plot whose 30 s window ends at the latest
 // of three readings, 0 at 14:00:00, 50 at 14:00:10 and 100 at 14:00:20 Oslo time, which sit at
 // 100, 200 and 300 px across, and whose domain [−12, 112] puts a value v at 112 − v px from the
@@ -19,6 +20,7 @@ import { pointerAt } from "../../../test/chart/marks";
 import { emulateReducedMotion } from "../../../test/reduced-motion";
 import { renderThemed, roleNamed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
+import { Chart } from "./chart-namespace";
 import "./chart.css";
 import { LiveLineChart } from "./live-line-chart-namespace";
 import type { LiveLineChartPoint, LiveLineChartRootProps } from "./live-line-chart-root";
@@ -33,6 +35,9 @@ const READINGS: readonly LiveLineChartPoint[] = [
   { time: NOON + 20 * SECOND, value: 100 },
 ];
 
+/** Values in whole numbers. */
+const WHOLE = { maximumFractionDigits: 0 } as const;
+
 /**
  * A chart with no axes in Oslo, so its plot is the whole 300 by 124 px frame showing 30 s, unless a
  * case sets the width, window or zone.
@@ -44,14 +49,16 @@ function Live({
   width = 300,
   windowMs = 30 * SECOND,
   timeZone = "Europe/Oslo",
+  valueFormat = WHOLE,
   children,
 }: {
   readonly data?: readonly LiveLineChartPoint[];
-  readonly value?: number;
+  readonly value?: number | undefined;
   readonly paused?: boolean;
   readonly width?: number;
   readonly windowMs?: number;
   readonly timeZone?: string;
+  readonly valueFormat?: LiveLineChartRootProps["valueFormat"];
   readonly children?: ReactNode;
 }): ReactNode {
   // Root's value is left out unless the case passes one.
@@ -66,7 +73,7 @@ function Live({
           {...latest}
           windowMs={windowMs}
           label="Pris"
-          valueFormat={{ maximumFractionDigits: 0 }}
+          valueFormat={valueFormat}
           paused={paused}
           aria-label="Spotpris nå"
           style={{ "--chart-plot-height": "124px" }}>
@@ -95,10 +102,30 @@ function dotAt(host: HTMLElement): string | null {
   return host.querySelector('[data-slot="live-line-chart-live-dot"] > g')?.getAttribute("transform") ?? null;
 }
 
-/** The crosshair's place, or null while it hides. It is aria-hidden plot output, so its slot locates it. */
+/** The crosshair's ring's place, or null while it hides. It is aria-hidden plot output, so its slot locates it. */
 function crosshairAt(host: HTMLElement): string | null {
   const group = host.querySelector('[data-slot="live-line-chart-crosshair"] > g');
-  return group === null || group.hasAttribute("data-hidden") ? null : group.getAttribute("transform");
+  if (group === null || group.hasAttribute("data-hidden")) return null;
+  return group.querySelector('[data-slot="chart-dot"]')?.getAttribute("transform") ?? null;
+}
+
+/** The crosshair's rule. It is aria-hidden plot output, so its slot locates it. */
+function crosshairRule(host: HTMLElement): SVGLineElement {
+  const rule = host.querySelector('[data-slot="live-line-chart-crosshair-rule"]');
+  if (!(rule instanceof SVGLineElement)) throw new Error("the crosshair has no rule");
+  return rule;
+}
+
+/** The plot's box, which the crosshair's rule spans. */
+function plotBox(host: HTMLElement): DOMRect {
+  const plot = host.querySelector('[data-slot="chart-plot"]');
+  if (plot === null) throw new Error("the plot is missing");
+  return plot.getBoundingClientRect();
+}
+
+/** The tooltip's popup, or null while it is closed. It is aria-hidden, so its slot locates it. */
+function tooltipPopup(host: HTMLElement): HTMLElement | null {
+  return host.querySelector<HTMLElement>('[data-slot="live-line-chart-tooltip"] [data-slot="chart-tooltip"]');
 }
 
 /** The tooltip's text, or null while it is closed. The popup is aria-hidden, so its slot locates it. */
@@ -348,25 +375,82 @@ describe("the readout", () => {
     await userEvent.keyboard("{End}");
     expect(crosshairAt(host)).toBe("translate(300 12)");
     expect(dotAt(host)).toBe("translate(300 12)");
-    const option = page.getByRole("option").element();
-    const optionY = option instanceof HTMLElement ? option.style.getPropertyValue("--chart-option-y") : "";
-    expect(Number.parseFloat(optionY)).toBeCloseTo(12, 6);
+    // The option centres on the reading, where the crosshair rings it.
+    const option = page.getByRole("option").element().getBoundingClientRect();
+    const ring = host.querySelector('[data-slot="live-line-chart-crosshair"] [data-slot="chart-dot"]');
+    const rung = ring?.getBoundingClientRect();
+    expect(option.left + option.width / 2).toBeCloseTo((rung?.left ?? 0) + (rung?.width ?? 0) / 2, 2);
+    expect(option.top + option.height / 2).toBeCloseTo((rung?.top ?? 0) + (rung?.height ?? 0) / 2, 2);
   });
 
-  it("stops the crosshair's glide on its reading once reduced motion turns on mid-glide", async () => {
+  it("lands a key step at once: the crosshair on the reading, and the tooltip with no entrance", async () => {
     const { host } = renderThemed(<Live />);
     await enterChart();
     await userEvent.keyboard("{ArrowLeft}");
-    const group = host.querySelector('[data-slot="live-line-chart-crosshair"] > g');
-    // The step glides from 300 px to the reading at 200 px; hold it mid-way so it outlives the switch.
-    const glides = group?.getAnimations() ?? [];
-    expect(glides.length).toBeGreaterThan(0);
-    for (const glide of glides) glide.pause();
-    await emulateReducedMotion("reduce");
-    await expect.poll(() => group?.getAnimations().length).toBe(0);
-    // With no glide left, the crosshair shows its resting place: 50 sits 112 − 50 = 62 px down.
+    // No frame runs on the paused chart, and the crosshair already rests on the reading at 200 px,
+    // where 50 sits 112 − 50 = 62 px down, with nothing running to carry it there.
     expect(crosshairAt(host)).toBe("translate(200 62)");
-    expect(group === null ? null : getComputedStyle(group).translate).toBe("none");
+    const crosshair = host.querySelector('[data-slot="live-line-chart-crosshair"]');
+    expect(crosshair?.getAnimations({ subtree: true })).toEqual([]);
+    const popup = tooltipPopup(host);
+    expect(popup === null ? null : getComputedStyle(popup).animationName).toBe("none");
+  });
+
+  it("opens the tooltip from the pointer with its entrance", async () => {
+    const { host } = renderThemed(<Live />);
+    await expect.poll(() => lineD(host)).not.toBeNull();
+    const box = plotBox(host);
+    await pointerAt(box.left + 190, box.top + 60);
+    await expect.poll(() => tooltipText(host)).toBe("14:00:10Pris50");
+    const popup = tooltipPopup(host);
+    expect(popup === null ? null : getComputedStyle(popup).animationName).not.toBe("none");
+  });
+
+  it("stands the crosshair at the pointer, its ring on the line, while the tooltip names the nearest reading", async () => {
+    // At 160 px the line runs 60 % of the way from 0 at 100 px to 50 at 200 px, so the ring sits on
+    // 30, 112 − 30 = 82 px down. At 170 px it sits on 35, 77 px down. The reading at 200 px is the
+    // nearest at both, so the crosshair moves with no new reading to name.
+    const { host } = renderThemed(<Live />);
+    await expect.poll(() => lineD(host)).not.toBeNull();
+    const box = plotBox(host);
+    await pointerAt(box.left + 160, box.top + 60);
+    await expect.poll(() => crosshairAt(host)).toBe("translate(160 82)");
+    expect(crosshairRule(host).getAttribute("transform")).toBe("translate(160 0)");
+    expect(tooltipText(host)).toBe("14:00:10Pris50");
+    await pointerAt(box.left + 170, box.top + 60);
+    await nextFrames(1);
+    expect(crosshairRule(host).getAttribute("transform")).toBe("translate(170 0)");
+    expect(crosshairAt(host)).toBe("translate(170 77)");
+    expect(tooltipText(host)).toBe("14:00:10Pris50");
+    const crosshair = host.querySelector('[data-slot="live-line-chart-crosshair"]');
+    expect(crosshair?.getAnimations({ subtree: true })).toEqual([]);
+  });
+
+  it("zooms the tooltip from the crosshair where the plot's edge holds it in", async () => {
+    // At 6 px from either edge the popup, wider than 12 px, keeps inside the plot: at the left edge
+    // its box starts at 0, so the crosshair stands 6 px into it, and at the right edge its box ends
+    // at 300 px, so the crosshair stands 6 px short of its width. It zooms from there, at its bottom.
+    const { host } = renderThemed(<Live />);
+    await expect.poll(() => lineD(host)).not.toBeNull();
+    const box = plotBox(host);
+    await pointerAt(box.left + 6, box.top + 60);
+    await expect.poll(() => tooltipText(host)).toBe("14:00:00Pris0");
+    const popup = tooltipPopup(host);
+    if (popup === null) throw new Error("the tooltip did not open");
+    const origin = () => getComputedStyle(popup).transformOrigin.split(" ").map(Number.parseFloat);
+    const size = () => {
+      const { width, height } = getComputedStyle(popup);
+      return [Number.parseFloat(width), Number.parseFloat(height)] as const;
+    };
+    const [width, height] = size();
+    expect(width).toBeGreaterThan(12);
+    expect(origin()[0]).toBeCloseTo(6, 2);
+    expect(origin()[1]).toBeCloseTo(height, 2);
+    await pointerAt(box.left + 294, box.top + 60);
+    await expect.poll(() => tooltipText(host)).toBe("14:00:20Pris100");
+    const [wide, tall] = size();
+    expect(origin()[0]).toBeCloseTo(wide - 6, 2);
+    expect(origin()[1]).toBeCloseTo(tall, 2);
   });
 
   it("names what a paused plot shows while the feed moves on and drops the shown readings", async () => {
@@ -477,9 +561,10 @@ describe("live motion", () => {
         <LiveLineChart.Badge />
       </Live>
     );
-    // The badge is aria-hidden; its sizer holds the plain text the rolling digits show.
+    // The badge is aria-hidden; its sizer holds the plain text the rolling digits show first.
     const badge = () =>
-      host.querySelector('[data-slot="live-line-chart-badge"] [data-slot="chart-axis-sizer"]')?.textContent;
+      host.querySelector('[data-slot="live-line-chart-badge"] [data-slot="chart-axis-sizer"] > *')
+        ?.textContent;
     await expect.poll(badge).toBe("100");
     rerender(
       <Live data={readings} value={87} paused={false}>
@@ -507,6 +592,209 @@ describe("live motion", () => {
     expect(dotAt(host)).toBe("translate(300 62)");
   });
 
+  it("holds the crosshair under a resting pointer while the line scrolls under it", async () => {
+    const { host } = renderThemed(<Live data={recentReadings()} paused={false} />);
+    await expect.poll(() => lineD(host)).not.toBeNull();
+    const box = plotBox(host);
+    await pointerAt(box.left + 150, box.top + 60);
+    await expect.poll(() => tooltipText(host)).not.toBeNull();
+    const first = lineD(host);
+    for (let frame = 0; frame < 10; frame += 1) {
+      await nextFrames(1);
+      expect(crosshairRule(host).getAttribute("transform")).toBe("translate(150 0)");
+    }
+    // The window scrolled meanwhile: a 30 s window over 300 px moves a pixel every 100 ms.
+    await expect.poll(() => lineD(host)).not.toBe(first);
+    expect(crosshairRule(host).getAttribute("transform")).toBe("translate(150 0)");
+  });
+
+  it("spans the plot with the crosshair's rule in every frame, from the frame a key steps", async () => {
+    const { host } = renderThemed(<Live data={recentReadings()} paused={false} />);
+    await expect.poll(() => lineD(host)).not.toBeNull();
+    await userEvent.click(page.getByRole("button", { name: "før" }));
+    await userEvent.keyboard("{Tab}");
+    await userEvent.keyboard("{ArrowLeft}");
+    for (let frame = 0; frame < 6; frame += 1) {
+      const rule = crosshairRule(host).getBoundingClientRect();
+      const plot = plotBox(host);
+      expect(rule.top).toBeCloseTo(plot.top, 2);
+      expect(rule.bottom).toBeCloseTo(plot.bottom, 2);
+      await nextFrames(1);
+    }
+  });
+
+  it("stops the live dot's ping while paused", async () => {
+    const ping = (host: HTMLElement) => {
+      const ring = host.querySelector('[data-slot="live-line-chart-live-dot"] [data-part="ping"]');
+      return ring === null ? null : getComputedStyle(ring).animationName;
+    };
+    const { host, rerender } = renderThemed(<Live data={recentReadings()} paused={false} />);
+    await expect.poll(() => ping(host)).toBe("chart-ping");
+    rerender(<Live data={recentReadings()} paused />);
+    expect(ping(host)).toBe("none");
+  });
+
+  it("fades a value tick and its grid line over the last 16 px at the plot's top and bottom", async () => {
+    // The domain [−12, 112] over the 124 px plot puts 100 at 12 px from the top and 0 at 12 px from
+    // the bottom, three quarters of the way into the 16 px fade, and 20 at 32 px from the bottom.
+    const { host } = renderThemed(
+      <Live>
+        <LiveLineChart.Grid />
+        <LiveLineChart.YAxis />
+      </Live>
+    );
+    const label = (text: string) =>
+      [...host.querySelectorAll<HTMLElement>('[data-slot="chart-y-tick"]')].find(
+        (tick) => tick.textContent === text
+      );
+    await expect.poll(() => label("100")).toBeDefined();
+    const lines = [...host.querySelectorAll('[data-slot="chart-grid-line"]')];
+    const settled = [...lines, label("0"), label("20"), label("100")];
+    await Promise.all(settled.flatMap((each) => each?.getAnimations().map((fade) => fade.finished) ?? []));
+    const opacity = (element: Element | undefined) =>
+      element === undefined ? Number.NaN : Number.parseFloat(getComputedStyle(element).opacity);
+    expect(opacity(label("100"))).toBeCloseTo(0.75, 6);
+    expect(opacity(label("0"))).toBeCloseTo(0.75, 6);
+    expect(opacity(label("20"))).toBe(1);
+    const top = lines.find((line) => Math.abs(Number(line.getAttribute("y1")) - 12) < 1e-6);
+    expect(opacity(top)).toBeCloseTo(0.75, 6);
+    // Each label centres on its grid line.
+    const box = label("100")?.getBoundingClientRect();
+    expect((box?.top ?? 0) + (box?.height ?? 0) / 2).toBeCloseTo(top?.getBoundingClientRect().top ?? 0, 1);
+  });
+
+  it("fades a value tick out as the step changes, placing it as the domain moves until it is gone", async () => {
+    // 0 to 100 ticks every 20. A reading of 1000, with Root's value at 20, sets the domain to rest
+    // at [−120, 1120], whose step is 200, so from the next frame only 0 of the old ticks stays, and
+    // 20 and 40 leave. At rest, 20 sits (1120 − 20) / 1240 × 124 = 110 px down, where the live dot
+    // draws Root's value.
+    const readings = recentReadings();
+    const axes = (
+      <>
+        <LiveLineChart.Line />
+        <LiveLineChart.LiveDot variant="default" />
+        <LiveLineChart.YAxis />
+      </>
+    );
+    const { host, rerender } = renderThemed(
+      <Live data={readings} paused={false}>
+        {axes}
+      </Live>
+    );
+    const label = (text: string) =>
+      [...host.querySelectorAll<HTMLElement>('[data-slot="chart-y-tick"]')].find(
+        (tick) => tick.textContent === text
+      );
+    await expect.poll(() => label("40")).toBeDefined();
+    const twenty = label("20");
+    const forty = label("40");
+    if (twenty === undefined || forty === undefined) throw new Error("no tick at 20 or 40");
+    // Hold each fade where it starts, the moment its tick leaves, so the test reads it mid-way.
+    const held = new MutationObserver((records) => {
+      for (const { target } of records) {
+        if (target instanceof Element && target.hasAttribute("data-leaving")) {
+          for (const fade of target.getAnimations()) fade.pause();
+        }
+      }
+    });
+    for (const tick of [twenty, forty]) {
+      held.observe(tick, { attributes: true, attributeFilter: ["data-leaving"] });
+    }
+    onTestFinished(() => {
+      held.disconnect();
+    });
+    const latest = Number(readings.at(-1)?.time ?? 0);
+    rerender(
+      <Live data={[...readings, { time: latest + 1, value: 1000 }]} value={20} paused={false}>
+        {axes}
+      </Live>
+    );
+    await expect.poll(() => twenty.hasAttribute("data-leaving")).toBe(true);
+    expect(twenty.isConnected).toBe(true);
+    const fades = twenty.getAnimations();
+    expect(fades.map((fade) => (fade instanceof CSSAnimation ? fade.animationName : null))).toEqual([
+      "chart-fade-out",
+    ]);
+    // While its fade holds, the leaving tick follows the domain to its rest beside the live dot.
+    await expect.poll(() => dotAt(host)).toMatch(/^translate\([\d.]+ 110\)$/u);
+    await nextFrames(2);
+    const centre = (element: Element | null | undefined) => {
+      const box = element?.getBoundingClientRect();
+      return (box?.top ?? Number.NaN) + (box?.height ?? Number.NaN) / 2;
+    };
+    const dot = host.querySelector('[data-slot="live-line-chart-live-dot"] [data-slot="chart-dot"]');
+    expect(centre(twenty)).toBeCloseTo(centre(dot), 1);
+    // A finished fade removes its tick, and so does a cancelled one, as reduced motion cancels it.
+    for (const fade of fades) fade.finish();
+    for (const fade of forty.getAnimations()) fade.cancel();
+    await expect.poll(() => twenty.isConnected).toBe(false);
+    await expect.poll(() => forty.isConnected).toBe(false);
+  });
+
+  it("keeps the crosshair under a resting pointer when the plot narrows", async () => {
+    // The pointer rests 150 px into a 300 px plot, then the plot narrows to 200 px with its left
+    // edge in place. The rule stays at the pointer, now three quarters of the way across, and the
+    // tooltip names the reading nearest it there: 14:00:10, drawn two thirds across, at 133 px.
+    const { host, rerender } = renderThemed(<Live />);
+    await expect.poll(() => lineD(host)).not.toBeNull();
+    const box = plotBox(host);
+    const pointer = box.left + 150;
+    await pointerAt(pointer, box.top + 60);
+    await expect.poll(() => tooltipText(host)).toBe("14:00:00Pris0");
+    rerender(<Live width={200} />);
+    await expect.poll(() => plotBox(host).width).toBeLessThan(box.width);
+    await nextFrames(1);
+    expect(crosshairRule(host).getBoundingClientRect().left).toBeCloseTo(pointer, 1);
+    expect(tooltipText(host)).toBe("14:00:10Pris50");
+  });
+
+  it("hides the crosshair's ring where no line is drawn, and keeps the rule at the pointer", async () => {
+    // The three readings' line starts at 100 px, so at 6 px the pointer is left of it. The rule
+    // stands at 6 px, and the tooltip names the nearest reading, 14:00:00.
+    const { host } = renderThemed(<Live />);
+    await expect.poll(() => lineD(host)).not.toBeNull();
+    const box = plotBox(host);
+    await pointerAt(box.left + 6, box.top + 60);
+    await expect.poll(() => tooltipText(host)).toBe("14:00:00Pris0");
+    expect(crosshairRule(host).getAttribute("transform")).toBe("translate(6 0)");
+    const ring = host.querySelector('[data-slot="live-line-chart-crosshair"] [data-slot="chart-dot"]');
+    expect(ring === null ? null : getComputedStyle(ring).visibility).toBe("hidden");
+    expect(getComputedStyle(crosshairRule(host)).visibility).toBe("visible");
+  });
+
+  it("holds the badge's column at the widest value it printed until the format changes", async () => {
+    const readings = recentReadings();
+    const badge = (
+      value: number | undefined,
+      valueFormat: LiveLineChartRootProps["valueFormat"] = WHOLE,
+      data: readonly LiveLineChartPoint[] = readings
+    ) => (
+      <Live data={data} value={value} paused={false} valueFormat={valueFormat}>
+        <LiveLineChart.Badge />
+      </Live>
+    );
+    const { host, rerender } = renderThemed(badge(12_345));
+    const sizer = () =>
+      host.querySelector('[data-slot="live-line-chart-badge"] [data-slot="chart-axis-sizer"]');
+    const width = () => sizer()?.getBoundingClientRect().width ?? Number.NaN;
+    await expect.poll(() => sizer()?.textContent).toBe("12\u00a0345");
+    const wide = width();
+    rerender(badge(7));
+    await expect.poll(() => sizer()?.firstElementChild?.textContent).toBe("7");
+    expect(width()).toBe(wide);
+    // A feed that empties for a while keeps the widest value it printed.
+    rerender(badge(undefined, WHOLE, []));
+    await expect
+      .poll(() => host.querySelector('[data-slot="live-line-chart-badge"] > [data-part="pill"]'))
+      .toBeNull();
+    rerender(badge(7));
+    await expect.poll(() => sizer()?.firstElementChild?.textContent).toBe("7");
+    expect(width()).toBe(wide);
+    rerender(badge(7, { maximumFractionDigits: 1 }));
+    await expect.poll(() => sizer()?.textContent).toBe("7");
+    expect(width()).toBeLessThan(wide);
+  });
+
   it("glides the live dot to a new value with motion on, from where it showed", async () => {
     const readings = recentReadings();
     const { host, rerender } = renderThemed(<Live data={readings} paused={false} />);
@@ -518,5 +806,74 @@ describe("live motion", () => {
     // The commit that brings the reading draws nothing new: the glide starts in the next frame.
     expect(dotAt(host)).toBe("translate(300 12)");
     await expect.poll(() => dotAt(host)).toBe("translate(300 62)");
+  });
+});
+
+describe("a chart nested in a live line chart's part", () => {
+  /** The nested Root's figure, which the outer live chart's figure holds. */
+  function nestedFigure(host: HTMLElement): HTMLElement {
+    const figure = host.querySelector<HTMLElement>('[data-slot="chart"] [data-slot="chart"]');
+    if (figure === null) throw new Error("no nested Root");
+    return figure;
+  }
+
+  it("lays a nested Chart's value ticks out by value, untouched by the live chart's own rules", async () => {
+    // The nested bars run 1 to 3, so its value axis holds several ticks. A higher value sits
+    // higher, so ordered by value the ticks' tops fall, and no two share one.
+    const { host } = renderThemed(
+      <Live>
+        <LiveLineChart.Headline>
+          <div style={{ width: 240 }}>
+            <Chart.Root
+              data={[1, 2, 3].map((v, index) => ({ name: String(index), v }))}
+              config={{ v: { label: "Forbruk", color: "chart-1" } }}
+              xKey="name"
+              data-intro="none"
+              aria-label="Indre">
+              <Chart.Bar dataKey="v" />
+              <Chart.YAxis />
+            </Chart.Root>
+          </div>
+        </LiveLineChart.Headline>
+        <LiveLineChart.Line />
+        <LiveLineChart.YAxis />
+      </Live>
+    );
+    const ticks = () =>
+      [...nestedFigure(host).querySelectorAll('[data-slot="chart-y-tick"]')].map((tick) => ({
+        value: Number(tick.textContent.replace("\u2212", "-").replace(",", ".")),
+        top: tick.getBoundingClientRect().top,
+      }));
+    await expect.poll(() => ticks().length).toBeGreaterThan(2);
+    const tops = ticks()
+      .toSorted((a, b) => a.value - b.value)
+      .map(({ top }) => top);
+    for (const [index, top] of tops.entries()) {
+      if (index > 0) expect(top).toBeLessThan(tops[index - 1] ?? Number.NaN);
+    }
+  });
+
+  it("keeps a running nested live chart's ping while the outer one is paused", async () => {
+    const now = Date.now();
+    const { host } = renderThemed(
+      <Live>
+        <LiveLineChart.Headline>
+          <LiveLineChart.Root
+            data={[
+              { time: now - 10 * SECOND, value: 0 },
+              { time: now, value: 50 },
+            ]}
+            aria-label="Indre">
+            <LiveLineChart.LiveDot />
+          </LiveLineChart.Root>
+        </LiveLineChart.Headline>
+        <LiveLineChart.LiveDot />
+      </Live>
+    );
+    await expect.poll(() => nestedFigure(host).querySelector('[data-part="ping"]')).not.toBeNull();
+    const inner = nestedFigure(host).querySelector('[data-part="ping"]');
+    const outer = [...host.querySelectorAll('[data-part="ping"]')].find((ping) => ping !== inner);
+    expect(inner === null ? null : getComputedStyle(inner).animationName).toBe("chart-ping");
+    expect(outer === undefined ? null : getComputedStyle(outer).animationName).toBe("none");
   });
 });

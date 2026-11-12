@@ -96,7 +96,8 @@ export type LiveLineChartRootProps = ChartAccessibleName &
     timeZone?: string;
     /**
      * Holds the window where it is, so a reader can study it, while the readings keep arriving.
-     * Once it runs again the window catches up with the clock and the readings it held back.
+     * The live dot's ping stops while it holds. Once it runs again the window draws the clock's
+     * window at once, with the readings it held back.
      */
     paused?: boolean;
     /** Replaces the generated description verbatim. */
@@ -130,10 +131,13 @@ const LIVE_FRAMES: LiveClockHost = {
  * description, the instructions, the plot's single tab stop, the parts and the status region, in
  * that order. The consumer owns the feed, and the chart only draws it.
  *
- * The window moves every frame at the pace of time, and a new reading grows out of the last one on
- * the chart's update curve while the value axis eases to fit, so nothing jumps. The loop stops
- * while the chart is out of view or its tab is hidden, and catches up on its return. Under reduced
- * motion the chart moves nothing: each new reading redraws the window once, ending at the clock.
+ * The window moves every frame at the pace of time, ahead of the browser's clock by as much as the
+ * readings' stamps run ahead of it, and a new reading grows out of the last one on an ease-out
+ * curve while the value axis eases to fit, inward more slowly than outward, so nothing jumps. The
+ * loop stops while the chart is out of view or its tab is hidden, and on its return, as after a
+ * pause or a new `windowMs`, draws the clock's window at once. The pointer moves the crosshair with
+ * no glide, and a key step lands at once. Under reduced motion the chart moves nothing: each new
+ * reading redraws the window once, ending at the clock.
  * The server renders the final HTML around the plot, and the marks draw once the browser measures
  * it.
  *
@@ -221,13 +225,17 @@ export function LiveLineChartRoot({
   useLayoutEffect(() => {
     clock.feed(feed);
   }, [clock, feed]);
-  // The loop runs only while some of the plot is in view.
+  // The loop runs only while some of the plot is in view, and starts 100 px before it scrolls in,
+  // so its first visible frame is already the clock's.
   useEffect(() => {
     const element = plotRef.current;
     if (element === null) return undefined;
-    const observer = new IntersectionObserver((entries) => {
-      clock.setVisible(entries.some((entry) => entry.isIntersecting));
-    });
+    const observer = new IntersectionObserver(
+      (entries) => {
+        clock.setVisible(entries.some((entry) => entry.isIntersecting));
+      },
+      { rootMargin: "100px 0px" }
+    );
     observer.observe(element);
     return () => {
       observer.disconnect();
@@ -264,9 +272,10 @@ export function LiveLineChartRoot({
       name,
       drawing,
       reduced,
+      paused,
       announce,
     }),
-    [text, clock, store, id, name, drawing, reduced, announce]
+    [text, clock, store, id, name, drawing, reduced, paused, announce]
   );
   // The description reads the feed the plot shows, as every readout does, so a paused chart's
   // description holds still with it.

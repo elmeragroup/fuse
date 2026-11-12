@@ -46,7 +46,7 @@ export function LiveLineChartBasic() {
       data={readings}
       windowMs={30_000}
       label="Power"
-      valueFormat={{ preset: "power", unit: "kW", maximumFractionDigits: 2 }}
+      valueFormat={{ preset: "power", unit: "kW", minimumFractionDigits: 2, maximumFractionDigits: 2 }}
       timeZone="Europe/Oslo"
       aria-label="House power draw, live">
       <LiveLineChart.Grid />

@@ -1,15 +1,12 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import type { ReactElement } from "react";
 
 import { writeAttribute, writeStyle } from "./chart-dom";
-import { glideFrom, snapGlide } from "./chart-spring";
 import { tooltipPopupClass } from "./chart-tooltip-popup";
 import type { ChartLayerProps } from "./chart-types";
-import { indexAt, livePixel, timeShare } from "./layout/live-window";
-import { FOLLOW_SPEEDS } from "./layout/motion";
-import { followSpring } from "./layout/spring";
+import { indexAt, livePixel } from "./layout/live-window";
 import {
   useLiveActive,
   useLiveFrame,
@@ -17,7 +14,8 @@ import {
   useLiveRoot,
   useShownFeed,
 } from "./live-line-chart-context";
-import { placeOf } from "./live-line-chart-surface";
+import type { LiveActive } from "./live-line-chart-context";
+import { readoutOf } from "./live-line-chart-surface";
 import { liveName, liveTimeText, liveValueText } from "./live-line-chart-text";
 
 /**
@@ -38,9 +36,10 @@ export type LiveLineChartTooltipProps = ChartLayerProps & {
 };
 
 /**
- * A vertical line through the active reading and a ring on it, which ride the reading as the window
- * scrolls and glide to the next one on the crosshair's spring: the pointer's follow spring, or the
- * fastest one for a key, so a held arrow never trails. Reduced motion moves it at once.
+ * A vertical line across the plot and a ring on the line. Under a pointer the line stands at the
+ * pointer's x and the ring rides the line there as the window scrolls under it, with no ring past
+ * either end of the line, and a key puts both on the reading it steps to. Neither glides: they move with the pointer, and a key step lands at
+ * once.
  *
  * @beta
  */
@@ -49,44 +48,32 @@ export function LiveLineChartCrosshair({ className, style }: LiveLineChartCrossh
   const plot = useLivePlot(context);
   const group = useRef<SVGGElement>(null);
   const rule = useRef<SVGLineElement>(null);
-  // A new active reading renders the part, so a step draws it with no frame running, as on a paused
-  // chart or between the redraws of reduced motion. A frame reads the store itself, which a pointer
-  // pick in the frame before this render already moved.
-  useLiveActive(context);
-  // Where the crosshair last rested, which a step to another reading glides from.
-  const shown = useRef<{ readonly time: number; readonly x: number; readonly y: number } | null>(null);
-  useLiveFrame(context, plot, (frame, geometry) => {
-    const node = group.current;
-    if (node === null || rule.current === null) return;
-    const active = context.store.active();
-    const place = active === null ? null : placeOf(frame, geometry, active.time);
-    writeAttribute(node, "data-hidden", place === null ? "" : null);
-    if (active === null || place === null) {
-      shown.current = null;
-      snapGlide(node);
-      return;
-    }
-    const { x, y } = place;
-    writeAttribute(node, "transform", `translate(${livePixel(x)} ${livePixel(y)})`);
-    writeAttribute(rule.current, "y1", -y);
-    writeAttribute(rule.current, "y2", geometry.height - y);
-    const before = shown.current;
-    shown.current = { time: place.point.time, x, y };
-    // Reduced motion stops a glide that is running too, as when the preference turns on mid-glide.
-    if (context.reduced) {
-      snapGlide(node);
-      return;
-    }
-    if (before === null || before.time === place.point.time) return;
-    const spring = followSpring(active.source === "keyboard" ? FOLLOW_SPEEDS.fast : null);
-    glideFrom(node, [before.x - x, before.y - y], spring);
-  });
+  const ring = useRef<SVGCircleElement>(null);
+  useLiveFrame(
+    context,
+    plot,
+    (frame, geometry) => {
+      if (group.current === null || rule.current === null || ring.current === null) return;
+      const at = readoutOf(frame, geometry, context.store);
+      writeAttribute(group.current, "data-hidden", at === null ? "" : null);
+      if (at === null) return;
+      // The rule moves along x only and always spans the plot, top to bottom.
+      writeAttribute(rule.current, "transform", `translate(${livePixel(at.x)} 0)`);
+      writeAttribute(rule.current, "y2", geometry.height);
+      // Where the pointer stands past either end of the line, the ring has no line to sit on.
+      writeAttribute(ring.current, "data-hidden", at.y === null ? "" : null);
+      if (at.y !== null) {
+        writeAttribute(ring.current, "transform", `translate(${livePixel(at.x)} ${livePixel(at.y)})`);
+      }
+    },
+    "readout"
+  );
   return (
     <svg data-slot="live-line-chart-crosshair" aria-hidden="true" className={className} style={style}>
       {plot === null ? null : (
         <g ref={group} data-hidden="">
-          <line ref={rule} data-slot="live-line-chart-crosshair-rule" x1={0} x2={0} />
-          <circle data-slot="chart-dot" r={4} />
+          <line ref={rule} data-slot="live-line-chart-crosshair-rule" x1={0} x2={0} y1={0} />
+          <circle ref={ring} data-slot="chart-dot" r={4} />
         </g>
       )}
     </svg>
@@ -94,9 +81,21 @@ export function LiveLineChartCrosshair({ className, style }: LiveLineChartCrossh
 }
 
 /**
- * The active reading's time and value in a popup at the top of the plot, which rides the reading
- * as the window scrolls and stays inside the plot at either edge. It is hidden from screen readers,
- * which read the same reading from the plot's option.
+ * What opened the tooltip, which holds while it stays open: a key opens it at once, with no
+ * entrance, and a pointer with the popup's fade and zoom.
+ */
+function useOpenedBy(active: LiveActive | null, open: boolean): LiveActive["source"] | null {
+  const [opened, setOpened] = useState<LiveActive["source"] | null>(null);
+  const next = open ? (opened ?? active?.source ?? null) : null;
+  if (next !== opened) setOpened(next);
+  return next;
+}
+
+/**
+ * The active reading's time and value in a popup at the top of the plot, above the crosshair, which
+ * moves with it in the same frame and stays inside the plot at either edge. A pointer opens it with
+ * a fade and a zoom from the crosshair, and a key opens it at once. It is hidden from screen
+ * readers, which read the same reading from the plot's option.
  *
  * @beta
  */
@@ -108,24 +107,40 @@ export function LiveLineChartTooltip({
   const context = useLiveRoot("LiveLineChart.Tooltip");
   const plot = useLivePlot(context);
   const active = useLiveActive(context);
-  const layer = useRef<HTMLDivElement>(null);
-  useLiveFrame(context, plot, (frame) => {
-    const node = layer.current;
-    const now = context.store.active();
-    if (node === null || now === null) return;
-    writeStyle(node, "--chart-at", String(timeShare(frame.window, now.time)));
-  });
+  const popup = useRef<HTMLDivElement>(null);
+  useLiveFrame(
+    context,
+    plot,
+    (frame, geometry) => {
+      const node = popup.current;
+      if (node === null) return;
+      const at = readoutOf(frame, geometry, context.store);
+      if (at === null) return;
+      // The popup centres on the crosshair and keeps inside the plot, its container, and zooms
+      // from the crosshair's x at its bottom edge. Both are its own properties, so no descendant
+      // restyles as it moves.
+      const x = `${livePixel(at.x)}px`;
+      const left = `clamp(0px, calc(${x} - 50%), calc(100cqw - 100%))`;
+      writeStyle(node, "translate", `${left} 0`);
+      writeStyle(node, "transform-origin", `calc(${x} - ${left}) 100%`);
+    },
+    "readout"
+  );
   const { text } = context;
   const { points } = useShownFeed(context);
   const point = active === null ? undefined : points[indexAt(points, active.time)];
+  const open = point !== undefined && plot !== null;
+  const openedBy = useOpenedBy(active, open);
   return (
-    <div ref={layer} data-slot="live-line-chart-tooltip" aria-hidden="true">
+    <div data-slot="live-line-chart-tooltip" aria-hidden="true">
       {point === undefined || plot === null ? null : (
         <div
+          ref={popup}
           data-slot="chart-tooltip"
           data-variant={variant}
-          // It opens as an anchored popup below its anchor does, fading in and dropping into place.
-          data-open=""
+          // A pointer opens it as an anchored popup below its anchor opens, fading in and dropping
+          // into place on data-open, and a key opens it at once, as keyboard actions never animate.
+          data-open={openedBy === "keyboard" ? undefined : ""}
           data-side="bottom"
           className={tooltipPopupClass(variant, className)}
           style={style}>

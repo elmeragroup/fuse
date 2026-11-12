@@ -1,8 +1,8 @@
 // A live line chart's window geometry. Unit under test: parseLiveSeries, parseLiveLatest,
-// visibleSpan, nearestIndex, stepIndex, walkRange, liveDomain, tickStep, timeTicks, edgeFade, liveVertices,
+// visibleSpan, nearestIndex, stepIndex, walkRange, liveDomain, liveValueTicks, tickStep, timeTicks, edgeFade, liveVertices,
 // liveLinePath and liveAreaPath. Oracles:
 // readings, indices, domains, tick instants and pixels worked out by hand, on a 30 s window over a
-// 300 by 100 px plot, where one second is 10 px.
+// 300 by 100 px plot, where one second is 10 px, and value tick steps worked by d3's rule by hand.
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 
@@ -11,6 +11,7 @@ import {
   liveDomain,
   liveAreaPath,
   liveLinePath,
+  liveValueTicks,
   liveVertices,
   nearestIndex,
   parseLiveLatest,
@@ -174,6 +175,27 @@ describe("liveDomain", () => {
         }
       )
     );
+  });
+});
+
+describe("liveValueTicks", () => {
+  it("takes the step from the resting domain, so it holds while the shown domain glides", () => {
+    // [−140, 0] aims for 5 ticks of 28, which d3 rounds to a step of 20 (2.8 lies between √2 and
+    // √10). Mid-glide from [0, 140] the domain shows [−104.8, 77], whose own step would be 50
+    // (36.4 at or past √10), but its ticks keep the resting step of 20.
+    expect(liveValueTicks([-140, 0], [-104.8, 77], 5)).toEqual([-100, -80, -60, -40, -20, 0, 20, 40, 60]);
+    expect(liveValueTicks([-140, 0], [-140, 0], 5)).toEqual([-140, -120, -100, -80, -60, -40, -20, 0]);
+  });
+
+  it("takes the shown domain's own step where the resting one would crowd it", () => {
+    // A spike leaves: the domain rests at [−1, 1], a step of 0.5, while it still shows [−1, 100],
+    // where that step would draw 202 ticks, past twice the 5 it aims for. d3 picks 20 for [−1, 100].
+    expect(liveValueTicks([-1, 1], [-1, 100], 5)).toEqual([0, 20, 40, 60, 80, 100]);
+  });
+
+  it("lands fractional steps on their decimals", () => {
+    // [0, 1] aims for 5 ticks of 0.2, which d3 keeps, written as tenths over 5.
+    expect(liveValueTicks([0, 1], [-0.05, 0.65], 5)).toEqual([0, 0.2, 0.4, 0.6]);
   });
 });
 

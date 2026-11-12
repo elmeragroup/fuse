@@ -26,7 +26,9 @@ The chart entry is a preview. Its names and props can change until Fuse's first 
 
 <Prose>
 
-The window moves every frame at the pace of time, never a reading at a time, so the line slides smoothly however often readings arrive. A new reading grows out of the last one, and the value axis eases to fit the window, both on the chart's update curve, so nothing jumps. The time axis ticks land on round times in the market's zone, and they fade in at the right edge and out at the left. The loop stops while the chart is out of view or its tab is hidden, and the window catches up on its return. `paused` holds the window where it is while the readings keep arriving.
+The window moves every frame at the pace of time, never a reading at a time, so the line slides smoothly however often readings arrive. Readings stamped ahead of the browser's clock move the window's end ahead with them, so it keeps scrolling between readings. A new reading grows out of the last one, and the value axis eases to fit the window, both on a gentle ease-out curve, so nothing jumps; the axis widens as fast as the values push it and narrows more slowly. Its ticks keep one step through a glide, and fade in and out as the step changes and at the plot's top and bottom edges. The time axis ticks land on round times in the market's zone, and they fade in at the right edge and out at the left. The loop stops while the chart is out of view or its tab is hidden, and on its return the window shows the clock's window at once. `paused` holds the window where it is while the readings keep arriving, and stops the live dot's ring.
+
+The crosshair follows the pointer with no glide, its ring riding the line as the window scrolls under it, and the tooltip names the reading nearest the pointer. A key step moves the crosshair and the tooltip to the reading at once.
 
 Under reduced motion the chart moves nothing: each new reading redraws the window once, ending at the clock, the live dot's ring stops and the badge's digits change at once.
 

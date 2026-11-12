@@ -8,7 +8,7 @@
  * edge, and y runs bottom to top. Positions are unsnapped: the window moves a fraction of a pixel
  * each frame, and snapping would make it judder.
  */
-import { bisector } from "d3-array";
+import { bisector, tickIncrement } from "d3-array";
 import { area, line } from "d3-shape";
 
 import type { ChartInstant } from "../chart-types";
@@ -296,6 +296,44 @@ export function liveDomain(extent: readonly [number, number]): readonly [number,
   return [low - 1, high + 1];
 }
 
+/**
+ * The value ticks a frame draws: every multiple of the step d3 picks for the resting domain, the
+ * one its glide comes to rest at, that the shown domain holds. A domain's step changes as it
+ * glides across one of d3's thresholds, which would swap every tick mid-glide, while the resting
+ * domain's changes only when the glide retargets. Where the resting step would crowd the shown
+ * domain with more than twice the ticks it aims for, as while a spike's domain eases back in, the
+ * shown domain's own step holds instead.
+ *
+ * @param rest - The domain the glide rests at.
+ * @param shown - The domain the frame shows.
+ * @param count - How many ticks a domain aims for.
+ * @returns The tick values in rising order, on the decimals d3 writes them at.
+ */
+export function liveValueTicks(
+  rest: readonly [number, number],
+  shown: readonly [number, number],
+  count: number
+): number[] {
+  const [low, high] = shown;
+  const resting = tickIncrement(rest[0], rest[1], count);
+  const crowded = (high - low) / Math.abs(resting < 0 ? 1 / resting : resting) > 2 * count;
+  // d3's increment: a positive step, or for a step under 1 its reciprocal negated, so a tick is
+  // an integer times or over it and lands on its decimal exactly.
+  const increment = crowded ? tickIncrement(low, high, count) : resting;
+  if (!Number.isFinite(increment) || increment === 0) return [];
+  const ticks: number[] = [];
+  if (increment > 0) {
+    // Adding 0 turns the -0 that `Math.ceil` gives just below 0 into 0.
+    for (let index = Math.ceil(low / increment) + 0; index * increment <= high; index += 1) {
+      ticks.push(index * increment);
+    }
+  } else {
+    const per = -increment;
+    for (let index = Math.ceil(low * per) + 0; index / per <= high; index += 1) ticks.push(index / per);
+  }
+  return ticks;
+}
+
 /** The coarsest tick step, a day, which a window too long for any finer step takes. */
 const COARSEST_TICK_STEP = 86_400_000;
 
@@ -449,6 +487,25 @@ export function liveVertices(
   if (tip === null || last === undefined || span.end !== points.length) return vertices;
   if (now > last.time) vertices.push({ time: now, value: tip });
   return vertices;
+}
+
+/**
+ * The value the line passes through at an instant, linear between the two vertices around it, so a
+ * ring at that instant sits on a linear line and within a stroke of the curves that bend between
+ * their vertices.
+ *
+ * @param vertices - The vertices in time order.
+ * @param time - The instant.
+ * @returns The value, or null where the line draws nothing: before its first vertex or after its last.
+ */
+export function lineValueAt(vertices: readonly LivePoint[], time: number): number | null {
+  const after = byTime.left(vertices, time);
+  const next = vertices[after];
+  if (next?.time === time) return next.value;
+  const previous = vertices[after - 1];
+  if (previous === undefined || next === undefined) return null;
+  const share = (time - previous.time) / (next.time - previous.time);
+  return previous.value + (next.value - previous.value) * share;
 }
 
 /** The plot a frame draws in: its box in CSS pixels, its window and its value domain. */
