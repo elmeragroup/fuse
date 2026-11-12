@@ -5,5 +5,5 @@ export const fiFI = {
   selectCountry: "Valitse maa",
   searchCountries: "Hae maita",
   noCountries: "Maita ei löytynyt.",
-  selectedCountry: (vars: Variables) => `Maa: ${String(vars?.country)} ${String(vars?.dialCode)}`,
+  selectedCountry: (vars: Variables) => `${String(vars?.dialCode)} ${String(vars?.country)}`,
 };

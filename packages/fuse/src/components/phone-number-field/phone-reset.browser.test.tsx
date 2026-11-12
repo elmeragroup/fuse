@@ -51,7 +51,7 @@ it("clears an uncontrolled number on reset without notifying", async () => {
   await expect.poll(() => snapshot()).toEqual(emptySnapshot);
   expect(change).toHaveBeenCalledTimes(changeCalls);
   expect(countryChange).toHaveBeenCalledTimes(countryCalls);
-  expect(roleNamed("button", "Select country").textContent).toContain("+47");
+  expect(roleNamed("button", "+47 Norway").textContent).toContain("+47");
 
   // The reset must leave the field editable, and the next edit still flows through.
   await userEvent.fill(phoneInput(), "99887766");

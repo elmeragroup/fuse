@@ -35,6 +35,14 @@ const SELECT_COUNTRY_COPY = {
   "fi-FI": "Valitse maa",
 } as const;
 
+/** Norway in each locale's own words, which the default trigger names after its dial code. */
+const NORWAY = {
+  "nb-NO": "Norge",
+  "sv-SE": "Norge",
+  "en-US": "Norway",
+  "fi-FI": "Norja",
+} as const;
+
 const SEARCH_COUNTRIES_COPY = {
   "nb-NO": "Søk etter land",
   "sv-SE": "Sök efter länder",
@@ -92,7 +100,7 @@ function inputGroupRoot(name: string): HTMLElement {
 describe("PhoneNumberField", () => {
   it("names the country trigger independently of the Field label", () => {
     renderField(<PhoneNumberField label="Mobile" />);
-    expect(roleNamed("button", "Select country")).toBeTruthy();
+    expect(roleNamed("button", "+47 Norway")).toBeTruthy();
     expect(page.getByRole("button", { name: "Mobile", exact: true }).query()).toBeNull();
     expect(textboxNamed("Mobile")).toBeTruthy();
     expect(textboxNamed("Mobile")).toHaveProperty("inputMode", "tel");
@@ -114,9 +122,8 @@ describe("PhoneNumberField", () => {
 
   it("puts no aria-readonly on the read-only trigger, which the button role does not support", async () => {
     const { host } = renderField(<PhoneNumberField label="Mobile" isReadOnly />);
-    expect(roleNamed("button", "Select country").hasAttribute("aria-readonly")).toBe(false);
-    // The trigger's name leaves out its visible dial code (WCAG 2.5.3); #246 tracks it.
-    await assertNoAxeViolations(host, ["label-content-name-mismatch"]);
+    expect(roleNamed("button", "+47 Norway").hasAttribute("aria-readonly")).toBe(false);
+    await assertNoAxeViolations(host);
   });
 
   it("names only the selected country through Intl.DisplayNames until the country popup opens", async () => {
@@ -124,7 +131,7 @@ describe("PhoneNumberField", () => {
     const ofSpy = vi.spyOn(Intl.DisplayNames.prototype, "of");
     try {
       renderField(<PhoneNumberField label="Mobile" />);
-      // The trigger's description names the selected country; the rows wait for the popup.
+      // The trigger's name names the selected country; the rows wait for the popup.
       expect(ofSpy.mock.calls).toEqual([["NO"]]);
       await openPicker();
       expect(ofSpy.mock.calls.length).toBeGreaterThan(1);
@@ -136,12 +143,9 @@ describe("PhoneNumberField", () => {
 
   it("selects a country from the keyboard, closes, updates the dial code, and focuses the number input", async () => {
     renderField(<PhoneNumberField label="Mobile" />);
-    expect(roleNamed("button", "Select country").textContent).toContain("+47");
+    expect(roleNamed("button", "+47 Norway").textContent).toContain("+47");
     await selectCountry("Sweden");
-    expect(roleNamed("button", "Select country").textContent).toContain("+46");
-    await expect
-      .element(roleNamed("button", "Select country"))
-      .toHaveAccessibleDescription("Country: Sweden +46");
+    expect(roleNamed("button", "+46 Sweden").textContent).toContain("+46");
     // Focus moves to the number input as the picker closes, which can land a frame later.
     await expect.element(page.getByRole("textbox", { name: "Mobile", exact: true })).toHaveFocus();
   });
@@ -207,7 +211,7 @@ describe("PhoneNumberField", () => {
 
     const disabledInput = textboxNamed("Disabled");
     expect(disabledInput).toHaveProperty("disabled", true);
-    const disabledTrigger = page.getByRole("button", { name: "Select country" }).elements()[1];
+    const disabledTrigger = page.getByRole("button", { name: "+47 Norway" }).elements()[1];
     expect(disabledTrigger).toHaveProperty("disabled", true);
 
     const locked = textboxNamed("Locked");
@@ -218,22 +222,18 @@ describe("PhoneNumberField", () => {
     expect(locked).toHaveProperty("value", "41234567");
   });
 
-  it("renders dictionary defaults in all four locales, describes the trigger's country in each, and lets override props win", async () => {
-    const described = {
-      "nb-NO": "Land: Norge +47",
-      "sv-SE": "Land: Norge +47",
-      "en-US": "Country: Norway +47",
-      "fi-FI": "Maa: Norja +47",
-    } as const;
+  it("renders dictionary defaults in all four locales, names the trigger's country in each, and lets override props win", async () => {
     for (const locale of SUPPORTED_LOCALES) {
       const { unmount } = renderField(<PhoneNumberField label="Mobile" />, locale);
+      const trigger = `+47 ${NORWAY[locale]}`;
       await expect
-        .element(roleNamed("button", SELECT_COUNTRY_COPY[locale]))
-        .toHaveAccessibleDescription(described[locale]);
-      await userEvent.click(page.getByRole("button", { name: SELECT_COUNTRY_COPY[locale], exact: true }));
+        .element(roleNamed("button", trigger))
+        .toHaveAccessibleDescription(SELECT_COUNTRY_COPY[locale]);
+      await userEvent.click(page.getByRole("button", { name: trigger, exact: true }));
       await vi.waitFor(() => {
         expect(page.getByRole("listbox").query()).not.toBeNull();
       });
+      expect(roleNamed("dialog", SELECT_COUNTRY_COPY[locale])).toBeTruthy();
       expect(countrySearch(SEARCH_COUNTRIES_COPY[locale])).toBeTruthy();
       await userEvent.fill(countrySearch(SEARCH_COUNTRIES_COPY[locale]), "zzzz");
       await vi.waitFor(() => {
@@ -251,9 +251,9 @@ describe("PhoneNumberField", () => {
       />,
       "nb-NO"
     );
-    expect(page.getByRole("button", { name: "Pick a country", exact: true }).query()).not.toBeNull();
-    expect(page.getByRole("button", { name: "Velg land", exact: true }).query()).toBeNull();
-    await openPicker("Pick a country");
+    await expect.element(roleNamed("button", "+47 Norge")).toHaveAccessibleDescription("Pick a country");
+    await openPicker("+47 Norge");
+    expect(roleNamed("dialog", "Pick a country")).toBeTruthy();
     expect(countrySearch("Filter countries")).toBeTruthy();
     await userEvent.fill(countrySearch("Filter countries"), "zzzz");
     await vi.waitFor(() => {
@@ -302,7 +302,7 @@ describe("PhoneNumberField country order", () => {
       />
     );
     const { rerender } = renderField(field(threeCountries), "sv-SE");
-    await openPicker(SELECT_COUNTRY_COPY["sv-SE"]);
+    await openPicker("+43 Österrike");
     // Sydafrika, Åland, Österrike
     expect(optionFlagCodes()).toEqual(["ZA", "AX", "AT"]);
     expect(page.getByRole("option", { selected: true }).element().textContent).toContain("Österrike");
@@ -313,7 +313,7 @@ describe("PhoneNumberField country order", () => {
     expect(optionFlagCodes()).toEqual(["ZA", "AX", "AT"]);
     await expect.poll(() => highlightedFlagCode("nb-NO")).toBe("AT");
     await closePicker();
-    await openPicker(SELECT_COUNTRY_COPY["nb-NO"]);
+    await openPicker("+43 Østerrike");
     // Sør-Afrika, Østerrike, Åland
     expect(optionFlagCodes()).toEqual(["ZA", "AT", "AX"]);
     await expect.poll(() => highlightedFlagCode("nb-NO")).toBe("AT");
@@ -325,11 +325,11 @@ describe("PhoneNumberField country order", () => {
       country_calling_codes: { ...threeCountries.country_calling_codes, "49": ["DE"] },
     };
     rerender(withLocale("nb-NO", field(withGermany)));
-    await openPicker(SELECT_COUNTRY_COPY["nb-NO"]);
+    await openPicker("+43 Østerrike");
     // Sør-Afrika, Tyskland, Østerrike, Åland
     expect(optionFlagCodes()).toEqual(["ZA", "DE", "AT", "AX"]);
     await expect.poll(() => highlightedFlagCode("nb-NO")).toBe("AT");
-    expect(roleNamed("button", SELECT_COUNTRY_COPY["nb-NO"]).textContent).toContain("+43");
+    expect(roleNamed("button", "+43 Østerrike").textContent).toContain("+43");
     expect(change).not.toHaveBeenCalled();
     expect(countryChange).not.toHaveBeenCalled();
   });
@@ -345,7 +345,7 @@ describe("PhoneNumberField country order", () => {
       />,
       "sv-SE"
     );
-    await openPicker(SELECT_COUNTRY_COPY["sv-SE"]);
+    await openPicker("+43 Österrike");
     // From Österrike, the last row, ArrowUp lands on Åland.
     await userEvent.keyboard("{ArrowUp}{Enter}");
     await vi.waitFor(() => {
@@ -359,7 +359,7 @@ describe("PhoneNumberField countries", () => {
   it("offers only the listed countries and falls back from a default outside them", async () => {
     renderField(<PhoneNumberField label="Mobile" countries={["SE", "NO", "FI"]} defaultCountryCode="DK" />);
     // Norway, the fallback before the first country, is listed.
-    expect(roleNamed("button", "Select country").textContent).toContain("+47");
+    expect(roleNamed("button", "+47 Norway").textContent).toContain("+47");
     await openPicker();
     // Finland, Norway, Sweden: name order, not the list's.
     expect(optionFlagCodes()).toEqual(["FI", "NO", "SE"]);

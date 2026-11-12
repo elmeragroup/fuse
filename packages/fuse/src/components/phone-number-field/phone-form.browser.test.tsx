@@ -155,6 +155,6 @@ describe("PhoneNumberField in a Form", () => {
       )
     );
     expect(phoneInput()).toHaveProperty("disabled", true);
-    expect(roleNamed("button", "Select country")).toHaveProperty("disabled", true);
+    expect(roleNamed("button", "+47 Norway")).toHaveProperty("disabled", true);
   });
 });

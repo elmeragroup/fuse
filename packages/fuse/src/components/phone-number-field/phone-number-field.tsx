@@ -158,7 +158,11 @@ export type PhoneNumberFieldProps = {
   size?: InputGroupRootProps["size"];
   /** Extra classes, merged onto the root via `cn`. */
   className?: string;
-  /** Explicit override for the built-in `selectCountry` dictionary key. */
+  /**
+   * Explicit override for the built-in `selectCountry` dictionary key: the country popup's name
+   * and the country trigger's description. The trigger's name is its visible dial code and the
+   * selected country, such as "+47 Norway".
+   */
   selectCountryLabel?: string;
   /** Explicit override for the built-in `searchCountries` dictionary key. */
   searchCountriesLabel?: string;
@@ -200,39 +204,44 @@ export type PhoneNumberFieldProps = {
 
 /** Props of the country picker's trigger. */
 type CountryTriggerProps = {
-  /** The trigger's name, the select-country action. */
+  /** The trigger's name: its visible dial code, then the selected country. */
   label: string;
-  /** The selected country and its dial code, which describe the trigger. */
+  /** The select-country action, which describes the trigger. */
   description: string;
   isEditable: boolean;
   /** The flag and dial code the trigger shows. */
   children: ReactNode;
 };
 
-/** The country picker's trigger, inside `ComboboxPrimitive.Root`, with its description. */
+/** The country picker's trigger, inside `ComboboxPrimitive.Root`, with its name and description. */
 function CountryTrigger({ label, description, isEditable, children }: CountryTriggerProps): ReactElement {
+  const nameId = useId();
   const descriptionId = useId();
   return (
     <>
       {/* role="button" overrides Base UI's default role="combobox" so the trigger keeps the
           getByRole("button", {name}) contract the browser tests freeze. The picker's own
-          labelable scope already keeps the field's label off it; the empty aria-labelledby is a
-          safeguard that keeps aria-label the name. Don't "simplify" either without updating the
-          browser tests. The min height is 1.5rem, floored at the fixed 24px target for a host
-          root below 16px. The trigger renders a <button>, so the inline addon drops its block
-          padding and the trigger fits the field box at both sizes and densities. */}
-      {/* The name stays the action; the description says which country and dial code the number
-          goes with, which the visible "+47" alone does not tell a screen reader. The server's Intl
-          data can name a country differently from the browser's (Hong Kong), so the text may keep
-          the server's through hydration. */}
-      <span id={descriptionId} className="sr-only" suppressHydrationWarning>
+          labelable scope already keeps the field's label off it; the explicit aria-labelledby
+          also wins over any label Base UI would wire, so the name stays the text below. Don't
+          "simplify" either without updating the browser tests. The min height is 1.5rem,
+          floored at the fixed 24px target for a host root below 16px. The trigger renders a
+          <button>, so the inline addon drops its block padding and the trigger fits the field
+          box at both sizes and densities. */}
+      {/* The name starts with the visible dial code, so a voice-control user can say the "+47"
+          they see (WCAG 2.5.3), and goes on to name the country, which the code alone does not
+          tell a screen reader. The description is the select-country action. The server's Intl
+          data can name a country differently from the browser's (Hong Kong), so the name may
+          keep the server's text through hydration. */}
+      <span id={nameId} className="sr-only" suppressHydrationWarning>
+        {label}
+      </span>
+      <span id={descriptionId} className="sr-only">
         {description}
       </span>
       <ComboboxPrimitive.Trigger
         data-slot="phone-number-field-country-trigger"
         role="button"
-        aria-label={label}
-        aria-labelledby=""
+        aria-labelledby={nameId}
         aria-describedby={descriptionId}
         // Base UI marks a read-only combobox trigger aria-readonly, which the button
         // role does not support; the read-only state shows as the inert cursor and the
@@ -414,16 +423,17 @@ export function PhoneNumberField({
             <InputGroupAddon className="text-foreground" align="inline-start">
               {/* One country leaves nothing to pick, so its flag and dial code are context: no
                   trigger, popup or tab stop, and a click focuses the number input, as on any
-                  addon. The name tells assistive technology which country the code belongs to. */}
+                  addon. The name after the code tells assistive technology which country the
+                  code belongs to, read as "+47 Norway", the order the trigger's name takes. */}
               {/* The addon keeps its block padding and inline inset for a non-button child, so
                   only a trailing gap here puts the flag where the trigger's sits. The server's
                   Intl data can name a country differently from the browser's (Hong Kong), so the
                   name may keep the server's text through hydration. */}
               <div className="flex shrink-0 items-center pr-1">
+                {countryFace}
                 <span className="sr-only" suppressHydrationWarning>
                   {getCountryName(phone.country.code)}
                 </span>
-                {countryFace}
               </div>
             </InputGroupAddon>
           ) : (
@@ -465,11 +475,11 @@ export function PhoneNumberField({
                 locale={locale}>
                 <InputGroupAddon className="text-foreground" align="inline-start">
                   <CountryTrigger
-                    label={resolvedSelectCountryLabel}
-                    description={strings.format("selectedCountry", {
+                    label={strings.format("selectedCountry", {
                       country: getCountryName(phone.country.code),
                       dialCode: phone.country.dialCode,
                     })}
+                    description={resolvedSelectCountryLabel}
                     isEditable={isEditable}>
                     {countryFace}
                   </CountryTrigger>
