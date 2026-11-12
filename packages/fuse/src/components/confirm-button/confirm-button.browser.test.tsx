@@ -125,18 +125,37 @@ describe("ConfirmButton", () => {
     );
   });
 
-  // The label text sits in a span, and Button spaces its flex items with a gap. An interpolated
-  // label must stay one item, laid out like the same words passed as one string.
-  it("lays out an interpolated label like the same label as one string", () => {
-    const count = 3;
+  // Unit under test: the label wrapping. Oracle: the same label written so that it renders the
+  // way main did, with no gap-separated piece. Button spaces its flex items with a gap, so a label
+  // split into several spans, or a whitespace-only span, comes out wider.
+  it.each([
+    ["an interpolated label", ["Delete ", 3, " items"], "Delete 3 items"],
+    [
+      "a label interpolated through a fragment",
+      <>
+        Delete <>{3}</> items
+      </>,
+      "Delete 3 items",
+    ],
+    [
+      "whitespace between two elements",
+      <>
+        <b>Delete</b> <b>all</b>
+      </>,
+      <>
+        <b>Delete</b>
+        <b>all</b>
+      </>,
+    ],
+  ] as const)("lays out %s at the width of its reference", (_case, label, reference) => {
     renderThemed(
       <>
-        <ConfirmButton onConfirm={() => undefined}>Delete {count} items</ConfirmButton>
-        <ConfirmButton onConfirm={() => undefined}>{"Delete 3 items"}</ConfirmButton>
+        <ConfirmButton onConfirm={() => undefined}>{label}</ConfirmButton>
+        <ConfirmButton onConfirm={() => undefined}>{reference}</ConfirmButton>
       </>
     );
-    const [interpolated, joined] = page.getByRole("button", { name: "Delete 3 items" }).elements();
-    expect(interpolated?.getBoundingClientRect().width).toBe(joined?.getBoundingClientRect().width);
+    const [wrapped, expected] = page.getByRole("button").elements();
+    expect(wrapped?.getBoundingClientRect().width).toBe(expected?.getBoundingClientRect().width);
   });
 
   it("disarms on Escape without confirming, and still invokes consumer onKeyDown", async () => {

@@ -28,8 +28,9 @@ export type ConfirmButtonProps = DistributiveOmit<
   /**
    * Label swapped in while armed; the resting label is kept when omitted. Text in `children` and
    * `armedChildren`, fragments included, renders in a `<span>` so the swap still works after page
-   * translation replaced the text. Text your own component renders stays bare; put it in an
-   * element.
+   * translation replaced the text. Text your own component renders stays bare: put it in an
+   * element, and when both labels use the same element, give each a different `key` so the swap
+   * replaces it instead of updating the text inside.
    */
   armedChildren?: ReactNode;
   /** Explicit armed announcement and `aria-label` override. */
@@ -37,32 +38,49 @@ export type ConfirmButtonProps = DistributiveOmit<
 };
 
 /**
- * Puts each run of adjacent text in one `<span>`, inside fragments too, so arming swaps elements
- * React owns. Page translation (Chrome's built-in translate) replaces a bare text node with its own
- * `<font>` nodes: React then threw `NotFoundError` removing the old text node, or updated the
- * detached node and left the old label showing. A run joins into one string, so the span keeps one
- * text node that React updates through `textContent`, and `Delete {count} items` stays one flex
- * item without Button's gap between its parts. Text a consumer component renders stays bare.
+ * The label's children with fragments and arrays flattened into one list. An element from inside
+ * a fragment gets the fragment's key as a prefix, so two fragments cannot hand out the same key.
+ */
+function flattenLabel(node: ReactNode, keyPrefix = ""): ReactNode[] {
+  return Children.toArray(node).flatMap((child) => {
+    if (!isValidElement<{ children?: ReactNode }>(child)) {
+      return [child];
+    }
+    const key = `${keyPrefix}${String(child.key)}`;
+    if (child.type === Fragment) {
+      return flattenLabel(child.props.children, `${key}/`);
+    }
+    return [keyPrefix === "" ? child : cloneElement(child, { key })];
+  });
+}
+
+/**
+ * Puts each run of adjacent text in one `<span>`, across fragment boundaries, so arming swaps
+ * elements React owns. Page translation (Chrome's built-in translate) replaces a bare text node
+ * with its own `<font>` nodes: React then threw `NotFoundError` removing the old text node, or
+ * updated the detached node and left the old label showing. A run joins into one string, so the
+ * span keeps one text node that React updates through `textContent`, and `Delete {count} items`
+ * stays one flex item without Button's gap between its parts. A run of only whitespace stays bare:
+ * as a span it would be a flex item of its own and add a gap, and translation leaves it alone.
+ * Text a consumer component renders stays bare.
  */
 function labelNodes(node: ReactNode): ReactNode[] {
   const nodes: ReactNode[] = [];
-  let run: (string | number)[] = [];
+  let run = "";
   const flush = () => {
-    if (run.length > 0) {
-      nodes.push(<span key={`text-${nodes.length}`}>{run.join("")}</span>);
-      run = [];
+    if (run.trim() !== "") {
+      nodes.push(<span key={`text-${nodes.length}`}>{run}</span>);
+    } else if (run !== "") {
+      nodes.push(run);
     }
+    run = "";
   };
-  for (const child of Children.toArray(node)) {
+  for (const child of flattenLabel(node)) {
     if (isTextValueNode(child)) {
-      run.push(child);
+      run += String(child);
     } else {
       flush();
-      nodes.push(
-        isValidElement<{ children?: ReactNode }>(child) && child.type === Fragment
-          ? cloneElement(child, undefined, labelNodes(child.props.children))
-          : child
-      );
+      nodes.push(child);
     }
   }
   flush();
