@@ -1,12 +1,14 @@
 import { createRef } from "react";
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
+import "../../../dist/themes.css";
 import { withLocale } from "../../../test/locale-matrix";
 import { describedTextsFor } from "../../../test/rac-calendar-testing";
 import {
+  cssVarColor,
   fieldBoxOf,
   formNamed,
   renderThemed,
@@ -149,5 +151,53 @@ describe("AutocompleteField", () => {
     await userEvent.keyboard("{Escape}");
     await expect.poll(() => page.getByRole("listbox").query()).toBeNull();
     expect(page.getByRole("status").elements()).toEqual([status]);
+  });
+
+  it("keeps read-only text against pointer and keyboard, and paints the field box with the muted read-only fill", async () => {
+    const onValueChange = vi.fn();
+    // The caret hides while the clear button shows, so each button gets a field of its own.
+    renderThemed(
+      withLocale(
+        "en-US",
+        <form aria-label="Order">
+          <Fruit isReadOnly showTrigger defaultValue="Ban" onValueChange={onValueChange} />
+          <Fruit
+            label="Snack"
+            name="snack"
+            isReadOnly
+            showClear
+            defaultValue="Apple"
+            onValueChange={onValueChange}
+          />
+        </form>
+      )
+    );
+    expect(input()).toHaveAttribute("readonly");
+    expect(input()).not.toBeDisabled();
+    const box = fieldBoxOf(input());
+    expect(getComputedStyle(box).backgroundColor).toBe(cssVarColor(box, "--muted"));
+
+    // The caret opens the list to show the matching suggestions, but a click on one keeps the text.
+    await userEvent.click(roleNamed("button", "Toggle suggestions"));
+    await userEvent.click(roleNamed("option", "Banana"));
+    expect(input().value).toBe("Ban");
+    await userEvent.keyboard("{Escape}");
+    await expect.poll(() => page.getByRole("listbox").query()).toBeNull();
+
+    // Neither a highlighted suggestion committed with Enter nor typing changes it.
+    await expect.element(page.getByRole("combobox", { name: "Fruit", exact: true })).toHaveFocus();
+    await userEvent.keyboard("{ArrowDown}{ArrowDown}{Enter}");
+    expect(input().value).toBe("Ban");
+    await userEvent.keyboard("{Escape}{Backspace}K");
+    expect(input().value).toBe("Ban");
+
+    await userEvent.click(roleNamed("button", "Clear text"));
+
+    expect(input("Snack").value).toBe("Apple");
+    expect(onValueChange).not.toHaveBeenCalled();
+    expect(formEntries("Order")).toEqual([
+      ["fruit", "Ban"],
+      ["snack", "Apple"],
+    ]);
   });
 });

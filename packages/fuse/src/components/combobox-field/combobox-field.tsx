@@ -8,9 +8,9 @@ import { FieldFrame } from "../field/field-frame";
 
 /**
  * The Root props the field names itself (`items`, `filteredItems`, `name`, `disabled` as
- * `isDisabled`, `required` as `isRequired`, `children`) or leaves to the compound: `multiple`,
- * since the field takes one selection, `readOnly`, since it has no `isReadOnly` yet, and
- * `inline`, since it always renders the popup.
+ * `isDisabled`, `required` as `isRequired`, `readOnly` as `isReadOnly`, `children`) or leaves to
+ * the compound: `multiple`, since the field takes one selection, and `inline`, since it always
+ * renders the popup.
  */
 type ComboboxFieldOwnedRootProps =
   | "items"
@@ -53,6 +53,12 @@ export type ComboboxFieldProps<
   isRequired?: boolean;
   /** Forwards `disabled` to `Field.Root` and `Combobox.Root`, which disable the input and its buttons. */
   isDisabled?: boolean;
+  /**
+   * Forwards `readOnly` to `Combobox.Root`; the input's field box uses `bg-muted`. The input stays
+   * focusable and its popup still opens to show the options, but neither choosing one, typing nor
+   * the clear button changes the selection.
+   */
+  isReadOnly?: boolean;
   /**
    * Native `name` the selected value submits under, forwarded to `Field.Root`. A `Form` error
    * under it shows below the input until the selection changes.
@@ -123,6 +129,7 @@ export function ComboboxField<
   isInvalid = false,
   isRequired = false,
   isDisabled = false,
+  isReadOnly = false,
   name,
   placeholder,
   showTrigger = true,
@@ -145,7 +152,8 @@ export function ComboboxField<
       <ComboboxRoot<Items, Filtered, Value>
         {...definedProps(props)}
         required={isRequired}
-        disabled={isDisabled}>
+        disabled={isDisabled}
+        readOnly={isReadOnly}>
         <ComboboxInput
           ref={ref}
           {...definedProps({ placeholder, className: inputClassName })}

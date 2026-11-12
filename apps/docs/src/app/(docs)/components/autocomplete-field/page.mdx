@@ -32,6 +32,8 @@ Base UI filters `items` against the text in the locale of `LocaleProvider`. Pass
 
 The list opens as the user types, so the field has no caret. `showTrigger` adds one, which opens the whole list for browsing. `showClear` adds a button that empties the input while it holds text, and the caret hides while it shows. Their names come from the locale dictionary.
 
+`isReadOnly` keeps the text: the input stays focusable and takes the muted read-only fill the other fields take, and its popup still opens to show the matching suggestions, but picking one, typing or the clear button changes nothing. The text still submits under `name`.
+
 </Prose>
 
 <Demo slug="autocomplete-field" id="caret" title="Caret" file="autocomplete-field-caret.tsx">

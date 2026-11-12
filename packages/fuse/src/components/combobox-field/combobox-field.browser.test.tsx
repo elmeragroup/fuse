@@ -1,12 +1,14 @@
 import { createRef } from "react";
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
+import "../../../dist/themes.css";
 import { withLocale } from "../../../test/locale-matrix";
 import { describedTextsFor } from "../../../test/rac-calendar-testing";
 import {
+  cssVarColor,
   fieldBoxOf,
   formNamed,
   renderThemed,
@@ -135,5 +137,53 @@ describe("ComboboxField", () => {
   it("marks the input required with isRequired", () => {
     renderThemed(withLocale("en-US", <Fruit isRequired />));
     expect(input()).toBeRequired();
+  });
+
+  it("keeps a read-only selection against pointer and keyboard, and paints the field box with the muted read-only fill", async () => {
+    const onValueChange = vi.fn();
+    // The caret hides while the clear button shows, so each button gets a field of its own.
+    renderThemed(
+      withLocale(
+        "en-US",
+        <form aria-label="Order">
+          <Fruit isReadOnly defaultValue="Banana" onValueChange={onValueChange} />
+          <Fruit
+            label="Snack"
+            name="snack"
+            isReadOnly
+            showClear
+            defaultValue="Apple"
+            onValueChange={onValueChange}
+          />
+        </form>
+      )
+    );
+    expect(input()).toHaveAttribute("readonly");
+    expect(input()).not.toBeDisabled();
+    const box = fieldBoxOf(input());
+    expect(getComputedStyle(box).backgroundColor).toBe(cssVarColor(box, "--muted"));
+
+    // The caret opens the list to show the options, but a click on another one keeps the value.
+    await userEvent.click(roleNamed("button", "Toggle options"));
+    await userEvent.click(roleNamed("option", "Cherry"));
+    expect(input().value).toBe("Banana");
+    await userEvent.keyboard("{Escape}");
+    await expect.poll(() => page.getByRole("listbox").query()).toBeNull();
+
+    // Neither a highlighted option committed with Enter nor typing changes it.
+    await expect.element(page.getByRole("combobox", { name: "Fruit", exact: true })).toHaveFocus();
+    await userEvent.keyboard("{ArrowDown}{ArrowDown}{Enter}");
+    expect(input().value).toBe("Banana");
+    await userEvent.keyboard("{Escape}{Backspace}C");
+    expect(input().value).toBe("Banana");
+
+    await userEvent.click(roleNamed("button", "Clear selection"));
+
+    expect(input("Snack").value).toBe("Apple");
+    expect(onValueChange).not.toHaveBeenCalled();
+    expect(formEntries("Order")).toEqual([
+      ["fruit", "Banana"],
+      ["snack", "Apple"],
+    ]);
   });
 });

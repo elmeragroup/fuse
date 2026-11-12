@@ -15,6 +15,7 @@ test("ComboboxFieldProps is the composite is* face, the input's props and Combob
   expectTypeOf<ComboboxFieldProps["errorMessage"]>().toEqualTypeOf<ReactNode | undefined>();
   expectTypeOf<ComboboxFieldProps["isDisabled"]>().toEqualTypeOf<boolean | undefined>();
   expectTypeOf<ComboboxFieldProps["isRequired"]>().toEqualTypeOf<boolean | undefined>();
+  expectTypeOf<ComboboxFieldProps["isReadOnly"]>().toEqualTypeOf<boolean | undefined>();
   expectTypeOf<ComboboxFieldProps["showTrigger"]>().toEqualTypeOf<boolean | undefined>();
   expectTypeOf<ComboboxFieldProps["showClear"]>().toEqualTypeOf<boolean | undefined>();
   expectTypeOf<ComboboxFieldProps>().not.toHaveProperty("disabled");

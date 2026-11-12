@@ -13,8 +13,8 @@ import { FieldFrame } from "../field/field-frame";
 
 /**
  * The Root props the field names itself (`items`, `filteredItems`, `name`, `disabled` as
- * `isDisabled`, `required` as `isRequired`, `children`) or leaves to the compound: `readOnly`,
- * since the composite has no `isReadOnly` yet, and `inline`, since it always renders the popup.
+ * `isDisabled`, `required` as `isRequired`, `readOnly` as `isReadOnly`, `children`) or leaves to
+ * the compound: `inline`, since it always renders the popup.
  */
 type AutocompleteFieldOwnedRootProps =
   | "items"
@@ -55,6 +55,12 @@ export type AutocompleteFieldProps<
   isRequired?: boolean;
   /** Forwards `disabled` to `Field.Root` and `Autocomplete.Root`, which disable the input and its buttons. */
   isDisabled?: boolean;
+  /**
+   * Forwards `readOnly` to `Autocomplete.Root`; the input's field box uses `bg-muted`. The input
+   * stays focusable and its popup still opens to show the suggestions, but neither picking one,
+   * typing nor the clear button changes the text.
+   */
+  isReadOnly?: boolean;
   /**
    * Native `name` the text submits under, forwarded to `Field.Root`. A `Form` error under it
    * shows below the input until the user edits the text.
@@ -132,6 +138,7 @@ export function AutocompleteField<
   isInvalid = false,
   isRequired = false,
   isDisabled = false,
+  isReadOnly = false,
   name,
   placeholder,
   showTrigger = false,
@@ -155,7 +162,8 @@ export function AutocompleteField<
       <AutocompleteRoot<Items, Filtered, ItemValue>
         {...definedProps(props)}
         required={isRequired}
-        disabled={isDisabled}>
+        disabled={isDisabled}
+        readOnly={isReadOnly}>
         <AutocompleteInput
           ref={ref}
           {...definedProps({ placeholder, className: inputClassName })}
