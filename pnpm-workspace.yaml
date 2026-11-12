@@ -25,6 +25,8 @@ catalog:
   # entry. It pins TypeScript 5.9.3, which the packed chart type check also runs as the older
   # consumer compiler.
   "@microsoft/api-extractor": 7.59.4
+  # The browser-floor gate's per-feature first versions. Past the minimum release age.
+  "@mdn/browser-compat-data": 8.1.7
   "@mdx-js/loader": 3.1.1
   "@next/mdx": 16.4.2
   "@shadcn/lint": 0.1.1
@@ -35,6 +37,7 @@ catalog:
   "@tailwindcss/typography": 0.5.20
   "@tanstack/react-table": 9.2.4
   "@tanstack/react-virtual": 3.14.13
+  "@types/css-tree": 3.2.0
   "@types/node": 26.6.6
   "@types/d3-array": 3.2.2
   "@types/d3-shape": 3.2.0
@@ -50,6 +53,9 @@ catalog:
   # age, so it needs no exclude entry.
   "@guidepup/virtual-screen-reader": 0.33.0
   clsx: 2.1.1
+  # The browser-floor gate reads the built sheets with it, which keeps every value as written.
+  # Both are past the minimum release age.
+  css-tree: 3.2.1
   csstype: 3.2.3
   # The chart layouts. Exact pins, because the frozen d3 test vectors in the charts ground truth
   # come from these releases. Both are past the minimum release age.
@@ -59,7 +65,7 @@ catalog:
   eslint-plugin-turbo: 2.10.12
   fast-check: 4.10.2
   "libphonenumber-js": 1.13.13
-  # The standalone stylesheet's nesting check parses dist/styles.css with the Lightning CSS that
+  # The standalone stylesheet test reprints fallbacks with the Lightning CSS that
   # @tailwindcss/node 4.3.3 runs its --optimize pass through.
   lightningcss: 1.32.0
   # The release announcement's Markdown reader, at the versions the docs app's remark already
@@ -68,6 +74,8 @@ catalog:
   # unclosed `[` (tooling/release-announcement/src/release-notes.ts).
   mdast-util-from-markdown: 2.0.3
   mdast-util-gfm-strikethrough: 2.0.0
+  # The browser-floor gate's shorthand table, at the release css-tree 3.2.1 already resolves.
+  mdn-data: 2.27.1
   micromark-extension-gfm-strikethrough: 2.1.0
   next: 16.4.2
   # Types and rule helpers for the repo-local oxlint plugin. Pinned to the oxlint release.

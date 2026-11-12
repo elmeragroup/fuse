@@ -886,7 +886,9 @@
 /* The fade points along the box's own direction. Tailwind's rtl variant matches the box under
    any right-to-left ancestor, so :dir(ltr), which reads the nearest dir, outranks it to turn a
    left-to-right box inside one back. Chromium before 120 drops the :dir() rule and keeps the
-   variant's answer; Tailwind's floor is Chrome 111. */
+   variant's answer. Fuse's browser floor is Tailwind v4's, Chrome 111, Safari 16.4 and Firefox
+   128; the browser-floor gate (test/browser-floor.ts) holds the built CSS to it and approves
+   each use above it, this rule among them. */
 @utility scroll-fade-inline {
   --scroll-fade-size: 1.5rem;
   --scroll-fade-toward: right;

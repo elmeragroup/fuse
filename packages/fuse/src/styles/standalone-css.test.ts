@@ -77,28 +77,6 @@ describe("standalone stylesheet source set", () => {
 });
 
 /**
- * The source line of every style rule in `css` that nests another rule, a style rule or a
- * conditional at-rule such as `@supports`.
- */
-function nestingRuleLines(css: Buffer): number[] {
-  const lines: number[] = [];
-  transform({
-    filename: "styles.css",
-    code: css,
-    visitor: {
-      Rule: {
-        style(rule) {
-          if (rule.value.rules.length > 0) {
-            lines.push(rule.value.loc.line);
-          }
-        },
-      },
-    },
-  });
-  return lines;
-}
-
-/**
  * `value` as Lightning CSS prints a custom property's fallback, the way `--optimize` reprints
  * every fallback in the standalone sheet, such as `oklch(0 0 0 / 0.05)` as `oklch(0% 0 0 / .05)`.
  */
@@ -108,16 +86,6 @@ function printedFallback(value: string): string {
   expect(printed, value).toBeDefined();
   return printed ?? value;
 }
-
-describe("standalone stylesheet nesting", () => {
-  it("nests no rule inside a style rule", () => {
-    // Native nesting needs Chrome 112 and Safari 16.5, one release above the floor of Chrome
-    // 111 and Safari 16.4 the standalone sheet serves, where a nested `@supports` is dropped.
-    // #558 widens this to every feature the floor lacks.
-    expect(existsSync(compiledCssPath), compiledCssPath).toBe(true);
-    expect(nestingRuleLines(readFileSync(compiledCssPath))).toEqual([]);
-  });
-});
 
 describe("variant-layer role reads", () => {
   it("fall back to the neutral default wherever the compiled sheet reads them", () => {

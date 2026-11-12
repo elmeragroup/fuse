@@ -1408,13 +1408,21 @@
     surface, at the 3:1 the palette guarantees chart roles (WCAG 1.4.11): lit and unlit notches
     never touch, as the gaps between them show the surface, and a solid fill's inner and outer
     edges lie on the surface too. gauge-chart.browser.test.tsx measures both floors. The fill and
-    the glow follow the track's variant: notches by default, the band beside a solid track.
+    the glow follow the track's variant: notches by default, the band beside a solid track. An
+    engine without light-dark(), below Chrome 123 and Safari 17.5, takes the light tint in both
+    schemes, since a custom property keeps a value it cannot use and leaves the notches unpainted.
   */
   [data-slot="gauge-chart-track"] {
-    --_paint: light-dark(
-      color-mix(in oklab, var(--muted-foreground) 32%, transparent),
-      color-mix(in oklab, var(--muted-foreground) 26%, transparent)
-    );
+    --_paint: color-mix(in oklab, var(--muted-foreground) 32%, transparent);
+  }
+
+  @supports (color: light-dark(#000, #fff)) {
+    [data-slot="gauge-chart-track"] {
+      --_paint: light-dark(
+        color-mix(in oklab, var(--muted-foreground) 32%, transparent),
+        color-mix(in oklab, var(--muted-foreground) 26%, transparent)
+      );
+    }
   }
 
   :is([data-slot="gauge-chart-track"], [data-slot="gauge-chart-fill"], [data-slot="gauge-chart-glow"])
@@ -1494,11 +1502,22 @@
     of the track's radius, which clears the centre's text: two masks, the band and the conic wedge
     the frame writes, intersect. "flat"
     paints one 28 % tint, "radial" brightens toward the rim and "conic" toward the reading's edge.
+    Below Chrome 120 mask does nothing on an HTML element, which would tint the whole box, so the
+    same masks come first prefixed, intersected by the legacy source-in.
   */
   [data-slot="gauge-chart-sector"] {
     --_at: var(--_cx) var(--_cy);
     --_reach-x: calc(var(--_rx) * var(--_gauge-track) * 100%);
     --_reach-y: calc(var(--_ry) * var(--_gauge-track) * 100%);
+    -webkit-mask:
+      conic-gradient(from var(--_sector-from) at var(--_at), #000 0 var(--_sector-span), transparent 0),
+      radial-gradient(
+        var(--_reach-x) var(--_reach-y) at var(--_at),
+        transparent calc(var(--_hole) * 100% - 0.5px),
+        #000 calc(var(--_hole) * 100%) calc(100% - 0.5px),
+        transparent 100%
+      );
+    -webkit-mask-composite: source-in;
     mask:
       conic-gradient(from var(--_sector-from) at var(--_at), #000 0 var(--_sector-span), transparent 0),
       radial-gradient(
@@ -4214,6 +4233,18 @@
     clip-path: inset(-50% calc(100% - var(--_band-end) * 1%) -50% -100%) view-box;
   }
 
+  /*
+    Below Chrome 119 a clip-path takes no view-box, so these clips fail and the highlight's segment
+    would draw whole, off the line at both ends, and the band the whole line. There the highlight
+    and the band clip away, and the hover keeps its crosshair, its dot and the dimmed line.
+  */
+  @supports not (clip-path: inset(0) view-box) {
+    [data-slot="sparkline-path"][data-part="highlight"],
+    [data-slot="sparkline-glide"] > [data-part="band-start"] {
+      clip-path: inset(50%);
+    }
+  }
+
   @media (hover: hover) {
     [data-slot="sparkline-value"] > [data-part="hit"] {
       pointer-events: all;
@@ -4288,6 +4319,7 @@
     box-sizing: content-box;
     margin-block: calc(var(--chart-stroke) / -2);
     padding-block: calc(var(--chart-stroke) / 2);
+    -webkit-mask-image: linear-gradient(to right, transparent, black 2rem);
     mask-image: linear-gradient(to right, transparent, black 2rem);
   }
 

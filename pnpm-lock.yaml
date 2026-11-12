@@ -48,6 +48,9 @@ catalogs:
     '@internationalized/string':
       specifier: 3.2.10
       version: 3.2.10
+    '@mdn/browser-compat-data':
+      specifier: 8.1.7
+      version: 8.1.7
     '@mdx-js/loader':
       specifier: 3.1.1
       version: 3.1.1
@@ -87,6 +90,9 @@ catalogs:
     '@tanstack/react-virtual':
       specifier: 3.14.13
       version: 3.14.13
+    '@types/css-tree':
+      specifier: 3.2.0
+      version: 3.2.0
     '@types/d3-array':
       specifier: 3.2.2
       version: 3.2.2
@@ -123,6 +129,9 @@ catalogs:
     clsx:
       specifier: 2.1.1
       version: 2.1.1
+    css-tree:
+      specifier: 3.2.1
+      version: 3.2.1
     csstype:
       specifier: 3.2.3
       version: 3.2.3
@@ -153,6 +162,9 @@ catalogs:
     mdast-util-gfm-strikethrough:
       specifier: 2.0.0
       version: 2.0.0
+    mdn-data:
+      specifier: 2.27.1
+      version: 2.27.1
     micromark-extension-gfm-strikethrough:
       specifier: 2.1.0
       version: 2.1.0
@@ -575,6 +587,9 @@ importers:
       '@guidepup/virtual-screen-reader':
         specifier: 'catalog:'
         version: 0.33.0
+      '@mdn/browser-compat-data':
+        specifier: 'catalog:'
+        version: 8.1.7
       '@microsoft/api-extractor':
         specifier: 'catalog:'
         version: 7.59.4(@types/node@26.6.6)
@@ -587,6 +602,9 @@ importers:
       '@tanstack/react-virtual':
         specifier: 'catalog:'
         version: 3.14.13(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      '@types/css-tree':
+        specifier: 'catalog:'
+        version: 3.2.0
       '@types/d3-array':
         specifier: 'catalog:'
         version: 3.2.2
@@ -608,12 +626,18 @@ importers:
       axe-core:
         specifier: 'catalog:'
         version: 4.14.0
+      css-tree:
+        specifier: 'catalog:'
+        version: 3.2.1
       fast-check:
         specifier: 'catalog:'
         version: 4.10.2
       lightningcss:
         specifier: 'catalog:'
         version: 1.32.0
+      mdn-data:
+        specifier: 'catalog:'
+        version: 2.27.1
       oxc-parser:
         specifier: 'catalog:'
         version: 0.148.0
@@ -1405,6 +1429,9 @@ packages:
   '@manypkg/tools@2.1.2':
     resolution: {integrity: sha512-6QEf6yqFbETdwGITKq57aYoPfX/3K8XFNwsAlx0C1M7o8cb79sv1M3w+tWuWvIcSbNqrLF7OD7YpZMVVz335hQ==}
     engines: {node: '>=20.0.0'}
+
+  '@mdn/browser-compat-data@8.1.7':
+    resolution: {integrity: sha512-TJ+rX530bFoE8678PuH2gjCSzwpBcaLlcElRhnnxFdkLHHT1clUAxtjImPFZDAlWQ005px9xaJ4Nd+aQp/rylQ==}
 
   '@mdx-js/loader@3.1.1':
     resolution: {integrity: sha512-0TTacJyZ9mDmY+VefuthVshaNIyCGZHJG2fMnGaDttCt8HmjUF7SizlHJpaCDoGnN635nK1wpzfpx/Xx5S4WnQ==}
@@ -2536,6 +2563,9 @@ packages:
   '@types/chai@5.2.3':
     resolution: {integrity: sha512-Mw558oeA9fFbv65/y4mHtXDs9bPnFMZAL/jxdPFUpOHHIXX91mcgEHbS5Lahr+pwZFR8A7GQleRWeI6cGFC2UA==}
 
+  '@types/css-tree@3.2.0':
+    resolution: {integrity: sha512-J5KXmk6BFIepOT7280FdFyNs4c5fh0Uee0otjKEvzchrRs38Ii9qminqc4ds0L19X8Zd/rT+brR9jkBthygjWw==}
+
   '@types/d3-array@3.2.2':
     resolution: {integrity: sha512-hOLWVbm7uRza0BYXpIIW5pxfrKe0W+D5lrFiAEYR+pb6w3N2SwSMaJbXdUfSEv+dT4MfHBLtn5js0LAWaO6otw==}
 
@@ -3145,6 +3175,10 @@ packages:
   cross-spawn@7.0.6:
     resolution: {integrity: sha512-uV2QOWP2nWzsy2aMp8aRibhi9dlzF5Hgh5SHaB9OiTGEyDTiJJyx0uy51QXdyWbtAHNua4XJzUKca3OzKUd3vA==}
     engines: {node: '>= 8'}
+
+  css-tree@3.2.1:
+    resolution: {integrity: sha512-X7sjQzceUhu1u7Y/ylrRZFU2FS6LRiFVp6rKLPg23y3x3c3DOKAwuXGDp+PAGjh6CSnCjYeAul8pcT8bAl+lSA==}
+    engines: {node: ^10 || ^12.20.0 || ^14.13.0 || >=15.0.0}
 
   cssesc@3.0.0:
     resolution: {integrity: sha512-/Tb/JcjK111nNScGob5MNtsntNM1aCNUDipB/TkwZFhyDrrE47SOx/18wF2bbjgc3ZzCSKW1T5nt5EbFoAz/Vg==}
@@ -3955,6 +3989,9 @@ packages:
 
   mdast-util-to-string@4.0.0:
     resolution: {integrity: sha512-0H44vDimn51F0YwvxSJSm0eCDOJTRlmN0R1yBh4HLj9wiV1Dn0QoXGbvFAWj2hSItVTlCmBF1hqKlIyUBVFLPg==}
+
+  mdn-data@2.27.1:
+    resolution: {integrity: sha512-9Yubnt3e8A0OKwxYSXyhLymGW4sCufcLG6VdiDdUGVkPhpqLxlvP5vl1983gQjJl3tqbrM731mjaZaP68AgosQ==}
 
   micromark-core-commonmark@2.0.3:
     resolution: {integrity: sha512-RDBrHEMSxVFLg6xvnXmb1Ayr2WzLAWjeSATAoxwKYJV94TeNavgoIdA0a9ytzDSVzBy2YKFK+emCPOEibLeCrg==}
@@ -5781,6 +5818,8 @@ snapshots:
       tinyglobby: 0.2.17
       yaml: 2.9.1
 
+  '@mdn/browser-compat-data@8.1.7': {}
+
   '@mdx-js/loader@3.1.1(supports-color@8.1.1)':
     dependencies:
       '@mdx-js/mdx': 3.1.1(supports-color@8.1.1)
@@ -6514,6 +6553,8 @@ snapshots:
       '@types/deep-eql': 4.0.2
       assertion-error: 2.0.1
 
+  '@types/css-tree@3.2.0': {}
+
   '@types/d3-array@3.2.2': {}
 
   '@types/d3-path@3.1.1': {}
@@ -7027,6 +7068,11 @@ snapshots:
       path-key: 3.1.1
       shebang-command: 2.0.0
       which: 2.0.2
+
+  css-tree@3.2.1:
+    dependencies:
+      mdn-data: 2.27.1
+      source-map-js: 1.2.1
 
   cssesc@3.0.0: {}
 
@@ -7906,6 +7952,8 @@ snapshots:
   mdast-util-to-string@4.0.0:
     dependencies:
       '@types/mdast': 4.0.4
+
+  mdn-data@2.27.1: {}
 
   micromark-core-commonmark@2.0.3:
     dependencies:
