@@ -44,10 +44,11 @@ find_app() {
 }
 
 # Every PR's preview shares one app, and Container Apps rejects a change while another one is
-# provisioning it (409 ContainerAppOperationInProgress). A run can start between our provisioning
-# check and any later change, so each change waits out that rejection, bounded to about four
-# minutes. A rejected change applied nothing, and each `az` change re-reads the app before writing
-# it, so repeating it is safe. Any other error fails at once.
+# provisioning it (409 ContainerAppOperationInProgress) or holds its lock (409
+# ContainerAppLockConflict). A run can start between our provisioning check and any later
+# change, so each change waits out that rejection, bounded to about four minutes. A rejected
+# change applied nothing, and each `az` change re-reads the app before writing it, so
+# repeating it is safe. Any other error fails at once.
 change_app() {
   local attempt error status
   for attempt in {1..24}; do
@@ -57,7 +58,7 @@ change_app() {
       status=$?
     fi
     echo "$error" >&2
-    if [[ "$error" != *ContainerAppOperationInProgress* ]]; then
+    if [[ "$error" != *ContainerAppOperationInProgress* && "$error" != *ContainerAppLockConflict* ]]; then
       return "$status"
     fi
     if [[ "$attempt" -eq 24 ]]; then
