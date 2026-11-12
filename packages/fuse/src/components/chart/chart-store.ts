@@ -15,6 +15,8 @@ import { useState, useSyncExternalStore } from "react";
 
 import { createDrawGate, subscribeNever } from "./chart-draw-gate";
 import type { DrawGate } from "./chart-draw-gate";
+import { trackPointer } from "./layout/pointer-speed";
+import type { TrackedPointer } from "./layout/pointer-speed";
 
 /**
  * Where Root's entrance is. It is `"waiting"` until the entrance starts, or until Root first
@@ -74,25 +76,6 @@ export type ChartSnapshot = {
   readonly emphasis: { readonly [key: string]: EmphasisEntry };
 };
 
-/**
- * The pointer's last position over the plot, in client pixels, its pointer type, when it got there
- * in milliseconds on the event clock, and how fast it has moved lately, in client pixels per
- * millisecond.
- */
-export type TrackedPointer = {
-  readonly x: number;
-  readonly y: number;
-  readonly type: string;
-  readonly time: number;
-  readonly speed: number;
-};
-
-/**
- * How much of a pointer's speed each move takes from its own distance and time, the rest from the
- * speed before it, so one quick event among slow ones counts for less than a flick.
- */
-const SPEED_WEIGHT = 0.5;
-
 /** The store one Root owns. */
 export type ChartStore = {
   /** The state the store started with, which the server and a hydrating part read. */
@@ -151,12 +134,7 @@ export function createChartStore(defaultActive: number | null = null): ChartStor
     drawing: createDrawGate(),
     pointer: () => last,
     track(x, y, type, time) {
-      const gap = last === null || last.type !== type ? 0 : time - last.time;
-      const speed =
-        last === null || gap <= 0
-          ? 0
-          : SPEED_WEIGHT * (Math.hypot(x - last.x, y - last.y) / gap) + (1 - SPEED_WEIGHT) * last.speed;
-      last = { x, y, type, time, speed };
+      last = trackPointer(last, x, y, type, time);
     },
     get: () => state,
     set(patch) {

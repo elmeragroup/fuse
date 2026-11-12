@@ -859,6 +859,7 @@
     "demos": [
       "sparkline-hourly-price.tsx",
       "sparkline-variants.tsx",
+      "sparkline-glide.tsx",
       "sparkline-negative.tsx",
       "sparkline-table.tsx"
     ]

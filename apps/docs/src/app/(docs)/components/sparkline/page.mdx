@@ -3,6 +3,7 @@ lede: >
   Preview. A server-drawn chart for a table cell or a stat tile, with no client JavaScript.
 ---
 
+import { SparklineGlide } from "./demos/sparkline-glide";
 import { SparklineHourlyPrice } from "./demos/sparkline-hourly-price";
 import { SparklineNegative } from "./demos/sparkline-negative";
 import { SparklineTable } from "./demos/sparkline-table";
@@ -33,6 +34,16 @@ The chart entry is a preview. Its names and props can change until Fuse's first 
 A line wipes in from the left as it enters the page, an area fills behind it, and bars grow from the baseline. Re-inserting the element replays the entrance, as a keyed row a sort moves or a panel shown again does, and `data-intro="none"` turns it off. A pointer over a value shows a dashed crosshair and a dot there, fades the rest of the series and draws the line around the value, or the value's bar, at full strength. Moving to the next value cross-fades the marks. All of it is CSS, so it needs no client JavaScript: motion stays off under `prefers-reduced-motion`, and the hover shows only on a device that hovers. It adds no tab stop and nothing to the accessible name, which already names the lowest and highest values. Each value's hover costs about half a kilobyte of markup, so `data-hover="none"` leaves it out where many Sparklines render at once, such as one per row of a long table. An area fades from its values toward 0, above and below the zero line; an engine that masks no SVG element, such as WebKit, keeps a flat 0.3 fill. A bar rounds the corners of its far end by `--chart-bar-radius`.
 
 </Prose>
+
+<Prose>
+
+For hover that moves rather than cross-fades, wrap one or more Sparklines in `SparklineHover`. It is a client component, and a server component can render it around server-rendered Sparklines: it reads each value's place from their markup, so the data stays on the server. Once it hydrates, one crosshair, one dot and, on a line or an area, one band that re-strokes the line glide from value to value on the spring a chart's crosshair follows, which quickens with the pointer and picks up from wherever the marks show mid-glide. A hovered bar still lifts at once. Under `prefers-reduced-motion` the marks move at once, and new data or a pointer that already rests on a value as the page hydrates places them at once on the hovered value. The marks glide in shares of the box, so a resize keeps them on the hovered value. A Sparkline inside nested wrappers follows the nearest one, and keeps its CSS hover until that one hydrates. Before it hydrates, or with no script, the Sparklines keep their CSS hover. A Sparkline with `data-hover="none"` has no hover for it to move, and it leaves that one be. `render` puts its behavior on another element, such as the tile that holds the Sparklines.
+
+</Prose>
+
+<Demo slug="sparkline" id="glide" title="Gliding hover" file="sparkline-glide.tsx">
+  <SparklineGlide />
+</Demo>
 
 <Demo slug="sparkline" id="negative" title="Below zero" file="sparkline-negative.tsx">
   <SparklineNegative />

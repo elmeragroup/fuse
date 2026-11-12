@@ -30,7 +30,7 @@ describe("pages that share the chart entry", () => {
     ["radial-chart", "radial-chart-root.tsx", ["RadialChart"]],
     ["radar-chart", "radar-chart-root.tsx", ["RadarChart"]],
     ["scatter-chart", "scatter-chart-root.tsx", ["ScatterChart"]],
-    ["sparkline", "sparkline.tsx", ["Sparkline"]],
+    ["sparkline", "sparkline.tsx", ["Sparkline", "SparklineHover"]],
   ])("resolve %s to @elmeragroup/fuse/chart and %s", (slug, source, exportNames) => {
     const paths = resolveComponentPaths(slug);
     const [own, ...extras] = paths.apis;

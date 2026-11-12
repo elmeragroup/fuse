@@ -161,6 +161,38 @@ function HoverRegion({
   );
 }
 
+/**
+ * The one set of hover marks `SparklineHover` moves: a band that re-strokes the line, for a line or
+ * an area, a crosshair and a dot, each in a group the glide translates. It stays hidden until a
+ * `SparklineHover` around the Sparkline hydrates, places it and marks it `data-glide`, which takes
+ * hover over from the regions, and it sits beside them, so the markup's depth stays the same at any
+ * length. The band's path is the whole line. One group clips it at the band's start and the group
+ * inside clips it at the band's end, so each edge glides on its own, and the path moves against
+ * both, so the line holds still while the band slides along it.
+ */
+function GlideMarks({ band }: { readonly band?: string }): ReactElement {
+  return (
+    // SparklineHover's controller writes this group's place as inline custom properties and its
+    // `data-glide` marker, maybe before a Suspense boundary around the Sparkline hydrates, so
+    // hydration leaves them be.
+    <g {...SPARKLINE_SLOT.glide} suppressHydrationWarning>
+      {band === undefined ? null : (
+        <g data-part={SPARKLINE_PART.bandStart}>
+          <g data-part={SPARKLINE_PART.bandEnd}>
+            <path {...SPARKLINE_SLOT.path} data-part={SPARKLINE_PART.glide} d={band} />
+          </g>
+        </g>
+      )}
+      <g data-part={SPARKLINE_PART.crosshair}>
+        <line {...SPARKLINE_SLOT.crosshair} data-part={SPARKLINE_PART.glide} x1="0" x2="0" y1="0" y2="100%" />
+      </g>
+      <g data-part={SPARKLINE_PART.dot}>
+        <path {...SPARKLINE_SLOT.dot} data-part={SPARKLINE_PART.glide} d="M0,0Z" />
+      </g>
+    </g>
+  );
+}
+
 /** A bar, its far end rounded, below the baseline for a negative value. */
 function Bar({
   reading,
@@ -197,7 +229,9 @@ function Bar({
  * panel does, replays it; `data-intro="none"` turns it off. On a device that hovers, the pointer
  * over a value shows a dashed crosshair and a dot there, fades the rest of the series and
  * re-strokes the line around the value, or lifts its bar, all in CSS. Hover adds nothing to the
- * accessible name and no tab stop, and `data-hover="none"` leaves it out.
+ * accessible name and no tab stop, and `data-hover="none"` leaves it out. Inside a
+ * `SparklineHover`, once it hydrates, one crosshair, one dot and one band glide from value to value
+ * on a spring instead.
  *
  * @beta
  */
@@ -233,10 +267,10 @@ export function Sparkline(props: SparklineProps): ReactElement {
   // The name reads as two sentences, so a label without its own stop takes one.
   const label = props["aria-label"];
   const name = /[.!?:]$/u.test(label) ? `${label} ${sentence}` : `${label}. ${sentence}`;
-  const regions =
-    props["data-hover"] === "none"
-      ? null
-      : layout.readings.map((reading) => (
+  const hover =
+    props["data-hover"] === "none" || layout.readings.length === 0 ? null : (
+      <>
+        {layout.readings.map((reading) => (
           <HoverRegion key={reading.index} reading={reading}>
             {"bar" in reading ? (
               <Bar reading={reading} part={SPARKLINE_PART.highlight} />
@@ -244,7 +278,10 @@ export function Sparkline(props: SparklineProps): ReactElement {
               <path {...SPARKLINE_SLOT.path} data-part={SPARKLINE_PART.highlight} d={reading.segment} />
             )}
           </HoverRegion>
-        ));
+        ))}
+        {layout.kind === "path" ? <GlideMarks band={layout.stroke} /> : <GlideMarks />}
+      </>
+    );
   return (
     <svg
       {...SPARKLINE_SLOT.root}
@@ -278,7 +315,7 @@ export function Sparkline(props: SparklineProps): ReactElement {
             {layout.stroke === "" ? null : <path {...SPARKLINE_SLOT.path} d={layout.stroke} />}
           </>
         )}
-        {regions}
+        {hover}
         {layout.dot === null ? null : <Dot at={layout.dot} />}
       </g>
     </svg>

@@ -117,6 +117,7 @@ const EXTRA_API_EXPORT_NAMES = new Map<string, readonly string[]>([
   ["file-upload", ["FileUpload", "useFileUpload"]],
   ["carousel", ["Carousel", "useCarousel"]],
   ["chart", ["Chart", "useChartPoint", "formatChartValue", "formatChartSlot"]],
+  ["sparkline", ["Sparkline", "SparklineHover"]],
   ["temporal-calendar", ["Calendar"]],
   ["temporal-range-calendar", ["RangeCalendar"]],
   ["temporal-date-field", ["DateField", "DateInput"]],

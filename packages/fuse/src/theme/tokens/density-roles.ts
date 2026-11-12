@@ -309,6 +309,8 @@ export const PART_DENSITY = {
   "sparkline-bar": "fixed",
   "sparkline-value": "fixed",
   "sparkline-crosshair": "fixed",
+  "sparkline-glide": "fixed",
+  "sparkline-hover": "layout",
 
   checkbox: "fixed",
   "checkbox-indicator": "fixed",
