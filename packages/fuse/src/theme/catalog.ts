@@ -6,8 +6,17 @@
  * part density table it carries, which the docs coverage test reads without resolving every
  * theme. It also carries the theme axes and the brand table, so a design tool can lay out
  * identity, brand and segment as separate choices. It carries the legal radius steps and the
- * radius rungs too, so the docs studio reads them instead of restating them.
+ * radius rungs too, so the docs studio reads them instead of restating them. The text-grade pairs
+ * name the role pairs the contrast gate holds at 4.5:1 everywhere, and the role text pairs those
+ * it holds in some schemes or identities, so the docs palettes page grades the same pairs. The
+ * ramp scales, steps and seed steps let it lay out the brand ramps without parsing token names
+ * or restating the ramp recipe.
  */
+
+export { ROLE_TEXT_PAIRS, TEXT_GRADE_PAIRS } from "./contrast";
+export { RAMP_SCALES, RAMP_STEPS } from "./tokens/brand-ramps";
+export type { RampScale, RampStep } from "./tokens/brand-ramps";
+export { brandRampSeedSteps } from "./tokens/brand-ramp-layer";
 
 export { CORNER_STEPS } from "./corners/corners";
 export { RADIUS_RUNG_NAMES, RADIUS_RUNGS } from "./corners/radius-scale";

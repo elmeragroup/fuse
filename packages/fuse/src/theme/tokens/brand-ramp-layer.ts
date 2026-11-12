@@ -23,8 +23,8 @@ import { tokenOklch } from "../token-color";
 import { GUEN_ORANGE } from "./brand-dark-palettes";
 import { BRAND_PALETTES, paletteBrand } from "./brand-palettes";
 import type { PaletteBrandCode } from "./brand-palettes";
-import { brandRampTokens } from "./brand-ramps";
-import type { BrandRampTokens } from "./brand-ramps";
+import { brandRampTokens, rampSeedStep } from "./brand-ramps";
+import type { BrandRampTokens, RampScale, RampSources, RampStep } from "./brand-ramps";
 import { segmentSheet } from "./segment-sheets";
 
 /**
@@ -76,6 +76,23 @@ const SECOND_BRAND_SEEDS = {
 } as const satisfies Record<PaletteBrandCode, string | undefined>;
 
 /**
+ * Where each of a theme's ramp scales takes its steps from: the neutral ramp the brand hue, palette
+ * 1 the brand seed, and palette 2 the second seed or an alias of palette 1.
+ *
+ * @param theme - The theme. Its identity does not change the ramps.
+ * @returns Each scale's tint, seed or alias.
+ */
+function brandRampSources(theme: ThemeInput): RampSources {
+  const seed = brandSeed(theme.brand, theme.segment);
+  const second = SECOND_BRAND_SEEDS[paletteBrand(theme.brand)];
+  return {
+    neutral: { _tag: "tint", hue: tokenOklch(seed).h, chroma: BRAND_NEUTRAL_CHROMA },
+    "1": { _tag: "seed", literal: seed },
+    "2": second === undefined ? { _tag: "alias", of: "1" } : { _tag: "seed", literal: second },
+  };
+}
+
+/**
  * A theme's ramp tokens. They follow the brand and segment alone, so a theme holds the same
  * ramps in both color schemes and both identities: they are raw tones, and only roles change
  * with the scheme or the identity.
@@ -84,11 +101,25 @@ const SECOND_BRAND_SEEDS = {
  * @returns Every ramp token with its `oklch()` literal.
  */
 export function brandRampLayer(theme: ThemeInput): BrandRampTokens {
-  const seed = brandSeed(theme.brand, theme.segment);
-  const second = SECOND_BRAND_SEEDS[paletteBrand(theme.brand)];
-  return brandRampTokens({
-    neutral: { _tag: "tint", hue: tokenOklch(seed).h, chroma: BRAND_NEUTRAL_CHROMA },
-    "1": { _tag: "seed", literal: seed },
-    "2": second === undefined ? { _tag: "alias", of: "1" } : { _tag: "seed", literal: second },
-  });
+  return brandRampTokens(brandRampSources(theme));
+}
+
+/** The step of each ramp scale that holds its seed literal, or `undefined` for a tint or an alias. */
+export type RampSeedSteps = { readonly [S in RampScale]: RampStep | undefined };
+
+/**
+ * The step of each of a theme's ramp scales that holds its curated seed unchanged, so a page can
+ * mark it. The neutral ramp is a tint and has none, and a single-colour brand's palette 2
+ * aliases palette 1, so it has none of its own.
+ *
+ * @param theme - The theme. Its identity does not change the ramps.
+ * @returns Each scale's seed step, or `undefined` where the scale holds no seed.
+ */
+export function brandRampSeedSteps(theme: ThemeInput): RampSeedSteps {
+  const sources = brandRampSources(theme);
+  return {
+    neutral: rampSeedStep(sources.neutral),
+    "1": rampSeedStep(sources["1"]),
+    "2": rampSeedStep(sources["2"]),
+  };
 }

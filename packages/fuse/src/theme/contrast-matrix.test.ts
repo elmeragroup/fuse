@@ -7,42 +7,23 @@ import * as Wcag from "@elmeragroup/color/wcag";
 
 import type { ResolvedColorScheme } from "./color-scheme-types";
 import { composeTheme } from "./compose-theme";
-import { buildContrastMatrix, CONTROL_SURFACES, TEXT_GRADE_PAIRS, tokenLiteral } from "./contrast";
+import {
+  ACCORDION_MUTED_PAIRS,
+  buildContrastMatrix,
+  CHART_ON_COLOR_PAIRS,
+  CONTROL_SURFACES,
+  DARK_PANEL_TEXT_PAIRS,
+  FEATURE_TEXT_PAIRS,
+  SIDEBAR_BRAND_PAIRS,
+  TEXT_GRADE_PAIRS,
+  TOGGLE_PRESSED_PAIRS,
+  tokenLiteral,
+} from "./contrast";
 import { resolveThemeCatalog } from "./resolve-theme-catalog";
 import { LEGAL_THEMES, themeSlug } from "./theme-input";
 import type { ThemeInput } from "./theme-input";
 import { literalContrast, tokenOklch } from "./token-color";
 import type { TokenName } from "./tokens/contract";
-
-/**
- * Dark-only panel pairs. `TEXT_GRADE_PAIRS` covers the roles every theme pairs with a surface;
- * these cover the popup, accent, sidebar and right-panel roles both identities render in dark.
- */
-const DARK_PANEL_TEXT_PAIRS = [
-  ["popover-foreground", "popover"],
-  ["accent-foreground", "accent"],
-  ["sidebar-foreground", "sidebar"],
-  ["sidebar-accent-foreground", "sidebar-accent"],
-  ["right-panel-foreground", "right-panel"],
-] as const;
-
-/**
- * The sidebar's brand pair: `text-sidebar-brand` on the sidebar, and text on a
- * `bg-sidebar-brand` fill. Either role may alias another, so the test reads them resolved.
- */
-const SIDEBAR_BRAND_PAIRS = [
-  ["sidebar-brand", "sidebar"],
-  ["sidebar-brand-foreground", "sidebar-brand"],
-] as const;
-
-/**
- * The filled-feature pair. The branded Figma dark sheets choose their own feature colors and
- * do not meet the text floor; the neutral dark palette is held to it.
- */
-const FEATURE_TEXT_PAIRS = [
-  ["feature-foreground", "feature"],
-  ["feature-foreground", "feature-bright"],
-] as const;
 
 /**
  * Text on an alert's translucent status fill: `[text role, tint role]`. The destructive and
@@ -71,19 +52,6 @@ const CHART_MARK_ROLES = [
   "chart-other",
   "chart-sentiment-positive",
   "chart-sentiment-negative",
-] as const;
-
-/** A direct label on a mark: each on-color role on the slot it was picked for. */
-const CHART_ON_COLOR_PAIRS = [
-  ["chart-1-foreground", "chart-1"],
-  ["chart-2-foreground", "chart-2"],
-  ["chart-3-foreground", "chart-3"],
-  ["chart-4-foreground", "chart-4"],
-  ["chart-5-foreground", "chart-5"],
-  ["chart-6-foreground", "chart-6"],
-  ["chart-7-foreground", "chart-7"],
-  ["chart-8-foreground", "chart-8"],
-  ["chart-other-foreground", "chart-other"],
 ] as const;
 
 const SYNTAX_ROLES = [
@@ -150,7 +118,7 @@ const CONTRAST_POLICIES: readonly ContrastPolicy[] = [
     // the light tones.
     schemes: ["dark"],
     matches: () => true,
-    pairs: [["muted-foreground", "primary-soft"]],
+    pairs: ACCORDION_MUTED_PAIRS,
     floor: 4.5,
   },
   {
@@ -159,7 +127,7 @@ const CONTRAST_POLICIES: readonly ContrastPolicy[] = [
     // the quiet 1.09:1 face on white by design.
     schemes: ["light", "dark"],
     matches: () => true,
-    pairs: [["toggle-pressed-foreground", "toggle-pressed"]],
+    pairs: TOGGLE_PRESSED_PAIRS,
     floor: 4.5,
   },
   {
