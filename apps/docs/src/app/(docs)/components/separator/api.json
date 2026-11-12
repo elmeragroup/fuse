@@ -32,7 +32,11 @@
           "shortType": null,
           "defaultValue": "\"horizontal\"",
           "description": "The orientation of the separator.",
-          "required": false
+          "required": false,
+          "values": [
+            "horizontal",
+            "vertical"
+          ]
         },
         {
           "name": "render",

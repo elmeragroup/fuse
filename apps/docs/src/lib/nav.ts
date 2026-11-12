@@ -77,13 +77,18 @@ export function componentForPath(pathname: string): ComponentOutline | undefined
   return COMPONENT_OUTLINES.find((component) => component.slug === slug);
 }
 
-/** The on-page TOC of a component page: prose headings, demos, API parts, tokens. */
+/**
+ * The on-page TOC of a component page: its prose headings and demos in page order, with the
+ * examples nested under Examples, then the API reference with its parts nested, then the tokens.
+ */
 function tocForComponent(component: ComponentOutline): readonly TocItem[] {
   return [
-    ...component.headings,
-    ...component.demos.map((demo) => ({ id: demo.id, title: demo.title })),
-    { id: API_SECTION_ID, title: "API reference" },
-    ...component.partNames.map((name) => ({ id: apiPartAnchor(name), title: name })),
+    ...component.sections,
+    {
+      id: API_SECTION_ID,
+      title: "API reference",
+      children: component.partNames.map((name) => ({ id: apiPartAnchor(name), title: name })),
+    },
     ...(component.hasTokens ? [{ id: TOKENS_SECTION_ID, title: "Tokens consumed" }] : []),
   ];
 }

@@ -39,7 +39,12 @@
           "shortType": "Union",
           "defaultValue": null,
           "description": "",
-          "required": false
+          "required": false,
+          "values": [
+            "always",
+            "hover",
+            "none"
+          ]
         },
         {
           "name": "variant",
@@ -48,7 +53,15 @@
           "shortType": "Union",
           "defaultValue": null,
           "description": "",
-          "required": false
+          "required": false,
+          "values": [
+            "brand",
+            "default",
+            "error",
+            "foreground",
+            "muted",
+            "primary"
+          ]
         },
         {
           "name": "weight",
@@ -57,7 +70,11 @@
           "shortType": "Union",
           "defaultValue": null,
           "description": "",
-          "required": false
+          "required": false,
+          "values": [
+            "bold",
+            "normal"
+          ]
         }
       ]
     }

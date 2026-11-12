@@ -18,7 +18,11 @@
           "shortType": "Union",
           "defaultValue": "\"default\"",
           "description": "Control size of the field box. Emitted as `data-size`. `\"default\"` maps to the `md` control size; `\"sm\"` maps to the `sm` control size. The size sets the inline inset and the type; the box keeps its 64px minimum and grows with its text at both sizes.",
-          "required": false
+          "required": false,
+          "values": [
+            "default",
+            "sm"
+          ]
         }
       ]
     }

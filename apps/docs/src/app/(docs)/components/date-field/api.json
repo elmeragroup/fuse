@@ -61,7 +61,13 @@
           "shortType": null,
           "defaultValue": null,
           "description": "The smallest unit edited. Defaults to `\"day\"` for a date and `\"minute\"` for a value with a time. Without a value it names the kind, as DateInput's does.",
-          "required": false
+          "required": false,
+          "values": [
+            "day",
+            "hour",
+            "minute",
+            "second"
+          ]
         },
         {
           "name": "hideTimeZone",
@@ -187,7 +193,11 @@
           "shortType": "Union",
           "defaultValue": "\"default\"",
           "description": "Control size of the field box. `\"default\"` maps to the `md` control size; `\"sm\"` to the `sm` one.",
-          "required": false
+          "required": false,
+          "values": [
+            "default",
+            "sm"
+          ]
         },
         {
           "name": "timeZone",
@@ -262,7 +272,13 @@
           "shortType": null,
           "defaultValue": null,
           "description": "The smallest unit edited. A time granularity needs a value with a time. Defaults to `\"day\"` for a PlainDate and `\"minute\"` for a value with a time. Without a value or default value it names the kind: `\"day\"` or none a PlainDate, a time unit a PlainDateTime, or a ZonedDateTime with `timeZone`.",
-          "required": false
+          "required": false,
+          "values": [
+            "day",
+            "hour",
+            "minute",
+            "second"
+          ]
         },
         {
           "name": "hideTimeZone",
@@ -381,7 +397,11 @@
           "shortType": "Union",
           "defaultValue": null,
           "description": "The field box's size: `\"default\"` the md control size, `\"sm\"` the sm one. Written as `data-size`.",
-          "required": false
+          "required": false,
+          "values": [
+            "default",
+            "sm"
+          ]
         },
         {
           "name": "timeZone",

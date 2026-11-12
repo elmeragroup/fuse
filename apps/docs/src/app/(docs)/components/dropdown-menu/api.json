@@ -174,7 +174,11 @@
           "shortType": "Union",
           "defaultValue": "'vertical'",
           "description": "The visual orientation of the menu. Controls whether roving focus uses up/down or left/right arrow keys.",
-          "required": false
+          "required": false,
+          "values": [
+            "horizontal",
+            "vertical"
+          ]
         },
         {
           "name": "triggerId",
@@ -395,7 +399,12 @@
           "shortType": null,
           "defaultValue": "\"start\"",
           "description": "How the popup aligns to the trigger on the cross axis. Menus lead from the trigger edge (unlike Popover/Tooltip, which default to `\"center\"`).",
-          "required": false
+          "required": false,
+          "values": [
+            "center",
+            "end",
+            "start"
+          ]
         },
         {
           "name": "alignOffset",
@@ -455,7 +464,15 @@
           "shortType": null,
           "defaultValue": "\"bottom\"",
           "description": "Which side of the trigger the popup is placed on.",
-          "required": false
+          "required": false,
+          "values": [
+            "bottom",
+            "inline-end",
+            "inline-start",
+            "left",
+            "right",
+            "top"
+          ]
         },
         {
           "name": "sideOffset",
@@ -703,7 +720,11 @@
           "shortType": "Union",
           "defaultValue": "\"default\"",
           "description": "Visual tone. The value stays `\"destructive\"` for consumer compat; classes use `error` tokens.",
-          "required": false
+          "required": false,
+          "values": [
+            "default",
+            "destructive"
+          ]
         }
       ]
     },
@@ -1160,7 +1181,11 @@
           "shortType": null,
           "defaultValue": "'horizontal'",
           "description": "The orientation of the separator.",
-          "required": false
+          "required": false,
+          "values": [
+            "horizontal",
+            "vertical"
+          ]
         },
         {
           "name": "render",
@@ -1335,7 +1360,11 @@
           "shortType": "Union",
           "defaultValue": "'vertical'",
           "description": "The visual orientation of the menu. Controls whether roving focus uses up/down or left/right arrow keys.",
-          "required": false
+          "required": false,
+          "values": [
+            "horizontal",
+            "vertical"
+          ]
         }
       ]
     },
@@ -1476,7 +1505,12 @@
           "shortType": null,
           "defaultValue": "\"start\"",
           "description": "How the popup aligns to its SubTrigger on the cross axis.",
-          "required": false
+          "required": false,
+          "values": [
+            "center",
+            "end",
+            "start"
+          ]
         },
         {
           "name": "alignOffset",
@@ -1536,7 +1570,15 @@
           "shortType": null,
           "defaultValue": "\"right\"",
           "description": "Which side of the SubTrigger the popup is placed on.",
-          "required": false
+          "required": false,
+          "values": [
+            "bottom",
+            "inline-end",
+            "inline-start",
+            "left",
+            "right",
+            "top"
+          ]
         },
         {
           "name": "sideOffset",

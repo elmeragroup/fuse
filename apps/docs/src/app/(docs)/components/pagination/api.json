@@ -67,7 +67,18 @@
           "shortType": "Union",
           "defaultValue": "\"icon\"",
           "description": "Recipe size axis borrowed from Button. Defaults to `\"icon\"`.",
-          "required": false
+          "required": false,
+          "values": [
+            "default",
+            "icon",
+            "icon-inline",
+            "icon-lg",
+            "icon-sm",
+            "icon-xs",
+            "lg",
+            "sm",
+            "xs"
+          ]
         }
       ]
     },
@@ -96,7 +107,18 @@
           "shortType": "Union",
           "defaultValue": "\"default\"",
           "description": "Recipe size axis borrowed from Button. Defaults to `\"default\"`.",
-          "required": false
+          "required": false,
+          "values": [
+            "default",
+            "icon",
+            "icon-inline",
+            "icon-lg",
+            "icon-sm",
+            "icon-xs",
+            "lg",
+            "sm",
+            "xs"
+          ]
         },
         {
           "name": "text",
@@ -134,7 +156,18 @@
           "shortType": "Union",
           "defaultValue": "\"default\"",
           "description": "Recipe size axis borrowed from Button. Defaults to `\"default\"`.",
-          "required": false
+          "required": false,
+          "values": [
+            "default",
+            "icon",
+            "icon-inline",
+            "icon-lg",
+            "icon-sm",
+            "icon-xs",
+            "lg",
+            "sm",
+            "xs"
+          ]
         },
         {
           "name": "text",

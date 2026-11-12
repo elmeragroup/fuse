@@ -18,7 +18,16 @@
           "shortType": null,
           "defaultValue": null,
           "description": "The frame's width to height, one of `\"1:1\"`, `\"4:3\"`, `\"3:4\"`, `\"3:2\"`, `\"2:3\"`, `\"16:9\"` and `\"9:16\"`. It has no default. A consumer `aspect-*` class, such as `aspect-[7/5]`, replaces it.",
-          "required": true
+          "required": true,
+          "values": [
+            "16:9",
+            "1:1",
+            "2:3",
+            "3:2",
+            "3:4",
+            "4:3",
+            "9:16"
+          ]
         }
       ]
     }

@@ -74,11 +74,24 @@ describe("the site palette's first page with nothing typed", () => {
   it("lists a component page's QuickNav entries under This page, each jumping to its anchor", () => {
     // The unit under test is the palette's This page group; the oracle is the QuickNav's table of
     // contents for the same route, which the palette must reproduce row for row.
-    const quickNav = tocForPath("/components/dialog");
+    // A nested entry, such as an API part under API reference, follows its section.
+    const quickNav = tocForPath("/components/dialog").flatMap((item) => [item, ...(item.children ?? [])]);
     const rows = group(homeGroups(sitePaletteModel("/components/dialog", [], NO_SETTINGS), ""), "This page");
     expect(rows.map((row) => row.title)).toEqual(quickNav.map((item) => item.title));
     expect(rows.map(href)).toEqual(quickNav.map((item) => `/components/dialog#${item.id}`));
-    expect(rows.map((row) => row.title)).toContain("API reference");
+    expect(rows.find((row) => row.title === "Dialog.Content")?.hint).toBe("API reference");
+  });
+
+  it("lists a page's examples under This page, each naming Examples as its section", () => {
+    // Oracle: the Button page nests its examples, such as Outline, under its Examples heading.
+    const rows = group(homeGroups(sitePaletteModel("/components/button", [], NO_SETTINGS), ""), "This page");
+    const titles = rows.map((row) => row.title);
+    expect(titles.slice(0, 3)).toEqual(["Usage", "Examples", "Outline"]);
+    expect(rows.find((row) => row.title === "Outline")).toMatchObject({
+      hint: "Examples",
+      action: { _tag: "Navigate", href: "/components/button#outline" },
+    });
+    expect(rows.find((row) => row.title === "Examples")?.hint).toBeUndefined();
   });
 
   it("lists registered commands after the table of contents, in registration order", () => {
@@ -87,7 +100,7 @@ describe("the site palette's first page with nothing typed", () => {
       { id: "undo", title: "Undo", disabled: true, action: { _tag: "Run", run: noop } },
       { id: "export", title: "Export CSS", action: { _tag: "OpenOverlay", open: noop } },
     ];
-    const quickNav = tocForPath("/components/dialog");
+    const quickNav = tocForPath("/components/dialog").flatMap((item) => [item, ...(item.children ?? [])]);
     const rows = group(
       homeGroups(sitePaletteModel("/components/dialog", commands, NO_SETTINGS), ""),
       "This page"

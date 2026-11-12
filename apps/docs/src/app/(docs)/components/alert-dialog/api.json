@@ -361,7 +361,22 @@
           "shortType": "Union",
           "defaultValue": null,
           "description": "",
-          "required": false
+          "required": false,
+          "values": [
+            "10xl",
+            "2xl",
+            "3xl",
+            "4xl",
+            "5xl",
+            "6xl",
+            "7xl",
+            "8xl",
+            "9xl",
+            "lg",
+            "md",
+            "sm",
+            "xl"
+          ]
         },
         {
           "name": "style",
@@ -390,7 +405,11 @@
           "shortType": "Union",
           "defaultValue": "\"destructive\"",
           "description": "Drives the action-button variant and the fallback icon. Destructive dialogs initially focus Cancel; neutral dialogs initially focus the primary action, or Cancel while `isActionDisabled` is set.",
-          "required": false
+          "required": false,
+          "values": [
+            "destructive",
+            "neutral"
+          ]
         }
       ]
     }

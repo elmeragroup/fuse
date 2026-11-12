@@ -72,8 +72,70 @@ describe("authored page.mdx as generation input", () => {
     );
     expect(parsed.lede).toBe("First line second line");
     expect(parsed.demos).toEqual([
-      { id: "variants", title: "Variants", file: "button-variant-matrix.tsx" },
-      { id: "sizes", title: "Sizes", file: "button-sizes.tsx" },
+      { id: "variants", title: "Variants", file: "button-variant-matrix.tsx", depth: 2 },
+      { id: "sizes", title: "Sizes", file: "button-sizes.tsx", depth: 2 },
+    ]);
+  });
+
+  it("reads the Usage shape: the default stage, the Usage code and the examples, in page order", () => {
+    const parsed = parseComponentPage(
+      page(
+        '<DefaultDemo slug="button" file="button-demo.tsx">',
+        "  <ButtonDemo />",
+        "</DefaultDemo>",
+        "",
+        "## Usage",
+        "",
+        "```tsx",
+        'import { Button } from "@elmeragroup/fuse/button";',
+        "",
+        "<Button>Button</Button>",
+        "```",
+        "",
+        "## Examples",
+        "",
+        "<Demo",
+        '  slug="button"',
+        '  id="outline"',
+        '  title="Outline"',
+        "  level={3}",
+        '  file="button-outline.tsx">',
+        "  <ButtonOutline />",
+        "</Demo>",
+        "",
+        '<Demo slug="button" id="ghost" title="Ghost" level={3} file="button-ghost.tsx" />',
+        "",
+        "## Notes"
+      ),
+      "button",
+      "button/page.mdx"
+    );
+    expect(parsed.defaultDemo).toBe("button-demo.tsx");
+    expect(parsed.usage).toBe(
+      'import { Button } from "@elmeragroup/fuse/button";\n\n<Button>Button</Button>'
+    );
+    expect(parsed.sections).toEqual([
+      { kind: "heading", id: "usage", title: "Usage", depth: 2 },
+      { kind: "heading", id: "examples", title: "Examples", depth: 2 },
+      { kind: "demo", id: "outline", title: "Outline", depth: 3 },
+      { kind: "demo", id: "ghost", title: "Ghost", depth: 3 },
+      { kind: "heading", id: "notes", title: "Notes", depth: 2 },
+    ]);
+    // The default stage is untitled, so it is no demo of the outline.
+    expect(parsed.demos.map((demo) => demo.file)).toEqual(["button-outline.tsx", "button-ghost.tsx"]);
+  });
+
+  it("reads a page without the Usage shape as before: no default stage, no Usage code", () => {
+    const parsed = parseComponentPage(
+      page('<Demo slug="button" id="a" title="A" file="a.tsx" />', "", "## Limits"),
+      "button",
+      "button/page.mdx"
+    );
+    expect(parsed.defaultDemo).toBeNull();
+    expect(parsed.usage).toBeNull();
+    expect(parsed.sections).toEqual([
+      { kind: "demo", id: "a", title: "A", depth: 2 },
+      { kind: "heading", id: "limits", title: "Limits", depth: 2 },
     ]);
   });
 
@@ -93,6 +155,21 @@ describe("authored page.mdx as generation input", () => {
       "a <Demo> naming another page's slug",
       page('<Demo slug="card" id="a" title="A" file="a.tsx" />'),
       /names slug "card" on the "button" page/,
+    ],
+    [
+      "a level-3 <Demo> with no heading before it",
+      page('<Demo slug="button" id="a" title="A" level={3} file="a.tsx" />'),
+      /needs a "##" heading before it/,
+    ],
+    [
+      "a <Demo> heading level other than 2 or 3",
+      page("## Examples", '<Demo slug="button" id="a" title="A" level={4} file="a.tsx" />'),
+      /must be 2 or 3, not 4/,
+    ],
+    [
+      "a second <DefaultDemo>",
+      page('<DefaultDemo slug="button" file="a.tsx" />', '<DefaultDemo slug="button" file="b.tsx" />'),
+      /at most one <DefaultDemo>/,
     ],
   ] as const)("rejects %s rather than ignoring it", (_case, source, message) => {
     expect(() => parseComponentPage(source, "button", "x.mdx")).toThrow(message);
@@ -250,6 +327,8 @@ describe("markdown endpoint rendering", () => {
     markdownUrl: "/components/widget.md",
     rsc: "client",
     headings: [],
+    sections: [],
+    usage: null,
     demos: [
       {
         id: "basic",
@@ -303,6 +382,29 @@ describe("markdown endpoint rendering", () => {
     // A recipe axis is labelled instead of leaving an empty description cell.
     expect(markdown).toContain("| `tone` |");
     expect(markdown).toContain("Recipe axis.");
+  });
+
+  it("mirrors a Usage-shaped page: H1, lede, Usage code, the examples with their source, API, tokens", () => {
+    const usage = 'import { Widget } from "@elmeragroup/fuse/widget";\n\n<Widget />';
+    const markdown = renderComponentMarkdown({ ...component, usage });
+    const headings = markdown.split("\n").filter((line) => /^#{1,3} /u.test(line));
+    expect(headings).toEqual([
+      "# Widget",
+      "## Usage",
+      "## Examples",
+      "### Basic",
+      "## API reference",
+      "### Widget · RSC: client",
+      "## Tokens consumed",
+    ]);
+    expect(markdown).toContain(`## Usage\n\n\`\`\`tsx\n${usage}\n\`\`\``);
+    expect(markdown).toContain(
+      "### Basic\n\nSource: `apps/docs/src/app/(docs)/components/widget/demos/widget-basic.tsx`"
+    );
+    expect(markdown).toContain("export function WidgetBasic() {}");
+    // The page itself shows no import list or RSC line, so its mirror leaves them out too.
+    expect(markdown).not.toContain("- Import:");
+    expect(markdown).not.toContain("- RSC:");
   });
 });
 

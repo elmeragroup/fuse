@@ -1,6 +1,8 @@
 import { Children, cloneElement, createElement, isValidElement } from "react";
 import type { ComponentProps, ReactElement, ReactNode } from "react";
 
+import { tv } from "tailwind-variants";
+
 import { slugifyHeading } from "../lib/slug";
 import { DocsCodeBlock } from "./docs-code-block";
 import { DocsInlineCode } from "./docs-inline-code";
@@ -37,10 +39,27 @@ function plainText(node: ReactNode): string {
     .join("");
 }
 
+/**
+ * A page section heading written outside `<Prose>`, such as a component page's `## Usage` and
+ * `## Examples`, looks like the generated section headings (`DocsSectionHeading`). Inside prose
+ * the typography styles keep it, so every `not-in-[.prose]:` utility steps aside there.
+ */
+const mdxSectionHeading = tv({
+  base: "not-in-[.prose]:text-lg not-in-[.prose]:font-semibold not-in-[.prose]:mt-12 not-in-[.prose]:mb-[0.9rem] not-in-[.prose]:scroll-mt-[calc(var(--spacing-docs-header)_+_1rem)] not-in-[.prose]:border-t not-in-[.prose]:border-border not-in-[.prose]:pt-6 not-in-[.prose]:font-heading",
+});
+
 function mdxHeading(level: HeadingLevel) {
   const tag = `h${String(level)}`;
-  function MdxHeading({ children, ...rest }: ComponentProps<"h2">): ReactElement {
-    return createElement(tag, { id: slugifyHeading(plainText(children)), ...rest }, children);
+  function MdxHeading({ children, className, ...rest }: ComponentProps<"h2">): ReactElement {
+    return createElement(
+      tag,
+      {
+        id: slugifyHeading(plainText(children)),
+        className: level === 2 ? mdxSectionHeading({ className }) : className,
+        ...rest,
+      },
+      children
+    );
   }
   MdxHeading.displayName = `Mdx${tag.toUpperCase()}`;
   return MdxHeading;

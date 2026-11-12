@@ -18,7 +18,11 @@
           "shortType": "Union",
           "defaultValue": "\"horizontal\"",
           "description": "",
-          "required": false
+          "required": false,
+          "values": [
+            "horizontal",
+            "vertical"
+          ]
         }
       ]
     },
@@ -50,7 +54,11 @@
           "shortType": null,
           "defaultValue": "\"vertical\"",
           "description": "Hairline axis. Flipped from the canonical Separator: a horizontal group needs a vertical hairline.",
-          "required": false
+          "required": false,
+          "values": [
+            "horizontal",
+            "vertical"
+          ]
         },
         {
           "name": "render",

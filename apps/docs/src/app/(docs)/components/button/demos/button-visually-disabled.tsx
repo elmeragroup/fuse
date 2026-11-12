@@ -5,18 +5,18 @@ import { useState } from "react";
 import { Button } from "@elmeragroup/fuse/button";
 
 export function ButtonVisuallyDisabled() {
-  const [explanation, setExplanation] = useState<string | null>(null);
+  const [explanation, setExplanation] = useState("");
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col items-center gap-3">
       <Button
         isVisuallyDisabled
-        onClick={() => {
-          setExplanation("This account is locked, so delete stays visible but explains itself.");
-        }}>
-        Delete account
+        onClick={() => setExplanation("Add a payment method before you upgrade your plan.")}>
+        Upgrade plan
       </Button>
-      {explanation === null ? null : <p>{explanation}</p>}
+      <p role="status" className="text-sm text-muted-foreground">
+        {explanation}
+      </p>
     </div>
   );
 }

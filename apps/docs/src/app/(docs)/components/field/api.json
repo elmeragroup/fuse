@@ -85,7 +85,12 @@
           "shortType": "Union",
           "defaultValue": "\"vertical\"",
           "description": "",
-          "required": false
+          "required": false,
+          "values": [
+            "horizontal",
+            "responsive",
+            "vertical"
+          ]
         },
         {
           "name": "render",
@@ -151,7 +156,12 @@
           "shortType": "Union",
           "defaultValue": "'onSubmit'",
           "description": "Determines when the field should be validated. This takes precedence over the `validationMode` prop on `<Form>`. - `onSubmit`: triggers validation when the form is submitted, and re-validates on change after submission. - `onBlur`: triggers validation when the control loses focus. - `onChange`: triggers validation on every change to the control value.",
-          "required": false
+          "required": false,
+          "values": [
+            "onBlur",
+            "onChange",
+            "onSubmit"
+          ]
         }
       ]
     },
@@ -539,7 +549,11 @@
           "shortType": "Union",
           "defaultValue": "\"legend\"",
           "description": "Emitted as `data-variant` and drives the text size: `\"legend\"` (default) titles the fieldset at a fixed 16/24px, `\"label\"` reads the label type pair to match a `Field.Label`.",
-          "required": false
+          "required": false,
+          "values": [
+            "label",
+            "legend"
+          ]
         }
       ]
     },

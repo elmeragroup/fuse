@@ -189,7 +189,12 @@
           "shortType": "Union",
           "defaultValue": "\"both\"",
           "description": "Which lines to draw, in screen directions: \"horizontal\" lines at the y ticks, \"vertical\" lines at the x ticks, or \"both\", the default, since both axes are numbers.",
-          "required": false
+          "required": false,
+          "values": [
+            "both",
+            "horizontal",
+            "vertical"
+          ]
         },
         {
           "name": "style",
@@ -207,7 +212,11 @@
           "shortType": "Union",
           "defaultValue": "\"solid\"",
           "description": "The line style. \"solid\" by default.",
-          "required": false
+          "required": false,
+          "values": [
+            "dashed",
+            "solid"
+          ]
         }
       ]
     },
@@ -261,7 +270,11 @@
           "shortType": "Union",
           "defaultValue": "\"none\"",
           "description": "The tick mark. \"none\" by default.",
-          "required": false
+          "required": false,
+          "values": [
+            "dot",
+            "none"
+          ]
         }
       ]
     },
@@ -306,7 +319,11 @@
           "shortType": "Union",
           "defaultValue": "\"start\"",
           "description": "\"start\" draws the axis at the left edge and \"end\" at the right. \"start\" by default.",
-          "required": false
+          "required": false,
+          "values": [
+            "end",
+            "start"
+          ]
         },
         {
           "name": "style",
@@ -378,7 +395,50 @@
           "shortType": null,
           "defaultValue": null,
           "description": "The line's tone. \"default\" by default.",
-          "required": false
+          "required": false,
+          "values": [
+            "default",
+            "error",
+            "muted"
+          ],
+          "requires": {
+            "default": [
+              [
+                "x"
+              ],
+              [
+                "y"
+              ],
+              [
+                "from",
+                "to"
+              ]
+            ],
+            "error": [
+              [
+                "x"
+              ],
+              [
+                "y"
+              ],
+              [
+                "from",
+                "to"
+              ]
+            ],
+            "muted": [
+              [
+                "x"
+              ],
+              [
+                "y"
+              ],
+              [
+                "from",
+                "to"
+              ]
+            ]
+          }
         },
         {
           "name": "variant",
@@ -387,7 +447,37 @@
           "shortType": "Union",
           "defaultValue": "\"solid\"",
           "description": "The line style. \"solid\" by default.",
-          "required": false
+          "required": false,
+          "values": [
+            "dashed",
+            "solid"
+          ],
+          "requires": {
+            "dashed": [
+              [
+                "x"
+              ],
+              [
+                "y"
+              ],
+              [
+                "from",
+                "to"
+              ]
+            ],
+            "solid": [
+              [
+                "x"
+              ],
+              [
+                "y"
+              ],
+              [
+                "from",
+                "to"
+              ]
+            ]
+          }
         },
         {
           "name": "x",
@@ -441,7 +531,12 @@
           "shortType": "Union",
           "defaultValue": "\"md\"",
           "description": "The dots' diameter: \"sm\" is 5 px, \"md\" 8 px and \"lg\" 11 px. \"md\" by default.",
-          "required": false
+          "required": false,
+          "values": [
+            "lg",
+            "md",
+            "sm"
+          ]
         },
         {
           "name": "style",
@@ -459,7 +554,11 @@
           "shortType": "Union",
           "defaultValue": "\"default\"",
           "description": "The dots' look. \"quiet\" draws them pale, for a reference series such as last year.",
-          "required": false
+          "required": false,
+          "values": [
+            "default",
+            "quiet"
+          ]
         }
       ]
     },
@@ -486,7 +585,17 @@
           "shortType": null,
           "defaultValue": "\"linear\"",
           "description": "The curve through the points, in x order, ties by y. \"linear\" by default, which draws a fitted line through its points as straight segments. \"step-after\" holds each y until the next x, as a tariff step does.",
-          "required": false
+          "required": false,
+          "values": [
+            "basis",
+            "bump",
+            "linear",
+            "monotone",
+            "natural",
+            "step",
+            "step-after",
+            "step-before"
+          ]
         },
         {
           "name": "dataKey",
@@ -513,7 +622,13 @@
           "shortType": "Union",
           "defaultValue": "\"default\"",
           "description": "The line's look. \"default\" by default. \"dashed\" dashes the whole line, \"flowing\" runs its dashes along it, which reduced motion stops, and \"quiet\" draws a thin, faint line.",
-          "required": false
+          "required": false,
+          "values": [
+            "dashed",
+            "default",
+            "flowing",
+            "quiet"
+          ]
         }
       ]
     },
@@ -549,7 +664,11 @@
           "shortType": "Union",
           "defaultValue": "\"ring\"",
           "description": "The mark on the active point. \"ring\" by default, a ring around the point in its series' colour. \"dot\" draws a filled dot inside a ring of the surface the chart rests on, `--surface`, for a series a Line draws alone.",
-          "required": false
+          "required": false,
+          "values": [
+            "dot",
+            "ring"
+          ]
         }
       ]
     },
@@ -594,7 +713,11 @@
           "shortType": "Union",
           "defaultValue": "\"default\"",
           "description": "The popup's surface. \"default\" by default.",
-          "required": false
+          "required": false,
+          "values": [
+            "default",
+            "frosted"
+          ]
         }
       ]
     },
@@ -647,7 +770,11 @@
           "shortType": null,
           "defaultValue": null,
           "description": "Which coordinate of the active point to print.",
-          "required": true
+          "required": true,
+          "values": [
+            "x",
+            "y"
+          ]
         },
         {
           "name": "format",
@@ -708,7 +835,13 @@
           "shortType": "Union",
           "defaultValue": "\"bottom\"",
           "description": "Where the legend sits around the plot. \"bottom\" by default.",
-          "required": false
+          "required": false,
+          "values": [
+            "bottom",
+            "end",
+            "start",
+            "top"
+          ]
         },
         {
           "name": "style",
@@ -982,7 +1115,20 @@
           "shortType": "Union",
           "defaultValue": "\"dots\"",
           "description": "The pattern drawn behind the marks. \"dots\" by default.",
-          "required": false
+          "required": false,
+          "values": [
+            "4-pointed-star",
+            "bubbles",
+            "cross-hatch",
+            "diagonal-lines",
+            "dots",
+            "falling-triangles",
+            "grid",
+            "overlapping-circles",
+            "plus",
+            "tiny-checkers",
+            "wiggle-lines"
+          ]
         }
       ]
     }

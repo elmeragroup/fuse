@@ -48,7 +48,13 @@
           "shortType": null,
           "defaultValue": "\"4xl\"",
           "description": "The root width from which the detail sits beside the list.",
-          "required": false
+          "required": false,
+          "values": [
+            "3xl",
+            "4xl",
+            "5xl",
+            "never"
+          ]
         }
       ]
     },
@@ -121,7 +127,22 @@
           "shortType": "Union",
           "defaultValue": null,
           "description": "",
-          "required": false
+          "required": false,
+          "values": [
+            "10xl",
+            "2xl",
+            "3xl",
+            "4xl",
+            "5xl",
+            "6xl",
+            "7xl",
+            "8xl",
+            "9xl",
+            "lg",
+            "md",
+            "sm",
+            "xl"
+          ]
         }
       ]
     },

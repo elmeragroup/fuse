@@ -266,11 +266,16 @@ export function sitePaletteModel(
   commands: readonly SiteCommand[],
   settings: SiteSettings
 ): SitePaletteModel {
-  const toc = tocForPath(pathname).map((item): SiteRow => ({
-    id: `toc:${item.id}`,
-    title: item.title,
-    action: { _tag: "Navigate", href: `${pathname}#${item.id}` },
-  }));
+  // A nested entry, such as an example under Examples, names its section in the row's hint.
+  const toc = tocForPath(pathname).flatMap((item): SiteRow[] => [
+    { id: `toc:${item.id}`, title: item.title, action: { _tag: "Navigate", href: `${pathname}#${item.id}` } },
+    ...(item.children ?? []).map((child): SiteRow => ({
+      id: `toc:${child.id}`,
+      title: child.title,
+      hint: item.title,
+      action: { _tag: "Navigate", href: `${pathname}#${child.id}` },
+    })),
+  ]);
   return {
     thisPage: [...toc, ...commands],
     settings: [...settings.pages.map(settingsEntry), ...settings.commands],

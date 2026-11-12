@@ -3,11 +3,14 @@ import type { ReactElement, ReactNode } from "react";
 
 import { tv } from "tailwind-variants";
 
+import { requireComponent } from "../lib/component-page";
 import { demoSourceHref, readDemoSource } from "../lib/demo-source";
+import type { DemoLocation } from "../lib/demo-source";
 import type { DocsRouteSection } from "../lib/docs-route-files";
 import { DemoHydrationMarker } from "./demo-hydration-marker";
 import { DemoStage } from "./demo-stage";
 import { DemoTabs } from "./demo-tabs";
+import { LiveCodeBoundary } from "./live-code/live-code-boundary";
 import { RetryBoundary } from "./retry-boundary";
 
 type DemoFrameProps = {
@@ -18,6 +21,11 @@ type DemoFrameProps = {
   /** Anchor id, unique inside the page; the on-page TOC links to it. */
   id: string;
   title: string;
+  /**
+   * The level of the demo's heading. A component page's examples sit under its `## Examples`
+   * heading at level 3, which the page writes as `level={3}`; the TOC nests them there.
+   */
+  level?: 2 | 3;
   /** Demo file name inside the page's `demos/` directory — the file the page imports. */
   file: string;
   /** The rendered demo, imported by the page as an ordinary ESM module. */
@@ -30,10 +38,11 @@ const demoFrame = tv({
     // The heading keeps the anchor id the on-page TOC links to, and lands below the sticky docs
     // header with the frame's top edge in view.
     heading: "scroll-mt-[calc(var(--spacing-docs-header)_+_1.5rem)]",
+    hidden: "sr-only",
   },
 });
 
-const { root, heading } = demoFrame();
+const { root, heading, hidden } = demoFrame();
 
 /**
  * The demo frame: a flush Frame titled with the demo, with a Demo view, the theme-tinted stage,
@@ -58,34 +67,95 @@ export function DemoFrame({
   slug,
   id,
   title,
+  level = 2,
   file,
   children,
 }: DemoFrameProps): ReactElement {
-  const demo = readDemoSource({ section, slug, file });
-
+  const Heading = level === 3 ? "h3" : "h2";
   return (
     <section className={root()} data-demo-frame aria-labelledby={id}>
-      <DemoTabs
+      <DemoFrameTabs
+        location={{ section, slug, file }}
         title={title}
+        labelId={id}
         heading={
-          <h2 id={id} className={heading()}>
+          <Heading id={id} className={heading()}>
             {title}
-          </h2>
-        }
-        file={file}
-        stage={
-          <DemoStage>
-            <RetryBoundary subject="This demo">
+          </Heading>
+        }>
+        {children}
+      </DemoFrameTabs>
+    </section>
+  );
+}
+
+type DemoFrameTabsProps = {
+  location: DemoLocation;
+  title: string;
+  /** The id of the element that names the frame, which the hydration marker finds it by. */
+  labelId: string;
+  heading?: ReactNode;
+  children: ReactNode;
+};
+
+/** The tabs, stage and source of one frame: a component demo's Code view is Live code. */
+function DemoFrameTabs({ location, title, labelId, heading, children }: DemoFrameTabsProps): ReactElement {
+  const demo = readDemoSource(location);
+  return (
+    <DemoTabs
+      title={title}
+      heading={heading}
+      liveCode={location.section === "components"}
+      file={location.file}
+      stage={
+        <DemoStage>
+          <RetryBoundary subject="This demo">
+            <LiveCodeBoundary>
               <Suspense fallback={null}>
                 {children}
-                <DemoHydrationMarker headingId={id} />
+                <DemoHydrationMarker headingId={labelId} />
               </Suspense>
-            </RetryBoundary>
-          </DemoStage>
-        }
-        sourceText={demo.source}
-        sourceHref={demoSourceHref({ section, slug, file })}
-      />
+            </LiveCodeBoundary>
+          </RetryBoundary>
+        </DemoStage>
+      }
+      sourceText={demo.source}
+      sourceHref={demoSourceHref(location)}
+    />
+  );
+}
+
+type DefaultDemoProps = {
+  /** Slug of the component page; locates the `demos/` directory and names the stage. */
+  slug: string;
+  /** Demo file name inside the page's `demos/` directory. */
+  file: string;
+  /** The rendered demo: one plain instance of the page's component. */
+  children: ReactNode;
+};
+
+/** The id of the default stage's label. A page has one default stage, so the id is fixed. */
+const DEFAULT_DEMO_LABEL = "default-demo";
+
+/**
+ * A component page's default stage, right under its intro. It is one frame with the component in
+ * its plainest form, and its Code view. It has no heading and no TOC entry, so a visually hidden
+ * label names it, such as "Button demo".
+ */
+export function DefaultDemo({ slug, file, children }: DefaultDemoProps): ReactElement {
+  const { title } = requireComponent(slug);
+  const label = `${title} demo`;
+  return (
+    <section className={root()} data-demo-frame aria-labelledby={DEFAULT_DEMO_LABEL}>
+      <span id={DEFAULT_DEMO_LABEL} className={hidden()}>
+        {label}
+      </span>
+      <DemoFrameTabs
+        location={{ section: "components", slug, file }}
+        title={label}
+        labelId={DEFAULT_DEMO_LABEL}>
+        {children}
+      </DemoFrameTabs>
     </section>
   );
 }

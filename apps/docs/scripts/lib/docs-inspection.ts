@@ -140,7 +140,10 @@ export function inspectComponentDemos(
     problems.add(`${slug}: no co-located demos directory at ${repoRelative(paths.demosDir)}`);
   }
 
-  const rendered = new Set(page.demos.map((demo) => demo.file));
+  const rendered = new Set([
+    ...page.demos.map((demo) => demo.file),
+    ...(page.defaultDemo === null ? [] : [page.defaultDemo]),
+  ]);
   if (existsSync(paths.demosDir)) {
     for (const entry of readdirSync(paths.demosDir)) {
       if (entry.endsWith(".tsx") && !rendered.has(entry)) {

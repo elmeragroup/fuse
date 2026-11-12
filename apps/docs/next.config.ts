@@ -3,7 +3,8 @@ import type { NextConfig } from "next";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-const workspaceRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), "../..");
+const docsDir = path.dirname(fileURLToPath(import.meta.url));
+const workspaceRoot = path.join(docsDir, "../..");
 
 /**
  * The e2e suite's build, `docs#build:e2e`, sets this to build into its own directory without the
@@ -90,6 +91,19 @@ const nextConfig: NextConfig = {
    */
   redirects() {
     return [{ source: "/themed/:theme", destination: "/?theme=:theme", permanent: false }];
+  },
+  turbopack: {
+    rules: {
+      /**
+       * For Live code, each component demo binds its Fuse parts through `lens()` and stamps their JSX
+       * sites, so the Code view can edit their props (`scripts/live-code-loader.ts`). Handbook and
+       * block demos are left alone. `next dev`, `next build` and `build:e2e` all compile through it.
+       */
+      "{*,live-code-rule}": {
+        loaders: [path.join(docsDir, "scripts/live-code-loader.ts")],
+        condition: { path: /(?:^|\/)src\/app\/\(docs\)\/components\/[^/]+\/demos\/[^/]+\.tsx$/ },
+      },
+    },
   },
   experimental: {
     /**

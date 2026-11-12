@@ -11,7 +11,8 @@
     "start": "next start --port 3000",
     "test": "vitest run --project unit",
     "test:e2e": "vitest run --project browser",
-    "type-check": "next typegen && tsrs --noEmit && tsrs --noEmit -p tsconfig.node.json"
+    "type-check": "next typegen && tsrs --noEmit && tsrs --noEmit -p tsconfig.node.json",
+    "live-code:sweep": "vitest run --config scripts/live-code-sweep/vitest.config.ts"
   },
   "dependencies": {
     "@base-ui/react": "catalog:",

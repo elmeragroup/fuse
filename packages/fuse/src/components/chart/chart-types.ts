@@ -680,11 +680,19 @@ export type ChartTimeAxisProps<TX> = [TX] extends [string]
     }
   : [TX] extends [ChartInstant]
     ? {
-        /** The slot length, which is also the finest interval in the chart. A time axis requires it. */
+        /**
+         * The slot length, which is also the finest interval in the chart. A time axis requires it.
+         * The axis lists at most 1,000,000 slots, so a year of minutes fits and a year of seconds
+         * throws `slot-limit`.
+         */
         interval: Interval;
       } & ChartTimeFields
     : {
-        /** The slot length, which is also the finest interval in the chart. A time axis requires it. */
+        /**
+         * The slot length, which is also the finest interval in the chart. A time axis requires it.
+         * The axis lists at most 1,000,000 slots, so a year of minutes fits and a year of seconds
+         * throws `slot-limit`.
+         */
         interval?: Interval;
       } & ChartTimeFields;
 

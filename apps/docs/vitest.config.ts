@@ -3,6 +3,7 @@ import { defineConfig } from "vitest/config";
 import { BaseSequencer } from "vitest/node";
 import type { TestSpecification } from "vitest/node";
 
+import { liveCodeLens } from "./scripts/lib/live-code-vite.ts";
 import { PAGE_WAIT_GUARD } from "./test/page-wait-guard";
 
 const shared = {
@@ -40,6 +41,9 @@ export default defineConfig({
         // project imports server view modules that render JSX (`api-view.tsx`), so
         // esbuild transforms it here instead of handing preserved JSX to Vite.
         oxc: { jsx: { runtime: "automatic" } },
+        // The Live code loader's rewrite, applied to component demos as the docs build applies it,
+        // so the transparency test renders what the site renders (`?original` opts a module out).
+        plugins: [liveCodeLens()],
         test: {
           name: "unit",
           include: ["test/**/*.test.ts"],

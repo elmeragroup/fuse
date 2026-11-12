@@ -1,7 +1,7 @@
 import { ApiReference } from "./src/components/api-reference";
 import { ComponentIntro } from "./src/components/component-intro";
 import { ComponentTokens } from "./src/components/component-tokens";
-import { DemoFrame } from "./src/components/demo-frame";
+import { DefaultDemo, DemoFrame } from "./src/components/demo-frame";
 import { MDX_HEADINGS, MdxCode, MdxPre } from "./src/components/mdx-elements";
 import { Prose } from "./src/components/prose";
 
@@ -21,6 +21,7 @@ export function useMDXComponents() {
     ComponentTokens,
     /** `<Demo …>` is the page-facing name of the frame. */
     Demo: DemoFrame,
+    DefaultDemo,
     Prose,
   };
 }

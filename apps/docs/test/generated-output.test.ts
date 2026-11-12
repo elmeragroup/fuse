@@ -134,8 +134,11 @@ describe("component page manifest", () => {
       for (const part of ALIAS_PAGES.has(slug) ? [] : pageParts(slug)) {
         expect(part.rsc, `${slug} ${part.name}`).toBe(declaredRsc(part.sourcePath));
       }
-      // The page's own status appears on the markdown endpoint, not in the manifest.
-      expect(endpoint(slug), slug).toContain(`- RSC: ${reviewed.rsc}`);
+      // The page's own status appears on the markdown endpoint, not in the manifest. A page in the
+      // Usage shape mirrors the page, which names no page-wide status; its parts carry theirs.
+      if (authoredPage(slug).parsed.usage === null) {
+        expect(endpoint(slug), slug).toContain(`- RSC: ${reviewed.rsc}`);
+      }
     }
   });
 });
@@ -161,17 +164,31 @@ describe("component outlines", () => {
     );
   });
 
-  it("outlines each page's depth-2 headings, in page order", () => {
-    // Unit under test: the generator's copy of each page's TOC headings into the outline.
-    // Oracle: the parsed page. Deeper headings stay out of the TOC.
+  it("outlines each page's depth-2 headings and demos in page order, with its examples nested", () => {
+    // Unit under test: the generator's TOC skeleton. Oracle: the parsed page, whose headings and
+    // demos the outline must list in the page's order. Deeper headings stay out of the TOC.
     for (const outline of COMPONENT_OUTLINES) {
       const authored = authoredPage(outline.slug).parsed;
-      expect(outline.headings, outline.slug).toEqual(
-        authored.headings
-          .filter((heading) => heading.depth === 2)
-          .map((heading) => ({ id: heading.id, title: heading.title }))
+      const flat = outline.sections.flatMap((item) => [
+        item.id,
+        ...(item.children ?? []).map((child) => child.id),
+      ]);
+      expect(flat, outline.slug).toEqual(
+        authored.sections
+          .filter((section) => section.depth === 2 || section.kind === "demo")
+          .map((section) => section.id)
       );
     }
+  });
+
+  it("nests the Button page's examples under Examples, after Usage", () => {
+    // Oracle: the Button page puts Usage, then Examples holding every titled demo it renders.
+    const button = COMPONENT_OUTLINES.find((outline) => outline.slug === "button");
+    expect(button?.sections.map((item) => item.id)).toEqual(["usage", "examples"]);
+    expect(button?.sections[1]?.children?.map((child) => child.id)).toEqual(
+      authoredPage("button").parsed.demos.map((demo) => demo.id)
+    );
+    expect(button?.sections[1]?.children?.length).toBe(22);
   });
 
   it("carries every demo the page renders into the outline, in order, each with a unique URL-safe ID and a nonempty title", () => {

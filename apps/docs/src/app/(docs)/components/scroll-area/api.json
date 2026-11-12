@@ -30,7 +30,11 @@
           "shortType": "Union",
           "defaultValue": "\"vertical\"",
           "description": "Which single scrollbar `Root` renders, and so which axis the content scrolls on. A vertical area holds its content to the viewport's width, so `truncate` text ellipsizes at the edge; a horizontal area lets its content grow to its widest line and scroll. For two-axis scrolling, compose the base-ui primitives directly and mount two `ScrollArea.Bar`s.",
-          "required": false
+          "required": false,
+          "values": [
+            "horizontal",
+            "vertical"
+          ]
         },
         {
           "name": "overflowEdgeThreshold",
@@ -72,7 +76,12 @@
           "shortType": null,
           "defaultValue": "\"hover\"",
           "description": "Scrollbar visibility, mapped onto base-ui's `keepMounted` plus opacity: `hover` reveals on hover or scroll, `always` keeps the bar mounted and visible, `auto` mounts it only while the content overflows.",
-          "required": false
+          "required": false,
+          "values": [
+            "always",
+            "auto",
+            "hover"
+          ]
         }
       ]
     },
@@ -117,7 +126,11 @@
           "shortType": "Union",
           "defaultValue": "\"vertical\"",
           "description": "Whether the scrollbar controls vertical or horizontal scroll.",
-          "required": false
+          "required": false,
+          "values": [
+            "horizontal",
+            "vertical"
+          ]
         },
         {
           "name": "render",
@@ -148,7 +161,12 @@
           "shortType": null,
           "defaultValue": "\"hover\"",
           "description": "Scrollbar visibility, as on `ScrollArea.Root`.",
-          "required": false
+          "required": false,
+          "values": [
+            "always",
+            "auto",
+            "hover"
+          ]
         }
       ]
     }

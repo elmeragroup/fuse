@@ -121,8 +121,51 @@ const ENTRY_STYLESHEETS = new Map<string, string>([
   ["@elmeragroup/fuse/chart", "@elmeragroup/fuse/chart.css"],
 ]);
 
+/** One demo as a markdown section: its title, its file and its whole source. */
+function renderDemo(demo: DocsComponent["demos"][number]): string[] {
+  return [`### ${demo.title}`, "", `Source: \`${demo.sourcePath}\``, "", "```tsx", demo.source, "```", ""];
+}
+
+/** The Tokens consumed section, or nothing when the recipe reads no token. */
+function renderTokens(component: DocsComponent): string[] {
+  if (component.tokens.length === 0) return [];
+  return [
+    "## Tokens consumed",
+    "",
+    ...component.tokens.map((token) => `- \`${token.name}\`${token.isColor ? " (colour)" : ""}`),
+    "",
+  ];
+}
+
+/**
+ * The endpoint of a page in the Usage-and-Examples shape. It follows the page with the H1 and
+ * lede, the Usage code, every example with its whole source, the API reference and the tokens.
+ */
+function renderUsagePage(component: DocsComponent, usage: string): string {
+  return finishMarkdown([
+    `# ${component.title}`,
+    "",
+    component.lede,
+    "",
+    "## Usage",
+    "",
+    "```tsx",
+    usage,
+    "```",
+    "",
+    "## Examples",
+    "",
+    ...component.demos.flatMap((demo) => renderDemo(demo)),
+    "## API reference",
+    "",
+    ...renderApiReference(component),
+    ...renderTokens(component),
+  ]);
+}
+
 /** Renders one component's markdown endpoint. */
 export function renderComponentMarkdown(component: DocsComponent): string {
+  if (component.usage !== null) return renderUsagePage(component, component.usage);
   // The stylesheet belongs to the page's own entry; an extra entry styles through it.
   const stylesheet = ENTRY_STYLESHEETS.get(component.apis[0].entry);
   const lines: string[] = [
@@ -142,25 +185,7 @@ export function renderComponentMarkdown(component: DocsComponent): string {
     "## Demos",
     "",
   ];
-  for (const demo of component.demos) {
-    lines.push(
-      `### ${demo.title}`,
-      "",
-      `Source: \`${demo.sourcePath}\``,
-      "",
-      "```tsx",
-      demo.source,
-      "```",
-      ""
-    );
-  }
-  lines.push("## API reference", "", ...renderApiReference(component));
-  if (component.tokens.length > 0) {
-    lines.push("## Tokens consumed", "");
-    for (const token of component.tokens) {
-      lines.push(`- \`${token.name}\`${token.isColor ? " (colour)" : ""}`);
-    }
-    lines.push("");
-  }
+  lines.push(...component.demos.flatMap((demo) => renderDemo(demo)));
+  lines.push("## API reference", "", ...renderApiReference(component), ...renderTokens(component));
   return finishMarkdown(lines);
 }

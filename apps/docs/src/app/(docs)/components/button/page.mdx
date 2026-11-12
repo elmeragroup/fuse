@@ -3,12 +3,29 @@ lede: >
   Triggers an action.
 ---
 
-import { ButtonVariantMatrix } from "./demos/button-variant-matrix";
-import { ButtonSizes } from "./demos/button-sizes";
-import { ButtonIcons } from "./demos/button-icons";
+import { ButtonDemo } from "./demos/button-demo";
+import { ButtonOutline } from "./demos/button-outline";
+import { ButtonSecondary } from "./demos/button-secondary";
+import { ButtonGhost } from "./demos/button-ghost";
+import { ButtonDestructive } from "./demos/button-destructive";
+import { ButtonSuccess } from "./demos/button-success";
+import { ButtonLink } from "./demos/button-link";
+import { ButtonExtraSmall } from "./demos/button-extra-small";
+import { ButtonSmall } from "./demos/button-small";
+import { ButtonLarge } from "./demos/button-large";
+import { ButtonIcon } from "./demos/button-icon";
+import { ButtonIconExtraSmall } from "./demos/button-icon-extra-small";
+import { ButtonIconSmall } from "./demos/button-icon-small";
+import { ButtonIconLarge } from "./demos/button-icon-large";
+import { ButtonIconInline } from "./demos/button-icon-inline";
+import { ButtonLeadingIcon } from "./demos/button-leading-icon";
+import { ButtonTrailingIcon } from "./demos/button-trailing-icon";
 import { ButtonPending } from "./demos/button-pending";
+import { ButtonCustomPendingIndicator } from "./demos/button-custom-pending-indicator";
+import { ButtonDisabled } from "./demos/button-disabled";
 import { ButtonVisuallyDisabled } from "./demos/button-visually-disabled";
 import { ButtonPredictiveIntent } from "./demos/button-predictive-intent";
+import { ButtonAsLink } from "./demos/button-as-link";
 
 import { componentMetadata } from "../../../../lib/component-page";
 
@@ -16,88 +33,127 @@ export const metadata = componentMetadata("button");
 
 <ComponentIntro slug="button" />
 
-<Demo slug="button" id="variants" title="Variants" file="button-variant-matrix.tsx">
-  <ButtonVariantMatrix />
+<DefaultDemo slug="button" file="button-demo.tsx">
+  <ButtonDemo />
+</DefaultDemo>
+
+## Usage
+
+{/* prettier-ignore */}
+```tsx
+import { Button } from "@elmeragroup/fuse/button";
+
+<Button>Button</Button>
+```
+
+## Examples
+
+<Demo slug="button" id="outline" title="Outline" level={3} file="button-outline.tsx">
+  <ButtonOutline />
 </Demo>
 
-<Demo slug="button" id="sizes" title="Sizes" file="button-sizes.tsx">
-  <ButtonSizes />
+<Demo slug="button" id="secondary" title="Secondary" level={3} file="button-secondary.tsx">
+  <ButtonSecondary />
 </Demo>
 
-<Prose>
-
-The label sizes pad with Button's own inset, the `--control-px-button-*` metrics, and the side of a
-`data-icon="inline-start"` or `"inline-end"` icon pads with `--control-px-button-icon-*`. Comfortable density widens
-both past the other controls; dense matches them. The document picks its density, whatever the theme's identity, and the
-tokens handbook page lists both densities' values. A branded button rounds with the brand's `--radius-button`, often a
-pill, so its label edges take at least 12px of padding: at dense density a branded label pads 12px where a neutral one
-pads 10px, or 8px at `xs`. Comfortable padding is 12px or more already, the icon side keeps its icon padding, and a
-button in a `ButtonGroup` keeps the dense inset, since the group rounds it with its own corner. A `px-*` class in `className` replaces the label padding only: the icon
-side keeps its icon padding, which a `has-data-[icon=inline-start]:pl-*` or `has-data-[icon=inline-end]:pr-*`
-class replaces.
-
-The `outline` variant takes its border from the theme. Neutral themes draw a 1px `--border` hairline with a
-small shadow, and branded themes a 2px ring in the text colour with no shadow.
-
-</Prose>
-
-<Demo slug="button" id="icons" title="Icons" file="button-icons.tsx">
-  <ButtonIcons />
+<Demo slug="button" id="ghost" title="Ghost" level={3} file="button-ghost.tsx">
+  <ButtonGhost />
 </Demo>
 
-<Prose>
+<Demo slug="button" id="destructive" title="Destructive" level={3} file="button-destructive.tsx">
+  <ButtonDestructive />
+</Demo>
 
-Mark every leading or trailing icon with `data-icon="inline-start"` or `"inline-end"`, as shadcn/ui's Button
-does. The attribute tells Button which side holds the icon, and that side takes the icon padding instead of the
-label padding, so the icon and its gap balance the text. Without it the icon side keeps the full label padding,
-which is widest at comfortable density, and the button looks too wide on that side. The rule matches the attribute in the
-DOM, so your own icon components must pass `data-icon` through to the element they render, as the
-`@elmeragroup/fuse/icons` components do.
+<Demo slug="button" id="success" title="Success" level={3} file="button-success.tsx">
+  <ButtonSuccess />
+</Demo>
 
-Button sizes every SVG child without a `size-*` class to 16px, and the `xs` and `icon-xs` sizes to 12px. Any
-`size-*` class opts out, `size-auto` included; `w-*` and `h-*` on their own do not, because the rule matches
-the class name.
+<Demo slug="button" id="link" title="Link" level={3} file="button-link.tsx">
+  <ButtonLink />
+</Demo>
 
-An SVG without a `viewBox` clips instead of scaling when the rule forces it to 16px. Logos that go through
-SVGR often arrive that way, because SVGO's default `removeViewBox` strips the attribute. Give such an icon
-`size-auto` to keep its intrinsic `width` and `height`, or restore the `viewBox` so it scales.
+<Demo slug="button" id="extra-small" title="Extra small" level={3} file="button-extra-small.tsx">
+  <ButtonExtraSmall />
+</Demo>
 
-</Prose>
+<Demo slug="button" id="small" title="Small" level={3} file="button-small.tsx">
+  <ButtonSmall />
+</Demo>
 
-<Demo slug="button" id="pending" title="Pending" file="button-pending.tsx">
+<Demo slug="button" id="large" title="Large" level={3} file="button-large.tsx">
+  <ButtonLarge />
+</Demo>
+
+<Demo slug="button" id="icon" title="Icon" level={3} file="button-icon.tsx">
+  <ButtonIcon />
+</Demo>
+
+<Demo
+  slug="button"
+  id="icon-extra-small"
+  title="Icon extra small"
+  level={3}
+  file="button-icon-extra-small.tsx">
+  <ButtonIconExtraSmall />
+</Demo>
+
+<Demo slug="button" id="icon-small" title="Icon small" level={3} file="button-icon-small.tsx">
+  <ButtonIconSmall />
+</Demo>
+
+<Demo slug="button" id="icon-large" title="Icon large" level={3} file="button-icon-large.tsx">
+  <ButtonIconLarge />
+</Demo>
+
+<Demo slug="button" id="icon-inline" title="Icon inline" level={3} file="button-icon-inline.tsx">
+  <ButtonIconInline />
+</Demo>
+
+<Demo slug="button" id="leading-icon" title="Leading icon" level={3} file="button-leading-icon.tsx">
+  <ButtonLeadingIcon />
+</Demo>
+
+<Demo slug="button" id="trailing-icon" title="Trailing icon" level={3} file="button-trailing-icon.tsx">
+  <ButtonTrailingIcon />
+</Demo>
+
+<Demo slug="button" id="pending" title="Pending" level={3} file="button-pending.tsx">
   <ButtonPending />
 </Demo>
 
-<Prose>
+<Demo
+  slug="button"
+  id="custom-pending-indicator"
+  title="Custom pending indicator"
+  level={3}
+  file="button-custom-pending-indicator.tsx">
+  <ButtonCustomPendingIndicator />
+</Demo>
 
-`isPending` blocks the button, dims it, stamps `aria-busy` and shows a spinner in the leading icon
-position; the button's own leading and bare icons hide meanwhile so the spinner takes their place, and
-a trailing `data-icon="inline-end"` icon stays. The button stays in the focus order, so a keyboard user
-who activated it is still on it when the result arrives. Pass `focusableWhenDisabled={false}` to take
-it out of the focus order instead.
+<Demo slug="button" id="disabled" title="Disabled" level={3} file="button-disabled.tsx">
+  <ButtonDisabled />
+</Demo>
 
-`pendingIndicator` changes what shows. A node replaces the spinner in the same decorative slot, for
-a brand spinner, and is not animated for you. `null` renders no indicator and hides nothing, so the
-call site owns the pending markup. The brand button above does that: `relative` on the button, the
-content kept in flow and faded with `group-data-pending/button:opacity-0`, and the spinner centred
-with `absolute inset-0 m-auto hidden group-data-pending/button:block`. Fade with opacity, never
-`invisible`, which would drop the label from the accessible name, and give the overlay no `data-icon`,
-which would tighten an inset. Pending buttons also dim like disabled ones; a brand that forbids that
-overrides the dim on its own wrapper.
-
-`aria-busy` alone announces nothing. Say what is happening by changing the label ("Saving") or through
-a `role="status"` region outside the button, and put the outcome there when the action settles. Wrap a
-label that changes in its own element, as the Save button does: page translation replaces bare text, so
-a new label in a bare text node never shows.
-
-</Prose>
-
-<Demo slug="button" id="visually-disabled" title="Visually disabled" file="button-visually-disabled.tsx">
+<Demo
+  slug="button"
+  id="visually-disabled"
+  title="Visually disabled"
+  level={3}
+  file="button-visually-disabled.tsx">
   <ButtonVisuallyDisabled />
 </Demo>
 
-<Demo slug="button" id="predictive-intent" title="Predictive intent" file="button-predictive-intent.tsx">
+<Demo
+  slug="button"
+  id="predictive-intent"
+  title="Predictive intent"
+  level={3}
+  file="button-predictive-intent.tsx">
   <ButtonPredictiveIntent />
+</Demo>
+
+<Demo slug="button" id="as-link" title="As a link" level={3} file="button-as-link.tsx">
+  <ButtonAsLink />
 </Demo>
 
 <ApiReference slug="button" />

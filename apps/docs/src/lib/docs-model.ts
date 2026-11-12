@@ -158,10 +158,20 @@ export type ContentHeading = {
   depth: number;
 };
 
-/** One on-page TOC entry: the anchor it links and its label. */
+/**
+ * One entry of a page's outline, in page order: a prose heading or a titled demo. The TOC
+ * nests a depth-3 demo under the depth-2 heading before it.
+ */
+export type PageSection =
+  | { readonly kind: "heading"; readonly id: string; readonly title: string; readonly depth: number }
+  | { readonly kind: "demo"; readonly id: string; readonly title: string; readonly depth: 2 | 3 };
+
+/** One on-page TOC entry: the anchor it links, its label, and the entries nested under it. */
 export type TocItem = {
   id: string;
   title: string;
+  /** The entries one level down, such as the examples under Examples. */
+  children?: readonly TocItem[];
 };
 
 /**
@@ -197,8 +207,12 @@ export type ComponentPageEntry = {
  * markdown endpoint and holds its TOC skeleton.
  */
 export type ComponentOutline = Pick<ComponentPageEntry, "slug" | "title" | "markdownUrl"> & {
-  /** The page's depth-2 headings, in page order. Deeper headings stay out of the TOC. */
-  headings: readonly TocItem[];
+  /**
+   * The page's depth-2 headings and its demos, in page order, each depth-3 demo nested under the
+   * heading before it. Deeper headings stay out of the TOC.
+   */
+  sections: readonly TocItem[];
+  /** The titled demos, in page order, which the ⌘K palette lists. */
   demos: readonly DemoRef[];
   /**
    * Names of the API parts the reference renders, in order — one TOC anchor each. This is TOC
@@ -245,6 +259,10 @@ export type DocsComponent = ComponentPageEntry & {
   rsc: RscStatus;
   /** Every heading of the page's authored prose, in page order. */
   headings: readonly ContentHeading[];
+  /** The headings and titled demos together, in page order. */
+  sections: readonly PageSection[];
+  /** The code under the page's `## Usage` heading, or `null` when the page has no Usage section. */
+  usage: string | null;
   demos: readonly DocsDemo[];
   parts: readonly DocsApiPart[];
 };

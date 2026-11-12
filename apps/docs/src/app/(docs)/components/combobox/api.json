@@ -496,7 +496,11 @@
           "shortType": "Union",
           "defaultValue": "\"default\"",
           "description": "Control size of the field box, the outer InputGroup. Emitted as `data-size`. `\"default\"` maps to the `md` control size; `\"sm\"` maps to the `sm` control size. It replaces the native numeric `size` attribute; set the width with a class instead.",
-          "required": false
+          "required": false,
+          "values": [
+            "default",
+            "sm"
+          ]
         },
         {
           "name": "style",
@@ -691,7 +695,12 @@
           "shortType": null,
           "defaultValue": "\"start\"",
           "description": "How the popup aligns to the trigger on the cross axis.",
-          "required": false
+          "required": false,
+          "values": [
+            "center",
+            "end",
+            "start"
+          ]
         },
         {
           "name": "alignOffset",
@@ -771,7 +780,15 @@
           "shortType": null,
           "defaultValue": "\"bottom\"",
           "description": "Which side of the trigger the popup is placed on.",
-          "required": false
+          "required": false,
+          "values": [
+            "bottom",
+            "inline-end",
+            "inline-start",
+            "left",
+            "right",
+            "top"
+          ]
         },
         {
           "name": "sideOffset",
@@ -1126,7 +1143,11 @@
           "shortType": null,
           "defaultValue": "'horizontal'",
           "description": "The orientation of the separator.",
-          "required": false
+          "required": false,
+          "values": [
+            "horizontal",
+            "vertical"
+          ]
         },
         {
           "name": "render",
@@ -1191,7 +1212,11 @@
           "shortType": "Union",
           "defaultValue": "\"default\"",
           "description": "Control size of the chips field box. Emitted as `data-size`. `\"default\"` maps to the `md` control size; `\"sm\"` maps to the `sm` control size. The box's minimum height, inset, gap and text follow it, and a row of chips still fits the sm height. More chips than one row holds grow the box at both sizes.",
-          "required": false
+          "required": false,
+          "values": [
+            "default",
+            "sm"
+          ]
         },
         {
           "name": "style",

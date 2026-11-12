@@ -44,6 +44,11 @@ import { selfFocusRingClass } from "../../styles/utils";
 // Accordion trigger and the selection labels. The state face's `disabled:`,
 // `data-disabled:` and `aria-disabled:` cursors are variants, so they sort after this
 // plain utility and a disabled button keeps `not-allowed`.
+// An SVG child without a `size-*` class takes 16px, or 12px at `xs` and `icon-xs`. The rule
+// matches the class name, so any `size-*` class opts out, `size-auto` included, and `w-*` or `h-*`
+// alone does not. An SVG without a `viewBox` has nothing to scale, so the 16px box clips it.
+// SVGO's default `removeViewBox` strips the attribute from logos that go through SVGR.
+// `size-auto` keeps such an SVG at its intrinsic `width` and `height`.
 // While Button renders a pending indicator it stamps `data-pending-indicator`, and the
 // recipe then hides the button's own leading and bare direct SVG children, so the indicator
 // takes a leading icon's place, an icon-only square shows the indicator alone, and a spinner

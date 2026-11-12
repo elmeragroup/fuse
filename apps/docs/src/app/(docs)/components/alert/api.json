@@ -45,7 +45,14 @@
           "shortType": "Union",
           "defaultValue": "\"default\"",
           "description": "",
-          "required": false
+          "required": false,
+          "values": [
+            "default",
+            "destructive",
+            "info",
+            "success",
+            "warning"
+          ]
         }
       ]
     },
@@ -66,7 +73,14 @@
           "shortType": null,
           "defaultValue": null,
           "description": "Status glyph. `default → Info`, `warning → Warning`, `destructive → WarningOctagon`, `success → CheckCircle`, `info → Info`.",
-          "required": true
+          "required": true,
+          "values": [
+            "default",
+            "destructive",
+            "info",
+            "success",
+            "warning"
+          ]
         },
         {
           "name": "weight",
@@ -75,7 +89,12 @@
           "shortType": "Union",
           "defaultValue": null,
           "description": "Phosphor weight. Bold is the library default; `regular` draws a thinner stroke and `fill` is reserved for selected or active states.",
-          "required": false
+          "required": false,
+          "values": [
+            "bold",
+            "fill",
+            "regular"
+          ]
         }
       ]
     },

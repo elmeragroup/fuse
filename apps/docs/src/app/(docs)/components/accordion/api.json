@@ -107,7 +107,11 @@
           "shortType": null,
           "defaultValue": "'vertical'",
           "description": "Deprecated following the [APG guidance update](https://github.com/w3c/aria-practices/pull/3434) to remove roving focus. This prop no longer affects keyboard focus behavior.",
-          "required": false
+          "required": false,
+          "values": [
+            "horizontal",
+            "vertical"
+          ]
         },
         {
           "name": "radius",
@@ -116,7 +120,12 @@
           "shortType": "Union",
           "defaultValue": "\"none\"",
           "description": "",
-          "required": false
+          "required": false,
+          "values": [
+            "lg",
+            "none",
+            "xl"
+          ]
         },
         {
           "name": "render",
@@ -158,7 +167,12 @@
           "shortType": "Union",
           "defaultValue": "\"default\"",
           "description": "",
-          "required": false
+          "required": false,
+          "values": [
+            "card",
+            "default",
+            "infodropdown"
+          ]
         }
       ]
     },

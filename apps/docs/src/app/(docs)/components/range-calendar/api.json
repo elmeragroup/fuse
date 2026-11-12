@@ -19,7 +19,11 @@
           "shortType": "Union",
           "defaultValue": "\"select\"",
           "description": "What an open range does when focus leaves the calendar or the user presses outside its days and month buttons: `\"select\"` completes it at the focused or hovered day, `\"reset\"` drops the anchor and keeps the previous range.",
-          "required": false
+          "required": false,
+          "values": [
+            "reset",
+            "select"
+          ]
         },
         {
           "name": "defaultValue",
@@ -46,7 +50,16 @@
           "shortType": "Union",
           "defaultValue": null,
           "description": "The weekday each row starts on. Defaults to the locale's: Sunday in en-US, Monday in the Nordic locales.",
-          "required": false
+          "required": false,
+          "values": [
+            "fri",
+            "mon",
+            "sat",
+            "sun",
+            "thu",
+            "tue",
+            "wed"
+          ]
         },
         {
           "name": "isDateUnavailable",
@@ -100,7 +113,11 @@
           "shortType": "Union",
           "defaultValue": "\"visible\"",
           "description": "How the month buttons page a multi-month view, and how far the view moves when the keyboard leaves it: `\"visible\"` by every visible month, `\"single\"` by one.",
-          "required": false
+          "required": false,
+          "values": [
+            "single",
+            "visible"
+          ]
         },
         {
           "name": "readOnly",
@@ -199,7 +216,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Extra classes, merged last through `cn`.",
+          "description": "Extra classes, merged last through `cn`. A `px-*` class replaces the label padding only. The icon side keeps its own padding, which `has-data-[icon=inline-start]:pl-*` or `has-data-[icon=inline-end]:pr-*` replaces.",
           "required": false
         },
         {
@@ -219,7 +236,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The in-flight state of an async action. Stamps `data-pending` and `aria-busy`, blocks activation (effective disabled is `disabled || isPending`) and renders the disabled treatment, but keeps the button in the focus order like `focusableWhenDisabled`, so a keyboard user who activated it is still on it when the result arrives. Shows the `pendingIndicator` in the leading icon position meanwhile. An explicit `focusableWhenDisabled={false}` restores the native `disabled` attribute while pending. `aria-busy` announces nothing by itself: say what is happening through the label (\"Saving\") or a `role=\"status\"` region outside the button. Put a label that changes with the state in its own element, such as `<span>{label}</span>`: page translation replaces a bare text child with its own nodes, so React's update to the old text node never shows.",
+          "description": "Marks an action in flight. The button blocks activation, dims, and stamps `data-pending` and `aria-busy`. It stays in the focus order, so a keyboard user is still on it when the result arrives. `focusableWhenDisabled={false}` takes it out of the focus order. `aria-busy` announces nothing, so say what is happening in the label, such as \"Saving\", or in a `role=\"status\"` region outside the button. Put a label that changes with the state in its own element, such as `<span>{label}</span>`: page translation replaces a bare text child with its own nodes, so React's update to the old text node never shows.",
           "required": false
         },
         {
@@ -228,7 +245,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Stamps `aria-disabled` (an explicit consumer value wins), which renders the disabled treatment (`opacity-50`, the `not-allowed` cursor, no hover or press paint), and suppresses focus-on-press while the button stays fully interactive — click, keyboard and focus-visible all still work, and a Tooltip on it still opens. For \"looks disabled but explains itself on activation\" flows. The treatment keys off `aria-disabled`, so an explicit `aria-disabled={false}` also turns it off: the button then looks and announces enabled and only the focus-on-press suppression remains.",
+          "description": "Makes the button look and announce disabled while it stays interactive. It stamps `aria-disabled`, and an explicit `aria-disabled` wins. Click, keyboard and focus still work, and a Tooltip on the button still opens. Use it for an action that explains on activation why it is unavailable.",
           "required": false
         },
         {
@@ -248,7 +265,7 @@
           "type": "(() => void) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Predictive-prefetch callback. Fires once when the pointer's predicted trajectory lands inside the inflated hit rect; browsers without the prediction API fail soft.",
+          "description": "Fires once when the pointer's predicted path enters the inflated hit rect, for prefetching. Browsers without pointer prediction never fire it.",
           "required": false
         },
         {
@@ -257,7 +274,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "What the button shows while pending. Omitted: a spinning `SpinnerGap` in the leading icon position, and the button's own leading and bare SVG children hide so the spinner takes their place (a trailing `data-icon=\"inline-end\"` icon stays). A node: rendered in that same place instead of the spinner, as a decorative `aria-hidden` slot; animate it yourself. `null` or `false`: no indicator and nothing hidden, so the call site owns the pending markup, for example a brand button that keeps its logo and centres its own spinner over it.",
+          "description": "What a pending button shows in its leading icon position. When you omit it, a spinner shows there and the button's leading and bare icons hide, while a `data-icon=\"inline-end\"` icon stays. A node replaces the spinner and does not animate on its own. `null` or `false` shows nothing and hides nothing, so the call site draws its own pending state. Fade that content with `group-data-pending/button:opacity-0`, not `invisible`, which drops the label from the accessible name, and give an overlay no `data-icon`.",
           "required": false
         },
         {
@@ -266,7 +283,7 @@
           "type": "number | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Pixels the hit rect is inflated on every side when predicting pointer intent.",
+          "description": "Pixels added to every side of the hit rect when predicting pointer intent.",
           "required": false
         },
         {
@@ -287,7 +304,14 @@
           "shortType": null,
           "defaultValue": null,
           "description": "Button's square size. Defaults to `\"icon\"`.",
-          "required": false
+          "required": false,
+          "values": [
+            "icon",
+            "icon-inline",
+            "icon-lg",
+            "icon-sm",
+            "icon-xs"
+          ]
         },
         {
           "name": "style",
@@ -302,12 +326,21 @@
         },
         {
           "name": "variant",
-          "origin": "recipe-axis",
+          "origin": "declared",
           "type": "\"default\" | \"destructive\" | \"ghost\" | \"link\" | \"outline\" | \"secondary\" | \"success\" | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "",
-          "required": false
+          "description": "The fill and text colour. The theme sets the `outline` border. `link` looks like an inline text link.",
+          "required": false,
+          "values": [
+            "default",
+            "destructive",
+            "ghost",
+            "link",
+            "outline",
+            "secondary",
+            "success"
+          ]
         }
       ]
     },
@@ -345,7 +378,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Extra classes, merged last through `cn`.",
+          "description": "Extra classes, merged last through `cn`. A `px-*` class replaces the label padding only. The icon side keeps its own padding, which `has-data-[icon=inline-start]:pl-*` or `has-data-[icon=inline-end]:pr-*` replaces.",
           "required": false
         },
         {
@@ -365,7 +398,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The in-flight state of an async action. Stamps `data-pending` and `aria-busy`, blocks activation (effective disabled is `disabled || isPending`) and renders the disabled treatment, but keeps the button in the focus order like `focusableWhenDisabled`, so a keyboard user who activated it is still on it when the result arrives. Shows the `pendingIndicator` in the leading icon position meanwhile. An explicit `focusableWhenDisabled={false}` restores the native `disabled` attribute while pending. `aria-busy` announces nothing by itself: say what is happening through the label (\"Saving\") or a `role=\"status\"` region outside the button. Put a label that changes with the state in its own element, such as `<span>{label}</span>`: page translation replaces a bare text child with its own nodes, so React's update to the old text node never shows.",
+          "description": "Marks an action in flight. The button blocks activation, dims, and stamps `data-pending` and `aria-busy`. It stays in the focus order, so a keyboard user is still on it when the result arrives. `focusableWhenDisabled={false}` takes it out of the focus order. `aria-busy` announces nothing, so say what is happening in the label, such as \"Saving\", or in a `role=\"status\"` region outside the button. Put a label that changes with the state in its own element, such as `<span>{label}</span>`: page translation replaces a bare text child with its own nodes, so React's update to the old text node never shows.",
           "required": false
         },
         {
@@ -374,7 +407,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Stamps `aria-disabled` (an explicit consumer value wins), which renders the disabled treatment (`opacity-50`, the `not-allowed` cursor, no hover or press paint), and suppresses focus-on-press while the button stays fully interactive — click, keyboard and focus-visible all still work, and a Tooltip on it still opens. For \"looks disabled but explains itself on activation\" flows. The treatment keys off `aria-disabled`, so an explicit `aria-disabled={false}` also turns it off: the button then looks and announces enabled and only the focus-on-press suppression remains.",
+          "description": "Makes the button look and announce disabled while it stays interactive. It stamps `aria-disabled`, and an explicit `aria-disabled` wins. Click, keyboard and focus still work, and a Tooltip on the button still opens. Use it for an action that explains on activation why it is unavailable.",
           "required": false
         },
         {
@@ -394,7 +427,7 @@
           "type": "(() => void) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Predictive-prefetch callback. Fires once when the pointer's predicted trajectory lands inside the inflated hit rect; browsers without the prediction API fail soft.",
+          "description": "Fires once when the pointer's predicted path enters the inflated hit rect, for prefetching. Browsers without pointer prediction never fire it.",
           "required": false
         },
         {
@@ -403,7 +436,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "What the button shows while pending. Omitted: a spinning `SpinnerGap` in the leading icon position, and the button's own leading and bare SVG children hide so the spinner takes their place (a trailing `data-icon=\"inline-end\"` icon stays). A node: rendered in that same place instead of the spinner, as a decorative `aria-hidden` slot; animate it yourself. `null` or `false`: no indicator and nothing hidden, so the call site owns the pending markup, for example a brand button that keeps its logo and centres its own spinner over it.",
+          "description": "What a pending button shows in its leading icon position. When you omit it, a spinner shows there and the button's leading and bare icons hide, while a `data-icon=\"inline-end\"` icon stays. A node replaces the spinner and does not animate on its own. `null` or `false` shows nothing and hides nothing, so the call site draws its own pending state. Fade that content with `group-data-pending/button:opacity-0`, not `invisible`, which drops the label from the accessible name, and give an overlay no `data-icon`.",
           "required": false
         },
         {
@@ -412,7 +445,7 @@
           "type": "number | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Pixels the hit rect is inflated on every side when predicting pointer intent.",
+          "description": "Pixels added to every side of the hit rect when predicting pointer intent.",
           "required": false
         },
         {
@@ -433,7 +466,14 @@
           "shortType": null,
           "defaultValue": null,
           "description": "Button's square size. Defaults to `\"icon\"`.",
-          "required": false
+          "required": false,
+          "values": [
+            "icon",
+            "icon-inline",
+            "icon-lg",
+            "icon-sm",
+            "icon-xs"
+          ]
         },
         {
           "name": "style",
@@ -448,12 +488,21 @@
         },
         {
           "name": "variant",
-          "origin": "recipe-axis",
+          "origin": "declared",
           "type": "\"default\" | \"destructive\" | \"ghost\" | \"link\" | \"outline\" | \"secondary\" | \"success\" | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "",
-          "required": false
+          "description": "The fill and text colour. The theme sets the `outline` border. `link` looks like an inline text link.",
+          "required": false,
+          "values": [
+            "default",
+            "destructive",
+            "ghost",
+            "link",
+            "outline",
+            "secondary",
+            "success"
+          ]
         }
       ]
     },

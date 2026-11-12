@@ -153,7 +153,11 @@
           "shortType": "Union",
           "defaultValue": "\"default\"",
           "description": "Control size of the field box. Emitted as `data-size`. `\"default\"` maps to the `md` control size; `\"sm\"` maps to the `sm` control size. The clear button follows it.",
-          "required": false
+          "required": false,
+          "values": [
+            "default",
+            "sm"
+          ]
         },
         {
           "name": "value",

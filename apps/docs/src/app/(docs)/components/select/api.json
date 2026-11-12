@@ -327,7 +327,11 @@
           "shortType": "Union",
           "defaultValue": "\"default\"",
           "description": "Control size of the trigger box. Emitted as `data-size`. `\"default\"` maps to the `md` control size; `\"sm\"` maps to the `sm` control size.",
-          "required": false
+          "required": false,
+          "values": [
+            "default",
+            "sm"
+          ]
         },
         {
           "name": "style",
@@ -426,7 +430,12 @@
           "shortType": null,
           "defaultValue": "\"center\"",
           "description": "How the popup aligns to the trigger on the cross axis.",
-          "required": false
+          "required": false,
+          "values": [
+            "center",
+            "end",
+            "start"
+          ]
         },
         {
           "name": "alignItemWithTrigger",
@@ -495,7 +504,15 @@
           "shortType": null,
           "defaultValue": "\"bottom\"",
           "description": "Which side of the trigger the popup is placed on.",
-          "required": false
+          "required": false,
+          "values": [
+            "bottom",
+            "inline-end",
+            "inline-start",
+            "left",
+            "right",
+            "top"
+          ]
         },
         {
           "name": "sideOffset",
@@ -728,7 +745,11 @@
           "shortType": null,
           "defaultValue": "'horizontal'",
           "description": "The orientation of the separator.",
-          "required": false
+          "required": false,
+          "values": [
+            "horizontal",
+            "vertical"
+          ]
         },
         {
           "name": "render",

@@ -30,7 +30,12 @@
           "shortType": "Union",
           "defaultValue": "\"default\"",
           "description": "",
-          "required": false
+          "required": false,
+          "values": [
+            "default",
+            "sm",
+            "xs"
+          ]
         },
         {
           "name": "variant",
@@ -39,7 +44,12 @@
           "shortType": "Union",
           "defaultValue": "\"default\"",
           "description": "",
-          "required": false
+          "required": false,
+          "values": [
+            "default",
+            "muted",
+            "outline"
+          ]
         }
       ]
     },
@@ -59,7 +69,12 @@
           "shortType": "Union",
           "defaultValue": "\"default\"",
           "description": "",
-          "required": false
+          "required": false,
+          "values": [
+            "default",
+            "icon",
+            "image"
+          ]
         }
       ]
     },
@@ -99,7 +114,11 @@
           "shortType": "Union",
           "defaultValue": "\"default\"",
           "description": "",
-          "required": false
+          "required": false,
+          "values": [
+            "compact",
+            "default"
+          ]
         }
       ]
     },
@@ -133,7 +152,11 @@
           "shortType": null,
           "defaultValue": "'horizontal'",
           "description": "The orientation of the separator.",
-          "required": false
+          "required": false,
+          "values": [
+            "horizontal",
+            "vertical"
+          ]
         },
         {
           "name": "render",
@@ -214,7 +237,12 @@
           "shortType": "Union",
           "defaultValue": "\"default\"",
           "description": "",
-          "required": false
+          "required": false,
+          "values": [
+            "default",
+            "hidden",
+            "visible"
+          ]
         }
       ]
     }

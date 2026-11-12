@@ -31,7 +31,8 @@ export type ChartCompositionRule =
   | "part-outside-panel"
   | "series-drawn-twice"
   | "invalid-gauge-domain"
-  | "invalid-sweep";
+  | "invalid-sweep"
+  | "slot-limit";
 
 /** The data rules, each with a production fallback. */
 export type ChartDataRule =

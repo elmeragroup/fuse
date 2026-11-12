@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useRef, useState } from "react";
+import { Fragment, useId, useRef, useState, useSyncExternalStore } from "react";
 import type { ReactElement, ReactNode } from "react";
 
 import { tv } from "tailwind-variants";
@@ -14,13 +14,20 @@ import { Tabs } from "@elmeragroup/fuse/tabs";
 import { Toolbar } from "@elmeragroup/fuse/toolbar";
 
 import { DocsCodePre } from "./docs-code-pre";
+import { LiveCodeProvider, LiveCodeStore } from "./live-code/lens";
+import { LiveCodeView } from "./live-code/live-code-view";
 import { CopySourceButton, useHighlightedSource } from "./source-code";
 
 type DemoTabsProps = {
   /** The demo's title as plain text, for the Sheet title and the view switch's name. */
   title: string;
-  /** The heading that names the frame, rendered inside `Frame.Title`. */
-  heading: ReactNode;
+  /** The heading that names the frame, rendered inside `Frame.Title`; a default stage has none. */
+  heading?: ReactNode;
+  /**
+   * Whether the Code view is Live code. The stage then stays in view, and the source shows beneath
+   * it with the props of its parts editable. Component pages turn it on.
+   */
+  liveCode?: boolean;
   /** The demo file name, the header of the Sheet's code frame. */
   file: string;
   /** The theme-tinted stage with the demo in it. */
@@ -89,12 +96,16 @@ type DemoView = "demo" | "code";
 export function DemoTabs({
   title,
   heading,
+  liveCode = false,
   file,
   stage,
   sourceText,
   sourceHref,
 }: DemoTabsProps): ReactElement {
   const demoView = useRef<HTMLDivElement>(null);
+  // One store per frame, shared by the stage's lensed parts and the Live code view.
+  const [store] = useState(() => new LiveCodeStore());
+  const generation = useSyncExternalStore(store.subscribe, store.getGeneration, store.getGeneration);
   const [view, setView] = useState<DemoView>("demo");
   const [demoHeight, setDemoHeight] = useState<number>();
   const id = useId();
@@ -111,84 +122,119 @@ export function DemoTabs({
     if (height !== undefined && height > 0) setDemoHeight(height);
   }
 
+  const views = liveCode ? (
+    <LiveCodeProvider store={store}>
+      {/* The stage stays in view under the Code tab, so it is the Demo tab's panel only while that
+          tab is selected. */}
+      <div
+        ref={demoView}
+        role={view === "demo" ? "tabpanel" : undefined}
+        id={panelId("demo")}
+        aria-labelledby={view === "demo" ? tabId("demo") : undefined}
+        tabIndex={-1}>
+        {/* Reset remounts the stage, which also drops an error a boundary inside it latched. */}
+        <Fragment key={generation}>{stage}</Fragment>
+      </div>
+      <div
+        role="tabpanel"
+        id={panelId("code")}
+        aria-labelledby={tabId("code")}
+        hidden={view !== "code"}
+        tabIndex={-1}
+        data-demo-source>
+        {shown ? (
+          <LiveCodeView store={store} title={title} file={file} sourceText={sourceText} html={html} />
+        ) : (
+          <div className={code()}>{source}</div>
+        )}
+      </div>
+    </LiveCodeProvider>
+  ) : null;
+
   return (
     <Frame.Root layout="flush" className={root()}>
-      <Frame.Header>
-        <Frame.Title>{heading}</Frame.Title>
-      </Frame.Header>
+      {heading === undefined ? null : (
+        <Frame.Header>
+          <Frame.Title>{heading}</Frame.Title>
+        </Frame.Header>
+      )}
       <Frame.Panel className={panel()}>
         <div className={bleed()}>
-          {/* The views leave the tab order: the wrapper's clip would hide a focused view's ring,
+          {views ?? (
+            <>
+              {/* The views leave the tab order: the wrapper's clip would hide a focused view's ring,
               and a keyboard reaches the demo's own controls and the code's actions instead. */}
-          <div
-            ref={demoView}
-            role="tabpanel"
-            id={panelId("demo")}
-            aria-labelledby={tabId("demo")}
-            hidden={view !== "demo"}
-            tabIndex={-1}>
-            {stage}
-          </div>
-          <div
-            role="tabpanel"
-            id={panelId("code")}
-            aria-labelledby={tabId("code")}
-            hidden={view !== "code"}
-            tabIndex={-1}
-            data-demo-source
-            className={codeView()}
-            style={{ "--demo-height": demoHeight === undefined ? undefined : `${demoHeight}px` }}>
-            {shown ? (
-              <>
-                <Toolbar.Root aria-label={`${title} code`} className={actions()}>
-                  <CopySourceButton
-                    toolbar
-                    sourceText={sourceText}
-                    label="Copy code"
-                    copiedStatus="Code copied to the clipboard"
-                  />
-                  <Sheet.Root>
-                    <Toolbar.Button
-                      render={
-                        <Sheet.Trigger
-                          render={<Button variant="ghost" size="icon-xs" aria-label="Open code" />}
-                        />
-                      }>
-                      <ArrowsOut aria-hidden />
-                    </Toolbar.Button>
-                    <Sheet.Content size="4xl">
-                      <Sheet.Header>
-                        <Sheet.Title>{title}</Sheet.Title>
-                      </Sheet.Header>
-                      <Sheet.Body>
-                        <Frame.Root layout="flush">
-                          <Frame.Header className={sheetHeader()}>
-                            <Frame.Title>{file}</Frame.Title>
-                            <Toolbar.Root aria-label={`${file} actions`}>
-                              <CopySourceButton
-                                toolbar
-                                sourceText={sourceText}
-                                label="Copy code"
-                                copiedStatus="Code copied to the clipboard"
-                              />
-                            </Toolbar.Root>
-                          </Frame.Header>
-                          <Frame.Panel>
-                            <div className={bleed()}>{source}</div>
-                          </Frame.Panel>
-                        </Frame.Root>
-                      </Sheet.Body>
-                    </Sheet.Content>
-                  </Sheet.Root>
-                </Toolbar.Root>
-                <ScrollArea.Root className={code()}>{source}</ScrollArea.Root>
-              </>
-            ) : (
-              // Until the view first shows, it holds the plain source alone. The toolbar, the Sheet
-              // and the scroll area, which measures itself as it mounts, wait for the reader.
-              <div className={code()}>{source}</div>
-            )}
-          </div>
+              <div
+                ref={demoView}
+                role="tabpanel"
+                id={panelId("demo")}
+                aria-labelledby={tabId("demo")}
+                hidden={view !== "demo"}
+                tabIndex={-1}>
+                {stage}
+              </div>
+              <div
+                role="tabpanel"
+                id={panelId("code")}
+                aria-labelledby={tabId("code")}
+                hidden={view !== "code"}
+                tabIndex={-1}
+                data-demo-source
+                className={codeView()}
+                style={{ "--demo-height": demoHeight === undefined ? undefined : `${demoHeight}px` }}>
+                {shown ? (
+                  <>
+                    <Toolbar.Root aria-label={`${title} code`} className={actions()}>
+                      <CopySourceButton
+                        toolbar
+                        sourceText={sourceText}
+                        label="Copy code"
+                        copiedStatus="Code copied to the clipboard"
+                      />
+                      <Sheet.Root>
+                        <Toolbar.Button
+                          render={
+                            <Sheet.Trigger
+                              render={<Button variant="ghost" size="icon-xs" aria-label="Open code" />}
+                            />
+                          }>
+                          <ArrowsOut aria-hidden />
+                        </Toolbar.Button>
+                        <Sheet.Content size="4xl">
+                          <Sheet.Header>
+                            <Sheet.Title>{title}</Sheet.Title>
+                          </Sheet.Header>
+                          <Sheet.Body>
+                            <Frame.Root layout="flush">
+                              <Frame.Header className={sheetHeader()}>
+                                <Frame.Title>{file}</Frame.Title>
+                                <Toolbar.Root aria-label={`${file} actions`}>
+                                  <CopySourceButton
+                                    toolbar
+                                    sourceText={sourceText}
+                                    label="Copy code"
+                                    copiedStatus="Code copied to the clipboard"
+                                  />
+                                </Toolbar.Root>
+                              </Frame.Header>
+                              <Frame.Panel>
+                                <div className={bleed()}>{source}</div>
+                              </Frame.Panel>
+                            </Frame.Root>
+                          </Sheet.Body>
+                        </Sheet.Content>
+                      </Sheet.Root>
+                    </Toolbar.Root>
+                    <ScrollArea.Root className={code()}>{source}</ScrollArea.Root>
+                  </>
+                ) : (
+                  // Until the view first shows, it holds the plain source alone. The toolbar, the Sheet
+                  // and the scroll area, which measures itself as it mounts, wait for the reader.
+                  <div className={code()}>{source}</div>
+                )}
+              </div>
+            </>
+          )}
         </div>
       </Frame.Panel>
       <Frame.Footer className={footer()}>
@@ -196,7 +242,7 @@ export function DemoTabs({
           value={view}
           onValueChange={(value) => {
             if (value === "code") {
-              rememberDemoHeight();
+              if (!liveCode) rememberDemoHeight();
               setShown(true);
             }
             setView(value === "code" ? "code" : "demo");

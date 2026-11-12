@@ -94,7 +94,13 @@
           "shortType": "Union",
           "defaultValue": null,
           "description": "",
-          "required": false
+          "required": false,
+          "values": [
+            "default",
+            "lg",
+            "sm",
+            "xs"
+          ]
         },
         {
           "name": "spacing",
@@ -132,7 +138,11 @@
           "shortType": "Union",
           "defaultValue": null,
           "description": "",
-          "required": false
+          "required": false,
+          "values": [
+            "default",
+            "outline"
+          ]
         }
       ]
     },
@@ -228,7 +238,13 @@
           "shortType": "Union",
           "defaultValue": null,
           "description": "",
-          "required": false
+          "required": false,
+          "values": [
+            "default",
+            "lg",
+            "sm",
+            "xs"
+          ]
         },
         {
           "name": "style",
@@ -259,7 +275,11 @@
           "shortType": "Union",
           "defaultValue": null,
           "description": "",
-          "required": false
+          "required": false,
+          "values": [
+            "default",
+            "outline"
+          ]
         }
       ]
     }

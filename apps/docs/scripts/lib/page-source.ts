@@ -14,7 +14,7 @@
 
 import { readFileSync } from "node:fs";
 
-import type { ContentHeading } from "../../src/lib/docs-model.ts";
+import type { ContentHeading, PageSection } from "../../src/lib/docs-model.ts";
 import { slugifyHeading } from "../../src/lib/slug.ts";
 
 /** One demo the page renders, in authored order. */
@@ -24,6 +24,8 @@ export type PageDemo = {
   title: string;
   /** File name inside the page's `demos/` directory. */
   file: string;
+  /** The level of the demo's heading: 2 by default, 3 for an example under `## Examples`. */
+  depth: 2 | 3;
 };
 
 /** One authored component page read as data. */
@@ -39,13 +41,28 @@ export type ComponentPageSource = {
   headings: readonly ContentHeading[];
   /** The demos the page renders, in authored order. */
   demos: readonly PageDemo[];
+  /** The headings and demos together, in page order. */
+  sections: readonly PageSection[];
+  /**
+   * The file of the page's untitled default stage, `<DefaultDemo file="…">`, or `null` when the
+   * page has none. It has no heading, so it stays out of the outline and the markdown.
+   */
+  defaultDemo: string | null;
+  /**
+   * The code of the fence under the page's `## Usage` heading, or `null` when the page has no
+   * Usage section. The markdown endpoint prints it as the page's Usage section.
+   */
+  usage: string | null;
 };
 
 const FRONTMATTER_FENCE = "---";
 const CODE_FENCE = /^\s*(?:```|~~~)/;
 const HEADING = /^(#{2,4})\s+(.+?)\s*#*\s*$/;
 const DEMO_TAG = /<Demo\s([^>]*?)\/?>/g;
+const DEFAULT_DEMO_TAG = /<DefaultDemo\s([^>]*?)\/?>/g;
 const ATTRIBUTE = /([A-Za-z][\w-]*)="([^"]*)"/g;
+const LEVEL_ATTRIBUTE = /\blevel=\{(\d+)\}/;
+const USAGE_FENCE = /^## Usage\s*$[\s\S]*?^\s*(?:```|~~~)[^\n]*\n([\s\S]*?)^\s*(?:```|~~~)\s*$/mu;
 const DEMO_ATTRIBUTES = ["slug", "id", "title", "file"] as const;
 
 type SplitPage = {
@@ -160,6 +177,23 @@ function readHeadings(lines: readonly string[]): readonly ContentHeading[] {
   return headings;
 }
 
+/** The string attributes of one element's opening tag. */
+function readAttributes(tag: string): ReadonlyMap<string, string> {
+  const attributes = new Map<string, string>();
+  for (const attribute of tag.matchAll(ATTRIBUTE)) {
+    attributes.set(attribute[1] ?? "", attribute[2] ?? "");
+  }
+  return attributes;
+}
+
+/** A demo's heading level: `level={3}` for an example, 2 when the tag leaves it out. */
+function readDepth(tag: string, file: string): 2 | 3 {
+  const level = LEVEL_ATTRIBUTE.exec(tag)?.[1];
+  if (level === undefined || level === "2") return 2;
+  if (level === "3") return 3;
+  throw new Error(`${file}: a <Demo> heading level must be 2 or 3, not ${level}`);
+}
+
 /**
  * The demos the page renders, read off its own `<Demo …>` elements.
  *
@@ -170,10 +204,7 @@ function readHeadings(lines: readonly string[]): readonly ContentHeading[] {
 function readDemos(lines: readonly string[], slug: string, file: string): readonly PageDemo[] {
   const demos: PageDemo[] = [];
   for (const tag of lines.join("\n").matchAll(DEMO_TAG)) {
-    const attributes = new Map<string, string>();
-    for (const attribute of (tag[1] ?? "").matchAll(ATTRIBUTE)) {
-      attributes.set(attribute[1] ?? "", attribute[2] ?? "");
-    }
+    const attributes = readAttributes(tag[1] ?? "");
     for (const required of DEMO_ATTRIBUTES) {
       if ((attributes.get(required) ?? "") === "") {
         throw new Error(`${file}: a <Demo> element is missing its "${required}" attribute`);
@@ -186,9 +217,68 @@ function readDemos(lines: readonly string[], slug: string, file: string): readon
       id: attributes.get("id") ?? "",
       title: attributes.get("title") ?? "",
       file: attributes.get("file") ?? "",
+      depth: readDepth(tag[1] ?? "", file),
     });
   }
   return demos;
+}
+
+/**
+ * The headings and demos in page order. Each reader keeps its own order, so sorting the two by
+ * where they start in the body restores the page's.
+ */
+function readSections(lines: readonly string[], slug: string, file: string): readonly PageSection[] {
+  const sections: { readonly at: number; readonly section: PageSection }[] = [];
+  let at = 0;
+  for (const line of lines) {
+    for (const heading of readHeadings([line])) {
+      sections.push({ at, section: { kind: "heading", ...heading } });
+    }
+    at += line.length + 1;
+  }
+  const text = lines.join("\n");
+  const demos = readDemos(lines, slug, file);
+  for (const [index, tag] of [...text.matchAll(DEMO_TAG)].entries()) {
+    const demo = demos[index];
+    if (demo === undefined) continue;
+    sections.push({
+      at: tag.index,
+      section: { kind: "demo", id: demo.id, title: demo.title, depth: demo.depth },
+    });
+  }
+  const ordered = sections.toSorted((left, right) => left.at - right.at).map(({ section }) => section);
+  const firstHeading = ordered.findIndex((section) => section.kind === "heading" && section.depth === 2);
+  const orphan = ordered.find(
+    (section, index) =>
+      section.kind === "demo" && section.depth === 3 && (firstHeading === -1 || index < firstHeading)
+  );
+  if (orphan !== undefined) {
+    throw new Error(
+      `${file}: the level-3 demo "${orphan.id}" needs a "##" heading before it, such as "## Examples"`
+    );
+  }
+  return ordered;
+}
+
+/** The file of the page's `<DefaultDemo>`, or `null`; a page renders at most one. */
+function readDefaultDemo(lines: readonly string[], slug: string, file: string): string | null {
+  const tags = [...lines.join("\n").matchAll(DEFAULT_DEMO_TAG)];
+  if (tags.length > 1) {
+    throw new Error(`${file}: a page renders at most one <DefaultDemo>`);
+  }
+  const tag = tags[0];
+  if (tag === undefined) return null;
+  const attributes = readAttributes(tag[1] ?? "");
+  const demoFile = attributes.get("file") ?? "";
+  if (demoFile === "") {
+    throw new Error(`${file}: the <DefaultDemo> element is missing its "file" attribute`);
+  }
+  if (attributes.get("slug") !== slug) {
+    throw new Error(
+      `${file}: the <DefaultDemo> names slug "${attributes.get("slug") ?? ""}" on the "${slug}" page`
+    );
+  }
+  return demoFile;
 }
 
 const PROSE_BLOCK = /<Prose>\n([\s\S]*?)\n<\/Prose>/gu;
@@ -212,6 +302,9 @@ export function parseComponentPage(source: string, slug: string, label: string):
     intro: readIntro(split.body),
     headings: readHeadings(lines),
     demos: readDemos(lines, slug, label),
+    sections: readSections(lines, slug, label),
+    defaultDemo: readDefaultDemo(lines, slug, label),
+    usage: USAGE_FENCE.exec(split.body)?.[1]?.trimEnd() ?? null,
   };
 }
 

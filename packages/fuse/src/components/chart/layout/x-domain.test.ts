@@ -5,6 +5,7 @@ import spring from "../format/fixtures/elhub/no1-consumption-2026-03-29.json" wi
 import production from "../format/fixtures/elhub/no1-production-15min-2025-10-26.json" with { type: "json" };
 import quarters from "../format/fixtures/prices/fall-back-2025-10-26-quarter.json" with { type: "json" };
 import slots from "../format/fixtures/slots.json" with { type: "json" };
+import { ChartCompositionError } from "./errors";
 import { slotJudgements } from "./fixtures/slot-judges";
 import {
   createRowPlacer,
@@ -344,5 +345,39 @@ describe("a row placer", () => {
     place(hours(0, 1, 2), { ...utc, period: [midnight, midnight + 3 * HOUR] });
     const longer = place(hours(0, 1, 2), { ...utc, period: [midnight, midnight + 4 * HOUR] });
     expect(startsOf(longer)).toEqual(at(0, 60, 120, 180));
+  });
+});
+
+describe("slot limit", () => {
+  const year = [Date.parse("2025-01-01T00:00:00Z"), Date.parse("2026-01-01T00:00:00Z")] as const;
+
+  // Oracle: a year of seconds is 365 × 86,400 slots, plus the slot the range ends on. An axis that
+  // built them would run out of memory, so a prompt throw also shows it counted first.
+  it("refuses an interval too fine for the rows' range, naming the interval, range and limit", () => {
+    const place = () =>
+      placeTimeRows(
+        year.map((instant) => new Date(instant)),
+        { interval: "second", timeZone: "UTC" }
+      );
+    expect(place).toThrow(ChartCompositionError);
+    expect(place).toThrow(
+      'Chart.Root interval "second" over 365 days needs 31,536,001 slots; the limit is 1,000,000.'
+    );
+  });
+
+  it("refuses the same for a period, whatever the rows", () => {
+    expect(() =>
+      placeTimeRows([], {
+        interval: "minute",
+        timeZone: "UTC",
+        period: [year[0], year[0] + 3 * 365 * 86_400_000],
+      })
+    ).toThrow(/interval "minute" over 1,095 days needs 1,576,801 slots/u);
+  });
+
+  it("lists a year of quarter-hours, the largest axis a demo draws", () => {
+    // Oracle: 365 days × 96 quarter-hours.
+    const { domain } = placeTimeRows([], { interval: "quarter-hour", timeZone: "UTC", period: year });
+    expect(domain.kind === "time" && domain.starts.length).toBe(35_040);
   });
 });

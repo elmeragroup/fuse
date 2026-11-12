@@ -7,6 +7,7 @@
 import type { ChartScalar } from "../chart-types";
 import { nextSlotStart, slotStart, slotStarter, slotStartsFrom } from "../format/time-format";
 import type { Interval } from "../format/time-format";
+import { ChartCompositionError } from "./errors";
 import { sameItems } from "./same-items";
 import { numberOf, stringOf } from "./scalar";
 
@@ -63,6 +64,57 @@ export function instantOf(value: ChartScalar): number {
   if (value instanceof Date) return value.getTime();
   const number = numberOf(value);
   return number !== undefined && Number.isFinite(number) ? number : Number.NaN;
+}
+
+/**
+ * The most slots one time axis may list. The largest axis a demo or test draws has 100,000
+ * slots, and a year of minutes, 525,600, fits with room to spare. A finer interval over a long
+ * range, such as seconds over a year (31,536,000), would build slots until the tab runs out of
+ * memory, so the axis refuses it instead.
+ */
+const SLOT_LIMIT = 1_000_000;
+
+const HOUR = 3_600_000;
+const DAY = 24 * HOUR;
+
+/**
+ * Each interval's slot length, the shortest one for the calendar intervals: a clock change can
+ * shorten a day by an hour, and a month is at least 28 days. A sub-day slot can also end early at
+ * a day's start, which adds at most one slot a day, far below the limit's headroom.
+ */
+const SLOT_LENGTH = {
+  second: 1_000,
+  minute: 60_000,
+  "quarter-hour": 15 * 60_000,
+  hour: HOUR,
+  day: DAY - HOUR,
+  week: 7 * DAY - HOUR,
+  month: 28 * DAY - HOUR,
+  year: 365 * DAY - HOUR,
+} as const satisfies Readonly<Record<Interval, number>>;
+
+/** A span in words, such as `365 days` or `6 hours`. */
+function describeSpan(span: number): string {
+  const days = span / DAY;
+  if (days >= 1) return `${Math.round(days).toLocaleString("en-US")} days`;
+  return `${Math.max(1, Math.round(span / HOUR)).toLocaleString("en-US")} hours`;
+}
+
+/**
+ * Throws when an axis from `from` to `to` would list more than `SLOT_LIMIT` slots. It counts by
+ * arithmetic, before any slot exists.
+ *
+ * @throws {ChartCompositionError} `slot-limit` when the interval is too fine for the range.
+ */
+function assertSlotCount(from: number, to: number, interval: Interval): void {
+  const span = Math.max(0, to - from);
+  const count = Math.floor(span / SLOT_LENGTH[interval]) + 1;
+  if (count <= SLOT_LIMIT) return;
+  throw new ChartCompositionError(
+    "Chart.Root",
+    "slot-limit",
+    `interval "${interval}" over ${describeSpan(span)} needs ${count.toLocaleString("en-US")} slots; the limit is ${SLOT_LIMIT.toLocaleString("en-US")}. Pass a coarser interval or a shorter period.`
+  );
 }
 
 /** Every slot start from `first` up to and including `last`. */
@@ -124,8 +176,13 @@ function placeInstants(cells: readonly number[], options: TimeAxisOptions): Plac
     placed.push(start);
   }
   let starts: number[] = [];
-  if (period !== undefined) starts = periodSlots(period, interval, timeZone);
-  else if (placed.length > 0) starts = slotsBetween(first, last, interval, timeZone);
+  if (period !== undefined) {
+    assertSlotCount(period[0], period[1], interval);
+    starts = periodSlots(period, interval, timeZone);
+  } else if (placed.length > 0) {
+    assertSlotCount(first, last, interval);
+    starts = slotsBetween(first, last, interval, timeZone);
+  }
   const rowAt = ascending ? walkRows(starts, placed, rows) : mapRows(starts, placed, rows, issues);
   // The sort is stable, so a row's off-grid issue stays ahead of its duplicate-x, as the passes pushed them.
   issues.sort((a, b) => a.row - b.row);

@@ -343,7 +343,11 @@
           "shortType": "Union",
           "defaultValue": "\"vertical\"",
           "description": "Layout of the group primitive, and of CheckboxItemGroup's stacked-card list. Vertical: primitive `flex-col` gapped by `--surface-gap-sm`; item list connected `flex-col gap-0`. Horizontal: primitive `flex-wrap` and item list `flex-row flex-wrap`, gapped by `--surface-gap-lg` with individually rounded cards. Maps through `selectionGroupOrientationVariants`.",
-          "required": false
+          "required": false,
+          "values": [
+            "horizontal",
+            "vertical"
+          ]
         },
         {
           "name": "value",
@@ -391,7 +395,29 @@
           "shortType": "Union",
           "defaultValue": "\"start\"",
           "description": "Where the control sits in the labelled row. Forwarded to `SelectionItem.Shell`. Default `\"start\"`.",
-          "required": false
+          "required": false,
+          "values": [
+            "end",
+            "start"
+          ],
+          "requires": {
+            "end": [
+              [
+                "parent"
+              ],
+              [
+                "value"
+              ]
+            ],
+            "start": [
+              [
+                "parent"
+              ],
+              [
+                "value"
+              ]
+            ]
+          }
         },
         {
           "name": "isDisabled",
@@ -593,7 +619,11 @@
           "shortType": "Union",
           "defaultValue": "\"vertical\"",
           "description": "Layout of the group primitive, and of CheckboxItemGroup's stacked-card list. Vertical: primitive `flex-col` gapped by `--surface-gap-sm`; item list connected `flex-col gap-0`. Horizontal: primitive `flex-wrap` and item list `flex-row flex-wrap`, gapped by `--surface-gap-lg` with individually rounded cards. Maps through `selectionGroupOrientationVariants`.",
-          "required": false
+          "required": false,
+          "values": [
+            "horizontal",
+            "vertical"
+          ]
         },
         {
           "name": "value",

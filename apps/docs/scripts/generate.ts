@@ -45,7 +45,9 @@ import type {
   ComponentPageEntry,
   DocsComponent,
   DocsDemo,
+  PageSection,
   ThemeCatalog,
+  TocItem,
 } from "../src/lib/docs-model.ts";
 import { API_REGEN_COMMAND } from "../src/lib/docs-model.ts";
 import { studioGeneratedFiles } from "../src/studio/registration.ts";
@@ -65,7 +67,9 @@ import { ProblemLog } from "./lib/errors.ts";
 import { functionReferences } from "./lib/function-reference.ts";
 import { openFuseProgram } from "./lib/fuse-program.ts";
 import type { FuseProgram } from "./lib/fuse-program.ts";
+import { identityComparedParts } from "./lib/identity-parts.ts";
 import { renderLandingFacts } from "./lib/landing-facts.ts";
+import { LIVE_CODE_IDENTITY_PARTS } from "./lib/live-code-schemas.ts";
 import { renderLlmsTxt } from "./lib/llms.ts";
 import { renderComponentMarkdown } from "./lib/markdown.ts";
 import { renderOgCardColors } from "./lib/og-card-colors.ts";
@@ -159,6 +163,8 @@ function buildComponent(
     // publishes it.
     rsc: readRscStatus(readFileSync(paths.sourceFile, "utf8")),
     headings: page.headings,
+    sections: page.sections,
+    usage: page.usage,
     demos,
     parts: apiParts.map((part) => {
       const reference = functions.get(part.name);
@@ -228,7 +234,15 @@ function readLibrary(inspections: readonly ComponentInspection[]) {
     const shared = sharedParts(fuse, new Set(inspections.map(({ slug }) => slug)));
     // An alias page repeats its owner's reference, so it has no API artifact of its own.
     const inventory = docsApiInventory(inspections).filter(({ page }) => !shared.aliases.has(page));
-    return { shared, inventory, functions: functionReferences(fuse, inventory) };
+    const pages = inspections.flatMap(({ slug }) =>
+      resolveComponentPaths(slug).apis.map(({ entryFile, exportNames }) => ({ slug, entryFile, exportNames }))
+    );
+    return {
+      shared,
+      inventory,
+      functions: functionReferences(fuse, inventory),
+      identityParts: identityComparedParts(fuse, pages),
+    };
   } finally {
     close();
   }
@@ -281,15 +295,32 @@ function linkSharedParts(component: DocsComponent, shared: SharedParts): DocsCom
 /** The import specifier of the chart family, whose pages the SideNav groups under Charts. */
 const CHART_ENTRY = "@elmeragroup/fuse/chart";
 
+/**
+ * The TOC entries of a page's sections. Each depth-2 heading or demo is an entry, in page order,
+ * and the depth-3 demos after a heading nest under it. Deeper headings stay out.
+ */
+function tocSections(sections: readonly PageSection[]): readonly TocItem[] {
+  const items: { id: string; title: string; children: TocItem[] }[] = [];
+  for (const section of sections) {
+    if (section.depth === 2) {
+      items.push({ id: section.id, title: section.title, children: [] });
+    } else if (section.kind === "demo") {
+      // The page reader rejects an example before the page's first depth-2 heading.
+      items.at(-1)?.children.push({ id: section.id, title: section.title });
+    }
+  }
+  return items.map(({ id, title, children }) =>
+    children.length === 0 ? { id, title } : { id, title, children }
+  );
+}
+
 /** The client's outline of a component: its identity and its TOC skeleton. */
 function toOutline(component: DocsComponent): ComponentOutline {
   return {
     slug: component.slug,
     title: component.title,
     markdownUrl: component.markdownUrl,
-    headings: component.headings
-      .filter((heading) => heading.depth === 2)
-      .map((heading) => ({ id: heading.id, title: heading.title })),
+    sections: tocSections(component.sections),
     demos: component.demos.map((demo) => ({ id: demo.id, title: demo.title })),
     // A page that repeats another page whole renders one sentence and no part anchors.
     partNames: component.alias === undefined ? component.parts.map((part) => part.name) : [],
@@ -482,6 +513,14 @@ async function emitStudio(
 }
 
 /** The ⌘K palette index. */
+/**
+ * The parts Fuse recognises by element identity, which the Live code loader leaves unwrapped. JSON,
+ * so the loader reads it without compiling anything.
+ */
+function emitLiveCodeIdentityParts(parts: readonly string[]): void {
+  writeFile(path.join(generatedDir, LIVE_CODE_IDENTITY_PARTS), `${JSON.stringify(parts, null, 2)}\n`);
+}
+
 function emitSearchIndex(components: readonly DocsComponent[]): void {
   writeFile(path.join(generatedDir, "search-index.ts"), `${BANNER}${renderSearchIndex(components)}`);
 }
@@ -524,7 +563,8 @@ async function main(): Promise<void> {
   }));
   problems.throwIfFailed();
 
-  const { shared, inventory, functions } = readLibrary(inspections);
+  const { shared, inventory, functions, identityParts } = readLibrary(inspections);
+  emitLiveCodeIdentityParts(identityParts);
   // Extraction writes the committed api.json files itself, only where the bytes change,
   // and throws a DocsGenerationError on any extraction problem.
   const generated = await generateDocsApiArtifacts(inventory);
