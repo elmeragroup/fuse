@@ -23,8 +23,10 @@ FROM base AS build
 # without Corepack.
 COPY package.json ./
 RUN npm install --global "pnpm@$(node -p "require('./package.json').packageManager.split('@')[1]")"
-# Fetch the store from the lockfile alone, so this layer survives source-only changes.
+# Fetch the store from the lockfile and the dependency patches it records, so this layer survives
+# source-only changes.
 COPY pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY patches ./patches
 RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store pnpm fetch --frozen-lockfile
 COPY . .
 # The base image's Node is the pin, so the install skips linking pnpm's own copy. `pnpm fetch` has
