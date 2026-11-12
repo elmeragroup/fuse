@@ -94,13 +94,15 @@ function browserProject(
       expect: { poll: { timeout: 10_000 } },
       include: options.include ?? BROWSER_TESTS,
       exclude: options.exclude,
-      fileParallelism: options.fileParallelism,
       browser: {
         enabled: true,
         headless: true,
         viewport: VIEWPORT,
         provider: playwright({ contextOptions: { viewport: VIEWPORT } }),
-        instances: browsers.map((browser) => ({ browser })),
+        // Each browser instance takes `fileParallelism` itself. At the project level Vitest turns
+        // `false` into one worker, then lets `VITEST_MAX_WORKERS` replace that count; it clamps an
+        // instance's workers to one after reading the variable, so only here does `false` hold.
+        instances: browsers.map((browser) => ({ browser, fileParallelism: options.fileParallelism ?? true })),
         commands: { ...pointerCommands, ...keyCommands, ...pageSizeCommands },
       },
     },
@@ -137,10 +139,12 @@ export default defineConfig({
       browserProject("browser", { exclude: [CLIPBOARD_TESTS, ENGINES_TESTS] }),
       // Node and each engine carry their own Intl data, and one differing space fails hydration.
       browserProject("browser-engines", { include: [`src/${ENGINES_TESTS}`] }, ["chromium", "webkit"]),
-      // Chromium keeps one clipboard for every file the browser project runs in parallel, so a
-      // file that copies can overwrite what another is about to paste. The files that drive the
-      // real clipboard end in `.clipboard.browser.test.tsx`, share their own project and run one
-      // at a time.
+      // Headless Chromium keeps one in-memory clipboard per browser process, never the system
+      // pasteboard, so concurrent runs cannot read each other's copies. Within a run, though, every
+      // file the browser project runs in parallel shares it, so a file that copies can overwrite
+      // what another is about to paste. The files that drive the real clipboard end in
+      // `.clipboard.browser.test.tsx`, share their own project and run one at a time, even under
+      // `VITEST_MAX_WORKERS`.
       browserProject("browser-clipboard", {
         include: [`src/${CLIPBOARD_TESTS}`],
         fileParallelism: false,
