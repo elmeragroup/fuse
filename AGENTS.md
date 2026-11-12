@@ -103,5 +103,6 @@ Apply every label from the [contribution flow](README.md#contribution-flow) that
 Take PR screenshots with `pnpm shots`; read [its README](tooling/pr-shots/README.md) first.
 For release or changeset work, read [scripts/RELEASE.md](scripts/RELEASE.md).
 For palette changes, read the [consumer contrast exceptions](<apps/docs/src/app/(docs)/accessibility/page.tsx>).
+For a component docs page or its demos, read [the fuse-component-page skill](.agents/skills/fuse-component-page/SKILL.md).
 For theme vocabulary, read [CONTEXT.md](CONTEXT.md).
 For Figma variable sync, read [the fuse-figma README](packages/fuse-figma/README.md).
