@@ -15,7 +15,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Accessible name forwarded to the input for label-less usage.",
+          "description": "Accessible name forwarded to the input for label-less usage. Without a visible `label`, the steppers' names end with it too (\"Increase Quantity\").",
           "required": false
         },
         {
@@ -42,7 +42,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Accessible name of the decrement stepper. Defaults to the locale dictionary.",
+          "description": "The decrement stepper's own name, which its accessible name follows with the field's name (\"Decrease Quantity\"). Defaults to the locale dictionary.",
           "required": false
         },
         {
@@ -105,7 +105,7 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Accessible name of the increment stepper. Defaults to the locale dictionary.",
+          "description": "The increment stepper's own name, which its accessible name follows with the field's name (\"Increase Quantity\"). Defaults to the locale dictionary.",
           "required": false
         },
         {

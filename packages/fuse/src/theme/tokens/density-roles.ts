@@ -539,6 +539,10 @@ export const PART_DENSITY = {
   "navigation-menu-viewport": "layout",
   "navigation-menu-popup": "layout",
 
+  // Each stepper is as wide as `--control-h-xs`, floored at 24px.
+  "number-field-decrement": "control",
+  "number-field-increment": "control",
+
   pagination: "layout",
   "pagination-content": "layout",
   "pagination-item": "layout",

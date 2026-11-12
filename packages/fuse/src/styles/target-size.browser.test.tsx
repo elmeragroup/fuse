@@ -48,8 +48,8 @@ describe("the 24px target floor", () => {
     );
     const targets = [
       roleNamed("button", "Edit"),
-      roleNamed("button", "Increase"),
-      roleNamed("button", "Decrease"),
+      roleNamed("button", "Increase Amount"),
+      roleNamed("button", "Decrease Amount"),
       roleNamed("button", "Remove Apple"),
       roleNamed("button", "Remove Banana"),
     ];

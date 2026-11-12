@@ -46,7 +46,7 @@ function inLocale(field: ReactElement): ReactElement {
  * the field box's own fill, border and shadow, which Fuse's stylesheet writes later.
  */
 const STEPPER_ALONE = [
-  "[&_button[aria-label=Decrease]]:invisible",
+  "[&_[data-slot=number-field-decrement]]:invisible",
   "[&_[role=group]]:border-transparent!",
   "[&_[role=group]]:bg-transparent!",
   "[&_[role=group]]:shadow-none!",

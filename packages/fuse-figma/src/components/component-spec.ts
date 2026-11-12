@@ -389,7 +389,7 @@ export type InstanceDefinition = {
   /**
    * The element the outer component renders the inner root as, where it differs from the one the
    * inner set's `element` names, as Number field's decrease stepper is the `<button
-   * aria-label="Decrease">` where the stepper set names its increase stepper. `figma:compare`'s markup
+   * data-slot="number-field-decrement">` where the stepper set names its increase stepper. `figma:compare`'s markup
    * check places the instance there. Undefined where the inner set's own element names it.
    */
   readonly element?: ElementSelector;

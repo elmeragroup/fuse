@@ -45,14 +45,11 @@ function groupFrom(name: string): HTMLElement {
   return group;
 }
 
-function stepperIn(fieldName: string, name: "Increase" | "Decrease"): HTMLElement {
-  const match = [...fieldRootFrom(fieldName).querySelectorAll("button")].find(
-    (button) => button.getAttribute("aria-label") === name
-  );
-  if (!(match instanceof HTMLElement)) {
-    throw new Error(`expected ${name} stepper in ${fieldName}`);
-  }
-  return match;
+/** The stepper named by its word and the field's name, checked to sit in that field. */
+function stepperOf(fieldName: string, word: "Increase" | "Decrease"): HTMLElement {
+  const stepper = roleNamed("button", `${word} ${fieldName}`);
+  expect(fieldRootFrom(fieldName).contains(stepper), `${word} ${fieldName} in its field`).toBe(true);
+  return stepper;
 }
 
 describe("NumberField", () => {
@@ -62,8 +59,8 @@ describe("NumberField", () => {
     );
     const input = textboxNamed("Quantity");
     expect(input.hasAttribute("data-focus-ring-control")).toBe(true);
-    expect(page.getByRole("button", { name: "Increase", exact: true }).query()).toBeTruthy();
-    expect(page.getByRole("button", { name: "Decrease", exact: true }).query()).toBeTruthy();
+    expect(page.getByRole("button", { name: "Increase Quantity", exact: true }).query()).toBeTruthy();
+    expect(page.getByRole("button", { name: "Decrease Quantity", exact: true }).query()).toBeTruthy();
     expect(groupFrom("Quantity").textContent).toContain("kr");
     const describedBy = input.getAttribute("aria-describedby") ?? "";
     expect(
@@ -154,7 +151,7 @@ describe("NumberField", () => {
 
     const input = page.getByRole("textbox", { name: "Quantity", exact: true });
     await expect.element(input).toHaveValue("");
-    await userEvent.click(page.getByRole("button", { name: "Increase", exact: true }));
+    await userEvent.click(page.getByRole("button", { name: "Increase Quantity", exact: true }));
 
     // The step reports upward, but the parent did not accept it. An uncontrolled field
     // would have painted its own "0" here; the DOM staying empty is the controlled
@@ -176,14 +173,14 @@ describe("NumberField", () => {
     await userEvent.fill(page.getByRole("textbox", { name: "Quantity", exact: true }), "99");
     input.blur();
     expect(onChange).toHaveBeenLastCalledWith(10);
-    expect(stepperIn("Quantity", "Increase")).toHaveProperty("disabled", true);
-    expect(stepperIn("Quantity", "Decrease")).toHaveProperty("disabled", false);
+    expect(stepperOf("Quantity", "Increase")).toHaveProperty("disabled", true);
+    expect(stepperOf("Quantity", "Decrease")).toHaveProperty("disabled", false);
 
     await userEvent.fill(page.getByRole("textbox", { name: "Quantity", exact: true }), "-4");
     input.blur();
     expect(onChange).toHaveBeenLastCalledWith(0);
-    expect(stepperIn("Quantity", "Decrease")).toHaveProperty("disabled", true);
-    expect(stepperIn("Quantity", "Increase")).toHaveProperty("disabled", false);
+    expect(stepperOf("Quantity", "Decrease")).toHaveProperty("disabled", true);
+    expect(stepperOf("Quantity", "Increase")).toHaveProperty("disabled", false);
   });
 
   it("names the steppers and describes the input's role from the provider locale, updates them on locale rerender, and lets increaseLabel and decreaseLabel override independently", () => {
@@ -193,11 +190,11 @@ describe("NumberField", () => {
         ROLE_DESCRIPTION_COPY[locale]
       );
       expect(
-        page.getByRole("button", { name: INCREASE_COPY[locale], exact: true }).query(),
+        page.getByRole("button", { name: `${INCREASE_COPY[locale]} Quantity`, exact: true }).query(),
         locale
       ).toBeTruthy();
       expect(
-        page.getByRole("button", { name: DECREASE_COPY[locale], exact: true }).query(),
+        page.getByRole("button", { name: `${DECREASE_COPY[locale]} Quantity`, exact: true }).query(),
         locale
       ).toBeTruthy();
       unmount();
@@ -207,13 +204,21 @@ describe("NumberField", () => {
       <NumberField label="Amount" defaultValue={1234.5} />,
       "en-US"
     );
-    expect(page.getByRole("button", { name: INCREASE_COPY["en-US"], exact: true }).query()).toBeTruthy();
-    expect(page.getByRole("button", { name: DECREASE_COPY["en-US"], exact: true }).query()).toBeTruthy();
+    expect(
+      page.getByRole("button", { name: `${INCREASE_COPY["en-US"]} Amount`, exact: true }).query()
+    ).toBeTruthy();
+    expect(
+      page.getByRole("button", { name: `${DECREASE_COPY["en-US"]} Amount`, exact: true }).query()
+    ).toBeTruthy();
     expect(textboxNamed("Amount")).toHaveProperty("value", "1,234.5");
 
     rerender(withLocale("nb-NO", <NumberField label="Amount" defaultValue={1234.5} />));
-    expect(page.getByRole("button", { name: INCREASE_COPY["nb-NO"], exact: true }).query()).toBeTruthy();
-    expect(page.getByRole("button", { name: DECREASE_COPY["nb-NO"], exact: true }).query()).toBeTruthy();
+    expect(
+      page.getByRole("button", { name: `${INCREASE_COPY["nb-NO"]} Amount`, exact: true }).query()
+    ).toBeTruthy();
+    expect(
+      page.getByRole("button", { name: `${DECREASE_COPY["nb-NO"]} Amount`, exact: true }).query()
+    ).toBeTruthy();
     expect(textboxNamed("Amount")).toHaveProperty("value", "1\u00a0234,5");
     unmountLocaleField();
 
@@ -221,10 +226,10 @@ describe("NumberField", () => {
       <NumberField label="Quantity" defaultValue={2} increaseLabel="Add one" decreaseLabel="Remove one" />,
       "nb-NO"
     );
-    expect(page.getByRole("button", { name: "Add one", exact: true }).query()).toBeTruthy();
-    expect(page.getByRole("button", { name: "Remove one", exact: true }).query()).toBeTruthy();
-    expect(page.getByRole("button", { name: "Øk", exact: true }).query()).toBeNull();
-    expect(page.getByRole("button", { name: "Reduser", exact: true }).query()).toBeNull();
+    expect(page.getByRole("button", { name: "Add one Quantity", exact: true }).query()).toBeTruthy();
+    expect(page.getByRole("button", { name: "Remove one Quantity", exact: true }).query()).toBeTruthy();
+    expect(page.getByRole("button", { name: "Øk Quantity", exact: true }).query()).toBeNull();
+    expect(page.getByRole("button", { name: "Reduser Quantity", exact: true }).query()).toBeNull();
 
     rerenderOverride(
       withLocale(
@@ -232,16 +237,33 @@ describe("NumberField", () => {
         <NumberField label="Quantity" defaultValue={2} increaseLabel="Add one" decreaseLabel="Remove one" />
       )
     );
-    expect(page.getByRole("button", { name: "Add one", exact: true }).query()).toBeTruthy();
-    expect(page.getByRole("button", { name: "Remove one", exact: true }).query()).toBeTruthy();
-    expect(page.getByRole("button", { name: "Lisää", exact: true }).query()).toBeNull();
-    expect(page.getByRole("button", { name: "Vähennä", exact: true }).query()).toBeNull();
+    expect(page.getByRole("button", { name: "Add one Quantity", exact: true }).query()).toBeTruthy();
+    expect(page.getByRole("button", { name: "Remove one Quantity", exact: true }).query()).toBeTruthy();
+    expect(page.getByRole("button", { name: "Lisää Quantity", exact: true }).query()).toBeNull();
+    expect(page.getByRole("button", { name: "Vähennä Quantity", exact: true }).query()).toBeNull();
     unmount();
 
     renderField(<NumberField label="Quantity" defaultValue={2} increaseLabel="Add one" />, "sv-SE");
-    expect(page.getByRole("button", { name: "Add one", exact: true }).query()).toBeTruthy();
-    expect(page.getByRole("button", { name: DECREASE_COPY["sv-SE"], exact: true }).query()).toBeTruthy();
+    expect(page.getByRole("button", { name: "Add one Quantity", exact: true }).query()).toBeTruthy();
+    expect(
+      page.getByRole("button", { name: `${DECREASE_COPY["sv-SE"]} Quantity`, exact: true }).query()
+    ).toBeTruthy();
   });
+
+  it("follows each stepper's own name with the field's name, from its label or its aria-label", () => {
+    renderField(
+      <>
+        <NumberField label="Adults" defaultValue={2} />
+        <NumberField aria-label="Infants" defaultValue={0} />
+        <NumberField label="Seats" aria-label="Reserved seats" defaultValue={1} />
+      </>
+    );
+    // Seats: the input takes its label over its aria-label, so its steppers name the same field.
+    for (const field of ["Adults", "Infants", "Seats"]) {
+      expect(stepperOf(field, "Increase")).not.toBe(stepperOf(field, "Decrease"));
+    }
+  });
+
   it("disables the input and steppers, and keeps a read-only input focusable", async () => {
     renderField(
       <>
@@ -251,10 +273,10 @@ describe("NumberField", () => {
       </>
     );
     expect(textboxNamed("Disabled")).toHaveProperty("disabled", true);
-    expect(stepperIn("Disabled", "Increase").getAttribute("aria-disabled")).toBe("true");
+    expect(stepperOf("Disabled", "Increase").getAttribute("aria-disabled")).toBe("true");
     expect(textboxNamed("Locked")).toHaveProperty("readOnly", true);
-    expect(stepperIn("Locked", "Increase").getAttribute("aria-disabled")).toBe("true");
-    expect(stepperIn("Locked", "Decrease").getAttribute("aria-disabled")).toBe("true");
+    expect(stepperOf("Locked", "Increase").getAttribute("aria-disabled")).toBe("true");
+    expect(stepperOf("Locked", "Decrease").getAttribute("aria-disabled")).toBe("true");
 
     page.getByRole("button", { name: "Before", exact: true }).element().focus();
     await userEvent.keyboard("{Tab}");
@@ -415,7 +437,7 @@ describe("form reset", () => {
     expect(new FormData(formNamed("Quantity form")).get("quantity")).toBe("5");
 
     // The committed value must reset too, not just the painted text.
-    await userEvent.click(roleNamed("button", "Increase"));
+    await userEvent.click(roleNamed("button", "Increase Quantity"));
     expect(inputNamed("Quantity")).toHaveProperty("value", "6");
   });
 
