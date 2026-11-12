@@ -3,6 +3,7 @@
  * number options or a named preset, so a server component can pass it to a client chart.
  */
 import { numberFormat } from "../../../internal/intl-cache";
+import { canonicalSpaces } from "../../../intl/canonical-spaces";
 import { inflect } from "../../../intl/count-of";
 import type { SupportedLocale } from "../../../intl/locale-context";
 import { makeFormattedText } from "./formatted-text";
@@ -85,17 +86,31 @@ function signed(options: Intl.NumberFormatOptions): boolean {
 }
 
 /**
- * The visual text of a number. Every visual minus is U+2212, en-US included, where Intl writes
- * U+002D, so negative values align and read the same in every locale.
+ * A number's visual parts as Intl writes them, but every minus U+2212, en-US included, where Intl
+ * writes U+002D, so negative values align and read the same in every locale.
  */
-function visualNumber(locale: SupportedLocale, value: number, options: Intl.NumberFormatOptions): string {
-  const format = numberFormat(locale, options);
-  // With no sign to replace, the parts join to Intl's own text.
-  if (unsigned(value, options)) return format.format(value);
-  return format
+function visualParts(
+  locale: SupportedLocale,
+  value: number,
+  options: Intl.NumberFormatOptions
+): Intl.NumberFormatPart[] {
+  return numberFormat(locale, options)
     .formatToParts(value)
-    .map((part) => (part.type === "minusSign" || part.type === "exponentMinusSign" ? "\u2212" : part.value))
-    .join("");
+    .map((part) =>
+      part.type === "minusSign" || part.type === "exponentMinusSign" ? { ...part, value: "\u2212" } : part
+    );
+}
+
+/** Parts joined into their text. */
+function joined(parts: readonly Intl.NumberFormatPart[]): string {
+  return parts.map((part) => part.value).join("");
+}
+
+/** The visual text of a number: its visual parts joined. */
+function visualNumber(locale: SupportedLocale, value: number, options: Intl.NumberFormatOptions): string {
+  // With no sign to replace, the parts join to Intl's own text.
+  if (unsigned(value, options)) return numberFormat(locale, options).format(value);
+  return joined(visualParts(locale, value, options));
 }
 
 /**
@@ -155,42 +170,82 @@ function digits(format: ChartFractionDigits, defaultMaximum: number | undefined)
   };
 }
 
-function formatPreset(
+/**
+ * A preset's fraction digits: energy and power print up to 2, a minor unit price up to 1, and a
+ * unit price in its currency the currency's own.
+ */
+function presetDigits(format: PresetFormat): ChartFractionDigits {
+  if (format.preset !== "unit-price") return digits(format, 2);
+  return digits(format, format.minor === true ? 1 : undefined);
+}
+
+/**
+ * The Intl options a value's visual number prints with: a preset's digits and sign, the currency of
+ * a unit price in kroner, or the consumer's Intl options with the negative-only sign by default.
+ */
+function visualOptions(format: ValueFormat): Intl.NumberFormatOptions {
+  if (format.preset === undefined) return { ...format, signDisplay: format.signDisplay ?? "negative" };
+  const fraction = presetDigits(format);
+  if (format.preset === "unit-price" && format.minor !== true) {
+    return { ...fraction, style: "currency", currency: format.currency, signDisplay: "negative" };
+  }
+  return { ...fraction, signDisplay: "negative" };
+}
+
+/**
+ * A format's unit around a value's number: the Intl options the visual and the spoken number print
+ * with, and the unit's text after the number in either form, such as ` kWh` and ` kilowattimer`.
+ */
+type ValueUnit = {
+  readonly options: Intl.NumberFormatOptions;
+  readonly spokenOptions: Intl.NumberFormatOptions;
+  readonly after: string;
+  readonly spokenAfter: string;
+};
+
+/**
+ * A value's unit in a format.
+ *
+ * @param locale - The active supported locale.
+ * @param words - The locale's chart words.
+ * @param value - The value, which a unit's name inflects by.
+ * @param format - Intl number options or a preset.
+ * @param role - The label's role: a `full` unit price names its VAT basis.
+ * @returns The unit.
+ */
+function valueUnit(
   locale: SupportedLocale,
   words: ChartWords,
   value: number,
-  format: PresetFormat,
+  format: ValueFormat,
   role: LabelRole
-): FormattedText {
+): ValueUnit {
+  const options = visualOptions(format);
+  if (format.preset === undefined) {
+    return { options, spokenOptions: spokenOptions(options), after: "", spokenAfter: "" };
+  }
+  const fraction = presetDigits(format);
   if (format.preset === "energy" || format.preset === "power") {
-    const fraction = digits(format, 2);
-    const options: Intl.NumberFormatOptions = { ...fraction, signDisplay: "negative" };
-    return makeFormattedText(
-      `${visualNumber(locale, value, options)} ${format.unit}`,
-      `${spokenNumber(locale, words, value, options)} ${inflect(locale, value, words.unitNames[format.unit], fraction)}`
-    );
+    const name = inflect(locale, value, words.unitNames[format.unit], fraction);
+    return { options, spokenOptions: options, after: ` ${format.unit}`, spokenAfter: ` ${name}` };
   }
   const vat = role === "full" ? ` ${words.vat[format.vat]}` : "";
   const spokenVat = role === "full" ? ` ${words.spokenVat[format.vat]}` : "";
   if (format.minor === true) {
-    const fraction = digits(format, 1);
-    const options: Intl.NumberFormatOptions = { ...fraction, signDisplay: "negative" };
     const minorName = inflect(locale, value, words.minorName[format.currency], fraction);
-    return makeFormattedText(
-      `${visualNumber(locale, value, options)} ${words.minorSymbol[format.currency]}/kWh${vat}`,
-      `${spokenNumber(locale, words, value, options)} ${minorName} ${words.spokenPerKilowattHour}${spokenVat}`
-    );
+    return {
+      options,
+      spokenOptions: options,
+      after: ` ${words.minorSymbol[format.currency]}/kWh${vat}`,
+      spokenAfter: ` ${minorName} ${words.spokenPerKilowattHour}${spokenVat}`,
+    };
   }
-  const options: Intl.NumberFormatOptions = {
-    ...digits(format, undefined),
-    style: "currency",
-    currency: format.currency,
-    signDisplay: "negative",
+  return {
+    options,
+    spokenOptions: spokenOptions(options),
+    after: `/kWh${vat}`,
+    spokenAfter: ` ${words.spokenPerKilowattHour}${spokenVat}`,
   };
-  return makeFormattedText(
-    `${visualNumber(locale, value, options)}/kWh${vat}`,
-    `${spokenNumber(locale, words, value, spokenOptions(options))} ${words.spokenPerKilowattHour}${spokenVat}`
-  );
 }
 
 /**
@@ -235,14 +290,102 @@ export function formatValue(
   if (value === null) {
     return makeFormattedText(words.noValue.text, words.noValue.spoken);
   }
-  if (format.preset !== undefined) {
-    return formatPreset(locale, words, value, format, role);
-  }
-  const options: Intl.NumberFormatOptions = { ...format, signDisplay: format.signDisplay ?? "negative" };
+  const unit = valueUnit(locale, words, value, format, role);
   return makeFormattedText(
-    visualNumber(locale, value, options),
-    spokenNumber(locale, words, value, spokenOptions(options))
+    `${visualNumber(locale, value, unit.options)}${unit.after}`,
+    `${spokenNumber(locale, words, value, unit.spokenOptions)}${unit.spokenAfter}`
   );
+}
+
+/**
+ * A formatted value as its number and the text the formatter wrote around it, which a centre lays
+ * out apart: the number large and rolling, the text before and after it small and breakable.
+ */
+export type ValueRun = {
+  /** The text before the number, such as `NOK ` or `$`, with the separator the formatter wrote. */
+  readonly before: string;
+  /** The number, from its sign through its last digit, exponent or compact suffix. */
+  readonly number: string;
+  /** The text after the number, such as ` kWh` or ` øre/kWh inkl. mva`. */
+  readonly after: string;
+};
+
+/** The Intl parts that belong to a number: its sign, digits, separators, exponent and compact suffix. */
+const NUMBER_PARTS: ReadonlySet<string> = new Set([
+  "minusSign",
+  "plusSign",
+  "integer",
+  "group",
+  "decimal",
+  "fraction",
+  "exponentSeparator",
+  "exponentMinusSign",
+  "exponentInteger",
+  "compact",
+  "infinity",
+  "nan",
+]);
+
+/**
+ * A number's visual parts split at the number, which Intl's own parts name, so a multiword unit such
+ * as `øre/kWh inkl. mva` stays whole, an exponent such as `3.9E3` stays in the number, a sign stays
+ * on it, and a compact suffix such as `1,2 mill.` stays with it, whatever the locale writes
+ * between. The number runs back from Intl's last number part over number parts and the literals
+ * between them, and stops at a currency or a unit, so `+NOK 3.90` keeps `+NOK ` before its number.
+ */
+function numberRun(parts: readonly Intl.NumberFormatPart[]): ValueRun {
+  const last = parts.findLastIndex((part) => NUMBER_PARTS.has(part.type));
+  let first = last;
+  for (let index = last - 1; index >= 0; index -= 1) {
+    const type = parts[index]?.type ?? "";
+    if (!NUMBER_PARTS.has(type) && type !== "literal") break;
+    if (NUMBER_PARTS.has(type)) first = index;
+  }
+  // Intl writes a number part for every number, NaN and the infinities included.
+  if (last === -1) throw new Error(`Intl wrote no number part in "${joined(parts)}".`);
+  return {
+    before: joined(parts.slice(0, first)),
+    number: joined(parts.slice(first, last + 1)),
+    after: joined(parts.slice(last + 1)),
+  };
+}
+
+/**
+ * A formatted value with its run: `formatValue`'s labels, and the visual text split at its number.
+ * The run's three pieces join to the visual text.
+ */
+export type FormattedRun = FormattedText & ValueRun;
+
+/**
+ * Format a value as `formatValue` does, and split its visual text at its number, so a centre lays
+ * the number out large and the unit around it small. One formatting writes both.
+ *
+ * @param locale - The active supported locale.
+ * @param value - The value.
+ * @param format - Intl number options or a preset.
+ * @param role - The label's role, as `formatValue` takes it.
+ * @returns The visual and spoken labels, and the text before the number, the number, and the text
+ *   after it, each with canonical spaces.
+ */
+export function formatValueRun(
+  locale: SupportedLocale,
+  value: number,
+  format: ValueFormat,
+  role: LabelRole
+): FormattedRun {
+  const words = CHART_WORDS[locale];
+  const unit = valueUnit(locale, words, value, format, role);
+  const run = numberRun(visualParts(locale, value, unit.options));
+  const before = canonicalSpaces(run.before);
+  const number = canonicalSpaces(run.number);
+  const after = canonicalSpaces(`${run.after}${unit.after}`);
+  return {
+    before,
+    number,
+    after,
+    text: `${before}${number}${after}`,
+    spoken: canonicalSpaces(`${spokenNumber(locale, words, value, unit.spokenOptions)}${unit.spokenAfter}`),
+  };
 }
 
 /**
@@ -251,9 +394,10 @@ export function formatValue(
  */
 function unitlessOptions(format: ValueFormat): Intl.NumberFormatOptions {
   if (format.preset === "energy" || format.preset === "power")
-    return { ...digits(format, 2), signDisplay: "negative" };
+    return { ...presetDigits(format), signDisplay: "negative" };
   if (format.preset === "unit-price") {
-    const fraction = format.minor === true ? digits(format, 1) : digits(format, 2);
+    // Without its currency a major price keeps the currency's 2 digits.
+    const fraction = format.minor === true ? presetDigits(format) : digits(format, 2);
     return {
       ...fraction,
       minimumFractionDigits:

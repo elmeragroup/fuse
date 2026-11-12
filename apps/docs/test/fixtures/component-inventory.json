@@ -490,6 +490,20 @@
       "frame-key-value-table.tsx"
     ]
   },
+  "gauge-chart": {
+    "title": "Gauge Chart",
+    "rsc": "client",
+    "demos": [
+      "gauge-chart-battery.tsx",
+      "gauge-chart-capacity-step.tsx",
+      "gauge-chart-charging.tsx",
+      "gauge-chart-empty.tsx",
+      "gauge-chart-live.tsx",
+      "gauge-chart-loading.tsx",
+      "gauge-chart-price-area.tsx",
+      "gauge-chart-spot-price.tsx"
+    ]
+  },
   "heading": {
     "title": "Heading",
     "rsc": "client",

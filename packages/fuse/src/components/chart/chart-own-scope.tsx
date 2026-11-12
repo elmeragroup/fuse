@@ -7,6 +7,7 @@
 import { use } from "react";
 import type { ReactElement, ReactNode } from "react";
 
+import { GaugeContext } from "./chart-gauge-context";
 import { ClockMarkerContext } from "./chart-marker-context";
 import { PolarContext } from "./chart-polar-context";
 import { ChartReadoutContext, ChartSelectionContext } from "./chart-readout-port";
@@ -88,7 +89,9 @@ function RootContexts({ children }: { readonly children: ReactNode }): ReactElem
                   <ScatterRootContext value={null}>
                     <ScatterPlotContext value={null}>
                       <PolarContext value={null}>
-                        <ClockMarkerContext value={null}>{children}</ClockMarkerContext>
+                        <GaugeContext value={null}>
+                          <ClockMarkerContext value={null}>{children}</ClockMarkerContext>
+                        </GaugeContext>
                       </PolarContext>
                     </ScatterPlotContext>
                   </ScatterRootContext>

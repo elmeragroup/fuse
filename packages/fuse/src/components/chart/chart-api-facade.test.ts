@@ -25,6 +25,7 @@ const PAIRS: ReadonlyArray<
   ["RadarChart", entry.RadarChart, facade.RadarChart],
   ["ClockChart", entry.ClockChart, facade.ClockChart],
   ["ScatterChart", entry.ScatterChart, facade.ScatterChart],
+  ["GaugeChart", entry.GaugeChart, facade.GaugeChart],
 ];
 
 describe("the docs API facade", () => {

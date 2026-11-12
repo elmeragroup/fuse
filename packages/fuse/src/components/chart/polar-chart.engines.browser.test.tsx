@@ -2,12 +2,13 @@ import { useEffect } from "react";
 
 // The polar Roots' spoken phrases and hydration, in Chromium and WebKit, whose Intl data each
 // write the percent and number text. The key sequence through each family runs in Chromium alone,
-// in polar-chart-keyboard.browser.test.tsx. Units under test:
-// PieChart.Root, RadialChart.Root and RadarChart.Root. Oracles, written by hand: CONTRACT section
+// in polar-chart-keyboard.browser.test.tsx. Units under test: PieChart.Root, RadialChart.Root,
+// RadarChart.Root, ClockChart.Root and GaugeChart.Root. Oracles, written by hand: CONTRACT section
 // 9.4's option grammar in Norwegian Bokmål, with S11's drafted words and layer 03's spoken percent
 // literal, in vsr's own phrase grammar, role, name, state, position and set size joined by ", ";
 // section 9.10's status words; and D18's first paint, where the server sends every mark hidden
-// and a hydrated chart in view shows them, with no recoverable error.
+// and a hydrated chart in view shows them, with no recoverable error; and a gauge's rest, worked
+// by hand from its reading.
 import { virtual } from "@guidepup/virtual-screen-reader";
 import { hydrateRoot } from "react-dom/client";
 import { renderToString } from "react-dom/server";
@@ -21,6 +22,7 @@ import { renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
 import "./chart.css";
 import { ClockChart } from "./clock-chart-namespace";
+import { GaugeChart } from "./gauge-chart-namespace";
 import { PieChart } from "./pie-chart-namespace";
 import { RadarChart } from "./radar-chart-namespace";
 import { RadialChart } from "./radial-chart-namespace";
@@ -203,6 +205,59 @@ describe("hydration (D18)", () => {
     const root = hydrateRoot(host, <Rings onHydrated={hydrated.resolve} />, { onRecoverableError: recover });
     try {
       await hydrated.promise;
+      expect(recover).not.toHaveBeenCalled();
+    } finally {
+      root.unmount();
+      host.remove();
+    }
+  });
+
+  it("sends a gauge at rest with its meter, lit notches, needle and centre from the server, and hydrates it as it is", async () => {
+    // 3,9 of 0–5 kWh: 0.78 of the 270° sweep, the needle at −135° + 210.6° = 75.6°, and
+    // round(40 · 0.78) = 31 lit notches. The meter's text is the value's spoken form, whose number
+    // each engine's Intl writes.
+    function Gauge({ onHydrated }: { readonly onHydrated?: () => void }) {
+      return (
+        <LocaleProvider locale="nb-NO">
+          <div style={{ width: 300 }}>
+            <GaugeChart.Root
+              value={3.9}
+              max={5}
+              valueFormat={{ preset: "energy", unit: "kWh", maximumFractionDigits: 1 }}
+              aria-label="Forbruk denne timen">
+              <GaugeChart.Zone from={4} to={5} color="chart-sentiment-negative" />
+              <GaugeChart.ProgressRing />
+              <GaugeChart.Sector />
+              <GaugeChart.Dots />
+              <GaugeChart.Track />
+              <GaugeChart.Fill />
+              <GaugeChart.Ruler />
+              <GaugeChart.Needle />
+              <GaugeChart.Center>
+                <GaugeChart.CenterValue />
+              </GaugeChart.Center>
+            </GaugeChart.Root>
+            <CommitMarker onCommit={onHydrated} />
+          </div>
+        </LocaleProvider>
+      );
+    }
+    const html = renderToString(<Gauge />);
+    expect(html).toContain('role="meter"');
+    expect(html).toContain('aria-valuetext="3,9\u00a0kilowattimer"');
+    expect(html).toContain('transform="rotate(75.6)"');
+    expect(html).not.toContain("data-drawn");
+    const host = document.createElement("div");
+    host.innerHTML = html;
+    expect(host.querySelectorAll('[data-slot="gauge-chart-notch"][data-lit]')).toHaveLength(31);
+    document.body.append(host);
+    const recover = vi.fn();
+    const hydrated = Promise.withResolvers<void>();
+    const root = hydrateRoot(host, <Gauge onHydrated={hydrated.resolve} />, { onRecoverableError: recover });
+    try {
+      await hydrated.promise;
+      const figure = host.querySelector("[data-polar]");
+      await expect.poll(() => figure?.hasAttribute("data-drawn")).toBe(true);
       expect(recover).not.toHaveBeenCalled();
     } finally {
       root.unmount();

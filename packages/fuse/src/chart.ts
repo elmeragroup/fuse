@@ -22,6 +22,7 @@ export { RadialChart } from "./components/chart/radial-chart-namespace";
 export { RadarChart } from "./components/chart/radar-chart-namespace";
 export { ClockChart } from "./components/chart/clock-chart-namespace";
 export { ScatterChart } from "./components/chart/scatter-chart-namespace";
+export { GaugeChart } from "./components/chart/gauge-chart-namespace";
 export { Sparkline } from "./components/chart/sparkline";
 export { SparklineHover } from "./components/chart/sparkline-hover";
 export { useChartPoint } from "./components/chart/use-chart-point";
@@ -44,6 +45,7 @@ export type {
   ChartFallback,
   ChartFigureProps,
   ChartFractionDigits,
+  ChartGaugeRole,
   ChartInstant,
   ChartIntro,
   ChartKeyOf,
@@ -214,5 +216,23 @@ export type {
   ScatterChartSkeletonProps,
 } from "./components/chart/scatter-chart-empty";
 export type { ScatterCurve } from "./components/chart/layout/scatter-frame";
+export type { GaugeChartRootProps } from "./components/chart/gauge-chart-root";
+export type { GaugeChartZoneProps } from "./components/chart/gauge-chart-zone";
+export type {
+  GaugeChartFillProps,
+  GaugeChartGlowProps,
+  GaugeChartTrackProps,
+} from "./components/chart/gauge-chart-track";
+export type { GaugeChartRulerProps } from "./components/chart/gauge-chart-ruler";
+export type { GaugeChartNeedleProps } from "./components/chart/gauge-chart-needle";
+export type { GaugeChartSectorProps } from "./components/chart/gauge-chart-sector";
+export type { GaugeChartProgressRingProps } from "./components/chart/gauge-chart-progress-ring";
+export type { GaugeChartDotsProps } from "./components/chart/gauge-chart-dots";
+export type {
+  GaugeChartCenterLabelProps,
+  GaugeChartCenterProps,
+  GaugeChartCenterValueProps,
+} from "./components/chart/gauge-chart-center";
+export type { GaugeChartEmptyProps, GaugeChartSkeletonProps } from "./components/chart/gauge-chart-skeleton";
 export type { SparklineProps } from "./components/chart/sparkline";
 export type { SparklineHoverProps } from "./components/chart/sparkline-hover";

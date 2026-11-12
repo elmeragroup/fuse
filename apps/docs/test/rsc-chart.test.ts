@@ -191,6 +191,13 @@ describe("the polar Roots under React Server Components", () => {
       "components/chart/clock-chart-column.tsx#ClockChartColumn",
       "components/chart/clock-chart-marks.tsx#ClockChartLine",
       "components/chart/clock-chart-center.tsx#ClockChartCenter",
+      "components/chart/gauge-chart-root.tsx#GaugeChartRoot",
+      "components/chart/gauge-chart-zone.tsx#GaugeChartZone",
+      "components/chart/gauge-chart-track.tsx#GaugeChartTrack",
+      "components/chart/gauge-chart-track.tsx#GaugeChartFill",
+      "components/chart/gauge-chart-needle.tsx#GaugeChartNeedle",
+      "components/chart/gauge-chart-center.tsx#GaugeChartCenter",
+      "components/chart/gauge-chart-center.tsx#GaugeChartCenterValue",
     ]);
   });
 
@@ -211,8 +218,9 @@ describe("the polar Roots under React Server Components", () => {
     ) as SsrResult;
     expect(ssr.flight).toBe(ssr.clientOnly);
     for (const html of [ssr.flight, ssr.clientOnly]) {
-      // Each Root sends its aspect-locked cell and plot, and the pie its three slices and labels.
-      expect(slotCount(html, "chart-polar-cell")).toBe(4);
+      // Each Root sends its aspect-locked cell, each but the gauge its plot, and the pie its three
+      // slices and labels.
+      expect(slotCount(html, "chart-polar-cell")).toBe(5);
       expect(slotCount(html, "pie-chart-sector")).toBe(3);
       expect(slotCount(html, "pie-chart-label")).toBe(3);
       // The rings' chart sends three rings and three tracks.
@@ -236,6 +244,9 @@ describe("the polar Roots under React Server Components", () => {
       expect(slotCount(html, "radar-chart-area-path")).toBe(2);
       expect(slotCount(html, "radar-chart-line-path")).toBe(3);
       expect(slotCount(html, "loader")).toBe(0);
+      // The gauge sends its meter, and its track's and fill's 40 notches each.
+      expect(html).toContain('role="meter"');
+      expect(slotCount(html, "gauge-chart-notch")).toBe(80);
       // The bill's three parts and the radar's two areas.
       expect(slotCount(html, "chart-legend-item")).toBe(5);
       // The pie's and the rings' tables: a head row and three rows each.

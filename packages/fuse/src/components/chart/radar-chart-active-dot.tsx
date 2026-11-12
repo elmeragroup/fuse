@@ -101,7 +101,7 @@ export function RadarChartActiveDot({ dataKey, className, style }: RadarChartAct
     [spokes, follow, active, drawn]
   );
   const { ref, place, node: anchor } = usePolarMark(polar.motion, drawActiveDot, look);
-  const commit = usePolarCommit(polar, anchor);
+  const commit = usePolarCommit(polar.commit, anchor);
   const radii = useMemo(() => radiiOf(radar, series), [radar, series]);
   const index = series?.index ?? 0;
   const count = radar.count;

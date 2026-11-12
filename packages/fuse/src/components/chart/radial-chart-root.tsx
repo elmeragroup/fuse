@@ -21,7 +21,7 @@ import type {
   ValueFormat,
 } from "./chart-types";
 import { seriesLabel } from "./format/series-label";
-import { sweepOf } from "./layout/polar-angle";
+import { parseSweep } from "./layout/polar-angle";
 import type { RingMaxima } from "./layout/rings";
 import { numberOf } from "./layout/scalar";
 
@@ -61,7 +61,10 @@ export type RadialChartRootProps<
     valueFormat?: ValueFormat;
     /** A fraction of the outer radius where the innermost ring starts, `0.3` by default. */
     innerRadius?: number;
-    /** Degrees from 12 o'clock, clockwise, where each ring's sweep starts. 0 by default. */
+    /**
+     * Degrees from 12 o'clock, clockwise, where each ring's sweep starts. 0 by default. An angle
+     * that is not a finite number, here or in `endAngle`, throws `invalid-sweep`.
+     */
     startAngle?: number;
     /** Degrees from 12 o'clock, clockwise, where a full ring's sweep ends. 360 by default. */
     endAngle?: number;
@@ -143,7 +146,7 @@ export function RadialChartRoot<
       valueKey,
       qualityKey,
       valueFormat: steadyFormat,
-      sweep: sweepOf(startAngle, endAngle),
+      sweep: parseSweep("RadialChart.Root", startAngle, endAngle),
       locale,
       name,
       part: "RadialChart.Root",

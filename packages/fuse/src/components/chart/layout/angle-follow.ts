@@ -5,6 +5,7 @@ import { turnOf } from "./polar-angle";
  * active dots and its tooltip's lane offset on one of these. The spring advances in closed form,
  * since the stiffest follow spring at 60 Hz has ω·dt ≈ 1.2, which would destabilise a numeric step.
  */
+import { criticalStep } from "./spring";
 import type { Spring } from "./spring";
 
 /** A follower's state: the shown angle in degrees, unwrapped, and its velocity in degrees per second. */
@@ -48,9 +49,8 @@ export function followStep(state: AngleFollow, target: number, dtMs: number, spr
   const omega = Math.sqrt(spring.stiffness);
   const zeta = spring.damping / (2 * omega);
   if (Math.abs(zeta - 1) < 1e-9) {
-    const b = v0 + omega * x0;
-    const decay = Math.exp(-omega * t);
-    return { angle: target + (x0 + b * t) * decay, velocity: decay * (b - omega * (x0 + b * t)) };
+    const { offset, velocity } = criticalStep(x0, v0, omega, t);
+    return { angle: target + offset, velocity };
   }
   if (zeta < 1) {
     const damped = omega * Math.sqrt(1 - zeta * zeta);

@@ -8,7 +8,7 @@
 import { arc as d3Arc } from "d3-shape";
 
 import type { Sweep } from "./polar-angle";
-import { polarPoint, toRadians } from "./polar-angle";
+import { isFullTurn, polarPoint, toRadians } from "./polar-angle";
 import { PATH_DIGITS, pathNumber } from "./rounding";
 
 /** One arc: a sector of an annulus, in degrees and the caller's radius unit. */
@@ -104,7 +104,7 @@ export function ringTrack(radius: number, sweep: Sweep): string {
   };
   const r = pathNumber(radius);
   const clockwise = sweep.direction === 1 ? 1 : 0;
-  if (sweep.width >= 360) {
+  if (isFullTurn(sweep)) {
     const half = sweep.start + 180 * sweep.direction;
     return `M${point(sweep.start)}A${r},${r} 0 0 ${clockwise} ${point(half)}A${r},${r} 0 0 ${clockwise} ${point(sweep.end)}`;
   }

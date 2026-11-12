@@ -12,9 +12,10 @@ import { useLocale } from "../../intl/locale-context";
 import { ChartDigitRoll } from "./chart-digit-roll";
 import { shareDigits, shareText } from "./chart-readout";
 import type { ChartFractionDigits, ChartLayerProps, ValueFormat } from "./chart-types";
+import { ChartValueRun } from "./chart-value-run";
 import { CHART_STRINGS } from "./format/chart-strings";
-import { numberAndUnit } from "./format/formatted-text";
-import { formatValue } from "./format/value-format";
+import { formatValueRun } from "./format/value-format";
+import type { ValueRun } from "./format/value-format";
 import { useCentreItem } from "./pie-chart-center";
 
 /**
@@ -47,29 +48,9 @@ export type PieChartCenterMaxProps = ChartLayerProps & {
   format?: ValueFormat;
 };
 
-/**
- * A value as its number, whose digits roll, and its unit, in the order the formatter wrote them and
- * joined by a breakable space, so a value too wide for the hole wraps between them instead of
- * overflowing.
- */
-function RollingValue({ text, step }: { readonly text: string; readonly step: number | null }): ReactElement {
-  const parts = numberAndUnit(text);
-  const number = (
-    <span data-part="number">
-      <ChartDigitRoll text={parts.number} step={step} />
-    </span>
-  );
-  if (parts.unit === null) return number;
-  const unit = <span data-part="unit">{parts.unit}</span>;
-  return parts.side === "before" ? (
-    <>
-      {unit} {number}
-    </>
-  ) : (
-    <>
-      {number} {unit}
-    </>
-  );
+/** A value as its number, whose digits roll, and the unit text around it. */
+function RollingValue({ run, step }: { readonly run: ValueRun; readonly step: number | null }): ReactElement {
+  return <ChartValueRun run={run} number={<ChartDigitRoll text={run.number} step={step} />} />;
 }
 
 /**
@@ -82,19 +63,19 @@ function RollingValue({ text, step }: { readonly text: string; readonly step: nu
 export function PieChartCenterValue({ format, className, style }: PieChartCenterValueProps): ReactElement {
   const { centre, active } = useCentreItem("PieChart.CenterValue");
   const { locale } = useLocale();
-  let text: string | null = null;
+  let run: ValueRun | null = null;
   if (centre !== null && active !== null) {
     const value = centre.value(active);
-    text =
+    run =
       value === null
-        ? CHART_STRINGS[locale].missing
-        : formatValue(locale, value, format ?? centre.format(active), "full").text;
+        ? { before: "", number: CHART_STRINGS[locale].missing, after: "" }
+        : formatValueRun(locale, value, format ?? centre.format(active), "full");
   } else if (centre?.total) {
-    text = formatValue(locale, centre.total.value, format ?? centre.total.format, "full").text;
+    run = formatValueRun(locale, centre.total.value, format ?? centre.total.format, "full");
   }
   return (
     <span data-slot="pie-chart-center-value" className={className} style={style}>
-      {text === null ? null : <RollingValue text={text} step={active} />}
+      {run === null ? null : <RollingValue run={run} step={active} />}
     </span>
   );
 }
@@ -147,9 +128,7 @@ export function PieChartCenterMax({ format, className, style }: PieChartCenterMa
         : centre.format(active));
   return (
     <span data-slot="pie-chart-center-max" className={className} style={style}>
-      {max === null ? null : (
-        <RollingValue text={formatValue(locale, max, shown, "full").text} step={active} />
-      )}
+      {max === null ? null : <RollingValue run={formatValueRun(locale, max, shown, "full")} step={active} />}
     </span>
   );
 }

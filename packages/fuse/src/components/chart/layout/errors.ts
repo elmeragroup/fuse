@@ -28,7 +28,9 @@ export type ChartCompositionRule =
   | "series-not-in-panel"
   | "key-outside-panels"
   | "part-outside-panel"
-  | "series-drawn-twice";
+  | "series-drawn-twice"
+  | "invalid-gauge-domain"
+  | "invalid-sweep";
 
 /** The data rules, each with a production fallback. */
 export type ChartDataRule =

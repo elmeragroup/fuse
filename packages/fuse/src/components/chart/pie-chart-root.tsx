@@ -22,7 +22,7 @@ import type {
 } from "./chart-types";
 import { seriesLabel } from "./format/series-label";
 import { OTHER_KEY } from "./layout/pie";
-import { sweepOf } from "./layout/polar-angle";
+import { parseSweep } from "./layout/polar-angle";
 
 /**
  * Props for `PieChart.Root`, the root of pie and donut charts and of gauge pies.
@@ -62,7 +62,10 @@ export type PieChartRootProps<
     innerRadius?: number;
     /** Degrees between slices. A negative value overlaps neighbours. */
     padAngle?: number;
-    /** Degrees from 12 o'clock, clockwise, where the first slice starts. 0 by default. */
+    /**
+     * Degrees from 12 o'clock, clockwise, where the first slice starts. 0 by default. An angle that
+     * is not a finite number, here or in `endAngle`, throws `invalid-sweep`.
+     */
     startAngle?: number;
     /** Degrees from 12 o'clock, clockwise, where the last slice ends. 360 by default. */
     endAngle?: number;
@@ -135,7 +138,7 @@ export function PieChartRoot<
         valueKey,
         qualityKey,
         valueFormat: steadyFormat,
-        sweep: sweepOf(startAngle, endAngle),
+        sweep: parseSweep("PieChart.Root", startAngle, endAngle),
         locale,
         name,
         part: "PieChart.Root",

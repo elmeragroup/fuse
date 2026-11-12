@@ -4,6 +4,7 @@
  * degrees. A point at angle a and radius r sits at `(r·sin a, −r·cos a)` from the centre, in screen
  * coordinates whose y grows downward. Degrees turn into radians only at a d3-shape call.
  */
+import { ChartCompositionError } from "./errors";
 
 /** A point in screen coordinates from the centre, x right and y down. */
 export type PolarPoint = { readonly x: number; readonly y: number };
@@ -80,6 +81,26 @@ export function sweepOf(start: number, end: number): Sweep {
 }
 
 /**
+ * The sweep between two angles a Root's props name, as `sweepOf` reads them.
+ *
+ * @param part - The Root, which the error names.
+ * @param start - `startAngle`.
+ * @param end - `endAngle`.
+ * @returns The sweep.
+ * @throws {ChartCompositionError} `invalid-sweep` when either angle is not a finite number.
+ */
+export function parseSweep(part: string, start: number, end: number): Sweep {
+  if (!Number.isFinite(start) || !Number.isFinite(end)) {
+    throw new ChartCompositionError(
+      part,
+      "invalid-sweep",
+      `received startAngle ${String(start)} and endAngle ${String(end)}. Pass finite numbers of degrees.`
+    );
+  }
+  return sweepOf(start, end);
+}
+
+/**
  * An angle in degrees turned into `[0, 360)`, so −90 reads 270 and 450 reads 90.
  *
  * @param angle - Degrees, any number of turns either way.
@@ -106,6 +127,16 @@ export function pointerAngle(dx: number, dy: number): number {
 }
 
 /**
+ * Whether a sweep closes on itself, so marks evenly spaced along it repeat its start at its end.
+ *
+ * @param sweep - The sweep.
+ * @returns Whether it runs a whole turn.
+ */
+export function isFullTurn(sweep: Sweep): boolean {
+  return sweep.width >= 360;
+}
+
+/**
  * How far an angle lies into a sweep, measured from the sweep's start in the sweep's own direction,
  * so a −135 to 135 gauge and a counter-clockwise sweep need no special case.
  *
@@ -117,7 +148,7 @@ export function angleInSweep(angle: number, sweep: Sweep): number | null {
   const raw = (angle - sweep.start) * sweep.direction;
   const offset = turnOf(raw);
   // A full turn holds every angle, and its own start at its end too.
-  if (sweep.width >= 360) return offset;
+  if (isFullTurn(sweep)) return offset;
   return offset <= sweep.width ? offset : null;
 }
 
@@ -133,9 +164,16 @@ export function angleInSweep(angle: number, sweep: Sweep): number | null {
 export function sweepBox(sweep: Sweep): SweepBox {
   const low = Math.min(sweep.start, sweep.end);
   const high = Math.max(sweep.start, sweep.end);
-  const points: PolarPoint[] = [{ x: 0, y: 0 }, polarPoint(low, 1), polarPoint(high, 1)];
+  // The quarter turns walk from the sweep's start brought into one turn, so a start of any size, as
+  // far out as a float holds, takes at most five steps. A sweep that is not finite, which a Root
+  // refuses before it builds one, boxes a whole turn.
+  const finite = Number.isFinite(low) && Number.isFinite(high);
+  const from = finite ? turnOf(low) : 0;
+  const to = from + (finite ? Math.min(360, high - low) : 360);
+  const points: PolarPoint[] = [{ x: 0, y: 0 }];
+  if (finite) points.push(polarPoint(low, 1), polarPoint(high, 1));
   // Every quarter turn inside the sweep is an extreme of the arc.
-  for (let quarter = Math.ceil(low / 90); quarter * 90 <= high; quarter += 1) {
+  for (let quarter = Math.ceil(from / 90); quarter * 90 <= to; quarter += 1) {
     points.push(polarPoint(quarter * 90, 1));
   }
   // Rounding to 12 digits lets sin(180°) read 0, so the box has no float sliver past the centre.

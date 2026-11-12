@@ -273,6 +273,15 @@ export type ChartColor =
 export type ChartPolarRole = ChartCategoricalRole | ChartSequentialRole | "chart-other";
 
 /**
+ * The colour roles a gauge's fill, its zones and its other reading layers take: a categorical role,
+ * or a sentiment role for a reading that is good or bad. Each reads against the surface at 3:1 or
+ * more in every theme, which the dimmer track beneath the fill relies on.
+ *
+ * @beta
+ */
+export type ChartGaugeRole = ChartCategoricalRole | ChartSentimentRole;
+
+/**
  * One polar role or a list of two or more, which paints a gradient along the slice or the sweep.
  *
  * @beta

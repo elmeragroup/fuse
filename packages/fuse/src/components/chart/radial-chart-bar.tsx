@@ -24,13 +24,14 @@ import { radialDrawingIn, usePolarContext } from "./chart-polar-context";
 import type { PolarContextValue, RadialRing } from "./chart-polar-context";
 import { PolarHatch } from "./chart-polar-hatch";
 import { usePolarCommit, usePolarMark } from "./chart-polar-motion";
-import { RING_DOTS, ringDash, ringFrameOf } from "./chart-ring-frame";
+import { ringDash, ringFrameOf } from "./chart-ring-frame";
 import type { RingFrame, RingPlace } from "./chart-ring-frame";
 import type { ChartLayerProps } from "./chart-types";
 import { ringTrack } from "./layout/arc-path";
 import { CHART_SPRINGS } from "./layout/motion";
 import { sweepOf, viewBoxOf } from "./layout/polar-angle";
 import type { Sweep } from "./layout/polar-angle";
+import { DIAL_MARKS } from "./layout/rings";
 import { springEasing } from "./layout/spring";
 
 /**
@@ -114,7 +115,7 @@ function RadialRingMark({
   );
   const ringLook = useMemo(() => ({ frame, key: ring.key, place }), [frame, ring.key, place]);
   const { ref, place: placeRing, node: anchor } = usePolarMark(polar.motion, writeRing, ringLook);
-  const commit = usePolarCommit(polar, anchor);
+  const commit = usePolarCommit(polar.commit, anchor);
   const { angle } = ring;
   useLayoutEffect(() => {
     placeRing([angle], commit(index, [0]));
@@ -130,7 +131,7 @@ function RadialRingMark({
   };
   const paint = ring.quality === "estimated" ? `url(#${prefix}-hatch-${String(index)})` : ring.paint;
   const mask = `${prefix}-mask-${String(index)}`;
-  const cell = sweep.width / RING_DOTS;
+  const cell = sweep.width / DIAL_MARKS;
   return (
     <g
       data-chart-ring=""

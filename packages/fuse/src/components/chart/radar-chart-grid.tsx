@@ -18,6 +18,7 @@ import type { RadarDrawing } from "./chart-polar-context";
 import type { ChartLayerProps } from "./chart-types";
 import { CHART_SPRINGS } from "./layout/motion";
 import { polarPoint, viewBoxOf } from "./layout/polar-angle";
+import { TRACK_GROW, TRACK_GROW_DURATION } from "./layout/polar-motion";
 import { radarRadius, spokeAngle } from "./layout/radar";
 import { pathNumber } from "./layout/rounding";
 import { springEasing } from "./layout/spring";
@@ -32,7 +33,6 @@ export type RadarChartGridProps = ChartLayerProps & {
   variant?: "polygon" | "circle";
 };
 
-const GROW = springEasing(CHART_SPRINGS.grow);
 const EXTEND = springEasing(CHART_SPRINGS.extend);
 
 /** A ring's path: a polygon through every spoke, or a circle. */
@@ -91,8 +91,8 @@ export function RadarChartGrid({ variant = "polygon", className, style }: RadarC
       viewBox={viewBoxOf(box)}
       className={className}
       style={{
-        "--_grow-duration": `${String(GROW.duration)}ms`,
-        "--_grow-easing": GROW.easing,
+        "--_grow-duration": TRACK_GROW_DURATION,
+        "--_grow-easing": TRACK_GROW.easing,
         "--_extend-duration": `${String(EXTEND.duration)}ms`,
         "--_extend-easing": EXTEND.easing,
         ...style,

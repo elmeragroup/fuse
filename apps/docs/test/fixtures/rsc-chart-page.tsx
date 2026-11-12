@@ -15,6 +15,7 @@ import {
   Chart,
   ClockChart,
   formatChartValue,
+  GaugeChart,
   PieChart,
   RadarChart,
   RadialChart,
@@ -255,6 +256,19 @@ export function PolarPage(): ReactElement {
           <ClockChart.Line dataKey="kwh" />
           <ClockChart.Center />
         </ClockChart.Root>
+        <GaugeChart.Root
+          value={3.9}
+          max={5}
+          valueFormat={{ preset: "energy", unit: "kWh", maximumFractionDigits: 1 }}
+          aria-label="Forbruk denne timen">
+          <GaugeChart.Zone from={4} to={5} color="chart-sentiment-negative" />
+          <GaugeChart.Track />
+          <GaugeChart.Fill />
+          <GaugeChart.Needle />
+          <GaugeChart.Center>
+            <GaugeChart.CenterValue />
+          </GaugeChart.Center>
+        </GaugeChart.Root>
       </main>
     </LocaleProvider>
   );

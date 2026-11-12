@@ -147,7 +147,7 @@ function DotLayer({
   const [first] = useState(() =>
     look === null ? new Map<string, string>() : dotGroups(look, look.series.rest)
   );
-  const commit = usePolarCommit(polar, anchor);
+  const commit = usePolarCommit(polar.commit, anchor);
   useClockPlacement(clock, series, look, { commit, place, drawn });
   // A variant change mounts paths at the first rest. Repaint every path from the frame the loop
   // drew last, without placing the mark again, so the motion runs on untouched.

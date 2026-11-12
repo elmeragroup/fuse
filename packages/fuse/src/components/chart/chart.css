@@ -56,6 +56,28 @@
   initial-value: 0.7;
 }
 
+/*
+  A gauge's rim layers take room at the rim, and the dial scales the track's layers in by what they
+  leave: Root reads --_gauge-track once per layout, as a number, to snap the notches.
+*/
+@property --_gauge-zone {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 1;
+}
+
+@property --_gauge-ring {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 1;
+}
+
+@property --_gauge-track {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 1;
+}
+
 /* The crosshair reads its width once per layout, as a length. */
 @property --chart-crosshair-width {
   syntax: "<length>";
@@ -433,7 +455,7 @@
     animation: chart-fade-in 0s 400ms both;
   }
 
-  @media (prefers-reduced-motion: no-preference) {
+  @media screen and (prefers-reduced-motion: no-preference) {
     [data-slot="chart-plot"] > [data-slot="loader"] {
       animation-duration: var(--chart-update);
       animation-timing-function: var(--chart-ease);
@@ -1195,8 +1217,12 @@
     opacity: 0;
   }
 
-  /* The centre's parts stack in the square inscribed in the hole, sized to it. */
-  [data-slot="pie-chart-center"] > [data-part="hole"] {
+  /*
+    A centre's parts stack in a box, sized to it: a pie's and a clock's the square inscribed in the
+    hole, a gauge's its own.
+  */
+  :is([data-slot="pie-chart-center"], [data-slot="clock-chart-center"], [data-slot="gauge-chart-center"])
+    > [data-part="hole"] {
     position: absolute;
     left: var(--_left);
     top: var(--_top);
@@ -1215,7 +1241,7 @@
     The value scales with the hole, never below the 12 px floor (CONTRACT section 10), and leads the
     label beneath it, which a hole narrower than 4rem leaves out, as it would wrap into the rings.
   */
-  [data-slot="pie-chart-center-value"] {
+  :is([data-slot="pie-chart-center-value"], [data-slot="gauge-chart-center-value"]) {
     font-size: clamp(0.75rem, 22cqmin, var(--heading-2-size, 1.25rem));
     font-weight: var(--heading-2-weight, 600);
     line-height: 1.2;
@@ -1228,7 +1254,11 @@
   }
 
   @container (width < 4rem) {
-    :is([data-slot="pie-chart-center-label"], [data-slot="pie-chart-center-name"]) {
+    :is(
+      [data-slot="pie-chart-center-label"],
+      [data-slot="pie-chart-center-name"],
+      [data-slot="gauge-chart-center-label"]
+    ) {
       display: none;
     }
   }
@@ -1239,25 +1269,372 @@
     WebKit draw the text of a reel moved by a fraction of a pixel up to two device pixels off the
     plain text beside it, a different distance for each digit.
   */
-  [data-slot="pie-chart-center"] [data-part="digits"] {
+  :is([data-slot="pie-chart-center"], [data-slot="gauge-chart-center"]) [data-part="digits"] {
     display: inline-flex;
     font-variant-numeric: tabular-nums;
     white-space: pre;
     line-height: round(1lh, 1px);
   }
 
-  [data-slot="pie-chart-center"] [data-part="digit"] {
+  :is([data-slot="pie-chart-center"], [data-slot="gauge-chart-center"]) [data-part="digit"] {
     display: inline-block;
     height: 1lh;
     overflow: hidden;
   }
 
-  /* Until the slices sweep in, the centre's digits wait at 0, and they count up with the sweep. */
-  [data-slot="pie-chart-center"] [data-part="reel"] {
+  /* Until the marks sweep in, the centre's digits wait at 0, and they count up with the sweep. */
+  :is([data-slot="pie-chart-center"], [data-slot="gauge-chart-center"]) [data-part="reel"] {
     --_reel-waiting: var(--_if-root-waiting) 0 0;
     display: flex;
     flex-direction: column;
     translate: var(--_reel-waiting, 0 calc(var(--_digit) * -10%));
+  }
+
+  /*
+    A gauge is a polar figure whose cell is a meter. Its layers lay out from the rim inward with no
+    radius to tune: an outside Ruler takes 0.11 of the radius at the rim, a Zone band 0.08 inside
+    it and a ProgressRing 0.06 inside that, and the track, the fill, the glow, the sector, the dots,
+    the inside ruler, the needle and the centre scale in by what they leave, --_gauge-track, about
+    the dial's centre. These rim weights live here alone: Root reads only --_gauge-track back.
+  */
+  [data-slot="gauge-chart"] {
+    --chart-polar-size: 15rem;
+  }
+
+  [data-slot="gauge-chart"] > [data-slot="chart-polar-frame"] {
+    --_gauge-rim-ruler: 0;
+    --_gauge-rim-zone: 0;
+    --_gauge-rim-ring: 0;
+    --_gauge-zone: calc(1 - var(--_gauge-rim-ruler) * 0.11);
+    --_gauge-ring: calc(var(--_gauge-zone) - var(--_gauge-rim-zone) * 0.08);
+    --_gauge-close: 1;
+    --_gauge-track: calc((var(--_gauge-ring) - var(--_gauge-rim-ring) * 0.06) * var(--_gauge-close));
+  }
+
+  /*
+    With no Track the layers inside it close in on the rim: they scale out by the notches' depth,
+    --_gauge-closed, 1 over the notches' inner radius, which Root writes from GAUGE_RADII, so a
+    Sector, Dots or an inside ruler reach where the track's inner edge would sit outward to where
+    its rim would, and no empty ring parts them from a ProgressRing or a ruler.
+  */
+  [data-slot="gauge-chart"] > [data-slot="chart-polar-frame"]:not(:has(> [data-slot="gauge-chart-track"])) {
+    --_gauge-close: var(--_gauge-closed);
+  }
+
+  /* An outside ruler's labels stand past the rim, in a gutter round the dial. */
+  [data-slot="gauge-chart"]
+    > [data-slot="chart-polar-frame"]:has(> [data-slot="gauge-chart-ruler"][data-variant="outside"]) {
+    --_gauge-rim-ruler: 1;
+    --_room-x: 2.25rem;
+    --_room-y: 1.25rem;
+  }
+
+  [data-slot="gauge-chart"] > [data-slot="chart-polar-frame"]:has(> [data-slot="gauge-chart-zone"]) {
+    --_gauge-rim-zone: 1;
+  }
+
+  [data-slot="gauge-chart"] > [data-slot="chart-polar-frame"]:has(> [data-slot="gauge-chart-progress-ring"]) {
+    --_gauge-rim-ring: 1;
+  }
+
+  /* The meter fills the cell, which holds nothing else, so the reader's box for it is the dial's. */
+  [data-slot="gauge-chart-meter"] {
+    position: absolute;
+    inset: 0;
+  }
+
+  [data-slot="gauge-chart"] [data-part="gauge-dial"] {
+    transform-box: view-box;
+    transform-origin: 0 0;
+    transform: scale(var(--_gauge-track));
+  }
+
+  [data-slot="gauge-chart-zone"] > [data-part="gauge-dial"] {
+    transform: scale(var(--_gauge-zone));
+  }
+
+  [data-slot="gauge-chart-progress-ring"] > [data-part="gauge-dial"] {
+    transform: scale(var(--_gauge-ring));
+  }
+
+  [data-slot="gauge-chart-ruler"][data-variant="outside"] [data-part="gauge-dial"] {
+    transform: none;
+  }
+
+  :is([data-slot="gauge-chart-zone"], [data-slot="gauge-chart-track"], [data-slot="gauge-chart-sector"]) {
+    z-index: 0;
+  }
+
+  :is([data-slot="gauge-chart-glow"], [data-slot="gauge-chart-dots"]) {
+    z-index: 1;
+  }
+
+  :is(
+    [data-slot="gauge-chart-fill"],
+    [data-slot="gauge-chart-ruler"],
+    [data-slot="gauge-chart-progress-ring"]
+  ) {
+    z-index: 2;
+  }
+
+  :is([data-slot="gauge-chart-needle"], [data-slot="gauge-chart-center"]) {
+    z-index: 3;
+  }
+
+  /*
+    The track is a subordinate scale, not the information carrier: the fill's extent carries the
+    value, and the ruler and its labels carry the scale. So the unlit notches and the solid band
+    take a mid-weight tone between --muted and --muted-foreground: the muted foreground at 32 % over
+    the surface in light and 26 % in dark, the theme's color-scheme picking, which keeps the track
+    discernible on the page and a card at 1.5:1 or more. The fill's extent reads against the
+    surface, at the 3:1 the palette guarantees chart roles (WCAG 1.4.11): lit and unlit notches
+    never touch, as the gaps between them show the surface, and a solid fill's inner and outer
+    edges lie on the surface too. gauge-chart.browser.test.tsx measures both floors. The fill and
+    the glow follow the track's variant: notches by default, the band beside a solid track.
+  */
+  [data-slot="gauge-chart-track"] {
+    --_paint: light-dark(
+      color-mix(in oklab, var(--muted-foreground) 32%, transparent),
+      color-mix(in oklab, var(--muted-foreground) 26%, transparent)
+    );
+  }
+
+  :is([data-slot="gauge-chart-track"], [data-slot="gauge-chart-fill"], [data-slot="gauge-chart-glow"])
+    :is([data-slot="gauge-chart-notch"], [data-part="solid"]) {
+    fill: var(--_paint);
+  }
+
+  :is([data-slot="gauge-chart-track"], [data-slot="gauge-chart-fill"], [data-slot="gauge-chart-glow"])
+    [data-part="solid"] {
+    display: none;
+  }
+
+  [data-slot="gauge-chart-track"][data-variant="solid"] [data-part="notches"] {
+    display: none;
+  }
+
+  [data-slot="gauge-chart-track"][data-variant="solid"] [data-part="solid"] {
+    display: inline;
+  }
+
+  [data-slot="chart-polar-frame"]:has(> [data-slot="gauge-chart-track"][data-variant="solid"])
+    > :is([data-slot="gauge-chart-fill"], [data-slot="gauge-chart-glow"])
+    [data-part="notches"] {
+    display: none;
+  }
+
+  [data-slot="chart-polar-frame"]:has(> [data-slot="gauge-chart-track"][data-variant="solid"])
+    > :is([data-slot="gauge-chart-fill"], [data-slot="gauge-chart-glow"])
+    [data-part="solid"] {
+    display: inline;
+  }
+
+  /* A notch the reading has not reached stays clear, so the track's own notch shows through. */
+  :is([data-slot="gauge-chart-fill"], [data-slot="gauge-chart-glow"])
+    [data-slot="gauge-chart-notch"]:not([data-lit]) {
+    opacity: 0;
+  }
+
+  /* Glow casts the fill's own paint at half alpha, blurred by 6 px. */
+  [data-slot="gauge-chart-glow"] {
+    filter: drop-shadow(0 0 6px color-mix(in oklab, var(--_paint) 50%, transparent));
+  }
+
+  [data-slot="gauge-chart-zone-band"] {
+    fill: var(--_paint);
+  }
+
+  /* A ProgressRing draws its value in full over its whole sweep at 22 %, as a dotted ring's rest. */
+  [data-slot="gauge-chart-progress-ring"] [data-part="rest"] {
+    fill: color-mix(in oklab, var(--_paint) 22%, transparent);
+  }
+
+  [data-slot="gauge-chart-progress-ring"] [data-part="value"] {
+    fill: var(--_paint);
+  }
+
+  /*
+    A dot the reading has not reached stays at 18 %, and a lit dot takes the full colour. While the
+    entrance waits every dot waits faint. "fade" dims each ring further toward the centre.
+  */
+  [data-slot="gauge-chart-dot"] {
+    --_dot-faint: color-mix(in oklab, var(--_paint) 18%, transparent);
+    --_dot-hold: var(--_if-root-waiting) var(--_dot-faint);
+    fill: var(--_dot-faint);
+  }
+
+  [data-slot="gauge-chart-dot"][data-lit] {
+    fill: var(--_dot-hold, var(--_paint));
+  }
+
+  [data-slot="gauge-chart-dots"][data-variant="fade"] [data-slot="gauge-chart-dot"] {
+    opacity: calc(1 - var(--_ring) / var(--_rings) * 0.75);
+  }
+
+  /*
+    A Sector is the wedge from the sweep's start to the reading, cut from the band from 0.6 to 0.8
+    of the track's radius, which clears the centre's text: two masks, the band and the conic wedge
+    the frame writes, intersect. "flat"
+    paints one 28 % tint, "radial" brightens toward the rim and "conic" toward the reading's edge.
+  */
+  [data-slot="gauge-chart-sector"] {
+    --_at: var(--_cx) var(--_cy);
+    --_reach-x: calc(var(--_rx) * var(--_gauge-track) * 100%);
+    --_reach-y: calc(var(--_ry) * var(--_gauge-track) * 100%);
+    mask:
+      conic-gradient(from var(--_sector-from) at var(--_at), #000 0 var(--_sector-span), transparent 0),
+      radial-gradient(
+        var(--_reach-x) var(--_reach-y) at var(--_at),
+        transparent calc(var(--_hole) * 100% - 0.5px),
+        #000 calc(var(--_hole) * 100%) calc(100% - 0.5px),
+        transparent 100%
+      );
+    mask-composite: intersect;
+    background: color-mix(in oklab, var(--_paint) 28%, transparent);
+  }
+
+  [data-slot="gauge-chart-sector"][data-variant="radial"] {
+    background: radial-gradient(
+      var(--_reach-x) var(--_reach-y) at var(--_at),
+      color-mix(in oklab, var(--_paint) 4%, transparent) calc(var(--_hole) * 100%),
+      color-mix(in oklab, var(--_paint) 55%, transparent)
+    );
+  }
+
+  /*
+    The conic wedge runs clockwise from --_sector-from, so a counter-clockwise sweep's wedge starts
+    at the reading, and its tints swap ends.
+  */
+  [data-slot="gauge-chart-sector"][data-variant="conic"] {
+    --_wedge-from: color-mix(in oklab, var(--_paint) 4%, transparent);
+    --_wedge-to: color-mix(in oklab, var(--_paint) 60%, transparent);
+    background: conic-gradient(
+      from var(--_sector-from) at var(--_at),
+      var(--_wedge-from) 0deg,
+      var(--_wedge-to) var(--_sector-span),
+      transparent 0
+    );
+  }
+
+  [data-slot="gauge-chart-sector"][data-variant="conic"][data-direction="counter-clockwise"] {
+    --_wedge-from: color-mix(in oklab, var(--_paint) 60%, transparent);
+    --_wedge-to: color-mix(in oklab, var(--_paint) 4%, transparent);
+  }
+
+  /*
+    A ruler's ticks keep 1 px at any size, a major 1.5 px, muted until the reading passes them. While
+    the entrance waits every tick waits muted, and the passed ones brighten as the fill sweeps by.
+  */
+  [data-slot="gauge-chart-ruler"] > svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+  }
+
+  [data-slot="gauge-chart-tick"] {
+    --_tick-muted: color-mix(in oklab, var(--muted-foreground) 55%, transparent);
+    --_tick-hold: var(--_if-root-waiting) var(--_tick-muted);
+    stroke: var(--_tick-muted);
+    stroke-width: 1px;
+    stroke-linecap: round;
+    vector-effect: non-scaling-stroke;
+  }
+
+  [data-slot="gauge-chart-tick"][data-major] {
+    stroke-width: 1.5px;
+  }
+
+  [data-slot="gauge-chart-tick"][data-passed] {
+    stroke: var(--_tick-hold, var(--foreground));
+  }
+
+  /*
+    A label sits on its anchor and reads away from it, inward inside the track and outward past the
+    rim, 4 px off, its anchor's place on the dial scaled in with the track.
+  */
+  [data-slot="gauge-chart-ruler-label"] {
+    --_s: var(--_gauge-track);
+    --_label-hold: var(--_if-root-waiting) var(--muted-foreground);
+    position: absolute;
+    left: calc((var(--_x) * var(--_s) - var(--_box-l)) / var(--_box-w) * 100%);
+    top: calc((var(--_y) * var(--_s) - var(--_box-t)) / var(--_box-h) * 100%);
+    translate: calc((var(--_dx) - 1) * 50% + var(--_dx) * 4px) calc((var(--_dy) - 1) * 50% + var(--_dy) * 4px);
+    font-size: 0.75rem;
+    line-height: 1rem;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    color: var(--muted-foreground);
+  }
+
+  [data-slot="gauge-chart-ruler"][data-variant="outside"] [data-slot="gauge-chart-ruler-label"] {
+    --_s: 1;
+  }
+
+  [data-slot="gauge-chart-ruler-label"][data-passed] {
+    color: var(--_label-hold, var(--foreground));
+  }
+
+  /* The needle, in the foreground role, keeps a 3 px line at any size, and hides with no reading. */
+  [data-slot="gauge-chart-needle"] line {
+    stroke: var(--foreground);
+    stroke-width: 3px;
+    stroke-linecap: round;
+    vector-effect: non-scaling-stroke;
+  }
+
+  [data-slot="gauge-chart-needle"] polygon {
+    fill: var(--foreground);
+    stroke: var(--foreground);
+    stroke-width: 1px;
+    stroke-linejoin: round;
+    vector-effect: non-scaling-stroke;
+  }
+
+  [data-slot="gauge-chart"][data-empty] [data-slot="gauge-chart-needle"] {
+    display: none;
+  }
+
+  /*
+    The centre's parts stack in a box 0.96 wide and 0.68 tall in units of the track's radius, about
+    inside the circle the needle's base clears, kept to the sweep's box, so a half-circle's centre
+    sits above its flat edge. Its digits count up as the sweep starts, after --_reel-delay, which
+    Root writes from the sweep's own start.
+  */
+  [data-slot="gauge-chart-center"] > [data-part="hole"] {
+    --_half-w: calc(0.48 * var(--_gauge-track));
+    --_half-h: calc(0.34 * var(--_gauge-track));
+    --_l: max(-1 * var(--_half-w), var(--_box-l));
+    --_r: min(var(--_half-w), var(--_box-r));
+    --_t: max(-1 * var(--_half-h), var(--_box-t));
+    --_b: min(var(--_half-h), var(--_box-b));
+    left: calc((var(--_l) - var(--_box-l)) / (var(--_box-r) - var(--_box-l)) * 100%);
+    top: calc((var(--_t) - var(--_box-t)) / (var(--_box-b) - var(--_box-t)) * 100%);
+    width: calc((var(--_r) - var(--_l)) / (var(--_box-r) - var(--_box-l)) * 100%);
+    height: calc((var(--_b) - var(--_t)) / (var(--_box-b) - var(--_box-t)) * 100%);
+  }
+
+  [data-slot="gauge-chart-center-label"] {
+    font-size: 0.75rem;
+    line-height: 1rem;
+  }
+
+  /*
+    The reading keeps to the centre's width, so a long unit, such as a price's VAT basis, wraps
+    within it instead of overflowing.
+  */
+  [data-slot="gauge-chart-center-value"] {
+    max-width: 100%;
+  }
+
+  /* The reading's unit reads small and muted beside its number, and wraps under it when the centre is narrow. */
+  [data-slot="gauge-chart-center-value"] [data-part="unit"] {
+    align-self: center;
+    font-size: 0.75rem;
+    font-weight: normal;
+    line-height: 1rem;
+    color: var(--muted-foreground);
   }
 
   /*
@@ -2115,21 +2492,6 @@
     }
   }
 
-  [data-slot="clock-chart-center"] > [data-part="hole"] {
-    position: absolute;
-    left: var(--_left);
-    top: var(--_top);
-    width: var(--_width);
-    height: var(--_height);
-    container-type: size;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    color: var(--muted-foreground);
-  }
-
   /*
     The value scales with the hole, never below the 12 px floor, and wraps between its number and its
     unit, so a long reading such as a year's total stays inside the square the hole holds.
@@ -2161,6 +2523,7 @@
   :is(
     [data-slot="pie-chart-center-value"],
     [data-slot="pie-chart-center-max"],
+    [data-slot="gauge-chart-center-value"],
     [data-slot="clock-chart-center"] [data-slot="clock-chart-active-value"]
   ) {
     display: inline-flex;
@@ -2173,10 +2536,14 @@
     The fit guard: a centre whose lines overflow the hole at the floor keeps only its value, and one
     whose value alone overflows shows nothing, since the tooltip, legend and table carry it.
   */
-  :is([data-slot="pie-chart-center"], [data-slot="clock-chart-center"])
+  :is([data-slot="pie-chart-center"], [data-slot="clock-chart-center"], [data-slot="gauge-chart-center"])
     > [data-part="hole"][data-fit="value"]
-    > :not([data-slot="pie-chart-center-value"], [data-slot="clock-chart-active-value"]),
-  :is([data-slot="pie-chart-center"], [data-slot="clock-chart-center"])
+    > :not(
+      [data-slot="pie-chart-center-value"],
+      [data-slot="clock-chart-active-value"],
+      [data-slot="gauge-chart-center-value"]
+    ),
+  :is([data-slot="pie-chart-center"], [data-slot="clock-chart-center"], [data-slot="gauge-chart-center"])
     > [data-part="hole"][data-fit="none"]
     > * {
     display: none;
@@ -2187,7 +2554,8 @@
     [data-variant="pie"],
     [data-variant="radial"],
     [data-variant="radar"],
-    [data-variant="clock"]
+    [data-variant="clock"],
+    [data-variant="gauge"]
   ) {
     display: block;
     width: min(100%, var(--chart-polar-size, 12.5rem));
@@ -2216,6 +2584,35 @@
 
   [data-slot="chart-skeleton"][data-variant="clock"] {
     --chart-skeleton-hole: 0.3;
+  }
+
+  /*
+    A gauge's placeholder keeps Root's box, the sweep's aspect, and sketches the track's band over
+    the sweep: the dial's disc placed in the box, an annulus masked to the sweep's angles.
+  */
+  [data-slot="chart-skeleton"][data-variant="gauge"] {
+    width: min(100%, var(--chart-polar-size, 15rem));
+    aspect-ratio: var(--_aspect);
+    overflow: hidden;
+  }
+
+  [data-slot="chart-skeleton"][data-variant="gauge"] [data-slot="chart-skeleton-mark"] {
+    position: absolute;
+    left: var(--_left);
+    top: var(--_top);
+    width: var(--_width);
+    height: var(--_height);
+    margin: 0;
+    border-radius: 50%;
+    mask:
+      radial-gradient(
+        closest-side circle,
+        transparent calc(var(--chart-skeleton-hole) * 100%),
+        #000 calc(var(--chart-skeleton-hole) * 100% + 0.5px) calc(100% - 0.5px),
+        transparent 100%
+      ),
+      conic-gradient(from var(--_from), #000 0 var(--_sweep), transparent 0);
+    mask-composite: intersect;
   }
 
   [data-slot="chart-skeleton"][data-variant="radar"] [data-slot="chart-skeleton-mark"] {
@@ -3861,9 +4258,10 @@
   /*
     Motion. The loop of chart-motion.ts moves every mark, so no geometry transitions here. A bar that a data update adds fades in through
     opacity only, on the tokens of layout/motion.ts, and the fade ends on whatever opacity the
-    cascade gives the bar, such as a past slot's dim.
+    cascade gives the bar, such as a past slot's dim. It runs on a screen only: a print draws every
+    mark at rest, as the loop does, so no track prints half scaled out and no digit mid-roll.
   */
-  @media (prefers-reduced-motion: no-preference) {
+  @media screen and (prefers-reduced-motion: no-preference) {
     /*
       Chart.Tooltip glides its positioner from one slot to the next over this duration, which
       it copies from the chart when the popup mounts. Under reduced motion it stays unset, and
@@ -3921,8 +4319,11 @@
       While the entrance plays, the digits count up over it, and afterwards roll on their spring,
       except while data-snap swaps them on a hover step that came fast.
     */
-    [data-slot="pie-chart-center"] [data-part="digits"]:not([data-snap]) [data-part="reel"] {
-      --_reel-entering: var(--_if-root-entering) translate var(--chart-intro) var(--chart-ease) 100ms;
+    :is([data-slot="pie-chart-center"], [data-slot="gauge-chart-center"])
+      [data-part="digits"]:not([data-snap])
+      [data-part="reel"] {
+      --_reel-entering: var(--_if-root-entering) translate var(--chart-intro) var(--chart-ease)
+        var(--_reel-delay, 100ms);
       transition: var(--_reel-entering, translate var(--_spring-duration) var(--_spring-easing));
     }
 
@@ -3949,6 +4350,32 @@
     [data-slot="radar-chart-grid-ring"] {
       animation: var(--_if-root-grow) chart-ring-grow var(--_grow-duration) var(--_grow-easing)
         calc(var(--chart-slot) * 80ms) backwards;
+    }
+
+    /*
+      As the entrance starts on a gauge nothing painted before, its track, zones and ruler fade in
+      and scale out from the centre to their own scale. A hydrated gauge's stay at rest.
+    */
+    :is(
+        [data-slot="gauge-chart-track"],
+        [data-slot="gauge-chart-zone"],
+        [data-slot="gauge-chart-ruler"],
+        [data-slot="gauge-chart-progress-ring"],
+        [data-slot="gauge-chart-dots"]
+      )
+      [data-part="gauge-dial"] {
+      animation:
+        var(--_if-root-grow) chart-ring-grow var(--_grow-duration) var(--_grow-easing) backwards,
+        chart-fade-in 300ms ease-out backwards;
+    }
+
+    [data-slot="gauge-chart-ruler-label"] {
+      animation: var(--_if-root-grow) chart-fade-in 500ms ease-out 200ms backwards;
+    }
+
+    /* A notch lights over 120 ms as the sweep reaches it. */
+    :is([data-slot="gauge-chart-fill"], [data-slot="gauge-chart-glow"]) [data-slot="gauge-chart-notch"] {
+      transition: opacity 120ms ease-out;
     }
 
     [data-slot="radar-chart-spoke"]:not([data-part="hand"]) {
@@ -4087,6 +4514,13 @@
     [data-slot="pie-chart-pie"],
     [data-slot="pie-chart-glow"],
     [data-slot="radial-chart-bar"],
+    [data-slot="gauge-chart-track"],
+    [data-slot="gauge-chart-fill"],
+    [data-slot="gauge-chart-glow"],
+    [data-slot="gauge-chart-zone"],
+    [data-slot="gauge-chart-progress-ring"],
+    [data-slot="gauge-chart-dots"],
+    [data-slot="gauge-chart-sector"],
     [data-radar-series],
     [data-clock-series],
     [data-slot="sparkline"],

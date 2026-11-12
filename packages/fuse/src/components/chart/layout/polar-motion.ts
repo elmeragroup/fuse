@@ -2,6 +2,9 @@
  * The polar families' motion timings, the Motion table's numbers. `chart.css` mirrors the
  * entrance's duration and stagger as `--chart-intro` and `--chart-stagger`.
  */
+import { CHART_SPRINGS } from "./motion";
+import { springEasing } from "./spring";
+import type { SpringEasing } from "./spring";
 
 /** How long the polar entrance moves a mark, in milliseconds. `--chart-intro` in `chart.css`. */
 const CHART_INTRO_MS = 1000;
@@ -18,8 +21,26 @@ const RING_INTRO = { start: 160, step: 100 } as const;
 /** Where a radar series starts to grow, and the step between series, after its grid draws. */
 const RADAR_INTRO = { start: 600, step: 150 } as const;
 
-/** The families whose entrance staggers its items, and the clock, whose writers stagger its slots. */
-export type PolarIntro = "pie" | "radial" | "radar" | "clock";
+/**
+ * The scale-out a ring's or a gauge's track and a radar's rings take as the entrance starts, on the
+ * Motion table's grow spring, sampled once.
+ */
+export const TRACK_GROW: SpringEasing = springEasing(CHART_SPRINGS.grow);
+
+/** The scale-out's duration as the stylesheet reads it, which a track's or a grid's layer carries. */
+export const TRACK_GROW_DURATION = `${String(TRACK_GROW.duration)}ms`;
+
+/**
+ * Where a gauge's sweep starts, after its track scales out, as a ring's value does. `chart.css`
+ * delays the centre's count-up by the same time.
+ */
+export const GAUGE_INTRO_START_MS = 160;
+
+/**
+ * The families whose entrance staggers its items, the clock, whose writers stagger its slots, and
+ * the gauge, whose one sweep follows its track.
+ */
+export type PolarIntro = "pie" | "radial" | "radar" | "clock" | "gauge";
 
 /**
  * The clock entrance, the Motion table's numbers: one progress over 1250 ms opens a clockwise wedge
@@ -68,7 +89,7 @@ export function introTiming(
 
 /**
  * When an item's entrance starts: slice i of a pie at 100 ms + i·`--chart-stagger`, 80 ms by default,
- * ring i's value at 160 + i·100 ms, and radar series s at 600 + s·150 ms.
+ * ring i's value at 160 + i·100 ms, radar series s at 600 + s·150 ms, and a gauge's sweep at 160 ms.
  *
  * @param family - The family.
  * @param index - The slice, the ring or the series.
@@ -85,6 +106,8 @@ export function introDelay(family: PolarIntro, index: number, pace: IntroPace = 
       return RADAR_INTRO.start + index * RADAR_INTRO.step;
     case "clock":
       return 0;
+    case "gauge":
+      return GAUGE_INTRO_START_MS;
   }
 }
 
