@@ -7,6 +7,7 @@ import { page, userEvent } from "vitest/browser";
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import { assertFocusRingAtBothDensities } from "../../../test/assert-focus-ring";
+import { described, fileInput, paste, pdf, pick, png, stubPicker, txt } from "../../../test/file-picks";
 import { fkasBranded } from "../../../test/theme-fixtures";
 import { formNamed, renderThemed, roleNamed } from "../../../test/themed-browser-render";
 import { ThemeScope } from "../../theme/theme-scope";
@@ -16,37 +17,9 @@ import type { FileRejection } from "../file-upload/split-files";
 import { FileTrigger } from "./file-trigger";
 import type { FileTriggerProps } from "./file-trigger";
 
-/** The hidden picker input. It is outside the accessibility tree, so no role or name finds it. */
-function fileInput(host: HTMLElement): HTMLInputElement {
-  const input = host.querySelector('input[type="file"]');
-  if (!(input instanceof HTMLInputElement)) {
-    throw new Error("expected FileTrigger's hidden file input");
-  }
-  return input;
-}
-
-/** Stubs the hidden input's `click`, which would open the picker, and returns the spy. */
-function stubPicker(host: HTMLElement) {
-  return vi.spyOn(fileInput(host), "click").mockReturnValue(undefined);
-}
-
-/** Picks `files` the way the browser does: it sets `input.files`, then fires `change`. */
-function pick(input: HTMLInputElement, files: readonly File[]): void {
-  const transfer = new DataTransfer();
-  for (const file of files) {
-    transfer.items.add(file);
-  }
-  input.files = transfer.files;
-  input.dispatchEvent(new Event("change", { bubbles: true }));
-}
-
 function svgPaths(root: ParentNode): string {
   return [...root.querySelectorAll("svg path")].map((path) => path.getAttribute("d") ?? "").join("|");
 }
-
-const png = (name: string) => new File(["png"], name, { type: "image/png" });
-const txt = (name: string) => new File(["txt"], name, { type: "text/plain" });
-const pdf = (name: string) => new File(["pdf"], name, { type: "" });
 
 /** The edges a ButtonGroup joins: each corner's radius and the leading border. */
 function joinedEdges(element: HTMLElement) {
@@ -58,11 +31,6 @@ function joinedEdges(element: HTMLElement) {
     bottomRight: style.borderBottomRightRadius,
     borderLeft: style.borderLeftWidth,
   };
-}
-
-/** A rejection as `[reason, file name]`. */
-function described(rejection: FileRejection): readonly [string, string] {
-  return "file" in rejection ? [rejection.reason, rejection.file.name] : [rejection.reason, rejection.name];
 }
 
 /**
@@ -159,15 +127,7 @@ describe("FileTrigger", () => {
   it("leaves a paste alone while its button has focus, as only FileUpload takes pastes", () => {
     renderThemed(<FileTrigger>Attach file</FileTrigger>);
     roleNamed("button", "Attach file").focus();
-    const transfer = new DataTransfer();
-    transfer.items.add(png("a.png"));
-    const event = new ClipboardEvent("paste", {
-      bubbles: true,
-      cancelable: true,
-      composed: true,
-      clipboardData: transfer,
-    });
-    document.body.dispatchEvent(event);
+    const event = paste(document.body, [png("a.png")]);
     // FileUpload cancels a paste it takes before it reads the files, so an uncancelled paste was
     // never taken.
     expect(event.defaultPrevented).toBe(false);
