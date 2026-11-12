@@ -172,6 +172,8 @@ export function Button({
         // appends it instead of inserting it before the first child. Page translation (Chrome's
         // built-in translate) replaces a bare text child with its own `<font>` nodes, and an
         // insert before the detached text node threw `NotFoundError` and unmounted the tree.
+        // `order` needs the root's flex layout, so a `className` that replaces `inline-flex` with
+        // `block` or `inline-block` moves the indicator after the label.
         <span
           data-slot="button-pending-indicator"
           data-icon="inline-start"
