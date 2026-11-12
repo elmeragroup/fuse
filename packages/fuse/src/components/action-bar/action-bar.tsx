@@ -196,7 +196,6 @@ export function ActionBarClear({
     <ToolbarPrimitive.Button
       data-slot="action-bar-clear"
       aria-label={label}
-      // oxlint-disable-next-line fuse/render-element-wiring -- the render element repeats the part's own name: an icon-size Button requires an aria-label of its own, and Toolbar.Button sets none it could override
       render={<Button variant="ghost" size="icon-xs" aria-label={label} />}
       {...props}>
       {children ?? <X aria-hidden="true" />}
