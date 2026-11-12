@@ -1,11 +1,11 @@
 /**
- * What a Live code edit does to a demo's source. The Code view draws each plan and Copy writes
- * it, so the code a reader sees is the code they copy.
+ * What a Live code edit does to a demo's source. The Code view shows the edited source and Copy
+ * writes it, from the same replacements, so the code a reader sees is the code they copy.
  */
 
 import type { Site } from "./sites";
 
-/** A prop value the Code view sets: an enum option or a boolean. */
+/** A prop value the stage editor sets: an enum option or a boolean. */
 export type PropValue = string | boolean;
 
 /** One site's edits: prop name to value, in the order the reader made them. */
@@ -13,17 +13,6 @@ export type SiteEdits = ReadonlyMap<string, PropValue>;
 
 /** A frame's edits, keyed by site `loc`. */
 export type FrameEdits = ReadonlyMap<string, SiteEdits>;
-
-/** What the edits do to one site: the attributes it rewrites, and the props it gains. */
-export type SitePlan = {
-  /**
-   * Each attribute the source writes and the reader changed, by name: its new text, or `null`
-   * when it moves to `added` because a later spread would override it in place.
-   */
-  readonly attributes: ReadonlyMap<string, string | null>;
-  /** Props the source does not write, as their attribute text, in edit order. */
-  readonly added: readonly { readonly name: string; readonly text: string }[];
-};
 
 /**
  * One prop as JSX attribute text. `true` is the bare name, `false` is written out as `{false}`,
@@ -37,31 +26,6 @@ export function attributeText(name: string, value: PropValue): string {
   if (value === true) return name;
   if (value === false) return `${name}={false}`;
   return `${name}="${value}"`;
-}
-
-/**
- * The plan for one site under its edits. An edit rewrites a prop the source writes in place. A
- * prop the source does not write goes at the site's `insertAt`, after the last spread, and so
- * does a written prop a later spread would override.
- *
- * @param site - The site, as `findSites` read it.
- * @param edits - The site's edits, or `undefined` when it has none.
- * @returns What the edits change.
- */
-export function planSite(site: Site, edits: SiteEdits | undefined): SitePlan {
-  const attributes = new Map<string, string | null>();
-  const added: { name: string; text: string }[] = [];
-  for (const [name, value] of edits ?? []) {
-    const written = site.attributes.find((attribute) => attribute.name === name);
-    const text = attributeText(name, value);
-    if (written !== undefined && written.start >= site.insertAt) {
-      attributes.set(name, text);
-      continue;
-    }
-    if (written !== undefined) attributes.set(name, null);
-    added.push({ name, text });
-  }
-  return { attributes, added };
 }
 
 /** One replacement of a source range: `[start, end)` becomes `text`. */
@@ -91,6 +55,43 @@ function removalStart(source: string, start: number): number {
 }
 
 /**
+ * The replacements that write the frame's edits into the demo's source. The Code view applies
+ * them to the source's highlighted markup, and `editedSource` to its text.
+ *
+ * @param source - The demo's source, the text `sites` was read from.
+ * @param sites - Its sites, from `findSites`.
+ * @param edits - The frame's edits.
+ * @returns The replacements, indexing the original source, none of them overlapping.
+ */
+export function sourceEdits(
+  source: string,
+  sites: readonly Site[],
+  edits: FrameEdits
+): readonly SourceEdit[] {
+  const replacements: SourceEdit[] = [];
+  for (const site of sites) {
+    // A prop the source writes is rewritten in place. One it does not write goes at `insertAt`,
+    // after the last spread, and so does a written one a later spread would override, which
+    // leaves its old place.
+    let inserted = "";
+    for (const [name, value] of edits.get(site.loc) ?? []) {
+      const text = attributeText(name, value);
+      const written = site.attributes.find((attribute) => attribute.name === name);
+      if (written !== undefined && written.start >= site.insertAt) {
+        replacements.push({ start: written.start, end: written.end, text });
+        continue;
+      }
+      if (written !== undefined) {
+        replacements.push({ start: removalStart(source, written.start), end: written.end, text: "" });
+      }
+      inserted += ` ${text}`;
+    }
+    if (inserted !== "") replacements.push({ start: site.insertAt, end: site.insertAt, text: inserted });
+  }
+  return replacements;
+}
+
+/**
  * The demo's source with the frame's edits written in, as Copy puts it on the clipboard.
  *
  * @param source - The demo's source, the text `sites` was read from.
@@ -99,22 +100,5 @@ function removalStart(source: string, start: number): number {
  * @returns The edited source, or `source` itself when there are no edits.
  */
 export function editedSource(source: string, sites: readonly Site[], edits: FrameEdits): string {
-  const replacements: SourceEdit[] = [];
-  for (const site of sites) {
-    const plan = planSite(site, edits.get(site.loc));
-    if (plan.added.length > 0) {
-      const text = plan.added.map((prop) => ` ${prop.text}`).join("");
-      replacements.push({ start: site.insertAt, end: site.insertAt, text });
-    }
-    for (const attribute of site.attributes) {
-      const text = plan.attributes.get(attribute.name);
-      if (text === undefined) continue;
-      replacements.push(
-        text === null
-          ? { start: removalStart(source, attribute.start), end: attribute.end, text: "" }
-          : { start: attribute.start, end: attribute.end, text }
-      );
-    }
-  }
-  return applyEdits(source, replacements);
+  return applyEdits(source, sourceEdits(source, sites, edits));
 }

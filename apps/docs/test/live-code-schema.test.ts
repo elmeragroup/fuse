@@ -84,7 +84,7 @@ describe("Live code schema", () => {
     ]);
     expect(allowedValues(orientation, new Set(), undefined)).toEqual([]);
     expect(allowedValues(reveal, new Set(["data"]), "smart")).toEqual(["sequence", "smart"]);
-    // A site that passes neither still lists the value it renders, so its token opens a choice.
+    // A site that passes neither still lists the value it renders, so its submenu has an option.
     expect(allowedValues(reveal, new Set(), "smart")).toEqual(["smart"]);
   });
 

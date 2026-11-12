@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { lensMembers } from "../src/components/live-code/lens";
 import type { PartSchema } from "../src/lib/live-code/schema";
 import { LiveCodeStore } from "../src/lib/live-code/store";
+import type { LiveSite } from "../src/lib/live-code/store";
 
 /** A part that carries parts, as `RadioItem` carries `RadioItem.Title`. */
 function Item(): null {
@@ -63,7 +64,27 @@ describe("Live code namespace bindings", () => {
     expect(store.getSites().get("4:7")?.values.get("size")).toEqual({ kind: "one", value: "sm" });
   });
 
-  it("reverts an unsettled edit when the stage throws, names it, and leaves a settled one alone", () => {
+  it("keeps a site that unmounted before any read, with its baseline, under the edits", () => {
+    // Oracle: a dropdown item that rendered `disabled={false}`, then unmounted when the menu
+    // closed, before anything read the sites.
+    const schema: PartSchema = [{ name: "disabled", kind: "boolean" }];
+    const store = new LiveCodeStore();
+    const item = Symbol("item");
+    store.register(item, { loc: "5:5", part: "Item", schema, values: new Map([["disabled", false]]) });
+    store.unregister(item);
+    const site = (): LiveSite | undefined => store.getSites().get("5:5");
+    expect(site()?.values.get("disabled")).toEqual({ kind: "one", value: false });
+    // The editor's rows read the committed edit, and Reset's clear drops it, with every other
+    // site's, and shows the baseline again.
+    store.set("5:5", "disabled", true);
+    store.set("9:3", "variant", "outline");
+    expect(site()?.values.get("disabled")).toEqual({ kind: "one", value: true });
+    store.clear();
+    expect(site()?.values.get("disabled")).toEqual({ kind: "one", value: false });
+    expect(store.getEdits().size).toBe(0);
+  });
+
+  it("reverts an unsettled edit or preview when the stage throws, names it, and leaves a settled one alone", () => {
     const store = new LiveCodeStore();
     store.set("3:5", "granularity", "day");
     store.settle();
@@ -74,6 +95,19 @@ describe("Live code namespace bindings", () => {
     expect(store.getNotice()).toBe('granularity="hour" doesn\'t render in this example.');
     // With nothing unsettled, a throw is the demo's own.
     expect(store.rejectUnsettled()).toBe(false);
+    // A preview that throws is dropped, never committed, and named the same way.
+    store.preview({ loc: "3:5", prop: "granularity", value: "minute" });
+    expect(store.rejectUnsettled()).toBe(true);
+    expect(store.previewAt("3:5")).toBeNull();
+    expect(store.editsAt("3:5").get("granularity")).toBe("day");
+    expect(store.getNotice()).toBe('granularity="minute" doesn\'t render in this example.');
+    // Committing the previewed value replaces the preview in the same step, and a throw then
+    // reverts the committed value.
+    store.preview({ loc: "3:5", prop: "granularity", value: "hour" });
+    store.set("3:5", "granularity", "hour");
+    expect(store.previewAt("3:5")).toBeNull();
+    expect(store.rejectUnsettled()).toBe(true);
+    expect(store.editsAt("3:5").get("granularity")).toBe("day");
     const generation = store.getGeneration();
     store.reset();
     expect(store.getNotice()).toBeNull();

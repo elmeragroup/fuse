@@ -38,17 +38,12 @@ describe("Live code site reader", () => {
     const [site] = findSites(source);
     expect(site?.loc).toBe("4:10");
     expect(site?.part).toBe("Button");
-    expect(text(source, site?.tag ?? { start: 0, end: 0 })).toBe("Button");
     expect(
-      site?.attributes.map((attribute) => ({
-        name: attribute.name,
-        written: text(source, attribute),
-        value: attribute.value === null ? null : text(source, attribute.value),
-      }))
+      site?.attributes.map((attribute) => ({ name: attribute.name, written: text(source, attribute) }))
     ).toEqual([
-      { name: "variant", written: 'variant="outline"', value: '"outline"' },
-      { name: "disabled", written: "disabled", value: null },
-      { name: "size", written: "size={size}", value: "{size}" },
+      { name: "variant", written: 'variant="outline"' },
+      { name: "disabled", written: "disabled" },
+      { name: "size", written: "size={size}" },
     ]);
   });
 
@@ -104,36 +99,29 @@ describe("Live code site reader", () => {
       '<Form<{ phone: string; onDone: (value: Map<string, number>) => void }> layout="stacked">',
     ].join("\n");
     const sites = findSites(source);
+    // The insertion point follows the type arguments, so an added prop never lands inside them.
     expect(
       sites.map((site) => ({
         part: site.part,
-        typeArguments: site.typeArguments === null ? null : text(source, site.typeArguments),
-        insertAfter: source.slice(site.tag.start, site.insertAt),
+        insertAfter: source.slice(source.lastIndexOf("\n", site.insertAt) + 2, site.insertAt),
         attributes: site.attributes.map((attribute) => attribute.name),
       }))
     ).toEqual([
-      {
-        part: "Select.Root",
-        typeArguments: "<StatusFilter>",
-        insertAfter: "Select.Root<StatusFilter>",
-        attributes: ["multiple", "items"],
-      },
+      { part: "Select.Root", insertAfter: "Select.Root<StatusFilter>", attributes: ["multiple", "items"] },
       {
         part: "Form",
-        typeArguments: "<{ phone: string; onDone: (value: Map<string, number>) => void }>",
         insertAfter: "Form<{ phone: string; onDone: (value: Map<string, number>) => void }>",
         attributes: ["layout"],
       },
     ]);
   });
 
-  it("records spreads and puts the insertion point after the last one", () => {
+  it("puts the insertion point after the last spread", () => {
     const source = [
       'import { Button } from "@elmeragroup/fuse/button";',
       '<Button variant="ghost" {...first} {/* note */} {...second} size="sm" />',
     ].join("\n");
     const [site] = findSites(source);
-    expect(site?.spreads.map((spread) => text(source, spread))).toEqual(["{...first}", "{...second}"]);
-    expect(source.slice(0, site?.insertAt).endsWith("{...second}")).toBe(true);
+    expect(source.slice(0, site?.insertAt).endsWith("{/* note */} {...second}")).toBe(true);
   });
 });

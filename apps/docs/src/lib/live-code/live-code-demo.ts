@@ -24,7 +24,7 @@ export function isLiveCodeDemo(path: string): boolean {
 }
 
 /**
- * Whether a section's demo frames show Live code in their Code view.
+ * Whether a section's demo frames are Live code: a stage editor, and the edited source in the Code view.
  *
  * @param section - The docs section of the page.
  * @returns Whether the section is the component pages.

@@ -19,7 +19,7 @@ import type { LiveCodeStore } from "../../src/lib/live-code/store.ts";
 import { DEFAULT_THEME } from "../../src/lib/theme.ts";
 
 /** One Live code demo file: its absolute path, and its name as a report lists it. */
-export type LiveCodeDemoFile = { readonly path: string; readonly name: string };
+type LiveCodeDemoFile = { readonly path: string; readonly name: string };
 
 /**
  * Every demo file that is Live code, from the docs' own demo listing.

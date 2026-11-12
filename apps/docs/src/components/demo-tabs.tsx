@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, Suspense, lazy, useId, useRef, useState, useSyncExternalStore } from "react";
+import { Fragment, Suspense, lazy, useEffect, useId, useRef, useState, useSyncExternalStore } from "react";
 import type { ReactElement, ReactNode, RefObject } from "react";
 
 import { tv } from "tailwind-variants";
@@ -17,14 +17,18 @@ import { LiveCodeFrame } from "./live-code/live-code-frame";
 import { CopySourceButton, useHighlightedSource } from "./source-code";
 import { SourceSheet } from "./source-sheet";
 
-// Live code's view, with its popover, controls and source scanner, loads when a reader first opens
-// a component demo's Code view, so no page ships it upfront.
+// Live code's Code view, with its source scanner and markup patcher, loads when a reader first opens
+// a component demo's Code view, and its stage editor, with its menus, when a stage first comes near
+// the viewport, so no page ships either upfront.
 const LiveCodeView = lazy(async () => ({
   default: (await import("./live-code/live-code-view")).LiveCodeView,
 }));
+const StageEditor = lazy(async () => ({
+  default: (await import("./live-code/stage-editor")).StageEditor,
+}));
 
 /** Which Code view a frame has: Live code, or the plain source with its actions. */
-export type DemoCodeView = "live" | "static";
+type DemoCodeView = "live" | "static";
 
 type DemoTabsProps = {
   /** The demo's title as plain text, for the Sheet title and the view switch's name. */
@@ -32,8 +36,9 @@ type DemoTabsProps = {
   /** The heading that names the frame, rendered inside `Frame.Title`; a default stage has none. */
   heading?: ReactNode;
   /**
-   * The Code view. `live` keeps the stage in view and shows the source beneath it with the props of
-   * its parts editable; component pages use it. `static` swaps the stage for the source.
+   * The Code view. `live` makes the stage's parts editable in place and keeps the stage in view,
+   * with the edited source beneath it; component pages use it. `static` swaps the stage for the
+   * source.
    */
   codeView: DemoCodeView;
   /** The demo file name, the header of the Sheet's code frame. */
@@ -70,15 +75,26 @@ const demoTabs = tv({
     // tab was chosen, so switching views never moves the footer or the page below it; the code
     // scrolls inside that height, and the Sheet shows it whole.
     codeView: "relative isolate h-(--demo-height) bg-card",
+    // The stage editor's place in a Live code frame's footer, at the inline start opposite the
+    // view switch, which is taller than the control. It is positioned for the editor's part
+    // outline, which it holds beside the control, and it is no ancestor of the stage. Its z-index
+    // is the least that stacks it above the backdrop a demo's open modal popup lays over the page,
+    // which stacks at `auto`, so the control still takes a press, which closes that popup. It
+    // stays below the docs header's `z-10`, so the header keeps the pointer where they overlap.
+    stageControlSlot: "relative z-1 flex",
     // The actions float in the code's top end corner and stay put while the code scrolls.
     actions: "absolute end-3 top-3 z-10",
     // The vertical scroll area holds the code block to its width, so the block scrolls its long
     // lines itself, under its own horizontal scrollbar.
     code: "h-full",
   },
+  variants: {
+    // A Live code frame's footer holds the stage control beside the view switch.
+    live: { true: { footer: "flex-row items-center justify-between" } },
+  },
 });
 
-const { root, panel, footer, bleed, codeView, actions, code } = demoTabs();
+const { panel, bleed, codeView, actions, code } = demoTabs();
 
 /** The two views a demo frame switches between. */
 type DemoView = "demo" | "code";
@@ -92,8 +108,10 @@ type DemoPanelsProps = {
   tabId: (of: DemoView) => string;
   /** The id of a view's panel, which its tab controls. */
   panelId: (of: DemoView) => string;
-  /** The Demo view's element, which the shell measures before the Code view replaces it. */
-  demoView: RefObject<HTMLDivElement | null>;
+  /** Takes the Demo view's element, which the shell measures before the Code view replaces it. */
+  demoViewRef: (element: HTMLDivElement | null) => void;
+  /** The Demo view's element, once mounted. */
+  demoView: HTMLDivElement | null;
   /** The Demo view's height when the Code tab was chosen, in px. */
   demoHeight: number | undefined;
   title: string;
@@ -120,7 +138,7 @@ function StaticCodePanels({
   shown,
   tabId,
   panelId,
-  demoView,
+  demoViewRef,
   demoHeight,
   title,
   file,
@@ -134,7 +152,7 @@ function StaticCodePanels({
       {/* The views leave the tab order: the wrapper's clip would hide a focused view's ring,
           and a keyboard reaches the demo's own controls and the code's actions instead. */}
       <div
-        ref={demoView}
+        ref={demoViewRef}
         role="tabpanel"
         id={panelId("demo")}
         aria-labelledby={tabId("demo")}
@@ -180,22 +198,60 @@ function StaticCodePanels({
 }
 
 /**
- * A component demo's views. The stage stays in view under the Code tab, with Live code beneath
- * it. The frame's Live code store is made here, so only Live code frames hold one; the stage's
- * lensed parts and the view share it through context.
+ * Whether a Live code frame's stage editor should load: once the frame comes near the viewport,
+ * so its stage control is there by the time a keyboard reaches the frame, or once the pointer or
+ * focus enters the frame, its header and footer included. A frame with no editor passes `null`
+ * and is never watched.
+ */
+function useStageEditorWanted(frame: RefObject<HTMLElement | null> | null): boolean {
+  const [wanted, setWanted] = useState(false);
+  useEffect(() => {
+    const host = frame?.current ?? null;
+    if (wanted || host === null) return;
+    const want = (): void => setWanted(true);
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) want();
+      },
+      { rootMargin: "200px" }
+    );
+    observer.observe(host);
+    host.addEventListener("pointerenter", want);
+    host.addEventListener("focusin", want);
+    return () => {
+      observer.disconnect();
+      host.removeEventListener("pointerenter", want);
+      host.removeEventListener("focusin", want);
+    };
+  }, [frame, wanted]);
+  return wanted;
+}
+
+type LiveCodePanelsProps = DemoPanelsProps & {
+  /** The footer slot the stage editor puts its control in, once it should load, else `null`. */
+  controlSlot: HTMLElement | null;
+};
+
+/**
+ * A component demo's views. The stage takes Live code's stage editor, whose control sits in the
+ * frame's footer, and stays in view under the Code tab with the edited source beneath it. The
+ * frame's Live code store is made here, so only Live code frames hold one; the stage's lensed
+ * parts, the editor and the Code view share it.
  */
 function LiveCodePanels({
   view,
   shown,
   tabId,
   panelId,
+  demoViewRef,
   demoView,
   title,
   file,
   stage,
   sourceText,
   html,
-}: DemoPanelsProps): ReactElement {
+  controlSlot,
+}: LiveCodePanelsProps): ReactElement {
   const [store] = useState(() => new LiveCodeStore());
   const generation = useSyncExternalStore(store.subscribe, store.getGeneration, store.getGeneration);
   const content = html === null ? { text: sourceText } : { html };
@@ -204,13 +260,18 @@ function LiveCodePanels({
       {/* The stage stays in view under the Code tab, so it is the Demo tab's panel only while that
           tab is selected. */}
       <div
-        ref={demoView}
+        ref={demoViewRef}
         role={view === "demo" ? "tabpanel" : undefined}
         id={panelId("demo")}
         aria-labelledby={view === "demo" ? tabId("demo") : undefined}
         tabIndex={-1}>
         {/* Reset remounts the stage, which also drops an error a boundary inside it latched. */}
         <Fragment key={generation}>{stage}</Fragment>
+        {demoView !== null && controlSlot !== null ? (
+          <Suspense fallback={null}>
+            <StageEditor store={store} host={demoView} slot={controlSlot} sourceText={sourceText} />
+          </Suspense>
+        ) : null}
       </div>
       <div
         role="tabpanel"
@@ -227,7 +288,7 @@ function LiveCodePanels({
               <LiveCodeFrame
                 title={title}
                 file={file}
-                source={<DocsCodePre variant="live" code={content} />}
+                source={<DocsCodePre variant="embedded" code={content} />}
               />
             }>
             <LiveCodeView store={store} title={title} file={file} sourceText={sourceText} html={html} />
@@ -257,7 +318,9 @@ function LiveCodePanels({
  *
  * `codeView` picks the panels. Either Code view, once shown, has a toolbar that copies the source
  * and an "Open code" action that shows it whole in a Sheet headed with the file name; Live code's
- * Sheet and Copy carry the reader's edits.
+ * Code view, Sheet and Copy carry the edits the reader made on the stage. A Live code frame also
+ * holds the stage editor's control in the footer, after the stage and before the view switch in
+ * the tab order. It stays there under either view.
  */
 export function DemoTabs({
   title,
@@ -268,7 +331,8 @@ export function DemoTabs({
   sourceText,
   sourceHref,
 }: DemoTabsProps): ReactElement {
-  const demoView = useRef<HTMLDivElement>(null);
+  // State rather than a ref: the stage editor observes the element once it mounts.
+  const [demoView, demoViewRef] = useState<HTMLDivElement | null>(null);
   const [view, setView] = useState<DemoView>("demo");
   const [demoHeight, setDemoHeight] = useState<number>();
   const id = useId();
@@ -277,16 +341,36 @@ export function DemoTabs({
   // The highlighted source loads when the Code view first shows.
   const [shown, setShown] = useState(false);
   const html = useHighlightedSource(sourceHref, shown);
-  const Panels = kind === "live" ? LiveCodePanels : StaticCodePanels;
+  const live = kind === "live";
+  const { root, footer, stageControlSlot } = demoTabs({ live });
+  // State rather than a ref: the editor portals into the slot once it mounts.
+  const [slot, setSlot] = useState<HTMLDivElement | null>(null);
+  const frame = useRef<HTMLDivElement>(null);
+  const editing = useStageEditorWanted(live ? frame : null);
+
+  const panels: DemoPanelsProps = {
+    view,
+    shown,
+    tabId,
+    panelId,
+    demoViewRef,
+    demoView,
+    demoHeight,
+    title,
+    file,
+    stage,
+    sourceText,
+    html,
+  };
 
   // Read while the Demo view still shows: a static Code view then opens at the height it leaves.
   function rememberDemoHeight(): void {
-    const height = demoView.current?.getBoundingClientRect().height;
+    const height = demoView?.getBoundingClientRect().height;
     if (height !== undefined && height > 0) setDemoHeight(height);
   }
 
   return (
-    <Frame.Root layout="flush" className={root()}>
+    <Frame.Root ref={frame} layout="flush" className={root()}>
       {heading === undefined ? null : (
         <Frame.Header>
           <Frame.Title>{heading}</Frame.Title>
@@ -294,22 +378,15 @@ export function DemoTabs({
       )}
       <Frame.Panel className={panel()}>
         <div className={bleed()}>
-          <Panels
-            view={view}
-            shown={shown}
-            tabId={tabId}
-            panelId={panelId}
-            demoView={demoView}
-            demoHeight={demoHeight}
-            title={title}
-            file={file}
-            stage={stage}
-            sourceText={sourceText}
-            html={html}
-          />
+          {live ? (
+            <LiveCodePanels {...panels} controlSlot={editing ? slot : null} />
+          ) : (
+            <StaticCodePanels {...panels} />
+          )}
         </div>
       </Frame.Panel>
       <Frame.Footer className={footer()}>
+        {live ? <div ref={setSlot} className={stageControlSlot()} /> : null}
         <Tabs.Root
           value={view}
           onValueChange={(value) => {

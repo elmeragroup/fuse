@@ -2,10 +2,9 @@
  * The JSX sites of a demo's lensed Fuse imports. A site is one opening tag of a part, with the
  * attributes written on it.
  *
- * Three readers must agree on where each site is. The Turbopack loader stamps each rendered part
- * with its location, the `/demo-source` route marks the highlighted tokens with it, and the Code
- * view's serializer writes edits back into the source with it. A site's `loc` is the one-based
- * `line:column` of its `<`, and it keys the site's edits everywhere.
+ * Two readers must agree on where each site is. The Turbopack loader stamps each rendered part
+ * with its location, and the serializer writes edits back into the source with it. A site's `loc`
+ * is the one-based `line:column` of its `<`, and it keys the site's edits everywhere.
  *
  * This is a small scanner rather than a parser, so the client can run it. It blanks comments
  * before the scan and steps over strings and braces in attribute values. A tag written inside a
@@ -23,7 +22,7 @@ const FUSE_IMPORT =
   /import\s*\{([^}]*)\}\s*from\s*["']@elmeragroup\/fuse(?:\/([a-z0-9-]+(?:\/[a-z0-9-]+)*))?["'];?/gu;
 
 /** One value import from a lensed Fuse entry. */
-export type LensedImport = {
+type LensedImport = {
   /** The name the entry exports, such as `Button` or `Select`. */
   readonly imported: string;
   /** The name the demo binds it to: `imported`, or the `as` alias. */
@@ -33,7 +32,7 @@ export type LensedImport = {
 /**
  * One `import { … } from "@elmeragroup/fuse/<entry>"` declaration of a lensed entry.
  */
-export type LensedImportDeclaration = {
+type LensedImportDeclaration = {
   /** Offset of the declaration's `import`. */
   readonly start: number;
   /** Offset just past the declaration, its semicolon included. */
@@ -44,20 +43,14 @@ export type LensedImportDeclaration = {
   readonly imports: readonly LensedImport[];
 };
 
-/** A range of the source, as offsets. */
-export type SourceRange = {
+/**
+ * One named attribute on a site's opening tag, as offsets: from its name to the end of its value,
+ * or of its name for a bare attribute, such as `disabled`.
+ */
+type SiteAttribute = {
+  readonly name: string;
   readonly start: number;
   readonly end: number;
-};
-
-/** One named attribute on a site's opening tag. */
-export type SiteAttribute = SourceRange & {
-  readonly name: string;
-  /**
-   * The value's range, a string literal or an expression container with its quotes or braces, or
-   * `null` for a bare attribute, such as `disabled`, which means `true`.
-   */
-  readonly value: SourceRange | null;
 };
 
 /** One JSX opening tag of a lensed part. */
@@ -66,12 +59,6 @@ export type Site = {
   readonly loc: string;
   /** The part's API name: the imported name, plus the member path, such as `Select.Root`. */
   readonly part: string;
-  /** The tag name as written, such as `Select.Root`. */
-  readonly tag: SourceRange;
-  /** The tag's type arguments with their angle brackets, such as `<StatusFilter>`, or `null`. */
-  readonly typeArguments: SourceRange | null;
-  /** The tag's spreads, such as `{...props}`, in source order. */
-  readonly spreads: readonly SourceRange[];
   /**
    * Where an attribute goes so that it wins: after the last spread, which would otherwise
    * override it, or else after the type arguments, or else after the tag name.
@@ -177,27 +164,27 @@ function skipTypeArguments(source: string, from: number): number {
   return at;
 }
 
-/** An opening tag's named attributes and its spreads. */
+/** An opening tag's named attributes, and where its last spread ends, or `null` without one. */
 type TagBody = {
   readonly attributes: readonly SiteAttribute[];
-  readonly spreads: readonly SourceRange[];
+  readonly lastSpreadEnd: number | null;
 };
 
 /** The attributes and spreads of the opening tag whose name, and type arguments, end at `from`. */
 function readAttributes(source: string, from: number): TagBody {
   const attributes: SiteAttribute[] = [];
-  const spreads: SourceRange[] = [];
-  const body = (): TagBody => ({ attributes, spreads });
+  let lastSpreadEnd: number | null = null;
+  const body = (): TagBody => ({ attributes, lastSpreadEnd });
   let at = from;
   for (;;) {
     while (at < source.length && /\s/u.test(source[at] ?? "")) at += 1;
     if (at >= source.length || source[at] === ">" || source.startsWith("/>", at)) return body();
     if (source[at] === "{") {
-      // A spread or a masked comment. Neither is a prop the Code view edits, but a spread
+      // A spread or a masked comment. Neither is a prop the stage editor sets, but a spread
       // overrides the attributes before it.
       const start = at;
       at = skipBraces(source, at);
-      if (/^\{\s*\.\.\./u.test(source.slice(start, at))) spreads.push({ start, end: at });
+      if (/^\{\s*\.\.\./u.test(source.slice(start, at))) lastSpreadEnd = at;
       continue;
     }
     const start = at;
@@ -205,18 +192,18 @@ function readAttributes(source: string, from: number): TagBody {
     const name = source.slice(start, at);
     if (name === "") return body();
     if (source[at] !== "=") {
-      attributes.push({ name, start, end: at, value: null });
+      attributes.push({ name, start, end: at });
       continue;
     }
     const valueStart = at + 1;
     const opener = source[valueStart];
     if (opener === '"' || opener === "'") {
       const end = skipQuoted(source, valueStart);
-      attributes.push({ name, start, end, value: { start: valueStart, end } });
+      attributes.push({ name, start, end });
       at = end;
     } else if (opener === "{") {
       const end = skipBraces(source, valueStart);
-      attributes.push({ name, start, end, value: { start: valueStart, end } });
+      attributes.push({ name, start, end });
       at = end;
     } else {
       return body();
@@ -235,7 +222,7 @@ function escapeRegExp(text: string): string {
  * @param offset - A zero-based offset.
  * @returns The location, such as `12:7`.
  */
-export function lineColumn(source: string, offset: number): string {
+function lineColumn(source: string, offset: number): string {
   const before = source.slice(0, offset);
   const lineStart = before.lastIndexOf("\n") + 1;
   return `${String(before.split("\n").length)}:${String(offset - lineStart + 1)}`;
@@ -264,15 +251,12 @@ export function findSites(source: string): readonly Site[] {
     if (imported === undefined) continue;
     const start = match.index + 1;
     const end = start + written.length;
-    const typeArguments = masked[end] === "<" ? { start: end, end: skipTypeArguments(masked, end) } : null;
-    const { attributes, spreads } = readAttributes(masked, typeArguments?.end ?? end);
+    const nameEnd = masked[end] === "<" ? skipTypeArguments(masked, end) : end;
+    const { attributes, lastSpreadEnd } = readAttributes(masked, nameEnd);
     sites.push({
       loc: lineColumn(source, match.index),
       part: imported + written.slice(local.length),
-      tag: { start, end },
-      typeArguments,
-      spreads,
-      insertAt: spreads.at(-1)?.end ?? typeArguments?.end ?? end,
+      insertAt: lastSpreadEnd ?? nameEnd,
       attributes,
     });
   }

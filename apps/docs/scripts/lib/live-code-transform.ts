@@ -4,8 +4,10 @@
  *
  * Each part a demo renders from a lensed Fuse import, when it has settable props, is bound through
  * the one generic `lens()` wrapper (a namespace is rebuilt with those members wrapped), and each
- * of its JSX sites is stamped with its `__lensLoc`. The rewrite carries the schema of exactly the parts the demo renders, so no
- * component needs code of its own. A demo without such a part comes back unchanged.
+ * of its JSX sites is stamped with its `__lensLoc`. A part Fuse recognises by element identity, or
+ * one no `api.json` documents, stays unwrapped. The rewrite carries the schema of exactly the parts
+ * the demo renders, so no component needs code of its own. A demo with no settable part comes back
+ * unchanged.
  */
 
 import { applyEdits } from "../../src/lib/live-code/edits.ts";

@@ -52,8 +52,11 @@ The page shape and the one-subject rule live in the Documentation section of `AG
 
 ## Demos and Live code
 
-Live code wraps every Fuse import in a component demo and makes props in the Code view
-editable. These follow from how it works:
+Live code wraps each Fuse part a component demo renders that has a settable prop, leaving out
+parts Fuse recognises by element identity, and makes those props editable on the stage. The stage
+control, in the frame's footer opposite the view switch, opens a menu of every site with a
+settable prop, and the Code view shows the edited source.
+These follow from how it works:
 
 - Start a demo with `"use client"`. Live code skips server demos.
 - Write each prop as a literal attribute. An expression value such as `variant={variant}`
@@ -63,10 +66,15 @@ editable. These follow from how it works:
   `elementType`.
 - `requires` hides a value whose companion props the site lacks. An `icon*` Button size needs
   `aria-label` on the demo before Live code offers it.
+- A stage with one site opens the menu straight onto its props. Several sites, from a repeated
+  part or a demo's popup parts such as a dropdown's items, each get a group labelled with the part
+  and source line, and highlighting a row outlines that site's elements, the ones its `ref`
+  reaches. A popup part stays in the menu while the popup is closed, and its edits apply when it
+  opens.
 - Use brand-neutral, realistic labels. Avoid app names and placeholder text.
 - A part that Fuse recognises through `child.type === X` stays unwrapped. The generated `src/generated/live-code-identity-parts.json` lists those parts. A new comparison against a Fuse
   component that is not a documented part fails `generate`; document the part.
-- An edit that throws is reverted with a notice. An edit that hangs is not: a value that makes a
+- An edit or a preview that throws is reverted with a notice. An edit that hangs is not: a value that makes a
   component loop or allocate without bound needs a guard in the component that throws, like
   Chart's `slot-limit`.
 - Sugar-high highlighting stays in server modules, or `client-graph.test.ts` fails.

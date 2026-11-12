@@ -48,9 +48,9 @@ const { root, heading, hidden } = demoFrame();
 /**
  * The demo frame: a flush Frame titled with the demo, with a Demo view, the theme-tinted stage,
  * and a Code view, the source of the very file that rendered the stage, with actions that copy
- * it and open it in a Sheet. A component demo's Code view is Live code (`hasLiveCode`): the
- * stage stays above it, its parts' props are editable in the source, and Copy and the Sheet
- * carry the edits. The footer switches between the views.
+ * it and open it in a Sheet. A component demo is Live code (`hasLiveCode`): its parts' props are
+ * editable on the stage, the stage stays above the Code view, and the Code view, Copy and the
+ * Sheet carry the edits. The footer switches between the views.
  *
  * A server component, so the source comes from a read of the demo file during prerendering rather
  * than from generated data threaded through the page. The page carries it as plain text. The
@@ -101,7 +101,7 @@ type DemoFrameTabsProps = {
   children: ReactNode;
 };
 
-/** The tabs, stage and source of one frame: a component demo's Code view is Live code. */
+/** The tabs, stage and source of one frame: a component demo's frame is Live code. */
 function DemoFrameTabs({ location, title, labelId, heading, children }: DemoFrameTabsProps): ReactElement {
   const demo = readDemoSource(location);
   return (

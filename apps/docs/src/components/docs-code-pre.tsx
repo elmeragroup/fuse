@@ -1,4 +1,4 @@
-import type { ComponentProps, ReactElement, Ref } from "react";
+import type { ComponentProps, ReactElement } from "react";
 
 import { tv } from "tailwind-variants";
 
@@ -22,11 +22,6 @@ const docsCodeBlock = tv({
         pre: "text-xs leading-relaxed m-0 bg-card px-4.5 py-4",
         code: "min-w-max",
       },
-      // Live code's source, whose 24px lines give every editable token a 24px target.
-      live: {
-        pre: "text-xs m-0 bg-card px-4.5 py-3 leading-6",
-        code: "min-w-max",
-      },
       signature: {
         pre: "text-xs leading-relaxed m-0 rounded-lg border border-border bg-muted px-2.5 py-2",
         code: "wrap-anywhere whitespace-pre-wrap",
@@ -41,16 +36,11 @@ const docsCodeBlock = tv({
 /** What a code block shows: raw text, or the highlighter's markup for it. */
 export type DocsCodeContent = { readonly text: string } | { readonly html: string };
 
-/** A `code` element its owner fills and edits itself through `codeRef`, as Live code does. */
-type OwnedCode = "owned";
-
 type DocsCodePreProps = Omit<ComponentProps<"pre">, "children"> & {
-  /** The text, the markup the server highlighted, or `owned` for an element its owner fills. */
-  code: DocsCodeContent | OwnedCode;
-  /** The `code` element, for an owner that fills it. */
-  codeRef?: Ref<HTMLElement>;
-  /** MDX fence, demo-frame source region, Live code's source, or the API panel's full type signature. */
-  variant?: "standalone" | "embedded" | "live" | "signature";
+  /** The text, or the markup the server highlighted. */
+  code: DocsCodeContent;
+  /** MDX fence, demo-frame source region, or the API panel's full type signature. */
+  variant?: "standalone" | "embedded" | "signature";
 };
 
 /**
@@ -63,15 +53,12 @@ export function DocsCodePre({
   className,
   variant = "standalone",
   code: content,
-  codeRef,
   ...props
 }: DocsCodePreProps): ReactElement {
   const { pre, code } = docsCodeBlock({ variant });
   return (
     <pre className={pre({ className })} {...props}>
-      {content === "owned" ? (
-        <code key="owned" ref={codeRef} className={code()} />
-      ) : "html" in content ? (
+      {"html" in content ? (
         <code key="html" className={code()} dangerouslySetInnerHTML={{ __html: content.html }} />
       ) : (
         <code key="text" className={code()}>

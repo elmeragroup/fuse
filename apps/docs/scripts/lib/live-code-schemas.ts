@@ -108,7 +108,7 @@ function readIdentityParts(file: string): ReadonlySet<string> {
 }
 
 /** A lookup, and the files its answers so far came from. */
-export type LiveCodeSchemas = {
+type LiveCodeSchemas = {
   /** The settable props of a part, or `undefined` when Live code leaves it unwrapped. */
   readonly schemaOf: SchemaLookup;
   /** The files the lookups read: the identity list, and each artifact an answer depends on. */

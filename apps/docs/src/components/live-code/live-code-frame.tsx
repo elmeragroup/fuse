@@ -25,8 +25,6 @@ type LiveCodeFrameProps = {
   actions?: ReactNode;
   /** The source block, which scrolls under the toolbar. */
   source: ReactNode;
-  /** What the frame holds besides, such as the popover that edits a token. */
-  children?: ReactNode;
 };
 
 /**
@@ -34,7 +32,7 @@ type LiveCodeFrameProps = {
  * The loaded view fills it, and the placeholder that holds the view's place while its code loads
  * draws the same frame, so the demo keeps its height when the view arrives.
  */
-export function LiveCodeFrame({ title, file, actions, source, children }: LiveCodeFrameProps): ReactElement {
+export function LiveCodeFrame({ title, file, actions, source }: LiveCodeFrameProps): ReactElement {
   return (
     <div className={styles.root()}>
       <Toolbar.Root aria-label={`${title} code`} className={styles.toolbar()}>
@@ -42,7 +40,6 @@ export function LiveCodeFrame({ title, file, actions, source, children }: LiveCo
         {actions}
       </Toolbar.Root>
       <ScrollArea.Root className={styles.scroll()}>{source}</ScrollArea.Root>
-      {children}
     </div>
   );
 }

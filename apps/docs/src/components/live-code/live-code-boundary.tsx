@@ -14,9 +14,9 @@ type LiveCodeBoundaryState = {
 };
 
 /**
- * Keeps a Live code edit from breaking its stage. When the stage throws before it commits the
- * reader's last edit, the boundary reverts that edit, which leaves a notice in the code toolbar,
- * and remounts the stage. A throw with no edit to blame is the demo's own, and the boundary hands
+ * Keeps a Live code edit or preview from breaking its stage. When the stage throws before it
+ * commits the reader's last edit, or the value the stage editor previews, the boundary reverts
+ * it, which leaves a notice in the editor's menu, and remounts the stage. A throw with no edit to blame is the demo's own, and the boundary hands
  * it on to the frame's `RetryBoundary`. Outside a Live code frame no edit is ever unsettled, so
  * every throw goes on.
  */

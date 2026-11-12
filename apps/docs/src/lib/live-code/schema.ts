@@ -1,12 +1,12 @@
 /**
  * Live code lets a reader set the props of a part that take a finite set of values. The Turbopack
- * loader reads them from the committed `api.json` and inlines them into each demo, and the Code
- * view reads them back from the parts that rendered.
+ * loader reads them from the committed `api.json` and inlines them into each demo, and the stage
+ * editor reads them back from the parts that rendered.
  */
 
 import type { ApiProp } from "../docs-model";
 
-/** One prop the Code view can set: an enum with its options, or a boolean. */
+/** One prop the stage editor can set: an enum with its options, or a boolean. */
 export type PropSpec =
   | {
       readonly name: string;
@@ -31,7 +31,7 @@ export type PropSpec =
 export type PartSchema = readonly PropSpec[];
 
 /** The fields of an `api.json` prop row this derivation reads. */
-export type ApiPropRow = Pick<ApiProp, "name" | "type" | "values" | "requires" | "defaultValue">;
+type ApiPropRow = Pick<ApiProp, "name" | "type" | "values" | "requires" | "defaultValue">;
 
 /**
  * Props a reader sets through other means than a value list: wiring (`children`, handlers),
@@ -64,7 +64,7 @@ function defaultTwin(name: string): string {
  */
 const ELEMENT_PROPS: ReadonlySet<string> = new Set(["render", "elementType"]);
 
-/** An authored default the Code view can show: a string literal or a boolean literal. */
+/** An authored default the stage editor can show: a string literal or a boolean literal. */
 type LiteralDefault =
   | { readonly kind: "string"; readonly value: string }
   | { readonly kind: "boolean"; readonly value: boolean }
@@ -80,7 +80,7 @@ function literalDefault(defaultValue: string | null): LiteralDefault {
 }
 
 /**
- * The props of one part a reader can set from the Code view: each enum `api.json` lists `values`
+ * The props of one part a reader can set from the stage editor: each enum `api.json` lists `values`
  * for, and each boolean.
  *
  * @param props - The part's `api.json` prop rows.

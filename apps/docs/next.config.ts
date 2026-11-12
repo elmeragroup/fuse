@@ -98,7 +98,7 @@ const nextConfig: NextConfig = {
     rules: {
       /**
        * For Live code, each component demo binds its Fuse parts through `lens()` and stamps their JSX
-       * sites, so the Code view can edit their props (`scripts/live-code-loader.ts`). Handbook and
+       * sites, so the stage editor can set their props (`scripts/live-code-loader.ts`). Handbook and
        * block demos are left alone. `next dev`, `next build` and `build:e2e` all compile through it.
        *
        * The key is a glob that matches every file, as `*` does, spelled so no other rule shares it:
