@@ -194,6 +194,8 @@ const COLUMNS = columns.columns([
         format={KWH}
         locale={APP_LOCALE}
         emphasis="last"
+        data-hover="none"
+        data-intro="none"
         className="h-7 w-28"
       />
     ),

@@ -306,6 +306,9 @@ export const PART_DENSITY = {
   "sparkline-path": "fixed",
   "sparkline-dot": "fixed",
   "sparkline-reference": "fixed",
+  "sparkline-bar": "fixed",
+  "sparkline-value": "fixed",
+  "sparkline-crosshair": "fixed",
 
   checkbox: "fixed",
   "checkbox-indicator": "fixed",

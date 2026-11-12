@@ -1,9 +1,10 @@
 ---
 lede: >
-  Preview. A static chart for a table cell or a stat tile, with no client JavaScript.
+  Preview. A server-drawn chart for a table cell or a stat tile, with no client JavaScript.
 ---
 
 import { SparklineHourlyPrice } from "./demos/sparkline-hourly-price";
+import { SparklineNegative } from "./demos/sparkline-negative";
 import { SparklineTable } from "./demos/sparkline-table";
 import { SparklineVariants } from "./demos/sparkline-variants";
 
@@ -25,6 +26,16 @@ The chart entry is a preview. Its names and props can change until Fuse's first 
 
 <Demo slug="sparkline" id="variants" title="Variants" file="sparkline-variants.tsx">
   <SparklineVariants />
+</Demo>
+
+<Prose>
+
+A line wipes in from the left as it enters the page, an area fills behind it, and bars grow from the baseline. Re-inserting the element replays the entrance, as a keyed row a sort moves or a panel shown again does, and `data-intro="none"` turns it off. A pointer over a value shows a dashed crosshair and a dot there, fades the rest of the series and draws the line around the value, or the value's bar, at full strength. Moving to the next value cross-fades the marks. All of it is CSS, so it needs no client JavaScript: motion stays off under `prefers-reduced-motion`, and the hover shows only on a device that hovers. It adds no tab stop and nothing to the accessible name, which already names the lowest and highest values. Each value's hover costs about half a kilobyte of markup, so `data-hover="none"` leaves it out where many Sparklines render at once, such as one per row of a long table. An area fades from its values toward 0, above and below the zero line; an engine that masks no SVG element, such as WebKit, keeps a flat 0.3 fill. A bar rounds the corners of its far end by `--chart-bar-radius`.
+
+</Prose>
+
+<Demo slug="sparkline" id="negative" title="Below zero" file="sparkline-negative.tsx">
+  <SparklineNegative />
 </Demo>
 
 <Demo slug="sparkline" id="table" title="In a table" file="sparkline-table.tsx">
