@@ -195,6 +195,27 @@ export default function ThemingPage(): ReactElement {
         Because it is attributes plus cascade, brand is correct at first paint with JavaScript disabled, and
         re-theming a subtree costs one wrapper element rather than a second stylesheet.
       </p>
+      <h3 id="brand-neutral-ramp">Brand neutral ramp</h3>
+      <p>
+        Each brand rule also declares the brand neutral ramp, <code>--brand-neutral-50</code> to{" "}
+        <code>--brand-neutral-950</code>, 50 the lightest: a grey at the hue of the brand&apos;s{" "}
+        <code>--feature</code> colour, with chroma 0.01. Fjordkraft&apos;s company segment takes the teal of
+        its own feature colour. The ramp holds the same values in light and dark and in both identities,
+        because it holds raw tones, not roles. Every ramp shares one lightness per step, so a step lines up
+        roughly across brands. Equal lightness is not equal contrast, because luminance also depends on hue
+        and chroma, so measure the real text and surface pair you use, as Fuse&apos;s contrast gates do.{" "}
+        <code>:root</code> declares an untinted grey at the same lightness, and utilities such as{" "}
+        <code>bg-brand-neutral-100</code> read it.
+      </p>
+      <p>
+        Branded light themes point their neutral roles at the ramp, so fills and lines share the page&apos;s
+        tint: <code>--sidebar</code> and <code>--right-panel</code> at step 50, <code>--muted</code> and{" "}
+        <code>--accent</code> at 100, <code>--input</code>, <code>--sidebar-accent</code> and{" "}
+        <code>--sidebar-border</code> at 200, and the <code>--border</code> hairline at 300. A role declares
+        the alias, such as <code>var(--brand-neutral-100)</code>, so overriding a step on the element that
+        carries the theme attributes moves every role that points at it. Neutral themes keep their untinted
+        system greys, and branded dark themes keep the neutrals they mix from each brand&apos;s dark card.
+      </p>
       <p>
         Corner rounding is part of the theme: each identity picks a corner set. A branded theme rounds cards
         from the brand&apos;s <code>--radius</code> and spaces the <code>rounded-*</code> scale around it in

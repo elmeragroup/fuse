@@ -17,6 +17,7 @@ import { literalContrast } from "./token-color";
 import { brandDarkPalette } from "./tokens/brand-dark-palettes";
 import { BRAND_PALETTES, BRANDED_IDENTITY_LAYER, paletteBrand } from "./tokens/brand-palettes";
 import { brandPointer } from "./tokens/brand-pointers";
+import { BRAND_RAMP_TOKEN_NAMES } from "./tokens/brand-ramps";
 import {
   assignedTokenNames,
   LIGHT_ONLY_KEYS,
@@ -73,7 +74,8 @@ function declaration(rules: ReturnType<typeof parseStyleRules>, selector: string
     ?.declarations.find((entry) => entry.name === name)?.value;
 }
 
-const EXPECTED_SELECTORS = [
+/** The root and brand rules, in emission order: the only rules that declare the brand ramps. */
+const RAMP_OWNER_SELECTORS = [
   ":root",
   '[data-theme-brand="fkas"]',
   '[data-theme-brand="tkas"]',
@@ -82,6 +84,13 @@ const EXPECTED_SELECTORS = [
   '[data-theme-brand="fkse"]',
   '[data-theme-brand="elma"]',
   '[data-theme-brand="ngfi"]',
+  // Fjordkraft company takes the teal ramps of its company feature over the orange ones its brand
+  // rule declares.
+  '[data-theme-brand="fkas"][data-theme-segment="company"]',
+];
+
+const EXPECTED_SELECTORS = [
+  ...RAMP_OWNER_SELECTORS,
   '[data-theme-identity="neutral"]',
   '[data-theme-identity="branded"][data-theme-brand="fkas"]',
   '[data-theme-identity="branded"][data-theme-brand="fkas"][data-theme-segment="company"]',
@@ -232,17 +241,20 @@ describe("theme contract", () => {
                 [`${BRANDED}${brand}`, BRANDED],
                 [`${BRANDED}${brand}${segment}`, `${BRANDED}${segment}`],
               ];
+        // The brand rule and its segment rule come first: they declare the ramps, which no
+        // palette rule restates, in both schemes.
         const lightSlots = slots.map(([selector]) => selector);
-        const slotted =
-          colorScheme === "light"
-            ? lightSlots
-            : [
-                ...lightSlots,
-                ...slots.flatMap(([selector, qualifiers]) => [
-                  `[data-theme="dark"]${selector}`,
-                  `:where([data-theme="dark"]${qualifiers})${brand}`,
-                ]),
-              ];
+        const slotted = [
+          brand,
+          `${brand}${segment}`,
+          ...lightSlots,
+          ...(colorScheme === "light"
+            ? []
+            : slots.flatMap(([selector, qualifiers]) => [
+                `[data-theme="dark"]${selector}`,
+                `:where([data-theme="dark"]${qualifiers})${brand}`,
+              ])),
+        ];
         const declared = new Map<string, string>();
         for (const selector of slotted) {
           for (const rule of byDirectSelector.get(selector) ?? []) {
@@ -358,6 +370,17 @@ describe("theme contract", () => {
     );
   });
 
+  it("declares the brand ramps only in the root and brand rules, never in a palette or dark rule", () => {
+    // The ramps are raw tones of a brand and segment, the same in both schemes and identities,
+    // so each step has one CSS owner per brand and segment and no scheme rule restates it.
+    for (const name of BRAND_RAMP_TOKEN_NAMES) {
+      const owners = rules
+        .filter((rule) => rule.declarations.some((entry) => entry.name === name))
+        .map((rule) => rule.selector);
+      expect(owners, name).toEqual(RAMP_OWNER_SELECTORS);
+    }
+  });
+
   it("resets every dark override and rebinds aliases whose source role changes", () => {
     for (const name of assignedTokenNames(NEUTRAL_DARK_PALETTE)) {
       expect(THEME_RESET_KEYS, `neutral ${name}`).toContain(name);
@@ -376,12 +399,13 @@ describe("theme contract", () => {
         expect(reset.has(name), `${name} rebinds to ${target}`).toBe(true);
       }
     }
-    // The brand pair is the brand-pointer layer's and the corner roles are the corner sets';
-    // every other role is a key some palette can change, or reads one. The sidebar brand pair
-    // reads the sidebar, which every dark palette sets.
+    // The brand pair and the brand ramps are the brand rules', and the corner roles are the corner
+    // sets'; every other role is a key some palette can change, or reads one. The sidebar brand
+    // pair reads the sidebar, which every dark palette sets.
     const notPaletteRoles = new Set<string>([
       "brand",
       "brand-foreground",
+      ...BRAND_RAMP_TOKEN_NAMES,
       "radius",
       "radius-button",
       "radius-field",
@@ -527,7 +551,8 @@ describe("ngfi identity", () => {
     ["feature", "#1E725A"], // primary-container
     ["feature-foreground", "#FFFFFF"], // on-primary-container
     ["feature-bright", "#87D6B9"], // primary-fixed-dim
-    ["border", "#BEC9C3"], // outline-variant
+    // The border and input take the brand neutral ramp, as every branded theme's do, rather than
+    // the scheme's outline-variant.
   ];
   const DARK_SCHEME: readonly (readonly [TokenName, string])[] = [
     ["background", "#101412"], // surface

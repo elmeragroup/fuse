@@ -78,8 +78,9 @@ describe("standalone stylesheet source set", () => {
 describe("variant-layer role reads", () => {
   it("fall back to the neutral default wherever the compiled sheet reads them", () => {
     // Only themes.css declares the variant-layer roles Fuse adds to the shadcn grammar, so a
-    // host without it reads every fallback. `--ring` is a shadcn base role, which such a host
-    // declares itself, as it does `--primary`, so it is read bare. Unit under test: each
+    // host without it reads every fallback. `--ring` and the neutral roles the layer points at
+    // the brand neutral ramp are shadcn base roles, or the right panel beside them, which such a
+    // host declares itself, as it does `--primary`, so they are read bare. Unit under test: each
     // `var(--K` in dist/styles.css for K in BRANDED_IDENTITY_LAYER. Oracle: LAYER_DEFAULTS[K],
     // the role's neutral default. A default that aliases another role this loop validates, such
     // as the selection divider's `var(--selection-border)`, is read with that role's own fallback,
@@ -88,7 +89,17 @@ describe("variant-layer role reads", () => {
     expect(existsSync(compiledCssPath), compiledCssPath).toBe(true);
     const css = readFileSync(compiledCssPath, "utf8");
     const defaults: Readonly<Record<string, string>> = LAYER_DEFAULTS;
-    const shadcnBaseRoles = new Set(["ring"]);
+    const shadcnBaseRoles = new Set([
+      "ring",
+      "muted",
+      "accent",
+      "border",
+      "input",
+      "sidebar",
+      "sidebar-accent",
+      "sidebar-border",
+      "right-panel",
+    ]);
     for (const key of Object.keys(BRANDED_IDENTITY_LAYER)) {
       if (shadcnBaseRoles.has(key)) continue;
       const fallbacks = varFallbacks(css, key);

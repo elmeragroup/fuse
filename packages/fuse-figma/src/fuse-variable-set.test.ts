@@ -33,6 +33,18 @@ function value(collectionName: string, variable: string, mode: string): Variable
   return spec(collectionName, variable)?.values.get(mode);
 }
 
+/**
+ * One variable's value in a mode, following aliases within its collection to the value they end
+ * on, as a role that points at another role of its theme, such as `muted` at a ramp step, does.
+ */
+function resolvedValue(collectionName: string, variable: string, mode: string): VariableValue | undefined {
+  let current = value(collectionName, variable, mode);
+  while (current?._tag === "Alias" && current.target.collection === collectionName) {
+    current = value(collectionName, current.target.variable, mode);
+  }
+  return current;
+}
+
 const px = (value: number): VariableValue => ({ _tag: "Float", value });
 
 const alias = (collectionName: string, variable: string): VariableValue => ({
@@ -233,7 +245,7 @@ describe("fuseVariableSet", () => {
       expect(leaves, tint).toHaveLength(8);
       for (const leaf of leaves) {
         for (const mode of brand.modes) {
-          const solid = value("Fuse brand", `${leaf.name.slice(0, -tint.length)}${role}`, mode);
+          const solid = resolvedValue("Fuse brand", `${leaf.name.slice(0, -tint.length)}${role}`, mode);
           if (solid?._tag !== "Color")
             throw new Error(`${leaf.name} in ${mode}: the role is no literal color`);
           const mixed = leaf.values.get(mode);

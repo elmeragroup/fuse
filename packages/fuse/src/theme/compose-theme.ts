@@ -3,6 +3,7 @@ import { cornersOf } from "./corners/corners";
 import type { ThemeIdentity, ThemeInput } from "./theme-input";
 import { themeSlug } from "./theme-input";
 import { brandPointer } from "./tokens/brand-pointers";
+import { brandRampLayer } from "./tokens/brand-ramp-layer";
 import {
   assignedTokenNames,
   MUST_OVERRIDE_BY_IDENTITY,
@@ -52,7 +53,7 @@ export function assertMustOverrideCoverage(
 
 /**
  * Composes a theme's full token contract in one scheme: the defaults, the brand pointer, the
- * identity's palette layers and its corner set.
+ * brand ramps, the identity's palette layers and its corner set.
  *
  * @param theme - A legal theme.
  * @param colorScheme - The scheme, light by default.
@@ -68,11 +69,14 @@ export function composeTheme(theme: ThemeInput, colorScheme: ResolvedColorScheme
     assertMustOverrideCoverage(suppliedTokenNames(theme, gate), theme.identity, gate, slug);
   }
   // Corners overlay last and only in light: no palette assigns them, and the dark composition
-  // keeps them from the light one.
+  // keeps them from the light one. The ramps follow the brand and segment alone: no palette
+  // layer names them, so they hold the same values in both identities and, through the dark
+  // overlay below, in dark.
   const light = withDerivedTokens(
     overlayTokenLayers(
       LAYER_DEFAULTS,
       brandPointer(theme.brand),
+      brandRampLayer(theme),
       ...paletteLayers(theme, "light"),
       cornersOf(theme)
     )

@@ -5,6 +5,7 @@ import { BRAND_CODES, BRANDS, LEGAL_THEMES, themeAxisSelector } from "./theme-in
 import type { BrandCode, ThemeInput } from "./theme-input";
 import { brandPointer } from "./tokens/brand-pointers";
 import type { BrandPointer } from "./tokens/brand-pointers";
+import { BRAND_RAMP_TOKEN_NAMES } from "./tokens/brand-ramps";
 import { derivedRoleSources, LIGHT_RESET_KEYS, isDerivedTokenName, TOKEN_NAMES } from "./tokens/contract";
 import type { TokenContract, TokenName } from "./tokens/contract";
 import { DEFAULTS } from "./tokens/defaults";
@@ -136,6 +137,10 @@ function darkBrandScopedRule(qualifiers: string, brand: BrandCode, tokens: Token
   );
 }
 
+/**
+ * A brand's neutral theme in its first segment, the theme its brand rule describes. `LEGAL_THEMES`
+ * lists each brand's segments in `BRANDS` order, so the first match is the first segment.
+ */
 function neutralTheme(brand: BrandCode): ThemeInput {
   const theme = LEGAL_THEMES.find(
     (candidate) => candidate.identity === "neutral" && candidate.brand === brand
@@ -146,18 +151,52 @@ function neutralTheme(brand: BrandCode): ThemeInput {
   return theme;
 }
 
+/** A composed theme's ramp tokens as declarations, in token order. */
+function rampDeclarations(tokens: TokenContract): (readonly [string, string])[] {
+  return BRAND_RAMP_TOKEN_NAMES.map((name) => [name, tokens[name]] as const);
+}
+
+/**
+ * The brand rules: the pointer, the roles that read it, and the brand's ramps. The ramps hold
+ * one value per brand and segment in both schemes and identities, so they live here, at the
+ * brand's weight, and no identity or scheme rule declares them. A segment whose ramps differ
+ * from the brand's first segment, such as Fjordkraft company with its teal hue, gets its own
+ * rule with the segment attribute beside the brand, which outweighs the brand rule in both
+ * schemes.
+ */
 function emitBrandPointers(): string {
-  return BRAND_CODES.map((code) => {
+  const brandRules: string[] = [];
+  const segmentRules: string[] = [];
+  for (const code of BRAND_CODES) {
+    const selector = themeAxisSelector("brand", code);
     const pointer = brandPointer(code);
-    return cssRule(
-      [themeAxisSelector("brand", code)],
-      [
-        ["brand", pointer.brand],
-        ["brand-foreground", pointer["brand-foreground"]],
-        ...brandScopedDeclarations(composeTheme(neutralTheme(code), "light")),
-      ]
+    const baseTheme = neutralTheme(code);
+    const base = composeTheme(baseTheme, "light");
+    brandRules.push(
+      cssRule(
+        [selector],
+        [
+          ["brand", pointer.brand],
+          ["brand-foreground", pointer["brand-foreground"]],
+          ...brandScopedDeclarations(base),
+          ...rampDeclarations(base),
+        ]
+      )
     );
-  }).join("\n\n");
+    for (const theme of LEGAL_THEMES) {
+      if (theme.identity !== "neutral" || theme.brand !== code || theme === baseTheme) {
+        continue;
+      }
+      const tokens = composeTheme(theme, "light");
+      if (BRAND_RAMP_TOKEN_NAMES.every((name) => tokens[name] === base[name])) {
+        continue;
+      }
+      segmentRules.push(
+        cssRule([`${selector}${themeAxisSelector("segment", theme.segment)}`], rampDeclarations(tokens))
+      );
+    }
+  }
+  return [...brandRules, ...segmentRules].join("\n\n");
 }
 
 function emitNeutralReset(): string {
@@ -199,14 +238,27 @@ function emitCorners(): string {
 }
 
 /**
- * The roles a segment changes against its brand base. A derived role counts as changed
- * wherever one of its sources does, because the rule must declare its `color-mix()` again
- * to mix the segment's sources instead of inheriting the base's result.
+ * The keys the brand rules own: the pointer and the ramps, which `emitBrandPointers` declares
+ * per brand and segment. A palette rule never declares them, so each has one CSS owner and one
+ * override weight.
+ */
+const BRAND_RULE_KEYS: ReadonlySet<TokenName> = new Set<TokenName>([
+  ...POINTER_KEYS,
+  ...BRAND_RAMP_TOKEN_NAMES,
+]);
+
+/**
+ * The roles a segment changes against its brand base, leaving out the keys the brand rules own.
+ * A derived role counts as changed wherever one of its sources does, because the rule must
+ * declare its `color-mix()` again to mix the segment's sources instead of inheriting the base's
+ * result.
  */
 function changedKeys(base: TokenContract, tokens: TokenContract): TokenName[] {
   const differs = (key: TokenName): boolean => tokens[key] !== base[key];
-  return TOKEN_NAMES.filter((key) =>
-    isDerivedTokenName(key) ? derivedRoleSources(key).some(differs) : differs(key)
+  return TOKEN_NAMES.filter(
+    (key) =>
+      !BRAND_RULE_KEYS.has(key) &&
+      (isDerivedTokenName(key) ? derivedRoleSources(key).some(differs) : differs(key))
   );
 }
 
