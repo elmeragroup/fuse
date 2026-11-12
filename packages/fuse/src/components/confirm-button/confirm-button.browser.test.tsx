@@ -67,6 +67,43 @@ describe("ConfirmButton", () => {
     expect(buttonNamed("Confirm delete").getAttribute("data-armed")).toBe("true");
   });
 
+  // Chrome's page translation swaps each text node for `<font>` wrappers that React does not
+  // know about. Arming then threw `NotFoundError` removing the old text node, or wrote the armed
+  // text into the detached node and left the translated resting label showing.
+  it.each([
+    ["text", "Confirm delete"],
+    ["an element", <strong key="armed">Confirm delete</strong>],
+  ] as const)(
+    "shows %s armedChildren after page translation replaced the resting label",
+    async (_case, armedChildren) => {
+      renderThemed(
+        <ConfirmButton onConfirm={() => undefined} armedChildren={armedChildren}>
+          Delete
+        </ConfirmButton>
+      );
+      const button = buttonNamed("Delete");
+      const walker = document.createTreeWalker(button, NodeFilter.SHOW_TEXT);
+      const label = walker.nextNode();
+      if (label === null) {
+        throw new Error("Expected the resting label as a text node");
+      }
+      const translated = document.createElement("font");
+      translated.innerHTML = "<font>Slett</font>";
+      label.parentNode?.replaceChild(translated, label);
+
+      await userEvent.click(button);
+
+      expect(button.isConnected).toBe(true);
+      expect(button.getAttribute("data-armed")).toBe("true");
+      // The visible label, without the visually hidden live region that also says "Confirm delete".
+      const visibleLabel = [...button.childNodes]
+        .filter((node) => !(node instanceof HTMLElement && node.hasAttribute("aria-live")))
+        .map((node) => node.textContent)
+        .join("");
+      expect(visibleLabel).toBe("Confirm delete");
+    }
+  );
+
   it("disarms on Escape without confirming, and still invokes consumer onKeyDown", async () => {
     const onConfirm = vi.fn();
     const onKeyDown = vi.fn();
