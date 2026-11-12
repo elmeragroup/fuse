@@ -54,8 +54,9 @@ export type ChartDotsProps = ChartLayerProps & {
   /** The series whose readings get a dot. */
   dataKey: string;
   /**
-   * The dot's look. "default" by default, a filled dot inside a ring of the surface. "ring" is a
-   * hollow ring and "halo" a dot inside a faint halo of its colour.
+   * The dot's look. "default" by default, a filled dot inside a ring of the surface the chart
+   * rests on, `--surface`. "ring" is a hollow ring and "halo" a dot inside a faint halo of
+   * its colour.
    */
   variant?: "default" | "ring" | "halo";
 };

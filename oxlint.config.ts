@@ -427,11 +427,13 @@ export default defineConfig({
         ],
         "fuse/restricted-imports": restrictModules([TEMPORAL_POLYFILL]),
         "fuse/state-face": "error",
+        "fuse/surface-muted-foreground": "error",
       },
     },
     {
       files: ["apps/docs/src/**/*.{ts,tsx}"],
       rules: {
+        "fuse/surface-muted-foreground": "error",
         "elmera/no-primitive-colors": "error",
         "elmera/no-raw-class-map": "error",
         "shadcn/no-restyle": [

@@ -25,7 +25,14 @@ export const itemVariants = tv({
   variants: {
     variant: {
       default: "border-transparent",
-      outline: "border-border",
+      // An outline row is a bordered content box, so it rests on the `panel` fill, as the default
+      // Alert and Frame.Panel do: white in every light theme, also on a tinted branded page, and
+      // the page in dark. It states the fill as `--surface`, as every container fill does (see
+      // `TOKEN_NAMES`). A link row's hover paints `muted` over it, so its text takes `foreground`,
+      // the gated pair on `muted`, and it states `muted` as its surface. The hover arm sets only `--item-foreground`, which one plain
+      // text utility reads, so a `text-*` in `className` replaces that utility at rest and on hover.
+      outline:
+        "border-border bg-panel text-(color:--item-foreground) [--item-foreground:--theme(--color-panel-foreground)] [--surface-muted-foreground:--theme(--color-muted-foreground)] [--surface:--theme(--color-panel)] [a]:enabled-hover:[--item-foreground:--theme(--color-foreground)] [a]:enabled-hover:[--surface-muted-foreground:--theme(--color-muted-foreground)] [a]:enabled-hover:[--surface:--theme(--color-muted)]",
       muted: "border-transparent bg-muted/50",
     },
     size: {

@@ -25,6 +25,8 @@ describe("overlayPopupSurfaceClass", () => {
         "shadow-md",
         "rounded-md",
         "bg-popover",
+        "[--surface:--theme(--color-popover)]",
+        "[--surface-muted-foreground:--theme(--color-muted-foreground)]",
         "text-popover-foreground",
         "ring-1",
         "ring-foreground/10",
@@ -70,6 +72,8 @@ describe("overlayTimedPopupClass", () => {
     expect(tokens(overlayTimedPopupClass)).toEqual(
       new Set([
         "bg-popover",
+        "[--surface:--theme(--color-popover)]",
+        "[--surface-muted-foreground:--theme(--color-muted-foreground)]",
         "text-popover-foreground",
         "shadow-md",
         "ring-1",

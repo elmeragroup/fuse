@@ -39,8 +39,9 @@ export type VerticalTableItem = {
 
 export type VerticalTableRootProps = ComponentProps<"div"> & {
   /**
-   * Facts-sheet look. `"non-bordered-compact"` drops the wrapper border/background
-   * and tightens cell padding via descendant `data-variant` selectors.
+   * Facts-sheet look. `"default"` draws a bordered box in the `panel` fill and states it as
+   * `--surface`. `"non-bordered-compact"` drops the wrapper border/background, keeps the
+   * surface of its host, and tightens cell padding via descendant `data-variant` selectors.
    */
   variant?: "default" | "non-bordered-compact";
 };
@@ -114,7 +115,7 @@ function TableHeader({ className, ...props }: TableHeaderProps): ReactElement {
       data-slot="table-header"
       className={cn(
         // oxlint-disable-next-line fuse/state-face -- table rows are not controls and have no disabled state
-        "[&_tr]:border-b framed-table:*:[tr]:border-none framed-table:*:[tr]:hover:bg-transparent",
+        "[&_tr]:border-b framed-table:*:[tr]:border-none framed-table:*:[tr]:hover:bg-transparent framed-table:*:[tr]:hover:[--table-row-foreground:currentColor]",
         className
       )}
       {...props}
@@ -128,8 +129,12 @@ function TableBody({ className, ...props }: TableBodyProps): ReactElement {
       data-slot="table-body"
       className={cn(
         frameTableBodyShellClass,
+        // A framed cell pairs its `panel` fill with `panel-foreground`. The body writes its text
+        // through one plain `text-(color:--table-body-foreground)`, and the framed arm sets only
+        // the property, so a `text-*` in `className` replaces the utility in every state. Cells
+        // inherit the body's and row's colour, so a cell's own colour wins too.
         // oxlint-disable-next-line fuse/state-face -- table rows are not controls and have no disabled state
-        "before:shadow-[0_1px_--theme(--color-black/6%)] relative before:pointer-events-none before:absolute before:inset-px not-framed-table:before:hidden framed-table:shadow-[shadow:0_var(--frame-shadow-y,1px)_var(--frame-shadow-blur,2px)_0_black]/5 [&_tr:last-child]:border-0 framed-table:*:[tr]:border-0 framed-table:*:[tr]:*:[td]:border-b framed-table:*:[tr]:*:[td]:bg-background framed-table:*:[tr]:*:[td]:bg-clip-padding framed-table:*:[tr]:*:[td]:first:border-s framed-table:*:[tr]:first:*:[td]:border-t framed-table:*:[tr]:*:[td]:last:border-e framed-table:*:[tr]:hover:*:[td]:bg-transparent framed-table:*:[tr]:data-[state=selected]:*:[td]:bg-muted/72",
+        "before:shadow-[0_1px_--theme(--color-black/6%)] relative text-(color:--table-body-foreground) [--table-body-foreground:currentColor] before:pointer-events-none before:absolute before:inset-px not-framed-table:before:hidden framed-table:shadow-[shadow:0_var(--frame-shadow-y,1px)_var(--frame-shadow-blur,2px)_0_black]/5 framed-table:[--table-body-foreground:--theme(--color-panel-foreground)] [&_tr:last-child]:border-0 framed-table:*:[tr]:border-0 framed-table:*:[tr]:*:[td]:border-b framed-table:*:[tr]:*:[td]:bg-panel framed-table:*:[tr]:*:[td]:bg-clip-padding framed-table:*:[tr]:*:[td]:[--surface-muted-foreground:--theme(--color-muted-foreground)] framed-table:*:[tr]:*:[td]:[--surface:--theme(--color-panel)] framed-table:*:[tr]:*:[td]:first:border-s framed-table:*:[tr]:first:*:[td]:border-t framed-table:*:[tr]:*:[td]:last:border-e framed-table:*:[tr]:hover:*:[td]:bg-transparent framed-table:*:[tr]:data-[state=selected]:*:[td]:bg-muted/72",
         className
       )}
       {...props}
@@ -143,7 +148,7 @@ function TableFooter({ className, ...props }: TableFooterProps): ReactElement {
       data-slot="table-footer"
       className={cn(
         // oxlint-disable-next-line fuse/state-face -- table rows are not controls and have no disabled state
-        "font-medium border-t bg-muted/72 framed-table:border-none framed-table:bg-transparent framed-table:*:[tr]:hover:bg-transparent [&>tr]:last:border-b-0",
+        "font-medium border-t bg-muted/72 framed-table:border-none framed-table:bg-transparent framed-table:*:[tr]:hover:bg-transparent framed-table:*:[tr]:hover:[--table-row-foreground:currentColor] [&>tr]:last:border-b-0",
         className
       )}
       {...props}
@@ -156,8 +161,12 @@ function TableRow({ className, ...props }: TableRowProps): ReactElement {
     <tr
       data-slot="table-row"
       className={cn(
+        // A hovered or selected row shows `muted`, in its own fill or through a framed cell's, so
+        // its text takes `foreground`, the gated pair on `muted`; at rest it keeps the text around
+        // it. The state arms set only `--table-row-foreground`, which one plain text utility reads,
+        // so a `text-*` in `className` replaces it in every state.
         // oxlint-disable-next-line fuse/state-face -- table rows are not controls and have no disabled state
-        "border-b transition-colors hover:bg-muted/72 data-[state=selected]:bg-muted/72 framed-table:hover:bg-transparent framed-table:data-[state=selected]:bg-transparent",
+        "border-b text-(color:--table-row-foreground) transition-colors [--table-row-foreground:currentColor] hover:bg-muted/72 hover:[--table-row-foreground:--theme(--color-foreground)] data-[state=selected]:bg-muted/72 data-[state=selected]:[--table-row-foreground:--theme(--color-foreground)] framed-table:hover:bg-transparent framed-table:data-[state=selected]:bg-transparent",
         className
       )}
       {...props}
@@ -223,7 +232,9 @@ function VerticalTableBody({
       data-slot="vertical-table"
       className={cn(
         frameVerticalTableShellClass,
-        "overflow-hidden rounded-md border bg-background in-data-[variant=non-bordered-compact]:border-none in-data-[variant=non-bordered-compact]:bg-inherit",
+        // The compact box keeps the text around it. Its arm sets only the property the one plain
+        // text utility reads, so a `text-*` in `className` replaces that utility in both variants.
+        "overflow-hidden rounded-md border bg-panel text-(color:--vertical-table-foreground) [--surface-muted-foreground:--theme(--color-muted-foreground)] [--surface:--theme(--color-panel)] [--vertical-table-foreground:--theme(--color-panel-foreground)] in-data-[variant=non-bordered-compact]:border-none in-data-[variant=non-bordered-compact]:bg-inherit in-data-[variant=non-bordered-compact]:[--surface-muted-foreground:inherit] in-data-[variant=non-bordered-compact]:[--surface:inherit] in-data-[variant=non-bordered-compact]:[--vertical-table-foreground:currentColor]",
         className
       )}
       {...props}>
@@ -268,7 +279,7 @@ function VerticalTableRow({
       data-font-weight={fontWeight}
       className={cn(
         // oxlint-disable-next-line fuse/state-face -- table rows are not controls and have no disabled state
-        "group/vertical-table-row-item *:border-border hover:bg-transparent [&>:not(:last-child)]:border-e",
+        "group/vertical-table-row-item *:border-border hover:bg-transparent hover:[--table-row-foreground:currentColor] [&>:not(:last-child)]:border-e",
         "in-data-[variant=non-bordered-compact]:border-none",
         { hidden: isHidden },
         className

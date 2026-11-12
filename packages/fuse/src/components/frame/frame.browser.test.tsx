@@ -6,6 +6,7 @@ import "../../../dist/themes.css";
 import { ringLayers, settleTransitions } from "../../../test/assert-invalid-ring";
 import { cornerRadius } from "../../../test/inner-corner-specimens";
 import { emulateReducedMotion } from "../../../test/reduced-motion";
+import { PANEL, describePartPaint } from "../../../test/surface-paint";
 import { expectTargetBoxes } from "../../../test/target-size";
 import { tkasCompany } from "../../../test/theme-fixtures";
 import {
@@ -213,3 +214,19 @@ describe("Frame", () => {
     });
   });
 });
+
+// The fill Frame.Panel paints, the text that travels with it and the surface it states (see
+// `surface-paint.tsx`).
+describePartPaint([
+  {
+    label: "Frame.Panel",
+    node: (className) => (
+      <Frame.Root>
+        <Frame.Panel className={className}>Usage panel</Frame.Panel>
+      </Frame.Root>
+    ),
+    text: () => textNamed("Usage panel"),
+    role: "--panel-foreground",
+    fill: PANEL,
+  },
+]);

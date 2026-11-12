@@ -84,7 +84,8 @@ export function viewportSize(): PlaceSize {
 /**
  * The popup's corner and padding, and its fill per variant. Frosted glass lets the plot show through a translucent popover
  * fill and blurs it. It sits on the utilities layer with the overlay fill it replaces, so the
- * class merge drops the opaque fill.
+ * class merge drops the opaque fill. A translucent fill keeps the surface beneath it, so frosted
+ * glass also drops the popover `--surface` the overlay fill states.
  */
 const tooltipPopup = tv({
   // DESIGN-NOTES "Tooltips" gives the chart popup an 8 px radius and 8 px of block padding. The
@@ -93,7 +94,8 @@ const tooltipPopup = tv({
   variants: {
     variant: {
       default: "",
-      frosted: "supports-backdrop-filter:backdrop-blur-md bg-popover/70",
+      frosted:
+        "supports-backdrop-filter:backdrop-blur-md bg-popover/70 [--surface-muted-foreground:inherit] [--surface:inherit]",
     },
   },
 });

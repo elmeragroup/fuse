@@ -9,9 +9,11 @@ export const pickerRangeRootClass = cn("@container/picker w-full");
 
 /**
  * A calendar inside the picker's popover, which is already the card: it drops its own border,
- * shadow and fill. Both tiers' single pickers.
+ * shadow and fill, and keeps the popover's `--surface`. Both tiers' single pickers.
  */
-export const pickerPopupCalendarClass = cn("border-none bg-transparent shadow-none");
+export const pickerPopupCalendarClass = cn(
+  "border-none bg-transparent shadow-none [--surface-muted-foreground:inherit] [--surface:inherit]"
+);
 
 /**
  * RangeCalendar's root is bare and the popup pads nothing, so the grid would otherwise sit flush

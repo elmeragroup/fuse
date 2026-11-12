@@ -758,6 +758,8 @@ export type ChartStyleVars = {
     "--chart-ring-fill"?: number | string;
     "--chart-slice-seam"?: string;
     "--chart-slice-pop"?: string;
+    "--surface"?: string;
+    "--surface-muted-foreground"?: string;
     "--animate-chart-ping"?: string;
     "--animate-chart-dash"?: string;
     "--animate-chart-shimmer"?: string;

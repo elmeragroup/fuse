@@ -117,6 +117,8 @@
   --color-popover-foreground: var(--popover-foreground);
   --color-dialog: var(--dialog, var(--popover));
   --color-dialog-foreground: var(--dialog-foreground, var(--popover-foreground));
+  --color-panel: var(--panel, var(--card));
+  --color-panel-foreground: var(--panel-foreground, var(--card-foreground));
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
   --color-accent: var(--accent);
@@ -713,8 +715,7 @@
    (0,3,1), so keep the arm at least that heavy. Child combinators keep a row nested in a
    SubSection from matching. `selection-row-disabled` marks the shell itself;
    `selection-row-disabled-part` marks the shell's direct children, the label and the SubSection
-   band, and the label's children, the label row cluster among them, so each part matches exactly
-   one arm. */
+   band. */
 @custom-variant selection-row-disabled (&:is([data-disabled]:not([data-disabled="false"]), :has(> label > [data-slot="selection-item-control"] :is([data-disabled]:not([data-disabled="false"]), :disabled, [aria-disabled="true"]))));
 @custom-variant selection-row-disabled-part {
   [data-selection-item]:is(
@@ -725,16 +726,6 @@
           :is([data-disabled]:not([data-disabled="false"]), :disabled, [aria-disabled="true"])
       )
     )
-    > &,
-  [data-selection-item]:is(
-      [data-disabled]:not([data-disabled="false"]),
-      :has(
-        > label
-          > [data-slot="selection-item-control"]
-          :is([data-disabled]:not([data-disabled="false"]), :disabled, [aria-disabled="true"])
-      )
-    )
-    > label
     > & {
     @slot;
   }

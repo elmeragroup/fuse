@@ -30,7 +30,10 @@ const checkboxCardStyles = tv({
   variants: {
     variant: {
       default: "bg-card",
-      muted: "bg-muted",
+      // The muted card swaps Card's fill, so it restates the text, `--surface` and muted text
+      // Card states beside its own.
+      muted:
+        "bg-muted text-foreground [--surface-muted-foreground:--theme(--color-muted-foreground)] [--surface:--theme(--color-muted)]",
     },
     // The card is the whole control, so it takes the one disabled look on its `isDisabled`
     // arm: the prop, not a selector, carries the state to the card.

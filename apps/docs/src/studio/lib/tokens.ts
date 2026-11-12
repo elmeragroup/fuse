@@ -73,6 +73,8 @@ export const TOKEN_TABLE = {
   "popover-foreground": color("surfaces"),
   dialog: color("surfaces"),
   "dialog-foreground": color("surfaces"),
+  panel: color("surfaces"),
+  "panel-foreground": color("surfaces"),
   muted: color("surfaces"),
   "muted-foreground": color("surfaces"),
   accent: color("surfaces"),

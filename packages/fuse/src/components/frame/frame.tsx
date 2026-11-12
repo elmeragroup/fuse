@@ -107,6 +107,11 @@ function holdsOnlyTable(children: ReactNode): boolean {
  * `--inner-corner` for its content, its corner less its border and padding. A Table in it renders
  * as a plain table.
  *
+ * It fills with the `panel` role, white like a Card in light themes and the page in dark ones, sets
+ * its text in `panel-foreground`, and states the fill as `--surface`, the colour of the fill an
+ * element sits on, so a chart in it cuts its rings and seams out of the panel, with its muted text
+ * as `--surface-muted-foreground`. A `bg-*` class that changes the fill changes both beside it.
+ *
  * A panel whose only child is a `Table.Root` or `VerticalTable.Body` element, written directly in
  * its children, drops its padding and writes `data-sole-table="true"`: the table runs to the
  * panel's edges, clips to its corners, and its first and last columns take over the padding, so
@@ -120,7 +125,7 @@ function FramePanel({ className, ...props }: FramePanelProps): ReactElement {
       data-sole-table={holdsOnlyTable(props.children)}
       className={cn(
         framePanelShellClass,
-        "before:shadow-[0_1px_--theme(--color-black/6%)] relative bg-background bg-clip-padding shadow-[shadow:0_var(--frame-shadow-y,1px)_var(--frame-shadow-blur,2px)_0_black]/5 before:pointer-events-none before:absolute before:inset-0",
+        "before:shadow-[0_1px_--theme(--color-black/6%)] relative bg-panel bg-clip-padding text-panel-foreground shadow-[shadow:0_var(--frame-shadow-y,1px)_var(--frame-shadow-blur,2px)_0_black]/5 [--surface-muted-foreground:--theme(--color-muted-foreground)] [--surface:--theme(--color-panel)] before:pointer-events-none before:absolute before:inset-0",
         className
       )}
       {...props}

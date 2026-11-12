@@ -980,7 +980,7 @@
           "type": "ChartTone | undefined",
           "shortType": null,
           "defaultValue": "\"default\"",
-          "description": "The hand's tone. \"default\" by default.",
+          "description": "The hand's tone. \"default\" by default. A muted label keeps the full muted text, and only the hand fades.",
           "required": false
         }
       ]

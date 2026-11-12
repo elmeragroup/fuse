@@ -34,33 +34,40 @@ export const alertVariants = tv({
   variants: {
     variant: {
       default: {
-        base: "bg-background text-foreground",
-        icon: "text-foreground",
+        // No `base`: the outline Item row underneath already paints the `panel` pair and states
+        // it as `--surface`, white in every light theme and the page in dark, so the Alert reads
+        // apart from a branded light page's tint and matches a Card or Frame.Panel around it.
+        // The icon sits on the panel in `panel-foreground`, as the title and body do.
+        icon: "text-panel-foreground",
         // Replaces Button's `enabled-hover:bg-primary/80`, which tailwind-merge keeps beside a
         // plain `bg-*` because the modifier differs, and which puts `text-foreground` on a
-        // primary fill. `foreground` on `muted` is a gated text-grade pair. It rests transparent on
-        // the Alert's own fill, as the outline Button does on its surface.
-        button: "bg-transparent text-foreground enabled-hover:bg-muted",
+        // primary fill. It rests transparent on the Alert's panel in `panel-foreground`, as the
+        // outline Button does on its surface, and its hover paints `muted` in `foreground`. Both
+        // are gated text-grade pairs. The opaque hover states `muted` as its surface.
+        button:
+          "bg-transparent text-panel-foreground enabled-hover:bg-muted enabled-hover:text-foreground enabled-hover:[--surface-muted-foreground:--theme(--color-muted-foreground)] enabled-hover:[--surface:--theme(--color-muted)]",
       },
       destructive: {
         // `error` text on the 5% `error` tint over the page, card or card-soft is a gated pair
         // (contrast-matrix.test.ts), for the title and the body alike.
-        base: "border-error bg-error/5 text-error",
+        // A translucent tint keeps the surface beneath it, so it drops the outline Item's `panel`.
+        base: "border-error bg-error/5 text-error [--surface-muted-foreground:inherit] [--surface:inherit]",
         icon: "text-error",
         // oxlint-disable-next-line fuse/state-face -- the alert action has no disabled state; this only overrides its Button's fill
         button: "bg-error text-error-foreground hover:bg-error/90",
       },
       warning: {
         // The flush focus ring takes the soft foreground, held to 4.5:1 on this fill, where
-        // the neutral grey falls under 3:1 in dark.
-        base: "border-warning bg-warning-soft text-warning-soft-foreground [--ring:var(--warning-soft-foreground)]",
+        // the neutral grey falls under 3:1 in dark. The soft fill is opaque, so it is the surface,
+        // and its soft foreground is the surface's muted text, which a chart's chips read.
+        base: "border-warning bg-warning-soft text-warning-soft-foreground [--ring:var(--warning-soft-foreground)] [--surface-muted-foreground:--theme(--color-warning-soft-foreground)] [--surface:--theme(--color-warning-soft)]",
         icon: "text-warning",
         // oxlint-disable-next-line fuse/state-face -- the alert action has no disabled state; this only overrides its Button's fill
         button: "bg-warning text-warning-foreground hover:bg-warning/90",
       },
       success: {
         // `foreground` on the 5% `success` tint is gated beside the destructive pair.
-        base: "border-success bg-success/5 text-foreground",
+        base: "border-success bg-success/5 text-foreground [--surface-muted-foreground:inherit] [--surface:inherit]",
         icon: "text-success",
         // oxlint-disable-next-line fuse/state-face -- the alert action has no disabled state; this only overrides its Button's fill
         button: "bg-success text-success-foreground hover:bg-success/90",
@@ -68,7 +75,7 @@ export const alertVariants = tv({
       info: {
         // The flush focus ring takes the soft foreground, as on warning: the neutral grey
         // falls under 3:1 on the info-soft fill in dark.
-        base: "border-info bg-info-soft text-info-soft-foreground [--ring:var(--info-soft-foreground)]",
+        base: "border-info bg-info-soft text-info-soft-foreground [--ring:var(--info-soft-foreground)] [--surface-muted-foreground:--theme(--color-info-soft-foreground)] [--surface:--theme(--color-info-soft)]",
         icon: "text-info",
         // oxlint-disable-next-line fuse/state-face -- the alert action has no disabled state; this only overrides its Button's fill
         button: "bg-info text-info-foreground hover:bg-info/90",

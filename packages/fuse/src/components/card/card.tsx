@@ -60,6 +60,12 @@ type CardDescriptionProps = HTMLAttributes<HTMLParagraphElement> &
  * colour in branded ones. A border colour class still wins. It casts Tailwind's `shadow-xs` in
  * the theme's `--card-shadow`: 5% black in neutral themes and zero alpha in branded ones. A
  * shadow size class replaces it, and a shadow colour class tints it.
+ *
+ * It states its `card` fill as `--surface`, the colour of the fill an element sits on, so a
+ * chart in it cuts its rings and seams out of the card, and its muted text as
+ * `--surface-muted-foreground`, which a chart's chips read. A `bg-*` class that changes the fill
+ * changes both beside it, as in
+ * `className="bg-muted [--surface:var(--muted)] [--surface-muted-foreground:var(--muted-foreground)]"`.
  */
 function CardRoot({ className, direction, size = "default", ...props }: CardRootProps): ReactElement {
   const { base } = cardVariants({ direction, size });

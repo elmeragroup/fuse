@@ -57,7 +57,8 @@ export type ScatterChartLineProps = ChartLayerProps & {
 export type ScatterChartActiveDotProps = ChartLayerProps & {
   /**
    * The mark on the active point. "ring" by default, a ring around the point in its series' colour.
-   * "dot" draws a filled dot inside a ring of the surface, for a series a Line draws alone.
+   * "dot" draws a filled dot inside a ring of the surface the chart rests on, `--surface`,
+   * for a series a Line draws alone.
    */
   variant?: "ring" | "dot";
 };

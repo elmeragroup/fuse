@@ -40,6 +40,8 @@
   --popover-foreground: oklch(0.15 0.0041 49.31);
   --dialog: var(--popover);
   --dialog-foreground: var(--popover-foreground);
+  --panel: var(--card);
+  --panel-foreground: var(--card-foreground);
   --muted: oklch(0.97 0.0013 106.42);
   --muted-foreground: oklch(0.544 0 0);
   --accent: oklch(0.96 0 0);
@@ -223,6 +225,8 @@
   --card-soft-foreground: oklch(0.15 0.0041 49.31);
   --dialog: var(--popover);
   --dialog-foreground: var(--popover-foreground);
+  --panel: var(--card);
+  --panel-foreground: var(--card-foreground);
   --muted: oklch(0.97 0.0013 106.42);
   --muted-foreground: oklch(0.544 0 0);
   --primary: oklch(0.16 0 0);
@@ -280,6 +284,8 @@
   --card-soft-foreground: oklch(0.3209 0.10325 38.8);
   --dialog: var(--background);
   --dialog-foreground: var(--foreground);
+  --panel: var(--card);
+  --panel-foreground: var(--card-foreground);
   --muted: oklch(0.97 0.0013 106.42);
   --muted-foreground: oklch(0.5286 0.07167 38.8);
   --primary: oklch(0.3209 0.10325 38.8);
@@ -357,6 +363,8 @@
   --card-soft-foreground: oklch(0.30407 0.05238 190.82);
   --dialog: var(--background);
   --dialog-foreground: var(--foreground);
+  --panel: var(--card);
+  --panel-foreground: var(--card-foreground);
   --muted: oklch(0.9684 0.0068 247.9);
   --muted-foreground: oklch(0.5273 0.03558 190.82);
   --primary: oklch(0.30407 0.05238 190.82);
@@ -414,6 +422,8 @@
   --card-soft-foreground: oklch(0.19922 0.12072 268.2);
   --dialog: var(--background);
   --dialog-foreground: var(--foreground);
+  --panel: var(--card);
+  --panel-foreground: var(--card-foreground);
   --muted: oklch(0.9684 0.0068 247.9);
   --muted-foreground: oklch(0.4513 0.08272 268.2);
   --primary: oklch(0.19922 0.12072 268.2);
@@ -471,6 +481,8 @@
   --card-soft-foreground: oklch(0.30579 0.03693 215.45);
   --dialog: var(--background);
   --dialog-foreground: var(--foreground);
+  --panel: var(--card);
+  --panel-foreground: var(--card-foreground);
   --muted: oklch(0.97 0.0013 106.42);
   --muted-foreground: oklch(0.5337 0.02481 215.45);
   --primary: oklch(0.30579 0.03693 215.45);
@@ -528,6 +540,8 @@
   --card-soft-foreground: oklch(0.36735 0.09417 249.17);
   --dialog: var(--background);
   --dialog-foreground: var(--foreground);
+  --panel: var(--card);
+  --panel-foreground: var(--card-foreground);
   --muted: oklch(0.97 0.0013 106.42);
   --muted-foreground: oklch(0.543 0.06802 249.17);
   --primary: oklch(0.36735 0.09417 249.17);
@@ -585,6 +599,8 @@
   --card-soft-foreground: oklch(0.28898 0.051828 217.7);
   --dialog: var(--background);
   --dialog-foreground: var(--foreground);
+  --panel: var(--card);
+  --panel-foreground: var(--card-foreground);
   --muted: oklch(0.97 0.0013 106.42);
   --muted-foreground: oklch(0.5186 0.03509 217.7);
   --primary: oklch(0.28898 0.051828 217.7);
@@ -642,6 +658,8 @@
   --card-soft-foreground: oklch(0.2214543 0.0071419 164.2694873);
   --dialog: var(--background);
   --dialog-foreground: var(--foreground);
+  --panel: var(--card);
+  --panel-foreground: var(--card-foreground);
   --muted: oklch(0.97 0.0013 106.42);
   --muted-foreground: oklch(0.3946937 0.0154068 164.0769747);
   --primary: oklch(0.3671893 0.072708 169.9789644);
@@ -766,6 +784,8 @@
   --popover-foreground: oklch(0.985 0 0);
   --dialog: var(--popover);
   --dialog-foreground: var(--popover-foreground);
+  --panel: var(--background);
+  --panel-foreground: var(--foreground);
   --muted: oklch(0.269 0 0);
   --muted-foreground: oklch(0.708 0 0);
   --accent: oklch(0.269 0 0);
@@ -938,6 +958,8 @@
   --popover-foreground: oklch(0.9604175 0.0214022 46.9889);
   --dialog: var(--popover);
   --dialog-foreground: var(--popover-foreground);
+  --panel: var(--background);
+  --panel-foreground: var(--foreground);
   --muted: oklch(0.3217071 0.0048738 155.376124);
   --muted-foreground: oklch(0.8280204 0.0042636 121.5755);
   --accent: oklch(0.3217071 0.0048738 155.376124);
@@ -1074,6 +1096,8 @@
   --popover-foreground: oklch(0.9822955 0.0142785 213.0969);
   --dialog: var(--popover);
   --dialog-foreground: var(--popover-foreground);
+  --panel: var(--background);
+  --panel-foreground: var(--foreground);
   --muted: oklch(0.3234574 0.004304 168.664764);
   --muted-foreground: oklch(0.8280204 0.0042636 121.5755);
   --accent: oklch(0.3234574 0.004304 168.664764);
@@ -1210,6 +1234,8 @@
   --popover-foreground: oklch(0.9790218 0.0292767 188.8731);
   --dialog: var(--popover);
   --dialog-foreground: var(--popover-foreground);
+  --panel: var(--background);
+  --panel-foreground: var(--foreground);
   --muted: oklch(0.3231955 0.0055038 166.72686);
   --muted-foreground: oklch(0.8280204 0.0042636 121.5755);
   --accent: oklch(0.3231955 0.0055038 166.72686);
@@ -1346,6 +1372,8 @@
   --popover-foreground: oklch(0.9592915 0.0326656 74.8018);
   --dialog: var(--popover);
   --dialog-foreground: var(--popover-foreground);
+  --panel: var(--background);
+  --panel-foreground: var(--foreground);
   --muted: oklch(0.3267693 0.0382191 282.23176);
   --muted-foreground: oklch(0.8280204 0.0042636 121.5755);
   --accent: oklch(0.3267693 0.0382191 282.23176);
@@ -1482,6 +1510,8 @@
   --popover-foreground: oklch(0.9822955 0.0142785 213.0969);
   --dialog: var(--popover);
   --dialog-foreground: var(--popover-foreground);
+  --panel: var(--background);
+  --panel-foreground: var(--foreground);
   --muted: oklch(0.3234574 0.004304 168.664764);
   --muted-foreground: oklch(0.8280204 0.0042636 121.5755);
   --accent: oklch(0.3234574 0.004304 168.664764);
@@ -1618,6 +1648,8 @@
   --popover-foreground: oklch(0.9801435 0.0172884 210.1893);
   --dialog: var(--popover);
   --dialog-foreground: var(--popover-foreground);
+  --panel: var(--background);
+  --panel-foreground: var(--foreground);
   --muted: oklch(0.2854407 0.0566847 244.676512);
   --muted-foreground: oklch(0.8280204 0.0042636 121.5755);
   --accent: oklch(0.2854407 0.0566847 244.676512);
@@ -1754,6 +1786,8 @@
   --popover-foreground: oklch(0.9817745 0.0118616 223.5201);
   --dialog: var(--popover);
   --dialog-foreground: var(--popover-foreground);
+  --panel: var(--background);
+  --panel-foreground: var(--foreground);
   --muted: oklch(0.3247122 0.0022984 199.184996);
   --muted-foreground: oklch(0.8280204 0.0042636 121.5755);
   --accent: oklch(0.3247122 0.0022984 199.184996);
@@ -1890,6 +1924,8 @@
   --popover-foreground: oklch(0.9126739 0.0051473 145.5332168);
   --dialog: var(--popover);
   --dialog-foreground: var(--popover-foreground);
+  --panel: var(--background);
+  --panel-foreground: var(--foreground);
   --muted: oklch(0.2925367 0.0068686 162.8437401);
   --muted-foreground: oklch(0.8280204 0.0042636 121.5755);
   --accent: oklch(0.2925367 0.0068686 162.8437401);

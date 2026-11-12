@@ -9,6 +9,14 @@
   Root carries data-active, data-near and data-pinned, which change on enter and leave, and the
   dim rules read them, each target led by a tag or attribute few parts carry, which Chromium keys
   its restyle on. A pointer move writes the followers' own attributes.
+
+  Cut-outs, the rings, seams, halos, chips and faces that part overlapping marks, paint
+  var(--surface, var(--background)). --surface is the colour of the fill an element sits on, which
+  every container that paints a container role states beside its fill, or the page where none
+  does. Text on a chip or halo of the surface reads the muted text paired with it,
+  var(--surface-muted-foreground, var(--muted-foreground)), which each host states beside
+  --surface. Inverse text that paints var(--background) on a foreground pill is no cut-out and
+  keeps the page colour.
 */
 
 /*
@@ -731,11 +739,11 @@
   }
 
   [data-slot="chart-bar-detail"][data-part="top"] {
-    fill: color-mix(in oklab, var(--_paint) 55%, var(--background));
+    fill: color-mix(in oklab, var(--_paint) 55%, var(--surface, var(--background)));
   }
 
   [data-slot="chart-bar-detail"][data-part="side"] {
-    fill: color-mix(in oklab, var(--_paint) 38%, var(--background));
+    fill: color-mix(in oklab, var(--_paint) 38%, var(--surface, var(--background)));
   }
 
   /* The background pattern sits behind every mark, wherever it sits among Root's children. */
@@ -978,7 +986,7 @@
 
   [data-slot="pie-chart-sector"] {
     fill: var(--_paint);
-    stroke: var(--background);
+    stroke: var(--surface, var(--background));
     stroke-width: var(--chart-slice-seam);
     stroke-linejoin: round;
     opacity: calc(1 - (1 - var(--chart-hover-dim)) * max(var(--_dim-active, 0), var(--_dim-series, 0)));
@@ -992,7 +1000,7 @@
   }
 
   [data-slot="pie-chart-ghost"] {
-    stroke: var(--background);
+    stroke: var(--surface, var(--background));
     stroke-width: var(--chart-slice-seam);
   }
 
@@ -1345,7 +1353,7 @@
   }
 
   [data-slot="radar-chart-dot"][data-part="halo"] {
-    stroke: var(--background);
+    stroke: var(--surface, var(--background));
     stroke-width: 10px;
   }
 
@@ -1359,7 +1367,7 @@
   }
 
   [data-slot="radar-chart-dots"][data-variant="ring"] [data-slot="radar-chart-dot"][data-part="dots"] {
-    stroke: var(--_ring-hole, var(--background));
+    stroke: var(--_ring-hole, var(--surface, var(--background)));
   }
 
   /*
@@ -1625,7 +1633,7 @@
   }
 
   [data-slot="clock-chart-dot"][data-part="halo"] {
-    stroke: var(--background);
+    stroke: var(--surface, var(--background));
     stroke-width: 10px;
   }
 
@@ -1647,7 +1655,7 @@
   }
 
   [data-variant="ring"] > g [data-slot="clock-chart-dot"][data-part="dots"] {
-    stroke: var(--_ring-hole, var(--background));
+    stroke: var(--_ring-hole, var(--surface, var(--background)));
   }
 
   [data-variant="halo"] > g [data-slot="clock-chart-dot"][data-part="halo"] {
@@ -1740,13 +1748,22 @@
     fill: color-mix(in oklab, var(--foreground) 8%, transparent);
   }
 
+  /*
+    The default and muted tones are the muted text of the surface: --surface-muted-foreground, which
+    every host that states --surface states beside it, or the page's --muted-foreground. On a warning
+    or info Alert's soft fill that is the soft foreground, so a label on its chip keeps 4.5:1.
+  */
   [data-slot^="clock-chart-reference"],
   [data-slot="clock-chart-now"] {
-    --chart-tone: var(--muted-foreground);
+    --chart-tone: var(--surface-muted-foreground, var(--muted-foreground));
   }
 
   :is([data-slot^="clock-chart-reference"], [data-slot="clock-chart-now"])[data-tone="muted"] {
-    --chart-tone: color-mix(in oklab, var(--muted-foreground) 60%, transparent);
+    --chart-tone: color-mix(
+      in oklab,
+      var(--surface-muted-foreground, var(--muted-foreground)) 60%,
+      transparent
+    );
   }
 
   :is([data-slot^="clock-chart-reference"], [data-slot="clock-chart-now"])[data-tone="error"] {
@@ -1850,27 +1867,35 @@
 
   /*
     A ring value sits on its chip of the surface, so it reads over the marks it crosses, as an axis
-    label reads beside them.
+    label reads beside them, in the surface's muted text.
   */
   :is([data-slot="clock-chart-radius-label"], [data-slot="radar-chart-radius-label"]) {
     padding: 0 0.125rem;
     border-radius: 0.25rem;
-    background: var(--background);
-    color: var(--muted-foreground);
+    background: var(--surface, var(--background));
+    color: var(--surface-muted-foreground, var(--muted-foreground));
     font-variant-numeric: tabular-nums;
   }
 
   [data-slot="clock-chart-now"] > [data-part="label"] {
     padding: 0 0.25rem;
     border-radius: 0.25rem;
-    background: var(--background);
+    background: var(--surface, var(--background));
     color: var(--chart-tone);
+  }
+
+  /*
+    A muted Now label keeps the full muted text of the surface, as a muted reference label does:
+    only the hand takes the muted tone's reduced alpha, which no chip text holds to 4.5:1.
+  */
+  [data-slot="clock-chart-now"][data-tone="muted"] > [data-part="label"] {
+    color: var(--surface-muted-foreground, var(--muted-foreground));
   }
 
   [data-slot="clock-chart-value-label"] {
     padding: 0 0.25rem;
     border-radius: 0.25rem;
-    background: var(--background);
+    background: var(--surface, var(--background));
     color: var(--foreground);
     font-variant-numeric: tabular-nums;
   }
@@ -2833,7 +2858,7 @@
   [data-slot="chart-swatch"][data-variant="circle-outline"] {
     border: 2px solid transparent;
     background:
-      linear-gradient(var(--background), var(--background)) padding-box,
+      linear-gradient(var(--surface, var(--background)), var(--surface, var(--background))) padding-box,
       var(--chart-swatch-paint) border-box;
   }
 
@@ -3111,13 +3136,18 @@
   }
 
   /* References draw aria-hidden lines and bands, and speak one visually hidden sentence. */
+  /* The default and muted tones are the surface's muted text, as on the clock's references. */
   [data-slot="chart-reference-line"],
   [data-slot="chart-reference-area"] {
-    --chart-tone: var(--muted-foreground);
+    --chart-tone: var(--surface-muted-foreground, var(--muted-foreground));
   }
 
   [data-slot^="chart-reference"][data-tone="muted"] {
-    --chart-tone: color-mix(in oklab, var(--muted-foreground) 60%, transparent);
+    --chart-tone: color-mix(
+      in oklab,
+      var(--surface-muted-foreground, var(--muted-foreground)) 60%,
+      transparent
+    );
   }
 
   [data-slot^="chart-reference"][data-tone="error"] {
@@ -3139,7 +3169,7 @@
   }
 
   /*
-    A label paints above the marks with a halo in the background colour, so a bar under a value
+    A label paints above the marks with a halo in the surface colour, so a bar under a value
     label leaves it readable. A muted label keeps the full muted text colour, because only the
     line and the band take the muted tone's reduced alpha.
   */
@@ -3152,13 +3182,13 @@
     color: var(--chart-tone);
     white-space: nowrap;
     text-shadow:
-      0 0 2px var(--background),
-      0 0 2px var(--background),
-      0 0 3px var(--background);
+      0 0 2px var(--surface, var(--background)),
+      0 0 2px var(--surface, var(--background)),
+      0 0 3px var(--surface, var(--background));
   }
 
   [data-slot^="chart-reference"][data-tone="muted"] > [data-slot="chart-reference-label"] {
-    color: var(--muted-foreground);
+    color: var(--surface-muted-foreground, var(--muted-foreground));
   }
 
   [data-slot="chart-reference-area"][data-clipped]:not([data-axis="slot"])
@@ -3393,7 +3423,7 @@
   */
   [data-slot="chart-dot"] {
     fill: var(--chart-series-paint);
-    stroke: var(--background);
+    stroke: var(--surface, var(--background));
     stroke-width: 2px;
     paint-order: stroke;
     print-color-adjust: exact;
@@ -3406,7 +3436,7 @@
       [data-slot="chart-active-dot"]
     )[data-variant="ring"]
     [data-slot="chart-dot"] {
-    fill: var(--_ring-hole, var(--background));
+    fill: var(--_ring-hole, var(--surface, var(--background)));
     stroke: var(--chart-series-paint);
   }
 

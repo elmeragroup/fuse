@@ -11,7 +11,9 @@ import "../../../dist/themes.css";
 import { nextFrames, recordFrames } from "../../../test/animation-frames";
 import { S06Chart } from "../../../test/chart/bar-charts";
 import { bars as drawnBars, label, pointerAt, popup, surfaceBox } from "../../../test/chart/marks";
-import { renderThemed } from "../../../test/themed-browser-render";
+import { renderIn, restoreDocumentThemeAroundEach, srgb, surfaceAt } from "../../../test/surface-paint";
+import { fkasBranded } from "../../../test/theme-fixtures";
+import { cssVarColor, renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
 import { Chart } from "./chart-namespace";
 import type { ChartConfig } from "./chart-types";
@@ -358,5 +360,39 @@ describe("a shut tooltip lets go of its point", () => {
     // The fade keeps the point it showed; the shut popup holds none.
     expect(changed).toEqual([]);
     await expect.poll(probe).toBe("none");
+  });
+});
+
+// Unit under test: the `--surface` the frosted popup states. Oracle: #553's rule that a translucent
+// fill keeps the surface beneath it, here the surface of the element the popup portals into.
+// Branded light paints its page in a tint and its popover white, so the two read apart.
+describe("the frosted tooltip", () => {
+  restoreDocumentThemeAroundEach();
+
+  it("keeps the surface beneath its translucent fill", async () => {
+    renderIn(
+      fkasBranded,
+      "light",
+      <div style={{ width: 400 }}>
+        <Chart.Root
+          data={[
+            { name: "a", v: 1 },
+            { name: "b", v: 2 },
+          ]}
+          config={{ v: { label: "V", color: "chart-1" } }}
+          xKey="name"
+          defaultActiveX="b"
+          aria-label="Frosted">
+          <Chart.Bar dataKey="v" />
+          <Chart.Tooltip variant="frosted" />
+        </Chart.Root>
+      </div>
+    );
+    await settle();
+    const open = openPopup();
+    const beneath = open.parentElement;
+    if (beneath === null) throw new Error("expected the popup's portal container");
+    expect(srgb(surfaceAt(beneath))).not.toEqual(srgb(cssVarColor(open, "--popover")));
+    expect(srgb(surfaceAt(open))).toEqual(srgb(surfaceAt(beneath)));
   });
 });

@@ -16,9 +16,9 @@ type CheckboxItemBaseProps = SelectionItemRootProps & {
    * Forwards `disabled` to the inner Checkbox, which dims to 50%, and shows the disabled row: the
    * theme's `--selection-disabled-background` fill and `--selection-disabled-hatch` stripes
    * (neutral themes stripe a muted fill, branded themes keep the card fill without stripes)
-   * and the `not-allowed` cursor. The title and other label row text take
-   * `--selection-disabled-foreground`, the muted foreground in branded themes; a SubSection
-   * keeps its colours. A disabled group shows its rows the same way.
+   * and the `not-allowed` cursor. The row's text, its SubSection's included, takes
+   * `--selection-disabled-foreground`, the muted foreground in branded themes; a text colour
+   * class on the row still wins. A disabled group shows its rows the same way.
    */
   isDisabled?: boolean;
   /** Forwards `readOnly` to the inner Checkbox. */
@@ -32,6 +32,9 @@ type CheckboxItemBaseProps = SelectionItemRootProps & {
    * Extra classes, merged onto the shell via `cn`. A `px-*` utility sets the card's side
    * inset, and a click in that inset beside the label row toggles the control. The row
    * paints the card fill (`bg-card`); a background class such as `bg-background` replaces it.
+   * The row states its fill as `--surface`, the colour a chart's cut-outs paint, so a row that
+   * paints another opaque fill restates `--surface` and `--surface-muted-foreground` beside it, such
+   * as `className="bg-background [--surface:var(--background)] [--surface-muted-foreground:var(--muted-foreground)]"`.
    * The checked row's `bg-muted` tint and the disabled row's `--selection-disabled-background`
    * fill win over such a class; set `--selection-disabled-background`, for example to
    * `var(--background)`, to change the disabled fill.

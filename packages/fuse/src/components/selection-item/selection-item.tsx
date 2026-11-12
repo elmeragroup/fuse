@@ -65,6 +65,21 @@ const firstLineClass = cn(
   "[--selection-first-line:var(--label-leading)] has-[>label_[data-slot=selection-item-title]]:[--selection-first-line:calc(var(--label-text)*var(--leading-snug))]"
 );
 
+// The row's fill, its text and its surface travel together, each fill stated as `--surface` and
+// `--surface-muted-foreground` beside it: `card-foreground` on the resting `card`, `foreground` on
+// the checked `muted`, and on the disabled fill (`disabledShellClass`)
+// `--selection-disabled-foreground`, the foreground on neutral `muted` and the muted foreground on
+// branded `card`. The disabled hatch is an image over that fill, so a chart's cut-outs take the
+// fill beneath it. The text arms set only `--item-foreground`, which the outline Item's one plain
+// text utility reads, so a `text-*` in `className` replaces that utility in every state, and the
+// label row and SubSection inherit it. Every shell states its own resting value, so a row nested
+// in a SubSection does not inherit its parent's state. A description keeps its own muted text, and
+// the control keeps its 50% face.
+const shellFillClass = cn(
+  "bg-card [--item-foreground:--theme(--color-card-foreground)] [--surface-muted-foreground:--theme(--color-muted-foreground)] [--surface:--theme(--color-card)]",
+  "has-[>label>[data-slot=selection-item-control]_[data-checked]]:bg-muted has-[>label>[data-slot=selection-item-control]_[data-checked]]:[--item-foreground:--theme(--color-foreground)] has-[>label>[data-slot=selection-item-control]_[data-checked]]:[--surface-muted-foreground:--theme(--color-muted-foreground)] has-[>label>[data-slot=selection-item-control]_[data-checked]]:[--surface:--theme(--color-muted)]"
+);
+
 // The disabled row, by the `selection-row-disabled` variants of fuse.css, which also give the label
 // and the selectable band their `not-allowed` cursor. A disabled row fills with the disabled
 // background role, checked or not, and that fill also wins over a background class in
@@ -72,17 +87,10 @@ const firstLineClass = cn(
 // alpha in neutral themes, transparent in branded ones.
 const disabledShellClass = cn(
   "selection-row-disabled:cursor-not-allowed",
-  "selection-row-disabled:bg-selection-disabled-background",
-  "selection-row-disabled:bg-[repeating-linear-gradient(45deg,transparent,transparent_8px,--theme(--color-selection-disabled-hatch)_8px,--theme(--color-selection-disabled-hatch)_16px)]"
+  "selection-row-disabled:bg-selection-disabled-background selection-row-disabled:[--surface-muted-foreground:--theme(--color-muted-foreground)] selection-row-disabled:[--surface:--theme(--color-selection-disabled-background)]",
+  "selection-row-disabled:bg-[repeating-linear-gradient(45deg,transparent,transparent_8px,--theme(--color-selection-disabled-hatch)_8px,--theme(--color-selection-disabled-hatch)_16px)]",
+  "selection-row-disabled:[--item-foreground:--theme(--color-selection-disabled-foreground)]"
 );
-
-// A disabled row's label row text takes `--selection-disabled-foreground`: the foreground in
-// neutral themes, which keeps the title's colour, and the muted foreground in branded ones.
-// It goes on the label row cluster, which also holds a plain-text row, rather than on the
-// title, and the variant's `> label > &` arm keeps a row nested in a SubSection from inheriting it.
-// The SubSection band is a sibling of the label, so its content keeps its colours, a
-// description keeps its own muted text, and the control keeps its 50% face.
-const disabledLabelTextClass = cn("selection-row-disabled-part:text-selection-disabled-foreground");
 
 /**
  * The click router of a row whose SubSection is selectable: a click in the row's own band
@@ -243,10 +251,10 @@ type SelectionItemShellProps = Omit<ComponentProps<typeof FieldItem>, "className
    * Shows the disabled row: the `not-allowed` cursor and the theme's
    * `--selection-disabled-background` fill under a 45° hatch striped in
    * `--selection-disabled-hatch`. Neutral themes fill with `--muted` and black stripes at 2%
-   * alpha; branded themes keep the card fill with no stripes. The label row's text takes
-   * `--selection-disabled-foreground`: the foreground in neutral themes, the muted foreground in
-   * branded ones. A description keeps its own muted text, a SubSection keeps its colours, and
-   * the control dims itself. A row whose group is disabled, or whose control in the control
+   * alpha; branded themes keep the card fill with no stripes. The row's text, its SubSection's
+   * included, takes `--selection-disabled-foreground`: the foreground in neutral themes, the muted
+   * foreground in branded ones. A text colour class in `className` still wins, a description
+   * keeps its own muted text, and the control dims itself. A row whose group is disabled, or whose control in the control
    * slot carries `data-disabled`, matches `:disabled` or is `aria-disabled="true"`, shows the
    * same look without it. Does not disable the control — the control or group owns that.
    */
@@ -255,10 +263,13 @@ type SelectionItemShellProps = Omit<ComponentProps<typeof FieldItem>, "className
    * Extra classes, merged last through `cn`. A `px-*` utility sets the card's side inset,
    * and a click in that inset beside the label row toggles the control. The row paints the
    * card fill (`bg-card`) like the other field boxes; a list on a surface that should show
-   * through takes a background class such as `bg-background`, which replaces it. The checked
-   * row's `bg-muted` tint and the disabled row's `--selection-disabled-background` fill win over
-   * such a class; set `--selection-disabled-background`, for example to `var(--background)`,
-   * to change the disabled fill.
+   * through takes a background class such as `bg-background`, which replaces it.
+   * The row states its fill as `--surface`, the colour a chart's cut-outs paint, so a row that
+   * paints another opaque fill restates `--surface` and `--surface-muted-foreground` beside it, such
+   * as `className="bg-background [--surface:var(--background)] [--surface-muted-foreground:var(--muted-foreground)]"`.
+   * The checked row's `bg-muted` tint and the disabled row's `--selection-disabled-background`
+   * fill win over such a class; set `--selection-disabled-background`, for example to
+   * `var(--background)`, to change the disabled fill.
    */
   className?: string;
   /**
@@ -343,9 +354,9 @@ export type SelectionItemRootProps = Omit<
  * A disabled shell, through `isDisabled`, a disabled group or its own disabled control, fills
  * with the theme's `--selection-disabled-background` under a hatch of
  * `--selection-disabled-hatch`, which outweighs the checked fill and a background class and
- * leaves the checked border, joins and pull-up alone. The label row's text takes
- * `--selection-disabled-foreground`, the control dims itself at 50%, and a SubSection keeps
- * its colours.
+ * leaves the checked border, joins and pull-up alone. The row's text, its SubSection's included,
+ * takes `--selection-disabled-foreground`, and the control dims itself at 50%. A text colour class
+ * in `className` wins over the resting, checked and disabled text alike.
  *
  * It publishes `--inner-corner`, its corner less its border and padding, for parts that round with
  * `rounded-inner`.
@@ -382,9 +393,7 @@ export function SelectionItemShell({
     </ItemMedia>
   );
   const rowCluster = (
-    <div className={cn("flex min-w-0 items-start gap-2.5", rowCellClass, disabledLabelTextClass)}>
-      {rowChildren}
-    </div>
+    <div className={cn("flex min-w-0 items-start gap-2.5", rowCellClass)}>{rowChildren}</div>
   );
   const spacer = <span aria-hidden />;
   // Separate child positions give each source its own key space; one merged array
@@ -418,7 +427,8 @@ export function SelectionItemShell({
         selectionItemShellClass,
         labelTypeClass,
         firstLineClass,
-        "relative isolate box-border grid items-stretch gap-0 gap-x-2.5 border-selection-border bg-card py-0 transition-colors has-[>label>[data-slot=selection-item-control]_[data-checked]]:border-selection-checked-border has-[>label>[data-slot=selection-item-control]_[data-checked]]:bg-muted",
+        "relative isolate box-border grid items-stretch gap-0 gap-x-2.5 border-selection-border py-0 transition-colors has-[>label>[data-slot=selection-item-control]_[data-checked]]:border-selection-checked-border",
+        shellFillClass,
         controlAtEnd ? "grid-cols-[minmax(0,1fr)_auto]" : "grid-cols-[auto_minmax(0,1fr)]",
         connectedStack ? connectedStackClass : "rounded-lg",
         disabledShellClass,

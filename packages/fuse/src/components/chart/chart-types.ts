@@ -550,7 +550,10 @@ export type ChartStyleVars = {
   "--chart-hover-dim"?: number | string;
   /** A ring's stroke as a fraction of its band, which also sets the gap to the next ring. `0.7` by default. */
   "--chart-ring-fill"?: number | string;
-  /** The surface-coloured stroke between adjacent slices. `--chart-bar-seam` by default. */
+  /**
+   * The width of the stroke between adjacent slices, painted in `--surface`.
+   * `--chart-bar-seam` by default.
+   */
   "--chart-slice-seam"?: string;
   /**
    * How far the active slice moves out along its bisector, on the pointer, a key and touch alike.
@@ -558,6 +561,30 @@ export type ChartStyleVars = {
    * the pick reads the slices where they rest, so the pop never moves a target.
    */
   "--chart-slice-pop"?: string;
+  /**
+   * The colour of the opaque fill an element sits on. A chart's cut-outs read it, so they part
+   * overlapping marks in the colour around them: dot rings and halos, ring-dot holes, pie and ghost
+   * seams, isometric bar faces, reference-label halos, hollow legend swatches and the polar radius,
+   * Now and value chips. They fall back to the page, `--background`, where nothing sets it.
+   *
+   * Card, `Frame.Panel`, the cells of a framed Table, the default Alert, the bordered VerticalTable box, the outline Item, the card Accordion,
+   * Calendar, Dialog, AlertDialog, Sheet, Popover and the other anchored popups state their fill
+   * here, so a chart inside one needs nothing. Set it on an element of your own that paints another opaque fill around a
+   * chart, beside that fill and its muted text, `--surface-muted-foreground`, such as
+   * `className="bg-muted [--surface:var(--muted)] [--surface-muted-foreground:var(--muted-foreground)]"`
+   * or a `style` typed as {@link ChartStyle}. A translucent tint, such as a hovered row, keeps the
+   * surface beneath it, and an image or a gradient is no colour a cut-out can match.
+   */
+  "--surface"?: string;
+  /**
+   * The muted text paired with `--surface`, which every element that states `--surface` states
+   * beside it. The polar radius values, the Now label and the reference lines and labels in the
+   * default and muted tones read it, so they keep their contrast on the chip or halo they sit on.
+   * They fall back to `--muted-foreground`. The warning and info Alerts state their soft
+   * foreground here; every other host states `--muted-foreground`, so a host nested in a tinted
+   * one does not inherit the tint's text.
+   */
+  "--surface-muted-foreground"?: string;
   /** The active-dot ping animation. Reduced motion sets it to `none`. */
   "--animate-chart-ping"?: string;
   /** The flowing-line dash animation. Reduced motion sets it to `none`. */

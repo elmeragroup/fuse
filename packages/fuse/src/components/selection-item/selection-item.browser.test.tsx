@@ -11,6 +11,8 @@ import "../../../dist/styles.css";
 // Role tokens live in themes.css only; the fill test reads --card and --background.
 import "../../../dist/themes.css";
 import { checkboxNamed, RowTitle, settled, shellFrom } from "../../../test/selection-row";
+import { MUTED, describePartPaint } from "../../../test/surface-paint";
+import type { PartCase } from "../../../test/surface-paint";
 import {
   cssVarColor,
   fkasBranded,
@@ -687,3 +689,77 @@ describe("SelectionItem role tokens", () => {
     });
   });
 });
+
+// The fill a selection row paints in each state, the text that travels with it, in its title and
+// its SubSection, and the surface it states (see `surface-paint.tsx`).
+function PlanRow(props: { className?: string; isDisabled?: boolean }): ReactElement {
+  return (
+    <CheckboxItem value="fixed" {...props}>
+      <RowTitle>Fixed plan</RowTitle>
+      <CheckboxItem.SubSection>Locked for twelve months.</CheckboxItem.SubSection>
+    </CheckboxItem>
+  );
+}
+
+/** A selection row's states, each with the fill it paints and the role its text pairs with. */
+const SELECTION_STATES: ReadonlyArray<{
+  readonly label: string;
+  readonly checked: boolean;
+  readonly isDisabled: boolean;
+  readonly role: PartCase["role"];
+  readonly fill: PartCase["fill"];
+}> = [
+  {
+    label: "an unchecked CheckboxItem",
+    checked: false,
+    isDisabled: false,
+    role: "--card-foreground",
+    fill: [{ role: "--card" }],
+  },
+  { label: "a checked CheckboxItem", checked: true, isDisabled: false, role: "--foreground", fill: MUTED },
+  {
+    label: "a disabled CheckboxItem",
+    checked: false,
+    isDisabled: true,
+    role: "--selection-disabled-foreground",
+    fill: [{ role: "--selection-disabled-background" }],
+  },
+  {
+    label: "a disabled checked CheckboxItem",
+    checked: true,
+    isDisabled: true,
+    role: "--selection-disabled-foreground",
+    fill: [{ role: "--selection-disabled-background" }],
+  },
+];
+
+const SELECTION_PARTS: readonly PartCase[] = [
+  ...SELECTION_STATES.flatMap(({ label, checked, isDisabled, role, fill }): PartCase[] =>
+    (["Fixed plan", "Locked for twelve months."] as const).map((name) => ({
+      label: `${label}, in its ${name === "Fixed plan" ? "title" : "SubSection"}`,
+      node: (className) => (
+        <CheckboxGroup label="Plans" defaultValue={checked ? ["fixed"] : []}>
+          <PlanRow className={className} isDisabled={isDisabled} />
+        </CheckboxGroup>
+      ),
+      text: () => textNamed(name),
+      role,
+      fill,
+    }))
+  ),
+  {
+    label: "a checked RadioItem",
+    node: (className) => (
+      <RadioItemGroup label="Plans" defaultValue="fixed">
+        <RadioItem value="fixed" className={className}>
+          <RowTitle>Fixed plan</RowTitle>
+        </RadioItem>
+      </RadioItemGroup>
+    ),
+    text: () => textNamed("Fixed plan"),
+    role: "--foreground",
+    fill: MUTED,
+  },
+];
+
+describePartPaint(SELECTION_PARTS);

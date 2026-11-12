@@ -1,3 +1,5 @@
+import type { ReactElement } from "react";
+
 import { describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
@@ -9,6 +11,8 @@ import * as Wcag from "@elmeragroup/color/wcag";
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import { HOSTS, centreY, hostCss } from "../../../test/first-line";
+import { MUTED, PANEL, describePartPaint } from "../../../test/surface-paint";
+import type { PartCase } from "../../../test/surface-paint";
 import {
   headingNamed,
   px,
@@ -349,3 +353,68 @@ describe("Alert", () => {
     expect(h2.getAttribute("data-slot")).toBe("item-title");
   });
 });
+
+// The fill the default Alert, its icon and its action paint, at rest and on hover, the text that
+// travels with it and the surface it states (see `surface-paint.tsx`).
+/** The default Alert with its action, whose button paints on the Alert's panel. */
+function ActionAlert(): ReactElement {
+  return (
+    <Alert.Root actionLabel="Retry" onAction={() => undefined}>
+      <Alert.Title>Usage is up</Alert.Title>
+    </Alert.Root>
+  );
+}
+
+/** The consumer's Alert.Icon, the last icon in the Alert: Alert.Root's own icon comes first. */
+function consumerAlertIcon(): Element {
+  // DOM audit: Alert.Icon is aria-hidden, so its slot is the only locator.
+  const icon = [...page.getByRole("alert").element().querySelectorAll('[data-slot="alert-icon"]')].at(-1);
+  if (icon === undefined) throw new Error("expected an Alert.Icon");
+  return icon;
+}
+
+const ALERT_PARTS: readonly PartCase[] = [
+  {
+    label: "the default Alert",
+    node: (className) => (
+      <Alert.Root className={className}>
+        <Alert.Title>Usage is up</Alert.Title>
+      </Alert.Root>
+    ),
+    text: () => textNamed("Usage is up"),
+    role: "--panel-foreground",
+    fill: PANEL,
+  },
+  {
+    // Alert.Root draws its own icon; a consumer's Alert.Icon takes the same recipe and a className.
+    label: "an Alert.Icon in the default Alert",
+    node: (className) => (
+      <Alert.Root>
+        <Alert.Title>Usage is up</Alert.Title>
+        <Alert.Icon variant="default" className={className} />
+      </Alert.Root>
+    ),
+    text: consumerAlertIcon,
+    role: "--panel-foreground",
+    fill: PANEL,
+  },
+  {
+    label: "the default Alert's action button",
+    node: () => <ActionAlert />,
+    text: () => roleNamed("button", "Retry"),
+    role: "--panel-foreground",
+    fill: PANEL,
+    takesClassName: false,
+  },
+  {
+    label: "the default Alert's hovered action button",
+    node: () => <ActionAlert />,
+    text: () => roleNamed("button", "Retry"),
+    role: "--foreground",
+    fill: MUTED,
+    hover: () => roleNamed("button", "Retry"),
+    takesClassName: false,
+  },
+];
+
+describePartPaint(ALERT_PARTS);

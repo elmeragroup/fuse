@@ -35,6 +35,11 @@ export const LAYER_DEFAULTS = {
   // inside keep the separation they have on the page. Dark keeps the popover pair.
   dialog: "var(--popover)",
   "dialog-foreground": "var(--popover-foreground)",
+  // The fill and text of the content panels a chart rests on: Frame panels, framed Table cells
+  // the bordered VerticalTable box, the default Alert and the outline Item. Light panels are the card, white in every theme, so a panel and a
+  // Card beside it match and chart cut-outs read as the same white. Dark keeps the page.
+  panel: "var(--card)",
+  "panel-foreground": "var(--card-foreground)",
   muted: "oklch(0.97 0.0013 106.42)",
   // The lightest grey, at three decimals, that measures at least 4.55:1 on `muted` and `card-soft`,
   // the darkest resting surfaces muted copy lands on (a highlighted `accent` row recolours its

@@ -211,6 +211,57 @@ Root never reads its children, so a reference outside the data reaches the axis 
   <ChartBackgroundPatterns />
 </Demo>
 
+## Surface
+
+<Prose>
+
+`--surface` is the colour of the opaque fill an element sits on. Every Fuse container that paints a container role states its fill there, and a chart reads it for its cut-outs, the shapes that part overlapping marks: dot rings and halos, ring-dot holes, pie and ghost seams, isometric bar faces, reference-label halos, hollow legend swatches, and the polar radius, Now and value chips. Where nothing sets `--surface`, they paint the page colour, `--background`. A chart inside one of these hosts needs nothing more:
+
+| Host                                   | Fill                                                  |
+| -------------------------------------- | ----------------------------------------------------- |
+| Card                                   | `card`                                                |
+| The muted CheckboxCard                 | `muted`                                               |
+| `Frame.Panel`                          | `panel`: `card` in light themes, `background` in dark |
+| The default Alert                      | `panel`                                               |
+| The cells of a framed Table            | `panel`                                               |
+| The bordered `VerticalTable` box       | `panel`                                               |
+| The outline Item                       | `panel`                                               |
+| An unchecked CheckboxItem or RadioItem | `card`                                                |
+| A checked CheckboxItem or RadioItem    | `muted`                                               |
+| A disabled CheckboxItem or RadioItem   | `selection-disabled-background`                       |
+| A hovered outline link Item            | `muted`                                               |
+| The warning and info Alerts            | `warning-soft`, `info-soft`                           |
+| The card Accordion item and its panel  | `card`                                                |
+| Calendar                               | `card`                                                |
+| Dialog, AlertDialog, Sheet             | `dialog`                                              |
+| Popover and the other anchored popups  | `popover`                                             |
+| The page                               | `background`, the fallback                            |
+
+In light themes the `card` and `panel` hosts are white, so a chart in one rests on white even where the page is tinted.
+
+Beside `--surface`, each host states `--surface-muted-foreground`, the muted text paired with its fill. The polar radius values, the Now label, and the reference lines and labels in the default and muted tones read it, so they keep 4.5:1 on the chip or halo they sit on. The warning and info Alerts state their soft foreground there, and every other host states `--muted-foreground`, so a Card in a warning Alert does not inherit the Alert's text.
+
+When you put a chart on another opaque fill, set both on that element beside the fill. `ChartStyle` types them for a `style`:
+
+```tsx
+import type { ChartStyle } from "@elmeragroup/fuse/chart";
+
+const muted: ChartStyle = {
+  background: "var(--muted)",
+  "--surface": "var(--muted)",
+  "--surface-muted-foreground": "var(--muted-foreground)",
+};
+
+<div className="bg-muted [--surface:var(--muted)] [--surface-muted-foreground:var(--muted-foreground)]">
+  {chart}
+</div>;
+<div style={muted}>{chart}</div>;
+```
+
+A translucent tint, such as a hovered or selected row, the destructive and success Alerts or the frosted chart tooltip, keeps the surface beneath it, so the cut-outs show the colour under the tint. An image or a gradient is no colour a cut-out can match.
+
+</Prose>
+
 ## Table and empty state
 
 <Demo slug="chart" id="table" title="A year of hours" file="chart-table.tsx">
