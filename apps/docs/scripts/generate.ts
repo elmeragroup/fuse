@@ -60,14 +60,13 @@ import {
   docsApiInventory,
   inspectComponentDemos,
   inspectGlobalDocs,
-  readRscStatus,
 } from "./lib/docs-inspection.ts";
 import type { ComponentInspection, DocsApiComponent } from "./lib/docs-inspection.ts";
+import { identityComparedParts } from "./lib/element-type-comparisons.ts";
 import { ProblemLog } from "./lib/errors.ts";
 import { functionReferences } from "./lib/function-reference.ts";
 import { openFuseProgram } from "./lib/fuse-program.ts";
 import type { FuseProgram } from "./lib/fuse-program.ts";
-import { identityComparedParts } from "./lib/identity-parts.ts";
 import { renderLandingFacts } from "./lib/landing-facts.ts";
 import { LIVE_CODE_IDENTITY_PARTS } from "./lib/live-code-schemas.ts";
 import { renderLlmsTxt } from "./lib/llms.ts";
@@ -83,6 +82,7 @@ import {
   repoRelative,
   fuseSrc,
 } from "./lib/paths.ts";
+import { readRscStatus } from "./lib/rsc-status.ts";
 import { renderSearchIndex } from "./lib/search.ts";
 import { collectRecipeSources } from "./lib/sources.ts";
 import { renderFigmaThemeCatalog } from "./lib/theme-catalog-figma.ts";
@@ -162,7 +162,6 @@ function buildComponent(
     // whether or not the artifact has a part declared there; the markdown endpoint
     // publishes it.
     rsc: readRscStatus(readFileSync(paths.sourceFile, "utf8")),
-    headings: page.headings,
     sections: page.sections,
     usage: page.usage,
     demos,
@@ -300,18 +299,20 @@ const CHART_ENTRY = "@elmeragroup/fuse/chart";
  * and the depth-3 demos after a heading nest under it. Deeper headings stay out.
  */
 function tocSections(sections: readonly PageSection[]): readonly TocItem[] {
-  const items: { id: string; title: string; children: TocItem[] }[] = [];
+  const items: { entry: TocItem; children: TocItem[] }[] = [];
   for (const section of sections) {
+    const entry: TocItem =
+      section.kind === "demo"
+        ? { id: section.id, title: section.title, demo: true }
+        : { id: section.id, title: section.title };
     if (section.depth === 2) {
-      items.push({ id: section.id, title: section.title, children: [] });
+      items.push({ entry, children: [] });
     } else if (section.kind === "demo") {
       // The page reader rejects an example before the page's first depth-2 heading.
-      items.at(-1)?.children.push({ id: section.id, title: section.title });
+      items.at(-1)?.children.push(entry);
     }
   }
-  return items.map(({ id, title, children }) =>
-    children.length === 0 ? { id, title } : { id, title, children }
-  );
+  return items.map(({ entry, children }) => (children.length === 0 ? entry : { ...entry, children }));
 }
 
 /** The client's outline of a component: its identity and its TOC skeleton. */
@@ -321,7 +322,6 @@ function toOutline(component: DocsComponent): ComponentOutline {
     title: component.title,
     markdownUrl: component.markdownUrl,
     sections: tocSections(component.sections),
-    demos: component.demos.map((demo) => ({ id: demo.id, title: demo.title })),
     // A page that repeats another page whole renders one sentence and no part anchors.
     partNames: component.alias === undefined ? component.parts.map((part) => part.name) : [],
     hasTokens: component.tokens.length > 0,
@@ -512,7 +512,6 @@ async function emitStudio(
   }
 }
 
-/** The ⌘K palette index. */
 /**
  * The parts Fuse recognises by element identity, which the Live code loader leaves unwrapped. JSON,
  * so the loader reads it without compiling anything.
@@ -521,6 +520,7 @@ function emitLiveCodeIdentityParts(parts: readonly string[]): void {
   writeFile(path.join(generatedDir, LIVE_CODE_IDENTITY_PARTS), `${JSON.stringify(parts, null, 2)}\n`);
 }
 
+/** The ⌘K palette index. */
 function emitSearchIndex(components: readonly DocsComponent[]): void {
   writeFile(path.join(generatedDir, "search-index.ts"), `${BANNER}${renderSearchIndex(components)}`);
 }

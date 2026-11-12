@@ -119,7 +119,8 @@ export type WallClock = {
 
 const SECOND = 1_000;
 const MINUTE = 60_000;
-const DAY = 86_400_000;
+/** A day's length in ms, which a clock change can shorten or lengthen by an hour. */
+export const DAY = 86_400_000;
 
 /** The length of each sub-day interval in minutes. A range preset needs one of these. */
 const RANGE_MINUTES = {
@@ -568,7 +569,7 @@ export function formatTime(
 }
 
 /** The length of each sub-day interval in milliseconds. */
-const SUB_DAY_MS = {
+export const SUB_DAY_MS = {
   second: 1_000,
   minute: RANGE_MINUTES.minute * MINUTE,
   "quarter-hour": RANGE_MINUTES["quarter-hour"] * MINUTE,

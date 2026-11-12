@@ -146,7 +146,13 @@ describe("site palette on the docs", () => {
     const dialog = palette(page);
     await page.keyboard.press("Meta+k");
     const thisPage = dialog.getByRole("group", { name: "This page", exact: true });
-    await expect.poll(() => thisPage.getByRole("option", { name: "API reference" }).count()).toBe(1);
+    // The section row's name is its title alone; a nested part row ends with its section as a hint.
+    await expect
+      .poll(() => thisPage.getByRole("option", { name: "API reference", exact: true }).count())
+      .toBe(1);
+    await expect
+      .poll(() => thisPage.getByRole("option", { name: /.\s*API reference$/u }).count())
+      .toBeGreaterThan(0);
     await expect.poll(() => thisPage.getByRole("option", { name: "Tokens consumed" }).count()).toBe(1);
 
     await page.keyboard.type("api reference");

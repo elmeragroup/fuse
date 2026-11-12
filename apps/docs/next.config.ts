@@ -3,6 +3,8 @@ import type { NextConfig } from "next";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { LIVE_CODE_DEMO_PATH } from "./src/lib/live-code/live-code-demo.ts";
+
 const docsDir = path.dirname(fileURLToPath(import.meta.url));
 const workspaceRoot = path.join(docsDir, "../..");
 
@@ -98,10 +100,14 @@ const nextConfig: NextConfig = {
        * For Live code, each component demo binds its Fuse parts through `lens()` and stamps their JSX
        * sites, so the Code view can edit their props (`scripts/live-code-loader.ts`). Handbook and
        * block demos are left alone. `next dev`, `next build` and `build:e2e` all compile through it.
+       *
+       * The key is a glob that matches every file, as `*` does, spelled so no other rule shares it:
+       * `@next/mdx` adds its own rule under `{*,next-mdx-rule}` the same way, and a shared key would
+       * replace one rule with the other. The `condition` narrows this one to component demos.
        */
       "{*,live-code-rule}": {
         loaders: [path.join(docsDir, "scripts/live-code-loader.ts")],
-        condition: { path: /(?:^|\/)src\/app\/\(docs\)\/components\/[^/]+\/demos\/[^/]+\.tsx$/ },
+        condition: { path: LIVE_CODE_DEMO_PATH },
       },
     },
   },

@@ -20,27 +20,35 @@ The page shape and the one-subject rule live in the Documentation section of `AG
    `.md` endpoint, so a rule about children goes on a declared `children` prop. Implementation
    rationale goes into a comment beside its owner, usually the recipe file. Then delete the
    prose. Done when every deleted fact is findable on the HTML page or in the source.
-3. **Rewrite the JSDoc you touched** with `writing-for-agents` and `unslop`. `unslop` refuses the
-   Skill tool for agents; read `~/.claude/skills/unslop/SKILL.md` and apply its rules by hand.
+3. **Rewrite the JSDoc you touched.** Open with what the prop does, in one plain sentence. State a
+   rule as an instruction to the consumer, with the value or markup it names in backticks. Give
+   each fact once, on the prop it concerns, and leave out how the component implements it. Cut
+   filler: no "simply", "just", "note that", or restating the type.
 4. **Declare real defaults** by destructuring, as in `variant = "default"`. The generator records a
    declared prop's default only from destructuring; it reads `@default` only for dependency
    props. A prop with no recorded default shows "unset" in Live code, which is correct when the
-   default is unknown.
+   default is unknown. Restating a recipe default this way is interim until the extractor records
+   recipe defaults (elmeragroup/internal#39).
 5. **Write the demos and the page**, then record the demo files in
    `apps/docs/test/fixtures/component-inventory.json` and run `pnpm --filter docs generate`.
 6. **Run the gates** listed under Checks. Done when all pass and the sweep shows no new hang.
 
 ## Page rules generation enforces
 
-- `<DefaultDemo>` comes once, untitled. It has no TOC entry and no markdown section.
-- Every `<Demo>` under `## Examples` carries `level={3}`. A level-3 demo outside Examples, a
-  level 4, or a second `<DefaultDemo>` fails generation.
+- A page with `<DefaultDemo>` is held to the whole shape: the default stage before `## Usage`,
+  `## Usage` then `## Examples` as the only headings, exactly one code block under Usage, only
+  `level={3}` demos and all of them under Examples, and no `<Prose>`. Anything else fails
+  generation, naming the rule.
+- `<DefaultDemo>` comes once, untitled. It has no TOC entry and no markdown section. It gets the
+  same file checks as a `<Demo>`: the file exists and starts with `"use client"`.
+- On any page, a level-3 demo before the first `##` heading, a level 4, or a second
+  `<DefaultDemo>` fails generation.
 - Demo ids are unique, URL-safe, and differ from heading ids. Every file in `demos/` must be
   rendered by a frame, and every frame's `file` must exist.
 - Put `{/* prettier-ignore */}` above the Usage fence. Without it oxfmt appends `;` to the JSX
   line.
-- The TOC comes from `scripts/lib/page-source.ts` reading `page.mdx` in order. A heading outside
-  the shape lands in the TOC too.
+- The TOC and the markdown endpoint come from `scripts/lib/page-source.ts` reading `page.mdx` in
+  order.
 
 ## Demos and Live code
 

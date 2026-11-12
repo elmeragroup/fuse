@@ -102,4 +102,22 @@ describe("Live code schema", () => {
     ]);
     expect(specs.map((spec) => spec.name)).toEqual(["size"]);
   });
+
+  it("leaves out controlled state and reads nullable booleans", () => {
+    // Oracle: PhoneNumberField's `countryCode` is the controlled twin of `defaultCountryCode`,
+    // and DatePicker's `isOpen` is owned by the parent; a `boolean | null | undefined` prop is a
+    // boolean the reader can set.
+    const specs = partSchema([
+      { name: "countryCode", type: '"NO" | "SE" | undefined', values: ["NO", "SE"], defaultValue: null },
+      {
+        name: "defaultCountryCode",
+        type: '"NO" | "SE" | undefined',
+        values: ["NO", "SE"],
+        defaultValue: null,
+      },
+      { name: "isOpen", type: "boolean | undefined", defaultValue: null },
+      { name: "isDisabled", type: "boolean | null | undefined", defaultValue: null },
+    ]);
+    expect(specs).toEqual([{ name: "isDisabled", kind: "boolean" }]);
+  });
 });

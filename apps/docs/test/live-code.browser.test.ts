@@ -8,7 +8,7 @@ import { closeContext, launchSuiteBrowser } from "./suite-browser";
 const browser = launchSuiteBrowser();
 
 describe("Live code", () => {
-  it("edits a prop through its token, re-renders the stage, copies the edited source and resets both", async () => {
+  it("edits a prop through its token, re-renders the stage, copies and opens the edited source and resets both", async () => {
     // Oracle: the Small example's own file, with `size="sm"` written as `size="lg"`.
     const source = readDemoSource({ section: "components", slug: "button", file: "button-small.tsx" }).source;
     expect(source).toContain('size="sm"');
@@ -44,6 +44,13 @@ describe("Live code", () => {
     expect(await page.evaluate(async () => navigator.clipboard.readText())).toBe(
       source.replace('size="sm"', 'size="lg"')
     );
+
+    // "Open code" shows the same edited source whole in a Sheet.
+    await frame.getByRole("button", { name: "Open code" }).click();
+    const sheet = page.getByRole("dialog", { name: "Small" });
+    expect(await sheet.locator("pre").textContent()).toBe(source.replace('size="sm"', 'size="lg"'));
+    await page.keyboard.press("Escape");
+    await sheet.waitFor({ state: "detached" });
 
     await frame.getByRole("button", { name: "Reset" }).click();
     await expect.poll(async () => stageButton.getAttribute("data-size")).toBe("sm");

@@ -11,7 +11,7 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 
 import { normalizeDemoSource } from "../../src/lib/docs-model.ts";
-import type { DocsDemo, RscStatus } from "../../src/lib/docs-model.ts";
+import type { DocsDemo } from "../../src/lib/docs-model.ts";
 import { componentSlugs, resolveComponentPaths } from "./components.ts";
 import type { ApiEntryPaths, ComponentPaths } from "./components.ts";
 import type { ProblemLog } from "./errors.ts";
@@ -19,25 +19,8 @@ import { readComponentPage } from "./page-source.ts";
 import type { ComponentPageSource } from "./page-source.ts";
 import { repoRelative, fuseRoot } from "./paths.ts";
 import { missingNavRoutes, missingStudioRoutes, staticRouteFile, studioRouteFile } from "./routes.ts";
+import { readRscStatus } from "./rsc-status.ts";
 import { assertDocsFuseCssExports } from "./workspace-css.ts";
-
-/**
- * RSC classification of a module from its own leading directive.
- *
- * Only a directive in the module prologue counts: comments and other directives
- * (`"use strict"`) may precede it, but the first statement ends the prologue, so a
- * `"use client"` string expression further down does not make the module a client one.
- */
-export function readRscStatus(source: string): RscStatus {
-  const prologue = source.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
-  for (const line of prologue.split("\n")) {
-    const trimmed = line.trim();
-    if (trimmed === "") continue;
-    if (/^["']use client["'];?$/.test(trimmed)) return "client";
-    if (!/^["'][^"']*["'];?$/.test(trimmed)) break;
-  }
-  return "server";
-}
 
 /**
  * Reviewed demos written as Server Components, by repository path. Each starts with no
@@ -152,31 +135,45 @@ export function inspectComponentDemos(
     }
   }
 
-  const demos: DocsDemo[] = [];
-  for (const entry of page.demos) {
-    const absolute = path.join(paths.demosDir, entry.file);
-    const relative = repoRelative(absolute);
-    if (!existsSync(absolute)) {
-      problems.add(`${relative}: the page renders this demo, but the file does not exist`);
-      continue;
-    }
-    const raw = readFileSync(absolute, "utf8");
-    const status = readRscStatus(raw);
-    if (SERVER_DEMOS.has(relative)) {
-      if (status !== "server") {
-        problems.add(`${relative}: a reviewed server demo must not start with a "use client" directive`);
-      }
-    } else if (status !== "client") {
-      problems.add(`${relative}: a demo must start with a "use client" directive`);
-    }
-    demos.push({
-      id: entry.id,
-      title: entry.title,
-      sourcePath: relative,
-      source: normalizeDemoSource(raw),
-    });
+  // The default stage gets every check a titled demo gets, and no section of the outline.
+  if (page.defaultDemo !== null) readRenderedDemo(paths.demosDir, page.defaultDemo, problems);
+  return page.demos.flatMap((entry): DocsDemo[] => {
+    const demo = readRenderedDemo(paths.demosDir, entry.file, problems);
+    if (demo === null) return [];
+    return [
+      { id: entry.id, title: entry.title, sourcePath: demo.relative, source: normalizeDemoSource(demo.raw) },
+    ];
+  });
+}
+
+/**
+ * Reads one demo file a page renders, after checking that it exists and that its directive
+ * matches its review: a server demo is listed in `SERVER_DEMOS`, and every other demo is a client
+ * module. A failed check goes to `problems`.
+ *
+ * @returns The file's repo path and source, or `null` when it does not exist.
+ */
+function readRenderedDemo(
+  demosDir: string,
+  file: string,
+  problems: ProblemLog
+): { readonly relative: string; readonly raw: string } | null {
+  const absolute = path.join(demosDir, file);
+  const relative = repoRelative(absolute);
+  if (!existsSync(absolute)) {
+    problems.add(`${relative}: the page renders this demo, but the file does not exist`);
+    return null;
   }
-  return demos;
+  const raw = readFileSync(absolute, "utf8");
+  const status = readRscStatus(raw);
+  if (SERVER_DEMOS.has(relative)) {
+    if (status !== "server") {
+      problems.add(`${relative}: a reviewed server demo must not start with a "use client" directive`);
+    }
+  } else if (status !== "client") {
+    problems.add(`${relative}: a demo must start with a "use client" directive`);
+  }
+  return { relative, raw };
 }
 
 /** Validates global read-only inputs. */

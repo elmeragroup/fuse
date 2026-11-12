@@ -1,11 +1,13 @@
 import { highlightLiveSource, highlightSource } from "../../../../../components/docs-code-block";
 import { demoLocations, readDemoSource } from "../../../../../lib/demo-source";
 import type { DemoLocation } from "../../../../../lib/demo-source";
+import { hasLiveCode } from "../../../../../lib/live-code/live-code-demo";
 import { findSites } from "../../../../../lib/live-code/sites";
 
 /**
  * The highlighted markup of one demo's source, which the demo frame's Code view fetches the first
- * time it shows. A component demo's markup marks its Live code sites (`highlightLiveSource`). Every demo prerenders here at build time, so the highlighter stays on the server
+ * time it shows. A component demo's markup marks its Live code sites (`highlightLiveSource`).
+ * Every demo prerenders here at build time, so the highlighter stays on the server
  * and a page ships each source once, as plain text.
  */
 export function generateStaticParams(): DemoLocation[] {
@@ -31,10 +33,9 @@ export async function GET(
   if (location === undefined) return new Response(null, { status: 404 });
   const { source } = readDemoSource(location);
   // A component demo's Code view is Live code, which edits the tokens of its marked sites.
-  const html =
-    location.section === "components"
-      ? highlightLiveSource(source, findSites(source))
-      : highlightSource(source);
+  const html = hasLiveCode(location.section)
+    ? highlightLiveSource(source, findSites(source))
+    : highlightSource(source);
   return new Response(html, {
     headers: { "content-type": "text/html; charset=utf-8" },
   });

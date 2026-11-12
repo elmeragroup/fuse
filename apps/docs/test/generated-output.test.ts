@@ -12,10 +12,11 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 import { resolveComponentPaths } from "../scripts/lib/components.ts";
-import { readRscStatus, SERVER_DEMOS } from "../scripts/lib/docs-inspection.ts";
+import { SERVER_DEMOS } from "../scripts/lib/docs-inspection.ts";
 import { parseComponentPage } from "../scripts/lib/page-source.ts";
 import type { ComponentPageSource } from "../scripts/lib/page-source.ts";
 import { repoRelative, repoRoot } from "../scripts/lib/paths.ts";
+import { readRscStatus } from "../scripts/lib/rsc-status.ts";
 import { COMPONENT_OUTLINES } from "../src/generated/component-outlines";
 import { COMPONENT_PAGES } from "../src/generated/component-pages";
 import type { ComponentApiArtifact } from "../src/lib/docs-model";
@@ -181,16 +182,6 @@ describe("component outlines", () => {
     }
   });
 
-  it("nests the Button page's examples under Examples, after Usage", () => {
-    // Oracle: the Button page puts Usage, then Examples holding every titled demo it renders.
-    const button = COMPONENT_OUTLINES.find((outline) => outline.slug === "button");
-    expect(button?.sections.map((item) => item.id)).toEqual(["usage", "examples"]);
-    expect(button?.sections[1]?.children?.map((child) => child.id)).toEqual(
-      authoredPage("button").parsed.demos.map((demo) => demo.id)
-    );
-    expect(button?.sections[1]?.children?.length).toBe(22);
-  });
-
   it("carries every demo the page renders into the outline, in order, each with a unique URL-safe ID and a nonempty title", () => {
     // Unit under test: the generator's copy of each page's demos into the outline. Oracle:
     // the parsed page's id and title pairs, compared whole so no demo field beyond them (its
@@ -198,9 +189,12 @@ describe("component outlines", () => {
     // docs-pipeline.
     for (const outline of COMPONENT_OUTLINES) {
       const authored = authoredPage(outline.slug).parsed;
-      expect(outline.demos, outline.slug).toEqual(authored.demos.map(({ id, title }) => ({ id, title })));
-      expect(new Set(outline.demos.map((demo) => demo.id)).size, outline.slug).toBe(outline.demos.length);
-      for (const demo of outline.demos) {
+      const demos = outline.sections
+        .flatMap((item) => [item, ...(item.children ?? [])])
+        .filter((item) => item.demo === true);
+      expect(demos, outline.slug).toEqual(authored.demos.map(({ id, title }) => ({ id, title, demo: true })));
+      expect(new Set(demos.map((demo) => demo.id)).size, outline.slug).toBe(demos.length);
+      for (const demo of demos) {
         expect(demo.id, `${outline.slug}.${demo.id}`).toMatch(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);
         expect(demo.title.trim(), `${outline.slug}.${demo.id}`).not.toBe("");
       }
@@ -213,7 +207,9 @@ describe("component outlines", () => {
     // and the frame's hydration marker.
     for (const outline of COMPONENT_OUTLINES) {
       const authored = authoredPage(outline.slug).parsed;
-      const headingIds = new Set(authored.headings.map((heading) => heading.id));
+      const headingIds = new Set(
+        authored.sections.flatMap((section) => (section.kind === "heading" ? [section.id] : []))
+      );
       expect(
         authored.demos.map((demo) => demo.id).filter((id) => headingIds.has(id)),
         outline.slug

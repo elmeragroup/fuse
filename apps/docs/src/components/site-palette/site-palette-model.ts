@@ -184,13 +184,16 @@ function pageRow(entry: SearchEntry): SiteRow {
 
 /** Every demo of every component page, deep-linked to its anchor. */
 const DEMO_ROWS: readonly SiteRow[] = COMPONENT_OUTLINES.flatMap((component) =>
-  component.demos.map((demo): SiteRow => ({
-    id: `demo:${component.slug}#${demo.id}`,
-    title: demo.title,
-    keywords: [component.title, component.slug],
-    hint: component.title,
-    action: { _tag: "Navigate", href: `${componentHref(component.slug)}#${demo.id}` },
-  }))
+  component.sections
+    .flatMap((item) => [item, ...(item.children ?? [])])
+    .filter((item) => item.demo === true)
+    .map((demo): SiteRow => ({
+      id: `demo:${component.slug}#${demo.id}`,
+      title: demo.title,
+      keywords: [component.title, component.slug],
+      hint: component.title,
+      action: { _tag: "Navigate", href: `${componentHref(component.slug)}#${demo.id}` },
+    }))
 );
 
 /** The rows of the Components page, in nav order. */

@@ -43,12 +43,12 @@ describe("Live code site reader", () => {
       site?.attributes.map((attribute) => ({
         name: attribute.name,
         written: text(source, attribute),
-        value: attribute.value?.kind === "string" ? attribute.value.text : (attribute.value?.kind ?? null),
+        value: attribute.value === null ? null : text(source, attribute.value),
       }))
     ).toEqual([
-      { name: "variant", written: 'variant="outline"', value: "outline" },
+      { name: "variant", written: 'variant="outline"', value: '"outline"' },
       { name: "disabled", written: "disabled", value: null },
-      { name: "size", written: "size={size}", value: "expression" },
+      { name: "size", written: "size={size}", value: "{size}" },
     ]);
   });
 

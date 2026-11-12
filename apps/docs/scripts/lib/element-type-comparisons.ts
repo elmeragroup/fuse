@@ -6,23 +6,18 @@
  * new comparison joins the set without a list to keep.
  */
 
-import { readdirSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { SyntaxKind } from "typescript/ast";
 import type { Node } from "typescript/ast";
 import { isBinaryExpression, isPropertyAccessExpression } from "typescript/ast/is";
-import { SymbolFlags } from "typescript/sync";
 import type { Checker, Symbol as TsSymbol } from "typescript/sync";
 
-import { entryExports, partSymbols } from "./fuse-program.ts";
+import { resolved } from "./fuse-program.ts";
 import type { FuseProgram } from "./fuse-program.ts";
+import { pagePartSymbols } from "./part-identity.ts";
 import type { IdentityPage } from "./part-identity.ts";
 import { fuseSrc, repoRelative } from "./paths.ts";
-
-/** The declaration a symbol names, through an import or re-export. */
-function resolved(checker: Checker, symbol: TsSymbol): TsSymbol {
-  return (symbol.flags & SymbolFlags.Alias) === 0 ? symbol : checker.getAliasedSymbol(symbol);
-}
 
 /**
  * The component a value is, keyed by the symbol of its type. A function's type is the function,
@@ -91,19 +86,17 @@ export function identityComparedParts(fuse: FuseProgram, pages: readonly Identit
   const { checker } = fuse;
   const partsByKey = new Map<number, Set<string>>();
   for (const page of pages) {
-    const exports = entryExports(fuse, page.entryFile);
-    if (exports === undefined)
-      throw new Error(`${page.slug}: the project holds no module at ${page.entryFile}`);
-    for (const exported of exports.filter((candidate) => page.exportNames.includes(candidate.name))) {
-      for (const { name, symbol } of partSymbols(checker, exported)) {
-        const key = componentKey(checker, symbol);
-        if (key !== undefined) partsByKey.set(key, (partsByKey.get(key) ?? new Set()).add(name));
-      }
+    for (const { name, symbol } of pagePartSymbols(fuse, page)) {
+      const key = componentKey(checker, symbol);
+      if (key !== undefined) partsByKey.set(key, (partsByKey.get(key) ?? new Set()).add(name));
     }
   }
   const parts = new Set<string>();
   const problems: string[] = [];
   for (const file of sourceFiles(fuseSrc)) {
+    // Only a file that reads `.type` can compare one; fetching every syntax tree costs a round
+    // trip each. The checker still decides each match in the files that pass.
+    if (!readFileSync(file, "utf8").includes(".type")) continue;
     const sourceFile = fuse.program.getSourceFile(file);
     if (sourceFile === undefined) continue;
     for (const { at, against } of comparisons(checker, file, sourceFile)) {

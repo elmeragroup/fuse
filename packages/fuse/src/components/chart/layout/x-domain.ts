@@ -5,7 +5,14 @@
  * lists the categories in data order.
  */
 import type { ChartScalar } from "../chart-types";
-import { nextSlotStart, slotStart, slotStarter, slotStartsFrom } from "../format/time-format";
+import {
+  DAY,
+  SUB_DAY_MS,
+  nextSlotStart,
+  slotStart,
+  slotStarter,
+  slotStartsFrom,
+} from "../format/time-format";
 import type { Interval } from "../format/time-format";
 import { ChartCompositionError } from "./errors";
 import { sameItems } from "./same-items";
@@ -74,8 +81,7 @@ export function instantOf(value: ChartScalar): number {
  */
 const SLOT_LIMIT = 1_000_000;
 
-const HOUR = 3_600_000;
-const DAY = 24 * HOUR;
+const HOUR = SUB_DAY_MS.hour;
 
 /**
  * Each interval's slot length, the shortest one for the calendar intervals: a clock change can
@@ -83,10 +89,7 @@ const DAY = 24 * HOUR;
  * a day's start, which adds at most one slot a day, far below the limit's headroom.
  */
 const SLOT_LENGTH = {
-  second: 1_000,
-  minute: 60_000,
-  "quarter-hour": 15 * 60_000,
-  hour: HOUR,
+  ...SUB_DAY_MS,
   day: DAY - HOUR,
   week: 7 * DAY - HOUR,
   month: 28 * DAY - HOUR,
@@ -102,11 +105,20 @@ function describeSpan(span: number): string {
 
 /**
  * Throws when an axis from `from` to `to` would list more than `SLOT_LIMIT` slots. It counts by
- * arithmetic, before any slot exists.
+ * arithmetic, before any slot exists. A bound that is no instant, as an invalid `Date` in
+ * `period` reads, has no count, so the axis refuses it by name.
  *
- * @throws {ChartCompositionError} `slot-limit` when the interval is too fine for the range.
+ * @throws {ChartCompositionError} `slot-limit` when the interval is too fine for the range, or a
+ * bound is not a finite instant.
  */
 function assertSlotCount(from: number, to: number, interval: Interval): void {
+  if (!Number.isFinite(from) || !Number.isFinite(to)) {
+    throw new ChartCompositionError(
+      "Chart.Root",
+      "slot-limit",
+      "period must be two valid instants, but one is not a valid date. Pass a period of valid dates."
+    );
+  }
   const span = Math.max(0, to - from);
   const count = Math.floor(span / SLOT_LENGTH[interval]) + 1;
   if (count <= SLOT_LIMIT) return;
@@ -117,17 +129,41 @@ function assertSlotCount(from: number, to: number, interval: Interval): void {
   );
 }
 
+/**
+ * Every slot start of an axis over `range`, from the slot `firstOf` picks for the range's start
+ * until `done`, once the range is known to fit the slot limit. Every slot list of an axis comes
+ * through here, and the check runs before any slot is computed.
+ */
+function listSlots(
+  range: readonly [number, number],
+  firstOf: (from: number) => number,
+  done: (start: number) => boolean,
+  interval: Interval,
+  timeZone: string
+): number[] {
+  const [from, to] = range;
+  assertSlotCount(from, to, interval);
+  return slotStartsFrom(firstOf(from), done, interval, timeZone);
+}
+
 /** Every slot start from `first` up to and including `last`. */
 function slotsBetween(first: number, last: number, interval: Interval, timeZone: string): number[] {
-  return slotStartsFrom(first, (start) => start > last, interval, timeZone);
+  return listSlots(
+    [first, last],
+    (from) => from,
+    (start) => start > last,
+    interval,
+    timeZone
+  );
 }
 
 /** Every slot start inside a half-open period. */
 function periodSlots(period: readonly [number, number], interval: Interval, timeZone: string): number[] {
-  const [from, to] = period;
-  let first = slotStart(from, interval, timeZone);
-  if (first < from) first = nextSlotStart(first, interval, timeZone);
-  return slotStartsFrom(first, (start) => start >= to, interval, timeZone);
+  const firstInside = (from: number): number => {
+    const start = slotStart(from, interval, timeZone);
+    return start < from ? nextSlotStart(start, interval, timeZone) : start;
+  };
+  return listSlots(period, firstInside, (start) => start >= period[1], interval, timeZone);
 }
 
 /**
@@ -176,13 +212,8 @@ function placeInstants(cells: readonly number[], options: TimeAxisOptions): Plac
     placed.push(start);
   }
   let starts: number[] = [];
-  if (period !== undefined) {
-    assertSlotCount(period[0], period[1], interval);
-    starts = periodSlots(period, interval, timeZone);
-  } else if (placed.length > 0) {
-    assertSlotCount(first, last, interval);
-    starts = slotsBetween(first, last, interval, timeZone);
-  }
+  if (period !== undefined) starts = periodSlots(period, interval, timeZone);
+  else if (placed.length > 0) starts = slotsBetween(first, last, interval, timeZone);
   const rowAt = ascending ? walkRows(starts, placed, rows) : mapRows(starts, placed, rows, issues);
   // The sort is stable, so a row's off-grid issue stays ahead of its duplicate-x, as the passes pushed them.
   issues.sort((a, b) => a.row - b.row);

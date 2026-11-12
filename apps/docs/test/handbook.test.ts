@@ -7,6 +7,7 @@ import { resolveThemeCatalog } from "@elmeragroup/fuse/theme-catalog";
 
 import { fuseSrc } from "../scripts/lib/paths.ts";
 import { fetchText } from "./docs-server";
+import { decodeHtml } from "./html";
 
 /** The four permutations the pin table forbids; none may reach the DOM. */
 const ILLEGAL_SLUGS = [
@@ -56,15 +57,6 @@ describe("theme matrix", () => {
 });
 
 /** The text an HTML text node spells with React's entity escapes. */
-function decodeHtml(text: string): string {
-  return text
-    .replaceAll("&gt;", ">")
-    .replaceAll("&lt;", "<")
-    .replaceAll("&quot;", '"')
-    .replaceAll("&#x27;", "'")
-    .replaceAll("&amp;", "&");
-}
-
 /** The text of each cell in the table row that `hook` marks, read only up to the row's own end. */
 function rowCells(html: string, hook: string): string[] {
   const start = html.indexOf(hook);

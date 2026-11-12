@@ -177,7 +177,9 @@ describe("the generated chart references", () => {
   it("puts the page intro under the lede and says a Server Component can render a client part", () => {
     const markdown = endpoint("chart");
     expect(markdown).toContain("The chart entry is a preview.");
-    expect(markdown.indexOf("The chart entry is a preview.")).toBeLessThan(markdown.indexOf("## Demos"));
+    expect(markdown.indexOf("The chart entry is a preview.")).toBeLessThan(
+      markdown.indexOf("Source: `apps/docs/")
+    );
     expect(markdown).toContain(
       "- RSC: client. A Server Component can still render it and pass it serialisable props."
     );

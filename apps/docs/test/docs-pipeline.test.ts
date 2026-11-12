@@ -1,17 +1,21 @@
-import { readFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { describe, expect, it } from "vitest";
+import { afterAll, describe, expect, it } from "vitest";
 
-import { readRscStatus } from "../scripts/lib/docs-inspection.ts";
+import { resolveComponentPaths } from "../scripts/lib/components.ts";
+import { inspectComponentDemos } from "../scripts/lib/docs-inspection.ts";
+import { ProblemLog } from "../scripts/lib/errors.ts";
 import { renderComponentMarkdown } from "../scripts/lib/markdown.ts";
 import { parseComponentPage } from "../scripts/lib/page-source.ts";
+import { repoRelative } from "../scripts/lib/paths.ts";
 import {
   missingNavRoutes,
   missingStudioRoutes,
   staticRouteFile,
   studioRouteFile,
 } from "../scripts/lib/routes.ts";
+import { readRscStatus } from "../scripts/lib/rsc-status.ts";
 import { collectRecipeSources } from "../scripts/lib/sources.ts";
 import { extractTokens, readColorTokenMap } from "../scripts/lib/tokens.ts";
 import type { DocsComponent } from "../src/lib/docs-model";
@@ -56,6 +60,17 @@ describe("authored page.mdx as generation input", () => {
     return ["---", "lede: >", "  First line", "  second line", "---", "", ...body].join("\n");
   }
 
+  const INTRO = '<ComponentIntro slug="button" />';
+  const DEFAULT_DEMO = '<DefaultDemo slug="button" file="button-demo.tsx" />';
+  const API_REFERENCE = '<ApiReference slug="button" />';
+  const TOKENS = '<ComponentTokens slug="button" />';
+  const USAGE = ["## Usage", "", "```tsx", "<A />", "```", ""];
+
+  /** A page with a default stage, so generation holds it to the Usage shape, around `body`. */
+  function usagePage(body: readonly string[]): string {
+    return page(INTRO, DEFAULT_DEMO, "", ...body, "", API_REFERENCE, TOKENS);
+  }
+
   it("folds a `>` lede and reads the demos the page renders, in order", () => {
     const parsed = parseComponentPage(
       page(
@@ -80,6 +95,8 @@ describe("authored page.mdx as generation input", () => {
   it("reads the Usage shape: the default stage, the Usage code and the examples, in page order", () => {
     const parsed = parseComponentPage(
       page(
+        '<ComponentIntro slug="button" />',
+        "",
         '<DefaultDemo slug="button" file="button-demo.tsx">',
         "  <ButtonDemo />",
         "</DefaultDemo>",
@@ -105,7 +122,9 @@ describe("authored page.mdx as generation input", () => {
         "",
         '<Demo slug="button" id="ghost" title="Ghost" level={3} file="button-ghost.tsx" />',
         "",
-        "## Notes"
+        '<ApiReference slug="button" />',
+        "",
+        '<ComponentTokens slug="button" />'
       ),
       "button",
       "button/page.mdx"
@@ -119,7 +138,6 @@ describe("authored page.mdx as generation input", () => {
       { kind: "heading", id: "examples", title: "Examples", depth: 2 },
       { kind: "demo", id: "outline", title: "Outline", depth: 3 },
       { kind: "demo", id: "ghost", title: "Ghost", depth: 3 },
-      { kind: "heading", id: "notes", title: "Notes", depth: 2 },
     ]);
     // The default stage is untitled, so it is no demo of the outline.
     expect(parsed.demos.map((demo) => demo.file)).toEqual(["button-outline.tsx", "button-ghost.tsx"]);
@@ -167,6 +185,85 @@ describe("authored page.mdx as generation input", () => {
       /must be 2 or 3, not 4/,
     ],
     [
+      "a Usage-shaped page with no code block under Usage",
+      usagePage(["## Usage", "", "## Examples"]),
+      /"## Usage" holds 0 code blocks, not one/,
+    ],
+    [
+      "a Usage-shaped page with two code blocks under Usage",
+      usagePage(["## Usage", "", "```tsx", "<A />", "```", "", "```tsx", "<B />", "```", "", "## Examples"]),
+      /"## Usage" holds 2 code blocks, not one/,
+    ],
+    [
+      "a level-3 demo outside Examples on a Usage-shaped page",
+      usagePage([
+        "## Usage",
+        "",
+        "```tsx",
+        "<A />",
+        "```",
+        '<Demo slug="button" id="a" title="A" level={3} file="a.tsx" />',
+        "",
+        "## Examples",
+      ]),
+      /the demo "a" is not a level=\{3\} demo under "## Examples"/,
+    ],
+    [
+      "a level-2 demo under Examples on a Usage-shaped page",
+      usagePage([
+        "## Usage",
+        "",
+        "```tsx",
+        "<A />",
+        "```",
+        "",
+        "## Examples",
+        '<Demo slug="button" id="a" title="A" file="a.tsx" />',
+      ]),
+      /the demo "a" is not a level=\{3\} demo under "## Examples"/,
+    ],
+    [
+      "prose on a Usage-shaped page",
+      usagePage([
+        "<Prose>",
+        "A rule.",
+        "</Prose>",
+        "## Usage",
+        "",
+        "```tsx",
+        "<A />",
+        "```",
+        "",
+        "## Examples",
+      ]),
+      /it renders <Prose>/,
+    ],
+    [
+      "a self-closing <Prose> on a Usage-shaped page",
+      usagePage(['<Prose children="A rule." />', ...USAGE, "## Examples"]),
+      /it renders <Prose>/,
+    ],
+    [
+      "a Usage-shaped page with no intro",
+      page(DEFAULT_DEMO, ...USAGE, "## Examples", API_REFERENCE, TOKENS),
+      /it renders no <ComponentIntro>/,
+    ],
+    [
+      "a Usage-shaped page with its API reference before Usage",
+      page(INTRO, DEFAULT_DEMO, API_REFERENCE, ...USAGE, "## Examples", TOKENS),
+      /its <ApiReference> comes before "## Examples"/,
+    ],
+    [
+      "a Usage-shaped page with no tokens part",
+      page(INTRO, DEFAULT_DEMO, ...USAGE, "## Examples", API_REFERENCE),
+      /it renders no <ComponentTokens>/,
+    ],
+    [
+      "another heading on a Usage-shaped page",
+      usagePage(["## Usage", "", "```tsx", "<A />", "```", "", "## Examples", "", "## Notes"]),
+      /its headings are ## Usage, ## Examples, ## Notes/,
+    ],
+    [
       "a second <DefaultDemo>",
       page('<DefaultDemo slug="button" file="a.tsx" />', '<DefaultDemo slug="button" file="b.tsx" />'),
       /at most one <DefaultDemo>/,
@@ -190,11 +287,60 @@ describe("authored page.mdx as generation input", () => {
       "button",
       "button/page.mdx"
     );
-    expect(parsed.headings).toEqual([
-      { id: "composition-limits", title: "Composition limits", depth: 2 },
-      { id: "details", title: "Details", depth: 3 },
+    expect(parsed.sections).toEqual([
+      { kind: "heading", id: "composition-limits", title: "Composition limits", depth: 2 },
+      { kind: "heading", id: "details", title: "Details", depth: 3 },
     ]);
     expect(parsed.demos).toEqual([]);
+  });
+});
+
+describe("demo file checks", () => {
+  const demosDir = mkdtempSync(join(here, ".demos-"));
+  afterAll(() => rmSync(demosDir, { recursive: true, force: true }));
+  writeFileSync(join(demosDir, "button-demo.tsx"), '"use client";\n\nexport function ButtonDemo() {}\n');
+  writeFileSync(join(demosDir, "button-server.tsx"), "export function ButtonServer() {}\n");
+
+  /** The problems generation reports for a Usage-shaped Button page with this default stage. */
+  function problemsFor(defaultDemo: string): readonly string[] {
+    const source = [
+      "---",
+      "lede: A button.",
+      "---",
+      '<ComponentIntro slug="button" />',
+      `<DefaultDemo slug="button" file="${defaultDemo}" />`,
+      "## Usage",
+      "```tsx",
+      "<Button />",
+      "```",
+      "## Examples",
+      '<ApiReference slug="button" />',
+      '<ComponentTokens slug="button" />',
+    ].join("\n");
+    const problems = new ProblemLog();
+    inspectComponentDemos(
+      {
+        slug: "button",
+        page: parseComponentPage(source, "button", "button/page.mdx"),
+        paths: { ...resolveComponentPaths("button"), demosDir },
+      },
+      problems
+    );
+    return problems.problems;
+  }
+
+  it("holds the default stage to the checks every demo gets, without listing it as a demo", () => {
+    const relative = (file: string): string => repoRelative(join(demosDir, file));
+    // A client default stage passes; the server file beside it is only never rendered.
+    expect(problemsFor("button-demo.tsx")).toEqual([
+      "button: demo file button-server.tsx is never rendered by the page",
+    ]);
+    expect(problemsFor("button-server.tsx")).toContain(
+      `${relative("button-server.tsx")}: a demo must start with a "use client" directive`
+    );
+    expect(problemsFor("button-missing.tsx")).toContain(
+      `${relative("button-missing.tsx")}: the page renders this demo, but the file does not exist`
+    );
   });
 });
 
@@ -326,8 +472,7 @@ describe("markdown endpoint rendering", () => {
     sourceUrl: "https://example.invalid/widget.tsx",
     markdownUrl: "/components/widget.md",
     rsc: "client",
-    headings: [],
-    sections: [],
+    sections: [{ kind: "demo", id: "basic", title: "Basic", depth: 2 }],
     usage: null,
     demos: [
       {
@@ -386,7 +531,15 @@ describe("markdown endpoint rendering", () => {
 
   it("mirrors a Usage-shaped page: H1, lede, Usage code, the examples with their source, API, tokens", () => {
     const usage = 'import { Widget } from "@elmeragroup/fuse/widget";\n\n<Widget />';
-    const markdown = renderComponentMarkdown({ ...component, usage });
+    const markdown = renderComponentMarkdown({
+      ...component,
+      usage,
+      sections: [
+        { kind: "heading", id: "usage", title: "Usage", depth: 2 },
+        { kind: "heading", id: "examples", title: "Examples", depth: 2 },
+        { kind: "demo", id: "basic", title: "Basic", depth: 3 },
+      ],
+    });
     const headings = markdown.split("\n").filter((line) => /^#{1,3} /u.test(line));
     expect(headings).toEqual([
       "# Widget",
@@ -405,6 +558,78 @@ describe("markdown endpoint rendering", () => {
     // The page itself shows no import list or RSC line, so its mirror leaves them out too.
     expect(markdown).not.toContain("- Import:");
     expect(markdown).not.toContain("- RSC:");
+  });
+
+  it("prints each heading once: the intro's under the lede, none for a prose heading over its demo", () => {
+    const page = parseComponentPage(
+      [
+        "---",
+        "lede: A widget.",
+        "---",
+        "<Prose>",
+        "",
+        "## Composition limits",
+        "",
+        "One bar per root.",
+        "",
+        "### Two axes",
+        "",
+        "Mount two bars.",
+        "",
+        "</Prose>",
+        "",
+        '<Demo slug="widget" id="basic" title="Basic" file="widget-basic.tsx" />',
+        "",
+        "<Prose>",
+        "",
+        "## Thumbnails",
+        "",
+        "Map your own indicators.",
+        "",
+        "</Prose>",
+        "",
+        '<Demo slug="widget" id="thumbnails" title="Thumbnails" file="widget-thumbnails.tsx" />',
+      ].join("\n"),
+      "widget",
+      "widget/page.mdx"
+    );
+    const thumbnails = {
+      id: "thumbnails",
+      title: "Thumbnails",
+      sourcePath: "apps/docs/src/app/(docs)/components/widget/demos/widget-thumbnails.tsx",
+      source: "export function WidgetThumbnails() {}",
+    };
+    const markdown = renderComponentMarkdown({
+      ...component,
+      intro: page.intro,
+      sections: page.sections,
+      demos: [...component.demos, thumbnails],
+    });
+    const headings = markdown.split("\n").filter((line) => /^#{1,3} /u.test(line));
+    expect(headings).toEqual([
+      "# Widget",
+      "## Composition limits",
+      "### Two axes",
+      "## Basic",
+      "## Thumbnails",
+      "## API reference",
+      "### Widget · RSC: client",
+      "## Tokens consumed",
+    ]);
+    expect(markdown).toContain(
+      "# Widget\n\nA widget.\n\n## Composition limits\n\nOne bar per root.\n\n### Two axes\n\nMount two bars.\n"
+    );
+    expect(markdown).toContain(
+      "## Thumbnails\n\nSource: `apps/docs/src/app/(docs)/components/widget/demos/widget-thumbnails.tsx`"
+    );
+    // Both prose headings stay in the outline.
+    expect(page.sections.map((section) => section.id)).toEqual([
+      "composition-limits",
+      "two-axes",
+      "basic",
+      "thumbnails",
+      "thumbnails",
+    ]);
   });
 });
 

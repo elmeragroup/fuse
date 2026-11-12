@@ -50,16 +50,14 @@ export type SourceRange = {
   readonly end: number;
 };
 
-/** An attribute's value: a string literal, unquoted in `text`, or an expression container. */
-export type AttributeValue =
-  | (SourceRange & { readonly kind: "string"; readonly text: string })
-  | (SourceRange & { readonly kind: "expression" });
-
 /** One named attribute on a site's opening tag. */
 export type SiteAttribute = SourceRange & {
   readonly name: string;
-  /** `null` for a bare attribute, such as `disabled`, which means `true`. */
-  readonly value: AttributeValue | null;
+  /**
+   * The value's range, a string literal or an expression container with its quotes or braces, or
+   * `null` for a bare attribute, such as `disabled`, which means `true`.
+   */
+  readonly value: SourceRange | null;
 };
 
 /** One JSX opening tag of a lensed part. */
@@ -214,12 +212,11 @@ function readAttributes(source: string, from: number): TagBody {
     const opener = source[valueStart];
     if (opener === '"' || opener === "'") {
       const end = skipQuoted(source, valueStart);
-      const text = source.slice(valueStart + 1, end - 1);
-      attributes.push({ name, start, end, value: { kind: "string", start: valueStart, end, text } });
+      attributes.push({ name, start, end, value: { start: valueStart, end } });
       at = end;
     } else if (opener === "{") {
       const end = skipBraces(source, valueStart);
-      attributes.push({ name, start, end, value: { kind: "expression", start: valueStart, end } });
+      attributes.push({ name, start, end, value: { start: valueStart, end } });
       at = end;
     } else {
       return body();

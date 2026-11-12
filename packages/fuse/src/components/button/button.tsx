@@ -109,6 +109,8 @@ export type ButtonProps = LabelButtonProps | IconButtonProps;
  */
 export function Button({
   className,
+  // Restates the recipe's defaults so the API extractor records them, until it reads recipe
+  // defaults itself (elmeragroup/internal#39).
   variant = "default",
   size = "default",
   isVisuallyDisabled = false,

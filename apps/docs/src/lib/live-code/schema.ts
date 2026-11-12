@@ -4,6 +4,8 @@
  * view reads them back from the parts that rendered.
  */
 
+import type { ApiProp } from "../docs-model";
+
 /** One prop the Code view can set: an enum with its options, or a boolean. */
 export type PropSpec =
   | {
@@ -16,7 +18,7 @@ export type PropSpec =
        * The alternatives a value needs beside it, keyed by value, from `api.json`'s `requires`.
        * Each alternative is a list of props, and any one of them is enough.
        */
-      readonly requires?: Readonly<Record<string, readonly (readonly string[])[]>>;
+      readonly requires?: NonNullable<ApiProp["requires"]>;
     }
   | {
       readonly name: string;
@@ -29,20 +31,32 @@ export type PropSpec =
 export type PartSchema = readonly PropSpec[];
 
 /** The fields of an `api.json` prop row this derivation reads. */
-export type ApiPropRow = {
-  readonly name: string;
-  readonly type: string;
-  readonly values?: readonly string[];
-  readonly requires?: Readonly<Record<string, readonly (readonly string[])[]>>;
-  readonly defaultValue: string | null;
-};
+export type ApiPropRow = Pick<ApiProp, "name" | "type" | "values" | "requires" | "defaultValue">;
 
 /**
  * Props a reader sets through other means than a value list: wiring (`children`, handlers),
  * styling, and the controlled or uncontrolled state a demo owns.
+ *
+ * The artifact records neither which props are controlled nor which are booleans, so these are
+ * read from names and printed types until the extractor records them (elmeragroup/internal#39).
+ * A prop with an uncontrolled twin, such as `countryCode` beside `defaultCountryCode`, is
+ * controlled state too, and so are the listed names without one.
  */
 const UNSETTABLE =
-  /^(?:className|style|children|ref|key|id|nativeButton|keepMounted|loopFocus|tabIndex|checked|pressed|value|open)$|^(?:aria-|data-|on[A-Z]|default[A-Z])/u;
+  /^(?:className|style|children|ref|key|id|nativeButton|keepMounted|loopFocus|tabIndex|checked|pressed|value|open|isOpen)$|^(?:aria-|data-|on[A-Z]|default[A-Z])/u;
+
+/** The printed types of a boolean prop, optional or nullable. */
+const BOOLEAN_TYPES: ReadonlySet<string> = new Set([
+  "boolean",
+  "boolean | undefined",
+  "boolean | null",
+  "boolean | null | undefined",
+]);
+
+/** The name of a prop's uncontrolled twin, such as `defaultCountryCode` for `countryCode`. */
+function defaultTwin(name: string): string {
+  return `default${name.charAt(0).toUpperCase()}${name.slice(1)}`;
+}
 
 /**
  * Props that swap the element a part renders rather than style it. A demo's content is written
@@ -74,8 +88,11 @@ function literalDefault(defaultValue: string | null): LiteralDefault {
  */
 export function partSchema(props: readonly ApiPropRow[]): PartSchema {
   const specs: PropSpec[] = [];
+  const names = new Set(props.map((prop) => prop.name));
   for (const prop of props) {
-    if (UNSETTABLE.test(prop.name) || ELEMENT_PROPS.has(prop.name)) continue;
+    if (UNSETTABLE.test(prop.name) || ELEMENT_PROPS.has(prop.name) || names.has(defaultTwin(prop.name))) {
+      continue;
+    }
     const fallback = literalDefault(prop.defaultValue);
     if (prop.values !== undefined) {
       const base: PropSpec = { name: prop.name, kind: "enum", values: prop.values };
@@ -87,7 +104,7 @@ export function partSchema(props: readonly ApiPropRow[]): PartSchema {
           ? { ...spec, default: fallback.value }
           : spec
       );
-    } else if (prop.type === "boolean" || prop.type === "boolean | undefined") {
+    } else if (BOOLEAN_TYPES.has(prop.type)) {
       const spec: PropSpec = { name: prop.name, kind: "boolean" };
       specs.push(fallback.kind === "boolean" ? { ...spec, default: fallback.value } : spec);
     }

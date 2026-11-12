@@ -8,7 +8,8 @@ import { tv } from "tailwind-variants";
 import { Button } from "@elmeragroup/fuse/button";
 import { Check } from "@elmeragroup/fuse/icons";
 import { Popover } from "@elmeragroup/fuse/popover";
-import { ScrollArea } from "@elmeragroup/fuse/scroll-area";
+import { ToggleGroup } from "@elmeragroup/fuse/toggle-group";
+import { Toolbar } from "@elmeragroup/fuse/toolbar";
 
 import { editedSource, planSite } from "../../lib/live-code/edits";
 import type { FrameEdits, PropValue } from "../../lib/live-code/edits";
@@ -16,25 +17,20 @@ import { allowedValues } from "../../lib/live-code/schema";
 import type { PropSpec } from "../../lib/live-code/schema";
 import { findSites } from "../../lib/live-code/sites";
 import type { Site } from "../../lib/live-code/sites";
+import type { LiveCodeStore, LiveSite, SiteValue } from "../../lib/live-code/store";
+import { DocsCodePre } from "../docs-code-pre";
 import { CopySourceButton } from "../source-code";
-import type { LiveCodeStore, LiveSite, SiteValue } from "./lens";
+import { SourceSheet } from "../source-sheet";
+import { LiveCodeFrame } from "./live-code-frame";
 import { PropControl } from "./prop-control";
 
 const liveCodeView = tv({
   slots: {
-    root: "relative isolate border-t border-border bg-card",
-    toolbar: "flex h-10 items-center gap-1 border-b border-border/60 ps-4 pe-2",
-    file: "text-xs me-auto truncate font-mono text-muted-foreground",
     // Names an edit the stage could not render, which Live code reverted.
     notice: "text-xs truncate text-muted-foreground",
     hint: "text-xs max-sm:hidden pe-1 text-muted-foreground",
-    scroll: "max-h-88",
-    // A 24px line gives every editable token a 24px target.
-    pre: "text-xs m-0 overflow-x-auto bg-card px-4.5 py-3 leading-6 [tab-size:2] text-sh-identifier [&_.sh__line]:block [&_.sh__line]:min-h-[1lh]",
-    code: "block min-w-max",
-    options: "flex w-48 flex-col p-1",
-    option:
-      "text-xs ease-out flex h-7 items-center gap-2 rounded-inner px-2 text-start font-mono transition-colors duration-100 outline-none hover:bg-accent focus-visible:bg-accent motion-reduce:transition-none",
+    options: "w-48 p-1",
+    option: "w-full justify-start gap-2 font-mono",
     optionCheck: "size-3.5 shrink-0 opacity-0 in-aria-pressed:opacity-100",
     optionDefault: "ms-auto font-sans text-muted-foreground",
     panel: "w-[min(20rem,calc(100vw-2rem))]",
@@ -56,15 +52,8 @@ const liveCodeView = tv({
 
 const styles = liveCodeView();
 
-/** One row of the tag panel: a prop, with the options its site can take when it is an enum. */
-type PanelRow = { readonly spec: PropSpec; readonly options: readonly string[] };
-
-/** What the open popover edits: one prop of a site, or every prop of its tag. */
-type OpenToken = {
-  readonly anchor: HTMLElement;
-  readonly loc: string;
-  readonly prop: string | null;
-};
+/** What the open popover edits: one site, and one of its props, or every prop of its tag (`null`). */
+type Target = { readonly site: Site; readonly live: LiveSite; readonly spec: PropSpec | null };
 
 /** The original tokens inside each wrapped prop button, restored when its edit is cleared. */
 type Originals = WeakMap<Element, readonly Node[]>;
@@ -83,17 +72,29 @@ function currentOf(value: SiteValue): PropValue | undefined {
   return value.kind === "one" ? value.value : undefined;
 }
 
-/** Whether a shown value is `option`; a mixed value is none of them. */
-function isShown(value: SiteValue, option: PropValue): boolean {
-  return value.kind === "one" && value.value === option;
-}
-
 /** The props a site passes: those its source writes, and those the reader set. */
 function passedProps(site: Site, edits: FrameEdits): ReadonlySet<string> {
   return new Set([
     ...site.attributes.map((attribute) => attribute.name),
     ...(edits.get(site.loc)?.keys() ?? []),
   ]);
+}
+
+/** What an open token edits, or `null` when its site is not one the stage rendered. */
+function targetOf(
+  anchor: HTMLButtonElement | null,
+  sites: readonly Site[],
+  live: ReadonlyMap<string, LiveSite>
+): Target | null {
+  if (anchor === null) return null;
+  const loc = anchor.dataset.lensSite ?? "";
+  const site = sites.find((candidate) => candidate.loc === loc);
+  const rendered = live.get(loc);
+  if (site === undefined || rendered === undefined) return null;
+  const prop = anchor.dataset.lensProp;
+  const spec =
+    prop === undefined ? null : (rendered.schema.find((candidate) => candidate.name === prop) ?? null);
+  return { site, live: rendered, spec };
 }
 
 /**
@@ -238,7 +239,7 @@ function drawEdits(code: HTMLElement, sites: readonly Site[], edits: FrameEdits,
 type LiveCodeViewProps = {
   /** The frame's store, shared with its stage. */
   store: LiveCodeStore;
-  /** The demo's title, which names the code toolbar. */
+  /** The demo's title, which names the code toolbar and the Sheet. */
   title: string;
   /** The demo file name, shown in the toolbar. */
   file: string;
@@ -256,16 +257,18 @@ type LiveCodeViewProps = {
  * the sites that rendered in buttons. A prop's button opens its options; a tag name's opens every
  * prop the part can set. An edit lands in the frame's store, where the stage's lensed parts read it,
  * and is drawn into the tokens here, so the stage and the code change together. Reset drops every
- * edit, and Copy copies the edited source, written by the same plan the tokens draw.
+ * edit. Copy and "Open code" carry the edited source, written by the same plan the tokens draw;
+ * the Sheet shows it highlighted until the first edit, and as plain text after.
  */
 export function LiveCodeView({ store, title, file, sourceText, html }: LiveCodeViewProps): ReactElement {
   const edits = useSyncExternalStore(store.subscribe, store.getEdits, store.getEdits);
-  const live = useSyncExternalStore(store.subscribe, store.getSites, store.getSites);
+  const live = useSyncExternalStore(store.subscribeSites, store.getSites, store.getSites);
   const notice = useSyncExternalStore(store.subscribe, store.getNotice, store.getNotice);
   const sites = useMemo(() => findSites(sourceText), [sourceText]);
   const code = useRef<HTMLElement>(null);
   const originals = useRef<Originals>(new WeakMap());
-  const [open, setOpen] = useState<OpenToken | null>(null);
+  // The open token's button; its site and prop are on its dataset.
+  const [anchor, setAnchor] = useState<HTMLButtonElement | null>(null);
 
   // The view owns this markup. It sets it once per source, then edits it in place.
   useLayoutEffect(() => {
@@ -283,150 +286,171 @@ export function LiveCodeView({ store, title, file, sourceText, html }: LiveCodeV
     drawEdits(element, sites, edits, originals.current);
     // A prop that moved after a spread is edited through its token there, and a prop whose
     // edit the reader cleared takes its token, the popover's anchor, with it.
-    setOpen((current) => {
+    setAnchor((current) => {
       if (current === null) return null;
-      if (current.anchor.dataset.state === "moved" && current.prop !== null) {
-        const moved = element.querySelector<HTMLButtonElement>(
-          `[data-lens-added="${CSS.escape(current.loc)}"] button[data-lens-prop="${CSS.escape(current.prop)}"]`
+      const prop = current.dataset.lensProp;
+      if (current.dataset.state === "moved" && prop !== undefined) {
+        const loc = CSS.escape(current.dataset.lensSite ?? "");
+        return element.querySelector<HTMLButtonElement>(
+          `[data-lens-added="${loc}"] button[data-lens-prop="${CSS.escape(prop)}"]`
         );
-        return moved === null ? null : { ...current, anchor: moved };
       }
-      return current.anchor.isConnected ? current : null;
+      return current.isConnected ? current : null;
     });
   }, [html, live, sites, edits]);
 
-  /** Closes the popover and clears the open token's highlight. */
-  function close(): void {
-    code.current?.querySelector("[data-open]")?.removeAttribute("data-open");
-    setOpen(null);
-  }
+  // The open token keeps a highlight, which follows the anchor when it moves.
+  useLayoutEffect(() => {
+    if (anchor === null) return;
+    anchor.setAttribute("data-open", "");
+    return () => anchor.removeAttribute("data-open");
+  }, [anchor]);
 
   function choose(event: MouseEvent<HTMLElement>): void {
     if (!(event.target instanceof Element)) return;
     const button = event.target.closest<HTMLButtonElement>("button[data-lens-site]");
-    if (button === null) return;
-    code.current?.querySelector("[data-open]")?.removeAttribute("data-open");
-    button.dataset.open = "";
-    setOpen({
-      anchor: button,
-      loc: button.dataset.lensSite ?? "",
-      prop: button.dataset.lensProp ?? null,
-    });
+    if (button !== null) setAnchor(button);
   }
 
-  const openSite = open === null ? undefined : sites.find((site) => site.loc === open.loc);
-  const openLive = open === null ? undefined : live.get(open.loc);
-  const openSchema = openLive?.schema;
-  const openSpec = open?.prop === null ? undefined : openSchema?.find((spec) => spec.name === open?.prop);
+  const target = targetOf(anchor, sites, live);
+  // A prop token with options opens the list alone; a tag or a boolean opens the panel.
+  const listed = target?.spec?.kind === "enum" ? target.spec : null;
   // The site's own value stays on offer, so a written prop always lists at least it.
-  const openOptions =
-    openSpec?.kind === "enum" && openSite !== undefined && openLive !== undefined
-      ? allowedValues(openSpec, passedProps(openSite, edits), currentOf(shownValue(openLive, openSpec)))
+  const optionsFor = (site: Site, rendered: LiveSite, spec: PropSpec): readonly string[] =>
+    spec.kind === "enum"
+      ? allowedValues(spec, passedProps(site, edits), currentOf(shownValue(rendered, spec)))
       : [];
-  // The tag panel's rows, each enum with the options its site can take. An enum with none to
-  // offer is left out rather than shown as an empty control.
-  const panelRows =
-    openSite === undefined || openLive === undefined
-      ? []
-      : (openSpec === undefined ? openLive.schema : [openSpec]).flatMap((spec): PanelRow[] => {
-          if (spec.kind === "boolean") return [{ spec, options: [] }];
-          const options = allowedValues(
-            spec,
-            passedProps(openSite, edits),
-            currentOf(shownValue(openLive, spec))
-          );
-          return options.length === 0 ? [] : [{ spec, options }];
-        });
+  const edited = editedSource(sourceText, sites, edits);
   const dirty = edits.size > 0;
   const editable = html !== null && live.size > 0;
 
   return (
-    <div className={styles.root()}>
-      <div role="group" aria-label={`${title} code`} className={styles.toolbar()}>
-        <span className={styles.file()}>{file}</span>
-        {/* A live region from the start, so the notice of a rejected edit is announced. */}
-        <span role="status" className={styles.notice()}>
-          {notice}
-        </span>
-        {editable && !dirty && notice === null ? (
-          <span className={styles.hint()}>Select a prop to try it</span>
-        ) : null}
-        {dirty ? (
-          <Button variant="ghost" size="xs" onClick={() => store.reset()}>
-            Reset
-          </Button>
-        ) : null}
-        <CopySourceButton
-          sourceText={editedSource(sourceText, sites, edits)}
-          label="Copy code"
-          copiedStatus="Code copied to the clipboard"
-        />
-      </div>
-      <ScrollArea.Root className={styles.scroll()}>
-        {/* Clicks land on the token buttons the view adds to the markup; native buttons carry the keys. */}
-        <pre className={styles.pre()} onClick={choose}>
-          <code ref={code} className={styles.code()} />
-        </pre>
-      </ScrollArea.Root>
+    <LiveCodeFrame
+      title={title}
+      file={file}
+      actions={
+        <>
+          {/* A live region from the start, so the notice of a rejected edit is announced. */}
+          <span role="status" className={styles.notice()}>
+            {notice}
+          </span>
+          {editable && !dirty && notice === null ? (
+            <span className={styles.hint()}>Select a prop to try it</span>
+          ) : null}
+          {dirty ? (
+            <Toolbar.Button render={<Button variant="ghost" size="xs" />} onClick={() => store.reset()}>
+              Reset
+            </Toolbar.Button>
+          ) : null}
+          <CopySourceButton
+            toolbar
+            sourceText={edited}
+            label="Copy code"
+            copiedStatus="Code copied to the clipboard"
+          />
+          <SourceSheet
+            title={title}
+            file={file}
+            sourceText={edited}
+            code={!dirty && html !== null ? { html } : { text: edited }}
+          />
+        </>
+      }
+      source={
+        // Clicks land on the token buttons the view adds to the markup; native buttons carry the keys.
+        <DocsCodePre variant="live" code="owned" codeRef={code} onClick={choose} />
+      }>
       <Popover.Root
-        open={open !== null && openSite !== undefined && openLive !== undefined}
+        open={anchor !== null && target !== null}
         onOpenChange={(next) => {
-          if (!next) close();
+          if (!next) setAnchor(null);
         }}>
-        {open !== null && openSite !== undefined && openLive !== undefined && openSchema !== undefined ? (
+        {anchor !== null && target !== null ? (
           <Popover.Content
-            anchor={open.anchor}
-            finalFocus={() => open.anchor}
+            anchor={anchor}
+            finalFocus={() => anchor}
             side="bottom"
             align="start"
             sideOffset={6}
             // The option list has no title of its own, so its name says what it sets.
-            aria-label={openSpec?.kind === "enum" ? `${openSite.part} ${openSpec.name}` : undefined}
-            className={openSpec?.kind === "enum" ? styles.options() : styles.panel()}>
-            {openSpec?.kind === "enum" ? (
-              <div role="group" aria-label={openSpec.name}>
-                {openOptions.length === 0 ? <p className={styles.empty()}>No value fits this site.</p> : null}
-                {openOptions.map((option) => (
-                  <button
-                    key={option}
-                    type="button"
-                    aria-pressed={isShown(shownValue(openLive, openSpec), option)}
-                    className={styles.option()}
-                    onClick={() => {
-                      store.set(open.loc, openSpec.name, option);
-                      close();
-                    }}>
-                    <Check aria-hidden className={styles.optionCheck()} />
-                    {option}
-                    {option === openSpec.default && option !== "default" ? (
-                      <span className={styles.optionDefault()}>default</span>
-                    ) : null}
-                  </button>
-                ))}
-              </div>
+            aria-label={listed === null ? undefined : `${target.site.part} ${listed.name}`}
+            className={listed === null ? styles.panel() : styles.options()}>
+            {listed !== null ? (
+              <OptionList
+                spec={listed}
+                options={optionsFor(target.site, target.live, listed)}
+                current={currentOf(shownValue(target.live, listed))}
+                onChoose={(option) => {
+                  store.set(target.site.loc, listed.name, option);
+                  setAnchor(null);
+                }}
+              />
             ) : (
               <>
                 <div className={styles.panelHeader()}>
-                  <Popover.Title className={styles.panelTitle()}>{`<${openSite.part}>`}</Popover.Title>
-                  <span className={styles.panelLine()}>line {open.loc.split(":")[0]}</span>
+                  <Popover.Title className={styles.panelTitle()}>{`<${target.site.part}>`}</Popover.Title>
+                  <span className={styles.panelLine()}>line {target.site.loc.split(":")[0]}</span>
                 </div>
                 <div className={styles.panelRows()}>
-                  {panelRows.map(({ spec, options }) => (
-                    <PropControl
-                      key={spec.name}
-                      spec={spec}
-                      options={options}
-                      value={shownValue(openLive, spec)}
-                      edited={edits.get(open.loc)?.has(spec.name) ?? false}
-                      onChange={(value) => store.set(open.loc, spec.name, value)}
-                    />
-                  ))}
+                  {(target.spec === null ? target.live.schema : [target.spec]).flatMap((spec) => {
+                    const options = optionsFor(target.site, target.live, spec);
+                    // An enum with no option to offer is left out rather than shown as an empty control.
+                    if (spec.kind === "enum" && options.length === 0) return [];
+                    return [
+                      <PropControl
+                        key={spec.name}
+                        spec={spec}
+                        options={options}
+                        value={shownValue(target.live, spec)}
+                        edited={edits.get(target.site.loc)?.has(spec.name) ?? false}
+                        onChange={(value) => store.set(target.site.loc, spec.name, value)}
+                      />,
+                    ];
+                  })}
                 </div>
               </>
             )}
           </Popover.Content>
         ) : null}
       </Popover.Root>
-    </div>
+    </LiveCodeFrame>
+  );
+}
+
+type OptionListProps = {
+  /** The enum prop the list sets. */
+  spec: Extract<PropSpec, { readonly kind: "enum" }>;
+  /** The options the site can take; see `allowedValues`. */
+  options: readonly string[];
+  /** The value the stage renders, or `undefined` when it shows none or a mix. */
+  current: PropValue | undefined;
+  /** Sets the chosen option, even the one already shown. */
+  onChoose: (option: string) => void;
+};
+
+/** One enum prop's options, with the shown one pressed and the default marked. */
+function OptionList({ spec, options, current, onChoose }: OptionListProps): ReactElement {
+  if (options.length === 0) return <p className={styles.empty()}>No value fits this site.</p>;
+  return (
+    <ToggleGroup.Root
+      aria-label={spec.name}
+      orientation="vertical"
+      size="sm"
+      spacing={0}
+      value={options.filter((option) => option === current)}>
+      {options.map((option) => (
+        <ToggleGroup.Item
+          key={option}
+          value={option}
+          className={styles.option()}
+          onClick={() => onChoose(option)}>
+          <Check aria-hidden className={styles.optionCheck()} />
+          {option}
+          {option === spec.default && option !== "default" ? (
+            <span className={styles.optionDefault()}>default</span>
+          ) : null}
+        </ToggleGroup.Item>
+      ))}
+    </ToggleGroup.Root>
   );
 }

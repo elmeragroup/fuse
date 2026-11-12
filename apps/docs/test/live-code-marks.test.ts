@@ -2,27 +2,21 @@ import { describe, expect, it } from "vitest";
 
 import { highlightLiveSource, highlightSource } from "../src/components/docs-code-block";
 import { findSites } from "../src/lib/live-code/sites";
+import { decodeHtml, tagAttribute } from "./html";
 
 /** The marked tokens' text, joined per mark: `<loc> <role> <prop>` to the text it covers. */
 function marked(html: string): Map<string, string> {
   const marks = new Map<string, string>();
-  for (const span of html.matchAll(/<span ([^>]*data-lens-site[^>]*)>([^<]*)<\/span>/gu)) {
-    const attributes = new Map(
-      [...(span[1] ?? "").matchAll(/(data-lens-[a-z]+)="([^"]*)"/gu)].map((match) => [match[1], match[2]])
-    );
+  for (const span of html.matchAll(/(<span [^>]*data-lens-site[^>]*>)([^<]*)<\/span>/gu)) {
+    const open = span[1] ?? "";
     const key = [
-      attributes.get("data-lens-site"),
-      attributes.get("data-lens-role"),
-      attributes.get("data-lens-prop") ?? "",
+      tagAttribute(open, "data-lens-site"),
+      tagAttribute(open, "data-lens-role"),
+      tagAttribute(open, "data-lens-prop") ?? "",
     ]
       .join(" ")
       .trim();
-    const value = (span[2] ?? "")
-      .replaceAll("&quot;", '"')
-      .replaceAll("&lt;", "<")
-      .replaceAll("&gt;", ">")
-      .replaceAll("&amp;", "&");
-    marks.set(key, (marks.get(key) ?? "") + value);
+    marks.set(key, (marks.get(key) ?? "") + decodeHtml(span[2] ?? ""));
   }
   return marks;
 }

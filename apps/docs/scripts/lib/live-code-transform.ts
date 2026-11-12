@@ -8,13 +8,14 @@
  * component needs code of its own. A demo without such a part comes back unchanged.
  */
 
+import { applyEdits } from "../../src/lib/live-code/edits.ts";
+import type { SourceEdit } from "../../src/lib/live-code/edits.ts";
 import type { PartSchema } from "../../src/lib/live-code/schema.ts";
 import { findSites, readLensedImports } from "../../src/lib/live-code/sites.ts";
+import { readRscStatus } from "./rsc-status.ts";
 
 /** Looks up the settable props of a part, such as `Select.Root`, of the given Fuse module. */
 export type SchemaLookup = (module: string, part: string) => PartSchema | undefined;
-
-type Edit = { readonly start: number; readonly end: number; readonly text: string };
 
 /**
  * The expression a demo binds in place of `value`, the import or namespace member named `name`:
@@ -47,10 +48,10 @@ function binding(value: string, name: string, parts: ReadonlyMap<string, PartSch
  */
 export function lensDemoSource(source: string, schemaOf: SchemaLookup, lensModule: string): string | null {
   // A server demo renders on the server, where a client wrapper cannot run.
-  if (!/^\s*["']use client["']/u.test(source)) return null;
+  if (readRscStatus(source) === "server") return null;
   const declarations = readLensedImports(source);
   const sites = findSites(source);
-  const edits: Edit[] = [];
+  const edits: SourceEdit[] = [];
   const bindings: string[] = [];
   for (const declaration of declarations) {
     const specifiers: string[] = [];
@@ -89,9 +90,5 @@ export function lensDemoSource(source: string, schemaOf: SchemaLookup, lensModul
     end: last.end,
     text: `\nimport { lens as __lens, lensMembers as __lensMembers } from ${JSON.stringify(lensModule)};\n${bindings.join("\n")}`,
   });
-  let out = source;
-  for (const { start, end, text } of edits.toSorted((left, right) => right.start - left.start)) {
-    out = out.slice(0, start) + text + out.slice(end);
-  }
-  return out;
+  return applyEdits(source, edits);
 }

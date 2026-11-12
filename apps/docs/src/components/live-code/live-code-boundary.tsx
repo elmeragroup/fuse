@@ -3,8 +3,8 @@
 import { Component, Fragment } from "react";
 import type { ReactNode } from "react";
 
+import type { LiveCodeStore } from "../../lib/live-code/store";
 import { LiveCodeContext } from "./lens";
-import type { LiveCodeStore } from "./lens";
 
 type LiveCodeBoundaryState = {
   /** What the stage threw, until the boundary recovers from it. */

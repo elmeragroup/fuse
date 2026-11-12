@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 
-import { LiveCodeStore, lensMembers } from "../src/components/live-code/lens";
+import { lensMembers } from "../src/components/live-code/lens";
 import type { PartSchema } from "../src/lib/live-code/schema";
+import { LiveCodeStore } from "../src/lib/live-code/store";
 
 /** A part that carries parts, as `RadioItem` carries `RadioItem.Title`. */
 function Item(): null {

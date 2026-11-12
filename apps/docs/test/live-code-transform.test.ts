@@ -12,8 +12,9 @@ import { Select } from "@elmeragroup/fuse/select";
 
 import { lensDemoSource } from "../scripts/lib/live-code-transform.ts";
 import type { SchemaLookup } from "../scripts/lib/live-code-transform.ts";
-import { LiveCodeProvider, LiveCodeStore } from "../src/components/live-code/lens";
+import { LiveCodeContext } from "../src/components/live-code/lens";
 import type { PartSchema } from "../src/lib/live-code/schema";
+import { LiveCodeStore } from "../src/lib/live-code/store";
 
 const VARIANT: PartSchema = [{ name: "variant", kind: "enum", values: ["default", "outline", "ghost"] }];
 
@@ -50,12 +51,15 @@ type DemoModule = {
   readonly Demo: ComponentType;
 };
 
-/** The transformed demo, imported as the page would import it. */
-async function transformed(): Promise<DemoModule> {
+/** A client demo whose directive follows a leading comment, which a directive prologue allows. */
+const COMMENTED_DEMO = `// A demo note.\n${DEMO}`;
+
+/** The transformed demo, imported as the page would import it; `name` keeps each source's module apart. */
+async function transformed(source = DEMO, name = "demo"): Promise<DemoModule> {
   const lensModule = pathToFileURL(join(import.meta.dirname, "../src/components/live-code/lens.tsx")).href;
-  const out = lensDemoSource(DEMO, schemaOf, lensModule);
+  const out = lensDemoSource(source, schemaOf, lensModule);
   if (out === null) throw new Error("The demo renders settable parts, so the loader rewrites it");
-  const file = join(directory, "demo.tsx");
+  const file = join(directory, `${name}.tsx`);
   writeFileSync(file, out);
   // SAFETY: the module is `DEMO` rewritten, which exports `bindings` and `Demo` as typed here.
   return (await import(/* @vite-ignore */ pathToFileURL(file).href)) as DemoModule;
@@ -71,15 +75,21 @@ describe("Live code loader transform", () => {
     );
   });
 
-  it("stamps each site with its location, so an edit at that location reaches the rendered part", async () => {
-    // Oracle: the `<` of `<Button` on line 9 sits in column 10.
-    const { Demo } = await transformed();
-    const store = new LiveCodeStore();
-    store.set("9:10", "variant", "outline");
-    expect(
-      renderToStaticMarkup(createElement(LiveCodeProvider, { store, children: createElement(Demo) }))
-    ).toBe(renderToStaticMarkup(createElement(Button, { variant: "outline" }, "Save")));
-  });
+  // Oracle: the `<` of `<Button` sits in column 10 of line 9, or of line 10 under the comment.
+  it.each([
+    ["a demo", DEMO, "demo", "9:10"],
+    ["a demo whose directive follows a leading comment", COMMENTED_DEMO, "commented", "10:10"],
+  ] as const)(
+    "stamps each site of %s with its location, so an edit there reaches the rendered part",
+    async (_case, source, name, location) => {
+      const { Demo } = await transformed(source, name);
+      const store = new LiveCodeStore();
+      store.set(location, "variant", "outline");
+      expect(
+        renderToStaticMarkup(createElement(LiveCodeContext, { value: store, children: createElement(Demo) }))
+      ).toBe(renderToStaticMarkup(createElement(Button, { variant: "outline" }, "Save")));
+    }
+  );
 
   it("keeps a namespace's other parts and wraps only the settable ones", async () => {
     const { bindings } = await transformed();

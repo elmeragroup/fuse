@@ -6,11 +6,11 @@
 
 import { fileURLToPath } from "node:url";
 
-import { liveCodeSchemaOf } from "./live-code-schemas.ts";
+import { isLiveCodeDemo } from "../../src/lib/live-code/live-code-demo.ts";
+import { openLiveCodeSchemas } from "./live-code-schemas.ts";
 import { lensDemoSource } from "./live-code-transform.ts";
 
 const lensModule = fileURLToPath(new URL("../../src/components/live-code/lens.tsx", import.meta.url));
-const COMPONENT_DEMO = /\/src\/app\/\(docs\)\/components\/[^/]+\/demos\/[^/?]+\.tsx$/u;
 
 /** The Vite plugin fields this plugin sets; Vitest's `plugins` option takes it as a Vite plugin. */
 type LensPlugin = {
@@ -29,8 +29,8 @@ export function liveCodeLens(): LensPlugin {
     name: "live-code-lens",
     enforce: "pre",
     transform(code: string, id: string): string | null {
-      if (!COMPONENT_DEMO.test(id)) return null;
-      return lensDemoSource(code, liveCodeSchemaOf, lensModule);
+      if (!isLiveCodeDemo(id)) return null;
+      return lensDemoSource(code, openLiveCodeSchemas().schemaOf, lensModule);
     },
   };
 }

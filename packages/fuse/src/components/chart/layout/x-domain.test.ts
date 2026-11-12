@@ -375,6 +375,13 @@ describe("slot limit", () => {
     ).toThrow(/interval "minute" over 1,095 days needs 1,576,801 slots/u);
   });
 
+  it("refuses a period with an invalid instant by naming the period, not the interval", () => {
+    // Oracle: Chart.Root reads an invalid Date in `period` as NaN, which has no slot count.
+    expect(() =>
+      placeTimeRows([], { interval: "hour", timeZone: "UTC", period: [Number.NaN, year[1]] })
+    ).toThrow("Chart.Root period must be two valid instants, but one is not a valid date.");
+  });
+
   it("lists a year of quarter-hours, the largest axis a demo draws", () => {
     // Oracle: 365 days × 96 quarter-hours.
     const { domain } = placeTimeRows([], { interval: "quarter-hour", timeZone: "UTC", period: year });

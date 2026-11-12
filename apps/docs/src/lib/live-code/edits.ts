@@ -64,6 +64,25 @@ export function planSite(site: Site, edits: SiteEdits | undefined): SitePlan {
   return { attributes, added };
 }
 
+/** One replacement of a source range: `[start, end)` becomes `text`. */
+export type SourceEdit = { readonly start: number; readonly end: number; readonly text: string };
+
+/**
+ * Applies replacements to a source, back to front, so each one's offsets hold. The ranges index
+ * the original source and must not overlap; an insertion may sit at the end of a replaced range.
+ *
+ * @param source - The original source.
+ * @param edits - The replacements, in any order.
+ * @returns The edited source.
+ */
+export function applyEdits(source: string, edits: readonly SourceEdit[]): string {
+  let out = source;
+  for (const { start, end, text } of edits.toSorted((left, right) => right.start - left.start)) {
+    out = out.slice(0, start) + text + out.slice(end);
+  }
+  return out;
+}
+
 /** Where an attribute's leading whitespace starts, so removing it leaves no gap. */
 function removalStart(source: string, start: number): number {
   let at = start;
@@ -80,7 +99,7 @@ function removalStart(source: string, start: number): number {
  * @returns The edited source, or `source` itself when there are no edits.
  */
 export function editedSource(source: string, sites: readonly Site[], edits: FrameEdits): string {
-  const replacements: { start: number; end: number; text: string }[] = [];
+  const replacements: SourceEdit[] = [];
   for (const site of sites) {
     const plan = planSite(site, edits.get(site.loc));
     if (plan.added.length > 0) {
@@ -97,10 +116,5 @@ export function editedSource(source: string, sites: readonly Site[], edits: Fram
       );
     }
   }
-  // Back to front, so earlier offsets hold.
-  let out = source;
-  for (const { start, end, text } of replacements.toSorted((left, right) => right.start - left.start)) {
-    out = out.slice(0, start) + text + out.slice(end);
-  }
-  return out;
+  return applyEdits(source, replacements);
 }

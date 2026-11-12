@@ -11,7 +11,7 @@ import { ToggleGroup } from "@elmeragroup/fuse/toggle-group";
 
 import type { PropValue } from "../../lib/live-code/edits";
 import type { PropSpec } from "../../lib/live-code/schema";
-import type { SiteValue } from "./lens";
+import type { SiteValue } from "../../lib/live-code/store";
 
 const propControl = tv({
   slots: {
@@ -57,22 +57,29 @@ export function PropControl({ spec, options, value, edited, onChange }: PropCont
   const labelId = useId();
   const mixed = value.kind === "mixed";
   const current = value.kind === "one" ? value.value : undefined;
-  const usesSelect = spec.kind === "enum" && !fitsSegments(options);
+  // A boolean whose value is unknown is the two segments `true` and `false`, with neither
+  // pressed: nothing passes it and the artifact records no default, so the control claims none.
+  const segments =
+    spec.kind === "boolean"
+      ? current === undefined
+        ? ["true", "false"]
+        : null
+      : fitsSegments(options)
+        ? options
+        : null;
+  const parse = (option: string | undefined): PropValue | undefined =>
+    spec.kind === "boolean" && option !== undefined ? option === "true" : option;
   let control: ReactElement;
-  if (spec.kind === "boolean" && current !== true && current !== false) {
-    // Nothing passes the value and the artifact records no default, so the control claims none:
-    // the reader picks `true` or `false` explicitly.
+  if (segments !== null) {
     control = (
       <ToggleGroup.Root
         aria-labelledby={labelId}
         size="xs"
         variant="outline"
         spacing={0}
-        value={[]}
-        onValueChange={(values: string[]) =>
-          onChange(values[0] === undefined ? undefined : values[0] === "true")
-        }>
-        {["true", "false"].map((option) => (
+        value={segments.filter((option) => option === current)}
+        onValueChange={(values: string[]) => onChange(parse(values[0]))}>
+        {segments.map((option) => (
           <ToggleGroup.Item key={option} value={option} className={segment()}>
             {option}
           </ToggleGroup.Item>
@@ -87,22 +94,6 @@ export function PropControl({ spec, options, value, edited, onChange }: PropCont
         checked={current === true}
         onCheckedChange={(checked) => onChange(checked)}
       />
-    );
-  } else if (fitsSegments(options)) {
-    control = (
-      <ToggleGroup.Root
-        aria-labelledby={labelId}
-        size="xs"
-        variant="outline"
-        spacing={0}
-        value={options.filter((option) => option === current)}
-        onValueChange={(values: string[]) => onChange(values[0])}>
-        {options.map((option) => (
-          <ToggleGroup.Item key={option} value={option} className={segment()}>
-            {option}
-          </ToggleGroup.Item>
-        ))}
-      </ToggleGroup.Root>
     );
   } else {
     control = (
@@ -129,7 +120,7 @@ export function PropControl({ spec, options, value, edited, onChange }: PropCont
         {spec.name}
         {mixed ? <span className={note()}>mixed</span> : null}
         {/* A Select says "Unset" itself; the other controls say it here. */}
-        {!mixed && current === undefined && !usesSelect ? <span className={note()}>unset</span> : null}
+        {!mixed && current === undefined && segments !== null ? <span className={note()}>unset</span> : null}
         <span aria-hidden className={dot()} data-unchanged={edited ? undefined : ""} />
         {edited ? <span className={hidden()}>(changed)</span> : null}
       </span>

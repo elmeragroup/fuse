@@ -7,6 +7,7 @@ import { requireComponent } from "../lib/component-page";
 import { demoSourceHref, readDemoSource } from "../lib/demo-source";
 import type { DemoLocation } from "../lib/demo-source";
 import type { DocsRouteSection } from "../lib/docs-route-files";
+import { hasLiveCode } from "../lib/live-code/live-code-demo";
 import { DemoHydrationMarker } from "./demo-hydration-marker";
 import { DemoStage } from "./demo-stage";
 import { DemoTabs } from "./demo-tabs";
@@ -47,7 +48,9 @@ const { root, heading, hidden } = demoFrame();
 /**
  * The demo frame: a flush Frame titled with the demo, with a Demo view, the theme-tinted stage,
  * and a Code view, the source of the very file that rendered the stage, with actions that copy
- * it and open it in a Sheet. The footer switches between the views.
+ * it and open it in a Sheet. A component demo's Code view is Live code (`hasLiveCode`): the
+ * stage stays above it, its parts' props are editable in the source, and Copy and the Sheet
+ * carry the edits. The footer switches between the views.
  *
  * A server component, so the source comes from a read of the demo file during prerendering rather
  * than from generated data threaded through the page. The page carries it as plain text. The
@@ -105,7 +108,7 @@ function DemoFrameTabs({ location, title, labelId, heading, children }: DemoFram
     <DemoTabs
       title={title}
       heading={heading}
-      liveCode={location.section === "components"}
+      codeView={hasLiveCode(location.section) ? "live" : "static"}
       file={location.file}
       stage={
         <DemoStage>

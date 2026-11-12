@@ -3,6 +3,10 @@
  * and the tree, so they throw in every build. Data errors throw in development and, in production,
  * warn once per Root for each rule and subject, such as a column, and render the fallback the rule
  * names. Both classes stay private, as `CommandCompositionError` does, and each carries its rule.
+ *
+ * `slot-limit` is the one composition rule the data can trigger: without a `period`, the rows'
+ * range sets the time axis's span. It still throws in every build, because no fallback can draw
+ * an axis of more slots than the limit, and building them freezes the tab.
  */
 import type { ChartConfig } from "../chart-types";
 import type { ModelIssue } from "./cartesian-model";
