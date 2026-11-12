@@ -8,7 +8,7 @@
  */
 import { cubicBezier } from "./layout/ease";
 import { momentumSpring, spanAround, springAt, springProgress } from "./layout/momentum";
-import type { MomentumMove, MomentumPoint, MomentumSpring, NumberSpring } from "./layout/momentum";
+import type { MomentumPoint, MomentumSpring, NumberSpring } from "./layout/momentum";
 import { CHART_UPDATE_CURVE, CHART_UPDATE_MS } from "./layout/motion";
 import { sameItems } from "./layout/same-items";
 
@@ -301,7 +301,10 @@ type Tween = {
  */
 type Mark = {
   drawn: MarkValues;
-  /** The loop's clock when `drawn` was drawn, which a momentum move reads the velocity at. */
+  /**
+   * The loop's clock when `drawn` was drawn, which a momentum move and a resize that retargets a
+   * spring read the velocity at.
+   */
   drawnAt?: number;
   eased: number;
   write: MarkWriter;
@@ -336,9 +339,6 @@ type Joined = {
 };
 
 const ease = cubicBezier(CHART_UPDATE_CURVE);
-
-/** What a momentum move carries from the tween it replaces: where, when, and on which spring. */
-type Carried = MomentumMove & { readonly from: MarkValues; readonly at: number };
 
 /** How long a tween runs, in milliseconds. */
 function durationOf(tween: Tween): number {
@@ -433,6 +433,36 @@ function rescaledTween(tween: Tween, axes: readonly ValueAxis[], scale: PlotScal
 /** Whether two numbers agree to within float error, as a mapped target and a fresh one do. */
 function close(a: number, b: number): boolean {
   return Math.abs(a - b) <= 1e-9 * Math.max(1, Math.abs(a), Math.abs(b));
+}
+
+/**
+ * Whether two lists agree number by number to within float error, as a mapped target and a fresh
+ * one do.
+ */
+function closeItems(a: MarkValues, b: MarkValues): boolean {
+  return (
+    a === b || (a.length === b.length && a.every((value, index) => close(value, b[index] ?? Number.NaN)))
+  );
+}
+
+/**
+ * The momentum tween a mark leaves its running tween on toward a new target: a spring from where it
+ * showed, at `velocity`, on the clock `at` it showed it at, within the values the tween moved
+ * between.
+ */
+function leaving(
+  drawn: MarkValues,
+  tween: Tween,
+  at: number,
+  target: MarkValues,
+  velocity: readonly number[]
+): Tween {
+  const from = [...drawn];
+  const spans = target.map((to, index) =>
+    spanAround(tween.from[index] ?? to, tween.to[index] ?? to, from[index] ?? to, tween.spring?.[index]?.span)
+  );
+  const { duration, spring } = momentumSpring({ from, to: target, velocity, spans });
+  return { from, to: target, start: at, delay: 0, duration, spring };
 }
 
 /**
@@ -680,11 +710,12 @@ export function createChartMotion(
   };
 
   /**
-   * The spring a moving mark leaves on toward a new target: from where it showed, at its velocity
-   * then, on the clock it showed it at. Null for a mark at rest, one in its delay or not yet
-   * started, which carries no velocity, and a path whose route draws more numbers than it rests on.
+   * The momentum tween a moving mark leaves on toward a new target: a spring from where it showed,
+   * at its velocity then, on the clock it showed it at. Null for a mark at rest, one in its delay
+   * or not yet started, which carries no velocity, and a path whose route draws more numbers than
+   * it rests on.
    */
-  const momentumOf = (id: string, target: MarkValues): Carried | null => {
+  const momentumOf = (id: string, target: MarkValues): Tween | null => {
     const mark = marks.get(id);
     const tween = mark?.tween ?? null;
     const at = mark?.drawnAt;
@@ -692,16 +723,7 @@ export function createChartMotion(
     if (tween.rest !== undefined || mark.drawn.length !== target.length) return null;
     const { velocity } = tweenAt(tween, at - tween.start - tween.delay);
     if (velocity.every((speed) => speed === 0)) return null;
-    const from = [...mark.drawn];
-    const spans = target.map((to, index) =>
-      spanAround(
-        tween.from[index] ?? to,
-        tween.to[index] ?? to,
-        from[index] ?? to,
-        tween.spring?.[index]?.span
-      )
-    );
-    return { from, at, ...momentumSpring({ from, to: target, velocity, spans }) };
+    return leaving(mark.drawn, tween, at, target, velocity);
   };
 
   /** Place a mark: the body of `place`, once the mark's anchor names it. */
@@ -817,20 +839,7 @@ export function createChartMotion(
     const mark = marks.get(id);
     const tween = mark?.tween ?? null;
     if (carried !== null && !sameItems(carried.from, target)) {
-      run(
-        id,
-        write,
-        {
-          from: carried.from,
-          to: target,
-          start: carried.at,
-          delay: 0,
-          duration: carried.duration,
-          spring: carried.spring,
-        },
-        axes,
-        owner
-      );
+      run(id, write, carried, axes, owner);
       return;
     }
     if (placement.kind === "move" && placement.via !== undefined) {
@@ -847,8 +856,7 @@ export function createChartMotion(
       // A route that draws more numbers than its rest runs on while a commit asks for the same
       // rest, mapped into a resized box with the group, and any other target snaps it there.
       const { rest } = tween;
-      const kept = rest.length === target.length && target.every((to, index) => close(to, rest[index] ?? 0));
-      if (kept) {
+      if (closeItems(rest, target)) {
         mark.write = write;
         write(mark.drawn);
         return;
@@ -869,9 +877,11 @@ export function createChartMotion(
       snap(id, target, write, axes, owner);
       return;
     }
-    if (mark !== undefined && tween !== null && sameItems(tween.to, target)) {
-      // The mark already heads for this target, so the tween runs on. A re-render or a new node
-      // may have drawn the target meanwhile, so the mark redraws where the tween has it.
+    if (mark !== undefined && tween !== null && closeItems(tween.to, target)) {
+      // The mark already heads for this target, so the tween runs on. A resize may have mapped it
+      // a float error off the commit's own, so the tween rests on the commit's. A re-render or a
+      // new node may have drawn the target meanwhile, so the mark redraws where the tween has it.
+      if (tween.to !== target) mark.tween = { ...tween, to: target };
       mark.write = write;
       write(mark.drawn);
       return;
@@ -901,6 +911,14 @@ export function createChartMotion(
     // shares with every other mark. Without a running tween, or at its very end, it snaps.
     if (tween === null || 1 - mark.eased < 1e-6) {
       snap(id, target, write, axes, owner);
+      return;
+    }
+    if (tween.spring !== undefined) {
+      // A spring's course is no scalar progress, so the mark leaves on a new spring from where and
+      // how fast the mapped spring moves it, as a momentum move does.
+      const at = mark.drawnAt ?? tween.start;
+      const { velocity } = tweenAt(tween, at - tween.start - tween.delay);
+      run(id, write, leaving(mark.drawn, tween, at, target, velocity), axes, owner);
       return;
     }
     // The tween, already mapped into the commit's box with its group, retargets.

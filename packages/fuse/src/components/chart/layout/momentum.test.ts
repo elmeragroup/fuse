@@ -8,12 +8,16 @@
 // not left, even when a retarget lands in an entrance's delay, a degree ahead of a fast rise, or
 // several times before the next frame; a resize that doubles the plot's width mid-turn doubles every
 // x coordinate the spring moves between, so the mark stays between the doubled target and twice the
-// highest value it drew; and a mark at rest, or under reduced motion, moves as it did.
+// highest value it drew; a resize whose target the commit recomputes a float error off the mapped
+// one draws in every frame what the unresized spring draws, mapped by hand, and rests on the
+// commit's target exactly; a mark whose target a resize moves off its mapped place keeps the way it
+// moved for the frame after, rising or falling, and turns at most once, as a critically damped
+// spring does; and a mark at rest, or under reduced motion, moves as it did.
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 
 import { createChartMotion } from "../chart-motion";
-import type { MarkValues, MotionHost, Placement, ValueAxis } from "../chart-motion";
+import type { MarkValues, MotionHost, Placement, SlotMap, ValueAxis } from "../chart-motion";
 
 /** A clock and a frame queue the test advances by hand. */
 function manualFrames() {
@@ -67,20 +71,29 @@ function settle(mark: ReturnType<typeof oneMark>, target: number, ms = 16, limit
   for (let index = 0; index < limit && mark.drawn.at(-1) !== target; index += 1) mark.frame(ms);
 }
 
+/** A slot grid on x from 0 whose pitch grows from 7 px to 9 px, as a resize maps it. */
+const PITCH_7_TO_9: SlotMap = { axis: "x", from: 0, to: 0, ratio: 9 / 7 };
+
 /** Every value drawn from `from` on, which a retarget's checks read. */
 function after(mark: ReturnType<typeof oneMark>, from: number): number[] {
   return mark.drawn.slice(from);
 }
 
-/** A mark sent from 0 to 100 and seven frames into its rise, then sent to 10 by `placement`. */
-function retarget(placement: Placement) {
-  const mark = oneMark();
+/**
+ * A mark whose numbers measure `axes`, sent from 0 to 100 and seven frames into its rise, then sent
+ * to `to`, 10 by default, by `placement`, and run a frame on.
+ */
+function retarget(
+  placement: Placement,
+  { to = 10, axes = [] }: { to?: number; axes?: readonly ValueAxis[] } = {}
+) {
+  const mark = oneMark({ axes });
   mark.place(0, { kind: "snap" });
   mark.place(100, { kind: "move" });
   for (let index = 0; index < 7; index += 1) mark.frame();
   const before = mark.drawn.slice(-2);
   const shown = mark.drawn.at(-1) ?? Number.NaN;
-  mark.place(10, placement);
+  mark.place(to, placement);
   // The placement draws where the mark showed, before the browser paints.
   const atPlace = mark.drawn.at(-1) ?? Number.NaN;
   mark.frame();
@@ -208,6 +221,90 @@ describe("a momentum move", () => {
     }
     expect(values.at(-1)).toBe(20);
   });
+
+  it.each([
+    {
+      // The box shrinks to 2/3 of its width. The resize maps the target 5 to 5 · (2/3), and the
+      // commit lays it out again at 10/3, a rounding error away.
+      name: "a plot 2/3 as wide",
+      to: 5,
+      scale: { x: 2 / 3, y: 1, to: {} },
+      map: (value: number) => (value * 2) / 3,
+      fresh: 10 / 3,
+    },
+    {
+      // The slot pitch grows from 7 px to 9 px on a grid that starts at 0, so slot 1's centre moves
+      // from 10.5 to 13.5, and the resize maps it to 13.500000000000002.
+      name: "a slot grid whose pitch grows from 7 px to 9 px",
+      to: 10.5,
+      scale: { x: 1, y: 1, slot: PITCH_7_TO_9, to: {} },
+      map: (value: number) => (value / 7) * 9,
+      fresh: 1.5 * 9,
+    },
+  ] as const)(
+    "stays on its spring's mapped course through $name, whose target the commit recomputes",
+    ({ to, scale, map, fresh }) => {
+      const resized = retarget({ kind: "move", momentum: "keep" }, { to, axes: ["x"] });
+      const unresized = retarget({ kind: "move", momentum: "keep" }, { to, axes: ["x"] });
+      const shown = resized.drawn.at(-1) ?? Number.NaN;
+      resized.place(fresh, { kind: "settle", scale });
+      // The resize draws the mark where it showed, mapped, before the browser paints.
+      expect(resized.drawn.at(-1)).toBeCloseTo(map(shown), 9);
+      // Every later frame draws what the unresized spring draws at the same time, mapped.
+      for (let index = 0; index < 120 && resized.drawn.at(-1) !== fresh; index += 1) {
+        resized.frame();
+        unresized.frame();
+        expect(resized.drawn.at(-1)).toBeCloseTo(map(unresized.drawn.at(-1) ?? Number.NaN), 9);
+      }
+      expect(resized.drawn.at(-1)).toBe(fresh);
+    }
+  );
+
+  it.each([
+    {
+      // The slot pitch grows from 7 px to 9 px, which maps the target 59.5 to 76.5, and the commit
+      // puts the slot's centre on a whole pixel, 77. The mark still rises away from it.
+      name: "still rises away from it",
+      to: 59.5,
+      frames: 0,
+      way: 1,
+      fresh: 77,
+    },
+    {
+      // The same resize maps the target 10.5 to 13.5, and the commit puts it on 14. The mark has
+      // turned and falls toward it.
+      name: "falls toward it",
+      to: 10.5,
+      frames: 3,
+      way: -1,
+      fresh: 14,
+    },
+  ] as const)(
+    "keeps its way through a resize that moves its target off its mapped place while it $name",
+    ({ to, frames, way, fresh }) => {
+      const mark = retarget({ kind: "move", momentum: "keep" }, { to, axes: ["x"] });
+      for (let index = 0; index < frames; index += 1) mark.frame();
+      const [previous = Number.NaN, shown = Number.NaN] = mark.drawn.slice(-2);
+      expect(Math.sign(shown - previous)).toBe(way);
+      const from = mark.drawn.length;
+      mark.place(fresh, { kind: "settle", scale: { x: 1, y: 1, slot: PITCH_7_TO_9, to: {} } });
+      settle(mark, fresh);
+      const values = after(mark, from);
+      const steps = values
+        .slice(1)
+        .map((value, index) => value - (values[index] ?? Number.NaN))
+        .filter((step) => step !== 0);
+      // The mark carries its velocity through the resize, so its first step after it goes the way
+      // it went before it.
+      expect(Math.sign(steps[0] ?? Number.NaN)).toBe(way);
+      // A critically damped spring turns at most once, so once the mark falls toward its target,
+      // every later step falls too.
+      const falling = steps.findIndex((step) => step < 0);
+      expect(steps.slice(falling).every((step) => step < 0)).toBe(true);
+      expect(Math.min(...values)).toBeGreaterThanOrEqual(fresh);
+      expect(values.at(-1)).toBe(fresh);
+    }
+  );
 });
 
 /** Whether no value crosses `target` from the side `start` lies on. */
