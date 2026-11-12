@@ -132,6 +132,28 @@ describe("Button", () => {
       expect(button.hasAttribute("data-pending")).toBe(false);
     });
 
+    // Chrome's page translation swaps each text node for `<font>` wrappers that React does not
+    // know about. Inserting the indicator before the old text node threw `NotFoundError`.
+    it("shows the indicator at the leading edge of a label that page translation replaced", () => {
+      function Fixture({ pending }: { pending: boolean }) {
+        return <Button isPending={pending}>Save</Button>;
+      }
+      const { rerender } = renderThemed(<Fixture pending={false} />);
+      const button = roleNamed("button", "Save");
+      const translated = document.createElement("font");
+      translated.innerHTML = "<font>Lagre</font>";
+      button.replaceChildren(translated);
+
+      rerender(<Fixture pending />);
+
+      expect(button.isConnected).toBe(true);
+      const indicator = button.querySelector('[data-slot="button-pending-indicator"]');
+      expect(indicator).not.toBeNull();
+      expect(indicator?.getBoundingClientRect().right).toBeLessThanOrEqual(
+        translated.getBoundingClientRect().left
+      );
+    });
+
     it("restores the native disabled attribute when a consumer opts out of staying focusable", async () => {
       renderThemed(
         <Button isPending focusableWhenDisabled={false}>
