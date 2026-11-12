@@ -605,7 +605,7 @@ describe("PhoneNumberField countryCode", () => {
     change.mockClear();
 
     await selectCountry("Sweden");
-    await expect.element(roleNamed("button", "Select country")).toHaveTextContent("+47");
+    await expect.element(page.getByRole("button", { name: "+47 Norway", exact: true })).toBeInTheDocument();
     await expect.element(input).toHaveValue("41234567");
     expect(countryChange).toHaveBeenCalledExactlyOnceWith({ code: "SE", dialCode: "+46" });
     expect(change).not.toHaveBeenCalled();
@@ -635,7 +635,7 @@ describe("PhoneNumberField countryCode", () => {
     change.mockClear();
 
     await selectCountry("Sweden");
-    await expect.element(roleNamed("button", "Select country")).toHaveTextContent("+46");
+    await expect.element(page.getByRole("button", { name: "+46 Sweden", exact: true })).toBeInTheDocument();
     await expect.element(input).toHaveValue("");
     expect(countryChange).toHaveBeenCalledExactlyOnceWith({ code: "SE", dialCode: "+46" });
     // The cleared number is reported once the field shows it.
@@ -684,7 +684,7 @@ describe("PhoneNumberField countryCode", () => {
       renderField(<Synchronous />);
       await expect.element(phoneInput()).toHaveValue("41234567");
       await act();
-      await expect.element(roleNamed("button", "Select country")).toHaveTextContent("+46");
+      await expect.element(page.getByRole("button", { name: "+46 Sweden", exact: true })).toBeInTheDocument();
       await expect.element(phoneInput()).toHaveValue(shows);
       expect(change.mock.calls.map(([value]) => value)).toEqual(changes);
       expect(heard[0]).toBe("country SE");
@@ -732,7 +732,7 @@ describe("PhoneNumberField countryCode", () => {
       renderField(<Formatting />);
       await expect.element(phoneInput()).toHaveValue("41234567");
       await act();
-      await expect.element(roleNamed("button", "Select country")).toHaveTextContent("+46");
+      await expect.element(page.getByRole("button", { name: "+46 Sweden", exact: true })).toBeInTheDocument();
       expect(change.mock.calls.map(([value]) => value)).toEqual(changes);
     }
   );
@@ -766,7 +766,7 @@ describe("PhoneNumberField countryCode", () => {
     }
     renderField(<Ahead />);
     await selectCountry("Sweden");
-    await expect.element(roleNamed("button", "Select country")).toHaveTextContent("+46");
+    await expect.element(page.getByRole("button", { name: "+46 Sweden", exact: true })).toBeInTheDocument();
     await expect.element(phoneInput()).toHaveValue("");
     expect(change).not.toHaveBeenCalled();
   });
@@ -791,9 +791,9 @@ describe("PhoneNumberField countryCode", () => {
       );
     }
     renderField(<Steering />);
-    await expect.element(roleNamed("button", "Select country")).toHaveTextContent("+47");
+    await expect.element(page.getByRole("button", { name: "+47 Norway", exact: true })).toBeInTheDocument();
     await userEvent.click(roleNamed("button", "Use Sweden"));
-    await expect.element(roleNamed("button", "Select country")).toHaveTextContent("+46");
+    await expect.element(page.getByRole("button", { name: "+46 Sweden", exact: true })).toBeInTheDocument();
     expect(countryChange).not.toHaveBeenCalled();
     expect(change).not.toHaveBeenCalled();
   });
