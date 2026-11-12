@@ -75,9 +75,22 @@ jobs:
       # job runs, so a unit or type failure does not wait on the browser suites.
       - name: turbo ci:checks (no browser)
         id: turbo-gate
-        run: pnpm exec turbo run '//#lint:oxlint' '//#test:repo-policy' '//#type-check:scripts' type-check test test:types build package:check api:report
+        run: pnpm exec turbo run '//#lint:oxlint' '//#test:repo-policy' '//#type-check:scripts' type-check test test:types build package:check size-limit api:report
         env:
           TURBO_RUN_SUMMARY: "true"
+
+      # size-limit writes its report before it passes or fails, so a breach still reaches the PR
+      # comment. A main run's report is the base every PR compares against. A gate that failed
+      # before size-limit leaves no report, and the upload skips.
+      - name: Upload size report
+        if: ${{ always() && steps.turbo-gate.outcome != 'skipped' }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: size-report
+          path: packages/fuse/.artifacts/size-report.json
+          if-no-files-found: ignore
+          # The report sits in `.artifacts/`, which the default excludes as hidden.
+          include-hidden-files: true
 
       # Turbo never evicts, so keep only the entries this run used before the cache saves. A
       # red gate still saves, so its successful tasks replay on the next attempt; a run whose
@@ -103,6 +116,69 @@ jobs:
       - name: Validate stable release PR
         if: env.IS_SELF_RELEASE_PR == 'true' || github.ref == 'refs/heads/changeset-release/main'
         run: pnpm release check-pr
+
+  # Posts each same-repository PR's size report against main's as one sticky comment. It runs
+  # after `checks`, whatever its result, so a breach shows its size, and nothing waits on it, so
+  # the required `checks` result never depends on commenting. It checks out only the comment
+  # script and runs no dependency code, so it alone holds `pull-requests: write`. A fork PR's
+  # token cannot comment, so it skips; its size-limit log in `checks` prints every size.
+  size-comment:
+    needs: checks
+    if: ${{ !cancelled() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      actions: read
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Checkout the comment script
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          sparse-checkout: packages/fuse/scripts
+
+      # Node strips the script's types itself; nothing is installed.
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: package.json
+
+      # `checks` uploads no report when its gate failed before size-limit ran; then there is
+      # nothing to post, and the PR keeps its last comment.
+      - name: Download the PR's size report
+        id: head-report
+        continue-on-error: true
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: size-report
+          path: ${{ runner.temp }}/head
+
+      # The base is the newest main run that passed every job. Until one uploads a report, or
+      # after it expires, the comment shows the PR's sizes without a comparison.
+      - name: Post the size comment
+        if: ${{ steps.head-report.outcome == 'success' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+          HEAD_REPORT: ${{ runner.temp }}/head/size-report.json
+          BASE_DIR: ${{ runner.temp }}/base
+          BODY: ${{ runner.temp }}/size-comment.md
+        run: |
+          base=()
+          run_id="$(gh run list --repo "$GITHUB_REPOSITORY" --workflow merge.yml --branch main --event push --status success --limit 1 --json databaseId --jq '.[0].databaseId // empty')"
+          if [ -n "$run_id" ] && gh run download "$run_id" --repo "$GITHUB_REPOSITORY" --name size-report --dir "$BASE_DIR"; then
+            base=("$BASE_DIR/size-report.json")
+          fi
+          node packages/fuse/scripts/size-comment.ts "$HEAD_REPORT" "${base[@]}" > "$BODY"
+          # Taking the first id in bash, not through `head`, keeps pipefail off a closed pipe.
+          ids="$(MARKER="$(head -n 1 "$BODY")" gh api --paginate "repos/$GITHUB_REPOSITORY/issues/$PR/comments" --jq '.[] | select(.user.login == "github-actions[bot]" and (.body | startswith($ENV.MARKER))) | .id')"
+          comment_id="${ids%%$'\n'*}"
+          if [ -n "$comment_id" ]; then
+            gh api --method PATCH "repos/$GITHUB_REPOSITORY/issues/comments/$comment_id" -F "body=@$BODY" > /dev/null
+          else
+            gh api --method POST "repos/$GITHUB_REPOSITORY/issues/$PR/comments" -F "body=@$BODY" > /dev/null
+          fi
 
   # Every package's browser, packed-consumer and e2e tasks, docs' e2e suite against its own
   # `next start` included, in one job beside the checks job.
