@@ -12,6 +12,7 @@ import { CaretDown } from "../../icons/generated/caret-down";
 import { X } from "../../icons/generated/x";
 import { definedProps } from "../../internal/defined-props";
 import type { ListItemOf, ListItems } from "../../internal/list-items";
+import { pressesRegion } from "../../internal/own-click";
 import { useLocale } from "../../intl/locale-context";
 import { cn } from "../../styles/cn";
 import { mergeClassName } from "../../styles/merge-class-name";
@@ -214,10 +215,12 @@ export function AutocompleteInput({
     // Base UI's InputGroup anchors the popup to the whole field box, not the input inside it.
     <AutocompletePrimitive.InputGroup
       render={<InputGroupRoot size={size} className={cn("w-auto", className)} />}
-      // A press on the field box outside a control opens the popup under `openOnInputClick`.
-      // Base UI skips that only for a disabled Root or Field, so skip it for this Input too.
+      // A press on the field box outside a control focuses the input and, under
+      // `openOnInputClick`, opens the popup. Base UI skips that only for a disabled Root or Field
+      // and for the controls it knows, so skip it for this Input too, for a nested element that
+      // owns its press, such as a label in a custom addon, and for one from a portal.
       onMouseDown={(event) => {
-        if (disabled) {
+        if (disabled || !pressesRegion(event.target, event.currentTarget)) {
           event.preventBaseUIHandler();
         }
       }}>
