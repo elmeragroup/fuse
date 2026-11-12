@@ -113,7 +113,8 @@ describe("cell formatting", () => {
 
   it("writes every space in a date as U+00A0", () => {
     // CLDR en: the medium date `MMM d, y`, the short time `h:mm a` and the `{1}, {0}` join. Node
-    // writes U+202F before the day period, and canonical spacing maps it with the other spaces.
+    // writes U+0020 before the day period, where Node 18.13 on ICU 72 wrote U+202F; canonical
+    // spacing maps every engine's space to U+00A0 (see `canonicalSpaces`).
     expect(
       formatDateCell("en-US", placed, { dateStyle: "medium", timeStyle: "short", timeZone: "UTC" })
     ).toBe("Sep\u00a030,\u00a02026,\u00a02:05\u00a0PM");
