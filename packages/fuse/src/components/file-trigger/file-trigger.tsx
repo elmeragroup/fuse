@@ -8,7 +8,6 @@ import { Camera } from "../../icons/generated/camera";
 import { Folder } from "../../icons/generated/folder";
 import { Paperclip } from "../../icons/generated/paperclip";
 import { definedProps } from "../../internal/defined-props";
-import { cn } from "../../styles/cn";
 import { Button } from "../button/button";
 import type { LabelButtonProps, LabelButtonSize } from "../button/button";
 import { FileUploadRoot } from "../file-upload/file-upload";
@@ -89,7 +88,6 @@ export function FileTrigger({
   withIcon = true,
   variant = "default",
   size = "sm",
-  className,
   children,
   ...props
 }: FileTriggerProps): ReactElement {
@@ -101,9 +99,8 @@ export function FileTrigger({
       <FileUploadTrigger
         render={<Button variant={variant} size={size} />}
         data-slot="file-trigger"
-        className={cn(withIcon && "gap-x-2", className)}
         {...props}>
-        {withIcon ? <Icon aria-hidden /> : null}
+        {withIcon ? <Icon data-icon="inline-start" aria-hidden /> : null}
         {children}
       </FileUploadTrigger>
     </FileUploadRoot>

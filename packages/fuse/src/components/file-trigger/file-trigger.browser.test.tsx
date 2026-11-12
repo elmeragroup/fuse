@@ -8,7 +8,9 @@ import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import { assertFocusRingAtBothDensities } from "../../../test/assert-focus-ring";
 import { fkasBranded } from "../../../test/theme-fixtures";
-import { formNamed, renderThemed, roleNamed } from "../../../test/themed-browser-render";
+import { formNamed, renderThemed, roleNamed, stampDensity } from "../../../test/themed-browser-render";
+import { Paperclip } from "../../icons/generated/paperclip";
+import { DENSITIES } from "../../theme/density";
 import { ThemeScope } from "../../theme/theme-scope";
 import { ButtonGroup } from "../button-group";
 import { Button } from "../button/button";
@@ -241,6 +243,34 @@ describe("FileTrigger", () => {
         expect(parseFloat(outer)).toBeGreaterThan(0);
       }
       expect(joinedEdges(roleNamed("button", "Attach"))).toEqual(expected);
+    }
+  );
+
+  it.each(["xs", "sm", "default", "lg"] as const)(
+    "spaces its icon and pads its icon side as a leading-icon Button at size %s, at both densities",
+    (size) => {
+      renderThemed(
+        <>
+          <FileTrigger size={size}>Attach</FileTrigger>
+          <Button size={size}>
+            <Paperclip data-icon="inline-start" aria-hidden />
+            Plain
+          </Button>
+        </>
+      );
+      /** The box metrics a leading icon sets on a label Button. */
+      const iconBox = (name: string) => {
+        const style = getComputedStyle(roleNamed("button", name));
+        return { gap: style.columnGap, start: style.paddingLeft, end: style.paddingRight };
+      };
+      for (const density of DENSITIES) {
+        stampDensity(density);
+        // Unit under test: FileTrigger's button. Oracle: a Button with a marked leading icon.
+        const expected = iconBox("Plain");
+        // The oracle took the marker: its icon side is tighter than its label side.
+        expect(Number.parseFloat(expected.start), density).toBeLessThan(Number.parseFloat(expected.end));
+        expect(iconBox("Attach"), density).toEqual(expected);
+      }
     }
   );
 
