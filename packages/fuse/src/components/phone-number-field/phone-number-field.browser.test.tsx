@@ -106,6 +106,22 @@ describe("PhoneNumberField", () => {
     expect(textboxNamed("Mobile")).toHaveProperty("inputMode", "tel");
   });
 
+  it.each([
+    ["the Field label", <PhoneNumberField key="label" label="Mobile" />],
+    ["aria-label without a label", <PhoneNumberField key="aria-label" aria-label="Mobile" />],
+    [
+      "aria-labelledby without a label",
+      <>
+        <span id="phone-heading">Mobile</span>
+        <PhoneNumberField aria-labelledby="phone-heading" />
+      </>,
+    ],
+  ])("names the group around the country picker and the number from %s", (_source, node) => {
+    renderField(node);
+    expect(roleNamed("group", "Mobile")).toBe(inputGroupRoot("Mobile"));
+    expect(roleNamed("group", "Mobile").contains(roleNamed("button", "+47 Norway"))).toBe(true);
+  });
+
   it("keeps the Field label and description when a wrapper forwards id and ARIA props as undefined", async () => {
     renderField(
       <PhoneNumberField

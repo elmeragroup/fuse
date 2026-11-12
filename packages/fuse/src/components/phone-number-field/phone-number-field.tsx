@@ -9,6 +9,7 @@ import type { ComponentProps, ReactElement, ReactNode } from "react";
 // primitives; the popup surface itself is the library Combobox.
 import { Combobox as ComboboxPrimitive } from "@base-ui/react";
 import { useFormContext } from "@base-ui/react/internals/form-context";
+import { useLabelableContext } from "@base-ui/react/internals/labelable-provider";
 import type { CountryCode, MetadataJson } from "libphonenumber-js/core";
 import { flushSync } from "react-dom";
 
@@ -16,6 +17,7 @@ import type { FlagAssetCode } from "../../flags";
 import { useFormReset } from "../../hooks/use-form-reset";
 import { useLocalizedStrings } from "../../hooks/use-localized-strings";
 import { MagnifyingGlass } from "../../icons/generated/magnifying-glass";
+import { definedProps } from "../../internal/defined-props";
 import { useLocale } from "../../intl/locale-context";
 import { cn } from "../../styles/cn";
 import { fieldReads } from "../../styles/field-size";
@@ -262,6 +264,29 @@ function CountryTrigger({ label, description, isEditable, children }: CountryTri
   );
 }
 
+/**
+ * The field box, an InputGroup named as the field. Its two tab stops, the country picker and the
+ * number, together make one value, and the group's name is what puts the picker's "Select
+ * country" in its field's context, as when a form has a mobile and a work number (WAI-ARIA APG:
+ * a group of related controls is named). It takes the name the number input takes: the
+ * consumer's `aria-labelledby`, else the Field label's id, with `aria-label` for a field with
+ * neither. It renders inside `Field.Root` to read the label's id, and above the picker's own
+ * labelable scope.
+ */
+function PhoneFieldGroup({
+  "aria-label": ariaLabel,
+  "aria-labelledby": ariaLabelledby,
+  ...props
+}: InputGroupRootProps): ReactElement {
+  const { labelId } = useLabelableContext();
+  return (
+    <InputGroupRoot
+      {...definedProps({ "aria-labelledby": ariaLabelledby ?? labelId, "aria-label": ariaLabel })}
+      {...props}
+    />
+  );
+}
+
 function countryCodeOf(country: PhoneNumberCountry): string {
   return country.code;
 }
@@ -418,7 +443,11 @@ export function PhoneNumberField({
         label={label}
         description={description}
         errorMessage={errorMessage}>
-        <InputGroupRoot ref={inputGroupRef} size={size} aria-invalid={isInvalid || undefined}>
+        <PhoneFieldGroup
+          ref={inputGroupRef}
+          size={size}
+          aria-invalid={isInvalid || undefined}
+          {...definedProps({ "aria-label": ariaLabel, "aria-labelledby": ariaLabelledby })}>
           {phone.countries.length === 1 ? (
             <InputGroupAddon className="text-foreground" align="inline-start">
               {/* One country leaves nothing to pick, so its flag and dial code are context: no
@@ -560,7 +589,7 @@ export function PhoneNumberField({
             />
           </SubmittedValueControl>
           {endContent}
-        </InputGroupRoot>
+        </PhoneFieldGroup>
       </FieldFrame>
       <input type="hidden" name={name} value={phone.outputValue} disabled={isDisabled} />
     </>

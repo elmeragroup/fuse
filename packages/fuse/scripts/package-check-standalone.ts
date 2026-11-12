@@ -97,7 +97,8 @@ try {
               link: measure("#link-button"),
               group: measure("#group"),
               groupInput: measure("#group input"),
-              number: measure("#number [role=group]"),
+              // The field box, which carries the field size; it has no group role.
+              number: measure("#number [data-size]"),
               numberInput: measure("#number input:not([aria-hidden])"),
               phone: measure("#phone [data-slot=input-group]"),
               textarea: measure("#textarea"),
