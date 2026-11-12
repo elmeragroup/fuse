@@ -2,7 +2,7 @@
 "@elmeragroup/fuse": patch
 ---
 
-`ConfirmButton` now shows its armed label on a page that Chrome's built-in translation has
-translated. Text in `children` and `armedChildren` renders in its own `<span>`. Before, arming
-threw `NotFoundError` when `armedChildren` was an element, and left the translated resting label
-showing when it was text.
+`ConfirmButton` now swaps between its resting and armed labels on a page that Chrome's built-in
+translation has translated. Each run of text in `children` and `armedChildren`, fragments included,
+renders in its own `<span>`. Before, the swap threw `NotFoundError` when one label was an element
+or a fragment, and left the translated old label showing when both were text.

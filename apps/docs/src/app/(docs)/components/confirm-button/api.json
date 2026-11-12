@@ -36,7 +36,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "Label swapped in while armed; the resting label is kept when omitted. Text in `children` and `armedChildren`, directly or in an array, renders in its own `<span>` so the swap still works after page translation replaced the text. Text inside a fragment or your own component stays bare; put it in an element.",
+          "description": "Label swapped in while armed; the resting label is kept when omitted. Text in `children` and `armedChildren`, fragments included, renders in a `<span>` so the swap still works after page translation replaced the text. Text your own component renders stays bare; put it in an element.",
           "required": false
         },
         {

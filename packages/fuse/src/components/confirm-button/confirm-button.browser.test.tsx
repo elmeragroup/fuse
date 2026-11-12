@@ -1,3 +1,5 @@
+import { Fragment } from "react";
+
 import { describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
@@ -68,41 +70,74 @@ describe("ConfirmButton", () => {
   });
 
   // Chrome's page translation swaps each text node for `<font>` wrappers that React does not
-  // know about. Arming then threw `NotFoundError` removing the old text node, or wrote the armed
-  // text into the detached node and left the translated resting label showing.
-  it.each([
-    ["text", "Confirm delete"],
-    ["an element", <strong key="armed">Confirm delete</strong>],
-  ] as const)(
-    "shows %s armedChildren after page translation replaced the resting label",
-    async (_case, armedChildren) => {
-      renderThemed(
-        <ConfirmButton onConfirm={() => undefined} armedChildren={armedChildren}>
-          Delete
-        </ConfirmButton>
-      );
-      const button = buttonNamed("Delete");
+  // know about. Swapping the label then threw `NotFoundError` removing the old text node, or wrote
+  // the new text into the detached node and left the translated label showing.
+  describe("on a page that translation rewrote", () => {
+    function translateLabel(button: HTMLElement) {
       const walker = document.createTreeWalker(button, NodeFilter.SHOW_TEXT);
-      const label = walker.nextNode();
-      if (label === null) {
-        throw new Error("Expected the resting label as a text node");
+      const labels: Node[] = [];
+      for (let node = walker.nextNode(); node !== null; node = walker.nextNode()) {
+        if (node.parentElement?.closest("[aria-live]") === null) {
+          labels.push(node);
+        }
       }
-      const translated = document.createElement("font");
-      translated.innerHTML = "<font>Slett</font>";
-      label.parentNode?.replaceChild(translated, label);
+      for (const label of labels) {
+        const translated = document.createElement("font");
+        translated.innerHTML = "<font>Oversatt</font>";
+        label.parentNode?.replaceChild(translated, label);
+      }
+    }
 
-      await userEvent.click(button);
-
-      expect(button.isConnected).toBe(true);
-      expect(button.getAttribute("data-armed")).toBe("true");
-      // The visible label, without the visually hidden live region that also says "Confirm delete".
-      const visibleLabel = [...button.childNodes]
+    // What the button shows, without the visually hidden live region that repeats the armed label.
+    function visibleLabel(button: HTMLElement) {
+      return [...button.childNodes]
         .filter((node) => !(node instanceof HTMLElement && node.hasAttribute("aria-live")))
         .map((node) => node.textContent)
         .join("");
-      expect(visibleLabel).toBe("Confirm delete");
     }
-  );
+
+    it.each([
+      ["text", "Confirm delete"],
+      ["an element", <strong key="armed">Confirm delete</strong>],
+      ["a fragment", <Fragment key="armed">Confirm delete</Fragment>],
+    ] as const)(
+      "arms to %s armedChildren and disarms back to the resting label",
+      async (_case, armedChildren) => {
+        renderThemed(
+          <ConfirmButton onConfirm={() => undefined} armedChildren={armedChildren}>
+            Delete
+          </ConfirmButton>
+        );
+        const button = buttonNamed("Delete");
+
+        translateLabel(button);
+        await userEvent.click(button);
+        expect(button.isConnected).toBe(true);
+        expect(button.getAttribute("data-armed")).toBe("true");
+        expect(visibleLabel(button)).toBe("Confirm delete");
+
+        translateLabel(button);
+        await userEvent.keyboard("{Escape}");
+        expect(button.isConnected).toBe(true);
+        expect(button.hasAttribute("data-armed")).toBe(false);
+        expect(visibleLabel(button)).toBe("Delete");
+      }
+    );
+  });
+
+  // The label text sits in a span, and Button spaces its flex items with a gap. An interpolated
+  // label must stay one item, laid out like the same words passed as one string.
+  it("lays out an interpolated label like the same label as one string", () => {
+    const count = 3;
+    renderThemed(
+      <>
+        <ConfirmButton onConfirm={() => undefined}>Delete {count} items</ConfirmButton>
+        <ConfirmButton onConfirm={() => undefined}>{"Delete 3 items"}</ConfirmButton>
+      </>
+    );
+    const [interpolated, joined] = page.getByRole("button", { name: "Delete 3 items" }).elements();
+    expect(interpolated?.getBoundingClientRect().width).toBe(joined?.getBoundingClientRect().width);
+  });
 
   it("disarms on Escape without confirming, and still invokes consumer onKeyDown", async () => {
     const onConfirm = vi.fn();
