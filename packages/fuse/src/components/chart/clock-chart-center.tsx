@@ -18,8 +18,8 @@ import { ChartHeadlineContext } from "./chart-scope-contexts";
 import { fallbackSlot, readingAt } from "./chart-series-readout";
 import { slotLabel } from "./chart-text";
 import type { ChartFallback, ChartLayerProps, ValueFormat } from "./chart-types";
-import { numberAndUnit } from "./format/formatted-text";
-import { formatValue } from "./format/value-format";
+import { ChartValueRun } from "./chart-value-run";
+import { formatValue, formatValueRun } from "./format/value-format";
 import { assertKnownKey } from "./layout/errors";
 
 /**
@@ -49,26 +49,6 @@ export type ClockChartActiveValueProps = ChartLayerProps & {
   format?: ValueFormat;
 };
 
-/**
- * A value as its number and its unit, in the order the formatter wrote them and joined by a
- * breakable space, so a value too wide for the hole wraps between them instead of overflowing.
- */
-function ValueParts({ text }: { readonly text: string }): ReactElement {
-  const parts = numberAndUnit(text);
-  const number = <span data-part="number">{parts.number}</span>;
-  if (parts.unit === null) return number;
-  const unit = <span data-part="unit">{parts.unit}</span>;
-  return parts.side === "before" ? (
-    <>
-      {unit} {number}
-    </>
-  ) : (
-    <>
-      {number} {unit}
-    </>
-  );
-}
-
 /** The slot a value part prints: the active slot, or the fallback's. */
 function useShownSlot(clock: ClockDrawing, dataKey: string, fallback: ChartFallback): number | null {
   const { kernel } = usePolarContext("ClockChart.ActiveValue", ["clock"]);
@@ -96,14 +76,12 @@ export function ClockChartActiveValue({
   const exposed = use(ChartHeadlineContext);
   const slot = useShownSlot(clock, dataKey, fallback);
   const reading = slot === null ? undefined : readingAt(clock.text, dataKey, slot);
+  const shownFormat = format ?? clock.text.config[dataKey]?.format ?? {};
   const label =
+    reading?.kind === "reading" ? formatValue(clock.text.locale, reading.value, shownFormat, "full") : null;
+  const run =
     reading?.kind === "reading"
-      ? formatValue(
-          clock.text.locale,
-          reading.value,
-          format ?? clock.text.config[dataKey]?.format ?? {},
-          "full"
-        )
+      ? formatValueRun(clock.text.locale, reading.value, shownFormat, "full")
       : null;
   return (
     <span
@@ -112,7 +90,10 @@ export function ClockChartActiveValue({
       className={className}
       style={style}>
       {label === null ? null : !exposed ? (
-        <ValueParts text={label.text} />
+        <ChartValueRun
+          run={run ?? { before: "", number: label.text, after: "" }}
+          number={run?.number ?? label.text}
+        />
       ) : label.text === label.spoken ? (
         label.text
       ) : (

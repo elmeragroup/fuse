@@ -15,9 +15,9 @@ import type { RefCallback } from "react";
 
 import { SAME_PLOT } from "./chart-motion";
 import type { ChartMotion, MarkValues, Placement } from "./chart-motion";
-import type { PolarContextValue, PolarUpdate } from "./chart-polar-context";
+import type { PolarContextValue, PolarKernel, PolarUpdate } from "./chart-polar-context";
 import { cssTime, DEFAULT_PACE, introDelay, introTiming } from "./layout/polar-motion";
-import type { IntroPace } from "./layout/polar-motion";
+import type { IntroPace, PolarIntro } from "./layout/polar-motion";
 import { sameItems } from "./layout/same-items";
 
 /** Writes the loop's numbers onto a polar mark's node, in the look it draws. */
@@ -85,6 +85,16 @@ export function usePolarMark<T extends Element, L>(
 }
 
 /**
+ * What a polar mark's commits read from its Root: the commit, whether the Root plays an entrance,
+ * the family whose entrance paces it, and the Root's store, hidden flag and figure. A polar Root's
+ * context holds them all, and a gauge's Root, which has no listbox, hands them on its own.
+ */
+export type PolarCommitSource = Pick<PolarContextValue, "update" | "entrance"> & {
+  readonly model: { readonly family: PolarIntro };
+  readonly kernel: Pick<PolarKernel, "store" | "hidden" | "root">;
+};
+
+/**
  * Track the commits a polar mark draws, so its layout effect knows how to reach each one. The
  * mark's first draw in the Root's first commit plays the entrance, or snaps without one. A mark
  * that first draws in a data update enters: it grows from its start on the update's clock, as its
@@ -104,7 +114,7 @@ export function usePolarMark<T extends Element, L>(
  *   them, as a clock's slots pair across a change of slot count.
  */
 export function usePolarCommit(
-  polar: Pick<PolarContextValue, "update" | "entrance" | "model" | "kernel">,
+  polar: PolarCommitSource,
   anchor: () => Element | null
 ): (
   index: number,

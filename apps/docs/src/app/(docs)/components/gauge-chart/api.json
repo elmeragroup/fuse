@@ -1,0 +1,772 @@
+{
+  "$generated": "Generated from packages/fuse types and JSDoc by pnpm --filter docs generate. Committed so API changes are reviewable diffs — never hand-edit this file; CI fails on drift.",
+  "slug": "gauge-chart",
+  "parts": [
+    {
+      "name": "GaugeChart.Root",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/gauge-chart-root.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 273,
+      "props": [
+        {
+          "name": "aria-label",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The chart's name. Pass this or `aria-labelledby`, never both.",
+          "required": false
+        },
+        {
+          "name": "aria-labelledby",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The id of the element that names the chart. Pass this or `aria-label`, never both.",
+          "required": false
+        },
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The chart's parts. Root never inspects them.",
+          "required": false
+        },
+        {
+          "name": "data-intro",
+          "origin": "declared",
+          "type": "\"none\" | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "\"none\" turns the entrance sweep off.",
+          "required": false
+        },
+        {
+          "name": "endAngle",
+          "origin": "declared",
+          "type": "number | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Degrees from 12 o'clock, clockwise, where the sweep ends. 135 by default, a 270° sweep open at the bottom. The chart keeps the aspect of the sweep's bounding box.",
+          "required": false
+        },
+        {
+          "name": "max",
+          "origin": "declared",
+          "type": "number",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The value at the sweep's end, above `min`. A `max` at or below `min`, or one that is not a finite number, throws `invalid-gauge-domain`.",
+          "required": true
+        },
+        {
+          "name": "min",
+          "origin": "declared",
+          "type": "number | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The value at the sweep's start. 0 by default.",
+          "required": false
+        },
+        {
+          "name": "startAngle",
+          "origin": "declared",
+          "type": "number | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Degrees from 12 o'clock, clockwise, where the sweep starts. −135 by default. An angle that is not a finite number, here or in `endAngle`, throws `invalid-sweep`.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        },
+        {
+          "name": "value",
+          "origin": "declared",
+          "type": "number | null",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The reading, in the domain's own unit, such as 3.9 kWh. A value past either end draws at that end and sets `data-over-max` or `data-under-min` on the figure, while the centre and the meter's text keep the true number. Null shows `GaugeChart.Empty`. A value that is not a finite number throws `non-finite-value` in development and draws as null in production.",
+          "required": true
+        },
+        {
+          "name": "valueFormat",
+          "origin": "declared",
+          "type": "ValueFormat | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The value format, which the centre, the meter's text and the ruler's labels read.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "GaugeChart.Zone",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/gauge-chart-zone.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Classes on the part's element.",
+          "required": false
+        },
+        {
+          "name": "color",
+          "origin": "declared",
+          "type": "ChartGaugeRole",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The band's colour role, such as \"chart-sentiment-negative\" for the step above a limit.",
+          "required": true
+        },
+        {
+          "name": "from",
+          "origin": "declared",
+          "type": "number",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Where the range starts, in the domain's unit.",
+          "required": true
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        },
+        {
+          "name": "to",
+          "origin": "declared",
+          "type": "number",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Where the range ends, in the domain's unit.",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "GaugeChart.Track",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/gauge-chart-track.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Classes on the part's element.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        },
+        {
+          "name": "variant",
+          "origin": "declared",
+          "type": "\"notches\" | \"solid\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"notches\"",
+          "description": "The track's look, which `Fill` and `Glow` follow. \"notches\" draws 40 notches over the sweep, every notch and every gap alike; \"solid\" draws one band with softly rounded ends. \"notches\" by default.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "GaugeChart.Fill",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/gauge-chart-track.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Classes on the part's element.",
+          "required": false
+        },
+        {
+          "name": "color",
+          "origin": "declared",
+          "type": "ChartGaugeRole | undefined",
+          "shortType": null,
+          "defaultValue": "\"chart-1\"",
+          "description": "The fill's colour role. \"chart-1\" by default.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "GaugeChart.Glow",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/gauge-chart-track.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Classes on the part's element.",
+          "required": false
+        },
+        {
+          "name": "color",
+          "origin": "declared",
+          "type": "ChartGaugeRole | undefined",
+          "shortType": null,
+          "defaultValue": "\"chart-1\"",
+          "description": "The glow's colour role, the Fill's own. \"chart-1\" by default.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "GaugeChart.Ruler",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/gauge-chart-ruler.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Classes on the part's element.",
+          "required": false
+        },
+        {
+          "name": "format",
+          "origin": "declared",
+          "type": "ValueFormat | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The labels' number format, without its unit. Root's `valueFormat` by default.",
+          "required": false
+        },
+        {
+          "name": "majorEvery",
+          "origin": "declared",
+          "type": "number | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "How many intervals one major tick spans, a whole number of 1 or more. Set it with `ticks`.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        },
+        {
+          "name": "ticks",
+          "origin": "declared",
+          "type": "number | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The intervals between `min` and `max`, a whole number of 1 or more. By default the domain's round step for about five majors, each split by the step's leading digit: 0–5 kWh takes 25, a tick each 0.2 kWh.",
+          "required": false
+        },
+        {
+          "name": "variant",
+          "origin": "declared",
+          "type": "\"inside\" | \"outside\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"inside\"",
+          "description": "Where the ruler sits: \"inside\" the track, or \"outside\" it at the rim, where the dial makes room for it and its labels. \"inside\" by default.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "GaugeChart.Needle",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/gauge-chart-needle.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Classes on the part's element.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        },
+        {
+          "name": "variant",
+          "origin": "declared",
+          "type": "\"line\" | \"triangle\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"line\"",
+          "description": "The needle's shape: a \"line\" with round ends, or a slim \"triangle\". \"line\" by default.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "GaugeChart.Sector",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/gauge-chart-sector.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Classes on the part's element.",
+          "required": false
+        },
+        {
+          "name": "color",
+          "origin": "declared",
+          "type": "ChartGaugeRole | undefined",
+          "shortType": null,
+          "defaultValue": "\"chart-1\"",
+          "description": "The sector's colour role. \"chart-1\" by default.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        },
+        {
+          "name": "variant",
+          "origin": "declared",
+          "type": "\"conic\" | \"flat\" | \"radial\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"conic\"",
+          "description": "The wedge's look: \"conic\" brightens toward the reading's edge, \"radial\" brightens toward the rim, and \"flat\" paints one tint. \"conic\" by default.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "GaugeChart.ProgressRing",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/gauge-chart-progress-ring.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Classes on the part's element.",
+          "required": false
+        },
+        {
+          "name": "color",
+          "origin": "declared",
+          "type": "ChartGaugeRole | undefined",
+          "shortType": null,
+          "defaultValue": "\"chart-1\"",
+          "description": "The ring's colour role. \"chart-1\" by default.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "GaugeChart.Dots",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/gauge-chart-dots.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Classes on the part's element.",
+          "required": false
+        },
+        {
+          "name": "color",
+          "origin": "declared",
+          "type": "ChartGaugeRole | undefined",
+          "shortType": null,
+          "defaultValue": "\"chart-1\"",
+          "description": "The dots' colour role. \"chart-1\" by default.",
+          "required": false
+        },
+        {
+          "name": "rings",
+          "origin": "declared",
+          "type": "number | undefined",
+          "shortType": null,
+          "defaultValue": "4",
+          "description": "How many rings of dots, 1 to 6, the outermost just inside the track. 4 by default.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        },
+        {
+          "name": "variant",
+          "origin": "declared",
+          "type": "\"even\" | \"fade\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"even\"",
+          "description": "The rings' look: \"even\", every ring alike, or \"fade\", each ring fainter toward the centre. \"even\" by default.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "GaugeChart.Center",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/gauge-chart-center.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The centre's content, such as `CenterValue` over a `CenterLabel`.",
+          "required": false
+        },
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Classes on the part's element.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "GaugeChart.CenterValue",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/gauge-chart-center.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Classes on the part's element.",
+          "required": false
+        },
+        {
+          "name": "format",
+          "origin": "declared",
+          "type": "ValueFormat | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The value format. Root's `valueFormat` by default.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "GaugeChart.CenterLabel",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/gauge-chart-center.tsx",
+      "forwardedFrom": [],
+      "forwardedCount": 0,
+      "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The label text, such as \"kWh this hour\".",
+          "required": false
+        },
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Classes on the part's element.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "GaugeChart.Skeleton",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/gauge-chart-skeleton.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 276,
+      "props": [
+        {
+          "name": "endAngle",
+          "origin": "declared",
+          "type": "number | undefined",
+          "shortType": null,
+          "defaultValue": "135",
+          "description": "The sweep's end, as on Root. 135 by default.",
+          "required": false
+        },
+        {
+          "name": "label",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The loader's name. The dictionary's \"Laster diagram\" is the default.",
+          "required": false
+        },
+        {
+          "name": "startAngle",
+          "origin": "declared",
+          "type": "number | undefined",
+          "shortType": null,
+          "defaultValue": "-135",
+          "description": "The sweep's start, as on Root. −135 by default. A non-finite angle throws `invalid-sweep`.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "GaugeChart.Empty",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/gauge-chart-skeleton.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 277,
+      "props": [
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, {}> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "GaugeChart.Headline",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/chart-headline.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 277,
+      "props": [
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, {}> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "GaugeChart.Takeaway",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/chart/chart-headline.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 276,
+      "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "string | number | readonly (string | number)[]",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "The takeaway sentence. Interpolated strings and numbers pass, and elements fail the type.",
+          "required": true
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, {}> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": "declared",
+          "type": "ChartStyle | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Inline styles, with every public chart custom property typed.",
+          "required": false
+        }
+      ]
+    }
+  ]
+}

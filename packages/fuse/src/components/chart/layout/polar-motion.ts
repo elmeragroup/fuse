@@ -18,8 +18,17 @@ const RING_INTRO = { start: 160, step: 100 } as const;
 /** Where a radar series starts to grow, and the step between series, after its grid draws. */
 const RADAR_INTRO = { start: 600, step: 150 } as const;
 
-/** The families whose entrance staggers its items, and the clock, whose writers stagger its slots. */
-export type PolarIntro = "pie" | "radial" | "radar" | "clock";
+/**
+ * Where a gauge's sweep starts, after its track scales out, as a ring's value does. `chart.css`
+ * delays the centre's count-up by the same time.
+ */
+const GAUGE_INTRO_START_MS = 160;
+
+/**
+ * The families whose entrance staggers its items, the clock, whose writers stagger its slots, and
+ * the gauge, whose one sweep follows its track.
+ */
+export type PolarIntro = "pie" | "radial" | "radar" | "clock" | "gauge";
 
 /**
  * The clock entrance, the Motion table's numbers: one progress over 1250 ms opens a clockwise wedge
@@ -68,7 +77,7 @@ export function introTiming(
 
 /**
  * When an item's entrance starts: slice i of a pie at 100 ms + i·`--chart-stagger`, 80 ms by default,
- * ring i's value at 160 + i·100 ms, and radar series s at 600 + s·150 ms.
+ * ring i's value at 160 + i·100 ms, radar series s at 600 + s·150 ms, and a gauge's sweep at 160 ms.
  *
  * @param family - The family.
  * @param index - The slice, the ring or the series.
@@ -85,6 +94,8 @@ export function introDelay(family: PolarIntro, index: number, pace: IntroPace = 
       return RADAR_INTRO.start + index * RADAR_INTRO.step;
     case "clock":
       return 0;
+    case "gauge":
+      return GAUGE_INTRO_START_MS;
   }
 }
 

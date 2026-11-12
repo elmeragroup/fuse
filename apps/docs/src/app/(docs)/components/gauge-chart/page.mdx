@@ -1,0 +1,85 @@
+---
+lede: >
+  Preview. One reading on a dial from its minimum to its maximum, named as a meter.
+---
+
+import { GaugeChartBattery } from "./demos/gauge-chart-battery";
+import { GaugeChartCapacityStep } from "./demos/gauge-chart-capacity-step";
+import { GaugeChartCharging } from "./demos/gauge-chart-charging";
+import { GaugeChartEmpty } from "./demos/gauge-chart-empty";
+import { GaugeChartLive } from "./demos/gauge-chart-live";
+import { GaugeChartLoading } from "./demos/gauge-chart-loading";
+import { GaugeChartPriceArea } from "./demos/gauge-chart-price-area";
+import { GaugeChartSpotPrice } from "./demos/gauge-chart-spot-price";
+
+import { componentMetadata } from "../../../../lib/component-page";
+
+export const metadata = componentMetadata("gauge-chart");
+
+<ComponentIntro slug="gauge-chart" />
+
+<Prose>
+
+The chart entry is a preview. Names and props can change until Fuse's first stable release. Root takes the reading in its own unit, with `min` and `max` around it, and names the dial as a meter: a screen reader reads its name, its domain and the value in Root's format. Nothing in the chart takes focus.
+
+Every part draws from one value. The track scales out once, the first time the gauge comes into view, then the fill sweeps from the minimum to the reading, lighting each notch as it passes, while the ruler's ticks brighten and the needle turns with it. A new reading sweeps on from wherever the dial shows. With reduced motion, and in print, the dial draws at rest at once.
+
+</Prose>
+
+## Against a limit
+
+A `Zone` marks a range at the rim, here the step above the 5 kWh capacity limit. The track scales in to make room for it, so no radius needs tuning.
+
+<Demo slug="gauge-chart" id="capacity-step" title="Capacity step" file="gauge-chart-capacity-step.tsx">
+  <GaugeChartCapacityStep />
+</Demo>
+
+## Price bands
+
+Zones repeat, each in its own colour role. An outside `Ruler` stands at the rim with its labels past it, and `Track variant="solid"` draws one band, which the fill follows.
+
+<Demo slug="gauge-chart" id="spot-price" title="Spot price" file="gauge-chart-spot-price.tsx">
+  <GaugeChartSpotPrice />
+</Demo>
+
+A gauge may leave the track out and let a `Sector` and rings of `Dots` carry the reading.
+
+<Demo slug="gauge-chart" id="price-area" title="Price area" file="gauge-chart-price-area.tsx">
+  <GaugeChartPriceArea />
+</Demo>
+
+## Rings
+
+A `ProgressRing` draws the reading as a thin ring outside the track, its remainder dimmed.
+
+<Demo slug="gauge-chart" id="battery" title="Battery charge" file="gauge-chart-battery.tsx">
+  <GaugeChartBattery />
+</Demo>
+
+With `startAngle={0}` and `endAngle={360}` the ring closes, and alone it carries the reading.
+
+<Demo slug="gauge-chart" id="charging" title="Charging session" file="gauge-chart-charging.tsx">
+  <GaugeChartCharging />
+</Demo>
+
+## Live readings
+
+Each new reading sweeps on from where the dial shows, also when it lands mid-sweep, and the centre's digits roll to it.
+
+<Demo slug="gauge-chart" id="live" title="Live reading" file="gauge-chart-live.tsx">
+  <GaugeChartLive />
+</Demo>
+
+## Loading and empty states
+
+<Demo slug="gauge-chart" id="loading" title="Loading" file="gauge-chart-loading.tsx">
+  <GaugeChartLoading />
+</Demo>
+
+A null value shows `GaugeChart.Empty`, and the dial is no meter until a reading arrives.
+
+<Demo slug="gauge-chart" id="empty" title="No reading" file="gauge-chart-empty.tsx">
+  <GaugeChartEmpty />
+</Demo>
+
+<ApiReference slug="gauge-chart" />

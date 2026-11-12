@@ -365,6 +365,9 @@ export type ChartFractionDigits = {
 };
 
 // @beta
+export type ChartGaugeRole = ChartCategoricalRole | ChartSequentialRole | ChartSentimentRole;
+
+// @beta
 function ChartGlow(input: ChartGlowProps): ReactElement;
 
 // @beta
@@ -1219,6 +1222,163 @@ export function formatChartValue(value: number, format: ValueFormat | undefined,
 export type FormattedText = {
     readonly text: string;
     readonly spoken: string;
+};
+
+declare namespace GaugeChart {
+    export {
+        GaugeChartCenter as Center,
+        GaugeChartCenterLabel as CenterLabel,
+        GaugeChartCenterValue as CenterValue,
+        GaugeChartDots as Dots,
+        GaugeChartEmpty as Empty,
+        GaugeChartFill as Fill,
+        GaugeChartGlow as Glow,
+        ChartHeadline as Headline,
+        GaugeChartNeedle as Needle,
+        GaugeChartProgressRing as ProgressRing,
+        GaugeChartRoot as Root,
+        GaugeChartRuler as Ruler,
+        GaugeChartSector as Sector,
+        GaugeChartSkeleton as Skeleton,
+        ChartTakeaway as Takeaway,
+        GaugeChartTrack as Track,
+        GaugeChartZone as Zone
+    }
+}
+
+// @beta
+function GaugeChartCenter(input: GaugeChartCenterProps): ReactElement;
+
+// @beta
+function GaugeChartCenterLabel(input: GaugeChartCenterLabelProps): ReactElement;
+
+// @beta
+export type GaugeChartCenterLabelProps = ChartLayerProps & {
+    children?: ReactNode;
+};
+
+// @beta
+export type GaugeChartCenterProps = ChartLayerProps & {
+    children?: ReactNode;
+};
+
+// @beta
+function GaugeChartCenterValue(input: GaugeChartCenterValueProps): ReactElement;
+
+// @beta
+export type GaugeChartCenterValueProps = ChartLayerProps & {
+    format?: ValueFormat;
+};
+
+// @beta
+function GaugeChartDots(input: GaugeChartDotsProps): ReactElement;
+
+// @beta
+export type GaugeChartDotsProps = ChartLayerProps & {
+    color?: ChartGaugeRole;
+    rings?: number;
+    variant?: "even" | "fade";
+};
+
+// @beta
+function GaugeChartEmpty(props: GaugeChartEmptyProps): ReactElement;
+
+// @beta
+export type GaugeChartEmptyProps = ChartDomProps<"div">;
+
+// @beta
+function GaugeChartFill(input: GaugeChartFillProps): ReactElement;
+
+// @beta
+export type GaugeChartFillProps = ChartLayerProps & {
+    color?: ChartGaugeRole;
+};
+
+// @beta
+function GaugeChartGlow(input: GaugeChartGlowProps): ReactElement;
+
+// @beta
+export type GaugeChartGlowProps = ChartLayerProps & {
+    color?: ChartGaugeRole;
+};
+
+// @beta
+function GaugeChartNeedle(input: GaugeChartNeedleProps): ReactElement;
+
+// @beta
+export type GaugeChartNeedleProps = ChartLayerProps & {
+    variant?: "line" | "triangle";
+};
+
+// @beta
+function GaugeChartProgressRing(input: GaugeChartProgressRingProps): ReactElement;
+
+// @beta
+export type GaugeChartProgressRingProps = ChartLayerProps & {
+    color?: ChartGaugeRole;
+};
+
+// @beta
+function GaugeChartRoot(props: GaugeChartRootProps): ReactElement;
+
+// @beta
+export type GaugeChartRootProps = ChartAccessibleName & ChartFigureProps & {
+    value: number | null;
+    min?: number;
+    max: number;
+    valueFormat?: ValueFormat;
+    startAngle?: number;
+    endAngle?: number;
+    "data-intro"?: "none";
+    children?: ReactNode;
+};
+
+// @beta
+function GaugeChartRuler(input: GaugeChartRulerProps): ReactElement;
+
+// @beta
+export type GaugeChartRulerProps = ChartLayerProps & {
+    variant?: "inside" | "outside";
+    ticks?: number;
+    majorEvery?: number;
+    format?: ValueFormat;
+};
+
+// @beta
+function GaugeChartSector(input: GaugeChartSectorProps): ReactElement;
+
+// @beta
+export type GaugeChartSectorProps = ChartLayerProps & {
+    color?: ChartGaugeRole;
+    variant?: "conic" | "radial" | "flat";
+};
+
+// @beta
+function GaugeChartSkeleton(input: GaugeChartSkeletonProps): ReactElement;
+
+// @beta
+export type GaugeChartSkeletonProps = Omit<ChartDomProps<"div">, "children" | "render"> & {
+    startAngle?: number;
+    endAngle?: number;
+    label?: string;
+};
+
+// @beta
+function GaugeChartTrack(input: GaugeChartTrackProps): ReactElement;
+
+// @beta
+export type GaugeChartTrackProps = ChartLayerProps & {
+    variant?: "notches" | "solid";
+};
+
+// @beta
+function GaugeChartZone(input: GaugeChartZoneProps): ReactElement;
+
+// @beta
+export type GaugeChartZoneProps = ChartLayerProps & {
+    from: number;
+    to: number;
+    color: ChartGaugeRole;
 };
 
 // @beta

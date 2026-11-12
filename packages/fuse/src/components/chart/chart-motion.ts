@@ -7,6 +7,8 @@
  * mark continues without a jump.
  */
 import { cubicBezier } from "./layout/ease";
+import { momentumSpring, spanAround, springAt, springProgress } from "./layout/momentum";
+import type { MomentumSpring, MomentumPoint } from "./layout/momentum";
 import { CHART_UPDATE_CURVE, CHART_UPDATE_MS } from "./layout/motion";
 import { sameItems } from "./layout/same-items";
 
@@ -70,6 +72,13 @@ export type Placement =
   | { readonly kind: "snap" }
   | {
       readonly kind: "move";
+      /**
+       * "keep" carries a running tween's velocity into the move, so a target that changes while
+       * the mark moves bends its course instead of turning it at once: the mark leaves from where
+       * and how fast it moves on a critically damped spring that rests on the new target, with no
+       * bounce, by the end of the update's duration. A mark at rest moves on the update curve.
+       */
+      readonly momentum?: "keep";
       /**
        * A path's own route to its resting target, when the two lists differ in length, as a line
        * that slides in a reading and slides the first one out does. The tween walks `from` to `to`,
@@ -282,6 +291,8 @@ type Tween = {
   readonly duration?: number;
   /** "linear" for a steady pace, the update curve when undefined. */
   readonly curve?: "linear";
+  /** The spring a momentum tween moves on in place of its curve. Undefined for a curve's tween. */
+  readonly spring?: MomentumSpring;
 };
 
 /**
@@ -290,6 +301,8 @@ type Tween = {
  */
 type Mark = {
   drawn: MarkValues;
+  /** The loop's clock when `drawn` was drawn, which a momentum move reads the velocity at. */
+  drawnAt?: number;
   eased: number;
   write: MarkWriter;
   tween: Tween | null;
@@ -323,6 +336,48 @@ type Joined = {
 };
 
 const ease = cubicBezier(CHART_UPDATE_CURVE);
+
+/** What a momentum move carries from the tween it replaces: where, when, and on which spring. */
+type Carried = {
+  readonly from: MarkValues;
+  readonly at: number;
+  /** How long the spring takes to settle, in milliseconds. */
+  readonly duration: number;
+  readonly spring: MomentumSpring;
+};
+
+/** How long a tween runs, in milliseconds. */
+function durationOf(tween: Tween): number {
+  return tween.duration ?? CHART_UPDATE_MS;
+}
+
+/**
+ * The numbers a tween draws a time into its run, and their velocity in units per millisecond.
+ * A curve's tween reads its curve, and a momentum tween its spring.
+ */
+function tweenAt(tween: Tween, elapsed: number): MomentumPoint {
+  const duration = durationOf(tween);
+  const t = Math.min(duration, Math.max(0, elapsed));
+  if (tween.spring !== undefined) return springAt(tween.spring, tween.from, tween.to, t);
+  const easedAt = (at: number): number => {
+    const progress = Math.min(1, Math.max(0, at / duration));
+    return tween.curve === "linear" ? progress : ease(progress);
+  };
+  // The curve's slope by a central difference a millisecond either side, one-sided at its ends.
+  const before = Math.max(0, t - 1);
+  const after = Math.min(duration, t + 1);
+  // A tween still in its delay has not moved yet, so it carries no velocity.
+  const slope = elapsed > 0 && after > before ? (easedAt(after) - easedAt(before)) / (after - before) : 0;
+  const eased = easedAt(t);
+  const values: number[] = [];
+  const speeds: number[] = [];
+  tween.to.forEach((to, index) => {
+    const from = tween.from[index] ?? to;
+    values.push(from + (to - from) * eased);
+    speeds.push((to - from) * slope);
+  });
+  return { values, velocity: speeds };
+}
 
 /** The numbers a mark rests on once its tween ends. */
 function restOf(mark: Mark): MarkValues {
@@ -531,13 +586,21 @@ export function createChartMotion(
         // An entrance that waited starts in the first frame after `play`, so its first painted frame
         // draws its start, however long the plot waited or the tab stayed hidden.
         if (tween.start === Number.POSITIVE_INFINITY) mark.tween = tween = { ...tween, start: time };
-        const progress = Math.min(
-          1,
-          Math.max(0, (time - tween.start - tween.delay) / (tween.duration ?? CHART_UPDATE_MS))
-        );
-        mark.eased = progress >= 1 ? 1 : tween.curve === "linear" ? progress : ease(progress);
+        const elapsed = time - tween.start - tween.delay;
+        const progress = Math.min(1, Math.max(0, elapsed / durationOf(tween)));
+        mark.eased =
+          progress >= 1
+            ? 1
+            : tween.spring !== undefined
+              ? // The spring's share of the way from rest, which a resize's retarget reads.
+                springProgress(progress)
+              : tween.curve === "linear"
+                ? progress
+                : ease(progress);
+        mark.drawnAt = time;
         // The last frame writes the target itself, so the DOM ends on the numbers React rendered.
         if (progress >= 1) mark.drawn = tween.rest ?? tween.to;
+        else if (tween.spring !== undefined) mark.drawn = tweenAt(tween, elapsed).values;
         else {
           mark.frames ??= [[], []];
           const at = mark.next ?? 0;
@@ -585,9 +648,32 @@ export function createChartMotion(
     axes: readonly ValueAxis[],
     owner: FrameOwner
   ): void => {
-    hold(id, { drawn: tween.from, eased: 0, write, tween, axes, owner });
+    // The mark shows `from` at the tween's start, so a second placement before the next frame
+    // reads its position, its velocity and its clock together from the tween it replaced.
+    const drawnAt = Number.isFinite(tween.start) ? tween.start : undefined;
+    hold(id, { drawn: tween.from, drawnAt, eased: 0, write, tween, axes, owner });
     write(tween.from);
     if (!held) handle ??= host.requestFrame(step);
+  };
+
+  /**
+   * The spring a moving mark leaves on toward a new target: from where it showed, at its velocity
+   * then, on the clock it showed it at. Null for a mark at rest, one in its delay or not yet
+   * started, which carries no velocity, and a path whose route draws more numbers than it rests on.
+   */
+  const momentumOf = (id: string, target: MarkValues): Carried | null => {
+    const mark = marks.get(id);
+    const tween = mark?.tween ?? null;
+    const at = mark?.drawnAt;
+    if (mark === undefined || tween === null || at === undefined || tween.start > at) return null;
+    if (tween.rest !== undefined || mark.drawn.length !== target.length) return null;
+    const { velocity } = tweenAt(tween, at - tween.start - tween.delay);
+    if (velocity.every((speed) => speed === 0)) return null;
+    const from = [...mark.drawn];
+    const spans = target.map((to, index) =>
+      spanAround(tween.from[index] ?? to, tween.to[index] ?? to, from[index] ?? to, tween.spring?.span[index])
+    );
+    return { from, at, ...momentumSpring({ from, to: target, velocity, spans }) };
   };
 
   /** Place a mark: the body of `place`, once the mark's anchor names it. */
@@ -685,6 +771,10 @@ export function createChartMotion(
         projectAll();
       }
     }
+    // A move that keeps momentum reads where and how fast the mark moves at the frame it last drew,
+    // before the update restarts the group, and leaves from there on a spring.
+    const carried =
+      placement.kind === "move" && placement.momentum === "keep" ? momentumOf(id, target) : null;
     if (placement.kind === "move") {
       // A data update restarts every running tween with it, from what each drew, so the group
       // keeps one progress, marks this commit leaves alone among them.
@@ -695,7 +785,7 @@ export function createChartMotion(
           if (mark.tween === null) continue;
           // A frame's list is drawn into again, so the restart keeps a copy.
           // A restart runs on the update's clock, so an entrance it interrupts takes 480 ms from here.
-          const { duration: _entrance, ...restarted } = mark.tween;
+          const { duration: _entrance, spring: _spring, ...restarted } = mark.tween;
           mark.tween = { ...restarted, from: [...mark.drawn], start, delay: 0 };
           mark.eased = 0;
         }
@@ -703,6 +793,23 @@ export function createChartMotion(
     }
     const mark = marks.get(id);
     const tween = mark?.tween ?? null;
+    if (carried !== null && !sameItems(carried.from, target)) {
+      run(
+        id,
+        write,
+        {
+          from: carried.from,
+          to: target,
+          start: carried.at,
+          delay: 0,
+          duration: carried.duration,
+          spring: carried.spring,
+        },
+        axes,
+        owner
+      );
+      return;
+    }
     if (placement.kind === "move" && placement.via !== undefined) {
       // A path's route starts from what it drew, entry by entry, which its caller aligned.
       const { from, to } = placement.via;

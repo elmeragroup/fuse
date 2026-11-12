@@ -68,6 +68,24 @@ import { ClockChartTooltip } from "../../src/components/chart/clock-chart-toolti
 import { ClockChartTooltipTotal } from "../../src/components/chart/clock-chart-tooltip-total";
 import { ClockChartValueLabel } from "../../src/components/chart/clock-chart-value-label";
 import {
+  GaugeChartCenter,
+  GaugeChartCenterLabel,
+  GaugeChartCenterValue,
+} from "../../src/components/chart/gauge-chart-center";
+import { GaugeChartDots } from "../../src/components/chart/gauge-chart-dots";
+import { GaugeChartNeedle } from "../../src/components/chart/gauge-chart-needle";
+import { GaugeChartProgressRing } from "../../src/components/chart/gauge-chart-progress-ring";
+import { GaugeChartRoot } from "../../src/components/chart/gauge-chart-root";
+import { GaugeChartRuler } from "../../src/components/chart/gauge-chart-ruler";
+import { GaugeChartSector } from "../../src/components/chart/gauge-chart-sector";
+import { GaugeChartEmpty, GaugeChartSkeleton } from "../../src/components/chart/gauge-chart-skeleton";
+import {
+  GaugeChartFill,
+  GaugeChartGlow,
+  GaugeChartTrack,
+} from "../../src/components/chart/gauge-chart-track";
+import { GaugeChartZone } from "../../src/components/chart/gauge-chart-zone";
+import {
   PieChartCenter,
   PieChartCenterLabel,
   PieChartCenterName,
@@ -317,6 +335,26 @@ export const ClockChart = {
   TableColumn: ChartTableColumn,
   Empty: ChartEmpty,
   Background: ChartBackground,
+} as const;
+
+export const GaugeChart = {
+  Root: GaugeChartRoot,
+  Zone: GaugeChartZone,
+  Track: GaugeChartTrack,
+  Fill: GaugeChartFill,
+  Glow: GaugeChartGlow,
+  Ruler: GaugeChartRuler,
+  Needle: GaugeChartNeedle,
+  Sector: GaugeChartSector,
+  ProgressRing: GaugeChartProgressRing,
+  Dots: GaugeChartDots,
+  Center: GaugeChartCenter,
+  CenterValue: GaugeChartCenterValue,
+  CenterLabel: GaugeChartCenterLabel,
+  Skeleton: GaugeChartSkeleton,
+  Empty: GaugeChartEmpty,
+  Headline: ChartHeadline,
+  Takeaway: ChartTakeaway,
 } as const;
 
 export const ScatterChart = {

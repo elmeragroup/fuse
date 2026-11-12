@@ -170,7 +170,7 @@
           "type": "number | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Degrees from 12 o'clock, clockwise, where each ring's sweep starts. 0 by default.",
+          "description": "Degrees from 12 o'clock, clockwise, where each ring's sweep starts. 0 by default. An angle that is not a finite number, here or in `endAngle`, throws `invalid-sweep`.",
           "required": false
         },
         {

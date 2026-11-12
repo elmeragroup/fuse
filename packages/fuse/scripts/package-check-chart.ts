@@ -42,6 +42,7 @@ const NAMESPACE_DECLARATIONS = [
   "components/chart/radial-chart-namespace.d.ts",
   "components/chart/radar-chart-namespace.d.ts",
   "components/chart/scatter-chart-namespace.d.ts",
+  "components/chart/gauge-chart-namespace.d.ts",
 ] as const;
 
 /** A declaration file's comment text with the JSDoc line prefixes removed and spaces collapsed. */
@@ -414,7 +415,7 @@ export async function checkPackedChartBundles(extracted: string): Promise<string
     if (chart.code !== alias.code) {
       throw new Error("the BarChart.Root route emits different bytes from the Chart.Root route");
     }
-    const polarModule = /^(pie|radial|radar|clock)-chart-/u;
+    const polarModule = /^(pie|radial|radar|clock|gauge)-chart-/u;
     for (const [name, route] of [
       ["Chart.Root", chart],
       ["BarChart.Root", alias],

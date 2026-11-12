@@ -13,6 +13,7 @@ const CHARTS = [
   "Bar Chart",
   "Chart",
   "Clock Chart",
+  "Gauge Chart",
   "Line Chart",
   "Pie Chart",
   "Radar Chart",

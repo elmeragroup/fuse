@@ -1,6 +1,7 @@
 // The polar data and composition rules in a development build. Units under test: the polar
-// Roots and a shared part inside them. Each case renders to a string and expects the thrown
-// error's name and rule, written by hand from CONTRACT section 8.1's table and S10's polar rows.
+// Roots, GaugeChart's Root and Skeleton, and a shared part inside them. Each case renders to a
+// string and expects the thrown error's name and rule, written by hand from CONTRACT section 8.1's
+// table and S10's polar rows.
 import type { ReactElement } from "react";
 
 import { renderToString } from "react-dom/server";
@@ -11,6 +12,7 @@ import { renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
 import type { ChartConfig } from "./chart-types";
 import { ClockChart } from "./clock-chart-namespace";
+import { GaugeChart } from "./gauge-chart-namespace";
 import { OTHER_KEY } from "./layout/pie";
 import { PieChart } from "./pie-chart-namespace";
 import { RadarChart } from "./radar-chart-namespace";
@@ -183,6 +185,54 @@ describe("the polar rules in development", () => {
       composition("unknown-key"),
     ],
     ["a Table outside its Root", <PieChart.Table key="table" />, composition("part-outside-root")],
+    [
+      "a pie whose sweep ends at infinity",
+      <PieChart.Root
+        key="pie"
+        data={ROWS}
+        config={CONFIG}
+        nameKey="name"
+        valueKey="v"
+        endAngle={Number.POSITIVE_INFINITY}
+        aria-label="Regning"
+      />,
+      composition("invalid-sweep"),
+    ],
+    [
+      "a radial chart whose sweep starts at NaN",
+      <RadialChart.Root
+        key="radial"
+        data={ROWS}
+        config={CONFIG}
+        nameKey="name"
+        valueKey="v"
+        startAngle={Number.NaN}
+        aria-label="Ringer"
+      />,
+      composition("invalid-sweep"),
+    ],
+    [
+      "a gauge whose sweep ends at infinity",
+      <GaugeChart.Root
+        key="gauge"
+        value={2}
+        max={5}
+        endAngle={Number.POSITIVE_INFINITY}
+        aria-label="Måler"
+      />,
+      composition("invalid-sweep"),
+    ],
+    [
+      "a gauge skeleton whose sweep starts at minus infinity",
+      <GaugeChart.Skeleton key="skeleton" startAngle={Number.NEGATIVE_INFINITY} />,
+      composition("invalid-sweep"),
+    ],
+    [
+      "a gauge whose max is not above its min",
+      <GaugeChart.Root key="gauge" value={2} min={5} max={5} aria-label="Måler" />,
+      composition("invalid-gauge-domain"),
+    ],
+    ["a gauge part outside its Root", <GaugeChart.Needle key="needle" />, composition("part-outside-root")],
     [
       "a clock with no time zone",
       <ClockChart.Root key="clock" {...DIAL} timeZone={undefined} />,

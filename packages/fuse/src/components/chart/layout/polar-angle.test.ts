@@ -2,7 +2,8 @@
 // sweepBox. Oracles: CONTRACT section 8.5's frame, d3-shape 3.2.0's lineRadial vector for the same
 // frame, ticket 08's Q8 cases, and the sweep boxes of
 // ticket 08's plot-cell judge, worked by hand for a 200 px cell: 200 by 200 for a circle, 200 by 100
-// for −90 to 90, 200 by 150 for −120 to 120 and 200 by 170.71 for −135 to 135.
+// for −90 to 90, 200 by 150 for −120 to 120 and 200 by 170.71 for −135 to 135, the same for any
+// whole number of turns.
 import { describe, expect, it } from "vitest";
 
 import { angleInSweep, pointerAngle, polarPoint, sweepBox, sweepOf } from "./polar-angle";
@@ -102,5 +103,17 @@ describe("sweepBox", () => {
 
   it("sets the top semicircle's flat edge at the centre's line, at the bottom", () => {
     expect(sweepBox(sweepOf(-90, 90))).toEqual({ left: -1, top: -1, right: 1, bottom: 0 });
+  });
+
+  it("boxes a sweep turned a whole number of turns away as it boxes the sweep itself", () => {
+    // 3600 turns past −135 to 135 is the same 270° gauge.
+    expect(sweepBox(sweepOf(-135 + 360 * 3600, 135 + 360 * 3600))).toEqual(sweepBox(sweepOf(-135, 135)));
+  });
+
+  it("returns for a start far past where a float counts single degrees", () => {
+    // Above 2^53 a quarter turn's count no longer steps by one, which the walk from the raw start
+    // never left; the walk from the start brought into one turn takes at most five steps.
+    const box = sweepBox(sweepOf(1e300, 1e300 + 270));
+    expect([box.left, box.top, box.right, box.bottom].every(Number.isFinite)).toBe(true);
   });
 });

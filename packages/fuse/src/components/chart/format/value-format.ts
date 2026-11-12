@@ -3,6 +3,7 @@
  * number options or a named preset, so a server component can pass it to a client chart.
  */
 import { numberFormat } from "../../../internal/intl-cache";
+import { canonicalSpaces } from "../../../intl/canonical-spaces";
 import { inflect } from "../../../intl/count-of";
 import type { SupportedLocale } from "../../../intl/locale-context";
 import { makeFormattedText } from "./formatted-text";
@@ -155,6 +156,25 @@ function digits(format: ChartFractionDigits, defaultMaximum: number | undefined)
   };
 }
 
+/**
+ * The Intl options a value's visual number prints with: a preset's digits and sign, the currency of
+ * a unit price in kroner, or the consumer's Intl options with the negative-only sign by default.
+ */
+function visualOptions(format: ValueFormat): Intl.NumberFormatOptions {
+  if (format.preset === "energy" || format.preset === "power")
+    return { ...digits(format, 2), signDisplay: "negative" };
+  if (format.preset === "unit-price") {
+    if (format.minor === true) return { ...digits(format, 1), signDisplay: "negative" };
+    return {
+      ...digits(format, undefined),
+      style: "currency",
+      currency: format.currency,
+      signDisplay: "negative",
+    };
+  }
+  return { ...format, signDisplay: format.signDisplay ?? "negative" };
+}
+
 function formatPreset(
   locale: SupportedLocale,
   words: ChartWords,
@@ -164,7 +184,7 @@ function formatPreset(
 ): FormattedText {
   if (format.preset === "energy" || format.preset === "power") {
     const fraction = digits(format, 2);
-    const options: Intl.NumberFormatOptions = { ...fraction, signDisplay: "negative" };
+    const options = visualOptions(format);
     return makeFormattedText(
       `${visualNumber(locale, value, options)} ${format.unit}`,
       `${spokenNumber(locale, words, value, options)} ${inflect(locale, value, words.unitNames[format.unit], fraction)}`
@@ -174,19 +194,14 @@ function formatPreset(
   const spokenVat = role === "full" ? ` ${words.spokenVat[format.vat]}` : "";
   if (format.minor === true) {
     const fraction = digits(format, 1);
-    const options: Intl.NumberFormatOptions = { ...fraction, signDisplay: "negative" };
+    const options = visualOptions(format);
     const minorName = inflect(locale, value, words.minorName[format.currency], fraction);
     return makeFormattedText(
       `${visualNumber(locale, value, options)} ${words.minorSymbol[format.currency]}/kWh${vat}`,
       `${spokenNumber(locale, words, value, options)} ${minorName} ${words.spokenPerKilowattHour}${spokenVat}`
     );
   }
-  const options: Intl.NumberFormatOptions = {
-    ...digits(format, undefined),
-    style: "currency",
-    currency: format.currency,
-    signDisplay: "negative",
-  };
+  const options = visualOptions(format);
   return makeFormattedText(
     `${visualNumber(locale, value, options)}/kWh${vat}`,
     `${spokenNumber(locale, words, value, spokenOptions(options))} ${words.spokenPerKilowattHour}${spokenVat}`
@@ -238,11 +253,87 @@ export function formatValue(
   if (format.preset !== undefined) {
     return formatPreset(locale, words, value, format, role);
   }
-  const options: Intl.NumberFormatOptions = { ...format, signDisplay: format.signDisplay ?? "negative" };
+  const options = visualOptions(format);
   return makeFormattedText(
     visualNumber(locale, value, options),
     spokenNumber(locale, words, value, spokenOptions(options))
   );
+}
+
+/**
+ * A formatted value as its number and the text the formatter wrote around it, which a centre lays
+ * out apart: the number large and rolling, the text before and after it small and breakable. Their
+ * concatenation is `formatValue`'s visual text.
+ */
+export type ValueRun = {
+  /** The text before the number, such as `NOK ` or `$`, with the separator the formatter wrote. */
+  readonly before: string;
+  /** The number, from its sign through its last digit, exponent or compact suffix. */
+  readonly number: string;
+  /** The text after the number, such as ` kWh` or ` øre/kWh inkl. mva`. */
+  readonly after: string;
+};
+
+/** The Intl parts that belong to a number: its sign, digits, separators, exponent and compact suffix. */
+const NUMBER_PARTS: ReadonlySet<string> = new Set([
+  "minusSign",
+  "plusSign",
+  "integer",
+  "group",
+  "decimal",
+  "fraction",
+  "exponentSeparator",
+  "exponentMinusSign",
+  "exponentInteger",
+  "compact",
+  "infinity",
+  "nan",
+]);
+
+/**
+ * Split a value's visual text at its number, which Intl's own parts name, so a multiword unit such as
+ * `øre/kWh inkl. mva` stays whole, an exponent such as `3.9E3` stays in the number, a sign stays on
+ * it, and a compact suffix such as `1,2 mill.` stays with it, whatever the locale writes between.
+ * The number runs back from Intl's last number part over number parts and the literals between
+ * them, and stops at a currency or a unit, so `+NOK 3.90` keeps `+NOK ` before its number.
+ *
+ * @param locale - The active supported locale.
+ * @param value - The value.
+ * @param format - Intl number options or a preset.
+ * @param role - The label's role, as `formatValue` takes it.
+ * @returns The text before the number, the number, and the text after it.
+ */
+export function formatValueRun(
+  locale: SupportedLocale,
+  value: number,
+  format: ValueFormat,
+  role: LabelRole
+): ValueRun {
+  const { text } = formatValue(locale, value, format, role);
+  const parts = numberFormat(locale, visualOptions(format))
+    .formatToParts(value)
+    .map((part) => ({
+      type: part.type,
+      value: part.type === "minusSign" || part.type === "exponentMinusSign" ? "\u2212" : part.value,
+    }));
+  // The number ends at Intl's last number part and runs back over number parts and the literals
+  // between them, such as the space before a compact suffix, but never over a currency or a unit.
+  const last = parts.findLastIndex((part) => NUMBER_PARTS.has(part.type));
+  let first = last;
+  for (let index = last - 1; index >= 0; index -= 1) {
+    const type = parts[index]?.type ?? "";
+    if (!NUMBER_PARTS.has(type) && type !== "literal") break;
+    if (NUMBER_PARTS.has(type)) first = index;
+  }
+  const number = canonicalSpaces(
+    parts
+      .slice(first, last + 1)
+      .map((part) => part.value)
+      .join("")
+  );
+  const at = first === -1 ? -1 : text.indexOf(number);
+  if (at === -1 || number === "") return { before: "", number: text, after: "" };
+  return { before: text.slice(0, at), number, after: text.slice(at + number.length) };
 }
 
 /**
