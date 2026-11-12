@@ -55,6 +55,24 @@
           "required": true
         },
         {
+          "name": "data-hover",
+          "origin": "declared",
+          "type": "\"none\" | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "\"none\" leaves hover out: no value shows a crosshair, a dot or a highlight under the pointer. Hover writes a region of about half a kilobyte and five elements per value: a 30-value line is about 18 KB and 150 elements with it and 1.4 KB and 3 elements without, and a 168-value line about 106 KB against 7 KB. Pass \"none\" where many Sparklines render at once, such as one per row of a long table.",
+          "required": false
+        },
+        {
+          "name": "data-intro",
+          "origin": "declared",
+          "type": "\"none\" | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "\"none\" turns the entrance off. The entrance plays whenever the svg enters the document, so it replays when the element is inserted again: a keyed row that a sort moves, or a panel shown again. Pass \"none\" where that happens, such as a Sparkline in a sortable table. Reduced motion draws the marks at rest either way.",
+          "required": false
+        },
+        {
           "name": "description",
           "origin": "declared",
           "type": "string | undefined",

@@ -9,8 +9,14 @@
 /** The digits a path coordinate keeps, d3-shape's default. */
 export const PATH_DIGITS = 3;
 
-/** Round to a number of digits, and turn -0 into 0, which no attribute may carry. */
-function rounded(value: number, digits: number): number {
+/**
+ * A number rounded to a number of digits, with -0 turned into 0, which no attribute may carry.
+ *
+ * @param value - The number.
+ * @param digits - The digits it keeps, `PATH_DIGITS` by default.
+ * @returns The rounded number.
+ */
+export function rounded(value: number, digits: number = PATH_DIGITS): number {
   const scale = 10 ** digits;
   return Math.round(value * scale) / scale + 0;
 }

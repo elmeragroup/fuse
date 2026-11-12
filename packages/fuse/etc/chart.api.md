@@ -1854,6 +1854,8 @@ export type SparklineProps = ChartLayerProps & {
     emphasis?: Exclude<ChartFallback, "now"> | number;
     reference?: number;
     description?: string;
+    "data-hover"?: "none";
+    "data-intro"?: "none";
 } & ({
     start?: never;
     interval?: never;

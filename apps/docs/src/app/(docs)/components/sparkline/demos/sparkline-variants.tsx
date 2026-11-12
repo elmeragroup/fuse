@@ -6,7 +6,8 @@ const PRICE = { preset: "unit-price", currency: "NOK", minor: true, vat: "includ
 
 /**
  * Each variant from a server component, with no client JavaScript: a line against a flat fixed
- * price, an area that reaches 0, and bars. Each name ends in its range sentence.
+ * price, an area that fades toward 0 with a dot on its last value, and bars. Each enters with
+ * motion, and a pointer over a value shows a crosshair there. Each name ends in its range sentence.
  */
 export function SparklineVariants() {
   return (
@@ -29,6 +30,7 @@ export function SparklineVariants() {
         format={PRICE}
         variant="area"
         color="chart-2"
+        emphasis="last"
       />
       <Sparkline
         aria-label="Spot price, bars"

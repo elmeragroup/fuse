@@ -856,7 +856,12 @@
   "sparkline": {
     "title": "Sparkline",
     "rsc": "server",
-    "demos": ["sparkline-hourly-price.tsx", "sparkline-table.tsx", "sparkline-variants.tsx"]
+    "demos": [
+      "sparkline-hourly-price.tsx",
+      "sparkline-variants.tsx",
+      "sparkline-negative.tsx",
+      "sparkline-table.tsx"
+    ]
   },
   "switch": {
     "title": "Switch",

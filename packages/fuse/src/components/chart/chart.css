@@ -77,6 +77,23 @@
 
 @layer components {
   /*
+    The motion and look tokens every chart family root declares: a cartesian chart, a polar
+    figure and a Sparkline, which sits outside any Root. Only the polar figure and the Sparkline
+    play an entrance over --chart-intro.
+  */
+  [data-slot="chart"],
+  [data-polar],
+  [data-slot="sparkline"] {
+    --chart-hover-dim: 0.45;
+    --chart-ease: cubic-bezier(0, 0.7, 0.5, 1);
+  }
+
+  [data-polar],
+  [data-slot="sparkline"] {
+    --chart-intro: 1000ms;
+  }
+
+  /*
     A chart has no width of its own, so it fills its container even as a flex or grid item. Its
     one column is a fraction of the width, not an auto track, so a `justify-content` from outside
     cannot shrink the frame to its content.
@@ -97,8 +114,6 @@
     --chart-bar-seam: 2px;
     --chart-bar-radius: var(--radius-xs, 0.125rem);
     --chart-crosshair-width: 1px;
-    --chart-hover-dim: 0.45;
-    --chart-ease: cubic-bezier(0, 0.7, 0.5, 1);
     --chart-update: 480ms;
     /* The tooltip's glide from one slot to the next, the time its spring takes to settle. */
     --chart-glide: 924ms;
@@ -785,12 +800,9 @@
     grid-template-columns: minmax(0, 1fr);
     --chart-stroke: 2px;
     --chart-area-opacity: 0.1;
-    --chart-hover-dim: 0.45;
-    --chart-ease: cubic-bezier(0, 0.7, 0.5, 1);
     --chart-update: 480ms;
     --chart-glide: 924ms;
     --chart-polar-size: 12.5rem;
-    --chart-intro: 1000ms;
     --chart-stagger: 80ms;
     container: polar-figure / inline-size;
   }
@@ -3651,15 +3663,32 @@
   }
 
   /*
-    A Sparkline fills its container's width at 2rem high. Its marks stretch to the box, so every
-    stroke keeps its width on screen, and a dot is the round cap of a stroke of no length.
+    A Sparkline fills its container's width at 2rem high. A line's or an area's marks stretch to
+    the box, so every stroke keeps its width on screen, and a dot is the round cap of a stroke of no
+    length, which a translate in percent of the box places. Bars place by percentages instead, so
+    the clip that rounds their far end draws circles. A Sparkline sits outside any Root, so it
+    takes the chart family's motion and look tokens from the rule that declares them on every
+    root. Its bars are a tenth of a chart's height, so they take the identity's bar corner up to
+    2 px, where a rounder identity would turn them into pills.
   */
   [data-slot="sparkline"] {
+    --chart-bar-radius: clamp(0px, var(--radius-xs, 0.125rem), 0.125rem);
     display: block;
     width: 100%;
     height: 2rem;
     overflow: visible;
     print-color-adjust: exact;
+  }
+
+  :is(
+    [data-slot="sparkline-path"],
+    [data-slot="sparkline-bar"],
+    [data-slot="sparkline-dot"],
+    [data-slot="sparkline-reference"],
+    [data-slot="sparkline-crosshair"]
+  ) {
+    pointer-events: none;
+    transition: opacity 150ms ease;
   }
 
   [data-slot="sparkline-path"] {
@@ -3671,19 +3700,32 @@
     vector-effect: non-scaling-stroke;
   }
 
-  [data-slot="sparkline"]:is([data-variant="area"], [data-variant="bar"]) [data-slot="sparkline-path"] {
+  /*
+    An area fades from 0.3 at its values to nothing at 0, as a mask over the series paint: down for
+    positive values, up for negative ones, and from both edges of the box to the zero line between
+    them. The mask spans the view box, which the svg stretches with the fill, and --_fill-zero puts
+    its clear stop on 0 down it, so a lone reading, which draws no fill, or a reference past the
+    values never moves the stop off the zero line. An engine that masks no SVG element, such as
+    WebKit, fills it flat at 0.3.
+  */
+  [data-slot="sparkline-path"][data-part="fill"] {
     fill: var(--chart-series-paint);
-    stroke: none;
-  }
-
-  [data-slot="sparkline"][data-variant="area"] [data-slot="sparkline-path"] {
     fill-opacity: 0.3;
+    stroke: none;
+    mask-image: linear-gradient(#000, transparent var(--_fill-zero, 100%), #000);
+    mask-origin: view-box;
+    mask-clip: view-box;
   }
 
-  /* An area's lone reading draws the line's dot, a round cap no fill can paint. */
-  [data-slot="sparkline"][data-variant="area"] [data-slot="sparkline-path"][data-part="lone"] {
-    fill: none;
-    stroke: var(--chart-series-paint);
+  /* A bar rounds its far end through a clip, so its base stays square, as a chart's bar does. */
+  [data-slot="sparkline-bar"] {
+    --_far: var(--chart-bar-radius);
+    fill: var(--chart-series-paint);
+    clip-path: inset(0 round var(--_far) var(--_far) 0 0) fill-box;
+  }
+
+  [data-slot="sparkline-bar"][data-negative] {
+    clip-path: inset(0 round 0 0 var(--_far) var(--_far)) fill-box;
   }
 
   [data-slot="sparkline-reference"] {
@@ -3705,6 +3747,68 @@
     stroke-width: 6px;
     stroke-linecap: round;
     vector-effect: non-scaling-stroke;
+    translate: calc(var(--_value-x) * 1%) calc(var(--_value-y) * 1%);
+  }
+
+  /*
+    Hover, with no JavaScript. Each reading's region holds its own crosshair, dot and highlight,
+    placed from the region's --_value-… properties, and shows them while its cell is hovered. The
+    regions sit side by side, so a long Sparkline nests no deeper than a short one. The marks show
+    only on a device that hovers, so a tap never leaves them stuck, and they cross-fade from one
+    value to the next: the old marks fade out as the new ones fade in.
+  */
+  [data-slot="sparkline-value"] > [data-part="hit"] {
+    fill: none;
+  }
+
+  [data-slot="sparkline-value"] > :not([data-part="hit"]) {
+    display: none;
+    opacity: 0;
+    transition:
+      opacity 120ms ease,
+      display 120ms ease allow-discrete;
+  }
+
+  [data-slot="sparkline-crosshair"] {
+    stroke: var(--muted-foreground);
+    stroke-width: 1px;
+    stroke-dasharray: 2 2;
+    vector-effect: non-scaling-stroke;
+    translate: calc(var(--_value-x) * 1%) 0;
+  }
+
+  /* The highlight re-strokes the line from the centre of the cell before the value to the one after. */
+  [data-slot="sparkline-path"][data-part="highlight"] {
+    clip-path: inset(-50% calc(100% - var(--_band-end) * 1%) -50% calc(var(--_band-start) * 1%)) view-box;
+  }
+
+  @media (hover: hover) {
+    [data-slot="sparkline-value"] > [data-part="hit"] {
+      pointer-events: all;
+    }
+
+    [data-slot="sparkline-value"]:hover > * {
+      display: inline;
+      opacity: 1;
+    }
+
+    @starting-style {
+      [data-slot="sparkline-value"]:hover > * {
+        opacity: 0;
+      }
+    }
+
+    /* The series fades while a value is hovered, and the hovered value's own marks stay whole. */
+    [data-slot="sparkline"]:has([data-slot="sparkline-value"]:hover)
+      :is([data-slot="sparkline-path"], [data-slot="sparkline-bar"]):not([data-part="highlight"]) {
+      opacity: var(--chart-hover-dim);
+    }
+
+    /* The emphasis dot gives way to the hover dot. */
+    [data-slot="sparkline"]:has([data-slot="sparkline-value"]:hover)
+      [data-slot="sparkline-dot"]:not([data-part]) {
+      opacity: 0;
+    }
   }
 
   /*
@@ -3720,6 +3824,31 @@
     */
     [data-slot="chart-tooltip-positioner"] {
       --_glide: var(--chart-glide);
+    }
+
+    /*
+      A Sparkline enters as its svg enters the document: the box wipes in from the left over the
+      chart entrance, so a line draws along its course and an area fills behind it, and each bar
+      grows from the baseline, down for a negative value. A re-render keeps the elements, so
+      nothing enters again, but re-inserting the svg, as a keyed reorder or a re-shown panel
+      does, replays the entrance, and data-intro="none" turns it off. A hovered bar's highlight,
+      which shows only on hover, never grows.
+    */
+    [data-slot="sparkline"]:not([data-intro="none"]) {
+      animation: chart-wipe-left var(--chart-intro) var(--chart-ease) backwards;
+    }
+
+    [data-slot="sparkline-bar"]:not([data-part]) {
+      transform-box: fill-box;
+      transform-origin: bottom;
+    }
+
+    [data-slot="sparkline-bar"][data-negative] {
+      transform-origin: top;
+    }
+
+    [data-slot="sparkline"]:not([data-intro="none"]) [data-slot="sparkline-bar"]:not([data-part]) {
+      animation: sparkline-grow var(--chart-intro) var(--chart-ease) backwards;
     }
 
     /* SlotLabel glides on the spring its style names, except while data-snap places it. */
@@ -3874,6 +4003,12 @@
     }
   }
 
+  @keyframes sparkline-grow {
+    from {
+      scale: 1 0;
+    }
+  }
+
   @keyframes chart-fade-in {
     from {
       opacity: 0;
@@ -3912,7 +4047,7 @@
       forced-color-adjust: none;
     }
 
-    [data-slot="sparkline-reference"] {
+    :is([data-slot="sparkline-reference"], [data-slot="sparkline-crosshair"]) {
       stroke: CanvasText;
     }
 

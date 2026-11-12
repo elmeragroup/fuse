@@ -1,8 +1,10 @@
 /**
  * The Sparkline's geometry and its range sentence, after CONTRACT sections 6, 8.9 and 9.10 and
- * ticket 06's F4. A Sparkline draws on the server at no known size, so its marks live in a viewBox
- * of equal cells that the svg stretches to its box, and its strokes keep their width on screen.
- * Every value sits in its own cell, so a step curve keeps the last run, as on a chart.
+ * ticket 06's F4. A Sparkline draws on the server at no known size, so a line or an area lives in
+ * a viewBox of equal cells that the svg stretches to its box, and its strokes keep their width on
+ * screen. Bars, the rules, the dots and the hover regions place by percentages of the box, which
+ * read the same in the stretched viewBox and in the bars' unstretched box. Every value sits in its
+ * own cell, so a step curve keeps the last run, as on a chart.
  */
 import type { SupportedLocale } from "../../../intl/locale-context";
 import type { ChartCurve } from "../chart-types";
@@ -13,31 +15,118 @@ import { formatValue } from "../format/value-format";
 import type { ValueFormat } from "../format/value-format";
 import { AREA_STRIDE, LINE_STRIDE, areaPaths, linePaths } from "./line-path";
 import type { PathPlacement, PathTopology } from "./line-path";
-import { PATH_DIGITS, pathNumber } from "./rounding";
+import { PATH_DIGITS, rounded } from "./rounding";
 
 /** The viewBox width of one value's cell. */
 const SPARKLINE_CELL = 10;
 
-/** The viewBox height. */
+/** The viewBox height, so a y coordinate is also a percentage of the box's height. */
 const SPARKLINE_HEIGHT = 100;
 
 /** The share of a bar cell left empty around its bar, as a chart's default band gap. */
 const BAR_GAP = 0.25;
 
-/** What a Sparkline draws. */
-export type SparklineLayout = {
-  readonly viewBox: string;
-  /** The mark: a line, an area's fill or the bars, empty with no reading. */
-  readonly mark: string;
-  /** An area's lone readings as round caps, which its fill cannot paint, empty for the others. */
-  readonly lone: string;
-  /** The zero line, where the domain spans 0, or null. */
-  readonly zero: string | null;
-  /** The flat reference line, or null. */
-  readonly reference: string | null;
-  /** The emphasised value's dot, or null. */
-  readonly dot: string | null;
+/**
+ * How far past the box, in percent, a hover band at either end reaches, so the clip that draws it
+ * keeps the end's round cap.
+ */
+const BAND_BLEED = 10;
+
+/** A span across the box, start first, in percent of its width. */
+export type SparklineSpan = readonly [start: number, end: number];
+
+/** A place in the box, in percent of its width and its height from the top left. */
+export type SparklinePoint = { readonly x: number; readonly y: number };
+
+/**
+ * How many readings either side of a hovered one its segment's path runs through, per curve. The
+ * segment clips to the span from the reading before to the reading after, so a reach is the fewest
+ * readings that shape that span:
+ *
+ * - linear, bump, step-before and step-after join each pair of readings from those two alone, so
+ *   one each side draws the span exactly;
+ * - monotone and basis shape a span's ends from the readings either side of it, and the centred
+ *   step ends a path's last reading at its centre rather than at the next step, so they take two
+ *   each side to draw the span through the full line's own commands;
+ * - the natural spline shapes each span from every reading. A reading's pull on a span shrinks by
+ *   a factor of about 2 - √3, a quarter, per reading between them, so a reading past four away
+ *   moves the clipped segment by under a fiftieth of its bend, below a pixel in a 2rem box.
+ */
+const SEGMENT_REACH = {
+  linear: 1,
+  monotone: 2,
+  "monotone-y": 2,
+  natural: 4,
+  step: 2,
+  "step-before": 1,
+  "step-after": 1,
+  bump: 1,
+  basis: 2,
+} as const satisfies Record<ChartCurve, number>;
+
+/**
+ * One reading the pointer can rest on, in percent of the box: its point, and the cell it owns,
+ * which is the region whose hover shows its crosshair and dot.
+ */
+export type SparklineReading = SparklinePoint & {
+  readonly index: number;
+  readonly cell: SparklineSpan;
 };
+
+/**
+ * A line's or an area's reading, with the segment of the line its hover re-strokes at full
+ * strength: a path through the readings around it, in viewBox units, which its band clips to the
+ * span from the centre of the cell before it to the centre of the cell after it. Each reading
+ * carries its own segment, so hover needs no script and no id, at the cost of the path data of the
+ * readings its curve's reach takes in.
+ */
+export type SparklinePathReading = SparklineReading & {
+  readonly band: SparklineSpan;
+  readonly segment: string;
+};
+
+/** A bar's reading, with its bar, which a negative value hangs below the baseline. */
+export type SparklineBarReading = SparklineReading & {
+  readonly bar: SparklinePoint & { readonly width: number; readonly height: number };
+  readonly negative: boolean;
+};
+
+/** What every variant draws besides its marks. Each value is in percent of the box. */
+type SparklineFrame = {
+  /** The zero line's height, where the domain spans 0, or null. */
+  readonly zero: number | null;
+  /** The flat reference line's height, or null. */
+  readonly reference: number | null;
+  /** The emphasised value's dot, or null. */
+  readonly dot: SparklinePoint | null;
+};
+
+/**
+ * What a Sparkline draws. A line or an area draws paths in a viewBox of equal cells that the svg
+ * stretches to its box. Bars place each bar by percentages in the unstretched box instead, so the
+ * corners they round stay circular.
+ */
+export type SparklineLayout =
+  | (SparklineFrame & {
+      readonly kind: "path";
+      readonly viewBox: string;
+      /** An area's fill between the values and 0, empty for a line. */
+      readonly fill: string;
+      /** The line, or an area's top edge, with every lone reading as a round cap. Empty with no reading. */
+      readonly stroke: string;
+      /**
+       * Where 0 sits down the view box, in percent: 100 under positive values, 0 over negative
+       * ones, and between for values on both sides. An area fades toward it. The view box, not the
+       * fill's own box, so the place holds when a lone reading or the reference reaches past the
+       * readings that draw fill.
+       */
+      readonly fillZero: number;
+      readonly readings: readonly SparklinePathReading[];
+    })
+  | (SparklineFrame & {
+      readonly kind: "bars";
+      readonly readings: readonly SparklineBarReading[];
+    });
 
 /** What the layout reads. */
 export type SparklineInput = {
@@ -102,31 +191,76 @@ export function emphasisIndex(
   }
 }
 
+/** The topology of evenly spaced values, each in its own cell, with a gap at every null. */
+function topologyOf(values: readonly (number | null)[]): PathTopology {
+  return {
+    count: values.length,
+    states: values.map((value) => (value === null ? "missing" : "reading")),
+    estimated: values.map(() => false),
+    projectedFrom: values.length,
+    sides: values.map(() => null),
+    cells: values.map(() => 1),
+    missing: "gap",
+  };
+}
+
 /**
- * Lay a Sparkline out in its viewBox.
+ * Lay a Sparkline out.
  *
  * @param input - The values and the look.
- * @returns The path data of each part.
+ * @returns The marks, the rules, the dot and each reading's hover geometry.
  */
 export function sparklineLayout(input: SparklineInput): SparklineLayout {
   const { data } = input;
-  const width = Math.max(1, data.length) * SPARKLINE_CELL;
+  const count = Math.max(1, data.length);
+  const width = count * SPARKLINE_CELL;
   const viewBox = `0 0 ${String(width)} ${String(SPARKLINE_HEIGHT)}`;
   const values = data.flatMap((value) => (value === null ? [] : [value]));
-  if (values.length === 0) return { viewBox, mark: "", lone: "", zero: null, reference: null, dot: null };
-  const [low, high] = domainOf(values, input);
+  const [low, high] = values.length === 0 ? [0, 1] : domainOf(values, input);
+  // The viewBox is 100 high, so a y coordinate is a percentage of the box's height as well.
   const y = (value: number) => ((high - value) / (high - low)) * SPARKLINE_HEIGHT;
   const x = (index: number) => (index + 0.5) * SPARKLINE_CELL;
-  const rule = (value: number) => `M0,${pathNumber(y(value))}H${pathNumber(width)}`;
-  const topology: PathTopology = {
-    count: data.length,
-    states: data.map((value) => (value === null ? "missing" : "reading")),
-    estimated: data.map(() => false),
-    projectedFrom: data.length,
-    sides: data.map(() => null),
-    cells: data.map(() => 1),
-    missing: "gap",
+  // A cell's share of the box, as a percentage of its width.
+  const share = (cells: number) => rounded((cells / count) * 100);
+  const readings = data.flatMap((value, index) =>
+    value === null
+      ? []
+      : [
+          {
+            index,
+            x: share(index + 0.5),
+            y: rounded(y(value)),
+            cell: [share(index), share(index + 1)] as const,
+          },
+        ]
+  );
+  const picked = emphasisIndex(data, input.emphasis);
+  const pick = readings.find((reading) => reading.index === picked);
+  const frame: SparklineFrame = {
+    zero: values.length > 0 && low < 0 && high > 0 ? rounded(y(0)) : null,
+    reference: values.length === 0 || input.reference === undefined ? null : rounded(y(input.reference)),
+    dot: pick === undefined ? null : { x: pick.x, y: pick.y },
   };
+  if (input.variant === "bar") {
+    return {
+      ...frame,
+      kind: "bars",
+      readings: readings.map((reading) => {
+        const value = data[reading.index] ?? 0;
+        const top = Math.min(y(value), y(0));
+        return {
+          ...reading,
+          bar: {
+            x: share(reading.index + BAR_GAP / 2),
+            y: rounded(top),
+            width: share(1 - BAR_GAP),
+            height: rounded(Math.abs(y(value) - y(0))),
+          },
+          negative: value < 0,
+        };
+      }),
+    };
+  }
   const place: PathPlacement = {
     orientation: "vertical",
     curve: input.curve,
@@ -137,38 +271,40 @@ export function sparklineLayout(input: SparklineInput): SparklineLayout {
     lone: "cap",
     digits: PATH_DIGITS,
   };
-  let mark: string;
-  let lone = "";
-  if (input.variant === "bar") {
-    const bar = SPARKLINE_CELL * (1 - BAR_GAP);
-    mark = data
-      .flatMap((value, index) => {
-        if (value === null) return [];
-        const top = Math.min(y(value), y(0));
-        const height = Math.abs(y(value) - y(0));
-        return [
-          `M${pathNumber(x(index) - bar / 2)},${pathNumber(top)}h${pathNumber(bar)}v${pathNumber(height)}h${pathNumber(-bar)}Z`,
-        ];
-      })
-      .join("");
-  } else if (input.variant === "area") {
+  // The line through the readings from `start` up to `end`, each at its own place.
+  const lineThrough = (start: number, end: number) => {
+    const window = data.slice(start, end);
+    const numbers = window.flatMap((value, offset) => [x(start + offset), y(value ?? 0)]);
+    return linePaths(numbers.length === window.length * LINE_STRIDE ? numbers : [], topologyOf(window), place)
+      .line;
+  };
+  const stroke = values.length === 0 ? "" : lineThrough(0, data.length);
+  const reach = SEGMENT_REACH[input.curve];
+  let fill = "";
+  if (input.variant === "area" && values.length > 0) {
     const numbers = data.flatMap((value, index) => [x(index), y(value ?? 0), y(0)]);
-    const paths = areaPaths(numbers.length === data.length * AREA_STRIDE ? numbers : [], topology, place);
-    mark = paths.area;
-    lone = paths.dots;
-  } else {
-    const numbers = data.flatMap((value, index) => [x(index), y(value ?? 0)]);
-    mark = linePaths(numbers.length === data.length * LINE_STRIDE ? numbers : [], topology, place).line;
+    fill = areaPaths(
+      numbers.length === data.length * AREA_STRIDE ? numbers : [],
+      topologyOf(data),
+      place
+    ).area;
   }
-  const picked = emphasisIndex(data, input.emphasis);
-  const pickedValue = picked === -1 ? null : (data[picked] ?? null);
+  const last = data.length - 1;
   return {
+    ...frame,
+    kind: "path",
     viewBox,
-    mark,
-    lone,
-    zero: low < 0 && high > 0 ? rule(0) : null,
-    reference: input.reference === undefined ? null : rule(input.reference),
-    dot: pickedValue === null ? null : `M${pathNumber(x(picked))},${pathNumber(y(pickedValue))}Z`,
+    fill,
+    stroke,
+    fillZero: rounded(y(0)),
+    readings: readings.map((reading) => ({
+      ...reading,
+      segment: lineThrough(Math.max(0, reading.index - reach), reading.index + reach + 1),
+      band: [
+        reading.index === 0 ? -BAND_BLEED : share(reading.index - 0.5),
+        reading.index === last ? 100 + BAND_BLEED : share(reading.index + 1.5),
+      ] as const,
+    })),
   };
 }
 
