@@ -42,11 +42,12 @@ function Panel() { const [open] = useSideOverlay(false); return <fuse.Sheet.Root
     `${sheet}function Panel(props) { const [open] = useSideOverlay(false); return <Sheet.Root {...props} open={open} />; }`,
     // A local component given a constant object the module only spreads.
     `function Section() { const band = { tone: "plain", title: "Hi" }; return <><Band {...band} /><Band {...band} lede="x" /></>; }`,
-    // A non-collapsing Sidebar renders a plain panel; an inline list is controlled like any root.
+    // An inline list is controlled like any root.
     `${hook}import { Combobox } from "@elmeragroup/fuse/combobox";
 function Picker() { const [open, setOpen] = useSideOverlay(false); return <Combobox.Root inline open={open} onOpenChange={setOpen} items={[]} />; }`,
-    `import { Sidebar } from "@elmeragroup/fuse/sidebar";
-function Rail() { return <Sidebar.Root collapsible="none" />; }`,
+    // A Sidebar's phone Sheet reads its Provider's `openMobile`, so the Root needs no state of its own.
+    `${hook}import { Sidebar } from "@elmeragroup/fuse/sidebar";
+function App() { const [open, setOpen] = useSideOverlay(false); return <Sidebar.Provider bounds="container" openMobile={open} onOpenMobileChange={setOpen}><Sidebar.Root collapsible="icon" /></Sidebar.Provider>; }`,
     // Parts that are no overlay, an overlay's other parts, and a seed for a local component.
     `import { Tooltip } from "@elmeragroup/fuse/tooltip";
 import { Collapsible } from "@elmeragroup/fuse/collapsible";
@@ -263,12 +264,6 @@ function Picker() { return <Combobox.Root inline modal defaultOpen items={[]}><C
 function Picker() { return <Autocomplete.Root inline={true} open items={[]} />; }`,
       errors: [{ messageId: "untraced" }],
     },
-    // The popup-free literal must come after any spread, which may undo it.
-    {
-      code: `import { Sidebar } from "@elmeragroup/fuse/sidebar";
-function Rail(props) { return <Sidebar.Root collapsible="none" {...props} />; }`,
-      errors: [{ messageId: "internal" }],
-    },
     // A forwarded prop is checked where it is passed, through spreads too.
     {
       code: `import { useState } from "react";
@@ -384,12 +379,19 @@ function Inner({ Sheet: Local }) { return <Local.Root />; }
 function Panel() { return <Sheet.Root />; }`,
       errors: [{ messageId: "uncontrolled" }],
     },
-    // Parts that keep their open state inside.
+    // A Sidebar Provider holds its phone Sheet's state inside unless it takes `openMobile` from the hook.
     {
       code: `import { Sidebar } from "@elmeragroup/fuse/sidebar";
-function Rail() { return <Sidebar.Root collapsible="icon" />; }`,
-      errors: [{ messageId: "internal" }],
+function App() { return <Sidebar.Provider bounds="container"><Sidebar.Root collapsible="icon" /></Sidebar.Provider>; }`,
+      errors: [{ messageId: "uncontrolled" }],
     },
+    {
+      code: `import { useState } from "react";
+import { Sidebar } from "@elmeragroup/fuse/sidebar";
+function App() { const [open, setOpen] = useState(false); return <Sidebar.Provider openMobile={open} onOpenMobileChange={setOpen} />; }`,
+      errors: [{ messageId: "untraced" }],
+    },
+    // Parts that keep their open state inside.
     {
       code: `import { SelectField } from "@elmeragroup/fuse/select-field";
 function Size() { return <SelectField label="Size" items={[]} />; }`,
