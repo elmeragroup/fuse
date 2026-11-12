@@ -58,6 +58,10 @@ export function TabsList({
   );
 }
 
+/**
+ * One tab. An inactive trigger reads `--muted-foreground`, the text-grade role held to 4.5:1 on
+ * `muted` and on every surface a line list sits on; hover and the active tab read the foreground.
+ */
 export function TabsTrigger({ className, ...props }: ComponentProps<typeof TabsPrimitive.Tab>): ReactElement {
   return (
     <TabsPrimitive.Tab
@@ -68,7 +72,7 @@ export function TabsTrigger({ className, ...props }: ComponentProps<typeof TabsP
         controlMd.inset(),
         controlMd.iconEdge(),
         controlMd.type(),
-        "font-medium ease-out group-data-[variant=default]/tabs-list:data-active:shadow-sm relative inline-flex h-[calc(100%-1px)] flex-1 items-center justify-center border border-transparent whitespace-nowrap text-foreground/60 transition-[color,background-color,border-color,box-shadow] duration-150 group-data-vertical/tabs:w-full group-data-vertical/tabs:justify-start enabled-hover:text-foreground group-data-[variant=line]/tabs-list:data-active:shadow-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+        "font-medium ease-out group-data-[variant=default]/tabs-list:data-active:shadow-sm relative inline-flex h-[calc(100%-1px)] flex-1 items-center justify-center border border-transparent whitespace-nowrap text-muted-foreground transition-[color,background-color,border-color,box-shadow] duration-150 group-data-vertical/tabs:w-full group-data-vertical/tabs:justify-start enabled-hover:text-foreground group-data-[variant=line]/tabs-list:data-active:shadow-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
         tabsTriggerShellClass,
         selfFocusRingClass,
         nativeStateFaceClass,
