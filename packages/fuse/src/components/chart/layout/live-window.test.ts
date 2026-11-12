@@ -1,6 +1,6 @@
-// A live line chart's window geometry. Unit under test: parseLiveSeries, visibleSpan,
-// nearestIndex, liveDomain, tickStep, timeTicks, edgeFade, liveVertices, liveLinePath and
-// liveAreaPath. Oracles:
+// A live line chart's window geometry. Unit under test: parseLiveSeries, parseLiveLatest,
+// visibleSpan, nearestIndex, stepIndex, walkRange, liveDomain, tickStep, timeTicks, edgeFade, liveVertices,
+// liveLinePath and liveAreaPath. Oracles:
 // readings, indices, domains, tick instants and pixels worked out by hand, on a 30 s window over a
 // 300 by 100 px plot, where one second is 10 px.
 import fc from "fast-check";
@@ -13,10 +13,13 @@ import {
   liveLinePath,
   liveVertices,
   nearestIndex,
+  parseLiveLatest,
   parseLiveSeries,
+  stepIndex,
   tickStep,
   timeTicks,
   visibleSpan,
+  walkRange,
   windowEndingAt,
 } from "./live-window";
 
@@ -47,16 +50,22 @@ describe("parseLiveSeries", () => {
   });
 
   it("holds Root's value to the readings' bound, reporting one past it and showing the latest reading's", () => {
-    const rows = [
+    const points = [
       { time: NOON, value: 1 },
       { time: NOON + SECOND, value: 2 },
     ];
-    expect(parseLiveSeries(rows, 7).latest).toBe(7);
+    expect(parseLiveLatest(points, 7)).toEqual({ latest: 7, issues: [] });
+    expect(parseLiveLatest(points, undefined)).toEqual({ latest: 2, issues: [] });
     for (const value of [1.7e308, -2e15, Number.NaN]) {
-      const series = parseLiveSeries(rows, value);
-      expect(series.latest).toBe(2);
-      expect(series.issues).toEqual([{ rule: "non-finite-live-value", subject: "value" }]);
+      expect(parseLiveLatest(points, value)).toEqual({
+        latest: 2,
+        issues: [{ kind: "prop", rule: "non-finite-live-value", subject: "value" }],
+      });
     }
+  });
+
+  it("waits for the first reading before a value has an instant to show at", () => {
+    expect(parseLiveLatest([], 7)).toEqual({ latest: null, issues: [] });
   });
 
   it("keeps one reading per instant, the last in row order", () => {
@@ -99,6 +108,46 @@ describe("visibleSpan and nearestIndex", () => {
     expect(nearestIndex(points, span, NOON)).toBe(1);
     expect(nearestIndex(points, span, NOON + 99 * SECOND)).toBe(3);
     expect(nearestIndex(points, { first: 2, end: 2 }, NOON)).toBe(-1);
+  });
+});
+
+describe("stepIndex", () => {
+  // Readings at 0, 10, 20 and 30 s past noon. The window shows the last three, indices 1 to 3.
+  const points = [0, 10, 20, 30].map((at) => ({ time: NOON + at * SECOND, value: at }));
+  const span = { first: 1, end: 4 };
+
+  it.each([
+    ["Home goes to the window's oldest reading", span, null, "first", 1],
+    ["End goes to the latest reading", span, NOON + 10 * SECOND, "last", 3],
+    ["a first step back leaves the latest reading", span, null, "previous", 2],
+    ["a step forward from the latest stays there", span, null, "next", 3],
+    ["a step back stops at the window's oldest", span, NOON + 10 * SECOND, "previous", 1],
+    ["a reading the window scrolled out steps forward from where it was", span, NOON, "next", 1],
+    ["a reading the window scrolled out cannot step further out", span, NOON, "previous", 1],
+    ["an empty window walks every reading", { first: 4, end: 4 }, null, "first", 0],
+  ] as const)("%s", (_, shown, active, to, expected) => {
+    expect(stepIndex(points, shown, active, to)).toBe(expected);
+  });
+
+  it("lands nowhere with no reading", () => {
+    expect(stepIndex([], { first: 0, end: 0 }, null, "last")).toBe(-1);
+  });
+});
+
+describe("walkRange", () => {
+  // The same four readings, at indices 0 to 3.
+  const points = [0, 10, 20, 30].map((at) => ({ time: NOON + at * SECOND, value: at }));
+
+  it.each([
+    ["runs from the window's oldest reading to the latest", { first: 1, end: 4 }, { first: 1, end: 4 }],
+    ["reaches a reading past the window's end", { first: 1, end: 3 }, { first: 1, end: 4 }],
+    ["covers every reading when the window shows none", { first: 4, end: 4 }, { first: 0, end: 4 }],
+  ] as const)("%s", (_, span, expected) => {
+    expect(walkRange(points, span)).toEqual(expected);
+  });
+
+  it("is empty with no reading", () => {
+    expect(walkRange([], { first: 0, end: 0 })).toEqual({ first: 0, end: 0 });
   });
 });
 
@@ -167,7 +216,7 @@ describe("liveVertices and the live paths", () => {
     const now = NOON + 25 * SECOND;
     const span = visibleSpan(points, windowEndingAt(now, 20 * SECOND));
     const held = new Map([[NOON + 20 * SECOND, 80]]);
-    expect(liveVertices(points, span, now, { target: 100, shown: 80 }, held)).toEqual([
+    expect(liveVertices(points, span, now, 80, held)).toEqual([
       { time: NOON, value: 0 },
       { time: NOON + 10 * SECOND, value: 50 },
       { time: NOON + 20 * SECOND, value: 80 },
@@ -180,7 +229,7 @@ describe("liveVertices and the live paths", () => {
     // reading is the line's end, so it draws at 110, and the earlier readings keep their own.
     const now = NOON + 20 * SECOND;
     const span = visibleSpan(points, windowEndingAt(now, 30 * SECOND));
-    expect(liveVertices(points, span, now, { target: 120, shown: 110 }, new Map())).toEqual([
+    expect(liveVertices(points, span, now, 110, new Map())).toEqual([
       { time: NOON, value: 0 },
       { time: NOON + 10 * SECOND, value: 50 },
       { time: NOON + 20 * SECOND, value: 110 },

@@ -1,12 +1,14 @@
 // LiveLineChart in Chromium. Unit under test: the whole path from Root's readings to the drawn
-// line, the live dot, the badge, the keyboard walk, the pointer pick, the crosshair, the tooltip,
-// the table, pausing and reduced motion. The server HTML is apps/docs' RSC fixture's. Oracles: pixels worked out by hand on a 300 by 124 px plot whose
-// 30 s window ends at the latest of three readings, 0 at 14:00:00, 50 at 14:00:10 and 100 at
-// 14:00:20 Oslo time, which sit at 100, 200 and 300 px across, and whose domain [−12, 112] puts a
-// value v at 112 − v px from the top; and names, sentences and rows written by hand.
+// line, the live dot, the badge, the axes, the keyboard walk, the pointer pick, the crosshair, the
+// tooltip, the table, pausing and reduced motion. The server HTML is apps/docs' RSC fixture's.
+// Oracles: pixels worked out by hand on a 300 by 124 px plot whose 30 s window ends at the latest
+// of three readings, 0 at 14:00:00, 50 at 14:00:10 and 100 at 14:00:20 Oslo time, which sit at
+// 100, 200 and 300 px across, and whose domain [−12, 112] puts a value v at 112 − v px from the
+// top; the line layer's box read against the plot's box and the stroke width the path computes;
+// and names, sentences, tick labels and rows written by hand.
 import type { ReactNode } from "react";
 
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, onTestFinished, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
@@ -31,29 +33,38 @@ const READINGS: readonly LiveLineChartPoint[] = [
   { time: NOON + 20 * SECOND, value: 100 },
 ];
 
-/** A chart with no axes, so its plot is the whole 300 by 124 px frame. */
+/**
+ * A chart with no axes in Oslo, so its plot is the whole 300 by 124 px frame showing 30 s, unless a
+ * case sets the width, window or zone.
+ */
 function Live({
   data = READINGS,
   value,
   paused = true,
+  width = 300,
+  windowMs = 30 * SECOND,
+  timeZone = "Europe/Oslo",
   children,
 }: {
   readonly data?: readonly LiveLineChartPoint[];
   readonly value?: number;
   readonly paused?: boolean;
+  readonly width?: number;
+  readonly windowMs?: number;
+  readonly timeZone?: string;
   readonly children?: ReactNode;
 }): ReactNode {
   // Root's value is left out unless the case passes one.
   const latest: Pick<LiveLineChartRootProps, "value"> = {};
   if (value !== undefined) latest.value = value;
   return (
-    <LocaleProvider locale="nb-NO" timeZone="Europe/Oslo">
+    <LocaleProvider locale="nb-NO" timeZone={timeZone}>
       <button type="button">før</button>
-      <div style={{ width: 300 }}>
+      <div style={{ width }}>
         <LiveLineChart.Root
           data={data}
           {...latest}
-          windowMs={30 * SECOND}
+          windowMs={windowMs}
           label="Pris"
           valueFormat={{ maximumFractionDigits: 0 }}
           paused={paused}
@@ -143,33 +154,94 @@ describe("LiveLineChart Root", () => {
 });
 
 describe("the line", () => {
-  /** The device rows the screenshot paints in one column, as an opaque-ish mark paints them. */
-  async function paintedRows(host: HTMLElement, column: number): Promise<number> {
-    const shot = await page.screenshot({ element: host, save: false });
-    const image = await createImageBitmap(await (await fetch(`data:image/png;base64,${shot}`)).blob());
-    const canvas = new OffscreenCanvas(image.width, image.height);
-    const context = canvas.getContext("2d");
-    if (context === null) return Number.NaN;
-    context.drawImage(image, 0, 0);
-    const scale = image.width / host.offsetWidth;
-    const { data } = context.getImageData(Math.round(column * scale), 0, 1, image.height);
-    let rows = 0;
-    // A row the line paints is far from the white page: its red channel drops below half.
-    for (let row = 0; row < image.height; row += 1) if ((data[row * 4] ?? 255) < 128) rows += 1;
-    return rows / scale;
-  }
-
-  it("keeps a line along the plot's top edge whole, its stroke half above the edge", async () => {
-    // The clock widens the domain to a value at once, so for a frame the line can run along the
-    // edge. Draw that frame: a 2 px stroke centred on y = 0 paints 2 px, not the 1 px inside.
+  it("lays its layer half a stroke past the plot's top and bottom edges, its viewport on the plot", async () => {
+    // The clock widens the domain to a value at once, so for a frame the line can run along an
+    // edge. The layer's border box, which its mask paints, holds the stroke's outer half there, and
+    // its content box, the SVG viewport the clock draws in, stays the plot.
     const { host } = renderThemed(
       <Live>
         <LiveLineChart.Line curve="linear" />
       </Live>
     );
     await expect.poll(() => lineD(host)).not.toBeNull();
-    host.querySelector('[data-slot="live-line-chart-line-path"]')?.setAttribute("d", "M0,0L300,0");
-    expect(await paintedRows(host, 150)).toBe(2);
+    const layer = host.querySelector('[data-slot="live-line-chart-line"]');
+    const path = host.querySelector('[data-slot="live-line-chart-line-path"]');
+    const plot = host.querySelector('[data-slot="chart-plot"]');
+    if (layer === null || path === null || plot === null) throw new Error("the line or the plot is missing");
+    const half = Number.parseFloat(getComputedStyle(path).strokeWidth) / 2;
+    expect(half).toBeGreaterThan(0);
+    const border = layer.getBoundingClientRect();
+    const target = plot.getBoundingClientRect();
+    expect(border.top).toBeCloseTo(target.top - half, 3);
+    expect(border.bottom).toBeCloseTo(target.bottom + half, 3);
+    const padding = getComputedStyle(layer);
+    expect(border.top + Number.parseFloat(padding.paddingTop)).toBeCloseTo(target.top, 3);
+    expect(border.bottom - Number.parseFloat(padding.paddingBottom)).toBeCloseTo(target.bottom, 3);
+    expect(border.left).toBeCloseTo(target.left, 3);
+    expect(border.right).toBeCloseTo(target.right, 3);
+  });
+});
+
+describe("the axes", () => {
+  it("labels the paused window's round times and the domain's nice values", async () => {
+    // A 400 px chart leaves the plot room for three to five time labels, so the axis steps 10 s:
+    // the window from 13:59:50 to 14:00:20 holds ticks at both ends and every 10 s between. The
+    // domain [−12, 112] ticks at d3's step of 20 from 0 to 100.
+    const { host } = renderThemed(
+      <Live width={400}>
+        <LiveLineChart.Grid />
+        <LiveLineChart.YAxis />
+        <LiveLineChart.XAxis />
+      </Live>
+    );
+    const xTicks = () =>
+      [...host.querySelectorAll<HTMLElement>('[data-slot="chart-x-axis"] [data-slot="chart-x-tick"]')].map(
+        (tick) => [tick.textContent, Number.parseFloat(tick.style.getPropertyValue("--chart-at"))] as const
+      );
+    await expect.poll(() => xTicks().length).toBe(4);
+    const ticks = xTicks();
+    expect(ticks.map(([label]) => label)).toEqual(["13:59:50", "14:00:00", "14:00:10", "14:00:20"]);
+    const places = [0, 1 / 3, 2 / 3, 1];
+    for (const [index, [, at]] of ticks.entries()) expect(at).toBeCloseTo(places[index] ?? Number.NaN, 9);
+    const yTicks = [
+      ...host.querySelectorAll('[data-slot="chart-y-axis"] [data-part="ticks"] [data-slot="chart-y-tick"]'),
+    ].map((tick) => tick.textContent);
+    expect(yTicks).toEqual(["0", "20", "40", "60", "80", "100"]);
+    expect(host.querySelectorAll('[data-slot="chart-grid-line"]')).toHaveLength(6);
+  });
+});
+
+describe("the time axis in a zone off the hour", () => {
+  it("ticks on the zone's round half hours, not UTC's", async () => {
+    // Kathmandu runs 5 h 45 min ahead of UTC, which no tick step of 30 min or more divides. A paused
+    // 3 h window ending at 08:00 UTC shows 10:45 to 13:45 there, and a 400 px chart leaves room for
+    // six to eleven labels, so the axis steps 30 min: 11:00 to 13:30, the first a quarter of an hour
+    // into the window and each next one half an hour on, at (0.25 + 0.5 k) / 3 of its width. Ticks
+    // on UTC's half hours would sit at 0, 1/6, … 1 and read 10:45, 11:15, …
+    const HOUR = 3_600 * SECOND;
+    const end = Date.UTC(2026, 9, 16, 8);
+    const { host } = renderThemed(
+      <Live
+        width={400}
+        windowMs={3 * HOUR}
+        timeZone="Asia/Kathmandu"
+        data={[
+          { time: end - 2 * HOUR, value: 0 },
+          { time: end - HOUR, value: 50 },
+          { time: end, value: 100 },
+        ]}>
+        <LiveLineChart.XAxis />
+      </Live>
+    );
+    const xTicks = () =>
+      [...host.querySelectorAll<HTMLElement>('[data-slot="chart-x-axis"] [data-slot="chart-x-tick"]')].map(
+        (tick) => [tick.textContent, Number.parseFloat(tick.style.getPropertyValue("--chart-at"))] as const
+      );
+    await expect.poll(() => xTicks().length).toBe(6);
+    const ticks = xTicks();
+    expect(ticks.map(([label]) => label)).toEqual(["11:00", "11:30", "12:00", "12:30", "13:00", "13:30"]);
+    const places = [1 / 12, 3 / 12, 5 / 12, 7 / 12, 9 / 12, 11 / 12];
+    for (const [index, [, at]] of ticks.entries()) expect(at).toBeCloseTo(places[index] ?? Number.NaN, 9);
   });
 });
 
@@ -199,6 +271,72 @@ describe("the readout", () => {
     expect(page.getByRole("option").all()).toHaveLength(1);
     await userEvent.keyboard("{Escape}");
     await expect.poll(() => tooltipText(host)).toBeNull();
+  });
+
+  it("counts only the readings the window shows in the option's position and set size", async () => {
+    // Two readings before the window, at 13:59:20 and 13:59:25, and the three inside it.
+    renderThemed(
+      <Live
+        data={[{ time: NOON - 40 * SECOND, value: 20 }, { time: NOON - 35 * SECOND, value: 30 }, ...READINGS]}
+      />
+    );
+    await enterChart();
+    await userEvent.keyboard("{End}");
+    expect(focused()).toEqual(["kl.\u00a014:00:20, Pris: 100", "3", "3"]);
+    await userEvent.keyboard("{Home}");
+    expect(focused()).toEqual(["kl.\u00a014:00:00, Pris: 0", "1", "3"]);
+  });
+
+  /**
+   * Freeze the wall clock at an instant for the rest of the test, so the live window Root ends at
+   * `Date.now()` holds still while animation frames keep running.
+   */
+  function freezeWallClock(at: number): void {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(at);
+    onTestFinished(() => {
+      vi.useRealTimers();
+    });
+  }
+
+  it("counts every reading when the live window shows none, as Home walks them all", async () => {
+    // At 14:01:40 the three readings are 100, 90 and 80 s old, all before the live 30 s window.
+    freezeWallClock(NOON + 100 * SECOND);
+    renderThemed(<Live paused={false} />);
+    await enterChart();
+    await nextFrames(3);
+    expect(focused()).toEqual(["kl.\u00a014:00:20, Pris: 100", "3", "3"]);
+    await userEvent.keyboard("{Home}");
+    await nextFrames(3);
+    expect(focused()).toEqual(["kl.\u00a014:00:00, Pris: 0", "1", "3"]);
+  });
+
+  it("names the latest reading, at its position, once the feed drops the walked one", async () => {
+    // At 14:00:20 the live 30 s window shows all three readings.
+    freezeWallClock(NOON + 20 * SECOND);
+    const { rerender } = renderThemed(<Live paused={false} />);
+    await enterChart();
+    await userEvent.keyboard("{ArrowLeft}");
+    await nextFrames(3);
+    expect(focused()).toEqual(["kl.\u00a014:00:10, Pris: 50", "2", "3"]);
+    // The feed drops the walked reading while the window still spans its instant.
+    rerender(<Live paused={false} data={[...READINGS.slice(0, 1), ...READINGS.slice(2)]} />);
+    await nextFrames(3);
+    expect(focused()).toEqual(["kl.\u00a014:00:20, Pris: 100", "2", "2"]);
+  });
+
+  it("names the latest reading once the feed drops the oldest one the walk reached", async () => {
+    // At 14:00:20 the live 30 s window shows all three readings.
+    freezeWallClock(NOON + 20 * SECOND);
+    const { rerender } = renderThemed(<Live paused={false} />);
+    await enterChart();
+    await userEvent.keyboard("{Home}");
+    await nextFrames(3);
+    expect(focused()).toEqual(["kl.\u00a014:00:00, Pris: 0", "1", "3"]);
+    // The feed drops the walked reading, the window's oldest, while the window still spans its instant.
+    rerender(<Live paused={false} data={READINGS.slice(1)} />);
+    await nextFrames(3);
+    expect(focused()).toEqual(["kl.\u00a014:00:20, Pris: 100", "2", "2"]);
   });
 
   it("puts the latest reading's crosshair and option where the line ends, on Root's value", async () => {
@@ -270,6 +408,31 @@ describe("the readout", () => {
     await expect.poll(() => tooltipText(host)).toBe("14:00:00Pris0");
     await userEvent.hover(page.getByRole("button", { name: "før" }));
     await expect.poll(() => tooltipText(host)).toBeNull();
+  });
+
+  it("keeps the tooltip dismissed under a resting pointer while the window scrolls", async () => {
+    const now = Date.now();
+    const { host } = renderThemed(
+      <Live
+        data={[
+          { time: now - 20 * SECOND, value: 0 },
+          { time: now - 10 * SECOND, value: 50 },
+          { time: now, value: 100 },
+        ]}
+        paused={false}
+      />
+    );
+    await expect.poll(() => lineD(host)).not.toBeNull();
+    const box = roleNamed("listbox", "Spotpris nå, datapunkter").getBoundingClientRect();
+    await pointerAt(box.left + 200, box.top + 60);
+    await expect.poll(() => tooltipText(host)).not.toBeNull();
+    // Focus moves by keyboard, so the pointer stays where it rests.
+    page.getByRole("button", { name: "før" }).element().focus();
+    await userEvent.keyboard("{Tab}");
+    await userEvent.keyboard("{Escape}");
+    await expect.poll(() => tooltipText(host)).toBeNull();
+    await nextFrames(10);
+    expect(tooltipText(host)).toBeNull();
   });
 
   it("lists the window's readings newest first in the table", async () => {

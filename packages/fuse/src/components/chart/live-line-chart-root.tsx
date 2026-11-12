@@ -1,15 +1,6 @@
 "use client";
 
-import {
-  useCallback,
-  useEffect,
-  useId,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-  useSyncExternalStore,
-} from "react";
+import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { ReactElement, ReactNode } from "react";
 
 import { useMergedRefs } from "../../hooks/use-merged-refs";
@@ -42,10 +33,10 @@ import {
 } from "./layout/errors";
 import { createLiveClock } from "./layout/live-clock";
 import type { LiveClockHost, LiveFeed, LiveMode } from "./layout/live-clock";
-import { parseLiveSeries } from "./layout/live-window";
-import { createLiveStore } from "./live-line-chart-context";
+import { parseLiveLatest, parseLiveSeries } from "./layout/live-window";
+import { createLiveStore, useShownFeed } from "./live-line-chart-context";
 import type { LiveLineRootContextValue } from "./live-line-chart-context";
-import { LiveSurface, useActiveFollowsFrame } from "./live-line-chart-readout";
+import { LiveSurface, useActiveFollowsFrame } from "./live-line-chart-surface";
 import { liveDescription } from "./live-line-chart-text";
 import type { LiveLineChartTimeFormat, LiveText } from "./live-line-chart-text";
 
@@ -120,10 +111,16 @@ const DEFAULT_WINDOW_MS = 30_000;
 /** A live issue names its own row, so no slot maps to one. */
 const NO_SLOT_ROWS: readonly number[] = [];
 
-/** The browser's frames, with the wall clock at the frame clock's precision. */
+/**
+ * The browser's frames and the wall clock. The window ends at `Date.now()`, the clock the
+ * consumer's feed stamps its readings with, so the two agree. The frame clock, `performance.now()`,
+ * stops while a computer sleeps, so a wall clock read from it falls behind the readings' stamps,
+ * and a window held at the latest reading would stop scrolling. Glides and frames keep the frame
+ * clock.
+ */
 const LIVE_FRAMES: LiveClockHost = {
   ...BROWSER_FRAMES,
-  epoch: () => performance.timeOrigin + performance.now(),
+  epoch: () => Date.now(),
 };
 
 /**
@@ -180,24 +177,25 @@ export function LiveLineChartRoot({
       `received windowMs ${String(windowMs)}. Pass the window's length in milliseconds, such as 30_000.`
     );
   }
-  const series = useMemo(() => parseLiveSeries(data, value), [data, value]);
-  const firstIssue = series.issues[0];
+  // A value that ticks on its own re-reads no reading.
+  const series = useMemo(() => parseLiveSeries(data), [data]);
+  const { points } = series;
+  const { latest: tip, issues: valueIssues } = useMemo(() => parseLiveLatest(points, value), [points, value]);
+  const issues = useMemo(() => [...series.issues, ...valueIssues], [series.issues, valueIssues]);
+  const firstIssue = issues[0];
   if (firstIssue !== undefined && isChartDevelopment()) {
     throw new ChartDataError("LiveLineChart.Root", firstIssue.rule, dataMessage(firstIssue, NO_SLOT_ROWS));
   }
   const warned = useRef(new Set<string>());
   useEffect(() => {
-    for (const { rule, subject, first, count } of issueGroups(series.issues)) {
+    for (const { rule, subject, first, count } of issueGroups(issues)) {
       const key = issueKey(rule, subject);
       if (warned.current.has(key)) continue;
       warned.current.add(key);
       console.warn(`LiveLineChart.Root ${dataMessage(first, NO_SLOT_ROWS, count)}`);
     }
-  }, [series.issues]);
+  }, [issues]);
 
-  const { points, latest } = series;
-  // A value with no reading has no instant to sit at, so the line waits for its first reading.
-  const tip = points.length === 0 ? null : latest;
   const feed = useMemo((): LiveFeed => ({ points, tip, duration: windowMs }), [points, tip, windowMs]);
   const [clock] = useState(() => createLiveClock(LIVE_FRAMES, feed));
   const [store] = useState(createLiveStore);
@@ -272,8 +270,7 @@ export function LiveLineChartRoot({
   );
   // The description reads the feed the plot shows, as every readout does, so a paused chart's
   // description holds still with it.
-  const shownFeed = () => clock.get().feed;
-  const shown = useSyncExternalStore(clock.subscribe, shownFeed, shownFeed);
+  const shown = useShownFeed(context);
   const spokenDescription = useMemo(
     () => description ?? liveDescription(text, shown.points, shown.duration, shown.tip),
     [description, text, shown]

@@ -49,6 +49,16 @@ const NARROW = 1e-12;
 export const VALUE_LIMIT = 1e15;
 
 /**
+ * Whether a value is finite and within `VALUE_LIMIT`, the bound every chart value keeps.
+ *
+ * @param value - The value.
+ * @returns True when the value is finite and its magnitude is at most 1e15.
+ */
+export function isBoundedValue(value: number): boolean {
+  return Number.isFinite(value) && Math.abs(value) <= VALUE_LIMIT;
+}
+
+/**
  * A magnitude below this counts as 0 in the domain. It mirrors the 1e15 upper bound, and below it
  * d3's step search overflows, so a subnormal such as 5e-324 would yield no tick at all.
  */

@@ -169,6 +169,7 @@ export type RowSubjectIssue = {
 
 /** A data issue about a prop rather than a row, such as a live chart's `value`. */
 export type PropIssue = {
+  readonly kind: "prop";
   readonly rule: ChartDataRule;
   /** The prop the rule is about. */
   readonly subject: string;
@@ -240,18 +241,13 @@ export function issueGroups<TIssue extends DataIssue>(issues: readonly TIssue[])
  * @returns The text.
  */
 export function dataMessage(issue: DataIssue, rowAt: readonly (number | undefined)[], count = 1): string {
+  const more = count > 1 ? `, the first of ${String(count)}` : "";
+  if ("kind" in issue) return `${DATA_MESSAGES[issue.rule]} Prop ${JSON.stringify(issue.subject)}${more}.`;
   const row = "row" in issue ? issue.row : "key" in issue ? rowAt[issue.slot] : undefined;
   const where =
     row !== undefined ? `Row ${String(row)}` : "slot" in issue ? `Slot ${String(issue.slot)}` : "";
   const named = "subject" in issue ? issue.subject : "key" in issue ? issue.key : undefined;
-  // An issue that names neither a row nor a slot is about a prop, which it names on its own.
-  const key =
-    named === undefined
-      ? ""
-      : where === ""
-        ? `Prop ${JSON.stringify(named)}`
-        : ` of ${JSON.stringify(named)}`;
-  const more = count > 1 ? `, the first of ${String(count)}` : "";
+  const key = named === undefined ? "" : ` of ${JSON.stringify(named)}`;
   return `${DATA_MESSAGES[issue.rule]} ${where}${key}${more}.`;
 }
 

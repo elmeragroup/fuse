@@ -11,7 +11,7 @@ import { cubicBezier } from "./ease";
 import { createLiveClock } from "./live-clock";
 import type { LiveFrame } from "./live-clock";
 import type { LiveClockHost, LiveFeed, LiveMode } from "./live-clock";
-import { liveVertices } from "./live-window";
+import { parseLiveLatest } from "./live-window";
 import type { LivePoint } from "./live-window";
 
 /**
@@ -20,12 +20,13 @@ import type { LivePoint } from "./live-window";
  * keeps is that there are none.
  */
 function outside(frame: LiveFrame): number[] {
-  const drawn = liveVertices(frame.points, frame.span, frame.now, frame.tip, frame.held).map(
-    ({ value }) => value
-  );
-  if (frame.tip !== null) drawn.push(frame.tip.shown);
+  const drawn = frame.vertices.map(({ value }) => value);
+  if (frame.tip !== null) drawn.push(frame.tip);
   return drawn.filter((value) => value < frame.domain[0] || value > frame.domain[1]);
 }
+
+/** Where the update curve, `cubic-bezier(0, 0.7, 0.5, 1)`, has eased half-way through its duration. */
+const HALF_EASED = cubicBezier([0, 0.7, 0.5, 1])(0.5);
 
 const NOON = Date.UTC(2026, 9, 16, 12);
 const SECOND = 1_000;
@@ -60,6 +61,16 @@ function fakeHost() {
   return { host, advance, pending: () => frames.size };
 }
 
+/** A clock on a fake host that runs live with a subscriber, one 16 ms frame in. */
+function runningClock(feed: LiveFeed) {
+  const { host, advance } = fakeHost();
+  const clock = createLiveClock(host, feed);
+  clock.subscribe(() => undefined);
+  clock.setMode("live");
+  advance(16);
+  return { host, advance, clock };
+}
+
 /** Readings of 0 at noon and 100 ten seconds later, in a 30 s window. */
 const FEED: LiveFeed = {
   points: [
@@ -83,15 +94,11 @@ describe("createLiveClock", () => {
     const clock = createLiveClock(host, FEED);
     expect(clock.get().now).toBe(NOON + 10 * SECOND);
     expect(clock.get().domain).toEqual([-12, 112]);
-    expect(clock.get().tip).toEqual({ target: 100, shown: 100 });
+    expect(clock.get().tip).toBe(100);
   });
 
   it("ends the window at the wall clock on every frame, never before the latest reading", () => {
-    const { host, advance } = fakeHost();
-    const clock = createLiveClock(host, FEED);
-    clock.subscribe(() => undefined);
-    clock.setMode("live");
-    advance(16);
+    const { advance, clock } = runningClock(FEED);
     expect(clock.get().window).toEqual({ start: NOON - 20 * SECOND + 16, end: NOON + 10 * SECOND + 16 });
     advance(250);
     expect(clock.get().now).toBe(NOON + 10 * SECOND + 266);
@@ -102,42 +109,33 @@ describe("createLiveClock", () => {
   });
 
   it("glides the domain and the tip from what they show to the new fit on the update curve", () => {
-    const { host, advance } = fakeHost();
-    const clock = createLiveClock(host, FEED);
-    clock.subscribe(() => undefined);
-    clock.setMode("live");
-    advance(16);
+    const { advance, clock } = runningClock(FEED);
     clock.feed(RISEN);
     // The frame after the feed starts the glide where the domain showed.
     advance(16);
     expect(clock.get().domain).toEqual([-12, 112]);
-    expect(clock.get().tip).toEqual({ target: 200, shown: 100 });
+    expect(clock.get().tip).toBe(100);
     advance(240);
-    const eased = cubicBezier([0, 0.7, 0.5, 1])(0.5);
     const [low, high] = clock.get().domain;
-    expect(low).toBeCloseTo(-12 - 12 * eased, 9);
-    expect(high).toBeCloseTo(112 + 112 * eased, 9);
-    expect(clock.get().tip?.shown).toBeCloseTo(100 + 100 * eased, 9);
+    expect(low).toBeCloseTo(-12 - 12 * HALF_EASED, 9);
+    expect(high).toBeCloseTo(112 + 112 * HALF_EASED, 9);
+    expect(clock.get().tip).toBeCloseTo(100 + 100 * HALF_EASED, 9);
     advance(240);
     expect(clock.get().domain).toEqual([-24, 224]);
-    expect(clock.get().tip).toEqual({ target: 200, shown: 200 });
+    expect(clock.get().tip).toBe(200);
   });
 
   it("retargets a glide mid-way from where it got to, without a jump", () => {
-    const { host, advance } = fakeHost();
-    const clock = createLiveClock(host, FEED);
-    clock.subscribe(() => undefined);
-    clock.setMode("live");
-    advance(16);
+    const { advance, clock } = runningClock(FEED);
     clock.feed(RISEN);
     advance(16);
     advance(240);
-    const before = clock.get().tip?.shown ?? 0;
+    const before = clock.get().tip ?? 0;
     clock.feed({ ...RISEN, points: [...RISEN.points, { time: NOON + 12 * SECOND, value: 0 }], tip: 0 });
     advance(0);
-    expect(clock.get().tip?.shown).toBe(before);
+    expect(clock.get().tip).toBe(before);
     advance(480);
-    expect(clock.get().tip?.shown).toBe(0);
+    expect(clock.get().tip).toBe(0);
   });
 
   it("stays still under reduced motion: no frame runs, and each feed redraws once at the wall clock", () => {
@@ -156,15 +154,11 @@ describe("createLiveClock", () => {
     expect(drawn).toBe(2);
     expect(clock.get().now).toBe(NOON + 15 * SECOND);
     expect(clock.get().domain).toEqual([-24, 224]);
-    expect(clock.get().tip).toEqual({ target: 200, shown: 200 });
+    expect(clock.get().tip).toBe(200);
   });
 
   it("holds its frame while paused and glides to what it missed once it runs again", () => {
-    const { host, advance } = fakeHost();
-    const clock = createLiveClock(host, FEED);
-    clock.subscribe(() => undefined);
-    clock.setMode("live");
-    advance(16);
+    const { advance, clock } = runningClock(FEED);
     const held = clock.get();
     clock.setMode("paused");
     clock.feed(RISEN);
@@ -173,7 +167,7 @@ describe("createLiveClock", () => {
     clock.setMode("live");
     advance(16);
     expect(clock.get().now).toBe(NOON + 10 * SECOND + 2 * SECOND + 32);
-    expect(clock.get().tip?.shown).toBe(100);
+    expect(clock.get().tip).toBe(100);
   });
 
   it("runs no frame while out of view or with no subscriber", () => {
@@ -192,25 +186,17 @@ describe("createLiveClock", () => {
   });
 
   it("settles the domain and the tip on their targets when reduced motion takes over mid-glide", () => {
-    const { host, advance } = fakeHost();
-    const clock = createLiveClock(host, FEED);
-    clock.subscribe(() => undefined);
-    clock.setMode("live");
-    advance(16);
+    const { advance, clock } = runningClock(FEED);
     clock.feed(RISEN);
     advance(16);
     advance(120);
     clock.setMode("still");
     expect(clock.get().domain).toEqual([-24, 224]);
-    expect(clock.get().tip).toEqual({ target: 200, shown: 200 });
+    expect(clock.get().tip).toBe(200);
   });
 
   it("glides a reading a newer one overtakes from where it showed, inside the domain all the way", () => {
-    const { host, advance } = fakeHost();
-    const clock = createLiveClock(host, FEED);
-    clock.subscribe(() => undefined);
-    clock.setMode("live");
-    advance(16);
+    const { advance, clock } = runningClock(FEED);
     clock.feed(RISEN);
     advance(16);
     advance(120);
@@ -250,11 +236,7 @@ describe("createLiveClock", () => {
   it("lets every reading's glide end within the update duration, however fast readings arrive", () => {
     // Readings every 100 ms for 100 s. A glide starts in the frame after its reading and lasts
     // 480 ms, so at any frame only the readings of the last 480 ms, at most five, still glide.
-    const { host, advance } = fakeHost();
-    const clock = createLiveClock(host, FEED);
-    clock.subscribe(() => undefined);
-    clock.setMode("live");
-    advance(16);
+    const { advance, clock } = runningClock(FEED);
     let points = FEED.points;
     let most = 0;
     for (let step = 1; step <= 1_000; step += 1) {
@@ -272,20 +254,15 @@ describe("createLiveClock", () => {
   it("knows a reading by its time, so it glides when Root's value sets the tip apart", () => {
     // A reading of 200 arrives while Root's value says 201: the reading grows from the line's end,
     // 100, to 200, the tip from 100 to 201, both on the update curve.
-    const { host, advance } = fakeHost();
-    const clock = createLiveClock(host, FEED);
-    clock.subscribe(() => undefined);
-    clock.setMode("live");
-    advance(16);
+    const { advance, clock } = runningClock(FEED);
     clock.feed({ ...RISEN, tip: 201 });
     advance(16);
     advance(240);
-    const eased = cubicBezier([0, 0.7, 0.5, 1])(0.5);
-    expect(clock.get().held.get(NOON + 11 * SECOND)).toBeCloseTo(100 + 100 * eased, 9);
-    expect(clock.get().tip?.shown).toBeCloseTo(100 + 101 * eased, 9);
+    expect(clock.get().held.get(NOON + 11 * SECOND)).toBeCloseTo(100 + 100 * HALF_EASED, 9);
+    expect(clock.get().tip).toBeCloseTo(100 + 101 * HALF_EASED, 9);
     advance(240);
     expect(clock.get().held.size).toBe(0);
-    expect(clock.get().tip).toEqual({ target: 201, shown: 201 });
+    expect(clock.get().tip).toBe(201);
     const [low, high] = clock.get().domain;
     expect(low).toBeCloseTo(-24.12, 9);
     expect(high).toBeCloseTo(225.12, 9);
@@ -295,15 +272,11 @@ describe("createLiveClock", () => {
     // From a flat 0, whose domain is [−1, 1], readings of 100 and 0 arrive at once. Only the newest
     // glides, so the 100 draws at once, and the domain's glide, which starts at [−1, 1], widens to
     // it: [−1, 100].
-    const { host, advance } = fakeHost();
-    const clock = createLiveClock(host, {
+    const { advance, clock } = runningClock({
       points: [{ time: NOON, value: 0 }],
       tip: 0,
       duration: 30 * SECOND,
     });
-    clock.subscribe(() => undefined);
-    clock.setMode("live");
-    advance(16);
     expect(clock.get().domain).toEqual([-1, 1]);
     clock.feed({
       points: [
@@ -317,7 +290,7 @@ describe("createLiveClock", () => {
     advance(16);
     expect(clock.get().domain).toEqual([-1, 100]);
     // The spike leaves. The domain eases back from what it showed: unmoved in a frame at +0 ms, and
-    // half-way through the 480 ms on the curve, its top at 100 + (1 − 100) × eased.
+    // half-way through the 480 ms on the curve, its top at 100 + (1 − 100) × HALF_EASED, the half-way ease.
     clock.feed({
       points: [
         { time: NOON, value: 0 },
@@ -329,10 +302,9 @@ describe("createLiveClock", () => {
     advance(0);
     expect(clock.get().domain).toEqual([-1, 100]);
     advance(240);
-    const eased = cubicBezier([0, 0.7, 0.5, 1])(0.5);
     const [low, high] = clock.get().domain;
     expect(low).toBe(-1);
-    expect(high).toBeCloseTo(100 - 99 * eased, 9);
+    expect(high).toBeCloseTo(100 - 99 * HALF_EASED, 9);
     expect(high).toBeGreaterThan(1);
     expect(high).toBeLessThan(100);
   });
@@ -384,8 +356,7 @@ describe("createLiveClock", () => {
     advance(0);
     expect(clock.get().held.get(at)).toBe(before);
     advance(240);
-    const eased = cubicBezier([0, 0.7, 0.5, 1])(0.5);
-    expect(clock.get().held.get(at)).toBeCloseTo(before - before * eased, 9);
+    expect(clock.get().held.get(at)).toBeCloseTo(before - before * HALF_EASED, 9);
     advance(240);
     expect(clock.get().held.has(at)).toBe(false);
   });
@@ -423,7 +394,7 @@ describe("createLiveClock", () => {
           let standalone: number | undefined;
           const feedOf = (): LiveFeed => ({
             points,
-            tip: points.length === 0 ? null : (standalone ?? points.at(-1)?.value ?? null),
+            tip: parseLiveLatest(points, standalone).latest,
             duration,
           });
           const clock = createLiveClock(host, feedOf());

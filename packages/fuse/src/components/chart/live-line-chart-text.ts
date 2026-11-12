@@ -8,6 +8,7 @@ import { countOf } from "../../intl/count-of";
 import type { SupportedLocale } from "../../intl/locale-context";
 import type { ValueFormat, XFormat } from "./chart-types";
 import { CHART_STRINGS } from "./format/chart-strings";
+import { sentence, unitLabel } from "./format/description-words";
 import type { FormattedText, LabelRole } from "./format/formatted-text";
 import { formatInstant } from "./format/time-format";
 import { formatValue } from "./format/value-format";
@@ -110,7 +111,8 @@ export function liveOptionName(text: LiveText, point: LivePoint): string {
 /**
  * The generated description of the readings `latestWindow` covers: their span and count, the
  * value's lowest and highest reading with their times, and the latest value with its time, the
- * first tie of each extreme named.
+ * first tie of each extreme named. The value's unit is stated once, after its name, as the other
+ * families' descriptions state it, and each value after it speaks unitless.
  *
  * @param text - The Root's words.
  * @param points - The readings in time order.
@@ -138,11 +140,25 @@ export function liveDescription(
     if (point.value > high.value) high = point;
   }
   const time = (point: LivePoint) => liveTimeText(text, point.time, "full").spoken;
-  const value = (amount: number) => liveValueText(text, amount, "full").spoken;
+  const named = unitLabel(
+    text.locale,
+    text.valueFormat,
+    liveName(text),
+    (amount) => liveValueText(text, amount, "full").spoken
+  );
   const count = countOf(text.locale, end - first, strings.points);
   return [
-    strings.descriptionSpan(time(oldest), oldest === newest ? undefined : time(newest), count),
-    strings.descriptionSeries(liveName(text), value(low.value), time(low), value(high.value), time(high)),
-    strings.liveLatest(value(latest), time(newest)),
+    sentence(
+      strings.descriptionSpan(time(oldest), oldest === newest ? undefined : time(newest), count),
+      text.locale
+    ),
+    strings.descriptionSeries(
+      named.label,
+      named.value(low.value),
+      time(low),
+      named.value(high.value),
+      time(high)
+    ),
+    strings.liveLatest(named.value(latest), time(newest)),
   ].join(" ");
 }

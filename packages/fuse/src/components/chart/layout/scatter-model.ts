@@ -9,7 +9,7 @@
 import type { ChartRow } from "../chart-types";
 import type { PointShares } from "./point-index";
 import { numberOf, stringOf } from "./scalar";
-import { VALUE_LIMIT, valueDomain } from "./value-domain";
+import { isBoundedValue, valueDomain } from "./value-domain";
 import type { ValueDomain } from "./value-domain";
 
 /** What Root reads the model from. */
@@ -96,7 +96,7 @@ const Y_TICKS = 5;
 function coordinate(cell: ChartRow[string]): number | null | undefined {
   if (cell === null || cell === undefined) return null;
   const value = numberOf(cell);
-  return value !== undefined && Number.isFinite(value) && Math.abs(value) <= VALUE_LIMIT ? value : undefined;
+  return value !== undefined && isBoundedValue(value) ? value : undefined;
 }
 
 /**

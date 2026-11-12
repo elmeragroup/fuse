@@ -307,9 +307,14 @@ function learnDay(zone: ZoneOffsets, instant: number): number {
 /**
  * The zone's UTC offset at an instant, in milliseconds, from the span that holds it, or from the
  * day Fuse reads first. Each span holds what Intl reads for the zone, so no cache here depends on
- * the process's zone.
+ * the process's zone, and a read inside a known span asks Intl nothing, as a frame loop needs.
+ *
+ * @param instant - The instant, epoch milliseconds.
+ * @param timeZone - The IANA zone.
+ * @returns The offset in milliseconds, such as 3 600 000 for CET.
+ * @throws A `RangeError` when `timeZone` is not an IANA zone.
  */
-function offsetAt(instant: number, timeZone: string): number {
+export function offsetAt(instant: number, timeZone: string): number {
   const zone = zoneOf(timeZone);
   const { last, spans } = zone;
   if (last !== undefined && last.from <= instant && instant < last.to) return last.offset;

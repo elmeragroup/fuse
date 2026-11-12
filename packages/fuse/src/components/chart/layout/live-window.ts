@@ -8,14 +8,15 @@
  * edge, and y runs bottom to top. Positions are unsnapped: the window moves a fraction of a pixel
  * each frame, and snapping would make it judder.
  */
+import { bisector } from "d3-array";
 import { area, line } from "d3-shape";
 
 import type { ChartInstant } from "../chart-types";
 import type { PropIssue, RowSubjectIssue } from "./errors";
 import { pathNumber } from "./rounding";
-import { curveAlongX } from "./scatter-frame";
-import type { ScatterCurve } from "./scatter-frame";
-import { VALUE_LIMIT } from "./value-domain";
+import { curveAlongX, heightY } from "./scatter-frame";
+import { isBoundedValue } from "./value-domain";
+import { instantOf } from "./x-domain";
 
 /** One reading: its instant in epoch milliseconds and its value. */
 export type LivePoint = { readonly time: number; readonly value: number };
@@ -26,9 +27,14 @@ export type LiveRow = { readonly time: ChartInstant; readonly value: number };
 /** The readings in time order, with the rows that were skipped and why. */
 export type LiveSeries = {
   readonly points: readonly LivePoint[];
-  /** The latest value: Root's `value` when it parses, else the latest reading's, or null with none. */
+  readonly issues: readonly RowSubjectIssue[];
+};
+
+/** The latest value, with the issue Root's `value` raised, if any. */
+export type LiveLatest = {
+  /** Root's `value` when it parses, else the latest reading's, or null with no reading. */
   readonly latest: number | null;
-  readonly issues: readonly (RowSubjectIssue | PropIssue)[];
+  readonly issues: readonly PropIssue[];
 };
 
 /** A time window in epoch milliseconds, `start` before `end`. */
@@ -37,29 +43,22 @@ export type LiveWindow = { readonly start: number; readonly end: number };
 /** The readings a window shows, as a half-open index range `[first, end)` of the series. */
 export type LiveSpan = { readonly first: number; readonly end: number };
 
-/** Whether a value is finite and within ±1e15, the bound every chart value keeps. */
-function isBoundedValue(value: number): boolean {
-  return Number.isFinite(value) && Math.abs(value) <= VALUE_LIMIT;
-}
-
 /**
  * Parse the consumer's readings: a `Date` or epoch-millisecond time and a finite value within
  * ±1e15. A row that breaks either rule is skipped and reported. The rest sort by time, and a feed
  * already in order, as a live feed is, skips the sort. One instant holds one reading: of rows that
  * share a time, the last in row order wins, as a feed that corrects its latest reading sends it
- * again, so a reading's time is its identity everywhere downstream. Root's `value` keeps the same
- * bound, and one that breaks it is reported and gives way to the latest reading's value.
+ * again, so a reading's time is its identity everywhere downstream.
  *
  * @param rows - The consumer's readings.
- * @param value - Root's `value`, or undefined.
  * @returns The parsed series.
  */
-export function parseLiveSeries(rows: readonly LiveRow[], value?: number): LiveSeries {
+export function parseLiveSeries(rows: readonly LiveRow[]): LiveSeries {
   const points: LivePoint[] = [];
-  const issues: (RowSubjectIssue | PropIssue)[] = [];
+  const issues: RowSubjectIssue[] = [];
   let sorted = true;
   for (const [index, row] of rows.entries()) {
-    const time = row.time instanceof Date ? row.time.getTime() : row.time;
+    const time = instantOf(row.time);
     if (!Number.isFinite(time)) {
       issues.push({ rule: "invalid-x", row: index, subject: "time" });
       continue;
@@ -79,14 +78,25 @@ export function parseLiveSeries(rows: readonly LiveRow[], value?: number): LiveS
     if (unique.at(-1)?.time === point.time) unique[unique.length - 1] = point;
     else unique.push(point);
   }
-  // Root's value holds to the readings' bound, and one that breaks it gives way to the latest
-  // reading's, so the domain stays finite.
-  let latest = unique.at(-1)?.value ?? null;
-  if (value !== undefined) {
-    if (isBoundedValue(value)) latest = value;
-    else issues.push({ rule: "non-finite-live-value", subject: "value" });
+  return { points: unique, issues };
+}
+
+/**
+ * Parse Root's `value` against the parsed readings. It keeps the readings' bound, and one that
+ * breaks it is reported and gives way to the latest reading's value, so the domain stays finite. A
+ * value with no reading has no instant to sit at, so the latest value waits for the first reading.
+ *
+ * @param points - The parsed readings in time order.
+ * @param value - Root's `value`, or undefined.
+ * @returns The latest value and the issue the value raised.
+ */
+export function parseLiveLatest(points: readonly LivePoint[], value: number | undefined): LiveLatest {
+  const reading = points.at(-1)?.value ?? null;
+  if (value === undefined) return { latest: reading, issues: [] };
+  if (!isBoundedValue(value)) {
+    return { latest: reading, issues: [{ kind: "prop", rule: "non-finite-live-value", subject: "value" }] };
   }
-  return { points: unique, latest, issues };
+  return { latest: reading === null ? null : value, issues: [] };
 }
 
 /**
@@ -111,28 +121,18 @@ export function timeShare(window: LiveWindow, time: number): number {
   return (time - window.start) / (window.end - window.start);
 }
 
-/** The first index whose reading is at or after `time`, or the length past the last. */
+/**
+ * The readings' places by time: `left` finds the first index whose reading is at or after an
+ * instant, and `right` the first after it, each the length past the last.
+ */
+const byTime = bisector((point: LivePoint) => point.time);
+
 function lowerBound(points: readonly LivePoint[], time: number): number {
-  let low = 0;
-  let high = points.length;
-  while (low < high) {
-    const middle = (low + high) >>> 1;
-    if ((points[middle]?.time ?? 0) < time) low = middle + 1;
-    else high = middle;
-  }
-  return low;
+  return byTime.left(points, time);
 }
 
-/** The first index whose reading is after `time`, or the length past the last. */
 function upperBound(points: readonly LivePoint[], time: number): number {
-  let low = 0;
-  let high = points.length;
-  while (low < high) {
-    const middle = (low + high) >>> 1;
-    if ((points[middle]?.time ?? 0) <= time) low = middle + 1;
-    else high = middle;
-  }
-  return low;
+  return byTime.right(points, time);
 }
 
 /**
@@ -176,9 +176,80 @@ export function nearestIndex(points: readonly LivePoint[], span: LiveSpan, time:
 }
 
 /**
+ * The readings a key walk reaches: from the window's oldest reading to the latest, or every reading
+ * when the window shows none.
+ *
+ * @param points - The readings in time order.
+ * @param span - The readings the window shows.
+ * @returns The index range, empty with no reading.
+ */
+export function walkRange(points: readonly LivePoint[], span: LiveSpan): LiveSpan {
+  return { first: span.first < span.end ? span.first : 0, end: points.length };
+}
+
+/** The keys' steps through the readings: one either way, or to either end. */
+export type LiveStep = "previous" | "next" | "first" | "last";
+
+/**
+ * The reading a key step lands on, within `walkRange`. It starts from the reading nearest the active
+ * one, so an active reading the window scrolled out steps from where it was, and it stops at
+ * either end.
+ *
+ * @param points - The readings in time order.
+ * @param span - The readings the window shows.
+ * @param active - The active reading's instant, or null to step from the latest reading.
+ * @param to - The step.
+ * @returns The index, or -1 with no reading.
+ */
+export function stepIndex(
+  points: readonly LivePoint[],
+  span: LiveSpan,
+  active: number | null,
+  to: LiveStep
+): number {
+  const { first, end } = walkRange(points, span);
+  const last = end - 1;
+  if (last < 0) return -1;
+  switch (to) {
+    case "first":
+      return first;
+    case "last":
+      return last;
+    case "previous":
+    case "next": {
+      const at = active === null ? last : nearestIndex(points, { first: 0, end: points.length }, active);
+      return Math.max(first, Math.min(last, at + (to === "next" ? 1 : -1)));
+    }
+  }
+}
+
+/**
+ * The lowest and highest of a starting range and the values of a run of readings.
+ *
+ * @param points - The readings.
+ * @param from - The run's first index.
+ * @param end - The index past the run's last.
+ * @param range - The lowest and highest value to start from, which may be empty, low above high.
+ * @returns The range widened to the run's values, the same object when none lies outside it.
+ */
+export function valueRange(
+  points: readonly LivePoint[],
+  from: number,
+  end: number,
+  range: readonly [number, number]
+): readonly [number, number] {
+  let [low, high] = range;
+  for (let index = from; index < end; index += 1) {
+    const value = points[index]?.value ?? low;
+    if (value < low) low = value;
+    if (value > high) high = value;
+  }
+  return low === range[0] && high === range[1] ? range : [low, high];
+}
+
+/**
  * The lowest and highest of the values the line draws through in a window: the span's readings,
- * the reading before the span, whose segment enters at the left edge, and an extra value, such as
- * the line's live tip. The entering segment counts by its outer reading's value, not by where it
+ * the reading before the span, whose segment enters at the left edge, and the line's live tip. The entering segment counts by its outer reading's value, not by where it
  * crosses the edge: the curves a live line draws, monotone, linear, the steps, bump and basis,
  * never leave the range of the readings around them, so the outer reading bounds the segment
  * under every one of them without sampling the curve, at the cost of some headroom while the
@@ -186,29 +257,24 @@ export function nearestIndex(points: readonly LivePoint[], span: LiveSpan, time:
  *
  * @param points - The readings in time order.
  * @param span - The readings the window shows.
- * @param extra - A value the extent must hold too, or null.
- * @returns The extent, or null when it holds no value.
+ * @param tip - The live tip, which the extent holds too.
+ * @returns The extent.
  */
 export function liveExtent(
   points: readonly LivePoint[],
   span: LiveSpan,
-  extra: number | null
-): readonly [number, number] | null {
-  let low = extra ?? Number.POSITIVE_INFINITY;
-  let high = extra ?? Number.NEGATIVE_INFINITY;
-  for (let index = Math.max(0, span.first - 1); index < span.end; index += 1) {
-    const value = points[index]?.value ?? low;
-    if (value < low) low = value;
-    if (value > high) high = value;
-  }
-  return low <= high ? [low, high] : null;
+  tip: number
+): readonly [number, number] {
+  return valueRange(points, Math.max(0, span.first - 1), span.end, [tip, tip]);
 }
 
 /**
- * The share of the extent the domain leaves free above its highest value and below its lowest, so
- * the line never touches the plot's top or bottom edge, after Liveline's range margin.
+ * The share of the extent the domain leaves free above its highest value and below its lowest,
+ * after Liveline's range margin, so a line at rest keeps clear of the plot's top and bottom edges.
+ * A value still on its glide can reach an edge, since the clock widens the domain exactly to every
+ * value it draws, and the line layer's half-stroke of padding keeps such a line whole there.
  */
-export const LIVE_DOMAIN_PAD = 0.12;
+const LIVE_DOMAIN_PAD = 0.12;
 
 /**
  * The value domain that fits an extent: the extent widened by `LIVE_DOMAIN_PAD` of its span at each
@@ -230,13 +296,32 @@ export function liveDomain(extent: readonly [number, number]): readonly [number,
   return [low - 1, high + 1];
 }
 
+/** The coarsest tick step, a day, which a window too long for any finer step takes. */
+const COARSEST_TICK_STEP = 86_400_000;
+
 /**
  * The tick steps a time axis picks from, in milliseconds, each a whole number of the wall clock's
  * seconds, minutes or hours, so every tick lands on a round time.
  */
-export const LIVE_TICK_STEPS = [
-  1_000, 2_000, 5_000, 10_000, 15_000, 30_000, 60_000, 120_000, 300_000, 600_000, 900_000, 1_800_000,
-  3_600_000, 7_200_000, 10_800_000, 21_600_000, 43_200_000, 86_400_000,
+const LIVE_TICK_STEPS = [
+  1_000,
+  2_000,
+  5_000,
+  10_000,
+  15_000,
+  30_000,
+  60_000,
+  120_000,
+  300_000,
+  600_000,
+  900_000,
+  1_800_000,
+  3_600_000,
+  7_200_000,
+  10_800_000,
+  21_600_000,
+  43_200_000,
+  COARSEST_TICK_STEP,
 ] as const;
 
 /**
@@ -249,7 +334,7 @@ export const LIVE_TICK_STEPS = [
  */
 export function tickStep(duration: number, room: number): number {
   const most = Math.max(1, room);
-  return LIVE_TICK_STEPS.find((step) => duration / step <= most) ?? 86_400_000;
+  return LIVE_TICK_STEPS.find((step) => duration / step <= most) ?? COARSEST_TICK_STEP;
 }
 
 /**
@@ -289,21 +374,22 @@ export function edgeFade(share: number, fade: number): number {
 }
 
 /**
- * The curves a live line chart's `Line` and `Area` take: `ScatterCurve` without "natural". Each of
- * them stays within the values of the two readings around every segment, so the readings the
- * window draws bound the line, and the domain that holds them holds the whole curve. A natural
- * spline overshoots its readings, as through 0, 100, 100 and 0, where it peaks near 115, so it
- * would leave a domain fitted to the readings.
+ * The curves a live line chart's `Line` and `Area` take. Each of them stays within the values of
+ * the two readings around every segment, so the readings the window draws bound the line, and the
+ * domain that holds them holds the whole curve. A natural spline overshoots its readings, as
+ * through 0, 100, 100 and 0, where it peaks near 115, so it would leave a domain fitted to the
+ * readings, and it is not among them. A curve joins only once it is known to stay bounded.
  *
  * @beta
  */
-export type LiveLineChartCurve = Exclude<ScatterCurve, "natural">;
-
-/** A shown reading or the live tip, which the line runs through. */
-export type LiveVertex = LivePoint;
-
-/** The live tip as a frame shows it: the value it eases toward, and the value it shows now. */
-export type LiveTip = { readonly target: number; readonly shown: number };
+export type LiveLineChartCurve =
+  | "monotone"
+  | "linear"
+  | "step"
+  | "step-before"
+  | "step-after"
+  | "bump"
+  | "basis";
 
 /**
  * The value a reading draws at in a frame. The latest reading on the clock's own instant is the
@@ -314,7 +400,7 @@ export type LiveTip = { readonly target: number; readonly shown: number };
  * @param points - The readings in time order.
  * @param index - The reading's index.
  * @param now - The clock, the window's end.
- * @param tip - The tip, or null with no reading.
+ * @param tip - The tip's shown value, or null with no reading.
  * @param held - The value each gliding reading shows now, by its time.
  * @returns The value, or NaN for an index with no reading.
  */
@@ -322,12 +408,12 @@ export function liveValueAt(
   points: readonly LivePoint[],
   index: number,
   now: number,
-  tip: LiveTip | null,
+  tip: number | null,
   held: ReadonlyMap<number, number>
 ): number {
   const point = points[index];
   if (point === undefined) return Number.NaN;
-  if (tip !== null && index === points.length - 1 && point.time >= now) return tip.shown;
+  if (tip !== null && index === points.length - 1 && point.time >= now) return tip;
   return held.get(point.time) ?? point.value;
 }
 
@@ -342,7 +428,7 @@ export function liveValueAt(
  * @param points - The readings in time order.
  * @param span - The readings the window shows.
  * @param now - The clock, the window's end.
- * @param tip - The tip, or null with no reading.
+ * @param tip - The tip's shown value, or null with no reading.
  * @param held - The value each gliding reading shows now, by its time.
  * @returns The vertices in time order.
  */
@@ -350,10 +436,10 @@ export function liveVertices(
   points: readonly LivePoint[],
   span: LiveSpan,
   now: number,
-  tip: LiveTip | null,
+  tip: number | null,
   held: ReadonlyMap<number, number>
-): LiveVertex[] {
-  const vertices: LiveVertex[] = [];
+): LivePoint[] {
+  const vertices: LivePoint[] = [];
   for (let index = Math.max(0, span.first - 1); index < span.end; index += 1) {
     const point = points[index];
     if (point !== undefined)
@@ -361,7 +447,7 @@ export function liveVertices(
   }
   const last = vertices.at(-1);
   if (tip === null || last === undefined || span.end !== points.length) return vertices;
-  if (now > last.time) vertices.push({ time: now, value: tip.shown });
+  if (now > last.time) vertices.push({ time: now, value: tip });
   return vertices;
 }
 
@@ -392,8 +478,7 @@ export function liveX(geometry: LiveGeometry, time: number): number {
  * @returns The coordinate.
  */
 export function liveY(geometry: LiveGeometry, value: number): number {
-  const [low, high] = geometry.domain;
-  return high === low ? geometry.height / 2 : (1 - (value - low) / (high - low)) * geometry.height;
+  return heightY(geometry.domain, geometry.height, value);
 }
 
 /** The digits a live path keeps: a hundredth of a pixel, so a slow scroll still moves the path. */
@@ -409,6 +494,21 @@ export function livePixel(value: number): string {
   return pathNumber(value, LIVE_DIGITS);
 }
 
+/** A live mark's path generator: the line itself, or the area under it to the plot's bottom edge. */
+function livePath(
+  geometry: LiveGeometry,
+  vertices: readonly LivePoint[],
+  curve: LiveLineChartCurve,
+  mark: "line" | "area"
+): string {
+  if (vertices.length < 2) return "";
+  const x = (vertex: LivePoint) => liveX(geometry, vertex.time);
+  const y = (vertex: LivePoint) => liveY(geometry, vertex.value);
+  const generator =
+    mark === "line" ? line<LivePoint>().x(x).y(y) : area<LivePoint>().x(x).y0(geometry.height).y1(y);
+  return generator.curve(curveAlongX(curve)).digits(LIVE_DIGITS)(vertices) ?? "";
+}
+
 /**
  * The line through a frame's vertices, along a d3-shape curve.
  *
@@ -419,17 +519,10 @@ export function livePixel(value: number): string {
  */
 export function liveLinePath(
   geometry: LiveGeometry,
-  vertices: readonly LiveVertex[],
+  vertices: readonly LivePoint[],
   curve: LiveLineChartCurve
 ): string {
-  if (vertices.length < 2) return "";
-  return (
-    line<LiveVertex>()
-      .x((vertex) => liveX(geometry, vertex.time))
-      .y((vertex) => liveY(geometry, vertex.value))
-      .curve(curveAlongX(curve))
-      .digits(LIVE_DIGITS)(vertices) ?? ""
-  );
+  return livePath(geometry, vertices, curve, "line");
 }
 
 /**
@@ -442,16 +535,8 @@ export function liveLinePath(
  */
 export function liveAreaPath(
   geometry: LiveGeometry,
-  vertices: readonly LiveVertex[],
+  vertices: readonly LivePoint[],
   curve: LiveLineChartCurve
 ): string {
-  if (vertices.length < 2) return "";
-  return (
-    area<LiveVertex>()
-      .x((vertex) => liveX(geometry, vertex.time))
-      .y0(geometry.height)
-      .y1((vertex) => liveY(geometry, vertex.value))
-      .curve(curveAlongX(curve))
-      .digits(LIVE_DIGITS)(vertices) ?? ""
-  );
+  return livePath(geometry, vertices, curve, "area");
 }

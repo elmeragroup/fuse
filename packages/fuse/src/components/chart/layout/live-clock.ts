@@ -21,10 +21,17 @@
  * wall clock and frames from its host and reads no browser API itself.
  */
 import type { MotionHost } from "../chart-motion";
-import { cubicBezier } from "./ease";
-import { indexAt, liveDomain, liveExtent, liveVertices, visibleSpan, windowEndingAt } from "./live-window";
-import type { LivePoint, LiveSpan, LiveTip, LiveWindow } from "./live-window";
-import { CHART_UPDATE_CURVE, CHART_UPDATE_MS } from "./motion";
+import {
+  indexAt,
+  liveDomain,
+  liveExtent,
+  liveVertices,
+  valueRange,
+  visibleSpan,
+  windowEndingAt,
+} from "./live-window";
+import type { LivePoint, LiveSpan, LiveWindow } from "./live-window";
+import { CHART_UPDATE_MS, updateTween } from "./motion";
 
 /** A host's frames, its frame clock, and the wall clock in epoch milliseconds. */
 export type LiveClockHost = MotionHost & { readonly epoch: () => number };
@@ -33,11 +40,9 @@ export type LiveClockHost = MotionHost & { readonly epoch: () => number };
 export type LiveFrame = {
   /**
    * The feed the frame draws, the same object until the clock takes another, which every readout
-   * that names a reading reads, so a paused chart names what it shows.
+   * that names a reading reads, so a paused chart names what it shows. `span` indexes its readings.
    */
   readonly feed: LiveFeed;
-  /** The feed's readings in time order, which `span` indexes. */
-  readonly points: readonly LivePoint[];
   /** The clock, the window's end, in epoch milliseconds. */
   readonly now: number;
   readonly window: LiveWindow;
@@ -45,17 +50,19 @@ export type LiveFrame = {
   readonly span: LiveSpan;
   /** The value domain as it shows now. */
   readonly domain: readonly [number, number];
-  /** The tip as it shows now, or null with no reading. */
-  readonly tip: LiveTip | null;
+  /** The tip's value as it shows now, or null with no reading. */
+  readonly tip: number | null;
   /** The value each gliding reading shows now, by its time: the live one and any still settling. */
   readonly held: ReadonlyMap<number, number>;
+  /** The points the line runs through, in time order, by `liveVertices`. */
+  readonly vertices: readonly LivePoint[];
 };
 
 /** What the chart feeds its clock. */
 export type LiveFeed = {
   /** The readings in time order. */
   readonly points: readonly LivePoint[];
-  /** The latest value, or null with no reading. */
+  /** The latest value, null exactly when there is no reading. */
   readonly tip: number | null;
   /** The window's length in milliseconds. */
   readonly duration: number;
@@ -81,59 +88,45 @@ export type LiveClock = {
   readonly setVisible: (visible: boolean) => void;
 };
 
-/** A glide of a number pair from one value to another, started at a frame-clock time. */
-type Glide = {
+/** A value's update glide, started at a frame-clock time. */
+type Glide = { readonly from: number; readonly to: number; readonly at: number };
+
+/** The domain's update glide: both ends on one glide. */
+type DomainGlide = {
   readonly from: readonly [number, number];
   readonly to: readonly [number, number];
   readonly at: number;
 };
 
-const ease = cubicBezier(CHART_UPDATE_CURVE);
-
-/** How far a glide that started `elapsed` milliseconds ago has come, on the update curve. */
-function glideShare(elapsed: number): number {
-  return ease(Math.max(0, Math.min(1, elapsed / CHART_UPDATE_MS)));
+function glideAt(glide: Glide, time: number): number {
+  return updateTween(glide.from, glide.to, glide.at, time);
 }
 
-function glideAt(glide: Glide, time: number): readonly [number, number] {
-  const share = glideShare(time - glide.at);
-  if (share >= 1) return glide.to;
-  return [
-    glide.from[0] + (glide.to[0] - glide.from[0]) * share,
-    glide.from[1] + (glide.to[1] - glide.from[1]) * share,
-  ];
+function domainAt(glide: DomainGlide, time: number): readonly [number, number] {
+  const low = updateTween(glide.from[0], glide.to[0], glide.at, time);
+  const high = updateTween(glide.from[1], glide.to[1], glide.at, time);
+  return low === glide.to[0] && high === glide.to[1] ? glide.to : [low, high];
 }
 
-/** A glide restarted at `time` from where it shows, toward a new target. */
-function rebase(glide: Glide, to: readonly [number, number], time: number): Glide {
-  return { from: glideAt(glide, time), to, at: time };
-}
-
-/** A glide of one value, as a pair whose halves move together. */
-function glideOne(from: number, to: number, time: number): Glide {
-  return { from: [from, from], to: [to, to], at: time };
-}
-
-/** A domain widened to hold every value in a list. */
-function holding(domain: readonly [number, number], values: Iterable<number>): readonly [number, number] {
-  let [low, high] = domain;
-  for (const value of values) {
-    if (value < low) low = value;
-    if (value > high) high = value;
-  }
-  return low === domain[0] && high === domain[1] ? domain : [low, high];
-}
-
-function samePair(a: readonly [number, number], b: readonly [number, number]): boolean {
+function sameRange(a: readonly [number, number], b: readonly [number, number]): boolean {
   return a[0] === b[0] && a[1] === b[1];
 }
 
-function rest(value: readonly [number, number]): Glide {
+/** A value at rest. */
+function still(value: number): Glide {
   return { from: value, to: value, at: Number.NEGATIVE_INFINITY };
+}
+
+/** A domain at rest. */
+function resting(domain: readonly [number, number]): DomainGlide {
+  return { from: domain, to: domain, at: Number.NEGATIVE_INFINITY };
 }
 
 /** The domain of a chart with no reading. */
 const EMPTY_DOMAIN: readonly [number, number] = [0, 1];
+
+/** What the last frame drew: the latest reading, which tells a new reading from a corrected one, and the tip's glide. */
+type Drawn = { readonly newest: LivePoint; readonly tip: Glide };
 
 /**
  * Create a chart's clock. Its first frame rests at the latest reading, which the server and a
@@ -150,83 +143,100 @@ export function createLiveClock(host: LiveClockHost, initial: LiveFeed): LiveClo
   let mode: LiveMode | null = null;
   let visible = true;
   let handle: number | null = null;
-  let domain = rest(EMPTY_DOMAIN);
-  // The tip glides as a pair whose two halves move together, so it shares the domain's glide.
-  let tip: Glide | null = null;
+  let domain = resting(EMPTY_DOMAIN);
+  // What the last frame drew, or null when it drew no reading.
+  let drawn: Drawn | null = null;
   // The readings that glide to their own value, by time, each on its own glide.
   const settling = new Map<number, Glide>();
-  // The latest reading the last frame drew, which tells a new reading from a corrected one.
-  let newestDrawn: LivePoint | null = null;
   const listeners = new Set<() => void>();
   const latest = (): number | null => feed.points.at(-1)?.time ?? null;
 
+  /**
+   * Move every glide on toward the feed: the clock's one change of state between frames. Every
+   * reading still on its way, and the one the last frame ended on, moves from where it shows to its
+   * value now, so a correction that arrives with a newer reading glides too, and a new reading grows
+   * out of where the line ended. A glide that has ended or shows its target already, a reading the
+   * feed dropped, and one before the window's entering reading, which no frame draws, leave. No
+   * glide restarts on a newer reading, so at most the readings of one update duration glide,
+   * however fast they arrive.
+   */
+  const retarget = (
+    last: Drawn,
+    newest: LivePoint,
+    tip: number,
+    fit: readonly [number, number],
+    span: LiveSpan,
+    time: number
+  ): Drawn => {
+    const { points } = feed;
+    for (const [at, glide] of settling) {
+      const value = points[indexAt(points, at)]?.value;
+      if (value !== undefined && value !== glide.to) {
+        settling.set(at, { from: glideAt(glide, time), to: value, at: time });
+      }
+    }
+    const ended = points[indexAt(points, last.newest.time)];
+    if (ended !== undefined && ended.value !== last.newest.value && !settling.has(ended.time)) {
+      settling.set(ended.time, { from: last.newest.value, to: ended.value, at: time });
+    }
+    if (newest.time !== last.newest.time) {
+      settling.set(newest.time, { from: glideAt(last.tip, time), to: newest.value, at: time });
+    }
+    const oldest = points[Math.max(0, span.first - 1)]?.time ?? Number.POSITIVE_INFINITY;
+    for (const [at, glide] of settling) {
+      const settled = time - glide.at >= CHART_UPDATE_MS || glideAt(glide, time) === glide.to;
+      if (settled || at < oldest || indexAt(points, at) === -1) settling.delete(at);
+    }
+    if (!sameRange(fit, domain.to)) domain = { from: domainAt(domain, time), to: fit, at: time };
+    const tipGlide = last.tip.to === tip ? last.tip : { from: glideAt(last.tip, time), to: tip, at: time };
+    return { newest, tip: tipGlide };
+  };
+
+  /** The value each gliding reading shows at a time, by its time. */
+  const heldAt = (time: number): ReadonlyMap<number, number> => {
+    const held = new Map<number, number>();
+    for (const [at, glide] of settling) held.set(at, glideAt(glide, time));
+    return held;
+  };
+
   /** The frame at a clock reading, gliding the domain to fit what its window shows. */
   const compose = (now: number, time: number, glides: boolean): LiveFrame => {
-    const { points } = feed;
+    const { points, tip: target } = feed;
     const window = windowEndingAt(now, feed.duration);
     const span = visibleSpan(points, window);
-    const extent = liveExtent(points, span, feed.tip);
-    const target = extent === null ? domain.to : liveDomain(extent);
-    const newest = points.at(-1) ?? null;
-    if (!glides || feed.tip === null || tip === null || newestDrawn === null || newest === null) {
-      // Without motion, or with nothing drawn to glide from, everything rests on its target.
-      domain = rest(extent === null ? glideAt(domain, time) : target);
-      tip = feed.tip === null ? null : rest([feed.tip, feed.tip]);
+    const newest = points.at(-1);
+    if (newest === undefined || target === null) {
+      // With no reading the frame draws nothing, and the domain rests where it showed.
+      domain = resting(domainAt(domain, time));
+      drawn = null;
       settling.clear();
+      return { feed, now, window, span, domain: domain.to, tip: null, held: new Map(), vertices: [] };
+    }
+    const fit = liveDomain(liveExtent(points, span, target));
+    if (!glides || drawn === null) {
+      // Without motion, or with nothing drawn to glide from, everything rests on its target.
+      domain = resting(fit);
+      settling.clear();
+      drawn = { newest, tip: still(target) };
     } else {
-      // Every reading still on its way, and the one the last frame ended on, moves from where it
-      // shows to its value now, so a correction that arrives with a newer reading glides too.
-      for (const [at, glide] of settling) {
-        const value = points[indexAt(points, at)]?.value;
-        if (value !== undefined && value !== glide.to[0]) {
-          settling.set(at, glideOne(glideAt(glide, time)[0], value, time));
-        }
-      }
-      const ended = points[indexAt(points, newestDrawn.time)];
-      if (ended !== undefined && ended.value !== newestDrawn.value && !settling.has(ended.time)) {
-        settling.set(ended.time, glideOne(newestDrawn.value, ended.value, time));
-      }
-      if (newest.time !== newestDrawn.time) {
-        // A new reading grows out of where the line ended.
-        settling.set(newest.time, glideOne(glideAt(tip, time)[0], newest.value, time));
-      }
-      if (tip.to[0] !== feed.tip) tip = rebase(tip, [feed.tip, feed.tip], time);
-      if (!samePair(target, domain.to)) domain = rebase(domain, target, time);
+      drawn = retarget(drawn, newest, target, fit, span, time);
     }
-    newestDrawn = newest;
-    // A glide that has ended or shows its target already, a reading the feed dropped, and one before
-    // the window's entering reading, which no frame draws, leave. No glide restarts on a newer
-    // reading, so at most the readings of one update duration glide, however fast they arrive.
-    const oldest = points[Math.max(0, span.first - 1)]?.time ?? Number.POSITIVE_INFINITY;
-    const held = new Map<number, number>();
-    for (const [at, glide] of settling) {
-      const value = glideAt(glide, time)[0];
-      const settled = time - glide.at >= CHART_UPDATE_MS || value === glide.to[0];
-      if (settled || at < oldest || indexAt(points, at) === -1) settling.delete(at);
-      else held.set(at, value);
-    }
-    const shown = tip === null ? null : glideAt(tip, time)[0];
-    const shownTip = feed.tip === null || shown === null ? null : { target: feed.tip, shown };
+    const held = heldAt(time);
+    const tip = glideAt(drawn.tip, time);
+    const vertices = liveVertices(points, span, now, tip, held);
     // The domain a frame shows holds every value it draws: the readings at the values they show,
     // the entering one among them, and the tip. It widens to them at once and only eases inward, so
     // no glide, batch or dropped reading ever draws a mark outside the plot.
-    const drawn = liveVertices(points, span, now, shownTip, held).map((vertex) => vertex.value);
-    if (shown !== null) drawn.push(shown);
-    const showing = glideAt(domain, time);
-    const widened = holding(showing, drawn);
+    const showing = domainAt(domain, time);
+    const widened = valueRange(vertices, 0, vertices.length, [
+      Math.min(showing[0], tip),
+      Math.max(showing[1], tip),
+    ]);
+    const shown = widened[0] === showing[0] && widened[1] === showing[1] ? showing : widened;
     // A widened domain is what the frame showed, so the glide goes on from it: a value that leaves
     // eases the domain back in rather than snapping it.
-    if (widened !== showing) domain = { from: widened, to: domain.to, at: time };
-    return {
-      feed,
-      points,
-      now,
-      window,
-      span,
-      domain: widened,
-      tip: shownTip,
-      held,
-    };
+    if (shown !== showing) domain = { from: shown, to: domain.to, at: time };
+    return { feed, now, window, span, domain: shown, tip, held, vertices };
   };
 
   // The first frame rests at the latest reading, so the server and every browser draw it alike.
@@ -239,6 +249,11 @@ export function createLiveClock(host: LiveClockHost, initial: LiveFeed): LiveClo
 
   /** The wall clock, never behind the latest reading, so a reading never lies past the right edge. */
   const wallNow = (): number => Math.max(host.epoch(), latest() ?? Number.NEGATIVE_INFINITY);
+
+  /** Redraw the feed at the wall clock with no motion, as a still clock and a first reading do. */
+  const redraw = (): void => {
+    show(compose(wallNow(), host.now(), false));
+  };
 
   const tick = (): void => {
     handle = null;
@@ -270,13 +285,12 @@ export function createLiveClock(host: LiveClockHost, initial: LiveFeed): LiveClo
       const wasEmpty = feed.points.length === 0;
       feed = next;
       // A live clock draws the feed in its next frame, and a paused one holds its frame.
-      if (mode === "still") show(compose(wallNow(), host.now(), false));
-      else if (mode === "live" && wasEmpty) show(compose(wallNow(), host.now(), false));
+      if (mode === "still" || (mode === "live" && wasEmpty)) redraw();
     },
     setMode(next) {
       if (next === mode) return;
       mode = next;
-      if (mode === "still") show(compose(wallNow(), host.now(), false));
+      if (mode === "still") redraw();
       schedule();
     },
     setVisible(next) {

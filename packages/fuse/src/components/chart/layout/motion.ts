@@ -3,6 +3,7 @@
  * mirrors the duration and the curve for the opacity fade of a mark that an update adds, so a
  * change here changes `--chart-update` and `--chart-ease` there too. The values follow `.scratch/charts-v1/reviews/motion-decision.md`.
  */
+import { cubicBezier } from "./ease";
 import type { BezierCurve } from "./ease";
 import type { Spring } from "./spring";
 
@@ -11,6 +12,24 @@ export const CHART_UPDATE_MS = 480;
 
 /** The control values of every data update and of the entrance. */
 export const CHART_UPDATE_CURVE: BezierCurve = [0, 0.7, 0.5, 1];
+
+const updateEase = cubicBezier(CHART_UPDATE_CURVE);
+
+/**
+ * A value on a data update's glide: from one value to another over `CHART_UPDATE_MS`, on
+ * `CHART_UPDATE_CURVE`, sampled at a time. Before the start it shows `from`, and from the end on
+ * it shows `to` exactly.
+ *
+ * @param from - The value the glide leaves.
+ * @param to - The value the glide reaches.
+ * @param startedAt - When the glide started, on the sampling clock, in milliseconds.
+ * @param now - When to sample it, on the same clock.
+ * @returns The value the glide shows at `now`.
+ */
+export function updateTween(from: number, to: number, startedAt: number, now: number): number {
+  const share = updateEase(Math.max(0, Math.min(1, (now - startedAt) / CHART_UPDATE_MS)));
+  return share >= 1 ? to : from + (to - from) * share;
+}
 
 /** The delay between two bars of the entrance wipe, in milliseconds. */
 export const CHART_STAGGER_MS = 16;

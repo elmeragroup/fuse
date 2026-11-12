@@ -390,7 +390,11 @@
   [data-slot="chart-points"],
   [data-slot="chart-active-dot"],
   [data-slot="chart-grid"],
-  [data-slot="chart-crosshair"] {
+  [data-slot="chart-crosshair"],
+  [data-slot="live-line-chart-line"],
+  [data-slot="live-line-chart-area"],
+  [data-slot="live-line-chart-live-dot"],
+  [data-slot="live-line-chart-crosshair"] {
     grid-area: plot;
     position: relative;
     width: 100%;
@@ -1269,24 +1273,31 @@
     WebKit draw the text of a reel moved by a fraction of a pixel up to two device pixels off the
     plain text beside it, a different distance for each digit.
   */
-  :is([data-slot="pie-chart-center"], [data-slot="gauge-chart-center"]) [data-part="digits"] {
+  :is([data-slot="pie-chart-center"], [data-slot="gauge-chart-center"], [data-slot="live-line-chart-badge"])
+    [data-part="digits"] {
     display: inline-flex;
     font-variant-numeric: tabular-nums;
     white-space: pre;
     line-height: round(1lh, 1px);
   }
 
-  :is([data-slot="pie-chart-center"], [data-slot="gauge-chart-center"]) [data-part="digit"] {
+  :is([data-slot="pie-chart-center"], [data-slot="gauge-chart-center"], [data-slot="live-line-chart-badge"])
+    [data-part="digit"] {
     display: inline-block;
     height: 1lh;
     overflow: hidden;
   }
 
+  :is([data-slot="pie-chart-center"], [data-slot="gauge-chart-center"], [data-slot="live-line-chart-badge"])
+    [data-part="reel"] {
+    display: flex;
+    flex-direction: column;
+    translate: 0 calc(var(--_digit) * -10%);
+  }
+
   /* Until the marks sweep in, the centre's digits wait at 0, and they count up with the sweep. */
   :is([data-slot="pie-chart-center"], [data-slot="gauge-chart-center"]) [data-part="reel"] {
     --_reel-waiting: var(--_if-root-waiting) 0 0;
-    display: flex;
-    flex-direction: column;
     translate: var(--_reel-waiting, 0 calc(var(--_digit) * -10%));
   }
 
@@ -4256,23 +4267,10 @@
   }
 
   /*
-    A live line chart. Its layers lie in the plot cell, as a cartesian mark's do, and its clock
-    writes their geometry every frame, so no rule here moves a mark. The line and the area fade in
-    over 2rem from the left edge, where readings leave the window, and the mask clips them there.
+    A live line chart. Its layers lie in the plot cell with the mark layers, and its clock writes
+    their geometry every frame, so no rule here moves a mark. The line and the area fade in over
+    2rem from the left edge, where readings leave the window, and the mask clips them there.
   */
-  [data-slot="live-line-chart-line"],
-  [data-slot="live-line-chart-area"],
-  [data-slot="live-line-chart-live-dot"],
-  [data-slot="live-line-chart-crosshair"] {
-    grid-area: plot;
-    position: relative;
-    width: 100%;
-    height: 100%;
-    min-width: 0;
-    overflow: visible;
-    pointer-events: none;
-  }
-
   /*
     The mask paints the border box only, and the clock widens the domain to a value at once, so a
     line can run along the plot's top or bottom edge. Half a stroke of padding above and below, with
@@ -4366,24 +4364,6 @@
     translate: 0 -50%;
   }
 
-  [data-slot="live-line-chart-badge"] [data-part="digits"] {
-    display: inline-flex;
-    white-space: pre;
-    line-height: round(1lh, 1px);
-  }
-
-  [data-slot="live-line-chart-badge"] [data-part="digit"] {
-    display: inline-block;
-    height: 1lh;
-    overflow: hidden;
-  }
-
-  [data-slot="live-line-chart-badge"] [data-part="reel"] {
-    display: flex;
-    flex-direction: column;
-    translate: 0 calc(var(--_digit) * -10%);
-  }
-
   /*
     The tooltip rides its reading along the top of the plot and stays inside the plot at either
     edge. It takes no pointer, so the pointer keeps scrubbing the plot under it.
@@ -4404,13 +4384,6 @@
     pointer-events: none;
     translate: clamp(calc(var(--chart-at, 0) * -100cqw), -50%, calc((1 - var(--chart-at, 0)) * 100cqw - 100%))
       0;
-  }
-
-  @media (prefers-reduced-motion: no-preference) {
-    /* The badge's digits roll on the ticker spring, except while data-snap swaps them. */
-    [data-slot="live-line-chart-badge"] [data-part="digits"]:not([data-snap]) [data-part="reel"] {
-      transition: translate var(--_spring-duration) var(--_spring-easing);
-    }
   }
 
   /*
@@ -4473,9 +4446,16 @@
         translate var(--_spring-duration) var(--_spring-easing);
     }
 
+    /* A number's digits roll on their spring, except while data-snap swaps them. */
+    :is([data-slot="pie-chart-center"], [data-slot="gauge-chart-center"], [data-slot="live-line-chart-badge"])
+      [data-part="digits"]:not([data-snap])
+      [data-part="reel"] {
+      transition: translate var(--_spring-duration) var(--_spring-easing);
+    }
+
     /*
-      While the entrance plays, the digits count up over it, and afterwards roll on their spring,
-      except while data-snap swaps them on a hover step that came fast.
+      While the entrance plays, a pie or gauge centre's digits count up over it, and afterwards roll
+      on their spring, except while data-snap swaps them on a hover step that came fast.
     */
     :is([data-slot="pie-chart-center"], [data-slot="gauge-chart-center"])
       [data-part="digits"]:not([data-snap])

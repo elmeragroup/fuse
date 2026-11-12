@@ -30,8 +30,15 @@ export type LiveStore = {
   readonly activate: (active: LiveActive | null) => void;
   /** Where the pointer rests across the plot, 0 to 1, or null while it is away. */
   readonly pointer: () => number | null;
-  /** Record where the pointer rests, or null when it leaves. */
+  /** Record where the pointer rests, or null when it leaves. Either ends a dismissal. */
   readonly point: (share: number | null) => void;
+  /**
+   * Whether Escape dismissed the readout, which a pointer resting on the plot does not undo: only a
+   * pointer that moves or leaves, or a key step, ends it.
+   */
+  readonly dismissed: () => boolean;
+  /** Let go of the active reading until the pointer moves or leaves, or a key steps. */
+  readonly dismiss: () => void;
 };
 
 /**
@@ -42,7 +49,14 @@ export type LiveStore = {
 export function createLiveStore(): LiveStore {
   let active: LiveActive | null = null;
   let pointer: number | null = null;
+  let dismissed = false;
   const listeners = new Set<() => void>();
+  const activate = (next: LiveActive | null): void => {
+    if (next !== null) dismissed = false;
+    if (next?.time === active?.time && next?.source === active?.source) return;
+    active = next;
+    for (const listener of listeners) listener();
+  };
   return {
     active: () => active,
     subscribe(listener) {
@@ -51,14 +65,16 @@ export function createLiveStore(): LiveStore {
         listeners.delete(listener);
       };
     },
-    activate(next) {
-      if (next?.time === active?.time && next?.source === active?.source) return;
-      active = next;
-      for (const listener of listeners) listener();
-    },
+    activate,
     pointer: () => pointer,
     point(share) {
       pointer = share;
+      dismissed = false;
+    },
+    dismissed: () => dismissed,
+    dismiss() {
+      activate(null);
+      dismissed = true;
     },
   };
 }
@@ -107,14 +123,8 @@ export function useLivePlot(context: LiveLineRootContextValue): ChartPlot | null
   return open ? measured : null;
 }
 
-/**
- * A frame in the plot's pixels.
- *
- * @param frame - The clock's frame.
- * @param plot - The measured plot.
- * @returns The geometry.
- */
-export function geometryOf(frame: LiveFrame, plot: ChartPlot): LiveGeometry {
+/** A frame in the plot's pixels. */
+function geometryOf(frame: LiveFrame, plot: ChartPlot): LiveGeometry {
   return { width: plot.box.width, height: plot.box.height, window: frame.window, domain: frame.domain };
 }
 

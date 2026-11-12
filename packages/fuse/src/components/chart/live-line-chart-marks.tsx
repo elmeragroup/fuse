@@ -1,13 +1,15 @@
 "use client";
 
 import { useRef } from "react";
-import type { ReactElement } from "react";
+import type { ReactElement, RefObject } from "react";
 
 import { ChartDigitRoll } from "./chart-digit-roll";
 import { useSvgIdPrefix, writeAttribute, writeStyle } from "./chart-dom";
+import type { ChartPlot } from "./chart-plot-measure";
 import type { ChartLayerProps } from "./chart-types";
-import { liveAreaPath, liveLinePath, livePixel, liveVertices, liveY } from "./layout/live-window";
+import { liveAreaPath, liveLinePath, livePixel, liveY } from "./layout/live-window";
 import type { LiveLineChartCurve } from "./layout/live-window";
+import { valueTop } from "./layout/plot-geometry";
 import { useLiveFrame, useLivePlot, useLiveRoot, useShownFeed } from "./live-line-chart-context";
 import { liveValueText } from "./live-line-chart-text";
 
@@ -59,6 +61,24 @@ export type LiveLineChartLiveDotProps = ChartLayerProps & {
  */
 export type LiveLineChartBadgeProps = ChartLayerProps;
 
+/** A path part's measured plot, or null before it is measured, and the path element each frame writes. */
+type LivePathPart = { readonly plot: ChartPlot | null; readonly path: RefObject<SVGPathElement | null> };
+
+/**
+ * A part that draws one path through each frame's vertices: the part's Root, its plot, and the
+ * path element each frame writes.
+ */
+function useLivePath(part: string, curve: LiveLineChartCurve, pathOf: typeof liveLinePath): LivePathPart {
+  const context = useLiveRoot(part);
+  const plot = useLivePlot(context);
+  const path = useRef<SVGPathElement>(null);
+  useLiveFrame(context, plot, (frame, geometry) => {
+    if (path.current === null) return;
+    writeAttribute(path.current, "d", pathOf(geometry, frame.vertices, curve));
+  });
+  return { plot, path };
+}
+
 /**
  * The line through the readings, which runs from the window's left edge on through the latest
  * reading to the right edge, now, at the latest value. It scrolls with the clock, and a new reading
@@ -73,14 +93,7 @@ export function LiveLineChartLine({
   className,
   style,
 }: LiveLineChartLineProps): ReactElement {
-  const context = useLiveRoot("LiveLineChart.Line");
-  const plot = useLivePlot(context);
-  const path = useRef<SVGPathElement>(null);
-  useLiveFrame(context, plot, (frame, geometry) => {
-    if (path.current === null) return;
-    const vertices = liveVertices(frame.points, frame.span, frame.now, frame.tip, frame.held);
-    writeAttribute(path.current, "d", liveLinePath(geometry, vertices, curve));
-  });
+  const { plot, path } = useLivePath("LiveLineChart.Line", curve, liveLinePath);
   return (
     <svg data-slot="live-line-chart-line" aria-hidden="true" className={className} style={style}>
       {plot === null ? null : <path ref={path} data-slot="live-line-chart-line-path" />}
@@ -100,15 +113,8 @@ export function LiveLineChartArea({
   className,
   style,
 }: LiveLineChartAreaProps): ReactElement {
-  const context = useLiveRoot("LiveLineChart.Area");
-  const plot = useLivePlot(context);
+  const { plot, path } = useLivePath("LiveLineChart.Area", curve, liveAreaPath);
   const fill = useSvgIdPrefix("live-line-chart-area");
-  const path = useRef<SVGPathElement>(null);
-  useLiveFrame(context, plot, (frame, geometry) => {
-    if (path.current === null) return;
-    const vertices = liveVertices(frame.points, frame.span, frame.now, frame.tip, frame.held);
-    writeAttribute(path.current, "d", liveAreaPath(geometry, vertices, curve));
-  });
   return (
     <svg
       data-slot="live-line-chart-area"
@@ -159,7 +165,7 @@ export function LiveLineChartLiveDot({
       writeAttribute(
         node,
         "transform",
-        `translate(${livePixel(geometry.width)} ${livePixel(liveY(geometry, tip.shown))})`
+        `translate(${livePixel(geometry.width)} ${livePixel(liveY(geometry, tip))})`
       );
     }
   });
@@ -192,11 +198,10 @@ export function LiveLineChartBadge({ className, style }: LiveLineChartBadgeProps
   const context = useLiveRoot("LiveLineChart.Badge");
   const plot = useLivePlot(context);
   const pill = useRef<HTMLSpanElement>(null);
-  useLiveFrame(context, plot, (frame, geometry) => {
+  useLiveFrame(context, plot, (frame) => {
     const node = pill.current;
     if (node === null || frame.tip === null) return;
-    const share = geometry.height === 0 ? 0.5 : liveY(geometry, frame.tip.shown) / geometry.height;
-    writeStyle(node, "--chart-at", `${String(share * 100)}%`);
+    writeStyle(node, "--chart-at", `${String(valueTop(frame.domain, frame.tip))}%`);
   });
   const { tip } = useShownFeed(context);
   const text = tip === null ? null : liveValueText(context.text, tip, "tick").text;

@@ -320,7 +320,7 @@ const BAR_PARTS = "Chart.Root, Chart.Grid, Chart.XAxis, Chart.YAxis, Chart.Bar";
  * Bundles the chart routes against the packed `chart.js`. An alias route and a `Chart` route emit
  * the same bytes, no cartesian route reaches a polar module, the pie route reaches no bar module,
  * a bar route of Root, Grid, both axes and Bar ships no Tooltip, Table, LegendToggleGroup or
- * floating-ui code, and `ScatterChart.Root` ships no cartesian store, readout or model. Each polar
+ * floating-ui code, and neither `ScatterChart.Root` nor `LiveLineChart.Root` ships a cartesian store, readout or model. Each polar
  * Root, and each polar namespace with its Tooltip, Legend and Table, ships no cartesian geometry,
  * and Pie's and Radial's ship no series model either. A control route that adds Tooltip,
  * Table and LegendToggleGroup to the bar route must trip each of the bar route's rules, the
@@ -364,54 +364,62 @@ export async function checkPackedChartBundles(extracted: string): Promise<string
         return { rule, alone, control };
       })
     );
-    const [[chart, alias, bars, control, pie, scatter, clockControl], polar, parts] = await Promise.all([
-      Promise.all([
-        bundleRoute(
-          extracted,
-          work,
-          "chart",
-          "import { Chart } from <chart>;\nexport const Root = Chart.Root;\n"
-        ),
-        bundleRoute(
-          extracted,
-          work,
-          "bar-chart",
-          "import { BarChart } from <chart>;\nexport const Root = BarChart.Root;\n"
-        ),
-        bundleRoute(
-          extracted,
-          work,
-          "bar-route",
-          `import { Chart } from <chart>;\nexport const parts = [${BAR_PARTS}];\n`
-        ),
-        bundleRoute(
-          extracted,
-          work,
-          "bar-route-control",
-          `import { Chart } from <chart>;\nexport const parts = [${BAR_PARTS}, Chart.Tooltip, Chart.Table, Chart.LegendToggleGroup];\n`
-        ),
-        bundleRoute(
-          extracted,
-          work,
-          "pie-chart",
-          "import { PieChart } from <chart>;\nexport const Root = PieChart.Root;\n"
-        ),
-        bundleRoute(
-          extracted,
-          work,
-          "scatter-chart",
-          "import { ScatterChart } from <chart>;\nexport const Root = ScatterChart.Root;\n"
-        ),
-        bundleRoute(
-          extracted,
-          work,
-          "clock-control",
-          `import { Chart } from <chart>;\nexport const parts = [${CLOCK_CONTROL_PARTS}];\n`
-        ),
-      ]),
-      polarRoutes,
-      partRoutes,
-    ]);
+    const [[chart, alias, bars, control, pie, scatter, live, clockControl], polar, parts] = await Promise.all(
+      [
+        Promise.all([
+          bundleRoute(
+            extracted,
+            work,
+            "chart",
+            "import { Chart } from <chart>;\nexport const Root = Chart.Root;\n"
+          ),
+          bundleRoute(
+            extracted,
+            work,
+            "bar-chart",
+            "import { BarChart } from <chart>;\nexport const Root = BarChart.Root;\n"
+          ),
+          bundleRoute(
+            extracted,
+            work,
+            "bar-route",
+            `import { Chart } from <chart>;\nexport const parts = [${BAR_PARTS}];\n`
+          ),
+          bundleRoute(
+            extracted,
+            work,
+            "bar-route-control",
+            `import { Chart } from <chart>;\nexport const parts = [${BAR_PARTS}, Chart.Tooltip, Chart.Table, Chart.LegendToggleGroup];\n`
+          ),
+          bundleRoute(
+            extracted,
+            work,
+            "pie-chart",
+            "import { PieChart } from <chart>;\nexport const Root = PieChart.Root;\n"
+          ),
+          bundleRoute(
+            extracted,
+            work,
+            "scatter-chart",
+            "import { ScatterChart } from <chart>;\nexport const Root = ScatterChart.Root;\n"
+          ),
+          bundleRoute(
+            extracted,
+            work,
+            "live-line-chart",
+            "import { LiveLineChart } from <chart>;\nexport const Root = LiveLineChart.Root;\n"
+          ),
+          bundleRoute(
+            extracted,
+            work,
+            "clock-control",
+            `import { Chart } from <chart>;\nexport const parts = [${CLOCK_CONTROL_PARTS}];\n`
+          ),
+        ]),
+        polarRoutes,
+        partRoutes,
+      ]
+    );
     if (chart.code !== alias.code) {
       throw new Error("the BarChart.Root route emits different bytes from the Chart.Root route");
     }
@@ -439,6 +447,11 @@ export async function checkPackedChartBundles(extracted: string): Promise<string
     const scatterLeaks = shipped(scatter, SCATTER_ROUTE_FORBIDDEN);
     if (scatterLeaks.length > 0) {
       throw new Error(`the ScatterChart.Root route ships ${scatterLeaks.join("; ")}`);
+    }
+    // A live line Root measures its plot and owns its store as a scatter Root does.
+    const liveLeaks = shipped(live, SCATTER_ROUTE_FORBIDDEN);
+    if (liveLeaks.length > 0) {
+      throw new Error(`the LiveLineChart.Root route ships ${liveLeaks.join("; ")}`);
     }
     // A detector that stops seeing modules would pass any route, so the bar control route, whose
     // Root and Tooltip ship every cartesian module the scatter rule names, must trip each of them.
@@ -480,7 +493,7 @@ export async function checkPackedChartBundles(extracted: string): Promise<string
     if (seriesBlind.length > 0) {
       throw new Error(`the radar namespace route trips no item rule for ${seriesBlind.join(", ")}`);
     }
-    return `Packed chart routes: Chart.Root and BarChart.Root emit ${String(chart.code.length)} identical bytes from ${String(chart.modules.length)} modules, the bar route reaches ${String(bars.modules.length)} modules with no Tooltip, Table, LegendToggleGroup or floating-ui code, its control trips all ${String(BAR_ROUTE_FORBIDDEN.length)} rules, PieChart.Root reaches ${String(pie.modules.length)} modules, ScatterChart.Root reaches ${String(scatter.modules.length)} modules and no cartesian code, ${String(polar.length)} polar routes ship no cartesian geometry, and ${String(PART_ROUTES.length)} single-part routes (${PART_ROUTES.map(({ part }) => part).join(", ")}) ship no other part, each rule tripped by its control`;
+    return `Packed chart routes: Chart.Root and BarChart.Root emit ${String(chart.code.length)} identical bytes from ${String(chart.modules.length)} modules, the bar route reaches ${String(bars.modules.length)} modules with no Tooltip, Table, LegendToggleGroup or floating-ui code, its control trips all ${String(BAR_ROUTE_FORBIDDEN.length)} rules, PieChart.Root reaches ${String(pie.modules.length)} modules, ScatterChart.Root reaches ${String(scatter.modules.length)} modules and LiveLineChart.Root ${String(live.modules.length)}, both with no cartesian code, ${String(polar.length)} polar routes ship no cartesian geometry, and ${String(PART_ROUTES.length)} single-part routes (${PART_ROUTES.map(({ part }) => part).join(", ")}) ship no other part, each rule tripped by its control`;
   } finally {
     rmSync(work, { recursive: true, force: true });
   }

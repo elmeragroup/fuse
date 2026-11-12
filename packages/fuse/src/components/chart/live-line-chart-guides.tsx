@@ -4,16 +4,26 @@ import { useMemo, useRef } from "react";
 import type { ReactElement } from "react";
 
 import type { SupportedLocale } from "../../intl/locale-context";
-import { writeAttribute, writeStyle } from "./chart-dom";
+import { createTickList, writeAttribute, writeStyle } from "./chart-dom";
+import type { TickList } from "./chart-dom";
+import { sameShallow, useSteady } from "./chart-steady";
 import type { ChartLayerProps, ValueFormat } from "./chart-types";
-import { wallTimes } from "./format/time-format";
+import { offsetAt } from "./format/time-format";
 import { formatValue } from "./format/value-format";
 import { labelWidth } from "./layout/label-width";
 import { linearScale, scaleTicks } from "./layout/linear-scale";
 import type { LiveFeed } from "./layout/live-clock";
-import { edgeFade, liveDomain, liveExtent, tickStep, timeShare, timeTicks } from "./layout/live-window";
-import type { LiveGeometry } from "./layout/live-window";
+import {
+  edgeFade,
+  liveDomain,
+  liveExtent,
+  liveY,
+  tickStep,
+  timeShare,
+  timeTicks,
+} from "./layout/live-window";
 import { hairline } from "./layout/plot-frame";
+import { valueTop } from "./layout/plot-geometry";
 import { useLiveFrame, useLivePlot, useLiveRoot, useShownFeed } from "./live-line-chart-context";
 import { latestWindow, liveTimeText } from "./live-line-chart-text";
 import type { LiveLineChartTimeFormat } from "./live-line-chart-text";
@@ -67,49 +77,36 @@ function valueTicks(domain: readonly [number, number]): number[] {
   return scaleTicks(linearScale(domain, [0, 1]), VALUE_TICKS);
 }
 
-/** A tick's element: a grid line or an axis label. */
-type TickNode = HTMLElement | SVGElement;
-
-/** The tick elements each parent holds, by key, which only `keyedChildren` adds and removes. */
-const tickNodes = new WeakMap<Element, Map<number, TickNode>>();
+/** An axis's labels and what they print in, so a change of either makes every label again. */
+type Labels<TFormat> = {
+  readonly list: TickList;
+  readonly locale: SupportedLocale;
+  readonly timeZone: string;
+  readonly format: TFormat;
+};
 
 /**
- * Keep one child per key under a parent: make the missing ones, drop the ones no key names, and
- * return each key's child. A frame writes only the children whose keys change, so a tick that
- * stays keeps its element and its text.
+ * An axis's labels under a parent for a locale, a zone and a format: the ones it holds while they
+ * print the same, else a new list, the old one's labels dropped.
  */
-function keyedChildren(
+function labelsFor<TFormat>(
+  held: Labels<TFormat> | null,
   parent: Element,
-  keys: readonly number[],
-  make: (key: number) => TickNode
-): ReadonlyMap<number, TickNode> {
-  const kept = tickNodes.get(parent) ?? new Map<number, TickNode>();
-  tickNodes.set(parent, kept);
-  const wanted = new Set(keys);
-  for (const [key, child] of kept) {
-    if (wanted.has(key)) continue;
-    child.remove();
-    kept.delete(key);
-  }
-  for (const key of keys) {
-    if (kept.has(key)) continue;
-    const child = make(key);
-    parent.append(child);
-    kept.set(key, child);
-  }
-  return kept;
-}
-
-/** Drop every tick a parent holds, so the next frame makes them again, as a new label format needs. */
-function dropChildren(parent: Element): void {
-  for (const child of tickNodes.get(parent)?.values() ?? []) child.remove();
-  tickNodes.delete(parent);
-}
-
-/** A value's place from the plot's top, as a share of its height. */
-function topShare(geometry: LiveGeometry, value: number): number {
-  const [low, high] = geometry.domain;
-  return high === low ? 0.5 : (high - value) / (high - low);
+  locale: SupportedLocale,
+  timeZone: string,
+  format: TFormat,
+  text: (key: number) => string,
+  slot: string
+): Labels<TFormat> {
+  if (held?.locale === locale && held.timeZone === timeZone && held.format === format) return held;
+  held?.list.clear();
+  const list = createTickList(parent, (key) => {
+    const label = parent.ownerDocument.createElement("span");
+    label.setAttribute("data-slot", slot);
+    label.textContent = text(key);
+    return label;
+  });
+  return { list, locale, timeZone, format };
 }
 
 /**
@@ -126,18 +123,18 @@ export function LiveLineChartGrid({
   const context = useLiveRoot("LiveLineChart.Grid");
   const plot = useLivePlot(context);
   const layer = useRef<SVGSVGElement>(null);
+  const lines = useRef<TickList | null>(null);
   useLiveFrame(context, plot, (frame, geometry) => {
     const node = layer.current;
     if (node === null) return;
-    const ticks = valueTicks(frame.domain);
-    const lines = keyedChildren(node, ticks, () => {
+    lines.current ??= createTickList(node, () => {
       const line = node.ownerDocument.createElementNS("http://www.w3.org/2000/svg", "line");
       line.setAttribute("data-slot", "chart-grid-line");
       line.setAttribute("data-axis", "value");
       return line;
     });
-    for (const [value, line] of lines) {
-      const y = topShare(geometry, value) * geometry.height;
+    for (const [value, line] of lines.current.sync(valueTicks(frame.domain))) {
+      const y = liveY(geometry, value);
       writeAttribute(line, "x1", 0);
       writeAttribute(line, "x2", geometry.width);
       writeAttribute(line, "y1", y);
@@ -169,63 +166,45 @@ export function LiveLineChartXAxis({ format, className, style }: LiveLineChartXA
   const context = useLiveRoot("LiveLineChart.XAxis");
   const plot = useLivePlot(context);
   const axis = useRef<HTMLDivElement>(null);
-  // The zone's offset, read once a minute, since a frame is too often to ask Intl.
-  const offset = useRef<{ readonly at: number; readonly timeZone: string; readonly value: number } | null>(
-    null
-  );
+  const labels = useRef<Labels<LiveLineChartTimeFormat> | null>(null);
   const { text } = context;
+  // Inline Intl options that name the same fields are no change.
+  const ownFormat = useSteady(format, sameShallow);
   // The widest label a tick of each format prints, which sets how many ticks fit.
   const widths = useMemo(() => {
     const sample = Date.UTC(2026, 9, 16, 22, 58, 58);
     const width = (preset: LiveLineChartTimeFormat) =>
-      labelWidth(liveTimeText(text, sample, "tick", format ?? preset).text);
+      labelWidth(liveTimeText(text, sample, "tick", ownFormat ?? preset).text);
     return { seconds: width("time-seconds"), minutes: width("time") };
-  }, [text, format]);
+  }, [text, ownFormat]);
   useLiveFrame(context, plot, (frame, geometry) => {
     const node = axis.current;
     if (node === null || geometry.width <= 0) return;
-    const minute = Math.floor(frame.now / 60_000) * 60_000;
-    const { timeZone } = text;
-    if (offset.current?.at !== minute || offset.current.timeZone !== timeZone) {
-      offset.current = { at: minute, timeZone, value: (wallTimes([minute], timeZone)[0] ?? minute) - minute };
-    }
     const { duration } = frame.feed;
     const fine = tickStep(duration, Math.floor(geometry.width / (widths.seconds + TICK_GAP_PX)));
     const step =
       fine < 60_000 ? fine : tickStep(duration, Math.floor(geometry.width / (widths.minutes + TICK_GAP_PX)));
-    const preset: LiveLineChartTimeFormat = format ?? (step < 60_000 ? "time-seconds" : "time");
-    // A step that crosses a minute changes the labels' format, so every tick is made again.
-    const labelFormat = JSON.stringify(preset);
-    if (node.getAttribute("data-format") !== labelFormat) {
-      dropChildren(node);
-      node.setAttribute("data-format", labelFormat);
-    }
-    const ticks = timeTicks(frame.window, step, offset.current.value);
-    const labels = keyedChildren(node, ticks, (time) => {
-      const label = node.ownerDocument.createElement("span");
-      label.setAttribute("data-slot", "chart-x-tick");
-      label.textContent = liveTimeText(text, time, "tick", preset).text;
-      return label;
-    });
+    // A step that crosses a minute changes the labels' format, which makes every label again.
+    const preset: LiveLineChartTimeFormat = ownFormat ?? (step < 60_000 ? "time-seconds" : "time");
+    const shown = labelsFor(
+      labels.current,
+      node,
+      text.locale,
+      text.timeZone,
+      preset,
+      (time) => liveTimeText(text, time, "tick", preset).text,
+      "chart-x-tick"
+    );
+    labels.current = shown;
+    const ticks = timeTicks(frame.window, step, offsetAt(frame.window.end, text.timeZone));
     const fade = TICK_FADE_PX / geometry.width;
-    for (const [time, label] of labels) {
+    for (const [time, label] of shown.list.sync(ticks)) {
       const share = timeShare(frame.window, time);
       writeStyle(label, "--chart-at", String(share));
       writeStyle(label, "opacity", String(edgeFade(share, fade)));
     }
   });
-  // A locale, a zone or a format that changes relabels every tick, so the axis starts over.
-  const key = `${text.locale}-${text.timeZone}-${JSON.stringify(format ?? null)}`;
-  return (
-    <div
-      key={key}
-      ref={axis}
-      data-slot="chart-x-axis"
-      aria-hidden="true"
-      className={className}
-      style={style}
-    />
-  );
+  return <div ref={axis} data-slot="chart-x-axis" aria-hidden="true" className={className} style={style} />;
 }
 
 /**
@@ -245,41 +224,53 @@ export function LiveLineChartYAxis({
   const context = useLiveRoot("LiveLineChart.YAxis");
   const plot = useLivePlot(context);
   const axis = useRef<HTMLDivElement>(null);
-  const valueFormat = format ?? context.text.valueFormat;
-  const { locale } = context.text;
+  const labels = useRef<Labels<ValueFormat> | null>(null);
+  // Root's format is steady already, and inline options that name the same fields are no change.
+  const valueFormat = useSteady(format, sameShallow) ?? context.text.valueFormat;
+  const { locale, timeZone } = context.text;
   const feed = useShownFeed(context);
   const sizer = useMemo(() => sizerLabels(feed, locale, valueFormat), [feed, locale, valueFormat]);
-  useLiveFrame(context, plot, (frame, geometry) => {
+  useLiveFrame(context, plot, (frame) => {
     const node = axis.current;
     if (node === null) return;
-    const labels = keyedChildren(node, valueTicks(frame.domain), (value) => {
-      const label = node.ownerDocument.createElement("span");
-      label.setAttribute("data-slot", "chart-y-tick");
-      label.textContent = formatValue(locale, value, valueFormat, "tick").text;
-      return label;
-    });
-    for (const [value, label] of labels) {
-      writeStyle(label, "--chart-at", `${String(topShare(geometry, value) * 100)}%`);
+    const shown = labelsFor(
+      labels.current,
+      node,
+      locale,
+      timeZone,
+      valueFormat,
+      (value) => formatValue(locale, value, valueFormat, "tick").text,
+      "chart-y-tick"
+    );
+    labels.current = shown;
+    for (const [value, label] of shown.list.sync(valueTicks(frame.domain))) {
+      writeStyle(label, "--chart-at", `${String(valueTop(frame.domain, value))}%`);
     }
   });
   return (
     <div data-slot="chart-y-axis" data-side={side} aria-hidden="true" className={className} style={style}>
       <span data-slot="chart-axis-sizer">
-        {sizer.map((label) => (
-          <span key={label}>{label}</span>
+        {sizer.map(({ value, text }) => (
+          <span key={value}>{text}</span>
         ))}
       </span>
-      {/* A locale or a format that changes relabels every tick, so the ticks start over. */}
-      <div key={`${locale}-${JSON.stringify(valueFormat)}`} ref={axis} data-part="ticks" />
+      <div ref={axis} data-part="ticks" />
     </div>
   );
 }
 
 /** The tick labels of the domain the latest window's readings fit, which size the axis column. */
-function sizerLabels(feed: LiveFeed, locale: SupportedLocale, format: ValueFormat): string[] {
+function sizerLabels(
+  feed: LiveFeed,
+  locale: SupportedLocale,
+  format: ValueFormat
+): { readonly value: number; readonly text: string }[] {
+  if (feed.tip === null) return [];
   const extent = liveExtent(feed.points, latestWindow(feed.points, feed.duration), feed.tip);
-  if (extent === null) return [];
-  return valueTicks(liveDomain(extent)).map((value) => formatValue(locale, value, format, "tick").text);
+  return valueTicks(liveDomain(extent)).map((value) => ({
+    value,
+    text: formatValue(locale, value, format, "tick").text,
+  }));
 }
 
 Object.assign(LiveLineChartGrid, { displayName: "LiveLineChart.Grid" });

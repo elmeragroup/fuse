@@ -3,14 +3,21 @@
 import { useRef } from "react";
 import type { FocusEvent, KeyboardEvent, MouseEvent, PointerEvent, ReactElement } from "react";
 
-import { listboxProps, StatusRegion, SurfaceName, useGestureEnd, useOptionHandoff } from "./chart-listbox";
+import {
+  listboxProps,
+  StatusRegion,
+  stepOf,
+  SurfaceName,
+  useGestureEnd,
+  useOptionHandoff,
+} from "./chart-listbox";
 import { useTapLift } from "./chart-tap-lift";
 import type { ScatterDomains } from "./layout/domain-glide";
 import { buildPointIndex, nearestPoint } from "./layout/point-index";
 import type { PointIndex } from "./layout/point-index";
 import { dotCentre } from "./layout/scatter-frame";
 import { focusPoint, pointOf, pointShares, stepPoint, walkPosition } from "./layout/scatter-model";
-import type { ScatterModel, ScatterStep } from "./layout/scatter-model";
+import type { ScatterModel } from "./layout/scatter-model";
 import { useScatterFrame, useScatterRoot, useWalkPlace, walkOf } from "./scatter-chart-context";
 import type { ScatterRootContextValue } from "./scatter-chart-context";
 import { useScatterStore } from "./scatter-chart-store";
@@ -22,22 +29,6 @@ import { scatterOptionName } from "./scatter-chart-text";
  * Both reach well past the 24 px target floor, so a lone point is easy to hit.
  */
 const HIT_RADIUS = { fine: 24, coarse: 32 } as const;
-
-/** The step a key makes. Arrow directions are physical, so x runs left to right under RTL too. */
-function stepOf(key: string): ScatterStep | undefined {
-  switch (key) {
-    case "ArrowRight":
-      return "next";
-    case "ArrowLeft":
-      return "previous";
-    case "Home":
-      return "first";
-    case "End":
-      return "last";
-    default:
-      return undefined;
-  }
-}
 
 /** Each model's spatial index, built on the first pointer move after a data change. */
 const indexes = new WeakMap<ScatterModel, PointIndex>();

@@ -1473,7 +1473,7 @@ function LiveLineChartCrosshair(input: LiveLineChartCrosshairProps): ReactElemen
 export type LiveLineChartCrosshairProps = ChartLayerProps;
 
 // @beta
-export type LiveLineChartCurve = Exclude<ScatterCurve, "natural">;
+export type LiveLineChartCurve = "monotone" | "linear" | "step" | "step-before" | "step-after" | "bump" | "basis";
 
 // @beta
 function LiveLineChartGrid(input: LiveLineChartGridProps): ReactElement;

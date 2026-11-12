@@ -131,3 +131,49 @@ export function clientScale(element: HTMLElement): ClientScale {
     y: element.offsetHeight === 0 ? 1 : box.height / element.offsetHeight,
   };
 }
+
+/** One keyed child of a tick list: a grid line or an axis label. */
+export type TickNode = HTMLElement | SVGElement;
+
+/** The children a frame keeps under one parent, one per key. */
+export type TickList = {
+  /**
+   * Keep one child per key: make the missing ones, drop the ones no key names, and return each
+   * key's child. A key that stays keeps its element and whatever its maker wrote.
+   */
+  readonly sync: (keys: readonly number[]) => ReadonlyMap<number, TickNode>;
+  /** Drop every child, so the next `sync` makes each one again, as a new label format needs. */
+  readonly clear: () => void;
+};
+
+/**
+ * Create the keyed children of one parent, which a frame writes only where its keys change.
+ *
+ * @param parent - The element that holds the children.
+ * @param make - Makes the child of a key.
+ * @returns The list.
+ */
+export function createTickList(parent: Element, make: (key: number) => TickNode): TickList {
+  const kept = new Map<number, TickNode>();
+  return {
+    sync(keys) {
+      const wanted = new Set(keys);
+      for (const [key, child] of kept) {
+        if (wanted.has(key)) continue;
+        child.remove();
+        kept.delete(key);
+      }
+      for (const key of keys) {
+        if (kept.has(key)) continue;
+        const child = make(key);
+        parent.append(child);
+        kept.set(key, child);
+      }
+      return kept;
+    },
+    clear() {
+      for (const child of kept.values()) child.remove();
+      kept.clear();
+    },
+  };
+}
