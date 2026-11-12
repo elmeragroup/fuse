@@ -2,9 +2,11 @@
   "extends": ["//"],
   "tasks": {
     // The rule tests lint code strings in memory, so they do not wait for the Fuse build that
-    // the root `test` task depends on for dist-reading suites.
+    // the root `test` task depends on for dist-reading suites. The side-overlay-state inventory
+    // check reads the docs' committed api.json files, so a new popup part misses this cache.
     "test": {
-      "dependsOn": []
+      "dependsOn": [],
+      "inputs": ["$TURBO_DEFAULT$", "$TURBO_ROOT$/apps/docs/src/app/**/*api.json"]
     }
   }
 }
