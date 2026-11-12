@@ -1,3 +1,4 @@
+import { transform } from "lightningcss";
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -75,6 +76,49 @@ describe("standalone stylesheet source set", () => {
   });
 });
 
+/**
+ * The source line of every style rule in `css` that nests another rule, a style rule or a
+ * conditional at-rule such as `@supports`.
+ */
+function nestingRuleLines(css: Buffer): number[] {
+  const lines: number[] = [];
+  transform({
+    filename: "styles.css",
+    code: css,
+    visitor: {
+      Rule: {
+        style(rule) {
+          if (rule.value.rules.length > 0) {
+            lines.push(rule.value.loc.line);
+          }
+        },
+      },
+    },
+  });
+  return lines;
+}
+
+/**
+ * `value` as Lightning CSS prints a custom property's fallback, the way `--optimize` reprints
+ * every fallback in the standalone sheet, such as `oklch(0 0 0 / 0.05)` as `oklch(0% 0 0 / .05)`.
+ */
+function printedFallback(value: string): string {
+  const { code } = transform({ filename: "fallback.css", code: Buffer.from(`a{--p:var(--q,${value})}`) });
+  const [printed] = varFallbacks(code.toString(), "q");
+  expect(printed, value).toBeDefined();
+  return printed ?? value;
+}
+
+describe("standalone stylesheet nesting", () => {
+  it("nests no rule inside a style rule", () => {
+    // Native nesting needs Chrome 112 and Safari 16.5, one release above the floor of Chrome
+    // 111 and Safari 16.4 the standalone sheet serves, where a nested `@supports` is dropped.
+    // #558 widens this to every feature the floor lacks.
+    expect(existsSync(compiledCssPath), compiledCssPath).toBe(true);
+    expect(nestingRuleLines(readFileSync(compiledCssPath))).toEqual([]);
+  });
+});
+
 describe("variant-layer role reads", () => {
   it("fall back to the neutral default wherever the compiled sheet reads them", () => {
     // Only themes.css declares the variant-layer roles Fuse adds to the shadcn grammar, so a
@@ -84,7 +128,8 @@ describe("variant-layer role reads", () => {
     // the role's neutral default. A default that aliases another role this loop validates, such
     // as the selection divider's `var(--selection-border)`, is read with that role's own fallback,
     // `var(--selection-border, var(--border))`, which the loop checks under that role's own key,
-    // so only then is the nested fallback stripped before comparing.
+    // so only then is the nested fallback stripped before comparing. The build's Lightning CSS
+    // pass reprints each fallback, so the default is compared as that printer spells it.
     expect(existsSync(compiledCssPath), compiledCssPath).toBe(true);
     const css = readFileSync(compiledCssPath, "utf8");
     const defaults: Readonly<Record<string, string>> = LAYER_DEFAULTS;
@@ -93,12 +138,14 @@ describe("variant-layer role reads", () => {
       if (shadcnBaseRoles.has(key)) continue;
       const fallbacks = varFallbacks(css, key);
       expect(fallbacks.length, key).toBeGreaterThan(0);
+      const expected = defaults[key];
+      const printed = expected === undefined ? undefined : printedFallback(expected);
       for (const fallback of fallbacks) {
         const inner = /^var\(--([\w-]+)\s*,[\s\S]*\)$/u.exec(fallback ?? "");
         const role = inner?.[1];
         const compared =
           role !== undefined && Object.hasOwn(BRANDED_IDENTITY_LAYER, role) ? `var(--${role})` : fallback;
-        expect(compared, key).toBe(defaults[key]);
+        expect(compared, key).toBe(printed);
       }
     }
   });

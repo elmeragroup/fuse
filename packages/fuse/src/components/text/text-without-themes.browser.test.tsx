@@ -7,7 +7,7 @@ import { describe, expect, it } from "vitest";
 // declares none of them, or only the ones it sets itself.
 import "../../../dist/styles.css";
 import { render } from "../../../test/browser-render";
-import { px, textNamed } from "../../../test/themed-browser-render";
+import { layoutPx, textNamed } from "../../../test/themed-browser-render";
 import { Text } from "./text";
 
 const SIZES = ["sm", "default", "lg"] as const;
@@ -22,9 +22,9 @@ function SizedTexts({ prefix, style }: { prefix: string; style?: CSSProperties }
   );
 }
 
-/** The computed line heights of a prefix's sm, default and lg Texts, in px. */
+/** The laid-out line heights of a prefix's sm, default and lg Texts, in px. */
 function lineHeights(prefix: string): readonly number[] {
-  return SIZES.map((size) => px(getComputedStyle(textNamed(`${prefix} ${size}`)).lineHeight));
+  return SIZES.map((size) => layoutPx(getComputedStyle(textNamed(`${prefix} ${size}`)).lineHeight));
 }
 
 describe("Text paragraph line height without themes.css", () => {

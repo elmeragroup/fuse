@@ -7,7 +7,7 @@ import { describe, expect, it } from "vitest";
 // declares none of them, or only the ones it sets itself.
 import "../../../dist/styles.css";
 import { render } from "../../../test/browser-render";
-import { headingNamed, px } from "../../../test/themed-browser-render";
+import { headingNamed, layoutPx, px } from "../../../test/themed-browser-render";
 import { Heading } from "./heading";
 
 const LEVELS = [1, 2, 3, 4] as const;
@@ -26,7 +26,7 @@ function LevelHeadings({ prefix, style }: { prefix: string; style?: CSSPropertie
 function types(prefix: string): readonly { size: number; leading: number; weight: string }[] {
   return LEVELS.map((level) => {
     const style = getComputedStyle(headingNamed(`${prefix} ${String(level)}`, level));
-    return { size: px(style.fontSize), leading: px(style.lineHeight), weight: style.fontWeight };
+    return { size: px(style.fontSize), leading: layoutPx(style.lineHeight), weight: style.fontWeight };
   });
 }
 

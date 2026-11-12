@@ -10,12 +10,11 @@ const MOBILE_MEDIA_QUERY = "(width < 48rem)";
 function Probe({ onRender }: { onRender: (isMobile: boolean) => void }) {
   const isMobile = useIsMobile();
   onRender(isMobile);
-  return <output aria-label="Viewport">{isMobile ? "mobile" : "desktop"}</output>;
-}
-
-function nestedRules(rules: CSSRuleList): CSSRule[] {
-  return [...rules].flatMap((rule) =>
-    rule instanceof CSSGroupingRule ? [rule, ...nestedRules(rule.cssRules)] : [rule]
+  return (
+    <>
+      <output aria-label="Viewport">{isMobile ? "mobile" : "desktop"}</output>
+      <div aria-label="md: probe" className="md:flex" role="group" />
+    </>
   );
 }
 
@@ -30,11 +29,11 @@ afterEach(async () => {
 
 describe("useIsMobile", () => {
   it.each([
-    { name: "below", width: 767, isMobile: true, text: "mobile" },
-    { name: "at", width: 768, isMobile: false, text: "desktop" },
+    { name: "below", width: 767, isMobile: true, text: "mobile", mdDisplay: "block" },
+    { name: "at", width: 768, isMobile: false, text: "desktop", mdDisplay: "flex" },
   ])(
-    "reads mql.matches on the first client render $name the breakpoint",
-    async ({ width, isMobile, text }) => {
+    "reads mql.matches on the first client render $name the breakpoint, where md: agrees",
+    async ({ width, isMobile, text, mdDisplay }) => {
       await page.viewport(width, 800);
       expect(window.matchMedia(MOBILE_MEDIA_QUERY).matches).toBe(isMobile);
       const seen: boolean[] = [];
@@ -48,6 +47,8 @@ describe("useIsMobile", () => {
       expect(seen[0]).toBe(isMobile);
       expect(seen).not.toContain(!isMobile);
       await expect.element(viewportStatus()).toHaveTextContent(text);
+      const mdProbe = page.getByRole("group", { name: "md: probe", exact: true }).element();
+      expect(getComputedStyle(mdProbe).display).toBe(mdDisplay);
     }
   );
 
@@ -80,9 +81,9 @@ describe("useIsMobile", () => {
     expect(removeListener).toHaveBeenCalledWith("change", expect.any(Function));
   });
 
-  it("queries the same rem breakpoint that md: starts at", async () => {
-    await page.viewport(1024, 768);
-    // Pass-through spy: matchMedia still answers, the spy only observes the query string.
+  it("queries the breakpoint in rem, as md: does, so both move with the browser's font size", () => {
+    // Pass-through spy: matchMedia still answers, the spy only observes the query string. The
+    // breakpoint table above holds at the default 16px font size, where 48rem and 768px agree.
     const queries: string[] = [];
     const matchMedia = window.matchMedia.bind(window);
     vi.spyOn(window, "matchMedia").mockImplementation((query) => {
@@ -91,19 +92,5 @@ describe("useIsMobile", () => {
     });
     render(<Probe onRender={vi.fn()} />);
     expect(new Set(queries)).toEqual(new Set(["(width < 48rem)"]));
-
-    const mdConditions = new Set(
-      [...document.styleSheets]
-        .flatMap((sheet) => nestedRules(sheet.cssRules))
-        .filter(
-          (rule): rule is CSSMediaRule =>
-            rule instanceof CSSMediaRule &&
-            [...rule.cssRules].some(
-              (inner) => inner instanceof CSSStyleRule && inner.selectorText === ".md\\:flex"
-            )
-        )
-        .map((rule) => rule.conditionText)
-    );
-    expect(mdConditions).toEqual(new Set(["(width >= 48rem)"]));
   });
 });

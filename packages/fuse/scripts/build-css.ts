@@ -36,6 +36,11 @@ export function buildCss(packageRoot: string): void {
     copyFileSync(join(srcStylesDir, privateSheet), join(distDir, "styles", privateSheet));
   }
 
+  // `--optimize` runs the Lightning CSS pass a Tailwind-source consumer's production build runs,
+  // at Tailwind's floor of Chrome 111, Safari 16.4 and Firefox 128. It flattens native CSS
+  // nesting, which needs Chrome 112 and Safari 16.5; below that a browser drops each nested
+  // `@supports (color: color-mix(...))` block, and `bg-*/<alpha>` paints its opaque fallback.
+  // `--minify` stays off so the shipped sheet reads as written.
   runCommand(
     "pnpm",
     [
@@ -45,6 +50,7 @@ export function buildCss(packageRoot: string): void {
       join(packageRoot, "scripts/standalone.css"),
       "-o",
       join(distDir, "styles.css"),
+      "--optimize",
     ],
     packageRoot
   );
