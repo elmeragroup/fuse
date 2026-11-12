@@ -740,6 +740,14 @@ export default defineConfig({
       },
     },
     {
+      // Shared test helpers wait and time on the tests' behalf, so they meet the same bar.
+      files: ["**/test/**/*.{ts,tsx,mts,mjs}"],
+      rules: {
+        "fuse/no-fixed-delay": "error",
+        "fuse/no-wall-clock": "error",
+      },
+    },
+    {
       files: ["**/vitest.*", "**/vite.config.*", "**/playwright.config.*"],
       rules: {
         "fuse/no-test-retry": "error",

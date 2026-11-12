@@ -20,6 +20,7 @@ appendFileSync("fake-server.log", `${role} ${process.pid}\n`);
 
 /** Keeps a process alive until it is killed. */
 function stayAlive() {
+  // oxlint-disable-next-line fuse/no-fixed-delay -- keeps a launcher that ignores SIGTERM alive apart from its worker, until the test kills it; nothing waits on this timer, which never fires within a run
   setTimeout(() => process.exit(0), 2 ** 31 - 1);
 }
 
