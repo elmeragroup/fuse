@@ -10,7 +10,7 @@ Add `FileUpload`.
   rest, each with a `reason`: `"type"`, `"count"`, `"directory"` or `"unreadable"`.
 - `Root` takes `accept` in the attribute's syntax, `multiple`, `directory`, `capture` and
   `disabled`, and renders the hidden file input with no `name`. A Root without `multiple` rejects
-  every file with `"count"` when more than one passes `accept`.
+  every file that passes `accept` with `"count"` when more than one does.
 - `Dropzone` sets `data-drop-target` while a file drag that can drop is over it, shows the
   not-allowed cursor when the drop is certain to fail, and opens the picker from a click on its
   empty surface. A dropped folder expands into its files, each with a `webkitRelativePath`.
