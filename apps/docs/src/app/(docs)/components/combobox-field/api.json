@@ -238,6 +238,15 @@
           "required": false
         },
         {
+          "name": "isReadOnly",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Forwards `readOnly` to `Combobox.Root`; the input's field box uses `bg-muted`. The input stays focusable and its popup still opens to show the options, but neither choosing one, typing nor the clear button changes the selection.",
+          "required": false
+        },
+        {
           "name": "isRequired",
           "origin": "declared",
           "type": "boolean | undefined",

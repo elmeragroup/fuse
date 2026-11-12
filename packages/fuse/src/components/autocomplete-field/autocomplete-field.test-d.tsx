@@ -16,6 +16,7 @@ test("AutocompleteFieldProps is the composite is* face, the input's props and Au
   expectTypeOf<AutocompleteFieldProps["status"]>().toEqualTypeOf<ReactNode | undefined>();
   expectTypeOf<AutocompleteFieldProps["isDisabled"]>().toEqualTypeOf<boolean | undefined>();
   expectTypeOf<AutocompleteFieldProps["isRequired"]>().toEqualTypeOf<boolean | undefined>();
+  expectTypeOf<AutocompleteFieldProps["isReadOnly"]>().toEqualTypeOf<boolean | undefined>();
   expectTypeOf<AutocompleteFieldProps["showTrigger"]>().toEqualTypeOf<boolean | undefined>();
   expectTypeOf<AutocompleteFieldProps["showClear"]>().toEqualTypeOf<boolean | undefined>();
   expectTypeOf<AutocompleteFieldProps>().not.toHaveProperty("disabled");

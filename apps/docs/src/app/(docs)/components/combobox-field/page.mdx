@@ -26,6 +26,8 @@ export const metadata = componentMetadata("combobox-field");
 
 Inside a `Form`, the field shows the error `Form` holds under its `name` when it gets no `errorMessage`, also in the first HTML a server renders. Choosing another option clears it, and a new `errors` object shows it again. The selection submits under `name`, once, and `isRequired` blocks an empty submit with the required message.
 
+`isReadOnly` keeps the selection: the input stays focusable and takes the muted read-only fill the other fields take, and its popup still opens to show the options, but choosing one, typing or the clear button changes nothing. The value still submits under `name`.
+
 </Prose>
 
 <Demo slug="combobox-field" id="form" title="In a form" file="combobox-field-form.tsx">

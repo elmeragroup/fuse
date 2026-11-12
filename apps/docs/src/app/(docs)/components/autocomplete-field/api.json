@@ -194,6 +194,15 @@
           "required": false
         },
         {
+          "name": "isReadOnly",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Forwards `readOnly` to `Autocomplete.Root`; the input's field box uses `bg-muted`. The input stays focusable and its popup still opens to show the suggestions, but neither picking one, typing nor the clear button changes the text.",
+          "required": false
+        },
+        {
           "name": "isRequired",
           "origin": "declared",
           "type": "boolean | undefined",
