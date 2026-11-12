@@ -28,10 +28,21 @@ export type FileUploadMeta = {
   /** Track a mounted Description's id. The returned function stops tracking it. */
   readonly registerDescription: (id: string) => () => void;
   /**
+   * Track a mounted Trigger's element. The first one mounted is the Field's control, and the first
+   * enabled one takes the focus an invalid submit gives the Root's validity input. The returned function stops
+   * tracking it.
+   */
+  readonly registerTrigger: (trigger: HTMLElement) => () => void;
+  /**
    * Count a Trigger mounted inside a Field. A Field has one control, so development logs an error
    * when a second one mounts. The returned function stops counting it.
    */
   readonly registerFieldTrigger: () => () => void;
+  /**
+   * Focus left a Trigger, which inside a Field marks the Field touched and, in its `onBlur` mode,
+   * validates it. A blur of the window, which opening the picker causes, does not call it.
+   */
+  readonly triggerLeft: () => void;
   /** The Dropzones, by id, that show a drop target now. `state.dragging` is whether any does. */
   readonly dropTargets: ReadonlySet<string>;
   /** Mark the Dropzone `zone` as showing a drop target, or as no longer showing one. */

@@ -6,14 +6,15 @@ import type { FileRejection } from "../src/components/file-upload/split-files";
 
 /**
  * The hidden picker input inside `host`. It is `hidden`, so it is outside the accessibility tree
- * and no role or name finds it. It never has a `name`; the separate input a form posts does.
+ * and no role or name finds it. The separate input a form posts and validates is visually hidden
+ * instead, never `hidden`.
  *
  * @param host - The rendered container to search.
  * @returns The picker input.
  * @throws When `host` holds no picker input, a defect in the render under test.
  */
 export function fileInput(host: HTMLElement): HTMLInputElement {
-  const input = host.querySelector('input[type="file"]:not([name])');
+  const input = host.querySelector('input[type="file"][hidden]');
   if (!(input instanceof HTMLInputElement)) {
     throw new Error("expected a hidden file picker input");
   }

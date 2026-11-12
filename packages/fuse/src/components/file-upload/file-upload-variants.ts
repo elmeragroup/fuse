@@ -24,5 +24,8 @@ export const fileUploadVariants = tv({
       dataStateFaceClass
     ),
     description: cn(labelTypeClass, "text-muted-foreground"),
+    // The input a form posts and validates: out of flow and out of reach of the pointer, but
+    // rendered, so the browser can focus it on an invalid submit.
+    postingInput: "pointer-events-none sr-only",
   },
 });

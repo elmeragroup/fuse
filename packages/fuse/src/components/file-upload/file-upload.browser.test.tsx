@@ -1,7 +1,8 @@
 import { useState } from "react";
-import type { ReactElement } from "react";
+import type { ReactElement, ReactNode } from "react";
 
-import { describe, expect, it, vi } from "vitest";
+import { createPortal } from "react-dom";
+import { describe, expect, it, onTestFinished, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
@@ -21,10 +22,14 @@ import {
   txt,
 } from "../../../test/file-picks";
 import { formNamed, renderThemed, roleNamed } from "../../../test/themed-browser-render";
+import { switchWindowAndBack } from "../../../test/window-focus";
+import { hasFocus } from "../../internal/active-element";
 import { isHTMLElement } from "../../internal/dom-node";
 import { Button } from "../button/button";
 import { Field } from "../field/index";
+import { Form } from "../form/form";
 import { SkeletonReveal } from "../skeleton/skeleton-reveal";
+import type { FileUploadRootProps } from "./file-upload";
 import { useFileUpload } from "./file-upload-context";
 import { FileUpload } from "./index";
 import type { FileRejection } from "./split-files";
@@ -484,6 +489,21 @@ function FieldUpload(props: { readonly invalid?: boolean }): ReactElement {
   );
 }
 
+/**
+ * Places a tree in the document, or in an open shadow root whose host the test owns. The host is
+ * made once, so every render of the returned function lands in the same shadow root.
+ */
+function placeIn(mount: "document" | "shadow root"): (tree: ReactElement) => ReactNode {
+  if (mount === "document") {
+    return (tree) => tree;
+  }
+  const host = document.createElement("div");
+  document.body.append(host);
+  onTestFinished(() => host.remove());
+  const shadow = host.attachShadow({ mode: "open" });
+  return (tree) => createPortal(tree, shadow);
+}
+
 describe("FileUpload in a Field", () => {
   it("names the Trigger by its own text, then Field.Label, and opens the picker from a click on the label", async () => {
     const { host } = renderThemed(<FieldUpload />);
@@ -634,6 +654,112 @@ describe("FileUpload in a Field", () => {
     roleNamed("button", "Inside").focus();
     expect(paste(document.body, [png("a.png")]).defaultPrevented).toBe(false);
     expect(onSelect).not.toHaveBeenCalled();
+  });
+
+  it.each(["document", "shadow root"] as const)(
+    "validates on the Trigger's blur in onBlur mode, but not on the window blur the OS picker causes, in a %s",
+    async (mount) => {
+      const place = placeIn(mount);
+      // A custom `validate`, because Base UI shows `valueMissing` only once the value has changed.
+      const tree = (step: string) =>
+        place(
+          <>
+            <Field.Root
+              name="evidence"
+              validationMode="onBlur"
+              validate={(value) =>
+                Array.isArray(value) && value.length === 0 ? "Add at least one file." : null
+              }>
+              <Field.Label>Evidence</Field.Label>
+              <FileUpload.Root files={[]}>
+                <FileUpload.Trigger>Add files</FileUpload.Trigger>
+              </FileUpload.Root>
+              <Field.Error />
+            </Field.Root>
+            <button type="button">Next</button>
+            <p>{step}</p>
+          </>
+        );
+      const { rerender } = renderThemed(tree("Picking"));
+      const trigger = page.getByRole("button", { name: "Add files Evidence", exact: true });
+      const button = trigger.element();
+      // Read from each element's own root: a document read names only a shadow root's host.
+      button.focus();
+      expect(hasFocus(button)).toBe(true);
+
+      // Opening the OS picker switches the window away and back. `rerender` renders through
+      // `flushSync`, which first commits every update the blur scheduled, so once "Picked" shows,
+      // a validation the blur committed would show too.
+      switchWindowAndBack(button);
+      rerender(tree("Picked"));
+      expect(page.getByText("Picked", { exact: true }).element()).toBeVisible();
+      expect(button).not.toHaveAttribute("aria-invalid");
+
+      await userEvent.tab();
+      await expect.poll(() => hasFocus(roleNamed("button", "Next"))).toBe(true);
+      await expect.element(trigger).toHaveAttribute("aria-invalid", "true");
+      await expect.element(trigger).toHaveAccessibleDescription("Add at least one file.");
+    }
+  );
+
+  it("clears a nameless Field's custom error on an optional Root once its files change to ones validate accepts", async () => {
+    // Neither posting nor required: the Field alone needs the validity input to judge the files.
+    function OptionalUpload(): ReactElement {
+      const [files, setFiles] = useState<readonly File[]>([]);
+      return (
+        <FileUpload.Root files={files} onSelect={(picked) => setFiles((current) => [...current, ...picked])}>
+          <FileUpload.Trigger>Add files</FileUpload.Trigger>
+        </FileUpload.Root>
+      );
+    }
+    const { host } = renderThemed(
+      <>
+        <Field.Root
+          validationMode="onBlur"
+          validate={(value) =>
+            Array.isArray(value) && value.length === 0 ? "Add at least one file." : null
+          }>
+          <Field.Label>Evidence</Field.Label>
+          <OptionalUpload />
+          <Field.Error />
+        </Field.Root>
+        <button type="button">Next</button>
+      </>
+    );
+    const trigger = page.getByRole("button", { name: "Add files Evidence", exact: true });
+    trigger.element().focus();
+    await userEvent.tab();
+    await expect.element(trigger).toHaveAttribute("aria-invalid", "true");
+    await expect.element(trigger).toHaveAccessibleDescription("Add at least one file.");
+
+    pick(fileInput(host), [png("a.png")]);
+    await expect.element(trigger).not.toHaveAttribute("aria-invalid");
+    await expect.element(page.getByText("Add at least one file.", { exact: true })).not.toBeInTheDocument();
+  });
+
+  it.each([
+    ["unmounts", { mounted: false, disabled: false }],
+    ["turns disabled and stays focusable", { mounted: true, disabled: true }],
+  ])("releases the Field's focus when its focused Trigger %s", async (_case, after) => {
+    const tree = (trigger: { readonly mounted: boolean; readonly disabled: boolean }) => (
+      <Field.Root name="evidence">
+        <Field.Label>Evidence</Field.Label>
+        <FileUpload.Root files={[]}>
+          {trigger.mounted ? (
+            <FileUpload.Trigger disabled={trigger.disabled} render={<Button focusableWhenDisabled />}>
+              Add files
+            </FileUpload.Trigger>
+          ) : null}
+        </FileUpload.Root>
+      </Field.Root>
+    );
+    const { host, rerender } = renderThemed(tree({ mounted: true, disabled: false }));
+    const field = host.querySelector('[data-slot="field"]');
+    roleNamed("button", "Add files Evidence").focus();
+    await expect.poll(() => field?.hasAttribute("data-focused")).toBe(true);
+
+    rerender(tree(after));
+    expect(field).not.toHaveAttribute("data-focused");
   });
 
   it("leaves a Trigger outside any Field unlabelled by a Field, valid and without an id", () => {
@@ -910,5 +1036,127 @@ describe("posting with a native form", () => {
     await expect.element(page.getByRole("button", { name: "Add more", exact: true })).toBeDisabled();
     expect(posted("Upload form", "evidence")).toEqual([]);
     expect(posted("Upload form", "attachments")).toEqual([]);
+  });
+});
+
+/**
+ * A required FileUpload whose parent adds each pick to `files`, starting from `initial`; `undefined`
+ * renders the Root with no `files` at all.
+ */
+function RequiredUpload(props: {
+  readonly initial: readonly File[] | undefined;
+  readonly disabled?: boolean;
+}): ReactElement {
+  const [files, setFiles] = useState(props.initial);
+  const controlled: Pick<FileUploadRootProps, "files"> = {};
+  if (files !== undefined) {
+    controlled.files = files;
+  }
+  return (
+    <FileUpload.Root
+      required
+      disabled={props.disabled ?? false}
+      {...controlled}
+      onSelect={(picked) => setFiles((current) => [...(current ?? []), ...picked])}>
+      <FileUpload.Trigger>Add files</FileUpload.Trigger>
+    </FileUpload.Root>
+  );
+}
+
+describe("required", () => {
+  it.each([
+    ["an empty files list", []],
+    ["no files prop", undefined],
+  ])(
+    "stops a Base UI Form submit with %s, shows valueMissing on the focused Trigger, and submits once a pick is added",
+    async (_case, initial: readonly File[] | undefined) => {
+      const submitted: unknown[] = [];
+      const { host } = renderThemed(
+        <Form aria-label="Upload form" onFormSubmit={(values) => submitted.push(values)}>
+          <Field.Root name="evidence">
+            <Field.Label>Evidence</Field.Label>
+            <RequiredUpload initial={initial} />
+            <Field.Error match="valueMissing">Add at least one file.</Field.Error>
+          </Field.Root>
+          <button type="submit">Send</button>
+        </Form>
+      );
+      const trigger = page.getByRole("button", { name: "Add files Evidence", exact: true });
+
+      await userEvent.click(roleNamed("button", "Send"));
+      await expect.element(trigger).toHaveFocus();
+      await expect.element(trigger).toHaveAttribute("aria-invalid", "true");
+      await expect.element(trigger).toHaveAccessibleDescription("Add at least one file.");
+      expect(submitted).toEqual([]);
+
+      const file = png("a.png");
+      pick(fileInput(host), [file]);
+      await expect.element(trigger).not.toHaveAttribute("aria-invalid");
+      await expect.element(page.getByText("Add at least one file.", { exact: true })).not.toBeInTheDocument();
+      await userEvent.click(roleNamed("button", "Send"));
+      await expect.poll(() => submitted).toEqual([{ evidence: [file] }]);
+    }
+  );
+
+  it("stops a native submit with no files at the Trigger, which takes focus, and submits once a pick is added", async () => {
+    const onSubmit = vi.fn<(event: SubmitEvent) => void>((event) => event.preventDefault());
+    const { host } = renderThemed(
+      <form aria-label="Upload form" onSubmit={(event) => onSubmit(event.nativeEvent)}>
+        <RequiredUpload initial={[]} />
+        <button type="submit">Send</button>
+      </form>
+    );
+
+    await userEvent.click(roleNamed("button", "Send"));
+    // A `hidden` required input cannot take focus, so the browser blocks the submit and focuses
+    // nothing; the Trigger taking focus shows the browser reached the validity input.
+    await expect.element(roleNamed("button", "Add files")).toHaveFocus();
+    expect(onSubmit).not.toHaveBeenCalled();
+
+    pick(fileInput(host), [png("a.png")]);
+    await expect.poll(() => formNamed("Upload form").checkValidity()).toBe(true);
+    await userEvent.click(roleNamed("button", "Send"));
+    expect(onSubmit).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([
+    ["natively disabled", <button key="native" />],
+    ["disabled and focusable", <Button key="focusable" focusableWhenDisabled />],
+  ])(
+    "hands an invalid native submit's focus past a %s Trigger to the first enabled one",
+    async (_case, render) => {
+      renderThemed(
+        <form aria-label="Upload form" onSubmit={(event) => event.preventDefault()}>
+          <FileUpload.Root required files={[]}>
+            <FileUpload.Trigger disabled render={render}>
+              Browse
+            </FileUpload.Trigger>
+            <FileUpload.Trigger>Add files</FileUpload.Trigger>
+          </FileUpload.Root>
+          <button type="submit">Send</button>
+        </form>
+      );
+
+      await userEvent.click(roleNamed("button", "Send"));
+      await expect.element(roleNamed("button", "Add files")).toHaveFocus();
+    }
+  );
+
+  it("lets a native submit through once the required Root is disabled", async () => {
+    const onSubmit = vi.fn<(event: SubmitEvent) => void>((event) => event.preventDefault());
+    const tree = (disabled: boolean) => (
+      <form aria-label="Upload form" onSubmit={(event) => onSubmit(event.nativeEvent)}>
+        <RequiredUpload initial={[]} disabled={disabled} />
+        <button type="submit">Send</button>
+      </form>
+    );
+    const { rerender } = renderThemed(tree(false));
+    await userEvent.click(roleNamed("button", "Send"));
+    expect(onSubmit).not.toHaveBeenCalled();
+
+    rerender(tree(true));
+    await expect.element(page.getByRole("button", { name: "Add files", exact: true })).toBeDisabled();
+    await userEvent.click(roleNamed("button", "Send"));
+    expect(onSubmit).toHaveBeenCalledTimes(1);
   });
 });
