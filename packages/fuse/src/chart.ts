@@ -23,6 +23,7 @@ export { RadarChart } from "./components/chart/radar-chart-namespace";
 export { ClockChart } from "./components/chart/clock-chart-namespace";
 export { ScatterChart } from "./components/chart/scatter-chart-namespace";
 export { Sparkline } from "./components/chart/sparkline";
+export { SparklineHover } from "./components/chart/sparkline-hover";
 export { useChartPoint } from "./components/chart/use-chart-point";
 export { formatChartValue, formatChartSlot } from "./components/chart/chart-format";
 export type { SupportedLocale } from "./intl/locale-context";
@@ -214,3 +215,4 @@ export type {
 } from "./components/chart/scatter-chart-empty";
 export type { ScatterCurve } from "./components/chart/layout/scatter-frame";
 export type { SparklineProps } from "./components/chart/sparkline";
+export type { SparklineHoverProps } from "./components/chart/sparkline-hover";

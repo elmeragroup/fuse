@@ -1,7 +1,8 @@
 /**
  * A directive-free server page that composes the chart entry. It holds S06's five-group stack of
  * NO1 consumption on 16 October 2026 under a `LocaleProvider`, with a series icon in the config
- * and a Headline whose text comes from `formatChartValue`, beside a `Sparkline`.
+ * and a Headline whose text comes from `formatChartValue`, beside a `Sparkline` that a client
+ * `SparklineHover` wraps.
  * `rsc-chart-server.ts` renders it through Flight, and `rsc-chart-ssr.ts` renders it again with no
  * Flight, as the oracle.
  */
@@ -18,6 +19,7 @@ import {
   RadarChart,
   RadialChart,
   Sparkline,
+  SparklineHover,
 } from "@elmeragroup/fuse/chart";
 import type { ChartConfig } from "@elmeragroup/fuse/chart";
 import { House } from "@elmeragroup/fuse/icons";
@@ -98,7 +100,9 @@ export function ChartPage(): ReactElement {
             </Chart.LegendItem>
           </Chart.Legend>
         </Chart.Root>
-        <Sparkline aria-label="Spotpris i dag" data={[1.2, null, 0.8]} locale="nb-NO" />
+        <SparklineHover>
+          <Sparkline aria-label="Spotpris i dag" data={[1.2, null, 0.8]} locale="nb-NO" />
+        </SparklineHover>
       </main>
     </LocaleProvider>
   );

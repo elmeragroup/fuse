@@ -5,9 +5,10 @@
  * sits at the top edge and 4 halfway down. The hover dim is the chart's 0.45.
  */
 import { afterEach, describe, expect, it } from "vitest";
-import { commands, page, userEvent } from "vitest/browser";
+import { commands, page } from "vitest/browser";
 
 import "../../../dist/styles.css";
+import { hoverIn, imageNamed, placeIn, rows, shownIn } from "../../../test/chart/sparkline";
 import { emulateReducedMotion } from "../../../test/reduced-motion";
 import { renderThemed } from "../../../test/themed-browser-render";
 import "./chart.css";
@@ -16,12 +17,7 @@ import type { SparklineProps } from "./sparkline";
 
 const NAME = "Spot price";
 
-/** The Sparkline image by its role and its generated name. */
-function image(): SVGSVGElement {
-  const element = page.getByRole("img", { name: `${NAME}. Lowest 2, highest 6.`, exact: true }).element();
-  if (!(element instanceof SVGSVGElement)) throw new Error("expected the Sparkline's svg");
-  return element;
-}
+const image = () => imageNamed(`${NAME}. Lowest 2, highest 6.`);
 
 /** One part of the image. The marks are presentational content of the img, so slots locate them. */
 function part(selector: string): SVGGraphicsElement {
@@ -30,39 +26,9 @@ function part(selector: string): SVGGraphicsElement {
   return element;
 }
 
-/** The one element a selector matches that the page shows, failing while none or several show. */
-function shown(selector: string): SVGGraphicsElement {
-  const showing = [...image().querySelectorAll(selector)].filter(
-    (element) => getComputedStyle(element).display !== "none"
-  );
-  const [only] = showing;
-  if (showing.length !== 1 || !(only instanceof SVGGraphicsElement)) {
-    throw new Error(`expected one ${selector} to show, found ${String(showing.length)}`);
-  }
-  return only;
-}
-
-/** A place relative to the image's top left corner, as a share of its width and its height. */
-type Share = { readonly x: number; readonly y: number };
-
-/** Where an element's centre sits in the image, as a share of the image's width and height. */
-function shareOf(element: Element): Share {
-  const box = image().getBoundingClientRect();
-  const own = element.getBoundingClientRect();
-  return { x: (own.x + own.width / 2 - box.x) / box.width, y: (own.y + own.height / 2 - box.y) / box.height };
-}
-
-/** Where an element's centre sits in the image, rounded to hundredths, so a settled glide reads exactly. */
-function placeOf(element: Element): Share {
-  const { x, y } = shareOf(element);
-  return { x: Math.round(x * 100) / 100, y: Math.round(y * 100) / 100 };
-}
-
-/** Hover the image at a share of its width, halfway down. */
-async function hoverAt(x: number): Promise<void> {
-  const box = image().getBoundingClientRect();
-  await userEvent.hover(image(), { position: { x: box.width * x, y: box.height / 2 } });
-}
+const shown = (selector: string) => shownIn(image(), selector);
+const placeOf = (element: Element) => placeIn(image(), element);
+const hoverAt = (x: number) => hoverIn(image(), x);
 
 function renderSparkline(variant: SparklineProps["variant"], intro?: "none"): void {
   renderThemed(
@@ -79,25 +45,14 @@ function renderSparkline(variant: SparklineProps["variant"], intro?: "none"): vo
   );
 }
 
-/** The colours of an element's screenshot at one column and several rows, in CSS pixels. */
-async function rows(element: Element, column: number, at: readonly number[]): Promise<number[][]> {
-  const base64 = await page.screenshot({ element, base64: true, save: false, scale: "css" });
-  const bitmap = await createImageBitmap(await (await fetch(`data:image/png;base64,${base64}`)).blob());
-  const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
-  const context = canvas.getContext("2d");
-  if (context === null) throw new Error("expected a 2d context");
-  context.drawImage(bitmap, 0, 0);
-  return at.map((row) => [...context.getImageData(column, row, 1, 1).data]);
-}
-
 const opacity = (selector: string) => Number(getComputedStyle(part(selector)).opacity);
 
-describe("Sparkline", () => {
-  afterEach(async () => {
-    await commands.parkPointer();
-    await emulateReducedMotion("no-preference");
-  });
+afterEach(async () => {
+  await commands.parkPointer();
+  await emulateReducedMotion("no-preference");
+});
 
+describe("Sparkline", () => {
   it("shows the crosshair and dot at the hovered value and fades the rest of the line, with no script", async () => {
     renderSparkline("line");
     const crosshair = '[data-slot="sparkline-crosshair"]';

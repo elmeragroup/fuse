@@ -45,7 +45,7 @@ describe("the chart entry under React Server Components", () => {
     expect(server.status).toBe(0);
   });
 
-  it("sends LocaleProvider, Chart.Root and its parts as client references and runs Sparkline on the server", () => {
+  it("sends LocaleProvider, Chart.Root, its parts and SparklineHover as client references and runs Sparkline on the server", () => {
     const references = flightClientReferences(payload).map(
       ({ module, name }) => `${module.replace(/^.*\/packages\/fuse\/src\//u, "")}#${name}`
     );
@@ -60,8 +60,9 @@ describe("the chart entry under React Server Components", () => {
       "components/chart/chart-legend.tsx#ChartLegendItem",
       "components/chart/chart-series.tsx#ChartSeriesIcon",
       "components/chart/chart-series.tsx#ChartSeriesLabel",
+      "components/chart/sparkline-hover.tsx#SparklineHover",
     ]);
-    // The name joins the consumer's label and the range sentence, which the server writes.
+    // SparklineHover's child crosses Flight as the svg the server rendered. The name joins the consumer's label and the range sentence, which the server writes.
     expect(payload).toContain(
       '["$","svg",null,{"data-slot":"sparkline","data-variant":"line","role":"img","aria-label":"Spotpris i dag. Lavest 0,8, høyest 1,2."'
     );

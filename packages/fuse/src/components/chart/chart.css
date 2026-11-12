@@ -3755,13 +3755,17 @@
     placed from the region's --_value-… properties, and shows them while its cell is hovered. The
     regions sit side by side, so a long Sparkline nests no deeper than a short one. The marks show
     only on a device that hovers, so a tap never leaves them stuck, and they cross-fade from one
-    value to the next: the old marks fade out as the new ones fade in.
+    value to the next: the old marks fade out as the new ones fade in. SparklineHover's one set of
+    marks, which its script places with the --_value-… and --_band-… properties of their group and
+    glides from value to value, fades the same way, and stays hidden until it takes their
+    Sparkline over.
   */
   [data-slot="sparkline-value"] > [data-part="hit"] {
     fill: none;
   }
 
-  [data-slot="sparkline-value"] > :not([data-part="hit"]) {
+  [data-slot="sparkline-value"] > :not([data-part="hit"]),
+  [data-slot="sparkline-glide"] [data-part="glide"] {
     display: none;
     opacity: 0;
     transition:
@@ -3782,26 +3786,69 @@
     clip-path: inset(-50% calc(100% - var(--_band-end) * 1%) -50% calc(var(--_band-start) * 1%)) view-box;
   }
 
+  /*
+    SparklineHover's band clips the whole line to the same span through two groups, one per edge,
+    whose translates it glides apart, so a band at either end, which bleeds past the box, changes
+    width as it moves.
+  */
+  [data-slot="sparkline-glide"] > [data-part="band-start"] {
+    clip-path: inset(-50% -100% -50% calc(var(--_band-start) * 1%)) view-box;
+  }
+
+  [data-part="band-start"] > [data-part="band-end"] {
+    clip-path: inset(-50% calc(100% - var(--_band-end) * 1%) -50% -100%) view-box;
+  }
+
   @media (hover: hover) {
     [data-slot="sparkline-value"] > [data-part="hit"] {
       pointer-events: all;
     }
 
-    [data-slot="sparkline-value"]:hover > * {
+    [data-slot="sparkline-value"]:hover > *,
+    [data-slot="sparkline"]:has([data-slot="sparkline-glide"][data-glide]):has(
+        [data-slot="sparkline-value"]:hover
+      )
+      [data-part="glide"] {
       display: inline;
       opacity: 1;
     }
 
     @starting-style {
-      [data-slot="sparkline-value"]:hover > * {
+      [data-slot="sparkline-value"]:hover > *,
+      [data-slot="sparkline"]:has([data-slot="sparkline-glide"][data-glide]):has(
+          [data-slot="sparkline-value"]:hover
+        )
+        [data-part="glide"] {
         opacity: 0;
       }
     }
 
     /* The series fades while a value is hovered, and the hovered value's own marks stay whole. */
     [data-slot="sparkline"]:has([data-slot="sparkline-value"]:hover)
-      :is([data-slot="sparkline-path"], [data-slot="sparkline-bar"]):not([data-part="highlight"]) {
+      :is([data-slot="sparkline-path"], [data-slot="sparkline-bar"]):not(
+        [data-part="highlight"],
+        [data-part="glide"]
+      ) {
       opacity: var(--chart-hover-dim);
+    }
+
+    /*
+      Once the nearest SparklineHover has placed a Sparkline's glide marks and marked their group
+      data-glide, they show while a value is hovered, in place of the value's own crosshair, dot
+      and segment, so the marks move rather than cross-fade. A hovered bar still lifts, at once, as
+      the crosshair glides over it. A Sparkline whose wrapper has not yet hydrated keeps its CSS
+      hover, whatever wrappers around it have.
+    */
+    [data-slot="sparkline"]:has([data-slot="sparkline-glide"][data-glide])
+      [data-slot="sparkline-value"]:hover
+      > :not([data-part="hit"], [data-slot="sparkline-bar"]) {
+      display: none;
+    }
+
+    [data-slot="sparkline"]:has([data-slot="sparkline-glide"][data-glide])
+      [data-slot="sparkline-value"]
+      > [data-slot="sparkline-bar"] {
+      transition: none;
     }
 
     /* The emphasis dot gives way to the hover dot. */

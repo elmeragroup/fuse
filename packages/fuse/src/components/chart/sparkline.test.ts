@@ -2,7 +2,7 @@
 // Every reading draws its mark and takes one hover region, however many readings there are, so a
 // server render that nests per reading, and runs out of stack or past an HTML parser's depth limit,
 // fails here instead of dropping data. Without hover, the marks and the name stay and no reading
-// takes a region.
+// takes a region and no glide marks are written.
 import { createElement } from "react";
 
 import { renderToStaticMarkup } from "react-dom/server";
@@ -30,7 +30,7 @@ describe("Sparkline on the server", () => {
     expect([bars.length, regions.length]).toEqual([COUNT, COUNT]);
   });
 
-  it("writes the marks and the name and no hover region with data-hover none", () => {
+  it("writes the marks and the name and no hover region or glide marks with data-hover none", () => {
     const render = (variant: "line" | "bar") =>
       renderToStaticMarkup(
         createElement(Sparkline, {
@@ -46,6 +46,9 @@ describe("Sparkline on the server", () => {
     expect(tags(line, "svg")[0]).toContain('aria-label="Load. Lowest 2, highest 6."');
     expect(tags(line, "path").filter((tag) => tag.includes('data-slot="sparkline-path"'))).toHaveLength(1);
     expect(tags(bar, "rect").filter((tag) => tag.includes('data-slot="sparkline-bar"'))).toHaveLength(3);
-    for (const markup of [line, bar]) expect(markup).not.toContain('data-slot="sparkline-value"');
+    for (const markup of [line, bar]) {
+      expect(markup).not.toContain('data-slot="sparkline-value"');
+      expect(markup).not.toContain('data-slot="sparkline-glide"');
+    }
   });
 });

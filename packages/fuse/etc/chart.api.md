@@ -1842,6 +1842,12 @@ export type ScatterCurve = Exclude<ChartCurve, "monotone-y">;
 export function Sparkline(props: SparklineProps): ReactElement;
 
 // @beta
+export function SparklineHover(input: SparklineHoverProps): ReactElement;
+
+// @beta
+export type SparklineHoverProps = useRender.ComponentProps<"div">;
+
+// @beta
 export type SparklineProps = ChartLayerProps & {
     id?: string;
     "aria-label": string;

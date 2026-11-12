@@ -57,6 +57,12 @@ export type Ride = {
   readonly keyframes: (peak: number) => readonly RideKeyframe[];
 };
 
+/**
+ * The unit a glide's offsets are in: CSS pixels, or percent of the element's transform box, which
+ * keeps an offset in step with a box that resizes mid-glide.
+ */
+type GlideUnit = "px" | "%";
+
 const timings = new Map<Spring, Timing>();
 
 const glides = new WeakMap<Element, Glide>();
@@ -115,16 +121,22 @@ export function leapSpring(): Spring {
 }
 
 /**
- * Glide an element onto the place it rests, from `by` CSS pixels away along x and y, plus whatever
- * offset a running glide shows.
+ * Glide an element onto the place it rests, from `by` away along x and y, plus whatever offset a
+ * running glide shows. An element glides in one unit, so the offset it shows adds to `by` as is.
  *
  * @param element - The element whose resting place was just written.
  * @param by - The old resting place less the new one.
  * @param spring - The spring.
+ * @param unit - The unit of `by`: CSS pixels by default, or percent of the element's transform box.
  */
-export function glideFrom(element: Element, by: readonly [number, number], spring: Spring): void {
+export function glideFrom(
+  element: Element,
+  by: readonly [number, number],
+  spring: Spring,
+  unit: GlideUnit = "px"
+): void {
   const shown = glideShown(element);
-  start(element, [by[0] + (shown?.[0] ?? 0), by[1] + (shown?.[1] ?? 0)], spring, null);
+  start(element, [by[0] + (shown?.[0] ?? 0), by[1] + (shown?.[1] ?? 0)], spring, null, unit);
 }
 
 /**
@@ -171,7 +183,7 @@ export function glideLength(
 }
 
 /**
- * The offset an element's glide shows now, along x and y in CSS pixels, from the easing and the
+ * The offset an element's glide shows now, along x and y in the unit it glides in, from the easing and the
  * keyframes its animation plays, on the glide's own clock, or null when none runs.
  *
  * @param element - The element that may be gliding.
@@ -194,8 +206,17 @@ export function glideShown(element: Element): readonly [number, number] | null {
   return ride.axis === "x" ? [along, across] : [across, along];
 }
 
-/** Replace an element's glide with one from an offset, on a spring, riding a course if given. */
-function start(element: Element, from: readonly [number, number], spring: Spring, ride: Ride | null): void {
+/**
+ * Replace an element's glide with one from an offset, on a spring, riding a course if given. A
+ * ride's keyframes are in CSS pixels.
+ */
+function start(
+  element: Element,
+  from: readonly [number, number],
+  spring: Spring,
+  ride: Ride | null,
+  unit: GlideUnit = "px"
+): void {
   snapGlide(element);
   const timing = springTiming(spring);
   // Without the spring's curve nothing says where an interrupted glide shows, so the mark
@@ -204,7 +225,10 @@ function start(element: Element, from: readonly [number, number], spring: Spring
   const [x, y] = from;
   if (x === 0 && y === 0) return;
   if (ride === null) {
-    const animation = element.animate([{ translate: shift(x, y) }, { translate: "0px 0px" }], timing);
+    const animation = element.animate(
+      [{ translate: shift(x, y, unit) }, { translate: `0${unit} 0${unit}` }],
+      timing
+    );
     keep(element, { animation, from, spring, ride: null });
     return;
   }
@@ -227,8 +251,8 @@ function keep(element: Element, glide: Glide): void {
   };
 }
 
-function shift(x: number, y: number): string {
-  return `${String(x)}px ${String(y)}px`;
+function shift(x: number, y: number, unit: GlideUnit): string {
+  return `${String(x)}${unit} ${String(y)}${unit}`;
 }
 
 /** A shift to a hundredth of a pixel, which keeps a long keyframe list short to parse. */
