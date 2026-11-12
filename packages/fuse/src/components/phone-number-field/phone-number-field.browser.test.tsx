@@ -7,6 +7,7 @@ import { describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import { PhoneNumberField } from "@elmeragroup/fuse/phone-number-field";
+import { TextField } from "@elmeragroup/fuse/text-field";
 
 import "../../../dist/styles.css";
 import { assertNoAxeViolations } from "../../../test/axe";
@@ -166,6 +167,24 @@ describe("PhoneNumberField", () => {
     expect(roleNamed("button", "+46 Sweden").textContent).toContain("+46");
     // Focus moves to the number input as the picker closes, which can land a frame later.
     await expect.element(page.getByRole("textbox", { name: "Mobile", exact: true })).toHaveFocus();
+  });
+
+  it("ends its consumer container as TextField does, so last:, space-y-* and divide-y treat both alike", () => {
+    renderField(
+      <>
+        <div>
+          <PhoneNumberField label="Work" />
+          <TextField label="Email" />
+        </div>
+        <div>
+          <TextField label="Name" />
+          <PhoneNumberField label="Mobile" name="phone" />
+        </div>
+      </>
+    );
+    // TextField is the oracle: rendered last, its field root is the container's last child.
+    expect(fieldRootFrom("Email").matches(":last-child")).toBe(true);
+    expect(fieldRootFrom("Mobile").matches(":last-child")).toBe(true);
   });
 
   it("submits E.164 from the hidden input and keeps the formatted display name", async () => {
