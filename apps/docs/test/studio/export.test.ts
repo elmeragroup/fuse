@@ -44,13 +44,11 @@ describe("exportCss", () => {
     expect(exported({})).toBe("/* No edits: every token keeps the base theme's value. */\n");
   });
 
-  it("writes light-only edits once, for both schemes, with the light-only aliases that read them", () => {
+  it("writes light-only edits once, on the light selector that holds in both schemes, with the light-only aliases that read them", () => {
     expect(exported({ shared: { radius: "1rem", "font-heading": "Georgia, serif" } })).toBe(`${HEADER}
 
 /* Both schemes: a dark palette keeps these from light. */
-[data-theme-identity="branded"][data-theme-brand="elma"][data-theme-segment="private"],
-[data-theme="dark"] [data-theme-identity="branded"][data-theme-brand="elma"][data-theme-segment="private"],
-[data-theme-identity="branded"][data-theme-brand="elma"][data-theme-segment="private"][data-theme="dark"] {
+[data-theme-identity="branded"][data-theme-brand="elma"][data-theme-segment="private"] {
   --radius: 1rem;
   --radius-button: var(--radius);
   --font-heading: Georgia, serif;
@@ -97,9 +95,7 @@ describe("exportCss", () => {
 }
 
 /* Both schemes: a dark palette keeps these from light. */
-[data-theme-identity="branded"][data-theme-brand="elma"][data-theme-segment="private"],
-[data-theme="dark"] [data-theme-identity="branded"][data-theme-brand="elma"][data-theme-segment="private"],
-[data-theme-identity="branded"][data-theme-brand="elma"][data-theme-segment="private"][data-theme="dark"] {
+[data-theme-identity="branded"][data-theme-brand="elma"][data-theme-segment="private"] {
   --radius: 1rem;
   --radius-button: var(--radius);
 }

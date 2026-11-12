@@ -17,7 +17,13 @@ import { literalContrast } from "./token-color";
 import { brandDarkPalette } from "./tokens/brand-dark-palettes";
 import { BRAND_PALETTES, BRANDED_IDENTITY_LAYER, paletteBrand } from "./tokens/brand-palettes";
 import { brandPointer } from "./tokens/brand-pointers";
-import { assignedTokenNames, LIGHT_RESET_KEYS, MUST_OVERRIDE_DARK, TOKEN_NAMES } from "./tokens/contract";
+import {
+  assignedTokenNames,
+  LIGHT_ONLY_KEYS,
+  LIGHT_RESET_KEYS,
+  MUST_OVERRIDE_DARK,
+  TOKEN_NAMES,
+} from "./tokens/contract";
 import type { LightResetKey, TokenLayer, TokenName } from "./tokens/contract";
 import { DEFAULTS } from "./tokens/defaults";
 import { NEUTRAL_DARK_PALETTE } from "./tokens/neutral-dark-palette";
@@ -163,7 +169,7 @@ describe("theme contract", () => {
     }
   });
 
-  it("resets only the light palette keys in light rules and every dark key in dark rules", () => {
+  it("resets only the light palette keys in light rules and every dark key but the light-only ones in dark rules", () => {
     for (const rule of rules.filter((entry) => !entry.selector.includes('[data-theme="dark"]'))) {
       if (rule.selector === ":root") continue;
       if (rule.selector.startsWith("[data-theme-brand=")) continue;
@@ -181,11 +187,17 @@ describe("theme contract", () => {
       ).toEqual([...LIGHT_RESET_KEYS, "color-scheme"]);
     }
     // A dark palette rule leaves the brand-scoped roles to its companion, which declares
-    // them alone. The palette rule beside it already sets the color scheme.
+    // them alone. The palette rule beside it already sets the color scheme. It leaves the
+    // light-only keys to the light rule, which matches in dark too, so a host override at the
+    // light rule's weight holds in dark.
+    const lightOnly = new Set<string>(LIGHT_ONLY_KEYS);
     for (const rule of rules.filter((entry) => entry.selector.includes('[data-theme="dark"]'))) {
       const expected = rule.selector.startsWith(":where(")
         ? BRAND_SCOPED_ROLES
-        : [...THEME_RESET_KEYS.filter((key) => !BRAND_SCOPED_ROLES.includes(key)), "color-scheme"];
+        : [
+            ...THEME_RESET_KEYS.filter((key) => !BRAND_SCOPED_ROLES.includes(key) && !lightOnly.has(key)),
+            "color-scheme",
+          ];
       expect(
         rule.declarations.map((declaration) => declaration.name),
         rule.selector
@@ -210,7 +222,9 @@ describe("theme contract", () => {
         const brand = `[data-theme-brand="${theme.brand}"]`;
         const segment = `[data-theme-segment="${theme.segment}"]`;
         // Each slot pairs a palette rule's selector with its qualifiers without the brand. In
-        // dark, the palette rule's brand-scoped companion follows it.
+        // dark, the palette rule's brand-scoped companion follows it. The light rules match a
+        // dark scope too, and every dark rule outweighs or follows them, so in dark they come
+        // first and the dark rules overlay them.
         const slots: (readonly [string, string])[] =
           theme.identity === "neutral"
             ? [[NEUTRAL, NEUTRAL]]
@@ -218,11 +232,17 @@ describe("theme contract", () => {
                 [`${BRANDED}${brand}`, BRANDED],
                 [`${BRANDED}${brand}${segment}`, `${BRANDED}${segment}`],
               ];
-        const slotted = slots.flatMap(([selector, qualifiers]) =>
+        const lightSlots = slots.map(([selector]) => selector);
+        const slotted =
           colorScheme === "light"
-            ? [selector]
-            : [`[data-theme="dark"]${selector}`, `:where([data-theme="dark"]${qualifiers})${brand}`]
-        );
+            ? lightSlots
+            : [
+                ...lightSlots,
+                ...slots.flatMap(([selector, qualifiers]) => [
+                  `[data-theme="dark"]${selector}`,
+                  `:where([data-theme="dark"]${qualifiers})${brand}`,
+                ]),
+              ];
         const declared = new Map<string, string>();
         for (const selector of slotted) {
           for (const rule of byDirectSelector.get(selector) ?? []) {

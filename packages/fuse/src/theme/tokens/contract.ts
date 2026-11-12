@@ -901,8 +901,13 @@ export const MUST_OVERRIDE_BY_IDENTITY = {
  * the dark role it names, or a value that does not depend on the scheme, such as the branded
  * card and row edges' zero alpha, the card shadow's black at 5% or the disabled row's black
  * stripe at 2% alpha.
+ *
+ * Every one is a light reset key, so each light theme rule declares it on the theme element,
+ * and light rules match in both schemes. No dark rule restates one, so a host override at the
+ * light rule's weight holds in dark, and an alias resolves against the element's own dark
+ * roles. {@link DarkTokenLayer} keeps every dark layer from setting one.
  */
-const LIGHT_ONLY_KEYS: ReadonlySet<TokenName> = new Set([
+export const LIGHT_ONLY_KEYS = [
   "card-border",
   "card-section-divider",
   "card-shadow",
@@ -930,7 +935,30 @@ const LIGHT_ONLY_KEYS: ReadonlySet<TokenName> = new Set([
   "heading-3-size",
   "heading-3-leading",
   "heading-3-weight",
-]);
+] as const satisfies readonly Extract<LightResetKey, LayerTokenName>[];
+
+/** A role a dark palette keeps from the light composition. */
+export type LightOnlyKey = (typeof LIGHT_ONLY_KEYS)[number];
+
+const LIGHT_ONLY_KEY_SET: ReadonlySet<TokenName> = new Set(LIGHT_ONLY_KEYS);
+
+/**
+ * Whether a dark palette keeps this role from the light composition, so no dark rule declares it.
+ *
+ * @param name - A contract token name.
+ * @returns `true` for a {@link LIGHT_ONLY_KEYS} entry.
+ */
+export function isLightOnlyKey(name: TokenName): name is LightOnlyKey {
+  return LIGHT_ONLY_KEY_SET.has(name);
+}
+
+/**
+ * The roles one dark layer assigns: any layer role but a {@link LightOnlyKey}. The dark rules
+ * leave the light-only keys to the light rules, so a dark value for one would never reach CSS.
+ * The `never` entries make such a value a type error, even where a layer is not an object
+ * literal and no excess-property check runs.
+ */
+export type DarkTokenLayer = Omit<TokenLayer, LightOnlyKey> & { readonly [Name in LightOnlyKey]?: never };
 
 /**
  * The reset keys whose default is an alias of another reset key. A palette names the target,
@@ -945,7 +973,7 @@ const ALIAS_RESET_KEYS: ReadonlySet<TokenName> = new Set(["sidebar-ring"]);
  */
 export const MUST_OVERRIDE_DARK = LIGHT_RESET_KEYS.filter(
   (key): key is Extract<LightResetKey, LayerTokenName> =>
-    isLayerTokenName(key) && !LIGHT_ONLY_KEYS.has(key) && !ALIAS_RESET_KEYS.has(key)
+    isLayerTokenName(key) && !isLightOnlyKey(key) && !ALIAS_RESET_KEYS.has(key)
 );
 
 /**

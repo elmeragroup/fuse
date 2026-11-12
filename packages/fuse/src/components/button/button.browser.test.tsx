@@ -5,10 +5,23 @@ import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
+import { render } from "../../../test/browser-render";
 import { dispatchPredictedPointer } from "../../../test/predicted-pointer";
-import { effectiveOpacity, renderThemed, roleNamed } from "../../../test/themed-browser-render";
+import {
+  effectiveOpacity,
+  fkasBranded,
+  fkasPrivate,
+  renderThemed,
+  roleNamed,
+  snapshotDocumentTheme,
+  stampDocumentTheme,
+} from "../../../test/themed-browser-render";
+import { ThemeScope } from "../../theme/theme-scope";
 import { Tooltip } from "../tooltip";
 import { Button } from "./button";
+
+/** A host's outline Button width, unlike the theme's 1px hairline and 2px branded ring. */
+const HOST_OUTLINE_WIDTH = "3px";
 
 describe("Button", () => {
   // Each button meets a click, Enter and Space. Disabled and pending block all three; a visually
@@ -258,4 +271,30 @@ describe("Button", () => {
     unmount();
     expect(trigger).toBeNull();
   });
+
+  // Unit under test: the themes.css rules on a branded theme element in both schemes. Oracle: the
+  // host's own width, set by a rule that ties the light theme rule and follows themes.css, as the
+  // theming handbook tells a host to override a theme role. A dark rule that restated the
+  // light-only role would outweigh it, and the border would flip back to the theme's 2px ring.
+  it.each(["light", "dark"] as const)(
+    "keeps a host --button-outline-width override on the theme element in %s",
+    (scheme) => {
+      const restoreDocumentTheme = snapshotDocumentTheme();
+      stampDocumentTheme(fkasPrivate, scheme);
+      const style = document.createElement("style");
+      style.textContent = `.host-outline[data-theme-brand="fkas"] { --button-outline-width: ${HOST_OUTLINE_WIDTH}; }`;
+      document.head.append(style);
+      try {
+        render(
+          <ThemeScope theme={fkasBranded} className="host-outline">
+            <Button variant="outline">Outlined</Button>
+          </ThemeScope>
+        );
+        expect(getComputedStyle(roleNamed("button", "Outlined")).borderTopWidth).toBe(HOST_OUTLINE_WIDTH);
+      } finally {
+        style.remove();
+        restoreDocumentTheme();
+      }
+    }
+  );
 });

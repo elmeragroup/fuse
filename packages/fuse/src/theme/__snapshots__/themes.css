@@ -823,19 +823,6 @@
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 40%);
   --ring: oklch(0.6 0 0);
-  --card-border: var(--border);
-  --card-section-divider: var(--border);
-  --card-shadow: oklch(0 0 0 / 0.05);
-  --button-outline: var(--border);
-  --selection-border: var(--border);
-  --selection-checked-border: var(--primary);
-  --selection-divider: var(--selection-border);
-  --selection-checked-divider: var(--selection-checked-border);
-  --selection-disabled-background: var(--muted);
-  --selection-disabled-hatch: oklch(0 0 0 / 0.02);
-  --selection-disabled-foreground: var(--foreground);
-  --toggle-pressed: var(--muted);
-  --toggle-pressed-foreground: var(--foreground);
   --sidebar: oklch(0.205 0 0);
   --sidebar-foreground: oklch(0.985 0 0);
   --sidebar-accent: oklch(0.269 0 0);
@@ -887,20 +874,6 @@
   --sh-jsxliterals: oklch(0.8156596 0.1022421 190.6206);
   --sh-sign: oklch(0.91205 0.0286161 218.9613);
   --sh-comment: oklch(0.8280204 0.0042636 121.5755);
-  --button-outline-width: 1px;
-  --selection-title-weight: 400;
-  --paragraph-leading-sm: 1.421875rem;
-  --paragraph-leading-base: 1.625rem;
-  --paragraph-leading-lg: 1.828125rem;
-  --heading-1-size: 1.5rem;
-  --heading-1-leading: 2.0625rem;
-  --heading-1-weight: 500;
-  --heading-2-size: 1.125rem;
-  --heading-2-leading: 1.546875rem;
-  --heading-2-weight: 500;
-  --heading-3-size: 1rem;
-  --heading-3-leading: 1.375rem;
-  --heading-3-weight: 500;
   color-scheme: dark;
 }
 
@@ -997,19 +970,6 @@
   --border: oklch(0.3956915 0.0031178 164.9356);
   --input: oklch(0.6543689 0.0037291 145.5328);
   --ring: oklch(0.6 0 0);
-  --card-border: oklch(0 0 0 / 0);
-  --card-section-divider: var(--background);
-  --card-shadow: oklch(0 0 0 / 0);
-  --button-outline: var(--foreground);
-  --selection-border: oklch(0 0 0 / 0);
-  --selection-checked-border: var(--selection-border);
-  --selection-divider: var(--border);
-  --selection-checked-divider: var(--selection-divider);
-  --selection-disabled-background: var(--card);
-  --selection-disabled-hatch: oklch(0 0 0 / 0);
-  --selection-disabled-foreground: var(--muted-foreground);
-  --toggle-pressed: var(--primary);
-  --toggle-pressed-foreground: var(--primary-foreground);
   --sidebar: oklch(0.1749487 0.003804 164.5613);
   --sidebar-foreground: oklch(0.9604175 0.0214022 46.9889);
   --sidebar-accent: oklch(0.2661671 0.0034366 164.8011);
@@ -1061,20 +1021,6 @@
   --sh-jsxliterals: oklch(0.8156596 0.1022421 190.6206);
   --sh-sign: oklch(0.91205 0.0286161 218.9613);
   --sh-comment: oklch(0.8280204 0.0042636 121.5755);
-  --button-outline-width: 2px;
-  --selection-title-weight: 500;
-  --paragraph-leading-sm: 1.25rem;
-  --paragraph-leading-base: 1.375rem;
-  --paragraph-leading-lg: 1.5rem;
-  --heading-1-size: 1.5rem;
-  --heading-1-leading: 2rem;
-  --heading-1-weight: 700;
-  --heading-2-size: 1.25rem;
-  --heading-2-leading: 2rem;
-  --heading-2-weight: 700;
-  --heading-3-size: 1.25rem;
-  --heading-3-leading: 2rem;
-  --heading-3-weight: 700;
   color-scheme: dark;
 }
 
@@ -1135,19 +1081,6 @@
   --border: oklch(0.3956915 0.0031178 164.9356);
   --input: oklch(0.6543689 0.0037291 145.5328);
   --ring: oklch(0.6 0 0);
-  --card-border: oklch(0 0 0 / 0);
-  --card-section-divider: var(--background);
-  --card-shadow: oklch(0 0 0 / 0);
-  --button-outline: var(--foreground);
-  --selection-border: oklch(0 0 0 / 0);
-  --selection-checked-border: var(--selection-border);
-  --selection-divider: var(--border);
-  --selection-checked-divider: var(--selection-divider);
-  --selection-disabled-background: var(--card);
-  --selection-disabled-hatch: oklch(0 0 0 / 0);
-  --selection-disabled-foreground: var(--muted-foreground);
-  --toggle-pressed: var(--primary);
-  --toggle-pressed-foreground: var(--primary-foreground);
   --sidebar: oklch(0.1749487 0.003804 164.5613);
   --sidebar-foreground: oklch(0.9822955 0.0142785 213.0969);
   --sidebar-accent: oklch(0.2661671 0.0034366 164.8011);
@@ -1199,20 +1132,6 @@
   --sh-jsxliterals: oklch(0.8156596 0.1022421 190.6206);
   --sh-sign: oklch(0.91205 0.0286161 218.9613);
   --sh-comment: oklch(0.8280204 0.0042636 121.5755);
-  --button-outline-width: 2px;
-  --selection-title-weight: 500;
-  --paragraph-leading-sm: 1.25rem;
-  --paragraph-leading-base: 1.375rem;
-  --paragraph-leading-lg: 1.5rem;
-  --heading-1-size: 1.5rem;
-  --heading-1-leading: 2rem;
-  --heading-1-weight: 700;
-  --heading-2-size: 1.25rem;
-  --heading-2-leading: 2rem;
-  --heading-2-weight: 700;
-  --heading-3-size: 1.25rem;
-  --heading-3-leading: 2rem;
-  --heading-3-weight: 700;
   color-scheme: dark;
 }
 
@@ -1273,19 +1192,6 @@
   --border: oklch(0.3956915 0.0031178 164.9356);
   --input: oklch(0.6543689 0.0037291 145.5328);
   --ring: oklch(0.6 0 0);
-  --card-border: oklch(0 0 0 / 0);
-  --card-section-divider: var(--background);
-  --card-shadow: oklch(0 0 0 / 0);
-  --button-outline: var(--foreground);
-  --selection-border: oklch(0 0 0 / 0);
-  --selection-checked-border: var(--selection-border);
-  --selection-divider: var(--border);
-  --selection-checked-divider: var(--selection-divider);
-  --selection-disabled-background: var(--card);
-  --selection-disabled-hatch: oklch(0 0 0 / 0);
-  --selection-disabled-foreground: var(--muted-foreground);
-  --toggle-pressed: var(--primary);
-  --toggle-pressed-foreground: var(--primary-foreground);
   --sidebar: oklch(0.1749487 0.003804 164.5613);
   --sidebar-foreground: oklch(0.9790218 0.0292767 188.8731);
   --sidebar-accent: oklch(0.2661671 0.0034366 164.8011);
@@ -1337,20 +1243,6 @@
   --sh-jsxliterals: oklch(0.8156596 0.1022421 190.6206);
   --sh-sign: oklch(0.91205 0.0286161 218.9613);
   --sh-comment: oklch(0.8280204 0.0042636 121.5755);
-  --button-outline-width: 2px;
-  --selection-title-weight: 500;
-  --paragraph-leading-sm: 1.25rem;
-  --paragraph-leading-base: 1.375rem;
-  --paragraph-leading-lg: 1.5rem;
-  --heading-1-size: 1.5rem;
-  --heading-1-leading: 2rem;
-  --heading-1-weight: 700;
-  --heading-2-size: 1.25rem;
-  --heading-2-leading: 2rem;
-  --heading-2-weight: 700;
-  --heading-3-size: 1.25rem;
-  --heading-3-leading: 2rem;
-  --heading-3-weight: 700;
   color-scheme: dark;
 }
 
@@ -1411,19 +1303,6 @@
   --border: oklch(0.3956915 0.0031178 164.9356);
   --input: oklch(0.6543689 0.0037291 145.5328);
   --ring: oklch(0.6 0 0);
-  --card-border: oklch(0 0 0 / 0);
-  --card-section-divider: var(--background);
-  --card-shadow: oklch(0 0 0 / 0);
-  --button-outline: var(--foreground);
-  --selection-border: oklch(0 0 0 / 0);
-  --selection-checked-border: var(--selection-border);
-  --selection-divider: var(--border);
-  --selection-checked-divider: var(--selection-divider);
-  --selection-disabled-background: var(--card);
-  --selection-disabled-hatch: oklch(0 0 0 / 0);
-  --selection-disabled-foreground: var(--muted-foreground);
-  --toggle-pressed: var(--primary);
-  --toggle-pressed-foreground: var(--primary-foreground);
   --sidebar: oklch(0.2029294 0.0334602 267.7195);
   --sidebar-foreground: oklch(0.9592915 0.0326656 74.8018);
   --sidebar-accent: oklch(0.2717674 0.038702 268.9648);
@@ -1475,20 +1354,6 @@
   --sh-jsxliterals: oklch(0.8156596 0.1022421 190.6206);
   --sh-sign: oklch(0.91205 0.0286161 218.9613);
   --sh-comment: oklch(0.8280204 0.0042636 121.5755);
-  --button-outline-width: 2px;
-  --selection-title-weight: 500;
-  --paragraph-leading-sm: 1.25rem;
-  --paragraph-leading-base: 1.375rem;
-  --paragraph-leading-lg: 1.5rem;
-  --heading-1-size: 1.5rem;
-  --heading-1-leading: 2rem;
-  --heading-1-weight: 700;
-  --heading-2-size: 1.25rem;
-  --heading-2-leading: 2rem;
-  --heading-2-weight: 700;
-  --heading-3-size: 1.25rem;
-  --heading-3-leading: 2rem;
-  --heading-3-weight: 700;
   color-scheme: dark;
 }
 
@@ -1549,19 +1414,6 @@
   --border: oklch(0.3956915 0.0031178 164.9356);
   --input: oklch(0.6543689 0.0037291 145.5328);
   --ring: oklch(0.6 0 0);
-  --card-border: oklch(0 0 0 / 0);
-  --card-section-divider: var(--background);
-  --card-shadow: oklch(0 0 0 / 0);
-  --button-outline: var(--foreground);
-  --selection-border: oklch(0 0 0 / 0);
-  --selection-checked-border: var(--selection-border);
-  --selection-divider: var(--border);
-  --selection-checked-divider: var(--selection-divider);
-  --selection-disabled-background: var(--card);
-  --selection-disabled-hatch: oklch(0 0 0 / 0);
-  --selection-disabled-foreground: var(--muted-foreground);
-  --toggle-pressed: var(--primary);
-  --toggle-pressed-foreground: var(--primary-foreground);
   --sidebar: oklch(0.1749487 0.003804 164.5613);
   --sidebar-foreground: oklch(0.9822955 0.0142785 213.0969);
   --sidebar-accent: oklch(0.2661671 0.0034366 164.8011);
@@ -1613,20 +1465,6 @@
   --sh-jsxliterals: oklch(0.8156596 0.1022421 190.6206);
   --sh-sign: oklch(0.91205 0.0286161 218.9613);
   --sh-comment: oklch(0.8280204 0.0042636 121.5755);
-  --button-outline-width: 2px;
-  --selection-title-weight: 500;
-  --paragraph-leading-sm: 1.25rem;
-  --paragraph-leading-base: 1.375rem;
-  --paragraph-leading-lg: 1.5rem;
-  --heading-1-size: 1.5rem;
-  --heading-1-leading: 2rem;
-  --heading-1-weight: 700;
-  --heading-2-size: 1.25rem;
-  --heading-2-leading: 2rem;
-  --heading-2-weight: 700;
-  --heading-3-size: 1.25rem;
-  --heading-3-leading: 2rem;
-  --heading-3-weight: 700;
   color-scheme: dark;
 }
 
@@ -1687,19 +1525,6 @@
   --border: oklch(0.3956915 0.0031178 164.9356);
   --input: oklch(0.6543689 0.0037291 145.5328);
   --ring: oklch(0.6 0 0);
-  --card-border: oklch(0 0 0 / 0);
-  --card-section-divider: var(--background);
-  --card-shadow: oklch(0 0 0 / 0);
-  --button-outline: var(--foreground);
-  --selection-border: oklch(0 0 0 / 0);
-  --selection-checked-border: var(--selection-border);
-  --selection-divider: var(--border);
-  --selection-checked-divider: var(--selection-divider);
-  --selection-disabled-background: var(--card);
-  --selection-disabled-hatch: oklch(0 0 0 / 0);
-  --selection-disabled-foreground: var(--muted-foreground);
-  --toggle-pressed: var(--primary);
-  --toggle-pressed-foreground: var(--primary-foreground);
   --sidebar: oklch(0.1842633 0.0454734 244.0362);
   --sidebar-foreground: oklch(0.9801435 0.0172884 210.1893);
   --sidebar-accent: oklch(0.2250318 0.0601105 247.6754);
@@ -1751,20 +1576,6 @@
   --sh-jsxliterals: oklch(0.8156596 0.1022421 190.6206);
   --sh-sign: oklch(0.91205 0.0286161 218.9613);
   --sh-comment: oklch(0.8280204 0.0042636 121.5755);
-  --button-outline-width: 2px;
-  --selection-title-weight: 500;
-  --paragraph-leading-sm: 1.25rem;
-  --paragraph-leading-base: 1.375rem;
-  --paragraph-leading-lg: 1.5rem;
-  --heading-1-size: 1.5rem;
-  --heading-1-leading: 2rem;
-  --heading-1-weight: 700;
-  --heading-2-size: 1.25rem;
-  --heading-2-leading: 2rem;
-  --heading-2-weight: 700;
-  --heading-3-size: 1.25rem;
-  --heading-3-leading: 2rem;
-  --heading-3-weight: 700;
   color-scheme: dark;
 }
 
@@ -1825,19 +1636,6 @@
   --border: oklch(0.3956915 0.0031178 164.9356);
   --input: oklch(0.6543689 0.0037291 145.5328);
   --ring: oklch(0.6 0 0);
-  --card-border: oklch(0 0 0 / 0);
-  --card-section-divider: var(--background);
-  --card-shadow: oklch(0 0 0 / 0);
-  --button-outline: var(--foreground);
-  --selection-border: oklch(0 0 0 / 0);
-  --selection-checked-border: var(--selection-border);
-  --selection-divider: var(--border);
-  --selection-checked-divider: var(--selection-divider);
-  --selection-disabled-background: var(--card);
-  --selection-disabled-hatch: oklch(0 0 0 / 0);
-  --selection-disabled-foreground: var(--muted-foreground);
-  --toggle-pressed: var(--primary);
-  --toggle-pressed-foreground: var(--primary-foreground);
   --sidebar: oklch(0.176932 0.0026206 247.9754);
   --sidebar-foreground: oklch(0.9817745 0.0118616 223.5201);
   --sidebar-accent: oklch(0.2675764 0.0014668 197.0689);
@@ -1889,20 +1687,6 @@
   --sh-jsxliterals: oklch(0.8156596 0.1022421 190.6206);
   --sh-sign: oklch(0.91205 0.0286161 218.9613);
   --sh-comment: oklch(0.8280204 0.0042636 121.5755);
-  --button-outline-width: 2px;
-  --selection-title-weight: 500;
-  --paragraph-leading-sm: 1.25rem;
-  --paragraph-leading-base: 1.375rem;
-  --paragraph-leading-lg: 1.5rem;
-  --heading-1-size: 1.5rem;
-  --heading-1-leading: 2rem;
-  --heading-1-weight: 700;
-  --heading-2-size: 1.25rem;
-  --heading-2-leading: 2rem;
-  --heading-2-weight: 700;
-  --heading-3-size: 1.25rem;
-  --heading-3-leading: 2rem;
-  --heading-3-weight: 700;
   color-scheme: dark;
 }
 
@@ -1963,19 +1747,6 @@
   --border: oklch(0.3956915 0.0031178 164.9356);
   --input: oklch(0.6543689 0.0037291 145.5328);
   --ring: oklch(0.6 0 0);
-  --card-border: oklch(0 0 0 / 0);
-  --card-section-divider: var(--background);
-  --card-shadow: oklch(0 0 0 / 0);
-  --button-outline: var(--foreground);
-  --selection-border: oklch(0 0 0 / 0);
-  --selection-checked-border: var(--selection-border);
-  --selection-divider: var(--border);
-  --selection-checked-divider: var(--selection-divider);
-  --selection-disabled-background: var(--card);
-  --selection-disabled-hatch: oklch(0 0 0 / 0);
-  --selection-disabled-foreground: var(--muted-foreground);
-  --toggle-pressed: var(--primary);
-  --toggle-pressed-foreground: var(--primary-foreground);
   --sidebar: oklch(0.1860912 0.0074341 164.0507906);
   --sidebar-foreground: oklch(0.9126739 0.0051473 145.5332168);
   --sidebar-accent: oklch(0.2386117 0.0070183 164.349003);
@@ -2027,20 +1798,6 @@
   --sh-jsxliterals: oklch(0.8156596 0.1022421 190.6206);
   --sh-sign: oklch(0.91205 0.0286161 218.9613);
   --sh-comment: oklch(0.8280204 0.0042636 121.5755);
-  --button-outline-width: 2px;
-  --selection-title-weight: 500;
-  --paragraph-leading-sm: 1.25rem;
-  --paragraph-leading-base: 1.375rem;
-  --paragraph-leading-lg: 1.5rem;
-  --heading-1-size: 1.5rem;
-  --heading-1-leading: 2rem;
-  --heading-1-weight: 700;
-  --heading-2-size: 1.25rem;
-  --heading-2-leading: 2rem;
-  --heading-2-weight: 700;
-  --heading-3-size: 1.25rem;
-  --heading-3-leading: 2rem;
-  --heading-3-weight: 700;
   color-scheme: dark;
 }
 

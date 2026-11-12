@@ -1,4 +1,4 @@
-import type { TokenContract, TokenLayer } from "./contract";
+import type { DarkTokenLayer, TokenContract } from "./contract";
 
 /**
  * The Figma sheet roles every branded dark palette must name. The remaining roles —
@@ -30,4 +30,4 @@ const BRAND_DARK_SHEET_KEYS = [
  * A dark palette for one branded brand or segment: every Figma-named role is required,
  * and a sheet may additionally name any other role it owns.
  */
-export type BrandDarkSheet = Pick<TokenContract, (typeof BRAND_DARK_SHEET_KEYS)[number]> & TokenLayer;
+export type BrandDarkSheet = Pick<TokenContract, (typeof BRAND_DARK_SHEET_KEYS)[number]> & DarkTokenLayer;
