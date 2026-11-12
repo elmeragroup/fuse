@@ -169,13 +169,24 @@ export function serverBoundaryNodes(host: HTMLElement) {
 }
 
 /**
- * Waits long enough for React to have run any retry it scheduled after the last commit, so a
- * test can assert that a dehydrated boundary was left alone rather than not yet touched.
+ * Waits until the work React can run now has drained, so a test can assert that a dehydrated
+ * boundary was left alone rather than not yet touched by a retry the last commit scheduled.
+ *
+ * React's scheduler runs each slice of work as a posted task and posts the next slice before it
+ * yields, and an update scheduled in a microtask posts its task before the microtask ends. A
+ * background-priority task runs only when no task of higher priority is runnable, so it runs
+ * once that work has drained, however long it takes. Delayed work is not covered: a background
+ * task can run while timers are still pending, such as the one React sets to throttle a Suspense
+ * reveal, so work behind a timer may run after this resolves.
+ *
+ * Not an idle callback: while a streamed boundary is still pending, Linux Chromium starts no idle
+ * period as long as other tasks keep arriving, even a timer every 10 ms, so `requestIdleCallback`
+ * starved past the test timeout on CI where macOS Chromium ran it at once.
+ *
+ * WebKit has no `scheduler.postTask`; only the Chromium `browser` project imports this module.
  */
 export async function settleScheduledWork(): Promise<void> {
-  await new Promise((resolve) => {
-    setTimeout(resolve, 100);
-  });
+  await scheduler.postTask(() => undefined, { priority: "background" });
 }
 
 /**

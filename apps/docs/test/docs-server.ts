@@ -1,5 +1,6 @@
 import { spawn } from "node:child_process";
 import type { ChildProcess } from "node:child_process";
+import { once } from "node:events";
 import { readFileSync } from "node:fs";
 import { rm } from "node:fs/promises";
 import path from "node:path";
@@ -96,6 +97,9 @@ async function waitForServer(url: string, child: ChildProcess): Promise<void> {
   throw new Error(`docs production server did not become ready at ${url}`);
 }
 
+/** How long `next start` may take to exit after SIGTERM before it is killed. */
+const SHUTDOWN_GRACE_MS = 5_000;
+
 /**
  * Starts `next start` on a free port.
  *
@@ -154,21 +158,29 @@ export async function startDocsProductionServer({ e2eBuild = false } = {}): Prom
 
   return {
     url,
+    // `next start` exits on SIGTERM once its cleanup has run. Global teardown has no hook timeout,
+    // and `vitest run` awaits it without a bound, so a server stalled in shutdown would hang the
+    // run. One still running after the grace period is killed and the close throws, failing the run.
     close: async () => {
-      if (child.exitCode !== null) {
+      if (child.exitCode !== null || child.signalCode !== null) {
         return;
       }
+      const exited = once(child, "exit").then(() => "exited" as const);
       child.kill("SIGTERM");
-      await new Promise<void>((resolve) => {
-        const timer = setTimeout(() => {
+      let watchdog: NodeJS.Timeout | undefined;
+      const killed = new Promise<"killed">((resolve) => {
+        // oxlint-disable-next-line fuse/no-fixed-delay -- a cleanup watchdog, not a wait for a condition: the close still awaits the exit, and the grace period only bounds how long a stalled graceful shutdown may hold the run
+        watchdog = setTimeout(() => {
           child.kill("SIGKILL");
-          resolve();
-        }, 5_000);
-        child.once("exit", () => {
-          clearTimeout(timer);
-          resolve();
-        });
+          resolve("killed");
+        }, SHUTDOWN_GRACE_MS);
       });
+      const outcome = await Promise.race([exited, killed]);
+      clearTimeout(watchdog);
+      if (outcome === "killed") {
+        await exited;
+        throw new Error(`docs production server ignored SIGTERM for ${SHUTDOWN_GRACE_MS} ms and was killed`);
+      }
     },
   };
 }

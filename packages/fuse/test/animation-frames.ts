@@ -47,6 +47,7 @@ export async function pendingTimeout(): Promise<void> {
 export async function wait(ms: number): Promise<void> {
   const start = performance.now();
   do await nextFrames(1);
+  // oxlint-disable-next-line fuse/no-wall-clock -- wait(ms) is the one real-time wait, and fuse/no-fixed-delay reports each call that sets its delay; it reads performance.now(), the clock event timeStamps share, so a hold timed on those events has run out
   while (performance.now() - start < ms);
 }
 
@@ -98,25 +99,29 @@ function matches<T>(actual: T, expected: T): boolean {
 }
 
 /**
- * Records `read()` on every animation frame, from the next frame until `done()` holds or `ms` pass.
- * Start it before the action under test, unawaited, and await it after: the frames run in the page
- * whatever the action's round trip to the test runner costs, so a loaded runner whose command
- * returns after an exit has ended still sees every frame of it.
+ * Records `read()` on every animation frame, from the next frame until `done()` holds. Start it
+ * before the action under test, unawaited, and await it after: the frames run in the page whatever
+ * the action's round trip to the test runner costs, so a loaded runner whose command returns after
+ * an exit has ended still sees every frame of it. Nothing but `done()` ends the recording, so an
+ * action that arrives late is still recorded; a `done()` that never holds leaves the promise
+ * pending until the test timeout fails the test, and the frame loop stops when the test finishes.
  *
  * @param read - What to record each frame.
  * @param done - Whether to stop, checked after each frame's reading.
- * @param ms - The most time to record for, in milliseconds.
  * @returns Every frame's reading, in order.
  */
-export function recordFrames<T>(read: () => T, done: () => boolean, ms = 3000): Promise<T[]> {
+export function recordFrames<T>(read: () => T, done: () => boolean): Promise<T[]> {
   const frames: T[] = [];
-  const start = performance.now();
+  let frame = 0;
+  onTestFinished(() => {
+    cancelAnimationFrame(frame);
+  });
   return new Promise((resolve) => {
     const tick = (): void => {
       frames.push(read());
-      if (done() || performance.now() - start > ms) resolve(frames);
-      else requestAnimationFrame(tick);
+      if (done()) resolve(frames);
+      else frame = requestAnimationFrame(tick);
     };
-    requestAnimationFrame(tick);
+    frame = requestAnimationFrame(tick);
   });
 }
