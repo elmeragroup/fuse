@@ -3,11 +3,22 @@
  * lightest. A ramp is a palette of raw tones, not a role. Roles point at its steps, such as
  * `--muted: var(--brand-neutral-100)`, so one table explains which tone a theme paints where.
  *
+ * A theme carries two kinds of ramp. The brand neutral ramp, scale `neutral`, is a grey tinted
+ * with the brand hue. The brand palettes, scales `1` and `2` in {@link HUE_SCALES}, carry the
+ * brand's own colours: palette 1 the brand colour, palette 2 a second brand colour where the
+ * brand curates one, otherwise an alias of palette 1 step for step.
+ *
  * Every ramp is a function of a hue and a chroma and shares one lightness per step,
  * {@link RAMP_LIGHTNESS}, so a step sits at roughly the same place in every brand and scale.
  * Equal lightness is not equal contrast, since luminance also follows hue and chroma, so a real
  * foreground and background pair is still measured, as `contrast-matrix.test.ts` does. `@elmeragroup/color` maps each step into sRGB by lowering its
  * chroma, which keeps the step's lightness and hue, and writes it as an `oklch()` literal.
+ *
+ * A brand palette is built from a seed, a curated colour literal, and passes through it: the
+ * step whose lightness is nearest the seed's holds the seed itself, unchanged, so a role that
+ * points at that step paints the curated colour exactly. Every other step sits on the shared
+ * lightness table at the seed's hue and chroma, or, where sRGB holds less chroma at the step's
+ * lightness, as much as sRGB holds: no curve is invented.
  *
  * The module owns the ramp contract entries too, built from one record, so the contract
  * spreads them and a new scale adds its tokens, kinds, paints and descriptions in one place.
@@ -16,6 +27,8 @@
 
 import * as Oklch from "@elmeragroup/color/oklch";
 import { getOrThrow } from "@elmeragroup/color/result";
+
+import { tokenOklch } from "../token-color";
 
 /** The eleven steps of a ramp, lightest first. */
 export const RAMP_STEPS = [
@@ -59,8 +72,19 @@ export const RAMP_LIGHTNESS = {
   "950": 0.16,
 } as const satisfies Record<RampStep, number>;
 
-/** The ramp scales a theme carries. `neutral` is a grey tinted with the brand hue. */
-export const RAMP_SCALES = ["neutral"] as const;
+/**
+ * The brand palettes, the hue ramps a theme carries: `1` is the brand colour and `2` a second
+ * brand colour. No brand curates a third colour, so there is no `3`: adding one is this entry,
+ * its seeds in `brand-ramp-layer.ts` and its `--color-brand-N-*` utilities in `fuse.css`, and the
+ * contract tokens and exporters follow.
+ */
+export const HUE_SCALES = ["1", "2"] as const;
+
+/**
+ * The ramp scales a theme carries: `neutral`, a grey tinted with the brand hue, then the brand
+ * palettes.
+ */
+export const RAMP_SCALES = ["neutral", ...HUE_SCALES] as const;
 
 /** A ramp's scale, such as `neutral`. */
 export type RampScale = (typeof RAMP_SCALES)[number];
@@ -117,15 +141,17 @@ export const BRAND_RAMP_KINDS = brandRampRecord(() => "color" as const);
  */
 export const BRAND_RAMP_PAINTS = brandRampRecord(() => ["surface", "ink", "line"] as const);
 
-/** How a ramp token's description names its scale. */
+/** How a ramp token's description names its ramp. */
 const RAMP_SCALE_DESCRIPTIONS = {
-  neutral: "a grey tinted with the brand hue",
+  neutral: "brand neutral ramp, a grey tinted with the brand hue",
+  "1": "brand palette 1, the brand colour",
+  "2": "brand palette 2, the second colour of a two-colour brand, or an alias of palette 1 in a single-colour brand",
 } as const satisfies Record<RampScale, string>;
 
 /** The ramp tokens' entries in the contract's `TOKEN_DESCRIPTIONS`. */
 export const BRAND_RAMP_DESCRIPTIONS = brandRampRecord((scale, step) => {
   const end = step === "50" ? ", the lightest step" : step === "950" ? ", the darkest step" : "";
-  return `Step ${step} of the brand ${scale} ramp, ${RAMP_SCALE_DESCRIPTIONS[scale]}${end}. It holds one value per brand and segment in both color schemes and identities, and every ramp shares its lightness positions, so a step lines up roughly across brands. Measure the contrast of a real text and surface pair.`;
+  return `Step ${step} of the ${RAMP_SCALE_DESCRIPTIONS[scale]}${end}. It holds one value per brand and segment in both color schemes and identities, and every ramp shares its lightness positions, so a step lines up roughly across brands. Measure the contrast of a real text and surface pair.`;
 });
 
 /** Every ramp token with its value. */
@@ -133,12 +159,41 @@ export type BrandRampTokens = BrandRampRecord<string>;
 
 /** The hue and chroma one ramp scale is built from. */
 export type RampTint = {
+  readonly _tag: "tint";
+
   /** The OKLCH hue in degrees. */
   readonly hue: number;
 
   /** The OKLCH chroma before gamut mapping. */
   readonly chroma: number;
 };
+
+/**
+ * A ramp scale that points at another scale step for step, as a single-colour brand's palette 2
+ * points at its palette 1. The steps are `var()` aliases, so overriding a step of the target
+ * moves the alias too.
+ */
+export type RampAlias = {
+  readonly _tag: "alias";
+
+  /** The scale every step points at. */
+  readonly of: RampScale;
+};
+
+/**
+ * A brand palette's seed: a curated colour literal. The palette passes through it at the step
+ * whose lightness is nearest the seed's, and every other step takes the seed's hue and chroma at
+ * its own lightness from {@link RAMP_LIGHTNESS}.
+ */
+export type RampSeed = {
+  readonly _tag: "seed";
+
+  /** The curated `oklch()` literal, emitted unchanged at its step. */
+  readonly literal: string;
+};
+
+/** Where one ramp scale's steps come from. */
+export type RampSource = RampTint | RampSeed | RampAlias;
 
 /**
  * One step of a ramp: the step's lightness at the tint, mapped into sRGB by lowering chroma.
@@ -153,20 +208,59 @@ function rampTone(tint: RampTint, step: RampStep): string {
 }
 
 /**
- * Every ramp token, each scale built from its tint.
+ * The step whose lightness is nearest a colour's. The seed it holds lies closer to that step's
+ * lightness than to either neighbour's, so the ramp still darkens at every step.
  *
- * @param tints - The hue and chroma of each scale.
- * @returns The ramp tokens with their `oklch()` literals.
+ * @param lightness - The OKLCH lightness.
+ * @returns The nearest step.
  */
-export function brandRampTokens(tints: { readonly [S in RampScale]: RampTint }): BrandRampTokens {
-  return brandRampRecord((scale, step) => rampTone(tints[scale], step));
+function nearestStep(lightness: number): RampStep {
+  const distance = (step: RampStep): number => Math.abs(RAMP_LIGHTNESS[step] - lightness);
+  return RAMP_STEPS.reduce((nearest, step) => (distance(step) < distance(nearest) ? step : nearest));
 }
 
 /**
- * The untinted ramps the root declares, so a scope without a brand reads a grey at every step.
- * They share the lightness table with every brand's ramps.
+ * One step of a seeded palette: the seed literal itself at its nearest step, otherwise the
+ * seed's hue and chroma at the step's lightness, gamut-mapped as {@link rampTone} does.
+ *
+ * @param seed - The palette's seed.
+ * @param step - The step.
+ * @returns The step as an `oklch()` literal.
  */
-export const GREY_RAMP_TOKENS: BrandRampTokens = brandRampTokens({ neutral: { hue: 0, chroma: 0 } });
+function seededTone(seed: RampSeed, step: RampStep): string {
+  const color = tokenOklch(seed.literal);
+  if (step === nearestStep(color.l)) return seed.literal;
+  return rampTone({ _tag: "tint", hue: color.h, chroma: color.c }, step);
+}
+
+/**
+ * Every ramp token, each scale built from its source.
+ *
+ * @param sources - The tint or seed of each scale, or the scale it aliases.
+ * @returns The ramp tokens with their `oklch()` literals or `var()` aliases.
+ */
+export function brandRampTokens(sources: { readonly [S in RampScale]: RampSource }): BrandRampTokens {
+  return brandRampRecord((scale, step) => {
+    const source = sources[scale];
+    switch (source._tag) {
+      case "tint":
+        return rampTone(source, step);
+      case "seed":
+        return seededTone(source, step);
+      case "alias":
+        return brandRampStep(source.of, step);
+    }
+  });
+}
+
+/** An untinted grey. */
+const GREY: RampTint = { _tag: "tint", hue: 0, chroma: 0 };
+
+/**
+ * The untinted ramps the root declares, so a scope without a brand reads a grey at every step of
+ * every scale. They share the lightness table with every brand's ramps.
+ */
+export const GREY_RAMP_TOKENS: BrandRampTokens = brandRampRecord((_scale, step) => rampTone(GREY, step));
 
 /**
  * A `var()` of one ramp step, the value a role takes to point at it.

@@ -6,6 +6,12 @@ import { DARK_DEFAULTS } from "./dark-defaults";
 import { mixOklchLiteral } from "./derived-tokens";
 import { segmentSheet } from "./segment-sheets";
 
+/**
+ * Gudbrandsdal Energi's orange, #FF9100: its branded dark `secondary`, and the seed of its brand
+ * palette 2 (`brand-ramp-layer.ts`).
+ */
+export const GUEN_ORANGE = "oklch(0.758638 0.1768149 60.637)";
+
 // Custom Figma color collections in Dark mode, read 2026-09-15.
 // Exact sRGB colors are retained in comments; OKLCH is the library's color format.
 const BRAND_DARK_PALETTES = {
@@ -61,7 +67,7 @@ const BRAND_DARK_PALETTES = {
     "primary-foreground": "oklch(0.2029294 0.0334602 267.7195)", // #101626
     "primary-soft": "oklch(0.2717674 0.038702 268.9648)", // #1F263A
     "primary-soft-foreground": "oklch(0.9592915 0.0326656 74.8018)", // #FFEFDA
-    secondary: "oklch(0.758638 0.1768149 60.637)", // #FF9100
+    secondary: GUEN_ORANGE, // #FF9100
     "secondary-foreground": "oklch(0.2029294 0.0334602 267.7195)", // #101626
     "secondary-soft": "oklch(0.259775 0.0931218 272.2625)", // #161D50
     "secondary-soft-foreground": "oklch(0.9592915 0.0326656 74.8018)", // #FFEFDA

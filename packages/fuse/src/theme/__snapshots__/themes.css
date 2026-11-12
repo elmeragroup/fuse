@@ -158,6 +158,28 @@
   --brand-neutral-800: oklch(0.27 0 0);
   --brand-neutral-900: oklch(0.205 0 0);
   --brand-neutral-950: oklch(0.16 0 0);
+  --brand-1-50: oklch(0.985 0 0);
+  --brand-1-100: oklch(0.965 0 0);
+  --brand-1-200: oklch(0.92 0 0);
+  --brand-1-300: oklch(0.88 0 0);
+  --brand-1-400: oklch(0.71 0 0);
+  --brand-1-500: oklch(0.556 0 0);
+  --brand-1-600: oklch(0.44 0 0);
+  --brand-1-700: oklch(0.37 0 0);
+  --brand-1-800: oklch(0.27 0 0);
+  --brand-1-900: oklch(0.205 0 0);
+  --brand-1-950: oklch(0.16 0 0);
+  --brand-2-50: oklch(0.985 0 0);
+  --brand-2-100: oklch(0.965 0 0);
+  --brand-2-200: oklch(0.92 0 0);
+  --brand-2-300: oklch(0.88 0 0);
+  --brand-2-400: oklch(0.71 0 0);
+  --brand-2-500: oklch(0.556 0 0);
+  --brand-2-600: oklch(0.44 0 0);
+  --brand-2-700: oklch(0.37 0 0);
+  --brand-2-800: oklch(0.27 0 0);
+  --brand-2-900: oklch(0.205 0 0);
+  --brand-2-950: oklch(0.16 0 0);
   --radius: 0.5rem;
   --radius-button: var(--radius);
   --radius-field: var(--radius);
@@ -194,6 +216,28 @@
   --brand-neutral-800: oklch(0.27 0.01 36.96);
   --brand-neutral-900: oklch(0.205 0.01 36.96);
   --brand-neutral-950: oklch(0.16 0.01 36.96);
+  --brand-1-50: oklch(0.985 0.0074756 36.96);
+  --brand-1-100: oklch(0.965 0.0177235 36.96);
+  --brand-1-200: oklch(0.92 0.0420486 36.96);
+  --brand-1-300: oklch(0.88 0.0653038 36.96);
+  --brand-1-400: oklch(0.71 0.1862897 36.96);
+  --brand-1-500: oklch(0.57866 0.19387 36.96);
+  --brand-1-600: oklch(0.44 0.1474075 36.96);
+  --brand-1-700: oklch(0.37 0.1239565 36.96);
+  --brand-1-800: oklch(0.27 0.0904551 36.96);
+  --brand-1-900: oklch(0.205 0.0686796 36.96);
+  --brand-1-950: oklch(0.16 0.0536046 36.96);
+  --brand-2-50: var(--brand-1-50);
+  --brand-2-100: var(--brand-1-100);
+  --brand-2-200: var(--brand-1-200);
+  --brand-2-300: var(--brand-1-300);
+  --brand-2-400: var(--brand-1-400);
+  --brand-2-500: var(--brand-1-500);
+  --brand-2-600: var(--brand-1-600);
+  --brand-2-700: var(--brand-1-700);
+  --brand-2-800: var(--brand-1-800);
+  --brand-2-900: var(--brand-1-900);
+  --brand-2-950: var(--brand-1-950);
 }
 
 [data-theme-brand="tkas"] {
@@ -212,6 +256,28 @@
   --brand-neutral-800: oklch(0.27 0.01 191.06);
   --brand-neutral-900: oklch(0.205 0.01 191.06);
   --brand-neutral-950: oklch(0.16 0.01 191.06);
+  --brand-1-50: oklch(0.985 0.0209008 191.06);
+  --brand-1-100: oklch(0.965 0.0503001 191.06);
+  --brand-1-200: oklch(0.92 0.09585 191.06);
+  --brand-1-300: oklch(0.88 0.09585 191.06);
+  --brand-1-400: oklch(0.71 0.09585 191.06);
+  --brand-1-500: oklch(0.55688 0.09585 191.06);
+  --brand-1-600: oklch(0.44 0.0757347 191.06);
+  --brand-1-700: oklch(0.37 0.063686 191.06);
+  --brand-1-800: oklch(0.27 0.0464737 191.06);
+  --brand-1-900: oklch(0.205 0.0352859 191.06);
+  --brand-1-950: oklch(0.16 0.0275406 191.06);
+  --brand-2-50: var(--brand-1-50);
+  --brand-2-100: var(--brand-1-100);
+  --brand-2-200: var(--brand-1-200);
+  --brand-2-300: var(--brand-1-300);
+  --brand-2-400: var(--brand-1-400);
+  --brand-2-500: var(--brand-1-500);
+  --brand-2-600: var(--brand-1-600);
+  --brand-2-700: var(--brand-1-700);
+  --brand-2-800: var(--brand-1-800);
+  --brand-2-900: var(--brand-1-900);
+  --brand-2-950: var(--brand-1-950);
 }
 
 [data-theme-brand="guen"] {
@@ -230,6 +296,28 @@
   --brand-neutral-800: oklch(0.27 0.01 270.38);
   --brand-neutral-900: oklch(0.205 0.01 270.38);
   --brand-neutral-950: oklch(0.16 0.01 270.38);
+  --brand-1-50: oklch(0.985 0.0069829 270.38);
+  --brand-1-100: oklch(0.965 0.0164222 270.38);
+  --brand-1-200: oklch(0.92 0.0382115 270.38);
+  --brand-1-300: oklch(0.88 0.0582384 270.38);
+  --brand-1-400: oklch(0.71 0.15062 270.38);
+  --brand-1-500: oklch(0.57814 0.22881 270.38);
+  --brand-1-600: oklch(0.44 0.22881 270.38);
+  --brand-1-700: oklch(0.37 0.22881 270.38);
+  --brand-1-800: oklch(0.27 0.1763616 270.38);
+  --brand-1-900: oklch(0.205 0.1339046 270.38);
+  --brand-1-950: oklch(0.16 0.1045115 270.38);
+  --brand-2-50: oklch(0.985 0.0092168 60.637);
+  --brand-2-100: oklch(0.965 0.0218066 60.637);
+  --brand-2-200: oklch(0.92 0.0514824 60.637);
+  --brand-2-300: oklch(0.88 0.079581 60.637);
+  --brand-2-400: oklch(0.758638 0.1768149 60.637);
+  --brand-2-500: oklch(0.556 0.1295864 60.637);
+  --brand-2-600: oklch(0.44 0.1025505 60.637);
+  --brand-2-700: oklch(0.37 0.0862357 60.637);
+  --brand-2-800: oklch(0.27 0.0629291 60.637);
+  --brand-2-900: oklch(0.205 0.0477799 60.637);
+  --brand-2-950: oklch(0.16 0.0372923 60.637);
 }
 
 [data-theme-brand="fkab"] {
@@ -248,6 +336,28 @@
   --brand-neutral-800: oklch(0.27 0.01 216.27);
   --brand-neutral-900: oklch(0.205 0.01 216.27);
   --brand-neutral-950: oklch(0.16 0.01 216.27);
+  --brand-1-50: oklch(0.985 0.0112245 216.27);
+  --brand-1-100: oklch(0.965 0.0263723 216.27);
+  --brand-1-200: oklch(0.92 0.0612291 216.27);
+  --brand-1-300: oklch(0.88 0.06979 216.27);
+  --brand-1-400: oklch(0.71 0.06979 216.27);
+  --brand-1-500: oklch(0.55738 0.06979 216.27);
+  --brand-1-600: oklch(0.44 0.06979 216.27);
+  --brand-1-700: oklch(0.37 0.0658088 216.27);
+  --brand-1-800: oklch(0.27 0.0480228 216.27);
+  --brand-1-900: oklch(0.205 0.036462 216.27);
+  --brand-1-950: oklch(0.16 0.0284586 216.27);
+  --brand-2-50: var(--brand-1-50);
+  --brand-2-100: var(--brand-1-100);
+  --brand-2-200: var(--brand-1-200);
+  --brand-2-300: var(--brand-1-300);
+  --brand-2-400: var(--brand-1-400);
+  --brand-2-500: var(--brand-1-500);
+  --brand-2-600: var(--brand-1-600);
+  --brand-2-700: var(--brand-1-700);
+  --brand-2-800: var(--brand-1-800);
+  --brand-2-900: var(--brand-1-900);
+  --brand-2-950: var(--brand-1-950);
 }
 
 [data-theme-brand="fkse"] {
@@ -266,6 +376,28 @@
   --brand-neutral-800: oklch(0.27 0.01 229.37);
   --brand-neutral-900: oklch(0.205 0.01 229.37);
   --brand-neutral-950: oklch(0.16 0.01 229.37);
+  --brand-1-50: oklch(0.985 0.0089106 229.37);
+  --brand-1-100: oklch(0.965 0.0209426 229.37);
+  --brand-1-200: oklch(0.92 0.04866 229.37);
+  --brand-1-300: oklch(0.88 0.0740657 229.37);
+  --brand-1-400: oklch(0.71 0.09344 229.37);
+  --brand-1-500: oklch(0.56873 0.09344 229.37);
+  --brand-1-600: oklch(0.44 0.08707 229.37);
+  --brand-1-700: oklch(0.37 0.073218 229.37);
+  --brand-1-800: oklch(0.27 0.0534296 229.37);
+  --brand-1-900: oklch(0.205 0.0405672 229.37);
+  --brand-1-950: oklch(0.16 0.0316626 229.37);
+  --brand-2-50: oklch(0.985 0.0227289 154.25);
+  --brand-2-100: oklch(0.965 0.0545696 154.25);
+  --brand-2-200: oklch(0.92 0.1337731 154.25);
+  --brand-2-300: oklch(0.88 0.16251 154.25);
+  --brand-2-400: oklch(0.72225 0.16251 154.25);
+  --brand-2-500: oklch(0.556 0.1395121 154.25);
+  --brand-2-600: oklch(0.44 0.1104053 154.25);
+  --brand-2-700: oklch(0.37 0.0928409 154.25);
+  --brand-2-800: oklch(0.27 0.067749 154.25);
+  --brand-2-900: oklch(0.205 0.0514394 154.25);
+  --brand-2-950: oklch(0.16 0.0401484 154.25);
 }
 
 [data-theme-brand="elma"] {
@@ -284,6 +416,28 @@
   --brand-neutral-800: oklch(0.27 0.01 218.5);
   --brand-neutral-900: oklch(0.205 0.01 218.5);
   --brand-neutral-950: oklch(0.16 0.01 218.5);
+  --brand-1-50: oklch(0.985 0.0107074 218.5);
+  --brand-1-100: oklch(0.965 0.0251591 218.5);
+  --brand-1-200: oklch(0.92 0.048167 218.5);
+  --brand-1-300: oklch(0.88 0.048167 218.5);
+  --brand-1-400: oklch(0.71 0.048167 218.5);
+  --brand-1-500: oklch(0.56464 0.048167 218.5);
+  --brand-1-600: oklch(0.44 0.048167 218.5);
+  --brand-1-700: oklch(0.37 0.048167 218.5);
+  --brand-1-800: oklch(0.27 0.048167 218.5);
+  --brand-1-900: oklch(0.205 0.0369523 218.5);
+  --brand-1-950: oklch(0.16 0.0288412 218.5);
+  --brand-2-50: var(--brand-1-50);
+  --brand-2-100: var(--brand-1-100);
+  --brand-2-200: var(--brand-1-200);
+  --brand-2-300: var(--brand-1-300);
+  --brand-2-400: var(--brand-1-400);
+  --brand-2-500: var(--brand-1-500);
+  --brand-2-600: var(--brand-1-600);
+  --brand-2-700: var(--brand-1-700);
+  --brand-2-800: var(--brand-1-800);
+  --brand-2-900: var(--brand-1-900);
+  --brand-2-950: var(--brand-1-950);
 }
 
 [data-theme-brand="ngfi"] {
@@ -302,6 +456,28 @@
   --brand-neutral-800: oklch(0.27 0.01 169.5466991);
   --brand-neutral-900: oklch(0.205 0.01 169.5466991);
   --brand-neutral-950: oklch(0.16 0.01 169.5466991);
+  --brand-1-50: oklch(0.985 0.0207948 169.5466991);
+  --brand-1-100: oklch(0.965 0.049834 169.5466991);
+  --brand-1-200: oklch(0.92 0.0877084 169.5466991);
+  --brand-1-300: oklch(0.88 0.0877084 169.5466991);
+  --brand-1-400: oklch(0.71 0.0877084 169.5466991);
+  --brand-1-500: oklch(0.556 0.0877084 169.5466991);
+  --brand-1-600: oklch(0.496237 0.0877084 169.5466991);
+  --brand-1-700: oklch(0.37 0.0736123 169.5466991);
+  --brand-1-800: oklch(0.27 0.0537172 169.5466991);
+  --brand-1-900: oklch(0.205 0.0407856 169.5466991);
+  --brand-1-950: oklch(0.16 0.0318331 169.5466991);
+  --brand-2-50: var(--brand-1-50);
+  --brand-2-100: var(--brand-1-100);
+  --brand-2-200: var(--brand-1-200);
+  --brand-2-300: var(--brand-1-300);
+  --brand-2-400: var(--brand-1-400);
+  --brand-2-500: var(--brand-1-500);
+  --brand-2-600: var(--brand-1-600);
+  --brand-2-700: var(--brand-1-700);
+  --brand-2-800: var(--brand-1-800);
+  --brand-2-900: var(--brand-1-900);
+  --brand-2-950: var(--brand-1-950);
 }
 
 [data-theme-brand="fkas"][data-theme-segment="company"] {
@@ -316,6 +492,28 @@
   --brand-neutral-800: oklch(0.27 0.01 216.27);
   --brand-neutral-900: oklch(0.205 0.01 216.27);
   --brand-neutral-950: oklch(0.16 0.01 216.27);
+  --brand-1-50: oklch(0.985 0.0112245 216.27);
+  --brand-1-100: oklch(0.965 0.0263723 216.27);
+  --brand-1-200: oklch(0.92 0.0612291 216.27);
+  --brand-1-300: oklch(0.88 0.06979 216.27);
+  --brand-1-400: oklch(0.71 0.06979 216.27);
+  --brand-1-500: oklch(0.55738 0.06979 216.27);
+  --brand-1-600: oklch(0.44 0.06979 216.27);
+  --brand-1-700: oklch(0.37 0.0658088 216.27);
+  --brand-1-800: oklch(0.27 0.0480228 216.27);
+  --brand-1-900: oklch(0.205 0.036462 216.27);
+  --brand-1-950: oklch(0.16 0.0284586 216.27);
+  --brand-2-50: var(--brand-1-50);
+  --brand-2-100: var(--brand-1-100);
+  --brand-2-200: var(--brand-1-200);
+  --brand-2-300: var(--brand-1-300);
+  --brand-2-400: var(--brand-1-400);
+  --brand-2-500: var(--brand-1-500);
+  --brand-2-600: var(--brand-1-600);
+  --brand-2-700: var(--brand-1-700);
+  --brand-2-800: var(--brand-1-800);
+  --brand-2-900: var(--brand-1-900);
+  --brand-2-950: var(--brand-1-950);
 }
 
 [data-theme-identity="neutral"] {
@@ -683,7 +881,7 @@
   --secondary-soft-foreground: oklch(0.22503 0.06011 247.68);
   --feature: oklch(0.56873 0.09344 229.37);
   --feature-bright: oklch(0.77836 0.11783 206.21);
-  --feature-foreground: oklch(0.72225 0.16251 154.25);
+  --feature-foreground: var(--brand-2-400);
   --border: var(--brand-neutral-300);
   --input: var(--brand-neutral-200);
   --ring: oklch(0.6 0 0);

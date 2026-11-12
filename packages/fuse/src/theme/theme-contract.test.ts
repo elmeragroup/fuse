@@ -10,6 +10,7 @@ import { getOrThrow } from "@elmeragroup/color/result";
 import { parseStyleRules } from "../../test/css-rules";
 import { declaredThemeValue, SECONDARY_HOVER_CSS } from "../../test/theme-css-contract";
 import { assertMustOverrideCoverage, composeTheme } from "./compose-theme";
+import { tokenLiteral } from "./contrast";
 import { cssVarReference } from "./css-values";
 import { generateThemesCss } from "./generate-css";
 import { LEGAL_THEMES, themeSlug } from "./theme-input";
@@ -603,10 +604,11 @@ describe("ngfi identity", () => {
 
 describe("fkse identity", () => {
   // The oracle is the Alias/Surface/On Surface Variant colour in the Telinet Figma file
-  // gzLEvCCAiwRqzoEPMBesdx, the role `feature-foreground` maps onto.
+  // gzLEvCCAiwRqzoEPMBesdx, the role `feature-foreground` maps onto. The role points at brand
+  // palette 2, which passes through the green unchanged.
   it("paints the branded light feature foreground in the Telinet green", () => {
     const light = composeTheme({ identity: "branded", brand: "fkse", segment: "private" });
-    expect(figmaHex(light["feature-foreground"])).toBe("#36C275");
+    expect(figmaHex(tokenLiteral(light, "feature-foreground"))).toBe("#36C275");
   });
 });
 

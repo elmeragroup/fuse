@@ -115,7 +115,10 @@ export const BRANDED_IDENTITY_LAYER = {
  * Nordic Green Energy keeps its sheet's opaque on-surface-variant.
  *
  * `feature` seeds the brand ramps (`brand-ramp-layer.ts`), so it stays a colour literal here and
- * in every segment delta, never an alias.
+ * in every segment delta, never an alias. The other brand tones stay curated literals too: they
+ * are the brand's own hand-tuned values, and a ramp step at a shared lightness would move them.
+ * Telinet's `feature-foreground` is the one role that points at a brand palette, because its
+ * green is the colour that seeds palette 2.
  */
 export const BRAND_PALETTES = {
   fkas: {
@@ -196,7 +199,9 @@ export const BRAND_PALETTES = {
     "secondary-soft-foreground": "oklch(0.22503 0.06011 247.68)",
     feature: "oklch(0.56873 0.09344 229.37)",
     "feature-bright": "oklch(0.77836 0.11783 206.21)",
-    "feature-foreground": "oklch(0.72225 0.16251 154.25)", // #36C275, the Telinet green
+    // The Telinet green, #36C275, is the brand's second colour: it seeds brand palette 2, which
+    // passes through it at step 400, the step nearest its lightness of 0.722.
+    "feature-foreground": brandRampStep("2", "400"),
   },
   // Elmera Figma "Farger" sheet (file dWv89e4X0DXeCKMsJwD5zL, node 2106:18246). card-soft (P-99)
   // and feature-bright (P-75) are interpolated tones between neighbouring sheet stops. No segment
