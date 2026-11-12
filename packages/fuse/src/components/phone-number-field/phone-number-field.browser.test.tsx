@@ -119,7 +119,7 @@ describe("PhoneNumberField", () => {
   ])("names the group around the country picker and the number from %s", (_source, node) => {
     renderField(node);
     expect(roleNamed("group", "Mobile")).toBe(inputGroupRoot("Mobile"));
-    expect(roleNamed("group", "Mobile").contains(roleNamed("button", "Select country"))).toBe(true);
+    expect(roleNamed("group", "Mobile").contains(roleNamed("button", "+47 Norway"))).toBe(true);
   });
 
   it("keeps the Field label and description when a wrapper forwards id and ARIA props as undefined", async () => {
