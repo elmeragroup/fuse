@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { Activity, Suspense, use, useState } from "react";
 import type { ReactNode } from "react";
 
 import type { MetadataJson } from "libphonenumber-js/core";
+import { flushSync } from "react-dom";
 import { describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
@@ -410,4 +411,92 @@ describe("PhoneNumberField caret", () => {
     expect([input.selectionStart, input.selectionEnd]).toEqual([4, 4]);
     expect(phoneSubmission().get("phone")).toBe("+4791534567");
   });
+
+  it("puts an edit's caret back once, and leaves the caret where the user moves it on later commits", async () => {
+    function Controlled() {
+      const [value, setValue] = useState("");
+      const [commits, setCommits] = useState(0);
+      return (
+        // A parent that renders again on a key the field ignores, with focus kept in the input.
+        <form
+          aria-label="Phone form"
+          onKeyUp={(event) => {
+            if (event.key === "Shift") setCommits((count) => count + 1);
+          }}>
+          <PhoneNumberField label="Mobile" name="phone" value={value} onChange={setValue} formatOnType />
+          <output>Commits {commits}</output>
+        </form>
+      );
+    }
+    renderField(<Controlled />);
+    const input = phoneInput();
+    input.focus();
+    for (const key of "91234567") await userEvent.keyboard(key);
+    input.setSelectionRange(4, 4);
+    await userEvent.keyboard("{Backspace}");
+    await expect.element(input).toHaveValue("91 34 56 7");
+    expect([input.selectionStart, input.selectionEnd]).toEqual([2, 2]);
+
+    input.setSelectionRange(0, 0);
+    await userEvent.keyboard("{Shift}");
+    await expect.element(page.getByText("Commits 1")).toBeInTheDocument();
+    expect(input.value).toBe("91 34 56 7");
+    expect([input.selectionStart, input.selectionEnd]).toEqual([0, 0]);
+  });
+
+  it.each(["Suspense", "Activity"] as const)(
+    "leaves the caret where the user moves it when a %s boundary hides and reveals the field",
+    async (boundary) => {
+      function Hideable() {
+        const [value, setValue] = useState("");
+        const [hidden, setHidden] = useState(false);
+        const field = (
+          <PhoneNumberField label="Mobile" name="phone" value={value} onChange={setValue} formatOnType />
+        );
+        return (
+          // Hides and reveals the field in one task, on a key the field ignores, so focus stays
+          // in the input while React disconnects and reconnects its layout effects.
+          <form
+            aria-label="Phone form"
+            onKeyUp={(event) => {
+              if (event.key !== "Shift") return;
+              flushSync(() => setHidden(true));
+              flushSync(() => setHidden(false));
+            }}>
+            {boundary === "Activity" ? (
+              <Activity mode={hidden ? "hidden" : "visible"}>{field}</Activity>
+            ) : (
+              <Suspense fallback={null}>
+                <SuspendWhile suspended={hidden} />
+                {field}
+              </Suspense>
+            )}
+          </form>
+        );
+      }
+      renderField(<Hideable />);
+      const input = phoneInput();
+      input.focus();
+      for (const key of "91234567") await userEvent.keyboard(key);
+      input.setSelectionRange(4, 4);
+      await userEvent.keyboard("{Backspace}");
+      await expect.element(input).toHaveValue("91 34 56 7");
+      expect([input.selectionStart, input.selectionEnd]).toEqual([2, 2]);
+
+      input.setSelectionRange(0, 0);
+      await userEvent.keyboard("{Shift}");
+      expect(document.activeElement).toBe(input);
+      expect(input.value).toBe("91 34 56 7");
+      expect([input.selectionStart, input.selectionEnd]).toEqual([0, 0]);
+    }
+  );
 });
+
+// Never settles: its resolver is dropped unused.
+const pending = new Promise<never>((resolve) => void resolve);
+
+/** Suspends its boundary while `suspended`, on a promise that never settles. */
+function SuspendWhile({ suspended }: { suspended: boolean }) {
+  if (suspended) use(pending);
+  return null;
+}
