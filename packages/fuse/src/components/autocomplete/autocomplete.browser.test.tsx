@@ -11,6 +11,7 @@ import { SUPPORTED_LOCALES, withLocale } from "../../../test/locale-matrix";
 import { formNamed, renderThemed, roleNamed } from "../../../test/themed-browser-render";
 import { Field } from "../field";
 import { Form } from "../form/form";
+import { InputGroup } from "../input-group";
 import { Autocomplete } from "./index";
 
 const FRUITS = ["Apple", "Banana", "Cherry", "Date"] as const;
@@ -449,6 +450,35 @@ describe("Autocomplete", () => {
     await pressAddonRail();
     await nextFrames(3);
     expect(page.getByRole("listbox").query()).toBeNull();
+  });
+
+  it("leaves a press on a label in a custom addon to the label, without focusing or opening the autocomplete", async () => {
+    const events: string[] = [];
+    renderAutocomplete(
+      <div style={{ width: 320 }}>
+        <Autocomplete.Root
+          items={[...FRUITS]}
+          openOnInputClick
+          onOpenChange={(open) => {
+            events.push(`open:${String(open)}`);
+          }}>
+          <Autocomplete.Input
+            aria-label="Fruit"
+            onFocus={() => {
+              events.push("focus");
+            }}>
+            <InputGroup.Addon align="inline-start">
+              <label htmlFor="autocomplete-other">Other</label>
+            </InputGroup.Addon>
+          </Autocomplete.Input>
+        </Autocomplete.Root>
+        <input id="autocomplete-other" />
+      </div>
+    );
+    await userEvent.click(page.getByText("Other", { exact: true }));
+    await expect.element(roleNamed("textbox", "Other")).toHaveFocus();
+    // Base UI focuses the input and requests the open state inside the press's own handlers.
+    expect(events).toEqual([]);
   });
 
   it("renders the Empty, Clear and caret defaults in all four locales and honors copy overrides", async () => {
