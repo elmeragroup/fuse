@@ -164,6 +164,7 @@ export function DataTableFilterTrigger({
             render ??
             // An icon Button requires its own name, and its props win in Base UI's merge.
             (iconOnly ? (
+              // oxlint-disable-next-line fuse/render-element-wiring -- the trigger names itself only when icon-only, through a conditional spread on the outer Toolbar.Button, and this icon Button in the same iconOnly branch repeats that name because an icon-size Button requires its own aria-label
               <Button variant="outline" size="icon-sm" aria-label={label} />
             ) : (
               <Button variant="outline" size="sm" />
