@@ -3,11 +3,18 @@
   "ui": "stream",
   "globalEnv": ["NODE_ENV"],
   "tasks": {
-    "//#lint": {
-      // apps/static-theme/vite.config.ts must import packages/fuse/dist/theme.js because
-      // colorSchemeScriptSource's Function#toString() has to be the packed IIFE, not re-emitted
-      // TypeScript. import/no-cycle resolves that import, so lint needs the Fuse build.
-      "dependsOn": ["@elmeragroup/fuse#build", "docs#generate"],
+    // What oxlint's type-aware rules read besides the source tree; without it they resolve imports to
+    // error types and report every member access on them. A task with no script, so `pnpm lint` and
+    // `pnpm lint:fix` share one list. apps/static-theme/vite.config.ts must import
+    // packages/fuse/dist/theme.js because colorSchemeScriptSource's Function#toString() has to be the
+    // packed IIFE, not re-emitted TypeScript, and fuse-figma's compare cells import the Fuse build
+    // because Node cannot load its TSX source. The docs app imports its generated src/generated.
+    "//#lint:prerequisites": {
+      "dependsOn": ["@elmeragroup/fuse#build", "docs#generate"]
+    },
+    // `pnpm lint` runs this task rather than the script itself, so the prerequisites build first.
+    "//#lint:oxlint": {
+      "dependsOn": ["//#lint:prerequisites"],
       "inputs": ["$TURBO_DEFAULT$"]
     },
     // The policy suites read files across the workspace, so a complete input list would have
@@ -91,7 +98,7 @@
     },
     "check": {
       "dependsOn": [
-        "//#lint",
+        "//#lint:oxlint",
         "//#test:repo-policy",
         "//#type-check:scripts",
         "type-check",

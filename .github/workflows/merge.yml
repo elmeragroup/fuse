@@ -75,7 +75,7 @@ jobs:
       # job runs, so a unit or type failure does not wait on the browser suites.
       - name: turbo ci:checks (no browser)
         id: turbo-gate
-        run: pnpm exec turbo run '//#lint' '//#test:repo-policy' '//#type-check:scripts' type-check test test:types build package:check api:report
+        run: pnpm exec turbo run '//#lint:oxlint' '//#test:repo-policy' '//#type-check:scripts' type-check test test:types build package:check api:report
         env:
           TURBO_RUN_SUMMARY: "true"
 

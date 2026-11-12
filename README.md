@@ -44,8 +44,8 @@ Root scripts fan out through turbo unless noted.
 | ------------------------- | --------------------------------------------------------------------------------------------------------------------- |
 | `pnpm build`              | Builds every package (`@elmeragroup/fuse` via tsdown, the Next apps, static-theme)                                    |
 | `pnpm dev`                | Runs the dev servers                                                                                                  |
-| `pnpm lint`               | `oxlint . --deny-warnings` over the tree: the `elmera`, `anti-slop` and `fuse` plugins, type-aware rules on tsrs      |
-| `pnpm lint:fix`           | The same with `--fix`                                                                                                 |
+| `pnpm lint`               | Builds the Fuse dist and docs sources it reads, then `oxlint . --deny-warnings` (`elmera`, `anti-slop`, `fuse`, tsrs) |
+| `pnpm lint:fix`           | The same with `--fix`, uncached                                                                                       |
 | `pnpm format`             | `oxfmt` write; `pnpm format:check` is the CI form                                                                     |
 | `pnpm test`               | Unit tests (vitest) in every package                                                                                  |
 | `pnpm test:browser`       | Browser-mode suites in the local gate (Fuse's `browser`, `browser-engines` and `browser-clipboard`, static-theme)     |
@@ -63,7 +63,8 @@ Root scripts fan out through turbo unless noted.
 
 The type-aware lint rules run on the linter built into tsrs, the compiler behind every type-check, so
 the workspace does not install `oxlint-tsgolint`. The lint scripts set
-`OXLINT_TSGOLINT_PATH=node_modules/.bin/tsrs-lint`; set it too when you run `oxlint` directly. The
+`OXLINT_TSGOLINT_PATH=node_modules/.bin/tsrs-lint`; set it too when you run `oxlint` directly, after
+`pnpm exec turbo run //#lint:prerequisites` builds the outputs those rules resolve imports against. The
 Oxc extensions read the same launcher from `.vscode/settings.json` and `.zed/settings.json`.
 
 Package-scoped scripts worth knowing:

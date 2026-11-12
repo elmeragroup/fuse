@@ -72,7 +72,8 @@ Each test lands in one project; reach for the cheapest that can go red:
 Write a mechanical source contract, a test shape included, as a rule in
 `tooling/oxlint-plugin-fuse`, with a valid/invalid rule test. While editing, run
 `vitest related <files> --run --project unit` in the owning package. Lint through
-`pnpm lint`; a direct `oxlint` needs `OXLINT_TSGOLINT_PATH=node_modules/.bin/tsrs-lint`.
+`pnpm lint`, which first builds what the type-aware rules read; a direct `oxlint` needs those
+outputs and `OXLINT_TSGOLINT_PATH=node_modules/.bin/tsrs-lint`.
 Before review, run `pnpm check`; CI adds the docs e2e and packed tier. For docs-app
 behavior, run `pnpm exec turbo run build:e2e --filter=docs`, then
 `pnpm --filter docs test:e2e test/<file>`.
