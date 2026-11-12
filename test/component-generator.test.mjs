@@ -34,6 +34,8 @@ function fixture() {
     cpSync(join(root, path), join(directory, path), { recursive: true });
   }
   symlinkSync(join(root, "node_modules"), join(directory, "node_modules"), "dir");
+  // `entries.ts` parses source with the fuse package's own devDependencies.
+  symlinkSync(join(root, "packages/fuse/node_modules"), join(directory, "packages/fuse/node_modules"), "dir");
   writeFileSync(join(directory, "package.json"), '{"private":true,"type":"module"}\n');
   // The fixture reuses installed tools and must never install into their symlink target.
   writeFileSync(join(directory, "pnpm-workspace.yaml"), "verifyDepsBeforeRun: false\n");
