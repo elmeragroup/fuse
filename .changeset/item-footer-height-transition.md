@@ -7,7 +7,7 @@ its fade and a short slide, over 150 ms ease-out. `SelectionItem.SubSection`, `R
 and `CheckboxItem.SubSection` are this footer, so a sub-section that opens a form pushes the rows
 below it down smoothly instead of in one frame, and closing it pulls them back the same way.
 Before, the row snapped both ways, and the slide never ran. Under `prefers-reduced-motion: reduce`
-the height still snaps and the fade remains.
+the height still snaps and the footer fades in place, without the slide.
 
 A `hidden` or `visible` footer clips its content in both modes, since the row is shorter than its
 content while it animates. The clip edge sits 4px outside the content on every side, so the shared
