@@ -1,4 +1,10 @@
 import type { ThemeIdentity } from "../theme-input";
+import {
+  BRAND_RAMP_DESCRIPTIONS,
+  BRAND_RAMP_KINDS,
+  BRAND_RAMP_PAINTS,
+  BRAND_RAMP_TOKEN_NAMES,
+} from "./brand-ramps";
 
 export const TOKEN_NAMES = [
   "background",
@@ -123,6 +129,7 @@ export const TOKEN_NAMES = [
   "sh-jsxliterals",
   "sh-sign",
   "sh-comment",
+  ...BRAND_RAMP_TOKEN_NAMES,
   "radius",
   "radius-button",
   "radius-field",
@@ -377,6 +384,7 @@ export const TOKEN_KINDS = {
   "sh-jsxliterals": "color",
   "sh-sign": "color",
   "sh-comment": "color",
+  ...BRAND_RAMP_KINDS,
   radius: "dimension",
   "radius-button": "dimension",
   "radius-field": "dimension",
@@ -542,6 +550,7 @@ export const TOKEN_PAINTS = {
   "sh-jsxliterals": ["ink"],
   "sh-sign": ["ink"],
   "sh-comment": ["ink"],
+  ...BRAND_RAMP_PAINTS,
 } as const satisfies Record<ColorTokenName, readonly TokenPaint[]>;
 
 /**
@@ -749,6 +758,7 @@ export const TOKEN_DESCRIPTIONS = {
   "sh-jsxliterals": "The color of JSX text in the syntax highlighting of Code.",
   "sh-sign": "The color of punctuation and operators in the syntax highlighting of Code.",
   "sh-comment": "The color of comments in the syntax highlighting of Code.",
+  ...BRAND_RAMP_DESCRIPTIONS,
   radius:
     "The corner radius of the theme, the corner of cards, selection rows and fields. The radius-xs to radius-xl rungs step around it.",
   "radius-button":
@@ -790,7 +800,8 @@ export const TOKEN_DESCRIPTIONS = {
 /**
  * The roles a light theme rule resets. They are every key the branded identity layer, a
  * brand palette or a segment delta can assign, plus each derived role computed from them
- * and each alias that reads one of them. `--sidebar-ring` defaults to `var(--ring)`, so the
+ * and each alias that reads one of them. The brand ramps are not among them: the brand rules
+ * own them, so a palette rule never restates a ramp step. `--sidebar-ring` defaults to `var(--ring)`, so the
  * rule restates it and the alias resolves against the scope's own ring.
  */
 export const LIGHT_RESET_KEYS = [
@@ -806,6 +817,7 @@ export const LIGHT_RESET_KEYS = [
   "panel-foreground",
   "muted",
   "muted-foreground",
+  "accent",
   "primary",
   "primary-foreground",
   "primary-soft",
@@ -834,7 +846,11 @@ export const LIGHT_RESET_KEYS = [
   "selection-disabled-foreground",
   "toggle-pressed",
   "toggle-pressed-foreground",
+  "sidebar",
+  "sidebar-accent",
+  "sidebar-border",
   "sidebar-ring",
+  "right-panel",
   "button-outline-width",
   "selection-title-weight",
   "paragraph-leading-sm",

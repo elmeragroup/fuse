@@ -35,6 +35,7 @@ export type SectionId =
   | "typography"
   | "identity"
   | "sidebar"
+  | "ramps"
   | "charts"
   | "syntax";
 
@@ -48,6 +49,7 @@ export const STUDIO_SECTIONS = [
   { id: "typography", title: "Typography" },
   { id: "identity", title: "Identity layer" },
   { id: "sidebar", title: "Sidebar" },
+  { id: "ramps", title: "Brand ramps" },
   { id: "charts", title: "Charts" },
   { id: "syntax", title: "Syntax" },
 ] as const satisfies readonly { id: SectionId; title: string }[];
@@ -180,6 +182,17 @@ export const TOKEN_TABLE = {
   "sh-jsxliterals": color("syntax"),
   "sh-sign": color("syntax"),
   "sh-comment": color("syntax"),
+  "brand-neutral-50": color("ramps"),
+  "brand-neutral-100": color("ramps"),
+  "brand-neutral-200": color("ramps"),
+  "brand-neutral-300": color("ramps"),
+  "brand-neutral-400": color("ramps"),
+  "brand-neutral-500": color("ramps"),
+  "brand-neutral-600": color("ramps"),
+  "brand-neutral-700": color("ramps"),
+  "brand-neutral-800": color("ramps"),
+  "brand-neutral-900": color("ramps"),
+  "brand-neutral-950": color("ramps"),
   radius: { section: "shape", kind: "dimension" },
   "radius-button": { section: "shape", kind: "dimension" },
   "radius-field": { section: "shape", kind: "dimension" },
@@ -230,10 +243,11 @@ export function sectionTokens(section: SectionId): readonly TokenName[] {
 /**
  * The keys a dark palette keeps from light: geometry, the card edge, section divider and shadow
  * colors, the outline and selection border and divider colors, the disabled selection row's fill,
- * stripe and text colors, the pressed Toggle's fill and text colors, the selection title weight, the paragraph line heights, the heading
- * scale and the heading font. The set is Fuse's private `LIGHT_ONLY_KEYS`
- * (`packages/fuse/src/theme/tokens/contract.ts`) plus `font-heading`, which the studio seeds the
- * same in both schemes. The studio tests check every one declares the same value in both schemes
+ * stripe and text colors, the pressed Toggle's fill and text colors, the brand ramp steps, the
+ * selection title weight, the paragraph line heights, the heading scale and the heading font. The
+ * set is Fuse's private `LIGHT_ONLY_KEYS` (`packages/fuse/src/theme/tokens/contract.ts`), the tokens
+ * of the ramps section, which hold one value per brand and segment in both schemes, plus `font-heading`, which the
+ * studio seeds the same in both schemes. The studio tests check every one declares the same value in both schemes
  * of every theme. An edit to one applies to both schemes.
  */
 export const LIGHT_ONLY_TOKENS: ReadonlySet<TokenName> = new Set<TokenName>([
@@ -250,6 +264,7 @@ export const LIGHT_ONLY_TOKENS: ReadonlySet<TokenName> = new Set<TokenName>([
   "selection-disabled-foreground",
   "toggle-pressed",
   "toggle-pressed-foreground",
+  ...sectionTokens("ramps"),
   "radius",
   "radius-button",
   "radius-field",

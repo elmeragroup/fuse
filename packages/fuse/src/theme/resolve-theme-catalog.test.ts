@@ -46,10 +46,10 @@ const SLUGS = [
 // checked selection row borders and dividers, the disabled selection row fill, stripe and text,
 // the pressed Toggle fill and label, the selection row title weight, the three paragraph line
 // heights, the size, line height and weight of h1 to h3, the modal fill and text, the
-// content panel fill and text, and the 26 chart roles: 8 slot foregrounds, Other and its
-// foreground, 7 ramp steps, 7 diverging steps and 2 sentiments. Themes name no fonts, so
-// `font-sans` and `font-heading` are not tokens.
-const TOKEN_COUNT = 135;
+// content panel fill and text, the 26 chart roles: 8 slot foregrounds, Other and its
+// foreground, 7 ramp steps, 7 diverging steps and 2 sentiments, and the 11 brand neutral ramp
+// steps from 50 to 950. Themes name no fonts, so `font-sans` and `font-heading` are not tokens.
+const TOKEN_COUNT = 146;
 
 // xs, sm, md, lg and xl.
 const RUNG_COUNT = 5;
@@ -231,12 +231,12 @@ describe("resolveThemeCatalog", () => {
         value: { alpha: 0 },
       });
     }
-    // The divider between stacked branded rows is the scheme's own opaque border: fkas
-    // oklch(0.898 0.0026 48.72) in light and the shared dark border oklch(0.3956915 0.0031178
-    // 164.9356) in dark.
+    // The divider between stacked branded rows is the scheme's own opaque border: fkas's brand
+    // neutral step 300, oklch(0.88 0.01 36.96), in light and the shared dark border
+    // oklch(0.3956915 0.0031178 164.9356) in dark.
     const fkas = theme("branded-fkas-private").schemes;
     for (const [scheme, border] of [
-      ["light", "oklch(0.898 0.0026 48.72)"],
+      ["light", "oklch(0.88 0.01 36.96)"],
       ["dark", "oklch(0.3956915 0.0031178 164.9356)"],
     ] as const) {
       expect(fkas[scheme].tokens["selection-divider"], scheme).toMatchObject({

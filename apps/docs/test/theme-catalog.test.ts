@@ -23,10 +23,10 @@ const ILLEGAL_SLUGS = [
 // checked selection row borders and dividers, the disabled selection row fill, stripe and text,
 // the pressed Toggle fill and label, the selection row title weight, the three paragraph line
 // heights, the size, line height and weight of h1 to h3, the modal fill and text, the
-// content panel fill and text, and the 26 chart roles: 8 slot foregrounds, Other and its
-// foreground, 7 ramp steps, 7 diverging steps and 2 sentiments. Themes name no fonts, so
-// `font-sans` and `font-heading` are not tokens.
-const ROLE_TOKEN_COUNT = 135;
+// content panel fill and text, the 26 chart roles: 8 slot foregrounds, Other and its
+// foreground, 7 ramp steps, 7 diverging steps and 2 sentiments, and the 11 brand neutral ramp
+// steps from 50 to 950. Themes name no fonts, so `font-sans` and `font-heading` are not tokens.
+const ROLE_TOKEN_COUNT = 146;
 
 function catalogTheme(slug: string): ThemeCatalogEntry {
   const theme = THEME_CATALOG.themes.find((entry) => entry.slug === slug);

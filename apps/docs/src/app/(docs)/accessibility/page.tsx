@@ -132,7 +132,7 @@ export default function AccessibilityPage(): ReactElement {
         </li>
         <li>
           Light <code>--input</code>, the border of Input, Textarea, Select and the other field boxes,
-          measures 1.08–1.70:1 against the page and card surfaces, under the 3:1 non-text floor. A field
+          measures 1.10–1.27:1 against the page and card surfaces, under the 3:1 non-text floor. A field
           border of at least 3:1 is a design decision on the roadmap. <code>Checkbox</code>,{" "}
           <code>Radio</code> and <code>Switch</code> do not depend on it: the unchecked Checkbox and Radio
           edge and the unchecked Switch edge and thumb are <code>--muted-foreground</code>, held to 3:1
@@ -151,7 +151,7 @@ export default function AccessibilityPage(): ReactElement {
         <li>
           A default <code>Accordion</code> item fills with <code>--primary-soft</code>. Its own text takes{" "}
           <code>--primary-soft-foreground</code>, but muted copy inside it, such as a field description,
-          measures under 4.5:1 in light mode: 4.43:1 on the neutral themes, 3.84:1 on Fjordkraft and 4.17:1 on
+          measures under 4.5:1 in light mode: 4.43:1 on the neutral themes, 3.84:1 on Fjordkraft and 4.22:1 on
           Telinet. Dark mode holds 4.5:1 in every theme.
         </li>
         <li>

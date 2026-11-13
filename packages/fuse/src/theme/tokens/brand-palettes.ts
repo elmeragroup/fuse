@@ -1,4 +1,5 @@
 import type { BrandCode } from "../theme-input";
+import { brandRampStep } from "./brand-ramps";
 import type { TokenLayer } from "./contract";
 import { NEUTRAL_RING, WHITE } from "./primitives";
 
@@ -56,6 +57,18 @@ export type PaletteBrandCode = Exclude<BrandCode, "fkab">;
  * `contrast-matrix.test.ts` holds a tuned ring to 3:1 on the page and card surfaces.
  */
 export const BRANDED_IDENTITY_LAYER = {
+  // The neutral roles point at the brand neutral ramp, a grey at the brand hue, so the fills and
+  // lines beside the tinted page share its tint. Every step sits on the lightness the role had
+  // as an untinted grey, so the change is a tint, not a value shift. The hairline takes the
+  // darker 300 so it holds 1.19:1 on the darkest page tint.
+  muted: brandRampStep("neutral", "100"),
+  accent: brandRampStep("neutral", "100"),
+  border: brandRampStep("neutral", "300"),
+  input: brandRampStep("neutral", "200"),
+  sidebar: brandRampStep("neutral", "50"),
+  "sidebar-accent": brandRampStep("neutral", "200"),
+  "sidebar-border": brandRampStep("neutral", "200"),
+  "right-panel": brandRampStep("neutral", "50"),
   dialog: "var(--background)",
   "dialog-foreground": "var(--foreground)",
   ring: NEUTRAL_RING,
@@ -97,8 +110,12 @@ export const BRANDED_IDENTITY_LAYER = {
  * surface, and `contrast-matrix.test.ts` holds it to 4.5:1 on `background`, `muted`, `card` and
  * `card-soft`. Where a brand sheet set the foreground at 70% alpha, the role is an opaque tone of
  * the foreground: its hue, mixed in OKLCH toward white until it measures on a white card what
- * the 70% value measured. Telinet (`fkse`) stops darker, at a tone that clears 4.5:1 on `muted`.
+ * the 70% value measured. Telinet (`fkse`) stops darker, at a tone that clears 4.5:1 on `muted`,
+ * 4.56:1 on the brand neutral ramp's step 100.
  * Nordic Green Energy keeps its sheet's opaque on-surface-variant.
+ *
+ * `feature` seeds the brand ramps (`brand-ramp-layer.ts`), so it stays a colour literal here and
+ * in every segment delta, never an alias.
  */
 export const BRAND_PALETTES = {
   fkas: {
@@ -108,7 +125,6 @@ export const BRAND_PALETTES = {
     "card-foreground": "oklch(0.23274 0.07506 38.69)",
     "card-soft": "oklch(0.98095 0.01088 54.5)",
     "card-soft-foreground": "oklch(0.3209 0.10325 38.8)",
-    muted: "oklch(0.97 0.0013 106.42)",
     "muted-foreground": "oklch(0.5286 0.07167 38.8)",
     primary: "oklch(0.3209 0.10325 38.8)",
     "primary-foreground": WHITE,
@@ -121,8 +137,6 @@ export const BRAND_PALETTES = {
     feature: "oklch(0.57866 0.19387 36.96)",
     "feature-bright": "oklch(0.74389 0.16389 43.68)",
     "feature-foreground": "oklch(0.80097 0.10434 49.42)",
-    border: "oklch(0.898 0.0026 48.72)",
-    input: "oklch(0.9232 0.0026 48.72)",
   },
   tkas: {
     background: "oklch(0.97902 0.02928 188.87)",
@@ -131,7 +145,6 @@ export const BRAND_PALETTES = {
     "card-foreground": "oklch(0.22003 0.0378 191.8)",
     "card-soft": "oklch(0.98982 0.01388 185.97)",
     "card-soft-foreground": "oklch(0.30407 0.05238 190.82)",
-    muted: "oklch(0.9684 0.0068 247.9)",
     "muted-foreground": "oklch(0.5273 0.03558 190.82)",
     primary: "oklch(0.30407 0.05238 190.82)",
     "primary-foreground": WHITE,
@@ -144,8 +157,6 @@ export const BRAND_PALETTES = {
     feature: "oklch(0.55688 0.09585 191.06)",
     "feature-bright": "oklch(0.77279 0.10225 190.47)",
     "feature-foreground": "oklch(0.90178 0.09399 190.62)",
-    border: "oklch(0.921 0.0126 255.53)",
-    input: "oklch(0.929 0.0126 255.53)",
   },
   guen: {
     background: "oklch(0.95469 0.01887 279.53)",
@@ -154,7 +165,6 @@ export const BRAND_PALETTES = {
     "card-foreground": "oklch(0.14028 0.08604 266.38)",
     "card-soft": "oklch(0.99199 0.00734 80.72)",
     "card-soft-foreground": "oklch(0.19922 0.12072 268.2)",
-    muted: "oklch(0.9684 0.0068 247.9)",
     "muted-foreground": "oklch(0.4513 0.08272 268.2)",
     primary: "oklch(0.19922 0.12072 268.2)",
     "primary-foreground": WHITE,
@@ -167,8 +177,6 @@ export const BRAND_PALETTES = {
     feature: "oklch(0.57814 0.22881 270.38)",
     "feature-bright": "oklch(0.7068 0.1522 275.6)",
     "feature-foreground": "oklch(0.84919 0.07412 279.64)",
-    border: "oklch(0.894 0.0126 255.53)",
-    input: "oklch(0.929 0.0126 255.53)",
   },
   fkse: {
     background: "oklch(0.98014 0.01729 210.19)",
@@ -177,8 +185,7 @@ export const BRAND_PALETTES = {
     "card-foreground": "oklch(0.22503 0.06011 247.68)",
     "card-soft": "oklch(0.99007 0.00865 210.19)",
     "card-soft-foreground": "oklch(0.36735 0.09417 249.17)",
-    muted: "oklch(0.97 0.0013 106.42)",
-    "muted-foreground": "oklch(0.543 0.06802 249.17)",
+    "muted-foreground": "oklch(0.54 0.06802 249.17)",
     primary: "oklch(0.36735 0.09417 249.17)",
     "primary-foreground": WHITE,
     "primary-soft": "oklch(0.9368 0.04194 223.32)",
@@ -190,8 +197,6 @@ export const BRAND_PALETTES = {
     feature: "oklch(0.56873 0.09344 229.37)",
     "feature-bright": "oklch(0.77836 0.11783 206.21)",
     "feature-foreground": "oklch(0.72225 0.16251 154.25)", // #36C275, the Telinet green
-    border: "oklch(0.9232 0.0026 48.72)",
-    input: "oklch(0.9232 0.0026 48.72)",
   },
   // Elmera Figma "Farger" sheet (file dWv89e4X0DXeCKMsJwD5zL, node 2106:18246). card-soft (P-99)
   // and feature-bright (P-75) are interpolated tones between neighbouring sheet stops. No segment
@@ -203,7 +208,6 @@ export const BRAND_PALETTES = {
     "card-foreground": "oklch(0.22089 0.039707 218.1)",
     "card-soft": "oklch(0.99085 0.0059393 223.5)",
     "card-soft-foreground": "oklch(0.28898 0.051828 217.7)",
-    muted: "oklch(0.97 0.0013 106.42)",
     "muted-foreground": "oklch(0.5186 0.03509 217.7)",
     primary: "oklch(0.28898 0.051828 217.7)",
     "primary-foreground": WHITE,
@@ -216,8 +220,6 @@ export const BRAND_PALETTES = {
     feature: "oklch(0.56464 0.048167 218.5)",
     "feature-bright": "oklch(0.77976 0.047959 220.7)",
     "feature-foreground": "oklch(0.9094 0.046626 220.6)",
-    border: "oklch(0.9219 0 0)",
-    input: "oklch(0.9219 0 0)",
   },
   // Nordic Green Energy Material 3 scheme, NGE/sys/light (Figma file q1sEYcZWmf1HUeuiaJFqm6,
   // section 129:12419), mapped to roles by meaning. The file's "Farger" sheets carry Gudbrandsdal
@@ -229,7 +231,6 @@ export const BRAND_PALETTES = {
     "card-foreground": "oklch(0.2214543 0.0071419 164.2694873)", // #181C1A on-surface
     "card-soft": "oklch(0.9640374 0.0050774 145.5360229)", // #F1F4F1 surface-container-low
     "card-soft-foreground": "oklch(0.2214543 0.0071419 164.2694873)", // #181C1A on-surface
-    muted: "oklch(0.97 0.0013 106.42)",
     "muted-foreground": "oklch(0.3946937 0.0154068 164.0769747)", // #3F4944 on-surface-variant
     primary: "oklch(0.3671893 0.072708 169.9789644)", // #004B39 primary
     "primary-foreground": WHITE, // on-primary
@@ -242,8 +243,6 @@ export const BRAND_PALETTES = {
     feature: "oklch(0.496237 0.0877084 169.5466991)", // #1E725A primary-container
     "feature-bright": "oklch(0.8167409 0.088748 168.8259798)", // #87D6B9 primary-fixed-dim
     "feature-foreground": WHITE, // on-primary-container
-    border: "oklch(0.8256644 0.0145962 162.3965393)", // #BEC9C3 outline-variant
-    input: "oklch(0.8256644 0.0145962 162.3965393)", // #BEC9C3 outline-variant
   },
 } as const satisfies Record<PaletteBrandCode, TokenLayer>;
 

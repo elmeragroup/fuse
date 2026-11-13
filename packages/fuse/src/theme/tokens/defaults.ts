@@ -1,4 +1,5 @@
 import { NEUTRAL_CORNERS } from "../corners/corners";
+import { GREY_RAMP_TOKENS } from "./brand-ramps";
 import type { LayerTokens, TokenContract } from "./contract";
 import { withDerivedTokens } from "./derived-tokens";
 import { NEUTRAL_RING, WHITE } from "./primitives";
@@ -180,6 +181,9 @@ export const LAYER_DEFAULTS = {
   "sh-jsxliterals": "#4cbf99",
   "sh-sign": "#ed9366",
   "sh-comment": "#abb0b6",
+  // A scope without a brand reads an untinted grey at every ramp step, at the lightness every
+  // brand's ramps share. Each brand rule declares its own tinted ramps.
+  ...GREY_RAMP_TOKENS,
   // The root rounds as a neutral theme does: one radius, buttons and fields aliasing it, and a
   // zero step. The corner sets in `theme/corners/corners.ts` own every theme's corners, and
   // their rules restate them on each theme element.

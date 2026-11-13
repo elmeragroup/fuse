@@ -230,6 +230,7 @@ const COLOR_SECTIONS: readonly SectionId[] = [
   "lines",
   "identity",
   "sidebar",
+  "ramps",
   "charts",
   "syntax",
 ];
