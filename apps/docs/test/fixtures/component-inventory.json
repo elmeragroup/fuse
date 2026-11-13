@@ -145,12 +145,29 @@
     "title": "Button",
     "rsc": "client",
     "demos": [
-      "button-variant-matrix.tsx",
-      "button-sizes.tsx",
-      "button-icons.tsx",
+      "button-demo.tsx",
+      "button-outline.tsx",
+      "button-secondary.tsx",
+      "button-ghost.tsx",
+      "button-destructive.tsx",
+      "button-success.tsx",
+      "button-link.tsx",
+      "button-extra-small.tsx",
+      "button-small.tsx",
+      "button-large.tsx",
+      "button-icon.tsx",
+      "button-icon-extra-small.tsx",
+      "button-icon-small.tsx",
+      "button-icon-large.tsx",
+      "button-icon-inline.tsx",
+      "button-leading-icon.tsx",
+      "button-trailing-icon.tsx",
       "button-pending.tsx",
+      "button-custom-pending-indicator.tsx",
+      "button-disabled.tsx",
       "button-visually-disabled.tsx",
-      "button-predictive-intent.tsx"
+      "button-predictive-intent.tsx",
+      "button-as-link.tsx"
     ]
   },
   "button-group": {

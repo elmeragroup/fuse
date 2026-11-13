@@ -54,7 +54,11 @@
           "shortType": null,
           "defaultValue": "\"horizontal\"",
           "description": "The component orientation (layout flow direction).",
-          "required": false
+          "required": false,
+          "values": [
+            "horizontal",
+            "vertical"
+          ]
         },
         {
           "name": "render",
@@ -163,7 +167,11 @@
           "shortType": "Union",
           "defaultValue": "\"default\"",
           "description": "",
-          "required": false
+          "required": false,
+          "values": [
+            "default",
+            "line"
+          ]
         }
       ]
     },

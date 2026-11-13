@@ -12,10 +12,11 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 import { resolveComponentPaths } from "../scripts/lib/components.ts";
-import { readRscStatus, SERVER_DEMOS } from "../scripts/lib/docs-inspection.ts";
+import { SERVER_DEMOS } from "../scripts/lib/docs-inspection.ts";
 import { parseComponentPage } from "../scripts/lib/page-source.ts";
 import type { ComponentPageSource } from "../scripts/lib/page-source.ts";
 import { repoRelative, repoRoot } from "../scripts/lib/paths.ts";
+import { readRscStatus } from "../scripts/lib/rsc-status.ts";
 import { COMPONENT_OUTLINES } from "../src/generated/component-outlines";
 import { COMPONENT_PAGES } from "../src/generated/component-pages";
 import type { ComponentApiArtifact } from "../src/lib/docs-model";
@@ -134,8 +135,11 @@ describe("component page manifest", () => {
       for (const part of ALIAS_PAGES.has(slug) ? [] : pageParts(slug)) {
         expect(part.rsc, `${slug} ${part.name}`).toBe(declaredRsc(part.sourcePath));
       }
-      // The page's own status appears on the markdown endpoint, not in the manifest.
-      expect(endpoint(slug), slug).toContain(`- RSC: ${reviewed.rsc}`);
+      // The page's own status appears on the markdown endpoint, not in the manifest. A page in the
+      // Usage shape mirrors the page, which names no page-wide status; its parts carry theirs.
+      if (authoredPage(slug).parsed.usage === null) {
+        expect(endpoint(slug), slug).toContain(`- RSC: ${reviewed.rsc}`);
+      }
     }
   });
 });
@@ -161,15 +165,19 @@ describe("component outlines", () => {
     );
   });
 
-  it("outlines each page's depth-2 headings, in page order", () => {
-    // Unit under test: the generator's copy of each page's TOC headings into the outline.
-    // Oracle: the parsed page. Deeper headings stay out of the TOC.
+  it("outlines each page's depth-2 headings and demos in page order, with its examples nested", () => {
+    // Unit under test: the generator's TOC skeleton. Oracle: the parsed page, whose headings and
+    // demos the outline must list in the page's order. Deeper headings stay out of the TOC.
     for (const outline of COMPONENT_OUTLINES) {
       const authored = authoredPage(outline.slug).parsed;
-      expect(outline.headings, outline.slug).toEqual(
-        authored.headings
-          .filter((heading) => heading.depth === 2)
-          .map((heading) => ({ id: heading.id, title: heading.title }))
+      const flat = outline.sections.flatMap((item) => [
+        item.id,
+        ...(item.children ?? []).map((child) => child.id),
+      ]);
+      expect(flat, outline.slug).toEqual(
+        authored.sections
+          .filter((section) => section.depth === 2 || section.kind === "demo")
+          .map((section) => section.id)
       );
     }
   });
@@ -181,9 +189,12 @@ describe("component outlines", () => {
     // docs-pipeline.
     for (const outline of COMPONENT_OUTLINES) {
       const authored = authoredPage(outline.slug).parsed;
-      expect(outline.demos, outline.slug).toEqual(authored.demos.map(({ id, title }) => ({ id, title })));
-      expect(new Set(outline.demos.map((demo) => demo.id)).size, outline.slug).toBe(outline.demos.length);
-      for (const demo of outline.demos) {
+      const demos = outline.sections
+        .flatMap((item) => [item, ...(item.children ?? [])])
+        .filter((item) => item.demo === true);
+      expect(demos, outline.slug).toEqual(authored.demos.map(({ id, title }) => ({ id, title, demo: true })));
+      expect(new Set(demos.map((demo) => demo.id)).size, outline.slug).toBe(demos.length);
+      for (const demo of demos) {
         expect(demo.id, `${outline.slug}.${demo.id}`).toMatch(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);
         expect(demo.title.trim(), `${outline.slug}.${demo.id}`).not.toBe("");
       }
@@ -196,7 +207,9 @@ describe("component outlines", () => {
     // and the frame's hydration marker.
     for (const outline of COMPONENT_OUTLINES) {
       const authored = authoredPage(outline.slug).parsed;
-      const headingIds = new Set(authored.headings.map((heading) => heading.id));
+      const headingIds = new Set(
+        authored.sections.flatMap((section) => (section.kind === "heading" ? [section.id] : []))
+      );
       expect(
         authored.demos.map((demo) => demo.id).filter((id) => headingIds.has(id)),
         outline.slug

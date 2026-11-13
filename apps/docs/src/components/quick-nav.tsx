@@ -16,11 +16,13 @@ const quickNav = tv({
     scroll: "h-full",
     title: "font-semibold text-xs tracking-widest m-0 mb-[0.6rem] block text-muted-foreground uppercase",
     list: "m-0 list-none p-0",
+    // The examples under Examples sit one step in from their heading.
+    nested: "m-0 list-none ps-3",
     link: "block py-1 text-muted-foreground no-underline hover:text-foreground focus-visible:rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
   },
 });
 
-const { root, scroll, title, list, link } = quickNav();
+const { root, scroll, title, list, nested, link } = quickNav();
 
 export function QuickNav(): ReactElement | null {
   const pathname = usePathname();
@@ -40,6 +42,17 @@ export function QuickNav(): ReactElement | null {
                   <a className={link()} href={`#${item.id}`}>
                     {item.title}
                   </a>
+                  {item.children === undefined || item.children.length === 0 ? null : (
+                    <ul className={nested()}>
+                      {item.children.map((child) => (
+                        <li key={child.id}>
+                          <a className={link()} href={`#${child.id}`}>
+                            {child.title}
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </li>
               ))}
             </ul>

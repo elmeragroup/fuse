@@ -7,7 +7,7 @@ describe("demo source read at render time", () => {
     const demo = readDemoSource({
       section: "components",
       slug: "button",
-      file: "button-variant-matrix.tsx",
+      file: "button-outline.tsx",
     });
     expect(demo.source).toContain('"use client"');
     expect(demo.source).toContain('from "@elmeragroup/fuse/button"');

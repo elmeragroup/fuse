@@ -288,7 +288,11 @@
           "shortType": "Union",
           "defaultValue": "\"inside\"",
           "description": "Where each label sits. An inside label on a role with no on-colour role draws outside instead.",
-          "required": false
+          "required": false,
+          "values": [
+            "inside",
+            "outside"
+          ]
         },
         {
           "name": "style",
@@ -705,7 +709,11 @@
           "shortType": "Union",
           "defaultValue": null,
           "description": "Where the popup rests on a vertical chart. \"point\", the default, centres it on the active slot inside the chart's box and rests it 8 px above the highest mark under its own width. \"top\" pins it to the plot top and tracks x only, as a chart with Panels always does. A horizontal chart places it over or under the active row either way.",
-          "required": false
+          "required": false,
+          "values": [
+            "point",
+            "top"
+          ]
         },
         {
           "name": "children",
@@ -741,7 +749,11 @@
           "shortType": "Union",
           "defaultValue": null,
           "description": "The popup's surface. \"default\" by default.",
-          "required": false
+          "required": false,
+          "values": [
+            "default",
+            "frosted"
+          ]
         }
       ]
     },
@@ -964,7 +976,15 @@
           "shortType": "Union",
           "defaultValue": "\"square\"",
           "description": "The swatch's shape. \"square\" by default.",
-          "required": false
+          "required": false,
+          "values": [
+            "bar",
+            "circle",
+            "circle-outline",
+            "line",
+            "square",
+            "square-outline"
+          ]
         }
       ]
     },
@@ -1078,7 +1098,13 @@
           "shortType": "Union",
           "defaultValue": "\"bottom\"",
           "description": "Where the legend sits around the plot. \"bottom\" by default. In a polar chart narrower than 30rem, a \"start\" or \"end\" legend moves under the dial, so the dial keeps its size.",
-          "required": false
+          "required": false,
+          "values": [
+            "bottom",
+            "end",
+            "start",
+            "top"
+          ]
         },
         {
           "name": "style",
@@ -1158,7 +1184,14 @@
           "shortType": null,
           "defaultValue": "\"last\"",
           "description": "The datum to print when nothing is active. \"last\" by default.",
-          "required": false
+          "required": false,
+          "values": [
+            "first",
+            "last",
+            "max",
+            "min",
+            "now"
+          ]
         },
         {
           "name": "format",
@@ -1282,7 +1315,13 @@
           "shortType": "Union",
           "defaultValue": "\"bottom\"",
           "description": "Where the group sits around the plot. \"bottom\" by default.",
-          "required": false
+          "required": false,
+          "values": [
+            "bottom",
+            "end",
+            "start",
+            "top"
+          ]
         },
         {
           "name": "style",
@@ -1530,7 +1569,20 @@
           "shortType": "Union",
           "defaultValue": "\"dots\"",
           "description": "The pattern drawn behind the marks. \"dots\" by default.",
-          "required": false
+          "required": false,
+          "values": [
+            "4-pointed-star",
+            "bubbles",
+            "cross-hatch",
+            "diagonal-lines",
+            "dots",
+            "falling-triangles",
+            "grid",
+            "overlapping-circles",
+            "plus",
+            "tiny-checkers",
+            "wiggle-lines"
+          ]
         }
       ]
     }

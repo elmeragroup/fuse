@@ -40,6 +40,41 @@ describe("component page anatomy", () => {
     expect(html).toContain("sh__token--keyword");
   });
 
+  it("renders the Usage shape: a named default stage, the Usage code, then examples at level 3", async () => {
+    const html = await fetchText("/components/button");
+    // The default stage has no heading of its own; a hidden label names its frame.
+    expect(html).toMatch(/<section[^>]*data-demo-frame[^>]*aria-labelledby="default-demo"/u);
+    expect(html).toMatch(/<span[^>]*id="default-demo"[^>]*>Button demo<\/span>/u);
+    expect(html).toMatch(/<h2[^>]*id="usage"/u);
+    expect(html).toMatch(/<h2[^>]*id="examples"/u);
+    expect(html).toMatch(/<h3[^>]*id="outline"[^>]*>Outline<\/h3>/u);
+    const order = [
+      'id="default-demo"',
+      'id="usage"',
+      'id="examples"',
+      'id="outline"',
+      'id="api-reference"',
+      'id="tokens-consumed"',
+    ];
+    const offsets = order.map((marker) => html.indexOf(marker));
+    expect(offsets.every((offset) => offset !== -1)).toBe(true);
+    expect(offsets).toEqual(offsets.toSorted((left, right) => left - right));
+  });
+
+  it("carries Button's usage rules in its reference and its markdown endpoint", async () => {
+    // Oracle: the rules the page used to state in prose, which now live on `children`.
+    const rules = ['data-icon="inline-start"', "size-auto", "viewBox"];
+    const html = await fetchText("/components/button");
+    const reference = html.slice(html.indexOf('id="api-button-children"'));
+    expect(html).toContain('id="api-button-children"');
+    const markdown = await fetchText("/components/button.md");
+    const row = markdown.split("\n").find((line) => line.startsWith("| `children` |")) ?? "";
+    for (const rule of rules) {
+      expect(reference).toContain(rule.replaceAll('"', "&quot;"));
+      expect(row).toContain(rule);
+    }
+  });
+
   it("renders the API reference as expandable rows with a per-part RSC indicator", async () => {
     const html = await fetchText("/components/button");
     expect(html).toContain('id="api-reference"');

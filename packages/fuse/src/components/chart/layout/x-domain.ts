@@ -5,8 +5,16 @@
  * lists the categories in data order.
  */
 import type { ChartScalar } from "../chart-types";
-import { nextSlotStart, slotStart, slotStarter, slotStartsFrom } from "../format/time-format";
+import {
+  DAY,
+  SUB_DAY_MS,
+  nextSlotStart,
+  slotStart,
+  slotStarter,
+  slotStartsFrom,
+} from "../format/time-format";
 import type { Interval } from "../format/time-format";
+import { ChartCompositionError } from "./errors";
 import { sameItems } from "./same-items";
 import { numberOf, stringOf } from "./scalar";
 
@@ -65,17 +73,97 @@ export function instantOf(value: ChartScalar): number {
   return number !== undefined && Number.isFinite(number) ? number : Number.NaN;
 }
 
+/**
+ * The most slots one time axis may list. The largest axis a demo or test draws has 100,000
+ * slots, and a year of minutes, 525,600, fits with room to spare. A finer interval over a long
+ * range, such as seconds over a year (31,536,000), would build slots until the tab runs out of
+ * memory, so the axis refuses it instead.
+ */
+const SLOT_LIMIT = 1_000_000;
+
+const HOUR = SUB_DAY_MS.hour;
+
+/**
+ * Each interval's slot length, the shortest one for the calendar intervals: a clock change can
+ * shorten a day by an hour, and a month is at least 28 days. A sub-day slot can also end early at
+ * a day's start, which adds at most one slot a day, far below the limit's headroom.
+ */
+const SLOT_LENGTH = {
+  ...SUB_DAY_MS,
+  day: DAY - HOUR,
+  week: 7 * DAY - HOUR,
+  month: 28 * DAY - HOUR,
+  year: 365 * DAY - HOUR,
+} as const satisfies Readonly<Record<Interval, number>>;
+
+/** A span in words, such as `365 days` or `6 hours`. */
+function describeSpan(span: number): string {
+  const days = span / DAY;
+  if (days >= 1) return `${Math.round(days).toLocaleString("en-US")} days`;
+  return `${Math.max(1, Math.round(span / HOUR)).toLocaleString("en-US")} hours`;
+}
+
+/**
+ * Throws when an axis from `from` to `to` would list more than `SLOT_LIMIT` slots. It counts by
+ * arithmetic, before any slot exists. A bound that is no instant, as an invalid `Date` in
+ * `period` reads, has no count, so the axis refuses it by name.
+ *
+ * @throws {ChartCompositionError} `slot-limit` when the interval is too fine for the range, or a
+ * bound is not a finite instant.
+ */
+function assertSlotCount(from: number, to: number, interval: Interval): void {
+  if (!Number.isFinite(from) || !Number.isFinite(to)) {
+    throw new ChartCompositionError(
+      "Chart.Root",
+      "slot-limit",
+      "period must be two valid instants, but one is not a valid date. Pass a period of valid dates."
+    );
+  }
+  const span = Math.max(0, to - from);
+  const count = Math.floor(span / SLOT_LENGTH[interval]) + 1;
+  if (count <= SLOT_LIMIT) return;
+  throw new ChartCompositionError(
+    "Chart.Root",
+    "slot-limit",
+    `interval "${interval}" over ${describeSpan(span)} needs ${count.toLocaleString("en-US")} slots; the limit is ${SLOT_LIMIT.toLocaleString("en-US")}. Pass a coarser interval or a shorter period.`
+  );
+}
+
+/**
+ * Every slot start of an axis over `range`, from the slot `firstOf` picks for the range's start
+ * until `done`, once the range is known to fit the slot limit. Every slot list of an axis comes
+ * through here, and the check runs before any slot is computed.
+ */
+function listSlots(
+  range: readonly [number, number],
+  firstOf: (from: number) => number,
+  done: (start: number) => boolean,
+  interval: Interval,
+  timeZone: string
+): number[] {
+  const [from, to] = range;
+  assertSlotCount(from, to, interval);
+  return slotStartsFrom(firstOf(from), done, interval, timeZone);
+}
+
 /** Every slot start from `first` up to and including `last`. */
 function slotsBetween(first: number, last: number, interval: Interval, timeZone: string): number[] {
-  return slotStartsFrom(first, (start) => start > last, interval, timeZone);
+  return listSlots(
+    [first, last],
+    (from) => from,
+    (start) => start > last,
+    interval,
+    timeZone
+  );
 }
 
 /** Every slot start inside a half-open period. */
 function periodSlots(period: readonly [number, number], interval: Interval, timeZone: string): number[] {
-  const [from, to] = period;
-  let first = slotStart(from, interval, timeZone);
-  if (first < from) first = nextSlotStart(first, interval, timeZone);
-  return slotStartsFrom(first, (start) => start >= to, interval, timeZone);
+  const firstInside = (from: number): number => {
+    const start = slotStart(from, interval, timeZone);
+    return start < from ? nextSlotStart(start, interval, timeZone) : start;
+  };
+  return listSlots(period, firstInside, (start) => start >= period[1], interval, timeZone);
 }
 
 /**

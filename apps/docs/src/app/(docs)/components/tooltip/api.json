@@ -181,7 +181,13 @@
           "shortType": "Union",
           "defaultValue": "'none'",
           "description": "Determines which axis the tooltip should track the cursor on.",
-          "required": false
+          "required": false,
+          "values": [
+            "both",
+            "none",
+            "x",
+            "y"
+          ]
         },
         {
           "name": "triggerId",
@@ -324,7 +330,12 @@
           "shortType": null,
           "defaultValue": "\"center\"",
           "description": "How the popup aligns to the trigger on the cross axis.",
-          "required": false
+          "required": false,
+          "values": [
+            "center",
+            "end",
+            "start"
+          ]
         },
         {
           "name": "alignOffset",
@@ -382,7 +393,15 @@
           "shortType": null,
           "defaultValue": "\"top\"",
           "description": "Which side of the trigger the popup is placed on. Tooltips open upward by default.",
-          "required": false
+          "required": false,
+          "values": [
+            "bottom",
+            "inline-end",
+            "inline-start",
+            "left",
+            "right",
+            "top"
+          ]
         },
         {
           "name": "sideOffset",

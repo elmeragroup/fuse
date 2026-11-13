@@ -18,7 +18,13 @@
           "shortType": "Union",
           "defaultValue": null,
           "description": "",
-          "required": false
+          "required": false,
+          "values": [
+            "center",
+            "justify",
+            "left",
+            "right"
+          ]
         },
         {
           "name": "leading",
@@ -27,7 +33,14 @@
           "shortType": "Union",
           "defaultValue": null,
           "description": "",
-          "required": false
+          "required": false,
+          "values": [
+            "loose",
+            "none",
+            "relaxed",
+            "snug",
+            "tight"
+          ]
         },
         {
           "name": "render",
@@ -45,7 +58,15 @@
           "shortType": "Union",
           "defaultValue": null,
           "description": "",
-          "required": false
+          "required": false,
+          "values": [
+            "2xl",
+            "default",
+            "lg",
+            "sm",
+            "xl",
+            "xs"
+          ]
         },
         {
           "name": "truncate",
@@ -63,7 +84,18 @@
           "shortType": "Union",
           "defaultValue": null,
           "description": "",
-          "required": false
+          "required": false,
+          "values": [
+            "brand",
+            "default",
+            "destructive",
+            "foreground",
+            "inherit",
+            "muted",
+            "primary",
+            "secondary",
+            "success"
+          ]
         },
         {
           "name": "weight",
@@ -72,7 +104,12 @@
           "shortType": "Union",
           "defaultValue": null,
           "description": "",
-          "required": false
+          "required": false,
+          "values": [
+            "bold",
+            "medium",
+            "normal"
+          ]
         }
       ]
     }

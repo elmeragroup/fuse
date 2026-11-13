@@ -88,7 +88,13 @@
           "shortType": null,
           "defaultValue": "\"default\"",
           "description": "Color and icon semantics. `\"inverted\"` is a mode name, not a Tailwind variant.",
-          "required": false
+          "required": false,
+          "values": [
+            "default",
+            "inverted",
+            "neutral",
+            "success-only-when-full"
+          ]
         },
         {
           "name": "render",

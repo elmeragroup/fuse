@@ -1,31 +1,41 @@
 ---
 lede: >
-  TODO({{name}}): one or two sentences explaining what this component
-  is and when to reach for it. Frontmatter declares the lede and nothing else.
+  TODO({{name}}): one sentence on what this component does. Frontmatter declares the lede and
+  nothing else.
 ---
 
+import { {{pascalCase name}}Demo } from "./demos/{{name}}-demo";
 import { {{pascalCase name}}Basic } from "./demos/{{name}}-basic";
 
 import { componentMetadata } from "../../../../lib/component-page";
 
 export const metadata = componentMetadata("{{name}}");
 
+{/* SCAFFOLD. The page runs, in order: intro, the default stage, Usage, Examples, API reference,
+    tokens. It carries no prose. A rule a consumer must follow goes into the JSDoc of the prop it
+    concerns, which the API reference and the markdown endpoint render. Each example is one demo
+    file in `demos/` with one {{pascalCase name}} on its stage, rendered by a `level={3}` `<Demo>`
+    under Examples. A frame that names a missing file fails generation, and so does a file that no
+    frame renders. */}
+
 <ComponentIntro slug="{{name}}" />
 
-<Prose>
+<DefaultDemo slug="{{name}}" file="{{name}}-demo.tsx">
+  <{{pascalCase name}}Demo />
+</DefaultDemo>
 
-SCAFFOLD — a hand-authored component page, composing the anatomy in
-the order below: intro, prose, one frame per reviewed scenario, API reference, tokens. Only this
-prose and the frames are authored; the intro, the reference and the token list read
-generated data, so never hand-write them.
+## Usage
 
-TODO({{name}}): replace this block with the page prose — composition limits, behavior a consumer needs to understand, and anything the generated API reference cannot say. Add
-one demo import and one frame per scenario below; a frame naming a file that is not in
-`demos/`, and a file in `demos/` that no frame renders, both fail generation.
+{/* prettier-ignore */}
+```tsx
+import { {{pascalCase name}} } from "@elmeragroup/fuse/{{name}}";
 
-</Prose>
+<{{pascalCase name}}>{{pascalCase name}}</{{pascalCase name}}>
+```
 
-<Demo slug="{{name}}" id="basic" title="Basic" file="{{name}}-basic.tsx">
+## Examples
+
+<Demo slug="{{name}}" id="basic" title="Basic" level={3} file="{{name}}-basic.tsx">
   <{{pascalCase name}}Basic />
 </Demo>
 

@@ -8,8 +8,10 @@
 // this file — `page.mdx` imports it as an ordinary ESM module and the demo frame reads this
 // very file from disk for the source region.
 //
-// Rename/duplicate this file per scenario (`{{name}}-<scenario>.tsx`) and render each one
-// from its own `<Demo …>` element in `page.mdx`. A demo file no page renders fails
+// Rename/duplicate this file per example (`{{name}}-<example>.tsx`) and render each one
+// from its own `<Demo … level={3}>` element under `## Examples` in `page.mdx`. Each stage shows
+// one {{pascalCase name}}: its own parts and plain HTML are fine, another Fuse component only
+// when {{pascalCase name}} cannot work without it. A demo file no page renders fails
 // generation, and so does a `<Demo>` naming a file that is not here.
 import { {{pascalCase name}} } from "@elmeragroup/fuse/{{name}}";
 

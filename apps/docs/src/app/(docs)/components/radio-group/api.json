@@ -151,7 +151,11 @@
           "shortType": "Union",
           "defaultValue": "\"vertical\"",
           "description": "Layout of the group primitive, and of RadioItemGroup's stacked-card list. Vertical: primitive `flex-col` gapped by `--surface-gap-sm`; item list connected `flex-col gap-0`. Horizontal: primitive `flex-wrap` and item list `flex-row flex-wrap`, gapped by `--surface-gap-lg` with individually rounded cards. Maps through `selectionGroupOrientationVariants`. Default `\"vertical\"`.",
-          "required": false
+          "required": false,
+          "values": [
+            "horizontal",
+            "vertical"
+          ]
         },
         {
           "name": "value",
@@ -355,7 +359,11 @@
           "shortType": "Union",
           "defaultValue": "\"start\"",
           "description": "Where the control sits in the labelled row. Forwarded to `SelectionItem.Shell`. Default `\"start\"`.",
-          "required": false
+          "required": false,
+          "values": [
+            "end",
+            "start"
+          ]
         },
         {
           "name": "isDisabled",
@@ -557,7 +565,11 @@
           "shortType": "Union",
           "defaultValue": "\"vertical\"",
           "description": "Layout of the group primitive, and of RadioItemGroup's stacked-card list. Vertical: primitive `flex-col` gapped by `--surface-gap-sm`; item list connected `flex-col gap-0`. Horizontal: primitive `flex-wrap` and item list `flex-row flex-wrap`, gapped by `--surface-gap-lg` with individually rounded cards. Maps through `selectionGroupOrientationVariants`. Default `\"vertical\"`.",
-          "required": false
+          "required": false,
+          "values": [
+            "horizontal",
+            "vertical"
+          ]
         },
         {
           "name": "value",
@@ -678,7 +690,14 @@
           "shortType": "Union",
           "defaultValue": "\"icon\"",
           "description": "Icon-button size mapped onto the control sizes like Button: `icon-xxs` and `icon-xs` share `--control-h-xs` (svg-3 / svg-3.5), `icon-sm` `--control-h-sm` (svg-4), `icon` `--control-h-md` (svg-4), `icon-lg` `--control-h-lg` (svg-5). Svg sizes apply only to `svg:not([class*='size-'])`. Default `\"icon\"`.",
-          "required": false
+          "required": false,
+          "values": [
+            "icon",
+            "icon-lg",
+            "icon-sm",
+            "icon-xs",
+            "icon-xxs"
+          ]
         },
         {
           "name": "style",

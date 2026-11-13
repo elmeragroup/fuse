@@ -38,6 +38,16 @@ export function openTag(html: string, tagName: string): string | null {
   return match?.[0] ?? null;
 }
 
+/** Text with the entities the docs' HTML escapes turned back into characters. */
+export function decodeHtml(text: string): string {
+  return text
+    .replaceAll("&gt;", ">")
+    .replaceAll("&lt;", "<")
+    .replaceAll("&quot;", '"')
+    .replaceAll("&#x27;", "'")
+    .replaceAll("&amp;", "&");
+}
+
 export function tagAttribute(open: string, name: string): string | null {
   const match = new RegExp(`\\s${name}="([^"]*)"`, "i").exec(open);
   return match?.[1] ?? null;

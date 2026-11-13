@@ -43,7 +43,11 @@
           "shortType": null,
           "defaultValue": "'horizontal'",
           "description": "The orientation of the toolbar.",
-          "required": false
+          "required": false,
+          "values": [
+            "horizontal",
+            "vertical"
+          ]
         },
         {
           "name": "render",
@@ -345,7 +349,11 @@
           "shortType": null,
           "defaultValue": null,
           "description": "The orientation of the separator. Defaults to the opposite of the toolbar's orientation, so a horizontal toolbar renders vertical separators.",
-          "required": false
+          "required": false,
+          "values": [
+            "horizontal",
+            "vertical"
+          ]
         },
         {
           "name": "render",

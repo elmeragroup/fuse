@@ -44,6 +44,7 @@ import { selfFocusRingClass } from "../../styles/utils";
 // Accordion trigger and the selection labels. The state face's `disabled:`,
 // `data-disabled:` and `aria-disabled:` cursors are variants, so they sort after this
 // plain utility and a disabled button keeps `not-allowed`.
+// The SVG child sizing rules, `size-*` opt-out and `viewBox` included, are on `children` in button.tsx.
 // While Button renders a pending indicator it stamps `data-pending-indicator`, and the
 // recipe then hides the button's own leading and bare direct SVG children, so the indicator
 // takes a leading icon's place, an icon-only square shows the indicator alone, and a spinner

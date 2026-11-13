@@ -135,7 +135,19 @@
           "shortType": null,
           "defaultValue": null,
           "description": "The band's colour role, such as \"chart-sentiment-negative\" for the step above a limit.",
-          "required": true
+          "required": true,
+          "values": [
+            "chart-1",
+            "chart-2",
+            "chart-3",
+            "chart-4",
+            "chart-5",
+            "chart-6",
+            "chart-7",
+            "chart-8",
+            "chart-sentiment-negative",
+            "chart-sentiment-positive"
+          ]
         },
         {
           "name": "from",
@@ -198,7 +210,11 @@
           "shortType": "Union",
           "defaultValue": "\"notches\"",
           "description": "The track's look, which `Fill` and `Glow` follow. \"notches\" draws 40 notches over the sweep, every notch and every gap alike; \"solid\" draws one band with softly rounded ends. \"notches\" by default.",
-          "required": false
+          "required": false,
+          "values": [
+            "notches",
+            "solid"
+          ]
         }
       ]
     },
@@ -225,7 +241,19 @@
           "shortType": null,
           "defaultValue": "\"chart-1\"",
           "description": "The colour role of the fill, or of the glow that casts it. \"chart-1\" by default.",
-          "required": false
+          "required": false,
+          "values": [
+            "chart-1",
+            "chart-2",
+            "chart-3",
+            "chart-4",
+            "chart-5",
+            "chart-6",
+            "chart-7",
+            "chart-8",
+            "chart-sentiment-negative",
+            "chart-sentiment-positive"
+          ]
         },
         {
           "name": "style",
@@ -261,7 +289,19 @@
           "shortType": null,
           "defaultValue": "\"chart-1\"",
           "description": "The colour role of the fill, or of the glow that casts it. \"chart-1\" by default.",
-          "required": false
+          "required": false,
+          "values": [
+            "chart-1",
+            "chart-2",
+            "chart-3",
+            "chart-4",
+            "chart-5",
+            "chart-6",
+            "chart-7",
+            "chart-8",
+            "chart-sentiment-negative",
+            "chart-sentiment-positive"
+          ]
         },
         {
           "name": "style",
@@ -333,7 +373,11 @@
           "shortType": "Union",
           "defaultValue": "\"inside\"",
           "description": "Where the ruler sits: \"inside\" the track, or \"outside\" it at the rim, where the dial makes room for it and its labels. \"inside\" by default.",
-          "required": false
+          "required": false,
+          "values": [
+            "inside",
+            "outside"
+          ]
         }
       ]
     },
@@ -369,7 +413,11 @@
           "shortType": "Union",
           "defaultValue": "\"line\"",
           "description": "The needle's shape: a \"line\" with round ends, or a slim \"triangle\". \"line\" by default.",
-          "required": false
+          "required": false,
+          "values": [
+            "line",
+            "triangle"
+          ]
         }
       ]
     },
@@ -396,7 +444,19 @@
           "shortType": null,
           "defaultValue": "\"chart-1\"",
           "description": "The sector's colour role. \"chart-1\" by default.",
-          "required": false
+          "required": false,
+          "values": [
+            "chart-1",
+            "chart-2",
+            "chart-3",
+            "chart-4",
+            "chart-5",
+            "chart-6",
+            "chart-7",
+            "chart-8",
+            "chart-sentiment-negative",
+            "chart-sentiment-positive"
+          ]
         },
         {
           "name": "style",
@@ -414,7 +474,12 @@
           "shortType": "Union",
           "defaultValue": "\"conic\"",
           "description": "The wedge's look: \"conic\" brightens toward the reading's edge, \"radial\" brightens toward the rim, and \"flat\" paints one tint. \"conic\" by default.",
-          "required": false
+          "required": false,
+          "values": [
+            "conic",
+            "flat",
+            "radial"
+          ]
         }
       ]
     },
@@ -441,7 +506,19 @@
           "shortType": null,
           "defaultValue": "\"chart-1\"",
           "description": "The ring's colour role. \"chart-1\" by default.",
-          "required": false
+          "required": false,
+          "values": [
+            "chart-1",
+            "chart-2",
+            "chart-3",
+            "chart-4",
+            "chart-5",
+            "chart-6",
+            "chart-7",
+            "chart-8",
+            "chart-sentiment-negative",
+            "chart-sentiment-positive"
+          ]
         },
         {
           "name": "style",
@@ -477,7 +554,19 @@
           "shortType": null,
           "defaultValue": "\"chart-1\"",
           "description": "The dots' colour role. \"chart-1\" by default.",
-          "required": false
+          "required": false,
+          "values": [
+            "chart-1",
+            "chart-2",
+            "chart-3",
+            "chart-4",
+            "chart-5",
+            "chart-6",
+            "chart-7",
+            "chart-8",
+            "chart-sentiment-negative",
+            "chart-sentiment-positive"
+          ]
         },
         {
           "name": "rings",
@@ -504,7 +593,11 @@
           "shortType": "Union",
           "defaultValue": "\"even\"",
           "description": "The rings' look: \"even\", every ring alike, or \"fade\", each ring fainter toward the centre. \"even\" by default.",
-          "required": false
+          "required": false,
+          "values": [
+            "even",
+            "fade"
+          ]
         }
       ]
     },

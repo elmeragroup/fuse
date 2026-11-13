@@ -87,7 +87,12 @@
           "shortType": "Union",
           "defaultValue": "'onSubmit'",
           "description": "Determines when the form should be validated. The `validationMode` prop on `<Field.Root>` takes precedence over this. - `onSubmit` (default): validates the field when the form is submitted, afterwards fields will re-validate on change. - `onBlur`: validates a field when it loses focus. - `onChange`: validates the field on every change to its value.",
-          "required": false
+          "required": false,
+          "values": [
+            "onBlur",
+            "onChange",
+            "onSubmit"
+          ]
         }
       ]
     }

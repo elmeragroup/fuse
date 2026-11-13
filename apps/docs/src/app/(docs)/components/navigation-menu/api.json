@@ -30,7 +30,12 @@
           "shortType": null,
           "defaultValue": "\"start\"",
           "description": "How the shared popup aligns to the open trigger on the cross axis.",
-          "required": false
+          "required": false,
+          "values": [
+            "center",
+            "end",
+            "start"
+          ]
         },
         {
           "name": "className",
@@ -125,7 +130,11 @@
           "shortType": "Union",
           "defaultValue": "\"horizontal\"",
           "description": "The orientation of the navigation menu.",
-          "required": false
+          "required": false,
+          "values": [
+            "horizontal",
+            "vertical"
+          ]
         },
         {
           "name": "render",
@@ -145,7 +154,15 @@
           "shortType": null,
           "defaultValue": "\"bottom\"",
           "description": "Which side of the open trigger the shared popup opens on. Keep the default `\"bottom\"` for a bar; a submenu nested in a `NavigationMenu.Content` opens to the side, usually `side=\"right\"` with `orientation=\"vertical\"` and `align=\"end\"`.",
-          "required": false
+          "required": false,
+          "values": [
+            "bottom",
+            "inline-end",
+            "inline-start",
+            "left",
+            "right",
+            "top"
+          ]
         },
         {
           "name": "style",

@@ -46,7 +46,11 @@
           "shortType": "Union",
           "defaultValue": "\"start\"",
           "description": "Where the control sits in the labelled row. `\"end\"` places it after the row children (trailing indicator). Default `\"start\"`.",
-          "required": false
+          "required": false,
+          "values": [
+            "end",
+            "start"
+          ]
         },
         {
           "name": "dataSlot",
@@ -184,7 +188,12 @@
           "shortType": "Union",
           "defaultValue": "\"default\"",
           "description": "",
-          "required": false
+          "required": false,
+          "values": [
+            "default",
+            "hidden",
+            "visible"
+          ]
         }
       ]
     }

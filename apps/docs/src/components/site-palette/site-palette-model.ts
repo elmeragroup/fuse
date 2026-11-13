@@ -184,13 +184,16 @@ function pageRow(entry: SearchEntry): SiteRow {
 
 /** Every demo of every component page, deep-linked to its anchor. */
 const DEMO_ROWS: readonly SiteRow[] = COMPONENT_OUTLINES.flatMap((component) =>
-  component.demos.map((demo): SiteRow => ({
-    id: `demo:${component.slug}#${demo.id}`,
-    title: demo.title,
-    keywords: [component.title, component.slug],
-    hint: component.title,
-    action: { _tag: "Navigate", href: `${componentHref(component.slug)}#${demo.id}` },
-  }))
+  component.sections
+    .flatMap((item) => [item, ...(item.children ?? [])])
+    .filter((item) => item.demo === true)
+    .map((demo): SiteRow => ({
+      id: `demo:${component.slug}#${demo.id}`,
+      title: demo.title,
+      keywords: [component.title, component.slug],
+      hint: component.title,
+      action: { _tag: "Navigate", href: `${componentHref(component.slug)}#${demo.id}` },
+    }))
 );
 
 /** The rows of the Components page, in nav order. */
@@ -266,11 +269,16 @@ export function sitePaletteModel(
   commands: readonly SiteCommand[],
   settings: SiteSettings
 ): SitePaletteModel {
-  const toc = tocForPath(pathname).map((item): SiteRow => ({
-    id: `toc:${item.id}`,
-    title: item.title,
-    action: { _tag: "Navigate", href: `${pathname}#${item.id}` },
-  }));
+  // A nested entry, such as an example under Examples, names its section in the row's hint.
+  const toc = tocForPath(pathname).flatMap((item): SiteRow[] => [
+    { id: `toc:${item.id}`, title: item.title, action: { _tag: "Navigate", href: `${pathname}#${item.id}` } },
+    ...(item.children ?? []).map((child): SiteRow => ({
+      id: `toc:${child.id}`,
+      title: child.title,
+      hint: item.title,
+      action: { _tag: "Navigate", href: `${pathname}#${child.id}` },
+    })),
+  ]);
   return {
     thisPage: [...toc, ...commands],
     settings: [...settings.pages.map(settingsEntry), ...settings.commands],

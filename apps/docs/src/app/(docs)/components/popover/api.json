@@ -262,7 +262,12 @@
           "shortType": null,
           "defaultValue": "\"center\"",
           "description": "How the popup aligns to the trigger on the cross axis.",
-          "required": false
+          "required": false,
+          "values": [
+            "center",
+            "end",
+            "start"
+          ]
         },
         {
           "name": "alignOffset",
@@ -351,7 +356,15 @@
           "shortType": null,
           "defaultValue": "\"bottom\"",
           "description": "Which side of the trigger the popup is placed on.",
-          "required": false
+          "required": false,
+          "values": [
+            "bottom",
+            "inline-end",
+            "inline-start",
+            "left",
+            "right",
+            "top"
+          ]
         },
         {
           "name": "sideOffset",

@@ -18,7 +18,11 @@
           "shortType": "Union",
           "defaultValue": null,
           "description": "",
-          "required": false
+          "required": false,
+          "values": [
+            "horizontal",
+            "vertical"
+          ]
         },
         {
           "name": "size",
@@ -27,7 +31,11 @@
           "shortType": "Union",
           "defaultValue": "\"default\"",
           "description": "The card's surface tier, which pads its sections, gaps them and sets their inner corner. `default` takes the medium tier, `--surface-pad-md`, which Items and Accordion items pad with too, so the card's text starts on their edge. `lg` takes the large tier, `--surface-pad-lg`, for a card that holds long prose or acts as a page's main panel.",
-          "required": false
+          "required": false,
+          "values": [
+            "default",
+            "lg"
+          ]
         }
       ]
     },
@@ -47,7 +55,11 @@
           "shortType": "Union",
           "defaultValue": null,
           "description": "",
-          "required": false
+          "required": false,
+          "values": [
+            "horizontal",
+            "vertical"
+          ]
         }
       ]
     },
@@ -67,7 +79,11 @@
           "shortType": "Union",
           "defaultValue": null,
           "description": "",
-          "required": false
+          "required": false,
+          "values": [
+            "horizontal",
+            "vertical"
+          ]
         }
       ]
     },
@@ -87,7 +103,11 @@
           "shortType": "Union",
           "defaultValue": null,
           "description": "",
-          "required": false
+          "required": false,
+          "values": [
+            "horizontal",
+            "vertical"
+          ]
         },
         {
           "name": "icon",
@@ -114,7 +134,18 @@
           "shortType": "Union",
           "defaultValue": "\"2xl\"",
           "description": "Typography size for the title, mapped to a `text-{size}` class. Defaults to `2xl`.",
-          "required": false
+          "required": false,
+          "values": [
+            "2xl",
+            "3xl",
+            "4xl",
+            "5xl",
+            "6xl",
+            "default",
+            "lg",
+            "sm",
+            "xl"
+          ]
         }
       ]
     },
@@ -134,7 +165,11 @@
           "shortType": "Union",
           "defaultValue": null,
           "description": "",
-          "required": false
+          "required": false,
+          "values": [
+            "horizontal",
+            "vertical"
+          ]
         },
         {
           "name": "size",
@@ -143,7 +178,15 @@
           "shortType": "Union",
           "defaultValue": "\"sm\"",
           "description": "Typography size for the description, mapped to a `text-{size}` class. Defaults to `sm`.",
-          "required": false
+          "required": false,
+          "values": [
+            "2xl",
+            "default",
+            "lg",
+            "sm",
+            "xl",
+            "xs"
+          ]
         }
       ]
     },
@@ -163,7 +206,11 @@
           "shortType": "Union",
           "defaultValue": null,
           "description": "",
-          "required": false
+          "required": false,
+          "values": [
+            "horizontal",
+            "vertical"
+          ]
         }
       ]
     },
@@ -183,7 +230,11 @@
           "shortType": "Union",
           "defaultValue": null,
           "description": "",
-          "required": false
+          "required": false,
+          "values": [
+            "horizontal",
+            "vertical"
+          ]
         }
       ]
     },
@@ -203,7 +254,11 @@
           "shortType": "Union",
           "defaultValue": null,
           "description": "",
-          "required": false
+          "required": false,
+          "values": [
+            "horizontal",
+            "vertical"
+          ]
         }
       ]
     },

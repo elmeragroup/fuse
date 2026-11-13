@@ -94,7 +94,13 @@
           "shortType": "Union",
           "defaultValue": "\"default\"",
           "description": "",
-          "required": false
+          "required": false,
+          "values": [
+            "default",
+            "lg",
+            "sm",
+            "xs"
+          ]
         },
         {
           "name": "style",
@@ -125,7 +131,11 @@
           "shortType": "Union",
           "defaultValue": "\"default\"",
           "description": "",
-          "required": false
+          "required": false,
+          "values": [
+            "default",
+            "outline"
+          ]
         }
       ]
     }

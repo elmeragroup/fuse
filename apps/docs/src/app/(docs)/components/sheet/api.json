@@ -148,7 +148,13 @@
           "shortType": "Union",
           "defaultValue": "\"right\"",
           "description": "Edge the panel anchors to. Also selects the swipe-to-dismiss direction (`top` → up, `right` → right, `bottom` → down, `left` → left).",
-          "required": false
+          "required": false,
+          "values": [
+            "bottom",
+            "left",
+            "right",
+            "top"
+          ]
         },
         {
           "name": "snapPoint",
@@ -552,7 +558,22 @@
           "shortType": "Union",
           "defaultValue": null,
           "description": "",
-          "required": false
+          "required": false,
+          "values": [
+            "10xl",
+            "2xl",
+            "3xl",
+            "4xl",
+            "5xl",
+            "6xl",
+            "7xl",
+            "8xl",
+            "9xl",
+            "lg",
+            "md",
+            "sm",
+            "xl"
+          ]
         },
         {
           "name": "style",

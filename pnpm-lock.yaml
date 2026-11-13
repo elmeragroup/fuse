@@ -28,8 +28,8 @@ catalogs:
       specifier: 4.0.6
       version: 4.0.6
     '@elmeragroup/internal':
-      specifier: 0.2.0-canary.19
-      version: 0.2.0-canary.19
+      specifier: 0.2.0-canary.20
+      version: 0.2.0-canary.20
     '@figma/plugin-typings':
       specifier: 1.141.0
       version: 1.141.0
@@ -271,7 +271,7 @@ importers:
         version: 3.0.2
       '@elmeragroup/internal':
         specifier: 'catalog:'
-        version: 0.2.0-canary.19
+        version: 0.2.0-canary.20
       '@elmeragroup/typescript-config':
         specifier: workspace:*
         version: link:tooling/typescript
@@ -380,7 +380,7 @@ importers:
         version: link:../../packages/color
       '@elmeragroup/internal':
         specifier: 'catalog:'
-        version: 0.2.0-canary.19
+        version: 0.2.0-canary.20
       '@elmeragroup/typescript-config':
         specifier: workspace:*
         version: link:../../tooling/typescript
@@ -544,7 +544,7 @@ importers:
         version: link:../color
       '@elmeragroup/internal':
         specifier: 'catalog:'
-        version: 0.2.0-canary.19
+        version: 0.2.0-canary.20
       '@elmeragroup/typescript-config':
         specifier: workspace:*
         version: link:../../tooling/typescript
@@ -1097,8 +1097,8 @@ packages:
       effect: ^4.0.6
       vitest: '>=5.0.0 <6.0.0'
 
-  '@elmeragroup/internal@0.2.0-canary.19':
-    resolution: {integrity: sha512-6g9C7QimCrNG3vT5oo6DpmXYWIrjSkz/J/crL2V2aEbVpC7dR5FWI4x4x4M8ti4mwselhMocjcwB+8KdJYj+zQ==}
+  '@elmeragroup/internal@0.2.0-canary.20':
+    resolution: {integrity: sha512-patXqrdbuC+T7afzCTKE/qi4SrFQa/P/44pRDLt8VAp2yMPu3Hp6pUdbRDtUKw7LRTwy3V5okh2e8NMx0hC75A==}
     engines: {node: '>=24.13.0 <25'}
 
   '@emnapi/runtime@1.11.3':
@@ -5488,7 +5488,7 @@ snapshots:
       effect: 4.0.6
       vitest: 5.0.0(@types/node@26.6.6)(@vitest/browser-playwright@5.0.0)(@vitest/ui@5.0.0)(vite@8.3.0(@types/node@26.6.6)(jiti@2.7.0)(yaml@2.9.1))
 
-  '@elmeragroup/internal@0.2.0-canary.19':
+  '@elmeragroup/internal@0.2.0-canary.20':
     dependencies:
       '@oxlint/plugins': 1.89.0
       effect: 4.0.6

@@ -72,7 +72,56 @@
           "shortType": null,
           "defaultValue": null,
           "description": "The entrance wipe origin, physical under `dir=\"rtl\"` too. \"none\" turns the entrance off. The entrance plays once, the first time a third of the plot's height is in view, or half the height of the viewport or of the scroll container that clips a taller plot, whether the chart hydrated server HTML or mounted in the browser. Until then Root writes `data-entrance=\"waiting\"` and the marks wait at the entrance's first frame: bars at their base, and lines, areas and dots clipped from the origin. The axes, the legend, the table and the chart's name render at once. Root writes `data-entrance=\"played\"` as the entrance starts, and drops it once the wipe of lines, areas and dots has run or is cut short, or at once when no line, area or dots wipe in. Scrolling away and back, hiding the chart and showing it again, even mid-wipe, or a new origin never replays it, and a line or an area added later never wipes in. A data update while the entrance waits plays it with the latest data. Reduced motion, \"none\" and printing draw the marks at rest at once. A bar that a data update adds after the entrance writes `data-intro=\"fade\"` on itself and fades in. A bar that an `xRange` change, a brush step or a pan adds writes `data-intro=\"none\"` and takes its place at once.",
-          "required": false
+          "required": false,
+          "values": [
+            "center",
+            "edges",
+            "left",
+            "none",
+            "right"
+          ],
+          "requires": {
+            "center": [
+              [
+                "aria-label"
+              ],
+              [
+                "aria-labelledby"
+              ]
+            ],
+            "edges": [
+              [
+                "aria-label"
+              ],
+              [
+                "aria-labelledby"
+              ]
+            ],
+            "left": [
+              [
+                "aria-label"
+              ],
+              [
+                "aria-labelledby"
+              ]
+            ],
+            "none": [
+              [
+                "aria-label"
+              ],
+              [
+                "aria-labelledby"
+              ]
+            ],
+            "right": [
+              [
+                "aria-label"
+              ],
+              [
+                "aria-labelledby"
+              ]
+            ]
+          }
         },
         {
           "name": "defaultActiveX",
@@ -116,8 +165,84 @@
           "type": "Interval | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Time axes only. A category axis takes no interval. The slot length, which is also the finest interval in the chart. A time axis requires it.",
-          "required": false
+          "description": "Time axes only. A category axis takes no interval. The slot length, which is also the finest interval in the chart. A time axis requires it. The axis lists at most 1,000,000 slots, so a year of minutes fits and a year of seconds throws `slot-limit`.",
+          "required": false,
+          "values": [
+            "day",
+            "hour",
+            "minute",
+            "month",
+            "quarter-hour",
+            "second",
+            "week",
+            "year"
+          ],
+          "requires": {
+            "day": [
+              [
+                "aria-label"
+              ],
+              [
+                "aria-labelledby"
+              ]
+            ],
+            "hour": [
+              [
+                "aria-label"
+              ],
+              [
+                "aria-labelledby"
+              ]
+            ],
+            "minute": [
+              [
+                "aria-label"
+              ],
+              [
+                "aria-labelledby"
+              ]
+            ],
+            "month": [
+              [
+                "aria-label"
+              ],
+              [
+                "aria-labelledby"
+              ]
+            ],
+            "quarter-hour": [
+              [
+                "aria-label"
+              ],
+              [
+                "aria-labelledby"
+              ]
+            ],
+            "second": [
+              [
+                "aria-label"
+              ],
+              [
+                "aria-labelledby"
+              ]
+            ],
+            "week": [
+              [
+                "aria-label"
+              ],
+              [
+                "aria-labelledby"
+              ]
+            ],
+            "year": [
+              [
+                "aria-label"
+              ],
+              [
+                "aria-labelledby"
+              ]
+            ]
+          }
         },
         {
           "name": "now",
@@ -162,7 +287,29 @@
           "shortType": "Union",
           "defaultValue": "\"vertical\"",
           "description": "\"horizontal\" draws the x column down the left edge and values left to right, for horizontal bars. Axes keep their data roles in both orientations, so `XAxis` is always the `xKey` axis and `YAxis` always the value axis. Each category row is `--chart-row-height` tall.",
-          "required": false
+          "required": false,
+          "values": [
+            "horizontal",
+            "vertical"
+          ],
+          "requires": {
+            "horizontal": [
+              [
+                "aria-label"
+              ],
+              [
+                "aria-labelledby"
+              ]
+            ],
+            "vertical": [
+              [
+                "aria-label"
+              ],
+              [
+                "aria-labelledby"
+              ]
+            ]
+          }
         },
         {
           "name": "period",
@@ -189,7 +336,29 @@
           "shortType": "Union",
           "defaultValue": "\"diverging\"",
           "description": "\"diverging\" by default, so negative values stack below zero.",
-          "required": false
+          "required": false,
+          "values": [
+            "diverging",
+            "expand"
+          ],
+          "requires": {
+            "diverging": [
+              [
+                "aria-label"
+              ],
+              [
+                "aria-labelledby"
+              ]
+            ],
+            "expand": [
+              [
+                "aria-label"
+              ],
+              [
+                "aria-labelledby"
+              ]
+            ]
+          }
         },
         {
           "name": "style",
@@ -243,7 +412,29 @@
           "shortType": "Union",
           "defaultValue": "\"band\"",
           "description": "\"band\" by default. Line and area charts usually pass \"point\".",
-          "required": false
+          "required": false,
+          "values": [
+            "band",
+            "point"
+          ],
+          "requires": {
+            "band": [
+              [
+                "aria-label"
+              ],
+              [
+                "aria-labelledby"
+              ]
+            ],
+            "point": [
+              [
+                "aria-label"
+              ],
+              [
+                "aria-labelledby"
+              ]
+            ]
+          }
         },
         {
           "name": "yBaseline",
@@ -252,7 +443,29 @@
           "shortType": "Union",
           "defaultValue": "\"zero\"",
           "description": "\"zero\" by default. \"none\" lets a Line-only layout leave 0 out, and Bar and Area throw under it. It governs the default layout only. Each Panel takes its own.",
-          "required": false
+          "required": false,
+          "values": [
+            "none",
+            "zero"
+          ],
+          "requires": {
+            "none": [
+              [
+                "aria-label"
+              ],
+              [
+                "aria-labelledby"
+              ]
+            ],
+            "zero": [
+              [
+                "aria-label"
+              ],
+              [
+                "aria-labelledby"
+              ]
+            ]
+          }
         },
         {
           "name": "yInclude",
@@ -315,7 +528,11 @@
           "shortType": "Union",
           "defaultValue": "\"zero\"",
           "description": "As Root's `yBaseline`, for this Panel's layout. \"zero\" by default.",
-          "required": false
+          "required": false,
+          "values": [
+            "none",
+            "zero"
+          ]
         },
         {
           "name": "yInclude",
@@ -351,7 +568,12 @@
           "shortType": "Union",
           "defaultValue": null,
           "description": "Which lines to draw, in screen directions. Without it, lines at the value ticks, which are horizontal under `orientation=\"vertical\"` and vertical under `\"horizontal\"`.",
-          "required": false
+          "required": false,
+          "values": [
+            "both",
+            "horizontal",
+            "vertical"
+          ]
         },
         {
           "name": "style",
@@ -369,7 +591,11 @@
           "shortType": "Union",
           "defaultValue": "\"solid\"",
           "description": "The line style. \"solid\" by default, as the Figma `Chart` component draws.",
-          "required": false
+          "required": false,
+          "values": [
+            "dashed",
+            "solid"
+          ]
         }
       ]
     },
@@ -423,7 +649,11 @@
           "shortType": "Union",
           "defaultValue": "\"none\"",
           "description": "The tick mark. \"none\" by default.",
-          "required": false
+          "required": false,
+          "values": [
+            "dot",
+            "none"
+          ]
         }
       ]
     },
@@ -468,7 +698,11 @@
           "shortType": "Union",
           "defaultValue": "\"start\"",
           "description": "\"start\" draws the axis at the left edge, or at the bottom under `orientation=\"horizontal\"`. \"end\" draws it at the opposite edge. \"start\" by default.",
-          "required": false
+          "required": false,
+          "values": [
+            "end",
+            "start"
+          ]
         },
         {
           "name": "style",
@@ -603,7 +837,18 @@
           "shortType": null,
           "defaultValue": "\"monotone\"",
           "description": "The curve through the readings. \"monotone\" by default. \"step-after\" and \"step-before\" run each reading across its whole cell, so they need `xScale=\"band\"` and throw `step-curve-needs-cells` under \"point\".",
-          "required": false
+          "required": false,
+          "values": [
+            "basis",
+            "bump",
+            "linear",
+            "monotone",
+            "monotone-y",
+            "natural",
+            "step",
+            "step-after",
+            "step-before"
+          ]
         },
         {
           "name": "dataKey",
@@ -630,7 +875,13 @@
           "shortType": "Union",
           "defaultValue": "\"default\"",
           "description": "The line's look. \"default\" by default. \"dashed\" dashes the whole line, \"flowing\" runs its dashes along it, which reduced motion stops, and \"quiet\" draws a thin, faint line for a reference series such as last year.",
-          "required": false
+          "required": false,
+          "values": [
+            "dashed",
+            "default",
+            "flowing",
+            "quiet"
+          ]
         }
       ]
     },
@@ -657,7 +908,18 @@
           "shortType": null,
           "defaultValue": "\"monotone\"",
           "description": "The curve along the area's edge. \"monotone\" by default.",
-          "required": false
+          "required": false,
+          "values": [
+            "basis",
+            "bump",
+            "linear",
+            "monotone",
+            "monotone-y",
+            "natural",
+            "step",
+            "step-after",
+            "step-before"
+          ]
         },
         {
           "name": "dataKey",
@@ -684,7 +946,15 @@
           "shortType": "Union",
           "defaultValue": "\"gradient\"",
           "description": "The fill's look. \"gradient\" by default, which fades from the value toward the baseline, and \"gradient-reverse\" fades the other way. \"solid\" fills at `--chart-area-opacity`, and \"dotted\", \"lines\" and \"hatched\" fill with a texture of the series colour.",
-          "required": false
+          "required": false,
+          "values": [
+            "dotted",
+            "gradient",
+            "gradient-reverse",
+            "hatched",
+            "lines",
+            "solid"
+          ]
         }
       ]
     },
@@ -729,7 +999,12 @@
           "shortType": "Union",
           "defaultValue": "\"default\"",
           "description": "The dot's look. \"default\" by default, a filled dot inside a ring of the surface the chart rests on, `--surface`. \"ring\" is a hollow ring and \"halo\" a dot inside a faint halo of its colour.",
-          "required": false
+          "required": false,
+          "values": [
+            "default",
+            "halo",
+            "ring"
+          ]
         }
       ]
     },
@@ -774,7 +1049,13 @@
           "shortType": "Union",
           "defaultValue": "\"default\"",
           "description": "The dot's look. \"default\" by default. \"ping\" sends a ring out from the dot once a second.",
-          "required": false
+          "required": false,
+          "values": [
+            "default",
+            "halo",
+            "ping",
+            "ring"
+          ]
         }
       ]
     },
@@ -837,7 +1118,13 @@
           "shortType": "Union",
           "defaultValue": "\"default\"",
           "description": "The dot's look. \"default\" by default.",
-          "required": false
+          "required": false,
+          "values": [
+            "default",
+            "halo",
+            "ping",
+            "ring"
+          ]
         }
       ]
     },
@@ -909,7 +1196,13 @@
           "shortType": "Union",
           "defaultValue": "\"both\"",
           "description": "The ends of the line that fade out, over 10% of the plot each. \"both\" by default. \"top\" is the end at the value axis's maximum, the right end under `orientation=\"horizontal\"`. A band never fades.",
-          "required": false
+          "required": false,
+          "values": [
+            "both",
+            "bottom",
+            "none",
+            "top"
+          ]
         },
         {
           "name": "style",
@@ -927,7 +1220,11 @@
           "shortType": "Union",
           "defaultValue": null,
           "description": "A band over the active slot or a line through it. The default follows `xScale`. A band spans the active slot of the coarsest series in its layout, so an hourly bar's band covers its hour.",
-          "required": false
+          "required": false,
+          "values": [
+            "band",
+            "line"
+          ]
         }
       ]
     },
@@ -1017,7 +1314,38 @@
           "shortType": null,
           "defaultValue": null,
           "description": "The line's tone. \"default\" by default.",
-          "required": false
+          "required": false,
+          "values": [
+            "default",
+            "error",
+            "muted"
+          ],
+          "requires": {
+            "default": [
+              [
+                "x"
+              ],
+              [
+                "y"
+              ]
+            ],
+            "error": [
+              [
+                "x"
+              ],
+              [
+                "y"
+              ]
+            ],
+            "muted": [
+              [
+                "x"
+              ],
+              [
+                "y"
+              ]
+            ]
+          }
         },
         {
           "name": "variant",
@@ -1026,7 +1354,29 @@
           "shortType": "Union",
           "defaultValue": null,
           "description": "The line style. \"solid\" by default.",
-          "required": false
+          "required": false,
+          "values": [
+            "dashed",
+            "solid"
+          ],
+          "requires": {
+            "dashed": [
+              [
+                "x"
+              ],
+              [
+                "y"
+              ]
+            ],
+            "solid": [
+              [
+                "x"
+              ],
+              [
+                "y"
+              ]
+            ]
+          }
         },
         {
           "name": "x",
@@ -1098,7 +1448,44 @@
           "shortType": null,
           "defaultValue": null,
           "description": "The band's tone. \"default\" by default.",
-          "required": false
+          "required": false,
+          "values": [
+            "default",
+            "error",
+            "muted"
+          ],
+          "requires": {
+            "default": [
+              [
+                "x1",
+                "x2"
+              ],
+              [
+                "y1",
+                "y2"
+              ]
+            ],
+            "error": [
+              [
+                "x1",
+                "x2"
+              ],
+              [
+                "y1",
+                "y2"
+              ]
+            ],
+            "muted": [
+              [
+                "x1",
+                "x2"
+              ],
+              [
+                "y1",
+                "y2"
+              ]
+            ]
+          }
         },
         {
           "name": "x1",
@@ -1170,7 +1557,14 @@
           "shortType": null,
           "defaultValue": "\"last\"",
           "description": "The datum to print when nothing is active. \"last\" by default.",
-          "required": false
+          "required": false,
+          "values": [
+            "first",
+            "last",
+            "max",
+            "min",
+            "now"
+          ]
         },
         {
           "name": "format",
@@ -1528,7 +1922,12 @@
           "shortType": "Union",
           "defaultValue": "\"bar\"",
           "description": "The mark the placeholder sketches. \"bar\" by default.",
-          "required": false
+          "required": false,
+          "values": [
+            "area",
+            "bar",
+            "line"
+          ]
         }
       ]
     },
@@ -1619,7 +2018,11 @@
           "shortType": "Union",
           "defaultValue": "\"point\"",
           "description": "Where the popup rests on a vertical chart. \"point\", the default, centres it on the active slot inside the chart's box and rests it 8 px above the highest mark under its own width. \"top\" pins it to the plot top and tracks x only, as a chart with Panels always does. A horizontal chart places it over or under the active row either way.",
-          "required": false
+          "required": false,
+          "values": [
+            "point",
+            "top"
+          ]
         },
         {
           "name": "children",
@@ -1655,7 +2058,11 @@
           "shortType": "Union",
           "defaultValue": "\"default\"",
           "description": "The popup's surface. \"default\" by default.",
-          "required": false
+          "required": false,
+          "values": [
+            "default",
+            "frosted"
+          ]
         }
       ]
     },
@@ -1878,7 +2285,15 @@
           "shortType": "Union",
           "defaultValue": "\"square\"",
           "description": "The swatch's shape. \"square\" by default.",
-          "required": false
+          "required": false,
+          "values": [
+            "bar",
+            "circle",
+            "circle-outline",
+            "line",
+            "square",
+            "square-outline"
+          ]
         }
       ]
     },
@@ -1992,7 +2407,13 @@
           "shortType": "Union",
           "defaultValue": "\"bottom\"",
           "description": "Where the legend sits around the plot. \"bottom\" by default. In a polar chart narrower than 30rem, a \"start\" or \"end\" legend moves under the dial, so the dial keeps its size.",
-          "required": false
+          "required": false,
+          "values": [
+            "bottom",
+            "end",
+            "start",
+            "top"
+          ]
         },
         {
           "name": "style",
@@ -2072,7 +2493,14 @@
           "shortType": null,
           "defaultValue": "\"last\"",
           "description": "The datum to print when nothing is active. \"last\" by default.",
-          "required": false
+          "required": false,
+          "values": [
+            "first",
+            "last",
+            "max",
+            "min",
+            "now"
+          ]
         },
         {
           "name": "format",
@@ -2196,7 +2624,13 @@
           "shortType": "Union",
           "defaultValue": "\"bottom\"",
           "description": "Where the group sits around the plot. \"bottom\" by default.",
-          "required": false
+          "required": false,
+          "values": [
+            "bottom",
+            "end",
+            "start",
+            "top"
+          ]
         },
         {
           "name": "style",
@@ -2444,7 +2878,20 @@
           "shortType": "Union",
           "defaultValue": "\"dots\"",
           "description": "The pattern drawn behind the marks. \"dots\" by default.",
-          "required": false
+          "required": false,
+          "values": [
+            "4-pointed-star",
+            "bubbles",
+            "cross-hatch",
+            "diagonal-lines",
+            "dots",
+            "falling-triangles",
+            "grid",
+            "overlapping-circles",
+            "plus",
+            "tiny-checkers",
+            "wiggle-lines"
+          ]
         }
       ]
     },

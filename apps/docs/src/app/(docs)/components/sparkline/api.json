@@ -34,7 +34,34 @@
           "shortType": null,
           "defaultValue": null,
           "description": "The paint. \"chart-1\" by default.",
-          "required": false
+          "required": false,
+          "values": [
+            "chart-1",
+            "chart-2",
+            "chart-3",
+            "chart-4",
+            "chart-5",
+            "chart-6",
+            "chart-7",
+            "chart-8",
+            "chart-diverging-1",
+            "chart-diverging-2",
+            "chart-diverging-3",
+            "chart-diverging-4",
+            "chart-diverging-5",
+            "chart-diverging-6",
+            "chart-diverging-7",
+            "chart-other",
+            "chart-sentiment-negative",
+            "chart-sentiment-positive",
+            "chart-seq-1",
+            "chart-seq-2",
+            "chart-seq-3",
+            "chart-seq-4",
+            "chart-seq-5",
+            "chart-seq-6",
+            "chart-seq-7"
+          ]
         },
         {
           "name": "curve",
@@ -43,7 +70,18 @@
           "shortType": null,
           "defaultValue": null,
           "description": "The curve through the values. \"monotone\" by default.",
-          "required": false
+          "required": false,
+          "values": [
+            "basis",
+            "bump",
+            "linear",
+            "monotone",
+            "monotone-y",
+            "natural",
+            "step",
+            "step-after",
+            "step-before"
+          ]
         },
         {
           "name": "data",
@@ -115,7 +153,67 @@
           "shortType": null,
           "defaultValue": null,
           "description": "Only with `start`. Each value's slot length.",
-          "required": false
+          "required": false,
+          "values": [
+            "day",
+            "hour",
+            "minute",
+            "month",
+            "quarter-hour",
+            "second",
+            "week",
+            "year"
+          ],
+          "requires": {
+            "day": [
+              [
+                "start",
+                "timeZone"
+              ]
+            ],
+            "hour": [
+              [
+                "start",
+                "timeZone"
+              ]
+            ],
+            "minute": [
+              [
+                "start",
+                "timeZone"
+              ]
+            ],
+            "month": [
+              [
+                "start",
+                "timeZone"
+              ]
+            ],
+            "quarter-hour": [
+              [
+                "start",
+                "timeZone"
+              ]
+            ],
+            "second": [
+              [
+                "start",
+                "timeZone"
+              ]
+            ],
+            "week": [
+              [
+                "start",
+                "timeZone"
+              ]
+            ],
+            "year": [
+              [
+                "start",
+                "timeZone"
+              ]
+            ]
+          }
         },
         {
           "name": "locale",
@@ -124,7 +222,13 @@
           "shortType": null,
           "defaultValue": null,
           "description": "The locale of the range sentence. A hook-free component cannot read LocaleProvider.",
-          "required": true
+          "required": true,
+          "values": [
+            "en-US",
+            "fi-FI",
+            "nb-NO",
+            "sv-SE"
+          ]
         },
         {
           "name": "reference",
@@ -169,7 +273,12 @@
           "shortType": "Union",
           "defaultValue": null,
           "description": "The mark. \"line\" by default.",
-          "required": false
+          "required": false,
+          "values": [
+            "area",
+            "bar",
+            "line"
+          ]
         }
       ]
     },

@@ -4,6 +4,7 @@ import type { ComponentProps, ReactElement, ReactNode } from "react";
 import { slugifyHeading } from "../lib/slug";
 import { DocsCodeBlock } from "./docs-code-block";
 import { DocsInlineCode } from "./docs-inline-code";
+import { DocsSectionHeading } from "./docs-section-heading";
 
 /**
  * The element overrides `@next/mdx` applies to every authored `page.mdx`
@@ -40,7 +41,16 @@ function plainText(node: ReactNode): string {
 function mdxHeading(level: HeadingLevel) {
   const tag = `h${String(level)}`;
   function MdxHeading({ children, ...rest }: ComponentProps<"h2">): ReactElement {
-    return createElement(tag, { id: slugifyHeading(plainText(children)), ...rest }, children);
+    const id = slugifyHeading(plainText(children));
+    // A `##` outside `<Prose>`, such as `## Usage`, looks like the generated section headings.
+    if (level === 2) {
+      return (
+        <DocsSectionHeading id={id} scope="outsideProse" {...rest}>
+          {children}
+        </DocsSectionHeading>
+      );
+    }
+    return createElement(tag, { id, ...rest }, children);
   }
   MdxHeading.displayName = `Mdx${tag.toUpperCase()}`;
   return MdxHeading;

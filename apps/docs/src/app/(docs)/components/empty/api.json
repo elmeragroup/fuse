@@ -18,7 +18,12 @@
           "shortType": "Union",
           "defaultValue": "\"default\"",
           "description": "",
-          "required": false
+          "required": false,
+          "values": [
+            "default",
+            "outline",
+            "outline-dashed"
+          ]
         }
       ]
     },
@@ -48,7 +53,11 @@
           "shortType": "Union",
           "defaultValue": "\"default\"",
           "description": "",
-          "required": false
+          "required": false,
+          "values": [
+            "default",
+            "icon"
+          ]
         }
       ]
     },

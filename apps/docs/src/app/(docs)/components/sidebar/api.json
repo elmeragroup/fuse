@@ -18,7 +18,11 @@
           "shortType": null,
           "defaultValue": "\"page\"",
           "description": "What bounds the Sidebar. `page` fills at least the viewport's height, fixes the desktop rail to the viewport, writes the open state to the `sidebar:state` cookie and toggles on ⌘B or Ctrl+B from anywhere in the document. `container` fills its container's height, which the host must define, keeps the rail inside it, writes no cookie, so a host that wants the state kept passes `open` and `onOpenChange`, and toggles on the shortcut only from a keydown inside the Provider's React tree. An `Inset` taller than the container is clipped, so the host scrolls the inset's own content. The mobile Sheet still follows the viewport's width.",
-          "required": false
+          "required": false,
+          "values": [
+            "container",
+            "page"
+          ]
         },
         {
           "name": "defaultOpen",
@@ -92,7 +96,12 @@
           "shortType": "Union",
           "defaultValue": "\"offcanvas\"",
           "description": "`offcanvas` slides the rail off-screen when collapsed; `icon` collapses to `--sidebar-width-icon`; `none` renders the static branch — which still emits `group peer` and `data-state/variant/side` for inset compositions.",
-          "required": false
+          "required": false,
+          "values": [
+            "icon",
+            "none",
+            "offcanvas"
+          ]
         },
         {
           "name": "dir",
@@ -110,7 +119,11 @@
           "shortType": "Union",
           "defaultValue": "\"left\"",
           "description": "Edge the rail anchors to. Emitted as `data-side`; drives gap rotation, container offsets, border side and rail cursors.",
-          "required": false
+          "required": false,
+          "values": [
+            "left",
+            "right"
+          ]
         },
         {
           "name": "variant",
@@ -119,7 +132,12 @@
           "shortType": "Union",
           "defaultValue": "\"sidebar\"",
           "description": "`floating` pads the rail and rounds/shadows the inner surface; `inset` pads the rail and lets the sibling `Sidebar.Inset` react through peer selectors; `sidebar` is flush with an edge border.",
-          "required": false
+          "required": false,
+          "values": [
+            "floating",
+            "inset",
+            "sidebar"
+          ]
         }
       ]
     },
@@ -131,7 +149,7 @@
         "@base-ui/react",
         "@types/react"
       ],
-      "forwardedCount": 284,
+      "forwardedCount": 283,
       "props": [
         {
           "name": "aria-label",
@@ -143,12 +161,21 @@
           "required": false
         },
         {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The label and icons. Mark a leading icon with `data-icon=\"inline-start\"` and a trailing one with `data-icon=\"inline-end\"`, and that side takes the narrower icon padding. Your own icon components must pass `data-icon` through to the element they render. An SVG without a `size-*` class renders at 16px, or 12px at the `xs` and `icon-xs` sizes. Any `size-*` class opts out, `size-auto` included, and `w-*` or `h-*` alone does not. An SVG without a `viewBox` clips at that size instead of scaling. Give it `size-auto` to keep its own `width` and `height`, or restore the `viewBox`.",
+          "required": false
+        },
+        {
           "name": "className",
           "origin": "declared",
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Extra classes, merged last through `cn`.",
+          "description": "Extra classes, merged last through `cn`. A `px-*` class replaces the label padding only. The icon side keeps its own padding, which `has-data-[icon=inline-start]:pl-*` or `has-data-[icon=inline-end]:pr-*` replaces.",
           "required": false
         },
         {
@@ -168,7 +195,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The in-flight state of an async action. Stamps `data-pending` and `aria-busy`, blocks activation (effective disabled is `disabled || isPending`) and renders the disabled treatment, but keeps the button in the focus order like `focusableWhenDisabled`, so a keyboard user who activated it is still on it when the result arrives. Shows the `pendingIndicator` in the leading icon position meanwhile. An explicit `focusableWhenDisabled={false}` restores the native `disabled` attribute while pending. `aria-busy` announces nothing by itself: say what is happening through the label (\"Saving\") or a `role=\"status\"` region outside the button. Put a label that changes with the state in its own element, such as `<span>{label}</span>`: page translation replaces a bare text child with its own nodes, so React's update to the old text node never shows.",
+          "description": "Marks an action in flight. The button blocks activation, dims, and stamps `data-pending` and `aria-busy`. It stays in the focus order, so a keyboard user is still on it when the result arrives. `focusableWhenDisabled={false}` takes it out of the focus order. `aria-busy` announces nothing, so say what is happening in the label, such as \"Saving\", or in a `role=\"status\"` region outside the button. Put a label that changes with the state in its own element, such as `<span>{label}</span>`: page translation replaces a bare text child with its own nodes, so React's update to the old text node never shows.",
           "required": false
         },
         {
@@ -177,7 +204,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Stamps `aria-disabled` (an explicit consumer value wins), which renders the disabled treatment (`opacity-50`, the `not-allowed` cursor, no hover or press paint), and suppresses focus-on-press while the button stays fully interactive — click, keyboard and focus-visible all still work, and a Tooltip on it still opens. For \"looks disabled but explains itself on activation\" flows. The treatment keys off `aria-disabled`, so an explicit `aria-disabled={false}` also turns it off: the button then looks and announces enabled and only the focus-on-press suppression remains.",
+          "description": "Makes the button look and announce disabled while it stays interactive. It stamps `aria-disabled`, and an explicit `aria-disabled` wins. Click, keyboard and focus still work, and a Tooltip on the button still opens. Use it for an action that explains on activation why it is unavailable.",
           "required": false
         },
         {
@@ -197,7 +224,7 @@
           "type": "(() => void) | undefined",
           "shortType": "function",
           "defaultValue": null,
-          "description": "Predictive-prefetch callback. Fires once when the pointer's predicted trajectory lands inside the inflated hit rect; browsers without the prediction API fail soft.",
+          "description": "Fires once when the pointer's predicted path enters the inflated hit rect, for prefetching. Browsers without pointer prediction never fire it.",
           "required": false
         },
         {
@@ -206,7 +233,7 @@
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "What the button shows while pending. Omitted: a spinning `SpinnerGap` in the leading icon position, and the button's own leading and bare SVG children hide so the spinner takes their place (a trailing `data-icon=\"inline-end\"` icon stays). A node: rendered in that same place instead of the spinner, as a decorative `aria-hidden` slot; animate it yourself. `null` or `false`: no indicator and nothing hidden, so the call site owns the pending markup, for example a brand button that keeps its logo and centres its own spinner over it.",
+          "description": "What a pending button shows in its leading icon position. When you omit it, a spinner shows there and the button's leading and bare icons hide, while a `data-icon=\"inline-end\"` icon stays. A node replaces the spinner and does not animate on its own. `null` or `false` shows nothing and hides nothing, so the call site draws its own pending state. Fade that content with `group-data-pending/button:opacity-0`, not `invisible`, which drops the label from the accessible name, and give an overlay no `data-icon`.",
           "required": false
         },
         {
@@ -215,7 +242,7 @@
           "type": "number | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Pixels the hit rect is inflated on every side when predicting pointer intent.",
+          "description": "Pixels added to every side of the hit rect when predicting pointer intent.",
           "required": false
         },
         {
@@ -235,8 +262,46 @@
           "type": "IconButtonSize | LabelButtonSize | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "Recipe size axis. The `icon*` sizes are square and additionally require an `aria-label`.",
-          "required": false
+          "description": "The height and padding. The `icon*` sizes are square and require an `aria-label`.",
+          "required": false,
+          "values": [
+            "default",
+            "icon",
+            "icon-inline",
+            "icon-lg",
+            "icon-sm",
+            "icon-xs",
+            "lg",
+            "sm",
+            "xs"
+          ],
+          "requires": {
+            "icon": [
+              [
+                "aria-label"
+              ]
+            ],
+            "icon-inline": [
+              [
+                "aria-label"
+              ]
+            ],
+            "icon-lg": [
+              [
+                "aria-label"
+              ]
+            ],
+            "icon-sm": [
+              [
+                "aria-label"
+              ]
+            ],
+            "icon-xs": [
+              [
+                "aria-label"
+              ]
+            ]
+          }
         },
         {
           "name": "style",
@@ -251,12 +316,21 @@
         },
         {
           "name": "variant",
-          "origin": "recipe-axis",
+          "origin": "declared",
           "type": "\"default\" | \"destructive\" | \"ghost\" | \"link\" | \"outline\" | \"secondary\" | \"success\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"ghost\"",
-          "description": "",
-          "required": false
+          "description": "The fill and text colour. The theme sets the `outline` border. `link` looks like an inline text link.",
+          "required": false,
+          "values": [
+            "default",
+            "destructive",
+            "ghost",
+            "link",
+            "outline",
+            "secondary",
+            "success"
+          ]
         }
       ]
     },
@@ -353,7 +427,11 @@
           "shortType": null,
           "defaultValue": "'horizontal'",
           "description": "The orientation of the separator.",
-          "required": false
+          "required": false,
+          "values": [
+            "horizontal",
+            "vertical"
+          ]
         },
         {
           "name": "render",
@@ -512,7 +590,12 @@
           "shortType": "Union",
           "defaultValue": "\"default\"",
           "description": "",
-          "required": false
+          "required": false,
+          "values": [
+            "default",
+            "lg",
+            "sm"
+          ]
         },
         {
           "name": "tooltip",
@@ -530,7 +613,11 @@
           "shortType": "Union",
           "defaultValue": "\"default\"",
           "description": "",
-          "required": false
+          "required": false,
+          "values": [
+            "default",
+            "outline"
+          ]
         }
       ]
     },
@@ -653,7 +740,11 @@
           "shortType": "Union",
           "defaultValue": "\"md\"",
           "description": "Row size, emitted as `data-size`. `md` takes the md control size's height and the density type pair; `sm` takes the sm control size's height and fixed `text-sm`.",
-          "required": false
+          "required": false,
+          "values": [
+            "md",
+            "sm"
+          ]
         }
       ]
     },

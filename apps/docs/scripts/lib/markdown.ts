@@ -121,16 +121,36 @@ const ENTRY_STYLESHEETS = new Map<string, string>([
   ["@elmeragroup/fuse/chart", "@elmeragroup/fuse/chart.css"],
 ]);
 
-/** Renders one component's markdown endpoint. */
-export function renderComponentMarkdown(component: DocsComponent): string {
+/** One demo as a markdown section at the page's heading level: its title, file and whole source. */
+function renderDemo(demo: DocsComponent["demos"][number], depth: number): string[] {
+  return [
+    `${"#".repeat(depth)} ${demo.title}`,
+    "",
+    `Source: \`${demo.sourcePath}\``,
+    "",
+    "```tsx",
+    demo.source,
+    "```",
+    "",
+  ];
+}
+
+/** The Tokens consumed section, or nothing when the recipe reads no token. */
+function renderTokens(component: DocsComponent): string[] {
+  if (component.tokens.length === 0) return [];
+  return [
+    "## Tokens consumed",
+    "",
+    ...component.tokens.map((token) => `- \`${token.name}\`${token.isColor ? " (colour)" : ""}`),
+    "",
+  ];
+}
+
+/** The page's import, stylesheet, RSC and source facts. */
+function renderFacts(component: DocsComponent): string[] {
   // The stylesheet belongs to the page's own entry; an extra entry styles through it.
   const stylesheet = ENTRY_STYLESHEETS.get(component.apis[0].entry);
-  const lines: string[] = [
-    `# ${component.title}`,
-    "",
-    component.lede,
-    "",
-    ...(component.intro === "" ? [] : [component.intro, ""]),
+  return [
     // One import line per entry the API reference documents, the page's own first.
     ...component.apis.map(({ entry }) => `- Import: \`import { ... } from "${entry}";\``),
     ...(stylesheet === undefined
@@ -139,28 +159,50 @@ export function renderComponentMarkdown(component: DocsComponent): string {
     `- RSC: ${component.rsc}${component.rsc === "client" ? `. ${CLIENT_PART_NOTE}` : ""}`,
     `- Source: \`${component.sourcePath}\``,
     "",
-    "## Demos",
-    "",
   ];
-  for (const demo of component.demos) {
-    lines.push(
-      `### ${demo.title}`,
-      "",
-      `Source: \`${demo.sourcePath}\``,
-      "",
-      "```tsx",
-      demo.source,
-      "```",
-      ""
-    );
-  }
-  lines.push("## API reference", "", ...renderApiReference(component));
-  if (component.tokens.length > 0) {
-    lines.push("## Tokens consumed", "");
-    for (const token of component.tokens) {
-      lines.push(`- \`${token.name}\`${token.isColor ? " (colour)" : ""}`);
+}
+
+/**
+ * The page's headings and demos in page order. A demo prints at its heading level with its
+ * source, and the Usage heading carries the Usage code. A heading the intro printed is not printed
+ * again. The endpoint holds no prose, so a heading that nothing follows before the next heading or
+ * demo of its level or above is left out.
+ */
+function renderSections(component: DocsComponent): string[] {
+  const demos = new Map(component.demos.map((demo) => [demo.id, demo]));
+  const { sections, usage } = component;
+  return sections.flatMap((section, index): string[] => {
+    if (section.kind === "demo") {
+      const demo = demos.get(section.id);
+      return demo === undefined ? [] : renderDemo(demo, section.depth);
     }
-    lines.push("");
-  }
-  return finishMarkdown(lines);
+    if (section.intro === true) return [];
+    const heading = [`${"#".repeat(section.depth)} ${section.title}`, ""];
+    if (section.id === "usage" && usage !== null) return [...heading, "```tsx", usage, "```", ""];
+    const next = sections[index + 1];
+    // A demo prints its own heading, so one at this level or above ends the section too.
+    const empty = next === undefined || next.depth <= section.depth;
+    return empty ? [] : heading;
+  });
+}
+
+/**
+ * Renders one component's markdown endpoint: the H1 and lede, the intro, the import, RSC and
+ * source facts, the page's sections in page order, the API reference and the tokens. A page in
+ * the Usage shape shows no import list or RSC line, so its mirror leaves the facts out too.
+ */
+export function renderComponentMarkdown(component: DocsComponent): string {
+  return finishMarkdown([
+    `# ${component.title}`,
+    "",
+    component.lede,
+    "",
+    ...(component.intro === "" ? [] : [component.intro, ""]),
+    ...(component.usage === null ? renderFacts(component) : []),
+    ...renderSections(component),
+    "## API reference",
+    "",
+    ...renderApiReference(component),
+    ...renderTokens(component),
+  ]);
 }

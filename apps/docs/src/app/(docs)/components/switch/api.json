@@ -160,7 +160,11 @@
           "shortType": "Union",
           "defaultValue": "\"default\"",
           "description": "Optical size of the track and thumb, also emitted as `data-size`. Pixel-fixed at both density stamps — not a control size.",
-          "required": false
+          "required": false,
+          "values": [
+            "default",
+            "sm"
+          ]
         },
         {
           "name": "style",

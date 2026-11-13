@@ -7,7 +7,7 @@
  */
 
 import { entryExports, partSymbols } from "./fuse-program.ts";
-import type { FuseProgram } from "./fuse-program.ts";
+import type { FuseProgram, PartSymbol } from "./fuse-program.ts";
 
 /** What the identity pass reads of one page: its entry and the exports it documents. */
 export type IdentityPage = {
@@ -33,16 +33,28 @@ export function partIdentities(
 ): ReadonlyMap<string, PageIdentities> {
   const result = new Map<string, PageIdentities>();
   for (const page of pages) {
-    const exports = entryExports(fuse, page.entryFile);
-    if (exports === undefined) {
-      throw new Error(`${page.slug}: the project holds no module at ${page.entryFile}`);
-    }
-    const parts = page.exportNames.flatMap((name) => {
-      const exported = exports.find((candidate) => candidate.name === name);
-      if (exported === undefined) throw new Error(`${page.slug}: ${page.entryFile} exports no ${name}`);
-      return partSymbols(fuse.checker, exported).map(({ name: part, symbol }) => [part, symbol.id] as const);
-    });
-    result.set(page.slug, new Map(parts));
+    result.set(page.slug, new Map(pagePartSymbols(fuse, page).map(({ name, symbol }) => [name, symbol.id])));
   }
   return result;
+}
+
+/**
+ * Every part one page documents, with the symbol that declares it, in the order of its export
+ * names and each namespace's members.
+ *
+ * @param fuse - The library program of the generation run.
+ * @param page - The page, with its entry file and the export names it documents.
+ * @returns The page's parts.
+ * @throws {Error} When the entry is missing from the program, or exports no such name.
+ */
+export function pagePartSymbols(fuse: FuseProgram, page: IdentityPage): readonly PartSymbol[] {
+  const exports = entryExports(fuse, page.entryFile);
+  if (exports === undefined) {
+    throw new Error(`${page.slug}: the project holds no module at ${page.entryFile}`);
+  }
+  return page.exportNames.flatMap((name) => {
+    const exported = exports.find((candidate) => candidate.name === name);
+    if (exported === undefined) throw new Error(`${page.slug}: ${page.entryFile} exports no ${name}`);
+    return partSymbols(fuse.checker, exported);
+  });
 }

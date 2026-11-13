@@ -18,7 +18,12 @@
           "shortType": "Union",
           "defaultValue": null,
           "description": "",
-          "required": false
+          "required": false,
+          "values": [
+            "default",
+            "lg",
+            "sm"
+          ]
         },
         {
           "name": "variant",
@@ -27,7 +32,28 @@
           "shortType": "Union",
           "defaultValue": null,
           "description": "",
-          "required": false
+          "required": false,
+          "values": [
+            "accent",
+            "card",
+            "default",
+            "destructive",
+            "info",
+            "muted",
+            "outline",
+            "outline-destructive",
+            "outline-info",
+            "outline-secondary",
+            "outline-success",
+            "outline-warning",
+            "secondary",
+            "soft-destructive",
+            "soft-info",
+            "soft-success",
+            "soft-warning",
+            "success",
+            "warning"
+          ]
         }
       ]
     }

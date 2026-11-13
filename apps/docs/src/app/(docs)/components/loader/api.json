@@ -27,7 +27,14 @@
           "shortType": "Union",
           "defaultValue": null,
           "description": "",
-          "required": false
+          "required": false,
+          "values": [
+            "default",
+            "large",
+            "medium",
+            "small",
+            "xl"
+          ]
         },
         {
           "name": "variant",

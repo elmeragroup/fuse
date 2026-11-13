@@ -28,7 +28,11 @@
           "shortType": "Union",
           "defaultValue": null,
           "description": "Ask a phone to capture new media with the front (`\"user\"`) or back (`\"environment\"`) camera.",
-          "required": false
+          "required": false,
+          "values": [
+            "environment",
+            "user"
+          ]
         },
         {
           "name": "directory",

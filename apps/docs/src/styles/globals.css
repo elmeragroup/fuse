@@ -471,3 +471,297 @@
 }
 
 /* studio:end */
+
+/* ExpandableMenu (`components/live-code/expandable-menu.tsx`): a Base UI Menu whose trigger becomes the menu, after
+   Bloom by Josh Puckett. Base UI marks a popup's first frame `data-starting-style` and its closing
+   frames `data-ending-style`, and waits for their transitions before it unmounts.
+
+   Fuse's reduced-motion rule keeps only opacity and colour transitions, so every rule outside the
+   `no-preference` block fades, and the clip, scale and blur motion sits inside it. A popup marked
+   `data-keyboard` is opening or closing from the keyboard: it takes no starting or ending look and
+   runs no transition, so it lands at once, cutting short any motion a pointer started, and its
+   trigger and the menu's sink jump with it. */
+
+/* The menu's sizes. The parts render with them, and the menu reads them as it opens, to choose its
+   side and its submenus' offsets; registered as lengths, so they read back resolved to px. */
+@property --expandable-menu-pip {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 0px;
+}
+@property --expandable-menu-row {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 0px;
+}
+@property --expandable-menu-inset {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 0px;
+}
+@property --expandable-menu-width {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 0px;
+}
+
+[data-slot="expandable-menu-positioner"],
+[data-slot="expandable-menu-trigger"] {
+  /* The trigger's circle and the menu's header. */
+  --expandable-menu-pip: 1.75rem;
+  /* A row, and a submenu's header. */
+  --expandable-menu-row: 2rem;
+  /* The padding between a popup's edge and its rows. */
+  --expandable-menu-inset: 0.25rem;
+  --expandable-menu-width: 15rem;
+  /* Concentric with the rows: their radius plus the inset the popup and the submenu pad them by. */
+  --expandable-menu-radius: calc(var(--radius-xl) + var(--expandable-menu-inset));
+  --expandable-menu-ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --expandable-menu-ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+  /* The ring and the lift are drop-shadows on the positioner, so they follow the popup's clip, and
+     fade with the popup's opacity. */
+  --expandable-menu-lift: drop-shadow(0 0 0.6px color-mix(in oklab, var(--color-foreground) 30%, transparent))
+    drop-shadow(0 10px 18px color-mix(in oklab, var(--color-foreground) 10%, transparent))
+    drop-shadow(0 2px 4px color-mix(in oklab, var(--color-foreground) 6%, transparent));
+}
+
+/* --- Trigger. A round ghost button, always visible. While its menu is open the menu lies over it,
+   so it hides rather than show at the edge of a menu that sinks under a submenu, and fades back
+   in as the closing menu shrinks onto it. */
+[data-slot="expandable-menu-trigger"] {
+  transition:
+    opacity 150ms var(--expandable-menu-ease-out),
+    color 150ms ease,
+    background-color 150ms ease;
+}
+[data-slot="expandable-menu-trigger"][data-popup-open] {
+  opacity: 0;
+}
+[data-slot="expandable-menu-trigger"][data-keyboard] {
+  transition: none;
+}
+
+/* The stage editor outlines the elements of the site whose row is highlighted, from what shows of
+   each element and its radius, which it sets as custom properties on the box. The clip keeps the
+   ring inside the region the element's ancestors clip it to. */
+[data-stage-outline] > * {
+  position: absolute;
+  top: var(--outline-y);
+  left: var(--outline-x);
+  width: var(--outline-width);
+  height: var(--outline-height);
+  border-radius: var(--outline-radius);
+  outline: 1.5px solid var(--color-ring);
+  outline-offset: 2px;
+  clip-path: inset(var(--outline-clip));
+}
+
+/* --- Popup. Laid over its trigger and clipped to its circle on the starting and ending frames. The
+   pip in its header, a copy of the trigger's sliders, stays on the trigger's icon throughout. */
+[data-slot="expandable-menu-positioner"] {
+  filter: var(--expandable-menu-lift);
+}
+[data-slot="expandable-menu-popup"] {
+  border-radius: var(--expandable-menu-radius);
+  transition: opacity 150ms ease-out;
+}
+[data-slot="expandable-menu-popup"]:is([data-starting-style], [data-ending-style]):not([data-keyboard]) {
+  opacity: 0;
+}
+/* A popup that grows upward keeps its header, and the pip in it, on the trigger; one aligned to
+   the trigger's end puts the pip at the header's end. */
+[data-slot="expandable-menu-popup"][data-side="top"] {
+  flex-direction: column-reverse;
+}
+[data-slot="expandable-menu-popup"][data-align="end"] [data-slot="expandable-menu-header"] {
+  flex-direction: row-reverse;
+  padding-inline: 0.75rem 0;
+}
+
+/* Contents arrive just after the shape starts to grow, and leave first. */
+:is(
+  [data-slot="expandable-menu-title"],
+  [data-slot="expandable-menu-body"],
+  [data-slot="expandable-menu-submenu-body"]
+) {
+  transition: opacity 150ms var(--expandable-menu-ease-out) 30ms;
+}
+:is([data-slot="expandable-menu-popup"], [data-slot="expandable-menu-submenu"]):is(
+    [data-starting-style],
+    [data-ending-style]
+  ):not([data-keyboard])
+  :is(
+    [data-slot="expandable-menu-title"],
+    [data-slot="expandable-menu-body"],
+    [data-slot="expandable-menu-submenu-body"]
+  ) {
+  opacity: 0;
+  transition-duration: 120ms;
+  transition-delay: 0ms;
+}
+
+/* --- Rows. The rows behind an open submenu stay at full contrast: they stay actionable, and the
+   menu's sinking scale and the submenu's own lift give the depth. A highlight lands at once and
+   the row it leaves fades out. */
+:is([data-slot="expandable-menu-popup"], [data-slot="expandable-menu-submenu"]) [role^="menuitem"] {
+  transition:
+    background-color 80ms ease-out,
+    color 80ms ease-out;
+}
+:is([data-slot="expandable-menu-popup"], [data-slot="expandable-menu-submenu"])
+  [role^="menuitem"]:is([data-highlighted], [data-popup-open]) {
+  transition-duration: 0ms;
+}
+
+/* --- Submenu. It opens in place over its row, and its header is that row, so the clip starts there.
+   Grown upward from its row, its header sits at its bottom. */
+[data-slot="expandable-menu-submenu"] {
+  /* Never taller than 320px, or the room Base UI measures beside its row; its options scroll. */
+  max-height: min(20rem, var(--available-height));
+  border-radius: var(--expandable-menu-radius);
+  transition: opacity 150ms ease-out;
+}
+[data-slot="expandable-menu-submenu"]:is([data-starting-style], [data-ending-style]):not([data-keyboard]) {
+  opacity: 0;
+}
+[data-slot="expandable-menu-submenu"][data-side="top"] {
+  flex-direction: column-reverse;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* The shape fades in over its first 90ms, and out over the last 85ms of its close, so neither an
+     opaque disc nor its lift appears or vanishes in one frame over the ghost trigger. */
+  [data-slot="expandable-menu-popup"] {
+    clip-path: inset(0 round var(--expandable-menu-radius));
+    transition:
+      clip-path 300ms var(--expandable-menu-ease-drawer),
+      opacity 90ms var(--expandable-menu-ease-out),
+      scale 300ms var(--expandable-menu-ease-drawer);
+  }
+  [data-slot="expandable-menu-popup"][data-ending-style] {
+    transition:
+      clip-path 200ms var(--expandable-menu-ease-out),
+      opacity 85ms ease-out 115ms,
+      scale 200ms var(--expandable-menu-ease-out);
+  }
+  [data-slot="expandable-menu-popup"][data-side="bottom"][data-trigger-at="left"]:is(
+      [data-starting-style],
+      [data-ending-style]
+    ):not([data-keyboard]) {
+    clip-path: inset(
+      0 calc(100% - var(--expandable-menu-pip)) calc(100% - var(--expandable-menu-pip)) 0 round
+        calc(var(--expandable-menu-pip) / 2)
+    );
+  }
+  [data-slot="expandable-menu-popup"][data-side="bottom"][data-trigger-at="right"]:is(
+      [data-starting-style],
+      [data-ending-style]
+    ):not([data-keyboard]) {
+    clip-path: inset(
+      0 0 calc(100% - var(--expandable-menu-pip)) calc(100% - var(--expandable-menu-pip)) round
+        calc(var(--expandable-menu-pip) / 2)
+    );
+  }
+  [data-slot="expandable-menu-popup"][data-side="top"][data-trigger-at="left"]:is(
+      [data-starting-style],
+      [data-ending-style]
+    ):not([data-keyboard]) {
+    clip-path: inset(
+      calc(100% - var(--expandable-menu-pip)) calc(100% - var(--expandable-menu-pip)) 0 0 round
+        calc(var(--expandable-menu-pip) / 2)
+    );
+  }
+  [data-slot="expandable-menu-popup"][data-side="top"][data-trigger-at="right"]:is(
+      [data-starting-style],
+      [data-ending-style]
+    ):not([data-keyboard]) {
+    clip-path: inset(
+      calc(100% - var(--expandable-menu-pip)) 0 0 calc(100% - var(--expandable-menu-pip)) round
+        calc(var(--expandable-menu-pip) / 2)
+    );
+  }
+
+  /* Depth while a submenu is open, as in Bloom: the menu behind it sinks a little, around the
+     centre of the edge of the row the submenu's header meets, which the popup measures as the
+     submenu opens (`--expandable-menu-sink-at`, set on its positioner). That edge stays put, so the
+     submenu, placed off the row every frame, stays put too. A submenu opened or closed from the
+     keyboard sinks it at once. */
+  [data-slot="expandable-menu-popup"] {
+    transform-origin: 50% var(--expandable-menu-sink-at);
+  }
+  [data-slot="expandable-menu-popup"]:has([data-slot="expandable-menu-submenu-trigger"][data-popup-open]) {
+    scale: 0.96;
+  }
+  [data-slot="expandable-menu-popup"]:has([data-slot="expandable-menu-submenu-trigger"][data-keyboard]) {
+    transition-duration: 300ms, 90ms, 0ms;
+  }
+
+  /* Contents come out of a 4px blur. */
+  :is(
+    [data-slot="expandable-menu-title"],
+    [data-slot="expandable-menu-body"],
+    [data-slot="expandable-menu-submenu-body"]
+  ) {
+    transition:
+      opacity 150ms var(--expandable-menu-ease-out) 30ms,
+      filter 150ms var(--expandable-menu-ease-out) 30ms;
+  }
+  :is([data-slot="expandable-menu-popup"], [data-slot="expandable-menu-submenu"]):is(
+      [data-starting-style],
+      [data-ending-style]
+    ):not([data-keyboard])
+    :is(
+      [data-slot="expandable-menu-title"],
+      [data-slot="expandable-menu-body"],
+      [data-slot="expandable-menu-submenu-body"]
+    ) {
+    filter: blur(4px);
+  }
+
+  /* The submenu grows from its row's own shape, the row's radius an inset inside its edges, and its
+     raised bar fades in and out at the ends as the menu's shape does. */
+  [data-slot="expandable-menu-submenu"] {
+    clip-path: inset(0 round var(--expandable-menu-radius));
+    transition:
+      clip-path 220ms var(--expandable-menu-ease-drawer),
+      opacity 90ms var(--expandable-menu-ease-out);
+  }
+  [data-slot="expandable-menu-submenu"][data-ending-style] {
+    transition:
+      clip-path 200ms var(--expandable-menu-ease-out),
+      opacity 85ms ease-out 115ms;
+  }
+  [data-slot="expandable-menu-submenu"][data-side="bottom"]:is(
+      [data-starting-style],
+      [data-ending-style]
+    ):not([data-keyboard]) {
+    clip-path: inset(
+      var(--expandable-menu-inset) var(--expandable-menu-inset)
+        calc(100% - var(--expandable-menu-inset) - var(--anchor-height)) round var(--radius-xl)
+    );
+  }
+  [data-slot="expandable-menu-submenu"][data-side="top"]:is([data-starting-style], [data-ending-style]):not(
+      [data-keyboard]
+    ) {
+    clip-path: inset(
+      calc(100% - var(--expandable-menu-inset) - var(--anchor-height)) var(--expandable-menu-inset)
+        var(--expandable-menu-inset) round var(--radius-xl)
+    );
+  }
+
+  [data-slot="expandable-menu-switch-thumb"] {
+    transition: translate 150ms var(--expandable-menu-ease-out);
+  }
+}
+
+/* Last, so it outranks every transition above: a popup opening or closing from the keyboard, and
+   its contents, settle at once, even mid-way through a pointer's morph. */
+:is([data-slot="expandable-menu-popup"], [data-slot="expandable-menu-submenu"])[data-keyboard],
+:is([data-slot="expandable-menu-popup"], [data-slot="expandable-menu-submenu"])[data-keyboard]
+  :is(
+    [data-slot="expandable-menu-title"],
+    [data-slot="expandable-menu-body"],
+    [data-slot="expandable-menu-submenu-body"]
+  ) {
+  transition: none;
+}

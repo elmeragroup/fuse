@@ -57,7 +57,7 @@ export function entryExports(fuse: FuseProgram, entryFile: string): readonly TsS
  * @param symbol - The symbol.
  * @returns The declaring symbol.
  */
-function resolved(checker: Checker, symbol: TsSymbol): TsSymbol {
+export function resolved(checker: Checker, symbol: TsSymbol): TsSymbol {
   return (symbol.flags & SymbolFlags.Alias) === 0 ? symbol : checker.getAliasedSymbol(symbol);
 }
 

@@ -151,7 +151,11 @@
           "shortType": "Union",
           "defaultValue": "\"horizontal\"",
           "description": "Layout axis. A vertical slider fills its parent's height, and its control below the label row keeps at least 160px.",
-          "required": false
+          "required": false,
+          "values": [
+            "horizontal",
+            "vertical"
+          ]
         },
         {
           "name": "showValue",

@@ -100,6 +100,7 @@ export default function plopfile(plop) {
       add("component.tsx.hbs", `${FUSE}/src/components/{{name}}/{{name}}.tsx`),
       add("unit-test.ts.hbs", `${FUSE}/src/components/{{name}}/{{name}}.test.ts`),
       add("browser-test.tsx.hbs", `${FUSE}/src/components/{{name}}/{{name}}.browser.test.tsx`),
+      add("default-demo.tsx.hbs", `${DOCS_ROUTE}/demos/{{name}}-demo.tsx`),
       add("demo.tsx.hbs", `${DOCS_ROUTE}/demos/{{name}}-basic.tsx`),
       add("page.mdx.hbs", `${DOCS_ROUTE}/page.mdx`),
       add("facade.ts.hbs", `${FUSE}/src/{{name}}.ts`),

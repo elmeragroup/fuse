@@ -27,7 +27,11 @@
           "shortType": "Union",
           "defaultValue": null,
           "description": "Ask a phone to capture new media with the front (`\"user\"`) or back (`\"environment\"`) camera.",
-          "required": false
+          "required": false,
+          "values": [
+            "environment",
+            "user"
+          ]
         },
         {
           "name": "directory",
@@ -90,16 +94,31 @@
           "shortType": null,
           "defaultValue": "\"sm\"",
           "description": "The Button's label size: `xs`, `sm` (the default), `default` or `lg`.",
-          "required": false
+          "required": false,
+          "values": [
+            "default",
+            "lg",
+            "sm",
+            "xs"
+          ]
         },
         {
           "name": "variant",
-          "origin": "recipe-axis",
+          "origin": "declared",
           "type": "\"default\" | \"destructive\" | \"ghost\" | \"link\" | \"outline\" | \"secondary\" | \"success\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"default\"",
-          "description": "",
-          "required": false
+          "description": "The fill and text colour. The theme sets the `outline` border. `link` looks like an inline text link.",
+          "required": false,
+          "values": [
+            "default",
+            "destructive",
+            "ghost",
+            "link",
+            "outline",
+            "secondary",
+            "success"
+          ]
         },
         {
           "name": "withIcon",

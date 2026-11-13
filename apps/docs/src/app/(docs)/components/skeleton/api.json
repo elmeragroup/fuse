@@ -85,7 +85,38 @@
           "shortType": "Union",
           "defaultValue": null,
           "description": "How content replaces the skeleton. `smart`, the default, holds a client skeleton back 150 ms so a fast load never shows one, lands content at once over a skeleton that was up only a moment or while someone scrolls or types, crossfades a refetch and small content, and brings larger content in row by row. `together` crossfades it all at once; `sequence` brings each piece in by its place, top to bottom and then a little left to right.",
-          "required": false
+          "required": false,
+          "values": [
+            "sequence",
+            "smart",
+            "together"
+          ],
+          "requires": {
+            "sequence": [
+              [
+                "data"
+              ],
+              [
+                "loading"
+              ]
+            ],
+            "smart": [
+              [
+                "data"
+              ],
+              [
+                "loading"
+              ]
+            ],
+            "together": [
+              [
+                "data"
+              ],
+              [
+                "loading"
+              ]
+            ]
+          }
         },
         {
           "name": "sample",
