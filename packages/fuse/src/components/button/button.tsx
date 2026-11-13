@@ -45,7 +45,9 @@ type ButtonSharedProps = ButtonPrimitiveProps &
      * `pendingIndicator` in the leading icon position meanwhile. An explicit
      * `focusableWhenDisabled={false}` restores the native `disabled` attribute while pending.
      * `aria-busy` announces nothing by itself: say what is happening through the label
-     * ("Saving") or a `role="status"` region outside the button.
+     * ("Saving") or a `role="status"` region outside the button. Put a label that changes with
+     * the state in its own element, such as `<span>{label}</span>`: page translation replaces a
+     * bare text child with its own nodes, so React's update to the old text node never shows.
      */
     isPending?: boolean;
     /**
@@ -158,6 +160,7 @@ export function Button({
       // such as aria-disabled, type and role.
       {...definedProps(props)}
       ref={mergedRef}>
+      {children}
       {showsIndicator ? (
         // Decorative: the state is announced through aria-busy and the label. The slot is a
         // leading icon, so the icon edge tightens the start inset as for any inline-start child,
@@ -165,15 +168,20 @@ export function Button({
         // consumer's node rides in the same slot, so it gets the same place and the same
         // aria-hidden; only the default spinner animates. `null` never reaches this branch, so
         // the coalescing only fills in `undefined`.
+        // It renders after the children and `order-first` moves it to the leading edge, so React
+        // appends it instead of inserting it before the first child. Page translation (Chrome's
+        // built-in translate) replaces a bare text child with its own `<font>` nodes, and an
+        // insert before the detached text node threw `NotFoundError` and unmounted the tree.
+        // `order` needs the root's flex layout, so a `className` that replaces `inline-flex` with
+        // `block` or `inline-block` moves the indicator after the label.
         <span
           data-slot="button-pending-indicator"
           data-icon="inline-start"
           aria-hidden
-          className="pointer-events-none inline-flex shrink-0 items-center justify-center">
+          className="pointer-events-none order-first inline-flex shrink-0 items-center justify-center">
           {pendingIndicator ?? <SpinnerGap className="animate-spin" />}
         </span>
       ) : null}
-      {children}
     </ButtonPrimitive>
   );
 }

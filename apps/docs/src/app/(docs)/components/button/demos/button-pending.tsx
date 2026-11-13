@@ -48,7 +48,7 @@ export function ButtonPending() {
       <div className="flex flex-wrap items-center gap-2">
         <Button isPending={isSaving} onClick={save}>
           <FloppyDisk data-icon="inline-start" />
-          {isSaving ? "Saving" : "Save"}
+          <span>{isSaving ? "Saving" : "Save"}</span>
         </Button>
         <Button isPending variant="outline">
           Loading

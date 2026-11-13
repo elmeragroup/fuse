@@ -74,7 +74,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The in-flight state of an async action. Stamps `data-pending` and `aria-busy`, blocks activation (effective disabled is `disabled || isPending`) and renders the disabled treatment, but keeps the button in the focus order like `focusableWhenDisabled`, so a keyboard user who activated it is still on it when the result arrives. Shows the `pendingIndicator` in the leading icon position meanwhile. An explicit `focusableWhenDisabled={false}` restores the native `disabled` attribute while pending. `aria-busy` announces nothing by itself: say what is happening through the label (\"Saving\") or a `role=\"status\"` region outside the button.",
+          "description": "The in-flight state of an async action. Stamps `data-pending` and `aria-busy`, blocks activation (effective disabled is `disabled || isPending`) and renders the disabled treatment, but keeps the button in the focus order like `focusableWhenDisabled`, so a keyboard user who activated it is still on it when the result arrives. Shows the `pendingIndicator` in the leading icon position meanwhile. An explicit `focusableWhenDisabled={false}` restores the native `disabled` attribute while pending. `aria-busy` announces nothing by itself: say what is happening through the label (\"Saving\") or a `role=\"status\"` region outside the button. Put a label that changes with the state in its own element, such as `<span>{label}</span>`: page translation replaces a bare text child with its own nodes, so React's update to the old text node never shows.",
           "required": false
         },
         {

@@ -86,7 +86,9 @@ which would tighten an inset. Pending buttons also dim like disabled ones; a bra
 overrides the dim on its own wrapper.
 
 `aria-busy` alone announces nothing. Say what is happening by changing the label ("Saving") or through
-a `role="status"` region outside the button, and put the outcome there when the action settles.
+a `role="status"` region outside the button, and put the outcome there when the action settles. Wrap a
+label that changes in its own element, as the Save button does: page translation replaces bare text, so
+a new label in a bare text node never shows.
 
 </Prose>
 
