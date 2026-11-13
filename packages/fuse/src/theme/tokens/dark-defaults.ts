@@ -34,6 +34,10 @@ export const DARK_DEFAULTS = {
   // layer's page alias.
   dialog: "var(--popover)",
   "dialog-foreground": "var(--popover-foreground)",
+  // Dark panels keep the page they painted before the role existed. Named here so no dark rule
+  // inherits the light card alias.
+  panel: "var(--background)",
+  "panel-foreground": "var(--foreground)",
   // The dark steps of the shared chart roles. `defaults.ts` describes each group.
   "chart-1": "oklch(0.6202 0.1856 257.5)", // #3183F3
   "chart-2": CHART_ORANGE, // #D86109

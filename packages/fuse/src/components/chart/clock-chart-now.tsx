@@ -27,7 +27,10 @@ const NOW_CHIP = 4;
 export type ClockChartNowProps = ChartLayerProps & {
   /** The visible label on the hand inside its tip, such as "Nå". */
   label?: string;
-  /** The hand's tone. "default" by default. */
+  /**
+   * The hand's tone. "default" by default. A muted label keeps the full muted text, and only the
+   * hand fades.
+   */
   tone?: ChartTone;
 };
 

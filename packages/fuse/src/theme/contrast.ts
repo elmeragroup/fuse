@@ -8,14 +8,15 @@ import { TOKEN_KINDS } from "./tokens/contract";
 import type { TokenContract, TokenName } from "./tokens/contract";
 
 /**
- * The surfaces a chart, syntax or control role must separate itself from: the page, the cards
- * and the modal fill.
+ * The surfaces a chart, syntax or control role must separate itself from: the page, the cards,
+ * the modal fill and the panel.
  */
 export const CONTROL_SURFACES = [
   "background",
   "card",
   "card-soft",
   "dialog",
+  "panel",
 ] as const satisfies readonly TokenName[];
 
 export const TEXT_GRADE_PAIRS = [
@@ -29,6 +30,8 @@ export const TEXT_GRADE_PAIRS = [
   ["muted-foreground", "card-soft"],
   ["dialog-foreground", "dialog"],
   ["muted-foreground", "dialog"],
+  ["panel-foreground", "panel"],
+  ["muted-foreground", "panel"],
   ["primary-foreground", "primary"],
   ["primary-soft-foreground", "primary-soft"],
   ["secondary-foreground", "secondary"],

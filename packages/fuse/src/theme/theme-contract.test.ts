@@ -36,18 +36,28 @@ function fkasCompanyLight(): TokenLayer {
 }
 
 /**
- * The light reset keys every brand palette assigns itself. Composition derives the secondary
- * hover, the sidebar ring aliases the ring, and the branded identity layer sets its keys for
- * every brand.
+ * The light reset keys no brand palette assigns: composition derives the secondary hover, the
+ * sidebar ring aliases the ring, and the content panel pair aliases the card pair.
+ */
+const ALIASED_RESET_KEYS = [
+  "secondary-hover",
+  "sidebar-ring",
+  "panel",
+  "panel-foreground",
+] as const satisfies readonly LightResetKey[];
+
+/**
+ * The light reset keys every brand palette assigns itself: all but the aliased ones and the keys
+ * the branded identity layer sets for every brand.
  */
 type BrandPaletteKey = Exclude<
   LightResetKey,
-  "secondary-hover" | "sidebar-ring" | keyof typeof BRANDED_IDENTITY_LAYER
+  (typeof ALIASED_RESET_KEYS)[number] | keyof typeof BRANDED_IDENTITY_LAYER
 >;
 
 const BRAND_PALETTE_KEYS = LIGHT_RESET_KEYS.filter(
   (key): key is BrandPaletteKey =>
-    key !== "secondary-hover" && key !== "sidebar-ring" && !(key in BRANDED_IDENTITY_LAYER)
+    !ALIASED_RESET_KEYS.some((aliased) => aliased === key) && !(key in BRANDED_IDENTITY_LAYER)
 );
 
 /** One declaration of the rule whose first selector is `selector`. */
@@ -314,6 +324,14 @@ describe("theme contract", () => {
     for (const name of ["radius", "radius-button", "radius-field", "radius-step"]) {
       expect(supplied.has(name), name).toBe(false);
     }
+    // The content panel pair aliases the card pair, palette keys, so a light rule that resets
+    // the card restates the panel and a branded panel resolves to its own brand's card.
+    expect(DEFAULTS.panel).toBe("var(--card)");
+    expect(DEFAULTS["panel-foreground"]).toBe("var(--card-foreground)");
+    expect(supplied.has("card") && supplied.has("card-foreground")).toBe(true);
+    expect(supplied.has("panel") || supplied.has("panel-foreground")).toBe(false);
+    supplied.add("panel");
+    supplied.add("panel-foreground");
 
     expect([...supplied].toSorted((left, right) => left.localeCompare(right))).toEqual(
       [...LIGHT_RESET_KEYS].toSorted((left, right) => left.localeCompare(right))

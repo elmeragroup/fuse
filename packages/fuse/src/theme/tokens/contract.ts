@@ -3,6 +3,12 @@ import type { ThemeIdentity } from "../theme-input";
 export const TOKEN_NAMES = [
   "background",
   "foreground",
+  // The container roles: card, popover, dialog and panel. Every Fuse container that paints one as
+  // its fill states that fill as `--surface` beside the fill class, through `--theme()` so a
+  // ThemeScope around it holds: `bg-panel [--surface:--theme(--color-panel)]`. `--surface` is the
+  // colour of the fill an element sits on; chart cut-outs read it, falling back to `background`.
+  // Beside it the container states `--surface-muted-foreground`, the muted text paired with that
+  // fill, which the text on a chart's chips reads; `fuse/surface-muted-foreground` requires it.
   "card",
   "card-foreground",
   "card-soft",
@@ -11,6 +17,8 @@ export const TOKEN_NAMES = [
   "popover-foreground",
   "dialog",
   "dialog-foreground",
+  "panel",
+  "panel-foreground",
   "muted",
   "muted-foreground",
   "accent",
@@ -263,6 +271,8 @@ export const TOKEN_KINDS = {
   "popover-foreground": "color",
   dialog: "color",
   "dialog-foreground": "color",
+  panel: "color",
+  "panel-foreground": "color",
   muted: "color",
   "muted-foreground": "color",
   accent: "color",
@@ -416,6 +426,8 @@ export const TOKEN_PAINTS = {
   "popover-foreground": ["ink"],
   dialog: ["surface"],
   "dialog-foreground": ["ink"],
+  panel: ["surface"],
+  "panel-foreground": ["ink"],
   // A ring PieChart strokes its track in it.
   muted: ["surface", "line"],
   "muted-foreground": ["surface", "ink", "line"],
@@ -568,10 +580,13 @@ export const TOKEN_DESCRIPTIONS = {
   dialog:
     "The fill of Dialog, AlertDialog and Sheet. Branded light themes fill it with the page tint, and neutral and dark themes use popover.",
   "dialog-foreground": "Text and icons in Dialog, AlertDialog and Sheet, text-grade on dialog.",
+  panel:
+    "The fill of Frame panels, framed Table cells, the bordered VerticalTable box, the default Alert and the outline Item, the content surfaces a chart rests on. Light themes alias card, so a panel is white like a Card, and dark themes alias background.",
+  "panel-foreground": "Text and icons on panel, text-grade on it.",
   muted:
     "A quiet fill for hover tints, the Tabs list track, Skeleton and Kbd, and the track of a ring PieChart. Text on it takes foreground or muted-foreground.",
   "muted-foreground":
-    "Secondary text, such as descriptions, placeholders and captions, text-grade on background, muted, card, card-soft and dialog. It also draws the edge of an unchecked Checkbox, Radio and Switch.",
+    "Secondary text, such as descriptions, placeholders and captions, text-grade on background, muted, card, card-soft, dialog and panel. It also draws the edge of an unchecked Checkbox, Radio and Switch.",
   accent: "The fill of a highlighted row in menus, Select, Combobox and Command, one step off popover.",
   "accent-foreground": "Text and icons on a highlighted accent row.",
   feature: "The fill of promo and hero panels. Use accent for a subtle hover tint instead.",
@@ -788,6 +803,8 @@ export const LIGHT_RESET_KEYS = [
   "card-soft-foreground",
   "dialog",
   "dialog-foreground",
+  "panel",
+  "panel-foreground",
   "muted",
   "muted-foreground",
   "primary",

@@ -865,10 +865,24 @@ if (!payload.includes("Sync delayed") || !payload.includes("Facility data is mor
 const alertRoot = payload
   .split("\n")
   .find((line) => line.includes('data-slot":"item"') && line.includes('"role":"alert"'));
+/**
+ * The row's className. Flight moves a string of 1024 characters or more into its own text row,
+ * `<id>:T<hex length>,<text>`, and writes `"$<id>"` in its place, so a long class list is read
+ * from that row.
+ */
+function classNameOf(row: string): string | undefined {
+  const value = /"className":"([^"]*)"/u.exec(row)?.[1];
+  const id = value === undefined ? undefined : /^\$([0-9a-f]+)$/u.exec(value)?.[1];
+  if (id === undefined) return value;
+  const header = new RegExp(`(?:^|\n)${id}:T([0-9a-f]+),`, "u").exec(payload);
+  if (header === null) return undefined;
+  const start = header.index + header[0].length;
+  return payload.slice(start, start + Number.parseInt(header[1] ?? "0", 16));
+}
 if (
   alertRoot === undefined ||
   !alertRoot.includes('["$","div"') ||
-  !alertRoot.includes("bg-warning-soft") ||
+  !(classNameOf(alertRoot) ?? "").includes("bg-warning-soft") ||
   alertRoot.includes("item.tsx") ||
   alertRoot.includes("button.tsx")
 ) {

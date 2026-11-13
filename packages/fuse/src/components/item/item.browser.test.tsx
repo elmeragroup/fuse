@@ -6,6 +6,8 @@ import "../../../dist/themes.css";
 import { expectActivationCancelled, resetHashAroundEach } from "../../../test/aria-disabled-activation";
 import { settleTransitions } from "../../../test/assert-invalid-ring";
 import { assertNoAxeViolations } from "../../../test/axe";
+import { MUTED, PANEL, describePartPaint } from "../../../test/surface-paint";
+import type { PartCase } from "../../../test/surface-paint";
 import { cssVarColor, renderThemed, roleNamed, textNamed } from "../../../test/themed-browser-render";
 import { Item } from "./index";
 
@@ -321,3 +323,33 @@ describe("Item", () => {
     expect(document.activeElement).not.toBe(nestedButton);
   });
 });
+
+// The fill the outline Item paints at rest and as a hovered link row, the text that travels with
+// it and the surface it states (see `surface-paint.tsx`).
+const ITEM_PARTS: readonly PartCase[] = [
+  {
+    label: "the outline Item",
+    node: (className) => (
+      <Item.Root variant="outline" className={className}>
+        <Item.Content>Usage row</Item.Content>
+      </Item.Root>
+    ),
+    text: () => textNamed("Usage row"),
+    role: "--panel-foreground",
+    fill: PANEL,
+  },
+  {
+    label: "a hovered outline link Item",
+    node: (className) => (
+      <Item.Root variant="outline" className={className} render={<a href="#usage" />}>
+        <Item.Content>Usage row</Item.Content>
+      </Item.Root>
+    ),
+    text: () => textNamed("Usage row"),
+    role: "--foreground",
+    fill: MUTED,
+    hover: () => roleNamed("link", "Usage row"),
+  },
+];
+
+describePartPaint(ITEM_PARTS);

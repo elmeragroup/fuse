@@ -121,14 +121,19 @@ const overlayPopupVariants = tv({
      * for one — are passed as the extra `cn` argument.
      */
     positioner: `isolate ${overlayLayer}`,
-    /** The tokenized popup fill and its paired text role. */
-    fill: "bg-popover text-popover-foreground",
+    /**
+     * The tokenized popup fill and its paired text role. It states the fill as `--surface`,
+     * so a chart in the popup cuts its rings and seams out of the popover colour.
+     */
+    fill: "bg-popover text-popover-foreground [--surface-muted-foreground:--theme(--color-muted-foreground)] [--surface:--theme(--color-popover)]",
     /**
      * The modal fill and its paired text role, which Dialog (and AlertDialog through it) and
      * Sheet compose after their faces. The `dialog` role aliases the popover pair except in
-     * branded light, where it is the page tint. `Command.Content` stays on the popover fill.
+     * branded light, where it is the page tint. `Command.Content` stays on the popover fill. It
+     * states the fill as `--surface`, so a chart in the modal cuts out of the dialog colour.
      */
-    modalFill: "bg-dialog text-dialog-foreground",
+    modalFill:
+      "bg-dialog text-dialog-foreground [--surface-muted-foreground:--theme(--color-muted-foreground)] [--surface:--theme(--color-dialog)]",
     /** The popup edge: the `md` elevation rung plus the hairline ring. */
     edge: "shadow-md ring-1 ring-foreground/10",
     /**

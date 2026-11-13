@@ -33,7 +33,7 @@ export const cardVariants = tv({
   slots: {
     base: [
       cardShellClass,
-      "flex flex-col border-card-border bg-card text-card-foreground shadow-[0_1px_2px_0_--theme(--color-card-shadow)]",
+      "flex flex-col border-card-border bg-card text-card-foreground shadow-[0_1px_2px_0_--theme(--color-card-shadow)] [--surface-muted-foreground:--theme(--color-muted-foreground)] [--surface:--theme(--color-card)]",
     ],
     cardHeader:
       "@container/card-header grid auto-rows-min items-start gap-1.5 has-data-[slot=card-action]:grid-cols-[1fr_auto]",

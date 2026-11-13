@@ -97,7 +97,7 @@
           "type": "\"default\" | \"non-bordered-compact\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"default\"",
-          "description": "Facts-sheet look. `\"non-bordered-compact\"` drops the wrapper border/background and tightens cell padding via descendant `data-variant` selectors.",
+          "description": "Facts-sheet look. `\"default\"` draws a bordered box in the `panel` fill and states it as `--surface`. `\"non-bordered-compact\"` drops the wrapper border/background, keeps the surface of its host, and tightens cell padding via descendant `data-variant` selectors.",
           "required": false
         }
       ]

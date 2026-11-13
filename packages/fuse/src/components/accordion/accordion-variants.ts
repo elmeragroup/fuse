@@ -76,9 +76,15 @@ export const accordionVariants = tv({
       },
       card: {
         base: "space-y-3",
-        item: [accordionCardItemShellClass, "border-card-border bg-card text-foreground"],
+        // The item and its panel state their `card` fill as `--surface`, as every container fill
+        // does (see `TOKEN_NAMES`).
+        item: [
+          accordionCardItemShellClass,
+          "border-card-border bg-card text-foreground [--surface-muted-foreground:--theme(--color-muted-foreground)] [--surface:--theme(--color-card)]",
+        ],
         // The panel sits inside the item's padding, so it rounds with the item's inner corner.
-        content: "rounded-inner bg-card text-foreground",
+        content:
+          "rounded-inner bg-card text-foreground [--surface-muted-foreground:--theme(--color-muted-foreground)] [--surface:--theme(--color-card)]",
         icon: "text-foreground",
       },
       infodropdown: {

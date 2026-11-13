@@ -28,7 +28,11 @@ const demoStage = tv({
   // room to show code.
   //
   // Every rule that lays out the stage's roots keys off `data-stage-layout`.
-  base: "sm:px-8 text-base flow-root min-h-64 content-center bg-background px-0 py-11 text-foreground min-[360px]:px-3 [&[data-stage-layout]]:text-center [:where(&[data-stage-layout]>*)]:mx-auto [:where(&[data-stage-layout]>*)]:max-w-full [:where(&[data-stage-layout]>*)]:text-start [:where(&[data-stage-layout]>*:not([data-slot]))]:justify-center",
+  //
+  // The stage repaints the page under the preview theme inside the frame's `Frame.Panel`, which
+  // states the docs theme's panel as `--surface`. So the stage states its own fill there too, and a
+  // chart or field in a demo cuts out of the stage as it would out of the page.
+  base: "sm:px-8 text-base flow-root min-h-64 content-center bg-background px-0 py-11 text-foreground [--surface-muted-foreground:--theme(--color-muted-foreground)] [--surface:--theme(--color-background)] min-[360px]:px-3 [&[data-stage-layout]]:text-center [:where(&[data-stage-layout]>*)]:mx-auto [:where(&[data-stage-layout]>*)]:max-w-full [:where(&[data-stage-layout]>*)]:text-start [:where(&[data-stage-layout]>*:not([data-slot]))]:justify-center",
 });
 
 /**

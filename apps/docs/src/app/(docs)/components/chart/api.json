@@ -728,7 +728,7 @@
           "type": "\"default\" | \"halo\" | \"ring\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"default\"",
-          "description": "The dot's look. \"default\" by default, a filled dot inside a ring of the surface. \"ring\" is a hollow ring and \"halo\" a dot inside a faint halo of its colour.",
+          "description": "The dot's look. \"default\" by default, a filled dot inside a ring of the surface the chart rests on, `--surface`. \"ring\" is a hollow ring and \"halo\" a dot inside a faint halo of its colour.",
           "required": false
         }
       ]

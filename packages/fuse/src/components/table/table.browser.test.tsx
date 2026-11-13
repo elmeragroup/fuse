@@ -1,11 +1,23 @@
+import type { ReactElement, ReactNode } from "react";
+
 import { afterEach, describe, expect, it } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
-import { ROW, px, renderThemed, stampDensity, textboxNamed } from "../../../test/themed-browser-render";
+import { PANEL, describePartPaint } from "../../../test/surface-paint";
+import type { Layer, PartCase } from "../../../test/surface-paint";
+import {
+  ROW,
+  px,
+  renderThemed,
+  roleNamed,
+  stampDensity,
+  textboxNamed,
+} from "../../../test/themed-browser-render";
 import { DENSITIES } from "../../theme/density";
-import { VerticalTable } from "./table";
+import { Frame } from "../frame/frame";
+import { Table, VerticalTable } from "./table";
 import type { VerticalTableItem } from "./table";
 
 function htmlTable(name?: string): HTMLTableElement {
@@ -184,3 +196,188 @@ describe("VerticalTable", () => {
     expect(page.getByRole("cell", { name: "Kari Nordmann", exact: true }).element().tagName).toBe("TD");
   });
 });
+
+// The fill a framed Table's cells, a Table row in a Frame.Panel and a VerticalTable box paint in
+// each state, the text that travels with it and the surface it states (see `surface-paint.tsx`).
+const cell = (name: string) => () => roleNamed("cell", name);
+
+/** A Frame's own translucent `muted` over the page, which shows through a transparent framed row. */
+const FRAME: readonly Layer[] = [{ role: "--muted", alpha: 0.72 }, { role: "--background" }];
+
+function FramedTable({ children }: { children: ReactNode }): ReactElement {
+  return (
+    <Frame.Root>
+      <Table.Root>{children}</Table.Root>
+    </Frame.Root>
+  );
+}
+
+const TABLE_PARTS: readonly PartCase[] = [
+  {
+    label: "a framed Table.Body at rest",
+    node: (className) => (
+      <FramedTable>
+        <Table.Body className={className}>
+          <Table.Row>
+            <Table.Cell>Meter</Table.Cell>
+          </Table.Row>
+        </Table.Body>
+      </FramedTable>
+    ),
+    text: cell("Meter"),
+    role: "--panel-foreground",
+    fill: PANEL,
+  },
+  {
+    label: "a framed Table.Cell at rest",
+    node: (className) => (
+      <FramedTable>
+        <Table.Body>
+          <Table.Row>
+            <Table.Cell className={className}>Meter</Table.Cell>
+          </Table.Row>
+        </Table.Body>
+      </FramedTable>
+    ),
+    text: cell("Meter"),
+    role: "--panel-foreground",
+    fill: PANEL,
+  },
+  {
+    // A hovered framed row clears its cells, so the Frame's own fill shows through.
+    label: "a hovered framed Table.Row",
+    node: (className) => (
+      <FramedTable>
+        <Table.Body>
+          <Table.Row className={className}>
+            <Table.Cell>Meter</Table.Cell>
+          </Table.Row>
+        </Table.Body>
+      </FramedTable>
+    ),
+    text: cell("Meter"),
+    role: "--foreground",
+    fill: FRAME,
+    hover: cell("Meter"),
+  },
+  {
+    label: "a selected framed Table.Row",
+    node: (className) => (
+      <FramedTable>
+        <Table.Body>
+          <Table.Row data-state="selected" className={className}>
+            <Table.Cell>Meter</Table.Cell>
+          </Table.Row>
+        </Table.Body>
+      </FramedTable>
+    ),
+    text: cell("Meter"),
+    role: "--foreground",
+    fill: [{ role: "--muted", alpha: 0.72 }, ...FRAME],
+  },
+  {
+    // A framed header's row stays clear on hover, and its heads keep their own muted text.
+    label: "a hovered framed Table.Header row",
+    node: (className) => (
+      <FramedTable>
+        <Table.Header>
+          <Table.Row>
+            <Table.Head className={className}>Meter</Table.Head>
+          </Table.Row>
+        </Table.Header>
+        <Table.Body>
+          <Table.Row>
+            <Table.Cell>1200 kWh</Table.Cell>
+          </Table.Row>
+        </Table.Body>
+      </FramedTable>
+    ),
+    text: () => roleNamed("columnheader", "Meter"),
+    role: "--muted-foreground",
+    fill: FRAME,
+    hover: () => roleNamed("columnheader", "Meter"),
+  },
+  {
+    // A framed footer's row stays clear on hover and keeps the text around it.
+    label: "a hovered framed Table.Footer row",
+    node: (className) => (
+      <FramedTable>
+        <Table.Body>
+          <Table.Row>
+            <Table.Cell>1200 kWh</Table.Cell>
+          </Table.Row>
+        </Table.Body>
+        <Table.Footer>
+          <Table.Row className={className}>
+            <Table.Cell>Total</Table.Cell>
+          </Table.Row>
+        </Table.Footer>
+      </FramedTable>
+    ),
+    text: cell("Total"),
+    role: "inherit",
+    fill: FRAME,
+    hover: cell("Total"),
+  },
+  {
+    label: "a hovered Table.Row in a Frame.Panel",
+    node: (className) => (
+      <Frame.Root>
+        <Frame.Panel>
+          <Table.Root>
+            <Table.Body>
+              <Table.Row className={className}>
+                <Table.Cell>Meter</Table.Cell>
+              </Table.Row>
+            </Table.Body>
+          </Table.Root>
+        </Frame.Panel>
+      </Frame.Root>
+    ),
+    text: cell("Meter"),
+    role: "--foreground",
+    fill: [{ role: "--muted", alpha: 0.72 }, ...PANEL],
+    hover: cell("Meter"),
+  },
+  {
+    label: "the bordered VerticalTable.Body",
+    node: (className) => (
+      <VerticalTable.Root>
+        <VerticalTable.Body className={className} data={[{ label: "Usage", value: "1200 kWh" }]} />
+      </VerticalTable.Root>
+    ),
+    text: cell("1200 kWh"),
+    role: "--panel-foreground",
+    fill: PANEL,
+  },
+  {
+    label: "a hovered bordered VerticalTable.Row",
+    node: (className) => (
+      <VerticalTable.Root>
+        <VerticalTable.Body>
+          <VerticalTable.Row className={className}>
+            <VerticalTable.Key>Usage</VerticalTable.Key>
+            <VerticalTable.Value>1200 kWh</VerticalTable.Value>
+          </VerticalTable.Row>
+        </VerticalTable.Body>
+      </VerticalTable.Root>
+    ),
+    text: cell("1200 kWh"),
+    role: "--panel-foreground",
+    fill: PANEL,
+    hover: cell("1200 kWh"),
+  },
+  {
+    label: "the compact VerticalTable.Body",
+    node: (className) => (
+      <VerticalTable.Root variant="non-bordered-compact">
+        <VerticalTable.Body className={className} data={[{ label: "Usage", value: "1200 kWh" }]} />
+      </VerticalTable.Root>
+    ),
+    text: cell("1200 kWh"),
+    role: "inherit",
+    fill: [{ role: "--background" }],
+  },
+];
+
+describePartPaint(TABLE_PARTS);

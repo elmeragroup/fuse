@@ -25,6 +25,7 @@ import { requireDisableReason } from "./rules/require-disable-reason.ts";
 import { restrictedImports } from "./rules/restricted-imports.ts";
 import { sideOverlayState } from "./rules/side-overlay-state.ts";
 import { stateFace } from "./rules/state-face.ts";
+import { surfaceMutedForeground } from "./rules/surface-muted-foreground.ts";
 
 /**
  * The repo's own lint rules: the source contracts Fuse holds its modules to, and the shapes a test
@@ -59,6 +60,7 @@ const plugin: Plugin = {
     "restricted-imports": restrictedImports,
     "side-overlay-state": sideOverlayState,
     "state-face": stateFace,
+    "surface-muted-foreground": surfaceMutedForeground,
   },
 };
 

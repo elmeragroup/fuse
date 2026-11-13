@@ -4,6 +4,10 @@ import { describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
+// Role tokens live in themes.css only; the card variant's fill cases read them.
+import "../../../dist/themes.css";
+import { MUTED, describePartPaint } from "../../../test/surface-paint";
+import type { PartCase } from "../../../test/surface-paint";
 import {
   fieldRootFrom,
   formNamed,
@@ -201,3 +205,17 @@ describe("TextField", () => {
     expect(document.activeElement).toBe(roleNamed("button", "After"));
   });
 });
+
+// The fill the card variant paints at rest and read-only, the muted label that travels with it and
+// the surface it states (see `surface-paint.tsx`). The label keeps its own muted text, so a class
+// on the field does not reach it.
+describePartPaint(
+  [false, true].map((isReadOnly): PartCase => ({
+    label: `the ${isReadOnly ? "read-only " : ""}card TextField`,
+    node: () => <TextField variant="card" isReadOnly={isReadOnly} label="Usage" defaultValue="1200" />,
+    text: () => textNamed("Usage"),
+    role: "--muted-foreground",
+    fill: isReadOnly ? MUTED : [{ role: "--card" }],
+    takesClassName: false,
+  }))
+);

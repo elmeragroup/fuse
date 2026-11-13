@@ -30,13 +30,14 @@ export const textFieldVariants = tv({
     variant: {
       card: {
         // The card is the field box, so it takes the read-only fill and the borderless input
-        // inside it cancels its own, which would paint a band across the card. It keeps the
+        // inside it cancels its own, which would paint a band across the card. The read-only fill
+        // swaps Card's, so it restates `--surface` and its muted text beside it. It keeps the
         // `--border` edge, the field's boundary, and the plain `shadow-xs` of every field box,
         // where Card's `--card-border` and `--card-shadow` go transparent in branded themes.
         base: cn(
           cardVariants().base(),
           textFieldCardShellClass,
-          "shadow-xs gap-0 border-border has-[input[readonly]:not(:disabled)]:bg-muted"
+          "shadow-xs gap-0 border-border has-[input[readonly]:not(:disabled)]:bg-muted has-[input[readonly]:not(:disabled)]:[--surface-muted-foreground:--theme(--color-muted-foreground)] has-[input[readonly]:not(:disabled)]:[--surface:--theme(--color-muted)]"
         ),
         fieldGroup: "w-full border-none",
         input: cn("text-lg rounded-none border-none p-0", readOnlyFillCancelClass),

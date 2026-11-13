@@ -16,7 +16,7 @@ import { selfFocusRingClass } from "../../styles/utils";
 export const calendarVariants = tv({
   slots: {
     root: cn(
-      "text-sm shadow-md w-fit border border-border bg-card bg-clip-padding text-card-foreground",
+      "text-sm shadow-md w-fit border border-border bg-card bg-clip-padding text-card-foreground [--surface-muted-foreground:--theme(--color-muted-foreground)] [--surface:--theme(--color-card)]",
       calendarShellClass
     ),
     header: "flex w-full items-center gap-1 px-1 pb-4",

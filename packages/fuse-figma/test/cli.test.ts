@@ -176,10 +176,10 @@ describe("fuse-figma check", () => {
       assert.include(printed, "Fuse tokens: create mode Light");
       assert.include(printed, "Fuse tokens: create mode Dark");
       assert.include(printed, "Fuse brand: create mode Telinet (private only)");
-      assert.include(printed, "Fuse brand: create variable ×1464");
+      assert.include(printed, "Fuse brand: create variable ×1480");
       assert.notInclude(printed, "Fuse brand: create variable light/branded/private/primary");
-      assert.include(printed, "Fuse segment: create variable ×732");
-      assert.include(printed, "Fuse identity: create variable ×366");
+      assert.include(printed, "Fuse segment: create variable ×740");
+      assert.include(printed, "Fuse identity: create variable ×370");
       assert.include(printed, "Fuse density: create mode Dense");
       assert.notInclude(printed, "Fuse density: create mode Auto");
       assert.include(printed, "Fuse density: create mode Comfortable");
