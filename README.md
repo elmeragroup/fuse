@@ -91,6 +91,7 @@ Package-scoped scripts worth knowing:
 | `tooling/typescript`           | `@elmeragroup/typescript-config`    | Shared tsconfig bases                                                                    |
 | `tooling/pr-shots`             | `@elmeragroup/pr-shots`             | Private CLI behind `pnpm shots`: before and after docs screenshots for PRs               |
 | `tooling/release-announcement` | `@elmeragroup/release-announcement` | Private steps of Publish Release that announce each published release in Slack           |
+| `tooling/canary-opt-out`       | `@elmeragroup/canary-opt-out`       | Private merge-workflow step that skips a push's canary when every PR it merged opts out  |
 
 The API extractor and the `elmera/*` and `anti-slop/*` lint rules come from [`@elmeragroup/internal`](https://github.com/elmeragroup/internal). The workspace pins it once in the pnpm catalog.
 

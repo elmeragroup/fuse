@@ -255,27 +255,52 @@ jobs:
   # land its stable bump and consume its changesets, and the skipped release job would never
   # publish that version.
   # Both merge jobs gate publishing: a commit whose cold browser run failed must not ship a canary.
-  # A `no-canary` label on the merged PR skips publication; the next published canary still
-  # carries the commit. The bot release PR is exempt, because skipping its merge would land the
-  # stable bump without publishing it.
+  # A push skips publication only when every PR it merged carries the `no-canary` label; a stack
+  # merge lands several PRs in one push. The next published canary still carries the commits.
+  # The bot release PR is exempt, because skipping its merge would land the stable bump without
+  # publishing it.
   canary-opt-out:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.RELEASE_ENABLED == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    # A lookup's retries through a GitHub rate limit take up to 9 minutes
+    # (tooling/canary-opt-out/src/github-pulls.ts), on top of the install.
+    timeout-minutes: 15
     permissions:
+      contents: read
       pull-requests: read
     outputs:
       skip: ${{ steps.labels.outputs.skip }}
     steps:
-      # A push event carries no labels, so read them from the PR that merged as this commit. A
-      # failed lookup fails the job, which skips publication visibly instead of guessing.
-      - name: Read the merged PR's labels
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+
+      # No pnpm cache: this job installs a fraction of the store and often finishes first, so it
+      # would save that partial store under the lockfile's key, which a cache never replaces, and
+      # every full install would restore it. The install takes seconds from the registry.
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: package.json
+
+      # The job holds a token, so it installs only the step's runtime dependencies, without their
+      # install scripts.
+      - name: Install
+        run: pnpm install --frozen-lockfile --no-runtime --ignore-scripts --prod --filter @elmeragroup/canary-opt-out
+
+      # A push event carries no labels, so the step reads them from the PR that merged as each
+      # pushed commit (tooling/canary-opt-out/src/canary-decision.ts holds the rule). A failed
+      # lookup writes no output and fails the job, which skips publication visibly instead of
+      # guessing.
+      - name: Read the merged PRs' labels
         id: labels
         env:
           GH_TOKEN: ${{ github.token }}
-        run: |
-          skip="$(gh api "repos/$GITHUB_REPOSITORY/commits/$GITHUB_SHA/pulls" --jq '[.[] | select(.merge_commit_sha == $ENV.GITHUB_SHA and .head.ref != "changeset-release/main") | .labels[].name] | any(. == "no-canary")')"
-          echo "skip=$skip" >> "$GITHUB_OUTPUT"
+        run: node tooling/canary-opt-out/src/canary-opt-out.ts
 
   release:
     needs: [checks, browser, canary-opt-out]

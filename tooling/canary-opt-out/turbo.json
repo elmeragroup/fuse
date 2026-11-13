@@ -1,0 +1,10 @@
+{
+  "extends": ["//"],
+  "tasks": {
+    // The suite runs the step against a local stand-in for GitHub, so it does not wait for the
+    // Fuse build that the root `test` task depends on.
+    "test": {
+      "dependsOn": []
+    }
+  }
+}
