@@ -19,6 +19,7 @@ import * as Accept from "./accept";
 import { registerDocumentDropGuard } from "./document-drop-guard";
 import { FileUploadContext } from "./file-upload-context";
 import type { FileUploadActions, FileUploadContextValue, FileUploadState } from "./file-upload-context";
+import { useFileUploadField } from "./file-upload-field";
 import { fileUploadVariants } from "./file-upload-variants";
 import { expand, read } from "./read-files";
 import type { ReadEntry } from "./read-files";
@@ -47,6 +48,15 @@ export type FileUploadRootProps = Omit<useRender.ComponentProps<"div">, "onSelec
      * `Field.Root`'s `name`.
      */
     files?: readonly File[];
+    /**
+     * Require at least one file in `files` before a form submits. An empty or undefined `files`
+     * counts as no file, as a native file input with no selection does, and a native form's
+     * submit stops and moves focus to the first enabled `FileUpload.Trigger`. Inside a
+     * `Field.Root`, the Field validates the files when its `validationMode` says and on a Base UI
+     * `Form` submit: with none it turns invalid with `valueMissing`, which
+     * `Field.Error match="valueMissing"` shows. A disabled Root is never required.
+     */
+    required?: boolean;
     /**
      * The `accept` attribute's syntax, such as `"image/*,.pdf"`. The picker receives it as-is, and
      * every source enforces it: a file that fails it reaches `onReject` with `"type"`.
@@ -79,6 +89,16 @@ export type FileUploadRootProps = Omit<useRender.ComponentProps<"div">, "onSelec
 const styles = fileUploadVariants();
 
 const NO_DROP_TARGETS: ReadonlySet<string> = new Set();
+
+const NO_FILES: readonly File[] = [];
+
+/**
+ * Whether a Trigger can take the focus the validity input hands on. A Trigger rendered with
+ * `focusableWhenDisabled` is disabled through `aria-disabled` alone, so `:disabled` misses it.
+ */
+function isEnabledTrigger(trigger: HTMLElement): boolean {
+  return !trigger.matches(':disabled, [aria-disabled="true"]');
+}
 
 /** React types no `webkitdirectory`, so the input takes the attribute through a spread. */
 type DirectoryAttribute = { webkitdirectory?: "" };
@@ -130,14 +150,20 @@ function writeFiles(input: HTMLInputElement, files: readonly File[]): void {
  * so every pick reaches `onSelect` or `onReject`, and only what the parent adds is posted.
  * Chromium and WebKit empty a file input on a form reset, so the Root writes the list back after
  * a native reset, including the one React runs after a form action. A disabled Root posts
- * nothing. Without `files` there is no posting input, and nothing is posted.
+ * nothing. Without `files` nothing is posted.
  *
- * A disabled `Field.Root` or `Field.Set` disables the Root. `FileUpload.Trigger` documents the
- * rest of the Field wiring.
+ * `required` asks for at least one file in `files`. The posting input then carries the validity
+ * a native form and a Base UI `Field` read; it is visually hidden rather than `hidden`, so the
+ * browser can stop a submit at it, and it hands focus to the first enabled `FileUpload.Trigger`.
+ *
+ * A disabled `Field.Root` or `Field.Set` disables the Root. Inside a `Field.Root`, the Trigger is
+ * the Field's control and `files` its value: `FileUpload.Trigger` documents the rest of the Field
+ * wiring.
  */
 export function FileUploadRoot({
   name: nameProp,
   files,
+  required = false,
   accept,
   multiple = false,
   directory = false,
@@ -160,9 +186,11 @@ export function FileUploadRoot({
   const [element, setElement] = useState<HTMLDivElement | null>(null);
   const mergedRef = useMergedRefs<HTMLDivElement>(ref, setElement);
   const inputRef = useRef<HTMLInputElement>(null);
-  // The input a native form posts, apart from the picker: a browser fires no `change` for a pick
-  // of the files its input already holds, so the picker stays empty between picks.
+  // The input a native form posts and validates, apart from the picker: a browser fires no
+  // `change` for a pick of the files its input already holds, so the picker stays empty between
+  // picks. It holds the controlled files whenever it is mounted: to post them, or to judge them.
   const postingRef = useRef<HTMLInputElement>(null);
+  const posted = files ?? NO_FILES;
   const [dropTargets, setDropTargets] = useState<ReadonlySet<string>>(NO_DROP_TARGETS);
   // Disabling ends every drag at once. Adjusted while rendering, so no frame shows a stale target.
   if (disabled && dropTargets.size > 0) {
@@ -266,6 +294,35 @@ export function FileUploadRoot({
     };
   }, []);
 
+  // The mounted Triggers, in mount order. The first is the control a Base UI Form focuses, and the
+  // first enabled one takes the focus the validity input hands on.
+  const triggers = useRef<HTMLElement[]>([]);
+  // The first Trigger, read when a Form focuses it.
+  const firstTrigger = useMemo(
+    () => ({
+      get current(): HTMLElement | null {
+        return triggers.current[0] ?? null;
+      },
+    }),
+    []
+  );
+  const registerTrigger = useCallback((trigger: HTMLElement) => {
+    triggers.current = [...triggers.current, trigger];
+    return () => {
+      triggers.current = triggers.current.filter((mounted) => mounted !== trigger);
+    };
+  }, []);
+
+  const { inField, triggerLeft } = useFileUploadField({
+    files: posted,
+    name: nameProp,
+    disabled,
+    trigger: firstTrigger,
+    validityInput: postingRef,
+  });
+  // Mounted to post the files, or for a native form or a Field to judge them.
+  const postingInputShown = name !== undefined || required || inField;
+
   // A Field has one control. Only counted, never changing an id, so a second Trigger is reported
   // in development and left as rendered.
   const fieldTriggers = useRef(0);
@@ -342,7 +399,9 @@ export function FileUploadRoot({
       meta: {
         descriptionIds,
         registerDescription,
+        registerTrigger,
         registerFieldTrigger,
+        triggerLeft,
         dropTargets,
         setDropTarget,
         receive,
@@ -354,7 +413,9 @@ export function FileUploadRoot({
       actions,
       descriptionIds,
       registerDescription,
+      registerTrigger,
       registerFieldTrigger,
+      triggerLeft,
       dropTargets,
       setDropTarget,
       receive,
@@ -366,16 +427,16 @@ export function FileUploadRoot({
   // appearing mounts it, a new `render` element remounts it empty) as well as every `files` change.
   const writePosted = useCallback(
     (input: HTMLInputElement | null) => {
-      if (input !== null && files !== undefined) {
-        writeFiles(input, files);
+      if (input !== null) {
+        writeFiles(input, posted);
       }
     },
-    [files]
+    [posted]
   );
   const postingInputRef = useMergedRefs(postingRef, writePosted);
 
   // A native reset empties the posting input after its `reset` event; the hook runs this after.
-  useFormReset(postingRef, name === undefined ? null : () => writePosted(postingRef.current));
+  useFormReset(postingRef, postingInputShown ? () => writePosted(postingRef.current) : null);
 
   const onChange = (event: ChangeEvent<HTMLInputElement>) => {
     const input = event.currentTarget;
@@ -417,19 +478,24 @@ export function FileUploadRoot({
                 // handler sees a second click.
                 onClick={(event) => event.stopPropagation()}
               />
-              {name === undefined ? null : (
-                // `hidden` keeps it out of the accessibility tree and the tab order. A disabled
-                // Root posts nothing, as a disabled native control does.
+              {postingInputShown ? (
+                // Visually hidden, not `hidden`, so a native submit can stop at it: the browser
+                // focuses an invalid control, and it hands that focus to the first enabled Trigger. It stays out
+                // of the accessibility tree and the tab order. A disabled Root posts nothing and is
+                // never validated, as a disabled native control is.
                 <input
                   ref={postingInputRef}
                   type="file"
-                  hidden
                   tabIndex={-1}
+                  aria-hidden
                   multiple
                   name={name}
+                  required={required}
                   disabled={disabled}
+                  onFocus={() => triggers.current.find(isEnabledTrigger)?.focus()}
+                  className={styles.postingInput()}
                 />
-              )}
+              ) : null}
             </>
           ),
         },

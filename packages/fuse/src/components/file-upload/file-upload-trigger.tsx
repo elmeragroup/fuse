@@ -1,6 +1,6 @@
 "use client";
 
-import { useLayoutEffect } from "react";
+import { useLayoutEffect, useState } from "react";
 import type { ReactElement } from "react";
 
 import { useFieldRootContext } from "@base-ui/react/internals/field-root-context";
@@ -10,10 +10,12 @@ import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
 
 import { definedProps } from "../../internal/defined-props";
+import { isHTMLElement } from "../../internal/dom-node";
 import { cn } from "../../styles/cn";
 import { ariaStateFaceClass } from "../../styles/state-face";
 import { selfFocusRingClass } from "../../styles/utils";
 import { useFileUploadContext } from "./file-upload-context";
+import { useFileUploadTriggerFocus } from "./file-upload-field";
 
 /** `FileUpload.Trigger` takes a `button`'s props plus Base UI's `render`. */
 export type FileUploadTriggerProps = useRender.ComponentProps<"button">;
@@ -41,6 +43,13 @@ function idList(...lists: readonly (string | undefined)[]): string | undefined {
  * Field marks it `aria-invalid` while it is enabled; its own `aria-invalid` wins over the Field's.
  * While `aria-invalid` is set, the Trigger paints the shared invalid border and ring, the one
  * invalid face of the FileUpload: an enclosing `FileUpload.Dropzone` paints none.
+ *
+ * The Root's `files` are the Field's value, which a Base UI `Form` passes to `onFormSubmit`. With
+ * the Root's `required`, a Base UI `Form` submit with no files marks the Field invalid with
+ * `valueMissing`, so its `Field.Error` describes the Trigger and the Trigger takes focus. As on
+ * `Select.Trigger`, a blur of the Trigger marks the Field touched and, in the Field's `onBlur`
+ * mode, validates it, and a change of `files` validates again as the `validationMode` says. The
+ * window blur that opening the picker causes is no blur of the Trigger, so it validates nothing.
  */
 export function FileUploadTrigger({
   className,
@@ -63,9 +72,19 @@ export function FileUploadTrigger({
   // Trigger's own `id` after mount, so server markup keeps the label paired with the Trigger.
   const controlId = useLabelableId({ id: ownId, enabled: inField });
   const id = inField ? controlId : ownId;
-  const { registerFieldTrigger } = meta;
+  const { registerTrigger, registerFieldTrigger, triggerLeft } = meta;
+  const [element, setElement] = useState<Element | null>(null);
+  useLayoutEffect(
+    () => (isHTMLElement(element) ? registerTrigger(element) : undefined),
+    [element, registerTrigger]
+  );
   useLayoutEffect(() => (inField ? registerFieldTrigger() : undefined), [inField, registerFieldTrigger]);
   const isDisabled = state.disabled || disabled === true;
+  const { onFocus, onBlur } = useFileUploadTriggerFocus({
+    disabled: isDisabled,
+    trigger: element,
+    left: triggerLeft,
+  });
   const labelledBy =
     ownLabelledBy ??
     (inField && labelable.labelId !== undefined && id !== undefined
@@ -78,6 +97,7 @@ export function FileUploadTrigger({
   return useRender({
     defaultTagName: "button",
     render,
+    ref: setElement,
     props: {
       "data-slot": "file-upload-trigger",
       // `type="button"` is a default here, because Base UI gives it only to its fallback tag, and
@@ -95,6 +115,8 @@ export function FileUploadTrigger({
               actions.open();
             }
           },
+          onFocus,
+          onBlur,
         },
         definedProps({
           ...props,

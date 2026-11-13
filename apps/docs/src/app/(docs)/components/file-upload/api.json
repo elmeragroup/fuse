@@ -103,6 +103,15 @@
           "defaultValue": null,
           "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
           "required": false
+        },
+        {
+          "name": "required",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Require at least one file in `files` before a form submits. An empty or undefined `files` counts as no file, as a native file input with no selection does, and a native form's submit stops and moves focus to the first enabled `FileUpload.Trigger`. Inside a `Field.Root`, the Field validates the files when its `validationMode` says and on a Base UI `Form` submit: with none it turns invalid with `valueMissing`, which `Field.Error match=\"valueMissing\"` shows. A disabled Root is never required.",
+          "required": false
         }
       ]
     },

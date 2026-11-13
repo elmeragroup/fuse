@@ -17,7 +17,8 @@ function postedLines(data: FormData): string[] {
 }
 
 export function FileUploadForm() {
-  // The form posts exactly this list. FileUpload hands each pick to onSelect, and the parent adds it.
+  // The form posts exactly this list, and `required` stops a submit while it is empty. FileUpload
+  // hands each pick to onSelect, and the parent adds it.
   const [files, setFiles] = useState<readonly File[]>([]);
   const [posted, setPosted] = useState<readonly string[] | null>(null);
 
@@ -31,6 +32,7 @@ export function FileUploadForm() {
       <FileUpload.Root
         name="receipts"
         files={files}
+        required
         accept="image/*,.pdf"
         multiple
         onSelect={(picked) => setFiles((current) => [...current, ...picked])}>
@@ -66,11 +68,7 @@ export function FileUploadForm() {
       <Button type="submit" variant="outline" className="self-start">
         Send
       </Button>
-      {posted === null ? null : (
-        <output className="text-sm">
-          {posted.length === 0 ? "The form posted no receipts." : `The form posted ${posted.join(", ")}.`}
-        </output>
-      )}
+      {posted === null ? null : <output className="text-sm">The form posted {posted.join(", ")}.</output>}
     </form>
   );
 }
