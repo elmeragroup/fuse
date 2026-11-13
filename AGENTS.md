@@ -37,6 +37,12 @@ Treat server/client compatibility as public behavior. A server component may
 render client children; keep directives on the modules that need them.
 Review changes to independent RSC expectations in `apps/docs/test/fixtures/`.
 
+## Node scripts
+
+Write every Node script, in `scripts/` and `tooling/`, as idiomatic Effect under the
+`coding-standards` skill. A CI job that runs one installs only that script's runtime
+dependencies, as `publish-release.yml`'s `notify` job does for `tooling/release-announcement`.
+
 ## Documentation
 
 Update public JSDoc, consumer examples and behavior tests when usage changes.
