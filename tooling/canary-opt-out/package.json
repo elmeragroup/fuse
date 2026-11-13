@@ -1,0 +1,24 @@
+{
+  "name": "@elmeragroup/canary-opt-out",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Decides whether a push to main skips its canary, from the no-canary labels of the PRs it merged.",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "type-check": "tsrs --noEmit"
+  },
+  "dependencies": {
+    "@effect/platform-node": "catalog:",
+    "effect": "catalog:"
+  },
+  "devDependencies": {
+    "@effect/vitest": "catalog:",
+    "@elmeragroup/typescript-config": "workspace:*",
+    "@types/node": "catalog:",
+    "tsrs": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}
