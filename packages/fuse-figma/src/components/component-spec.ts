@@ -459,9 +459,9 @@ export type ComponentDefinition = BoxDefinition & {
   readonly slot: string;
   /**
    * The root element, for a root whose markup carries no `data-slot`, or one whose `data-slot`
-   * changes with the cell, as Pagination's edge link carries `pagination-previous` or `pagination-next`. `figma:compare` measures the one
-   * element of a cell this selector matches, and its markup check places the root there. Undefined
-   * for a root its `data-slot` names.
+   * changes with the cell, as Pagination's edge link carries `pagination-previous` or
+   * `pagination-next`. `figma:compare` measures the one element of a cell this selector matches,
+   * and its markup check places the root there. Undefined for a root its `data-slot` names.
    */
   readonly element?: ElementSelector;
   /**

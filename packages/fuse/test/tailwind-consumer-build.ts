@@ -44,9 +44,6 @@ export async function consumerCss(entry: string, candidates: readonly string[]):
       }
       return Promise.resolve({ path: id, base, content });
     },
-    loadModule: (id) => {
-      throw new Error(`fuse.css loads no plugin, received ${id}`);
-    },
   });
   return compiler.build([...candidates]);
 }

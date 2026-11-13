@@ -6,7 +6,6 @@ import type { Metadata, Viewport } from "next";
 import { ColorSchemeScript, themeAttributes } from "@elmeragroup/fuse/theme";
 
 import { DocumentRoot } from "../../components/document-root";
-import { TemporalPolyfill } from "../../components/temporal-polyfill";
 import { ogLandingPath, ogMetadata } from "../../lib/og-metadata";
 import { siteOrigin } from "../../lib/site-origin";
 import { DOCUMENT_COLOR_SCHEME, OPENING_THEME } from "../../lib/theme";
@@ -74,8 +73,6 @@ export default function LandingLayout({ children }: LandingLayoutProps): ReactEl
         <script dangerouslySetInnerHTML={{ __html: THEME_QUERY_SCRIPT }} />
       </head>
       <body className="m-0 min-w-80 bg-background font-sans text-foreground antialiased">
-        {/* The app shell's New order form picks a Temporal date. */}
-        <TemporalPolyfill />
         {/* The landing reads the route's theme param, which the build's shell for the themed
             route does not have yet, so it suspends there; each theme's prerender resumes it. A
             shared address's landing therefore follows an empty shell, which the head script has

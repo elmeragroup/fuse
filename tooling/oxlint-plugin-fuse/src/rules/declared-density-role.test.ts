@@ -23,7 +23,7 @@ ruleTester.run("declared-density-role", declaredDensityRole, {
     { code: '<button data-slot="button" />', options },
     { code: 'const props = { "data-slot": "card-header" };', options },
     { code: 'useRender({ state: { slot: "sidebar-group" } });', options },
-    // React Aria's JSX `slot` names a context slot, not a part.
+    // A JSX `slot` is the HTML slot attribute, not a part.
     { code: '<Heading slot="title" />', options },
     // A slot chosen at runtime is the caller's to declare.
     { code: "<div data-slot={name} />", options },

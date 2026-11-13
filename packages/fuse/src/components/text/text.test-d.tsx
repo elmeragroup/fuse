@@ -29,6 +29,5 @@ test("TextProps is native p props plus the recipe axes, elementType, and render"
   expectTypeOf<TextProps["elementType"]>().toEqualTypeOf<keyof JSX.IntrinsicElements | undefined>();
   expectTypeOf<TextProps["className"]>().toEqualTypeOf<string | undefined>();
   expectTypeOf<TextProps["id"]>().toEqualTypeOf<string | undefined>();
-  expectTypeOf<TextProps>().not.toHaveProperty("slot");
   expectTypeOf<TextProps>().not.toHaveProperty("as");
 });

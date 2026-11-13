@@ -10,8 +10,8 @@ import { propertyKeyName } from "./ast-names.ts";
 import { stringLiteral } from "./static-text.ts";
 
 /**
- * The JSX attributes a part's `data-slot` is written through. A JSX `slot` attribute is React
- * Aria's slot, not a part.
+ * The JSX attributes a part's `data-slot` is written through. A JSX `slot` attribute is the HTML
+ * `slot` attribute, not a part.
  */
 export const SLOT_JSX_ATTRIBUTES: ReadonlySet<string> = new Set(["data-slot", "dataSlot"]);
 

@@ -148,7 +148,8 @@ export function DatePickerField<P = object, T extends DateInputValue = PropsMade
       label={label}
       description={description}
       errorMessage={errorMessage}
-      // Without `isInvalid`, `errorMessage` shows only once the field's own validation fails, as in React Aria.
+      // Without `isInvalid`, `errorMessage` shows only once the field's own validation fails, as in
+      // React Aria.
       isErrorMessageAlwaysShown={isInvalid}>
       <DatePickerRoot<KindFromValue, T>
         {...definedProps({

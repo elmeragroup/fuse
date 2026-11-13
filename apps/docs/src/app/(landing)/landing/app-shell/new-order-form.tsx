@@ -14,6 +14,8 @@ import { PhoneNumberField } from "@elmeragroup/fuse/phone-number-field";
 import { Radio, RadioGroup, RadioItem, RadioItemGroup } from "@elmeragroup/fuse/radio-group";
 import { Select } from "@elmeragroup/fuse/select";
 import { Sheet } from "@elmeragroup/fuse/sheet";
+// The landing's only Temporal user installs the polyfill with this lazy chunk, not on first paint.
+import "@elmeragroup/fuse/temporal-polyfill";
 import { TextField } from "@elmeragroup/fuse/text-field";
 import { TextareaField } from "@elmeragroup/fuse/textarea-field";
 import { LocaleProvider } from "@elmeragroup/fuse/theme";

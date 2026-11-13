@@ -21,13 +21,7 @@ import { CompareBrowser, DEVICE_SCALE } from "./browser-render.ts";
 import type { BrowserUnavailable, CellRequest, RenderedCell } from "./browser-render.ts";
 import { isClientRenderer, loadRenderers, renderCellHtml } from "./cell-renderers.ts";
 import type { AnyCellRenderer, RendererMissing } from "./cell-renderers.ts";
-import {
-  fallbackInteraction,
-  forcedPseudoClasses,
-  highlightAttributes,
-  parseCell,
-  restingTwin,
-} from "./cells.ts";
+import { fallbackInteraction, forcedPseudoClasses, marksHighlight, parseCell, restingTwin } from "./cells.ts";
 import { checkClientMarkup } from "./client-markup.ts";
 import { fileFailure, makeDirectory, writeBytes, writeText } from "./compare-files.ts";
 import type { CompareFileFailed } from "./compare-files.ts";
@@ -224,8 +218,8 @@ export function planCells(
         ? { _tag: "Client", set: definition.key, cell: shown }
         : { _tag: "Static", html: renderCellHtml(renderer, shown) };
     const forced = forcedPseudoClasses(cell, renderer.highlight);
-    const forcedAttributes = highlightAttributes(cell, renderer.highlight);
-    const forces = forced.length > 0 || Object.keys(forcedAttributes).length > 0;
+    const highlighted = marksHighlight(cell, renderer.highlight);
+    const forces = forced.length > 0 || highlighted;
     planned.push({
       instance,
       definition,
@@ -240,7 +234,7 @@ export function planCells(
         height: definition.viewport?.height,
         forcedOn: forcedSelector(definition, cell),
         forced,
-        forcedAttributes,
+        highlighted,
         resting: forces ? content(restingTwin(cell)) : undefined,
         fallback: fallbackInteraction(cell),
         restsByDesign: unchanged.has(instance.variant),

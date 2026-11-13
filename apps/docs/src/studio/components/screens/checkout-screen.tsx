@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { FocusEvent, FormEvent, KeyboardEvent, ReactElement } from "react";
+import type { FormEvent, ReactElement } from "react";
 
 import { tv } from "tailwind-variants";
 
@@ -53,18 +53,6 @@ const FORM_ID = "checkout-order";
 /** A confirmed order, as the success message reads it back. */
 type Order = { readonly customer: string; readonly email: string; readonly summary: string };
 
-/**
- * Whether every segment of the DateField that `event` came from is filled. The field keeps its
- * last complete value while a segment is empty, and reports no change when a segment is filled
- * back to that value, so the segments themselves tell.
- */
-function segmentsFilled(event: KeyboardEvent | FocusEvent): boolean {
-  const target = event.target;
-  // The date input marks an empty segment, and no prop or callback reports it.
-  const group = target instanceof Element ? target.closest('[role="group"]') : null;
-  return (group?.querySelector('[role="spinbutton"][data-placeholder]') ?? null) === null;
-}
-
 /** Formats whole kroner as the summary shows them. */
 function kroner(amount: number): string {
   return amount === 0 ? "Included" : `NOK ${String(amount)}`;
@@ -73,36 +61,23 @@ function kroner(amount: number): string {
 /**
  * A sign-up checkout in the branded look: contact fields with a live email error, the phone and
  * start date, optional extras, and an order summary that follows the picks. "Confirm order"
- * submits the Form, which checks every field and the start date first; a valid order is
+ * submits the Form, which checks every field first; a valid order is
  * confirmed in place.
  */
 export function CheckoutScreen(): ReactElement {
   const [email, setEmail] = useState("nora.haugen@example");
   const [extras, setExtras] = useState<ReadonlySet<string>>(new Set(["app"]));
   const earliestStart = Temporal.PlainDate.from(EARLIEST_START);
-  const [start, setStart] = useState<Temporal.PlainDate | null>(() =>
-    Temporal.PlainDate.from(EARLIEST_START)
-  );
-  const [startFilled, setStartFilled] = useState(true);
+  const [start, setStart] = useState<Temporal.PlainDate | null>(earliestStart);
   const emailInvalid = !EMAIL.test(email);
-  // The screen's own words for the start date; `isInvalid` also makes the Form refuse the submit.
-  const startError =
-    start === null || !startFilled
-      ? "Enter a complete start date."
-      : Temporal.PlainDate.compare(start, earliestStart) < 0
-        ? "Choose a start date from 1 November 2026 on."
-        : undefined;
-  const trackFilled = (event: KeyboardEvent | FocusEvent) => {
-    setStartFilled(segmentsFilled(event));
-  };
   const picked = EXTRAS.filter((extra) => extras.has(extra.id));
   const total = BASE_PRICE + picked.reduce((sum, extra) => sum + extra.price, 0);
   const [order, setOrder] = useState<Order | undefined>(undefined);
 
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (start === null || startError !== undefined) {
-      setOrder(undefined);
+    // The Form calls this only once the DateField's own required, complete and minimum checks pass.
+    if (start === null) {
       return;
     }
     const data = new FormData(event.currentTarget);
@@ -166,20 +141,19 @@ export function CheckoutScreen(): ReactElement {
             autoComplete="email"
           />
           <PhoneNumberField label="Mobile" name="mobile" defaultValue="+4741234567" />
-          {/* The field's keys and focus leaving bubble to this wrapper, which reads its segments. */}
-          {/* oxlint-disable-next-line jsx-a11y/no-static-element-interactions -- listens only to events bubbling from the DateField's own segments; the wrapper does nothing a role would announce */}
-          <div onKeyUp={trackFilled} onBlur={trackFilled}>
-            <DateField
-              label="Start date"
-              name="start"
-              description="The first of a month, from November on."
-              value={start}
-              minValue={earliestStart}
-              isInvalid={startError !== undefined}
-              errorMessage={startError}
-              onChange={setStart}
-            />
-          </div>
+          <DateField
+            label="Start date"
+            name="start"
+            description="The first of a month, from November on."
+            isRequired
+            value={start}
+            minValue={earliestStart}
+            onChange={(next) => {
+              setStart(next);
+              // A refused submit never reaches `submit`, so an earlier confirmation would go stale.
+              setOrder(undefined);
+            }}
+          />
           <Field.Root>
             <Field.Label>Extras</Field.Label>
             <div className={styles.extras()}>

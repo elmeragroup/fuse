@@ -28,8 +28,8 @@ export type CalendarValueChangeReason = "day-press" | "keyboard";
 /**
  * Why a selected value would fail the calendar's own rules: before the minimum
  * (`"rangeUnderflow"`), after the maximum (`"rangeOverflow"`), or a day `isDateUnavailable`
- * refuses (`"unavailable"`). The bound words are `ValidityState`'s, as every date component in
- * the tier reports them.
+ * refuses (`"unavailable"`). The bound words are `ValidityState`'s, as every date component
+ * reports them.
  */
 export type CalendarValidationError = "rangeUnderflow" | "rangeOverflow" | "unavailable";
 

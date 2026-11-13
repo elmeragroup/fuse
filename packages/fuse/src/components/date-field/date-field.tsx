@@ -126,7 +126,8 @@ export function DateField<P = object, T extends DateInputValue = PropsMadeValue<
       label={label}
       description={description}
       errorMessage={errorMessage}
-      // Without `isInvalid`, `errorMessage` shows only once the field's own validation fails, as in React Aria.
+      // Without `isInvalid`, `errorMessage` shows only once the field's own validation fails, as in
+      // React Aria.
       isErrorMessageAlwaysShown={isInvalid}>
       <DateInputRoot<KindFromValue, T>
         {...definedProps({

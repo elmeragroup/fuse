@@ -135,8 +135,8 @@ export function attributesNamed(
 /**
  * Whether an element is the one a definition's selector names: it has the selector's tag, each
  * attribute the selector lists with that exact value or, for `true`, any value, and each attribute
- * its `suffixes` list with a value that ends with a suffix that is not empty, as the selector's CSS form matches it
- * in the browser.
+ * its `suffixes` list with a value that ends with a suffix that is not empty, as the selector's CSS
+ * form matches it in the browser.
  *
  * @param selector - The element a root or a part names, where its markup carries no `data-slot`.
  * @param element - An element of the markup.

@@ -15,7 +15,7 @@ import { linkVariants } from "./link-variants";
 export type LinkProps = useRender.ComponentProps<"a"> & VariantProps<typeof linkVariants>;
 
 /**
- * A render element's `className`: a string, or a state callback such as React Aria's `Link` takes.
+ * A render element's `className`: a string, or a state callback such as React Router's `NavLink` takes.
  * Link never calls the callback, the element does with its own state, so the state is `never` here.
  */
 type RenderElementClassName = string | ((state: never) => string | undefined) | undefined;
@@ -62,11 +62,10 @@ function renderWithClassName(render: LinkProps["render"], classes: string): Reac
  * <Link render={<NextLink href="/invoices/1042" />}>Invoice 1042</Link>
  * ```
  *
- * The same `render` composition takes React Router's `Link` or React Aria's `Link`, whose
- * `RouterProvider` then routes an internal `href`. A `className` on the render element, a string
- * or React Aria's state callback, merges after Link's classes and wins a conflict. For a link
- * that leaves the site, set `target` and `rel` yourself, and add an icon after the text: Link
- * sizes an inline SVG to the text.
+ * The same `render` composition takes React Router's `Link`. A `className` on the render
+ * element, a string or a state callback, merges after Link's classes and wins a conflict. For a
+ * link that leaves the site, set `target` and `rel` yourself, and add an icon after the text:
+ * Link sizes an inline SVG to the text.
  */
 export function Link({
   className,

@@ -342,6 +342,7 @@
     "rsc": "server",
     "demos": [
       "date-field-basic.tsx",
+      "date-field-states.tsx",
       "date-field-time.tsx",
       "date-field-zoned.tsx",
       "date-field-bounds.tsx",
@@ -354,6 +355,7 @@
     "rsc": "client",
     "demos": [
       "date-picker-basic.tsx",
+      "date-picker-states.tsx",
       "date-picker-time.tsx",
       "date-picker-time-input.tsx",
       "date-picker-presets.tsx",
@@ -366,6 +368,7 @@
     "rsc": "client",
     "demos": [
       "date-range-picker-basic.tsx",
+      "date-range-picker-states.tsx",
       "date-range-picker-months.tsx",
       "date-range-picker-time.tsx",
       "date-range-picker-presets.tsx",

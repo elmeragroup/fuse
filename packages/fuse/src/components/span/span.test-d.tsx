@@ -3,7 +3,7 @@ import { expectTypeOf, test } from "vitest";
 import type { SpanProps } from "@elmeragroup/fuse/span";
 import { Span } from "@elmeragroup/fuse/span";
 
-test("SpanProps is native span props plus the recipe axes and render; the element rejects as, slot and elementType", () => {
+test("SpanProps is native span props plus the recipe axes and render; the element rejects as and elementType", () => {
   expectTypeOf<SpanProps["variant"]>().toEqualTypeOf<
     | "default"
     | "foreground"
@@ -27,7 +27,6 @@ test("SpanProps is native span props plus the recipe axes and render; the elemen
   expectTypeOf<SpanProps["truncate"]>().toEqualTypeOf<boolean | undefined>();
   expectTypeOf<SpanProps["className"]>().toEqualTypeOf<string | undefined>();
   expectTypeOf<SpanProps["id"]>().toEqualTypeOf<string | undefined>();
-  expectTypeOf<SpanProps>().not.toHaveProperty("slot");
   expectTypeOf<SpanProps>().not.toHaveProperty("as");
   expectTypeOf<SpanProps>().not.toHaveProperty("elementType");
 
@@ -39,8 +38,6 @@ test("SpanProps is native span props plus the recipe axes and render; the elemen
   );
   const _render = <Span render={<strong />}>As strong</Span>;
 
-  // @ts-expect-error Span takes no `slot` prop
-  const _noSlot = <Span slot="description">Described</Span>;
   // @ts-expect-error the forced-span identity keeps no elementType prop
   const _noElementType = <Span elementType="p">Block</Span>;
   // @ts-expect-error polymorphism is never an `as` prop

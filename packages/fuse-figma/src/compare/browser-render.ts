@@ -79,10 +79,10 @@ export type CellRequest = {
   readonly forcedOn: string;
   readonly forced: readonly ForcedPseudoClass[];
   /**
-   * The attributes the page writes on the forced element, as `data-highlighted` on a highlighted
-   * Combobox row. Empty for a cell whose state CSS draws from the pseudo classes alone.
+   * Whether the page writes `data-highlighted` on the forced element, as on a highlighted Combobox
+   * row.
    */
-  readonly forcedAttributes: Readonly<Record<string, string>>;
+  readonly highlighted: boolean;
   /** The same cell at rest, rendered off to the side to check the forced state. */
   readonly resting: CellContent | undefined;
   /** The real hover or focus the page tries when forcing changed nothing, or none. */
@@ -160,9 +160,9 @@ const SIGNATURE_PROPERTIES: readonly string[] = [
   "opacity",
 ];
 
-/** Whether the page forces anything on a cell: pseudo classes, attributes, or both. */
+/** Whether the page forces anything on a cell: pseudo classes, the highlight, or both. */
 function forcesState(request: CellRequest): boolean {
-  return request.forced.length > 0 || Object.keys(request.forcedAttributes).length > 0;
+  return request.forced.length > 0 || request.highlighted;
 }
 
 const REFERENCE_PREFIX = "rest-";
@@ -419,8 +419,8 @@ async function forceStates(page: Page, requests: readonly CellRequest[]): Promis
       selector: cellSelector(request.id, request.forcedOn),
     });
     await cdp.send("CSS.forcePseudoState", { nodeId, forcedPseudoClasses: [...request.forced] });
-    for (const [name, value] of Object.entries(request.forcedAttributes)) {
-      await cdp.send("DOM.setAttributeValue", { nodeId, name, value });
+    if (request.highlighted) {
+      await cdp.send("DOM.setAttributeValue", { nodeId, name: "data-highlighted", value: "" });
     }
   }
   const changed = new Set<string>();

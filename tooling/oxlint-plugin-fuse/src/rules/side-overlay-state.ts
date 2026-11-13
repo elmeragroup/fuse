@@ -146,19 +146,16 @@ function importOf(variable: Variable | undefined): ImportOf | undefined {
   return { source, imported: specifier.imported };
 }
 
-/** A Fuse import a name resolves to: the export path it names. */
-type FuseImport = { readonly path: readonly string[] };
-
 /**
- * The Fuse import a variable is bound by: `["Sheet"]` for `import { Sheet as S }`, `[]` for a
- * namespace import, or `undefined` for any other binding, a shadowing local included.
+ * The Fuse export path a variable's import names: `["Sheet"]` for `import { Sheet as S }`, `[]`
+ * for a namespace import, or `undefined` for any other binding, a shadowing local included.
  */
-function fuseImport(variable: Variable | undefined): FuseImport | undefined {
+function fuseImport(variable: Variable | undefined): readonly string[] | undefined {
   const binding = importOf(variable);
   if (binding === undefined || !isFuseSource(binding.source)) return undefined;
   const imported = binding.imported;
-  if (imported === "namespace") return { path: [] };
-  return { path: [moduleExportName(imported)] };
+  if (imported === "namespace") return [];
+  return [moduleExportName(imported)];
 }
 
 /** Whether an export path names an overlay part or a namespace holding one. */
@@ -179,7 +176,7 @@ function rendered(segments: readonly string[], scope: Scope): OverlayPart | "loc
   if (head === undefined || (members.length === 0 && /^[a-z]/u.test(head))) return undefined;
   const imported = fuseImport(resolve(scope, head));
   if (imported !== undefined) {
-    return FUSE_OVERLAYS.get([...imported.path, ...members].join("."));
+    return FUSE_OVERLAYS.get([...imported, ...members].join("."));
   }
   const registered = REGISTERED.get(members.at(-1) ?? "");
   return registered === undefined ? "local" : FUSE_OVERLAYS.get(registered);
@@ -543,7 +540,7 @@ export const sideOverlayState: Rule = {
           parent.type === "MemberExpression" && !parent.computed && parent.property.type === "Identifier"
             ? [parent.property.name]
             : [];
-        const path = [...imported.path, ...member];
+        const path = [...imported, ...member];
         if (path.join(".") === ROW_ACTIONS_FACTORY) {
           report(identifier, "factory", { name: identifier.name });
         } else if (reachesOverlay(path)) {

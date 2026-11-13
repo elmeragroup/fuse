@@ -215,8 +215,8 @@ export type DatePickerGroupProps = Omit<
 
 /**
  * The field box around the inputs and the trigger: a `group` named by the picker's label and
- * described by its description and error, written `data-slot="field-group"`. Alt+ArrowDown in it opens the popup (`reason: "keyboard"`), before the segment
- * under focus sees the key.
+ * described by its description and error, written `data-slot="field-group"`. Alt+ArrowDown in it
+ * opens the popup (`reason: "keyboard"`), before the segment under focus sees the key.
  */
 export function DatePickerGroup({ className, render, ...props }: DatePickerGroupProps): ReactElement {
   const shell = usePickerShellContext("DatePicker.Group");

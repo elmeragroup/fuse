@@ -208,6 +208,9 @@ function isBareComponent(subpath: string): boolean {
 function isDeferredEntry(subpath: string, deferred: readonly string[] = DEFERRED_ENTRIES): boolean {
   return deferred.includes(subpath);
 }
+/** Every registered public JS entry, `.` for the root barrel. */
+const PUBLIC_JS_ENTRIES: readonly string[] = [...NON_COMPONENT_JS_ENTRIES, ...BARE_COMPONENT_ENTRIES];
+
 const IMPLEMENTATION_DIRECTORIES = new Set(["components", "hooks", "icons", "styles", "theme"]);
 
 const SOURCE_EXTENSIONS = [".ts", ".tsx", ".js", ".jsx"] as const;
@@ -278,31 +281,18 @@ function resolveExistingSource(packageRoot: string, relativeWithoutExt: string):
   return undefined;
 }
 
-function canonicalJsAllowlist(): Set<string> {
-  const allow = new Set<string>(NON_COMPONENT_JS_ENTRIES);
-  for (const name of BARE_COMPONENT_ENTRIES) {
-    allow.add(name);
-  }
-  return allow;
-}
-
-function collectUnexpectedJsFiles(
-  packageRoot: string,
-  relativeDir: string,
-  allow: Set<string>,
-  toSubpath: (baseName: string) => string,
-  skipDirectory: (name: string) => boolean
-): string[] {
+/** The JS files and directory indexes in `src` that no registered public entry claims. */
+function unexpectedJsEntryFiles(packageRoot: string): string[] {
+  const isEntry = (baseName: string) => PUBLIC_JS_ENTRIES.includes(baseName === "index" ? "." : baseName);
   const unexpected: string[] = [];
-  const dir = join(packageRoot, relativeDir);
+  const dir = join(packageRoot, "src");
   if (!existsSync(dir) || !statSync(dir).isDirectory()) {
     return unexpected;
   }
 
   for (const entry of readdirSync(dir)) {
-    const fullPath = join(dir, entry);
-    const stat = statSync(fullPath);
-    const relativePath = `${relativeDir}/${entry}`;
+    const stat = statSync(join(dir, entry));
+    const relativePath = `src/${entry}`;
     if (stat.isFile()) {
       if (!SOURCE_EXTENSIONS.some((extension) => entry.endsWith(extension))) {
         continue;
@@ -310,39 +300,20 @@ function collectUnexpectedJsFiles(
       if (isSkippedSourceFile(relativePath)) {
         continue;
       }
-      const baseName = entry.replace(/\.(tsx|ts|jsx|js)$/u, "");
-      if (!allow.has(toSubpath(baseName))) {
+      if (!isEntry(entry.replace(/\.(tsx|ts|jsx|js)$/u, ""))) {
         unexpected.push(toPosix(relativePath));
       }
       continue;
     }
-    if (!stat.isDirectory() || skipDirectory(entry)) {
+    if (!stat.isDirectory() || IMPLEMENTATION_DIRECTORIES.has(entry)) {
       continue;
     }
     const index = resolveExistingSource(packageRoot, relativePath);
-    if (index?.startsWith(`${relativeDir}/${entry}/`) && !allow.has(toSubpath(entry))) {
+    if (index?.startsWith(`${relativePath}/`) && !isEntry(entry)) {
       unexpected.push(index);
     }
   }
   return unexpected;
-}
-
-function unexpectedJsEntryFiles(packageRoot: string): string[] {
-  const allow = canonicalJsAllowlist();
-  return collectUnexpectedJsFiles(
-    packageRoot,
-    "src",
-    allow,
-    (baseName) => (baseName === "index" ? "." : baseName),
-    (name) => IMPLEMENTATION_DIRECTORIES.has(name)
-  );
-}
-
-function resolveJsSource(packageRoot: string, subpath: string): string | undefined {
-  if (subpath === ".") {
-    return resolveExistingSource(packageRoot, "src/index");
-  }
-  return resolveExistingSource(packageRoot, `src/${subpath}`);
 }
 
 function iconRuntimeExports(): readonly string[] {
@@ -538,7 +509,7 @@ export function discoverJsEntriesFromAllowlist(
     if (isDeferredEntry(subpath, deferred)) {
       continue;
     }
-    const sourceFile = resolveJsSource(packageRoot, subpath);
+    const sourceFile = resolveExistingSource(packageRoot, subpath === "." ? "src/index" : `src/${subpath}`);
     if (sourceFile === undefined) {
       throw new Error(`Missing source entry for ${subpath}`);
     }
@@ -580,8 +551,7 @@ export function discoverEntries(packageRoot: string): DiscoveredEntries {
     );
   }
 
-  const allow = [...NON_COMPONENT_JS_ENTRIES, ...BARE_COMPONENT_ENTRIES];
-  const jsEntries = discoverJsEntriesFromAllowlist(packageRoot, allow);
+  const jsEntries = discoverJsEntriesFromAllowlist(packageRoot, PUBLIC_JS_ENTRIES);
 
   const css = cssEntries(packageRoot);
   const assetPatterns = flagAssetPattern(packageRoot);

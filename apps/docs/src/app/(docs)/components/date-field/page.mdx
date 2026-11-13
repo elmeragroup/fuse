@@ -4,6 +4,7 @@ lede: >
 ---
 
 import { DateFieldBasic } from "./demos/date-field-basic";
+import { DateFieldStates } from "./demos/date-field-states";
 import { DateFieldTime } from "./demos/date-field-time";
 import { DateFieldZoned } from "./demos/date-field-zoned";
 import { DateFieldBounds } from "./demos/date-field-bounds";
@@ -36,6 +37,18 @@ Type the digits, and each segment moves on when it is full: `10052026` in en-US,
 
 <Demo slug="date-field" id="basic" title="Basic" file="date-field-basic.tsx">
   <DateFieldBasic />
+</Demo>
+
+<Prose>
+
+## Sizes and states
+
+The field box comes in two sizes: `size="sm"` and the default. `isInvalid` shows `errorMessage` under the box, `isDisabled` dims the field and leaves its value out of the form, and `isReadOnly` keeps the value: the segments stay focusable and take the muted read-only fill.
+
+</Prose>
+
+<Demo slug="date-field" id="states" title="Sizes and states" file="date-field-states.tsx">
+  <DateFieldStates />
 </Demo>
 
 <Prose>

@@ -6,8 +6,8 @@
  * `element` selects where the root carries no `data-slot`, at any depth, since a radio renders
  * inside its group. A renderer sets the states the markup draws, such as disabled or pending,
  * through the element's props. The page forces hover and focus itself, on the root part, on the
- * part the definition's `statePart` names or on the sibling its `statePeer` names, and writes the
- * `data-highlighted` a set that marks its highlighted row by that attribute reads.
+ * part the definition's `statePart` names or on the sibling its `statePeer` names, and writes
+ * `data-highlighted` on a highlighted row whose set marks it by that attribute.
  *
  * A renderer's element comes from a module that imports the Fuse build, which exists only after
  * `pnpm --filter @elmeragroup/fuse build`. This module lists each renderer's set and the build

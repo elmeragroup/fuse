@@ -120,10 +120,10 @@ export class CascadeLogs {
   /**
    * Record the classes whose variants never held in one cell together, such as
    * `aria-invalid:focus-visible:` on a set that draws invalid and focus as two values of its state
-   * axis, or whose one variant never held in a cell that gives the class, and as unmapped the classes that style a child
-   * part no part of the definition took, since they style nothing the set draws, and as dropped the
-   * classes for every element below a box that holds no element in any cell. Call it after every
-   * cell.
+   * axis, or whose one variant never held in a cell that gives the class, and as unmapped the
+   * classes that style a child part no part of the definition took, since they style nothing the
+   * set draws, and as dropped the classes for every element below a box that holds no element in
+   * any cell. Call it after every cell.
    *
    * @param record - Where the owner's rows go once every cell has cascaded.
    */

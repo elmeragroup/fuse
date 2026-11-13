@@ -2,13 +2,13 @@
  * The shared state table against the `chip` fixture of `test/fixture-sets.ts`. The unit under test
  * is `makeStateTable`. The oracle is what each variant means in the browser: fuse.css gates
  * `enabled-hover:` on hover of an enabled control, and `hover:` holds on hover with no gate, since
- * Tailwind compiles it to `:hover`. Tailwind's `focus-visible:` holds on keyboard focus, `disabled:` on a native disabled
- * control, `aria-disabled:` on a disabled Base UI span, which never matches `:disabled`,
- * `aria-invalid:` and `data-invalid:` on a control inside an invalid Field, `has-data-[icon=…]:`
- * while a descendant carries that `data-icon`, and each child selector picks the `<svg>` elements
- * its CSS selector matches. `[&>a]:` and `[&>a:hover]:` compile to `> a` and `> a:hover`, a link
- * child of the box, which no kit box holds. `sm:` and `md:` compile to `@media (width >= 40rem)` and
- * `(width >= 48rem)`, which a desktop window matches.
+ * Tailwind compiles it to `:hover`. Tailwind's `focus-visible:` holds on keyboard focus,
+ * `disabled:` on a native disabled control, `aria-disabled:` on a disabled Base UI span, which
+ * never matches `:disabled`, `aria-invalid:` and `data-invalid:` on a control inside an invalid
+ * Field, `has-data-[icon=…]:` while a descendant carries that `data-icon`, and each child selector
+ * picks the `<svg>` elements its CSS selector matches. `[&>a]:` and `[&>a:hover]:` compile to `> a`
+ * and `> a:hover`, a link child of the box, which no kit box holds. `sm:` and `md:` compile to
+ * `@media (width >= 40rem)` and `(width >= 48rem)`, which a desktop window matches.
  */
 import { describe, expect, it } from "vitest";
 

@@ -37,7 +37,7 @@ Interactive controls now share one disabled and invalid look:
   a whole and shows the `not-allowed` cursor over its input and steppers. A stepper disabled
   at its bound no longer dims on its own; it keeps its muted fill and shows a muted caret.
 - **Other controls.** A disabled `Accordion.Trigger` now
-  dims, show the `not-allowed` cursor, and no longer underline or fade on hover. An
+  dims, shows the `not-allowed` cursor, and no longer underlines or fades on hover. An
   `Accordion.Trigger`, `Select.Trigger`, `Input` or `Textarea` given `aria-disabled="true"`
   now dims and shows the `not-allowed` cursor as well. A disabled inline `TextField` no
   longer shows its border and fill when hovered.

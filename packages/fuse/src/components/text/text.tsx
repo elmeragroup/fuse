@@ -9,7 +9,7 @@ import type { VariantProps } from "tailwind-variants";
 import { cn } from "../../styles/cn";
 import { textVariants } from "./text-variants";
 
-export type TextProps = Omit<ComponentPropsWithoutRef<"p">, "slot"> &
+export type TextProps = ComponentPropsWithoutRef<"p"> &
   VariantProps<typeof textVariants> & {
     /**
      * Tag name rendered when `render` is omitted. Kept from the ref for compat —

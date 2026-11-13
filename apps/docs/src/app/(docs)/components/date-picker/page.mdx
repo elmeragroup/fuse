@@ -4,6 +4,7 @@ lede: >
 ---
 
 import { DatePickerBasic } from "./demos/date-picker-basic";
+import { DatePickerStates } from "./demos/date-picker-states";
 import { DatePickerTime } from "./demos/date-picker-time";
 import { DatePickerTimeInput } from "./demos/date-picker-time-input";
 import { DatePickerPresets } from "./demos/date-picker-presets";
@@ -28,6 +29,18 @@ Type into the segments as in [DateField](/components/date-field), or open the ca
 
 <Demo slug="date-picker" id="basic" title="Basic" file="date-picker-basic.tsx">
   <DatePickerBasic />
+</Demo>
+
+<Prose>
+
+## Sizes and states
+
+The field box comes in two sizes: `size="sm"` and the default. `isInvalid` shows `errorMessage` under the box, `isDisabled` dims the picker and leaves its value out of the form, and `isReadOnly` keeps the value: the segments stay focusable, take the muted read-only fill, and the calendar button is disabled.
+
+</Prose>
+
+<Demo slug="date-picker" id="states" title="Sizes and states" file="date-picker-states.tsx">
+  <DatePickerStates />
 </Demo>
 
 <Prose>

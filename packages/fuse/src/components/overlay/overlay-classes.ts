@@ -1,7 +1,7 @@
 /**
- * Package-private class vocabulary shared by every overlay family: Dialog and Sheet. Nothing here is exported through
- * `package.json#exports`; it reaches the standalone stylesheet only through the emitted
- * dist modules that import it, which are that sheet's only source.
+ * Package-private class vocabulary shared by every overlay family: Dialog and Sheet. Nothing here
+ * is exported through `package.json#exports`; it reaches the standalone stylesheet only through the
+ * emitted dist modules that import it, which are that sheet's only source.
  *
  * Resolved constants are derived from the recipes below. Export names stay so the
  * thirteen overlay consumers compile without edits.
@@ -97,7 +97,7 @@ const overlayPopupVariants = tv({
      */
     scrim: "bg-black/10 supports-backdrop-filter:backdrop-blur-xs",
     /**
-     * The modal title typography that `Dialog.Title` (and AlertDialog's title through it),
+     * The modal title typography that `Dialog.Title` (and AlertDialog's title through it)
      * and `Sheet.Title` share, so none of them can drift.
      * `text-xl` keeps its own 28px line, so a wrapped title stays readable, and the title stands
      * above comfortable `--label-text` and `--control-text`. It carries no colour: the title
