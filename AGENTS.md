@@ -49,8 +49,10 @@ Update public JSDoc, consumer examples and behavior tests when usage changes.
 Keep runnable demos beside their page; review scenario coverage in the fixtures.
 A component page in the Button shape runs in this order: intro, an untitled `<DefaultDemo>`,
 `## Usage` with one code block, `## Examples` with one `level={3}` `<Demo>` per example, API
-reference, tokens. It carries no prose. A consumer rule goes into the JSDoc of the prop it
-concerns, which the API reference and the markdown endpoint render.
+reference, tokens. It carries no prose, except a short `## Composition` between Usage and
+Examples on a page in `COMPOSITION_PAGES` (`apps/docs/scripts/lib/page-source.ts`). A consumer
+rule goes into the JSDoc of the prop it concerns, which the API reference and the markdown
+endpoint render.
 Each example stages one instance of the page's component, with its own parts and plain HTML.
 Another Fuse component appears only when the subject cannot work without it.
 Generate API artifacts and exports through their scripts, including after rebase.

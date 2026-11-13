@@ -12,8 +12,9 @@ import { componentMetadata } from "../../../../lib/component-page";
 export const metadata = componentMetadata("{{name}}");
 
 {/* SCAFFOLD. The page runs, in order: intro, the default stage, Usage, Examples, API reference,
-    tokens. It carries no prose. A rule a consumer must follow goes into the JSDoc of the prop it
-    concerns, which the API reference and the markdown endpoint render. Each example is one demo
+    tokens. It carries no prose. A page in `COMPOSITION_PAGES` may add `## Composition` after
+    Usage. A rule a consumer must follow goes into the JSDoc of the prop it concerns, which the
+    API reference and the markdown endpoint render. Each example is one demo
     file in `demos/` with one {{pascalCase name}} on its stage, rendered by a `level={3}` `<Demo>`
     under Examples. A frame that names a missing file fails generation, and so does a file that no
     frame renders. */}

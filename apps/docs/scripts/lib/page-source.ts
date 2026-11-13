@@ -33,8 +33,8 @@ export type ComponentPageSource = {
   /** The editorial half of the page: the one-paragraph description under the H1. */
   lede: string;
   /**
-   * The page's intro, the markdown of the `<Prose>` blocks before its first demo, or `""` when the
-   * page opens with a demo. The markdown endpoint prints it under the lede.
+   * The page's intro, the markdown of the `<Prose>` blocks before its first demo or default stage,
+   * or `""` when the page opens with one. The markdown endpoint prints it under the lede.
    */
   intro: string;
   /** The demos the page renders, in authored order. */
@@ -51,7 +51,22 @@ export type ComponentPageSource = {
    * in the Usage shape. The markdown endpoint prints it under the Usage heading.
    */
   usage: string | null;
+  /**
+   * The markdown of the page's `## Composition` section, the body of its one `<Prose>` block, or
+   * `null` when the page has none. The markdown endpoint prints it under the Composition heading.
+   */
+  composition: string | null;
 };
+
+/**
+ * The pages that may hold a `## Composition` section between Usage and Examples, each with the
+ * reason it needs one. A page belongs here only when its component cannot be used correctly
+ * without knowing how its parts or sibling components fit together. A rule about one prop goes
+ * in that prop's JSDoc instead.
+ */
+export const COMPOSITION_PAGES: ReadonlyMap<string, string> = new Map([
+  ["form", "Form only routes errors through the Field parts and field components inside it."],
+]);
 
 const FRONTMATTER_FENCE = "---";
 const CODE_FENCE = /^\s*(?:```|~~~)/;
@@ -262,41 +277,69 @@ function assertNestable(sections: readonly PageSection[], file: string): void {
   }
 }
 
+/** What a page in the Usage shape declares beyond its sections. */
+type UsageContent = {
+  /** The code of the one fence under `## Usage`. */
+  readonly usage: string;
+  /** The markdown of the `## Composition` section, or `null` when the page has none. */
+  readonly composition: string | null;
+};
+
+const USAGE_HEADINGS = "## Usage\n## Examples";
+const COMPOSITION_HEADINGS = "## Usage\n## Composition\n## Examples";
+const PROSE_TAG = /<Prose[\s/>]/gu;
+const COMPOSITION_BODY = /^<Prose>\n([\s\S]*?)\n<\/Prose>$/u;
+
 /**
- * The code of a page in the Usage shape, which `AGENTS.md` states: the intro, the untitled
- * `<DefaultDemo>`, `## Usage` with exactly one code block, `## Examples` with only `level={3}`
- * demos, then the API reference and tokens, and no `<Prose>`. Fails naming the first rule the
- * page breaks.
+ * Reads a page in the Usage shape, which `AGENTS.md` states: the intro, the untitled
+ * `<DefaultDemo>`, `## Usage` with exactly one code block, an optional `## Composition` on a page
+ * in {@link COMPOSITION_PAGES}, `## Examples` with only `level={3}` demos, then the API reference
+ * and tokens. The only `<Prose>` is the one block that makes up the Composition section, with at
+ * most one code block. Fails naming the first rule the page breaks.
  *
- * @param body - The page body, for the Usage block's code.
+ * @param body - The page body, for the code and the Composition markdown.
  * @param lines - The body with code blocks blanked, for its structure.
  * @param items - The page's headings and demos, in page order.
+ * @param slug - The page's slug, checked against {@link COMPOSITION_PAGES}.
  * @param file - The page's name in failures.
- * @returns The code of the Usage block.
+ * @returns The Usage code and the Composition markdown.
  */
-function readUsageCode(
+function readUsagePage(
   body: string,
   lines: readonly string[],
   items: readonly PageItem[],
+  slug: string,
   file: string
-): string {
+): UsageContent {
   const fail = (rule: string): never => {
     throw new Error(`${file}: a page with <DefaultDemo> follows the Usage shape, but ${rule}`);
   };
   // The structure outside code blocks; offsets into it are offsets into `body`.
   const structure = lines.join("\n");
-  if (/<Prose[\s/>]/u.test(structure)) {
-    fail("it renders <Prose>; put consumer rules in the JSDoc of their prop");
-  }
-  const headings = items.flatMap((item) => (item.kind === "heading" ? [item.section] : []));
-  const titles = headings.map((heading) => `${"#".repeat(heading.depth)} ${heading.title}`);
-  if (titles.join("\n") !== "## Usage\n## Examples") {
+  const headingItems = items.flatMap((item) => (item.kind === "heading" ? [item] : []));
+  const titles = headingItems.map(({ section }) => `${"#".repeat(section.depth)} ${section.title}`);
+  const hasComposition = titles.join("\n") === COMPOSITION_HEADINGS;
+  if (!hasComposition && titles.join("\n") !== USAGE_HEADINGS) {
     fail(
-      `its headings are ${titles.length === 0 ? "none" : titles.join(", ")}, not "## Usage" then "## Examples"`
+      `its headings are ${titles.length === 0 ? "none" : titles.join(", ")}, not "## Usage", an optional "## Composition", then "## Examples"`
     );
   }
-  const usageAt = items.find((item) => item.kind === "heading")?.at ?? 0;
-  const examplesAt = items.findLast((item) => item.kind === "heading")?.at ?? 0;
+  if (hasComposition && !COMPOSITION_PAGES.has(slug)) {
+    fail(
+      `it has "## Composition" and "${slug}" is not in COMPOSITION_PAGES; put consumer rules in the JSDoc of their prop`
+    );
+  }
+  const usageAt = headingItems[0]?.at ?? 0;
+  const compositionAt = hasComposition ? (headingItems[1]?.at ?? 0) : null;
+  const examplesAt = headingItems.at(-1)?.at ?? 0;
+  const prose = [...structure.matchAll(PROSE_TAG)];
+  const strayProse = prose.some(
+    (tag) => compositionAt === null || tag.index < compositionAt || tag.index > examplesAt
+  );
+  if (strayProse) {
+    fail('it renders <Prose> outside "## Composition"; put consumer rules in the JSDoc of their prop');
+  }
+  if (prose.length > 1) fail(`"## Composition" renders ${prose.length} <Prose> blocks, not one`);
   const apiAt = structure.search(/<ApiReference[\s/>]/u);
   // The page's parts in the order AGENTS.md states, each at its offset or -1 when missing.
   const parts = [
@@ -320,12 +363,30 @@ function readUsageCode(
       fail(`the demo "${item.demo.id}" is not a level={3} demo under "## Examples"`);
     }
   }
-  const fences = [...body.slice(usageAt, examplesAt).matchAll(FENCED_BLOCK)];
+  const fences = [...body.slice(usageAt, compositionAt ?? examplesAt).matchAll(FENCED_BLOCK)];
   const [usage] = fences;
   if (fences.length !== 1 || usage === undefined) {
     return fail(`"## Usage" holds ${fences.length} code blocks, not one`);
   }
-  return (usage[1] ?? "").trimEnd();
+  return {
+    usage: (usage[1] ?? "").trimEnd(),
+    composition: compositionAt === null ? null : readComposition(body, compositionAt, examplesAt, fail),
+  };
+}
+
+/**
+ * The markdown of the `## Composition` section between `start` and `end`: the body of the one
+ * `<Prose>` block that is the section's whole content, holding at most one code block.
+ */
+function readComposition(body: string, start: number, end: number, fail: (rule: string) => never): string {
+  const section = body.slice(start, end).replace(/^.*\n/u, "").trim();
+  const markdown = COMPOSITION_BODY.exec(section)?.[1]?.trim();
+  if (markdown === undefined || markdown === "") {
+    return fail('"## Composition" is not one <Prose> block of markdown');
+  }
+  const fences = [...markdown.matchAll(FENCED_BLOCK)].length;
+  if (fences > 1) fail(`"## Composition" holds ${fences} code blocks, not one at most`);
+  return markdown;
 }
 
 /** The file of the page's `<DefaultDemo>`, or `null`; a page renders at most one. */
@@ -354,9 +415,10 @@ const PROSE_BLOCK = /<Prose>\n([\s\S]*?)\n<\/Prose>/gu;
 /** One `<Prose>` block before the first `<Demo>`: its body span and its markdown. */
 type IntroBlock = { readonly start: number; readonly end: number; readonly markdown: string };
 
-/** The `<Prose>` blocks that come before the first `<Demo>`, which make up the page's intro. */
+/** The `<Prose>` blocks before the first demo or default stage, which make up the page's intro. */
 function readIntroBlocks(body: string): readonly IntroBlock[] {
-  const firstDemo = body.search(/<Demo\s/u);
+  // `<DefaultDemo>` opens a page in the Usage shape, whose only `<Prose>` is its Composition.
+  const firstDemo = body.search(/<(?:Default)?Demo\s/u);
   const head = firstDemo === -1 ? body : body.slice(0, firstDemo);
   return [...head.matchAll(PROSE_BLOCK)].map((match) => ({
     start: match.index,
@@ -374,6 +436,7 @@ export function parseComponentPage(source: string, slug: string, label: string):
   const sections = items.map((item) => sectionOf(item, intro));
   assertNestable(sections, label);
   const defaultDemo = readDefaultDemo(lines, slug, label);
+  const content = defaultDemo === null ? null : readUsagePage(split.body, lines, items, slug, label);
   return {
     lede: parseFrontmatter(split.frontmatter, label),
     intro: intro
@@ -383,7 +446,8 @@ export function parseComponentPage(source: string, slug: string, label: string):
     demos: items.flatMap((item) => (item.kind === "demo" ? [item.demo] : [])),
     sections,
     defaultDemo,
-    usage: defaultDemo === null ? null : readUsageCode(split.body, lines, items, label),
+    usage: content?.usage ?? null,
+    composition: content?.composition ?? null,
   };
 }
 

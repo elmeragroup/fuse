@@ -164,6 +164,7 @@ function buildComponent(
     rsc: readRscStatus(readFileSync(paths.sourceFile, "utf8")),
     sections: page.sections,
     usage: page.usage,
+    composition: page.composition,
     demos,
     parts: apiParts.map((part) => {
       const reference = functions.get(part.name);

@@ -4,26 +4,38 @@ import type { ReactElement } from "react";
 
 import { Form as FormPrimitive } from "@base-ui/react/form";
 
-/** Base UI's Form props, typed over the values `onFormSubmit` receives. */
-export type FormProps<FormValues extends object = FormPrimitive.Values> = FormPrimitive.Props<FormValues>;
+/** The props of `Form`, typed over the values `onFormSubmit` receives. */
+export type FormProps<FormValues extends object = FormPrimitive.Values> = Omit<
+  FormPrimitive.Props<FormValues>,
+  "errors" | "onFormSubmit"
+> & {
+  /**
+   * Error messages by field name, such as a server's response to a submit. Each key is the `name`
+   * on a `Field.Root` or on the control inside it, and each value is one message or several. A
+   * `Field.Error` without children shows them, and so do `TextField`, `PhoneNumberField`,
+   * `SearchField`, `DateField`, `DatePickerField` and `DateRangePickerField` when they get no
+   * `errorMessage`. A `DateRangePickerField` shows the errors under its `startName` and its
+   * `endName`. After a submit, the form focuses the first field the new errors mark.
+   *
+   * Editing a field clears its error, and a new `errors` object shows the messages again. Until
+   * then an error blocks every submit, so when a change in another field makes a field valid,
+   * pass a new `errors` object without its message.
+   */
+  errors?: FormPrimitive.Props<FormValues>["errors"];
+  /**
+   * Called on submit with the values of the controls inside each `Field.Root`, keyed by `name`.
+   * A `PhoneNumberField` gives its number in its `outputFormat`. It prevents the native submit;
+   * leave it out to submit natively or to a form action.
+   *
+   * The form checks every enabled field first. While one is invalid, it calls neither this nor
+   * `onSubmit`, runs no native submit or form action, and focuses the first invalid field. A
+   * field passed `invalid`, or `isInvalid` on `TextField`, stays invalid for as long as you
+   * pass it.
+   */
+  onFormSubmit?: FormPrimitive.Props<FormValues>["onFormSubmit"];
+};
 
-/**
- * A native form whose `errors` reach the Fields inside it, such as validation errors a server
- * returned after submit. Keys are the names of the controls, and each value is one message or
- * several. A `Field.Error` without children shows the error under its control's name, and so
- * do `TextField`, `PhoneNumberField` and the date fields and pickers when they get no
- * `errorMessage`. Editing a field clears its error, and a new `errors` object shows them again.
- *
- * Every submit first checks the enabled Fields inside the form. While any of them is invalid,
- * the form calls neither `onSubmit` nor `onFormSubmit`, lets no native submit or form action
- * run, and focuses the first one it can. An `errors` entry counts until its own field's value
- * changes or a new `errors` object leaves it out, and a Field passed `invalid` (TextField's
- * `isInvalid`) for as long as it is passed. In the default `onSubmit` validation mode, Fields
- * also re-check their native constraints on every change from the first submit on. So when a
- * change elsewhere can make a field valid, as with rules in a schema, pass a new `errors`
- * object without the stale message, or use a plain `<form noValidate>` and pass each field
- * `isInvalid` and `errorMessage` (or `Field.Root invalid` and `Field.Error` children) instead.
- */
+/** A native form whose `errors` reach the Fields inside it. */
 export function Form<FormValues extends object = FormPrimitive.Values>(
   props: FormProps<FormValues>
 ): ReactElement {

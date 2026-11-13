@@ -7,7 +7,7 @@ import { resolveComponentPaths } from "../scripts/lib/components.ts";
 import { inspectComponentDemos } from "../scripts/lib/docs-inspection.ts";
 import { ProblemLog } from "../scripts/lib/errors.ts";
 import { renderComponentMarkdown } from "../scripts/lib/markdown.ts";
-import { parseComponentPage } from "../scripts/lib/page-source.ts";
+import { COMPOSITION_PAGES, parseComponentPage } from "../scripts/lib/page-source.ts";
 import { repoRelative } from "../scripts/lib/paths.ts";
 import {
   missingNavRoutes,
@@ -272,6 +272,127 @@ describe("authored page.mdx as generation input", () => {
     expect(() => parseComponentPage(source, "button", "x.mdx")).toThrow(message);
   });
 
+  describe("the Composition section", () => {
+    const [allowed = ""] = COMPOSITION_PAGES.keys();
+    const COMPOSITION = [
+      "## Composition",
+      "",
+      "<Prose>",
+      "",
+      "Put each field inside the form.",
+      "",
+      "</Prose>",
+      "",
+    ];
+    const EXAMPLE = `<Demo slug="${allowed}" id="a" title="A" level={3} file="a.tsx" />`;
+
+    /** A Usage-shaped page of the first page allowed a Composition section, around `body`. */
+    function allowedPage(body: readonly string[]): string {
+      return page(
+        `<ComponentIntro slug="${allowed}" />`,
+        `<DefaultDemo slug="${allowed}" file="demo.tsx" />`,
+        "",
+        ...body,
+        "",
+        `<ApiReference slug="${allowed}" />`,
+        `<ComponentTokens slug="${allowed}" />`
+      );
+    }
+
+    it("reads it between Usage and Examples, with its markdown and at most one code block", () => {
+      const parsed = parseComponentPage(
+        allowedPage([
+          ...USAGE,
+          "## Composition",
+          "",
+          "<Prose>",
+          "",
+          "Put each field inside the form.",
+          "",
+          "```tsx",
+          "<B />",
+          "```",
+          "",
+          "</Prose>",
+          "",
+          "## Examples",
+          EXAMPLE,
+        ]),
+        allowed,
+        "x.mdx"
+      );
+      expect(parsed.usage).toBe("<A />");
+      expect(parsed.composition).toBe("Put each field inside the form.\n\n```tsx\n<B />\n```");
+      // The Composition prose is no intro, so the markdown endpoint prints it once, under its heading.
+      expect(parsed.intro).toBe("");
+      expect(parsed.sections).toEqual([
+        { kind: "heading", id: "usage", title: "Usage", depth: 2 },
+        { kind: "heading", id: "composition", title: "Composition", depth: 2 },
+        { kind: "heading", id: "examples", title: "Examples", depth: 2 },
+        { kind: "demo", id: "a", title: "A", depth: 3 },
+      ]);
+    });
+
+    it("rejects it on a page outside COMPOSITION_PAGES", () => {
+      expect(COMPOSITION_PAGES.has("button")).toBe(false);
+      expect(() =>
+        parseComponentPage(usagePage([...USAGE, ...COMPOSITION, "## Examples"]), "button", "x.mdx")
+      ).toThrow(/"button" is not in COMPOSITION_PAGES/);
+    });
+
+    it.each([
+      [
+        "after Examples",
+        [...USAGE, "## Examples", EXAMPLE, "", ...COMPOSITION],
+        /its headings are ## Usage, ## Examples, ## Composition, not "## Usage", an optional "## Composition", then "## Examples"/,
+      ],
+      [
+        "before Usage",
+        [...COMPOSITION, ...USAGE, "## Examples"],
+        /its headings are ## Composition, ## Usage, ## Examples/,
+      ],
+      [
+        "with two code blocks",
+        [
+          ...USAGE,
+          "## Composition",
+          "<Prose>",
+          "```tsx",
+          "<B />",
+          "```",
+          "```tsx",
+          "<C />",
+          "```",
+          "</Prose>",
+          "## Examples",
+        ],
+        /"## Composition" holds 2 code blocks, not one at most/,
+      ],
+      [
+        "with a demo in it",
+        [...USAGE, ...COMPOSITION, EXAMPLE, "", "## Examples"],
+        /the demo "a" is not a level=\{3\} demo under "## Examples"/,
+      ],
+      [
+        "as markdown outside <Prose>",
+        [...USAGE, "## Composition", "", "Put each field inside the form.", "", "## Examples"],
+        /"## Composition" is not one <Prose> block of markdown/,
+      ],
+      [
+        "as two <Prose> blocks",
+        [...USAGE, ...COMPOSITION, "<Prose>", "More.", "</Prose>", "## Examples"],
+        /"## Composition" renders 2 <Prose> blocks, not one/,
+      ],
+      [
+        "with <Prose> elsewhere on the page",
+        ["<Prose>", "A rule.", "</Prose>", ...USAGE, ...COMPOSITION, "## Examples"],
+        /it renders <Prose> outside "## Composition"/,
+      ],
+    ] as const)("rejects it %s", (_case, body, message) => {
+      expect(() => parseComponentPage(allowedPage(body), allowed, "x.mdx")).toThrow(message);
+    });
+  });
+
   it("collects ATX headings for the TOC and reads fenced code as source, not structure", () => {
     const parsed = parseComponentPage(
       page(
@@ -474,6 +595,7 @@ describe("markdown endpoint rendering", () => {
     rsc: "client",
     sections: [{ kind: "demo", id: "basic", title: "Basic", depth: 2 }],
     usage: null,
+    composition: null,
     demos: [
       {
         id: "basic",
@@ -529,13 +651,16 @@ describe("markdown endpoint rendering", () => {
     expect(markdown).toContain("Recipe axis.");
   });
 
-  it("mirrors a Usage-shaped page: H1, lede, Usage code, the examples with their source, API, tokens", () => {
+  it("mirrors a Usage-shaped page: H1, lede, Usage code, Composition, the examples with their source, API, tokens", () => {
     const usage = 'import { Widget } from "@elmeragroup/fuse/widget";\n\n<Widget />';
+    const composition = "Put each `Widget.Item` inside a `Widget`.";
     const markdown = renderComponentMarkdown({
       ...component,
       usage,
+      composition,
       sections: [
         { kind: "heading", id: "usage", title: "Usage", depth: 2 },
+        { kind: "heading", id: "composition", title: "Composition", depth: 2 },
         { kind: "heading", id: "examples", title: "Examples", depth: 2 },
         { kind: "demo", id: "basic", title: "Basic", depth: 3 },
       ],
@@ -544,6 +669,7 @@ describe("markdown endpoint rendering", () => {
     expect(headings).toEqual([
       "# Widget",
       "## Usage",
+      "## Composition",
       "## Examples",
       "### Basic",
       "## API reference",
@@ -551,6 +677,7 @@ describe("markdown endpoint rendering", () => {
       "## Tokens consumed",
     ]);
     expect(markdown).toContain(`## Usage\n\n\`\`\`tsx\n${usage}\n\`\`\``);
+    expect(markdown).toContain(`## Composition\n\n${composition}\n\n## Examples`);
     expect(markdown).toContain(
       "### Basic\n\nSource: `apps/docs/src/app/(docs)/components/widget/demos/widget-basic.tsx`"
     );

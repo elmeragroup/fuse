@@ -15,23 +15,27 @@ The page shape and the one-subject rule live in the Documentation section of `AG
    such as `variant` or `size`, gets its own example. So does each state worth seeing, such as
    pending, disabled or a `render` swap. One instance of the page's component per stage, plus its own
    parts and plain HTML. Done when every recipe value has a stage.
-2. **Move the prose out.** For each `<Prose>` fact, a rule a consumer must follow goes into the
+2. **Decide on Composition.** Add `## Composition` only when the component cannot be used
+   correctly without knowing how its parts or sibling components fit together, as with Form and
+   the fields inside it. Keep it to a few sentences. A rule about one prop never goes there; it
+   goes on that prop. Adding a slug to `COMPOSITION_PAGES` needs a one-line reason beside it.
+3. **Move the prose out.** For each `<Prose>` fact, a rule a consumer must follow goes into the
    JSDoc of the prop it concerns. Component-level JSDoc reaches neither the API reference nor the
    `.md` endpoint, so a rule about children goes on a declared `children` prop. Implementation
    rationale goes into a comment beside its owner, usually the recipe file. Then delete the
    prose. Done when every deleted fact is findable on the HTML page or in the source.
-3. **Rewrite the JSDoc you touched.** Open with what the prop does, in one plain sentence. State a
+4. **Rewrite the JSDoc you touched.** Open with what the prop does, in one plain sentence. State a
    rule as an instruction to the consumer, with the value or markup it names in backticks. Give
    each fact once, on the prop it concerns, and leave out how the component implements it. Cut
    filler: no "simply", "just", "note that", or restating the type.
-4. **Declare real defaults** by destructuring, as in `variant = "default"`. The generator records a
+5. **Declare real defaults** by destructuring, as in `variant = "default"`. The generator records a
    declared prop's default only from destructuring; it reads `@default` only for dependency
    props. A prop with no recorded default shows "unset" in Live code, which is correct when the
    default is unknown. Restating a recipe default this way is interim until the extractor records
    recipe defaults (elmeragroup/internal#39).
-5. **Write the demos and the page**, then record the demo files in
+6. **Write the demos and the page**, then record the demo files in
    `apps/docs/test/fixtures/component-inventory.json` and run `pnpm --filter docs generate`.
-6. **Run the gates** listed under Checks. Done when all pass and the sweep shows no new hang.
+7. **Run the gates** listed under Checks. Done when all pass and the sweep shows no new hang.
 
 ## Page rules generation enforces
 
@@ -39,6 +43,10 @@ The page shape and the one-subject rule live in the Documentation section of `AG
   `## Usage` then `## Examples` as the only headings, exactly one code block under Usage, only
   `level={3}` demos and all of them under Examples, and no `<Prose>`. Anything else fails
   generation, naming the rule.
+- The one exception is `## Composition` between Usage and Examples, on a slug listed in
+  `COMPOSITION_PAGES` in `scripts/lib/page-source.ts` with its reason. Its body is one `<Prose>`
+  block with at most one code block and no demo. The TOC, the ⌘K list and the `.md` endpoint show
+  it after Usage.
 - `<DefaultDemo>` comes once, untitled. It has no TOC entry and no markdown section. It gets the
   same file checks as a `<Demo>`: the file exists and starts with `"use client"`.
 - On any page, a level-3 demo before the first `##` heading, a level 4, or a second

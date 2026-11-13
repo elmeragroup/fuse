@@ -4,8 +4,10 @@ lede: >
   fields inside it.
 ---
 
+import { FormDemo } from "./demos/form-demo";
 import { FormServerErrors } from "./demos/form-server-errors";
-import { FormSchemaValidation } from "./demos/form-schema-validation";
+import { FormValidateOnChange } from "./demos/form-validate-on-change";
+import { FormValidateOnBlur } from "./demos/form-validate-on-blur";
 
 import { componentMetadata } from "../../../../lib/component-page";
 
@@ -13,34 +15,49 @@ export const metadata = componentMetadata("form");
 
 <ComponentIntro slug="form" />
 
+<DefaultDemo slug="form" file="form-demo.tsx">
+  <FormDemo />
+</DefaultDemo>
+
+## Usage
+
+{/* prettier-ignore */}
+```tsx
+import { Form } from "@elmeragroup/fuse/form";
+import { TextField } from "@elmeragroup/fuse/text-field";
+
+<Form onFormSubmit={(values) => save(values)}>
+  <TextField label="Email" name="email" isRequired />
+</Form>
+```
+
+## Composition
+
 <Prose>
 
-`errors` maps field names, the `name` on `Field.Root` or on the control inside it, to one message or several, typically what a server returned after a submit. A `Field.Error` without children shows the error under its control's name, and so do `TextField`, `PhoneNumberField`, `SearchField` and the date fields (`DateField`, `DatePickerField` and `DateRangePickerField`) when they get no `errorMessage`. A `DateRangePickerField` shows the errors under its `startName` and its `endName`. Editing a field clears its error, and a new `errors` object, such as the next response, shows them again. After a submit, `Form` focuses the first field the new errors mark.
+Put each control in a `Field.Root`, or use a field component such as `TextField`, which renders its own. `Form` finds the fields by `name`: it shows `errors` on them and passes their values to `onFormSubmit`. The fields show their constraint messages through `Field.Error`, and the browser's own bubbles stay off.
 
-`onFormSubmit` receives the values of the controls inside a `Field.Root`, such as `TextField`'s, and `PhoneNumberField`'s number in its `outputFormat` under its `name`, and prevents the native submit; leave it out to submit natively or to a form action. The browser's own validation bubbles stay off: the fields show their constraint messages through `Field.Error` instead.
+When a schema decides validity and a change in one field can make another valid, use a plain `<form noValidate>` instead. Run the schema in your submit handler and pass each field its result: `isInvalid` and `errorMessage` on `TextField`, or `invalid` on `Field.Root` and the message as the children of `Field.Error`. A field still checks its native constraints when the user presses Enter in it, so for a rule the schema can relax, pass `aria-required` or `inputMode="email"` instead of `isRequired` or `type="email"`. A plain form does not focus the first invalid field, so move focus there yourself.
 
 </Prose>
 
-<Demo slug="form" id="server-errors" title="Server errors" file="form-server-errors.tsx">
+## Examples
+
+<Demo slug="form" id="server-errors" title="Server errors" level={3} file="form-server-errors.tsx">
   <FormServerErrors />
 </Demo>
 
-<Prose>
+<Demo
+  slug="form"
+  id="validate-on-change"
+  title="Validate on change"
+  level={3}
+  file="form-validate-on-change.tsx">
+  <FormValidateOnChange />
+</Demo>
 
-## Errors block the submit
-
-Every submit first checks the enabled fields inside `Form`. While any of them is invalid, `Form` calls neither `onSubmit` nor `onFormSubmit`, lets no native submit or form action run, and focuses the first invalid field it can. An error from `errors` counts until that field's own value changes or a new `errors` object leaves it out, and a field passed `invalid`, such as `TextField` with `isInvalid`, counts for as long as it is passed. In the default `onSubmit` validation mode, the fields also re-check their native constraints, such as `required`, on every change from the first submit on.
-
-That suits errors the user fixes in the field that shows them, such as an address the server rejected. It does not suit a form whose rules live in a schema, on the client or on a server, where a change elsewhere makes a field valid: a checkbox that makes an empty field optional, or a hidden value that a lookup fills in after the error came back. The field that shows the error never changes, so every submit stops on it until a new `errors` object drops its message. When you know which change clears which error, pass that object and keep `Form`. When only the schema knows, use a plain form.
-
-## Schema-validated forms
-
-Use a plain `<form noValidate>` for those, and pass each field the schema's verdict: `isInvalid` and `errorMessage` on `TextField`, or `invalid` on `Field.Root` and the message, when the schema returns one, as the children of `Field.Error`. Every submit reaches your handler, which runs the schema and sets the messages, and `noValidate` keeps the browser's own bubbles off. A field still checks its own native constraints when the user presses Enter in it, and shows the browser's message where you pass none. So for a rule the schema can relax, such as a field that is only sometimes required, leave `isRequired` or `type="email"` off and pass `aria-required` or `inputMode="email"` instead. This path gives up the errors routed by name and the focus on the first field they mark, so move focus to the first invalid field yourself when it may be out of view.
-
-</Prose>
-
-<Demo slug="form" id="schema-validation" title="Schema validation" file="form-schema-validation.tsx">
-  <FormSchemaValidation />
+<Demo slug="form" id="validate-on-blur" title="Validate on blur" level={3} file="form-validate-on-blur.tsx">
+  <FormValidateOnBlur />
 </Demo>
 
 <ApiReference slug="form" />

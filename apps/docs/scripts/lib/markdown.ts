@@ -164,13 +164,13 @@ function renderFacts(component: DocsComponent): string[] {
 
 /**
  * The page's headings and demos in page order. A demo prints at its heading level with its
- * source, and the Usage heading carries the Usage code. A heading the intro printed is not printed
- * again. The endpoint holds no prose, so a heading that nothing follows before the next heading or
- * demo of its level or above is left out.
+ * source, the Usage heading carries the Usage code, and the Composition heading its markdown. A
+ * heading the intro printed is not printed again. Other headings carry no prose, so a heading
+ * that nothing follows before the next heading or demo of its level or above is left out.
  */
 function renderSections(component: DocsComponent): string[] {
   const demos = new Map(component.demos.map((demo) => [demo.id, demo]));
-  const { sections, usage } = component;
+  const { sections, usage, composition } = component;
   return sections.flatMap((section, index): string[] => {
     if (section.kind === "demo") {
       const demo = demos.get(section.id);
@@ -179,6 +179,7 @@ function renderSections(component: DocsComponent): string[] {
     if (section.intro === true) return [];
     const heading = [`${"#".repeat(section.depth)} ${section.title}`, ""];
     if (section.id === "usage" && usage !== null) return [...heading, "```tsx", usage, "```", ""];
+    if (section.id === "composition" && composition !== null) return [...heading, composition, ""];
     const next = sections[index + 1];
     // A demo prints its own heading, so one at this level or above ends the section too.
     const empty = next === undefined || next.depth <= section.depth;

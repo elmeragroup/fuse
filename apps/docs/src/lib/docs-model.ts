@@ -265,6 +265,8 @@ export type DocsComponent = ComponentPageEntry & {
   sections: readonly PageSection[];
   /** The code under the page's `## Usage` heading, or `null` when the page has no Usage section. */
   usage: string | null;
+  /** The markdown under the page's `## Composition` heading, or `null` when the page has none. */
+  composition: string | null;
   demos: readonly DocsDemo[];
   parts: readonly DocsApiPart[];
 };
