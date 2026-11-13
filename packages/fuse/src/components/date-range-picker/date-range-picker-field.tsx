@@ -26,8 +26,7 @@ import {
 } from "./date-range-picker-parts";
 
 /**
- * DateRangePickerField's props: the interim React Aria DateRangePicker's names, over Temporal
- * values.
+ * DateRangePickerField's props: React Aria's DateRangePicker prop names, over Temporal values.
  *
  * @template T - The ends' kind: `Temporal.PlainDate` (the default), `PlainDateTime` or
  *   `ZonedDateTime`. Rendered, the field reads it from its `value` or `defaultValue`, and without
@@ -69,7 +68,7 @@ export type DateRangePickerFieldProps<T extends DateInputValue = Temporal.PlainD
   hourCycle?: 12 | 24;
   /** Hides zoned values' zone names. */
   hideTimeZone?: boolean;
-  /** The zone an empty zoned picker takes. New beside the interim names. */
+  /** The zone an empty zoned picker takes. New beside React Aria's names. */
   timeZone?: string;
   /** The weekday each calendar row starts on. */
   firstDayOfWeek?: CalendarFirstDayOfWeek;
@@ -127,8 +126,8 @@ export type DateRangePickerFieldProps<T extends DateInputValue = Temporal.PlainD
 };
 
 /**
- * Labeled date range picker composite over `DateRangePicker`'s parts, with the interim React Aria
- * DateRangePicker's prop names: a label, the field box with the start and end segments and the
+ * Labeled date range picker composite over `DateRangePicker`'s parts, with React Aria's
+ * DateRangePicker prop names: a label, the field box with the start and end segments and the
  * calendar trigger, the merged error, the description, and the range calendar popup with an
  * optional preset pane. Each end is a Field of its own under `startName` and `endName`. Values are
  * Temporal values, which a client component builds. The composite itself holds no state, so a
@@ -178,7 +177,7 @@ export function DateRangePickerField<P = object, T extends DateInputValue = Prop
         <DateRangePickerEndInput shouldForceLeadingZeros={shouldForceLeadingZeros} />
         <DatePickerTrigger className="ms-auto" />
       </DatePickerGroup>
-      {/* Without `isInvalid`, React Aria shows `errorMessage` only once the range's validation fails;
+      {/* Without `isInvalid`, `errorMessage` shows only once the range's validation fails, as in React Aria;
           an `errorMessage` that renders nothing keeps the range's own messages. */}
       <DateRangePickerError>{errorMessage}</DateRangePickerError>
       {description ? <DateRangePickerDescription>{description}</DateRangePickerDescription> : null}

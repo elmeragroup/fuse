@@ -40,8 +40,8 @@ const VARIANTS = Object.keys(linkVariants.variants.variant).filter(isVariant);
 const UNDERLINES = Object.keys(linkVariants.variants.underline).filter(isUnderline);
 
 /**
- * The text every cell shows, the default of the `Label` text property: the link of the docs React
- * Aria demo. The compare renderer renders the same text.
+ * The text every cell shows, the default of the `Label` text property: the link of the docs Router
+ * links example. The compare renderer renders the same text.
  */
 export const LINK_LABEL = "invoice 1042";
 

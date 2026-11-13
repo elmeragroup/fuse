@@ -9,7 +9,6 @@ import { LinkUnderline } from "./demos/link-underline";
 import { LinkColors } from "./demos/link-colors";
 import { LinkExternal } from "./demos/link-external";
 import { LinkNext } from "./demos/link-next";
-import { LinkReactAria } from "./demos/link-react-aria";
 import { LinkTruncate } from "./demos/link-truncate";
 
 import { componentMetadata } from "../../../../lib/component-page";
@@ -24,7 +23,7 @@ export const metadata = componentMetadata("link");
 action, such as opening a dialog or saving a form, use a [Button](/components/button).
 
 Link routes nothing itself. To navigate through your app's router, pass the router's link as
-`render`. The router examples below cover Next.js, React Router and React Aria.
+`render`. The router examples below cover Next.js and React Router.
 
 </Prose>
 
@@ -123,18 +122,6 @@ import { Link } from "@elmeragroup/fuse/link";
 
 <Link render={<RouterLink to="/invoices/1042" />}>Invoice 1042</Link>;
 ```
-
-React Aria's `Link` routes through the `navigate` that `UiProviders` installs. Render through it to
-reach that router: an internal `href` calls `navigate`, and a `target="_blank"` link stays a full
-navigation.
-
-</Prose>
-
-<Demo slug="link" id="react-aria" title="React Aria" file="link-react-aria.tsx">
-  <LinkReactAria />
-</Demo>
-
-<Prose>
 
 ## Truncate
 

@@ -2,25 +2,38 @@
 
 import { useState } from "react";
 
-import { CalendarDate } from "@internationalized/date";
-
-import { DatePicker } from "@elmeragroup/fuse/react-aria/date-picker";
-import { UiProviders } from "@elmeragroup/fuse/react-aria/ui-providers";
-import { Text } from "@elmeragroup/fuse/text";
-
-const initialValue = new CalendarDate(2026, 7, 14);
+import { DatePicker } from "@elmeragroup/fuse/date-picker";
+import { Field } from "@elmeragroup/fuse/field";
 
 export function DatePickerControlled() {
-  const [value, setValue] = useState<CalendarDate | null>(initialValue);
-
+  const [value, setValue] = useState<Temporal.PlainDate | null>(null);
+  const [note, setNote] = useState("Weekends are refused.");
   return (
-    <UiProviders locale="en-US" navigate={() => undefined}>
-      <div className="flex flex-col gap-2">
-        <DatePicker<CalendarDate> label="Invoice date" value={value} onChange={setValue} />
-        <Text size="sm" variant="muted">
-          {value === null ? "No date selected." : value.toString()}
-        </Text>
-      </div>
-    </UiProviders>
+    <Field.Root className="max-w-xs w-full">
+      <Field.Label>Delivery</Field.Label>
+      <DatePicker.Root
+        value={value}
+        onValueChange={(next, details) => {
+          // Canceling keeps the value; a refused day keeps the popup open on it.
+          if (next !== null && next.dayOfWeek > 5) {
+            details.cancel();
+            setNote(
+              `No deliveries on ${next.toLocaleString("en-US", { weekday: "long" })}s (${details.reason}).`
+            );
+            return;
+          }
+          setValue(next);
+          setNote(next === null ? "Cleared." : `Delivery on ${next.toString()} (${details.reason}).`);
+        }}>
+        <DatePicker.Group>
+          <DatePicker.Input />
+          <DatePicker.Trigger />
+        </DatePicker.Group>
+        <DatePicker.Popup>
+          <DatePicker.Calendar />
+        </DatePicker.Popup>
+      </DatePicker.Root>
+      <Field.Description>{note}</Field.Description>
+    </Field.Root>
   );
 }

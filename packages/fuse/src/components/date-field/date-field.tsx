@@ -8,7 +8,7 @@ import type { DateInputValue } from "./date-input";
 import type { KindFromValue, KindProps, PropsMadeValue } from "./date-kind-props";
 
 /**
- * DateField's props: the interim React Aria DateField's names, over Temporal values.
+ * DateField's props: React Aria's DateField prop names, over Temporal values.
  *
  * @template T - The value's kind: `Temporal.PlainDate` (the default), `PlainDateTime` or
  *   `ZonedDateTime`. Rendered, DateField reads it from its `value` or `defaultValue`, and without
@@ -54,13 +54,12 @@ export type DateFieldProps<T extends DateInputValue = Temporal.PlainDate> = {
   /** Hides a zoned value's zone name. */
   hideTimeZone?: boolean;
   /**
-   * The zone an empty zoned field takes. New beside the interim names: React Aria reads the zone
+   * The zone an empty zoned field takes. New beside React Aria's names: React Aria reads the zone
    * from a value, so an empty field needs it to emit a ZonedDateTime.
    */
   timeZone?: string;
   /**
-   * Pads days, months and hours with a leading zero. The interim DateField flipped React Aria's
-   * locale default; this one keeps the flip.
+   * Pads days, months and hours with a leading zero, which flips React Aria's locale default.
    * @default true
    */
   shouldForceLeadingZeros?: boolean;
@@ -87,7 +86,7 @@ export type DateFieldProps<T extends DateInputValue = Temporal.PlainDate> = {
 
 /**
  * Labeled date field composite over Field and `DateInput`: a label, the segments, the error and
- * the description, with the interim React Aria DateField's prop names. Values are Temporal values,
+ * the description, with React Aria's DateField prop names. Values are Temporal values,
  * which a client component builds. The composite itself holds no state, so a server component can
  * render it without a value.
  *
@@ -127,13 +126,13 @@ export function DateField<P = object, T extends DateInputValue = PropsMadeValue<
       label={label}
       description={description}
       errorMessage={errorMessage}
-      // Without `isInvalid`, React Aria shows `errorMessage` only once its own validation fails.
+      // Without `isInvalid`, `errorMessage` shows only once the field's own validation fails, as in React Aria.
       isErrorMessageAlwaysShown={isInvalid}>
       <DateInputRoot<KindFromValue, T>
         {...definedProps({
           value,
           defaultValue,
-          // The extra details argument is ignored by the interim `onChange(value)` signature.
+          // The extra details argument is ignored by the `onChange(value)` signature.
           onValueChange: onChange,
           minValue,
           maxValue,

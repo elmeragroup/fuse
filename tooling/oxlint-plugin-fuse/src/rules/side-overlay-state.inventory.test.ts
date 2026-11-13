@@ -28,9 +28,6 @@ const COMPONENT_PAGES = new URL("../../../../apps/docs/src/app/(docs)/components
 /** A prop that holds a part's open state: `onOpenChange`, `onPageSizeOpenChange`. */
 const OPEN_STATE = /^on[A-Za-z]*Open[A-Za-z]*Change$/u;
 
-/** Where React Aria parts live, which the rule looks up under the `react-aria/*` entries. */
-const REACT_ARIA_SOURCE = /^packages\/fuse\/src\/react-aria\/([^/]+)\//u;
-
 /**
  * Fuse parts that render a popup and need no side state, each with why. They are checked the other
  * way: the rule must not report them, so an entry goes stale once the inventory lists its part.
@@ -69,10 +66,9 @@ const PORTALS = new Set([
   "Tooltip.Content",
 ]);
 
-/** A documented part: its export path, the import that names it, and the popup props it takes. */
+/** A documented part: its export path and the popup props it takes. */
 type DocumentedPart = {
   readonly name: string;
-  readonly source: string;
   readonly container: boolean;
   readonly opens: boolean;
 };
@@ -81,25 +77,20 @@ type DocumentedPart = {
 type ApiArtifact = {
   readonly parts: ReadonlyArray<{
     readonly name: string;
-    readonly sourcePath: string;
     readonly props: ReadonlyArray<{ readonly name: string }>;
   }>;
 };
 
-/** The parts one committed `api.json` documents, under the entry the rule resolves each through. */
+/** The parts one committed `api.json` documents. */
 function readApi(path: string): DocumentedPart[] {
   // SAFETY: the docs generator writes every `api.json` through one serialiser, and its drift check
   // regenerates and compares each committed file, as `apps/docs/src/lib/api-source.ts` relies on.
   const artifact = JSON.parse(readFileSync(new URL(path, COMPONENT_PAGES), "utf8")) as ApiArtifact;
-  return artifact.parts.map(({ name, sourcePath, props }) => {
-    const reactAria = REACT_ARIA_SOURCE.exec(sourcePath)?.[1];
-    return {
-      name,
-      source: reactAria === undefined ? "@elmeragroup/fuse" : `@elmeragroup/fuse/react-aria/${reactAria}`,
-      container: props.some((prop) => prop.name === "container"),
-      opens: props.some((prop) => OPEN_STATE.test(prop.name)),
-    };
-  });
+  return artifact.parts.map(({ name, props }) => ({
+    name,
+    container: props.some((prop) => prop.name === "container"),
+    opens: props.some((prop) => OPEN_STATE.test(prop.name)),
+  }));
 }
 
 const documented = readdirSync(COMPONENT_PAGES, { withFileTypes: true })
@@ -114,7 +105,7 @@ const documented = readdirSync(COMPONENT_PAGES, { withFileTypes: true })
 function controller(part: DocumentedPart): DocumentedPart {
   if (part.opens || !PORTALS.has(part.name)) return part;
   const rootName = `${part.name.split(".")[0]}.Root`;
-  const root = documented.find((other) => other.source === part.source && other.name === rootName);
+  const root = documented.find((other) => other.name === rootName);
   if (root === undefined)
     throw new Error(`${part.name} is listed in PORTALS, but no ${rootName} is documented`);
   return root;
@@ -128,18 +119,18 @@ const controllers = Map.groupBy(
 
 /** Whether a controlling part carries a reviewed exemption. */
 function isExempt(part: DocumentedPart): boolean {
-  return part.source === "@elmeragroup/fuse" && EXEMPT.has(part.name);
+  return EXEMPT.has(part.name);
 }
 
 /** A file that renders a part bare: no state attribute, which the rule reports for an overlay. */
-function bare({ name, source }: DocumentedPart): string {
-  return `import { ${name.split(".")[0]} } from "${source}";\nexport const Bare = () => <${name} />;`;
+function bare({ name }: DocumentedPart): string {
+  return `import { ${name.split(".")[0]} } from "@elmeragroup/fuse";\nexport const Bare = () => <${name} />;`;
 }
 
 const exempt = [...controllers.keys()].filter(isExempt);
 
 ruleTester.run(
-  "side-overlay-state inventory: list each popup part in FUSE_OVERLAYS or REACT_ARIA_OVERLAYS, add a portal that reads its Root to PORTALS, or exempt it here with why",
+  "side-overlay-state inventory: list each popup part in FUSE_OVERLAYS, add a portal that reads its Root to PORTALS, or exempt it here with why",
   sideOverlayState,
   {
     valid: exempt.map((part) => ({
@@ -149,7 +140,7 @@ ruleTester.run(
     invalid: [...controllers]
       .filter(([part]) => !isExempt(part))
       .map(([part, popups]) => ({
-        name: `${part.name} from ${part.source} controls a popup (${popups.map((popup) => popup.name).join(", ")})`,
+        name: `${part.name} controls a popup (${popups.map((popup) => popup.name).join(", ")})`,
         code: bare(part),
         errors: 1,
       })),

@@ -1,16 +1,14 @@
 ---
 lede: >
-  A date field with a calendar popover.
+  A date field with a calendar popup, with Temporal values.
 ---
 
 import { DatePickerBasic } from "./demos/date-picker-basic";
-import { DatePickerSizes } from "./demos/date-picker-sizes";
-import { DatePickerControlled } from "./demos/date-picker-controlled";
+import { DatePickerTime } from "./demos/date-picker-time";
+import { DatePickerTimeInput } from "./demos/date-picker-time-input";
 import { DatePickerPresets } from "./demos/date-picker-presets";
-import { DatePickerTriggerStart } from "./demos/date-picker-trigger-start";
-import { DatePickerValidation } from "./demos/date-picker-validation";
-import { DatePickerStates } from "./demos/date-picker-states";
-import { DatePickerInModal } from "./demos/date-picker-in-modal";
+import { DatePickerForm } from "./demos/date-picker-form";
+import { DatePickerControlled } from "./demos/date-picker-controlled";
 
 import { componentMetadata } from "../../../../lib/component-page";
 
@@ -20,9 +18,11 @@ export const metadata = componentMetadata("date-picker");
 
 <Prose>
 
-Values are `CalendarDate` objects from `@internationalized/date`, which you install separately; the library does not re-export it.
+`DatePickerField` from `@elmeragroup/fuse/date-picker` takes React Aria's DatePicker prop names: `label`, `description`, `errorMessage`, `isInvalid`, `isDisabled`, `isReadOnly`, `isRequired`, `value`, `defaultValue`, `onChange`, `minValue`, `maxValue`, `isDateUnavailable`, `granularity`, `hourCycle`, `hideTimeZone`, `firstDayOfWeek`, `presetGroup`, `triggerPlacement`, `size`, `isOpen`, `defaultOpen`, `onOpenChange` and `onBlur`. Its values are `Temporal.PlainDate`, `PlainDateTime` or `ZonedDateTime` objects; `onChange` hands back this runtime's value, typed as [DateField's](/components/date-field) is, with no type argument. Build a value in a client component: a Temporal object a server component passes reaches the client as ISO text, which the component refuses with a `TypeError`. [Temporal for dates](/quick-start#temporal) shows a server component handing its text to a client component that builds the value.
 
-Render `DatePicker` inside `UiProviders`, which supplies the app locale it follows. Without a `LocaleProvider` above it, `DatePicker` throws when it mounts.
+Fuse reads `globalThis.Temporal`. Import `@elmeragroup/fuse/temporal-polyfill` once in your app's entry, on the server and in the browser.
+
+Type into the segments as in [DateField](/components/date-field), or open the calendar with the trigger or Alt+ArrowDown in the field. Focus moves to the selected day, or today, and back when the popup closes. Picking a day commits it and closes the popup.
 
 </Prose>
 
@@ -30,37 +30,84 @@ Render `DatePicker` inside `UiProviders`, which supplies the app locale it follo
   <DatePickerBasic />
 </Demo>
 
-<Demo slug="date-picker" id="sizes" title="Sizes" file="date-picker-sizes.tsx">
-  <DatePickerSizes />
+<Prose>
+
+## Dates and times
+
+With a `PlainDateTime` or `ZonedDateTime` the field edits the time down to `granularity`, and picking a day keeps the value's time and zone. `hourCycle={24}` shows 24 hours, `hideTimeZone` hides a zoned value's zone name, and `timeZone` is the zone an empty zoned picker takes. Until a value names its kind, an empty picker follows changes to `granularity` and `timeZone`, in what it types as in what the calendar picks. The popup shows the value's time under the calendar, in a time input with the field's `hourCycle` and `hideTimeZone`; typing there changes only the time. With `shouldCloseOnSelect={false}` and no value yet, a picked day is held while the popup stays open: a time typed under the calendar commits it at that time, and closing the popup first commits it at midnight. A time typed before any day waits for one.
+
+</Prose>
+
+<Demo slug="date-picker" id="time" title="Dates and times" file="date-picker-time.tsx">
+  <DatePickerTime />
 </Demo>
 
-<Demo slug="date-picker" id="controlled" title="Controlled" file="date-picker-controlled.tsx">
-  <DatePickerControlled />
+<Prose>
+
+Composing the parts, put `DatePicker.TimeInput` in the popup after `DatePicker.Calendar`. It renders only while the picker's values have a time (a `PlainDateTime` or `ZonedDateTime`, and a `granularity` finer than `"day"`), is named "Time", reports through the Root's `onValueChange` with the input's reasons, and is a Field of its own: it submits nothing, and a half-typed time marks only itself.
+
+</Prose>
+
+<Demo slug="date-picker" id="time-input" title="Time in the popup" file="date-picker-time-input.tsx">
+  <DatePickerTimeInput />
 </Demo>
 
-Presets stack above the calendar on small screens. A popup with limited vertical space scrolls to keep every date reachable.
+<Prose>
 
-<Demo slug="date-picker" id="presets" title="Presets" file="date-picker-presets.tsx">
+## Presets
+
+`presetGroup` puts a preset pane beside the calendar, normally `DatePicker.Presets` with a `DatePicker.PresetItem` per choice. Give a preset the date it stands for as `dateValue`: every press, Space or Enter sets the picker's value through `onValueChange` with the reason `"preset-press"`, also on the preset already checked, and the calendar moves to its month. Each callback refuses what it owns: the picker's `onValueChange` runs first, and canceling it refuses the whole press, so the value and the checked preset stay and the pane's `onValueChange` is not called; for a preset not yet checked the pane's runs next, and canceling it keeps the checked preset, though the value is already set. The checked preset is the pane's key, as in a radio group: a pane that owns its key clears it when the picker's value changes any other way (a day, typing, a time, a form reset); a key you control is yours to clear, in the picker's `onValueChange`. A preset without one is your key to map: the pane's `onValueChange` receives it, so set the picker's value from there. The pane's `onValueChange` receives the key and details as the picker's own callbacks do: `reason` `"preset-press"`, the DOM `event`, the preset's radio as `trigger`, and `cancel()`, which keeps the checked preset as it was. `disabled` disables a preset, and `closeOnDoubleClick` closes the popup on a double-click.
+
+</Prose>
+
+<Demo slug="date-picker" id="preset-pane" title="Presets" file="date-picker-presets.tsx">
   <DatePickerPresets />
 </Demo>
 
-Set `triggerPlacement="start"` to put the calendar button before the date. The button comes first in tab order, and clicking the label focuses it.
+<Prose>
 
-<Demo slug="date-picker" id="trigger-start" title="Leading trigger" file="date-picker-trigger-start.tsx">
-  <DatePickerTriggerStart />
+## In a form
+
+Inside `Form`, the picker is a Field of the form: its ISO text reaches `onFormSubmit` and native `FormData` under its `name`, a required, incomplete or out-of-bounds value blocks the submit and takes focus on its first segment, and an error the form returns under its `name` shows below it until the value changes.
+
+</Prose>
+
+<Demo slug="date-picker" id="form" title="In a form" file="date-picker-form.tsx">
+  <DatePickerForm />
 </Demo>
 
-<Demo slug="date-picker" id="validation" title="Validation" file="date-picker-validation.tsx">
-  <DatePickerValidation />
+<Prose>
+
+## Parts and cancelable changes
+
+`DatePicker.Root` holds the value and the open state, with Base UI's names: `value`, `onValueChange`, `open`, `onOpenChange`, `disabled`, `readOnly`, `required`, `invalid`, `render`. Compose `DatePicker.Group` (the field box), `DatePicker.Input`, `DatePicker.Trigger`, `DatePicker.Popup`, `DatePicker.Calendar`, which takes `Calendar`'s parts as children, and `DatePicker.TimeInput`. In a `Field.Root`, its `Field.Label` names the group, the segments, the trigger and the popup. A disabled `Field.Root` or `Field.Set` around the picker disables it whole, the trigger, calendar and presets included, from the server's first render on.
+
+`onValueChange` receives the change's details: its `reason` (`"day-press"`, `"keyboard"`, `"input-change"`, `"input-clear"`, `"input-paste"`, `"preset-press"`), the DOM `event`, the `trigger`, `getValidationError()` and `cancel()`. Canceling a day keeps the value and the popup open; canceling an edit shows the value again in the segments. `onOpenChange` receives Base UI Popover's reasons and the picker's own (`"keyboard"`, `"day-press"`, `"preset-press"`); canceling keeps the popup as it is.
+
+</Prose>
+
+<Demo
+  slug="date-picker"
+  id="controlled"
+  title="Parts and cancelable changes"
+  file="date-picker-controlled.tsx">
+  <DatePickerControlled />
 </Demo>
 
-<Demo slug="date-picker" id="states" title="States" file="date-picker-states.tsx">
-  <DatePickerStates />
-</Demo>
+<Prose>
 
-<Demo slug="date-picker" id="in-modal" title="Inside a dialog" file="date-picker-in-modal.tsx">
-  <DatePickerInModal />
-</Demo>
+## Server rendering
+
+`DatePickerField` holds no state of its own, so a server component renders it without a date value; its parts are client components. Nothing reads the clock while rendering: the calendar marks today from its first client effect.
+
+## Accessibility
+
+- **One group.** The field box is a `group` named by the label. Its segments are named "month, Moving date" (textboxes on iOS), as DateField's.
+- **The trigger and the popup.** The trigger is named "Calendar" and the label ("Calendar Moving date"), with `aria-haspopup="dialog"`; the popup is a `dialog` with the same name. Opening it moves focus to the focused day; Escape closes it and returns focus.
+- **Presets.** Each preset is a native radio inside its label, so the whole row is the target and the arrow keys move between them.
+- **24px targets.** The trigger takes the field's inner square, and the day buttons keep their 36px circles at both densities.
+
+</Prose>
 
 <ApiReference slug="date-picker" />
 

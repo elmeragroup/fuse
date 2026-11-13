@@ -1,30 +1,32 @@
 "use client";
 
-import { useState } from "react";
+import { RangeCalendar } from "@elmeragroup/fuse/range-calendar";
 
-import { CalendarDate, isWeekend } from "@internationalized/date";
+/** The days a fully booked cabin has no room, as a booking system would report them. */
+const BOOKED = new Set(["2026-10-09", "2026-10-10", "2026-10-21", "2026-10-22", "2026-10-23"]);
 
-import { Field } from "@elmeragroup/fuse/field";
-import { RangeCalendar } from "@elmeragroup/fuse/react-aria/range-calendar";
-import { UiProviders } from "@elmeragroup/fuse/react-aria/ui-providers";
-import { Switch } from "@elmeragroup/fuse/switch";
+/** Defined once, outside the component, so every day does not re-render on each render. */
+function isBooked(date: Temporal.PlainDate): boolean {
+  return BOOKED.has(date.toString());
+}
 
 export function RangeCalendarUnavailable() {
-  const [allowsNonContiguousRanges, setAllowsNonContiguousRanges] = useState(false);
-
   return (
-    <UiProviders locale="en-US" navigate={() => undefined}>
-      <div className="flex flex-col gap-4">
-        <Field.Root>
-          <Field.Label>Allow ranges that skip weekends</Field.Label>
-          <Switch checked={allowsNonContiguousRanges} onCheckedChange={setAllowsNonContiguousRanges} />
-        </Field.Root>
-        <RangeCalendar
-          defaultFocusedValue={new CalendarDate(2026, 7, 14)}
-          isDateUnavailable={(date) => isWeekend(date, "en-US")}
-          allowsNonContiguousRanges={allowsNonContiguousRanges}
-        />
-      </div>
-    </UiProviders>
+    <RangeCalendar.Root
+      aria-label="Cabin stay"
+      defaultValue={{
+        start: Temporal.PlainDate.from("2026-10-13"),
+        end: Temporal.PlainDate.from("2026-10-15"),
+      }}
+      minValue={Temporal.PlainDate.from("2026-10-05")}
+      maxValue={Temporal.PlainDate.from("2026-11-15")}
+      isDateUnavailable={isBooked}>
+      <RangeCalendar.Header>
+        <RangeCalendar.DecrementMonth />
+        <RangeCalendar.VisibleRangeHeading />
+        <RangeCalendar.IncrementMonth />
+      </RangeCalendar.Header>
+      <RangeCalendar.Months />
+    </RangeCalendar.Root>
   );
 }

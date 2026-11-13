@@ -4,7 +4,6 @@ import { parseCssBlocks, parseScopedBlocks, parseScopedDeclarations, parseStyleR
 
 const SHEET = `
 @import "tw-animate-css";
-@plugin "tailwindcss-react-aria-components";
 /* A comment { with braces } is ignored. */
 :root {
   --control-h-md: 2.25rem;

@@ -56,9 +56,8 @@ export type StateTable = (variant: string) => VariantMeaning;
 
 /**
  * The variants each value of a `state` axis renders, apart from `disabled`. fuse.css gates
- * `enabled-hover:` on an enabled control, and `hover:` has no gate. tailwindcss-react-aria-components
- * compiles `hover:` to `:hover`, or to `[data-hovered]` on an element marked `data-rac`, which React
- * Aria stamps while the pointer is over it. A cell holds one state, so none is hovered and disabled.
+ * `enabled-hover:` on an enabled control, and `hover:` has no gate. A cell holds one state, so none
+ * is hovered and disabled.
  */
 const SHARED_STATES = new Map([
   ["hover", ["enabled-hover", "hover"]],
@@ -79,24 +78,18 @@ const DISABLED_BY_ROOT = {
   "base-ui-field-part": ["data-disabled"],
   // Nothing stamps a plain element, so only a group variant that reads the element around it holds.
   "plain-element": [],
-  // React Aria stamps `aria-disabled="true"` and `data-disabled` on a disabled element, which is no
-  // native control, so it never matches `:disabled`.
-  "react-aria-element": ["aria-disabled", "data-disabled"],
 } as const satisfies Record<RootKind, readonly string[]>;
 
 /**
  * The variants the `invalid` state renders, by what the root element is. An invalid Field stamps
  * `aria-invalid` and `data-invalid` on its control, and `data-invalid` alone on its label,
- * description and error. React Aria stamps `aria-invalid` and `data-invalid` on an invalid element,
- * and tailwindcss-react-aria-components compiles `invalid:` to `[data-invalid]` on an element marked
- * `data-rac`. A set with no root kind takes the shared entry, the control's.
+ * description and error. A set with no root kind takes the shared entry, the control's.
  */
 const INVALID_BY_ROOT = {
   "native-control": ["aria-invalid", "data-invalid"],
   "base-ui-span": ["aria-invalid", "data-invalid"],
   "base-ui-field-part": ["data-invalid"],
   "plain-element": [],
-  "react-aria-element": ["aria-invalid", "data-invalid", "invalid"],
 } as const satisfies Record<RootKind, readonly string[]>;
 
 /** `has-data-[icon=…]:` holds while some icon of the cell, or the span around it, carries the `data-icon`. */

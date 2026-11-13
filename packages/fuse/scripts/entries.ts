@@ -105,17 +105,6 @@ export const DEFERRED_ENTRIES: readonly string[] = [];
  */
 export const PREVIEW_ENTRIES = ["chart"] as const;
 
-/** Appendix A — 7 quarantined react-aria interim entries. */
-export const RAC_ENTRIES = [
-  "calendar",
-  "date-field",
-  "date-picker",
-  "date-range-picker",
-  "focusable",
-  "range-calendar",
-  "ui-providers",
-] as const;
-
 /**
  * Opt-in entries a consumer imports bare for what they install, not for exports. Each source file
  * is the installer itself rather than a facade, exports no value, and stays out of the root
@@ -160,9 +149,6 @@ export const runtimeDependencies = [
   "clsx",
   "tailwind-merge",
   "tailwind-variants",
-  "react-aria-components",
-  "react-aria",
-  "@internationalized/date",
   "@phosphor-icons/react",
   "@internationalized/string",
   "sugar-high",
@@ -179,7 +165,7 @@ export const runtimeDependencies = [
 
 /**
  * Bare component entries that import an optional peer, keyed to that peer. They stay out of the
- * root barrel, like icons and react-aria/*, so `import { Button } from "@elmeragroup/fuse"` never
+ * root barrel, like icons, so `import { Button } from "@elmeragroup/fuse"` never
  * resolves a package the consumer may not have installed.
  */
 export const OPTIONAL_PEER_ENTRIES = {
@@ -222,7 +208,7 @@ function isBareComponent(subpath: string): boolean {
 function isDeferredEntry(subpath: string, deferred: readonly string[] = DEFERRED_ENTRIES): boolean {
   return deferred.includes(subpath);
 }
-const IMPLEMENTATION_DIRECTORIES = new Set(["components", "hooks", "icons", "styles", "theme", "react-aria"]);
+const IMPLEMENTATION_DIRECTORIES = new Set(["components", "hooks", "icons", "styles", "theme"]);
 
 const SOURCE_EXTENSIONS = [".ts", ".tsx", ".js", ".jsx"] as const;
 
@@ -297,9 +283,6 @@ function canonicalJsAllowlist(): Set<string> {
   for (const name of BARE_COMPONENT_ENTRIES) {
     allow.add(name);
   }
-  for (const name of RAC_ENTRIES) {
-    allow.add(`react-aria/${name}`);
-  }
   return allow;
 }
 
@@ -346,30 +329,18 @@ function collectUnexpectedJsFiles(
 
 function unexpectedJsEntryFiles(packageRoot: string): string[] {
   const allow = canonicalJsAllowlist();
-  return [
-    ...collectUnexpectedJsFiles(
-      packageRoot,
-      "src",
-      allow,
-      (baseName) => (baseName === "index" ? "." : baseName),
-      (name) => IMPLEMENTATION_DIRECTORIES.has(name)
-    ),
-    ...collectUnexpectedJsFiles(
-      packageRoot,
-      "src/react-aria",
-      allow,
-      (baseName) => `react-aria/${baseName}`,
-      () => false
-    ),
-  ];
+  return collectUnexpectedJsFiles(
+    packageRoot,
+    "src",
+    allow,
+    (baseName) => (baseName === "index" ? "." : baseName),
+    (name) => IMPLEMENTATION_DIRECTORIES.has(name)
+  );
 }
 
 function resolveJsSource(packageRoot: string, subpath: string): string | undefined {
   if (subpath === ".") {
     return resolveExistingSource(packageRoot, "src/index");
-  }
-  if (subpath.startsWith("react-aria/")) {
-    return resolveExistingSource(packageRoot, `src/${subpath}`);
   }
   return resolveExistingSource(packageRoot, `src/${subpath}`);
 }
@@ -609,11 +580,7 @@ export function discoverEntries(packageRoot: string): DiscoveredEntries {
     );
   }
 
-  const allow = [
-    ...NON_COMPONENT_JS_ENTRIES,
-    ...BARE_COMPONENT_ENTRIES,
-    ...RAC_ENTRIES.map((name) => `react-aria/${name}`),
-  ];
+  const allow = [...NON_COMPONENT_JS_ENTRIES, ...BARE_COMPONENT_ENTRIES];
   const jsEntries = discoverJsEntriesFromAllowlist(packageRoot, allow);
 
   const css = cssEntries(packageRoot);

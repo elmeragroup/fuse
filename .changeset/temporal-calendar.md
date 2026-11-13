@@ -3,8 +3,7 @@
 ---
 
 Adds `Calendar` from `@elmeragroup/fuse/calendar` and the root entry: a calendar built from parts
-whose values are `Temporal.PlainDate`s. It is the Temporal replacement for the interim
-`@elmeragroup/fuse/react-aria/calendar`, which stays unchanged.
+whose values are `Temporal.PlainDate`s.
 
 ```tsx
 import { Calendar } from "@elmeragroup/fuse/calendar";
@@ -38,8 +37,8 @@ import { Calendar } from "@elmeragroup/fuse/calendar";
   can still focus. Day names, the bound suffixes and the month buttons' names match React Aria's in
   the four locales.
 - `onValueChange` and `onVisibleRangeChange` pass details with a `reason` and `cancel()`, which keeps
-  the value or the months unchanged. React Aria has no equivalent. `onValueChange`'s
-  `getValidationError()` names a failure in `ValidityState`'s words, as the tier's other date
+  the value or the months unchanged. `onValueChange`'s
+  `getValidationError()` names a failure in `ValidityState`'s words, as the other date
   components do: `"rangeUnderflow"`, `"rangeOverflow"` or `"unavailable"`.
 - Today is read in an effect and moves at midnight, so a server render marks no today and the
   calendar prerenders. A server component renders the parts without a date value.

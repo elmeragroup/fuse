@@ -13,7 +13,7 @@ import type {
 import * as TableModule from "@elmeragroup/fuse/table";
 import { Table, VerticalTable } from "@elmeragroup/fuse/table";
 
-test("public API exports the namespaces and VerticalTableItem — never RAC or flat ref names", () => {
+test("public API exports the namespaces and VerticalTableItem — never flat or legacy part names", () => {
   expectTypeOf<TableRootProps>().toEqualTypeOf<ComponentProps<"table">>();
   expectTypeOf<VerticalTableRootProps["variant"]>().toEqualTypeOf<
     "default" | "non-bordered-compact" | undefined

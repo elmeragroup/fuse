@@ -7,9 +7,8 @@ import { peerFloorRelease } from "./published-dependencies";
 import { runCommandAsync } from "./run-command";
 
 /**
- * Compiled rules that only compile when the shipped classes, `tw-animate-css` and
- * `tailwindcss-react-aria-components` all work at the floor: the 4.1 wrap utilities, the
- * animation plugin's keyframes, a variant only the React Aria plugin defines, and Fuse's own
+ * Compiled rules that only compile when the shipped classes and `tw-animate-css` both work at
+ * the floor: the 4.1 wrap utilities, the animation plugin's keyframes, and Fuse's own
  * scroll-linked fade, a utility with nested `@supports` blocks that reads a registered property.
  * The chart markers prove the floor resolves `@elmeragroup/fuse/chart.css` and keeps its plain CSS.
  */
@@ -17,7 +16,6 @@ const FLOOR_MARKERS = [
   { source: "the wrap-anywhere utility", rule: "overflow-wrap: anywhere" },
   { source: "the wrap-break-word utility", rule: "overflow-wrap: break-word" },
   { source: "tw-animate-css", rule: "@keyframes enter" },
-  { source: "tailwindcss-react-aria-components", rule: "[data-outside-month]" },
   { source: "the scroll-fade-inline utility", rule: "animation-timeline: scroll(self inline)" },
   { source: "the scroll fade's registered property", rule: "@property --scroll-fade-start" },
   { source: "chart.css's root rule", rule: '[data-slot="chart"]' },
@@ -25,8 +23,8 @@ const FLOOR_MARKERS = [
 
 /**
  * Installs the tarball beside the first Tailwind release its peer range admits, then compiles
- * the packed CSS against it from the installed package's sources. npm resolves the plugins' own
- * peer ranges against that Tailwind, so an incompatible plugin fails the install. `npm install`
+ * the packed CSS against it from the installed package's sources. npm resolves the dependencies'
+ * own peer ranges against that Tailwind, so an incompatible one fails the install. `npm install`
  * is spawned before this returns. Async, so a malformed peer range rejects like every other
  * failure and reaches the caller's abort handling.
  *

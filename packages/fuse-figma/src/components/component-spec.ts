@@ -91,16 +91,8 @@ export const BASE_UI_CHECKED_FACTS: ReadonlyMap<string, (cell: Cell) => boolean>
  *   marks them `data-disabled` alone and an invalid one `data-invalid` alone.
  * - `plain-element`: an element nothing stamps a state on, such as Field's title `<div>`, which
  *   shows a disabled Field only through the `group-data-disabled/field:` its definition names.
- * - `react-aria-element`: a React Aria Components element marked `data-rac`, such as a Calendar day
- *   cell `<div>`, which React Aria marks `aria-disabled="true"` and `data-disabled` while disabled,
- *   and `aria-invalid="true"` and `data-invalid` while invalid, which `invalid:` reads there.
  */
-export type RootKind =
-  | "native-control"
-  | "base-ui-span"
-  | "base-ui-field-part"
-  | "plain-element"
-  | "react-aria-element";
+export type RootKind = "native-control" | "base-ui-span" | "base-ui-field-part" | "plain-element";
 
 /**
  * Where a native control sets its text within the text's box, which no class says, as an `<input>`
@@ -235,10 +227,10 @@ export type BoxDefinition = {
 };
 
 /**
- * An element that carries no `data-slot`, named by its tag and the attributes it carries, as React
- * Aria's Calendar renders a day as a `<div data-rac role="button">`. `figma:compare` measures a root
- * by its CSS form, such as `div[data-rac][role="button"]`, and its markup check places a root or a
- * part by it.
+ * An element named by its tag and the attributes it carries rather than by one fixed `data-slot`, as
+ * Alert dialog's Cancel renders a `<button data-dialog-action-type="secondary">`. `figma:compare`
+ * measures a root by its CSS form, such as `button[data-dialog-action-type="secondary"]`, and its
+ * markup check places a root or a part by it.
  */
 export type ElementSelector = {
   /**
@@ -247,16 +239,9 @@ export type ElementSelector = {
   readonly tag: string;
   /**
    * The attributes the element carries, each name in lowercase. A string matches that exact value,
-   * and `true` matches the attribute with any value, as `[data-rac]` does.
+   * and `true` matches the attribute with any value, as `[data-focus-ring-control]` does.
    */
   readonly attributes: Readonly<Record<string, string | true>>;
-  /**
-   * The attributes whose values start with a prefix, each name in lowercase, as
-   * `[aria-label^="Tuesday, July 14, 2026"]` matches a day React Aria labels ` selected` while it is
-   * the value. An empty prefix matches nothing, as in CSS. Undefined for an element the attributes
-   * alone name.
-   */
-  readonly prefixes?: Readonly<Record<string, string>>;
   /**
    * The attributes whose values end with a suffix, each name in lowercase, as `[data-slot$="-label"]`
    * matches the group label of Select and of Dropdown menu, which name their slots by family. An empty
@@ -473,9 +458,8 @@ export type ComponentDefinition = BoxDefinition & {
   /** The root layer's name, and the root element's `data-slot` unless `element` names the element. */
   readonly slot: string;
   /**
-   * The root element, for a root whose markup carries no `data-slot`, as React Aria's Calendar
-   * renders a day as a `<div data-rac role="button">`, or one whose `data-slot` changes with the
-   * cell, as Pagination's edge link carries `pagination-previous` or `pagination-next`. `figma:compare` measures the one
+   * The root element, for a root whose markup carries no `data-slot`, or one whose `data-slot`
+   * changes with the cell, as Pagination's edge link carries `pagination-previous` or `pagination-next`. `figma:compare` measures the one
    * element of a cell this selector matches, and its markup check places the root there. Undefined
    * for a root its `data-slot` names.
    */
@@ -483,7 +467,7 @@ export type ComponentDefinition = BoxDefinition & {
   /**
    * The `data-slot` the element `element` names carries in a cell, as Pagination's edge link carries
    * `pagination-previous` or `pagination-next` by its direction. Undefined for an element that carries
-   * none in any cell, as React Aria's Calendar day renders none, and for a root its `data-slot` names. The
+   * none in any cell, and for a root its `data-slot` names. The
    * presence check reads it for an instance part's root, and the markup check holds it to what each
    * cell renders.
    */

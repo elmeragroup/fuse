@@ -276,7 +276,7 @@ export async function auditTargets(root: Locator): Promise<TargetAudit> {
 /**
  * Whether a real press at `miss`'s offset moves focus to the date segment. A segment's edge can
  * sit within a pixel of its literal's, where `elementFromPoint` reports the literal, but
- * react-aria hands that press to the segment, so the press still reaches it. Focus starts on
+ * `DateInput.Root` hands that press to the segment, so the press still reaches it. Focus starts on
  * another segment of the same field, so only the press itself can put it on this one.
  */
 async function pressFocuses(segment: Locator, miss: ProbeMiss): Promise<boolean> {

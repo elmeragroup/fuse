@@ -1,6 +1,5 @@
 /**
- * Package-private class vocabulary shared by every overlay family — the public base-ui
- * Dialog/Sheet and the interim RAC Dialog alike. Nothing here is exported through
+ * Package-private class vocabulary shared by every overlay family: Dialog and Sheet. Nothing here is exported through
  * `package.json#exports`; it reaches the standalone stylesheet only through the emitted
  * dist modules that import it, which are that sheet's only source.
  *
@@ -99,7 +98,7 @@ const overlayPopupVariants = tv({
     scrim: "bg-black/10 supports-backdrop-filter:backdrop-blur-xs",
     /**
      * The modal title typography that `Dialog.Title` (and AlertDialog's title through it),
-     * `Sheet.Title` and the interim tier's dialog heading share, so none of them can drift.
+     * and `Sheet.Title` share, so none of them can drift.
      * `text-xl` keeps its own 28px line, so a wrapped title stays readable, and the title stands
      * above comfortable `--label-text` and `--control-text`. It carries no colour: the title
      * inherits its surface's ink, `text-dialog-foreground` in Dialog and Sheet. Every title is a
@@ -113,7 +112,7 @@ const overlayPopupVariants = tv({
      * `em` keeps the header's size, and it hides when the icon renders nothing.
      */
     titleLine: "flex h-[calc(var(--text-xl)*var(--text-xl--line-height))] shrink-0 items-center empty:hidden",
-    /** Dialog footer action row, shared with the interim tier's footer slot. */
+    /** Dialog footer action row. */
     footer: "sm:flex-row sm:justify-end flex flex-col-reverse gap-2",
     /**
      * The positioner face of every anchored overlay: one stacking context and the single

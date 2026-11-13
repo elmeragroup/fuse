@@ -47,8 +47,8 @@ const { root, heading } = demoFrame();
  * Sheet, and only the stage follows the preview theme (`DemoStage`). The heading keeps its level
  * and id inside `Frame.Title`, so the TOC and screen readers find the demo as before.
  *
- * A demo that reads the clock while it renders cannot prerender: React Aria's date components
- * build their dates on `new Date()`. The boundary keeps such a demo out of the static HTML, and
+ * A demo that reads the clock while it renders cannot prerender, such as one that builds today's
+ * date. The boundary keeps such a demo out of the static HTML, and
  * the browser renders it on hydration; every other demo prerenders as before. The marker inside
  * the boundary stamps `data-demo-hydrated` on the frame once the demo is live. A demo that fails
  * to render shows a reload prompt in its stage, and the page around it keeps working.

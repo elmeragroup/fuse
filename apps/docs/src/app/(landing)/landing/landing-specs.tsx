@@ -27,7 +27,7 @@ const styles = landingSpecs();
 type Spec = { value: number; unit?: string; label: string; note: string };
 
 const SPECS: readonly Spec[] = [
-  { value: FACTS.components, label: "Components", note: "Built on Base UI. Date components use React Aria." },
+  { value: FACTS.components, label: "Components", note: "Built on Base UI. Date components use Temporal." },
   {
     value: FACTS.themes,
     label: "Themes",

@@ -432,8 +432,9 @@ function NumberEditorBody({
 // The date editor offers the field's presets, in the field's order, and the default five when it
 // lists none. A preset applies and closes. It writes `isBetween` over its range. On a field without
 // `isBetween`, Today and Yesterday, the one-day presets, write `is`, and the editor leaves the
-// other presets out. The body is one or two date inputs by default, and a function child
-// replaces it, such as with a calendar the app imports, since the entry cannot import React Aria.
+// other presets out. The body is one or two native date inputs by default, and a function child
+// replaces it, such as with Fuse's `Calendar` or `RangeCalendar`; the app imports the calendar, so
+// the editor's entry carries none.
 // From the small breakpoint up the presets of a function child stand in a column beside it, as the
 // date pickers set their preset pane beside the calendar, and the popup widens to that layout.
 // Above the date inputs, or on a narrow viewport, they wrap above.

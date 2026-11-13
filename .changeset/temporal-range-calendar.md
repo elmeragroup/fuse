@@ -3,9 +3,7 @@
 ---
 
 Adds `RangeCalendar` from `@elmeragroup/fuse/range-calendar` and the root entry: a calendar that
-selects a range of days, on `Calendar`'s parts, whose values are `Temporal.PlainDate`s. It is the
-Temporal replacement for the interim `@elmeragroup/fuse/react-aria/range-calendar`, which stays
-unchanged.
+selects a range of days, on `Calendar`'s parts, whose values are `Temporal.PlainDate`s.
 
 ```tsx
 import { RangeCalendar } from "@elmeragroup/fuse/range-calendar";
@@ -39,7 +37,7 @@ import { RangeCalendar } from "@elmeragroup/fuse/range-calendar";
 - Its grids are `aria-multiselectable`. A range left open when the calendar turns read-only or
   disabled is dropped, never completed.
 - `onValueChange` passes details with a `reason` (`"day-press"`, `"keyboard"`, `"outside-press"`,
-  `"focus-out"`) and `cancel()`. React Aria has no equivalent. `getValidationError()` names a
+  `"focus-out"`) and `cancel()`. `getValidationError()` names a
   failing range in `ValidityState`'s words, as `Calendar` does: `"rangeUnderflow"`,
   `"rangeOverflow"` or `"unavailable"`.
 

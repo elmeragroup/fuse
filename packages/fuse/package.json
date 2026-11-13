@@ -283,34 +283,6 @@
       "types": "./src/range-calendar.ts",
       "import": "./src/range-calendar.ts"
     },
-    "./react-aria/calendar": {
-      "types": "./src/react-aria/calendar.ts",
-      "import": "./src/react-aria/calendar.ts"
-    },
-    "./react-aria/date-field": {
-      "types": "./src/react-aria/date-field.ts",
-      "import": "./src/react-aria/date-field.ts"
-    },
-    "./react-aria/date-picker": {
-      "types": "./src/react-aria/date-picker.ts",
-      "import": "./src/react-aria/date-picker.ts"
-    },
-    "./react-aria/date-range-picker": {
-      "types": "./src/react-aria/date-range-picker.ts",
-      "import": "./src/react-aria/date-range-picker.ts"
-    },
-    "./react-aria/focusable": {
-      "types": "./src/react-aria/focusable.ts",
-      "import": "./src/react-aria/focusable.ts"
-    },
-    "./react-aria/range-calendar": {
-      "types": "./src/react-aria/range-calendar.ts",
-      "import": "./src/react-aria/range-calendar.ts"
-    },
-    "./react-aria/ui-providers": {
-      "types": "./src/react-aria/ui-providers.ts",
-      "import": "./src/react-aria/ui-providers.ts"
-    },
     "./recipe-catalog": {
       "types": "./src/components/recipe-catalog.ts",
       "import": "./src/components/recipe-catalog.ts"
@@ -469,19 +441,15 @@
   },
   "dependencies": {
     "@base-ui/react": "catalog:",
-    "@internationalized/date": "catalog:",
     "@internationalized/string": "catalog:",
     "@phosphor-icons/react": "catalog:",
     "clsx": "catalog:",
     "d3-array": "catalog:",
     "d3-shape": "catalog:",
     "libphonenumber-js": "catalog:",
-    "react-aria": "catalog:",
-    "react-aria-components": "catalog:",
     "sugar-high": "catalog:",
     "tailwind-merge": "catalog:",
     "tailwind-variants": "catalog:",
-    "tailwindcss-react-aria-components": "catalog:",
     "temporal-polyfill": "catalog:",
     "tw-animate-css": "catalog:"
   },

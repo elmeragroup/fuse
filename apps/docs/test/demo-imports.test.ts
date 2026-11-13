@@ -8,22 +8,16 @@ const componentsDir = path.join(docsRoot, "src/app/(docs)/components");
 const blocksDir = path.join(docsRoot, "src/app/(docs)/blocks");
 
 /**
- * Specifiers any consumer writes: React, the public entries, the date-cluster value type, and the
- * optional table peer every `@elmeragroup/fuse/data-table` consumer installs.
+ * Specifiers any consumer writes: React, the public entries, and the optional table peer every
+ * `@elmeragroup/fuse/data-table` consumer installs.
  */
-const CONSUMER_SPECIFIERS = [
-  /^react$/u,
-  /^@elmeragroup\/fuse\//u,
-  /^@internationalized\/date$/u,
-  /^@tanstack\/react-table$/u,
-];
+const CONSUMER_SPECIFIERS = [/^react$/u, /^@elmeragroup\/fuse\//u, /^@tanstack\/react-table$/u];
 
 /**
  * Reviewed demos whose scenarios the public API cannot express, with the allowed
  * non-public imports. Review a new exception here rather than deriving it from demos.
  */
 const CARVE_OUTS = new Map<string, readonly string[]>([
-  ["calendar/demos/calendar-rtl.tsx", ["react-aria-components"]],
   // A year of hours would fill the demo's printed source, so it reads one data module.
   ["chart/demos/chart-table.tsx", ["./data/hourly-year"]],
   // Two months of hours for the month switch's Sparklines, 1,465 values.
@@ -44,18 +38,13 @@ const CARVE_OUTS = new Map<string, readonly string[]>([
     ["../../chart/demos/data/no1-household-hourly-2025-09-2025-10"],
   ],
   ["clock-chart/demos/clock-chart-week.tsx", ["../../chart/demos/data/no1-household-hourly-2025-09-2025-10"]],
-  ["date-field/demos/date-field-date-input.tsx", ["react-aria-components"]],
-  // Link's router demos show `render` composing a router's link: the docs app's own, and React
-  // Aria's, which routes through UiProviders.
+  // Link's router demo shows `render` composing the docs app's own router link.
   ["link/demos/link-next.tsx", ["next/link"]],
-  ["link/demos/link-react-aria.tsx", ["react-aria-components"]],
   // The router-link demo shows `render` composing the docs app's own router link.
   ["navigation-menu/demos/navigation-menu-router-link.tsx", ["next/link"]],
   ["scroll-area/demos/scroll-area-composed.tsx", ["@base-ui/react/scroll-area"]],
   // The server demo needs a consumer's own "use client" rows to pass its SubSections through.
   ["selection-item/demos/selection-item-server.tsx", ["./client/plan-rows"]],
-  // UiProviders routes React Aria's links, so its demo renders one.
-  ["ui-providers/demos/ui-providers-basic.tsx", ["react-aria-components"]],
 ]);
 
 /**

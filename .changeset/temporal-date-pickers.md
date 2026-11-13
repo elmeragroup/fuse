@@ -5,9 +5,7 @@
 Adds `DatePickerField` and the `DatePicker` parts from `@elmeragroup/fuse/date-picker`, and
 `DateRangePickerField` and the `DateRangePicker` parts from `@elmeragroup/fuse/date-range-picker`,
 both in the root entry: a date field with a calendar popup, and start and end fields with a range
-calendar popup, whose values are Temporal values. They are the Temporal replacements for the
-interim `@elmeragroup/fuse/react-aria/date-picker` and `react-aria/date-range-picker`, which stay
-unchanged.
+calendar popup, whose values are Temporal values.
 
 ```tsx
 import { DatePicker, DatePickerField } from "@elmeragroup/fuse/date-picker";
@@ -26,7 +24,7 @@ import { DateRangePickerField } from "@elmeragroup/fuse/date-range-picker";
 />;
 ```
 
-- The composites keep the interim prop names (`label`, `description`, `errorMessage`, `isInvalid`,
+- The composites take React Aria's prop names (`label`, `description`, `errorMessage`, `isInvalid`,
   `isDisabled`, `isReadOnly`, `isRequired`, `value`, `defaultValue`, `onChange`, `minValue`,
   `maxValue`, `isDateUnavailable`, `granularity`, `hourCycle`, `hideTimeZone`, `firstDayOfWeek`,
   `presetGroup`, `triggerPlacement`, `startName`, `endName`, `size`, `isOpen`, `defaultOpen`,
@@ -51,11 +49,9 @@ import { DateRangePickerField } from "@elmeragroup/fuse/date-range-picker";
   presets), in server output too.
 - Presets: `DatePicker.Presets` and `DatePicker.PresetItem` (`DateRangePicker.Presets`,
   `.PresetItem`) are native radios inside their labels, with a controlled `value`, `disabled` items
-  and `closeOnDoubleClick` (the interim `isCloseDialogOnDoubleClick`). The interim
-  `DatePickerPresetGroup`'s `onChange` and `isDisabled` are `onValueChange` and `disabled` here;
-  `onValueChange` passes the key and cancelable details (`reason: "preset-press"`).
+  and `closeOnDoubleClick`. `onValueChange` passes the key and cancelable details
+  (`reason: "preset-press"`).
 - The parts use Base UI's names (`value`, `onValueChange`, `open`, `onOpenChange`, `disabled`,
   `readOnly`, `required`, `invalid`, `render`). `onValueChange` and `onOpenChange` pass details
   with a `reason` (`"day-press"`, `"keyboard"`, `"input-change"`, … and Base UI Popover's
   `"trigger-press"`, `"escape-key"`, `"outside-press"`, plus `"preset-press"`) and `cancel()`;
-  React Aria has no equivalent.

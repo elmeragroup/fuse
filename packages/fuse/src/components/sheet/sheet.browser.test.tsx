@@ -1,5 +1,3 @@
-import type { ReactNode } from "react";
-
 import { describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
@@ -8,7 +6,6 @@ import { assertFocusRingOnKeyboardAbsentOnMouse } from "../../../test/assert-foc
 import { SUPPORTED_LOCALES, withLocale } from "../../../test/locale-matrix";
 import { expectTargetBoxes } from "../../../test/target-size";
 import { renderThemed, roleNamed } from "../../../test/themed-browser-render";
-import { DatePicker as RacDatePicker } from "../../react-aria/date-picker";
 import { Sheet } from "./index";
 import type { SheetRootProps } from "./sheet";
 
@@ -22,12 +19,10 @@ const CLOSE_COPY = {
 function BasicSheet({
   onOpenChange,
   side,
-  body = "Usage history.",
   ...contentProps
 }: {
   onOpenChange?: SheetRootProps["onOpenChange"];
   side?: "top" | "right" | "bottom" | "left";
-  body?: ReactNode;
   showCloseButton?: boolean;
   closeLabel?: string;
   size?: "sm" | "md" | "10xl";
@@ -40,7 +35,7 @@ function BasicSheet({
           <Sheet.Title>Meter details</Sheet.Title>
           <Sheet.Description>Readings for this address.</Sheet.Description>
         </Sheet.Header>
-        <Sheet.Body>{body}</Sheet.Body>
+        <Sheet.Body>Usage history.</Sheet.Body>
         <Sheet.Footer>
           <Sheet.Close>Done</Sheet.Close>
         </Sheet.Footer>
@@ -207,33 +202,6 @@ describe("Sheet", () => {
     expect(scope).not.toBeNull();
     expect(scope?.contains(dialog)).toBe(true);
     expect([...document.body.children].includes(dialog)).toBe(false);
-  });
-
-  it("stays open after a click in the panel closes a React Aria date picker inside it, and after the next click", async () => {
-    const onOpenChange = vi.fn<NonNullable<SheetRootProps["onOpenChange"]>>();
-    const reported = () => onOpenChange.mock.calls.map(([open, details]) => [open, details.reason]);
-    renderThemed(
-      withLocale(
-        "en-US",
-        <BasicSheet onOpenChange={onOpenChange} body={<RacDatePicker label="Reading date" />} />
-      )
-    );
-    await openSheet();
-    await userEvent.click(page.getByRole("button", { name: /^calendar/i }));
-    await expect.element(page.getByRole("grid")).toBeVisible();
-
-    // React Aria's modal popover inerts the panel, so the press lands where the user aims rather
-    // than where an actionability check would accept it. React Aria stops this click at document
-    // capture, before Base UI's outside-press check on its target can run.
-    const description = page.getByText("Readings for this address.", { exact: true });
-    await userEvent.click(description, { force: true });
-    await expect.element(page.getByRole("grid")).not.toBeInTheDocument();
-    expect(reported()).toEqual([[true, "trigger-press"]]);
-
-    // Unforced, so the press waits until the panel takes pointer input again. Base UI reports a
-    // dismissal from inside the click, so it has been recorded by the time the click resolves.
-    await userEvent.click(description);
-    expect(reported()).toEqual([[true, "trigger-press"]]);
   });
 
   it("gives the trigger the shared keyboard focus ring", async () => {

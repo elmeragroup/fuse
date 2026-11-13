@@ -23,7 +23,7 @@ export function PageHeader({ page, children }: PageHeaderProps): ReactElement {
   const { label, description } = appPage(page);
   return (
     <div className="md:px-6 flex flex-wrap items-end justify-between gap-x-6 gap-y-3 px-4 pt-6 pb-2">
-      {/* Focusable from script only: the shell moves focus to the page's title after a client
+      {/* Takes focus from script only: the shell moves focus to the page's title after a client
           navigation, without a ring, since no key put it there. */}
       <div data-page-title tabIndex={-1} className="flex min-w-0 flex-col gap-1 outline-none">
         <Heading level={1} size="2xl" noMargin>

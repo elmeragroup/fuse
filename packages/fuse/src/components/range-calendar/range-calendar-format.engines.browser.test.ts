@@ -1,6 +1,6 @@
 /**
  * Unit under test: the description RangeCalendar names its range's ends with, in every engine.
- * Oracle: React Aria's interim RangeCalendar names for the same ranges, read from its range-start
+ * Oracle: React Aria's RangeCalendar names for the same ranges, read from its range-start
  * day button in Chromium per locale and written out by hand. en-US is that text exactly (the parity
  * harness pins it). In nb-NO, sv-SE and fi-FI React Aria's own text comes from
  * `formatRangeToParts`, which differs between engines (a shared month dropped, sv-SE days

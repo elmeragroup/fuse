@@ -167,14 +167,6 @@ describe("localization page", () => {
   });
 });
 
-describe("temporal migration page", () => {
-  it("shows the conversion and server-error demos", async () => {
-    const html = await fetchText("/handbook/temporal-migration");
-    expect(html).toContain('id="conversion"');
-    expect(html).toContain('id="server-errors"');
-  });
-});
-
 describe("quick start page", () => {
   it("shows the app page scaffold once — landmarks, skip link and lang", async () => {
     const html = await fetchText("/quick-start");

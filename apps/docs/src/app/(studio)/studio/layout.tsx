@@ -2,6 +2,7 @@ import type { ReactElement, ReactNode } from "react";
 
 import { LocaleProvider } from "@elmeragroup/fuse/theme";
 
+import { TemporalPolyfill } from "../../../components/temporal-polyfill";
 import { CornerXrayProvider } from "../../../studio/components/corner-xray";
 import { DensityViewProvider } from "../../../studio/components/density/density-view";
 import { StudioPalette } from "../../../studio/components/studio-palette";
@@ -22,6 +23,8 @@ export type StudioLayoutProps = {
 export default function StudioLayout({ children }: StudioLayoutProps): ReactElement {
   return (
     <StudioProvider>
+      {/* The checkout screen's start date is a Temporal date. */}
+      <TemporalPolyfill />
       <LocaleProvider locale="en-US">
         <ViewportProvider>
           <DensityViewProvider>

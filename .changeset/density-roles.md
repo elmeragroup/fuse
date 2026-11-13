@@ -42,9 +42,8 @@ What now follows density:
   - A compact `Item.Group` pads default Items with `--surface-pad-md` and `sm` Items with
     `--row-px`.
 - **Field text.**
-  - `Field.Label`, `Field.Title`, `Field.Description`, `Field.Error`, a `variant="label"`
-    `Field.Legend`, and the React Aria fields' label, description and error read the label
-    metrics.
+  - `Field.Label`, `Field.Title`, `Field.Description`, `Field.Error` and a `variant="label"`
+    `Field.Legend` read the label metrics.
   - A `variant="legend"` `Field.Legend` stays 16/24px.
   - `SelectionItem.Title` and `SelectionItem.Description` read them too. They now write their own
     `selection-item-title` and `selection-item-description` slots in place of `item-title` and
@@ -69,7 +68,6 @@ What now follows density:
     `InputGroup.Text` take the md control type.
   - The `Combobox` chips box takes the md control type, gap and `--row-py`.
   - `Tooltip` pads with `--surface-pad-md` and `--row-py`.
-  - The React Aria picker dialog stacks its content by `--surface-gap-lg`.
 - **Sidebar.**
   - `Sidebar.Header`, `Sidebar.Footer` and `Sidebar.Group` pad with `--row-px`; the collapsed
     icon rail keeps 8px.

@@ -11,10 +11,7 @@
  * each forced cell against its resting twin: a forced cell whose measured element and descendants
  * have the twin's colors, shadows and underlines did not reach Fuse's `enabled-hover:` or
  * `focus-visible:` rules, and the page then hovers or focuses the forced element for real before its
- * screenshot, unless the request says the kit draws the cell as at rest in the preview's theme. React Aria draws its hover and focus faces from pointer and focus
- * events only a hydrated page sees, so with the pseudo classes the page writes the attributes the
- * cell's renderer names on the forced element, through CDP's `DOM.setAttributeValue`, as the
- * Calendar day's `data-hovered` and its focused class.
+ * screenshot, unless the request says the kit draws the cell as at rest in the preview's theme.
  *
  * A client cell mounts on the page from the client bundle, open, with its popup in its slot. The
  * page awaits the mount before it reads any font or style, checks that no client slot holds focus
@@ -82,9 +79,8 @@ export type CellRequest = {
   readonly forcedOn: string;
   readonly forced: readonly ForcedPseudoClass[];
   /**
-   * The attributes the page writes on the forced element with the forced pseudo classes, as React
-   * Aria would while the state holds, or alone, as `data-highlighted` on a highlighted Combobox row.
-   * Empty for a cell whose state CSS draws from the pseudo classes alone.
+   * The attributes the page writes on the forced element, as `data-highlighted` on a highlighted
+   * Combobox row. Empty for a cell whose state CSS draws from the pseudo classes alone.
    */
   readonly forcedAttributes: Readonly<Record<string, string>>;
   /** The same cell at rest, rendered off to the side to check the forced state. */

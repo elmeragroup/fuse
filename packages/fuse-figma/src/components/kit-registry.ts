@@ -21,7 +21,6 @@ import {
   BREADCRUMB_TRAIL,
 } from "./breadcrumb-kit";
 import { BUTTON, ICON_BUTTON } from "./button-kit";
-import { CALENDAR_DAY } from "./calendar-day-kit";
 import { CHECKBOX } from "./checkbox-kit";
 import { COMBOBOX_EMPTY, COMBOBOX_ITEM, COMBOBOX_OPEN, COMBOBOX_POPUP } from "./combobox-kit";
 import { COMMAND_DIALOG_OPEN, COMMAND_PALETTE } from "./command-dialog-kit";
@@ -190,9 +189,6 @@ const DROPDOWN_MENU_PAGE: KitPage = { slug: "dropdown-menu", name: "Dropdown men
 
 /** The page Empty sits on alone. */
 const EMPTY_PAGE: KitPage = { slug: "empty", name: "Empty" };
-
-/** The page of the Calendar's day cell, alone until the month frame joins it. */
-const CALENDAR_PAGE: KitPage = { slug: "calendar", name: "Calendar" };
 
 /** The page Link sits on alone. */
 const LINK_PAGE: KitPage = { slug: "link", name: "Link" };
@@ -419,7 +415,6 @@ export const KIT: readonly KitEntry[] = [
     previewCells: matrixCells(COMMAND_DIALOG_OPEN.axes),
   },
   { definition: EMPTY, page: EMPTY_PAGE, previewCells: matrixCells(EMPTY.axes) },
-  { definition: CALENDAR_DAY, page: CALENDAR_PAGE, previewCells: matrixCells(CALENDAR_DAY.axes) },
   { definition: LINK, page: LINK_PAGE, previewCells: matrixCells(LINK.axes) },
   { definition: ITEM, page: ITEM_PAGE, previewCells: matrixCells(ITEM.axes) },
   { definition: ITEM_LINK, page: ITEM_PAGE, previewCells: matrixCells(ITEM_LINK.axes) },

@@ -568,9 +568,7 @@ export default function ThemingPage(): ReactElement {
         The Quick start layout puts ColorSchemeScript in head. This also avoids the hidden streaming preamble
         Next can insert at the start of body. Leave the provider&apos;s <code>injectColorSchemeScript</code>{" "}
         at its default, false. A forced route needs a route-group layout or other document that supplies the
-        same force to both. React Aria consumers use UiProviders instead of nesting it with LocaleProvider.
-        Put its function-valued navigate prop in an app-owned client wrapper that calls useRouter and passes
-        router.push.
+        same force to both.
       </p>
 
       <h2 id="next-pages">Next Pages</h2>

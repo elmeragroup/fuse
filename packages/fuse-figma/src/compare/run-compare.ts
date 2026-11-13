@@ -19,9 +19,15 @@ import type { ComponentSetSpec } from "../components/kit-spec.ts";
 import { browserFootprint, coversRenderBounds, figmaFootprint, sharedCanvas } from "./align.ts";
 import { CompareBrowser, DEVICE_SCALE } from "./browser-render.ts";
 import type { BrowserUnavailable, CellRequest, RenderedCell } from "./browser-render.ts";
-import { forcedAttributesFor, isClientRenderer, loadRenderers, renderCellHtml } from "./cell-renderers.ts";
+import { isClientRenderer, loadRenderers, renderCellHtml } from "./cell-renderers.ts";
 import type { AnyCellRenderer, RendererMissing } from "./cell-renderers.ts";
-import { fallbackInteraction, forcedPseudoClasses, parseCell, restingTwin } from "./cells.ts";
+import {
+  fallbackInteraction,
+  forcedPseudoClasses,
+  highlightAttributes,
+  parseCell,
+  restingTwin,
+} from "./cells.ts";
 import { checkClientMarkup } from "./client-markup.ts";
 import { fileFailure, makeDirectory, writeBytes, writeText } from "./compare-files.ts";
 import type { CompareFileFailed } from "./compare-files.ts";
@@ -218,7 +224,7 @@ export function planCells(
         ? { _tag: "Client", set: definition.key, cell: shown }
         : { _tag: "Static", html: renderCellHtml(renderer, shown) };
     const forced = forcedPseudoClasses(cell, renderer.highlight);
-    const forcedAttributes = forcedAttributesFor(renderer, cell);
+    const forcedAttributes = highlightAttributes(cell, renderer.highlight);
     const forces = forced.length > 0 || Object.keys(forcedAttributes).length > 0;
     planned.push({
       instance,
@@ -452,7 +458,7 @@ const comparePreview = Effect.fnUntraced(function* (
     const { renderer } = definition;
     const markup =
       cell.mounted !== undefined && isClientRenderer(renderer)
-        ? checkClientMarkup(definition, renderer.union, parsedCell, request, cell.mounted)
+        ? checkClientMarkup(definition, renderer.union, parsedCell, cell.mounted)
         : [];
     const png = instance.image === null ? null : parsePng(Buffer.from(instance.image.png, "base64"));
     if (png !== null && Result.isFailure(png)) {

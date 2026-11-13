@@ -2,31 +2,45 @@
 
 import { useState } from "react";
 
-import { CalendarDate } from "@internationalized/date";
-import type { DateValue } from "@internationalized/date";
+import { RangeCalendar } from "@elmeragroup/fuse/range-calendar";
+import type { RangeCalendarValue } from "@elmeragroup/fuse/range-calendar";
 
-import { RangeCalendar } from "@elmeragroup/fuse/react-aria/range-calendar";
-import { UiProviders } from "@elmeragroup/fuse/react-aria/ui-providers";
-import { Text } from "@elmeragroup/fuse/text";
-
-type Range = { start: DateValue; end: DateValue };
-
-const initialRange: Range = {
-  start: new CalendarDate(2026, 7, 14),
-  end: new CalendarDate(2026, 7, 18),
-};
+/** The longest stay the booking rules allow. */
+const MAX_NIGHTS = 7;
 
 export function RangeCalendarControlled() {
-  const [value, setValue] = useState<Range | null>(initialRange);
-
+  const [value, setValue] = useState<RangeCalendarValue | null>(null);
+  const [refused, setRefused] = useState<string | null>(null);
   return (
-    <UiProviders locale="en-US" navigate={() => undefined}>
-      <div className="flex flex-col gap-2">
-        <RangeCalendar value={value} onChange={setValue} />
-        <Text size="sm" variant="muted">
-          {value === null ? "No range selected." : `${value.start.toString()} — ${value.end.toString()}`}
-        </Text>
-      </div>
-    </UiProviders>
+    <div className="flex flex-col items-start gap-4">
+      <RangeCalendar.Root
+        aria-label="Stay"
+        value={value}
+        onValueChange={(next, details) => {
+          // A canceled day press keeps the value and the first day, so another end can be picked.
+          if (next.start.until(next.end).days > MAX_NIGHTS) {
+            details.cancel();
+            setRefused(
+              `${next.start.toString()} to ${next.end.toString()} is longer than ${MAX_NIGHTS} nights.`
+            );
+            return;
+          }
+          setRefused(null);
+          setValue(next);
+        }}>
+        <RangeCalendar.Header>
+          <RangeCalendar.DecrementMonth />
+          <RangeCalendar.VisibleRangeHeading />
+          <RangeCalendar.IncrementMonth />
+        </RangeCalendar.Header>
+        <RangeCalendar.Months />
+      </RangeCalendar.Root>
+      <output className="text-sm">
+        {value === null ? "No stay selected" : `Stay: ${value.start.toString()} to ${value.end.toString()}`}
+      </output>
+      <p role="status" className="text-sm text-error">
+        {refused}
+      </p>
+    </div>
   );
 }

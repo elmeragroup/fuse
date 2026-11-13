@@ -5,7 +5,6 @@
  * with the test tooling.
  */
 import { compile } from "tailwindcss";
-import reactAriaComponents from "tailwindcss-react-aria-components";
 import themeCss from "tailwindcss/theme.css?raw";
 import utilitiesCss from "tailwindcss/utilities.css?raw";
 
@@ -45,11 +44,8 @@ export async function consumerCss(entry: string, candidates: readonly string[]):
       }
       return Promise.resolve({ path: id, base, content });
     },
-    loadModule: (id, base) => {
-      if (id !== "tailwindcss-react-aria-components") {
-        throw new Error(`fuse.css loads no plugin but tailwindcss-react-aria-components, received ${id}`);
-      }
-      return Promise.resolve({ path: id, base, module: reactAriaComponents });
+    loadModule: (id) => {
+      throw new Error(`fuse.css loads no plugin, received ${id}`);
     },
   });
   return compiler.build([...candidates]);

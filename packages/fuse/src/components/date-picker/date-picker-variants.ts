@@ -21,7 +21,7 @@ import { buttonVariants } from "../button/button-variants";
  * - `group` is the field box around the trigger and the segment rows: the shared field chrome at
  *   the field height of its `size`, ringed while a segment has keyboard focus, with the data-target
  *   state face (`data-invalid="true"`, `data-disabled`) and the muted read-only fill
- *   (`data-readonly`). The `range` axis lays out two rows, as the interim picker did.
+ *   (`data-readonly`). The `range` axis lays out two rows.
  * - `input` is a `DateInput.Root` inside the box: no chrome of its own, the md control inset and the
  *   text-entry type, so the segments line up with DateField's.
  * - `trigger` is the calendar button flush against the box's border: it reads the box's inner

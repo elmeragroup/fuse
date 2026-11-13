@@ -1,14 +1,14 @@
 ---
 lede: >
-  A segmented input for typing a date.
+  A segmented input for typing a date, a date and time, or a date and time in a zone, with Temporal values.
 ---
 
 import { DateFieldBasic } from "./demos/date-field-basic";
-import { DateFieldSizes } from "./demos/date-field-sizes";
-import { DateFieldValidation } from "./demos/date-field-validation";
-import { DateFieldGranularity } from "./demos/date-field-granularity";
-import { DateFieldStates } from "./demos/date-field-states";
-import { DateFieldDateInput } from "./demos/date-field-date-input";
+import { DateFieldTime } from "./demos/date-field-time";
+import { DateFieldZoned } from "./demos/date-field-zoned";
+import { DateFieldBounds } from "./demos/date-field-bounds";
+import { DateFieldForm } from "./demos/date-field-form";
+import { DateFieldParts } from "./demos/date-field-parts";
 
 import { componentMetadata } from "../../../../lib/component-page";
 
@@ -18,11 +18,19 @@ export const metadata = componentMetadata("date-field");
 
 <Prose>
 
-Values are `CalendarDate` objects from `@internationalized/date`, which you install separately; the library does not re-export it.
+`DateField` from `@elmeragroup/fuse/date-field` takes React Aria's DateField prop names: `label`, `description`, `errorMessage`, `isInvalid`, `isDisabled`, `isReadOnly`, `isRequired`, `value`, `defaultValue`, `onChange`, `minValue`, `maxValue`, `isDateUnavailable`, `granularity`, `hourCycle`, `hideTimeZone` and `size`. Its values are `Temporal.PlainDate`, `PlainDateTime` or `ZonedDateTime`: a date prop takes one as an object from any Temporal implementation, and `onChange` hands back this runtime's value. The kind `onChange` receives is typed from the value or default value, and without either from `granularity` and `timeZone`, as the field resolves it at runtime: no granularity or `"day"` gives a `PlainDate`, a time `granularity` a `PlainDateTime`, and a time `granularity` with `timeZone` a `ZonedDateTime`. No type argument is needed. Build a value in a client component: a Temporal object a server component passes reaches the client as ISO text, which the component refuses with a `TypeError`. [Temporal for dates](/quick-start#temporal) shows a server component handing its text to a client component that builds the value.
 
-`DateInput` is the segment row on its own, for custom field compositions.
+A misspelt or undeclared prop does not compile, and that includes the keys of a spread object, unlike a component without a type parameter. Destructure what the field does not take, such as a form library's `ref`, before spreading the rest, and pass `disabled` on as `isDisabled`:
 
-Wrap locale-dependent usage in `UiProviders` so it follows the app locale.
+```tsx
+const { ref, disabled, ...rest } = field;
+
+<DateField label="Starts" isDisabled={disabled} {...rest} />;
+```
+
+Fuse reads `globalThis.Temporal`. Import `@elmeragroup/fuse/temporal-polyfill` once in your app's entry, on the server and in the browser.
+
+Type the digits, and each segment moves on when it is full: `10052026` in en-US, `05102026` in nb-NO. Arrow up and down step a segment and wrap, Page Up and Page Down step by a page (5 years, 2 months, 7 days, 2 hours, 15 minutes), Home and End go to its ends, and Backspace removes a digit. Those keys held with Ctrl, Cmd or Alt are left to the browser. The value commits once every segment is filled; a date the segments cannot form, such as February 30, commits on blur as the month's last day.
 
 </Prose>
 
@@ -30,25 +38,82 @@ Wrap locale-dependent usage in `UiProviders` so it follows the app locale.
   <DateFieldBasic />
 </Demo>
 
-<Demo slug="date-field" id="sizes" title="Sizes" file="date-field-sizes.tsx">
-  <DateFieldSizes />
+<Prose>
+
+## Dates and times
+
+The value's kind decides the segments: a `PlainDate` edits the date, a `PlainDateTime` or `ZonedDateTime` the date and time down to `granularity` (`"minute"` by default for a value with a time; `"hour"` or `"second"` change it). `hourCycle` picks 12 hours with an AM/PM segment or 24 hours; without it the locale decides, 12 in en-US and 24 in the Nordic locales. Type the first letter of the day period to set it. Changing `granularity` or `hourCycle` while segments are half-typed drops what was typed, so the field shows its value again rather than a draft over segments it no longer has.
+
+</Prose>
+
+<Demo slug="date-field" id="time" title="Dates and times" file="date-field-time.tsx">
+  <DateFieldTime />
 </Demo>
 
-<Demo slug="date-field" id="validation" title="Validation" file="date-field-validation.tsx">
-  <DateFieldValidation />
+<Prose>
+
+## Time zones
+
+A `ZonedDateTime` field shows its zone's name after the time, unless `hideTimeZone`. A field that starts empty has no value to read its zone from, so pass `timeZone` with a time `granularity`: the field then emits `ZonedDateTime`s in that zone, and names the zone as it is today, read once the field has mounted. Emptying a field keeps its kind and zone. Stepping the hour moves through real hours, so on a night the clocks go back the repeated hour comes twice, and on a night they go forward the missing hour never comes.
+
+</Prose>
+
+<Demo slug="date-field" id="zoned" title="Time zones" file="date-field-zoned.tsx">
+  <DateFieldZoned />
 </Demo>
 
-<Demo slug="date-field" id="granularity" title="Granularity" file="date-field-granularity.tsx">
-  <DateFieldGranularity />
+<Prose>
+
+## Bounds and validation
+
+`minValue` and `maxValue` take any kind, independent of the value's, compared as React Aria compares them: a zoned bound as an instant, a plain bound as wall-clock time in the value's zone. A value outside them still commits; when the field loses focus it shows as invalid with React Aria's words, "Value must be 07/31/2026 or earlier.", in the `LocaleProvider`'s locale. `isDateUnavailable` reports "Selected date unavailable.". A half-typed field reports itself incomplete, and an empty required one missing. `errorMessage` replaces the field's own words; without `isInvalid` it shows only once that validation fails.
+
+</Prose>
+
+<Demo slug="date-field" id="bounds" title="Bounds and validation" file="date-field-bounds.tsx">
+  <DateFieldBounds />
 </Demo>
 
-<Demo slug="date-field" id="states" title="States" file="date-field-states.tsx">
-  <DateFieldStates />
+<Prose>
+
+## In a form
+
+Inside `Form`, the field is a Field of the form: its ISO text reaches `onFormSubmit` and native `FormData` under its `name`, a required, incomplete or out-of-bounds field blocks the submit and takes focus on its first segment, and an error the form holds under its `name` shows below it until the value changes.
+
+</Prose>
+
+<Demo slug="date-field" id="form" title="In a form" file="date-field-form.tsx">
+  <DateFieldForm />
 </Demo>
 
-<Demo slug="date-field" id="date-input" title="Date input" file="date-field-date-input.tsx">
-  <DateFieldDateInput />
+<Prose>
+
+## Parts
+
+`DateInput.Root` is the segment row on its own, with Base UI's names: `value`, `onValueChange`, `disabled`, `readOnly`, `required`, `invalid` and `render`. Put it in a `Field.Root` beside your own label, description and error; the first segment is the Field's control. Its children render each segment: return a `DateInput.Segment`, or leave them out for the default segments, which a server component relies on. A segment is a literal, the zone's name or a unit: its `isEditable` narrows its `type` to a unit such as `"month"` when true, and `type` tells `"literal"` from `"timeZoneName"` when false.
+
+`onValueChange` receives the details of the change: its `reason` (`"input-change"` for typing, keys and blur, `"input-clear"` when every segment is cleared, `"input-paste"` for pasted ISO text, or text in the field's own format such as `10/05/2026` in en-US and `05.10.2026` in nb-NO), the DOM `event`, the `trigger` segment, `getValidationError()` and `cancel()`. `getValidationError()` names a failure in Calendar's words: `"rangeUnderflow"`, `"rangeOverflow"` or `"unavailable"`, or `null`. Canceling keeps the value and shows it again in the segments.
+
+</Prose>
+
+<Demo slug="date-field" id="date-input" title="DateInput parts" file="date-field-parts.tsx">
+  <DateFieldParts />
 </Demo>
+
+<Prose>
+
+## Server rendering
+
+`DateField` holds no state of its own, so a server component renders it without a date value; `DateInput.Root` is a client component. Neither reads the clock while rendering: an arrow key on an empty segment reads today when the user presses it.
+
+## Accessibility
+
+- **One group, named segments.** The segments sit in a `group` named by the label. Each segment is a `spinbutton` named by its unit and the label, "month, Moving date", with its number, and the month's name or the hour as said, as its value. On iOS they are `textbox`es, since VoiceOver there cannot focus a spinbutton.
+- **Described once.** The description, the error and the selected value ("Selected Date: October 05, 2026") describe the first segment, and every segment while the field is invalid.
+- **Mobile keyboards.** Segments open the numeric keyboard with a Next key, and the field handles the input events of Android's keyboards.
+- **24px targets.** The whole field box is the target: a press beside the segments focuses the last filled one.
+
+</Prose>
 
 <ApiReference slug="date-field" />
 

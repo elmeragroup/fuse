@@ -20,7 +20,6 @@
     "@elmeragroup/fuse": "workspace:*",
     "effect": "catalog:",
     "tailwindcss": "catalog:",
-    "tailwindcss-react-aria-components": "catalog:",
     "tw-animate-css": "catalog:"
   },
   "devDependencies": {
@@ -28,7 +27,6 @@
     "@elmeragroup/typescript-config": "workspace:*",
     "@figma/plugin-typings": "catalog:",
     "@fontsource/roboto": "catalog:",
-    "@internationalized/date": "catalog:",
     "@types/node": "catalog:",
     "@types/pngjs": "catalog:",
     "@types/react": "catalog:",

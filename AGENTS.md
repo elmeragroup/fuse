@@ -1,8 +1,8 @@
 # Working on Fuse
 
 Keep `@elmeragroup/fuse` one public package. Keep implementation helpers private.
-The root barrel exposes permanent components and theme APIs; icons, illustrations
-and interim `react-aria/*` entries stay opt-in subpaths.
+The root barrel exposes permanent components and theme APIs; icons, illustrations,
+flags, optional-peer and preview entries stay opt-in subpaths.
 Preserve the React peer lower bound when choosing runtime APIs.
 
 ## Component composition

@@ -2,7 +2,7 @@
  * AUTO-GENERATED FILE — DO NOT EDIT DIRECTLY.
  *
  * Root barrel of bare component entries plus /theme.
- * Icons, illustrations, flags, react-aria/*, optional-peer and preview entries stay subpath-only.
+ * Icons, illustrations, flags, optional-peer and preview entries stay subpath-only.
  */
 
 export * from "./accordion";

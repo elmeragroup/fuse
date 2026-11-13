@@ -1,22 +1,20 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { useState } from "react";
 import type { FocusEvent, FormEvent, KeyboardEvent, ReactElement } from "react";
 
-import { CalendarDate } from "@internationalized/date";
 import { tv } from "tailwind-variants";
 
 import { Alert } from "@elmeragroup/fuse/alert";
 import { Button } from "@elmeragroup/fuse/button";
 import { Card } from "@elmeragroup/fuse/card";
 import { Checkbox } from "@elmeragroup/fuse/checkbox";
+import { DateField } from "@elmeragroup/fuse/date-field";
 import { DescriptionList } from "@elmeragroup/fuse/description-list";
 import { Field } from "@elmeragroup/fuse/field";
 import { Form } from "@elmeragroup/fuse/form";
 import { Heading } from "@elmeragroup/fuse/heading";
 import { PhoneNumberField } from "@elmeragroup/fuse/phone-number-field";
-import { DateField } from "@elmeragroup/fuse/react-aria/date-field";
-import { UiProviders } from "@elmeragroup/fuse/react-aria/ui-providers";
 import { SelectionItem } from "@elmeragroup/fuse/selection-item";
 import { Separator } from "@elmeragroup/fuse/separator";
 import { Text } from "@elmeragroup/fuse/text";
@@ -47,23 +45,22 @@ const EXTRAS = [
 
 const BASE_PRICE = 39;
 
-const earliestStart = new CalendarDate(2026, 11, 1);
+/** The first start date the screen takes, built in render so the host's Temporal is installed. */
+const EARLIEST_START = "2026-11-01";
 
 const FORM_ID = "checkout-order";
-
-const startFormat = new Intl.DateTimeFormat("en-GB", { dateStyle: "long", timeZone: "UTC" });
 
 /** A confirmed order, as the success message reads it back. */
 type Order = { readonly customer: string; readonly email: string; readonly summary: string };
 
 /**
- * Whether every segment of the DateField that `event` came from is filled. React Aria keeps its
+ * Whether every segment of the DateField that `event` came from is filled. The field keeps its
  * last complete value while a segment is empty, and reports no change when a segment is filled
  * back to that value, so the segments themselves tell.
  */
 function segmentsFilled(event: KeyboardEvent | FocusEvent): boolean {
   const target = event.target;
-  // React Aria marks an empty segment, and no prop or callback reports it.
+  // The date input marks an empty segment, and no prop or callback reports it.
   const group = target instanceof Element ? target.closest('[role="group"]') : null;
   return (group?.querySelector('[role="spinbutton"][data-placeholder]') ?? null) === null;
 }
@@ -82,14 +79,17 @@ function kroner(amount: number): string {
 export function CheckoutScreen(): ReactElement {
   const [email, setEmail] = useState("nora.haugen@example");
   const [extras, setExtras] = useState<ReadonlySet<string>>(new Set(["app"]));
-  const [start, setStart] = useState<CalendarDate | null>(earliestStart);
+  const earliestStart = Temporal.PlainDate.from(EARLIEST_START);
+  const [start, setStart] = useState<Temporal.PlainDate | null>(() =>
+    Temporal.PlainDate.from(EARLIEST_START)
+  );
   const [startFilled, setStartFilled] = useState(true);
   const emailInvalid = !EMAIL.test(email);
-  // The interim React Aria DateField does not register with the Form, so the screen gates on it.
+  // The screen's own words for the start date; `isInvalid` also makes the Form refuse the submit.
   const startError =
     start === null || !startFilled
       ? "Enter a complete start date."
-      : start.compare(earliestStart) < 0
+      : Temporal.PlainDate.compare(start, earliestStart) < 0
         ? "Choose a start date from 1 November 2026 on."
         : undefined;
   const trackFilled = (event: KeyboardEvent | FocusEvent) => {
@@ -114,7 +114,7 @@ export function CheckoutScreen(): ReactElement {
     setOrder({
       customer: `${read("firstName")} ${read("lastName")}`,
       email: read("email"),
-      summary: `${items}: NOK ${String(total)} a month from ${startFormat.format(start.toDate("UTC"))}.`,
+      summary: `${items}: NOK ${String(total)} a month from ${start.toLocaleString("en-GB", { dateStyle: "long" })}.`,
     });
   };
 
@@ -166,24 +166,20 @@ export function CheckoutScreen(): ReactElement {
             autoComplete="email"
           />
           <PhoneNumberField label="Mobile" name="mobile" defaultValue="+4741234567" />
-          {/* React Aria builds its dates on `new Date()`, which the studio's prerender refuses, so
-              the browser renders the field. */}
-          <Suspense fallback={null}>
-            <UiProviders locale="en-US" navigate={() => undefined}>
-              <DateField<CalendarDate>
-                label="Start date"
-                name="start"
-                description="The first of a month, from November on."
-                value={start}
-                minValue={earliestStart}
-                isInvalid={startError !== undefined}
-                errorMessage={startError}
-                onChange={setStart}
-                onKeyUp={trackFilled}
-                onBlur={trackFilled}
-              />
-            </UiProviders>
-          </Suspense>
+          {/* The field's keys and focus leaving bubble to this wrapper, which reads its segments. */}
+          {/* oxlint-disable-next-line jsx-a11y/no-static-element-interactions -- listens only to events bubbling from the DateField's own segments; the wrapper does nothing a role would announce */}
+          <div onKeyUp={trackFilled} onBlur={trackFilled}>
+            <DateField
+              label="Start date"
+              name="start"
+              description="The first of a month, from November on."
+              value={start}
+              minValue={earliestStart}
+              isInvalid={startError !== undefined}
+              errorMessage={startError}
+              onChange={setStart}
+            />
+          </div>
           <Field.Root>
             <Field.Label>Extras</Field.Label>
             <div className={styles.extras()}>

@@ -1,5 +1,3 @@
-import type { VariantProps } from "tailwind-variants";
-
 import { cn } from "./cn";
 import { tv } from "./tv";
 
@@ -84,9 +82,6 @@ export const fieldSize = tv({
     size: "default",
   },
 });
-
-/** The field size a text-entry field box takes, from the recipe's `size` axis. */
-export type FieldSize = NonNullable<VariantProps<typeof fieldSize>["size"]>;
 
 /**
  * The read slots, resolved once at module scope as `controlMd` is. The reads do not depend on

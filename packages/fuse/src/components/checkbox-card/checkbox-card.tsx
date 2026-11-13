@@ -12,7 +12,7 @@ import { Circle } from "../../icons/generated/circle";
 import { definedProps } from "../../internal/defined-props";
 import { cn } from "../../styles/cn";
 import { checkboxCardContentShellClass } from "../../styles/inner-corner/card";
-import { racDisabledStateFaceClass } from "../../styles/state-face";
+import { propDisabledStateFaceClass } from "../../styles/state-face";
 import { tv } from "../../styles/tv";
 import {
   iconCrossfadeHidden,
@@ -39,7 +39,7 @@ const checkboxCardStyles = tv({
     // The card is the whole control, so it takes the one disabled look on its `isDisabled`
     // arm: the prop, not a selector, carries the state to the card.
     isDisabled: {
-      true: racDisabledStateFaceClass,
+      true: propDisabledStateFaceClass,
     },
   },
   defaultVariants: {

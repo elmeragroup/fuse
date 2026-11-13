@@ -2,26 +2,37 @@
 
 import { useState } from "react";
 
-import { CalendarDate } from "@internationalized/date";
-import type { DateValue } from "@internationalized/date";
-
-import { Calendar } from "@elmeragroup/fuse/react-aria/calendar";
-import { UiProviders } from "@elmeragroup/fuse/react-aria/ui-providers";
-
-const initialDate = new CalendarDate(2026, 7, 14);
+import { Calendar } from "@elmeragroup/fuse/calendar";
+import { Switch } from "@elmeragroup/fuse/switch";
 
 export function CalendarControlled() {
-  const [value, setValue] = useState<DateValue | null>(initialDate);
-  const [focusedValue, setFocusedValue] = useState<DateValue>(initialDate);
-
+  const [value, setValue] = useState(() => Temporal.PlainDate.from("2026-10-14"));
+  const [locked, setLocked] = useState(false);
   return (
-    <UiProviders locale="en-US" navigate={() => undefined}>
-      <Calendar
+    <div className="flex flex-col items-start gap-4">
+      <Calendar.Root
+        aria-label="Meter reading date"
         value={value}
-        onChange={setValue}
-        focusedValue={focusedValue}
-        onFocusChange={setFocusedValue}
-      />
-    </UiProviders>
+        onValueChange={(next, details) => {
+          // A canceled change keeps the value; focus stays on the pressed day.
+          if (locked) {
+            details.cancel();
+            return;
+          }
+          setValue(next);
+        }}>
+        <Calendar.Header>
+          <Calendar.DecrementMonth />
+          <Calendar.VisibleRangeHeading />
+          <Calendar.IncrementMonth />
+        </Calendar.Header>
+        <Calendar.Months />
+      </Calendar.Root>
+      <label className="text-sm flex items-center gap-2">
+        <Switch checked={locked} onCheckedChange={setLocked} />
+        Lock the date
+      </label>
+      <output className="text-sm">Selected: {value.toString()}</output>
+    </div>
   );
 }

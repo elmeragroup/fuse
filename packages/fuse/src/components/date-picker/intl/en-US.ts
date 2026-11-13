@@ -1,8 +1,8 @@
 /**
  * Default localized copy for the date pickers. `calendar` (the trigger's name), `startDate`,
  * `endDate` and `rangeReversed` copy React Aria's `@react-aria/datepicker` and
- * `@react-stately/datepicker` strings, so a screen reader and a form read the same words on the
- * interim tier and on this one; `presets` is the interim preset group's default name. `time`,
+ * `@react-stately/datepicker` strings, so a screen reader and a form read the words React Aria's
+ * pickers use; `presets` names the preset group. `time`,
  * `startTime` and `endTime` name the popup's time inputs, as React Spectrum's picker names the time
  * fields under its calendar.
  */

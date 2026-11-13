@@ -92,7 +92,7 @@ function describeFunction(
   if (description === "") {
     warnings.push(`${part.name}: public function has no JSDoc description`);
   }
-  // A const that aliases another library's function, such as `useFocusable`, carries its own
+  // A const that aliases another library's function carries its own
   // `@param` tags, while the signature's parameters keep the original declaration's empty docs.
   const paramTags = new Map(
     tags

@@ -7,7 +7,7 @@
  * inside its group. A renderer sets the states the markup draws, such as disabled or pending,
  * through the element's props. The page forces hover and focus itself, on the root part, on the
  * part the definition's `statePart` names or on the sibling its `statePeer` names, and writes the
- * attributes a renderer names for a hover or focus face React Aria sets only after hydration.
+ * `data-highlighted` a set that marks its highlighted row by that attribute reads.
  *
  * A renderer's element comes from a module that imports the Fuse build, which exists only after
  * `pnpm --filter @elmeragroup/fuse build`. This module lists each renderer's set and the build
@@ -33,7 +33,6 @@ import { renderToStaticMarkup } from "react-dom/server";
 
 import type { ElmeraIconProps } from "../../../fuse/dist/icons.js";
 import type { Cell } from "../components/component-spec.ts";
-import { forcedPseudoClasses, highlightAttributes } from "./cells.ts";
 import type { Highlight } from "./cells.ts";
 
 /** Renders the cells of one kit definition with the real Fuse component. */
@@ -56,15 +55,6 @@ export type CellRenderer = {
    */
   readonly hostClasses?: readonly string[];
   /**
-   * The attributes React Aria writes on the forced element while a cell's hover or focus state
-   * holds, which static markup cannot hold: React Aria sets them from pointer and focus events once
-   * a page hydrates, and the compare page never does. The page writes them on the element when it
-   * forces the state, as `data-hovered`, which `hover:` reads on an element marked `data-rac`, or
-   * the class a `className` function gives at `isFocusVisible`. Undefined for a component whose
-   * hover and focus faces CSS draws from the pseudo classes the page forces.
-   */
-  readonly forcedAttributes?: (cell: Cell) => Readonly<Record<string, string>>;
-  /**
    * How the set's markup shows a highlighted row, for a set with a `state=highlighted` cell: the page
    * forces `:focus` on the row, or writes `data-highlighted` on it. Undefined for a set with none.
    */
@@ -72,13 +62,13 @@ export type CellRenderer = {
 };
 
 /** The part of a renderer its own module defines, beside its import of the Fuse build. */
-export type CellRendering = Pick<CellRenderer, "element" | "hostClasses" | "forcedAttributes" | "highlight">;
+export type CellRendering = Pick<CellRenderer, "element" | "hostClasses" | "highlight">;
 
 /**
  * The part of a client renderer its own module defines, which the page's bundle imports. The page
  * mounts the element in the cell's slot with React's `createRoot` and waits for the popup to settle.
  */
-export type ClientCellRendering = Pick<CellRenderer, "hostClasses" | "forcedAttributes" | "highlight"> & {
+export type ClientCellRendering = Pick<CellRenderer, "hostClasses" | "highlight"> & {
   /**
    * The real Fuse element for a parsed cell, open through `defaultOpen`, with its popup portalled
    * into `container`, the cell's slot, through the overlay's `container` prop, so the popup lays out
@@ -456,11 +446,6 @@ const SOURCES: readonly RendererSource[] = [
     load: async () => (await import("./empty-cell.ts")).empty,
   },
   {
-    set: "calendar-day",
-    entry: "dist/react-aria/calendar.js",
-    load: async () => (await import("./calendar-day-cell.ts")).calendarDay,
-  },
-  {
     set: "link",
     entry: "dist/link.js",
     load: async () => (await import("./link-cell.ts")).link,
@@ -688,31 +673,13 @@ export function markedIcon(
   return createElement(icon, { ...props, key: marker });
 }
 
-/**
- * The attributes the page writes on a cell's forced element when it forces the cell's state.
- *
- * @param renderer - The cell's renderer, or the rendering its module defines.
- * @param cell - The parsed cell.
- * @returns `data-highlighted` for a highlighted row its set marks, with the renderer's forced
- *   attributes for a cell whose state the page forces, and none for a cell it forces nothing on.
- */
-export function forcedAttributesFor(
-  renderer: Pick<CellRendering, "forcedAttributes" | "highlight">,
-  cell: Cell
-): Readonly<Record<string, string>> {
-  const highlighted = highlightAttributes(cell, renderer.highlight);
-  return forcedPseudoClasses(cell, renderer.highlight).length === 0 && Object.keys(highlighted).length === 0
-    ? {}
-    : { ...highlighted, ...renderer.forcedAttributes?.(cell) };
-}
-
 /** No BOOLEAN property turned on, as a preview shows every property at its default. */
 const AT_DEFAULTS: ReadonlySet<string> = new Set();
 
 /**
  * Render a cell to static HTML. The page needs no hydration: CSS draws every state, the page
- * forces hover and focus as pseudo classes, and it writes the attributes a renderer names for the
- * faces React Aria sets after hydration.
+ * forces hover and focus as pseudo classes, and it writes `data-highlighted` on a highlighted row
+ * whose set marks it so.
  *
  * @param renderer - The cell's renderer, or the rendering its module defines.
  * @param cell - The parsed cell.

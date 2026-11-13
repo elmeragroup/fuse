@@ -1,6 +1,6 @@
 /**
  * Unit under test: the Calendar parts in Chromium, through their roles and names. Oracles: the
- * React Aria interim tier's behaviour (day names, grid names, keyboard targets, bound naming and
+ * React Aria Calendar's behaviour (day names, grid names, keyboard targets, bound naming and
  * clamping, today naming), React Aria's
  * `react-stately` paging rules worked out by hand for the multi-month cases, and printed 2026
  * calendars. Every scenario runs under a clock frozen at local noon on June 15, 2030, outside
@@ -118,7 +118,7 @@ function gridNames(): string[] {
   return [...document.querySelectorAll("[role=grid]")].map((grid) => grid.getAttribute("aria-label") ?? "");
 }
 
-describe("Calendar parity with the interim tier", () => {
+describe("Calendar parity with React Aria", () => {
   it.each([
     ["{Home}", "Thursday, October 1, 2026", "Delivery, October 2026"],
     ["{End}", "Saturday, October 31, 2026", "Delivery, October 2026"],

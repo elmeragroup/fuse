@@ -26,9 +26,8 @@ import { ariaInvalidFocusRingClass, dataInvalidFocusRingClass, withinInvalidFocu
  * Composing the arms here rather than at each call site means no control can take the gate
  * without the look.
  *
- * - `rac` is the disabled or invalid look alone, with no selector, for a recipe told the
- *   state through a prop or render prop (React Aria wrappers, CheckboxCard's `isDisabled`).
- *   The recipe puts it on its own `isDisabled` or `isInvalid` arm.
+ * - `prop` is the disabled look alone, with no selector, for a recipe told the state through
+ *   a prop (CheckboxCard's `isDisabled`). The recipe puts it on its own `isDisabled` arm.
  * - `within` keys off the group's own control: a direct child marked
  *   `data-focus-ring-control` (`:disabled`, `aria-disabled="true"`, `aria-invalid`), for a
  *   group whose box is the control (InputGroup, Combobox chips, NumberField). Each owner keeps
@@ -73,18 +72,10 @@ export const dataStateFaceClass = cn(
 export const ariaStateFaceClass = cn(ariaDisabledFace, ariaInvalidFace);
 
 /**
- * The rac-target disabled face. A recipe puts it on its `isDisabled: true` arm, because a
- * prop or render prop reports the state there, not a selector.
+ * The prop-target disabled face. A recipe puts it on its `isDisabled: true` arm, because a
+ * prop reports the state there, not a selector.
  */
-export const racDisabledStateFaceClass = cn("cursor-not-allowed opacity-50");
-
-/**
- * The rac-target invalid face, for a recipe's `isInvalid: true` arm. A recipe that also takes
- * the state focus ring adds `stateInvalidFocusRingVisibleClass` from `utils.ts` on its
- * `isInvalid` and `isFocusVisible` compound, so the focused invalid control draws the solid
- * error line inside this halo rather than the plain focus ring.
- */
-export const racInvalidStateFaceClass = cn("border-error ring-3 ring-error/20");
+export const propDisabledStateFaceClass = cn("cursor-not-allowed opacity-50");
 
 /**
  * The within-target state face on the group. It reads only a direct child marked

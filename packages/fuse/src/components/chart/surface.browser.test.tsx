@@ -4,13 +4,9 @@
 // chart CSS, and in light themes the white every Card, `Frame.Panel`, framed Table cell, default
 // Alert, bordered VerticalTable box and outline Item promises through the `panel` and `card` roles.
 // A translucent host keeps the surface beneath it, so its oracle is the fill of the element around it.
-//
-// The interim React Aria Calendar takes no children, so no chart can rest in it. Its case reads
-// the `--surface` it states and holds it to the same oracle, its own computed fill.
 import type { ReactElement } from "react";
 
 import { describe, expect, it } from "vitest";
-import { page } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
@@ -23,7 +19,6 @@ import {
   surfaceAt,
 } from "../../../test/surface-paint";
 import { computedContrast, stampDensity } from "../../../test/themed-browser-render";
-import { Calendar as AriaCalendar } from "../../react-aria/calendar/calendar";
 import { DENSITIES } from "../../theme/density";
 import { Chart } from "./chart-namespace";
 import "./chart.css";
@@ -95,19 +90,6 @@ describe("chart cut-outs", () => {
         if (whiteInLight && scheme === "light") expect(srgb(fill)).toEqual([1, 1, 1, 1]);
       }
     );
-  }
-});
-
-describe("the React Aria Calendar", () => {
-  for (const { theme, scheme, name } of THEMED) {
-    it(`states its fill as --surface in ${name}`, async () => {
-      renderIn(theme, scheme, <AriaCalendar aria-label="Usage days" />);
-      // React Aria appends the visible month to the calendar's name.
-      const calendar = page.getByRole("application", { name: /^Usage days, / });
-      await expect.element(calendar).toBeInTheDocument();
-      const style = getComputedStyle(calendar.element());
-      expect(srgb(style.getPropertyValue("--surface"))).toEqual(srgb(style.backgroundColor));
-    });
   }
 });
 

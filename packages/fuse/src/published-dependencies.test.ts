@@ -10,9 +10,6 @@ describe("published dependency ranges", () => {
   const catalog = new Map([
     ["@base-ui/react", "1.8.0"],
     ["@phosphor-icons/react", "2.1.10"],
-    ["react-aria", "3.52.1"],
-    ["react-aria-components", "1.21.1"],
-    ["tailwindcss-react-aria-components", "2.2.0"],
     ["tailwind-merge", "3.7.0"],
     ["tw-animate-css", "1.4.0"],
     ["sugar-high", "2.4.1"],
@@ -24,9 +21,6 @@ describe("published dependency ranges", () => {
     expect(publishedDependencies(declared, catalog)).toEqual({
       "@base-ui/react": "1.8.0",
       "@phosphor-icons/react": "2.1.10",
-      "react-aria": "3.52.1",
-      "react-aria-components": "1.21.1",
-      "tailwindcss-react-aria-components": "2.2.0",
       "tailwind-merge": "^3.7.0",
       "tw-animate-css": "^1.4.0",
       "sugar-high": "^2.4.0",

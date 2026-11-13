@@ -62,7 +62,7 @@ import { cn } from "./cn";
 
 /**
  * The field box corner: Input, Textarea, the Select trigger, NumberField, InputGroup, the
- * Combobox chips box and the React Aria field group. It declares `--field-corner` for the parts
+ * Combobox chips box and the date fields' field group. It declares `--field-corner` for the parts
  * inside the box and rounds with it. Branded themes round it with `--radius-field`, and
  * neutral themes with `--radius`.
  */

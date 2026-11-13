@@ -3,24 +3,804 @@
   "slug": "range-calendar",
   "parts": [
     {
-      "name": "RangeCalendar",
+      "name": "RangeCalendar.Root",
       "rsc": "client",
-      "sourcePath": "packages/fuse/src/react-aria/range-calendar/range-calendar.tsx",
+      "sourcePath": "packages/fuse/src/components/range-calendar/range-calendar.tsx",
       "forwardedFrom": [
-        "@react-types/shared",
-        "react-aria",
-        "react-aria-components",
-        "react-stately"
+        "@base-ui/react",
+        "@types/react"
       ],
-      "forwardedCount": 98,
+      "forwardedCount": 278,
       "props": [
         {
-          "name": "errorMessage",
+          "name": "commitBehavior",
+          "origin": "declared",
+          "type": "RangeCommitBehavior | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"select\"",
+          "description": "What an open range does when focus leaves the calendar or the user presses outside its days and month buttons: `\"select\"` completes it at the focused or hovered day, `\"reset\"` drops the anchor and keeps the previous range.",
+          "required": false
+        },
+        {
+          "name": "defaultValue",
+          "origin": "declared",
+          "type": "RangeCalendarValue | null | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "The range selected first, when the calendar owns its value. Takes what `value` takes.",
+          "required": false
+        },
+        {
+          "name": "disabled",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether nothing in the calendar responds: no day takes focus and the month buttons are disabled.",
+          "required": false
+        },
+        {
+          "name": "firstDayOfWeek",
+          "origin": "declared",
+          "type": "CalendarFirstDayOfWeek | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "The weekday each row starts on. Defaults to the locale's: Sunday in en-US, Monday in the Nordic locales.",
+          "required": false
+        },
+        {
+          "name": "isDateUnavailable",
+          "origin": "declared",
+          "type": "((date: PlainDate, anchor: PlainDate | null) => boolean) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Days the user may focus but not select, given the anchored day while a range is being chosen (`null` otherwise), so the available days can depend on the first day picked. Once a range is anchored it can reach only the run of available days around the anchor, looked for up to `visibleMonths` months each way: the days past the nearest unavailable day are disabled until the range completes. An unavailable day further from the anchor is not looked for, as in React Aria, so a longer range can span it; check such a range in `onValueChange`. Keep the function's identity stable across renders, since every day re-renders when it changes.",
+          "required": false
+        },
+        {
+          "name": "maxValue",
+          "origin": "declared",
+          "type": "TemporalValue | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The last selectable day, taking what `minValue` takes. Days after it are disabled.",
+          "required": false
+        },
+        {
+          "name": "minValue",
+          "origin": "declared",
+          "type": "TemporalValue | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The first selectable day: a Temporal PlainDate, PlainDateTime or ZonedDateTime from any implementation. A date-time bound counts from its own wall-clock day. Days before it are disabled, never focusable, and focus clamps to it.",
+          "required": false
+        },
+        {
+          "name": "onValueChange",
+          "origin": "declared",
+          "type": "((value: RangeCalendarValue, details: RangeCalendarRootValueChangeEventDetails) => void) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Called when the user completes a range, with this runtime's `Temporal.PlainDate`s, earlier day first. The first day pressed only anchors the range and calls nothing. `details.reason` is `\"day-press\"`, `\"keyboard\"`, `\"outside-press\"` or `\"focus-out\"`. Canceling a day press or key with `details.cancel()` keeps the value and the anchor, so the user can pick another end; canceling an outside press or focus-out keeps the value and drops the anchor. `details.getValidationError()` returns `null` for a range the calendar accepts, and otherwise `\"rangeUnderflow\"` for a start before `minValue`, `\"rangeOverflow\"` for an end after `maxValue` and `\"unavailable\"` for an end `isDateUnavailable` refuses with no anchor.",
+          "required": false
+        },
+        {
+          "name": "onVisibleRangeChange",
+          "origin": "declared",
+          "type": "CalendarVisibleRangeChangeHandler | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Called when the visible months change by a month button or the keyboard, with the new first month. `details.reason` is `\"increment-press\"`, `\"decrement-press\"` or `\"keyboard\"`. Canceling with `details.cancel()` keeps the months shown: a month button press does nothing, and a key that would page leaves focus on the day it was on.",
+          "required": false
+        },
+        {
+          "name": "pageBehavior",
+          "origin": "declared",
+          "type": "CalendarPageBehavior | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"visible\"",
+          "description": "How the month buttons page a multi-month view, and how far the view moves when the keyboard leaves it: `\"visible\"` by every visible month, `\"single\"` by one.",
+          "required": false
+        },
+        {
+          "name": "readOnly",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether the user may move around the months but not change the value.",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, RangeCalendarRootState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "value",
+          "origin": "declared",
+          "type": "RangeCalendarValue | null | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "The selected range, when the parent owns it: each end a `Temporal.PlainDate` from any implementation. A range given in reverse shows the earlier day first. A server component cannot pass one, since it reaches the client as text: build the value in a client component. `null` selects nothing.",
+          "required": false
+        },
+        {
+          "name": "visibleMonths",
+          "origin": "declared",
+          "type": "number | undefined",
+          "shortType": null,
+          "defaultValue": "1",
+          "description": "How many months show side by side, wrapping onto new rows when the host is narrow. Pick it from the viewport in the host, such as one month on a phone and two on a desktop. A whole number from 1: a fraction truncates, and anything below 1 or not a finite number shows one month, with a warning in development.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "RangeCalendar.Header",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/calendar/calendar-parts.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": [
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, {}> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "RangeCalendar.DecrementMonth",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/calendar/calendar-parts.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 283,
+      "props": [
+        {
+          "name": "aria-label",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The accessible name. Defaults to the locale dictionary: \"Previous\" or \"Next\" in en-US.",
+          "required": false
+        },
+        {
+          "name": "children",
           "origin": "declared",
           "type": "ReactNode",
           "shortType": null,
           "defaultValue": null,
-          "description": "Error copy, rendered through the public Text onto RAC `Text slot=\"errorMessage\"` when present. RangeCalendar has no ValidationResult render face.",
+          "description": "The icon. Defaults to a caret that points along the writing direction.",
+          "required": false
+        },
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Extra classes, merged last through `cn`.",
+          "required": false
+        },
+        {
+          "name": "focusableWhenDisabled",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether the button should be focusable when disabled.",
+          "required": false
+        },
+        {
+          "name": "isPending",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The in-flight state of an async action. Stamps `data-pending` and `aria-busy`, blocks activation (effective disabled is `disabled || isPending`) and renders the disabled treatment, but keeps the button in the focus order like `focusableWhenDisabled`, so a keyboard user who activated it is still on it when the result arrives. Shows the `pendingIndicator` in the leading icon position meanwhile. An explicit `focusableWhenDisabled={false}` restores the native `disabled` attribute while pending. `aria-busy` announces nothing by itself: say what is happening through the label (\"Saving\") or a `role=\"status\"` region outside the button. Put a label that changes with the state in its own element, such as `<span>{label}</span>`: page translation replaces a bare text child with its own nodes, so React's update to the old text node never shows.",
+          "required": false
+        },
+        {
+          "name": "isVisuallyDisabled",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Stamps `aria-disabled` (an explicit consumer value wins), which renders the disabled treatment (`opacity-50`, the `not-allowed` cursor, no hover or press paint), and suppresses focus-on-press while the button stays fully interactive — click, keyboard and focus-visible all still work, and a Tooltip on it still opens. For \"looks disabled but explains itself on activation\" flows. The treatment keys off `aria-disabled`, so an explicit `aria-disabled={false}` also turns it off: the button then looks and announces enabled and only the focus-on-press suppression remains.",
+          "required": false
+        },
+        {
+          "name": "nativeButton",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "true",
+          "description": "Whether the component renders a native `<button>` element when replacing it via the `render` prop. Set to `false` if the rendered element is not a button (for example, `<div>`).",
+          "required": false
+        },
+        {
+          "name": "onIntent",
+          "origin": "declared",
+          "type": "(() => void) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Predictive-prefetch callback. Fires once when the pointer's predicted trajectory lands inside the inflated hit rect; browsers without the prediction API fail soft.",
+          "required": false
+        },
+        {
+          "name": "pendingIndicator",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "What the button shows while pending. Omitted: a spinning `SpinnerGap` in the leading icon position, and the button's own leading and bare SVG children hide so the spinner takes their place (a trailing `data-icon=\"inline-end\"` icon stays). A node: rendered in that same place instead of the spinner, as a decorative `aria-hidden` slot; animate it yourself. `null` or `false`: no indicator and nothing hidden, so the call site owns the pending markup, for example a brand button that keeps its logo and centres its own spinner over it.",
+          "required": false
+        },
+        {
+          "name": "predictionZoneSize",
+          "origin": "declared",
+          "type": "number | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Pixels the hit rect is inflated on every side when predicting pointer intent.",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, ButtonState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "size",
+          "origin": "declared",
+          "type": "IconButtonSize | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Button's square size. Defaults to `\"icon\"`.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "CSSProperties | ((state: ButtonState) => CSSProperties | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
+          "required": false
+        },
+        {
+          "name": "variant",
+          "origin": "recipe-axis",
+          "type": "\"default\" | \"destructive\" | \"ghost\" | \"link\" | \"outline\" | \"secondary\" | \"success\" | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "RangeCalendar.IncrementMonth",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/calendar/calendar-parts.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 283,
+      "props": [
+        {
+          "name": "aria-label",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The accessible name. Defaults to the locale dictionary: \"Previous\" or \"Next\" in en-US.",
+          "required": false
+        },
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The icon. Defaults to a caret that points along the writing direction.",
+          "required": false
+        },
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Extra classes, merged last through `cn`.",
+          "required": false
+        },
+        {
+          "name": "focusableWhenDisabled",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "false",
+          "description": "Whether the button should be focusable when disabled.",
+          "required": false
+        },
+        {
+          "name": "isPending",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The in-flight state of an async action. Stamps `data-pending` and `aria-busy`, blocks activation (effective disabled is `disabled || isPending`) and renders the disabled treatment, but keeps the button in the focus order like `focusableWhenDisabled`, so a keyboard user who activated it is still on it when the result arrives. Shows the `pendingIndicator` in the leading icon position meanwhile. An explicit `focusableWhenDisabled={false}` restores the native `disabled` attribute while pending. `aria-busy` announces nothing by itself: say what is happening through the label (\"Saving\") or a `role=\"status\"` region outside the button. Put a label that changes with the state in its own element, such as `<span>{label}</span>`: page translation replaces a bare text child with its own nodes, so React's update to the old text node never shows.",
+          "required": false
+        },
+        {
+          "name": "isVisuallyDisabled",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Stamps `aria-disabled` (an explicit consumer value wins), which renders the disabled treatment (`opacity-50`, the `not-allowed` cursor, no hover or press paint), and suppresses focus-on-press while the button stays fully interactive — click, keyboard and focus-visible all still work, and a Tooltip on it still opens. For \"looks disabled but explains itself on activation\" flows. The treatment keys off `aria-disabled`, so an explicit `aria-disabled={false}` also turns it off: the button then looks and announces enabled and only the focus-on-press suppression remains.",
+          "required": false
+        },
+        {
+          "name": "nativeButton",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": "true",
+          "description": "Whether the component renders a native `<button>` element when replacing it via the `render` prop. Set to `false` if the rendered element is not a button (for example, `<div>`).",
+          "required": false
+        },
+        {
+          "name": "onIntent",
+          "origin": "declared",
+          "type": "(() => void) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Predictive-prefetch callback. Fires once when the pointer's predicted trajectory lands inside the inflated hit rect; browsers without the prediction API fail soft.",
+          "required": false
+        },
+        {
+          "name": "pendingIndicator",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "What the button shows while pending. Omitted: a spinning `SpinnerGap` in the leading icon position, and the button's own leading and bare SVG children hide so the spinner takes their place (a trailing `data-icon=\"inline-end\"` icon stays). A node: rendered in that same place instead of the spinner, as a decorative `aria-hidden` slot; animate it yourself. `null` or `false`: no indicator and nothing hidden, so the call site owns the pending markup, for example a brand button that keeps its logo and centres its own spinner over it.",
+          "required": false
+        },
+        {
+          "name": "predictionZoneSize",
+          "origin": "declared",
+          "type": "number | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Pixels the hit rect is inflated on every side when predicting pointer intent.",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, ButtonState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "size",
+          "origin": "declared",
+          "type": "IconButtonSize | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Button's square size. Defaults to `\"icon\"`.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "CSSProperties | ((state: ButtonState) => CSSProperties | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
+          "required": false
+        },
+        {
+          "name": "variant",
+          "origin": "recipe-axis",
+          "type": "\"default\" | \"destructive\" | \"ghost\" | \"link\" | \"outline\" | \"secondary\" | \"success\" | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "RangeCalendar.VisibleRangeHeading",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/calendar/calendar-parts.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": [
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, {}> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "RangeCalendar.Months",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/calendar/calendar-parts.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 279,
+      "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "((month: PlainYearMonth, index: number) => ReactNode) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Renders one visible month, normally a `Calendar.Month` keyed by `month.toString()`. Called for each month from the first, `visibleMonths` times. Defaults to a `Calendar.Month` with its `MonthHeading`, visually hidden in a one-month view, and a `DayGrid` with the weekday row and the weeks, which is also how a server component renders the months, since a function cannot cross to the client.",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, {}> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "RangeCalendar.Month",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/calendar/calendar-parts.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": [
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, {}> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "value",
+          "origin": "declared",
+          "type": "PlainYearMonth",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The month, as `Calendar.Months` passes it.",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "RangeCalendar.MonthHeading",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/calendar/calendar-parts.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": [
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, {}> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "RangeCalendar.DayGrid",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/calendar/calendar-parts.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 289,
+      "props": [
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, {}> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "RangeCalendar.DayGridHeader",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/calendar/calendar-parts.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 280,
+      "props": [
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, {}> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "RangeCalendar.DayGridHeaderRow",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/calendar/calendar-parts.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 279,
+      "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "((day: PlainDate, index: number) => ReactNode) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Renders one weekday's header cell from a day on it. Defaults to `Calendar.DayGridHeaderCell`.",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, {}> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "RangeCalendar.DayGridHeaderCell",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/calendar/calendar-parts.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 286,
+      "props": [
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, {}> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "value",
+          "origin": "declared",
+          "type": "PlainDate",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "A day on the weekday the cell names.",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "RangeCalendar.DayGridBody",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/calendar/calendar-parts.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 279,
+      "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "((week: PlainDate, index: number) => ReactNode) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Renders one week from its first day, normally a `Calendar.DayGridRow` keyed by `week.toString()`. Defaults to that row with its default cells.",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, {}> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "RangeCalendar.DayGridRow",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/calendar/calendar-parts.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 279,
+      "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "((day: PlainDate, index: number) => ReactNode) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Renders one day, normally a `Calendar.DayGridCell` keyed by `day.toString()` around a `Calendar.DayButton`. Defaults to exactly that.",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, {}> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "value",
+          "origin": "declared",
+          "type": "PlainDate",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The week's first day, as `Calendar.DayGridBody` passes it.",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "RangeCalendar.DayGridCell",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/calendar/calendar-parts.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 289,
+      "props": [
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, CalendarDayFlagState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "value",
+          "origin": "declared",
+          "type": "PlainDate",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The day, as `Calendar.DayGridRow` passes it.",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "RangeCalendar.DayButton",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/calendar/calendar-parts.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 290,
+      "props": [
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, CalendarDayButtonState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
           "required": false
         }
       ]

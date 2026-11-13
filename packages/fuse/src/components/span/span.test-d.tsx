@@ -39,7 +39,7 @@ test("SpanProps is native span props plus the recipe axes and render; the elemen
   );
   const _render = <Span render={<strong />}>As strong</Span>;
 
-  // @ts-expect-error the RAC slot prop is dropped
+  // @ts-expect-error Span takes no `slot` prop
   const _noSlot = <Span slot="description">Described</Span>;
   // @ts-expect-error the forced-span identity keeps no elementType prop
   const _noElementType = <Span elementType="p">Block</Span>;

@@ -19,10 +19,7 @@ export type WorkspaceCatalog = ReadonlyMap<string, string>;
  */
 const EXACT_DEPENDENCY_PINS: ReadonlySet<string> = new Set([
   "@base-ui/react",
-  "react-aria",
-  "react-aria-components",
   "@phosphor-icons/react",
-  "tailwindcss-react-aria-components",
   "temporal-polyfill",
 ]);
 
