@@ -1,3 +1,5 @@
+import { Fragment } from "react";
+
 import { describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
@@ -65,6 +67,95 @@ describe("ConfirmButton", () => {
     await press();
     expect(onConfirm).toHaveBeenCalledTimes(1);
     expect(buttonNamed("Confirm delete").getAttribute("data-armed")).toBe("true");
+  });
+
+  // Chrome's page translation swaps each text node for `<font>` wrappers that React does not
+  // know about. Swapping the label then threw `NotFoundError` removing the old text node, or wrote
+  // the new text into the detached node and left the translated label showing.
+  describe("on a page that translation rewrote", () => {
+    function translateLabel(button: HTMLElement) {
+      const walker = document.createTreeWalker(button, NodeFilter.SHOW_TEXT);
+      const labels: Node[] = [];
+      for (let node = walker.nextNode(); node !== null; node = walker.nextNode()) {
+        if (node.parentElement?.closest("[aria-live]") === null) {
+          labels.push(node);
+        }
+      }
+      for (const label of labels) {
+        const translated = document.createElement("font");
+        translated.innerHTML = "<font>Oversatt</font>";
+        label.parentNode?.replaceChild(translated, label);
+      }
+    }
+
+    // What the button shows, without the visually hidden live region that repeats the armed label.
+    function visibleLabel(button: HTMLElement) {
+      return [...button.childNodes]
+        .filter((node) => !(node instanceof HTMLElement && node.hasAttribute("aria-live")))
+        .map((node) => node.textContent)
+        .join("");
+    }
+
+    it.each([
+      ["text", "Confirm delete"],
+      ["an element", <strong key="armed">Confirm delete</strong>],
+      ["a fragment", <Fragment key="armed">Confirm delete</Fragment>],
+    ] as const)(
+      "arms to %s armedChildren and disarms back to the resting label",
+      async (_case, armedChildren) => {
+        renderThemed(
+          <ConfirmButton onConfirm={() => undefined} armedChildren={armedChildren}>
+            Delete
+          </ConfirmButton>
+        );
+        const button = buttonNamed("Delete");
+
+        translateLabel(button);
+        await userEvent.click(button);
+        expect(button.isConnected).toBe(true);
+        expect(button.getAttribute("data-armed")).toBe("true");
+        expect(visibleLabel(button)).toBe("Confirm delete");
+
+        translateLabel(button);
+        await userEvent.keyboard("{Escape}");
+        expect(button.isConnected).toBe(true);
+        expect(button.hasAttribute("data-armed")).toBe(false);
+        expect(visibleLabel(button)).toBe("Delete");
+      }
+    );
+  });
+
+  // Unit under test: the label wrapping. Oracle: the same label written so that it renders the
+  // way main did, with no gap-separated piece. Button spaces its flex items with a gap, so a label
+  // split into several spans, or a whitespace-only span, comes out wider.
+  it.each([
+    ["an interpolated label", ["Delete ", 3, " items"], "Delete 3 items"],
+    [
+      "a label interpolated through a fragment",
+      <>
+        Delete <>{3}</> items
+      </>,
+      "Delete 3 items",
+    ],
+    [
+      "whitespace between two elements",
+      <>
+        <b>Delete</b> <b>all</b>
+      </>,
+      <>
+        <b>Delete</b>
+        <b>all</b>
+      </>,
+    ],
+  ] as const)("lays out %s at the width of its reference", (_case, label, reference) => {
+    renderThemed(
+      <>
+        <ConfirmButton onConfirm={() => undefined}>{label}</ConfirmButton>
+        <ConfirmButton onConfirm={() => undefined}>{reference}</ConfirmButton>
+      </>
+    );
+    const [wrapped, expected] = page.getByRole("button").elements();
+    expect(wrapped?.getBoundingClientRect().width).toBe(expected?.getBoundingClientRect().width);
   });
 
   it("disarms on Escape without confirming, and still invokes consumer onKeyDown", async () => {

@@ -89,6 +89,7 @@ export const CONFIRM_BUTTON: ComponentDefinition = {
     characters: CONFIRM_BUTTON_LABEL,
     textProperty: "Label",
     shownIn: () => true,
+    textElement: { tag: "span", attributes: {} },
   },
   iconsFor: () => [],
   swapProperties: [],
