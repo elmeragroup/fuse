@@ -5,8 +5,11 @@ import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
+import { renderInHost, surfaceHostsNamed } from "../../../test/surface-hosts";
+import { THEMED, restoreDocumentThemeAroundEach, srgb } from "../../../test/surface-paint";
 import {
   LABEL,
+  computedContrast,
   cssVarColor,
   fieldRootFrom,
   inputNamed,
@@ -261,4 +264,31 @@ describe("Field text follows density", () => {
       expect(typeOf("Legend title"), `${density} legend`).toEqual({ font: 16, leading: 24 });
     }
   );
+});
+
+// Unit under test: the fill of the separator label, which hides the rule under it, and its muted
+// text. Oracles: the computed `background-color` of the host the separator rests on, and WCAG
+// 1.4.3's 4.5:1 between the label's computed text and that fill. The chart surface suite covers
+// every host's `--surface`; this one holds the label to the hosts a form rests in, and to the soft
+// Alerts, whose fill the page's muted text does not read on.
+describe("Field.Separator's label", () => {
+  const HOSTS = surfaceHostsNamed([
+    "Card",
+    "Frame.Panel",
+    "Dialog",
+    "the page",
+    "the warning Alert",
+    "the info Alert",
+  ]);
+  restoreDocumentThemeAroundEach();
+
+  for (const { theme, scheme, name } of THEMED) {
+    it.each(HOSTS)(`paints the fill of $label and reads on it in ${name}`, async (host) => {
+      const element = await renderInHost(host, theme, scheme, <Field.Separator>or</Field.Separator>);
+      const fill = getComputedStyle(element).backgroundColor;
+      const label = getComputedStyle(textNamed("or"));
+      expect(srgb(label.backgroundColor)).toEqual(srgb(fill));
+      expect(computedContrast(label.color, fill)).toBeGreaterThanOrEqual(4.5);
+    });
+  }
 });
