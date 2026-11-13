@@ -1,6 +1,12 @@
 import { cssVarReference } from "../css-values";
 import { LEGAL_THEMES } from "../theme-input";
-import { assignedTokenNames, derivedRoleSources, isDerivedTokenName, TOKEN_NAMES } from "./contract";
+import {
+  assignedTokenNames,
+  derivedRoleSources,
+  isDerivedTokenName,
+  isLightOnlyKey,
+  TOKEN_NAMES,
+} from "./contract";
 import type { TokenLayer, TokenName } from "./contract";
 import { DEFAULTS } from "./defaults";
 import { paletteLayers } from "./palette-layers";
@@ -60,3 +66,10 @@ const paletteLayerList = LEGAL_THEMES.flatMap((theme) => [
 
 /** Every token name a light or dark palette can change, in `TOKEN_NAMES` order. */
 export const THEME_RESET_KEYS = resetKeysFor(paletteLayerList);
+
+/**
+ * The keys a dark rule declares: every {@link THEME_RESET_KEYS} entry but the light-only keys.
+ * The light rule of the same theme element declares those and matches in both schemes, so a
+ * dark rule restating one would only outweigh a host override at the light rule's weight.
+ */
+export const DARK_RESET_KEYS = THEME_RESET_KEYS.filter((name) => !isLightOnlyKey(name));

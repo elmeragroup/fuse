@@ -10,7 +10,7 @@ import type { TokenContract, TokenName } from "./tokens/contract";
 import { DEFAULTS } from "./tokens/defaults";
 import { derivedRoleCss } from "./tokens/derived-tokens";
 import { PRIMITIVE_NAMES, PRIMITIVES } from "./tokens/primitives";
-import { THEME_RESET_KEYS } from "./tokens/reset-keys";
+import { DARK_RESET_KEYS } from "./tokens/reset-keys";
 
 const GENERATED_FILE_HEADER = `/**
  * AUTO-GENERATED FILE — DO NOT EDIT DIRECTLY.
@@ -72,7 +72,9 @@ function rootDeclarations(): (readonly [string, string])[] {
 /**
  * Light layers declare `LIGHT_RESET_KEYS` only, so a host override of a role no
  * palette owns (`--popover`, `--chart-*`) inherits through the scope. Dark
- * layers materialize `THEME_RESET_KEYS`, every key any light or dark palette can change.
+ * layers materialize `DARK_RESET_KEYS`, every key any light or dark palette can change
+ * except the light-only keys. The light rule of the same element declares those in both
+ * schemes, so a host override of one at the light rule's weight holds in dark.
  */
 function resetDeclarations(
   overrides: Partial<TokenContract>,
@@ -82,7 +84,7 @@ function resetDeclarations(
 }
 
 function resetKeys(colorScheme: ResolvedColorScheme): readonly TokenName[] {
-  return colorScheme === "dark" ? THEME_RESET_KEYS : LIGHT_RESET_KEYS;
+  return colorScheme === "dark" ? DARK_RESET_KEYS : LIGHT_RESET_KEYS;
 }
 
 function emitRoot(): string {
@@ -216,12 +218,14 @@ function differsFrom(base: TokenContract, tokens: TokenContract): boolean {
 /**
  * Emit each brand's rule from its composed base theme, then a segment rule wherever the
  * segment departs from that base. Light segment rules carry only the changed keys; dark
- * segment rules materialize the full reset set like every other dark rule.
+ * segment rules materialize the full dark reset set like every other dark rule.
  *
  * A segment that departs only in light still gets a dark rule: the light segment selector
  * (`[identity][brand][segment]`) ties the dark brand selector (`[dark][identity][brand]`),
  * so without the four-attribute dark segment rule a dark scope would resolve that tie by
- * emission order instead of by specificity.
+ * emission order instead of by specificity. The tie only covers the keys both rules declare.
+ * A light-only key is never in a dark rule, so a light segment rule's value for one wins in
+ * dark by being the only declaration at that weight, and the composed dark theme keeps it.
  */
 function emitBrandPalettes(colorScheme: ResolvedColorScheme): string {
   const rules: string[] = [];

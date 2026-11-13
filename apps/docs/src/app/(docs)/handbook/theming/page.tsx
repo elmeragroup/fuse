@@ -186,6 +186,12 @@ export default function ThemingPage(): ReactElement {
         identity&apos;s corner set, which no colour scheme restates.
       </p>
       <p>
+        Dark rules restate only the roles a dark palette changes. The corners, the outline button&apos;s
+        border, the card edge and shadow, the selection row edges, the pressed toggle, the paragraph leading
+        and the heading scale keep their light values, so an override of one on the element that carries the
+        theme attributes holds in both colour schemes.
+      </p>
+      <p>
         Because it is attributes plus cascade, brand is correct at first paint with JavaScript disabled, and
         re-theming a subtree costs one wrapper element rather than a second stylesheet.
       </p>

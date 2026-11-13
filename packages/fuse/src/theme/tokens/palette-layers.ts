@@ -13,7 +13,8 @@ import { segmentSheet } from "./segment-sheets";
  * the brand palette and its segment delta. Branded dark is the brand-and-segment dark sheet.
  * The fkab alias is resolved here, as in each accessor of a per-brand table, so every palette
  * table below is keyed by `PaletteBrandCode`. Corners are no palette layer: `theme/corners/corners.ts` owns them, so
- * the dark rules, which reset every key a palette layer can change, never restate them.
+ * the dark rules, which reset every key a palette layer can change but the light-only keys,
+ * never restate them. Each dark layer is a `DarkTokenLayer`, so none sets a light-only key.
  */
 export function paletteLayers(theme: ThemeInput, colorScheme: ResolvedColorScheme): TokenLayer[] {
   const layers: TokenLayer[] = [];

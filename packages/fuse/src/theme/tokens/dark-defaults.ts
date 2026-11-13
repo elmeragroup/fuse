@@ -1,4 +1,4 @@
-import type { TokenLayer } from "./contract";
+import type { DarkTokenLayer } from "./contract";
 import { NEUTRAL_RING } from "./primitives";
 
 const CHART_ORANGE = "oklch(0.6303 0.1701 47.53)"; // #D86109
@@ -73,4 +73,4 @@ export const DARK_DEFAULTS = {
   "sh-jsxliterals": "oklch(0.8156596 0.1022421 190.6206)", // #69D8D2
   "sh-sign": "oklch(0.91205 0.0286161 218.9613)", // #CEE7EF
   "sh-comment": "oklch(0.8280204 0.0042636 121.5755)", // #C6C7C4
-} as const satisfies TokenLayer;
+} as const satisfies DarkTokenLayer;

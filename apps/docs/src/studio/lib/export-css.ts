@@ -65,8 +65,9 @@ function densityCss(density: DensityOverrides | undefined): string | undefined {
  * - Dark edits go on the handbook's two-selector dark pair. A token the light rule declares is
  *   restated there with the base theme's dark value, because the light rule also matches a dark
  *   scope and would otherwise outweigh the base theme's dark rule.
- * - Light-only edits appear once, on the light selector and the dark pair together, since a
- *   dark segment rule restates them at the dark pair's weight.
+ * - Light-only edits appear once, on the light selector alone. No Fuse dark rule declares a
+ *   light-only token, so the light selector, which also matches a dark scope, holds in both
+ *   schemes, and a host's own later override at that weight still wins over it.
  * - Each rule also restates the base aliases that read its edits, the closure the studio's
  *   artboards restate ({@link restatedAliases}), so the CSS works on a nested theme scope as well
  *   as on `<html>`. A light-only alias goes in the rule for both schemes.
@@ -112,13 +113,7 @@ export function exportCss(document: StudioDocument, base: BaseDeclarations): str
     );
   }
   if (Object.keys(sharedDeclarations).length > 0) {
-    rules.push(
-      rule(
-        "Both schemes: a dark palette keeps these from light.",
-        [selector, ...darkPair],
-        sharedDeclarations
-      )
-    );
+    rules.push(rule("Both schemes: a dark palette keeps these from light.", [selector], sharedDeclarations));
   }
   const density = densityCss(document.overrides.density);
   if (rules.length === 0 && density === undefined) {

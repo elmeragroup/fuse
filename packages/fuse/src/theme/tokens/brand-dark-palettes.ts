@@ -1,7 +1,7 @@
 import type { ThemeSegment } from "../theme-input";
 import type { BrandDarkSheet } from "./brand-dark-sheet";
 import type { PaletteBrandCode } from "./brand-palettes";
-import type { TokenLayer } from "./contract";
+import type { DarkTokenLayer } from "./contract";
 import { DARK_DEFAULTS } from "./dark-defaults";
 import { mixOklchLiteral } from "./derived-tokens";
 import { segmentSheet } from "./segment-sheets";
@@ -149,7 +149,7 @@ function darkSheet(brand: PaletteBrandCode, segment: ThemeSegment): BrandDarkShe
  * role a sheet does name is never clobbered. Neutral themes compose
  * `NEUTRAL_DARK_PALETTE` instead.
  */
-export function brandDarkPalette(brand: PaletteBrandCode, segment: ThemeSegment): TokenLayer {
+export function brandDarkPalette(brand: PaletteBrandCode, segment: ThemeSegment): DarkTokenLayer {
   const palette = darkSheet(brand, segment);
   const popover = palette.popover ?? palette.card;
   return {
