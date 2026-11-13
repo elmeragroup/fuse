@@ -37,6 +37,12 @@ A Sidebar inside a box on the page, such as an embedded app pane or a demo, take
   <SidebarIconCollapse />
 </Demo>
 
+<Prose>
+
+Below 768px `Sidebar.Root` becomes a Sheet. Its open state is session-only and starts closed. A host that closes it from outside, such as after a navigation, passes `openMobile` and `onOpenMobileChange` to `Sidebar.Provider`. The Trigger, ⌘B, the Sheet's own dismissal and `useSidebar().setOpenMobile` then report through `onOpenMobileChange`, and the host decides.
+
+</Prose>
+
 <Demo slug="sidebar" id="mobile-sheet" title="Mobile Sheet" file="sidebar-mobile-sheet.tsx">
   <SidebarMobileSheet />
 </Demo>

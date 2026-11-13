@@ -1,4 +1,4 @@
-import { StrictMode, useLayoutEffect } from "react";
+import { StrictMode, startTransition, useLayoutEffect, useState } from "react";
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
@@ -462,6 +462,28 @@ describe("Sidebar controlled and uncontrolled state", () => {
     rerender(<Frame provider={{ open: true, onOpenChange }} />);
     expect(sidebarRoot().getAttribute("data-state")).toBe("expanded");
   });
+
+  it("keeps a controlled openMobile authoritative: the phone Sheet only reports requests", async () => {
+    await page.viewport(MOBILE.width, MOBILE.height);
+    const onOpenMobileChange = vi.fn<(open: boolean) => void>();
+    const frame = (openMobile: boolean) => <Frame provider={{ openMobile, onOpenMobileChange }} />;
+    const sheet = page.getByRole("dialog", { name: TITLE_COPY["en-US"], exact: true });
+    const { rerender } = renderThemed(frame(false));
+
+    await userEvent.click(roleNamed("button", "Toggle sidebar"));
+    expect(onOpenMobileChange).toHaveBeenLastCalledWith(true);
+    expect(sheet.query(), "the parent has not opened it").toBeNull();
+
+    rerender(frame(true));
+    await expect.element(sheet).toBeVisible();
+
+    await userEvent.keyboard("{Escape}");
+    expect(onOpenMobileChange).toHaveBeenLastCalledWith(false);
+
+    // Closed from outside, as a host does after a navigation.
+    rerender(frame(false));
+    await expect.element(sheet).not.toBeInTheDocument();
+  });
 });
 
 describe("Sidebar menu skeleton geometry", () => {
@@ -736,6 +758,42 @@ describe("state", () => {
       expect(roleNamed("status", "Open state").textContent).toBe("true");
       await userEvent.click(roleNamed("button", "Toggle sidebar"));
       expect(onChange).toHaveBeenLastCalledWith(false);
+    });
+
+    it("queues uncontrolled openMobile updaters across transitions as React's setter does", async () => {
+      function MobileQueue() {
+        const { openMobile, setOpenMobile } = useSidebar();
+        const [settled, setSettled] = useState(false);
+        return (
+          <>
+            <button
+              type="button"
+              onClick={async () => {
+                startTransition(() => setOpenMobile((open) => !open));
+                await Promise.resolve();
+                startTransition(() => {
+                  setOpenMobile((open) => !open);
+                  setSettled(true);
+                });
+              }}>
+              Invert in two transitions
+            </button>
+            <output aria-label="Mobile open state">{settled ? String(openMobile) : "pending"}</output>
+          </>
+        );
+      }
+      renderThemed(
+        withLocale(
+          "en-US",
+          <Sidebar.Provider>
+            <MobileQueue />
+          </Sidebar.Provider>
+        )
+      );
+      await userEvent.click(roleNamed("button", "Invert in two transitions"));
+      await expect
+        .element(page.getByRole("status", { name: "Mobile open state" }))
+        .toHaveTextContent("false");
     });
 
     it("keeps callbacks stable when the committed controlled setter changes", async () => {

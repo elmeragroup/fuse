@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import type { ReactElement, RefObject } from "react";
 
 import { tv } from "tailwind-variants";
@@ -12,7 +12,7 @@ import { Tooltip } from "@elmeragroup/fuse/tooltip";
 
 import { isTypingTarget } from "../../../../lib/typing-target";
 import { useLandingTheme } from "../landing-theme";
-import { useSideOverlay, useSideShown } from "../window-side";
+import { useSideOverlay } from "../window-side";
 import { CommandPalette } from "./command-palette";
 import { DashboardContext } from "./dashboard-context";
 import type { DashboardApi, Navigation, Notice, Reveal } from "./dashboard-context";
@@ -78,15 +78,6 @@ function DashboardShell({ scope }: ShellProps): ReactElement {
     mountedAt.current = Date.now();
   }, []);
   useEffect(() => () => clearTimeout(fetchTimer.current), []);
-
-  // The phone's sidebar Sheet keeps its open state in Fuse's Sidebar provider, out of reach of a
-  // render-time reset, so it closes in the commit that hides the side, before the browser paints.
-  const shown = useSideShown();
-  useLayoutEffect(() => {
-    if (!shown) {
-      setOpenMobile(false);
-    }
-  }, [shown, setOpenMobile]);
 
   const fetchList = useCallback(() => {
     setOpenMobile(false);
@@ -265,6 +256,7 @@ function DashboardShell({ scope }: ShellProps): ReactElement {
 export function DashboardApp(): ReactElement {
   const { theme } = useLandingTheme();
   const scope = useRef<HTMLDivElement>(null);
+  const [sidebarOpen, setSidebarOpen] = useSideOverlay(false);
 
   return (
     <ThemeScope
@@ -276,8 +268,9 @@ export function DashboardApp(): ReactElement {
       <Tooltip.Provider>
         <Toast.Provider>
           {/* Bounded by the window: the rail fills it, its open state stays in memory and out of
-              the host's cookie, and ⌘B toggles it only from inside. */}
-          <Sidebar.Provider bounds="container">
+              the host's cookie, and ⌘B toggles it only from inside. The phone Sheet's state is the
+              side's, so it closes in the render that hides the side. */}
+          <Sidebar.Provider bounds="container" openMobile={sidebarOpen} onOpenMobileChange={setSidebarOpen}>
             <DashboardShell scope={scope} />
           </Sidebar.Provider>
           <Toast.Viewport aria-label="Dashboard notifications" />

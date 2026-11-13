@@ -48,12 +48,30 @@
           "required": false
         },
         {
+          "name": "onOpenMobileChange",
+          "origin": "declared",
+          "type": "((open: boolean) => void) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Controlled setter for the phone Sheet. Called with the requested state when the Trigger, the shortcut, the Sheet's own dismissal or `useSidebar().setOpenMobile` asks to open or close it; when provided, internal state is bypassed.",
+          "required": false
+        },
+        {
           "name": "open",
           "origin": "declared",
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
           "description": "Controlled open state.",
+          "required": false
+        },
+        {
+          "name": "openMobile",
+          "origin": "declared",
+          "type": "boolean | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Controlled open state of the phone Sheet the Root becomes below the mobile breakpoint, so a host can close it from outside, such as after a navigation. Session-only: never written to the cookie. Uncontrolled, it starts closed.",
           "required": false
         }
       ]

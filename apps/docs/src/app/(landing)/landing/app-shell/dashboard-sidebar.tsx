@@ -215,7 +215,6 @@ function SellerMenu(): ReactElement {
  */
 export function DashboardSidebar(): ReactElement {
   return (
-    // oxlint-disable-next-line fuse/side-overlay-state -- the phone Sheet's state lives in the Sidebar provider; DashboardShell closes it with setOpenMobile in the commit that hides the side.
     <Sidebar.Root collapsible="icon" variant="inset">
       <Sidebar.Header>
         <WorkspaceSwitcher />

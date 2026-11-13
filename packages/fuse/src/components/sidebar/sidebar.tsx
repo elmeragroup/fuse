@@ -129,9 +129,12 @@ export type SidebarContextValue = {
    * controlled or not; at `bounds="container"` it never does.
    */
   setOpen: (open: boolean | ((open: boolean) => boolean)) => void;
-  /** Mobile Sheet state; session-only, never cookie-persisted. */
+  /** Mobile Sheet state — controlled or internal; session-only, never cookie-persisted. */
   openMobile: boolean;
-  /** React state setter for `openMobile`. */
+  /**
+   * Accepts a boolean or an updater, as a React state setter does. When the Provider takes
+   * `openMobile`, it reports the request through `onOpenMobileChange` instead.
+   */
   setOpenMobile: Dispatch<SetStateAction<boolean>>;
   /** From the package-private viewport probe; `false` on the server and first client render. */
   isMobile: boolean;
@@ -175,6 +178,35 @@ export function useSidebar(): SidebarContextValue {
   return useSidebarInternal().value;
 }
 
+/**
+ * Resolves a boolean-or-updater request to the open state it asks for. Updaters within one event
+ * compose from the last request; the next event starts from committed state again, so a parent
+ * that controls the state may reject every request without causing another render. React's own
+ * setter queues updaters instead, so the uncontrolled phone Sheet passes them to it untouched. The
+ * desktop setter resolves even uncontrolled requests here, because its cookie needs the value.
+ */
+function useOpenRequests(open: boolean): (value: SetStateAction<boolean>) => boolean {
+  // Resolves against committed state only: a suspended or abandoned render must not change how
+  // the visible controls behave.
+  const committed = useRef(open);
+  useLayoutEffect(() => {
+    committed.current = open;
+  });
+  const pending = useRef<boolean | undefined>(undefined);
+
+  return useCallback((value: SetStateAction<boolean>) => {
+    // oxlint-disable-next-line anti-slop/no-runtime-typeof -- updater-or-boolean is the setter contract
+    const next = typeof value === "function" ? value(pending.current ?? committed.current) : value;
+    if (pending.current === undefined) {
+      queueMicrotask(() => {
+        pending.current = undefined;
+      });
+    }
+    pending.current = next;
+    return next;
+  }, []);
+}
+
 export type SidebarProviderProps = ComponentProps<"div"> & {
   /**
    * Uncontrolled initial open state. SSR pattern: parse the `sidebar:state` cookie
@@ -189,6 +221,18 @@ export type SidebarProviderProps = ComponentProps<"div"> & {
    * is still written on every change.
    */
   onOpenChange?: (open: boolean) => void;
+  /**
+   * Controlled open state of the phone Sheet the Root becomes below the mobile breakpoint, so a
+   * host can close it from outside, such as after a navigation. Session-only: never written to
+   * the cookie. Uncontrolled, it starts closed.
+   */
+  openMobile?: boolean;
+  /**
+   * Controlled setter for the phone Sheet. Called with the requested state when the Trigger, the
+   * shortcut, the Sheet's own dismissal or `useSidebar().setOpenMobile` asks to open or close it;
+   * when provided, internal state is bypassed.
+   */
+  onOpenMobileChange?: (open: boolean) => void;
   /**
    * What bounds the Sidebar. `page` fills at least the viewport's height, fixes the desktop rail
    * to the viewport, writes the open state to the `sidebar:state` cookie and toggles on ⌘B or
@@ -218,6 +262,8 @@ export function SidebarProvider({
   defaultOpen = true,
   open: openProp,
   onOpenChange: setOpenProp,
+  openMobile: openMobileProp,
+  onOpenMobileChange,
   labels: labelsProp,
   bounds = "page",
   className,
@@ -227,43 +273,44 @@ export function SidebarProvider({
 }: SidebarProviderProps): ReactElement {
   const strings = useLocalizedStrings(sidebarStrings);
   const isMobile = useIsMobile();
-  const [openMobile, setOpenMobile] = useState(false);
-
   const [internalOpen, setInternalOpen] = useState(defaultOpen);
   const open = openProp ?? internalOpen;
+  const requestOpen = useOpenRequests(open);
+  const [internalOpenMobile, setInternalOpenMobile] = useState(false);
+  const openMobile = openMobileProp ?? internalOpenMobile;
+  const requestOpenMobile = useOpenRequests(openMobile);
 
   // Stable handlers read only committed props and responsive state. Suspended or
   // abandoned renders must not change how the visible controls behave.
-  const latest = useRef({ open, isMobile, setOpenProp, bounds });
+  const latest = useRef({ isMobile, setOpenProp, onOpenMobileChange, bounds });
   useLayoutEffect(() => {
-    latest.current = { open, isMobile, setOpenProp, bounds };
+    latest.current = { isMobile, setOpenProp, onOpenMobileChange, bounds };
   });
-  const pendingOpen = useRef<boolean | undefined>(undefined);
 
-  const setOpen = useCallback((value: boolean | ((value: boolean) => boolean)) => {
-    // oxlint-disable-next-line anti-slop/no-runtime-typeof -- updater-or-boolean is the setter contract
-    const openState = typeof value === "function" ? value(pendingOpen.current ?? latest.current.open) : value;
-    if (pendingOpen.current === undefined) {
-      // Compose requests within this event, then return authority to committed state.
-      // A controlled parent may reject every request without causing another render.
-      queueMicrotask(() => {
-        pendingOpen.current = undefined;
-      });
-    }
-    pendingOpen.current = openState;
-    const onOpenChange = latest.current.setOpenProp;
+  const setOpen = useCallback(
+    (value: boolean | ((value: boolean) => boolean)) => {
+      const openState = requestOpen(value);
+      (latest.current.setOpenProp ?? setInternalOpen)(openState);
+      // The cookie is the page's: a contained Sidebar's state belongs to its host.
+      if (latest.current.bounds === "page") {
+        document.cookie = `${SIDEBAR_COOKIE_NAME}=${openState}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`;
+      }
+    },
+    [requestOpen]
+  );
 
-    if (onOpenChange) {
-      onOpenChange(openState);
-    } else {
-      setInternalOpen(openState);
-    }
-
-    // The cookie is the page's: a contained Sidebar's state belongs to its host.
-    if (latest.current.bounds === "page") {
-      document.cookie = `${SIDEBAR_COOKIE_NAME}=${openState}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`;
-    }
-  }, []);
+  // No cookie to write, so uncontrolled updaters keep React's queue.
+  const setOpenMobile = useCallback(
+    (value: SetStateAction<boolean>) => {
+      const report = latest.current.onOpenMobileChange;
+      if (report) {
+        report(requestOpenMobile(value));
+      } else {
+        setInternalOpenMobile(value);
+      }
+    },
+    [requestOpenMobile]
+  );
 
   const toggleSidebar = useCallback(() => {
     if (latest.current.isMobile) {
@@ -271,7 +318,7 @@ export function SidebarProvider({
       return;
     }
     setOpen((current) => !current);
-  }, [setOpen]);
+  }, [setOpen, setOpenMobile]);
 
   // Reads the native event and cancels `cancelable`: a React caller passes its synthetic event,
   // since only that one updates what React ancestors see as `defaultPrevented`.
@@ -320,6 +367,7 @@ export function SidebarProvider({
       setOpen,
       isMobile,
       openMobile,
+      setOpenMobile,
       toggleSidebar,
       toggleLabel,
       titleLabel,

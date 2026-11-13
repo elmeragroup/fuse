@@ -4,28 +4,22 @@ import { moduleExportName, nameChain, propertyKeyName } from "../ast-names.ts";
 import { constantString } from "../static-text.ts";
 
 /** The attribute that controls whether a part's popup shows. */
-type StateAttribute = "open" | "isOpen" | "pageSizeOpen" | "value";
+type StateAttribute = "open" | "isOpen" | "openMobile" | "pageSizeOpen" | "value";
 
 /** The value each state attribute takes while the popup is closed. */
 const CLOSED = {
   open: false,
   isOpen: false,
+  openMobile: false,
   pageSizeOpen: false,
   value: null,
 } as const satisfies Record<StateAttribute, false | null>;
 
 /**
- * A literal attribute that makes a part render no popup at all, so it is no overlay. Only a value
- * the part's source proves popup-free counts.
+ * How an overlay part's open state is held: the controlling attribute, or `internal` for a part
+ * that keeps its open state inside.
  */
-type PopupFree = { readonly attribute: string; readonly value: string };
-
-/** An overlay part: how its open state is held, and a literal attribute that removes its popup. */
-type OverlayPart = {
-  /** The controlling attribute, or `internal` for a part that keeps its open state inside. */
-  readonly state: StateAttribute | "internal";
-  readonly popupFree?: PopupFree;
-};
+type OverlayPart = StateAttribute | "internal";
 
 /**
  * Every Fuse part that renders a popup, by the path it is exported under (`Sheet.Root`,
@@ -34,14 +28,16 @@ type OverlayPart = {
  * locked and the shown side hidden from assistive technology; a non-modal one (Popover, Combobox,
  * Autocomplete, a date picker's popup, a nav panel) stays on screen over the side that replaced it.
  * A ListDetail shows its detail as a Sheet over the list below its breakpoint and as a pane beside
- * it above; `ListDetail.Detail` needs no row, because its Sheet reads the Root's `open`.
+ * it above; `ListDetail.Detail` needs no row, because its Sheet reads the Root's `open`. A Sidebar
+ * likewise becomes a Sheet on phones; `Sidebar.Root` needs no row, because its Sheet reads the
+ * Provider's `openMobile`, which `useSidebar()`'s `setOpenMobile` and `toggleSidebar` only request
+ * through `onOpenMobileChange`. A Provider whose Roots all take `collapsible="none"` renders no
+ * Sheet; that is a reviewed exception like a popup-free Command.
  *
  * `internal` parts keep their popup's state inside: `SelectField`, `PhoneNumberField` and
- * `DataTable.RowActions` take no open state, `Sidebar.Root` holds its phone Sheet's in the
- * provider, and `DataTableFilter` and `PopoverInfoButton` own theirs. `Sidebar.Root` with
- * `collapsible="none"` renders a plain panel (`sidebar.tsx` returns a `div` for it), the only
- * popup-free form a literal proves. Base UI's `inline` on a Combobox or Autocomplete Root is not
- * one: a `Content` inside it still renders a popup, so an inline Root is checked like any other.
+ * `DataTable.RowActions` take no open state, and `DataTableFilter` and `PopoverInfoButton` own
+ * theirs. Base UI's `inline` on a Combobox or Autocomplete Root does not make it popup-free: a
+ * `Content` inside it still renders a popup, so an inline Root is checked like any other.
  *
  * The inventory was taken from every Fuse module that renders a Base UI or Fuse popup root. Parts
  * left out render none (ConfirmButton arms in place, Pagination is a list of links) or show only
@@ -55,39 +51,39 @@ type OverlayPart = {
  */
 const FUSE_OVERLAYS: ReadonlyMap<string, OverlayPart> = new Map(
   Object.entries<OverlayPart>({
-    "AlertDialog.Root": { state: "open" },
-    "Autocomplete.Root": { state: "open" },
-    AutocompleteField: { state: "open" },
-    "Combobox.Root": { state: "open" },
-    ComboboxField: { state: "open" },
-    "Command.Root": { state: "open" },
-    "DataTable.ColumnToggle": { state: "open" },
-    "DataTable.Pagination": { state: "pageSizeOpen" },
-    "DataTable.RowActions": { state: "internal" },
-    "DataTableFilter.Root": { state: "internal" },
-    "DatePicker.Root": { state: "open" },
-    DatePickerField: { state: "isOpen" },
-    "DateRangePicker.Root": { state: "open" },
-    DateRangePickerField: { state: "isOpen" },
-    "Dialog.Root": { state: "open" },
-    "DropdownMenu.Root": { state: "open" },
-    "ListDetail.Root": { state: "open" },
-    "NavigationMenu.Root": { state: "value" },
-    PhoneNumberField: { state: "internal" },
-    "Popover.Root": { state: "open" },
-    PopoverInfoButton: { state: "internal" },
-    "Select.Root": { state: "open" },
-    SelectField: { state: "internal" },
-    "Sheet.Root": { state: "open" },
-    "Sidebar.Root": { state: "internal", popupFree: { attribute: "collapsible", value: "none" } },
+    "AlertDialog.Root": "open",
+    "Autocomplete.Root": "open",
+    AutocompleteField: "open",
+    "Combobox.Root": "open",
+    ComboboxField: "open",
+    "Command.Root": "open",
+    "DataTable.ColumnToggle": "open",
+    "DataTable.Pagination": "pageSizeOpen",
+    "DataTable.RowActions": "internal",
+    "DataTableFilter.Root": "internal",
+    "DatePicker.Root": "open",
+    DatePickerField: "isOpen",
+    "DateRangePicker.Root": "open",
+    DateRangePickerField: "isOpen",
+    "Dialog.Root": "open",
+    "DropdownMenu.Root": "open",
+    "ListDetail.Root": "open",
+    "NavigationMenu.Root": "value",
+    PhoneNumberField: "internal",
+    "Popover.Root": "open",
+    PopoverInfoButton: "internal",
+    "Select.Root": "open",
+    SelectField: "internal",
+    "Sheet.Root": "open",
+    "Sidebar.Provider": "openMobile",
   })
 );
 
 /** The React Aria entries' overlay parts, which take React Aria's `isOpen`. */
 const REACT_ARIA_OVERLAYS: ReadonlyMap<string, OverlayPart> = new Map(
   Object.entries<OverlayPart>({
-    DatePicker: { state: "isOpen" },
-    DateRangePicker: { state: "isOpen" },
+    DatePicker: "isOpen",
+    DateRangePicker: "isOpen",
   })
 );
 
@@ -445,7 +441,8 @@ function forwardsState(variable: Variable | undefined): boolean {
  * `oxlint-disable` with its reason.
  *
  * - An overlay part is controlled through its state attribute (`open`, NavigationMenu's `value`,
- *   React Aria's `isOpen`, `DataTable.Pagination`'s `pageSizeOpen`), with no spread after it.
+ *   React Aria's `isOpen`, `DataTable.Pagination`'s `pageSizeOpen`, `Sidebar.Provider`'s
+ *   `openMobile`), with no spread after it.
  * - That attribute reads, by name, state never reassigned: the first binding of
  *   `useSideOverlay(false)` (`null` for a nav value), or, for a boolean attribute, a prop named
  *   `open`, `isOpen` or `…Open` that the component destructures with the default `false`. A boolean
@@ -460,8 +457,7 @@ function forwardsState(variable: Variable | undefined): boolean {
  *   modules that see a local component.
  * - A component that destructures a forwarded open-state prop is rendered only as a JSX tag, where
  *   its callers are checked; `createElement(Panel, props)` or `memo(Panel)` would bypass them.
- * - A part that keeps its open state inside, such as `Sidebar.Root`'s phone Sheet, is always
- *   reported, unless a literal attribute proves it renders no popup.
+ * - A part that keeps its open state inside, such as `SelectField`'s listbox, is always reported.
  *
  * Parts count from the package root or any subpath, under any alias or namespace, through the
  * binding each name resolves to in scope, and as a table's registered `table.ColumnToggle` and
@@ -586,32 +582,22 @@ export const sideOverlayState: Rule = {
           }
           return;
         }
-        const attributes = element.attributes;
-        // The last attribute of a name, which wins over any before it, and its position.
-        const lastAttribute = (name: string) => {
-          const index = attributes.findLastIndex(
-            (attribute) => attribute.type === "JSXAttribute" && attributeName(attribute) === name
-          );
-          const attribute = attributes[index];
-          return { index, attribute: attribute?.type === "JSXAttribute" ? attribute : undefined };
-        };
-        const lastSpread = attributes.findLastIndex((attribute) => attribute.type === "JSXSpreadAttribute");
-        const popupFree = target.popupFree;
-        if (popupFree !== undefined) {
-          const { index, attribute } = lastAttribute(popupFree.attribute);
-          const value = attribute?.value;
-          if (index > lastSpread && value?.type === "Literal" && value.value === popupFree.value) return;
-        }
-        if (target.state === "internal") {
+        if (target === "internal") {
           report(element, "internal", { part });
           return;
         }
-        const name = target.state;
-        const { index, attribute } = lastAttribute(name);
+        const name = target;
+        const attributes = element.attributes;
+        // The last attribute of a name wins over any before it, unless a spread follows it.
+        const index = attributes.findLastIndex(
+          (attribute) => attribute.type === "JSXAttribute" && attributeName(attribute) === name
+        );
+        const attribute = attributes[index];
+        const lastSpread = attributes.findLastIndex((attribute) => attribute.type === "JSXSpreadAttribute");
         const spread = attributes[lastSpread];
         if (spread !== undefined && lastSpread > index) {
           report(spread, "spread", { part, attribute: name });
-        } else if (attribute === undefined) {
+        } else if (attribute?.type !== "JSXAttribute") {
           report(element, "uncontrolled", { part, attribute: name });
         } else {
           judge(name, attributeValue(attribute), CLOSED[name]);
